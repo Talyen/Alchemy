@@ -1,7 +1,6 @@
 import { trinketLibrary } from "@/lib/game-data";
 import { gearBaseItemList } from "@/lib/gear/base-items";
-import { hashStringToUint32 } from "@/lib/rng";
-import { pickRandom } from "@/lib/utils";
+import { hashStringToUint32, pickRandom } from "@/lib/rng";
 
 import type { MysteryEffect, MysteryEvent } from "./types";
 

@@ -21,22 +21,16 @@ export function clearCombatPresentation() {
 export function awardRunEndMaterials(draft: GameplayDraft): ReturnType<typeof emptyInventory> {
   const runState = draft.run.activeRun;
   const runProfile = draft.runProfile;
-  {
-    if (runState.contentSystemType === CONTENT_SYSTEMS.WILDWOOD) {
-      clearRunMaterialsEarned(draft);
-      const none = emptyInventory();
-      setRunEndMaterials(draft, none);
-      return none;
-    }
-    const runCollected = runState.runMaterialsEarned;
-    const homesteadBonus = applyEndOfRunHomesteadBonuses(
-      emptyInventory(),
-      runProfile.effects,
-      runState.roomsEncountered,
-    );
-    addMaterials(draft, homesteadBonus);
-    setRunEndMaterials(draft, addInventory(runCollected, homesteadBonus));
+  if (runState.contentSystemType === CONTENT_SYSTEMS.WILDWOOD) {
     clearRunMaterialsEarned(draft);
-    return homesteadBonus;
+    const none = emptyInventory();
+    setRunEndMaterials(draft, none);
+    return none;
   }
+  const runCollected = runState.runMaterialsEarned;
+  const homesteadBonus = applyEndOfRunHomesteadBonuses(emptyInventory(), runProfile.effects, runState.roomsEncountered);
+  addMaterials(draft, homesteadBonus);
+  setRunEndMaterials(draft, addInventory(runCollected, homesteadBonus));
+  clearRunMaterialsEarned(draft);
+  return homesteadBonus;
 }

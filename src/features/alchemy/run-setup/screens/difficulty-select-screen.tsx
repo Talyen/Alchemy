@@ -1,4 +1,4 @@
-import { Fragment, useState } from "react";
+import { Fragment, memo, useMemo, useState } from "react";
 import { Swords } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -43,12 +43,6 @@ function getDifficultyBonusLabel(difficultyId: DifficultyId): string {
   return `${String(Math.round((multiplier - 1) * 100))}% Bonus XP`;
 }
 
-const DIFFICULTY_ART: Record<DifficultyId, string> = {
-  "difficulty-1": difficultyArt["difficulty-1"]!,
-  "difficulty-2": difficultyArt["difficulty-2"]!,
-  "difficulty-3": difficultyArt["difficulty-3"]!,
-};
-
 function renderDescription(text: string) {
   const lines = text.split("\n");
   return lines.map((line, i) => (
@@ -64,7 +58,7 @@ function renderDescription(text: string) {
   ));
 }
 
-function DifficultyCard({
+const DifficultyCard = memo(function DifficultyCard({
   difficultyId,
   name,
   description,
@@ -82,17 +76,25 @@ function DifficultyCard({
   onSelect: (id: DifficultyId) => void;
 }) {
   const bonusLine = getDifficultyBonusLabel(difficultyId);
-  const fullDescription = description + (bonusLine ? "\n" + bonusLine : "");
+  const fullDescription = bonusLine ? `${description}\n${bonusLine}` : description;
+  const renderedDescription = useMemo(() => renderDescription(fullDescription), [fullDescription]);
   const showUnlockedArt = !locked;
-  const diffArt = DIFFICULTY_ART[difficultyId] ?? difficultyArt["difficulty-3"]!;
+  const diffArt = difficultyArt[difficultyId] ?? difficultyArt["difficulty-3"]!;
   const { triggerRef, visible, onMouseEnter, onMouseLeave } = useHoverVisible();
   const { shimmerActive, shimmerToken, onHoverStart } = useInteractiveCard("difficulty-select", difficultyId);
+
+  function handleEnter() {
+    if (!locked) {
+      onHoverStart();
+    }
+    onMouseEnter();
+  }
 
   return (
     <div
       ref={triggerRef}
       className={cn(chooserHeroPaddedTileClass, "flex flex-col items-center")}
-      onMouseEnter={onMouseEnter}
+      onMouseEnter={handleEnter}
       onMouseLeave={onMouseLeave}
     >
       <button
@@ -114,7 +116,6 @@ function DifficultyCard({
             shimmerActive={shimmerActive}
             shimmerToken={shimmerToken}
             shimmerRounded="rounded-shell-panel"
-            onMouseEnter={onHoverStart}
           >
             <img src={diffArt} alt="" className={cn(cardSurfaceClass, "w-full rounded-shell-panel object-cover")} />
             {completed && (
@@ -137,7 +138,7 @@ function DifficultyCard({
         )}
         <p className={cn("font-sans", sectionTitleClass, locked && "text-muted-foreground")}>{name}</p>
         <div className="flex min-h-[6.67cqh] w-full flex-col justify-center">
-          <div className={cn("w-full text-center", bodyTextClass)}>{renderDescription(fullDescription)}</div>
+          <div className={cn("w-full text-center", bodyTextClass)}>{renderedDescription}</div>
         </div>
       </button>
 
@@ -150,7 +151,7 @@ function DifficultyCard({
       )}
     </div>
   );
-}
+});
 
 export function DifficultySelectScreen({
   characterId,
@@ -168,6 +169,7 @@ export function DifficultySelectScreen({
   onMenu?: ((rect: DOMRect) => void) | undefined;
 }) {
   const [selectedDifficultyId, setSelectedDifficultyId] = useState<DifficultyId | null>(selectedDifficulty);
+
   const config = difficultyConfigs[characterId];
   const char = characters[characterId];
   const art = characterArt[char.id];

@@ -1,7 +1,11 @@
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { cardById, getCardKeywords, selectRewardCards, type BattleCard, type KeywordId } from "@/lib/game-data";
 import { MYSTERY_CARD_CHOICES, GEAR_ASTRAL_GUARANTEE_BONUS } from "@/lib/game-constants";
-import { appendCardToRunWithDiscovery, appendBoonToRunWithDiscovery } from "../run/deck-mutations";
+import {
+  appendCardToRunWithDiscovery,
+  appendBoonToRunWithDiscovery,
+  grantGearToRunWithRecord,
+} from "../run/deck-mutations";
 import type { MaterialId } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { applyMaterialFindBonus } from "@/lib/homestead/loot";
@@ -9,15 +13,12 @@ import { generateGearInstanceForBaseItem } from "@/lib/gear";
 import { pickMysteryTrinketGrantId, type MysteryEffect } from "@/lib/mystery";
 import { combineTrinketEffectIds } from "@/lib/trinkets";
 import { gearBaseItemList } from "@/lib/gear/base-items";
-import { rngInt } from "@/lib/rng";
-import { pickRandom } from "@/lib/utils";
-import { mutateGearWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
+import { pickRandom, rngInt } from "@/lib/rng";
 import {
   addGold,
   awardMaterialsDuringRun,
   awardMysteryXP,
   deductGold,
-  recordRunObtainedItem,
   setMysteryCardChoices,
   setMysteryGrantedGearInstances,
   setMysteryGrantedTrinketIds,
@@ -139,10 +140,7 @@ function gainMysteryGeneratedGear(baseItemId: string, context: MysteryEffectCont
     forceAstral ? GEAR_ASTRAL_GUARANTEE_BONUS : context.draft.runProfile.effects.gearAstralChanceBonus,
   );
   if (!instance) return { followUp: null };
-  mutateGearWithRunHealthSync(context.draft, {
-    mutate: (gear) => gear.addInstance(instance, context.draft.run.activeRun.characterId),
-  });
-  recordRunObtainedItem(context.draft, { kind: "gear", instance });
+  grantGearToRunWithRecord(context.draft, instance);
   setMysteryGrantedGearInstances(context.draft, (previous) => [...previous, instance]);
   return { followUp: null };
 }

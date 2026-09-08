@@ -48,7 +48,7 @@ Historical evidence; current instructions live in the linked canonical owners.
 
 2026-09-04 — Focused E2E invocation: appending a spec after the npm script's spaced project flag treated the spec as another project. Use an explicit Playwright invocation with `--project=chromium` for focused files. N/A (one-off).
 
-Labyrinth fresh-start regression (2026-09-04): resume-only browser coverage missed a missing map-generation step. Fixed in [run initialization](../../src/features/alchemy/run-setup/run/content-system-run-init.ts) with fresh-start and Wildcard coverage; N/A (one-off).
+Labyrinth fresh-start regression (2026-09-04): resume-only browser coverage missed a missing map-generation step. Fixed in [run initialization](../../src/features/alchemy/run-setup/run/content-system-navigation.ts) with fresh-start and Wildcard coverage; N/A (one-off).
 
 2026-09-04 — Artwork reveal: startup preload completion did not guarantee later mounted images were decoded. Screen and tab fades now wait for mounted artwork, with dimensions reserved for the menu logo; see [UI](../../docs/UI.md#screen-fade-motion). N/A (one-off).
 

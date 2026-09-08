@@ -1,7 +1,6 @@
 import { applyCardHealing } from "./status-player";
 import { hasEncounterBenefit } from "./types";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
-import { pickRandom } from "@/lib/utils";
 import { type EnemyStatusId, type PlayerStatusId } from "@/lib/game-data";
 import {
   addEnemyStatus,
@@ -19,7 +18,7 @@ import {
 } from "./combat-text";
 import { scaledGearLeechHeal } from "./gear-effects";
 import { rollTalentChance } from "./status-helpers";
-import { getBattleRng, rollPercent } from "@/lib/rng";
+import { getBattleRng, pickRandom, rollPercent } from "@/lib/rng";
 import { scalePercent } from "./amount-helpers";
 import { FIRST_EFFECT_MULTIPLIER, HALF_DIVISOR, LEECH_HEAL_FRACTION, PERCENT_DENOMINATOR } from "../game-constants";
 

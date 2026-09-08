@@ -5,13 +5,11 @@ import {
   resourceFood,
   resourceGold,
   resourceHerbs,
-  resourceHide,
   resourceIron,
-  resourceStone,
   resourceWood,
 } from "@/lib/game-data";
 
-export type HomesteadResource = MaterialId | "gold" | "stone" | "hide";
+export type HomesteadResource = MaterialId | "gold";
 
 const RESOURCE_ART_MAP: Record<HomesteadResource, string> = {
   wood: resourceWood,
@@ -20,15 +18,11 @@ const RESOURCE_ART_MAP: Record<HomesteadResource, string> = {
   food: resourceFood,
   gems: resourceCrystal,
   gold: resourceGold,
-  stone: resourceStone,
-  hide: resourceHide,
 };
 
 const RESOURCE_LABELS: Record<HomesteadResource, string> = {
   ...materialLabels,
   gold: "Gold",
-  stone: "Stone",
-  hide: "Hide",
 };
 
 export const matTextColor: Record<MaterialId, string> = {

@@ -124,4 +124,22 @@ describe("DifficultySelectScreen", () => {
 
     fireEvent.mouseLeave(wrapper);
   });
+
+  it("activates interactive card hover on entering an unlocked difficulty tile", () => {
+    render(
+      <DifficultySelectScreen
+        characterId="knight"
+        selectedDifficulty={null}
+        completedDifficulties={[]}
+        onSelect={vi.fn()}
+        onBack={vi.fn()}
+      />,
+    );
+
+    const noviceBtn = screen.getByRole("button", { name: /Novice/i });
+    const wrapper = noviceBtn.parentElement!;
+
+    fireEvent.mouseEnter(wrapper);
+    expect(useUiStore.getState().hoveredCardId).toBe("difficulty-select-difficulty-1");
+  });
 });

@@ -29,13 +29,13 @@ function applyTierEffects(base: HomesteadEffectManifest, partial?: Partial<Homes
 
 function applyItemTiers(
   base: HomesteadEffectManifest,
-  items: Array<{ id: string; tiers: Array<{ effects?: Partial<HomesteadEffectManifest> }> }>,
+  items: ReadonlyArray<{ id: string; tiers: ReadonlyArray<{ effects?: Partial<HomesteadEffectManifest> }> }>,
   levels: Record<string, number>,
 ): void {
-  for (const [id, level] of Object.entries(levels)) {
-    const item = items.find((i) => i.id === id);
-    if (!item) continue;
-    for (let i = 0; i < level; i++) {
+  for (const item of items) {
+    const level = levels[item.id] ?? 0;
+    const cappedLevel = Math.min(level, item.tiers.length);
+    for (let i = 0; i < cappedLevel; i++) {
       applyTierEffects(base, item.tiers[i]?.effects);
     }
   }
@@ -48,9 +48,16 @@ function mergeRecordEffect<K extends HomesteadBattleRecordKey>(
   key: K,
 ): void {
   const sourceValue = source[key];
-  if (Object.keys(sourceValue).length > 0) {
-    target[key] = { ...target[key], ...sourceValue };
+  if (Object.keys(sourceValue).length === 0) return;
+  const merged = { ...target[key] } as Record<string, number>;
+  for (const [k, v] of Object.entries(sourceValue)) {
+    if (key === "cardHealBonus") {
+      merged[k] = (merged[k] ?? 0) + v;
+    } else {
+      merged[k] = Math.max(merged[k] ?? 0, v);
+    }
   }
+  target[key] = merged as TalentEffectManifest[K];
 }
 
 export function computeHomesteadEffects(
@@ -69,7 +76,6 @@ export function computeHomesteadEffects(
   applyItemTiers(effects, farmPlots, plantedFarms);
   applyItemTiers(effects, researchUpgrades, completedResearch);
 
-  effects.companionBondLevels = { ...effects.companionBondLevels };
   for (const [id, level] of Object.entries(bondedCompanions)) {
     if (id in effects.companionBondLevels) {
       effects.companionBondLevels[id as keyof typeof effects.companionBondLevels] = level;

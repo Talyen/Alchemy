@@ -4,7 +4,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { resetEscapeStackForTests } from "@/app/escape-stack";
 import { BattleBoonInspectOverlay } from "@/features/alchemy/run-loop/screens/battle-screen/boon-inspect";
-import { uniqueRunBoons } from "@/features/alchemy/run-loop/screens/battle-screen/unique-run-boons";
+import {
+  hasInspectableBoons,
+  uniqueRunBoons,
+} from "@/features/alchemy/run-loop/screens/battle-screen/unique-run-boons";
 import { TRINKET_PAGE_SIZE } from "@/lib/game-constants";
 import { trinketLibrary, type TrinketEntry } from "@/lib/game-data";
 
@@ -12,6 +15,17 @@ const library: TrinketEntry[] = [
   { id: "alpha", title: "Alpha Charm", descriptionLines: ["Gain 1 Block."], art: "alpha-art", effects: {} },
   { id: "beta", title: "Beta Stone", descriptionLines: ["Draw 1."], art: "beta-art", effects: {} },
 ];
+
+describe("hasInspectableBoons", () => {
+  it("returns true when at least one boon matches in the library", () => {
+    expect(hasInspectableBoons(["missing", "alpha"], library)).toBe(true);
+  });
+
+  it("returns false when no boons match or list is empty", () => {
+    expect(hasInspectableBoons([], library)).toBe(false);
+    expect(hasInspectableBoons(["unknown", "also-unknown"], library)).toBe(false);
+  });
+});
 
 describe("uniqueRunBoons", () => {
   it("keeps first-seen ids and skips duplicates and unknown entries", () => {

@@ -1,12 +1,9 @@
 import type { MaterialInventory } from "./types";
+import type { TieredItem } from "./tiers";
 import { canAfford, subtractInventory } from "./inventory";
 
-interface TieredUpgradeItem {
-  tiers: Array<{ cost: MaterialInventory }>;
-}
-
 export function tryUpgradeTierItem(
-  item: TieredUpgradeItem | undefined,
+  item: TieredItem<string, { cost: MaterialInventory }> | undefined,
   currentLevel: number,
   inventory: MaterialInventory,
 ): { ok: boolean; inventory: MaterialInventory; nextLevel: number } {

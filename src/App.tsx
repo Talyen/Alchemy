@@ -34,7 +34,7 @@ import { CardDescriptionProvider } from "@/features/alchemy/shared/context/card-
 import { HamburgerTrigger } from "@/features/alchemy/shared/ui/navigation";
 import { BattleAutoplayToggle } from "@/features/alchemy/run-loop/screens/battle-screen/autoplay-toggle";
 import { BattleBoonInspectButton } from "@/features/alchemy/run-loop/screens/battle-screen/boon-inspect";
-import { uniqueRunBoons } from "@/features/alchemy/run-loop/screens/battle-screen/unique-run-boons";
+import { hasInspectableBoons } from "@/features/alchemy/run-loop/screens/battle-screen/unique-run-boons";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { clearAlchemySaveData, type SaveLoadState } from "@/features/alchemy/shared/storage";
 import { useAppSettings } from "@/features/alchemy/shared/stores/store-actions";
@@ -144,7 +144,7 @@ function AppMainContent({
   const { isAutoplayEnabled, toggleAutoplayEnabled, boonInspectOpen, toggleBoonInspect, closeBoonInspect } =
     run.routeCommands.battle;
   const runBoons = useActiveRunBoons();
-  const hasInspectBoons = uniqueRunBoons(runBoons).length > 0;
+  const hasInspectBoons = hasInspectableBoons(runBoons);
   const { ref: artworkRef, pending: artworkPending } = useArtworkReady(renderedScreen);
   const pagePhaseClass = pagePhase === "exit" ? "page-exit" : "page-enter";
   const screenInteractive = controllerScreen === renderedScreen && pagePhase !== "exit";
@@ -211,7 +211,6 @@ function AppMainContent({
             routeCommands: run.routeCommands,
             onClearSaveData: dev.clearSaveData,
             onUnlockAllDevMode: dev.unlockAllDevMode,
-            onBackFromOptions: nav.backFromOptions,
             gameMenuOpen: gameMenu.gameMenuOpen,
             onOpenGameMenu: gameMenu.openGameMenu,
             onBack: nav.screenBackHandler,

@@ -13,10 +13,9 @@ import { defaultGearEffects } from "@/lib/gear";
 import { EMPTY_ENEMY_MITIGATION, type BattleState } from "./types";
 import { computeTrinketManifest } from "../trinkets";
 import { applyDrawResult, drawCards } from "./draw";
-import { shuffle } from "@/lib/utils";
 import { defaultBattleState, defaultTalentEffects } from "./battle-setup-defaults";
 import { initializeEnemyState } from "./battle-enemy-setup";
-import { placeholderRng } from "@/lib/rng";
+import { placeholderRng, shuffle } from "@/lib/rng";
 import { dealPlayerTypedHit } from "./player-typed-hit";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 

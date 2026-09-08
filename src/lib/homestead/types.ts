@@ -2,7 +2,7 @@ import type { TalentEffectManifest } from "@/lib/game-data";
 
 export type MaterialId = "wood" | "iron" | "herbs" | "food" | "gems";
 
-export const MATERIAL_IDS: MaterialId[] = ["wood", "iron", "herbs", "food", "gems"];
+export const MATERIAL_IDS: [MaterialId, ...MaterialId[]] = ["wood", "iron", "herbs", "food", "gems"];
 
 export const materialLabels: Record<MaterialId, string> = {
   wood: "Wood",
@@ -10,14 +10,6 @@ export const materialLabels: Record<MaterialId, string> = {
   herbs: "Herbs",
   food: "Food",
   gems: "Gems",
-};
-
-export const materialIcons: Record<MaterialId, string> = {
-  wood: "icon-logs",
-  iron: "icon-hammer",
-  herbs: "icon-sprout",
-  food: "icon-cake",
-  gems: "icon-gem",
 };
 
 export type MaterialInventory = Record<MaterialId, number>;
@@ -40,36 +32,22 @@ export type ResearchId =
   | "wool-tailoring"
   | "agility-training";
 
-interface HomesteadUpgradeTier {
+export interface HomesteadUpgradeTier {
   cost: MaterialInventory;
   effects?: Partial<HomesteadEffectManifest>;
   benefitDescription: string;
   nonCombatBenefitDescription?: string;
 }
 
-export interface HomesteadBuilding {
-  id: BuildingId;
+export interface HomesteadUpgradeItem<TId extends string = string> {
+  id: TId;
   title: string;
-  description: string;
   tiers: HomesteadUpgradeTier[];
-  buttonLabel: string;
 }
 
-export interface HomesteadFarm {
-  id: FarmId;
-  title: string;
-  description: string;
-  tiers: HomesteadUpgradeTier[];
-  buttonLabel: string;
-}
-
-export interface HomesteadResearch {
-  id: ResearchId;
-  title: string;
-  description: string;
-  tiers: HomesteadUpgradeTier[];
-  buttonLabel: string;
-}
+export type HomesteadBuilding = HomesteadUpgradeItem<BuildingId>;
+export type HomesteadFarm = HomesteadUpgradeItem<FarmId>;
+export type HomesteadResearch = HomesteadUpgradeItem<ResearchId>;
 
 type NumericTalentKey = {
   [K in keyof TalentEffectManifest]: TalentEffectManifest[K] extends number ? K : never;

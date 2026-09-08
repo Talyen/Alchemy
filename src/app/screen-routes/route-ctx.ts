@@ -8,7 +8,6 @@ export interface RenderAlchemyScreenProps {
   routeCommands: AlchemyRouteCommands;
   onClearSaveData: () => void;
   onUnlockAllDevMode: () => void;
-  onBackFromOptions: () => void;
   gameMenuOpen: boolean;
   onOpenGameMenu: (rect: DOMRect) => void;
   onBack?: (() => void) | undefined;
@@ -38,5 +37,5 @@ export interface BattleRouteCtx extends PhaseRouteCtx<"battle"> {
 
 export type OptionsRouteCtx = Pick<
   RenderAlchemyScreenProps,
-  "onClearSaveData" | "onUnlockAllDevMode" | "onBackFromOptions" | "onOpenGameMenu"
+  "onClearSaveData" | "onUnlockAllDevMode" | "onOpenGameMenu" | "onBack"
 >;

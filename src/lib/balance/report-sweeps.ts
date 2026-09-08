@@ -15,8 +15,7 @@ import { generateGearInstanceForBaseItem, gearBaseItemList, type GearEffectManif
 import { gearAffixList } from "@/lib/gear/affix-catalog";
 import { resolveAffixEffects } from "@/lib/gear/affixes";
 import { defaultGearEffects } from "@/lib/gear/gear-effect-manifest";
-import { createRunStreamRng } from "@/lib/rng";
-import { sampleItems } from "@/lib/utils";
+import { createRunStreamRng, sampleItems } from "@/lib/rng";
 import {
   buildClassSimDeck,
   cardMatchesAffinity,

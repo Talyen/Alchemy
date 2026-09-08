@@ -73,4 +73,27 @@ describe("DraftDeckScreen", () => {
     fireEvent.mouseLeave(choiceBtn);
     expect(useUiStore.getState().plasmaInteraction).toBeNull();
   });
+
+  it("isolates hover state for duplicate drafted cards", () => {
+    const cardA = makeTestCard({ id: "strike", title: "Strike" });
+    const cardB = makeTestCard({ id: "strike", title: "Strike" });
+    const drafted = [
+      cardA,
+      cardB,
+      ...Array.from({ length: DRAFT_ROUNDS - 2 }, (_, index) =>
+        makeTestCard({ id: `card-${index}`, title: `Card ${index}` }),
+      ),
+    ];
+
+    render(<DraftDeckScreen onComplete={vi.fn()} draftedCards={drafted} draftChoices={[]} onPick={vi.fn()} />);
+
+    const strikeButtons = screen.getAllByRole("button", { name: /Strike/i });
+    expect(strikeButtons).toHaveLength(2);
+
+    fireEvent.mouseEnter(strikeButtons[0]!);
+    expect(useUiStore.getState().hoveredCardId).toBe("drafted-strike-0-strike");
+
+    fireEvent.mouseEnter(strikeButtons[1]!);
+    expect(useUiStore.getState().hoveredCardId).toBe("drafted-strike-1-strike");
+  });
 });

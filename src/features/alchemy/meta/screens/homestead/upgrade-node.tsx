@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { type MaterialInventory } from "@/lib/homestead/types";
 import { canAfford, emptyInventory } from "@/lib/homestead/inventory";
@@ -30,7 +30,7 @@ export function HomesteadUpgradeNode({
   const itemCost = tier?.cost ?? ZERO_COST;
   const itemAffordable = !isCompleted && canAfford(materialInventory, itemCost);
 
-  const detailTooltip = useTooltipContent(
+  const detailTooltip = getUpgradeTooltip(
     item,
     nextTierIndex,
     currentLevel,
@@ -69,7 +69,7 @@ export function HomesteadUpgradeNode({
   );
 }
 
-function useTooltipContent(
+function getUpgradeTooltip(
   item: GoalItem,
   nextTierIndex: number,
   currentLevel: number,
@@ -78,43 +78,44 @@ function useTooltipContent(
   costLabel: string,
   materialInventory: MaterialInventory,
 ): (ctx: PopupContext) => ReactNode {
-  return useMemo(() => {
+  return ({ visible, triggerRef }) => {
     const nodes: ReactNode[] = [];
-    const currentTier = item.data.tiers[nextTierIndex];
-
-    if (currentTier) {
-      if (currentTier.benefitDescription) {
-        for (const line of currentTier.benefitDescription.split("\n")) {
-          nodes.push(<div key={`b-${nodes.length}`}>{renderTextWithMaterials(line)}</div>);
+    if (visible) {
+      const currentTier = item.data.tiers[nextTierIndex];
+      if (currentTier) {
+        if (currentTier.benefitDescription) {
+          for (const line of currentTier.benefitDescription.split("\n")) {
+            nodes.push(<div key={`b-${nodes.length}`}>{renderTextWithMaterials(line)}</div>);
+          }
+        }
+        if (currentTier.nonCombatBenefitDescription) {
+          nodes.push(
+            <div key={`b-${nodes.length}`}>{renderTextWithMaterials(currentTier.nonCombatBenefitDescription)}</div>,
+          );
         }
       }
-      if (currentTier.nonCombatBenefitDescription) {
-        nodes.push(
-          <div key={`b-${nodes.length}`}>{renderTextWithMaterials(currentTier.nonCombatBenefitDescription)}</div>,
-        );
-      }
+
+      nodes.push(
+        <HomesteadTooltipCost
+          key={`cost-${nodes.length}`}
+          label={costLabel}
+          cost={cost}
+          inventory={materialInventory}
+          stars={<StarRating current={currentLevel} max={maxTiers} />}
+        />,
+      );
     }
 
-    nodes.push(
-      <HomesteadTooltipCost
-        key={`cost-${nodes.length}`}
-        label={costLabel}
-        cost={cost}
-        inventory={materialInventory}
-        stars={<StarRating current={currentLevel} max={maxTiers} />}
-      />,
-    );
-
-    return ({ visible, triggerRef }) => (
+    return (
       <DetailPopup
         idPrefix={item.data.id}
         title={item.data.title}
         subtitle={undefined}
-        descriptionLines={item.data.description ? [item.data.description] : []}
+        descriptionLines={[]}
         descriptionNodes={nodes}
         visible={visible}
         triggerRef={triggerRef}
       />
     );
-  }, [item, nextTierIndex, currentLevel, maxTiers, cost, costLabel, materialInventory]);
+  };
 }

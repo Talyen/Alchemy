@@ -1,7 +1,8 @@
-import { useMemo, useRef } from "react";
+import { useLayoutEffect, useMemo, useRef } from "react";
 import type { BattleState } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 import type { Screen } from "@/lib/routing";
+import { useLatestRef } from "@/features/alchemy/shared/hooks";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import { useBattleAutoEndTurn, useBattleAutoplay } from "@/features/alchemy/run-loop/battle";
 import type { BattlePlaybackBind } from "@/features/alchemy/run-loop/battle/battle-context";
@@ -13,10 +14,10 @@ interface UseBattlePlaybackProps {
   hasActiveBattle: boolean;
   gameMenuOpen: boolean;
   isAutoplayEnabled: boolean;
-  toggleAutoplay: () => void;
   handleEndTurn: () => void;
   handleAutoplayCard: (card: BattleCard, index: number) => boolean;
   isCardPlayInProgress: () => boolean;
+  bindPlayback?: ((bind: BattlePlaybackBind | null) => void) | undefined;
 }
 
 export function useBattlePlayback({
@@ -25,21 +26,19 @@ export function useBattlePlayback({
   hasActiveBattle,
   gameMenuOpen,
   isAutoplayEnabled,
-  toggleAutoplay,
   handleEndTurn,
   handleAutoplayCard,
   isCardPlayInProgress,
+  bindPlayback,
 }: UseBattlePlaybackProps) {
   const autoEndTurn = useSettingsStore((s) => s.autoEndTurn);
   const scheduleAutoEndTurnRef = useRef<(state?: BattleState) => void>(() => {});
   const wakeAutoplayRef = useRef<(() => void) | null>(null);
-  const onPlaybackGateChangeRef = useRef<() => void>(() => {});
 
-  // eslint-disable-next-line react-hooks/refs -- latest playback callbacks; not a render input
-  onPlaybackGateChangeRef.current = () => {
+  const onPlaybackGateChangeRef = useLatestRef(() => {
     scheduleAutoEndTurnRef.current();
     wakeAutoplayRef.current?.();
-  };
+  });
   const presentationGateRef = useBattlePresentationGateRef(onPlaybackGateChangeRef);
 
   const { scheduleAutoEndTurn, clearAutoEndTurn } = useBattleAutoEndTurn({
@@ -75,9 +74,13 @@ export function useBattlePlayback({
     [scheduleAutoEndTurn, clearAutoEndTurn],
   );
 
-  return {
-    isAutoplayEnabled,
-    toggleAutoplay,
-    bind,
-  };
+  const bindPlaybackRef = useLatestRef(bindPlayback);
+  useLayoutEffect(() => {
+    const currentBind = bindPlaybackRef.current;
+    if (!currentBind) return;
+    currentBind(bind);
+    return () => currentBind(null);
+  }, [bind, bindPlaybackRef]);
+
+  return { bind };
 }

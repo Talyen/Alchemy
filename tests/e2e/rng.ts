@@ -1,5 +1,7 @@
 import type { Page } from "@playwright/test";
-import { LCG_INCREMENT, LCG_MULTIPLIER } from "../fixtures/rng";
+
+const LCG_MULTIPLIER = 1664525;
+const LCG_INCREMENT = 1013904223;
 
 export async function seedRandom(page: Page, seed = 42) {
   await page.addInitScript(

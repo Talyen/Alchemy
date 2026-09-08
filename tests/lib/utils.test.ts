@@ -1,20 +1,13 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   appendUnique,
   appendUniqueMany,
   capitalizeWord,
   clamp,
   createInstanceId,
-  createSeededRng,
   formatLargeAmount,
   lerp,
-  pickRandom,
-  sampleItems,
-  shuffle,
-  takeRandomItem,
 } from "@/lib/utils";
-
-vi.spyOn(Math, "random").mockReturnValue(0.5);
 
 describe("clamp", () => {
   it("returns value when within bounds", () => {
@@ -76,95 +69,6 @@ describe("formatLargeAmount", () => {
   it("maps non-finite amounts to zero", () => {
     expect(formatLargeAmount(Number.NaN)).toBe("0");
     expect(formatLargeAmount(Number.POSITIVE_INFINITY)).toBe("0");
-  });
-});
-
-describe("shuffle", () => {
-  it("returns all items", () => {
-    const result = shuffle([1, 2, 3, 4], () => 0.5);
-    expect(result).toHaveLength(4);
-    expect(result.sort()).toEqual([1, 2, 3, 4]);
-  });
-
-  it("does not mutate the original array", () => {
-    const input = [1, 2, 3];
-    shuffle(input, () => 0.5);
-    expect(input).toEqual([1, 2, 3]);
-  });
-
-  it("handles empty array", () => {
-    expect(shuffle([], () => 0.5)).toEqual([]);
-  });
-
-  it("handles single element", () => {
-    expect(shuffle([42], () => 0.5)).toEqual([42]);
-  });
-});
-
-describe("sampleItems", () => {
-  it("samples up to count items without replacement", () => {
-    const items = [1, 2, 3, 4, 5] as const;
-    const sampled = sampleItems(items, 3, () => 0.5);
-    expect(sampled).toHaveLength(3);
-    expect(new Set(sampled).size).toBe(3);
-  });
-
-  it("caps sample count at array length", () => {
-    const items = [10, 20];
-    const sampled = sampleItems(items, 5, () => 0.5);
-    expect(sampled).toHaveLength(2);
-  });
-
-  it("returns empty array when count is zero", () => {
-    expect(sampleItems([1, 2, 3], 0, () => 0.5)).toEqual([]);
-  });
-});
-
-describe("pickRandom", () => {
-  it("returns the item at the selected index", () => {
-    expect(pickRandom([10, 20, 30], () => 0)).toBe(10);
-    expect(pickRandom([10, 20, 30], () => 0.5)).toBe(20);
-  });
-
-  it("returns undefined for empty array", () => {
-    expect(pickRandom([], () => 0.5)).toBeUndefined();
-  });
-
-  it("returns the only element for single-element array", () => {
-    expect(pickRandom([7], () => 0.5)).toBe(7);
-  });
-});
-
-describe("takeRandomItem", () => {
-  it("returns undefined for empty array", () => {
-    expect(takeRandomItem([], () => 0.5)).toBeUndefined();
-  });
-
-  it("removes and returns an item from the array", () => {
-    const list = ["a", "b", "c"];
-    const removed = takeRandomItem(list, () => 0);
-    expect(removed).toBe("a");
-    expect(list).toEqual(["b", "c"]);
-  });
-});
-
-describe("createSeededRng", () => {
-  it("produces deterministic pseudo-random sequences for a seed", () => {
-    const rng1 = createSeededRng(12345);
-    const rng2 = createSeededRng(12345);
-
-    const seq1 = [rng1(), rng1(), rng1(), rng1()];
-    const seq2 = [rng2(), rng2(), rng2(), rng2()];
-
-    expect(seq1).toEqual(seq2);
-    expect(seq1.every((v) => v >= 0 && v < 1)).toBe(true);
-  });
-
-  it("produces different sequences for different seeds", () => {
-    const rng1 = createSeededRng(111);
-    const rng2 = createSeededRng(222);
-
-    expect(rng1()).not.toBe(rng2());
   });
 });
 

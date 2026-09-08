@@ -1,9 +1,13 @@
-export interface TieredItem<T extends string = string> {
+import type { MaterialInventory } from "./types";
+
+export interface TieredItem<T extends string = string, TTier = { cost: MaterialInventory }> {
   id: T;
-  tiers: readonly unknown[];
+  tiers: readonly TTier[];
 }
 
-export function createEmptyTierRecord<T extends string>(items: ReadonlyArray<TieredItem<T>>): Record<T, number> {
+export function createEmptyTierRecord<T extends string, TTier = { cost: MaterialInventory }>(
+  items: ReadonlyArray<TieredItem<T, TTier>>,
+): Record<T, number> {
   const record = {} as Record<T, number>;
   for (const { id } of items) {
     record[id] = 0;
@@ -11,6 +15,8 @@ export function createEmptyTierRecord<T extends string>(items: ReadonlyArray<Tie
   return record;
 }
 
-export function createTierLookup<T extends string>(items: ReadonlyArray<TieredItem<T>>): Map<T, TieredItem<T>> {
+export function createTierLookup<T extends string, TTier = { cost: MaterialInventory }>(
+  items: ReadonlyArray<TieredItem<T, TTier>>,
+): Map<T, TieredItem<T, TTier>> {
   return new Map(items.map((item) => [item.id, item]));
 }

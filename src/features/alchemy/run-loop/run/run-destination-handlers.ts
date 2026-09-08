@@ -1,11 +1,12 @@
-import type { GearStore } from "@/features/alchemy/shared/stores/gear-store-types";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
-import { mutateGearWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
-import { recordRunObtainedItem } from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { ResolvedRewardChoice } from "@/lib/active-run-session";
 import { getRandomPotionCard } from "../navigation/reward-flow";
-import { appendCardToRunWithDiscovery, appendBoonToRunWithDiscovery } from "./deck-mutations";
-import { discoverTrinketIds } from "../../shared/stores/profile-store";
+import {
+  appendCardToRunWithDiscovery,
+  appendBoonToRunWithDiscovery,
+  grantGearToRunWithRecord,
+  grantTrinketToRunWithRecord,
+} from "./deck-mutations";
 import type { RunFlowShellActions } from "./run-flow-shell-actions";
 import { DESTINATIONS, ROUTE_SCREENS, type Destination } from "@/lib/routing";
 import { ENEMY_TYPES } from "@/lib/game-data";
@@ -70,20 +71,12 @@ export function applyRewardSelection({ reward, draft }: RewardSelectionInput) {
     case "boon":
       appendBoonToRunWithDiscovery(draft, reward.choice.id);
       return;
-    case "trinket": {
-      const trinketId = reward.choice.id;
-      mutateGearWithRunHealthSync(draft, { mutate: (gear: GearStore) => gear.addTrinket(trinketId) });
-      discoverTrinketIds(draft, [trinketId]);
-      recordRunObtainedItem(draft, { kind: "trinket", trinketId });
+    case "trinket":
+      grantTrinketToRunWithRecord(draft, reward.choice.id);
       return;
-    }
-    case "gear": {
-      const characterId = draft.run.activeRun.characterId;
-      mutateGearWithRunHealthSync(draft, {
-        mutate: (gear: GearStore) => gear.addInstance(reward.choice, characterId),
-      });
-      recordRunObtainedItem(draft, { kind: "gear", instance: reward.choice });
-    }
+    case "gear":
+      grantGearToRunWithRecord(draft, reward.choice);
+      return;
   }
 }
 

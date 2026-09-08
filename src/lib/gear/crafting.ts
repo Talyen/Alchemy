@@ -7,7 +7,7 @@ import {
   SALVAGE_BASIC_VOIDSTONE_CHANCE,
   SALVAGE_DICE_HIGH_CHANCE,
 } from "@/lib/game-constants";
-import { createSeededRng, hashStringToUint32 } from "@/lib/rng";
+import { createSeededRng, hashStringToUint32, pickRandom } from "@/lib/rng";
 import { craftingArt } from "@/lib/game-data";
 import { buildEligibleAffixPool, rollAffixes } from "./generation";
 import { rollAffixValue } from "./affixes";
@@ -17,7 +17,6 @@ import type { MaterialInventory } from "@/lib/homestead/types";
 import { gearDefinitionId, gearDefinitions, gearInstanceRarity } from "./definitions";
 import { type GearInstance, type GearAffixRoll, type GearRarity } from "./types";
 import { clamp, lerp } from "@/lib/math";
-import { pickRandom } from "@/lib/utils";
 import { EMPTY_CRAFTING_CURRENCIES, type CraftingCurrencyId } from "./crafting-ids";
 export type { CraftingCurrencyId } from "./crafting-ids";
 

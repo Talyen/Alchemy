@@ -1,22 +1,40 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useHeldWhile } from "@/features/alchemy/shared/ui/use-fade";
 import { cardById, trinketById } from "@/features/alchemy/shared/config/game-data-catalog";
 import { MysteryScreen, MysteryScreenShell } from "@/features/alchemy/run-loop/screens";
 import { useMysteryScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import type { RunLoopCommands } from "./route-ctx";
 
+const findCard = (id: string) => cardById[id];
+const findTrinket = (id: string) => trinketById[id];
+
 function useHeldMysteryVisit(r: ReturnType<typeof useMysteryScreenData>) {
   const isMysteryActive = Boolean(r.mysteryEvent);
-  return {
-    heldEvent: useHeldWhile(isMysteryActive, r.mysteryEvent),
-    heldCardChoices: useHeldWhile(isMysteryActive, r.mysteryCardChoices),
-    heldGrantedTrinketIds: useHeldWhile(isMysteryActive, r.mysteryGrantedTrinketIds),
-    heldGrantedGearInstances: useHeldWhile(isMysteryActive, r.mysteryGrantedGearInstances),
-    heldChosenCardId: useHeldWhile(isMysteryActive, r.mysteryChosenCardId),
-    heldChosenChoice: useHeldWhile(isMysteryActive, r.mysteryChosenChoice),
-    heldPendingRemoval: useHeldWhile(isMysteryActive, r.mysteryPendingRemoval),
-    isMysteryActive,
-  };
+  const liveVisit = useMemo(
+    () =>
+      isMysteryActive
+        ? {
+            event: r.mysteryEvent!,
+            cardChoices: r.mysteryCardChoices,
+            grantedTrinketIds: r.mysteryGrantedTrinketIds,
+            grantedGearInstances: r.mysteryGrantedGearInstances,
+            chosenCardId: r.mysteryChosenCardId,
+            chosenChoice: r.mysteryChosenChoice,
+            pendingRemoval: r.mysteryPendingRemoval,
+          }
+        : null,
+    [
+      isMysteryActive,
+      r.mysteryEvent,
+      r.mysteryCardChoices,
+      r.mysteryGrantedTrinketIds,
+      r.mysteryGrantedGearInstances,
+      r.mysteryChosenCardId,
+      r.mysteryChosenChoice,
+      r.mysteryPendingRemoval,
+    ],
+  );
+  return useHeldWhile(isMysteryActive, liveVisit);
 }
 
 export function MysteryScreenRoute({ commands }: { commands: RunLoopCommands["mystery"] }) {
@@ -25,15 +43,7 @@ export function MysteryScreenRoute({ commands }: { commands: RunLoopCommands["my
 
   const lastMysteryEventIdRef = useRef<string | null>(null);
   const autoContinueAttemptedRef = useRef<string | null | undefined>(undefined);
-  const {
-    heldEvent,
-    heldCardChoices,
-    heldGrantedTrinketIds,
-    heldGrantedGearInstances,
-    heldChosenCardId,
-    heldChosenChoice,
-    heldPendingRemoval,
-  } = useHeldMysteryVisit(r);
+  const heldVisit = useHeldMysteryVisit(r);
 
   useEffect(() => {
     if (r.mysteryEvent) {
@@ -43,35 +53,35 @@ export function MysteryScreenRoute({ commands }: { commands: RunLoopCommands["my
       }
       return;
     }
-    if (heldEvent) return;
+    if (heldVisit) return;
     const visitId = lastMysteryEventIdRef.current;
     if (autoContinueAttemptedRef.current !== undefined && autoContinueAttemptedRef.current === visitId) return;
     autoContinueAttemptedRef.current = visitId;
     handleContinue();
-  }, [r.mysteryEvent, heldEvent, handleContinue]);
+  }, [r.mysteryEvent, heldVisit, handleContinue]);
 
-  if (!heldEvent) {
+  if (!heldVisit) {
     return <MysteryScreenShell />;
   }
 
   return (
     <MysteryScreen
-      event={heldEvent}
+      event={heldVisit.event}
       runDeck={r.runDeck}
-      mysteryCardChoices={heldCardChoices}
-      mysteryGrantedTrinketIds={heldGrantedTrinketIds}
-      mysteryGrantedGearInstances={heldGrantedGearInstances}
-      mysteryChosenCardId={heldChosenCardId}
-      mysteryChosenChoice={heldChosenChoice}
-      mysteryPendingRemoval={heldPendingRemoval}
+      mysteryCardChoices={heldVisit.cardChoices}
+      mysteryGrantedTrinketIds={heldVisit.grantedTrinketIds}
+      mysteryGrantedGearInstances={heldVisit.grantedGearInstances}
+      mysteryChosenCardId={heldVisit.chosenCardId}
+      mysteryChosenChoice={heldVisit.chosenChoice}
+      mysteryPendingRemoval={heldVisit.pendingRemoval}
       runTalentXP={r.runTalentXP}
       talentXP={r.talentXP}
       onChoose={commands.handleChoice}
       onChooseCard={commands.handleChooseCard}
       onRemoveCard={commands.handleRemoveCard}
       onContinue={commands.handleContinue}
-      findCard={(id) => cardById[id]}
-      findTrinket={(id) => trinketById[id]}
+      findCard={findCard}
+      findTrinket={findTrinket}
     />
   );
 }

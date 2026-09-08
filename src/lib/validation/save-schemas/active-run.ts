@@ -22,13 +22,10 @@ import {
   EncounterRewardTraitArraySchema,
   MaterialInventorySchema,
 } from "./core";
-import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
+import { MATERIAL_IDS } from "@/lib/homestead/types";
 import { type RunRngState } from "@/lib/rng";
 
-const MaterialIdPersistSchema = z.preprocess(
-  (val) => (val === "crystal" ? "gems" : val),
-  z.enum(MATERIAL_IDS as [MaterialId, ...MaterialId[]]),
-);
+const MaterialIdPersistSchema = z.preprocess((val) => (val === "crystal" ? "gems" : val), z.enum(MATERIAL_IDS));
 
 const RunObtainedGearItemSchema = z.object({
   kind: z.literal("gear"),

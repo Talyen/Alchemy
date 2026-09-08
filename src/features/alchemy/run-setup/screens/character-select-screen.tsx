@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { cn } from "@/lib/utils";
 import {
@@ -27,6 +28,7 @@ import {
 import { playUISound } from "@/lib/audio";
 
 const HERO_SHINE_CLASS = "z-20 opacity-0 transition-opacity duration-200 group-hover:opacity-100";
+const ALL_CHARACTER_IDS = Object.keys(characters) as CharacterId[];
 
 function HeroCardShine({ characterId, colors }: { characterId: CharacterId; colors: readonly string[] }) {
   if (colors.length === 0) return null;
@@ -43,7 +45,7 @@ function HeroCardShine({ characterId, colors }: { characterId: CharacterId; colo
   return <ShineBorder shineColor={colors} borderWidth={3} className={HERO_SHINE_CLASS} />;
 }
 
-function CharacterCard({
+const CharacterCard = memo(function CharacterCard({
   id,
   onSelect,
   isLocked,
@@ -127,7 +129,7 @@ function CharacterCard({
       </p>
     </div>
   );
-}
+});
 
 export function CharacterSelectScreen({
   onSelect,
@@ -140,8 +142,6 @@ export function CharacterSelectScreen({
   onBack?: (() => void) | undefined;
   onMenu?: ((rect: DOMRect) => void) | undefined;
 }) {
-  const charIds = Object.keys(characters) as CharacterId[];
-
   return (
     <TitledScreenShell
       title="Choose Your Hero"
@@ -150,7 +150,7 @@ export function CharacterSelectScreen({
       onMenu={onMenu}
     >
       <div className={cn("mt-6 grid w-full grid-cols-4 justify-items-center gap-y-6", chooserHeroRowGapClass)}>
-        {charIds.map((id) => {
+        {ALL_CHARACTER_IDS.map((id) => {
           const isLocked = !isCharacterUnlocked(id, finishedRunCharacters);
           const unlockRequirementText = isLocked ? getCharacterUnlockMessage(id) : "";
 

@@ -490,7 +490,7 @@ export default tseslint.config(
   ),
   syntaxBlock(
     ["src/lib/battle/**/*.ts"],
-    ["src/lib/battle/status-helpers.ts", "src/lib/battle/rng.ts", "src/lib/battle/battle-setup.ts"],
+    ["src/lib/battle/status-helpers.ts", "src/lib/battle/battle-setup.ts"],
     ...BATTLE_NO_MATH_RANDOM,
     ...BATTLE_NO_MATH_FLOOR,
     ...BATTLE_NO_DIRECT_RNG,
@@ -498,7 +498,7 @@ export default tseslint.config(
     ...NO_UNOWNED_CONTEXT_CREATION,
   ),
   syntaxBlock(
-    ["src/lib/battle/status-helpers.ts", "src/lib/battle/rng.ts", "src/lib/battle/battle-setup.ts"],
+    ["src/lib/battle/status-helpers.ts", "src/lib/battle/battle-setup.ts"],
     undefined,
     ...BATTLE_NO_MATH_RANDOM,
     ...BATTLE_NO_MATH_FLOOR,

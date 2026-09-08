@@ -167,6 +167,19 @@ export function computeMerchantRefreshPrice(
   return computeShopRefreshPriceForKind("merchant", talentEffects, refreshesLeft);
 }
 
+export function computeTrinketRefreshPrice(
+  talentEffects: TalentEffectManifest,
+  refreshesLeft: number,
+  modifiers: readonly EncounterRewardTraitId[] = [],
+): number {
+  if (refreshesLeft > 0 && modifiers.includes("fresh-curios")) return 0;
+  return computeShopRefreshPriceForKind("trinket", talentEffects, refreshesLeft);
+}
+
+export function computeEquipmentRefreshPrice(talentEffects: TalentEffectManifest, refreshesLeft: number): number {
+  return computeShopRefreshPriceForKind("equipment", talentEffects, refreshesLeft);
+}
+
 export function computeAlchemistRefreshPrice(
   talentEffects: TalentEffectManifest,
   refreshesLeft: number,

@@ -5,12 +5,12 @@ import type {
   HomesteadEffectManifest,
   HomesteadFarm,
   HomesteadResearch,
+  HomesteadUpgradeItem,
+  HomesteadUpgradeTier,
+  MaterialInventory,
   ResearchId,
 } from "./types";
 import { dualMaterialCosts, materialCost, singleMaterialCosts } from "./costs";
-import type { MaterialInventory } from "./types";
-
-type HomesteadUpgradeTier = HomesteadBuilding["tiers"][number];
 
 export function stackingTiers(
   costs: readonly MaterialInventory[],
@@ -26,22 +26,24 @@ export function stackingTiers(
   }));
 }
 
+function defineUpgradeItem<TId extends string>(
+  id: TId,
+  title: string,
+  tiers: HomesteadUpgradeTier[],
+): HomesteadUpgradeItem<TId> {
+  return { id, title, tiers };
+}
+
 export function defineBuilding(id: BuildingId, title: string, tiers: HomesteadUpgradeTier[]): HomesteadBuilding {
-  return { id, title, description: "", buttonLabel: "Build", tiers };
+  return defineUpgradeItem(id, title, tiers);
 }
 
 export function defineFarm(id: FarmId, title: string, tiers: HomesteadUpgradeTier[]): HomesteadFarm {
-  return {
-    id,
-    title,
-    description: "",
-    buttonLabel: "Build",
-    tiers,
-  };
+  return defineUpgradeItem(id, title, tiers);
 }
 
 export function defineResearch(id: ResearchId, title: string, tiers: HomesteadUpgradeTier[]): HomesteadResearch {
-  return { id, title, description: "", buttonLabel: "Research", tiers };
+  return defineUpgradeItem(id, title, tiers);
 }
 
 export { dualMaterialCosts, materialCost, singleMaterialCosts };

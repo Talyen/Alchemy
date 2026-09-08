@@ -1,8 +1,8 @@
 import { addInventory } from "@/lib/homestead/inventory";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
-import { COMPANION_BOND_TIERS } from "@/lib/homestead/companions";
+import { companionTierItems } from "@/lib/homestead/companions";
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
-import { createTierLookup } from "@/lib/homestead/tiers";
+import { createTierLookup, type TieredItem } from "@/lib/homestead/tiers";
 import { logError } from "@/lib/error-logger";
 import { defaultCompanionBondLevels } from "@/lib/game-data";
 import { tryUpgradeTierItem } from "@/lib/homestead/upgrades";
@@ -14,6 +14,7 @@ import type { Draft } from "immer";
 const buildingLookup = createTierLookup(buildings);
 const farmLookup = createTierLookup(farmPlots);
 const researchLookup = createTierLookup(researchUpgrades);
+const companionLookup = createTierLookup(companionTierItems);
 
 export function pruneUnknownCompanions(companions: Record<CompanionId, number>): Record<CompanionId, number> {
   const removed = Object.keys(companions).filter((key) => !(key in defaultCompanionBondLevels));
@@ -35,13 +36,13 @@ function recomputeEffects(profile: PermanentProgressFields): void {
   );
 }
 
-function applyTierUpgrade(
+function applyTierUpgrade<TId extends string>(
   profile: PermanentProgressFields,
-  lookup: Map<string, { tiers: readonly unknown[] }>,
+  lookup: Map<TId, TieredItem<TId>>,
   levels: Record<string, number>,
-  id: string,
+  id: TId,
 ): boolean {
-  const definition = lookup.get(id) as Parameters<typeof tryUpgradeTierItem>[0] | undefined;
+  const definition = lookup.get(id);
   const result = tryUpgradeTierItem(definition, levels[id] ?? 0, profile.materialInventory);
   if (!result.ok) return false;
   profile.materialInventory = result.inventory;
@@ -71,14 +72,5 @@ export function completeResearch(profile: Draft<PermanentProgressFields>, id: Re
 }
 
 export function bondCompanion(profile: Draft<PermanentProgressFields>, id: CompanionId): boolean {
-  const currentLevel = profile.bondedCompanions[id] ?? 0;
-  const companionItem = { tiers: COMPANION_BOND_TIERS.map((cost) => ({ cost })) } as Parameters<
-    typeof tryUpgradeTierItem
-  >[0];
-  const result = tryUpgradeTierItem(companionItem, currentLevel, profile.materialInventory);
-  if (!result.ok) return false;
-  profile.materialInventory = result.inventory;
-  profile.bondedCompanions[id] = result.nextLevel;
-  recomputeEffects(profile);
-  return true;
+  return applyTierUpgrade(profile, companionLookup, profile.bondedCompanions, id);
 }

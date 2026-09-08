@@ -19,8 +19,8 @@ import { parkAndDeactivateForegroundRunInDraft } from "@/features/alchemy/shared
 import { makeTestBattleState } from "../../../../fixtures/battle";
 import { canEnterLabyrinthNode } from "@/lib/content-systems/labyrinth/map-state";
 
-vi.mock("@/features/alchemy/run-setup/run/campaign-start", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/alchemy/run-setup/run/campaign-start")>();
+vi.mock("@/features/alchemy/shared/run-flow/campaign-start", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/alchemy/shared/run-flow/campaign-start")>();
   return {
     ...actual,
     afterCampaignCharacterResolved: vi.fn((_id, _deps, onContinue) => onContinue()),
@@ -250,6 +250,26 @@ describe("createContentSystemNavigation", () => {
     nav.handleStandardDraftComplete();
     expect(readRunSession().labyrinthMap).not.toBeNull();
     expect(readActiveRun().runDeck).toEqual(drafted);
+    expect(deps.navigateTo).toHaveBeenLastCalledWith(ROUTE_SCREENS.LABYRINTH_MAP);
+  });
+
+  it("resumes and completes a labyrinth Wildcard draft even if session pendingContentSystemType defaulted to campaign", () => {
+    const drafted = Array.from({ length: DRAFT_ROUNDS }, (_, index) => makeTestCard({ id: `lab-draft-${index}` }));
+    setRunProgress({
+      characterId: "wildcard",
+      contentSystemType: CONTENT_SYSTEMS.LABYRINTH,
+      runDeck: drafted,
+    });
+    setRunSession({
+      hasActiveRun: true,
+      pendingContentSystemType: CONTENT_SYSTEMS.CAMPAIGN,
+      starterDraftChoices: [],
+    });
+    const deps = makeDeps();
+    const nav = createContentSystemNavigation(deps);
+    nav.handleStandardDraftComplete();
+    expect(readRunSession().labyrinthMap).not.toBeNull();
+    expect(readActiveRun().contentSystemType).toBe(CONTENT_SYSTEMS.LABYRINTH);
     expect(deps.navigateTo).toHaveBeenLastCalledWith(ROUTE_SCREENS.LABYRINTH_MAP);
   });
 

@@ -47,11 +47,16 @@ export function createDraftRunStartSnapshot(
   });
 }
 
+export interface ApplyRunStartResult {
+  isFreshStart: boolean;
+  startGoldGranted: number;
+}
+
 export function applyRunStartToDraft(
   draft: GameplayDraft,
   snapshot: RunStartSnapshot,
   options: ApplyRunStartOptions = {},
-): void {
+): ApplyRunStartResult {
   const switching = draft.session.hasActiveRun && draft.run.activeRun.contentSystemType !== snapshot.contentSystemType;
   const isFreshStart = !draft.session.hasActiveRun || switching;
   if (switching) {
@@ -59,8 +64,9 @@ export function applyRunStartToDraft(
     clearTransientSession(draft);
   }
   applyRunStartSnapshot(draft, snapshot);
-  if (isFreshStart) {
-    grantStartGold(draft, snapshot.startGoldGrant);
+  const startGoldGranted = isFreshStart ? snapshot.startGoldGrant : 0;
+  if (startGoldGranted > 0) {
+    grantStartGold(draft, startGoldGranted);
   }
   draft.run.runRecency = touchRunRecency(draft.run.runRecency, snapshot.contentSystemType);
   draft.run.parkedRuns = omitParkedMode(draft.run.parkedRuns, snapshot.contentSystemType);
@@ -70,4 +76,5 @@ export function applyRunStartToDraft(
       snapshot.freshDeck.map((card) => card.id),
     );
   }
+  return { isFreshStart, startGoldGranted };
 }

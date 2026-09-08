@@ -6,10 +6,9 @@ import { runSetupScreenRoutes } from "./run-setup-routes";
 import { runLoopScreenRoutes } from "./run-loop-routes";
 import { runEndScreenRoutes } from "./run-end-routes";
 import type { Screen } from "@/lib/routing";
+import type { RenderAlchemyScreenProps } from "./route-ctx";
 
 export type ScreenRoute = (ctx: RenderAlchemyScreenProps) => ReactNode;
-
-import { type RenderAlchemyScreenProps } from "./route-ctx";
 export type { RenderAlchemyScreenProps };
 
 export const SCREEN_ROUTES = {

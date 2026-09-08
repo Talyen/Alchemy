@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { MATERIAL_IDS, materialLabels, materialIcons } from "@/lib/homestead/types";
+import { MATERIAL_IDS, materialLabels } from "@/lib/homestead/types";
 import { emptyInventory, addInventory, canAfford, subtractInventory } from "@/lib/homestead/inventory";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
@@ -103,12 +103,6 @@ describe("MATERIAL_IDS and labels", () => {
       expect(materialLabels[mat]).toBeTruthy();
     }
   });
-
-  it("every material has an icon", () => {
-    for (const mat of MATERIAL_IDS) {
-      expect(materialIcons[mat]).toBeTruthy();
-    }
-  });
 });
 
 describe("defaultHomesteadEffects", () => {
@@ -124,7 +118,7 @@ describe("defaultHomesteadEffects", () => {
 
 describe.each([
   { name: "buildings", items: buildings, hasTiers: true },
-  { name: "farmPlots", items: farmPlots, hasTiers: false },
+  { name: "farmPlots", items: farmPlots, hasTiers: true },
   { name: "researchUpgrades", items: researchUpgrades, hasTiers: true },
 ])("$name data integrity", ({ items, hasTiers }) => {
   it("all IDs are unique", () => {
@@ -135,8 +129,6 @@ describe.each([
   it("each entry has required fields", () => {
     for (const item of items) {
       expect(item.title).toBeTruthy();
-      expect(typeof item.description).toBe("string");
-      expect(item.buttonLabel).toBeTruthy();
       if (hasTiers) expect(item.tiers.length).toBeGreaterThan(0);
     }
   });
@@ -291,6 +283,21 @@ describe("mergeIntoManifest", () => {
   it("does not spread homestead-only fields into talent manifest", () => {
     const merged = mergeIntoManifest(makeTalentManifest(), makeHomesteadEffects());
     expect((merged as unknown as Record<string, unknown>).endRunFoodPerRoom).toBeUndefined();
+  });
+
+  it("accumulates numeric records like cardHealBonus across manifests", () => {
+    const talent = makeTalentManifest();
+    talent.cardHealBonus = { bread: 3, apple: 1 };
+    const homestead = {
+      ...makeHomesteadEffects(),
+      cardHealBonus: { bread: 2, potion: 4 },
+    };
+    const merged = mergeIntoManifest(talent, homestead);
+    expect(merged.cardHealBonus).toEqual({
+      bread: 5,
+      apple: 1,
+      potion: 4,
+    });
   });
 });
 

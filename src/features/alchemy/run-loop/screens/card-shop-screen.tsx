@@ -6,8 +6,8 @@ import type { BattleCard } from "@/lib/game-data";
 import { PurchasableCardItem } from "../../shared/ui/purchasable-shop-item";
 import { RemoveCardPanel } from "../../shared/ui/remove-card-panel";
 import { ScreenHeaderRow, ScreenShell, ServiceButton } from "../../shared/ui/shared-ui";
-import { shopItemSlotKey, shopOfferingsSwapKey } from "../shop/shop-slot-keys";
-import { RefreshShopServiceButton, ShopBrowseOfferings, ShopBrowseShell } from "./shop-browse-shell";
+import { shopItemSlotKey } from "../shop/shop-slot-keys";
+import { GenericShopScreen } from "./generic-shop-screen";
 import { FadeSlot } from "../../shared/ui/use-fade";
 
 export function CardShopScreen({
@@ -58,53 +58,36 @@ export function CardShopScreen({
           />
         </ScreenShell>
       ) : (
-        <ShopBrowseShell title="Card Shop" gold={gold}>
-          <div className="w-full">
-            <ShopBrowseOfferings
-              swapKey={shopOfferingsSwapKey(
-                shopCards.map((card, i) => shopItemSlotKey(card.id, i)),
-                refreshesLeft,
-              )}
-              onLeave={onContinue}
-              services={
-                <>
-                  <ServiceButton
-                    icon={Trash2}
-                    label="Remove Card"
-                    cost={removePrice}
-                    disabled={gold < removePrice}
-                    disabledMessage="Not Enough Gold"
-                    used={removeUsed}
-                    soldOutText="Remove Card - Sold Out"
-                    onClick={() => {
-                      setRemoveMode(true);
-                    }}
-                  />
-                  <RefreshShopServiceButton
-                    gold={gold}
-                    refreshesLeft={refreshesLeft}
-                    refreshPrice={refreshPrice}
-                    onRefresh={onRefresh}
-                  />
-                </>
-              }
-            >
-              {shopCards.map((card, i) => {
-                const slotKey = shopItemSlotKey(card.id, i);
-                return (
-                  <PurchasableCardItem
-                    key={slotKey}
-                    card={card}
-                    price={getCardPrice(card)}
-                    gold={gold}
-                    purchased={purchasedSlotKeys.includes(slotKey)}
-                    onBuy={() => onBuyCard(card, slotKey)}
-                  />
-                );
-              })}
-            </ShopBrowseOfferings>
-          </div>
-        </ShopBrowseShell>
+        <GenericShopScreen
+          title="Card Shop"
+          gold={gold}
+          items={shopCards}
+          refreshesLeft={refreshesLeft}
+          refreshPrice={refreshPrice}
+          purchasedSlotKeys={purchasedSlotKeys}
+          getSlotKey={(card, i) => shopItemSlotKey(card.id, i)}
+          getPrice={getCardPrice}
+          onBuy={onBuyCard}
+          onRefresh={onRefresh}
+          onContinue={onContinue}
+          extraServices={
+            <ServiceButton
+              icon={Trash2}
+              label="Remove Card"
+              cost={removePrice}
+              disabled={gold < removePrice}
+              disabledMessage="Not Enough Gold"
+              used={removeUsed}
+              soldOutText="Remove Card - Sold Out"
+              onClick={() => {
+                setRemoveMode(true);
+              }}
+            />
+          }
+          renderItem={(card, price, purchased, onBuy) => (
+            <PurchasableCardItem card={card} price={price} gold={gold} purchased={purchased} onBuy={onBuy} />
+          )}
+        />
       )}
     </FadeSlot>
   );

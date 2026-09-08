@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, afterEach } from "vitest";
+import { render, cleanup } from "@testing-library/react";
 import { ROUTE_SCREEN_VALUES, type Screen } from "@/lib/routing";
 import { renderAlchemyScreenRoute, SCREEN_ROUTES } from "@/app/screen-routes";
 import type { RenderAlchemyScreenProps } from "@/app/screen-routes/route-ctx";
@@ -59,13 +60,15 @@ function createMockProps(screen: Screen): RenderAlchemyScreenProps {
     routeCommands: createMockRouteCommands(),
     onClearSaveData: vi.fn(),
     onUnlockAllDevMode: vi.fn(),
-    onBackFromOptions: vi.fn(),
+    onBack: vi.fn(),
     gameMenuOpen: false,
     onOpenGameMenu: vi.fn(),
   };
 }
 
 describe("SCREEN_ROUTES registry", () => {
+  afterEach(cleanup);
+
   it("registers a handler for every Screen in ROUTE_SCREEN_VALUES", () => {
     const registeredScreens = Object.keys(SCREEN_ROUTES).sort();
     const expectedScreens = [...ROUTE_SCREEN_VALUES].sort();
@@ -76,8 +79,8 @@ describe("SCREEN_ROUTES registry", () => {
   it("renders with ErrorBoundary for every registered Screen", () => {
     for (const screen of ROUTE_SCREEN_VALUES) {
       const props = createMockProps(screen);
-      const node = renderAlchemyScreenRoute(props);
-      expect(node).toBeDefined();
+      const { container } = render(renderAlchemyScreenRoute(props));
+      expect(container.firstChild).toBeDefined();
     }
   });
 

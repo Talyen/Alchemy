@@ -14,6 +14,7 @@ interface GenericShopScreenProps<T> {
   onBuy: (item: T, slotKey: string) => boolean;
   onRefresh: () => void;
   onContinue: () => void;
+  extraServices?: ReactNode;
   renderItem: (item: T, price: number, purchased: boolean, onBuy: () => void) => ReactNode;
 }
 
@@ -29,6 +30,7 @@ export function GenericShopScreen<T>({
   onBuy,
   onRefresh,
   onContinue,
+  extraServices,
   renderItem,
 }: GenericShopScreenProps<T>) {
   return (
@@ -40,12 +42,15 @@ export function GenericShopScreen<T>({
         )}
         onLeave={onContinue}
         services={
-          <RefreshShopServiceButton
-            gold={gold}
-            refreshesLeft={refreshesLeft}
-            refreshPrice={refreshPrice}
-            onRefresh={onRefresh}
-          />
+          <>
+            {extraServices}
+            <RefreshShopServiceButton
+              gold={gold}
+              refreshesLeft={refreshesLeft}
+              refreshPrice={refreshPrice}
+              onRefresh={onRefresh}
+            />
+          </>
         }
       >
         {items.map((item, i) => {

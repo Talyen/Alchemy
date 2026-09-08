@@ -58,15 +58,15 @@ export function handHasHiddenCard(state: Pick<BattleState, "hand">, hiddenHandCa
 }
 
 export function getPlayableHandCardKeys(battleState: BattleState): Set<string> {
-  const keys: string[] = [];
+  const keys = new Set<string>();
   for (let index = 0; index < battleState.hand.length; index++) {
     const card = battleState.hand[index];
     if (!card) continue;
     if (canPlayCard(battleState, card, index, PLAYABLE_HAND_OPTIONS)) {
-      keys.push(getHandCardKey(card, index));
+      keys.add(getHandCardKey(card, index));
     }
   }
-  return new Set(keys);
+  return keys;
 }
 
 export function getPlayableHandCardKeysExcludingHidden(

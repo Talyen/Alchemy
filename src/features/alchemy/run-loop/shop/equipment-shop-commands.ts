@@ -1,13 +1,12 @@
 import { activeLabyrinthBenefits } from "@/lib/content-systems/labyrinth/room-rules";
-import { mutateGearWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
+import { grantGearToRunWithRecord } from "@/features/alchemy/run-loop/run/deck-mutations";
 import {
   createDraftRunRandomSource,
-  recordRunObtainedItem,
   setEquipmentShopState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { TalentEffectManifest } from "@/lib/game-data";
 import { getOwnedUniqueDefinitionIds, type GearInstance } from "@/lib/gear";
-import { computeGearBuyPrice, computeMerchantRefreshPrice } from "./shop-pricing";
+import { computeEquipmentRefreshPrice, computeGearBuyPrice } from "./shop-pricing";
 import { resolveDraftShopPricingContext, resolveReadShopPricingContext } from "./shop-pricing-context";
 import {
   commitShopInitialize,
@@ -33,7 +32,7 @@ export function createEquipmentShopCommands({
   const getBuyPrice = (instance: GearInstance) => {
     return computeGearBuyPrice(instance, resolveReadShopPricingContext(talentEffects, "equipmentShopState"));
   };
-  const getRefreshPrice = (refreshesLeft: number) => computeMerchantRefreshPrice(talentEffects, refreshesLeft);
+  const getRefreshPrice = (refreshesLeft: number) => computeEquipmentRefreshPrice(talentEffects, refreshesLeft);
 
   function initialize(): void {
     commitShopInitialize(setEquipmentShopState, (draft) =>
@@ -60,13 +59,7 @@ export function createEquipmentShopCommands({
 
         slotKey: instance.instanceId,
         offeringMatches: true,
-        acquire: () => {
-          const characterId = draft.run.activeRun.characterId;
-          mutateGearWithRunHealthSync(draft, {
-            mutate: (gear) => gear.addInstance(offered, characterId),
-          });
-          recordRunObtainedItem(draft, { kind: "gear", instance: offered });
-        },
+        acquire: () => grantGearToRunWithRecord(draft, offered),
       });
     }).committed;
   }

@@ -1,6 +1,6 @@
 import { MATERIAL_IDS, type MaterialId, type MaterialInventory } from "./types";
 import type { HomesteadEffectManifest } from "./types";
-import { addInventory, emptyInventory, materialAmount } from "./inventory";
+import { emptyInventory, materialAmount } from "./inventory";
 import { materialCost } from "./costs";
 import { HOMESTEAD_LOOT_MULTIPLIERS } from "../game-constants";
 
@@ -181,16 +181,6 @@ const enemyLootTables: Record<string, EnemyLootTable> = {
 
 export const enemyLootTableIds = Object.keys(enemyLootTables);
 
-function rollBonuses(table: EnemyLootTable, rng: () => number): MaterialInventory {
-  const result = emptyInventory();
-  for (const bonus of table.bonuses) {
-    if (rng() < bonus.weight) {
-      result[bonus.material] = bonus.min + Math.floor(rng() * (bonus.max - bonus.min + 1));
-    }
-  }
-  return result;
-}
-
 function applyTypeMultiplier(loot: MaterialInventory, enemyType: string): MaterialInventory {
   const multiplier =
     enemyType === "boss"
@@ -209,10 +199,19 @@ function applyTypeMultiplier(loot: MaterialInventory, enemyType: string): Materi
 export function getEnemyMaterialLoot(enemyId: string, enemyType: string, rng: () => number): MaterialInventory {
   const table = enemyLootTables[enemyId];
   if (!table) return emptyInventory();
-  const guaranteed = { ...table.guaranteed };
-  const bonuses = rollBonuses(table, rng);
-  const combined = addInventory(guaranteed, bonuses);
-  return applyTypeMultiplier(combined, enemyType);
+  const loot: MaterialInventory = {
+    wood: table.guaranteed.wood,
+    iron: table.guaranteed.iron,
+    herbs: table.guaranteed.herbs,
+    food: table.guaranteed.food,
+    gems: table.guaranteed.gems,
+  };
+  for (const bonus of table.bonuses) {
+    if (rng() < bonus.weight) {
+      loot[bonus.material] += bonus.min + Math.floor(rng() * (bonus.max - bonus.min + 1));
+    }
+  }
+  return applyTypeMultiplier(loot, enemyType);
 }
 
 export function applyMaterialFindBonus(
@@ -233,11 +232,12 @@ export function applyEndOfRunHomesteadBonuses(
   effects: EndOfRunHomesteadEffects,
   roomsEncountered: number,
 ): MaterialInventory {
+  const roomCount = Math.max(0, roomsEncountered);
   const withFlatYields = {
     ...base,
-    herbs: base.herbs + effects.endRunHerbsPerRoom * roomsEncountered,
-    food: base.food + effects.endRunFoodPerRoom * roomsEncountered,
-    gems: base.gems + effects.endRunGemsPerRoom * roomsEncountered,
+    herbs: base.herbs + (effects.endRunHerbsPerRoom ?? 0) * roomCount,
+    food: base.food + (effects.endRunFoodPerRoom ?? 0) * roomCount,
+    gems: base.gems + (effects.endRunGemsPerRoom ?? 0) * roomCount,
   };
   return applyMaterialFindBonus(withFlatYields, effects);
 }

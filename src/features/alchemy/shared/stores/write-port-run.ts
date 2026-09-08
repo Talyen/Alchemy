@@ -3,8 +3,7 @@ import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import type { BattleCard } from "@/lib/game-data";
 import type { CharacterId, KeywordId } from "@/lib/game-data";
 import { addTalentXP, filterKeywordsForTalentXP, getCardKeywords } from "@/lib/game-data";
-import type { RunRngStream } from "@/lib/rng";
-import { nextRunRngValue } from "@/lib/rng";
+import { stepRunRng, type RunRngStream } from "@/lib/rng";
 import type { PersistedBattleTransition } from "@/lib/active-run-session";
 import { current, isDraft, type Draft } from "immer";
 import type { GameplayDraft } from "./run-session-command";
@@ -106,9 +105,7 @@ export function resetProgress(draft: GameplayDraft): void {
 }
 
 export function nextRunRandom(draft: GameplayDraft, stream: RunRngStream): number {
-  const draw = nextRunRngValue(draft.run.activeRun.rng, stream);
-  draft.run.activeRun.rng.counters[stream] = draw.nextCounter;
-  return draw.value;
+  return stepRunRng(draft.run.activeRun.rng, stream);
 }
 
 export function resetRunXP(draft: GameplayDraft): void {

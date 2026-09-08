@@ -25,6 +25,7 @@ import {
   type HomesteadBuilding,
   type HomesteadFarm,
   type HomesteadResearch,
+  type MaterialId,
   type MaterialInventory,
   materialLabels,
 } from "@/lib/homestead/types";
@@ -73,12 +74,15 @@ export function getArt(id: string): string {
 
 export { HomesteadResourceWallet as MaterialsBar } from "../../../shared/ui/material-icons";
 
+const LABEL_TO_MATERIAL: Record<string, MaterialId> = Object.fromEntries(
+  MATERIAL_IDS.map((m) => [materialLabels[m], m]),
+);
 const MATERIAL_LABELS_LIST = MATERIAL_IDS.map((m) => materialLabels[m]);
 const MATERIAL_REGEX = new RegExp(`\\b(${MATERIAL_LABELS_LIST.join("|")})\\b`, "g");
 
 function renderMaterialPills(text: string, key: number): ReactNode {
   return text.split(MATERIAL_REGEX).map((sub, index) => {
-    const mat = MATERIAL_IDS.find((m) => materialLabels[m] === sub);
+    const mat = LABEL_TO_MATERIAL[sub];
     if (!mat) return <span key={`${key}-${index}`}>{sub}</span>;
     return <MaterialInlineChip key={`${key}-${index}`} material={mat} label={sub} />;
   });
@@ -104,8 +108,11 @@ export function formatMaterialCostSummary(cost: MaterialInventory): string {
   return parts.join(", ");
 }
 
-export function getItems(tab: Tab, pool: HomesteadBuilding[] | HomesteadFarm[] | HomesteadResearch[]): GoalItem[] {
-  if (tab === "farm") return (pool as HomesteadFarm[]).map((data) => ({ kind: "farm", data }));
-  if (tab === "research") return (pool as HomesteadResearch[]).map((data) => ({ kind: "research", data }));
-  return (pool as HomesteadBuilding[]).map((data) => ({ kind: "building", data }));
+export function getItems(
+  tab: Tab,
+  pool: readonly HomesteadBuilding[] | readonly HomesteadFarm[] | readonly HomesteadResearch[],
+): GoalItem[] {
+  if (tab === "farm") return (pool as readonly HomesteadFarm[]).map((data) => ({ kind: "farm", data }));
+  if (tab === "research") return (pool as readonly HomesteadResearch[]).map((data) => ({ kind: "research", data }));
+  return (pool as readonly HomesteadBuilding[]).map((data) => ({ kind: "building", data }));
 }

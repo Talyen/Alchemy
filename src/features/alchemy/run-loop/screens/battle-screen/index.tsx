@@ -8,7 +8,7 @@ import { BattleActors } from "./actors";
 import { BattleBottomBar } from "./controls";
 import { PageLayout } from "../../../shared/ui/shared-ui";
 import { BattleBoonInspectOverlay } from "./boon-inspect";
-import { uniqueRunBoons } from "./unique-run-boons";
+import { hasInspectableBoons } from "./unique-run-boons";
 import { WishOverlay } from "./wish-overlay";
 import type { BattleActionsProps, BattleFeedbackProps, BattleRefsProps, BattleScreenData } from "./types";
 import { getEnemyStatusChips, getPlayerStatusChips, isAlchemyDevBuild } from "../../../shared/utils";
@@ -103,8 +103,7 @@ export function BattleScreen(props: BattleScreenProps) {
 
   const { battleSceneRef: sceneRef } = refs;
 
-  const inspectBoons = useMemo(() => uniqueRunBoons(runBoons), [runBoons]);
-  const inspectUiOpen = boonInspectOpen && inspectBoons.length > 0 && !battleState.wishOptions;
+  const inspectUiOpen = boonInspectOpen && hasInspectableBoons(runBoons) && !battleState.wishOptions;
 
   return (
     <div className="relative h-full w-full overflow-hidden">

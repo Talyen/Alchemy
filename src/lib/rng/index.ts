@@ -52,9 +52,14 @@ export function createSeededRng(seed: number): Rng {
   };
 }
 
-export function createRunRngState(rng: Rng): RunRngState {
-  const raw = rng();
-  const seed = raw >= 0 && raw < 1 ? toUint32(Math.trunc(raw * UINT32_RANGE)) : 0;
+export function createRunRngState(seedOrRng: number | Rng = Math.random): RunRngState {
+  let seed: number;
+  if (typeof seedOrRng === "number") {
+    seed = Number.isFinite(seedOrRng) ? toUint32(Math.trunc(seedOrRng)) : 0;
+  } else {
+    const raw = seedOrRng();
+    seed = raw >= 0 && raw < 1 ? toUint32(Math.trunc(raw * UINT32_RANGE)) : 0;
+  }
   return {
     seed,
     counters: {
@@ -76,6 +81,12 @@ export function nextRunRngValue(state: RunRngState, stream: RunRngStream): { val
   return { value, nextCounter: counter + 1 };
 }
 
+export function stepRunRng(state: RunRngState, stream: RunRngStream): number {
+  const draw = nextRunRngValue(state, stream);
+  state.counters[stream] = draw.nextCounter;
+  return draw.value;
+}
+
 export function rngInt(rng: Rng, n: number): number {
   if (!Number.isInteger(n) || n <= 0) throw new Error("rngInt requires a positive integer range");
   return Math.floor(assertDraw(rng()) * n);
@@ -84,20 +95,15 @@ export function rngInt(rng: Rng, n: number): number {
 export function createRunStreamRng(seed: number, stream: RunRngStream = "world", startCounter = 0): Rng {
   if (!Number.isInteger(startCounter) || startCounter < 0)
     throw new Error("createRunStreamRng requires a non-negative integer startCounter");
-  const state: RunRngState = {
-    seed: toUint32(seed),
-    counters: {
-      rewards: stream === "rewards" ? startCounter : 0,
-      destinations: stream === "destinations" ? startCounter : 0,
-      events: stream === "events" ? startCounter : 0,
-      shops: stream === "shops" ? startCounter : 0,
-      world: stream === "world" ? startCounter : 0,
-    },
-  };
+  if (!(stream in STREAM_SALTS)) {
+    throw new Error(`Unknown run RNG stream: ${stream}`);
+  }
+  const seed32 = toUint32(seed);
+  const salt = STREAM_SALTS[stream];
+  let counter = startCounter;
   return () => {
-    const draw = nextRunRngValue(state, stream);
-    state.counters[stream] = draw.nextCounter;
-    return draw.value;
+    counter += 1;
+    return mixUint32(seed32 ^ salt ^ Math.imul(counter, 0x85eb_ca6b)) / UINT32_RANGE;
   };
 }
 

@@ -18,9 +18,17 @@ import { TitledScreenShell } from "../../shared/ui/shared-ui";
 import { usePlasmaInteraction } from "../../shared/ui/use-plasma-source";
 import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
 
-function DraftedCardItem({ card, onHoverChange }: { card: BattleCard; onHoverChange: (hovered: boolean) => void }) {
+function DraftedCardItem({
+  card,
+  interactionKey,
+  onHoverChange,
+}: {
+  card: BattleCard;
+  interactionKey: string;
+  onHoverChange: (hovered: boolean) => void;
+}) {
   const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
-    `drafted-${card.id}`,
+    interactionKey,
     card.id,
   );
 
@@ -75,13 +83,17 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
       <FadeSlot swapKey={isComplete ? "complete" : round} className="mx-auto mt-8 min-h-[36cqh] w-full">
         {isComplete ? (
           <div className="mx-auto grid max-w-fit grid-cols-3 justify-items-center gap-6">
-            {draftedCards.map((card, index) => (
-              <DraftedCardItem
-                key={`drafted-${card.id}-${String(card.uid ?? index)}`}
-                card={card}
-                onHoverChange={(hovered) => setHoveredCard(hovered ? card : null)}
-              />
-            ))}
+            {draftedCards.map((card, index) => {
+              const itemKey = `drafted-${card.id}-${String(card.uid ?? index)}`;
+              return (
+                <DraftedCardItem
+                  key={itemKey}
+                  card={card}
+                  interactionKey={itemKey}
+                  onHoverChange={(hovered) => setHoveredCard(hovered ? card : null)}
+                />
+              );
+            })}
           </div>
         ) : (
           <div className="flex flex-wrap items-start justify-center gap-6">

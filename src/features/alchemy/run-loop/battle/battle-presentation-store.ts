@@ -135,12 +135,10 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()(
       set({ enemyShaking: true });
       scheduleShakeReset("enemy", () => set({ enemyShaking: false }));
     },
-
     shakePlayer: () => {
       set({ playerShaking: true });
       scheduleShakeReset("player", () => set({ playerShaking: false }));
     },
-
     shakeCompanion: () => {
       set({ companionShaking: true });
       scheduleShakeReset("companion", () => set({ companionShaking: false }));
