@@ -25,6 +25,15 @@ export function resolveAffixEffects(affixes: readonly GearAffixRoll[]): GearEffe
   return effects;
 }
 
+export function effectsForAffixRolls(
+  rawAffixes: readonly GearAffixRoll[] | Array<{ id: string; value: number }> | null | undefined,
+  rarity?: GearRarity | null,
+): GearEffectManifest {
+  return resolveAffixEffects(
+    normalizeAffixRolls(rawAffixes as Array<{ id: string; value: number }> | null | undefined, rarity),
+  );
+}
+
 export function normalizeAffixRolls(
   rawAffixes?: Array<{ id: string; value: number }> | null,
   rarity?: GearRarity | null,
@@ -32,10 +41,7 @@ export function normalizeAffixRolls(
   if (!rawAffixes || !Array.isArray(rawAffixes)) return [];
   return rawAffixes.flatMap((entry) => {
     if (!entry || !isGearAffixId(entry.id) || !Number.isFinite(entry.value) || entry.value <= 0) return [];
-    const range =
-      rarity && (entry.id === "health-per-turn" || entry.id === "forge-on-burn")
-        ? gearAffixCatalog[entry.id].roll[rarity]
-        : undefined;
+    const range = rarity ? gearAffixCatalog[entry.id].roll[rarity] : undefined;
     return [
       {
         id: entry.id,
@@ -83,13 +89,13 @@ export function affixMatchesAffinity(def: GearAffixDefinition, affinityKeywords:
 
 export function getGearInstanceTooltipEntries(
   instance: GearInstance,
-): Array<{ key: string; name?: string; text: string }> {
+): Array<{ key: string; name?: string; text: string; affixId?: GearAffixId; value?: number }> {
   const definition = gearDefinitions[instance.definitionId];
   const affixEntries = getGearAffixTooltipEntries(
     getUniqueAffixes(instance.definitionId) ?? instance.affixes,
     definition?.rarity,
   );
-  if (affixEntries.length > 0) return affixEntries.map(({ key, name, text }) => ({ key, name, text }));
+  if (affixEntries.length > 0) return affixEntries;
   return (definition?.descriptionLines ?? []).map((text, index) => ({ key: `definition-${index}`, text }));
 }
 

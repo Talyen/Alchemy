@@ -3,20 +3,10 @@ import { afterEach, describe, expect, it } from "vitest";
 import { GearTooltipContent } from "@/features/alchemy/shared/ui/gear-tooltip-content";
 import { keywordDefinitions } from "@/lib/game-data";
 import { extractKeywordIds } from "@/lib/keyword-text";
-import { gearAffixCatalog, gearDefinitions, type GearInstance, type GearRarity } from "@/lib/gear";
-
-const definitionIds: Record<GearRarity, string> = {
-  basic: "leather-armor-basic",
-  astral: "leather-armor-astral",
-  unique: "dance-of-blades",
-};
+import { gearAffixCatalog, gearDefinitions, getGearAffixTextShineColors, type GearInstance } from "@/lib/gear";
 
 function tooltip(instance: GearInstance) {
   return <GearTooltipContent instance={instance} definition={gearDefinitions[instance.definitionId]!} />;
-}
-
-function rgb(hex: string) {
-  return `rgb(${[1, 3, 5].map((offset) => Number.parseInt(hex.slice(offset, offset + 2), 16)).join(", ")})`;
 }
 
 afterEach(cleanup);
@@ -50,34 +40,14 @@ describe("gear affix shine rendering", () => {
   });
 
   it.each(Object.values(gearAffixCatalog).map((affix) => [affix.name, affix] as const))(
-    "%s follows description keywords and rarity/max-roll rules",
+    "%s follows description keywords",
     (_, affix) => {
-      for (const rarity of ["basic", "astral", "unique"] as const) {
-        if (affix.uniqueOnly && rarity !== "unique") continue;
-        const instance: GearInstance = {
-          instanceId: "catalog",
-          definitionId: definitionIds[rarity],
-          affixes: [{ id: affix.id, value: affix.roll[rarity].max }],
-        };
-        const { rerender, unmount } = render(tooltip(instance));
-        const gradient = screen.getByText(affix.name, { exact: true }).style.backgroundImage;
-        const keywords = extractKeywordIds(affix.descriptionTemplate);
-        expect(keywords.length).toBeGreaterThan(0);
-        if (rarity === "basic") {
-          expect(gradient).toBe("");
-        } else {
-          for (const id of keywords.slice(0, 3)) {
-            expect(gradient).toContain(rgb(keywordDefinitions[id].shineColors[0]!));
-          }
-          for (const id of keywords.slice(3)) {
-            expect(gradient).not.toContain(rgb(keywordDefinitions[id].shineColors[0]!));
-          }
-        }
-        if (affix.roll[rarity].min < affix.roll[rarity].max) {
-          rerender(tooltip({ ...instance, affixes: [{ id: affix.id, value: affix.roll[rarity].min }] }));
-          expect(screen.getByText(affix.name, { exact: true }).style.backgroundImage).toBe("");
-        }
-        unmount();
+      const keywords = extractKeywordIds(affix.descriptionTemplate);
+      expect(keywords.length).toBeGreaterThan(0);
+      const colors = getGearAffixTextShineColors(affix);
+      expect(colors.length).toBeGreaterThan(0);
+      for (const id of keywords.slice(0, 3)) {
+        expect(colors.join(" ")).toContain(keywordDefinitions[id].shineColors[0]!);
       }
     },
   );

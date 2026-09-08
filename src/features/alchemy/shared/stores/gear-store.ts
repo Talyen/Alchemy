@@ -67,10 +67,26 @@ export const gearPersistenceCodec: GameplayPersistenceCodec<GearSaveFields> = {
 export type GearArmorySlice = GearStateFields;
 
 export function useGearCombatRestrictions() {
-  const state = useGameplayStateStore(
-    useShallow((s) => ({ run: s.run, session: s.session, battle: s.battle, gear: s.gear })),
+  const selection = useGameplayStateStore(
+    useShallow((s) => ({
+      hasActiveRun: s.session.hasActiveRun,
+      activeRun: s.run.activeRun,
+      parkedRuns: s.run.parkedRuns,
+      hasActiveBattle: s.battle.hasActiveBattle,
+      loadouts: s.gear.loadouts,
+      equippedTrinkets: s.gear.equippedTrinkets,
+    })),
   );
-  return useMemo(() => deriveGearCombatRestrictions(state), [state]);
+  return useMemo(
+    () =>
+      deriveGearCombatRestrictions({
+        session: { hasActiveRun: selection.hasActiveRun },
+        run: { activeRun: selection.activeRun, parkedRuns: selection.parkedRuns },
+        battle: { hasActiveBattle: selection.hasActiveBattle },
+        gear: { loadouts: selection.loadouts, equippedTrinkets: selection.equippedTrinkets },
+      }),
+    [selection],
+  );
 }
 
 export function useGearArmorySlice(): GearArmorySlice {

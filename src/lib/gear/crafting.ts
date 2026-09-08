@@ -9,7 +9,7 @@ import {
 } from "@/lib/game-constants";
 import { createSeededRng, hashStringToUint32, pickRandom } from "@/lib/rng";
 import { craftingArt } from "@/lib/game-data";
-import { buildEligibleAffixPool, rollAffixes } from "./generation";
+import { buildEligibleAffixPool, rollAffixes } from "./affix-pool";
 import { rollAffixValue } from "./affixes";
 import { gearAffixCatalog } from "./affix-catalog";
 import { emptyInventory } from "@/lib/homestead/inventory";

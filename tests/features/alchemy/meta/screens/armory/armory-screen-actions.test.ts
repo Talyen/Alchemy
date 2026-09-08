@@ -40,14 +40,6 @@ describe("resetArmoryTargeting", () => {
     expect(setActiveCurrencyId).toHaveBeenCalledWith(null);
     expect(setSalvagePending).toHaveBeenCalledWith(null);
   });
-
-  it("works without a pending-yield setter", () => {
-    const setSalvageMode = vi.fn();
-    const setActiveCurrencyId = vi.fn();
-    resetArmoryTargeting({ setSalvageMode, setActiveCurrencyId });
-    expect(setSalvageMode).toHaveBeenCalledWith(false);
-    expect(setActiveCurrencyId).toHaveBeenCalledWith(null);
-  });
 });
 
 describe("applyCurrencyToGear", () => {
@@ -101,7 +93,7 @@ describe("applyCurrencyToGear", () => {
     expect(clearCurrency).not.toHaveBeenCalled();
   });
 
-  it("clears the armed currency when the last one is spent", () => {
+  it("clears the armed currency after one successful application", () => {
     const onApplyCurrency = vi.fn().mockReturnValue(true);
     const clearCurrency = vi.fn();
     applyCurrencyToGear({
@@ -112,19 +104,6 @@ describe("applyCurrencyToGear", () => {
       clearCurrency,
     });
     expect(playUISound).toHaveBeenCalledWith("talentUnlock");
-    expect(clearCurrency).toHaveBeenCalledTimes(1);
-  });
-
-  it("clears targeting after one successful application", () => {
-    const onApplyCurrency = vi.fn().mockReturnValue(true);
-    const clearCurrency = vi.fn();
-    applyCurrencyToGear({
-      editable: true,
-      activeCurrencyId: "voidstone",
-      instance: basicSword(),
-      onApplyCurrency,
-      clearCurrency,
-    });
     expect(clearCurrency).toHaveBeenCalledTimes(1);
   });
 });

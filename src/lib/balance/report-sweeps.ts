@@ -11,9 +11,14 @@ import {
   type TalentEffectManifest,
 } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
-import { generateGearInstanceForBaseItem, gearBaseItemList, type GearEffectManifest } from "@/lib/gear";
+import {
+  generateGearInstanceForBaseItem,
+  gearBaseItemList,
+  gearInstanceRarity,
+  type GearEffectManifest,
+} from "@/lib/gear";
 import { gearAffixList } from "@/lib/gear/affix-catalog";
-import { resolveAffixEffects } from "@/lib/gear/affixes";
+import { effectsForAffixRolls } from "@/lib/gear/affixes";
 import { defaultGearEffects } from "@/lib/gear/gear-effect-manifest";
 import { createRunStreamRng, sampleItems } from "@/lib/rng";
 import {
@@ -367,7 +372,9 @@ export function runGearSweep(options: ReportRunOptions): PairedTierRow[] {
           if (!matches) continue;
           const rng = createRunStreamRng(seed, "rewards");
           const instance = generateGearInstanceForBaseItem(item.id, rng);
-          const treatmentGear = instance ? resolveAffixEffects(instance.affixes) : defaultGearEffects;
+          const treatmentGear = instance
+            ? effectsForAffixRolls(instance.affixes, gearInstanceRarity(instance))
+            : defaultGearEffects;
           recordComparison(options, collected, tier.preset, item.id, baseline, {
             ...shared,
             gearEffects: treatmentGear,
@@ -406,7 +413,10 @@ export function runAffixSweep(options: ReportRunOptions): PairedTierRow[] {
             const value = Math.round((range.min + range.max) / 2);
             recordComparison(options, collected, tier.preset, affix.id, baseline, {
               ...shared,
-              gearEffects: resolveAffixEffects([{ id: affix.id, value }]),
+              gearEffects: effectsForAffixRolls(
+                [{ id: affix.id, value }],
+                affix.uniqueOnly ? "unique" : tier.preset === "late" ? "astral" : "basic",
+              ),
             });
           }
         }

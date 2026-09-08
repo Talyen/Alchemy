@@ -17,6 +17,9 @@ export function ArmoryCurrencyCursor({ activeCurrencyId }: { activeCurrencyId: C
   const [point, setPoint] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
+    if (!activeCurrencyId) {
+      return;
+    }
     let raf = 0;
     let pending = lastPoint.current;
     function flush() {
@@ -30,15 +33,15 @@ export function ArmoryCurrencyCursor({ activeCurrencyId }: { activeCurrencyId: C
           ? { x: event.clientX, y: event.clientY }
           : null;
       lastPoint.current = pending;
-      if (activeCurrencyId && !raf) raf = requestAnimationFrame(flush);
+      if (!raf) raf = requestAnimationFrame(flush);
     }
     function handlePointerLeave() {
       pending = null;
       lastPoint.current = pending;
-      if (activeCurrencyId && !raf) raf = requestAnimationFrame(flush);
+      if (!raf) raf = requestAnimationFrame(flush);
       else setPoint(null);
     }
-    if (activeCurrencyId) raf = requestAnimationFrame(flush);
+    raf = requestAnimationFrame(flush);
     document.addEventListener("pointerdown", handlePointerMove, { passive: true });
     document.addEventListener("pointermove", handlePointerMove, { passive: true });
     document.documentElement.addEventListener("pointerleave", handlePointerLeave);

@@ -23,19 +23,19 @@ describe("useArmoryPickerPage", () => {
     rerender({ context: "rogue:main-hand" });
     expect(result.current.pageItems).toEqual(items.slice(0, 6));
   });
-});
 
-it("keeps the clamped Armory page after items are added", () => {
-  const items = Array.from({ length: 20 }, (_, index) => index);
-  const { result, rerender } = renderHook(
-    ({ count }) => useArmoryPickerPage("knight:main-hand", items.slice(0, count)),
-    {
-      initialProps: { count: 20 },
-    },
-  );
-  act(() => result.current.onPageChange(2));
-  rerender({ count: 4 });
-  expect(result.current.safePage).toBe(0);
-  rerender({ count: 20 });
-  expect(result.current.safePage).toBe(0);
+  it("keeps the clamped Armory page after items are added", () => {
+    const items = Array.from({ length: 20 }, (_, index) => index);
+    const { result, rerender } = renderHook(
+      ({ count }) => useArmoryPickerPage("knight:main-hand", items.slice(0, count)),
+      {
+        initialProps: { count: 20 },
+      },
+    );
+    act(() => result.current.onPageChange(2));
+    rerender({ count: 4 });
+    expect(result.current.safePage).toBe(0);
+    rerender({ count: 20 });
+    expect(result.current.safePage).toBe(0);
+  });
 });

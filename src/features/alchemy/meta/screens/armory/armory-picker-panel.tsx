@@ -1,22 +1,15 @@
-import type { CraftingResult } from "./crafting-result";
 import { Dices } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { sectionTitleClass } from "@/features/alchemy/shared/config";
 import type { CharacterId, TrinketEntry } from "@/lib/game-data";
-import type {
-  ArmorySlot,
-  CraftingCurrencyId,
-  EquippedTrinkets,
-  GearInstance,
-  GearLoadout,
-  GearLoadouts,
-} from "@/lib/gear";
+import type { ArmorySlot, EquippedTrinkets, GearInstance, GearLoadout, GearLoadouts } from "@/lib/gear";
 import { cn } from "@/lib/utils";
 import { ItemPickerGrid } from "./item-picker-grid";
 import { SLOT_LABELS } from "./parts/slot-labels";
 import { TrinketPickerGrid } from "./trinket-picker-grid";
 
 import type { GearCombatRestrictions } from "../../../shared/stores/gear-store";
+import type { ArmoryItemActions, ArmoryTargeting } from "./armory-screen-types";
 
 interface ArmoryPickerPanelProps {
   combatRestrictions: GearCombatRestrictions;
@@ -28,16 +21,9 @@ interface ArmoryPickerPanelProps {
   loadout: GearLoadout;
   loadouts: GearLoadouts;
   inventory: GearInstance[];
-  editable: boolean;
-  salvageMode: boolean;
-  activeCurrencyId: CraftingCurrencyId | null;
+  targeting: ArmoryTargeting;
+  actions: ArmoryItemActions;
   onSpawnDevGear: ((characterId: CharacterId) => void) | undefined;
-  onEquipGear: (instance: GearInstance) => void;
-  onEquipTrinket: (trinketId: string) => void;
-  onSetProtected: (instanceId: string, protectedItem: boolean) => boolean;
-  craftingResult: CraftingResult | null;
-  onSalvage: (instance: GearInstance) => void;
-  onApplyCurrency: (instance: GearInstance) => void;
 }
 
 export function ArmoryPickerPanel({
@@ -50,17 +36,11 @@ export function ArmoryPickerPanel({
   loadout,
   loadouts,
   inventory,
-  editable,
-  salvageMode,
-  activeCurrencyId,
+  targeting,
+  actions,
   onSpawnDevGear,
-  onEquipGear,
-  onEquipTrinket,
-  onSetProtected,
-  craftingResult,
-  onSalvage,
-  onApplyCurrency,
 }: ArmoryPickerPanelProps) {
+  const { editable, salvageMode, activeCurrencyId, craftingResult } = targeting;
   return (
     <section
       data-testid="armory-right-panel"
@@ -89,7 +69,7 @@ export function ArmoryPickerPanel({
           trinkets={ownedTrinkets}
           equippedTrinkets={equippedTrinkets}
           editable={editable}
-          onEquip={onEquipTrinket}
+          onEquip={actions.onEquipTrinket}
         />
       ) : (
         <ItemPickerGrid
@@ -103,11 +83,11 @@ export function ArmoryPickerPanel({
           editable={editable}
           salvageMode={salvageMode}
           activeCurrencyId={activeCurrencyId}
-          onEquip={onEquipGear}
-          onSetProtected={onSetProtected}
+          onEquip={actions.onEquipGear}
+          onSetProtected={actions.onSetProtected}
           craftingResult={craftingResult}
-          onSalvage={onSalvage}
-          onApplyCurrency={onApplyCurrency}
+          onSalvage={actions.onSalvage}
+          onApplyCurrency={actions.onApplyCurrency}
         />
       )}
     </section>

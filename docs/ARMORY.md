@@ -11,16 +11,17 @@ Start from these owners:
 
 - `use-armory-controller.ts` — read facade and mutation/HP-sync/save-flush boundary consumed by the route.
 - `armory-screen.tsx` (sibling of `armory/`) — screen composition and interaction wiring.
-- `item-picker-grid.tsx` — slot-filtered inventory presentation.
-- Panels, parts, and overlays — presentation only; they receive domain state and commands through props.
+- `armory/` — picker grids (`ArmoryPagedGrid` owner in `paged-picker-grid.tsx`, slot-filtered via `itemsMatchingSlot` in `armory-screen-actions.ts`), targeting state (`use-armory-targeting-state.ts`, `armory-item-state.ts`), panels, parts, and overlays — presentation only; they receive domain state and commands through props.
 
-Visual layout, copy, pagination, and targeting details belong to the screen
+Targeting interaction contract: `use-armory-targeting-events.ts` derives its click/context-menu regions from one `ARMORY_TARGETING_SELECTORS` map. Adding an Armory interactive element requires updating that map and keeping the targeting-events matrix test in sync.
+
+Visual layout, copy, and pagination belong to the screen
 implementation and its focused tests; keep this document centered on the gear
 contract and controller seams.
 
 ## Data model
 
-`src/lib/gear/types.ts`, `crafting.ts`, and `crafting-ids.ts` are authoritative. Durable invariants:
+`src/lib/gear/definitions.ts`, `crafting.ts`, and `crafting-ids.ts` are authoritative. Item titles live with definitions (`getGearInstanceTitle`, re-exported via `item-names.ts`). Affix pool/roll helpers live in `affix-pool.ts` so generation and crafting depend down. Durable invariants:
 
 - A saved `GearInstance` has a stable unique `instanceId`, a `definitionId`, rolled `affixes`, and an optional `protected` flag (omitted means unlocked); it never embeds definition objects or art URLs. Protected items can be equipped but cannot be crafted or salvaged. Protection changes use the Gear command boundary and flush the save.
 - Inventories and loadouts are keyed by character. A loadout maps each slot to at most one instance ID.
@@ -52,7 +53,7 @@ hero cannot be taken by another hero, and reserved Gear cannot be crafted,
 salvaged, or have protection toggled from another tab. Unused items remain
 editable through other heroes’ tabs. Acquisition adds inventory normally.
 
-`gearCommandView` enforces the same reservations before running the mutator;
+The `GearStore` command boundary (`gear-session-command.ts` via `dispatchGearMutationWithRunHealthSync` / `dispatchGearSalvageWithMaterialGrant`) enforces the same reservations before running the mutator;
 blocked actions spend no currencies, roll no RNG, award no salvage, and trigger
 neither combat rebinding nor an explicit save flush. The UI shows a lock and a
 reason naming the reserved hero while preserving inspection. Talent and
@@ -60,18 +61,18 @@ Homestead mutation timing remains unchanged.
 
 ## State flow
 
-| Layer       | Owner                                                                                                                                  |
-| ----------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Pure rules  | `src/lib/gear/` — types, definitions, affixes, crafting, generation                                                                    |
-| Aggregate   | `gameplay-state-store` gear region via `gear-store.ts` (selectors + persistence codec) and `gear-session-command.ts` (HP-sync wrapper) |
-| Screen      | Armory route → `use-armory-controller.ts` → `armory-screen.tsx`                                                                        |
-| Battle      | `computeGearManifest` → `BattleState.gearEffects`; rebound on live meta mutation                                                       |
-| Persistence | `subscribeAlchemyPersistence` / `encodePersistenceFields`                                                                              |
+| Layer       | Owner                                                                                                                                     |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Pure rules  | `src/lib/gear/` — types, definitions, affixes, crafting, generation                                                                       |
+| Aggregate   | `gameplay-state-store` gear region via `gear-store.ts` (selectors + persistence codec) and `gear-session-command.ts` (HP-sync wrapper)    |
+| Screen      | Armory route → `use-armory-controller.ts` → `armory-screen.tsx`                                                                           |
+| Battle      | `computeGearManifest` → `BattleState.gearEffects`; rebound on live meta mutation                                                          |
+| Persistence | `subscribeAlchemyPersistence` / `encodePersistenceFields` + immediate `flushSaveAfterGearMutation` (fire-and-forget; autosave owns retry) |
 
 ### Read paths
 
-- **`Armory lock`** — computed from generated Gear or permanent Trinket ownership via `useIsArmoryLocked()` in `gear-store.ts`; `MenuScreen` receives a `locked` prop, it does not read the store. Combat preserves browsing but makes each battling hero’s Armory tab read-only; see [Combat equipment restrictions](#combat-equipment-restrictions).
-- **`ArmoryScreen`** — reads Gear, Trinket ownership/equipment, and crafting currencies via `useGearArmorySlice`.
+- **`Armory lock`** — computed from generated Gear or permanent Trinket ownership via `useIsArmoryLocked()` in `gear-store.ts`; `MenuScreen` receives a `locked` prop, it does not read the store. Combat preserves browsing but makes each battling hero’s Armory tab read-only; see [Combat equipment restrictions](#combat-equipment-restrictions). Reserved heroes show a `browseOnly` banner; reserved items show a lock with a reason naming the reserved hero while preserving inspection. Protection toggles live on `GearProtectionButton`.
+- **`ArmoryScreen`** — reads Gear, Trinket ownership/equipment, and crafting currencies via `useGearArmorySlice`, combat reservations via `useGearCombatRestrictions`, plus finished-run and active-run reads bundled in `useArmoryController`.
 - **`useArmoryController`** — facade hook that bundles the read-only slice plus the mutation callbacks.
 - **Battle** — `computeGearManifest` is applied at battle start and rebound onto the live `BattleState` whenever gear, talents, or homestead change.
 - **Run start** — `run-start-command.ts` snapshots `computeGearManifest.maxHealth` into `RunStartSnapshot.gearMaxHealthBonus`.
@@ -102,9 +103,9 @@ Base item construction owns homestead salvage materials; rarity increases quanti
 The route wrapper (`src/app/screen-routes/meta-routes.tsx`) does not mutate gear directly. It consumes `useArmoryController()`, which:
 
 - Reads `inventories`, `loadouts`, and `craftingCurrencies` from `useGearArmorySlice`.
-- Routes `equip`/`unequip`/`equipTrinket`/`unequipTrinket` through `dispatchGearMutationWithRunHealthSync` (HP-sync side effect) and flushes the save on success only — failed taps are feedback-only, no save.
+- Routes `equip`/`unequip`/`equipTrinket`/`unequipTrinket`/`setProtected` through `dispatchGearMutationWithRunHealthSync` (HP-sync side effect) and flushes the save on success only — failed taps are feedback-only, no save.
 - Routes `applyCurrency` through `dispatchGearMutationWithRunHealthSync` and flushes the save on success.
-- Routes `salvage` through `dispatchGearSalvageWithMaterialGrant` and flushes the save on success.
+- Routes `salvage` through `dispatchGearSalvageWithMaterialGrant` (HP-syncs once, then grants homestead materials without a second rebind) and flushes the save on success.
 - Provides a dev-only `onSpawnDevGear` that calls `generateDevRandomGearInstance` through `dispatchGearMutationWithRunHealthSync` and flushes the save.
 - Reports derived `combatRestrictions` by character and reserved Gear/Trinket ID, plus `finishedRunCharacters`, for the screen.
 

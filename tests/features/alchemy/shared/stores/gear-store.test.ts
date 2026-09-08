@@ -9,7 +9,7 @@ import {
 } from "@/lib/gear";
 import { mutateGearForTest, resetGearForTest, resetProfileForTest } from "../../../../helpers/gameplay-store-test";
 import { createInitialGearState } from "@/features/alchemy/shared/stores/gear-store-initial-state";
-import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
+import { readGearState, readHasAnyOwnedGear } from "@/features/alchemy/shared/stores/gear-store";
 import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import {
   dispatchGearMutationWithRunHealthSync,
@@ -68,11 +68,15 @@ describe("gear-store", () => {
     resetGearForTest();
   });
 
-  it("reports armory lock state from inventory", () => {
+  it("reports armory lock state from inventory and trinkets", () => {
     resetGearForTest();
-    expect(flattenGearInventories(readGearState().inventories).length === 0).toBe(true);
+    expect(readHasAnyOwnedGear()).toBe(false);
     mutateGearForTest((gear) => gear.addInstance(armor, "knight"));
-    expect(flattenGearInventories(readGearState().inventories).length === 0).toBe(false);
+    expect(readHasAnyOwnedGear()).toBe(true);
+    resetGearForTest();
+    expect(readHasAnyOwnedGear()).toBe(false);
+    mutateGearForTest((gear) => gear.addTrinket("bone-charm"));
+    expect(readHasAnyOwnedGear()).toBe(true);
     resetGearForTest();
   });
 

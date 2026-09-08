@@ -80,16 +80,18 @@ export function teardownRun(): void {
   notifyRunTeardown();
 }
 
-function flushSaveAfterRunEnd(): void {
-  void saveAlchemySaveData(buildAlchemySaveDataFromStores(null)).catch((error: unknown) => {
-    logStorageFailure("Failed to flush save after run end", error);
+function flushSave(activeRun: ActiveRunData | null, message: string): void {
+  void saveAlchemySaveData(buildAlchemySaveDataFromStores(activeRun)).catch((error: unknown) => {
+    logStorageFailure(message, error);
   });
 }
 
+function flushSaveAfterRunEnd(): void {
+  flushSave(null, "Failed to flush save after run end");
+}
+
 export function flushSaveAfterGearMutation(activeRun: ActiveRunData | null): void {
-  void saveAlchemySaveData(buildAlchemySaveDataFromStores(activeRun)).catch((error: unknown) => {
-    logStorageFailure("Failed to flush save after gear mutation", error);
-  });
+  flushSave(activeRun, "Failed to flush save after gear mutation");
 }
 
 function finalizeRunEndSessionState(

@@ -3,11 +3,11 @@ import { useAdaptiveGrid } from "../../../shared/ui/adaptive-grid";
 import { GridMeasurement } from "../../../shared/ui/grid-measurement";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { collectionGridGapXClass } from "../../../shared/config";
+import { collectionGridGapXClass, collectionGridTileWidthClass, gearArtAspectClass } from "../../../shared/config";
 import { FadeSlot } from "../../../shared/ui/use-fade";
 import { PaginationControls } from "../../../shared/ui/shared-ui";
 
-export function PagedPickerGrid({
+function PagedPickerGrid({
   grid: { onContainer, onMeasure, referenceTileWidth, gridStyle },
   testId,
   swapKey,
@@ -81,4 +81,51 @@ export function useArmoryPickerPage<T>(context: string, items: T[], selectedInde
     totalPages,
     onPageChange,
   };
+}
+
+export function ArmoryPagedGrid<T>({
+  items,
+  selectedId,
+  context,
+  testId,
+  swapKey,
+  fillerTestId,
+  renderItem,
+}: {
+  items: T[];
+  selectedId?: string | null;
+  context: string;
+  testId: string;
+  swapKey: string;
+  fillerTestId?: string;
+  renderItem: (item: T) => ReactNode;
+}) {
+  const selectedIndex = selectedId
+    ? items.findIndex(
+        (item) =>
+          (item as { instanceId?: unknown; id?: unknown }).instanceId === selectedId ||
+          (item as { id?: unknown }).id === selectedId,
+      )
+    : -1;
+  const { grid, pageItems, fillerCount, safePage, totalPages, onPageChange } = useArmoryPickerPage(
+    context,
+    items,
+    selectedIndex,
+  );
+  return (
+    <PagedPickerGrid
+      grid={grid}
+      testId={testId}
+      swapKey={swapKey}
+      isEmpty={items.length === 0}
+      safePage={safePage}
+      totalPages={totalPages}
+      onPageChange={onPageChange}
+      fillerCount={fillerCount}
+      fillerClassName={cn(collectionGridTileWidthClass, gearArtAspectClass)}
+      {...(fillerTestId ? { fillerTestId } : {})}
+    >
+      {pageItems.map(renderItem)}
+    </PagedPickerGrid>
+  );
 }

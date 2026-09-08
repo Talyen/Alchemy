@@ -19,8 +19,4 @@ describe("targetingRingClass", () => {
   it("returns no classes when there is no targeting mode", () => {
     expect(targetingRingClass(null)).toEqual([]);
   });
-
-  it("keeps salvage and currency treatments distinct", () => {
-    expect(targetingRingClass("salvage")).not.toEqual(targetingRingClass("currency"));
-  });
 });

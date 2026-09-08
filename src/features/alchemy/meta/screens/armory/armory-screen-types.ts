@@ -11,9 +11,26 @@ import type {
 
 import type { GearCombatRestrictions } from "../../../shared/stores/gear-store";
 
+import type { CraftingResult } from "./crafting-result";
+
 export interface ArmorySalvagePending {
   instance: GearInstance;
   yield: SalvageYield;
+}
+
+export interface ArmoryTargeting {
+  editable: boolean;
+  salvageMode: boolean;
+  activeCurrencyId: CraftingCurrencyId | null;
+  craftingResult: CraftingResult | null;
+}
+
+export interface ArmoryItemActions {
+  onEquipGear: (instance: GearInstance) => void;
+  onEquipTrinket: (trinketId: string) => void;
+  onSetProtected: (instanceId: string, protectedItem: boolean) => boolean;
+  onSalvage: (instance: GearInstance) => void;
+  onApplyCurrency: (instance: GearInstance) => void;
 }
 
 export interface ArmoryScreenProps {

@@ -32,6 +32,8 @@ describe("gear display", () => {
         key: "max-health-0",
         name: "Enduring",
         text: "Increases Health by 7",
+        affixId: "max-health",
+        value: 7,
       },
     ]);
   });

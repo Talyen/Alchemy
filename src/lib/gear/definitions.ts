@@ -4,7 +4,7 @@ import { gearArtByDefinitionId } from "@/lib/game-data";
 import { gearBaseItems, type GearBaseItemId, type GearSlotRule } from "./base-items";
 import type { GearRarity, GearSlot } from "./types";
 import type { GearAffixId } from "./affix-catalog";
-import { uniqueItemList } from "./unique-catalog";
+import { getUniqueItemDefinition, uniqueItemList } from "./unique-catalog";
 
 export interface GearAffixRoll {
   id: GearAffixId;
@@ -100,4 +100,25 @@ export const gearDefinitionList = Object.values(gearDefinitions);
 
 export function getGearDefinitionsByRarity(rarity: GearRarity): GearDefinition[] {
   return gearDefinitionList.filter((definition) => definition.rarity === rarity);
+}
+
+function baseItemDisplayName(definition: GearDefinition): string {
+  return gearBaseItems[definition.baseItemId].displayName;
+}
+
+function titleForDefinition(definition: GearDefinition): string {
+  const uniqueDef = getUniqueItemDefinition(definition.id);
+  if (uniqueDef) return uniqueDef.displayName;
+  const name = baseItemDisplayName(definition);
+  return definition.rarity === "astral" ? `Astral ${name}` : name;
+}
+
+export function getGearDefinitionTitle(definition: GearDefinition): string {
+  return titleForDefinition(definition);
+}
+
+export function getGearInstanceTitle(instance: GearInstance): string {
+  const definition = gearDefinitions[instance.definitionId];
+  if (!definition) return "Gear";
+  return getGearDefinitionTitle(definition);
 }

@@ -10,30 +10,43 @@ interface UseArmoryTargetingEventsOptions {
   clearTargeting: () => void;
 }
 
+const ARMORY_TARGETING_SELECTORS = {
+  workspace: '[data-testid="armory-workspace"]',
+  inventoryItem: '[data-testid="armory-inventory-item"]',
+  equipmentSlot: '[data-testid="armory-equipment-slot"]',
+  trinketSlot: '[data-testid="armory-trinket-slot"]',
+  trinketItem: '[data-testid="armory-trinket-item"]',
+  craftingCurrency: '[data-testid="armory-crafting-currency"]',
+  craftingStrip: '[data-testid="armory-crafting-strip"]',
+  salvageToggle: '[data-testid="armory-salvage-toggle"]',
+  confirmationDialog: '[data-testid="confirmation-dialog"]',
+  salvageable: '[data-salvageable="true"]',
+} as const;
+
 const CURRENCY_CLICK_REGIONS = [
-  '[data-testid="armory-workspace"]',
-  '[data-testid="confirmation-dialog"]',
-  '[data-testid="armory-inventory-item"]',
-  '[data-testid="armory-equipment-slot"]',
-  '[data-testid="armory-trinket-slot"]',
-  '[data-testid="armory-trinket-item"]',
-  '[data-testid="armory-crafting-currency"]',
-  '[data-testid="armory-crafting-strip"]',
-  '[data-testid="armory-salvage-toggle"]',
+  ARMORY_TARGETING_SELECTORS.workspace,
+  ARMORY_TARGETING_SELECTORS.confirmationDialog,
+  ARMORY_TARGETING_SELECTORS.inventoryItem,
+  ARMORY_TARGETING_SELECTORS.equipmentSlot,
+  ARMORY_TARGETING_SELECTORS.trinketSlot,
+  ARMORY_TARGETING_SELECTORS.trinketItem,
+  ARMORY_TARGETING_SELECTORS.craftingCurrency,
+  ARMORY_TARGETING_SELECTORS.craftingStrip,
+  ARMORY_TARGETING_SELECTORS.salvageToggle,
 ].join(",");
 
 const SALVAGE_CLICK_REGIONS = [
-  '[data-salvageable="true"]',
-  '[data-testid="armory-salvage-toggle"]',
-  '[data-testid="armory-crafting-strip"]',
+  ARMORY_TARGETING_SELECTORS.salvageable,
+  ARMORY_TARGETING_SELECTORS.salvageToggle,
+  ARMORY_TARGETING_SELECTORS.craftingStrip,
 ].join(",");
 
 const CONTEXT_MENU_REGIONS = [
-  '[data-testid="armory-crafting-currency"]',
-  '[data-testid="armory-inventory-item"]',
-  '[data-testid="armory-trinket-item"]',
-  '[data-testid="armory-equipment-slot"]',
-  '[data-testid="armory-trinket-slot"]',
+  ARMORY_TARGETING_SELECTORS.craftingCurrency,
+  ARMORY_TARGETING_SELECTORS.inventoryItem,
+  ARMORY_TARGETING_SELECTORS.trinketItem,
+  ARMORY_TARGETING_SELECTORS.equipmentSlot,
+  ARMORY_TARGETING_SELECTORS.trinketSlot,
 ].join(",");
 
 function setupTargetingEventListeners(salvageMode: boolean, clearTargeting: () => void): () => void {
@@ -46,7 +59,7 @@ function setupTargetingEventListeners(salvageMode: boolean, clearTargeting: () =
   function handleContextMenu(event: MouseEvent) {
     const target = event.target instanceof Element ? event.target : null;
     if (target?.closest(CONTEXT_MENU_REGIONS)) return;
-    if (target?.closest('[data-testid="armory-workspace"]')) event.preventDefault();
+    if (target?.closest(ARMORY_TARGETING_SELECTORS.workspace)) event.preventDefault();
     clearTargeting();
   }
 

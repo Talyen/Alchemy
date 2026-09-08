@@ -30,14 +30,15 @@ import type { SynchronousResult } from "@/features/alchemy/shared/stores/run-ses
 import type { GearStore } from "@/features/alchemy/shared/stores/gear-store-types";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 
-function mutateGearWithFlush<T>(
-  flush: () => void,
-  mutate: (state: GearStore) => T & SynchronousResult<T>,
-  options?: { flushOnSuccessOnly?: boolean },
-): T {
+function mutateGearWithFlush<T>(flush: () => void, mutate: (state: GearStore) => T & SynchronousResult<T>): T {
   const result = dispatchGearMutationWithRunHealthSync<T>({ mutate });
-  if (options?.flushOnSuccessOnly ? result : true) flush();
+  if (result) flush();
   return result;
+}
+
+function mutateGearWithFlushAlways(flush: () => void, mutate: (state: GearStore) => void): void {
+  dispatchGearMutationWithRunHealthSync<void>({ mutate });
+  flush();
 }
 
 export interface ArmoryController {
@@ -48,7 +49,6 @@ export interface ArmoryController {
   craftingCurrencies: Record<CraftingCurrencyId, number>;
   finishedRunCharacters: CharacterId[];
   combatRestrictions: GearCombatRestrictions;
-  hasActiveRun: boolean;
   onEquip: (characterId: CharacterId, slot: GearSlot, instance: GearInstance) => void;
   onUnequip: (characterId: CharacterId, slot: GearSlot) => void;
   onEquipTrinket: (characterId: CharacterId, trinketId: string) => void;
@@ -73,41 +73,34 @@ export function useArmoryController(options?: { rng?: () => number }): ArmoryCon
 
   const onEquip = useCallback<ArmoryController["onEquip"]>(
     (characterId, slot, instance) => {
-      mutateGearWithFlush(flush, (state) => state.equip(characterId, slot, instance), {
-        flushOnSuccessOnly: true,
-      });
+      mutateGearWithFlush(flush, (state) => state.equip(characterId, slot, instance));
     },
     [flush],
   );
 
   const onUnequip = useCallback<ArmoryController["onUnequip"]>(
     (characterId, slot) => {
-      mutateGearWithFlush(flush, (state) => state.unequip(characterId, slot), { flushOnSuccessOnly: true });
+      mutateGearWithFlush(flush, (state) => state.unequip(characterId, slot));
     },
     [flush],
   );
 
   const onEquipTrinket = useCallback<ArmoryController["onEquipTrinket"]>(
     (characterId, trinketId) => {
-      mutateGearWithFlush(flush, (state) => state.equipTrinket(characterId, trinketId), {
-        flushOnSuccessOnly: true,
-      });
+      mutateGearWithFlush(flush, (state) => state.equipTrinket(characterId, trinketId));
     },
     [flush],
   );
 
   const onUnequipTrinket = useCallback<ArmoryController["onUnequipTrinket"]>(
     (characterId) => {
-      mutateGearWithFlush(flush, (state) => state.unequipTrinket(characterId), { flushOnSuccessOnly: true });
+      mutateGearWithFlush(flush, (state) => state.unequipTrinket(characterId));
     },
     [flush],
   );
 
   const onSetProtected = useCallback<ArmoryController["onSetProtected"]>(
-    (instanceId, protectedItem) =>
-      mutateGearWithFlush(flush, (state) => state.setProtected(instanceId, protectedItem), {
-        flushOnSuccessOnly: true,
-      }),
+    (instanceId, protectedItem) => mutateGearWithFlush(flush, (state) => state.setProtected(instanceId, protectedItem)),
     [flush],
   );
 
@@ -124,16 +117,14 @@ export function useArmoryController(options?: { rng?: () => number }): ArmoryCon
 
   const onApplyCurrency = useCallback<ArmoryController["onApplyCurrency"]>(
     (currencyId, instanceId) =>
-      mutateGearWithFlush(flush, (state) => state.applyCurrency(currencyId, instanceId, { rng }), {
-        flushOnSuccessOnly: true,
-      }),
+      mutateGearWithFlush(flush, (state) => state.applyCurrency(currencyId, instanceId, { rng })),
     [flush, rng],
   );
 
   const onSpawnDevGear = useCallback<NonNullable<ArmoryController["onSpawnDevGear"]>>(
     (characterId) => {
       if (!isAlchemyDevBuild()) return;
-      mutateGearWithFlush(flush, (state) => {
+      mutateGearWithFlushAlways(flush, (state) => {
         state.addInstance(generateDevRandomGearInstance(rng), characterId);
       });
     },
@@ -149,7 +140,6 @@ export function useArmoryController(options?: { rng?: () => number }): ArmoryCon
       craftingCurrencies: gear.craftingCurrencies,
       finishedRunCharacters,
       combatRestrictions,
-      hasActiveRun,
       onEquip,
       onUnequip,
       onEquipTrinket,
@@ -168,7 +158,6 @@ export function useArmoryController(options?: { rng?: () => number }): ArmoryCon
     gear.equippedTrinkets,
     gear.craftingCurrencies,
     finishedRunCharacters,
-    hasActiveRun,
     onEquip,
     onUnequip,
     onEquipTrinket,

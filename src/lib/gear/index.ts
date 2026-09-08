@@ -3,6 +3,7 @@ export * from "./definitions";
 export * from "./operations";
 export * from "./affixes";
 export * from "./affix-catalog";
+export * from "./affix-pool";
 export * from "./base-items";
 export * from "./gear-effect-manifest";
 export * from "./generation";

@@ -143,4 +143,74 @@ describe("useArmoryController", () => {
 
     dispatchRunSessionCommand((draft) => setHasActiveBattle(draft, false));
   });
+
+  it("flushes after successful equip, unequip, trinket, protection, and currency mutations", () => {
+    const armor: GearInstance = { instanceId: "armor-flush", definitionId: "plate-armor-basic", affixes: [] };
+    const sword: GearInstance = {
+      instanceId: "sword-flush",
+      definitionId: "shortsword-basic",
+      affixes: [{ id: "flat-physical", value: 1 }],
+    };
+    const inventories = createEmptyGearInventories();
+    inventories.knight = [armor, sword];
+    mutateGearForTest((gear) => {
+      gear.initialize(inventories, gear.loadouts);
+      gear.addTrinket("bone-charm");
+      gear.addCurrencies({ voidstone: 1 });
+    });
+
+    const { result } = renderHook(() => useArmoryController({ rng: () => 0 }));
+
+    act(() => {
+      result.current.onEquip("knight", "body", armor);
+    });
+    expect(flushSaveAfterGearMutation).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      result.current.onUnequip("knight", "body");
+    });
+    expect(flushSaveAfterGearMutation).toHaveBeenCalledTimes(2);
+
+    act(() => {
+      result.current.onEquipTrinket("knight", "bone-charm");
+    });
+    expect(flushSaveAfterGearMutation).toHaveBeenCalledTimes(3);
+
+    act(() => {
+      result.current.onUnequipTrinket("knight");
+    });
+    expect(flushSaveAfterGearMutation).toHaveBeenCalledTimes(4);
+
+    act(() => {
+      expect(result.current.onSetProtected(sword.instanceId, true)).toBe(true);
+    });
+    expect(flushSaveAfterGearMutation).toHaveBeenCalledTimes(5);
+
+    act(() => {
+      expect(result.current.onSetProtected(sword.instanceId, false)).toBe(true);
+    });
+    expect(flushSaveAfterGearMutation).toHaveBeenCalledTimes(6);
+
+    act(() => {
+      expect(result.current.onApplyCurrency("voidstone", sword.instanceId)).toBe(true);
+    });
+    expect(flushSaveAfterGearMutation).toHaveBeenCalledTimes(7);
+  });
+
+  it("does not flush when salvage or currency mutations fail", () => {
+    const inventories = createEmptyGearInventories();
+    mutateGearForTest((gear) => gear.initialize(inventories, gear.loadouts));
+
+    const { result } = renderHook(() => useArmoryController());
+
+    act(() => {
+      expect(result.current.onSalvage("missing", { currencies: {}, materials: {} } as never)).toBe(false);
+    });
+    expect(flushSaveAfterGearMutation).not.toHaveBeenCalled();
+
+    act(() => {
+      expect(result.current.onApplyCurrency("voidstone", "missing")).toBe(false);
+    });
+    expect(flushSaveAfterGearMutation).not.toHaveBeenCalled();
+  });
 });

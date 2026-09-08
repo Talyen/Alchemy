@@ -144,4 +144,31 @@ describe("gear save normalization", () => {
     expect(normalized.gearLoadouts.knight["left-accessory"]).toBeNull();
     expect(normalized.craftingCurrencies).toEqual(craftingCurrencies);
   });
+
+  it("round-trips protection flags, trinket exclusivity, and clones snapshots", () => {
+    const sword: GearInstance = {
+      instanceId: "sword-1",
+      definitionId: "shortsword-basic",
+      affixes: [{ id: "flat-physical", value: 1 }],
+      protected: true,
+    };
+    mutateGearForTest((gear) => {
+      gear.initialize(knightInventories(sword), createEmptyGearLoadouts());
+      gear.addTrinket("bone-charm");
+      gear.equipTrinket("knight", "bone-charm");
+    });
+
+    const save = buildAlchemySaveDataFromStores(null);
+    expect(save.gearInventories.knight[0]?.protected).toBe(true);
+    expect(save.equippedTrinkets.knight).toBe("bone-charm");
+
+    save.gearInventories.knight[0]!.affixes[0]!.value = 999;
+    save.gearInventories.knight.push({ instanceId: "injected", definitionId: "shortsword-basic", affixes: [] });
+    const fresh = buildAlchemySaveDataFromStores(null);
+    expect(fresh.gearInventories.knight).toHaveLength(1);
+    expect(fresh.gearInventories.knight[0]?.affixes[0]?.value).toBe(1);
+
+    const normalized = normalizeSaveData(save);
+    expect(normalized.gearInventories.knight.some((item) => item.instanceId === "sword-1")).toBe(true);
+  });
 });

@@ -9,9 +9,12 @@ export interface GearCombatRestrictions {
   trinkets: Record<string, CharacterId>;
 }
 
-export function deriveGearCombatRestrictions(
-  state: Pick<GameplayState, "run" | "session" | "battle" | "gear">,
-): GearCombatRestrictions {
+export function deriveGearCombatRestrictions(state: {
+  run: Pick<GameplayState["run"], "activeRun" | "parkedRuns">;
+  session: Pick<GameplayState["session"], "hasActiveRun">;
+  battle: Pick<GameplayState["battle"], "hasActiveBattle">;
+  gear: Pick<GameplayState["gear"], "loadouts" | "equippedTrinkets">;
+}): GearCombatRestrictions {
   const characters: GearCombatRestrictions["characters"] = {};
   const foregroundMode = state.session.hasActiveRun ? state.run.activeRun.contentSystemType : null;
   if (foregroundMode && state.battle.hasActiveBattle) {

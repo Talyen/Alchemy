@@ -7,55 +7,15 @@ import {
   GEAR_REWARD_RARITY_CHANCE,
 } from "@/lib/game-constants";
 import { clamp } from "@/lib/math";
-import { createInstanceId, pickRandom, sampleItems, takeRandomItem } from "@/lib/utils";
-import { affixMatchesAffinity, rollAffixValue } from "./affixes";
-import { gearAffixList, type GearAffixAspect, type GearAffixDefinition } from "./affix-catalog";
+import { createInstanceId, pickRandom, sampleItems } from "@/lib/utils";
+import { rollAffixes } from "./affix-pool";
 import { gearBaseItemList, gearBaseItems, type GearBaseItemId } from "./base-items";
 import { gearDefinitionId, gearDefinitions } from "./definitions";
 import { GEAR_RARITIES } from "./types";
 import { uniqueItemList, type UniqueItemDefinition } from "./unique-catalog";
-import type { GearAffixRoll, GearDefinition, GearInstance, GearRarity, GearSlot } from "./types";
+import type { GearAffixRoll, GearDefinition, GearInstance, GearRarity } from "./types";
 
-const SHIELD_BASE_ITEM_IDS = new Set(["leather-buckler", "kite-shield"]);
-const OFF_HAND_OFFENSIVE_BASE_ITEMS = new Set(["quiver", "spellbook"]);
-const JEWELRY_SLOTS = new Set<GearSlot>(["left-accessory", "right-accessory"]);
-
-function allowedAspectsForDefinition(def: GearDefinition): GearAffixAspect[] {
-  if (SHIELD_BASE_ITEM_IDS.has(def.baseItemId)) {
-    return ["offensive", "defensive"];
-  }
-  if (def.compatibleSlots.some((slot) => JEWELRY_SLOTS.has(slot))) {
-    return ["offensive", "defensive"];
-  }
-  if (def.compatibleSlots.includes("main-hand")) {
-    return ["offensive"];
-  }
-  if (def.compatibleSlots.includes("off-hand") && OFF_HAND_OFFENSIVE_BASE_ITEMS.has(def.baseItemId)) {
-    return ["offensive"];
-  }
-  return ["defensive"];
-}
-
-const eligibleAffixPoolCache = new Map<string, GearAffixDefinition[]>();
-
-function eligibleAffixCacheKey(definition: GearDefinition): string {
-  const affinityKey = [...definition.affinityKeywords].sort().join(",");
-  const aspectKey = allowedAspectsForDefinition(definition).join(",");
-  return `${definition.baseItemId}|${aspectKey}|${affinityKey}`;
-}
-
-export function buildEligibleAffixPool(definition: GearDefinition): GearAffixDefinition[] {
-  const cacheKey = eligibleAffixCacheKey(definition);
-  const cached = eligibleAffixPoolCache.get(cacheKey);
-  if (cached) return cached;
-  const allowedAspects = new Set(allowedAspectsForDefinition(definition));
-  const pool = gearAffixList.filter(
-    (affix) =>
-      !affix.uniqueOnly && allowedAspects.has(affix.aspect) && affixMatchesAffinity(affix, definition.affinityKeywords),
-  );
-  eligibleAffixPoolCache.set(cacheKey, pool);
-  return pool;
-}
+export { allowedAspectsForDefinition, buildEligibleAffixPool, rollAffixes } from "./affix-pool";
 
 export function generateUniqueGearInstance(uniqueDef: UniqueItemDefinition): GearInstance {
   return {
@@ -128,30 +88,24 @@ interface RollItemDropTierOptions {
   astralChanceBonus?: number;
 }
 
-function resolveDropTier(uniqueChance: number, astralChance: number, rng: () => number): GearRarity {
+function resolveRarityTier(
+  weights: { unique: number; astral: number },
+  rng: () => number,
+  options?: { allowsUnique?: boolean | undefined; astralBonus?: number | undefined },
+): GearRarity {
+  const allowsUnique = options?.allowsUnique !== false;
+  const astralBonus = Math.max(0, options?.astralBonus ?? 0);
+  const unique = allowsUnique ? weights.unique : 0;
+  const astral = weights.astral + astralBonus + (allowsUnique ? 0 : weights.unique);
   const draw = rng();
-  if (draw < uniqueChance) return "unique";
-  if (draw < uniqueChance + astralChance) return "astral";
+  if (draw < unique) return "unique";
+  if (draw < unique + astral) return "astral";
   return "basic";
 }
 
-function rollTierFromChances(
-  uniqueChance: number,
-  astralChance: number,
-  rng: () => number,
-  allowsUnique: boolean,
-  fallbackUniqueChance: number,
-): GearRarity {
-  const unique = allowsUnique ? uniqueChance : 0;
-  const astral = astralChance + (allowsUnique ? 0 : fallbackUniqueChance);
-  return resolveDropTier(unique, astral, rng);
-}
-
 function rollItemDropTier(options: RollItemDropTierOptions, rng: () => number): GearRarity {
-  const allowsUnique = options.allowsUnique !== false;
-  const astralBonus = Math.max(0, options.astralChanceBonus ?? 0);
   const base = options.isBoss ? DROP_RATES_BOSS : DROP_RATES_NORMAL;
-  return rollTierFromChances(base.unique, base.astral + astralBonus, rng, allowsUnique, base.unique);
+  return resolveRarityTier(base, rng, { allowsUnique: options.allowsUnique, astralBonus: options.astralChanceBonus });
 }
 
 export function rollGearRewardDropTier(rng: () => number, isBoss = false, astralChanceBonus = 0): GearRarity {
@@ -159,14 +113,7 @@ export function rollGearRewardDropTier(rng: () => number, isBoss = false, astral
 }
 
 function rollEquipmentShopDropTier(astralChanceBonus = 0, rng: () => number, allowsUnique = true): GearRarity {
-  const astralBonus = Math.max(0, astralChanceBonus);
-  return rollTierFromChances(
-    EQUIPMENT_SHOP_DROP_RATES.unique,
-    EQUIPMENT_SHOP_DROP_RATES.astral + astralBonus,
-    rng,
-    allowsUnique,
-    EQUIPMENT_SHOP_DROP_RATES.unique,
-  );
+  return resolveRarityTier(EQUIPMENT_SHOP_DROP_RATES, rng, { allowsUnique, astralBonus: astralChanceBonus });
 }
 
 interface GenerateGearOfferingsOptions {
@@ -327,22 +274,6 @@ export function rollAffixCount(rarity: GearRarity, rng: () => number): number {
   const range = GEAR_AFFIX_COUNT[rarity];
   if (range.max <= range.min) return range.min;
   return rng() < GEAR_AFFIX_COUNT_MIN_WEIGHT ? range.min : range.max;
-}
-
-export function rollAffixes(definition: GearDefinition, count: number, rng: () => number): GearAffixRoll[] {
-  const pool = buildEligibleAffixPool(definition);
-  const effectiveCount = Math.min(count, pool.length);
-  const selected: GearAffixRoll[] = [];
-  const remaining = [...pool];
-  const rarity = definition.rarity ?? "basic";
-
-  for (let pick = 0; pick < effectiveCount; pick += 1) {
-    const chosen = takeRandomItem(remaining, rng);
-    if (!chosen) break;
-    selected.push({ id: chosen.id, value: rollAffixValue(chosen, rarity, rng) });
-  }
-
-  return selected;
 }
 
 export function createGearInstance(definition: GearDefinition, affixes: GearAffixRoll[] = []): GearInstance {

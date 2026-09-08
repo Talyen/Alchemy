@@ -23,6 +23,7 @@ import { rebindLiveRunMeta } from "./run-meta-rebind";
 
 function gearCommandView(state: GameplayDraft): GearStore {
   const gear = state.gear;
+  const restrictions = deriveGearCombatRestrictions(state);
   return {
     get inventories() {
       return gear.inventories;
@@ -48,34 +49,32 @@ function gearCommandView(state: GameplayDraft): GearStore {
       }
     },
     equip: (characterId, slot, instance) => {
-      const restrictions = deriveGearCombatRestrictions(state);
       if (restrictions.characters[characterId] || restrictions.gear[instance.instanceId]) return false;
       return equipGearInstance(gear, characterId, slot, instance);
     },
     unequip: (characterId, slot) => {
-      if (deriveGearCombatRestrictions(state).characters[characterId]) return false;
+      if (restrictions.characters[characterId]) return false;
       return unequipGearInstance(gear, characterId, slot);
     },
     addTrinket: (trinketId) => addPermanentTrinket(gear, trinketId),
     equipTrinket: (characterId, trinketId) => {
-      const restrictions = deriveGearCombatRestrictions(state);
       if (restrictions.characters[characterId] || restrictions.trinkets[trinketId]) return false;
       return equipPermanentTrinket(gear, characterId, trinketId);
     },
     unequipTrinket: (characterId) => {
-      if (deriveGearCombatRestrictions(state).characters[characterId]) return false;
+      if (restrictions.characters[characterId]) return false;
       return unequipPermanentTrinket(gear, characterId);
     },
     setProtected: (instanceId, protectedItem) => {
-      if (deriveGearCombatRestrictions(state).gear[instanceId]) return false;
+      if (restrictions.gear[instanceId]) return false;
       return setGearProtected(gear, instanceId, protectedItem);
     },
     salvage: (instanceId, options) => {
-      if (deriveGearCombatRestrictions(state).gear[instanceId]) return null;
+      if (restrictions.gear[instanceId]) return null;
       return salvageGearInstance(gear, instanceId, options);
     },
     applyCurrency: (currencyId, instanceId, options) => {
-      if (deriveGearCombatRestrictions(state).gear[instanceId]) return false;
+      if (restrictions.gear[instanceId]) return false;
       return applyGearCurrency(gear, currencyId, instanceId, options);
     },
     addCurrencies: (currencies) => addGearCurrencies(gear, currencies),

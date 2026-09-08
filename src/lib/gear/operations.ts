@@ -1,4 +1,4 @@
-import { normalizeAffixRolls, resolveAffixEffects } from "./affixes";
+import { effectsForAffixRolls, normalizeAffixRolls } from "./affixes";
 import { computeSalvageYield, type SalvageYield } from "./crafting";
 import { gearDefinitions } from "./definitions";
 import { getUniqueAffixes } from "./unique-catalog";
@@ -188,9 +188,7 @@ export function normalizeGearInstance(raw: unknown): GearInstance | null {
 export function effectsForInstance(instance: GearInstance): GearEffectManifest {
   const definition = gearDefinitions[instance.definitionId];
   if (!definition) return { ...defaultGearEffects };
-  return resolveAffixEffects(
-    getUniqueAffixes(instance.definitionId) ?? normalizeAffixRolls(instance.affixes, definition.rarity),
-  );
+  return effectsForAffixRolls(getUniqueAffixes(instance.definitionId) ?? instance.affixes, definition.rarity);
 }
 
 export function computeGearManifest(

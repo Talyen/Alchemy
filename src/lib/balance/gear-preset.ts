@@ -2,10 +2,11 @@ import { characters, type CharacterId } from "@/lib/game-data";
 import {
   generateGearInstanceForBaseItem,
   gearBaseItemList,
+  gearInstanceRarity,
   type GearBaseItemDefinition,
   type GearSlot,
 } from "@/lib/gear";
-import { resolveAffixEffects } from "@/lib/gear/affixes";
+import { effectsForAffixRolls } from "@/lib/gear/affixes";
 import { defaultGearEffects, mergeGearEffectManifests, type GearEffectManifest } from "@/lib/gear/gear-effect-manifest";
 import { pickRandom } from "@/lib/utils";
 import type { TalentPreset } from "./types";
@@ -73,7 +74,7 @@ export function buildTypicalGearEffects(
     if (!chosen) continue;
     const instance = generateGearInstanceForBaseItem(chosen.id, rng, astralChanceBonus);
     if (!instance) continue;
-    effects = mergeGearEffectManifests(effects, resolveAffixEffects(instance.affixes));
+    effects = mergeGearEffectManifests(effects, effectsForAffixRolls(instance.affixes, gearInstanceRarity(instance)));
     if (slot === "main-hand") {
       rangedMainHand = chosen.slotRule === "ranged";
       skipOffHand = chosen.slotRule === "two-handed";

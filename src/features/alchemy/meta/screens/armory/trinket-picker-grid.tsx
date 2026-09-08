@@ -1,11 +1,10 @@
-import { Lock } from "lucide-react";
-import { characters } from "@/features/alchemy/shared/config/game-data-catalog";
 import type { CharacterId, TrinketEntry } from "@/lib/game-data";
 import type { EquippedTrinkets } from "@/lib/gear";
-import { cn } from "@/lib/utils";
-import { collectionGridTileWidthClass, gearArtAspectClass } from "@/features/alchemy/shared/config";
 import { TrinketTile } from "@/features/alchemy/shared/ui/collection-art-tiles";
-import { PagedPickerGrid, useArmoryPickerPage } from "./paged-picker-grid";
+import { collectionGridTileWidthClass } from "@/features/alchemy/shared/config";
+import { ArmoryPagedGrid } from "./paged-picker-grid";
+import { formatTrinketEquipAriaLabel, reservedReasonFor } from "./armory-item-state";
+import { ReservedLock } from "./parts/armory-item-chrome";
 
 export function TrinketPickerGrid({
   reservedTrinkets,
@@ -22,30 +21,16 @@ export function TrinketPickerGrid({
   editable: boolean;
   onEquip: (trinketId: string) => void;
 }) {
-  const pageContext = `trinket:${characterId}`;
-  const { grid, pageItems, fillerCount, safePage, totalPages, onPageChange } = useArmoryPickerPage(
-    pageContext,
-    trinkets,
-    trinkets.findIndex((item) => item.id === equippedTrinkets[characterId]),
-  );
-
   return (
-    <PagedPickerGrid
-      grid={grid}
+    <ArmoryPagedGrid
+      items={trinkets}
+      selectedId={equippedTrinkets[characterId]}
+      context={`trinket:${characterId}`}
       testId="armory-trinket-picker"
       swapKey={characterId}
-      isEmpty={trinkets.length === 0}
-      safePage={safePage}
-      totalPages={totalPages}
-      onPageChange={onPageChange}
-      fillerCount={fillerCount}
-      fillerClassName={cn(collectionGridTileWidthClass, gearArtAspectClass)}
-    >
-      {pageItems.map((trinket) => {
+      renderItem={(trinket) => {
         const reservedBy = reservedTrinkets[trinket.id];
-        const reservationReason = reservedBy
-          ? `Reserved for ${characters[reservedBy].name} until their battle ends.`
-          : undefined;
+        const reservationReason = reservedReasonFor(reservedBy ?? null);
         const equippedBy = (Object.entries(equippedTrinkets) as Array<[CharacterId, string | null]>).find(
           ([, id]) => id === trinket.id,
         )?.[0];
@@ -57,22 +42,20 @@ export function TrinketPickerGrid({
               as="button"
               className={collectionGridTileWidthClass}
               ariaDisabled={!editable || Boolean(reservedBy)}
-              chip={reservationReason}
+              chip={reservationReason ?? undefined}
               interactiveChrome={editable && !reservedBy}
               onClick={editable && !reservedBy ? () => onEquip(trinket.id) : undefined}
               ariaLabel={
                 reservationReason
                   ? `${trinket.title}. ${reservationReason}`
-                  : `Equip ${trinket.title}${equippedBy ? ` from ${equippedBy}` : ""}`
+                  : formatTrinketEquipAriaLabel(trinket.title, equippedBy)
               }
             >
-              {reservedBy ? (
-                <Lock aria-hidden="true" className="absolute bottom-3 left-3 z-10 h-6 w-6 text-amber-200" />
-              ) : null}
+              {reservedBy ? <ReservedLock /> : null}
             </TrinketTile>
           </div>
         );
-      })}
-    </PagedPickerGrid>
+      }}
+    />
   );
 }

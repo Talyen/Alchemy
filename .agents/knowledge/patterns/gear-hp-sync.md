@@ -15,7 +15,7 @@ Gear equip/unequip/salvage/crafting mutates `GearStore` and must sync live run h
 
 - `docs/ARMORY.md#write-paths` — `dispatchGearMutationWithRunHealthSync` (outside command) vs `mutateGearWithRunHealthSync(draft, ...)` (inside command); `mutate` receives `GearStore` handle for any character.
 - `src/features/alchemy/shared/stores/gear-session-command.ts` — HP-sync wrappers + `syncRunHealth ?? draft.session.hasActiveRun`.
-- `src/features/alchemy/shared/stores/run-session-write-port.ts` — `rebindLiveRunMeta` call site.
+- `src/features/alchemy/shared/stores/run-meta-rebind.ts` — `rebindLiveRunMeta` definition; callers in `gear-session-command.ts`, `write-port-homestead.ts`, `write-port-meta.ts`, `run-park-restore.ts`.
 - `src/features/alchemy/run-loop/shop/*-shop-commands.ts`, `src/features/alchemy/run-loop/run/run-flow-rewards.ts` — gear grants inside open command use draft variant.
 - `src/app/screen-routes/meta-routes.tsx` via `useArmoryController` — outer dispatch + `flushSaveAfterGearMutation` outside run.
 

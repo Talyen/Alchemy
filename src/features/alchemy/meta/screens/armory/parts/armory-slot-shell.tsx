@@ -20,7 +20,16 @@ export function useArmorySlotHover(key: string) {
     onHoverStart: card.onHoverStart,
     onHoverEnd: card.onHoverEnd,
   });
-  return { ...card, ...popup };
+  return {
+    isHovered: card.isHovered,
+    shimmerActive: card.shimmerActive,
+    shimmerToken: card.shimmerToken,
+    wrapperRef: popup.wrapperRef,
+    showPopup: popup.showPopup,
+    handleHoverStart: popup.handleHoverStart,
+    handleMouseLeave: popup.handleMouseLeave,
+    handleBlur: popup.handleBlur,
+  };
 }
 
 export function armorySlotSurfaceClass(editable: boolean, showShine: boolean) {

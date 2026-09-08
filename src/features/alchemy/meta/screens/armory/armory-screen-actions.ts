@@ -11,7 +11,7 @@ import type { ArmorySalvagePending } from "./armory-screen-types";
 interface TargetingSetters {
   setSalvageMode: (value: boolean) => void;
   setActiveCurrencyId: (value: CraftingCurrencyId | null) => void;
-  setSalvagePending?: (value: ArmorySalvagePending | null) => void;
+  setSalvagePending: (value: ArmorySalvagePending | null) => void;
 }
 
 export function itemsMatchingSlot(inventory: GearInstance[], slot: GearSlot): GearInstance[] {
@@ -21,7 +21,7 @@ export function itemsMatchingSlot(inventory: GearInstance[], slot: GearSlot): Ge
 export function resetArmoryTargeting({ setSalvageMode, setActiveCurrencyId, setSalvagePending }: TargetingSetters) {
   setSalvageMode(false);
   setActiveCurrencyId(null);
-  setSalvagePending?.(null);
+  setSalvagePending(null);
 }
 
 export function applyCurrencyToGear({
