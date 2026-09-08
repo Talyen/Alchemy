@@ -6,253 +6,254 @@ import {
   isSpecialCorruptionCard,
   replaceNumberAt,
 } from "@/lib/corruption";
+import { getCorruptionMutationGroups } from "@/lib/corruption/mutations";
+import { applyNumericCorruption } from "@/lib/corruption/numeric";
+import { cardById, cardLibrary } from "@/lib/game-data";
+import type { CORRUPTION_OUTCOME_WEIGHTS } from "@/lib/game-constants";
 import { makeTestCard } from "../../../fixtures/cards";
-import { makeEffect } from "../../../fixtures/battle";
-import { cardById, type BattleCard } from "@/lib/game-data";
 
 function makeRng(values: number[]): () => number {
   let index = 0;
-  return () => values[index++] ?? values[values.length - 1] ?? 0.99;
+  return () => values[index++] ?? 0;
 }
 
-function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
-  return makeTestCard({
-    id: "slash",
-    title: "Slash",
-    descriptionLines: ["Deal 5 Physical damage"],
-    art: "slash-art",
-    effects: [makeEffect("physical", 5)],
-    ...overrides,
-  });
+function outcome(id: string, kind: keyof typeof CORRUPTION_OUTCOME_WEIGHTS) {
+  const group = getCorruptionMutationGroups(cardById[id]!).find((entry) => entry.kind === kind);
+  expect(group, `${id}: ${kind}`).toBeDefined();
+  return group!.mutations[0]!.card;
 }
 
-describe("card corruption", () => {
-  it.each(["ray-of-frost", "earthquake", "blizzard", "avatar"])(
-    "keeps %s repeated effects aligned with its corrupted description",
-    (id) => {
-      const card = cardById[id]!;
-      const originalEffects = structuredClone(card.effects);
-      const result = corruptCard(card, [card], makeRng([0, 0.9]));
-      expect(result).not.toBeNull();
-      const first = result!.corruptedCard.effects[0]!;
-      const repeat = result!.corruptedCard.effects.find((effect) => effect.kind === "repeat-over-turns");
-      expect(repeat?.kind).toBe("repeat-over-turns");
-      if (repeat?.kind !== "repeat-over-turns") return;
-      expect(repeat.effects[0]).toEqual(first);
-      expect(card.effects).toEqual(originalEffects);
-      if (id === "avatar") expect(repeat.effects[1]).toEqual(originalEffects[1]);
-    },
-  );
-
-  it.each([
-    [0, 0.9],
-    [0.9, 0.1],
-  ])("keeps equal random damage bounds valid with rolls %j", (targetRoll, deltaRoll) => {
-    const selected = makeCard({
-      descriptionLines: ["Deal 3–3 Random damage"],
-      effects: [{ kind: "random-damage", minAmount: 3, maxAmount: 3 }],
-    });
-    const result = corruptCard(selected, [selected], makeRng([targetRoll, deltaRoll]));
-    expect(result).not.toBeNull();
-    expect(result!.corruptedCard.effects[0]).toEqual({ kind: "random-damage", minAmount: 3, maxAmount: 3 });
-    expect(result!.corruptedCard.descriptionLines).toEqual(["Deal 3–3 Random damage"]);
-    expect(selected.corrupted).toBeUndefined();
+describe("card corruption outcomes", () => {
+  it("strengthens ordinary damage proportionally and scarce resources by one", () => {
+    expect(outcome("slash", "strengthen").descriptionLines).toEqual(["Deal 9 Physical damage"]);
+    expect(outcome("slash", "strengthen").effects).toEqual([{ kind: "damage", damageType: "physical", amount: 9 }]);
+    expect(outcome("anvil", "strengthen").descriptionLines).toEqual(["Gain 3 Forge"]);
+    expect(outcome("fireball", "strengthen").descriptionLines).toEqual(["Deal 3 Burn damage"]);
   });
 
-  it("finds editable numeric description targets with matching effects", () => {
-    const targets = getEditableCorruptionTargets(makeCard());
-
-    expect(targets).toHaveLength(1);
-    expect(targets[0].value).toBe(5);
-  });
-
-  it("increments a card description and matching mechanical amount", () => {
-    const rng = makeRng([0, 0.9]);
-
-    const result = corruptCard(makeCard(), [makeCard()], rng);
-    expect(result).not.toBeNull();
-    if (!result) return;
-
-    expect(result.corruptedCard.descriptionLines).toEqual(["Deal 6 Physical damage"]);
-    expect(result.corruptedCard.effects[0]).toMatchObject({ amount: 6 });
-    expect(result.corruptedCard.corrupted).toBe(true);
-    expect(result.corruptedCard.title).toBe("Slash");
-  });
-
-  it("decrements a card description and matching mechanical amount", () => {
-    const rng = makeRng([0, 0.1]);
-
-    const result = corruptCard(makeCard(), [makeCard()], rng);
-    expect(result).not.toBeNull();
-    if (!result) return;
-
-    expect(result.corruptedCard.descriptionLines).toEqual(["Deal 4 Physical damage"]);
-    expect(result.corruptedCard.effects[0]).toMatchObject({ amount: 4 });
-  });
-
-  it("allows corruption to reduce a value to 0", () => {
-    const rng = makeRng([0, 0.1]);
-    const anvil = makeCard({
-      id: "anvil",
-      title: "Anvil",
+  it("weakens damage and can reduce a scarce resource to zero", () => {
+    expect(outcome("slash", "weaken").descriptionLines).toEqual(["Deal 4 Physical damage"]);
+    const card = makeTestCard({
       descriptionLines: ["Gain 1 Forge"],
       effects: [{ kind: "player-status", status: "forge", amount: 1 }],
     });
-
-    const result = corruptCard(anvil, [anvil], rng);
-    expect(result).not.toBeNull();
-    if (!result) return;
-
-    expect(result.corruptedCard.descriptionLines).toEqual(["Gain 0 Forge"]);
-    expect(result.corruptedCard.effects[0]).toMatchObject({ amount: 0 });
+    const next = getCorruptionMutationGroups(card).find((group) => group.kind === "weaken")!.mutations[0]!.card;
+    expect(next.effects).toEqual([{ kind: "player-status", status: "forge", amount: 0 }]);
   });
 
-  it("falls back to transforming cards with no editable numeric description", () => {
-    const rng = makeRng([0, 0, 0.9]);
-    const cleanse = makeCard({
-      id: "cleanse",
-      title: "Cleanse",
-      descriptionLines: ["Remove a harmful status effect"],
-      effects: [{ kind: "remove-harmful-status", amount: 1 }],
-    });
-    const slash = makeCard();
-
-    const result = corruptCard(cleanse, [cleanse, slash], rng);
-    expect(result).not.toBeNull();
-    if (!result) return;
-
-    expect(result.transformed).toBe(true);
-    expect(result.corruptedCard.id).toBe("slash");
-    expect(result.corruptedCard.descriptionLines).toEqual(["Deal 6 Physical damage"]);
+  it("treats reducing Health loss as strengthening", () => {
+    const next = outcome("faustian-bargain", "strengthen");
+    expect(next.descriptionLines[0]).toBe("Lose 1 Health");
+    expect(next.effects[0]).toEqual({ kind: "lose-health", amount: 1 });
   });
 
-  it("excludes mixed potion cards from transform candidates", () => {
-    expect(isSpecialCorruptionCard(makeCard({ id: "mixed-potion" }))).toBe(true);
-    expect(isSpecialCorruptionCard(makeCard({ id: "mixed-potion-123" }))).toBe(true);
-    expect(isSpecialCorruptionCard(makeCard({ id: "slash" }))).toBe(false);
+  it("adds one effect before trailing keywords and marks its number", () => {
+    const next = outcome("fire-arrow", "secondary");
+    expect(next.descriptionLines).toEqual(["Deal 2 Burn damage", "Gain 2 Block", "Archery"]);
+    expect(next.effects[1]).toEqual({ kind: "player-status", status: "block", amount: 2 });
+    expect(next.corruptedValuePositions).toEqual([{ lineIndex: 1, matchIndex: 5 }]);
   });
 
-  it("replaces only the selected deck slot", () => {
-    const rng = makeRng([0.9, 0, 0.9]);
-    const slash = makeCard();
-    const stab = makeCard({
-      id: "stab",
-      title: "Stab",
-      descriptionLines: ["Deal 4 Physical damage"],
-      effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
-    });
-
-    const result = corruptDeckCard([slash, stab], 1, [slash, stab], rng);
-
-    expect(result.deck[0]).toBe(slash);
-    expect(result.deck[1].descriptionLines).toEqual(["Deal 5 Physical damage"]);
-    expect(result.result?.originalCard.id).toBe("stab");
+  it("charges the Health price before granting the larger benefit", () => {
+    const next = outcome("block", "bargain");
+    expect(next.descriptionLines).toEqual(["Lose 2 Health", "Gain 10 Block"]);
+    expect(next.effects).toEqual([
+      { kind: "lose-health", amount: 2 },
+      { kind: "player-status", status: "block", amount: 10 },
+    ]);
+    expect(next.corruptedValuePositions).toEqual([
+      { lineIndex: 1, matchIndex: 5 },
+      { lineIndex: 0, matchIndex: 5 },
+    ]);
   });
 
-  it("transforms when random < 0.1 even with editable targets", () => {
-    const rng = makeRng([0.05, 0, 0, 0.9]);
-    const slash = makeCard();
-    const bash = makeCard({
-      id: "bash",
-      title: "Bash",
-      descriptionLines: ["Deal 8 Physical damage"],
-      effects: [{ kind: "damage", damageType: "physical", amount: 8 }],
-    });
-
-    const result = corruptCard(slash, [slash, bash], rng);
-    expect(result).not.toBeNull();
-    if (!result) return;
-
-    expect(result.transformed).toBe(true);
-    expect(result.corruptedCard.id).toBe("bash");
-    expect(result.corruptedCard.effects[0]).toMatchObject({ amount: 9 });
+  it("converts damage using the new type's magnitude while retaining the card", () => {
+    const group = getCorruptionMutationGroups(cardById.slash!).find((entry) => entry.kind === "convert")!;
+    const next = group.mutations.find(
+      ({ card }) => card.effects[0]?.kind === "damage" && card.effects[0].damageType === "poison",
+    )!.card;
+    expect(next.id).toBe("slash");
+    expect(next.descriptionLines).toEqual(["Deal 2 Poison damage"]);
+    expect(next.effects).toEqual([{ kind: "damage", damageType: "poison", amount: 2 }]);
   });
 
-  it("preserves selectedCard uid when transformed", () => {
-    const rng = makeRng([0.05, 0, 0, 0.9]);
-    const slash = makeCard({ uid: 42 });
-    const bash = makeCard({
-      id: "bash",
-      title: "Bash",
-      descriptionLines: ["Deal 8 Physical damage"],
-      effects: [{ kind: "damage", damageType: "physical", amount: 8 }],
-    });
-
-    const result = corruptCard(slash, [slash, bash], rng);
-    expect(result).not.toBeNull();
-    if (!result) return;
-
-    expect(result.transformed).toBe(true);
-    expect(result.corruptedCard.id).toBe("bash");
-    expect(result.corruptedCard.uid).toBe(42);
+  it.each([
+    ["draw", "Draw 1 Card", { kind: "draw-cards", amount: 1 }],
+    ["mana", "Restore 1 Mana", { kind: "restore-mana", amount: 1 }],
+  ] as const)("adds the %s jackpot without changing Mana cost", (kind, line, effect) => {
+    const next = outcome("slash", kind);
+    expect(next.cost).toBe(cardById.slash!.cost);
+    expect(next.descriptionLines).toEqual(["Deal 6 Physical damage", line]);
+    expect(next.effects[1]).toEqual(effect);
   });
 
-  it("mutates directly when the transform roll reaches 0.1", () => {
-    const rng = makeRng([0.1, 0, 0.9]);
-    const slash = makeCard();
-    const bash = makeCard({
-      id: "bash",
-      title: "Bash",
-      descriptionLines: ["Deal 8 Physical damage"],
-      effects: [{ kind: "damage", damageType: "physical", amount: 8 }],
-    });
-
-    const result = corruptCard(slash, [slash, bash], rng);
-    expect(result).not.toBeNull();
-    if (!result) return;
-
-    expect(result.transformed).toBe(false);
-    expect(result.corruptedCard.id).toBe("slash");
-    expect(result.corruptedCard.effects[0]).toMatchObject({ amount: 6 });
+  it("adds Leech to the actual damage effect", () => {
+    const next = outcome("slash", "leech");
+    expect(next.descriptionLines).toEqual(["Deal 6 Physical damage", "Leech"]);
+    expect(next.effects[0]).toMatchObject({ lifesteal: true });
   });
 
-  it("returns null when the selected card cannot mutate or transform", () => {
-    const rng = makeRng([0]);
-    const cleanse = makeCard({
-      id: "cleanse",
-      title: "Cleanse",
-      descriptionLines: ["Remove a harmful status effect"],
-      effects: [{ kind: "remove-harmful-status", amount: 1 }],
-    });
-    const mixed = makeCard({
-      id: "mixed-potion",
-      title: "Mixed Potion",
-      descriptionLines: ["Deal 5 Physical damage"],
-      effects: [makeEffect("physical", 5)],
-    });
-
-    expect(corruptCard(cleanse, [cleanse, mixed], rng)).toBeNull();
-    expect(corruptDeckCard([cleanse], 0, [cleanse, mixed], rng)).toEqual({ deck: [cleanse], result: null });
+  it("triples a simple effect when adding Consume", () => {
+    const next = outcome("slash", "consume");
+    expect(next.consume).toBe(true);
+    expect(next.descriptionLines).toEqual(["Deal 18 Physical damage", "Consume"]);
+    expect(next.effects[0]).toMatchObject({ amount: 18 });
   });
 
-  it("handles multi-number lines with multiple matching effects accurately", () => {
-    const multiCard = makeCard({
-      id: "split-strike",
-      title: "Split Strike",
-      descriptionLines: ["Deal 3 Physical damage and 5 Bleed"],
-      effects: [makeEffect("physical", 3), { kind: "damage", damageType: "bleed", amount: 5 }],
-    });
-
-    const targets = getEditableCorruptionTargets(multiCard);
-    expect(targets).toHaveLength(2);
-    expect(targets[0]).toMatchObject({ lineIndex: 0, value: 3, effectIndex: 0 });
-    expect(targets[1]).toMatchObject({ lineIndex: 0, value: 5, effectIndex: 1 });
+  it("removes Consume explicitly so it cannot return on hydration", () => {
+    const next = outcome("health-potion", "reusable");
+    expect(next.consume).toBe(false);
+    expect(next.descriptionLines).toEqual(["Restore 8 Health"]);
+    expect(next.effects).toEqual(cardById["health-potion"]!.effects);
   });
 
-  it("skips numbers in description lines that have no corresponding mechanical effect amount", () => {
-    const attackEnemiesCard = makeCard({
-      id: "cleave",
-      title: "Cleave",
-      descriptionLines: ["Deal 6 Physical damage to 2 enemies"],
-      effects: [makeEffect("physical", 6)],
-    });
+  it.each(["haste", "mana-crystals", "mana-potion", "faustian-bargain", "shadowstep", "wolf-companion"])(
+    "does not make %s reusable",
+    (id) => {
+      expect(cardById[id]).toBeDefined();
+      expect(getCorruptionMutationGroups(cardById[id]!).some((group) => group.kind === "reusable")).toBe(false);
+    },
+  );
 
-    const targets = getEditableCorruptionTargets(attackEnemiesCard);
-    expect(targets).toHaveLength(1);
-    expect(targets[0]).toMatchObject({ lineIndex: 0, value: 6, effectIndex: 0 });
+  it.each(["dark-pact", "blood-offering", "mana-potion", "ray-of-frost", "blessed-aegis"])(
+    "does not add draw, Mana, or Consume to complex or resource-generating %s",
+    (id) => {
+      const kinds = getCorruptionMutationGroups(cardById[id]!).map((group) => group.kind);
+      expect(kinds).not.toContain("draw");
+      expect(kinds).not.toContain("mana");
+      expect(kinds).not.toContain("consume");
+    },
+  );
+
+  it("caps added effect text and still supports cards with no numeric targets", () => {
+    const card = makeTestCard({
+      descriptionLines: ["One", "Two", "Three", "Four"],
+      effects: [{ kind: "next-hit-crit" }],
+    });
+    expect(getCorruptionMutationGroups(card)).toEqual([]);
+    const shortCard = { ...card, descriptionLines: ["Your next damaging card is a critical strike"] };
+    expect(getCorruptionMutationGroups(shortCard).map((group) => group.kind)).toEqual(["secondary"]);
+  });
+
+  it.each(["ray-of-frost", "earthquake", "blizzard", "avatar"])("keeps %s repeated effects aligned", (id) => {
+    const card = cardById[id]!;
+    const original = structuredClone(card);
+    const next = outcome(id, "strengthen");
+    const repeat = next.effects.find((effect) => effect.kind === "repeat-over-turns");
+    expect(repeat?.kind).toBe("repeat-over-turns");
+    if (repeat?.kind === "repeat-over-turns") expect(repeat.effects[0]).toEqual(next.effects[0]);
+    expect(card).toEqual(original);
+  });
+
+  it("excludes clamped no-ops from equal random-damage bounds", () => {
+    const card = makeTestCard({
+      descriptionLines: ["Deal 3–3 Random damage"],
+      effects: [{ kind: "random-damage", minAmount: 3, maxAmount: 3 }],
+    });
+    const groups = getCorruptionMutationGroups(card);
+    expect(groups.find((group) => group.kind === "strengthen")!.mutations[0]!.card.descriptionLines).toEqual([
+      "Deal 3–4 Random damage",
+    ]);
+    expect(groups.find((group) => group.kind === "weaken")!.mutations[0]!.card.descriptionLines).toEqual([
+      "Deal 2–3 Random damage",
+    ]);
+  });
+
+  it("preserves catalog inputs and changes something mechanically in every candidate", () => {
+    for (const original of cardLibrary) {
+      const before = structuredClone(original);
+      for (const group of getCorruptionMutationGroups(original)) {
+        for (const { card } of group.mutations) {
+          expect(card.corrupted).toBe(true);
+          expect(card.cost).toBe(original.cost);
+          expect({ effects: card.effects, consume: !!card.consume }).not.toEqual({
+            effects: original.effects,
+            consume: !!original.consume,
+          });
+          for (const pos of card.corruptedValuePositions ?? [])
+            expect(card.descriptionLines[pos.lineIndex]!.slice(pos.matchIndex)).toMatch(/^\d/);
+        }
+      }
+      expect(original).toEqual(before);
+    }
   });
 });
 
+describe("corruption selection", () => {
+  it("selects each eligible family by weight instead of number of variants", () => {
+    const card = cardById.slash!;
+    const groups = getCorruptionMutationGroups(card);
+    const total = groups.reduce((sum, group) => sum + group.weight, 0);
+    let offset = 0;
+    for (const group of groups) {
+      const result = corruptCard(card, [card], makeRng([(offset + group.weight / 2) / total, 0]));
+      expect(result?.corruptedCard).toEqual(group.mutations[0]!.card);
+      offset += group.weight;
+    }
+  });
+
+  it("keeps transformation at ten percent and preserves the selected UID", () => {
+    const slash = { ...cardById.slash!, uid: 42 };
+    const library = [slash, { ...cardById.frostbolt!, uid: 123 }];
+    const transformed = corruptCard(slash, library, makeRng([0.099, 0, 0, 0]));
+    expect(transformed?.transformed).toBe(true);
+    expect(transformed?.corruptedCard).toMatchObject({ id: "frostbolt", uid: 42, corrupted: true });
+    expect(corruptCard(slash, library, makeRng([0.1, 0, 0]))?.transformed).toBe(false);
+  });
+
+  it("rejects another corruption without spending RNG", () => {
+    const card = { ...cardById.slash!, corrupted: true };
+    expect(
+      corruptCard(card, cardLibrary, () => {
+        throw new Error("must not roll");
+      }),
+    ).toBeNull();
+  });
+
+  it("replaces only the selected slot and is deterministic", () => {
+    const deck = [cardById.slash!, cardById.block!];
+    const first = corruptDeckCard(deck, 1, deck, makeRng([0.5, 0, 0]));
+    expect(first.deck[0]).toBe(deck[0]);
+    expect(first.deck[1]).not.toBe(deck[1]);
+    expect(first).toEqual(corruptDeckCard(deck, 1, deck, makeRng([0.5, 0, 0])));
+  });
+
+  it("excludes generated Mixed Potions from transformation", () => {
+    expect(isSpecialCorruptionCard({ id: "mixed-potion-123" })).toBe(true);
+    const slash = cardById.slash!;
+    expect(corruptCard(slash, [slash, { ...slash, id: "mixed-potion" }], makeRng([0]))?.transformed).toBe(false);
+  });
+});
+
+describe("numeric text alignment", () => {
+  it("matches multiple values and ignores unrelated numbers", () => {
+    const card = makeTestCard({
+      descriptionLines: ["Deal 3 Physical and 5 Bleed damage to 2 enemies"],
+      effects: [
+        { kind: "damage", damageType: "physical", amount: 3 },
+        { kind: "damage", damageType: "bleed", amount: 5 },
+      ],
+    });
+    expect(getEditableCorruptionTargets(card)).toMatchObject([
+      { value: 3, effectIndex: 0 },
+      { value: 5, effectIndex: 1 },
+    ]);
+  });
+
+  it("moves existing highlights when the number gains a digit", () => {
+    const card = makeTestCard({
+      descriptionLines: ["Deal 9 Physical and 2 Bleed damage"],
+      effects: [
+        { kind: "damage", damageType: "physical", amount: 9 },
+        { kind: "damage", damageType: "bleed", amount: 2 },
+      ],
+      corruptedValuePositions: [{ lineIndex: 0, matchIndex: 20 }],
+    });
+    const next = applyNumericCorruption(card, getEditableCorruptionTargets(card)[0]!, 1);
+    expect(next.descriptionLines).toEqual(["Deal 10 Physical and 2 Bleed damage"]);
+    expect(next.corruptedValuePositions).toContainEqual({ lineIndex: 0, matchIndex: 21 });
+  });
+});
 describe("replaceNumberAt", () => {
   it("replaces leading number at exact offset without disturbing other numbers", () => {
     const line = "Deal 5 Physical damage and 10 Holy damage";

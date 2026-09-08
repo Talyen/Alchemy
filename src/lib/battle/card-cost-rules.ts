@@ -2,7 +2,7 @@ import { cardHasDamageType, cardHasKeyword, isNatureCard } from "./card-classifi
 import { hasEncounterBenefit } from "./types";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { UNIQUE_GEAR_COMBAT } from "../game-constants";
-import { type BattleCard } from "@/lib/game-data";
+import { getCardKeywords, type BattleCard } from "@/lib/game-data";
 import { isPotionCard } from "@/lib/game-data/cards/card-pools";
 import { type BattleState, type CombatFlags } from "./types";
 
@@ -38,7 +38,7 @@ const FIRST_CARD_FREE_RULES: Array<{
   {
     flag: "firstCompanionCardFreeUsed",
     condition: (state, card) =>
-      state.talentEffects.firstCompanionCardFree && card.effects.some((effect) => effect.kind === "summon-companion"),
+      state.talentEffects.firstCompanionCardFree && getCardKeywords(card).includes("companion"),
   },
   {
     flag: "firstArcheryCardFreeUsed",

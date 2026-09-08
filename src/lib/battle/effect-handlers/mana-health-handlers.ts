@@ -8,8 +8,8 @@ import {
   applyHealingWithCombatText,
   payKillPayouts,
 } from "../combat-text";
-import { dealSelfDamage, getEnemyDamageMultiplier } from "../status-helpers";
-import type { BattleState, CombatTextEvent } from "../types";
+import { dealSelfDamage, getEnemyDamageMultiplier, decayArmorAfterDamage } from "../status-helpers";
+import { addEnemyStatus, type BattleState, type CombatTextEvent } from "../types";
 import { ccDeepenedSinceStart, defineHandler } from "./handler-types";
 import { processEncounterTraitHealthThreshold } from "../encounter-trait-health-threshold";
 import { dealEnemyScaledDamage } from "../gear-effects";
@@ -62,12 +62,15 @@ function burnEnemyOnManaCrystalLoss(
     combatTexts,
     {
       multiplier: getEnemyDamageMultiplier(state, "burn"),
-      riders: (damagedState) =>
-        payKillPayouts(
-          processEncounterTraitHealthThreshold(previousEnemyHealth, damagedState, combatTexts),
+      riders: (damagedState, damage, texts) => {
+        const burning = addEnemyStatus(damagedState, "burn", damage);
+        const decayed = decayArmorAfterDamage(burning, damage, "enemy", texts);
+        return payKillPayouts(
+          processEncounterTraitHealthThreshold(previousEnemyHealth, decayed, texts),
           previousEnemyHealth > 0,
-          combatTexts,
-        ),
+          texts,
+        );
+      },
     },
   );
 }

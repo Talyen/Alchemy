@@ -100,7 +100,7 @@ export function DescriptionLines({
               const offset = partOffsets[index] ?? 0;
               return splitCorruptedNumericParts(part.text, offset, corruptedOffsets).map((frag, fi) =>
                 frag.corrupted ? (
-                  <span key={`${idPrefix}-${lineIndex}-${index}-${fi}`} className="text-shine-corruption">
+                  <span key={`${idPrefix}-${lineIndex}-${index}-${fi}`} className="text-destructive">
                     {frag.text}
                   </span>
                 ) : (

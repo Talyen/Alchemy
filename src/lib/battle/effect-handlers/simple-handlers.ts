@@ -10,11 +10,7 @@ import { defineHandler } from "./handler-types";
 export const applySummonCompanionEffect = defineHandler(
   "summon-companion",
   (state, _card, effect, _potionMult, _combatTexts) => {
-    let nextState: BattleState = { ...state, activeCompanion: companionLibrary[effect.companionId] };
-    if (state.talentEffects.drawOnCompanionCard > 0) {
-      nextState = applyDrawResult(nextState, drawFromState(nextState, state.talentEffects.drawOnCompanionCard));
-    }
-    return nextState;
+    return { ...state, activeCompanion: companionLibrary[effect.companionId] };
   },
 );
 

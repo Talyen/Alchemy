@@ -304,8 +304,6 @@
   border-radius: max(0px, calc(var(--surface-radius) - var(--surface-frame-border-width)));
 }
 
-/* Animated corruption-red gradient for corrupted card values and title prefixes.
-   Repeats its color band around the shared foreground highlight for a seamless loop. */
 .text-shine-corruption {
   background-image: linear-gradient(
     in oklab 90deg,

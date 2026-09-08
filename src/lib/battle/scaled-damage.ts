@@ -14,7 +14,7 @@ export function dealEnemyScaledDamage(
   combatTexts: CombatTextEvent[],
   options: DealEnemyScaledDamageOptions = {},
 ): BattleState {
-  if (baseDamage <= 0) return state;
+  if (baseDamage <= 0 || state.enemyHealth <= 0) return state;
   const pacedDamage = paceCombatMagnitude(state, baseDamage, "player");
   const finalDamage = Math.round(pacedDamage * (options.multiplier ?? 1));
   if (finalDamage > 0) {

@@ -1,31 +1,9 @@
-import { type BattleCard, type BattleCardEffect } from "@/lib/game-data";
-import {
-  CORRUPTION_DELTA_CHANCE,
-  CORRUPTION_MIN_VALUE,
-  CORRUPTION_MUTATION_DELTA,
-  CORRUPTION_TEXT_PATTERNS,
-  CORRUPTION_TRANSFORM_CHANCE,
-  MIXED_POTION_CARD_ID,
-} from "@/lib/game-constants";
+import type { BattleCard } from "@/lib/game-data";
+import { CORRUPTION_TRANSFORM_CHANCE, MIXED_POTION_CARD_ID } from "@/lib/game-constants";
 import { pickRandom } from "@/lib/utils";
+import { getCorruptionMutationGroups, type CorruptionMutationGroup } from "./mutations";
 
-const CORRUPTIBLE_NUMERIC_FIELDS = [
-  "amount",
-  "minAmount",
-  "maxAmount",
-  "perManaCrystal",
-  "convertCurrentMana",
-] as const;
-
-type CorruptibleNumericField = (typeof CORRUPTIBLE_NUMERIC_FIELDS)[number];
-
-export interface CorruptionTarget {
-  lineIndex: number;
-  matchIndex: number;
-  value: number;
-  effectIndex: number;
-  field: CorruptibleNumericField;
-}
+export { getEditableCorruptionTargets, replaceNumberAt } from "./numeric";
 
 export interface CorruptionResult {
   originalCard: BattleCard;
@@ -38,126 +16,14 @@ export function isSpecialCorruptionCard(card: Pick<BattleCard, "id">): boolean {
   return card.id === MIXED_POTION_CARD_ID || card.id.startsWith(`${MIXED_POTION_CARD_ID}-`);
 }
 
-export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget[] {
-  const targets: CorruptionTarget[] = [];
-  const valueQueue = new Map<number, Array<{ effectIndex: number; field: CorruptibleNumericField }>>();
-  for (let idx = 0; idx < card.effects.length; idx += 1) {
-    const effect = card.effects[idx] as Record<string, unknown>;
-    for (const field of CORRUPTIBLE_NUMERIC_FIELDS) {
-      const value = effect[field];
-      if (typeof value !== "number" || !Number.isFinite(value)) continue;
-      if (!valueQueue.has(value)) valueQueue.set(value, []);
-      valueQueue.get(value)!.push({ effectIndex: idx, field });
-    }
+function pickMutation(groups: CorruptionMutationGroup[], rng: () => number) {
+  const total = groups.reduce((sum, group) => sum + group.weight, 0);
+  let roll = rng() * total;
+  for (const group of groups) {
+    roll -= group.weight;
+    if (roll < 0) return pickRandom(group.mutations, rng);
   }
-  const queueCursor = new Map<number, number>();
-
-  card.descriptionLines.forEach((line, lineIndex) => {
-    for (const match of line.matchAll(CORRUPTION_TEXT_PATTERNS.authoredNumber)) {
-      const matchIndex = match.index;
-      if (matchIndex === undefined) continue;
-      const value = Number(match[0]);
-      const queue = valueQueue.get(value);
-      if (!queue) continue;
-      const cursor = queueCursor.get(value) ?? 0;
-      if (cursor >= queue.length) continue;
-      const matched = queue[cursor];
-      if (!matched) continue;
-      queueCursor.set(value, cursor + 1);
-      targets.push({ lineIndex, matchIndex, value, effectIndex: matched.effectIndex, field: matched.field });
-    }
-  });
-
-  return targets;
-}
-
-interface TransformCandidate {
-  card: BattleCard;
-  targets: CorruptionTarget[];
-}
-
-function getTransformCandidates(candidates: BattleCard[]): TransformCandidate[] {
-  const valid: TransformCandidate[] = [];
-  for (const card of candidates) {
-    const targets = getEditableCorruptionTargets(card);
-    if (targets.length > 0) {
-      valid.push({ card, targets });
-    }
-  }
-  return valid;
-}
-
-function cloneCard(card: BattleCard): BattleCard {
-  return {
-    ...card,
-    descriptionLines: [...card.descriptionLines],
-    effects: card.effects.map((effect) => ({ ...effect })),
-  };
-}
-
-export function replaceNumberAt(line: string, matchIndex: number, nextValue: number): string {
-  if (matchIndex < 0 || matchIndex >= line.length) return line;
-  const match = line.slice(matchIndex).match(CORRUPTION_TEXT_PATTERNS.leadingNumber);
-  if (!match) return line;
-  return `${line.slice(0, matchIndex)}${nextValue}${line.slice(matchIndex + match[0].length)}`;
-}
-
-function updateRepeatedCorruption(
-  effect: BattleCardEffect,
-  sourceEffect: BattleCardEffect,
-  field: CorruptibleNumericField,
-  nextValue: number,
-): BattleCardEffect {
-  if (effect.kind !== "repeat-over-turns") return effect;
-  return {
-    ...effect,
-    effects: effect.effects.map((child) =>
-      JSON.stringify(child) === JSON.stringify(sourceEffect)
-        ? { ...child, [field]: nextValue }
-        : updateRepeatedCorruption(child, sourceEffect, field, nextValue),
-    ),
-  };
-}
-
-function applyNumericCorruption(card: BattleCard, target: CorruptionTarget, delta: 1 | -1): BattleCard {
-  const currentLine = card.descriptionLines[target.lineIndex];
-  if (currentLine === undefined) return card;
-
-  let nextValue = Math.max(CORRUPTION_MIN_VALUE, target.value + delta * CORRUPTION_MUTATION_DELTA);
-  const sourceEffect = card.effects[target.effectIndex];
-  if (sourceEffect?.kind === "random-damage") {
-    if (target.field === "minAmount") nextValue = Math.min(nextValue, sourceEffect.maxAmount);
-    if (target.field === "maxAmount") nextValue = Math.max(nextValue, sourceEffect.minAmount);
-  }
-  const nextLine = replaceNumberAt(currentLine, target.matchIndex, nextValue);
-  if (nextLine === currentLine && target.value !== nextValue) return card;
-
-  const nextCard = cloneCard(card);
-  const effect = nextCard.effects[target.effectIndex] as Record<string, unknown> | undefined;
-  if (!effect || effect[target.field] !== target.value) return card;
-
-  nextCard.descriptionLines[target.lineIndex] = nextLine;
-  effect[target.field] = nextValue;
-  if (sourceEffect) {
-    nextCard.effects = nextCard.effects.map((entry) =>
-      updateRepeatedCorruption(entry, sourceEffect, target.field, nextValue),
-    );
-  }
-  nextCard.corrupted = true;
-  const deltaLen = String(nextValue).length - String(target.value).length;
-  const shiftedExisting =
-    deltaLen !== 0
-      ? (card.corruptedValuePositions ?? []).map((pos) =>
-          pos.lineIndex === target.lineIndex && pos.matchIndex > target.matchIndex
-            ? { ...pos, matchIndex: pos.matchIndex + deltaLen }
-            : pos,
-        )
-      : (card.corruptedValuePositions ?? []);
-  nextCard.corruptedValuePositions = [
-    ...shiftedExisting,
-    { lineIndex: target.lineIndex, matchIndex: target.matchIndex },
-  ];
-  return nextCard;
+  return undefined;
 }
 
 export function corruptCard(
@@ -165,47 +31,27 @@ export function corruptCard(
   library: BattleCard[],
   rng: () => number,
 ): CorruptionResult | null {
-  const selectedTargets = getEditableCorruptionTargets(selectedCard);
-  const potentialCandidates = library.filter((card) => card.id !== selectedCard.id && !isSpecialCorruptionCard(card));
-
-  let sourceCard = selectedCard;
-  let targets = selectedTargets;
+  if (selectedCard.corrupted) return null;
+  let groups = getCorruptionMutationGroups(selectedCard);
   let transformed = false;
-
-  const mustTransform = selectedTargets.length === 0;
-  const canAttemptTransform = potentialCandidates.length > 0;
-
-  if (mustTransform || (canAttemptTransform && rng() < CORRUPTION_TRANSFORM_CHANCE)) {
-    const candidates = getTransformCandidates(potentialCandidates);
-    if (candidates.length > 0) {
-      const picked = pickRandom(candidates, rng);
-      if (picked) {
-        sourceCard = picked.card;
-        targets = picked.targets;
-        transformed = true;
-      }
+  const candidates = library.filter(
+    (card) => card.id !== selectedCard.id && !card.corrupted && !isSpecialCorruptionCard(card),
+  );
+  if (groups.length === 0 || (candidates.length > 0 && rng() < CORRUPTION_TRANSFORM_CHANCE)) {
+    const options = candidates.map((card) => getCorruptionMutationGroups(card)).filter((entries) => entries.length > 0);
+    const picked = pickRandom(options, rng);
+    if (picked) {
+      groups = picked;
+      transformed = true;
     }
   }
-
-  if (targets.length === 0) return null;
-
-  const target = pickRandom(targets, rng);
-  if (!target) return null;
-
-  const delta: 1 | -1 = rng() < CORRUPTION_DELTA_CHANCE ? -1 : 1;
-  const corruptedCard = applyNumericCorruption(sourceCard, target, delta);
-  if (corruptedCard === sourceCard) return null;
-
-  if (transformed && selectedCard.uid !== undefined) {
-    corruptedCard.uid = selectedCard.uid;
-  }
-
-  return {
-    originalCard: selectedCard,
-    corruptedCard,
-    transformed,
-    delta,
-  };
+  if (groups.length === 0) return null;
+  const mutation = pickMutation(groups, rng);
+  if (!mutation) return null;
+  const corruptedCard = { ...mutation.card };
+  if (selectedCard.uid !== undefined) corruptedCard.uid = selectedCard.uid;
+  else delete corruptedCard.uid;
+  return { originalCard: selectedCard, corruptedCard, transformed, delta: mutation.delta };
 }
 
 export function corruptDeckCard(
@@ -218,8 +64,5 @@ export function corruptDeckCard(
   if (!selectedCard) throw new Error("Cannot corrupt a missing card");
   const result = corruptCard(selectedCard, library, rng);
   if (!result) return { deck, result: null };
-  return {
-    deck: deck.map((card, index) => (index === cardIndex ? result.corruptedCard : card)),
-    result,
-  };
+  return { deck: deck.map((card, index) => (index === cardIndex ? result.corruptedCard : card)), result };
 }

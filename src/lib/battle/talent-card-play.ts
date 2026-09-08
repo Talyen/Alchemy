@@ -2,6 +2,7 @@ import { getCardKeywords, type BattleCard } from "@/lib/game-data";
 import { addPlayerStatusWithCombatText } from "./combat-text";
 import { addForgeToPlayer, applyPlayerStatusEffect } from "./status-player";
 import { isAttackCard } from "./card-classification";
+import { applyDrawResult, drawFromState } from "./draw";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import { reduceEnemyArmor, type BattleState, type CombatTextEvent } from "./types";
 
@@ -19,6 +20,9 @@ export function prepareTalentCardPlay(state: BattleState, card: BattleCard, comb
     sanguine: attack ? state.flags.sanguinePhysicalBonus : 0,
   };
   let nextState = state;
+  if (keywords.includes("companion") && talents.drawOnCompanionCard > 0) {
+    nextState = applyDrawResult(nextState, drawFromState(nextState, talents.drawOnCompanionCard));
+  }
   if (keywords.includes("holy") && talents.blockOnHolyCard > 0) {
     nextState = applyPlayerStatusEffect(
       nextState,

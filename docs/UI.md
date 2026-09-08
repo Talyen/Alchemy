@@ -209,6 +209,10 @@ full-width action stays in a separate footer. There is no close button, party
 control, or enemy-detail action. Shared screen-header eyebrows use the small text
 size, one step above extra-small.
 
+## Corrupted card text
+
+Corrupted card titles retain the animated red-and-white shine on the “Corrupted” prefix only. Corrupted numerical values use solid `text-destructive` dark red with no animation. Keywords retain their normal colors, including added Leech and Consume; removed Consume disappears without a placeholder. The altar uses the existing card picker and before/after result, with no extra outcome choices or previews.
+
 ## Hover tooltips
 
 Tooltips render through `PortaledTooltip` into the root-space `#tooltip-root`.

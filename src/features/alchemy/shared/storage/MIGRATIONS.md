@@ -131,6 +131,8 @@ When adding a new saved field that gates features (unlocks, meta screens, game m
 - Labyrinth support modifiers reuse node `rewardModifiers` and session/active-run `activeLabyrinthRewardModifiers`; no structural migration is required. Superseded encounter IDs remain loadable and executable, but new Labyrinth rolls exclude them. Battle `encounterBenefits` defaults to `[]`, validates reward IDs, and is cleared outside Labyrinth. Per-turn benefit flags and the once-per-battle Second Wind flag default to false and persist in snapshots and pending result states. Modified Potion effects/descriptions use the existing saved-card contract. Mystery offer hydration applies saved room modifiers to the canonical event, while the already chosen outcome is preserved verbatim to prevent repeat rewards.
 - Battle-only fields that are rebuilt rather than persisted do not affect the save contract. `battleMetrics` is simulation-only, omitted in normal battles, and stripped by `normalizePersistedBattleState`; it requires no save bump.
 
+Expanded Corruption outcomes use existing saved effects, descriptions, highlight positions, and explicit Consume overrides; no schema bump is required. Keep `consume: false` when normalizing or rebuilding persisted cards so a reusable corrupted card cannot regain its catalog Consume flag. Legacy numerical corruption results remain loadable without rerolling.
+
 ## Defaults and resume normalization
 
 Selected additive defaults and screen-scoped normalization rules are listed

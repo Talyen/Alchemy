@@ -22,6 +22,7 @@ import { applyGearCcPhysicalDamage, dealEnemyScaledDamage, scaledGearLeechHeal }
 import { applyLeechHealing, computeLeechHeal, scalePlayerLeechHeal } from "./damage-rider-leech";
 import { detonateEnemyStatuses } from "./dot-resolve";
 import { halveRounded } from "./amount-helpers";
+import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 
 function applyGearBurnBleedMirrorLeech(
   state: BattleState,
@@ -149,7 +150,12 @@ function applyFrozenHeartDamage(state: BattleState, combatTexts: CombatTextEvent
   const enemyWasAlive = state.enemyHealth > 0;
   return dealEnemyScaledDamage(state, state.trinketEffects.frozenHeartDamage, "physical", combatTexts, {
     multiplier: getEnemyDamageMultiplier(state, "physical"),
-    riders: (damagedState) => payKillPayouts(damagedState, enemyWasAlive, combatTexts),
+    riders: (damagedState) =>
+      payKillPayouts(
+        processEncounterTraitHealthThreshold(state.enemyHealth, damagedState, combatTexts),
+        enemyWasAlive,
+        combatTexts,
+      ),
   });
 }
 

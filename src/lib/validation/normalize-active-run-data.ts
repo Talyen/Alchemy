@@ -94,7 +94,7 @@ function toPersistedCard(card: BattleCard): PersistedBattleCard {
     effects: card.effects,
   };
   if (card.uid !== undefined) base.uid = card.uid;
-  if (card.consume) base.consume = true;
+  if (card.consume !== undefined) base.consume = card.consume;
   if (card.corrupted) base.corrupted = true;
   if (card.baseTitle) base.baseTitle = card.baseTitle;
   if (card.corruptedValuePositions) base.corruptedValuePositions = card.corruptedValuePositions;
