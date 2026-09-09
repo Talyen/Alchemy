@@ -10,7 +10,10 @@ async function checkGeneratedFast() {
 if (isMainModule(import.meta.url)) {
   checkGeneratedFast().catch((error) => {
     console.error("Fast generated check failed.");
-    console.error(error instanceof Error ? error.message : error);
+    if (error instanceof AggregateError) {
+      for (const cause of error.errors) console.error(cause instanceof Error ? cause.message : cause);
+    }
+    console.error(error instanceof Error ? (error.cause ?? error.message) : error);
     process.exitCode = 1;
   });
 }

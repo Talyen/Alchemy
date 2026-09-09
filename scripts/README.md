@@ -9,7 +9,7 @@ and this map to locate their implementation owners.
 | Task                                                | Command                                                                       |
 | --------------------------------------------------- | ----------------------------------------------------------------------------- |
 | Full prep (predev library entry over same pipeline) | `node scripts/prepare-assets.mjs` / `npm run assets` (`assets.mjs --prepare`) |
-| Optimize only                                       | `assets.mjs --optimize`                                                       |
+| Optimize only (all assets: art + sounds + music)    | `assets.mjs --optimize` / `npm run assets:optimize`                           |
 | Sync all generated                                  | `node scripts/sync-generated.mjs` / `npm run sync:generated`                  |
 | Fine-grained sync                                   | `sync-generated.mjs --art-only\|--gear-only\|--version-only`                  |
 | Fast barrel check (no transform)                    | `npm run check:generated` (`check-generated-fast.mjs`)                        |
@@ -66,12 +66,17 @@ and release gates also check desktop bundles.
 
 ## Release / changelog (three stages, shared `lib/patch-notes-core.mjs` + `lib/git-release.mjs`)
 
-| Output or operation                    | Implementation owner       |
-| -------------------------------------- | -------------------------- |
-| Developer Unreleased history           | `sync-changelog.mjs`       |
-| Versioned changelog section            | `release-changelog.mjs`    |
-| Player notes from commits and trailers | `generate-patch-notes.mjs` |
-| Release artifact validation            | `verify-release.mjs`       |
+| Output or operation                                          | Implementation owner                                                             |
+| ------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| Developer Unreleased history                                 | `sync-changelog.mjs`                                                             |
+| Versioned changelog section                                  | `release-changelog.mjs`                                                          |
+| Player notes from commits and trailers                       | `generate-patch-notes.mjs`                                                       |
+| Release orchestration (`release`, `release:hotfix --hotfix`) | `release.mjs` → `lib/release-runner.mjs`                                         |
+| Build version stamping                                       | `sync-version-metadata.mjs` (sequenced by `release-runner.mjs` post-bump)        |
+| Release artifact validation                                  | `verify-release.mjs` → `lib/release-checks.mjs`                                  |
+| Tag-vs-package check                                         | `verify-release-version.mjs` (also run locally pre-push by `release-runner.mjs`) |
+| Steam upload                                                 | `steam-upload.mjs`                                                               |
+| Verified build                                               | `build-verified.mjs`                                                             |
 
 [RELEASE](../docs/RELEASE.md#changelog-release-time-only) owns timing, note policy,
 and the release decision flow.
@@ -81,7 +86,8 @@ Desktop: `ensure-electron.mjs` (orchestrator) → `electron-download.mjs` + `ele
 
 ## Audits (periodic sweep, not a push gate)
 
-`npm run audit` runs `audit-all.mjs` by default. Pass a focused selector after
+`npm run audit` runs `audit.mjs`, which dispatches to `audit-all.mjs` with no
+selector. Pass a focused selector after
 the npm separator (`npm run audit -- --types|--amplification|--content|--hotspots`)
 to dispatch one probe instead. Gating probes: knip, depcruise, eslint complexity,
 content-audit. Advisory trend probes (always exit 0):
@@ -91,11 +97,12 @@ evidence and never block handoff.
 
 ## Test / E2E
 
-`npm run test:e2e:route -- <shop|audio|gear|homestead|mystery> [-- extra playwright args]`;
+`npm run test:e2e:route -- <route> [-- extra playwright args]`;
 `test:ship:unit`, `test:e2e:audit` (full timings), `perf`, `balance:sim`, `ci:summarize`.
-Per-route `test:e2e:<name>` scripts are convenience aliases of the same router.
-`ci-summarize-vitest.mjs` / `ci-summarize-playwright.mjs` are the CI entry points
-consumed directly by `.github/workflows/` — not dead shims.
+Every `E2E_ROUTES` entry has a matching `test:e2e:<name>` alias;
+`shop` aliases to `shop-screen`, `homestead-screen` to `homestead`.
+`ci-summarize.mjs --vitest/--playwright/--all` is the single CI summary entry;
+workflows call it directly with the matching flag.
 
 ## Development
 

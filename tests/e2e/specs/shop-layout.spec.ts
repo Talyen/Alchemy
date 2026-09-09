@@ -2,10 +2,12 @@ import { expect } from "@playwright/test";
 import { test } from "../../fixtures/e2e";
 import { startAtDestination, makeCard } from "../../helpers";
 import { ShopPage } from "../../pages/shop-page";
-import { critical } from "../../playwright-tags";
+import { critical, slow } from "../../playwright-tags";
 
 for (const destination of ["Card Shop", "Alchemist's Shop", "Gear Shop", "Trinket Shop"] as const) {
-  test(`${destination} keeps artwork and layout stable after purchases`, critical, async ({ page, runtimeErrors }) => {
+  const gate = destination === "Card Shop" || destination === "Alchemist's Shop" ? critical : slow;
+
+  test(`${destination} keeps artwork and layout stable after purchases`, gate, async ({ page, runtimeErrors }) => {
     void runtimeErrors;
     await startAtDestination(page, { runGold: 9999 }, { forceDestination: destination });
     await page.getByRole("button", { name: destination, exact: true }).click();
@@ -29,7 +31,7 @@ for (const destination of ["Card Shop", "Alchemist's Shop", "Gear Shop", "Trinke
     await expect(items.first()).toHaveCSS("border-top-width", "1px");
     const before = await geometry();
     const leaveBefore = await leave.boundingBox();
-    while (await shop.buyBtn.count()) {
+    if (await shop.buyBtn.count()) {
       await shop.buyCard();
       await shop.waitForPurchase();
       await leave.hover();

@@ -8,6 +8,7 @@ import {
   startBattleWithDeck,
   enableLoadingScreen,
   failOnRuntimeErrors,
+  injectHomestead,
 } from "../../helpers";
 import { test } from "../../fixtures/e2e";
 import { BattlePage } from "../../pages/battle-page";
@@ -143,7 +144,7 @@ test.describe("Options Screen", critical, () => {
   });
 });
 
-animationTest("closing the game menu prevents keyboard navigation during its fade", async ({ page }, testInfo) => {
+animationTest("closing the game menu prevents keyboard navigation during its fade", async ({ page }) => {
   const errors = failOnRuntimeErrors(page);
   const menu = new MenuPage(page);
   await menu.goto();
@@ -151,7 +152,6 @@ animationTest("closing the game menu prevents keyboard navigation during its fad
   await page.getByRole("button", { name: "Open game menu" }).click();
   const panel = page.getByTestId("game-menu");
   await panel.getByRole("button", { name: "Collection", exact: true }).focus();
-  await page.screenshot({ path: testInfo.outputPath("open-menu.png") });
   await page.evaluate(() => {
     document.addEventListener(
       "keydown",
@@ -213,22 +213,27 @@ test.describe("Startup Loading Screen", slow, () => {
   });
 });
 
-test.describe("Talents Screen", critical, () => {
-  test("shows talent overview grid and navigates to keyword tree and back", async ({ page }) => {
+test.describe("Progression Locks", critical, () => {
+  test("clean save gates meta buttons and game-mode tiles", async ({ page }) => {
+    await injectHomestead(page, { finishedRunCharacters: [] });
+    await page.goto("/");
+    await expect(page.getByRole("button", { name: "Talents" })).toHaveAttribute("aria-disabled", "true");
+    await expect(page.getByRole("button", { name: "Homestead" })).toHaveAttribute("aria-disabled", "true");
+    await expect(page.getByRole("button", { name: "Armory" })).toHaveAttribute("aria-disabled", "true");
+
     const menu = new MenuPage(page);
-    await menu.gotoWithUnlockedMeta();
-    await menu.openTalents();
+    await menu.openGameModeSelect();
+    await expect(page.getByRole("button", { name: "The Labyrinth (Locked)" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Wildwood Draft (Locked)" })).toBeVisible();
+  });
 
-    await expect(page.getByRole("heading", { name: "Talents" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Select Burn Talents" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Select Physical Talents" })).toBeVisible();
+  test("finished Rogue and Ranger unlock Labyrinth and Wildwood tiles", async ({ page }) => {
+    await injectHomestead(page, { finishedRunCharacters: ["rogue", "ranger"] });
+    const menu = new MenuPage(page);
+    await menu.goto();
+    await menu.openGameModeSelect();
 
-    await page.getByRole("button", { name: "Select Burn Talents" }).click();
-    await expect(page.getByRole("heading", { name: "Burn" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Back" })).toBeVisible();
-
-    await page.getByRole("button", { name: "Back" }).click();
-    await expect(page.getByRole("heading", { name: "Talents" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Select Burn Talents" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "The Labyrinth", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Wildwood Draft", exact: true })).toBeVisible();
   });
 });

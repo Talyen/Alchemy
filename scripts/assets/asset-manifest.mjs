@@ -12,12 +12,10 @@ export async function validateAssetRegistry(entries, { sourceDir } = {}) {
       sourceDir,
       checkExport: true,
       targetPattern: /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*\.webp$/,
+      label: "Asset registry",
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    throw new Error(message.replace("Registry validation failed:", "Asset registry validation failed:"), {
-      cause: error,
-    });
+    throw new Error(error instanceof Error ? error.message : String(error), { cause: error });
   }
   return entries;
 }

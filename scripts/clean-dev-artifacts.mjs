@@ -4,8 +4,8 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { isMainModule } from "./lib/is-main-module.mjs";
-import { resolveDevPort, STALE_TEST_PORTS } from "./lib/dev-port.mjs";
-import { stopDevServer } from "./stop-dev-server.mjs";
+import { STALE_TEST_PORTS } from "./lib/dev-port.mjs";
+import { stopStaleTestPorts } from "./stop-dev-server.mjs";
 import {
   BUILD_ARTIFACT_DIRS,
   DEFAULT_ARTIFACT_DIRS,
@@ -76,19 +76,6 @@ Default targets:
 }
 
 /**
- * @param {number} port
- * @param {{ dryRun: boolean }} options
- */
-async function stopPort(port, options) {
-  if (options.dryRun) {
-    console.log(`[dry-run] Would stop Alchemy-owned process on port ${port} (if any).`);
-    return;
-  }
-
-  await stopDevServer({ port, projectRoot: rootDir });
-}
-
-/**
  * @param {{ builds?: boolean, processes?: boolean, includeDevPort?: boolean, dryRun?: boolean }} options
  */
 export async function runClean(options = {}) {
@@ -117,18 +104,7 @@ export async function runClean(options = {}) {
   }
 
   if (processes) {
-    const ports = [...STALE_TEST_PORTS];
-    if (includeDevPort) {
-      try {
-        const devPort = resolveDevPort();
-        if (!ports.includes(devPort)) ports.push(devPort);
-      } catch {
-        // A malformed ALCHEMY_DEV_PORT should not block artifact cleanup.
-      }
-    }
-    for (const port of ports) {
-      await stopPort(port, { dryRun });
-    }
+    await stopStaleTestPorts({ projectRoot: rootDir, includeDevPort, dryRun });
   }
 
   if (!dryRun && targets.length > 0) {

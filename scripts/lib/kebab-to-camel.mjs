@@ -8,5 +8,6 @@ export function kebabToCamel(name) {
 }
 
 export function toAssetExportName(target) {
+  if (!target.endsWith(".webp")) throw new Error(`Asset target must end with .webp: "${target}"`);
   return kebabToCamel(target.replace(/\.webp$/, ""));
 }

@@ -71,13 +71,27 @@ declare module "*/generate-patch-notes.mjs" {
 }
 
 declare module "*/release-runner.mjs" {
-  export function parseReleaseArgs(argv: string[]): { dryRun: boolean };
+  export function parseReleaseArgs(argv: string[]): { dryRun: boolean; hotfix: boolean };
   export function runRelease(options: {
     label: string;
     gates: string[][];
     bumpArgs?: string[];
     dryRun?: boolean;
   }): Promise<void>;
+}
+
+declare module "*/release-checks.mjs" {
+  export function verifyReleaseVersionTag(tag: string, version: string): string;
+  export function verifyDesktopPackage(): Promise<void>;
+}
+
+declare module "*/asset-constants.mjs" {
+  export const GENERATED_OUTPUTS: Readonly<{
+    assets: string;
+    gearArt: string;
+    versionMetadata: string;
+  }>;
+  export const PREPARED_ASSET_OUTPUTS: readonly string[];
 }
 
 declare module "*/desktop-artifact.mjs" {
@@ -223,7 +237,7 @@ interface VitestSummary {
   failures: VitestFailure[];
 }
 
-declare module "*/ci-summarize-vitest.mjs" {
+declare module "*/vitest-summary.mjs" {
   export function summarizeVitestReport(report: unknown, options?: { maxFailures?: number }): VitestSummary;
   export function formatVitestSummaryMarkdown(summary: VitestSummary): string;
   export function summarizeVitestFile(reportPath: string): string;
@@ -641,6 +655,7 @@ declare module "*/audit.mjs" {
     hasContent: boolean;
     hasHotspots: boolean;
     hasAll: boolean;
+    forwardedArgs: string[];
   }
   export function parseAuditArgs(argv: string[]): AuditSelection;
   export function resolveAuditScript(parsed: AuditSelection, hasArgs: boolean): string | null;

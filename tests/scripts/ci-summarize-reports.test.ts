@@ -3,7 +3,7 @@ import {
   formatVitestSummaryMarkdown,
   summarizeVitestFile,
   summarizeVitestReport,
-} from "../../scripts/ci-summarize-vitest.mjs";
+} from "../../scripts/lib/vitest-summary.mjs";
 import { parseSummaryArgs } from "../../scripts/ci-summarize.mjs";
 import {
   collectPlaywrightTests,
@@ -24,7 +24,7 @@ import path from "node:path";
 import { formatRecentRun, parseShowRunsArgs, readRecentRuns } from "../../scripts/show-runs.mjs";
 import PlaywrightRunReporter from "../../scripts/lib/playwright-run-reporter.mjs";
 
-describe("ci-summarize-vitest", () => {
+describe("ci-summarize (vitest)", () => {
   it("resolves defaults and positional paths for single and combined modes", () => {
     expect(parseSummaryArgs(["--vitest"])).toMatchObject({
       vitest: true,
@@ -97,7 +97,7 @@ describe("ci-summarize-vitest", () => {
   });
 });
 
-describe("ci-summarize-playwright", () => {
+describe("ci-summarize (playwright)", () => {
   it("prints a self-identifying final summary", () => {
     const priorRunId = process.env.ALCHEMY_RUN_ID;
     process.env.ALCHEMY_RUN_ID = "playwright-reporter-run";

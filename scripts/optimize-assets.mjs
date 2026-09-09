@@ -4,25 +4,17 @@ import path from "node:path";
 import sharp from "sharp";
 
 import { staticAssets, validateAssetRegistry } from "./assets/asset-manifest.mjs";
-import {
-  isOutputFresh,
-  processManifestEntries,
-  removeOrphanOutputs,
-  resolveSourceHash,
-  withOutputHash,
-  writeManifestIfChanged,
-} from "./lib/asset-manifest-cache.mjs";
+import { commitManifest, processFreshEntry, processManifestEntries } from "./lib/asset-manifest-cache.mjs";
 import {
   ART_TRANSFORM_CONCURRENCY,
   ASSET_SCHEMA_VERSION,
   GEAR_SLOT_IDS,
   MANIFEST_BASENAME,
-  QUALITY,
   SHARP_DEFAULTS,
-  WIDTH,
+  artPreset,
 } from "./lib/asset-constants.mjs";
-import { formatProcessError } from "./lib/process-helpers.mjs";
-import { runAudioScript } from "./lib/audio-optimizer.mjs";
+import { failedOptimizeResult, targetErrorHandler } from "./lib/process-helpers.mjs";
+import { runPipelineScript } from "./lib/audio-optimizer.mjs";
 import { getOptimizedManifestPath, resolveRootDir } from "./lib/sync-generated-helpers.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
@@ -34,8 +26,12 @@ const manifestPath = getOptimizedManifestPath(rootDir);
 const SCHEMA_VERSION = ASSET_SCHEMA_VERSION;
 const TRANSFORM_CONCURRENCY = ART_TRANSFORM_CONCURRENCY;
 
-const gearAssetWidth = WIDTH.gear;
-const gearAssetQuality = QUALITY.gear;
+const gearPreset = artPreset("gear");
+const gearAssetWidth = gearPreset.width;
+const gearAssetQuality = gearPreset.quality;
+
+/** OS metadata files are never authoring sources. */
+const IGNORED_SOURCE_FILES = new Set(["thumbs.db", "desktop.ini", ".ds_store"]);
 
 function slugifyGearName(name) {
   return name
@@ -46,12 +42,27 @@ function slugifyGearName(name) {
 }
 
 async function discoverFiles({ dir, pattern, validate }) {
-  const entries = await readdir(dir, { withFileTypes: true });
+  let entries;
+  try {
+    entries = await readdir(dir, { withFileTypes: true });
+  } catch (error) {
+    if (error?.code === "ENOENT") {
+      const wrapped = new Error(
+        `Missing Raw Assets source "${dir}". This checkout may exclude raw sources; asset prep requires the full Raw Assets/ tree.`,
+        { cause: error },
+      );
+      wrapped.code = error.code;
+      wrapped.path = error.path ?? dir;
+      throw wrapped;
+    }
+    throw error;
+  }
 
   const discovered = [];
   for (const entry of entries) {
     if (!entry.isFile()) continue;
     if (entry.name.startsWith(".")) continue;
+    if (IGNORED_SOURCE_FILES.has(entry.name.toLowerCase())) continue;
     const match = entry.name.match(pattern);
     if (!match) {
       const skip = validate.skip?.(entry.name);
@@ -128,6 +139,12 @@ function artTransformSettings({ width, quality }) {
   };
 }
 
+function applyArtTransform(image, settings) {
+  return image
+    .resize({ width: settings.width, fit: settings.fit, withoutEnlargement: settings.withoutEnlargement })
+    .webp({ quality: settings.quality, alphaQuality: settings.alphaQuality, effort: settings.effort });
+}
+
 /**
  * @param {{ source: string, target: string, width: number, quality: number }} asset
  * @param {import("./lib/asset-manifest-cache.mjs").ManifestEntry | undefined} storedEntry
@@ -135,23 +152,12 @@ function artTransformSettings({ width, quality }) {
 async function optimizeAsset(asset, storedEntry) {
   const sourcePath = path.join(sourceDir, asset.source);
   const outputPath = path.join(outputDir, asset.target);
-  const sourceEntry = await resolveSourceHash(
-    sourcePath,
-    artTransformSettings({ width: asset.width, quality: asset.quality }),
-    SCHEMA_VERSION,
+  const settings = artTransformSettings({ width: asset.width, quality: asset.quality });
+
+  const { fresh, entry } = await processFreshEntry(sourcePath, outputPath, settings, SCHEMA_VERSION, storedEntry, () =>
+    applyArtTransform(sharp(sourcePath), settings).toFile(outputPath),
   );
-
-  const isFresh = await isOutputFresh(outputPath, storedEntry, sourceEntry.hash);
-  if (isFresh) {
-    return { message: `${asset.target} already up to date`, entry: storedEntry };
-  }
-
-  await sharp(sourcePath)
-    .resize({ width: asset.width, fit: SHARP_DEFAULTS.fit, withoutEnlargement: SHARP_DEFAULTS.withoutEnlargement })
-    .webp({ quality: asset.quality, alphaQuality: SHARP_DEFAULTS.alphaQuality, effort: SHARP_DEFAULTS.effort })
-    .toFile(outputPath);
-
-  return { message: `${asset.target} optimized`, entry: await withOutputHash(sourceEntry, outputPath) };
+  return { message: `${asset.target} ${fresh ? "already up to date" : "optimized"}`, entry };
 }
 
 export async function optimizeAssets() {
@@ -167,28 +173,18 @@ export async function optimizeAssets() {
     manifestPath,
     concurrency: TRANSFORM_CONCURRENCY,
     processEntry: optimizeAsset,
-    handleError: (asset, error) => formatProcessError(asset.target, error),
+    handleError: targetErrorHandler,
   });
 
   if (failed) {
-    console.warn("Skipping art manifest write and orphan sweep because art optimization failed.");
-    return {
-      ok: false,
-      error: results
-        .filter((result) => result.failed)
-        .map((result) => result.message)
-        .join(" "),
-    };
+    return failedOptimizeResult(results, "art manifest write and orphan sweep");
   }
 
-  await writeManifestIfChanged(manifestPath, nextManifest);
-  const removed = await removeOrphanOutputs(outputDir, new Set(Object.keys(nextManifest)), {
+  await commitManifest(manifestPath, nextManifest, {
+    outputDir,
     manifestBasename: MANIFEST_BASENAME,
     label: "optimized asset",
   });
-  if (removed > 0) {
-    console.log(`Removed ${removed} orphan optimized assets.`);
-  }
 
   console.log(
     `Optimized ${results.length} art assets (${gearAssets.length} gear, ${gearSlotBackgrounds.length} gear slot backgrounds).`,
@@ -197,5 +193,5 @@ export async function optimizeAssets() {
 }
 
 if (isMainModule(import.meta.url)) {
-  runAudioScript("Asset optimization", optimizeAssets);
+  runPipelineScript("Asset optimization", optimizeAssets);
 }

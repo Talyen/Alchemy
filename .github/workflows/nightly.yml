@@ -76,7 +76,7 @@ jobs:
 
       - name: Summarize web e2e shard
         if: always()
-        run: node scripts/ci-summarize-playwright.mjs
+        run: node scripts/ci-summarize.mjs --playwright
 
       - name: Upload Playwright report
         if: failure()
@@ -128,7 +128,7 @@ jobs:
 
       - name: Summarize Electron e2e
         if: always()
-        run: node scripts/ci-summarize-playwright.mjs reports/playwright-electron-results.json
+        run: node scripts/ci-summarize.mjs --playwright reports/playwright-electron-results.json
 
       - name: Upload Electron Playwright report
         if: failure()

@@ -6,6 +6,9 @@ import {
   makeCard,
   seedRandom,
   boxesOverlap,
+  AEGIS_CARD,
+  BLOCK_CARD,
+  ANVIL_CARD,
 } from "../../helpers";
 import { BattlePage } from "../../pages/battle-page";
 import { test } from "../../fixtures/e2e";
@@ -127,5 +130,36 @@ test.describe("Battle Autoplay", critical, () => {
         return mana < manaBefore || enemy < enemyBefore;
       })
       .toBe(true);
+  });
+});
+
+test.describe("Block and Status Invariants", critical, () => {
+  test("blessed aegis plays against a live block value", async ({ page, fastBattle, runtimeErrors }) => {
+    void fastBattle;
+    void runtimeErrors;
+
+    await startBattleWithDeck(page, [BLOCK_CARD, AEGIS_CARD, BLOCK_CARD, AEGIS_CARD, BLOCK_CARD, AEGIS_CARD]);
+    const battle = new BattlePage(page);
+
+    await battle.playCardNamed("Block");
+    await expect.poll(async () => battle.block(), { timeout: 8000 }).toBeGreaterThan(0);
+    const blockBeforeAegis = await battle.block();
+
+    await battle.playCardNamed("Blessed Aegis");
+    await expect.poll(async () => battle.enemyHealth(), { timeout: 10_000 }).toBeLessThan(30);
+    await expect.poll(async () => battle.block(), { timeout: 5000 }).toBe(blockBeforeAegis);
+  });
+
+  test("forge status persists across end turn", async ({ page, fastBattle, runtimeErrors }) => {
+    void fastBattle;
+    void runtimeErrors;
+    await startBattleWithDeck(page, [ANVIL_CARD, ANVIL_CARD, ANVIL_CARD, ANVIL_CARD, ANVIL_CARD, ANVIL_CARD]);
+    const battle = new BattlePage(page);
+
+    await battle.playCardNamed("Anvil");
+    await expect(page.getByRole("button", { name: "Forge 1" })).toBeVisible();
+
+    await battle.endTurn();
+    await expect(page.getByRole("button", { name: /Forge/ })).toHaveCount(1);
   });
 });

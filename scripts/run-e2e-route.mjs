@@ -33,7 +33,7 @@ export const E2E_ROUTES = Object.freeze({
   }),
   talents: Object.freeze({
     label: "talents Playwright flow",
-    args: ["playwright", "test", "tests/e2e/specs/menu-navigation.spec.ts", "-g", "Talents", "--project", "chromium"],
+    args: ["playwright", "test", "tests/e2e/specs/talents-flow.spec.ts", "--project", "chromium"],
   }),
   options: Object.freeze({
     label: "options Playwright flow",
@@ -49,7 +49,15 @@ export const E2E_ROUTES = Object.freeze({
   }),
   locks: Object.freeze({
     label: "progression locks Playwright flow",
-    args: ["playwright", "test", "tests/e2e/specs/progression-locks.spec.ts", "--project", "chromium"],
+    args: [
+      "playwright",
+      "test",
+      "tests/e2e/specs/menu-navigation.spec.ts",
+      "-g",
+      "Progression Locks",
+      "--project",
+      "chromium",
+    ],
   }),
   "shop-screen": Object.freeze({
     label: "shop Playwright flow",
@@ -101,10 +109,13 @@ function canonicalRouteNames() {
 }
 
 function printHelp() {
+  const aliases = Object.entries(E2E_ROUTE_ALIASES)
+    .map(([alias, route]) => `${alias} aliases to ${route}`)
+    .join(", ");
   console.log(`Usage: node scripts/run-e2e-route.mjs <route> [extra playwright args]
 
 Routes: ${canonicalRouteNames().join(", ")}
-  shop aliases to shop-screen
+  ${aliases}
 
 Examples:
   npm run test:e2e:route -- shop

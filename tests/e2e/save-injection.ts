@@ -149,6 +149,7 @@ function buildActiveRunSave(overrides: Record<string, unknown>) {
     ...(typeof selectedAspectRatio === "string" ? { selectedAspectRatio } : {}),
     activeRun: {
       characterId: "knight",
+      contentSystemType: "campaign",
       runDeck: [],
       runPlayerHealth: 30,
       runMaxHealth: 30,

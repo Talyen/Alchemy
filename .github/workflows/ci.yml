@@ -164,7 +164,7 @@ jobs:
 
       - name: Summarize unit tests
         if: always()
-        run: node scripts/ci-summarize-vitest.mjs
+        run: node scripts/ci-summarize.mjs --vitest
 
       - uses: actions/upload-artifact@v7
         if: failure()
@@ -241,7 +241,7 @@ jobs:
 
       - name: Summarize e2e tests
         if: always()
-        run: node scripts/ci-summarize-playwright.mjs reports/playwright-results-${{ matrix.shard }}.json
+        run: node scripts/ci-summarize.mjs --playwright reports/playwright-results-${{ matrix.shard }}.json
 
       - name: Upload Playwright report
         if: failure()
@@ -325,7 +325,7 @@ jobs:
 
       - name: Summarize save journeys
         if: always()
-        run: node scripts/ci-summarize-playwright.mjs
+        run: node scripts/ci-summarize.mjs --playwright
 
       - name: Upload save failure report
         if: failure()
@@ -410,7 +410,7 @@ jobs:
 
       - name: Summarize Electron e2e
         if: always()
-        run: node scripts/ci-summarize-playwright.mjs reports/playwright-electron-results.json
+        run: node scripts/ci-summarize.mjs --playwright reports/playwright-electron-results.json
 
       - name: Upload Electron Playwright report
         if: failure()

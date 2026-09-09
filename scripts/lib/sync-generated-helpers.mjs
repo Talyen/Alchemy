@@ -33,6 +33,14 @@ export function resolveRootDir(importMetaUrl) {
   return path.resolve(path.dirname(fileURLToPath(importMetaUrl)), "..");
 }
 
+/**
+ * Strict barrel-side manifest reader. Intentionally stricter than
+ * loadManifest (which returns {} on ENOENT/corrupt to trigger a full
+ * rebuild): sync must never silently regenerate barrels from an empty set,
+ * so malformed/empty manifests and missing required targets throw with the
+ * manifest path attached. Filesystem read/stat errors propagate raw so
+ * callers (and tests) see the original code/path.
+ */
 export async function readArtManifest(manifestPath) {
   const raw = await readFile(manifestPath, "utf8");
   let manifest;

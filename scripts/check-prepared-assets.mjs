@@ -4,19 +4,13 @@ import { mkdir, readFile, readdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { isMainModule } from "./lib/is-main-module.mjs";
+import { PREPARED_ASSET_OUTPUTS } from "./lib/asset-constants.mjs";
 import { resolveRootDir } from "./lib/sync-generated-helpers.mjs";
 import { prepareAssets } from "./prepare-assets.mjs";
 
 const rootDir = resolveRootDir(import.meta.url);
 
-const PREPARED_ASSET_OUTPUTS = Object.freeze([
-  "src/assets/optimized",
-  "public/sounds",
-  "public/Music",
-  "src/lib/game-data/assets.generated.ts",
-  "src/lib/game-data/gear-art.ts",
-  "src/lib/validation/metadata.generated.ts",
-]);
+const PREPARED_ASSET_OUTPUT_LIST = PREPARED_ASSET_OUTPUTS;
 
 /** @typedef {Map<string, Buffer>} AssetSnapshot */
 /** @typedef {Map<string, string>} HashSnapshot */
@@ -42,7 +36,7 @@ async function snapshotPath(relativePath, snapshot) {
 async function outputSnapshot() {
   /** @type {AssetSnapshot} */
   const snapshot = new Map();
-  for (const relativePath of PREPARED_ASSET_OUTPUTS) await snapshotPath(relativePath, snapshot);
+  for (const relativePath of PREPARED_ASSET_OUTPUT_LIST) await snapshotPath(relativePath, snapshot);
   return snapshot;
 }
 

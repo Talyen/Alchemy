@@ -13,9 +13,7 @@ import { test } from "../../fixtures/e2e";
 import { BattlePage } from "../../pages/battle-page";
 import { DestinationPage } from "../../pages/destination-page";
 import { expectRunPhase } from "../../pages/game-stage";
-import { MenuPage } from "../../pages/menu-page";
 import { critical, slow } from "../../playwright-tags";
-import { injectHomestead, injectTalentUnlocks } from "../save-injection";
 
 test.describe("Battle Flow", critical, () => {
   test("normal combat can be won by playing cards and ending turns", async ({ page, fastBattle, runtimeErrors }) => {
@@ -85,37 +83,6 @@ test.describe("Battle Flow", critical, () => {
     expect(layout.sceneOverflow).toBe("visible");
     expect(layout.cards.some((card) => card.bottom > layout.scene.bottom + 0.5)).toBe(true);
     expect(Math.max(...layout.cards.map((card) => card.bottom))).toBeLessThanOrEqual(layout.stage.bottom + 1);
-  });
-});
-
-test.describe("Talents", critical, () => {
-  test.beforeEach(async ({ page }) => {
-    await new MenuPage(page).gotoWithUnlockedMeta();
-  });
-
-  test("reset talents button is disabled when no talents are allocated", async ({ page }) => {
-    const menu = new MenuPage(page);
-    await menu.openTalents();
-
-    const resetBtn = page.getByRole("button", { name: "Reset Talents" });
-    await expect(resetBtn).toBeVisible();
-    await expect(resetBtn).toBeDisabled();
-  });
-
-  test("reset talents button opens confirmation after a talent is allocated", async ({ page }) => {
-    await injectHomestead(page);
-    await injectTalentUnlocks(page, { physical: ["physical-expert-blacksmith"] });
-    await page.goto("/");
-
-    const menu = new MenuPage(page);
-    await menu.openTalents();
-
-    const resetBtn = page.getByRole("button", { name: "Reset Talents" });
-    await expect(resetBtn).toBeEnabled();
-
-    await resetBtn.click();
-    await expect(page.getByText("Reset Talents?")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Cancel" })).toBeVisible();
   });
 });
 

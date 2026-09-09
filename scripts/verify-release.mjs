@@ -1,21 +1,22 @@
 #!/usr/bin/env node
 /** Release gate: tag matches package.json version + packaged desktop integrity. */
-import { spawnSync } from "node:child_process";
-
+import { verifyDesktopPackage, verifyReleaseVersionTag } from "./lib/release-checks.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
+import { readRepoPackageJson } from "./lib/repo-package.mjs";
 
-function run(label, args) {
-  console.log(`\n== ${label} ==`);
-  const result = spawnSync("node", args, { stdio: "inherit", shell: process.platform === "win32" });
-  return result.status ?? 1;
-}
-
-function main() {
-  const versionCode = run("release tag", ["scripts/verify-release-version.mjs"]);
-  if (versionCode !== 0) return versionCode;
-  return run("desktop package", ["scripts/verify-desktop-package.mjs"]);
+export async function verifyRelease() {
+  const pkg = readRepoPackageJson();
+  const tag = process.env.RELEASE_TAG ?? process.env.GITHUB_REF_NAME ?? "";
+  console.log("\n== release tag ==");
+  verifyReleaseVersionTag(tag, pkg.version);
+  console.log(`Release tag matches package.json version ${pkg.version}`);
+  console.log("\n== desktop package ==");
+  await verifyDesktopPackage();
 }
 
 if (isMainModule(import.meta.url)) {
-  process.exitCode = main();
+  verifyRelease().catch((error) => {
+    console.error(error instanceof Error ? error.message : error);
+    process.exitCode = 1;
+  });
 }

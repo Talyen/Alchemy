@@ -17,7 +17,11 @@ export async function syncGenerated({ check = false, artOnly = false, gearOnly =
     await syncVersionMetadata({ check });
     return;
   }
-  await Promise.all([syncArtBarrels({ check }), syncVersionMetadata({ check })]);
+  const results = await Promise.allSettled([syncArtBarrels({ check }), syncVersionMetadata({ check })]);
+  const failures = results.filter((result) => result.status === "rejected").map((result) => result.reason);
+  if (failures.length > 0) {
+    throw new AggregateError(failures, failures.map(String).join(" "));
+  }
 }
 
 function printHelp() {

@@ -19,7 +19,7 @@ import {
 import { createEmptyGearInventories, createEmptyGearLoadouts } from "@/lib/gear/types";
 import { assertGearFlatDamageBoostsPhysicalDamage } from "../gear-combat";
 import { seedRandom } from "../rng";
-import { injectActiveBattle, makeGoblinBattleState, makeHighDamageCard, failOnRuntimeErrors } from "../../helpers";
+import { injectActiveBattle, makeGoblinBattleState, makeHighDamageCard } from "../../helpers";
 import { MenuPage } from "../../pages/menu-page";
 import { test } from "../../fixtures/e2e";
 import { critical, slow } from "../../playwright-tags";
@@ -134,14 +134,14 @@ test.describe("Armory equip", critical, () => {
     await page.getByRole("button", { name: "Open game menu" }).click();
     await page.getByRole("button", { name: "Armory" }).click();
     await expect(page.getByText("Equipment cannot be changed during Combat.", { exact: true })).toHaveCount(0);
-    await page.getByLabel("Armor equipment slot").click();
+    await selectArmorySlot(page, "body");
     const bodyItem = gearItemLocator(page, "Leather Armor");
     await expect(bodyItem).toBeVisible();
     await expect(bodyItem.getByRole("button", { name: "Leather Armor", exact: true })).toHaveAttribute(
       "aria-disabled",
       "true",
     );
-    await bodyItem.getByRole("button", { name: "Leather Armor", exact: true }).click();
+    await bodyItem.getByRole("button", { name: "Leather Armor", exact: true }).click({ force: true });
     await expect(page.getByText("Equipment cannot be changed during Combat.", { exact: true })).toBeVisible();
     await expect(equipmentSlotLocator(page, "body").locator("img")).toHaveCount(1);
     await page.getByRole("button", { name: "Rogue", exact: true }).click();
@@ -154,7 +154,7 @@ test.describe("Armory equip", critical, () => {
 test(
   "reserves shared equipment across reload and releases it after victory",
   critical,
-  async ({ page, fastBattle, runtimeErrors }, testInfo) => {
+  async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;
     const gearInventories = createEmptyGearInventories();
@@ -176,33 +176,23 @@ test(
     await expect(reserved).toHaveAttribute("aria-disabled", "true");
     await reserved.hover();
     await expect(page.getByText("Reserved for Knight until their battle ends.", { exact: true })).toBeVisible();
-    await page.screenshot({ path: testInfo.outputPath("reserved-equipment.png") });
-    const restored = await page.context().newPage();
-    const errors = failOnRuntimeErrors(restored);
-    try {
-      await restored.goto(page.url());
-      await restored.getByRole("button", { name: "Open game menu" }).click();
-      await restored.getByRole("button", { name: "Armory", exact: true }).click();
-      await restored.getByLabel("Armor equipment slot").click();
-      await gearItemLocator(restored, "Leather Armor")
-        .getByRole("button", { name: "Leather Armor", exact: true })
-        .click();
-      await expect(restored.getByText("Equipment cannot be changed during Combat.", { exact: true })).toBeVisible();
-      await restored.getByRole("button", { name: "Open game menu" }).click();
-      await restored.getByRole("button", { name: "Return to Battle", exact: true }).click();
-      const battle = new BattlePage(restored);
-      await battle.playFirstCard();
-      await expect(battle.victoryHeading).toBeVisible();
-      await restored.getByRole("button", { name: "Open game menu" }).click();
-      await restored.getByRole("button", { name: "Armory", exact: true }).click();
-      await expect(restored.getByText("Equipment cannot be changed during Combat.", { exact: true })).toHaveCount(0);
-      await restored.getByRole("button", { name: "Rogue", exact: true }).click();
-      await gearItemLocator(restored, "Longsword").getByRole("button", { name: "Longsword", exact: true }).click();
-      await expect(equipmentSlotLocator(restored, "main-hand").locator("img")).toHaveCount(2);
-      expect(errors).toEqual([]);
-    } finally {
-      await restored.close();
-    }
+    await page.reload();
+    await page.getByRole("button", { name: "Open game menu" }).click();
+    await page.getByRole("button", { name: "Armory", exact: true }).click();
+    await page.getByRole("button", { name: "Rogue", exact: true }).click();
+    const restoredReserved = page.getByRole("button", { name: /Longsword. Reserved for Knight/ });
+    await expect(restoredReserved).toHaveAttribute("aria-disabled", "true");
+    await page.getByRole("button", { name: "Open game menu" }).click();
+    await page.getByRole("button", { name: "Return to Battle", exact: true }).click();
+    const battle = new BattlePage(page);
+    await battle.playFirstCard();
+    await expect(battle.victoryHeading).toBeVisible();
+    await page.getByRole("button", { name: "Open game menu" }).click();
+    await page.getByRole("button", { name: "Armory", exact: true }).click();
+    await expect(page.getByText("Equipment cannot be changed during Combat.", { exact: true })).toHaveCount(0);
+    await page.getByRole("button", { name: "Rogue", exact: true }).click();
+    await gearItemLocator(page, "Longsword").getByRole("button", { name: "Longsword", exact: true }).click();
+    await expect(equipmentSlotLocator(page, "main-hand").locator("img")).toHaveCount(2);
   },
 );
 

@@ -149,6 +149,8 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
     const started = Date.now();
     const runnerResult = await runner(definition.label, definition.command, definition.args, env);
     if (definition.key === "verification" && !options.runner) {
+      // Intentional nesting: verify owns its run record and selection policy;
+      // check links verify/summary.json so reuse provenance survives handoff.
       const verificationSummary = path.join(ROOT, "reports/runs", runId, "verify/summary.json");
       if (fs.existsSync(verificationSummary)) artifacts.push({ path: verificationSummary, role: "secondary" });
     }

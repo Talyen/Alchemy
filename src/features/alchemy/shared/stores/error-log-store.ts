@@ -80,18 +80,17 @@ export function parsePersistedErrorLog(raw: string | null): LoggedError[] {
 }
 
 function loadPersisted(): LoggedError[] {
+  if (typeof window === "undefined" || typeof localStorage === "undefined") return [];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    const errors = parsePersistedErrorLog(raw);
-    if (raw && JSON.stringify(errors) !== raw) persist(errors);
-    return errors;
+    return parsePersistedErrorLog(raw);
   } catch {
-    persist([]);
     return [];
   }
 }
 
 function persist(errors: LoggedError[]): void {
+  if (typeof window === "undefined" || typeof localStorage === "undefined") return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(errors));
   } catch {}
@@ -99,12 +98,16 @@ function persist(errors: LoggedError[]): void {
 
 let nextId = 0;
 
+function createLoggedErrorId(): string {
+  return `err_${Date.now()}_${nextId++}_${Math.random().toString(36).slice(2, 7)}`;
+}
+
 export const useErrorLogStore = create<ErrorLogStore>()((set) => ({
   errors: loadPersisted(),
 
   pushError: (entry: LogEntry) => {
     set((s) => {
-      const id = `err_${Date.now()}_${nextId++}`;
+      const id = createLoggedErrorId();
       const logged: LoggedError = {
         id,
         timestamp: Date.now(),

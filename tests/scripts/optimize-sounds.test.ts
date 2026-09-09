@@ -121,7 +121,10 @@ describe("sound manifest publication", () => {
     await writeFile(path.join(outputDir, "generated.mp3"), "corrupt output");
     fixture.convert.mockRejectedValue(new Error("encoder failed"));
     vi.mocked(writeFile).mockClear();
-    await expect(optimizeSounds()).rejects.toThrow("encoder failed");
+    await expect(optimizeSounds()).resolves.toMatchObject({
+      ok: false,
+      error: expect.stringContaining("encoder failed"),
+    });
     expect(await readFile(manifestPath, "utf8")).toBe(before);
     expect(manifestWrites()).toHaveLength(0);
     expect(await readFile(path.join(outputDir, "orphan.ogg"), "utf8")).toBe("keep on failure");

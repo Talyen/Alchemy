@@ -35,7 +35,6 @@ test("player death finishes its particle burst before defeat", critical, async (
       ),
     )
     .toBeLessThan(0.9);
-  await page.screenshot({ path: "/tmp/alchemy-player-death.png" });
   await expect(burst).toBeHidden();
   await expect(page.getByRole("heading", { name: "Defeat" })).toBeVisible();
   expect(await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}").activeRun, SAVE_KEY)).toBeNull();

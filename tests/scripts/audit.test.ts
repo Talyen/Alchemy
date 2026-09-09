@@ -14,16 +14,25 @@ describe("parseAuditArgs", () => {
       hasContent: false,
       hasHotspots: false,
       hasAll: false,
+      forwardedArgs: [],
     });
   });
 
   it("accepts each known option", () => {
     expect(parseAuditArgs(["--all"]).hasAll).toBe(true);
-    expect(parseAuditArgs(["--sweep"]).hasAll).toBe(true);
     expect(parseAuditArgs(["--types"]).hasTypes).toBe(true);
     expect(parseAuditArgs(["--amplification"]).hasAmplification).toBe(true);
     expect(parseAuditArgs(["--content"]).hasContent).toBe(true);
     expect(parseAuditArgs(["--hotspots"]).hasHotspots).toBe(true);
+  });
+
+  it("forwards recognized child probe options", () => {
+    expect(parseAuditArgs(["--all", "--verbose"]).forwardedArgs).toEqual(["--verbose"]);
+    expect(parseAuditArgs(["--hotspots", "--json"]).forwardedArgs).toEqual(["--json"]);
+    expect(parseAuditArgs(["--hotspots", "--last", "10"]).forwardedArgs).toEqual(["--last", "10"]);
+    expect(parseAuditArgs(["--hotspots", "--last=10"]).forwardedArgs).toEqual(["--last=10"]);
+    expect(parseAuditArgs(["--hotspots", "--run-id", "xyz"]).forwardedArgs).toEqual(["--run-id", "xyz"]);
+    expect(parseAuditArgs(["--hotspots", "--", "--custom-flag"]).forwardedArgs).toEqual(["--custom-flag"]);
   });
 
   it("allows help flags through for the caller to handle", () => {
@@ -32,8 +41,8 @@ describe("parseAuditArgs", () => {
   });
 
   it("rejects conflicting selections", () => {
-    expect(() => parseAuditArgs(["--all", "--types"])).toThrow("--all/--sweep cannot be combined");
-    expect(() => parseAuditArgs(["--sweep", "--hotspots"])).toThrow("--all/--sweep cannot be combined");
+    expect(() => parseAuditArgs(["--all", "--types"])).toThrow("--all cannot be combined");
+    expect(() => parseAuditArgs(["--all", "--hotspots"])).toThrow("--all cannot be combined");
     expect(() => parseAuditArgs(["--types", "--content"])).toThrow("choose only one");
   });
 

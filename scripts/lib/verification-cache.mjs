@@ -4,6 +4,9 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 
 const REUSABLE_COMMANDS = new Set(["related", "unit-changed", "unit-save", "unit-desktop", "unit-performance"]);
+// Only fast deterministic unit selections reuse receipts: docs-check,
+// assets-check, and report-balance are excluded because they are slow,
+// environment-sensitive, or produce artifacts the receipt cannot vouch for.
 const MAX_AGE_MS = 60 * 60 * 1000;
 const VOLATILE_ENV =
   /^(?:ALCHEMY_RUN_ID|ALCHEMY_VERIFY_FRESH|npm_lifecycle_event|npm_lifecycle_script|npm_command|npm_package_json|INIT_CWD|SHLVL|_)$/u;
@@ -67,9 +70,10 @@ export function captureVerificationInputs(rootDir, env = process.env) {
 }
 
 function receiptPath(rootDir, command) {
+  // Sort args so identical file sets in different git-status order share a key.
   const key = crypto
     .createHash("sha256")
-    .update(JSON.stringify([command.key, command.command, command.args]))
+    .update(JSON.stringify([command.key, command.command, [...command.args].sort()]))
     .digest("hex");
   return path.join(rootDir, "reports/verification-cache", `${key}.json`);
 }

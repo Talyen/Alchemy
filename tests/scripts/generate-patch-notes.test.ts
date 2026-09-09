@@ -263,8 +263,8 @@ describe("generate-patch-notes", () => {
       dryRun: true,
       releaseVersion: "1.4.0",
     });
-    expect(parseReleaseArgs(["--dry-run"])).toEqual({ dryRun: true });
-    expect(parseReleaseArgs([])).toEqual({ dryRun: false });
+    expect(parseReleaseArgs(["--dry-run"])).toEqual({ dryRun: true, hotfix: false });
+    expect(parseReleaseArgs([])).toEqual({ dryRun: false, hotfix: false });
   });
 });
 

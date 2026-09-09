@@ -6,36 +6,72 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-const ALLOWED = new Set(["--all", "--sweep", "--types", "--amplification", "--content", "--hotspots", "--help", "-h"]);
+const SELECTORS = new Set(["--all", "--types", "--amplification", "--content", "--hotspots"]);
+const HELP_FLAGS = new Set(["--help", "-h"]);
+const FORWARDABLE_FLAGS = new Set(["--verbose", "--json", "--check", "--last", "--run-id", "--min-bytes"]);
+
+function isAllowedForwarded(arg, prev) {
+  if (FORWARDABLE_FLAGS.has(arg)) return true;
+  if (arg.startsWith("--last=") || arg.startsWith("--run-id=") || arg.startsWith("--min-bytes=")) return true;
+  if (prev === "--last" || prev === "--run-id" || prev === "--min-bytes") return true;
+  return false;
+}
 
 function printHelp() {
-  console.log(`Usage: node scripts/audit.mjs [command]
-  --all/--sweep (default) Periodic measurable sweep (knip, depcruise, complexity, type-escapes, amplification, content)
-                        NOTE: --all is the periodic sweep, not literally every audit — use --hotspots separately.
-                        Type-escape and amplification probes are advisory trends (always exit 0).
+  console.log(`Usage: node scripts/audit.mjs [selector] [options]
+  --all (default)    Periodic measurable sweep (knip, depcruise, complexity, type-escapes, amplification, content)
+                         NOTE: --all is the periodic sweep, not literally every audit — use --hotspots separately.
+                         Type-escape and amplification probes are advisory trends (always exit 0).
+                         Accepts --verbose to stream child output.
   --types              Run type-escape audit only
   --amplification      Run change-amplification audit only
   --content            Run content audit only
   --hotspots           Run context hotspots (route preread budgets + command exposure)
+                         Accepts --last <n>, --run-id <id>, --min-bytes <n>, --json, --check
   --help               Show this help`);
 }
 
 export function parseAuditArgs(argv) {
-  const unknown = argv.filter((arg) => !ALLOWED.has(arg));
-  if (unknown.length > 0) throw new Error(`Unknown option or argument: ${unknown.join(", ")}`);
-  const hasTypes = argv.includes("--types");
-  const hasAmplification = argv.includes("--amplification");
-  const hasContent = argv.includes("--content");
-  const hasHotspots = argv.includes("--hotspots");
-  const hasAll = argv.includes("--all") || argv.includes("--sweep");
+  const selected = [];
+  const forwardedArgs = [];
+  let inPassthrough = false;
+
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    if (inPassthrough) {
+      forwardedArgs.push(arg);
+      continue;
+    }
+    if (arg === "--") {
+      inPassthrough = true;
+      continue;
+    }
+    if (HELP_FLAGS.has(arg)) {
+      continue;
+    }
+    if (SELECTORS.has(arg)) {
+      selected.push(arg);
+      continue;
+    }
+    const prev = i > 0 ? argv[i - 1] : "";
+    if (isAllowedForwarded(arg, prev)) {
+      forwardedArgs.push(arg);
+      continue;
+    }
+    throw new Error(`Unknown option or argument: ${arg}`);
+  }
+
+  const hasTypes = selected.includes("--types");
+  const hasAmplification = selected.includes("--amplification");
+  const hasContent = selected.includes("--content");
+  const hasHotspots = selected.includes("--hotspots");
+  const hasAll = selected.includes("--all");
   const specificCount = [hasTypes, hasAmplification, hasContent, hasHotspots].filter(Boolean).length;
   if (hasAll && specificCount > 0)
-    throw new Error(
-      "Conflicting options: --all/--sweep cannot be combined with --types/--amplification/--content/--hotspots",
-    );
+    throw new Error("Conflicting options: --all cannot be combined with --types/--amplification/--content/--hotspots");
   if (specificCount > 1)
     throw new Error("Conflicting options: choose only one of --types/--amplification/--content/--hotspots");
-  return { hasTypes, hasAmplification, hasContent, hasHotspots, hasAll };
+  return { hasTypes, hasAmplification, hasContent, hasHotspots, hasAll, forwardedArgs };
 }
 
 export function resolveAuditScript(parsed, hasArgs) {
@@ -63,7 +99,8 @@ async function main() {
   }
   const script = resolveAuditScript(parsed, args.length > 0);
   if (!script) return;
-  const result = runCommand(process.execPath, [script], { cwd: ROOT, stdio: "inherit" });
+  const childArgs = [script, ...parsed.forwardedArgs];
+  const result = runCommand(process.execPath, childArgs, { cwd: ROOT, stdio: "inherit" });
   if (result.status !== 0) process.exitCode = result.status ?? 1;
 }
 

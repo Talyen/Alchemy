@@ -37,13 +37,6 @@ import { CombatantStatusEffectPresentation } from "./combatant-status-effect-pre
 import { CombatantAttackLunge } from "./combatant-attack-lunge";
 import type { ActiveCcKeyword } from "../../utils/cc-presentation";
 
-const ACTOR_PANEL_CONFIG = {
-  fullHealthPercent: 100,
-  deathDoorShineDurationSeconds: 4,
-  deathDoorArtBorderWidth: 3,
-  deathDoorStatsBorderWidth: 2,
-} as const;
-
 interface ArtPanelProps {
   side: "player" | "enemy";
   title: string;
@@ -110,7 +103,7 @@ export function ArtPanel({
   children,
 }: ArtPanelProps) {
   const healthToken = useChangeToken(health);
-  const healthPercent = maxHealth > 0 ? (health / maxHealth) * ACTOR_PANEL_CONFIG.fullHealthPercent : 0;
+  const healthPercent = maxHealth > 0 ? (health / maxHealth) * 100 : 0;
   const { triggerRef: artWrapperRef, visible: tooltipVisible, ...tooltipHandlers } = useHoverVisible();
   usePlasmaInteraction(plasmaColorPair, tooltipVisible);
 

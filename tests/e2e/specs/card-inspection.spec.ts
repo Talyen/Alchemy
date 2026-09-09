@@ -13,7 +13,7 @@ import { BattlePage } from "../../pages/battle-page";
 test(
   "inspects the run deck and each battle pile without advancing combat",
   critical,
-  async ({ page, fastBattle, runtimeErrors }, testInfo) => {
+  async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;
     const slash = makeCard({ uid: 101, cost: 1 });
@@ -28,10 +28,16 @@ test(
         discard: [anvil],
         exhausted: [apple],
       }),
-      { runDeck: [slash, block, anvil, apple] },
+      { runDeck: [slash, block, anvil, apple], runBoons: ["brass-censer"] },
     );
     const battle = new BattlePage(page);
     const health = await battle.enemyHealth();
+    const boonsOpener = page.getByRole("button", { name: "Inspect Boons", exact: true });
+    await boonsOpener.click();
+    const boonsOverlay = page.getByTestId("battle-boon-inspect-overlay");
+    await expect(boonsOverlay.getByRole("heading", { name: "Boons", exact: true })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(boonsOverlay).toHaveCount(0);
     const draw = page.getByRole("button", { name: "Inspect Draw Pile · 1 cards" });
     await expect(draw).toHaveAttribute("aria-disabled", "false");
     await expect(page.getByTestId("draw-pile")).toHaveText("");
@@ -48,8 +54,6 @@ test(
     await expect(dialog.getByRole("heading", { name: "Deck", exact: true })).toBeVisible();
     await expect(dialog.getByRole("img")).toHaveCount(4);
     await expect(dialog.getByRole("img", { name: "Apple", exact: true })).toBeVisible();
-    await page.mouse.move(0, 0);
-    await page.screenshot({ path: testInfo.outputPath("deck-inspection.png") });
     await dialog.getByRole("button", { name: "Close card inspection" }).click();
     await expect(dialog).toHaveCount(0);
     const discardOpener = page.getByRole("button", { name: "Inspect Discard Pile · 1 cards" });
@@ -103,7 +107,7 @@ test(
   },
 );
 
-test("keeps deck access on run screens and meta detours", async ({ page, fastBattle, runtimeErrors }, testInfo) => {
+test("keeps deck access on run screens and meta detours", async ({ page, fastBattle, runtimeErrors }) => {
   void fastBattle;
   void runtimeErrors;
   await startAtDestination(
@@ -113,8 +117,6 @@ test("keeps deck access on run screens and meta detours", async ({ page, fastBat
   );
   const icon = page.getByRole("button", { name: "View Deck · 6 cards" });
   await expect(icon).toBeVisible();
-  await page.mouse.move(0, 0);
-  await page.screenshot({ path: testInfo.outputPath("destination-deck-control.png") });
   await page.getByRole("button", { name: "Open game menu" }).click();
   await page.getByRole("button", { name: "Collection", exact: true }).click();
   await icon.click();
@@ -129,7 +131,7 @@ for (const viewport of [
     page,
     fastBattle,
     runtimeErrors,
-  }, testInfo) => {
+  }) => {
     void fastBattle;
     void runtimeErrors;
     await page.setViewportSize(viewport);
@@ -155,8 +157,6 @@ for (const viewport of [
     expect(titleBounds).not.toBeNull();
     expect(Math.abs(titleBounds!.x + titleBounds!.width / 2 - panelBounds!.x - panelBounds!.width / 2)).toBeLessThan(1);
     await expect(dialog.getByRole("button", { name: "Next page" })).toBeVisible();
-    await page.mouse.move(0, 0);
-    await page.screenshot({ path: testInfo.outputPath("multipage-deck.png") });
     await dialog.getByRole("button", { name: "Next page" }).click();
     await expect(dialog.getByRole("button", { name: "Previous page" })).toBeEnabled();
     await page.keyboard.press("Escape");
@@ -168,7 +168,5 @@ for (const viewport of [
     await page.getByRole("button", { name: "Inspect Discard Pile · 0 cards" }).click();
     await expect(dialog).toHaveText("Discard Pile");
     await expect(dialog.getByRole("button")).toHaveCount(1);
-    await page.mouse.move(0, 0);
-    await page.screenshot({ path: testInfo.outputPath("empty-discard.png") });
   });
 }

@@ -79,6 +79,37 @@ export async function resolveSourceHash(sourcePath, settings, schemaVersion) {
 }
 
 /**
+ * Shared freshness gate: hash the source, reuse the stored entry when the
+ * committed output still matches, otherwise run the caller transform.
+ */
+export async function processFreshEntry(sourcePath, outputPath, settings, schemaVersion, storedEntry, transform) {
+  const sourceEntry = await resolveSourceHash(sourcePath, settings, schemaVersion);
+  if (await isOutputFresh(outputPath, storedEntry, sourceEntry.hash)) {
+    return { fresh: true, sourceEntry, entry: storedEntry };
+  }
+  await transform();
+  return { fresh: false, sourceEntry, entry: await withOutputHash(sourceEntry, outputPath) };
+}
+
+/**
+ * Shared manifest commit: persist the next manifest then sweep orphans keyed
+ * on manifest keys (music keys are filenames, so callers pass key sets).
+ */
+export async function commitManifest(
+  manifestPath,
+  nextManifest,
+  { outputDir, manifestBasename = "", label = "asset" },
+) {
+  await writeManifestIfChanged(manifestPath, nextManifest);
+  const removed = await removeOrphanOutputs(outputDir, new Set(Object.keys(nextManifest)), {
+    manifestBasename,
+    label,
+  });
+  if (removed > 0) console.log(`Removed ${removed} orphan ${label}s.`);
+  return removed;
+}
+
+/**
  * @param {unknown} value
  * @returns {ManifestEntry | null}
  */

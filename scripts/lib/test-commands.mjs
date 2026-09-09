@@ -2,26 +2,24 @@ import { globSync } from "node:fs";
 
 const NPM = process.platform === "win32" ? "npm.cmd" : "npm";
 
+// Core save/persistence suites; the two save-migration architecture tests live
+// under tests/architecture, so the ship gate picks them up via tooling below.
+const SAVE_CORE_SUITES = Object.freeze([
+  "tests/features/alchemy/shared/storage",
+  "tests/app/autosave-hook.test.ts",
+  "tests/app/autosave-active-run.test.ts",
+  "tests/lib/validation",
+  "tests/lib/active-run-session",
+]);
+
 export const TEST_SUITES = Object.freeze({
   save: Object.freeze([
-    "tests/features/alchemy/shared/storage",
-    "tests/app/autosave-hook.test.ts",
-    "tests/app/autosave-active-run.test.ts",
-    "tests/lib/validation",
-    "tests/lib/active-run-session",
+    ...SAVE_CORE_SUITES,
     "tests/architecture/save-migration-guard.test.ts",
     "tests/architecture/save-migration-contract.test.ts",
   ]),
   tooling: Object.freeze(["tests/scripts", "tests/architecture"]),
-  shipUnit: Object.freeze([
-    "tests/features/alchemy/shared/storage",
-    "tests/app/autosave-hook.test.ts",
-    "tests/app/autosave-active-run.test.ts",
-    "tests/lib/validation",
-    "tests/lib/active-run-session",
-    "tests/scripts",
-    "tests/architecture",
-  ]),
+  shipUnit: Object.freeze([...SAVE_CORE_SUITES, "tests/scripts", "tests/architecture"]),
 });
 
 function testFilesUnder(rootDir, rootPath) {

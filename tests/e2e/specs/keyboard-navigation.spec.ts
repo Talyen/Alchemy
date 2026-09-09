@@ -1,6 +1,7 @@
 import { expect } from "@playwright/test";
-import { makeCard, startBattleWithDeck } from "../../helpers";
+import { makeCard, startBattleWithDeck, enterPrimaryRewardScreen } from "../../helpers";
 import { BattlePage } from "../../pages/battle-page";
+import { DestinationPage } from "../../pages/destination-page";
 import { test } from "../../fixtures/e2e";
 import { critical } from "../../playwright-tags";
 
@@ -55,5 +56,31 @@ test.describe("Keyboard Navigation", critical, () => {
 
     await page.keyboard.press("Enter");
     await expect(battle.endTurnBtn).toBeEnabled({ timeout: 5000 });
+  });
+
+  test("keyboard navigation selects destinations and claims rewards", async ({ page, fastBattle, runtimeErrors }) => {
+    void fastBattle;
+    void runtimeErrors;
+
+    await enterPrimaryRewardScreen(page, {
+      rewardType: "card",
+      choiceIds: ["slash", "bash"],
+      destinations: ["Normal Combat", "Campfire"],
+    });
+    const rewardChoice = page.getByRole("button", { name: /^Select / }).first();
+    await rewardChoice.focus();
+    await expect(rewardChoice).toBeFocused();
+    await page.keyboard.press("Enter");
+
+    const destination = new DestinationPage(page);
+    await destination.expectVisible();
+
+    const destChoice = page.getByRole("button", { name: /Combat/, exact: true }).first();
+    await destChoice.focus();
+    await expect(destChoice).toBeFocused();
+    await page.keyboard.press("Enter");
+
+    const battle = new BattlePage(page);
+    await expect(battle.endTurnBtn).toBeVisible({ timeout: 10_000 });
   });
 });

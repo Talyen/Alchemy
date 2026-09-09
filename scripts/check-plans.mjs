@@ -3,11 +3,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { isoDate, PLAN_STALE_DAYS, PLAN_STATUSES, REQUIRED_PLAN_KEYS } from "./lib/plan-contract.mjs";
+import { isoDate, PLANS_DIR, PLAN_STALE_DAYS, PLAN_STATUSES, REQUIRED_PLAN_KEYS } from "./lib/plan-contract.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const PLANS_DIR = path.join(ROOT, "docs", "Plans");
 
 export function parsePlanMetadata(source) {
   const lines = source.split(/\r?\n/u);

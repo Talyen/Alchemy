@@ -17,7 +17,7 @@
   "main": "desktop/main.cjs",
   "scripts": {
     "assets": "node scripts/assets.mjs",
-    "assets:optimize": "node scripts/optimize-assets.mjs",
+    "assets:optimize": "node scripts/assets.mjs --optimize",
     "assets:optimize:art": "node scripts/optimize-assets.mjs",
     "assets:optimize:sounds": "node scripts/optimize-sounds.mjs",
     "assets:optimize:music": "node scripts/optimize-music.mjs",
@@ -88,6 +88,11 @@
     "test:e2e:options": "node scripts/run-e2e-route.mjs options",
     "test:e2e:locks": "node scripts/run-e2e-route.mjs locks",
     "test:e2e:mystery": "node scripts/run-e2e-route.mjs mystery",
+    "test:e2e:battle": "node scripts/run-e2e-route.mjs battle",
+    "test:e2e:save": "node scripts/run-e2e-route.mjs save",
+    "test:e2e:labyrinth": "node scripts/run-e2e-route.mjs labyrinth",
+    "test:e2e:wildwood": "node scripts/run-e2e-route.mjs wildwood",
+    "test:e2e:outcomes": "node scripts/run-e2e-route.mjs outcomes",
     "test:e2e:debug": "cross-env PLAYWRIGHT_VITE_MODE=preview playwright test --project chromium --headed --trace on",
     "test:e2e:full": "cross-env PLAYWRIGHT_VITE_MODE=preview PLAYWRIGHT_E2E_FULL=1 CI=true playwright test --project chromium",
     "test:e2e:nightly": "cross-env PLAYWRIGHT_VITE_MODE=preview PLAYWRIGHT_E2E_FULL=1 PLAYWRIGHT_NIGHTLY=1 CI=true playwright test --project chromium",
@@ -115,7 +120,7 @@
     "format:check": "node scripts/run-prettier.mjs --check",
     "prepare": "lefthook install",
     "release": "node scripts/release.mjs",
-    "release:hotfix": "node scripts/release-hotfix.mjs"
+    "release:hotfix": "node scripts/release.mjs --hotfix"
   },
   "dependencies": {
     "@floating-ui/dom": "^1.8.0",

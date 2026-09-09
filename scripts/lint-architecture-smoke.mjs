@@ -19,9 +19,11 @@ export function assertArchitectureSmokeFiles(rootDir = process.cwd()) {
   if (missing.length > 0) throw new Error(`Architecture smoke fixtures are missing: ${missing.join(", ")}`);
 }
 
-assertArchitectureSmokeFiles();
-
-const eslint = new ESLint();
+let eslintInstance = null;
+function getESLint() {
+  if (!eslintInstance) eslintInstance = new ESLint();
+  return eslintInstance;
+}
 
 function restrictedImports(config) {
   const rule = config.rules?.["no-restricted-imports"];
@@ -50,7 +52,7 @@ const configCache = new Map();
 
 async function getConfig(file) {
   if (!configCache.has(file)) {
-    configCache.set(file, eslint.calculateConfigForFile(file));
+    configCache.set(file, getESLint().calculateConfigForFile(file));
   }
   return configCache.get(file);
 }
@@ -265,7 +267,7 @@ export async function main() {
     "ts/tsx syntax blocks must both compose restrictions",
   );
 
-  const results = await eslint.lintFiles(ARCHITECTURE_SMOKE_FILES);
+  const results = await getESLint().lintFiles(ARCHITECTURE_SMOKE_FILES);
   const errors = results.flatMap((r) =>
     r.messages.filter((m) => m.severity === 2).map((m) => `${r.filePath}:${m.line}:${m.column} ${m.message}`),
   );

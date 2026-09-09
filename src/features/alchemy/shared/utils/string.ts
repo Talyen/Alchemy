@@ -22,7 +22,7 @@ export function tokenizeDescription(line: string): DescriptionPart[] {
     lastIndex = matchIndex + matchedText.length;
   }
   if (lastIndex < line.length) pieces.push({ text: line.slice(lastIndex) });
-  return pieces.length > 0 ? pieces : [{ text: line }];
+  return pieces;
 }
 
 export function canonicalizeKeywordText(text: string): string {

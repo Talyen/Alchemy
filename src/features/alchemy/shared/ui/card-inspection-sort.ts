@@ -6,9 +6,13 @@ function inspectionSortKey(card: BattleCard): string {
 }
 
 export function sortInspectionCards(cards: readonly BattleCard[]): BattleCard[] {
-  return [...cards].sort(
-    (a, b) =>
-      getCardDisplayTitle(a).localeCompare(getCardDisplayTitle(b), "en") ||
-      inspectionSortKey(a).localeCompare(inspectionSortKey(b), "en"),
-  );
+  if (cards.length <= 1) return [...cards];
+  return cards
+    .map((card) => ({
+      card,
+      title: getCardDisplayTitle(card),
+      key: inspectionSortKey(card),
+    }))
+    .sort((a, b) => a.title.localeCompare(b.title, "en") || a.key.localeCompare(b.key, "en"))
+    .map((entry) => entry.card);
 }

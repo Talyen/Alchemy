@@ -113,7 +113,7 @@ for (const { width, height, gameSizePercent } of [
   { width: 1920, height: 1080, gameSizePercent: 100 },
   { width: 2560, height: 1080, gameSizePercent: 80 },
 ]) {
-  test(`hand fits and controls stay fixed at ${width} / ${gameSizePercent}%`, slow, async ({ page }, testInfo) => {
+  test(`hand fits and controls stay fixed at ${width} / ${gameSizePercent}%`, slow, async ({ page }) => {
     const errors = failOnRuntimeErrors(page);
     await page.setViewportSize({ width, height });
     await page.addInitScript(
@@ -136,7 +136,6 @@ for (const { width, height, gameSizePercent } of [
           }),
         );
     const initial = await positions();
-    await testInfo.attach("seven-card-hand", { body: await page.screenshot(), contentType: "image/png" });
     for (let count = 7; count >= 1; count--) {
       await expect(page.locator("[data-hand-slot]")).toHaveCount(count);
       await page.mouse.move(0, 0);

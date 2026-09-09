@@ -62,7 +62,7 @@ jobs:
 
       - name: Summarize unit tests
         if: always()
-        run: node scripts/ci-summarize-vitest.mjs
+        run: node scripts/ci-summarize.mjs --vitest
 
       - uses: actions/upload-artifact@v7
         if: failure()
@@ -138,7 +138,7 @@ jobs:
 
       - name: Summarize e2e tests
         if: always()
-        run: node scripts/ci-summarize-playwright.mjs
+        run: node scripts/ci-summarize.mjs --playwright
 
       - name: Upload Playwright report
         if: failure()

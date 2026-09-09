@@ -130,6 +130,5 @@ export function evaluateSaveCandidates(candidates: string[]): SaveLoadState {
 
   if (future && (!playable || newestFutureSavedAt > playableSavedAt)) return future;
   if (playable) return playable;
-  if (future) return future;
   return { data: createDefaultSaveData(), status: { kind: "corrupt" } };
 }

@@ -102,11 +102,12 @@ export function computeDestinationWeight(destination: Destination, context: Dest
 
 function weightedPick(pool: Destination[], context: DestinationOfferState, rng: () => number): Destination | null {
   if (pool.length === 0) return null;
-  const totalWeight = pool.reduce((sum, destination) => sum + computeDestinationWeight(destination, context), 0);
+  const weights = pool.map((destination) => computeDestinationWeight(destination, context));
+  const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
   if (totalWeight <= 0) return pool[0] ?? null;
   let roll = rng() * totalWeight;
-  const selectedIndex = pool.findIndex((destination) => {
-    roll -= computeDestinationWeight(destination, context);
+  const selectedIndex = weights.findIndex((weight) => {
+    roll -= weight;
     return roll < 0;
   });
   return pool[selectedIndex >= 0 ? selectedIndex : pool.length - 1] ?? null;

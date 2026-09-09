@@ -110,10 +110,7 @@ test.describe("Responsive display sizes", slow, () => {
     }
   });
 
-  test("collection retains its resized page across portrait and landscape tabs", async ({
-    page,
-    runtimeErrors,
-  }, testInfo) => {
+  test("collection retains its resized page across portrait and landscape tabs", async ({ page, runtimeErrors }) => {
     void runtimeErrors;
     await page.setViewportSize({ width: 1920, height: 1080 });
     await new MenuPage(page).gotoCollection();
@@ -140,13 +137,9 @@ test.describe("Responsive display sizes", slow, () => {
         .poll(() => cards.locator("img").evaluateAll((images) => images.map((img) => img.getAttribute("src"))))
         .toContain(first);
     }
-    await testInfo.attach("collection-resized-page", { body: await page.screenshot(), contentType: "image/png" });
   });
 
-  test("hero descriptions fit at maximum tooltip size on a small viewport", async ({
-    page,
-    runtimeErrors,
-  }, testInfo) => {
+  test("hero descriptions fit at maximum tooltip size on a small viewport", async ({ page, runtimeErrors }) => {
     void runtimeErrors;
     await page.addInitScript(() => {
       localStorage.setItem(
@@ -175,6 +168,5 @@ test.describe("Responsive display sizes", slow, () => {
           .evaluate((el) => getComputedStyle(el).opacity),
       )
       .toBe("1");
-    await testInfo.attach("hero-tooltip-125", { body: await page.screenshot(), contentType: "image/png" });
   });
 });

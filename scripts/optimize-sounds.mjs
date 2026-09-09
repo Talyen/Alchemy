@@ -9,11 +9,11 @@ import ffmpegPath from "ffmpeg-static";
 
 import { curatedSoundFiles, generatedSoundAssets, validateSoundAssetRegistry } from "./assets/sound-assets.mjs";
 import {
+  commitManifest,
   isOutputFresh,
+  processFreshEntry,
   processManifestEntries,
   resolveSourceHash,
-  removeOrphanOutputs,
-  writeManifestIfChanged,
   withOutputHash,
 } from "./lib/asset-manifest-cache.mjs";
 import {
@@ -27,8 +27,8 @@ import {
   VORBIS_QUALITY,
   soundTransformSettings,
 } from "./lib/asset-constants.mjs";
-import { runAudioScript } from "./lib/audio-optimizer.mjs";
-import { formatProcessError } from "./lib/process-helpers.mjs";
+import { runPipelineScript } from "./lib/audio-optimizer.mjs";
+import { failedOptimizeResult, targetErrorHandler } from "./lib/process-helpers.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { mapPool } from "./lib/map-pool.mjs";
 import { resolveRootDir } from "./lib/sync-generated-helpers.mjs";
@@ -48,16 +48,19 @@ async function optimizeSound({ source, target }, storedEntry) {
   const outputPath = path.join(outputDir, target);
   const ext = path.extname(source).toLowerCase();
   const settings = soundTransformSettings(ext);
-  const sourceEntry = await resolveSourceHash(sourcePath, settings, SCHEMA_VERSION);
-  const isFresh = await isOutputFresh(outputPath, storedEntry, sourceEntry.hash);
-  if (isFresh) {
-    return { message: `${target} already up to date`, entry: storedEntry };
-  }
+  const { fresh, entry } = await processFreshEntry(sourcePath, outputPath, settings, SCHEMA_VERSION, storedEntry, () =>
+    convertSound(sourcePath, outputPath, settings),
+  );
+  return {
+    message: `${target} ${fresh ? "already up to date" : settings.mode === "copy" ? "copied" : "converted"}`,
+    entry,
+  };
+}
 
+async function convertSound(sourcePath, outputPath, settings) {
   if (settings.mode === "copy") {
-    // Already OGG — copy through unchanged.
     await copyFile(sourcePath, outputPath);
-    return { message: `${target} copied`, entry: await withOutputHash(sourceEntry, outputPath) };
+    return;
   }
 
   // Convert WAV (or anything else) to OGG Vorbis with gentle loudness normalization
@@ -76,8 +79,6 @@ async function optimizeSound({ source, target }, storedEntry) {
     "-vn",
     outputPath,
   ]);
-
-  return { message: `${target} converted`, entry: await withOutputHash(sourceEntry, outputPath) };
 }
 
 export async function optimizeSounds() {
@@ -95,19 +96,12 @@ export async function optimizeSounds() {
     manifestPath,
     concurrency: TRANSFORM_CONCURRENCY,
     processEntry: optimizeSound,
-    handleError: (sound, error) => formatProcessError(sound.target, error),
+    handleError: targetErrorHandler,
   });
 
   console.log(`Processed ${results.length} sounds.`);
   if (failed) {
-    console.warn("Skipping sound fallbacks, manifest write, and orphan sweep because sound optimization failed.");
-    return {
-      ok: false,
-      error: results
-        .filter((result) => result.failed)
-        .map((result) => result.message)
-        .join(" "),
-    };
+    return failedOptimizeResult(results, "sound fallbacks, manifest write, and orphan sweep");
   }
   // Owner tags the OGG source (generated transform vs curated commit). MP3s are
   // always generated artifacts; their owner mirrors their OGG source. MP3 hashes
@@ -116,10 +110,14 @@ export async function optimizeSounds() {
   const generatedEntries = Object.fromEntries(
     Object.entries(nextManifest).map(([name, entry]) => [name, { ...entry, owner: SOUND_ENTRY_OWNERS.generated }]),
   );
-  const { mp3Entries, curatedOggEntries } = await ensureMp3Fallbacks(previousManifest, managedOggs);
+  const { mp3Entries, curatedOggEntries, mp3Failures } = await ensureMp3Fallbacks(previousManifest, managedOggs);
+  if (mp3Failures.length > 0) {
+    console.warn("Skipping sound manifest write and orphan sweep because MP3 fallback conversion failed.");
+    return { ok: false, error: mp3Failures.join(" ") };
+  }
   const completeManifest = { ...generatedEntries, ...curatedOggEntries, ...mp3Entries };
-  await writeManifestIfChanged(manifestPath, completeManifest);
-  await removeOrphanOutputs(outputDir, new Set(Object.keys(completeManifest)), {
+  await commitManifest(manifestPath, completeManifest, {
+    outputDir,
     manifestBasename: MANIFEST_BASENAME,
     label: "sound file",
   });
@@ -132,47 +130,55 @@ async function ensureMp3Fallbacks(previousManifest, managedOggs) {
   /** @type {Record<string, import("./lib/asset-manifest-cache.mjs").ManifestEntry>} */
   const mp3Entries = {};
   const curatedOggEntries = {};
+  const mp3Failures = [];
   let converted = 0;
   await mapPool(oggs, TRANSFORM_CONCURRENCY, async (ogg) => {
-    const oggPath = path.join(outputDir, ogg);
-    const mp3Name = ogg.replace(/\.ogg$/i, ".mp3");
-    const mp3Path = path.join(outputDir, mp3Name);
-    const stored = previousManifest[mp3Name];
-    if (!managedOggs.has(ogg) && !files.has(ogg)) throw new Error(`Missing curated sound: ${ogg}`);
-    const sourceEntry = await resolveSourceHash(oggPath, MP3_FALLBACK_SETTINGS, SCHEMA_VERSION);
-    const owner = managedOggs.has(ogg) ? SOUND_ENTRY_OWNERS.generated : SOUND_ENTRY_OWNERS.curated;
-    if (!managedOggs.has(ogg)) {
-      const storedOgg = previousManifest[ogg];
-      const oggEntry = await resolveSourceHash(oggPath, CURATED_SOUND_SETTINGS, SCHEMA_VERSION);
-      const oggFresh = await isOutputFresh(oggPath, storedOgg, oggEntry.hash);
-      curatedOggEntries[ogg] = {
-        ...(oggFresh ? storedOgg : await withOutputHash(oggEntry, oggPath)),
-        owner: SOUND_ENTRY_OWNERS.curated,
-      };
-    }
+    try {
+      const oggPath = path.join(outputDir, ogg);
+      const mp3Name = ogg.replace(/\.ogg$/i, ".mp3");
+      const mp3Path = path.join(outputDir, mp3Name);
+      const stored = previousManifest[mp3Name];
+      if (!managedOggs.has(ogg) && !files.has(ogg)) throw new Error(`Missing curated sound: ${ogg}`);
+      const sourceEntry = await resolveSourceHash(oggPath, MP3_FALLBACK_SETTINGS, SCHEMA_VERSION);
+      const owner = managedOggs.has(ogg) ? SOUND_ENTRY_OWNERS.generated : SOUND_ENTRY_OWNERS.curated;
+      if (!managedOggs.has(ogg)) {
+        const storedOgg = previousManifest[ogg];
+        const oggEntry = await resolveSourceHash(oggPath, CURATED_SOUND_SETTINGS, SCHEMA_VERSION);
+        const oggFresh = await isOutputFresh(oggPath, storedOgg, oggEntry.hash);
+        curatedOggEntries[ogg] = {
+          ...(oggFresh ? storedOgg : await withOutputHash(oggEntry, oggPath)),
+          owner: SOUND_ENTRY_OWNERS.curated,
+        };
+      }
 
-    if (!(await isOutputFresh(mp3Path, stored, sourceEntry.hash))) {
-      await execFileAsync(ffmpegPath, [
-        "-y",
-        "-i",
-        oggPath,
-        "-c:a",
-        MP3_FALLBACK_SETTINGS.codec,
-        "-q:a",
-        MP3_FALLBACK_SETTINGS.quality,
-        "-vn",
-        mp3Path,
-      ]);
-      converted += 1;
-      mp3Entries[mp3Name] = { ...(await withOutputHash(sourceEntry, mp3Path)), owner };
-    } else {
-      mp3Entries[mp3Name] = { ...stored, owner };
+      if (!(await isOutputFresh(mp3Path, stored, sourceEntry.hash))) {
+        await execFileAsync(ffmpegPath, [
+          "-y",
+          "-i",
+          oggPath,
+          "-c:a",
+          MP3_FALLBACK_SETTINGS.codec,
+          "-q:a",
+          MP3_FALLBACK_SETTINGS.quality,
+          "-vn",
+          mp3Path,
+        ]);
+        converted += 1;
+        mp3Entries[mp3Name] = { ...(await withOutputHash(sourceEntry, mp3Path)), owner };
+      } else {
+        mp3Entries[mp3Name] = { ...stored, owner };
+      }
+    } catch (error) {
+      if (error instanceof Error && error.message.startsWith("Missing curated sound:")) throw error;
+      const detail = error instanceof Error ? error.message : String(error);
+      console.error(`FAILED ${ogg}: ${detail}`);
+      mp3Failures.push(`FAILED ${ogg}: ${detail}`);
     }
   });
   if (converted > 0) console.log(`Wrote ${converted} MP3 SFX fallbacks for Safari.`);
-  return { mp3Entries, curatedOggEntries };
+  return { mp3Entries, curatedOggEntries, mp3Failures };
 }
 
 if (isMainModule(import.meta.url)) {
-  runAudioScript("Sound optimization", optimizeSounds);
+  runPipelineScript("Sound optimization", optimizeSounds);
 }

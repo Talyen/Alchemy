@@ -3,6 +3,9 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { syncVersionMetadata } from "../sync-version-metadata.mjs";
+import { verifyReleaseVersionTag } from "./release-checks.mjs";
+
 const currentFile = fileURLToPath(import.meta.url);
 const root = path.resolve(path.dirname(currentFile), "../..");
 const npx = process.platform === "win32" ? "npx.cmd" : "npx";
@@ -33,7 +36,7 @@ function parseGithubRepoPath(remoteUrl) {
 }
 
 export function parseReleaseArgs(argv) {
-  return { dryRun: argv.includes("--dry-run") };
+  return { dryRun: argv.includes("--dry-run"), hotfix: argv.includes("--hotfix") };
 }
 
 function previewPatchNotes() {
@@ -137,6 +140,18 @@ export async function runRelease({ label, gates, bumpArgs = [], dryRun = false }
   const newVersion = packageVersion();
   const tag = `v${newVersion}`;
   if (oldVersion === newVersion) throw new Error("Version did not change after bump. Aborting push.");
+  verifyReleaseVersionTag(tag, newVersion);
+
+  // Stamp the bumped version into generated metadata and fold it into the
+  // release commit before pushing. commit-and-tag-version only commits
+  // package files + CHANGELOG, so without this the tag would ship stale
+  // CURRENT_GAME_BUILD_VERSION and fail assets:check in release CI.
+  // Nothing has been pushed yet, so amending + moving the tag is local-only.
+  if (await syncVersionMetadata()) {
+    run("git", ["add", "src/lib/validation/metadata.generated.ts"]);
+    run("git", ["commit", "--amend", "--no-edit", "--no-verify"]);
+    run("git", ["tag", "-f", tag]);
+  }
 
   console.log("\n═══ Pushing ═══\n");
   run("git", ["push", "--no-verify", "origin", "main"]);

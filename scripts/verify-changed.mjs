@@ -50,19 +50,20 @@ export function formatPlan(plan, { verbosePlan = false } = {}) {
   return `${lines.join("\n")}\n`;
 }
 
-function runVerificationCommand(command, index, verbose, runId) {
-  const diagnosticInputs = process.env.ALCHEMY_AGENT_SESSION ? captureVerificationInputs(ROOT) : null;
+function runVerificationCommand(command, index, verbose, runId, sessionInputs) {
   const result = runCommand(command.command, command.args, {
     cwd: ROOT,
     env: { ...process.env, ALCHEMY_RUN_ID: runId },
     shell: process.platform === "win32",
     stdio: ["inherit", "pipe", "pipe"],
   });
-  if (diagnosticInputs && diagnosticInputs === captureVerificationInputs(ROOT))
+  // sessionInputs is captured once per process (see main); one post-command
+  // capture decides whether the diagnostic event is trustworthy.
+  if (sessionInputs !== null && sessionInputs === captureVerificationInputs(ROOT))
     recordAgentEvent(ROOT, {
       kind: "diagnostic",
       command: JSON.stringify([command.command, command.args]),
-      inputHash: diagnosticInputs,
+      inputHash: sessionInputs,
       status: result.status === 0 ? "passed" : "failed",
     });
   const verboseOutput = verbose && result.output ? result.output : "";
@@ -81,6 +82,8 @@ function runVerificationCommand(command, index, verbose, runId) {
     return { passed: true, command, result, exposure };
   }
   if (exposure.overBudget && result.status === 0) {
+    // Intentional: verify fails passing-but-chatty commands so routine output
+    // stays bounded; check only fails on non-zero exit. Keep both policies.
     console.error(`✗ ${command.label} exceeded the routine output budget (run ${runId})`);
     return { passed: false, exposureFailure: true, command, result, exposure };
   }
@@ -103,12 +106,13 @@ export function main(argv = process.argv.slice(2)) {
     if (flags.has("plan")) return 0;
 
     const cache = createVerificationCache(ROOT, plan.commands);
+    const sessionInputs = process.env.ALCHEMY_AGENT_SESSION ? captureVerificationInputs(ROOT) : null;
     const outcomes = [];
     for (const [index, command] of plan.commands.entries()) {
       const receipt = cache.read(command);
       const outcome = receipt
         ? { passed: true, command, reused: receipt.runId }
-        : runVerificationCommand(command, index, flags.has("verbose"), runId);
+        : runVerificationCommand(command, index, flags.has("verbose"), runId, sessionInputs);
       if (receipt) console.log(`✓ ${command.label} (reused passing run ${receipt.runId}; inputs unchanged)`);
       recordAgentEvent(ROOT, {
         kind: "verification",

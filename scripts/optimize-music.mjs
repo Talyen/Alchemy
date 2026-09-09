@@ -1,22 +1,15 @@
 import { mkdir, copyFile } from "node:fs/promises";
 import path from "node:path";
 
-import {
-  isOutputFresh,
-  processManifestEntries,
-  removeOrphanOutputs,
-  resolveSourceHash,
-  withOutputHash,
-  writeManifestIfChanged,
-} from "./lib/asset-manifest-cache.mjs";
+import { commitManifest, processFreshEntry, processManifestEntries } from "./lib/asset-manifest-cache.mjs";
 import {
   ASSET_SCHEMA_VERSION,
   MANIFEST_BASENAME,
   MUSIC_COPY_CONCURRENCY,
   MUSIC_SETTINGS,
 } from "./lib/asset-constants.mjs";
-import { discoverAudioFiles, runAudioScript } from "./lib/audio-optimizer.mjs";
-import { formatProcessError } from "./lib/process-helpers.mjs";
+import { discoverAudioFiles, runPipelineScript } from "./lib/audio-optimizer.mjs";
+import { failedOptimizeResult, targetErrorHandler } from "./lib/process-helpers.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { resolveRootDir } from "./lib/sync-generated-helpers.mjs";
 
@@ -45,41 +38,33 @@ export async function optimizeMusic() {
       const sourcePath = path.join(sourceDir, file);
       const outputPath = path.join(outputDir, file);
 
-      const sourceEntry = await resolveSourceHash(sourcePath, MUSIC_SETTINGS, SCHEMA_VERSION);
-      const isFresh = await isOutputFresh(outputPath, storedEntry, sourceEntry.hash);
-      if (isFresh) {
-        return { message: `${file} already up to date`, entry: storedEntry };
-      }
-      await copyFile(sourcePath, outputPath);
-      return { message: `${file} copied`, entry: await withOutputHash(sourceEntry, outputPath) };
+      const { fresh, entry } = await processFreshEntry(
+        sourcePath,
+        outputPath,
+        MUSIC_SETTINGS,
+        SCHEMA_VERSION,
+        storedEntry,
+        () => copyFile(sourcePath, outputPath),
+      );
+      return { message: `${file} ${fresh ? "already up to date" : "copied"}`, entry };
     },
-    handleError: formatProcessError,
+    handleError: targetErrorHandler,
   });
 
   if (failed) {
-    console.warn("Skipping music manifest write and orphan sweep because music optimization failed.");
-    return {
-      ok: false,
-      error: results
-        .filter((result) => result.failed)
-        .map((result) => result.message)
-        .join(" "),
-    };
+    return failedOptimizeResult(results, "music manifest write and orphan sweep");
   }
 
-  await writeManifestIfChanged(manifestPath, nextManifest);
-  const removed = await removeOrphanOutputs(outputDir, new Set(files), {
+  await commitManifest(manifestPath, nextManifest, {
+    outputDir,
     manifestBasename: MANIFEST_BASENAME,
     label: "music file",
   });
-  if (removed > 0) {
-    console.log(`Removed ${removed} orphan music files.`);
-  }
 
   console.log(`Processed ${results.length} music files.`);
   return { ok: true };
 }
 
 if (isMainModule(import.meta.url)) {
-  runAudioScript("Music optimization", optimizeMusic);
+  runPipelineScript("Music optimization", optimizeMusic);
 }

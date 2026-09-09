@@ -98,7 +98,6 @@ test.describe("Labyrinth map presentation", () => {
     await expect(completed).toHaveCount(6);
     await expect(completed.first().locator("img")).toHaveCSS("filter", "grayscale(1)");
     await expect(completed.first().locator("svg path")).toHaveCount(0);
-    await page.screenshot({ path: test.info().outputPath("completed.png") });
     await picker.click();
     await page.getByRole("option", { name: "Floor 2", exact: true }).click();
     await expect(completed).toHaveCount(0);
@@ -151,7 +150,6 @@ test.describe("Labyrinth map presentation", () => {
     await nodes.first().click();
     await expect(nodes.first()).toHaveAttribute("aria-pressed", "true");
     await expect(inspector).toHaveCount(1);
-    await page.screenshot({ path: test.info().outputPath("map-inspector.png") });
     await page.getByTestId("locked-chamber").first().locator("..").click();
     await expect(inspector).toBeHidden();
     await nodes.first().click();
@@ -245,7 +243,6 @@ test.describe("Labyrinth map presentation", () => {
     const panel = (await inspector.boundingBox())!;
     expect(panel.y).toBeGreaterThanOrEqual(bounds.y);
     expect(panel.y + panel.height).toBeLessThanOrEqual(bounds.y + bounds.height + 1);
-    await page.screenshot({ path: test.info().outputPath("short-window-inspector.png") });
   });
 
   for (const gameSizePercent of [80, 100, 120]) {
@@ -277,7 +274,6 @@ test.describe("Labyrinth map presentation", () => {
       await expect(page.getByText("Combat", { exact: true })).toHaveCount(1);
       await expect(page.getByText("Fight a standard enemy encounter")).toHaveCount(0);
       await expect(page.getByRole("complementary", { name: "Chamber details" })).toHaveCSS("opacity", "1");
-      await page.screenshot({ path: test.info().outputPath("inspector.png") });
     });
   }
 });
@@ -302,7 +298,6 @@ test.describe("Labyrinth touch inspector", () => {
     await expect(page.getByRole("button", { name: "Fight", exact: true })).toBeInViewport();
     await expect(inspector.locator("..")).toBeFocused();
     await expect(inspector).toHaveCSS("opacity", "1");
-    await page.screenshot({ path: test.info().outputPath("touch-inspector.png") });
     await page.keyboard.press("Escape");
     await expect(inspector).toBeHidden();
     await expect(chamber).toBeFocused();

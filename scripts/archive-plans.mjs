@@ -2,12 +2,10 @@
 /** Move terminal execution plans out of the active plans directory. */
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { parsePlanMetadata } from "./check-plans.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
+import { PLANS_DIR } from "./lib/plan-contract.mjs";
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const PLANS_DIR = path.join(ROOT, "docs", "Plans");
 const TERMINAL_STATUSES = new Set(["complete", "cancelled"]);
 
 export function archiveTerminalPlans({ plansDir = PLANS_DIR } = {}) {

@@ -356,7 +356,8 @@ export function replaceChangelogUnreleased(content, unreleasedMarkdown) {
 export function promoteUnreleasedSection(content, version, dateIso) {
   const unreleased = extractChangelogSection(content, "## [Unreleased]");
   const versionHeading = `## [${version.replace(/^v/, "")}] (${dateIso})`;
-  const promotedBody = (unreleased ?? "_No changes yet._").replace(/^_No changes yet\._$/u, "").trim();
+  const rawBody = (unreleased ?? "").replace(/^_No changes yet\._$/u, "").trim();
+  const promotedBody = rawBody === "" ? "_No changes yet._" : rawBody;
   const emptyUnreleased = buildChangelogUnreleased([]);
 
   let next = replaceChangelogUnreleased(content, emptyUnreleased);

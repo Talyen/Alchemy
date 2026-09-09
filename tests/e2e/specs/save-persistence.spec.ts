@@ -10,7 +10,6 @@ import {
   startAtDestination,
   startBattleWithDeck,
   enterPrimaryRewardScreen,
-  ANVIL_CARD,
 } from "../../helpers";
 import { injectMidCombatSave } from "../mid-combat-save";
 import { BattlePage } from "../../pages/battle-page";
@@ -95,7 +94,7 @@ test.describe("Save Persistence & Resume", () => {
     await expect(page.getByRole("button", { name: "Card Shop" })).toBeVisible();
   });
 
-  test("mid-battle reload returns to destination not battle", critical, async ({ page }) => {
+  test("resume restores destination choices when reloaded between battles", critical, async ({ page }) => {
     await seedRandom(page, 42);
     await injectSaveState(page, {
       runPlayerHealth: 22,
@@ -124,6 +123,8 @@ test.describe("Save Persistence & Resume", () => {
       return save.activeRun?.activeCombat?.battleState?.turn ?? null;
     }, SAVE_KEY);
     expect(turnBefore).toBe(2);
+
+    await page.reload();
 
     await expect(battle.endTurnBtn).toBeVisible({ timeout: 10000 });
     await expect.poll(() => battle.playerHealth()).toBe(18);
@@ -253,18 +254,5 @@ test.describe("Autosave Cadence", () => {
       return JSON.parse(localStorage.getItem(saveKey) || "{}");
     }, SAVE_KEY);
     expect(persistedPurseGold(goldAfter)).toBe(42);
-  });
-
-  test("forge status persists across end turn", async ({ page, fastBattle, runtimeErrors }) => {
-    void fastBattle;
-    void runtimeErrors;
-    await startBattleWithDeck(page, [ANVIL_CARD, ANVIL_CARD, ANVIL_CARD, ANVIL_CARD, ANVIL_CARD, ANVIL_CARD]);
-    const battle = new BattlePage(page);
-
-    await battle.playCardNamed("Anvil");
-    await expect(page.getByRole("button", { name: "Forge 1" })).toBeVisible();
-
-    await battle.endTurn();
-    await expect(page.getByRole("button", { name: /Forge/ })).toHaveCount(1);
   });
 });

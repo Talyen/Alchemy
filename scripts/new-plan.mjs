@@ -4,9 +4,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { isMainModule } from "./lib/is-main-module.mjs";
+import { PLANS_DIR } from "./lib/plan-contract.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const PLANS_DIR = path.join(ROOT, "docs", "Plans");
 const NAME_PATTERN = /^[A-Za-z0-9._-]+$/u;
 
 export function safePlanName(value) {

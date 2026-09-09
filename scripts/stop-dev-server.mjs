@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { setTimeout as delay } from "node:timers/promises";
 import { isMainModule } from "./lib/is-main-module.mjs";
-import { parsePort, resolveDevPort } from "./lib/dev-port.mjs";
+import { parsePort, resolveDevPort, STALE_TEST_PORTS } from "./lib/dev-port.mjs";
 
 const execFileAsync = promisify(execFile);
 const currentFile = fileURLToPath(import.meta.url);
@@ -195,6 +195,27 @@ export async function stopDevServer({ port = resolveDevPort(), projectRoot = roo
   }
 
   console.log(`Dev server auto-stop is not implemented for ${process.platform}; relying on Vite strictPort.`);
+}
+
+/** Stop Alchemy-owned listeners on stale test ports (plus the dev port on request). */
+export async function stopStaleTestPorts({ projectRoot = rootDir, includeDevPort = false, dryRun = false } = {}) {
+  const ports = [...STALE_TEST_PORTS];
+  if (includeDevPort) {
+    try {
+      const devPort = resolveDevPort();
+      if (!ports.includes(devPort)) ports.push(devPort);
+    } catch {
+      // A malformed ALCHEMY_DEV_PORT should not block cleanup.
+    }
+  }
+  for (const port of ports) {
+    if (dryRun) {
+      console.log(`[dry-run] Would stop Alchemy-owned process on port ${port} (if any).`);
+      continue;
+    }
+    await stopDevServer({ port, projectRoot });
+  }
+  return ports;
 }
 
 if (isMainModule(import.meta.url)) {

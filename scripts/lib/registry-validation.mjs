@@ -1,10 +1,11 @@
 import { access } from "node:fs/promises";
 import path from "node:path";
 import { toAssetExportName } from "./kebab-to-camel.mjs";
+import { mapPool } from "./map-pool.mjs";
 
 export async function validateRegistryEntries(
   entries,
-  { sourceDir, targetKey = "target", checkExport = false, sourcePattern, targetPattern } = {},
+  { sourceDir, targetKey = "target", checkExport = false, sourcePattern, targetPattern, label = "Registry" } = {},
 ) {
   const errors = [];
   const sources = new Map();
@@ -26,7 +27,13 @@ export async function validateRegistryEntries(
     if (target) targets.set(target, source);
 
     if (checkExport && target) {
-      const exportName = toAssetExportName(target);
+      let exportName;
+      try {
+        exportName = toAssetExportName(target);
+      } catch {
+        errors.push(`Invalid target "${target}" (must match ${targetPattern ?? /\.webp$/u}).`);
+        continue;
+      }
       const prev = exports.get(exportName);
       if (prev) errors.push(`Duplicate asset export "${exportName}" (${prev} and ${target}).`);
       exports.set(exportName, target);
@@ -38,18 +45,26 @@ export async function validateRegistryEntries(
     if (target && targetPattern && !targetPattern.test(target)) {
       errors.push(`Invalid target "${target}" (must match ${targetPattern}).`);
     }
+  }
 
-    if (sourceDir && source) {
-      try {
-        await access(path.join(sourceDir, source));
-      } catch {
-        errors.push(`Missing asset source "${source}" for target "${target}".`);
-      }
-    }
+  if (sourceDir) {
+    const missing = await mapPool(
+      entries.filter((entry) => entry.source),
+      16,
+      async (entry) => {
+        try {
+          await access(path.join(sourceDir, entry.source));
+          return null;
+        } catch {
+          return `Missing asset source "${entry.source}" for target "${entry[targetKey]}".`;
+        }
+      },
+    );
+    for (const error of missing) if (error) errors.push(error);
   }
 
   if (errors.length > 0) {
-    throw new Error(`Registry validation failed:\n- ${errors.join("\n- ")}`, { cause: { details: errors } });
+    throw new Error(`${label} validation failed:\n- ${errors.join("\n- ")}`, { cause: { details: errors } });
   }
   return entries;
 }
