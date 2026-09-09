@@ -71,26 +71,7 @@ function ArmoryScreenRoute({
   onOpenGameMenu: (rect: DOMRect) => void;
 }) {
   const controller = useArmoryController();
-  return (
-    <ArmoryScreen
-      inventories={controller.inventories}
-      loadouts={controller.loadouts}
-      ownedTrinketIds={controller.ownedTrinketIds}
-      equippedTrinkets={controller.equippedTrinkets}
-      craftingCurrencies={controller.craftingCurrencies}
-      onApplyCurrency={controller.onApplyCurrency}
-      finishedRunCharacters={controller.finishedRunCharacters}
-      combatRestrictions={controller.combatRestrictions}
-      onEquip={controller.onEquip}
-      onUnequip={controller.onUnequip}
-      onEquipTrinket={controller.onEquipTrinket}
-      onUnequipTrinket={controller.onUnequipTrinket}
-      onSalvage={controller.onSalvage}
-      onBack={onBack}
-      onMenu={onOpenGameMenu}
-      {...(controller.onSpawnDevGear ? { onSpawnDevGear: controller.onSpawnDevGear } : {})}
-    />
-  );
+  return <ArmoryScreen {...controller} onBack={onBack} onMenu={onOpenGameMenu} />;
 }
 
 function GameModeSelectScreenRoute({
@@ -130,16 +111,11 @@ function CollectionScreenRoute({
 
   return (
     <CollectionScreen
-      collectionTab={profile.collectionTab}
+      {...profile}
       onSelectTab={handleCollectionTabChangeCommand}
       onPageChange={setCollectionPageCommand}
       bondedCompanions={bondedCompanions}
-      discoveredCardIds={profile.discoveredCardIds}
-      encounteredEnemyIds={profile.encounteredEnemyIds}
-      discoveredTrinketIds={profile.discoveredTrinketIds}
-      discoveredUniqueIds={profile.discoveredUniqueIds}
       finishedRunCharacters={finishedRunCharacters}
-      collectionPages={profile.collectionPages}
       onBack={onBack}
       onMenu={onOpenGameMenu}
     />
@@ -158,12 +134,7 @@ function HomesteadScreenRoute({
 
   return (
     <HomesteadScreen
-      gold={homesteadValues.gold}
-      materialInventory={homesteadValues.materialInventory}
-      constructedBuildings={homesteadValues.constructedBuildings}
-      plantedFarms={homesteadValues.plantedFarms}
-      completedResearch={homesteadValues.completedResearch}
-      bondedCompanions={homesteadValues.bondedCompanions}
+      {...homesteadValues}
       discoveredCardIds={discoveredCardIds}
       onConstructBuilding={constructBuildingCommand}
       onPlantFarm={plantFarmCommand}
@@ -184,12 +155,11 @@ function TalentsScreenRoute({
   onBack?: (() => void) | undefined;
   onOpenGameMenu: (rect: DOMRect) => void;
 }) {
-  const { talentXP, unlockedTalents } = useTalentProgressSlice();
+  const talentProgress = useTalentProgressSlice();
 
   return (
     <TalentsScreen
-      talentXP={talentXP}
-      unlockedTalents={unlockedTalents}
+      {...talentProgress}
       onUnlockTalent={commands.unlockTalent}
       onResetTalents={commands.resetUnlockedTalents}
       onBack={onBack}

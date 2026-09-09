@@ -39,11 +39,7 @@ export function readBuyPrices(
   talentEffects: TalentEffectManifest,
   shopKey: ShopSessionStateKey,
 ): number[] {
-  return getShopBuyPrices(
-    kind,
-    items as ReadonlyArray<BattleCard | GearInstance>,
-    resolveReadShopPricingContext(talentEffects, shopKey),
-  );
+  return getShopBuyPrices(kind, items, resolveReadShopPricingContext(talentEffects, shopKey));
 }
 
 export function readRefreshPrice(
@@ -62,7 +58,10 @@ export function gearSlotKeyOf(instance: GearInstance): string {
   return instance.instanceId;
 }
 
-interface SlotPurchaseConfig<TState extends { firstPurchaseUsed: boolean; purchasedSlotKeys: string[] }, TItem> {
+interface SlotPurchaseConfig<
+  TState extends { firstPurchaseUsed: boolean; purchasedSlotKeys: string[] },
+  TItem extends BattleCard | GearInstance | TrinketEntry,
+> {
   talentEffects: TalentEffectManifest;
   state: TState;
   setState: DraftStateWriter<TState>;
@@ -77,9 +76,10 @@ interface SlotPurchaseConfig<TState extends { firstPurchaseUsed: boolean; purcha
   acquire: (draft: GameplayDraft, offered: TItem) => void;
 }
 
-export function purchaseSlotOffering<TState extends { firstPurchaseUsed: boolean; purchasedSlotKeys: string[] }, TItem>(
-  config: SlotPurchaseConfig<TState, TItem>,
-): ShopTransactionResult {
+export function purchaseSlotOffering<
+  TState extends { firstPurchaseUsed: boolean; purchasedSlotKeys: string[] },
+  TItem extends BattleCard | GearInstance | TrinketEntry,
+>(config: SlotPurchaseConfig<TState, TItem>): ShopTransactionResult {
   const atSlot = findShopOffering(config.items, config.slotKey, config.slotKeyOf);
   const offered = atSlot !== undefined && config.idOf(atSlot) === config.requestedId ? atSlot : undefined;
   const draftContext = resolveDraftShopPricingContext(config.talentEffects, config.draft, config.state);
@@ -93,7 +93,7 @@ export function purchaseSlotOffering<TState extends { firstPurchaseUsed: boolean
   const price =
     config.buyKind === "trinket"
       ? getShopBuyPrice(config.buyKind, null, draftContext)
-      : getShopBuyPrice(config.buyKind, offered as unknown as BattleCard | GearInstance, draftContext);
+      : getShopBuyPrice(config.buyKind, offered, draftContext);
   return purchaseShopOffering({
     draft: config.draft,
     price,

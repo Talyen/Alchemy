@@ -138,28 +138,20 @@ const COUNT_PARITY_RULES: CountParityRule[] = [
         (effect) => effect.kind === "player-status" && effect.status === "block" && effect.perManaCrystal !== undefined,
       ).length,
   },
-  {
-    label: "armor",
-    countLines: (lines) => lines.filter((line) => line.startsWith("Gain ") && line.includes(" Armor")).length,
-    countEffects: (effects) =>
-      flattenChanceEffects(effects).filter((effect) => effect.kind === "player-status" && effect.status === "armor")
-        .length,
-  },
-  {
-    label: "forge",
-    countLines: (lines) => lines.filter((line) => line.startsWith("Gain ") && line.includes(" Forge")).length,
-    countEffects: (effects) =>
-      flattenChanceEffects(effects).filter((effect) => effect.kind === "player-status" && effect.status === "forge")
-        .length,
-  },
-  {
-    label: "thorns",
-    countLines: (lines) => lines.filter((line) => line.startsWith("Gain ") && line.includes(" Thorns")).length,
-    countEffects: (effects) =>
-      flattenChanceEffects(effects).filter((effect) => effect.kind === "player-status" && effect.status === "thorns")
-        .length,
-  },
+  statusParityRule("armor", "Armor"),
+  statusParityRule("forge", "Forge"),
+  statusParityRule("thorns", "Thorns"),
 ];
+
+function statusParityRule(status: "armor" | "forge" | "thorns", name: string): CountParityRule {
+  return {
+    label: status,
+    countLines: (lines) => lines.filter((line) => line.startsWith("Gain ") && line.includes(` ${name}`)).length,
+    countEffects: (effects) =>
+      flattenChanceEffects(effects).filter((effect) => effect.kind === "player-status" && effect.status === status)
+        .length,
+  };
+}
 
 export { validateEnemyTraitDescriptionParity, TRAIT_REQUIRED_PATTERNS } from "./card-parity/enemy-trait-parity";
 export { validateTrinketDescriptionParity } from "./card-parity/trinket-parity";
@@ -197,18 +189,17 @@ function checkDamageParity(card: BattleCard): ContentValidationIssue | null {
   return null;
 }
 
+function cardIssue(severity: "error" | "warning", id: string, message: string): ContentValidationIssue {
+  return { severity, area: "cards", id, message };
+}
+
 function checkHasteParity(card: BattleCard): ContentValidationIssue | null {
   const { effects, descriptionLines } = card;
   if (
     effects.some((effect) => effect.kind === "player-status" && effect.status === "haste") &&
     !descriptionLines.some((line) => line.includes("extra turn"))
   ) {
-    return {
-      severity: "error",
-      area: "cards",
-      id: card.id,
-      message: "Haste effect is missing extra-turn description text",
-    };
+    return cardIssue("error", card.id, "Haste effect is missing extra-turn description text");
   }
   return null;
 }
@@ -219,12 +210,7 @@ function checkPhoenixFeatherParity(card: BattleCard): ContentValidationIssue | n
     flattenEffects(effects).some((effect) => effect.kind === "player-status" && effect.status === "phoenixFeather") &&
     !descriptionLines.some((line) => line.includes("die") || line.includes("30%"))
   ) {
-    return {
-      severity: "error",
-      area: "cards",
-      id: card.id,
-      message: "Phoenix Feather effect is missing revive description text",
-    };
+    return cardIssue("error", card.id, "Phoenix Feather effect is missing revive description text");
   }
   return null;
 }
@@ -234,12 +220,11 @@ function checkBuffCompanionParity(card: BattleCard): ContentValidationIssue | nu
   const described = countLinesStartingWith(card.descriptionLines, "Increase ");
   const actual = countByKind(card.effects, "buff-companion");
   if (described !== actual) {
-    return {
-      severity: "error",
-      area: "cards",
-      id: card.id,
-      message: `buff-companion description count ${described} does not match effect count ${actual}`,
-    };
+    return cardIssue(
+      "error",
+      card.id,
+      `buff-companion description count ${described} does not match effect count ${actual}`,
+    );
   }
   return null;
 }
@@ -247,12 +232,7 @@ function checkBuffCompanionParity(card: BattleCard): ContentValidationIssue | nu
 function checkLifestealParity(card: BattleCard): ContentValidationIssue | null {
   if (!hasLifesteal(card.effects)) return null;
   if (!card.descriptionLines.some((line) => line === "Leech")) {
-    return {
-      severity: "warning",
-      area: "cards",
-      id: card.id,
-      message: "Lifesteal effect is missing Leech description line",
-    };
+    return cardIssue("warning", card.id, "Lifesteal effect is missing Leech description line");
   }
   return null;
 }
@@ -261,20 +241,10 @@ function checkArcheryTagParity(card: BattleCard): ContentValidationIssue | null 
   const hasArcheryTag = card.tags?.includes("archery");
   const hasArcheryLine = card.descriptionLines.some((line) => line === "Archery");
   if (hasArcheryTag && !hasArcheryLine) {
-    return {
-      severity: "warning",
-      area: "cards",
-      id: card.id,
-      message: "Archery tag is missing Archery description line",
-    };
+    return cardIssue("warning", card.id, "Archery tag is missing Archery description line");
   }
   if (hasArcheryLine && !hasArcheryTag) {
-    return {
-      severity: "warning",
-      area: "cards",
-      id: card.id,
-      message: "Archery description line is missing archery tag",
-    };
+    return cardIssue("warning", card.id, "Archery description line is missing archery tag");
   }
   return null;
 }
@@ -285,12 +255,7 @@ function checkConsumeParity(card: BattleCard): ContentValidationIssue | null {
   const hasCompanion =
     hasKind(card.effects, "summon-companion") && card.descriptionLines.some((line) => line === "Companion");
   if (!hasConsume && !hasCompanion) {
-    return {
-      severity: "warning",
-      area: "cards",
-      id: card.id,
-      message: "consume:true is missing Consume or Companion description line",
-    };
+    return cardIssue("warning", card.id, "consume:true is missing Consume or Companion description line");
   }
   return null;
 }
@@ -298,12 +263,7 @@ function checkConsumeParity(card: BattleCard): ContentValidationIssue | null {
 function checkCompanionParity(card: BattleCard): ContentValidationIssue | null {
   if (!hasKind(card.effects, "summon-companion")) return null;
   if (!card.descriptionLines.some((line) => line.includes("Companion"))) {
-    return {
-      severity: "warning",
-      area: "cards",
-      id: card.id,
-      message: "summon-companion effect is missing Companion description line",
-    };
+    return cardIssue("warning", card.id, "summon-companion effect is missing Companion description line");
   }
   return null;
 }
@@ -314,12 +274,13 @@ function checkRuleParity(card: BattleCard): ContentValidationIssue[] {
     const described = rule.countLines(card.descriptionLines);
     const actual = rule.countEffects(card.effects);
     if (described !== actual) {
-      issues.push({
-        severity: "error",
-        area: "cards",
-        id: card.id,
-        message: `${rule.label} description count ${described} does not match effect count ${actual}`,
-      });
+      issues.push(
+        cardIssue(
+          "error",
+          card.id,
+          `${rule.label} description count ${described} does not match effect count ${actual}`,
+        ),
+      );
     }
   }
   return issues;

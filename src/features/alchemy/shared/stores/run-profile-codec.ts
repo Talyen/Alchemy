@@ -1,39 +1,20 @@
-import type { CompanionId, TalentXP, UnlockedTalents } from "@/lib/game-data";
-import type { HomesteadEffectManifest } from "@/lib/homestead/types";
-import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/homestead/types";
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import { pruneUnknownCompanions } from "@/features/alchemy/shared/stores/homestead-actions";
-import { createInitialPermanentFields } from "@/features/alchemy/shared/stores/run-state-init";
+import {
+  createInitialPermanentFields,
+  type PermanentProgressFields,
+} from "@/features/alchemy/shared/stores/run-state-init";
 import { rebindLiveRunMeta } from "@/features/alchemy/shared/stores/run-meta-rebind";
 import { type GameplayPersistenceCodec } from "./persistence-codec";
 import { readGameplayState } from "./gameplay-state-store";
 
-export interface RunProfileSaveFields {
-  gold: number;
-  talentXP: TalentXP;
-  unlockedTalents: UnlockedTalents;
-  materialInventory: MaterialInventory;
-  constructedBuildings: Record<BuildingId, number>;
-  plantedFarms: Record<FarmId, number>;
-  completedResearch: Record<ResearchId, number>;
-  bondedCompanions: Record<CompanionId, number>;
-}
+export type RunProfileSaveFields = Omit<PermanentProgressFields, "effects">;
 
-type RunProfileSnapshot = RunProfileSaveFields & {
-  effects: HomesteadEffectManifest;
-};
+type RunProfileSnapshot = PermanentProgressFields;
 
 function encodeRunProfileSnapshot(snapshot: RunProfileSnapshot): RunProfileSaveFields {
-  return {
-    gold: snapshot.gold,
-    talentXP: snapshot.talentXP,
-    unlockedTalents: snapshot.unlockedTalents,
-    materialInventory: snapshot.materialInventory,
-    constructedBuildings: snapshot.constructedBuildings,
-    plantedFarms: snapshot.plantedFarms,
-    completedResearch: snapshot.completedResearch,
-    bondedCompanions: snapshot.bondedCompanions,
-  };
+  const { effects: _, ...saveFields } = snapshot;
+  return saveFields;
 }
 
 function createDefaultRunProfileSaveFields(): RunProfileSaveFields {

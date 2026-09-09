@@ -1,5 +1,6 @@
 import { LABYRINTH_REWARD_CONFIG } from "@/lib/game-constants";
 import { computeTrinketManifest } from "@/lib/trinkets";
+import { emptyInventory } from "@/lib/homestead/inventory";
 import { MATERIAL_IDS, type MaterialInventory } from "@/lib/homestead/types";
 import type { BattleState } from "@/lib/battle";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
@@ -81,10 +82,10 @@ export function applyLabyrinthRewardMaterialModifiers(
   let mutated = false;
   if (hasRewardModifier(modifiers, "scavenger")) {
     mutated = true;
-    next = MATERIAL_IDS.reduce<MaterialInventory>((result, material) => {
-      result[material] = Math.round(next[material] * LABYRINTH_REWARD_CONFIG.scavengerMaterialMultiplier);
-      return result;
-    }, {} as MaterialInventory);
+    next = emptyInventory();
+    for (const material of MATERIAL_IDS) {
+      next[material] = Math.round((materials[material] ?? 0) * LABYRINTH_REWARD_CONFIG.scavengerMaterialMultiplier);
+    }
   }
   if (hasRewardModifier(modifiers, "herbalist")) {
     mutated = true;

@@ -1,17 +1,7 @@
-import type { CharacterId } from "@/lib/game-data";
-import type {
-  CraftingCurrencyId,
-  GearInstance,
-  GearInventories,
-  GearLoadouts,
-  GearSlot,
-  EquippedTrinkets,
-  SalvageYield,
-} from "@/lib/gear";
-
-import type { GearCombatRestrictions } from "../../../shared/stores/gear-store";
+import type { CraftingCurrencyId, GearInstance, SalvageYield } from "@/lib/gear";
 
 import type { CraftingResult } from "./crafting-result";
+import type { ArmoryController } from "./use-armory-controller";
 
 export interface ArmorySalvagePending {
   instance: GearInstance;
@@ -33,19 +23,7 @@ export interface ArmoryItemActions {
   onCombatLockedAttempt: () => void;
 }
 
-export interface ArmoryScreenProps {
-  inventories: GearInventories;
-  loadouts: GearLoadouts;
-  ownedTrinketIds: string[];
-  equippedTrinkets: EquippedTrinkets;
-  finishedRunCharacters: CharacterId[];
-  combatRestrictions: GearCombatRestrictions;
-  onEquip: (characterId: CharacterId, slot: GearSlot, instance: GearInstance) => void;
-  onUnequip: (characterId: CharacterId, slot: GearSlot) => void;
-  onEquipTrinket: (characterId: CharacterId, trinketId: string) => void;
-  onUnequipTrinket: (characterId: CharacterId) => void;
-  onSalvage: (instanceId: string, salvageYield: SalvageYield) => boolean;
-  onSpawnDevGear?: (characterId: CharacterId) => void;
+export interface ArmoryScreenProps extends Omit<ArmoryController, "craftingCurrencies" | "onApplyCurrency"> {
   craftingCurrencies?: Record<CraftingCurrencyId, number>;
   onApplyCurrency?: (currencyId: CraftingCurrencyId, instanceId: string) => boolean;
   onBack?: (() => void) | undefined;

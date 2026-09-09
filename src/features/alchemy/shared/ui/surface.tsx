@@ -5,6 +5,7 @@ import {
   type PointerEvent,
   type ReactNode,
   type Ref,
+  type SyntheticEvent,
 } from "react";
 
 import { cn } from "@/lib/utils";
@@ -25,7 +26,7 @@ interface SurfaceProps {
   baseTransform?: string | undefined;
   style?: CSSProperties;
   onClick?: ((e: MouseEvent<HTMLButtonElement>) => void) | undefined;
-  onDivClick?: ((e?: MouseEvent<HTMLDivElement>) => void) | undefined;
+  onDivClick?: ((e?: SyntheticEvent<HTMLDivElement>) => void) | undefined;
   onPointerDown?: ((e: PointerEvent<HTMLButtonElement>) => void) | undefined;
   onFocus?: () => void;
   onBlur?: () => void;
@@ -61,12 +62,12 @@ function surfaceClassName(
   );
 }
 
-function handleDivKeyDown(onDivClick: ((e?: MouseEvent<HTMLDivElement>) => void) | undefined) {
+function handleDivKeyDown(onDivClick: ((e?: SyntheticEvent<HTMLDivElement>) => void) | undefined) {
   return onDivClick
     ? (event: KeyboardEvent<HTMLDivElement>) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
-          onDivClick(event as unknown as MouseEvent<HTMLDivElement>);
+          onDivClick(event);
         }
       }
     : undefined;
@@ -110,8 +111,8 @@ export function Surface(props: SurfaceProps) {
   const divClick = onDivClick ?? onClick;
   const handleDivClick =
     divClick !== undefined
-      ? (e?: MouseEvent<HTMLDivElement>) => {
-          if (!disabled) (divClick as (e?: MouseEvent<HTMLDivElement>) => void)(e);
+      ? (e?: SyntheticEvent<HTMLDivElement>) => {
+          if (!disabled) (divClick as (e?: SyntheticEvent<HTMLDivElement>) => void)(e);
         }
       : undefined;
   const body = (

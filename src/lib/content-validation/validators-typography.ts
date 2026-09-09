@@ -35,173 +35,110 @@ function checkNoPeriod(
   }
 }
 
+function checkTextTypography(
+  collector: ReturnType<typeof createCollector>,
+  group: ContentValidationArea,
+  id: string,
+  label: string,
+  text: string,
+  options?: { allowPeriod?: boolean; sliceLimit?: number },
+): void {
+  if (hasEmDash(text)) {
+    const snippet = options?.sliceLimit ? text.slice(0, options.sliceLimit) : text;
+    collector.error(group, id, `${label} contains em dash — rewrite without —: "${snippet}"`);
+  }
+  if (!options?.allowPeriod) {
+    checkNoPeriod(collector, group, id, label, text);
+  }
+}
+
 export function validateTypography(collector: ReturnType<typeof createCollector>): void {
   for (const event of mysteryPool) {
-    if (hasEmDash(event.title)) {
-      collector.error("rewards", event.id, `Mystery title contains em dash — rewrite without —: "${event.title}"`);
-    }
-    if (hasEmDash(event.narrative)) {
-      collector.error(
-        "rewards",
-        event.id,
-        `Mystery narrative contains em dash — rewrite without —: "${event.narrative.slice(0, 80)}"`,
-      );
-    }
+    checkTextTypography(collector, "rewards", event.id, "Mystery title", event.title, { allowPeriod: true });
+    checkTextTypography(collector, "rewards", event.id, "Mystery narrative", event.narrative, {
+      allowPeriod: true,
+      sliceLimit: 80,
+    });
     for (const choice of event.choices) {
-      if (hasEmDash(choice.label)) {
-        collector.error(
-          "rewards",
-          `${event.id}/${choice.label}`,
-          `Mystery choice label contains em dash — rewrite without —: "${choice.label}"`,
-        );
-      }
+      checkTextTypography(collector, "rewards", `${event.id}/${choice.label}`, "Mystery choice label", choice.label, {
+        allowPeriod: true,
+      });
     }
   }
 
   for (const card of cardLibrary) {
-    if (hasEmDash(card.title)) {
-      collector.error("cards", card.id, `Card title contains em dash — rewrite without —: "${card.title}"`);
-    }
+    checkTextTypography(collector, "cards", card.id, "Card title", card.title, { allowPeriod: true });
     for (const line of card.descriptionLines) {
-      if (hasEmDash(line)) {
-        collector.error("cards", card.id, `Card description contains em dash — rewrite without —: "${line}"`);
-      }
-      checkNoPeriod(collector, "cards", card.id, "Card description", line);
+      checkTextTypography(collector, "cards", card.id, "Card description", line);
     }
   }
 
   for (const trinket of trinketLibrary) {
-    if (hasEmDash(trinket.title)) {
-      collector.error("trinkets", trinket.id, `Trinket title contains em dash — rewrite without —: "${trinket.title}"`);
-    }
+    checkTextTypography(collector, "trinkets", trinket.id, "Trinket title", trinket.title, { allowPeriod: true });
     for (const line of trinket.descriptionLines) {
-      if (hasEmDash(line)) {
-        collector.error("trinkets", trinket.id, `Trinket description contains em dash — rewrite without —: "${line}"`);
-      }
-      checkNoPeriod(collector, "trinkets", trinket.id, "Trinket description", line);
+      checkTextTypography(collector, "trinkets", trinket.id, "Trinket description", line);
     }
   }
 
   for (const enemy of enemyBestiary) {
-    if (hasEmDash(enemy.title)) {
-      collector.error("enemies", enemy.id, `Enemy title contains em dash — rewrite without —: "${enemy.title}"`);
-    }
-    if (hasEmDash(enemy.subtitle)) {
-      collector.error("enemies", enemy.id, `Enemy subtitle contains em dash — rewrite without —: "${enemy.subtitle}"`);
-    }
+    checkTextTypography(collector, "enemies", enemy.id, "Enemy title", enemy.title, { allowPeriod: true });
+    checkTextTypography(collector, "enemies", enemy.id, "Enemy subtitle", enemy.subtitle, { allowPeriod: true });
     for (const trait of enemy.traits) {
-      if (hasEmDash(trait.title)) {
-        collector.error(
-          "enemies",
-          trait.id,
-          `Enemy trait title contains em dash — rewrite without —: "${trait.title}"`,
-        );
-      }
-      if (hasEmDash(trait.description)) {
-        collector.error(
-          "enemies",
-          trait.id,
-          `Enemy trait description contains em dash — rewrite without —: "${trait.description}"`,
-        );
-      }
-      checkNoPeriod(collector, "enemies", trait.id, "Enemy trait description", trait.description);
+      checkTextTypography(collector, "enemies", trait.id, "Enemy trait title", trait.title, { allowPeriod: true });
+      checkTextTypography(collector, "enemies", trait.id, "Enemy trait description", trait.description);
     }
   }
 
   for (const [id, companion] of Object.entries(companionLibrary)) {
-    if (hasEmDash(companion.title)) {
-      collector.error("companions", id, `Companion title contains em dash — rewrite without —: "${companion.title}"`);
-    }
+    checkTextTypography(collector, "companions", id, "Companion title", companion.title, { allowPeriod: true });
   }
 
   for (const definition of gearDefinitionList) {
     for (const line of definition.descriptionLines) {
-      if (hasEmDash(line)) {
-        collector.error("gear", definition.id, `Gear description contains em dash — rewrite without —: "${line}"`);
-      }
-      if (definition.rarity !== "unique") checkNoPeriod(collector, "gear", definition.id, "Gear description", line);
+      checkTextTypography(collector, "gear", definition.id, "Gear description", line, {
+        allowPeriod: definition.rarity === "unique",
+      });
     }
-    if (hasEmDash(definition.id)) {
-      collector.error("gear", definition.id, `Gear id contains em dash — rewrite without —: "${definition.id}"`);
-    }
+    checkTextTypography(collector, "gear", definition.id, "Gear id", definition.id, { allowPeriod: true });
   }
 
   for (const [id, character] of Object.entries(characters)) {
-    if (hasEmDash(character.name)) {
-      collector.error("keywords", id, `Character name contains em dash — rewrite without —: "${character.name}"`);
-    }
-    if (hasEmDash(character.description)) {
-      collector.error(
-        "keywords",
-        id,
-        `Character description contains em dash — rewrite without —: "${character.description}"`,
-      );
-    }
-    if (hasEmDash(character.role)) {
-      collector.error("keywords", id, `Character role contains em dash — rewrite without —: "${character.role}"`);
-    }
+    checkTextTypography(collector, "keywords", id, "Character name", character.name, { allowPeriod: true });
+    checkTextTypography(collector, "keywords", id, "Character description", character.description, {
+      allowPeriod: true,
+    });
+    checkTextTypography(collector, "keywords", id, "Character role", character.role, { allowPeriod: true });
   }
 
   for (const talent of talentPool) {
-    if (hasEmDash(talent.description)) {
-      collector.error(
-        "talents",
-        talent.id,
-        `Talent description contains em dash — rewrite without —: "${talent.description}"`,
-      );
-    }
-    checkNoPeriod(collector, "talents", talent.id, "Talent description", talent.description);
+    checkTextTypography(collector, "talents", talent.id, "Talent description", talent.description);
   }
 
   for (const [id, definition] of Object.entries(keywordDefinitions)) {
-    if (hasEmDash(definition.label)) {
-      collector.error("keywords", id, `Keyword label contains em dash — rewrite without —: "${definition.label}"`);
-    }
-    if (hasEmDash(definition.description)) {
-      collector.error(
-        "keywords",
-        id,
-        `Keyword description contains em dash — rewrite without —: "${definition.description}"`,
-      );
-    }
-    checkNoPeriod(collector, "keywords", id, "Keyword description", definition.description);
+    checkTextTypography(collector, "keywords", id, "Keyword label", definition.label, { allowPeriod: true });
+    checkTextTypography(collector, "keywords", id, "Keyword description", definition.description);
   }
 
   for (const [id, trait] of Object.entries(ENCOUNTER_TRAITS)) {
-    if (hasEmDash(trait.label)) {
-      collector.error(
-        "encounter-traits",
-        id,
-        `Encounter trait label contains em dash — rewrite without —: "${trait.label}"`,
-      );
-    }
-    if (hasEmDash(trait.description)) {
-      collector.error(
-        "encounter-traits",
-        id,
-        `Encounter trait description contains em dash — rewrite without —: "${trait.description}"`,
-      );
-    }
-    checkNoPeriod(collector, "encounter-traits", id, "Encounter trait description", trait.description);
-    if (hasEmDash(trait.enemyTrait.title)) {
-      collector.error(
-        "encounter-traits",
-        id,
-        `Encounter trait enemy title contains em dash — rewrite without —: "${trait.enemyTrait.title}"`,
-      );
-    }
-    if (hasEmDash(trait.enemyTrait.description)) {
-      collector.error(
-        "encounter-traits",
-        id,
-        `Encounter trait enemy description contains em dash — rewrite without —: "${trait.enemyTrait.description}"`,
-      );
-    }
-    checkNoPeriod(collector, "encounter-traits", id, "Encounter trait enemy description", trait.enemyTrait.description);
+    checkTextTypography(collector, "encounter-traits", id, "Encounter trait label", trait.label, {
+      allowPeriod: true,
+    });
+    checkTextTypography(collector, "encounter-traits", id, "Encounter trait description", trait.description);
+    checkTextTypography(collector, "encounter-traits", id, "Encounter trait enemy title", trait.enemyTrait.title, {
+      allowPeriod: true,
+    });
+    checkTextTypography(
+      collector,
+      "encounter-traits",
+      id,
+      "Encounter trait enemy description",
+      trait.enemyTrait.description,
+    );
   }
 
   for (const affix of gearAffixList) {
-    if (!affix.uniqueOnly)
+    if (!affix.uniqueOnly) {
       checkNoPeriod(collector, "gear", affix.id, "Gear affix description", affix.descriptionTemplate);
+    }
   }
 }

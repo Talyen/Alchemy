@@ -266,20 +266,14 @@ export function getCorruptionMutationGroups(
   if (modifiers.includes("echoing-altar")) {
     const keywords = new Set<KeywordId>(getCardKeywords(card));
     shaped = shaped.map((group) => {
-      if (group.kind === "secondary") {
-        const cards = filterEchoSecondary(
-          group.mutations.map(({ card: next }) => next),
-          keywords,
+      if (group.kind === "secondary" || group.kind === "convert") {
+        const filterFn = group.kind === "secondary" ? filterEchoSecondary : filterEchoConversions;
+        const kept = new Set(
+          filterFn(
+            group.mutations.map(({ card: next }) => next),
+            keywords,
+          ),
         );
-        const kept = new Set(cards);
-        return { ...group, mutations: group.mutations.filter(({ card: next }) => kept.has(next)) };
-      }
-      if (group.kind === "convert") {
-        const cards = filterEchoConversions(
-          group.mutations.map(({ card: next }) => next),
-          keywords,
-        );
-        const kept = new Set(cards);
         return { ...group, mutations: group.mutations.filter(({ card: next }) => kept.has(next)) };
       }
       return group;

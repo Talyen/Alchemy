@@ -20,16 +20,7 @@ function deriveTitle(id: string, customTitle?: string): string {
 type PlayerStatusDescriptionStatus = "block" | "armor" | "thorns" | "forge";
 
 function playerStatusDescriptionLine(status: PlayerStatusDescriptionStatus, amount: number): string {
-  switch (status) {
-    case "block":
-      return `Gain ${amount} Block`;
-    case "armor":
-      return `Gain ${amount} Armor`;
-    case "thorns":
-      return `Gain ${amount} Thorns`;
-    case "forge":
-      return `Gain ${amount} Forge`;
-  }
+  return `Gain ${amount} ${capitalizeWord(status)}`;
 }
 
 function effectDescriptionLine(effect: BattleCardEffect): string {

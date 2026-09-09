@@ -15,7 +15,7 @@ import { GEAR_RARITIES } from "./types";
 import { uniqueItemList, type UniqueItemDefinition } from "./unique-catalog";
 import type { GearAffixRoll, GearDefinition, GearInstance, GearRarity } from "./types";
 
-export { allowedAspectsForDefinition, buildEligibleAffixPool, rollAffixes } from "./affix-pool";
+export { buildEligibleAffixPool } from "./affix-pool";
 
 export function generateUniqueGearInstance(uniqueDef: UniqueItemDefinition): GearInstance {
   return {

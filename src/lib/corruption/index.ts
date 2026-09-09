@@ -27,6 +27,13 @@ function pickMutation(groups: CorruptionMutationGroup[], rng: () => number) {
   return undefined;
 }
 
+function preserveCardUid(card: BattleCard, uid: BattleCard["uid"]): BattleCard {
+  const result = { ...card };
+  if (uid !== undefined) result.uid = uid;
+  else delete result.uid;
+  return result;
+}
+
 export function corruptCard(
   selectedCard: BattleCard,
   library: BattleCard[],
@@ -56,10 +63,12 @@ export function corruptCard(
   const mutation = pickMutation(groups, rng);
   if (!mutation) return null;
   if (!twin) {
-    const corruptedCard = { ...mutation.card };
-    if (selectedCard.uid !== undefined) corruptedCard.uid = selectedCard.uid;
-    else delete corruptedCard.uid;
-    return { originalCard: selectedCard, corruptedCard, transformed, delta: mutation.delta };
+    return {
+      originalCard: selectedCard,
+      corruptedCard: preserveCardUid(mutation.card, selectedCard.uid),
+      transformed,
+      delta: mutation.delta,
+    };
   }
   const firstKind = groups.find((entry) => entry.mutations.includes(mutation))?.kind;
   const secondGroups = getCorruptionMutationGroups(mutation.card, singleModifiers).filter(
@@ -67,17 +76,16 @@ export function corruptCard(
   );
   const second = pickMutation(secondGroups, rng);
   if (!second) {
-    const corruptedCard = { ...mutation.card };
-    if (selectedCard.uid !== undefined) corruptedCard.uid = selectedCard.uid;
-    else delete corruptedCard.uid;
-    return { originalCard: selectedCard, corruptedCard, transformed, delta: mutation.delta };
+    return {
+      originalCard: selectedCard,
+      corruptedCard: preserveCardUid(mutation.card, selectedCard.uid),
+      transformed,
+      delta: mutation.delta,
+    };
   }
-  const corruptedCard = { ...second.card };
-  if (selectedCard.uid !== undefined) corruptedCard.uid = selectedCard.uid;
-  else delete corruptedCard.uid;
   return {
     originalCard: selectedCard,
-    corruptedCard,
+    corruptedCard: preserveCardUid(second.card, selectedCard.uid),
     transformed,
     delta: mutation.delta === -1 && second.delta === -1 ? -1 : 1,
   };

@@ -34,13 +34,7 @@ function checkRestoreLine(
       : null;
   if (!prefix || !line.includes(resource) || line.includes("Mana Crystal") || line.includes("Maximum Mana"))
     return false;
-  const effect = nextEffect();
-  if (!effect) {
-    pushMissingEffect(issues, cardId, line);
-    return true;
-  }
-  if (parseLeadingNumber(line, prefix) !== effect.amount) pushValueMismatch(issues, cardId, line, effect.amount);
-  return true;
+  return checkSimpleValueLine(line, prefix, nextEffect, issues, cardId);
 }
 
 type NextDamageFn = () => (BattleCardEffect & { kind: "damage" }) | undefined;
@@ -81,13 +75,7 @@ function checkGoldLine(
 ): boolean {
   const prefix = line.startsWith("Gain ") ? "Gain " : line.startsWith("Steal ") ? "Steal " : null;
   if (!prefix || !line.includes(" Gold")) return false;
-  const effect = nextGold();
-  if (!effect) {
-    pushMissingEffect(issues, cardId, line);
-    return true;
-  }
-  if (parseLeadingNumber(line, prefix) !== effect.amount) pushValueMismatch(issues, cardId, line, effect.amount);
-  return true;
+  return checkSimpleValueLine(line, prefix, nextGold, issues, cardId);
 }
 
 function checkPerManaBlockLine(
@@ -152,14 +140,8 @@ function checkLoseHealthLine(
   issues: ContentValidationIssue[],
   cardId: string,
 ): boolean {
-  if (!line.startsWith("Lose ") || !line.includes("Health")) return false;
-  const effect = nextLoseHealth();
-  if (!effect) {
-    pushMissingEffect(issues, cardId, line);
-    return true;
-  }
-  if (parseLeadingNumber(line, "Lose ") !== effect.amount) pushValueMismatch(issues, cardId, line, effect.amount);
-  return true;
+  if (!line.includes("Health")) return false;
+  return checkSimpleValueLine(line, "Lose ", nextLoseHealth, issues, cardId);
 }
 
 function checkGainMaxManaLine(
@@ -168,30 +150,8 @@ function checkGainMaxManaLine(
   issues: ContentValidationIssue[],
   cardId: string,
 ): boolean {
-  if (!line.startsWith("Gain ") || !(line.includes("Maximum Mana") || line.includes("Mana Crystal"))) return false;
-  const effect = nextGainMaxMana();
-  if (!effect) {
-    pushMissingEffect(issues, cardId, line);
-    return true;
-  }
-  if (parseLeadingNumber(line, "Gain ") !== effect.amount) pushValueMismatch(issues, cardId, line, effect.amount);
-  return true;
-}
-
-function checkWishLine(
-  line: string,
-  nextWish: NextSimpleFn<{ amount: number }>,
-  issues: ContentValidationIssue[],
-  cardId: string,
-): boolean {
-  if (!line.startsWith("Wish ")) return false;
-  const effect = nextWish();
-  if (!effect) {
-    pushMissingEffect(issues, cardId, line);
-    return true;
-  }
-  if (parseLeadingNumber(line, "Wish ") !== effect.amount) pushValueMismatch(issues, cardId, line, effect.amount);
-  return true;
+  if (!line.includes("Maximum Mana") && !line.includes("Mana Crystal")) return false;
+  return checkSimpleValueLine(line, "Gain ", nextGainMaxMana, issues, cardId);
 }
 
 export function validateCardNumericParity(card: BattleCard): ContentValidationIssue[] {
@@ -226,7 +186,7 @@ export function validateCardNumericParity(card: BattleCard): ContentValidationIs
     if (checkStatusLine(line, nextPlayerStatus, issues, card.id)) continue;
     if (checkRestoreLine(line, "Mana", nextRestoreMana, issues, card.id)) continue;
     if (checkRestoreLine(line, "Health", nextHeal, issues, card.id)) continue;
-    if (checkWishLine(line, nextWish, issues, card.id)) continue;
+    if (checkSimpleValueLine(line, "Wish ", nextWish, issues, card.id)) continue;
     if (checkSimpleValueLine(line, "Draw ", nextDraw, issues, card.id)) continue;
     if (checkLoseHealthLine(line, nextLoseHealth, issues, card.id)) continue;
     if (checkGainMaxManaLine(line, nextGainMaxMana, issues, card.id)) continue;

@@ -12,7 +12,7 @@ import {
   SHOP_REMOVE_PRICE,
   TRINKET_SHOP_TRINKET_PRICE,
 } from "@/lib/game-constants";
-import { type BattleCard, type TalentEffectManifest } from "@/lib/game-data";
+import { type BattleCard, type TalentEffectManifest, type TrinketEntry } from "@/lib/game-data";
 import { isStandardPotionCard } from "@/lib/game-data/cards/card-pools";
 import { gearDefinitions, type GearInstance } from "@/lib/gear";
 import { computeTrinketManifest } from "@/lib/trinkets";
@@ -97,7 +97,7 @@ const SHOP_BUY_BASE_PRICE = {
 
 function getBuyMultiplier(
   kind: ShopBuyKind,
-  item: BattleCard | GearInstance | null,
+  item: BattleCard | GearInstance | TrinketEntry | null,
   modifiers: readonly EncounterRewardTraitId[],
 ): number {
   if (kind === "merchantCard" && modifiers.includes("bargain-bin")) return LABYRINTH_MODIFIER_CONFIG.half;
@@ -108,20 +108,21 @@ function getBuyMultiplier(
     kind === "gear" &&
     modifiers.includes("apprentice") &&
     item !== null &&
-    gearDefinitions[(item as GearInstance).definitionId]?.rarity === "basic"
+    "definitionId" in item &&
+    gearDefinitions[item.definitionId]?.rarity === "basic"
   )
     return LABYRINTH_MODIFIER_CONFIG.half;
   return 1;
 }
 
-function getBuyBasePrice(kind: ShopBuyKind, item: BattleCard | GearInstance | null): number {
+function getBuyBasePrice(kind: ShopBuyKind, item: BattleCard | GearInstance | TrinketEntry | null): number {
   if (kind === "gear") return getEquipmentShopPrice(item as GearInstance);
   return SHOP_BUY_BASE_PRICE[kind];
 }
 
 function getBuyDiscounts(
   kind: ShopBuyKind,
-  item: BattleCard | GearInstance | null,
+  item: BattleCard | GearInstance | TrinketEntry | null,
   talentEffects: TalentEffectManifest,
 ): { haggleDiscount: number; apothecaryDiscount: number } {
   if ((kind === "merchantCard" || kind === "alchemistPotion") && item !== null)
@@ -131,7 +132,7 @@ function getBuyDiscounts(
 
 export function getShopBuyPrice(
   kind: ShopBuyKind,
-  item: BattleCard | GearInstance | null,
+  item: BattleCard | GearInstance | TrinketEntry | null,
   context: ShopBuyPriceContext,
 ): number {
   return computeBuyPrice(
@@ -143,7 +144,7 @@ export function getShopBuyPrice(
 
 export function getShopBuyPrices(
   kind: ShopBuyKind,
-  items: ReadonlyArray<BattleCard | GearInstance>,
+  items: ReadonlyArray<BattleCard | GearInstance | TrinketEntry>,
   context: ShopBuyPriceContext,
 ): number[] {
   return items.map((item) => getShopBuyPrice(kind, item, context));

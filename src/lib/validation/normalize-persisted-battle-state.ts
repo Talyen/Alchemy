@@ -87,10 +87,7 @@ export function normalizePersistedBattleState(saved: Partial<BattleState>): Batt
   };
   delete merged.battleMetrics;
 
-  merged.rng =
-    (saved as { rng?: unknown }).rng != null && typeof (saved as { rng?: unknown }).rng === "function"
-      ? (saved as unknown as { rng: () => number }).rng
-      : restingWorldRng();
+  merged.rng = typeof saved.rng === "function" ? saved.rng : restingWorldRng();
 
   const savedFlags: Record<string, unknown> = saved.flags ?? {};
   merged.flags.previousCardWasArchery = savedFlags.previousCardWasArchery === true;

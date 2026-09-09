@@ -106,22 +106,44 @@ function invalidateCombatTextSequence() {
 
 let ghostIdCounter = 0;
 
+type BattlePresentationState = Pick<
+  BattlePresentationStore,
+  | "cardGhosts"
+  | "floatingCombatTexts"
+  | "enemyShaking"
+  | "playerShaking"
+  | "companionShaking"
+  | "playerImpactCue"
+  | "enemyImpactCue"
+  | "playerAttackToken"
+  | "enemyAttackToken"
+  | "playerCastToken"
+  | "enemyCastToken"
+  | "cardTransfers"
+  | "hiddenHandCardKeys"
+  | "cardTransferInProgress"
+>;
+
+const INITIAL_BATTLE_PRESENTATION_STATE: BattlePresentationState = {
+  cardGhosts: [],
+  floatingCombatTexts: [],
+  enemyShaking: false,
+  playerShaking: false,
+  companionShaking: false,
+  playerImpactCue: null,
+  enemyImpactCue: null,
+  playerAttackToken: 0,
+  enemyAttackToken: 0,
+  playerCastToken: 0,
+  enemyCastToken: 0,
+  cardTransfers: [],
+  hiddenHandCardKeys: EMPTY_HIDDEN_HAND_KEYS,
+  cardTransferInProgress: false,
+};
+
 export const useBattlePresentationStore = create<BattlePresentationStore>()(
   subscribeWithSelector((set) => ({
-    cardGhosts: [],
-    floatingCombatTexts: [],
-    enemyShaking: false,
-    playerShaking: false,
-    companionShaking: false,
-    playerImpactCue: null,
-    enemyImpactCue: null,
-    playerAttackToken: 0,
-    enemyAttackToken: 0,
-    playerCastToken: 0,
-    enemyCastToken: 0,
-    cardTransfers: [],
-    hiddenHandCardKeys: EMPTY_HIDDEN_HAND_KEYS,
-    cardTransferInProgress: false,
+    ...INITIAL_BATTLE_PRESENTATION_STATE,
 
     spawnCardGhost: (ghost) => {
       const id = `ghost-${++ghostIdCounter}`;
@@ -253,22 +275,7 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()(
     resetPresentation: () => {
       invalidateCombatTextSequence();
       clearPresentationTimers();
-      set({
-        cardGhosts: [],
-        floatingCombatTexts: [],
-        enemyShaking: false,
-        playerShaking: false,
-        companionShaking: false,
-        playerImpactCue: null,
-        enemyImpactCue: null,
-        playerAttackToken: 0,
-        enemyAttackToken: 0,
-        playerCastToken: 0,
-        enemyCastToken: 0,
-        cardTransfers: [],
-        hiddenHandCardKeys: EMPTY_HIDDEN_HAND_KEYS,
-        cardTransferInProgress: false,
-      });
+      set(INITIAL_BATTLE_PRESENTATION_STATE);
     },
   })),
 );

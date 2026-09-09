@@ -11,13 +11,6 @@ export const TRINKET_SHOP_OFFERED = 3;
 export const TRINKET_SHOP_REFRESHES = 1;
 
 export const EQUIPMENT_SHOP_BASIC_PRICE = 40;
-
-export const SHOP_CONFIG = {
-  shop: { price: SHOP_CARD_PRICE },
-  alchemist: { price: ALCHEMIST_POTION_PRICE },
-  equipment: { price: EQUIPMENT_SHOP_BASIC_PRICE },
-  trinket: { price: TRINKET_SHOP_TRINKET_PRICE },
-} as const;
 export const EQUIPMENT_SHOP_ASTRAL_PRICE = 80;
 export const EQUIPMENT_SHOP_UNIQUE_PRICE = 100;
 export const EQUIPMENT_SHOP_OFFERED = 3;

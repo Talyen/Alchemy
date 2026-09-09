@@ -199,13 +199,7 @@ function applyTypeMultiplier(loot: MaterialInventory, enemyType: string): Materi
 export function getEnemyMaterialLoot(enemyId: string, enemyType: string, rng: () => number): MaterialInventory {
   const table = enemyLootTables[enemyId];
   if (!table) return emptyInventory();
-  const loot: MaterialInventory = {
-    wood: table.guaranteed.wood,
-    iron: table.guaranteed.iron,
-    herbs: table.guaranteed.herbs,
-    food: table.guaranteed.food,
-    gems: table.guaranteed.gems,
-  };
+  const loot: MaterialInventory = { ...table.guaranteed };
   for (const bonus of table.bonuses) {
     if (rng() < bonus.weight) {
       loot[bonus.material] += bonus.min + Math.floor(rng() * (bonus.max - bonus.min + 1));

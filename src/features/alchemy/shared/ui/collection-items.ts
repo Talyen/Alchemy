@@ -11,7 +11,6 @@ import {
   type BestiaryEntry,
   type CharacterDefinition,
   type CharacterId,
-  type TrinketEntry,
 } from "@/features/alchemy/shared/config/game-data-catalog";
 import type { BattleCard } from "@/lib/game-data";
 import { gearDefinitions, uniqueItemList } from "@/lib/gear";
@@ -139,16 +138,26 @@ function shapeCardItem(
   };
 }
 
+function sliceDiscoveredEntries<T extends { id: string }>(
+  entries: readonly T[],
+  discoveredIds: readonly string[],
+  start: number,
+  pageSize: number,
+  mapEntry: (entry: T, discovered: boolean) => CollectionTileItem,
+): CollectionTileItem[] {
+  const discoveredSet = new Set(discoveredIds);
+  return entries.slice(start, start + pageSize).map((entry) => mapEntry(entry, discoveredSet.has(entry.id)));
+}
+
 function getCardItems(
   discoveredCardIds: string[],
   bondedCompanions: Record<string, number> = {},
   start: number,
   pageSize: number,
 ): CollectionTileItem[] {
-  const discoveredSet = new Set(discoveredCardIds);
-  return sortedCardLibrary
-    .slice(start, start + pageSize)
-    .map((card) => shapeCardItem(card, discoveredSet.has(card.id), bondedCompanions));
+  return sliceDiscoveredEntries(sortedCardLibrary, discoveredCardIds, start, pageSize, (card, discovered) =>
+    shapeCardItem(card, discovered, bondedCompanions),
+  );
 }
 
 function getHeroItems(
@@ -175,53 +184,41 @@ function getHeroItems(
 }
 
 function getBestiaryItems(encounteredEnemyIds: string[], start: number, pageSize: number): CollectionTileItem[] {
-  const encounteredSet = new Set(encounteredEnemyIds);
-  return sortedEnemyBestiary.slice(start, start + pageSize).map((entry: BestiaryEntry) => {
-    const discovered = encounteredSet.has(entry.id);
-    return {
-      id: entry.id,
-      title: discovered ? entry.title : COLLECTION_ITEMS_CONFIG.hiddenTitle,
-      subtitle: discovered ? entry.subtitle : undefined,
-      descriptionLines: discovered ? entry.descriptionLines : [COLLECTION_ITEMS_CONFIG.hiddenEnemyDescription],
-      art: entry.art,
-      discovered,
-      hoverScope: "collection-bestiary",
-      frameType: "bestiary",
-      enemyEntry: entry,
-    };
-  });
+  return sliceDiscoveredEntries(sortedEnemyBestiary, encounteredEnemyIds, start, pageSize, (entry, discovered) => ({
+    id: entry.id,
+    title: discovered ? entry.title : COLLECTION_ITEMS_CONFIG.hiddenTitle,
+    subtitle: discovered ? entry.subtitle : undefined,
+    descriptionLines: discovered ? entry.descriptionLines : [COLLECTION_ITEMS_CONFIG.hiddenEnemyDescription],
+    art: entry.art,
+    discovered,
+    hoverScope: "collection-bestiary",
+    frameType: "bestiary",
+    enemyEntry: entry,
+  }));
 }
 
 function getTrinketItems(discoveredTrinketIds: string[], start: number, pageSize: number): CollectionTileItem[] {
-  const discoveredSet = new Set(discoveredTrinketIds);
-  return sortedTrinketLibrary.slice(start, start + pageSize).map((entry: TrinketEntry) => {
-    const discovered = discoveredSet.has(entry.id);
-    return {
-      id: entry.id,
-      title: discovered ? entry.title : COLLECTION_ITEMS_CONFIG.hiddenTitle,
-      subtitle: undefined,
-      descriptionLines: discovered ? entry.descriptionLines : [COLLECTION_ITEMS_CONFIG.hiddenTrinketDescription],
-      art: entry.art,
-      discovered,
-      hoverScope: "collection-trinket" as const,
-      frameType: "trinket" as const,
-    };
-  });
+  return sliceDiscoveredEntries(sortedTrinketLibrary, discoveredTrinketIds, start, pageSize, (entry, discovered) => ({
+    id: entry.id,
+    title: discovered ? entry.title : COLLECTION_ITEMS_CONFIG.hiddenTitle,
+    subtitle: undefined,
+    descriptionLines: discovered ? entry.descriptionLines : [COLLECTION_ITEMS_CONFIG.hiddenTrinketDescription],
+    art: entry.art,
+    discovered,
+    hoverScope: "collection-trinket",
+    frameType: "trinket",
+  }));
 }
 
 function getUniqueItems(discoveredUniqueIds: string[], start: number, pageSize: number): CollectionTileItem[] {
-  const discoveredSet = new Set(discoveredUniqueIds);
-  return sortedUniqueLibrary.slice(start, start + pageSize).map((entry) => {
-    const discovered = discoveredSet.has(entry.id);
-    return {
-      id: entry.id,
-      title: discovered ? entry.displayName : COLLECTION_ITEMS_CONFIG.hiddenTitle,
-      subtitle: undefined,
-      descriptionLines: discovered ? [entry.description] : [COLLECTION_ITEMS_CONFIG.hiddenUniqueDescription],
-      art: gearDefinitions[entry.id]?.art ?? "",
-      discovered,
-      hoverScope: "collection-unique" as const,
-      frameType: "unique" as const,
-    };
-  });
+  return sliceDiscoveredEntries(sortedUniqueLibrary, discoveredUniqueIds, start, pageSize, (entry, discovered) => ({
+    id: entry.id,
+    title: discovered ? entry.displayName : COLLECTION_ITEMS_CONFIG.hiddenTitle,
+    subtitle: undefined,
+    descriptionLines: discovered ? [entry.description] : [COLLECTION_ITEMS_CONFIG.hiddenUniqueDescription],
+    art: gearDefinitions[entry.id]?.art ?? "",
+    discovered,
+    hoverScope: "collection-unique",
+    frameType: "unique",
+  }));
 }

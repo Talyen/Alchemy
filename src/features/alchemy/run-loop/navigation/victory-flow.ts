@@ -9,11 +9,42 @@ import {
   type TalentEffectManifest,
 } from "@/lib/game-data";
 import type { BattleState } from "@/lib/battle";
-import type { HomesteadEffectManifest } from "@/lib/homestead/types";
-import type {
-  DestinationOfferState,
-  DestinationOptionsInput,
+import type { HomesteadEffectManifest, MaterialInventory } from "@/lib/homestead/types";
+import type { RewardState } from "@/lib/active-run-session";
+import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
+import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
+import type { Destination } from "@/lib/routing";
+import { getEnemyMaterialLoot, applyMaterialFindBonus } from "@/lib/homestead/loot";
+import {
+  COMPANION_GOLD_FIND_CHANCE,
+  COMPANION_GOLD_MULTIPLIER,
+  ELITE_GOLD_BONUS_FRACTION,
+  BOSS_GOLD_BONUS_FRACTION,
+  ENEMY_TRAIT_IDS,
+  GOLD_REWARD_MIN,
+  GOLD_REWARD_MAX,
+  GOLD_TROVE_REWARD_MULTIPLIER,
+} from "@/lib/game-constants";
+import {
+  getActiveRewardModifiersForContentSystem,
+  applyLabyrinthRewardMaterialModifiers,
+  computeVictoryGold,
+  getGenerousGoldBonus,
+  getWealthyGoldBonus,
+  getWellProvisionedHealing,
+} from "./reward-math";
+import {
+  createCombatRewardState as createCombatRewardStateFromFlow,
+  createBossRewardState as createBossRewardStateFromFlow,
+  createWildwoodRewardState,
+} from "./reward-flow";
+import {
+  sampleDestinationChoices,
+  withSelectedBossForDestinations,
+  type DestinationOfferState,
+  type DestinationOptionsInput,
 } from "@/features/alchemy/shared/run-flow/destination-flow";
+import { combineTrinketEffectIds } from "@/lib/trinkets";
 
 export interface VictoryRewardsInput {
   characterId: CharacterId;
@@ -47,38 +78,6 @@ export interface VictoryRewardsResult {
   maxHealthDelta: number;
   destinationOfferState: DestinationOfferState;
 }
-import { getEnemyMaterialLoot, applyMaterialFindBonus } from "@/lib/homestead/loot";
-import {
-  COMPANION_GOLD_FIND_CHANCE,
-  COMPANION_GOLD_MULTIPLIER,
-  ELITE_GOLD_BONUS_FRACTION,
-  BOSS_GOLD_BONUS_FRACTION,
-  ENEMY_TRAIT_IDS,
-  GOLD_REWARD_MIN,
-  GOLD_REWARD_MAX,
-  GOLD_TROVE_REWARD_MULTIPLIER,
-} from "@/lib/game-constants";
-import { getGenerousGoldBonus, getWealthyGoldBonus, getWellProvisionedHealing } from "./reward-math";
-import type { MaterialInventory } from "@/lib/homestead/types";
-import type { RewardState } from "@/lib/active-run-session";
-import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
-import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
-import type { Destination } from "@/lib/routing";
-import {
-  getActiveRewardModifiersForContentSystem,
-  applyLabyrinthRewardMaterialModifiers,
-  computeVictoryGold,
-} from "./reward-math";
-import {
-  createCombatRewardState as createCombatRewardStateFromFlow,
-  createBossRewardState as createBossRewardStateFromFlow,
-  createWildwoodRewardState,
-} from "./reward-flow";
-import {
-  sampleDestinationChoices,
-  withSelectedBossForDestinations,
-} from "@/features/alchemy/shared/run-flow/destination-flow";
-import { combineTrinketEffectIds } from "@/lib/trinkets";
 
 interface VictoryGoldRoll {
   gold: number;

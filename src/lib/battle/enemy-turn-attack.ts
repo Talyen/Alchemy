@@ -258,7 +258,14 @@ export function processEnemyAttack(state: BattleState, combatTexts: CombatTextEv
     if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
     const effect = attackEffects[idx] as EnemyAttackEffect;
     try {
-      if (effect.kind === "damage") {
+      const damageEffect: Extract<EnemyAttackEffect, { kind: "damage" }> | null =
+        effect.kind === "damage"
+          ? effect
+          : effect.status === "stun" || effect.status === "freeze"
+            ? { kind: "damage", damageType: effect.status, amount: effect.amount }
+            : null;
+
+      if (damageEffect) {
         const previousState = nextState;
         const isFirstDamage = firstDamageEffect;
         const resolved = resolveEnemyDamageModifiers(
@@ -272,7 +279,10 @@ export function processEnemyAttack(state: BattleState, combatTexts: CombatTextEv
         const flatBonus = resolved.flatBonus;
         for (const traitId of resolved.abilityIds) nextState = recordEnemyAbilityActivation(nextState, traitId);
 
-        const banditFirstHit = hasEnemyTrait(nextState, "bandit", traitSet) && !nextState.flags.enemyFirstHitDoubleUsed;
+        const banditFirstHit =
+          effect.kind === "damage" &&
+          hasEnemyTrait(nextState, "bandit", traitSet) &&
+          !nextState.flags.enemyFirstHitDoubleUsed;
         if (banditFirstHit) {
           amountMultiplier *= BANDIT_FIRST_HIT_MULTIPLIER;
         }
@@ -288,14 +298,14 @@ export function processEnemyAttack(state: BattleState, combatTexts: CombatTextEv
           flatBonus,
           skipTraitReactions: isBonusHolyEffect,
           traitSet,
-          ...(hasEnemyTrait(nextState, "ogre", traitSet) && effect.damageType === "physical"
+          ...(hasEnemyTrait(nextState, "ogre", traitSet) && damageEffect.damageType === "physical"
             ? { physicalBlockBreakMultiplier: OGRE_BLOCK_BREAK_MULTIPLIER }
             : {}),
-          ...(hasEnemyTrait(nextState, "giant-snake", traitSet) && effect.damageType === "poison"
+          ...(hasEnemyTrait(nextState, "giant-snake", traitSet) && damageEffect.damageType === "poison"
             ? { extraPoisonBlockStrip: GIANT_SNAKE_EXTRA_BLOCK_STRIP }
             : {}),
         };
-        nextState = processAttackDamageEffect(nextState, effect, combatTexts, damageOptions);
+        nextState = processAttackDamageEffect(nextState, damageEffect, combatTexts, damageOptions);
         if (playerPacketLanded(previousState, nextState)) {
           attackPacketLanded = true;
           damageDealtToHealth += previousState.playerHealth - nextState.playerHealth;
@@ -303,35 +313,7 @@ export function processEnemyAttack(state: BattleState, combatTexts: CombatTextEv
             nextState = recordEnemyAbilityActivation(setFlag(nextState, "enemyFirstHitDoubleUsed", true), "bandit");
         }
         firstDamageEffect = false;
-      } else if (effect.status === "stun" || effect.status === "freeze") {
-        const previousState = nextState;
-        const isFirstDamage = firstDamageEffect;
-        const resolved = resolveEnemyDamageModifiers(
-          nextState,
-          traitSet,
-          isFirstDamage,
-          nextAttackCrit,
-          nextAttackBonus,
-        );
-        const amountMultiplier = resolved.amountMultiplier * (brawlerPenalty ? BRAWLER_PENALTY_MULTIPLIER : 1);
-        const flatBonus = resolved.flatBonus;
-        for (const traitId of resolved.abilityIds) nextState = recordEnemyAbilityActivation(nextState, traitId);
-        if (isFirstDamage && (nextAttackCrit || nextAttackBonus > 0)) {
-          nextState = setFlag(nextState, "enemyNextAttackCrit", false);
-          nextState = setFlag(nextState, "enemyNextAttackBonus", 0);
-        }
-        nextState = processAttackDamageEffect(
-          nextState,
-          { kind: "damage", damageType: effect.status, amount: effect.amount },
-          combatTexts,
-          { canDodge: true, amountMultiplier, flatBonus, traitSet },
-        );
-        if (playerPacketLanded(previousState, nextState)) {
-          attackPacketLanded = true;
-          damageDealtToHealth += previousState.playerHealth - nextState.playerHealth;
-        }
-        firstDamageEffect = false;
-      } else if (isDirectPlayerStatusAttack(effect)) {
+      } else if (effect.kind === "player-status" && isDirectPlayerStatusAttack(effect)) {
         nextState = applyPlayerStatusFromAttack(nextState, effect, combatTexts);
       }
     } catch (err) {

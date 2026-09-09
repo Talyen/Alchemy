@@ -75,7 +75,6 @@ export const FIGHT_PACING = {
 
 export const CAMPFIRE_HEAL_FRACTION = 0.3;
 
-export const WISH_CRYSTAL_GOLD_CHANCE = 0.5;
 export const WISH_CRYSTAL_GOLD_PERCENT = 50;
 export const WISH_TRINKET_FORK_PERCENT = 50;
 

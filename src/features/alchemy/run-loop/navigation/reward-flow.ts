@@ -1,5 +1,14 @@
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
-import { getCardKeywords } from "@/lib/game-data";
+import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
+import {
+  ENEMY_TYPES,
+  cardLibrary,
+  getCardKeywords,
+  selectRewardCards,
+  trinketLibrary,
+  type BattleCard,
+  type TrinketEntry,
+} from "@/lib/game-data";
 import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import {
   BOSS_REWARD_RATES,
@@ -9,6 +18,7 @@ import {
   REWARD_CARD_CHOICES,
 } from "@/lib/game-constants";
 import { pickRandom, sampleItems } from "@/lib/rng";
+import { REWARD_ROUTES, type Destination, type RewardRoute } from "@/lib/routing";
 import {
   generateGearRewardChoices,
   generateGearRewardChoicesForRarities,
@@ -27,7 +37,6 @@ import {
 } from "@/lib/active-run-session";
 import type { BattleState } from "@/lib/battle";
 import type { MaterialInventory } from "@/lib/homestead/types";
-
 import { computeRewardGold } from "./reward-math";
 
 export type FinalizeRewardRoute = RewardRoute;
@@ -80,30 +89,11 @@ export interface CombatRewardInput {
   ownedUniqueIds?: ReadonlySet<string>;
   gearAstralChanceBonus?: number;
 }
-import { REWARD_ROUTES, type Destination, type RewardRoute } from "@/lib/routing";
-import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
-import {
-  ENEMY_TYPES,
-  cardLibrary,
-  selectRewardCards,
-  trinketLibrary,
-  type BattleCard,
-  type TrinketEntry,
-} from "@/lib/game-data";
 
 function sampleTrinketRewardChoices(excludedIds: readonly string[], rng: () => number): TrinketEntry[] {
   const excluded = new Set(excludedIds);
   return sampleItems(
     trinketLibrary.filter((entry) => !excluded.has(entry.id)),
-    REWARD_CARD_CHOICES,
-    rng,
-  );
-}
-
-function samplePermanentTrinketRewardChoices(ownedIds: readonly string[], rng: () => number): TrinketEntry[] {
-  const owned = new Set(ownedIds);
-  return sampleItems(
-    trinketLibrary.filter((entry) => !owned.has(entry.id)),
     REWARD_CARD_CHOICES,
     rng,
   );
@@ -290,7 +280,7 @@ export function createBossRewardState({
   const reward =
     category === "trinket"
       ? (() => {
-          const choices = samplePermanentTrinketRewardChoices(ownedTrinketIds, rng);
+          const choices = sampleTrinketRewardChoices(ownedTrinketIds, rng);
           return choices.length > 0
             ? {
                 ...createEmptyRewardState(),
@@ -331,7 +321,7 @@ function createGearOrPermanentTrinketReward(
     return {
       ...createEmptyRewardState(),
       rewardType: "trinket",
-      choices: samplePermanentTrinketRewardChoices(ownedTrinketIds, rng),
+      choices: sampleTrinketRewardChoices(ownedTrinketIds, rng),
     };
   }
   return {
@@ -435,7 +425,7 @@ export function createCombatRewardState({
       };
     }
     case "trinket": {
-      const choices = samplePermanentTrinketRewardChoices(ownedTrinketIds, rng);
+      const choices = sampleTrinketRewardChoices(ownedTrinketIds, rng);
       if (choices.length === 0) {
         return {
           ...createFallbackGearRewardState(false, rng, gearAstralChanceBonus, ownedUniqueIds),

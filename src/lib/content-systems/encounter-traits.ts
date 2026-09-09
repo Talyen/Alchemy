@@ -107,6 +107,15 @@ function idsForCategory<Category extends EncounterTraitCategory>(
 export const COMBAT_ENCOUNTER_TRAIT_IDS = idsForCategory("combat");
 export const REWARD_ENCOUNTER_TRAIT_IDS = idsForCategory("reward");
 
+function getEligibleTraitIds<C extends EncounterTraitCategory>(
+  mode: EncounterMode,
+  category: C,
+): Array<EncounterTraitIdFor<C>> {
+  return Object.values(ENCOUNTER_TRAITS)
+    .filter((trait) => trait.category === category && trait.modes.includes(mode))
+    .map((trait) => trait.id as EncounterTraitIdFor<C>);
+}
+
 const ELIGIBLE_TRAIT_POOLS: Record<
   EncounterMode,
   {
@@ -115,32 +124,12 @@ const ELIGIBLE_TRAIT_POOLS: Record<
   }
 > = {
   labyrinth: {
-    combat: Object.values(ENCOUNTER_TRAITS)
-      .filter(
-        (trait): trait is typeof trait & { category: "combat" } =>
-          trait.category === "combat" && trait.modes.includes("labyrinth"),
-      )
-      .map((trait) => trait.id),
-    reward: Object.values(ENCOUNTER_TRAITS)
-      .filter(
-        (trait): trait is typeof trait & { category: "reward" } =>
-          trait.category === "reward" && trait.modes.includes("labyrinth"),
-      )
-      .map((trait) => trait.id),
+    combat: getEligibleTraitIds("labyrinth", "combat"),
+    reward: getEligibleTraitIds("labyrinth", "reward"),
   },
   wildwood: {
-    combat: Object.values(ENCOUNTER_TRAITS)
-      .filter(
-        (trait): trait is typeof trait & { category: "combat" } =>
-          trait.category === "combat" && trait.modes.includes("wildwood"),
-      )
-      .map((trait) => trait.id),
-    reward: Object.values(ENCOUNTER_TRAITS)
-      .filter(
-        (trait): trait is typeof trait & { category: "reward" } =>
-          trait.category === "reward" && trait.modes.includes("wildwood"),
-      )
-      .map((trait) => trait.id),
+    combat: getEligibleTraitIds("wildwood", "combat"),
+    reward: getEligibleTraitIds("wildwood", "reward"),
   },
 };
 
