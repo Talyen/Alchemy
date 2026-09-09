@@ -6,6 +6,7 @@ import { logError } from "../error-logger";
 import { type BattleState, type CombatTextEvent, addEnemyMitigation, addEnemyStatus, hasEnemyTrait } from "./types";
 import {
   DIFFICULTY_FORGE_PER_TURN,
+  GLACIAL_SURGE_MAX_FREEZE_BONUS,
   IRON_HIDE_ARMOR_PER_TURN,
   REACTION_ONLY_ENEMY_TRAIT_IDS as REACTION_ONLY_IDS,
   TRAIT_FORGE_PER_TURN,
@@ -56,13 +57,18 @@ const enemyTraitTurnStartHandlers: Record<string, EnemyTurnStartHandler> = {
     return addEnemyMitigation(state, "armor", IRON_HIDE_ARMOR_PER_TURN);
   },
   "glacial-shell": (state, combatTexts) => {
+    const amount = Math.min(
+      TRAIT_FREEZE_BONUS_PER_TURN,
+      GLACIAL_SURGE_MAX_FREEZE_BONUS - state.enemyStatuses.freezeBonus,
+    );
+    if (amount <= 0) return state;
     mergeCombatText(combatTexts, {
       target: "enemy",
       kind: "status",
       stat: "freezeBonus",
-      amount: TRAIT_FREEZE_BONUS_PER_TURN,
+      amount,
     });
-    return addEnemyStatus(state, "freezeBonus", TRAIT_FREEZE_BONUS_PER_TURN);
+    return addEnemyStatus(state, "freezeBonus", amount);
   },
   cleric: (state, combatTexts) => {
     mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "block", amount: 1 });

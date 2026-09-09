@@ -2,6 +2,8 @@ import { makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { defaultTalentEffects } from "@/lib/battle";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
+import { computeIncomingEnemyAttackDamage } from "@/lib/battle/enemy-attack-damage";
+import { scaleEnemyAbilityDamage } from "@/lib/battle/battle-enemy-setup";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { companionLibrary } from "@/lib/game-data";
 import { applyDamageStatuses } from "@/lib/battle/damage-status-riders";
@@ -16,16 +18,28 @@ import {
 import { defaultEnemyStatusValues, defaultPlayerStatusValues } from "../../fixtures/default-battle-state";
 
 describe("Dodge talent rewrites", () => {
-  it("Riposte deals Physical equal to the dodged attack", () => {
-    const result = applyEnemyAbility(
-      incomingPhysical({
-        talentEffects: { ...defaultTalentEffects, physicalOnDodgeEqualToAttack: true },
-      }),
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
-      makeCombatTexts(),
-    );
+  it("Riposte and Footwork copy the dodged amount without extra pacing or spending a prepared critical strike", () => {
+    const state = incomingPhysical({
+      appliesFightPacing: true,
+      turn: 11,
+      enemyHealth: 1000,
+      enemyMaxHealth: 1000,
+      playerStatuses: defaultPlayerStatusValues({ forge: 50 }),
+      flags: { ...patchBattleState().flags, nextHitCrit: true },
+      talentEffects: {
+        ...defaultTalentEffects,
+        physicalOnDodgeEqualToAttack: true,
+        blockOnDodgeEqualToAttack: true,
+        flatPhysicalDamage: 50,
+      },
+    });
+    const effect = { kind: "damage", damageType: "physical", amount: 8 } as const;
+    const incoming = computeIncomingEnemyAttackDamage(state, scaleEnemyAbilityDamage(state, effect));
+    const result = applyEnemyAbility(state, makeEnemyTestCard({ effects: [effect] }), makeCombatTexts());
     expect(result.playerHealth).toBe(100);
-    expect(result.enemyHealth).toBe(92);
+    expect(result.enemyHealth).toBe(1000 - incoming);
+    expect(result.playerStatuses.block).toBe(incoming);
+    expect(result.flags.nextHitCrit).toBe(true);
   });
 
   it("Footwork grants Block equal to the dodged attack", () => {

@@ -3,14 +3,7 @@ import { defaultGearEffects } from "@/lib/gear";
 import { createBattleStartState, createBattleState, drawOpeningHand } from "@/lib/battle/battle-setup";
 import { enemyBestiary, computeTalentEffects } from "@/lib/game-data";
 import type { BestiaryEntry, DifficultyModifier } from "@/lib/game-data";
-import {
-  BASE_ENEMY_HEALTH,
-  BASE_PLAYER_MANA,
-  BOSS_HEALTH_MULTIPLIER,
-  ELITE_HP_MULTIPLIER,
-  MAX_PLAYER_HEALTH,
-  ROOM_SCALING_INCREMENT,
-} from "@/lib/game-constants";
+import { BASE_PLAYER_MANA, MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { defaultTrinketEffects } from "@/lib/trinkets";
 import { makeTestCard, seededRng } from "../../fixtures/battle";
 
@@ -26,7 +19,7 @@ describe("createBattleState", () => {
     });
     expect(result.turn).toBe(1);
     expect(result.playerHealth).toBe(MAX_PLAYER_HEALTH);
-    expect(result.enemyHealth).toBe(BASE_ENEMY_HEALTH);
+    expect(result.enemyHealth).toBe(54);
     expect(result.hand.length).toBeGreaterThanOrEqual(1);
     expect(result.mana).toBe(BASE_PLAYER_MANA);
     expect(result.activeCompanion).toBeNull();
@@ -79,30 +72,30 @@ describe("createBattleState", () => {
       currentEnemy: skeleton,
       rng: seededRng(42),
     });
-    expect(result.enemyHealth).toBe(Math.round(BASE_ENEMY_HEALTH * (1 + 4 * ROOM_SCALING_INCREMENT)));
+    expect(result.enemyHealth).toBe(88);
     expect(result.currentEnemy.abilityIds).toEqual(skeleton.abilityIds);
     expect(result.lastEnemyAbilityId).toBeNull();
   });
 
-  it("scales elite enemy health by ELITE_HP_MULTIPLIER", () => {
+  it("initializes the calibrated elite Health pool", () => {
     const elite = enemyBestiary.find((e) => e.enemyType === "elite")!;
     const result = createBattleState({
       runDeck: battleDeck,
       currentEnemy: elite,
       rng: seededRng(42),
     });
-    expect(result.enemyMaxHealth).toBe(Math.round(BASE_ENEMY_HEALTH * ELITE_HP_MULTIPLIER));
+    expect(result.enemyMaxHealth).toBe(95);
     expect(result.enemyHealth).toBe(result.enemyMaxHealth);
   });
 
-  it("scales boss enemy health by BOSS_HEALTH_MULTIPLIER", () => {
+  it("initializes the calibrated Frostwarden Health pool", () => {
     const boss = enemyBestiary.find((e) => e.enemyType === "boss")!;
     const result = createBattleState({
       runDeck: battleDeck,
       currentEnemy: boss,
       rng: seededRng(42),
     });
-    expect(result.enemyMaxHealth).toBe(Math.round(BASE_ENEMY_HEALTH * BOSS_HEALTH_MULTIPLIER));
+    expect(result.enemyMaxHealth).toBe(96);
     expect(result.enemyHealth).toBe(result.enemyMaxHealth);
   });
 

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { enemyBestiary } from "@/lib/game-data";
 import { getEnemyDamageMultiplier } from "@/lib/battle/status-helpers";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
+import { getEnemyAbilityPressure } from "@/lib/battle/battle-enemy-setup";
 import { applyHealingWithCombatText } from "@/lib/battle/combat-text";
 import { processEnemyRegeneration } from "@/lib/battle/enemy-turn-traits";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
@@ -16,10 +17,13 @@ import {
   defaultPlayerStatusValues,
 } from "../../fixtures/default-battle-state";
 
-function stateForEnemy(id: string, overrides: Partial<ReturnType<typeof makeTestBattleState>> = {}) {
+function stateForEnemy(
+  id: string,
+  overrides: Partial<ReturnType<typeof makeTestBattleState>> = {},
+): ReturnType<typeof makeTestBattleState> {
   const enemy = enemyBestiary.find((candidate) => candidate.id === id);
   if (!enemy) throw new Error(`Unknown enemy ${id}`);
-  return makeTestBattleState({
+  const state = makeTestBattleState({
     currentEnemy: enemy,
     enemyHealth: 100,
     enemyMaxHealth: 100,
@@ -29,6 +33,12 @@ function stateForEnemy(id: string, overrides: Partial<ReturnType<typeof makeTest
     appliesFightPacing: false,
     ...overrides,
   });
+  return {
+    ...state,
+    difficultyModifiers: state.difficultyModifiers.some((modifier) => modifier.kind === "enemy-damage-multiplier")
+      ? state.difficultyModifiers
+      : [{ kind: "enemy-damage-multiplier", amount: 1 / getEnemyAbilityPressure(state) }, ...state.difficultyModifiers],
+  };
 }
 
 describe("imported enemy trait damage rules", () => {
@@ -164,7 +174,7 @@ describe("imported enemy attack reactions", () => {
     ["hellhound", "burning-blade", { burn: 1 }, 96],
     ["dire-wolf", "fangs", { bleed: 1 }, 95],
     ["banshee", "bash", { stun: 1 }, 97],
-    ["ice-wraith", "frostbolt", undefined, 98],
+    ["ice-wraith", "frostbolt", undefined, 97],
   ] as const)("modifies %s damage from its player/enemy state", (id, ability, statuses, expectedHealth) => {
     const result = applyEnemyAbility(
       stateForEnemy(id, {
@@ -203,7 +213,7 @@ describe("imported enemy attack reactions", () => {
     expect(texts).toContainEqual({ target: "player", kind: "notice", stat: "block", text: "Purged" });
   });
 
-  it("damages Blood Countess when either combatant restores Health and pays kill rewards", () => {
+  it("damages Blood Countess only when the hero restores Health and pays kill rewards", () => {
     const base = stateForEnemy("blood-countess");
     const playerHealState = stateForEnemy("blood-countess", {
       enemyHealth: 1,
@@ -219,7 +229,7 @@ describe("imported enemy attack reactions", () => {
       stateForEnemy("blood-countess", { enemyHealth: 90, enemyRegeneration: 3 }),
       [],
     );
-    expect(enemyHealResult.enemyHealth).toBe(92);
+    expect(enemyHealResult.enemyHealth).toBe(93);
   });
 
   it("halves Brawler's first attack after Stun resolves", () => {

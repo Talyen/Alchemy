@@ -44,6 +44,8 @@ describe("balance report", () => {
     expect(model.cardsInClass.length).toBeGreaterThan(0);
     for (const enemy of model.enemies) {
       for (const tier of ["early", "mid", "late"] as const) {
+        const outcomes = enemy.rates[tier];
+        expect(outcomes.wins + outcomes.losses + outcomes.timeouts).toBe(outcomes.n);
         const matchups = model.classMatchups.filter((row) => row.enemyId === enemy.id);
         const n = matchups.reduce((sum, row) => sum + row.rates[tier].n, 0);
         expect(n).toBe(enemy.rates[tier].n);
@@ -56,6 +58,8 @@ describe("balance report", () => {
     const json = renderBalanceReportJson(model, options);
     const html = renderBalanceReportHtml(model, options);
     expect(html).toContain("<h1>Balance Report</h1>");
+    expect(html).toContain("Wins / Defeats / Timeouts Early");
+    expect(html).toContain("Target 15–30 turns (boss)");
     expect(html).toContain("Enemy attacks Early");
     expect(html).toContain("Ability uses Late");
     expect(html).toContain("Trait activations Late");

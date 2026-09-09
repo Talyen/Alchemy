@@ -19,7 +19,7 @@ import {
   type EnemyDamageResult,
 } from "./enemy-attack-damage";
 import { applyCardPlayTalentRewards, applyMortarAndPestlePotionUse, handlePostPlayCardDestination } from "./card-play";
-import { dealPlayerTypedHit } from "./player-typed-hit";
+import { dealPlayerTypedHit, dealTalentTypedHit } from "./player-typed-hit";
 import { hasEnemyTrait, setPlayerStatus, type BattleState, type CombatTextEvent } from "./types";
 
 function applyDodgeDrawAndPlay(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
@@ -72,7 +72,7 @@ function applyOnPlayerDodge(state: BattleState, combatTexts: CombatTextEvent[], 
     nextState = addPlayerStatusWithCombatText(nextState, "block", nextState.gearEffects.blockOnDodge, combatTexts);
   }
   if (nextState.talentEffects.blockOnDodgeEqualToAttack && dodgedAmount > 0) {
-    nextState = addPlayerStatusWithCombatText(nextState, "block", dodgedAmount, combatTexts);
+    nextState = addPlayerStatusWithCombatText(nextState, "block", dodgedAmount, combatTexts, { skipFightPacing: true });
   }
   const armor = nextState.gearEffects.armorOnDodge + nextState.talentEffects.armorOnDodge;
   if (armor > 0) nextState = addPlayerStatusWithCombatText(nextState, "armor", armor, combatTexts);
@@ -83,7 +83,7 @@ function applyOnPlayerDodge(state: BattleState, combatTexts: CombatTextEvent[], 
     nextState = dealPlayerTypedHit(nextState, "physical", nextState.gearEffects.physicalOnDodge, combatTexts);
   }
   if (nextState.talentEffects.physicalOnDodgeEqualToAttack && dodgedAmount > 0 && nextState.enemyHealth > 0) {
-    nextState = dealPlayerTypedHit(nextState, "physical", dodgedAmount, combatTexts);
+    nextState = dealTalentTypedHit(nextState, "physical", dodgedAmount, combatTexts, true);
   }
   if (nextState.gearEffects.bleedOnDodge > 0 && nextState.enemyHealth > 0) {
     nextState = dealPlayerTypedHit(nextState, "bleed", nextState.gearEffects.bleedOnDodge, combatTexts);

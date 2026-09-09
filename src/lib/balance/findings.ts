@@ -86,21 +86,15 @@ export interface BalanceFindingsReport {
 
 const SEVERITY_RANK: Record<FindingSeverity, number> = { critical: 0, serious: 1, watch: 2 };
 
-const APPLY_TYPE_WIN_BAND: Record<FindingsTier, boolean> = {
-  early: false,
-  mid: true,
-  late: true,
-};
-
 const ENEMY_CAUSE_HINTS: Record<string, string> = {
-  "iron-bear": "Iron Hide grants armor, forge, or burn every other enemy turn.",
-  frostwarden: "Glacial Shell: half Freeze, 50% more Burn, freeze bonus every other turn.",
+  "iron-bear": "Iron Hide grants 1 Armor every other enemy turn.",
+  frostwarden: "Glacial Surge: half Freeze, 30% more Burn, +1 Freeze damage every other turn up to +2.",
   "forge-golem": "Rusting Carapace grants Forge every other turn; starts with Block.",
   "blight-treant": "Regeneration plus Burn vulnerability.",
   "fire-elemental": "Cinder Skin deals Burn when attacked.",
   "living-armor": "Starts combat with Armor; 25% less Bleed.",
   slime: "Amorphous: 10% less Physical and Poison.",
-  necromancer: "Bleed attack; Holy vulnerability.",
+  necromancer: "Fangs, Bloodthorn, and Rend; double Holy damage received.",
 };
 
 const REVIEW_SUFFIX = " Discuss before applying a change.";
@@ -425,7 +419,7 @@ function collectRateFindings(options: {
       ...(causeHint ? { causeHint } : {}),
       recommendation: `Boss win rate is below 70%.${REVIEW_SUFFIX}`,
     });
-  } else if (enemyType && APPLY_TYPE_WIN_BAND[tier] && isWinRateOutsideTypeBand(cell.winRate, enemyType)) {
+  } else if (enemyType && isWinRateOutsideTypeBand(cell.winRate, enemyType)) {
     const tooLow = cell.winRate < WIN_RATE_BAND_BY_TYPE[enemyType].min;
     add({
       severity: "serious",

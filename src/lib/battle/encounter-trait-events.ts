@@ -1,4 +1,5 @@
 import { recordEnemyAbilityActivation } from "./battle-metrics";
+import { cardHasDamageType } from "./card-classification";
 import type { BattleCard } from "@/lib/game-data";
 import { applyEnemyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { applyEnemyLeechHealing, processEnemyDamageEffect } from "./enemy-attack-damage";
@@ -153,14 +154,18 @@ export function processEncounterTraitCardAction(
         1,
         combatTexts,
       );
-    if (hasEnemyTrait(nextState, "cinder-skin") && !nextState.flags.cinderSkinUsedThisTurn)
-      nextState = dealTraitDamage(
-        setFlag(recordEnemyAbilityActivation(nextState, "cinder-skin"), "cinderSkinUsedThisTurn", true),
-        "burn",
-        1,
-        combatTexts,
-      );
   }
+  if (
+    cardHasDamageType(card, "physical") &&
+    hasEnemyTrait(nextState, "cinder-skin") &&
+    !nextState.flags.cinderSkinUsedThisTurn
+  )
+    nextState = dealTraitDamage(
+      setFlag(recordEnemyAbilityActivation(nextState, "cinder-skin"), "cinderSkinUsedThisTurn", true),
+      "burn",
+      1,
+      combatTexts,
+    );
   return nextState;
 }
 

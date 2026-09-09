@@ -136,7 +136,7 @@ export function applyEnemyHealingWithCombatText(
   const actualHeal = nextHealth - state.enemyHealth;
   if (actualHeal <= 0) return state;
   mergeCombatText(combatTexts, { target: "enemy", kind: "heal", stat: "health", amount: actualHeal });
-  return applyBloodCountessHealingReaction({ ...state, enemyHealth: nextHealth }, actualHeal, combatTexts);
+  return { ...state, enemyHealth: nextHealth };
 }
 
 export function applyHealOnManaGain(

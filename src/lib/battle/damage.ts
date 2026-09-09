@@ -6,7 +6,7 @@ import type { BattleState, CombatTextEvent } from "./types";
 import { computeCardDamageToEnemy } from "./damage-calc";
 import { applyDamageRiders } from "./damage-riders";
 import { tryDodgePlayerAttackPacket } from "./dodge";
-import { dealPlayerTypedHit } from "./player-typed-hit";
+import { dealPlayerTypedHit, dealTalentTypedHit } from "./player-typed-hit";
 
 export function dealDamageToEnemy(
   state: BattleState,
@@ -83,7 +83,7 @@ export function dealDamageToEnemy(
     result = dealPlayerTypedHit(result, "bleed", venomDamage, combatTexts);
   }
   if (applyPartingCut && modifiedDamage > 0 && result.enemyHealth > 0) {
-    result = dealPlayerTypedHit(result, "bleed", modifiedDamage, combatTexts);
+    result = dealTalentTypedHit(result, "bleed", modifiedDamage, combatTexts, true);
   }
   if (modifiedDamage > 0 && result.enemyHealth > 0) {
     if (packet.damageType !== "physical" && bonuses.physical > 0) {

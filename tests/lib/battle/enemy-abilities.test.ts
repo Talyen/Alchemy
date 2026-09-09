@@ -10,7 +10,7 @@ import {
 } from "@/lib/game-data";
 import { applyEnemyAbility, processEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
-import { scaleEnemyAbilityDamage } from "@/lib/battle/battle-enemy-setup";
+import { getEnemyAbilityPressure, scaleEnemyAbilityDamage } from "@/lib/battle/battle-enemy-setup";
 import { normalizePersistedBattleState } from "@/lib/validation/normalize-persisted-battle-state";
 import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
 import { tickPlayerStatuses } from "@/lib/battle/status-ticks";
@@ -19,8 +19,8 @@ import { makeTestBattleState, makeTestCard, seededRng } from "../../fixtures/bat
 import { defaultPlayerStatusValues } from "../../fixtures/default-battle-state";
 import type { BattleState, CombatTextEvent } from "@/lib/battle";
 
-function enemyState(id = "skeleton", overrides: Partial<BattleState> = {}) {
-  return makeTestBattleState({
+function enemyState(id = "skeleton", overrides: Partial<BattleState> = {}): BattleState {
+  const state = makeTestBattleState({
     currentEnemy: enemyById[id],
     playerHealth: 100,
     playerMaxHealth: 100,
@@ -29,6 +29,12 @@ function enemyState(id = "skeleton", overrides: Partial<BattleState> = {}) {
     rng: () => 0.99,
     ...overrides,
   });
+  return {
+    ...state,
+    difficultyModifiers: state.difficultyModifiers.some((modifier) => modifier.kind === "enemy-damage-multiplier")
+      ? state.difficultyModifiers
+      : [{ kind: "enemy-damage-multiplier", amount: 1 / getEnemyAbilityPressure(state) }, ...state.difficultyModifiers],
+  };
 }
 
 function useAbility(state: BattleState, id: string, texts: CombatTextEvent[] = []) {
@@ -232,6 +238,7 @@ describe("enemy card effects", () => {
     const scaled = scaleEnemyAbilityDamage(
       {
         roomScalingMultiplier: 1.5,
+        currentEnemy: enemyById.skeleton,
         difficultyModifiers: [
           { kind: "enemy-damage-multiplier", amount: 1.5 },
           { kind: "increase-enemy-damage", amount: 2 },
@@ -240,11 +247,15 @@ describe("enemy card effects", () => {
       },
       effect,
     );
-    expect(scaled).toEqual({ ...effect, amount: 11 });
+    expect(scaled).toEqual({ ...effect, amount: 13 });
     expect(effect.amount).toBe(3);
     expect(
       scaleEnemyAbilityDamage(
-        { roomScalingMultiplier: 1, difficultyModifiers: [{ kind: "enemy-attacks-gain-leech" }] },
+        {
+          currentEnemy: enemyById.skeleton,
+          roomScalingMultiplier: 1,
+          difficultyModifiers: [{ kind: "enemy-attacks-gain-leech" }],
+        },
         { kind: "damage", damageType: "physical", amount: 6 },
       ).lifesteal,
     ).toBe(true);
@@ -314,16 +325,17 @@ describe("ability trait boundaries", () => {
     expect(attacked.flags.enemyBrawlerDamagePenalty).toBe(false);
   });
 
-  it("grants Blood Offering only to Bleed hits and never duplicates native Leech", () => {
+  it("rewards established Bleed with Blood Frenzy while retaining only native Leech", () => {
     const state = enemyState("blood-cultist", { enemyHealth: 10 });
-    expect(useAbility(state, "serrated-edge").enemyHealth).toBe(11);
+    expect(useAbility(state, "serrated-edge").enemyHealth).toBe(10);
+    expect(useAbility(state, "rend").playerHealth).toBe(98);
+    const bleeding = { ...state, playerStatuses: { ...state.playerStatuses, bleed: 1 } };
+    expect(useAbility(bleeding, "rend").playerHealth).toBe(95);
+    expect(useAbility(bleeding, "rend").enemyHealth).toBe(10);
     expect(useAbility(state, "fangs").enemyHealth).toBe(
-      useAbility({ ...state, currentEnemy: enemyById.skeleton }, "fangs").enemyHealth,
+      useAbility(enemyState("skeleton", { enemyHealth: 10 }), "fangs").enemyHealth,
     );
-    const base = enemyState("blood-cultist", { enemyHealth: 10 });
-    expect(
-      useAbility({ ...base, talentEffects: { ...base.talentEffects, blockEnemyLeech: true } }, "rend").enemyHealth,
-    ).toBe(10);
+    expect(useAbility(state, "bloodthorn").enemyHealth).toBe(12);
   });
 
   it("adds one Blood Scent hit strictly below half Health without additional Leech", () => {

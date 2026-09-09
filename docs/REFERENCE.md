@@ -138,7 +138,7 @@ ALCHEMY_BALANCE_DECK_SEEDS=5 npm run balance:sim
 # Change the play policy (random-playable, greedy-damage, defensive-random, greedy-effective-damage)
 ALCHEMY_BALANCE_POLICY=greedy-effective-damage npm run balance:sim
 
-# Kit + combat talents + talent-point HP only (no homestead / gear / Vitality / core trinkets)
+# Kit + tree-order talents + talent-point HP only (no homestead / gear / Vitality / core trinkets)
 ALCHEMY_BALANCE_LOADOUT=bare npm run balance:sim
 
 # Measure raw kit without hidden fight pacing
@@ -149,7 +149,7 @@ npm run test:balance
 ```
 
 The simulator covers deterministic early/mid/late progression scenarios using
-combat-eligible talents and seeded loadouts. Exact presets, finding bands, and
+tree-order talent presets and seeded loadouts. Presets include economic talents and exclude placeholders; only the individual-talent sweep filters out meta-only talents. Exact presets, finding bands, and
 report grouping are owned by `src/lib/balance/` and the generated report; use
 findings as review input rather than applying tunings automatically. The
 summary opens `reports/balance-findings.html` and writes a JSON companion.
@@ -163,6 +163,7 @@ must exactly match the choices above; pacing accepts `on`/`1`/`true` or
 `ALCHEMY_BALANCE_FINDINGS_CAP` controls the number of findings in both rendered summaries (default: 100). Scenario seeds derive from tier, class, enemy, depth, replicate, and sweep identity instead of loop position, so adding or reordering unrelated content does not re-key existing comparisons. Core matchups reuse each tier/class deck sample across enemies while retaining distinct fight randomness; isolation sweeps keep baseline and treatment paired.
 The report uses paired battle iterations for trinket, talent, companion, gear, and affix sweeps, and independent card-deck samples for isolated-card sweeps. Each isolated-card comparison uses ten non-target cards for its baseline and the same nine non-target cards plus the target for treatment; a target card can never appear in its own baseline. The nine shared cards retain their positions before the paired seeded shuffle so only the replaced card changes the initial draw order.
 Hero-versus-enemy rows aggregate every tested depth and deck sample. Durations count rounds actually played (a capped fight reports 30, not 31), including losses and timeouts; a shorter fight can mean an earlier defeat, so read duration alongside win rate. Hero and enemy spread checks cover all three tiers. Paired win and duration findings use their own standard errors, with category medians calculated before filtering noisy results.
+Enemy targets apply at Early, Mid, and Late: normal 90–99.9% hero wins and 5–10 turns; elite 80–95% and 10–15 turns; boss 70–99.9% and 15–30 turns. Every enemy/tier must satisfy both ranges with fewer than 2% timeouts. These bands remain owned by `src/lib/balance/findings-bands.ts`. The matrix shows targets beside observations and preserves actual wins, defeats, and timeouts separately from rates; class outcome counts are raw even though class aggregate rates weight enemy types equally. A rounded displayed percentage or a capped findings list is not a substitute for checking all enemy/tier rows.
 Individual affix probes compare one affix against no gear across every hero, tier, gauntlet enemy, and configured deck seed. Basic midpoint rolls are used early/mid, Astral midpoint rolls late, and unique affixes use their fixed rolls. These probes measure sensitivity, including hypothetical early access to unique effects; they do not model acquisition or stacked affixes. The existing rolled-item sweep remains separate.
 `balance:sim` generates reports; `test:balance` verifies finite full-report
 construction and render purity without touching `reports/`. Changed balance

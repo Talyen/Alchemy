@@ -52,7 +52,7 @@ export function dealPlayerTypedHit(
 export function tryPoisonStunProc(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
   if (damage <= 0) return state;
   if (!rollTalentChance(state.talentEffects.poisonStunChance, state)) return state;
-  return dealPlayerTypedHit(state, "stun", damage, combatTexts);
+  return dealTalentTypedHit(state, "stun", damage, combatTexts, true);
 }
 
 export function applyBrassCenser(

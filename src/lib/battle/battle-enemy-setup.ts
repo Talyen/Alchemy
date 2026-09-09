@@ -9,12 +9,43 @@ import {
   ENEMY_STARTING_BLOCK,
   LIVING_ARMOR_STARTING_ARMOR,
   ROOM_SCALING_INCREMENT,
+  ENEMY_BALANCE_BY_TYPE,
+  ENEMY_HEALTH_OVERRIDES,
+  ENEMY_PRESSURE_OVERRIDES,
+  ENEMY_PROGRESSION_DEPTH_LIMIT,
 } from "../game-constants";
+
+function enemyProgressionDepth(roomMultiplier: number): number {
+  if (roomMultiplier <= 1) return 0;
+  return Math.min(ENEMY_PROGRESSION_DEPTH_LIMIT, 1 + Math.round((roomMultiplier - 1) / ROOM_SCALING_INCREMENT));
+}
+
+function evaluateEnemyCurve(curve: { base: number; linear: number; quadratic: number }, depth: number): number {
+  return curve.base + curve.linear * depth + curve.quadratic * depth * depth;
+}
+
+export function getEnemyAbilityPressure(state: Pick<BattleState, "roomScalingMultiplier" | "currentEnemy">): number {
+  const depth = enemyProgressionDepth(state.roomScalingMultiplier);
+  const override = Object.hasOwn(ENEMY_PRESSURE_OVERRIDES, state.currentEnemy.id)
+    ? ENEMY_PRESSURE_OVERRIDES[state.currentEnemy.id]
+    : undefined;
+  return (
+    evaluateEnemyCurve(ENEMY_BALANCE_BY_TYPE[state.currentEnemy.enemyType].pressure, depth) *
+    (typeof override === "number"
+      ? override
+      : override
+        ? Math.min(override.max, override.base + override.linear * depth)
+        : 1)
+  );
+}
 
 function scaleEnemyHealth(enemy: BestiaryEntry, roomMul: number): number {
   const hpTypeMul =
     enemy.enemyType === "elite" ? ELITE_HP_MULTIPLIER : enemy.enemyType === "boss" ? BOSS_HEALTH_MULTIPLIER : 1;
-  return Math.round(BASE_ENEMY_HEALTH * roomMul * hpTypeMul);
+  const baseHealth = Math.round(BASE_ENEMY_HEALTH * roomMul * hpTypeMul);
+  const growth = evaluateEnemyCurve(ENEMY_BALANCE_BY_TYPE[enemy.enemyType].health, enemyProgressionDepth(roomMul));
+  const contentMultiplier = Object.hasOwn(ENEMY_HEALTH_OVERRIDES, enemy.id) ? ENEMY_HEALTH_OVERRIDES[enemy.id]! : 1;
+  return Math.round(baseHealth * growth * contentMultiplier);
 }
 
 function scaleEnemyRegeneration(enemy: BestiaryEntry, roomMul: number): number {
@@ -34,13 +65,14 @@ function buildScaledEnemy(enemy: BestiaryEntry, totalRoomsInRun = 0) {
 }
 
 export function scaleEnemyAbilityDamage(
-  state: Pick<BattleState, "roomScalingMultiplier" | "difficultyModifiers">,
+  state: Pick<BattleState, "roomScalingMultiplier" | "difficultyModifiers" | "currentEnemy">,
   effect: EnemyAbilityDamageEffect,
 ): EnemyAbilityDamageEffect {
   const modifiers = state.difficultyModifiers;
   const damageMultiplier = modifierAmount(modifiers, "enemy-damage-multiplier", 1);
+  const pressure = getEnemyAbilityPressure(state);
   let amount = Math.round(effect.amount * state.roomScalingMultiplier);
-  amount = Math.round(amount * damageMultiplier);
+  amount = Math.round(amount * pressure * damageMultiplier);
   for (const modifier of modifiers) {
     if (modifier.kind === "increase-enemy-physical-damage" || modifier.kind === "increase-enemy-damage") {
       amount += modifier.amount;

@@ -117,12 +117,16 @@ function applyAbilityDamage(
     flatBonus -= ICE_WRAITH_FROZEN_PENALTY;
     record("ice-wraith");
   }
+  if (effect.damageType === "freeze" && (trait("frost-elemental") || trait("ice-wraith"))) {
+    flatBonus += scaleByRoomMultiplier(state, CONDITIONAL_FLAT_BONUS);
+    record(trait("frost-elemental") ? "frost-elemental" : "ice-wraith");
+  }
   const banditBonus = trait("bandit") && !state.flags.enemyFirstHitDoubleUsed;
   if (banditBonus) amountMultiplier *= BANDIT_FIRST_HIT_MULTIPLIER;
   let damage = scaleEnemyAbilityDamage(state, effect);
   if (effect.doubleIfEnemyBleeding && state.playerStatuses.bleed > 0) damage = { ...damage, amount: damage.amount * 2 };
-  if (trait("blood-cultist") && effect.damageType === "bleed") {
-    damage = { ...damage, lifesteal: true };
+  if (trait("blood-cultist") && effect.damageType === "bleed" && state.playerStatuses.bleed > 0) {
+    flatBonus += CONDITIONAL_FLAT_BONUS;
     record("blood-cultist");
   }
   const result = resolveEnemyAttackHit(nextState, damage, combatTexts, {

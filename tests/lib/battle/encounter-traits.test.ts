@@ -254,6 +254,22 @@ describe("encounter trait card events", () => {
     expect(result.state.playerStatuses.burn).toBeGreaterThan(0);
   });
 
+  it("preserves Cinder Skin for a Physical card after a spell", () => {
+    const spell = card({ id: "spell", uid: 1, effects: [{ kind: "damage", damageType: "freeze", amount: 2 }] });
+    const physical = card({ id: "physical", uid: 2 });
+    const currentEnemy = {
+      ...enemyWith(),
+      traits: [{ id: "cinder-skin", title: "Cinder Skin", description: "Reacts to Physical cards" }],
+    };
+    const state = makeTestBattleState({ currentEnemy, hand: [spell, physical], mana: 2, playerHealth: 10 });
+    const afterSpell = playBattleCardResolved(state, spell.id, 0).state;
+    expect(afterSpell.playerStatuses.burn).toBe(0);
+    expect(afterSpell.flags.cinderSkinUsedThisTurn).toBe(false);
+    const afterPhysical = playBattleCardResolved(afterSpell, physical.id, 0).state;
+    expect(afterPhysical.playerStatuses.burn).toBe(1);
+    expect(afterPhysical.flags.cinderSkinUsedThisTurn).toBe(true);
+  });
+
   it("limits cinder-skin and holy-retribution to once per turn each", () => {
     const currentEnemy: BestiaryEntry = {
       ...enemyWith("holy-retribution"),
@@ -403,8 +419,10 @@ describe("encounter trait card events", () => {
     ).state;
     const afterTurn = endPlayerTurn({
       ...afterCard,
+      rng: () => 0.99,
     }).state;
-    expect(afterTurn.playerHealth).toBe(afterCard.playerHealth - 7);
+    const withoutBonus = endPlayerTurn({ ...afterCard, enemyPhysicalDamageBonus: 0, rng: () => 0.99 }).state;
+    expect(afterTurn.playerHealth).toBe(withoutBonus.playerHealth - 1);
   });
 
   it("activates Divine Aegis when a DoT crosses half health", () => {

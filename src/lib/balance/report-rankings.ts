@@ -3,6 +3,9 @@ export function isDeltaNoisy(delta: number, se: number, k = 2): boolean {
 }
 
 export interface RateCell {
+  wins: number;
+  losses: number;
+  timeouts: number;
   winRate: number;
   timeoutRate: number;
   averageTurns: number;
@@ -16,6 +19,9 @@ export interface RateCell {
 
 export function emptyRateCell(): RateCell {
   return {
+    wins: 0,
+    losses: 0,
+    timeouts: 0,
     winRate: 0,
     timeoutRate: 0,
     averageTurns: 0,
@@ -44,6 +50,9 @@ export function combineRateCells(cells: readonly RateCell[]): RateCell {
   }
   if (n === 0) return emptyRateCell();
   return {
+    wins: cells.reduce((sum, cell) => sum + cell.wins, 0),
+    losses: cells.reduce((sum, cell) => sum + cell.losses, 0),
+    timeouts: cells.reduce((sum, cell) => sum + cell.timeouts, 0),
     winRate: wins / n,
     timeoutRate: timeouts / n,
     averageTurns: turns / n,

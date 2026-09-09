@@ -13,6 +13,7 @@ export interface FightPacingPoolMetrics {
 interface FightPacingClockConfig {
   targetDuration: number;
   maxRounds: number;
+  damageOverrunSpan: number;
 }
 
 const SPAN_EPSILON = 0.001;
@@ -118,4 +119,17 @@ export function openingPacedDamage(amount: number, enemyType: EnemyType = "norma
   );
   if (bonus === 0) return amount;
   return Math.round(amount * (1 + bonus));
+}
+
+export function paceCombatDamage(
+  state: BattleState,
+  amount: number,
+  side: FightPacingSide,
+  applyFightPacing = true,
+): number {
+  const paced = paceCombatMagnitude(state, amount, side, applyFightPacing);
+  if (!applyFightPacing || !state.appliesFightPacing || amount <= 0) return paced;
+  const config = fightPacingClockConfig(state.currentEnemy.enemyType);
+  const overrun = Math.max(0, state.turn - config.targetDuration);
+  return Math.round(paced * (1 + (overrun / config.damageOverrunSpan) ** 2));
 }

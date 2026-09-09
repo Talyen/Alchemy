@@ -1,6 +1,6 @@
 import { mergeCombatText } from "./combat-text";
 import { damageEnemyHealth, type BattleState, type CombatTextEvent } from "./types";
-import { paceCombatMagnitude } from "./fight-pacing";
+import { paceCombatDamage } from "./fight-pacing";
 
 export interface DealEnemyScaledDamageOptions {
   multiplier?: number;
@@ -15,7 +15,7 @@ export function dealEnemyScaledDamage(
   options: DealEnemyScaledDamageOptions = {},
 ): BattleState {
   if (baseDamage <= 0 || state.enemyHealth <= 0) return state;
-  const pacedDamage = paceCombatMagnitude(state, baseDamage, "player");
+  const pacedDamage = paceCombatDamage(state, baseDamage, "player");
   const finalDamage = Math.round(pacedDamage * (options.multiplier ?? 1));
   if (finalDamage > 0) {
     mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat, amount: finalDamage });

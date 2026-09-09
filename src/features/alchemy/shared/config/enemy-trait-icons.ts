@@ -42,6 +42,7 @@ const traitIcons: Record<string, LucideIcon> = {
   hellhound: Flame,
   "stone-golem": Shield,
   "ice-wraith": Snowflake,
+  "frost-elemental": Snowflake,
   "rusting-carapace": Anvil,
   "starting-block": Shield,
   "glacial-shell": Snowflake,

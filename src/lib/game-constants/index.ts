@@ -3,6 +3,7 @@ export * from "./battle-timing";
 export * from "./combat-rules";
 export * from "./corruption";
 export * from "./enemy-traits";
+export * from "./enemy-balance";
 export * from "./gear";
 export * from "./homestead-loot";
 export * from "./progression";

@@ -21,7 +21,7 @@ import { type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 import { setFlag, addEnemyStatus, damageEnemyHealth, type BattleState, type CombatTextEvent } from "./types";
 import { BATTLE_CONFIG, BLACKFLETCH_EXECUTE_HEALTH_PERCENT } from "../game-constants";
 import { halveRounded } from "./amount-helpers";
-import { paceCombatMagnitude } from "./fight-pacing";
+import { paceCombatDamage } from "./fight-pacing";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 
 function applyBurnDamageRiders(
@@ -41,7 +41,7 @@ function applyBurnDamageRiders(
     );
   }
   if (rollTalentChance(state.talentEffects.burnStunChance, state)) {
-    nextState = dealPlayerTypedHit(nextState, "stun", modifiedDamage, combatTexts);
+    nextState = dealTalentTypedHit(nextState, "stun", modifiedDamage, combatTexts, true);
   }
   return nextState;
 }
@@ -73,7 +73,7 @@ function applyNatureDamageRiders(
     nextState = addEnemyStatus(nextState, "bleed", modifiedDamage);
   }
   if (rollTalentChance(state.talentEffects.natureStunChance, state)) {
-    nextState = dealPlayerTypedHit(nextState, "stun", modifiedDamage, combatTexts);
+    nextState = dealTalentTypedHit(nextState, "stun", modifiedDamage, combatTexts, true);
   }
   return nextState;
 }
@@ -189,7 +189,7 @@ export function applyAttackPurgeRider(state: BattleState, combatTexts: CombatTex
     ...state,
     enemyMitigation: { ...state.enemyMitigation, [category]: 0 },
   };
-  const holyDamage = paceCombatMagnitude(
+  const holyDamage = paceCombatDamage(
     nextState,
     Math.round(nextState.gearEffects.attackPurgeDealHolyPerEffect * getEnemyDamageMultiplier(nextState, "holy")),
     "player",
@@ -258,7 +258,7 @@ export function applyDamageRiders(
   if (effect.damageType === "physical" && modifiedDamage > 0) {
     const stunChance = nextState.talentEffects.physicalStunChance + nextState.gearEffects.physicalStunChance;
     if (rollTalentChance(stunChance, nextState)) {
-      nextState = dealPlayerTypedHit(nextState, "stun", modifiedDamage, combatTexts);
+      nextState = dealTalentTypedHit(nextState, "stun", modifiedDamage, combatTexts, true);
     }
   }
   if (effect.damageType === "poison") {

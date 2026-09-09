@@ -66,9 +66,9 @@ export const FIGHT_PACING = {
   burnFractionAtTarget: 0.5,
   backstopSpan: 4,
   clockByEnemyType: {
-    normal: { targetDuration: 7.0, maxRounds: 10 },
-    elite: { targetDuration: 12.0, maxRounds: 16 },
-    boss: { targetDuration: 20.0, maxRounds: 30 },
+    normal: { targetDuration: 7.0, maxRounds: 10, damageOverrunSpan: 4 },
+    elite: { targetDuration: 12.0, maxRounds: 16, damageOverrunSpan: 4 },
+    boss: { targetDuration: 20.0, maxRounds: 30, damageOverrunSpan: 3 },
   },
 } as const;
 

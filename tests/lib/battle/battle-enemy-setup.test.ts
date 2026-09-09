@@ -2,14 +2,13 @@ import { describe, expect, it } from "vitest";
 import { initializeEnemyState, scaleEnemyAbilityDamage } from "@/lib/battle/battle-enemy-setup";
 import { enemyBestiary, type BestiaryEntry, type DifficultyModifier } from "@/lib/game-data";
 import {
-  BASE_ENEMY_HEALTH,
-  BOSS_HEALTH_MULTIPLIER,
-  ELITE_HP_MULTIPLIER,
   ENEMY_BOSS_REGENERATION,
   ENEMY_BASE_REGENERATION,
   ENEMY_STARTING_BLOCK,
   LIVING_ARMOR_STARTING_ARMOR,
   ROOM_SCALING_INCREMENT,
+  ENEMY_PRESSURE_OVERRIDES,
+  ENEMY_HEALTH_OVERRIDES,
 } from "@/lib/game-constants";
 
 function getEnemy(id: string): BestiaryEntry {
@@ -26,20 +25,20 @@ describe("initializeEnemyState", () => {
   const livingArmor = getEnemy("living-armor");
   const forgeGolem = getEnemy("forge-golem");
 
-  it("scales normal enemy at room 1 to base health and multiplier 1", () => {
+  it("calibrates starting normal Health without changing resource scaling", () => {
     const result = initializeEnemyState(skeleton, 1, []);
-    expect(result.enemyMaxHealth).toBe(BASE_ENEMY_HEALTH);
+    expect(result.enemyMaxHealth).toBe(54);
     expect(result.roomScalingMultiplier).toBe(1);
   });
 
   it("applies elite HP multiplier", () => {
     const result = initializeEnemyState(mimic, 1, []);
-    expect(result.enemyMaxHealth).toBe(Math.round(BASE_ENEMY_HEALTH * ELITE_HP_MULTIPLIER));
+    expect(result.enemyMaxHealth).toBe(95);
   });
 
   it("applies boss HP multiplier and boss regeneration", () => {
     const result = initializeEnemyState(blightTreant, 1, []);
-    expect(result.enemyMaxHealth).toBe(Math.round(BASE_ENEMY_HEALTH * BOSS_HEALTH_MULTIPLIER));
+    expect(result.enemyMaxHealth).toBe(101);
     expect(result.enemyRegeneration).toBe(ENEMY_BOSS_REGENERATION);
   });
 
@@ -52,12 +51,12 @@ describe("initializeEnemyState", () => {
     const roomMul = 1 + 4 * ROOM_SCALING_INCREMENT;
     const result = initializeEnemyState(skeleton, 5, []);
     expect(result.roomScalingMultiplier).toBe(roomMul);
-    expect(result.enemyMaxHealth).toBe(Math.round(BASE_ENEMY_HEALTH * roomMul));
+    expect(result.enemyMaxHealth).toBe(88);
     const physical = scaleEnemyAbilityDamage(
-      { roomScalingMultiplier: roomMul, difficultyModifiers: [] },
+      { currentEnemy: skeleton, roomScalingMultiplier: roomMul, difficultyModifiers: [] },
       { kind: "damage", damageType: "physical", amount: 6 },
     );
-    expect(physical.amount).toBe(Math.round(6 * roomMul));
+    expect(physical.amount).toBe(10);
   });
 
   it("multiplies max health with enemy-health-multiplier", () => {
@@ -65,6 +64,39 @@ describe("initializeEnemyState", () => {
     const base = initializeEnemyState(skeleton, 1, []);
     const result = initializeEnemyState(skeleton, 1, mods);
     expect(result.enemyMaxHealth).toBe(Math.round(base.enemyMaxHealth * 1.5));
+  });
+
+  it("keeps progression finite and Health increasing through intermediate and later rooms", () => {
+    for (const enemy of enemyBestiary) {
+      let previousHealth = 0;
+      for (const depth of [0, 1, 2, 4, 8, 12, 16, 20, 23, 24, 25, 40, 80]) {
+        const setup = initializeEnemyState(enemy, depth, []);
+        expect(Number.isFinite(setup.enemyMaxHealth)).toBe(true);
+        expect(setup.enemyMaxHealth).toBeGreaterThanOrEqual(previousHealth);
+        const attack = scaleEnemyAbilityDamage(
+          { currentEnemy: enemy, roomScalingMultiplier: setup.roomScalingMultiplier, difficultyModifiers: [] },
+          { kind: "damage", damageType: "physical", amount: 6 },
+        );
+        expect(Number.isFinite(attack.amount)).toBe(true);
+        expect(attack.amount).toBeGreaterThanOrEqual(0);
+        previousHealth = setup.enemyMaxHealth;
+      }
+    }
+    const ids = new Set<string>(enemyBestiary.map((enemy) => enemy.id));
+    for (const id of [...Object.keys(ENEMY_PRESSURE_OVERRIDES), ...Object.keys(ENEMY_HEALTH_OVERRIDES)]) {
+      expect(ids.has(id)).toBe(true);
+    }
+  });
+
+  it("does not mistake inherited object names for enemy tuning", () => {
+    const enemy = { ...skeleton, id: "constructor" };
+    expect(initializeEnemyState(enemy, 5, [])).toEqual(initializeEnemyState(skeleton, 5, []));
+    expect(
+      scaleEnemyAbilityDamage(
+        { currentEnemy: enemy, roomScalingMultiplier: 1, difficultyModifiers: [] },
+        { kind: "damage", damageType: "physical", amount: 6 },
+      ).amount,
+    ).toBe(6);
   });
 
   it("includes living-armor trait starting armor scaled by room", () => {

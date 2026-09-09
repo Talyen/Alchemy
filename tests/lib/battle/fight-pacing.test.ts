@@ -8,6 +8,7 @@ import {
   fightPacingPoolMetrics,
   openingPacedDamage,
   paceCombatMagnitude,
+  paceCombatDamage,
 } from "@/lib/battle/fight-pacing";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { resolvePlayerCrowdControlTrigger } from "@/lib/battle/status-cc";
@@ -46,6 +47,16 @@ describe("appliesFightPacingFromEnv", () => {
 });
 
 describe("fight pacing multipliers", () => {
+  it("accelerates damage on both sides only after the target duration, without accelerating resources", () => {
+    const atTarget = pacedState({ turn: 7 });
+    const late = { ...atTarget, turn: 11 };
+    for (const side of ["player", "enemy"] as const) {
+      expect(paceCombatDamage(atTarget, 10, side)).toBe(paceCombatMagnitude(atTarget, 10, side));
+      expect(paceCombatDamage(late, 10, side)).toBe(paceCombatMagnitude(late, 10, side) * 2);
+      expect(paceCombatDamage({ ...late, appliesFightPacing: false }, 10, side)).toBe(10);
+      expect(paceCombatDamage(late, 10, side, false)).toBe(10);
+    }
+  });
   it("grants no comeback when HP fractions are even", () => {
     expect(fightPacingComebackMultiplier("player", evenMetrics)).toBe(1);
     expect(fightPacingComebackMultiplier("enemy", evenMetrics)).toBe(1);

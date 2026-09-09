@@ -1,6 +1,7 @@
 export const TRAIT_FORGE_PER_TURN = 1;
 export const IRON_HIDE_ARMOR_PER_TURN = 1;
 export const TRAIT_FREEZE_BONUS_PER_TURN = 1;
+export const GLACIAL_SURGE_MAX_FREEZE_BONUS = 2;
 export const DIFFICULTY_FORGE_PER_TURN = 1;
 export const LIVING_ARMOR_STARTING_ARMOR = 4;
 export const ENEMY_STARTING_BLOCK = 4;
@@ -41,6 +42,7 @@ export const ENEMY_TRAIT_IDS = {
   THICK_HIDE: "thick-hide",
   POISON_RESISTANCE: "poison-resistance",
   GLACIAL_SHELL: "glacial-shell",
+  FROST_ELEMENTAL: "frost-elemental",
   GOLD_TROVE: "gold-trove",
   STARTING_BLOCK: "starting-block",
   FREEZE_VULNERABILITY: "freeze-vulnerability",
@@ -118,6 +120,7 @@ export const TRAIT_DAMAGE_RULES: Array<{ traitId: string; damageType: string; mu
 ];
 
 export const REACTION_ONLY_ENEMY_TRAIT_IDS = [
+  ENEMY_TRAIT_IDS.FROST_ELEMENTAL,
   ENEMY_TRAIT_IDS.WILL_O_WISP,
   ENEMY_TRAIT_IDS.BANDIT,
   ENEMY_TRAIT_IDS.OGRE,

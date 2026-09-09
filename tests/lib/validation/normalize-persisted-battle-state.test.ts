@@ -1,10 +1,32 @@
 import { describe, expect, it } from "vitest";
 import { defaultBattleState } from "@/lib/battle";
 import { GEAR_EFFECT_KEYS } from "@/lib/gear";
+import { enemyById } from "@/lib/game-data";
 import { LEGACY_MANABURN_PER_CRYSTAL_ENABLED, MANABURN_DAMAGE_PERCENT } from "@/lib/game-constants";
 import { normalizePersistedBattleState } from "@/lib/validation/normalize-persisted-battle-state";
 
 describe("normalizePersistedBattleState", () => {
+  it("retains a running battle's Health, defenses, and old roster across balance updates", () => {
+    const saved = {
+      ...defaultBattleState(),
+      currentEnemy: { ...enemyById["iron-bear"], abilityIds: ["maul", "burning-blade", "plate-mail"] },
+      roomScalingMultiplier: 1.42,
+      enemyMaxHealth: 119,
+      enemyHealth: 63,
+      lastEnemyAbilityId: "plate-mail",
+      enemyMitigation: { block: 5, armor: 7, forge: 0 },
+    };
+    const normalized = normalizePersistedBattleState(saved);
+    expect(normalized).toMatchObject({
+      enemyMaxHealth: 119,
+      enemyHealth: 63,
+      roomScalingMultiplier: 1.42,
+      lastEnemyAbilityId: "plate-mail",
+      enemyMitigation: saved.enemyMitigation,
+      currentEnemy: { abilityIds: saved.currentEnemy.abilityIds },
+    });
+    expect(enemyById["iron-bear"].abilityIds).toContain("pounce");
+  });
   it("fills missing gear and flag manifests from defaults", () => {
     const saved = {
       ...defaultBattleState(),

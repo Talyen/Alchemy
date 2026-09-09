@@ -15,6 +15,7 @@ import { emptyPairedWinStats } from "@/lib/balance/report-rankings";
 
 function cell(partial: Partial<RateCell>): RateCell {
   return {
+    ...emptyRateCell(),
     winRate: 0.95,
     timeoutRate: 0,
     averageEnemyAttacks: 0,
@@ -64,6 +65,24 @@ function emptyModel(): { -readonly [Key in keyof BalanceReportModel]: BalanceRep
 }
 
 describe("evaluateBalanceFindings", () => {
+  it("applies enemy win-rate bands to every progression tier", () => {
+    const model = emptyModel();
+    model.enemies = [
+      { id: "skeleton", rates: rates(cell({ winRate: 0.85 }), cell({ winRate: 0.85 }), cell({ winRate: 0.85 })) },
+      { id: "mimic", rates: rates(cell({ winRate: 0.97 }), cell({ winRate: 0.97 }), cell({ winRate: 0.97 })) },
+      { id: "iron-bear", rates: rates(cell({ winRate: 0.65 }), cell({ winRate: 0.65 }), cell({ winRate: 0.65 })) },
+    ];
+    const findings = evaluateBalanceFindings(model).findings;
+    for (const id of ["skeleton", "mimic", "iron-bear"]) {
+      expect(
+        findings
+          .filter((finding) => finding.id === id && finding.bucket === "typeWinRate")
+          .map((finding) => finding.tier)
+          .sort(),
+      ).toEqual(["early", "late", "mid"]);
+    }
+  });
+
   it("collapses a 100% enemy into one finding instead of per-class matchups", () => {
     const characters = ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid", "wildcard"] as const;
     const matchups: ClassMatchupRow[] = characters.map((characterId) => ({

@@ -288,8 +288,8 @@ describe("Sun-Struck Shield reflection", () => {
       makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 60 }] }),
       [],
     );
-    expect(next.enemyHealth).toBe(182);
-    expect(next.playerStatuses.block).toBe(43);
+    expect(next.enemyHealth).toBe(183);
+    expect(next.playerStatuses.block).toBe(46);
     expect(next.playerHealth).toBe(12);
   });
 });

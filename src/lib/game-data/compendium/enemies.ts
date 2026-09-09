@@ -22,7 +22,7 @@ export const enemyBestiary = [
       trait(
         "glacial-shell",
         "Glacial Surge",
-        "Receives half Freeze damage\nReceives 30% more Burn damage\nFreeze damage increases by 1 every other turn",
+        "Receives half Freeze damage\nReceives 30% more Burn damage\nFreeze damage increases by 1 every other turn, up to 2 additional damage",
       ),
     ],
     abilityIds: ["frostbolt", "cold-snap", "glacial-ward"],
@@ -100,7 +100,7 @@ export const enemyBestiary = [
     art: assetRefs.ironBear,
     enemyType: "boss",
     traits: [trait("iron-hide", "Iron Hide", "Gains 1 Armor every other turn")],
-    abilityIds: ["maul", "burning-blade", "plate-mail"],
+    abilityIds: ["maul", "burning-blade", "pounce"],
   }),
   defineEnemy({
     id: "fire-elemental",
@@ -108,7 +108,7 @@ export const enemyBestiary = [
     art: assetRefs.fireElemental,
     enemyType: "elite",
     traits: [
-      trait("cinder-skin", "Cinder Skin", "Deals 1 Burn damage when attacked\nOnce per turn"),
+      trait("cinder-skin", "Cinder Skin", "Deals 1 Burn damage when the hero plays a Physical card\nOnce per turn"),
       trait("freeze-vulnerability", "Freeze Vulnerability", "Receives double Freeze damage"),
     ],
     abilityIds: ["fireball", "cinderbloom", "molten-bulwark"],
@@ -118,7 +118,10 @@ export const enemyBestiary = [
     title: "Frost Elemental",
     art: assetRefs.frostElemental,
     enemyType: "elite",
-    traits: [trait("burn-vulnerability", "Burn Vulnerability", "Receives 30% more Burn damage")],
+    traits: [
+      trait("frost-elemental", "Deep Cold", "Deals 1 additional Freeze damage"),
+      trait("burn-vulnerability", "Burn Vulnerability", "Receives 30% more Burn damage"),
+    ],
     abilityIds: ["frostbolt", "cold-snap", "glacial-ward"],
   }),
   defineEnemy({
@@ -212,7 +215,13 @@ export const enemyBestiary = [
     title: "Blood Cultist",
     art: assetRefs.bloodCultist,
     enemyType: "elite",
-    traits: [trait("blood-cultist", "Blood Offering", "Bleed attacks gain Leech\nReceives 30% more Holy damage")],
+    traits: [
+      trait(
+        "blood-cultist",
+        "Blood Frenzy",
+        "Deals 1 additional Bleed damage against Bleeding heroes\nReceives 30% more Holy damage",
+      ),
+    ],
     abilityIds: ["rend", "serrated-edge", "bloodthorn"],
   }),
   defineEnemy({
@@ -252,7 +261,7 @@ export const enemyBestiary = [
       trait(
         "blood-countess",
         "Profane Blood",
-        "Receives 30% more Holy damage\nTakes 1 Holy damage whenever either combatant restores Health",
+        "Receives 30% more Holy damage\nTakes 1 Holy damage whenever the hero restores Health",
       ),
     ],
     abilityIds: ["fangs", "rend", "bloodthorn"],
@@ -273,7 +282,7 @@ export const enemyBestiary = [
     art: assetRefs.cleric,
     enemyType: "elite",
     traits: [trait("cleric", "Divine Favor", "Gains 1 Block each turn\nHoly damage restores 1 Health")],
-    abilityIds: ["judgment", "holy-radiance", "block"],
+    abilityIds: ["judgment", "holy-radiance", "smite"],
   }),
   defineEnemy({
     id: "inquisitor",
@@ -330,7 +339,7 @@ export const enemyBestiary = [
       trait(
         "ice-wraith",
         "Deep Chill",
-        "Deals 1 less damage while it has Freeze buildup\nReceives 30% less Physical damage\nReceives 30% more Burn and Holy damage",
+        "Deals 1 additional Freeze damage\nDeals 1 less damage while it has Freeze buildup\nReceives 30% less Physical damage\nReceives 30% more Burn and Holy damage",
       ),
     ],
     abilityIds: ["frostbolt", "cold-snap", "glacial-ward"],

@@ -4,6 +4,9 @@ import type { RateCell } from "@/lib/balance/report-rankings";
 
 function rate(winRate: number, n: number): RateCell {
   return {
+    wins: Math.round(winRate * n),
+    losses: n - Math.round(winRate * n) - Math.round((winRate / 10) * n),
+    timeouts: Math.round((winRate / 10) * n),
     winRate,
     timeoutRate: winRate / 10,
     averageEnemyAttacks: 0,
@@ -27,5 +30,8 @@ describe("equalWeightByType", () => {
     expect(combined.winRate).toBeCloseTo(0.6);
     expect(combined.timeoutRate).toBeCloseTo(0.06);
     expect(combined.n).toBe(963);
+    expect(combined.wins).toBe(847);
+    expect(combined.losses).toBe(31);
+    expect(combined.timeouts).toBe(85);
   });
 });

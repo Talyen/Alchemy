@@ -11,7 +11,7 @@ import { gearFrozenDamageMultiplier } from "./gear-effects";
 import { scalePercent, scalePerMana } from "./amount-helpers";
 import { type BattleCard, type BattleCardEffect, type DamageType, type TalentEffectManifest } from "@/lib/game-data";
 import { reduceEnemyArmor, setFlag, type BattleState } from "./types";
-import { paceCombatMagnitude } from "./fight-pacing";
+import { paceCombatDamage } from "./fight-pacing";
 import {
   ARCHERY_HIGH_HEALTH_THRESHOLD_PERCENT,
   ARCHERY_LOW_HEALTH_THRESHOLD_PERCENT,
@@ -348,7 +348,7 @@ export function computeTalentDamageToEnemy(
   amount: number,
   derived: boolean,
 ) {
-  const base = derived ? Math.round(amount) : paceCombatMagnitude(state, amount, "player");
+  const base = derived ? Math.round(amount) : paceCombatDamage(state, amount, "player");
   const multiplier = derived
     ? getEnemyTraitDamageMultiplier(state, damageType)
     : getEnemyDamageMultiplier(state, damageType);
@@ -405,7 +405,7 @@ export function computeCardDamageToEnemy(
   const totalBonus = computeAdditiveDamageBonus(stateAfterFirst, effect, card) + firstBonus + unwoundedBonus;
   const totalMultiplier = Math.max(MIN_DAMAGE_MULTIPLIER, 1 + totalBonus);
   const scaledDamage = Math.round(baseDamage * totalMultiplier * encounterMultiplier);
-  const pacedDamage = paceCombatMagnitude(stateAfterFirst, scaledDamage, "player");
+  const pacedDamage = paceCombatDamage(stateAfterFirst, scaledDamage, "player");
   const repeatedDamage = Math.round(pacedDamage * (context?.damageMultiplier ?? 1));
   const criticalDamage = context?.guaranteedCrit
     ? repeatedDamage * CRIT_MULTIPLIER

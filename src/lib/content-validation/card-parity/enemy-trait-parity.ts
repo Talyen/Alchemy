@@ -2,6 +2,7 @@ import type { BestiaryEntry } from "@/lib/game-data";
 import type { ContentValidationIssue } from "../types";
 
 export const TRAIT_REQUIRED_PATTERNS: Record<string, { pattern: RegExp; term: string }> = {
+  "frost-elemental": { pattern: /freeze/, term: "freeze" },
   "iron-hide": { pattern: /armor/, term: "armor" },
   "rusting-carapace": { pattern: /forge/, term: "forge" },
   "starting-block": { pattern: /block/, term: "block" },

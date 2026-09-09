@@ -211,10 +211,17 @@ describe("processEnemyTraits", () => {
     });
   });
 
-  it("applies glacial-shell freeze bonus", () => {
+  it("builds Glacial Surge to its cap without removing a larger saved bonus", () => {
     const state = makeTestBattleState({ currentEnemy: frostwarden, turn: 2, roomScalingMultiplier: 1 });
     const result = processEnemyTraits(state, []);
     expect(result.enemyStatuses.freezeBonus).toBe(TRAIT_FREEZE_BONUS_PER_TURN);
+    let next = result;
+    for (const turn of [4, 6, 8, 10]) next = processEnemyTraits({ ...next, turn }, []);
+    expect(next.enemyStatuses.freezeBonus).toBe(2);
+    const legacy = { ...next, enemyStatuses: { ...next.enemyStatuses, freezeBonus: 7 } };
+    const texts: Parameters<typeof processEnemyRegeneration>[1] = [];
+    expect(processEnemyTraits(legacy, texts).enemyStatuses.freezeBonus).toBe(7);
+    expect(texts).not.toContainEqual(expect.objectContaining({ stat: "freezeBonus" }));
   });
 
   it("applies enemy-gains-forge-each-turn difficulty modifier", () => {

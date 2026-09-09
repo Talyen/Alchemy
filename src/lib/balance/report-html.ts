@@ -1,7 +1,8 @@
-import { talentPool } from "@/lib/game-data";
+import { enemyById, isEnemyId, talentPool } from "@/lib/game-data";
 import { ANOMALY_THRESHOLD_BY_PRESET } from "./anomalies";
+import { formatLengthBand, formatWinRateBand, isLengthOutsideBand, isWinRateOutsideTypeBand } from "./findings-bands";
 import type { BalanceReportModel, PairedTierRow } from "./report-model";
-import { TITLE_LOOKUPS } from "./report-catalog";
+import { TITLE_LOOKUPS, type ReportEnemyType } from "./report-catalog";
 import type { ReportRunOptions } from "./report-options";
 import { reportMethodologyLines } from "./report-run";
 import type { PairedDelta, RateCell } from "./report-rankings";
@@ -21,8 +22,12 @@ function titleFor(kind: keyof typeof TITLE_LOOKUPS | "talent", id: string): stri
   return TITLE_LOOKUPS[kind][id] ?? id;
 }
 
-function rateCells(cell: RateCell): string {
-  return `<td>${percent(cell.winRate)}</td><td>${percent(cell.timeoutRate)}</td><td>${cell.averageTurns.toFixed(1)}</td><td>${cell.averageHealthRemaining.toFixed(0)}</td><td>${cell.averageEnemyAttacks.toFixed(1)}</td><td>${cell.averageEnemyAbilityUses.toFixed(1)}</td><td>${cell.averageEnemyAbilityActivations.toFixed(1)}</td><td>${percent(cell.winsBeforeEnemyAttackRate)}</td>`;
+function rateCells(cell: RateCell, enemyType?: ReportEnemyType): string {
+  const winTarget = enemyType ? `<div class="meta">Target ${formatWinRateBand(enemyType)}</div>` : "";
+  const turnTarget = enemyType ? `<div class="meta">Target ${formatLengthBand(enemyType)}</div>` : "";
+  const winClass = enemyType && isWinRateOutsideTypeBand(cell.winRate, enemyType) ? "neg" : "";
+  const turnClass = enemyType && isLengthOutsideBand(cell.averageTurns, enemyType) ? "neg" : "";
+  return `<td class="${winClass}">${percent(cell.winRate)}${winTarget}</td><td>${cell.wins} / ${cell.losses} / ${cell.timeouts}<div class="meta">n=${cell.n}</div></td><td>${percent(cell.timeoutRate)}</td><td class="${turnClass}">${cell.averageTurns.toFixed(1)}${turnTarget}</td><td>${cell.averageHealthRemaining.toFixed(0)}</td><td>${cell.averageEnemyAttacks.toFixed(1)}</td><td>${cell.averageEnemyAbilityUses.toFixed(1)}</td><td>${cell.averageEnemyAbilityActivations.toFixed(1)}</td><td>${percent(cell.winsBeforeEnemyAttackRate)}</td>`;
 }
 
 function deltaCell(delta: PairedDelta): string {
@@ -48,10 +53,10 @@ export function renderBalanceReportHtml(model: BalanceReportModel, options: Repo
     .join("\n");
 
   const enemyRows = model.enemies
-    .map(
-      (row) =>
-        `<tr><td>${escapeHtml(titleFor("enemy", row.id))}</td>${rateCells(row.rates.early)}${rateCells(row.rates.mid)}${rateCells(row.rates.late)}</tr>`,
-    )
+    .map((row) => {
+      const type = isEnemyId(row.id) ? enemyById[row.id].enemyType : undefined;
+      return `<tr><td>${escapeHtml(titleFor("enemy", row.id))}</td>${rateCells(row.rates.early, type)}${rateCells(row.rates.mid, type)}${rateCells(row.rates.late, type)}</tr>`;
+    })
     .join("\n");
 
   const classRows = model.classes
@@ -66,7 +71,7 @@ export function renderBalanceReportHtml(model: BalanceReportModel, options: Repo
   const matchupRows = model.classMatchups
     .map((row) => {
       const cards = row.topCardsLate.map((entry) => `${titleFor("card", entry.cardId)} (${entry.count})`).join(", ");
-      return `<tr><td>${escapeHtml(titleFor("character", row.characterId))}</td><td>${escapeHtml(titleFor("enemy", row.enemyId))}</td><td>${escapeHtml(row.enemyType)}</td>${rateCells(row.rates.early)}${rateCells(row.rates.mid)}${rateCells(row.rates.late)}<td>${escapeHtml(cards)}</td></tr>`;
+      return `<tr><td>${escapeHtml(titleFor("character", row.characterId))}</td><td>${escapeHtml(titleFor("enemy", row.enemyId))}</td><td>${escapeHtml(row.enemyType)}</td>${rateCells(row.rates.early, row.enemyType)}${rateCells(row.rates.mid, row.enemyType)}${rateCells(row.rates.late, row.enemyType)}<td>${escapeHtml(cards)}</td></tr>`;
     })
     .join("\n");
 
@@ -95,7 +100,7 @@ export function renderBalanceReportHtml(model: BalanceReportModel, options: Repo
 
   const { meta } = model;
   const rateHeaderTier = (label: string) =>
-    `<th>Win ${label}</th><th>Timeout ${label}</th><th>Turns ${label}</th><th>HP ${label}</th><th>Enemy attacks ${label}</th><th>Ability uses ${label}</th><th>Trait activations ${label}</th><th>Wins before attack ${label}</th>`;
+    `<th>Win ${label}</th><th>Wins / Defeats / Timeouts ${label}</th><th>Timeout ${label}</th><th>Turns ${label}</th><th>HP ${label}</th><th>Enemy attacks ${label}</th><th>Ability uses ${label}</th><th>Trait activations ${label}</th><th>Wins before attack ${label}</th>`;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -138,7 +143,7 @@ ${enemyRows}
 </tbody></table></div>
 
 <h2>Class Rankings</h2>
-<p class="meta">Overall columns weight Normal / Elite / Boss equally. Late type split is raw win rate within that enemy type.</p>
+<p class="meta">Overall rates weight Normal / Elite / Boss equally. Outcome counts retain actual battles and are not type-weighted. Late type split is raw win rate within that enemy type.</p>
 <div class="scroll"><table><thead><tr><th>Class</th>${rateHeaderTier("Early")}${rateHeaderTier("Mid")}${rateHeaderTier("Late")}<th>Late Normal</th><th>Late Elite</th><th>Late Boss</th></tr></thead><tbody>
 ${classRows}
 </tbody></table></div>

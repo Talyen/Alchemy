@@ -24,7 +24,7 @@ import { BATTLE_CONFIG, PERCENT_DENOMINATOR } from "../game-constants";
 import { computeLeechHeal } from "./damage-rider-leech";
 import { isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-traits";
 import { decayArmorAfterDamage } from "./status-helpers";
-import { paceCombatMagnitude } from "./fight-pacing";
+import { paceCombatDamage } from "./fight-pacing";
 import { dealPlayerTypedHit } from "./player-typed-hit";
 import { getEnemyTraitSet, hasEnemyTrait } from "./types/state-helpers";
 
@@ -95,7 +95,7 @@ export function computeIncomingEnemyAttackDamage(
     state.enemyHealth < state.enemyMaxHealth / 2
   )
     remainingDamage *= LABYRINTH_MODIFIER_CONFIG.double;
-  const paced = paceCombatMagnitude(state, remainingDamage, "enemy");
+  const paced = paceCombatDamage(state, remainingDamage, "enemy");
   return Math.round(paced);
 }
 

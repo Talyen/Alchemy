@@ -8,7 +8,7 @@ import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { addPlayerStatusWithCombatText, applyHealingWithCombatText } from "./combat-text";
 import { rollTalentChance } from "./status-helpers";
 import { getBattleRng, rollPercent } from "@/lib/rng";
-import { dealPlayerTypedHit } from "./player-typed-hit";
+import { dealTalentTypedHit } from "./player-typed-hit";
 import { scaledGearLeechHeal } from "./gear-effects";
 import { scalePerMana } from "./amount-helpers";
 
@@ -126,7 +126,7 @@ export function resolveCompanionTurnStart(
 
     if (damageDealt > 0 && state.talentEffects.companionStunChance > 0) {
       if (rollTalentChance(state.talentEffects.companionStunChance, state)) {
-        afterEffects = dealPlayerTypedHit(afterEffects, "stun", damageDealt, combatTexts);
+        afterEffects = dealTalentTypedHit(afterEffects, "stun", damageDealt, combatTexts, true);
       }
     }
 

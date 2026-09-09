@@ -197,7 +197,7 @@ describe("applyEnemyAbility", () => {
       makeTexts(),
     );
     expect(result.playerHealth).toBe(30);
-    expect(result.playerStatuses.block).toBe(1);
+    expect(result.playerStatuses.block).toBe(2);
   });
 
   it("decays player armor when health damage is taken", () => {
@@ -545,7 +545,7 @@ describe("applyEnemyAbility", () => {
     expect(purgedArmor.playerStatuses.forge).toBe(1);
   });
 
-  it("blood-countess damages itself on player heal (and also on enemy heal per trait)", async () => {
+  it("blood-countess damages itself only on actual hero healing", async () => {
     const { applyEnemyHealingWithCombatText, applyHealingWithCombatText } = await import("@/lib/battle/combat-text");
     const countessState = makeTestBattleState({
       currentEnemy: enemyBestiary.find((e) => e.id === "blood-countess")!,
@@ -566,7 +566,7 @@ describe("applyEnemyAbility", () => {
       enemyMaxHealth: 10,
     });
     const enemyHealed = applyEnemyHealingWithCombatText(enemyHealState, 3, []);
-    expect(enemyHealed.enemyHealth).toBe(7);
+    expect(enemyHealed.enemyHealth).toBe(8);
   });
 });
 
