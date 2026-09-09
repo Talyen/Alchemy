@@ -9,7 +9,9 @@ import {
   emptyShopState,
   emptyTrinketShopState,
 } from "@/lib/active-run-session";
+import { hexAt } from "@/lib/content-systems/labyrinth/hex-grid";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
+import { withClearedNode } from "@/lib/content-systems/labyrinth/map-state";
 import { createSeededRng } from "@/lib/utils";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { decodeRunResumeSnapshot, encodePersistedShops } from "@/features/alchemy/shared/stores/run-resume-codec";
@@ -44,6 +46,27 @@ function startLabyrinthRun(): void {
 }
 
 describe("labyrinth modifier persistence", () => {
+  it.each(["wide", "legacy tall"])(
+    "retains %s geography, settled location and pending travel across save and restore",
+    (layout) => {
+      startLabyrinthRun();
+      const map = structuredClone(readRunSession().labyrinthMap!);
+      const nodes = map.floors.find((floor) => floor.depth === 1)!.nodeIds;
+      if (layout === "legacy tall") {
+        nodes.forEach((id, index) => {
+          map.nodes[id]!.gridPosition = hexAt(Math.floor(index / 2) + 2, index % 2);
+        });
+      }
+      const currentNodeId = nodes[0]!;
+      setRunSession({ labyrinthMap: withClearedNode(map, currentNodeId), activeLabyrinthPendingNode: nodes[1]! });
+      const snap = snapshotRun(ROUTE_SCREENS.CAMPFIRE);
+      expect(snap.labyrinthMap?.currentNodeId).toBe(currentNodeId);
+      const decoded = decodeRunResumeSnapshot(snap);
+      expect(decoded.session.labyrinthMap).toEqual(snap.labyrinthMap);
+      expect(decoded.session.labyrinthMap?.currentNodeId).toBe(currentNodeId);
+      expect(decoded.session.labyrinthPendingNode).toBe(nodes[1]);
+    },
+  );
   it("keeps expedition twists on saves made outside combat", () => {
     startLabyrinthRun();
 

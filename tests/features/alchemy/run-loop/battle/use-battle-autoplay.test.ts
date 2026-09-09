@@ -34,37 +34,43 @@ describe("useBattleAutoplay", () => {
     vi.useFakeTimers();
     resetBattlePresentationAndRun();
     useUiStore.getState().setCardInspection(null);
+    useUiStore.getState().setEnemyInspectionOpen(false);
   });
 
   afterEach(() => {
     vi.useRealTimers();
   });
 
-  it("pauses while inspecting and resumes without toggling the autoplay setting", async () => {
-    const playCard = vi.fn(() => true);
-    useUiStore.getState().setCardInspection("draw");
-    const { unmount } = renderHook(() =>
-      useAutoplayUnderTest({
-        enabled: true,
-        screen: "battle",
-        battleState: openBattle.battleState,
-        hasActiveBattle: true,
-        isCardPlayInProgress: () => false,
-        gameMenuOpen: false,
-        playCard,
-      }),
-    );
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(AUTOPLAY_RETRY_DELAY_MS * 3);
-    });
-    expect(playCard).not.toHaveBeenCalled();
-    await act(async () => {
-      useUiStore.getState().setCardInspection(null);
-      await vi.advanceTimersByTimeAsync(AUTOPLAY_RETRY_DELAY_MS);
-    });
-    expect(playCard).toHaveBeenCalledOnce();
-    unmount();
-  });
+  it.each(["cards", "enemy"] as const)(
+    "pauses while inspecting %s and resumes without toggling the autoplay setting",
+    async (kind) => {
+      const playCard = vi.fn(() => true);
+      if (kind === "cards") useUiStore.getState().setCardInspection("draw");
+      else useUiStore.getState().setEnemyInspectionOpen(true);
+      const { unmount } = renderHook(() =>
+        useAutoplayUnderTest({
+          enabled: true,
+          screen: "battle",
+          battleState: openBattle.battleState,
+          hasActiveBattle: true,
+          isCardPlayInProgress: () => false,
+          gameMenuOpen: false,
+          playCard,
+        }),
+      );
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(AUTOPLAY_RETRY_DELAY_MS * 3);
+      });
+      expect(playCard).not.toHaveBeenCalled();
+      await act(async () => {
+        if (kind === "cards") useUiStore.getState().setCardInspection(null);
+        else useUiStore.getState().setEnemyInspectionOpen(false);
+        await vi.advanceTimersByTimeAsync(AUTOPLAY_RETRY_DELAY_MS);
+      });
+      expect(playCard).toHaveBeenCalledOnce();
+      unmount();
+    },
+  );
 
   it("plays the first playable card when enabled", () => {
     const playCard = vi.fn(() => true);

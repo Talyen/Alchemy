@@ -1,13 +1,19 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CollectionScreen } from "@/features/alchemy/meta/screens/collection-screen";
 import { installDisabledAnimationsForTests } from "../../../../helpers/animation-test";
+import { enemyBestiary } from "@/lib/game-data";
+import { getBossMusicKey } from "@/lib/audio";
+
+const audio = vi.hoisted(() => ({ playMusic: vi.fn(), playEnemyAttack: vi.fn() }));
+vi.mock("@/lib/audio", async (importOriginal) => ({ ...(await importOriginal<Record<string, unknown>>()), ...audio }));
 
 describe("CollectionScreen", () => {
   installDisabledAnimationsForTests();
 
   afterEach(() => {
     cleanup();
+    vi.clearAllMocks();
   });
 
   const defaultProps = {
@@ -66,5 +72,42 @@ describe("CollectionScreen", () => {
     expect(undiscoveredImg?.className).toContain("opacity-45");
     expect(undiscoveredImg?.className).toContain("group-hover:grayscale-0");
     expect(undiscoveredImg?.className).toContain("group-hover:opacity-100");
+  });
+
+  it("opens Boss inspection while preserving music preview across closing and reopening", () => {
+    const id = "forge-golem";
+    const sorted = [...enemyBestiary].sort((a, b) => a.title.localeCompare(b.title));
+    const page = Math.floor(sorted.findIndex((entry) => entry.id === id) / 6);
+    render(
+      <CollectionScreen
+        {...defaultProps}
+        collectionTab="bestiary"
+        encounteredEnemyIds={[id]}
+        collectionPages={{ ...defaultProps.collectionPages, bestiary: page }}
+      />,
+    );
+    const portrait = screen.getByRole("button", { name: "Inspect The Forge Golem" });
+    fireEvent.click(portrait);
+    expect(audio.playEnemyAttack).toHaveBeenCalledWith(id);
+    expect(audio.playMusic).toHaveBeenCalledWith(getBossMusicKey(id));
+    const dialog = screen.getByRole("dialog", { name: "The Forge Golem" });
+    expect(
+      within(dialog)
+        .getAllByRole("img")
+        .map((image) => image.getAttribute("alt")),
+    ).toEqual(["Sunder", "Bash", "Molten Bulwark"]);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Close enemy inspection" }));
+    expect(audio.playMusic).toHaveBeenCalledOnce();
+    fireEvent.click(portrait);
+    expect(screen.getByRole("dialog", { name: "The Forge Golem" })).toBeTruthy();
+    expect(audio.playMusic).toHaveBeenCalledOnce();
+    expect(audio.playEnemyAttack).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps undiscovered entries concealed while retaining their existing click sound", () => {
+    render(<CollectionScreen {...defaultProps} collectionTab="bestiary" encounteredEnemyIds={[]} />);
+    fireEvent.click(screen.getAllByRole("button", { name: "Inspect Undiscovered Entry" })[0]);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(audio.playEnemyAttack).toHaveBeenCalledOnce();
   });
 });

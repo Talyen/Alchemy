@@ -182,3 +182,16 @@ trace events fail capture. Screenshots are omitted to reduce trace overhead.
 Metric and comparison unit tests in `tests/performance/` run in the ordinary Node Vitest suite (`npm test`).
 
 Related: [PerformanceAudit.md](./Audits/PerformanceAudit.md) (when to change code), [CONTRIBUTING.md](../CONTRIBUTING.md) (E2E helpers / animation policy).
+
+## Eager bundle size
+
+The gating ceilings live in `scripts/lib/bundle-budget.mjs` and are checked by
+`npm run check:bundle`. Screen and art loading remain eager.
+
+The enemy ability and inspection change measured 1,657,797 bytes of total desktop
+JavaScript. Sharing `InspectionPanel` and `InspectionCardGrid` with deck inspection
+reduced that to 1,657,118 bytes. The remaining feature cost exceeded the previous
+1,648,640-byte ceiling by 8,478 bytes, so the total allowance increased by 10 KiB
+to 1,658,880 bytes. The entry and game-data ceilings remain intact. This measured
+allowance covers the card resolver, migration, repertoire data, and trait/inspection
+presentation without new dependencies or deferred screen loading.

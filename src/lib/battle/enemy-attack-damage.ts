@@ -26,7 +26,7 @@ import { isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-tra
 import { decayArmorAfterDamage } from "./status-helpers";
 import { paceCombatMagnitude } from "./fight-pacing";
 import { dealPlayerTypedHit } from "./player-typed-hit";
-import { addEnemyMitigation, getEnemyTraitSet, hasEnemyTrait, setFlag } from "./types/state-helpers";
+import { getEnemyTraitSet, hasEnemyTrait } from "./types/state-helpers";
 
 function applyPhysicalForgeBonus(state: BattleState, effect: EnemyAttackEffect & { kind: "damage" }) {
   if (effect.damageType !== "physical") return effect.amount;
@@ -215,37 +215,6 @@ function resolvePostDamageThresholds(
   return nextState;
 }
 
-function healEnemyWithCombatText(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
-  return applyEnemyHealingWithCombatText(state, amount, combatTexts, { skipFightPacing: true });
-}
-
-function applyEnemyDamageTraitReactions(
-  state: BattleState,
-  effect: EnemyAttackEffect & { kind: "damage" },
-  actualDamage: number,
-  combatTexts: CombatTextEvent[],
-  traitSet?: ReadonlySet<string>,
-): BattleState {
-  if (actualDamage <= 0) return state;
-  let nextState = state;
-  if (effect.damageType === "holy") {
-    if (hasEnemyTrait(nextState, "cleric", traitSet))
-      nextState = healEnemyWithCombatText(recordEnemyAbilityActivation(nextState, "cleric"), 1, combatTexts);
-    if (hasEnemyTrait(nextState, "zealot-enemy", traitSet) || hasEnemyTrait(nextState, "inquisitor", traitSet)) {
-      nextState = recordEnemyAbilityActivation(
-        nextState,
-        hasEnemyTrait(nextState, "inquisitor", traitSet) ? "inquisitor" : "zealot-enemy",
-      );
-      nextState = setFlag(nextState, "enemyNextAttackHolyBonus", nextState.flags.enemyNextAttackHolyBonus + 1);
-    }
-  }
-  if ((effect.damageType === "stun" || effect.damageType === "holy") && hasEnemyTrait(nextState, "paladin", traitSet)) {
-    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "block", amount: 1 });
-    nextState = addEnemyMitigation(recordEnemyAbilityActivation(nextState, "paladin"), "block", 1);
-  }
-  return nextState;
-}
-
 export function applyEnemyLeechHealing(
   state: BattleState,
   actualDamage: number,
@@ -255,15 +224,7 @@ export function applyEnemyLeechHealing(
   if (state.talentEffects.blockEnemyLeech) return state;
   const healAmount = computeLeechHeal(actualDamage);
   if (healAmount <= 0) return state;
-  let nextState = applyEnemyHealingWithCombatText(state, healAmount, combatTexts, { skipFightPacing: true });
-  if (
-    hasEnemyTrait(nextState, "vampire") &&
-    state.enemyHealth < state.enemyMaxHealth &&
-    nextState.enemyHealth >= state.enemyMaxHealth
-  ) {
-    nextState = setFlag(nextState, "enemyNextAttackBonus", nextState.flags.enemyNextAttackBonus + 1);
-  }
-  return nextState;
+  return applyEnemyHealingWithCombatText(state, healAmount, combatTexts, { skipFightPacing: true });
 }
 
 function recordPlayerHealthLost(
@@ -321,21 +282,23 @@ function applyBlockedAttackRetaliation(
   return applyDamageRiders(nextState, card, effect, modifiedDamage, combatTexts);
 }
 
-export function processEnemyDamageEffect(
+export interface EnemyDamageResult {
+  state: BattleState;
+  healthDamage: number;
+  landed: boolean;
+}
+
+export function resolveEnemyDamageEffect(
   state: BattleState,
   effect: EnemyAttackEffect & { kind: "damage" },
   combatTexts: CombatTextEvent[],
   options: EnemyDamageOptions = {},
-) {
+): EnemyDamageResult {
+  if (state.playerHealth <= 0) return { state, healthDamage: 0, landed: false };
   const incomingDamage = options.incomingDamage ?? computeIncomingEnemyAttackDamage(state, effect, options);
 
-  const { remainingDamage, blockAbsorb, blockSpent, totalExtraBlock, actualDamage } = calculateBlockAndArmorMitigation(
-    state,
-    effect,
-    incomingDamage,
-    combatTexts,
-    options,
-  );
+  const { remainingDamage, blockAbsorb, blockSpent, totalExtraBlock, armorAbsorb, actualDamage } =
+    calculateBlockAndArmorMitigation(state, effect, incomingDamage, combatTexts, options);
 
   let attackState = state;
   if (totalExtraBlock > 0) {
@@ -354,6 +317,10 @@ export function processEnemyDamageEffect(
     combatTexts,
   );
   const blockLost = Math.min(blockSpent + totalExtraBlock, damagedState.playerStatuses.block);
+  const outcome = {
+    healthDamage: Math.max(0, prevHealth - damagedState.playerHealth),
+    landed: blockLost > 0 || armorAbsorb > 0 || actualDamage > 0,
+  };
   let nextState: BattleState = {
     ...damagedState,
     playerStatuses: {
@@ -378,6 +345,8 @@ export function processEnemyDamageEffect(
     combatTexts,
   );
 
+  if (nextState.enemyHealth <= 0 || nextState.playerHealth <= 0) return { state: nextState, ...outcome };
+
   const preventStatusBuildup = shouldBlockPreventStatusBuildup(state, effect.damageType);
   if (!preventStatusBuildup) {
     nextState = applyPlayerDamageStatuses(nextState, effect, actualDamage);
@@ -389,7 +358,7 @@ export function processEnemyDamageEffect(
       ? Math.max(0, prevHealth - damagedState.playerHealth)
       : actualDamage;
     nextState = applyEnemyLeechHealing(nextState, healthLost, combatTexts);
-    if (hasEnemyTrait(state, "ravenous") && effect.damageType === "bleed") {
+    if (effect.damageType === "bleed") {
       nextState = {
         ...nextState,
         pendingEnemyBleedLeechHealing:
@@ -403,11 +372,10 @@ export function processEnemyDamageEffect(
     nextState = applyBlockedAttackRetaliation(nextState, blockLost, combatTexts);
   }
 
-  if (nextState.enemyHealth <= 0 || nextState.playerHealth <= 0) return nextState;
+  if (nextState.enemyHealth <= 0 || nextState.playerHealth <= 0) return { state: nextState, ...outcome };
 
   if (!options.skipTraitReactions) {
     const traitSet = options.traitSet ?? getEnemyTraitSet(nextState);
-    nextState = applyEnemyDamageTraitReactions(nextState, effect, actualDamage, combatTexts, traitSet);
     if (
       hasEnemyTrait(nextState, "earth-elemental", traitSet) &&
       state.playerStatuses.block > 0 &&
@@ -423,5 +391,14 @@ export function processEnemyDamageEffect(
     }
   }
 
-  return nextState;
+  return { state: nextState, ...outcome };
+}
+
+export function processEnemyDamageEffect(
+  state: BattleState,
+  effect: EnemyAttackEffect & { kind: "damage" },
+  combatTexts: CombatTextEvent[],
+  options: EnemyDamageOptions = {},
+): BattleState {
+  return resolveEnemyDamageEffect(state, effect, combatTexts, options).state;
 }

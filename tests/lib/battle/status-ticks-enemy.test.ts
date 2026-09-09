@@ -198,7 +198,7 @@ describe("tickEnemyStatuses", () => {
         art: "",
         enemyType: "normal",
         traits: [{ id: "burn-resistance", title: "Burn Resistance", description: "Half burn damage" }],
-        attackEffects: [],
+        abilityIds: ["slash", "bash", "block"],
       },
     });
     const texts = makeTexts();
@@ -221,7 +221,7 @@ describe("tickEnemyStatuses", () => {
         traits: [
           { id: "burn-vulnerability", title: "Burn Vulnerability", description: "Receives 30% more Burn damage" },
         ],
-        attackEffects: [],
+        abilityIds: ["slash", "bash", "block"],
       },
     });
     const texts = makeTexts();
@@ -243,7 +243,7 @@ describe("tickEnemyStatuses", () => {
         art: "",
         enemyType: "elite",
         traits: [{ id: "living-armor", title: "Living Armor", description: "Receives 25% less Bleed damage" }],
-        attackEffects: [],
+        abilityIds: ["slash", "bash", "block"],
       },
     });
     const texts = makeTexts();

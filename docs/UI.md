@@ -185,39 +185,55 @@ available height.
 
 ## Labyrinth map
 
-The map scrolls vertically below a stationary header with a compact Floor select.
-Touching point-topped hexes keep saved coordinates and cap their width at 12.5
-content units (200px at default Game Size), shrinking to fit narrow map areas.
-Outer padding accommodates selected artwork lift without changing hit targets.
-Map entry, destination return, and automatic floor advancement reveal the first
-reachable chamber in row/column order; manual floor browsing remembers scroll
-positions for the mounted screen. Floors without reachable chambers start at top.
+The complete current floor fits below the stationary header, using both viewport
+width and height. Saved hex coordinates and complete-floor bounds stay fixed as
+rooms clear. Selection and destination return do not pan, scroll, or recenter the
+map. A resize refits the same floor. A centered Floor N status subheader sits
+beneath Labyrinth; there is no side tracker or reserved gutter. New floors use
+five rows across roughly five columns, giving larger hexes a roughly square
+footprint fitted uniformly to the available rectangle. There is no floor picker,
+zoom toolbar, legend, or node overlay.
 
-Only reachable chambers accept selection and keyboard focus. Locked artwork
-stays dim; completed artwork is grayscale, darkened, slightly smaller, and has a
-faint outline instead of a red X. Clicking either dismisses details. Completion
-preserves floor bounds and positions. Reachable art stays bright with colored
-shine and hover/focus plasma feedback. Selected art lifts slightly; presses
-compress it. Observed transitions to reachable pulse once; entering the map does
-not replay state-change effects. Reduced motion disables movement and shine.
-Hexes have no tooltips or zoom controls.
+Touching point-topped hexes use existing artwork and one exact integer-lattice
+geometry for positions and shared vertices. A map-wide SVG renders each edge
+once in pixel coordinates, with a 2px non-scaling stroke and room around the
+perimeter to avoid clipping. No square viewBox stretching, state-specific stroke
+widths, or node transforms are permitted. Shared-edge appearance priority is
+keyboard focus, selection, current location, hover, reachable, completed, then
+unexplored; ties use stable node IDs. Selection/focus is ivory, current location
+muted amber, completed borders dim stone, and unexplored borders charcoal.
+Reachable borders retain their existing type-gradient shine. Gradients use each
+node's bounds in user-space coordinates, so all of its owned edge segments share
+one continuous gradient; reduced motion freezes the shine. Completed artwork is
+desaturated and subdued, unexplored artwork dim, and neither changes size.
 
-One inspector floats beside the selected node without reserving map space.
-It prefers right, then left, top, or bottom, with an 8px gap and boundary padding.
-Its preferred width is 340px at default Game Size, capped to the visible map area.
-It follows its chamber during map scrolling and resizing, and dismisses once the
-chamber completely leaves view. Outside clicks dismiss it, reachable nodes switch
-selection directly, and Escape dismisses and restores node focus. Floor changes
-and stale unavailable selections dismiss it. Destination labels use Combat while
-the persisted Normal Combat value remains compatible.
+Every chamber on the current floor can be inspected using mouse, touch, or a
+native keyboard button. Only reachable rooms can be entered. Selection never
+moves the player or alters reachability; automatic travel through cleared rooms
+retains all explored-area choices without drawn routes. The current room has
+`aria-current="location"`; its inspector also says "You are here".
 
-The inspector uses edge-to-edge 4:3 artwork without text or scrims. Category and
-name appear below artwork, with duplicate labels omitted and shops categorized
-as Merchant. Combat and reward modifiers remain separate readable blocks with
-colored keywords. Content scrolls independently without shrinking artwork; the
-full-width action stays in a separate footer. There is no close button, party
-control, or enemy-detail action. Shared screen-header eyebrows use the small text
-size, one step above extra-small.
+One inspector floats beside the selected hex and never reserves a sidebar. It
+prefers right, then left, top, or bottom, with a 10px gap and 8px boundary padding.
+Its width is 320–420 rendered pixels, capped to the viewport, including on narrow
+screens. Width limits and the node gap compensate for the virtual-stage scale;
+Floating UI boundary padding already uses screen pixels and must not be scaled
+again. It follows layout changes without moving the map. Outside clicks dismiss
+it, another node switches inspection, and Escape dismisses and restores node
+focus. No close button or tooltip is added. Floor changes dismiss old selection.
+
+The inspector shows the artwork at its natural aspect ratio without cropping.
+The nonduplicated category/name overlays its bottom left on a dark gradient,
+using larger type. Each trait has a padded, subtly bordered container, a larger
+icon, and a name subheader. There are no horizontal divider lines in the panel
+or above the action footer. Descriptions use the shared keyword renderer;
+trait names use standard text shine for up to three keywords extracted from their
+descriptions, falling back to the trait's existing theme when none are named.
+Icons reuse the trait's theme keyword or an existing service icon.
+Long text scrolls independently and the action footer remains visible. Completed
+and unexplored rooms explain their status instead of offering entry. A completed
+boss offers Descend, including the number of unexplored rooms that will be left
+behind. The progression and save contract lives in [WORKFLOWS](./WORKFLOWS.md#content-system-behavior).
 
 ## Corrupted card text
 
@@ -297,6 +313,40 @@ battle teardown, or opening a peer menu closes it. Escape, backdrop, and the clo
 button dismiss it and return focus to the opener. Pile measurement wrappers must
 match the artwork bounds: their button is block-level so inline baseline spacing
 does not shift transfer anchors.
+
+## Enemy inspection
+
+Battle enemy portraits and discovered Bestiary entries open the shared
+`EnemyInspectionOverlay`, sharing `InspectionPanel` and `InspectionCardGrid` with
+deck inspection. The enemy name is the modal header, followed by Traits
+and Abilities headings without a divider. Abilities reuse `BattleCardButton`,
+`viewCardWidthClass`, the standard keyword border/hover behavior, and adaptive
+card pagination. Cards show portrait art only; effects appear in ordinary card
+tooltips on hover or keyboard focus. Inspection cards cannot be played or flipped
+and do not inherit the hero's description context. Ability tooltip text is universal: edit the canonical card description once for
+all inspection and play surfaces.
+
+Enemy portrait tooltips show traits only, with no repeated-attack text, ability
+cards, or upcoming-action indicator. `EnemyTraits` renders the same named trait
+sections in Battle hover, Bestiary hover, and the modal. Each subheader pairs a
+small static Lucide icon with `ShineText`; colors come from up to three distinct
+keywords in description order through `getKeywordTextShineColors`. Descriptions
+use the shared keyword tokenizer for bold/color emphasis. No-keyword titles use
+the normal neutral fallback. Encounter modifiers use the same rendering and are
+shown once in their existing separate group. Enemy trait copy refers to heroes.
+
+Opening inspection dismisses the portrait tooltip through its standard fade.
+`useHoverVisible` supports `suspended` and `dismiss`: restored focus must not flash
+the old tooltip back; deliberate pointer movement or a new focus visit can show
+it again. While the modal is open, Battle input, autoplay, and automatic End Turn
+use the shared inspection gate. Opening is restricted to the same safe decision
+window as deck inspection. Modal dismissal and focus return follow the shared
+overlay lifecycle.
+
+Bestiary clicks retain the enemy sound and Boss music preview. Opening, closing,
+and reopening the modal do not restart or stop preview music; existing page/tab
+changes still restore menu music. Undiscovered entries retain their current
+concealment and audio behavior and cannot open inspection.
 
 ## Verification
 

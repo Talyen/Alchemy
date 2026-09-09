@@ -1,6 +1,6 @@
 import { createEmptyTalentEffectManifest, type TalentEffectManifest } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import { BASE_ENEMY_HEALTH, FALLBACK_ENEMY_ATTACK, MAX_PLAYER_HEALTH } from "../game-constants";
+import { BASE_ENEMY_HEALTH, MAX_PLAYER_HEALTH } from "../game-constants";
 import { EMPTY_ENEMY_MITIGATION, type BattleState, type EnemyStatusValues, type PlayerStatusValues } from "./types";
 import { defaultTrinketEffects } from "../trinkets";
 import { defaultGearEffects } from "@/lib/gear";
@@ -18,7 +18,7 @@ const skeletonEnemy = {
   art: "",
   enemyType: "normal" as const,
   traits: [],
-  attackEffects: [{ kind: "damage" as const, damageType: "physical" as const, amount: FALLBACK_ENEMY_ATTACK }],
+  abilityIds: ["slash", "bash", "block"],
 };
 
 function createEmptyPlayerStatuses(): PlayerStatusValues {
@@ -72,7 +72,7 @@ export function defaultBattleState(): BattleState {
     deathsDoorGraceTurnsRemaining: null,
     enemyHealth: BASE_ENEMY_HEALTH,
     enemyMaxHealth: BASE_ENEMY_HEALTH,
-    enemyAttackEffects: [],
+    lastEnemyAbilityId: null,
     enemyMitigation: { ...EMPTY_ENEMY_MITIGATION },
     enemyRegeneration: 0,
     roomScalingMultiplier: 1,

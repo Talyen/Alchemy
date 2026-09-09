@@ -1,6 +1,7 @@
+import { makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { defaultTalentEffects } from "@/lib/battle";
-import { processEnemyAttack } from "@/lib/battle/enemy-turn-attack";
+import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { companionLibrary } from "@/lib/game-data";
 import { applyDamageStatuses } from "@/lib/battle/damage-status-riders";
@@ -16,10 +17,11 @@ import { defaultEnemyStatusValues, defaultPlayerStatusValues } from "../../fixtu
 
 describe("Dodge talent rewrites", () => {
   it("Riposte deals Physical equal to the dodged attack", () => {
-    const result = processEnemyAttack(
+    const result = applyEnemyAbility(
       incomingPhysical({
         talentEffects: { ...defaultTalentEffects, physicalOnDodgeEqualToAttack: true },
       }),
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
       makeCombatTexts(),
     );
     expect(result.playerHealth).toBe(100);
@@ -27,11 +29,12 @@ describe("Dodge talent rewrites", () => {
   });
 
   it("Footwork grants Block equal to the dodged attack", () => {
-    const result = processEnemyAttack(
+    const result = applyEnemyAbility(
       incomingPhysical({
         playerStatuses: defaultPlayerStatusValues({ block: 0 }),
         talentEffects: { ...defaultTalentEffects, blockOnDodgeEqualToAttack: true },
       }),
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
       makeCombatTexts(),
     );
     expect(result.playerStatuses.block).toBe(8);
@@ -42,27 +45,38 @@ describe("Dodge talent rewrites", () => {
       playerHealth: 10,
       playerMaxHealth: 30,
       rng: () => 0.15,
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
       talentEffects: { ...defaultTalentEffects, dodgeChanceBelowHalfHealth: 20 },
     });
-    expect(processEnemyAttack(wounded, makeCombatTexts()).playerHealth).toBe(10);
+    expect(
+      applyEnemyAbility(
+        wounded,
+        makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
+        makeCombatTexts(),
+      ).playerHealth,
+    ).toBe(10);
 
     const healthy = patchBattleState({
       playerHealth: 30,
       playerMaxHealth: 30,
       rng: () => 0.15,
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
       talentEffects: { ...defaultTalentEffects, dodgeChanceBelowHalfHealth: 20 },
     });
-    expect(processEnemyAttack(healthy, makeCombatTexts()).playerHealth).toBeLessThan(30);
+    expect(
+      applyEnemyAbility(
+        healthy,
+        makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
+        makeCombatTexts(),
+      ).playerHealth,
+    ).toBeLessThan(30);
   });
 
   it("Pack Weave makes the Companion attack when you Dodge", () => {
-    const result = processEnemyAttack(
+    const result = applyEnemyAbility(
       incomingPhysical({
         activeCompanion: companionLibrary.wolf,
         talentEffects: { ...defaultTalentEffects, companionAttacksOnDodge: true },
       }),
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
       makeCombatTexts(),
     );
     expect(result.enemyHealth).toBeLessThan(100);
@@ -80,10 +94,11 @@ describe("Dodge talent rewrites", () => {
   });
 
   it("Parting Cut makes the next Physical card deal matching Bleed", () => {
-    const afterDodge = processEnemyAttack(
+    const afterDodge = applyEnemyAbility(
       incomingPhysical({
         talentEffects: { ...defaultTalentEffects, partingCutOnDodge: true },
       }),
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
       makeCombatTexts(),
     );
     expect(afterDodge.flags.nextPhysicalDealsBleed).toBe(true);
@@ -111,21 +126,23 @@ describe("Dodge talent rewrites", () => {
   });
 
   it("Lucky Foot grants Gold when you Dodge", () => {
-    const result = processEnemyAttack(
+    const result = applyEnemyAbility(
       incomingPhysical({
         gold: 10,
         talentEffects: { ...defaultTalentEffects, goldOnDodge: 1 },
       }),
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
       makeCombatTexts(),
     );
     expect(result.gold).toBe(11);
   });
 
   it("Arrow Dance makes the next Archery card free", () => {
-    const afterDodge = processEnemyAttack(
+    const afterDodge = applyEnemyAbility(
       incomingPhysical({
         talentEffects: { ...defaultTalentEffects, nextArcheryCardFreeOnDodge: true },
       }),
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
       makeCombatTexts(),
     );
     expect(afterDodge.flags.nextArcheryCardFree).toBe(true);
@@ -142,10 +159,11 @@ describe("Dodge talent rewrites", () => {
   });
 
   it("Windstep makes the next Nature card free", () => {
-    const afterDodge = processEnemyAttack(
+    const afterDodge = applyEnemyAbility(
       incomingPhysical({
         talentEffects: { ...defaultTalentEffects, nextNatureCardFreeOnDodge: true },
       }),
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
       makeCombatTexts(),
     );
     expect(afterDodge.flags.nextNatureCardFree).toBe(true);

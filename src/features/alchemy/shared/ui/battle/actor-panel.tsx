@@ -2,7 +2,7 @@ import { type ReactNode, type Ref } from "react";
 
 import { Progress } from "@/components/ui/progress";
 import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
-import type { BestiaryEntry, EnemyAttackEffect } from "@/lib/game-data";
+import type { BestiaryEntry } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
 import {
@@ -54,7 +54,8 @@ interface ArtPanelProps {
   cardWidthClass?: string;
   descriptionLines?: string[];
   currentEnemy?: BestiaryEntry;
-  currentEnemyAttackEffects?: EnemyAttackEffect[];
+  onInspect?: ((trigger: HTMLElement) => void) | undefined;
+  inspectionOpen?: boolean;
   activeLabyrinthModifiers?: EncounterCombatTraitId[];
   deathsDoorActive?: boolean;
   isBoss?: boolean;
@@ -87,7 +88,8 @@ export function ArtPanel({
   cardWidthClass,
   descriptionLines,
   currentEnemy,
-  currentEnemyAttackEffects,
+  onInspect,
+  inspectionOpen = false,
   activeLabyrinthModifiers = [],
   deathsDoorActive = false,
   isBoss = false,
@@ -104,14 +106,17 @@ export function ArtPanel({
 }: ArtPanelProps) {
   const healthToken = useChangeToken(health);
   const healthPercent = maxHealth > 0 ? (health / maxHealth) * 100 : 0;
-  const { triggerRef: artWrapperRef, visible: tooltipVisible, ...tooltipHandlers } = useHoverVisible();
+  const {
+    triggerRef: artWrapperRef,
+    visible: tooltipVisible,
+    ...tooltipHandlers
+  } = useHoverVisible({ suspended: inspectionOpen });
   usePlasmaInteraction(plasmaColorPair, tooltipVisible);
 
   const resolvedCardWidthClass =
     cardWidthClass ?? (side === "enemy" ? battleEnemyCardWidthClass : battleCardWidthClass);
   const artWrapClass = cn("relative overflow-visible", isBoss && side === "player" && "origin-bottom scale-[1.3]");
-  const hoverShineColors =
-    side === "enemy" && currentEnemy ? getEnemyKeywordShineColors(currentEnemy, currentEnemyAttackEffects) : undefined;
+  const hoverShineColors = side === "enemy" && currentEnemy ? getEnemyKeywordShineColors(currentEnemy) : undefined;
 
   return (
     <div className={cn("relative flex flex-col items-center gap-3", shaking && "animate-shake")}>
@@ -127,12 +132,14 @@ export function ArtPanel({
             className="group/art-wrapper relative"
             onMouseEnter={tooltipHandlers.onMouseEnter}
             onMouseLeave={tooltipHandlers.onMouseLeave}
+            onMouseMove={tooltipHandlers.onMouseMove}
+            onFocusCapture={tooltipHandlers.onFocusCapture}
+            onBlurCapture={tooltipHandlers.onBlurCapture}
           >
             <ActorTooltip
               title={title}
               descriptionLines={descriptionLines}
               currentEnemy={currentEnemy}
-              currentEnemyAttackEffects={currentEnemyAttackEffects}
               activeLabyrinthModifiers={activeLabyrinthModifiers}
               triggerRef={artWrapperRef}
               visible={tooltipVisible}
@@ -146,6 +153,14 @@ export function ArtPanel({
               shimmerToken={shimmerToken}
               onHoverShimmer={onHoverShimmer}
               surfaceRef={surfaceRef}
+              onInspect={
+                onInspect
+                  ? (trigger) => {
+                      tooltipHandlers.dismiss();
+                      onInspect(trigger);
+                    }
+                  : undefined
+              }
               isDead={isDead}
               cardWidthClass={resolvedCardWidthClass}
               deathsDoorActive={deathsDoorActive}
@@ -191,6 +206,7 @@ function ActorArtFrame({
   shimmerToken,
   onHoverShimmer,
   surfaceRef,
+  onInspect,
   isDead,
   cardWidthClass = battleCardWidthClass,
   deathsDoorActive,
@@ -210,6 +226,7 @@ function ActorArtFrame({
   shimmerToken: number | undefined;
   onHoverShimmer: (cardId: string) => void;
   surfaceRef: Ref<HTMLDivElement> | undefined;
+  onInspect?: ((trigger: HTMLElement) => void) | undefined;
   isDead: boolean;
   cardWidthClass?: string;
   deathsDoorActive: boolean;
@@ -227,6 +244,14 @@ function ActorArtFrame({
     <CombatantStatusEffectPresentation keyword={isDead ? null : ccKeyword}>
       <Surface
         surfaceRef={surfaceRef}
+        onDivClick={
+          onInspect && !isDead
+            ? (event) => {
+                if (event) onInspect(event.currentTarget);
+              }
+            : undefined
+        }
+        ariaLabel={`Inspect ${title}`}
         testId={`battle-${side}-art-panel`}
         clipContents={false}
         className={cn(

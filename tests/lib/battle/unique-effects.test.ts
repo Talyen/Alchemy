@@ -1,10 +1,11 @@
+import { makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
 import { describe, expect, it, vi } from "vitest";
 import { patchBattleState, makeTestCard } from "../../fixtures/battle";
 import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
 import { applyDamageStatuses } from "@/lib/battle/damage-status-riders";
 import { applyAttackPurgeRider } from "@/lib/battle/damage-riders";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
-import { processEnemyAttack } from "@/lib/battle/enemy-turn-attack";
+import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import type { BattleCardEffect } from "@/lib/game-data";
 import type { CombatTextEvent } from "@/lib/battle/types";
@@ -183,12 +184,15 @@ describe("unique item battle effects", () => {
       enemyHealth: 100,
       enemyMaxHealth: 100,
       rng: dodgeThenMissRng(),
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
       gearEffects: { ...defaultGearEffects, dodgeDrawAndPlay: 1 },
     });
 
     const combatTexts: CombatTextEvent[] = [];
-    const afterHit = processEnemyAttack(baseState, combatTexts);
+    const afterHit = applyEnemyAbility(
+      baseState,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
+      combatTexts,
+    );
 
     expect(afterHit.playerHealth).toBe(100);
     expect(afterHit.playerStatuses.block).toBe(8);
@@ -220,11 +224,14 @@ describe("unique item battle effects", () => {
       enemyHealth: 100,
       enemyMaxHealth: 100,
       rng: dodgeThenMissRng(),
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
       gearEffects: { ...defaultGearEffects, dodgeDrawAndPlay: 1 },
     });
 
-    const afterHit = processEnemyAttack(baseState, []);
+    const afterHit = applyEnemyAbility(
+      baseState,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
+      [],
+    );
     expect(afterHit.hand).toHaveLength(7);
     expect(afterHit.hand.some((c) => c.id === "counter-strike")).toBe(false);
     expect(afterHit.discard.some((c) => c.id === "counter-strike")).toBe(true);

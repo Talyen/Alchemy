@@ -76,7 +76,7 @@ describe("Compendium builders", () => {
       art: "",
       enemyType: "boss",
       traits: [],
-      attackEffects: [],
+      abilityIds: ["slash", "bash", "block"],
     });
     expect(enemy.subtitle).toBe("Boss");
     expect(enemy.descriptionLines).toEqual([]);

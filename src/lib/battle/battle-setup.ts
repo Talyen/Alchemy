@@ -98,7 +98,6 @@ export function createBattleStartState(options: CreateBattleStateOptions): Battl
 
   const {
     enemyMaxHealth,
-    modifiedEffects,
     enemyRegeneration,
     roomScalingMultiplier,
     startingArmor,
@@ -133,7 +132,6 @@ export function createBattleStartState(options: CreateBattleStateOptions): Battl
     playerMaxHealth: finalMaxHealth,
     enemyHealth: enemyMaxHealth,
     enemyMaxHealth,
-    enemyAttackEffects: modifiedEffects,
     enemyRegeneration,
     roomScalingMultiplier,
     enemyMitigation: {
@@ -168,7 +166,7 @@ export function createBattleStartState(options: CreateBattleStateOptions): Battl
     talentEffects: battleTalents,
     trinketEffects,
     gearEffects: battleGearEffects,
-    flags: baseState.flags,
+    flags: { ...baseState.flags, legacyEnemyThornsReady: battleEnemy.traits.some((trait) => trait.id === "thorns") },
     uniqueGear: {
       ...baseState.uniqueGear,
       everkeenReady:

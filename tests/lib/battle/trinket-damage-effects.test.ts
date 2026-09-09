@@ -68,8 +68,8 @@ describe("Plague Doctor's Mask", () => {
 
   it("treats Poison after the enemy phase's tick", () => {
     const state = patchBattleState({
+      enemyCC: { stunSkipTurns: 1 },
       rng: rolls(),
-      enemyAttackEffects: [],
       playerStatuses: { poison: 5 },
       trinketEffects: { plagueDoctorPoisonCleanse: 2 },
     });

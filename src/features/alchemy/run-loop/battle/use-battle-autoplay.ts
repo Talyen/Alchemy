@@ -1,4 +1,4 @@
-import { useUiStore } from "../../shared/stores/ui-store";
+import { useUiStore, isBattleInspectionOpen } from "../../shared/stores/ui-store";
 import { useEffect, type RefObject } from "react";
 
 import { AUTOPLAY_POST_PLAY_DELAY_MS, AUTOPLAY_RETRY_DELAY_MS } from "@/lib/game-constants";
@@ -60,7 +60,7 @@ export function useBattleAutoplay({
           hiddenHandCardKeys: presentationGateRef.current.hiddenHandCardKeys,
           cardPlayInProgress: isCardPlayInProgressRef.current(),
           gameMenuOpen: gameMenuOpenRef.current,
-          inspectionOpen: useUiStore.getState().cardInspection !== null,
+          inspectionOpen: isBattleInspectionOpen(useUiStore.getState()),
         }),
       findPlayableCard: () => findFirstPlayableHandCard(battleStateRef.current),
       playCard: (card, index) => playCardRef.current(card, index),

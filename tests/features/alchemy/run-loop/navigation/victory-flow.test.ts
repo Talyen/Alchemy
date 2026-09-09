@@ -243,7 +243,7 @@ describe("computeVictoryRewards", () => {
             art: "",
             enemyType: "elite",
             traits: [{ id: "gold-trove", title: "Gold Trove", description: "Drops Double Gold on Defeat" }],
-            attackEffects: [{ kind: "damage", damageType: "physical", amount: 7 }],
+            abilityIds: ["slash", "bash", "block"],
           },
         }),
       }),

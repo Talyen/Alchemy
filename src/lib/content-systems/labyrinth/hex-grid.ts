@@ -1,13 +1,14 @@
 import type { LabyrinthGridPosition } from "../types";
 
 export const LABYRINTH_HEX = {
-  fullColumnsAcross: 3,
+  fullColumnsAcross: 5,
 
-  parseColumnsAcross: 4,
+  parseColumnsAcross: 5,
   minNodesPerFloor: 12,
   maxNodesPerFloor: 14,
 
   maxFloorRows: 8,
+  generationRows: 5,
   maxNodeDegree: 3,
 } as const;
 
@@ -34,7 +35,7 @@ export function isHexInBounds(position: LabyrinthGridPosition): boolean {
 }
 
 export function isHexInGenerationBounds(position: LabyrinthGridPosition): boolean {
-  if (position.row < 0 || position.row > LABYRINTH_HEX.maxFloorRows) return false;
+  if (position.row < 0 || position.row >= LABYRINTH_HEX.generationRows) return false;
   const column = hexVisualColumn(position);
   return column >= 0 && column < LABYRINTH_HEX.fullColumnsAcross;
 }

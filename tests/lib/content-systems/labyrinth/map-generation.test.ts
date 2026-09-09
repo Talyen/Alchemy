@@ -6,10 +6,14 @@ import {
   expandBeyondBoss,
   generateLabyrinthMap,
   orderTypesForPositions,
-  withClearedLabyrinthNode,
 } from "@/lib/content-systems/labyrinth/map-generation";
 import type { LabyrinthGridPosition, LabyrinthNodeType } from "@/lib/content-systems/types";
-import { floorNodes, isNodeReachable, labyrinthNodeVisualState } from "@/lib/content-systems/labyrinth/map-state";
+import {
+  floorNodes,
+  isNodeReachable,
+  labyrinthNodeVisualState,
+  withClearedNode,
+} from "@/lib/content-systems/labyrinth/map-state";
 import {
   LABYRINTH_ENTRANCE_NODE_ID,
   LABYRINTH_SUPPORT_TYPES,
@@ -118,7 +122,7 @@ describe("canEnterLabyrinthNode", () => {
   it("unlocks hex neighbors after a node is cleared", () => {
     const map = generateLabyrinthMap(createSeededRng(42));
     const entryId = map.nodes[LABYRINTH_ENTRANCE_NODE_ID]!.outgoingIds[0]!;
-    const cleared = withClearedLabyrinthNode(map, entryId, createSeededRng(1));
+    const cleared = withClearedNode(map, entryId);
     const entry = cleared.nodes[entryId]!;
     const neighbor = floorNodes(cleared, 1).find(
       (node) => node.id !== entryId && areHexesAdjacent(entry.gridPosition, node.gridPosition),
@@ -129,16 +133,22 @@ describe("canEnterLabyrinthNode", () => {
   });
 });
 
-describe("withClearedLabyrinthNode boss expansion", () => {
-  it("appends the next floor when the floor boss is cleared", () => {
+describe("deliberate Labyrinth descent", () => {
+  it("keeps the cleared boss on the current floor until descending", () => {
     const map = createMinimalLabyrinthMap();
     const combat = Object.values(map.nodes).find((node) => node.type === "combat")!;
     const rest = Object.values(map.nodes).find((node) => node.type === "rest")!;
     const boss = Object.values(map.nodes).find((node) => node.type === "boss")!;
-    let next = withClearedLabyrinthNode(map, combat.id, createSeededRng(1));
-    next = withClearedLabyrinthNode(next, rest.id, createSeededRng(2));
-    next = withClearedLabyrinthNode(next, boss.id, createSeededRng(3));
+    let next = withClearedNode(map, combat.id);
+    next = withClearedNode(next, rest.id);
+    next = withClearedNode(next, boss.id);
+    expect(next.currentFloor).toBe(1);
+    expect(next.currentNodeId).toBe(boss.id);
+    expect(next.floors).toHaveLength(map.floors.length);
+    next = expandBeyondBoss(next, boss.id, createSeededRng(3));
     expect(next.currentFloor).toBe(2);
+    expect(next.currentNodeId).toBeNull();
+    expect(expandBeyondBoss(next, boss.id, createSeededRng(4))).toBe(next);
     expect(floorNodes(next, 2).some((node) => node.type === "boss")).toBe(true);
     expect(next.nodes[boss.id]?.outgoingIds.length).toBe(1);
   });
@@ -172,9 +182,12 @@ describe("optional Labyrinth chambers", () => {
     let map = original;
     for (const id of path) {
       expect(canEnterLabyrinthNode(map, id)).toBe(true);
-      map = withClearedLabyrinthNode(map, id, rng);
+      map = withClearedNode(map, id);
     }
+    expect(map.currentFloor).toBe(1);
+    map = expandBeyondBoss(map, boss.id, rng);
     expect(map.currentFloor).toBe(2);
+    expect(canEnterLabyrinthNode(map, entry.id)).toBe(false);
     for (const node of nodes.filter((node) => !path.includes(node.id))) {
       expect(map.nodes[node.id]).toEqual(node);
     }

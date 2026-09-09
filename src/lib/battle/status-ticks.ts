@@ -3,14 +3,11 @@ import { scaledGearLeechHeal } from "./gear-effects";
 import { drawKeywordCard } from "./draw";
 import { hasEncounterBenefit } from "./types";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
-import { recordEnemyAbilityActivation } from "./battle-metrics";
 import {
   applyPlayerCombatDamage,
   mitigatePlayerCombatDamage,
   scaleReceivedPlayerDamage,
   setPlayerStatus,
-  setFlag,
-  hasEnemyTrait,
   type BattleState,
   type CombatTextEvent,
 } from "./types";
@@ -129,12 +126,15 @@ function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
 }
 
 export function tickEnemyStatuses(state: BattleState, combatTexts: CombatTextEvent[]) {
+  if (state.enemyHealth <= 0) return state;
   if (state.enemyStatuses.burn <= 0 && state.enemyStatuses.poison <= 0 && state.enemyStatuses.bleed <= 0) {
     if (state.pendingBleedLeechHealing === 0) return state;
     return { ...state, pendingBleedLeechHealing: 0 };
   }
   let nextState = tickBurn(state, combatTexts);
+  if (nextState.enemyHealth <= 0) return nextState;
   nextState = tickPoison(nextState, combatTexts);
+  if (nextState.enemyHealth <= 0) return nextState;
   nextState = tickBleed(nextState, combatTexts);
   return nextState;
 }
@@ -207,9 +207,6 @@ function tickPlayerBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
       next = applyEnemyLeechHealing(next, enemyLeechDamage, combatTexts);
     }
     next = { ...next, pendingEnemyBleedLeechHealing: 0 };
-    if (hasEnemyTrait(state, "blood-cultist") && healthBeforeBleed > next.playerHealth) {
-      next = setFlag(recordEnemyAbilityActivation(next, "blood-cultist"), "enemyNextAttackCrit", true);
-    }
     return next;
   });
 }

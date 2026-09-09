@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, cleanup, act, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 import { useHoverVisible } from "@/features/alchemy/shared/ui/use-hover-visible";
 
 afterEach(() => cleanup());
@@ -47,6 +48,45 @@ function ControlledHarness({ interactive = true, isHovered }: { interactive?: bo
 }
 
 describe("useHoverVisible", () => {
+  it("dismisses for inspection without flashing back on focus restoration", () => {
+    function InspectionHover() {
+      const [open, setOpen] = useState(false);
+      const { triggerRef, onMouseEnter, onMouseLeave, onMouseMove, onFocusCapture, onBlurCapture, dismiss, visible } =
+        useHoverVisible<HTMLButtonElement>({ suspended: open });
+      return (
+        <>
+          <button
+            ref={triggerRef}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
+            onMouseMove={onMouseMove}
+            onFocusCapture={onFocusCapture}
+            onBlurCapture={onBlurCapture}
+            onClick={() => {
+              dismiss();
+              setOpen(true);
+            }}
+          >
+            Inspect
+          </button>
+          {open ? <button onClick={() => setOpen(false)}>Close</button> : null}
+          <span data-testid="visible">{String(visible)}</span>
+        </>
+      );
+    }
+    render(<InspectionHover />);
+    const trigger = screen.getByRole("button", { name: "Inspect" });
+    fireEvent.mouseEnter(trigger);
+    expect(screen.getByTestId("visible").textContent).toBe("true");
+    fireEvent.click(trigger);
+    fireEvent.blur(trigger);
+    expect(screen.getByTestId("visible").textContent).toBe("false");
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    fireEvent.focus(trigger);
+    expect(screen.getByTestId("visible").textContent).toBe("false");
+    fireEvent.mouseMove(trigger);
+    expect(screen.getByTestId("visible").textContent).toBe("true");
+  });
   it("toggles visible on mouse enter/leave in uncontrolled mode", async () => {
     render(<HoverHarness />);
     expect(screen.getByTestId("visible").textContent).toBe("false");

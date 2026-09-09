@@ -88,24 +88,7 @@ describe("card descriptions vs effects", () => {
   });
 });
 
-describe("enemy descriptions vs attack effects", () => {
-  it.each(enemyBestiary.map((e) => [e.id, e.title, e] as const))(
-    "%s — attack effects have valid kinds",
-    (_id, _title, enemy) => {
-      for (const effect of enemy.attackEffects) {
-        expect(["damage", "player-status"]).toContain(effect.kind);
-        if (effect.kind === "damage") {
-          expect(typeof effect.amount).toBe("number");
-          expect(effect.amount).toBeGreaterThan(0);
-        }
-        if (effect.kind === "player-status") {
-          expect(typeof effect.amount).toBe("number");
-          expect(effect.amount).toBeGreaterThan(0);
-        }
-      }
-    },
-  );
-
+describe("enemy trait descriptions", () => {
   it("every enemy trait is registered in TRAIT_REQUIRED_PATTERNS with valid text", () => {
     for (const enemy of enemyBestiary) {
       for (const trait of enemy.traits) {

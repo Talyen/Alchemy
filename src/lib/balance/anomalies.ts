@@ -1,6 +1,10 @@
 import type { BattleState, CombatTextEvent } from "@/lib/battle";
 
 export interface BattleAnomalies {
+  enemyHealing: number;
+  heroHealthDamage: number;
+  enemyBlockGranted: number;
+  enemyArmorGranted: number;
   maxPlayerBlock: number;
   maxPlayerArmor: number;
   maxPlayerBurn: number;
@@ -78,6 +82,10 @@ export function getAnomalyThreshold(preset: AnomalyPreset): number {
 
 export function createEmptyAnomalies(): BattleAnomalies {
   return {
+    enemyHealing: 0,
+    heroHealthDamage: 0,
+    enemyBlockGranted: 0,
+    enemyArmorGranted: 0,
     ...Object.fromEntries(ANOMALY_METRICS.map(({ key }) => [key, 0])),
     maxSingleHitDamageToEnemyStat: "",
     maxSingleHitDamageToPlayerStat: "",
@@ -97,6 +105,15 @@ export function sampleAnomalies(
   }
 
   for (const ct of combatTexts) {
+    if (ct.kind === "heal" && ct.target === "enemy") anomalies.enemyHealing += ct.amount;
+    if (ct.kind === "status" && ct.target === "enemy" && ct.stat === "block") anomalies.enemyBlockGranted += ct.amount;
+    if (ct.kind === "status" && ct.target === "enemy" && ct.stat === "armor") anomalies.enemyArmorGranted += ct.amount;
+    if (
+      ct.kind === "damage" &&
+      ct.target === "player" &&
+      !["block", "armor", "forge", "thorns", "mana", "gold", "gems"].includes(ct.stat)
+    )
+      anomalies.heroHealthDamage += ct.amount;
     if (ct.kind !== "damage" && ct.kind !== "heal") continue;
     if (ct.kind === "damage") {
       if (ct.target === "enemy") {

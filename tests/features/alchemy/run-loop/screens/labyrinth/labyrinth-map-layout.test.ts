@@ -4,33 +4,27 @@ import { hexAt, areHexesAdjacent } from "@/lib/content-systems/labyrinth/hex-gri
 import { generateFloorLayout } from "@/lib/content-systems/labyrinth/hex-layout";
 import type { LabyrinthNode } from "@/lib/content-systems/types";
 
-function node(id: string, position: { row: number; col: number }, cleared = false): LabyrinthNode {
-  return {
-    id,
-    type: "combat",
-    floor: 1,
-    gridPosition: position,
-    modifiers: [],
-    rewardModifiers: [],
-    outgoingIds: [],
-    cleared,
-  };
+function node(id: string, gridPosition: { row: number; col: number }, cleared = false): LabyrinthNode {
+  return { id, type: "combat", floor: 1, gridPosition, modifiers: [], rewardModifiers: [], outgoingIds: [], cleared };
 }
 
-describe("layoutFloorNodes", () => {
-  it("fits the width of every floor variant while keeping chamber size independent of viewport height", () => {
+describe("Labyrinth floor geometry", () => {
+  it("fits every production template in the viewport without clipping border strokes", () => {
     for (const count of [12, 13, 14]) {
       for (let variant = 0; variant < 6; variant += 1) {
         const nodes = generateFloorLayout(count, () => variant / 6).map((p, i) => node(String(i), p));
-        for (const width of [240, 320, 800, 1400]) {
-          for (const maximumNodeWidth of [160, 200, 240]) {
-            const layout = layoutFloorNodes(nodes, width, maximumNodeWidth);
-            expect(layout.metrics.width).toBeLessThanOrEqual(maximumNodeWidth);
-            for (const point of layout.positions.values()) {
-              expect(point.x - layout.metrics.width / 2).toBeGreaterThanOrEqual(0);
-              expect(point.x + layout.metrics.width / 2).toBeLessThanOrEqual(width);
-              expect(point.y - layout.metrics.height / 2).toBeGreaterThanOrEqual(0);
-              expect(point.y + layout.metrics.height / 2).toBeLessThanOrEqual(layout.height);
+        for (const [width, height] of [
+          [240, 400],
+          [600, 350],
+          [1200, 900],
+        ]) {
+          const layout = layoutFloorNodes(nodes, width!, height!);
+          for (const edge of layout.edges) {
+            for (const point of [edge.from, edge.to]) {
+              expect(point.x).toBeGreaterThanOrEqual(2);
+              expect(point.x).toBeLessThanOrEqual(width! - 2);
+              expect(point.y).toBeGreaterThanOrEqual(2);
+              expect(point.y).toBeLessThanOrEqual(height! - 2);
             }
           }
         }
@@ -38,41 +32,40 @@ describe("layoutFloorNodes", () => {
     }
   });
 
-  it("caps large-screen chambers and produces a scrollable floor", () => {
-    const nodes = generateFloorLayout(14, () => 0).map((p, i) => node(String(i), p));
-    const layout = layoutFloorNodes(nodes, 1200, 200);
-    expect(layout.metrics.width).toBeCloseTo(200);
-    expect(layout.height).toBeGreaterThan(720);
+  it("uses identical shared vertices and renders each shared edge once at every orientation", () => {
+    const nodes = generateFloorLayout(14, () => 0.5).map((p, i) => node(String(i), p));
+    const layout = layoutFloorNodes(nodes, 600, 500);
+    let adjacentPairs = 0;
+    for (let i = 0; i < nodes.length; i += 1) {
+      for (const b of nodes.slice(i + 1)) {
+        const a = nodes[i]!;
+        if (!areHexesAdjacent(a.gridPosition, b.gridPosition)) continue;
+        adjacentPairs += 1;
+        const pa = layout.positions.get(a.id)!;
+        const pb = layout.positions.get(b.id)!;
+        expect(Math.hypot(pa.x - pb.x, pa.y - pb.y)).toBeCloseTo(layout.metrics.width);
+        expect(layout.edges.filter((edge) => edge.nodeIds.includes(a.id) && edge.nodeIds.includes(b.id))).toHaveLength(
+          1,
+        );
+      }
+    }
+    expect(layout.edges).toHaveLength(nodes.length * 6 - adjacentPairs);
+    for (const edge of layout.edges) {
+      expect(Math.hypot(edge.to.x - edge.from.x, edge.to.y - edge.from.y)).toBeCloseTo(layout.metrics.radius);
+    }
   });
 
-  it("keeps positions and size unchanged when chambers clear", () => {
-    const nodes = [node("a", hexAt(0, 0)), node("b", hexAt(4, 2)), node("c", hexAt(8, 0))];
+  it("preserves all geometry when rooms clear and normalizes nonzero saved origins", () => {
+    const nodes = [node("a", hexAt(4, 2)), node("b", hexAt(6, 2))];
+    const layout = layoutFloorNodes(nodes, 420, 500);
     expect(
       layoutFloorNodes(
         nodes.map((item) => ({ ...item, cleared: true })),
         420,
         500,
       ),
-    ).toEqual(layoutFloorNodes(nodes, 420, 500));
-  });
-
-  it("packs adjacent hexes at exactly one apothem pair apart", () => {
-    const nodes = generateFloorLayout(14, () => 0.5).map((p, i) => node(String(i), p));
-    const layout = layoutFloorNodes(nodes, 600, 500);
-    for (const a of nodes) {
-      for (const b of nodes) {
-        if (!areHexesAdjacent(a.gridPosition, b.gridPosition)) continue;
-        const pa = layout.positions.get(a.id)!;
-        const pb = layout.positions.get(b.id)!;
-        expect(Math.hypot(pa.x - pb.x, pa.y - pb.y)).toBeCloseTo(layout.metrics.width);
-      }
-    }
-  });
-
-  it("normalizes saved rows without assuming a zero origin", () => {
-    const layout = layoutFloorNodes([node("a", hexAt(4, 2)), node("b", hexAt(6, 2))], 400, 400);
-    expect(layout.positions.get("a")!.x).toBe(200);
-    expect(layout.positions.get("a")!.y - layout.metrics.height / 2).toBeCloseTo(32);
-    expect((layout.positions.get("a")!.y + layout.positions.get("b")!.y) / 2).toBeCloseTo(layout.height / 2);
+    ).toEqual(layout);
+    expect(layout.positions.get("a")!.x).toBe(210);
+    expect((layout.positions.get("a")!.y + layout.positions.get("b")!.y) / 2).toBe(250);
   });
 });

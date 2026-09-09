@@ -152,10 +152,12 @@ describe("enemy interaction measurements", () => {
       seed: 1,
     });
     expect(batch.averageEnemyAttacks).toBe(1);
-    expect(batch.averageEnemyAbilityActivations).toBe(1);
+    expect(batch.averageEnemyAbilityUses).toBe(1);
+    expect(batch.averageEnemyAbilityActivations).toBe(2 / 3);
     expect(batch.winsBeforeEnemyAttackRate).toBe(0);
     for (const result of batch.results) {
-      expect(result.enemyAbilityActivations).toEqual({ "stone-titan": 1 });
+      expect(Object.values(result.enemyAbilityUses).reduce((sum, count) => sum + count, 0)).toBe(1);
+      expect(result.enemyAbilityActivations).toEqual(result.enemyAbilityUses.sunder ? {} : { "stone-titan": 1 });
       expect(result.wonBeforeEnemyAttack).toBe(false);
     }
   });

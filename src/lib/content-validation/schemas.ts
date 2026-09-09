@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { BattleCardEffectSchema, ENEMY_TYPE_VALUES, keywordDefinitions, type KeywordId } from "@/lib/game-data";
 import { GEAR_AFFIX_IDS, GEAR_EFFECT_KEYS, GEAR_RARITIES, GEAR_SLOTS } from "@/lib/gear";
-import { DamageTypeSchema, PlayerStatusIdSchema, EnemyStatusIdSchema } from "@/lib/validation";
+import { EnemyStatusIdSchema } from "@/lib/validation";
 import { COMBAT_ENCOUNTER_TRAIT_IDS, REWARD_ENCOUNTER_TRAIT_IDS } from "../content-systems/encounter-traits";
 import { defaultTrinketEffects } from "@/lib/trinkets";
 
@@ -26,20 +26,6 @@ export const CardContentSchema = z.object({
   excludeFromOfferPool: z.boolean().optional(),
 });
 
-const EnemyAttackEffectSchema = z.discriminatedUnion("kind", [
-  z.object({
-    kind: z.literal("damage"),
-    damageType: DamageTypeSchema,
-    amount: PositiveIntegerSchema,
-    lifesteal: z.boolean().optional(),
-  }),
-  z.object({
-    kind: z.literal("player-status"),
-    status: PlayerStatusIdSchema,
-    amount: PositiveIntegerSchema,
-  }),
-]);
-
 export const EnemyContentSchema = z.object({
   id: NonEmptyStringSchema,
   title: NonEmptyStringSchema,
@@ -54,7 +40,10 @@ export const EnemyContentSchema = z.object({
       description: NonEmptyStringSchema,
     }),
   ),
-  attackEffects: z.array(EnemyAttackEffectSchema).min(1),
+  abilityIds: z
+    .array(NonEmptyStringSchema)
+    .length(3)
+    .refine((ids) => new Set(ids).size === ids.length, "Enemy abilities must be distinct"),
 });
 
 export const CompanionContentSchema = z.object({

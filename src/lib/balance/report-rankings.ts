@@ -8,6 +8,7 @@ export interface RateCell {
   averageTurns: number;
   averageEnemyAttacks: number;
   averageEnemyAbilityActivations: number;
+  averageEnemyAbilityUses: number;
   winsBeforeEnemyAttackRate: number;
   averageHealthRemaining: number;
   n: number;
@@ -21,6 +22,7 @@ export function emptyRateCell(): RateCell {
     averageHealthRemaining: 0,
     averageEnemyAttacks: 0,
     averageEnemyAbilityActivations: 0,
+    averageEnemyAbilityUses: 0,
     winsBeforeEnemyAttackRate: 0,
     n: 0,
   };
@@ -46,6 +48,7 @@ export function combineRateCells(cells: readonly RateCell[]): RateCell {
     timeoutRate: timeouts / n,
     averageTurns: turns / n,
     averageEnemyAttacks: cells.reduce((sum, cell) => sum + cell.averageEnemyAttacks * cell.n, 0) / n,
+    averageEnemyAbilityUses: cells.reduce((sum, cell) => sum + cell.averageEnemyAbilityUses * cell.n, 0) / n,
     averageEnemyAbilityActivations:
       cells.reduce((sum, cell) => sum + cell.averageEnemyAbilityActivations * cell.n, 0) / n,
     winsBeforeEnemyAttackRate: cells.reduce((sum, cell) => sum + cell.winsBeforeEnemyAttackRate * cell.n, 0) / n,

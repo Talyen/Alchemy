@@ -30,6 +30,7 @@ function makeMap(nodes: LabyrinthNode[], currentFloor = 1): LabyrinthMap {
   }
   return {
     currentFloor,
+    currentNodeId: null,
     floors: [...byFloor.entries()]
       .sort((a, b) => a[0] - b[0])
       .map(([depth, nodeIds]) => ({

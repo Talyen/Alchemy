@@ -125,7 +125,6 @@ export function incomingPhysical(overrides: Parameters<typeof patchBattleState>[
     enemyHealth: 100,
     enemyMaxHealth: 100,
     rng: dodgeThenMissRng(),
-    enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
     ...overrides,
   });
 }

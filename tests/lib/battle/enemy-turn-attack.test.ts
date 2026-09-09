@@ -1,19 +1,24 @@
+import { applyPlayerStatusFromAttack } from "@/lib/battle/status-player";
+import { makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { enemyBestiary } from "@/lib/game-data";
-import { processEnemyAttack } from "@/lib/battle/enemy-turn-attack";
+import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import { BATTLE_CONFIG } from "@/lib/game-constants";
 import { makeCombatTexts as makeTexts, makeTestBattleState } from "../../fixtures/battle";
 import { defaultCcState } from "../../fixtures/default-battle-state";
 
-describe("processEnemyAttack", () => {
+describe("applyEnemyAbility", () => {
   it("player block absorbs before health", () => {
     const state = makeTestBattleState({
       playerHealth: 30,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 10, armor: 0 },
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
     });
-    const result = processEnemyAttack(state, makeTexts());
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] }),
+      makeTexts(),
+    );
     expect(result.playerStatuses.block).toBe(5);
     expect(result.playerHealth).toBe(30);
   });
@@ -23,9 +28,12 @@ describe("processEnemyAttack", () => {
       playerHealth: 30,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
       enemyMitigation: { ...makeTestBattleState().enemyMitigation, forge: 3 },
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
     });
-    const result = processEnemyAttack(state, makeTexts());
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] }),
+      makeTexts(),
+    );
     expect(result.playerHealth).toBe(22);
   });
 
@@ -33,9 +41,12 @@ describe("processEnemyAttack", () => {
     const state = makeTestBattleState({
       playerHealth: 30,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0 },
-      enemyAttackEffects: [{ kind: "damage", damageType: "burn", amount: 4 }],
     });
-    const result = processEnemyAttack(state, makeTexts());
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 4 }] }),
+      makeTexts(),
+    );
     expect(result.playerStatuses.burn).toBe(4);
     expect(result.playerHealth).toBe(26);
   });
@@ -45,10 +56,13 @@ describe("processEnemyAttack", () => {
       playerHealth: 5,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
       deathsDoorUsed: false,
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
       turn: 3,
     });
-    const result = processEnemyAttack(state, makeTexts());
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10 }] }),
+      makeTexts(),
+    );
     expect(result.playerHealth).toBe(1);
     expect(result.deathsDoorUsed).toBe(true);
     expect(result.deathsDoorActive).toBe(true);
@@ -59,9 +73,12 @@ describe("processEnemyAttack", () => {
     const state = makeTestBattleState({
       playerHealth: 30,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 3 },
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
     });
-    const result = processEnemyAttack(state, makeTexts());
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
+      makeTexts(),
+    );
     expect(result.playerHealth).toBe(25);
   });
 
@@ -70,9 +87,12 @@ describe("processEnemyAttack", () => {
       playerHealth: 30,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
       talentEffects: { ...makeTestBattleState().talentEffects, receiveHalfHolyDamage: true },
-      enemyAttackEffects: [{ kind: "damage", damageType: "holy", amount: 10 }],
     });
-    const result = processEnemyAttack(state, makeTexts());
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "holy", amount: 10 }] }),
+      makeTexts(),
+    );
     expect(result.playerHealth).toBe(25);
   });
 
@@ -81,9 +101,12 @@ describe("processEnemyAttack", () => {
       playerHealth: 30,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
       talentEffects: { ...makeTestBattleState().talentEffects, receiveHalfFreezeDamage: true },
-      enemyAttackEffects: [{ kind: "damage", damageType: "freeze", amount: 10 }],
     });
-    const result = processEnemyAttack(state, makeTexts());
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "freeze", amount: 10 }] }),
+      makeTexts(),
+    );
 
     expect(result.playerHealth).toBe(25);
     expect(result.playerStatuses.freeze).toBe(5);
@@ -94,9 +117,12 @@ describe("processEnemyAttack", () => {
       playerHealth: 30,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
       talentEffects: { ...makeTestBattleState().talentEffects, receiveHalfBurnDamage: true },
-      enemyAttackEffects: [{ kind: "damage", damageType: "burn", amount: 4 }],
     });
-    const result = processEnemyAttack(state, makeTexts());
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 4 }] }),
+      makeTexts(),
+    );
     expect(result.playerHealth).toBe(28);
     expect(result.playerStatuses.burn).toBe(2);
   });
@@ -106,9 +132,12 @@ describe("processEnemyAttack", () => {
       playerHealth: 30,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
       talentEffects: { ...makeTestBattleState().talentEffects, receiveHalfNatureDamage: true },
-      enemyAttackEffects: [{ kind: "damage", damageType: "nature", amount: 10 }],
     });
-    const result = processEnemyAttack(state, makeTexts());
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "nature", amount: 10 }] }),
+      makeTexts(),
+    );
     expect(result.playerHealth).toBe(25);
   });
 
@@ -117,9 +146,12 @@ describe("processEnemyAttack", () => {
       playerHealth: 30,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0 },
       enemyStatuses: { ...makeTestBattleState().enemyStatuses, burnBonus: 2 },
-      enemyAttackEffects: [{ kind: "damage", damageType: "burn", amount: 4 }],
     });
-    const result = processEnemyAttack(state, makeTexts());
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 4 }] }),
+      makeTexts(),
+    );
     expect(result.playerHealth).toBe(24);
   });
 
@@ -128,9 +160,12 @@ describe("processEnemyAttack", () => {
       playerHealth: 30,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0 },
       enemyStatuses: { ...makeTestBattleState().enemyStatuses, freezeBonus: 2 },
-      enemyAttackEffects: [{ kind: "damage", damageType: "freeze", amount: 4 }],
     });
-    const result = processEnemyAttack(state, makeTexts());
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "freeze", amount: 4 }] }),
+      makeTexts(),
+    );
     expect(result.playerHealth).toBe(24);
     expect(result.playerStatuses.freeze).toBe(6);
   });
@@ -141,9 +176,12 @@ describe("processEnemyAttack", () => {
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
       enemyStatuses: { ...makeTestBattleState().enemyStatuses, poison: 3 },
       talentEffects: { ...makeTestBattleState().talentEffects, poisonReducesEnemyDamage: 2 },
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 7 }],
     });
-    const result = processEnemyAttack(state, makeTexts());
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 7 }] }),
+      makeTexts(),
+    );
     expect(result.playerHealth).toBe(25);
   });
 
@@ -152,9 +190,12 @@ describe("processEnemyAttack", () => {
       playerHealth: 30,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 10, armor: 0 },
       talentEffects: { ...makeTestBattleState().talentEffects, blockAbsorbPhysicalBonus: 20 },
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 11 }],
     });
-    const result = processEnemyAttack(state, makeTexts());
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 11 }] }),
+      makeTexts(),
+    );
     expect(result.playerHealth).toBe(30);
     expect(result.playerStatuses.block).toBe(1);
   });
@@ -163,9 +204,12 @@ describe("processEnemyAttack", () => {
     const state = makeTestBattleState({
       playerHealth: 30,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 3 },
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
     });
-    const result = processEnemyAttack(state, makeTexts());
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] }),
+      makeTexts(),
+    );
     expect(result.playerStatuses.armor).toBe(3 - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT);
   });
 
@@ -174,10 +218,13 @@ describe("processEnemyAttack", () => {
       playerHealth: 30,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 1 },
       talentEffects: { ...makeTestBattleState().talentEffects, armorBreakBlock: 5 },
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
     });
     const texts = makeTexts();
-    const result = processEnemyAttack(state, texts);
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
+      texts,
+    );
     expect(result.playerStatuses.armor).toBe(0);
     expect(result.playerStatuses.block).toBe(5);
     expect(texts).toContainEqual({ target: "player", kind: "status", stat: "block", amount: 5 });
@@ -188,9 +235,12 @@ describe("processEnemyAttack", () => {
       playerHealth: 30,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
       enemyMitigation: { ...makeTestBattleState().enemyMitigation, forge: 3 },
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 4 }],
     });
-    const result = processEnemyAttack(state, makeTexts());
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 4 }] }),
+      makeTexts(),
+    );
     expect(result.enemyMitigation.forge).toBe(3 - BATTLE_CONFIG.FORGE_DECAY_AMOUNT);
   });
 
@@ -200,10 +250,13 @@ describe("processEnemyAttack", () => {
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
       enemyHealth: 20,
       enemyMaxHealth: 30,
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5, lifesteal: true }],
     });
     const texts = makeTexts();
-    const result = processEnemyAttack(state, texts);
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5, lifesteal: true }] }),
+      texts,
+    );
     expect(result.enemyHealth).toBe(23);
     expect(texts).toContainEqual({ target: "enemy", kind: "heal", stat: "health", amount: 3 });
   });
@@ -215,9 +268,12 @@ describe("processEnemyAttack", () => {
       enemyHealth: 20,
       enemyMaxHealth: 30,
       talentEffects: { ...makeTestBattleState().talentEffects, blockEnemyLeech: true },
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5, lifesteal: true }],
     });
-    const result = processEnemyAttack(state, makeTexts());
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5, lifesteal: true }] }),
+      makeTexts(),
+    );
     expect(result.enemyHealth).toBe(20);
   });
 
@@ -229,28 +285,36 @@ describe("processEnemyAttack", () => {
       enemyMaxHealth: 30,
       enemyCC: defaultCcState({ freezeSkipTurns: 1 }),
       talentEffects: { ...makeTestBattleState().talentEffects, freezeBlocksRegen: true },
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5, lifesteal: true }],
     });
-    const result = processEnemyAttack(state, makeTexts());
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5, lifesteal: true }] }),
+      makeTexts(),
+    );
     expect(result.enemyHealth).toBe(20);
   });
 
   it("applies player-status attack effects", () => {
-    const state = makeTestBattleState({
-      enemyAttackEffects: [{ kind: "player-status", status: "poison", amount: 2 }],
-    });
-    const result = processEnemyAttack(state, makeTexts());
+    const state = makeTestBattleState({});
+    const result = applyPlayerStatusFromAttack(
+      state,
+      { kind: "player-status", status: "poison", amount: 2 },
+      makeTexts(),
+    );
     expect(result.playerStatuses.poison).toBe(2);
   });
 
-  it("armor reduces direct stun status attacks by default", () => {
+  it("armor reduces Stun ability damage", () => {
     const state = makeTestBattleState({
       playerHealth: 30,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 3 },
-      enemyAttackEffects: [{ kind: "player-status", status: "stun", amount: 5 }],
     });
     const texts = makeTexts();
-    const result = processEnemyAttack(state, texts);
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "stun", amount: 5 }] }),
+      texts,
+    );
     expect(result.playerHealth).toBe(28);
     expect(result.playerStatuses.stun).toBe(2);
     expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "stun", amount: 2 });
@@ -261,10 +325,13 @@ describe("processEnemyAttack", () => {
       playerHealth: 30,
       playerMaxHealth: 30,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
-      enemyAttackEffects: [{ kind: "damage", damageType: "stun", amount: 20 }],
     });
     const texts = makeTexts();
-    const result = processEnemyAttack(state, texts);
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "stun", amount: 20 }] }),
+      texts,
+    );
     expect(result.playerStatuses.stun).toBe(0);
     expect(result.playerCC.stunSkipTurns).toBe(1);
     expect(texts).toContainEqual({ target: "player", kind: "notice", stat: "stun", text: "Stunned" });
@@ -276,9 +343,12 @@ describe("processEnemyAttack", () => {
       playerMaxHealth: 30,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 4, armor: 0 },
       talentEffects: { ...makeTestBattleState().talentEffects, blockPreventsStun: true },
-      enemyAttackEffects: [{ kind: "damage", damageType: "stun", amount: 8 }],
     });
-    const result = processEnemyAttack(state, makeTexts());
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "stun", amount: 8 }] }),
+      makeTexts(),
+    );
     expect(result.playerStatuses.stun).toBe(0);
     expect(result.playerCC.stunSkipTurns).toBe(0);
   });
@@ -289,9 +359,12 @@ describe("processEnemyAttack", () => {
       playerMaxHealth: 30,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 3, armor: 0 },
       talentEffects: { ...makeTestBattleState().talentEffects, blockPreventsStun: true },
-      enemyAttackEffects: [{ kind: "damage", damageType: "stun", amount: 10 }],
     });
-    const result = processEnemyAttack(state, makeTexts());
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "stun", amount: 10 }] }),
+      makeTexts(),
+    );
     expect(result.playerStatuses.block).toBe(0);
     expect(result.playerStatuses.stun).toBe(0);
     expect(result.playerCC.stunSkipTurns).toBe(0);
@@ -302,10 +375,13 @@ describe("processEnemyAttack", () => {
       playerHealth: 30,
       playerMaxHealth: 30,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
-      enemyAttackEffects: [{ kind: "damage", damageType: "freeze", amount: 20 }],
     });
     const texts = makeTexts();
-    const result = processEnemyAttack(state, texts);
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "freeze", amount: 20 }] }),
+      texts,
+    );
     expect(result.playerStatuses.freeze).toBe(0);
     expect(result.playerCC.freezeSkipTurns).toBe(1);
     expect(texts).toContainEqual({ target: "player", kind: "notice", stat: "freeze", text: "Frozen" });
@@ -316,10 +392,13 @@ describe("processEnemyAttack", () => {
       playerHealth: 30,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 10, armor: 0 },
       trinketEffects: { ...makeTestBattleState().trinketEffects, vanguardCrestForgeOnBlockAbsorb: 2 },
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
     });
     const texts = makeTexts();
-    const result = processEnemyAttack(state, texts);
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] }),
+      texts,
+    );
     expect(result.playerHealth).toBe(30);
     expect(result.playerStatuses.forge).toBe(2);
     expect(texts).toContainEqual({ target: "player", kind: "status", stat: "forge", amount: 2 });
@@ -330,9 +409,12 @@ describe("processEnemyAttack", () => {
       playerHealth: 20,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 2, armor: 0 },
       talentEffects: { ...makeTestBattleState().talentEffects, blockDepletedHeal: 3 },
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
     });
-    const result = processEnemyAttack(state, makeTexts());
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10 }] }),
+      makeTexts(),
+    );
     expect(result.playerHealth).toBe(15);
   });
 
@@ -343,9 +425,12 @@ describe("processEnemyAttack", () => {
       playerMaxHealth: 30,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 5, armor: 0 },
       talentEffects: { ...makeTestBattleState().talentEffects, blockDepletedHeal: 4 },
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
     });
-    const result = processEnemyAttack(state, texts);
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] }),
+      texts,
+    );
     expect(result.playerHealth).toBe(30);
     expect(texts.find((t) => t.kind === "heal")).toEqual({
       target: "player",
@@ -366,9 +451,12 @@ describe("processEnemyAttack", () => {
         phoenixFeather: 1,
       },
       deathsDoorUsed: false,
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
     });
-    const result = processEnemyAttack(state, makeTexts());
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10 }] }),
+      makeTexts(),
+    );
 
     expect(result.playerHealth).toBe(9);
     expect(result.playerStatuses.phoenixFeather).toBe(0);
@@ -382,9 +470,12 @@ describe("processEnemyAttack", () => {
       playerHealth: 30,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 10, armor: 5 },
       rng: () => 0.01,
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
     });
-    const result = processEnemyAttack(state, texts);
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
+      texts,
+    );
     expect(result.playerHealth).toBe(30);
     expect(result.playerStatuses.block).toBe(10);
     expect(result.playerStatuses.armor).toBe(5);
@@ -401,9 +492,12 @@ describe("processEnemyAttack", () => {
       playerHealth: 30,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, poison: 0 },
       rng: () => 0.01,
-      enemyAttackEffects: [{ kind: "player-status", status: "poison", amount: 4 }],
     });
-    const result = processEnemyAttack(state, makeTexts());
+    const result = applyPlayerStatusFromAttack(
+      state,
+      { kind: "player-status", status: "poison", amount: 4 },
+      makeTexts(),
+    );
     expect(result.playerHealth).toBe(30);
     expect(result.playerStatuses.poison).toBe(4);
   });
@@ -422,25 +516,31 @@ describe("processEnemyAttack", () => {
     const banshee = enemyBestiary.find((e) => e.id === "banshee")!;
     const base = makeTestBattleState({
       currentEnemy: banshee,
-      enemyAttackEffects: banshee.attackEffects,
       playerHealth: 30,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 10, armor: 2, forge: 1, haste: 1 },
       rng: () => 0.99,
     });
     const texts = makeTexts();
-    const purgedBlock = processEnemyAttack(base, texts);
+    const purgedBlock = applyEnemyAbility(
+      base,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "stun", amount: 4 }] }),
+      texts,
+    );
     expect(purgedBlock.playerStatuses.block).toBe(0);
     expect(purgedBlock.playerStatuses.armor).toBe(2);
     expect(texts).toContainEqual({ target: "player", kind: "notice", stat: "block", text: "Purged" });
 
     const noBlock = makeTestBattleState({
       currentEnemy: banshee,
-      enemyAttackEffects: banshee.attackEffects,
       playerHealth: 30,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 2, forge: 1, haste: 1 },
       rng: () => 0.99,
     });
-    const purgedArmor = processEnemyAttack(noBlock, []);
+    const purgedArmor = applyEnemyAbility(
+      noBlock,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "stun", amount: 4 }] }),
+      [],
+    );
     expect(purgedArmor.playerStatuses.armor).toBe(0);
     expect(purgedArmor.playerStatuses.forge).toBe(1);
   });
@@ -476,10 +576,13 @@ describe("player Thorns", () => {
       playerHealth: 30,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0, thorns: 3 },
       enemyHealth: 30,
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
       rng: () => 0.99,
     });
-    const result = processEnemyAttack(state, makeTexts());
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] }),
+      makeTexts(),
+    );
     expect(result.playerHealth).toBe(25);
     expect(result.enemyHealth).toBe(27);
     expect(result.playerStatuses.thorns).toBe(0);
@@ -490,10 +593,13 @@ describe("player Thorns", () => {
       playerHealth: 30,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 10, armor: 0, thorns: 2 },
       enemyHealth: 30,
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
       rng: () => 0.99,
     });
-    const result = processEnemyAttack(state, makeTexts());
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] }),
+      makeTexts(),
+    );
     expect(result.playerHealth).toBe(30);
     expect(result.playerStatuses.block).toBe(5);
     expect(result.enemyHealth).toBe(28);
@@ -505,10 +611,13 @@ describe("player Thorns", () => {
       playerHealth: 30,
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0, thorns: 3 },
       enemyHealth: 30,
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
       rng: () => 0.01,
     });
-    const result = processEnemyAttack(state, makeTexts());
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] }),
+      makeTexts(),
+    );
     expect(result.playerHealth).toBe(30);
     expect(result.enemyHealth).toBe(30);
     expect(result.playerStatuses.thorns).toBe(3);

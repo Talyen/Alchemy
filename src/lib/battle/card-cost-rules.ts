@@ -57,6 +57,7 @@ function checkTrinketFreePotion(state: CardCostState, card: BattleCard): boolean
 function computeStandardCost(
   state: CardCostState,
   card: BattleCard,
+  discountedCost: number,
 ): { effectiveCost: number; consumedFlags: Set<BooleanCombatFlag>; disarmedFlags: Set<BooleanCombatFlag> } {
   let effectiveCost = applyCostDiscount(card.cost, state.flags.nextCardCostReduction);
   const consumedFlags = new Set<BooleanCombatFlag>();
@@ -79,6 +80,9 @@ function computeStandardCost(
   }
   if (effectiveCost === 0) return { effectiveCost, consumedFlags, disarmedFlags };
 
+  effectiveCost = applyCostDiscount(discountedCost, state.flags.nextCardCostReduction);
+  if (effectiveCost === 0) return { effectiveCost, consumedFlags, disarmedFlags };
+
   if (state.flags.nextHolyCardFree && cardHasDamageType(card, "holy")) {
     effectiveCost = 0;
     disarmedFlags.add("nextHolyCardFree");
@@ -97,14 +101,12 @@ function computeStandardCost(
 }
 
 export function computeEffectiveCost(state: CardCostState, card: BattleCard) {
-  const result = computeStandardCost(state, card);
   const fleeting = card.consume && hasEncounterBenefit(state, "fleeting");
   const quickdraw =
     card.tags?.includes("archery") && hasEncounterBenefit(state, "quickdraw") && !state.flags.encounterArcheryUsed;
   const encounterDiscount =
     (fleeting ? LABYRINTH_MODIFIER_CONFIG.costReduction : 0) +
     (quickdraw ? LABYRINTH_MODIFIER_CONFIG.costReduction : 0);
-  if (quickdraw) result.consumedFlags.add("encounterArcheryUsed");
   const gear = state.gearEffects;
   const unique = state.uniqueGear;
   const elementalFree =
@@ -119,16 +121,13 @@ export function computeEffectiveCost(state: CardCostState, card: BattleCard) {
     card.uid !== undefined &&
     ((gear.returnFirstPhysicalCard > 0 && card.uid === unique.redHarvestUid) ||
       (gear.recoverLastArcheryCard > 0 && card.uid === unique.returningFlightUid));
-  return {
-    ...result,
-    effectiveCost:
-      elementalFree || natureFree || physicalFree
-        ? 0
-        : Math.max(
-            0,
-            result.effectiveCost - encounterDiscount - (returned ? UNIQUE_GEAR_COMBAT.returnedCardDiscount : 0),
-          ),
-  };
+  const discountedCost =
+    elementalFree || natureFree || physicalFree
+      ? 0
+      : Math.max(0, card.cost - encounterDiscount - (returned ? UNIQUE_GEAR_COMBAT.returnedCardDiscount : 0));
+  const result = computeStandardCost(state, card, discountedCost);
+  if (quickdraw) result.consumedFlags.add("encounterArcheryUsed");
+  return result;
 }
 
 export function computeCardPayment(state: BattleState, card: BattleCard) {

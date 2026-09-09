@@ -22,7 +22,6 @@ describe("player-facing combat regressions", () => {
       rng: () => 0.01,
       mana,
       activeCompanion: companionLibrary["mana-moth"],
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 1 }],
       talentEffects: { wellspringKeepMana: 1, companionAttacksOnDodge: true },
     });
     const result = endPlayerTurn(state).state;

@@ -4,6 +4,7 @@ export function useHoverVisible<T extends HTMLElement = HTMLDivElement>(options?
   holdMs?: number;
   focusWithinGuard?: boolean;
   interactive?: boolean;
+  suspended?: boolean;
   isHovered?: boolean;
   onHoverStart?: () => void;
   onHoverEnd?: () => void;
@@ -14,6 +15,7 @@ export function useHoverVisible<T extends HTMLElement = HTMLDivElement>(options?
     holdMs: holdMsOpt,
     focusWithinGuard: focusWithinGuardOpt,
     interactive,
+    suspended = false,
     isHovered,
     onHoverStart,
     onHoverEnd,
@@ -23,21 +25,22 @@ export function useHoverVisible<T extends HTMLElement = HTMLDivElement>(options?
   const isControlled = isHovered !== undefined;
   const [uncontrolledVisible, setUncontrolledVisible] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
 
   const visible = (() => {
     const raw = isControlled ? (isHovered ?? false) : uncontrolledVisible;
-    if (interactive === false) return false;
+    if (interactive === false || suspended || dismissed) return false;
     return raw;
   })();
 
   const doShow = useCallback(() => {
-    if (interactive === false) return;
+    if (interactive === false || suspended) return;
     if (isControlled) onHoverStart?.();
     else {
       setUncontrolledVisible(true);
       onHoverStart?.();
     }
-  }, [interactive, isControlled, onHoverStart]);
+  }, [interactive, suspended, isControlled, onHoverStart]);
 
   const doHide = useCallback(
     ({ checkFocusWithin }: { checkFocusWithin: boolean }) => {
@@ -52,11 +55,27 @@ export function useHoverVisible<T extends HTMLElement = HTMLDivElement>(options?
     [focusWithinGuard, interactive, isControlled, onHoverEnd],
   );
 
-  const show = doShow;
-  const hide = useCallback(() => doHide({ checkFocusWithin: true }), [doHide]);
-  const handleHoverStart = doShow;
-  const handleMouseLeave = useCallback(() => doHide({ checkFocusWithin: true }), [doHide]);
-  const handleBlur = useCallback(() => doHide({ checkFocusWithin: false }), [doHide]);
+  const handleHoverStart = useCallback(() => {
+    if (!dismissed) doShow();
+  }, [dismissed, doShow]);
+  const handleMouseMove = useCallback(() => {
+    if (!suspended && dismissed) {
+      setDismissed(false);
+      doShow();
+    }
+  }, [dismissed, suspended, doShow]);
+  const handleMouseLeave = useCallback(() => {
+    if (!suspended) setDismissed(false);
+    doHide({ checkFocusWithin: true });
+  }, [suspended, doHide]);
+  const handleBlur = useCallback(() => {
+    if (!suspended) setDismissed(false);
+    doHide({ checkFocusWithin: false });
+  }, [suspended, doHide]);
+  const dismiss = useCallback(() => {
+    setDismissed(true);
+    doHide({ checkFocusWithin: false });
+  }, [doHide]);
 
   useEffect(() => {
     if (holdMs <= 0) return;
@@ -76,12 +95,15 @@ export function useHoverVisible<T extends HTMLElement = HTMLDivElement>(options?
     visible,
     mounted: holdMs > 0 ? mounted : visible,
     showPopup: holdMs > 0 ? (interactive === false ? false : visible || mounted) : visible,
-    onMouseEnter: isControlled ? handleHoverStart : show,
-    onMouseLeave: isControlled ? handleMouseLeave : hide,
-    onFocusCapture: isControlled ? handleHoverStart : show,
-    onBlurCapture: isControlled ? handleBlur : hide,
+    onMouseEnter: handleHoverStart,
+    onMouseMove: handleMouseMove,
+    onMouseLeave: handleMouseLeave,
+    onFocusCapture: handleHoverStart,
+    onBlurCapture: handleBlur,
     handleHoverStart,
+    handleMouseMove,
     handleMouseLeave,
     handleBlur,
+    dismiss,
   };
 }

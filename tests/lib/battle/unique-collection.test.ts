@@ -1,3 +1,4 @@
+import { makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { patchBattleState, makeTestCard, type BattleStatePatch } from "../../fixtures/battle";
 import { companionLibrary, type BattleCard, type DamageType } from "@/lib/game-data";
@@ -7,7 +8,7 @@ import { canPlayCard, playBattleCardResolved } from "@/lib/battle/card-play";
 import { computeEffectiveCost } from "@/lib/battle/card-cost-rules";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
-import { processEnemyAttack } from "@/lib/battle/enemy-turn-attack";
+import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { addGoldWithCombatText } from "@/lib/battle/combat-text";
@@ -46,12 +47,12 @@ function play(state: BattleState, card: BattleCard): BattleState {
 
 function dodge(state: BattleState): BattleState {
   let roll = 0;
-  return processEnemyAttack(
+  return applyEnemyAbility(
     {
       ...state,
       rng: () => (roll++ === 0 ? 0 : 0.99),
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
     },
+    makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10 }] }),
     [],
   );
 }
@@ -323,12 +324,12 @@ describe("Unique Dodge and Block rewards", () => {
     const state = play(battle({ gearEffects: { archeryDodgeAndDraw: 1 }, deck: [arrow] }), arrow);
     expect(state.uniqueGear.wrenflightActive).toBe(true);
     let calls = 0;
-    const result = processEnemyAttack(
+    const result = applyEnemyAbility(
       {
         ...state,
         rng: () => (calls++ === 0 ? 0.1 : 0.99),
-        enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 20 }],
       },
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 20 }] }),
       [],
     );
     expect(result.playerHealth).toBe(100);

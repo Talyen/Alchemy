@@ -27,6 +27,27 @@ describe("createEmptyAnomalies", () => {
 });
 
 describe("sampleAnomalies", () => {
+  it("separates enemy healing and defense grants from hero Health damage", () => {
+    const anomalies = createEmptyAnomalies();
+    sampleAnomalies(
+      makeTestBattleState(),
+      [
+        { target: "enemy", kind: "heal", stat: "health", amount: 3 },
+        { target: "player", kind: "heal", stat: "health", amount: 9 },
+        { target: "enemy", kind: "status", stat: "block", amount: 5 },
+        { target: "enemy", kind: "status", stat: "armor", amount: 2 },
+        { target: "player", kind: "damage", stat: "block", amount: 4 },
+        { target: "player", kind: "damage", stat: "bleed", amount: 2 },
+      ],
+      anomalies,
+    );
+    expect(anomalies).toMatchObject({
+      enemyHealing: 3,
+      heroHealthDamage: 2,
+      enemyBlockGranted: 5,
+      enemyArmorGranted: 2,
+    });
+  });
   it("records status peaks from battle state", () => {
     const anomalies = createEmptyAnomalies();
     const state = makeTestBattleState({

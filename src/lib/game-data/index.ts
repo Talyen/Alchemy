@@ -15,3 +15,4 @@ export * from "./character-unlocks";
 export * from "./talents";
 export * from "./difficulties";
 export * from "./reward-selection";
+export * from "./enemy-abilities";

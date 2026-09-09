@@ -35,6 +35,7 @@ export interface BattleSimulationResult {
   outcome: BattleSimulationOutcome;
   enemyAttackActions: number;
   enemyAbilityActivations: Record<string, number>;
+  enemyAbilityUses: Record<string, number>;
   wonBeforeEnemyAttack: boolean;
   turns: number;
   playerHealth: number;
@@ -67,6 +68,7 @@ export interface BalanceBatchResult {
   averageTurns: number;
   averageEnemyAttacks: number;
   averageEnemyAbilityActivations: number;
+  averageEnemyAbilityUses: number;
   winsBeforeEnemyAttackRate: number;
   averageHealthRemaining: number;
   averageCardsPlayed: number;

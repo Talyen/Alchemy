@@ -1,12 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
+import { useEffect } from "react";
 import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import { FadeSlot } from "../../../shared/ui/use-fade";
 import { ScreenShell, ScreenHeaderRow } from "../../../shared/ui/shared-ui";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { LabyrinthMap } from "@/lib/content-systems/types";
-import { floorNodes, labyrinthNodeVisualState } from "@/lib/content-systems/labyrinth/map-state";
-
+import { canInspectLabyrinthNode, floorNodes } from "@/lib/content-systems/labyrinth/map-state";
 import { LabyrinthMapViewport } from "./labyrinth-map-viewport";
 import { getLabyrinthNodePlasmaPair } from "./labyrinth-plasma";
 import { usePlasmaBaseline } from "@/features/alchemy/shared/ui/use-plasma-source";
@@ -17,54 +14,29 @@ interface Props {
   onNodeSelect: (nodeId: string) => void;
   onNodeDeselect: () => void;
   onNodeEnter: () => void;
+  onDescend: () => void;
 }
 
-export function LabyrinthMapScreen({ labyrinthMap, selectedNodeId, onNodeSelect, onNodeDeselect, onNodeEnter }: Props) {
-  const playableFloors = useMemo(
-    () =>
-      labyrinthMap ? labyrinthMap.floors.filter((floor) => floor.depth > 0).sort((a, b) => a.depth - b.depth) : [],
-    [labyrinthMap],
-  );
-  const [viewedFloor, setViewedFloor] = useState(labyrinthMap?.currentFloor ?? 1);
-  const currentFloor = labyrinthMap?.currentFloor ?? 1;
-  const previousFloor = useRef(currentFloor);
-  const scrollPositions = useRef(new Map<number, number>());
-  const readScrollPosition = useCallback(() => scrollPositions.current.get(viewedFloor), [viewedFloor]);
-  const saveScrollPosition = useCallback(
-    (position: number) => {
-      scrollPositions.current.set(viewedFloor, position);
-    },
-    [viewedFloor],
-  );
-  const playableDepths = useMemo(() => new Set(playableFloors.map((floor) => floor.depth)), [playableFloors]);
-  useEffect(() => {
-    const advanced = currentFloor > previousFloor.current;
-    previousFloor.current = currentFloor;
-    if (advanced || (labyrinthMap !== null && !playableDepths.has(viewedFloor))) {
-      scrollPositions.current.delete(currentFloor);
-      onNodeDeselect();
-      setViewedFloor(currentFloor);
-    }
-  }, [currentFloor, viewedFloor, labyrinthMap, playableDepths, onNodeDeselect]);
-
-  useEffect(() => {
-    if (!selectedNodeId || !labyrinthMap) return;
-    const node = labyrinthMap.nodes[selectedNodeId];
-    if (!node || node.floor !== viewedFloor || labyrinthNodeVisualState(labyrinthMap, node.id) !== "reachable")
-      onNodeDeselect();
-  }, [selectedNodeId, viewedFloor, labyrinthMap, onNodeDeselect]);
-
-  const nodes = labyrinthMap ? floorNodes(labyrinthMap, viewedFloor) : [];
+export function LabyrinthMapScreen({
+  labyrinthMap,
+  selectedNodeId,
+  onNodeSelect,
+  onNodeDeselect,
+  onNodeEnter,
+  onDescend,
+}: Props) {
   const selectedNode =
-    nodes.find(
-      (node) =>
-        node.id === selectedNodeId && labyrinthMap && labyrinthNodeVisualState(labyrinthMap, node.id) === "reachable",
-    ) ?? null;
-  const inspectorNodeId = selectedNode?.id ?? null;
+    labyrinthMap && selectedNodeId && canInspectLabyrinthNode(labyrinthMap, selectedNodeId)
+      ? (labyrinthMap.nodes[selectedNodeId] ?? null)
+      : null;
   usePlasmaBaseline(selectedNode ? getLabyrinthNodePlasmaPair(selectedNode) : null);
 
   useEffect(() => {
-    if (!inspectorNodeId) return;
+    if (selectedNodeId && !selectedNode) onNodeDeselect();
+  }, [selectedNodeId, selectedNode, onNodeDeselect]);
+
+  useEffect(() => {
+    if (!selectedNode) return;
     return pushEscapeHandler({
       id: "labyrinth-inspector",
       priority: ESCAPE_PRIORITY.SCREEN_OVERLAY,
@@ -78,55 +50,40 @@ export function LabyrinthMapScreen({ labyrinthMap, selectedNodeId, onNodeSelect,
         return true;
       },
     });
-  }, [inspectorNodeId, onNodeDeselect]);
+  }, [selectedNode, onNodeDeselect]);
 
   return (
     <div className="h-full min-h-0 overflow-hidden">
-      <ScreenShell className="h-full min-h-0 gap-4" minHeightClass="min-h-0" maxWidthClass="max-w-7xl">
+      <ScreenShell className="h-full min-h-0 gap-4" minHeightClass="min-h-0" maxWidthClass="max-w-none">
         <div className="shrink-0">
-          <ScreenHeaderRow
-            title="Labyrinth"
-            trailing={
-              playableFloors.length > 0 ? (
-                <Select
-                  value={String(viewedFloor)}
-                  onValueChange={(value) => {
-                    onNodeDeselect();
-                    setViewedFloor(Number(value));
-                  }}
-                >
-                  <SelectTrigger aria-label="Floor" className="w-auto shrink-0 gap-2 px-3 py-2">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {playableFloors.map((floor) => (
-                      <SelectItem key={floor.id} value={String(floor.depth)}>
-                        Floor {floor.depth}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : null
-            }
-          />
+          <ScreenHeaderRow title="Labyrinth" />
+          {labyrinthMap ? (
+            <p
+              role="status"
+              aria-label={`Floor ${labyrinthMap.currentFloor}`}
+              className="mt-2 text-center text-lg font-semibold text-amber-100/80"
+            >
+              Floor {labyrinthMap.currentFloor}
+            </p>
+          ) : null}
         </div>
-        <div className="relative flex min-h-0 flex-1">
-          <FadeSlot swapKey={viewedFloor} className="labyrinth-floor-swap flex min-h-0 min-w-0 flex-1">
-            {labyrinthMap ? (
-              <LabyrinthMapViewport
-                key={viewedFloor}
-                map={labyrinthMap}
-                nodes={nodes}
-                selectedNodeId={selectedNode?.id ?? null}
-                onEnter={onNodeEnter}
-                onSelect={onNodeSelect}
-                onDeselect={onNodeDeselect}
-                readScrollPosition={readScrollPosition}
-                saveScrollPosition={saveScrollPosition}
-              />
-            ) : null}
-          </FadeSlot>
-        </div>
+        <FadeSlot
+          swapKey={labyrinthMap?.currentFloor ?? 1}
+          className="labyrinth-floor-swap flex min-h-0 min-w-0 flex-1"
+        >
+          {labyrinthMap ? (
+            <LabyrinthMapViewport
+              key={labyrinthMap.currentFloor}
+              map={labyrinthMap}
+              nodes={floorNodes(labyrinthMap, labyrinthMap.currentFloor)}
+              selectedNodeId={selectedNode?.id ?? null}
+              onSelect={onNodeSelect}
+              onDeselect={onNodeDeselect}
+              onEnter={onNodeEnter}
+              onDescend={onDescend}
+            />
+          ) : null}
+        </FadeSlot>
       </ScreenShell>
     </div>
   );

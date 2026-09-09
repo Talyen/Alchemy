@@ -13,7 +13,7 @@ const GOBLIN_ENEMY: BestiaryEntry = {
   art: "goblin.webp",
   enemyType: "normal",
   traits: [],
-  attackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+  abilityIds: ["stab", "slash", "block"],
 };
 
 export function makeGoblinBattleState(overrides: InjectedBattleState = {}): InjectedBattleState {
@@ -32,7 +32,7 @@ export function makeGoblinBattleState(overrides: InjectedBattleState = {}): Inje
     enemyHealth: 40,
     enemyMaxHealth: 40,
     currentEnemy: GOBLIN_ENEMY,
-    enemyAttackEffects: GOBLIN_ENEMY.attackEffects,
+    lastEnemyAbilityId: null,
     playerStatuses: {},
     enemyStatuses: {},
     flags: {},

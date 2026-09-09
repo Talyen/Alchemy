@@ -168,13 +168,13 @@ describe("getPlasmaKeywordsForEnemy", () => {
     art: "",
     enemyType: "normal",
     traits: [],
-    attackEffects: [],
+    abilityIds: [],
   };
 
-  it("collects damage types from attack effects", () => {
+  it("collects keywords from canonical ability cards", () => {
     const entry: BestiaryEntry = {
       ...baseEntry,
-      attackEffects: [{ kind: "damage", damageType: "burn", amount: 3 }],
+      abilityIds: ["fireball"],
     };
     expect(getPlasmaKeywordsForEnemy(entry)).toEqual(["burn"]);
   });
@@ -187,35 +187,30 @@ describe("getPlasmaKeywordsForEnemy", () => {
     expect(getPlasmaKeywordsForEnemy(entry)).toEqual(["poison"]);
   });
 
-  it("honors the live attack-effects override", () => {
+  it("collects every ability without choosing an upcoming action", () => {
     const entry: BestiaryEntry = {
       ...baseEntry,
-      attackEffects: [{ kind: "damage", damageType: "burn", amount: 3 }],
+      abilityIds: ["frostbolt", "fireball"],
     };
-    expect(getPlasmaKeywordsForEnemy(entry, [{ kind: "damage", damageType: "freeze", amount: 2 }])).toEqual(["freeze"]);
+    expect(getPlasmaKeywordsForEnemy(entry)).toEqual(["freeze", "burn"]);
   });
 
-  it("maps trait and live attack keywords to the enemy shine palette", () => {
+  it("maps trait and ability keywords to the enemy shine palette", () => {
     const entry: BestiaryEntry = {
       ...baseEntry,
       traits: [{ id: "t1", title: "Spores", description: "Applies Poison to the hero." }],
-      attackEffects: [{ kind: "damage", damageType: "burn", amount: 3 }],
+      abilityIds: ["frostbolt"],
     };
 
-    expect(getEnemyKeywordShineColors(entry, [{ kind: "damage", damageType: "freeze", amount: 2 }])).toEqual(
-      getKeywordListShineColors(["poison", "freeze"]),
-    );
+    expect(getEnemyKeywordShineColors(entry)).toEqual(getKeywordListShineColors(["poison", "freeze"]));
   });
 
   it("maps enemy keywords to a plasma pair with wildcard fallback", () => {
     const entry: BestiaryEntry = {
       ...baseEntry,
-      attackEffects: [
-        { kind: "damage", damageType: "burn", amount: 2 },
-        { kind: "damage", damageType: "poison", amount: 1 },
-      ],
+      abilityIds: ["fireball", "venom-fangs"],
     };
-    expect(getPlasmaColorPairForEnemy(entry)).toEqual(getPlasmaColorPair(["burn", "poison"]));
+    expect(getPlasmaColorPairForEnemy(entry)).toEqual(getPlasmaColorPair(["burn", "poison", "leech"]));
     expect(getPlasmaColorPairForEnemy(baseEntry)).toEqual(getPlasmaColorPair([]));
   });
 });

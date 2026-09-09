@@ -26,7 +26,8 @@ describe("hex grid", () => {
     expect(projectedHalfColumn({ row: 2, col: 0 })).toBe(2);
     expect(isHexInBounds({ row: 0, col: 0 })).toBe(true);
     expect(isHexInBounds({ row: 0, col: 3 })).toBe(true);
-    expect(isHexInBounds({ row: 0, col: 4 })).toBe(false);
+    expect(isHexInBounds({ row: 0, col: 4 })).toBe(true);
+    expect(isHexInBounds({ row: 0, col: 5 })).toBe(false);
     expect(isHexInBounds({ row: 5, col: 0 })).toBe(true);
     expect(isHexInBounds(hexAt(8, 0))).toBe(true);
     expect(isHexInBounds(hexAt(9, 0))).toBe(false);

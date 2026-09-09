@@ -35,24 +35,31 @@ import { useTileHoverPopup } from "./use-tile-hover-popup";
 
 interface CollectionTileProps {
   item: CollectionTileItem;
-  onEnemyActivate?: ((enemyId: string) => void) | undefined;
+  onEnemyActivate?: ((enemyId: string, trigger: HTMLButtonElement) => void) | undefined;
+  inspectionOpen?: boolean;
 }
 
-export const CollectionTile = memo(function CollectionTile({ item, onEnemyActivate }: CollectionTileProps) {
+export const CollectionTile = memo(function CollectionTile({
+  item,
+  onEnemyActivate,
+  inspectionOpen = false,
+}: CollectionTileProps) {
   const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
     item.hoverScope,
     item.id,
   );
   const [flipped, setFlipped] = useState(false);
-  const { wrapperRef, showPopup, handleHoverStart, handleMouseLeave, handleBlur } = useTileHoverPopup({
-    interactive: true,
-    isHovered,
-    onHoverStart,
-    onHoverEnd,
-  });
+  const { wrapperRef, showPopup, visible, handleHoverStart, handleMouseMove, handleMouseLeave, handleBlur, dismiss } =
+    useTileHoverPopup({
+      interactive: true,
+      suspended: inspectionOpen,
+      isHovered,
+      onHoverStart,
+      onHoverEnd,
+    });
 
   const shineColors = collectionTileShineColors(item);
-  const showShine = isHovered && shineColors.length > 0;
+  const showShine = visible && shineColors.length > 0;
 
   return (
     <div
@@ -60,8 +67,9 @@ export const CollectionTile = memo(function CollectionTile({ item, onEnemyActiva
       className="relative flex h-full w-full justify-center"
       onMouseEnter={handleHoverStart}
       onMouseLeave={handleMouseLeave}
+      onMouseMove={handleMouseMove}
     >
-      {showPopup ? <CollectionTilePopup item={item} hovered={isHovered} triggerRef={wrapperRef} /> : null}
+      {showPopup ? <CollectionTilePopup item={item} hovered={visible} triggerRef={wrapperRef} /> : null}
       <Surface
         as="button"
         ariaLabel={inspectAriaLabel(item)}
@@ -77,13 +85,14 @@ export const CollectionTile = memo(function CollectionTile({ item, onEnemyActiva
           item.discovered ? cardInteractiveGlowClass : cardHoverScaleClass,
           getTileWidthClass(item.frameType === "bestiary" ? "bestiary" : "collectionCard"),
         )}
-        onClick={() => {
+        onClick={(event) => {
           if (item.hoverScope === "collection-card") {
             playCardSound(item.id);
             setFlipped((f) => !f);
           } else if (item.hoverScope === "collection-bestiary") {
+            if (item.discovered) dismiss();
             playEnemyAttack(item.id);
-            onEnemyActivate?.(item.id);
+            onEnemyActivate?.(item.id, event.currentTarget);
           }
         }}
       >

@@ -1,67 +1,59 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { autoUpdate, computePosition, flip, offset, shift } from "@floating-ui/dom";
-
-import { labyrinthNodeVisualState } from "@/lib/content-systems/labyrinth/map-state";
-import { compareHexPositions } from "@/lib/content-systems/labyrinth/hex-grid";
 import type { LabyrinthMap, LabyrinthNode } from "@/lib/content-systems/types";
+import { usePlasmaInteraction } from "@/features/alchemy/shared/ui/use-plasma-source";
 import { layoutFloorNodes } from "./labyrinth-map-layout";
 import { LabyrinthNodeSeal } from "./labyrinth-node-seal";
 import { LabyrinthNodeInspector } from "./labyrinth-node-inspector";
+import { LabyrinthMapBorders } from "./labyrinth-map-borders";
+import { getLabyrinthNodePlasmaPair } from "./labyrinth-plasma";
 
 interface Props {
   map: LabyrinthMap;
   nodes: LabyrinthNode[];
   selectedNodeId: string | null;
   onEnter: () => void;
+  onDescend: () => void;
   onSelect: (id: string) => void;
   onDeselect: () => void;
-  readScrollPosition: () => number | undefined;
-  saveScrollPosition: (position: number) => void;
 }
 
-export function LabyrinthMapViewport({
-  map,
-  nodes,
-  selectedNodeId,
-  onEnter,
-  onSelect,
-  onDeselect,
-  readScrollPosition,
-  saveScrollPosition,
-}: Props) {
+export function LabyrinthMapViewport({ map, nodes, selectedNodeId, onEnter, onDescend, onSelect, onDeselect }: Props) {
   const viewportRef = useRef<HTMLDivElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const nodeSizeRef = useRef<HTMLDivElement>(null);
-  const initializedScroll = useRef(false);
   const inspectorRef = useRef<HTMLDivElement>(null);
-  const [size, setSize] = useState({ width: 0, height: 0, nodeWidth: 0 });
-  const selectedNode =
-    nodes.find((node) => node.id === selectedNodeId && labyrinthNodeVisualState(map, node.id) === "reachable") ?? null;
+  const [size, setSize] = useState({ width: 0, height: 0, scale: 1 });
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
+  const selectedNode = nodes.find((node) => node.id === selectedNodeId) ?? null;
+  const emphasizedNode = nodes.find((node) => node.id === (hoveredNodeId ?? focusedNodeId));
+  usePlasmaInteraction(
+    emphasizedNode && emphasizedNode.id !== selectedNodeId ? getLabyrinthNodePlasmaPair(emphasizedNode) : null,
+    Boolean(emphasizedNode),
+  );
 
   useLayoutEffect(() => {
-    const element = scrollRef.current;
-    const nodeSize = nodeSizeRef.current;
-    if (!element || !nodeSize) return;
-    const observer = new ResizeObserver(() => {
-      setSize({ width: element.clientWidth, height: element.clientHeight, nodeWidth: nodeSize.offsetWidth });
-    });
+    const element = viewportRef.current;
+    if (!element) return;
+    const update = () => {
+      const style = getComputedStyle(element);
+      const width = Number.parseFloat(style.width) || element.clientWidth;
+      const height = Number.parseFloat(style.height) || element.clientHeight;
+      const scale = width > 0 ? element.getBoundingClientRect().width / width : 1;
+      setSize({ width, height, scale: scale > 0 ? scale : 1 });
+    };
+    const observer = new ResizeObserver(update);
     observer.observe(element);
-    observer.observe(nodeSize);
-    return () => observer.disconnect();
+    const stage = element.closest('[data-testid="vr-stage"]');
+    const styleObserver = new MutationObserver(update);
+    if (stage) styleObserver.observe(stage, { attributes: true, attributeFilter: ["style"] });
+    update();
+    return () => {
+      observer.disconnect();
+      styleObserver.disconnect();
+    };
   }, []);
 
-  const layout = layoutFloorNodes(nodes, size.width, size.nodeWidth);
-
-  useLayoutEffect(() => {
-    const scroll = scrollRef.current;
-    if (!scroll || !size.width || !size.nodeWidth || initializedScroll.current) return;
-    initializedScroll.current = true;
-    const first = nodes
-      .filter((node) => labyrinthNodeVisualState(map, node.id) === "reachable")
-      .sort((a, b) => compareHexPositions(a.gridPosition, b.gridPosition))[0];
-    const point = first ? layout.positions.get(first.id) : null;
-    scroll.scrollTop = readScrollPosition() ?? (point ? Math.max(0, point.y - layout.metrics.height / 2 - 16) : 0);
-  }, [layout, map, nodes, readScrollPosition, size]);
+  const layout = layoutFloorNodes(nodes, size.width, size.height);
 
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
@@ -72,22 +64,10 @@ export function LabyrinthMapViewport({
     let needsFocus = true;
     inspector.style.visibility = "hidden";
     const update = () => {
-      const chamber = trigger.getBoundingClientRect();
-      const bounds = viewport.getBoundingClientRect();
-      if (
-        chamber.bottom <= bounds.top ||
-        chamber.top >= bounds.bottom ||
-        chamber.right <= bounds.left ||
-        chamber.left >= bounds.right
-      ) {
-        inspector.style.visibility = "hidden";
-        onDeselect();
-        return;
-      }
       void computePosition(trigger, inspector, {
         placement: "right",
         middleware: [
-          offset(8),
+          offset(10 / size.scale),
           flip({ boundary: viewport, padding: 8, fallbackPlacements: ["left", "top", "bottom"] }),
           shift({ boundary: viewport, padding: 8, crossAxis: true }),
         ],
@@ -102,12 +82,12 @@ export function LabyrinthMapViewport({
         }
       });
     };
-    const cleanup = autoUpdate(trigger, inspector, update, { animationFrame: true });
+    const cleanup = autoUpdate(trigger, inspector, update);
     return () => {
       cancelled = true;
       cleanup();
     };
-  }, [selectedNodeId, size, onDeselect]);
+  }, [selectedNodeId, size]);
 
   useEffect(() => {
     if (!selectedNodeId) return;
@@ -124,44 +104,56 @@ export function LabyrinthMapViewport({
   return (
     <section aria-label="Labyrinth map" className="flex min-h-0 min-w-0 flex-1 flex-col">
       <div ref={viewportRef} data-testid="labyrinth-viewport" className="relative min-h-0 flex-1 overflow-hidden">
-        <div
-          ref={nodeSizeRef}
-          aria-hidden
-          className="pointer-events-none invisible absolute h-0 w-[calc(12.5*var(--content-rem,1rem))]"
-        />
-        <div
-          ref={scrollRef}
-          data-testid="labyrinth-scroll"
-          className="absolute inset-0 overflow-x-hidden overflow-y-auto overscroll-contain"
-          onScroll={(event) => saveScrollPosition(event.currentTarget.scrollTop)}
-        >
-          <div className="relative w-full" style={{ height: layout.height }}>
-            {nodes.map((node) => {
-              const point = layout.positions.get(node.id);
-              if (!point) return null;
-              return (
-                <LabyrinthNodeSeal
-                  key={node.id}
-                  node={node}
-                  map={map}
-                  selected={selectedNodeId === node.id}
-                  x={point.x}
-                  y={point.y}
-                  width={layout.metrics.width}
-                  height={layout.metrics.height}
-                  onSelect={onSelect}
-                />
-              );
-            })}
-          </div>
+        <div className="absolute inset-0">
+          {size.width > 0 && size.height > 0 ? (
+            <>
+              {nodes.map((node) => {
+                const point = layout.positions.get(node.id)!;
+                return (
+                  <LabyrinthNodeSeal
+                    key={node.id}
+                    node={node}
+                    map={map}
+                    selected={selectedNodeId === node.id}
+                    x={point.x}
+                    y={point.y}
+                    width={layout.metrics.width}
+                    height={layout.metrics.height}
+                    onSelect={onSelect}
+                    onHover={setHoveredNodeId}
+                    onFocus={setFocusedNodeId}
+                  />
+                );
+              })}
+              <LabyrinthMapBorders
+                map={map}
+                nodes={nodes}
+                layout={layout}
+                selectedNodeId={selectedNodeId}
+                focusedNodeId={focusedNodeId}
+                hoveredNodeId={hoveredNodeId}
+              />
+            </>
+          ) : null}
         </div>
         {selectedNode ? (
           <div
             ref={inspectorRef}
             tabIndex={-1}
-            className="absolute z-40 flex max-h-[calc(100%-16px)] w-[calc(21.25*var(--content-rem,1rem))] max-w-[calc(100%-16px)] flex-col outline-none"
+            className="absolute z-40 flex flex-col outline-none"
+            style={{
+              width: `clamp(${320 / size.scale}px,calc(26*var(--content-rem,1rem)),${420 / size.scale}px)`,
+              maxWidth: Math.max(0, size.width - 16 / size.scale),
+              maxHeight: Math.max(0, size.height - 16 / size.scale),
+            }}
           >
-            <LabyrinthNodeInspector key={selectedNode.id} node={selectedNode} onEnter={onEnter} />
+            <LabyrinthNodeInspector
+              key={selectedNode.id}
+              node={selectedNode}
+              map={map}
+              onEnter={onEnter}
+              onDescend={onDescend}
+            />
           </div>
         ) : null}
       </div>

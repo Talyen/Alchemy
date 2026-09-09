@@ -4,7 +4,7 @@ import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { applyIronwoodBuckler } from "./bonus-effects";
 import { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 import { isPlayerDefeated, type BattleState, type CombatTextEvent } from "./types";
-import { processEnemyAttack, processEnemyTraitActionStart } from "./enemy-turn-attack";
+import { processEnemyAbility } from "./enemy-turn-attack";
 import { processEnemyRegeneration, processEnemyTraits } from "./enemy-turn-traits";
 import { processEncounterTraitActionDamage, processEncounterTraitActionStart } from "./encounter-trait-events";
 import {
@@ -21,8 +21,8 @@ interface EndPlayerTurnResolutionBase {
   playerTurnSkipped: boolean;
   enemyTurnStartCombatTexts: CombatTextEvent[];
   enemyResolutionCombatTexts: CombatTextEvent[];
-  enemyPerformedAttack: boolean;
-  afterAttackState?: BattleState;
+  enemyPerformedAbility: boolean;
+  afterAbilityState?: BattleState;
 }
 
 export type EndPlayerTurnResolution =
@@ -72,7 +72,7 @@ function resolveHasteTurn(state: BattleState) {
     ...finalizePlayerTurn(nextState, combatTexts, { preserveBlock: true }),
     enemyTurnStartCombatTexts: [] as CombatTextEvent[],
     enemyResolutionCombatTexts: [] as CombatTextEvent[],
-    enemyPerformedAttack: false,
+    enemyPerformedAbility: false,
   };
 }
 
@@ -81,17 +81,15 @@ type EnemyPostTickMode = "attack" | "skip";
 function resolveEnemyPostTickResolution(
   state: BattleState,
   texts: CombatTextEvent[],
-  options: { traitRoll?: number } | undefined,
   mode: EnemyPostTickMode,
-): { state: BattleState; afterAttackState?: BattleState } {
+): { state: BattleState; afterAbilityState?: BattleState } {
   let nextState = processEncounterTraitActionStart(state, texts);
-  nextState = processEnemyTraits(nextState, texts, options);
-  nextState = processEnemyTraitActionStart(nextState, texts);
-  let afterAttackState: BattleState | undefined;
+  nextState = processEnemyTraits(nextState, texts);
+  let afterAbilityState: BattleState | undefined;
   if (mode === "attack") {
-    nextState = processEnemyAttack(nextState, texts);
-    afterAttackState = nextState;
-    if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return { state: nextState, afterAttackState };
+    nextState = processEnemyAbility(nextState, texts);
+    afterAbilityState = nextState;
+    if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return { state: nextState, afterAbilityState };
   } else {
     nextState = reduceSkipTurns(nextState);
   }
@@ -99,14 +97,14 @@ function resolveEnemyPostTickResolution(
   if (mode === "attack" && !isPlayerDefeated(nextState)) {
     nextState = processEncounterTraitActionDamage(nextState, texts);
   }
-  if (isPlayerDefeated(nextState)) return { state: nextState, ...(afterAttackState ? { afterAttackState } : {}) };
+  if (isPlayerDefeated(nextState)) return { state: nextState, ...(afterAbilityState ? { afterAbilityState } : {}) };
   nextState = resolveDeathsDoorGraceExpiry(nextState);
   nextState = processEnemyRegeneration(nextState, texts);
-  if (afterAttackState === undefined) return { state: nextState };
-  return { state: nextState, afterAttackState };
+  if (afterAbilityState === undefined) return { state: nextState };
+  return { state: nextState, afterAbilityState };
 }
 
-function resolveSkippedEnemyTurn(state: BattleState, options?: { traitRoll?: number }) {
+function resolveSkippedEnemyTurn(state: BattleState) {
   const enemyTurnStartCombatTexts: CombatTextEvent[] = [];
   const enemyResolutionCombatTexts: CombatTextEvent[] = [];
   const nextState = tickEnemyStatuses(state, enemyTurnStartCombatTexts);
@@ -119,11 +117,11 @@ function resolveSkippedEnemyTurn(state: BattleState, options?: { traitRoll?: num
       enemyTurnStartState,
       enemyTurnStartCombatTexts,
       enemyResolutionCombatTexts: [],
-      enemyPerformedAttack: false,
+      enemyPerformedAbility: false,
     };
   }
 
-  const result = resolveEnemyPostTickResolution(nextState, enemyResolutionCombatTexts, options, "skip");
+  const result = resolveEnemyPostTickResolution(nextState, enemyResolutionCombatTexts, "skip");
   const combatTexts = [...enemyTurnStartCombatTexts, ...enemyResolutionCombatTexts];
 
   return {
@@ -132,7 +130,7 @@ function resolveSkippedEnemyTurn(state: BattleState, options?: { traitRoll?: num
     enemyTurnStartState,
     enemyTurnStartCombatTexts,
     enemyResolutionCombatTexts,
-    enemyPerformedAttack: false,
+    enemyPerformedAbility: false,
   };
 }
 
@@ -142,16 +140,13 @@ function resolveEnemyTurnStart(state: BattleState): CombatTextResult {
   return { state: nextState, texts };
 }
 
-function resolveEnemyAction(
-  state: BattleState,
-  options?: { traitRoll?: number },
-): CombatTextResult & { afterAttackState: BattleState } {
+function resolveEnemyAction(state: BattleState): CombatTextResult & { afterAbilityState: BattleState } {
   const texts: CombatTextEvent[] = [];
-  const result = resolveEnemyPostTickResolution(state, texts, options, "attack");
-  return { state: result.state, texts, afterAttackState: result.afterAttackState! };
+  const result = resolveEnemyPostTickResolution(state, texts, "attack");
+  return { state: result.state, texts, afterAbilityState: result.afterAbilityState! };
 }
 
-function resolveStandardEnemyTurn(nextState: BattleState, options?: { traitRoll?: number }) {
+function resolveStandardEnemyTurn(nextState: BattleState) {
   const startResult = resolveEnemyTurnStart(nextState);
   const enemyTurnStartState = startResult.state;
   const enemyTurnStartCombatTexts = startResult.texts;
@@ -163,11 +158,11 @@ function resolveStandardEnemyTurn(nextState: BattleState, options?: { traitRoll?
       enemyTurnStartState,
       enemyTurnStartCombatTexts,
       enemyResolutionCombatTexts: [],
-      enemyPerformedAttack: false,
+      enemyPerformedAbility: false,
     };
   }
 
-  const actionResult = resolveEnemyAction(enemyTurnStartState, options);
+  const actionResult = resolveEnemyAction(enemyTurnStartState);
   const combatTexts = [...enemyTurnStartCombatTexts, ...actionResult.texts];
 
   return {
@@ -176,12 +171,12 @@ function resolveStandardEnemyTurn(nextState: BattleState, options?: { traitRoll?
     enemyTurnStartState,
     enemyTurnStartCombatTexts,
     enemyResolutionCombatTexts: actionResult.texts,
-    enemyPerformedAttack: true,
-    afterAttackState: actionResult.afterAttackState,
+    enemyPerformedAbility: true,
+    afterAbilityState: actionResult.afterAbilityState,
   };
 }
 
-export function endPlayerTurn(state: BattleState, options?: { traitRoll?: number }): EndPlayerTurnResolution {
+export function endPlayerTurn(state: BattleState): EndPlayerTurnResolution {
   const endingTexts: CombatTextEvent[] = [];
   const healedState =
     hasEncounterBenefit(state, "restorative") && state.enemyHealth > 0 && !isPlayerDefeated(state)
@@ -198,7 +193,7 @@ export function endPlayerTurn(state: BattleState, options?: { traitRoll?: number
   const enemyPhaseState = resetEnemyTurnState(nextState);
 
   if (turnEndedState.enemyCC.stunSkipTurns + turnEndedState.enemyCC.freezeSkipTurns > 0) {
-    const result = resolveSkippedEnemyTurn(enemyPhaseState, options);
+    const result = resolveSkippedEnemyTurn(enemyPhaseState);
     return {
       ...result,
       combatTexts: [...endingTexts, ...result.combatTexts],
@@ -206,7 +201,7 @@ export function endPlayerTurn(state: BattleState, options?: { traitRoll?: number
     };
   }
 
-  const result = resolveStandardEnemyTurn(enemyPhaseState, options);
+  const result = resolveStandardEnemyTurn(enemyPhaseState);
   return {
     ...result,
     combatTexts: [...endingTexts, ...result.combatTexts],

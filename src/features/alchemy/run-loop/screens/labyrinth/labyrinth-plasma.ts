@@ -1,9 +1,12 @@
 import { LABYRINTH_TRAITS } from "@/lib/content-systems/labyrinth/trait-catalog";
 import { enemyById, isEnemyId } from "@/features/alchemy/shared/config/game-data-catalog";
-import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
+import { type KeywordId } from "@/lib/game-data";
 import type { EncounterCombatTraitId, EncounterRewardTraitId, LabyrinthNode } from "@/lib/content-systems/types";
-import { getPlasmaColorPair, type PlasmaColorPair } from "@/features/alchemy/shared/config/plasma-palettes";
-import { keywordAliases } from "@/features/alchemy/shared/config/keywords";
+import {
+  getPlasmaColorPair,
+  getPlasmaKeywordsForEnemy,
+  type PlasmaColorPair,
+} from "@/features/alchemy/shared/config/plasma-palettes";
 import { destinationMeta } from "@/features/alchemy/shared/config/metadata";
 import { LABYRINTH_TYPE_TO_DESTINATION } from "@/lib/content-systems/labyrinth/data";
 
@@ -20,10 +23,6 @@ const LABYRINTH_TYPE_BASE_KEYWORDS: Record<LabyrinthNode["type"], KeywordId[]> =
   "trinket-shop": ["wish"],
   "equipment-shop": ["forge"],
 };
-
-function isKeywordId(value: string): value is KeywordId {
-  return value in keywordDefinitions;
-}
 
 const additionalTraitKeywords = (category: "combat" | "reward") =>
   Object.fromEntries(
@@ -69,20 +68,7 @@ function collectEnemyKeywordIds(enemyId: string | undefined): KeywordId[] {
   if (!enemyId || !isEnemyId(enemyId)) return [];
   const enemy = enemyById[enemyId];
   if (!enemy) return [];
-  const ids = new Set<KeywordId>();
-  const traitText = enemy.traits.map((t) => t.description).join(" ");
-  for (const alias of keywordAliases) {
-    if (traitText.includes(alias.match)) ids.add(alias.keywordId);
-  }
-  for (const effect of enemy.attackEffects) {
-    if (effect.kind === "damage" && effect.damageType in keywordDefinitions) {
-      ids.add(effect.damageType);
-    }
-    if (effect.kind === "player-status" && isKeywordId(effect.status)) {
-      ids.add(effect.status);
-    }
-  }
-  return [...ids];
+  return getPlasmaKeywordsForEnemy(enemy);
 }
 
 function getLabyrinthNodeKeywordIds(node: LabyrinthNode): KeywordId[] {

@@ -1,6 +1,7 @@
+import { makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { tryDodgeEnemyAttackPacket, tryDodgePlayerAttackPacket } from "@/lib/battle/dodge";
-import { processEnemyAttack } from "@/lib/battle/enemy-turn-attack";
+import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { addPlayerStatus } from "@/lib/battle/types";
 import { applyPlayerDamageStatuses } from "@/lib/battle/status-player";
 import { resolvePlayerCrowdControlTriggers } from "@/lib/battle/status-cc";
@@ -76,12 +77,17 @@ describe("Dodge tree rewards", () => {
       talentEffects: fullTree,
       rng: () => 0,
       gearEffects: { healOnDodge: 2, armorOnDodge: 3 },
-      enemyAttackEffects: [
-        { kind: "damage", damageType: "physical", amount: 8 },
-        { kind: "damage", damageType: "physical", amount: 8 },
-      ],
     });
-    const result = processEnemyAttack(state, []);
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({
+        effects: [
+          { kind: "damage", damageType: "physical", amount: 8 },
+          { kind: "damage", damageType: "physical", amount: 8 },
+        ],
+      }),
+      [],
+    );
     expect(result.playerDodgeCount).toBe(2);
     expect(result.playerHealth).toBe(56);
     expect(result.playerStatuses).toMatchObject({ armor: 8, forge: 2, thorns: 2 });
@@ -94,15 +100,20 @@ describe("Dodge tree rewards", () => {
       playerStatuses: { burn: 1, poison: 2, bleed: 1, freeze: 3, stun: 3 },
       talentEffects: { cleanseStacksOnDodge: 1, healOnStatusCleanse: 4 },
     });
-    const result = processEnemyAttack(state, []);
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
+      [],
+    );
     expect(result.playerStatuses).toMatchObject({ burn: 0, poison: 1, bleed: 0, freeze: 3, stun: 3 });
     expect(result.playerHealth).toBe(54);
-    const partial = processEnemyAttack(
+    const partial = applyEnemyAbility(
       incomingPhysical({
         playerHealth: 50,
         playerStatuses: { burn: 3, poison: 3, bleed: 3 },
         talentEffects: state.talentEffects,
       }),
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
       [],
     );
     expect(partial.playerHealth).toBe(50);
@@ -115,7 +126,15 @@ describe("Dodge tree rewards", () => {
       gearEffects: { nextAttackPhysicalOnDodge: 3 },
       rng: () => 0,
     });
-    const dodged = processEnemyAttack(processEnemyAttack(state, []), []);
+    const dodged = applyEnemyAbility(
+      applyEnemyAbility(
+        state,
+        makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
+        [],
+      ),
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
+      [],
+    );
     expect(dodged.flags.nextHitPhysicalBonus).toBe(14);
     const hit = dealDamage({ ...dodged, rng: () => 0.99 }, makeTestCard({ effects: [makeEffect("physical", 5)] }));
     expect(hit.enemyHealth).toBe(81);
@@ -123,10 +142,11 @@ describe("Dodge tree rewards", () => {
   });
 
   it("retains existing Riposte and Footwork alongside new rewards", () => {
-    const result = processEnemyAttack(
+    const result = applyEnemyAbility(
       incomingPhysical({
         talentEffects: { ...fullTree, physicalOnDodgeEqualToAttack: true, blockOnDodgeEqualToAttack: true },
       }),
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
       [],
     );
     expect(result.playerStatuses.block).toBe(8);
@@ -149,14 +169,14 @@ describe("Rolling Recovery", () => {
   });
 
   it("does not reduce Health damage and scales buildup before the Stun threshold", () => {
-    const result = processEnemyAttack(
+    const result = applyEnemyAbility(
       incomingPhysical({
         rng: () => 0.99,
         playerHealth: 100,
         playerStatuses: { stun: 40 },
-        enemyAttackEffects: [{ kind: "damage", damageType: "stun", amount: 10 }],
         talentEffects: { stunBuildupReductionPercent: 10 },
       }),
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "stun", amount: 10 }] }),
       [],
     );
     expect(result.playerHealth).toBe(90);

@@ -1,8 +1,9 @@
+import { makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { defaultGearEffects } from "@/lib/gear";
 import { dealPlayerTypedHit } from "@/lib/battle/player-typed-hit";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
-import { processEnemyAttack } from "@/lib/battle/enemy-turn-attack";
+import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { dealDamage, makeCombatTexts, makeEffect, makeTestCard, patchBattleState } from "../../fixtures/battle";
 import { defaultPlayerStatusValues } from "../../fixtures/default-battle-state";
 
@@ -144,16 +145,26 @@ describe("player Dodge chance from gear", () => {
     const hits = patchBattleState({
       playerHealth: 30,
       rng: () => 0.07,
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
     });
-    expect(processEnemyAttack(hits, makeCombatTexts()).playerHealth).toBeLessThan(30);
+    expect(
+      applyEnemyAbility(
+        hits,
+        makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
+        makeCombatTexts(),
+      ).playerHealth,
+    ).toBeLessThan(30);
 
     const dodges = patchBattleState({
       playerHealth: 30,
       rng: () => 0.07,
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
       gearEffects: { ...defaultGearEffects, dodgeChance: 3 },
     });
-    expect(processEnemyAttack(dodges, makeCombatTexts()).playerHealth).toBe(30);
+    expect(
+      applyEnemyAbility(
+        dodges,
+        makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
+        makeCombatTexts(),
+      ).playerHealth,
+    ).toBe(30);
   });
 });

@@ -91,7 +91,7 @@ describe("Wildwood Draft gauntlet rules", () => {
       art: "",
       enemyType: "boss",
       traits: [{ id: "normal", title: "Normal", description: "Normal trait" }],
-      attackEffects: [],
+      abilityIds: ["slash", "bash", "block"],
     };
 
     const result = withWildwoodModifier(boss, "tempered");

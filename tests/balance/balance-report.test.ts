@@ -57,10 +57,12 @@ describe("balance report", () => {
     const html = renderBalanceReportHtml(model, options);
     expect(html).toContain("<h1>Balance Report</h1>");
     expect(html).toContain("Enemy attacks Early");
-    expect(html).toContain("Ability activations Late");
+    expect(html).toContain("Ability uses Late");
+    expect(html).toContain("Trait activations Late");
     expect(html).toContain("Wins before attack Mid");
     expect(json).toContain("averageEnemyAttacks");
     expect(json).toContain("averageEnemyAbilityActivations");
+    expect(json).toContain("averageEnemyAbilityUses");
     expect(json).toContain("winsBeforeEnemyAttackRate");
     expect(renderBalanceReportJson(model, options)).toBe(json);
     const findings = evaluateBalanceFindings(model);

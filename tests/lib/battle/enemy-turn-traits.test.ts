@@ -14,7 +14,6 @@ import {
 import {
   DIFFICULTY_FORGE_PER_TURN,
   IRON_HIDE_ARMOR_PER_TURN,
-  IRON_HIDE_BURN_BONUS_PER_TURN,
   TRAIT_FORGE_PER_TURN,
   TRAIT_FREEZE_BONUS_PER_TURN,
 } from "@/lib/game-constants";
@@ -181,7 +180,7 @@ describe("processEnemyTraits", () => {
       roomScalingMultiplier: 2,
       enemyMitigation: { ...makeTestBattleState().enemyMitigation, forge: 0 },
     });
-    const result = processEnemyTraits(state, [], { traitRoll: 0 });
+    const result = processEnemyTraits(state, []);
     expect(result.enemyMitigation.forge).toBe(TRAIT_FORGE_PER_TURN);
   });
 
@@ -191,18 +190,18 @@ describe("processEnemyTraits", () => {
       turn: 1,
       enemyMitigation: { ...makeTestBattleState().enemyMitigation, forge: 0 },
     });
-    const result = processEnemyTraits(state, [], { traitRoll: 0 });
+    const result = processEnemyTraits(state, []);
     expect(result.enemyMitigation.forge).toBe(0);
   });
 
-  it("iron-hide chooses armor when traitRoll is 0", () => {
+  it("iron-hide grows Armor every other turn without a random choice", () => {
     const state = makeTestBattleState({
       currentEnemy: ironBear,
       turn: 2,
       roomScalingMultiplier: 1,
     });
     const texts: Parameters<typeof processEnemyRegeneration>[1] = [];
-    const result = processEnemyTraits(state, texts, { traitRoll: 0 });
+    const result = processEnemyTraits(state, texts);
     expect(result.enemyMitigation.armor).toBe(IRON_HIDE_ARMOR_PER_TURN);
     expect(texts).toContainEqual({
       target: "enemy",
@@ -212,35 +211,9 @@ describe("processEnemyTraits", () => {
     });
   });
 
-  it("iron-hide chooses forge when traitRoll is in the middle third", () => {
-    const state = makeTestBattleState({ currentEnemy: ironBear, turn: 2, roomScalingMultiplier: 1 });
-    const texts: Parameters<typeof processEnemyRegeneration>[1] = [];
-    const result = processEnemyTraits(state, texts, { traitRoll: 0.4 });
-    expect(result.enemyMitigation.forge).toBe(TRAIT_FORGE_PER_TURN);
-    expect(texts).toContainEqual({
-      target: "enemy",
-      kind: "status",
-      stat: "forge",
-      amount: TRAIT_FORGE_PER_TURN,
-    });
-  });
-
-  it("iron-hide chooses burn bonus when traitRoll is in the upper third", () => {
-    const state = makeTestBattleState({ currentEnemy: ironBear, turn: 2, roomScalingMultiplier: 1 });
-    const texts: Parameters<typeof processEnemyRegeneration>[1] = [];
-    const result = processEnemyTraits(state, texts, { traitRoll: 0.9 });
-    expect(result.enemyStatuses.burnBonus).toBe(IRON_HIDE_BURN_BONUS_PER_TURN);
-    expect(texts).toContainEqual({
-      target: "enemy",
-      kind: "status",
-      stat: "burnBonus",
-      amount: IRON_HIDE_BURN_BONUS_PER_TURN,
-    });
-  });
-
   it("applies glacial-shell freeze bonus", () => {
     const state = makeTestBattleState({ currentEnemy: frostwarden, turn: 2, roomScalingMultiplier: 1 });
-    const result = processEnemyTraits(state, [], { traitRoll: 0 });
+    const result = processEnemyTraits(state, []);
     expect(result.enemyStatuses.freezeBonus).toBe(TRAIT_FREEZE_BONUS_PER_TURN);
   });
 
@@ -268,7 +241,7 @@ describe("processEnemyTraits", () => {
       enemyMitigation: { ...makeTestBattleState().enemyMitigation, forge: 0 },
       talentEffects: { ...makeTestBattleState().talentEffects, freezePreventsEnemyScaling: true },
     });
-    const result = processEnemyTraits(state, [], { traitRoll: 0 });
+    const result = processEnemyTraits(state, []);
     expect(result.enemyMitigation.forge).toBe(0);
   });
 
@@ -278,7 +251,7 @@ describe("processEnemyTraits", () => {
       currentEnemy: blightTreant,
       enemyMitigation: { ...makeTestBattleState().enemyMitigation, forge: 0 },
     });
-    const result = processEnemyTraits(state, [], { traitRoll: 0 });
+    const result = processEnemyTraits(state, []);
     expect(result.enemyMitigation.forge).toBe(0);
   });
 
@@ -290,7 +263,7 @@ describe("processEnemyTraits", () => {
       difficultyModifiers: [{ kind: "enemy-gains-forge-each-turn" }],
       enemyMitigation: { ...makeTestBattleState().enemyMitigation, forge: 0 },
     });
-    const result = processEnemyTraits(state, [], { traitRoll: 0 });
+    const result = processEnemyTraits(state, []);
     expect(result.enemyMitigation.forge).toBe(TRAIT_FORGE_PER_TURN + DIFFICULTY_FORGE_PER_TURN);
   });
 });

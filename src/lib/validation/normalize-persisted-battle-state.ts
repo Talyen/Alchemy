@@ -1,7 +1,19 @@
 import { defaultBattleState, type BattleState } from "@/lib/battle";
-import type { TalentEffectManifest } from "@/lib/game-data";
+import {
+  findEnemyAbilityCard,
+  enemyById,
+  enemyBestiary,
+  isEnemyId,
+  type BestiaryEntry,
+  type EnemyTrait,
+  type TalentEffectManifest,
+} from "@/lib/game-data";
 import { computeTrinketManifest, isDefaultTrinketManifest } from "@/lib/trinkets";
-import { sanitizeEncounterTraitIds, sanitizePersistedEnemyTraits } from "@/lib/content-systems/encounter-traits";
+import {
+  ENCOUNTER_TRAITS,
+  sanitizeEncounterTraitIds,
+  sanitizePersistedEnemyTraits,
+} from "@/lib/content-systems/encounter-traits";
 import {
   LEGACY_BLEED_EXECUTE_MULTIPLIER,
   LEGACY_FIRST_BURN_BONUS_MULTIPLIER,
@@ -59,8 +71,43 @@ function clampNonNegative(value: number, fallback: number): number {
   return Number.isFinite(value) && value >= 0 ? value : fallback;
 }
 
+const traitMetadata = new Map(
+  [
+    ...enemyBestiary.flatMap((enemy) => enemy.traits),
+    ...Object.values(ENCOUNTER_TRAITS).map((trait) => trait.enemyTrait),
+  ].map((trait) => [trait.id, trait]),
+);
+
+function restoreEnemyTraits(value: unknown, enemy: BestiaryEntry | undefined): EnemyTrait[] {
+  if (!Array.isArray(value)) return enemy?.traits ?? [];
+  const traits = value.flatMap((trait: unknown): EnemyTrait[] => {
+    if (!trait || typeof trait !== "object" || !("id" in trait) || typeof trait.id !== "string") return [];
+    const canonical = enemy?.traits.find((entry) => entry.id === trait.id) ?? traitMetadata.get(trait.id);
+    if (canonical) return [canonical];
+    if (
+      !("title" in trait) ||
+      typeof trait.title !== "string" ||
+      !("description" in trait) ||
+      typeof trait.description !== "string"
+    )
+      return [];
+    return [{ id: trait.id, title: trait.title, description: trait.description }];
+  });
+  return sanitizePersistedEnemyTraits(traits);
+}
+
 export function normalizePersistedBattleState(saved: Partial<BattleState>): BattleState {
   const defaults = defaultBattleState();
+  const savedEnemy = saved.currentEnemy;
+  const catalogEnemy = savedEnemy && isEnemyId(savedEnemy.id) ? enemyById[savedEnemy.id] : undefined;
+  const savedAbilityIds = savedEnemy?.abilityIds;
+  const abilityIds =
+    Array.isArray(savedAbilityIds) &&
+    savedAbilityIds.length === 3 &&
+    new Set(savedAbilityIds).size === 3 &&
+    savedAbilityIds.every((id) => typeof id === "string" && findEnemyAbilityCard(id))
+      ? savedAbilityIds
+      : (catalogEnemy?.abilityIds ?? defaults.currentEnemy.abilityIds);
   const merged: BattleState = {
     ...defaults,
     ...saved,
@@ -82,14 +129,23 @@ export function normalizePersistedBattleState(saved: Partial<BattleState>): Batt
     currentEnemy: {
       ...defaults.currentEnemy,
       ...saved.currentEnemy,
-      traits: sanitizePersistedEnemyTraits(Array.isArray(saved.currentEnemy?.traits) ? saved.currentEnemy.traits : []),
+      abilityIds,
+      traits: restoreEnemyTraits(saved.currentEnemy?.traits, catalogEnemy),
     },
   };
   delete merged.battleMetrics;
+  merged.lastEnemyAbilityId =
+    typeof saved.lastEnemyAbilityId === "string" && abilityIds.includes(saved.lastEnemyAbilityId)
+      ? saved.lastEnemyAbilityId
+      : null;
 
   merged.rng = typeof saved.rng === "function" ? saved.rng : restingWorldRng();
 
   const savedFlags: Record<string, unknown> = saved.flags ?? {};
+  if (!("legacyEnemyThornsReady" in savedFlags)) {
+    merged.flags.legacyEnemyThornsReady =
+      merged.currentEnemy.traits.some((trait) => trait.id === "thorns") && merged.enemyStatuses.thorns > 0;
+  }
   merged.flags.previousCardWasArchery = savedFlags.previousCardWasArchery === true;
   merged.flags.previousCardWasNature = savedFlags.previousCardWasNature === true;
   merged.flags.companionNextAttackBonus = clampNonNegative(merged.flags.companionNextAttackBonus, 0);

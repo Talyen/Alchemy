@@ -27,7 +27,7 @@ const PersistedBattleStateWireSchema = z.looseObject({
   enemyHealth: z.number(),
   enemyMaxHealth: z.number(),
   currentEnemy: z.record(z.string(), z.unknown()),
-  enemyAttackEffects: z.array(z.unknown()),
+  lastEnemyAbilityId: z.string().nullable().catch(null),
   playerStatuses: z.record(z.string(), z.unknown()),
   enemyStatuses: z.record(z.string(), z.unknown()),
   flags: z.record(z.string(), z.unknown()),

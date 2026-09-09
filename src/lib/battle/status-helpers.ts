@@ -9,7 +9,8 @@ import {
   TRAIT_DAMAGE_WEAKNESS,
 } from "../game-constants";
 import { addPlayerStatusWithCombatText, mergeCombatText } from "./combat-text";
-import { applyPlayerCombatDamage, type BattleState, type CombatTextEvent, type CombatTextStat } from "./types";
+import { applyPlayerCombatDamage, scaleReceivedPlayerDamage, type BattleState, type CombatTextEvent } from "./types";
+import type { EnemyStatusDamageId } from "@/lib/game-data";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { halveRounded } from "./amount-helpers";
 
@@ -50,10 +51,19 @@ export function getEnemyDamageMultiplier(
 export function dealSelfDamage(
   state: BattleState,
   amount: number,
-  statLabel: CombatTextStat,
+  statLabel: EnemyStatusDamageId | "health",
   combatTexts: CombatTextEvent[],
 ): { state: BattleState; healthLost: number } {
-  const postDamage = applyPlayerCombatDamage(state, amount, "self", undefined, undefined, combatTexts);
+  const healthCost = statLabel === "health";
+  const damage = healthCost ? amount : scaleReceivedPlayerDamage(amount, state.talentEffects, statLabel);
+  const postDamage = applyPlayerCombatDamage(
+    state,
+    damage,
+    "self",
+    statLabel,
+    { ignoreMitigation: healthCost },
+    combatTexts,
+  );
   const healthLost = Math.max(0, state.playerHealth - postDamage.playerHealth);
   if (healthLost > 0) {
     mergeCombatText(combatTexts, {

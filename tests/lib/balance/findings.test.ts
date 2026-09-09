@@ -19,6 +19,7 @@ function cell(partial: Partial<RateCell>): RateCell {
     timeoutRate: 0,
     averageEnemyAttacks: 0,
     averageEnemyAbilityActivations: 0,
+    averageEnemyAbilityUses: 0,
     winsBeforeEnemyAttackRate: 0,
     averageTurns: 4,
     averageHealthRemaining: 10,

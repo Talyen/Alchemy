@@ -12,6 +12,8 @@ interface PlasmaRegistration {
 }
 
 interface UiStore {
+  enemyInspectionOpen: boolean;
+  setEnemyInspectionOpen: (open: boolean) => void;
   cardInspection: CardInspectionView | null;
   setCardInspection: (view: CardInspectionView | null) => void;
   hoveredCardId: string | null;
@@ -28,8 +30,12 @@ interface UiStore {
 }
 
 export const useUiStore = create<UiStore>()((set, get) => ({
+  enemyInspectionOpen: false,
+  setEnemyInspectionOpen: (enemyInspectionOpen) =>
+    set({ enemyInspectionOpen, ...(enemyInspectionOpen ? { cardInspection: null } : {}) }),
   cardInspection: null,
-  setCardInspection: (cardInspection) => set({ cardInspection }),
+  setCardInspection: (cardInspection) =>
+    set({ cardInspection, ...(cardInspection ? { enemyInspectionOpen: false } : {}) }),
   hoveredCardId: null,
   shimmerState: null,
   plasmaBaseline: null,
@@ -54,3 +60,7 @@ export const useUiStore = create<UiStore>()((set, get) => ({
   clearPlasmaInteraction: (ownerId) =>
     set((state) => (state.plasmaInteraction?.ownerId === ownerId ? { plasmaInteraction: null } : state)),
 }));
+
+export function isBattleInspectionOpen(state: Pick<UiStore, "cardInspection" | "enemyInspectionOpen">): boolean {
+  return state.cardInspection !== null || state.enemyInspectionOpen;
+}

@@ -18,13 +18,13 @@ function makeBoss(overrides: Partial<BestiaryEntry> = {}): BestiaryEntry {
     art: "",
     enemyType: "boss",
     traits: [],
-    attackEffects: [],
+    abilityIds: [],
     ...overrides,
   };
 }
 
 describe("getBossShineColors", () => {
-  it("collects keyword shine colors from boss traits and attack effects", () => {
+  it("collects keyword shine colors from boss traits and ability cards", () => {
     const frostwarden = getBossById("frostwarden");
     expect(frostwarden).toBeDefined();
 
@@ -32,7 +32,7 @@ describe("getBossShineColors", () => {
 
     expect(colors).toContain(keywordDefinitions.freeze.shineColors[0]);
     expect(colors).toContain(keywordDefinitions.burn.shineColors[0]);
-    expect(colors).toContain(keywordDefinitions.physical.shineColors[0]);
+    expect(colors).toContain(keywordDefinitions.block.shineColors[0]);
   });
 
   it("falls back when no combat keywords match", () => {

@@ -53,7 +53,6 @@ export const MAX_HEALTH_PER_TALENT_POINT = 1;
 export const BASE_ENEMY_HEALTH = 30;
 export const BASE_PLAYER_MANA = 4;
 export const DEFAULT_BATTLE_ENEMY_TYPE = "normal";
-export const FALLBACK_ENEMY_ATTACK = 8;
 
 export const FIGHT_PACING = {
   evenThreshold: 0.1,

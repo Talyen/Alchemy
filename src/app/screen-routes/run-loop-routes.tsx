@@ -1,5 +1,12 @@
 import { labyrinthCampfireHealing } from "@/lib/content-systems/labyrinth/room-rules";
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
+import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import { EnemyInspectionOverlay } from "@/features/alchemy/shared/ui/enemy-inspection-overlay";
+import {
+  readCardAnimationInProgress,
+  readPlaybackPresentationGate,
+} from "@/features/alchemy/run-loop/battle/presentation/use-hand-presentation";
+import { handHasHiddenCard } from "@/features/alchemy/run-loop/battle/playable-hand";
 import { useAppScreenChrome } from "@/app/app-screen-chrome-context";
 import {
   AlchemistShopScreen,
@@ -44,6 +51,32 @@ function BattleScreenRoute({
 }) {
   const { characterId, heroArt, playerName, aspectMode, stagePixelRatio } = useAppScreenChrome();
   const { battleScreenData, hasActiveBattle } = useBattleScreenRouteData();
+  const enemyInspectionOpen = useUiStore((state) => state.enemyInspectionOpen);
+  const setEnemyInspectionOpen = useUiStore((state) => state.setEnemyInspectionOpen);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+  const canInspectEnemy = Boolean(
+    cardInspection?.canOpen &&
+    hasActiveBattle &&
+    !gameMenuOpen &&
+    !commands.boonInspectOpen &&
+    commands.screen === "battle",
+  );
+  useEffect(() => () => setEnemyInspectionOpen(false), [setEnemyInspectionOpen]);
+  useEffect(() => {
+    if (!canInspectEnemy) setEnemyInspectionOpen(false);
+  }, [canInspectEnemy, setEnemyInspectionOpen]);
+  function inspectEnemy(trigger: HTMLElement) {
+    const presentation = readPlaybackPresentationGate();
+    if (
+      !canInspectEnemy ||
+      commands.isCardPlayInProgress() ||
+      readCardAnimationInProgress() ||
+      handHasHiddenCard(battleScreenData.battleState, presentation.hiddenHandCardKeys)
+    )
+      return;
+    returnFocusRef.current = trigger;
+    setEnemyInspectionOpen(true);
+  }
   useBattlePlayback({
     screen: commands.screen,
     battleState: battleScreenData.battleState,
@@ -57,23 +90,34 @@ function BattleScreenRoute({
   });
 
   return (
-    <BattleScreen
-      onInspectPile={cardInspection?.onOpen}
-      inspectionAvailable={cardInspection?.canOpen}
-      battleScreenData={battleScreenData}
-      characterId={characterId}
-      heroArt={heroArt}
-      playerName={playerName}
-      aspectMode={aspectMode}
-      stagePixelRatio={stagePixelRatio}
-      refs={commands.refs}
-      onCardClick={commands.handleCardClick}
-      onWishChoice={commands.handleWishChoice}
-      onSkipCombatDevMode={commands.skipCombatDevMode}
-      onEndTurn={commands.handleEndTurn}
-      boonInspectOpen={commands.boonInspectOpen}
-      onCloseBoonInspect={commands.closeBoonInspect}
-    />
+    <>
+      <BattleScreen
+        onInspectEnemy={inspectEnemy}
+        enemyInspectionOpen={enemyInspectionOpen}
+        onInspectPile={cardInspection?.onOpen}
+        inspectionAvailable={cardInspection?.canOpen}
+        battleScreenData={battleScreenData}
+        characterId={characterId}
+        heroArt={heroArt}
+        playerName={playerName}
+        aspectMode={aspectMode}
+        stagePixelRatio={stagePixelRatio}
+        refs={commands.refs}
+        onCardClick={commands.handleCardClick}
+        onWishChoice={commands.handleWishChoice}
+        onSkipCombatDevMode={commands.skipCombatDevMode}
+        onEndTurn={commands.handleEndTurn}
+        boonInspectOpen={commands.boonInspectOpen}
+        onCloseBoonInspect={commands.closeBoonInspect}
+      />
+      <EnemyInspectionOverlay
+        open={enemyInspectionOpen && canInspectEnemy}
+        entry={battleScreenData.battleState.currentEnemy}
+        modifiers={battleScreenData.activeLabyrinthModifiers}
+        onClose={() => setEnemyInspectionOpen(false)}
+        returnFocusRef={returnFocusRef}
+      />
+    </>
   );
 }
 
@@ -86,6 +130,7 @@ function LabyrinthMapScreenRoute({ commands }: { commands: RunLoopCommands["laby
       onNodeSelect={commands.handleNodeSelect}
       onNodeDeselect={commands.handleNodeDeselect}
       onNodeEnter={commands.handleNodeEnter}
+      onDescend={commands.descend}
     />
   );
 }

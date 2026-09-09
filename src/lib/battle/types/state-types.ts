@@ -5,7 +5,6 @@ import type {
   CompanionDefinition,
   DamageType,
   DifficultyModifier,
-  EnemyAttackEffect,
   EnemyStatusId,
   PlayerStatusId,
   TalentEffectManifest,
@@ -55,7 +54,11 @@ export function isStunFreezeBuildupBlocked(cc: CcState): boolean {
 export type { CombatFlags } from "../combat-flags";
 
 export interface BattleState {
-  battleMetrics?: { enemyAttackActions: number; enemyAbilityActivations: Record<string, number> };
+  battleMetrics?: {
+    enemyAttackActions: number;
+    enemyAbilityActivations: Record<string, number>;
+    enemyAbilityUses?: Record<string, number>;
+  };
   deck: BattleCard[];
   hand: BattleCard[];
   discard: BattleCard[];
@@ -75,7 +78,7 @@ export interface BattleState {
   deathsDoorGraceTurnsRemaining: number | null;
   enemyHealth: number;
   enemyMaxHealth: number;
-  enemyAttackEffects: EnemyAttackEffect[];
+  lastEnemyAbilityId: string | null;
   enemyRegeneration: number;
   roomScalingMultiplier: number;
   enemyMitigation: EnemyMitigation;

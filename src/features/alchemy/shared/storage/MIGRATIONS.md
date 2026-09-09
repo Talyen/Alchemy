@@ -78,7 +78,19 @@ Migration tests must verify gameplay progress, not just field presence:
 - The distinct talent/card rework keeps all unlock and card IDs. New manifest fields default to zero/false; `nextHolyCardFree` and `killRewardsPaid` default to false and persist through saved battles and pending results. Retired first-use and direct-stack proc fields retain their readers for captured old manifests. New catalog cards all cost one Mana; valid saved cost, Consume, effects, descriptions, and corruption overrides retain their existing meanings. No version bump is needed.
 - Mana from Heaven banks its next-turn reward in `flags.pendingWishMana`, defaulting to zero in old snapshots and retained in current snapshots and pending enemy-turn results. The five talent interaction replacements keep their unlock IDs and add manifest fields with zero defaults; old saved manifests retain immediate Wish Mana, Burn-hit Forge, flat Holy retaliation, and first-card Leech until the battle finishes. No schema bump is needed.
 - Version-specific fixtures continue to assert the outcomes recorded in [MIGRATION_HISTORY.md](./MIGRATION_HISTORY.md).
+- Enemy ability migration preserves active/parked battles and already-resolved continuations without rerolling or duplicating rewards. New saves retain canonical ability IDs and last-used history; the legacy Thorns marker remains distinct from card-granted stacks. See [schema 16](./MIGRATION_HISTORY.md#schema-16--enemy-card-abilities).
 - Every fixture is **idempotent** after `normalizeSaveData` (`tests/helpers/parse-save-for-tests.ts`).
+
+Labyrinth maps add nullable `currentNodeId`, defaulting to the floor entrance for
+older saves. Invalid or uncleared references are repaired to null without dropping
+the active run. Existing floors, pending encounters, and reward state are retained;
+boss completion now waits for explicit descent rather than generating immediately.
+No schema bump is required for the additive default. New-floor generation resets
+the position, and already-generated saved floors are reused.
+New five-row floor templates do not tighten saved-coordinate validation: maps
+through row 8 remain accepted, and the fifth visual column is now accepted too.
+Existing coordinates are never repacked or regenerated. The persisted shape is
+unchanged and no schema bump is needed.
 
 ## Future schema saves
 

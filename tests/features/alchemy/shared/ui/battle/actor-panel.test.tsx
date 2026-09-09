@@ -33,7 +33,7 @@ const enemy: BestiaryEntry = {
   art: "enemy.png",
   enemyType: "normal",
   traits: [{ id: "spores", title: "Spores", description: "Applies Poison to the hero." }],
-  attackEffects: [{ kind: "damage", damageType: "burn", amount: 2 }],
+  abilityIds: ["frostbolt"],
 };
 
 function hexToRgb(hex: string): string {
@@ -61,14 +61,7 @@ describe("ArtPanel hover motion", () => {
   });
 
   it("shows the enemy keyword shine only while the enemy is hovered", () => {
-    const { getByTestId, queryByTestId } = render(
-      <ArtPanel
-        {...baseProps}
-        side="enemy"
-        currentEnemy={enemy}
-        currentEnemyAttackEffects={[{ kind: "damage", damageType: "freeze", amount: 1 }]}
-      />,
-    );
+    const { getByTestId, queryByTestId } = render(<ArtPanel {...baseProps} side="enemy" currentEnemy={enemy} />);
     const surface = getByTestId("battle-enemy-art-panel");
     const wrapper = surface.parentElement;
     expect(wrapper).not.toBeNull();

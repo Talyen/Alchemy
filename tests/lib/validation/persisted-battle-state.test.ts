@@ -18,7 +18,6 @@ describe("PersistedBattleStateSchema", () => {
       enemyHealth: 20,
       enemyMaxHealth: 20,
       currentEnemy: { id: "skeleton" },
-      enemyAttackEffects: [],
       playerStatuses: {},
       enemyStatuses: {},
       flags: {},
@@ -71,9 +70,10 @@ describe("PersistedBattleStateSchema", () => {
     expect(PersistedBattleStateSchema.safeParse(state).success).toBe(false);
   });
 
-  it("rejects when enemyAttackEffects is not an array", () => {
-    const state = { ...validState(), enemyAttackEffects: "damage" };
-    expect(PersistedBattleStateSchema.safeParse(state).success).toBe(false);
+  it("repairs invalid last-ability history without discarding the battle", () => {
+    const result = PersistedBattleStateSchema.parse({ ...validState(), lastEnemyAbilityId: "missing-card" });
+    expect(result.lastEnemyAbilityId).toBeNull();
+    expect(result.currentEnemy.abilityIds).toEqual(["slash", "bash", "block"]);
   });
 
   it("rejects when playerStatuses is missing", () => {

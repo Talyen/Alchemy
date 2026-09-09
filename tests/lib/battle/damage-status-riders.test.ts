@@ -252,7 +252,7 @@ describe("applyDamageStatuses", () => {
         art: "",
         enemyType: "normal",
         traits: [{ id: "glacial-shell", title: "Glacial Shell", description: "Receives half Freeze damage" }],
-        attackEffects: [],
+        abilityIds: ["slash", "bash", "block"],
       },
     });
     const effect = { kind: "damage" as const, damageType: "freeze" as const, amount: 10 };

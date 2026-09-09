@@ -63,6 +63,7 @@ describe("useLabyrinthController hook", () => {
 
     expect(readRunSession().activeLabyrinthPendingNode).toBeNull();
     expect(readRunSession().labyrinthMap!.nodes[target]?.cleared).toBe(true);
+    expect(readRunSession().labyrinthMap!.currentNodeId).toBe(target);
   });
 
   it("enterSelectedNode rejects a second enter while a node is pending", () => {
@@ -84,7 +85,7 @@ describe("useLabyrinthController hook", () => {
     expect(onStartBattle).toHaveBeenCalledOnce();
   });
 
-  it("deselects when a locked chamber is requested and never enters it", () => {
+  it("inspects an unexplored chamber without entering it", () => {
     const { result } = renderHook(() => useLabyrinthController());
     const map = readRunSession().labyrinthMap!;
     const locked = Object.values(map.nodes).find(
@@ -99,7 +100,7 @@ describe("useLabyrinthController hook", () => {
       entered = result.current.enterSelectedNode(stubNodeHandlers());
     });
 
-    expect(readRunSession().selectedLabyrinthNodeId).toBeNull();
+    expect(readRunSession().selectedLabyrinthNodeId).toBe(locked!.id);
     expect(entered).toBe(false);
     expect(readRunSession().activeLabyrinthPendingNode).toBeNull();
   });
@@ -122,6 +123,55 @@ describe("useLabyrinthController hook", () => {
     expect(readRunSession().activeLabyrinthPendingNode).toBeNull();
     expect(readRunSession().selectedLabyrinthNodeId).toBeNull();
     expect(readRunSession().labyrinthMap!.nodes[LABYRINTH_ENTRANCE_NODE_ID]?.type).toBe("entrance");
+    expect(readRunSession().labyrinthMap!.currentNodeId).toBeNull();
+  });
+
+  it("descends once from a completed boss and rejects prior-floor entry", () => {
+    const { result } = renderHook(() => useLabyrinthController());
+    const boss = Object.values(readRunSession().labyrinthMap!.nodes).find((node) => node.type === "boss")!;
+    act(() => {
+      result.current.selectNode(boss.id);
+      result.current.descend();
+    });
+    expect(readRunSession().labyrinthMap!.currentFloor).toBe(1);
+    act(() => {
+      dispatchRunSessionCommand((draft) => {
+        draft.session.labyrinthMap!.nodes[boss.id]!.cleared = true;
+        draft.session.labyrinthMap!.currentNodeId = boss.id;
+      });
+      result.current.descend();
+      result.current.descend();
+    });
+    const next = readRunSession().labyrinthMap!;
+    expect(next.currentFloor).toBe(2);
+    expect(next.floors).toHaveLength(3);
+    expect(next.currentNodeId).toBeNull();
+    act(() => {
+      result.current.selectNode(boss.id);
+      result.current.descend();
+    });
+    expect(readRunSession().selectedLabyrinthNodeId).toBeNull();
+    expect(readRunSession().labyrinthMap).toBe(next);
+  });
+
+  it("does not move or clear a room when its destination fails to open", () => {
+    const { result } = renderHook(() => useLabyrinthController());
+    const target = firstReachableId();
+    act(() => result.current.selectNode(target));
+    expect(() =>
+      act(() =>
+        result.current.enterSelectedNode(
+          stubNodeHandlers({
+            onStartBattleWithModifiers: () => {
+              throw new Error("Cannot start battle");
+            },
+          }),
+        ),
+      ),
+    ).toThrow("Cannot start battle");
+    expect(readRunSession().activeLabyrinthPendingNode).toBeNull();
+    expect(readRunSession().labyrinthMap!.currentNodeId).toBeNull();
+    expect(readRunSession().labyrinthMap!.nodes[target]!.cleared).toBe(false);
   });
 
   it("routes corruption chambers to onStartCorruption with room modifiers", () => {

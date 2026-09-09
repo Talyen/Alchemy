@@ -1,7 +1,7 @@
 import type { RefObject } from "react";
 import { ShineBorder } from "@/components/ui/shine-border";
 import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
-import type { BestiaryEntry, EnemyAttackEffect } from "@/lib/game-data";
+import type { BestiaryEntry } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import { SHINE_PALETTES } from "../../config";
 import { DescriptionLines } from "../card-description-ui";
@@ -21,7 +21,6 @@ export function ActorTooltip({
   title,
   descriptionLines,
   currentEnemy,
-  currentEnemyAttackEffects,
   activeLabyrinthModifiers,
   triggerRef,
   visible,
@@ -29,7 +28,6 @@ export function ActorTooltip({
   title: string;
   descriptionLines: string[] | undefined;
   currentEnemy: BestiaryEntry | undefined;
-  currentEnemyAttackEffects: EnemyAttackEffect[] | undefined;
   activeLabyrinthModifiers?: EncounterCombatTraitId[] | undefined;
   triggerRef: RefObject<HTMLElement | null>;
   visible: boolean;
@@ -38,7 +36,6 @@ export function ActorTooltip({
     return (
       <EnemyTooltip
         entry={currentEnemy}
-        attackEffects={currentEnemyAttackEffects}
         labyrinthModifiers={activeLabyrinthModifiers ?? []}
         triggerRef={triggerRef}
         visible={visible}

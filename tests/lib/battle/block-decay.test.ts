@@ -8,14 +8,15 @@ import { defaultTrinketManifest } from "../../fixtures/default-battle-state";
 
 function makeState(overrides: Partial<BattleState> = {}): BattleState {
   return makeTestBattleState({
+    currentEnemy: { ...makeTestBattleState().currentEnemy, abilityIds: ["slash", "bash", "sunder"] },
+    rng: () => 0.99,
     playerHealth: 30,
     playerMaxHealth: 30,
     playerStatuses: { ...makeTestBattleState().playerStatuses, block: 10 },
     enemyHealth: 30,
     enemyMaxHealth: 30,
     enemyStatuses: { ...makeTestBattleState().enemyStatuses },
-    enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 4 }],
-    deck: [makeTestBattleState().deck[0]],
+    deck: [],
     mana: 4,
     maxMana: 4,
     talentEffects: defaultTalentEffects,
@@ -33,7 +34,7 @@ describe("block decay timing", () => {
   });
 
   it("block decays when no damage is taken", () => {
-    const state = makeState({ enemyAttackEffects: [] });
+    const state = makeState({ enemyCC: { stunSkipTurns: 1, freezeSkipTurns: 0, cooldown: 0 } });
     const result = endPlayerTurn(state);
 
     expect(result.state.playerHealth).toBe(30);
@@ -50,8 +51,7 @@ describe("block decay timing", () => {
 
   it("block decays during turn transition after enemy phase completes", () => {
     const state = makeState({
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 7 },
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 2 }],
+      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 9 },
     });
     const result = endPlayerTurn(state);
 
@@ -63,13 +63,11 @@ describe("block decay timing", () => {
     const trinketEffects = defaultTrinketManifest({ ironwoodBucklerThornsOnBlock: 1 });
     const decayed = endPlayerTurn(
       makeState({
-        enemyAttackEffects: [],
         trinketEffects,
       }),
     );
     const preserved = endPlayerTurn(
       makeState({
-        enemyAttackEffects: [],
         playerStatuses: { ...makeTestBattleState().playerStatuses, block: 10, haste: 1 },
         trinketEffects,
       }),
@@ -82,7 +80,6 @@ describe("block decay timing", () => {
 
   it("enemy block decays at the start of the enemy phase after the player had an attack window", () => {
     const state = makeState({
-      enemyAttackEffects: [],
       enemyMitigation: { ...makeTestBattleState().enemyMitigation, block: 9 },
     });
     const result = endPlayerTurn(state);
@@ -93,12 +90,11 @@ describe("block decay timing", () => {
     const reinforcedEnemy = {
       ...makeTestBattleState().currentEnemy,
       traits: [ENCOUNTER_TRAITS.reinforced.enemyTrait],
-      attackEffects: [],
+      abilityIds: ["slash", "bash", "sunder"],
     };
     const first = endPlayerTurn(
       makeState({
         currentEnemy: reinforcedEnemy,
-        enemyAttackEffects: [],
         enemyMitigation: { ...makeTestBattleState().enemyMitigation, block: 0 },
       }),
     );

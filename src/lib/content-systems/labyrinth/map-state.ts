@@ -9,7 +9,7 @@ export function floorNodes(map: LabyrinthMap, depth: number): LabyrinthNode[] {
 
 export function isNodeReachable(map: LabyrinthMap, nodeId: string): boolean {
   const node = map.nodes[nodeId];
-  if (!node || node.cleared) return false;
+  if (!node || node.cleared || node.floor !== map.currentFloor) return false;
 
   for (const candidate of Object.values(map.nodes)) {
     if (!candidate.cleared) continue;
@@ -29,9 +29,20 @@ export function canEnterLabyrinthNode(map: LabyrinthMap, nodeId: string): boolea
   return labyrinthNodeVisualState(map, nodeId) === "reachable";
 }
 
+export function canInspectLabyrinthNode(map: LabyrinthMap, nodeId: string): boolean {
+  const node = map.nodes[nodeId];
+  return Boolean(node && node.floor === map.currentFloor && node.type !== "entrance");
+}
+
+export function canDescendFromLabyrinthNode(map: LabyrinthMap, nodeId: string): boolean {
+  const node = map.nodes[nodeId];
+  return Boolean(node && node.floor === map.currentFloor && node.type === "boss" && node.cleared);
+}
+
 export function cloneLabyrinthMap(map: LabyrinthMap): LabyrinthMap {
   return {
     currentFloor: map.currentFloor,
+    currentNodeId: map.currentNodeId,
     floors: map.floors.map((floor) => ({ ...floor, nodeIds: [...floor.nodeIds] })),
     nodes: Object.fromEntries(
       Object.entries(map.nodes).map(([id, node]) => [
@@ -52,6 +63,7 @@ export function withClearedNode(map: LabyrinthMap, nodeId: string): LabyrinthMap
   if (!node || node.cleared) return map;
   return {
     ...map,
+    currentNodeId: node.floor === map.currentFloor ? nodeId : map.currentNodeId,
     nodes: {
       ...map.nodes,
       [nodeId]: { ...node, cleared: true },

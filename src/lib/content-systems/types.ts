@@ -48,4 +48,5 @@ export interface LabyrinthMap {
   floors: LabyrinthFloor[];
   nodes: Record<string, LabyrinthNode>;
   currentFloor: number;
+  currentNodeId: string | null;
 }

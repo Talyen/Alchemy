@@ -469,6 +469,7 @@ export const CURRENT_SCHEMA_SAVE_FIXTURES_BY_SOURCE_VERSION: Record<number, () =
   12: currentSchemaV12Save,
   13: currentSchemaV13Save,
   14: () => withVersion(currentSchemaSave(), 14),
+  15: enemyAbilitiesV15Save,
 };
 
 const FIXTURE_LIVE_SLASH = {
@@ -646,8 +647,67 @@ function recurringTrinketsV14Save() {
   );
 }
 
+function enemyAbilitiesV15Save() {
+  const save = currentSchemaMidCombatTrinketSave();
+  const run = save.activeRun as unknown as Record<string, unknown>;
+  const combat = run.activeCombat as Record<string, unknown>;
+  const battle = combat.battleState as Record<string, unknown>;
+  const legacyBattle = {
+    ...battle,
+    currentEnemy: {
+      id: "vampire",
+      title: "Vampire",
+      subtitle: "Elite",
+      art: "vampire.webp",
+      enemyType: "elite",
+      descriptionLines: [],
+      traits: [{ id: "vampire", title: "Vampire", description: "Has a 10% chance to Leech" }],
+      attackEffects: [{ kind: "damage", damageType: "bleed", amount: 2 }],
+    },
+    turnPhase: "enemy",
+    enemyAttackEffects: [{ kind: "damage", damageType: "bleed", amount: 5 }],
+    enemyMitigation: { block: 4, armor: 2, forge: 3 },
+    roomScalingMultiplier: 1.4,
+    difficultyModifiers: [{ kind: "increase-enemy-damage", amount: 2 }],
+    flags: {
+      enemyNextAttackCrit: true,
+      enemyNextAttackBonus: 1,
+      enemyNextAttackHolyBonus: 2,
+      enemyFirstHitDoubleUsed: true,
+    },
+  };
+  return withVersion(
+    {
+      ...save,
+      encounteredEnemyIds: ["vampire"],
+      activeRun: {
+        ...run,
+        rng: { seed: 42, counters: { rewards: 0, destinations: 0, events: 0, shops: 0, world: 17 } },
+        activeCombat: {
+          ...combat,
+          battleState: legacyBattle,
+          pendingBattleTransition: {
+            kind: "enemy-turn",
+            playerTurnSkipped: false,
+            resultState: {
+              ...legacyBattle,
+              turnPhase: "player",
+              playerHealth: 14,
+              enemyHealth: 17,
+              gold: 33,
+              playerDodgeCount: 2,
+            },
+          },
+        },
+      },
+    },
+    15,
+  );
+}
+
 export const MIGRATION_SCENARIO_FIXTURES: Record<string, () => Record<string, unknown>> = {
   midCombatTrinket: currentSchemaMidCombatTrinketSave,
+  enemyAbilities: enemyAbilitiesV15Save,
   recurringTrinkets: recurringTrinketsV14Save,
   wildwoodTrinketReward: currentSchemaWildwoodTrinketRewardSave,
   wildwoodCardReward: currentSchemaWildwoodCardRewardSave,

@@ -80,7 +80,8 @@ describe("createBattleState", () => {
       rng: seededRng(42),
     });
     expect(result.enemyHealth).toBe(Math.round(BASE_ENEMY_HEALTH * (1 + 4 * ROOM_SCALING_INCREMENT)));
-    expect(result.enemyAttackEffects[0].amount).toBe(9);
+    expect(result.currentEnemy.abilityIds).toEqual(skeleton.abilityIds);
+    expect(result.lastEnemyAbilityId).toBeNull();
   });
 
   it("scales elite enemy health by ELITE_HP_MULTIPLIER", () => {
@@ -232,89 +233,6 @@ describe("createBattleState", () => {
       expect(result.activeCompanion?.id).toBe("wolf");
     });
 
-    it("increase-enemy-physical-damage boosts matching damage effect", () => {
-      const withBoss: BestiaryEntry = {
-        ...skeleton,
-        attackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
-      };
-      const result = createBattleState({
-        runDeck: battleDeck,
-        currentEnemy: withBoss,
-        difficultyModifiers: [{ kind: "increase-enemy-physical-damage", amount: 3 }],
-        rng: seededRng(42),
-      });
-      const dmgEffect = result.enemyAttackEffects.find((e) => e.kind === "damage")!;
-      expect(dmgEffect.amount).toBe(11);
-    });
-
-    it("increase-enemy-damage boosts any damage effect", () => {
-      const withBoss: BestiaryEntry = {
-        ...skeleton,
-        attackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
-      };
-      const result = createBattleState({
-        runDeck: battleDeck,
-        currentEnemy: withBoss,
-        difficultyModifiers: [{ kind: "increase-enemy-damage", amount: 4 }],
-        rng: seededRng(42),
-      });
-      const dmgEffect = result.enemyAttackEffects.find((e) => e.kind === "damage")!;
-      expect(dmgEffect.amount).toBe(12);
-    });
-
-    it("increase-enemy-status boosts matching status effect", () => {
-      const withBoss: BestiaryEntry = {
-        ...skeleton,
-        attackEffects: [
-          { kind: "damage", damageType: "physical", amount: 6 },
-          { kind: "player-status", status: "poison", amount: 2 },
-        ],
-      };
-      const result = createBattleState({
-        runDeck: battleDeck,
-        currentEnemy: withBoss,
-        difficultyModifiers: [{ kind: "increase-enemy-status", status: "poison", amount: 2 }],
-        rng: seededRng(42),
-      });
-      const poisonEffect = result.enemyAttackEffects.find((e) => e.kind === "player-status" && e.status === "poison")!;
-      expect(poisonEffect.amount).toBe(4);
-      const dmgEffect = result.enemyAttackEffects.find((e) => e.kind === "damage")!;
-      expect(dmgEffect.amount).toBe(6);
-    });
-
-    it("increase-enemy-status boosts matching freeze damage effect", () => {
-      const withBoss: BestiaryEntry = {
-        ...skeleton,
-        attackEffects: [
-          { kind: "damage", damageType: "physical", amount: 6 },
-          { kind: "damage", damageType: "freeze", amount: 2 },
-        ],
-      };
-      const result = createBattleState({
-        runDeck: battleDeck,
-        currentEnemy: withBoss,
-        difficultyModifiers: [{ kind: "increase-enemy-status", status: "freeze", amount: 2 }],
-        rng: seededRng(42),
-      });
-      const freezeEffect = result.enemyAttackEffects.find((e) => e.kind === "damage" && e.damageType === "freeze")!;
-      expect(freezeEffect.amount).toBe(4);
-    });
-
-    it("enemy-attacks-gain-leech adds lifesteal to damage effects", () => {
-      const withBoss: BestiaryEntry = {
-        ...skeleton,
-        attackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
-      };
-      const result = createBattleState({
-        runDeck: battleDeck,
-        currentEnemy: withBoss,
-        difficultyModifiers: [{ kind: "enemy-attacks-gain-leech" }],
-        rng: seededRng(42),
-      });
-      const dmgEffect = result.enemyAttackEffects.find((e) => e.kind === "damage")!;
-      expect((dmgEffect as typeof dmgEffect & { lifesteal: boolean }).lifesteal).toBe(true);
-    });
-
     it("multiple modifiers apply simultaneously", () => {
       const mods: DifficultyModifier[] = [
         { kind: "start-block", amount: 5 },
@@ -331,24 +249,6 @@ describe("createBattleState", () => {
       expect(result.enemyMitigation.armor).toBe(2);
       expect(result.mana).toBe(BASE_PLAYER_MANA + 1);
       expect(result.maxMana).toBe(BASE_PLAYER_MANA + 1);
-    });
-
-    it("increase-enemy-status does not affect non-matching status", () => {
-      const withBoss: BestiaryEntry = {
-        ...skeleton,
-        attackEffects: [
-          { kind: "damage", damageType: "physical", amount: 6 },
-          { kind: "player-status", status: "burn", amount: 2 },
-        ],
-      };
-      const result = createBattleState({
-        runDeck: battleDeck,
-        currentEnemy: withBoss,
-        difficultyModifiers: [{ kind: "increase-enemy-status", status: "poison", amount: 2 }],
-        rng: seededRng(42),
-      });
-      const burnEffect = result.enemyAttackEffects.find((e) => e.kind === "player-status" && e.status === "burn")!;
-      expect(burnEffect.amount).toBe(2);
     });
   });
 });

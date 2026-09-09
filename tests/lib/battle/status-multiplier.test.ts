@@ -60,7 +60,7 @@ describe("getEnemyDamageMultiplier", () => {
         art: "",
         enemyType: "normal",
         traits: [{ id: "brittle-bones", title: "Brittle Bones", description: "Weak to Holy" }],
-        attackEffects: [],
+        abilityIds: ["slash", "bash", "block"],
       },
     });
     const result = getEnemyDamageMultiplier(state, "holy");

@@ -1,10 +1,11 @@
+import { makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { computeTalentEffects, companionLibrary, type BattleCard, type KeywordId } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { applyLeechHealing } from "@/lib/battle/damage-rider-leech";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
-import { processEnemyAttack } from "@/lib/battle/enemy-turn-attack";
+import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { advanceToPlayerTurn, reduceSkipTurns } from "@/lib/battle/player-turn-transition";
@@ -71,9 +72,12 @@ describe("repeatable talent replacements", () => {
       playerStatuses: { block: 2 },
       talentEffects: talents("block", "block-reduce-burn"),
       currentEnemy: { traits: [{ id: "earth-elemental", title: "Earth Elemental", description: "" }] },
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 2 }],
     });
-    const after = processEnemyAttack(state, []);
+    const after = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 2 }] }),
+      [],
+    );
     expect(after.enemyHealth).toBe(0);
     expect(after.playerHealth).toBe(state.playerHealth);
   });
@@ -152,7 +156,6 @@ describe("repeatable talent replacements", () => {
       mana: 0,
       maxMana: 3,
       talentEffects: talents("mana", "mana-arcane-wish"),
-      enemyAttackEffects: [],
     });
     const ended = endPlayerTurn(state);
     expect(ended.state.mana).toBe(4);
@@ -233,15 +236,21 @@ describe("repeatable talent replacements", () => {
 
   it("Tailwind draws for repeated Dodges and retains those cards into the next hand", () => {
     const state = battle({
+      currentEnemy: { abilityIds: ["slash", "fangs", "block"] },
       talentEffects: { ...talents("dodge", "dodge-rolling-recovery"), dodgeChance: 95 },
       rng: () => 0.5,
       deck: Array.from({ length: 10 }, (_, i) => attack(`draw-${i}`)),
-      enemyAttackEffects: [
-        { kind: "damage", damageType: "physical", amount: 2 },
-        { kind: "damage", damageType: "physical", amount: 2 },
-      ],
     });
-    const dodged = processEnemyAttack(state, []);
+    const dodged = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({
+        effects: [
+          { kind: "damage", damageType: "physical", amount: 2 },
+          { kind: "damage", damageType: "physical", amount: 2 },
+        ],
+      }),
+      [],
+    );
     expect(dodged.hand).toHaveLength(2);
     const after = endPlayerTurn(state).state;
     expect(after.hand.length).toBeGreaterThan(5);
@@ -330,33 +339,62 @@ describe("repeatable talent replacements", () => {
       talentEffects: talents("burn", "burn-dmg-5"),
       enemyStatuses: { burn: 1 },
       rng: () => 0.01,
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 2 }],
     });
-    const first = processEnemyAttack(state, []);
-    expect(first.enemyHealth).toBe(98);
-    expect(processEnemyAttack(first, []).enemyHealth).toBe(96);
-    expect(processEnemyAttack({ ...state, enemyStatuses: { ...state.enemyStatuses, burn: 0 } }, []).enemyHealth).toBe(
-      100,
+    const first = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 2 }] }),
+      [],
     );
+    expect(first.enemyHealth).toBe(98);
+    expect(
+      applyEnemyAbility(
+        first,
+        makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 2 }] }),
+        [],
+      ).enemyHealth,
+    ).toBe(96);
+    expect(
+      applyEnemyAbility(
+        { ...state, enemyStatuses: { ...state.enemyStatuses, burn: 0 } },
+        makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 2 }] }),
+        [],
+      ).enemyHealth,
+    ).toBe(100);
   });
 
   it("Sun-Struck Shield reacts to blocked attacks but not reflected damage", () => {
     const state = battle({
       talentEffects: talents("block", "block-reduce-burn"),
       playerStatuses: { block: 10 },
-      enemyAttackEffects: [
-        { kind: "damage", damageType: "physical", amount: 2 },
-        { kind: "damage", damageType: "physical", amount: 2 },
-      ],
     });
-    expect(processEnemyAttack(state, []).enemyHealth).toBe(98);
+    expect(
+      applyEnemyAbility(
+        state,
+        makeEnemyTestCard({
+          effects: [
+            { kind: "damage", damageType: "physical", amount: 2 },
+            { kind: "damage", damageType: "physical", amount: 2 },
+          ],
+        }),
+        [],
+      ).enemyHealth,
+    ).toBe(98);
     expect(
       processEnemyDamageEffect(state, { kind: "damage", damageType: "physical", amount: 2 }, [], {
         skipTraitReactions: true,
       }).enemyHealth,
     ).toBe(100);
     expect(
-      processEnemyAttack({ ...state, playerStatuses: { ...state.playerStatuses, block: 0 } }, []).enemyHealth,
+      applyEnemyAbility(
+        { ...state, playerStatuses: { ...state.playerStatuses, block: 0 } },
+        makeEnemyTestCard({
+          effects: [
+            { kind: "damage", damageType: "physical", amount: 2 },
+            { kind: "damage", damageType: "physical", amount: 2 },
+          ],
+        }),
+        [],
+      ).enemyHealth,
     ).toBe(100);
   });
 
@@ -365,12 +403,17 @@ describe("repeatable talent replacements", () => {
       enemyHealth: 1,
       playerStatuses: { block: 2 },
       talentEffects: talents("block", "block-reduce-burn"),
-      enemyAttackEffects: [
-        { kind: "damage", damageType: "physical", amount: 2 },
-        { kind: "damage", damageType: "physical", amount: 100 },
-      ],
     });
-    const after = processEnemyAttack(state, []);
+    const after = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({
+        effects: [
+          { kind: "damage", damageType: "physical", amount: 2 },
+          { kind: "damage", damageType: "physical", amount: 100 },
+        ],
+      }),
+      [],
+    );
     expect(after.enemyHealth).toBe(0);
     expect(after.playerHealth).toBe(state.playerHealth);
     expect(after.deathsDoorUsed).toBe(false);
@@ -429,12 +472,17 @@ describe("repeatable talent replacements", () => {
       deck: [attack("draw1"), attack("draw2")],
       flags: { companionNextAttackBonus: 2 },
       rng: () => 0.5,
-      enemyAttackEffects: [
-        { kind: "damage", damageType: "physical", amount: 2 },
-        { kind: "damage", damageType: "physical", amount: 2 },
-      ],
     });
-    const after = processEnemyAttack(state, []);
+    const after = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({
+        effects: [
+          { kind: "damage", damageType: "physical", amount: 2 },
+          { kind: "damage", damageType: "physical", amount: 2 },
+        ],
+      }),
+      [],
+    );
     expect(after.hand).toHaveLength(2);
     expect(after.enemyHealth).toBe(96);
     expect(after.flags.companionNextAttackBonus).toBe(0);
@@ -445,9 +493,12 @@ describe("repeatable talent replacements", () => {
     const state = battle({
       playerStatuses: { block: 20 },
       talentEffects: { ...talents("block", "block-reduce-burn"), holyBlockPercentFromDamage: 100 },
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 2 }],
     });
-    const after = processEnemyAttack(state, []);
+    const after = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 2 }] }),
+      [],
+    );
     expect(after.playerStatuses.block).toBe(19);
     expect(after.enemyHealth).toBe(99);
   });

@@ -68,6 +68,25 @@ immunity with its turn-start 2-Poison cleanse and retaliation. The obsolete
 one-use flags are removed even when already spent. Ownership, Boons, other
 combat effects, and battle progress are preserved.
 
+## Schema 16 — enemy card abilities
+
+`migrateV15ToV16` replaces repeated enemy attack arrays with canonical
+`currentEnemy.abilityIds` and an initially empty `lastEnemyAbilityId`. It updates
+renamed trait metadata without changing enemy IDs or discoveries and retires the
+old Blood Cultist, Vampire, and Holy-priming flags. Existing Health, statuses,
+mitigation, difficulty modifiers, room scaling, RNG counters, and earned rewards
+remain intact. The legacy encounter Thorns marker moves into
+`flags.legacyEnemyThornsReady` while preserving the visible stack, allowing new
+card-granted Thorns to coexist with its original retaliation.
+
+The same transformation covers active and parked runs and both opening-draw and
+enemy-turn saved result states. Already-resolved results retain their Health,
+Gold, Dodge count, and continuation meaning; resume commits them without another
+ability choice or duplicate rewards. The following action uses the new repertoire.
+New snapshots retain valid last-ability history. Normalization repairs missing or
+unsupported ability references from the enemy catalog and restores known trait
+metadata for inspection, without discarding the battle.
+
 ## Content versions 2 and 3 — card IDs
 
 `src/lib/validation/migration/content-steps.ts` remaps `sunder-armor` to `sunder`

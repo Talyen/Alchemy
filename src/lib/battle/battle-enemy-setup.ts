@@ -1,4 +1,5 @@
-import type { BestiaryEntry, DifficultyModifier, EnemyAttackEffect } from "@/lib/game-data";
+import type { BestiaryEntry, DifficultyModifier, EnemyAbilityDamageEffect } from "@/lib/game-data";
+import type { BattleState } from "./types";
 import {
   BASE_ENEMY_HEALTH,
   BOSS_HEALTH_MULTIPLIER,
@@ -16,21 +17,6 @@ function scaleEnemyHealth(enemy: BestiaryEntry, roomMul: number): number {
   return Math.round(BASE_ENEMY_HEALTH * roomMul * hpTypeMul);
 }
 
-function scaleAttackEffects(effects: EnemyAttackEffect[], roomMul: number): EnemyAttackEffect[] {
-  return effects.map((effect) => {
-    const scaledAmount = Math.round(effect.amount * roomMul);
-    if (effect.kind === "damage") {
-      return {
-        kind: "damage",
-        damageType: effect.damageType,
-        amount: scaledAmount,
-        ...(effect.lifesteal !== undefined ? { lifesteal: effect.lifesteal } : {}),
-      };
-    }
-    return { kind: "player-status", status: effect.status, amount: scaledAmount };
-  });
-}
-
 function scaleEnemyRegeneration(enemy: BestiaryEntry, roomMul: number): number {
   if (!enemy.traits.some((t) => t.id === "regeneration")) return 0;
   const base = enemy.enemyType === "boss" ? ENEMY_BOSS_REGENERATION : ENEMY_BASE_REGENERATION;
@@ -43,44 +29,35 @@ function buildScaledEnemy(enemy: BestiaryEntry, totalRoomsInRun = 0) {
   return {
     roomMul,
     scaledEnemyHealth: scaleEnemyHealth(enemy, roomMul),
-    scaledEnemyAttackEffects: scaleAttackEffects(enemy.attackEffects, roomMul),
     enemyRegeneration: scaleEnemyRegeneration(enemy, roomMul),
   };
 }
 
-function applyDifficultyAttackModifiers(effects: EnemyAttackEffect[], modifiers: DifficultyModifier[]) {
-  const dmgMul = modifierAmount(modifiers, "enemy-damage-multiplier", 1);
-  const damageBonus = modifiers
-    .filter((m) => m.kind === "increase-enemy-physical-damage" || m.kind === "increase-enemy-damage")
-    .reduce((sum, m) => sum + m.amount, 0);
-  const statusBonusById = new Map<string, number>();
-  for (const mod of modifiers) {
-    if (mod.kind === "increase-enemy-status") {
-      statusBonusById.set(mod.status, (statusBonusById.get(mod.status) ?? 0) + mod.amount);
+export function scaleEnemyAbilityDamage(
+  state: Pick<BattleState, "roomScalingMultiplier" | "difficultyModifiers">,
+  effect: EnemyAbilityDamageEffect,
+): EnemyAbilityDamageEffect {
+  const modifiers = state.difficultyModifiers;
+  const damageMultiplier = modifierAmount(modifiers, "enemy-damage-multiplier", 1);
+  let amount = Math.round(effect.amount * state.roomScalingMultiplier);
+  amount = Math.round(amount * damageMultiplier);
+  for (const modifier of modifiers) {
+    if (modifier.kind === "increase-enemy-physical-damage" || modifier.kind === "increase-enemy-damage") {
+      amount += modifier.amount;
+    }
+    if (
+      modifier.kind === "increase-enemy-status" &&
+      (effect.damageType === "stun" || effect.damageType === "freeze") &&
+      modifier.status === effect.damageType
+    ) {
+      amount += modifier.amount;
     }
   }
-  const attacksGainLeech = modifiers.some((m) => m.kind === "enemy-attacks-gain-leech");
-
-  return effects.map((effect) => {
-    if (effect.kind === "damage") {
-      let amount = effect.amount;
-      if (dmgMul !== 1) amount = Math.round(amount * dmgMul);
-      if (damageBonus) amount += damageBonus;
-      if (effect.damageType === "stun" || effect.damageType === "freeze") {
-        amount += statusBonusById.get(effect.damageType) ?? 0;
-      }
-      return {
-        ...effect,
-        amount,
-        ...(attacksGainLeech ? { lifesteal: true } : {}),
-      };
-    }
-    const statusBonus = statusBonusById.get(effect.status) ?? 0;
-    if (statusBonus) {
-      return { ...effect, amount: effect.amount + statusBonus };
-    }
-    return effect;
-  });
+  return {
+    ...effect,
+    amount,
+    ...(modifiers.some((modifier) => modifier.kind === "enemy-attacks-gain-leech") ? { lifesteal: true } : {}),
+  };
 }
 
 function isStartCompanionMod(mod: DifficultyModifier): mod is Extract<DifficultyModifier, { kind: "start-companion" }> {
@@ -120,11 +97,7 @@ export function initializeEnemyState(
   battleRooms: number,
   battleDiffs: DifficultyModifier[],
 ) {
-  const { scaledEnemyHealth, scaledEnemyAttackEffects, enemyRegeneration, roomMul } = buildScaledEnemy(
-    battleEnemy,
-    battleRooms,
-  );
-  const modifiedEffects = applyDifficultyAttackModifiers(scaledEnemyAttackEffects, battleDiffs);
+  const { scaledEnemyHealth, enemyRegeneration, roomMul } = buildScaledEnemy(battleEnemy, battleRooms);
   const { startingArmor, startBlock, manaBonus, startCompanion, startCompanionId, startingEnemyBlock } =
     computeStartingStatuses(battleDiffs, battleEnemy, roomMul);
 
@@ -133,7 +106,6 @@ export function initializeEnemyState(
 
   return {
     enemyMaxHealth,
-    modifiedEffects,
     enemyRegeneration,
     roomScalingMultiplier: roomMul,
     startingArmor,

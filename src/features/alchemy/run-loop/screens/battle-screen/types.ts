@@ -25,7 +25,6 @@ export type BattleScreenState = Pick<
   | "activeCompanion"
   | "companionDamageBuff"
   | "currentEnemy"
-  | "enemyAttackEffects"
   | "turnPhase"
   | "playerCC"
   | "enemyCC"

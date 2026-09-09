@@ -169,7 +169,7 @@ export function applyHolyLifesteal(state: BattleState, damage: number, combatTex
   if (damage <= 0 || state.talentEffects.holyLifestealPercent <= 0) return state;
   const healAmount = scalePercent(damage, state.talentEffects.holyLifestealPercent);
   if (healAmount <= 0) return state;
-  return executePlayerHealing(state, healAmount, combatTexts);
+  return executePlayerHealing(state, scaledGearLeechHeal(healAmount, state.gearEffects), combatTexts);
 }
 
 export function applyDamageBlock(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {

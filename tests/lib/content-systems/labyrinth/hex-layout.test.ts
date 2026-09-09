@@ -10,6 +10,7 @@ import {
   areHexesAdjacent,
   hexKey,
   isHexInGenerationBounds,
+  hexVisualColumn,
 } from "@/lib/content-systems/labyrinth/hex-grid";
 import { createSeededRng } from "@/lib/utils";
 import type { LabyrinthGridPosition } from "@/lib/content-systems/types";
@@ -43,23 +44,55 @@ function assertLayoutConstraints(layout: LabyrinthGridPosition[]) {
 }
 
 describe("generateFloorLayout", () => {
-  it("validates every compact template, including loops and optional dead ends", () => {
+  it("validates every five-row snake with only local loops and optional pockets", () => {
     for (const count of [12, 13, 14]) {
       const variants = new Set<string>();
       const cycles = new Set<number>();
-      const leaves = new Set<number>();
       for (let variant = 0; variant < 6; variant += 1) {
         const layout = generateFloorLayout(count, () => variant / 6);
         expect(layout).toHaveLength(count);
         assertLayoutConstraints(layout);
-        expect(Math.max(...layout.map((p) => p.row))).toBeLessThanOrEqual(6);
+        expect(Math.max(...layout.map((p) => p.row))).toBe(4);
+        expect(Math.max(...layout.map(hexVisualColumn)) - Math.min(...layout.map(hexVisualColumn))).toBe(4);
+        const distances = distancesFromEntry(layout);
+        const route = [layout.length - 1];
+        while (route[0] !== 0) {
+          const current = route[0]!;
+          route.unshift(
+            layout.findIndex(
+              (position, index) =>
+                distances[index] === distances[current]! - 1 && areHexesAdjacent(position, layout[current]!),
+            ),
+          );
+        }
+        const horizontalRuns: number[] = [];
+        for (let step = 1; step < route.length; step += 1) {
+          const from = layout[route[step - 1]!]!;
+          const to = layout[route[step]!]!;
+          expect(to.row).toBeGreaterThanOrEqual(from.row);
+          if (from.row === to.row) {
+            const direction = Math.sign(to.col - from.col);
+            if (direction !== horizontalRuns.at(-1)) horizontalRuns.push(direction);
+          }
+        }
+        expect(horizontalRuns).toHaveLength(3);
+        const offRoute = layout.map((_, index) => index).filter((index) => !route.includes(index));
+        expect(offRoute.length).toBeGreaterThan(0);
+        for (const index of offRoute) {
+          const neighbors = offRoute.filter((other) => areHexesAdjacent(layout[index]!, layout[other]!));
+          expect(neighbors.length).toBeLessThanOrEqual(1);
+          const pocket = [index, ...neighbors];
+          const attachments = route.flatMap((main, order) =>
+            pocket.some((side) => areHexesAdjacent(layout[main]!, layout[side]!)) ? [order] : [],
+          );
+          expect(attachments.length).toBeGreaterThan(0);
+          expect(Math.max(...attachments) - Math.min(...attachments)).toBeLessThanOrEqual(1);
+        }
         variants.add(JSON.stringify(layout));
         cycles.add(floorLayoutCycleCount(layout));
-        leaves.add(layout.filter((_, i) => hexDegree(layout, i) === 1).length);
       }
       expect(variants.size).toBe(6);
-      expect(cycles).toEqual(new Set([1, 2, 3]));
-      expect(leaves).toEqual(new Set([2, 3, 4]));
+      expect(cycles).toEqual(new Set([0, 1]));
     }
   });
 

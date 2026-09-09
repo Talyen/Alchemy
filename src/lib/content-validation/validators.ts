@@ -1,3 +1,4 @@
+import { findEnemyAbilityCard } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import {
   cardLibrary,
@@ -106,15 +107,8 @@ export function validateEnemies(collector: ReturnType<typeof createCollector>): 
   for (const enemy of enemyBestiary) {
     collectSchemaIssues(EnemyContentSchema, enemy, "enemies", enemy.id, collector.error);
     validateArt("enemies", enemy.id, enemy.art, collector.error, collector.warning);
-    if (enemy.attackEffects.some((effect) => effect.amount <= 0)) {
-      collector.warning("balance", enemy.id, "Enemy has a zero or negative attack value");
-    }
-    if (
-      enemy.attackEffects.some(
-        (effect) => effect.kind === "player-status" && (effect.status === "stun" || effect.status === "freeze"),
-      )
-    ) {
-      collector.error("enemies", enemy.id, "Enemy Stun and Freeze attacks must be damage effects");
+    for (const id of enemy.abilityIds) {
+      if (!findEnemyAbilityCard(id)) collector.error("enemies", enemy.id, `Unsupported enemy ability: ${id}`);
     }
     for (const issue of validateEnemyTraitDescriptionParity(enemy)) collector.issues.push(issue);
   }

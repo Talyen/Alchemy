@@ -10,7 +10,7 @@ import {
   mergeCombatText,
   payKillPayouts,
 } from "./combat-text";
-import { getCardKeywords, isPotionCard, type BattleCard, type EnemyAttackEffect } from "@/lib/game-data";
+import { getCardKeywords, isPotionCard, type BattleCard } from "@/lib/game-data";
 import {
   type BattleResolution,
   type BattleState,
@@ -70,7 +70,7 @@ function isCardInHand(state: BattleState, card: BattleCard, index: number): bool
   return !!currentCard && currentCard.id === card.id && currentCard.uid === card.uid;
 }
 
-function applyMortarAndPestlePotionUse(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]) {
+export function applyMortarAndPestlePotionUse(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]) {
   if (!isPotionCard(card) || state.trinketEffects.mortarPestlePoisonOnPotionUse <= 0) return state;
   return dealPlayerTypedHit(state, "poison", state.trinketEffects.mortarPestlePoisonOnPotionUse, combatTexts);
 }
@@ -134,10 +134,7 @@ function executeCardPlayState(
     nextState = applyMortarAndPestlePotionUse(nextState, card, combatTexts);
   }
 
-  nextState = applyNatureCardPlayTalents(nextState, card, combatTexts);
-  if (state.talentEffects.companionActsOnCard && getCardKeywords(card).includes("companion")) {
-    nextState = processCompanionTurnStart(nextState, combatTexts);
-  }
+  nextState = applyCardPlayTalentRewards(nextState, card, combatTexts);
 
   nextState = applyTwinCasting(nextState, card);
 
@@ -197,6 +194,18 @@ function applyResonantChimeTrinket(state: BattleState, combatTexts: CombatTextEv
     return { ...afterMana, flags: { ...state.flags, resonantChimeUsedThisTurn: true } };
   }
   return state;
+}
+
+export function applyCardPlayTalentRewards(
+  state: BattleState,
+  card: BattleCard,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  let nextState = applyNatureCardPlayTalents(state, card, combatTexts);
+  if (nextState.talentEffects.companionActsOnCard && getCardKeywords(card).includes("companion")) {
+    nextState = processCompanionTurnStart(nextState, combatTexts);
+  }
+  return nextState;
 }
 
 function applyNatureCardPlayTalents(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]): BattleState {
@@ -344,8 +353,4 @@ export function playBattleCardResolved(
   if (prepared.harvest) nextState = returnHarvestCard(nextState, card);
 
   return { state: nextState, combatTexts };
-}
-
-export function enemyAttackDealsDamage(effects: readonly EnemyAttackEffect[] | null | undefined): boolean {
-  return (effects ?? []).some((effect) => effect.kind === "damage");
 }

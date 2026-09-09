@@ -24,6 +24,18 @@ Add the union member in [`src/lib/game-data/types.ts`](../types.ts), a schema de
 
 - Numeric upgrades and corruption share `updateCardNumericValue` in `src/lib/corruption/numeric.ts`. Targets can address nested scheduled effects when their amounts have separate description lines. A scheduled effect sharing one authored amount with an immediate effect changes with that amount; separately authored delayed amounts change independently. “Draw a card” represents one editable draw, while schedule durations are not editable magnitude targets. Keep original catalog effects immutable.
 
+## Enemy abilities
+
+Enemies reference canonical cards through `BestiaryEntry.abilityIds`; they do not
+author a parallel effect library. `game-data/enemy-abilities.ts` validates the
+supported subset, including every chance branch and conditional field.
+`battle/enemy-turn-attack.ts` resolves that subset from the enemy's perspective,
+using shared incoming-damage, crowd-control, healing, and mitigation primitives.
+Hero-only resources and rewards never run for enemy self-benefits. Card-granted
+Thorns and queued Bleed Leech use the same status semantics as hero cards while
+retaining existing encounter exceptions. Selection and trait limits are owned by
+[GAME_RULES](../../../../docs/GAME_RULES.md#enemy-abilities-and-traits).
+
 ## Tests
 
 - [`tests/lib/battle/effect-handlers-registry.test.ts`](../../../../tests/lib/battle/effect-handlers-registry.test.ts) — every non-recursive kind has a handler.

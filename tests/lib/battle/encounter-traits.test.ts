@@ -22,7 +22,7 @@ function enemyWith(...ids: Array<keyof typeof ENCOUNTER_TRAITS>): BestiaryEntry 
     art: "",
     enemyType: "boss",
     traits: ids.map((id) => ENCOUNTER_TRAITS[id].enemyTrait),
-    attackEffects: [{ kind: "damage", damageType: "physical", amount: 1 }],
+    abilityIds: ["slash", "bash", "block"],
   };
 }
 
@@ -41,24 +41,25 @@ function card(overrides: Partial<BattleCard> = {}): BattleCard {
 
 describe("encounter trait enemy actions", () => {
   it("scales buffs and damage with room depth only when the enemy attacks", () => {
-    const currentEnemy = enemyWith("tempered", "reinforced", "zealot");
+    const currentEnemy = {
+      ...enemyWith("tempered", "reinforced", "zealot"),
+      abilityIds: ["slash", "bash", "frostbolt"],
+    };
     const state = makeTestBattleState({
       currentEnemy,
-      enemyAttackEffects: [{ kind: "damage", damageType: "holy", amount: 1 }],
       roomScalingMultiplier: 2,
       playerHealth: 30,
     });
     const result = endPlayerTurn(state);
     expect(result.state.enemyMitigation.forge).toBe(2);
     expect(result.state.enemyMitigation.block).toBe(4);
-    expect(result.state.playerHealth).toBe(25);
+    expect(result.state.playerHealth).toBe(20);
   });
 
   it("keeps per-turn stat gains on a skipped enemy action but skips action riders", () => {
     const currentEnemy = enemyWith("tempered", "zealot");
     const state = makeTestBattleState({
       currentEnemy,
-      enemyAttackEffects: currentEnemy.attackEffects,
       enemyCC: defaultCcState({ stunSkipTurns: 1 }),
     });
     const result = endPlayerTurn(state);
@@ -69,18 +70,20 @@ describe("encounter trait enemy actions", () => {
 
   it("uses battle RNG for Septic", () => {
     const currentEnemy = enemyWith("septic");
-    const poison = endPlayerTurn(makeTestBattleState({ currentEnemy, enemyAttackEffects: [], rng: () => 0.1 })).state;
-    const bleed = endPlayerTurn(makeTestBattleState({ currentEnemy, enemyAttackEffects: [], rng: () => 0.9 })).state;
+    const poison = endPlayerTurn(makeTestBattleState({ currentEnemy, rng: () => 0.1 })).state;
+    const bleed = endPlayerTurn(makeTestBattleState({ currentEnemy, rng: () => 0.9 })).state;
     expect(poison.playerStatuses.poison).toBe(1);
     expect(bleed.playerStatuses.bleed).toBe(1);
   });
 
   it("applies Plated, Reinforced, and Overgrowth before the attack", () => {
-    const currentEnemy = enemyWith("plated", "reinforced", "overgrowth");
+    const currentEnemy = {
+      ...enemyWith("plated", "reinforced", "overgrowth"),
+      abilityIds: ["slash", "bash", "frostbolt"],
+    };
     const result = endPlayerTurn(
       makeTestBattleState({
         currentEnemy,
-        enemyAttackEffects: [],
         enemyHealth: 10,
         enemyMaxHealth: 20,
         roomScalingMultiplier: 2,
@@ -97,14 +100,14 @@ describe("encounter trait enemy actions", () => {
     ["concussive", "stun", 1],
   ] as const)("applies %s typed damage and build-up", (traitId, status, amount) => {
     const currentEnemy = enemyWith(traitId);
-    const result = endPlayerTurn(makeTestBattleState({ currentEnemy, enemyAttackEffects: [] })).state;
+    const result = endPlayerTurn(makeTestBattleState({ currentEnemy })).state;
     expect(result.playerStatuses[status]).toBe(amount);
     expect(result.playerHealth).toBe(30 - amount);
   });
 
   it("applies Zealot Holy damage without a status rider", () => {
     const currentEnemy = enemyWith("zealot");
-    const result = endPlayerTurn(makeTestBattleState({ currentEnemy, enemyAttackEffects: [] })).state;
+    const result = endPlayerTurn(makeTestBattleState({ currentEnemy })).state;
     expect(result.playerHealth).toBe(28);
   });
 
@@ -114,7 +117,6 @@ describe("encounter trait enemy actions", () => {
     const result = endPlayerTurn(
       makeTestBattleState({
         currentEnemy,
-        enemyAttackEffects: [],
         roomScalingMultiplier: 2,
         playerStatuses: { ...base.playerStatuses, block: 10, armor: 3 },
       }),
@@ -125,9 +127,7 @@ describe("encounter trait enemy actions", () => {
 
   it("Flesheater leeches from its hit and the following Bleed tick", () => {
     const currentEnemy = enemyWith("flesheater");
-    const first = endPlayerTurn(
-      makeTestBattleState({ currentEnemy, enemyAttackEffects: [], enemyHealth: 10, enemyMaxHealth: 20 }),
-    ).state;
+    const first = endPlayerTurn(makeTestBattleState({ currentEnemy, enemyHealth: 10, enemyMaxHealth: 20 })).state;
     expect(first.enemyHealth).toBe(11);
     expect(first.playerStatuses.bleed).toBe(1);
     expect(first.pendingEnemyBleedLeechHealing).toBe(1);
@@ -147,7 +147,6 @@ describe("encounter trait enemy actions", () => {
     const first = endPlayerTurn(
       makeTestBattleState({
         currentEnemy,
-        enemyAttackEffects: [],
         enemyHealth: 10,
         enemyMaxHealth: 20,
         enemyCC: { stunSkipTurns: 0, freezeSkipTurns: enemyFreezeSkipTurns, cooldown: 0 },
@@ -167,7 +166,8 @@ describe("encounter trait card events", () => {
     const played = card({ effects: [{ kind: "random-damage", minAmount: 1, maxAmount: 6 }] });
     const state = patchBattleState({
       currentEnemy: enemyWith(trait),
-      enemyStatuses: { thorns: 1 },
+      enemyStatuses: { thorns: trait === "thorns" ? 1 : 0 },
+      flags: { legacyEnemyThornsReady: trait === "thorns" },
       playerHealth: 10,
       hand: [played],
       mana: 1,
@@ -191,6 +191,7 @@ describe("encounter trait card events", () => {
       enemyHealth: 1,
       enemyMaxHealth: 1,
       enemyStatuses: { thorns: 1 },
+      flags: { legacyEnemyThornsReady: currentEnemy.traits.some((trait) => trait.id === "thorns") },
       playerHealth: 10,
       hand: [played],
       mana: 1,
@@ -210,6 +211,7 @@ describe("encounter trait card events", () => {
       enemyHealth: 30,
       enemyMaxHealth: 30,
       enemyStatuses: { thorns: 1 },
+      flags: { legacyEnemyThornsReady: currentEnemy.traits.some((trait) => trait.id === "thorns") },
       playerHealth: 10,
       hand: [played, { ...played, uid: 2 }],
       mana: 2,
@@ -233,7 +235,7 @@ describe("encounter trait card events", () => {
       art: "",
       enemyType: "elite",
       traits: [{ id: "cinder-skin", title: "Cinder Skin", description: "Deals 1 Burn damage when attacked" }],
-      attackEffects: [{ kind: "damage", damageType: "burn", amount: 3 }],
+      abilityIds: ["slash", "bash", "block"],
     };
     const played = card({
       effects: [{ kind: "damage", damageType: "physical", amount: 2 }],
@@ -318,6 +320,7 @@ describe("encounter trait card events", () => {
       patchBattleState({
         currentEnemy,
         enemyStatuses: { thorns: 1 },
+        flags: { legacyEnemyThornsReady: currentEnemy.traits.some((trait) => trait.id === "thorns") },
         hand: [played],
         mana: 1,
         playerHealth: 1,
@@ -391,7 +394,7 @@ describe("encounter trait card events", () => {
   });
 
   it("uses the persistent Physical bonus on later enemy attacks", () => {
-    const currentEnemy = enemyWith("insatiable");
+    const currentEnemy = { ...enemyWith("insatiable"), abilityIds: ["block", "bash", "slash"] };
     const played = card({ consume: true, effects: [] });
     const afterCard = playBattleCardResolved(
       makeTestBattleState({ currentEnemy, hand: [played], mana: 1, turnPhase: "player" }),
@@ -400,9 +403,8 @@ describe("encounter trait card events", () => {
     ).state;
     const afterTurn = endPlayerTurn({
       ...afterCard,
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 1 }],
     }).state;
-    expect(afterTurn.playerHealth).toBe(afterCard.playerHealth - 2);
+    expect(afterTurn.playerHealth).toBe(afterCard.playerHealth - 7);
   });
 
   it("activates Divine Aegis when a DoT crosses half health", () => {

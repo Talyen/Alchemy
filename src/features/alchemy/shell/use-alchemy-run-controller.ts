@@ -174,6 +174,7 @@ export function useAlchemyRunController() {
           handleNodeSelect: labyrinth.selectNode,
           handleNodeDeselect: labyrinth.deselectNode,
           handleNodeEnter: nodeRouting.handleLabyrinthNodeEnter,
+          descend: labyrinth.descend,
         },
         rewards: {
           skip: nav.skipRewards,
@@ -284,6 +285,7 @@ export function useAlchemyRunController() {
       nodeRouting.handleLabyrinthNodeEnter,
       labyrinth.selectNode,
       labyrinth.deselectNode,
+      labyrinth.descend,
       shop.merchant.buyCard,
       shop.merchant.removeCard,
       shop.merchant.refresh,

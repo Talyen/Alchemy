@@ -7,6 +7,5 @@ export {
   getEnemyStatusChips,
 } from "./battle";
 export { getCardRect } from "./dom";
-export { formatEnemyAttackLines } from "./enemy";
 export { isAlchemyDevBuild, shouldSkipStartupLoadingGate } from "./dev-mode";
 export { getActiveCcKeyword, type ActiveCcKeyword } from "./cc-presentation";

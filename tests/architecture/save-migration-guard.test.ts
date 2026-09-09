@@ -5,6 +5,8 @@ import { normalizeSaveData } from "../helpers/parse-save-for-tests";
 import { migrateSaveDataToCurrent } from "@/lib/validation/migration";
 import { CURRENT_SAVE_SCHEMA_VERSION, LAUNCH_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import { cardLibrary } from "@/lib/game-data/cards";
+import { enemyById } from "@/lib/game-data";
+import { processEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { TOMBSTONED_CARD_IDS } from "@/lib/validation/migration/tombstoned-content-ids";
 import {
   CURRENT_SCHEMA_SAVE_FIXTURES_BY_SOURCE_VERSION,
@@ -18,6 +20,66 @@ function rawActiveRun(fixture: Record<string, unknown>) {
 }
 
 describe("save migration guard", () => {
+  it("keeps a battle loadable when a legacy enemy ID is an inherited object name", () => {
+    const raw = MIGRATION_SCENARIO_FIXTURES.enemyAbilities();
+    const run = raw.activeRun as {
+      activeCombat: { battleState: { currentEnemy: { id: string }; playerHealth: number } };
+    };
+    run.activeCombat.battleState.currentEnemy.id = "constructor";
+    const save = normalizeSaveData(raw);
+    expect(save.activeRun?.activeCombat?.battleState.playerHealth).toBe(run.activeCombat.battleState.playerHealth);
+    expect(save.activeRun?.activeCombat?.battleState.currentEnemy.abilityIds).toEqual(enemyById.skeleton.abilityIds);
+    expect(save.encounteredEnemyIds).toContain("vampire");
+  });
+  it("upgrades enemy abilities while preserving resolved results, modifiers, and progress", () => {
+    const raw = MIGRATION_SCENARIO_FIXTURES.enemyAbilities();
+    const before = JSON.stringify(raw);
+    const save = normalizeSaveData(raw);
+    const battle = save.activeRun!.activeCombat!.battleState;
+    const pending = save.activeRun!.activeCombat!.pendingBattleTransition;
+    expect(battle.currentEnemy.abilityIds).toEqual(enemyById.vampire.abilityIds);
+    expect(battle.currentEnemy.traits[0].title).toBe("Blood Scent");
+    expect(battle.lastEnemyAbilityId).toBeNull();
+    expect(battle).not.toHaveProperty("enemyAttackEffects");
+    expect(battle.currentEnemy).not.toHaveProperty("attackEffects");
+    expect(battle.flags).not.toHaveProperty("enemyNextAttackCrit");
+    expect(battle.flags).not.toHaveProperty("enemyNextAttackBonus");
+    expect(battle.flags).not.toHaveProperty("enemyNextAttackHolyBonus");
+    expect(battle.flags.enemyFirstHitDoubleUsed).toBe(true);
+    expect(battle.enemyMitigation).toEqual({ block: 4, armor: 2, forge: 3 });
+    expect(battle.difficultyModifiers).toEqual([{ kind: "increase-enemy-damage", amount: 2 }]);
+    expect(save.activeRun!.rng.counters.world).toBe(17);
+    expect(save.encounteredEnemyIds).toContain("vampire");
+    expect(pending?.kind).toBe("enemy-turn");
+    if (pending?.kind !== "enemy-turn") throw new Error("Missing saved enemy result");
+    expect(pending.resultState).toMatchObject({
+      playerHealth: 14,
+      enemyHealth: 17,
+      gold: 33,
+      playerDodgeCount: 2,
+      turnPhase: "player",
+    });
+    const next = processEnemyAbility({ ...pending.resultState, appliesFightPacing: false, rng: () => 0.99 }, []);
+    expect(next.lastEnemyAbilityId).toBe("bloodthorn");
+    expect(next.gold).toBe(33);
+    expect(next.playerDodgeCount).toBe(2);
+    expect(JSON.stringify(raw)).toBe(before);
+  });
+
+  it("migrates active and parked ability history for every run mode", () => {
+    const raw = MIGRATION_SCENARIO_FIXTURES.enemyAbilities();
+    for (const mode of ["campaign", "labyrinth", "wildwood"] as const) {
+      const run = { ...(raw.activeRun as Record<string, unknown>), contentSystemType: mode };
+      const migrated = migrateSaveDataToCurrent({ ...raw, activeRun: run, parkedRuns: { [mode]: run } });
+      const active = migrated.activeRun as typeof run & {
+        activeCombat: { battleState: { currentEnemy: { abilityIds: string[] }; lastEnemyAbilityId: null } };
+      };
+      const parked = migrated.parkedRuns as Record<string, typeof active>;
+      expect(active.activeCombat.battleState.currentEnemy.abilityIds).toEqual(enemyById.vampire.abilityIds);
+      expect(parked[mode].activeCombat.battleState).toEqual(active.activeCombat.battleState);
+      expect(migrateSaveDataToCurrent(migrated)).toEqual(migrated);
+    }
+  });
   it("provides a fixture for each supported source schema version", () => {
     for (
       let sourceVersion = LAUNCH_SAVE_SCHEMA_VERSION;

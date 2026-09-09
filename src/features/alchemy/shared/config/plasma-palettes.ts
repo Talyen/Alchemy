@@ -1,6 +1,7 @@
 import {
   characters,
   getCardKeywords,
+  getEnemyAbilities,
   getCompanionKeywords,
   getTrinketKeywords,
   keywordDefinitions,
@@ -13,7 +14,7 @@ import {
   type TrinketEntry,
 } from "@/features/alchemy/shared/config/game-data-catalog";
 import { gearDefinitions, getGearInstanceKeywordIds, getUniqueGearShineColors, type GearInstance } from "@/lib/gear";
-import { keywordAliasMap, keywordAliases, keywordPattern } from "./keywords";
+import { keywordAliasMap, keywordPattern } from "./keywords";
 import {
   getCompanionShineColors,
   getKeywordListShineColors,
@@ -121,41 +122,21 @@ export function getPlasmaColorPairForCompanion(companion: CompanionDefinition): 
   );
 }
 
-export function getPlasmaKeywordsForEnemy(
-  entry: BestiaryEntry,
-  attackEffects?: BestiaryEntry["attackEffects"],
-): KeywordId[] {
-  const keywords = new Set<KeywordId>();
-
-  const traitText = entry.traits.map((trait) => trait.description).join(" ");
-  for (const alias of keywordAliases) {
-    if (traitText.includes(alias.match)) keywords.add(alias.keywordId);
-  }
-
-  for (const effect of attackEffects ?? entry.attackEffects) {
-    if (effect.kind === "damage" && effect.damageType in keywordDefinitions) {
-      keywords.add(effect.damageType);
-    }
-    if (effect.kind === "player-status" && effect.status in keywordDefinitions) {
-      keywords.add(effect.status as KeywordId);
-    }
-  }
-
-  return [...keywords];
+export function getPlasmaKeywordsForEnemy(entry: BestiaryEntry): KeywordId[] {
+  return [
+    ...new Set([
+      ...getPlasmaKeywordsForText(entry.traits.map((trait) => trait.description).join(" ")),
+      ...getEnemyAbilities(entry).flatMap(getCardKeywords),
+    ]),
+  ];
 }
 
-export function getEnemyKeywordShineColors(
-  entry: BestiaryEntry,
-  attackEffects?: BestiaryEntry["attackEffects"],
-): readonly string[] {
-  return getKeywordListShineColors(getPlasmaKeywordsForEnemy(entry, attackEffects));
+export function getEnemyKeywordShineColors(entry: BestiaryEntry): readonly string[] {
+  return getKeywordListShineColors(getPlasmaKeywordsForEnemy(entry));
 }
 
-export function getPlasmaColorPairForEnemy(
-  entry: BestiaryEntry,
-  attackEffects?: BestiaryEntry["attackEffects"],
-): PlasmaColorPair | null {
-  return getPlasmaColorPair(getPlasmaKeywordsForEnemy(entry, attackEffects));
+export function getPlasmaColorPairForEnemy(entry: BestiaryEntry): PlasmaColorPair | null {
+  return getPlasmaColorPair(getPlasmaKeywordsForEnemy(entry));
 }
 
 export function getPlasmaKeywordLabel(keywordId: KeywordId): string {

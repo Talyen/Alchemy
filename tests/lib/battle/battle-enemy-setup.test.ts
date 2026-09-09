@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { initializeEnemyState } from "@/lib/battle/battle-enemy-setup";
+import { initializeEnemyState, scaleEnemyAbilityDamage } from "@/lib/battle/battle-enemy-setup";
 import { enemyBestiary, type BestiaryEntry, type DifficultyModifier } from "@/lib/game-data";
 import {
   BASE_ENEMY_HEALTH,
@@ -53,8 +53,11 @@ describe("initializeEnemyState", () => {
     const result = initializeEnemyState(skeleton, 5, []);
     expect(result.roomScalingMultiplier).toBe(roomMul);
     expect(result.enemyMaxHealth).toBe(Math.round(BASE_ENEMY_HEALTH * roomMul));
-    const physical = result.modifiedEffects.find((e) => e.kind === "damage" && e.damageType === "physical");
-    expect(physical?.kind === "damage" && physical.amount).toBe(Math.round(7 * roomMul));
+    const physical = scaleEnemyAbilityDamage(
+      { roomScalingMultiplier: roomMul, difficultyModifiers: [] },
+      { kind: "damage", damageType: "physical", amount: 6 },
+    );
+    expect(physical.amount).toBe(Math.round(6 * roomMul));
   });
 
   it("multiplies max health with enemy-health-multiplier", () => {
@@ -62,52 +65,6 @@ describe("initializeEnemyState", () => {
     const base = initializeEnemyState(skeleton, 1, []);
     const result = initializeEnemyState(skeleton, 1, mods);
     expect(result.enemyMaxHealth).toBe(Math.round(base.enemyMaxHealth * 1.5));
-  });
-
-  it("increases physical damage from difficulty bonuses", () => {
-    const mods: DifficultyModifier[] = [
-      { kind: "increase-enemy-physical-damage", amount: 2 },
-      { kind: "increase-enemy-damage", amount: 1 },
-    ];
-    const result = initializeEnemyState(skeleton, 1, mods);
-    const physical = result.modifiedEffects.find((e) => e.kind === "damage" && e.damageType === "physical");
-    expect(physical?.kind === "damage" && physical.amount).toBe(7 + 2 + 1);
-  });
-
-  it("does not increase non-matching Stun damage attacks with status bonuses", () => {
-    const mods: DifficultyModifier[] = [{ kind: "increase-enemy-status", status: "poison", amount: 2 }];
-    const result = initializeEnemyState(forgeGolem, 1, mods);
-    const stun = result.modifiedEffects.find((e) => e.kind === "damage" && e.damageType === "stun");
-    expect(stun?.kind === "damage" && stun.amount).toBe(1);
-  });
-
-  it("increase-enemy-status boosts matching freeze damage attacks", () => {
-    const freezeEnemy: BestiaryEntry = {
-      ...skeleton,
-      attackEffects: [{ kind: "damage", damageType: "freeze", amount: 3 }],
-    };
-    const mods: DifficultyModifier[] = [{ kind: "increase-enemy-status", status: "freeze", amount: 2 }];
-    const result = initializeEnemyState(freezeEnemy, 1, mods);
-    const freeze = result.modifiedEffects.find((e) => e.kind === "damage" && e.damageType === "freeze");
-    expect(freeze?.kind === "damage" && freeze.amount).toBe(5);
-  });
-
-  it("adds lifesteal to all damage attacks when enemy-attacks-gain-leech is active", () => {
-    const mods: DifficultyModifier[] = [{ kind: "enemy-attacks-gain-leech" }];
-    const result = initializeEnemyState(skeleton, 1, mods);
-    for (const effect of result.modifiedEffects) {
-      if (effect.kind === "damage") expect(effect.lifesteal).toBe(true);
-    }
-  });
-
-  it("preserves existing lifesteal on scaled damage attacks", () => {
-    const leechEnemy: BestiaryEntry = {
-      ...skeleton,
-      attackEffects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 6, lifesteal: true }],
-    };
-    const result = initializeEnemyState(leechEnemy, 3, []);
-    const physical = result.modifiedEffects[0];
-    expect(physical.kind === "damage" && physical.lifesteal).toBe(true);
   });
 
   it("includes living-armor trait starting armor scaled by room", () => {

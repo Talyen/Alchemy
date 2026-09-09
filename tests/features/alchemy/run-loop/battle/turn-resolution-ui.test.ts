@@ -194,7 +194,7 @@ describe("resolveHasteSkipTurn", () => {
 
 describe("resolveNormalEnemyTurn", () => {
   it("commits a resumable continuation before presentation delays", () => {
-    const state = defaultBattleState();
+    const state = { ...defaultBattleState(), rng: () => 0.99 };
     const result = endPlayerTurn(state);
     if (result.kind === "haste") throw new Error("Expected an enemy-turn resolution");
     const orch = makeOrch();
@@ -237,7 +237,7 @@ describe("resolveNormalEnemyTurn", () => {
 describe("executeEnemyPhase", () => {
   it("shakes the player when enemy damage texts are present", async () => {
     const current = defaultBattleState();
-    const result = { ...current, playerHealth: 5 };
+    const result = { ...current, playerHealth: 5, lastEnemyAbilityId: "slash" };
 
     await executeEnemyPhase(
       result,
@@ -258,7 +258,7 @@ describe("executeEnemyPhase", () => {
 
   it("still shakes the player when only block absorb damage is present", async () => {
     const current = defaultBattleState();
-    const result = { ...current, playerHealth: 5 };
+    const result = { ...current, playerHealth: 5, lastEnemyAbilityId: "slash" };
 
     await executeEnemyPhase(
       result,
@@ -293,13 +293,13 @@ describe("executeEnemyPhase", () => {
     expect(presentation.telegraphCast).not.toHaveBeenCalled();
   });
 
-  it("telegraphs a cast when a status-only enemy acts", async () => {
+  it("telegraphs a cast for the resolved defensive ability", async () => {
     const current = defaultBattleState();
     current.currentEnemy = {
       ...current.currentEnemy,
-      attackEffects: [{ kind: "player-status", status: "bleed", amount: 3 }],
+      abilityIds: ["slash", "bash", "block"],
     };
-    const result = { ...current, playerHealth: 5 };
+    const result = { ...current, playerHealth: 5, lastEnemyAbilityId: "block" };
 
     await executeEnemyPhase(result, current, [], 1, false, true, makeBattleTurnSession(), makeOrch(), resolveEndTurn);
 

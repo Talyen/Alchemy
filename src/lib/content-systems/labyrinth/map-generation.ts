@@ -12,7 +12,7 @@ import {
 import { LABYRINTH_HEX, areHexesAdjacent } from "./hex-grid";
 import { generateFloorLayout } from "./hex-layout";
 import { getEnemyModifiersForNodeType, getRewardModifiersForNodeType } from "./modifiers";
-import { cloneLabyrinthMap, withClearedNode } from "./map-state";
+import { canDescendFromLabyrinthNode, cloneLabyrinthMap } from "./map-state";
 
 export { canEnterLabyrinthNode } from "./map-state";
 
@@ -240,6 +240,7 @@ export function generateLabyrinthMap(rng: () => number): LabyrinthMap {
   nodes[entrance.id] = entrance;
   return {
     currentFloor: 1,
+    currentNodeId: null,
     floors: [{ id: LABYRINTH_ENTRANCE_FLOOR_ID, depth: 0, nodeIds: [entrance.id] }, first.floor],
     nodes,
   };
@@ -247,7 +248,10 @@ export function generateLabyrinthMap(rng: () => number): LabyrinthMap {
 
 export function expandBeyondBoss(map: LabyrinthMap, bossId: string, rng: () => number): LabyrinthMap {
   const boss = map.nodes[bossId];
-  if (!boss || boss.type !== "boss" || !boss.cleared || boss.outgoingIds.length > 0) return map;
+  if (!boss || !canDescendFromLabyrinthNode(map, bossId)) return map;
+
+  const nextFloor = map.floors.find((floor) => floor.depth === map.currentFloor + 1);
+  if (nextFloor) return { ...map, currentFloor: nextFloor.depth, currentNodeId: null };
 
   const next = cloneLabyrinthMap(map);
   const nextBoss = next.nodes[bossId]!;
@@ -256,14 +260,8 @@ export function expandBeyondBoss(map: LabyrinthMap, bossId: string, rng: () => n
   for (const node of generated.nodes) next.nodes[node.id] = node;
   next.nodes[bossId] = { ...nextBoss, outgoingIds: [generated.entryId] };
   next.currentFloor = generated.floor.depth;
+  next.currentNodeId = null;
   return next;
-}
-
-export function withClearedLabyrinthNode(map: LabyrinthMap, nodeId: string, rng: () => number): LabyrinthMap {
-  const cleared = withClearedNode(map, nodeId);
-  const node = cleared.nodes[nodeId];
-  if (node?.type === "boss") return expandBeyondBoss(cleared, nodeId, rng);
-  return cleared;
 }
 
 export function createMinimalLabyrinthMap(): LabyrinthMap {
@@ -307,6 +305,7 @@ export function createMinimalLabyrinthMap(): LabyrinthMap {
   const entrance = makeEntranceNode([combatId]);
   return {
     currentFloor: 1,
+    currentNodeId: null,
     floors: [
       { id: LABYRINTH_ENTRANCE_FLOOR_ID, depth: 0, nodeIds: [entrance.id] },
       { id: labyrinthFloorId(1), depth: 1, nodeIds: [combatId, restId, bossId] },

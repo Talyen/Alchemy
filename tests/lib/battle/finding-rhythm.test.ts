@@ -1,7 +1,8 @@
+import { makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { defaultBattleState, endPlayerTurn, applyPlayerCombatDamage } from "@/lib/battle";
 import { tryDodgeEnemyAttackPacket } from "@/lib/battle/dodge";
-import { processEnemyAttack } from "@/lib/battle/enemy-turn-attack";
+import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import { tickPlayerStatuses } from "@/lib/battle/status-ticks";
 import { applyLoseHealthEffect } from "@/lib/battle/effect-handlers/mana-health-handlers";
@@ -15,27 +16,40 @@ function rhythmState() {
 describe("Finding Rhythm", () => {
   it("gains 5 points for each hostile Health damage instance and carries it across turns", () => {
     const state = rhythmState();
-    const first = processEnemyAttack(state, []);
-    const second = processEnemyAttack(first, []);
+    const first = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
+      [],
+    );
+    const second = applyEnemyAbility(
+      first,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
+      [],
+    );
     expect(first.dodgeChanceFromDamage).toBe(5);
     expect(second.dodgeChanceFromDamage).toBe(10);
-    const nextTurn = endPlayerTurn(second).state;
+    const nextTurn = endPlayerTurn({
+      ...second,
+      currentEnemy: { ...second.currentEnemy, abilityIds: ["block", "bash", "slash"] },
+    }).state;
     expect(nextTurn.dodgeChanceFromDamage).toBe(15);
     expect(state.dodgeChanceFromDamage).toBe(0);
   });
 
   it("updates chance between packets and resets immediately when a later packet is Dodged", () => {
     const state = rhythmState();
-    const result = processEnemyAttack(
+    const result = applyEnemyAbility(
       {
         ...state,
         rng: () => 0.075,
-        enemyAttackEffects: [
+      },
+      makeEnemyTestCard({
+        effects: [
           { kind: "damage", damageType: "physical", amount: 1 },
           { kind: "damage", damageType: "physical", amount: 1 },
           { kind: "damage", damageType: "physical", amount: 1 },
         ],
-      },
+      }),
       [],
     );
     expect(result.playerDodgeCount).toBe(1);
@@ -68,7 +82,11 @@ describe("Finding Rhythm", () => {
       { ...state, gearEffects: { ...state.gearEffects, resistPhysical: 100 } },
       { ...state, talentEffects: { ...state.talentEffects, damageReduction: 100 } },
     ]) {
-      const result = processEnemyAttack(protectedState, []);
+      const result = applyEnemyAbility(
+        protectedState,
+        makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
+        [],
+      );
       expect(result.playerHealth).toBe(100);
       expect(result.dodgeChanceFromDamage).toBe(0);
     }

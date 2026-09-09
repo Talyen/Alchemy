@@ -151,7 +151,7 @@ describe("applyCardEffects — multiply-enemy-status", () => {
         art: "",
         enemyType: "boss",
         traits: [{ id: "braced" }],
-        attackEffects: [],
+        abilityIds: ["slash", "bash", "block"],
       } as never,
     });
     const card = makeTestCard({ effects: [{ kind: "multiply-enemy-status", status: "stun", factor: 2 }] });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canPlayCard, enemyAttackDealsDamage, playBattleCardResolved } from "@/lib/battle/card-play";
+import { canPlayCard, playBattleCardResolved } from "@/lib/battle/card-play";
 import { cardHasDamageType, hasDamageEffect, isAttackCard } from "@/lib/battle/card-classification";
 import { defaultBattleState } from "@/lib/battle";
 import { cardById, companionLibrary } from "@/lib/game-data";
@@ -473,13 +473,6 @@ describe("isAttackCard / hasDamageEffect", () => {
     });
     expect(hasDamageEffect(card.effects)).toBe(false);
     expect(isAttackCard(card)).toBe(false);
-  });
-});
-
-describe("enemyAttackDealsDamage", () => {
-  it("is true for hit packets and false for status-only packets", () => {
-    expect(enemyAttackDealsDamage([{ kind: "damage", damageType: "physical", amount: 4 }])).toBe(true);
-    expect(enemyAttackDealsDamage([{ kind: "player-status", status: "bleed", amount: 2 }])).toBe(false);
   });
 });
 

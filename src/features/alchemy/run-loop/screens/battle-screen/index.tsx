@@ -16,6 +16,8 @@ import { getScreenParticleConfig } from "@/app/screen-particle-config";
 import { useSettingsStore } from "../../../shared/stores/settings-store";
 
 interface BattleScreenProps {
+  onInspectEnemy?: ((trigger: HTMLElement) => void) | undefined;
+  enemyInspectionOpen?: boolean | undefined;
   onInspectPile?: BattleActionsProps["onInspectPile"];
   inspectionAvailable?: boolean | undefined;
   battleScreenData: BattleScreenData;
@@ -125,7 +127,13 @@ export function BattleScreen(props: BattleScreenProps) {
               data-testid="battle-scene"
               className="[container-type:size] absolute inset-0 overflow-visible"
             >
-              <BattleActors view={view} feedback={feedback} refs={refs} />
+              <BattleActors
+                view={view}
+                feedback={feedback}
+                refs={refs}
+                onInspectEnemy={props.onInspectEnemy}
+                enemyInspectionOpen={props.enemyInspectionOpen}
+              />
 
               <BattleBottomBar view={view} refs={refs} actions={actions} playabilityState={battleState} />
 

@@ -22,7 +22,7 @@ function titleFor(kind: keyof typeof TITLE_LOOKUPS | "talent", id: string): stri
 }
 
 function rateCells(cell: RateCell): string {
-  return `<td>${percent(cell.winRate)}</td><td>${percent(cell.timeoutRate)}</td><td>${cell.averageTurns.toFixed(1)}</td><td>${cell.averageHealthRemaining.toFixed(0)}</td><td>${cell.averageEnemyAttacks.toFixed(1)}</td><td>${cell.averageEnemyAbilityActivations.toFixed(1)}</td><td>${percent(cell.winsBeforeEnemyAttackRate)}</td>`;
+  return `<td>${percent(cell.winRate)}</td><td>${percent(cell.timeoutRate)}</td><td>${cell.averageTurns.toFixed(1)}</td><td>${cell.averageHealthRemaining.toFixed(0)}</td><td>${cell.averageEnemyAttacks.toFixed(1)}</td><td>${cell.averageEnemyAbilityUses.toFixed(1)}</td><td>${cell.averageEnemyAbilityActivations.toFixed(1)}</td><td>${percent(cell.winsBeforeEnemyAttackRate)}</td>`;
 }
 
 function deltaCell(delta: PairedDelta): string {
@@ -95,7 +95,7 @@ export function renderBalanceReportHtml(model: BalanceReportModel, options: Repo
 
   const { meta } = model;
   const rateHeaderTier = (label: string) =>
-    `<th>Win ${label}</th><th>Timeout ${label}</th><th>Turns ${label}</th><th>HP ${label}</th><th>Enemy attacks ${label}</th><th>Ability activations ${label}</th><th>Wins before attack ${label}</th>`;
+    `<th>Win ${label}</th><th>Timeout ${label}</th><th>Turns ${label}</th><th>HP ${label}</th><th>Enemy attacks ${label}</th><th>Ability uses ${label}</th><th>Trait activations ${label}</th><th>Wins before attack ${label}</th>`;
 
   return `<!DOCTYPE html>
 <html lang="en">

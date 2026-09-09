@@ -1,3 +1,4 @@
+import { makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import {
   createBattleState,
@@ -11,7 +12,7 @@ import { applyGearCcPhysicalDamage } from "@/lib/battle/gear-effects";
 import { computeEffectiveCost } from "@/lib/battle/card-cost-rules";
 import { addEnemyStatus } from "@/lib/battle/types";
 import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/player-typed-hit";
-import { processEnemyAttack } from "@/lib/battle/enemy-turn-attack";
+import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { applyWishEffect, chooseWishCard } from "@/lib/battle/wish";
 import { detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
 import { tryDodgeEnemyAttackPacket, tryDodgePlayerAttackPacket } from "@/lib/battle/dodge";
@@ -25,7 +26,6 @@ function state(overrides: BattleStatePatch = {}) {
     contentSystemType: "labyrinth",
     enemyHealth: 100,
     enemyMaxHealth: 100,
-    enemyAttackEffects: [],
     currentEnemy: { traits: [] },
     rng: () => 0.99,
     ...overrides,
@@ -65,7 +65,13 @@ describe("Labyrinth player benefits", () => {
     const saved = normalizePersistedBattleState(JSON.parse(JSON.stringify(first)));
     const second = play({ ...saved, rng: () => 0.99 }, card);
     expect(second.enemyHealth).toBe(88);
-    expect(play(endPlayerTurn(second).state, card).enemyHealth).toBe(80);
+    expect(
+      play(
+        endPlayerTurn({ ...second, currentEnemy: { ...second.currentEnemy, abilityIds: ["block", "bash", "slash"] } })
+          .state,
+        card,
+      ).enemyHealth,
+    ).toBe(80);
   });
 
   it("Unbroken preserves player Block through ordinary and extra turns", () => {
@@ -92,9 +98,14 @@ describe("Labyrinth player benefits", () => {
     const current = state({
       encounterBenefits: ["ironclad"],
       playerStatuses: { armor: 2, poison: 2 },
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
     });
-    expect(processEnemyAttack(current, []).playerStatuses.armor).toBe(2);
+    expect(
+      applyEnemyAbility(
+        current,
+        makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] }),
+        [],
+      ).playerStatuses.armor,
+    ).toBe(2);
     expect(tickPlayerStatuses(current, []).playerStatuses.armor).toBe(2);
   });
 
@@ -225,11 +236,11 @@ describe("Labyrinth player benefits", () => {
     const next = endPlayerTurn(
       state({
         encounterBenefits: ["restorative"],
+        currentEnemy: { abilityIds: ["block", "bash", "slash"] },
         playerHealth: 10,
-        enemyAttackEffects: [{ kind: "damage", damageType: "holy", amount: 5 }],
       }),
     ).state;
-    expect(next.playerHealth).toBe(7);
+    expect(next.playerHealth).toBe(6);
     const dead = endPlayerTurn(
       state({ encounterBenefits: ["restorative"], playerHealth: 0, deathsDoorUsed: true }),
     ).state;
@@ -242,19 +253,26 @@ describe("Labyrinth enemy modifiers", () => {
     const current = state({
       currentEnemy: enemy("unbreakable", "whitehot"),
       enemyMitigation: { armor: 2, forge: 3 },
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 4 }],
     });
     const hit = play(current, attack());
     expect(hit.enemyMitigation.armor).toBe(2);
-    const next = processEnemyAttack(hit, []);
+    const next = applyEnemyAbility(
+      hit,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 4 }] }),
+      [],
+    );
     expect(next.enemyMitigation.forge).toBe(3);
     expect(next.playerHealth).toBe(current.playerHealth - 7);
   });
 
   it("Entrenched preserves enemy Block", () => {
     expect(
-      endPlayerTurn(state({ currentEnemy: enemy("entrenched"), enemyMitigation: { block: 9 } })).state.enemyMitigation
-        .block,
+      endPlayerTurn(
+        state({
+          currentEnemy: { ...enemy("entrenched"), abilityIds: ["slash", "block", "plate-mail"] },
+          enemyMitigation: { block: 9 },
+        }),
+      ).state.enemyMitigation.block,
     ).toBe(9);
   });
 
@@ -281,12 +299,19 @@ describe("Labyrinth enemy modifiers", () => {
     const current = state({
       currentEnemy: enemy("ravenous"),
       enemyHealth: 50,
-      enemyAttackEffects: [{ kind: "damage", damageType: "bleed", amount: 4 }],
     });
-    const next = processEnemyAttack(current, []);
+    const next = applyEnemyAbility(
+      current,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "bleed", amount: 4 }] }),
+      [],
+    );
     expect(next.enemyHealth).toBe(52);
     expect(tickPlayerStatuses(next, []).enemyHealth).toBe(54);
-    const blocked = processEnemyAttack({ ...current, playerStatuses: { ...current.playerStatuses, block: 10 } }, []);
+    const blocked = applyEnemyAbility(
+      { ...current, playerStatuses: { ...current.playerStatuses, block: 10 } },
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "bleed", amount: 4 }] }),
+      [],
+    );
     expect(blocked.enemyHealth).toBe(50);
   });
 
@@ -303,10 +328,21 @@ describe("Labyrinth enemy modifiers", () => {
     const current = state({
       currentEnemy: enemy("executioner"),
       enemyHealth: 49,
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 4 }],
     });
-    expect(processEnemyAttack(current, []).playerHealth).toBe(22);
-    expect(processEnemyAttack({ ...current, enemyHealth: 50 }, []).playerHealth).toBe(26);
+    expect(
+      applyEnemyAbility(
+        current,
+        makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 4 }] }),
+        [],
+      ).playerHealth,
+    ).toBe(22);
+    expect(
+      applyEnemyAbility(
+        { ...current, enemyHealth: 50 },
+        makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 4 }] }),
+        [],
+      ).playerHealth,
+    ).toBe(26);
   });
 
   it("Thick Hide reuses the existing 50% Physical resistance", () => {

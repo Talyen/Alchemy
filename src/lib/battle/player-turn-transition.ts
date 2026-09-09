@@ -58,7 +58,14 @@ function processPendingTurnStartEffects(state: BattleState, combatTexts: CombatT
   };
   return withPreservedFlags({ ...state, pendingTurnStartEffects: kept }, (nextState) =>
     due.reduce(
-      (current, pulse) => applyCardEffects(current, { ...pulseCard, effects: pulse.effects }, combatTexts),
+      (current, pulse) =>
+        current.enemyHealth <= 0 || isPlayerDefeated(current)
+          ? current
+          : applyCardEffects(current, { ...pulseCard, effects: pulse.effects }, combatTexts, {
+              manaAtStart: current.mana,
+              enemyFreezeSkipTurnsAtStart: current.enemyCC.freezeSkipTurns,
+              cardHealing: true,
+            }),
       nextState,
     ),
   );

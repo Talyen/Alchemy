@@ -20,7 +20,7 @@ describe("WILDWOOD_BOSS_IDS", () => {
     for (const bossId of WILDWOOD_BOSS_IDS) {
       expect(enemyById[bossId].enemyType).toBe("boss");
       expect(enemyById[bossId].traits.length).toBeGreaterThan(0);
-      expect(enemyById[bossId].attackEffects.length).toBeGreaterThan(0);
+      expect(enemyById[bossId].abilityIds.length).toBeGreaterThan(0);
     }
   });
 

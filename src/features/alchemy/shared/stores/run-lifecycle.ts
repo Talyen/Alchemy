@@ -190,6 +190,7 @@ export function clearBattleUi(): void {
 
 export function clearBattlePresentationUi(): void {
   useUiStore.getState().setCardInspection(null);
+  useUiStore.getState().setEnemyInspectionOpen(false);
   useUiStore.getState().clearCardHover();
   clearPresentationListeners.forEach((listener) => listener());
 }
@@ -200,5 +201,6 @@ function notifyRunTeardown(): void {
 
 function clearTransientUiOnTeardown(): void {
   useUiStore.getState().setCardInspection(null);
+  useUiStore.getState().setEnemyInspectionOpen(false);
   useUiStore.getState().clearCardHover();
 }

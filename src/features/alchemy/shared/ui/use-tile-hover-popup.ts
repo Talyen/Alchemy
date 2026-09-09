@@ -6,20 +6,24 @@ export function useTileHoverPopup({
   isHovered,
   onHoverStart,
   onHoverEnd,
+  suspended = false,
 }: {
   interactive: boolean;
   isHovered: boolean;
   onHoverStart: () => void;
   onHoverEnd: () => void;
+  suspended?: boolean;
 }) {
-  const { wrapperRef, showPopup, handleHoverStart, handleMouseLeave, handleBlur } = useHoverVisible({
-    holdMs: TOOLTIP_FADE_MS,
-    focusWithinGuard: true,
-    interactive,
-    isHovered,
-    onHoverStart,
-    onHoverEnd,
-  });
+  const { wrapperRef, showPopup, visible, handleHoverStart, handleMouseMove, handleMouseLeave, handleBlur, dismiss } =
+    useHoverVisible({
+      holdMs: TOOLTIP_FADE_MS,
+      focusWithinGuard: true,
+      interactive,
+      isHovered,
+      onHoverStart,
+      onHoverEnd,
+      suspended,
+    });
 
-  return { wrapperRef, showPopup, handleHoverStart, handleMouseLeave, handleBlur };
+  return { wrapperRef, showPopup, visible, handleHoverStart, handleMouseMove, handleMouseLeave, handleBlur, dismiss };
 }

@@ -3,8 +3,13 @@ import { current } from "immer";
 import {
   canEnterLabyrinthNode,
   generateLabyrinthMap,
-  withClearedLabyrinthNode,
+  expandBeyondBoss,
 } from "@/lib/content-systems/labyrinth/map-generation";
+import {
+  canDescendFromLabyrinthNode,
+  canInspectLabyrinthNode,
+  withClearedNode,
+} from "@/lib/content-systems/labyrinth/map-state";
 import type {
   EncounterCombatTraitId,
   EncounterRewardTraitId,
@@ -23,6 +28,7 @@ export interface LabyrinthController {
   selectNode: (nodeId: string) => void;
   deselectNode: () => void;
   enterSelectedNode: (handlers: LabyrinthNodeHandlers) => boolean;
+  descend: () => void;
   onNodeCleared: () => void;
   resetMap: () => void;
 }
@@ -82,7 +88,7 @@ export function useLabyrinthController(): LabyrinthController {
   const selectNode = useCallback((nodeId: string) => {
     dispatchRunSessionCommand((draft) => {
       const map = draft.session.labyrinthMap;
-      setSelectedLabyrinthNodeId(draft, map && canEnterLabyrinthNode(map, nodeId) ? nodeId : null);
+      setSelectedLabyrinthNodeId(draft, map && canInspectLabyrinthNode(map, nodeId) ? nodeId : null);
     });
   }, []);
 
@@ -119,9 +125,8 @@ export function useLabyrinthController(): LabyrinthController {
       setActiveLabyrinthPendingNode(draft, null);
       setSelectedLabyrinthNodeId(draft, null);
       if (pendingNode) {
-        const rng = createDraftRunRandomSource(draft, "world");
         const prev = draft.session.labyrinthMap;
-        if (prev) setLabyrinthMap(draft, withClearedLabyrinthNode(prev, pendingNode, rng));
+        if (prev) setLabyrinthMap(draft, withClearedNode(prev, pendingNode));
       }
       return pendingNode;
     });
@@ -130,8 +135,17 @@ export function useLabyrinthController(): LabyrinthController {
     }
   }, []);
 
+  const descend = useCallback(() => {
+    dispatchRunSessionCommand((draft) => {
+      const { labyrinthMap: map, selectedLabyrinthNodeId: nodeId, activeLabyrinthPendingNode } = draft.session;
+      if (!map || !nodeId || activeLabyrinthPendingNode || !canDescendFromLabyrinthNode(map, nodeId)) return;
+      setLabyrinthMap(draft, expandBeyondBoss(map, nodeId, createDraftRunRandomSource(draft, "world")));
+      setSelectedLabyrinthNodeId(draft, null);
+    });
+  }, []);
+
   return useMemo(
-    () => ({ selectNode, deselectNode, enterSelectedNode, onNodeCleared, resetMap }),
-    [selectNode, deselectNode, enterSelectedNode, onNodeCleared, resetMap],
+    () => ({ selectNode, deselectNode, enterSelectedNode, descend, onNodeCleared, resetMap }),
+    [selectNode, deselectNode, enterSelectedNode, descend, onNodeCleared, resetMap],
   );
 }

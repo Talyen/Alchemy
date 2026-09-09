@@ -1,28 +1,16 @@
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { applyEnemyHealingWithCombatText, mergeCombatText } from "./combat-text";
-import { getBattleRng, rngInt } from "@/lib/rng";
 import type { BestiaryEntry, DifficultyModifier } from "@/lib/game-data";
 import { COMBAT_ENCOUNTER_TRAIT_IDS } from "@/lib/content-systems/encounter-traits";
 import { logError } from "../error-logger";
-import {
-  type BattleState,
-  type CombatTextEvent,
-  addEnemyMitigation,
-  addEnemyStatus,
-  hasEnemyTrait,
-  setFlag,
-} from "./types";
+import { type BattleState, type CombatTextEvent, addEnemyMitigation, addEnemyStatus, hasEnemyTrait } from "./types";
 import {
   DIFFICULTY_FORGE_PER_TURN,
   IRON_HIDE_ARMOR_PER_TURN,
-  IRON_HIDE_BURN_BONUS_PER_TURN,
   REACTION_ONLY_ENEMY_TRAIT_IDS as REACTION_ONLY_IDS,
   TRAIT_FORGE_PER_TURN,
   TRAIT_FREEZE_BONUS_PER_TURN,
 } from "../game-constants";
-const ENEMY_TURN_CONSTANTS = {
-  IRON_HIDE_OPTIONS_COUNT: 3,
-};
 
 export function isEveryOtherTurnScalingTurn(state: { turn: number }): boolean {
   return state.turn % 2 === 0;
@@ -46,51 +34,26 @@ export function processEnemyRegeneration(state: BattleState, combatTexts: Combat
   let nextState = applyEnemyHealingWithCombatText(state, state.enemyRegeneration, combatTexts);
   if (nextState.enemyHealth > state.enemyHealth && hasEnemyTrait(state, "regeneration"))
     nextState = recordEnemyAbilityActivation(nextState, "regeneration");
-  if (
-    hasEnemyTrait(state, "vampire") &&
-    state.enemyHealth < state.enemyMaxHealth &&
-    nextState.enemyHealth >= state.enemyMaxHealth
-  ) {
-    nextState = setFlag(nextState, "enemyNextAttackBonus", nextState.flags.enemyNextAttackBonus + 1);
-  }
   return nextState;
 }
 
 const EVERY_OTHER_TURN_TRAITS = new Set(["rusting-carapace", "iron-hide", "glacial-shell"]);
 
-type EnemyTurnStartHandler = (
-  state: BattleState,
-  combatTexts: CombatTextEvent[],
-  options?: { traitRoll?: number },
-) => BattleState;
+type EnemyTurnStartHandler = (state: BattleState, combatTexts: CombatTextEvent[]) => BattleState;
 
 const enemyTraitTurnStartHandlers: Record<string, EnemyTurnStartHandler> = {
   "rusting-carapace": (state, combatTexts) => {
     mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "forge", amount: TRAIT_FORGE_PER_TURN });
     return addEnemyMitigation(state, "forge", TRAIT_FORGE_PER_TURN);
   },
-  "iron-hide": (state, combatTexts, options) => {
-    const traitRng = options?.traitRoll !== undefined ? () => options.traitRoll! : getBattleRng(state);
-    const choice = rngInt(traitRng, ENEMY_TURN_CONSTANTS.IRON_HIDE_OPTIONS_COUNT);
-    if (choice === 0) {
-      mergeCombatText(combatTexts, {
-        target: "enemy",
-        kind: "status",
-        stat: "armor",
-        amount: IRON_HIDE_ARMOR_PER_TURN,
-      });
-      return addEnemyMitigation(state, "armor", IRON_HIDE_ARMOR_PER_TURN);
-    } else if (choice === 1) {
-      mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "forge", amount: TRAIT_FORGE_PER_TURN });
-      return addEnemyMitigation(state, "forge", TRAIT_FORGE_PER_TURN);
-    }
+  "iron-hide": (state, combatTexts) => {
     mergeCombatText(combatTexts, {
       target: "enemy",
       kind: "status",
-      stat: "burnBonus",
-      amount: IRON_HIDE_BURN_BONUS_PER_TURN,
+      stat: "armor",
+      amount: IRON_HIDE_ARMOR_PER_TURN,
     });
-    return addEnemyStatus(state, "burnBonus", IRON_HIDE_BURN_BONUS_PER_TURN);
+    return addEnemyMitigation(state, "armor", IRON_HIDE_ARMOR_PER_TURN);
   },
   "glacial-shell": (state, combatTexts) => {
     mergeCombatText(combatTexts, {
@@ -223,12 +186,11 @@ function processTraitHandler(
   trait: BestiaryEntry["traits"][number],
   state: BattleState,
   combatTexts: CombatTextEvent[],
-  traitRoll: number,
 ): BattleState {
   const handler = enemyTraitTurnStartHandlers[trait.id];
   if (handler) {
     if (EVERY_OTHER_TURN_TRAITS.has(trait.id) && !isEveryOtherTurnScalingTurn(state)) return state;
-    return handler(recordEnemyAbilityActivation(state, trait.id), combatTexts, { traitRoll });
+    return handler(recordEnemyAbilityActivation(state, trait.id), combatTexts);
   }
   if (!PASSIVE_ONLY_TRAITS.has(trait.id) && !REACTION_ONLY_TRAITS.has(trait.id)) {
     console.warn(`[Battle] No turn-start handler for trait: ${trait.id}`);
@@ -260,19 +222,14 @@ function processDifficultyModifier(
   return handler(state, combatTexts);
 }
 
-export function processEnemyTraits(
-  state: BattleState,
-  combatTexts: CombatTextEvent[],
-  options?: { traitRoll?: number },
-) {
+export function processEnemyTraits(state: BattleState, combatTexts: CombatTextEvent[]) {
   let nextState = state;
   const scalingBlocked = isFreezeActiveForAspect(nextState, "scaling");
-  const traitRoll = options?.traitRoll ?? getBattleRng(nextState)();
 
   if (!scalingBlocked) {
     for (const trait of nextState.currentEnemy.traits) {
       try {
-        nextState = processTraitHandler(trait, nextState, combatTexts, traitRoll);
+        nextState = processTraitHandler(trait, nextState, combatTexts);
       } catch (err) {
         if (import.meta.env.DEV) throw err;
         reportHandlerFailure(`Enemy trait handler for ${trait.id}`, err);

@@ -1,6 +1,7 @@
+import { makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { defaultGearEffects } from "@/lib/gear";
-import { processEnemyAttack } from "@/lib/battle/enemy-turn-attack";
+import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import {
   dealDamage,
@@ -20,7 +21,11 @@ describe("Dodge gear affixes", () => {
       gearEffects: { ...defaultGearEffects, blockOnDodge: 4, armorOnDodge: 2, healOnDodge: 5 },
       playerHealth: 20,
     });
-    const result = processEnemyAttack(state, texts);
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
+      texts,
+    );
     expect(result.playerHealth).toBe(25);
     expect(result.playerStatuses.block).toBe(5);
     expect(result.playerStatuses.armor).toBe(3);
@@ -36,7 +41,11 @@ describe("Dodge gear affixes", () => {
       talentEffects: { ...patchBattleState().talentEffects, armorOnDodge: 3 },
     });
     const texts = makeCombatTexts();
-    const result = processEnemyAttack(state, texts);
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
+      texts,
+    );
     expect(result.playerStatuses.armor).toBe(6);
     expect(texts).toContainEqual({ target: "player", kind: "status", stat: "armor", amount: 5 });
   });
@@ -45,17 +54,22 @@ describe("Dodge gear affixes", () => {
     const state = incomingPhysical({
       gearEffects: { ...defaultGearEffects, physicalOnDodge: 5, bleedOnDodge: 4 },
     });
-    const result = processEnemyAttack(state, makeCombatTexts());
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
+      makeCombatTexts(),
+    );
     expect(result.playerHealth).toBe(100);
     expect(result.enemyHealth).toBe(91);
     expect(result.enemyStatuses.bleed).toBeGreaterThan(0);
   });
 
   it("arms Opening additional Physical on the next attack", () => {
-    const afterDodge = processEnemyAttack(
+    const afterDodge = applyEnemyAbility(
       incomingPhysical({
         gearEffects: { ...defaultGearEffects, nextAttackPhysicalOnDodge: 4 },
       }),
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
       makeCombatTexts(),
     );
     expect(afterDodge.flags.nextHitPhysicalBonus).toBe(4);
@@ -66,10 +80,11 @@ describe("Dodge gear affixes", () => {
   });
 
   it("arms Off-Balance as a guaranteed Crit on the next attack", () => {
-    const afterDodge = processEnemyAttack(
+    const afterDodge = applyEnemyAbility(
       incomingPhysical({
         gearEffects: { ...defaultGearEffects, nextAttackCritOnDodge: 1 },
       }),
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
       makeCombatTexts(),
     );
     expect(afterDodge.flags.nextHitCrit).toBe(true);

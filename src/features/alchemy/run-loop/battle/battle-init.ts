@@ -152,7 +152,7 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
       {
         afterCommit: ({ startingTexts, companionId, outcome, openingCardIds }) => {
           const battleState = readBattle().battleState;
-          preloadBattleSounds(openingCardIds, battleState.currentEnemy.id);
+          preloadBattleSounds([...openingCardIds, ...battleState.currentEnemy.abilityIds], battleState.currentEnemy.id);
           session.prepareBattleSessionForStart();
           const presentationStore = ctx.getPresentation();
           presentationStore.resetPresentation();

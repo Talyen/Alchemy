@@ -27,6 +27,7 @@ function runBatchInternal(config: BalanceBatchConfig): BalanceBatchResult {
   let cardsPlayedTotal = 0;
   let enemyAttacksTotal = 0;
   let enemyAbilityActivationsTotal = 0;
+  let enemyAbilityUsesTotal = 0;
   let winsBeforeEnemyAttack = 0;
   const cardPlayCounts: Record<string, number> = {};
   const results: BalanceBatchResult["results"] = [];
@@ -40,6 +41,7 @@ function runBatchInternal(config: BalanceBatchConfig): BalanceBatchResult {
     healthTotal += Math.max(0, result.playerHealth);
     cardsPlayedTotal += result.totalCardsPlayed;
     enemyAttacksTotal += result.enemyAttackActions;
+    enemyAbilityUsesTotal += Object.values(result.enemyAbilityUses).reduce((a, b) => a + b, 0);
     enemyAbilityActivationsTotal += Object.values(result.enemyAbilityActivations).reduce((a, b) => a + b, 0);
     if (result.wonBeforeEnemyAttack) winsBeforeEnemyAttack += 1;
     for (const [cardId, count] of Object.entries(result.cardsPlayed)) {
@@ -60,6 +62,7 @@ function runBatchInternal(config: BalanceBatchConfig): BalanceBatchResult {
     averageTurns: turnTotal / iterations,
     averageEnemyAttacks: enemyAttacksTotal / iterations,
     averageEnemyAbilityActivations: enemyAbilityActivationsTotal / iterations,
+    averageEnemyAbilityUses: enemyAbilityUsesTotal / iterations,
     winsBeforeEnemyAttackRate: winsBeforeEnemyAttack / iterations,
     averageHealthRemaining: healthTotal / iterations,
     averageCardsPlayed: cardsPlayedTotal / iterations,

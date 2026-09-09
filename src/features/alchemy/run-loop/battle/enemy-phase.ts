@@ -1,11 +1,6 @@
-import {
-  enemyAttackDealsDamage,
-  isPlayerDefeated,
-  type BattleState,
-  type CombatTextEvent,
-  type EndPlayerTurnResolution,
-} from "@/lib/battle";
-import { playBattleEvent, playEnemyAttack } from "@/lib/audio";
+import { enemyAbilityDealsDamage, getEnemyAbilityCard } from "@/lib/game-data";
+import { isPlayerDefeated, type BattleState, type CombatTextEvent, type EndPlayerTurnResolution } from "@/lib/battle";
+import { playBattleEvent, playCardSound, playEnemyAttack } from "@/lib/audio";
 import { ENEMY_ATTACK_RECOVERY_DELAY, ENEMY_PHASE_DELAY } from "@/lib/game-constants";
 import { delay } from "@/lib/animation/game-timer";
 import { markBattleStage } from "@/lib/performance/battle-stage-marks";
@@ -83,7 +78,7 @@ export function resolveNormalEnemyTurn(
     enemyResolutionTexts,
     sessionNum,
     result.playerTurnSkipped,
-    result.enemyPerformedAttack,
+    result.enemyPerformedAbility,
     battleSession,
     orch,
     resolveEndTurn,
@@ -96,7 +91,7 @@ export async function executeEnemyPhase(
   combatTexts: CombatTextEvent[],
   sessionNum: number,
   playerTurnSkipped: boolean,
-  enemyPerformedAttack: boolean,
+  enemyPerformedAbility: boolean,
   battleSession: BattleTurnSession,
   orch: TurnOrchestration,
   resolveEndTurn: ResolveEndTurn,
@@ -106,9 +101,11 @@ export async function executeEnemyPhase(
   await delay(ENEMY_PHASE_DELAY);
   if (!battleSession.isCurrentBattleSession(sessionNum)) return;
   const vfx = orch.getPresentation();
-  if (enemyPerformedAttack) {
-    playEnemyAttack(currentState.currentEnemy.id);
-    if (enemyAttackDealsDamage(currentState.currentEnemy.attackEffects)) {
+  if (enemyPerformedAbility) {
+    const ability = resultState.lastEnemyAbilityId ? getEnemyAbilityCard(resultState.lastEnemyAbilityId) : null;
+    if (ability) playCardSound(ability.id);
+    else playEnemyAttack(currentState.currentEnemy.id);
+    if (!ability || enemyAbilityDealsDamage(ability)) {
       vfx.telegraphAttack("enemy");
     } else {
       vfx.telegraphCast("enemy");

@@ -27,6 +27,7 @@ export function CollectionGrid({
   columns,
   bondedCompanions,
   onEnemyActivate,
+  inspectionOpen = false,
 }: {
   collectionTab: CollectionTab;
   discoveredCardIds: string[];
@@ -38,7 +39,8 @@ export function CollectionGrid({
   pageSize: number;
   columns: number;
   bondedCompanions: Record<string, number>;
-  onEnemyActivate?: (enemyId: string) => void;
+  onEnemyActivate?: (enemyId: string, trigger: HTMLButtonElement) => void;
+  inspectionOpen?: boolean;
 }) {
   const pageItems = useMemo(
     () =>
@@ -82,7 +84,7 @@ export function CollectionGrid({
       >
         {pageItems.map((item) => (
           <div key={`${item.hoverScope}-${item.id}`} className="relative">
-            <CollectionTile item={item} onEnemyActivate={onEnemyActivate} />
+            <CollectionTile item={item} onEnemyActivate={onEnemyActivate} inspectionOpen={inspectionOpen} />
           </div>
         ))}
         {Array.from({ length: Math.max(0, pageSize - pageItems.length) }).map((_, index) => (

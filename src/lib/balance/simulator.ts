@@ -133,7 +133,7 @@ function runSimTurn(
   if (state.enemyHealth <= 0 || isPlayerDefeated(state)) return state;
 
   const resolution = endPlayerTurn(state);
-  if (resolution.afterAttackState) sampleAnomalies(resolution.afterAttackState, [], anomalies);
+  if (resolution.afterAbilityState) sampleAnomalies(resolution.afterAbilityState, [], anomalies);
   state = choosePendingWishCards(resolution.state);
   sampleAnomalies(state, resolution.combatTexts, anomalies);
   return state;
@@ -217,6 +217,7 @@ export function simulateBattle(config: BattleSimulationConfig): BattleSimulation
     enemyMaxHealth: state.enemyMaxHealth,
     enemyAttackActions: state.battleMetrics!.enemyAttackActions,
     enemyAbilityActivations: state.battleMetrics!.enemyAbilityActivations,
+    enemyAbilityUses: state.battleMetrics!.enemyAbilityUses ?? {},
     wonBeforeEnemyAttack: outcome === "win" && state.battleMetrics!.enemyAttackActions === 0,
     cardsPlayed,
     totalCardsPlayed: Object.values(cardsPlayed).reduce((total, count) => total + count, 0),

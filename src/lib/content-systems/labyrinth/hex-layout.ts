@@ -45,6 +45,49 @@ export function floorLayoutCycleCount(
   return edgeCount - positions.length + 1;
 }
 
+function isWindingRoute(route: readonly LabyrinthGridPosition[]): boolean {
+  let direction = 0;
+  let turns = 0;
+  for (let index = 1; index < route.length; index += 1) {
+    const previous = route[index - 1]!;
+    const current = route[index]!;
+    if (current.row < previous.row) return false;
+    if (current.row !== previous.row) continue;
+    const nextDirection = Math.sign(current.col - previous.col);
+    if (direction !== 0 && nextDirection !== direction) turns += 1;
+    direction = nextDirection;
+  }
+  return turns >= 2;
+}
+
+function hasCompactSidePockets(
+  positions: readonly LabyrinthGridPosition[],
+  route: readonly LabyrinthGridPosition[],
+): boolean {
+  const routeIndices = new Map(route.map((position, index) => [hexKey(position), index]));
+  const remaining = new Set(positions.filter((position) => !routeIndices.has(hexKey(position))));
+  if (remaining.size === 0) return false;
+  let pockets = 0;
+  for (const start of remaining) {
+    pockets += 1;
+    if (pockets > 2) return false;
+    const pocket = [start];
+    const attachments: number[] = [];
+    remaining.delete(start);
+    for (const source of pocket) {
+      for (const target of positions) {
+        if (!areHexesAdjacent(source, target)) continue;
+        const routeIndex = routeIndices.get(hexKey(target));
+        if (routeIndex !== undefined) attachments.push(routeIndex);
+        if (remaining.delete(target)) pocket.push(target);
+      }
+    }
+    if (pocket.length > 2 || attachments.length === 0) return false;
+    if (Math.max(...attachments) - Math.min(...attachments) > 1) return false;
+  }
+  return true;
+}
+
 export function isValidFloorLayout(positions: readonly LabyrinthGridPosition[]): boolean {
   if (positions.length < 3) return false;
   if (positions.some((position) => !isHexInGenerationBounds(position))) return false;
@@ -58,12 +101,12 @@ export function isValidFloorLayout(positions: readonly LabyrinthGridPosition[]):
   const degrees = computeAllDegrees(positions);
   if (degrees[0] !== 1 || degrees[degrees.length - 1] !== 1) return false;
   if (degrees.some((degree) => degree > LABYRINTH_HEX.maxNodeDegree)) return false;
-  if (!degrees.includes(LABYRINTH_HEX.maxNodeDegree)) return false;
 
   const visualColumns = positions.map(hexVisualColumn);
-  if (Math.max(...visualColumns) - Math.min(...visualColumns) < 2) return false;
+  if (Math.max(...visualColumns) - Math.min(...visualColumns) < 4) return false;
 
   const distances = new Map([[hexKey(positions[0]!), 0]]);
+  const paths = new Map([[hexKey(positions[0]!), [positions[0]!]]]);
   const frontier = [positions[0]!];
   for (let index = 0; index < frontier.length; index += 1) {
     const source = frontier[index]!;
@@ -71,6 +114,7 @@ export function isValidFloorLayout(positions: readonly LabyrinthGridPosition[]):
       const key = hexKey(target);
       if (!areHexesAdjacent(source, target) || distances.has(key)) continue;
       distances.set(key, distances.get(hexKey(source))! + 1);
+      paths.set(key, [...paths.get(hexKey(source))!, target]);
       frontier.push(target);
     }
   }
@@ -78,33 +122,34 @@ export function isValidFloorLayout(positions: readonly LabyrinthGridPosition[]):
   const bossDistance = distances.get(hexKey(positions[positions.length - 1]!));
   if (bossDistance !== Math.max(...distances.values())) return false;
 
-  return floorLayoutCycleCount(positions, degrees) >= 1;
+  const route = paths.get(hexKey(positions[positions.length - 1]!))!;
+  return isWindingRoute(route) && hasCompactSidePockets(positions, route);
 }
 
 const FLOOR_TEMPLATES: Record<number, readonly string[]> = {
   12: [
-    "E##/..#/###/#.#/..#/B#.",
-    "##E/#../.##/#.#/#.#/#.B",
-    "##E/#../#.#/##./#.#/#.B",
-    "##E/#../#.#/###/#../#B.",
-    "##E/#../#../###/#.#/#.B",
-    "##E/#../.##/#.#/###/..B",
+    "...E#/#...#/.####/#..../.##B.",
+    "..E##/....#/.####/#...#/.#B..",
+    ".#E.#/#...#/.####/....#/...B#",
+    "E##../..#../.###./#..../.###B",
+    "...#E/.##../...##/....#/B####",
+    ".###E/#..../.###./..#../B##..",
   ],
   13: [
-    "E##/..#/.##/#.#/#.#/##./..B",
-    "E.#/###/#../###/#../##B",
-    "##E/#../#.#/##./#.#/#.#/B..",
-    "##E/#../#.#/###/#../##B",
-    "E.#/##./#.#/###/#../##B",
-    "##E/#../#../###/#.#/##./B..",
+    "...E#/.#..#/.####/#..../.###B",
+    ".##E./#..../.###./...##/B###.",
+    "###E./#..../.####/....#/..B##",
+    ".#E../#...#/.####/#...#/#..B#",
+    "...#E/###../...##/....#/B####",
+    "E###./...#./.####/#..../.##B.",
   ],
   14: [
-    "E##/..#/###/#.#/..#/..#/B##",
-    "E.#/###/#../##./#.#/#.#/#.B",
-    "E.#/###/#../###/#../##./#.B",
-    "E.#/###/#../###/#.#/#../.#B",
-    "E.#/###/#../###/#.#/#.#/..B",
-    "##E/#../.##/#.#/#.#/###/B..",
+    ".#.E#/#...#/.####/#..../.###B",
+    ".#E../#...#/.####/#...#/#.B##",
+    ".E###/....#/#####/#...#/.#B..",
+    "E###./...##/####./#..../.##B.",
+    "..#E./.#.../#####/....#/B####",
+    "####E/#..../.####/#...#/...B#",
   ],
 };
 

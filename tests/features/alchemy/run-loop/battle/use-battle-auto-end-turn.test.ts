@@ -35,24 +35,36 @@ describe("useBattleAutoEndTurn", () => {
     vi.useFakeTimers();
     resetBattlePresentationAndRun();
     useUiStore.getState().setCardInspection(null);
+    useUiStore.getState().setEnemyInspectionOpen(false);
   });
 
   afterEach(() => {
     vi.useRealTimers();
   });
 
-  it("cancels an existing timer during inspection and resumes after closing", () => {
-    const onEndTurn = vi.fn();
-    renderHook(() =>
-      useAutoEndTurnUnderTest({ ...baseOptions, battleState: makeEmptyHandBattle().battleState, onEndTurn }),
-    );
-    act(() => useUiStore.getState().setCardInspection("deck"));
-    act(() => vi.advanceTimersByTime(AUTO_END_TURN_DELAY * 2));
-    expect(onEndTurn).not.toHaveBeenCalled();
-    act(() => useUiStore.getState().setCardInspection(null));
-    act(() => vi.advanceTimersByTime(AUTO_END_TURN_DELAY));
-    expect(onEndTurn).toHaveBeenCalledOnce();
-  });
+  it.each(["cards", "enemy"] as const)(
+    "cancels an existing timer during %s inspection and resumes after closing",
+    (kind) => {
+      const onEndTurn = vi.fn();
+      renderHook(() =>
+        useAutoEndTurnUnderTest({ ...baseOptions, battleState: makeEmptyHandBattle().battleState, onEndTurn }),
+      );
+      act(() =>
+        kind === "cards"
+          ? useUiStore.getState().setCardInspection("deck")
+          : useUiStore.getState().setEnemyInspectionOpen(true),
+      );
+      act(() => vi.advanceTimersByTime(AUTO_END_TURN_DELAY * 2));
+      expect(onEndTurn).not.toHaveBeenCalled();
+      act(() =>
+        kind === "cards"
+          ? useUiStore.getState().setCardInspection(null)
+          : useUiStore.getState().setEnemyInspectionOpen(false),
+      );
+      act(() => vi.advanceTimersByTime(AUTO_END_TURN_DELAY));
+      expect(onEndTurn).toHaveBeenCalledOnce();
+    },
+  );
 
   it("schedules end turn when no card is playable", () => {
     const onEndTurn = vi.fn();

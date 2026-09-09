@@ -20,10 +20,14 @@ export function BattleActors({
   view,
   feedback,
   refs,
+  onInspectEnemy,
+  enemyInspectionOpen,
 }: {
   view: RequiredBattleViewProps;
   feedback: BattleFeedbackProps;
   refs: BattleRefsProps;
+  onInspectEnemy?: ((trigger: HTMLElement) => void) | undefined;
+  enemyInspectionOpen?: boolean | undefined;
 }) {
   const { battleState, characterId, heroArt, playerName, aspectMode } = view;
   const { playerStatusChips, enemyStatusChips, activeLabyrinthModifiers } = feedback;
@@ -99,7 +103,8 @@ export function BattleActors({
           surfaceRef={enemyPanelRef}
           isDead={battleState.enemyHealth <= 0}
           currentEnemy={battleState.currentEnemy}
-          currentEnemyAttackEffects={battleState.enemyAttackEffects}
+          onInspect={onInspectEnemy}
+          inspectionOpen={enemyInspectionOpen ?? false}
           activeLabyrinthModifiers={activeLabyrinthModifiers}
           isBoss={isBoss}
           turnActive={!isPlayerTurn && !enemyDead}

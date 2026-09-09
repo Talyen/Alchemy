@@ -14,6 +14,7 @@ export function hexLabyrinthMapFixture() {
   const entranceId = "labyrinth-entrance";
   return {
     currentFloor: 1,
+    currentNodeId: null,
     floors: [
       { id: "labyrinth-floor-0", depth: 0, nodeIds: [entranceId] },
       { id: "labyrinth-floor-1", depth: 1, nodeIds: [combatId, restId, bossId] },
@@ -128,6 +129,7 @@ export function productionHexLabyrinthMapFixture(): LabyrinthMap {
   const nodes = [entrance, ...floor1Linked, ...floor2];
   return {
     currentFloor: 2,
+    currentNodeId: null,
     floors: [
       { id: LABYRINTH_ENTRANCE_FLOOR_ID, depth: 0, nodeIds: [entrance.id] },
       { id: labyrinthFloorId(1), depth: 1, nodeIds: floor1Linked.map((node) => node.id) },

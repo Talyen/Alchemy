@@ -96,9 +96,16 @@ export const LabyrinthMapSchema = z
     floors: z.array(LabyrinthFloorSchema),
     nodes: z.record(z.string(), LabyrinthNodeSchema),
     currentFloor: z.number().int().positive().catch(1),
+    currentNodeId: z.string().min(1).nullable().catch(null),
   })
   .refine(isValidLabyrinthMap, { message: "Invalid labyrinth map structure" })
-  .transform((map): LabyrinthMap => map)
+  .transform((map): LabyrinthMap => {
+    const currentNode = map.currentNodeId ? map.nodes[map.currentNodeId] : null;
+    return {
+      ...map,
+      currentNodeId: currentNode?.floor === map.currentFloor && currentNode.cleared ? currentNode.id : null,
+    };
+  })
   .nullable()
   .catch(null);
 

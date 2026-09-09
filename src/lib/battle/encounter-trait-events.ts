@@ -17,8 +17,12 @@ function addEnemyStatusText(
 }
 
 export function regrowEnemyThorns(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
-  if (state.enemyStatuses.thorns > 0) return state;
-  const nextState = setEnemyStatus(state, "thorns", 1);
+  if (state.flags.legacyEnemyThornsReady) return state;
+  const nextState = setEnemyStatus(
+    setFlag(state, "legacyEnemyThornsReady", true),
+    "thorns",
+    state.enemyStatuses.thorns + 1,
+  );
   mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "thorns", amount: 1 });
   return nextState;
 }
@@ -133,9 +137,13 @@ export function processEncounterTraitCardAction(
     nextState = addEnemyStatusText(nextState, "block", scale(1), combatTexts);
   }
   if (card.effects.some((effect) => effect.kind === "damage" || effect.kind === "random-damage")) {
-    if (hasEnemyTrait(nextState, "thorns") && nextState.enemyStatuses.thorns > 0) {
+    if (hasEnemyTrait(nextState, "thorns") && nextState.flags.legacyEnemyThornsReady) {
       nextState = recordEnemyAbilityActivation(nextState, "thorns");
-      nextState = setEnemyStatus(nextState, "thorns", 0);
+      nextState = setEnemyStatus(
+        setFlag(nextState, "legacyEnemyThornsReady", false),
+        "thorns",
+        Math.max(0, nextState.enemyStatuses.thorns - 1),
+      );
       nextState = dealTraitDamage(nextState, "physical", 1, combatTexts);
     }
     if (hasEnemyTrait(nextState, "holy-retribution") && !nextState.flags.holyRetributionUsedThisTurn)
@@ -163,10 +171,11 @@ export function applyEncounterThorns(state: BattleState, combatTexts: CombatText
     : hasEnemyTrait(state, "thornhide")
       ? "thornhide"
       : null;
-  if (!id) return state;
-  const amount = state.enemyStatuses.thorns;
+  const legacyThorns = state.flags.legacyEnemyThornsReady ? 1 : 0;
+  const amount = Math.max(0, state.enemyStatuses.thorns - legacyThorns);
+  if (amount === 0) return state;
   return processEnemyDamageEffect(
-    setEnemyStatus(recordEnemyAbilityActivation(state, id), "thorns", 0),
+    setEnemyStatus(id ? recordEnemyAbilityActivation(state, id) : state, "thorns", legacyThorns),
     { kind: "damage", damageType: "nature", amount },
     combatTexts,
   );

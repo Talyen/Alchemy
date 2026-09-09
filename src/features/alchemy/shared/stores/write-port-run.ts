@@ -224,8 +224,8 @@ export function withRestingWorldBattleRng(battleState: BattleState): BattleState
 
 export function withRestingEndPlayerTurnResolution(result: EndPlayerTurnResolution): EndPlayerTurnResolution {
   const state = withRestingWorldBattleRng(result.state);
-  const afterAttack = result.afterAttackState
-    ? { afterAttackState: withRestingWorldBattleRng(result.afterAttackState) }
+  const afterAttack = result.afterAbilityState
+    ? { afterAbilityState: withRestingWorldBattleRng(result.afterAbilityState) }
     : {};
   if (result.kind === "haste") {
     return { ...result, state, ...afterAttack };

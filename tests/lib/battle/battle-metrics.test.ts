@@ -1,6 +1,7 @@
+import { makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
-import { processEnemyAttack } from "@/lib/battle/enemy-turn-attack";
+import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { processEnemyTraits } from "@/lib/battle/enemy-turn-traits";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { normalizePersistedBattleState } from "@/lib/validation/normalize-persisted-battle-state";
@@ -12,14 +13,28 @@ describe("battle measurements", () => {
   it("counts a blocked multi-hit attack once without changing combat", () => {
     const state = makeTestBattleState({
       playerStatuses: { ...makeTestBattleState().playerStatuses, block: 50 },
-      enemyAttackEffects: [
-        { kind: "damage", damageType: "physical", amount: 2 },
-        { kind: "damage", damageType: "burn", amount: 2 },
-      ],
       rng: () => 0.99,
     });
-    const measured = processEnemyAttack({ ...state, battleMetrics: metrics() }, []);
-    const plain = processEnemyAttack(state, []);
+    const measured = applyEnemyAbility(
+      { ...state, battleMetrics: metrics() },
+      makeEnemyTestCard({
+        effects: [
+          { kind: "damage", damageType: "physical", amount: 2 },
+          { kind: "damage", damageType: "burn", amount: 2 },
+        ],
+      }),
+      [],
+    );
+    const plain = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({
+        effects: [
+          { kind: "damage", damageType: "physical", amount: 2 },
+          { kind: "damage", damageType: "burn", amount: 2 },
+        ],
+      }),
+      [],
+    );
     const { battleMetrics, ...combat } = measured;
     expect(battleMetrics?.enemyAttackActions).toBe(1);
     expect(combat).toEqual(plain);
@@ -49,19 +64,17 @@ describe("battle measurements", () => {
       battleMetrics: metrics(),
       currentEnemy: { ...base.currentEnemy, traits: [{ id: "iron-hide", title: "Iron Hide", description: "" }] },
     };
-    expect(
-      processEnemyTraits({ ...state, turn: 1 }, [], { traitRoll: 0 }).battleMetrics?.enemyAbilityActivations,
-    ).toEqual({});
-    expect(
-      processEnemyTraits({ ...state, turn: 2 }, [], { traitRoll: 0 }).battleMetrics?.enemyAbilityActivations,
-    ).toEqual({ "iron-hide": 1 });
+    expect(processEnemyTraits({ ...state, turn: 1 }, []).battleMetrics?.enemyAbilityActivations).toEqual({});
+    expect(processEnemyTraits({ ...state, turn: 2 }, []).battleMetrics?.enemyAbilityActivations).toEqual({
+      "iron-hide": 1,
+    });
     const frozen = {
       ...state,
       turn: 2,
       enemyCC: { ...state.enemyCC, freezeSkipTurns: 1 },
       talentEffects: { ...state.talentEffects, freezePreventsEnemyScaling: true },
     };
-    expect(processEnemyTraits(frozen, [], { traitRoll: 0 }).battleMetrics?.enemyAbilityActivations).toEqual({});
+    expect(processEnemyTraits(frozen, []).battleMetrics?.enemyAbilityActivations).toEqual({});
     expect(state.battleMetrics).toEqual(metrics());
   });
 

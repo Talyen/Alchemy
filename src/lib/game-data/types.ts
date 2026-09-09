@@ -184,7 +184,7 @@ export interface BestiaryEntry {
   art: string;
   enemyType: EnemyType;
   traits: EnemyTrait[];
-  attackEffects: EnemyAttackEffect[];
+  abilityIds: string[];
 }
 
 export interface TrinketEntry {
