@@ -1,14 +1,20 @@
 import { usePagination } from "../../../shared/ui/use-pagination";
-import { useAdaptiveGrid } from "../../../shared/ui/adaptive-grid";
-import { GridMeasurement } from "../../../shared/ui/grid-measurement";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { collectionGridGapXClass, collectionGridTileWidthClass, gearArtAspectClass } from "../../../shared/config";
 import { FadeSlot } from "../../../shared/ui/use-fade";
 import { PaginationControls } from "../../../shared/ui/shared-ui";
 
+const ARMORY_PICKER_COLUMNS = 3;
+const ARMORY_PICKER_ROWS = 2;
+const ARMORY_PICKER_PAGE_SIZE = ARMORY_PICKER_COLUMNS * ARMORY_PICKER_ROWS;
+
+const armoryPickerGridStyle = {
+  gridTemplateColumns: `repeat(${ARMORY_PICKER_COLUMNS}, minmax(0, 1fr))`,
+  justifyContent: "center",
+} satisfies CSSProperties;
+
 function PagedPickerGrid({
-  grid: { onContainer, onMeasure, referenceTileWidth, gridStyle },
   testId,
   swapKey,
   isEmpty,
@@ -20,7 +26,6 @@ function PagedPickerGrid({
   fillerTestId,
   children,
 }: {
-  grid: ReturnType<typeof useAdaptiveGrid>;
   testId: string;
   swapKey: string;
   isEmpty: boolean;
@@ -34,15 +39,17 @@ function PagedPickerGrid({
 }) {
   return (
     <section data-testid={testId} className="flex min-h-0 min-w-0 flex-1 flex-col">
-      <div ref={onContainer} className="relative w-full">
-        <GridMeasurement onMeasure={onMeasure} referenceTileWidth={referenceTileWidth} />
+      <div className="relative w-full">
         <FadeSlot swapKey={`${swapKey}-${safePage}`} className="relative mt-2 w-full overflow-visible">
           {isEmpty ? (
             <p className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center text-center text-xl text-muted-foreground">
               Empty
             </p>
           ) : null}
-          <div style={gridStyle} className={cn("grid w-full grid-rows-2", collectionGridGapXClass, "gap-y-6")}>
+          <div
+            style={armoryPickerGridStyle}
+            className={cn("grid w-full grid-rows-2", collectionGridGapXClass, "gap-y-6")}
+          >
             {children}
             {Array.from({ length: fillerCount }, (_, index) => index).map((index) => (
               <div key={`${testId}-filler-${index}`} data-testid={fillerTestId} className={fillerClassName} />
@@ -65,8 +72,7 @@ function PagedPickerGrid({
 }
 
 export function useArmoryPickerPage<T>(context: string, items: T[], selectedIndex = -1) {
-  const grid = useAdaptiveGrid(225, 3);
-  const pageSize = grid.pageSize;
+  const pageSize = ARMORY_PICKER_PAGE_SIZE;
   const {
     page: safePage,
     totalPages,
@@ -74,7 +80,6 @@ export function useArmoryPickerPage<T>(context: string, items: T[], selectedInde
   } = usePagination(items.length, pageSize, context, selectedIndex);
   const pageItems = items.slice(safePage * pageSize, (safePage + 1) * pageSize);
   return {
-    grid,
     pageItems,
     fillerCount: Math.max(0, pageSize - pageItems.length),
     safePage,
@@ -107,14 +112,13 @@ export function ArmoryPagedGrid<T>({
           (item as { id?: unknown }).id === selectedId,
       )
     : -1;
-  const { grid, pageItems, fillerCount, safePage, totalPages, onPageChange } = useArmoryPickerPage(
+  const { pageItems, fillerCount, safePage, totalPages, onPageChange } = useArmoryPickerPage(
     context,
     items,
     selectedIndex,
   );
   return (
     <PagedPickerGrid
-      grid={grid}
       testId={testId}
       swapKey={swapKey}
       isEmpty={items.length === 0}

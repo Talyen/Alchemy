@@ -61,6 +61,7 @@ export const LabyrinthNodeTypeSchema = z.enum([
   "elite",
   "rest",
   "mystery",
+  "corruption",
   "shop",
   "alchemist",
   "trinket-shop",

@@ -30,6 +30,7 @@ export const SHINE_PALETTES = {
     elite: ["#3b0764", "#9333ea", "#c084fc", "#581c87"],
     rest: ["#431407", "#d97706", "#fb923c", "#78350f"],
     mystery: ["#27272a", "#a1a1aa", "#e4e4e7", "#525252"],
+    corruption: ["#450a0a", "#dc2626", "#f87171", "#7f1d1d"],
     shop: ["#422006", "#eab308", "#fde047", "#78350f"],
     alchemist: ["#022c22", "#10b981", "#6ee7b7", "#064e3b"],
     "trinket-shop": ["#2e1065", "#a855f7", "#e9d5ff", "#581c87"],

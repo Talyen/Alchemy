@@ -15,6 +15,7 @@ function stubNodeHandlers(overrides: Partial<LabyrinthNodeHandlers> = {}): Labyr
     onStartBossBattleWithModifiers: vi.fn(),
     onStartRest: vi.fn(),
     onStartMystery: vi.fn(),
+    onStartCorruption: vi.fn(),
     onStartShop: vi.fn(),
     onStartAlchemist: vi.fn(),
     onStartTrinketShop: vi.fn(),
@@ -121,5 +122,49 @@ describe("useLabyrinthController hook", () => {
     expect(readRunSession().activeLabyrinthPendingNode).toBeNull();
     expect(readRunSession().selectedLabyrinthNodeId).toBeNull();
     expect(readRunSession().labyrinthMap!.nodes[LABYRINTH_ENTRANCE_NODE_ID]?.type).toBe("entrance");
+  });
+
+  it("routes corruption chambers to onStartCorruption with room modifiers", () => {
+    const corruptionId = "labyrinth-floor-1-corruption";
+    act(() => {
+      dispatchRunSessionCommand((draft) => {
+        const map = readRunSession().labyrinthMap!;
+        setLabyrinthMap(draft, {
+          ...map,
+          floors: [
+            { id: "labyrinth-floor-0", depth: 0, nodeIds: [LABYRINTH_ENTRANCE_NODE_ID] },
+            { id: "labyrinth-floor-1", depth: 1, nodeIds: [corruptionId] },
+          ],
+          nodes: {
+            [LABYRINTH_ENTRANCE_NODE_ID]: {
+              ...map.nodes[LABYRINTH_ENTRANCE_NODE_ID]!,
+              outgoingIds: [corruptionId],
+            },
+            [corruptionId]: {
+              id: corruptionId,
+              type: "corruption",
+              floor: 1,
+              gridPosition: { row: 0, col: 1 },
+              modifiers: [],
+              rewardModifiers: ["blood-rite"],
+              outgoingIds: [],
+              cleared: false,
+            },
+          },
+        });
+      });
+    });
+    const onStartCorruption = vi.fn();
+    const { result } = renderHook(() => useLabyrinthController());
+
+    let entered = false;
+    act(() => {
+      result.current.selectNode(corruptionId);
+      entered = result.current.enterSelectedNode(stubNodeHandlers({ onStartCorruption }));
+    });
+
+    expect(entered).toBe(true);
+    expect(onStartCorruption).toHaveBeenCalledWith(["blood-rite"]);
+    expect(readRunSession().activeLabyrinthPendingNode).toBe(corruptionId);
   });
 });

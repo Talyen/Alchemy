@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { ShoppingBag, X } from "lucide-react";
 
+import { ChromeIconButton } from "../../../shared/ui/chrome-icon-button";
 import { Button } from "@/components/ui/button";
 import { battleTrinketInspectRowMaxWidthClass } from "@/features/alchemy/shared/config";
 import { TRINKET_PAGE_SIZE } from "@/lib/game-constants";
@@ -17,16 +18,14 @@ const INSPECT_COLUMNS = 4;
 
 export function BattleBoonInspectButton({ open, onToggle }: { open: boolean; onToggle: () => void }) {
   return (
-    <Button
-      variant={open ? "primary" : "outline"}
-      size="icon"
-      className={cn("h-12 w-12", !open && "text-muted-foreground")}
+    <ChromeIconButton
+      variant={open ? "primary" : "ghost"}
       onClick={onToggle}
       aria-label={open ? "Close Boons" : "Inspect Boons"}
       data-testid="battle-boon-inspect-toggle"
     >
       <ShoppingBag className="h-6 w-6" />
-    </Button>
+    </ChromeIconButton>
   );
 }
 

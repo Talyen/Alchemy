@@ -5,6 +5,7 @@ import {
   resetUnlockedTalents,
   setActiveLabyrinthModifiers,
   setActiveLabyrinthRewardModifiers,
+  setCorruptionResult,
   unlockAllTalents,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
@@ -108,6 +109,10 @@ export function useAlchemyRunController() {
     beginLabyrinth,
   });
 
+  const resetCorruptionResult = useCallback(() => {
+    dispatchRunSessionCommand((draft) => setCorruptionResult(draft, null));
+  }, []);
+
   const nodeRouting = useMemo(
     () =>
       createLabyrinthNodeRouting({
@@ -121,6 +126,7 @@ export function useAlchemyRunController() {
         },
         nav: { beginMysteryEvent: nav.beginMysteryEvent },
         shop,
+        corruption: { reset: resetCorruptionResult },
       }),
     [
       applyLabyrinthBattleModifiers,
@@ -131,6 +137,7 @@ export function useAlchemyRunController() {
       battle.startBossBattle,
       nav.beginMysteryEvent,
       shop,
+      resetCorruptionResult,
     ],
   );
 

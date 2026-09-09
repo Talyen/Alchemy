@@ -14,6 +14,7 @@ const LABYRINTH_TYPE_BASE_KEYWORDS: Record<LabyrinthNode["type"], KeywordId[]> =
   boss: [],
   rest: ["health"],
   mystery: ["wish"],
+  corruption: ["consume"],
   shop: ["gold"],
   alchemist: ["poison"],
   "trinket-shop": ["wish"],

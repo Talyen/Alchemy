@@ -21,12 +21,14 @@ export const TrinketSlotButton = memo(function TrinketSlotButton({
   editable,
   onSelect,
   onUnequip,
+  onCombatLockedAttempt,
 }: {
   trinket: TrinketEntry | undefined;
   selected: boolean;
   editable: boolean;
   onSelect: () => void;
   onUnequip: () => void;
+  onCombatLockedAttempt: () => void;
 }) {
   const {
     isHovered,
@@ -72,7 +74,15 @@ export const TrinketSlotButton = memo(function TrinketSlotButton({
         onBlur={handleBlur}
         className={armorySlotSurfaceClass(editable, showShine)}
         onClick={() => {
-          if (editable && selected && trinket) onUnequip();
+          if (!editable) {
+            if (selected && trinket) {
+              onCombatLockedAttempt();
+              return;
+            }
+            onSelect();
+            return;
+          }
+          if (selected && trinket) onUnequip();
           else onSelect();
         }}
       >

@@ -42,7 +42,6 @@ export interface GearStore {
   addTrinket: (trinketId: string) => boolean;
   equipTrinket: (characterId: CharacterId, trinketId: string) => boolean;
   unequipTrinket: (characterId: CharacterId) => boolean;
-  setProtected: (instanceId: string, protectedItem: boolean) => boolean;
   salvage: (
     instanceId: string,
     options?: { yield?: SalvageYield },

@@ -1,7 +1,10 @@
+import "../../../../helpers/mock-audio";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { playUISound } from "@/lib/audio";
 import { createEmptyEquippedTrinkets, createEmptyGearLoadouts } from "@/lib/gear";
+import { COMBAT_LOCKED_MESSAGE } from "@/features/alchemy/meta/screens/armory/armory-item-state";
 import {
   createArmoryInventories,
   installArmoryScreenTestHooks,
@@ -88,19 +91,49 @@ describe("ArmoryScreen core", () => {
     expect(screen.getByRole("button", { name: "Wizard (Locked)" })).toHaveProperty("disabled", true);
   });
 
-  it("shows browse-only feedback", async () => {
+  it("stays silent while browsing a hero in Combat and errors on a locked change", async () => {
     const user = userEvent.setup();
     const onUnequip = vi.fn();
+    const onEquipTrinket = vi.fn();
+    const loadouts = createEmptyGearLoadouts();
+    loadouts.knight["main-hand"] = "gear-sword";
     renderArmoryScreen({
       combatRestrictions: { characters: { knight: ["campaign"] }, gear: {}, trinkets: {} },
+      loadouts,
       onUnequip,
+      onEquipTrinket,
       ownedTrinketIds: ["brass-censer"],
     });
 
-    expect(screen.getByText(/Equipment can be changed after this hero’s battle ends/)).toBeTruthy();
+    expect(screen.queryByText(COMBAT_LOCKED_MESSAGE)).toBeNull();
 
     await user.click(screen.getByLabelText("Trinket equipment slot"));
-    expect(screen.getByRole("button", { name: "Equip Brass Censer" }).getAttribute("aria-disabled")).toBe("true");
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(onUnequip).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Equip Brass Censer" }));
+    expect(onEquipTrinket).not.toHaveBeenCalled();
+    expect(playUISound).toHaveBeenCalledWith("error");
+    expect(screen.getByRole("alert").textContent).toBe(COMBAT_LOCKED_MESSAGE);
+  });
+
+  it("errors when trying to unequip gear for a hero in Combat", async () => {
+    const user = userEvent.setup();
+    const onUnequip = vi.fn();
+    const loadouts = createEmptyGearLoadouts();
+    loadouts.knight["main-hand"] = "gear-sword";
+    renderArmoryScreen({
+      combatRestrictions: { characters: { knight: ["campaign"] }, gear: {}, trinkets: {} },
+      loadouts,
+      onUnequip,
+    });
+
+    expect(screen.queryByRole("alert")).toBeNull();
+
+    await user.click(screen.getByLabelText("Main-hand equipment slot"));
+    expect(onUnequip).not.toHaveBeenCalled();
+    expect(playUISound).toHaveBeenCalledWith("error");
+    expect(screen.getByRole("alert").textContent).toBe(COMBAT_LOCKED_MESSAGE);
   });
 
   it("reserves another hero’s equipment while leaving unused gear editable", async () => {

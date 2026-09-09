@@ -198,7 +198,6 @@ const CRAFTING_CURRENCY_BEHAVIORS: Record<CraftingCurrencyId, CraftingCurrencyBe
 };
 
 export function craftingCurrencyBlockedReason(currencyId: CraftingCurrencyId, item: GearInstance): string | null {
-  if (item.protected) return "Unlock this item before crafting.";
   if (gearInstanceRarity(item) === "unique") return "Unique items cannot be crafted.";
   if (CRAFTING_CURRENCY_BEHAVIORS[currencyId].canApply(item)) return null;
   switch (currencyId) {

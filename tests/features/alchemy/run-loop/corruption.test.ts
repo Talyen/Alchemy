@@ -225,6 +225,84 @@ describe("corruption selection", () => {
   });
 });
 
+describe("labyrinth corruption room modifiers", () => {
+  it("steady-sigil removes weakening without touching strengthen", () => {
+    const kinds = getCorruptionMutationGroups(cardById.slash!).map((group) => group.kind);
+    expect(kinds).toContain("weaken");
+    const steady = getCorruptionMutationGroups(cardById.slash!, ["steady-sigil"]);
+    expect(steady.map((group) => group.kind)).not.toContain("weaken");
+    expect(steady.map((group) => group.kind)).toContain("strengthen");
+  });
+
+  it("pure-altar keeps the selected card identity", () => {
+    const slash = { ...cardById.slash! };
+    const library = [slash, { ...cardById.frostbolt! }];
+    expect(corruptCard(slash, library, makeRng([0.099, 0, 0, 0]))?.transformed).toBe(true);
+    const pure = corruptCard(slash, library, makeRng([0.099, 0, 0, 0]), ["pure-altar"]);
+    expect(pure?.transformed).toBe(false);
+    expect(pure?.corruptedCard.id).toBe("slash");
+  });
+
+  it("blood-rite favors leech and conversion gifts", () => {
+    const base = new Map(getCorruptionMutationGroups(cardById.slash!).map((group) => [group.kind, group.weight]));
+    const blood = new Map(
+      getCorruptionMutationGroups(cardById.slash!, ["blood-rite"]).map((group) => [group.kind, group.weight]),
+    );
+    expect(blood.get("leech")).toBe(base.get("leech")! * 3);
+    expect(blood.get("convert")).toBe(base.get("convert")! * 2);
+    expect(blood.get("strengthen")).toBe(base.get("strengthen"));
+  });
+
+  it("echoing-altar narrows secondary gifts to the card keywords", () => {
+    const tagged = makeTestCard({
+      descriptionLines: ["Deal 6 Physical damage"],
+      effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
+      tags: ["poison"],
+    });
+    const secondary = getCorruptionMutationGroups(tagged).find((group) => group.kind === "secondary")!;
+    expect(secondary.mutations).toHaveLength(4);
+    const echoed = getCorruptionMutationGroups(tagged, ["echoing-altar"]).find((group) => group.kind === "secondary")!;
+    expect(echoed.mutations).toHaveLength(1);
+    expect(echoed.mutations[0]!.card.descriptionLines).toContain("Deal 1 Poison damage");
+  });
+
+  it("echoing-altar narrows conversions to the card keywords with fallback", () => {
+    const tagged = makeTestCard({
+      descriptionLines: ["Deal 6 Physical damage"],
+      effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
+      tags: ["poison"],
+    });
+    const echoed = getCorruptionMutationGroups(tagged, ["echoing-altar"]).find((group) => group.kind === "convert")!;
+    expect(echoed.mutations).toHaveLength(1);
+    expect(echoed.mutations[0]!.card.effects[0]).toMatchObject({ damageType: "poison" });
+    const fallback = getCorruptionMutationGroups(cardById.slash!, ["echoing-altar"]).find(
+      (group) => group.kind === "convert",
+    )!;
+    expect(fallback.mutations.length).toBeGreaterThan(1);
+  });
+
+  it("twin-offering applies two gifts in one corruption", () => {
+    const slash = { ...cardById.slash! };
+    const result = corruptCard(slash, [slash], makeRng([0, 0, 0, 0]), ["twin-offering"]);
+    expect(result?.transformed).toBe(false);
+    expect(result?.delta).toBe(1);
+    expect(result?.corruptedCard.corrupted).toBe(true);
+    expect(result?.corruptedCard.descriptionLines).toEqual(["Deal 9 Physical damage", "Gain 2 Block"]);
+    expect(result?.corruptedCard.effects).toHaveLength(2);
+  });
+
+  it("twin-offering chains the second gift onto the first", () => {
+    const card = makeTestCard({
+      descriptionLines: ["One", "Two", "Three"],
+      effects: [{ kind: "next-hit-crit" }],
+    });
+    const result = corruptCard(card, [card], makeRng([0, 0, 0, 0]), ["twin-offering"]);
+    expect(result?.corruptedCard.descriptionLines).toEqual(["One", "Two", "Three", "Gain 3 Block"]);
+    expect(result?.corruptedCard.effects).toHaveLength(2);
+    expect(result?.delta).toBe(1);
+  });
+});
+
 describe("numeric text alignment", () => {
   it("matches multiple values and ignores unrelated numbers", () => {
     const card = makeTestCard({

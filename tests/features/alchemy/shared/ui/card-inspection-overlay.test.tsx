@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CardInspectionOverlay } from "@/features/alchemy/shared/ui/card-inspection-overlay";
+import { keywordDefinitions } from "@/lib/game-data";
 import { resetEscapeStackForTests } from "@/app/escape-stack";
 import { makeTestCard } from "../../../../fixtures/battle";
 import { installDisabledAnimationsForTests } from "../../../../helpers/animation-test";
@@ -103,6 +104,36 @@ describe("card inspection", () => {
     view.unmount();
     expect(document.activeElement).toBe(opener);
     opener.remove();
+  });
+
+  it("shows hover-only keyword shine, with neutral fallback when no keywords resolve", () => {
+    const keywordCard = makeTestCard({
+      id: "physical-slash",
+      title: "Physical Slash",
+      uid: 11,
+      effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+    });
+    const plainCard = makeTestCard({ id: "plain", title: "Plain", uid: 12, effects: [], descriptionLines: [] });
+    render(
+      <CardInspectionOverlay {...props} collections={[{ id: "deck" as const, cards: [keywordCard, plainCard] }]} />,
+    );
+    const keywordButton = screen.getByRole("button", { name: "Physical Slash" });
+    const plainButton = screen.getByRole("button", { name: "Plain" });
+    expect(keywordButton.querySelector(".shine-border")).toBeNull();
+    expect(plainButton.querySelector(".shine-border")).toBeNull();
+    fireEvent.mouseEnter(keywordButton.parentElement!);
+    const shine = keywordButton.querySelector<HTMLElement>(".shine-border")!;
+    expect(shine).not.toBeNull();
+    expect(keywordButton.className).toMatch(/card-art-shine/);
+    const color = document.createElement("span");
+    color.style.color = keywordDefinitions.physical.shineColors[0]!;
+    expect(shine.style.backgroundImage).toContain(color.style.color);
+    fireEvent.mouseLeave(keywordButton.parentElement!);
+    expect(keywordButton.querySelector(".shine-border")).toBeNull();
+    fireEvent.focus(plainButton);
+    expect(plainButton.querySelector(".shine-border")).not.toBeNull();
+    fireEvent.blur(plainButton);
+    expect(plainButton.querySelector(".shine-border")).toBeNull();
   });
 
   it("resets pagination on reopen and rejects clicks during the closing fade", async () => {

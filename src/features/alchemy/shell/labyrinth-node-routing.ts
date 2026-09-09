@@ -23,6 +23,7 @@ interface LabyrinthNodeRoutingDeps {
   };
   nav: { beginMysteryEvent: () => void };
   shop: Pick<ShopActions, "initialize">;
+  corruption: { reset: () => void };
 }
 
 export function createLabyrinthNodeRouting(deps: LabyrinthNodeRoutingDeps) {
@@ -72,6 +73,8 @@ export function createLabyrinthNodeRouting(deps: LabyrinthNodeRoutingDeps) {
         applyNodeModifiers([], modifiers);
         deps.nav.beginMysteryEvent();
       },
+      onStartCorruption: (modifiers = []) =>
+        enterLabyrinthNodeScreen(ROUTE_SCREENS.CORRUPTION, () => deps.corruption.reset(), [], modifiers),
       onStartShop: (modifiers = []) =>
         enterLabyrinthNodeScreen(ROUTE_SCREENS.SHOP, () => deps.shop.initialize("merchant"), [], modifiers),
       onStartAlchemist: (modifiers = []) =>

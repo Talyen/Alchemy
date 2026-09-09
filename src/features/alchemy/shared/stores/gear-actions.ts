@@ -104,15 +104,6 @@ export function unequipPermanentTrinket(gear: Draft<GearStateFields>, characterI
   return true;
 }
 
-export function setGearProtected(gear: Draft<GearStateFields>, instanceId: string, protectedItem: boolean): boolean {
-  const owner = findGearInventoryOwner(gear.inventories, instanceId);
-  const instance = owner ? gear.inventories[owner].find((item) => item.instanceId === instanceId) : undefined;
-  if (!instance || Boolean(instance.protected) === protectedItem) return false;
-  if (protectedItem) instance.protected = true;
-  else delete instance.protected;
-  return true;
-}
-
 export function salvageGearInstance(
   gear: Draft<GearStateFields>,
   instanceId: string,

@@ -41,6 +41,7 @@ export interface LabyrinthNodeHandlers {
   ) => void;
   onStartRest: (modifiers?: EncounterRewardTraitId[]) => void;
   onStartMystery: (modifiers?: EncounterRewardTraitId[]) => void;
+  onStartCorruption: (modifiers?: EncounterRewardTraitId[]) => void;
   onStartShop: (modifiers?: EncounterRewardTraitId[]) => void;
   onStartAlchemist: (modifiers?: EncounterRewardTraitId[]) => void;
   onStartTrinketShop: (modifiers?: EncounterRewardTraitId[]) => void;
@@ -58,6 +59,7 @@ const NODE_ACTIONS: Record<LabyrinthNodeType, NodeAction> = {
   entrance: () => {},
   rest: (node, handlers) => handlers.onStartRest(node.rewardModifiers),
   mystery: (node, handlers) => handlers.onStartMystery(node.rewardModifiers),
+  corruption: (node, handlers) => handlers.onStartCorruption(node.rewardModifiers),
   shop: (node, handlers) => handlers.onStartShop(node.rewardModifiers),
   alchemist: (node, handlers) => handlers.onStartAlchemist(node.rewardModifiers),
   "trinket-shop": (node, handlers) => handlers.onStartTrinketShop(node.rewardModifiers),

@@ -10,11 +10,13 @@ export function ArmoryFeedback({
   result,
   after,
   onDismiss,
+  error = false,
 }: {
   notice: string;
   result: CraftingResult | null;
   after: GearInstance | undefined;
   onDismiss: () => void;
+  error?: boolean;
 }) {
   const open = Boolean(notice || (result && after));
   const { mounted, phase } = useFadePresence(open);
@@ -24,14 +26,15 @@ export function ArmoryFeedback({
   return createPortal(
     <div
       className={cn(
-        "alchemy-shell motion-panel fixed right-5 bottom-5 z-[110] w-[26rem] max-w-[calc(100vw-2.5rem)] rounded-xl border border-emerald-300/30 p-4 shadow-2xl",
+        "alchemy-shell motion-panel fixed right-5 bottom-5 z-[110] w-[26rem] max-w-[calc(100vw-2.5rem)] rounded-xl border p-4 shadow-2xl",
+        error ? "border-red-400/50" : "border-emerald-300/30",
         fadePhaseClass(phase),
       )}
       inert={!open}
     >
       {held.notice ? (
         <>
-          <p role="status" className="text-sm text-amber-100">
+          <p role={error ? "alert" : "status"} className={cn("text-sm", error ? "text-red-100" : "text-amber-100")}>
             {held.notice}
           </p>
           <button

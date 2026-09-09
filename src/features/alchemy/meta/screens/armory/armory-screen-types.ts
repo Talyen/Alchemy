@@ -28,9 +28,9 @@ export interface ArmoryTargeting {
 export interface ArmoryItemActions {
   onEquipGear: (instance: GearInstance) => void;
   onEquipTrinket: (trinketId: string) => void;
-  onSetProtected: (instanceId: string, protectedItem: boolean) => boolean;
   onSalvage: (instance: GearInstance) => void;
   onApplyCurrency: (instance: GearInstance) => void;
+  onCombatLockedAttempt: () => void;
 }
 
 export interface ArmoryScreenProps {
@@ -44,7 +44,6 @@ export interface ArmoryScreenProps {
   onUnequip: (characterId: CharacterId, slot: GearSlot) => void;
   onEquipTrinket: (characterId: CharacterId, trinketId: string) => void;
   onUnequipTrinket: (characterId: CharacterId) => void;
-  onSetProtected: (instanceId: string, protectedItem: boolean) => boolean;
   onSalvage: (instanceId: string, salvageYield: SalvageYield) => boolean;
   onSpawnDevGear?: (characterId: CharacterId) => void;
   craftingCurrencies?: Record<CraftingCurrencyId, number>;

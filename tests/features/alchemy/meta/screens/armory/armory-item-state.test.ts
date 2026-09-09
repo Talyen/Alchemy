@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   formatTrinketEquipAriaLabel,
   getArmoryTargetState,
-  PROTECTED_BEFORE_SALVAGE_MESSAGE,
   reservedReasonFor,
 } from "@/features/alchemy/meta/screens/armory/armory-item-state";
 import type { GearInstance } from "@/lib/gear";
@@ -28,17 +27,6 @@ describe("armory-item-state", () => {
     expect(state).toMatchObject({ salvageable: true, canCraft: false, mode: "salvage" });
     expect(state.targetAriaLabel).toContain("Salvage");
     expect(state.blockedReason).toBeNull();
-  });
-
-  it("blocks protected items from salvage with a shared message", () => {
-    const state = getArmoryTargetState({
-      instance: sword({ protected: true }),
-      salvageMode: true,
-      activeCurrencyId: null,
-    });
-    expect(state.salvageable).toBe(false);
-    expect(state.blockedReason).toBe(PROTECTED_BEFORE_SALVAGE_MESSAGE);
-    expect(state.targetAriaLabel).toBeNull();
   });
 
   it("blocks reserved items from crafting and salvage with the reservation reason", () => {

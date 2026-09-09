@@ -116,7 +116,7 @@ export function unequipGear(loadouts: GearLoadouts, characterId: GearCharacterId
 }
 
 export function canSalvageGear(inventory: GearInstance[], instanceId: string): boolean {
-  return inventory.some((item) => item.instanceId === instanceId && !item.protected);
+  return inventory.some((item) => item.instanceId === instanceId);
 }
 
 function removeGearFromLoadouts(loadouts: GearLoadouts, instanceId: string): GearLoadouts {
@@ -181,7 +181,6 @@ export function normalizeGearInstance(raw: unknown): GearInstance | null {
     instanceId,
     definitionId,
     affixes: getUniqueAffixes(definitionId) ?? normalizeAffixRolls(rawAffixes, gearDefinitions[definitionId].rarity),
-    ...(raw.protected === true ? { protected: true } : {}),
   };
 }
 

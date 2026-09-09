@@ -22,6 +22,9 @@ function makeRoutingDeps(enterImpl: (handlers: LabyrinthNodeHandlers) => void) {
     shop: {
       initialize: vi.fn(),
     },
+    corruption: {
+      reset: vi.fn(),
+    },
   };
 }
 
@@ -67,4 +70,14 @@ it("passes support modifiers before initializing their destination", () => {
   createLabyrinthNodeRouting(deps).handleLabyrinthNodeEnter();
   expect(deps.applyLabyrinthBattleModifiers).toHaveBeenCalledWith([]);
   expect(deps.shop.initialize).toHaveBeenCalledWith("alchemist");
+});
+
+it("routes corruption nodes to the altar with cleared results and room modifiers", () => {
+  const deps = makeRoutingDeps((handlers) => handlers.onStartCorruption(["blood-rite"]));
+  createLabyrinthNodeRouting(deps).handleLabyrinthNodeEnter();
+
+  expect(deps.applyLabyrinthBattleModifiers).toHaveBeenCalledWith([]);
+  expect(deps.applyLabyrinthRewardModifiers).toHaveBeenCalledWith(["blood-rite"]);
+  expect(deps.corruption.reset).toHaveBeenCalledOnce();
+  expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.CORRUPTION);
 });

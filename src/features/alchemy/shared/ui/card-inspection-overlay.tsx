@@ -2,9 +2,9 @@ import { sortInspectionCards } from "./card-inspection-sort";
 import { useId, useMemo, useState, type RefObject } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { BattleCard, CardDescriptionContext } from "@/lib/game-data";
+import { getCardKeywords, type BattleCard, type CardDescriptionContext } from "@/lib/game-data";
 import type { CardInspectionView } from "../types";
-import { viewCardWidthClass } from "../config";
+import { getInspectionKeywordShineColors, viewCardWidthClass } from "../config";
 import { BattleCardButton } from "./card-button";
 import { getCardDisplayTitle } from "./card-description-ui";
 import { CardSelectionGrid } from "./card-selection-grid";
@@ -45,6 +45,7 @@ function InspectionGrid({
             shimmerToken={undefined}
             className={viewCardWidthClass}
             descriptionContext={descriptionContext}
+            shineColor={getInspectionKeywordShineColors(getCardKeywords(card))}
           />
         </div>
       )}

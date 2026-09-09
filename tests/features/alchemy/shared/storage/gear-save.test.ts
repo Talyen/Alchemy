@@ -145,12 +145,11 @@ describe("gear save normalization", () => {
     expect(normalized.craftingCurrencies).toEqual(craftingCurrencies);
   });
 
-  it("round-trips protection flags, trinket exclusivity, and clones snapshots", () => {
+  it("round-trips trinket exclusivity and clones snapshots", () => {
     const sword: GearInstance = {
       instanceId: "sword-1",
       definitionId: "shortsword-basic",
       affixes: [{ id: "flat-physical", value: 1 }],
-      protected: true,
     };
     mutateGearForTest((gear) => {
       gear.initialize(knightInventories(sword), createEmptyGearLoadouts());
@@ -159,7 +158,7 @@ describe("gear save normalization", () => {
     });
 
     const save = buildAlchemySaveDataFromStores(null);
-    expect(save.gearInventories.knight[0]?.protected).toBe(true);
+    expect(save.gearInventories.knight[0]?.instanceId).toBe("sword-1");
     expect(save.equippedTrinkets.knight).toBe("bone-charm");
 
     save.gearInventories.knight[0]!.affixes[0]!.value = 999;

@@ -34,6 +34,8 @@ export const FLAG_DEFINITIONS = {
   runicQuillUsedThisTurn: { default: false as const, preserveAs: true as const },
   emberforgedUsedThisTurn: { default: false as const, preserveAs: true as const },
   consumeDrawUsedThisTurn: { default: false as const, preserveAs: true as const },
+  cinderSkinUsedThisTurn: { default: false as const, preserveAs: true as const },
+  holyRetributionUsedThisTurn: { default: false as const, preserveAs: true as const },
 
   divineAegisTriggered: { default: false as const, preserveAs: null },
 

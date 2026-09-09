@@ -113,6 +113,12 @@ export function abandonCorruptionDestinationVisit(draft: GameplayDraft): void {
   abandonDestinationVisit(draft, DESTINATIONS.CORRUPTION);
 }
 
+export function abandonLabyrinthCorruptionVisit(draft: GameplayDraft): void {
+  setCorruptionResult(draft, null);
+  draft.session.activeLabyrinthPendingNode = null;
+  draft.session.selectedLabyrinthNodeId = null;
+}
+
 export function abandonMysteryDestinationVisit(draft: GameplayDraft): void {
   abandonDestinationVisit(draft, DESTINATIONS.MYSTERY);
 }

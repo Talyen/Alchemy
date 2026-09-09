@@ -12,7 +12,6 @@ import {
   initializeGear,
   resetGear,
   salvageGearInstance,
-  setGearProtected,
   unequipGearInstance,
   unequipPermanentTrinket,
 } from "./gear-actions";
@@ -64,10 +63,6 @@ function gearCommandView(state: GameplayDraft): GearStore {
     unequipTrinket: (characterId) => {
       if (restrictions.characters[characterId]) return false;
       return unequipPermanentTrinket(gear, characterId);
-    },
-    setProtected: (instanceId, protectedItem) => {
-      if (restrictions.gear[instanceId]) return false;
-      return setGearProtected(gear, instanceId, protectedItem);
     },
     salvage: (instanceId, options) => {
       if (restrictions.gear[instanceId]) return null;

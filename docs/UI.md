@@ -25,6 +25,7 @@ For flow-specific rules, use [display sizing](#display-sizing), [Collection and 
 - Generic interactive primitives preserve standard ARIA roles, names, values, keyboard behavior, and disabled states. Eligible talent nodes use native buttons for Enter and Space; keyword trees without portrait art remain selectable using a blank portrait and the keyword icon.
 - `Surface` is the shared interactive card/tile owner (`onClick` works for both `button` and `div` renderings; prefer `as="button"` for actions). `PortaledTooltip` with `TooltipPanel` owns tooltip chrome. `ShineText` with `GearItemTitle`/`TrinketItemTitle` (both in `gear-item-title.tsx`) own keyword/item shine typography.
 - Astral gear and Trinket title shine uses at most three described keywords, each with its primary color and a 55%-opacity stop. Gear prefers matching base affinities; Trinkets retain description order. Unique gear titles stay gold. Artwork and border palettes remain independent.
+- Over-art price chips use an opaque dark scrim with light text and shadow so card art cannot wash them out; affordable shop prices keep gold border and text on that scrim.
 - Modal interaction and dismissal follow [Overlay lifecycle](#overlay-lifecycle).
 
 ## Overlay lifecycle
@@ -75,16 +76,17 @@ Game-specific button shape and layout tokens live in `src/features/alchemy/share
 
 `Button` always renders a native button. `wrapperClassName` optionally adds a layout span; `className`, refs, event handlers, and native button attributes belong to the button itself. Omitted `type` retains native form behavior.
 
-| Concern        | Standard                                                                                                                                                                                                 |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Shape          | `rounded-xl` rectangles through `BUTTON_SHAPE`                                                                                                                                                           |
-| Primary        | `Button variant="primary"` for Play, Continue, and Confirm                                                                                                                                               |
-| Secondary      | `Button variant="outline"` for Back, Cancel, Skip, and alternate navigation                                                                                                                              |
-| Accent         | `ShineAccentButton` only for accent-intent forward actions                                                                                                                                               |
-| Paired actions | Secondary left and primary right; shared button width tokens                                                                                                                                             |
-| Equal choices  | `DestinationChoices` and `Surface`, with an accessible tile name                                                                                                                                         |
-| Tabs           | `TabBar`                                                                                                                                                                                                 |
-| Hover / press  | Primary buttons use CSS bloom without scaling; secondary buttons use background feedback. Preserve surface-specific CSS scaling and shared `active:` feedback; do not add parallel Motion hover scaling. |
+| Concern        | Standard                                                                                                                                                                                                                                                                 |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Shape          | `rounded-xl` rectangles through `BUTTON_SHAPE`                                                                                                                                                                                                                           |
+| Primary        | `Button variant="primary"` for Play, Continue, and Confirm                                                                                                                                                                                                               |
+| Secondary      | `Button variant="outline"` for Back, Cancel, Skip, and alternate navigation                                                                                                                                                                                              |
+| Accent         | `ShineAccentButton` only for accent-intent forward actions                                                                                                                                                                                                               |
+| Paired actions | Secondary left and primary right; shared button width tokens                                                                                                                                                                                                             |
+| Equal choices  | `DestinationChoices` and `Surface`, with an accessible tile name                                                                                                                                                                                                         |
+| Tabs           | `TabBar`                                                                                                                                                                                                                                                                 |
+| Chrome icons   | `ChromeIconButton` owns header and battle-corner icon buttons (back, deck, menu, autoplay, boons): ghost `h-11 w-11` dim `text-muted-foreground/60` with `hover:bg-muted/40 hover:text-foreground`; active uses `bg-muted/40 text-foreground`, toggle-on uses `primary`. |
+| Hover / press  | Primary buttons use CSS bloom without scaling; secondary buttons use background feedback. Preserve surface-specific CSS scaling and shared `active:` feedback; do not add parallel Motion hover scaling.                                                                 |
 
 Card and collection artwork, including gear and trinket tiles, reserves a 1px frame across available, selected, disabled, purchased, and shine states, so changing interaction state cannot resize its artwork or row or recenter the screen. The thicker hover and selection outline is an absolute overlay, preserving the thin default border. Hover-only shine uses `card-art-shine`; persistent shine uses `has-shine-border`. Both hide the frame color while preserving its space. Pass frame Shine through `Surface.overlay` so the artwork clipping layer cannot hide it.
 
@@ -282,7 +284,10 @@ and an upper-right close button, plus pagination controls when needed. It has no
 collection tabs, counts, instructional or empty-state text, or labels below cards.
 Open each collection from its own opener. Pagination resets on reopening.
 Full Deck is the run deck, including cards Consumed in the current battle;
-battle-only generated cards appear in their current piles instead.
+battle-only generated cards appear in their current piles instead. Deck, Draw
+Pile, and Discard Pile cards show their keyword Shine Border on hover or
+keyboard focus, with neutral shine when no keywords resolve, matching
+Collection, Wish, and reward choices.
 
 Inspection opens only between actions on a surviving player’s turn, with no
 Wish, pending transition, hidden hand card, card ghost, or card transfer. While
@@ -306,4 +311,4 @@ Currency artwork shares one 5rem size between the crafting strip, pointer attach
 
 Selecting an item for salvage immediately ends targeting and clears its cursor and highlights. Confirm, Cancel, and Escape return to browsing. The dialog uses the heading “Salvage,” a wrapping shining item name in “Salvaging [item] will yield:”, a portrait, full-size currency rewards, and an equipped-character warning where applicable. Confirmations focus Cancel, contain keyboard focus, and disable actions during exit.
 
-Crafting consumes one currency per activation. Active instructions include a visible Cancel action and Escape hint; invalid targets explain their restriction in tooltips and after selection. Success shows actual before/after affix descriptions in a dismissible panel pinned inside the viewport, a brief item pulse, and count feedback only when quantities change. Inventory movement uses a short position transition; reduced-motion preferences disable these animations. Protection buttons remain available on both inventory and equipped gear; locked items remain equippable.
+Crafting consumes one currency per activation. Escape cancels targeting; invalid targets explain their restriction in tooltips and after selection. Success shows actual before/after affix descriptions in a dismissible panel pinned inside the viewport, a brief item pulse, and count feedback only when quantities change. Inventory movement uses a short position transition; reduced-motion preferences disable these animations.

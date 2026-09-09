@@ -71,7 +71,7 @@ export const ENCOUNTER_TRAITS = defineEncounterTraits({
   concussive: combat("Concussive", "Enemy deals 1 Stun damage each turn"),
   rooted: combat("Rooted", "Gains 1 Block when you play a Nature card"),
   overgrowth: combat("Overgrowth", "Enemy restores 1 Health each turn"),
-  "holy-retribution": combat("Holy Retribution", "Enemy deals 1 Holy damage whenever you attack"),
+  "holy-retribution": combat("Holy Retribution", "Enemy deals 1 Holy damage whenever you attack\nOnce per turn"),
   "divine-aegis": combat("Divine Aegis", "Gains 2 Armor and 4 Block the first time reaching 50% Health"),
   generous: reward("Generous", "Gain 50% more Gold after victory", ["labyrinth"]),
   alchemist: reward("Alchemist", "Gain an extra random Potion after victory", ["labyrinth", "wildwood"]),

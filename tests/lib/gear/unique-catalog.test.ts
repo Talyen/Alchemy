@@ -83,11 +83,10 @@ describe("unique item catalog", () => {
 });
 
 describe("fixed Unique compatibility", () => {
-  it.each(uniqueItemList)("repairs saved $displayName without changing ownership or protection", (unique) => {
+  it.each(uniqueItemList)("repairs saved $displayName without changing ownership", (unique) => {
     const original: GearInstance = {
       instanceId: "owned-id",
       definitionId: unique.id,
-      protected: true,
       affixes: [{ id: "flat-physical", value: 99 }],
     };
     const expected = [unique.signatureAffix, ...unique.supportingAffixes];

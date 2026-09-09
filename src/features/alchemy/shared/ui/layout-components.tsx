@@ -1,9 +1,9 @@
 import { DeckInspectButton } from "./deck-inspect-button";
 import type { ReactNode } from "react";
 import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { screenDescriptionClass, screenShellPaddingClass, screenTitleClass } from "../config";
+import { ChromeIconButton } from "./chrome-icon-button";
 import { HamburgerTrigger } from "./navigation";
 import { useOptionalAppScreenChrome } from "@/app/app-screen-chrome-context";
 
@@ -55,28 +55,13 @@ export function ScreenHeaderRow({
   const leadingContent =
     leading ??
     (effectiveBack ? (
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-11 w-11 text-muted-foreground/60 transition-colors hover:bg-muted/40 hover:text-foreground"
-        onClick={effectiveBack}
-        aria-label="Back"
-      >
+      <ChromeIconButton onClick={effectiveBack} aria-label="Back">
         <ArrowLeft className="h-7 w-7" />
-      </Button>
+      </ChromeIconButton>
     ) : null);
 
   const menuButton = effectiveMenu ? (
-    <HamburgerTrigger
-      variant="ghost"
-      onClick={effectiveMenu}
-      label="Open game menu"
-      active={chrome?.isMenuOpen}
-      className={cn(
-        "h-11 w-11 transition-colors hover:bg-muted/40 hover:text-foreground",
-        chrome?.isMenuOpen ? "bg-muted/40 text-foreground" : "text-muted-foreground/60",
-      )}
-    />
+    <HamburgerTrigger onClick={effectiveMenu} label="Open game menu" active={chrome?.isMenuOpen} />
   ) : null;
   const trailingContent =
     trailing || menuButton ? (
@@ -96,7 +81,7 @@ export function ScreenHeaderRow({
           {leadingContent || chrome?.deckInspection ? (
             <div className={cn("absolute top-1/2 left-0 flex -translate-y-1/2 items-center gap-2", leadingClassName)}>
               {leadingContent}
-              {chrome?.deckInspection ? <DeckInspectButton {...chrome.deckInspection} compact /> : null}
+              {chrome?.deckInspection ? <DeckInspectButton {...chrome.deckInspection} /> : null}
             </div>
           ) : null}
           <h1 className={cn("text-center font-sans", screenTitleClass)}>{title}</h1>

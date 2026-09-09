@@ -144,7 +144,7 @@ describe("useArmoryController", () => {
     dispatchRunSessionCommand((draft) => setHasActiveBattle(draft, false));
   });
 
-  it("flushes after successful equip, unequip, trinket, protection, and currency mutations", () => {
+  it("flushes after successful equip, unequip, trinket, and currency mutations", () => {
     const armor: GearInstance = { instanceId: "armor-flush", definitionId: "plate-armor-basic", affixes: [] };
     const sword: GearInstance = {
       instanceId: "sword-flush",
@@ -182,19 +182,9 @@ describe("useArmoryController", () => {
     expect(flushSaveAfterGearMutation).toHaveBeenCalledTimes(4);
 
     act(() => {
-      expect(result.current.onSetProtected(sword.instanceId, true)).toBe(true);
-    });
-    expect(flushSaveAfterGearMutation).toHaveBeenCalledTimes(5);
-
-    act(() => {
-      expect(result.current.onSetProtected(sword.instanceId, false)).toBe(true);
-    });
-    expect(flushSaveAfterGearMutation).toHaveBeenCalledTimes(6);
-
-    act(() => {
       expect(result.current.onApplyCurrency("voidstone", sword.instanceId)).toBe(true);
     });
-    expect(flushSaveAfterGearMutation).toHaveBeenCalledTimes(7);
+    expect(flushSaveAfterGearMutation).toHaveBeenCalledTimes(5);
   });
 
   it("does not flush when salvage or currency mutations fail", () => {

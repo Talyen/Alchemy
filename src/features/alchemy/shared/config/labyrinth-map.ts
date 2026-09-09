@@ -1,9 +1,22 @@
-import { Crown, DoorOpen, FlaskConical, Gem, Hammer, Heart, ShoppingCart, Skull, Sparkles, Swords } from "lucide-react";
+import {
+  Crown,
+  Dices,
+  DoorOpen,
+  FlaskConical,
+  Gem,
+  Hammer,
+  Heart,
+  ShoppingCart,
+  Skull,
+  Sparkles,
+  Swords,
+} from "lucide-react";
 
 import type { LabyrinthNodeType } from "@/lib/content-systems/types";
 import {
   alchemistShopBg,
   campfire,
+  corruptionAltar,
   eliteEnemyBg,
   merchantShopBg,
   mysteryBg,
@@ -56,6 +69,13 @@ export const LABYRINTH_NODE_META: Record<LabyrinthNodeType, LabyrinthNodeMeta> =
     shineColors: [...SHINE_PALETTES.labyrinth.mystery],
     art: mysteryBg,
     actionLabel: "Investigate",
+  },
+  corruption: {
+    icon: Dices,
+    className: "bg-black text-red-400",
+    shineColors: [...SHINE_PALETTES.labyrinth.corruption],
+    art: corruptionAltar,
+    actionLabel: "Enter",
   },
   shop: {
     icon: ShoppingCart,

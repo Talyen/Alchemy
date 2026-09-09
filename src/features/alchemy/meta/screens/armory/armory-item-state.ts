@@ -8,7 +8,7 @@ import {
   type GearInstance,
 } from "@/lib/gear";
 
-export const PROTECTED_BEFORE_SALVAGE_MESSAGE = "Unlock this item before salvaging.";
+export const COMBAT_LOCKED_MESSAGE = "Equipment cannot be changed during Combat.";
 
 export function reservedReasonFor(reservedBy: CharacterId | null | undefined): string | null {
   if (!reservedBy) return null;
@@ -42,14 +42,9 @@ export function getArmoryTargetState({
   }
   const title = getGearInstanceTitle(instance);
   const canCraft = !reservedBy && activeCurrencyId !== null && canApplyCraftingCurrency(activeCurrencyId, instance);
-  const salvageable = !reservedBy && salvageMode && !instance.protected;
+  const salvageable = !reservedBy && salvageMode;
   const blockedReason =
-    reservationReason ??
-    (activeCurrencyId
-      ? craftingCurrencyBlockedReason(activeCurrencyId, instance)
-      : salvageMode && instance.protected
-        ? PROTECTED_BEFORE_SALVAGE_MESSAGE
-        : null);
+    reservationReason ?? (activeCurrencyId ? craftingCurrencyBlockedReason(activeCurrencyId, instance) : null);
   const mode: ArmoryTargetMode = salvageable ? "salvage" : canCraft ? "currency" : null;
   let targetAriaLabel: string | null = null;
   if (activeCurrencyId && canCraft) {

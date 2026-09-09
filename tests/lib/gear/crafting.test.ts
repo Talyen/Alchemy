@@ -180,6 +180,14 @@ describe("crafting currency logic", () => {
     expect(result?.yieldedMaterials).toEqual(frozen.materials);
   });
 
+  it("keeps salvage preview rewards stable across reload and affix changes", () => {
+    const item = createBasicItem();
+    const preview = computeSalvageYield(item);
+    const reloaded = JSON.parse(JSON.stringify(item)) as GearInstance;
+    expect(computeSalvageYield(reloaded)).toEqual(preview);
+    expect(computeSalvageYield({ ...item, affixes: [{ id: "flat-physical", value: 2 }] })).toEqual(preview);
+  });
+
   it("normalizes crafting currencies to known nonnegative integer ids", () => {
     expect(
       normalizeCraftingCurrencies({

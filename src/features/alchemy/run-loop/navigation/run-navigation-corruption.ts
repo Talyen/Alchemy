@@ -1,6 +1,7 @@
 import { playUISound } from "@/lib/audio";
 import { cardLibrary, type BattleCard } from "@/lib/game-data";
 import { corruptDeckCard } from "@/lib/corruption";
+import { activeLabyrinthBenefits } from "@/lib/content-systems/labyrinth/room-rules";
 import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import {
@@ -13,11 +14,16 @@ function applyCorruptionToDeck(cardIndex: number, updateRunDeck: (draft: Gamepla
   dispatchRunSessionCommand(
     (nextDraft) => {
       const runDeck = nextDraft.run.activeRun.runDeck as BattleCard[];
+      const modifiers = activeLabyrinthBenefits(
+        nextDraft.run.activeRun.contentSystemType,
+        nextDraft.session.activeLabyrinthRewardModifiers,
+      );
       const { deck, result } = corruptDeckCard(
         runDeck,
         cardIndex,
         cardLibrary,
         createDraftRunRandomSource(nextDraft, "events"),
+        modifiers,
       );
       if (!result) return null;
       updateRunDeck(nextDraft, deck);
@@ -37,6 +43,8 @@ export interface CorruptionFlowDeps {
   updateRunDeck: (draft: GameplayDraft, deck: BattleCard[]) => void;
   advanceToNextDestination: () => void;
   returnToCurrentDestination: () => void;
+  returnToLabyrinthMap?: () => void;
+  isLabyrinthRun?: () => boolean;
 }
 
 export function createCorruptionFlowHandlers(deps: CorruptionFlowDeps) {
@@ -48,6 +56,10 @@ export function createCorruptionFlowHandlers(deps: CorruptionFlowDeps) {
   function handleCorruptionExit() {
     if (readRunSession().corruptionResult) {
       deps.advanceToNextDestination();
+      return;
+    }
+    if (deps.isLabyrinthRun?.() && deps.returnToLabyrinthMap) {
+      deps.returnToLabyrinthMap();
       return;
     }
     deps.returnToCurrentDestination();

@@ -16,17 +16,14 @@ describe("gear-store crafting integration", () => {
     affixes: [{ id: "flat-physical", value: 1 }],
   };
 
-  it("protects items at the command boundary and allows use after unlocking", () => {
+  it("salvages and crafts items through the command boundary", () => {
     resetGearForTest();
     mutateGearForTest((gear) => gear.initialize(knightInventories(item), createEmptyGearLoadouts(), { voidstone: 2 }));
-    expect(mutateGearForTest((gear) => gear.setProtected(item.instanceId, true))).toBe(true);
-    expect(mutateGearForTest((gear) => gear.salvage(item.instanceId))).toBeNull();
-    expect(mutateGearForTest((gear) => gear.applyCurrency("voidstone", item.instanceId, { rng: () => 0 }))).toBe(false);
-    expect(readGearState().craftingCurrencies.voidstone).toBe(2);
-    expect(readGearState().inventories.knight).toHaveLength(1);
-    expect(mutateGearForTest((gear) => gear.setProtected(item.instanceId, false))).toBe(true);
     expect(mutateGearForTest((gear) => gear.applyCurrency("voidstone", item.instanceId, { rng: () => 0 }))).toBe(true);
     expect(readGearState().craftingCurrencies.voidstone).toBe(1);
+    expect(readGearState().inventories.knight).toHaveLength(1);
+    expect(mutateGearForTest((gear) => gear.salvage(item.instanceId))).not.toBeNull();
+    expect(readGearState().inventories.knight).toHaveLength(0);
     resetGearForTest();
   });
 

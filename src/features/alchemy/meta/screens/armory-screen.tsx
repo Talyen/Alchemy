@@ -16,12 +16,7 @@ import { playUISound } from "@/lib/audio";
 import type { CraftingResult } from "./armory/crafting-result";
 import { ArmoryFeedback } from "./armory/armory-feedback";
 import { cn } from "@/lib/utils";
-import {
-  collectionGridGapXClass,
-  screenShellPaddingClass,
-  sectionTitleClass,
-  gameModeMeta,
-} from "@/features/alchemy/shared/config";
+import { collectionGridGapXClass, screenShellPaddingClass, sectionTitleClass } from "@/features/alchemy/shared/config";
 import {
   characters,
   getRequiredPreviousCharacter,
@@ -36,7 +31,7 @@ import { renderUnlockMessage } from "../../shared/ui/unlock-text";
 import { ArmoryCharacterTabs, ArmoryOverlays, type ArmoryScreenProps } from "./armory";
 import { ScreenHeaderRow } from "../../shared/ui/shared-ui";
 import { applyCurrencyToGear, itemsMatchingSlot } from "./armory/armory-screen-actions";
-import { PROTECTED_BEFORE_SALVAGE_MESSAGE } from "./armory/armory-item-state";
+import { COMBAT_LOCKED_MESSAGE } from "./armory/armory-item-state";
 import { useArmoryTargetingState } from "./armory/use-armory-targeting-state";
 import { ArmoryPickerPanel } from "./armory/armory-picker-panel";
 import { EquipmentSlotButton } from "./armory/parts/equipment-slot-button";
@@ -58,7 +53,6 @@ export function ArmoryScreen({
   onEquipTrinket,
   onUnequipTrinket,
   onSalvage,
-  onSetProtected,
   onApplyCurrency = () => false,
   onSpawnDevGear,
   onBack,
@@ -77,8 +71,7 @@ export function ArmoryScreen({
   const loadout = loadouts[characterId];
   const requiredCharacterId = getRequiredPreviousCharacter(characterId);
   const locked = !isCharacterUnlocked(characterId, finishedRunCharacters);
-  const battleModes = combatRestrictions.characters[characterId];
-  const browseOnly = Boolean(battleModes?.length);
+  const browseOnly = Boolean(combatRestrictions.characters[characterId]?.length);
   const editable = !browseOnly && !locked;
   const pickerItems = useMemo(() => {
     if (selectedSlot === "trinket") return [];
@@ -113,8 +106,18 @@ export function ArmoryScreen({
     [clearTargeting],
   );
 
+  const handleCombatLockedAttempt = useCallback(() => {
+    if (!browseOnly) return;
+    setNotice(COMBAT_LOCKED_MESSAGE);
+    playUISound("error");
+  }, [browseOnly]);
+
   function handleSelectCurrency(currencyId: CraftingCurrencyId) {
-    if (!editable || craftingCurrencies[currencyId] <= 0) return;
+    if (!editable) {
+      handleCombatLockedAttempt();
+      return;
+    }
+    if (craftingCurrencies[currencyId] <= 0) return;
     setActiveCurrencyId((current) => (current === currencyId ? null : currencyId));
     setSalvageMode(false);
     setCraftingResult(null);
@@ -123,24 +126,34 @@ export function ArmoryScreen({
 
   const beginSalvage = useCallback(
     (instance: GearInstance) => {
-      if (!editable || combatRestrictions.gear[instance.instanceId]) return;
-      if (instance.protected) {
-        setNotice(PROTECTED_BEFORE_SALVAGE_MESSAGE);
-        playUISound("error");
+      if (!editable) {
+        handleCombatLockedAttempt();
         return;
       }
+      if (combatRestrictions.gear[instance.instanceId]) return;
       setSalvageMode(false);
       setActiveCurrencyId(null);
       setNotice("");
       setCraftingResult(null);
       setSalvagePending({ instance, yield: computeSalvageYield(instance) });
     },
-    [editable, combatRestrictions.gear, setActiveCurrencyId, setSalvageMode, setSalvagePending],
+    [
+      editable,
+      combatRestrictions.gear,
+      handleCombatLockedAttempt,
+      setActiveCurrencyId,
+      setSalvageMode,
+      setSalvagePending,
+    ],
   );
 
   const handleApplyCurrency = useCallback(
     (instance: GearInstance) => {
-      if (!editable || !activeCurrencyId || combatRestrictions.gear[instance.instanceId]) return;
+      if (!editable) {
+        handleCombatLockedAttempt();
+        return;
+      }
+      if (!activeCurrencyId || combatRestrictions.gear[instance.instanceId]) return;
       const reason = craftingCurrencyBlockedReason(activeCurrencyId, instance);
       if (reason) {
         setNotice(reason);
@@ -159,7 +172,14 @@ export function ArmoryScreen({
         setCraftingResult({ before: instance, currencyId: activeCurrencyId });
       } else setNotice("Crafting could not be completed. No currency was spent.");
     },
-    [editable, activeCurrencyId, onApplyCurrency, combatRestrictions.gear, setActiveCurrencyId],
+    [
+      editable,
+      activeCurrencyId,
+      onApplyCurrency,
+      combatRestrictions.gear,
+      handleCombatLockedAttempt,
+      setActiveCurrencyId,
+    ],
   );
 
   const handleSlotSelect = useCallback(
@@ -169,37 +189,48 @@ export function ArmoryScreen({
     },
     [clearTargeting],
   );
-  const handleSlotUnequip = useCallback((slot: GearSlot) => onUnequip(characterId, slot), [onUnequip, characterId]);
+  const handleSlotUnequip = useCallback(
+    (slot: GearSlot) => {
+      if (!editable) {
+        handleCombatLockedAttempt();
+        return;
+      }
+      onUnequip(characterId, slot);
+    },
+    [editable, handleCombatLockedAttempt, onUnequip, characterId],
+  );
 
   const equippedSalvageCharacter = salvagePending
     ? findGearEquippedCharacter(loadouts, salvagePending.instance.instanceId)
     : null;
   const craftedItem = craftingResult ? inventoryById.get(craftingResult.before.instanceId) : undefined;
-  const handleSetProtected = useCallback(
-    (instanceId: string, protectedItem: boolean) => {
-      if (!editable || combatRestrictions.gear[instanceId]) return false;
-      const success = onSetProtected(instanceId, protectedItem);
-      setNotice(
-        success
-          ? protectedItem
-            ? "Item protected from salvage and crafting."
-            : "Item unlocked."
-          : "Item protection could not be changed.",
-      );
-      return success;
-    },
-    [editable, combatRestrictions.gear, onSetProtected],
-  );
   const handleEquipGear = useCallback(
     (instance: GearInstance) => {
+      if (!editable) {
+        handleCombatLockedAttempt();
+        return;
+      }
       if (selectedSlot !== "trinket") onEquip(characterId, selectedSlot, instance);
     },
-    [selectedSlot, onEquip, characterId],
+    [editable, handleCombatLockedAttempt, selectedSlot, onEquip, characterId],
   );
   const handleEquipTrinket = useCallback(
-    (trinketId: string) => onEquipTrinket(characterId, trinketId),
-    [onEquipTrinket, characterId],
+    (trinketId: string) => {
+      if (!editable) {
+        handleCombatLockedAttempt();
+        return;
+      }
+      onEquipTrinket(characterId, trinketId);
+    },
+    [editable, handleCombatLockedAttempt, onEquipTrinket, characterId],
   );
+  const handleUnequipTrinket = useCallback(() => {
+    if (!editable) {
+      handleCombatLockedAttempt();
+      return;
+    }
+    onUnequipTrinket(characterId);
+  }, [editable, handleCombatLockedAttempt, onUnequipTrinket, characterId]);
 
   return (
     <PageLayout>
@@ -212,14 +243,6 @@ export function ArmoryScreen({
         )}
       >
         <ScreenHeaderRow className="min-h-10 px-12" title="Armory" onBack={onBack} onMenu={onMenu} />
-        {browseOnly ? (
-          <p className="mx-auto mt-3 rounded-lg border border-amber-400/30 bg-amber-500/10 px-4 py-2 text-center text-sm text-amber-100">
-            Equipment can be changed after this hero’s battle ends.
-            {battleModes?.length
-              ? ` Unfinished battle: ${battleModes.map((mode) => gameModeMeta[mode]?.title ?? mode).join(", ")}.`
-              : ""}
-          </p>
-        ) : null}
         <ArmoryCharacterTabs
           activeTab={characterId}
           finishedRunCharacters={finishedRunCharacters}
@@ -252,7 +275,8 @@ export function ArmoryScreen({
                           selected={selectedSlot === slot}
                           editable={editable}
                           onSelect={() => handleSlotSelect(slot)}
-                          onUnequip={() => onUnequipTrinket(characterId)}
+                          onUnequip={handleUnequipTrinket}
+                          onCombatLockedAttempt={handleCombatLockedAttempt}
                         />
                       );
                     }
@@ -269,10 +293,10 @@ export function ArmoryScreen({
                         activeCurrencyId={activeCurrencyId}
                         onSelect={handleSlotSelect}
                         onUnequip={handleSlotUnequip}
-                        onSetProtected={handleSetProtected}
                         craftingResult={craftingResult}
                         onSalvage={beginSalvage}
                         onApplyCurrency={handleApplyCurrency}
+                        onCombatLockedAttempt={handleCombatLockedAttempt}
                       />
                     );
                   })}
@@ -283,10 +307,7 @@ export function ArmoryScreen({
                   activeCurrencyId={activeCurrencyId}
                   salvageMode={salvageMode}
                   editable={editable}
-                  hasSalvageableGear={sharedInventory.some(
-                    (item) => !item.protected && !combatRestrictions.gear[item.instanceId],
-                  )}
-                  onCancel={clearTargeting}
+                  hasSalvageableGear={sharedInventory.some((item) => !combatRestrictions.gear[item.instanceId])}
                   onSelectCurrency={handleSelectCurrency}
                   onToggleSalvageMode={() => {
                     setNotice("");
@@ -320,9 +341,9 @@ export function ArmoryScreen({
                 actions={{
                   onEquipGear: handleEquipGear,
                   onEquipTrinket: handleEquipTrinket,
-                  onSetProtected: handleSetProtected,
                   onSalvage: beginSalvage,
                   onApplyCurrency: handleApplyCurrency,
+                  onCombatLockedAttempt: handleCombatLockedAttempt,
                 }}
                 onSpawnDevGear={onSpawnDevGear}
               />
@@ -333,6 +354,7 @@ export function ArmoryScreen({
           notice={notice}
           result={craftingResult}
           after={craftedItem}
+          error={notice === COMBAT_LOCKED_MESSAGE}
           onDismiss={() => {
             setNotice("");
             setCraftingResult(null);

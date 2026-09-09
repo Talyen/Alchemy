@@ -4,6 +4,7 @@ import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useRunSessionNavigationSlice } from "@/features/alchemy/shared/stores/run-reads";
 import {
   setRunDeck,
+  abandonLabyrinthCorruptionVisit,
   cancelDestinationClaim,
   releaseRewardClaim,
   setHasActiveBattle as setDraftHasActiveBattle,
@@ -11,6 +12,8 @@ import {
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { ROUTE_SCREENS } from "@/lib/routing";
+import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
+import { readActiveRun } from "@/features/alchemy/shared/stores/run-reads";
 import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
 import { createCorruptionFlowHandlers } from "@/features/alchemy/run-loop/navigation/run-navigation-corruption";
 import { useRunDestinationWiring } from "./use-run-destination-wiring";
@@ -100,15 +103,22 @@ export function useRunFlowEngine({
     [actions, destinations.getAvailableDestinations],
   );
 
-  const corruption = useMemo(
-    () =>
-      createCorruptionFlowHandlers({
-        updateRunDeck: setRunDeck,
-        advanceToNextDestination: flowHandlers.advanceToNextDestination,
-        returnToCurrentDestination: flowHandlers.returnToCurrentDestination,
-      }),
-    [flowHandlers.advanceToNextDestination, flowHandlers.returnToCurrentDestination],
-  );
+  const corruption = useMemo(() => {
+    function returnToLabyrinthMap() {
+      navigateTo(ROUTE_SCREENS.LABYRINTH_MAP, () => {
+        dispatchRunSessionCommand((draft) => {
+          abandonLabyrinthCorruptionVisit(draft);
+        });
+      });
+    }
+    return createCorruptionFlowHandlers({
+      updateRunDeck: setRunDeck,
+      advanceToNextDestination: flowHandlers.advanceToNextDestination,
+      returnToCurrentDestination: flowHandlers.returnToCurrentDestination,
+      returnToLabyrinthMap,
+      isLabyrinthRun: () => readActiveRun().contentSystemType === CONTENT_SYSTEMS.LABYRINTH,
+    });
+  }, [flowHandlers.advanceToNextDestination, flowHandlers.returnToCurrentDestination, navigateTo]);
 
   const teardown = useMemo(() => {
     function resetRunState() {

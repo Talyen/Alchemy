@@ -115,6 +115,8 @@ function resetPlayerTurnState(
       runicQuillUsedThisTurn: false,
       consumeDrawUsedThisTurn: false,
       emberforgedUsedThisTurn: false,
+      cinderSkinUsedThisTurn: false,
+      holyRetributionUsedThisTurn: false,
       nextCardCostReduction: 0,
     },
   };

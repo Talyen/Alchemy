@@ -1,4 +1,5 @@
 import type { BattleCard } from "@/lib/game-data";
+import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { CORRUPTION_TRANSFORM_CHANCE, MIXED_POTION_CARD_ID } from "@/lib/game-constants";
 import { pickRandom } from "@/lib/utils";
 import { getCorruptionMutationGroups, type CorruptionMutationGroup } from "./mutations";
@@ -30,15 +31,21 @@ export function corruptCard(
   selectedCard: BattleCard,
   library: BattleCard[],
   rng: () => number,
+  modifiers: readonly EncounterRewardTraitId[] = [],
 ): CorruptionResult | null {
   if (selectedCard.corrupted) return null;
-  let groups = getCorruptionMutationGroups(selectedCard);
+  const pure = modifiers.includes("pure-altar");
+  const twin = modifiers.includes("twin-offering");
+  const singleModifiers = twin ? modifiers.filter((id) => id !== "twin-offering") : modifiers;
+  let groups = getCorruptionMutationGroups(selectedCard, singleModifiers);
   let transformed = false;
   const candidates = library.filter(
     (card) => card.id !== selectedCard.id && !card.corrupted && !isSpecialCorruptionCard(card),
   );
-  if (groups.length === 0 || (candidates.length > 0 && rng() < CORRUPTION_TRANSFORM_CHANCE)) {
-    const options = candidates.map((card) => getCorruptionMutationGroups(card)).filter((entries) => entries.length > 0);
+  if (groups.length === 0 || (!pure && candidates.length > 0 && rng() < CORRUPTION_TRANSFORM_CHANCE)) {
+    const options = candidates
+      .map((card) => getCorruptionMutationGroups(card, singleModifiers))
+      .filter((entries) => entries.length > 0);
     const picked = pickRandom(options, rng);
     if (picked) {
       groups = picked;
@@ -48,10 +55,36 @@ export function corruptCard(
   if (groups.length === 0) return null;
   const mutation = pickMutation(groups, rng);
   if (!mutation) return null;
-  const corruptedCard = { ...mutation.card };
+  if (!twin) {
+    const corruptedCard = { ...mutation.card };
+    if (selectedCard.uid !== undefined) corruptedCard.uid = selectedCard.uid;
+    else delete corruptedCard.uid;
+    return { originalCard: selectedCard, corruptedCard, transformed, delta: mutation.delta };
+  }
+  const firstKind = groups.find((entry) => entry.mutations.includes(mutation))?.kind;
+  const secondGroups = getCorruptionMutationGroups(mutation.card, singleModifiers).filter(
+    (group) => group.kind !== firstKind && !isOppositeAxis(firstKind, group.kind),
+  );
+  const second = pickMutation(secondGroups, rng);
+  if (!second) {
+    const corruptedCard = { ...mutation.card };
+    if (selectedCard.uid !== undefined) corruptedCard.uid = selectedCard.uid;
+    else delete corruptedCard.uid;
+    return { originalCard: selectedCard, corruptedCard, transformed, delta: mutation.delta };
+  }
+  const corruptedCard = { ...second.card };
   if (selectedCard.uid !== undefined) corruptedCard.uid = selectedCard.uid;
   else delete corruptedCard.uid;
-  return { originalCard: selectedCard, corruptedCard, transformed, delta: mutation.delta };
+  return {
+    originalCard: selectedCard,
+    corruptedCard,
+    transformed,
+    delta: mutation.delta === -1 && second.delta === -1 ? -1 : 1,
+  };
+}
+
+function isOppositeAxis(first: CorruptionMutationGroup["kind"] | undefined, second: CorruptionMutationGroup["kind"]) {
+  return (first === "strengthen" && second === "weaken") || (first === "weaken" && second === "strengthen");
 }
 
 export function corruptDeckCard(
@@ -59,10 +92,11 @@ export function corruptDeckCard(
   cardIndex: number,
   library: BattleCard[],
   rng: () => number,
+  modifiers: readonly EncounterRewardTraitId[] = [],
 ): { deck: BattleCard[]; result: CorruptionResult | null } {
   const selectedCard = deck[cardIndex];
   if (!selectedCard) throw new Error("Cannot corrupt a missing card");
-  const result = corruptCard(selectedCard, library, rng);
+  const result = corruptCard(selectedCard, library, rng, modifiers);
   if (!result) return { deck, result: null };
   return { deck: deck.map((card, index) => (index === cardIndex ? result.corruptedCard : card)), result };
 }

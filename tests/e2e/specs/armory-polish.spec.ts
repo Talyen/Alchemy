@@ -58,13 +58,11 @@ test("matches currency artwork sizes and freezes the equipped salvage preview", 
   await expect.poll(() => rewards.innerText()).toBe(firstPreview);
   await dialog.getByRole("button", { name: "Salvage", exact: true }).click();
   await expect(dialog).toHaveCount(0);
-  await expect(equipmentSlotLocator(page, "main-hand").getByRole("button", { name: "Protect Longsword" })).toHaveCount(
-    0,
-  );
+  await expect(page.getByTestId("armory-slot-background")).toBeVisible();
   await expect(page.getByTestId("armory-salvage-toggle")).toHaveAttribute("aria-pressed", "false");
 });
 
-test("crafts once, reports the change, and saves item protection", async ({ page, runtimeErrors }, testInfo) => {
+test("crafts once, reports the change, and persists across reload", async ({ page, runtimeErrors }, testInfo) => {
   void runtimeErrors;
   await openArmory(page, { inventory: [sword], craftingCurrencies: { "smiths-whetstone": 3, voidstone: 2 } });
   await activateCurrency(page, "smiths-whetstone");
@@ -76,21 +74,13 @@ test("crafts once, reports the change, and saves item protection", async ({ page
   await expect(result).toContainText("Increases Physical damage by 2");
   await page.mouse.move(0, 0);
   await page.screenshot({ path: testInfo.outputPath("crafting-result.png") });
-  await page.getByRole("button", { name: "Protect Longsword", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Unlock Longsword", exact: true })).toBeVisible();
-  await activateCurrency(page, "voidstone");
-  await gearItemLocator(page, "Longsword").getByRole("button").click();
-  await expect(page.getByRole("status").filter({ hasText: "Unlock this item before crafting." })).toBeVisible();
-  await expect(currencyLocator(page, "voidstone")).toContainText("2");
+  await page.getByRole("button", { name: "Dismiss result" }).click();
   const restoredPage = await page.context().newPage();
   const restoredErrors = failOnRuntimeErrors(restoredPage);
   try {
     await restoredPage.goto(page.url());
     await restoredPage.getByRole("button", { name: "Armory", exact: true }).click();
-    await expect(restoredPage.getByRole("button", { name: "Unlock Longsword", exact: true })).toBeVisible();
     await expect(currencyLocator(restoredPage, "smiths-whetstone")).toContainText("2");
-    await expect(restoredPage.getByTestId("armory-salvage-toggle")).toBeDisabled();
-    await restoredPage.getByRole("button", { name: "Unlock Longsword", exact: true }).click();
     await expect(restoredPage.getByTestId("armory-salvage-toggle")).toBeEnabled();
     expect(restoredErrors).toEqual([]);
   } finally {

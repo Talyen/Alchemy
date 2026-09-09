@@ -85,7 +85,6 @@ function ArmoryScreenRoute({
       onUnequip={controller.onUnequip}
       onEquipTrinket={controller.onEquipTrinket}
       onUnequipTrinket={controller.onUnequipTrinket}
-      onSetProtected={controller.onSetProtected}
       onSalvage={controller.onSalvage}
       onBack={onBack}
       onMenu={onOpenGameMenu}

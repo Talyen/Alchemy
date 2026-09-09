@@ -7,6 +7,7 @@ import {
   tickEnemyStatuses,
   tickPlayerStatuses,
 } from "@/lib/battle";
+import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
 import type { BattleCard, BestiaryEntry } from "@/lib/game-data";
 import { makeTestBattleState, patchBattleState } from "../../fixtures/battle";
@@ -249,6 +250,65 @@ describe("encounter trait card events", () => {
       0,
     );
     expect(result.state.playerStatuses.burn).toBeGreaterThan(0);
+  });
+
+  it("limits cinder-skin and holy-retribution to once per turn each", () => {
+    const currentEnemy: BestiaryEntry = {
+      ...enemyWith("holy-retribution"),
+      traits: [
+        ...enemyWith("holy-retribution").traits,
+        { id: "cinder-skin", title: "Cinder Skin", description: "Deals 1 Burn damage when attacked\nOnce per turn" },
+      ],
+    };
+    const firstCard = card({ uid: 1, effects: [{ kind: "damage", damageType: "physical", amount: 2 }] });
+    const secondCard = card({ uid: 2, effects: [{ kind: "damage", damageType: "physical", amount: 2 }] });
+    const state = patchBattleState({
+      currentEnemy,
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      hand: [firstCard, secondCard],
+      mana: 2,
+      playerHealth: 10,
+      turnPhase: "player",
+    });
+    const first = playBattleCardResolved(state, firstCard.id, 0);
+    expect(first.state.playerHealth).toBe(8);
+    expect(first.state.playerStatuses.burn).toBe(1);
+    expect(first.state.flags.cinderSkinUsedThisTurn).toBe(true);
+    expect(first.state.flags.holyRetributionUsedThisTurn).toBe(true);
+    const second = playBattleCardResolved(first.state, secondCard.id, 0);
+    expect(second.state.playerHealth).toBe(8);
+    expect(second.state.playerStatuses.burn).toBe(1);
+  });
+
+  it("resets cinder-skin and holy-retribution on the next player turn", () => {
+    const currentEnemy: BestiaryEntry = {
+      ...enemyWith("holy-retribution"),
+      traits: [
+        ...enemyWith("holy-retribution").traits,
+        { id: "cinder-skin", title: "Cinder Skin", description: "Deals 1 Burn damage when attacked\nOnce per turn" },
+      ],
+    };
+    const firstCard = card({ uid: 1, effects: [{ kind: "damage", damageType: "physical", amount: 2 }] });
+    const secondCard = card({ uid: 2, effects: [{ kind: "damage", damageType: "physical", amount: 2 }] });
+    const thirdCard = card({ uid: 3, effects: [{ kind: "damage", damageType: "physical", amount: 2 }] });
+    const state = patchBattleState({
+      currentEnemy,
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      hand: [firstCard, secondCard],
+      mana: 2,
+      playerHealth: 10,
+      turnPhase: "player",
+    });
+    const first = playBattleCardResolved(state, firstCard.id, 0);
+    const second = playBattleCardResolved(first.state, secondCard.id, 0);
+    const nextTurn = { ...advanceToPlayerTurn(second.state), hand: [thirdCard], mana: 1 };
+    expect(nextTurn.flags.cinderSkinUsedThisTurn).toBe(false);
+    expect(nextTurn.flags.holyRetributionUsedThisTurn).toBe(false);
+    const third = playBattleCardResolved(nextTurn, thirdCard.id, 0);
+    expect(third.state.playerHealth).toBe(second.state.playerHealth - 2);
+    expect(third.state.playerStatuses.burn).toBe(second.state.playerStatuses.burn + 1);
   });
 
   it("moves a played card to its destination when retaliation defeats the player", () => {

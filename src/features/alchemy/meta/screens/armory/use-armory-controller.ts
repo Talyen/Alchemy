@@ -53,7 +53,6 @@ export interface ArmoryController {
   onUnequip: (characterId: CharacterId, slot: GearSlot) => void;
   onEquipTrinket: (characterId: CharacterId, trinketId: string) => void;
   onUnequipTrinket: (characterId: CharacterId) => void;
-  onSetProtected: (instanceId: string, protectedItem: boolean) => boolean;
   onSalvage: (instanceId: string, salvageYield: SalvageYield) => boolean;
   onApplyCurrency: (currencyId: CraftingCurrencyId, instanceId: string) => boolean;
   onSpawnDevGear?: (characterId: CharacterId) => void;
@@ -99,11 +98,6 @@ export function useArmoryController(options?: { rng?: () => number }): ArmoryCon
     [flush],
   );
 
-  const onSetProtected = useCallback<ArmoryController["onSetProtected"]>(
-    (instanceId, protectedItem) => mutateGearWithFlush(flush, (state) => state.setProtected(instanceId, protectedItem)),
-    [flush],
-  );
-
   const onSalvage = useCallback<ArmoryController["onSalvage"]>(
     (instanceId, salvageYield) => {
       const result = dispatchGearSalvageWithMaterialGrant((state) =>
@@ -145,7 +139,6 @@ export function useArmoryController(options?: { rng?: () => number }): ArmoryCon
       onEquipTrinket,
       onUnequipTrinket,
       onSalvage,
-      onSetProtected,
       onApplyCurrency,
     };
     if (isAlchemyDevBuild()) controller.onSpawnDevGear = onSpawnDevGear;
@@ -163,7 +156,6 @@ export function useArmoryController(options?: { rng?: () => number }): ArmoryCon
     onEquipTrinket,
     onUnequipTrinket,
     onSalvage,
-    onSetProtected,
     onApplyCurrency,
     onSpawnDevGear,
   ]);

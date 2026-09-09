@@ -338,6 +338,9 @@ require enough unowned matching content; the current catalog has only two
 direct healing Trinkets and no Archery-specific Trinkets, so neither theme rolls.
 Mystery rooms select a compatible event and modify its displayed choices before
 resolution; resume reconstructs the same offers without reapplying rewards.
+Corruption chambers reuse the Campaign altar flow and pass their green bonus
+into the corruption roll; leaving before corrupting abandons the pending visit
+and returns to the maze with the chamber still reachable.
 
 Historical grid-map recovery
 is recorded in [MIGRATION_HISTORY.md](../src/features/alchemy/shared/storage/MIGRATION_HISTORY.md#schema-14--labyrinth-hex-floors).

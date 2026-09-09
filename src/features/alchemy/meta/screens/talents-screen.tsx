@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { RotateCcw } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import {
   type KeywordId,
   getTalentsForKeyword,
@@ -18,6 +17,7 @@ import { cn } from "@/lib/utils";
 
 import { TalentOverviewGrid } from "../talents/talent-overview-grid";
 import { ConfirmationDialog, TitledScreenShell } from "../../shared/ui/shared-ui";
+import { ChromeIconButton } from "../../shared/ui/chrome-icon-button";
 import { usePlasmaInteraction } from "../../shared/ui/use-plasma-source";
 import { getPlasmaColorPair, getPlasmaKeywordsForTalent } from "../../shared/config";
 import { FadeSlot } from "../../shared/ui/use-fade";
@@ -132,16 +132,13 @@ export function TalentsScreen({
       onBack={selectedKeyword ? handleBack : onBack}
       onMenu={onMenu}
       headerActions={
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-11 w-11 text-muted-foreground/60 transition-colors hover:bg-muted/40 hover:text-foreground"
+        <ChromeIconButton
           disabled={!hasAllocatedTalents}
           onClick={() => setShowResetConfirm(true)}
           aria-label="Reset talents"
         >
           <RotateCcw className="h-6 w-6" />
-        </Button>
+        </ChromeIconButton>
       }
     >
       <FadeSlot swapKey={selectedKeyword ?? "overview"} className="mt-4 flex w-full flex-1 flex-col justify-center">

@@ -1,6 +1,5 @@
 import { Layers } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { ChromeIconButton } from "./chrome-icon-button";
 
 export interface DeckInspectButtonProps {
   count: number;
@@ -8,18 +7,10 @@ export interface DeckInspectButtonProps {
   onOpen: () => void;
 }
 
-export function DeckInspectButton({
-  count,
-  disabled,
-  onOpen,
-  compact = false,
-}: DeckInspectButtonProps & { compact?: boolean }) {
+export function DeckInspectButton({ count, disabled, onOpen }: DeckInspectButtonProps) {
   const label = `View Deck · ${count} cards`;
   return (
-    <Button
-      variant={compact ? "ghost" : "outline"}
-      size="icon"
-      className={cn("text-muted-foreground", compact ? "h-11 w-11" : "h-12 w-12")}
+    <ChromeIconButton
       aria-label={label}
       aria-disabled={disabled}
       aria-haspopup="dialog"
@@ -30,6 +21,6 @@ export function DeckInspectButton({
       }}
     >
       <Layers className="h-6 w-6" />
-    </Button>
+    </ChromeIconButton>
   );
 }

@@ -1,4 +1,3 @@
-import { GearProtectionButton } from "./gear-protection-button";
 import type { CraftingResult } from "../crafting-result";
 import { memo } from "react";
 import {
@@ -31,10 +30,10 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
   activeCurrencyId,
   onSelect,
   onUnequip,
-  onSetProtected,
   craftingResult,
   onSalvage,
   onApplyCurrency,
+  onCombatLockedAttempt,
 }: {
   slot: GearSlot;
   instance: GearInstance | undefined;
@@ -44,10 +43,10 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
   activeCurrencyId: CraftingCurrencyId | null;
   onSelect: (slot: GearSlot) => void;
   onUnequip: (slot: GearSlot) => void;
-  onSetProtected: (instanceId: string, protectedItem: boolean) => boolean;
   craftingResult: CraftingResult | null;
   onSalvage: (instance: GearInstance) => void;
   onApplyCurrency: (instance: GearInstance) => void;
+  onCombatLockedAttempt: () => void;
 }) {
   const definition = instance ? gearDefinitions[instance.definitionId] : undefined;
   const shineColors = instance ? getAstralShineColors(instance) : undefined;
@@ -99,6 +98,10 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
         className={armorySlotSurfaceClass(editable, showShine)}
         onClick={() => {
           if (!editable) {
+            if (instance && (selected || salvageMode || activeCurrencyId)) {
+              onCombatLockedAttempt();
+              return;
+            }
             onSelect(slot);
             return;
           }
@@ -123,9 +126,6 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
         ) : null}
       </Surface>
       {instance ? <CraftingFlash result={craftingResult} instanceId={instance.instanceId} /> : null}
-      {instance ? (
-        <GearProtectionButton instance={instance} editable={editable} onSetProtected={onSetProtected} />
-      ) : null}
     </div>
   );
 });

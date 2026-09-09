@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight, Menu } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { ChromeIconButton } from "./chrome-icon-button";
 
 export function PaginationControls({
   page,
@@ -106,24 +107,21 @@ export function HamburgerTrigger({
   onClick,
   label = "Open menu",
   className,
-  variant = "outline",
   active = false,
 }: {
   onClick: (rect: DOMRect) => void;
   label?: string;
   className?: string;
-  variant?: "outline" | "ghost";
   active?: boolean | undefined;
 }) {
   return (
-    <Button
-      variant={variant}
-      size="icon"
-      className={cn("h-12 w-12 text-muted-foreground", active && "bg-muted/40 text-foreground", className)}
+    <ChromeIconButton
+      className={cn(className)}
+      active={active}
       onClick={(e) => onClick(e.currentTarget.getBoundingClientRect())}
       aria-label={label}
     >
       <Menu className="h-6 w-6" />
-    </Button>
+    </ChromeIconButton>
   );
 }

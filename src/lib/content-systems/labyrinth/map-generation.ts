@@ -1,7 +1,7 @@
 import { pickRandom, shuffle } from "@/lib/utils";
 import { enemiesByType, enemyById, type EnemyType } from "@/lib/game-data";
 
-import type { LabyrinthFloor, LabyrinthMap, LabyrinthNode, LabyrinthNodeType } from "../types";
+import type { LabyrinthFloor, LabyrinthGridPosition, LabyrinthMap, LabyrinthNode, LabyrinthNodeType } from "../types";
 import {
   LABYRINTH_ENTRANCE_FLOOR_ID,
   LABYRINTH_ENTRANCE_NODE_ID,
@@ -9,7 +9,7 @@ import {
   labyrinthFloorId,
   labyrinthNodeId,
 } from "./data";
-import { LABYRINTH_HEX } from "./hex-grid";
+import { LABYRINTH_HEX, areHexesAdjacent } from "./hex-grid";
 import { generateFloorLayout } from "./hex-layout";
 import { getEnemyModifiersForNodeType, getRewardModifiersForNodeType } from "./modifiers";
 import { cloneLabyrinthMap, withClearedNode } from "./map-state";
@@ -42,6 +42,7 @@ function plannedTypes(count: number, rng: () => number): LabyrinthNodeType[] {
     "elite",
     "mystery",
     "rest",
+    "corruption",
     "shop",
     "alchemist",
     "trinket-shop",
@@ -56,6 +57,103 @@ function plannedTypes(count: number, rng: () => number): LabyrinthNodeType[] {
     }
   }
   return ["combat", ...shuffle(middle, rng), "boss"];
+}
+
+function neighborSlots(positions: readonly LabyrinthGridPosition[], index: number): number[] {
+  const source = positions[index];
+  if (!source) return [];
+  const neighbors: number[] = [];
+  for (let other = 0; other < positions.length; other += 1) {
+    if (other !== index && areHexesAdjacent(source, positions[other]!)) neighbors.push(other);
+  }
+  return neighbors;
+}
+
+function slotSubsets(slots: readonly number[], size: number): number[][] {
+  const subsets: number[][] = [];
+  for (let mask = 0; mask < 1 << slots.length; mask += 1) {
+    const subset: number[] = [];
+    for (let index = 0; index < slots.length; index += 1) {
+      if ((mask & (1 << index)) !== 0) subset.push(slots[index]!);
+    }
+    if (subset.length === size) subsets.push(subset);
+  }
+  return subsets;
+}
+
+function cleanSlotCount(
+  type: LabyrinthNodeType,
+  open: readonly number[],
+  seated: ReadonlyArray<LabyrinthNodeType | undefined>,
+  neighbors: ReadonlyArray<readonly number[]>,
+): number {
+  let clean = 0;
+  for (const slot of open) {
+    let touchesSameType = false;
+    for (const neighbor of neighbors[slot]!) {
+      if (seated[neighbor] === type) {
+        touchesSameType = true;
+        break;
+      }
+    }
+    if (!touchesSameType) clean += 1;
+  }
+  return clean;
+}
+
+function subsetConflictCount(
+  subset: readonly number[],
+  type: LabyrinthNodeType,
+  seated: ReadonlyArray<LabyrinthNodeType | undefined>,
+  neighbors: ReadonlyArray<readonly number[]>,
+): number {
+  const members = new Set(subset);
+  let conflicts = 0;
+  for (const slot of subset) {
+    for (const neighbor of neighbors[slot]!) {
+      if (seated[neighbor] === type) conflicts += 1;
+      else if (neighbor > slot && members.has(neighbor)) conflicts += 1;
+    }
+  }
+  return conflicts;
+}
+
+export function orderTypesForPositions(
+  types: readonly LabyrinthNodeType[],
+  positions: readonly LabyrinthGridPosition[],
+  rng: () => number,
+): LabyrinthNodeType[] {
+  if (types.length !== positions.length) return [...types];
+  const neighbors = positions.map((_, index) => neighborSlots(positions, index));
+  const seated = new Array<LabyrinthNodeType | undefined>(types.length);
+  seated[0] = types[0];
+  seated[types.length - 1] = types[types.length - 1];
+  const counts = new Map<LabyrinthNodeType, number>();
+  for (const type of types.slice(1, -1)) counts.set(type, (counts.get(type) ?? 0) + 1);
+  const groups = shuffle([...counts], rng);
+  let open = types.map((_, index) => index).filter((index) => index > 0 && index < types.length - 1);
+  while (groups.length > 0) {
+    groups.sort(
+      ([leftType, leftCount], [rightType, rightCount]) =>
+        rightCount - leftCount ||
+        cleanSlotCount(leftType, open, seated, neighbors) - cleanSlotCount(rightType, open, seated, neighbors),
+    );
+    const [type, count] = groups.shift()!;
+    let bestSubset = open.slice(0, count);
+    let bestConflicts = Number.POSITIVE_INFINITY;
+    for (const subset of shuffle(slotSubsets(open, count), rng)) {
+      const conflicts = subsetConflictCount(subset, type, seated, neighbors);
+      if (conflicts < bestConflicts) {
+        bestConflicts = conflicts;
+        bestSubset = subset;
+        if (conflicts === 0) break;
+      }
+    }
+    for (const slot of bestSubset) seated[slot] = type;
+    const taken = new Set(bestSubset);
+    open = open.filter((slot) => !taken.has(slot));
+  }
+  return seated as LabyrinthNodeType[];
 }
 
 function makeNode(input: {
@@ -101,7 +199,7 @@ function generateFloor(
     throw new Error(`Labyrinth floor layout length ${positions.length} does not match node count ${count}`);
   }
   const used = new Set(usedEnemies);
-  const nodes = types.map((type, index) => {
+  const nodes = orderTypesForPositions(types, positions, rng).map((type, index) => {
     const enemyType: EnemyType = type === "boss" ? "boss" : type === "elite" ? "elite" : "normal";
     const enemyId = COMBAT_NODE_TYPES.has(type) ? pickEnemyId(enemyType, used, rng) : undefined;
     if (enemyId) used.add(enemyId);

@@ -8,6 +8,7 @@ export const LABYRINTH_TYPE_TO_DESTINATION: Record<LabyrinthNodeType, Destinatio
   boss: DESTINATIONS.BOSS_COMBAT,
   rest: DESTINATIONS.CAMPFIRE,
   mystery: DESTINATIONS.MYSTERY,
+  corruption: DESTINATIONS.CORRUPTION,
   shop: DESTINATIONS.CARD_SHOP,
   alchemist: DESTINATIONS.ALCHEMIST_SHOP,
   "trinket-shop": DESTINATIONS.TRINKET_SHOP,
@@ -20,6 +21,7 @@ export const NODE_TYPE_LABELS: Record<LabyrinthNodeType, string> = {
   elite: DESTINATIONS.ELITE_COMBAT,
   rest: DESTINATIONS.CAMPFIRE,
   mystery: DESTINATIONS.MYSTERY,
+  corruption: DESTINATIONS.CORRUPTION,
   shop: DESTINATIONS.CARD_SHOP,
   alchemist: DESTINATIONS.ALCHEMIST_SHOP,
   "trinket-shop": DESTINATIONS.TRINKET_SHOP,
@@ -33,6 +35,7 @@ export const LABYRINTH_ENTRANCE_FLOOR_ID = "labyrinth-floor-0";
 export const LABYRINTH_SUPPORT_TYPES: Array<Exclude<LabyrinthNodeType, "entrance" | "combat" | "elite" | "boss">> = [
   "rest",
   "mystery",
+  "corruption",
   "shop",
   "alchemist",
   "trinket-shop",

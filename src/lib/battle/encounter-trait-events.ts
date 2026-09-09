@@ -5,7 +5,7 @@ import { applyEnemyLeechHealing, processEnemyDamageEffect } from "./enemy-attack
 import { addEnemyMitigationWithCombatText } from "./encounter-trait-health-threshold";
 import { isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-traits";
 import { getBattleRng, rollPercent } from "@/lib/rng";
-import { hasEnemyTrait, setEnemyStatus, type BattleState, type CombatTextEvent } from "./types";
+import { hasEnemyTrait, setEnemyStatus, setFlag, type BattleState, type CombatTextEvent } from "./types";
 
 function addEnemyStatusText(
   state: BattleState,
@@ -138,10 +138,20 @@ export function processEncounterTraitCardAction(
       nextState = setEnemyStatus(nextState, "thorns", 0);
       nextState = dealTraitDamage(nextState, "physical", 1, combatTexts);
     }
-    if (hasEnemyTrait(nextState, "holy-retribution"))
-      nextState = dealTraitDamage(recordEnemyAbilityActivation(nextState, "holy-retribution"), "holy", 1, combatTexts);
-    if (hasEnemyTrait(nextState, "cinder-skin"))
-      nextState = dealTraitDamage(recordEnemyAbilityActivation(nextState, "cinder-skin"), "burn", 1, combatTexts);
+    if (hasEnemyTrait(nextState, "holy-retribution") && !nextState.flags.holyRetributionUsedThisTurn)
+      nextState = dealTraitDamage(
+        setFlag(recordEnemyAbilityActivation(nextState, "holy-retribution"), "holyRetributionUsedThisTurn", true),
+        "holy",
+        1,
+        combatTexts,
+      );
+    if (hasEnemyTrait(nextState, "cinder-skin") && !nextState.flags.cinderSkinUsedThisTurn)
+      nextState = dealTraitDamage(
+        setFlag(recordEnemyAbilityActivation(nextState, "cinder-skin"), "cinderSkinUsedThisTurn", true),
+        "burn",
+        1,
+        combatTexts,
+      );
   }
   return nextState;
 }

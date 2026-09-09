@@ -108,4 +108,9 @@ export const LABYRINTH_TRAITS = {
   bountiful: room("mystery", "Bountiful", "This event grants twice as many Materials", "nature"),
   enlightening: room("mystery", "Enlightening", "This event grants twice as much experience", "wish"),
   "restful-discovery": room("mystery", "Restful Discovery", "Restore 15% Health after this event", "health"),
+  "steady-sigil": room("corruption", "Steady Sigil", "Corruption cannot weaken", "armor"),
+  "pure-altar": room("corruption", "Pure Altar", "Keeps your card's identity", "wish"),
+  "echoing-altar": room("corruption", "Echoing Altar", "Gift matches your card's keywords", "consume"),
+  "blood-rite": room("corruption", "Blood Rite", "Favors Bleed and Leech gifts", "bleed"),
+  "twin-offering": room("corruption", "Twin Offering", "Corrupts once with two gifts", "leech"),
 };

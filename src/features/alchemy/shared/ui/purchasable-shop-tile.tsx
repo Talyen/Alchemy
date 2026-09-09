@@ -26,17 +26,17 @@ export function ShopPriceChip({
         <DisabledTooltip show={!canAfford} message="Not Enough Gold">
           <div
             className={cn(
-              "pointer-events-auto inline-flex items-center justify-center gap-2 rounded-full px-4 py-1.5 text-base leading-none font-semibold shadow-md backdrop-blur-sm",
+              "pointer-events-auto inline-flex items-center justify-center gap-2 rounded-full px-4 py-1.5 text-base leading-none font-semibold shadow-lg backdrop-blur-md",
               canAfford
-                ? "border border-yellow-400/40 bg-yellow-300/15 text-yellow-300"
+                ? "border border-yellow-400/60 bg-stone-950/85 text-yellow-200"
                 : "border border-border/50 bg-stone-950/85 text-muted-foreground",
             )}
           >
             <CurrencyAmount
               amount={price}
               suffix=" Gold"
-              iconClassName={cn("h-6 w-6", canAfford ? "text-yellow-300" : "text-muted-foreground")}
-              className="whitespace-nowrap"
+              iconClassName="h-6 w-6 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]"
+              className="whitespace-nowrap drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]"
             />
           </div>
         </DisabledTooltip>

@@ -5,10 +5,17 @@ import {
   createMinimalLabyrinthMap,
   expandBeyondBoss,
   generateLabyrinthMap,
+  orderTypesForPositions,
   withClearedLabyrinthNode,
 } from "@/lib/content-systems/labyrinth/map-generation";
+import type { LabyrinthGridPosition, LabyrinthNodeType } from "@/lib/content-systems/types";
 import { floorNodes, isNodeReachable, labyrinthNodeVisualState } from "@/lib/content-systems/labyrinth/map-state";
-import { LABYRINTH_ENTRANCE_NODE_ID } from "@/lib/content-systems/labyrinth/data";
+import {
+  LABYRINTH_ENTRANCE_NODE_ID,
+  LABYRINTH_SUPPORT_TYPES,
+  LABYRINTH_TYPE_TO_DESTINATION,
+} from "@/lib/content-systems/labyrinth/data";
+import { DESTINATIONS } from "@/lib/routing";
 import { LABYRINTH_HEX, areHexesAdjacent, isHexInBounds } from "@/lib/content-systems/labyrinth/hex-grid";
 import { isValidFloorLayout } from "@/lib/content-systems/labyrinth/hex-layout";
 
@@ -71,6 +78,22 @@ describe("generateLabyrinthMap", () => {
         expect(node.enemyId).toBeTruthy();
       }
     }
+  });
+
+  it("deals corruption chambers at the support rate without enemies", () => {
+    expect(LABYRINTH_SUPPORT_TYPES).toContain("corruption");
+    expect(LABYRINTH_TYPE_TO_DESTINATION.corruption).toBe(DESTINATIONS.CORRUPTION);
+    let seen = 0;
+    for (let seed = 0; seed < 30; seed++) {
+      const map = generateLabyrinthMap(createSeededRng(seed));
+      for (const node of Object.values(map.nodes)) {
+        if (node.type !== "corruption") continue;
+        seen += 1;
+        expect(node.enemyId).toBeUndefined();
+        expect(node.rewardModifiers).toHaveLength(1);
+      }
+    }
+    expect(seen).toBeGreaterThan(0);
   });
 });
 
@@ -157,5 +180,77 @@ describe("optional Labyrinth chambers", () => {
     }
     expect(floorNodes(original, 1).every((node) => !node.cleared)).toBe(true);
     expect(floorNodes(map, 2).filter((node) => node.type === "boss")).toHaveLength(1);
+  });
+});
+
+describe("labyrinth type seating", () => {
+  function sameTypeAdjacencies(
+    types: readonly LabyrinthNodeType[],
+    positions: readonly LabyrinthGridPosition[],
+  ): number {
+    let conflicts = 0;
+    for (let first = 0; first < types.length; first += 1) {
+      for (let second = first + 1; second < types.length; second += 1) {
+        if (types[first] === types[second] && areHexesAdjacent(positions[first]!, positions[second]!)) {
+          conflicts += 1;
+        }
+      }
+    }
+    return conflicts;
+  }
+
+  it("separates duplicate types when the layout allows it", () => {
+    const positions: LabyrinthGridPosition[] = [
+      { row: 0, col: 0 },
+      { row: 1, col: 0 },
+      { row: 2, col: 0 },
+      { row: 3, col: 0 },
+    ];
+    const types: LabyrinthNodeType[] = ["combat", "rest", "combat", "boss"];
+    const result = orderTypesForPositions(types, positions, createSeededRng(7));
+    expect(result[0]).toBe("combat");
+    expect(result[result.length - 1]).toBe("boss");
+    expect([...result].sort()).toEqual([...types].sort());
+    expect(sameTypeAdjacencies(result, positions)).toBe(0);
+  });
+
+  it("separates repeated non-combat types without per-type logic", () => {
+    const positions: LabyrinthGridPosition[] = [
+      { row: 0, col: 0 },
+      { row: 1, col: 0 },
+      { row: 2, col: 0 },
+      { row: 3, col: 0 },
+      { row: 4, col: 0 },
+    ];
+    const types: LabyrinthNodeType[] = ["combat", "mystery", "combat", "mystery", "boss"];
+    const result = orderTypesForPositions(types, positions, createSeededRng(11));
+    expect([...result].sort()).toEqual([...types].sort());
+    expect(sameTypeAdjacencies(result, positions)).toBe(0);
+    const mysteries = result.map((type, index) => (type === "mystery" ? index : -1)).filter((index) => index >= 0);
+    expect(mysteries).toHaveLength(2);
+    expect(areHexesAdjacent(positions[mysteries[0]!]!, positions[mysteries[1]!]!)).toBe(false);
+  });
+
+  it("still seats every planned type when separation is impossible", () => {
+    const positions: LabyrinthGridPosition[] = [
+      { row: 0, col: 0 },
+      { row: 0, col: 1 },
+      { row: 1, col: 0 },
+    ];
+    const types: LabyrinthNodeType[] = ["combat", "combat", "combat"];
+    const result = orderTypesForPositions(types, positions, createSeededRng(3));
+    expect(result).toEqual(["combat", "combat", "combat"]);
+  });
+
+  it("keeps generated floors nearly free of same-type neighbors", () => {
+    let conflicts = 0;
+    for (let seed = 1; seed <= 100; seed += 1) {
+      const nodes = floorNodes(generateLabyrinthMap(createSeededRng(seed)), 1);
+      conflicts += sameTypeAdjacencies(
+        nodes.map((node) => node.type),
+        nodes.map((node) => node.gridPosition),
+      );
+    }
+    expect(conflicts).toBeLessThanOrEqual(90);
   });
 });

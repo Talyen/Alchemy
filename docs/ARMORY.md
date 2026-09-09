@@ -23,14 +23,14 @@ contract and controller seams.
 
 `src/lib/gear/definitions.ts`, `crafting.ts`, and `crafting-ids.ts` are authoritative. Item titles live with definitions (`getGearInstanceTitle`, re-exported via `item-names.ts`). Affix pool/roll helpers live in `affix-pool.ts` so generation and crafting depend down. Durable invariants:
 
-- A saved `GearInstance` has a stable unique `instanceId`, a `definitionId`, rolled `affixes`, and an optional `protected` flag (omitted means unlocked); it never embeds definition objects or art URLs. Protected items can be equipped but cannot be crafted or salvaged. Protection changes use the Gear command boundary and flush the save.
+- A saved `GearInstance` has a stable unique `instanceId`, a `definitionId`, and rolled `affixes`; it never embeds definition objects or art URLs.
 - Inventories and loadouts are keyed by character. A loadout maps each slot to at most one instance ID.
 - Permanent Trinkets are unique definition IDs in `ownedTrinketIds`, not generated `GearInstance` values; they have no rarity, affixes, crafting, or salvage.
 - `equippedTrinkets` maps each character to one owned Trinket at most. Equipping a shared Trinket moves it from any other character.
 - Definitions own compatible slots, hand rules, affinity keywords, salvage value, and presentation metadata. One-handed melee weapons and wands may occupy `main-hand` or `off-hand`; two-handers and ranged weapons stay main-hand only (ranged pairs with a quiver off-hand).
 - Hand conflicts are resolved only when equipping a hand slot; equipping body armor or accessories preserves the current weapon and off-hand item.
 - Gear slots are `main-hand`, `off-hand`, `body`, `left-accessory`, and `right-accessory`. Both Accessory slots accept Rings or Amulets. The Armory lays these out over `left-accessory | trinket | right-accessory`; the dedicated Trinket slot accepts only permanent Trinkets.
-- **Unique** is a third Gear rarity (alongside basic and astral). Each of the 29 base items has exactly one named Unique with one exclusive signature and three fixed standard supporting affixes. Supporting rolls always use the standard Unique/Astral maximum from the affix catalog; the signature has its own fixed magnitude. Generation, tooltips, manifests, and saved-item normalization share these canonical affixes. Existing items keep their instance ID and protection when supporting values change. Crafting currencies cannot modify uniques. Unique salvage follows the crafting and homestead salvage definitions. Collection tracks discovered unique definition IDs independently of current inventory, so salvage does not hide an already-found unique.
+- **Unique** is a third Gear rarity (alongside basic and astral). Each of the 29 base items has exactly one named Unique with one exclusive signature and three fixed standard supporting affixes. Supporting rolls always use the standard Unique/Astral maximum from the affix catalog; the signature has its own fixed magnitude. Generation, tooltips, manifests, and saved-item normalization share these canonical affixes. Existing items keep their instance ID when supporting values change. Crafting currencies cannot modify uniques. Unique salvage follows the crafting and homestead salvage definitions. Collection tracks discovered unique definition IDs independently of current inventory, so salvage does not hide an already-found unique.
 - Uniqueness is inventory-scoped: a unique definition is excluded from shops and rewards while any character still holds an instance. Salvaging it returns that definition to the drop pool. Reward and shop screens never offer the same unique twice, and never pair a unique with another item of the same base item.
 - Drop, shop, rarity, and permanent-Trinket replacement tuning lives in `src/lib/game-constants/run-rewards.ts`. Unique rolls degrade to the owning surface's fallback when no eligible unique remains; permanent-Trinket replacement falls back to Gear when no unowned Trinket remains. Keep changing percentages in the tuning owner rather than copying them into this contract.
 - Normal, Elite, and Boss combat roll one reward group, then roll each Gear choice independently using that encounter’s relative Basic/Astral/Unique weights. Astral bonuses transfer Basic weight before normalization. Cards, Trinkets, and Boons stay grouped; Boss Gear has no Basic rolls. Unavailable Unique choices individually fall back to Astral, preserving three Gear choices and shared base-item exclusions. Exhausted Trinket pools use the existing fallback Gear odds independently per choice.
@@ -47,10 +47,13 @@ unfinished parked battle remains reserved. These restrictions are derived after
 reload and require no new save fields.
 
 A reserved hero’s Armory tab remains browsable but cannot equip, unequip, craft,
-salvage, or toggle item protection. Other heroes remain editable. Inventory is
+salvage. Other heroes remain editable. Blocked
+attempts on the reserved hero’s tab play the error sound and show a red
+“Equipment cannot be changed during Combat.” message; browsing the tab stays
+silent with no persistent banner. Inventory is
 browsed across characters: Gear and permanent Trinkets equipped by a reserved
-hero cannot be taken by another hero, and reserved Gear cannot be crafted,
-salvaged, or have protection toggled from another tab. Unused items remain
+hero cannot be taken by another hero, and reserved Gear cannot be crafted
+or salvaged from another tab. Unused items remain
 editable through other heroes’ tabs. Acquisition adds inventory normally.
 
 The `GearStore` command boundary (`gear-session-command.ts` via `dispatchGearMutationWithRunHealthSync` / `dispatchGearSalvageWithMaterialGrant`) enforces the same reservations before running the mutator;
@@ -71,7 +74,7 @@ Homestead mutation timing remains unchanged.
 
 ### Read paths
 
-- **`Armory lock`** — computed from generated Gear or permanent Trinket ownership via `useIsArmoryLocked()` in `gear-store.ts`; `MenuScreen` receives a `locked` prop, it does not read the store. Combat preserves browsing but makes each battling hero’s Armory tab read-only; see [Combat equipment restrictions](#combat-equipment-restrictions). Reserved heroes show a `browseOnly` banner; reserved items show a lock with a reason naming the reserved hero while preserving inspection. Protection toggles live on `GearProtectionButton`.
+- **`Armory lock`** — computed from generated Gear or permanent Trinket ownership via `useIsArmoryLocked()` in `gear-store.ts`; `MenuScreen` receives a `locked` prop, it does not read the store. Combat preserves browsing but makes each battling hero’s Armory tab read-only; see [Combat equipment restrictions](#combat-equipment-restrictions). Blocked attempts on a reserved hero’s tab play the error sound and show a red Combat-locked message; reserved items show a lock with a reason naming the reserved hero while preserving inspection.
 - **`ArmoryScreen`** — reads Gear, Trinket ownership/equipment, and crafting currencies via `useGearArmorySlice`, combat reservations via `useGearCombatRestrictions`, plus finished-run and active-run reads bundled in `useArmoryController`.
 - **`useArmoryController`** — facade hook that bundles the read-only slice plus the mutation callbacks.
 - **Battle** — `computeGearManifest` is applied at battle start and rebound onto the live `BattleState` whenever gear, talents, or homestead change.
@@ -89,7 +92,7 @@ There is no external `useGearStore` hook. Gear mutations run against a `GearStor
 HP sync runs through `rebindLiveRunMeta` when `syncRunHealth ?? draft.session.hasActiveRun`. `mutate` receives a `GearStore` handle and may edit any character's loadout (for example Armory browsing another hero while a run is in progress): `(state) => state.equip(loadoutCharacterId, slot, instance)`.
 
 1. **Equip / Unequip** — `dispatchGearMutationWithRunHealthSync({ mutate: (state) => state.equip(characterId, slot, instance) })` and `(state) => state.unequip(characterId, slot)`.
-2. **Salvage** — preview with `computeSalvageYield` (definition `salvageValue` homestead materials + crafting currencies drawn from the existing rarity table using a seed derived from the stable instance ID). Reopening, reloading, changing affixes, and toggling protection do not reroll rewards; upgrading rarity uses the new rarity table. Confirm passes that frozen yield into `dispatchGearSalvageWithMaterialGrant((state) => state.salvage(instanceId, { yield }))`, which HP-syncs, then grants homestead materials in the same command via `awardMaterialsDuringRun` (active run) or `addMaterials` (meta). Confirm always pays exactly the preview. Both salvage and crafting reject protected items at the command boundary.
+2. **Salvage** — preview with `computeSalvageYield` (definition `salvageValue` homestead materials + crafting currencies drawn from the existing rarity table using a seed derived from the stable instance ID). Reopening, reloading, and changing affixes do not reroll rewards; upgrading rarity uses the new rarity table. Confirm passes that frozen yield into `dispatchGearSalvageWithMaterialGrant((state) => state.salvage(instanceId, { yield }))`, which HP-syncs, then grants homestead materials in the same command via `awardMaterialsDuringRun` (active run) or `addMaterials` (meta). Confirm always pays exactly the preview.
 3. **Crafting-currency apply** — `(state) => state.applyCurrency(currencyId, instanceId, { rng })` mutates the item's affixes via `applyCraftingCurrency`.
 4. **Add new instance (rewards / shop / dev spawn)** — Armory/dev spawn: `dispatchGearMutationWithRunHealthSync({ mutate: (state) => state.addInstance(instance, characterId) })`. Shop and in-run reward commands already own a draft: `mutateGearWithRunHealthSync(draft, { mutate: (gear) => gear.addInstance(instance, characterId) })`.
 5. **Permanent Trinkets** — use `addTrinket`, `equipTrinket`, and `unequipTrinket` on the Gear aggregate. Rewards and the Trinket Shop add ownership inside their existing run-session command; acquisition never auto-equips or creates a Boon.
@@ -103,7 +106,7 @@ Base item construction owns homestead salvage materials; rarity increases quanti
 The route wrapper (`src/app/screen-routes/meta-routes.tsx`) does not mutate gear directly. It consumes `useArmoryController()`, which:
 
 - Reads `inventories`, `loadouts`, and `craftingCurrencies` from `useGearArmorySlice`.
-- Routes `equip`/`unequip`/`equipTrinket`/`unequipTrinket`/`setProtected` through `dispatchGearMutationWithRunHealthSync` (HP-sync side effect) and flushes the save on success only — failed taps are feedback-only, no save.
+- Routes `equip`/`unequip`/`equipTrinket`/`unequipTrinket` through `dispatchGearMutationWithRunHealthSync` (HP-sync side effect) and flushes the save on success only — failed taps are feedback-only, no save.
 - Routes `applyCurrency` through `dispatchGearMutationWithRunHealthSync` and flushes the save on success.
 - Routes `salvage` through `dispatchGearSalvageWithMaterialGrant` (HP-syncs once, then grants homestead materials without a second rebind) and flushes the save on success.
 - Provides a dev-only `onSpawnDevGear` that calls `generateDevRandomGearInstance` through `dispatchGearMutationWithRunHealthSync` and flushes the save.

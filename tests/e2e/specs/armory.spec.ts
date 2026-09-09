@@ -133,7 +133,7 @@ test.describe("Armory equip", critical, () => {
 
     await page.getByRole("button", { name: "Open game menu" }).click();
     await page.getByRole("button", { name: "Armory" }).click();
-    await expect(page.getByText(/Equipment can be changed after this hero’s battle ends/)).toBeVisible();
+    await expect(page.getByText("Equipment cannot be changed during Combat.", { exact: true })).toHaveCount(0);
     await page.getByLabel("Armor equipment slot").click();
     const bodyItem = gearItemLocator(page, "Leather Armor");
     await expect(bodyItem).toBeVisible();
@@ -141,9 +141,11 @@ test.describe("Armory equip", critical, () => {
       "aria-disabled",
       "true",
     );
+    await bodyItem.getByRole("button", { name: "Leather Armor", exact: true }).click();
+    await expect(page.getByText("Equipment cannot be changed during Combat.", { exact: true })).toBeVisible();
     await expect(equipmentSlotLocator(page, "body").locator("img")).toHaveCount(1);
     await page.getByRole("button", { name: "Rogue", exact: true }).click();
-    await expect(page.getByText(/Equipment can be changed after this hero’s battle ends/)).toHaveCount(0);
+    await expect(page.getByText("Equipment cannot be changed during Combat.", { exact: true })).toHaveCount(0);
     await gearItemLocator(page, "Leather Armor").getByRole("button", { name: "Leather Armor", exact: true }).click();
     await expect(equipmentSlotLocator(page, "body").locator("img")).toHaveCount(2);
   });
@@ -181,7 +183,11 @@ test(
       await restored.goto(page.url());
       await restored.getByRole("button", { name: "Open game menu" }).click();
       await restored.getByRole("button", { name: "Armory", exact: true }).click();
-      await expect(restored.getByText(/Equipment can be changed after this hero’s battle ends/)).toBeVisible();
+      await restored.getByLabel("Armor equipment slot").click();
+      await gearItemLocator(restored, "Leather Armor")
+        .getByRole("button", { name: "Leather Armor", exact: true })
+        .click();
+      await expect(restored.getByText("Equipment cannot be changed during Combat.", { exact: true })).toBeVisible();
       await restored.getByRole("button", { name: "Open game menu" }).click();
       await restored.getByRole("button", { name: "Return to Battle", exact: true }).click();
       const battle = new BattlePage(restored);
@@ -189,7 +195,7 @@ test(
       await expect(battle.victoryHeading).toBeVisible();
       await restored.getByRole("button", { name: "Open game menu" }).click();
       await restored.getByRole("button", { name: "Armory", exact: true }).click();
-      await expect(restored.getByText(/Equipment can be changed after this hero’s battle ends/)).toHaveCount(0);
+      await expect(restored.getByText("Equipment cannot be changed during Combat.", { exact: true })).toHaveCount(0);
       await restored.getByRole("button", { name: "Rogue", exact: true }).click();
       await gearItemLocator(restored, "Longsword").getByRole("button", { name: "Longsword", exact: true }).click();
       await expect(equipmentSlotLocator(restored, "main-hand").locator("img")).toHaveCount(2);

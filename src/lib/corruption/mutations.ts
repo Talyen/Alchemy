@@ -1,4 +1,12 @@
-import { BattleCardEffectSchema, type BattleCard, type BattleCardEffect, type DamageType } from "@/lib/game-data";
+import {
+  BattleCardEffectSchema,
+  getCardKeywords,
+  type BattleCard,
+  type BattleCardEffect,
+  type DamageType,
+  type KeywordId,
+} from "@/lib/game-data";
+import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import {
   CORRUPTION_OUTCOME_WEIGHTS,
   CORRUPTION_STRENGTHEN_RATIO,
@@ -144,7 +152,37 @@ function removeConsume(card: BattleCard): BattleCard {
   };
 }
 
-export function getCorruptionMutationGroups(card: BattleCard): CorruptionMutationGroup[] {
+function secondaryKeyword(effect: BattleCardEffect): KeywordId | null {
+  if (effect.kind === "player-status" && effect.status === "block") return "block";
+  if (effect.kind === "heal") return "health";
+  if (effect.kind === "damage" && (effect.damageType === "poison" || effect.damageType === "burn")) {
+    return effect.damageType;
+  }
+  return null;
+}
+
+function filterEchoSecondary(cards: BattleCard[], keywords: ReadonlySet<KeywordId>): BattleCard[] {
+  const matching = cards.filter((next) => {
+    const added = next.effects[next.effects.length - 1];
+    if (!added) return false;
+    const keyword = secondaryKeyword(added);
+    return keyword !== null && keywords.has(keyword);
+  });
+  return matching.length > 0 ? matching : cards;
+}
+
+function filterEchoConversions(cards: BattleCard[], keywords: ReadonlySet<KeywordId>): BattleCard[] {
+  const matching = cards.filter((next) => {
+    const effect = next.effects[0];
+    return effect?.kind === "damage" && keywords.has(effect.damageType);
+  });
+  return matching.length > 0 ? matching : cards;
+}
+
+export function getCorruptionMutationGroups(
+  card: BattleCard,
+  modifiers: readonly EncounterRewardTraitId[] = [],
+): CorruptionMutationGroup[] {
   const targets = getEditableCorruptionTargets(card);
   const target = plainTarget(card, targets);
   const roomForLine =
@@ -214,7 +252,40 @@ export function getCorruptionMutationGroups(card: BattleCard): CorruptionMutatio
   }
   add("convert", conversionMutations(card, target));
   if (canRemoveConsume(card)) add("reusable", [removeConsume(card)]);
-  return groups
+  let shaped = groups;
+  if (modifiers.includes("steady-sigil")) {
+    shaped = shaped.filter((group) => group.kind !== "weaken");
+  }
+  if (modifiers.includes("blood-rite")) {
+    shaped = shaped.map((group) => {
+      if (group.kind === "leech") return { ...group, weight: group.weight * 3 };
+      if (group.kind === "convert") return { ...group, weight: group.weight * 2 };
+      return group;
+    });
+  }
+  if (modifiers.includes("echoing-altar")) {
+    const keywords = new Set<KeywordId>(getCardKeywords(card));
+    shaped = shaped.map((group) => {
+      if (group.kind === "secondary") {
+        const cards = filterEchoSecondary(
+          group.mutations.map(({ card: next }) => next),
+          keywords,
+        );
+        const kept = new Set(cards);
+        return { ...group, mutations: group.mutations.filter(({ card: next }) => kept.has(next)) };
+      }
+      if (group.kind === "convert") {
+        const cards = filterEchoConversions(
+          group.mutations.map(({ card: next }) => next),
+          keywords,
+        );
+        const kept = new Set(cards);
+        return { ...group, mutations: group.mutations.filter(({ card: next }) => kept.has(next)) };
+      }
+      return group;
+    });
+  }
+  return shaped
     .map((group) => ({
       ...group,
       mutations: group.mutations.filter(({ card: next }) =>

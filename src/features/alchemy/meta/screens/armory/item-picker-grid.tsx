@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import type { CraftingResult } from "./crafting-result";
-import { GearProtectionButton } from "./parts/gear-protection-button";
 import {
   gearDefinitions,
   getAstralShineColors,
@@ -42,10 +41,10 @@ export function ItemPickerGrid({
   salvageMode,
   activeCurrencyId,
   onEquip,
-  onSetProtected,
   craftingResult,
   onSalvage,
   onApplyCurrency,
+  onCombatLockedAttempt,
 }: {
   reservedGear: Record<string, CharacterId>;
   slot: GearSlot;
@@ -58,10 +57,10 @@ export function ItemPickerGrid({
   salvageMode: boolean;
   activeCurrencyId: CraftingCurrencyId | null;
   onEquip: (instance: GearInstance) => void;
-  onSetProtected: (instanceId: string, protectedItem: boolean) => boolean;
   craftingResult: CraftingResult | null;
   onSalvage: (instance: GearInstance) => void;
   onApplyCurrency: (instance: GearInstance) => void;
+  onCombatLockedAttempt: () => void;
 }) {
   const reducedMotion = useReducedMotion();
   const equippedBy = useMemo(() => {
@@ -125,7 +124,11 @@ export function ItemPickerGrid({
                 imageClassName={gearArtFillClass}
                 shineColor={shineColor}
                 onClick={() => {
-                  if (!editable || reservedBy) return;
+                  if (reservedBy) return;
+                  if (!editable) {
+                    onCombatLockedAttempt();
+                    return;
+                  }
                   if (salvageMode) {
                     onSalvage(item);
                     return;
@@ -164,7 +167,6 @@ export function ItemPickerGrid({
               </InteractiveArtTile>
             </div>
             <CraftingFlash result={craftingResult} instanceId={item.instanceId} />
-            <GearProtectionButton instance={item} editable={editable && !reservedBy} onSetProtected={onSetProtected} />
           </motion.div>
         );
       }}

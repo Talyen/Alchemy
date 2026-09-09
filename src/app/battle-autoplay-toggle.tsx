@@ -1,19 +1,16 @@
 import { Repeat } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { ChromeIconButton } from "@/features/alchemy/shared/ui/chrome-icon-button";
 
 export function BattleAutoplayToggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) {
   return (
-    <Button
-      variant={enabled ? "primary" : "outline"}
-      size="icon"
-      className={cn("h-12 w-12", !enabled && "text-muted-foreground")}
+    <ChromeIconButton
+      variant={enabled ? "primary" : "ghost"}
       onClick={onToggle}
       aria-label="Autoplay"
       aria-pressed={enabled}
       data-testid="autoplay-toggle"
     >
       <Repeat className="h-6 w-6" />
-    </Button>
+    </ChromeIconButton>
   );
 }

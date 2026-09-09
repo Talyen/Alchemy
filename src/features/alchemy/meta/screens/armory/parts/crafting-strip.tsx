@@ -1,6 +1,6 @@
 import type { RefObject } from "react";
 import { Trash2 } from "lucide-react";
-import { getCraftingCurrencyDefinition, CRAFTING_CURRENCY_LIST, type CraftingCurrencyId } from "@/lib/gear";
+import { CRAFTING_CURRENCY_LIST, type CraftingCurrencyId } from "@/lib/gear";
 import { cn } from "@/lib/utils";
 import { sectionTitleClass, surfaceSelectedRingClass } from "../../../../shared/config";
 import { CurrencyChip } from "./currency-chip";
@@ -12,7 +12,6 @@ export function CraftingStrip({
   salvageMode,
   editable,
   hasSalvageableGear,
-  onCancel,
   onSelectCurrency,
   onToggleSalvageMode,
 }: {
@@ -22,7 +21,6 @@ export function CraftingStrip({
   salvageMode: boolean;
   editable: boolean;
   hasSalvageableGear: boolean;
-  onCancel: () => void;
   onSelectCurrency: (currencyId: CraftingCurrencyId) => void;
   onToggleSalvageMode: () => void;
 }) {
@@ -62,26 +60,6 @@ export function CraftingStrip({
           <Trash2 className="h-8 w-8" />
           <span className="text-xs">Salvage</span>
         </button>
-      </div>
-      <div className="mt-3 min-h-12 text-center text-sm text-muted-foreground" aria-live="polite">
-        {activeCurrencyId || salvageMode ? (
-          <>
-            <p>
-              {activeCurrencyId
-                ? `${getCraftingCurrencyDefinition(activeCurrencyId).displayName}: ${getCraftingCurrencyDefinition(activeCurrencyId).tooltipEffect}. Select an item. Uses one currency.`
-                : "Salvage: select an unlocked item to preview its rewards."}
-            </p>
-            <button
-              type="button"
-              className="mt-1 rounded px-2 py-1 text-foreground underline underline-offset-4"
-              onClick={onCancel}
-            >
-              Cancel <span className="text-muted-foreground">(Esc)</span>
-            </button>
-          </>
-        ) : (
-          <p>Choose a currency to craft once, or Salvage to recover materials.</p>
-        )}
       </div>
     </div>
   );

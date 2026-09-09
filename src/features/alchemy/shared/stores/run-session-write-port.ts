@@ -62,6 +62,7 @@ export {
 } from "./write-port-meta";
 export {
   abandonCorruptionDestinationVisit,
+  abandonLabyrinthCorruptionVisit,
   applyRunStartSnapshot,
   beginDestinationClaim,
   beginRewardClaim,

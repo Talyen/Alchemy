@@ -13,6 +13,7 @@ export function TrinketPickerGrid({
   equippedTrinkets,
   editable,
   onEquip,
+  onCombatLockedAttempt,
 }: {
   reservedTrinkets: Record<string, CharacterId>;
   characterId: CharacterId;
@@ -20,6 +21,7 @@ export function TrinketPickerGrid({
   equippedTrinkets: EquippedTrinkets;
   editable: boolean;
   onEquip: (trinketId: string) => void;
+  onCombatLockedAttempt: () => void;
 }) {
   return (
     <ArmoryPagedGrid
@@ -44,7 +46,7 @@ export function TrinketPickerGrid({
               ariaDisabled={!editable || Boolean(reservedBy)}
               chip={reservationReason ?? undefined}
               interactiveChrome={editable && !reservedBy}
-              onClick={editable && !reservedBy ? () => onEquip(trinket.id) : undefined}
+              onClick={reservedBy ? undefined : editable ? () => onEquip(trinket.id) : () => onCombatLockedAttempt()}
               ariaLabel={
                 reservationReason
                   ? `${trinket.title}. ${reservationReason}`

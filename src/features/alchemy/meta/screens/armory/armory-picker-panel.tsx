@@ -70,6 +70,7 @@ export function ArmoryPickerPanel({
           equippedTrinkets={equippedTrinkets}
           editable={editable}
           onEquip={actions.onEquipTrinket}
+          onCombatLockedAttempt={actions.onCombatLockedAttempt}
         />
       ) : (
         <ItemPickerGrid
@@ -84,10 +85,10 @@ export function ArmoryPickerPanel({
           salvageMode={salvageMode}
           activeCurrencyId={activeCurrencyId}
           onEquip={actions.onEquipGear}
-          onSetProtected={actions.onSetProtected}
           craftingResult={craftingResult}
           onSalvage={actions.onSalvage}
           onApplyCurrency={actions.onApplyCurrency}
+          onCombatLockedAttempt={actions.onCombatLockedAttempt}
         />
       )}
     </section>

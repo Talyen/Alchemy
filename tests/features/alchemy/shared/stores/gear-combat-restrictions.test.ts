@@ -69,9 +69,6 @@ describe("combat equipment protection", () => {
       dispatchGearMutationWithRunHealthSync({ mutate: (gear) => gear.equipTrinket("rogue", "brass-censer") }),
     ).toBe(false);
     expect(dispatchGearMutationWithRunHealthSync({ mutate: (gear) => gear.unequipTrinket("knight") })).toBe(false);
-    expect(dispatchGearMutationWithRunHealthSync({ mutate: (gear) => gear.setProtected(sword.instanceId, true) })).toBe(
-      false,
-    );
     expect(
       dispatchGearMutationWithRunHealthSync({
         mutate: (gear) => gear.applyCurrency("ascension-seal", sword.instanceId, { rng }),
@@ -85,9 +82,6 @@ describe("combat equipment protection", () => {
   it("allows unused shared gear and acquisitions without changing the battle equipment", () => {
     const manifest = readGameplayState().battle.battleState.gearEffects;
     expect(dispatchGearMutationWithRunHealthSync({ mutate: (gear) => gear.equip("rogue", "main-hand", spare) })).toBe(
-      true,
-    );
-    expect(dispatchGearMutationWithRunHealthSync({ mutate: (gear) => gear.setProtected(spare.instanceId, true) })).toBe(
       true,
     );
     dispatchGearMutationWithRunHealthSync({
