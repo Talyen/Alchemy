@@ -6,7 +6,12 @@ import { FadeSlot } from "../../shared/ui/use-fade";
 import { playUISound } from "@/lib/audio";
 import { cardLibrary, type CompanionId } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
-import { artTileGridRowsClass, collectionGridGapXClass, collectionGridMinHeightClass } from "../../shared/config";
+import {
+  artTileGridRowsClass,
+  collectionCardGridTileWidthClass,
+  collectionGridGapXClass,
+  collectionGridMinHeightClass,
+} from "../../shared/config";
 import { HOMESTEAD_CONFIG, type GoalItem, type Tab, MaterialsBar, HomesteadTabs, getItems } from "./homestead/helpers";
 import { CompanionCardNode } from "./homestead/companion-node";
 import { HomesteadUpgradeNode } from "./homestead/upgrade-node";
@@ -72,6 +77,11 @@ export function HomesteadScreen({
 
   const companionPages = Math.max(1, Math.ceil(companionCards.length / HOMESTEAD_CONFIG.companionPageSize));
   const safeCompanionPage = Math.min(companionPage, companionPages - 1);
+  const visibleCompanionCards = companionCards.slice(
+    safeCompanionPage * HOMESTEAD_CONFIG.companionPageSize,
+    (safeCompanionPage + 1) * HOMESTEAD_CONFIG.companionPageSize,
+  );
+  const companionFillerCount = Math.max(0, HOMESTEAD_CONFIG.companionPageSize - visibleCompanionCards.length);
   const isCompanions = tab === "companions";
 
   function handleSelectTab(nextTab: Tab) {
@@ -102,22 +112,30 @@ export function HomesteadScreen({
             className={cn("mx-auto flex w-full flex-col justify-center overflow-visible", collectionGridMinHeightClass)}
           >
             {isCompanions ? (
-              <div className={cn("grid w-full grid-cols-4", collectionGridGapXClass, artTileGridRowsClass)}>
-                {companionCards
-                  .slice(
-                    safeCompanionPage * HOMESTEAD_CONFIG.companionPageSize,
-                    (safeCompanionPage + 1) * HOMESTEAD_CONFIG.companionPageSize,
-                  )
-                  .map((card) => (
-                    <CompanionCardNode
-                      key={card.id}
-                      card={card}
-                      discovered={discoveredIds.has(card.id)}
-                      bondedCompanions={bondedCompanions}
-                      materialInventory={materialInventory}
-                      onBond={handleBondCompanion}
-                    />
-                  ))}
+              <div
+                className={cn(
+                  "mx-auto grid w-full max-w-fit grid-cols-4 justify-items-center",
+                  collectionGridGapXClass,
+                  artTileGridRowsClass,
+                )}
+              >
+                {visibleCompanionCards.map((card) => (
+                  <CompanionCardNode
+                    key={card.id}
+                    card={card}
+                    discovered={discoveredIds.has(card.id)}
+                    bondedCompanions={bondedCompanions}
+                    materialInventory={materialInventory}
+                    onBond={handleBondCompanion}
+                  />
+                ))}
+                {Array.from({ length: companionFillerCount }).map((_, index) => (
+                  <div
+                    key={`companion-filler-${index}`}
+                    aria-hidden
+                    className={cn(collectionCardGridTileWidthClass, "aspect-[3/4]")}
+                  />
+                ))}
               </div>
             ) : (
               <div className={cn("grid w-full grid-cols-3", collectionGridGapXClass, artTileGridRowsClass)}>

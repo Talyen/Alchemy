@@ -13,13 +13,25 @@ describe("ShineBorder", () => {
     const shine = container.querySelector(".shine-border") as HTMLElement;
 
     expect(shine.className).not.toMatch(/\binset-0\b/);
-    expect(shine.className).toMatch(/\boverflow-hidden\b/);
+    expect(shine.querySelector(".shine-border-paint")?.className).toMatch(/\boverflow-hidden\b/);
     expect(shine.className).toMatch(/rounded-\[inherit\]/);
-    expect(shine.style.backgroundImage).toContain("rgb(255, 0, 0)");
-    expect(shine.style.backgroundImage).toContain("rgb(0, 255, 0)");
-    expect(shine.style.backgroundColor).toBe("rgb(255, 0, 0)");
-    expect(shine.style.backgroundImage).not.toContain("rgba");
-    expect(shine.style.backgroundImage).not.toContain("color-mix");
-    expect(shine.style.backgroundImage).not.toContain("transparent");
+    expect(shine.querySelector<HTMLElement>(".shine-border-paint")!.style.backgroundImage).toContain("rgb(255, 0, 0)");
+    expect(shine.querySelector<HTMLElement>(".shine-border-paint")!.style.backgroundImage).toContain("rgb(0, 255, 0)");
+    expect(shine.querySelector<HTMLElement>(".shine-border-paint")!.style.backgroundColor).toBe("rgb(255, 0, 0)");
+    expect(shine.querySelector<HTMLElement>(".shine-border-paint")!.style.backgroundImage).not.toContain("rgba");
+    expect(shine.querySelector<HTMLElement>(".shine-border-paint")!.style.backgroundImage).not.toContain("color-mix");
+    expect(shine.querySelector<HTMLElement>(".shine-border-paint")!.style.backgroundImage).not.toContain("transparent");
+  });
+  it("keeps persistent shine unlit until glow is requested", () => {
+    const { container, rerender } = render(<ShineBorder shineColor={["#cbd5e1", "#64748b"]} />);
+    const shine = container.querySelector<HTMLElement>(".shine-border")!;
+    expect(shine.dataset.glow).toBeUndefined();
+    rerender(<ShineBorder shineColor={["#cbd5e1", "#64748b"]} glow />);
+    expect(shine.dataset.glow).toBe("true");
+    expect(shine.style.getPropertyValue("--shine-glow-color")).toBe("#cbd5e1");
+    expect(shine.style.mask).toBe("");
+    rerender(<ShineBorder shineColor={["#cbd5e1", "#64748b"]} />);
+    expect(shine.dataset.glow).toBeUndefined();
+    expect(container.querySelector(".shine-border-paint")).not.toBeNull();
   });
 });

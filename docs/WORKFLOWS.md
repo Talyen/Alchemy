@@ -80,7 +80,9 @@ The Alchemist encounter bonus grants one Potion after the final reward choice or
 
 Follow-up choices include Companion cards, Archery cards from Fletched, Wish cards from Wishkeeper, and Nature cards from Kindred Spoils. The saved `companionChoiceIds` field carries all of these bonus choices. Primary and bonus choices restore against the full card catalog in their saved order, dropping only missing IDs; loading never rerolls choices or reapplies offer-pool or theme eligibility.
 
-Destination eligibility uses health and maximum health after victory bonuses. When the Boon pool is exhausted, combat and Wildwood rewards fall back to card choices.
+An interrupted bonus handoff resumes only the bonus choices: the primary reward and its materials have already committed. Unclaimed rewards whose choices no longer resolve stay on Rewards with Skip available, retaining materials and routing metadata across repeated saves until finalized. Loading never awards materials.
+
+Destination eligibility uses health and maximum health after victory bonuses and the upcoming location’s loot depth. Combat and Wildwood exclude exhausted Boon and permanent-Trinket pools before sampling through the [shared loot policy](./ARMORY.md#loot-tuning). Pass progression from `resolveDraftLootProgress()` when generating new loot; loading pending rewards or shop offers must not reapply progression eligibility.
 
 | Step                           | File(s)                                                                                                                                                  |
 | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |

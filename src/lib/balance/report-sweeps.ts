@@ -1,3 +1,4 @@
+import { resolveLootWeights } from "@/lib/loot";
 import {
   cardLibrary,
   characters,
@@ -11,12 +12,7 @@ import {
   type TalentEffectManifest,
 } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
-import {
-  generateGearInstanceForBaseItem,
-  gearBaseItemList,
-  gearInstanceRarity,
-  type GearEffectManifest,
-} from "@/lib/gear";
+import { generateLootGearChoices, gearBaseItemList, gearInstanceRarity, type GearEffectManifest } from "@/lib/gear";
 import { gearAffixList } from "@/lib/gear/affix-catalog";
 import { effectsForAffixRolls } from "@/lib/gear/affixes";
 import { defaultGearEffects } from "@/lib/gear/gear-effect-manifest";
@@ -371,7 +367,13 @@ export function runGearSweep(options: ReportRunOptions): PairedTierRow[] {
             item.affinityKeywords.some((keyword) => keywords.includes(keyword));
           if (!matches) continue;
           const rng = createRunStreamRng(seed, "rewards");
-          const instance = generateGearInstanceForBaseItem(item.id, rng);
+          const instance = generateLootGearChoices(
+            1,
+            rng,
+            resolveLootWeights({ source: "mystery", progress: { depth: 24, highestCompletedDifficulty: null } }),
+            new Set(),
+            [item.id],
+          )[0];
           const treatmentGear = instance
             ? effectsForAffixRolls(instance.affixes, gearInstanceRarity(instance))
             : defaultGearEffects;

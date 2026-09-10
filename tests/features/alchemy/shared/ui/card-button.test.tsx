@@ -36,4 +36,22 @@ describe("BattleCardButton", () => {
 
     expect(screen.getByRole("button", { name: "Test Card" }).classList.contains("card-hover-scale")).toBe(false);
   });
+  it("pairs keyword shine and glow only while eligible for hover", () => {
+    const props = {
+      ariaLabel: "Test Card",
+      shimmerActive: false,
+      shimmerToken: undefined,
+      onHoverStart: () => {},
+      onHoverEnd: () => {},
+      card,
+      shineColor: ["#ff0000", "#00ff00"],
+      scaleOnHover: false,
+    };
+    const { container, rerender } = render(<BattleCardButton {...props} hovered />);
+    expect(container.querySelector('.shine-border[data-glow="true"]')).not.toBeNull();
+    for (const state of [{ hovered: false }, { hovered: true, disabled: true }, { hovered: true, dragging: true }]) {
+      rerender(<BattleCardButton {...props} {...state} />);
+      expect(container.querySelector(".shine-border")).toBeNull();
+    }
+  });
 });

@@ -1,3 +1,4 @@
+const lootProgress = { depth: 24, highestCompletedDifficulty: null };
 import { describe, expect, it } from "vitest";
 import {
   createInitialShopState as createInitialShopStateImpl,
@@ -34,7 +35,8 @@ const testRng = () => 0.5;
 const createInitialShopState = () => createInitialShopStateImpl([], testRng);
 const createInitialAlchemistState = () => createInitialAlchemistStateImpl([], testRng);
 const createInitialTrinketShopState = (rng: () => number = testRng) => createInitialTrinketShopStateImpl(rng);
-const createInitialEquipmentShopState = (rng: () => number = testRng) => createInitialEquipmentShopStateImpl(rng);
+const createInitialEquipmentShopState = (rng: () => number = testRng) =>
+  createInitialEquipmentShopStateImpl(rng, lootProgress);
 
 describe("shop-state-init", () => {
   it.each([
@@ -52,8 +54,15 @@ describe("shop-state-init", () => {
   });
 
   it("keeps Bowyer shelves full when every eligible base was already offered", () => {
-    const previous = resampleEquipmentShopOfferings(testRng, 0, new Set(), ["bowyer"]);
-    const refreshed = resampleEquipmentShopOfferings(testRng, 0, new Set(), ["bowyer", "masterwork"], previous);
+    const previous = resampleEquipmentShopOfferings(testRng, lootProgress, 0, new Set(), ["bowyer"]);
+    const refreshed = resampleEquipmentShopOfferings(
+      testRng,
+      lootProgress,
+      0,
+      new Set(),
+      ["bowyer", "masterwork"],
+      previous,
+    );
     expect(refreshed).toHaveLength(EQUIPMENT_SHOP_OFFERED);
     expect(new Set(refreshed.map((item) => gearDefinitions[item.definitionId]!.baseItemId)).size).toBe(3);
     expect(refreshed.every((item) => gearDefinitions[item.definitionId]!.rarity === "astral")).toBe(true);
@@ -89,7 +98,7 @@ describe("shop-state-init", () => {
     const owned = trinketLibrary[0];
     expect(owned).toBeDefined();
     const ownedId = owned!.id;
-    const offerings = resampleTrinketShopOfferings(() => 0, [ownedId]);
+    const offerings = resampleTrinketShopOfferings(() => 0, lootProgress, [ownedId]);
     expect(offerings).toHaveLength(TRINKET_SHOP_OFFERED);
     expect(offerings.map((entry) => entry.id)).not.toContain(ownedId);
   });
@@ -97,13 +106,13 @@ describe("shop-state-init", () => {
   it("shortens the shelf when fewer unowned trinkets remain than slots", () => {
     const keep = trinketLibrary.slice(0, 2).map((entry) => entry.id);
     const owned = trinketLibrary.filter((entry) => !keep.includes(entry.id)).map((entry) => entry.id);
-    const offerings = resampleTrinketShopOfferings(() => 0, owned);
+    const offerings = resampleTrinketShopOfferings(() => 0, lootProgress, owned);
     expect(offerings.map((entry) => entry.id).sort()).toEqual([...keep].sort());
   });
 
   it("excludes the current trinket shelf when enough alternatives remain", () => {
     const currentIds: string[] = trinketLibrary.slice(0, TRINKET_SHOP_OFFERED).map((entry) => entry.id);
-    const offerings = resampleTrinketShopOfferings(() => 0.5, [], currentIds);
+    const offerings = resampleTrinketShopOfferings(() => 0.5, lootProgress, [], currentIds);
 
     expect(offerings).toHaveLength(TRINKET_SHOP_OFFERED);
     expect(offerings.some((entry) => currentIds.includes(entry.id))).toBe(false);
@@ -116,6 +125,7 @@ describe("shop-state-init", () => {
     const owned = trinketLibrary.filter((entry) => !eligibleIds.has(entry.id)).map((entry) => entry.id);
     const offerings = resampleTrinketShopOfferings(
       () => 0.5,
+      lootProgress,
       owned,
       current.map((entry) => entry.id),
     );
@@ -127,7 +137,7 @@ describe("shop-state-init", () => {
   it("caps shelf at available count when almost all trinkets are owned, even with currentIds", () => {
     const keep = trinketLibrary.slice(0, 2).map((entry) => entry.id);
     const owned = trinketLibrary.filter((entry) => !keep.includes(entry.id)).map((entry) => entry.id);
-    const offerings = resampleTrinketShopOfferings(() => 0.5, owned, keep);
+    const offerings = resampleTrinketShopOfferings(() => 0.5, lootProgress, owned, keep);
 
     expect(offerings).toHaveLength(keep.length);
     expect(offerings.map((entry) => entry.id).sort()).toEqual([...keep].sort());
@@ -139,6 +149,7 @@ describe("shop-state-init", () => {
     const owned = trinketLibrary.filter((entry) => !eligibleIds.has(entry.id)).map((entry) => entry.id);
     const offerings = resampleTrinketShopOfferings(
       () => 0.5,
+      lootProgress,
       owned,
       eligible.map((entry) => entry.id),
     );

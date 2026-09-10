@@ -1,3 +1,4 @@
+import { isLootEligible, resolveLootWeights, type LootProgress } from "@/lib/loot";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { labyrinthCardShopPool } from "@/lib/content-systems/labyrinth/room-rules";
 import { doublePotionPotency } from "@/lib/alchemist";
@@ -20,7 +21,13 @@ import {
   TRINKET_SHOP_OFFERED,
   EQUIPMENT_SHOP_OFFERED,
 } from "@/lib/game-constants";
-import { gearDefinitions, generateEquipmentShopOfferings, type GearInstance } from "@/lib/gear";
+import {
+  gearDefinitions,
+  generateLootGearChoices,
+  generateGearRewardChoicesForRarity,
+  getGearLootAvailability,
+  type GearInstance,
+} from "@/lib/gear";
 import { trinketLibrary } from "@/lib/game-data";
 import { sampleItems } from "@/lib/utils";
 
@@ -49,7 +56,7 @@ export function resampleCardShopOfferings(
   return [...novel, ...selectRewardCards(deck, pool, count - novel.length, novel, rng)];
 }
 
-export function resampleTrinketShopOfferings(
+function sampleTrinketShopOfferings(
   rng: () => number,
   ownedIds: readonly string[] = [],
   currentIds: readonly string[] = [],
@@ -73,8 +80,18 @@ export function resampleTrinketShopOfferings(
   return [...novel, ...fallback];
 }
 
+export function resampleTrinketShopOfferings(
+  rng: () => number,
+  lootProgress: LootProgress,
+  ownedIds: readonly string[] = [],
+  currentIds: readonly string[] = [],
+): TrinketEntry[] {
+  return isLootEligible("trinket", lootProgress.depth) ? sampleTrinketShopOfferings(rng, ownedIds, currentIds) : [];
+}
+
 export function resampleEquipmentShopOfferings(
   rng: () => number,
+  lootProgress: LootProgress,
   gearAstralChanceBonus = 0,
   ownedUniqueIds?: ReadonlySet<string>,
   modifiers: readonly EncounterRewardTraitId[] = [],
@@ -89,11 +106,17 @@ export function resampleEquipmentShopOfferings(
     currentItems.map((item) => gearDefinitions[item.definitionId]?.baseItemId),
   );
   const novelBases = baseItems.filter((id) => !currentBases.has(id));
-  const sample = (count: number, baseItemIds: readonly string[]) =>
-    generateEquipmentShopOfferings(count, rng, gearAstralChanceBonus, ownedUniqueIds, {
-      baseItemIds,
-      ...(modifiers.includes("masterwork") ? { rarity: "astral" as const } : {}),
+  const sample = (count: number, baseItemIds: readonly string[]) => {
+    const weights = resolveLootWeights({
+      source: "equipment",
+      progress: lootProgress,
+      astralChanceBonus: gearAstralChanceBonus,
+      available: getGearLootAvailability(ownedUniqueIds, baseItemIds),
     });
+    return modifiers.includes("masterwork")
+      ? generateGearRewardChoicesForRarity(count, "astral", rng, ownedUniqueIds, baseItemIds, true)
+      : generateLootGearChoices(count, rng, weights, ownedUniqueIds, baseItemIds, true);
+  };
   const novel = sample(Math.min(EQUIPMENT_SHOP_OFFERED, novelBases.length), novelBases);
   if (novel.length >= EQUIPMENT_SHOP_OFFERED) return novel;
   const selected = new Set<string | undefined>(novel.map((item) => gearDefinitions[item.definitionId]?.baseItemId));
@@ -129,18 +152,19 @@ export function createInitialAlchemistState(
 export function createInitialTrinketShopState(rng: () => number, ownedIds: readonly string[] = []): TrinketShopState {
   return {
     ...emptyTrinketShopState(),
-    trinkets: resampleTrinketShopOfferings(rng, ownedIds),
+    trinkets: sampleTrinketShopOfferings(rng, ownedIds),
   };
 }
 
 export function createInitialEquipmentShopState(
   rng: () => number,
+  lootProgress: LootProgress,
   gearAstralChanceBonus = 0,
   ownedUniqueIds?: ReadonlySet<string>,
   modifiers: readonly EncounterRewardTraitId[] = [],
 ): EquipmentShopState {
   return {
     ...emptyEquipmentShopState(),
-    gear: resampleEquipmentShopOfferings(rng, gearAstralChanceBonus, ownedUniqueIds, modifiers),
+    gear: resampleEquipmentShopOfferings(rng, lootProgress, gearAstralChanceBonus, ownedUniqueIds, modifiers),
   };
 }

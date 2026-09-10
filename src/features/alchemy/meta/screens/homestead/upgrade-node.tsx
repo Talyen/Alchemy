@@ -5,9 +5,15 @@ import { canAfford, emptyInventory } from "@/lib/homestead/inventory";
 import { DetailPopup } from "../../../shared/ui/card-popup";
 import { InteractiveArtTile, type PopupContext } from "../../../shared/ui/interactive-art-tile";
 import { StarRating } from "../../../shared/ui/star-rating";
-import { cardSurfaceClass, collectionGridBestiaryWidthClass, landscapeArtImageClass } from "../../../shared/config";
+import {
+  cardSurfaceClass,
+  collectionGridBestiaryWidthClass,
+  getInspectionKeywordShineColors,
+  landscapeArtImageClass,
+} from "../../../shared/config";
 import { HOMESTEAD_CONFIG, type GoalItem, formatMaterialCostSummary, getArt, renderTextWithMaterials } from "./helpers";
 import { HomesteadTooltipCost, homesteadCompletedSurfaceClass, homesteadTileDimClass } from "./homestead-tile-node";
+import { extractKeywordIds } from "@/lib/keyword-text";
 
 const ZERO_COST: MaterialInventory = emptyInventory();
 
@@ -61,12 +67,21 @@ export function HomesteadUpgradeNode({
       )}
       popup={detailTooltip}
       as={isCompleted ? "div" : "button"}
-      showGlow={itemAffordable}
+      showGlow
+      shineOnHover
+      shineColor={getHomesteadUpgradeShineColors(item)}
       {...(isCompleted ? {} : { ariaDisabled: !itemAffordable })}
       onClick={itemAffordable ? () => onAction(item) : undefined}
       ariaLabel={ariaLabel}
     />
   );
+}
+
+function getHomesteadUpgradeShineColors(item: GoalItem): readonly string[] {
+  const text = item.data.tiers
+    .flatMap((tier) => [tier.benefitDescription, tier.nonCombatBenefitDescription ?? ""])
+    .join("\n");
+  return getInspectionKeywordShineColors(extractKeywordIds(text));
 }
 
 function getUpgradeTooltip(

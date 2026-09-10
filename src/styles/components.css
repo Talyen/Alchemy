@@ -349,8 +349,14 @@
    border-box (and outer radius) as the CSS frame. 0 when shine replaces it. */
 .shine-border {
   inset: calc(-1 * var(--surface-frame-border-width, 0px));
-  /* Mask frames are rectangular; clip to inherited radius so corners do not square off. */
-  overflow: hidden;
+  overflow: visible;
+  transition:
+    filter 200ms ease-out,
+    opacity var(--tw-duration, 200ms) ease-out;
+}
+
+.shine-border[data-glow="true"] {
+  filter: drop-shadow(0 0 16px color-mix(in srgb, var(--shine-glow-color) 45%, transparent));
 }
 
 .surface-clip img {
@@ -489,11 +495,6 @@
   --card-interaction-frame-color: transparent;
 }
 
-.card-art-shine .shine-border,
-.has-shine-border .shine-border {
-  transition: padding 200ms ease-out;
-}
-
 .has-shine-border:hover:not(:disabled),
 .group:hover .has-shine-border:not(:disabled),
 .has-shine-border.card-interactive-selected {
@@ -519,10 +520,22 @@
   filter: none;
 }
 
+.surface:has(> .shine-border[data-glow="true"]),
+.talent-node:has(> .shine-border[data-glow="true"]) {
+  overflow: visible;
+  filter: none;
+}
+
+@starting-style {
+  .shine-border[data-glow="true"] {
+    filter: none;
+  }
+}
+
 /* Lets Wildcard shine interpolate from one keyword color to the next. */
 @property --cycle-shine {
   syntax: "<color>";
-  inherits: false;
+  inherits: true;
   initial-value: #fbbf24;
 }
 

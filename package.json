@@ -102,6 +102,7 @@
     "perf:trace": "node scripts/run-performance.mjs --trace",
     "perf:compare": "node scripts/run-performance.mjs --compare",
     "balance:sim": "node scripts/run-balance-report.mjs && node scripts/open-report.mjs reports/balance-findings.html",
+    "balance:loot": "node scripts/run-loot-report.mjs",
     "test:balance": "vitest run --config vitest.balance.config.ts",
     "check:static": "concurrently --kill-others-on-fail --max-process 4 --names generated,format,typecheck,eslint,boundaries,arch-smoke \"npm run check:generated\" \"npm run format:check\" \"npm run typecheck:all\" \"npm run lint\" \"npm run lint:boundaries\" \"npm run lint:architecture-smoke\"",
     "lint": "eslint . --cache --max-warnings=0",

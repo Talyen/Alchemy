@@ -40,7 +40,8 @@ describe("ArmoryScreen tooltip integration", () => {
 
     fireEvent.mouseEnter(screen.getByLabelText(/^Use Voidstone,/));
 
-    const tooltipText = screen.getByText("Remove All Affixes");
+    const tooltipText = screen.getByText("Remove", { selector: "strong" });
+    expect(tooltipText.parentElement?.textContent).toBe("Remove All Affixes");
     expect(tooltipText.closest(".armory-inventory-tooltip")).toBeTruthy();
     await waitFor(() => {
       expect(tooltipText.closest(".hover-popup-panel")?.getAttribute("data-visible")).toBe("true");

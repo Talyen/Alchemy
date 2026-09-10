@@ -18,4 +18,18 @@ describe("encounter trait health threshold", () => {
     expect(result.enemyMitigation).toMatchObject({ armor: 2, block: 4 });
     expect(processEncounterTraitHealthThreshold(11, result, [])).toBe(result);
   });
+
+  it("triggers Divine Aegis when the hit starts exactly at half health", () => {
+    const base = makeTestBattleState();
+    const state = makeTestBattleState({
+      enemyHealth: 9,
+      enemyMaxHealth: 20,
+      currentEnemy: {
+        ...base.currentEnemy,
+        traits: [{ id: "divine-aegis", title: "Divine Aegis", description: "" }],
+      },
+    });
+    const result = processEncounterTraitHealthThreshold(10, state, []);
+    expect(result.flags.divineAegisTriggered).toBe(true);
+  });
 });

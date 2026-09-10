@@ -37,13 +37,14 @@ import { isPlayerCcControlled } from "./status-cc";
 import { MAX_HAND_SIZE, WISH_TRINKET_FORK_PERCENT } from "../game-constants";
 
 function consumeCardDiscounts(state: BattleState, payment: ReturnType<typeof computeCardPayment>): BattleState {
-  const { consumedFlags, disarmedFlags } = payment;
-  if (consumedFlags.size === 0 && disarmedFlags.size === 0) {
+  const { consumedFlags, disarmedFlags, spentArmedDiscount } = payment;
+  if (consumedFlags.size === 0 && disarmedFlags.size === 0 && !spentArmedDiscount) {
     return state;
   }
   const nextFlags: CombatFlags = { ...state.flags };
   for (const flag of consumedFlags) nextFlags[flag] = true;
   for (const flag of disarmedFlags) nextFlags[flag] = false;
+  if (spentArmedDiscount) nextFlags.nextCardCostReduction = 0;
   return { ...state, flags: nextFlags };
 }
 
@@ -114,7 +115,7 @@ function executeCardPlayState(
   let nextState: BattleState = {
     ...state,
     hand: state.hand.filter((_, i) => i !== index),
-    flags: { ...state.flags, nextCardCostReduction: 0, playNextCardTwice: false },
+    flags: { ...state.flags, playNextCardTwice: false },
     cardsPlayedThisTurn: state.cardsPlayedThisTurn + 1,
     mana: Math.max(0, state.mana - effectiveCost),
   };

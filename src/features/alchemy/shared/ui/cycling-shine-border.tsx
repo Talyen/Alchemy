@@ -4,6 +4,7 @@ import { ShineBorder } from "@/components/ui/shine-border";
 import { CYCLE_SHINE_VAR, ensureShineCycleKeyframes, getShineCycleAnimationName } from "./cycling-shine-keyframes";
 
 interface CyclingShineBorderProps {
+  glow?: boolean;
   colors: readonly string[];
   borderWidth?: number;
   duration?: number;
@@ -12,6 +13,7 @@ interface CyclingShineBorderProps {
 }
 
 export function CyclingShineBorder({
+  glow = false,
   colors,
   borderWidth = 1,
   duration = 14,
@@ -30,6 +32,7 @@ export function CyclingShineBorder({
 
   return (
     <ShineBorder
+      glow={glow}
       shineColor={`var(${CYCLE_SHINE_VAR})`}
       borderWidth={borderWidth}
       duration={duration}

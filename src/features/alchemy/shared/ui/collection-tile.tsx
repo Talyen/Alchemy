@@ -3,7 +3,7 @@ import { memo, useState, type RefObject } from "react";
 import { playCardSound, playEnemyAttack } from "@/lib/audio";
 import { cardBack, getEffectiveCardDescriptionLines, getCardKeywords } from "@/lib/game-data";
 import { gearDefinitions } from "@/lib/gear";
-import { getTrinketKeywords } from "../config/game-data-catalog";
+import { getTrinketKeywords, cardById } from "../config/game-data-catalog";
 import { cn } from "@/lib/utils";
 import { extractKeywordIds } from "@/lib/keyword-text";
 import { ShineBorder } from "@/components/ui/shine-border";
@@ -11,7 +11,6 @@ import { ShineBorder } from "@/components/ui/shine-border";
 import {
   cardArtImageClass,
   cardInteractiveGlowClass,
-  cardHoverScaleClass,
   cardSurfaceClass,
   getTileWidthClass,
   getInspectionKeywordShineColors,
@@ -77,12 +76,12 @@ export const CollectionTile = memo(function CollectionTile({
         onBlur={handleBlur}
         shimmerActive={shimmerActive}
         shimmerToken={shimmerToken}
-        overlay={showShine ? <ShineBorder shineColor={shineColors} borderWidth={2} className="z-20" /> : null}
+        overlay={showShine ? <ShineBorder glow shineColor={shineColors} borderWidth={2} className="z-20" /> : null}
         className={cn(
           "group card-art-frame border border-border/80 shadow-md",
           showShine && "card-art-shine",
           cardSurfaceClass,
-          item.discovered ? cardInteractiveGlowClass : cardHoverScaleClass,
+          cardInteractiveGlowClass,
           getTileWidthClass(item.frameType === "bestiary" ? "bestiary" : "collectionCard"),
         )}
         onClick={(event) => {
@@ -103,8 +102,11 @@ export const CollectionTile = memo(function CollectionTile({
 });
 
 function collectionTileShineColors(item: CollectionTileItem): readonly string[] {
-  if (!item.discovered) return getInspectionKeywordShineColors([]);
   if (item.card) return getInspectionKeywordShineColors(getCardKeywords(item.card));
+  if (item.frameType === "card") {
+    const catalogCard = cardById[item.id];
+    if (catalogCard) return getInspectionKeywordShineColors(getCardKeywords(catalogCard));
+  }
   if (item.character) return getCharacterShineColors(item.character.id);
   if (item.enemyEntry) return getInspectionKeywordShineColors(getPlasmaKeywordsForEnemy(item.enemyEntry));
   if (item.frameType === "trinket") return getInspectionKeywordShineColors(getTrinketKeywords(item.id));

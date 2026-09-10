@@ -1,0 +1,14 @@
+Obsidian Seal card pile candidates
+
+Created through local image composition, explicitly authorized by the user.
+Source: ../approved-art/card-back.png, preserved byte-for-byte.
+Six layered copies with slight rotation and neutral shading on lower layers.
+Both delivered PNGs: 1086x1448, exact 3:4 portrait, genuine alpha transparency.
+deck-pile.png is the canonical stack source, for the bottom-left screen corner.
+discard-pile.png is a lossless horizontal mirror, for the bottom-right corner.
+In the app, the same stack asset can serve both sides with scaleX(-1) on the Discard image only; labels and other UI should remain unmirrored.
+The separate single-card source remains needed for card-transfer animations.
+build.mjs reproduces the stacks and comparison without image generation.
+
+Verified: alpha reaches zero outside both stack silhouettes, exact mirrored pixels, 3:4 aspect, unchanged single-card bytes, and visual review at the current 161x215 base pile size.
+Approved and installed through Raw Assets/Misc/Draw Pile.png, Discard Pile.png, and Card Back.png. The existing separate pile asset references consume the mirrored PNG pair.

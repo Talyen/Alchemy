@@ -127,7 +127,7 @@ describe("card inspection", () => {
     expect(keywordButton.className).toMatch(/card-art-shine/);
     const color = document.createElement("span");
     color.style.color = keywordDefinitions.physical.shineColors[0]!;
-    expect(shine.style.backgroundImage).toContain(color.style.color);
+    expect(shine.querySelector<HTMLElement>(".shine-border-paint")!.style.backgroundImage).toContain(color.style.color);
     fireEvent.mouseLeave(keywordButton.parentElement!);
     expect(keywordButton.querySelector(".shine-border")).toBeNull();
     fireEvent.focus(plainButton);

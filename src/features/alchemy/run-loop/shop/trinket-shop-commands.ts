@@ -1,3 +1,5 @@
+import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/loot-progress";
+import { isLootEligible } from "@/lib/loot";
 import { grantTrinketToRunWithRecord } from "@/features/alchemy/shared/stores/deck-mutations";
 import {
   createDraftRunRandomSource,
@@ -54,6 +56,8 @@ export function createTrinketShopCommands({
   function refresh(): boolean {
     return runShopTransaction((draft) => {
       const state = draft.session.trinketShopState;
+      if (!isLootEligible("trinket", resolveDraftLootProgress(draft).depth))
+        return { committed: false, price: 0, value: null };
       return refreshShopOfferings({
         draft,
         price: getShopRefreshPrice("trinket", talentEffects, state.refreshesLeft, resolveDraftShopModifiers(draft)),
@@ -63,6 +67,7 @@ export function createTrinketShopCommands({
         resample: () =>
           resampleTrinketShopOfferings(
             createDraftRunRandomSource(draft, "shops"),
+            resolveDraftLootProgress(draft),
             draft.gear.ownedTrinketIds,
             state.trinkets.map((trinket) => trinket.id),
           ),

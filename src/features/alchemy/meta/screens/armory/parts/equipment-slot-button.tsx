@@ -90,6 +90,16 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
         as="button"
         ariaLabel={ariaLabel}
         ariaPressed={selected}
+        overlay={
+          shineColors ? (
+            <ShineBorder
+              glow={isHovered}
+              shineColor={shineColors}
+              borderWidth={GEAR_ASTRAL_SHINE_BORDER_WIDTH}
+              className="z-20"
+            />
+          ) : null
+        }
         selected={selected}
         shimmerActive={shimmerActive}
         shimmerToken={shimmerToken}
@@ -121,9 +131,6 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
         }}
       >
         <GearSlotArt definition={definition} slot={slot} />
-        {shineColors ? (
-          <ShineBorder shineColor={shineColors} borderWidth={GEAR_ASTRAL_SHINE_BORDER_WIDTH} className="z-20" />
-        ) : null}
       </Surface>
       {instance ? <CraftingFlash result={craftingResult} instanceId={instance.instanceId} /> : null}
     </div>

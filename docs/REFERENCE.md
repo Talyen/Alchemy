@@ -39,6 +39,7 @@ npm run plans:check         # Validate active plan metadata only
 npm run new:plan -- <Name>  # Scaffold an execution plan under docs/Plans/
 npm run archive:plans      # Move all complete/cancelled plans; inspect ownership first
 npm run balance:sim         # Headless balance findings (opens reports/balance-findings.html)
+npm run balance:loot        # Seeded loot progression report (reports/loot-progression/report.html)
 npm run perf                # FPS / hitch profiling ([PERFORMANCE.md](./PERFORMANCE.md))
 npm run clean               # Remove local diagnostics/artifacts
 npm run release             # Full release: gates, commit/tag, push, CI watch ([RELEASE.md](./RELEASE.md))
@@ -121,6 +122,10 @@ input identity, receipt expiry, and the `ALCHEMY_VERIFY_FRESH=1` override.
 Use the pinned [agent evaluations](../.agents/evals/README.md) for completed-task comparisons. With `ALCHEMY_AGENT_SESSION` set to an evaluation session ID, context reads and verification attempts/reuse append local events automatically. Host usage is optional and must come from a real usage report; unavailable values remain null. No prompts, credentials or source text are written to event records. Ordinary tasks do not require telemetry or new bookkeeping.
 
 `npm run context:hotspots -- --last 20` ranks broad category prereads and aggregates captured output from recent runs. It is advisory process evidence, not a correctness gate. Use `--min-bytes 0` for the complete inventory, `--json` for machine-readable output, or `--run-id <id>` for one recorded run. `--verbose` remains an explicit opt-in for complete child output.
+
+## Loot progression report
+
+`npm run balance:loot` writes HTML and JSON to `reports/loot-progression/`. It uses the shared loot policy and Gear generator with deterministic per-cell seeds, comparing source/depth breakpoints, all account-clear tiers, and fresh versus nearly-complete collections. Route definitions are included in both outputs. Counts represent offered items, not acquisitions; ownership stays fixed along each route and no shop refreshes are assumed. Set `ALCHEMY_LOOT_SAMPLES` to a positive integer to change the default 1,000 samples per cell. Loot rules and tuning ownership: [ARMORY](./ARMORY.md#loot-tuning).
 
 ## Balance simulation
 

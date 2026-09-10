@@ -1,6 +1,7 @@
+import { resolveLootWeights } from "@/lib/loot";
 import { characters, type CharacterId } from "@/lib/game-data";
 import {
-  generateGearInstanceForBaseItem,
+  generateLootGearChoices,
   gearBaseItemList,
   gearInstanceRarity,
   type GearBaseItemDefinition,
@@ -72,7 +73,17 @@ export function buildTypicalGearEffects(
     const pool = poolForSlot(slot, keywords, { rangedMainHand, skipTwoHanded: false });
     const chosen = pickRandom(pool, rng);
     if (!chosen) continue;
-    const instance = generateGearInstanceForBaseItem(chosen.id, rng, astralChanceBonus);
+    const instance = generateLootGearChoices(
+      1,
+      rng,
+      resolveLootWeights({
+        source: "mystery",
+        progress: { depth: 24, highestCompletedDifficulty: null },
+        astralChanceBonus,
+      }),
+      new Set(),
+      [chosen.id],
+    )[0];
     if (!instance) continue;
     effects = mergeGearEffectManifests(effects, effectsForAffixRolls(instance.affixes, gearInstanceRarity(instance)));
     if (slot === "main-hand") {

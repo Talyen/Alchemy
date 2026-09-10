@@ -1,10 +1,11 @@
+import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/loot-progress";
 import {
   activeLabyrinthBenefits,
   applyLabyrinthMysteryModifiers,
   isLabyrinthMysteryEligible,
 } from "@/lib/content-systems/labyrinth/room-rules";
 import { useCallback, useMemo } from "react";
-import { pickResolvedMysteryEvent, type MysteryChoice } from "@/lib/mystery";
+import { isMysteryLootEligible, pickResolvedMysteryEvent, type MysteryChoice } from "@/lib/mystery";
 import { appendCardToRunWithDiscovery } from "@/features/alchemy/shared/stores/deck-mutations";
 import { applyMysteryEffect } from "@/features/alchemy/run-loop/navigation/mystery-flow";
 import {
@@ -39,16 +40,20 @@ export function useMysteryEventNavigation({
             draft.run.activeRun.contentSystemType,
             draft.session.activeLabyrinthRewardModifiers,
           );
+          const ownedBoons = combineTrinketEffectIds(
+            draft.run.activeRun.runBoons,
+            draft.gear.equippedTrinkets[draft.run.activeRun.characterId],
+          );
+          const lootProgress = resolveDraftLootProgress(draft);
           setMysteryEvent(
             draft,
             applyLabyrinthMysteryModifiers(
               pickResolvedMysteryEvent(
                 rng,
-                combineTrinketEffectIds(
-                  draft.run.activeRun.runBoons,
-                  draft.gear.equippedTrinkets[draft.run.activeRun.characterId],
-                ),
-                (event) => isLabyrinthMysteryEligible(event, modifiers),
+                ownedBoons,
+                (event) =>
+                  isLabyrinthMysteryEligible(event, modifiers) &&
+                  isMysteryLootEligible(event, lootProgress, ownedBoons),
               ),
               modifiers,
               draft.run.activeRun.runMaxHealth,

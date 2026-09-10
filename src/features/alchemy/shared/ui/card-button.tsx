@@ -189,7 +189,9 @@ function CardButtonSurface({
       buttonRef={buttonRef}
       ariaLabel={ariaLabel}
       overlay={
-        showShine && shineColor ? <ShineBorder shineColor={shineColor} borderWidth={2} className="z-20" /> : undefined
+        showShine && shineColor ? (
+          <ShineBorder glow shineColor={shineColor} borderWidth={2} className="z-20" />
+        ) : undefined
       }
     >
       <img

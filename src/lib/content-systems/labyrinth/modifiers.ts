@@ -1,3 +1,4 @@
+import { isLootEligible } from "@/lib/loot";
 import { pickRandom, shuffle } from "@/lib/utils";
 import type { LabyrinthNodeType } from "../types";
 import {
@@ -62,8 +63,11 @@ export function getEnemyModifiersForNodeType(
 export function getRewardModifiersForNodeType(
   rng: () => number,
   type: LabyrinthNodeType = "combat",
+  lootDepth = 1,
 ): EncounterRewardTraitId[] {
-  const pool = eligibleEncounterTraitIds("labyrinth", "reward").filter((id) => isLabyrinthTraitEligible(id, type));
+  const pool = eligibleEncounterTraitIds("labyrinth", "reward").filter(
+    (id) => isLabyrinthTraitEligible(id, type) && (id !== "masterwork" || isLootEligible("astral", lootDepth)),
+  );
   const selected = pickRandom(pool, rng);
   return selected ? [selected] : [];
 }

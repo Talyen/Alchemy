@@ -362,4 +362,22 @@ describe("tickPlayerStatuses", () => {
     expect(next.playerStatuses.stun).toBe(3);
     expect(next.playerStatuses.freeze).toBe(2);
   });
+
+  it("stops remaining player DoTs after a lethal burn tick", () => {
+    const state = patchBattleState({
+      playerHealth: 5,
+      playerMaxHealth: 30,
+      deathsDoorUsed: true,
+      playerStatuses: defaultPlayerStatusValues({ burn: 10, poison: 10, bleed: 10 }),
+    });
+    const texts = makeTexts();
+    const next = tickPlayerStatuses(state, texts);
+
+    expect(next.playerHealth).toBe(0);
+    expect(next.playerStatuses.poison).toBe(10);
+    expect(next.playerStatuses.bleed).toBe(10);
+    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: 5 });
+    expect(texts.some((entry) => entry.stat === "poison")).toBe(false);
+    expect(texts.some((entry) => entry.stat === "bleed")).toBe(false);
+  });
 });

@@ -9,6 +9,12 @@ export const coreAssets = [
   { source: "Misc/Discard Pile.png", target: "discard-pile.webp", width: WIDTH.card, quality: QUALITY.boon },
   { source: "Misc/Card Back.png", target: "card-back.webp", width: WIDTH.card, quality: QUALITY.boon },
   {
+    source: "Misc/Mana Crystal.png",
+    target: "battle-mana-crystal.webp",
+    width: WIDTH.resource,
+    quality: QUALITY.resource,
+  },
+  {
     source: "Misc/pointer_c_shaded.png",
     target: "pointer-c-shaded.webp",
     width: WIDTH.cursor,
@@ -16,37 +22,37 @@ export const coreAssets = [
   },
   // Crafting
   {
-    source: "Crafting/Ascension Seal.jpeg",
+    source: "Crafting/Ascension Seal.png",
     target: "crafting-ascension-seal.webp",
     width: WIDTH.crafting,
     quality: QUALITY.crafting,
   },
   {
-    source: "Crafting/Discordant Dice.jpeg",
+    source: "Crafting/Discordant Dice.png",
     target: "crafting-discordant-dice.webp",
     width: WIDTH.crafting,
     quality: QUALITY.crafting,
   },
   {
-    source: "Crafting/Severance Maw.jpeg",
+    source: "Crafting/Severance Maw.png",
     target: "crafting-severance-maw.webp",
     width: WIDTH.crafting,
     quality: QUALITY.crafting,
   },
   {
-    source: "Crafting/Smith's Whetstone.jpeg",
+    source: "Crafting/Smith's Whetstone.png",
     target: "crafting-smiths-whetstone.webp",
     width: WIDTH.crafting,
     quality: QUALITY.crafting,
   },
   {
-    source: "Crafting/Sprig of Growth.jpeg",
+    source: "Crafting/Sprig of Growth.png",
     target: "crafting-sprig-of-growth.webp",
     width: WIDTH.crafting,
     quality: QUALITY.crafting,
   },
   {
-    source: "Crafting/Voidstone.jpeg",
+    source: "Crafting/Voidstone.png",
     target: "crafting-voidstone.webp",
     width: WIDTH.crafting,
     quality: QUALITY.crafting,

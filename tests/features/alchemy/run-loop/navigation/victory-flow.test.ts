@@ -50,6 +50,7 @@ function baseBattleState(overrides: Record<string, unknown> = {}) {
 
 function baseInput(overrides: Record<string, unknown> = {}): VictoryRewardsInput {
   return {
+    lootProgress: { depth: 24, highestCompletedDifficulty: null },
     characterId: "knight",
     selectedDifficulty: null,
     unlockedTalents: {},

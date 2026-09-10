@@ -47,7 +47,6 @@ export const setCorruptionResult = createSessionFieldSetter("corruptionResult");
 
 export function beginRewardClaim(draft: GameplayDraft): boolean {
   if (draft.session.rewardClaimInFlight) return false;
-  if (draft.session.rewardState.choices.length === 0 && !draft.session.companionRewardCards?.length) return false;
   draft.session.rewardClaimInFlight = true;
   return true;
 }

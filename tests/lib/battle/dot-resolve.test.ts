@@ -193,4 +193,15 @@ describe("remaining-tick detonation", () => {
     const next = detonateEnemyStatuses(state, ["poison"], makeTexts(), "remaining-ticks");
     expect(next.enemyHealth).toBe(100 - [5, 4, 3, 2, 1].reduce((sum, tick) => sum + Math.round(tick * multiplier), 0));
   });
+
+  it("leaves a defeated enemy untouched instead of detonating its corpse", () => {
+    const state = patchBattleState({
+      enemyHealth: 0,
+      enemyStatuses: defaultEnemyStatusValues({ burn: 8 }),
+    });
+    const texts = makeTexts();
+    const next = detonateEnemyStatuses(state, ["burn"], texts);
+    expect(next).toBe(state);
+    expect(texts).toEqual([]);
+  });
 });

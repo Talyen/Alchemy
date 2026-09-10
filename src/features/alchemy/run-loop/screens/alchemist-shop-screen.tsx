@@ -82,7 +82,7 @@ export function AlchemistShopScreen({
   }
 
   function handleMixConfirm() {
-    if (mix.a === null || mix.b === null) return;
+    if (mix.a === null || mix.b === null || gold < mixPrice) return;
     const result = onMixPotions(mix.a, mix.b);
     if (result) setMixedCard(result);
   }
@@ -190,7 +190,12 @@ export function AlchemistShopScreen({
               <Button size="lg" variant="outline" onClick={resetSelections}>
                 Cancel
               </Button>
-              <Button size="lg" disabled={mix.a === null || mix.b === null} onClick={handleMixConfirm}>
+              <Button
+                size="lg"
+                disabled={mix.a === null || mix.b === null || gold < mixPrice}
+                title={gold < mixPrice ? "Not Enough Gold" : undefined}
+                onClick={handleMixConfirm}
+              >
                 Combine
               </Button>
             </div>

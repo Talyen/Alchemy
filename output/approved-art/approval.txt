@@ -1,0 +1,14 @@
+Approved artwork masters
+
+Approved by the user on 2026-09-10: Gold, Wood, Discordant Dice, Ascension Seal.
+Gold and Wood are the unchanged selections from art-trial-v1.
+Discordant Dice and Ascension Seal are the unchanged selections from art-trial-v2.
+All four masters are 1254x1254 PNG. Gold and Wood have transparent backgrounds.
+Generation prompts remain in ../art-trial-v1/prompts.txt and ../art-trial-v2/prompts.txt.
+
+Approval locks the visual designs. These archival copies have also been copied into the matching Raw Assets/Homestead/Resources, Raw Assets/Crafting, and Raw Assets/Misc folders and wired through the game asset pipeline.
+Obsidian Seal card back approved by the user on 2026-09-10, copied unchanged from ../art-trial-v5/deck-obsidian-seal.png to card-back.png (1086x1448 PNG, 3:4 portrait).
+Its rectangular border, dark grey illustrated surface and small inset elemental gemstones are the selected design. Prompt: ../art-trial-v5/prompts.txt, Obsidian Seal.
+Iron, Herbs, Food, Gems and Mana approved by the user on 2026-09-10 and copied unchanged from ../remaining-icons-v1/. All five are 1254x1254 PNG with verified real alpha transparency. Their final prompts are in ../remaining-icons-v1/prompts.txt.
+Sprig of Growth, Voidstone, Severance Maw and Smith's Whetstone approved with their existing dark backgrounds by explicit user confirmation on 2026-09-10; copied unchanged from ../remaining-icons-v1/. All six crafting currencies are approved with intentional opaque backgrounds.
+Deck/Discard piles were approved by the user and copied from ../card-piles-v1/ into Raw Assets/Misc/Draw Pile.png and Discard Pile.png. The user explicitly authorized direct composition from the approved single-card image after image generation baked a checkerboard into an opaque candidate. card-back.png remains the singular animation asset; the two pile masters are exact horizontal mirrors.

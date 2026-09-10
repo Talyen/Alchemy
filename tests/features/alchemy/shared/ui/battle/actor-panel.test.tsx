@@ -72,7 +72,7 @@ describe("ArtPanel hover motion", () => {
     const shine = getByTestId("keyword-shine-enemy");
     expect(shine.className).toMatch(/\bshine-border\b/);
     for (const color of getKeywordListShineColors(["poison", "freeze"])) {
-      expect(shine.style.backgroundImage).toContain(hexToRgb(color));
+      expect(shine.querySelector<HTMLElement>(".shine-border-paint")!.style.backgroundImage).toContain(hexToRgb(color));
     }
 
     fireEvent.mouseLeave(wrapper!);

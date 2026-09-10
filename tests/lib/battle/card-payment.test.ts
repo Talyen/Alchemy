@@ -69,6 +69,24 @@ describe("card payment", () => {
     expect(result.mana).toBe(0);
   });
 
+  it("preserves free-card perks and the armed discount when playing a saved zero-cost card", () => {
+    const free = makeTestCard({ id: "saved-free", cost: 0, tags: ["archery"], effects: [] });
+    const paid = makeTestCard({ id: "paid", cost: 1, tags: ["archery"], effects: [] });
+    const state = patchBattleState({
+      mana: 0,
+      hand: [free, paid],
+      talentEffects: { firstArcheryCardFree: true },
+      flags: { nextCardCostReduction: 1 },
+    });
+    const afterFree = playBattleCardResolved(state, free.id, 0).state;
+    expect(afterFree.flags.firstArcheryCardFreeUsed).toBe(false);
+    expect(afterFree.flags.nextCardCostReduction).toBe(1);
+    const afterPaid = playBattleCardResolved(afterFree, paid.id, 0).state;
+    expect(afterPaid.flags.firstArcheryCardFreeUsed).toBe(true);
+    expect(afterPaid.flags.nextCardCostReduction).toBe(1);
+    expect(afterPaid.hand).toHaveLength(0);
+  });
+
   it("does not reuse a preview after resources change", () => {
     const card = makeTestCard({ cost: 2, effects: [] });
     const state = patchBattleState({ mana: 2, hand: [card] });

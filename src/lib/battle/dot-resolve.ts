@@ -57,6 +57,7 @@ export function detonateEnemyStatuses(
   combatTexts: CombatTextEvent[],
   mode: "next-tick" | "remaining-ticks" = "next-tick",
 ): BattleState {
+  if (state.enemyHealth <= 0) return state;
   const pulses: EnemyDotPulse[] = [];
   for (const status of statuses) {
     const amount = state.enemyStatuses[status];

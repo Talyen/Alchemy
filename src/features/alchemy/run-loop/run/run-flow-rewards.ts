@@ -91,7 +91,7 @@ export function createRewardHandlers(
         const session = draft.session;
         if (
           choiceId === null
-            ? session.rewardState.rewardType !== "card"
+            ? session.rewardState.rewardType !== "card" && session.rewardState.choices.length > 0
             : !resolveRewardChoice(session.rewardState, choiceId)
         )
           return null;

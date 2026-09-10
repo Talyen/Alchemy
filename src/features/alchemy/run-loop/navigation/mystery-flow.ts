@@ -1,6 +1,8 @@
+import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/loot-progress";
+import { resolveLootWeights } from "@/lib/loot";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { cardById, getCardKeywords, selectRewardCards, type BattleCard, type KeywordId } from "@/lib/game-data";
-import { MYSTERY_CARD_CHOICES, GEAR_ASTRAL_GUARANTEE_BONUS } from "@/lib/game-constants";
+import { MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
 import {
   appendCardToRunWithDiscovery,
   appendBoonToRunWithDiscovery,
@@ -9,7 +11,12 @@ import {
 import type { MaterialId } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { applyMaterialFindBonus } from "@/lib/homestead/loot";
-import { generateGearInstanceForBaseItem } from "@/lib/gear";
+import {
+  generateGearInstanceForBaseItem,
+  generateLootGearChoices,
+  getGearLootAvailability,
+  getOwnedUniqueDefinitionIds,
+} from "@/lib/gear";
 import { pickMysteryTrinketGrantId, type MysteryEffect } from "@/lib/mystery";
 import { combineTrinketEffectIds } from "@/lib/trinkets";
 import { gearBaseItemList } from "@/lib/gear/base-items";
@@ -138,11 +145,21 @@ function gainRandomMysteryGear(context: MysteryEffectContext) {
 }
 
 function gainMysteryGeneratedGear(baseItemId: string, context: MysteryEffectContext, forceAstral = false) {
-  const instance = generateGearInstanceForBaseItem(
-    baseItemId,
-    context.rng,
-    forceAstral ? GEAR_ASTRAL_GUARANTEE_BONUS : context.draft.runProfile.effects.gearAstralChanceBonus,
-  );
+  const ownedUniqueIds = getOwnedUniqueDefinitionIds(context.draft.gear.inventories);
+  const instance = forceAstral
+    ? generateGearInstanceForBaseItem(baseItemId, context.rng, "astral")
+    : generateLootGearChoices(
+        1,
+        context.rng,
+        resolveLootWeights({
+          source: "mystery",
+          progress: resolveDraftLootProgress(context.draft),
+          astralChanceBonus: context.draft.runProfile.effects.gearAstralChanceBonus,
+          available: getGearLootAvailability(ownedUniqueIds, [baseItemId]),
+        }),
+        ownedUniqueIds,
+        [baseItemId],
+      )[0];
   if (!instance) return { followUp: null };
   grantGearToRunWithRecord(context.draft, instance);
   setMysteryGrantedGearInstances(context.draft, (previous) => [...previous, instance]);

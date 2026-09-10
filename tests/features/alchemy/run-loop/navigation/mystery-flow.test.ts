@@ -113,6 +113,18 @@ describe("applyMysteryEffect", () => {
     expect(["bone-charm", "sin-eaters-lantern"]).not.toContain(granted[0]);
   });
 
+  it("uses shared depth eligibility for random Gear while honoring an already-promised Astral", () => {
+    setRunProgress({ characterId: "knight", destinationIndexInAct: 0 });
+    apply({ kind: "gainGeneratedGear", baseItemId: "emerald-ring" }, () => 0.99);
+    expect(readRunSession().mysteryGrantedGearInstances.at(-1)?.definitionId).toBe("emerald-ring-basic");
+    setRunProgress({ destinationIndexInAct: 3 });
+    apply({ kind: "gainGeneratedGear", baseItemId: "emerald-ring" }, () => 0.99);
+    expect(readRunSession().mysteryGrantedGearInstances.at(-1)?.definitionId).toBe("emerald-ring-astral");
+    setRunProgress({ destinationIndexInAct: 0 });
+    apply({ kind: "gainGeneratedGear", baseItemId: "emerald-ring", astral: true }, () => 0);
+    expect(readRunSession().mysteryGrantedGearInstances.at(-1)?.definitionId).toBe("emerald-ring-astral");
+  });
+
   it("gainGeneratedGear adds the instance to the armory and records it", () => {
     setRunProgress({ characterId: "knight" });
     dispatchRunSessionCommand((draft) => setHasActiveRun(draft, true));

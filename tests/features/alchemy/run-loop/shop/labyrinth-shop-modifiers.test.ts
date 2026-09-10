@@ -1,3 +1,4 @@
+import { twoFloorLabyrinthMapFixture } from "../../../../fixtures/labyrinth-map";
 import { describe, expect, it } from "vitest";
 import { buildActions } from "./shop-actions-harness";
 import { setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
@@ -17,7 +18,7 @@ function room(id: EncounterRewardTraitId) {
     gold: 500,
     runDeck: [cardById["health-potion"]!, cardById["mana-potion"]!],
   });
-  setRunSession({ activeLabyrinthRewardModifiers: [id] });
+  setRunSession({ activeLabyrinthRewardModifiers: [id], labyrinthMap: twoFloorLabyrinthMapFixture() });
   return buildActions();
 }
 

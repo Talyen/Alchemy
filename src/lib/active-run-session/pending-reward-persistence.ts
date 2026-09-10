@@ -50,11 +50,23 @@ export function serializePendingReward(
   rewardState: RewardState,
   companionRewardCards: BattleCard[] | null = null,
 ): PersistedPendingReward | null {
-  if (rewardState.choices.length === 0 && !companionRewardCards?.length) return null;
+  if (
+    rewardState.choices.length === 0 &&
+    !companionRewardCards?.length &&
+    rewardState.lastVictoryContentSystem === null &&
+    rewardState.lastVictoryEnemyType === null &&
+    rewardState.selectedBossId === null &&
+    rewardState.destinations.length === 0 &&
+    rewardState.gold === 0 &&
+    !Object.values(rewardState.materials).some((amount) => amount > 0)
+  )
+    return null;
 
   const shared = sharedRewardFields(rewardState, companionRewardCards);
   if (rewardState.rewardType === "gear") {
-    return { ...shared, rewardType: "gear", gearChoices: rewardState.choices };
+    return rewardState.choices.length > 0
+      ? { ...shared, rewardType: "gear", gearChoices: rewardState.choices }
+      : { ...shared, rewardType: "card", choiceIds: [] };
   }
   if (rewardState.rewardType === "trinket" || rewardState.rewardType === "boon") {
     return {

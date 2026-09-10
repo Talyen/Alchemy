@@ -1,3 +1,4 @@
+import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/loot-progress";
 import { grantGearToRunWithRecord } from "@/features/alchemy/shared/stores/deck-mutations";
 import {
   createDraftRunRandomSource,
@@ -27,6 +28,7 @@ export function createEquipmentShopCommands({
   const initialize = initializeShop(setEquipmentShopState, (draft) =>
     createInitialEquipmentShopState(
       createDraftRunRandomSource(draft, "shops"),
+      resolveDraftLootProgress(draft),
       gearAstralChanceBonus,
       getOwnedUniqueDefinitionIds(draft.gear.inventories),
       resolveDraftShopModifiers(draft),
@@ -64,6 +66,7 @@ export function createEquipmentShopCommands({
         resample: () =>
           resampleEquipmentShopOfferings(
             createDraftRunRandomSource(draft, "shops"),
+            resolveDraftLootProgress(draft),
             gearAstralChanceBonus,
             getOwnedUniqueDefinitionIds(draft.gear.inventories),
             resolveDraftShopModifiers(draft),

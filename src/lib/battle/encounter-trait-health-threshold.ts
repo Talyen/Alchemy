@@ -21,7 +21,9 @@ export function processEncounterTraitHealthThreshold(
   state: BattleState,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  const crossedHalfHealth = previousHealth > state.enemyMaxHealth / 2 && state.enemyHealth <= state.enemyMaxHealth / 2;
+  const halfHealth = state.enemyMaxHealth / 2;
+  const crossedHalfHealth =
+    previousHealth >= halfHealth && state.enemyHealth <= halfHealth && previousHealth > state.enemyHealth;
   if (
     hasEnemyTrait(state, "second-wind") &&
     !state.flags.secondWindTriggered &&

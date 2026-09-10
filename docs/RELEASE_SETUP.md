@@ -66,6 +66,45 @@ Windows release job.
 | `SENTRY_ORG` / `SENTRY_PROJECT`     | Source-map destination         |
 | `AZURE_*` values above              | Optional Azure Trusted Signing |
 
+## Steam Input default mapping (controller Playable)
+
+Decision: Alchemy plays with mouse plus keyboard equivalents, with no native
+gamepad handling and no controller settings in Options. Steam Deck and Big
+Picture support comes from one official Steam Input mapping authored in the
+Steamworks dashboard, not from in-game changes.
+
+Author this default mapping once, publish it as the default, and keep it so
+players need no tweaks or in-game setting changes:
+
+- Right trackpad or right stick: mouse
+- A: Enter to activate the focused control
+- Right trigger: left mouse click
+- B: back / dismiss (Escape)
+- D-pad up/down: previous/next focus (Shift+Tab / Tab)
+- D-pad left/right: arrow keys for sliders and select controls
+- Bumpers: previous/next focus (Shift+Tab / Tab); focus a tab or page button, then press A
+- Start: Escape to open the game menu or dismiss the current overlay
+- Select: Escape
+- Left stick up/down: mouse wheel scrolling
+
+Tabs and pagination are ordinary buttons without dedicated switch-tab or
+switch-page keyboard shortcuts. Validate this proposed mapping in Steam Input
+before publishing it as the default. Interactive surfaces use native controls: actions are
+native buttons (or `role="button"` with Enter / Space), Options sliders are
+native ranges (arrow keys), selects use the existing Radix keyboard and Escape
+behavior, dialogs contain focus with Cancel first and dismiss on Escape, and
+keyboard focus shows the same card detail popups as hover.
+
+Store tagging: keep the listing below full controller support. The game is
+playable with the official mapping; it does not ship native button icons,
+remapping, sensitivity, or rumble settings.
+
+Revalidate this mapping before changing the listing or promoting a public
+build when any of these appear: non-button interactions such as drag-only
+play, new text entry needing the on-screen keyboard, new screens or dialogs
+outside the shared button / dialog / tab / pagination primitives, or changes
+to Escape ordering.
+
 ## Steam listing baseline (Windows)
 
 These are the current player-facing store assumptions, not values derived from

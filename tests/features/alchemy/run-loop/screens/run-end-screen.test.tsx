@@ -212,6 +212,18 @@ describe("RunEndScreen", () => {
     expect(screen.queryByRole("img", { name: "Leather Armor" })).toBeNull();
   });
 
+  it("opens only one tooltip when a saved recap contains duplicate items", async () => {
+    const user = userEvent.setup();
+    renderRunEnd({
+      runEndItems: [
+        { kind: "trinket", trinketId: "bone-charm" },
+        { kind: "trinket", trinketId: "bone-charm" },
+      ],
+    });
+    await user.hover(screen.getAllByRole("img", { name: "Bone Charm" })[0]!);
+    expect(await screen.findAllByText("Bone Charm")).toHaveLength(1);
+  });
+
   it("shows gear and trinket hover tooltips", async () => {
     const user = userEvent.setup();
     const item = gearItem("armor-tip");

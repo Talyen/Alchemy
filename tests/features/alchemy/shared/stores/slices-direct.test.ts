@@ -123,8 +123,12 @@ describe("session write-port", () => {
     effects: [{ kind: "damage", damageType: "burn", amount: 8 }],
   };
 
-  it("gates beginRewardClaim on pending rewards and one claim at a time", () => {
+  it("gates beginRewardClaim on one claim at a time so empty skips can finalize", () => {
+    expect(dispatchRunSessionCommand((draft) => beginRewardClaim(draft))).toBe(true);
+    expect(readRunSession().rewardClaimInFlight).toBe(true);
     expect(dispatchRunSessionCommand((draft) => beginRewardClaim(draft))).toBe(false);
+
+    dispatchRunSessionCommand((draft) => releaseRewardClaim(draft));
     expect(readRunSession().rewardClaimInFlight).toBe(false);
 
     dispatchRunSessionCommand((draft) => setCompanionRewardCards(draft, [rewardCard]));

@@ -24,7 +24,7 @@ function shineElement(testId: string): HTMLElement {
 }
 
 function shineBackground(testId: string): string {
-  return shineElement(testId).style.backgroundImage;
+  return shineElement(testId).querySelector<HTMLElement>(".shine-border-paint")!.style.backgroundImage;
 }
 
 function expectShineContains(testId: string, colors: readonly string[]) {

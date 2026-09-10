@@ -1,7 +1,8 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CompanionCardNode } from "@/features/alchemy/meta/screens/homestead/companion-node";
 import { emptyInventory } from "@/lib/homestead/inventory";
+import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { cardLibrary } from "@/lib/game-data";
 
 const wolfCard = cardLibrary.find((c) =>
@@ -11,6 +12,7 @@ const wolfCard = cardLibrary.find((c) =>
 )!;
 
 describe("CompanionCardNode", () => {
+  beforeEach(() => useUiStore.setState({ hoveredCardId: null, shimmerState: null }));
   afterEach(() => cleanup());
 
   it("renders grayscale when undiscovered and no tile button", () => {
@@ -33,7 +35,7 @@ describe("CompanionCardNode", () => {
   it("renders clickable art tile when discovered and affordable", () => {
     const onBond = vi.fn();
     const inventory = { ...emptyInventory(), food: 100 };
-    render(
+    const { container } = render(
       <CompanionCardNode
         card={wolfCard}
         discovered
@@ -44,13 +46,14 @@ describe("CompanionCardNode", () => {
     );
     const btn = screen.getByRole("button");
     expect(btn.getAttribute("aria-disabled")).toBe("false");
+    expect(container.querySelector(".card-interactive-glow")).toBeTruthy();
     fireEvent.click(btn);
     expect(onBond).toHaveBeenCalled();
   });
 
-  it("marks tile aria-disabled and ignores clicks when unaffordable", () => {
+  it("keeps glow when unaffordable and ignores clicks", () => {
     const onBond = vi.fn();
-    render(
+    const { container } = render(
       <CompanionCardNode
         card={wolfCard}
         discovered
@@ -61,8 +64,46 @@ describe("CompanionCardNode", () => {
     );
     const btn = screen.getByRole("button");
     expect(btn.getAttribute("aria-disabled")).toBe("true");
+    expect(container.querySelector(".card-interactive-glow")).toBeTruthy();
     fireEvent.click(btn);
     expect(onBond).not.toHaveBeenCalled();
+  });
+
+  it("shows matching shine and glow for undiscovered companions during hover", () => {
+    const inventory = { ...emptyInventory(), food: 100 };
+    const discovered = render(
+      <CompanionCardNode
+        card={wolfCard}
+        discovered
+        bondedCompanions={{} as any}
+        materialInventory={inventory}
+        onBond={vi.fn()}
+      />,
+    );
+    const button = screen.getByRole("button");
+    fireEvent.mouseEnter(button.parentElement!);
+    const discoveredColor = button.querySelector<HTMLElement>(".shine-border-paint")?.style.backgroundColor;
+    expect(discoveredColor).toBeTruthy();
+    fireEvent.mouseLeave(button.parentElement!);
+    discovered.unmount();
+    useUiStore.setState({ hoveredCardId: null, shimmerState: null });
+
+    const { container } = render(
+      <CompanionCardNode
+        card={wolfCard}
+        discovered={false}
+        bondedCompanions={{} as any}
+        materialInventory={emptyInventory()}
+        onBond={vi.fn()}
+      />,
+    );
+    const surface = container.querySelector(".card-interactive-glow");
+    expect(surface).toBeTruthy();
+    expect(container.querySelector(".shine-border")).toBeNull();
+    fireEvent.mouseEnter(surface!.parentElement!);
+    expect(container.querySelector<HTMLElement>(".shine-border-paint")?.style.backgroundColor).toBe(discoveredColor);
+    fireEvent.mouseLeave(surface!.parentElement!);
+    expect(container.querySelector(".shine-border")).toBeNull();
   });
 
   it("renders art-only tile without button when complete", () => {

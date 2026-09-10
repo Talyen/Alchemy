@@ -1,3 +1,4 @@
+import type { LootProgress } from "@/lib/loot";
 import {
   computeTalentEffects,
   ENEMY_TYPES,
@@ -47,6 +48,7 @@ import {
 import { combineTrinketEffectIds } from "@/lib/trinkets";
 
 export interface VictoryRewardsInput {
+  lootProgress: LootProgress;
   characterId: CharacterId;
   selectedDifficulty: DifficultyId | null;
   unlockedTalents: UnlockedTalents;
@@ -118,6 +120,7 @@ function rollVictoryGold(
 
 export function computeVictoryRewardState(
   input: {
+    lootProgress: LootProgress;
     characterId: CharacterId;
     selectedDifficulty: DifficultyId | null;
     unlockedTalents: UnlockedTalents;
@@ -147,6 +150,7 @@ export function computeVictoryRewardState(
 
   if (input.battleState.currentEnemy.enemyType === ENEMY_TYPES.BOSS) {
     return createBossRewardStateFromFlow({
+      lootProgress: input.lootProgress,
       gold: input.gold,
       bossBonus: input.bossBonus,
       generousBonus: input.generousBonus,
@@ -166,6 +170,7 @@ export function computeVictoryRewardState(
   return withSelectedBossForDestinations(
     input.destinations,
     createCombatRewardStateFromFlow({
+      lootProgress: input.lootProgress,
       battleState: input.battleState,
       runDeck: input.runDeck,
       gold: input.gold,
@@ -207,6 +212,7 @@ export function computeVictoryRewards(
       rewardState: createWildwoodRewardState(
         input.runDeck,
         rng,
+        input.lootProgress,
         input.homesteadEffects.gearAstralChanceBonus,
         activeTrinketEffectIds,
         input.ownedTrinketIds ?? [],
@@ -275,6 +281,7 @@ export function computeVictoryRewards(
 
   const rewardState = computeVictoryRewardState(
     {
+      lootProgress: input.lootProgress,
       characterId: input.characterId,
       selectedDifficulty: input.selectedDifficulty,
       unlockedTalents: input.unlockedTalents,

@@ -18,7 +18,7 @@ import {
   SHOP_REFRESH_PRICE,
   TRINKET_SHOP_TRINKET_PRICE,
 } from "@/lib/game-constants";
-import { generateGearRewardChoices, gearDefinitions } from "@/lib/gear";
+import { generateGearRewardChoicesForRarity, gearDefinitions } from "@/lib/gear";
 import { cardById, cardLibrary, createEmptyTalentEffectManifest } from "@/lib/game-data";
 
 describe("shop-pricing", () => {
@@ -88,9 +88,9 @@ describe("shop-pricing", () => {
   });
 
   it("getEquipmentShopPrice uses rarity", () => {
-    const astralChoices = generateGearRewardChoices(10, () => 0.08);
-    const basicChoices = generateGearRewardChoices(10, () => 0.99);
-    const uniqueChoices = generateGearRewardChoices(10, () => 0.01);
+    const astralChoices = generateGearRewardChoicesForRarity(1, "astral", () => 0.08);
+    const basicChoices = generateGearRewardChoicesForRarity(1, "basic", () => 0.99);
+    const uniqueChoices = generateGearRewardChoicesForRarity(1, "unique", () => 0.01);
     expect(astralChoices.some((c) => getEquipmentShopPrice(c) === EQUIPMENT_SHOP_ASTRAL_PRICE)).toBe(true);
     expect(basicChoices.some((c) => getEquipmentShopPrice(c) === EQUIPMENT_SHOP_BASIC_PRICE)).toBe(true);
     expect(uniqueChoices.some((c) => getEquipmentShopPrice(c) === EQUIPMENT_SHOP_UNIQUE_PRICE)).toBe(true);

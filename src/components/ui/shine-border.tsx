@@ -3,12 +3,14 @@ import type { CSSProperties, HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 interface ShineBorderProps extends HTMLAttributes<HTMLDivElement> {
+  glow?: boolean;
   borderWidth?: number;
   duration?: number;
   shineColor: string | readonly string[];
 }
 
 export function ShineBorder({
+  glow = false,
   borderWidth = 1,
   duration = 14,
   shineColor,
@@ -27,6 +29,17 @@ export function ShineBorder({
         {
           "--border-width": `${borderWidth}px`,
           "--duration": `${duration}s`,
+          "--shine-glow-color": firstColor,
+          ...style,
+        } as CSSProperties
+      }
+      data-glow={glow ? "true" : undefined}
+      className={cn("shine-border pointer-events-none absolute animate-shine rounded-[inherit]", className)}
+      {...props}
+    >
+      <div
+        className="shine-border-paint absolute inset-0 overflow-hidden rounded-[inherit]"
+        style={{
           backgroundColor: firstColor,
           backgroundImage: `radial-gradient(${gradientStops})`,
           backgroundSize: "300% 300%",
@@ -35,14 +48,10 @@ export function ShineBorder({
           WebkitMaskComposite: "xor",
           maskComposite: "exclude",
           padding: "var(--border-width)",
-          ...style,
-        } as CSSProperties
-      }
-      className={cn(
-        "shine-border pointer-events-none absolute animate-shine overflow-hidden rounded-[inherit]",
-        className,
-      )}
-      {...props}
-    />
+          backgroundPosition: "inherit",
+          transition: "padding 200ms ease-out",
+        }}
+      />
+    </div>
   );
 }

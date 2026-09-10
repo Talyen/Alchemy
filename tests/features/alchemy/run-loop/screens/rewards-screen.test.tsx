@@ -240,7 +240,9 @@ describe("RewardsScreen", () => {
     const color = document.createElement("span");
     for (const keyword of ["holy", "stun"] as const) {
       color.style.color = keywordDefinitions[keyword].shineColors[0];
-      expect(shine.style.backgroundImage).toContain(color.style.color);
+      expect(shine.querySelector<HTMLElement>(".shine-border-paint")!.style.backgroundImage).toContain(
+        color.style.color,
+      );
     }
     fireEvent.blur(unique);
     expect(unique.querySelector(".shine-border")).toBeNull();

@@ -14,6 +14,7 @@ export function useRunDestinationWiring({
   const getAvailableDestinations = useCallback((options: DestinationOptionsInput = {}) => {
     const active = readActiveRun();
     return resolveAvailableDestinations({
+      currentAct: active.currentAct,
       destinationIndexInAct: active.destinationIndexInAct,
       completedDestinations: active.completedDestinations,
       runPlayerHealth: active.runPlayerHealth,

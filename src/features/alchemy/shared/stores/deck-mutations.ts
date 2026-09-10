@@ -24,7 +24,8 @@ export function grantGearToRunWithRecord(draft: GameplayDraft, instance: GearIns
 }
 
 export function grantTrinketToRunWithRecord(draft: GameplayDraft, trinketId: string): void {
-  mutateGearWithRunHealthSync(draft, { mutate: (gear) => gear.addTrinket(trinketId) });
+  const added = mutateGearWithRunHealthSync(draft, { mutate: (gear) => gear.addTrinket(trinketId) });
+  if (!added) return;
   discoverTrinketIds(draft, [trinketId]);
   recordRunObtainedItem(draft, { kind: "trinket", trinketId });
 }

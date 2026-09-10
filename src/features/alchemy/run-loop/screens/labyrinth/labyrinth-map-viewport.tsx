@@ -96,7 +96,8 @@ export function LabyrinthMapViewport({ map, nodes, selectedNodeId, onEnter, onDe
     const dismiss = (event: PointerEvent) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
-      if (inspectorRef.current?.contains(target) || target.closest("[data-labyrinth-node]")) return;
+      if (inspectorRef.current?.contains(target)) return;
+      if (target.closest('[data-labyrinth-node]:not([data-state="undiscovered"])')) return;
       onDeselect();
     };
     document.addEventListener("pointerdown", dismiss, true);

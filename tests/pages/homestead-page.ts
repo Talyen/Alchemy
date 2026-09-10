@@ -31,7 +31,7 @@ export class HomesteadPage {
   }
 
   constructButton() {
-    return this.page.getByRole("button", { name: /Construct|Build|Upgrade|Bond|Craft/ }).first();
+    return this.page.getByRole("button", { name: /^(?:Construct|Build|Upgrade|Bond|Craft)\b/ }).first();
   }
 
   async getBuildingText(name: string) {

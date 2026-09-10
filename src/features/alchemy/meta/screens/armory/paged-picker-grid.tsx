@@ -1,3 +1,4 @@
+import { PackageOpen } from "lucide-react";
 import { usePagination } from "../../../shared/ui/use-pagination";
 import type { CSSProperties, ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -42,9 +43,14 @@ function PagedPickerGrid({
       <div className="relative w-full">
         <FadeSlot swapKey={`${swapKey}-${safePage}`} className="relative mt-2 w-full overflow-visible">
           {isEmpty ? (
-            <p className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center text-center text-xl text-muted-foreground">
-              Empty
-            </p>
+            <div
+              data-testid={`${testId}-empty`}
+              role="img"
+              aria-label="Empty"
+              className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center text-muted-foreground"
+            >
+              <PackageOpen aria-hidden="true" className="h-12 w-12" />
+            </div>
           ) : null}
           <div
             style={armoryPickerGridStyle}

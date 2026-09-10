@@ -108,6 +108,23 @@ entry or missing targets.
 Do not add exports to generated files by hand. The hash schema salt lives in
 `scripts/lib/asset-constants.mjs`; bump it when all asset caches must be invalidated.
 
+## Resource and battle UI masters
+
+Homestead resource masters live in `Raw Assets/Homestead/Resources/`; crafting
+currency PNG masters live in `Raw Assets/Crafting/`. Resources and battle Mana
+use transparent backgrounds, while crafting currencies retain their illustrated
+dark backgrounds. Check the actual alpha channel before importing transparent
+art: a visible checkerboard may be baked into an opaque image.
+
+`Raw Assets/Misc/Card Back.png` is the single card used in transfer animations.
+`Draw Pile.png` and `Discard Pile.png` are the approved stack and its horizontal
+mirror; both retain transparent margins and a 3:4 canvas. Keep pile artwork
+separate from the single-card master so animations never show a stack.
+`Misc/Mana Crystal.png` generates `battle-mana-crystal.webp` for the Mana display;
+it is distinct from the playable Mana Crystals card artwork. Available crystals
+use the full image, spent crystals use 20% opacity, and overflow crystals retain
+their brighter glow.
+
 ## Add or replace Gear art
 
 1. Name source files `Raw Assets/Gear/{Name} - {Basic|Astral}.jpeg` (PNG and

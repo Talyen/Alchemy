@@ -155,6 +155,8 @@ export function RewardsScreen({
   }, [hoveredCardId, rewardState]);
 
   const claimLocked = claimInFlight || rewardChoices.length === 0;
+  const skipDisabled = claimInFlight;
+  const showSkip = rewardState.rewardType === "card" || rewardChoices.length === 0;
   usePlasmaInteraction(getRewardColorPair(hoveredReward), hoveredReward !== null);
 
   return (
@@ -170,9 +172,15 @@ export function RewardsScreen({
           </div>
           <RewardsFound rewardGold={rewardGold} rewardMaterials={rewardMaterials} />
         </div>
-        {rewardState.rewardType === "card" ? (
+        {showSkip ? (
           <div className="mt-5 flex justify-center">
-            <Button variant="outline" size="lg" className={BUTTON_WIDTH_ACTION} disabled={claimLocked} onClick={onSkip}>
+            <Button
+              variant="outline"
+              size="lg"
+              className={BUTTON_WIDTH_ACTION}
+              disabled={skipDisabled}
+              onClick={onSkip}
+            >
               Skip
             </Button>
           </div>

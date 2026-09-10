@@ -1,3 +1,4 @@
+import { isLootEligible, type LootProgress } from "@/lib/loot";
 import { trinketLibrary } from "@/lib/game-data";
 import { gearBaseItemList } from "@/lib/gear/base-items";
 import { hashStringToUint32, pickRandom } from "@/lib/rng";
@@ -130,4 +131,20 @@ export function applyResolvedMysteryTrinketIds(
       }),
     })),
   };
+}
+
+export function isMysteryLootEligible(
+  event: MysteryEvent,
+  progress: LootProgress,
+  ownedBoonIds: readonly string[],
+): boolean {
+  if (isLootEligible("astral", progress.depth)) return true;
+  const availableBoons = trinketLibrary.filter((entry) => !ownedBoonIds.includes(entry.id)).length;
+  return event.choices.every((choice) => {
+    if (choice.effects.some((effect) => effect.kind === "gainGeneratedGear" && effect.astral)) return false;
+    return (
+      choice.effects.filter((effect) => effect.kind === "gainTrinket" || effect.kind === "gainRandomTrinket").length <=
+      availableBoons
+    );
+  });
 }

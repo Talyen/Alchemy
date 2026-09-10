@@ -1,3 +1,4 @@
+import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/loot-progress";
 import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { createDraftRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
@@ -90,6 +91,7 @@ export function createVictoryHandlers(deps: RunFlowHandlerDeps) {
         : draft.session.activeLabyrinthRewardModifiers;
     return computeVictoryRewards(
       {
+        lootProgress: resolveDraftLootProgress(draft),
         characterId: runState.characterId,
         selectedDifficulty: runState.selectedDifficulty,
         unlockedTalents: runProfile.unlockedTalents,

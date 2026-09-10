@@ -1,3 +1,4 @@
+import { isLootEligible } from "@/lib/loot";
 import { pickRandom, shuffle } from "@/lib/utils";
 import { enemiesByType, enemyById, type EnemyType } from "@/lib/game-data";
 
@@ -26,8 +27,12 @@ function pickEnemyId(type: EnemyType, used: ReadonlySet<string>, rng: () => numb
   return pickRandom(candidates, rng)?.id;
 }
 
-function plannedTypes(count: number, rng: () => number): LabyrinthNodeType[] {
-  const support = shuffle(LABYRINTH_SUPPORT_TYPES, rng);
+function availableNodeType(type: LabyrinthNodeType, lootDepth: number): LabyrinthNodeType {
+  return type === "trinket-shop" && !isLootEligible("trinket", lootDepth) ? "equipment-shop" : type;
+}
+
+function plannedTypes(count: number, rng: () => number, lootDepth: number): LabyrinthNodeType[] {
+  const support = shuffle([...new Set(LABYRINTH_SUPPORT_TYPES.map((type) => availableNodeType(type, lootDepth)))], rng);
   const middle: LabyrinthNodeType[] = support.slice(0, Math.min(3, count - 2));
   const weighted: LabyrinthNodeType[] = [
     "combat",
@@ -42,7 +47,7 @@ function plannedTypes(count: number, rng: () => number): LabyrinthNodeType[] {
     "equipment-shop",
   ];
   while (middle.length < count - 2) {
-    const next = pickRandom(weighted, rng) ?? "combat";
+    const next = availableNodeType(pickRandom(weighted, rng) ?? "combat", lootDepth);
     if (LABYRINTH_SUPPORT_TYPES.includes(next as (typeof LABYRINTH_SUPPORT_TYPES)[number]) && middle.includes(next)) {
       middle.push("combat");
     } else {
@@ -105,11 +110,13 @@ function makeNode(input: {
   gridPosition: LabyrinthNode["gridPosition"];
   rng: () => number;
   enemyId?: string;
+  lootDepth: number;
 }): LabyrinthNode {
-  const combatType = input.type === "combat" || input.type === "elite" || input.type === "boss" ? input.type : null;
+  const type = availableNodeType(input.type, input.lootDepth);
+  const combatType = type === "combat" || type === "elite" || type === "boss" ? type : null;
   const node: LabyrinthNode = {
     id: input.id,
-    type: input.type,
+    type,
     floor: input.floor,
     gridPosition: input.gridPosition,
     modifiers: combatType
@@ -119,7 +126,7 @@ function makeNode(input: {
           input.enemyId ? (enemyById[input.enemyId]?.traits.map((trait) => trait.id) ?? []) : [],
         )
       : [],
-    rewardModifiers: getRewardModifiersForNodeType(input.rng, input.type),
+    rewardModifiers: getRewardModifiersForNodeType(input.rng, type, input.lootDepth),
     cleared: input.type === "entrance",
   };
   if (input.enemyId) node.enemyId = input.enemyId;
@@ -145,9 +152,10 @@ function generateFloor(
   depth: number,
   rng: () => number,
   usedEnemies: ReadonlySet<string>,
+  completedRooms = 0,
 ): { floor: LabyrinthFloor; nodes: LabyrinthNode[]; entryId: string } {
   const positions = generateFloorPositions(rng);
-  const types = plannedTypes(positions.length, rng);
+  const types = plannedTypes(positions.length, rng, completedRooms + 1);
   const used = new Set(usedEnemies);
   const nodes = orderTypesForPositions(types, positions, rng).map((type, index) => {
     const enemyType: EnemyType = type === "boss" ? "boss" : type === "elite" ? "elite" : "normal";
@@ -158,6 +166,10 @@ function generateFloor(
       type,
       floor: depth,
       gridPosition: positions[index]!,
+      lootDepth:
+        completedRooms +
+        Math.abs(positions[index]!.row - positions[0]!.row) +
+        Math.abs(positions[index]!.col - positions[0]!.col),
       rng,
       ...(enemyId ? { enemyId } : {}),
     });
@@ -203,6 +215,7 @@ export function addLabyrinthSideRooms(map: LabyrinthMap, rng: () => number): Lab
         type,
         floor: floor.depth,
         gridPosition,
+        lootDepth: Object.values(map.nodes).filter((node) => node.cleared && node.type !== "entrance").length + 1,
         rng,
         ...(enemyId ? { enemyId } : {}),
       });
@@ -224,7 +237,12 @@ export function expandBeyondBoss(map: LabyrinthMap, bossId: string, rng: () => n
     return entrance ? { ...map, currentFloor: depth, currentNodeId: entrance.id } : map;
   }
 
-  const generated = generateFloor(depth, rng, usedEnemyIds(map));
+  const generated = generateFloor(
+    depth,
+    rng,
+    usedEnemyIds(map),
+    Object.values(map.nodes).filter((node) => node.cleared && node.type !== "entrance").length,
+  );
   return {
     ...map,
     floors: [...map.floors, generated.floor],

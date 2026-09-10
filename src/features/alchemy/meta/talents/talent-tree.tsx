@@ -44,6 +44,8 @@ function TalentCard({
   onUnlock: ((talentId: string) => void) | undefined;
   onHoverTalent?: ((talent: TalentDefinition | null) => void) | undefined;
 }) {
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
   const def = keywordDefinitions[talent.keywordId];
   const shineColors = getKeywordShineColors(talent.keywordId);
   const accentColor = shineColors[0];
@@ -60,10 +62,22 @@ function TalentCard({
       type={interactive ? "button" : undefined}
       aria-disabled={!isPlaceholder && !isUnlocked && !interactive ? true : undefined}
       onClick={interactive ? () => onUnlock?.(talent.id) : undefined}
-      onMouseEnter={() => onHoverTalent?.(talent)}
-      onMouseLeave={() => onHoverTalent?.(null)}
-      onFocus={() => onHoverTalent?.(talent)}
-      onBlur={() => onHoverTalent?.(null)}
+      onMouseEnter={() => {
+        setHovered(true);
+        onHoverTalent?.(talent);
+      }}
+      onMouseLeave={() => {
+        setHovered(false);
+        onHoverTalent?.(null);
+      }}
+      onFocus={() => {
+        setFocused(true);
+        onHoverTalent?.(talent);
+      }}
+      onBlur={() => {
+        setFocused(false);
+        onHoverTalent?.(null);
+      }}
       className={cn(
         "talent-node relative h-[calc(10.5*var(--content-rem,1rem))] w-[calc(20.5*var(--content-rem,1rem))] shrink-0 rounded-lg bg-stone-900",
         showShine && "talent-card-available",
@@ -111,7 +125,13 @@ function TalentCard({
         </div>
       </div>
       {showShine ? (
-        <ShineBorder shineColor={shineColors} borderWidth={2} duration={8} className="z-10 rounded-lg" />
+        <ShineBorder
+          glow={hovered || focused}
+          shineColor={shineColors}
+          borderWidth={2}
+          duration={8}
+          className="z-10 rounded-lg"
+        />
       ) : null}
     </Element>
   );

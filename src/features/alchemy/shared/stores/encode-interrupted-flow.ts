@@ -8,7 +8,6 @@ import {
   type RewardState,
 } from "@/lib/active-run-session";
 import type { BattleCard } from "@/lib/game-data";
-import { emptyInventory } from "@/lib/homestead/inventory";
 import { filterValidDestinations, isRunResumeScreen, type Screen } from "@/lib/routing";
 import { wildcardStarterResumeTarget } from "@/features/alchemy/shared/run-flow/starter-draft";
 import { wildwoodPhaseToScreen } from "@/features/alchemy/shared/run-flow/wildwood-screen-routing";
@@ -75,20 +74,17 @@ export function encodeInterruptedFlow(
     return encodeDestinationFlow(session);
   }
 
-  if (currentScreen === "rewards" && session.rewardState.choices.length > 0) {
+  if (currentScreen === "rewards") {
     const pending = serializePendingReward(session.rewardState, session.companionRewardCards);
     return pending ? { kind: "primary-reward", pending } : { kind: "none" };
   }
 
-  if (currentScreen === "destination" || (currentScreen === "rewards" && session.rewardState.choices.length === 0)) {
+  if (currentScreen === "destination") {
     return encodeDestinationFlow(session);
   }
 
   const pending = serializePendingReward(session.rewardState, session.companionRewardCards);
-  if (pending && session.companionRewardCards?.length) {
-    return { kind: "companion-reward", pending };
-  }
-  if (pending && session.rewardState.choices.length > 0) {
+  if (pending && (session.companionRewardCards?.length || session.rewardState.choices.length > 0)) {
     return { kind: "primary-reward", pending };
   }
 
@@ -120,25 +116,19 @@ export function inferActiveRunScreen(activeRun: ActiveRunData): Screen {
   return resolveExplorationScreen(activeRun.labyrinthMap, activeRun.wildwoodDraft);
 }
 
-function restoreCompanionHandoff(currentScreen: Screen | null, pending: PersistedPendingReward): DecodedClaimSurface {
-  const restored = restorePendingRewardBundle(pending);
-  let { rewardState, companionRewardCards } = restored;
-  let screen = currentScreen;
-
-  if (companionRewardCards?.length && (!rewardState || rewardState.choices.length === 0)) {
-    rewardState = {
-      ...(rewardState ?? createEmptyRewardState(filterValidDestinations(pending.destinations))),
-      rewardType: "card",
-      choices: companionRewardCards,
-      selectedId: null,
-      gold: 0,
-      materials: emptyInventory(),
-    };
-    companionRewardCards = null;
-    screen = "rewards";
-  }
-
-  return { rewardState, companionRewardCards, screen };
+function restoreCompanionHandoff(pending: PersistedPendingReward): DecodedClaimSurface {
+  const { companionRewardCards } = restorePendingRewardBundle(pending);
+  return {
+    rewardState: {
+      ...createEmptyRewardState(filterValidDestinations(pending.destinations)),
+      choices: companionRewardCards ?? [],
+      selectedBossId: pending.selectedBossId,
+      lastVictoryEnemyType: pending.lastVictoryEnemyType,
+      lastVictoryContentSystem: pending.lastVictoryContentSystem,
+    },
+    companionRewardCards: null,
+    screen: "rewards",
+  };
 }
 
 function restorePrimaryPendingReward(
@@ -149,9 +139,16 @@ function restorePrimaryPendingReward(
   const companionRewardCards = restored.companionRewardCards;
   let rewardState = restored.rewardState;
   let screen = currentScreen;
-  if (!rewardState && pending.destinations.length > 0) {
-    rewardState = createEmptyRewardState(filterValidDestinations(pending.destinations));
-    screen = "destination";
+  if (!rewardState) {
+    rewardState = {
+      ...createEmptyRewardState(filterValidDestinations(pending.destinations)),
+      gold: pending.gold,
+      materials: pending.materials,
+      selectedBossId: pending.selectedBossId,
+      lastVictoryEnemyType: pending.lastVictoryEnemyType,
+      lastVictoryContentSystem: pending.lastVictoryContentSystem,
+    };
+    screen = "rewards";
   }
   return { rewardState, companionRewardCards, screen };
 }
@@ -184,7 +181,7 @@ export function decodeInterruptedFlow(activeRun: ActiveRunData): DecodedClaimSur
   const flow = activeRun.interruptedFlow;
   switch (flow.kind) {
     case "companion-reward":
-      return restoreCompanionHandoff(activeRun.currentScreen, flow.pending);
+      return restoreCompanionHandoff(flow.pending);
     case "primary-reward":
       return restorePrimaryPendingReward(activeRun.currentScreen, flow.pending);
     case "destination":

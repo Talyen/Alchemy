@@ -1,7 +1,8 @@
+import { resolveLootWeights } from "@/lib/loot";
 import { describe, expect, it } from "vitest";
 import {
   canApplyCraftingCurrency,
-  generateEquipmentShopOfferings,
+  generateLootGearChoices,
   generateUniqueGearInstance,
   gearAffixCatalog,
   gearBaseItemList,
@@ -73,7 +74,12 @@ describe("unique item catalog", () => {
 
   it("excludes owned uniques from equipment shop offerings and degrades when all owned", () => {
     const allOwnedIds = new Set(uniqueItemList.map((u) => u.id));
-    const offerings = generateEquipmentShopOfferings(3, () => 0.01, 0, allOwnedIds);
+    const offerings = generateLootGearChoices(
+      3,
+      () => 0.99,
+      resolveLootWeights({ source: "equipment", progress: { depth: 24, highestCompletedDifficulty: null } }),
+      allOwnedIds,
+    );
     expect(offerings).toHaveLength(3);
 
     for (const offering of offerings) {

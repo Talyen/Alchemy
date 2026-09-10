@@ -1,3 +1,4 @@
+const lootProgress = { depth: 24, highestCompletedDifficulty: null };
 import "../../../../helpers/mock-audio";
 import { expect, beforeEach } from "vitest";
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
@@ -13,6 +14,8 @@ import {
   setTrinketShopState as mutateTrinketShopState,
   setEquipmentShopState as mutateEquipmentShopState,
   setRunBoons,
+  setCurrentAct,
+  setDestinationIndexInAct,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import {
   createInitialShopState as createInitialShopStateImpl,
@@ -36,7 +39,7 @@ export const createInitialShopState = (deck: BattleCard[] = []) => createInitial
 export const createInitialAlchemistState = (deck: BattleCard[] = []) => createInitialAlchemistStateImpl(deck, testRng);
 export const createInitialTrinketShopState = (rng: () => number = testRng) => createInitialTrinketShopStateImpl(rng);
 export const createInitialEquipmentShopState = (rng: () => number = testRng) =>
-  createInitialEquipmentShopStateImpl(rng);
+  createInitialEquipmentShopStateImpl(rng, lootProgress);
 
 export function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
   return makeTestCard({ cost: 2, effects: [makeEffect("physical", 5)], ...overrides });
@@ -72,4 +75,8 @@ export function buildActions(
 beforeEach(() => {
   resetAllTestStores();
   resetGearForTest();
+  dispatchRunSessionCommand((draft) => {
+    setCurrentAct(draft, 3);
+    setDestinationIndexInAct(draft, 7);
+  });
 });

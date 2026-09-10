@@ -73,51 +73,53 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
   usePlasmaInteraction(plasmaKeywordIds ? getPlasmaColorPair(plasmaKeywordIds) : null, plasmaKeywordIds !== null);
 
   return (
-    <TitledScreenShell title={isComplete ? "Draft Complete" : "Draft a Deck"} maxWidthClass="max-w-6xl">
-      <p className={cn("mt-3 text-center", bodyTextClass)}>
-        {isComplete
-          ? `You drafted ${String(draftedCards.length)} cards. Ready to begin your run.`
-          : `Pick 1 of 3 cards - ${String(round)}/${String(DRAFT_ROUNDS)} selected`}
-      </p>
+    <FadeSlot swapKey={isComplete ? "complete" : round} className="h-full w-full">
+      <TitledScreenShell title={isComplete ? "Draft Complete" : "Draft a Deck"} maxWidthClass="max-w-6xl">
+        <p className={cn("mt-3 text-center", bodyTextClass)}>
+          {isComplete
+            ? `You drafted ${String(draftedCards.length)} cards. Ready to begin your run.`
+            : `Pick 1 of 3 cards - ${String(round)}/${String(DRAFT_ROUNDS)} selected`}
+        </p>
 
-      <FadeSlot swapKey={isComplete ? "complete" : round} className="mx-auto mt-8 min-h-[36cqh] w-full">
-        {isComplete ? (
-          <div className="mx-auto grid max-w-fit grid-cols-3 justify-items-center gap-6">
-            {draftedCards.map((card, index) => {
-              const itemKey = `drafted-${card.id}-${String(card.uid ?? index)}`;
-              return (
-                <DraftedCardItem
-                  key={itemKey}
+        <div className="mx-auto mt-8 min-h-[36cqh] w-full">
+          {isComplete ? (
+            <div className="mx-auto grid max-w-fit grid-cols-3 justify-items-center gap-6">
+              {draftedCards.map((card, index) => {
+                const itemKey = `drafted-${card.id}-${String(card.uid ?? index)}`;
+                return (
+                  <DraftedCardItem
+                    key={itemKey}
+                    card={card}
+                    interactionKey={itemKey}
+                    onHoverChange={(hovered) => setHoveredCard(hovered ? card : null)}
+                  />
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-start justify-center gap-6">
+              {draftChoices.map((card, index) => (
+                <SelectableCard
+                  key={`draft-choice-${String(index)}-${card.id}`}
                   card={card}
-                  interactionKey={itemKey}
+                  isSelected={false}
+                  onSelect={() => onPick(card.id)}
+                  interactionKey={`draft-choice-${String(index)}`}
                   onHoverChange={(hovered) => setHoveredCard(hovered ? card : null)}
                 />
-              );
-            })}
-          </div>
-        ) : (
-          <div className="flex flex-wrap items-start justify-center gap-6">
-            {draftChoices.map((card, index) => (
-              <SelectableCard
-                key={`draft-choice-${String(index)}-${card.id}`}
-                card={card}
-                isSelected={false}
-                onSelect={() => onPick(card.id)}
-                interactionKey={`draft-choice-${String(index)}`}
-                onHoverChange={(hovered) => setHoveredCard(hovered ? card : null)}
-              />
-            ))}
-          </div>
-        )}
-      </FadeSlot>
-
-      {isComplete ? (
-        <div className="mt-8 flex justify-center">
-          <Button size="lg" variant="primary" className={BUTTON_WIDTH_ACTION} onClick={() => onComplete()}>
-            Continue
-          </Button>
+              ))}
+            </div>
+          )}
         </div>
-      ) : null}
-    </TitledScreenShell>
+
+        {isComplete ? (
+          <div className="mt-8 flex justify-center">
+            <Button size="lg" variant="primary" className={BUTTON_WIDTH_ACTION} onClick={() => onComplete()}>
+              Continue
+            </Button>
+          </div>
+        ) : null}
+      </TitledScreenShell>
+    </FadeSlot>
   );
 }

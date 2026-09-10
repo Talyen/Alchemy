@@ -80,15 +80,13 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
   });
   const isFrozenPreserved = state.enemyCC.freezeSkipTurns > 0 && state.talentEffects.freezePreventsPoisonDecay;
   let nextPoison = state.enemyStatuses.poison;
-  if (!isFrozenPreserved) {
-    if (rollPercent(state.talentEffects.poisonGainChance, getBattleRng(state))) {
-      nextPoison += POISON_GAIN_AMOUNT;
-    } else {
-      nextPoison = decayPoisonStacks(
-        nextPoison,
-        hasEncounterBenefit(state, "venomous") ? LABYRINTH_MODIFIER_CONFIG.half : 1,
-      );
-    }
+  if (rollPercent(state.talentEffects.poisonGainChance, getBattleRng(state))) {
+    nextPoison += POISON_GAIN_AMOUNT;
+  } else if (!isFrozenPreserved) {
+    nextPoison = decayPoisonStacks(
+      nextPoison,
+      hasEncounterBenefit(state, "venomous") ? LABYRINTH_MODIFIER_CONFIG.half : 1,
+    );
   }
   return dealEnemyDotTick(state, "poison", finalDamage, nextPoison, combatTexts, (nextState) => {
     const afterRiders = applyPoisonTalentRiders(
@@ -223,7 +221,13 @@ export function tickPlayerStatuses(state: BattleState, combatTexts: CombatTextEv
     return resolvePendingBattleReactions(resolvePlayerCrowdControlTriggers(nextState, combatTexts), combatTexts);
   }
   let nextState = tickPlayerBurn(state, combatTexts);
+  if (nextState.playerHealth <= 0 && !nextState.deathsDoorActive) {
+    return resolvePendingBattleReactions(resolvePlayerCrowdControlTriggers(nextState, combatTexts), combatTexts);
+  }
   nextState = tickPlayerPoison(nextState, combatTexts);
+  if (nextState.playerHealth <= 0 && !nextState.deathsDoorActive) {
+    return resolvePendingBattleReactions(resolvePlayerCrowdControlTriggers(nextState, combatTexts), combatTexts);
+  }
   nextState = tickPlayerBleed(nextState, combatTexts);
   return resolvePendingBattleReactions(resolvePlayerCrowdControlTriggers(nextState, combatTexts), combatTexts);
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyAttackPurgeRider } from "@/lib/battle/damage-riders";
+import { applyAttackPurgeRider, applyDamageRiders } from "@/lib/battle/damage-riders";
 import { paceCombatDamage } from "@/lib/battle/fight-pacing";
 import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
 import { dealDamage, makeCombatTexts, makeTestCard, patchBattleState } from "../../fixtures/battle";
@@ -79,5 +79,23 @@ describe("damage rider regressions", () => {
     expect(result.enemyHealth).toBe(state.enemyHealth);
     expect(result.enemyStatuses.stun).toBe(0);
     expect(result.playerStatuses.forge).toBe(4);
+  });
+
+  it("skips the main hit when Wardbreaker purge kills the enemy", () => {
+    const state = patchBattleState({
+      rng: () => 0.99,
+      enemyHealth: 3,
+      enemyMaxHealth: 30,
+      playerHealth: 20,
+      playerMaxHealth: 30,
+      enemyMitigation: { armor: 0, block: 5, forge: 0 },
+      gearEffects: { attackPurgeDealHolyPerEffect: 5 },
+    });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10, lifesteal: true }] });
+    const texts = makeCombatTexts();
+    const result = applyDamageRiders(state, card, card.effects[0] as never, 10, texts);
+    expect(result.enemyHealth).toBe(0);
+    expect(result.playerHealth).toBe(20);
+    expect(texts.some((entry) => entry.stat === "physical")).toBe(false);
   });
 });

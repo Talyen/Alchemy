@@ -162,14 +162,24 @@ Outgoing screen content becomes inert as soon as navigation changes the active
 screen and rejects activation events during its fade, so stale portrait activation
 cannot replace destination music.
 
-Collection entries rest with dim grey borders. Discovered entries show their keyword
-Shine Border on hover or keyboard focus; locked and undiscovered entries show a neutral
-Shine Border on hover or keyboard focus across all tabs.
+Collection entries rest with dim grey borders. All entries, including locked and
+undiscovered entries, show matching keyword Shine Border and glow on hover or
+keyboard focus, with neutral shine when no keywords resolve. Homestead companions
+and upgrades use the same treatment regardless of affordability or discovery.
 Wish and reward choices use the same hover treatment. Trinkets and gear, including
 uniques, use their effect keywords on these surfaces, with neutral shine when none
 exist. Shared trinket and gear art tiles, including Mystery rewards, shops, and
 run-end items, also rest with the default border and show Shine only on hover or
 keyboard focus. Their existing Shine palettes and item-title colors are preserved.
+
+Hover-only Shine Borders and persistent Shine Borders that strengthen on hover pair
+with the shared keyword glow, including their existing focus activation. `ShineBorder`
+owns the optional `glow` treatment: zero offset, 16px blur, 45% opacity, and a 200ms
+transition, tinted with the palette's first color. Wildcard glow follows its cycling
+color. The outer layer casts the glow around the masked inner border; keep it outside
+artwork clips. Paired glow replaces the ordinary gold hover glow without changing
+scale or press feedback. Selection alone retains its existing treatment. Purely
+persistent decoration, turn indicators, and Death’s Door borders do not opt in.
 
 ## Card-removal browsing
 

@@ -1,8 +1,10 @@
 import "../../../../helpers/mock-audio";
 import "../../../../helpers/mock-flush-save";
 import { beforeEach, describe, expect, it } from "vitest";
+import { ActiveRunDataSchema } from "@/lib/validation/save-schemas/active-run";
 import { defaultBattleState } from "@/lib/battle";
-import { ROUTE_SCREENS } from "@/lib/routing";
+import { finalizeRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
+import { REWARD_ROUTES, ROUTE_SCREENS } from "@/lib/routing";
 import { createEmptyRewardState, type ActiveRunData } from "@/lib/active-run-session";
 import { restoreRun, teardownRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { getCurrentRunPhase } from "../../../../helpers/run-session-assertions";
@@ -15,7 +17,6 @@ import { createRunSessionCommand } from "@/features/alchemy/shared/stores/run-se
 import {
   beginRewardClaim as mutateBeginRewardClaim,
   initializeActiveBattle as mutateInitializeActiveBattle,
-  releaseRewardClaim as mutateReleaseRewardClaim,
   setCompanionRewardCards as mutateCompanionRewardCards,
   setHasActiveBattle as mutateHasActiveBattle,
   setHasActiveRun as mutateHasActiveRun,
@@ -39,7 +40,6 @@ const setHasActiveBattle = createRunSessionCommand(mutateHasActiveBattle);
 const setRewardState = createRunSessionCommand(mutateRewardState);
 const beginRewardClaim = createRunSessionCommand(mutateBeginRewardClaim);
 const setCompanionRewardCards = createRunSessionCommand(mutateCompanionRewardCards);
-const releaseRewardClaim = createRunSessionCommand(mutateReleaseRewardClaim);
 const initializeActiveBattle = createRunSessionCommand(mutateInitializeActiveBattle);
 const setScreen = createRunSessionCommand(mutateSetScreen);
 
@@ -145,7 +145,7 @@ describe("session facade API", () => {
     expect(snap.currentScreen).toBe("destination");
   });
 
-  it("encodes destination interruptedFlow for hollow boss mid-claim without destinations", () => {
+  it("preserves an empty boss reward so Skip can finish the act after reload", () => {
     setRewardState({
       ...createEmptyRewardState(),
       rewardType: "gear",
@@ -155,17 +155,18 @@ describe("session facade API", () => {
 
     const snap = snapshotRun(ROUTE_SCREENS.REWARDS);
     expect(snap.currentScreen).toBe("rewards");
-    expect(snap.interruptedFlow).toEqual({
-      kind: "destination",
-      destinations: [],
-      selectedBossId: null,
-      lastVictoryEnemyType: "boss",
-      lastVictoryContentSystem: null,
+    expect(snap.interruptedFlow).toMatchObject({
+      kind: "primary-reward",
+      pending: { rewardType: "card", choiceIds: [], lastVictoryEnemyType: "boss" },
     });
 
-    restoreRun(snap, {}, {});
-    expect(readActiveRunScreen()).toBe("destination");
-    expect(readRunSession().rewardState.choices).toEqual([]);
+    const parsed = ActiveRunDataSchema.parse(JSON.parse(JSON.stringify(snap)));
+    expect(parsed.interruptedFlow).toEqual(snap.interruptedFlow);
+    restoreRun({ ...snap, interruptedFlow: parsed.interruptedFlow }, {}, {});
+    expect(readActiveRunScreen()).toBe("rewards");
+    const rewardState = readRunSession().rewardState;
+    expect(rewardState.choices).toEqual([]);
+    expect(finalizeRewardState({ rewardState, companionRewardCards: null }).route).toBe(REWARD_ROUTES.ACT_COMPLETE);
   });
 
   it("marks enemy-phase combat without a transition for boot recovery", () => {
@@ -179,54 +180,6 @@ describe("session facade API", () => {
     restoreRun(snap, {}, {});
     expect(readBattle().pendingBattleTransition).toEqual({ kind: "legacy-enemy-turn" });
     expect(readBattle().battleState.turnPhase).toBe("enemy");
-  });
-
-  it("persists companion handoff during mid-claim and restores both offers", () => {
-    const primary = cardLibrary.find((card) => card.id === "slash")!;
-    const companion = cardLibrary.find((card) => card.effects.some((effect) => effect.kind === "summon-companion"))!;
-    setRewardState({
-      ...createEmptyRewardState(["Card Shop"]),
-      rewardType: "card",
-      choices: [primary],
-    });
-    setCompanionRewardCards([companion]);
-    beginRewardClaim();
-
-    const snap = snapshotRun(ROUTE_SCREENS.REWARDS);
-    expect(snap.interruptedFlow.kind).toBe("companion-reward");
-    if (snap.interruptedFlow.kind === "companion-reward") {
-      expect(snap.interruptedFlow.pending.rewardType).toBe("card");
-      if (snap.interruptedFlow.pending.rewardType === "card") {
-        expect(snap.interruptedFlow.pending.choiceIds).toEqual([primary.id]);
-      }
-      expect(snap.interruptedFlow.pending.companionChoiceIds).toEqual([companion.id]);
-    }
-    expect(snap.currentScreen).toBe("rewards");
-
-    setRewardState(createEmptyRewardState());
-    setCompanionRewardCards(null);
-    releaseRewardClaim();
-    restoreRun(snap, {}, {});
-
-    const restored = readRunSession().rewardState;
-    expect(restored.rewardType).toBe("card");
-    if (restored.rewardType === "card") {
-      expect(restored.choices.map((choice) => choice.id)).toEqual([primary.id]);
-    }
-    expect(readRunSession().companionRewardCards?.map((choice) => choice.id)).toEqual([companion.id]);
-    expect(readActiveRunScreen()).toBe("rewards");
-  });
-
-  it("avoids soft-locking hollow boss rewards on resume", () => {
-    setRewardState({
-      ...createEmptyRewardState(),
-      rewardType: "gear",
-      choices: [],
-      lastVictoryEnemyType: "boss",
-    });
-    const snap = snapshotRun(ROUTE_SCREENS.REWARDS);
-    restoreRun(snap, {}, {});
-    expect(readActiveRunScreen()).toBe("destination");
   });
 
   it("snapshots and restores pending gear rewards on the rewards screen", () => {

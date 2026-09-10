@@ -105,7 +105,11 @@ export function InteractiveArtTile({
         )}
         shimmerActive={interactive && !disabled ? shimmerActive : false}
         shimmerToken={interactive && !disabled ? shimmerToken : undefined}
-        overlay={showShine ? <ShineBorder shineColor={shineColors} borderWidth={2} className="z-20" /> : null}
+        overlay={
+          showShine ? (
+            <ShineBorder glow={interactive && isHovered} shineColor={shineColors} borderWidth={2} className="z-20" />
+          ) : null
+        }
         selected={interactiveChrome && selected}
         disabled={disabled}
         onClick={interactive && !disabled ? onClick : undefined}

@@ -36,13 +36,14 @@ function HeroCardShine({ characterId, colors }: { characterId: CharacterId; colo
     return (
       <CyclingShineBorder
         colors={colors}
+        glow
         borderWidth={3}
         intervalMs={WILDCARD_SHINE_CYCLE_MS}
         className={HERO_SHINE_CLASS}
       />
     );
   }
-  return <ShineBorder shineColor={colors} borderWidth={3} className={HERO_SHINE_CLASS} />;
+  return <ShineBorder glow shineColor={colors} borderWidth={3} className={HERO_SHINE_CLASS} />;
 }
 
 const CharacterCard = memo(function CharacterCard({

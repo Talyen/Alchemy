@@ -3,7 +3,7 @@ import { BookOpen, Cog, Shield, Swords, TreePine, WandSparkles } from "lucide-re
 import { Button } from "@/components/ui/button";
 import { ShineBorder } from "@/components/ui/shine-border";
 import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
-import { BUTTON_WIDTH_MENU, cardHoverScaleClass } from "@/features/alchemy/shared/config";
+import { BUTTON_WIDTH_MENU } from "@/features/alchemy/shared/config";
 import { Surface } from "../../shared/ui/surface";
 import { usePlasmaInteraction } from "../../shared/ui/use-plasma-source";
 import { cn } from "@/lib/utils";
@@ -72,19 +72,22 @@ export function MenuScreen({
   const isHomesteadLocked = !isProgressionFeatureUnlocked("homestead", finishedRunCharacters);
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-10 text-center">
-      <Surface className={cn("relative w-full max-w-[calc(35.4375*var(--content-rem,1rem))]", cardHoverScaleClass)}>
+    <div className="flex h-full w-full flex-col items-center justify-center gap-5 py-4 text-center">
+      <Surface
+        clipContents={false}
+        className="relative flex min-h-0 w-full max-w-[calc(44.86*var(--content-rem,1rem))] justify-center"
+      >
         <img
           width={1200}
-          height={1219}
+          height={1046}
           src={logoSrc}
           alt="Alchemy logo"
-          className="h-auto w-full brightness-90"
+          className="h-full max-h-full w-auto max-w-full object-contain brightness-90"
           loading="eager"
         />
       </Surface>
 
-      <div className="grid justify-items-center gap-3 overflow-visible">
+      <div className="grid shrink-0 justify-items-center gap-3 overflow-visible">
         <MenuPlasmaHover colorPair={PLAY_PLASMA_PAIR}>
           <Button
             size="lg"

@@ -58,36 +58,49 @@ function computeStandardCost(
   state: CardCostState,
   card: BattleCard,
   discountedCost: number,
-): { effectiveCost: number; consumedFlags: Set<BooleanCombatFlag>; disarmedFlags: Set<BooleanCombatFlag> } {
-  let effectiveCost = applyCostDiscount(card.cost, state.flags.nextCardCostReduction);
+): {
+  effectiveCost: number;
+  consumedFlags: Set<BooleanCombatFlag>;
+  disarmedFlags: Set<BooleanCombatFlag>;
+  spentArmedDiscount: boolean;
+} {
   const consumedFlags = new Set<BooleanCombatFlag>();
   const disarmedFlags = new Set<BooleanCombatFlag>();
 
-  if (effectiveCost === 0) return { effectiveCost, consumedFlags, disarmedFlags };
+  if (card.cost === 0) {
+    return { effectiveCost: 0, consumedFlags, disarmedFlags, spentArmedDiscount: false };
+  }
 
   for (const rule of FIRST_CARD_FREE_RULES) {
     if (!state.flags[rule.flag] && rule.condition(state, card)) {
-      effectiveCost = 0;
-      consumedFlags.add(rule.flag);
-      break;
+      return {
+        effectiveCost: 0,
+        consumedFlags: consumedFlags.add(rule.flag),
+        disarmedFlags,
+        spentArmedDiscount: false,
+      };
     }
   }
-  if (effectiveCost === 0) return { effectiveCost, consumedFlags, disarmedFlags };
 
   if (checkTrinketFreePotion(state, card)) {
-    effectiveCost = 0;
     consumedFlags.add("firstPotionFreeUsed");
+    return { effectiveCost: 0, consumedFlags, disarmedFlags, spentArmedDiscount: false };
   }
-  if (effectiveCost === 0) return { effectiveCost, consumedFlags, disarmedFlags };
 
-  effectiveCost = applyCostDiscount(discountedCost, state.flags.nextCardCostReduction);
-  if (effectiveCost === 0) return { effectiveCost, consumedFlags, disarmedFlags };
+  if (discountedCost === 0) {
+    return { effectiveCost: 0, consumedFlags, disarmedFlags, spentArmedDiscount: false };
+  }
+
+  const armedReduction = state.flags.nextCardCostReduction;
+  let effectiveCost = applyCostDiscount(discountedCost, armedReduction);
+  const spentArmedDiscount = armedReduction > 0 && effectiveCost < discountedCost;
+  if (effectiveCost === 0) return { effectiveCost, consumedFlags, disarmedFlags, spentArmedDiscount };
 
   if (state.flags.nextHolyCardFree && cardHasDamageType(card, "holy")) {
     effectiveCost = 0;
     disarmedFlags.add("nextHolyCardFree");
   }
-  if (effectiveCost === 0) return { effectiveCost, consumedFlags, disarmedFlags };
+  if (effectiveCost === 0) return { effectiveCost, consumedFlags, disarmedFlags, spentArmedDiscount };
 
   if (state.flags.nextArcheryCardFree && !!card.tags?.includes("archery")) {
     effectiveCost = 0;
@@ -97,7 +110,7 @@ function computeStandardCost(
     disarmedFlags.add("nextNatureCardFree");
   }
 
-  return { effectiveCost, consumedFlags, disarmedFlags };
+  return { effectiveCost, consumedFlags, disarmedFlags, spentArmedDiscount };
 }
 
 export function computeEffectiveCost(state: CardCostState, card: BattleCard) {

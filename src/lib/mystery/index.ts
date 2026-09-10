@@ -8,3 +8,5 @@ export {
   pickMysteryTrinketGrantId,
   repairUnresolvedMysteryTrinkets,
 } from "./resolve-trinkets";
+
+export { isMysteryLootEligible } from "./resolve-trinkets";

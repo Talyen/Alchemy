@@ -1,3 +1,4 @@
+import { campaignLootDepth, isLootEligible } from "@/lib/loot";
 import type { Destination } from "@/lib/routing";
 import { getRunAvailableDestinations, type DestinationOptionsInput } from "./destination-flow";
 
@@ -9,6 +10,7 @@ export function getPreviousDestination(
 }
 
 export interface ResolveAvailableDestinationsInput {
+  currentAct: number;
   destinationIndexInAct: number;
   completedDestinations: Destination[];
   runPlayerHealth: number;
@@ -30,6 +32,8 @@ export function resolveAvailableDestinations(input: ResolveAvailableDestinations
     maxHealth: options.maxHealth ?? input.runMaxHealth,
     previousDestination,
     hasAnyOwnedGear: options.hasAnyOwnedGear ?? input.hasAnyOwnedGear,
-    hasUnownedTrinkets: options.hasUnownedTrinkets ?? input.hasUnownedTrinkets ?? true,
+    hasUnownedTrinkets:
+      (options.hasUnownedTrinkets ?? input.hasUnownedTrinkets ?? true) &&
+      isLootEligible("trinket", campaignLootDepth(input.currentAct, destinationIndexInAct + 1)),
   });
 }

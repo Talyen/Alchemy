@@ -219,6 +219,7 @@ export function applyDamageRiders(
   const enemyWasStunned = state.enemyCC.stunSkipTurns > 0;
   const enemyWasFrozen = state.enemyCC.freezeSkipTurns > 0;
   const prePurgeState = isExtraHit ? state : applyAttackPurgeRider(state, combatTexts);
+  if (prePurgeState.enemyHealth <= 0) return prePurgeState;
   const hit = damageEnemyHealth(prePurgeState, modifiedDamage);
   const previousHealth = hit.previousHealth;
   onDamageDealt?.(Math.max(0, previousHealth - hit.state.enemyHealth));

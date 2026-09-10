@@ -15,55 +15,45 @@ export const EQUIPMENT_SHOP_ASTRAL_PRICE = 80;
 export const EQUIPMENT_SHOP_UNIQUE_PRICE = 100;
 export const EQUIPMENT_SHOP_OFFERED = 3;
 export const EQUIPMENT_SHOP_REFRESHES = 1;
-export const EQUIPMENT_SHOP_DROP_RATES = {
-  unique: 0.05,
-  astral: 0.25,
-  basic: 0.7,
-} as const;
-
-export const ENCOUNTER_REWARD_RATES = {
-  normal: {
-    card: 0.55,
-    basic: 0.17,
-    boon: 0.1,
-    astral: 0.07,
-    trinket: 0.06,
-    unique: 0.05,
+export const LOOT_SOURCE_WEIGHTS = {
+  normal: { card: 0.55, basic: 0.17, boon: 0.1, astral: 0.07, trinket: 0.06, unique: 0.05 },
+  elite: { card: 0.3, basic: 0.25, boon: 0.18, astral: 0.1, trinket: 0.09, unique: 0.08 },
+  boss: { card: 0, basic: 0, boon: 0, astral: 0.49, trinket: 0.3, unique: 0.21 },
+  wildwood: {
+    card: 1 / 3,
+    basic: (2 / 9) * 0.87,
+    boon: 1 / 3,
+    astral: (2 / 9) * 0.08,
+    trinket: 1 / 9,
+    unique: (2 / 9) * 0.05,
   },
-  elite: {
-    card: 0.3,
-    basic: 0.25,
-    boon: 0.18,
-    astral: 0.1,
-    trinket: 0.09,
-    unique: 0.08,
-  },
-} as const satisfies Record<
-  "normal" | "elite",
-  Record<"card" | "basic" | "boon" | "astral" | "trinket" | "unique", number>
->;
-
-export const BOSS_REWARD_RATES = {
-  astral: 0.49,
-  trinket: 0.3,
-  unique: 0.21,
-} as const satisfies Record<"astral" | "trinket" | "unique", number>;
-
-export const DROP_RATES_BOSS = {
-  unique: 0.3,
-  astral: 0.7,
-  basic: 0,
+  equipment: { card: 0, basic: 0.7, boon: 0, astral: 0.25, trinket: 0, unique: 0.05 },
+  mystery: { card: 0, basic: 0.5, boon: 0, astral: 0.5, trinket: 0, unique: 0 },
+  trinket: { card: 0, basic: 0, boon: 0, astral: 0, trinket: 1, unique: 0 },
+  masterwork: { card: 0, basic: 0, boon: 0, astral: 1, trinket: 0, unique: 0 },
 } as const;
 
-export const DROP_RATES_NORMAL = {
-  unique: 0.05,
-  astral: 0.08,
-  basic: 0.87,
+export const LOOT_DEPTH_CURVES = {
+  astral: [
+    { depth: 4, weight: 0.2 },
+    { depth: 8, weight: 0.6 },
+    { depth: 16, weight: 1 },
+  ],
+  trinket: [
+    { depth: 8, weight: 0.35 },
+    { depth: 16, weight: 1 },
+  ],
+  unique: [
+    { depth: 12, weight: 0.2 },
+    { depth: 24, weight: 1 },
+  ],
 } as const;
 
-export const GEAR_REWARD_PERMANENT_TRINKET_CHANCE = {
-  normal: 1 / 3,
-  boss: 0.3,
+export const LOOT_ACCOUNT_MULTIPLIERS = {
+  none: 1,
+  "difficulty-1": 1.1,
+  "difficulty-2": 1.2,
+  "difficulty-3": 1.3,
 } as const;
 
 export const DRAFT_ROUNDS = 6;
@@ -93,9 +83,7 @@ export const SHOP_REFRESHES = 1;
 export const ALCHEMIST_POTIONS_OFFERED = 3;
 export const ALCHEMIST_REFRESHES = 1;
 export { BOSS_HEALTH_MULTIPLIER } from "./combat-rules";
-export const GEAR_REWARD_RARITY_CHANCE = 0.5;
 
-export const GEAR_ASTRAL_GUARANTEE_BONUS = 1;
 export const GEAR_AFFIX_COUNT = {
   basic: { min: 1, max: 2 },
   astral: { min: 3, max: 4 },

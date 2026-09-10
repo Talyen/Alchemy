@@ -1,3 +1,4 @@
+import { resolveLootWeights, rollLootGroup, type LootProgress, type LootSource } from "@/lib/loot";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
 import {
@@ -7,41 +8,24 @@ import {
   selectRewardCards,
   trinketLibrary,
   type BattleCard,
-  type TrinketEntry,
 } from "@/lib/game-data";
 import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
-import {
-  BOSS_REWARD_RATES,
-  ENCOUNTER_REWARD_RATES,
-  GEAR_REWARD_PERMANENT_TRINKET_CHANCE,
-  LABYRINTH_REWARD_CONFIG,
-  REWARD_CARD_CHOICES,
-} from "@/lib/game-constants";
+import { LABYRINTH_REWARD_CONFIG, REWARD_CARD_CHOICES } from "@/lib/game-constants";
 import { pickRandom, sampleItems } from "@/lib/rng";
 import { REWARD_ROUTES, type Destination, type RewardRoute } from "@/lib/routing";
-import {
-  generateGearRewardChoices,
-  generateGearRewardChoicesForRarities,
-  rollGearRewardDropTier,
-  type GearRarity,
-} from "@/lib/gear";
+import { generateLootGearChoices, getGearLootAvailability } from "@/lib/gear";
 import {
   createEmptyRewardState,
   resolveRewardChoice,
   type CardRewardState,
-  type BoonRewardState,
-  type GearRewardState,
   type ResolvedRewardChoice,
   type RewardState,
-  type TrinketRewardState,
 } from "@/lib/active-run-session";
 import type { BattleState } from "@/lib/battle";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { computeRewardGold } from "./reward-math";
 
 export type FinalizeRewardRoute = RewardRoute;
-
-export type CombatRewardCategory = "card" | "gear" | "boon" | "trinket";
 
 export interface FinalizeRewardInput {
   rewardState: RewardState;
@@ -57,6 +41,7 @@ export interface FinalizeRewardResult {
 }
 
 export interface BossRewardInput {
+  lootProgress: LootProgress;
   gold: number;
   bossBonus: number;
   generousBonus: number;
@@ -72,6 +57,7 @@ export interface BossRewardInput {
 }
 
 export interface CombatRewardInput {
+  lootProgress: LootProgress;
   battleState: BattleState;
   runDeck: BattleCard[];
   gold: number;
@@ -88,81 +74,6 @@ export interface CombatRewardInput {
   ownedTrinketIds?: string[];
   ownedUniqueIds?: ReadonlySet<string>;
   gearAstralChanceBonus?: number;
-}
-
-function sampleTrinketRewardChoices(excludedIds: readonly string[], rng: () => number): TrinketEntry[] {
-  const excluded = new Set(excludedIds);
-  return sampleItems(
-    trinketLibrary.filter((entry) => !excluded.has(entry.id)),
-    REWARD_CARD_CHOICES,
-    rng,
-  );
-}
-
-function rollWeightedCategory<T extends string>(rates: Readonly<Record<T, number>>, rng: () => number): T {
-  const draw = rng();
-  let cumulative = 0;
-  let fallback: T | null = null;
-
-  for (const category of Object.keys(rates) as T[]) {
-    fallback = category;
-    cumulative += rates[category];
-    if (draw < cumulative) return category;
-  }
-
-  if (fallback === null) throw new Error("[reward-flow] cannot roll from an empty category table");
-  return fallback;
-}
-
-function getEncounterRewardRates(enemyType: "normal" | "elite", astralChanceBonus = 0) {
-  const rates = ENCOUNTER_REWARD_RATES[enemyType];
-  const basicToAstral = Math.min(Math.max(0, astralChanceBonus), rates.basic);
-  return {
-    ...rates,
-    basic: rates.basic - basicToAstral,
-    astral: rates.astral + basicToAstral,
-  };
-}
-
-export function rollEncounterRewardCategory(enemyType: "normal" | "elite", rng: () => number): CombatRewardCategory {
-  const rates = ENCOUNTER_REWARD_RATES[enemyType];
-  return rollWeightedCategory(
-    {
-      card: rates.card,
-      gear: rates.basic + rates.astral + rates.unique,
-      boon: rates.boon,
-      trinket: rates.trinket,
-    },
-    rng,
-  );
-}
-
-export function rollBossRewardCategory(rng: () => number): "gear" | "trinket" {
-  return rollWeightedCategory(
-    {
-      gear: BOSS_REWARD_RATES.astral + BOSS_REWARD_RATES.unique,
-      trinket: BOSS_REWARD_RATES.trinket,
-    },
-    rng,
-  );
-}
-
-export function rollCombatGearRewardRarity(
-  enemyType: "normal" | "elite" | "boss",
-  rng: () => number,
-  astralChanceBonus = 0,
-): GearRarity {
-  const rates =
-    enemyType === "boss" ? { basic: 0, ...BOSS_REWARD_RATES } : getEncounterRewardRates(enemyType, astralChanceBonus);
-  const total = rates.basic + rates.astral + rates.unique;
-  return rollWeightedCategory(
-    {
-      basic: rates.basic / total,
-      astral: rates.astral / total,
-      unique: rates.unique / total,
-    },
-    rng,
-  );
 }
 
 export function createNextRewardState(rewardState: RewardState): CardRewardState {
@@ -239,219 +150,111 @@ export function finalizeRewardState({ rewardState, companionRewardCards }: Final
   };
 }
 
-function createGearRewardState(
-  rollRarity: () => GearRarity,
-  rng: () => number,
-  ownedUniqueIds: ReadonlySet<string>,
-): GearRewardState {
-  const rarities = Array.from({ length: REWARD_CARD_CHOICES }, rollRarity);
-  const choices = generateGearRewardChoicesForRarities(rarities, rng, ownedUniqueIds);
-  return {
-    ...createEmptyRewardState(),
-    rewardType: "gear",
-    choices,
-  };
-}
-
-function createFallbackGearRewardState(
-  isBoss: boolean,
-  rng: () => number,
-  gearAstralChanceBonus: number,
-  ownedUniqueIds: ReadonlySet<string>,
-): GearRewardState {
-  return createGearRewardState(() => rollGearRewardDropTier(rng, isBoss, gearAstralChanceBonus), rng, ownedUniqueIds);
-}
-
-export function createBossRewardState({
-  gold,
-  bossBonus,
-  generousBonus,
-  wealthyBonus,
-  talentGoldPerCombat,
-  materials,
-  trinketIds,
-  goldMultiplier = 1,
+function createLootRewardState({
+  source,
+  lootProgress,
   rng,
+  runDeck = [],
   gearAstralChanceBonus = 0,
   ownedTrinketIds = [],
+  excludedBoonIds = [],
   ownedUniqueIds = new Set(),
-}: BossRewardInput): GearRewardState | TrinketRewardState {
-  const category = rollBossRewardCategory(rng);
-  const reward =
-    category === "trinket"
-      ? (() => {
-          const choices = sampleTrinketRewardChoices(ownedTrinketIds, rng);
-          return choices.length > 0
-            ? {
-                ...createEmptyRewardState(),
-                rewardType: "trinket" as const,
-                choices,
-              }
-            : createFallbackGearRewardState(true, rng, gearAstralChanceBonus, ownedUniqueIds);
-        })()
-      : createGearRewardState(() => rollCombatGearRewardRarity("boss", rng), rng, ownedUniqueIds);
-  return {
-    ...reward,
-    gold: computeRewardGold({
-      baseGold: gold,
-      bonusGold: bossBonus,
-      generousBonus,
-      wealthyBonus,
-      talentGoldPerCombat,
-      trinketIds,
-      goldMultiplier,
-    }),
-    materials,
-  };
-}
-
-function createGearOrPermanentTrinketReward(
-  ownedTrinketIds: readonly string[],
-  rng: () => number,
-  gearAstralChanceBonus: number,
-  isBoss = false,
-  ownedUniqueIds: ReadonlySet<string> = new Set(),
-): GearRewardState | TrinketRewardState {
-  const owned = new Set(ownedTrinketIds);
-  const unowned = trinketLibrary.filter((entry) => !owned.has(entry.id));
-  const trinketChance = isBoss
-    ? GEAR_REWARD_PERMANENT_TRINKET_CHANCE.boss
-    : GEAR_REWARD_PERMANENT_TRINKET_CHANCE.normal;
-  if (unowned.length > 0 && rng() < trinketChance) {
-    return {
-      ...createEmptyRewardState(),
-      rewardType: "trinket",
-      choices: sampleTrinketRewardChoices(ownedTrinketIds, rng),
-    };
+}: {
+  source: LootSource;
+  lootProgress: LootProgress;
+  rng: () => number;
+  runDeck?: BattleCard[];
+  gearAstralChanceBonus?: number;
+  ownedTrinketIds?: readonly string[];
+  excludedBoonIds?: readonly string[];
+  ownedUniqueIds?: ReadonlySet<string>;
+}): RewardState {
+  const cards = getOfferableCardPool();
+  const boons = trinketLibrary.filter((entry) => !excludedBoonIds.includes(entry.id));
+  const trinkets = trinketLibrary.filter((entry) => !ownedTrinketIds.includes(entry.id));
+  const weights = resolveLootWeights({
+    source,
+    progress: lootProgress,
+    astralChanceBonus: gearAstralChanceBonus,
+    available: {
+      ...getGearLootAvailability(ownedUniqueIds),
+      card: cards.length > 0,
+      boon: boons.length > 0,
+      trinket: trinkets.length > 0,
+    },
+  });
+  const category = rollLootGroup(weights, rng);
+  switch (category) {
+    case "gear":
+      return {
+        ...createEmptyRewardState(),
+        rewardType: "gear",
+        choices: generateLootGearChoices(REWARD_CARD_CHOICES, rng, weights, ownedUniqueIds),
+      };
+    case "trinket":
+      return {
+        ...createEmptyRewardState(),
+        rewardType: "trinket",
+        choices: sampleItems(trinkets, REWARD_CARD_CHOICES, rng),
+      };
+    case "boon":
+      return { ...createEmptyRewardState(), rewardType: "boon", choices: sampleItems(boons, REWARD_CARD_CHOICES, rng) };
+    case "card":
+      return { ...createEmptyRewardState(), choices: selectRewardCards(runDeck, cards, REWARD_CARD_CHOICES, [], rng) };
   }
+}
+
+export function createBossRewardState(input: BossRewardInput): RewardState {
   return {
-    ...createEmptyRewardState(),
-    rewardType: "gear",
-    choices: generateGearRewardChoices(REWARD_CARD_CHOICES, rng, gearAstralChanceBonus, isBoss, ownedUniqueIds),
+    ...createLootRewardState({ ...input, source: "boss" }),
+    gold: computeRewardGold({
+      baseGold: input.gold,
+      bonusGold: input.bossBonus,
+      generousBonus: input.generousBonus,
+      wealthyBonus: input.wealthyBonus,
+      talentGoldPerCombat: input.talentGoldPerCombat,
+      trinketIds: input.trinketIds,
+      goldMultiplier: input.goldMultiplier ?? 1,
+    }),
+    materials: input.materials,
   };
-}
-
-function rollWildwoodRewardType(rng: () => number): "card" | "boon" | "gear" {
-  const roll = Math.floor(rng() * 3);
-  if (roll === 0) return "card";
-  if (roll === 1) return "boon";
-  return "gear";
-}
-
-export function computeWildwoodTrinketChance(): number {
-  return GEAR_REWARD_PERMANENT_TRINKET_CHANCE.normal / 3;
 }
 
 export function createWildwoodRewardState(
   runDeck: BattleCard[],
   rng: () => number,
+  lootProgress: LootProgress,
   gearAstralChanceBonus = 0,
   excludedBoonIds: string[] = [],
   ownedTrinketIds: string[] = [],
   ownedUniqueIds: ReadonlySet<string> = new Set(),
-): CardRewardState | BoonRewardState | TrinketRewardState | GearRewardState {
-  const rewardType = rollWildwoodRewardType(rng);
-  if (rewardType === "gear") {
-    return createGearOrPermanentTrinketReward(ownedTrinketIds, rng, gearAstralChanceBonus, false, ownedUniqueIds);
-  }
-  if (rewardType === "boon") {
-    const choices = sampleTrinketRewardChoices(excludedBoonIds, rng);
-    if (choices.length > 0) {
-      return {
-        ...createEmptyRewardState(),
-        rewardType: "boon",
-        choices,
-      };
-    }
-  }
-  return {
-    ...createEmptyRewardState(),
-    rewardType: "card",
-    choices: selectRewardCards(runDeck, getOfferableCardPool(), REWARD_CARD_CHOICES, [], rng),
-  };
+): RewardState {
+  return createLootRewardState({
+    source: "wildwood",
+    runDeck,
+    rng,
+    lootProgress,
+    gearAstralChanceBonus,
+    excludedBoonIds,
+    ownedTrinketIds,
+    ownedUniqueIds,
+  });
 }
 
-export function createCombatRewardState({
-  battleState,
-  runDeck,
-  gold,
-  eliteBonus,
-  generousBonus,
-  wealthyBonus,
-  talentGoldPerCombat,
-  materials,
-  destinations,
-  trinketIds,
-  goldMultiplier = 1,
-  rng,
-  excludedBoonIds = [],
-  ownedTrinketIds = [],
-  ownedUniqueIds = new Set(),
-  gearAstralChanceBonus = 0,
-}: CombatRewardInput): CardRewardState | BoonRewardState | TrinketRewardState | GearRewardState {
-  const goldTotal = computeRewardGold({
-    baseGold: gold,
-    bonusGold: eliteBonus,
-    generousBonus,
-    wealthyBonus,
-    talentGoldPerCombat,
-    trinketIds,
-    goldMultiplier,
-  });
-
-  const createCardReward = (): CardRewardState => ({
-    ...createEmptyRewardState(destinations),
-    rewardType: "card",
-    choices: selectRewardCards(runDeck, getOfferableCardPool(), REWARD_CARD_CHOICES, [], rng),
-    gold: goldTotal,
-    materials,
-  });
-
-  const enemyType = battleState.currentEnemy.enemyType === ENEMY_TYPES.ELITE ? ENEMY_TYPES.ELITE : ENEMY_TYPES.NORMAL;
-  const category = rollEncounterRewardCategory(enemyType, rng);
-
-  switch (category) {
-    case "card":
-      return createCardReward();
-    case "boon": {
-      const choices = sampleTrinketRewardChoices(excludedBoonIds, rng);
-      if (choices.length === 0) return createCardReward();
-      return {
-        ...createEmptyRewardState(destinations),
-        rewardType: "boon",
-        choices,
-        gold: goldTotal,
-        materials,
-      };
-    }
-    case "trinket": {
-      const choices = sampleTrinketRewardChoices(ownedTrinketIds, rng);
-      if (choices.length === 0) {
-        return {
-          ...createFallbackGearRewardState(false, rng, gearAstralChanceBonus, ownedUniqueIds),
-          destinations,
-          gold: goldTotal,
-          materials,
-        };
-      }
-      return {
-        ...createEmptyRewardState(destinations),
-        rewardType: "trinket",
-        choices,
-        gold: goldTotal,
-        materials,
-      };
-    }
-    case "gear":
-      return {
-        ...createGearRewardState(
-          () => rollCombatGearRewardRarity(enemyType, rng, gearAstralChanceBonus),
-          rng,
-          ownedUniqueIds,
-        ),
-        destinations,
-        gold: goldTotal,
-        materials,
-      };
-  }
+export function createCombatRewardState(input: CombatRewardInput): RewardState {
+  const source = input.battleState.currentEnemy.enemyType === ENEMY_TYPES.ELITE ? "elite" : "normal";
+  return {
+    ...createLootRewardState({ ...input, source }),
+    gold: computeRewardGold({
+      baseGold: input.gold,
+      bonusGold: input.eliteBonus,
+      generousBonus: input.generousBonus,
+      wealthyBonus: input.wealthyBonus,
+      talentGoldPerCombat: input.talentGoldPerCombat,
+      trinketIds: input.trinketIds,
+      goldMultiplier: input.goldMultiplier ?? 1,
+    }),
+    materials: input.materials,
+    destinations: input.destinations,
+  };
 }

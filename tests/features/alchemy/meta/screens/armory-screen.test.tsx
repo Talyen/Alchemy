@@ -253,7 +253,7 @@ describe("ArmoryScreen core", () => {
 
     await user.click(screen.getByLabelText("Right accessory equipment slot"));
     await waitFor(() => {
-      expect(screen.getByText("Empty")).toBeTruthy();
+      expect(screen.getByRole("img", { name: "Empty" })).toBeTruthy();
       expect(document.querySelectorAll('[data-testid="armory-inventory-item"]')).toHaveLength(0);
       expect(document.querySelectorAll('[data-testid="armory-inventory-filler"]')).toHaveLength(6);
     });

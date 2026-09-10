@@ -36,17 +36,27 @@ for (const tab of ["heroes", "cards", "bestiary", "trinkets", "uniques"] satisfi
       expect(button.querySelector(".shine-border")).toBeNull();
     });
 
-    it("shows neutral Shine on locked or undiscovered entries only during hover or focus", () => {
+    it("shows matching keyword Shine and glow on locked or undiscovered entries during hover or focus", () => {
+      const unlocked = render(<CollectionTile item={{ ...item, discovered: true }} />);
+      let button = screen.getByRole("button", { name: /^Inspect / });
+      fireEvent.mouseEnter(button.parentElement!);
+      const unlockedColor = button.querySelector<HTMLElement>(".shine-border-paint")?.style.backgroundColor;
+      expect(unlockedColor).toBeTruthy();
+      expect(button.className).toContain("card-interactive-glow");
+      fireEvent.mouseLeave(button.parentElement!);
+      unlocked.unmount();
+      useUiStore.setState({ hoveredCardId: null, shimmerState: null });
+
       render(<CollectionTile item={{ ...item, discovered: false }} />);
-      const button = screen.getByRole("button", { name: /^Inspect / });
+      button = screen.getByRole("button", { name: /^Inspect / });
       expect(button.querySelector(".shine-border")).toBeNull();
       fireEvent.mouseEnter(button.parentElement!);
-      expect(button.querySelector<HTMLElement>(".shine-border")?.style.backgroundColor).toBe("rgb(203, 213, 225)");
-      expect(button.className).not.toContain("card-interactive-glow");
+      expect(button.querySelector<HTMLElement>(".shine-border-paint")?.style.backgroundColor).toBe(unlockedColor);
+      expect(button.className).toContain("card-interactive-glow");
       fireEvent.mouseLeave(button.parentElement!);
       expect(button.querySelector(".shine-border")).toBeNull();
       fireEvent.focus(button);
-      expect(button.querySelector<HTMLElement>(".shine-border")?.style.backgroundColor).toBe("rgb(203, 213, 225)");
+      expect(button.querySelector<HTMLElement>(".shine-border-paint")?.style.backgroundColor).toBe(unlockedColor);
       fireEvent.blur(button);
       expect(button.querySelector(".shine-border")).toBeNull();
     });

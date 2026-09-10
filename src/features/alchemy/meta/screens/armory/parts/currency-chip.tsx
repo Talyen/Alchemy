@@ -1,3 +1,4 @@
+import { Fragment, type ReactNode } from "react";
 import { useChangeToken } from "../../../../shared/ui/battle/use-change-token";
 import { cn } from "@/lib/utils";
 import type { CraftingCurrencyDefinition } from "@/lib/gear";
@@ -5,6 +6,18 @@ import { PortaledTooltip } from "../../../../shared/ui/portaled-tooltip";
 import { TooltipBody, TooltipHeader } from "../../../../shared/ui/tooltip-panel";
 import { useHoverVisible } from "../../../../shared/ui/use-hover-visible";
 import { surfaceSelectedRingClass } from "../../../../shared/config";
+
+function renderBoldSegments(text: string): ReactNode {
+  return text.split(/\*\*(.+?)\*\*/g).map((part, index) =>
+    index % 2 === 1 ? (
+      <strong key={index} className="font-semibold text-foreground">
+        {part}
+      </strong>
+    ) : (
+      <Fragment key={index}>{part}</Fragment>
+    ),
+  );
+}
 
 export function CurrencyChip({
   currency,
@@ -58,13 +71,9 @@ export function CurrencyChip({
       <PortaledTooltip triggerRef={triggerRef} visible={visible} className="armory-inventory-tooltip !shadow-none">
         <TooltipHeader>{currency.displayName}</TooltipHeader>
         <TooltipBody>
-          <p>{currency.tooltipEffect}</p>
+          <p>{renderBoldSegments(currency.tooltipEffect)}</p>
           {showDescription ? <p className="mt-2">{currency.description}</p> : null}
-          {disabled ? (
-            <p className="mt-2">
-              {count === 0 ? "Salvage gear to obtain crafting currency." : "Crafting is unavailable."}
-            </p>
-          ) : null}
+          {disabled && count > 0 ? <p className="mt-2">Crafting is unavailable.</p> : null}
         </TooltipBody>
       </PortaledTooltip>
       {onSelect ? (

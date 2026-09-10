@@ -1,6 +1,4 @@
-import { Gem } from "lucide-react";
-
-import { pileDiscardArt, pileDrawArt } from "@/features/alchemy/shared/config/game-data-catalog";
+import { battleManaCrystal, pileDiscardArt, pileDrawArt } from "@/features/alchemy/shared/config/game-data-catalog";
 import { cn } from "@/lib/utils";
 
 import { cardArtImageClass, cardSurfaceClass, pileCardWidthClass } from "../../config";
@@ -64,21 +62,22 @@ export function ManaPanel({ mana, maxMana, gold }: { mana: number; maxMana: numb
   return (
     <div className="flex flex-col items-center gap-2" data-testid="mana-panel" data-mana={mana}>
       <GoldPill amount={gold} />
-      <div className="flex items-center justify-center gap-1.5">
+      <div className="flex items-center justify-center gap-1.5" role="img" aria-label={`Mana: ${mana} / ${maxMana}`}>
         {Array.from({ length: displayCount }).map((_, index) => {
           const isFilled = index < mana;
           const isOverflow = index >= maxMana;
           return (
-            <Gem
+            <img
               key={`mana-${index}-${manaToken}-${isFilled}`}
+              src={battleManaCrystal}
+              alt=""
+              draggable={false}
               className={cn(
-                "h-[calc(1.8225*var(--content-rem,1rem))] w-[calc(1.8225*var(--content-rem,1rem))] transition-opacity duration-200",
+                "h-[calc(1.8225*var(--content-rem,1rem))] w-[calc(1.8225*var(--content-rem,1rem))] object-contain transition-opacity duration-200 select-none",
                 isFilled && "mana-gem-active",
-                isFilled && isOverflow && "text-sky-300 drop-shadow-mana-overflow-glow",
-                isFilled && !isOverflow && "text-mana-gem",
-                !isFilled && "text-mana-gem/20",
+                isFilled && isOverflow && "brightness-125 drop-shadow-mana-overflow-glow",
+                !isFilled && "opacity-20",
               )}
-              strokeWidth={2.2}
             />
           );
         })}

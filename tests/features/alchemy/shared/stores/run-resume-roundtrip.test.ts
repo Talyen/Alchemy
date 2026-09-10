@@ -1,7 +1,11 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import "../../../../helpers/mock-audio";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { defaultBattleState } from "@/lib/battle";
 import { cardLibrary, getCardKeywords } from "@/lib/game-data";
+import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
+import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
+import { finalizeRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import { createEmptyRewardState } from "@/lib/active-run-session";
 import {
   emptyAlchemistState,
@@ -136,15 +140,18 @@ describe("homestead hydrate parity", () => {
 });
 
 describe("interrupted mid-claim rewards", () => {
-  it("keeps both spoils and companion gifts when the claim is interrupted", () => {
+  it("resumes only the bonus after the primary reward has committed", () => {
     const primary = cardLibrary.find((card) => card.id === "slash")!;
     const companion = cardLibrary.find((card) => card.effects.some((effect) => effect.kind === "summon-companion"))!;
     setRunSession({
       hasActiveRun: true,
-      rewardClaimInFlight: true,
       rewardState: { ...createEmptyRewardState(), rewardType: "card", choices: [primary], gold: 7 },
       companionRewardCards: [companion],
     });
+    const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo: vi.fn() }));
+    handlers.claimRewardChoice(primary.id);
+    expect(readRunSession().rewardClaimInFlight).toBe(true);
+    const claimedDeck = readActiveRun().runDeck;
 
     const snap = snapshotRun(ROUTE_SCREENS.REWARDS);
     expect(snap.interruptedFlow.kind).toBe("companion-reward");
@@ -166,9 +173,12 @@ describe("interrupted mid-claim rewards", () => {
     const restored = readRunSession().rewardState;
     expect(restored.rewardType).toBe("card");
     if (restored.rewardType === "card") {
-      expect(restored.choices.map((choice) => choice.id)).toEqual([primary.id]);
+      expect(restored.choices.map((choice) => choice.id)).toEqual([companion.id]);
     }
-    expect(readRunSession().companionRewardCards?.map((choice) => choice.id)).toEqual([companion.id]);
+    expect(restored.materials).toEqual(emptyInventory());
+    expect(readRunSession().companionRewardCards).toBeNull();
+    handlers.skipRewards();
+    expect(readActiveRun().runDeck).toEqual(claimedDeck);
   });
 });
 
@@ -235,6 +245,48 @@ describe.each(["companion", "archery", "wish", "nature"] as const)("%s bonus rew
     expect(readGameplayState().runProfile.materialInventory).toEqual(profileBefore.materialInventory);
     expect(readActiveRun().runMaterialsEarned).toEqual(snap.runMaterialsEarned);
     expect(readActiveRun().rng).toEqual(snap.rng);
+    expect(
+      finalizeRewardState({ rewardState: readRunSession().rewardState, companionRewardCards: null }).materials,
+    ).toEqual(emptyInventory());
+  });
+});
+
+describe("primary reward resume", () => {
+  it("preserves victory gold and materials when primary choices are unavailable but destinations remain", () => {
+    startLabyrinthRun();
+    setRunSession({
+      rewardState: {
+        ...createEmptyRewardState(["Card Shop"]),
+        choices: [{ ...cardLibrary.find((card) => card.id === "slash")!, id: "no-such-primary-card" }],
+        selectedId: "no-such-primary-card",
+        gold: 7,
+        materials: { ...emptyInventory(), wood: 3 },
+        lastVictoryContentSystem: "labyrinth",
+        lastVictoryEnemyType: "elite",
+      },
+      companionRewardCards: null,
+    });
+    const snap = snapshotRun(ROUTE_SCREENS.REWARDS);
+    expect(snap.interruptedFlow.kind).toBe("primary-reward");
+    resetRunDomainStore();
+    restoreRun(snap, {}, {});
+
+    expect(readGameplayState().run.navigation.screen).toBe(ROUTE_SCREENS.REWARDS);
+    const restored = readRunSession().rewardState;
+    expect(restored.destinations).toEqual(["Card Shop"]);
+    expect(restored.gold).toBe(7);
+    expect(restored.materials).toEqual({ ...emptyInventory(), wood: 3 });
+    expect(restored.lastVictoryContentSystem).toBe("labyrinth");
+    expect(restored.lastVictoryEnemyType).toBe("elite");
+    const retrySnapshot = snapshotRun(ROUTE_SCREENS.REWARDS);
+    resetRunDomainStore();
+    restoreRun(retrySnapshot, {}, {});
+    expect(readRunSession().rewardState).toEqual(restored);
+    const materialsBefore = readActiveRun().runMaterialsEarned.wood;
+    const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo: vi.fn() }));
+    handlers.skipRewards();
+    handlers.skipRewards();
+    expect(readActiveRun().runMaterialsEarned.wood).toBe(materialsBefore + 3);
   });
 });
 
