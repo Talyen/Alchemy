@@ -87,7 +87,7 @@ export function scaleEnemyAbilityDamage(
   }
   return {
     ...effect,
-    amount,
+    amount: effect.amount > 0 ? Math.max(1, amount) : amount,
     ...(modifiers.some((modifier) => modifier.kind === "enemy-attacks-gain-leech") ? { lifesteal: true } : {}),
   };
 }

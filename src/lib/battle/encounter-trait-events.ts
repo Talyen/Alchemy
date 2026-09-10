@@ -1,8 +1,11 @@
 import { recordEnemyAbilityActivation } from "./battle-metrics";
-import { cardHasDamageType } from "./card-classification";
 import type { BattleCard } from "@/lib/game-data";
 import { applyEnemyHealingWithCombatText, mergeCombatText } from "./combat-text";
-import { applyEnemyLeechHealing, processEnemyDamageEffect } from "./enemy-attack-damage";
+import {
+  applyEnemyLeechHealing,
+  processEnemyDamageEffect,
+  resolvePendingCinderSkinReaction,
+} from "./enemy-attack-damage";
 import { addEnemyMitigationWithCombatText } from "./encounter-trait-health-threshold";
 import { isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-traits";
 import { getBattleRng, rollPercent } from "@/lib/rng";
@@ -155,18 +158,7 @@ export function processEncounterTraitCardAction(
         combatTexts,
       );
   }
-  if (
-    cardHasDamageType(card, "physical") &&
-    hasEnemyTrait(nextState, "cinder-skin") &&
-    !nextState.flags.cinderSkinUsedThisTurn
-  )
-    nextState = dealTraitDamage(
-      setFlag(recordEnemyAbilityActivation(nextState, "cinder-skin"), "cinderSkinUsedThisTurn", true),
-      "burn",
-      1,
-      combatTexts,
-    );
-  return nextState;
+  return resolvePendingCinderSkinReaction(nextState, combatTexts);
 }
 
 export function applyEncounterThorns(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {

@@ -9,7 +9,11 @@ import {
 } from "@/lib/battle";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
-import type { BattleCard, BestiaryEntry } from "@/lib/game-data";
+import { companionLibrary, enemyById, type BattleCard, type BestiaryEntry } from "@/lib/game-data";
+import { resolvePendingCinderSkinReaction } from "@/lib/battle/enemy-attack-damage";
+import { damageEnemyHealth } from "@/lib/battle/types";
+import { normalizePersistedBattleState } from "@/lib/validation/normalize-persisted-battle-state";
+import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { makeTestBattleState, patchBattleState } from "../../fixtures/battle";
 import { defaultCcState } from "../../fixtures/default-battle-state";
 
@@ -254,7 +258,7 @@ describe("encounter trait card events", () => {
     expect(result.state.playerStatuses.burn).toBeGreaterThan(0);
   });
 
-  it("preserves Cinder Skin for a Physical card after a spell", () => {
+  it("shares Cinder Skin between spells and Physical cards", () => {
     const spell = card({ id: "spell", uid: 1, effects: [{ kind: "damage", damageType: "freeze", amount: 2 }] });
     const physical = card({ id: "physical", uid: 2 });
     const currentEnemy = {
@@ -263,8 +267,8 @@ describe("encounter trait card events", () => {
     };
     const state = makeTestBattleState({ currentEnemy, hand: [spell, physical], mana: 2, playerHealth: 10 });
     const afterSpell = playBattleCardResolved(state, spell.id, 0).state;
-    expect(afterSpell.playerStatuses.burn).toBe(0);
-    expect(afterSpell.flags.cinderSkinUsedThisTurn).toBe(false);
+    expect(afterSpell.playerStatuses.burn).toBe(1);
+    expect(afterSpell.flags.cinderSkinUsedThisTurn).toBe(true);
     const afterPhysical = playBattleCardResolved(afterSpell, physical.id, 0).state;
     expect(afterPhysical.playerStatuses.burn).toBe(1);
     expect(afterPhysical.flags.cinderSkinUsedThisTurn).toBe(true);
@@ -491,5 +495,119 @@ describe("encounter trait card events", () => {
     expect(result.enemyStatuses.bleed).toBe(6);
     expect(result.enemyMitigation.armor).toBe(0);
     expect(result.enemyMitigation.block).toBe(0);
+  });
+});
+
+describe("Cinder Skin Health damage reactions", () => {
+  const makeState = () =>
+    patchBattleState({
+      currentEnemy: enemyById["fire-elemental"],
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      playerHealth: 30,
+      playerMaxHealth: 30,
+      rng: () => 0.99,
+      hand: [card()],
+      mana: 1,
+    });
+
+  it("lets a Companion trigger the shared reaction before cards and DoTs", () => {
+    const state = { ...makeState(), activeCompanion: companionLibrary.wolf };
+    const afterCompanion = processCompanionTurnStart(state, []);
+    expect(afterCompanion.playerHealth).toBe(29);
+    expect(afterCompanion.flags.cinderSkinUsedThisTurn).toBe(true);
+    const afterCard = playBattleCardResolved(afterCompanion, afterCompanion.hand[0]!.id, 0).state;
+    const afterDot = tickEnemyStatuses({ ...afterCard, enemyStatuses: { ...afterCard.enemyStatuses, poison: 2 } }, []);
+    expect(afterDot.playerHealth).toBe(29);
+    expect(afterDot.playerStatuses.burn).toBe(1);
+  });
+
+  it("triggers from damage over time, including a lethal tick", () => {
+    for (const health of [1, 100]) {
+      const state = makeState();
+      const next = tickEnemyStatuses(
+        { ...state, enemyHealth: health, enemyStatuses: { ...state.enemyStatuses, poison: 2 } },
+        [],
+      );
+      expect(next.playerHealth).toBe(29);
+      expect(next.flags.cinderSkinUsedThisTurn).toBe(true);
+    }
+  });
+
+  it("does not spend the reaction on blocked or dodged cards", () => {
+    for (const dodge of [false, true]) {
+      const state = makeState();
+      const prevented = playBattleCardResolved(
+        {
+          ...state,
+          rng: () => (dodge ? 0 : 0.99),
+          enemyMitigation: { ...state.enemyMitigation, block: dodge ? 0 : 20 },
+        },
+        state.hand[0]!.id,
+        0,
+      ).state;
+      expect(prevented.enemyHealth).toBe(100);
+      expect(prevented.flags.cinderSkinUsedThisTurn).toBe(false);
+      expect(prevented.playerHealth).toBe(30);
+    }
+  });
+
+  it("retaliates after Consume damage from a non-damaging card", () => {
+    const played = card({ consume: true, effects: [{ kind: "player-status", status: "forge", amount: 1 }] });
+    const state = makeState();
+    const result = playBattleCardResolved(
+      { ...state, hand: [played], gearEffects: { ...state.gearEffects, burnOnConsume: 1 } },
+      played.id,
+      0,
+    ).state;
+    expect(result.playerHealth).toBe(29);
+    expect(result.flags.pendingCinderSkinReaction).toBe(false);
+    expect(result.flags.cinderSkinUsedThisTurn).toBe(true);
+  });
+
+  it("retains the first damage trigger even if Second Wind restores the lost Health", () => {
+    const state = makeState();
+    const played = card({ effects: [{ kind: "damage", damageType: "physical", amount: 2 }] });
+    const currentEnemy = {
+      ...state.currentEnemy,
+      traits: [...state.currentEnemy.traits, ...enemyWith("second-wind").traits],
+    };
+    const result = playBattleCardResolved(
+      { ...state, currentEnemy, enemyHealth: 51, hand: [played] },
+      played.id,
+      0,
+    ).state;
+    expect(result.enemyHealth).toBeGreaterThan(51);
+    expect(result.playerHealth).toBe(29);
+    expect(result.flags.pendingCinderSkinReaction).toBe(false);
+  });
+
+  it("drains a saved pending reaction once without retriggering on counter-damage", () => {
+    const state = makeState();
+    const defended = {
+      ...state,
+      playerStatuses: { ...state.playerStatuses, block: 1 },
+      gearEffects: { ...state.gearEffects, stunOnBlockDepleted: 1 },
+    };
+    const queued = damageEnemyHealth(defended, 1).state;
+    const resumed = normalizePersistedBattleState(queued);
+    expect(resumed.flags.pendingCinderSkinReaction).toBe(true);
+    const resolved = resolvePendingCinderSkinReaction(resumed, []);
+    expect(resolved.playerHealth).toBe(30);
+    expect(resolved.enemyHealth).toBe(98);
+    expect(resolved.flags.pendingCinderSkinReaction).toBe(false);
+    expect(resolvePendingCinderSkinReaction(resolved, [])).toBe(resolved);
+  });
+
+  it("keeps room scaling and retaliates against a lethal card", () => {
+    const state = makeState();
+    const result = playBattleCardResolved(
+      { ...state, enemyHealth: 1, roomScalingMultiplier: 2 },
+      state.hand[0]!.id,
+      0,
+    ).state;
+    expect(result.enemyHealth).toBe(0);
+    expect(result.playerHealth).toBe(28);
+    expect(result.flags.cinderSkinUsedThisTurn).toBe(true);
   });
 });

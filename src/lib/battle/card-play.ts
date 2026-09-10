@@ -1,3 +1,4 @@
+import { resolvePendingCinderSkinReaction } from "./enemy-attack-damage";
 import { prepareTalentCardPlay } from "./talent-card-play";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import { drawFromState, applyDrawResult } from "./draw";
@@ -72,7 +73,10 @@ function isCardInHand(state: BattleState, card: BattleCard, index: number): bool
 
 export function applyMortarAndPestlePotionUse(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]) {
   if (!isPotionCard(card) || state.trinketEffects.mortarPestlePoisonOnPotionUse <= 0) return state;
-  return dealPlayerTypedHit(state, "poison", state.trinketEffects.mortarPestlePoisonOnPotionUse, combatTexts);
+  return resolvePendingCinderSkinReaction(
+    dealPlayerTypedHit(state, "poison", state.trinketEffects.mortarPestlePoisonOnPotionUse, combatTexts),
+    combatTexts,
+  );
 }
 
 function validateCardPlay(
@@ -352,5 +356,5 @@ export function playBattleCardResolved(
   nextState = handlePostPlayCardDestination(nextState, card, playerAlive, combatTexts);
   if (prepared.harvest) nextState = returnHarvestCard(nextState, card);
 
-  return { state: nextState, combatTexts };
+  return { state: resolvePendingCinderSkinReaction(nextState, combatTexts), combatTexts };
 }

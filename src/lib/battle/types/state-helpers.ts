@@ -160,8 +160,19 @@ export interface EnemyHitHealth {
 
 export function damageEnemyHealth(state: BattleState, damage: number): EnemyHitHealth {
   const previousHealth = state.enemyHealth;
+  const enemyHealth = clampHealth(previousHealth, -damage, state.enemyMaxHealth);
+  const triggersCinderSkin =
+    enemyHealth < previousHealth && hasEnemyTrait(state, "cinder-skin") && !state.flags.cinderSkinUsedThisTurn;
   return {
-    state: { ...state, enemyHealth: clampHealth(state.enemyHealth, -damage, state.enemyMaxHealth) },
+    state: {
+      ...state,
+      enemyHealth,
+      ...(triggersCinderSkin
+        ? {
+            flags: { ...state.flags, cinderSkinUsedThisTurn: true, pendingCinderSkinReaction: true },
+          }
+        : {}),
+    },
     previousHealth,
     enemyWasAlive: previousHealth > 0,
   };

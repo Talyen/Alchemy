@@ -1,3 +1,4 @@
+import { resolvePendingCinderSkinReaction } from "./enemy-attack-damage";
 import {
   enemyAbilityDealsDamage,
   getEnemyAbilityCard,
@@ -280,9 +281,13 @@ export function applyEnemyAbility(state: BattleState, card: BattleCard, combatTe
   let nextState = recordEnemyAbilityUse({ ...state, lastEnemyAbilityId: card.id }, card.id);
   if (damaging) nextState = recordEnemyAttackAction(nextState);
   if (context.brawlerPenalty) nextState = setFlag(nextState, "enemyBrawlerDamagePenalty", false);
-  nextState = card.effects.reduce((next, effect) => applyEnemyEffect(next, effect, context, combatTexts), nextState);
+  nextState = card.effects.reduce(
+    (next, effect) =>
+      resolvePendingCinderSkinReaction(applyEnemyEffect(next, effect, context, combatTexts), combatTexts),
+    nextState,
+  );
   if (!damaging || nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
-  return applyAbilityFollowups(nextState, context, combatTexts);
+  return resolvePendingCinderSkinReaction(applyAbilityFollowups(nextState, context, combatTexts), combatTexts);
 }
 
 export function processEnemyAbility(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {

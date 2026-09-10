@@ -1,3 +1,4 @@
+import { resolvePendingCinderSkinReaction } from "./enemy-attack-damage";
 import { hasEncounterBenefit } from "./types";
 import { applyHealingWithCombatText } from "./combat-text";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
@@ -182,7 +183,7 @@ export function endPlayerTurn(state: BattleState): EndPlayerTurnResolution {
     hasEncounterBenefit(state, "restorative") && state.enemyHealth > 0 && !isPlayerDefeated(state)
       ? applyHealingWithCombatText(state, LABYRINTH_MODIFIER_CONFIG.healingPerTurn, endingTexts)
       : state;
-  const turnEndedState = reducePlayerSkipTurns(healedState);
+  const turnEndedState = reducePlayerSkipTurns(resolvePendingCinderSkinReaction(healedState, endingTexts));
   const nextState = beginEnemyPhase(turnEndedState);
 
   if (turnEndedState.playerStatuses.haste > 0) {

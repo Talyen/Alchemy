@@ -24,7 +24,7 @@ import { applyLeechHealing, computeLeechHeal, scalePlayerLeechHeal } from "./dam
 import { applyPoisonTalentRiders } from "./damage-status-riders";
 import { mergeCombatText } from "./combat-text";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
-import { applyEnemyLeechHealing } from "./enemy-attack-damage";
+import { applyEnemyLeechHealing, resolvePendingCinderSkinReaction } from "./enemy-attack-damage";
 import { tryPoisonStunProc } from "./player-typed-hit";
 import { payPendingBleedLeech } from "./damage-rider-leech";
 import { dealEnemyDotTick } from "./dot-resolve";
@@ -131,11 +131,11 @@ export function tickEnemyStatuses(state: BattleState, combatTexts: CombatTextEve
     if (state.pendingBleedLeechHealing === 0) return state;
     return { ...state, pendingBleedLeechHealing: 0 };
   }
-  let nextState = tickBurn(state, combatTexts);
+  let nextState = resolvePendingCinderSkinReaction(tickBurn(state, combatTexts), combatTexts);
   if (nextState.enemyHealth <= 0) return nextState;
-  nextState = tickPoison(nextState, combatTexts);
+  nextState = resolvePendingCinderSkinReaction(tickPoison(nextState, combatTexts), combatTexts);
   if (nextState.enemyHealth <= 0) return nextState;
-  nextState = tickBleed(nextState, combatTexts);
+  nextState = resolvePendingCinderSkinReaction(tickBleed(nextState, combatTexts), combatTexts);
   return nextState;
 }
 
@@ -217,10 +217,10 @@ export function tickPlayerStatuses(state: BattleState, combatTexts: CombatTextEv
     if (nextState.pendingEnemyBleedLeechHealing !== 0) {
       nextState = { ...nextState, pendingEnemyBleedLeechHealing: 0 };
     }
-    return resolvePlayerCrowdControlTriggers(nextState, combatTexts);
+    return resolvePendingCinderSkinReaction(resolvePlayerCrowdControlTriggers(nextState, combatTexts), combatTexts);
   }
   let nextState = tickPlayerBurn(state, combatTexts);
   nextState = tickPlayerPoison(nextState, combatTexts);
   nextState = tickPlayerBleed(nextState, combatTexts);
-  return resolvePlayerCrowdControlTriggers(nextState, combatTexts);
+  return resolvePendingCinderSkinReaction(resolvePlayerCrowdControlTriggers(nextState, combatTexts), combatTexts);
 }

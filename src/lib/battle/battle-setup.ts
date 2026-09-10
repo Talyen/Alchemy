@@ -1,3 +1,4 @@
+import { resolvePendingCinderSkinReaction } from "./enemy-attack-damage";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import {
@@ -181,7 +182,7 @@ export function createBattleStartState(options: CreateBattleStateOptions): Battl
   };
   const startFreeze = battleTalents.startFreeze + battleGearEffects.startFreeze;
   if (startFreeze <= 0) return state;
-  return dealPlayerTypedHit(state, "freeze", startFreeze, []);
+  return resolvePendingCinderSkinReaction(dealPlayerTypedHit(state, "freeze", startFreeze, []), []);
 }
 
 export function createBattleState(options: CreateBattleStateOptions): BattleState {

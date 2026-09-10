@@ -288,7 +288,7 @@ export interface EnemyDamageResult {
   landed: boolean;
 }
 
-export function resolveEnemyDamageEffect(
+function resolveEnemyDamageEffectCore(
   state: BattleState,
   effect: EnemyAttackEffect & { kind: "damage" },
   combatTexts: CombatTextEvent[],
@@ -392,6 +392,29 @@ export function resolveEnemyDamageEffect(
   }
 
   return { state: nextState, ...outcome };
+}
+
+export function resolvePendingCinderSkinReaction(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+  if (!state.flags.pendingCinderSkinReaction) return state;
+  const ready = {
+    ...state,
+    flags: { ...state.flags, cinderSkinUsedThisTurn: true, pendingCinderSkinReaction: false },
+  };
+  return resolveEnemyDamageEffectCore(
+    recordEnemyAbilityActivation(ready, "cinder-skin"),
+    { kind: "damage", damageType: "burn", amount: scaleByRoomMultiplier(ready, 1) },
+    combatTexts,
+  ).state;
+}
+
+export function resolveEnemyDamageEffect(
+  state: BattleState,
+  effect: EnemyAttackEffect & { kind: "damage" },
+  combatTexts: CombatTextEvent[],
+  options: EnemyDamageOptions = {},
+): EnemyDamageResult {
+  const result = resolveEnemyDamageEffectCore(state, effect, combatTexts, options);
+  return { ...result, state: resolvePendingCinderSkinReaction(result.state, combatTexts) };
 }
 
 export function processEnemyDamageEffect(

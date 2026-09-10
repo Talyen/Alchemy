@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
+import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
+import { patchBattleState, makeTestCard } from "../../fixtures/battle";
 import { initializeEnemyState, scaleEnemyAbilityDamage } from "@/lib/battle/battle-enemy-setup";
-import { enemyBestiary, type BestiaryEntry, type DifficultyModifier } from "@/lib/game-data";
+import {
+  enemyBestiary,
+  getEnemyAbilities,
+  type BattleCardEffect,
+  type BestiaryEntry,
+  type DifficultyModifier,
+} from "@/lib/game-data";
 import {
   ENEMY_BOSS_REGENERATION,
   ENEMY_BASE_REGENERATION,
@@ -135,5 +143,62 @@ describe("initializeEnemyState", () => {
     const mods: DifficultyModifier[] = [{ kind: "enemy-starting-armor", amount: 3 }];
     const result = initializeEnemyState(livingArmor, 1, mods);
     expect(result.startingArmor).toBe(3 + LIVING_ARMOR_STARTING_ARMOR);
+  });
+});
+
+describe("enemy ability damage floor", () => {
+  it("keeps every positive canonical damage effect at least 1 at early depths", () => {
+    for (const enemy of enemyBestiary) {
+      for (const depth of [0, 1, 2, 3, 5, 7]) {
+        const setup = initializeEnemyState(enemy, depth, []);
+        const state = { ...setup, currentEnemy: enemy, difficultyModifiers: [] };
+        const checkEffects = (effects: readonly BattleCardEffect[]) => {
+          for (const effect of effects) {
+            if (effect.kind === "damage" && effect.amount > 0) {
+              expect(
+                scaleEnemyAbilityDamage(state, effect).amount,
+                `${enemy.id} at depth ${depth}`,
+              ).toBeGreaterThanOrEqual(1);
+            }
+            if (effect.kind === "chance") {
+              checkEffects(effect.successEffects);
+              checkEffects(effect.failureEffects);
+            }
+            if (effect.kind === "repeat-over-turns") checkEffects(effect.effects);
+          }
+        };
+        for (const ability of getEnemyAbilities(enemy)) checkEffects(ability.effects);
+      }
+    }
+  });
+
+  it("retains zero-base effects and applies the floor after difficulty scaling", () => {
+    const state = {
+      currentEnemy: getEnemy("giant-snake"),
+      roomScalingMultiplier: 1,
+      difficultyModifiers: [{ kind: "enemy-damage-multiplier", amount: 0.01 }] as DifficultyModifier[],
+    };
+    for (const amount of [0, 0.1, 1, 6]) {
+      expect(scaleEnemyAbilityDamage(state, { kind: "damage", damageType: "physical", amount }).amount).toBe(
+        amount > 0 ? 1 : 0,
+      );
+    }
+  });
+
+  it("lets Block, Armor, and Dodge prevent a minimum-damage hit", () => {
+    const state = patchBattleState({
+      currentEnemy: getEnemy("giant-snake"),
+      roomScalingMultiplier: 1.07,
+      rng: () => 0.99,
+    });
+    const ability = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 1 }] });
+    expect(applyEnemyAbility(state, ability, []).playerHealth).toBe(state.playerHealth - 1);
+    for (const defense of [
+      { ...state, playerStatuses: { ...state.playerStatuses, block: 1 } },
+      { ...state, playerStatuses: { ...state.playerStatuses, armor: 1 } },
+      { ...state, rng: () => 0 },
+    ]) {
+      expect(applyEnemyAbility(defense, ability, []).playerHealth).toBe(state.playerHealth);
+    }
   });
 });

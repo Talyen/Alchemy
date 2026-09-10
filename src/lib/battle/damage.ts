@@ -1,3 +1,4 @@
+import { resolvePendingCinderSkinReaction } from "./enemy-attack-damage";
 import { applyEncounterThorns } from "./encounter-trait-events";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import { UNIQUE_GEAR_COMBAT } from "../game-constants";
@@ -93,5 +94,5 @@ export function dealDamageToEnemy(
       result = dealPlayerTypedHit(result, "bleed", bonuses.bleed, combatTexts);
     }
   }
-  return applyEncounterThorns(result, combatTexts);
+  return resolvePendingCinderSkinReaction(applyEncounterThorns(result, combatTexts), combatTexts);
 }

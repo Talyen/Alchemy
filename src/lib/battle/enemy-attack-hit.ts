@@ -15,6 +15,7 @@ import { applyCardEffects } from "./effect-handlers";
 import {
   computeIncomingEnemyAttackDamage,
   resolveEnemyDamageEffect,
+  resolvePendingCinderSkinReaction,
   type EnemyDamageOptions,
   type EnemyDamageResult,
 } from "./enemy-attack-damage";
@@ -148,7 +149,7 @@ export function resolveEnemyAttackHit(
   if (canDodge && hasEnemyTrait(state, "ravenous")) effect = { ...effect, lifesteal: true };
   const incomingDamage = computeIncomingEnemyAttackDamage(state, effect, damageOptions);
   const dodged = tryDodgeEnemyDamagePacket(state, combatTexts, canDodge, incomingDamage);
-  if (dodged) return { state: dodged, healthDamage: 0, landed: false };
+  if (dodged) return { state: resolvePendingCinderSkinReaction(dodged, combatTexts), healthDamage: 0, landed: false };
   return resolveEnemyDamageEffect(state, effect, combatTexts, {
     ...damageOptions,
     incomingDamage,

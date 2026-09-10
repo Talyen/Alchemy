@@ -1,3 +1,4 @@
+import { resolvePendingCinderSkinReaction } from "./enemy-attack-damage";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import { damageOnlyEffects } from "./damage-effect-selection";
 import { getCompanionBondEffects, type BattleCard, type TalentEffectManifest } from "@/lib/game-data";
@@ -142,6 +143,6 @@ export function resolveCompanionTurnStart(
       }
     }
 
-    return afterEffects;
+    return resolvePendingCinderSkinReaction(afterEffects, combatTexts);
   });
 }

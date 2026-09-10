@@ -2,6 +2,7 @@ import { recordEnemyAbilityActivation } from "./battle-metrics";
 import type { PlayerStatusId } from "@/lib/game-data";
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import {
+  damageEnemyHealth,
   addPlayerStatus,
   applyPlayerHealing,
   clampHealth,
@@ -94,10 +95,7 @@ function applyBloodCountessHealingReaction(
   const enemyWasAlive = state.enemyHealth > 0;
   const holyDamage = 1;
   if (combatTexts) mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "holy", amount: holyDamage });
-  const damagedState = {
-    ...state,
-    enemyHealth: clampHealth(state.enemyHealth, -holyDamage, state.enemyMaxHealth),
-  };
+  const damagedState = damageEnemyHealth(state, holyDamage).state;
   return payKillPayouts(recordEnemyAbilityActivation(damagedState, "blood-countess"), enemyWasAlive, combatTexts ?? []);
 }
 

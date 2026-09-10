@@ -1,3 +1,4 @@
+import { resolvePendingCinderSkinReaction } from "../enemy-attack-damage";
 import { resolveCompanionTurnStart } from "../companion-effects";
 import { hasEncounterBenefit } from "../types";
 import type { BattleCard, BattleCardEffect, BattleCardEffectKind } from "@/lib/game-data";
@@ -92,7 +93,7 @@ export function applyEffectByKind(
     nextState = resolveCompanionTurnStart(nextState, combatTexts, applyCardEffects);
     nextState = resolveCompanionTurnStart(nextState, combatTexts, applyCardEffects);
   }
-  return nextState;
+  return resolvePendingCinderSkinReaction(nextState, combatTexts);
 }
 
 function applySingleEffect(

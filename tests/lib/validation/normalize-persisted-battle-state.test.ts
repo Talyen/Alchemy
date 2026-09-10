@@ -46,6 +46,7 @@ describe("normalizePersistedBattleState", () => {
     }
     expect(normalized.flags.firstHolyCardFreeUsed).toBe(false);
     expect(normalized.flags.emberforgedUsedThisTurn).toBe(false);
+    expect(normalized.flags.pendingCinderSkinReaction).toBe(false);
   });
 
   it("defaults additive enemy trait flags for older battle snapshots", () => {

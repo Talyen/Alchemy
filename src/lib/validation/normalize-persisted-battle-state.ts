@@ -146,6 +146,7 @@ export function normalizePersistedBattleState(saved: Partial<BattleState>): Batt
     merged.flags.legacyEnemyThornsReady =
       merged.currentEnemy.traits.some((trait) => trait.id === "thorns") && merged.enemyStatuses.thorns > 0;
   }
+  merged.flags.pendingCinderSkinReaction = savedFlags.pendingCinderSkinReaction === true;
   merged.flags.previousCardWasArchery = savedFlags.previousCardWasArchery === true;
   merged.flags.previousCardWasNature = savedFlags.previousCardWasNature === true;
   merged.flags.companionNextAttackBonus = clampNonNegative(merged.flags.companionNextAttackBonus, 0);

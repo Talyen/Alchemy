@@ -1,3 +1,4 @@
+import { resolvePendingCinderSkinReaction } from "./enemy-attack-damage";
 import { hasEncounterBenefit, hasEnemyTrait } from "./types";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import type { BattleCard } from "@/lib/game-data";
@@ -28,7 +29,10 @@ function applyPlagueDoctorMask(state: BattleState, combatTexts: CombatTextEvent[
     { ...state, playerStatuses: { ...state.playerStatuses, poison: state.playerStatuses.poison - removed } },
     combatTexts,
   );
-  return dealPlayerTypedHit(cleansed, "poison", halveRounded(removed), combatTexts);
+  return resolvePendingCinderSkinReaction(
+    dealPlayerTypedHit(cleansed, "poison", halveRounded(removed), combatTexts),
+    combatTexts,
+  );
 }
 
 function computeDeathsDoorGraceRemaining(state: BattleState): number {
@@ -241,8 +245,11 @@ export function advanceToPlayerTurn(
     processPendingTurnStartEffects(applyPlagueDoctorMask(recovered, combatTexts), combatTexts),
     combatTexts,
   );
-  if (drawnState.gearEffects.healthPerTurn <= 0) return drawnState;
-  return applyHealingWithCombatText(drawnState, drawnState.gearEffects.healthPerTurn, combatTexts);
+  const healedState =
+    drawnState.gearEffects.healthPerTurn > 0
+      ? applyHealingWithCombatText(drawnState, drawnState.gearEffects.healthPerTurn, combatTexts)
+      : drawnState;
+  return resolvePendingCinderSkinReaction(healedState, combatTexts);
 }
 
 export function reduceSkipTurns(state: BattleState): BattleState {
