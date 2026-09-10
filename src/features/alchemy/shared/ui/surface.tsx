@@ -1,5 +1,6 @@
 import {
   type CSSProperties,
+  type AriaAttributes,
   type KeyboardEvent,
   type MouseEvent,
   type PointerEvent,
@@ -33,6 +34,7 @@ interface SurfaceProps {
   ariaLabel?: string;
   ariaDisabled?: boolean;
   ariaPressed?: boolean;
+  ariaCurrent?: AriaAttributes["aria-current"];
   buttonRef?: Ref<HTMLButtonElement> | undefined;
   surfaceRef?: Ref<HTMLDivElement> | undefined;
   testId?: string;
@@ -94,6 +96,7 @@ export function Surface(props: SurfaceProps) {
     ariaLabel,
     ariaDisabled,
     ariaPressed,
+    ariaCurrent,
     buttonRef,
     surfaceRef,
     testId,
@@ -131,6 +134,7 @@ export function Surface(props: SurfaceProps) {
         ref={buttonRef}
         type="button"
         aria-label={ariaLabel}
+        aria-current={ariaCurrent}
         {...(ariaDisabled !== undefined ? { "aria-disabled": ariaDisabled } : {})}
         {...(ariaPressed !== undefined ? { "aria-pressed": ariaPressed } : {})}
         disabled={disabled}
@@ -162,6 +166,7 @@ export function Surface(props: SurfaceProps) {
       tabIndex={handleDivClick && !disabled ? 0 : undefined}
       role={handleDivClick ? "button" : undefined}
       aria-label={handleDivClick ? ariaLabel : undefined}
+      aria-current={ariaCurrent}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       className={klass}

@@ -132,7 +132,8 @@ describe("save JSON round trips", () => {
     const { reParsed } = roundTrip(original);
     expect(reParsed).toEqual(original);
     expect(reParsed.activeRun?.labyrinthMap?.currentFloor).toBe(1);
-    expect(reParsed.activeRun?.labyrinthMap?.nodes["labyrinth-entrance"]?.type).toBe("entrance");
+    const map = reParsed.activeRun!.labyrinthMap!;
+    expect(map.nodes[map.currentNodeId]?.type).toBe("entrance");
   });
 
   it("full save with all fields round-trips through JSON serialize/deserialize", () => {

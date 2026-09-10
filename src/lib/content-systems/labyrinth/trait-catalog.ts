@@ -74,7 +74,7 @@ export const LABYRINTH_TRAITS = {
   "thick-hide": enemy("Thick Hide", "Enemy takes half Physical damage", "physical"),
   unbreakable: enemy("Unbreakable", "Enemy no longer loses Armor when taking damage", "armor", ["elite", "boss"]),
   whitehot: enemy("Whitehot", "Enemy no longer loses Forge when dealing damage", "forge", ["elite", "boss"]),
-  executioner: enemy("Executioner", "Enemy deals double Physical damage while below half Health", "physical", [
+  executioner: enemy("Desperation", "Enemy deals double Physical damage while below half Health", "physical", [
     "elite",
     "boss",
   ]),

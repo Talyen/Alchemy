@@ -10,7 +10,7 @@ The canonical kind list is [`BATTLE_CARD_EFFECT_KINDS`](./registry.ts). Template
 
 Add the union member in [`src/lib/game-data/types.ts`](../types.ts), a schema definition in the matching `<group>-schemas.ts`, the definition in `TEMPLATE_EFFECT_DEFINITIONS`, a handler in the matching `<group>-handlers.ts` plus its `EFFECT_APPLY_BY_KIND` row, a `FORMATTERS` row in [`effect-metadata.ts`](../effect-metadata.ts), and a numeric-parity check in [`numeric-parity.ts`](../../content-validation/card-parity/numeric-parity.ts) when the kind has an authored number line. Card previews show authored base amounts only — no handler math is mirrored into tooltips.
 
-[`applyCardEffects`](../../battle/effect-handlers/registry.ts) is the single entry point exported from `@/lib/battle`. It walks each effect on a card, routes `chance` (via `rollChance` + `getBattleRng`) and `repeat-over-turns` (queue `pendingTurnStartEffects`) before the registry, and otherwise delegates to `applyEffectByKind`.
+[`applyCardEffects`](../../battle/effect-handlers/registry.ts) is the single entry point exported from `@/lib/battle`. It walks each effect on a card, routes `chance` (via `rollChance` + `getBattleRng`) and `repeat-over-turns` (queue `pendingTurnStartEffects` with source card ID, Consume, and tags) before the registry, and otherwise delegates to `applyEffectByKind`.
 
 ## Ordering and semantics
 
@@ -22,7 +22,7 @@ Add the union member in [`src/lib/game-data/types.ts`](../types.ts), a schema de
 - `damage` cannot have both `doubleIfEnemyBurning` and `tripleIfEnemyNotBurning`.
 - `gain-gold` with `ifEnemyStunned` fizzles unless the enemy is stunned at all.
 
-- Numeric upgrades and corruption share `updateCardNumericValue` in `src/lib/corruption/numeric.ts`. Targets can address nested scheduled effects when their amounts have separate description lines. A scheduled effect sharing one authored amount with an immediate effect changes with that amount; separately authored delayed amounts change independently. “Draw a card” represents one editable draw, while schedule durations are not editable magnitude targets. Keep original catalog effects immutable.
+- Numeric upgrades and corruption share `updateCardNumericValue` in `src/lib/corruption/numeric.ts`. Targets address nested scheduled effects and both chance branches. Chance paths index success effects followed by failure effects; probabilities and schedule durations are not editable magnitudes. A fixed Random damage amount displayed as one number updates both bounds together. A scheduled effect sharing one authored amount with an immediate effect changes with that amount; separately authored delayed amounts change independently. “Draw a card” represents one editable draw. Keep original catalog effects immutable.
 
 ## Enemy abilities
 

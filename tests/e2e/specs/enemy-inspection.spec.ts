@@ -1,5 +1,14 @@
-import { expect, test } from "@playwright/test";
-import { failOnRuntimeErrors, makeCard, seedRandom, startBattleWithDeck, assertNoOverflow } from "../../helpers";
+import type { LabyrinthMap } from "@/lib/content-systems/types";
+import { gridLabyrinthMapFixture } from "../../fixtures/labyrinth-map";
+import { expect, test, type Locator } from "@playwright/test";
+import {
+  failOnRuntimeErrors,
+  makeCard,
+  seedRandom,
+  startBattleWithDeck,
+  assertNoOverflow,
+  injectLabyrinthRun,
+} from "../../helpers";
 import { MenuPage } from "../../pages/menu-page";
 import { critical } from "../../playwright-tags";
 
@@ -88,3 +97,89 @@ test(
     expect(errors).toEqual([]);
   },
 );
+
+async function readTraitSizing(trait: Locator) {
+  return trait.evaluate((element) => {
+    const icon = element.querySelector("svg")!;
+    const iconSize = icon.getBoundingClientRect().width;
+    const scale = iconSize / parseFloat(getComputedStyle(icon).width);
+    return [
+      parseFloat(getComputedStyle(element.querySelector("h3")!).fontSize) * scale,
+      parseFloat(getComputedStyle(element.querySelector("p")!).fontSize) * scale,
+      iconSize,
+    ];
+  });
+}
+
+test("enemy Trait boxes stay unified and adapt to inspection width", async ({ page }, testInfo) => {
+  const errors = failOnRuntimeErrors(page);
+  await page.setViewportSize({ width: 1280, height: 720 });
+  const map: LabyrinthMap = gridLabyrinthMapFixture();
+  const node = map.nodes["labyrinth-floor-1-n0"]!;
+  node.enemyId = "vampire";
+  node.modifiers = ["caustic", "flesheater"];
+  node.rewardModifiers = ["alchemist"];
+  await injectLabyrinthRun(page, {
+    labyrinthMap: map,
+    deck: Array.from({ length: 6 }, () => makeCard()),
+    runOverrides: { selectedAspectRatio: "auto" },
+  });
+  await page.locator(`[data-labyrinth-node="${node.id}"]`).click();
+  const details = page.getByRole("complementary", { name: "Chamber details" });
+  await expect(details.locator("[data-trait]")).toHaveCount(3);
+  await expect(details).toHaveCSS("opacity", "1");
+  const mapTrait = details.locator('[data-trait="caustic"]');
+  const mapSizing = await readTraitSizing(mapTrait);
+  await page.screenshot({ path: testInfo.outputPath("traits-map.png") });
+  await page.getByRole("button", { name: "Fight", exact: true }).click();
+  const enemy = page.getByTestId("battle-enemy-art-panel");
+  await expect(page.getByRole("button", { name: /^View Deck/ })).toHaveAttribute("aria-disabled", "false", {
+    timeout: 20_000,
+  });
+  await enemy.hover();
+  const tooltip = page.locator(".hover-popup-panel[data-visible]");
+  await expect(tooltip.locator("[data-trait]")).toHaveCount(4);
+  await expect(tooltip).not.toContainText("Special Modifiers");
+  await expect(tooltip).toHaveCSS("opacity", "1");
+  const hoverSizing = await readTraitSizing(tooltip.locator('[data-trait="caustic"]'));
+  for (const [index, size] of hoverSizing.entries()) expect(size).toBeCloseTo(mapSizing[index]!, 1);
+  await page.screenshot({ path: testInfo.outputPath("traits-hover.png") });
+  const tooltipBox = (await tooltip.boundingBox())!;
+  expect(tooltipBox.width).toBeGreaterThan(280);
+  expect(tooltipBox.width).toBeLessThanOrEqual(448);
+  expect(tooltipBox.x).toBeGreaterThanOrEqual(0);
+  expect(tooltipBox.y).toBeGreaterThanOrEqual(0);
+  expect(tooltipBox.x + tooltipBox.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+  expect(tooltipBox.y + tooltipBox.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+  await enemy.click();
+  const dialog = page.getByRole("dialog", { name: "Vampire" });
+  const traits = dialog.locator("[data-trait]");
+  await expect(traits).toHaveCount(4);
+  await expect(dialog).not.toContainText("Special Modifiers");
+  const inspectTrait = dialog.locator('[data-trait="caustic"]');
+  const inspectSizing = await readTraitSizing(inspectTrait);
+  for (const [index, size] of inspectSizing.entries()) expect(size).toBeCloseTo(mapSizing[index]!, 1);
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await expect
+    .poll(async () => (await traits.nth(1).boundingBox())!.y - (await traits.nth(0).boundingBox())!.y)
+    .toBe(0);
+  const first = (await traits.nth(0).boundingBox())!;
+  const second = (await traits.nth(1).boundingBox())!;
+  expect(second.y).toBeCloseTo(first.y, 0);
+  expect(second.x).toBeGreaterThan(first.x + first.width);
+  expect(second.height).toBeCloseTo(first.height, 0);
+  await expect(tooltip).toHaveCount(0);
+  await expect(page.getByTestId("enemy-inspection-overlay")).toHaveCSS("opacity", "1");
+  await page.screenshot({ path: testInfo.outputPath("traits-inspection-wide.png") });
+  await page.setViewportSize({ width: 600, height: 900 });
+  await expect
+    .poll(async () => {
+      const firstBox = (await traits.nth(0).boundingBox())!;
+      const nextBox = (await traits.nth(1).boundingBox())!;
+      return nextBox.y > firstBox.y + firstBox.height;
+    })
+    .toBe(true);
+  await assertNoOverflow(page, "narrow enemy Traits");
+  await page.screenshot({ path: testInfo.outputPath("traits-inspection-narrow.png") });
+  expect(errors).toEqual([]);
+});

@@ -31,7 +31,7 @@ test.describe("Run Outcomes", critical, () => {
 
         const destination = new DestinationPage(page);
         await destination.expectVisible();
-        await destination.enterCombat("Boss Combat");
+        await destination.enterCombat("Boss");
 
         await winBattleAndClaimReward(page);
 
@@ -50,7 +50,7 @@ test.describe("Run Outcomes", critical, () => {
 
       const destination = new DestinationPage(page);
       await destination.expectVisible();
-      await destination.enterCombat("Boss Combat");
+      await destination.enterCombat("Boss");
       await winBattleAndClaimReward(page);
 
       await expect(page.getByRole("heading", { name: /Victory|Triumph|Run Complete/i })).toBeVisible({ timeout: 5000 });
@@ -99,6 +99,8 @@ test.describe("Run Outcomes", critical, () => {
         gearEffects: { dodgeChance: 0 },
         talentEffects: { dodgeChanceBelowHalfHealth: 0 },
       });
+
+      battleState.currentEnemy = { ...battleState.currentEnemy, abilityIds: ["slash", "sunder", "burning-blade"] };
 
       await injectActiveBattle(page, battleState, {
         runPlayerHealth: 1,

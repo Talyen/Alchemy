@@ -4,6 +4,7 @@ import { gearDefinitions } from "./definitions";
 import { getUniqueAffixes } from "./unique-catalog";
 import { mergeGearEffectManifests } from "./gear-effect-manifest";
 import {
+  createEmptyGearLoadouts,
   GEAR_CHARACTER_IDS,
   GEAR_SLOTS,
   defaultGearEffects,
@@ -93,6 +94,25 @@ function resolveHandConflicts(
   return characterLoadout;
 }
 
+export function pruneOrphanGearLoadouts(inventory: GearInstance[], loadouts: GearLoadouts): GearLoadouts {
+  const inventoryIds = new Set(inventory.map((item) => item.instanceId));
+  const next = createEmptyGearLoadouts();
+
+  for (const characterId of GEAR_CHARACTER_IDS) {
+    for (const slot of GEAR_SLOTS) {
+      const instanceId = loadouts[characterId][slot];
+      next[characterId][slot] = instanceId && inventoryIds.has(instanceId) ? instanceId : null;
+    }
+    const offHand = resolveEquippedDefinitionAt(inventory, next[characterId], "off-hand");
+    const mainHand = resolveEquippedDefinitionAt(inventory, next[characterId], "main-hand");
+    if (offHand && isQuiver(offHand) && (!mainHand || !isRangedWeapon(mainHand))) {
+      next[characterId]["off-hand"] = null;
+    }
+  }
+
+  return next;
+}
+
 export function equipGear(
   loadouts: GearLoadouts,
   characterId: GearCharacterId,
@@ -108,11 +128,19 @@ export function equipGear(
   const next = removeGearFromLoadouts(loadouts, instance.instanceId);
   const characterLoadout = { ...next[characterId], [slot]: instance.instanceId };
   next[characterId] = resolveHandConflicts(characterLoadout, slot, definition, inventory);
-  return next;
+  return pruneOrphanGearLoadouts(inventory, next);
 }
 
-export function unequipGear(loadouts: GearLoadouts, characterId: GearCharacterId, slot: GearSlot): GearLoadouts {
-  return { ...loadouts, [characterId]: { ...loadouts[characterId], [slot]: null } };
+export function unequipGear(
+  loadouts: GearLoadouts,
+  characterId: GearCharacterId,
+  slot: GearSlot,
+  inventory: GearInstance[],
+): GearLoadouts {
+  return pruneOrphanGearLoadouts(inventory, {
+    ...loadouts,
+    [characterId]: { ...loadouts[characterId], [slot]: null },
+  });
 }
 
 export function canSalvageGear(inventory: GearInstance[], instanceId: string): boolean {
@@ -146,7 +174,7 @@ export function salvageGear(
   const salvageYield = frozenYield ?? computeSalvageYield(instance);
   return {
     inventory: inventory.filter((item) => item.instanceId !== instanceId),
-    loadouts: removeGearFromLoadouts(loadouts, instanceId),
+    loadouts: pruneOrphanGearLoadouts(inventory, removeGearFromLoadouts(loadouts, instanceId)),
     yieldedCurrencies: salvageYield.currencies,
     yieldedMaterials: salvageYield.materials,
   };

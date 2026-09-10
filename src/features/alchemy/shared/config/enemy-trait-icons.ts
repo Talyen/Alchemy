@@ -13,7 +13,6 @@ import {
   Scale,
   Shield,
   Snowflake,
-  Sparkles,
   Sprout,
   Stars,
   Sun,
@@ -27,6 +26,23 @@ import { keywordIcons } from "./metadata";
 
 const traitIcons: Record<string, LucideIcon> = {
   banshee: Volume2,
+  pyromancer: Flame,
+  ogre: Swords,
+  "giant-snake": Droplets,
+  "living-armor": Shield,
+  "will-o-wisp": Stars,
+  yeti: Shield,
+  "earth-elemental": Mountain,
+  "glacial-body": Snowflake,
+  "minor-freeze-vulnerability": Snowflake,
+  "cold-blooded": Snowflake,
+  "minor-holy-vulnerability": Sun,
+  "holy-vulnerability": Sun,
+  "tough-hide": Shield,
+  "vampiric-curse": HeartCrack,
+  "frozen-apparition": Snowflake,
+  "winter-hide": Snowflake,
+  "earthen-body": Mountain,
   bandit: Swords,
   "blood-cultist": Droplet,
   brawler: Stars,
@@ -52,15 +68,14 @@ const traitIcons: Record<string, LucideIcon> = {
   "blood-countess": HeartCrack,
   regeneration: Sprout,
   "brittle-bones": Bone,
-  "trinket-hoarder": Coins,
   "gold-trove": Coins,
   amorphous: Droplet,
   "cinder-skin": Flame,
 };
 
-export function getEnemyTraitIcon(trait: EnemyTrait, encounterModifier = false): LucideIcon {
+export function getEnemyTraitIcon(trait: EnemyTrait): LucideIcon {
   const icon = Object.hasOwn(traitIcons, trait.id) ? traitIcons[trait.id] : undefined;
   if (icon) return icon;
   const keyword = extractKeywordIds(trait.description)[0];
-  return keyword ? keywordIcons[keyword] : encounterModifier ? Sparkles : Shield;
+  return keyword ? keywordIcons[keyword] : Shield;
 }

@@ -209,7 +209,7 @@ describe("gear domain", () => {
   it("reports equipped gear as salvage eligible", () => {
     const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "left-accessory", ring, [ring]);
     expect(canSalvageGear([ring], ring.instanceId)).toBe(true);
-    expect(unequipGear(loadouts, "knight", "left-accessory").knight["left-accessory"]).toBeNull();
+    expect(unequipGear(loadouts, "knight", "left-accessory", [ring]).knight["left-accessory"]).toBeNull();
   });
 
   it("does not report nonexistent gear as salvage eligible", () => {
@@ -278,6 +278,26 @@ describe("gear domain", () => {
     const longsword: GearInstance = { instanceId: "longsword-1", definitionId: "longsword-basic", affixes: [] };
     const quiver: GearInstance = { instanceId: "quiver-1", definitionId: "quiver-basic", affixes: [] };
     const buckler: GearInstance = { instanceId: "buckler-1", definitionId: "leather-buckler-basic", affixes: [] };
+
+    it.each(["unequip", "salvage", "transfer", "restore"])(
+      "removes an unsupported Quiver when its bow leaves through %s",
+      (action) => {
+        const inventory = [longbow, quiver];
+        const withBow = equipGear(createEmptyGearLoadouts(), "knight", "main-hand", longbow, inventory);
+        const equipped = equipGear(withBow, "knight", "off-hand", quiver, inventory);
+        const result =
+          action === "unequip"
+            ? unequipGear(equipped, "knight", "main-hand", inventory)
+            : action === "salvage"
+              ? salvageGear(inventory, equipped, longbow.instanceId)!.loadouts
+              : action === "transfer"
+                ? equipGear(equipped, "ranger", "main-hand", longbow, inventory)
+                : pruneOrphanGearLoadouts([quiver], equipped);
+        expect(result.knight["main-hand"]).toBeNull();
+        expect(result.knight["off-hand"]).toBeNull();
+        expect(equipped.knight["off-hand"]).toBe(quiver.instanceId);
+      },
+    );
 
     it("flags longbow, shortbow, recurve-bow, and crossbow as ranged weapons", () => {
       expect(isRangedWeapon(gearDefinitions["longbow-basic"])).toBe(true);

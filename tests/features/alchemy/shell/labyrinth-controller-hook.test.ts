@@ -1,8 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
-import { LABYRINTH_ENTRANCE_NODE_ID } from "@/lib/content-systems/labyrinth/data";
-import { createSeededRng } from "@/lib/utils";
+import { gridLabyrinthMapFixture } from "../../../fixtures/labyrinth-map";
 import { useLabyrinthController, type LabyrinthNodeHandlers } from "@/features/alchemy/shell/use-labyrinth-controller";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
@@ -25,13 +23,12 @@ function stubNodeHandlers(overrides: Partial<LabyrinthNodeHandlers> = {}): Labyr
 }
 
 function firstReachableId() {
-  const map = readRunSession().labyrinthMap!;
-  return map.nodes[LABYRINTH_ENTRANCE_NODE_ID]!.outgoingIds[0]!;
+  return "labyrinth-floor-1-n0";
 }
 
 beforeEach(() => {
   resetTransientRunUi();
-  dispatchRunSessionCommand((draft) => setLabyrinthMap(draft, generateLabyrinthMap(createSeededRng(42))));
+  dispatchRunSessionCommand((draft) => setLabyrinthMap(draft, gridLabyrinthMapFixture()));
 });
 
 describe("useLabyrinthController hook", () => {
@@ -85,12 +82,10 @@ describe("useLabyrinthController hook", () => {
     expect(onStartBattle).toHaveBeenCalledOnce();
   });
 
-  it("inspects an unexplored chamber without entering it", () => {
+  it("inspects the distant boss without entering it", () => {
     const { result } = renderHook(() => useLabyrinthController());
     const map = readRunSession().labyrinthMap!;
-    const locked = Object.values(map.nodes).find(
-      (node) => node.floor > 0 && node.id !== firstReachableId() && !node.cleared,
-    );
+    const locked = Object.values(map.nodes).find((node) => node.type === "boss");
     expect(locked).toBeDefined();
 
     let entered = true;
@@ -105,25 +100,13 @@ describe("useLabyrinthController hook", () => {
     expect(readRunSession().activeLabyrinthPendingNode).toBeNull();
   });
 
-  it.each([LABYRINTH_ENTRANCE_NODE_ID, "missing-node"])("rejects completed or missing selection %s", (nodeId) => {
+  it.each(["labyrinth-floor-1-n4", "missing-node"])("rejects undiscovered or missing selection %s", (nodeId) => {
     const { result } = renderHook(() => useLabyrinthController());
     act(() => {
       result.current.selectNode(firstReachableId());
       result.current.selectNode(nodeId);
     });
     expect(readRunSession().selectedLabyrinthNodeId).toBeNull();
-  });
-
-  it("resetMap clears pending selection and rebuilds the map", () => {
-    const { result } = renderHook(() => useLabyrinthController());
-    act(() => {
-      result.current.selectNode(firstReachableId());
-      result.current.resetMap();
-    });
-    expect(readRunSession().activeLabyrinthPendingNode).toBeNull();
-    expect(readRunSession().selectedLabyrinthNodeId).toBeNull();
-    expect(readRunSession().labyrinthMap!.nodes[LABYRINTH_ENTRANCE_NODE_ID]?.type).toBe("entrance");
-    expect(readRunSession().labyrinthMap!.currentNodeId).toBeNull();
   });
 
   it("descends once from a completed boss and rejects prior-floor entry", () => {
@@ -144,8 +127,8 @@ describe("useLabyrinthController hook", () => {
     });
     const next = readRunSession().labyrinthMap!;
     expect(next.currentFloor).toBe(2);
-    expect(next.floors).toHaveLength(3);
-    expect(next.currentNodeId).toBeNull();
+    expect(next.floors).toHaveLength(2);
+    expect(next.nodes[next.currentNodeId]?.type).toBe("entrance");
     act(() => {
       result.current.selectNode(boss.id);
       result.current.descend();
@@ -170,39 +153,17 @@ describe("useLabyrinthController hook", () => {
       ),
     ).toThrow("Cannot start battle");
     expect(readRunSession().activeLabyrinthPendingNode).toBeNull();
-    expect(readRunSession().labyrinthMap!.currentNodeId).toBeNull();
+    expect(readRunSession().labyrinthMap!.currentNodeId).toBe("labyrinth-floor-1-entrance");
     expect(readRunSession().labyrinthMap!.nodes[target]!.cleared).toBe(false);
   });
 
   it("routes corruption chambers to onStartCorruption with room modifiers", () => {
-    const corruptionId = "labyrinth-floor-1-corruption";
-    act(() => {
-      dispatchRunSessionCommand((draft) => {
-        const map = readRunSession().labyrinthMap!;
-        setLabyrinthMap(draft, {
-          ...map,
-          floors: [
-            { id: "labyrinth-floor-0", depth: 0, nodeIds: [LABYRINTH_ENTRANCE_NODE_ID] },
-            { id: "labyrinth-floor-1", depth: 1, nodeIds: [corruptionId] },
-          ],
-          nodes: {
-            [LABYRINTH_ENTRANCE_NODE_ID]: {
-              ...map.nodes[LABYRINTH_ENTRANCE_NODE_ID]!,
-              outgoingIds: [corruptionId],
-            },
-            [corruptionId]: {
-              id: corruptionId,
-              type: "corruption",
-              floor: 1,
-              gridPosition: { row: 0, col: 1 },
-              modifiers: [],
-              rewardModifiers: ["blood-rite"],
-              outgoingIds: [],
-              cleared: false,
-            },
-          },
-        });
-      });
+    const corruptionId = firstReachableId();
+    dispatchRunSessionCommand((draft) => {
+      const node = draft.session.labyrinthMap!.nodes[corruptionId]!;
+      node.type = "corruption";
+      node.rewardModifiers = ["blood-rite"];
+      delete node.enemyId;
     });
     const onStartCorruption = vi.fn();
     const { result } = renderHook(() => useLabyrinthController());
@@ -216,5 +177,22 @@ describe("useLabyrinthController hook", () => {
     expect(entered).toBe(true);
     expect(onStartCorruption).toHaveBeenCalledWith(["blood-rite"]);
     expect(readRunSession().activeLabyrinthPendingNode).toBe(corruptionId);
+  });
+  it("enters a previously discovered branch without moving through completed rooms", () => {
+    const { result } = renderHook(() => useLabyrinthController());
+    const handlers = stubNodeHandlers();
+    act(() => {
+      result.current.selectNode(firstReachableId());
+      result.current.enterSelectedNode(handlers);
+      result.current.onNodeCleared();
+      result.current.selectNode("labyrinth-floor-1-n3");
+      result.current.enterSelectedNode(handlers);
+    });
+    expect(handlers.onStartBattleWithModifiers).toHaveBeenCalledOnce();
+    expect(handlers.onStartRest).toHaveBeenCalledOnce();
+    expect(readRunSession().activeLabyrinthPendingNode).toBe("labyrinth-floor-1-n3");
+    expect(readRunSession().labyrinthMap!.currentNodeId).toBe(firstReachableId());
+    act(() => result.current.onNodeCleared());
+    expect(readRunSession().labyrinthMap!.currentNodeId).toBe("labyrinth-floor-1-n3");
   });
 });

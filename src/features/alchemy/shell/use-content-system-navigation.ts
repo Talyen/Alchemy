@@ -4,7 +4,6 @@ import type { ContentSystemNavigationDeps } from "@/features/alchemy/run-setup/r
 
 export function useContentSystemNavigation({
   navigateTo,
-  returnToBattle,
   onStartBattle,
   getAvailableDestinations,
   onResumeWildwood,
@@ -14,12 +13,11 @@ export function useContentSystemNavigation({
     () =>
       createContentSystemNavigation({
         navigateTo,
-        returnToBattle,
         onStartBattle,
         getAvailableDestinations,
         onResumeWildwood,
         clearCardHover,
       }),
-    [navigateTo, returnToBattle, onStartBattle, getAvailableDestinations, onResumeWildwood, clearCardHover],
+    [navigateTo, onStartBattle, getAvailableDestinations, onResumeWildwood, clearCardHover],
   );
 }

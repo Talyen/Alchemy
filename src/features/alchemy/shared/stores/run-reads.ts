@@ -112,6 +112,13 @@ export function readRunRecency(): ContentSystemId[] {
 export function readActiveRunScreen(): Screen {
   return readGameplayState().run.navigation.screen;
 }
+export function readRunResumeScreen(): Screen | null {
+  const state = readGameplayState();
+  return state.session.hasActiveRun ? state.run.navigation.resumeScreen : null;
+}
+export function useRunResumeScreen(): Screen | null {
+  return useGameplayStateStore((state) => (state.session.hasActiveRun ? state.run.navigation.resumeScreen : null));
+}
 export function readRunPhase(): RunPhase {
   const state = readGameplayState();
   return getRunPhase(state.run.navigation.screen, state.battle.hasActiveBattle);

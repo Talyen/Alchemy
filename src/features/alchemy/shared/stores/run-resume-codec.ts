@@ -37,7 +37,12 @@ import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet
 import { type Screen } from "@/lib/routing";
 import { createInitialActiveRunFields, ACTIVE_RUN_PROGRESS_KEYS, type ActiveRunProgressFields } from "./run-state-init";
 import type { RunSession } from "./run-reads";
-import { decodeInterruptedFlow, encodeInterruptedFlow, resolveEncodeScreen } from "./encode-interrupted-flow";
+import {
+  decodeInterruptedFlow,
+  encodeInterruptedFlow,
+  inferActiveRunScreen,
+  resolveEncodeScreen,
+} from "./encode-interrupted-flow";
 
 export interface DecodedRunResumeSession {
   labyrinthMap: LabyrinthMap | null;
@@ -64,7 +69,7 @@ export interface DecodedRunResumeSession {
 
 export interface DecodedRunResumeSnapshot {
   progress: ActiveRunProgressFields;
-  screen: Screen | null;
+  screen: Screen;
   pendingBattleTransition: PersistedBattleTransition | null;
   session: DecodedRunResumeSession;
 }
@@ -201,10 +206,7 @@ function encodeActiveRunFromSession(source: RunSession, resume: EncodeResumeFiel
     activeLabyrinthModifiers: isLabyrinth ? [...session.activeLabyrinthModifiers] : [],
     activeLabyrinthRewardModifiers: isLabyrinth ? [...session.activeLabyrinthRewardModifiers] : [],
     wildwoodDraft: progress.contentSystemType === "wildwood" ? session.wildwoodDraft : null,
-    starterDraftChoices:
-      progress.contentSystemType === "wildwood" || !session.starterDraftChoices?.length
-        ? null
-        : session.starterDraftChoices,
+    starterDraftChoices: progress.contentSystemType === "wildwood" ? null : session.starterDraftChoices,
     activeCombat,
     currentScreen: resume.currentScreen,
     interruptedFlow: resume.interruptedFlow,
@@ -220,10 +222,11 @@ function encodeActiveRunFromSession(source: RunSession, resume: EncodeResumeFiel
 export function encodeRunResumeSnapshot(source: RunSession, screen?: Screen): ActiveRunData {
   const requestedScreen = screen ?? source.screen;
   const currentScreen = resolveEncodeScreen(requestedScreen, source.session) ?? requestedScreen;
-  return encodeActiveRunFromSession(source, {
+  const snapshot = encodeActiveRunFromSession(source, {
     currentScreen,
     ...encodeScreenGatedFields(source.session, currentScreen),
   });
+  return { ...snapshot, currentScreen: inferActiveRunScreen(snapshot) };
 }
 
 function preferTopLevelModifiers<T>(
@@ -235,15 +238,15 @@ function preferTopLevelModifiers<T>(
 }
 
 export function decodeRunResumeSnapshot(activeRun: ActiveRunData): DecodedRunResumeSnapshot {
-  let screen = activeRun.currentScreen;
+  let screen = inferActiveRunScreen(activeRun);
   let rewardState: RewardState | null = null;
   let companionRewardCards: BattleCard[] | null = null;
 
   if (activeRun.interruptedFlow.kind !== "none") {
-    const claim = decodeInterruptedFlow(activeRun);
+    const claim = decodeInterruptedFlow({ ...activeRun, currentScreen: screen });
     rewardState = claim.rewardState;
     companionRewardCards = claim.companionRewardCards;
-    screen = claim.screen;
+    screen = inferActiveRunScreen({ ...activeRun, currentScreen: claim.screen ?? screen });
   }
 
   const mysteryVisit =

@@ -177,7 +177,11 @@ describe("applyCardEffects — next-hit-crit and play-next-card-twice", () => {
     });
     const result = applyCardEffects(state, card, []);
     expect(result.pendingTurnStartEffects).toEqual([
-      { remainingTurns: 1, effects: [{ kind: "damage", damageType: "freeze", amount: 2 }] },
+      {
+        remainingTurns: 1,
+        effects: [{ kind: "damage", damageType: "freeze", amount: 2 }],
+        sourceCard: { id: card.id, consume: card.consume, tags: card.tags },
+      },
     ]);
     expect(result.enemyHealth).toBe(30);
   });

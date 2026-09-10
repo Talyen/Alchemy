@@ -6,6 +6,8 @@ import { migrateV12ToV13 } from "./steps-v12-v13";
 import { migrateV13ToV14 } from "./steps-v13-v14";
 import { migrateV14ToV15 } from "./steps-v14-v15";
 import { migrateV15ToV16 } from "./steps-v15-v16";
+import { migrateV16ToV17 } from "./steps-v16-v17";
+import { migrateV17ToV18 } from "./steps-v17-v18";
 
 export function getRawSaveSchemaVersion(parsed: unknown): number {
   return getRawVersion(parsed, "saveSchemaVersion");
@@ -28,6 +30,8 @@ export const SCHEMA_MIGRATIONS: Array<{ from: number; to: number; migrate: (data
   { from: 13, to: 14, migrate: migrateV13ToV14 },
   { from: 14, to: 15, migrate: migrateV14ToV15 },
   { from: 15, to: 16, migrate: migrateV15ToV16 },
+  { from: 16, to: 17, migrate: migrateV16ToV17 },
+  { from: 17, to: 18, migrate: migrateV17ToV18 },
 ];
 
 function migrateContentToCurrent(next: RawSaveData): RawSaveData {

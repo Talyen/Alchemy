@@ -1,5 +1,5 @@
 import { defaultBattleState } from "@/lib/battle";
-import { LABYRINTH_ENTRANCE_NODE_ID } from "@/lib/content-systems/labyrinth/data";
+import { canEnterLabyrinthNode } from "@/lib/content-systems/labyrinth/map-state";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { getStartingDeck } from "@/lib/game-data";
 import type { ActiveRunData, PersistedMysteryVisit } from "@/lib/active-run-session";
@@ -69,7 +69,8 @@ export function createCompleteActiveRunData(): ActiveRunData {
   };
 
   const labyrinthMap = generateLabyrinthMap(createSeededRng(42));
-  const labyrinthPendingNode = labyrinthMap.nodes[LABYRINTH_ENTRANCE_NODE_ID]?.outgoingIds[0] ?? null;
+  const labyrinthPendingNode =
+    Object.values(labyrinthMap.nodes).find((node) => canEnterLabyrinthNode(labyrinthMap, node.id))?.id ?? null;
 
   return {
     characterId: "knight",

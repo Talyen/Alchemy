@@ -23,12 +23,15 @@ export function EnemyTooltip({
     <PortaledTooltip
       triggerRef={triggerRef}
       visible={visible}
+      width="w-fit max-w-112"
       className="rounded-shell-tooltip"
       plasmaColorPair={discovered ? getPlasmaColorPairForEnemy(entry) : null}
     >
       <TooltipHeader>{discovered ? entry.title : "Undiscovered"}</TooltipHeader>
       {discovered ? (
-        <EnemyTraits entry={entry} modifiers={labyrinthModifiers} />
+        <div className="[--content-scale:var(--tooltip-trait-scale,1)]">
+          <EnemyTraits entry={entry} modifiers={labyrinthModifiers} />
+        </div>
       ) : (
         <TooltipBody>
           <p>Undiscovered</p>

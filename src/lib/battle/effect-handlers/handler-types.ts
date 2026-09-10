@@ -9,6 +9,7 @@ export interface CardEffectResolutionContext {
   cardHealing?: boolean;
   attackBonuses?: { flat: number; physical: number; bleed: number; sanguine?: number };
   damageEffects?: Array<Extract<BattleCardEffect, { kind: "damage" }>>;
+  onDamageDealt?: (amount: number) => void;
   damageMultiplier?: number;
   baseDamageBonus?: number;
   guaranteedCrit?: boolean;

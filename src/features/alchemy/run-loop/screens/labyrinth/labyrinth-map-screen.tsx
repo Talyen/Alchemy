@@ -44,7 +44,7 @@ export function LabyrinthMapScreen({
         const menu = document.querySelector("[data-testid=game-menu]");
         if (menu instanceof HTMLElement && !menu.closest(".pointer-events-none")) return false;
         document
-          .querySelector<HTMLButtonElement>('[data-labyrinth-node][aria-pressed="true"]')
+          .querySelector<HTMLButtonElement>('[data-labyrinth-node] button[aria-pressed="true"]')
           ?.focus({ preventScroll: true });
         onNodeDeselect();
         return true;
@@ -57,15 +57,6 @@ export function LabyrinthMapScreen({
       <ScreenShell className="h-full min-h-0 gap-4" minHeightClass="min-h-0" maxWidthClass="max-w-none">
         <div className="shrink-0">
           <ScreenHeaderRow title="Labyrinth" />
-          {labyrinthMap ? (
-            <p
-              role="status"
-              aria-label={`Floor ${labyrinthMap.currentFloor}`}
-              className="mt-2 text-center text-lg font-semibold text-amber-100/80"
-            >
-              Floor {labyrinthMap.currentFloor}
-            </p>
-          ) : null}
         </div>
         <FadeSlot
           swapKey={labyrinthMap?.currentFloor ?? 1}

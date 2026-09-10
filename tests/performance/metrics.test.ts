@@ -1,7 +1,7 @@
 import { readdirSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { LABYRINTH_HEX } from "@/lib/content-systems/labyrinth/hex-grid";
+import { labyrinthGridPositions } from "@/lib/content-systems/labyrinth/grid";
 import {
   aggregateRawSamples,
   classifyTargets,
@@ -32,7 +32,7 @@ import {
   requirePositiveFiniteObservation,
   talentCategoryButtonName,
 } from "../../performance/scenario-contracts";
-import { productionHexLabyrinthMapFixture } from "../fixtures/labyrinth-hex-map";
+import { twoFloorLabyrinthMapFixture } from "../fixtures/labyrinth-map";
 
 function sample(frameTimes: number[], extras: Partial<FrameSampleRaw> = {}): FrameSampleRaw {
   return {
@@ -91,12 +91,11 @@ describe("performance scenario contracts", () => {
   });
 
   it("uses a production-sized multi-floor Labyrinth fixture", () => {
-    const map = productionHexLabyrinthMapFixture();
+    const map = twoFloorLabyrinthMapFixture();
     const playable = map.floors.filter((floor) => floor.depth > 0);
     expect(playable.length).toBeGreaterThanOrEqual(2);
     for (const floor of playable) {
-      expect(floor.nodeIds.length).toBeGreaterThanOrEqual(LABYRINTH_HEX.minNodesPerFloor);
-      expect(floor.nodeIds.length).toBeLessThanOrEqual(LABYRINTH_HEX.maxNodesPerFloor);
+      expect(floor.nodeIds).toHaveLength(labyrinthGridPositions().length);
     }
   });
 });

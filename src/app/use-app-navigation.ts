@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Screen } from "@/lib/routing";
-import { isRunLoopScreen } from "@/lib/routing";
 import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { MOTION_FADE_MS, PAGE_EXIT_MS } from "@/lib/game-constants";
 import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import {
   useHasActiveBattle,
-  useHasActiveRun,
+  useRunResumeScreen,
   useForegroundResumeKind,
 } from "@/features/alchemy/shared/stores/run-reads";
 import { useLatestRef } from "@/features/alchemy/shared/hooks";
@@ -94,10 +93,9 @@ export function useReturnToRunNavigation({
   run: Pick<AlchemyRunCommands, "goToScreen" | "returnToBattle">;
   renderedScreen: Screen;
 }) {
-  const [returnToRunScreen, setReturnToRunScreen] = useState<Screen | null>(null);
+  const returnToRunScreen = useRunResumeScreen();
   const [optionsReturnScreen, setOptionsReturnScreen] = useState<Screen>("menu");
   const hasActiveBattle = useHasActiveBattle();
-  const hasActiveRun = useHasActiveRun();
   const resumeKind = useForegroundResumeKind();
   const returnToRunTarget = resolveReturnToRunTarget(
     returnToRunScreen,
@@ -111,7 +109,6 @@ export function useReturnToRunNavigation({
   }, [renderedScreen]);
 
   function navigateToMeta(screen: Extract<Screen, "collection" | "talents" | "homestead" | "options" | "armory">) {
-    if (isRunLoopScreen(renderedScreen) || renderedScreen === "draft-deck") setReturnToRunScreen(renderedScreen);
     run.goToScreen(screen);
   }
 
@@ -122,22 +119,11 @@ export function useReturnToRunNavigation({
   }
 
   function returnToRun() {
-    const target = resolveReturnToRunTarget(
-      returnToRunScreen,
-      hasActiveBattle || resumeKind === "battle",
-      resumeKind != null,
-    );
-    if (!target) return;
-    if (hasActiveRun && returnToRunScreen && returnToRunScreen !== "battle") {
-      run.goToScreen(returnToRunScreen);
-    } else {
-      run.returnToBattle();
-    }
-    setReturnToRunScreen(null);
+    if (!returnToRunTarget) return;
+    run.returnToBattle();
   }
 
   function handleMainMenu() {
-    if (isRunLoopScreen(renderedScreen) || renderedScreen === "draft-deck") setReturnToRunScreen(renderedScreen);
     run.goToScreen("menu");
   }
 

@@ -3,10 +3,9 @@ import { parseActiveRun } from "@/lib/active-run-session";
 import { normalizeSaveData } from "../../../../helpers/parse-save-for-tests";
 import { defaultBattleState } from "@/lib/battle";
 import { repairPersistedTrinketManifest } from "@/lib/validation/normalize-persisted-battle-state";
-import { cardLibrary } from "@/lib/game-data";
+import { cardLibrary, enemyById } from "@/lib/game-data";
 import { makeRunCandidate } from "../../../../fixtures/active-run";
-import { createMinimalLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
-import { LABYRINTH_ENTRANCE_NODE_ID } from "@/lib/content-systems/labyrinth/data";
+import { gridLabyrinthMapFixture } from "../../../../fixtures/labyrinth-map";
 import { makeTestCard } from "../../../../fixtures/cards";
 
 describe("parseActiveRun", () => {
@@ -259,7 +258,7 @@ describe("parseActiveRun", () => {
       ...battleState,
       flags: { goldOnFirstPoisonThisCombat: false },
       currentEnemy: {
-        ...battleState.currentEnemy,
+        ...enemyById["mud-elemental"],
         traits: [
           { id: "regeneration", title: "Regeneration", description: "Base enemy trait" },
           { id: "armored", title: "Armored", description: "Retired encounter trait" },
@@ -292,24 +291,23 @@ describe("parseActiveRun with labyrinth map", () => {
     });
   }
 
-  it("parses a valid hex labyrinth map", () => {
-    const result = parseActiveRun(makeLabyrinthRun(createMinimalLabyrinthMap() as unknown as Record<string, unknown>));
+  it("parses a valid grid labyrinth map", () => {
+    const result = parseActiveRun(makeLabyrinthRun(gridLabyrinthMapFixture() as unknown as Record<string, unknown>));
     expect(result).not.toBeNull();
     expect(result!.labyrinthMap).not.toBeNull();
     expect(result!.labyrinthMap!.currentFloor).toBe(1);
-    expect(result!.labyrinthMap!.nodes[LABYRINTH_ENTRANCE_NODE_ID]?.type).toBe("entrance");
+    expect(result!.labyrinthMap!.nodes["labyrinth-floor-1-entrance"]?.type).toBe("entrance");
   });
 
   it("drops labyrinth runs when the map has no entrance", () => {
-    const map = createMinimalLabyrinthMap();
-    delete map.nodes[LABYRINTH_ENTRANCE_NODE_ID];
-    map.floors = map.floors.filter((floor) => floor.depth !== 0);
+    const map = gridLabyrinthMapFixture();
+    delete map.nodes["labyrinth-floor-1-entrance"];
     const result = parseActiveRun(makeLabyrinthRun(map as unknown as Record<string, unknown>));
     expect(result).toBeNull();
   });
 
   it("drops labyrinth runs when a floor is missing its boss", () => {
-    const map = createMinimalLabyrinthMap();
+    const map = gridLabyrinthMapFixture();
     const boss = Object.values(map.nodes).find((node) => node.type === "boss")!;
     map.nodes[boss.id] = { ...boss, type: "combat" };
     const result = parseActiveRun(makeLabyrinthRun(map as unknown as Record<string, unknown>));
@@ -317,7 +315,7 @@ describe("parseActiveRun with labyrinth map", () => {
   });
 
   it("filters unknown labyrinth modifier kinds", () => {
-    const map = createMinimalLabyrinthMap();
+    const map = gridLabyrinthMapFixture();
     const combat = Object.values(map.nodes).find((node) => node.type === "combat")!;
     map.nodes[combat.id] = { ...combat, modifiers: ["unknown-mod" as never] };
     const result = parseActiveRun(makeLabyrinthRun(map as unknown as Record<string, unknown>));
@@ -326,7 +324,7 @@ describe("parseActiveRun with labyrinth map", () => {
   });
 
   it("normalizes labyrinth combat pending node id and modifiers", () => {
-    const map = createMinimalLabyrinthMap();
+    const map = gridLabyrinthMapFixture();
     const combat = Object.values(map.nodes).find((node) => node.type === "combat")!;
     const result = parseActiveRun(
       makeRunCandidate({

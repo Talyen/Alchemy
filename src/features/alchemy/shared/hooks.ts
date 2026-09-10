@@ -114,7 +114,10 @@ export function getVirtualResolutionLayout(
       top: 0,
       "--content-scale": stageContentScale,
     },
-    tooltipStyle: { "--content-scale": tooltipScale } as React.CSSProperties,
+    tooltipStyle: {
+      "--content-scale": tooltipScale,
+      "--tooltip-trait-scale": contentScale * tooltipScale,
+    } as React.CSSProperties,
     aspectMode:
       selectedAspectRatio === "auto" ? getAspectModeFromRatio(viewportAspect) : getAspectMode(selectedAspectRatio),
     stagePixelRatio: LAYOUT_CONFIG.STAGE_PIXEL_RATIO_DEFAULT,

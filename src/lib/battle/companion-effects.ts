@@ -1,10 +1,10 @@
-import { resolvePendingCinderSkinReaction } from "./enemy-attack-damage";
+import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import { damageOnlyEffects } from "./damage-effect-selection";
 import { getCompanionBondEffects, type BattleCard, type TalentEffectManifest } from "@/lib/game-data";
 import { isPlayerDefeated, type BattleState, type CombatTextEvent, withPreservedFlags } from "./types";
 import { LOW_HEALTH_THRESHOLD_PERCENT, PERCENT_DENOMINATOR } from "../game-constants";
-import { applyLeechHealing, computeLeechHeal, scalePlayerLeechHeal } from "./damage-rider-leech";
+import { addBloodDebtHealing, applyLeechHealing, computeLeechHeal, scalePlayerLeechHeal } from "./damage-rider-leech";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { addPlayerStatusWithCombatText, applyHealingWithCombatText } from "./combat-text";
 import { rollTalentChance } from "./status-helpers";
@@ -99,19 +99,25 @@ export function resolveCompanionTurnStart(
 
   return withPreservedFlags(state, (s) => {
     const attackBonuses = { flat: s.flags.companionNextAttackBonus, physical: 0, bleed: 0 };
+    const damageEffects: NonNullable<CardEffectResolutionContext["damageEffects"]> = [];
+    let damageDealt = 0;
     let afterEffects = processEncounterTraitCardAction(
       applyEffects(s, companionCard, combatTexts, {
         manaAtStart: s.mana,
         enemyFreezeSkipTurnsAtStart: s.enemyCC.freezeSkipTurns,
         attackBonuses,
         companionAttack: true,
+        damageEffects,
+        onDamageDealt: (amount) => {
+          damageDealt += amount;
+        },
       }),
       companionCard,
       combatTexts,
+      damageEffects.length > 0,
     );
 
     afterEffects = { ...afterEffects, flags: { ...afterEffects.flags, companionNextAttackBonus: attackBonuses.flat } };
-    const damageDealt = Math.max(0, s.enemyHealth - afterEffects.enemyHealth);
     if (damageDealt > 0 && state.gearEffects.healOnCompanionAttack > 0) {
       afterEffects = applyHealingWithCombatText(afterEffects, state.gearEffects.healOnCompanionAttack, combatTexts);
     }
@@ -135,7 +141,10 @@ export function resolveCompanionTurnStart(
       if (rollPercent(state.talentEffects.companionLeechChance, getBattleRng(state))) {
         const leechHeal = scalePlayerLeechHeal(
           afterEffects,
-          scaledGearLeechHeal(computeLeechHeal(damageDealt), afterEffects.gearEffects),
+          scaledGearLeechHeal(
+            addBloodDebtHealing(afterEffects, computeLeechHeal(damageDealt)),
+            afterEffects.gearEffects,
+          ),
         );
         if (leechHeal > 0) {
           afterEffects = applyLeechHealing(afterEffects, leechHeal, combatTexts);
@@ -143,6 +152,6 @@ export function resolveCompanionTurnStart(
       }
     }
 
-    return resolvePendingCinderSkinReaction(afterEffects, combatTexts);
+    return resolvePendingBattleReactions(afterEffects, combatTexts);
   });
 }

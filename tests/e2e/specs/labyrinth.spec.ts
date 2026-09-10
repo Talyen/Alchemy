@@ -1,9 +1,10 @@
 import { expect, test as motionTest } from "@playwright/test";
 import { test } from "../../fixtures/e2e";
-import { productionHexLabyrinthMapFixture } from "../../fixtures/labyrinth-hex-map";
+import { gridLabyrinthMapFixture, twoFloorLabyrinthMapFixture } from "../../fixtures/labyrinth-map";
 import { critical } from "../../playwright-tags";
 import { failOnRuntimeErrors, injectLabyrinthRun } from "../../helpers";
 import { MenuPage } from "../../pages/menu-page";
+import { CorruptionPage } from "../../pages/corruption-page";
 
 const chamberDetails = "Chamber details";
 
@@ -12,97 +13,129 @@ test.describe("Labyrinth exploration", critical, () => {
     void runtimeErrors;
   });
 
-  test("a new run opens a complete floor with inspectable chambers", async ({ page }) => {
+  test("a new run opens twenty rooms, with hidden encounters and an inspectable distant boss", async ({ page }) => {
     const menu = new MenuPage(page);
     await menu.goToCharacterSelectUnlocked("labyrinth");
     await menu.selectCharacterAndContinue("Knight");
-    await expect(page.getByRole("heading", { name: "Labyrinth", exact: true })).toBeVisible();
-    await expect(page.getByRole("status", { name: "Floor 1" })).toBeVisible();
-    await page
-      .getByRole("button", { name: /chamber, reachable, enterable/ })
-      .first()
-      .click();
-    await expect(page.getByRole("complementary", { name: chamberDetails })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Fight", exact: true })).toBeVisible();
-  });
-
-  test("inspects unexplored and completed rooms, preserves the map, and restores keyboard focus", async ({ page }) => {
-    const map = productionHexLabyrinthMapFixture();
-    map.currentFloor = 1;
-    map.currentNodeId = "labyrinth-floor-1-n4";
-    await page.setViewportSize({ width: 1920, height: 1080 });
-    await injectLabyrinthRun(page, { labyrinthMap: map });
+    await expect(page.getByRole("region", { name: "Labyrinth map" })).toHaveAttribute("aria-description", "Floor 1");
+    await expect(page.getByRole("status", { name: "Floor 1" })).toHaveCount(0);
     const nodes = page.locator("[data-labyrinth-node]");
-    await expect(nodes).toHaveCount(12);
-    const boxes = await nodes.evaluateAll((elements) =>
-      elements.map((element) => element.getBoundingClientRect().toJSON()),
+    await expect(nodes).toHaveCount(20);
+    await expect(page.getByRole("button", { name: "Entrance chamber, you are here", exact: true })).toHaveAttribute(
+      "aria-current",
+      "location",
     );
-    const unexplored = page.getByRole("button", { name: /chamber, unexplored/ }).first();
-    await unexplored.click();
-    await expect(page.getByText("Explore an adjacent chamber to enter.")).toBeVisible();
-    await expect(page.getByRole("button", { name: /^(Fight|Rest|Enter)$/ })).toHaveCount(0);
+    const hidden = page.getByRole("button", { name: /^Undiscovered chamber/ });
+    expect(await hidden.count()).toBeGreaterThanOrEqual(15);
+    await expect(hidden.first().locator("img")).toHaveCount(0);
+    await expect(hidden.first()).toHaveText("?");
+    await hidden.first().hover();
+    await hidden.first().focus();
+    await hidden.first().press("Enter");
+    await expect(page.getByRole("complementary", { name: chamberDetails })).toHaveCount(0);
+    await page.getByRole("button", { name: /^Boss chamber/ }).click();
+    await expect(page.getByRole("complementary", { name: chamberDetails })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Fight", exact: true })).toHaveCount(0);
+    await expect(page.getByText("Move to an adjacent chamber to enter.")).toHaveCount(0);
     await page.keyboard.press("Escape");
-    await expect(unexplored).toBeFocused();
-    const current = page.locator('[aria-current="location"]');
-    await current.press("Space");
-    await expect(page.getByText("You are here", { exact: true })).toBeVisible();
-    await expect(page.getByText("Completed", { exact: true })).toBeVisible();
-    await page.keyboard.press("Escape");
-    await expect(current).toBeFocused();
-    const available = page.getByRole("button", { name: /chamber, reachable/ });
-    await available.first().click();
-    await available.last().click();
-    await expect(available.last()).toHaveAttribute("aria-pressed", "true");
-    await expect(page.getByRole("complementary", { name: chamberDetails })).toHaveCount(1);
-    expect(
-      await nodes.evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().toJSON())),
-    ).toEqual(boxes);
-    await page.getByRole("heading", { name: "Labyrinth", exact: true }).click();
-    await expect(page.getByRole("complementary", { name: chamberDetails })).toBeHidden();
+    await expect(page.getByRole("button", { name: /^Boss chamber/ })).toBeFocused();
   });
 
-  test("returning from a room preserves geography and saves the player's location", async ({ page }) => {
-    const map = productionHexLabyrinthMapFixture();
-    const target = map.nodes["labyrinth-floor-2-n0"]!;
+  test("completed branches remain accessible and discovery survives returning from another room", async ({ page }) => {
+    const map = gridLabyrinthMapFixture();
+    const target = map.nodes["labyrinth-floor-1-n0"]!;
     target.type = "rest";
     delete target.enemyId;
     await injectLabyrinthRun(page, { labyrinthMap: map });
-    const room = page.locator(`[data-labyrinth-node="${target.id}"]`);
-    const before = await room.boundingBox();
+    const room = page.locator(`[data-labyrinth-node="${target.id}"] button`);
+    const diagonal = page.locator('[data-labyrinth-node="labyrinth-floor-1-n4"]');
+    const layout = await page
+      .locator("[data-labyrinth-node]")
+      .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("style")));
+    await expect(diagonal).toHaveAttribute("data-state", "undiscovered");
     await room.click();
     await page.getByRole("button", { name: "Rest", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Campfire", exact: true, level: 1 })).toBeVisible();
     await page.getByRole("button", { name: "Rest", exact: true }).click();
-    await expect(page.getByRole("heading", { name: "Labyrinth", exact: true })).toBeVisible();
     await expect(room).toHaveAttribute("aria-current", "location");
-    expect(await room.boundingBox()).toEqual(before);
-    await expect(page.getByRole("complementary", { name: chamberDetails })).toBeHidden();
+    await expect(diagonal.locator("img")).toHaveCount(1);
+    const entrance = page.getByRole("button", { name: /^Entrance chamber/ });
+    await entrance.click();
+    await expect(page.getByText("Floor 1", { exact: true })).toBeVisible();
+    await expect(room).toHaveAttribute("aria-current", "location");
+    await page.keyboard.press("Escape");
+    const otherBranch = page.locator('[data-labyrinth-node="labyrinth-floor-1-n3"] button');
+    await otherBranch.click();
+    await page.getByRole("button", { name: "Rest", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Campfire", exact: true, level: 1 })).toBeVisible();
+    await page.getByRole("button", { name: "Rest", exact: true }).click();
+    await expect(otherBranch).toHaveAttribute("aria-current", "location");
+    await expect(diagonal.locator("img")).toHaveCount(1);
+    await expect(page.locator('[data-labyrinth-node="labyrinth-floor-1-n1"]')).toHaveAttribute(
+      "data-state",
+      "reachable",
+    );
+    expect(
+      await page
+        .locator("[data-labyrinth-node]")
+        .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("style"))),
+    ).toEqual(layout);
     const fresh = await page.context().newPage();
+    const errors = failOnRuntimeErrors(fresh);
     try {
       await fresh.goto("/");
-      await expect(fresh.locator(`[data-labyrinth-node="${target.id}"]`)).toHaveAttribute("aria-current", "location", {
-        timeout: 20000,
-      });
+      await expect(fresh.locator('[data-labyrinth-node="labyrinth-floor-1-n3"] button')).toHaveAttribute(
+        "aria-current",
+        "location",
+        { timeout: 20000 },
+      );
+      await expect(fresh.locator('[data-labyrinth-node="labyrinth-floor-1-n4"] img')).toHaveCount(1);
+      await expect(fresh.locator(`[data-labyrinth-node="${target.id}"]`)).toHaveAttribute("data-state", "cleared");
+      expect(errors).toEqual([]);
     } finally {
       await fresh.close();
     }
   });
 
-  test("a completed boss offers one-way descent without a floor picker", async ({ page }) => {
-    const map = productionHexLabyrinthMapFixture();
-    const boss = map.nodes["labyrinth-floor-2-n11"]!;
-    boss.cleared = true;
-    map.currentNodeId = boss.id;
+  test("leaving Corruption unfinished does not move the player or scout beyond it", async ({ page }) => {
+    const map = gridLabyrinthMapFixture();
+    const target = map.nodes["labyrinth-floor-1-n0"]!;
+    target.type = "corruption";
+    delete target.enemyId;
     await injectLabyrinthRun(page, { labyrinthMap: map });
-    await expect(page.getByRole("status", { name: "Floor 2" })).toBeVisible();
-    await expect(page.getByRole("combobox", { name: "Floor" })).toHaveCount(0);
-    await page.locator(`[data-labyrinth-node="${boss.id}"]`).click();
-    await expect(page.getByText("Leave 11 unexplored chambers behind.")).toBeVisible();
+    const room = page.locator(`[data-labyrinth-node="${target.id}"] button`);
+    await room.click();
+    await page.getByRole("button", { name: "Enter", exact: true }).click();
+    const corruption = new CorruptionPage(page);
+    await expect(corruption.altarHeading).toBeVisible();
+    await corruption.leaveBtn.click();
+    await expect(page.locator(`[data-labyrinth-node="${map.currentNodeId}"] button`)).toHaveAttribute(
+      "aria-current",
+      "location",
+    );
+    await expect(page.locator('[data-labyrinth-node="labyrinth-floor-1-n4"]')).toHaveAttribute(
+      "data-state",
+      "undiscovered",
+    );
+    await expect(page.locator(`[data-labyrinth-node="${target.id}"]`)).toHaveAttribute("data-state", "reachable");
+  });
+
+  test("a completed boss offers descent without backtracking", async ({ page }) => {
+    const map = gridLabyrinthMapFixture();
+    for (const node of Object.values(map.nodes)) node.cleared = true;
+    map.nodes["labyrinth-floor-1-n3"]!.cleared = false;
+    await injectLabyrinthRun(page, { labyrinthMap: map });
+    await page.locator('[data-labyrinth-node="labyrinth-floor-1-n14"] button').click();
+    await expect(page.getByText("Leave 1 unexplored chamber behind.")).toBeVisible();
     await page.getByRole("button", { name: "Descend", exact: true }).click();
-    await expect(page.getByRole("status", { name: "Floor 3" })).toBeVisible();
-    await expect(page.getByRole("complementary", { name: chamberDetails })).toBeHidden();
-    await expect(page.locator('[data-labyrinth-node^="labyrinth-floor-2-"]')).toHaveCount(0);
-    await expect(page.getByRole("button", { name: /chamber, reachable, enterable/ })).toHaveCount(1);
+    await expect(page.getByRole("region", { name: "Labyrinth map" })).toHaveAttribute("aria-description", "Floor 2");
+    await expect(page.locator('[data-labyrinth-node^="labyrinth-floor-1-"]')).toHaveCount(0);
+    await expect(page.locator("[data-labyrinth-node]")).toHaveCount(20);
+    await expect(page.getByRole("button", { name: "Entrance chamber, you are here", exact: true })).toHaveAttribute(
+      "aria-current",
+      "location",
+    );
+    await expect(page.getByRole("complementary", { name: chamberDetails })).toHaveCount(0);
   });
 });
 
@@ -112,7 +145,7 @@ for (const { width, height, gameSizePercent } of [
   { width: 1280, height: 480, gameSizePercent: 120 },
   { width: 600, height: 900, gameSizePercent: 100 },
 ]) {
-  test(`full floor and anchored details fit ${width}×${height} at Game Size ${gameSizePercent}`, async ({
+  test(`full grid and overlay fit ${width}×${height} at Game Size ${gameSizePercent}`, async ({
     page,
     runtimeErrors,
   }) => {
@@ -124,16 +157,19 @@ for (const { width, height, gameSizePercent } of [
       );
     }, gameSizePercent);
     await page.setViewportSize({ width, height });
-    const map = productionHexLabyrinthMapFixture();
+    const map = twoFloorLabyrinthMapFixture();
     const target = map.nodes["labyrinth-floor-2-n0"]!;
     target.modifiers = ["jealous", "tempered", "rooted"];
     target.rewardModifiers = ["alchemist", "companion", "scavenger"];
     await injectLabyrinthRun(page, { labyrinthMap: map, runOverrides: { selectedAspectRatio: "auto" } });
     const viewport = page.getByTestId("labyrinth-viewport");
     const nodes = page.locator("[data-labyrinth-node]");
-    await expect(nodes).toHaveCount(12);
-    await nodes.first().hover();
+    const room = page.locator(`[data-labyrinth-node="${target.id}"] button`);
+    await expect(nodes).toHaveCount(20);
     const bounds = (await viewport.boundingBox())!;
+    const positions = await nodes.evaluateAll((elements) => elements.map((element) => element.getAttribute("style")));
+    await room.hover();
+    await expect(room.locator("..")).toHaveCSS("scale", "1.06");
     const rectangles = await nodes.evaluateAll((elements) =>
       elements.map((element) => element.getBoundingClientRect().toJSON()),
     );
@@ -142,28 +178,14 @@ for (const { width, height, gameSizePercent } of [
       expect(box.y).toBeGreaterThanOrEqual(bounds.y);
       expect(box.right).toBeLessThanOrEqual(bounds.x + bounds.width + 1);
       expect(box.bottom).toBeLessThanOrEqual(bounds.y + bounds.height + 1);
+      expect(box.width / box.height).toBeCloseTo(4 / 3, 2);
     }
-    const floorLabel = (await page.getByRole("status", { name: "Floor 2" }).boundingBox())!;
     const header = (await page.getByRole("heading", { name: "Labyrinth", exact: true }).boundingBox())!;
-    expect(floorLabel.y).toBeGreaterThanOrEqual(header.y + header.height);
-    expect(floorLabel.y + floorLabel.height).toBeLessThanOrEqual(bounds.y);
+    expect(header.y + header.height).toBeLessThanOrEqual(bounds.y);
+    await expect(page.getByRole("status")).toHaveCount(0);
     expect(await viewport.evaluate((element) => element.scrollHeight <= element.clientHeight)).toBe(true);
-    const borderInfo = await page
-      .getByTestId("labyrinth-borders")
-      .locator("path")
-      .evaluateAll((paths) =>
-        paths.map((path) => ({
-          key: path.getAttribute("data-edge"),
-          width: getComputedStyle(path).strokeWidth,
-          scale: path.getAttribute("vector-effect"),
-        })),
-      );
-    expect(new Set(borderInfo.map((edge) => edge.key)).size).toBe(borderInfo.length);
-    expect(new Set(borderInfo.map((edge) => edge.width))).toEqual(new Set(["2px"]));
-    expect(borderInfo.every((edge) => edge.scale === "non-scaling-stroke")).toBe(true);
-    await expect(page.getByRole("button", { name: /Zoom|Fit floor/ })).toHaveCount(0);
-    await expect(nodes.locator("span, svg")).toHaveCount(0);
-    await nodes.first().click();
+    await expect(nodes.locator("button").filter({ hasText: /Combat|Campfire|Shop|Entrance/ })).toHaveCount(0);
+    await room.click();
     const inspector = page.getByRole("complementary", { name: chamberDetails });
     await expect(inspector).toBeVisible();
     const panel = (await inspector.boundingBox())!;
@@ -171,7 +193,6 @@ for (const { width, height, gameSizePercent } of [
     expect(panel.y).toBeGreaterThanOrEqual(bounds.y);
     expect(panel.x + panel.width).toBeLessThanOrEqual(bounds.x + bounds.width + 1);
     expect(panel.y + panel.height).toBeLessThanOrEqual(bounds.y + bounds.height + 1);
-    expect(panel.width).toBeGreaterThanOrEqual(Math.min(320, bounds.width - 16) - 1);
     await expect(page.getByRole("button", { name: "Fight", exact: true })).toBeInViewport();
     const art = page.getByTestId("chamber-art");
     const image = art.locator("img");
@@ -182,29 +203,28 @@ for (const { width, height, gameSizePercent } of [
     }));
     expect(imageRatio.rendered).toBeCloseTo(imageRatio.natural, 2);
     await expect(art.getByRole("heading", { name: "Goblin" })).toHaveCount(1);
-    const information = art.locator("..");
-    await information.hover();
+    await art.locator("..").hover();
     await page.mouse.wheel(0, 1500);
     await expect(page.getByRole("button", { name: "Fight", exact: true })).toBeInViewport();
-    expect(
-      await nodes.evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().toJSON())),
-    ).toEqual(rectangles);
+    expect(await nodes.evaluateAll((elements) => elements.map((element) => element.getAttribute("style")))).toEqual(
+      positions,
+    );
     await page.keyboard.press("Escape");
-    await expect(nodes.first()).toBeFocused();
+    await expect(room).toBeFocused();
   });
 }
 
 test.describe("Labyrinth touch", () => {
   test.use({ hasTouch: true });
 
-  test("opens and dismisses anchored details without node overlays", async ({ page, runtimeErrors }) => {
+  test("opens and dismisses room details", async ({ page, runtimeErrors }) => {
     void runtimeErrors;
     await page.setViewportSize({ width: 600, height: 900 });
     await injectLabyrinthRun(page, {
-      labyrinthMap: productionHexLabyrinthMapFixture(),
+      labyrinthMap: gridLabyrinthMapFixture(),
       runOverrides: { selectedAspectRatio: "auto" },
     });
-    const room = page.getByRole("button", { name: /chamber, reachable/ }).first();
+    const room = page.getByRole("button", { name: /Combat chamber, reachable/ }).first();
     await room.tap();
     await expect(page.getByRole("complementary", { name: chamberDetails })).toBeVisible();
     await expect(page.getByRole("button", { name: "Fight", exact: true })).toBeInViewport();
@@ -213,15 +233,51 @@ test.describe("Labyrinth touch", () => {
   });
 });
 
-motionTest("Labyrinth shine respects reduced motion without changing border geometry", async ({ page }) => {
+motionTest("node hover, focus and selection retain shared shine without moving neighboring rooms", async ({ page }) => {
   const errors = failOnRuntimeErrors(page);
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await injectLabyrinthRun(page, { labyrinthMap: productionHexLabyrinthMapFixture() });
-  const room = page.getByRole("button", { name: /chamber, reachable/ }).first();
-  const before = await room.boundingBox();
-  await room.click();
+  await injectLabyrinthRun(page, { labyrinthMap: gridLabyrinthMapFixture() });
+  const room = page.locator('[data-labyrinth-node="labyrinth-floor-1-n0"] button');
+  const neighbor = page.locator('[data-labyrinth-node="labyrinth-floor-1-n1"]');
+  const neighborBefore = await neighbor.boundingBox();
+  await room.hover();
+  await expect(room.locator("..")).toHaveCSS("scale", "1.06");
+  await expect(room.locator(".shine-border")).toBeVisible();
+  expect(await neighbor.boundingBox()).toEqual(neighborBefore);
+  await page.getByRole("heading", { name: "Labyrinth", exact: true }).hover();
+  await expect(room.locator("..")).toHaveCSS("scale", "none");
+  await room.focus();
+  await expect(room.locator("..")).toHaveCSS("scale", "1.06");
+  await room.press("Enter");
   await expect(page.getByRole("complementary", { name: chamberDetails })).toBeVisible();
-  expect(await room.boundingBox()).toEqual(before);
-  await expect(page.getByTestId("labyrinth-borders").locator("animate")).toHaveCount(0);
+  await expect(room.locator("..")).toHaveCSS("scale", "1.06");
+  expect(await neighbor.boundingBox()).toEqual(neighborBefore);
+  expect(errors).toEqual([]);
+});
+
+motionTest("current amber, dim room borders and the boss glow remain stable through hover", async ({ page }) => {
+  const errors = failOnRuntimeErrors(page);
+  await injectLabyrinthRun(page, { labyrinthMap: gridLabyrinthMapFixture() });
+  const entrance = page.getByRole("button", { name: "Entrance chamber, you are here", exact: true });
+  const room = page.locator('[data-labyrinth-node="labyrinth-floor-1-n0"] button');
+  const hidden = page.getByRole("button", { name: /^Undiscovered chamber/ }).first();
+  const boss = page.getByRole("button", { name: /^Boss chamber/ });
+  await expect(page.getByTestId("labyrinth-location")).toHaveCount(0);
+  await expect(entrance).toHaveClass(/border-primary/);
+  const roomBorder = await room.evaluate((element) => getComputedStyle(element).borderColor);
+  await expect(hidden).toHaveCSS("border-color", roomBorder);
+  await expect(boss).toHaveCSS("border-color", roomBorder);
+  const glow = await boss.evaluate((element) => getComputedStyle(element).boxShadow);
+  expect(glow).not.toBe("none");
+  await boss.hover();
+  await expect(boss.locator(".shine-border")).toBeVisible();
+  await expect(boss).toHaveCSS("box-shadow", glow);
+  await page.getByRole("heading", { name: "Labyrinth", exact: true }).hover();
+  await expect(boss.locator(".shine-border")).toHaveCount(0);
+  await expect(boss).toHaveCSS("box-shadow", glow);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await room.hover();
+  await expect(room.locator("..")).toHaveCSS("scale", "1.06");
+  await expect(room.locator("..")).toHaveCSS("transition-property", "none");
+  await expect(room.locator(".shine-border")).toHaveCSS("animation-name", "none");
   expect(errors).toEqual([]);
 });

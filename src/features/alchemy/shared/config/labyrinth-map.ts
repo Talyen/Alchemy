@@ -113,5 +113,3 @@ export const LABYRINTH_NODE_META: Record<LabyrinthNodeType, LabyrinthNodeMeta> =
     actionLabel: "Fight",
   },
 };
-
-export const LABYRINTH_HEX_CLIP = "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)";

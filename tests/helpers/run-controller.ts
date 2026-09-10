@@ -23,7 +23,12 @@ export function createMockRouteCommands(): AlchemyRouteCommands {
       handleBackFromDifficultySelect: fn(),
     },
     runLoop: {
-      labyrinth: { handleNodeSelect: fn(), handleNodeDeselect: fn(), handleNodeEnter: fn(), descend: fn() },
+      labyrinth: {
+        handleNodeSelect: fn(),
+        handleNodeDeselect: fn(),
+        handleNodeEnter: fn(),
+        descend: fn(),
+      },
       rewards: { skip: fn(), claimChoice: fn() },
       destinations: { prepare: fn(), choose: fn(), continueCampfire: fn() },
       wildwood: { removeCard: fn(), skipRemoval: fn() },

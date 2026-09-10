@@ -39,11 +39,11 @@ import {
   flattenGearInventories,
   normalizeExclusiveGearLoadouts,
   normalizeGearLoadout,
-  pruneOrphanGearLoadouts,
   type GearInventories,
   type GearLoadouts,
   type EquippedTrinkets,
 } from "@/lib/gear/types";
+import { pruneOrphanGearLoadouts } from "@/lib/gear/operations";
 
 function characterShape<T extends z.ZodType>(factory: (id: string) => T): Record<string, T> {
   const shape: Record<string, T> = {};

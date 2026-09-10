@@ -38,6 +38,7 @@ Decision order:
 
 ## Navigation and bootstrap
 
+- Save assertions wait for the persisted value with `expect.poll`; visible navigation does not imply that a debounced write has completed. If a fixture needs damage on the next enemy turn, supply three canonical damaging ability IDs rather than assume the default Goblin cannot Block.
 - Save injectors install page-level initialization scripts that run again on navigation and reload. To verify changes persisted after injection, open a fresh page in the same browser context (shared storage, no page-level seeding script), collect its runtime errors, and close it after assertions.
 - The fresh-storage cold-start test keeps real loading enabled, with a 30-second menu wait inside a 60-second test budget for parallel suite load. Ordinary menu checks retain their shorter budgets.
 - `openGameModeSelect` retries Play if bootstrap unmounts the menu.

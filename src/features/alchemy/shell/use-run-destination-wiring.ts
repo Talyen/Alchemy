@@ -1,19 +1,8 @@
 import { useCallback, useMemo } from "react";
 import { readHasAnyOwnedGear, readHasUnownedTrinkets } from "@/features/alchemy/shared/stores/gear-store";
-import {
-  readActiveRun,
-  readActiveRunScreen,
-  readBattle,
-  readHasActiveRun,
-  readParkedRuns,
-  readRunProfile,
-  readRunRecency,
-} from "@/features/alchemy/shared/stores/run-reads";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { hydrateModeRunInDraft } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
-import { mostRecentResumableMode } from "@/features/alchemy/shared/stores/parked-runs";
+import { readActiveRun, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import { resolveAvailableDestinations, type DestinationOptionsInput } from "@/features/alchemy/shared/run-flow";
-import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
+import type { Screen } from "@/lib/routing";
 
 export function useRunDestinationWiring({
   navigateTo,
@@ -36,25 +25,6 @@ export function useRunDestinationWiring({
     });
   }, []);
 
-  const returnToBattle = useCallback(() => {
-    const hasLive = readHasActiveRun();
-    const liveMode = hasLive ? readActiveRun().contentSystemType : null;
-    const parked = readParkedRuns();
-    const mode = mostRecentResumableMode(readRunRecency(), liveMode, parked, hasLive);
-    if (mode && (!hasLive || liveMode !== mode)) {
-      dispatchRunSessionCommand((draft) => {
-        hydrateModeRunInDraft(draft, mode);
-      });
-    }
-    if (readBattle().hasActiveBattle) {
-      navigateTo(ROUTE_SCREENS.BATTLE);
-      return;
-    }
-    if (readHasActiveRun()) {
-      navigateTo(readActiveRunScreen());
-    }
-  }, [navigateTo]);
-
   const goToScreen = useCallback(
     (nextScreen: Screen) => {
       clearCardHover();
@@ -63,8 +33,5 @@ export function useRunDestinationWiring({
     [clearCardHover, navigateTo],
   );
 
-  return useMemo(
-    () => ({ getAvailableDestinations, returnToBattle, goToScreen }),
-    [getAvailableDestinations, returnToBattle, goToScreen],
-  );
+  return useMemo(() => ({ getAvailableDestinations, goToScreen }), [getAvailableDestinations, goToScreen]);
 }

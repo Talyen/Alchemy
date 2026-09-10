@@ -1,4 +1,4 @@
-import { resolvePendingCinderSkinReaction } from "./enemy-attack-damage";
+import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { prepareTalentCardPlay } from "./talent-card-play";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import { drawFromState, applyDrawResult } from "./draw";
@@ -73,7 +73,7 @@ function isCardInHand(state: BattleState, card: BattleCard, index: number): bool
 
 export function applyMortarAndPestlePotionUse(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]) {
   if (!isPotionCard(card) || state.trinketEffects.mortarPestlePoisonOnPotionUse <= 0) return state;
-  return resolvePendingCinderSkinReaction(
+  return resolvePendingBattleReactions(
     dealPlayerTypedHit(state, "poison", state.trinketEffects.mortarPestlePoisonOnPotionUse, combatTexts),
     combatTexts,
   );
@@ -110,7 +110,7 @@ function executeCardPlayState(
   playTwice: boolean,
   guaranteedCrit: boolean,
   damageEffects: NonNullable<CardEffectResolutionContext["damageEffects"]>,
-): BattleState {
+) {
   let nextState: BattleState = {
     ...state,
     hand: state.hand.filter((_, i) => i !== index),
@@ -133,8 +133,12 @@ function executeCardPlayState(
   nextState = applyCardEffects(nextState, card, combatTexts, playContext);
   nextState = applyMortarAndPestlePotionUse(nextState, card, combatTexts);
 
+  const repeatedDamageEffects: NonNullable<CardEffectResolutionContext["damageEffects"]> = [];
   if (playTwice) {
-    nextState = applyCardEffects(nextState, card, combatTexts, { ...playContext, damageEffects: [] });
+    nextState = applyCardEffects(nextState, card, combatTexts, {
+      ...playContext,
+      damageEffects: repeatedDamageEffects,
+    });
     nextState = applyMortarAndPestlePotionUse(nextState, card, combatTexts);
   }
 
@@ -142,7 +146,11 @@ function executeCardPlayState(
 
   nextState = applyTwinCasting(nextState, card);
 
-  return nextState;
+  return {
+    state: nextState,
+    attackAttempted: damageEffects.length > 0,
+    repeatAttackAttempted: repeatedDamageEffects.length > 0,
+  };
 }
 
 function applyTwinCasting(state: BattleState, card: BattleCard): BattleState {
@@ -335,7 +343,7 @@ export function playBattleCardResolved(
   };
   if (blockCost > 0)
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: blockCost });
-  let nextState = executeCardPlayState(
+  const played = executeCardPlayState(
     paymentState,
     card,
     index,
@@ -345,9 +353,15 @@ export function playBattleCardResolved(
     prepared.critical,
     prepared.damageEffects,
   );
-  nextState = finishUniqueCardDamage(nextState, card, prepared, combatTexts);
-  nextState = processEncounterTraitCardAction(nextState, card, combatTexts);
-  if (playTwice) nextState = processEncounterTraitCardAction(nextState, { ...card, consume: false }, combatTexts);
+  let nextState = finishUniqueCardDamage(played.state, card, prepared, combatTexts);
+  nextState = processEncounterTraitCardAction(nextState, card, combatTexts, played.attackAttempted);
+  if (playTwice)
+    nextState = processEncounterTraitCardAction(
+      nextState,
+      { ...card, consume: false },
+      combatTexts,
+      played.repeatAttackAttempted,
+    );
 
   const playerAlive = !isPlayerDefeated(nextState);
   if (playerAlive && enemyWasAlive) {
@@ -356,5 +370,5 @@ export function playBattleCardResolved(
   nextState = handlePostPlayCardDestination(nextState, card, playerAlive, combatTexts);
   if (prepared.harvest) nextState = returnHarvestCard(nextState, card);
 
-  return { state: resolvePendingCinderSkinReaction(nextState, combatTexts), combatTexts };
+  return { state: resolvePendingBattleReactions(nextState, combatTexts), combatTexts };
 }

@@ -308,9 +308,13 @@ const ActiveRunDataObjectSchema = z.object({
 export type ValidatedActiveRunData = z.output<typeof ActiveRunDataObjectSchema>;
 
 export const ActiveRunDataSchema = ActiveRunDataObjectSchema.transform(normalizeActiveRunData)
-  .refine((data) => data.contentSystemType !== "labyrinth" || data.labyrinthMap !== null, {
-    message: "Labyrinth runs require a valid labyrinth map",
-  })
+  .refine(
+    (data) =>
+      data.contentSystemType !== "labyrinth" ||
+      data.labyrinthMap !== null ||
+      (data.characterId === "wildcard" && data.starterDraftChoices !== null && data.activeCombat === null),
+    { message: "Labyrinth runs require a valid labyrinth map or an unfinished Wildcard starter draft" },
+  )
   .refine((data) => data.contentSystemType !== "wildwood" || data.wildwoodDraft !== null, {
     message: "Wildwood Draft runs require versioned mode state",
   });

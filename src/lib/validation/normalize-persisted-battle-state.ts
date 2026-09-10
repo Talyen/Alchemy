@@ -82,7 +82,13 @@ function restoreEnemyTraits(value: unknown, enemy: BestiaryEntry | undefined): E
   if (!Array.isArray(value)) return enemy?.traits ?? [];
   const traits = value.flatMap((trait: unknown): EnemyTrait[] => {
     if (!trait || typeof trait !== "object" || !("id" in trait) || typeof trait.id !== "string") return [];
-    const canonical = enemy?.traits.find((entry) => entry.id === trait.id) ?? traitMetadata.get(trait.id);
+    if (
+      enemy &&
+      !Object.hasOwn(ENCOUNTER_TRAITS, trait.id) &&
+      (traitMetadata.has(trait.id) || trait.id === "trinket-hoarder")
+    )
+      return [];
+    const canonical = traitMetadata.get(trait.id);
     if (canonical) return [canonical];
     if (
       !("title" in trait) ||
@@ -93,7 +99,11 @@ function restoreEnemyTraits(value: unknown, enemy: BestiaryEntry | undefined): E
       return [];
     return [{ id: trait.id, title: trait.title, description: trait.description }];
   });
-  return sanitizePersistedEnemyTraits(traits);
+  return [
+    ...new Map(
+      sanitizePersistedEnemyTraits([...(enemy?.traits ?? []), ...traits]).map((trait) => [trait.id, trait]),
+    ).values(),
+  ];
 }
 
 export function normalizePersistedBattleState(saved: Partial<BattleState>): BattleState {
@@ -126,6 +136,7 @@ export function normalizePersistedBattleState(saved: Partial<BattleState>): Batt
     enemyCC: mergeRecord(defaults.enemyCC, saved.enemyCC),
     enemyMitigation: mergeRecord(defaults.enemyMitigation, saved.enemyMitigation),
     pendingTurnStartEffects: saved.pendingTurnStartEffects ?? defaults.pendingTurnStartEffects,
+    pendingForgeThresholds: saved.pendingForgeThresholds ?? defaults.pendingForgeThresholds,
     currentEnemy: {
       ...defaults.currentEnemy,
       ...saved.currentEnemy,

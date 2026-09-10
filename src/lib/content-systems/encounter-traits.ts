@@ -62,7 +62,7 @@ export const ENCOUNTER_TRAITS = defineEncounterTraits({
   septic: combat("Septic", "Deals 1 Poison or Bleed damage each turn"),
   caustic: combat("Caustic", "Deals 1 Poison damage and strips 1 Armor each turn"),
   flesheater: combat("Flesheater", "Deals 1 Bleed damage each turn\nLeech"),
-  combustible: combat("Combustible", "Enemy deals 1 Burn damage each turn"),
+  combustible: combat("Scorching", "Enemy deals 1 Burn damage each turn"),
   chilling: combat("Chilling", "Enemy deals 1 Freeze damage each turn"),
   thorns: combat("Thorns", "Gains 1 Thorns each turn"),
   zealot: combat("Zealot", "Enemy deals 2 Holy damage each turn"),

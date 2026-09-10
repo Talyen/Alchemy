@@ -8,7 +8,6 @@ import { gearDefinitions, getOwnedUniqueDefinitionIds } from "@/lib/gear";
 import { eventHasUnresolvedRandomTrinket, repairUnresolvedMysteryTrinkets } from "@/lib/mystery";
 import type { GameplayDraft } from "./run-session-command";
 import { decodeRunResumeSnapshot, encodeRunResumeSnapshot, type DecodedRunResumeSession } from "./run-resume-codec";
-import { inferActiveRunScreen } from "./encode-interrupted-flow";
 import { getRunSessionFromState } from "./run-reads";
 import {
   abandonMysteryDestinationVisit,
@@ -47,7 +46,7 @@ import { rebindLiveRunMeta } from "./run-meta-rebind";
 import { omitParkedMode, removeRunRecency, touchRunRecency } from "./parked-runs";
 
 function encodeParkedSnapshot(draft: GameplayDraft): ActiveRunData {
-  return encodeRunResumeSnapshot(getRunSessionFromState(draft, draft.run.navigation.screen));
+  return encodeRunResumeSnapshot(getRunSessionFromState(draft), draft.run.navigation.resumeScreen ?? undefined);
 }
 
 function repairRestoredTrinketShop(state: TrinketShopState, ownedIds: readonly string[]): TrinketShopState {
@@ -119,6 +118,7 @@ export function parkAndDeactivateForegroundRunInDraft(draft: GameplayDraft): voi
 }
 
 export function applyRestoreRunToDraft(draft: GameplayDraft, activeRun: ActiveRunData | null): void {
+  draft.run.navigation.resumeScreen = null;
   const decoded = activeRun ? decodeRunResumeSnapshot(activeRun) : null;
   if (decoded) initializeFromResumeSnapshot(draft, decoded.progress);
   else initializeActiveRun(draft, null);
@@ -133,13 +133,13 @@ export function applyRestoreRunToDraft(draft: GameplayDraft, activeRun: ActiveRu
   const pending = decoded?.pendingBattleTransition ?? null;
   initializeActiveBattle(draft, battleState, pending);
 
-  const resumeScreen = decoded?.screen ?? (activeRun ? inferActiveRunScreen(activeRun) : null);
-  if (resumeScreen) setScreen(draft, resumeScreen);
+  const resumeScreen = decoded?.screen ?? null;
   if (!activeRun) return;
 
   clearTransientSession(draft);
   setHasActiveRun(draft, true);
   if (decoded) restoreRunSession(draft, decoded.session);
+  if (resumeScreen) setScreen(draft, resumeScreen);
   if (draft.session.mysteryEvent && eventHasUnresolvedRandomTrinket(draft.session.mysteryEvent)) {
     const rng = createDraftRunRandomSource(draft, "events");
     setMysteryEvent(

@@ -5,6 +5,7 @@ import {
   createInitialTrinketShopState as createInitialTrinketShopStateImpl,
   createInitialEquipmentShopState as createInitialEquipmentShopStateImpl,
   resampleTrinketShopOfferings,
+  resampleEquipmentShopOfferings,
 } from "@/features/alchemy/run-loop/shop/shop-state-init";
 import {
   hydrateAlchemistState,
@@ -24,6 +25,7 @@ import {
   EQUIPMENT_SHOP_OFFERED,
 } from "@/lib/game-constants";
 import { trinketLibrary } from "@/lib/game-data";
+import { gearDefinitions } from "@/lib/gear";
 
 const testRng = () => 0.5;
 const createInitialShopState = () => createInitialShopStateImpl([], testRng);
@@ -32,6 +34,13 @@ const createInitialTrinketShopState = (rng: () => number = testRng) => createIni
 const createInitialEquipmentShopState = (rng: () => number = testRng) => createInitialEquipmentShopStateImpl(rng);
 
 describe("shop-state-init", () => {
+  it("keeps Bowyer shelves full when every eligible base was already offered", () => {
+    const previous = resampleEquipmentShopOfferings(testRng, 0, new Set(), ["bowyer"]);
+    const refreshed = resampleEquipmentShopOfferings(testRng, 0, new Set(), ["bowyer", "masterwork"], previous);
+    expect(refreshed).toHaveLength(EQUIPMENT_SHOP_OFFERED);
+    expect(new Set(refreshed.map((item) => gearDefinitions[item.definitionId]!.baseItemId)).size).toBe(3);
+    expect(refreshed.every((item) => gearDefinitions[item.definitionId]!.rarity === "astral")).toBe(true);
+  });
   it("createInitialShopState samples correct number of shop cards", () => {
     expect(createInitialShopState().cards.length).toBe(SHOP_CARDS_OFFERED);
   });

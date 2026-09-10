@@ -18,7 +18,8 @@ export type ArmedFlagChipId =
   | "nextHitPhysicalBonus"
   | "nextPhysicalDealsBleed"
   | "nextArcheryCardFree"
-  | "nextNatureCardFree";
+  | "nextNatureCardFree"
+  | "nextHolyCardFree";
 
 export type PendingPulseChipId = `pending-${DamageType}`;
 
@@ -137,6 +138,13 @@ export const augmentDefinitions: Record<AugmentId, AugmentDefinition> = {
     description: "Your next Archery card is free.",
     icon: keywordIcons.archery,
     colorClass: keywordDefinitions.archery.colorClass,
+  },
+  nextHolyCardFree: {
+    id: "nextHolyCardFree",
+    label: "Divine Favor",
+    description: "Your next Holy card is free.",
+    icon: keywordIcons.holy,
+    colorClass: keywordDefinitions.holy.colorClass,
   },
   nextNatureCardFree: {
     id: "nextNatureCardFree",

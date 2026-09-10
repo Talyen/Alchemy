@@ -1,5 +1,11 @@
 import { expect, test } from "../../fixtures/e2e";
-import { assertNoOverflow, assertStageFitsViewport, makeCard, startBattleWithDeck } from "../../helpers";
+import {
+  assertNoOverflow,
+  assertStageFitsViewport,
+  failOnRuntimeErrors,
+  makeCard,
+  startBattleWithDeck,
+} from "../../helpers";
 import { MenuPage } from "../../pages/menu-page";
 import { slow } from "../../playwright-tags";
 
@@ -106,6 +112,90 @@ test.describe("Responsive display sizes", slow, () => {
         expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(viewport.width + 1);
         expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(viewport.height + 1);
         await assertNoOverflow(page, `Battle ${viewport.width} at ${gameSizePercent}`);
+      }
+    }
+  });
+
+  test("enemy tooltip headers stay standard while Traits match game sizing in Collection and Battle", async ({
+    browser,
+  }, testInfo) => {
+    test.setTimeout(60_000);
+    for (const [gameSizePercent, tooltipSizePercent] of [
+      [80, 90],
+      [120, 90],
+      [120, 125],
+    ] as const) {
+      const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+      const errors = failOnRuntimeErrors(page);
+      await page.addInitScript(
+        (preferences) => localStorage.setItem("alchemy-device-display-v1", JSON.stringify(preferences)),
+        { version: 1, gameSizePercent, tooltipSizePercent },
+      );
+      try {
+        await new MenuPage(page).gotoCollection({ encounteredEnemyIds: ["bandit"] });
+        const tooltip = page.locator("#tooltip-root .hover-popup-panel[data-visible]");
+        await page.getByRole("button", { name: "Inspect Knight", exact: true }).hover();
+        await expect(tooltip).toHaveCSS("opacity", "1");
+        const standardHeaderSize = await tooltip
+          .locator(":scope > p")
+          .first()
+          .evaluate((el) => getComputedStyle(el).fontSize);
+        await page.screenshot({ path: testInfo.outputPath(`standard-${gameSizePercent}-${tooltipSizePercent}.png`) });
+        await page.getByRole("button", { name: "Bestiary", exact: true }).click();
+        for (const screen of ["Collection", "Battle"]) {
+          if (screen === "Battle") {
+            await startBattleWithDeck(
+              page,
+              Array.from({ length: 6 }, () => makeCard()),
+            );
+            await expect(page.getByRole("button", { name: /^View Deck/ })).toHaveAttribute("aria-disabled", "false", {
+              timeout: 20_000,
+            });
+            await page.getByTestId("battle-enemy-art-panel").hover();
+          } else {
+            await page.getByRole("button", { name: "Inspect Bandit", exact: true }).hover();
+          }
+          await expect(tooltip.locator("[data-trait]").first()).toBeVisible();
+          await expect(tooltip).toHaveCSS("opacity", "1");
+          await expect(tooltip.locator(":scope > p").first()).toHaveCSS("font-size", standardHeaderSize);
+          const scale = tooltipSizePercent / 100;
+          const gameScale = await page
+            .locator("html")
+            .evaluate((el) => parseFloat(getComputedStyle(el).getPropertyValue("--content-scale")));
+          const traitScale = gameScale * scale;
+          const sizing = await tooltip.evaluate((el) => {
+            const style = getComputedStyle(el);
+            const body = el.querySelector("[data-trait] p")!;
+            const icon = el.querySelector("[data-trait] svg")!;
+            return [
+              parseFloat(style.getPropertyValue("--content-scale")),
+              parseFloat(getComputedStyle(body).fontSize),
+              icon.getBoundingClientRect().width,
+              parseFloat(style.paddingTop),
+              parseFloat(style.maxWidth),
+            ];
+          });
+          for (const [index, expected] of [
+            scale,
+            18 * traitScale,
+            32 * traitScale,
+            12 * scale,
+            448 * scale,
+          ].entries()) {
+            expect(sizing[index]).toBeCloseTo(expected, 1);
+          }
+          const bounds = (await tooltip.boundingBox())!;
+          expect(bounds.x).toBeGreaterThanOrEqual(0);
+          expect(bounds.y).toBeGreaterThanOrEqual(0);
+          expect(bounds.x + bounds.width).toBeLessThanOrEqual(1280);
+          expect(bounds.y + bounds.height).toBeLessThanOrEqual(720);
+          await page.screenshot({
+            path: testInfo.outputPath(`enemy-${screen}-${gameSizePercent}-${tooltipSizePercent}.png`),
+          });
+        }
+        expect(errors).toEqual([]);
+      } finally {
+        await page.close();
       }
     }
   });

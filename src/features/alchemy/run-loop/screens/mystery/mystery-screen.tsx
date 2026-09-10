@@ -113,33 +113,35 @@ export function MysteryScreen({
   ]);
 
   return (
-    <MysteryScreenShell title={title} keywordIds={plasmaKeywordIds}>
-      <FadeSlot swapKey={phase} className="mt-6 flex min-h-[56cqh] w-full flex-col">
-        {mysteryCardChoices ? (
-          <CardChoicePicker choices={mysteryCardChoices} onSelect={handleCardChoiceConfirm} />
-        ) : mysteryPendingRemoval ? (
-          <RemoveCardPanel
-            runDeck={runDeck}
-            intro={<ScreenDescription>Select a card to remove from your deck</ScreenDescription>}
-            onConfirm={handleRemoveConfirm}
-          />
-        ) : mysteryChosenChoice ? (
-          <MysteryRewardSummary
-            choice={mysteryChosenChoice}
-            findCard={findCard}
-            findTrinket={findTrinket}
-            grantedTrinketIds={mysteryGrantedTrinketIds}
-            grantedGearInstances={mysteryGrantedGearInstances}
-            chosenCardId={mysteryChosenCardId}
-            runTalentXP={runTalentXP}
-            talentXP={talentXP}
-            onContinue={onContinue}
-          />
-        ) : (
-          <MysteryEventIntro event={event} findCard={findCard} findTrinket={findTrinket} onPick={handlePick} />
-        )}
-      </FadeSlot>
-    </MysteryScreenShell>
+    <FadeSlot swapKey={`${event.id}:${phase}`} className="h-full w-full">
+      <MysteryScreenShell title={title} keywordIds={plasmaKeywordIds}>
+        <div className="mt-6 flex min-h-[56cqh] w-full flex-col">
+          {mysteryCardChoices ? (
+            <CardChoicePicker choices={mysteryCardChoices} onSelect={handleCardChoiceConfirm} />
+          ) : mysteryPendingRemoval ? (
+            <RemoveCardPanel
+              runDeck={runDeck}
+              intro={<ScreenDescription>Select a card to remove from your deck</ScreenDescription>}
+              onConfirm={handleRemoveConfirm}
+            />
+          ) : mysteryChosenChoice ? (
+            <MysteryRewardSummary
+              choice={mysteryChosenChoice}
+              findCard={findCard}
+              findTrinket={findTrinket}
+              grantedTrinketIds={mysteryGrantedTrinketIds}
+              grantedGearInstances={mysteryGrantedGearInstances}
+              chosenCardId={mysteryChosenCardId}
+              runTalentXP={runTalentXP}
+              talentXP={talentXP}
+              onContinue={onContinue}
+            />
+          ) : (
+            <MysteryEventIntro event={event} findCard={findCard} findTrinket={findTrinket} onPick={handlePick} />
+          )}
+        </div>
+      </MysteryScreenShell>
+    </FadeSlot>
   );
 }
 

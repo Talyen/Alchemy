@@ -159,26 +159,25 @@ export function RewardsScreen({
 
   return (
     <TitledScreenShell title="Victory" maxWidthClass="max-w-6xl">
-      <h2 className={cn("mt-3 text-center font-sans", sectionTitleClass)}>{choicePrompt}</h2>
-
       <FadeSlot
-        swapKey={rewardChoices.map((item) => getRewardChoiceId(item)).join("-")}
-        className="mt-8 flex flex-col items-center gap-8"
+        swapKey={`${rewardState.rewardType}:${rewardChoices.map((item) => getRewardChoiceId(item)).join("-")}`}
+        className="flex flex-col"
       >
-        <div className="flex flex-wrap items-start justify-center gap-6">
-          <RewardChoiceItems rewardState={rewardState} disabled={claimLocked} onClaimReward={onClaimReward} />
+        <h2 className={cn("mt-3 text-center font-sans", sectionTitleClass)}>{choicePrompt}</h2>
+        <div className="mt-8 flex flex-col items-center gap-8">
+          <div className="flex flex-wrap items-start justify-center gap-6">
+            <RewardChoiceItems rewardState={rewardState} disabled={claimLocked} onClaimReward={onClaimReward} />
+          </div>
+          <RewardsFound rewardGold={rewardGold} rewardMaterials={rewardMaterials} />
         </div>
-
-        <RewardsFound rewardGold={rewardGold} rewardMaterials={rewardMaterials} />
+        {rewardState.rewardType === "card" ? (
+          <div className="mt-5 flex justify-center">
+            <Button variant="outline" size="lg" className={BUTTON_WIDTH_ACTION} disabled={claimLocked} onClick={onSkip}>
+              Skip
+            </Button>
+          </div>
+        ) : null}
       </FadeSlot>
-
-      {rewardState.rewardType === "card" ? (
-        <div className="mt-5 flex justify-center">
-          <Button variant="outline" size="lg" className={BUTTON_WIDTH_ACTION} disabled={claimLocked} onClick={onSkip}>
-            Skip
-          </Button>
-        </div>
-      ) : null}
     </TitledScreenShell>
   );
 }

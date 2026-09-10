@@ -505,7 +505,11 @@ describe("reworked cards", () => {
     expect(result.state.enemyStatuses.freeze).toBeGreaterThan(0);
     expect(result.state.wishOptions).toBeNull();
     expect(result.state.pendingTurnStartEffects).toEqual([
-      { remainingTurns: 1, effects: [{ kind: "wish", amount: 1 }] },
+      {
+        remainingTurns: 1,
+        effects: [{ kind: "wish", amount: 1 }],
+        sourceCard: { id: card.id, consume: card.consume, tags: card.tags },
+      },
     ]);
   });
 

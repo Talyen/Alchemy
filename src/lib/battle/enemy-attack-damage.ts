@@ -5,6 +5,7 @@ import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { applyEnemyHealingWithCombatText, applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import {
   addForgeToPlayer,
+  applyForgeThresholdRewards,
   applyPlayerDamageStatuses,
   applyPlayerStatusEffect,
   shouldBlockPreventStatusBuildup,
@@ -394,7 +395,7 @@ function resolveEnemyDamageEffectCore(
   return { state: nextState, ...outcome };
 }
 
-export function resolvePendingCinderSkinReaction(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+function resolvePendingCinderSkinReaction(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   if (!state.flags.pendingCinderSkinReaction) return state;
   const ready = {
     ...state,
@@ -407,6 +408,21 @@ export function resolvePendingCinderSkinReaction(state: BattleState, combatTexts
   ).state;
 }
 
+export function resolvePendingBattleReactions(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+  let nextState = state;
+  while (nextState.pendingForgeThresholds.length > 0 || nextState.flags.pendingCinderSkinReaction) {
+    const thresholds = nextState.pendingForgeThresholds;
+    if (thresholds.length > 0) {
+      nextState = { ...nextState, pendingForgeThresholds: [] };
+      for (const { previousForge, nextForge } of thresholds) {
+        nextState = applyForgeThresholdRewards(nextState, previousForge, nextForge, combatTexts);
+      }
+    }
+    nextState = resolvePendingCinderSkinReaction(nextState, combatTexts);
+  }
+  return nextState;
+}
+
 export function resolveEnemyDamageEffect(
   state: BattleState,
   effect: EnemyAttackEffect & { kind: "damage" },
@@ -414,7 +430,7 @@ export function resolveEnemyDamageEffect(
   options: EnemyDamageOptions = {},
 ): EnemyDamageResult {
   const result = resolveEnemyDamageEffectCore(state, effect, combatTexts, options);
-  return { ...result, state: resolvePendingCinderSkinReaction(result.state, combatTexts) };
+  return { ...result, state: resolvePendingBattleReactions(result.state, combatTexts) };
 }
 
 export function processEnemyDamageEffect(

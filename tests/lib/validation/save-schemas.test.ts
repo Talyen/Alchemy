@@ -10,12 +10,12 @@ import {
   CURRENT_SAVE_SCHEMA_VERSION,
 } from "@/lib/validation";
 import { defaultBattleState } from "@/lib/battle";
+import { enemyById } from "@/lib/game-data";
 import { GEAR_EFFECT_KEYS } from "@/lib/gear";
 import { createSeededRng } from "@/lib/utils";
-import { hexAt } from "@/lib/content-systems/labyrinth/hex-grid";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { withClearedNode } from "@/lib/content-systems/labyrinth/map-state";
-import { LABYRINTH_ENTRANCE_NODE_ID } from "@/lib/content-systems/labyrinth/data";
+import { canEnterLabyrinthNode } from "@/lib/content-systems/labyrinth/map-state";
 import { baseHomesteadSave } from "../../fixtures/saves";
 import { makeMinimalActiveRunInput } from "../../fixtures/active-run";
 import { ASPECT_RATIO_VALUES, DISPLAY_MODE_VALUES, SETTINGS_RANGES } from "@/lib/settings-values";
@@ -364,8 +364,19 @@ describe("ActiveRunDataSchema persisted session payloads", () => {
     expect(result.data.activeCombat?.pendingBattleTransition?.kind).toBe("opening-draw");
   });
 
-  it("normalizes enemy-turn resultState manifests after JSON save/load", () => {
-    const defaults = defaultBattleState();
+  it("normalizes enemy-turn resultState manifests and Traits without replaying resolved outcomes", () => {
+    const defaults = {
+      ...defaultBattleState(),
+      currentEnemy: {
+        ...enemyById.goblin,
+        traits: [
+          { id: "trinket-hoarder", title: "Trinket Hoarder", description: "Receives 30% more Burn damage" },
+          { id: "combustible", title: "Combustible", description: "Enemy deals 1 Burn damage each turn" },
+        ],
+      },
+      enemyMitigation: { block: 1, armor: 0, forge: 0 },
+      lastEnemyAbilityId: "stab",
+    };
     const strippedResultState = JSON.parse(
       JSON.stringify({
         ...defaults,
@@ -400,6 +411,11 @@ describe("ActiveRunDataSchema persisted session payloads", () => {
     expect(transition?.kind).toBe("enemy-turn");
     if (transition?.kind !== "enemy-turn") return;
 
+    for (const state of [result.data.activeCombat!.battleState, transition.resultState]) {
+      expect(state.currentEnemy.traits.map((trait) => trait.title)).toEqual(["Scavenged Shield", "Scorching"]);
+      expect(state.enemyMitigation.block).toBe(1);
+      expect(state.lastEnemyAbilityId).toBe("stab");
+    }
     expect(transition.resultState.turn).toBe(3);
     expect(transition.resultState.playerHealth).toBe(20);
     expect(transition.resultState.gearEffects.flatPhysicalDamage).toBe(2);
@@ -577,34 +593,31 @@ describe("LabyrinthMapSchema", () => {
     if (result.success) expect(result.data).toBeNull();
   });
 
-  it("roundtrips new wide maps and existing tall floors without changing their coordinates", () => {
+  it("roundtrips seeded grid geography", () => {
     for (const seed of [1, 42, 99]) {
       const map = generateLabyrinthMap(createSeededRng(seed));
-      expect(LabyrinthMapSchema.parse(JSON.parse(JSON.stringify(map)))).toEqual(map);
-      const nodes = Object.values(map.nodes).filter((node) => node.floor === 1);
-      nodes.forEach((node, index) => {
-        node.gridPosition = hexAt(Math.floor(index / 2) + 2, index % 2);
-      });
       expect(LabyrinthMapSchema.parse(JSON.parse(JSON.stringify(map)))).toEqual(map);
     }
   });
 
   it("parses a map after a node is cleared", () => {
     const map = generateLabyrinthMap(createSeededRng(42));
-    const entryId = map.nodes[LABYRINTH_ENTRANCE_NODE_ID]!.outgoingIds[0]!;
+    const entryId = Object.values(map.nodes).find((node) => canEnterLabyrinthNode(map, node.id))!.id;
     const next = withClearedNode(map, entryId);
     const result = LabyrinthMapSchema.safeParse(next);
     expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
     expect(result.data?.currentNodeId).toBe(entryId);
     const legacy = { ...next, currentNodeId: undefined };
-    expect(LabyrinthMapSchema.parse(legacy)).toEqual({ ...next, currentNodeId: null });
-    expect(LabyrinthMapSchema.parse({ ...next, currentNodeId: "missing" })).toEqual({ ...next, currentNodeId: null });
+    expect(LabyrinthMapSchema.parse(legacy)).toEqual({ ...next, currentNodeId: map.currentNodeId });
+    expect(LabyrinthMapSchema.parse({ ...next, currentNodeId: "missing" })).toEqual({
+      ...next,
+      currentNodeId: map.currentNodeId,
+    });
   });
 
   it("catches a map with no entrance", () => {
     const map = generateLabyrinthMap(createSeededRng(42));
-    delete map.nodes[LABYRINTH_ENTRANCE_NODE_ID];
-    map.floors = map.floors.filter((floor) => floor.depth !== 0);
+    delete map.nodes[map.currentNodeId];
     const result = LabyrinthMapSchema.safeParse(map);
     expect(result.success).toBe(true);
     expect(result.data).toBeNull();

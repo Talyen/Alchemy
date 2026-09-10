@@ -14,7 +14,7 @@ import { addInventory, emptyInventory } from "@/lib/homestead/inventory";
 import type { ActiveRunData, RunObtainedItem } from "@/lib/active-run-session";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
-import type { Screen } from "@/lib/routing";
+import { isRunResumeScreen, type Screen } from "@/lib/routing";
 
 function setDraftField<T extends object, K extends keyof T>(
   draft: T,
@@ -164,6 +164,7 @@ export function initializeFromResumeSnapshot(draft: GameplayDraft, activeRun: Ac
 }
 
 export function hydrateFromSnapshot(draft: GameplayDraft, snapshot: RunStartSnapshot): void {
+  draft.run.navigation.resumeScreen = null;
   Object.assign(draft.run.activeRun, runFieldsFromSnapshot(snapshot), {
     runTalentXP: {},
     runMaterialsEarned: emptyInventory(),
@@ -172,11 +173,16 @@ export function hydrateFromSnapshot(draft: GameplayDraft, snapshot: RunStartSnap
 }
 
 export function setScreen(draft: GameplayDraft, action: Screen | ((prev: Screen) => Screen)): void {
-  draft.run.navigation.screen = typeof action === "function" ? action(draft.run.navigation.screen) : action;
+  const screen = typeof action === "function" ? action(draft.run.navigation.screen) : action;
+  draft.run.navigation.screen = screen;
+  if (draft.session.hasActiveRun && isRunResumeScreen(screen)) {
+    draft.run.navigation.resumeScreen = screen;
+  }
 }
 
 export function resetNavigation(draft: GameplayDraft): void {
   draft.run.navigation.screen = "menu";
+  draft.run.navigation.resumeScreen = null;
 }
 
 export function createDraftRunRandomSource(draft: GameplayDraft, stream: RunRngStream): () => number {

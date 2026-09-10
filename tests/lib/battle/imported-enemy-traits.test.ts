@@ -43,9 +43,55 @@ function stateForEnemy(
 
 describe("imported enemy trait damage rules", () => {
   it.each([
+    ["skeleton", "holy"],
+    ["frostwarden", "freeze"],
+    ["fire-imp", "freeze"],
+    ["hellhound", "freeze"],
+    ["giant-snake", "freeze"],
+    ["blood-cultist", "holy"],
+    ["dire-wolf", "physical"],
+    ["vampire", "burn"],
+    ["winter-wolf", "burn"],
+    ["ice-wraith", "physical"],
+    ["yeti", "freeze"],
+    ["banshee", "holy"],
+    ["earth-elemental", "burn"],
+  ] as const)("keeps %s's %s defense exclusively on its separate Trait", (id, damageType) => {
+    const state = stateForEnemy(id);
+    const withoutDefense = {
+      ...state,
+      currentEnemy: { ...state.currentEnemy, traits: state.currentEnemy.traits.slice(0, 1) },
+    };
+    expect(getEnemyDamageMultiplier(withoutDefense, damageType)).toBe(1);
+  });
+
+  it.each([
+    ["bandit", "holy", 1],
+    ["goblin", "burn", 1],
+    ["pyromancer", "freeze", 1],
+    ["zealot", "bleed", 1],
+    ["inquisitor", "bleed", 1],
+    ["seraph", "bleed", 1],
+    ["brawler", "bleed", 1],
+    ["skeleton", "holy", 2],
+    ["skeleton", "stun", 2],
+    ["frostwarden", "freeze", 0.5],
+    ["frostwarden", "burn", 1.3],
+    ["fire-imp", "freeze", 1.3],
+    ["hellhound", "freeze", 1.3],
+    ["giant-snake", "freeze", 1.3],
+    ["blood-cultist", "holy", 1.3],
+    ["vampire", "holy", 1.3],
+    ["vampire", "burn", 1.3],
+    ["winter-wolf", "burn", 1.3],
+    ["ice-wraith", "holy", 1.3],
+    ["ice-wraith", "burn", 1.3],
+    ["yeti", "burn", 1.3],
+    ["banshee", "holy", 2],
+    ["earth-elemental", "freeze", 0.8],
     ["will-o-wisp", "physical", 0.7],
-    ["ogre", "holy", 1.3],
-    ["giant-spider", "burn", 1.3],
+    ["ogre", "holy", 1],
+    ["giant-spider", "burn", 1],
     ["dire-wolf", "physical", 0.9],
     ["paladin", "holy", 0.7],
     ["ice-wraith", "physical", 0.7],
@@ -58,6 +104,20 @@ describe("imported enemy trait damage rules", () => {
 });
 
 describe("imported enemy attack reactions", () => {
+  it("adds room-scaled Pyromancy only to Burn hits within the original damage packet", () => {
+    const state = stateForEnemy("pyromancer", { roomScalingMultiplier: 2 });
+    const card = makeEnemyTestCard({
+      effects: [
+        { kind: "damage", damageType: "burn", amount: 3 },
+        { kind: "damage", damageType: "holy", amount: 3 },
+      ],
+    });
+    const baseline = applyEnemyAbility({ ...state, currentEnemy: { ...state.currentEnemy, traits: [] } }, card, []);
+    const result = applyEnemyAbility(state, card, []);
+    expect(result.playerHealth).toBe(baseline.playerHealth - 2);
+    expect(result.playerStatuses.burn).toBe(baseline.playerStatuses.burn + 2);
+  });
+
   it("doubles Bandit's first successful damage packet only", () => {
     const state = stateForEnemy("bandit", {});
     const first = applyEnemyAbility(
@@ -148,7 +208,7 @@ describe("imported enemy attack reactions", () => {
       [],
     );
     expect(result.playerHealth).toBe(100);
-    expect(result.playerStatuses.block).toBe(2);
+    expect(result.playerStatuses.block).toBe(1);
   });
 
   it("applies Burn resistance to unblocked Pyromancer attacks", () => {
@@ -158,7 +218,7 @@ describe("imported enemy attack reactions", () => {
     expect(
       applyEnemyAbility(state, makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 3 }] }), [])
         .playerHealth,
-    ).toBe(99);
+    ).toBe(98);
   });
 
   it.each([
@@ -174,7 +234,7 @@ describe("imported enemy attack reactions", () => {
     ["hellhound", "burning-blade", { burn: 1 }, 96],
     ["dire-wolf", "fangs", { bleed: 1 }, 95],
     ["banshee", "bash", { stun: 1 }, 97],
-    ["ice-wraith", "frostbolt", undefined, 97],
+    ["ice-wraith", "frostbolt", undefined, 96],
   ] as const)("modifies %s damage from its player/enemy state", (id, ability, statuses, expectedHealth) => {
     const result = applyEnemyAbility(
       stateForEnemy(id, {

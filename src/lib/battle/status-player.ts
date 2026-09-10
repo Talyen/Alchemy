@@ -189,9 +189,7 @@ export function addForgeToPlayer(state: BattleState, baseAmount: number, combatT
   const oldForge = state.playerStatuses.forge;
   const newForge = oldForge + amount;
   let nextState = addPlayerStatus(state, "forge", amount);
-  nextState = applyForgeBurnBurst(nextState, oldForge, newForge, combatTexts);
-  nextState = applyForgeStripArmorBurst(nextState, oldForge, newForge);
-  nextState = applyForgeBlockBurst(nextState, oldForge, newForge, combatTexts);
+  nextState = applyForgeThresholdRewards(nextState, oldForge, newForge, combatTexts);
   if (combatTexts) {
     mergeCombatText(combatTexts, {
       target: "player",
@@ -201,6 +199,17 @@ export function addForgeToPlayer(state: BattleState, baseAmount: number, combatT
     });
   }
   return nextState;
+}
+
+export function applyForgeThresholdRewards(
+  state: BattleState,
+  oldForge: number,
+  newForge: number,
+  combatTexts?: CombatTextEvent[],
+): BattleState {
+  let nextState = applyForgeBurnBurst(state, oldForge, newForge, combatTexts);
+  nextState = applyForgeStripArmorBurst(nextState, oldForge, newForge);
+  return applyForgeBlockBurst(nextState, oldForge, newForge, combatTexts);
 }
 
 export function applyPlayerStatusEffect(

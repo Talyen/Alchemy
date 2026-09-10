@@ -5,8 +5,22 @@ import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
 import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
 import { buildActions, createInitialEquipmentShopState, setEquipmentShopState } from "./shop-actions-harness";
 import type { GearInstance } from "@/lib/gear";
+import { gearDefinitions } from "@/lib/gear";
 
 describe("equipment shop actions", () => {
+  it("refreshes away from the previous shelf when other equipment is available", () => {
+    setRunProgress({ gold: 999, characterId: "knight" });
+    const actions = buildActions();
+    for (let visit = 0; visit < 10; visit++) {
+      setEquipmentShopState(createInitialEquipmentShopState());
+      const previous = readRunSession().equipmentShopState.gear;
+      const oldBases = new Set(previous.map((item) => gearDefinitions[item.definitionId]!.baseItemId));
+      expect(actions.equipment.refresh()).toBe(true);
+      const refreshed = readRunSession().equipmentShopState.gear;
+      expect(refreshed).toHaveLength(previous.length);
+      expect(refreshed.every((item) => !oldBases.has(gearDefinitions[item.definitionId]!.baseItemId))).toBe(true);
+    }
+  });
   it("purchases the live shelf item when the supplied copy has different contents", () => {
     const onShelf: GearInstance = {
       instanceId: "shop-armor",

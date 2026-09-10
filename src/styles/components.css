@@ -180,6 +180,29 @@
     will-change: opacity;
   }
 
+  .card-inspection-overlay.screen-fade-in > [role="dialog"] {
+    animation: cardInspectionSettle var(--motion-fade-duration) ease-out both;
+  }
+
+  .card-inspection-overlay-empty > [role="dialog"] {
+    min-width: min(20rem, 100%);
+  }
+
+  @keyframes cardInspectionSettle {
+    from {
+      translate: 0 6px;
+    }
+    to {
+      translate: 0 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card-inspection-overlay.screen-fade-in > [role="dialog"] {
+      animation: none;
+    }
+  }
+
   .hp-number-pop {
     animation: numberPop 280ms ease-out both;
   }
@@ -541,4 +564,62 @@
   visibility: hidden;
   animation-play-state: paused;
   pointer-events: none;
+}
+
+.labyrinth-node {
+  position: absolute;
+  translate: -50% -50%;
+  transition: scale 200ms ease-out;
+}
+
+.labyrinth-node[data-emphasized="true"] {
+  scale: 1.06;
+  z-index: 2;
+}
+
+.labyrinth-node > .surface {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--color-stone-950);
+  outline: none;
+}
+
+.labyrinth-boss {
+  box-shadow: 0 0 12px 2px color-mix(in srgb, var(--color-red-500) 45%, transparent);
+}
+
+@keyframes labyrinth-discover {
+  from {
+    opacity: 0;
+  }
+}
+
+.labyrinth-discovery {
+  pointer-events: none;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+  animation: labyrinth-discover 180ms ease-out both;
+}
+
+.labyrinth-unknown {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: var(--color-stone-600);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .labyrinth-node {
+    transition: none;
+  }
+
+  .labyrinth-discovery {
+    animation: none;
+  }
 }

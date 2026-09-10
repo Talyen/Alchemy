@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { act, cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { RunEndScreen } from "@/features/alchemy/run-loop/screens/run-end-screen";
 import { getTalentTreeKeywordIds, keywordDefinitions } from "@/lib/game-data";
@@ -46,6 +46,7 @@ function renderRunEnd({
 describe("RunEndScreen", () => {
   afterEach(() => {
     cleanup();
+    vi.unstubAllGlobals();
   });
 
   it("shows keyword XP earned this run with Lv# label and keyword styling", () => {
@@ -85,17 +86,69 @@ describe("RunEndScreen", () => {
     expect(screen.getByRole("button", { name: /continue/i }).isConnected).toBe(true);
   });
 
-  it.each([1, 2, 3])("centers %i talent XP cards at a stable width", (count) => {
+  it.each([
+    [1, [1]],
+    [3, [3]],
+    [6, [3, 3]],
+    [7, [4, 3]],
+    [11, [4, 4, 3]],
+  ] as const)("balances %i talent XP cards into centered rows", (count, expectedRows) => {
     const keywords = getTalentTreeKeywordIds().slice(0, count);
     const runEndTalentXP = Object.fromEntries(keywords.map((kw) => [kw, 1]));
     renderRunEnd({ runEndTalentXP, talentXP: runEndTalentXP });
 
     const row = screen.getByText(keywordDefinitions[keywords[0]!]!.label).closest(".justify-center");
-    expect(row?.className).toContain("flex");
+    expect(row?.className).toContain("grid");
+    const cards = Array.from(row?.children ?? []) as HTMLElement[];
+    expect(
+      expectedRows.map((_, index) => cards.filter((card) => card.style.gridRow === String(index + 1)).length),
+    ).toEqual(expectedRows);
+    expect(cards.map((card) => card.textContent)).toEqual(
+      keywords.map((kw) => expect.stringContaining(keywordDefinitions[kw]!.label)),
+    );
     expect(row?.children).toHaveLength(count);
     for (const card of row?.children ?? []) {
       expect(card.className).toContain("w-56");
     }
+  });
+
+  it("rebalances on container resize and Game Size changes without remounting cards", () => {
+    let resize = () => {};
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        constructor(callback: () => void) {
+          resize = callback;
+        }
+        observe() {}
+        disconnect() {}
+      },
+    );
+    vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
+      callback(0);
+      return 1;
+    });
+    const width = vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(1168);
+    const computedStyle = vi
+      .spyOn(window, "getComputedStyle")
+      .mockReturnValue({ width: "224px" } as CSSStyleDeclaration);
+    const keywords = getTalentTreeKeywordIds().slice(0, 6);
+    const xp = Object.fromEntries(keywords.map((kw) => [kw, 1]));
+    renderRunEnd({ runEndTalentXP: xp, talentXP: xp });
+    const grid = screen.getByText(keywordDefinitions[keywords[0]!]!.label).closest(".grid")!;
+    const cards = Array.from(grid.children) as HTMLElement[];
+    const rows = () => cards.map((card) => card.style.gridRow);
+    expect(rows()).toEqual(["1", "1", "1", "2", "2", "2"]);
+    width.mockReturnValue(460);
+    act(() => resize());
+    expect(rows()).toEqual(["1", "1", "2", "2", "3", "3"]);
+    computedStyle.mockReturnValue({ width: "268.8px" } as CSSStyleDeclaration);
+    act(() => resize());
+    expect(rows()).toEqual(["1", "2", "3", "4", "5", "6"]);
+    width.mockReturnValue(1402);
+    act(() => resize());
+    expect(rows()).toEqual(["1", "1", "1", "2", "2", "2"]);
+    expect(Array.from(grid.children).every((card, index) => card === cards[index])).toBe(true);
   });
 
   it("shows ten stable-width talent XP cards without paging", () => {

@@ -14,7 +14,6 @@ import { useRunFlowEngine } from "./use-run-flow-engine";
 import { useLabyrinthController } from "./use-labyrinth-controller";
 import { createLabyrinthNodeRouting } from "./labyrinth-node-routing";
 import { useBattleWiring } from "./use-battle-wiring";
-import { useLabyrinthEntryGuard } from "./use-labyrinth-entry-guard";
 import { useScreenTransitions } from "./use-screen-transitions";
 import { useSteamRichPresence } from "./use-steam-rich-presence";
 import {
@@ -95,19 +94,9 @@ export function useAlchemyRunController() {
 
   useSteamRichPresence(screen, nav.runPhase, characterId);
 
-  const beginLabyrinth = nav.beginLabyrinth;
-  const activeRunData = nav.activeRunData;
   const hasActiveBattle = battle.hasActiveBattle;
   const handleBattleEndRun = battle.handleEndRun;
   const handleAbandonRun = nav.handleAbandonRun;
-
-  const handleBeginLabyrinth = useLabyrinthEntryGuard({
-    contentSystemType,
-    activeRunData,
-    hasActiveBattle,
-    resetMap: labyrinth.resetMap,
-    beginLabyrinth,
-  });
 
   const resetCorruptionResult = useCallback(() => {
     dispatchRunSessionCommand((draft) => setCorruptionResult(draft, null));
@@ -154,7 +143,7 @@ export function useAlchemyRunController() {
       meta: {
         goToScreen: nav.goToScreen,
         beginCampaign: nav.beginCampaign,
-        beginLabyrinth: handleBeginLabyrinth,
+        beginLabyrinth: nav.beginLabyrinth,
         beginWildwood: nav.beginWildwood,
         unlockTalent: commandUnlockTalent,
         resetUnlockedTalents: commandResetUnlockedTalents,
@@ -281,7 +270,7 @@ export function useAlchemyRunController() {
       nav.handleCorruptCard,
       nav.handleCorruptionExit,
       nav.continueFromRunEnd,
-      handleBeginLabyrinth,
+      nav.beginLabyrinth,
       nodeRouting.handleLabyrinthNodeEnter,
       labyrinth.selectNode,
       labyrinth.deselectNode,

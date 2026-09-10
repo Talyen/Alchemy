@@ -239,7 +239,7 @@ describe("applyDamageStatuses", () => {
     expect(texts).not.toContainEqual({ target: "enemy", kind: "damage", stat: "physical", amount: 6 });
   });
 
-  it("freeze triggers on glacial-shell enemies when threshold is met", () => {
+  it("freeze triggers on glacial-body enemies when threshold is met", () => {
     const state = makeTestBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
@@ -251,7 +251,7 @@ describe("applyDamageStatuses", () => {
         descriptionLines: [""],
         art: "",
         enemyType: "normal",
-        traits: [{ id: "glacial-shell", title: "Glacial Shell", description: "Receives half Freeze damage" }],
+        traits: [{ id: "glacial-body", title: "Glacial Body", description: "Receives half Freeze damage" }],
         abilityIds: ["slash", "bash", "block"],
       },
     });

@@ -34,6 +34,10 @@ export function isRunLoopScreen(screen: Screen): boolean {
   return SCREEN_PHASE[screen] === "runLoop";
 }
 
+export function isRunResumeScreen(screen: Screen): boolean {
+  return isRunLoopScreen(screen) || screen === ROUTE_SCREENS.DRAFT_DECK || screen === ROUTE_SCREENS.DIFFICULTY_SELECT;
+}
+
 export function getRunPhase(screen: Screen, hasActiveBattle: boolean): RunPhase {
   if (hasActiveBattle && screen === ROUTE_SCREENS.BATTLE) return "battle";
   return SCREEN_PHASE[screen];

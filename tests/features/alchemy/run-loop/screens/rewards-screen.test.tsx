@@ -96,7 +96,7 @@ describe("RewardsScreen", () => {
     expect(screen.queryByRole("button", { name: /menu/i })).toBeNull();
   });
 
-  it("prompts with the reward kind instead of a generic choose label", () => {
+  it("changes reward prompts with their content after the outgoing fade", async () => {
     const { rerender } = render(
       <RewardsScreen rewardState={readRunSession().rewardState} onSkip={vi.fn()} onClaimReward={vi.fn()} />,
     );
@@ -122,7 +122,9 @@ describe("RewardsScreen", () => {
         onClaimReward={vi.fn()}
       />,
     );
-    expect(screen.getByRole("heading", { name: "Choose a Trinket to add to your Armory" })).toBeTruthy();
+    expect(screen.getByText("Add a Card to your Deck")).toBeTruthy();
+    expect(screen.queryByText("Choose a Trinket to add to your Armory")).toBeNull();
+    expect(await screen.findByRole("heading", { name: "Choose a Trinket to add to your Armory" })).toBeTruthy();
 
     rerender(
       <RewardsScreen
@@ -143,7 +145,7 @@ describe("RewardsScreen", () => {
         onClaimReward={vi.fn()}
       />,
     );
-    expect(screen.getByRole("heading", { name: "Choose a Boon for this Run" })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Choose a Boon for this Run" })).toBeTruthy();
 
     rerender(
       <RewardsScreen
@@ -156,7 +158,7 @@ describe("RewardsScreen", () => {
         onClaimReward={vi.fn()}
       />,
     );
-    expect(screen.getByRole("heading", { name: "Add Gear to your Armory" })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Add Gear to your Armory" })).toBeTruthy();
   });
 
   it("offers an immediate card choice without a confirmation button", () => {

@@ -26,6 +26,23 @@ beforeEach(() => {
 });
 
 describe("persistence coordinator", () => {
+  it("keeps hydrated profile fields from overwriting later inventory, discovery and settings changes", () => {
+    hydrateAlchemyPersistenceFields(defaultSaveData);
+    useSettingsStore.getState().setMusicVolume(12);
+    mutateGearForTest((gear) => {
+      gear.addTrinket("tattered-pages");
+      gear.addInstance({ instanceId: "new-reward", definitionId: "longsword-basic", affixes: [] }, "knight");
+    });
+    dispatchRunSessionCommand((draft) => setDiscoveredCardIds(draft, ["slash", "bash"]));
+    const encoded = encodePersistenceFields();
+    expect(encoded.ownedTrinketIds).toContain("tattered-pages");
+    expect(encoded.gearInventories.knight.some((gear) => gear.instanceId === "new-reward")).toBe(true);
+    expect(encoded.discoveredCardIds).toEqual(["slash", "bash"]);
+    expect(encoded.musicVolume).toBe(12);
+    expect(readRunProfile()).not.toHaveProperty("ownedTrinketIds");
+    expect(readRunProfile()).not.toHaveProperty("musicVolume");
+  });
+
   it("round-trips domain-owned save fields without transient UI state", () => {
     hydrateAlchemyPersistenceFields({
       ...defaultSaveData,

@@ -1,7 +1,10 @@
-import { LABYRINTH_TRAITS } from "@/lib/content-systems/labyrinth/trait-catalog";
+import {
+  ENCOUNTER_COMBAT_TRAIT_KEYWORDS,
+  ENCOUNTER_REWARD_TRAIT_KEYWORDS,
+} from "@/features/alchemy/shared/config/encounter-trait-presentation";
 import { enemyById, isEnemyId } from "@/features/alchemy/shared/config/game-data-catalog";
 import { type KeywordId } from "@/lib/game-data";
-import type { EncounterCombatTraitId, EncounterRewardTraitId, LabyrinthNode } from "@/lib/content-systems/types";
+import type { LabyrinthNode } from "@/lib/content-systems/types";
 import {
   getPlasmaColorPair,
   getPlasmaKeywordsForEnemy,
@@ -22,46 +25,6 @@ const LABYRINTH_TYPE_BASE_KEYWORDS: Record<LabyrinthNode["type"], KeywordId[]> =
   alchemist: ["poison"],
   "trinket-shop": ["wish"],
   "equipment-shop": ["forge"],
-};
-
-const additionalTraitKeywords = (category: "combat" | "reward") =>
-  Object.fromEntries(
-    Object.entries(LABYRINTH_TRAITS)
-      .filter(([, trait]) => trait.category === category)
-      .map(([id, trait]) => [id, [trait.keyword]]),
-  );
-
-export const LABYRINTH_COMBAT_TRAIT_KEYWORDS: Partial<Record<EncounterCombatTraitId, KeywordId[]>> = {
-  ...additionalTraitKeywords("combat"),
-  tempered: ["forge"],
-  plated: ["armor"],
-  reinforced: ["block"],
-  braced: ["stun"],
-  septic: ["poison", "bleed"],
-  caustic: ["poison"],
-  flesheater: ["bleed", "leech"],
-  combustible: ["burn"],
-  chilling: ["freeze"],
-  thorns: ["physical"],
-  zealot: ["holy"],
-  insatiable: ["consume"],
-  jealous: ["wish"],
-  concussive: ["stun"],
-  rooted: ["nature"],
-  overgrowth: ["health"],
-  "holy-retribution": ["holy"],
-  "divine-aegis": ["armor"],
-};
-
-export const LABYRINTH_REWARD_TRAIT_KEYWORDS: Partial<Record<EncounterRewardTraitId, KeywordId[]>> = {
-  ...additionalTraitKeywords("reward"),
-  generous: ["gold"],
-  alchemist: ["poison"],
-  scavenger: ["forge"],
-  companion: ["companion"],
-  wealthy: ["gold"],
-  herbalist: ["nature"],
-  wellProvisioned: ["health"],
 };
 
 function collectEnemyKeywordIds(enemyId: string | undefined): KeywordId[] {
@@ -93,11 +56,11 @@ function getLabyrinthNodeKeywordIds(node: LabyrinthNode): KeywordId[] {
   }
 
   for (const traitId of node.modifiers ?? []) {
-    const kws = LABYRINTH_COMBAT_TRAIT_KEYWORDS[traitId];
+    const kws = ENCOUNTER_COMBAT_TRAIT_KEYWORDS[traitId];
     if (kws) push(kws);
   }
   for (const traitId of node.rewardModifiers ?? []) {
-    const kws = LABYRINTH_REWARD_TRAIT_KEYWORDS[traitId];
+    const kws = ENCOUNTER_REWARD_TRAIT_KEYWORDS[traitId];
     if (kws) push(kws);
   }
 
@@ -108,6 +71,7 @@ function getLabyrinthNodeKeywordIds(node: LabyrinthNode): KeywordId[] {
 }
 
 export function getLabyrinthNodePlasmaPair(node: LabyrinthNode): PlasmaColorPair | null {
+  if (node.type === "entrance") return null;
   if (node.type === "boss") {
     const keywordIds = getLabyrinthNodeKeywordIds(node);
     return getPlasmaColorPair(keywordIds);

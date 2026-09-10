@@ -33,11 +33,9 @@ beforeEach(() => {
 
 function makeDeps(overrides: Partial<Parameters<typeof createContentSystemNavigation>[0]> = {}) {
   const navigateTo = vi.fn();
-  const returnToBattle = vi.fn();
   const onStartBattle = vi.fn();
   return {
     navigateTo,
-    returnToBattle,
     onStartBattle,
     getAvailableDestinations: () => [DESTINATIONS.NORMAL_COMBAT],
     onResumeWildwood: vi.fn(),
@@ -94,8 +92,7 @@ describe("createContentSystemNavigation", () => {
     const deps = makeDeps();
     const nav = createContentSystemNavigation(deps);
     nav.beginCampaign();
-    expect(deps.returnToBattle).toHaveBeenCalledOnce();
-    expect(deps.navigateTo).not.toHaveBeenCalled();
+    expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE);
   });
 
   it.each([CONTENT_SYSTEMS.CAMPAIGN, CONTENT_SYSTEMS.LABYRINTH, CONTENT_SYSTEMS.WILDWOOD])(
@@ -113,8 +110,7 @@ describe("createContentSystemNavigation", () => {
       const nav = createContentSystemNavigation(deps);
       const begin = { campaign: nav.beginCampaign, labyrinth: nav.beginLabyrinth, wildwood: nav.beginWildwood };
       begin[mode]();
-      expect(deps.returnToBattle).toHaveBeenCalledOnce();
-      expect(deps.navigateTo).not.toHaveBeenCalled();
+      expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE);
       expect(deps.onResumeWildwood).not.toHaveBeenCalled();
       expect(readBattle().battleState.turn).toBe(4);
     },

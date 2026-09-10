@@ -252,8 +252,8 @@ describe("useScreenTransitions navigation", () => {
     const setScreen = vi.fn();
     const { result } = renderHook(() => useScreenTransitions(ROUTE_SCREENS.MENU, setScreen));
 
-    expect(() => result.current.navigateTo(ROUTE_SCREENS.BATTLE)).toThrow(
-      "Disallowed screen transition: menu -> battle",
+    expect(() => result.current.navigateTo(ROUTE_SCREENS.RUN_VICTORY)).toThrow(
+      "Disallowed screen transition: menu -> run-victory",
     );
     expect(setScreen).not.toHaveBeenCalled();
   });

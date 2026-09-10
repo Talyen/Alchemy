@@ -1,5 +1,6 @@
 import type { RefObject } from "react";
 import type { BattleCard, CardDescriptionContext } from "@/lib/game-data";
+import { cn } from "@/lib/utils";
 import type { CardInspectionView } from "../types";
 import { InspectionCardGrid, InspectionPanel } from "./inspection-content";
 import { ModalOverlayShell } from "./modal-overlay-shell";
@@ -24,6 +25,7 @@ interface CardInspectionOverlayProps {
 export function CardInspectionOverlay(props: CardInspectionOverlayProps) {
   const heldSelected = useHeldWhile(props.open, props.selected ?? "deck");
   const collection = props.collections.find((entry) => entry.id === heldSelected) ?? props.collections[0];
+  const cards = collection?.cards ?? [];
   return (
     <ModalOverlayShell
       open={props.open}
@@ -32,7 +34,10 @@ export function CardInspectionOverlay(props: CardInspectionOverlayProps) {
       dismissOnBackdrop
       zIndex={85}
       testId="card-inspection-overlay"
-      className="flex items-center justify-center p-6"
+      className={cn(
+        "card-inspection-overlay flex items-center justify-center p-6",
+        cards.length === 0 && "card-inspection-overlay-empty",
+      )}
     >
       <InspectionPanel
         title={LABELS[heldSelected]}
@@ -40,11 +45,15 @@ export function CardInspectionOverlay(props: CardInspectionOverlayProps) {
         onClose={props.onClose}
         returnFocusRef={props.returnFocusRef}
       >
-        <InspectionCardGrid
-          cards={collection?.cards ?? []}
-          descriptionContext={props.descriptionContext}
-          resetKey={`${heldSelected}:${props.open}`}
-        />
+        {cards.length === 0 ? (
+          <p className="flex min-h-40 shrink-0 items-center justify-center text-sm text-muted-foreground">Empty</p>
+        ) : (
+          <InspectionCardGrid
+            cards={cards}
+            descriptionContext={props.descriptionContext}
+            resetKey={`${heldSelected}:${props.open}`}
+          />
+        )}
       </InspectionPanel>
     </ModalOverlayShell>
   );

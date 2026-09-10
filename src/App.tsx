@@ -107,7 +107,7 @@ function AppMainContent({
     setGameMenuOpen: gameMenu.setGameMenuOpen,
   });
 
-  useAlchemyAutosaveFromStores(autosaveEnabled, nav.returnToRunScreen);
+  useAlchemyAutosaveFromStores(autosaveEnabled);
 
   const dev = useDevShortcuts(run);
 

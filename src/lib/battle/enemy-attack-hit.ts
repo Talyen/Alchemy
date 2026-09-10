@@ -1,5 +1,7 @@
 import type { EnemyAttackEffect } from "@/lib/game-data";
 import { prepareTalentCardPlay } from "./talent-card-play";
+import { processEncounterTraitCardAction } from "./encounter-trait-events";
+import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import {
   mergeCombatText,
   addGoldWithCombatText,
@@ -15,13 +17,13 @@ import { applyCardEffects } from "./effect-handlers";
 import {
   computeIncomingEnemyAttackDamage,
   resolveEnemyDamageEffect,
-  resolvePendingCinderSkinReaction,
+  resolvePendingBattleReactions,
   type EnemyDamageOptions,
   type EnemyDamageResult,
 } from "./enemy-attack-damage";
 import { applyCardPlayTalentRewards, applyMortarAndPestlePotionUse, handlePostPlayCardDestination } from "./card-play";
 import { dealPlayerTypedHit, dealTalentTypedHit } from "./player-typed-hit";
-import { hasEnemyTrait, setPlayerStatus, type BattleState, type CombatTextEvent } from "./types";
+import { hasEnemyTrait, isPlayerDefeated, setPlayerStatus, type BattleState, type CombatTextEvent } from "./types";
 
 function applyDodgeDrawAndPlay(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   if (state.gearEffects.dodgeDrawAndPlay <= 0) return state;
@@ -39,7 +41,9 @@ function applyDodgeDrawAndPlay(state: BattleState, combatTexts: CombatTextEvent[
 
   const talentPlay = prepareTalentCardPlay(nextState, drawn.card, combatTexts);
   nextState = talentPlay.state;
+  const damageEffects: NonNullable<CardEffectResolutionContext["damageEffects"]> = [];
   const playContext = {
+    damageEffects,
     attackBonuses: talentPlay.attackBonuses,
     cardHealing: true,
     manaAtStart: nextState.mana,
@@ -49,7 +53,8 @@ function applyDodgeDrawAndPlay(state: BattleState, combatTexts: CombatTextEvent[
   nextState = applyCardEffects(nextState, drawn.card, combatTexts, playContext);
   nextState = applyMortarAndPestlePotionUse(nextState, drawn.card, combatTexts);
   nextState = applyCardPlayTalentRewards(nextState, drawn.card, combatTexts);
-  nextState = handlePostPlayCardDestination(nextState, drawn.card, true, combatTexts);
+  nextState = processEncounterTraitCardAction(nextState, drawn.card, combatTexts, damageEffects.length > 0);
+  nextState = handlePostPlayCardDestination(nextState, drawn.card, !isPlayerDefeated(nextState), combatTexts);
   return nextState;
 }
 
@@ -149,7 +154,7 @@ export function resolveEnemyAttackHit(
   if (canDodge && hasEnemyTrait(state, "ravenous")) effect = { ...effect, lifesteal: true };
   const incomingDamage = computeIncomingEnemyAttackDamage(state, effect, damageOptions);
   const dodged = tryDodgeEnemyDamagePacket(state, combatTexts, canDodge, incomingDamage);
-  if (dodged) return { state: resolvePendingCinderSkinReaction(dodged, combatTexts), healthDamage: 0, landed: false };
+  if (dodged) return { state: resolvePendingBattleReactions(dodged, combatTexts), healthDamage: 0, landed: false };
   return resolveEnemyDamageEffect(state, effect, combatTexts, {
     ...damageOptions,
     incomingDamage,

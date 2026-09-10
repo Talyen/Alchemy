@@ -66,6 +66,13 @@ For a schema bump from `N` to `N + 1`:
 
 ## Test expectations
 
+Mode resume retains the existing `activeRun`, `parkedRuns`, and `currentScreen`
+wire shape. Menu locations in older snapshots are inferred from surviving run
+state during restore. A Labyrinth Wildcard starter draft may lack a map until
+confirmation; its non-null `starterDraftChoices` (including an empty array after
+the last pick) must survive encoding and validation. This validation correction
+and the in-memory return-location field require no schema-version bump.
+
 Migration tests must verify gameplay progress, not just field presence:
 
 - Collection discoveries remain unlocked.
@@ -77,20 +84,39 @@ Migration tests must verify gameplay progress, not just field presence:
 - Talent replacement IDs and unlocked progress are unchanged. New sequence, Companion bonus, Sanguine Overflow, and Dark Recovery flags default to false/zero in old battle snapshots and pending results; current snapshots preserve them. The new effects are additive manifest fields and need no schema-version bump. Retired effect fields and their readers remain for already-saved combat manifests; recomputing talents from unlocks uses the replacement definitions. Existing queued choices and resolved enemy-turn results are not rerolled or rewarded again.
 - The distinct talent/card rework keeps all unlock and card IDs. New manifest fields default to zero/false; `nextHolyCardFree` and `killRewardsPaid` default to false and persist through saved battles and pending results. Retired first-use and direct-stack proc fields retain their readers for captured old manifests. New catalog cards all cost one Mana; valid saved cost, Consume, effects, descriptions, and corruption overrides retain their existing meanings. No version bump is needed.
 - Mana from Heaven banks its next-turn reward in `flags.pendingWishMana`, defaulting to zero in old snapshots and retained in current snapshots and pending enemy-turn results. The five talent interaction replacements keep their unlock IDs and add manifest fields with zero defaults; old saved manifests retain immediate Wish Mana, Burn-hit Forge, flat Holy retaliation, and first-card Leech until the battle finishes. No schema bump is needed.
+- Gear loadout cleanup unequips Quivers lacking a ranged main-hand weapon, retaining ownership and all other valid slots. This repairs invalid pairs without changing the saved shape or schema version.
+- Queued turn-start pulses optionally retain `sourceCard` (ID, Consume, tags), preserving card bonuses after save/resume. Legacy pulses without this metadata retain their neutral-source behavior; the queue defaults to empty when absent. This additive field requires no schema bump.
+- Golden Crucible threshold reactions persist in `pendingForgeThresholds`, defaulting to an empty queue in older battles and pending results. Resuming drains each crossing once without granting its already-awarded Forge again. This additive default needs no schema bump.
 - Version-specific fixtures continue to assert the outcomes recorded in [MIGRATION_HISTORY.md](./MIGRATION_HISTORY.md).
+- Native enemy Traits refresh from the current enemy catalog during battle normalization, replacing retired or bundled native Traits while retaining encounter modifiers. Active/parked snapshots and pending result states retain Health, defenses, ability history, and combat flags; normalization never reapplies starting grants or resolves actions. This catalog refresh changes no persisted shape and needs no schema bump.
 - Enemy ability migration preserves active/parked battles and already-resolved continuations without rerolling or duplicating rewards. New saves retain canonical ability IDs and last-used history; the legacy Thorns marker remains distinct from card-granted stacks. See [schema 16](./MIGRATION_HISTORY.md#schema-16--enemy-card-abilities).
 - Every fixture is **idempotent** after `normalizeSaveData` (`tests/helpers/parse-save-for-tests.ts`).
 
-Labyrinth maps add nullable `currentNodeId`, defaulting to the floor entrance for
-older saves. Invalid or uncleared references are repaired to null without dropping
-the active run. Existing floors, pending encounters, and reward state are retained;
-boss completion now waits for explicit descent rather than generating immediately.
-No schema bump is required for the additive default. New-floor generation resets
-the position, and already-generated saved floors are reused.
-New five-row floor templates do not tighten saved-coordinate validation: maps
-through row 8 remain accepted, and the fifth visual column is now accepted too.
-Existing coordinates are never repacked or regenerated. The persisted shape is
-unchanged and no schema bump is needed.
+Labyrinth Open Field maps contain twenty direct row/column positions per floor (4 / 6 / 6 / 4),
+one completed entrance in the top row, and one boss in the bottom row at least
+two columns away. `currentNodeId` identifies a completed room on the active
+floor; invalid references fall back to its entrance. Discovery derives from
+completed rooms and boss visibility, so no separate discovery list is persisted.
+Pending encounters and settled position survive save/resume without replaying
+encounters or revealing unfinished rooms' neighbors.
+
+Schema 17 deliberately retires incompatible development hex Labyrinth active
+and parked runs. This is the explicitly authorized prelaunch exception to run
+preservation, not a general recovery policy. The migration retains profile
+progression, currency, inventories, and other modes, and leaves Open Field runs
+intact. Do not keep a legacy hex renderer or remap old connections implicitly.
+See [migration history](./MIGRATION_HISTORY.md#schema-17--labyrinth-open-field).
+
+Schema 18 adds the four side rooms to existing sixteen-room Open Field saves,
+preserving original node IDs, coordinates, completion, Traits, pending encounters,
+and RNG counters in active and parked runs. Only the additional rooms are rolled
+from a migration-local seeded source; see [history](./MIGRATION_HISTORY.md#schema-18--labyrinth-side-rooms).
+
+Persistence codecs explicitly select their own fields on both hydration and
+encoding. Passing the full save envelope to a narrowly typed codec does not
+remove extra runtime keys. In particular, run-profile fields must never contain
+inventory, settings, or discovery snapshots that could overwrite their live
+owners during the next save.
 
 ## Future schema saves
 

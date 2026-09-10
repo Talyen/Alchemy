@@ -69,12 +69,14 @@ describe("getPlayerStatusChips", () => {
     state.flags.nextHitPhysicalBonus = 4;
     state.flags.nextPhysicalDealsBleed = true;
     state.flags.nextArcheryCardFree = true;
+    state.flags.nextHolyCardFree = true;
     const chips = getPlayerStatusChips(state);
     expect(chips).toContainEqual({ id: "playNextCardTwice", value: 1, hideValue: true });
     expect(chips).toContainEqual({ id: "nextHitCrit", value: 1, hideValue: true });
     expect(chips).toContainEqual({ id: "nextHitPhysicalBonus", value: 4 });
     expect(chips).toContainEqual({ id: "nextPhysicalDealsBleed", value: 1, hideValue: true });
     expect(chips).toContainEqual({ id: "nextArcheryCardFree", value: 1, hideValue: true });
+    expect(chips).toContainEqual({ id: "nextHolyCardFree", value: 1, hideValue: true });
     expect(chips.find((chip) => chip.id === "nextHitPoison")).toBeUndefined();
   });
 

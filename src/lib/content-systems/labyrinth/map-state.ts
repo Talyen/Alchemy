@@ -1,5 +1,5 @@
 import type { LabyrinthMap, LabyrinthNode, LabyrinthNodeVisualState } from "../types";
-import { areHexesAdjacent } from "./hex-grid";
+import { areGridNeighbors } from "./grid";
 
 export function floorNodes(map: LabyrinthMap, depth: number): LabyrinthNode[] {
   const floor = map.floors.find((entry) => entry.depth === depth);
@@ -7,31 +7,35 @@ export function floorNodes(map: LabyrinthMap, depth: number): LabyrinthNode[] {
   return floor.nodeIds.map((id) => map.nodes[id]).filter((node): node is LabyrinthNode => Boolean(node));
 }
 
-export function isNodeReachable(map: LabyrinthMap, nodeId: string): boolean {
-  const node = map.nodes[nodeId];
-  if (!node || node.cleared || node.floor !== map.currentFloor) return false;
-
-  for (const candidate of Object.values(map.nodes)) {
-    if (!candidate.cleared) continue;
-    if (candidate.outgoingIds.includes(nodeId)) return true;
-    if (candidate.floor === node.floor && areHexesAdjacent(candidate.gridPosition, node.gridPosition)) return true;
-  }
-  return false;
+function hasClearedNeighbor(map: LabyrinthMap, node: LabyrinthNode): boolean {
+  return (
+    node.floor === map.currentFloor &&
+    floorNodes(map, map.currentFloor).some(
+      (candidate) => candidate.cleared && areGridNeighbors(candidate.gridPosition, node.gridPosition),
+    )
+  );
 }
 
-export function labyrinthNodeVisualState(map: LabyrinthMap, nodeId: string): LabyrinthNodeVisualState {
+export function isNodeDiscovered(map: LabyrinthMap, nodeId: string): boolean {
   const node = map.nodes[nodeId];
-  if (!node || node.cleared) return "cleared";
-  return isNodeReachable(map, nodeId) ? "reachable" : "locked";
+  return Boolean(
+    node && node.floor === map.currentFloor && (node.cleared || node.type === "boss" || hasClearedNeighbor(map, node)),
+  );
 }
 
 export function canEnterLabyrinthNode(map: LabyrinthMap, nodeId: string): boolean {
-  return labyrinthNodeVisualState(map, nodeId) === "reachable";
+  const node = map.nodes[nodeId];
+  return Boolean(node && !node.cleared && hasClearedNeighbor(map, node));
+}
+
+export function labyrinthNodeVisualState(map: LabyrinthMap, nodeId: string): LabyrinthNodeVisualState {
+  if (!isNodeDiscovered(map, nodeId)) return "undiscovered";
+  if (map.nodes[nodeId]?.cleared) return "cleared";
+  return canEnterLabyrinthNode(map, nodeId) ? "reachable" : "locked";
 }
 
 export function canInspectLabyrinthNode(map: LabyrinthMap, nodeId: string): boolean {
-  const node = map.nodes[nodeId];
-  return Boolean(node && node.floor === map.currentFloor && node.type !== "entrance");
+  return isNodeDiscovered(map, nodeId);
 }
 
 export function canDescendFromLabyrinthNode(map: LabyrinthMap, nodeId: string): boolean {
@@ -39,34 +43,14 @@ export function canDescendFromLabyrinthNode(map: LabyrinthMap, nodeId: string): 
   return Boolean(node && node.floor === map.currentFloor && node.type === "boss" && node.cleared);
 }
 
-export function cloneLabyrinthMap(map: LabyrinthMap): LabyrinthMap {
-  return {
-    currentFloor: map.currentFloor,
-    currentNodeId: map.currentNodeId,
-    floors: map.floors.map((floor) => ({ ...floor, nodeIds: [...floor.nodeIds] })),
-    nodes: Object.fromEntries(
-      Object.entries(map.nodes).map(([id, node]) => [
-        id,
-        {
-          ...node,
-          outgoingIds: [...node.outgoingIds],
-          modifiers: [...node.modifiers],
-          rewardModifiers: [...node.rewardModifiers],
-        },
-      ]),
-    ),
-  };
-}
-
 export function withClearedNode(map: LabyrinthMap, nodeId: string): LabyrinthMap {
-  const node = map.nodes[nodeId];
-  if (!node || node.cleared) return map;
+  if (!canEnterLabyrinthNode(map, nodeId)) return map;
   return {
     ...map,
-    currentNodeId: node.floor === map.currentFloor ? nodeId : map.currentNodeId,
+    currentNodeId: nodeId,
     nodes: {
       ...map.nodes,
-      [nodeId]: { ...node, cleared: true },
+      [nodeId]: { ...map.nodes[nodeId]!, cleared: true },
     },
   };
 }

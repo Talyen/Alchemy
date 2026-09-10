@@ -1,5 +1,5 @@
 import { injectLabyrinthRun } from "../../tests/e2e/save-injection";
-import { productionHexLabyrinthMapFixture } from "../../tests/fixtures/labyrinth-hex-map";
+import { twoFloorLabyrinthMapFixture } from "../../tests/fixtures/labyrinth-map";
 import { delay } from "../delay";
 import { expect, test } from "../fixtures";
 
@@ -12,9 +12,12 @@ test.describe("labyrinth-interactions", () => {
       profile: "transition",
       minFrames: Number.parseInt(process.env.PERF_MIN_FRAMES ?? "250", 10),
       setup: async (page) => {
-        await injectLabyrinthRun(page, { resume: true, labyrinthMap: productionHexLabyrinthMapFixture() });
+        await injectLabyrinthRun(page, { resume: true, labyrinthMap: twoFloorLabyrinthMapFixture() });
         await expect(page.getByRole("region", { name: "Labyrinth map" })).toBeVisible();
-        await expect(page.getByRole("status", { name: "Floor 2", exact: true })).toBeVisible();
+        await expect(page.getByRole("region", { name: "Labyrinth map" })).toHaveAttribute(
+          "aria-description",
+          "Floor 2",
+        );
       },
       interact: async (page, phase) => {
         const nodes = page.getByRole("button", { name: /chamber/i, disabled: false });

@@ -4,7 +4,6 @@ import type { DestinationOptionsInput } from "@/features/alchemy/shared/run-flow
 
 export interface ContentSystemNavigationDeps {
   navigateTo: (nextScreen: Screen, onRenderedScreenCommit?: () => void) => void;
-  returnToBattle: () => void;
   onStartBattle: (
     deck?: BattleCard[],
     gold?: number,

@@ -87,11 +87,14 @@ test.describe("Reward Flow", critical, () => {
     });
     await new RewardPage(page).claimFirstReward();
     await new DestinationPage(page).expectVisible();
-    const boons = await page.evaluate((saveKey) => {
-      const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-      return save.activeRun?.runBoons ?? [];
-    }, SAVE_KEY);
-    expect(boons).toContain("tattered-pages");
+    await expect
+      .poll(() =>
+        page.evaluate(
+          (saveKey) => JSON.parse(localStorage.getItem(saveKey) || "{}").activeRun?.runBoons ?? [],
+          SAVE_KEY,
+        ),
+      )
+      .toContain("tattered-pages");
 
     await enterPrimaryRewardScreen(page, {
       rewardType: "trinket",
@@ -99,6 +102,11 @@ test.describe("Reward Flow", critical, () => {
     });
     await new RewardPage(page).claimFirstReward();
     await new DestinationPage(page).expectVisible();
+    await expect
+      .poll(() =>
+        page.evaluate((saveKey) => JSON.parse(localStorage.getItem(saveKey) || "{}").ownedTrinketIds ?? [], SAVE_KEY),
+      )
+      .toContain("tattered-pages");
     const saved = await page.evaluate((saveKey) => JSON.parse(localStorage.getItem(saveKey) || "{}"), SAVE_KEY);
     expect(saved.ownedTrinketIds).toContain("tattered-pages");
     expect(saved.activeRun?.runBoons ?? []).not.toContain("tattered-pages");
@@ -109,12 +117,16 @@ test.describe("Reward Flow", critical, () => {
     });
     await new RewardPage(page).claimFirstReward();
     await new DestinationPage(page).expectVisible();
-    const gearInventory = await page.evaluate((saveKey) => {
-      const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-      const inventories = save.gearInventories || {};
-      return Object.values(inventories).flat() as Array<{ instanceId: string }>;
-    }, SAVE_KEY);
-    expect(gearInventory.some((g) => g.instanceId === "reward-gear")).toBe(true);
+    await expect
+      .poll(() =>
+        page.evaluate((saveKey) => {
+          const inventories = JSON.parse(localStorage.getItem(saveKey) || "{}").gearInventories || {};
+          return (Object.values(inventories).flat() as Array<{ instanceId: string }>).some(
+            (gear) => gear.instanceId === "reward-gear",
+          );
+        }, SAVE_KEY),
+      )
+      .toBe(true);
   });
 
   test("unclaimed rewards survive reload and can be claimed immediately", async ({
@@ -139,6 +151,11 @@ test.describe("Reward Flow", critical, () => {
     await page.reload();
     await new RewardPage(page).claimFirstReward();
     await new DestinationPage(page).expectVisible();
+    await expect
+      .poll(() =>
+        page.evaluate((saveKey) => JSON.parse(localStorage.getItem(saveKey) || "{}").ownedTrinketIds ?? [], SAVE_KEY),
+      )
+      .toContain("tattered-pages");
     const saved = await page.evaluate((saveKey) => JSON.parse(localStorage.getItem(saveKey) || "{}"), SAVE_KEY);
     expect(saved.ownedTrinketIds).toContain("tattered-pages");
   });

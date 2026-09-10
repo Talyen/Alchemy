@@ -31,7 +31,6 @@ describe("initializeEnemyState", () => {
   const mudElemental = getEnemy("mud-elemental");
   const blightTreant = getEnemy("blight-treant");
   const livingArmor = getEnemy("living-armor");
-  const forgeGolem = getEnemy("forge-golem");
 
   it("calibrates starting normal Health without changing resource scaling", () => {
     const result = initializeEnemyState(skeleton, 1, []);
@@ -113,9 +112,9 @@ describe("initializeEnemyState", () => {
     expect(result.startingArmor).toBe(Math.round(LIVING_ARMOR_STARTING_ARMOR * roomMul));
   });
 
-  it("includes starting-block trait enemy block scaled by room", () => {
+  it.each(["forge-golem", "goblin"])("includes %s starting Block scaled by room", (id) => {
     const roomMul = 1 + 2 * ROOM_SCALING_INCREMENT;
-    const result = initializeEnemyState(forgeGolem, 3, []);
+    const result = initializeEnemyState(getEnemy(id), 3, []);
     expect(result.startingEnemyBlock).toBe(Math.round(ENEMY_STARTING_BLOCK * roomMul));
   });
 

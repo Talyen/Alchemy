@@ -106,17 +106,3 @@ export function normalizeExclusiveGearLoadouts(loadouts: GearLoadouts): GearLoad
 
   return next;
 }
-
-export function pruneOrphanGearLoadouts(inventory: GearInventory, loadouts: GearLoadouts): GearLoadouts {
-  const inventoryIds = new Set(inventory.map((item) => item.instanceId));
-  const next = createEmptyGearLoadouts();
-
-  for (const characterId of GEAR_CHARACTER_IDS) {
-    for (const slot of GEAR_SLOTS) {
-      const instanceId = loadouts[characterId][slot];
-      next[characterId][slot] = instanceId && inventoryIds.has(instanceId) ? instanceId : null;
-    }
-  }
-
-  return next;
-}

@@ -18,10 +18,12 @@ import {
   readHasActiveRun,
   readHasActiveBattle,
   readParkedRuns,
+  readRunRecency,
   readRunSession,
 } from "@/features/alchemy/shared/stores/run-reads";
 import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
-import { hydrateModeRunInDraft } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { hydrateModeRunInDraft, snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { mostRecentResumableMode } from "@/features/alchemy/shared/stores/parked-runs";
 import { parkAndDeactivateForegroundRunInDraft } from "@/features/alchemy/shared/stores/run-park-restore";
 import {
   createInitialDestinationResult,
@@ -33,12 +35,9 @@ import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-genera
 import { applyRunStartToDraft, createDraftRunStartSnapshot } from "./run-start-command";
 import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
 import { afterCampaignCharacterResolved } from "@/features/alchemy/shared/run-flow/campaign-start";
-import {
-  createStarterDraftChoices,
-  wildcardStarterResumeTarget,
-} from "@/features/alchemy/shared/run-flow/starter-draft";
+import { createStarterDraftChoices } from "@/features/alchemy/shared/run-flow/starter-draft";
 import type { ContentSystemNavigationDeps } from "./content-system-navigation-types";
-import { ROUTE_SCREENS } from "@/lib/routing";
+import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
 import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
 import {
   getDifficultyModifiers,
@@ -77,6 +76,12 @@ function restoreResumedCampaignDestinations(
   getAvailableDestinations: ContentSystemNavigationDeps["getAvailableDestinations"],
 ): void {
   const active = draft.run.activeRun;
+  const reward = draft.session.rewardState;
+  if (
+    reward.destinations.length > 0 &&
+    (!reward.destinations.includes(DESTINATIONS.BOSS_COMBAT) || reward.selectedBossId)
+  )
+    return;
   setRewardState(draft, (prev) =>
     restoreOrCreateDestinationRewardState(prev, {
       availableDestinations: getAvailableDestinations({
@@ -211,37 +216,30 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
       ),
   });
 
-  function resumeActiveContentSystem(systemId: ContentSystemId) {
-    if (readHasActiveBattle()) {
-      deps.returnToBattle();
-      return;
-    }
-    const run = readActiveRun();
-    const starterResume = wildcardStarterResumeTarget({
-      characterId: run.characterId,
-      contentSystemType: run.contentSystemType,
-      selectedDifficulty: run.selectedDifficulty,
-      runDeckLength: run.runDeck.length,
-      starterDraftChoices: readRunSession().starterDraftChoices,
+  function resumeRun(requestedMode?: ContentSystemId) {
+    const hasLive = readHasActiveRun();
+    const liveMode = hasLive ? readActiveRun().contentSystemType : null;
+    const parked = readParkedRuns();
+    const mode = requestedMode ?? mostRecentResumableMode(readRunRecency(), liveMode, parked, hasLive);
+    if (!mode || (liveMode !== mode && !parked[mode])) return;
+    dispatchRunSessionCommand((draft) => {
+      if (liveMode !== mode) hydrateModeRunInDraft(draft, mode);
+      setPendingContentSystemType(draft, mode);
+      setPendingCharacterId(draft, null);
     });
-    if (starterResume === "draft-deck") {
-      deps.navigateTo(ROUTE_SCREENS.DRAFT_DECK);
-      return;
-    }
-    if (starterResume === "difficulty-select") {
-      deps.navigateTo(ROUTE_SCREENS.DIFFICULTY_SELECT);
-      return;
-    }
-    if (systemId === CONTENT_SYSTEMS.LABYRINTH) {
-      deps.navigateTo(ROUTE_SCREENS.LABYRINTH_MAP);
-    } else if (systemId === CONTENT_SYSTEMS.CAMPAIGN) {
-      deps.navigateTo(ROUTE_SCREENS.DESTINATION, () => {
+    const screen = snapshotRun().currentScreen;
+    if (!screen) return;
+    deps.clearCardHover();
+    if (screen === ROUTE_SCREENS.DESTINATION && mode === CONTENT_SYSTEMS.CAMPAIGN) {
+      deps.navigateTo(screen, () => {
         dispatchRunSessionCommand((draft) => {
           restoreResumedCampaignDestinations(draft, deps.getAvailableDestinations);
         });
       });
-    } else if (systemId === CONTENT_SYSTEMS.WILDWOOD) {
+    } else if (screen === ROUTE_SCREENS.BATTLE && mode === CONTENT_SYSTEMS.WILDWOOD && !readHasActiveBattle()) {
       deps.onResumeWildwood();
+    } else {
+      deps.navigateTo(screen);
     }
   }
 
@@ -249,22 +247,19 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
     const hasActiveRun = readHasActiveRun();
     const runType = hasActiveRun ? readActiveRun().contentSystemType : null;
     if (hasActiveRun && runType === systemId) {
-      resumeActiveContentSystem(systemId);
+      resumeRun(systemId);
       return;
     }
     const parked = readParkedRuns()[systemId];
     if (parked) {
-      dispatchRunSessionCommand((draft) => {
-        hydrateModeRunInDraft(draft, systemId);
-      });
-      resumeActiveContentSystem(systemId);
+      resumeRun(systemId);
       return;
     }
     dispatchRunSessionCommand((draft) => {
       if (draft.session.hasActiveRun && draft.run.activeRun.contentSystemType !== systemId) {
         parkAndDeactivateForegroundRunInDraft(draft);
-        setPendingCharacterId(draft, null);
       }
+      setPendingCharacterId(draft, null);
       setPendingContentSystemType(draft, systemId);
     });
     deps.navigateTo(ROUTE_SCREENS.CHARACTER_SELECT);
@@ -399,6 +394,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
   }
 
   return {
+    resumeRun,
     beginCampaign,
     beginLabyrinth,
     beginWildwood,

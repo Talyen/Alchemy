@@ -26,6 +26,7 @@ For flow-specific rules, use [display sizing](#display-sizing), [Collection and 
 - `Surface` is the shared interactive card/tile owner (`onClick` works for both `button` and `div` renderings; prefer `as="button"` for actions). `PortaledTooltip` with `TooltipPanel` owns tooltip chrome. `ShineText` with `GearItemTitle`/`TrinketItemTitle` (both in `gear-item-title.tsx`) own keyword/item shine typography.
 - Astral gear and Trinket title shine uses at most three described keywords, each with its primary color and a 55%-opacity stop. Gear prefers matching base affinities; Trinkets retain description order. Unique gear titles stay gold. Artwork and border palettes remain independent.
 - Over-art price chips use an opaque dark scrim with light text and shadow so card art cannot wash them out; affordable shop prices keep gold border and text on that scrim.
+- `TraitBox` owns Trait containers, colored icons, keyword descriptions, and title shine across Labyrinth map details and enemy hover/inspection. Encounter icon themes live in shared configuration and also drive map effects. Enemy Traits and encounter modifiers form one deduplicated list; inspection uses two equal columns at 40rem of available content width, with a single-column fallback and full-width sole Traits. Hover and map Traits stay stacked. Apply inline-size containment only to the inspection layout: shrink-to-fit tooltips need their contents to contribute intrinsic width.
 - Modal interaction and dismissal follow [Overlay lifecycle](#overlay-lifecycle).
 
 ## Overlay lifecycle
@@ -39,6 +40,13 @@ clicks on the backdrop itself; clicks inside content do not dismiss it or activa
 underlying screen handlers. Required choices such as Wish remain non-dismissible.
 Panels size to their contents with bounded width and height and scroll overflow;
 card inspection retains adaptive pagination without reserving an empty full-screen panel.
+
+Draw Pile, Discard Pile, and Deck inspection share the existing 180ms backdrop fade
+with a 6px upward panel settle on opening, easing out over the same duration. Closing
+uses only the fade; reduced motion omits the settle. Cards appear together, and
+populated panels retain content-based sizing without animated dimensions. Empty
+collections show centered, muted “Empty” text in a 10rem-high content area with a
+20rem minimum panel width, bounded by the available viewport with overflow scrolling.
 
 `ModalOverlayShell` owns overlay interaction eligibility: only open, rendered
 content accepts input or registers an Escape handler. Closing content remains
@@ -59,7 +67,14 @@ to its existing target when the panel unmounts.
 | Copy               | `ScreenDescription` is static. `TextAnimate` is reserved for mystery narrative.                                                                                                                                                 |
 | Anti-flash         | Replace outgoing payloads only at the rendered-screen commit, swap layout while opacity is zero, reserve height for shape-changing swaps, and keep shell chrome mounted when payload data clears. Do not stagger route content. |
 
-Screen and `FadeSlot` reveals wait for the mounted images to load and decode through `useArtworkReady`, then allow a layout frame before starting the fade. Startup preloading is a warm-up, not proof that a later mounted image is paint-ready. Failed or timed-out images stay hidden for that mount so they cannot pop in after the screen is revealed. Reserve intrinsic artwork dimensions when image height determines layout, including the menu logo.
+Screen and `FadeSlot` reveals wait for the mounted images to load and decode through `useArtworkReady`, then allow a layout frame before starting the fade. While preparing a reveal, the gate also tracks artwork inserted after layout measurement and changed image sources; stale decode completions cannot reveal or hide the replacement. The observer disconnects after reveal, so normal battle updates do not restart the whole-screen gate. Startup preloading is a warm-up, not proof that a later mounted image is paint-ready. Failed or timed-out images stay hidden for that mount so they cannot pop in after the screen is revealed. Reserve intrinsic artwork dimensions when image height determines layout, including the menu logo.
+
+`FadeSlot` keeps outgoing and artwork-pending content inert. Identity-dependent
+headings, prompts, resources, and actions must travel with their content: Victory
+reward prompts/Skip share the reward-kind-and-choice identity, and Mystery titles
+share the event-and-phase identity. Do not animate `filter` on artwork whose
+state uses grayscale; reveal opacity must settle to the underlying state opacity
+rather than force completed art to full color or full opacity.
 
 `useHeldWhile` snapshots its input in an effect. Memoize composite inputs before passing them to the hook; fresh objects can trigger repeated rendering in environments without React Compiler.
 
@@ -92,7 +107,11 @@ Card and collection artwork, including gear and trinket tiles, reserves a 1px fr
 
 Artwork surfaces resolve their clipping radius from the same inline theme token and local content scale as the outer frame. The artwork radius subtracts the frame width so portrait and landscape corners meet in resting, hovered, and selected states.
 
+Labyrinth's rectangular art nodes reuse `Surface`, shared shimmer, and Shine Border. Hover, keyboard focus, and selection enlarge only the emphasized tile to 106%; unknown tiles stay neutral. Completed art remains subdued. Reduced motion makes emphasis immediate and shine static. See [Labyrinth map](#labyrinth-map) for discovery and movement.
+
 ## Display sizing
+
+Talents on the end-run screen and Mystery rewards keep fixed-width boxes in centered, balanced rows. Use the fewest rows that fit (up to five boxes per row), distribute counts with at most one box of difference, and place larger rows first. Recalculate when available width or Game Size changes.
 
 The virtual stage owns available-space geometry and battle coordinates. Its fit
 scale is not capped; content growth is. At fit scale `s <= 1`, content follows
@@ -174,6 +193,8 @@ choices and Skip until the next reward surface or destination is committed.
 
 ## Options
 
+Options opened from either end-run outcome returns to that same recap through Back or Escape, including after changing Game Size.
+
 Game Size and Tooltip Size are device-local preferences, separate from game
 saves and cloud mirroring. Reset Sizes and Reset Options reset both. Clearing
 progress or importing a save does not change them.
@@ -185,55 +206,42 @@ available height.
 
 ## Labyrinth map
 
-The complete current floor fits below the stationary header, using both viewport
-width and height. Saved hex coordinates and complete-floor bounds stay fixed as
-rooms clear. Selection and destination return do not pan, scroll, or recenter the
-map. A resize refits the same floor. A centered Floor N status subheader sits
-beneath Labyrinth; there is no side tracker or reserved gutter. New floors use
-five rows across roughly five columns, giving larger hexes a roughly square
-footprint fitted uniformly to the available rectangle. There is no floor picker,
-zoom toolbar, legend, or node overlay.
+The complete twenty-room floor fits below the stationary Labyrinth header in
+rows of 4 / 6 / 6 / 4. There is no Floor N subheader; the floor number is the
+Entrance inspector's eyebrow and the map region's accessible description.
+Equal 4:3 full-bleed art tiles maximize their size against both available
+dimensions, with narrow gutters and room for 106% hover enlargement. Positions
+stay fixed during discovery, selection, and destination return. There is no
+scrolling, zoom toolbar, legend, corridor, visible room label, or location dot.
 
-Touching point-topped hexes use existing artwork and one exact integer-lattice
-geometry for positions and shared vertices. A map-wide SVG renders each edge
-once in pixel coordinates, with a 2px non-scaling stroke and room around the
-perimeter to avoid clipping. No square viewBox stretching, state-specific stroke
-widths, or node transforms are permitted. Shared-edge appearance priority is
-keyboard focus, selection, current location, hover, reachable, completed, then
-unexplored; ties use stable node IDs. Selection/focus is ivory, current location
-muted amber, completed borders dim stone, and unexplored borders charcoal.
-Reachable borders retain their existing type-gradient shine. Gradients use each
-node's bounds in user-space coordinates, so all of its owned edge segments share
-one continuous gradient; reduced motion freezes the shine. Completed artwork is
-desaturated and subdued, unexplored artwork dim, and neither changes size.
+Undiscovered rooms contain only a neutral `?`; no hidden art, category, Trait,
+accessible name, or hover theme is exposed. Actual Mystery encounters reveal
+their existing art. The boss is always visible and inspectable, with the shared
+display label Boss and a persistent red glow independent of hover/selection.
+All rooms rest with the standard dim `border-border/80` frame, except the current
+room's shared `border-primary` amber. Reachability does not change border color.
+Shared hover, focus, and selection keep shimmer and Shine Border; unknown
+interactions stay neutral. Completed art remains grayscale and subdued from
+its first frame, including during the opacity reveal and route returns.
 
-Every chamber on the current floor can be inspected using mouse, touch, or a
-native keyboard button. Only reachable rooms can be entered. Selection never
-moves the player or alters reachability; automatic travel through cleared rooms
-retains all explored-area choices without drawn routes. The current room has
-`aria-current="location"`; its inspector also says "You are here".
+Clicking or keyboard-activating a discovered room opens its inspector. An
+unfinished room offers its action when adjacent to any completed room; there
+is no explicit walking action or backtracking requirement. Inspection never
+changes completion or location. Current location remains accessible through
+`aria-current="location"`. Reduced motion freezes emphasis and shine.
 
-One inspector floats beside the selected hex and never reserves a sidebar. It
-prefers right, then left, top, or bottom, with a 10px gap and 8px boundary padding.
-Its width is 320–420 rendered pixels, capped to the viewport, including on narrow
-screens. Width limits and the node gap compensate for the virtual-stage scale;
-Floating UI boundary padding already uses screen pixels and must not be scaled
-again. It follows layout changes without moving the map. Outside clicks dismiss
-it, another node switches inspection, and Escape dismisses and restores node
-focus. No close button or tooltip is added. Floor changes dismiss old selection.
+One inspector floats beside the selected tile without reserving a sidebar or
+resizing the grid. It prefers right, then left, top, or bottom, with a 10px gap
+and 8px boundary padding. Its width is 320–420 rendered pixels, capped to the
+viewport; width and node-gap limits compensate for virtual-stage scale.
+Outside clicks dismiss it, another inspectable node switches inspection, and
+Escape dismisses and restores focus. Floor changes dismiss old selection.
 
-The inspector shows the artwork at its natural aspect ratio without cropping.
-The nonduplicated category/name overlays its bottom left on a dark gradient,
-using larger type. Each trait has a padded, subtly bordered container, a larger
-icon, and a name subheader. There are no horizontal divider lines in the panel
-or above the action footer. Descriptions use the shared keyword renderer;
-trait names use standard text shine for up to three keywords extracted from their
-descriptions, falling back to the trait's existing theme when none are named.
-Icons reuse the trait's theme keyword or an existing service icon.
-Long text scrolls independently and the action footer remains visible. Completed
-and unexplored rooms explain their status instead of offering entry. A completed
-boss offers Descend, including the number of unexplored rooms that will be left
-behind. The progression and save contract lives in [WORKFLOWS](./WORKFLOWS.md#content-system-behavior).
+The inspector retains natural-aspect artwork, the category/name overlay, shared
+Trait containers, and a pinned action footer while details scroll. Inaccessible
+rooms omit the action footer and adjacency instructions. A completed boss offers
+Descend regardless of the last completed location, reporting rooms left behind.
+Combat, services, and rewards retain their existing actions.
 
 ## Corrupted card text
 
@@ -247,7 +255,11 @@ then automatic flip to a fitting side, then shift to stay in bounds), bounded to
 `[data-testid="vr-stage"]` with `documentElement` as a fallback, so panels keep
 an independent CSS-pixel scale and avoid clipped ancestors. Tooltip Size
 (90–125%, 5% steps; default 100%) scales text, chrome, and preferred width
-together. Placement recomputes width bounds when the stage or tooltip changes
+together. Enemy tooltip headers, outer padding, and preferred width remain
+independent of Game Size. Only the nested Trait list uses the game content scale
+as its baseline, matching Labyrinth and inspection Trait text, icons, and spacing;
+Tooltip Size also multiplies that baseline. Enemy tooltips prefer 28rem of width
+at the independent tooltip scale to give boxed Trait descriptions room to wrap. Placement recomputes width bounds when the stage or tooltip changes
 size; position-only updates preserve the resolved width to avoid forced layout. Long
 descriptions can use available width to fit; tooltips never scroll or truncate.
 

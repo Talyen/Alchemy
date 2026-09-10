@@ -56,7 +56,7 @@ export interface RunDomainDataState {
   parkedRuns: ParkedRunsMap;
   runRecency: ContentSystemId[];
   initialized: boolean;
-  navigation: { screen: Screen };
+  navigation: { screen: Screen; resumeScreen: Screen | null };
 }
 
 export function createInitialSessionFields(): RunSessionFields {
@@ -111,7 +111,7 @@ export function createInitialRunDomainData(): RunDomainDataState {
     parkedRuns: emptyParkedRuns(),
     runRecency: [],
     initialized: false,
-    navigation: { screen: "menu" },
+    navigation: { screen: "menu", resumeScreen: null },
   };
 }
 

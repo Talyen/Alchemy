@@ -1,5 +1,5 @@
 import { dealTalentTypedHit } from "./player-typed-hit";
-import { hasEncounterBenefit } from "./types";
+import { hasEncounterBenefit, hasEnemyTrait } from "./types";
 import { selectRewardCards } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import type { BattleCard } from "@/lib/game-data";
@@ -26,6 +26,16 @@ import {
 import { shouldConvertCrystalWishToGold } from "@/lib/content-systems/battle-content";
 import { dealEnemyScaledDamage, gearFrozenDamageMultiplier } from "./gear-effects";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
+import { recordEnemyAbilityActivation } from "./battle-metrics";
+import { scaleByRoomMultiplier } from "./enemy-turn-traits";
+
+function processEncounterTraitWish(state: BattleState): BattleState {
+  if (!hasEnemyTrait(state, "jealous")) return state;
+  return {
+    ...recordEnemyAbilityActivation(state, "jealous"),
+    enemyPhysicalDamageBonus: state.enemyPhysicalDamageBonus + scaleByRoomMultiplier(state, 1),
+  };
+}
 
 function upgradeWishCard(card: BattleCard): BattleCard {
   const targets = getEditableCorruptionTargets(card).sort(
@@ -117,6 +127,7 @@ export function applyWishEffect(state: BattleState, card: BattleCard, amount: nu
   let nextState: BattleState = state.wishOptions
     ? { ...state, wishQueue: [...state.wishQueue, ...nextWishOptions] }
     : { ...state, wishOptions: nextWishOptions[0]!, wishQueue: [...state.wishQueue, ...nextWishOptions.slice(1)] };
+  nextState = processEncounterTraitWish(nextState);
 
   for (let i = 0; i < wishCount; i += 1) {
     nextState = applyWishGoldTriggers(nextState, combatTexts);

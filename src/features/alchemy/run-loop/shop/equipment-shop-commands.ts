@@ -78,6 +78,7 @@ export function createEquipmentShopCommands({
             gearAstralChanceBonus,
             getOwnedUniqueDefinitionIds(draft.gear.inventories),
             resolveDraftShopModifiers(draft),
+            state.gear,
           ),
       });
     }).committed;

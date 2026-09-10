@@ -213,8 +213,17 @@ export function addGoldWithCombatText(
       amount: scaledGold,
     });
   }
-  return state.gearEffects.goldGrantsForgeAndHoly > 0
-    ? addPlayerStatusWithCombatText(nextState, "forge", scaledGold, combatTexts, { skipFightPacing: true })
+  if (state.gearEffects.goldGrantsForgeAndHoly <= 0 || scaledGold <= 0) return nextState;
+  const previousForge = nextState.playerStatuses.forge;
+  nextState = addPlayerStatusWithCombatText(nextState, "forge", scaledGold, combatTexts, { skipFightPacing: true });
+  const nextForge = nextState.playerStatuses.forge;
+  const thresholds = [
+    state.talentEffects.forgeBurnThreshold,
+    state.talentEffects.forgeStripArmorThreshold,
+    state.talentEffects.forgeBlockThreshold,
+  ];
+  return thresholds.some((threshold) => threshold > 0 && previousForge < threshold && nextForge >= threshold)
+    ? { ...nextState, pendingForgeThresholds: [...nextState.pendingForgeThresholds, { previousForge, nextForge }] }
     : nextState;
 }
 

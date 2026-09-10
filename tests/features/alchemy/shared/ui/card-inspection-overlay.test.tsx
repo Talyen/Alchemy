@@ -71,7 +71,7 @@ describe("card inspection", () => {
     expect(screen.getByRole("dialog").getAttribute("aria-modal")).toBe("true");
   });
 
-  it("shows only the selected title and close button for empty piles", () => {
+  it("labels an empty pile and keeps its close action available", () => {
     render(
       <CardInspectionOverlay
         {...props}
@@ -80,10 +80,10 @@ describe("card inspection", () => {
       />,
     );
     expect(screen.getByRole("heading", { name: "Discard Pile" })).toBeTruthy();
-    expect(screen.queryByText("No cards here.")).toBeNull();
+    expect(within(screen.getByRole("dialog")).getByText("Empty")).toBeTruthy();
     expect(screen.queryByRole("group", { name: "Card collections" })).toBeNull();
     expect(screen.getAllByRole("button")).toHaveLength(1);
-    expect(screen.getByRole("dialog").textContent).toBe("Discard Pile");
+    expect(screen.queryByTestId("card-selection-grid")).toBeNull();
   });
 
   it("contains focus, supports every dismissal route, and restores the opener", async () => {

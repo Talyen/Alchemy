@@ -1,3 +1,5 @@
+import type { LabyrinthMap } from "@/lib/content-systems/types";
+import { gridLabyrinthMapFixture } from "../fixtures/labyrinth-map";
 import { describe, expect, it } from "vitest";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { applyBrassCenser } from "@/lib/battle/player-typed-hit";
@@ -20,6 +22,50 @@ function rawActiveRun(fixture: Record<string, unknown>) {
 }
 
 describe("save migration guard", () => {
+  it("adds four side rooms without changing existing active or parked Labyrinth progress", () => {
+    const raw = MIGRATION_SCENARIO_FIXTURES.expandedLabyrinth();
+    const before = JSON.stringify(raw);
+    const original = rawActiveRun(raw)!.labyrinthMap as LabyrinthMap;
+    const save = normalizeSaveData(raw);
+    const run = save.activeRun!;
+    const map = run.labyrinthMap!;
+    expect(map.floors[0]!.nodeIds).toHaveLength(20);
+    for (const [id, node] of Object.entries(original.nodes)) expect(map.nodes[id]).toEqual(node);
+    expect(map.currentNodeId).toBe(original.currentNodeId);
+    expect(run.labyrinthPendingNode).toBe("labyrinth-floor-1-n0");
+    expect(run.rng.counters.world).toBe(7);
+    expect(run.activeCombat?.battleState.playerHealth).toBe(20);
+    expect(run.activeCombat?.battleState.flags.firstBurnTrinketDoubledUsed).toBe(true);
+    expect(save.parkedRuns.labyrinth?.labyrinthMap).toEqual(map);
+    expect(normalizeSaveData(save)).toEqual(save);
+    expect(JSON.stringify(raw)).toBe(before);
+  });
+
+  it("retires only development hex Labyrinth runs while retaining profile progression and other modes", () => {
+    const raw = MIGRATION_SCENARIO_FIXTURES.retiredHexLabyrinth();
+    const campaignSave = currentSchemaCampaignSave();
+    const campaign = rawActiveRun(campaignSave);
+    const parked = { ...(raw.parkedRuns as Record<string, unknown>), campaign };
+    const save = normalizeSaveData({
+      ...raw,
+      parkedRuns: parked,
+      talentXP: { physical: 18 },
+      materialInventory: { wood: 5 },
+    });
+    expect(save.activeRun).toBeNull();
+    expect(save.parkedRuns.labyrinth).toBeUndefined();
+    expect(save.parkedRuns.campaign?.contentSystemType).toBe("campaign");
+    expect(save.parkedRuns.campaign?.runPlayerHealth).toBe(campaign?.runPlayerHealth);
+    expect(save.discoveredCardIds).toEqual(expect.arrayContaining(["slash", "bash"]));
+    expect(save.talentXP.physical).toBe(18);
+    expect(save.materialInventory.wood).toBe(5);
+    expect(save.gold).toBe(raw.gold);
+    expect(normalizeSaveData(save)).toEqual(save);
+    const activeCampaign = normalizeSaveData({ ...raw, activeRun: campaign });
+    expect(activeCampaign.activeRun?.contentSystemType).toBe("campaign");
+    expect(activeCampaign.parkedRuns.labyrinth).toBeUndefined();
+  });
+
   it("keeps a battle loadable when a legacy enemy ID is an inherited object name", () => {
     const raw = MIGRATION_SCENARIO_FIXTURES.enemyAbilities();
     const run = raw.activeRun as {
@@ -69,7 +115,11 @@ describe("save migration guard", () => {
   it("migrates active and parked ability history for every run mode", () => {
     const raw = MIGRATION_SCENARIO_FIXTURES.enemyAbilities();
     for (const mode of ["campaign", "labyrinth", "wildwood"] as const) {
-      const run = { ...(raw.activeRun as Record<string, unknown>), contentSystemType: mode };
+      const run = {
+        ...(raw.activeRun as Record<string, unknown>),
+        contentSystemType: mode,
+        ...(mode === "labyrinth" ? { labyrinthMap: gridLabyrinthMapFixture() } : {}),
+      };
       const migrated = migrateSaveDataToCurrent({ ...raw, activeRun: run, parkedRuns: { [mode]: run } });
       const active = migrated.activeRun as typeof run & {
         activeCombat: { battleState: { currentEnemy: { abilityIds: string[] }; lastEnemyAbilityId: null } };
@@ -222,7 +272,7 @@ describe("save migration guard", () => {
     const migrated = normalizeSaveData(MIGRATION_SCENARIO_FIXTURES.labyrinthGridRegen());
     expect(migrated.activeRun?.contentSystemType).toBe("labyrinth");
     expect(migrated.activeRun?.runPlayerHealth).toBe(24);
-    expect(migrated.activeRun?.labyrinthMap?.floors.length).toBeGreaterThanOrEqual(2);
+    expect(migrated.activeRun?.labyrinthMap?.floors).toHaveLength(1);
     expect(migrated.activeRun?.labyrinthMap?.currentFloor).toBe(1);
     expect(migrated.activeRun?.labyrinthPendingNode).toBeNull();
   });

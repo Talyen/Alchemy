@@ -10,6 +10,35 @@ describe("FadeSlot", () => {
     vi.useRealTimers();
   });
 
+  it("keeps outgoing and artwork-pending content inert during a swap", async () => {
+    vi.useFakeTimers();
+    const { rerender } = render(
+      <FadeSlot swapKey="first" data-testid="slot">
+        <button>First reward</button>
+      </FadeSlot>,
+    );
+    await act(async () => {
+      await Promise.resolve();
+      vi.advanceTimersByTime(20);
+    });
+    expect(screen.getByTestId("slot").hasAttribute("inert")).toBe(false);
+    rerender(
+      <FadeSlot swapKey="second" data-testid="slot">
+        <button>Next reward</button>
+      </FadeSlot>,
+    );
+    expect(screen.getByTestId("slot").hasAttribute("inert")).toBe(true);
+    expect(screen.getByRole("button", { name: "First reward", hidden: true })).toBeTruthy();
+    act(() => vi.advanceTimersByTime(resolveGameDelay(MOTION_FADE_MS)));
+    expect(screen.getByTestId("slot").hasAttribute("inert")).toBe(true);
+    await act(async () => {
+      await Promise.resolve();
+      vi.advanceTimersByTime(20);
+    });
+    expect(screen.getByTestId("slot").hasAttribute("inert")).toBe(false);
+    expect(screen.getByRole("button", { name: "Next reward" })).toBeTruthy();
+  });
+
   it("holds outgoing children and wrapper className until opacity is 0", () => {
     vi.useFakeTimers();
     const { rerender } = render(

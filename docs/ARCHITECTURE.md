@@ -84,6 +84,10 @@ Run-level randomness is persisted in `activeRun.rng` as one seed plus counters f
 
 Parked-run reads return detached snapshots, including any pending battle result, while retaining the resting RNG callbacks on in-memory battle states. Resuming a parked run with active combat returns to battle before considering the mode's map or destination route.
 
+`run.navigation.resumeScreen` retains the live run's gameplay location while `screen` changes to menus or setup. `setScreen` records resumable gameplay, starter-draft, and difficulty screens only while a run is active; new-run initialization clears the prior location and restore seeds it from the decoded snapshot. Autosave, Armory flushes, and parking use this location through the existing resume codec and persist it as `ActiveRunData.currentScreen`. Menu navigation never replaces it. The codec infers a playable location for older snapshots that recorded a menu.
+
+`content-system-navigation.resumeRun` owns both mode-button resume and the shell's `returnToBattle` command. An explicit mode selects its slot; otherwise recency selects the last played run. Browsing another mode's setup creates no slot and does not promote that mode. Restoring a slot clears abandoned setup selections and returns to its saved screen, including unfinished rewards, shops, events, and drafts. No separate Labyrinth entry guard may block parked slots or regenerate their map.
+
 Purse-to-battle synchronization updates both the current battle and any pending opening-draw or enemy-turn result. The pending result retains its unapplied Gold change relative to the current battle, so restoring a run preserves Gold earned or spent elsewhere. Hydration retains both saved Gold values until this synchronization runs; completing the transition applies the remaining change once through the battle-to-purse commit.
 
 ### Session capability ports

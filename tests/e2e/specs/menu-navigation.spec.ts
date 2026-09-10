@@ -48,17 +48,84 @@ test.describe("Menu", critical, () => {
     await expect(page.getByRole("button", { name: "Resume The Campaign" })).toBeVisible();
   });
 
-  test("Labyrinth button shows Resume when a labyrinth run is active", async ({ page }) => {
+  test("Labyrinth resumes after backing out of Campaign setup through either resume control", async ({ page }) => {
     await injectLabyrinthRun(page, {
       deck: [makeCard()],
       discoveredCardIds: ["slash", "bash", "block"],
       runOverrides: { roomsEncountered: 1, destinationIndexInAct: 1 },
     });
+    const menu = new MenuPage(page);
+    for (const control of ["mode", "menu"]) {
+      await page.getByRole("button", { name: "Open game menu" }).click();
+      await page.getByRole("button", { name: "Main Menu" }).click();
+      await menu.openGameModeSelect();
+      await page.getByRole("button", { name: "The Campaign", exact: true }).click();
+      await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(page.getByRole("heading", { name: "Choose a Path" })).toBeVisible();
+      if (control === "mode") {
+        await page.getByRole("button", { name: "Resume The Labyrinth" }).click();
+      } else {
+        await page.getByRole("button", { name: "Open game menu" }).click();
+        await page.getByRole("button", { name: "Return to Run" }).click();
+      }
+      await expect(page.getByLabel("Labyrinth map", { exact: true })).toBeVisible();
+    }
+  });
+
+  test("Campaign combat and Labyrinth progress both survive a reload and mode switching", async ({
+    page,
+    fastBattle,
+    runtimeErrors,
+  }) => {
+    void fastBattle;
+    void runtimeErrors;
+    await injectLabyrinthRun(page, {
+      deck: [makeCard()],
+      runOverrides: { roomsEncountered: 3, runPlayerHealth: 17 },
+    });
     await page.getByRole("button", { name: "Open game menu" }).click();
     await page.getByRole("button", { name: "Main Menu" }).click();
     const menu = new MenuPage(page);
     await menu.openGameModeSelect();
-    await expect(page.getByRole("button", { name: "Resume The Labyrinth" })).toBeVisible();
+    await page.getByRole("button", { name: "The Campaign", exact: true }).click();
+    await menu.selectCharacterAndContinue();
+    await expectRunPhase(page, "battle");
+    await expect
+      .poll(() =>
+        page.evaluate((key) => {
+          const save = JSON.parse(localStorage.getItem(key) ?? "{}");
+          return {
+            active: save.activeRun?.contentSystemType,
+            combat: save.activeRun?.activeCombat?.battleState.turnPhase,
+            labyrinthHealth: save.parkedRuns?.labyrinth?.runPlayerHealth,
+            labyrinthRooms: save.parkedRuns?.labyrinth?.roomsEncountered,
+          };
+        }, SAVE_KEY),
+      )
+      .toEqual({ active: "campaign", combat: "player", labyrinthHealth: 17, labyrinthRooms: 3 });
+
+    const reloaded = await page.context().newPage();
+    const errors = failOnRuntimeErrors(reloaded);
+    try {
+      await reloaded.goto("/");
+      await expectRunPhase(reloaded, "battle");
+      await new BattlePage(reloaded).menuBtn.click();
+      await reloaded.getByRole("button", { name: "Main Menu" }).click();
+      await new MenuPage(reloaded).openGameModeSelect();
+      await expect(reloaded.getByText("Resume The Campaign", { exact: true })).toBeVisible();
+      await expect(reloaded.getByText("Resume The Labyrinth", { exact: true })).toBeVisible();
+      await reloaded.getByRole("button", { name: "Resume The Labyrinth" }).click();
+      await expect(reloaded.getByLabel("Labyrinth map", { exact: true })).toBeVisible();
+      await reloaded.getByRole("button", { name: "Open game menu" }).click();
+      await reloaded.getByRole("button", { name: "Main Menu" }).click();
+      await new MenuPage(reloaded).openGameModeSelect();
+      await reloaded.getByRole("button", { name: "Resume The Campaign" }).click();
+      await expectRunPhase(reloaded, "battle");
+      expect(errors).toEqual([]);
+    } finally {
+      await reloaded.close();
+    }
   });
 });
 

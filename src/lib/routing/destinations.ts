@@ -35,5 +35,6 @@ export function isShopDestination(destination: Destination): boolean {
 }
 
 export function destinationLabel(destination: Destination): string {
-  return destination === DESTINATIONS.NORMAL_COMBAT ? "Combat" : destination;
+  if (destination === DESTINATIONS.NORMAL_COMBAT) return "Combat";
+  return destination === DESTINATIONS.BOSS_COMBAT ? "Boss" : destination;
 }

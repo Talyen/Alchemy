@@ -20,11 +20,11 @@ import {
 } from "./status-helpers";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { POISON_GAIN_AMOUNT } from "../game-constants";
-import { applyLeechHealing, computeLeechHeal, scalePlayerLeechHeal } from "./damage-rider-leech";
+import { addBloodDebtHealing, applyLeechHealing, computeLeechHeal, scalePlayerLeechHeal } from "./damage-rider-leech";
 import { applyPoisonTalentRiders } from "./damage-status-riders";
 import { mergeCombatText } from "./combat-text";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
-import { applyEnemyLeechHealing, resolvePendingCinderSkinReaction } from "./enemy-attack-damage";
+import { applyEnemyLeechHealing, resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { tryPoisonStunProc } from "./player-typed-hit";
 import { payPendingBleedLeech } from "./damage-rider-leech";
 import { dealEnemyDotTick } from "./dot-resolve";
@@ -56,7 +56,10 @@ function applyParasiticBloomLeech(state: BattleState, damage: number, combatText
   if (!rollPercent(state.trinketEffects.parasiticBloomLeechChance, getBattleRng(state))) return state;
   return applyLeechHealing(
     state,
-    scalePlayerLeechHeal(state, scaledGearLeechHeal(computeLeechHeal(damage), state.gearEffects)),
+    scalePlayerLeechHeal(
+      state,
+      scaledGearLeechHeal(addBloodDebtHealing(state, computeLeechHeal(damage)), state.gearEffects),
+    ),
     combatTexts,
     {
       afflicted: true,
@@ -131,11 +134,11 @@ export function tickEnemyStatuses(state: BattleState, combatTexts: CombatTextEve
     if (state.pendingBleedLeechHealing === 0) return state;
     return { ...state, pendingBleedLeechHealing: 0 };
   }
-  let nextState = resolvePendingCinderSkinReaction(tickBurn(state, combatTexts), combatTexts);
+  let nextState = resolvePendingBattleReactions(tickBurn(state, combatTexts), combatTexts);
   if (nextState.enemyHealth <= 0) return nextState;
-  nextState = resolvePendingCinderSkinReaction(tickPoison(nextState, combatTexts), combatTexts);
+  nextState = resolvePendingBattleReactions(tickPoison(nextState, combatTexts), combatTexts);
   if (nextState.enemyHealth <= 0) return nextState;
-  nextState = resolvePendingCinderSkinReaction(tickBleed(nextState, combatTexts), combatTexts);
+  nextState = resolvePendingBattleReactions(tickBleed(nextState, combatTexts), combatTexts);
   return nextState;
 }
 
@@ -217,10 +220,10 @@ export function tickPlayerStatuses(state: BattleState, combatTexts: CombatTextEv
     if (nextState.pendingEnemyBleedLeechHealing !== 0) {
       nextState = { ...nextState, pendingEnemyBleedLeechHealing: 0 };
     }
-    return resolvePendingCinderSkinReaction(resolvePlayerCrowdControlTriggers(nextState, combatTexts), combatTexts);
+    return resolvePendingBattleReactions(resolvePlayerCrowdControlTriggers(nextState, combatTexts), combatTexts);
   }
   let nextState = tickPlayerBurn(state, combatTexts);
   nextState = tickPlayerPoison(nextState, combatTexts);
   nextState = tickPlayerBleed(nextState, combatTexts);
-  return resolvePendingCinderSkinReaction(resolvePlayerCrowdControlTriggers(nextState, combatTexts), combatTexts);
+  return resolvePendingBattleReactions(resolvePlayerCrowdControlTriggers(nextState, combatTexts), combatTexts);
 }

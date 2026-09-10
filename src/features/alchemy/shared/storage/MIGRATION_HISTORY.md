@@ -87,6 +87,36 @@ New snapshots retain valid last-ability history. Normalization repairs missing o
 unsupported ability references from the enemy catalog and restores known trait
 metadata for inspection, without discarding the battle.
 
+## Schema 17 — Labyrinth Open Field
+
+Each playable floor now has a completed entrance inside a full 4×4 rectangular
+grid, cardinal adjacency, and a single persisted current position. The old
+floor-zero entrance and `outgoingIds` are removed. Discovery is derived from
+completed rooms rather than stored separately.
+
+The explicitly authorized prelaunch migration retires incompatible hex
+Labyrinth runs in both active and parked slots; their in-flight encounters
+are retired with the run. Profile progression, the shared Gold purse, permanent
+inventories, Campaign, and Wildwood are preserved. Already-valid Open Field
+runs pass through, and repeated migration is idempotent. The older schema-14
+regeneration path delegates to the current generator, so pre-hex grids recover
+to a valid current floor without retaining hex runtime code.
+
+## Schema 18 — Labyrinth side rooms
+
+Existing sixteen-room Open Field floors gain one room on each side of the middle
+two rows, using columns -1 and 4 around the unchanged 0–3 core. The migration
+preserves original room IDs, coordinates, completion, Traits, current position,
+and pending battles/visits in active and parked runs. A local seeded source rolls
+only the additions without advancing the saved run's RNG counters. Expanded
+floors pass through without another roll. The display name Boss replaces Boss
+Combat while the serialized destination identifier stays unchanged.
+
+The accompanying codec correction explicitly selects run-profile fields during
+hydration and encoding. Stale inventory/settings/discovery fields from the full
+save envelope can no longer overwrite their live owners when saving rewards.
+This fixes field ownership without changing those domains' saved shapes.
+
 ## Content versions 2 and 3 — card IDs
 
 `src/lib/validation/migration/content-steps.ts` remaps `sunder-armor` to `sunder`

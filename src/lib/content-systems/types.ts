@@ -18,7 +18,7 @@ export type LabyrinthNodeType =
   | "equipment-shop"
   | "boss";
 
-export type LabyrinthNodeVisualState = "locked" | "reachable" | "cleared";
+export type LabyrinthNodeVisualState = "undiscovered" | "locked" | "reachable" | "cleared";
 
 export interface LabyrinthGridPosition {
   row: number;
@@ -33,7 +33,6 @@ export interface LabyrinthNode {
   modifiers: EncounterCombatTraitId[];
   rewardModifiers: EncounterRewardTraitId[];
 
-  outgoingIds: string[];
   cleared: boolean;
   enemyId?: string;
 }
@@ -48,5 +47,5 @@ export interface LabyrinthMap {
   floors: LabyrinthFloor[];
   nodes: Record<string, LabyrinthNode>;
   currentFloor: number;
-  currentNodeId: string | null;
+  currentNodeId: string;
 }

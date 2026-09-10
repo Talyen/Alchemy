@@ -20,7 +20,7 @@ import {
   TRINKET_SHOP_OFFERED,
   EQUIPMENT_SHOP_OFFERED,
 } from "@/lib/game-constants";
-import { generateEquipmentShopOfferings, type GearInstance } from "@/lib/gear";
+import { gearDefinitions, generateEquipmentShopOfferings, type GearInstance } from "@/lib/gear";
 import { trinketLibrary } from "@/lib/game-data";
 import { sampleItems } from "@/lib/utils";
 
@@ -66,16 +66,27 @@ export function resampleEquipmentShopOfferings(
   gearAstralChanceBonus = 0,
   ownedUniqueIds?: ReadonlySet<string>,
   modifiers: readonly EncounterRewardTraitId[] = [],
+  currentItems: readonly GearInstance[] = [],
 ): GearInstance[] {
   const baseItems = modifiers.includes("bowyer")
     ? ["shortbow", "longbow", "recurve-bow"]
     : modifiers.includes("armorer")
       ? gearBaseItemList.filter((item) => item.compatibleSlots.includes("body")).map((item) => item.id)
-      : undefined;
-  return generateEquipmentShopOfferings(EQUIPMENT_SHOP_OFFERED, rng, gearAstralChanceBonus, ownedUniqueIds, {
-    ...(baseItems ? { baseItemIds: baseItems } : {}),
-    ...(modifiers.includes("masterwork") ? { rarity: "astral" as const } : {}),
-  });
+      : gearBaseItemList.map((item) => item.id);
+  const currentBases = new Set<string | undefined>(
+    currentItems.map((item) => gearDefinitions[item.definitionId]?.baseItemId),
+  );
+  const novelBases = baseItems.filter((id) => !currentBases.has(id));
+  const sample = (count: number, baseItemIds: readonly string[]) =>
+    generateEquipmentShopOfferings(count, rng, gearAstralChanceBonus, ownedUniqueIds, {
+      baseItemIds,
+      ...(modifiers.includes("masterwork") ? { rarity: "astral" as const } : {}),
+    });
+  const novel = sample(Math.min(EQUIPMENT_SHOP_OFFERED, novelBases.length), novelBases);
+  if (novel.length >= EQUIPMENT_SHOP_OFFERED) return novel;
+  const selected = new Set<string | undefined>(novel.map((item) => gearDefinitions[item.definitionId]?.baseItemId));
+  const fallbackBases = baseItems.filter((id) => !selected.has(id));
+  return [...novel, ...sample(EQUIPMENT_SHOP_OFFERED - novel.length, fallbackBases.length ? fallbackBases : baseItems)];
 }
 
 export function createInitialShopState(

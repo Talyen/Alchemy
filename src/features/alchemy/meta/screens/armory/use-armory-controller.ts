@@ -25,7 +25,6 @@ import {
   useGearCombatRestrictions,
   type GearCombatRestrictions,
 } from "@/features/alchemy/shared/stores/gear-store";
-import { useAppScreenChrome } from "@/app/app-screen-chrome-context";
 import type { SynchronousResult } from "@/features/alchemy/shared/stores/run-session-command";
 import type { GearStore } from "@/features/alchemy/shared/stores/gear-store-types";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
@@ -59,7 +58,6 @@ export interface ArmoryController {
 }
 
 export function useArmoryController(options?: { rng?: () => number }): ArmoryController {
-  const { returnToRunScreen } = useAppScreenChrome();
   const gear = useGearArmorySlice();
   const combatRestrictions = useGearCombatRestrictions();
   const finishedRunCharacters = useFinishedRunCharacters();
@@ -67,8 +65,8 @@ export function useArmoryController(options?: { rng?: () => number }): ArmoryCon
   const rng = options?.rng ?? Math.random;
 
   const flush = useCallback(() => {
-    flushSaveAfterGearMutation(resolveActiveRunForSave(hasActiveRun, returnToRunScreen ?? undefined));
-  }, [hasActiveRun, returnToRunScreen]);
+    flushSaveAfterGearMutation(resolveActiveRunForSave(hasActiveRun));
+  }, [hasActiveRun]);
 
   const onEquip = useCallback<ArmoryController["onEquip"]>(
     (characterId, slot, instance) => {

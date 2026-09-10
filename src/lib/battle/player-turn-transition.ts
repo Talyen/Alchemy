@@ -1,4 +1,4 @@
-import { resolvePendingCinderSkinReaction } from "./enemy-attack-damage";
+import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { hasEncounterBenefit, hasEnemyTrait } from "./types";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import type { BattleCard } from "@/lib/game-data";
@@ -29,7 +29,7 @@ function applyPlagueDoctorMask(state: BattleState, combatTexts: CombatTextEvent[
     { ...state, playerStatuses: { ...state.playerStatuses, poison: state.playerStatuses.poison - removed } },
     combatTexts,
   );
-  return resolvePendingCinderSkinReaction(
+  return resolvePendingBattleReactions(
     dealPlayerTypedHit(cleansed, "poison", halveRounded(removed), combatTexts),
     combatTexts,
   );
@@ -65,7 +65,7 @@ function processPendingTurnStartEffects(state: BattleState, combatTexts: CombatT
       (current, pulse) =>
         current.enemyHealth <= 0 || isPlayerDefeated(current)
           ? current
-          : applyCardEffects(current, { ...pulseCard, effects: pulse.effects }, combatTexts, {
+          : applyCardEffects(current, { ...pulseCard, ...pulse.sourceCard, effects: pulse.effects }, combatTexts, {
               manaAtStart: current.mana,
               enemyFreezeSkipTurnsAtStart: current.enemyCC.freezeSkipTurns,
               cardHealing: true,
@@ -249,7 +249,7 @@ export function advanceToPlayerTurn(
     drawnState.gearEffects.healthPerTurn > 0
       ? applyHealingWithCombatText(drawnState, drawnState.gearEffects.healthPerTurn, combatTexts)
       : drawnState;
-  return resolvePendingCinderSkinReaction(healedState, combatTexts);
+  return resolvePendingBattleReactions(healedState, combatTexts);
 }
 
 export function reduceSkipTurns(state: BattleState): BattleState {

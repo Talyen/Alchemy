@@ -12,9 +12,12 @@ export type RunProfileSaveFields = Omit<PermanentProgressFields, "effects">;
 
 type RunProfileSnapshot = PermanentProgressFields;
 
-function encodeRunProfileSnapshot(snapshot: RunProfileSnapshot): RunProfileSaveFields {
-  const { effects: _, ...saveFields } = snapshot;
-  return saveFields;
+const RUN_PROFILE_SAVE_KEYS = Object.keys(createInitialPermanentFields()).filter((key) => key !== "effects") as Array<
+  keyof RunProfileSaveFields
+>;
+
+function encodeRunProfileSnapshot(snapshot: RunProfileSaveFields): RunProfileSaveFields {
+  return Object.fromEntries(RUN_PROFILE_SAVE_KEYS.map((key) => [key, snapshot[key]])) as RunProfileSaveFields;
 }
 
 function createDefaultRunProfileSaveFields(): RunProfileSaveFields {
@@ -31,7 +34,7 @@ export const runProfilePersistenceCodec: GameplayPersistenceCodec<RunProfileSave
   hydrate: (fields, draft) => {
     const prunedCompanions = pruneUnknownCompanions({ ...fields.bondedCompanions });
     draft.runProfile = {
-      ...fields,
+      ...encodeRunProfileSnapshot(fields),
       bondedCompanions: prunedCompanions,
       effects: computeHomesteadEffects(
         fields.constructedBuildings,

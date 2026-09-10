@@ -26,7 +26,7 @@ function state(overrides: BattleStatePatch = {}) {
     contentSystemType: "labyrinth",
     enemyHealth: 100,
     enemyMaxHealth: 100,
-    currentEnemy: { traits: [] },
+    currentEnemy: { id: "modifier-test-enemy", traits: [] },
     rng: () => 0.99,
     ...overrides,
   });
@@ -46,7 +46,7 @@ function attack(type: DamageType = "physical", amount = 4, overrides: Partial<Ba
 }
 
 function enemy(...ids: EncounterCombatTraitId[]) {
-  return { traits: ids.map((id) => ENCOUNTER_TRAITS[id].enemyTrait) };
+  return { id: "modifier-test-enemy", traits: ids.map((id) => ENCOUNTER_TRAITS[id].enemyTrait) };
 }
 
 function play(current: ReturnType<typeof state>, card: BattleCard) {
@@ -324,7 +324,7 @@ describe("Labyrinth enemy modifiers", () => {
     expect(play(current, attack("holy", 70)).enemyHealth).toBe(0);
   });
 
-  it("Executioner strengthens Physical attacks only below half Health", () => {
+  it("Desperation strengthens Physical attacks only below half Health", () => {
     const current = state({
       currentEnemy: enemy("executioner"),
       enemyHealth: 49,

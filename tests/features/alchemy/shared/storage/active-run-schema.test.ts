@@ -79,21 +79,20 @@ describe("active run field parsing and normalization", () => {
     const missingFloors = cloneSeededLabyrinthMap();
     missingFloors.floors = [];
 
-    const danglingOutgoing = cloneSeededLabyrinthMap();
-    danglingOutgoing.nodes[Object.keys(danglingOutgoing.nodes)[0]!]!.outgoingIds = ["missing-node"];
+    const danglingRoom = cloneSeededLabyrinthMap();
+    danglingRoom.floors[0]!.nodeIds[1] = "missing-node";
 
     expect(
       parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: missingFloors })),
     ).toBeNull();
     expect(
-      parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: danglingOutgoing })),
+      parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: danglingRoom })),
     ).toBeNull();
   });
 
   it("drops runs with labyrinth maps that have impossible endpoint state", () => {
     const missingEntrance = cloneSeededLabyrinthMap();
-    delete missingEntrance.nodes["labyrinth-entrance"];
-    missingEntrance.floors = missingEntrance.floors.filter((floor) => floor.depth !== 0);
+    delete missingEntrance.nodes[missingEntrance.currentNodeId];
 
     const missingBoss = cloneSeededLabyrinthMap();
     const boss = Object.values(missingBoss.nodes).find((node) => node.type === "boss");

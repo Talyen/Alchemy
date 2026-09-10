@@ -20,20 +20,33 @@ export interface CorruptionTarget {
   field: CorruptibleNumericField;
 }
 
+function nestedEffects(effect: BattleCardEffect): BattleCardEffect[] {
+  if (effect.kind === "repeat-over-turns") return effect.effects;
+  if (effect.kind === "chance") return [...effect.successEffects, ...effect.failureEffects];
+  return [];
+}
+
+function hasSharedRandomAmount(card: BattleCard, effect: BattleCardEffect): boolean {
+  return (
+    effect.kind === "random-damage" &&
+    effect.minAmount === effect.maxAmount &&
+    card.descriptionLines.some((line) => line.includes(`Deal ${effect.minAmount} Random damage`))
+  );
+}
+
 export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget[] {
   const targets: CorruptionTarget[] = [];
   const valueQueue = new Map<number, Array<Pick<CorruptionTarget, "effectIndex" | "effectPath" | "field">>>();
   function collect(effect: BattleCardEffect, effectIndex: number, effectPath: number[] = []) {
     const record = effect as Record<string, unknown>;
     for (const field of CORRUPTIBLE_NUMERIC_FIELDS) {
+      if (field === "maxAmount" && hasSharedRandomAmount(card, effect)) continue;
       const value = record[field];
       if (typeof value !== "number" || !Number.isFinite(value)) continue;
       if (!valueQueue.has(value)) valueQueue.set(value, []);
       valueQueue.get(value)!.push({ effectIndex, ...(effectPath.length ? { effectPath } : {}), field });
     }
-    if (effect.kind === "repeat-over-turns") {
-      effect.effects.forEach((child, index) => collect(child, effectIndex, [...effectPath, index]));
-    }
+    nestedEffects(effect).forEach((child, index) => collect(child, effectIndex, [...effectPath, index]));
   }
   card.effects.forEach((effect, index) => collect(effect, index));
   const queueCursor = new Map<number, number>();
@@ -75,8 +88,8 @@ export function replaceNumberAt(line: string, matchIndex: number, nextValue: num
 export function getCorruptionTargetEffect(card: BattleCard, target: CorruptionTarget): BattleCardEffect | undefined {
   let effect = card.effects[target.effectIndex];
   for (const index of target.effectPath ?? []) {
-    if (effect?.kind !== "repeat-over-turns") return undefined;
-    effect = effect.effects[index];
+    if (!effect) return undefined;
+    effect = nestedEffects(effect)[index];
   }
   return effect;
 }
@@ -98,7 +111,19 @@ export function updateCardNumericValue(card: BattleCard, target: CorruptionTarge
       key === selected ||
       (path.length > 0 && !authored.has(key) && JSON.stringify(effect) === JSON.stringify(source))
     ) {
+      if (effect.kind === "random-damage" && target.field === "minAmount" && hasSharedRandomAmount(card, effect)) {
+        return { ...effect, minAmount: nextValue, maxAmount: nextValue };
+      }
       return { ...effect, [target.field]: nextValue };
+    }
+    if (effect.kind === "chance") {
+      return {
+        ...effect,
+        successEffects: effect.successEffects.map((child, index) => update(child, root, [...path, index])),
+        failureEffects: effect.failureEffects.map((child, index) =>
+          update(child, root, [...path, effect.successEffects.length + index]),
+        ),
+      };
     }
     return effect.kind === "repeat-over-turns"
       ? { ...effect, effects: effect.effects.map((child, index) => update(child, root, [...path, index])) }
@@ -117,7 +142,7 @@ export function applyNumericCorruption(card: BattleCard, target: CorruptionTarge
 
   let nextValue = Math.max(CORRUPTION_MIN_VALUE, target.value + delta);
   const sourceEffect = getCorruptionTargetEffect(card, target);
-  if (sourceEffect?.kind === "random-damage") {
+  if (sourceEffect?.kind === "random-damage" && !hasSharedRandomAmount(card, sourceEffect)) {
     if (target.field === "minAmount") nextValue = Math.min(nextValue, sourceEffect.maxAmount);
     if (target.field === "maxAmount") nextValue = Math.max(nextValue, sourceEffect.minAmount);
   }

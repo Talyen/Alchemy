@@ -90,7 +90,15 @@ const difficultyTurnStartHandlers: Partial<Record<DifficultyModifier["kind"], En
 const ENEMY_TRAIT_DEFINITIONS: Record<string, { passive: boolean; reaction: boolean; turnStart: boolean }> = (() => {
   const passiveIds: string[] = [
     "brittle-bones",
-    "trinket-hoarder",
+    "glacial-body",
+    "minor-freeze-vulnerability",
+    "cold-blooded",
+    "minor-holy-vulnerability",
+    "tough-hide",
+    "vampiric-curse",
+    "frozen-apparition",
+    "winter-hide",
+    "earthen-body",
     "holy-vulnerability",
     "burn-resistance",
     "burn-vulnerability",

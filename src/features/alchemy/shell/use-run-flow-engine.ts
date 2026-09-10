@@ -54,7 +54,6 @@ export function useRunFlowEngine({
 
   const contentNav = useContentSystemNavigation({
     navigateTo,
-    returnToBattle: destinations.returnToBattle,
     onStartBattle: battle.onStartBattle,
     getAvailableDestinations: destinations.getAvailableDestinations,
     onResumeWildwood: wildwood.resumeWildwoodRun,
@@ -172,7 +171,7 @@ export function useRunFlowEngine({
       handleStarterDraftPick: contentNav.handleStarterDraftPick,
       handleDifficultySelect: contentNav.handleDifficultySelect,
       handleBackFromDifficultySelect: contentNav.handleBackFromDifficultySelect,
-      returnToBattle: destinations.returnToBattle,
+      returnToBattle: () => contentNav.resumeRun(),
       goToScreen: destinations.goToScreen,
       handleDestinationChoice: flowHandlers.handleDestinationChoice,
       handleActComplete: flowHandlers.handleActComplete,
@@ -198,7 +197,6 @@ export function useRunFlowEngine({
       hasActiveRun,
       pendingCharacterId,
       destinations.getAvailableDestinations,
-      destinations.returnToBattle,
       destinations.goToScreen,
       flowHandlers,
       contentNav,

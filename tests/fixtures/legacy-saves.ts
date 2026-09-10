@@ -1,4 +1,5 @@
 import { hexLabyrinthMapFixture } from "./labyrinth-hex-map";
+import { gridLabyrinthMapFixture } from "./labyrinth-map";
 import { saveEnvelopeFixture } from "./saves";
 
 import { createEmptyGearInventories, createEmptyGearLoadouts } from "@/lib/gear/types";
@@ -147,7 +148,7 @@ export function currentSchemaCampaignSave() {
 }
 
 export function currentSchemaLabyrinthRunSave() {
-  const labyrinthMap = hexLabyrinthMapFixture();
+  const labyrinthMap = gridLabyrinthMapFixture();
   return currentSaveEnvelope({
     discoveredCardIds: ["slash", "bash"],
     activeRun: {
@@ -470,6 +471,8 @@ export const CURRENT_SCHEMA_SAVE_FIXTURES_BY_SOURCE_VERSION: Record<number, () =
   13: currentSchemaV13Save,
   14: () => withVersion(currentSchemaSave(), 14),
   15: enemyAbilitiesV15Save,
+  16: hexLabyrinthV16Save,
+  17: openFieldV17Save,
 };
 
 const FIXTURE_LIVE_SLASH = {
@@ -721,4 +724,30 @@ export const MIGRATION_SCENARIO_FIXTURES: Record<string, () => Record<string, un
   tombstonedPiles: currentSchemaTombstonedPilesSave,
   legacyGearSlots: currentSchemaLegacyGearSlotsSave,
   labyrinthGridRegen: currentSchemaLabyrinthGridV13Save,
+  retiredHexLabyrinth: hexLabyrinthV16Save,
+  expandedLabyrinth: openFieldV17Save,
 };
+
+function hexLabyrinthV16Save() {
+  const save = currentSchemaLabyrinthRunSave();
+  const run = { ...(save.activeRun as unknown as Record<string, unknown>), labyrinthMap: hexLabyrinthMapFixture() };
+  return withVersion({ ...save, activeRun: run, parkedRuns: { labyrinth: run } }, 16);
+}
+
+function openFieldV17Save() {
+  const save = currentSchemaMidCombatTrinketSave();
+  const map = gridLabyrinthMapFixture();
+  for (const [id, node] of Object.entries(map.nodes)) {
+    if (node.gridPosition.col < 0 || node.gridPosition.col > 3) delete map.nodes[id];
+  }
+  map.floors[0]!.nodeIds = map.floors[0]!.nodeIds.filter((id) => map.nodes[id]);
+  map.nodes["labyrinth-floor-1-n3"]!.cleared = true;
+  const run = {
+    ...(save.activeRun as unknown as Record<string, unknown>),
+    contentSystemType: "labyrinth",
+    labyrinthMap: map,
+    labyrinthPendingNode: "labyrinth-floor-1-n0",
+    rng: { seed: 42, counters: { rewards: 0, destinations: 0, events: 0, shops: 0, world: 7 } },
+  };
+  return withVersion({ ...save, activeRun: run, parkedRuns: { labyrinth: run } }, 17);
+}

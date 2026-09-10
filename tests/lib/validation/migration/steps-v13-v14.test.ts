@@ -42,8 +42,8 @@ describe("migrateV13ToV14", () => {
     expect(run.labyrinthPendingNode).toBeNull();
     const map = run.labyrinthMap as { floors: unknown[]; currentFloor: number; nodes: Record<string, unknown> };
     expect(map.currentFloor).toBe(1);
-    expect(map.floors.length).toBeGreaterThanOrEqual(2);
-    expect(map.nodes["labyrinth-entrance"]).toBeDefined();
+    expect(map.floors).toHaveLength(1);
+    expect(map.nodes["labyrinth-floor-1-n0"]).toMatchObject({ type: "entrance", cleared: true });
   });
 
   it("regenerates parked Labyrinth grids without dropping the parked run", () => {
@@ -64,7 +64,7 @@ describe("migrateV13ToV14", () => {
     expect(run.labyrinthPendingNode).toBeNull();
     const map = run.labyrinthMap as { floors: unknown[]; currentFloor: number; nodes: Record<string, unknown> };
     expect(map.currentFloor).toBe(1);
-    expect(map.floors.length).toBeGreaterThanOrEqual(2);
-    expect(map.nodes["labyrinth-entrance"]).toBeDefined();
+    expect(map.floors).toHaveLength(1);
+    expect(map.nodes["labyrinth-floor-1-n0"]).toMatchObject({ type: "entrance", cleared: true });
   });
 });

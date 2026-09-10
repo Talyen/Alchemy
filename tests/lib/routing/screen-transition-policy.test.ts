@@ -41,6 +41,10 @@ const PRODUCTION_NAVIGATION_EDGES: ReadonlyArray<readonly [Screen, Screen]> = [
   [ROUTE_SCREENS.WILDWOOD_REMOVAL, ROUTE_SCREENS.BATTLE],
   [ROUTE_SCREENS.GAME_OVER, ROUTE_SCREENS.MENU],
   [ROUTE_SCREENS.RUN_VICTORY, ROUTE_SCREENS.MENU],
+  [ROUTE_SCREENS.GAME_OVER, ROUTE_SCREENS.OPTIONS],
+  [ROUTE_SCREENS.OPTIONS, ROUTE_SCREENS.GAME_OVER],
+  [ROUTE_SCREENS.RUN_VICTORY, ROUTE_SCREENS.OPTIONS],
+  [ROUTE_SCREENS.OPTIONS, ROUTE_SCREENS.RUN_VICTORY],
   [ROUTE_SCREENS.CHARACTER_SELECT, ROUTE_SCREENS.DIFFICULTY_SELECT],
   [ROUTE_SCREENS.CHARACTER_SELECT, ROUTE_SCREENS.BATTLE],
   [ROUTE_SCREENS.CHARACTER_SELECT, ROUTE_SCREENS.LABYRINTH_MAP],
@@ -75,9 +79,17 @@ describe("screen-transition-policy", () => {
   });
 
   it("rejects transitions outside the policy", () => {
-    expect(isScreenTransitionAllowed(ROUTE_SCREENS.MENU, ROUTE_SCREENS.BATTLE)).toBe(false);
-    expect(() => assertScreenTransitionAllowed(ROUTE_SCREENS.MENU, ROUTE_SCREENS.BATTLE)).toThrow(
-      "Disallowed screen transition: menu -> battle",
+    expect(isScreenTransitionAllowed(ROUTE_SCREENS.MENU, ROUTE_SCREENS.RUN_VICTORY)).toBe(false);
+    expect(() => assertScreenTransitionAllowed(ROUTE_SCREENS.MENU, ROUTE_SCREENS.RUN_VICTORY)).toThrow(
+      "Disallowed screen transition: menu -> run-victory",
     );
+  });
+
+  it("allows saved gameplay and starter drafts to resume from menus and setup", () => {
+    for (const from of ["menu", "game-mode-select", "character-select", "difficulty-select", "options"] as const) {
+      for (const to of ["battle", "labyrinth-map", "shop", "rewards", "draft-deck", "difficulty-select"] as const) {
+        expect(isScreenTransitionAllowed(from, to), `${from} -> ${to}`).toBe(true);
+      }
+    }
   });
 });

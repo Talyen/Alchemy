@@ -64,7 +64,7 @@ export function prepareTalentCardPlay(state: BattleState, card: BattleCard, comb
     nextState = addForgeToPlayer(nextState, talents.forgeOnBurnCard, combatTexts);
   }
   if (keywords.includes("leech") && talents.armorStealOnLeechCard > 0) {
-    const stolen = Math.min(state.enemyMitigation.armor, talents.armorStealOnLeechCard);
+    const stolen = Math.min(nextState.enemyMitigation.armor, talents.armorStealOnLeechCard);
     if (stolen > 0) {
       nextState = addPlayerStatusWithCombatText(reduceEnemyArmor(nextState, stolen), "armor", stolen, combatTexts, {
         skipFightPacing: true,

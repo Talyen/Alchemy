@@ -1,10 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { current } from "immer";
-import {
-  canEnterLabyrinthNode,
-  generateLabyrinthMap,
-  expandBeyondBoss,
-} from "@/lib/content-systems/labyrinth/map-generation";
+import { canEnterLabyrinthNode, expandBeyondBoss } from "@/lib/content-systems/labyrinth/map-generation";
 import {
   canDescendFromLabyrinthNode,
   canInspectLabyrinthNode,
@@ -30,7 +26,6 @@ export interface LabyrinthController {
   enterSelectedNode: (handlers: LabyrinthNodeHandlers) => boolean;
   descend: () => void;
   onNodeCleared: () => void;
-  resetMap: () => void;
 }
 
 export interface LabyrinthNodeHandlers {
@@ -77,14 +72,6 @@ function routeNodeInteraction(node: LabyrinthNode, handlers: LabyrinthNodeHandle
 }
 
 export function useLabyrinthController(): LabyrinthController {
-  const resetMap = useCallback(() => {
-    dispatchRunSessionCommand((draft) => {
-      setActiveLabyrinthPendingNode(draft, null);
-      setSelectedLabyrinthNodeId(draft, null);
-      setLabyrinthMap(draft, generateLabyrinthMap(createDraftRunRandomSource(draft, "world")));
-    });
-  }, []);
-
   const selectNode = useCallback((nodeId: string) => {
     dispatchRunSessionCommand((draft) => {
       const map = draft.session.labyrinthMap;
@@ -145,7 +132,7 @@ export function useLabyrinthController(): LabyrinthController {
   }, []);
 
   return useMemo(
-    () => ({ selectNode, deselectNode, enterSelectedNode, descend, onNodeCleared, resetMap }),
-    [selectNode, deselectNode, enterSelectedNode, descend, onNodeCleared, resetMap],
+    () => ({ selectNode, deselectNode, enterSelectedNode, descend, onNodeCleared }),
+    [selectNode, deselectNode, enterSelectedNode, descend, onNodeCleared],
   );
 }

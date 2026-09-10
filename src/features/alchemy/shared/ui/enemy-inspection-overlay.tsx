@@ -26,7 +26,7 @@ function EnemyInspectionPanel({ entry, modifiers, onClose, returnFocusRef, open 
       <div className="flex flex-col gap-5">
         <section className="flex flex-col gap-3">
           <h3 className="font-sans text-xl font-semibold">Traits</h3>
-          <EnemyTraits entry={entry} {...(modifiers ? { modifiers } : {})} />
+          <EnemyTraits layout="inspection" entry={entry} {...(modifiers ? { modifiers } : {})} />
         </section>
         <section className="flex flex-col gap-3">
           <h3 className="font-sans text-xl font-semibold">Abilities</h3>

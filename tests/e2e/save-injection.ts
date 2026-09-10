@@ -4,7 +4,7 @@ import type { BattleCard } from "@/lib/game-data/types";
 import { SAVE_KEY } from "@/lib/game-constants";
 import { baseHomesteadSave, ALL_PLAYABLE_CHARACTERS, DEFAULT_DISCOVERED_CARD_IDS } from "../fixtures/saves";
 import type { InjectedBattleState } from "../fixtures/battle-state";
-import { hexLabyrinthMapFixture } from "../fixtures/labyrinth-hex-map";
+import { gridLabyrinthMapFixture } from "../fixtures/labyrinth-map";
 import { makeHighDamageCard } from "./cards";
 
 export function destinationInterruptedFlow(destinations: string[]) {
@@ -260,7 +260,7 @@ export async function injectLabyrinthRun(
     labyrinthMap?: LabyrinthMap;
   } = {},
 ) {
-  const map = options.labyrinthMap ?? hexLabyrinthMapFixture();
+  const map = options.labyrinthMap ?? gridLabyrinthMapFixture();
   const desktop = await isDesktopPage(page);
   await injectSaveState(page, {
     characterId: "knight",

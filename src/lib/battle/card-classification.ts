@@ -1,4 +1,4 @@
-import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
+import { getCardKeywords, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 
 function effectsHaveDamage(effects: readonly BattleCardEffect[], damageType?: string): boolean {
   return effects.some((effect) => {
@@ -32,7 +32,7 @@ export function cardHasDamageType(card: BattleCard, damageType: string): boolean
 }
 
 export function cardHasKeyword(card: BattleCard, keyword: string): boolean {
-  return card.tags?.some((tag) => tag === keyword) === true || cardHasDamageType(card, keyword);
+  return getCardKeywords(card).some((candidate) => candidate === keyword);
 }
 
 export function isNatureCard(card: BattleCard): boolean {

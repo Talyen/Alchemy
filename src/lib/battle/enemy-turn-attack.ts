@@ -1,4 +1,4 @@
-import { resolvePendingCinderSkinReaction } from "./enemy-attack-damage";
+import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import {
   enemyAbilityDealsDamage,
   getEnemyAbilityCard,
@@ -17,7 +17,6 @@ import {
   GIANT_SNAKE_EXTRA_BLOCK_STRIP,
   HALF_DIVISOR,
   HELLHOUND_BURN_MULTIPLIER,
-  ICE_WRAITH_FROZEN_PENALTY,
   INQUISITOR_BURN_MULTIPLIER,
   OGRE_BLOCK_BREAK_MULTIPLIER,
   VAMPIRE_BLOOD_SCENT_DAMAGE,
@@ -114,13 +113,13 @@ function applyAbilityDamage(
     flatBonus += CONDITIONAL_FLAT_BONUS;
     record("stone-golem");
   }
-  if (trait("ice-wraith") && state.enemyStatuses.freeze > 0) {
-    flatBonus -= ICE_WRAITH_FROZEN_PENALTY;
-    record("ice-wraith");
-  }
   if (effect.damageType === "freeze" && (trait("frost-elemental") || trait("ice-wraith"))) {
     flatBonus += scaleByRoomMultiplier(state, CONDITIONAL_FLAT_BONUS);
     record(trait("frost-elemental") ? "frost-elemental" : "ice-wraith");
+  }
+  if (effect.damageType === "burn" && trait("pyromancer")) {
+    flatBonus += scaleByRoomMultiplier(state, CONDITIONAL_FLAT_BONUS);
+    record("pyromancer");
   }
   const banditBonus = trait("bandit") && !state.flags.enemyFirstHitDoubleUsed;
   if (banditBonus) amountMultiplier *= BANDIT_FIRST_HIT_MULTIPLIER;
@@ -282,12 +281,11 @@ export function applyEnemyAbility(state: BattleState, card: BattleCard, combatTe
   if (damaging) nextState = recordEnemyAttackAction(nextState);
   if (context.brawlerPenalty) nextState = setFlag(nextState, "enemyBrawlerDamagePenalty", false);
   nextState = card.effects.reduce(
-    (next, effect) =>
-      resolvePendingCinderSkinReaction(applyEnemyEffect(next, effect, context, combatTexts), combatTexts),
+    (next, effect) => resolvePendingBattleReactions(applyEnemyEffect(next, effect, context, combatTexts), combatTexts),
     nextState,
   );
   if (!damaging || nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
-  return resolvePendingCinderSkinReaction(applyAbilityFollowups(nextState, context, combatTexts), combatTexts);
+  return resolvePendingBattleReactions(applyAbilityFollowups(nextState, context, combatTexts), combatTexts);
 }
 
 export function processEnemyAbility(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {

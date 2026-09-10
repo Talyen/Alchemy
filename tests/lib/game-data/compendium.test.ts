@@ -10,6 +10,7 @@ import {
   trinketById,
   trinketLibrary,
 } from "@/lib/game-data";
+import { collectUncoveredEnemyTraitIds } from "@/lib/battle/enemy-turn-traits";
 import { defineEnemy, trinket } from "@/lib/game-data/compendium-builders";
 import {
   combineTrinketEffectIds,
@@ -19,6 +20,16 @@ import {
 } from "@/lib/trinkets";
 
 describe("Compendium indexed maps and guards", () => {
+  it("gives every enemy one to three unique supported native Traits", () => {
+    for (const enemy of enemyBestiary) {
+      expect(enemy.traits.length, enemy.id).toBeGreaterThanOrEqual(1);
+      expect(enemy.traits.length, enemy.id).toBeLessThanOrEqual(3);
+      const ids = enemy.traits.map((trait) => trait.id);
+      expect(new Set(ids).size, enemy.id).toBe(ids.length);
+      expect(collectUncoveredEnemyTraitIds(ids), enemy.id).toEqual([]);
+    }
+  });
+
   it("indexes all enemies in enemyById matching enemyBestiary", () => {
     expect(Object.keys(enemyById)).toHaveLength(enemyBestiary.length);
     for (const enemy of enemyBestiary) {

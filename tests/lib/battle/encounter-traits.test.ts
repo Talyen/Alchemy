@@ -10,7 +10,7 @@ import {
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
 import { companionLibrary, enemyById, type BattleCard, type BestiaryEntry } from "@/lib/game-data";
-import { resolvePendingCinderSkinReaction } from "@/lib/battle/enemy-attack-damage";
+import { resolvePendingBattleReactions } from "@/lib/battle/enemy-attack-damage";
 import { damageEnemyHealth } from "@/lib/battle/types";
 import { normalizePersistedBattleState } from "@/lib/validation/normalize-persisted-battle-state";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
@@ -592,11 +592,11 @@ describe("Cinder Skin Health damage reactions", () => {
     const queued = damageEnemyHealth(defended, 1).state;
     const resumed = normalizePersistedBattleState(queued);
     expect(resumed.flags.pendingCinderSkinReaction).toBe(true);
-    const resolved = resolvePendingCinderSkinReaction(resumed, []);
+    const resolved = resolvePendingBattleReactions(resumed, []);
     expect(resolved.playerHealth).toBe(30);
     expect(resolved.enemyHealth).toBe(98);
     expect(resolved.flags.pendingCinderSkinReaction).toBe(false);
-    expect(resolvePendingCinderSkinReaction(resolved, [])).toBe(resolved);
+    expect(resolvePendingBattleReactions(resolved, [])).toBe(resolved);
   });
 
   it("keeps room scaling and retaliates against a lethal card", () => {

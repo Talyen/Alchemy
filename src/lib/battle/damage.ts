@@ -1,4 +1,4 @@
-import { resolvePendingCinderSkinReaction } from "./enemy-attack-damage";
+import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { applyEncounterThorns } from "./encounter-trait-events";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import { UNIQUE_GEAR_COMBAT } from "../game-constants";
@@ -77,6 +77,7 @@ export function dealDamageToEnemy(
     false,
     context?.cardHealing,
     context?.companionAttack,
+    context?.onDamageDealt,
   );
   if (viper && result.enemyHealth > 0) {
     const venomDamage = Math.round(modifiedDamage * UNIQUE_GEAR_COMBAT.viperDamageMultiplier);
@@ -94,5 +95,5 @@ export function dealDamageToEnemy(
       result = dealPlayerTypedHit(result, "bleed", bonuses.bleed, combatTexts);
     }
   }
-  return resolvePendingCinderSkinReaction(applyEncounterThorns(result, combatTexts), combatTexts);
+  return resolvePendingBattleReactions(applyEncounterThorns(result, combatTexts), combatTexts);
 }

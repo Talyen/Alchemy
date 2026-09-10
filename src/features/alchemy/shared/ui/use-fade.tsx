@@ -110,7 +110,7 @@ export function FadeSlot({
     heldStyleRef.current = (props as { style?: React.CSSProperties }).style;
   }
 
-  const { style: _style, ...restProps } = props as { style?: React.CSSProperties };
+  const { style: _style, ...restProps } = props;
 
   return (
     <div
@@ -124,6 +124,7 @@ export function FadeSlot({
       // eslint-disable-next-line react-hooks/refs -- hold outgoing layout while opacity is 0
       style={shownKey === swapKey ? _style : heldStyleRef.current}
       {...restProps}
+      inert={shownKey !== swapKey || (artworkPending ?? restProps.inert)}
     >
       {/* eslint-disable-next-line react-hooks/refs -- hold the outgoing child while opacity is 0 */}
       {shownKey === swapKey ? children : heldRef.current}

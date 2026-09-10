@@ -5,7 +5,7 @@ import { usePlasmaInteraction } from "@/features/alchemy/shared/ui/use-plasma-so
 import { layoutFloorNodes } from "./labyrinth-map-layout";
 import { LabyrinthNodeSeal } from "./labyrinth-node-seal";
 import { LabyrinthNodeInspector } from "./labyrinth-node-inspector";
-import { LabyrinthMapBorders } from "./labyrinth-map-borders";
+import { isNodeDiscovered } from "@/lib/content-systems/labyrinth/map-state";
 import { getLabyrinthNodePlasmaPair } from "./labyrinth-plasma";
 
 interface Props {
@@ -25,7 +25,9 @@ export function LabyrinthMapViewport({ map, nodes, selectedNodeId, onEnter, onDe
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
   const selectedNode = nodes.find((node) => node.id === selectedNodeId) ?? null;
-  const emphasizedNode = nodes.find((node) => node.id === (hoveredNodeId ?? focusedNodeId));
+  const emphasizedNode = nodes.find(
+    (node) => node.id === (hoveredNodeId ?? focusedNodeId) && isNodeDiscovered(map, node.id),
+  );
   usePlasmaInteraction(
     emphasizedNode && emphasizedNode.id !== selectedNodeId ? getLabyrinthNodePlasmaPair(emphasizedNode) : null,
     Boolean(emphasizedNode),
@@ -58,7 +60,7 @@ export function LabyrinthMapViewport({ map, nodes, selectedNodeId, onEnter, onDe
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
     const inspector = inspectorRef.current;
-    const trigger = viewport?.querySelector<HTMLElement>('[data-labyrinth-node][aria-pressed="true"]');
+    const trigger = viewport?.querySelector<HTMLElement>('[data-labyrinth-node] button[aria-pressed="true"]');
     if (!viewport || !inspector || !trigger || !selectedNodeId) return;
     let cancelled = false;
     let needsFocus = true;
@@ -94,7 +96,7 @@ export function LabyrinthMapViewport({ map, nodes, selectedNodeId, onEnter, onDe
     const dismiss = (event: PointerEvent) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
-      if (inspectorRef.current?.contains(target) || target.closest("button[data-labyrinth-node]")) return;
+      if (inspectorRef.current?.contains(target) || target.closest("[data-labyrinth-node]")) return;
       onDeselect();
     };
     document.addEventListener("pointerdown", dismiss, true);
@@ -102,7 +104,11 @@ export function LabyrinthMapViewport({ map, nodes, selectedNodeId, onEnter, onDe
   }, [selectedNodeId, onDeselect]);
 
   return (
-    <section aria-label="Labyrinth map" className="flex min-h-0 min-w-0 flex-1 flex-col">
+    <section
+      aria-label="Labyrinth map"
+      aria-description={`Floor ${map.currentFloor}`}
+      className="flex min-h-0 min-w-0 flex-1 flex-col"
+    >
       <div ref={viewportRef} data-testid="labyrinth-viewport" className="relative min-h-0 flex-1 overflow-hidden">
         <div className="absolute inset-0">
           {size.width > 0 && size.height > 0 ? (
@@ -115,6 +121,7 @@ export function LabyrinthMapViewport({ map, nodes, selectedNodeId, onEnter, onDe
                     node={node}
                     map={map}
                     selected={selectedNodeId === node.id}
+                    emphasized={selectedNodeId === node.id || hoveredNodeId === node.id || focusedNodeId === node.id}
                     x={point.x}
                     y={point.y}
                     width={layout.metrics.width}
@@ -125,14 +132,6 @@ export function LabyrinthMapViewport({ map, nodes, selectedNodeId, onEnter, onDe
                   />
                 );
               })}
-              <LabyrinthMapBorders
-                map={map}
-                nodes={nodes}
-                layout={layout}
-                selectedNodeId={selectedNodeId}
-                focusedNodeId={focusedNodeId}
-                hoveredNodeId={hoveredNodeId}
-              />
             </>
           ) : null}
         </div>

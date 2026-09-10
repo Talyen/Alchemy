@@ -3,8 +3,12 @@ import type { LabyrinthMap, LabyrinthNode } from "@/lib/content-systems/types";
 import type { EncounterCombatTraitId, EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { LabyrinthNodeTypeSchema } from "./schema-enums";
 import { sanitizeEncounterTraitIds } from "@/lib/content-systems/encounter-traits";
-import { isHexInBounds, hexKey } from "@/lib/content-systems/labyrinth/hex-grid";
-import { LABYRINTH_ENTRANCE_NODE_ID } from "@/lib/content-systems/labyrinth/data";
+import {
+  LABYRINTH_GRID,
+  gridKey,
+  isInLabyrinthGrid,
+  labyrinthGridPositions,
+} from "@/lib/content-systems/labyrinth/grid";
 
 export const EncounterCombatTraitArraySchema = z
   .array(z.string())
@@ -16,19 +20,18 @@ export const EncounterRewardTraitArraySchema = z
   .catch([] as EncounterRewardTraitId[]);
 
 const LabyrinthGridPositionSchema = z.object({
-  row: z.number().int().catch(0),
-  col: z.number().int().catch(0),
+  row: z.number().int(),
+  col: z.number().int(),
 });
 
 const LabyrinthNodeSchema = z
   .object({
     id: z.string().min(1),
     type: LabyrinthNodeTypeSchema,
-    floor: z.number().int().nonnegative().catch(0),
+    floor: z.number().int().positive(),
     gridPosition: LabyrinthGridPositionSchema,
     modifiers: EncounterCombatTraitArraySchema,
     rewardModifiers: EncounterRewardTraitArraySchema,
-    outgoingIds: z.array(z.string()).catch([]),
     cleared: z.boolean().catch(false),
     enemyId: z.string().optional(),
   })
@@ -39,8 +42,8 @@ const LabyrinthNodeSchema = z
 
 const LabyrinthFloorSchema = z.object({
   id: z.string().min(1),
-  depth: z.number().int().nonnegative().catch(0),
-  nodeIds: z.array(z.string().min(1)).min(1),
+  depth: z.number().int().positive(),
+  nodeIds: z.array(z.string().min(1)).length(labyrinthGridPositions().length),
 });
 
 interface LabyrinthMapShape {
@@ -50,60 +53,61 @@ interface LabyrinthMapShape {
 }
 
 function isValidLabyrinthMap(map: LabyrinthMapShape): boolean {
-  if (map.floors.length < 2) return false;
   const floorDepths = new Set<number>();
   const seenNodeIds = new Set<string>();
-  let entranceCount = 0;
-
   for (const floor of map.floors) {
     if (floorDepths.has(floor.depth)) return false;
     floorDepths.add(floor.depth);
     const occupied = new Set<string>();
-    let bossCount = 0;
+    let entrance: LabyrinthNode | undefined;
+    let boss: LabyrinthNode | undefined;
     for (const nodeId of floor.nodeIds) {
       const node = map.nodes[nodeId];
-      if (!node || node.id !== nodeId) return false;
-      if (node.floor !== floor.depth) return false;
-      if (seenNodeIds.has(nodeId)) return false;
+      if (!node || node.id !== nodeId || node.floor !== floor.depth || seenNodeIds.has(nodeId)) return false;
       seenNodeIds.add(nodeId);
-      if (!isHexInBounds(node.gridPosition) && floor.depth > 0) return false;
-      const key = hexKey(node.gridPosition);
+      if (!isInLabyrinthGrid(node.gridPosition)) return false;
+      const key = gridKey(node.gridPosition);
       if (occupied.has(key)) return false;
       occupied.add(key);
-      if (node.type === "entrance") entranceCount += 1;
-      if (node.type === "boss") bossCount += 1;
-      for (const outgoingId of node.outgoingIds) {
-        if (!map.nodes[outgoingId]) return false;
+      if (node.type === "entrance") {
+        if (entrance || !node.cleared || node.gridPosition.row !== 0) return false;
+        entrance = node;
+      }
+      if (node.type === "boss") {
+        if (boss || node.gridPosition.row !== LABYRINTH_GRID.rows - 1) return false;
+        boss = node;
       }
     }
-    if (floor.depth === 0) {
-      if (floor.nodeIds.length !== 1 || map.nodes[floor.nodeIds[0]!]?.type !== "entrance") return false;
-    } else if (bossCount !== 1) {
+    if (
+      !entrance ||
+      !boss ||
+      Math.abs(entrance.gridPosition.col - boss.gridPosition.col) < LABYRINTH_GRID.minimumBossColumnDistance
+    )
       return false;
-    }
   }
-
-  if (entranceCount !== 1) return false;
-  const extraNodes = Object.keys(map.nodes).some((id) => !seenNodeIds.has(id));
-  if (extraNodes) return false;
-  if (!floorDepths.has(map.currentFloor) || map.currentFloor < 1) return false;
-  const entrance = map.nodes[LABYRINTH_ENTRANCE_NODE_ID];
-  return Boolean(entrance?.cleared && entrance.type === "entrance");
+  return (
+    Object.keys(map.nodes).length === seenNodeIds.size &&
+    floorDepths.has(map.currentFloor) &&
+    Array.from({ length: map.floors.length }, (_, index) => index + 1).every((depth) => floorDepths.has(depth))
+  );
 }
 
 export const LabyrinthMapSchema = z
   .object({
-    floors: z.array(LabyrinthFloorSchema),
+    floors: z.array(LabyrinthFloorSchema).min(1),
     nodes: z.record(z.string(), LabyrinthNodeSchema),
     currentFloor: z.number().int().positive().catch(1),
-    currentNodeId: z.string().min(1).nullable().catch(null),
+    currentNodeId: z.string().min(1).catch(""),
   })
   .refine(isValidLabyrinthMap, { message: "Invalid labyrinth map structure" })
   .transform((map): LabyrinthMap => {
-    const currentNode = map.currentNodeId ? map.nodes[map.currentNodeId] : null;
+    const currentNode = map.nodes[map.currentNodeId];
+    const entrance = Object.values(map.nodes).find(
+      (node) => node.floor === map.currentFloor && node.type === "entrance",
+    )!;
     return {
       ...map,
-      currentNodeId: currentNode?.floor === map.currentFloor && currentNode.cleared ? currentNode.id : null,
+      currentNodeId: currentNode?.floor === map.currentFloor && currentNode.cleared ? currentNode.id : entrance.id,
     };
   })
   .nullable()

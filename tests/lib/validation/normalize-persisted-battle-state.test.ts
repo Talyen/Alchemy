@@ -27,6 +27,39 @@ describe("normalizePersistedBattleState", () => {
     });
     expect(enemyById["iron-bear"].abilityIds).toContain("pounce");
   });
+  it.each(["goblin", "frostwarden", "skeleton", "ice-wraith", "pyromancer"] as const)(
+    "refreshes %s native Traits without replaying battle setup or losing modifiers",
+    (id) => {
+      const defaults = defaultBattleState();
+      const enemy = enemyById[id];
+      const saved = {
+        ...defaults,
+        currentEnemy: {
+          ...enemy,
+          traits: [
+            { id: id === "goblin" ? "trinket-hoarder" : enemy.traits[0]!.id, title: "Old", description: "Old" },
+            { id: "combustible", title: "Combustible", description: "Old" },
+          ],
+        },
+        enemyHealth: 17,
+        enemyMitigation: { block: 1, armor: 2, forge: 3 },
+        lastEnemyAbilityId: enemy.abilityIds[0]!,
+        flags: { ...defaults.flags, enemyFirstHitDoubleUsed: true },
+      };
+      const normalized = normalizePersistedBattleState(saved);
+      expect(normalized.currentEnemy.traits.slice(0, enemy.traits.length)).toEqual(enemy.traits);
+      expect(normalized.currentEnemy.traits.at(-1)?.title).toBe("Scorching");
+      expect(normalized.currentEnemy.traits).toHaveLength(enemy.traits.length + 1);
+      expect(normalized).toMatchObject({
+        enemyHealth: 17,
+        enemyMitigation: saved.enemyMitigation,
+        lastEnemyAbilityId: saved.lastEnemyAbilityId,
+        flags: saved.flags,
+      });
+      expect(normalizePersistedBattleState(normalized)).toEqual(normalized);
+    },
+  );
+
   it("fills missing gear and flag manifests from defaults", () => {
     const saved = {
       ...defaultBattleState(),
@@ -74,7 +107,10 @@ describe("normalizePersistedBattleState", () => {
 
     const normalized = normalizePersistedBattleState(saved);
 
-    expect(normalized.currentEnemy.traits.map((trait) => trait.id)).toEqual(["tempered"]);
+    expect(normalized.currentEnemy.traits.map((trait) => trait.id)).toEqual([
+      ...enemyById.skeleton.traits.map((trait) => trait.id),
+      "tempered",
+    ]);
   });
 
   it("fills empty status and CC records with numeric defaults", () => {

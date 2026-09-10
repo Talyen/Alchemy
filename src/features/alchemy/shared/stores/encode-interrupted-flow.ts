@@ -9,7 +9,8 @@ import {
 } from "@/lib/active-run-session";
 import type { BattleCard } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import { filterValidDestinations, type Screen } from "@/lib/routing";
+import { filterValidDestinations, isRunResumeScreen, type Screen } from "@/lib/routing";
+import { wildcardStarterResumeTarget } from "@/features/alchemy/shared/run-flow/starter-draft";
 import { wildwoodPhaseToScreen } from "@/features/alchemy/shared/run-flow/wildwood-screen-routing";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type { LabyrinthMap } from "@/lib/content-systems/types";
@@ -100,17 +101,23 @@ function resolveDestinationExitScreen(activeRun: ActiveRunData): Screen {
 
 export function inferActiveRunScreen(activeRun: ActiveRunData): Screen {
   if (activeRun.activeCombat && activeRun.activeCombat.battleState.enemyHealth > 0) return "battle";
-  if (activeRun.contentSystemType === "labyrinth" && activeRun.labyrinthMap) return "labyrinth-map";
-  if (activeRun.wildwoodDraft) {
-    return resolveExplorationScreen(activeRun.labyrinthMap, activeRun.wildwoodDraft);
-  }
+  const starterResume = wildcardStarterResumeTarget({
+    ...activeRun,
+    runDeckLength: activeRun.runDeck.length,
+  });
+  if (starterResume) return starterResume;
+  if (activeRun.currentScreen && isRunResumeScreen(activeRun.currentScreen)) return activeRun.currentScreen;
   if (activeRun.interruptedFlow.kind === "primary-reward" || activeRun.interruptedFlow.kind === "companion-reward") {
     return "rewards";
   }
   if (activeRun.interruptedFlow.kind === "destination") return "destination";
   if (activeRun.mysteryVisit) return "mystery";
   if (activeRun.corruptionResult) return "corruption";
-  return "destination";
+  if (activeRun.shopState) return "shop";
+  if (activeRun.alchemistState) return "alchemist";
+  if (activeRun.trinketShopState) return "trinket-shop";
+  if (activeRun.equipmentShopState) return "equipment-shop";
+  return resolveExplorationScreen(activeRun.labyrinthMap, activeRun.wildwoodDraft);
 }
 
 function restoreCompanionHandoff(currentScreen: Screen | null, pending: PersistedPendingReward): DecodedClaimSurface {

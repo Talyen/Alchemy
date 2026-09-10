@@ -1,4 +1,4 @@
-import { resolvePendingCinderSkinReaction } from "../enemy-attack-damage";
+import { resolvePendingBattleReactions } from "../enemy-attack-damage";
 import { resolveCompanionTurnStart } from "../companion-effects";
 import { hasEncounterBenefit } from "../types";
 import type { BattleCard, BattleCardEffect, BattleCardEffectKind } from "@/lib/game-data";
@@ -93,7 +93,7 @@ export function applyEffectByKind(
     nextState = resolveCompanionTurnStart(nextState, combatTexts, applyCardEffects);
     nextState = resolveCompanionTurnStart(nextState, combatTexts, applyCardEffects);
   }
-  return resolvePendingCinderSkinReaction(nextState, combatTexts);
+  return resolvePendingBattleReactions(nextState, combatTexts);
 }
 
 function applySingleEffect(
@@ -116,7 +116,15 @@ function applySingleEffect(
       ...state,
       pendingTurnStartEffects: [
         ...state.pendingTurnStartEffects,
-        { remainingTurns: effect.remainingTurns, effects: effect.effects },
+        {
+          remainingTurns: effect.remainingTurns,
+          effects: effect.effects,
+          sourceCard: {
+            id: card.id,
+            ...(card.consume !== undefined ? { consume: card.consume } : {}),
+            ...(card.tags !== undefined ? { tags: card.tags } : {}),
+          },
+        },
       ],
     };
   }

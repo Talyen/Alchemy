@@ -20,6 +20,7 @@ import type { CombatFlags } from "../combat-flags";
 import type { UniqueGearBattleState } from "../unique-gear-state";
 
 interface PendingTurnStartPulse {
+  sourceCard?: Pick<BattleCard, "id" | "consume" | "tags">;
   remainingTurns: number;
   effects: BattleCardEffect[];
 }
@@ -100,6 +101,7 @@ export interface BattleState {
   flags: CombatFlags;
   uniqueGear: UniqueGearBattleState;
   pendingTurnStartEffects: PendingTurnStartPulse[];
+  pendingForgeThresholds: Array<{ previousForge: number; nextForge: number }>;
   discoveredCardIds: string[];
   cardsPlayedThisTurn: number;
   nextCardUid: number;

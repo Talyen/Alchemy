@@ -6,6 +6,7 @@ import {
   addEnemyStatus,
   addPlayerStatus,
   setFlag,
+  isPlayerDefeated,
   type BattleState,
   type CombatTextEvent,
   type EnemyMitigation,
@@ -25,6 +26,11 @@ import { FIRST_EFFECT_MULTIPLIER, HALF_DIVISOR, LEECH_HEAL_FRACTION, PERCENT_DEN
 export function computeLeechHeal(damageDealt: number): number {
   if (damageDealt <= 0) return 0;
   return Math.round(damageDealt * LEECH_HEAL_FRACTION);
+}
+
+export function addBloodDebtHealing(state: BattleState, amount: number): number {
+  if (amount <= 0 || state.talentEffects.leechMissingHealthStep <= 0) return amount;
+  return amount + Math.round((state.playerMaxHealth - state.playerHealth) / state.talentEffects.leechMissingHealthStep);
 }
 
 export function scalePlayerLeechHeal(state: BattleState, amount: number): number {
@@ -57,12 +63,14 @@ export function applyLeechHealing(
       { skipFightPacing: true },
     );
   }
-  return healing > 0 &&
+  restored =
+    healing > 0 &&
     state.playerHealth < state.playerMaxHealth &&
     restored.playerHealth >= restored.playerMaxHealth &&
     state.talentEffects.nextAttackPhysicalOnLeechToFull > 0
-    ? setFlag(restored, "sanguinePhysicalBonus", state.talentEffects.nextAttackPhysicalOnLeechToFull)
-    : restored;
+      ? setFlag(restored, "sanguinePhysicalBonus", state.talentEffects.nextAttackPhysicalOnLeechToFull)
+      : restored;
+  return healing > 0 && !isPlayerDefeated(restored) ? applyLeechManaRider(restored, combatTexts) : restored;
 }
 
 function executePlayerHealing(
@@ -119,11 +127,10 @@ function applyLeechTrinketSiphonRider(state: BattleState): BattleState {
   return state;
 }
 
-export function applyLeechHitRewards(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
+export function applyLeechHitRewards(state: BattleState, damage: number, _combatTexts: CombatTextEvent[]): BattleState {
   if (damage <= 0) return state;
   let nextState = state;
   nextState = applyLeechStatusRider(nextState, "bleed", state.talentEffects.leechBleedChance, damage);
-  nextState = applyLeechManaRider(nextState, combatTexts);
   nextState = applyLeechTrinketSiphonRider(nextState);
   return applyLeechStatusRider(nextState, "poison", state.talentEffects.leechPoisonChance, damage);
 }
@@ -152,10 +159,7 @@ export function applyLeechHitHealing(
     healAmount = Math.round(healAmount * (1 + state.talentEffects.leechExecuteMultiplier / PERCENT_DENOMINATOR));
   }
 
-  if (state.talentEffects.leechMissingHealthStep > 0) {
-    const missing = state.playerMaxHealth - state.playerHealth;
-    healAmount += Math.round(missing / state.talentEffects.leechMissingHealthStep);
-  }
+  healAmount = addBloodDebtHealing(state, healAmount);
 
   healAmount = scaledGearLeechHeal(healAmount, state.gearEffects);
   if (cardLeech && state.talentEffects.cardLeechBonusPercent > 0) {
@@ -169,7 +173,11 @@ export function applyHolyLifesteal(state: BattleState, damage: number, combatTex
   if (damage <= 0 || state.talentEffects.holyLifestealPercent <= 0) return state;
   const healAmount = scalePercent(damage, state.talentEffects.holyLifestealPercent);
   if (healAmount <= 0) return state;
-  return executePlayerHealing(state, scaledGearLeechHeal(healAmount, state.gearEffects), combatTexts);
+  return executePlayerHealing(
+    state,
+    scaledGearLeechHeal(addBloodDebtHealing(state, healAmount), state.gearEffects),
+    combatTexts,
+  );
 }
 
 export function applyDamageBlock(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
@@ -205,7 +213,10 @@ export function payPendingBleedLeech(
   if (leechPaid > 0) {
     nextState = applyLeechHealing(
       nextState,
-      scalePlayerLeechHeal(nextState, scaledGearLeechHeal(computeLeechHeal(leechPaid), nextState.gearEffects)),
+      scalePlayerLeechHeal(
+        nextState,
+        scaledGearLeechHeal(addBloodDebtHealing(nextState, computeLeechHeal(leechPaid)), nextState.gearEffects),
+      ),
       combatTexts,
       { afflicted },
     );

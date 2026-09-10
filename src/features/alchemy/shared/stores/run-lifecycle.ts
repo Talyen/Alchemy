@@ -6,7 +6,7 @@ import { buildAlchemySaveDataFromStores, saveAlchemySaveData } from "@/features/
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { logStorageFailure } from "@/lib/storage-logging";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import { getRunSession } from "./run-reads";
+import { getRunSession, readRunResumeScreen } from "./run-reads";
 import { encodeRunResumeSnapshot } from "./run-resume-codec";
 import { dispatchRunSessionCommand, type GameplayDraft } from "./run-session-command";
 import { initializeActiveBattle, setRunEndItems, setRunEndLabyrinthFloor } from "./run-session-write-port";
@@ -48,7 +48,7 @@ export function resolveActiveRunForSave(hasActiveRun: boolean, screen?: Screen):
 }
 
 export function snapshotRun(screen?: Screen): ActiveRunData {
-  return encodeRunResumeSnapshot(getRunSession(screen), screen);
+  return encodeRunResumeSnapshot(getRunSession(), screen ?? readRunResumeScreen() ?? undefined);
 }
 
 export function syncRunToBattleStart(draft: GameplayDraft, playerHealth?: number): number {

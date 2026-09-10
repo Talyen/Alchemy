@@ -1,198 +1,111 @@
 import { describe, expect, it } from "vitest";
 import { createSeededRng } from "@/lib/utils";
 import {
-  canEnterLabyrinthNode,
-  createMinimalLabyrinthMap,
   expandBeyondBoss,
   generateLabyrinthMap,
   orderTypesForPositions,
 } from "@/lib/content-systems/labyrinth/map-generation";
+import { canEnterLabyrinthNode, floorNodes, withClearedNode } from "@/lib/content-systems/labyrinth/map-state";
+import {
+  areGridNeighbors,
+  gridKey,
+  isInLabyrinthGrid,
+  labyrinthGridPositions,
+} from "@/lib/content-systems/labyrinth/grid";
+import { LABYRINTH_SUPPORT_TYPES } from "@/lib/content-systems/labyrinth/data";
 import type { LabyrinthGridPosition, LabyrinthNodeType } from "@/lib/content-systems/types";
-import {
-  floorNodes,
-  isNodeReachable,
-  labyrinthNodeVisualState,
-  withClearedNode,
-} from "@/lib/content-systems/labyrinth/map-state";
-import {
-  LABYRINTH_ENTRANCE_NODE_ID,
-  LABYRINTH_SUPPORT_TYPES,
-  LABYRINTH_TYPE_TO_DESTINATION,
-} from "@/lib/content-systems/labyrinth/data";
-import { DESTINATIONS } from "@/lib/routing";
-import { LABYRINTH_HEX, areHexesAdjacent, isHexInBounds } from "@/lib/content-systems/labyrinth/hex-grid";
-import { isValidFloorLayout } from "@/lib/content-systems/labyrinth/hex-layout";
 
-function playableNodes(map: ReturnType<typeof generateLabyrinthMap>) {
-  return Object.values(map.nodes).filter((node) => node.floor > 0);
-}
-
-describe("generateLabyrinthMap", () => {
-  it("starts with a cleared entrance and a playable floor 1", () => {
-    const map = generateLabyrinthMap(createSeededRng(42));
-    expect(map.currentFloor).toBe(1);
-    expect(map.nodes[LABYRINTH_ENTRANCE_NODE_ID]?.cleared).toBe(true);
-    expect(map.nodes[LABYRINTH_ENTRANCE_NODE_ID]?.type).toBe("entrance");
-    const floor1 = playableNodes(map);
-    expect(floor1.length).toBeGreaterThanOrEqual(LABYRINTH_HEX.minNodesPerFloor);
-    expect(floor1.length).toBeLessThanOrEqual(LABYRINTH_HEX.maxNodesPerFloor);
-    expect(floor1[0]?.type).toBe("combat");
-    expect(floor1.some((node) => node.type === "boss")).toBe(true);
-  });
-
-  it("first floor node is always combat and reachable from the entrance", () => {
-    for (const seed of [1, 7, 13, 19, 25, 42, 99, 100]) {
+describe("Open Field generation", () => {
+  it("generates full grids with a safe top entrance, distant bottom boss and existing encounters", () => {
+    const starts = new Set<number>();
+    for (let seed = 1; seed <= 32; seed += 1) {
       const map = generateLabyrinthMap(createSeededRng(seed));
-      const entryId = map.nodes[LABYRINTH_ENTRANCE_NODE_ID]!.outgoingIds[0]!;
-      expect(map.nodes[entryId]?.type).toBe("combat");
-      expect(canEnterLabyrinthNode(map, entryId)).toBe(true);
-    }
-  });
-
-  it("keeps floor layouts within hex bounds and unique cells", () => {
-    const map = generateLabyrinthMap(createSeededRng(42));
-    const seen = new Set<string>();
-    for (const node of floorNodes(map, 1)) {
-      expect(isHexInBounds(node.gridPosition)).toBe(true);
-      const key = `${node.gridPosition.row},${node.gridPosition.col}`;
-      expect(seen.has(key)).toBe(false);
-      seen.add(key);
-    }
-  });
-
-  it("is deterministic for the same seed", () => {
-    const a = generateLabyrinthMap(createSeededRng(123));
-    const b = generateLabyrinthMap(createSeededRng(123));
-    expect(Object.keys(a.nodes).sort()).toEqual(Object.keys(b.nodes).sort());
-    for (const id of Object.keys(a.nodes)) {
-      expect(a.nodes[id]).toEqual(b.nodes[id]);
-    }
-  });
-
-  it("differs across seeds", () => {
-    const a = generateLabyrinthMap(createSeededRng(1));
-    const b = generateLabyrinthMap(createSeededRng(2));
-    expect(JSON.stringify(a.nodes)).not.toBe(JSON.stringify(b.nodes));
-  });
-
-  it("assigns enemy ids to combat, elite, and boss nodes", () => {
-    const map = generateLabyrinthMap(createSeededRng(42));
-    for (const node of Object.values(map.nodes)) {
-      if (node.type === "combat" || node.type === "elite" || node.type === "boss") {
-        expect(node.enemyId).toBeTruthy();
+      const nodes = floorNodes(map, 1);
+      expect(map.floors).toHaveLength(1);
+      expect(nodes).toHaveLength(labyrinthGridPositions().length);
+      expect(new Set(nodes.map((node) => gridKey(node.gridPosition))).size).toBe(20);
+      expect(nodes.every((node) => isInLabyrinthGrid(node.gridPosition))).toBe(true);
+      expect([0, 1, 2, 3].map((row) => nodes.filter((node) => node.gridPosition.row === row).length)).toEqual([
+        4, 6, 6, 4,
+      ]);
+      const entrances = nodes.filter((node) => node.type === "entrance");
+      const bosses = nodes.filter((node) => node.type === "boss");
+      expect(entrances).toHaveLength(1);
+      expect(bosses).toHaveLength(1);
+      const entrance = entrances[0]!;
+      const boss = bosses[0]!;
+      starts.add(entrance.gridPosition.col);
+      expect(entrance.gridPosition.row).toBe(0);
+      expect(entrance.cleared).toBe(true);
+      expect(entrance.modifiers).toEqual([]);
+      expect(entrance.rewardModifiers).toEqual([]);
+      expect(map.currentNodeId).toBe(entrance.id);
+      expect(boss.gridPosition.row).toBe(3);
+      expect(Math.abs(boss.gridPosition.col - entrance.gridPosition.col)).toBeGreaterThanOrEqual(2);
+      expect(nodes.filter((node) => node.cleared)).toEqual([entrance]);
+      const support = nodes.filter((node) =>
+        LABYRINTH_SUPPORT_TYPES.includes(node.type as (typeof LABYRINTH_SUPPORT_TYPES)[number]),
+      );
+      expect(support.length).toBeGreaterThanOrEqual(3);
+      expect(new Set(support.map((node) => node.type)).size).toBe(support.length);
+      for (const node of nodes) {
+        if (["combat", "elite", "boss"].includes(node.type)) {
+          expect(node.enemyId).toBeTruthy();
+          expect(node.modifiers).toHaveLength(node.type === "combat" ? 1 : 2);
+          expect(node.rewardModifiers).toHaveLength(1);
+        } else if (node.type !== "entrance") {
+          expect(node.enemyId).toBeUndefined();
+          expect(node.modifiers).toEqual([]);
+          expect(node.rewardModifiers).toHaveLength(1);
+        }
       }
     }
+    expect(starts.size).toBe(4);
   });
 
-  it("deals corruption chambers at the support rate without enemies", () => {
-    expect(LABYRINTH_SUPPORT_TYPES).toContain("corruption");
-    expect(LABYRINTH_TYPE_TO_DESTINATION.corruption).toBe(DESTINATIONS.CORRUPTION);
-    let seen = 0;
-    for (let seed = 0; seed < 30; seed++) {
-      const map = generateLabyrinthMap(createSeededRng(seed));
-      for (const node of Object.values(map.nodes)) {
-        if (node.type !== "corruption") continue;
-        seen += 1;
-        expect(node.enemyId).toBeUndefined();
-        expect(node.rewardModifiers).toHaveLength(1);
-      }
-    }
-    expect(seen).toBeGreaterThan(0);
-  });
-});
-
-describe("hex floor layouts", () => {
-  it("generated floor positions remain connected with a distant terminal boss", () => {
-    for (const seed of [1, 8, 15, 22, 29, 36, 43, 50]) {
-      const map = generateLabyrinthMap(createSeededRng(seed));
-      const positions = floorNodes(map, 1).map((node) => node.gridPosition);
-      expect(isValidFloorLayout(positions)).toBe(true);
-    }
-  });
-});
-
-describe("canEnterLabyrinthNode", () => {
-  it("rejects the entrance and uncleared non-adjacent rooms", () => {
-    const map = generateLabyrinthMap(createSeededRng(42));
-    expect(canEnterLabyrinthNode(map, LABYRINTH_ENTRANCE_NODE_ID)).toBe(false);
-    const boss = Object.values(map.nodes).find((node) => node.type === "boss")!;
-    expect(canEnterLabyrinthNode(map, boss.id)).toBe(false);
+  it("is deterministic per seed and varies across seeds", () => {
+    expect(generateLabyrinthMap(createSeededRng(42))).toEqual(generateLabyrinthMap(createSeededRng(42)));
+    expect(generateLabyrinthMap(createSeededRng(42))).not.toEqual(generateLabyrinthMap(createSeededRng(7)));
   });
 
-  it("unlocks hex neighbors after a node is cleared", () => {
-    const map = generateLabyrinthMap(createSeededRng(42));
-    const entryId = map.nodes[LABYRINTH_ENTRANCE_NODE_ID]!.outgoingIds[0]!;
-    const cleared = withClearedNode(map, entryId);
-    const entry = cleared.nodes[entryId]!;
-    const neighbor = floorNodes(cleared, 1).find(
-      (node) => node.id !== entryId && areHexesAdjacent(entry.gridPosition, node.gridPosition),
-    );
-    expect(neighbor).toBeDefined();
-    expect(isNodeReachable(cleared, neighbor!.id)).toBe(true);
-    expect(labyrinthNodeVisualState(cleared, entryId)).toBe("cleared");
-  });
-});
-
-describe("deliberate Labyrinth descent", () => {
-  it("keeps the cleared boss on the current floor until descending", () => {
-    const map = createMinimalLabyrinthMap();
-    const combat = Object.values(map.nodes).find((node) => node.type === "combat")!;
-    const rest = Object.values(map.nodes).find((node) => node.type === "rest")!;
-    const boss = Object.values(map.nodes).find((node) => node.type === "boss")!;
-    let next = withClearedNode(map, combat.id);
-    next = withClearedNode(next, rest.id);
-    next = withClearedNode(next, boss.id);
-    expect(next.currentFloor).toBe(1);
-    expect(next.currentNodeId).toBe(boss.id);
-    expect(next.floors).toHaveLength(map.floors.length);
-    next = expandBeyondBoss(next, boss.id, createSeededRng(3));
-    expect(next.currentFloor).toBe(2);
-    expect(next.currentNodeId).toBeNull();
-    expect(expandBeyondBoss(next, boss.id, createSeededRng(4))).toBe(next);
-    expect(floorNodes(next, 2).some((node) => node.type === "boss")).toBe(true);
-    expect(next.nodes[boss.id]?.outgoingIds.length).toBe(1);
-  });
-
-  it("expandBeyondBoss is a no-op until the boss is cleared", () => {
-    const map = createMinimalLabyrinthMap();
-    const boss = Object.values(map.nodes).find((node) => node.type === "boss")!;
-    const next = expandBeyondBoss(map, boss.id, createSeededRng(9));
-    expect(next.floors).toHaveLength(map.floors.length);
-  });
-});
-
-describe("optional Labyrinth chambers", () => {
-  it("advances after an adjacent boss route without clearing all detours", () => {
+  it("allows a five-to-six-step boss route, retains detours, and descends only once", () => {
     const rng = createSeededRng(42);
     const original = generateLabyrinthMap(rng);
     const nodes = floorNodes(original, 1);
-    const entry = nodes[0]!;
     const boss = nodes.find((node) => node.type === "boss")!;
-    const paths = new Map([[entry.id, [entry.id]]]);
-    const queue = [entry];
-    for (const source of queue) {
-      for (const target of nodes) {
-        if (paths.has(target.id) || !areHexesAdjacent(source.gridPosition, target.gridPosition)) continue;
-        paths.set(target.id, [...paths.get(source.id)!, target.id]);
-        queue.push(target);
-      }
-    }
-    const path = paths.get(boss.id)!;
-    expect(path.length).toBeLessThan(nodes.length);
     let map = original;
-    for (const id of path) {
-      expect(canEnterLabyrinthNode(map, id)).toBe(true);
-      map = withClearedNode(map, id);
+    let steps = 0;
+    while (map.currentNodeId !== boss.id) {
+      const position = map.nodes[map.currentNodeId]!.gridPosition;
+      const nextPosition =
+        position.row < boss.gridPosition.row
+          ? { ...position, row: position.row + 1 }
+          : { ...position, col: position.col + Math.sign(boss.gridPosition.col - position.col) };
+      const next = nodes.find((node) => gridKey(node.gridPosition) === gridKey(nextPosition))!;
+      expect(canEnterLabyrinthNode(map, next.id)).toBe(true);
+      map = withClearedNode(map, next.id);
+      steps += 1;
     }
+    expect(steps).toBeGreaterThanOrEqual(5);
+    expect(steps).toBeLessThanOrEqual(6);
     expect(map.currentFloor).toBe(1);
-    map = expandBeyondBoss(map, boss.id, rng);
-    expect(map.currentFloor).toBe(2);
-    expect(canEnterLabyrinthNode(map, entry.id)).toBe(false);
-    for (const node of nodes.filter((node) => !path.includes(node.id))) {
-      expect(map.nodes[node.id]).toEqual(node);
-    }
-    expect(floorNodes(original, 1).every((node) => !node.cleared)).toBe(true);
-    expect(floorNodes(map, 2).filter((node) => node.type === "boss")).toHaveLength(1);
+    const completed = map;
+    const next = expandBeyondBoss(map, boss.id, rng);
+    expect(next.currentFloor).toBe(2);
+    expect(next.floors).toHaveLength(2);
+    expect(next.nodes[next.currentNodeId]!.type).toBe("entrance");
+    expect(next.nodes[next.currentNodeId]!.floor).toBe(2);
+    expect(floorNodes(next, 1)).toEqual(floorNodes(completed, 1));
+    expect(floorNodes(next, 1).filter((node) => !node.cleared).length).toBeGreaterThan(0);
+    expect(expandBeyondBoss(next, boss.id, rng)).toBe(next);
+    const revisit = { ...next, currentFloor: 1, currentNodeId: boss.id };
+    expect(
+      expandBeyondBoss(revisit, boss.id, () => {
+        throw new Error("Must reuse the generated floor");
+      }),
+    ).toEqual(next);
+    expect(original.nodes[boss.id]!.cleared).toBe(false);
+    expect(expandBeyondBoss(original, boss.id, rng)).toBe(original);
   });
 });
 
@@ -204,7 +117,7 @@ describe("labyrinth type seating", () => {
     let conflicts = 0;
     for (let first = 0; first < types.length; first += 1) {
       for (let second = first + 1; second < types.length; second += 1) {
-        if (types[first] === types[second] && areHexesAdjacent(positions[first]!, positions[second]!)) {
+        if (types[first] === types[second] && areGridNeighbors(positions[first]!, positions[second]!)) {
           conflicts += 1;
         }
       }
@@ -241,7 +154,7 @@ describe("labyrinth type seating", () => {
     expect(sameTypeAdjacencies(result, positions)).toBe(0);
     const mysteries = result.map((type, index) => (type === "mystery" ? index : -1)).filter((index) => index >= 0);
     expect(mysteries).toHaveLength(2);
-    expect(areHexesAdjacent(positions[mysteries[0]!]!, positions[mysteries[1]!]!)).toBe(false);
+    expect(areGridNeighbors(positions[mysteries[0]!]!, positions[mysteries[1]!]!)).toBe(false);
   });
 
   it("still seats every planned type when separation is impossible", () => {
@@ -253,17 +166,5 @@ describe("labyrinth type seating", () => {
     const types: LabyrinthNodeType[] = ["combat", "combat", "combat"];
     const result = orderTypesForPositions(types, positions, createSeededRng(3));
     expect(result).toEqual(["combat", "combat", "combat"]);
-  });
-
-  it("keeps generated floors nearly free of same-type neighbors", () => {
-    let conflicts = 0;
-    for (let seed = 1; seed <= 100; seed += 1) {
-      const nodes = floorNodes(generateLabyrinthMap(createSeededRng(seed)), 1);
-      conflicts += sameTypeAdjacencies(
-        nodes.map((node) => node.type),
-        nodes.map((node) => node.gridPosition),
-      );
-    }
-    expect(conflicts).toBeLessThanOrEqual(90);
   });
 });

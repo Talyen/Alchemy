@@ -1,11 +1,7 @@
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import type { BattleCard } from "@/lib/game-data";
 import { applyEnemyHealingWithCombatText, mergeCombatText } from "./combat-text";
-import {
-  applyEnemyLeechHealing,
-  processEnemyDamageEffect,
-  resolvePendingCinderSkinReaction,
-} from "./enemy-attack-damage";
+import { applyEnemyLeechHealing, processEnemyDamageEffect, resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { addEnemyMitigationWithCombatText } from "./encounter-trait-health-threshold";
 import { isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-traits";
 import { getBattleRng, rollPercent } from "@/lib/rng";
@@ -122,15 +118,12 @@ export function processEncounterTraitCardAction(
   state: BattleState,
   card: BattleCard,
   combatTexts: CombatTextEvent[],
+  attackAttempted: boolean,
 ): BattleState {
   let nextState = state;
   const scale = (amount: number) => scaleByRoomMultiplier(nextState, amount);
   if (card.consume && hasEnemyTrait(nextState, "insatiable")) {
     nextState = recordEnemyAbilityActivation(nextState, "insatiable");
-    nextState = { ...nextState, enemyPhysicalDamageBonus: nextState.enemyPhysicalDamageBonus + scale(1) };
-  }
-  if (card.effects.some((effect) => effect.kind === "wish") && hasEnemyTrait(nextState, "jealous")) {
-    nextState = recordEnemyAbilityActivation(nextState, "jealous");
     nextState = { ...nextState, enemyPhysicalDamageBonus: nextState.enemyPhysicalDamageBonus + scale(1) };
   }
   if (
@@ -140,7 +133,7 @@ export function processEncounterTraitCardAction(
     nextState = recordEnemyAbilityActivation(nextState, "rooted");
     nextState = addEnemyStatusText(nextState, "block", scale(1), combatTexts);
   }
-  if (card.effects.some((effect) => effect.kind === "damage" || effect.kind === "random-damage")) {
+  if (attackAttempted) {
     if (hasEnemyTrait(nextState, "thorns") && nextState.flags.legacyEnemyThornsReady) {
       nextState = recordEnemyAbilityActivation(nextState, "thorns");
       nextState = setEnemyStatus(
@@ -158,7 +151,7 @@ export function processEncounterTraitCardAction(
         combatTexts,
       );
   }
-  return resolvePendingCinderSkinReaction(nextState, combatTexts);
+  return resolvePendingBattleReactions(nextState, combatTexts);
 }
 
 export function applyEncounterThorns(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {

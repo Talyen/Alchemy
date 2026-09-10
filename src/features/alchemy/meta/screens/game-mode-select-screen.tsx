@@ -48,7 +48,7 @@ function GameModeTile({
       interactionId={modeId}
       art={meta.art}
       icon={Icon}
-      label={meta.title}
+      label={canResume ? `Resume ${meta.title}` : meta.title}
       ariaLabel={ariaLabel}
       accentClassName={meta.accentClassName}
       plasmaColorPair={isLocked ? null : meta.plasmaColorPair}

@@ -19,7 +19,7 @@ import {
   MIN_FREEZE_THRESHOLD_FRACTION,
 } from "../game-constants";
 import { applyGearCcPhysicalDamage, dealEnemyScaledDamage, scaledGearLeechHeal } from "./gear-effects";
-import { applyLeechHealing, computeLeechHeal, scalePlayerLeechHeal } from "./damage-rider-leech";
+import { addBloodDebtHealing, applyLeechHealing, computeLeechHeal, scalePlayerLeechHeal } from "./damage-rider-leech";
 import { detonateEnemyStatuses } from "./dot-resolve";
 import { halveRounded } from "./amount-helpers";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
@@ -38,7 +38,10 @@ function applyGearBurnBleedMirrorLeech(
   const healAmount = Math.max(1, halveRounded(actualDamage));
   return applyLeechHealing(
     nextState,
-    scalePlayerLeechHeal(nextState, scaledGearLeechHeal(healAmount, nextState.gearEffects)),
+    scalePlayerLeechHeal(
+      nextState,
+      scaledGearLeechHeal(addBloodDebtHealing(nextState, healAmount), nextState.gearEffects),
+    ),
     combatTexts,
   );
 }
@@ -79,7 +82,10 @@ export function applyPoisonTalentRiders(
     if (rollPercent(leechChance, getBattleRng(nextState))) {
       nextState = applyLeechHealing(
         nextState,
-        scalePlayerLeechHeal(nextState, scaledGearLeechHeal(computeLeechHeal(damage), nextState.gearEffects)),
+        scalePlayerLeechHeal(
+          nextState,
+          scaledGearLeechHeal(addBloodDebtHealing(nextState, computeLeechHeal(damage)), nextState.gearEffects),
+        ),
         combatTexts,
         { afflicted: true },
       );

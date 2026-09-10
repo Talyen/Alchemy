@@ -26,11 +26,8 @@ export const NODE_TYPE_LABELS: Record<LabyrinthNodeType, string> = {
   alchemist: DESTINATIONS.ALCHEMIST_SHOP,
   "trinket-shop": DESTINATIONS.TRINKET_SHOP,
   "equipment-shop": DESTINATIONS.GEAR_SHOP,
-  boss: DESTINATIONS.BOSS_COMBAT,
+  boss: destinationLabel(DESTINATIONS.BOSS_COMBAT),
 };
-
-export const LABYRINTH_ENTRANCE_NODE_ID = "labyrinth-entrance";
-export const LABYRINTH_ENTRANCE_FLOOR_ID = "labyrinth-floor-0";
 
 export const LABYRINTH_SUPPORT_TYPES: Array<Exclude<LabyrinthNodeType, "entrance" | "combat" | "elite" | "boss">> = [
   "rest",

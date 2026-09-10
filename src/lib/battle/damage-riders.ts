@@ -213,6 +213,7 @@ export function applyDamageRiders(
   isExtraHit = false,
   cardHealing = false,
   companionAttack = false,
+  onDamageDealt?: (amount: number) => void,
 ) {
   const enemyWasBurningBefore = state.enemyStatuses.burn > 0;
   const enemyWasStunned = state.enemyCC.stunSkipTurns > 0;
@@ -220,6 +221,7 @@ export function applyDamageRiders(
   const prePurgeState = isExtraHit ? state : applyAttackPurgeRider(state, combatTexts);
   const hit = damageEnemyHealth(prePurgeState, modifiedDamage);
   const previousHealth = hit.previousHealth;
+  onDamageDealt?.(Math.max(0, previousHealth - hit.state.enemyHealth));
   let nextState: BattleState = hit.state;
 
   nextState = decayArmorAfterDamage(nextState, modifiedDamage, "enemy");
@@ -277,8 +279,8 @@ export function applyDamageRiders(
       nextState,
       modifiedDamage,
       combatTexts,
-      cardHealing,
-      !companionAttack,
+      cardHealing && !!effect.lifesteal,
+      !companionAttack && !!effect.lifesteal,
       previousHealth,
     );
   }
@@ -307,6 +309,7 @@ export function applyDamageRiders(
           true,
           cardHealing,
           companionAttack,
+          onDamageDealt,
         );
       }
     }

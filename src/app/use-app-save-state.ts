@@ -12,12 +12,10 @@ import {
 } from "@/features/alchemy/shared/storage";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import { AUTOSAVE_DEBOUNCE_MS, AUTOSAVE_MAX_WAIT_MS, BATTLE_AUTOSAVE_DEBOUNCE_MS } from "@/lib/game-constants";
-import type { Screen } from "@/lib/routing";
 import { applyAutosaveCompletion, computeAutosaveDelay, shouldAttemptFlush } from "./autosave-scheduler";
 
-export function useAlchemyAutosaveFromStores(enabled = true, runScreenOverride: Screen | null = null) {
+export function useAlchemyAutosaveFromStores(enabled = true) {
   const enabledRef = useLatestRef(enabled);
-  const runScreenOverrideRef = useLatestRef(runScreenOverride);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -79,7 +77,7 @@ export function useAlchemyAutosaveFromStores(enabled = true, runScreenOverride: 
       const savingRevision = revision;
       const savingGeneration = generation;
       submittedRevision = savingRevision;
-      const activeRun = resolveActiveRunForSave(readHasActiveRun(), runScreenOverrideRef.current ?? undefined);
+      const activeRun = resolveActiveRunForSave(readHasActiveRun());
       const save = buildAlchemySaveDataFromStores(activeRun);
       const complete = (outcome: SaveWriteOutcome) => {
         if (!mounted || !enabledRef.current || savingGeneration !== generation) return;
@@ -138,5 +136,5 @@ export function useAlchemyAutosaveFromStores(enabled = true, runScreenOverride: 
       cancelTimer();
       unsubscribeCancellation();
     };
-  }, [enabled, enabledRef, runScreenOverrideRef]);
+  }, [enabled, enabledRef]);
 }

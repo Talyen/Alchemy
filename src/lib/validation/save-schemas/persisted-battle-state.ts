@@ -2,7 +2,8 @@ import { EncounterRewardTraitArraySchema } from "./labyrinth-schemas";
 import { z } from "zod";
 import { type BattleState } from "@/lib/battle";
 import { normalizePersistedBattleState } from "../normalize-persisted-battle-state";
-import { BattleCardSchema } from "./battle-card-schemas";
+import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
+import { BattleCardEffectSchema, BattleCardSchema } from "./battle-card-schemas";
 import { UniqueGearBattleStateSchema } from "./unique-gear-state";
 
 const PersistedBattleStateWireSchema = z.looseObject({
@@ -15,6 +16,24 @@ const PersistedBattleStateWireSchema = z.looseObject({
     (value) => (Array.isArray(value) ? value.filter(Array.isArray) : []),
     z.array(z.array(BattleCardSchema)),
   ),
+  pendingTurnStartEffects: z
+    .array(
+      z.object({
+        remainingTurns: z.number().int().positive(),
+        effects: z.array(BattleCardEffectSchema),
+        sourceCard: z
+          .object({
+            id: z.string(),
+            consume: z.boolean().optional(),
+            tags: z.array(z.enum(Object.keys(keywordDefinitions) as KeywordId[])).optional(),
+          })
+          .optional(),
+      }),
+    )
+    .catch([]),
+  pendingForgeThresholds: z
+    .array(z.object({ previousForge: z.number().int().nonnegative(), nextForge: z.number().int().nonnegative() }))
+    .catch([]),
   mana: z.number(),
   maxMana: z.number(),
   gold: z.number(),

@@ -81,7 +81,7 @@ describe("encodeRunResumeSnapshot", () => {
       activeLabyrinthModifiers: [],
       activeLabyrinthRewardModifiers: [],
       activeCombat: null,
-      currentScreen: "menu",
+      currentScreen: "destination",
       interruptedFlow: { kind: "none" },
       shopState: null,
       alchemistState: null,
