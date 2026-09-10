@@ -12,6 +12,7 @@ test("player death finishes its particle burst before defeat", critical, async (
       playerHealth: 1,
       deathsDoorUsed: true,
       deathsDoorActive: false,
+      lastEnemyAbilityId: "block",
       gearEffects: { dodgeChance: 0 },
       talentEffects: { dodgeChanceBelowHalfHealth: 0 },
     }),

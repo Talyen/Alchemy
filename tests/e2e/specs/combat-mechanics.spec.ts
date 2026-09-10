@@ -144,9 +144,10 @@ test.describe("Block and Status Invariants", critical, () => {
     await battle.playCardNamed("Block");
     await expect.poll(async () => battle.block(), { timeout: 8000 }).toBeGreaterThan(0);
     const blockBeforeAegis = await battle.block();
+    const enemyHealthBeforeAegis = await battle.enemyHealth();
 
     await battle.playCardNamed("Blessed Aegis");
-    await expect.poll(async () => battle.enemyHealth(), { timeout: 10_000 }).toBeLessThan(30);
+    await expect.poll(async () => battle.enemyHealth(), { timeout: 10_000 }).toBeLessThan(enemyHealthBeforeAegis);
     await expect.poll(async () => battle.block(), { timeout: 5000 }).toBe(blockBeforeAegis);
   });
 
