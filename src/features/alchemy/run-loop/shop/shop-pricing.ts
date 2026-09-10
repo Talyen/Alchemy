@@ -55,7 +55,7 @@ export function computeShopServicePrice(basePrice: number, serviceDiscount = 0):
   return Math.max(0, basePrice - serviceDiscount);
 }
 
-export function computeShopRefreshPrice(basePrice: number, shopFreeRefresh: boolean, refreshesLeft: number): number {
+function computeShopRefreshPrice(basePrice: number, shopFreeRefresh: boolean, refreshesLeft: number): number {
   if (shopFreeRefresh && refreshesLeft > 0) return 0;
   return basePrice;
 }
@@ -142,14 +142,6 @@ export function getShopBuyPrice(
   );
 }
 
-export function getShopBuyPrices(
-  kind: ShopBuyKind,
-  items: ReadonlyArray<BattleCard | GearInstance | TrinketEntry>,
-  context: ShopBuyPriceContext,
-): number[] {
-  return items.map((item) => getShopBuyPrice(kind, item, context));
-}
-
 const SHOP_REFRESH_BASE_PRICE: Record<ShopRefreshKind, number> = {
   merchant: SHOP_REFRESH_PRICE,
   trinket: SHOP_REFRESH_PRICE,
@@ -173,30 +165,6 @@ export function getShopRefreshPrice(
   const freeTrait = SHOP_REFRESH_FREE_TRAIT[kind];
   if (refreshesLeft > 0 && freeTrait !== null && modifiers.includes(freeTrait)) return 0;
   return computeShopRefreshPrice(SHOP_REFRESH_BASE_PRICE[kind], talentEffects.shopFreeRefresh, refreshesLeft);
-}
-
-export function computeMerchantRefreshPrice(talentEffects: TalentEffectManifest, refreshesLeft: number): number {
-  return getShopRefreshPrice("merchant", talentEffects, refreshesLeft);
-}
-
-export function computeTrinketRefreshPrice(
-  talentEffects: TalentEffectManifest,
-  refreshesLeft: number,
-  modifiers: readonly EncounterRewardTraitId[] = [],
-): number {
-  return getShopRefreshPrice("trinket", talentEffects, refreshesLeft, modifiers);
-}
-
-export function computeEquipmentRefreshPrice(talentEffects: TalentEffectManifest, refreshesLeft: number): number {
-  return getShopRefreshPrice("equipment", talentEffects, refreshesLeft);
-}
-
-export function computeAlchemistRefreshPrice(
-  talentEffects: TalentEffectManifest,
-  refreshesLeft: number,
-  modifiers: readonly EncounterRewardTraitId[] = [],
-): number {
-  return getShopRefreshPrice("alchemist", talentEffects, refreshesLeft, modifiers);
 }
 
 export function computeRemoveCardPrice(

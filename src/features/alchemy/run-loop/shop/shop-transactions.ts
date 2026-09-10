@@ -1,4 +1,3 @@
-import { selectRewardCards, type BattleCard } from "@/lib/game-data";
 import { playGoldSpend } from "@/lib/audio";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
@@ -32,19 +31,6 @@ export function commitShopInitialize<T>(
   dispatchRunSessionCommand((draft) => {
     setState(draft, createInitial(draft));
   });
-}
-
-export function mapRefreshedShopOfferings<TState extends { refreshesLeft: number; purchasedSlotKeys: string[] }>(
-  previous: TState,
-  itemsKey: keyof TState,
-  items: TState[keyof TState],
-): TState {
-  return {
-    ...previous,
-    [itemsKey]: items,
-    refreshesLeft: previous.refreshesLeft - 1,
-    purchasedSlotKeys: [],
-  };
 }
 
 interface PurchaseShopOfferingInput<TState extends { firstPurchaseUsed: boolean; purchasedSlotKeys: string[] }> {
@@ -104,7 +90,7 @@ interface RefreshShopOfferingsInput<T, TItem> {
   resample: () => TItem[];
 }
 
-export function refreshShopOfferings<T, TItem>(
+export function refreshShopOfferings<T extends { refreshesLeft: number; purchasedSlotKeys: string[] }, TItem>(
   input: RefreshShopOfferingsInput<T, TItem>,
 ): ShopTransactionResult<TItem[] | null> {
   if (input.refreshesLeft <= 0 || readDraftGold(input.draft) < input.price) {
@@ -113,32 +99,10 @@ export function refreshShopOfferings<T, TItem>(
 
   deductGold(input.draft, input.price);
   const newItems = input.resample();
-  input.setState(input.draft, (previous) => input.mapState(previous, newItems));
+  input.setState(input.draft, (previous) => ({
+    ...input.mapState(previous, newItems),
+    refreshesLeft: previous.refreshesLeft - 1,
+    purchasedSlotKeys: [],
+  }));
   return { committed: true, price: input.price, value: newItems };
-}
-
-export function refreshCardShopOfferings<T>(config: {
-  draft: GameplayDraft;
-  price: number;
-  refreshesLeft: number;
-  pool: BattleCard[];
-  currentItems: BattleCard[];
-  count: number;
-  setState: DraftStateWriter<T>;
-  mapState: (previous: T, items: BattleCard[]) => T;
-  rng: () => number;
-}): ShopTransactionResult<BattleCard[] | null> {
-  return refreshShopOfferings({
-    draft: config.draft,
-    price: config.price,
-    refreshesLeft: config.refreshesLeft,
-    setState: config.setState,
-    mapState: config.mapState,
-    resample: () => {
-      const deck = config.draft.run.activeRun.runDeck;
-      const novel = selectRewardCards(deck, config.pool, config.count, config.currentItems, config.rng);
-      if (novel.length >= config.count) return novel;
-      return [...novel, ...selectRewardCards(deck, config.pool, config.count - novel.length, novel, config.rng)];
-    },
-  });
 }

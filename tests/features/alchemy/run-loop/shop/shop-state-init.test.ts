@@ -4,6 +4,7 @@ import {
   createInitialAlchemistState as createInitialAlchemistStateImpl,
   createInitialTrinketShopState as createInitialTrinketShopStateImpl,
   createInitialEquipmentShopState as createInitialEquipmentShopStateImpl,
+  resampleCardShopOfferings,
   resampleTrinketShopOfferings,
   resampleEquipmentShopOfferings,
 } from "@/features/alchemy/run-loop/shop/shop-state-init";
@@ -27,6 +28,8 @@ import {
 import { trinketLibrary } from "@/lib/game-data";
 import { gearDefinitions } from "@/lib/gear";
 
+import { makeEffect, makeTestCardWithId } from "../../../../fixtures/battle";
+
 const testRng = () => 0.5;
 const createInitialShopState = () => createInitialShopStateImpl([], testRng);
 const createInitialAlchemistState = () => createInitialAlchemistStateImpl([], testRng);
@@ -34,6 +37,20 @@ const createInitialTrinketShopState = (rng: () => number = testRng) => createIni
 const createInitialEquipmentShopState = (rng: () => number = testRng) => createInitialEquipmentShopStateImpl(rng);
 
 describe("shop-state-init", () => {
+  it.each([
+    { name: "enough novel cards", currentCount: 1, novelCount: 3 },
+    { name: "one novel card", currentCount: 3, novelCount: 1 },
+    { name: "no novel cards", currentCount: 4, novelCount: 0 },
+  ])("fills card shelves with maximum novelty when there are $name", ({ currentCount, novelCount }) => {
+    const pool = ["a", "b", "c", "d"].map((id) => makeTestCardWithId(id, { effects: [makeEffect("physical", 1)] }));
+    const current = pool.slice(0, currentCount);
+    const refreshed = resampleCardShopOfferings([pool[0]!], pool, current, 3, testRng);
+    expect(refreshed).toHaveLength(3);
+    expect(new Set(refreshed.map((card) => card.id)).size).toBe(3);
+    expect(refreshed.every((card) => pool.includes(card))).toBe(true);
+    expect(refreshed.filter((card) => !current.some((old) => old.id === card.id))).toHaveLength(novelCount);
+  });
+
   it("keeps Bowyer shelves full when every eligible base was already offered", () => {
     const previous = resampleEquipmentShopOfferings(testRng, 0, new Set(), ["bowyer"]);
     const refreshed = resampleEquipmentShopOfferings(testRng, 0, new Set(), ["bowyer", "masterwork"], previous);

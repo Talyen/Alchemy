@@ -6,20 +6,17 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { SHOP_CARDS_OFFERED } from "@/lib/game-constants";
 import type { BattleCard, TalentEffectManifest } from "@/lib/game-data";
-import { computeRemoveCardPrice } from "./shop-pricing";
-import { resolveDraftShopModifiers, resolveReadShopModifiers } from "./shop-pricing-context";
-import { commitShopService, runShopTransaction } from "./shop-transactions";
+import { computeRemoveCardPrice, getShopBuyPrice, getShopRefreshPrice } from "./shop-pricing";
+import {
+  resolveDraftShopModifiers,
+  resolveReadShopModifiers,
+  resolveReadShopPricingContext,
+} from "./shop-pricing-context";
+import { commitShopService, refreshShopOfferings, runShopTransaction } from "./shop-transactions";
 import { isValidDeckIndex } from "@/lib/utils";
 import type { MerchantShopCommands } from "./shop-action-types";
-import {
-  cardSlotKeyOf,
-  initializeShop,
-  purchaseSlotOffering,
-  readBuyPrices,
-  readRefreshPrice,
-  refreshCardOfferings,
-} from "./shop-commands-core";
-import { createInitialShopState, merchantShopPool, type ShopState } from "./shop-state-init";
+import { cardSlotKeyOf, initializeShop, purchaseSlotOffering, readRefreshPrice } from "./shop-commands-core";
+import { createInitialShopState, merchantShopPool, resampleCardShopOfferings } from "./shop-state-init";
 
 export function createMerchantShopCommands({
   talentEffects,
@@ -27,7 +24,7 @@ export function createMerchantShopCommands({
   talentEffects: TalentEffectManifest;
 }): MerchantShopCommands {
   const getCardBuyPrice = (card: BattleCard) => {
-    return readBuyPrices("merchantCard", [card], talentEffects, "shopState")[0] ?? 0;
+    return getShopBuyPrice("merchantCard", card, resolveReadShopPricingContext(talentEffects, "shopState"));
   };
   const getRemoveCardPrice = () => computeRemoveCardPrice(talentEffects, resolveReadShopModifiers());
   const getRefreshPrice = (refreshesLeft: number) => readRefreshPrice("merchant", talentEffects, refreshesLeft);
@@ -81,17 +78,20 @@ export function createMerchantShopCommands({
   function refresh(): boolean {
     return runShopTransaction((draft) => {
       const state = draft.session.shopState;
-      return refreshCardOfferings<ShopState>({
-        talentEffects,
+      return refreshShopOfferings({
         draft,
-        state,
+        price: getShopRefreshPrice("merchant", talentEffects, state.refreshesLeft, resolveDraftShopModifiers(draft)),
+        refreshesLeft: state.refreshesLeft,
         setState: setShopState,
-        itemsKey: "cards",
-        pool: merchantShopPool(resolveDraftShopModifiers(draft)),
-        currentItems: state.cards,
-        count: SHOP_CARDS_OFFERED,
-        rng: createDraftRunRandomSource(draft, "shops"),
-        refreshKind: "merchant",
+        mapState: (previous, items) => ({ ...previous, cards: items }),
+        resample: () =>
+          resampleCardShopOfferings(
+            draft.run.activeRun.runDeck,
+            merchantShopPool(resolveDraftShopModifiers(draft)),
+            state.cards,
+            SHOP_CARDS_OFFERED,
+            createDraftRunRandomSource(draft, "shops"),
+          ),
       });
     }).committed;
   }

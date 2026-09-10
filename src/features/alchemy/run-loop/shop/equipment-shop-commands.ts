@@ -5,22 +5,12 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { TalentEffectManifest } from "@/lib/game-data";
 import { getOwnedUniqueDefinitionIds, type GearInstance } from "@/lib/gear";
-import { runShopTransaction } from "./shop-transactions";
+import { refreshShopOfferings, runShopTransaction } from "./shop-transactions";
 import type { EquipmentShopCommands } from "./shop-action-types";
-import {
-  gearSlotKeyOf,
-  initializeShop,
-  purchaseSlotOffering,
-  readRefreshPrice,
-  refreshCatalogOfferings,
-} from "./shop-commands-core";
+import { gearSlotKeyOf, initializeShop, purchaseSlotOffering, readRefreshPrice } from "./shop-commands-core";
 import { resolveDraftShopModifiers, resolveReadShopPricingContext } from "./shop-pricing-context";
-import { getShopBuyPrice } from "./shop-pricing";
-import {
-  createInitialEquipmentShopState,
-  resampleEquipmentShopOfferings,
-  type EquipmentShopState,
-} from "./shop-state-init";
+import { getShopBuyPrice, getShopRefreshPrice } from "./shop-pricing";
+import { createInitialEquipmentShopState, resampleEquipmentShopOfferings } from "./shop-state-init";
 
 export function createEquipmentShopCommands({
   talentEffects,
@@ -65,13 +55,12 @@ export function createEquipmentShopCommands({
   function refresh(): boolean {
     return runShopTransaction((draft) => {
       const state = draft.session.equipmentShopState;
-      return refreshCatalogOfferings<EquipmentShopState, GearInstance>({
-        talentEffects,
+      return refreshShopOfferings({
         draft,
-        state,
+        price: getShopRefreshPrice("equipment", talentEffects, state.refreshesLeft, resolveDraftShopModifiers(draft)),
+        refreshesLeft: state.refreshesLeft,
         setState: setEquipmentShopState,
-        itemsKey: "gear",
-        refreshKind: "equipment",
+        mapState: (previous, items) => ({ ...previous, gear: items }),
         resample: () =>
           resampleEquipmentShopOfferings(
             createDraftRunRandomSource(draft, "shops"),

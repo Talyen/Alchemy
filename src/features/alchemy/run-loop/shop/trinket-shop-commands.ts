@@ -5,12 +5,16 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { TalentEffectManifest, TrinketEntry } from "@/lib/game-data";
 import { getShopBuyPrice, getShopRefreshPrice } from "./shop-pricing";
-import { resolveReadShopModifiers, resolveReadShopPricingContext } from "./shop-pricing-context";
-import { runShopTransaction } from "./shop-transactions";
+import {
+  resolveDraftShopModifiers,
+  resolveReadShopModifiers,
+  resolveReadShopPricingContext,
+} from "./shop-pricing-context";
+import { refreshShopOfferings, runShopTransaction } from "./shop-transactions";
 import { shopItemSlotKey } from "./shop-slot-keys";
 import type { TrinketShopCommands } from "./shop-action-types";
-import { initializeShop, purchaseSlotOffering, refreshCatalogOfferings } from "./shop-commands-core";
-import { createInitialTrinketShopState, resampleTrinketShopOfferings, type TrinketShopState } from "./shop-state-init";
+import { initializeShop, purchaseSlotOffering } from "./shop-commands-core";
+import { createInitialTrinketShopState, resampleTrinketShopOfferings } from "./shop-state-init";
 
 export function createTrinketShopCommands({
   talentEffects,
@@ -50,13 +54,12 @@ export function createTrinketShopCommands({
   function refresh(): boolean {
     return runShopTransaction((draft) => {
       const state = draft.session.trinketShopState;
-      return refreshCatalogOfferings<TrinketShopState, TrinketEntry>({
-        talentEffects,
+      return refreshShopOfferings({
         draft,
-        state,
+        price: getShopRefreshPrice("trinket", talentEffects, state.refreshesLeft, resolveDraftShopModifiers(draft)),
+        refreshesLeft: state.refreshesLeft,
         setState: setTrinketShopState,
-        itemsKey: "trinkets",
-        refreshKind: "trinket",
+        mapState: (previous, items) => ({ ...previous, trinkets: items }),
         resample: () =>
           resampleTrinketShopOfferings(
             createDraftRunRandomSource(draft, "shops"),

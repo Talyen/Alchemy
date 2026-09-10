@@ -37,6 +37,18 @@ export function applyStrongSpiritsToPotions(
   return modifiers.includes("strong-spirits") ? potions.map(doublePotionPotency) : potions;
 }
 
+export function resampleCardShopOfferings(
+  deck: BattleCard[],
+  pool: BattleCard[],
+  currentItems: BattleCard[],
+  count: number,
+  rng: () => number,
+): BattleCard[] {
+  const novel = selectRewardCards(deck, pool, count, currentItems, rng);
+  if (novel.length >= count) return novel;
+  return [...novel, ...selectRewardCards(deck, pool, count - novel.length, novel, rng)];
+}
+
 export function resampleTrinketShopOfferings(
   rng: () => number,
   ownedIds: readonly string[] = [],

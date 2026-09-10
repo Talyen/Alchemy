@@ -1,17 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
-  computeAlchemistRefreshPrice,
-  computeEquipmentRefreshPrice,
-  computeMerchantRefreshPrice,
   computeShopBuyPrice,
-  computeShopRefreshPrice,
   computeShopServicePrice,
-  computeTrinketRefreshPrice,
   getCardBuyTalentDiscounts,
   getEquipmentShopPrice,
   getGenericBuyTalentDiscounts,
   getShopBuyPrice,
-  getShopBuyPrices,
   getShopRefreshPrice,
 } from "@/features/alchemy/run-loop/shop/shop-pricing";
 import {
@@ -65,26 +59,21 @@ describe("shop-pricing", () => {
     ).toBe(TRINKET_SHOP_TRINKET_PRICE - 7);
   });
 
-  it("computeShopRefreshPrice grants Restock on first refresh", () => {
-    expect(computeShopRefreshPrice(SHOP_REFRESH_PRICE, true, 1)).toBe(0);
-    expect(computeShopRefreshPrice(SHOP_REFRESH_PRICE, true, 0)).toBe(SHOP_REFRESH_PRICE);
-  });
-
-  it("kind refresh prices honor shop-free talent effects without trait modifiers", () => {
-    const talents = { ...createEmptyTalentEffectManifest(), shopFreeRefresh: true };
-    expect(computeMerchantRefreshPrice(talents, 1)).toBe(0);
-    expect(computeEquipmentRefreshPrice(talents, 1)).toBe(0);
-    expect(computeTrinketRefreshPrice(talents, 1)).toBe(0);
-    expect(computeAlchemistRefreshPrice(talents, 1)).toBe(0);
-    expect(computeMerchantRefreshPrice(talents, 0)).toBe(SHOP_REFRESH_PRICE);
-  });
-
-  it("kind refresh prices honor per-shop free-refresh traits", () => {
-    const talents = { ...createEmptyTalentEffectManifest(), shopFreeRefresh: false };
-    expect(computeTrinketRefreshPrice(talents, 1, ["fresh-curios"])).toBe(0);
-    expect(computeTrinketRefreshPrice(talents, 1, [])).toBe(SHOP_REFRESH_PRICE);
-    expect(computeAlchemistRefreshPrice(talents, 1, ["fresh-batch"])).toBe(0);
-    expect(computeAlchemistRefreshPrice(talents, 1, ["fresh-curios"])).toBe(ALCHEMIST_REFRESH_PRICE);
+  it.each([
+    { kind: "merchant", basePrice: SHOP_REFRESH_PRICE, freeTrait: null },
+    { kind: "equipment", basePrice: SHOP_REFRESH_PRICE, freeTrait: null },
+    { kind: "trinket", basePrice: SHOP_REFRESH_PRICE, freeTrait: "fresh-curios" },
+    { kind: "alchemist", basePrice: ALCHEMIST_REFRESH_PRICE, freeTrait: "fresh-batch" },
+  ] as const)("$kind refresh prices preserve talents, traits, and exhaustion", ({ kind, basePrice, freeTrait }) => {
+    const talents = createEmptyTalentEffectManifest();
+    const restock = { ...talents, shopFreeRefresh: true };
+    expect(getShopRefreshPrice(kind, talents, 1)).toBe(basePrice);
+    expect(getShopRefreshPrice(kind, restock, 1)).toBe(0);
+    expect(getShopRefreshPrice(kind, restock, 0)).toBe(basePrice);
+    for (const trait of ["fresh-curios", "fresh-batch"] as const) {
+      expect(getShopRefreshPrice(kind, talents, 1, [trait])).toBe(trait === freeTrait ? 0 : basePrice);
+      expect(getShopRefreshPrice(kind, talents, 0, [trait])).toBe(basePrice);
+    }
   });
 
   it("computeShopServicePrice applies service discounts", () => {
@@ -107,7 +96,7 @@ describe("shop-pricing", () => {
     expect(uniqueChoices.some((c) => getEquipmentShopPrice(c) === EQUIPMENT_SHOP_UNIQUE_PRICE)).toBe(true);
   });
 
-  it("getShopBuyPrice halves merchant cards under bargain-bin after talent discounts", () => {
+  it("getShopBuyPrice halves the merchant base price under bargain-bin before talent discounts", () => {
     const card = cardById["strike"] ?? cardLibrary[0]!;
     const talents = { ...createEmptyTalentEffectManifest(), shopCardDiscount: 5 };
     expect(
@@ -173,23 +162,5 @@ describe("shop-pricing", () => {
         modifiers: ["apprentice"],
       }),
     ).toBe(EQUIPMENT_SHOP_ASTRAL_PRICE);
-  });
-
-  it("getShopBuyPrices maps every offering through one context", () => {
-    const talents = createEmptyTalentEffectManifest();
-    const context = { talentEffects: talents, runBoons: [], firstPurchaseUsed: true, modifiers: [] as const };
-    const cards = [cardById["strike"] ?? cardLibrary[0]!, cardById["guard"] ?? cardLibrary[1]!];
-    expect(getShopBuyPrices("merchantCard", cards, context)).toEqual(
-      cards.map((card) => getShopBuyPrice("merchantCard", card, context)),
-    );
-  });
-
-  it("getShopRefreshPrice honors per-shop traits without changing other shops", () => {
-    const talents = createEmptyTalentEffectManifest();
-    expect(getShopRefreshPrice("trinket", talents, 1, ["fresh-curios"])).toBe(0);
-    expect(getShopRefreshPrice("alchemist", talents, 1, ["fresh-curios"])).toBe(ALCHEMIST_REFRESH_PRICE);
-    expect(getShopRefreshPrice("alchemist", talents, 1, ["fresh-batch"])).toBe(0);
-    expect(getShopRefreshPrice("merchant", talents, 1, ["fresh-curios", "fresh-batch"])).toBe(SHOP_REFRESH_PRICE);
-    expect(getShopRefreshPrice("equipment", talents, 1, ["fresh-curios", "fresh-batch"])).toBe(SHOP_REFRESH_PRICE);
   });
 });
