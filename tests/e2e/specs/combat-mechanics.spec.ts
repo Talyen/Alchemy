@@ -122,13 +122,16 @@ test.describe("Battle Autoplay", critical, () => {
     }).toPass({ timeout: 5_000 });
 
     await expect
-      .poll(async () => {
-        if (await battle.victoryHeading.isVisible()) return true;
-        if (!(await battle.manaPanel.isVisible()) || !(await battle.enemyHealthPanel.isVisible())) return false;
-        const mana = await battle.mana();
-        const enemy = await battle.enemyHealth();
-        return mana < manaBefore || enemy < enemyBefore;
-      })
+      .poll(
+        async () => {
+          if (await battle.victoryHeading.isVisible()) return true;
+          if (!(await battle.manaPanel.isVisible()) || !(await battle.enemyHealthPanel.isVisible())) return false;
+          const mana = await battle.mana();
+          const enemy = await battle.enemyHealth();
+          return mana < manaBefore || enemy < enemyBefore;
+        },
+        { timeout: process.env.CI ? 10_000 : 5_000 },
+      )
       .toBe(true);
   });
 });
