@@ -70,13 +70,9 @@ export function useAppAudioEffects({
 
   useEffect(() => {
     setMasterVolume(masterVolume / 100);
-  }, [masterVolume]);
-  useEffect(() => {
     setMusicVolume(musicVolume / 100);
-  }, [musicVolume]);
-  useEffect(() => {
     setSfxVolume(sfxVolume / 100);
-  }, [sfxVolume]);
+  }, [masterVolume, musicVolume, sfxVolume]);
 
   useEffect(() => {
     muteInBackgroundRef.current = muteInBackground;
@@ -109,11 +105,15 @@ export function useAppAudioEffects({
       invalidateCacheForKey(musicKey);
     }
     lastBattleActiveRef.current = hasActiveBattle;
-  }, [hasActiveBattle, screen]);
+    // `screen` is intentionally not a dep: the battle-start jingle cares only about
+    // the battle-active transition; screen-driven music switches live below.
+  }, [hasActiveBattle]);
 
   useEffect(() => {
     screenRef.current = screen;
     if (initialScreenRef.current) {
+      // Bootstrap already started menu music; skip the first screen effect so
+      // cold start doesn't restart the track.
       initialScreenRef.current = false;
       return;
     }
@@ -335,5 +335,3 @@ function waitForFonts() {
     );
   });
 }
-
-export { getScreenParticleConfig } from "./screen-particle-config";

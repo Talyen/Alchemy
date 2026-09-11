@@ -6,25 +6,27 @@ import { UnsupportedSaveVersionScreen } from "@/app/unsupported-save-version-scr
 import type { useReturnToRunNavigation } from "@/app/use-app-navigation";
 import { isProgressionFeatureUnlocked, type CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
 
+import { getScreenParticleConfig } from "@/app/screen-particle-config";
+
 export function AppBackgroundParticles({
   renderedScreen,
-  particleColors,
-  particleAlphaMultiplier,
   backgroundParticlesIntensity = 100,
 }: {
   renderedScreen: Screen;
-  particleColors: readonly string[] | undefined;
-  particleAlphaMultiplier: number | undefined;
   backgroundParticlesIntensity?: number | undefined;
 }) {
   if (renderedScreen === "battle" || renderedScreen === "character-select") return null;
   if (backgroundParticlesIntensity <= 0) return null;
+  // App chrome never paints battle particles (battle screen owns boss-aware particles),
+  // so `false` is intentional here rather than a missing boss flag.
+  const { particleColors, particleAlphaMultiplier, particleCount } = getScreenParticleConfig(renderedScreen, false);
   const effectiveAlphaMultiplier = ((particleAlphaMultiplier ?? 1) * backgroundParticlesIntensity) / 100;
   return (
     <BackgroundParticles
       variant="embers"
       {...(particleColors ? { colors: particleColors } : {})}
       alphaMultiplier={effectiveAlphaMultiplier}
+      {...(particleCount !== undefined ? { particleCount } : {})}
     />
   );
 }

@@ -1,7 +1,7 @@
 import { createSeededRng } from "@/lib/utils";
 import { addLabyrinthSideRooms } from "@/lib/content-systems/labyrinth/map-generation";
 import type { LabyrinthMap } from "@/lib/content-systems/types";
-import { isRecord, migrateRunTree, rngSeedFromRun, type RawSaveData } from "./types";
+import { defineRunStep, isRecord, rngSeedFromRun } from "./types";
 
 function expandOpenFieldRun(value: unknown): unknown {
   if (!isRecord(value) || value.contentSystemType !== "labyrinth") return value;
@@ -25,6 +25,4 @@ function expandOpenFieldRun(value: unknown): unknown {
   };
 }
 
-export function migrateV17ToV18(parsed: RawSaveData): RawSaveData {
-  return migrateRunTree(parsed, expandOpenFieldRun);
-}
+export const migrateV17ToV18 = defineRunStep(expandOpenFieldRun);

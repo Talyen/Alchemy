@@ -14,7 +14,6 @@ const domLibPrefixes = [
   "tests/lib/crash-reporting",
   "tests/lib/image-preload",
   "tests/lib/platform",
-  "tests/lib/validation/barrel",
 ];
 const domTypeScriptTests = [
   ...domTestPrefixes.map((prefix) => `${prefix}**/*.test.ts`),

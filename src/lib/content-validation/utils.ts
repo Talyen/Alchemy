@@ -76,9 +76,9 @@ export function validateArt(
     return;
   }
   if (!knownArt.has(art)) {
-    addError("art", id, "Art reference is not in the known optimized asset registries");
+    addError(area, id, "Art reference is not in the known optimized asset registries");
   }
   if (placeholderArt.has(art)) {
-    addWarning("art", id, "Uses placeholder art");
+    addWarning(area, id, "Uses placeholder art");
   }
 }

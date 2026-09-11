@@ -8,6 +8,8 @@ import type { OptionsRouteCtx } from "./route-ctx";
 
 type OptionsScreenRouteProps = OptionsRouteCtx;
 
+const noop = (): void => {};
+
 function OptionsScreenRoute({ onClearSaveData, onUnlockAllDevMode, onBack, onOpenGameMenu }: OptionsScreenRouteProps) {
   const settings = useSettingsStore(
     useShallow((s) => ({
@@ -26,11 +28,17 @@ function OptionsScreenRoute({ onClearSaveData, onUnlockAllDevMode, onBack, onOpe
     })),
   );
   const actions = useSettingsActions();
-  const sizing = useDeviceDisplayStore();
+  const gameSizePercent = useDeviceDisplayStore((s) => s.gameSizePercent);
+  const tooltipSizePercent = useDeviceDisplayStore((s) => s.tooltipSizePercent);
+  const setGameSizePercent = useDeviceDisplayStore((s) => s.setGameSizePercent);
+  const setTooltipSizePercent = useDeviceDisplayStore((s) => s.setTooltipSizePercent);
+  const resetSizes = useDeviceDisplayStore((s) => s.resetSizes);
 
   return (
     <OptionsScreen
-      onBack={onBack ?? (() => {})}
+      // Options always has a back target (backFromOptions); the fallback only
+      // satisfies the shared route ctx's optional onBack for type-level safety.
+      onBack={onBack ?? noop}
       onMenu={onOpenGameMenu}
       display={{
         selectedAspectRatio: settings.selectedAspectRatio,
@@ -46,10 +54,10 @@ function OptionsScreenRoute({ onClearSaveData, onUnlockAllDevMode, onBack, onOpe
         onBackgroundGlowIntensityChange: actions.setBackgroundGlowIntensity,
       }}
       interface={{
-        gameSizePercent: sizing.gameSizePercent,
-        tooltipSizePercent: sizing.tooltipSizePercent,
-        onGameSizeChange: sizing.setGameSizePercent,
-        onTooltipSizeChange: sizing.setTooltipSizePercent,
+        gameSizePercent,
+        tooltipSizePercent,
+        onGameSizeChange: setGameSizePercent,
+        onTooltipSizeChange: setTooltipSizePercent,
       }}
       audio={{
         masterVolume: settings.masterVolume,
@@ -74,7 +82,7 @@ function OptionsScreenRoute({ onClearSaveData, onUnlockAllDevMode, onBack, onOpe
         onConfirmClearSave: onClearSaveData,
         onResetOptions: () => {
           actions.resetToDefaults();
-          sizing.resetSizes();
+          resetSizes();
         },
       }}
       dev={{ onUnlockAll: onUnlockAllDevMode }}

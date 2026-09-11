@@ -4,12 +4,13 @@ import type { CardInspectionView } from "@/features/alchemy/shared/types";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { readCardInspectionData, useCardInspectionData } from "@/features/alchemy/shared/stores/run-reads";
 import {
-  useCardAnimationInProgress,
   readCardAnimationInProgress,
+  readPlaybackPresentationGate,
+  useCardAnimationInProgress,
   useHiddenHandCardKeys,
 } from "@/features/alchemy/run-loop/battle/presentation/use-hand-presentation";
-import { readPlaybackPresentationGate } from "@/features/alchemy/run-loop/battle/presentation/use-hand-presentation";
-import { handHasHiddenCard } from "@/features/alchemy/run-loop/battle/playable-hand";
+import { handHasHiddenCard, type HiddenHandCardKeys } from "@/features/alchemy/run-loop/battle/playable-hand";
+import type { BattleSnapshot } from "@/lib/battle";
 import type { CardInspectionCollection } from "@/features/alchemy/shared/ui/card-inspection-overlay";
 
 const RUN_META_SCREENS: readonly Screen[] = ["armory", "talents", "homestead", "collection", "options"];
@@ -27,6 +28,23 @@ export function isDeckInspectionVisible(
       returnToRunScreen !== null &&
       (isRunLoopScreen(returnToRunScreen) || returnToRunScreen === "draft-deck"))
   );
+}
+
+/**
+ * Shared battle gate for deck inspection. The render path (canOpen) feeds it
+ * reactive hook values; the event path (onOpen) feeds it fresh reads plus an
+ * additional card-play-in-progress check, so both stay in agreement.
+ */
+export function isBattleInspectionBlocked(input: {
+  battleReady: boolean;
+  cardAnimationInProgress: boolean;
+  battleState: Pick<BattleSnapshot, "hand">;
+  hiddenHandCardKeys: HiddenHandCardKeys;
+}): boolean {
+  if (!input.battleReady) return true;
+  if (input.cardAnimationInProgress) return true;
+  if (handHasHiddenCard(input.battleState, input.hiddenHandCardKeys)) return true;
+  return false;
 }
 
 export function useCardInspection({
@@ -56,10 +74,19 @@ export function useCardInspection({
     visible &&
     screenInteractive &&
     (!data.hasActiveBattle ||
-      (data.battleReady && !cardAnimationInProgress && !handHasHiddenCard(data, hiddenHandCardKeys)));
+      !isBattleInspectionBlocked({
+        battleReady: data.battleReady,
+        cardAnimationInProgress,
+        battleState: data,
+        hiddenHandCardKeys,
+      }));
   const close = useCallback(() => useUiStore.getState().setCardInspection(null), []);
 
-  useLayoutEffect(() => close, [close, screen, data.mode, data.characterId, data.runSeed, data.hasActiveBattle]);
+  // Close inspection whenever the run/screen/battle identity changes underneath it.
+  useLayoutEffect(
+    () => () => close(),
+    [close, screen, data.mode, data.characterId, data.runSeed, data.hasActiveBattle],
+  );
   useLayoutEffect(() => {
     if (!canOpen || gameMenuOpen || boonInspectOpen) close();
   }, [canOpen, close, gameMenuOpen, boonInspectOpen]);
@@ -74,10 +101,13 @@ export function useCardInspection({
       if (current.hasActiveBattle) {
         const presentation = readPlaybackPresentationGate();
         if (
-          !current.battleReady ||
           isCardPlayInProgress() ||
-          readCardAnimationInProgress() ||
-          handHasHiddenCard(current, presentation.hiddenHandCardKeys)
+          isBattleInspectionBlocked({
+            battleReady: current.battleReady,
+            cardAnimationInProgress: readCardAnimationInProgress(),
+            battleState: current,
+            hiddenHandCardKeys: presentation.hiddenHandCardKeys,
+          })
         )
           return;
       }

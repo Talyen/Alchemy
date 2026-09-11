@@ -41,6 +41,7 @@ jobs:
               - "package.json"
               - "package-lock.json"
               - "src/lib/validation/**"
+              - "src/lib/content-validation/**"
               - "src/features/alchemy/shared/storage/**"
               - "src/lib/active-run-session/**"
               - "src/lib/platform.ts"
@@ -68,6 +69,7 @@ jobs:
               - "src/lib/crash-reporting.ts"
               - "src/features/alchemy/shared/storage/**"
               - "vite.config.ts"
+              - "tsconfig*.json"
               - "steam/**"
               - "scripts/dist-desktop*"
               - "scripts/lib/desktop-artifact*"
@@ -99,6 +101,7 @@ jobs:
               - "tests/electron/**"
               - "playwright.electron*"
               - "vite.config.ts"
+              - "tsconfig*.json"
               - "scripts/prepare-assets.mjs"
               - "scripts/electron-path*"
               - "scripts/ensure-electron*"
@@ -191,7 +194,7 @@ jobs:
       - uses: ./.github/actions/setup
       - run: npm run build
 
-      - name: Check bundle budget (index 640k / total 1.61M)
+      - name: Check bundle budget (index 640 KiB / total 1620 KiB)
         run: node scripts/check-bundle-budget.mjs
 
       - name: Smoke test production build
@@ -209,6 +212,8 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      ALCHEMY_RUN_VARIANT: shard-${{ matrix.shard }}
     strategy:
       fail-fast: false
       matrix:
@@ -339,10 +344,16 @@ jobs:
             reports/current-run.*
             reports/runs/
           retention-days: 7
+          if-no-files-found: ignore
 
   desktop-build:
-    needs: changes
-    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.desktop == 'true'
+    needs: [changes, ship-gate]
+    # Reuses ship-gate's desktop renderer bundle when it already built one
+    # instead of paying for a second full Vite build; a failed renderer build
+    # fails this job instead of repackaging a known-bad bundle.
+    if: >-
+      (github.event_name == 'workflow_dispatch' || needs.changes.outputs.desktop == 'true') &&
+      needs.ship-gate.result != 'failure' && needs.ship-gate.result != 'cancelled'
     runs-on: windows-latest
     timeout-minutes: 45
     steps:
@@ -356,8 +367,35 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           skip-electron-download: "false"
-      - name: Build Windows installer
-        run: npm run dist:desktop
+
+      - name: Cache Electron binary
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cache/electron
+            node_modules/electron/dist
+            node_modules/electron/path.txt
+          key: electron-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            electron-${{ runner.os }}-
+
+      - name: Sync Steam App ID
+        run: npm run sync:steam-appid
+
+      - name: Reuse desktop renderer bundle
+        id: renderer-download
+        if: needs.ship-gate.result == 'success'
+        uses: actions/download-artifact@v8
+        with:
+          name: dist-desktop
+          path: dist/
+
+      - name: Build desktop renderer
+        if: steps.renderer-download.outcome != 'success'
+        run: npm run build:desktop
+
+      - name: Package Windows installer
+        run: node scripts/dist-desktop.mjs
 
       - name: Upload desktop artifact
         uses: actions/upload-artifact@v7

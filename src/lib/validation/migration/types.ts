@@ -32,6 +32,12 @@ export function migrateRunTree(save: RawSaveData, migrateRun: (run: unknown) => 
   };
 }
 
+// Skeleton for version steps that only touch run trees (active + parked).
+// v11→v12 stays bespoke because it also migrates top-level gear loadouts.
+export function defineRunStep(migrateRun: (run: unknown) => unknown): (save: RawSaveData) => RawSaveData {
+  return (save) => migrateRunTree(save, migrateRun);
+}
+
 export function rngSeedFromRun(run: Record<string, unknown>): number {
   if (isRecord(run.rng) && typeof run.rng.seed === "number") return run.rng.seed >>> 0;
   const runId = typeof run.runId === "string" ? run.runId : typeof run.id === "string" ? run.id : "";

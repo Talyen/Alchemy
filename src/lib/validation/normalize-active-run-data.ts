@@ -5,6 +5,7 @@ import { DRAFT_CHOICES, DRAFT_ROUNDS, MYSTERY_CARD_CHOICES } from "@/lib/game-co
 import { cardById, characters, selectRewardCards, type BattleCard, type KeywordId } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { stepRunRng, type RunRngState, type RunRngStream } from "@/lib/rng";
+import { isTombstonedCardId } from "./migration/tombstoned-content-ids";
 import type {
   ActiveCombatData,
   AlchemistState,
@@ -19,8 +20,15 @@ function isLiveCardId(id: string): boolean {
   return cardById[id] !== undefined;
 }
 
+// Tombstoned ids are known-retired content (quiet drop, covered by guard test);
+// unknown ids are dropped identically today. The distinction is kept explicit
+// so future load telemetry can count unknown ids without re-deriving history.
+function isDroppedCardId(id: string): boolean {
+  return !isLiveCardId(id) && !isTombstonedCardId(id);
+}
+
 function filterLiveCards<T extends { id: string }>(cards: T[]): T[] {
-  return cards.filter((card) => isLiveCardId(card.id));
+  return cards.filter((card) => !isTombstonedCardId(card.id) && !isDroppedCardId(card.id));
 }
 
 function filterLiveBattleState(state: BattleSnapshot): BattleSnapshot {

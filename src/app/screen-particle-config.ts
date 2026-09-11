@@ -19,7 +19,12 @@ const SCREEN_PARTICLE_ALPHA: Partial<Record<Screen, number>> = {
 
 export function getScreenParticleConfig(renderedScreen: Screen, isBossBattle: boolean) {
   const particleColors = SCREEN_PARTICLE_COLORS[renderedScreen];
-  const particleAlphaMultiplier = isBossBattle ? BATTLE_PARTICLE_INTENSITY_BOSS : SCREEN_PARTICLE_ALPHA[renderedScreen];
+  // Boss intensity only applies to battle particles; other screens ignore the flag
+  // so a stale/mis-threaded `true` can't boost menu Biergarten-style screens.
+  const particleAlphaMultiplier =
+    renderedScreen === "battle" && isBossBattle
+      ? BATTLE_PARTICLE_INTENSITY_BOSS
+      : SCREEN_PARTICLE_ALPHA[renderedScreen];
   const particleCount = renderedScreen === "battle" ? BATTLE_PARTICLE_COUNT : undefined;
   return { particleColors, particleAlphaMultiplier, particleCount };
 }

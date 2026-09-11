@@ -1,9 +1,9 @@
 /**
  * Knip dead-code policy
  * ---------------------
- * Barrels for `@/lib/game-data`, `@/lib/battle`, and `@/lib/validation` are the
- * eslint-enforced public surface. Feature stores and screens still use on-disk
- * paths (`shared/run-flow/destination-flow`).
+ * Barrels for `@/lib/game-data`, `@/lib/battle`, `@/lib/validation`, and
+ * `@/lib/content-validation` are the eslint-enforced public surface. Feature
+ * stores and screens still use on-disk paths (`shared/run-flow/destination-flow`).
  *
  * Entries cover the barrel public surfaces plus the app shell (`src/App.tsx`).
  * The Vite runtime (`src/main.tsx`) and the boot script (`src/startup.ts`,
@@ -28,6 +28,7 @@ export default {
     "src/lib/gear/index.ts",
     "src/lib/battle/index.ts",
     "src/lib/validation/index.ts",
+    "src/lib/content-validation/index.ts",
     "src/features/alchemy/shared/run-flow/index.ts",
     "scripts/*.mjs",
     "desktop/*.cjs",

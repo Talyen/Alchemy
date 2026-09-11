@@ -1,4 +1,4 @@
-import { isRecord, migrateRunTree, type RawSaveData } from "./types";
+import { defineRunStep, isRecord } from "./types";
 
 function retireHexLabyrinthRun(value: unknown): unknown {
   if (!isRecord(value) || value.contentSystemType !== "labyrinth") return value;
@@ -8,6 +8,4 @@ function retireHexLabyrinthRun(value: unknown): unknown {
   return value;
 }
 
-export function migrateV16ToV17(parsed: RawSaveData): RawSaveData {
-  return migrateRunTree(parsed, retireHexLabyrinthRun);
-}
+export const migrateV16ToV17 = defineRunStep(retireHexLabyrinthRun);

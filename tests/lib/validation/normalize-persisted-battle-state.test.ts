@@ -3,7 +3,7 @@ import { defaultBattleState } from "@/lib/battle";
 import { GEAR_EFFECT_KEYS } from "@/lib/gear";
 import { enemyById } from "@/lib/game-data";
 import { LEGACY_MANABURN_PER_CRYSTAL_ENABLED, MANABURN_DAMAGE_PERCENT } from "@/lib/game-constants";
-import { normalizePersistedBattleState } from "@/lib/validation/normalize-persisted-battle-state";
+import { normalizePersistedBattleState, repairPersistedTrinketManifest } from "@/lib/validation";
 
 describe("normalizePersistedBattleState", () => {
   it("retains a running battle's Health, defenses, and old roster across balance updates", () => {
@@ -207,4 +207,48 @@ it("preserves the spent Emberforged trigger when resuming a turn", () => {
   const state = defaultBattleState();
   state.flags.emberforgedUsedThisTurn = true;
   expect(normalizePersistedBattleState(state).flags.emberforgedUsedThisTurn).toBe(true);
+});
+
+describe("repairPersistedTrinketManifest (owned by normalize-persisted-battle-state)", () => {
+  it("recomputes default trinketEffects from runBoons", () => {
+    const battleState = defaultBattleState();
+    const repaired = repairPersistedTrinketManifest(battleState, ["bone-charm"]);
+    expect(repaired.trinketEffects.boneCharmHealOnKill).toBe(3);
+  });
+
+  it("leaves non-default manifests unchanged", () => {
+    const battleState = {
+      ...defaultBattleState(),
+      trinketEffects: {
+        ...defaultBattleState().trinketEffects,
+        boneCharmHealOnKill: 9,
+      },
+    };
+    const repaired = repairPersistedTrinketManifest(battleState, ["bone-charm"]);
+    expect(repaired.trinketEffects.boneCharmHealOnKill).toBe(9);
+  });
+
+  it("preserves legacy active-battle trinket fields", () => {
+    const defaults = defaultBattleState();
+    const battleState = {
+      ...defaults,
+      trinketEffects: {
+        ...defaults.trinketEffects,
+        blockToArmorThreshold: 6,
+        blockToArmorAmount: 1,
+        mortarPestleFreeFirstPotion: true,
+        grovesFavorStartHeal: 2,
+      },
+    };
+
+    const repaired = repairPersistedTrinketManifest(battleState, ["ironwood-buckler", "mortar-and-pestle"]);
+
+    expect(repaired.trinketEffects).toEqual(battleState.trinketEffects);
+  });
+
+  it("no-ops when runBoons is empty", () => {
+    const battleState = defaultBattleState();
+    const repaired = repairPersistedTrinketManifest(battleState, []);
+    expect(repaired).toBe(battleState);
+  });
 });

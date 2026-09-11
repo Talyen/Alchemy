@@ -2,29 +2,49 @@ import type { BattleCardEffect } from "@/lib/game-data";
 import { isRecursiveBattleCardEffectKind } from "@/lib/game-data";
 import type { ContentValidationIssue } from "../types";
 
-export function flattenEffects(effects: BattleCardEffect[]): BattleCardEffect[] {
+function flattenInternal(effects: BattleCardEffect[], unwrapRepeatOverTurns: boolean): BattleCardEffect[] {
   return effects.flatMap((effect) => {
     if (effect.kind === "chance") {
-      return [...flattenEffects(effect.successEffects), ...flattenEffects(effect.failureEffects)];
+      return [
+        ...flattenInternal(effect.successEffects, unwrapRepeatOverTurns),
+        ...flattenInternal(effect.failureEffects, unwrapRepeatOverTurns),
+      ];
     }
-    if (effect.kind === "repeat-over-turns") {
-      return flattenEffects(effect.effects);
+    if (unwrapRepeatOverTurns && effect.kind === "repeat-over-turns") {
+      return flattenInternal(effect.effects, unwrapRepeatOverTurns);
     }
     return [effect];
   });
+}
+
+// Flattening is memoized per input array: count parity runs ~17 rules plus
+// numeric parity cursors over the same card, so without caching each rule
+// re-walks the effect tree.
+const flattenCache = new WeakMap<BattleCardEffect[], BattleCardEffect[]>();
+const flattenChanceCache = new WeakMap<BattleCardEffect[], BattleCardEffect[]>();
+
+export function flattenEffects(effects: BattleCardEffect[]): BattleCardEffect[] {
+  const cached = flattenCache.get(effects);
+  if (cached) return cached;
+  const flat = flattenInternal(effects, true);
+  flattenCache.set(effects, flat);
+  return flat;
 }
 
 export function countByKind(effects: BattleCardEffect[], kind: string): number {
   return flattenEffects(effects).filter((effect) => effect.kind === kind).length;
 }
 
+// Chance-only flattening intentionally keeps repeat-over-turns wrappers intact.
+// Block/status count rules use this variant because repeat lines use "each
+// turn" wording that the block rule excludes explicitly; numeric parity cursors
+// use the full flattening above. The two counts can legitimately differ.
 export function flattenChanceEffects(effects: BattleCardEffect[]): BattleCardEffect[] {
-  return effects.flatMap((effect) => {
-    if (effect.kind === "chance") {
-      return [...flattenChanceEffects(effect.successEffects), ...flattenChanceEffects(effect.failureEffects)];
-    }
-    return [effect];
-  });
+  const cached = flattenChanceCache.get(effects);
+  if (cached) return cached;
+  const flat = flattenInternal(effects, false);
+  flattenChanceCache.set(effects, flat);
+  return flat;
 }
 
 export function hasKind(effects: BattleCardEffect[], kind: string): boolean {

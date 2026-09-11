@@ -1,5 +1,4 @@
-import { isRecord, migrateRunTree } from "./types";
-import type { RawSaveData } from "./types";
+import { defineRunStep, isRecord } from "./types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 
 const EMPTY_MATERIALS = emptyInventory();
@@ -77,6 +76,4 @@ function migrateRun(value: unknown): unknown {
   };
 }
 
-export function migrateV12ToV13(save: RawSaveData): RawSaveData {
-  return migrateRunTree(save, migrateRun);
-}
+export const migrateV12ToV13 = defineRunStep(migrateRun);

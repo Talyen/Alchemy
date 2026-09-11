@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { computeEffectiveCost } from "@/lib/battle/card-cost-rules";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
-import { createMixedPotion, tryCreateMixedPotion } from "@/lib/alchemist/potion-mixer";
+import { createMixedPotion, tryCreateMixedPotion } from "@/lib/alchemist";
 import { cardById, isMixedPotionCard, isPotionCard, isStandardPotionCard } from "@/lib/game-data";
 import { MIXED_POTION_CARD_ID } from "@/lib/game-constants";
 import { makeCombatTexts, makeState } from "../../fixtures/battle";

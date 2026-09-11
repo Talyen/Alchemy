@@ -55,6 +55,8 @@ const ENEMY_STATUS_IDS = toNonEmptyTuple(ENEMY_STATUS_DISPLAY_ORDER as EnemyStat
 export const DamageTypeSchema = z.enum(DAMAGE_TYPE_VALUES);
 export const PlayerStatusIdSchema = z.enum(PLAYER_STATUS_IDS);
 export const EnemyStatusIdSchema = z.enum(ENEMY_STATUS_IDS);
+// Stable id list for content lint without reaching into zod internals (.options).
+export const ENEMY_STATUS_IDS_LIST: readonly string[] = ENEMY_STATUS_IDS;
 export const LabyrinthNodeTypeSchema = z.enum([
   "entrance",
   "combat",

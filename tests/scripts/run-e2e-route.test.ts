@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { E2E_ROUTES, resolveE2eRoute } from "../../scripts/run-e2e-route.mjs";
@@ -20,8 +20,18 @@ describe("e2e routes", () => {
     }
   });
 
-  it("keeps the shop alias on the shop screen journey", () => {
-    expect(resolveE2eRoute("shop")).toBe(E2E_ROUTES["shop-screen"]);
+  it("keeps backward-compatible screen-name aliases", () => {
+    expect(resolveE2eRoute("shop")).toBe(E2E_ROUTES.shop);
+    expect(resolveE2eRoute("shop-screen")).toBe(E2E_ROUTES.shop);
+    expect(resolveE2eRoute("homestead")).toBe(E2E_ROUTES.homestead);
+    expect(resolveE2eRoute("homestead-screen")).toBe(E2E_ROUTES.homestead);
+  });
+
+  it("keeps a test:e2e:<name> alias for every route", () => {
+    const scripts = JSON.parse(readFileSync(path.join(repoRoot, "package.json"), "utf8")).scripts;
+    for (const name of Object.keys(E2E_ROUTES)) {
+      expect(scripts[`test:e2e:${name}`], name).toBe(`node scripts/run-e2e-route.mjs ${name}`);
+    }
   });
 
   it("rejects unknown routes", () => {

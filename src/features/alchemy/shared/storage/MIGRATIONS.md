@@ -49,12 +49,16 @@ add step modules when a real post-floor transform is required.
 For a schema bump from `N` to `N + 1`:
 
 1. Increment `CURRENT_SAVE_SCHEMA_VERSION` in `src/lib/validation/metadata.ts`.
-2. Add `migrateVNToVNPlus1` in a `steps-*.ts` module under `src/lib/validation/migration/`. Keep content-ID remaps in the separate `content-steps.ts` owner.
-3. Register `{ from: N, to: N + 1, migrate: migrateVNToVNPlus1 }` in `SCHEMA_MIGRATIONS` in `src/lib/validation/migration/index.ts` so the chain covers every increment from the supported floor without gaps.
+2. Add `migrateVNToVNPlus1` in a `steps-*.ts` module under `src/lib/validation/migration/` via `defineRunStep(migrateRun)` (v11→v12 stays bespoke for top-level gear). Keep content-ID remaps in the separate `content-steps.ts` owner.
+3. Append the step to `ORDERED_RUN_MIGRATIONS` in `src/lib/validation/migration/index.ts` so the chain covers every increment from the supported floor without gaps (versions derive from position).
 4. Update Zod schemas in `src/lib/validation/save-schemas/` and `defaults.ts`.
 5. Add a fixture to `CURRENT_SCHEMA_SAVE_FIXTURES_BY_SOURCE_VERSION` in `tests/fixtures/legacy-saves.ts` (CI fails if any source version `LAUNCH … N-1` is missing).
 6. If the change touches `activeRun` nested state, add or extend a scenario in `MIGRATION_SCENARIO_FIXTURES` and assert gameplay outcomes in `save-migration-guard.test.ts`.
-7. Run `npm run check:ship` — tests use `normalizeSaveData` from `tests/helpers/parse-save-for-tests.ts` (`SaveDataSchema.parse`). Production load uses `safeParseWithErrors(SaveDataSchema, …)` in `save-candidates.ts` via `evaluateSaveCandidates`.
+7. Run `npm run check:ship` — tests use `normalizeSaveData` from `tests/helpers/parse-save-for-tests.ts` (`SaveDataSchema.parse`, throwing for test failures). Production load uses `safeParseWithErrors(SaveDataSchema, …)` in `save-candidates.ts` via `evaluateSaveCandidates` (accumulating per-card repair warnings without failing). The split is intentional: tests fail loudly, production repairs quietly and surfaces warnings.
+
+`.catch()` means silent repair: use it for load-tolerant defaults, never for authoring validation. Per-card repair notes travel via nested warnings (see `validation-utils.ts`), not the global collector that was removed. `src/lib/validation/` is load-tolerant (current saves must load); `src/lib/content-validation/` is authoring-strict (content must match effects) — content lint must not import save internals except the stable `ENEMY_STATUS_IDS_LIST`.
+
+Per-step migration tests are intentionally aggregate (`migration.test.ts` + guard scenarios); only complex steps need dedicated `steps-vN-vN+1` files.
 
 ## `saveSchemaVersion` vs `contentVersion`
 

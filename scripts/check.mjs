@@ -6,7 +6,8 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 
 import { changedGitPaths, ensureRunId, writeCurrentRun } from "./lib/current-run.mjs";
-import { commandExposure, failureSummary, writeFailureDigest } from "./lib/compact-output.mjs";
+import { writeFailureDigest } from "./lib/compact-output.mjs";
+import { summarizeStepResult } from "./lib/run-step.mjs";
 import { classifyCheckPaths, parseChangedPathsArgs, resolveSelectedPaths } from "./lib/changed-paths.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { runCommand } from "./lib/run-command.mjs";
@@ -75,6 +76,9 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
   const env = { ...process.env, ALCHEMY_RUN_ID: runId };
   const before = digestFn();
   const verifyArgs = paths.length > 0 ? paths : ["--diff"];
+  // Static checks rerun docs:check via lint:ci, so verification skips its own
+  // copy on executable changes; documentation-only changes keep it here.
+  if (selection.needsCodeChecks) verifyArgs.push("--skip-docs-check");
   const skipBuilds = process.env.ALCHEMY_CHECK_SKIP_BUILD === "1";
   const buildReason = skipBuilds ? "skipped via ALCHEMY_CHECK_SKIP_BUILD=1 (CI still builds)" : undefined;
   const definitions = [
@@ -167,22 +171,14 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
     const code = result.status ?? 1;
     const status = code === 0 ? "passed" : "failed";
     steps.push({ label: definition.label, status, durationMs });
-    const exposedOutput = code === 0 ? "" : failureSummary(result.output);
-    exposures.push(
-      commandExposure({
-        key: definition.key,
-        label: definition.label,
-        command: `${definition.command} ${definition.args.join(" ")}`,
-        result,
-        exposedOutput,
-      }),
-    );
+    const { exposure, failureOutput } = summarizeStepResult(definition, result);
+    exposures.push(exposure);
     if (code !== 0) {
       const reportsDir = path.join(ROOT, "reports", "runs", runId, "check");
       const evidence = writeFailureDigest(reportsDir, definition, result, runId, steps.length - 1);
       artifacts.push({ path: evidence.digestPath, role: "primary" }, { path: evidence.logPath, role: "secondary" });
       failed = { label: definition.label, code, ...evidence };
-      console.error(`  ${exposedOutput}`);
+      console.error(`  ${failureOutput}`);
       console.error(`  Failure digest: ${path.relative(ROOT, evidence.digestPath)}`);
       console.error(`  Full log: ${path.relative(ROOT, evidence.logPath)}`);
       break;

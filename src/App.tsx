@@ -4,7 +4,6 @@ import {
   GameMenuOverlay,
   StartupLoadingScreen,
   UnsupportedSaveOverlay,
-  getScreenParticleConfig,
   useAlchemyAutosaveFromStores,
   useAppAudioEffects,
   useAppDisplayEffects,
@@ -25,7 +24,7 @@ import { BattleBoonInspectButton } from "@/features/alchemy/run-loop/screens/bat
 import { hasInspectableBoons } from "@/features/alchemy/run-loop/screens/battle-screen/unique-run-boons";
 import { CardDescriptionProvider } from "@/features/alchemy/shared/context/card-description-context";
 import { useVirtualResolution } from "@/features/alchemy/shared/hooks";
-import { clearAlchemySaveData, type SaveLoadState } from "@/features/alchemy/shared/storage";
+import { clearAlchemySaveData } from "@/features/alchemy/shared/storage";
 import { useDeviceDisplayStore } from "@/features/alchemy/shared/stores/device-display-store";
 import { useIsArmoryLocked } from "@/features/alchemy/shared/stores/gear-store";
 import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profile-store";
@@ -62,6 +61,37 @@ async function wipeUnsupportedSaveAndReload() {
     throw new Error("Save data could not be cleared");
   }
   window.location.reload();
+}
+
+function BattleCluster({
+  inert,
+  deckInspection,
+  isAutoplayEnabled,
+  toggleAutoplayEnabled,
+  hasInspectBoons,
+  boonInspectOpen,
+  toggleBoonInspect,
+  gameMenuOpen,
+  onOpenGameMenu,
+}: {
+  inert: boolean;
+  deckInspection: { count: number; disabled: boolean; onOpen: () => void } | undefined;
+  isAutoplayEnabled: boolean;
+  toggleAutoplayEnabled: () => void;
+  hasInspectBoons: boolean;
+  boonInspectOpen: boolean;
+  toggleBoonInspect: () => void;
+  gameMenuOpen: boolean;
+  onOpenGameMenu: (rect?: DOMRect) => void;
+}) {
+  return (
+    <div inert={inert} className="absolute top-4 right-4 z-[80] flex items-center gap-2">
+      {deckInspection ? <DeckInspectButton {...deckInspection} /> : null}
+      <BattleAutoplayToggle enabled={isAutoplayEnabled} onToggle={toggleAutoplayEnabled} />
+      {hasInspectBoons ? <BattleBoonInspectButton open={boonInspectOpen} onToggle={toggleBoonInspect} /> : null}
+      <HamburgerTrigger onClick={onOpenGameMenu} label="Open game menu" active={gameMenuOpen} />
+    </div>
+  );
 }
 
 function AppMainContent({
@@ -103,8 +133,7 @@ function AppMainContent({
     renderedScreen,
     gameMenuOpen: gameMenu.gameMenuOpen,
     onBack: nav.screenBackHandler,
-    setMenuAnchorRect: gameMenu.setMenuAnchorRect,
-    setGameMenuOpen: gameMenu.setGameMenuOpen,
+    toggleGameMenu: gameMenu.toggleGameMenu,
   });
 
   useAlchemyAutosaveFromStores(autosaveEnabled);
@@ -124,7 +153,6 @@ function AppMainContent({
     [homesteadBondedCompanions, homesteadEffects, talentEffects],
   );
 
-  const { particleColors, particleAlphaMultiplier } = getScreenParticleConfig(renderedScreen, false);
   const plasmaColorPair = useUiStore(
     (state) => state.plasmaInteraction?.colorPair ?? state.plasmaBaseline?.colorPair ?? null,
   );
@@ -235,22 +263,22 @@ function AppMainContent({
       >
         <AppBackgroundParticles
           renderedScreen={renderedScreen}
-          particleColors={particleColors}
-          particleAlphaMultiplier={particleAlphaMultiplier}
           backgroundParticlesIntensity={backgroundParticlesIntensity}
         />
         <KeywordPlasmaBackground colorPair={effectivePlasmaColorPair} intensity={backgroundGlowIntensity} />
         {content}
         {showBattleCluster ? (
-          <div
+          <BattleCluster
             inert={inspection.open || !screenInteractive}
-            className="absolute top-4 right-4 z-[80] flex items-center gap-2"
-          >
-            {deckInspection ? <DeckInspectButton {...deckInspection} /> : null}
-            <BattleAutoplayToggle enabled={isAutoplayEnabled} onToggle={toggleAutoplayEnabled} />
-            {hasInspectBoons ? <BattleBoonInspectButton open={boonInspectOpen} onToggle={toggleBoonInspect} /> : null}
-            <HamburgerTrigger onClick={gameMenu.openGameMenu} label="Open game menu" active={gameMenu.gameMenuOpen} />
-          </div>
+            deckInspection={deckInspection}
+            isAutoplayEnabled={isAutoplayEnabled}
+            toggleAutoplayEnabled={toggleAutoplayEnabled}
+            hasInspectBoons={hasInspectBoons}
+            boonInspectOpen={boonInspectOpen}
+            toggleBoonInspect={toggleBoonInspect}
+            gameMenuOpen={gameMenu.gameMenuOpen}
+            onOpenGameMenu={gameMenu.openGameMenu}
+          />
         ) : null}
         <CardInspectionOverlay
           open={inspection.open}
@@ -281,14 +309,12 @@ function AppMainContent({
 }
 
 function AppInner({
-  bootstrapResult,
+  saveBlockedByNewerVersion,
   displayLayout,
 }: {
-  bootstrapResult: SaveLoadState;
+  saveBlockedByNewerVersion: boolean;
   displayLayout: ReturnType<typeof useVirtualResolution>;
 }) {
-  const { status: saveLoadStatus } = bootstrapResult;
-
   const settings = useAppSettings();
   const vrStageRef = useRef<HTMLDivElement>(null);
   const { frameStyle, stageStyle, tooltipStyle, aspectMode, stagePixelRatio } = displayLayout;
@@ -312,9 +338,6 @@ function AppInner({
   const run = useAlchemyRunController();
 
   const { renderedScreen, pagePhase, tooltipBlocked } = useRenderedScreenTransition(run.screen);
-
-  const saveBlockedByNewerVersion =
-    saveLoadStatus.kind === "unsupported-newer-schema" || saveLoadStatus.kind === "unsupported-newer-content";
 
   return (
     <ErrorBoundary label={screen}>
@@ -373,5 +396,5 @@ export default function App() {
     return <StartupLoadingScreen progress={startupProgress} />;
   }
 
-  return <AppInner bootstrapResult={bootstrapResult} displayLayout={displayLayout} />;
+  return <AppInner saveBlockedByNewerVersion={saveBlockedByNewerVersion} displayLayout={displayLayout} />;
 }

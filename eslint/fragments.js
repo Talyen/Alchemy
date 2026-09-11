@@ -47,6 +47,10 @@ export const BARREL_PATTERNS = [
     message: "Import from @/lib/validation (barrel) instead of deep paths.",
   },
   {
+    group: ["@/lib/content-validation/*", "**/lib/content-validation/*"],
+    message: "Import from @/lib/content-validation (barrel) instead of deep paths.",
+  },
+  {
     group: ["@/features/alchemy/shared/utils/*", "**/features/alchemy/shared/utils/*"],
     message: "Import from @/features/alchemy/shared/utils (barrel) instead of deep paths.",
   },
@@ -199,6 +203,32 @@ export const SCREENS_NO_ORCHESTRATION = [
       "../../run/**",
     ],
     message: "Screens must not import run orchestration. Pass data via controller props.",
+  },
+];
+
+/** @type {ImportPattern[]} */
+export const SCREENS_NO_APP_ORCHESTRATION = [
+  {
+    group: [
+      "@/app/app-shell",
+      "@/app/use-app-*",
+      "@/app/use-alchemy-bootstrap",
+      "@/app/use-card-inspection",
+      "@/app/screen-routes",
+      "@/app/screen-routes/*",
+      "@/app/screen-routes/**",
+      "@/app/app-overlays",
+      "@/app/startup-bar-progress",
+      "@/app/startup-loading-screen",
+      "@/app/unsupported-save-version-screen",
+      "@/app/battle-autoplay-toggle",
+      "@/app/loading-words",
+      "@/app/use-synced-loading-word",
+      "**/app/app-shell",
+      "**/app/screen-routes/**",
+    ],
+    message:
+      "Screens must not import app-shell orchestration (bootstrap/autosave/navigation/routes/overlays). Leaf capability modules (@/app/escape-stack, @/app/screen-particle-config, app chrome context) stay allowed; wire everything else via route props.",
   },
 ];
 

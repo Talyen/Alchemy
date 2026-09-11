@@ -48,9 +48,11 @@ vi.mock("@/app/app-screen-chrome-context", () => ({
     playerName: "Knight",
     aspectMode: "standard",
     stagePixelRatio: 1,
+    returnToRunScreen: null,
+  }),
+  useMenuBadges: () => ({
     hasUnspentTalents: false,
     hasAffordableHomestead: false,
-    returnToRunScreen: null,
   }),
 }));
 

@@ -1,3 +1,5 @@
+// Content-id remaps must stay tiny: this walk deep-clones the whole save per
+// applicable version, so a large table should become targeted path rewrites.
 const CONTENT_ID_REMAPS_BY_VERSION: Array<{ toVersion: number; remaps: Record<string, string> }> = [
   { toVersion: 2, remaps: { "sunder-armor": "sunder" } },
   { toVersion: 3, remaps: { roulette: "roll-the-dice" } },
@@ -9,10 +11,16 @@ const CARD_ID_KEYS = new Set([
   "cardIds",
   "chosenCardId",
   "choiceIds",
+  "rewardChoiceIds",
+  "selectedRewardId",
   "selectedId",
   "companionChoiceIds",
   "discoveredCardIds",
 ]);
+// Note: rewardGearChoices intentionally excluded (gear instances, not card ids).
+// rewardChoiceIds/selectedRewardId can also hold boon or trinket ids (see the
+// wildwoodDraft rewardType branches in steps-v12-v13); they are covered here
+// for card rewards, so future remap keys must avoid the boon/trinket namespaces.
 
 function isCardIdPosition(key: string): boolean {
   return CARD_ID_KEYS.has(key);

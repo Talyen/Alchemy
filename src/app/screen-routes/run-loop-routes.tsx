@@ -61,9 +61,11 @@ function BattleScreenRoute({
     !commands.boonInspectOpen &&
     commands.screen === "battle",
   );
-  useEffect(() => () => setEnemyInspectionOpen(false), [setEnemyInspectionOpen]);
+  // Single effect owns enemy-inspection teardown: close when the inspection gate
+  // fails and on unmount (cleanup), so the overlay can't outlive battle identity.
   useEffect(() => {
     if (!canInspectEnemy) setEnemyInspectionOpen(false);
+    return () => setEnemyInspectionOpen(false);
   }, [canInspectEnemy, setEnemyInspectionOpen]);
   function inspectEnemy(trigger: HTMLElement) {
     const presentation = readPlaybackPresentationGate();

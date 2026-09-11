@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { createMixedPotion, tryCreateMixedPotion, applyMixToDeck } from "@/lib/alchemist";
+import { createMixedPotion, tryCreateMixedPotion, applyMixToDeck, doublePotionPotency } from "@/lib/alchemist";
 import { ALCHEMIST_MIX_PRICE } from "@/lib/game-constants";
 import { cardLibrary, type BattleCard } from "@/lib/game-data";
+import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
+import { validateCardDescriptionParity } from "@/lib/content-validation/card-parity";
 
 function makePotion(overrides: Partial<BattleCard> = {}): BattleCard {
   return {
@@ -54,6 +56,31 @@ describe("createMixedPotion", () => {
     expect(mixed.effects).toHaveLength(2);
     expect(mixed.effects[0]).toEqual({ kind: "heal", amount: 5 });
     expect(mixed.effects[1]).toEqual({ kind: "damage", damageType: "burn", amount: 8 });
+  });
+  it("keeps both effect sets when same-id cards differ below the top level", () => {
+    const cardA = makePotion({
+      effects: [
+        { kind: "chance", probability: 0.5, successEffects: [{ kind: "heal", amount: 5 }], failureEffects: [] },
+      ],
+    });
+    const cardB = makePotion({
+      effects: [
+        {
+          kind: "chance",
+          probability: 0.5,
+          successEffects: [{ kind: "heal", amount: 5 }],
+          failureEffects: [{ kind: "gain-gold", amount: 3 }],
+        },
+      ],
+    });
+    const mixed = createMixedPotion(cardA, cardB);
+    expect(mixed.effects).toHaveLength(2);
+    expect(mixed.effects[1]).toEqual({
+      kind: "chance",
+      probability: 0.5,
+      successEffects: [{ kind: "heal", amount: 5 }],
+      failureEffects: [{ kind: "gain-gold", amount: 3 }],
+    });
   });
 
   it("doubles effects when mixing the same potion ID", () => {
@@ -308,5 +335,56 @@ describe("same-card specialty potions", () => {
 describe("gold deduction", () => {
   it("costs 40 gold per mix", () => {
     expect(ALCHEMIST_MIX_PRICE).toBe(40);
+  });
+});
+
+describe("doublePotionPotency", () => {
+  it("doubles card effect amount and updates description", () => {
+    const doubled = doublePotionPotency(healPotion);
+    expect(doubled.effects[0]).toEqual({ kind: "heal", amount: 10 });
+    expect(doubled.descriptionLines).toEqual(["Heal 10 Health", "Consume"]);
+  });
+});
+
+describe("repeat-over-turns effect scaling", () => {
+  it("scales nested effects inside repeat-over-turns", () => {
+    const lingeringPotion = makePotion({
+      id: "lingering-potion",
+      title: "Lingering Potion",
+      descriptionLines: ["Restore 4 Health at start of next 2 turns", "Consume"],
+      effects: [
+        {
+          kind: "repeat-over-turns",
+          remainingTurns: 2,
+          effects: [{ kind: "heal", amount: 4 }],
+        },
+      ],
+    });
+    const mixed = createMixedPotion(lingeringPotion, lingeringPotion, 2);
+    expect(mixed.effects[0]).toEqual({
+      kind: "repeat-over-turns",
+      remainingTurns: 2,
+      effects: [{ kind: "heal", amount: 10 }],
+    });
+    expect(mixed.descriptionLines).toEqual(["Restore 10 Health at start of next 2 turns", "Consume"]);
+  });
+});
+
+describe("mixed potion description parity", () => {
+  it("maintains description parity for standard potions mixed together", () => {
+    const pool = getStandardPotionPool();
+    const hp = pool.find((c) => c.id === "health-potion")!;
+    const mana = pool.find((c) => c.id === "mana-potion")!;
+    const mixed = createMixedPotion(hp, mana);
+    const issues = validateCardDescriptionParity(mixed);
+    expect(issues).toEqual([]);
+  });
+
+  it("maintains description parity for doubled standard potions", () => {
+    const pool = getStandardPotionPool();
+    const hp = pool.find((c) => c.id === "health-potion")!;
+    const mixed = createMixedPotion(hp, hp);
+    const issues = validateCardDescriptionParity(mixed);
+    expect(issues).toEqual([]);
   });
 });

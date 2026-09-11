@@ -15,6 +15,9 @@ export const GearInstanceSchema = z.object({
 });
 
 export function normalizeGearInstanceArray(raw: unknown): Array<z.infer<typeof GearInstanceSchema>> {
+  // Canonical array wrapper around normalizeGearInstance from gear/operations.
+  // Run-obtained items reuse the single-item normalizer directly to preserve
+  // order in a heterogeneous list; all other save paths go through this helper.
   if (!Array.isArray(raw)) return [];
   return raw.flatMap((item) => {
     const normalized = normalizeGearInstance(item);

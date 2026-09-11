@@ -1,7 +1,8 @@
 import { spawnSync } from "node:child_process";
 
 import { changedGitPaths } from "./current-run.mjs";
-import { resolveRoutes } from "./change-routes.mjs";
+import { resolveRoutes, SHARED_BUILD_PATTERNS } from "./change-routes.mjs";
+import { globToRegExp } from "./glob-pattern.mjs";
 
 export function parseChangedPathsArgs(argv, { usage } = {}) {
   const flags = new Set();
@@ -46,9 +47,7 @@ export function classifyCheckPaths(paths) {
   const needsCodeChecks = paths.length > 0;
   const lockfile = paths.some((filePath) => filePath === "package.json" || filePath === "package-lock.json");
   const sharedBuild = paths.some((filePath) =>
-    /^(package(?:-lock)?\.json$|tsconfig.*\.json$|vite\.config\.ts$|scripts\/build-verified\.mjs$|scripts\/lib\/(?:vite-.*|sentry-release)\.mjs$)/u.test(
-      filePath,
-    ),
+    SHARED_BUILD_PATTERNS.some((pattern) => globToRegExp(pattern).test(filePath)),
   );
   const desktop = ids.has("desktop") || sharedBuild;
   const web =

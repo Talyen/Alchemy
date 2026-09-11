@@ -42,21 +42,29 @@ export function MysteryScreenRoute({ commands }: { commands: RunLoopCommands["my
   const { handleContinue } = commands;
 
   const lastMysteryEventIdRef = useRef<string | null>(null);
-  const autoContinueAttemptedRef = useRef<string | null | undefined>(undefined);
+  // undefined = armed (continue pending); string|null = already continued for that visit
+  // (null covers the mount-with-no-event case, where there is no visit id yet).
+  const continuedVisitIdRef = useRef<string | null | undefined>(undefined);
   const heldVisit = useHeldMysteryVisit(r);
 
+  // Auto-continue table (route is mounted on the mystery screen):
+  // - event active, new id → remember id, re-arm, wait
+  // - event active, same id → wait
+  // - event cleared, held visit still fading → wait for fade-out
+  // - event cleared, nothing held, id not yet continued → continue once
+  // - already continued for this id → idle
   useEffect(() => {
     if (r.mysteryEvent) {
       if (lastMysteryEventIdRef.current !== r.mysteryEvent.id) {
         lastMysteryEventIdRef.current = r.mysteryEvent.id;
-        autoContinueAttemptedRef.current = null;
+        continuedVisitIdRef.current = undefined;
       }
       return;
     }
     if (heldVisit) return;
     const visitId = lastMysteryEventIdRef.current;
-    if (autoContinueAttemptedRef.current !== undefined && autoContinueAttemptedRef.current === visitId) return;
-    autoContinueAttemptedRef.current = visitId;
+    if (continuedVisitIdRef.current === visitId) return;
+    continuedVisitIdRef.current = visitId;
     handleContinue();
   }, [r.mysteryEvent, heldVisit, handleContinue]);
 

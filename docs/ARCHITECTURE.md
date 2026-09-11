@@ -14,7 +14,7 @@ Canonical reference for run state, store layout, and boot policy. Coding rules: 
 | `run-loop/`  | Battle glue, navigation, shop, in-run screens                                          |
 | `shell/`     | Controller hooks                                                                       |
 
-Import lib catalogs through their eslint-enforced barrels (`@/lib/game-data`, `@/lib/battle`, `@/lib/validation`). Feature stores and screens use on-disk paths (for example `@/features/alchemy/shared/stores/run-reads`). Feature UI reads static catalogs through [`shared/config/game-data-catalog.ts`](../src/features/alchemy/shared/config/game-data-catalog.ts).
+Import lib catalogs through their eslint-enforced barrels (`@/lib/game-data`, `@/lib/battle`, `@/lib/validation`, `@/lib/content-validation`). Feature stores and screens use on-disk paths (for example `@/features/alchemy/shared/stores/run-reads`). Feature UI reads static catalogs through [`shared/config/game-data-catalog.ts`](../src/features/alchemy/shared/config/game-data-catalog.ts). Content parity helpers live under `@/lib/content-validation/card-parity` (the only sanctioned deep path: relative imports inside the package plus test deep imports, which sit outside boundary lint; every other `src/` import goes through the barrel).
 
 > Token-barrel exception: keep `game-data-catalog.ts` off the token `config/` barrel so layout/token imports stay catalog-free.
 
@@ -49,7 +49,7 @@ Battle reads expose serializable `BattleSnapshot` values. Opening draws and card
 
 ### Anti-patterns
 
-- No all-screens display bag or second flattening read model. Each route owns its exact screen-specific hook (`RunScreenDataByScreen` in `run-screen-data.ts`).
+- No all-screens display bag or second flattening read model. Each route owns its exact screen-specific hook (`RunScreenDataByScreen` in `run-screen-data.ts`). Menu badge dots (`useMenuBadges` in `src/app/app-screen-chrome-context.tsx`) are the blessed exception: they derive talent/homestead affordability only on the Menu route, never through the always-mounted chrome provider. Screens must not import app-shell orchestration (`SCREENS_NO_APP_ORCHESTRATION`); leaf capability modules (`escape-stack`, `screen-particle-config`, chrome context) stay allowed.
 
 ### Run randomness
 
@@ -231,7 +231,7 @@ Gameplay mutations use the command boundary; persistence codecs receive a draft 
 
 ## Import boundaries
 
-Enforced in `eslint.config.js` (composition in `eslint/fragments.js` + `eslint/boundaries.js`) and double-checked by `npm run lint:boundaries` (dependency-cruiser). Phase bans and flat-config stacking order live in those files; `npm run lint:architecture-smoke` (`scripts/lint-architecture-smoke.mjs`) asserts stacked `no-restricted-imports` fragments on representative files. Summary:
+Enforced in `eslint.config.js` (composition in `eslint/fragments.js` + `eslint/boundaries.js`) and double-checked by `npm run lint:boundaries` (dependency-cruiser, except barrel deep-import bans which are eslint-only). Phase bans and flat-config stacking order live in those files; `npm run lint:architecture-smoke` (`scripts/lint-architecture-smoke.mjs`) asserts stacked `no-restricted-imports` fragments on representative files. Summary:
 
 - `src/lib/**` must not import `@/features/**`
 - Source modules must remain acyclic; reusable battle rules and reactions live below turn/card orchestrators

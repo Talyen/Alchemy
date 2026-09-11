@@ -82,6 +82,9 @@ export function useAlchemyAutosaveFromStores(enabled = true) {
       const complete = (outcome: SaveWriteOutcome) => {
         if (!mounted || !enabledRef.current || savingGeneration !== generation) return;
         if (outcome === "skipped") {
+          // Writes disabled (e.g. after a save wipe): drop all pending state locally.
+          // The scheduler's skipped branch mirrors this for testability but isn't
+          // consumed here because cancelPending also bumps generation.
           cancelPending();
           return;
         }
@@ -122,6 +125,10 @@ export function useAlchemyAutosaveFromStores(enabled = true) {
       if (document.visibilityState === "hidden") flush(true);
     };
 
+    // Both pagehide and beforeunload flush terminally: pagehide covers modern
+    // browsers (including mobile Back-Forward Cache eviction), beforeunload covers
+    // older desktop browsers where pagehide alone can miss a reload. flush() is
+    // idempotent via revision gating so a double event is harmless.
     window.addEventListener("pagehide", handlePageExit);
     window.addEventListener("beforeunload", handlePageExit);
     document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -131,10 +138,15 @@ export function useAlchemyAutosaveFromStores(enabled = true) {
       window.removeEventListener("pagehide", handlePageExit);
       window.removeEventListener("beforeunload", handlePageExit);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      // Fire-and-forget terminal flush: complete() early-returns once mounted=false,
+      // so this only matters when the write backend can persist synchronously on exit.
       flush(true);
       mounted = false;
       cancelTimer();
       unsubscribeCancellation();
     };
-  }, [enabled, enabledRef]);
+    // enabledRef is stable (useLatestRef mutates during render); [enabled] alone
+    // controls resubscription so toggling autosave doesn't lose pending revisions.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- enabledRef is a stable latest-ref; freshness without resubscription
+  }, [enabled]);
 }

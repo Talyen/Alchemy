@@ -43,14 +43,14 @@ const TALENT_TREE_KEYWORD_IMPLEMENTED_COUNTS = getTalentTreeKeywordIds().map((kw
   count: countImplementedTalents(kwId),
 }));
 
-function hasUnspentTalents(talentXP: TalentXP, unlockedTalents: UnlockedTalents): boolean {
+export function hasUnspentTalents(talentXP: TalentXP, unlockedTalents: UnlockedTalents): boolean {
   return TALENT_TREE_KEYWORD_IMPLEMENTED_COUNTS.some(({ kwId, count }) => {
     const xp = talentXP[kwId] ?? 0;
     return getTalentKeywordProgress(xp, (unlockedTalents[kwId] ?? []).length, count).hasUnspent;
   });
 }
 
-function hasAffordableHomesteadUpgrade(input: {
+export function hasAffordableHomesteadUpgrade(input: {
   materialInventory: MaterialInventory;
   constructedBuildings: Record<string, number>;
   plantedFarms: Record<string, number>;
@@ -110,8 +110,6 @@ export interface AppScreenChrome {
   playerName: string;
   aspectMode: "standard" | "narrow" | "ultrawide";
   stagePixelRatio: number;
-  hasUnspentTalents: boolean;
-  hasAffordableHomestead: boolean;
   returnToRunScreen: Screen | null;
   openGameMenu?: ((rect?: DOMRect) => void) | undefined;
   isMenuOpen?: boolean | undefined;
@@ -141,9 +139,46 @@ export function AppScreenChromeProvider({
   children: ReactNode;
 }) {
   const characterId = useActiveRunCharacterId();
-  const { talentXP, unlockedTalents } = useTalentProgressSlice();
   const heroArt = characterArt[characterId];
   const playerName = characters[characterId].name;
+
+  const value = useMemo<AppScreenChrome>(
+    () => ({
+      characterId,
+      heroArt,
+      playerName,
+      aspectMode,
+      stagePixelRatio,
+      returnToRunScreen,
+      openGameMenu,
+      isMenuOpen,
+      onBack,
+      deckInspection,
+    }),
+    [
+      aspectMode,
+      characterId,
+      heroArt,
+      isMenuOpen,
+      onBack,
+      deckInspection,
+      openGameMenu,
+      playerName,
+      returnToRunScreen,
+      stagePixelRatio,
+    ],
+  );
+
+  return <AppScreenChromeContext.Provider value={value}>{children}</AppScreenChromeContext.Provider>;
+}
+
+/**
+ * Menu-only badge derivation (unspent talents / affordable homestead dots).
+ * Kept out of AppScreenChromeProvider so every other screen doesn't subscribe
+ * to talent, homestead, and discovery slices on each render.
+ */
+export function useMenuBadges(): { hasUnspentTalents: boolean; hasAffordableHomestead: boolean } {
+  const { talentXP, unlockedTalents } = useTalentProgressSlice();
   const hasUnspentTalentsBadge = useMemo(
     () => hasUnspentTalents(talentXP, unlockedTalents),
     [talentXP, unlockedTalents],
@@ -165,38 +200,7 @@ export function AppScreenChromeProvider({
     [bondedCompanions, completedResearch, constructedBuildings, discoveredCardIds, materialInventory, plantedFarms],
   );
 
-  const value = useMemo<AppScreenChrome>(
-    () => ({
-      characterId,
-      heroArt,
-      playerName,
-      aspectMode,
-      stagePixelRatio,
-      hasUnspentTalents: hasUnspentTalentsBadge,
-      hasAffordableHomestead,
-      returnToRunScreen,
-      openGameMenu,
-      isMenuOpen,
-      onBack,
-      deckInspection,
-    }),
-    [
-      aspectMode,
-      characterId,
-      hasAffordableHomestead,
-      hasUnspentTalentsBadge,
-      heroArt,
-      isMenuOpen,
-      onBack,
-      deckInspection,
-      openGameMenu,
-      playerName,
-      returnToRunScreen,
-      stagePixelRatio,
-    ],
-  );
-
-  return <AppScreenChromeContext.Provider value={value}>{children}</AppScreenChromeContext.Provider>;
+  return { hasUnspentTalents: hasUnspentTalentsBadge, hasAffordableHomestead };
 }
 
 export function useAppScreenChrome(): AppScreenChrome {

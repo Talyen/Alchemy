@@ -14,6 +14,7 @@ import {
   ORCHESTRATION_NO_SCREENS,
   RUN_LOOP_NO_RUN_SETUP,
   RUN_SETUP_NO_RUN_LOOP,
+  SCREENS_NO_APP_ORCHESTRATION,
   SCREENS_NO_ORCHESTRATION,
   UI_NO_SESSION_STORES,
   WRITE_PORT_PATTERNS,
@@ -98,12 +99,12 @@ const BOUNDARY_TABLE = [
   { files: ["src/features/alchemy/run-setup/**/*.{ts,tsx}"], extra: [RUN_SETUP_NO_RUN_LOOP] },
   {
     files: ["src/features/alchemy/run-setup/screens/**/*.{ts,tsx}"],
-    extra: [RUN_SETUP_NO_RUN_LOOP, SCREENS_NO_ORCHESTRATION],
+    extra: [RUN_SETUP_NO_RUN_LOOP, SCREENS_NO_ORCHESTRATION, SCREENS_NO_APP_ORCHESTRATION],
   },
   { files: ["src/features/alchemy/run-loop/**/*.{ts,tsx}"], extra: [RUN_LOOP_NO_RUN_SETUP] },
   {
     files: ["src/features/alchemy/run-loop/screens/**/*.{ts,tsx}"],
-    extra: [RUN_LOOP_NO_RUN_SETUP, SCREENS_NO_ORCHESTRATION],
+    extra: [RUN_LOOP_NO_RUN_SETUP, SCREENS_NO_ORCHESTRATION, SCREENS_NO_APP_ORCHESTRATION],
   },
   {
     files: ["src/features/alchemy/run-loop/battle/**/*.{ts,tsx}"],
@@ -116,7 +117,7 @@ const BOUNDARY_TABLE = [
   { files: ["src/features/alchemy/meta/**/*.{ts,tsx}"], extra: [META_NO_RUN_LOOP] },
   {
     files: ["src/features/alchemy/meta/screens/**/*.{ts,tsx}"],
-    extra: [META_NO_RUN_LOOP, SCREENS_NO_ORCHESTRATION],
+    extra: [META_NO_RUN_LOOP, SCREENS_NO_ORCHESTRATION, SCREENS_NO_APP_ORCHESTRATION],
   },
   {
     files: ["src/lib/game-data/assets.generated.ts"],

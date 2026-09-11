@@ -65,6 +65,8 @@ function clampNonNegative(value: number, fallback: number): number {
   return Number.isFinite(value) && value >= 0 ? value : fallback;
 }
 
+// Module-level catalog snapshot for trait restore; stale under HMR/catalog
+// swaps, which is acceptable for load-time repair (fresh import per load).
 const traitMetadata = new Map(
   [
     ...enemyBestiary.flatMap((enemy) => enemy.traits),
@@ -76,6 +78,9 @@ function restoreEnemyTraits(value: unknown, enemy: BestiaryEntry | undefined): E
   if (!Array.isArray(value)) return enemy?.traits ?? [];
   const traits = value.flatMap((trait: unknown): EnemyTrait[] => {
     if (!trait || typeof trait !== "object" || !("id" in trait) || typeof trait.id !== "string") return [];
+    // Native traits are restored from the catalog below; persisted copies are
+    // dropped to avoid stale tuning. trinket-hoarder is retired from the
+    // catalog but still dropped here to keep old saves loadable.
     if (
       enemy &&
       !Object.hasOwn(ENCOUNTER_TRAITS, trait.id) &&
@@ -138,6 +143,7 @@ export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): B
       traits: restoreEnemyTraits(saved.currentEnemy?.traits, catalogEnemy),
     },
   };
+  // battleMetrics is runtime-only telemetry; never persisted.
   delete merged.battleMetrics;
   merged.lastEnemyAbilityId =
     typeof saved.lastEnemyAbilityId === "string" && abilityIds.includes(saved.lastEnemyAbilityId)
@@ -164,6 +170,7 @@ export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): B
   merged.playerMaxHealth = clampNonNegative(merged.playerMaxHealth, defaults.playerMaxHealth);
   merged.enemyMaxHealth = clampNonNegative(merged.enemyMaxHealth, defaults.enemyMaxHealth);
   merged.gold = clampNonNegative(merged.gold, defaults.gold);
+  // Load-path truncation (not battle Math.round): turn must stay an integer ≥1.
   merged.turn = Number.isFinite(merged.turn) && merged.turn >= 1 ? Math.trunc(merged.turn) : defaults.turn;
   return merged;
 }

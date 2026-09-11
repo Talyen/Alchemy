@@ -1,4 +1,4 @@
-import { isRecord, migrateRunTree, type RawSaveData } from "./types";
+import { defineRunStep, isRecord } from "./types";
 
 function migrateRun(value: unknown): unknown {
   if (!isRecord(value) || !isRecord(value.activeCombat) || !isRecord(value.activeCombat.battleState)) return value;
@@ -20,6 +20,4 @@ function migrateRun(value: unknown): unknown {
   };
 }
 
-export function migrateV14ToV15(parsed: RawSaveData): RawSaveData {
-  return migrateRunTree(parsed, migrateRun);
-}
+export const migrateV14ToV15 = defineRunStep(migrateRun);

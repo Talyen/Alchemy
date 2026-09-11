@@ -1,4 +1,4 @@
-import { createMixedPotion } from "@/lib/alchemist/potion-mixer";
+import { createMixedPotion } from "@/lib/alchemist";
 import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import {
   characters,

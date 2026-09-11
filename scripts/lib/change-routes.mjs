@@ -14,6 +14,21 @@ function route(id, patterns, commands, docs, fixture, exclude = []) {
   return Object.freeze({ id, patterns, commands, docs, fixture, exclude });
 }
 
+// Shared build inputs that force both web and desktop renderer rebuilds.
+// Owned here so scripts/lib/changed-paths.mjs (local check classification)
+// and tests/scripts/ci-path-filters.test.ts (CI paths-filter parity) read one
+// list instead of maintaining parallel copies. CI topology itself remains owned
+// by .github/workflows/ (see CONTRIBUTING.md#static-build-and-ci-policy).
+export const SHARED_BUILD_PATTERNS = Object.freeze([
+  "package.json",
+  "package-lock.json",
+  "tsconfig*.json",
+  "vite.config.ts",
+  "scripts/build-verified.mjs",
+  "scripts/lib/vite-*.mjs",
+  "scripts/lib/sentry-release.mjs",
+]);
+
 export const ROUTES = Object.freeze([
   route(
     "documentation",
@@ -30,6 +45,7 @@ export const ROUTES = Object.freeze([
       "src/app/use-app-save-state.ts",
       "src/app/use-alchemy-bootstrap.ts",
       "src/lib/validation/**",
+      "src/lib/content-validation/**",
       "src/lib/active-run-session/**",
       "src/lib/platform-save-backend.ts",
     ],
@@ -61,6 +77,9 @@ export const ROUTES = Object.freeze([
     ["related", "assets-check"],
     [doc("docs/WORKFLOWS-ASSETS.md", null, "asset workflow")],
     "scripts/assets/core-assets.mjs",
+    // Release/desktop sync helpers share the sync-* prefix but reproduce no
+    // committed asset output; they stay on the tooling route.
+    ["scripts/sync-changelog.mjs", "scripts/sync-steam-appid.mjs"],
   ),
   route(
     "desktop",

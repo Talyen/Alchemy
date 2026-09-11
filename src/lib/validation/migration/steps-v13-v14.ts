@@ -1,5 +1,4 @@
-import { isRecord, migrateRunTree, rngSeedFromRun } from "./types";
-import type { RawSaveData } from "./types";
+import { defineRunStep, isRecord, rngSeedFromRun } from "./types";
 import { createSeededRng } from "@/lib/utils";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 
@@ -22,6 +21,4 @@ function migrateRun(value: unknown): unknown {
   };
 }
 
-export function migrateV13ToV14(parsed: RawSaveData): RawSaveData {
-  return migrateRunTree(parsed, migrateRun);
-}
+export const migrateV13ToV14 = defineRunStep(migrateRun);

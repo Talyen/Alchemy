@@ -13,10 +13,10 @@ import {
 import { CURRENT_SAVE_SCHEMA_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_CONTENT_VERSION } from "../metadata";
 import { SETTINGS_RANGES, resolveAutoplayEnabled } from "@/lib/settings-values";
 import { migrateSaveDataToCurrent } from "../migration";
+import { deduplicatedStringArraySchema } from "./validation-utils";
 import {
   CHARACTER_IDS,
   CharacterIdSchema,
-  deduplicatedStringArraySchema,
   MATERIAL_ZERO_INVENTORY,
   CRAFTING_CURRENCY_ZERO_INVENTORY,
   createTierRecordSchema,
@@ -28,7 +28,7 @@ import {
   TalentXPSchema,
   UnlockedTalentsSchema,
   EMPTY_COMPLETED_DIFFICULTIES,
-} from "./core";
+} from "./schema-enums";
 import { ActiveRunDataSchema } from "./active-run";
 import { ParkedRunsSchema, RunRecencySchema } from "./parked-runs";
 import { GearInstanceArraySchema } from "./gear-schemas";

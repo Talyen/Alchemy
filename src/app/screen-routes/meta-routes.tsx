@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { isDesktop, quitDesktopApp } from "@/lib/platform";
 import { menuLogo } from "@/lib/game-data";
-import { useAppScreenChrome } from "@/app/app-screen-chrome-context";
+import { useMenuBadges } from "@/app/app-screen-chrome-context";
 import {
   CollectionScreen,
   GameModeSelectScreen,
@@ -42,7 +42,7 @@ const completeResearchCommand = createRunSessionCommand(completeResearch);
 const bondCompanionCommand = createRunSessionCommand(bondCompanion);
 
 function MenuScreenRoute({ commands }: { commands: MetaCommands }) {
-  const { hasUnspentTalents, hasAffordableHomestead } = useAppScreenChrome();
+  const { hasUnspentTalents, hasAffordableHomestead } = useMenuBadges();
   const isArmoryLocked = useIsArmoryLocked();
   const finishedRunCharacters = useFinishedRunCharacters();
   return (

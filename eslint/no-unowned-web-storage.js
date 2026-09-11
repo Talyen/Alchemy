@@ -1,6 +1,6 @@
 import { repoRelativePosix } from "./filename.js";
 
-const ALLOWED_PREFIXES = ["src/features/alchemy/shared/storage/", "src/lib/validation/", "src/lib/active-run-session/"];
+const ALLOWED_PREFIXES = ["src/features/alchemy/shared/storage/", "src/lib/active-run-session/"];
 
 const ALLOWED_FILES = new Set([
   "src/lib/platform-save-backend.ts",
@@ -35,7 +35,7 @@ export const noUnownedWebStorage = {
   meta: {
     type: "problem",
     docs: {
-      description: "Keep localStorage/sessionStorage on storage, validation, boot, and named preference seams.",
+      description: "Keep localStorage/sessionStorage on storage, boot, and named preference seams.",
     },
     schema: [],
     messages: {

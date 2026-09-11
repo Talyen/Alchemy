@@ -44,10 +44,17 @@ Gate composition, CI tiers, and reuse policy live in
 | ----------------------------------------- | ----------------------------------------------------------------------- |
 | Completion orchestration                  | `check.mjs`                                                             |
 | Related tests and risk escalations        | `verify-changed.mjs`                                                    |
+| Finished-step exposure/digest reporting   | `lib/run-step.mjs` (shared by `check` + `verify`)                       |
 | Path parsing and classification           | `lib/changed-paths.mjs` + `lib/change-routes.mjs`                       |
 | Documentation contracts and plan metadata | `check-docs.mjs`, `check-documentation-contract.mjs`, `check-plans.mjs` |
 | Passing unit receipts                     | `lib/verification-cache.mjs`                                            |
 | Bundle budgets                            | `lib/bundle-budget.mjs`                                                 |
+
+CI path filters (`.github/workflows/ci.yml` `changes` job) stay owned by the
+workflows; `tests/scripts/ci-path-filters.test.ts` pins the intended
+route↔gate alignment so the two lists cannot drift silently. `docs:check` runs
+once per gate: verification skips its copy (`--skip-docs-check`) when `check`
+will run it through the static aggregate.
 
 Documentation and ESLint inventories exclude isolated `.worktrees/` checkouts,
 reports, and installed dependencies. Documentation checks share one file inventory;
@@ -99,8 +106,9 @@ evidence and never block handoff.
 
 `npm run test:e2e:route -- <route> [-- extra playwright args]`;
 `test:ship:unit`, `test:e2e:audit` (full timings), `perf`, `balance:sim`, `ci:summarize`.
-Every `E2E_ROUTES` entry has a matching `test:e2e:<name>` alias;
-`shop` aliases to `shop-screen`, `homestead-screen` to `homestead`.
+Every `E2E_ROUTES` entry has a matching `test:e2e:<name>` alias
+(`tests/scripts/run-e2e-route.test.ts` pins the set); legacy screen names
+`shop-screen` and `homestead-screen` remain accepted as aliases.
 `ci-summarize.mjs --vitest/--playwright/--all` is the single CI summary entry;
 workflows call it directly with the matching flag.
 

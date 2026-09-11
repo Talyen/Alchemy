@@ -59,7 +59,7 @@ export const E2E_ROUTES = Object.freeze({
       "chromium",
     ],
   }),
-  "shop-screen": Object.freeze({
+  shop: Object.freeze({
     label: "shop Playwright flow",
     args: ["playwright", "test", "tests/e2e/specs/shop-and-rewards.spec.ts", "--project", "chromium"],
   }),
@@ -100,7 +100,7 @@ export const E2E_ROUTES = Object.freeze({
 });
 
 const E2E_ROUTE_ALIASES = Object.freeze({
-  shop: "shop-screen",
+  "shop-screen": "shop",
   "homestead-screen": "homestead",
 });
 

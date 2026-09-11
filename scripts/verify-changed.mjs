@@ -3,7 +3,8 @@
 import path from "node:path";
 import fs from "node:fs";
 
-import { commandExposure, failureSummary, writeFailureDigest } from "./lib/compact-output.mjs";
+import { writeFailureDigest } from "./lib/compact-output.mjs";
+import { summarizeStepResult } from "./lib/run-step.mjs";
 import { resolveRoutePlan } from "./lib/change-routes.mjs";
 import { parseChangedPathsArgs, resolveSelectedPaths } from "./lib/changed-paths.mjs";
 import { ensureRunId, writeCurrentRun } from "./lib/current-run.mjs";
@@ -15,7 +16,7 @@ import { selectContext } from "./lib/agent-context.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
-const VERIFY_FLAGS = new Set(["diff", "plan", "verbose-plan", "verbose", "keep-going"]);
+const VERIFY_FLAGS = new Set(["diff", "plan", "verbose-plan", "verbose", "keep-going", "skip-docs-check"]);
 
 export function parseVerifyArgs(argv) {
   const { flags, paths } = parseChangedPathsArgs(argv, {
@@ -25,6 +26,13 @@ export function parseVerifyArgs(argv) {
     if (!VERIFY_FLAGS.has(flag)) throw new Error(`Unknown verify option: --${flag}`);
   }
   return { flags, paths: resolveSelectedPaths(ROOT, { flags, paths }) };
+}
+
+export function filterPlanCommands(plan, flags) {
+  if (flags.has("skip-docs-check")) {
+    return { ...plan, commands: plan.commands.filter((command) => command.key !== "docs-check") };
+  }
+  return plan;
 }
 
 export function formatPlan(plan, { verbosePlan = false } = {}) {
@@ -66,17 +74,7 @@ function runVerificationCommand(command, index, verbose, runId, sessionInputs) {
       inputHash: sessionInputs,
       status: result.status === 0 ? "passed" : "failed",
     });
-  const verboseOutput = verbose && result.output ? result.output : "";
-  if (verboseOutput) process.stdout.write(result.output.endsWith("\n") ? result.output : `${result.output}\n`);
-  const failureOutput = result.status === 0 ? "" : failureSummary(result.output);
-  const exposure = commandExposure({
-    key: command.key,
-    label: command.label,
-    command: `${command.command} ${command.args.join(" ")}`,
-    result,
-    exposedOutput: verboseOutput + failureOutput,
-    budgetBytes: verbose ? null : undefined,
-  });
+  const { exposure, failureOutput } = summarizeStepResult(command, result, { verbose });
   if (result.status === 0 && !exposure.overBudget) {
     console.log(`✓ ${command.label} (${(result.elapsedMs / 1000).toFixed(1)}s, run ${runId})`);
     return { passed: true, command, result, exposure };
@@ -100,7 +98,9 @@ export function main(argv = process.argv.slice(2)) {
   const runId = ensureRunId("verify");
   try {
     const { flags, paths } = parseVerifyArgs(argv);
-    const plan = resolveRoutePlan(paths);
+    // check.mjs passes --skip-docs-check when its CI-static stage will run
+    // docs:check itself, so one gate never pays for documentation checks twice.
+    const plan = filterPlanCommands(resolveRoutePlan(paths), flags);
     console.log(`Run: ${runId}`);
     process.stdout.write(formatPlan(plan, { verbosePlan: flags.has("verbose-plan") }));
     if (flags.has("plan")) return 0;

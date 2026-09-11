@@ -206,6 +206,26 @@ declare module "*/kebab-to-camel.mjs" {
   export function kebabToCamel(name: string): string;
 }
 
+declare module "*/glob-pattern.mjs" {
+  export function globToRegExp(glob: string): RegExp;
+}
+
+declare module "*/run-step.mjs" {
+  export function summarizeStepResult(
+    command: VerificationCommand,
+    result: { output?: unknown; status?: number | null; elapsedMs?: number },
+    options?: { verbose?: boolean },
+  ): {
+    exposure: {
+      key: string;
+      label: string;
+      command: string;
+      overBudget: boolean;
+    };
+    failureOutput: string;
+  };
+}
+
 declare module "*/sync-generated-helpers.mjs" {
   export const WEBP_SUFFIX: string;
   export const GEAR_PREFIX: string;
@@ -318,6 +338,7 @@ interface VerificationCommand {
 }
 
 declare module "*/change-routes.mjs" {
+  export const SHARED_BUILD_PATTERNS: readonly string[];
   export const ROUTES: readonly VerificationRoute[];
   export function validateRouteCatalog(options?: { rootDir?: string }): string[];
   export function resolveRoutes(paths: string[]): VerificationRoute[];
@@ -542,6 +563,10 @@ declare module "*/context-hotspots.mjs" {
 declare module "*/verify-changed.mjs" {
   export function main(argv?: string[]): number;
   export function parseVerifyArgs(argv: string[]): { flags: Set<string>; paths: string[] };
+  export function filterPlanCommands(
+    plan: { paths: string[]; routes: VerificationRoute[]; commands: VerificationCommand[] },
+    flags: Set<string>,
+  ): { paths: string[]; routes: VerificationRoute[]; commands: VerificationCommand[] };
   export function formatPlan(
     plan: { paths: string[]; routes: VerificationRoute[]; commands: VerificationCommand[] },
     options?: { verbosePlan?: boolean },

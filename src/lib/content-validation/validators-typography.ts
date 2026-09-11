@@ -99,7 +99,6 @@ export function validateTypography(collector: ReturnType<typeof createCollector>
         allowPeriod: definition.rarity === "unique",
       });
     }
-    checkTextTypography(collector, "gear", definition.id, "Gear id", definition.id, { allowPeriod: true });
   }
 
   for (const [id, character] of Object.entries(characters)) {
@@ -137,6 +136,8 @@ export function validateTypography(collector: ReturnType<typeof createCollector>
   }
 
   for (const affix of gearAffixList) {
+    // Unique-only affix templates render with flavor punctuation; only shared
+    // pool templates must stay period-free for inline display.
     if (!affix.uniqueOnly) {
       checkNoPeriod(collector, "gear", affix.id, "Gear affix description", affix.descriptionTemplate);
     }

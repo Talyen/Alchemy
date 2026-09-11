@@ -1,5 +1,5 @@
 import { enemyById, isEnemyId } from "@/lib/game-data";
-import { isRecord, migrateRunTree, type RawSaveData } from "./types";
+import { defineRunStep, isRecord } from "./types";
 
 function migrateBattle(value: unknown): unknown {
   if (!isRecord(value)) return value;
@@ -47,6 +47,4 @@ function migrateRun(value: unknown): unknown {
   };
 }
 
-export function migrateV15ToV16(parsed: RawSaveData): RawSaveData {
-  return migrateRunTree(parsed, migrateRun);
-}
+export const migrateV15ToV16 = defineRunStep(migrateRun);

@@ -1,6 +1,6 @@
-import type { BattleCard } from "@/lib/game-data";
+import { isMixedPotionCard, type BattleCard } from "@/lib/game-data";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
-import { CORRUPTION_TRANSFORM_CHANCE, MIXED_POTION_CARD_ID } from "@/lib/game-constants";
+import { CORRUPTION_TRANSFORM_CHANCE } from "@/lib/game-constants";
 import { pickRandom } from "@/lib/utils";
 import { getCorruptionMutationGroups, type CorruptionMutationGroup } from "./mutations";
 
@@ -13,9 +13,7 @@ export interface CorruptionResult {
   delta: 1 | -1;
 }
 
-export function isSpecialCorruptionCard(card: Pick<BattleCard, "id">): boolean {
-  return card.id === MIXED_POTION_CARD_ID || card.id.startsWith(`${MIXED_POTION_CARD_ID}-`);
-}
+export const isSpecialCorruptionCard = isMixedPotionCard;
 
 function pickMutation(groups: CorruptionMutationGroup[], rng: () => number) {
   const total = groups.reduce((sum, group) => sum + group.weight, 0);

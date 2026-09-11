@@ -7,7 +7,6 @@ export {
   useAppDisplayEffects,
   useGlobalErrorHandlers,
   useInitialLoadReady,
-  getScreenParticleConfig,
 } from "./use-app-effects";
 export {
   useAppKeyboardShortcuts,

@@ -1,5 +1,5 @@
 import { type BattleCard, type BattleCardEffect } from "@/lib/game-data";
-import type { ContentValidationIssue } from "./types";
+import type { ContentValidationIssue } from "../types";
 import {
   countByKind,
   countLinesStartingWith,
@@ -8,8 +8,8 @@ import {
   hasKind,
   hasLifesteal,
   hasNonStandardDamageEffects,
-} from "./card-parity/helpers";
-import { validateCardNumericParity } from "./card-parity/numeric-parity";
+} from "./helpers";
+import { validateCardNumericParity } from "./numeric-parity";
 
 interface CountParityRule {
   label: string;
@@ -153,9 +153,9 @@ function statusParityRule(status: "armor" | "forge" | "thorns", name: string): C
   };
 }
 
-export { validateEnemyTraitDescriptionParity, TRAIT_REQUIRED_PATTERNS } from "./card-parity/enemy-trait-parity";
-export { validateTrinketDescriptionParity } from "./card-parity/trinket-parity";
-export { flattenEffects } from "./card-parity/helpers";
+export { validateEnemyTraitDescriptionParity, TRAIT_REQUIRED_PATTERNS } from "./enemy-trait-parity";
+export { validateTrinketDescriptionParity } from "./trinket-parity";
+export { flattenEffects } from "./helpers";
 
 function checkDamageParity(card: BattleCard): ContentValidationIssue | null {
   const { effects, descriptionLines } = card;

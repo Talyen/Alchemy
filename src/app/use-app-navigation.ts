@@ -37,7 +37,15 @@ export function useGameMenuState() {
     setMenuAnchorRect(null);
   }, []);
 
-  return { gameMenuOpen, menuAnchorRect, openGameMenu, closeGameMenu, setMenuAnchorRect, setGameMenuOpen };
+  const toggleGameMenu = useCallback(() => {
+    // Keyboard-driven toggle has no anchor element, so it always clears any
+    // stale anchor: a null anchor renders the menu unanchored (centered),
+    // which is the correct keyboard-opened state, and keeps closed anchor-free.
+    setMenuAnchorRect(null);
+    setGameMenuOpen((prev) => !prev);
+  }, []);
+
+  return { gameMenuOpen, menuAnchorRect, openGameMenu, closeGameMenu, toggleGameMenu };
 }
 
 export function useRenderedScreenTransition(controllerScreen: Screen) {
@@ -148,7 +156,7 @@ export function useReturnToRunNavigation({
   };
 }
 
-function resolveScreenBackHandler({
+export function resolveScreenBackHandler({
   renderedScreen,
   returnToRunTarget,
   returnToRun,
@@ -198,19 +206,20 @@ export function useAppKeyboardShortcuts({
   renderedScreen,
   gameMenuOpen,
   onBack,
-  setMenuAnchorRect,
-  setGameMenuOpen,
+  toggleGameMenu,
 }: {
   renderedScreen: Screen;
   gameMenuOpen: boolean;
   onBack?: (() => void) | undefined;
-  setMenuAnchorRect: (rect: DOMRect | null | ((prev: DOMRect | null) => DOMRect | null)) => void;
-  setGameMenuOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
+  toggleGameMenu: () => void;
 }) {
   const gameMenuOpenRef = useLatestRef(gameMenuOpen);
   const renderedScreenRef = useLatestRef(renderedScreen);
   const onBackRef = useLatestRef(onBack);
+  const toggleGameMenuRef = useLatestRef(toggleGameMenu);
 
+  // Subscribed once; freshness comes from latest-refs above so menu/back/screen
+  // updates never resubscribe the global Escape stack.
   useEffect(() => {
     const removeBackHandler = pushEscapeHandler({
       id: "app-screen-back",
@@ -232,8 +241,7 @@ export function useAppKeyboardShortcuts({
       onEscape: () => {
         if (renderedScreenRef.current === "menu") return false;
         if (isRadixEscapeTargetOpen()) return false;
-        if (!gameMenuOpenRef.current) setMenuAnchorRect(null);
-        setGameMenuOpen((prev) => !prev);
+        toggleGameMenuRef.current();
         return;
       },
     });
@@ -242,15 +250,17 @@ export function useAppKeyboardShortcuts({
       removeBackHandler();
       removeMenuHandler();
     };
-  }, [gameMenuOpenRef, onBackRef, renderedScreenRef, setMenuAnchorRect, setGameMenuOpen]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally subscribe once; refs stay fresh
+  }, []);
 }
 
 export function useDevShortcuts(run: Pick<AlchemyRunCommands, "resetRunState" | "unlockAllTalents">) {
+  const { resetRunState, unlockAllTalents } = run;
   const clearSaveData = useCallback(() => {
     void clearAllPersistentGameData().then((cleared) => {
-      if (cleared) run.resetRunState();
+      if (cleared) resetRunState();
     });
-  }, [run]);
+  }, [resetRunState]);
 
   const unlockAllDevMode = useCallback(() => {
     if (!isAlchemyDevBuild()) return;
@@ -274,8 +284,8 @@ export function useDevShortcuts(run: Pick<AlchemyRunCommands, "resetRunState" | 
       setFinishedRunCharacters(draft, ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"]);
       setMaterials(draft, { wood: 99, iron: 99, herbs: 99, food: 99, gems: 99 });
     });
-    run.unlockAllTalents();
-  }, [run]);
+    unlockAllTalents();
+  }, [unlockAllTalents]);
 
   return { clearSaveData, unlockAllDevMode };
 }

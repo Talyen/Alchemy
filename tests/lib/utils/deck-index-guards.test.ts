@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { isValidDeckIndex } from "@/lib/utils";
 import { removeWildwoodCard, createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
-import { applyMixToDeck } from "@/lib/alchemist/potion-mixer";
+import { applyMixToDeck } from "@/lib/alchemist";
 import { makeTestCard } from "../../fixtures/cards";
 
 function card(id: string) {

@@ -7,21 +7,23 @@ import { GearInstanceArraySchema, GearInstanceSchema, normalizeGearInstanceArray
 import { normalizeGearInstance } from "@/lib/gear/operations";
 import { PersistedBattleStateSchema } from "./persisted-battle-state";
 import { emptyInventory } from "@/lib/homestead/inventory";
+import { deduplicatedStringArraySchema } from "./validation-utils";
 import {
-  deduplicatedStringArraySchema,
   CharacterIdSchema,
   ContentSystemIdSchema,
   EnemyTypeSchema,
   DifficultyIdSchema,
   DestinationArraySchema,
   TalentXPSchema,
-  BattleCardSchema,
+  MaterialInventorySchema,
+} from "./schema-enums";
+import { BattleCardSchema } from "./battle-card-schemas";
+import {
   LabyrinthMapSchema,
   LabyrinthPendingNodeSchema,
   EncounterCombatTraitArraySchema,
   EncounterRewardTraitArraySchema,
-  MaterialInventorySchema,
-} from "./core";
+} from "./labyrinth-schemas";
 import { MATERIAL_IDS } from "@/lib/homestead/types";
 import { type RunRngState } from "@/lib/rng";
 
@@ -39,6 +41,10 @@ const RunObtainedItemSchema = z.discriminatedUnion("kind", [RunObtainedGearItemS
 
 function normalizeRunObtainedItems(raw: unknown): Array<z.infer<typeof RunObtainedItemSchema>> {
   if (!Array.isArray(raw)) return [];
+  // Canonical single-item normalizer is normalizeGearInstance from
+  // gear/operations (same as normalizeGearInstanceArray uses); the loop below
+  // preserves original order while dropping invalid gear, which the array
+  // wrapper alone cannot do for this heterogeneous list.
   const items: Array<z.infer<typeof RunObtainedItemSchema>> = [];
   for (const entry of raw) {
     if (!entry || typeof entry !== "object") continue;
@@ -101,6 +107,8 @@ const CorruptionResultPersistSchema = z
   .nullable()
   .catch(null);
 
+// Shared frozen fallback; normalize-active-run-data defensively copies
+// seed+counters before use, so no consumer may mutate this reference.
 const FALLBACK_RUN_RNG_STATE: RunRngState = Object.freeze({
   seed: 1,
   counters: Object.freeze({ rewards: 0, destinations: 0, events: 0, shops: 0, world: 0 }),
@@ -235,7 +243,12 @@ const PersistedPendingRewardUnionSchema = z.discriminatedUnion("rewardType", [
   }),
   z.object({
     rewardType: z.literal("gear"),
-    gearChoices: z.preprocess((raw) => normalizeGearInstanceArray(raw), z.array(GearInstanceSchema).min(1)),
+    // If every saved gear instance is invalid (catalog rotation), min(1) fails
+    // and InterruptedFlow falls back to {kind:"none"}. Intentional load repair:
+    // a gear reward with no valid choices cannot be offered, and restore
+    // already maps empty gear to null. Shared gold/materials on the same
+    // pending reward are dropped with it; preserving them is a future change.
+    gearChoices: z.preprocess(normalizeGearInstanceArray, z.array(GearInstanceSchema).min(1)),
     ...PersistedPendingRewardBaseSchema,
   }),
 ]);

@@ -1,14 +1,22 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
-import { publishCiSummary } from "./lib/ci-summary.mjs";
 import { writeFailureIndex } from "./lib/playwright-diagnostics.mjs";
+import { writeCurrentRun } from "./lib/current-run.mjs";
 import { formatPlaywrightSummaryMarkdown, summarizePlaywrightReport } from "./lib/playwright-summary.mjs";
 import { formatVitestSummaryMarkdown, summarizeVitestReport, summarizeVitestFile } from "./lib/vitest-summary.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 const DEFAULT_VITEST_REPORT = "reports/vitest-timings.json";
 const DEFAULT_PLAYWRIGHT_REPORT = "reports/playwright-results.json";
+
+function publishCiSummary({ rootDir = process.cwd(), markdown, status, command, artifacts, summary, counts }) {
+  const run = writeCurrentRun({ rootDir, status, command, artifacts, summary, counts });
+  const output = process.env.GITHUB_STEP_SUMMARY;
+  const pointer = `${markdown}\n_Run: \`${run.runId}\` · Current pointer: \`reports/current-run.md\`_\n`;
+  if (output) fs.appendFileSync(output, pointer);
+  else process.stdout.write(pointer);
+}
 
 function publishVitest(reportPath) {
   const resolved = path.resolve(reportPath);

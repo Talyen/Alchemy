@@ -45,7 +45,6 @@ export interface CompletionInput extends AutosaveProgress {
 export interface CompletionResult extends AutosaveProgress {
   schedule: boolean;
   cancelTimer: boolean;
-  reset: boolean;
 }
 
 export function applyAutosaveCompletion(input: CompletionInput): CompletionResult {
@@ -57,7 +56,6 @@ export function applyAutosaveCompletion(input: CompletionInput): CompletionResul
       retryAt: 0,
       schedule: false,
       cancelTimer: true,
-      reset: true,
     };
   }
   if (input.outcome === "saved") {
@@ -71,7 +69,6 @@ export function applyAutosaveCompletion(input: CompletionInput): CompletionResul
       retryAt,
       schedule: !covered,
       cancelTimer: covered,
-      reset: false,
     };
   }
   if (input.savingRevision > input.acknowledgedRevision && input.savingRevision === input.submittedRevision) {
@@ -82,7 +79,6 @@ export function applyAutosaveCompletion(input: CompletionInput): CompletionResul
       retryAt: input.now + input.maxWaitMs,
       schedule: true,
       cancelTimer: false,
-      reset: false,
     };
   }
   return {
@@ -92,6 +88,5 @@ export function applyAutosaveCompletion(input: CompletionInput): CompletionResul
     retryAt: input.retryAt,
     schedule: false,
     cancelTimer: false,
-    reset: false,
   };
 }

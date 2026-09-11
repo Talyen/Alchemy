@@ -1,7 +1,11 @@
-try {
-  if (localStorage.getItem("alchemy-disable-animations") === "true") {
-    document.documentElement.classList.add("alchemy-disable-animations");
+export function applyInitialAnimationPreference(): void {
+  try {
+    if (localStorage.getItem("alchemy-disable-animations") === "true") {
+      document.documentElement.classList.add("alchemy-disable-animations");
+    }
+  } catch (error) {
+    console.warn("Failed to apply initial local storage styles", error);
   }
-} catch (error) {
-  console.warn("Failed to apply initial local storage styles", error);
 }
+
+applyInitialAnimationPreference();

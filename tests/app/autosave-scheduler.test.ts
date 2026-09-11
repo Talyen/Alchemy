@@ -84,7 +84,7 @@ describe("applyAutosaveCompletion", () => {
         now: 2_000,
         maxWaitMs: 10_000,
       }),
-    ).toMatchObject({ revision: 0, acknowledgedRevision: 0, submittedRevision: 0, retryAt: 0, reset: true });
+    ).toMatchObject({ revision: 0, acknowledgedRevision: 0, submittedRevision: 0, retryAt: 0 });
   });
 
   it("acknowledges saved revisions and clears the retry", () => {

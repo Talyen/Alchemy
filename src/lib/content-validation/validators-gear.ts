@@ -47,11 +47,10 @@ function validateGearDefinitions(collector: ReturnType<typeof createCollector>):
     collectSchemaIssues(GearDefinitionContentSchema, definition, "gear", definition.id, collector.error);
     validateArt("gear", definition.id, definition.art, collector.error, collector.warning);
     if (definition.rarity !== "unique" && !gearArtByDefinitionId[definition.id])
-      collector.error("art", definition.id, "Missing generated gear art mapping");
-    const minAffixes = definition.rarity ? GEAR_AFFIX_COUNT[definition.rarity].min : 0;
-    if (definition.rarity === "unique") continue;
-    if (!definition.rarity) continue;
+      collector.error("gear", definition.id, "Missing generated gear art mapping");
+    if (definition.rarity === "unique" || !definition.rarity) continue;
 
+    const minAffixes = GEAR_AFFIX_COUNT[definition.rarity].min;
     const eligibleAffixes = buildEligibleAffixPool(definition);
     if (eligibleAffixes.length < minAffixes)
       collector.error(

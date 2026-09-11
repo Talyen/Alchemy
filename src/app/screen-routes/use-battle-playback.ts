@@ -82,6 +82,6 @@ export function useBattlePlayback({
     currentBind(bind);
     return () => currentBind(null);
   }, [bind, bindPlaybackRef]);
-
-  return { bind };
+  // No return value: the bind is forwarded to the controller via bindPlayback.
+  // Callers needing schedule/clear access should go through routeCommands.battle.
 }

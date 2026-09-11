@@ -158,10 +158,11 @@ export function validateCardNumericParity(card: BattleCard): ContentValidationIs
   const issues: ContentValidationIssue[] = [];
   const { effects, descriptionLines } = card;
 
+  // Single flatten shared by all per-kind cursors below (helpers memoize
+  // across cards as well, so count parity and numeric parity share the walk).
+  const flat = flattenEffects(effects);
   const getNext = <T extends BattleCardEffect["kind"]>(kind: T) => {
-    const filtered = flattenEffects(effects).filter((e) => e.kind === kind) as Array<
-      Extract<BattleCardEffect, { kind: T }>
-    >;
+    const filtered = flat.filter((e) => e.kind === kind) as Array<Extract<BattleCardEffect, { kind: T }>>;
     let index = 0;
     return () => filtered[index++];
   };

@@ -80,6 +80,29 @@ describe("source-aware completion gate", () => {
     expect(calls).toContain("desktop build");
   });
 
+  it("lets static checks own docs:check on executable changes only", async () => {
+    const executable: unknown[][] = [];
+    await runCheck(["src/App.tsx", "docs/guide.md"], {
+      runner: vi.fn((...args: unknown[]) => {
+        executable.push(args);
+        return 0;
+      }),
+      captureDigest: () => ({ head: "abc", hash: "same" }),
+    });
+    const verify = executable.find((args) => args[0] === "changed-path verification");
+    expect(verify?.[2]).toContain("--skip-docs-check");
+
+    const docsOnly: unknown[][] = [];
+    await runCheck(["docs/guide.md"], {
+      runner: vi.fn((...args: unknown[]) => {
+        docsOnly.push(args);
+        return 0;
+      }),
+      captureDigest: () => ({ head: "abc", hash: "same" }),
+    });
+    expect(docsOnly.find((args) => args[0] === "changed-path verification")?.[2]).not.toContain("--skip-docs-check");
+  });
+
   it("fails when source inputs drift", async () => {
     let reads = 0;
     const code = await runCheck(["docs/REFERENCE.md"], {

@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { FlaskConical } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { isMixedPotionCard, isStandardPotionCard, type BattleCard } from "@/lib/game-data";
+import { isStandardPotionCard, type BattleCard } from "@/lib/game-data";
 import { MIXED_POTION_TITLE } from "@/lib/game-constants";
 import { collectionTileWidthClass, BUTTON_WIDTH_ACTION } from "@/features/alchemy/shared/config";
 
@@ -66,8 +66,7 @@ export function AlchemistShopScreen({
 
   function selectMixCard(index: number) {
     const card = runDeck[index];
-    if (!card) return;
-    if (isMixedPotionCard(card)) return;
+    if (!card || !isStandardPotionCard(card)) return;
     if (mix.step === 1) {
       setMix((s) => ({ ...s, step: 2, a: index }));
     } else if (mix.step === 2) {

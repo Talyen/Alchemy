@@ -1,12 +1,12 @@
 import { z } from "zod";
 import { BattleCardEffectSchema, ENEMY_TYPE_VALUES, keywordDefinitions, type KeywordId } from "@/lib/game-data";
 import { GEAR_AFFIX_IDS, GEAR_EFFECT_KEYS, GEAR_RARITIES, GEAR_SLOTS } from "@/lib/gear";
-import { EnemyStatusIdSchema } from "@/lib/validation";
+import { ENEMY_STATUS_IDS_LIST } from "@/lib/validation";
 import { COMBAT_ENCOUNTER_TRAIT_IDS, REWARD_ENCOUNTER_TRAIT_IDS } from "../content-systems/encounter-traits";
 import { defaultTrinketEffects } from "@/lib/trinkets";
 
 const keywordIds = Object.keys(keywordDefinitions) as [KeywordId, ...KeywordId[]];
-export const enemyStatusIds = EnemyStatusIdSchema.options;
+export const enemyStatusIds: readonly string[] = ENEMY_STATUS_IDS_LIST;
 export const enemyTypes = ENEMY_TYPE_VALUES;
 
 const NonEmptyStringSchema = z.string().min(1);

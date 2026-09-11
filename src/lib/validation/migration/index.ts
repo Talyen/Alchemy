@@ -24,15 +24,31 @@ export function getRawLastSavedAt(parsed: unknown): number | null {
   return value;
 }
 
-export const SCHEMA_MIGRATIONS: Array<{ from: number; to: number; migrate: (data: RawSaveData) => RawSaveData }> = [
-  { from: 11, to: 12, migrate: migrateV11ToV12 },
-  { from: 12, to: 13, migrate: migrateV12ToV13 },
-  { from: 13, to: 14, migrate: migrateV13ToV14 },
-  { from: 14, to: 15, migrate: migrateV14ToV15 },
-  { from: 15, to: 16, migrate: migrateV15ToV16 },
-  { from: 16, to: 17, migrate: migrateV16ToV17 },
-  { from: 17, to: 18, migrate: migrateV17ToV18 },
+// Ordered step list; versions are derived from position so gaps are impossible.
+// v11→v12 stays bespoke (top-level gear) via its own export; the rest use
+// defineRunStep. Add new steps by appending here and bumping metadata.
+const ORDERED_RUN_MIGRATIONS: Array<(data: RawSaveData) => RawSaveData> = [
+  migrateV11ToV12,
+  migrateV12ToV13,
+  migrateV13ToV14,
+  migrateV14ToV15,
+  migrateV15ToV16,
+  migrateV16ToV17,
+  migrateV17ToV18,
 ];
+
+const FIRST_VERSION = 11;
+
+export const SCHEMA_MIGRATIONS: Array<{ from: number; to: number; migrate: (data: RawSaveData) => RawSaveData }> =
+  ORDERED_RUN_MIGRATIONS.map((migrate, index) => ({
+    from: FIRST_VERSION + index,
+    to: FIRST_VERSION + index + 1,
+    migrate,
+  }));
+
+// Steps advance exactly one version per iteration (to = from + 1), so more
+// iterations than table entries means versions are not progressing through
+// the table — the only way this loop can fail to terminate.
 
 function migrateContentToCurrent(next: RawSaveData): RawSaveData {
   const contentVersion = getRawContentVersion(next);
@@ -41,12 +57,22 @@ function migrateContentToCurrent(next: RawSaveData): RawSaveData {
 
 export function migrateSaveDataToCurrent(parsed: unknown): RawSaveData {
   if (!parsed || typeof parsed !== "object") return {};
+  // Fast path: already-current saves skip the content-remap deep clone on every parse.
+  if (
+    getRawSaveSchemaVersion(parsed) === CURRENT_SAVE_SCHEMA_VERSION &&
+    getRawContentVersion(parsed) === CURRENT_CONTENT_VERSION
+  ) {
+    return { ...(parsed as RawSaveData) };
+  }
   let next = { ...(parsed as RawSaveData) };
   let currentVersion = getRawSaveSchemaVersion(next);
-  while (true) {
+  for (let step = 0; step <= SCHEMA_MIGRATIONS.length; step += 1) {
     const migrated = SCHEMA_MIGRATIONS.find((m) => m.from === currentVersion);
     if (!migrated) break;
+    if (step === SCHEMA_MIGRATIONS.length) throw new Error("Save migration did not terminate");
     next = migrated.migrate(next);
+    // Progress is table-driven (to = from + 1); steps operate on unversioned
+    // trees and rely on the final stamp below.
     currentVersion = migrated.to;
   }
   next = migrateContentToCurrent(next);

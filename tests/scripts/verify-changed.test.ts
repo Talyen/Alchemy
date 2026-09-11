@@ -13,12 +13,12 @@ import {
 } from "../../scripts/lib/compact-output.mjs";
 import { resolveRoutePlan, resolveRoutes, ROUTES, validateRouteCatalog } from "../../scripts/lib/change-routes.mjs";
 import { TEST_SUITES, validateTestSuitePaths } from "../../scripts/lib/test-commands.mjs";
-import { formatPlan, parseVerifyArgs } from "../../scripts/verify-changed.mjs";
+import { formatPlan, filterPlanCommands, parseVerifyArgs } from "../../scripts/verify-changed.mjs";
 
 describe("verification selection", () => {
   it("uses a small broad category catalog", () => {
     expect(ROUTES.length).toBeLessThanOrEqual(10);
-    expect(ROUTES.reduce((count, route) => count + route.patterns.length, 0)).toBeLessThanOrEqual(69);
+    expect(ROUTES.reduce((count, route) => count + route.patterns.length, 0)).toBeLessThanOrEqual(70);
     expect(validateRouteCatalog()).toEqual([]);
     expect(validateTestSuitePaths(process.cwd(), TEST_SUITES.shipUnit)).toEqual([]);
   });
@@ -129,6 +129,17 @@ describe("verification selection", () => {
     expect(plan.routes.map((route) => route.id)).toEqual(["unknown"]);
     expect(plan.commands.map((command) => command.key)).toEqual(["related"]);
     expect(formatPlan(plan)).toContain("uncategorized paths");
+  });
+
+  it("skips documentation checks on request without losing other escalations", () => {
+    const plan = resolveRoutePlan(["scripts/check.mjs", "src/lib/battle/damage-calc.ts", "docs/guide.md"]);
+    expect(plan.commands.map((command) => command.key)).toContain("docs-check");
+    const filtered = filterPlanCommands(plan, new Set(["skip-docs-check"]));
+    expect(filtered.commands.map((command) => command.key)).not.toContain("docs-check");
+    expect(filtered.commands.map((command) => command.key)).toEqual(
+      plan.commands.map((command) => command.key).filter((key) => key !== "docs-check"),
+    );
+    expect(filterPlanCommands(plan, new Set()).commands).toBe(plan.commands);
   });
 
   it("rejects unknown verify flags before running commands", () => {
