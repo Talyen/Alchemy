@@ -653,3 +653,22 @@
     animation: none;
   }
 }
+
+@keyframes battle-gold-increase {
+  from {
+    background-color: rgb(251 191 36 / 25%);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+
+.battle-gold-increase {
+  animation: battle-gold-increase 650ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .battle-gold-increase {
+    animation: none;
+  }
+}

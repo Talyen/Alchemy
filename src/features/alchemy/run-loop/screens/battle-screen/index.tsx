@@ -11,7 +11,7 @@ import { BattleBoonInspectOverlay } from "./boon-inspect";
 import { hasInspectableBoons } from "./unique-run-boons";
 import { WishOverlay } from "./wish-overlay";
 import type { BattleActionsProps, BattleFeedbackProps, BattleRefsProps, BattleScreenData } from "./types";
-import { getEnemyStatusChips, getPlayerStatusChips, isAlchemyDevBuild } from "../../../shared/utils";
+import { getEnemyStatusChips, getPlayerStatusChips } from "../../../shared/utils";
 import { BackgroundParticles } from "../../../shared/ui/background-particles";
 import { getScreenParticleConfig } from "@/app/screen-particle-config";
 import { useSettingsStore } from "../../../shared/stores/settings-store";
@@ -30,7 +30,6 @@ interface BattleScreenProps {
   refs: BattleRefsProps;
   onCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
   onWishChoice: (card: BattleCard) => void;
-  onSkipCombatDevMode: () => void;
   onEndTurn: () => void;
   boonInspectOpen: boolean;
   onCloseBoonInspect: () => void;
@@ -49,7 +48,6 @@ export function BattleScreen(props: BattleScreenProps) {
     refs,
     onCardClick,
     onWishChoice,
-    onSkipCombatDevMode,
     onEndTurn,
     boonInspectOpen,
     onCloseBoonInspect,
@@ -89,18 +87,15 @@ export function BattleScreen(props: BattleScreenProps) {
     [playerStatusChips, enemyStatusChips, activeLabyrinthModifiers],
   );
 
-  const isDev = isAlchemyDevBuild();
   const actions: BattleActionsProps = useMemo(
     () => ({
       onInspectPile,
       inspectionAvailable,
       onCardClick,
       onWishChoice,
-      onSkipCombatDevMode,
       onEndTurn,
-      isDevMode: isDev,
     }),
-    [onInspectPile, inspectionAvailable, onCardClick, onWishChoice, onSkipCombatDevMode, onEndTurn, isDev],
+    [onInspectPile, inspectionAvailable, onCardClick, onWishChoice, onEndTurn],
   );
 
   const { battleSceneRef: sceneRef } = refs;

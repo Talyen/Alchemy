@@ -16,6 +16,8 @@ import {
   useReturnToRunNavigation,
 } from "@/app/app-shell";
 import { BattleAutoplayToggle } from "@/app/battle-autoplay-toggle";
+import { BattleGoldCounter, BattleSkipCombatButton } from "@/app/battle-toolbar-extras";
+import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 import { renderAlchemyScreenRoute } from "@/app/screen-routes";
 import { useAlchemyBootstrap } from "@/app/use-alchemy-bootstrap";
 import { useCardInspection } from "@/app/use-card-inspection";
@@ -33,6 +35,7 @@ import {
   useActiveRunScreenValue,
   useAutosaveAllowed,
   useBondedCompanions,
+  useRunSessionBattleContext,
   useRunSessionNavigationSlice,
   useTalentEffects,
 } from "@/features/alchemy/shared/stores/run-reads";
@@ -73,6 +76,7 @@ function BattleCluster({
   toggleBoonInspect,
   gameMenuOpen,
   onOpenGameMenu,
+  onSkipCombat,
 }: {
   inert: boolean;
   deckInspection: { count: number; disabled: boolean; onOpen: () => void } | undefined;
@@ -83,12 +87,21 @@ function BattleCluster({
   toggleBoonInspect: () => void;
   gameMenuOpen: boolean;
   onOpenGameMenu: (rect?: DOMRect) => void;
+  onSkipCombat: () => void;
 }) {
+  const { battle } = useRunSessionBattleContext("battle");
   return (
     <div inert={inert} className="absolute top-4 right-4 z-[80] flex items-center gap-2">
+      <BattleGoldCounter gold={battle.battleState.gold} />
       {deckInspection ? <DeckInspectButton {...deckInspection} /> : null}
       <BattleAutoplayToggle enabled={isAutoplayEnabled} onToggle={toggleAutoplayEnabled} />
       {hasInspectBoons ? <BattleBoonInspectButton open={boonInspectOpen} onToggle={toggleBoonInspect} /> : null}
+      {isAlchemyDevBuild() ? (
+        <BattleSkipCombatButton
+          onSkip={onSkipCombat}
+          disabled={gameMenuOpen || boonInspectOpen || Boolean(battle.battleState.wishOptions)}
+        />
+      ) : null}
       <HamburgerTrigger onClick={onOpenGameMenu} label="Open game menu" active={gameMenuOpen} />
     </div>
   );
@@ -280,6 +293,7 @@ function AppMainContent({
             toggleBoonInspect={toggleBoonInspect}
             gameMenuOpen={gameMenu.gameMenuOpen}
             onOpenGameMenu={gameMenu.openGameMenu}
+            onSkipCombat={run.routeCommands.battle.skipCombatDevMode}
           />
         ) : null}
         <CardInspectionOverlay

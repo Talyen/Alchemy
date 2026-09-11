@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 import { ManaPanel, PilePanel } from "../../../shared/ui/battle/resources";
-import { HomesteadResourceArtwork } from "../../../shared/ui/material-icons";
 import { battleBottomBarClass, battleBottomColumnClass, BUTTON_WIDTH_DIALOG } from "@/features/alchemy/shared/config";
 import { BattleHand } from "./hand";
 import type { BattleActionsProps, BattleRefsProps, BattleScreenState, RequiredBattleViewProps } from "./types";
@@ -28,8 +27,8 @@ export function BattleBottomBar({
   return (
     <section className={battleBottomBarClass}>
       <div className={battleBottomColumnClass}>
-        <ManaPanel mana={battleState.mana} maxMana={battleState.maxMana} gold={battleState.gold} />
-        <div className="mt-[calc(1.0125*var(--content-rem,1rem))]">
+        <ManaPanel mana={battleState.mana} maxMana={battleState.maxMana} />
+        <div className="flex justify-center">
           <PilePanel
             ref={drawPileRef}
             label="Draw Pile"
@@ -57,7 +56,7 @@ function BattleControls({
   actions: BattleActionsProps;
   discardPileRef: RefObject<HTMLDivElement | null>;
 }) {
-  const { onEndTurn, onSkipCombatDevMode, isDevMode } = actions;
+  const { onEndTurn } = actions;
   const cardTransferInProgress = useCardTransferInProgress();
 
   return (
@@ -72,17 +71,9 @@ function BattleControls({
         >
           End Turn
         </Button>
-
-        {isDevMode ? (
-          <div className="flex w-full flex-col gap-1">
-            <Button variant="outline" size="sm" className="w-full text-xs text-amber-200" onClick={onSkipCombatDevMode}>
-              <HomesteadResourceArtwork resource="gold" size="xs" alt="" /> Skip Combat
-            </Button>
-          </div>
-        ) : null}
       </div>
 
-      <div className="mt-[calc(1.0125*var(--content-rem,1rem))]">
+      <div className="flex justify-center">
         <PilePanel
           ref={discardPileRef}
           label="Discard Pile"

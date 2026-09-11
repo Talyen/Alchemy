@@ -3,7 +3,6 @@ import { cn } from "@/lib/utils";
 
 import { cardArtImageClass, cardSurfaceClass, pileCardWidthClass } from "../../config";
 import { Surface } from "../surface";
-import { GoldPill } from "../material-icons";
 import { useChangeToken } from "./use-change-token";
 
 export function PilePanel({
@@ -55,13 +54,12 @@ export function PilePanel({
   );
 }
 
-export function ManaPanel({ mana, maxMana, gold }: { mana: number; maxMana: number; gold: number }) {
+export function ManaPanel({ mana, maxMana }: { mana: number; maxMana: number }) {
   const displayCount = Math.max(mana, maxMana);
   const manaToken = useChangeToken(`${mana}-${maxMana}`);
 
   return (
-    <div className="flex flex-col items-center gap-2" data-testid="mana-panel" data-mana={mana}>
-      <GoldPill amount={gold} />
+    <div className="flex h-16 items-center justify-center" data-testid="mana-panel" data-mana={mana}>
       <div className="flex items-center justify-center gap-1.5" role="img" aria-label={`Mana: ${mana} / ${maxMana}`}>
         {Array.from({ length: displayCount }).map((_, index) => {
           const isFilled = index < mana;

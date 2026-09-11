@@ -155,6 +155,11 @@ stage. Authored arbitrary content dimensions must use the content unit; do not
 use raw container-height units as the primary card size. Available-space caps
 are allowed: the battle hand caps card height, compresses its fan into the
 reserved center region, and reserves extra bottom space for larger hands.
+Draw and Discard artwork use 80% of the resting hand card width, sharing its
+responsive size from the bottom bar. Mana and End Turn sit above the aligned piles.
+The battle toolbar places live Gold before the inspection controls, with a brief
+highlight on increases. Dev-only Skip Combat uses a labeled skip-forward icon
+and tooltip immediately before Menu.
 The battle bottom bar reserves content-sized side controls and gives the hand
 the remaining width. Side controls stay stationary as the hand grows to seven
 cards; smaller hands remain centered with capped spacing. Hand hover and pointer

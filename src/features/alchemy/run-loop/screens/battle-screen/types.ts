@@ -54,9 +54,7 @@ export interface BattleActionsProps {
   inspectionAvailable?: boolean | undefined;
   onCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
   onWishChoice: (card: BattleCard) => void;
-  onSkipCombatDevMode: () => void;
   onEndTurn: () => void;
-  isDevMode: boolean;
 }
 
 export type RequiredBattleViewProps = Required<BattleScreenViewProps>;

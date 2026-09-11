@@ -107,7 +107,6 @@ function BattleScreenRoute({
         refs={commands.refs}
         onCardClick={commands.handleCardClick}
         onWishChoice={commands.handleWishChoice}
-        onSkipCombatDevMode={commands.skipCombatDevMode}
         onEndTurn={commands.handleEndTurn}
         boonInspectOpen={commands.boonInspectOpen}
         onCloseBoonInspect={commands.closeBoonInspect}
