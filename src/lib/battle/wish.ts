@@ -48,6 +48,7 @@ export function buildWishOptions(state: BattleState, card: BattleCard): BattleCa
   const baseCount =
     WISH_CHOICE_COUNT +
     state.talentEffects.wishExtraChoices +
+    (state.flags.nextWishExtraChoice ? 1 : 0) +
     (hasEncounterBenefit(state, "wishful") && !state.flags.encounterWishUsed ? 1 : 0) +
     (rollPercent(state.talentEffects.wishExtraChoiceChance, getBattleRng(state)) ? 1 : 0);
 
@@ -122,6 +123,7 @@ export function applyWishEffect(state: BattleState, card: BattleCard, amount: nu
   const nextWishOptions: BattleCard[][] = [];
   for (let index = 0; index < wishCount; index += 1) {
     nextWishOptions.push(buildWishOptions(state, card));
+    if (state.flags.nextWishExtraChoice) state = { ...state, flags: { ...state.flags, nextWishExtraChoice: false } };
     if (hasEncounterBenefit(state, "wishful")) state = { ...state, flags: { ...state.flags, encounterWishUsed: true } };
   }
   let nextState: BattleState = state.wishOptions

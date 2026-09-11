@@ -6,6 +6,7 @@ import {
   getAllocatableTalentChoices,
   chunkIntoRows,
   getTalentRows,
+  normalizeUnlockedTalents,
   getTalentRowIndex,
   isTalentRowUnlocked,
   computeTalentEffects,
@@ -219,5 +220,68 @@ describe("computeTalentEffects", () => {
     expect(effects.cleanseBelowHealthPercent).toBe(25);
     expect(effects.healthThresholdArmor).toHaveLength(1);
     expect(effects.healthThresholdArmor).toEqual(expect.arrayContaining([{ threshold: 50, amount: 5 }]));
+  });
+});
+
+describe("combat feedback talent progression", () => {
+  it.each([
+    [
+      "holy",
+      [
+        "Faith Barrier",
+        "Celestial Ward",
+        "Purge",
+        "Divine Favor",
+        "Prosperity",
+        "Scorching Light",
+        "Tithe",
+        "Radiant Guard",
+        "Blessed Leech",
+        "Divine Intervention",
+      ],
+    ],
+    [
+      "nature",
+      [
+        "Overgrowth",
+        "Thornskin",
+        "Bramblegrowth",
+        "Photosynthesis",
+        "Windstep",
+        "Briar Patch",
+        "Toxic Pollen",
+        "Verdant Cycle",
+        "Ecosystem",
+        "Entangle",
+      ],
+    ],
+    [
+      "leech",
+      [
+        "Deep Siphon",
+        "Blood Debt",
+        "Affliction Siphon",
+        "Desperate Siphon",
+        "Cull the Weak",
+        "Sanguine Overflow",
+        "Bloodletting",
+        "Mana Siphon",
+        "Armor Siphon",
+        "Virulent Leech",
+      ],
+    ],
+  ] as const)("keeps the agreed %s order and gates its final row", (keyword, names) => {
+    const talents = getTalentsForKeyword(keyword);
+    expect(talents.map((talent) => talent.name)).toEqual(names);
+    const early = talents.slice(0, 6).map((talent) => talent.id);
+    expect(isTalentRowUnlocked(keyword, early, 3)).toBe(true);
+    expect(isTalentRowUnlocked(keyword, early.slice(0, 5), 3)).toBe(false);
+  });
+
+  it("preserves an already-purchased connector without granting its new prerequisites", () => {
+    const purchased = { holy: ["holy-tithe"] };
+    expect(normalizeUnlockedTalents(purchased)).toEqual(purchased);
+    expect(computeTalentEffects(purchased).holyGoldChance).toBe(10);
+    expect(getAllocatableTalentChoices("holy", purchased.holy).map((talent) => talent.name)).toEqual(["Faith Barrier"]);
   });
 });

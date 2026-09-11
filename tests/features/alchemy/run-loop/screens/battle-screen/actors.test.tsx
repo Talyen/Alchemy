@@ -7,7 +7,6 @@ import { ShakingArtPanel } from "@/features/alchemy/run-loop/battle/presentation
 vi.mock("@/features/alchemy/run-loop/battle/presentation/actor-vfx", () => ({
   ShakingArtPanel: vi.fn(() => null),
   ShakingCompanionPanel: () => null,
-  CombatTextRailSide: () => null,
 }));
 
 beforeEach(() => vi.clearAllMocks());

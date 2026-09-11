@@ -1,3 +1,4 @@
+import { cardHasKeyword } from "./card-classification";
 import { flatDamageBonus } from "./damage-modifiers";
 import { hasEncounterBenefit } from "./types";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
@@ -400,7 +401,16 @@ export function computeCardDamageToEnemy(
     effect.damageType === "bleed" && state.enemyStatuses.bleed === 0
       ? state.talentEffects.bleedUnwoundedBonusPercent / 100
       : 0;
-  const totalBonus = computeAdditiveDamageBonus(stateAfterFirst, effect, card) + firstBonus + unwoundedBonus;
+  const cullBonus =
+    state.talentEffects.leechCardDamageVsLowHealthPercent > 0 &&
+    card &&
+    !context?.companionAttack &&
+    cardHasKeyword(card, "leech") &&
+    state.enemyHealth < state.enemyMaxHealth / 2
+      ? state.talentEffects.leechCardDamageVsLowHealthPercent / 100
+      : 0;
+  const totalBonus =
+    computeAdditiveDamageBonus(stateAfterFirst, effect, card) + firstBonus + unwoundedBonus + cullBonus;
   const totalMultiplier = Math.max(MIN_DAMAGE_MULTIPLIER, 1 + totalBonus);
   const scaledDamage = Math.round(baseDamage * totalMultiplier * encounterMultiplier);
   const pacedDamage = paceCombatDamage(stateAfterFirst, scaledDamage, "player");

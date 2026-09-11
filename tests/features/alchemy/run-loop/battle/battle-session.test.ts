@@ -147,11 +147,11 @@ describe("createBattleSession", () => {
       .getState()
       .showCombatTexts([{ target: "enemy", kind: "damage", stat: "health", amount: 5 }]);
     await vi.advanceTimersByTimeAsync(0);
-    expect(useBattlePresentationStore.getState().floatingCombatTexts).toHaveLength(1);
+    expect(useBattlePresentationStore.getState().floatingCombatBursts).toHaveLength(1);
 
     const { session } = makeSession();
     session.resetBattleSession();
-    expect(useBattlePresentationStore.getState().floatingCombatTexts).toEqual([]);
+    expect(useBattlePresentationStore.getState().floatingCombatBursts).toEqual([]);
     vi.useRealTimers();
   });
 

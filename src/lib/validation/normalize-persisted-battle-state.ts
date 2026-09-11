@@ -56,6 +56,8 @@ function normalizeTalentEffects(
   if (savedRecord.burnDamagePerManaCrystal === LEGACY_MANABURN_PER_CRYSTAL_ENABLED) {
     merged.burnDamagePerManaCrystal = MANABURN_DAMAGE_PERCENT;
   }
+  merged.wishExtraChoiceAfterHolyCard = savedRecord.wishExtraChoiceAfterHolyCard === true;
+  merged.leechCardDamageVsLowHealthPercent = clampNonNegative(merged.leechCardDamageVsLowHealthPercent, 0);
   return merged;
 }
 
@@ -148,6 +150,7 @@ export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): B
       merged.currentEnemy.traits.some((trait) => trait.id === "thorns") && merged.enemyStatuses.thorns > 0;
   }
   merged.flags.pendingCinderSkinReaction = savedFlags.pendingCinderSkinReaction === true;
+  merged.flags.nextWishExtraChoice = savedFlags.nextWishExtraChoice === true;
   merged.flags.previousCardWasArchery = savedFlags.previousCardWasArchery === true;
   merged.flags.previousCardWasNature = savedFlags.previousCardWasNature === true;
   merged.flags.companionNextAttackBonus = clampNonNegative(merged.flags.companionNextAttackBonus, 0);

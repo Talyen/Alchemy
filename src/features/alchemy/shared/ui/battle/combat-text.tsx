@@ -1,9 +1,10 @@
-import { createElement } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { createElement, useLayoutEffect, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
+import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import { cn } from "@/lib/utils";
 
-import type { FloatingCombatText } from "../../types";
+import type { CombatTextBurst, FloatingCombatText } from "../../types";
 import { getCombatTextColorClass, getCombatTextIcon } from "../../utils";
 
 const FCT_BASE_SIZE_CQH = 3.5;
@@ -87,49 +88,93 @@ const FCT_ANIMATION_PROPS = (() => {
   };
 })();
 
-export function CombatTextRail({ entries }: { entries: FloatingCombatText[] }) {
-  if (entries.length === 0) {
-    return null;
-  }
+export function CombatTextRail({ bursts }: { bursts: CombatTextBurst[] }) {
+  const reducedMotion = useReducedMotion();
+  const staticMotion = reducedMotion === true || isAnimationDisabled();
+  const newestRef = useRef<HTMLDivElement>(null);
+  const [newestHeight, setNewestHeight] = useState(0);
+  const newestId = bursts.at(-1)?.id;
+
+  useLayoutEffect(() => {
+    const newest = newestRef.current;
+    if (!newest) return;
+    const measure = () => setNewestHeight(newest.offsetHeight);
+    measure();
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
+    observer?.observe(newest);
+    return () => observer?.disconnect();
+  }, [newestId]);
 
   return (
-    <div className="pointer-events-none relative z-30 h-24 w-full">
-      <AnimatePresence>
-        {entries.map((entry) => (
-          <CombatTextBubble key={entry.id} entry={entry} />
-        ))}
-      </AnimatePresence>
+    <div className="pointer-events-none absolute inset-0 z-30 w-full">
+      <div
+        className="absolute inset-x-0 flex -translate-y-full flex-col items-center gap-3"
+        style={{ top: "calc(50% - 3rem)", marginTop: newestHeight }}
+      >
+        <AnimatePresence mode="popLayout">
+          {bursts.map((burst) => (
+            <motion.div
+              key={burst.id}
+              ref={burst.id === newestId ? newestRef : undefined}
+              layout={staticMotion ? false : "position"}
+              data-testid="combat-text-burst"
+              data-burst-id={burst.id}
+              data-target={burst.target}
+              className="relative w-max max-w-full shrink-0"
+              initial={false}
+              exit={{ opacity: 0, transition: { duration: staticMotion ? 0 : 0.1 } }}
+              transition={{ layout: { duration: 0.15, ease: "easeOut" } }}
+            >
+              <motion.div
+                className={cn(
+                  "grid justify-items-center gap-x-4 gap-y-1 font-bold tracking-wide",
+                  "transform-gpu will-change-transform [backface-visibility:hidden]",
+                  "[filter:drop-shadow(0_0_1px_rgb(0,0,0))_drop-shadow(0_1px_2px_rgba(0,0,0,0.95))]",
+                  burst.entries.filter((entry) => entry.kind !== "notice").length > 3 && "grid-cols-2",
+                )}
+                style={{ fontSize: `calc(${FCT_BASE_SIZE_CQH * 10.8}px * var(--content-scale, 1))` }}
+                initial={staticMotion ? false : FCT_ANIMATION_PROPS.initial}
+                animate={staticMotion ? { opacity: 1, scale: 1, y: 0 } : FCT_ANIMATION_PROPS.animate}
+              >
+                {burst.entries.map((entry) => (
+                  <CombatTextEntry key={entry.id} entry={entry} />
+                ))}
+              </motion.div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
 
-function CombatTextBubble({ entry }: { entry: FloatingCombatText }) {
+function CombatTextEntry({ entry }: { entry: FloatingCombatText }) {
   const icon = getCombatTextIcon(entry);
-  const colorClass = getCombatTextColorClass(entry);
-
-  const fontSize = `calc(${FCT_BASE_SIZE_CQH * 10.8}px * var(--content-scale, 1))`;
-  const iconSize = `calc(${FCT_BASE_SIZE_CQH * 0.94 * 10.8}px * var(--content-scale, 1))`;
-
   return (
-    <div className="absolute left-1/2" style={{ top: `${entry.lane * 56}px`, transform: "translate3d(-50%, 0, 0)" }}>
-      <motion.div
-        data-testid="combat-text"
-        className={cn(
-          "inline-flex items-center gap-1.5 font-bold tracking-wide whitespace-nowrap",
-          "transform-gpu will-change-transform [backface-visibility:hidden]",
-          "[filter:drop-shadow(0_0_1.5px_rgba(0,0,0,0.95))_drop-shadow(0_2px_4px_rgba(0,0,0,0.85))]",
-          colorClass,
-        )}
-        style={{ fontSize }}
-        {...FCT_ANIMATION_PROPS}
-        exit={{ opacity: 0, transition: { duration: 0.1 } }}
-      >
-        {createElement(icon!, {
-          style: { width: iconSize, height: iconSize },
-          strokeWidth: 2.75,
-        })}
-        {entry.displayText ? <span>{entry.displayText}</span> : null}
-      </motion.div>
+    <div
+      data-testid="combat-text"
+      data-kind={entry.kind}
+      data-stat={entry.stat}
+      className={cn(
+        "inline-flex items-center justify-center gap-1.5 whitespace-nowrap",
+        entry.kind === "notice" && "col-span-full",
+        getCombatTextColorClass(entry),
+      )}
+    >
+      {icon
+        ? createElement(icon, {
+            style: {
+              width: `calc(${FCT_BASE_SIZE_CQH * 0.94 * 10.8}px * var(--content-scale, 1))`,
+              height: `calc(${FCT_BASE_SIZE_CQH * 0.94 * 10.8}px * var(--content-scale, 1))`,
+            },
+            strokeWidth: 3,
+          })
+        : null}
+      {entry.displayText ? (
+        <span style={{ WebkitTextStroke: "1.5px rgba(0, 0, 0, 0.95)", paintOrder: "stroke fill" }}>
+          {entry.displayText}
+        </span>
+      ) : null}
     </div>
   );
 }

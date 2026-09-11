@@ -110,6 +110,16 @@ Artwork surfaces resolve their clipping radius from the same inline theme token 
 
 Labyrinth's rectangular art nodes reuse `Surface`, shared shimmer, and Shine Border. Hover, keyboard focus, and selection enlarge only the emphasized tile to 106%; unknown tiles stay neutral. Completed art remains subdued. Reduced motion makes emphasis immediate and shine static. See [Labyrinth map](#labyrinth-map) for discovery and movement.
 
+## Battle feedback
+
+Each resolved action shows a compact burst over each affected combatant. Preserve separate typed icons, colors, and signed values for damage and positive effects; merge only matching target/kind/type within that action. Notices come first, damage/loss next, healing/gains last, with stable order within each group. Up to three numeric entries use one centered column; larger bursts use two columns, with notices spanning both. Death’s Door retains its skull-only notice.
+
+Bursts render in the battle scene above card-flight overlays, pinned to the moving portrait references using scene-local coordinates. While bursts are visible, their overlay geometry follows the portrait each animation frame, including lunges, casts, shake, and Companion shifts, without restarting the text animation. Tracking stops when the target has no bursts or the layer unmounts. The newest burst starts at the original portrait-center rail origin (half the portrait height minus 3rem); measured burst height keeps that origin stable as grouping changes. Bursts use natural layout dimensions to move earlier actions upward without changing their numbers or restarting their animation. Each new action appears immediately. Keep at most three active bursts per target; overflow fades the oldest early rather than truncating the new action’s types or queuing feedback. Preserve the original text/icon sizing (3.5 × 10.8 design pixels, icons at 94%) and animation: 2× pop, 1.8× hold, 200 ms entrance, 200 ms hold, 500 ms shrink overlapping a 700 ms cubic rise of 240 design pixels, and a 400 ms fade. The 1100 ms visible animation also sets the normal burst lifetime. Use the existing game-delay policy with a 400 ms minimum text lifetime; reduced motion or disabled animations remove pop, travel, and animated repositioning. Presentation teardown cancels all burst lifetimes.
+
+Combat text uses a 1.5px dark stroke painted behind its colored fill, icon stroke width 3, and two tight dark drop shadows (1px and 2px blur) for contrast against artwork. Keep these treatments static; do not add per-frame shadow changes or duplicate outline elements.
+
+Divine Intervention readiness uses an armed player status chip, not another floating notice. Its tooltip explains the extra choice, nonstacking behavior, and combat lifetime.
+
 ## Display sizing
 
 Talents on the end-run screen and Mystery rewards keep fixed-width boxes in centered, balanced rows. Use the fewest rows that fit (up to five boxes per row), distribute counts with at most one box of difference, and place larger rows first. Recalculate when available width or Game Size changes.

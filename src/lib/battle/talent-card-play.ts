@@ -23,7 +23,10 @@ export function prepareTalentCardPlay(state: BattleState, card: BattleCard, comb
     bleed: physical && state.flags.previousCardWasNature ? talents.physicalAfterNatureBleedDamage : 0,
     sanguine: attack ? state.flags.sanguinePhysicalBonus : 0,
   };
-  let nextState = state;
+  let nextState =
+    keywords.includes("holy") && talents.wishExtraChoiceAfterHolyCard
+      ? { ...state, flags: { ...state.flags, nextWishExtraChoice: true } }
+      : state;
   if (archery && state.enemyCC.stunSkipTurns > 0 && talents.drawOnArcheryVsStunned > 0) {
     nextState = applyDrawResult(nextState, drawFromState(nextState, talents.drawOnArcheryVsStunned));
   }

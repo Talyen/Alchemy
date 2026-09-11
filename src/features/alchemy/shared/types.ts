@@ -52,9 +52,15 @@ export interface BattleRefs {
 
 export type FloatingCombatText = CombatTextEvent & {
   id: string;
-  lane: number;
   displayText: string;
 };
+
+export interface CombatTextBurst {
+  id: string;
+  target: CombatTextEvent["target"];
+  entries: FloatingCombatText[];
+  lifetimeMs: number;
+}
 
 export interface CombatImpactCue {
   sequence: number;

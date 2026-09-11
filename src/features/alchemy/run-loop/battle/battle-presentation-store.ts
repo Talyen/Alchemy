@@ -2,15 +2,15 @@ import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 import { readBattle, readRunPhase } from "@/features/alchemy/shared/stores/run-reads";
 import { onClearBattlePresentation, onRunTeardown } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
-import type { BattleSnapshot, CombatTextEvent } from "@/lib/battle";
+import { mergeCombatText, type BattleSnapshot, type CombatTextEvent } from "@/lib/battle";
 import {
-  COMBAT_TEXT_LANE_DELAY_MS,
   COMBAT_TEXT_LIFETIME_MS,
-  COMBAT_TEXT_MAX_VISIBLE_PER_RAIL,
+  COMBAT_TEXT_MIN_LIFETIME_MS,
+  COMBAT_TEXT_MAX_BURSTS_PER_RAIL,
   SHAKE_DURATION,
 } from "@/lib/game-constants";
 import { resolveGameDelay, TimerGroup } from "@/lib/animation/game-timer";
-import type { CardGhost, CardTransfer, CombatImpactCue, FloatingCombatText } from "../../shared/types";
+import type { CardGhost, CardTransfer, CombatImpactCue, CombatTextBurst } from "../../shared/types";
 import type { CombatTextShakeFeedback } from "./battle-status";
 import { getCombatImpactVisual } from "../../shared/utils";
 import {
@@ -33,7 +33,7 @@ interface BattlePresentationStore {
   displayedBattle: BattleSnapshot | null;
   setDisplayedBattle: (state: BattleSnapshot | null) => void;
   cardGhosts: CardGhost[];
-  floatingCombatTexts: FloatingCombatText[];
+  floatingCombatBursts: CombatTextBurst[];
   enemyShaking: boolean;
   playerShaking: boolean;
   companionShaking: boolean;
@@ -66,8 +66,6 @@ interface BattlePresentationStore {
 }
 
 const shakeDuration = SHAKE_DURATION;
-const combatTextLifetimeMs = COMBAT_TEXT_LIFETIME_MS;
-const combatTextLaneDelayMs = COMBAT_TEXT_LANE_DELAY_MS;
 
 let combatTextSequence = 0;
 let combatImpactSequence = 0;
@@ -99,13 +97,10 @@ function shouldShowFloatingCombatText(sequence: number): boolean {
   return battle.hasActiveBattle && readRunPhase() === "battle";
 }
 
-const nextCombatTextAt = { player: 0, enemy: 0 };
 let combatTextId = 0;
 
 function invalidateCombatTextSequence() {
   combatTextSequence += 1;
-  nextCombatTextAt.player = 0;
-  nextCombatTextAt.enemy = 0;
 }
 
 let ghostIdCounter = 0;
@@ -115,7 +110,7 @@ type BattlePresentationState = Pick<
   | "openingDrawPending"
   | "displayedBattle"
   | "cardGhosts"
-  | "floatingCombatTexts"
+  | "floatingCombatBursts"
   | "enemyShaking"
   | "playerShaking"
   | "companionShaking"
@@ -134,7 +129,7 @@ const INITIAL_BATTLE_PRESENTATION_STATE: BattlePresentationState = {
   openingDrawPending: false,
   displayedBattle: null,
   cardGhosts: [],
-  floatingCombatTexts: [],
+  floatingCombatBursts: [],
   enemyShaking: false,
   playerShaking: false,
   companionShaking: false,
@@ -194,71 +189,72 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()(
     },
 
     showCombatTexts: (events) => {
-      if (events.length === 0) return;
       const sequence = combatTextSequence;
-      const laneCounts: Record<"player" | "enemy", number> = { player: 0, enemy: 0 };
-      const createdAt = performance.now();
-      const nextEntries = events.map((event) => {
-        const lane = laneCounts[event.target];
-        laneCounts[event.target] += 1;
+      if (events.length === 0 || !shouldShowFloatingCombatText(sequence)) return;
+      const consolidated: CombatTextEvent[] = [];
+      // Resolved frames can be saved and replayed; presentation must never mutate their events.
+      for (const event of events) mergeCombatText(consolidated, { ...event });
+      const priority = (event: CombatTextEvent) => (event.kind === "notice" ? 0 : event.kind === "damage" ? 1 : 2);
+      consolidated.sort((a, b) => priority(a) - priority(b));
+      const lifetimeMs = Math.max(COMBAT_TEXT_MIN_LIFETIME_MS, resolveGameDelay(COMBAT_TEXT_LIFETIME_MS));
+      const actionId = ++combatTextId;
+      const bursts: CombatTextBurst[] = [];
+      const impacts: Partial<Record<"playerImpactCue" | "enemyImpactCue", CombatImpactCue>> = {};
+      for (const target of ["player", "enemy"] as const) {
+        const entries = consolidated.filter((event) => event.target === target);
+        if (entries.length === 0) continue;
+        const id = `combat-burst-${actionId}-${target}`;
+        bursts.push({
+          id,
+          target,
+          lifetimeMs,
+          entries: entries.map((event, index) => ({
+            ...event,
+            id: `${id}-${index}`,
+            displayText: getCombatTextDisplayText(event),
+          })),
+        });
+        let strongest: { amount: number; visual: NonNullable<ReturnType<typeof getCombatImpactVisual>> } | undefined;
+        for (const entry of entries) {
+          const visual = getCombatImpactVisual(entry);
+          if (!visual || entry.kind !== "damage") continue;
+          if (
+            !strongest ||
+            (visual.healthLost && !strongest.visual.healthLost) ||
+            (visual.healthLost === strongest.visual.healthLost && entry.amount > strongest.amount)
+          ) {
+            strongest = { amount: entry.amount, visual };
+          }
+        }
+        if (strongest)
+          impacts[target === "player" ? "playerImpactCue" : "enemyImpactCue"] = {
+            ...strongest.visual,
+            sequence: ++combatImpactSequence,
+          };
+      }
+      if (bursts.length === 0) return;
+      set((s) => {
+        const all = [...s.floatingCombatBursts, ...bursts];
         return {
-          ...event,
-          lane,
-          id: `combat-text-${++combatTextId}`,
-          displayText: getCombatTextDisplayText(event),
-        } satisfies FloatingCombatText;
+          floatingCombatBursts: all.filter(
+            (burst, index) =>
+              all.slice(index + 1).filter((later) => later.target === burst.target).length <
+              COMBAT_TEXT_MAX_BURSTS_PER_RAIL,
+          ),
+          ...impacts,
+        };
       });
-
-      const entriesByDelay = new Map<number, FloatingCombatText[]>();
-      for (const entry of nextEntries) {
-        const showAt = Math.max(createdAt, nextCombatTextAt[entry.target]);
-        nextCombatTextAt[entry.target] = showAt + resolveGameDelay(combatTextLaneDelayMs);
-        const entryDelay = showAt - createdAt;
-        const bucket = entriesByDelay.get(entryDelay);
-        if (bucket) bucket.push(entry);
-        else entriesByDelay.set(entryDelay, [entry]);
-      }
-
-      for (const [entryDelay, entries] of entriesByDelay) {
-        combatTextTimers.setTimeout(() => {
-          if (!shouldShowFloatingCombatText(sequence)) return;
-          set((s) => {
-            let next = [...s.floatingCombatTexts, ...entries];
-            let playerImpactCue: CombatImpactCue | undefined;
-            let enemyImpactCue: CombatImpactCue | undefined;
-            for (const entry of entries) {
-              const visual = getCombatImpactVisual(entry);
-              if (!visual) continue;
-              const cue = { ...visual, sequence: ++combatImpactSequence } satisfies CombatImpactCue;
-              if (entry.target === "player") playerImpactCue = cue;
-              else enemyImpactCue = cue;
-            }
-            for (const side of ["player", "enemy"] as const) {
-              const sideEntries = next.filter((entry) => entry.target === side);
-              const overflow = sideEntries.length - COMBAT_TEXT_MAX_VISIBLE_PER_RAIL;
-              if (overflow <= 0) continue;
-              const drop = new Set(sideEntries.slice(0, overflow).map((entry) => entry.id));
-              next = next.filter((entry) => !drop.has(entry.id));
-            }
-            return {
-              floatingCombatTexts: next,
-              ...(playerImpactCue ? { playerImpactCue } : {}),
-              ...(enemyImpactCue ? { enemyImpactCue } : {}),
-            };
-          });
-          const ids = new Set(entries.map((entry) => entry.id));
-          combatTextTimers.setTimeout(() => {
-            if (sequence !== combatTextSequence) return;
-            set((s) => ({ floatingCombatTexts: s.floatingCombatTexts.filter((c) => !ids.has(c.id)) }));
-          }, resolveGameDelay(combatTextLifetimeMs));
-        }, entryDelay);
-      }
+      const ids = new Set(bursts.map((burst) => burst.id));
+      combatTextTimers.setTimeout(() => {
+        if (sequence !== combatTextSequence) return;
+        set((s) => ({ floatingCombatBursts: s.floatingCombatBursts.filter((burst) => !ids.has(burst.id)) }));
+      }, lifetimeMs);
     },
 
     clearFloatingCombatTexts: () => {
       invalidateCombatTextSequence();
       combatTextTimers.clearAll();
-      set({ floatingCombatTexts: [], playerImpactCue: null, enemyImpactCue: null });
+      set({ floatingCombatBursts: [], playerImpactCue: null, enemyImpactCue: null });
     },
 
     setCardTransfers: (transfers) =>

@@ -19,7 +19,8 @@ export type ArmedFlagChipId =
   | "nextPhysicalDealsBleed"
   | "nextArcheryCardFree"
   | "nextNatureCardFree"
-  | "nextHolyCardFree";
+  | "nextHolyCardFree"
+  | "nextWishExtraChoice";
 
 export type PendingPulseChipId = `pending-${DamageType}`;
 
@@ -48,6 +49,13 @@ const pendingPulseDefinitions = Object.fromEntries(
 );
 
 export const augmentDefinitions: Record<AugmentId, AugmentDefinition> = {
+  nextWishExtraChoice: {
+    id: "nextWishExtraChoice",
+    label: "Divine Intervention",
+    description: "Your next Wish offers 1 additional card choice. Does not stack. Lasts until used or combat ends.",
+    icon: keywordIcons.wish,
+    colorClass: keywordDefinitions.holy.colorClass,
+  },
   burnBonus: {
     id: "burnBonus",
     label: "Burn Bonus",

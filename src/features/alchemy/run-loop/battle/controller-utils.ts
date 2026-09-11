@@ -39,22 +39,24 @@ export function playCompanionSound(companionId: string) {
 }
 
 export function playCombatTextSounds(combatTexts: CombatTextEvent[]) {
+  const sounds = new Set<Parameters<typeof playBattleEvent>[0]>();
   for (const ct of combatTexts) {
     if (ct.kind === "notice") {
-      if (ct.stat === "stun") playBattleEvent("stunProc");
-      else if (ct.stat === "freeze") playBattleEvent("freezeProc");
+      if (ct.stat === "stun") sounds.add("stunProc");
+      else if (ct.stat === "freeze") sounds.add("freezeProc");
       continue;
     }
     if (ct.kind === "damage" && ct.target === "enemy") {
-      playBattleEvent("enemyHit");
+      sounds.add("enemyHit");
     } else if (ct.kind === "damage" && ct.target === "player" && ct.stat === "block") {
-      playBattleEvent("blockAbsorb");
+      sounds.add("blockAbsorb");
     } else if (ct.kind === "damage" && ct.target === "player") {
-      playBattleEvent("playerHit");
+      sounds.add("playerHit");
     } else if (ct.kind === "heal" && ct.target === "player") {
-      playBattleEvent("playerHeal");
+      sounds.add("playerHeal");
     }
   }
+  for (const sound of sounds) playBattleEvent(sound);
 }
 
 export function transferCardIntervalSeconds(

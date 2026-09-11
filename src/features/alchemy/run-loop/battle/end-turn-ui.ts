@@ -38,9 +38,14 @@ export function createBattleEndTurnUi(
     session.clearAllBattleTimeouts();
     const sessionNum = ctx.battleSessionRef.current;
     if (result.state.enemyHealth <= 0 || isPlayerDefeated(result.state)) {
-      presentation.showCombatTexts(
-        result.frames.flatMap(({ turn, companion }) => [...turn.combatTexts, ...(companion?.texts ?? [])]),
-      );
+      for (const { turn, companion } of result.frames) {
+        if (turn.kind === "haste") presentation.showCombatTexts(turn.combatTexts);
+        else {
+          presentation.showCombatTexts(turn.enemyTurnStartCombatTexts);
+          presentation.showCombatTexts(turn.enemyResolutionCombatTexts);
+        }
+        if (companion) presentation.showCombatTexts(companion.texts);
+      }
       ctx.cardPlayInProgressRef.current = false;
       session.checkBattleEnd(result.state, sessionNum);
       return;

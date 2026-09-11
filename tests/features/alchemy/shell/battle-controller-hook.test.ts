@@ -97,14 +97,14 @@ describe("useBattleController", () => {
       variant: "activate",
     });
     await vi.advanceTimersByTimeAsync(0);
-    expect(useBattlePresentationStore.getState().floatingCombatTexts).toHaveLength(1);
+    expect(useBattlePresentationStore.getState().floatingCombatBursts).toHaveLength(1);
     expect(useBattlePresentationStore.getState().cardGhosts).toHaveLength(1);
 
     act(() => {
       rerender({ screen: ROUTE_SCREENS.COLLECTION });
     });
 
-    expect(useBattlePresentationStore.getState().floatingCombatTexts).toEqual([]);
+    expect(useBattlePresentationStore.getState().floatingCombatBursts).toEqual([]);
     expect(useBattlePresentationStore.getState().cardGhosts).toEqual([]);
     vi.useRealTimers();
   });

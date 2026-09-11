@@ -68,7 +68,6 @@ interface ArtPanelProps {
   attackToken?: number;
   castToken?: number;
   plasmaColorPair?: PlasmaColorPair | null;
-  children?: ReactNode;
 }
 
 export function ArtPanel({
@@ -102,7 +101,6 @@ export function ArtPanel({
   attackToken = 0,
   castToken = 0,
   plasmaColorPair = null,
-  children,
 }: ArtPanelProps) {
   const healthToken = useChangeToken(health);
   const healthPercent = maxHealth > 0 ? (health / maxHealth) * 100 : 0;
@@ -172,11 +170,6 @@ export function ArtPanel({
               {...(hoverShineColors === undefined ? {} : { hoverShineColors })}
               {...(turnShineColors === undefined ? {} : { turnShineColors })}
             />
-            {children ? (
-              <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center overflow-visible">
-                {children}
-              </div>
-            ) : null}
           </div>
           {artCorner}
         </div>

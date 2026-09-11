@@ -215,11 +215,11 @@ describe("distinct talent conditions", () => {
   });
 
   it.each(["physical", "nature", "holy"] as const)(
-    "Cull the Weak checks Health before a %s hit obtains Leech",
+    "legacy Cull the Weak checks Health before a %s hit obtains Leech",
     (type) => {
       const initial = battle({
         enemyHealth: 53,
-        talentEffects: { ...talents("Cull the Weak"), natureLeechChance: 100 },
+        talentEffects: { leechHolyDamageVsLowHealth: 1, natureLeechChance: 100 },
         trinketEffects: { brassCenserProcChance: type === "holy" ? 100 : 0 },
         rng: () => 0.75,
       });
@@ -229,8 +229,8 @@ describe("distinct talent conditions", () => {
     },
   );
 
-  it("Cull the Weak adds Holy damage without recursively triggering another Leech hit", () => {
-    const effects = talents("Cull the Weak", "Blessed Leech");
+  it("legacy Cull the Weak adds Holy damage without recursively triggering another Leech hit", () => {
+    const effects = { ...talents("Blessed Leech"), leechHolyDamageVsLowHealth: 1 };
     const initial = battle({ talentEffects: effects, enemyHealth: 49 });
     expect(applyLifestealAndPlayerHitTriggers(initial, 8, []).enemyHealth).toBe(48);
     expect(

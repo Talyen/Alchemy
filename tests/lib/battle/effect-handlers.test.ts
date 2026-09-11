@@ -29,7 +29,7 @@ import {
   applyDrawCardsEffect,
   applyNextArcheryFreeEffect,
 } from "@/lib/battle/effect-handlers/simple-handlers";
-import { makeTestBattleState } from "../../fixtures/battle";
+import { makeTestBattleState, makeTestCard } from "../../fixtures/battle";
 
 type EffectHandler = (
   state: ReturnType<typeof makeTestBattleState>,
@@ -242,7 +242,7 @@ describe("applyCleansePlayerStatusToDamageEffect", () => {
     const state = makeTestBattleState();
     const result = applyCleansePlayerStatusToDamageEffect(
       state,
-      {} as never,
+      makeTestCard(),
       { kind: "cleanse-player-status-to-damage", status: "burn", damageType: "physical" } as never,
       1,
       [],
@@ -257,7 +257,7 @@ describe("applyCleansePlayerStatusToDamageEffect", () => {
     });
     const result = applyCleansePlayerStatusToDamageEffect(
       state,
-      {} as never,
+      makeTestCard(),
       { kind: "cleanse-player-status-to-damage", status: "burn", damageType: "physical" } as never,
       1,
       [],

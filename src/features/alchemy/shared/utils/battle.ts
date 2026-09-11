@@ -106,6 +106,7 @@ function buildArmedPlayerChips(state: BattleSnapshot): StatusChip[] {
   }
   if (flags.nextPhysicalDealsBleed) chips.push({ id: "nextPhysicalDealsBleed", value: 1, hideValue: true });
   if (flags.nextArcheryCardFree) chips.push({ id: "nextArcheryCardFree", value: 1, hideValue: true });
+  if (flags.nextWishExtraChoice) chips.push({ id: "nextWishExtraChoice", value: 1, hideValue: true });
   if (flags.nextHolyCardFree) chips.push({ id: "nextHolyCardFree", value: 1, hideValue: true });
   if (flags.nextNatureCardFree) chips.push({ id: "nextNatureCardFree", value: 1, hideValue: true });
 

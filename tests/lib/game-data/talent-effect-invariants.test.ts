@@ -38,6 +38,8 @@ const LEGACY_SNAPSHOT_FIELDS: ReadonlyArray<keyof TalentEffectManifest> = [
   "firstPoisonCardFree",
   "goldOnFirstPoison",
   "holyBurnChance",
+  "holyWishChance",
+  "leechHolyDamageVsLowHealth",
   "leechBleedChance",
   "leechDesperateMultiplier",
   "leechExecuteMultiplier",

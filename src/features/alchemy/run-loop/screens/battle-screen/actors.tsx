@@ -12,7 +12,7 @@ import {
   getCompanionShineColors,
   getPlasmaColorPairForCharacter,
 } from "@/features/alchemy/shared/config";
-import { CombatTextRailSide, ShakingArtPanel, ShakingCompanionPanel } from "../../battle/presentation/actor-vfx";
+import { ShakingArtPanel, ShakingCompanionPanel } from "../../battle/presentation/actor-vfx";
 import { getActiveCcKeyword } from "@/features/alchemy/shared/utils";
 import type { BattleFeedbackProps, BattleRefsProps, RequiredBattleViewProps } from "./types";
 
@@ -85,9 +85,7 @@ export function BattleActors({
                 </div>
               ) : null
             }
-          >
-            <CombatTextRailSide side="player" />
-          </ShakingArtPanel>
+          />
         </div>
       </div>
 
@@ -111,9 +109,7 @@ export function BattleActors({
           turnUrgentHide={enemyDead}
           ccKeyword={enemyCcKeyword}
           {...(isBoss ? { turnShineColors: getBossShineColors(battleState.currentEnemy) } : {})}
-        >
-          <CombatTextRailSide side="enemy" />
-        </ShakingArtPanel>
+        />
       </div>
     </section>
   );
