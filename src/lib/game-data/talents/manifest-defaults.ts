@@ -1,7 +1,10 @@
 import { defaultCompanionBondLevels } from "../companions";
-import type { TalentEffectManifest } from "../talent-effect-manifest";
+interface HealthThresholdBonus {
+  threshold: number;
+  amount: number;
+}
 
-export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
+export const DEFAULT_TALENT_EFFECTS = {
   cleanseCcOnDodge: false,
   burnOnDodgeBurning: 0,
   consumeDetonatesBurn: false,
@@ -129,12 +132,12 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   flatArmorAmount: 0,
 
   campfireHealBonus: 0,
-  healthThresholdBlock: null,
+  healthThresholdBlock: null as HealthThresholdBonus | null,
   maxHealthPerCombat: 0,
   startHealth: 0,
   healMultiplier: 1,
   consumeHealMultiplier: 0,
-  healthThresholdArmor: [],
+  healthThresholdArmor: [] as HealthThresholdBonus[],
   overhealToBlockRatio: 0,
   healOnStatusCleanse: 0,
   deathsDoorExtension: 0,
@@ -210,7 +213,7 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
 
   runMaxHealthBonus: 0,
   runMaxManaBonus: 0,
-  cardHealBonus: {},
+  cardHealBonus: {} as Record<string, number>,
 
   firstPoisonCardFree: false,
   poisonDamageReduction: 0,
@@ -298,6 +301,8 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   blockEnemyLeech: false,
   natureLeechChance: 0,
 };
+
+export type TalentEffectManifest = typeof DEFAULT_TALENT_EFFECTS;
 
 export function createEmptyTalentEffectManifest(): TalentEffectManifest {
   return {

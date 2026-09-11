@@ -265,6 +265,9 @@ describe("generate-patch-notes", () => {
     });
     expect(parseReleaseArgs(["--dry-run"])).toEqual({ dryRun: true, hotfix: false });
     expect(parseReleaseArgs([])).toEqual({ dryRun: false, hotfix: false });
+    expect(parseReleaseArgs(["--hotfix", "--dry-run"])).toEqual({ dryRun: true, hotfix: true });
+    expect(() => parseReleaseArgs(["--dryrun"])).toThrow("Unknown release argument");
+    expect(() => parseReleaseArgs(["patch"])).toThrow("Unknown release argument");
   });
 });
 

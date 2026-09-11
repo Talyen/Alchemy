@@ -3,7 +3,6 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import tseslint from "typescript-eslint";
 import { alchemyPlugin } from "../../eslint/plugin.js";
-
 const ROOT = path.resolve(import.meta.dirname, "../..");
 
 async function lintRule(relativePath: string, code: string, ruleId: string, options: { jsx?: boolean } = {}) {
@@ -139,61 +138,32 @@ describe("alchemy ESLint plugin", () => {
     expect(allowed).toEqual([]);
   });
 
-  it("bans general comments while permitting tool directives", async () => {
-    const banned = await lintRule(
-      "src/lib/battle/card-play.ts",
-      `/* helper description */\nexport function ping() {}\n`,
-      "no-comments",
-    );
-    expect(banned.length).toBeGreaterThan(0);
-
-    const bannedEslintReasonMissing = await lintRule(
-      "src/lib/battle/card-play.ts",
-      `// eslint-disable-next-line @typescript-eslint/no-explicit-any\nexport const x: any = 1;\n`,
-      "no-comments",
-    );
-    expect(bannedEslintReasonMissing.length).toBeGreaterThan(0);
-
-    const bannedLoosePrefix = await lintRule(
-      "src/lib/battle/card-play.ts",
-      `// eslint something\n export const x = 1;\n`,
-      "no-comments",
-    );
-    expect(bannedLoosePrefix.length).toBeGreaterThan(0);
-
-    const allowedEslint = await lintRule(
-      "src/lib/battle/card-play.ts",
-      `// eslint-disable-next-line @typescript-eslint/no-explicit-any -- intentional any for test\nexport const x: any = 1;\n`,
-      "no-comments",
-    );
-    expect(allowedEslint).toEqual([]);
-
-    const allowedTs = await lintRule(
-      "src/lib/battle/card-play.ts",
-      `// @ts-expect-error test assertion\nexport const x: number = "1";\n`,
-      "no-comments",
-    );
-    expect(allowedTs).toEqual([]);
-
-    const allowedV8 = await lintRule(
-      "src/lib/battle/card-play.ts",
-      `/* v8 ignore next */\nexport function ping() {}\n`,
-      "no-comments",
-    );
-    expect(allowedV8).toEqual([]);
-
-    const allowedVite = await lintRule(
-      "src/lib/battle/card-play.ts",
-      `export const mod = import(/* @vite-ignore */ "./dynamic");\n`,
-      "no-comments",
-    );
-    expect(allowedVite).toEqual([]);
-
-    const notFixed = await fixRule(
-      "src/lib/battle/card-play.ts",
-      `/* helper description */\nexport function ping() {}\n`,
-      "no-comments",
-    );
-    expect(notFixed).toBe(`/* helper description */\nexport function ping() {}\n`);
+  it("allows explanations and requires reasons for lint suppressions", async () => {
+    const file = "src/lib/battle/card-play.ts";
+    const rule = "require-disable-reason";
+    expect(
+      await lintRule(file, "/* Preserve RNG order for saved battles. */\nexport function ping() {}\n", rule),
+    ).toEqual([]);
+    expect(
+      await lintRule(
+        file,
+        "// eslint-disable-next-line @typescript-eslint/no-explicit-any\nexport const x: any = 1;\n",
+        rule,
+      ),
+    ).not.toEqual([]);
+    expect(
+      await lintRule(
+        file,
+        "// eslint-disable-next-line @typescript-eslint/no-explicit-any -- \nexport const x: any = 1;\n",
+        rule,
+      ),
+    ).not.toEqual([]);
+    expect(
+      await lintRule(
+        file,
+        "// eslint-disable-next-line @typescript-eslint/no-explicit-any -- boundary fixture\nexport const x: any = 1;\n",
+        rule,
+      ),
+    ).toEqual([]);
   });
 });

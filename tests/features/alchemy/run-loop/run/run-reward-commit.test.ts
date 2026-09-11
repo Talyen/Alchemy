@@ -1,10 +1,9 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { makeDiscoveryCard } from "../../../../helpers/discovery-store-mock";
-import { applyAlchemistPotion, applyRewardSelection } from "@/features/alchemy/run-loop/run/run-flow-rewards";
 import * as rewardGold from "@/features/alchemy/run-loop/navigation/reward-flow";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { trinketLibrary } from "@/lib/game-data";
-
+import { applyAlchemistPotion, applyRewardSelection } from "@/features/alchemy/run-loop/run/reward-commands";
 const discoveryMocks = vi.hoisted(() => ({
   discoverCardIds: vi.fn(),
   discoverTrinketIds: vi.fn(),

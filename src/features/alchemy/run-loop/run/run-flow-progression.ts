@@ -1,27 +1,27 @@
+import { getBossById, rollFreshBossId } from "@/features/alchemy/shared/config";
+import { createInitialDestinationResult } from "@/features/alchemy/shared/run-flow/destination-flow";
+import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
+import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import {
+  abandonCorruptionDestinationVisit,
+  clearMysteryVisitState,
+  clearShopOfferings,
+  createDraftRunRandomSource,
+  setCompletedDestinations,
   setCompletedDifficulties,
+  setCorruptionResult,
+  setCurrentAct,
+  setDestinationIndexInAct,
   setDestinationOfferState,
   setHasActiveBattle,
   setRewardState,
   setRoomsEncountered,
-  setCurrentAct,
-  setDestinationIndexInAct,
-  setCompletedDestinations,
-  clearMysteryVisitState,
-  clearShopOfferings,
-  setCorruptionResult,
-  createDraftRunRandomSource,
-  abandonCorruptionDestinationVisit,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
-import { createInitialDestinationResult } from "@/features/alchemy/shared/run-flow/destination-flow";
-import { getBossById, rollFreshBossId } from "@/features/alchemy/shared/config";
-import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { ACTS_PER_RUN } from "@/lib/game-constants";
-import type { CompleteRunVictory, RunFlowHandlerDeps } from "./run-flow";
-import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
+import { ACTS_PER_RUN } from "@/lib/game-constants";
+import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
+import type { CompleteRunVictory, RunFlowHandlerDeps } from "./run-flow";
 
 export function createProgressionHandlers(deps: RunFlowHandlerDeps, completeRunVictory: CompleteRunVictory) {
   function clearCompletedDestinationState(draft: GameplayDraft) {
@@ -75,7 +75,7 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, completeRunV
     });
   }
 
-  function handleActComplete(onRenderedScreenCommit?: () => void) {
+  function handleActComplete(prepareNavigation?: () => void) {
     dispatchRunSessionCommand(
       (draft) => {
         setHasActiveBattle(draft, false);
@@ -104,9 +104,9 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, completeRunV
         afterCommit: (runComplete) => {
           clearBattlePresentationUi();
           if (runComplete) {
-            completeRunVictory(onRenderedScreenCommit);
+            completeRunVictory(prepareNavigation);
           } else {
-            prepareNextDestination(0, onRenderedScreenCommit);
+            prepareNextDestination(0, prepareNavigation);
           }
         },
       },
@@ -123,6 +123,11 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, completeRunV
   }
 
   function advanceToNextDestination() {
+    const activity = readRunSession().activity.kind;
+    if (
+      !["campfire", "shop", "alchemist", "trinket-shop", "equipment-shop", "mystery", "corruption"].includes(activity)
+    )
+      return;
     const labyrinth = readActiveRun().contentSystemType === CONTENT_SYSTEMS.LABYRINTH;
     const nextScreen = labyrinth ? ROUTE_SCREENS.LABYRINTH_MAP : ROUTE_SCREENS.DESTINATION;
 

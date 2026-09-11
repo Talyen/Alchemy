@@ -3,7 +3,8 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { BATTLE_CARD_EFFECT_KINDS } from "@/lib/game-data/effects/registry";
 import { DAMAGE_TYPES } from "@/lib/game-data/types";
-import { ROUTE_SCREEN_VALUES } from "@/lib/routing/screens";
+import { ROUTE_SCREEN_VALUES, isRunResumeScreen } from "@/lib/routing";
+import { runActivityScreen, transitionRunActivity } from "@/lib/active-run-session";
 
 const ROOT = join(import.meta.dirname, "../..");
 
@@ -58,12 +59,10 @@ describe("exhaustive switch coverage", () => {
     assertContainsCases("src/lib/mystery/effect-order.ts", mysteryKinds);
   });
 
-  it("run-resume-codec covers every Screen", () => {
-    assertContainsCases("src/features/alchemy/shared/stores/run-resume-codec.ts", ROUTE_SCREEN_VALUES, {
-      allowDefault: true,
-    });
-    const source = readSource("src/features/alchemy/shared/stores/run-resume-codec.ts");
-    expect(source.includes("case null"), "run-resume-codec missing case null").toBe(true);
-    expect(source.includes("case undefined"), "run-resume-codec missing case undefined").toBe(true);
+  it("maps every gameplay screen to an activity and preserves it across menu navigation", () => {
+    for (const screen of ROUTE_SCREEN_VALUES) {
+      const next = transitionRunActivity({ kind: "campfire" }, screen);
+      expect(runActivityScreen(next), screen).toBe(isRunResumeScreen(screen) ? screen : "campfire");
+    }
   });
 });

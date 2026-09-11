@@ -37,7 +37,7 @@ npm run docs:check          # Validate documentation contracts and plan metadata
 npm run docs:check:final    # Repository-wide closure: requires every plan to be finished and archived
 npm run plans:check         # Validate active plan metadata only
 npm run new:plan -- <Name>  # Scaffold an execution plan under docs/Plans/
-npm run archive:plans      # Move all complete/cancelled plans; inspect ownership first
+npm run archive:plans -- PlanName.md  # Archive a task-owned complete/cancelled plan (--dry-run previews)
 npm run balance:sim         # Headless balance findings (opens reports/balance-findings.html)
 npm run balance:loot        # Seeded loot progression report (reports/loot-progression/report.html)
 npm run perf                # FPS / hitch profiling ([PERFORMANCE.md](./PERFORMANCE.md))
@@ -49,15 +49,13 @@ This is the curated agent subset. The full catalog is `package.json` (exhaustive
 
 ### Build commands decision tree
 
-| Intent                                                | Command                                                         |
-| ----------------------------------------------------- | --------------------------------------------------------------- |
-| Local web/dev                                         | `npm run dev` / `npm run build`                                 |
-| Vercel web                                            | `vercel.json` buildCommand: typecheck + `build`                 |
-| Desktop renderer                                      | `npm run build:desktop`                                         |
-| Verified web (push/handoff/CI)                        | `npm run build` (validates generated outputs including version) |
-| Verified desktop (ship/CI)                            | `npm run build:desktop` (plus `assets:check` at release)        |
-| Unpacked Windows app (local iterate)                  | `npm run package:win`                                           |
-| Installers for configured targets (currently Windows) | `npm run dist:desktop`                                          |
+| Intent                                                | Command                                         |
+| ----------------------------------------------------- | ----------------------------------------------- |
+| Local web/dev                                         | `npm run dev` / `npm run build`                 |
+| Vercel web                                            | `vercel.json` buildCommand: typecheck + `build` |
+| Desktop renderer                                      | `npm run build:desktop`                         |
+| Unpacked Windows app (local iterate)                  | `npm run package:win`                           |
+| Installers for configured targets (currently Windows) | `npm run dist:desktop`                          |
 
 **Skip flags:**
 
@@ -66,7 +64,7 @@ This is the curated agent subset. The full catalog is `package.json` (exhaustive
   Semantics are owned by
   [`WORKFLOWS-ASSETS.md`](./WORKFLOWS-ASSETS.md).
 - `ALCHEMY_ENABLE_CHECKER=1` — opt-in to the in-Vite `vite-plugin-checker` typecheck (off by default so `npm run dev` stays snappy; use `npm run typecheck:watch`, `npm run dev:checked`, or this flag when you need live type errors). `ALCHEMY_SKIP_CHECKER=1` is a hard off used by the Playwright preview server.
-- `ALCHEMY_SKIP_SOURCEMAP=1` — opt-out of hidden sourcemaps for `mode=desktop` builds when fast local iterate is preferred; `npm run clean` removes existing maps.
+- `ALCHEMY_SKIP_SOURCEMAP=1` — opt-out of hidden sourcemaps for `mode=desktop` builds when fast local iterate is preferred; `npm run clean -- --builds` removes existing build outputs and their maps.
 - `ALCHEMY_CHECK_SKIP_BUILD=1` — skip web/desktop builds and preview smoke in `npm run check` for fast local iteration; CI and ship gates still build.
 
 `npm run clean` removes local diagnostics and the Vite cache (explicit reset);

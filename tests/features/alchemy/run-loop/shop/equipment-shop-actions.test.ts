@@ -6,17 +6,17 @@ import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run
 import { buildActions, createInitialEquipmentShopState, setEquipmentShopState } from "./shop-actions-harness";
 import type { GearInstance } from "@/lib/gear";
 import { gearDefinitions } from "@/lib/gear";
-
+import { readActivityData } from "@/lib/active-run-session";
 describe("equipment shop actions", () => {
   it("refreshes away from the previous shelf when other equipment is available", () => {
     setRunProgress({ gold: 999, characterId: "knight" });
     const actions = buildActions();
     for (let visit = 0; visit < 10; visit++) {
       setEquipmentShopState(createInitialEquipmentShopState());
-      const previous = readRunSession().equipmentShopState.gear;
+      const previous = readActivityData(readRunSession().activity, "equipment-shop").gear;
       const oldBases = new Set(previous.map((item) => gearDefinitions[item.definitionId]!.baseItemId));
       expect(actions.equipment.refresh()).toBe(true);
-      const refreshed = readRunSession().equipmentShopState.gear;
+      const refreshed = readActivityData(readRunSession().activity, "equipment-shop").gear;
       expect(refreshed).toHaveLength(previous.length);
       expect(refreshed.every((item) => !oldBases.has(gearDefinitions[item.definitionId]!.baseItemId))).toBe(true);
     }
@@ -61,7 +61,9 @@ describe("equipment shop actions", () => {
       expect(result).toBe(true);
       expect(commits).toHaveLength(1);
       expect(readRunProfile().gold).toBe(999 - actions.equipment.getBuyPrice(instance));
-      expect(readRunSession().equipmentShopState.purchasedSlotKeys).toEqual([instance.instanceId]);
+      expect(readActivityData(readRunSession().activity, "equipment-shop").purchasedSlotKeys).toEqual([
+        instance.instanceId,
+      ]);
       expect(readGearState().inventories.knight).toContainEqual(instance);
       expect(readActiveRun().runObtainedItems).toEqual([{ kind: "gear", instance }]);
 

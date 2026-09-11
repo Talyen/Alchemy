@@ -36,6 +36,8 @@ function parseGithubRepoPath(remoteUrl) {
 }
 
 export function parseReleaseArgs(argv) {
+  const unknown = argv.filter((arg) => arg !== "--dry-run" && arg !== "--hotfix");
+  if (unknown.length > 0) throw new Error(`Unknown release argument(s): ${unknown.join(", ")}`);
   return { dryRun: argv.includes("--dry-run"), hotfix: argv.includes("--hotfix") };
 }
 
@@ -90,7 +92,7 @@ async function watchRelease({ label, tag }) {
   if (runId) {
     console.log("Watching release workflow...");
     try {
-      run("gh", ["run", "watch", runId]);
+      run("gh", ["run", "watch", runId, "--exit-status"]);
       console.log(`\n✅ ${label} ${tag} completed successfully.`);
     } catch {
       let conclusion = "unknown";

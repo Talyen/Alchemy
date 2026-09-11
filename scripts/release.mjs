@@ -1,14 +1,20 @@
-// Full release wrapper: shared pre-flight gate, bump, push, and workflow watch.
-// Hotfix mode (release:hotfix): lighter gate, forced patch bump.
 import { parseReleaseArgs, runRelease } from "./lib/release-runner.mjs";
 
-const { dryRun, hotfix } = parseReleaseArgs(process.argv.slice(2));
+async function main() {
+  const argv = process.argv.slice(2);
+  if (argv.includes("--help") || argv.includes("-h")) {
+    console.log("Usage: npm run release -- [--dry-run] [--hotfix]");
+    return;
+  }
+  const { dryRun, hotfix } = parseReleaseArgs(argv);
+  await runRelease(
+    hotfix
+      ? { label: "Hotfix", gates: [["check:ship"], ["test:e2e:critical"]], bumpArgs: ["--release-as", "patch"], dryRun }
+      : { label: "Release", gates: [["check:ship:full"]], dryRun },
+  );
+}
 
-runRelease(
-  hotfix
-    ? { label: "Hotfix", gates: [["check:ship"], ["test:e2e:critical"]], bumpArgs: ["--release-as", "patch"], dryRun }
-    : { label: "Release", gates: [["check:ship:full"]], dryRun },
-).catch((error) => {
-  console.error(`\n${error.message}`);
+main().catch((error) => {
+  console.error(error instanceof Error ? error.message : String(error));
   process.exitCode = 1;
 });

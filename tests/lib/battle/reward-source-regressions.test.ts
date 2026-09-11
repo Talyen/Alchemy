@@ -3,6 +3,8 @@ import { dealDamage, makeTestCard, patchBattleState } from "../../fixtures/battl
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
+import { repeatUniqueCardDamage } from "@/lib/battle/unique-card-effects";
+import { applyHealingWithCombatText } from "@/lib/battle/combat-text";
 import { companionLibrary } from "@/lib/game-data";
 
 describe("combat reward sources", () => {
@@ -73,5 +75,62 @@ describe("combat reward sources", () => {
       [],
     );
     expect(blocked.playerStatuses.block).toBe(0);
+  });
+});
+
+describe("combat healing regressions", () => {
+  it.each(["tick", "hit"])("Poison Leech excludes overkill from a %s", (source) => {
+    const state = patchBattleState({
+      enemyHealth: 3,
+      playerHealth: 10,
+      enemyStatuses: { poison: 20 },
+      talentEffects: { poisonLeechChance: 100 },
+    });
+    const result =
+      source === "tick"
+        ? tickEnemyStatuses(state, [])
+        : dealDamage(
+            { ...state, rng: () => 0.99 },
+            makeTestCard({
+              effects: [{ kind: "damage", damageType: "poison", amount: 20 }],
+            }),
+          );
+    expect(result.playerHealth).toBe(12);
+  });
+
+  it("gear-repeated explicit card Leech triggers Clean Slate", () => {
+    const state = patchBattleState({
+      rng: () => 0.99,
+      playerHealth: 29,
+      playerMaxHealth: 30,
+      playerStatuses: { poison: 3 },
+      talentEffects: { cleanseOnCardOverheal: true, nextHolyFreeOnCleanse: true },
+    });
+    const card = makeTestCard({
+      effects: [{ kind: "damage", damageType: "physical", amount: 6, lifesteal: true }],
+    });
+    const result = repeatUniqueCardDamage(state, card, []);
+    expect(result.playerHealth).toBe(30);
+    expect(result.playerStatuses.poison).toBe(0);
+    expect(result.flags.nextHolyCardFree).toBe(true);
+  });
+
+  it("Profane Blood triggers Second Wind on a surviving half-Health crossing", () => {
+    const state = patchBattleState({
+      enemyHealth: 51,
+      enemyMaxHealth: 100,
+      playerHealth: 10,
+      currentEnemy: {
+        traits: [
+          { id: "blood-countess", title: "Profane Blood", description: "" },
+          { id: "second-wind", title: "Second Wind", description: "" },
+        ],
+      },
+    });
+    const result = applyHealingWithCombatText(state, 1, []);
+    expect(result.flags.secondWindTriggered).toBe(true);
+    expect(result.enemyHealth).toBeGreaterThan(50);
+    const repeated = applyHealingWithCombatText(result, 1, []);
+    expect(repeated.enemyHealth).toBe(result.enemyHealth - 1);
   });
 });

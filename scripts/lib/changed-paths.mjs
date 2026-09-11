@@ -40,9 +40,10 @@ function isDocumentationPath(filePath) {
 }
 
 export function classifyCheckPaths(paths) {
+  paths = paths.filter((filePath) => !isDocumentationPath(filePath));
   const routes = resolveRoutes(paths);
   const ids = new Set(routes.map((route) => route.id));
-  const needsCodeChecks = paths.some((filePath) => !isDocumentationPath(filePath));
+  const needsCodeChecks = paths.length > 0;
   const lockfile = paths.some((filePath) => filePath === "package.json" || filePath === "package-lock.json");
   const sharedBuild = paths.some((filePath) =>
     /^(package(?:-lock)?\.json$|tsconfig.*\.json$|vite\.config\.ts$|scripts\/build-verified\.mjs$|scripts\/lib\/(?:vite-.*|sentry-release)\.mjs$)/u.test(

@@ -4,22 +4,18 @@ Use [REFERENCE](../docs/REFERENCE.md#script-command-reference) to choose a comma
 [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) to select checks,
 and this map to locate their implementation owners.
 
-## Assets (canonical: `assets.mjs --prepare/--optimize/--sync/--check`)
+## Assets
 
-| Task                                                | Command                                                                       |
-| --------------------------------------------------- | ----------------------------------------------------------------------------- |
-| Full prep (predev library entry over same pipeline) | `node scripts/prepare-assets.mjs` / `npm run assets` (`assets.mjs --prepare`) |
-| Optimize only (all assets: art + sounds + music)    | `assets.mjs --optimize` / `npm run assets:optimize`                           |
-| Sync all generated                                  | `node scripts/sync-generated.mjs` / `npm run sync:generated`                  |
-| Fine-grained sync                                   | `sync-generated.mjs --art-only\|--gear-only\|--version-only`                  |
-| Fast barrel check (no transform)                    | `npm run check:generated` (`check-generated-fast.mjs`)                        |
-| Heavy idempotence check (rebuild + restore)         | `npm run assets:check`                                                        |
-| Aliases (`sync:art-barrels`, `sync:gear-art`)       | Forward to `sync-generated.mjs --art-only` / `--gear-only`                    |
+[WORKFLOWS-ASSETS](../docs/WORKFLOWS-ASSETS.md) owns authoring commands and the
+choice between fast generated checks and prepared-output verification.
 
-`prepare-assets.mjs` owns preparation, `sync-art-barrels.mjs` builds the two art
-barrels, and `check-prepared-assets.mjs` owns idempotence checking and restoration.
-Authoring order and fast-versus-prepared checks live in
-[WORKFLOWS-ASSETS](../docs/WORKFLOWS-ASSETS.md).
+| Concern                                     | Implementation owner                                                                          |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Asset CLI and preparation                   | `assets.mjs` → `prepare-assets.mjs`                                                           |
+| Art, sound, and music optimization          | `optimize-pipelines.mjs` → `optimize-assets.mjs`, `optimize-sounds.mjs`, `optimize-music.mjs` |
+| Generated art barrels and version metadata  | `sync-generated.mjs` → `sync-art-barrels.mjs`, `sync-version-metadata.mjs`                    |
+| Fast generated-output validation            | `check-generated-fast.mjs`                                                                    |
+| Prepared-output idempotence and restoration | `check-prepared-assets.mjs`                                                                   |
 
 Shared: `lib/asset-constants.mjs` (tuning), `lib/asset-manifest-cache.mjs` (freshness),
 `lib/process-helpers.mjs` (generic `formatProcessError`), `lib/audio-optimizer.mjs` (audio discovery/runner).
@@ -54,7 +50,11 @@ Gate composition, CI tiers, and reuse policy live in
 | Bundle budgets                            | `lib/bundle-budget.mjs`                                                 |
 
 Documentation and ESLint inventories exclude isolated `.worktrees/` checkouts,
-reports, and installed dependencies. Ambient script-test declarations belong in
+reports, and installed dependencies. Documentation checks share one file inventory;
+current-file checks cover E2E paths as well as other source references. Instruction
+history is advisory and does not require an entry for each skill or knowledge edit.
+
+Ambient script-test declarations belong in
 `tests/scripts/global.d.ts`; standalone unreferenced declarations fail dead-code
 checks. Shared build inputs select both renderer builds through the existing
 change routes. Test selection preserves deleted paths for classification and risk escalations, but executes only surviving changed unit files. When consolidating tests, include the surviving files in the task selection; update stale suite references rather than disabling their validation. [Test value](../CONTRIBUTING.md#test-value-and-coverage-strategy) owns coverage decisions.
@@ -86,8 +86,8 @@ Desktop: `ensure-electron.mjs` (orchestrator) → `electron-download.mjs` + `ele
 
 ## Audits (periodic sweep, not a push gate)
 
-`npm run audit` runs `audit.mjs`, which dispatches to `audit-all.mjs` with no
-selector. Pass a focused selector after
+`npm run audit` runs `audit.mjs`, which dispatches to `audit-all.mjs` when no
+selector is supplied, including with `--verbose`. Pass a focused selector after
 the npm separator (`npm run audit -- --types|--amplification|--content|--hotspots`)
 to dispatch one probe instead. Gating probes: knip, depcruise, eslint complexity,
 content-audit. Advisory trend probes (always exit 0):
@@ -128,7 +128,9 @@ owned by `lib/sentry-release.mjs`; chunk splitting is owned by `lib/vite-chunks.
 run `npm ci` inside the new worktree before running its verification gates.
 Some tools can resolve dependencies from the parent checkout while Knip still
 reports missing binaries and unused dependencies without a local installation.
-Run worktree management commands from the original checkout.
+Run worktree management commands from the original checkout. Removal validates
+the exact registered worktree; an unregistered directory requires inspection
+and explicit `--force`. An empty normalized task name is rejected.
 
 `scripts/bin/git` shims destructive git through
 `git-safety-guard.mjs` (auto-stash backup); `setup-git-safety.mjs` installs the PATH hook.

@@ -1,7 +1,7 @@
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
-import { applyEnemyHealingWithCombatText, mergeCombatText } from "./combat-text";
-import { scaleByRoomMultiplier } from "./enemy-turn-traits";
+import { applyEnemyHealingWithCombatText } from "./enemy-healing";
+import { mergeCombatText } from "./combat-text-events";
 import { paceCombatMagnitude } from "./fight-pacing";
 import { addEnemyMitigation, hasEnemyTrait, type BattleState, type CombatTextEvent } from "./types";
 
@@ -42,6 +42,16 @@ export function processEncounterTraitHealthThreshold(
     { ...state, flags: { ...state.flags, divineAegisTriggered: true } },
     "divine-aegis",
   );
-  nextState = addEnemyMitigationWithCombatText(nextState, "armor", scaleByRoomMultiplier(nextState, 2), combatTexts);
-  return addEnemyMitigationWithCombatText(nextState, "block", scaleByRoomMultiplier(nextState, 4), combatTexts);
+  nextState = addEnemyMitigationWithCombatText(
+    nextState,
+    "armor",
+    Math.round(2 * nextState.roomScalingMultiplier),
+    combatTexts,
+  );
+  return addEnemyMitigationWithCombatText(
+    nextState,
+    "block",
+    Math.round(4 * nextState.roomScalingMultiplier),
+    combatTexts,
+  );
 }

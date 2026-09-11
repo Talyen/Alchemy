@@ -4,7 +4,8 @@ import { setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { buildActions, createInitialShopState, makeCard, requiredItem, setShopState } from "./shop-actions-harness";
 import { SHOP_CARD_PRICE, SHOP_REMOVE_PRICE } from "@/lib/game-constants";
-
+import { playUISound } from "@/lib/audio";
+import { readActivityData } from "@/lib/active-run-session";
 describe("merchant shop actions", () => {
   describe("merchant remove card", () => {
     it("deducts gold and removes card from deck", () => {
@@ -17,7 +18,8 @@ describe("merchant shop actions", () => {
       expect(readRunProfile().gold).toBe(999 - SHOP_REMOVE_PRICE);
       expect(readActiveRun().runDeck).toHaveLength(1);
       expect(readActiveRun().runDeck[0].id).toBe("b");
-      expect(readRunSession().shopState.removeUsed).toBe(true);
+      expect(readActivityData(readRunSession().activity, "shop").removeUsed).toBe(true);
+      expect(playUISound).toHaveBeenCalledWith("shopRemove");
     });
 
     it("does nothing when removeUsed is already true", () => {
@@ -28,6 +30,7 @@ describe("merchant shop actions", () => {
       actions.merchant.removeCard(0);
 
       expect(readRunProfile().gold).toBe(999);
+      expect(playUISound).not.toHaveBeenCalled();
     });
 
     it("does nothing for out-of-bounds index", () => {
@@ -46,7 +49,7 @@ describe("merchant shop actions", () => {
       setRunProgress({ gold: 999 });
       setShopState(createInitialShopState());
       const actions = buildActions({ trinketIds: ["merchants-favor"] });
-      const card = requiredItem(readRunSession().shopState.cards[0], "merchant card");
+      const card = requiredItem(readActivityData(readRunSession().activity, "shop").cards[0], "merchant card");
 
       const discountedPrice = SHOP_CARD_PRICE - 7;
       actions.merchant.buyCard(card, shopItemSlotKey(card.id, 0));
@@ -58,7 +61,7 @@ describe("merchant shop actions", () => {
       setRunProgress({ gold: 999 });
       setShopState(createInitialShopState());
       const firstActions = buildActions({ trinketIds: ["merchants-favor"] });
-      const cards = readRunSession().shopState.cards;
+      const cards = readActivityData(readRunSession().activity, "shop").cards;
       expect(cards.length).toBeGreaterThanOrEqual(2);
       const firstCard = requiredItem(cards[0], "first merchant card");
       const secondCard = requiredItem(cards[1], "second merchant card");
@@ -77,7 +80,7 @@ describe("merchant shop actions", () => {
       setRunProgress({ gold: 999 });
       setShopState(createInitialShopState());
       const actions = buildActions({ talentEffects: { shopCardDiscount: 5 } });
-      const card = requiredItem(readRunSession().shopState.cards[0], "merchant card");
+      const card = requiredItem(readActivityData(readRunSession().activity, "shop").cards[0], "merchant card");
 
       expect(actions.merchant.getCardBuyPrice(card)).toBe(SHOP_CARD_PRICE - 5);
     });
@@ -87,7 +90,7 @@ describe("merchant shop actions", () => {
       setRunProgress({ gold: 999 });
       setShopState(createInitialShopState());
       const actions = buildActions();
-      const onShelf = requiredItem(readRunSession().shopState.cards[0], "merchant card");
+      const onShelf = requiredItem(readActivityData(readRunSession().activity, "shop").cards[0], "merchant card");
       const staleCopy = { ...onShelf, uid: (onShelf.uid ?? 0) + 1000 };
 
       expect(actions.merchant.buyCard(staleCopy, shopItemSlotKey(onShelf.id, 0))).toBe(true);
@@ -101,7 +104,7 @@ describe("merchant shop actions", () => {
       setRunProgress({ gold: 999 });
       setShopState(createInitialShopState());
       const actions = buildActions();
-      const onShelf = requiredItem(readRunSession().shopState.cards[0], "merchant card");
+      const onShelf = requiredItem(readActivityData(readRunSession().activity, "shop").cards[0], "merchant card");
 
       expect(actions.merchant.buyCard({ ...onShelf }, shopItemSlotKey("missing-card", 0))).toBe(false);
       expect(readRunProfile().gold).toBe(999);
@@ -114,7 +117,7 @@ describe("merchant shop actions", () => {
 
       actions.initialize("merchant");
 
-      const shop = readRunSession().shopState;
+      const shop = readActivityData(readRunSession().activity, "shop");
       expect(shop.firstPurchaseUsed).toBe(false);
       expect(shop.purchasedSlotKeys).toHaveLength(0);
       expect(shop.cards.length).toBeGreaterThan(0);
@@ -124,7 +127,7 @@ describe("merchant shop actions", () => {
     it("reads the current first-purchase state when pricing merchant cards", () => {
       setRunProgress({ gold: 999 });
       setShopState(createInitialShopState());
-      const card = requiredItem(readRunSession().shopState.cards[0], "merchant card");
+      const card = requiredItem(readActivityData(readRunSession().activity, "shop").cards[0], "merchant card");
 
       buildActions().merchant.buyCard(card, shopItemSlotKey(card.id, 0));
 

@@ -167,6 +167,7 @@ function normalize(filePath) {
 }
 
 function matches(route, filePath) {
+  if (filePath.endsWith(".md") && route.id !== "documentation") return false;
   return (
     route.patterns.some((pattern) => globToRegExp(pattern).test(filePath)) &&
     !(route.exclude ?? []).some((pattern) => globToRegExp(pattern).test(filePath))
@@ -186,7 +187,7 @@ function isUnitTest(filePath) {
 }
 
 function isRelatedInput(filePath) {
-  if (filePath.startsWith("tests/")) return false;
+  if (filePath.startsWith("tests/") || filePath.endsWith(".md")) return false;
   return /^(src|scripts|desktop|performance)\//u.test(filePath) || /\.(ts|tsx|js|mjs|cjs)$/u.test(filePath);
 }
 
@@ -194,11 +195,13 @@ export function resolveRoutePlan(paths) {
   const normalized = paths.map(normalize);
   const routes = resolveRoutes(normalized);
   const keys = new Set(routes.flatMap((candidate) => candidate.commands));
-  if (routes.some((candidate) => candidate.id === "tooling")) keys.delete("related");
   const changedTests = normalized.filter(
     (filePath) => isUnitTest(filePath) && existsSync(path.join(ROOT_DIR, filePath)),
   );
-  const relatedInputs = normalized.filter((filePath) => !isUnitTest(filePath) && isRelatedInput(filePath));
+  const tooling = routes.find((candidate) => candidate.id === "tooling");
+  const relatedInputs = normalized.filter(
+    (filePath) => !isUnitTest(filePath) && isRelatedInput(filePath) && !(tooling && matches(tooling, filePath)),
+  );
   if (changedTests.length === 0) keys.delete("unit-changed");
   if (relatedInputs.length === 0) keys.delete("related");
   return {

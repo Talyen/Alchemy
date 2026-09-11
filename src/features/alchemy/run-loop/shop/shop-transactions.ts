@@ -1,7 +1,7 @@
-import { playGoldSpend } from "@/lib/audio";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { deductGold, readDraftGold } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { playGoldSpend, playUISound } from "@/lib/audio";
 
 type StateUpdate<T> = T | ((previous: T) => T);
 export type DraftStateWriter<T> = (draft: GameplayDraft, value: StateUpdate<T>) => void;
@@ -17,10 +17,16 @@ function playShopSpendFeedback(result: Pick<ShopTransactionResult<unknown>, "com
 }
 
 export function runShopTransaction<T>(
+  activity: "shop" | "alchemist" | "trinket-shop" | "equipment-shop",
   recipe: (draft: GameplayDraft) => ShopTransactionResult<T>,
-): ShopTransactionResult<T> {
-  const result = dispatchRunSessionCommand(recipe);
+  successSound?: Parameters<typeof playUISound>[0],
+): ShopTransactionResult<T | undefined> {
+  const result = dispatchRunSessionCommand((draft) =>
+    draft.session.activity.kind === activity ? recipe(draft) : null,
+  );
+  if (!result) return { committed: false, price: 0, value: undefined };
   playShopSpendFeedback(result);
+  if (result.committed && successSound) playUISound(successSound);
   return result;
 }
 

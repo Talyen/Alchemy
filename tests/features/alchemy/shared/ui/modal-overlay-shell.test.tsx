@@ -94,6 +94,7 @@ describe("ModalOverlayShell", () => {
     expect(exiting.hasAttribute("inert")).toBe(true);
     fireEvent.click(screen.getByRole("button"));
     fireEvent.keyDown(screen.getByRole("button"), { key: "Enter" });
+    expect(fireEvent.keyDown(screen.getByRole("button"), { key: "Tab" })).toBe(true);
     fireEvent.click(exiting);
     expect(onAction).toHaveBeenCalledTimes(1);
     expect(onKeyDown).toHaveBeenCalledTimes(1);

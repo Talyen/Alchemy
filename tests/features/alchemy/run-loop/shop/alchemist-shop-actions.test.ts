@@ -8,11 +8,16 @@ import {
   requiredItem,
   setAlchemistState,
 } from "./shop-actions-harness";
-import { ALCHEMIST_MIX_PRICE, ALCHEMIST_POTION_PRICE, MIXED_POTION_CARD_ID } from "@/lib/game-constants";
+import {
+  ALCHEMIST_MIX_PRICE,
+  ALCHEMIST_POTIONS_OFFERED,
+  ALCHEMIST_POTION_PRICE,
+  MIXED_POTION_CARD_ID,
+} from "@/lib/game-constants";
 import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
-import { ALCHEMIST_POTIONS_OFFERED } from "@/lib/game-constants";
 import { makeEffect } from "../../../../fixtures/battle";
-
+import { playUISound } from "@/lib/audio";
+import { readActivityData } from "@/lib/active-run-session";
 describe("alchemist shop actions", () => {
   it("fills refresh slots from previous offerings when only one novel potion remains", () => {
     const pool = getStandardPotionPool();
@@ -20,7 +25,7 @@ describe("alchemist shop actions", () => {
     setRunProgress({ gold: 999 });
     setAlchemistState({ ...createInitialAlchemistState(), potions: pool.slice(1), refreshesLeft: 1 });
     expect(buildActions().alchemist.refresh()).toBe(true);
-    const potions = readRunSession().alchemistState.potions;
+    const potions = readActivityData(readRunSession().activity, "alchemist").potions;
     expect(potions).toHaveLength(ALCHEMIST_POTIONS_OFFERED);
     expect(potions).toContainEqual(novel);
     expect(new Set(potions.map((card) => card.id)).size).toBe(potions.length);
@@ -36,8 +41,9 @@ describe("alchemist shop actions", () => {
 
       expect(actions.alchemist.mixPotions(0, 1)).toBeNull();
       expect(readRunProfile().gold).toBe(999);
-      expect(readRunSession().alchemistState.mixUsed).toBe(false);
+      expect(readActivityData(readRunSession().activity, "alchemist").mixUsed).toBe(false);
       expect(readActiveRun().runDeck.map((card) => card.id)).toEqual(["slash", "bash"]);
+      expect(playUISound).not.toHaveBeenCalled();
     });
     it("deducts gold, replaces two cards with mixed potion, marks mixUsed", () => {
       setRunProgress({
@@ -51,8 +57,9 @@ describe("alchemist shop actions", () => {
 
       expect(result).not.toBeNull();
       expect(readRunProfile().gold).toBe(999 - ALCHEMIST_MIX_PRICE);
-      expect(readRunSession().alchemistState.mixUsed).toBe(true);
+      expect(readActivityData(readRunSession().activity, "alchemist").mixUsed).toBe(true);
       expect(readActiveRun().runDeck).toEqual([result]);
+      expect(playUISound).toHaveBeenCalledWith("alchemistMix");
     });
 
     it("adds homestead potionMixPotency onto talent mix potency", () => {
@@ -100,7 +107,7 @@ describe("alchemist shop actions", () => {
       const result = actions.alchemist.mixPotions(0, 1);
       expect(result).toBeNull();
       expect(readRunProfile().gold).toBe(999);
-      expect(readRunSession().alchemistState.mixUsed).toBe(false);
+      expect(readActivityData(readRunSession().activity, "alchemist").mixUsed).toBe(false);
     });
 
     it("prevents a second mix attempt after first succeeds", () => {
@@ -113,7 +120,7 @@ describe("alchemist shop actions", () => {
 
       const first = firstActions.alchemist.mixPotions(0, 1);
       expect(first).not.toBeNull();
-      expect(readRunSession().alchemistState.mixUsed).toBe(true);
+      expect(readActivityData(readRunSession().activity, "alchemist").mixUsed).toBe(true);
 
       const second = firstActions.alchemist.mixPotions(0, 1);
       expect(second).toBeNull();
@@ -136,7 +143,7 @@ describe("alchemist shop actions", () => {
       expect(actions.alchemist.mixPotions(0, 1)).not.toBeNull();
       expect(actions.alchemist.mixPotions(2, 3)).toBeNull();
       expect(readRunProfile().gold).toBe(999 - ALCHEMIST_MIX_PRICE);
-      expect(readRunSession().alchemistState.mixUsed).toBe(true);
+      expect(readActivityData(readRunSession().activity, "alchemist").mixUsed).toBe(true);
     });
   });
   describe("talent discounts", () => {
@@ -144,7 +151,10 @@ describe("alchemist shop actions", () => {
       setRunProgress({ gold: 999 });
       setAlchemistState(createInitialAlchemistState());
       const actions = buildActions({ talentEffects: { potionDiscount: 5, shopCardDiscount: 3 } });
-      const potion = requiredItem(readRunSession().alchemistState.potions[0], "alchemist potion");
+      const potion = requiredItem(
+        readActivityData(readRunSession().activity, "alchemist").potions[0],
+        "alchemist potion",
+      );
 
       expect(actions.alchemist.getPotionBuyPrice(potion)).toBeLessThanOrEqual(ALCHEMIST_POTION_PRICE - 3);
     });

@@ -1,7 +1,5 @@
-import type { RunFlowHandlerDeps } from "@/features/alchemy/run-loop/run/run-flow";
-import type { RunFlowShellActions } from "@/features/alchemy/run-loop/run/run-flow";
+import type { RunFlowHandlerDeps, RunFlowShellActions } from "@/features/alchemy/run-loop/run/run-flow";
 import type { BattleCard, DifficultyModifier } from "@/lib/game-data";
-
 export type MakeFlowHandlerDepsOverrides = Partial<RunFlowHandlerDeps> &
   Partial<RunFlowShellActions> & {
     onLabyrinthClearNode?: () => void;
@@ -17,7 +15,6 @@ export type MakeFlowHandlerDepsOverrides = Partial<RunFlowHandlerDeps> &
     ) => void;
     onStartBossBattle?: () => void;
     onStartBossById?: (bossId: string, modifiers?: DifficultyModifier[]) => boolean;
-    onCommitWildwoodVictory?: RunFlowShellActions["commitWildwoodVictory"];
     onWildwoodRewardComplete?: RunFlowShellActions["wildwoodRewardComplete"];
   };
 
@@ -31,7 +28,6 @@ export function makeFlowHandlerDeps(overrides: MakeFlowHandlerDepsOverrides = {}
     initializeShop,
     startBattle,
     startBoss,
-    commitWildwoodVictory,
     beginMysteryEvent = () => {},
     wildwoodRewardComplete,
     onLabyrinthClearNode = () => {},
@@ -42,7 +38,6 @@ export function makeFlowHandlerDeps(overrides: MakeFlowHandlerDepsOverrides = {}
     onStartBattle = () => {},
     onStartBossBattle = () => {},
     onStartBossById = () => true,
-    onCommitWildwoodVictory = () => {},
     onWildwoodRewardComplete = () => {},
   } = overrides;
 
@@ -69,7 +64,6 @@ export function makeFlowHandlerDeps(overrides: MakeFlowHandlerDepsOverrides = {}
         if (opts?.bossId && onStartBossById(opts.bossId, opts.modifiers)) return;
         onStartBossBattle();
       }),
-    commitWildwoodVictory: commitWildwoodVictory ?? onCommitWildwoodVictory,
     beginMysteryEvent,
     wildwoodRewardComplete: wildwoodRewardComplete ?? onWildwoodRewardComplete,
     clearCardHover: overrides.clearCardHover ?? (() => {}),

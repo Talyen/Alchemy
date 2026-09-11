@@ -6,9 +6,9 @@ import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-ru
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readBattle, readHasActiveRun } from "@/features/alchemy/shared/stores/run-reads";
 import {
+  setGold,
   setHasActiveBattle,
   setHasActiveRun,
-  setGold,
   setScreen,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
@@ -18,7 +18,6 @@ import {
   resetRunProgressSlice,
   setRunProgress,
 } from "../../../helpers/run-domain-store-test";
-
 vi.mock("@/lib/platform", () => ({
   setSteamRichPresence: vi.fn(),
 }));
@@ -60,9 +59,7 @@ describe("useAlchemyRunController", () => {
     act(() => {
       vi.runAllTimers();
     });
-    act(() => {
-      result.current.commitPendingTransition();
-    });
+    act(() => {});
     vi.useRealTimers();
 
     expect(readHasActiveRun()).toBe(false);

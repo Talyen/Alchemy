@@ -135,7 +135,7 @@ describe("talent effect invariants", () => {
     }
   });
 
-  it("every talent-written field is read in application code", () => {
+  it("every talent-written field has an application reader or registered reaction", () => {
     const sources = APPLICATION_DIRS.flatMap((dir) => walkTsFiles(join(ROOT, dir)));
     const corpus = sources.map((file) => readFileSync(file, "utf8")).join("\n");
     const unread: string[] = [];
@@ -145,6 +145,7 @@ describe("talent effect invariants", () => {
         `talents.${field}`,
         `battleTalents.${field}`,
         `talent.${field}`,
+        `chance: "${field}"`,
         `["${field}"]`,
       ];
       if (!needles.some((needle) => corpus.includes(needle))) unread.push(field);

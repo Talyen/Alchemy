@@ -421,20 +421,20 @@ describe("reward flow orchestration", () => {
     it("routes companion rewards back to the rewards screen with the settle hook", () => {
       const handlers = makeHandlers();
       executeRewardRouteTransition("companion-reward", handlers);
-      expect(handlers.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.REWARDS, handlers.settleClaimSurface);
+      expect(handlers.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.REWARDS, handlers.releaseClaim);
     });
 
     it("routes labyrinth map rewards to the labyrinth screen", () => {
       const handlers = makeHandlers();
       executeRewardRouteTransition("labyrinth-map", handlers);
       expect(handlers.labyrinthClearNode).toHaveBeenCalledOnce();
-      expect(handlers.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.LABYRINTH_MAP, handlers.settleClaimSurface);
+      expect(handlers.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.LABYRINTH_MAP, handlers.releaseClaim);
     });
 
     it("routes wildwood victory through completeRunVictory", () => {
       const handlers = makeHandlers();
       executeRewardRouteTransition("wildwood-victory", handlers);
-      expect(handlers.completeRunVictory).toHaveBeenCalledWith(handlers.settleClaimSurface);
+      expect(handlers.completeRunVictory).toHaveBeenCalledWith(handlers.releaseClaim);
       expect(handlers.navigateTo).not.toHaveBeenCalled();
     });
 
@@ -442,14 +442,14 @@ describe("reward flow orchestration", () => {
       const handlers = makeHandlers();
       executeRewardRouteTransition("act-complete", handlers);
       expect(handlers.handleActComplete).toHaveBeenCalledWith(handlers.releaseClaim);
-      expect(handlers.settleClaimSurface).not.toHaveBeenCalled();
+      expect(handlers.releaseClaim).not.toHaveBeenCalled();
       expect(handlers.navigateTo).not.toHaveBeenCalled();
     });
 
     it("routes campaign rewards to destination", () => {
       const handlers = makeHandlers();
       executeRewardRouteTransition("destination", handlers);
-      expect(handlers.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.DESTINATION, handlers.settleClaimSurface);
+      expect(handlers.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.DESTINATION, handlers.releaseClaim);
     });
   });
 });

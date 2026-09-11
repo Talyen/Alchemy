@@ -1,4 +1,4 @@
-import { applyHealthThresholdCleanse } from "./status-player";
+import { checkHealthThresholds } from "./status-player";
 import { scaledGearLeechHeal } from "./gear-effects";
 import { drawKeywordCard } from "./draw";
 import { hasEncounterBenefit } from "./types";
@@ -89,9 +89,10 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
     );
   }
   return dealEnemyDotTick(state, "poison", finalDamage, nextPoison, combatTexts, (nextState) => {
+    const healthLost = Math.max(0, state.enemyHealth - nextState.enemyHealth);
     const afterRiders = applyPoisonTalentRiders(
-      applyParasiticBloomLeech(nextState, Math.max(0, state.enemyHealth - nextState.enemyHealth), combatTexts),
-      finalDamage,
+      applyParasiticBloomLeech(nextState, healthLost, combatTexts),
+      healthLost,
       combatTexts,
     );
     return tryPoisonStunProc(afterRiders, finalDamage, combatTexts);
@@ -164,7 +165,7 @@ function dealPlayerDotTick(
       amount: healthLost,
     });
   }
-  nextState = applyHealthThresholdCleanse(state.playerHealth, nextState, combatTexts);
+  nextState = checkHealthThresholds(state.playerHealth, nextState.playerHealth, nextState, combatTexts);
   return decayArmorAfterDamage(nextState, reducedDamage, "player", combatTexts);
 }
 

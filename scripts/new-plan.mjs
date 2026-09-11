@@ -30,15 +30,11 @@ Describe the user-visible outcome and the bounded implementation scope.
 
 ## Plan
 
-- [ ] Record the baseline and relevant constraints.
-- [ ] Implement the most pragmatic architectural solution — the best long-term shape (even when larger than the minimal workaround).
-- [ ] Review coverage: retain, improve, consolidate, remove, or add tests according to [test value](../../CONTRIBUTING.md#test-value-and-coverage-strategy).
-- [ ] Run path-scoped verification.
-- [ ] Complete and archive this plan using the plan lifecycle, then report verification.
+- [ ] Describe the task-specific implementation steps and meaningful verification.
 
 ## Notes
 
-Keep durable policy in its canonical documentation owner. Follow [the plan lifecycle](./README.md#task-handoff) to complete and archive only this task's plan, then run \`npm run docs:check\` or the task-scoped handoff gate. Other tasks' active plans may remain; validation does not archive files.
+Keep durable rules in their canonical owner. For test selection and task-owned handoff, follow [CONTRIBUTING](../../CONTRIBUTING.md#what-to-run-when-you-change) and [the plan lifecycle](./README.md#task-handoff).
 `;
 }
 

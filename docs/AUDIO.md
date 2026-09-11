@@ -23,6 +23,9 @@ Playback modules live together in `src/lib/audio/`; callers use `@/lib/audio`, b
 - Player volume and mute behavior use the shared settings values; do not introduce audio-local bounds or persisted preferences.
 - Playback failures are non-fatal: report useful diagnostics and continue. Audio failure must not block startup, navigation, battle, saves, or quit.
 - Cache, preload, deduplication, and playback lifetime remain below UI callers. Screens request semantic sounds rather than managing media elements.
+- Crafted Mixed Potion IDs resolve to the base Potion sound for both playback and battle preloading.
+- Successful shop refreshes, card removals, and Potion mixes play their registered service sounds after the transaction commits, including free services. Rejected actions remain silent.
+- Starting a battle invalidates the upcoming enemy's battle music cache, even while the previous screen remains visible. It preserves menu playback until navigation selects the battle track.
 
 ## Change checklist
 

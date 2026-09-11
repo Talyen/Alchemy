@@ -10,6 +10,7 @@ reports/
 .env
 .DS_Store
 scratch/
+/output/
 .vite/
 tsconfig.tsbuildinfo
 screenshot-*
@@ -27,4 +28,3 @@ NUL
 # Generated at upload / release time
 steam/build/
 release-notes/
-

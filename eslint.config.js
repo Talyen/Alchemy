@@ -173,23 +173,7 @@ export default tseslint.config(
   {
     files: ["src/**/*.{ts,tsx}", "tests/**/*.{ts,tsx}"],
     rules: {
-      "alchemy/no-comments": "error",
-    },
-  },
-  {
-    files: [
-      "src/lib/game-data/assets.generated.ts",
-      "src/lib/game-data/gear-art.ts",
-      "src/lib/validation/metadata.generated.ts",
-    ],
-    rules: {
-      "alchemy/no-comments": "off",
-    },
-  },
-  {
-    files: ["eslint/**/*.js", "scripts/**/*.{js,mjs}", "*.config.*"],
-    rules: {
-      "alchemy/no-comments": "off",
+      "alchemy/require-disable-reason": "error",
     },
   },
   {

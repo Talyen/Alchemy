@@ -5,13 +5,10 @@ import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { createEmptyRewardState } from "@/lib/active-run-session";
 import { getRunAvailableDestinations } from "@/features/alchemy/shared/run-flow/destination-flow";
 import { getPreviousDestination } from "@/features/alchemy/shared/run-flow/resolve-available-destinations";
-import { makeTestCard } from "../../../../fixtures/cards";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import {
   beginDestinationClaim,
-  setAlchemistState,
-  setCorruptionResult,
   setMysteryCardChoices,
   setMysteryChosenCardId,
   setMysteryChosenChoice,
@@ -20,13 +17,11 @@ import {
   setMysteryGrantedTrinketIds,
   setMysteryPendingRemoval,
   setRewardState,
-  setShopState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
-import { setRunProgress } from "../../../../helpers/run-domain-store-test";
+import { setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
-
 beforeEach(() => {
   resetTransientRunUi();
 });
@@ -56,6 +51,7 @@ describe("run destination controller actions", () => {
   });
 
   it("continues from campfire through the progression handler", () => {
+    setRunSession({ activity: { kind: "campfire" } });
     let commit: (() => void) | undefined;
     const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => {
       commit = onCommitted;
@@ -73,6 +69,7 @@ describe("run destination controller actions", () => {
   });
 
   it("advanceToNextDestination samples the next picker at the live destination index after a non-combat continue", () => {
+    setRunSession({ activity: { kind: "campfire" } });
     vi.spyOn(config, "rollFreshBossId").mockReturnValue("mimic");
     setRunProgress({
       destinationIndexInAct: 7,
@@ -98,6 +95,7 @@ describe("run destination controller actions", () => {
   });
 
   it("advanceToNextDestination carries the live index so Corruption suppression applies after a non-combat continue", () => {
+    setRunSession({ activity: { kind: "campfire" } });
     setRunProgress({
       destinationIndexInAct: 2,
       completedDestinations: [DESTINATIONS.NORMAL_COMBAT, DESTINATIONS.CORRUPTION],
@@ -146,7 +144,6 @@ describe("run destination controller actions", () => {
     "advanceToNextDestination clears leftover mystery visit state ($name)",
     ({ contentSystemType, expectedScreen, expectLabyrinthClear }) => {
       setRunProgress({ contentSystemType });
-      const stale = makeTestCard({ id: "slash" });
       dispatchRunSessionCommand((draft) => {
         setMysteryEvent(draft, {
           id: "stale-event",
@@ -165,47 +162,13 @@ describe("run destination controller actions", () => {
         setMysteryChosenCardId(draft, "slash");
         setMysteryChosenChoice(draft, { label: "Leave", effects: [] });
         setMysteryPendingRemoval(draft, true);
-        setShopState(draft, { ...draft.session.shopState, cards: [stale] });
-        setAlchemistState(draft, { ...draft.session.alchemistState, potions: [stale] });
-        setCorruptionResult(draft, {
-          originalCard: stale,
-          corruptedCard: { ...stale, corrupted: true },
-          transformed: false,
-          delta: -1,
-        });
       });
 
       const labyrinthClearNode = vi.fn();
-      let commit: (() => void) | undefined;
-      const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => {
-        commit = onCommitted;
-      });
+      const navigateTo = vi.fn((_screen: string, prepare?: () => void) => prepare?.());
       const roomsBeforeExit = readActiveRun().roomsEncountered;
       createRunFlow(makeFlowHandlerDeps({ navigateTo, labyrinthClearNode })).advanceToNextDestination();
-
-      const outgoing = readRunSession();
-      expect(outgoing.mysteryEvent?.id).toBe("stale-event");
-      expect(outgoing.shopState.cards).toEqual([stale]);
-      expect(outgoing.alchemistState.potions).toEqual([stale]);
-      expect(outgoing.corruptionResult?.originalCard.id).toBe("slash");
-      expect(readActiveRun().roomsEncountered).toBe(roomsBeforeExit);
-      expect(labyrinthClearNode).not.toHaveBeenCalled();
-
-      commit?.();
-
-      const cleared = readRunSession();
-      expect(cleared.mysteryEvent).toBeNull();
-      expect(cleared.mysteryCardChoices).toBeNull();
-      expect(cleared.mysteryGrantedTrinketIds).toEqual([]);
-      expect(cleared.mysteryGrantedGearInstances).toEqual([]);
-      expect(cleared.mysteryChosenCardId).toBeNull();
-      expect(cleared.mysteryChosenChoice).toBeNull();
-      expect(cleared.mysteryPendingRemoval).toBe(false);
-      expect(cleared.corruptionResult).toBeNull();
-      expect(cleared.shopState.cards).toEqual([]);
-      expect(cleared.alchemistState.potions).toEqual([]);
-      expect(cleared.trinketShopState.trinkets).toEqual([]);
-      expect(cleared.equipmentShopState.gear).toEqual([]);
+      expect(readRunSession().activity.kind).not.toBe("mystery");
       expect(readActiveRun().roomsEncountered).toBe(roomsBeforeExit + 1);
       expect(navigateTo.mock.calls[0]?.[0]).toBe(expectedScreen);
       if (expectLabyrinthClear) expect(labyrinthClearNode).toHaveBeenCalledOnce();

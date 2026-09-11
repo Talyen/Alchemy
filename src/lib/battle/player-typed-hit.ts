@@ -1,20 +1,18 @@
-import { applyNatureManaRefund } from "./bonus-effects";
-import type { BattleCard, DamageType } from "@/lib/game-data";
+import type { BattleCard, DamageType, TalentEffectManifest } from "@/lib/game-data";
 import { getBattleRng, rollPercent } from "@/lib/rng";
+import { applyNatureManaRefund } from "./bonus-effects";
+import { computeCardDamageToEnemy, computeTalentDamageToEnemy } from "./damage-calc";
 import {
-  applyHolyLifesteal,
   applyDamageBlock,
+  applyHolyLifesteal,
   applyHolyTithe,
   applyLeechHitHealing,
   applyLeechHitRewards,
 } from "./damage-rider-leech";
-import { computeCardDamageToEnemy, computeTalentDamageToEnemy } from "./damage-calc";
-import { applyDamageStatuses } from "./damage-status-riders";
-import { mergeCombatText, payKillPayouts } from "./combat-text";
-import { decayArmorAfterDamage, rollTalentChance } from "./status-helpers";
+import { rollTalentChance } from "./status-helpers";
 import { addForgeToPlayer } from "./status-player";
-import { setFlag, damageEnemyHealth, type BattleState, type CombatTextEvent } from "./types";
-import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
+import { resolveTypedEnemyHit } from "./typed-hit-resolution";
+import { setFlag, type BattleState, type CombatTextEvent } from "./types";
 
 const FOLLOW_UP_CARD: BattleCard = {
   id: "follow-up-typed-hit",
@@ -34,17 +32,9 @@ export function dealPlayerTypedHit(
   if (amount <= 0 || state.enemyHealth <= 0) return state;
   const effect = { kind: "damage" as const, damageType, amount };
   const { nextState: afterMods, modifiedDamage } = computeCardDamageToEnemy(state, effect, FOLLOW_UP_CARD);
-  const hit = damageEnemyHealth(afterMods, modifiedDamage);
-  const enemyWasAlive = hit.enemyWasAlive;
+  const hit = resolveTypedEnemyHit(afterMods, effect, modifiedDamage, combatTexts);
   const preHitHealth = hit.previousHealth;
-  let nextState: BattleState = hit.state;
-  nextState = decayArmorAfterDamage(nextState, modifiedDamage, "enemy", combatTexts);
-  nextState = applyDamageStatuses(nextState, effect, modifiedDamage, combatTexts, preHitHealth);
-  if (modifiedDamage > 0) {
-    mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: damageType, amount: modifiedDamage });
-  }
-  nextState = processEncounterTraitHealthThreshold(preHitHealth, nextState, combatTexts);
-  nextState = payKillPayouts(nextState, enemyWasAlive, combatTexts);
+  let nextState = hit.state;
   if (damageType === "nature") nextState = applyNatureManaRefund(nextState, modifiedDamage, combatTexts);
   return damageType === "holy" ? applyBrassCenser(nextState, modifiedDamage, combatTexts, preHitHealth) : nextState;
 }
@@ -78,18 +68,8 @@ export function dealTalentTypedHit(
   if (amount <= 0 || state.enemyHealth <= 0) return state;
   const { state: blocked, remainingDamage: resolved } = computeTalentDamageToEnemy(state, damageType, amount, derived);
   if (resolved <= 0) return blocked;
-  const hit = damageEnemyHealth(blocked, resolved);
-  let nextState = decayArmorAfterDamage(hit.state, resolved, "enemy", combatTexts);
-  nextState = applyDamageStatuses(
-    nextState,
-    { kind: "damage", damageType, amount },
-    resolved,
-    combatTexts,
-    hit.previousHealth,
-  );
-  mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: damageType, amount: resolved });
-  nextState = processEncounterTraitHealthThreshold(hit.previousHealth, nextState, combatTexts);
-  nextState = payKillPayouts(nextState, hit.enemyWasAlive, combatTexts);
+  const hit = resolveTypedEnemyHit(blocked, { kind: "damage", damageType, amount }, resolved, combatTexts);
+  let nextState = hit.state;
   if (damageType === "holy") {
     nextState = applyHolyLifesteal(nextState, resolved, combatTexts);
     nextState = applyDamageBlock(nextState, resolved, combatTexts);
@@ -127,8 +107,7 @@ export function applyLifestealAndPlayerHitTriggers(
 ): BattleState {
   if (damage <= 0) return state;
   let nextState = applyLeechHitHealing(state, damage, combatTexts, cardHealing, cardLeech);
-  nextState = tryTalentTypedHit(nextState, state.talentEffects.leechBleedDamageChance, "bleed", damage, combatTexts);
-  nextState = tryTalentTypedHit(nextState, state.talentEffects.leechPoisonDamageChance, "poison", damage, combatTexts);
+  nextState = applyTalentHitConversions(nextState, "leech", damage, combatTexts);
   if (enemyHealthBeforeHit < state.enemyMaxHealth / 2) {
     nextState = dealTalentTypedHit(nextState, "holy", state.talentEffects.leechHolyDamageVsLowHealth, combatTexts);
   }
@@ -145,4 +124,38 @@ export function applyNatureLeech(
   const leechChance = state.talentEffects.natureLeechChance + state.gearEffects.natureLeechChance;
   if (leechChance <= 0 || !rollTalentChance(leechChance, state)) return state;
   return applyLifestealAndPlayerHitTriggers(state, damage, combatTexts, false, false, enemyHealthBeforeHit);
+}
+
+type ConversionSource = "physical" | "bleed" | "nature" | "holy" | "leech";
+type NumericTalentEffect = {
+  [K in keyof TalentEffectManifest]: TalentEffectManifest[K] extends number ? K : never;
+}[keyof TalentEffectManifest];
+interface HitConversion {
+  chance: NumericTalentEffect;
+  target: "burn" | "poison" | "bleed";
+}
+
+const TALENT_HIT_CONVERSIONS: Record<ConversionSource, readonly HitConversion[]> = {
+  physical: [{ chance: "physicalBleedDamageChance", target: "bleed" }],
+  bleed: [{ chance: "bleedPoisonDamageChance", target: "poison" }],
+  nature: [{ chance: "naturePoisonDamageChance", target: "poison" }],
+  holy: [{ chance: "holyBurnDamageChance", target: "burn" }],
+  leech: [
+    { chance: "leechBleedDamageChance", target: "bleed" },
+    { chance: "leechPoisonDamageChance", target: "poison" },
+  ],
+};
+
+export function applyTalentHitConversions(
+  state: BattleState,
+  source: ConversionSource,
+  damage: number,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  let next = state;
+  // Array order is combat order: it also determines the persisted RNG stream's next draw.
+  for (const reaction of TALENT_HIT_CONVERSIONS[source]) {
+    next = tryTalentTypedHit(next, state.talentEffects[reaction.chance], reaction.target, damage, combatTexts);
+  }
+  return next;
 }

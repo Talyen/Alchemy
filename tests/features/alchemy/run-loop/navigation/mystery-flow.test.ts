@@ -6,15 +6,15 @@ import {
   type MysteryEffectResult,
 } from "@/features/alchemy/run-loop/navigation/mystery-flow";
 import { cardLibrary, getCardKeywords } from "@/lib/game-data";
-import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import * as cardPools from "@/lib/game-data/cards/card-pools";
+import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { resetAllTestStores, resetProfileForTest } from "../../../../helpers/gameplay-store-test";
 import { setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
 import { setHasActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
-
+import { readActivityData } from "@/lib/active-run-session";
 function makeContext(rng: () => number = () => 0.5): MysteryEffectContext {
   let context!: MysteryEffectContext;
   dispatchRunSessionCommand((draft) => {
@@ -47,7 +47,7 @@ describe("applyMysteryEffect", () => {
   it("chooseCard opens the picker and pauses evaluation", () => {
     const result = apply({ kind: "chooseCard" });
     expect(result.followUp).toBe("choose-card");
-    expect(readRunSession().mysteryCardChoices).not.toBeNull();
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryCardChoices).not.toBeNull();
   });
 
   it("healHealth heals up to max health", () => {
@@ -98,7 +98,7 @@ describe("applyMysteryEffect", () => {
   it("gainRandomTrinket grants an unowned pick and records it", () => {
     const result = apply({ kind: "gainRandomTrinket", fromIds: ["bone-charm", "sin-eaters-lantern"] }, () => 0.5);
     expect(result.followUp).toBeNull();
-    const granted = readRunSession().mysteryGrantedTrinketIds;
+    const granted = readActivityData(readRunSession().activity, "mystery").mysteryGrantedTrinketIds;
     expect(granted).toHaveLength(1);
     expect(["bone-charm", "sin-eaters-lantern"]).toContain(granted[0]);
     expect(readActiveRun().runBoons).toEqual(granted);
@@ -108,7 +108,7 @@ describe("applyMysteryEffect", () => {
     setRunProgress({ runBoons: ["bone-charm", "sin-eaters-lantern"] });
     const result = apply({ kind: "gainRandomTrinket", fromIds: ["bone-charm", "sin-eaters-lantern"] }, () => 0.5);
     expect(result.followUp).toBeNull();
-    const granted = readRunSession().mysteryGrantedTrinketIds;
+    const granted = readActivityData(readRunSession().activity, "mystery").mysteryGrantedTrinketIds;
     expect(granted).toHaveLength(1);
     expect(["bone-charm", "sin-eaters-lantern"]).not.toContain(granted[0]);
   });
@@ -116,13 +116,19 @@ describe("applyMysteryEffect", () => {
   it("uses shared depth eligibility for random Gear while honoring an already-promised Astral", () => {
     setRunProgress({ characterId: "knight", destinationIndexInAct: 0 });
     apply({ kind: "gainGeneratedGear", baseItemId: "emerald-ring" }, () => 0.99);
-    expect(readRunSession().mysteryGrantedGearInstances.at(-1)?.definitionId).toBe("emerald-ring-basic");
+    expect(
+      readActivityData(readRunSession().activity, "mystery").mysteryGrantedGearInstances.at(-1)?.definitionId,
+    ).toBe("emerald-ring-basic");
     setRunProgress({ destinationIndexInAct: 3 });
     apply({ kind: "gainGeneratedGear", baseItemId: "emerald-ring" }, () => 0.99);
-    expect(readRunSession().mysteryGrantedGearInstances.at(-1)?.definitionId).toBe("emerald-ring-astral");
+    expect(
+      readActivityData(readRunSession().activity, "mystery").mysteryGrantedGearInstances.at(-1)?.definitionId,
+    ).toBe("emerald-ring-astral");
     setRunProgress({ destinationIndexInAct: 0 });
     apply({ kind: "gainGeneratedGear", baseItemId: "emerald-ring", astral: true }, () => 0);
-    expect(readRunSession().mysteryGrantedGearInstances.at(-1)?.definitionId).toBe("emerald-ring-astral");
+    expect(
+      readActivityData(readRunSession().activity, "mystery").mysteryGrantedGearInstances.at(-1)?.definitionId,
+    ).toBe("emerald-ring-astral");
   });
 
   it("gainGeneratedGear adds the instance to the armory and records it", () => {
@@ -131,7 +137,7 @@ describe("applyMysteryEffect", () => {
 
     apply({ kind: "gainGeneratedGear", baseItemId: "emerald-ring" });
 
-    const granted = readRunSession().mysteryGrantedGearInstances;
+    const granted = readActivityData(readRunSession().activity, "mystery").mysteryGrantedGearInstances;
     expect(granted).toHaveLength(1);
     expect(granted[0]!.definitionId).toMatch(/^emerald-ring-(basic|astral)$/);
     expect(readGearState().inventories.knight.some((item) => item.instanceId === granted[0]!.instanceId)).toBe(true);
@@ -144,7 +150,7 @@ describe("applyMysteryEffect", () => {
 
     apply({ kind: "gainRandomGear" }, () => 0.5);
 
-    const granted = readRunSession().mysteryGrantedGearInstances;
+    const granted = readActivityData(readRunSession().activity, "mystery").mysteryGrantedGearInstances;
     expect(granted).toHaveLength(1);
     expect(granted[0]!.definitionId).toMatch(/-(basic|astral)$/);
     expect(readGearState().inventories.knight.some((item) => item.instanceId === granted[0]!.instanceId)).toBe(true);
@@ -166,7 +172,7 @@ describe("applyMysteryEffect", () => {
 describe("chooseCard tag filtering", () => {
   it("offers only cards matching the tag", () => {
     apply({ kind: "chooseCard", tag: "archery" });
-    const offered = readRunSession().mysteryCardChoices!;
+    const offered = readActivityData(readRunSession().activity, "mystery").mysteryCardChoices!;
     expect(offered.length).toBeGreaterThan(0);
     for (const card of offered) {
       const libraryCard = cardLibrary.find((c) => c.id === card.id);
@@ -176,7 +182,7 @@ describe("chooseCard tag filtering", () => {
 
   it("can offer non-tagged cards when no tag is given", () => {
     apply({ kind: "chooseCard" });
-    const offered = readRunSession().mysteryCardChoices!;
+    const offered = readActivityData(readRunSession().activity, "mystery").mysteryCardChoices!;
     expect(offered.some((card) => !getCardKeywords(card).includes("archery"))).toBe(true);
   });
 
@@ -188,7 +194,7 @@ describe("chooseCard tag filtering", () => {
     const poolSpy = vi.spyOn(cardPools, "getOfferableCardPool").mockReturnValue(slashOnly);
     try {
       apply({ kind: "chooseCard", tag: "archery" });
-      const offered = readRunSession().mysteryCardChoices!;
+      const offered = readActivityData(readRunSession().activity, "mystery").mysteryCardChoices!;
       expect(offered.length).toBeGreaterThan(0);
       expect(offered.every((card) => card.id === "slash")).toBe(true);
     } finally {

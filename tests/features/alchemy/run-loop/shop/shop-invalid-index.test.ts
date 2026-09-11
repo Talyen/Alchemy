@@ -4,13 +4,13 @@ import { setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import {
   buildActions,
-  makeCard,
-  setShopState,
-  createInitialShopState,
-  setAlchemistState,
   createInitialAlchemistState,
+  createInitialShopState,
+  makeCard,
+  setAlchemistState,
+  setShopState,
 } from "./shop-actions-harness";
-
+import { readActivityData } from "@/lib/active-run-session";
 describe("shop invalid index guards", () => {
   describe("merchant removeCard", () => {
     it("is no-op for fractional, NaN, Infinity and does not charge gold or consume slot", () => {
@@ -22,7 +22,7 @@ describe("shop invalid index guards", () => {
       expect(actions.merchant.removeCard(NaN)).toBe(false);
       expect(actions.merchant.removeCard(Infinity as unknown as number)).toBe(false);
       expect(readRunProfile().gold).toBe(beforeGold);
-      expect(readRunSession().shopState.removeUsed).toBe(false);
+      expect(readActivityData(readRunSession().activity, "shop").removeUsed).toBe(false);
       expect(readActiveRun().runDeck).toHaveLength(2);
     });
 
@@ -67,7 +67,7 @@ describe("shop invalid index guards", () => {
       expect(actions.alchemist.mixPotions(0, 0)).toBeNull();
       expect(actions.alchemist.mixPotions(0, 5)).toBeNull();
       expect(readRunProfile().gold).toBe(999);
-      expect(readRunSession().alchemistState.mixUsed).toBe(false);
+      expect(readActivityData(readRunSession().activity, "alchemist").mixUsed).toBe(false);
     });
 
     it("succeeds for valid distinct potion indices", () => {

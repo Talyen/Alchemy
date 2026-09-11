@@ -5,34 +5,32 @@ import { ActiveRunDataSchema } from "@/lib/validation/save-schemas/active-run";
 import { defaultBattleState } from "@/lib/battle";
 import { finalizeRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import { REWARD_ROUTES, ROUTE_SCREENS } from "@/lib/routing";
-import { createEmptyRewardState, type ActiveRunData } from "@/lib/active-run-session";
-import { restoreRun, teardownRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { createEmptyRewardState, readActivityData, type ActiveRunData } from "@/lib/active-run-session";
+import { restoreRun, snapshotRun, teardownRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { getCurrentRunPhase } from "../../../../helpers/run-session-assertions";
-import { getRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import {
+  getRunSession,
+  readActiveRun,
+  readActiveRunScreen,
+  readBattle,
+  readRunSession,
+} from "@/features/alchemy/shared/stores/run-reads";
 import { cardLibrary, getStartingDeck } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { ANCIENT_ALTAR_MYSTERY_VISIT } from "./active-run-data-fixture";
 import { createRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   beginRewardClaim as mutateBeginRewardClaim,
-  initializeActiveBattle as mutateInitializeActiveBattle,
   setCompanionRewardCards as mutateCompanionRewardCards,
   setHasActiveBattle as mutateHasActiveBattle,
   setHasActiveRun as mutateHasActiveRun,
+  initializeActiveBattle as mutateInitializeActiveBattle,
   setRewardState as mutateRewardState,
   setScreen as mutateSetScreen,
+  setSyncedBattleState as mutateSyncedBattleState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { setSyncedBattleState as mutateSyncedBattleState } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetProgress as mutateResetProgress } from "@/features/alchemy/shared/stores/write-port-run";
-import {
-  readActiveRun,
-  readActiveRunScreen,
-  readBattle,
-  readRunSession,
-} from "@/features/alchemy/shared/stores/run-reads";
 import { resetRunDomainStore, setRunProgress } from "../../../../helpers/run-domain-store-test";
-
 const resetProgress = createRunSessionCommand(mutateResetProgress);
 const setSyncedBattleState = createRunSessionCommand(mutateSyncedBattleState);
 const setHasActiveRun = createRunSessionCommand(mutateHasActiveRun);
@@ -125,24 +123,16 @@ describe("session facade API", () => {
     );
   });
 
-  it("omits primary reward choices while a claim is in flight but keeps destinations", () => {
+  it("retains an unconsumed reward while a claim lock is held", () => {
     const instance = { instanceId: "gear-1", definitionId: "ruby-ring-basic" as const, affixes: [] };
-    setRewardState({
-      ...createEmptyRewardState(["Campfire"]),
-      rewardType: "gear",
-      choices: [instance],
-      gold: 5,
-    });
+    setRewardState({ ...createEmptyRewardState(["Campfire"]), rewardType: "gear", choices: [instance], gold: 5 });
     beginRewardClaim();
     const snap = snapshotRun(ROUTE_SCREENS.REWARDS);
-    expect(snap.interruptedFlow).toEqual({
-      kind: "destination",
-      destinations: ["Campfire"],
-      selectedBossId: null,
-      lastVictoryEnemyType: null,
-      lastVictoryContentSystem: null,
+    expect(snap.interruptedFlow).toMatchObject({
+      kind: "primary-reward",
+      pending: { gearChoices: [instance], gold: 5 },
     });
-    expect(snap.currentScreen).toBe("destination");
+    expect(snap.currentScreen).toBe("rewards");
   });
 
   it("preserves an empty boss reward so Skip can finish the act after reload", () => {
@@ -359,8 +349,8 @@ describe("session facade API", () => {
     restoreRun(activeRun, {}, {});
 
     expect(readActiveRunScreen()).toBe("mystery");
-    expect(readRunSession().mysteryEvent?.id).toBe("ancient-altar");
-    expect(readRunSession().mysteryChosenChoice?.label).toBe("Take the Offering");
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryEvent?.id).toBe("ancient-altar");
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryChosenChoice?.label).toBe("Take the Offering");
   });
 
   it("restores a mid-visit mystery card picker", () => {
@@ -384,11 +374,11 @@ describe("session facade API", () => {
     restoreRun(activeRun, {}, {});
 
     expect(readActiveRunScreen()).toBe("mystery");
-    expect(readRunSession().mysteryEvent?.id).toBe("ancient-altar");
-    expect(readRunSession().mysteryCardChoices).toEqual([slash]);
-    expect(readRunSession().mysteryGrantedTrinketIds).toEqual(["bone-charm"]);
-    expect(readRunSession().mysteryGrantedGearInstances).toEqual([]);
-    expect(readRunSession().mysteryChosenCardId).toBe("slash");
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryEvent?.id).toBe("ancient-altar");
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryCardChoices).toEqual([slash]);
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryGrantedTrinketIds).toEqual(["bone-charm"]);
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryGrantedGearInstances).toEqual([]);
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryChosenCardId).toBe("slash");
   });
 
   it("restores a pending legacy mystery card removal", () => {
@@ -410,7 +400,7 @@ describe("session facade API", () => {
 
     restoreRun(activeRun, {}, {});
 
-    expect(readRunSession().mysteryPendingRemoval).toBe(true);
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryPendingRemoval).toBe(true);
     expect(snapshotRun().mysteryVisit?.pendingRemoval).toBe(true);
   });
 
@@ -425,7 +415,7 @@ describe("session facade API", () => {
     restoreRun(activeRun, {}, {});
 
     expect(readActiveRunScreen()).toBe("destination");
-    expect(readRunSession().mysteryEvent).toBeNull();
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryEvent).toBeNull();
   });
 
   it("restores overgrown-temple random gear without introducing trinkets", () => {
@@ -446,7 +436,9 @@ describe("session facade API", () => {
 
     restoreRun(activeRun, {}, {});
 
-    const search = readRunSession().mysteryEvent?.choices.find((choice) => choice.label === "Search the Crypt");
+    const search = readActivityData(readRunSession().activity, "mystery").mysteryEvent?.choices.find(
+      (choice) => choice.label === "Search the Crypt",
+    );
     expect(search?.effects).toContainEqual({ kind: "gainRandomGear" });
     expect(search?.effects.some((effect) => effect.kind === "gainTrinket")).toBe(false);
   });
@@ -468,8 +460,8 @@ describe("session facade API", () => {
     restoreRun(activeRun, {}, {});
 
     expect(readActiveRunScreen()).toBe("destination");
-    expect(readRunSession().mysteryEvent).toBeNull();
-    expect(readRunSession().mysteryChosenChoice).toBeNull();
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryEvent).toBeNull();
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryChosenChoice).toBeNull();
     expect(readRunSession().rewardState.destinations).toEqual(["Mystery", "Campfire", "Normal Combat"]);
     expect(readActiveRun().completedDestinations).toEqual([]);
     expect(readActiveRun().destinationIndexInAct).toBe(0);
@@ -510,7 +502,7 @@ describe("session facade API", () => {
 
     restoreRun(activeRun, {}, {});
 
-    expect(readRunSession().corruptionResult).toMatchObject({
+    expect(readActivityData(readRunSession().activity, "corruption")).toMatchObject({
       originalCard: { id: slash.id },
       corruptedCard: { id: slash.id, corrupted: true },
       transformed: false,

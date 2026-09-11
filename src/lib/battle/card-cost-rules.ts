@@ -42,7 +42,7 @@ const FIRST_CARD_FREE_RULES: Array<{
   },
   {
     flag: "firstArcheryCardFreeUsed",
-    condition: (state, card) => state.talentEffects.firstArcheryCardFree && !!card.tags?.includes("archery"),
+    condition: (state, card) => state.talentEffects.firstArcheryCardFree && cardHasKeyword(card, "archery"),
   },
 ];
 
@@ -102,7 +102,7 @@ function computeStandardCost(
   }
   if (effectiveCost === 0) return { effectiveCost, consumedFlags, disarmedFlags, spentArmedDiscount };
 
-  if (state.flags.nextArcheryCardFree && !!card.tags?.includes("archery")) {
+  if (state.flags.nextArcheryCardFree && cardHasKeyword(card, "archery")) {
     effectiveCost = 0;
     disarmedFlags.add("nextArcheryCardFree");
   } else if (state.flags.nextNatureCardFree && isNatureCard(card)) {
@@ -116,7 +116,7 @@ function computeStandardCost(
 export function computeEffectiveCost(state: CardCostState, card: BattleCard) {
   const fleeting = card.consume && hasEncounterBenefit(state, "fleeting");
   const quickdraw =
-    card.tags?.includes("archery") && hasEncounterBenefit(state, "quickdraw") && !state.flags.encounterArcheryUsed;
+    cardHasKeyword(card, "archery") && hasEncounterBenefit(state, "quickdraw") && !state.flags.encounterArcheryUsed;
   const encounterDiscount =
     (fleeting ? LABYRINTH_MODIFIER_CONFIG.costReduction : 0) +
     (quickdraw ? LABYRINTH_MODIFIER_CONFIG.costReduction : 0);

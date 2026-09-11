@@ -1,4 +1,3 @@
-import { useCallback, useMemo } from "react";
 import { current } from "immer";
 import { canEnterLabyrinthNode, expandBeyondBoss } from "@/lib/content-systems/labyrinth/map-generation";
 import {
@@ -19,7 +18,6 @@ import {
   setLabyrinthMap,
   setSelectedLabyrinthNodeId,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-
 export interface LabyrinthController {
   selectNode: (nodeId: string) => void;
   deselectNode: () => void;
@@ -27,7 +25,6 @@ export interface LabyrinthController {
   descend: () => void;
   onNodeCleared: () => void;
 }
-
 export interface LabyrinthNodeHandlers {
   onStartBattleWithModifiers: (
     enemyType: "normal" | "elite",
@@ -48,9 +45,7 @@ export interface LabyrinthNodeHandlers {
   onStartTrinketShop: (modifiers?: EncounterRewardTraitId[]) => void;
   onStartEquipmentShop: (modifiers?: EncounterRewardTraitId[]) => void;
 }
-
 type NodeAction = (node: LabyrinthNode, handlers: LabyrinthNodeHandlers) => void;
-
 const NODE_ACTIONS: Record<LabyrinthNodeType, NodeAction> = {
   combat: (node, handlers) =>
     handlers.onStartBattleWithModifiers("normal", node.modifiers, node.rewardModifiers, node.enemyId),
@@ -66,24 +61,20 @@ const NODE_ACTIONS: Record<LabyrinthNodeType, NodeAction> = {
   "trinket-shop": (node, handlers) => handlers.onStartTrinketShop(node.rewardModifiers),
   "equipment-shop": (node, handlers) => handlers.onStartEquipmentShop(node.rewardModifiers),
 };
-
 function routeNodeInteraction(node: LabyrinthNode, handlers: LabyrinthNodeHandlers): void {
   NODE_ACTIONS[node.type](node, handlers);
 }
-
-export function useLabyrinthController(): LabyrinthController {
-  const selectNode = useCallback((nodeId: string) => {
+export function createLabyrinthController(): LabyrinthController {
+  const selectNode = (nodeId: string) => {
     dispatchRunSessionCommand((draft) => {
       const map = draft.session.labyrinthMap;
       setSelectedLabyrinthNodeId(draft, map && canInspectLabyrinthNode(map, nodeId) ? nodeId : null);
     });
-  }, []);
-
-  const deselectNode = useCallback(() => {
+  };
+  const deselectNode = () => {
     dispatchRunSessionCommand((draft) => setSelectedLabyrinthNodeId(draft, null));
-  }, []);
-
-  const enterSelectedNode = useCallback((handlers: LabyrinthNodeHandlers): boolean => {
+  };
+  const enterSelectedNode = (handlers: LabyrinthNodeHandlers): boolean => {
     const node = dispatchRunSessionCommand((draft) => {
       const session = draft.session;
       if (session.activeLabyrinthPendingNode) return null;
@@ -104,9 +95,8 @@ export function useLabyrinthController(): LabyrinthController {
       throw error;
     }
     return true;
-  }, []);
-
-  const onNodeCleared = useCallback(() => {
+  };
+  const onNodeCleared = () => {
     const pending = dispatchRunSessionCommand((draft) => {
       const pendingNode = draft.session.activeLabyrinthPendingNode;
       setActiveLabyrinthPendingNode(draft, null);
@@ -118,21 +108,16 @@ export function useLabyrinthController(): LabyrinthController {
       return pendingNode;
     });
     if (!pending) {
-      console.warn("[useLabyrinthController] onNodeCleared called without a pending node");
+      console.warn("[createLabyrinthController] onNodeCleared called without a pending node");
     }
-  }, []);
-
-  const descend = useCallback(() => {
+  };
+  const descend = () => {
     dispatchRunSessionCommand((draft) => {
       const { labyrinthMap: map, selectedLabyrinthNodeId: nodeId, activeLabyrinthPendingNode } = draft.session;
       if (!map || !nodeId || activeLabyrinthPendingNode || !canDescendFromLabyrinthNode(map, nodeId)) return;
       setLabyrinthMap(draft, expandBeyondBoss(map, nodeId, createDraftRunRandomSource(draft, "world")));
       setSelectedLabyrinthNodeId(draft, null);
     });
-  }, []);
-
-  return useMemo(
-    () => ({ selectNode, deselectNode, enterSelectedNode, descend, onNodeCleared }),
-    [selectNode, deselectNode, enterSelectedNode, descend, onNodeCleared],
-  );
+  };
+  return { selectNode, deselectNode, enterSelectedNode, descend, onNodeCleared };
 }

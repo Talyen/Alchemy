@@ -1,4 +1,4 @@
-import { applyHealthThresholdCleanse } from "../status-player";
+import { checkHealthThresholds } from "../status-player";
 import { DAMAGE_TYPES } from "@/lib/game-data";
 import { getBattleRng, rngInt } from "@/lib/rng";
 import { applyPotionMultiplier } from "../amount-helpers";
@@ -23,8 +23,9 @@ export const applyDamageEffect = defineHandler("damage", (state, card, effect, p
 
 export const applySelfDamageEffect = defineHandler("self-damage", (state, _card, effect, _potionMult, combatTexts) => {
   const { state: postDamage, healthLost } = dealSelfDamage(state, effect.amount, effect.damageType, combatTexts);
-  return applyHealthThresholdCleanse(
+  return checkHealthThresholds(
     state.playerHealth,
+    postDamage.playerHealth,
     addPlayerStatus(postDamage, effect.damageType, healthLost),
     combatTexts,
   );

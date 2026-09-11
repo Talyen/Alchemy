@@ -11,7 +11,7 @@ function isGearAffixId(value: string): value is GearAffixId {
 }
 
 function formatAffixDescription(def: GearAffixDefinition, roll: GearAffixRoll): string {
-  return def.descriptionTemplate.replace("{value}", String(roll.value));
+  return def.descriptionTemplate.replaceAll("{value}", String(roll.value));
 }
 
 export function resolveAffixEffects(affixes: readonly GearAffixRoll[]): GearEffectManifest {

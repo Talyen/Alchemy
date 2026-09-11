@@ -52,14 +52,13 @@ describe("parseAuditArgs", () => {
   });
 
   it("routes the default and each focused audit to its implementation", () => {
-    expect(resolveAuditScript(parseAuditArgs([]), false)).toBe("scripts/audit-all.mjs");
-    expect(resolveAuditScript(parseAuditArgs(["--all"]), true)).toBe("scripts/audit-all.mjs");
-    expect(resolveAuditScript(parseAuditArgs(["--types"]), true)).toBe("scripts/audit-type-escapes.mjs");
-    expect(resolveAuditScript(parseAuditArgs(["--amplification"]), true)).toBe(
-      "scripts/audit-change-amplification.mjs",
-    );
-    expect(resolveAuditScript(parseAuditArgs(["--content"]), true)).toBe("scripts/content-audit.mjs");
-    expect(resolveAuditScript(parseAuditArgs(["--hotspots"]), true)).toBe("scripts/context-hotspots.mjs");
+    expect(resolveAuditScript(parseAuditArgs([]))).toBe("scripts/audit-all.mjs");
+    expect(resolveAuditScript(parseAuditArgs(["--verbose"]))).toBe("scripts/audit-all.mjs");
+    expect(resolveAuditScript(parseAuditArgs(["--all"]))).toBe("scripts/audit-all.mjs");
+    expect(resolveAuditScript(parseAuditArgs(["--types"]))).toBe("scripts/audit-type-escapes.mjs");
+    expect(resolveAuditScript(parseAuditArgs(["--amplification"]))).toBe("scripts/audit-change-amplification.mjs");
+    expect(resolveAuditScript(parseAuditArgs(["--content"]))).toBe("scripts/content-audit.mjs");
+    expect(resolveAuditScript(parseAuditArgs(["--hotspots"]))).toBe("scripts/context-hotspots.mjs");
   });
 
   it("keeps npm audit argument forwarding compatible with focused audits", () => {

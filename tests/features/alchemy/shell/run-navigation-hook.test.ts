@@ -10,7 +10,6 @@ import { readActiveRun, readBattle, readRunSession } from "@/features/alchemy/sh
 import { setHasActiveBattle, setHasActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { makeTestCard } from "../../../fixtures/battle";
 import { resetAllTestStores, setRunProgress, setRunSession } from "../../../helpers/run-domain-store-test";
-
 beforeEach(() => {
   resetAllTestStores();
 });
@@ -64,10 +63,7 @@ describe("useRunFlowEngine", () => {
       wildwoodDraft,
     });
     const onStartBossById = vi.fn(() => true);
-    let commit: (() => void) | undefined;
-    const navigateTo = vi.fn((_screen: string, onCommit?: () => void) => {
-      commit = onCommit;
-    });
+    const navigateTo = vi.fn();
 
     const { result } = renderHook(() =>
       useRunFlowEngine({
@@ -91,11 +87,9 @@ describe("useRunFlowEngine", () => {
 
     expect(readActiveRun().runDeck).toEqual(draftedCards);
     expect(readRunSession().pendingCharacterId).toBeNull();
-    expect(readRunSession().wildwoodDraft).toMatchObject({ phase: "draft" });
-    expect(onStartBossById).not.toHaveBeenCalled();
-    expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE, expect.any(Function));
-
-    act(() => commit?.());
+    expect(readRunSession().wildwoodDraft).toMatchObject({ phase: "battle" });
+    expect(onStartBossById).toHaveBeenCalledOnce();
+    expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE, undefined);
 
     expect(readRunSession().wildwoodDraft).toMatchObject({ phase: "battle" });
     expect(onStartBossById).toHaveBeenCalledOnce();
@@ -109,10 +103,7 @@ describe("useRunFlowEngine", () => {
       wildwoodDraft: { ...createInitialWildwoodDraftState("knight", () => 0.5), phase: "removal" },
     });
     const onStartBossById = vi.fn(() => true);
-    let commit: (() => void) | undefined;
-    const navigateTo = vi.fn((_screen: string, onCommit?: () => void) => {
-      commit = onCommit;
-    });
+    const navigateTo = vi.fn();
 
     const { result } = renderHook(() =>
       useRunFlowEngine({
@@ -132,12 +123,6 @@ describe("useRunFlowEngine", () => {
 
     act(() => result.current.handleWildwoodRemoveCard(1));
 
-    expect(readActiveRun().runDeck).toEqual(runDeck);
-    expect(readRunSession().wildwoodDraft).toMatchObject({ phase: "removal" });
-    expect(onStartBossById).not.toHaveBeenCalled();
-
-    act(() => commit?.());
-
     expect(readActiveRun().runDeck.map((card) => card.id)).toEqual([
       "wildwood-removal-0",
       "wildwood-removal-2",
@@ -151,7 +136,7 @@ describe("useRunFlowEngine", () => {
     expect(onStartBossById).toHaveBeenCalledOnce();
   });
 
-  it("keeps the Wildwood removal phase intact when skipping until the battle screen swap", () => {
+  it("commits a skipped Wildwood removal before the battle screen swap", () => {
     const runDeck = Array.from({ length: 3 }, (_, index) => makeTestCard({ id: `wildwood-skip-${index}` }));
     setRunProgress({ contentSystemType: "wildwood", runDeck });
     setRunSession({
@@ -159,10 +144,7 @@ describe("useRunFlowEngine", () => {
       wildwoodDraft: { ...createInitialWildwoodDraftState("knight", () => 0.5), phase: "removal" },
     });
     const onStartBossById = vi.fn(() => true);
-    let commit: (() => void) | undefined;
-    const navigateTo = vi.fn((_screen: string, onCommit?: () => void) => {
-      commit = onCommit;
-    });
+    const navigateTo = vi.fn();
 
     const { result } = renderHook(() =>
       useRunFlowEngine({
@@ -186,14 +168,8 @@ describe("useRunFlowEngine", () => {
     });
 
     expect(readActiveRun().runDeck).toEqual(runDeck);
-    expect(readRunSession().wildwoodDraft).toMatchObject({ phase: "removal" });
-    expect(navigateTo).toHaveBeenCalledOnce();
-
-    act(() => commit?.());
-
-    expect(readActiveRun().runDeck).toEqual(runDeck);
     expect(readRunSession().wildwoodDraft).toMatchObject({ phase: "battle" });
-    expect(onStartBossById).toHaveBeenCalledOnce();
+    expect(navigateTo).toHaveBeenCalledOnce();
   });
 
   it("does not advance an incomplete Wildwood draft", () => {
@@ -269,6 +245,6 @@ describe("useRunFlowEngine", () => {
     });
 
     expect(readRunSession().pendingCharacterId).toBeNull();
-    expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE, expect.any(Function));
+    expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE, undefined);
   });
 });

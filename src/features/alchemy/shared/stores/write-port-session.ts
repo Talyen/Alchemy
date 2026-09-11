@@ -1,20 +1,21 @@
-import {
-  emptyAlchemistState,
-  emptyEquipmentShopState,
-  emptyShopState,
-  emptyTrinketShopState,
-} from "@/lib/active-run-session";
 import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
-import { DESTINATIONS, type Destination } from "@/lib/routing";
-import type { GameplayDraft } from "./run-session-command";
-import { createInitialSessionFields, type RunSessionFields } from "./run-domain-types";
 import {
+  emptyHydratedMysteryVisit,
+  readActivityData,
+  type HydratedMysteryVisit,
+  type RunActivityData,
+} from "@/lib/active-run-session";
+import { enterWildwoodReward } from "@/lib/content-systems/wildwood/gauntlet";
+import { DESTINATIONS, type Destination } from "@/lib/routing";
+import { createInitialSessionFields, type RunSessionFields } from "./run-domain-types";
+import type { GameplayDraft } from "./run-session-command";
+import {
+  createDraftFieldSetter,
   hydrateFromSnapshot,
   setCompletedDestinations,
   setDestinationIndexInAct,
   setDestinationOfferState,
 } from "./write-port-run";
-import { createDraftFieldSetter } from "./write-port-run";
 
 const createSessionFieldSetter = createDraftFieldSetter<RunSessionFields, GameplayDraft>((draft) => draft.session);
 
@@ -43,7 +44,10 @@ export const setRewardState = createSessionFieldSetter("rewardState");
 export const setCompanionRewardCards = createSessionFieldSetter("companionRewardCards");
 export const setRunEndMaterials = createSessionFieldSetter("runEndMaterials");
 export const setRunEndItems = createSessionFieldSetter("runEndItems");
-export const setCorruptionResult = createSessionFieldSetter("corruptionResult");
+export function setCorruptionResult(draft: GameplayDraft, result: RunActivityData["corruption"]): void {
+  if (result === null && draft.session.activity.kind !== "corruption") return;
+  draft.session.activity = { kind: "corruption", data: result };
+}
 
 export function beginRewardClaim(draft: GameplayDraft): boolean {
   if (draft.session.rewardClaimInFlight) return false;
@@ -122,16 +126,35 @@ export function abandonMysteryDestinationVisit(draft: GameplayDraft): void {
   abandonDestinationVisit(draft, DESTINATIONS.MYSTERY);
 }
 
-export const setShopState = createSessionFieldSetter("shopState");
-export const setAlchemistState = createSessionFieldSetter("alchemistState");
-export const setTrinketShopState = createSessionFieldSetter("trinketShopState");
-export const setEquipmentShopState = createSessionFieldSetter("equipmentShopState");
+type ActivityUpdate<K extends keyof RunActivityData> =
+  | RunActivityData[K]
+  | ((previous: RunActivityData[K]) => RunActivityData[K]);
+
+function updateVisit<K extends keyof RunActivityData>(
+  draft: GameplayDraft,
+  kind: K,
+  action: ActivityUpdate<K>,
+): RunActivityData[K] {
+  return typeof action === "function" ? action(readActivityData(draft.session.activity, kind)) : action;
+}
+
+export function setShopState(draft: GameplayDraft, action: ActivityUpdate<"shop">): void {
+  draft.session.activity = { kind: "shop", data: updateVisit(draft, "shop", action) };
+}
+export function setAlchemistState(draft: GameplayDraft, action: ActivityUpdate<"alchemist">): void {
+  draft.session.activity = { kind: "alchemist", data: updateVisit(draft, "alchemist", action) };
+}
+export function setTrinketShopState(draft: GameplayDraft, action: ActivityUpdate<"trinket-shop">): void {
+  draft.session.activity = { kind: "trinket-shop", data: updateVisit(draft, "trinket-shop", action) };
+}
+export function setEquipmentShopState(draft: GameplayDraft, action: ActivityUpdate<"equipment-shop">): void {
+  draft.session.activity = { kind: "equipment-shop", data: updateVisit(draft, "equipment-shop", action) };
+}
 
 export function clearShopOfferings(draft: GameplayDraft): void {
-  setShopState(draft, emptyShopState());
-  setAlchemistState(draft, emptyAlchemistState());
-  setTrinketShopState(draft, emptyTrinketShopState());
-  setEquipmentShopState(draft, emptyEquipmentShopState());
+  if (["shop", "alchemist", "trinket-shop", "equipment-shop"].includes(draft.session.activity.kind)) {
+    draft.session.activity = { kind: "idle" };
+  }
 }
 
 export const setActiveLabyrinthModifiers = createSessionFieldSetter("activeLabyrinthModifiers");
@@ -141,20 +164,34 @@ export const setSelectedLabyrinthNodeId = createSessionFieldSetter("selectedLaby
 export const setRunEndLabyrinthFloor = createSessionFieldSetter("runEndLabyrinthFloor");
 export const setLabyrinthMap = createSessionFieldSetter("labyrinthMap");
 
-export const setMysteryEvent = createSessionFieldSetter("mysteryEvent");
-export const setMysteryChosenChoice = createSessionFieldSetter("mysteryChosenChoice");
-export const setMysteryPendingRemoval = createSessionFieldSetter("mysteryPendingRemoval");
-export const setMysteryCardChoices = createSessionFieldSetter("mysteryCardChoices");
-export const setMysteryGrantedTrinketIds = createSessionFieldSetter("mysteryGrantedTrinketIds");
-export const setMysteryGrantedGearInstances = createSessionFieldSetter("mysteryGrantedGearInstances");
-export const setMysteryChosenCardId = createSessionFieldSetter("mysteryChosenCardId");
+function createMysteryFieldSetter<K extends keyof HydratedMysteryVisit>(field: K) {
+  return (
+    draft: GameplayDraft,
+    action: HydratedMysteryVisit[K] | ((previous: HydratedMysteryVisit[K]) => HydratedMysteryVisit[K]),
+  ) => {
+    if (draft.session.activity.kind !== "mystery") {
+      draft.session.activity = { kind: "mystery", data: emptyHydratedMysteryVisit() };
+    }
+    const visit = draft.session.activity.data;
+    visit[field] = typeof action === "function" ? action(visit[field]) : action;
+  };
+}
+
+export const setMysteryEvent = createMysteryFieldSetter("mysteryEvent");
+export const setMysteryChosenChoice = createMysteryFieldSetter("mysteryChosenChoice");
+export const setMysteryPendingRemoval = createMysteryFieldSetter("mysteryPendingRemoval");
+export const setMysteryCardChoices = createMysteryFieldSetter("mysteryCardChoices");
+export const setMysteryGrantedTrinketIds = createMysteryFieldSetter("mysteryGrantedTrinketIds");
+export const setMysteryGrantedGearInstances = createMysteryFieldSetter("mysteryGrantedGearInstances");
+export const setMysteryChosenCardId = createMysteryFieldSetter("mysteryChosenCardId");
 
 export function clearMysteryVisitState(draft: GameplayDraft): void {
-  setMysteryEvent(draft, null);
-  setMysteryChosenChoice(draft, null);
-  setMysteryPendingRemoval(draft, false);
-  setMysteryCardChoices(draft, null);
-  setMysteryGrantedTrinketIds(draft, []);
-  setMysteryGrantedGearInstances(draft, []);
-  setMysteryChosenCardId(draft, null);
+  if (draft.session.activity.kind === "mystery") draft.session.activity = { kind: "idle" };
+}
+
+export function enterWildwoodVictory(draft: GameplayDraft): void {
+  const wildwood = draft.session.wildwoodDraft;
+  if (!wildwood) return;
+  const reward = enterWildwoodReward(wildwood);
+  if (reward) setWildwoodDraft(draft, reward);
 }

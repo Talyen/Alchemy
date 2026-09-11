@@ -1,12 +1,10 @@
 # Contributing
 
-Install dependencies with `npm ci`, run `npm run context -- <relevant paths>` to read the selected canonical owner sections, and begin the change there. Use `npm run context` to list task categories when paths are not known; the [documentation map](./README.md#documentation) remains the human index. Clear bugs, failing checks, broken docs or invariants, and well-supported maintenance, accessibility, or UX issues encountered elsewhere may be fixed; follow their cause without starting a broad cleanup or uncited audit. Preserve existing edits with surgical changes, and ask when a safe merge or remedy is ambiguous.
-
-During implementation run `npm run verify -- --diff`; before push and handoff run `npm run check -- --diff`. Use Conventional Commits and leave `CHANGELOG.md` to release automation.
+Install dependencies with `npm ci`. Use `npm run context -- <relevant paths>` for the applicable owner sections, or `npm run context` to list task categories. The [documentation map](./README.md#documentation) is the human index; [AGENTS.md](./AGENTS.md) owns scope, preservation of existing work, and Git authorization.
 
 ## What to run when you change…
 
-The local workflow has three entry points — one per moment, never interchangeable:
+Use the gate appropriate to the work. `check` includes `verify`, so do not run both consecutively on unchanged inputs:
 
 | Moment           | Command                    | Responsibility                                                                                                     |
 | ---------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------ |
@@ -22,12 +20,12 @@ The risk escalations are intentionally broad and few:
 - Asset source or pipeline changes run the idempotent prepared-output check.
 - Desktop changes run the desktop boundary unit suite.
 - Balance and performance changes run their dedicated report/harness checks.
-- Tooling and configuration changes run the complete tooling and architecture unit suite because those tests inspect repository files directly.
+- Tooling and configuration changes run the complete tooling and architecture unit suite because those tests inspect repository files directly. When gameplay changes are included, their dependency-related tests still run.
 - Other implementation changes use Vitest dependency selection; changed test files execute directly.
 
 Eligible expensive unit commands can reuse a recent passing result under the [verification reuse policy](#verification-reuse). Use `ALCHEMY_VERIFY_FRESH=1` for fresh observations during nondeterminism investigation.
 
-The completion gate records every passed, failed, and skipped stage under one run ID, retains bounded failure evidence, and rejects results if tracked source inputs change during the run. Documentation-only changes run documentation and format checks without unit, build, or browser work. Executable changes run the same static aggregate as CI, but not full Vitest or browser journeys. Runtime inputs trigger a non-mutating build and preview smoke. Package manifests trigger `npm ci --dry-run --ignore-scripts`; other pushes do not.
+The completion gate records every passed, failed, and skipped stage under one run ID, retains bounded failure evidence, and rejects results if tracked source inputs change during the run. Documentation-only changes run documentation and format checks without unit, build, or browser work, including Markdown under source, script, and test directories. Executable changes run the same static aggregate as CI, but not full Vitest or browser journeys. Runtime inputs trigger a non-mutating build and preview smoke. Package manifests trigger `npm ci --dry-run --ignore-scripts`; other pushes do not.
 
 ## Verification reuse
 
@@ -58,6 +56,8 @@ When removing or moving suites, update maintained references and explicit gate s
 Fixture, bootstrap, page-object, tag, and diagnostic instructions live in [tests/e2e/README.md](./tests/e2e/README.md). Every push runs the `@critical` suite once; save-touching pushes additionally run the complete save specs, intentionally repeating their overlapping critical tests. Nightly and release workflows own the full browser suite; nightly also owns coverage, mutation, deep entry-export analysis, and full Electron coverage.
 
 Vitest runs React, hook, and browser-adapter suites in the `dom` project; pure engine, validation, desktop-contract, and tooling suites run in the `node` project. `vitest.config.ts:testEnvironmentForPath` owns that classification.
+
+Preserve test import order when a shared harness registers mocks or hooks. Import organization must not move that harness after modules whose dependencies it mocks; use explicit hoisted mocks where feasible. Ordinary explanatory comments are allowed; ESLint suppressions still require a reason. Keep comments focused on ordering, compatibility, and other reasons that names and tests alone do not explain.
 
 Hook tests pass changing inputs through `renderHook(callback, { initialProps })` and `rerender(nextProps)`. `rerender` updates props; it does not replace the render callback.
 

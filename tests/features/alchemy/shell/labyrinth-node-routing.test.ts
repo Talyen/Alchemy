@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createLabyrinthNodeRouting } from "@/features/alchemy/shell/labyrinth-node-routing";
-import type { LabyrinthNodeHandlers } from "@/features/alchemy/shell/use-labyrinth-controller";
+import type { LabyrinthNodeHandlers } from "@/features/alchemy/run-loop/run/labyrinth-controller";
 import { ROUTE_SCREENS } from "@/lib/routing";
 
 function makeRoutingDeps(enterImpl: (handlers: LabyrinthNodeHandlers) => void) {

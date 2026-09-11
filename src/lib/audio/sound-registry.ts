@@ -1,3 +1,6 @@
+import { MIXED_POTION_CARD_ID } from "../game-constants";
+import { isMixedPotionCard } from "../game-data/cards/card-pools";
+
 export const cardSounds: Record<string, string[]> = {
   slash: ["sword-attack-1.ogg"],
   stab: ["sword-attack-3.ogg"],
@@ -58,6 +61,10 @@ export const cardSounds: Record<string, string[]> = {
   "blood-offering": ["sword-impact-hit-2.ogg"],
   judgment: ["strong-punch.ogg"],
 };
+
+export function getCardSounds(cardId: string): readonly string[] {
+  return cardSounds[isMixedPotionCard({ id: cardId }) ? MIXED_POTION_CARD_ID : cardId] ?? [];
+}
 
 export const enemyAttackSounds: Record<string, string[]> = {
   skeleton: ["swish-hit.ogg"],

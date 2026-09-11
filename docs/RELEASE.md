@@ -38,6 +38,10 @@ previous tag to the current tag. `npm run release -- --dry-run` prints the draft
 without gates, a bump, a tag, or a push. A real release prints it after gates
 and before tagging.
 
+Unknown release options fail before any gates, version changes, or publishing.
+The workflow watcher returns failure when the watched GitHub Actions run fails;
+if monitoring is unavailable, inspect the printed workflow link.
+
 ## Agent release flow
 
 1. Ensure your working tree is clean and you're on `main`.

@@ -110,6 +110,12 @@ Do not add exports to generated files by hand. The hash schema salt lives in
 
 ## Resource and battle UI masters
 
+Retained studies, generation prompts, approval records, and comparison previews
+live in the [design archive](./design/README.md). These record design history;
+the matching files under `Raw Assets/` remain the production authoring sources.
+Use ignored `output/` or `scratch/` for temporary experiments, and move materials
+worth keeping into `docs/design/` with their prompts and review context.
+
 Homestead resource masters live in `Raw Assets/Homestead/Resources/`; crafting
 currency PNG masters live in `Raw Assets/Crafting/`. Resources and battle Mana
 use transparent backgrounds, while crafting currencies retain their illustrated

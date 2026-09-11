@@ -105,10 +105,10 @@ function resolveEnemyPostTickResolution(
   return { state: nextState, afterAbilityState };
 }
 
-function resolveSkippedEnemyTurn(state: BattleState) {
-  const enemyTurnStartCombatTexts: CombatTextEvent[] = [];
+function resolveSkippedEnemyTurn(state: BattleState, startResult = resolveEnemyTurnStart(state)) {
+  const enemyTurnStartCombatTexts = startResult.texts;
   const enemyResolutionCombatTexts: CombatTextEvent[] = [];
-  const nextState = tickEnemyStatuses(state, enemyTurnStartCombatTexts);
+  const nextState = startResult.state;
   const enemyTurnStartState = nextState;
 
   if (enemyTurnStartState.enemyHealth <= 0) {
@@ -161,6 +161,10 @@ function resolveStandardEnemyTurn(nextState: BattleState) {
       enemyResolutionCombatTexts: [],
       enemyPerformedAbility: false,
     };
+  }
+
+  if (enemyTurnStartState.enemyCC.stunSkipTurns > 0 || enemyTurnStartState.enemyCC.freezeSkipTurns > 0) {
+    return resolveSkippedEnemyTurn(nextState, startResult);
   }
 
   const actionResult = resolveEnemyAction(enemyTurnStartState);

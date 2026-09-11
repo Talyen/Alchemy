@@ -1,10 +1,10 @@
 import "../../../helpers/mock-audio";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useMysteryEventNavigation } from "@/features/alchemy/shell/use-mystery-event-navigation";
+import { createMysteryEventNavigation } from "@/features/alchemy/run-loop/navigation/mystery-event-navigation";
 import { resetAllTestStores } from "../../../helpers/gameplay-store-test";
 import { setRunProgress } from "../../../helpers/run-domain-store-test";
-import { readRunSession, readActiveRun } from "@/features/alchemy/shared/stores/run-reads";
+import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   setMysteryCardChoices,
@@ -12,10 +12,10 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { cardLibrary, type BattleCard } from "@/lib/game-data";
 import type { Screen } from "@/lib/routing";
-
+import { readActivityData } from "@/lib/active-run-session";
 function renderMysteryNav() {
   const navigateTo = vi.fn((_screen: Screen, onCommit?: () => void) => onCommit?.());
-  const hook = renderHook(() => useMysteryEventNavigation({ navigateTo }));
+  const hook = renderHook(() => createMysteryEventNavigation({ navigateTo }));
   return { hook, navigateTo };
 }
 
@@ -39,8 +39,8 @@ describe("mystery transactional guards", () => {
     });
     expect(result).toBe(false);
     expect(readActiveRun().runDeck).toHaveLength(beforeDeck);
-    expect(readRunSession().mysteryCardChoices).not.toBeNull();
-    expect(readRunSession().mysteryChosenCardId).toBeNull();
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryCardChoices).not.toBeNull();
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryChosenCardId).toBeNull();
   });
 
   it("chooseCard accepts offered card and is idempotent on duplicate", () => {
@@ -57,8 +57,8 @@ describe("mystery transactional guards", () => {
       first = hook.result.current.handleMysteryChooseCard(offeredId);
     });
     expect(first).toBe(true);
-    expect(readRunSession().mysteryChosenCardId).toBe(offeredId);
-    expect(readRunSession().mysteryCardChoices).toBeNull();
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryChosenCardId).toBe(offeredId);
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryCardChoices).toBeNull();
     let second: boolean | undefined;
     act(() => {
       second = hook.result.current.handleMysteryChooseCard(offeredId);
@@ -74,13 +74,13 @@ describe("mystery transactional guards", () => {
         setMysteryPendingRemoval(draft, true);
       });
     });
-    expect(readRunSession().mysteryPendingRemoval).toBe(true);
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryPendingRemoval).toBe(true);
     let result: boolean | undefined;
     act(() => {
       result = hook.result.current.handleMysteryRemoveCard(0.5 as unknown as number);
     });
     expect(result).toBe(false);
-    expect(readRunSession().mysteryPendingRemoval).toBe(true);
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryPendingRemoval).toBe(true);
     act(() => {
       result = hook.result.current.handleMysteryRemoveCard(NaN);
     });
@@ -107,7 +107,7 @@ describe("mystery transactional guards", () => {
     });
     expect(result).toBe(true);
     expect(readActiveRun().runDeck).toHaveLength(1);
-    expect(readRunSession().mysteryPendingRemoval).toBe(false);
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryPendingRemoval).toBe(false);
 
     act(() => {
       result = hook.result.current.handleMysteryRemoveCard(0);

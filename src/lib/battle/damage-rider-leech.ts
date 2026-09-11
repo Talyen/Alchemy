@@ -80,12 +80,7 @@ function executePlayerHealing(
   cardHealing = false,
 ): BattleState {
   if (amount <= 0) return state;
-  return applyLeechHealing(
-    state,
-    Math.round(scalePlayerLeechHeal(state, amount) * state.talentEffects.healMultiplier),
-    combatTexts,
-    { cardHealing },
-  );
+  return applyLeechHealing(state, scalePlayerLeechHeal(state, amount), combatTexts, { cardHealing });
 }
 
 function applyLeechStatusRider(state: BattleState, status: EnemyStatusId, chance: number, damage: number): BattleState {

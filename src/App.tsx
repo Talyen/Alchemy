@@ -1,17 +1,10 @@
-import { useCardInspection } from "@/app/use-card-inspection";
-import { DeckInspectButton } from "@/features/alchemy/shared/ui/deck-inspect-button";
-import { CardInspectionOverlay } from "@/features/alchemy/shared/ui/card-inspection-overlay";
-import { useArtworkReady } from "@/features/alchemy/shared/ui/use-artwork-ready";
-import { useDeviceDisplayStore } from "@/features/alchemy/shared/stores/device-display-store";
-import { useCallback, useLayoutEffect, useMemo, useRef, useState, type SyntheticEvent } from "react";
-import { cn } from "@/lib/utils";
-import type { Screen } from "@/lib/routing";
 import {
   AppBackgroundParticles,
   AppScreenChromeProvider,
   GameMenuOverlay,
   StartupLoadingScreen,
   UnsupportedSaveOverlay,
+  getScreenParticleConfig,
   useAlchemyAutosaveFromStores,
   useAppAudioEffects,
   useAppDisplayEffects,
@@ -22,35 +15,42 @@ import {
   useInitialLoadReady,
   useRenderedScreenTransition,
   useReturnToRunNavigation,
-  getScreenParticleConfig,
 } from "@/app/app-shell";
-import { renderAlchemyScreenRoute } from "@/app/screen-routes";
-import { useIsArmoryLocked } from "@/features/alchemy/shared/stores/gear-store";
-import { useVirtualResolution } from "@/features/alchemy/shared/hooks";
-import { setModalRoot } from "@/features/alchemy/shared/ui/modal-root";
-import { setTooltipRoot } from "@/features/alchemy/shared/ui/tooltip-root";
-import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
-import { CardDescriptionProvider } from "@/features/alchemy/shared/context/card-description-context";
-import { HamburgerTrigger } from "@/features/alchemy/shared/ui/navigation";
 import { BattleAutoplayToggle } from "@/app/battle-autoplay-toggle";
+import { renderAlchemyScreenRoute } from "@/app/screen-routes";
+import { useAlchemyBootstrap } from "@/app/use-alchemy-bootstrap";
+import { useCardInspection } from "@/app/use-card-inspection";
+import { ErrorBoundary } from "@/components/error-boundary";
 import { BattleBoonInspectButton } from "@/features/alchemy/run-loop/screens/battle-screen/boon-inspect";
 import { hasInspectableBoons } from "@/features/alchemy/run-loop/screens/battle-screen/unique-run-boons";
-import { ErrorBoundary } from "@/components/error-boundary";
+import { CardDescriptionProvider } from "@/features/alchemy/shared/context/card-description-context";
+import { useVirtualResolution } from "@/features/alchemy/shared/hooks";
 import { clearAlchemySaveData, type SaveLoadState } from "@/features/alchemy/shared/storage";
-import { useAppSettings } from "@/features/alchemy/shared/stores/settings-store";
+import { useDeviceDisplayStore } from "@/features/alchemy/shared/stores/device-display-store";
+import { useIsArmoryLocked } from "@/features/alchemy/shared/stores/gear-store";
+import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profile-store";
 import {
-  useActiveRunScreenValue,
   useActiveRunBoons,
+  useActiveRunScreenValue,
   useAutosaveAllowed,
   useBondedCompanions,
+  useRunSessionNavigationSlice,
   useTalentEffects,
 } from "@/features/alchemy/shared/stores/run-reads";
-import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profile-store";
-import { useRunSessionNavigationSlice } from "@/features/alchemy/shared/stores/run-reads";
-import type { AlchemyRunCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
-import { useAlchemyBootstrap } from "@/app/use-alchemy-bootstrap";
-import { KeywordPlasmaBackground } from "@/features/alchemy/shared/ui/keyword-plasma-background";
+import { useAppSettings } from "@/features/alchemy/shared/stores/settings-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import { CardInspectionOverlay } from "@/features/alchemy/shared/ui/card-inspection-overlay";
+import { DeckInspectButton } from "@/features/alchemy/shared/ui/deck-inspect-button";
+import { KeywordPlasmaBackground } from "@/features/alchemy/shared/ui/keyword-plasma-background";
+import { setModalRoot } from "@/features/alchemy/shared/ui/modal-root";
+import { HamburgerTrigger } from "@/features/alchemy/shared/ui/navigation";
+import { setTooltipRoot } from "@/features/alchemy/shared/ui/tooltip-root";
+import { useArtworkReady } from "@/features/alchemy/shared/ui/use-artwork-ready";
+import type { AlchemyRunCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
+import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
+import type { Screen } from "@/lib/routing";
+import { cn } from "@/lib/utils";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState, type SyntheticEvent } from "react";
 
 const OPTIONS_PREVIEW_PLASMA_PAIR = { primary: "#fbbf24", secondary: "#78350f" };
 
@@ -311,10 +311,7 @@ function AppInner({
   const gameMenu = useGameMenuState();
   const run = useAlchemyRunController();
 
-  const { renderedScreen, pagePhase, tooltipBlocked } = useRenderedScreenTransition(
-    run.screen,
-    run.commitPendingTransition,
-  );
+  const { renderedScreen, pagePhase, tooltipBlocked } = useRenderedScreenTransition(run.screen);
 
   const saveBlockedByNewerVersion =
     saveLoadStatus.kind === "unsupported-newer-schema" || saveLoadStatus.kind === "unsupported-newer-content";

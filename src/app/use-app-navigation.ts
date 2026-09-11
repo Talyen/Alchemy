@@ -1,27 +1,27 @@
-import { useCallback, useEffect, useState } from "react";
-import type { Screen } from "@/lib/routing";
-import { resolveGameDelay } from "@/lib/animation/game-timer";
-import { MOTION_FADE_MS, PAGE_EXIT_MS } from "@/lib/game-constants";
 import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
+import { useLatestRef } from "@/features/alchemy/shared/hooks";
+import { discoverCardIds, discoverTrinketIds, discoverUniqueIds } from "@/features/alchemy/shared/stores/profile-store";
+import { clearAllPersistentGameData } from "@/features/alchemy/shared/stores/reset";
 import {
+  useForegroundResumeKind,
   useHasActiveBattle,
   useRunResumeScreen,
-  useForegroundResumeKind,
 } from "@/features/alchemy/shared/stores/run-reads";
-import { useLatestRef } from "@/features/alchemy/shared/hooks";
-import { useSequentialFadeSwap } from "@/features/alchemy/shared/ui/use-fade";
-import type { AlchemyRunCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
-import { cardLibrary, enemyBestiary, trinketLibrary } from "@/lib/game-data";
-import { uniqueItemList } from "@/lib/gear";
-import { discoverCardIds, discoverTrinketIds, discoverUniqueIds } from "@/features/alchemy/shared/stores/profile-store";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   setEncounteredEnemyIds,
   setFinishedRunCharacters,
   setMaterials,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { clearAllPersistentGameData } from "@/features/alchemy/shared/stores/reset";
+import { useSequentialFadeSwap } from "@/features/alchemy/shared/ui/use-fade";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import type { AlchemyRunCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
+import { resolveGameDelay } from "@/lib/animation/game-timer";
+import { MOTION_FADE_MS, PAGE_EXIT_MS } from "@/lib/game-constants";
+import { cardLibrary, enemyBestiary, trinketLibrary } from "@/lib/game-data";
+import { uniqueItemList } from "@/lib/gear";
+import type { Screen } from "@/lib/routing";
+import { useCallback, useEffect, useState } from "react";
 
 export function useGameMenuState() {
   const [gameMenuOpen, setGameMenuOpen] = useState(false);
@@ -40,12 +40,11 @@ export function useGameMenuState() {
   return { gameMenuOpen, menuAnchorRect, openGameMenu, closeGameMenu, setMenuAnchorRect, setGameMenuOpen };
 }
 
-export function useRenderedScreenTransition(controllerScreen: Screen, commitPendingTransition: () => void) {
+export function useRenderedScreenTransition(controllerScreen: Screen) {
   const { shown: renderedScreen, phase: fadePhase } = useSequentialFadeSwap({
     target: controllerScreen,
     durationMs: PAGE_EXIT_MS,
     initialPhase: "enter",
-    onSwap: commitPendingTransition,
   });
   const [tooltipBlocked, setTooltipBlocked] = useState(true);
 

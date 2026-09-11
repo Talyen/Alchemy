@@ -68,6 +68,19 @@ describe("verification selection", () => {
     ).toEqual(["unit-tooling"]);
   });
 
+  it("preserves gameplay test selection alongside tooling changes", () => {
+    const runtimePath = "src/lib/battle/damage-calc.ts";
+    const plan = resolveRoutePlan(["scripts/check.mjs", runtimePath, "src/lib/game-data/effects/BATTLE_HANDLERS.md"]);
+    expect(plan.commands.map((command) => command.key)).toEqual(["docs-check", "unit-tooling", "related"]);
+    expect(plan.commands.find((command) => command.key === "related")?.args).toEqual([
+      "vitest",
+      "related",
+      runtimePath,
+      "--run",
+      "--passWithNoTests",
+    ]);
+  });
+
   it("adds only the retained risk escalations", () => {
     expect(
       resolveRoutePlan(["src/features/alchemy/shared/storage/io.ts"]).commands.map((command) => command.key),
@@ -87,7 +100,12 @@ describe("verification selection", () => {
   });
 
   it("keeps documentation free of unit, build, and browser work", () => {
-    const plan = resolveRoutePlan(["docs/new-guide.md"]);
+    const plan = resolveRoutePlan([
+      "docs/new-guide.md",
+      "scripts/README.md",
+      "src/features/alchemy/shared/storage/MIGRATIONS.md",
+      "tests/e2e/README.md",
+    ]);
     expect(resolveRoutes(plan.paths).map((route) => route.id)).toEqual(["documentation"]);
     expect(plan.commands.map((command) => command.key)).toEqual(["docs-check"]);
     expect(formatPlan(plan)).toContain("documentation checks");

@@ -22,10 +22,10 @@ import {
   SHOP_REFRESH_PRICE,
   TRINKET_SHOP_TRINKET_PRICE,
 } from "@/lib/game-constants";
-import { playGoldSpend } from "@/lib/audio";
+import { playGoldSpend, playUISound } from "@/lib/audio";
 import type { GearInstance } from "@/lib/gear";
 import { createRunRngState } from "@/lib/rng";
-
+import { readActivityData } from "@/lib/active-run-session";
 type Actions = ReturnType<typeof buildActions>;
 
 const basicGear: GearInstance = {
@@ -48,16 +48,16 @@ const shops = [
       });
     },
     buy: (actions: Actions) => {
-      const card = requiredItem(readRunSession().shopState.cards[0], "merchant card");
+      const card = requiredItem(readActivityData(readRunSession().activity, "shop").cards[0], "merchant card");
       return actions.merchant.buyCard(card, shopItemSlotKey(card.id, 0));
     },
     refresh: (actions: Actions) => actions.merchant.refresh(),
-    read: () => readRunSession().shopState,
+    read: () => readActivityData(readRunSession().activity, "shop"),
     buyPrice: SHOP_CARD_PRICE as number | null,
     refreshPrice: SHOP_REFRESH_PRICE,
-    offeringIds: () => readRunSession().shopState.cards.map((card) => card.id),
+    offeringIds: () => readActivityData(readRunSession().activity, "shop").cards.map((card) => card.id),
 
-    replayIds: () => readRunSession().shopState.cards.map((card) => card.id),
+    replayIds: () => readActivityData(readRunSession().activity, "shop").cards.map((card) => card.id),
     restockDedup: true,
     initialize: (actions: Actions) => actions.merchant.initialize(),
     replayRefresh: true,
@@ -75,15 +75,18 @@ const shops = [
       });
     },
     buy: (actions: Actions) => {
-      const potion = requiredItem(readRunSession().alchemistState.potions[0], "alchemist potion");
+      const potion = requiredItem(
+        readActivityData(readRunSession().activity, "alchemist").potions[0],
+        "alchemist potion",
+      );
       return actions.alchemist.buyPotion(potion, shopItemSlotKey(potion.id, 0));
     },
     refresh: (actions: Actions) => actions.alchemist.refresh(),
-    read: () => readRunSession().alchemistState,
+    read: () => readActivityData(readRunSession().activity, "alchemist"),
     buyPrice: ALCHEMIST_POTION_PRICE as number | null,
     refreshPrice: ALCHEMIST_REFRESH_PRICE,
-    offeringIds: () => readRunSession().alchemistState.potions.map((card) => card.id),
-    replayIds: () => readRunSession().alchemistState.potions.map((card) => card.id),
+    offeringIds: () => readActivityData(readRunSession().activity, "alchemist").potions.map((card) => card.id),
+    replayIds: () => readActivityData(readRunSession().activity, "alchemist").potions.map((card) => card.id),
     restockDedup: true,
     initialize: (actions: Actions) => actions.alchemist.initialize(),
     replayRefresh: true,
@@ -101,15 +104,18 @@ const shops = [
       });
     },
     buy: (actions: Actions) => {
-      const trinket = requiredItem(readRunSession().trinketShopState.trinkets[0], "trinket offering");
+      const trinket = requiredItem(
+        readActivityData(readRunSession().activity, "trinket-shop").trinkets[0],
+        "trinket offering",
+      );
       return actions.trinket.buy(trinket, shopItemSlotKey(trinket.id, 0));
     },
     refresh: (actions: Actions) => actions.trinket.refresh(),
-    read: () => readRunSession().trinketShopState,
+    read: () => readActivityData(readRunSession().activity, "trinket-shop"),
     buyPrice: TRINKET_SHOP_TRINKET_PRICE as number | null,
     refreshPrice: SHOP_REFRESH_PRICE,
-    offeringIds: () => readRunSession().trinketShopState.trinkets.map((entry) => entry.id),
-    replayIds: () => readRunSession().trinketShopState.trinkets.map((entry) => entry.id),
+    offeringIds: () => readActivityData(readRunSession().activity, "trinket-shop").trinkets.map((entry) => entry.id),
+    replayIds: () => readActivityData(readRunSession().activity, "trinket-shop").trinkets.map((entry) => entry.id),
     restockDedup: true,
     initialize: (actions: Actions) => actions.trinket.initialize(),
     replayRefresh: true,
@@ -131,15 +137,20 @@ const shops = [
       });
     },
     buy: (actions: Actions) => {
-      const instance = requiredItem(readRunSession().equipmentShopState.gear[0], "gear offering");
+      const instance = requiredItem(
+        readActivityData(readRunSession().activity, "equipment-shop").gear[0],
+        "gear offering",
+      );
       return actions.equipment.buy(instance, instance.instanceId);
     },
     refresh: (actions: Actions) => actions.equipment.refresh(),
-    read: () => readRunSession().equipmentShopState,
+    read: () => readActivityData(readRunSession().activity, "equipment-shop"),
     buyPrice: null as number | null,
     refreshPrice: SHOP_REFRESH_PRICE,
-    offeringIds: () => readRunSession().equipmentShopState.gear.map((item) => item.instanceId),
-    replayIds: () => readRunSession().equipmentShopState.gear.map((item) => item.definitionId),
+    offeringIds: () =>
+      readActivityData(readRunSession().activity, "equipment-shop").gear.map((item) => item.instanceId),
+    replayIds: () =>
+      readActivityData(readRunSession().activity, "equipment-shop").gear.map((item) => item.definitionId),
     restockDedup: false,
     initialize: (actions: Actions) => actions.equipment.initialize(),
     replayRefresh: true,
@@ -217,6 +228,7 @@ describe("shop action isolation", () => {
       expect(shop.read().purchasedSlotKeys).toEqual([]);
       expect(commits).toHaveLength(1);
       expect(playGoldSpend).toHaveBeenCalledOnce();
+      expect(playUISound).toHaveBeenCalledWith("shopRefresh");
     });
 
     it("returns false without a commit when no refresh remains", () => {
@@ -231,6 +243,7 @@ describe("shop action isolation", () => {
 
       expect(commits).toHaveLength(0);
       expect(playGoldSpend).not.toHaveBeenCalled();
+      expect(playUISound).not.toHaveBeenCalled();
     });
   });
 
@@ -283,16 +296,19 @@ describe("shop action isolation", () => {
   });
 
   describe("per-shop isolation", () => {
-    it("buying in merchant shop does not affect alchemist state", () => {
+    it("a stale merchant purchase cannot spend gold after entering the alchemist", () => {
       setRunProgress({ gold: 999 });
       setShopState(createInitialShopState());
+      const card = requiredItem(readActivityData(readRunSession().activity, "shop").cards[0], "merchant card");
       setAlchemistState(createInitialAlchemistState());
       const actions = buildActions();
-      const card = requiredItem(readRunSession().shopState.cards[0], "merchant card");
+      expect(actions.merchant.buyCard(card, shopItemSlotKey(card.id, 0))).toBe(false);
+      expect(actions.merchant.refresh()).toBe(false);
+      expect(actions.merchant.removeCard(0)).toBe(false);
+      expect(readRunProfile().gold).toBe(999);
+      expect(readRunSession().activity.kind).toBe("alchemist");
 
-      actions.merchant.buyCard(card, shopItemSlotKey(card.id, 0));
-
-      expect(readRunSession().alchemistState.firstPurchaseUsed).toBe(false);
+      expect(readActivityData(readRunSession().activity, "alchemist").firstPurchaseUsed).toBe(false);
     });
   });
 });

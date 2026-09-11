@@ -3,7 +3,6 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { execSync } from "node:child_process";
 import { validateContextCatalog } from "./lib/agent-context.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
@@ -24,27 +23,11 @@ const IGNORED_DIRECTORIES = new Set([
 const REPO_PATH_PREFIX = /^(?:\.github\/|(?:src|tests|scripts|docs|desktop|public)\/)/u;
 const PATH_TEMPLATE_CHARS = /[*?{}$<>"'`]/u;
 
-let markdownFileCache = null;
 const markdownSourceCache = new Map();
 let repositoryFileCache = null;
 
 function markdownFiles(directory = ROOT) {
-  if (directory !== ROOT || markdownFileCache) {
-    if (directory === ROOT && markdownFileCache) return markdownFileCache;
-    return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-      if (entry.isDirectory()) {
-        return IGNORED_DIRECTORIES.has(entry.name) ? [] : markdownFiles(join(directory, entry.name));
-      }
-      return [".md", ".mdx"].includes(extname(entry.name)) ? [join(directory, entry.name)] : [];
-    });
-  }
-  markdownFileCache = readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-    if (entry.isDirectory()) {
-      return IGNORED_DIRECTORIES.has(entry.name) ? [] : markdownFiles(join(directory, entry.name));
-    }
-    return [".md", ".mdx"].includes(extname(entry.name)) ? [join(directory, entry.name)] : [];
-  });
-  return markdownFileCache;
+  return repositoryFiles(directory).filter((file) => [".md", ".mdx"].includes(extname(file)));
 }
 
 function readMarkdownSource(file) {
@@ -238,16 +221,6 @@ export function checkMarkdownHeadingAnchors() {
   return broken;
 }
 
-export function checkContributingE2ePaths() {
-  const source = readFileSync(join(ROOT, "CONTRIBUTING.md"), "utf8");
-  const missing = [];
-  for (const match of source.matchAll(/`tests\/[a-zA-Z0-9._/-]+\.spec\.ts`/gu)) {
-    const relativePath = match[0].slice(1, -1);
-    if (!existsSync(join(ROOT, relativePath))) missing.push(relativePath);
-  }
-  return missing;
-}
-
 export function checkDurableDocumentReachability(rootDir = ROOT) {
   const isExempt = (relativePath) =>
     relativePath === "CHANGELOG.md" || relativePath.startsWith("docs/Plans/") || relativePath.startsWith(".agents/");
@@ -315,52 +288,20 @@ export function checkSkillIndexCompleteness() {
   ];
 }
 
-export function checkSkillImpactLedger({ changedPaths } = {}) {
-  // Advisory only: remind when instruction memory changes without a ledger entry.
-  // Never fails docs:check — the ledger is history, not a gate.
-  let paths = changedPaths;
-  if (!paths) {
-    try {
-      const output = execSync("git diff --name-only HEAD 2>/dev/null; git diff --cached --name-only 2>/dev/null", {
-        encoding: "utf8",
-      });
-      paths = output.split("\n").filter(Boolean);
-      if (paths.length === 0) return [];
-    } catch {
-      return [];
-    }
-  }
-  const touchesInstructionMemory = paths.some(
-    (p) => p.startsWith(".agents/skills/") || p.startsWith(".agents/knowledge/"),
-  );
-  const touchesLedger = paths.includes(".agents/knowledge/skill-impact.md");
-  if (touchesInstructionMemory && !touchesLedger) {
-    console.warn(
-      "warning: skill-impact ledger advisory: .agents/knowledge/skill-impact.md not updated alongside .agents/skills/ or .agents/knowledge/ change",
-    );
-  }
-  return [];
-}
-
 export const DOCUMENTATION_CONTRACTS = [
   ["local Markdown links", checkLocalMarkdownLinks],
   ["inline repository paths", checkInlineRepositoryPaths],
   ["backticked current file references", checkBacktickedCurrentFileReferences],
   ["documented npm scripts", checkDocumentedNpmScripts],
   ["Markdown heading anchors", checkMarkdownHeadingAnchors],
-  ["CONTRIBUTING E2E paths", checkContributingE2ePaths],
   ["durable document reachability", checkDurableDocumentReachability],
   ["knowledge index completeness", checkKnowledgeIndexCompleteness],
   ["skill index completeness", checkSkillIndexCompleteness],
   ["agent discovery catalog", () => validateContextCatalog(ROOT)],
 ];
 
-export const ADVISORY_DOCUMENTATION_CONTRACTS = [["skill-impact ledger", checkSkillImpactLedger]];
-
 export function checkDocumentationContracts() {
-  return [...DOCUMENTATION_CONTRACTS, ...ADVISORY_DOCUMENTATION_CONTRACTS].flatMap(([name, check]) =>
-    check().map((failure) => `${name}: ${failure}`),
-  );
+  return DOCUMENTATION_CONTRACTS.flatMap(([name, check]) => check().map((failure) => `${name}: ${failure}`));
 }
 
 export function reportDocumentationContracts() {
@@ -370,9 +311,7 @@ export function reportDocumentationContracts() {
     for (const failure of failures) console.error(`- ${failure}`);
     return false;
   }
-  console.log(
-    `Documentation contracts passed (${DOCUMENTATION_CONTRACTS.length} gating + ${ADVISORY_DOCUMENTATION_CONTRACTS.length} advisory).`,
-  );
+  console.log(`Documentation contracts passed (${DOCUMENTATION_CONTRACTS.length} checks).`);
   return true;
 }
 

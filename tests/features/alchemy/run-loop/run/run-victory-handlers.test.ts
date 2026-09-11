@@ -1,20 +1,26 @@
 import { act, renderHook } from "@testing-library/react";
 import { useScreenTransitions } from "@/features/alchemy/shell/use-screen-transitions";
 import "../../../../helpers/mock-audio";
-import { describe, expect, it, beforeEach, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
 import { createVictoryHandlers } from "@/features/alchemy/run-loop/run/run-flow-victory";
 import { awardRunEndMaterials, clearCombatState } from "@/features/alchemy/run-loop/run/run-flow-defeat";
 import { readActiveRun, readBattle, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { addRunMaterialsEarned, setHasActiveBattle } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { setSyncedBattleState } from "@/features/alchemy/shared/stores/run-session-write-port";
+import {
+  addRunMaterialsEarned,
+  setHasActiveBattle,
+  setSyncedBattleState,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetAllTestStores } from "../../../../helpers/gameplay-store-test";
-import { setRunSession, setRunProgress } from "../../../../helpers/run-domain-store-test";
+import { setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { isDraft } from "immer";
-
+import { applyRunDefeatTeardown } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { playGoldGain } from "@/lib/audio";
+import { BATTLE_END_TRANSITION_DELAY } from "@/lib/game-constants";
+import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
+import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 vi.mock("@/features/alchemy/shared/stores/run-session-lifecycle-port", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/features/alchemy/shared/stores/run-session-lifecycle-port")>();
   return {
@@ -23,14 +29,10 @@ vi.mock("@/features/alchemy/shared/stores/run-session-lifecycle-port", async (im
   };
 });
 
-import { applyRunDefeatTeardown } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
-import { playGoldGain } from "@/lib/audio";
-import { BATTLE_END_TRANSITION_DELAY } from "@/lib/game-constants";
-import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
-import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
-
 beforeEach(() => {
   resetAllTestStores();
+  setRunSession({ hasActiveRun: true, activity: { kind: "rewards" } });
+  dispatchRunSessionCommand((draft) => setHasActiveBattle(draft, true));
 });
 
 describe("createRunFlow victory paths", () => {
@@ -122,7 +124,7 @@ describe("createRunFlow victory paths", () => {
     const handlers = createRunFlow(makeFlowHandlerDeps({ transition }));
     handlers.handleBattleDefeat();
     expect(applyRunDefeatTeardown).not.toHaveBeenCalled();
-    transition.mock.calls[0][1].onCommit();
+    transition.mock.calls[0][1].prepare();
     expect(applyRunDefeatTeardown).toHaveBeenCalledWith(
       expect.objectContaining({
         awardRunEndMaterials,
@@ -142,7 +144,7 @@ describe("createRunFlow victory paths", () => {
       ROUTE_SCREENS.GAME_OVER,
       expect.objectContaining({ delayMs: BATTLE_END_TRANSITION_DELAY }),
     );
-    transition.mock.calls[0][1].onCommit();
+    transition.mock.calls[0][1].prepare();
     expect(applyRunDefeatTeardown).toHaveBeenCalledWith(
       expect.objectContaining({
         awardRunEndMaterials,
@@ -152,7 +154,7 @@ describe("createRunFlow victory paths", () => {
     );
   });
 
-  it.each([false, true])("defeat delay respects cancellation: %s", (cancelled) => {
+  it.each([false, true])("defeat commits immediately while presentation can be cancelled: %s", (cancelled) => {
     vi.useFakeTimers();
     try {
       setRunSession({ hasActiveRun: true });
@@ -162,13 +164,13 @@ describe("createRunFlow victory paths", () => {
       act(() => handlers.handleBattleDefeat());
       act(() => vi.advanceTimersByTime(BATTLE_END_TRANSITION_DELAY - 1));
       expect(setScreen).not.toHaveBeenCalled();
-      expect(applyRunDefeatTeardown).not.toHaveBeenCalled();
+      expect(applyRunDefeatTeardown).toHaveBeenCalledOnce();
       if (cancelled) result.current.cancelPending();
       act(() => vi.advanceTimersByTime(1));
       expect(setScreen).toHaveBeenCalledTimes(cancelled ? 0 : 1);
-      expect(applyRunDefeatTeardown).toHaveBeenCalledTimes(cancelled ? 0 : 1);
+      expect(applyRunDefeatTeardown).toHaveBeenCalledOnce();
       act(() => vi.advanceTimersByTime(BATTLE_END_TRANSITION_DELAY));
-      expect(applyRunDefeatTeardown).toHaveBeenCalledTimes(cancelled ? 0 : 1);
+      expect(applyRunDefeatTeardown).toHaveBeenCalledOnce();
     } finally {
       vi.useRealTimers();
     }
@@ -275,16 +277,9 @@ describe("createRunFlow victory paths", () => {
         currentRewardTraitIds: [],
       },
     });
-    let receivedDraft = false;
-    const commitWildwoodVictory = vi.fn((draftOrResult: unknown) => {
-      receivedDraft = isDraft(draftOrResult);
-    });
-    const handlers = createVictoryHandlers(makeFlowHandlerDeps({ commitWildwoodVictory }));
-
+    const handlers = createVictoryHandlers(makeFlowHandlerDeps());
     handlers.commitVictoryResult();
-
-    expect(commitWildwoodVictory).toHaveBeenCalledTimes(1);
-    expect(receivedDraft).toBe(true);
+    expect(readRunSession().wildwoodDraft?.phase).toBe("reward");
   });
 
   it("plays gold gain SFX when Wildwood victory persists in-combat gold", () => {
@@ -402,7 +397,7 @@ describe("createRunFlow victory paths", () => {
     expect(readRunSession().rewardClaimInFlight).toBe(true);
 
     expect(readRunSession().rewardState.destinations).toEqual([DESTINATIONS.NORMAL_COMBAT]);
-    expect(readRunSession().rewardState.choices).toEqual([card]);
+    expect(readRunSession().rewardState.choices).toEqual([]);
 
     const onCommit = navigateTo.mock.calls[0][1] as () => void;
     onCommit();
@@ -410,7 +405,7 @@ describe("createRunFlow victory paths", () => {
     expect(readRunSession().rewardState.choices).toEqual([]);
   });
 
-  it("claimRewardChoice defers companion handoff until navigation commit", () => {
+  it("claimRewardChoice commits the companion handoff before navigation", () => {
     const primary = {
       id: "reward-card",
       uid: 1,
@@ -456,8 +451,8 @@ describe("createRunFlow victory paths", () => {
     expect(readActiveRun().runDeck.map((card) => card.id)).toEqual([primary.id]);
     expect(readRunSession().rewardClaimInFlight).toBe(true);
 
-    expect(readRunSession().rewardState.choices).toEqual([primary]);
-    expect(readRunSession().companionRewardCards).toEqual([companion]);
+    expect(readRunSession().rewardState.choices).toEqual([companion]);
+    expect(readRunSession().companionRewardCards).toBeNull();
 
     const onCommit = navigateTo.mock.calls[0]![1] as () => void;
     onCommit();

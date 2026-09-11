@@ -1,6 +1,9 @@
 # Plans
 
-Keep active execution plans in this directory. Durable product, architecture,
+Use a plan when work benefits from a persistent implementation outline; ordinary
+changes do not need one. Keep active execution plans in this directory.
+
+Durable product, architecture,
 testing, and workflow rules belong in their canonical owner documents
 (`AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/WORKFLOWS.md`, `docs/REFERENCE.md`,
 or a subsystem README) — never only in a plan.
@@ -18,9 +21,10 @@ and document-reachability contracts.
 ## Task handoff
 
 1. Mark only the task-owned plan complete or cancelled and refresh its date.
-2. Archive it explicitly. `npm run archive:plans` moves every terminal plan;
-   inspect the candidates first. If another task has a terminal plan, move only
-   your plan into `Archived/` instead. Update relative links after moving it.
+2. Run `npm run archive:plans -- PlanName.md` for that plan (multiple filenames
+   are supported). Add `--dry-run` to preview. Without filenames the command
+   moves every terminal plan, so use that form only for repository-wide cleanup.
+   Update relative links after moving a plan.
 3. Confirm your plan is archived and run `npm run docs:check`, or the task-scoped
    `npm run check -- <paths>` that includes it. Include the moved plan and
    updated links in the task-owned paths.

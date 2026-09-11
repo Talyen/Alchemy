@@ -1,218 +1,36 @@
-import { useMemo, useCallback } from "react";
-import { createRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import { createRunOutcomes, type RunOutcomes } from "@/features/alchemy/run-loop/run/run-flow";
 import { useRunSessionNavigationSlice } from "@/features/alchemy/shared/stores/run-reads";
-import {
-  setRunDeck,
-  abandonLabyrinthCorruptionVisit,
-  cancelDestinationClaim,
-  releaseRewardClaim,
-  setHasActiveBattle as setDraftHasActiveBattle,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
-import { ROUTE_SCREENS } from "@/lib/routing";
-import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
-import { readActiveRun } from "@/features/alchemy/shared/stores/run-reads";
-import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
-import { createCorruptionFlowHandlers } from "@/features/alchemy/run-loop/navigation/run-navigation-corruption";
-import { useRunDestinationWiring } from "./use-run-destination-wiring";
-import { useWildwoodGauntletFlow } from "./use-wildwood-gauntlet-flow";
-import { useContentSystemNavigation } from "./use-content-system-navigation";
-import { useMysteryEventNavigation } from "./use-mystery-event-navigation";
-import type { RunFlowShellActions } from "@/features/alchemy/run-loop/run/run-flow";
+import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import { useMemo } from "react";
+import { getRunAvailableDestinations } from "./run-destination-wiring";
+import { createRunFlowEngine } from "./run-flow-engine";
 import type { RunNavigationDeps } from "./shell-types";
 
-export function useRunFlowEngine({
-  screen,
-  navigateTo,
-  transition,
-  cancelPending,
-  battle,
-  initializeShop,
-  labyrinthClearNode,
-}: RunNavigationDeps) {
-  const setHasActiveBattle = useMemo(() => createRunSessionCommand(setDraftHasActiveBattle), []);
+export function useRunFlowEngine(
+  { screen, navigateTo, transition, cancelPending, battle, initializeShop, labyrinthClearNode }: RunNavigationDeps,
+  outcomes?: RunOutcomes,
+) {
   const nav = useRunSessionNavigationSlice(screen);
-  const clearCardHover = useUiStore((s) => s.clearCardHover);
-
-  const runPhase = nav.phase;
-  const hasActiveRun = nav.hasActiveRun;
-  const pendingCharacterId = nav.pendingCharacterId;
-
-  const destinations = useRunDestinationWiring({
-    navigateTo,
-    clearCardHover,
-  });
-
-  const wildwood = useWildwoodGauntletFlow({
-    navigateTo,
-    onStartBossById: battle.onStartBossById,
-    setHasActiveBattle,
-    clearCardHover,
-  });
-
-  const contentNav = useContentSystemNavigation({
-    navigateTo,
-    onStartBattle: battle.onStartBattle,
-    getAvailableDestinations: destinations.getAvailableDestinations,
-    onResumeWildwood: wildwood.resumeWildwoodRun,
-    clearCardHover,
-  });
-
-  const mystery = useMysteryEventNavigation({
-    navigateTo,
-  });
-
-  const actions = useMemo((): RunFlowShellActions => {
-    return {
-      navigateTo,
-      transition,
-      labyrinthClearNode,
-      initializeShop,
-      startBattle: (opts) =>
-        battle.onStartBattle(opts?.deck, opts?.gold, opts?.enemyType, opts?.modifiers, opts?.enemyId),
-      startBoss: (opts) => {
-        if (opts?.bossId && battle.onStartBossById(opts.bossId, opts.modifiers)) return;
-        battle.onStartBossBattle();
-      },
-      commitWildwoodVictory: wildwood.commitWildwoodVictory,
-      beginMysteryEvent: mystery.beginMysteryEvent,
-      wildwoodRewardComplete: wildwood.handleWildwoodRewardComplete,
-      clearCardHover,
-    };
-  }, [
-    navigateTo,
-    transition,
-    labyrinthClearNode,
-    initializeShop,
-    battle,
-    wildwood.commitWildwoodVictory,
-    wildwood.handleWildwoodRewardComplete,
-    mystery.beginMysteryEvent,
-    clearCardHover,
-  ]);
-
-  const flowHandlers = useMemo(
+  const commands = useMemo(
     () =>
-      createRunFlow({
-        actions,
-        getAvailableDestinations: destinations.getAvailableDestinations,
-      }),
-    [actions, destinations.getAvailableDestinations],
+      createRunFlowEngine(
+        { navigateTo, transition, cancelPending, battle, initializeShop, labyrinthClearNode },
+        outcomes ??
+          createRunOutcomes({
+            actions: { navigateTo, transition, clearCardHover: () => useUiStore.getState().clearCardHover() },
+            getAvailableDestinations: getRunAvailableDestinations,
+          }),
+      ),
+    [navigateTo, transition, cancelPending, battle, initializeShop, labyrinthClearNode, outcomes],
   );
-
-  const corruption = useMemo(() => {
-    function returnToLabyrinthMap() {
-      navigateTo(ROUTE_SCREENS.LABYRINTH_MAP, () => {
-        dispatchRunSessionCommand((draft) => {
-          abandonLabyrinthCorruptionVisit(draft);
-        });
-      });
-    }
-    return createCorruptionFlowHandlers({
-      updateRunDeck: setRunDeck,
-      advanceToNextDestination: flowHandlers.advanceToNextDestination,
-      returnToCurrentDestination: flowHandlers.returnToCurrentDestination,
-      returnToLabyrinthMap,
-      isLabyrinthRun: () => readActiveRun().contentSystemType === CONTENT_SYSTEMS.LABYRINTH,
-    });
-  }, [flowHandlers.advanceToNextDestination, flowHandlers.returnToCurrentDestination, navigateTo]);
-
-  const teardown = useMemo(() => {
-    function resetRunState() {
-      dispatchRunSessionCommand(
-        (draft) => {
-          cancelDestinationClaim(draft);
-          releaseRewardClaim(draft);
-          setDraftHasActiveBattle(draft, false);
-        },
-        {
-          afterCommit: () => {
-            cancelPending();
-            clearBattlePresentationUi();
-            clearCardHover();
-            navigateTo(ROUTE_SCREENS.MENU, () => {
-              teardownRun();
-            });
-          },
-        },
-      );
-    }
-
-    function continueFromRunEnd() {
-      resetRunState();
-    }
-
-    return { resetRunState, continueFromRunEnd };
-  }, [cancelPending, clearCardHover, navigateTo]);
-
-  const handleMysteryContinue = useCallback(() => {
-    flowHandlers.advanceToNextDestination();
-  }, [flowHandlers]);
 
   return useMemo(
     () => ({
-      runPhase,
-      activeRunData: hasActiveRun,
-      pendingCharacterId,
-      getAvailableDestinations: destinations.getAvailableDestinations,
-      advanceToNextDestination: flowHandlers.advanceToNextDestination,
-      beginCampaign: contentNav.beginCampaign,
-      beginLabyrinth: contentNav.beginLabyrinth,
-      beginWildwood: contentNav.beginWildwood,
-      beginMysteryEvent: mystery.beginMysteryEvent,
-      endLabyrinthRun: flowHandlers.endLabyrinthRun,
-      handleAbandonRun: flowHandlers.handleAbandonRun,
-      handleCharacterSelect: contentNav.handleCharacterSelect,
-      handleStandardDraftComplete: contentNav.handleStandardDraftComplete,
-      handleWildwoodDraftComplete: wildwood.handleWildwoodDraftComplete,
-      handleWildwoodDraftPick: wildwood.handleDraftPick,
-      handleStarterDraftPick: contentNav.handleStarterDraftPick,
-      handleDifficultySelect: contentNav.handleDifficultySelect,
-      handleBackFromDifficultySelect: contentNav.handleBackFromDifficultySelect,
-      returnToBattle: () => contentNav.resumeRun(),
-      goToScreen: destinations.goToScreen,
-      handleDestinationChoice: flowHandlers.handleDestinationChoice,
-      handleActComplete: flowHandlers.handleActComplete,
-      skipRewards: flowHandlers.skipRewards,
-      claimRewardChoice: flowHandlers.claimRewardChoice,
-      handleWildwoodRemoveCard: wildwood.handleWildwoodRemoveCard,
-      handleWildwoodSkipRemoval: wildwood.handleWildwoodSkipRemoval,
-      prepareDestinationScreen: flowHandlers.prepareDestinationScreen,
-      handleCampfireContinue: flowHandlers.handleCampfireContinue,
-      handleCorruptCard: corruption.handleCorruptCard,
-      handleCorruptionExit: corruption.handleCorruptionExit,
-      handleMysteryChoice: mystery.handleMysteryChoice,
-      handleMysteryChooseCard: mystery.handleMysteryChooseCard,
-      handleMysteryRemoveCard: mystery.handleMysteryRemoveCard,
-      handleMysteryContinue,
-      resetRunState: teardown.resetRunState,
-      continueFromRunEnd: teardown.continueFromRunEnd,
-      handleBattleVictory: flowHandlers.handleBattleVictory,
-      handleBattleDefeat: flowHandlers.handleBattleDefeat,
+      ...commands,
+      runPhase: nav.phase,
+      activeRunData: nav.hasActiveRun,
+      pendingCharacterId: nav.pendingCharacterId,
     }),
-    [
-      runPhase,
-      hasActiveRun,
-      pendingCharacterId,
-      destinations.getAvailableDestinations,
-      destinations.goToScreen,
-      flowHandlers,
-      contentNav,
-      mystery.beginMysteryEvent,
-      mystery.handleMysteryChoice,
-      mystery.handleMysteryChooseCard,
-      mystery.handleMysteryRemoveCard,
-      wildwood.handleWildwoodDraftComplete,
-      wildwood.handleDraftPick,
-      wildwood.handleWildwoodRemoveCard,
-      wildwood.handleWildwoodSkipRemoval,
-      corruption.handleCorruptCard,
-      corruption.handleCorruptionExit,
-      handleMysteryContinue,
-      teardown.resetRunState,
-      teardown.continueFromRunEnd,
-    ],
+    [commands, nav.phase, nav.hasActiveRun, nav.pendingCharacterId],
   );
 }

@@ -1,13 +1,14 @@
-import { playUISound } from "@/lib/audio";
-import { cardLibrary, type BattleCard } from "@/lib/game-data";
-import { corruptDeckCard } from "@/lib/corruption";
-import { activeLabyrinthBenefits } from "@/lib/content-systems/labyrinth/room-rules";
-import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
+import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   createDraftRunRandomSource,
   setCorruptionResult,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { readActivityData } from "@/lib/active-run-session";
+import { playUISound } from "@/lib/audio";
+import { activeLabyrinthBenefits } from "@/lib/content-systems/labyrinth/room-rules";
+import { corruptDeckCard } from "@/lib/corruption";
+import { cardLibrary, type BattleCard } from "@/lib/game-data";
 import { discoverCardIds } from "../../shared/stores/profile-store";
 
 function applyCorruptionToDeck(cardIndex: number, updateRunDeck: (draft: GameplayDraft, deck: BattleCard[]) => void) {
@@ -49,12 +50,13 @@ export interface CorruptionFlowDeps {
 
 export function createCorruptionFlowHandlers(deps: CorruptionFlowDeps) {
   function handleCorruptCard(cardIndex: number) {
-    if (readRunSession().corruptionResult) return;
+    if (readRunSession().activity.kind !== "corruption" || readActivityData(readRunSession().activity, "corruption"))
+      return;
     applyCorruptionToDeck(cardIndex, deps.updateRunDeck);
   }
 
   function handleCorruptionExit() {
-    if (readRunSession().corruptionResult) {
+    if (readActivityData(readRunSession().activity, "corruption")) {
       deps.advanceToNextDestination();
       return;
     }

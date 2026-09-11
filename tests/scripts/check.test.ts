@@ -20,13 +20,16 @@ describe("source-aware completion gate", () => {
 
   it("runs documentation checks without unit, build, or browser work", async () => {
     const calls: string[] = [];
-    const code = await runCheck(["docs/REFERENCE.md"], {
-      runner: vi.fn((label: string) => {
-        calls.push(label);
-        return 0;
-      }),
-      captureDigest: () => ({ head: "abc", hash: "same" }),
-    });
+    const code = await runCheck(
+      ["docs/REFERENCE.md", "scripts/README.md", "src/features/alchemy/shared/storage/MIGRATIONS.md"],
+      {
+        runner: vi.fn((label: string) => {
+          calls.push(label);
+          return 0;
+        }),
+        captureDigest: () => ({ head: "abc", hash: "same" }),
+      },
+    );
     expect(code).toBe(0);
     expect(calls).toEqual(["changed-path verification", "documentation format"]);
   });

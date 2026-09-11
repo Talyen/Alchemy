@@ -20,7 +20,14 @@ export function withPreservedFlags(state: BattleState, mutate: (s: BattleState) 
     flags: { ...state.flags, ...PRESERVED_FLAG_VALUES },
   };
   const result = mutate(blockedState);
-  return { ...result, flags: { ...result.flags, ...saved } };
+  return {
+    ...result,
+    flags: {
+      ...result.flags,
+      ...saved,
+      nextCardCostReduction: Math.max(state.flags.nextCardCostReduction, result.flags.nextCardCostReduction),
+    },
+  };
 }
 
 export function playerStatusDelta(state: BattleState, status: PlayerStatusId, delta: number): number {
@@ -288,6 +295,7 @@ export function applyPlayerCombatDamage(
 
 export function applyPlayerHealing(state: BattleState, amount: number): BattleState {
   if (isPlayerDefeated(state)) return state;
+  amount = Math.round(amount * state.talentEffects.healMultiplier);
   const playerHealth = clampHealth(state.playerHealth, amount, state.playerMaxHealth);
   const actualHeal = playerHealth - state.playerHealth;
   const overheal = state.playerHealth + amount - playerHealth;

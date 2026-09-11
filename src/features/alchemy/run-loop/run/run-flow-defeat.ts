@@ -1,6 +1,5 @@
-import { BATTLE_END_TRANSITION_DELAY } from "@/lib/game-constants";
-import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
+import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   applyRunDefeatTeardown,
   clearBattlePresentationUi,
@@ -12,12 +11,13 @@ import {
   setHasActiveBattle,
   setRunEndMaterials,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { resolveGameDelay } from "@/lib/animation/game-timer";
+import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
+import { BATTLE_END_TRANSITION_DELAY } from "@/lib/game-constants";
 import { addInventory, emptyInventory } from "@/lib/homestead/inventory";
 import { applyEndOfRunHomesteadBonuses } from "@/lib/homestead/loot";
-import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
-import type { RunFlowHandlerDeps } from "./run-flow";
 import { ROUTE_SCREENS } from "@/lib/routing";
-import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
+import type { RunOutcomeDeps } from "./run-flow";
 
 export function clearCombatState(draft: GameplayDraft) {
   setHasActiveBattle(draft, false);
@@ -44,7 +44,7 @@ export function awardRunEndMaterials(draft: GameplayDraft): ReturnType<typeof em
   return homesteadBonus;
 }
 
-export function createDefeatHandlers(deps: RunFlowHandlerDeps) {
+export function createDefeatHandlers(deps: RunOutcomeDeps) {
   function finalizeDefeat() {
     applyRunDefeatTeardown({
       awardRunEndMaterials,
@@ -63,7 +63,7 @@ export function createDefeatHandlers(deps: RunFlowHandlerDeps) {
     deps.actions.transition(ROUTE_SCREENS.GAME_OVER, {
       delayMs: resolveGameDelay(BATTLE_END_TRANSITION_DELAY),
       guard: () => readRunSession().hasActiveRun,
-      onCommit: finalizeDefeat,
+      prepare: finalizeDefeat,
     });
   }
 

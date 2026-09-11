@@ -1,61 +1,20 @@
+import { mergeCombatText } from "./combat-text-events";
+import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
+export { mergeCombatText, shouldShowCombatText } from "./combat-text-events";
+export { applyEnemyHealingWithCombatText } from "./enemy-healing";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import type { PlayerStatusId } from "@/lib/game-data";
-import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import {
   damageEnemyHealth,
   addPlayerStatus,
   applyPlayerHealing,
-  clampHealth,
   gainMana,
   scaleGoldReward,
   hasEnemyTrait,
   type BattleState,
   type CombatTextEvent,
-  type NumericCombatTextEvent,
 } from "./types";
-import { halveRounded } from "./amount-helpers";
 import { paceCombatMagnitude } from "./fight-pacing";
-
-function isNoticeCombatText(event: CombatTextEvent) {
-  return event.kind === "notice";
-}
-
-function isNumericCombatText(event: CombatTextEvent): event is NumericCombatTextEvent {
-  return event.kind !== "notice";
-}
-
-export function shouldShowCombatText(event: CombatTextEvent) {
-  return event.kind !== "status" || !harmfulPlayerStatusIds.includes(event.stat as never);
-}
-
-export function mergeCombatText(combatTexts: CombatTextEvent[], nextEvent: CombatTextEvent) {
-  if (!shouldShowCombatText(nextEvent)) return;
-
-  if (isNoticeCombatText(nextEvent)) {
-    const existingNotice = combatTexts.find(
-      (event) =>
-        isNoticeCombatText(event) &&
-        event.target === nextEvent.target &&
-        event.stat === nextEvent.stat &&
-        event.text === nextEvent.text,
-    );
-    if (!existingNotice) combatTexts.push(nextEvent);
-    return;
-  }
-
-  const existingEvent = combatTexts.find(
-    (event): event is NumericCombatTextEvent =>
-      isNumericCombatText(event) &&
-      event.target === nextEvent.target &&
-      event.kind === nextEvent.kind &&
-      event.stat === nextEvent.stat,
-  );
-  if (existingEvent) {
-    existingEvent.amount += nextEvent.amount;
-    return;
-  }
-  combatTexts.push(nextEvent);
-}
 
 export function emitOverhealBlockText(
   stateBefore: Pick<BattleState, "playerStatuses">,
@@ -95,7 +54,8 @@ function applyBloodCountessHealingReaction(
   const enemyWasAlive = state.enemyHealth > 0;
   const holyDamage = 1;
   if (combatTexts) mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "holy", amount: holyDamage });
-  const damagedState = damageEnemyHealth(state, holyDamage).state;
+  const hit = damageEnemyHealth(state, holyDamage);
+  const damagedState = processEncounterTraitHealthThreshold(hit.previousHealth, hit.state, combatTexts ?? []);
   return payKillPayouts(recordEnemyAbilityActivation(damagedState, "blood-countess"), enemyWasAlive, combatTexts ?? []);
 }
 
@@ -118,23 +78,6 @@ export function applyHealingWithCombatText(
     emitReactiveThornsText(prevState, nextState, combatTexts);
   }
   return applyBloodCountessHealingReaction(nextState, actualHeal, combatTexts);
-}
-
-export function applyEnemyHealingWithCombatText(
-  state: BattleState,
-  amount: number,
-  combatTexts: CombatTextEvent[],
-  options?: { skipFightPacing?: boolean },
-): BattleState {
-  if (amount <= 0 || state.enemyHealth <= 0) return state;
-  if (state.enemyStatuses.poison > 0 && state.talentEffects.poisonHalvesHealing) amount = halveRounded(amount);
-  if (state.enemyStatuses.bleed > 0 && state.talentEffects.bleedHalvesEnemyHealing) amount = halveRounded(amount);
-  const healAmount = options?.skipFightPacing ? amount : paceCombatMagnitude(state, amount, "enemy");
-  const nextHealth = clampHealth(state.enemyHealth, healAmount, state.enemyMaxHealth);
-  const actualHeal = nextHealth - state.enemyHealth;
-  if (actualHeal <= 0) return state;
-  mergeCombatText(combatTexts, { target: "enemy", kind: "heal", stat: "health", amount: actualHeal });
-  return { ...state, enemyHealth: nextHealth };
 }
 
 export function applyHealOnManaGain(

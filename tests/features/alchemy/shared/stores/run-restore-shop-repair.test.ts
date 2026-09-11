@@ -1,7 +1,7 @@
 import "../../../../helpers/mock-audio";
 import "../../../../helpers/mock-flush-save";
 import { beforeEach, describe, expect, it } from "vitest";
-import { shopItemSlotKey } from "@/lib/active-run-session";
+import { readActivityData, shopItemSlotKey } from "@/lib/active-run-session";
 import { restoreRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { readActiveRunScreen, readBattle, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { mutateGearForTest, resetAllTestStores, resetGearForTest } from "../../../../helpers/gameplay-store-test";
@@ -10,7 +10,6 @@ import { cardById, trinketLibrary } from "@/lib/game-data";
 import { evaluateSaveCandidates } from "@/features/alchemy/shared/storage/save-candidates";
 import { makeMinimalActiveRunInput } from "../../../../fixtures/active-run";
 import { makeTestBattleState } from "../../../../fixtures/battle";
-
 const ownedTrinket = trinketLibrary[0]!;
 const otherTrinket = trinketLibrary[1]!;
 
@@ -103,7 +102,7 @@ describe("run restore shop offering repair", () => {
       {},
     );
 
-    const shop = readRunSession().trinketShopState;
+    const shop = readActivityData(readRunSession().activity, "trinket-shop");
     expect(shop.trinkets.map((entry) => entry.id)).toEqual([otherTrinket.id]);
     expect(shop.purchasedSlotKeys).toEqual([shopItemSlotKey(otherTrinket.id, 0)]);
     expect(readActiveRunScreen()).toBe("trinket-shop");
@@ -129,7 +128,7 @@ describe("run restore shop offering repair", () => {
       {},
     );
 
-    const shop = readRunSession().trinketShopState;
+    const shop = readActivityData(readRunSession().activity, "trinket-shop");
     expect(shop.trinkets).toEqual([]);
     expect(shop.purchasedSlotKeys).toEqual([]);
     expect(shop.refreshesLeft).toBe(0);
@@ -157,7 +156,7 @@ describe("run restore shop offering repair", () => {
       {},
     );
 
-    const shop = readRunSession().equipmentShopState;
+    const shop = readActivityData(readRunSession().activity, "equipment-shop");
     expect(shop.gear.map((item) => item.instanceId)).toEqual(["shelf-basic"]);
     expect(shop.purchasedSlotKeys).toEqual(["shelf-basic"]);
   });

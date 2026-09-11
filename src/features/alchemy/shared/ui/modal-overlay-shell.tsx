@@ -1,4 +1,4 @@
-import type { ReactNode, SyntheticEvent } from "react";
+import type { KeyboardEvent, ReactNode, SyntheticEvent } from "react";
 import { createPortal } from "react-dom";
 import { useModalRoot } from "./modal-root";
 import { ESCAPE_PRIORITY } from "@/app/escape-stack";
@@ -27,6 +27,11 @@ interface ModalOverlayShellProps {
 function blockInteraction(event: SyntheticEvent) {
   event.preventDefault();
   event.stopPropagation();
+}
+
+function blockInactiveKey(event: KeyboardEvent) {
+  event.stopPropagation();
+  if (event.key !== "Tab") event.preventDefault();
 }
 
 export function ModalOverlayShell({
@@ -67,7 +72,7 @@ export function ModalOverlayShell({
         if (dismissOnBackdrop && interactive && event.target === event.currentTarget) onClose();
       }}
       onClickCapture={!interactive ? blockInteraction : undefined}
-      onKeyDownCapture={!interactive ? blockInteraction : undefined}
+      onKeyDownCapture={!interactive ? blockInactiveKey : undefined}
     >
       {children}
     </div>,

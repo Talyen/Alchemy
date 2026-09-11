@@ -1,5 +1,5 @@
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
-import { CORRUPTION_MIN_VALUE, CORRUPTION_TEXT_PATTERNS } from "@/lib/game-constants";
+import { CORRUPTION_MIN_VALUE, CORRUPTION_TEXT_PATTERNS, PERCENT_DENOMINATOR } from "@/lib/game-constants";
 
 const CORRUPTIBLE_NUMERIC_FIELDS = [
   "amount",
@@ -7,6 +7,7 @@ const CORRUPTIBLE_NUMERIC_FIELDS = [
   "maxAmount",
   "perManaCrystal",
   "convertCurrentMana",
+  "equalToGoldPercent",
 ] as const;
 
 type CorruptibleNumericField = (typeof CORRUPTIBLE_NUMERIC_FIELDS)[number];
@@ -34,13 +35,32 @@ function hasSharedRandomAmount(card: BattleCard, effect: BattleCardEffect): bool
   );
 }
 
+function sharesDamageAmount(line: string, effect: BattleCardEffect): boolean {
+  if (effect.kind !== "damage") return false;
+  const match = /^Deal (\d+) (\w+) or (\w+) damage$/.exec(line);
+  return (
+    match !== null &&
+    Number(match[1]) === effect.amount &&
+    [match[2]!.toLowerCase(), match[3]!.toLowerCase()].includes(effect.damageType)
+  );
+}
+
 export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget[] {
   const targets: CorruptionTarget[] = [];
   const valueQueue = new Map<number, Array<Pick<CorruptionTarget, "effectIndex" | "effectPath" | "field">>>();
+  const sharedDamageLines = new Set<string>();
   function collect(effect: BattleCardEffect, effectIndex: number, effectPath: number[] = []) {
     const record = effect as Record<string, unknown>;
     for (const field of CORRUPTIBLE_NUMERIC_FIELDS) {
       if (field === "maxAmount" && hasSharedRandomAmount(card, effect)) continue;
+      if (field === "amount" && effectPath.length > 0) {
+        const lineIndex = card.descriptionLines.findIndex((line) => sharesDamageAmount(line, effect));
+        if (lineIndex >= 0) {
+          const key = `${effectIndex}/${lineIndex}`;
+          if (sharedDamageLines.has(key)) continue;
+          sharedDamageLines.add(key);
+        }
+      }
       const value = record[field];
       if (typeof value !== "number" || !Number.isFinite(value)) continue;
       if (!valueQueue.has(value)) valueQueue.set(value, []);
@@ -98,6 +118,7 @@ export function updateCardNumericValue(card: BattleCard, target: CorruptionTarge
   const source = getCorruptionTargetEffect(card, target);
   const line = card.descriptionLines[target.lineIndex];
   if (!source || (source as Record<string, unknown>)[target.field] !== target.value || line === undefined) return card;
+  if (target.field === "equalToGoldPercent") nextValue = Math.min(PERCENT_DENOMINATOR, nextValue);
   const nextLine = replaceNumberAt(line, target.matchIndex, nextValue);
   if (nextLine === line) return card;
   const pathKey = (root: number, path: number[]) => [root, ...path].join("/");
@@ -105,10 +126,12 @@ export function updateCardNumericValue(card: BattleCard, target: CorruptionTarge
   const authored = new Set(
     getEditableCorruptionTargets(card).map((entry) => pathKey(entry.effectIndex, entry.effectPath ?? [])),
   );
+  const sharedDamageLine = target.field === "amount" && sharesDamageAmount(line, source) ? line : null;
   function update(effect: BattleCardEffect, root: number, path: number[] = []): BattleCardEffect {
     const key = pathKey(root, path);
     if (
       key === selected ||
+      (root === target.effectIndex && sharedDamageLine !== null && sharesDamageAmount(sharedDamageLine, effect)) ||
       (path.length > 0 && !authored.has(key) && JSON.stringify(effect) === JSON.stringify(source))
     ) {
       if (effect.kind === "random-damage" && target.field === "minAmount" && hasSharedRandomAmount(card, effect)) {
@@ -141,6 +164,7 @@ export function applyNumericCorruption(card: BattleCard, target: CorruptionTarge
   if (currentLine === undefined) return card;
 
   let nextValue = Math.max(CORRUPTION_MIN_VALUE, target.value + delta);
+  if (target.field === "equalToGoldPercent") nextValue = Math.min(PERCENT_DENOMINATOR, nextValue);
   const sourceEffect = getCorruptionTargetEffect(card, target);
   if (sourceEffect?.kind === "random-damage" && !hasSharedRandomAmount(card, sourceEffect)) {
     if (target.field === "minAmount") nextValue = Math.min(nextValue, sourceEffect.maxAmount);

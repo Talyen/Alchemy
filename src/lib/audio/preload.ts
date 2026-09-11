@@ -1,4 +1,10 @@
-import { allRegisteredSoundFiles, battleEventSounds, cardSounds, enemyAttackSounds, uiSounds } from "./sound-registry";
+import {
+  allRegisteredSoundFiles,
+  battleEventSounds,
+  getCardSounds,
+  enemyAttackSounds,
+  uiSounds,
+} from "./sound-registry";
 import { batchedPreload, scheduleIdle } from "../preload";
 import { audioUrl } from "./url";
 import { SOUNDS_BASE_PATH } from "../game-constants";
@@ -88,7 +94,7 @@ export function preloadBattleSounds(cardIds: readonly string[], enemyId: string)
     battleEventSounds.endTurn,
   ]);
   for (const cardId of cardIds) {
-    for (const name of cardSounds[cardId] ?? []) names.add(name);
+    for (const name of getCardSounds(cardId)) names.add(name);
   }
   for (const name of enemyAttackSounds[enemyId] ?? []) names.add(name);
   preloadSounds([...names]);

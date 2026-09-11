@@ -1,11 +1,16 @@
+import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import {
+  prepareRunNavigation,
+  setRewardState,
+  setShopState,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
+import { useRewardsScreenData, useShopScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
+import { emptyShopState, readActivityData } from "@/lib/active-run-session";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
-import { useRewardsScreenData, useShopScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import { resetAllTestStores } from "../../../../helpers/gameplay-store-test";
-import { setRunProgress } from "../../../../helpers/run-domain-store-test";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { setRewardState } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
+import { setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 
 beforeEach(() => {
   resetAllTestStores();
@@ -19,7 +24,7 @@ describe("screen-specific run data hooks", () => {
     expect(result.current).toEqual({
       gold: 42,
       runDeck: [],
-      shopState: readRunSession().shopState,
+      shopState: readActivityData(readRunSession().activity, "shop"),
     });
     expect(result.current).not.toHaveProperty("rewardState");
   });
@@ -47,5 +52,16 @@ describe("screen-specific run data hooks", () => {
     });
 
     expect(renders).toBe(1);
+  });
+  it("holds the outgoing shelf while navigation commits a different activity", () => {
+    setRunProgress({ gold: 42 });
+    setRunSession({ hasActiveRun: true, activity: { kind: "shop", data: emptyShopState() } });
+    const { result } = renderHook(() => useShopScreenData());
+    act(() => dispatchRunSessionCommand((draft) => setShopState(draft, { ...emptyShopState(), refreshesLeft: 0 })));
+    const outgoing = result.current;
+    act(() => dispatchRunSessionCommand((draft) => prepareRunNavigation(draft, "destination")));
+    expect(readRunSession().activity).toEqual({ kind: "destination" });
+    expect(result.current).toBe(outgoing);
+    expect(result.current.shopState.refreshesLeft).toBe(0);
   });
 });

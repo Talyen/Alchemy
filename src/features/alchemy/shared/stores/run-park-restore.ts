@@ -1,14 +1,23 @@
 import type { ActiveRunData, EquipmentShopState, TrinketShopState } from "@/lib/active-run-session";
-import { repairShopOfferings, shopItemSlotKey } from "@/lib/active-run-session";
+import { readActivityData, repairShopOfferings, runActivityScreen, shopItemSlotKey } from "@/lib/active-run-session";
 import type { ContentSystemId } from "@/lib/content-systems/types";
-import { combineTrinketEffectIds } from "@/lib/trinkets";
-import { ROUTE_SCREENS } from "@/lib/routing";
-import { repairPersistedTrinketManifest } from "@/lib/validation";
 import { gearDefinitions, getOwnedUniqueDefinitionIds } from "@/lib/gear";
 import { eventHasUnresolvedRandomTrinket, repairUnresolvedMysteryTrinkets } from "@/lib/mystery";
-import type { GameplayDraft } from "./run-session-command";
-import { decodeRunResumeSnapshot, encodeRunResumeSnapshot, type DecodedRunResumeSession } from "./run-resume-codec";
+import { ROUTE_SCREENS } from "@/lib/routing";
+import { combineTrinketEffectIds } from "@/lib/trinkets";
+import { repairPersistedTrinketManifest } from "@/lib/validation";
+import { omitParkedMode, removeRunRecency, touchRunRecency } from "./parked-runs";
+import { rebindLiveRunMeta } from "./run-meta-rebind";
 import { getRunSessionFromState } from "./run-reads";
+import { decodeRunResumeSnapshot, encodeRunResumeSnapshot, type DecodedRunResumeSession } from "./run-resume-codec";
+import type { GameplayDraft } from "./run-session-command";
+import {
+  createDraftRunRandomSource,
+  initializeActiveBattle,
+  initializeActiveRun,
+  initializeFromResumeSnapshot,
+  setScreen,
+} from "./write-port-run";
 import {
   abandonMysteryDestinationVisit,
   clearMysteryVisitState,
@@ -16,37 +25,17 @@ import {
   setActiveLabyrinthModifiers,
   setActiveLabyrinthPendingNode,
   setActiveLabyrinthRewardModifiers,
-  setAlchemistState,
   setCompanionRewardCards,
-  setCorruptionResult,
-  setEquipmentShopState,
   setHasActiveRun,
   setLabyrinthMap,
-  setMysteryCardChoices,
-  setMysteryChosenCardId,
-  setMysteryChosenChoice,
   setMysteryEvent,
-  setMysteryGrantedGearInstances,
-  setMysteryGrantedTrinketIds,
-  setMysteryPendingRemoval,
   setRewardState,
-  setShopState,
   setStarterDraftChoices,
-  setTrinketShopState,
   setWildwoodDraft,
 } from "./write-port-session";
-import {
-  createDraftRunRandomSource,
-  initializeActiveRun,
-  initializeFromResumeSnapshot,
-  setScreen,
-} from "./write-port-run";
-import { initializeActiveBattle } from "./write-port-run";
-import { rebindLiveRunMeta } from "./run-meta-rebind";
-import { omitParkedMode, removeRunRecency, touchRunRecency } from "./parked-runs";
 
 function encodeParkedSnapshot(draft: GameplayDraft): ActiveRunData {
-  return encodeRunResumeSnapshot(getRunSessionFromState(draft), draft.run.navigation.resumeScreen ?? undefined);
+  return encodeRunResumeSnapshot(getRunSessionFromState(draft), runActivityScreen(draft.session.activity) ?? undefined);
 }
 
 function repairRestoredTrinketShop(state: TrinketShopState, ownedIds: readonly string[]): TrinketShopState {
@@ -84,22 +73,14 @@ function restoreRunSession(draft: GameplayDraft, decoded: DecodedRunResumeSessio
   setStarterDraftChoices(draft, decoded.starterDraftChoices);
   if (decoded.rewardState) setRewardState(draft, decoded.rewardState);
   setCompanionRewardCards(draft, decoded.companionRewardCards);
-  if (decoded.shopState) setShopState(draft, decoded.shopState);
-  if (decoded.alchemistState) setAlchemistState(draft, decoded.alchemistState);
-  if (decoded.trinketShopState) {
-    setTrinketShopState(draft, repairRestoredTrinketShop(decoded.trinketShopState, draft.gear.ownedTrinketIds));
+  draft.session.activity = decoded.activity;
+  const activity = draft.session.activity;
+  if (activity.kind === "trinket-shop") {
+    activity.data = repairRestoredTrinketShop(activity.data, draft.gear.ownedTrinketIds);
   }
-  if (decoded.equipmentShopState) {
-    setEquipmentShopState(draft, repairRestoredEquipmentShop(decoded.equipmentShopState, draft.gear.inventories));
+  if (activity.kind === "equipment-shop") {
+    activity.data = repairRestoredEquipmentShop(activity.data, draft.gear.inventories);
   }
-  setMysteryEvent(draft, decoded.mysteryEvent);
-  setMysteryChosenChoice(draft, decoded.mysteryChosenChoice);
-  setMysteryPendingRemoval(draft, decoded.mysteryPendingRemoval);
-  setMysteryCardChoices(draft, decoded.mysteryCardChoices);
-  setMysteryGrantedTrinketIds(draft, decoded.mysteryGrantedTrinketIds);
-  setMysteryGrantedGearInstances(draft, decoded.mysteryGrantedGearInstances);
-  setMysteryChosenCardId(draft, decoded.mysteryChosenCardId);
-  setCorruptionResult(draft, decoded.corruptionResult);
 }
 
 export function parkForegroundRunInDraft(draft: GameplayDraft): void {
@@ -118,7 +99,7 @@ export function parkAndDeactivateForegroundRunInDraft(draft: GameplayDraft): voi
 }
 
 export function applyRestoreRunToDraft(draft: GameplayDraft, activeRun: ActiveRunData | null): void {
-  draft.run.navigation.resumeScreen = null;
+  draft.session.activity = { kind: "idle" };
   const decoded = activeRun ? decodeRunResumeSnapshot(activeRun) : null;
   if (decoded) initializeFromResumeSnapshot(draft, decoded.progress);
   else initializeActiveRun(draft, null);
@@ -140,12 +121,13 @@ export function applyRestoreRunToDraft(draft: GameplayDraft, activeRun: ActiveRu
   setHasActiveRun(draft, true);
   if (decoded) restoreRunSession(draft, decoded.session);
   if (resumeScreen) setScreen(draft, resumeScreen);
-  if (draft.session.mysteryEvent && eventHasUnresolvedRandomTrinket(draft.session.mysteryEvent)) {
+  const mysteryEvent = readActivityData(draft.session.activity, "mystery").mysteryEvent;
+  if (mysteryEvent && eventHasUnresolvedRandomTrinket(mysteryEvent)) {
     const rng = createDraftRunRandomSource(draft, "events");
     setMysteryEvent(
       draft,
       repairUnresolvedMysteryTrinkets(
-        draft.session.mysteryEvent,
+        mysteryEvent,
         combineTrinketEffectIds(
           draft.run.activeRun.runBoons,
           draft.gear.equippedTrinkets[draft.run.activeRun.characterId],
@@ -154,7 +136,7 @@ export function applyRestoreRunToDraft(draft: GameplayDraft, activeRun: ActiveRu
       ),
     );
   }
-  if (resumeScreen === "mystery" && !draft.session.mysteryEvent) {
+  if (resumeScreen === "mystery" && !mysteryEvent) {
     if (activeRun.mysteryVisit != null) {
       abandonMysteryDestinationVisit(draft);
       clearMysteryVisitState(draft);

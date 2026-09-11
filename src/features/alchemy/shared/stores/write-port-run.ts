@@ -1,20 +1,18 @@
-import type { BattleState, EndPlayerTurnResolution } from "@/lib/battle";
-import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
-import type { BattleCard } from "@/lib/game-data";
-import type { CharacterId, KeywordId } from "@/lib/game-data";
-import { addTalentXP, filterKeywordsForTalentXP, getCardKeywords } from "@/lib/game-data";
-import { stepRunRng, type RunRngStream } from "@/lib/rng";
-import type { PersistedBattleTransition } from "@/lib/active-run-session";
-import { current, isDraft, type Draft } from "immer";
-import type { GameplayDraft } from "./run-session-command";
-import { getGoldMultiplier } from "@/lib/game-data";
-import { createInitialActiveRunFields, runFieldsFromSnapshot, type ActiveRunProgressFields } from "./run-state-init";
-import { createInitialBattleFields, type DisplayOverrides, type RunDomainBattleState } from "./run-domain-types";
-import { addInventory, emptyInventory } from "@/lib/homestead/inventory";
-import type { ActiveRunData, RunObtainedItem } from "@/lib/active-run-session";
-import type { MaterialInventory } from "@/lib/homestead/types";
 import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
-import { isRunResumeScreen, type Screen } from "@/lib/routing";
+import type { ActiveRunData, PersistedBattleTransition, RunObtainedItem } from "@/lib/active-run-session";
+import { transitionRunActivity } from "@/lib/active-run-session";
+import type { BattleState, EndPlayerTurnResolution } from "@/lib/battle";
+import type { BattleCard, CharacterId, KeywordId } from "@/lib/game-data";
+import { addTalentXP, filterKeywordsForTalentXP, getCardKeywords, getGoldMultiplier } from "@/lib/game-data";
+import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
+import { addInventory, emptyInventory } from "@/lib/homestead/inventory";
+import type { MaterialInventory } from "@/lib/homestead/types";
+import { stepRunRng, type RunRngStream } from "@/lib/rng";
+import { type Screen } from "@/lib/routing";
+import { current, isDraft, type Draft } from "immer";
+import { createInitialBattleFields, type DisplayOverrides, type RunDomainBattleState } from "./run-domain-types";
+import type { GameplayDraft } from "./run-session-command";
+import { createInitialActiveRunFields, runFieldsFromSnapshot, type ActiveRunProgressFields } from "./run-state-init";
 
 function setDraftField<T extends object, K extends keyof T>(
   draft: T,
@@ -164,7 +162,7 @@ export function initializeFromResumeSnapshot(draft: GameplayDraft, activeRun: Ac
 }
 
 export function hydrateFromSnapshot(draft: GameplayDraft, snapshot: RunStartSnapshot): void {
-  draft.run.navigation.resumeScreen = null;
+  draft.session.activity = { kind: "idle" };
   Object.assign(draft.run.activeRun, runFieldsFromSnapshot(snapshot), {
     runTalentXP: {},
     runMaterialsEarned: emptyInventory(),
@@ -175,14 +173,16 @@ export function hydrateFromSnapshot(draft: GameplayDraft, snapshot: RunStartSnap
 export function setScreen(draft: GameplayDraft, action: Screen | ((prev: Screen) => Screen)): void {
   const screen = typeof action === "function" ? action(draft.run.navigation.screen) : action;
   draft.run.navigation.screen = screen;
-  if (draft.session.hasActiveRun && isRunResumeScreen(screen)) {
-    draft.run.navigation.resumeScreen = screen;
-  }
+  prepareRunNavigation(draft, screen);
+}
+
+export function prepareRunNavigation(draft: GameplayDraft, screen: Screen): void {
+  if (draft.session.hasActiveRun) draft.session.activity = transitionRunActivity(draft.session.activity, screen);
 }
 
 export function resetNavigation(draft: GameplayDraft): void {
   draft.run.navigation.screen = "menu";
-  draft.run.navigation.resumeScreen = null;
+  draft.session.activity = { kind: "idle" };
 }
 
 export function createDraftRunRandomSource(draft: GameplayDraft, stream: RunRngStream): () => number {
@@ -306,6 +306,7 @@ export function initializeActiveBattle(
   battle.displayOverrides = {};
   battle.battleStartState = hydrated;
   battle.hasActiveBattle = true;
+  prepareRunNavigation(draft, "battle");
   syncBattleGoldFromPurse(draft);
 }
 

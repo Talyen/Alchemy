@@ -3,7 +3,7 @@ import "../../../../helpers/mock-flush-save";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defaultBattleState } from "@/lib/battle";
 import { ROUTE_SCREENS } from "@/lib/routing";
-import { createEmptyRewardState } from "@/lib/active-run-session";
+import { createEmptyRewardState, readActivityData } from "@/lib/active-run-session";
 import {
   applyRunDefeatTeardown,
   finalizeRunEndSession,
@@ -11,18 +11,18 @@ import {
   syncRunToBattleStart as mutateRunToBattleStart,
   teardownRun,
 } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   createRunSessionCommand,
   subscribeRunSessionCommits,
 } from "@/features/alchemy/shared/stores/run-session-command";
 import {
-  initializeActiveBattle as mutateInitializeActiveBattle,
   setHasActiveBattle as mutateHasActiveBattle,
   setHasActiveRun as mutateHasActiveRun,
+  initializeActiveBattle as mutateInitializeActiveBattle,
   setRewardState as mutateRewardState,
+  setSyncedBattleState as mutateSyncedBattleState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { setSyncedBattleState as mutateSyncedBattleState } from "@/features/alchemy/shared/stores/run-session-write-port";
-import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import {
   readActiveRun,
@@ -30,15 +30,6 @@ import {
   readBattle,
   readRunSession,
 } from "@/features/alchemy/shared/stores/run-reads";
-
-const syncBattleToRun = createRunSessionCommand(mutateBattleToRun);
-const syncRunToBattleStart = createRunSessionCommand(mutateRunToBattleStart);
-const initializeActiveBattle = createRunSessionCommand(mutateInitializeActiveBattle);
-const setSyncedBattleState = createRunSessionCommand(mutateSyncedBattleState);
-const setHasActiveBattle = createRunSessionCommand(mutateHasActiveBattle);
-const setHasActiveRun = createRunSessionCommand(mutateHasActiveRun);
-const setRewardState = createRunSessionCommand(mutateRewardState);
-
 import { saveAlchemySaveData } from "@/features/alchemy/shared/storage";
 import { playDefeat, stopAllSfx } from "@/lib/audio";
 import {
@@ -47,6 +38,13 @@ import {
   resetRunSessionSlice,
   setRunProgress,
 } from "../../../../helpers/run-domain-store-test";
+const syncBattleToRun = createRunSessionCommand(mutateBattleToRun);
+const syncRunToBattleStart = createRunSessionCommand(mutateRunToBattleStart);
+const initializeActiveBattle = createRunSessionCommand(mutateInitializeActiveBattle);
+const setSyncedBattleState = createRunSessionCommand(mutateSyncedBattleState);
+const setHasActiveBattle = createRunSessionCommand(mutateHasActiveBattle);
+const setHasActiveRun = createRunSessionCommand(mutateHasActiveRun);
+const setRewardState = createRunSessionCommand(mutateRewardState);
 
 beforeEach(() => {
   resetRunDomainStore();
@@ -58,8 +56,8 @@ describe("session slice", () => {
   });
 
   it("has empty shop and alchemist state", () => {
-    expect(readRunSession().shopState.cards).toEqual([]);
-    expect(readRunSession().alchemistState.potions).toEqual([]);
+    expect(readActivityData(readRunSession().activity, "shop").cards).toEqual([]);
+    expect(readActivityData(readRunSession().activity, "alchemist").potions).toEqual([]);
   });
 
   it("starts with empty reward state and no active run", () => {

@@ -87,11 +87,13 @@ Feature layout and run-state ownership:
 - `scripts/` — command entry points and shared tooling in `scripts/lib/`; see the [script implementation map](./scripts/README.md)
 - `eslint/` — custom lint rules and import-boundary definitions composed by `eslint.config.js`
 - `docs/`, `.agents/` — canonical project documentation, audit procedures, plans, and agent skills and lessons
+- `docs/design/` — retained art studies, approval records, and UI mockups; see the [design archive](./docs/design/README.md)
 - `steam/` — Steam packaging and upload configuration
 
 Root configuration files remain beside `package.json` for tool discovery. Local
 outputs such as `dist/`, `release-desktop/`, `reports/`, `playwright-report/`, and
-`test-results/` are ignored artifacts. Existing `npm run clean` and
+`test-results/` are ignored artifacts. `scratch/` and `output/` hold temporary local
+work; retained design materials belong in `docs/design/`. Existing `npm run clean` and
 `npm run prune:transient` commands manage disposable reports and caches.
 
 `npm run dev` prepares authored assets before starting Vite. Production builds

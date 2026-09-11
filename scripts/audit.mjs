@@ -74,13 +74,12 @@ export function parseAuditArgs(argv) {
   return { hasTypes, hasAmplification, hasContent, hasHotspots, hasAll, forwardedArgs };
 }
 
-export function resolveAuditScript(parsed, hasArgs) {
+export function resolveAuditScript(parsed) {
   if (parsed.hasTypes) return "scripts/audit-type-escapes.mjs";
   if (parsed.hasAmplification) return "scripts/audit-change-amplification.mjs";
   if (parsed.hasContent) return "scripts/content-audit.mjs";
   if (parsed.hasHotspots) return "scripts/context-hotspots.mjs";
-  if (parsed.hasAll || !hasArgs) return "scripts/audit-all.mjs";
-  return null;
+  return "scripts/audit-all.mjs";
 }
 
 async function main() {
@@ -97,8 +96,7 @@ async function main() {
     process.exitCode = 2;
     return;
   }
-  const script = resolveAuditScript(parsed, args.length > 0);
-  if (!script) return;
+  const script = resolveAuditScript(parsed);
   const childArgs = [script, ...parsed.forwardedArgs];
   const result = runCommand(process.execPath, childArgs, { cwd: ROOT, stdio: "inherit" });
   if (result.status !== 0) process.exitCode = result.status ?? 1;

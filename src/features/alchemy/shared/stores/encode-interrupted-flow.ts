@@ -1,3 +1,5 @@
+import { wildcardStarterResumeTarget } from "@/features/alchemy/shared/run-flow/starter-draft";
+import { wildwoodPhaseToScreen } from "@/features/alchemy/shared/run-flow/wildwood-screen-routing";
 import {
   createEmptyRewardState,
   restorePendingRewardBundle,
@@ -7,12 +9,10 @@ import {
   type PersistedPendingReward,
   type RewardState,
 } from "@/lib/active-run-session";
+import type { LabyrinthMap } from "@/lib/content-systems/types";
+import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type { BattleCard } from "@/lib/game-data";
 import { filterValidDestinations, isRunResumeScreen, type Screen } from "@/lib/routing";
-import { wildcardStarterResumeTarget } from "@/features/alchemy/shared/run-flow/starter-draft";
-import { wildwoodPhaseToScreen } from "@/features/alchemy/shared/run-flow/wildwood-screen-routing";
-import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
-import type { LabyrinthMap } from "@/lib/content-systems/types";
 import type { RunSession } from "./run-reads";
 
 export interface DecodedClaimSurface {
@@ -32,25 +32,6 @@ function resolveExplorationScreen(
   return "destination";
 }
 
-function encodeMidClaimPendingReward(session: RunSession["session"]): PersistedPendingReward | null {
-  return serializePendingReward(session.rewardState, session.companionRewardCards);
-}
-
-export function resolveEncodeScreen(
-  requested: Screen | null | undefined,
-  session: RunSession["session"],
-): Screen | null | undefined {
-  if (!session.rewardClaimInFlight) return requested;
-  if (session.companionRewardCards?.length) return requested ?? "rewards";
-
-  if (session.rewardState.destinations.length > 0) return "destination";
-
-  if (requested === "rewards" || requested == null) {
-    return resolveExplorationScreen(session.labyrinthMap, session.wildwoodDraft);
-  }
-  return requested;
-}
-
 function encodeDestinationFlow(session: RunSession["session"]): InterruptedFlow {
   return {
     kind: "destination",
@@ -65,15 +46,6 @@ export function encodeInterruptedFlow(
   session: RunSession["session"],
   currentScreen: Screen | null | undefined,
 ): InterruptedFlow {
-  if (session.rewardClaimInFlight) {
-    if (session.companionRewardCards?.length) {
-      const pending = encodeMidClaimPendingReward(session);
-      return pending ? { kind: "companion-reward", pending } : encodeDestinationFlow(session);
-    }
-
-    return encodeDestinationFlow(session);
-  }
-
   if (currentScreen === "rewards") {
     const pending = serializePendingReward(session.rewardState, session.companionRewardCards);
     return pending ? { kind: "primary-reward", pending } : { kind: "none" };

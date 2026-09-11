@@ -1,38 +1,28 @@
-import type { BattleCard, CharacterId, TalentXP } from "@/lib/game-data";
-import { defaultBattleState, type BattleState, type PlayerStatusValues, type TurnPhase } from "@/lib/battle";
-import {
-  createEmptyRewardState,
-  emptyAlchemistState,
-  emptyEquipmentShopState,
-  emptyShopState,
-  emptyTrinketShopState,
-  type AlchemistState,
-  type EquipmentShopState,
-  type LabyrinthPendingNodeId,
-  type PersistedBattleTransition,
-  type RewardState,
-  type RunObtainedItem,
-  type ShopState,
-  type TrinketShopState,
-} from "@/lib/active-run-session";
-import type { GearInstance } from "@/lib/gear";
 import {
   createInitialActiveRunFields,
   type ActiveRunProgressFields,
 } from "@/features/alchemy/shared/stores/run-state-init";
-import type { Destination, Screen } from "@/lib/routing";
+import {
+  createEmptyRewardState,
+  type LabyrinthPendingNodeId,
+  type PersistedBattleTransition,
+  type RewardState,
+  type RunActivity,
+  type RunObtainedItem,
+} from "@/lib/active-run-session";
+import { defaultBattleState, type BattleState, type PlayerStatusValues, type TurnPhase } from "@/lib/battle";
 import type {
   ContentSystemId,
   EncounterCombatTraitId,
   EncounterRewardTraitId,
   LabyrinthMap,
 } from "@/lib/content-systems/types";
-import { emptyParkedRuns, type ParkedRunsMap } from "./parked-runs";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
-import type { CorruptionResult } from "@/lib/corruption";
+import type { BattleCard, CharacterId, TalentXP } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
 import type { MaterialInventory } from "@/lib/homestead/types";
+import type { Destination, Screen } from "@/lib/routing";
+import { emptyParkedRuns, type ParkedRunsMap } from "./parked-runs";
 
 export interface DisplayOverrides {
   hand?: BattleCard[];
@@ -56,11 +46,12 @@ export interface RunDomainDataState {
   parkedRuns: ParkedRunsMap;
   runRecency: ContentSystemId[];
   initialized: boolean;
-  navigation: { screen: Screen; resumeScreen: Screen | null };
+  navigation: { screen: Screen };
 }
 
 export function createInitialSessionFields(): RunSessionFields {
   return {
+    activity: { kind: "idle" },
     hasActiveRun: false,
     rewardClaimInFlight: false,
     pendingDestinationClaim: null,
@@ -74,23 +65,11 @@ export function createInitialSessionFields(): RunSessionFields {
     runEndMaterials: emptyInventory(),
     runEndTalentXP: {},
     runEndItems: [],
-    corruptionResult: null,
     pendingCharacterId: null,
     pendingContentSystemType: "campaign",
     labyrinthMap: null,
     wildwoodDraft: null,
     starterDraftChoices: null,
-    shopState: emptyShopState(),
-    alchemistState: emptyAlchemistState(),
-    trinketShopState: emptyTrinketShopState(),
-    equipmentShopState: emptyEquipmentShopState(),
-    mysteryEvent: null,
-    mysteryChosenChoice: null,
-    mysteryPendingRemoval: false,
-    mysteryCardChoices: null,
-    mysteryGrantedTrinketIds: [],
-    mysteryGrantedGearInstances: [],
-    mysteryChosenCardId: null,
   };
 }
 
@@ -111,11 +90,12 @@ export function createInitialRunDomainData(): RunDomainDataState {
     parkedRuns: emptyParkedRuns(),
     runRecency: [],
     initialized: false,
-    navigation: { screen: "menu", resumeScreen: null },
+    navigation: { screen: "menu" },
   };
 }
 
 export interface RunSessionFields {
+  activity: RunActivity;
   hasActiveRun: boolean;
   rewardClaimInFlight: boolean;
   pendingDestinationClaim: Destination | null;
@@ -129,25 +109,9 @@ export interface RunSessionFields {
   runEndMaterials: MaterialInventory;
   runEndTalentXP: TalentXP;
   runEndItems: RunObtainedItem[];
-  corruptionResult: CorruptionResult | null;
   pendingCharacterId: CharacterId | null;
   pendingContentSystemType: ContentSystemId;
   labyrinthMap: LabyrinthMap | null;
   wildwoodDraft: WildwoodDraftState | null;
   starterDraftChoices: BattleCard[] | null;
-  shopState: ShopState;
-  alchemistState: AlchemistState;
-  trinketShopState: TrinketShopState;
-  equipmentShopState: EquipmentShopState;
-  mysteryEvent: MysteryEvent | null;
-  mysteryChosenChoice: MysteryChoice | null;
-
-  mysteryPendingRemoval: boolean;
-  mysteryCardChoices: BattleCard[] | null;
-
-  mysteryGrantedTrinketIds: string[];
-
-  mysteryGrantedGearInstances: GearInstance[];
-
-  mysteryChosenCardId: string | null;
 }

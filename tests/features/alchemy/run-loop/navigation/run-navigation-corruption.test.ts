@@ -10,7 +10,7 @@ import {
 import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { makeTestCard } from "../../../../fixtures/cards";
-
+import { readActivityData } from "@/lib/active-run-session";
 beforeEach(() => {
   resetTransientRunUi();
 });
@@ -106,6 +106,6 @@ describe("corruption destination exit", () => {
 
     expect(readRunSession().activeLabyrinthPendingNode).toBeNull();
     expect(readRunSession().selectedLabyrinthNodeId).toBeNull();
-    expect(readRunSession().corruptionResult).toBeNull();
+    expect(readActivityData(readRunSession().activity, "corruption")).toBeNull();
   });
 });

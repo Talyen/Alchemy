@@ -19,7 +19,6 @@ export function makeRewardRouteDeps(): RewardRouteDeps {
     completeRunVictory: vi.fn(),
     handleActComplete: vi.fn(),
     labyrinthClearNode: vi.fn(),
-    settleClaimSurface: vi.fn(),
     releaseClaim: vi.fn(),
   };
 }

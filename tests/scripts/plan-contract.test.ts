@@ -29,14 +29,6 @@ describe("execution-plan contract", () => {
     expect(invalid.errors).toContain("updated must be an ISO date");
   });
 
-  it("rejects terminal statuses in the active plans directory", () => {
-    const complete = parsePlanMetadata(
-      planTemplate("ExamplePlan", "2026-08-20").replace("status: active", "status: complete"),
-    );
-    expect(complete.errors).toEqual([]);
-    expect(complete.metadata.status).toBe("complete");
-  });
-
   it("archives terminal plans and leaves active plans in place", () => {
     const plansDir = fs.mkdtempSync(path.join(os.tmpdir(), "alchemy-plans-"));
     fs.writeFileSync(
@@ -49,6 +41,29 @@ describe("execution-plan contract", () => {
       expect(archiveTerminalPlans({ plansDir })).toEqual(["docs/Plans/Archived/Complete.md"]);
       expect(fs.existsSync(path.join(plansDir, "Archived", "Complete.md"))).toBe(true);
       expect(fs.existsSync(path.join(plansDir, "Active.md"))).toBe(true);
+    } finally {
+      fs.rmSync(plansDir, { recursive: true, force: true });
+    }
+  });
+  it("preflights and archives only selected plans without inspecting another task's metadata", () => {
+    const plansDir = fs.mkdtempSync(path.join(os.tmpdir(), "alchemy-plans-"));
+    const complete = planTemplate("Complete", "2026-08-20").replace("status: active", "status: complete");
+    fs.writeFileSync(path.join(plansDir, "Mine.md"), complete);
+    fs.writeFileSync(path.join(plansDir, "Theirs.md"), "unfinished metadata");
+    try {
+      expect(() => archiveTerminalPlans({ plansDir, names: ["Mine.md", "Missing.md"] })).toThrow("Plan not found");
+      expect(() => archiveTerminalPlans({ plansDir, names: ["../Mine.md"] })).toThrow("Expected a plan filename");
+      expect(archiveTerminalPlans({ plansDir, names: ["Mine.md"], dryRun: true })).toEqual([
+        "docs/Plans/Archived/Mine.md",
+      ]);
+      expect(fs.existsSync(path.join(plansDir, "Mine.md"))).toBe(true);
+      fs.mkdirSync(path.join(plansDir, "Archived"));
+      fs.writeFileSync(path.join(plansDir, "Archived", "Mine.md"), "retained history");
+      expect(() => archiveTerminalPlans({ plansDir, names: ["Mine.md"] })).toThrow("Archive already contains");
+      expect(fs.readFileSync(path.join(plansDir, "Archived", "Mine.md"), "utf8")).toBe("retained history");
+      fs.unlinkSync(path.join(plansDir, "Archived", "Mine.md"));
+      expect(archiveTerminalPlans({ plansDir, names: ["Mine.md"] })).toEqual(["docs/Plans/Archived/Mine.md"]);
+      expect(fs.readFileSync(path.join(plansDir, "Theirs.md"), "utf8")).toBe("unfinished metadata");
     } finally {
       fs.rmSync(plansDir, { recursive: true, force: true });
     }

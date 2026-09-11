@@ -1,20 +1,17 @@
-import { activeLabyrinthBenefits } from "@/lib/content-systems/labyrinth/room-rules";
-import { isPlayerDefeated } from "@/lib/battle";
 import {
-  emptyHydratedMysteryVisit,
   hydrateAlchemistState,
   hydrateEquipmentShopState,
   hydrateMysteryVisit,
   hydrateShopState,
   hydrateTrinketShopState,
+  runActivityScreen,
   serializeAlchemistState,
   serializeEquipmentShopState,
   serializeMysteryVisit,
   serializeShopState,
   serializeTrinketShopState,
+  transitionRunActivity,
   type ActiveRunData,
-  type AlchemistState,
-  type EquipmentShopState,
   type InterruptedFlow,
   type LabyrinthPendingNodeId,
   type PersistedAlchemistState,
@@ -24,25 +21,18 @@ import {
   type PersistedShopState,
   type PersistedTrinketShopState,
   type RewardState,
-  type ShopState,
-  type TrinketShopState,
+  type RunActivity,
 } from "@/lib/active-run-session";
-import type { CorruptionResult } from "@/lib/corruption";
-import { logStorageFailure } from "@/lib/storage-logging";
+import { isPlayerDefeated } from "@/lib/battle";
+import { activeLabyrinthBenefits } from "@/lib/content-systems/labyrinth/room-rules";
 import type { EncounterCombatTraitId, EncounterRewardTraitId, LabyrinthMap } from "@/lib/content-systems/types";
-import type { BattleCard } from "@/lib/game-data";
-import type { GearInstance } from "@/lib/gear";
-import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
+import type { CorruptionResult } from "@/lib/corruption";
+import type { BattleCard } from "@/lib/game-data";
 import { type Screen } from "@/lib/routing";
-import { createInitialActiveRunFields, ACTIVE_RUN_PROGRESS_KEYS, type ActiveRunProgressFields } from "./run-state-init";
+import { decodeInterruptedFlow, encodeInterruptedFlow, inferActiveRunScreen } from "./encode-interrupted-flow";
 import type { RunSession } from "./run-reads";
-import {
-  decodeInterruptedFlow,
-  encodeInterruptedFlow,
-  inferActiveRunScreen,
-  resolveEncodeScreen,
-} from "./encode-interrupted-flow";
+import { ACTIVE_RUN_PROGRESS_KEYS, createInitialActiveRunFields, type ActiveRunProgressFields } from "./run-state-init";
 
 export interface DecodedRunResumeSession {
   labyrinthMap: LabyrinthMap | null;
@@ -53,18 +43,7 @@ export interface DecodedRunResumeSession {
   starterDraftChoices: BattleCard[] | null;
   rewardState: RewardState | null;
   companionRewardCards: BattleCard[] | null;
-  shopState: ShopState | null;
-  alchemistState: AlchemistState | null;
-  trinketShopState: TrinketShopState | null;
-  equipmentShopState: EquipmentShopState | null;
-  mysteryEvent: MysteryEvent | null;
-  mysteryChosenChoice: MysteryChoice | null;
-  mysteryPendingRemoval: boolean;
-  mysteryCardChoices: BattleCard[] | null;
-  mysteryGrantedTrinketIds: string[];
-  mysteryGrantedGearInstances: GearInstance[];
-  mysteryChosenCardId: string | null;
-  corruptionResult: CorruptionResult | null;
+  activity: RunActivity;
 }
 
 export interface DecodedRunResumeSnapshot {
@@ -88,51 +67,16 @@ const EMPTY_PERSISTED_SHOPS: PersistedShops = Object.freeze({
   equipmentShopState: null,
 });
 
-export function encodePersistedShops(
-  session: RunSession["session"],
-  currentScreen: Screen | null | undefined,
-): PersistedShops {
-  switch (currentScreen) {
-    case "shop":
-      return { ...EMPTY_PERSISTED_SHOPS, shopState: serializeShopState(session.shopState) };
-    case "alchemist":
-      return { ...EMPTY_PERSISTED_SHOPS, alchemistState: serializeAlchemistState(session.alchemistState) };
-    case "trinket-shop":
-      return { ...EMPTY_PERSISTED_SHOPS, trinketShopState: serializeTrinketShopState(session.trinketShopState) };
-    case "equipment-shop":
-      return {
-        ...EMPTY_PERSISTED_SHOPS,
-        equipmentShopState: serializeEquipmentShopState(session.equipmentShopState),
-      };
-    case undefined:
-    case null:
-    case "menu":
-    case "game-mode-select":
-    case "character-select":
-    case "difficulty-select":
-    case "draft-deck":
-    case "battle":
-    case "rewards":
-    case "destination":
-    case "options":
-    case "collection":
-    case "talents":
-    case "homestead":
-    case "armory":
-    case "game-over":
-    case "campfire":
-    case "mystery":
-    case "corruption":
-    case "run-victory":
-    case "labyrinth-map":
-    case "wildwood-removal":
-      return EMPTY_PERSISTED_SHOPS;
-    default: {
-      const _exhaustiveCheck: never = currentScreen;
-      logStorageFailure(`encodePersistedShops: unhandled screen ${String(_exhaustiveCheck)}`);
-      return EMPTY_PERSISTED_SHOPS;
-    }
-  }
+export function encodePersistedShops(session: RunSession["session"]): PersistedShops {
+  const activity = session.activity;
+  if (activity.kind === "shop") return { ...EMPTY_PERSISTED_SHOPS, shopState: serializeShopState(activity.data) };
+  if (activity.kind === "alchemist")
+    return { ...EMPTY_PERSISTED_SHOPS, alchemistState: serializeAlchemistState(activity.data) };
+  if (activity.kind === "trinket-shop")
+    return { ...EMPTY_PERSISTED_SHOPS, trinketShopState: serializeTrinketShopState(activity.data) };
+  if (activity.kind === "equipment-shop")
+    return { ...EMPTY_PERSISTED_SHOPS, equipmentShopState: serializeEquipmentShopState(activity.data) };
+  return EMPTY_PERSISTED_SHOPS;
 }
 
 function pickActiveRunProgress(run: RunSession["run"]): ActiveRunProgressFields {
@@ -167,19 +111,19 @@ function resolvePendingBattleTransition(activeRun: ActiveRunData): PersistedBatt
   return synthesizeLegacyEnemyTurnTransition(activeRun);
 }
 
-function encodeScreenGatedFields(
+function encodeActivityFields(
   session: RunSession["session"],
   screen: Screen | null | undefined,
 ): Omit<EncodeResumeFields, "currentScreen"> {
-  const shops = encodePersistedShops(session, screen);
+  const shops = encodePersistedShops(session);
   return {
     interruptedFlow: encodeInterruptedFlow(session, screen),
     shopState: shops.shopState,
     alchemistState: shops.alchemistState,
     trinketShopState: shops.trinketShopState,
     equipmentShopState: shops.equipmentShopState,
-    mysteryVisit: screen === "mystery" ? serializeMysteryVisit(session) : null,
-    corruptionResult: screen === "corruption" ? session.corruptionResult : null,
+    mysteryVisit: session.activity.kind === "mystery" ? serializeMysteryVisit(session.activity.data) : null,
+    corruptionResult: session.activity.kind === "corruption" ? session.activity.data : null,
   };
 }
 
@@ -220,13 +164,14 @@ function encodeActiveRunFromSession(source: RunSession, resume: EncodeResumeFiel
 }
 
 export function encodeRunResumeSnapshot(source: RunSession, screen?: Screen): ActiveRunData {
-  const requestedScreen = screen ?? source.screen;
-  const currentScreen = resolveEncodeScreen(requestedScreen, source.session) ?? requestedScreen;
+  const currentScreen = runActivityScreen(source.session.activity) ?? screen ?? source.screen;
   const snapshot = encodeActiveRunFromSession(source, {
     currentScreen,
-    ...encodeScreenGatedFields(source.session, currentScreen),
+    ...encodeActivityFields(source.session, currentScreen),
   });
-  return { ...snapshot, currentScreen: inferActiveRunScreen(snapshot) };
+  return source.session.activity.kind === "idle"
+    ? { ...snapshot, currentScreen: inferActiveRunScreen(snapshot) }
+    : snapshot;
 }
 
 function preferTopLevelModifiers<T>(
@@ -249,16 +194,7 @@ export function decodeRunResumeSnapshot(activeRun: ActiveRunData): DecodedRunRes
     screen = inferActiveRunScreen({ ...activeRun, currentScreen: claim.screen ?? screen });
   }
 
-  const mysteryVisit =
-    screen === "mystery"
-      ? hydrateMysteryVisit(activeRun.mysteryVisit, {
-          modifiers: activeLabyrinthBenefits(
-            activeRun.contentSystemType,
-            activeRun.activeLabyrinthRewardModifiers ?? [],
-          ),
-          maxHealth: activeRun.runMaxHealth,
-        })
-      : emptyHydratedMysteryVisit();
+  const activity = decodeRunActivity(activeRun, screen);
 
   return {
     progress: createInitialActiveRunFields(activeRun),
@@ -279,12 +215,27 @@ export function decodeRunResumeSnapshot(activeRun: ActiveRunData): DecodedRunRes
       starterDraftChoices: activeRun.starterDraftChoices,
       rewardState,
       companionRewardCards,
-      shopState: activeRun.shopState ? hydrateShopState(activeRun.shopState) : null,
-      alchemistState: activeRun.alchemistState ? hydrateAlchemistState(activeRun.alchemistState) : null,
-      trinketShopState: activeRun.trinketShopState ? hydrateTrinketShopState(activeRun.trinketShopState) : null,
-      equipmentShopState: activeRun.equipmentShopState ? hydrateEquipmentShopState(activeRun.equipmentShopState) : null,
-      ...mysteryVisit,
-      corruptionResult: activeRun.corruptionResult,
+      activity,
     },
   };
+}
+
+function decodeRunActivity(activeRun: ActiveRunData, screen: Screen): RunActivity {
+  if (screen === "shop" && activeRun.shopState) return { kind: screen, data: hydrateShopState(activeRun.shopState) };
+  if (screen === "alchemist" && activeRun.alchemistState)
+    return { kind: screen, data: hydrateAlchemistState(activeRun.alchemistState) };
+  if (screen === "trinket-shop" && activeRun.trinketShopState)
+    return { kind: screen, data: hydrateTrinketShopState(activeRun.trinketShopState) };
+  if (screen === "equipment-shop" && activeRun.equipmentShopState)
+    return { kind: screen, data: hydrateEquipmentShopState(activeRun.equipmentShopState) };
+  if (screen === "mystery")
+    return {
+      kind: screen,
+      data: hydrateMysteryVisit(activeRun.mysteryVisit, {
+        modifiers: activeLabyrinthBenefits(activeRun.contentSystemType, activeRun.activeLabyrinthRewardModifiers ?? []),
+        maxHealth: activeRun.runMaxHealth,
+      }),
+    };
+  if (screen === "corruption") return { kind: screen, data: activeRun.corruptionResult };
+  return transitionRunActivity({ kind: "idle" }, screen);
 }

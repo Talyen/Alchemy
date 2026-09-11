@@ -15,6 +15,7 @@ export function repeatUniqueCardDamage(
   if (state.enemyHealth <= 0 || isPlayerDefeated(state)) return state;
   const repeated = withPreservedFlags({ ...state, flags: { ...state.flags, uniqueRepeatActive: true } }, (current) =>
     applyCardEffects(current, { ...card, effects: damageOnlyEffects(card.effects) }, combatTexts, {
+      cardHealing: true,
       manaAtStart: current.mana,
       enemyFreezeSkipTurnsAtStart: current.enemyCC.freezeSkipTurns,
       damageMultiplier: multiplier,

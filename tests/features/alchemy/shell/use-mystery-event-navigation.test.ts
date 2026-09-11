@@ -1,27 +1,27 @@
 import "../../../helpers/mock-audio";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useMysteryEventNavigation } from "@/features/alchemy/shell/use-mystery-event-navigation";
+import { createMysteryEventNavigation } from "@/features/alchemy/run-loop/navigation/mystery-event-navigation";
 import { resetAllTestStores, resetProfileForTest } from "../../../helpers/gameplay-store-test";
-import { setRunProgress } from "../../../helpers/run-domain-store-test";
+import { setRunProgress, setRunSession } from "../../../helpers/run-domain-store-test";
 import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
 import { readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { type MysteryEffect } from "@/lib/mystery";
-
 import { playGoldGain, playGoldSpend, playUISound } from "@/lib/audio";
 import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
-
+import { emptyHydratedMysteryVisit, readActivityData } from "@/lib/active-run-session";
 function renderMysteryNav(navigateTo = vi.fn((_screen: Screen, onCommit?: () => void) => onCommit?.())) {
-  const hook = renderHook(() => useMysteryEventNavigation({ navigateTo }));
+  const hook = renderHook(() => createMysteryEventNavigation({ navigateTo }));
   return { ...hook, navigateTo };
 }
 
 beforeEach(() => {
   resetAllTestStores();
   resetProfileForTest();
+  setRunSession({ activity: { kind: "mystery", data: emptyHydratedMysteryVisit() } });
 });
 
-describe("useMysteryEventNavigation", () => {
+describe("createMysteryEventNavigation", () => {
   it("beginMysteryEvent stores an event and navigates", () => {
     const { result, navigateTo } = renderMysteryNav();
 
@@ -29,12 +29,12 @@ describe("useMysteryEventNavigation", () => {
       result.current.beginMysteryEvent();
     });
 
-    expect(readRunSession().mysteryEvent).not.toBeNull();
-    expect(readRunSession().mysteryCardChoices).toBeNull();
-    expect(readRunSession().mysteryGrantedTrinketIds).toEqual([]);
-    expect(readRunSession().mysteryGrantedGearInstances).toEqual([]);
-    expect(readRunSession().mysteryChosenCardId).toBeNull();
-    expect(readRunSession().mysteryChosenChoice).toBeNull();
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryEvent).not.toBeNull();
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryCardChoices).toBeNull();
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryGrantedTrinketIds).toEqual([]);
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryGrantedGearInstances).toEqual([]);
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryChosenCardId).toBeNull();
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryChosenChoice).toBeNull();
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.MYSTERY, undefined);
     expect(playUISound).toHaveBeenCalledWith("musicBoxMystery");
   });
@@ -83,7 +83,7 @@ describe("useMysteryEventNavigation", () => {
     });
 
     expect(readRunProfile().gold).toBe(30);
-    expect(readRunSession().mysteryChosenChoice?.label).toBe("Take");
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryChosenChoice?.label).toBe("Take");
   });
 
   it("handleMysteryChooseCard ignores a second pick", async () => {
@@ -103,7 +103,7 @@ describe("useMysteryEventNavigation", () => {
       result.current.handleMysteryChooseCard("block");
     });
 
-    expect(readRunSession().mysteryChosenCardId).toBe("slash");
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryChosenCardId).toBe("slash");
   });
 
   it("rolls back state and skips gold sounds when a later effect throws", () => {

@@ -15,7 +15,7 @@ import {
   mergeCombatText,
   payKillPayouts,
 } from "./combat-text";
-import { BLEED_STATUS_MULTIPLIER, FIRST_EFFECT_MULTIPLIER, HALF_DIVISOR } from "../game-constants";
+import { BLEED_STATUS_MULTIPLIER, FIRST_EFFECT_MULTIPLIER, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
 import { paceCombatMagnitude } from "./fight-pacing";
 import { dealEnemyScaledDamage } from "./scaled-damage";
 import { decayArmorAfterDamage, getEnemyDamageMultiplier } from "./status-helpers";
@@ -28,7 +28,8 @@ export function applyCardHealing(
   options?: { skipFightPacing?: boolean },
 ): BattleState {
   const paced = options?.skipFightPacing ? amount : paceCombatMagnitude(state, amount, "player");
-  const overheals = paced > Math.max(0, state.playerMaxHealth - state.playerHealth);
+  const overheals =
+    Math.round(paced * state.talentEffects.healMultiplier) > Math.max(0, state.playerMaxHealth - state.playerHealth);
   const healed = applyHealingWithCombatText(state, paced, combatTexts, { skipFightPacing: true });
   return overheals && state.talentEffects.cleanseOnCardOverheal
     ? removeHarmfulPlayerStatuses(healed, 1, combatTexts)
@@ -80,6 +81,41 @@ export function applyHealthThresholdCleanse(
   return threshold > 0 && previousHealth >= threshold && state.playerHealth < threshold && state.playerHealth > 0
     ? removeHarmfulPlayerStatuses(state, Infinity, combatTexts)
     : state;
+}
+
+export function checkHealthThresholds(
+  prevHealth: number,
+  nextHealth: number,
+  state: BattleState,
+  combatTexts: CombatTextEvent[],
+) {
+  if (nextHealth <= 0) return state;
+  let nextState = state;
+
+  function applyHealthThresholdStatBonus(
+    currentState: BattleState,
+    configs: { threshold: number; amount: number } | Array<{ threshold: number; amount: number }> | null,
+    stat: "block" | "armor",
+  ): BattleState {
+    const bonuses = configs == null ? [] : Array.isArray(configs) ? configs : [configs];
+    let next = currentState;
+    for (const config of bonuses) {
+      const thresholdHp = (state.playerMaxHealth * config.threshold) / PERCENT_DENOMINATOR;
+      if (prevHealth >= thresholdHp && nextHealth < thresholdHp) {
+        next = applyPlayerStatusEffect(
+          next,
+          { kind: "player-status", status: stat, amount: config.amount },
+          combatTexts,
+        );
+      }
+    }
+    return next;
+  }
+
+  nextState = applyHealthThresholdCleanse(prevHealth, nextState, combatTexts);
+  nextState = applyHealthThresholdStatBonus(nextState, state.talentEffects.healthThresholdBlock, "block");
+  nextState = applyHealthThresholdStatBonus(nextState, state.talentEffects.healthThresholdArmor, "armor");
+  return nextState;
 }
 
 function scaleArmorAmount(state: BattleState, amount: number): { state: BattleState; amount: number } {

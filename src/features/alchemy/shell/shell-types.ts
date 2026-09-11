@@ -1,7 +1,7 @@
-import type { BattleCard, DifficultyModifier } from "@/lib/game-data";
-import type { WildwoodModifierId } from "@/lib/content-systems/wildwood/gauntlet";
-import type { Screen, ScreenTransitionOptions } from "@/lib/routing";
 import type { ShopKind } from "@/features/alchemy/run-loop/shop/shop-action-types";
+import type { WildwoodModifierId } from "@/lib/content-systems/wildwood/gauntlet";
+import type { BattleCard, DifficultyModifier } from "@/lib/game-data";
+import type { Screen, ScreenTransitionOptions } from "@/lib/routing";
 
 interface BattleLauncherDeps {
   onStartBattle: (
@@ -21,7 +21,7 @@ interface BattleLauncherDeps {
 
 export interface RunNavigationDeps {
   screen: Screen;
-  navigateTo: (nextScreen: Screen, onRenderedScreenCommit?: () => void) => void;
+  navigateTo: (nextScreen: Screen, prepareNavigation?: () => void) => void;
   transition: (nextScreen: Screen, options?: ScreenTransitionOptions) => void;
   cancelPending: () => void;
   battle: BattleLauncherDeps;

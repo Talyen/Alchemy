@@ -7,12 +7,12 @@ import {
   subscribeRunSessionCommits,
 } from "@/features/alchemy/shared/stores/run-session-command";
 import { setShopState as mutateShopState } from "@/features/alchemy/shared/stores/run-session-write-port";
-const setShopState = createRunSessionCommand(mutateShopState);
 import { cardById, type BattleCard } from "@/lib/game-data";
-import { emptyShopState, type ShopState } from "@/lib/active-run-session";
+import { emptyShopState, readActivityData, type ShopState } from "@/lib/active-run-session";
 import { resetAllTestStores } from "../../../../helpers/gameplay-store-test";
 import { setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
+const setShopState = createRunSessionCommand(mutateShopState);
 
 beforeEach(() => {
   resetAllTestStores();
@@ -38,7 +38,7 @@ describe("refreshShopOfferings", () => {
       refreshShopOfferings<ShopState, BattleCard>({
         draft,
         price: 5,
-        refreshesLeft: draft.session.shopState.refreshesLeft,
+        refreshesLeft: readActivityData(draft.session.activity, "shop").refreshesLeft,
         setState: mutateShopState,
         resample: () => applyStrongSpiritsToPotions(newItems, ["strong-spirits"]),
         mapState: (previous, items) => ({ ...previous, cards: items }),
@@ -54,10 +54,13 @@ describe("refreshShopOfferings", () => {
     expect(refreshed.value).not.toEqual(newItems);
     expect(commits).toHaveLength(1);
     expect(readRunProfile().gold).toBe(5);
-    expect(readRunSession().shopState.cards).toEqual(refreshed.value);
-    expect(readRunSession().shopState).toMatchObject({ firstPurchaseUsed: true, removeUsed: true });
-    expect(readRunSession().shopState.refreshesLeft).toBe(0);
-    expect(readRunSession().shopState.purchasedSlotKeys).toEqual([]);
+    expect(readActivityData(readRunSession().activity, "shop").cards).toEqual(refreshed.value);
+    expect(readActivityData(readRunSession().activity, "shop")).toMatchObject({
+      firstPurchaseUsed: true,
+      removeUsed: true,
+    });
+    expect(readActivityData(readRunSession().activity, "shop").refreshesLeft).toBe(0);
+    expect(readActivityData(readRunSession().activity, "shop").purchasedSlotKeys).toEqual([]);
   });
 
   it.each([
@@ -81,7 +84,7 @@ describe("refreshShopOfferings", () => {
       refreshShopOfferings<ShopState, BattleCard>({
         draft,
         price: 5,
-        refreshesLeft: draft.session.shopState.refreshesLeft,
+        refreshesLeft: readActivityData(draft.session.activity, "shop").refreshesLeft,
         setState: mutateShopState,
         resample,
         mapState: (previous, items) => ({ ...previous, cards: items }),
@@ -108,7 +111,7 @@ describe("purchaseShopOffering", () => {
       purchaseShopOffering({
         draft,
         price: 5,
-        state: draft.session.shopState,
+        state: readActivityData(draft.session.activity, "shop"),
         setState: mutateShopState,
         slotKey: "missing-0",
         offeringMatches: false,

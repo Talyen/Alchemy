@@ -51,7 +51,7 @@ Discovery: use `npm run context -- --outline <file>` before reading a large unfa
 
 - Before store/port/save/constant/routing change, search the touched subsystem and its consumers; follow further dependencies when evidence requires it.
 - If docs + nearest tests leave rule ambiguous, inspect focused history (start with at most five relevant commits); record the resolved invariant.
-- Post-edit: review the diff and enough surrounding code to check behavior and integration. Prefer removing redundancy and reusing owners before introducing abstractions. No comments — express intent via code, types, and tests; only tool directives allowed by `alchemy/no-comments`. New cross-boundary contract → `architect` skill.
+- Post-edit: review the diff and enough surrounding code to check behavior and integration. Prefer removing redundancy and reusing owners before introducing abstractions. Use names, types, and tests to express behavior. Add concise comments when they explain non-obvious reasons, ordering, or compatibility constraints; avoid narrating the code. ESLint suppressions must explain their reason (`alchemy/require-disable-reason`). New cross-boundary contract → `architect` skill.
 
 ## UI
 

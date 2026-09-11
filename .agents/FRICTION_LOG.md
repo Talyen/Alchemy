@@ -17,19 +17,3 @@ Add one short row for unresolved friction with the observation and next useful a
 ## Resolved history
 
 [September 2026](./history/friction-2026-09.md). All previous resolved entries are preserved there.
-
-- Corruption expansion: `normalize-active-run-data.ts`’s offer-repair serializer used a truthy Consume check, unlike the explicit-override hydration contract. Preserve `false` as well as `true`; the canonical rule is in `shared/storage/MIGRATIONS.md`.
-
-- 2026-09-08: `cardHasKeyword` in battle classification checks damage types and explicit tags, so it cannot identify untagged summon/Companion-buff cards. Whistle must use the full `getCardKeywords` query, as documented in GAME_RULES’ Companion card perks. Separately authored delayed card amounts also exposed an assumption in numeric upgrades that every matching delayed effect shared the immediate description number; numeric targets now retain scheduled effect paths.
-
-- 2026-09-08: Changed-unit verification selected deleted test paths, causing Vitest to fail an otherwise valid retirement with no matching files. Selection now skips absent unit files while preserving changed paths and risk escalations; CONTRIBUTING documents selecting surviving coverage when consolidating.
-
-- 2026-09-08: A six-worker development-mode layout batch timed out across simple startup and layout checks with GPU-stall warnings (`playwright-20260908t164214z-12124-6dfda6`); the unchanged 4K check passed with one worker. The E2E focused-check guide now calls for serial isolation before changing assertions or timeouts under this symptom.
-
-- 2026-09-08: Removing immer `current()` snapshot-diffing in `mutateGearWithRunHealthSync` broke `gear-combat-restrictions.test.ts` ("without touching state"): on an unmodified draft `current()` returns the same base reference, so the `!==` guard skips `rebindLiveRunMeta` and preserves root identity for blocked gear commands. Do not replace it with an unconditional rebind; the guard is the no-op path. Similarly, the exhaustive `Screen` switch in `encodePersistedShops` is enforced by `tests/architecture/exhaustive-switch-coverage.test.ts` — do not collapse it to ifs; new screens must enumerate explicitly.
-
-- 2026-09-10: The mid-claim reward roundtrip test expected primary choices to remain claimable even though `finishRewards` awards them before the navigation callback. This hid repeated rewards on reload. The test now uses a real claim before snapshotting; [WORKFLOWS](../docs/WORKFLOWS.md#add-or-change-post-victory-routing-reward_routes) records the committed-primary versus pending-bonus distinction.
-
-- 2026-09-10: Homestead’s `constructButton()` matched the Buildings tab because its action regex matched prefixes within words. Hover verification exposed the missing artwork on that target. The page object now matches action words at the start of the accessible name; the shared hover browser test verifies the actual building tile.
-
-- 2026-09-10: Campaign starts with a battle before its eight destinations per Act, while `roomsEncountered` advances at different times for battles and non-combat visits. Reusing that field as universal loot depth would miscount routes. The shared loot progression adapter and [Armory contract](../docs/ARMORY.md#loot-tuning) now derive each mode’s location ordinal from its existing state.

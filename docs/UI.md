@@ -51,6 +51,7 @@ collections show centered, muted “Empty” text in a 10rem-high content area w
 `ModalOverlayShell` owns overlay interaction eligibility: only open, rendered
 content accepts input or registers an Escape handler. Closing content remains
 visible for its existing fade but is inert and rejects activation events;
+Tab keeps its native focus traversal while propagation to inactive controls is blocked;
 `mount=false` removes it immediately without retaining an Escape handler.
 Reopening cancels pending removal. Consumers retain action-specific guards such
 as Wish's single-selection latch and confirmation buttons' disabled state.
@@ -59,13 +60,13 @@ to its existing target when the panel unmounts.
 
 ## Screen fade motion
 
-| Concern            | Contract                                                                                                                                                                                                                        |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Route change       | `useRenderedScreenTransition` owns the opacity-only page fade. Autosave, audio, battle playback, and presentation teardown follow committed `screen`, not `renderedScreen`.                                                     |
-| In-screen identity | Use `FadeSlot` for tabs, shop modes, offerings, keyword trees, and other identity swaps. Its first mount is idle so it does not stack on the route fade.                                                                        |
-| Overlays           | Dialogs, wish, and the game menu use `useFadePresence` so exit completes before unmount.                                                                                                                                        |
-| Copy               | `ScreenDescription` is static. `TextAnimate` is reserved for mystery narrative.                                                                                                                                                 |
-| Anti-flash         | Replace outgoing payloads only at the rendered-screen commit, swap layout while opacity is zero, reserve height for shape-changing swaps, and keep shell chrome mounted when payload data clears. Do not stagger route content. |
+| Concern            | Contract                                                                                                                                                                                                                                                                         |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Route change       | `useRenderedScreenTransition` owns the opacity-only page fade. Save payloads follow the committed run activity; audio, battle playback, and presentation teardown follow committed `screen`, not `renderedScreen`.                                                               |
+| In-screen identity | Use `FadeSlot` for tabs, shop modes, offerings, keyword trees, and other identity swaps. Its first mount is idle so it does not stack on the route fade.                                                                                                                         |
+| Overlays           | Dialogs, wish, and the game menu use `useFadePresence` so exit completes before unmount.                                                                                                                                                                                         |
+| Copy               | `ScreenDescription` is static. `TextAnimate` is reserved for mystery narrative.                                                                                                                                                                                                  |
+| Anti-flash         | Commit gameplay independently of animation; hold outgoing display snapshots until the rendered screen changes, swap layout while opacity is zero, reserve height for shape-changing swaps, and keep shell chrome mounted when payload data clears. Do not stagger route content. |
 
 Screen and `FadeSlot` reveals wait for the mounted images to load and decode through `useArtworkReady`, then allow a layout frame before starting the fade. While preparing a reveal, the gate also tracks artwork inserted after layout measurement and changed image sources; stale decode completions cannot reveal or hide the replacement. The observer disconnects after reveal, so normal battle updates do not restart the whole-screen gate. Startup preloading is a warm-up, not proof that a later mounted image is paint-ready. Failed or timed-out images stay hidden for that mount so they cannot pop in after the screen is revealed. Reserve intrinsic artwork dimensions when image height determines layout, including the menu logo.
 

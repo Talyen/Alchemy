@@ -202,7 +202,10 @@ export async function main() {
     ruleIsError(alchemyRule(destinationConfig, "no-run-earned-add-materials")),
     "screens must ban progress addMaterials",
   );
-  assert.ok(ruleIsError(alchemyRule(destinationConfig, "no-comments")), "screens must ban comments");
+  assert.ok(
+    ruleIsError(alchemyRule(destinationConfig, "require-disable-reason")),
+    "lint suppressions must explain their reason",
+  );
   assert.ok(ruleIsError(alchemyRule(destinationConfig, "no-em-dash")), "screens must ban em dashes");
 
   const libConfig = await getConfig("src/lib/battle/card-play.ts");

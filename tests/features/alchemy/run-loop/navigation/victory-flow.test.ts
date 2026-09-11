@@ -5,7 +5,6 @@ import {
   type VictoryRewardsInput,
   type VictoryRewardsResult,
 } from "@/features/alchemy/run-loop/navigation/victory-flow";
-import { commitVictoryRewards, type CommitVictoryRewardsDeps } from "@/features/alchemy/run-loop/run/run-flow-victory";
 import { computeVictoryGold } from "@/features/alchemy/run-loop/navigation/reward-math";
 import { createEmptyRewardState } from "@/lib/active-run-session";
 import { emptyInventory } from "@/lib/homestead/inventory";
@@ -19,7 +18,7 @@ import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { resetRunDomainStore } from "../../../../helpers/gameplay-store-test";
 import { setRunProgress } from "../../../../helpers/run-domain-store-test";
-
+import { commitVictoryRewards, type CommitVictoryRewardsDeps } from "@/features/alchemy/run-loop/run/victory-commands";
 beforeEach(() => resetRunDomainStore());
 
 vi.mock("@/features/alchemy/shared/run-flow/destination-flow", async (importOriginal) => {

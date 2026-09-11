@@ -71,6 +71,11 @@ describe("preloadSounds", () => {
 });
 
 describe("preloadBattleSounds", () => {
+  it("warms the sound for crafted Mixed Potions in the hand", () => {
+    preloadBattleSounds(["mixed-potion-health-potion-0-mana-potion-0"], "skeleton");
+    expect(createdFakeAudio.some((el) => el.src.includes("ice-in-water."))).toBe(true);
+  });
+
   it("prioritizes the visible hand and current enemy sound set", () => {
     preloadBattleSounds(["slash", "frostbolt"], "skeleton");
     const urls = createdFakeAudio.map((el) => el.src);

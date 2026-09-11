@@ -1,5 +1,8 @@
-import { useMemo } from "react";
-import { useShallow } from "zustand/react/shallow";
+import type { ActiveRunData, ParkedRunsMap, PersistedBattleTransition } from "@/lib/active-run-session";
+import { readActivityData, runActivityScreen } from "@/lib/active-run-session";
+import { isPlayerDefeated, type BattleState } from "@/lib/battle";
+import type { ContentSystemId, EncounterCombatTraitId } from "@/lib/content-systems/types";
+import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type {
   BattleCard,
   CharacterId,
@@ -9,18 +12,15 @@ import type {
   UnlockedTalents,
 } from "@/lib/game-data";
 import { computeTalentEffects } from "@/lib/game-data";
-import type { ContentSystemId, EncounterCombatTraitId } from "@/lib/content-systems/types";
-import { getRunPhase, type RunPhase, type Screen, type Destination } from "@/lib/routing";
-import { isPlayerDefeated, type BattleState } from "@/lib/battle";
-import type { PersistedBattleTransition } from "@/lib/active-run-session";
-import type { PermanentProgressFields } from "./run-state-init";
-import { pickActiveRunView, type ActiveRunReadView } from "./run-state-init";
+import { getRunPhase, type Destination, type RunPhase, type Screen } from "@/lib/routing";
+import { useMemo } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { readGameplayState, useGameplayStateStore, type GameplayState } from "./gameplay-state-store";
 import { mostRecentResumableMode } from "./parked-runs";
-import type { ActiveRunData, ParkedRunsMap } from "@/lib/active-run-session";
 import type { RunDomainBattleState, RunSessionFields } from "./run-domain-types";
+import type { PermanentProgressFields } from "./run-state-init";
+import { pickActiveRunView, type ActiveRunReadView } from "./run-state-init";
 import { deepFreezeInDev } from "./store-utils";
-import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 
 export interface ContentNavigationRunPort {
   contentSystemType: ContentSystemId;
@@ -41,11 +41,11 @@ function selectContentNavigationFields(state: GameplayState): ContentNavigationR
   };
 }
 
+export type { DisplayOverrides } from "./run-domain-types";
 export type { ActiveRunReadView } from "./run-state-init";
 export type RunProfileReadView = Readonly<PermanentProgressFields>;
 export type RunSessionReadView = Readonly<RunSessionFields>;
 export type BattleReadView = Readonly<RunDomainBattleState>;
-export type { DisplayOverrides } from "./run-domain-types";
 
 function useShallowRunSelector<T>(selector: (state: GameplayState) => T): T {
   return useGameplayStateStore(useShallow(selector));
@@ -62,7 +62,13 @@ export function readRunSession(): RunSessionReadView {
 export function readShopFirstPurchaseUsed(
   shop: "shopState" | "alchemistState" | "trinketShopState" | "equipmentShopState",
 ): boolean {
-  return readGameplayState().session[shop].firstPurchaseUsed;
+  const kinds = {
+    shopState: "shop",
+    alchemistState: "alchemist",
+    trinketShopState: "trinket-shop",
+    equipmentShopState: "equipment-shop",
+  } as const;
+  return readActivityData(readGameplayState().session.activity, kinds[shop]).firstPurchaseUsed;
 }
 export function readBattle(): BattleReadView {
   return deepFreezeInDev({ ...readGameplayState().battle });
@@ -114,10 +120,12 @@ export function readActiveRunScreen(): Screen {
 }
 export function readRunResumeScreen(): Screen | null {
   const state = readGameplayState();
-  return state.session.hasActiveRun ? state.run.navigation.resumeScreen : null;
+  return state.session.hasActiveRun ? runActivityScreen(state.session.activity) : null;
 }
 export function useRunResumeScreen(): Screen | null {
-  return useGameplayStateStore((state) => (state.session.hasActiveRun ? state.run.navigation.resumeScreen : null));
+  return useGameplayStateStore((state) =>
+    state.session.hasActiveRun ? runActivityScreen(state.session.activity) : null,
+  );
 }
 export function readRunPhase(): RunPhase {
   const state = readGameplayState();

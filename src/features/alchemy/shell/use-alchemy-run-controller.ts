@@ -1,33 +1,35 @@
-import { useCallback, useLayoutEffect, useMemo } from "react";
-import type { EncounterCombatTraitId, EncounterRewardTraitId } from "@/lib/content-systems/types";
+import { createRunOutcomes } from "@/features/alchemy/run-loop/run/run-flow";
+import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
 import {
-  unlockTalent,
+  useActiveRunCharacterId,
+  useActiveRunScreenValue,
+  useContentSystemType,
+  useHomesteadEffects,
+  useTalentEffects,
+} from "@/features/alchemy/shared/stores/run-reads";
+import {
+  createRunSessionCommand,
+  dispatchRunSessionCommand,
+} from "@/features/alchemy/shared/stores/run-session-command";
+import {
   resetUnlockedTalents,
   setActiveLabyrinthModifiers,
   setActiveLabyrinthRewardModifiers,
   setCorruptionResult,
   unlockAllTalents,
+  unlockTalent,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
-import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
-import { useRunFlowEngine } from "./use-run-flow-engine";
-import { useLabyrinthController } from "./use-labyrinth-controller";
+import type { EncounterCombatTraitId, EncounterRewardTraitId } from "@/lib/content-systems/types";
+import { useCallback, useMemo } from "react";
+import { shouldSurrenderBattleOnEndRun } from "./end-run-policy";
 import { createLabyrinthNodeRouting } from "./labyrinth-node-routing";
-import { useBattleWiring } from "./use-battle-wiring";
+import { getRunAvailableDestinations } from "./run-destination-wiring";
+import { useBattleController } from "./use-battle-controller";
+import { createLabyrinthController } from "@/features/alchemy/run-loop/run/labyrinth-controller";
+import { useRunFlowEngine } from "./use-run-flow-engine";
 import { useScreenTransitions } from "./use-screen-transitions";
 import { useSteamRichPresence } from "./use-steam-rich-presence";
-import {
-  useActiveRunCharacterId,
-  useActiveRunScreenValue,
-  useTalentEffects,
-  useContentSystemType,
-  useHomesteadEffects,
-} from "@/features/alchemy/shared/stores/run-reads";
-import { shouldSurrenderBattleOnEndRun } from "./end-run-policy";
-import {
-  createRunSessionCommand,
-  dispatchRunSessionCommand,
-} from "@/features/alchemy/shared/stores/run-session-command";
 
 const commandUnlockTalent = createRunSessionCommand(unlockTalent);
 const commandResetUnlockedTalents = createRunSessionCommand(resetUnlockedTalents);
@@ -39,7 +41,7 @@ export function useAlchemyRunController() {
   const contentSystemType = useContentSystemType();
   const characterId = useActiveRunCharacterId();
   const screen = useActiveRunScreenValue();
-  const { navigateTo, transition, commitPendingTransition, cancelPending } = useScreenTransitions(screen);
+  const { navigateTo, transition, cancelPending } = useScreenTransitions(screen);
 
   const setHoveredCardId = useCallback((id: string | null | ((prev: string | null) => string | null)) => {
     const store = useUiStore.getState();
@@ -52,9 +54,19 @@ export function useAlchemyRunController() {
     dispatchRunSessionCommand((draft) => setActiveLabyrinthRewardModifiers(draft, modifiers));
   }, []);
 
-  const { battle, setBattleCompletionHandlers } = useBattleWiring({
+  const outcomes = useMemo(
+    () =>
+      createRunOutcomes({
+        actions: { navigateTo, transition, clearCardHover: () => useUiStore.getState().clearCardHover() },
+        getAvailableDestinations: getRunAvailableDestinations,
+      }),
+    [navigateTo, transition],
+  );
+  const battle = useBattleController({
     screen,
     setHoveredCardId,
+    onBattleVictory: outcomes.victory.handleBattleVictory,
+    onBattleDefeat: outcomes.defeat.handleBattleDefeat,
   });
 
   const gearAstralChanceBonus = homesteadEffects.gearAstralChanceBonus;
@@ -64,7 +76,7 @@ export function useAlchemyRunController() {
     [talentEffects, gearAstralChanceBonus, potionMixPotency],
   );
 
-  const labyrinth = useLabyrinthController();
+  const labyrinth = useMemo(() => createLabyrinthController(), []);
 
   const battleLauncher = useMemo(
     () => ({
@@ -75,22 +87,18 @@ export function useAlchemyRunController() {
     [battle.startBattle, battle.startBossBattle, battle.startBossById],
   );
 
-  const nav = useRunFlowEngine({
-    screen,
-    navigateTo,
-    transition,
-    cancelPending,
-    battle: battleLauncher,
-    initializeShop: shop.initialize,
-    labyrinthClearNode: labyrinth.onNodeCleared,
-  });
-
-  useLayoutEffect(() => {
-    setBattleCompletionHandlers({
-      onBattleVictory: nav.handleBattleVictory,
-      onBattleDefeat: nav.handleBattleDefeat,
-    });
-  }, [nav.handleBattleDefeat, nav.handleBattleVictory, setBattleCompletionHandlers]);
+  const nav = useRunFlowEngine(
+    {
+      screen,
+      navigateTo,
+      transition,
+      cancelPending,
+      battle: battleLauncher,
+      initializeShop: shop.initialize,
+      labyrinthClearNode: labyrinth.onNodeCleared,
+    },
+    outcomes,
+  );
 
   useSteamRichPresence(screen, nav.runPhase, characterId);
 
@@ -244,79 +252,12 @@ export function useAlchemyRunController() {
         continueFromRunEnd: nav.continueFromRunEnd,
       },
     }),
-    [
-      nav.goToScreen,
-      nav.beginCampaign,
-      nav.beginWildwood,
-      nav.handleCharacterSelect,
-      nav.handleStandardDraftComplete,
-      nav.handleWildwoodDraftComplete,
-      nav.handleWildwoodDraftPick,
-      nav.handleStarterDraftPick,
-      nav.handleDifficultySelect,
-      nav.handleBackFromDifficultySelect,
-      nav.skipRewards,
-      nav.claimRewardChoice,
-      nav.prepareDestinationScreen,
-      nav.handleDestinationChoice,
-      nav.handleCampfireContinue,
-      nav.handleWildwoodRemoveCard,
-      nav.handleWildwoodSkipRemoval,
-      nav.advanceToNextDestination,
-      nav.handleMysteryChoice,
-      nav.handleMysteryChooseCard,
-      nav.handleMysteryRemoveCard,
-      nav.handleMysteryContinue,
-      nav.handleCorruptCard,
-      nav.handleCorruptionExit,
-      nav.continueFromRunEnd,
-      nav.beginLabyrinth,
-      nodeRouting.handleLabyrinthNodeEnter,
-      labyrinth.selectNode,
-      labyrinth.deselectNode,
-      labyrinth.descend,
-      shop.merchant.buyCard,
-      shop.merchant.removeCard,
-      shop.merchant.refresh,
-      shop.merchant.getCardBuyPrice,
-      shop.merchant.getRemoveCardPrice,
-      shop.merchant.getRefreshPrice,
-      shop.alchemist.buyPotion,
-      shop.alchemist.refresh,
-      shop.alchemist.mixPotions,
-      shop.alchemist.getPotionBuyPrice,
-      shop.alchemist.getMixPrice,
-      shop.alchemist.getRefreshPrice,
-      shop.trinket.buy,
-      shop.trinket.refresh,
-      shop.trinket.getBuyPrice,
-      shop.trinket.getRefreshPrice,
-      shop.equipment.buy,
-      shop.equipment.refresh,
-      shop.equipment.getBuyPrice,
-      shop.equipment.getRefreshPrice,
-      battle.handleCardClick,
-      battle.handleWishChoice,
-      battle.handleEndTurn,
-      battle.handleAutoplayCard,
-      battle.skipCombatDevMode,
-      battle.refs,
-      battle.bindPlayback,
-      battle.isCardPlayInProgress,
-      battle.screen,
-      battle.isAutoplayEnabled,
-      battle.setAutoplayEnabled,
-      battle.toggleAutoplayEnabled,
-      battle.boonInspectOpen,
-      battle.toggleBoonInspect,
-      battle.closeBoonInspect,
-    ],
+    [nav, nodeRouting, labyrinth, shop, battle],
   );
 
   return {
     screen,
     homesteadEffects,
-    commitPendingTransition,
     routeCommands,
     unlockAllTalents: commandUnlockAllTalents,
     returnToBattle: nav.returnToBattle,

@@ -128,7 +128,6 @@ function resetPlayerTurnState(
       emberforgedUsedThisTurn: false,
       cinderSkinUsedThisTurn: false,
       holyRetributionUsedThisTurn: false,
-      nextCardCostReduction: 0,
     },
   };
 }

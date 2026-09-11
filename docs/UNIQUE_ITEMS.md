@@ -10,7 +10,7 @@ Collection rules.
 
 Every Unique has exactly one exclusive fixed signature and three fixed standard affixes at the current standard Unique/Astral maximum. No item-generation RNG chooses or rolls a Unique's affixes.
 
-Generation, inventory normalization, tooltips, and battle manifests use the same canonical affixes. Existing owned items receive the corrected standard rolls without changing identity, ownership, or Collection discovery. A saved battle retains its captured manifest until normal live meta rebinding or a new battle.
+Generation, inventory normalization, tooltips, and battle manifests use the same canonical affixes. Tooltip templates replace every occurrence of an affix value, including Saintfall's damage and healing. Existing owned items receive the corrected standard rolls without changing identity, ownership, or Collection discovery. A saved battle retains its captured manifest until normal live meta rebinding or a new battle.
 
 Unique signature descriptions may use sentence punctuation for readability; standard affixes retain the existing period-free typography rule. The concise-description policy and its covered signatures are enforced by the [catalog tests](../tests/lib/gear/unique-catalog.test.ts); this reference does not maintain a second wording table.
 

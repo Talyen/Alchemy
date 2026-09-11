@@ -71,6 +71,12 @@ describe("stopAllSfx", () => {
 });
 
 describe("playCardSound", () => {
+  it("plays the potion sound for a crafted Mixed Potion", () => {
+    playCardSound("mixed-potion-health-potion-0-mana-potion-0");
+    expect(lastFakeAudio()?.src).toContain("ice-in-water.");
+    expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();
+  });
+
   it("plays audio for known card id", () => {
     playCardSound("slash");
     expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();

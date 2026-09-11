@@ -1,8 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { GEAR_AFFIX_IDS, gearAffixCatalog } from "@/lib/gear/affix-catalog";
-import { defaultGearEffects, normalizeAffixRolls, resolveAffixEffects } from "@/lib/gear";
+import { defaultGearEffects, getGearAffixTooltipEntries, normalizeAffixRolls, resolveAffixEffects } from "@/lib/gear";
 
 describe("gear affixes", () => {
+  it("shows both Saintfall magnitudes in its tooltip", () => {
+    const [entry] = getGearAffixTooltipEntries([{ id: "saintfall", value: 4 }], "unique");
+    expect(entry?.text).toBe("When Block is depleted, deal 4 Holy to the attacker and restore 4 Health");
+  });
+
   describe("normalizeAffixRolls", () => {
     it("validates and rounds canonical affix rolls", () => {
       expect(

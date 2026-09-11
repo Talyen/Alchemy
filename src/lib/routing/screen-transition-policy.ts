@@ -1,5 +1,5 @@
-import { ROUTE_SCREEN_VALUES, ROUTE_SCREENS, type Screen } from "./screens";
 import { isRunResumeScreen } from "./run-screen-router";
+import { ROUTE_SCREENS, ROUTE_SCREEN_VALUES, type Screen } from "./screens";
 
 const META_DESTINATIONS = [
   ROUTE_SCREENS.MENU,
@@ -23,7 +23,7 @@ const META_AND_RUN_RETURN_DESTINATIONS = [...META_DESTINATIONS, ...RUN_RESUME_SC
 export interface ScreenTransitionOptions {
   delayMs?: number;
   immediate?: boolean;
-  onCommit?: () => void;
+  prepare?: () => void;
 
   guard?: () => boolean;
 }

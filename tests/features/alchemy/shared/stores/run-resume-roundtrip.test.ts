@@ -6,35 +6,24 @@ import { cardLibrary, getCardKeywords } from "@/lib/game-data";
 import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
 import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
 import { finalizeRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
-import { createEmptyRewardState } from "@/lib/active-run-session";
-import {
-  emptyAlchemistState,
-  emptyEquipmentShopState,
-  emptyShopState,
-  emptyTrinketShopState,
-} from "@/lib/active-run-session";
-import { canEnterLabyrinthNode } from "@/lib/content-systems/labyrinth/map-state";
+import { createEmptyRewardState, emptyEquipmentShopState, emptyShopState } from "@/lib/active-run-session";
+import { canEnterLabyrinthNode, withClearedNode } from "@/lib/content-systems/labyrinth/map-state";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
-import { withClearedNode } from "@/lib/content-systems/labyrinth/map-state";
 import { createSeededRng } from "@/lib/utils";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { decodeRunResumeSnapshot, encodePersistedShops } from "@/features/alchemy/shared/stores/run-resume-codec";
-import type { Screen } from "@/lib/routing";
 import { runProfilePersistenceCodec } from "@/features/alchemy/shared/stores/run-profile-codec";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import {
-  setAlchemistState,
   setCompanionRewardCards,
   setEquipmentShopState,
   setRewardState,
   setShopState,
-  setTrinketShopState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
-
 beforeEach(() => {
   resetRunDomainStore();
 });
@@ -43,6 +32,7 @@ function startLabyrinthRun(): void {
   setRunProgress({ characterId: "knight", contentSystemType: "labyrinth" });
   setRunSession({
     hasActiveRun: true,
+    activity: { kind: "rewards" },
     labyrinthMap: generateLabyrinthMap(createSeededRng(1)),
     activeLabyrinthModifiers: ["septic"],
     activeLabyrinthRewardModifiers: ["generous"],
@@ -145,6 +135,7 @@ describe("interrupted mid-claim rewards", () => {
     const companion = cardLibrary.find((card) => card.effects.some((effect) => effect.kind === "summon-companion"))!;
     setRunSession({
       hasActiveRun: true,
+      activity: { kind: "rewards" },
       rewardState: { ...createEmptyRewardState(), rewardType: "card", choices: [primary], gold: 7 },
       companionRewardCards: [companion],
     });
@@ -154,14 +145,14 @@ describe("interrupted mid-claim rewards", () => {
     const claimedDeck = readActiveRun().runDeck;
 
     const snap = snapshotRun(ROUTE_SCREENS.REWARDS);
-    expect(snap.interruptedFlow.kind).toBe("companion-reward");
-    if (snap.interruptedFlow.kind === "companion-reward") {
+    expect(snap.interruptedFlow.kind).toBe("primary-reward");
+    if (snap.interruptedFlow.kind === "primary-reward") {
       expect(snap.interruptedFlow.pending.rewardType).toBe("card");
       if (snap.interruptedFlow.pending.rewardType === "card") {
-        expect(snap.interruptedFlow.pending.choiceIds).toEqual([primary.id]);
+        expect(snap.interruptedFlow.pending.choiceIds).toEqual([companion.id]);
       }
-      expect(snap.interruptedFlow.pending.companionChoiceIds).toEqual([companion.id]);
-      expect(snap.interruptedFlow.pending.gold).toBe(7);
+      expect(snap.interruptedFlow.pending.companionChoiceIds).toEqual([]);
+      expect(snap.interruptedFlow.pending.gold).toBe(0);
     }
 
     dispatchRunSessionCommand((draft) => {
@@ -228,7 +219,9 @@ describe.each(["companion", "archery", "wish", "nature"] as const)("%s bonus rew
       companionRewardCards: bonuses,
     });
     const snap = snapshotRun(ROUTE_SCREENS.REWARDS);
-    expect(snap.interruptedFlow.kind).toBe("companion-reward");
+    // Older builds could persist an awarded primary bundle while its bonus handoff waited for a fade.
+    if (snap.interruptedFlow.kind !== "primary-reward") throw new Error("Expected pending reward fixture");
+    snap.interruptedFlow = { kind: "companion-reward", pending: snap.interruptedFlow.pending };
     resetRunDomainStore();
     const profileBefore = readGameplayState().runProfile;
     restoreRun(snap, {}, {});
@@ -291,28 +284,25 @@ describe("primary reward resume", () => {
 });
 
 describe("shop persistence", () => {
-  it("keeps only the current shop across save and restore", () => {
+  it("keeps only the latest shop visit even while an earlier screen is displayed", () => {
     setRunSession({ hasActiveRun: true });
     dispatchRunSessionCommand((draft) => {
       setShopState(draft, emptyShopState());
-      setAlchemistState(draft, emptyAlchemistState());
-      setTrinketShopState(draft, emptyTrinketShopState());
       setEquipmentShopState(draft, emptyEquipmentShopState());
     });
-
     const snap = snapshotRun(ROUTE_SCREENS.SHOP);
-    expect(snap.shopState).not.toBeNull();
+    expect(snap.currentScreen).toBe("equipment-shop");
+    expect(snap.shopState).toBeNull();
     expect(snap.alchemistState).toBeNull();
     expect(snap.trinketShopState).toBeNull();
-    expect(snap.equipmentShopState).toBeNull();
-
+    expect(snap.equipmentShopState).not.toBeNull();
     restoreRun(snap, {}, {});
-    expect(readRunSession().shopState).not.toBeNull();
+    expect(readRunSession().activity.kind).toBe("equipment-shop");
   });
 
-  it("recovers empty shops instead of crashing on future screens", () => {
+  it("serializes no shop when no visit is active", () => {
     setRunSession({ hasActiveRun: true });
-    const shops = encodePersistedShops(readRunSession(), "future-screen" as Screen);
+    const shops = encodePersistedShops(readRunSession());
     expect(shops).toEqual({ shopState: null, alchemistState: null, trinketShopState: null, equipmentShopState: null });
   });
 });

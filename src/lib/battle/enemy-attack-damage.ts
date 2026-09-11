@@ -1,3 +1,4 @@
+export { checkHealthThresholds } from "./status-player";
 import { computeCardDamageToEnemy } from "./damage-calc";
 import { applyDamageRiders, reflectBlockedAttackAsHoly } from "./damage-riders";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
@@ -7,9 +8,8 @@ import {
   addForgeToPlayer,
   applyForgeThresholdRewards,
   applyPlayerDamageStatuses,
-  applyPlayerStatusEffect,
   shouldBlockPreventStatusBuildup,
-  applyHealthThresholdCleanse,
+  checkHealthThresholds,
 } from "./status-player";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
 import type { EnemyAttackEffect } from "@/lib/game-data";
@@ -166,40 +166,6 @@ function applyEnemyForgeDecayOnHit(state: BattleState, actualDamage: number, dam
   };
 }
 
-export function checkHealthThresholds(
-  prevHealth: number,
-  nextHealth: number,
-  state: BattleState,
-  combatTexts: CombatTextEvent[],
-) {
-  let nextState = state;
-
-  function applyHealthThresholdStatBonus(
-    currentState: BattleState,
-    configs: { threshold: number; amount: number } | Array<{ threshold: number; amount: number }> | null,
-    stat: "block" | "armor",
-  ): BattleState {
-    const bonuses = configs == null ? [] : Array.isArray(configs) ? configs : [configs];
-    let next = currentState;
-    for (const config of bonuses) {
-      const thresholdHp = (state.playerMaxHealth * config.threshold) / PERCENT_DENOMINATOR;
-      if (prevHealth >= thresholdHp && nextHealth < thresholdHp) {
-        next = applyPlayerStatusEffect(
-          next,
-          { kind: "player-status", status: stat, amount: config.amount },
-          combatTexts,
-        );
-      }
-    }
-    return next;
-  }
-
-  nextState = applyHealthThresholdCleanse(prevHealth, nextState, combatTexts);
-  nextState = applyHealthThresholdStatBonus(nextState, state.talentEffects.healthThresholdBlock, "block");
-  nextState = applyHealthThresholdStatBonus(nextState, state.talentEffects.healthThresholdArmor, "armor");
-  return nextState;
-}
-
 function resolvePostDamageThresholds(
   state: BattleState,
   prevHealth: number,
@@ -336,6 +302,14 @@ function resolveEnemyDamageEffectCore(
   recordPlayerHealthLost(prevHealth, nextState, effect.damageType, combatTexts);
   nextState = applyBlockDepletedHeal(state, nextState, combatTexts);
 
+  if (
+    nextState.enemyHealth > 0 &&
+    nextState.playerHealth > 0 &&
+    !shouldBlockPreventStatusBuildup(state, effect.damageType)
+  ) {
+    nextState = applyPlayerDamageStatuses(nextState, effect, actualDamage);
+  }
+
   nextState = resolvePostDamageThresholds(
     nextState,
     prevHealth,
@@ -348,10 +322,6 @@ function resolveEnemyDamageEffectCore(
 
   if (nextState.enemyHealth <= 0 || nextState.playerHealth <= 0) return { state: nextState, ...outcome };
 
-  const preventStatusBuildup = shouldBlockPreventStatusBuildup(state, effect.damageType);
-  if (!preventStatusBuildup) {
-    nextState = applyPlayerDamageStatuses(nextState, effect, actualDamage);
-  }
   nextState = resolvePlayerCrowdControlTriggers(nextState, combatTexts);
 
   if (effect.lifesteal && actualDamage > 0) {

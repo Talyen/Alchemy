@@ -16,10 +16,13 @@ import { MUSIC_KEYS } from "@/lib/game-constants";
 import type { Screen } from "@/lib/routing";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 
-const battleActive = vi.hoisted(() => ({ value: false }));
+const battleActive = vi.hoisted(() => ({ value: false, enemyId: "skeleton", enemyType: "normal" }));
 
 vi.mock("@/features/alchemy/shared/stores/run-reads", () => ({
-  readBattle: () => ({ hasActiveBattle: false }),
+  readBattle: () => ({
+    hasActiveBattle: battleActive.value,
+    battleState: { currentEnemy: { id: battleActive.enemyId, enemyType: battleActive.enemyType } },
+  }),
   useHasActiveBattle: () => battleActive.value,
 }));
 
@@ -90,6 +93,8 @@ describe("useAppAudioEffects mute-in-background", () => {
 
   beforeEach(() => {
     battleActive.value = false;
+    battleActive.enemyId = "skeleton";
+    battleActive.enemyType = "normal";
     useSettingsStore.setState(useSettingsStore.getInitialState(), true);
     vi.mocked(setMuted).mockClear();
     vi.mocked(setMasterVolume).mockClear();
@@ -220,26 +225,35 @@ describe("useAppAudioEffects mute-in-background", () => {
     expect(playMusic).toHaveBeenCalledWith(MUSIC_KEYS.BATTLE);
   });
 
-  it("refreshes the menu music cache when a battle starts", () => {
-    const rendered = renderHook(
-      ({ screen }: { screen: Screen }) =>
-        useAppAudioEffects({
-          masterVolume: 50,
-          musicVolume: 50,
-          sfxVolume: 50,
-          muteInBackground: true,
-          screen,
-        }),
-      { initialProps: { screen: "menu" as Screen } },
-    );
-    unmountAudio = rendered.unmount;
-    vi.mocked(invalidateCacheForKey).mockClear();
-    battleActive.value = true;
+  it.each([
+    { enemyId: "skeleton", enemyType: "normal", musicKey: MUSIC_KEYS.BATTLE },
+    { enemyId: "forge-golem", enemyType: "boss", musicKey: MUSIC_KEYS.BOSS_FORGE_GOLEM },
+  ])(
+    "refreshes $enemyId music without interrupting menu music before the battle screen opens",
+    ({ enemyId, enemyType, musicKey }) => {
+      const rendered = renderHook(
+        ({ screen }: { screen: Screen }) =>
+          useAppAudioEffects({
+            masterVolume: 50,
+            musicVolume: 50,
+            sfxVolume: 50,
+            muteInBackground: true,
+            screen,
+          }),
+        { initialProps: { screen: "menu" as Screen } },
+      );
+      unmountAudio = rendered.unmount;
+      vi.mocked(invalidateCacheForKey).mockClear();
+      battleActive.value = true;
+      battleActive.enemyId = enemyId;
+      battleActive.enemyType = enemyType;
 
-    rendered.rerender({ screen: "menu" });
+      rendered.rerender({ screen: "menu" });
 
-    expect(invalidateCacheForKey).toHaveBeenCalledWith(MUSIC_KEYS.MENU);
-  });
+      expect(invalidateCacheForKey).toHaveBeenCalledWith(musicKey);
+      expect(invalidateCacheForKey).not.toHaveBeenCalledWith(MUSIC_KEYS.MENU);
+    },
+  );
 
   it("resumes paused music on a foreground gesture", () => {
     vi.mocked(isMusicPaused).mockReturnValue(true);

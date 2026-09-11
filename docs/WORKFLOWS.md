@@ -289,7 +289,7 @@ Homestead screens (like all screen directories) are excluded from `vitest` cover
 
 Ownership: [ARCHITECTURE.md § Shop commands](./ARCHITECTURE.md#shop-commands).
 
-Kind `"merchant"` maps to the player-facing **Card Shop**. Persist only the active shop screen through `encodePersistedShops`.
+Kind `"merchant"` maps to the player-facing **Card Shop**. Persist only `session.activity`'s shop visit through `encodePersistedShops`; presentation navigation does not select the shelf to save.
 
 1. Keep `create-shop-actions.ts` as composition; put shop behavior in the matching `*-shop-commands.ts` module and draft recipes in `shop-transactions.ts`.
 2. Dispatch purchases/refreshes through the existing shop command seam so paid effects and SFX run after a successful commit. Keep slot identity helpers separate from command/audio modules. Equipment purchases resolve price and acquired contents from the live shelf item by instance ID.
@@ -425,7 +425,7 @@ Live pool events are authored in `src/lib/mystery/pool.ts`; other `MysteryEffect
 | 1. Add `kind` string to `MysteryEffect` union                 | `src/lib/mystery/types.ts`                                                                                                          |
 | 2. Add a `mysteryApplyHandlers` entry                         | `src/features/alchemy/run-loop/navigation/mystery-flow.ts`                                                                          |
 | 3. Add fields to `MysteryEffectContext` if needed             | `mystery-flow.ts`                                                                                                                   |
-| 4. Wire React hook if needed                                  | `shell/use-mystery-event-navigation.ts`                                                                                             |
+| 4. Wire event commands if needed                              | `run-loop/navigation/mystery-event-navigation.ts`                                                                                   |
 | 5. Wire follow-up UI in mystery screen                        | `run-loop/screens/mystery/mystery-screen.tsx` (exported via screens barrel)                                                         |
 | 6. Route-held fade / empty-visit continue                     | `app/screen-routes/mystery-screen-route.tsx`                                                                                        |
 | 7. Persist new visit fields if the kind stores rolled results | Mystery visit schema in `src/lib/validation/save-schemas/active-run.ts` + `src/lib/active-run-session/mystery-visit-persistence.ts` |
@@ -435,7 +435,7 @@ Live pool events are authored in `src/lib/mystery/pool.ts`; other `MysteryEffect
 
 ## Adding / changing corruption flow
 
-Numeric corruption also updates matching delayed repeats of the changed effect, so the later turn agrees with the card description. Unrelated repeated effects retain their values.
+Numeric corruption also updates matching delayed repeats of the changed effect, so the later turn agrees with the card description. A shared damage number, such as Stab's Physical-or-Bleed amount, updates both alternatives without consuming the numeric target for a separately described effect. Tithe's Gold percentage is editable and capped at 100%; Powerful Wish uses the same numeric mapping. Unrelated repeated effects retain their values.
 
 | Step                                               | File(s)                                                                                        |
 | -------------------------------------------------- | ---------------------------------------------------------------------------------------------- |

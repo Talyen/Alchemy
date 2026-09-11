@@ -1,4 +1,6 @@
+import { readActivityData } from "@/lib/active-run-session";
 import { activeLabyrinthBenefits } from "@/lib/content-systems/labyrinth/room-rules";
+import { useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useGameplayStateStore, type GameplayState } from "./gameplay-state-store";
 import type { RunDataScreen, RunScreenDataByScreen } from "./run-screen-data";
@@ -12,14 +14,25 @@ function selectShopCardBase(state: GameplayState) {
   };
 }
 
+function useActivityScreenData<S extends RunDataScreen>(screen: S, data: ScreenData<S>): ScreenData<S> {
+  const active = useGameplayStateStore((state) => state.session.activity.kind === screen);
+  const [shown, setShown] = useState(data);
+  // Retain each outgoing screen's own data while its committed successor fades in.
+  if (active && shown !== data) setShown(data);
+  return active ? data : shown;
+}
+
 function createShopDataHook<S extends RunDataScreen>(
+  screen: S,
   selector: (state: GameplayState) => ScreenData<S>,
 ): () => ScreenData<S> {
-  return () => useGameplayStateStore(useShallow(selector));
+  return function useScreenData() {
+    return useActivityScreenData(screen, useGameplayStateStore(useShallow(selector)));
+  };
 }
 
 export function useCampfireScreenData(): ScreenData<"campfire"> {
-  return useGameplayStateStore(
+  const data = useGameplayStateStore(
     useShallow((state) => ({
       modifiers: activeLabyrinthBenefits(
         state.run.activeRun.contentSystemType,
@@ -29,26 +42,27 @@ export function useCampfireScreenData(): ScreenData<"campfire"> {
       runMaxHealth: state.run.activeRun.runMaxHealth,
     })),
   );
+  return useActivityScreenData("campfire", data);
 }
 
-export const useShopScreenData = createShopDataHook<"shop">((state) => ({
+export const useShopScreenData = createShopDataHook<"shop">("shop", (state) => ({
   ...selectShopCardBase(state),
-  shopState: state.session.shopState,
+  shopState: readActivityData(state.session.activity, "shop"),
 }));
 
-export const useAlchemistScreenData = createShopDataHook<"alchemist">((state) => ({
+export const useAlchemistScreenData = createShopDataHook<"alchemist">("alchemist", (state) => ({
   ...selectShopCardBase(state),
-  alchemistState: state.session.alchemistState,
+  alchemistState: readActivityData(state.session.activity, "alchemist"),
 }));
 
-export const useTrinketShopScreenData = createShopDataHook<"trinket-shop">((state) => ({
+export const useTrinketShopScreenData = createShopDataHook<"trinket-shop">("trinket-shop", (state) => ({
   gold: state.runProfile.gold,
-  trinketShopState: state.session.trinketShopState,
+  trinketShopState: readActivityData(state.session.activity, "trinket-shop"),
 }));
 
-export const useEquipmentShopScreenData = createShopDataHook<"equipment-shop">((state) => ({
+export const useEquipmentShopScreenData = createShopDataHook<"equipment-shop">("equipment-shop", (state) => ({
   gold: state.runProfile.gold,
-  equipmentShopState: state.session.equipmentShopState,
+  equipmentShopState: readActivityData(state.session.activity, "equipment-shop"),
 }));
 
 export function useLabyrinthMapScreenData(): ScreenData<"labyrinth-map"> {
@@ -61,42 +75,46 @@ export function useLabyrinthMapScreenData(): ScreenData<"labyrinth-map"> {
 }
 
 export function useRewardsScreenData(): ScreenData<"rewards"> {
-  return useGameplayStateStore(
+  const data = useGameplayStateStore(
     useShallow((state) => ({
       rewardState: state.session.rewardState,
       rewardClaimInFlight: state.session.rewardClaimInFlight,
     })),
   );
+  return useActivityScreenData("rewards", data);
 }
 
 export function useDestinationScreenData(): ScreenData<"destination"> {
-  return useGameplayStateStore(useShallow((state) => ({ rewardState: state.session.rewardState })));
+  const data = useGameplayStateStore(useShallow((state) => ({ rewardState: state.session.rewardState })));
+  return useActivityScreenData("destination", data);
 }
 
 export function useMysteryScreenData(): ScreenData<"mystery"> {
-  return useGameplayStateStore(
+  const data = useGameplayStateStore(
     useShallow((state) => ({
       runDeck: state.run.activeRun.runDeck,
-      mysteryEvent: state.session.mysteryEvent,
-      mysteryCardChoices: state.session.mysteryCardChoices,
-      mysteryGrantedTrinketIds: state.session.mysteryGrantedTrinketIds,
-      mysteryGrantedGearInstances: state.session.mysteryGrantedGearInstances,
-      mysteryChosenCardId: state.session.mysteryChosenCardId,
-      mysteryChosenChoice: state.session.mysteryChosenChoice,
-      mysteryPendingRemoval: state.session.mysteryPendingRemoval,
+      mysteryEvent: readActivityData(state.session.activity, "mystery").mysteryEvent,
+      mysteryCardChoices: readActivityData(state.session.activity, "mystery").mysteryCardChoices,
+      mysteryGrantedTrinketIds: readActivityData(state.session.activity, "mystery").mysteryGrantedTrinketIds,
+      mysteryGrantedGearInstances: readActivityData(state.session.activity, "mystery").mysteryGrantedGearInstances,
+      mysteryChosenCardId: readActivityData(state.session.activity, "mystery").mysteryChosenCardId,
+      mysteryChosenChoice: readActivityData(state.session.activity, "mystery").mysteryChosenChoice,
+      mysteryPendingRemoval: readActivityData(state.session.activity, "mystery").mysteryPendingRemoval,
       runTalentXP: state.run.activeRun.runTalentXP,
       talentXP: state.runProfile.talentXP,
     })),
   );
+  return useActivityScreenData("mystery", data);
 }
 
 export function useCorruptionScreenData(): ScreenData<"corruption"> {
-  return useGameplayStateStore(
+  const data = useGameplayStateStore(
     useShallow((state) => ({
       runDeck: state.run.activeRun.runDeck,
-      corruptionResult: state.session.corruptionResult,
+      corruptionResult: readActivityData(state.session.activity, "corruption"),
     })),
   );
+  return useActivityScreenData("corruption", data);
 }
 
 export function useRunEndScreenData(): ScreenData<"game-over"> {
@@ -113,5 +131,6 @@ export function useRunEndScreenData(): ScreenData<"game-over"> {
 }
 
 export function useWildwoodRemovalScreenData(): ScreenData<"wildwood-removal"> {
-  return useGameplayStateStore(useShallow((state) => ({ runDeck: state.run.activeRun.runDeck })));
+  const data = useGameplayStateStore(useShallow((state) => ({ runDeck: state.run.activeRun.runDeck })));
+  return useActivityScreenData("wildwood-removal", data);
 }

@@ -402,13 +402,11 @@ declare module "*/check-plans.mjs" {
 
 declare module "*/check-documentation-contract.mjs" {
   export const DOCUMENTATION_CONTRACTS: ReadonlyArray<readonly [string, () => string[]]>;
-  export const ADVISORY_DOCUMENTATION_CONTRACTS: ReadonlyArray<readonly [string, () => string[]]>;
   export function checkLocalMarkdownLinks(): string[];
   export function checkInlineRepositoryPaths(): string[];
   export function checkBacktickedCurrentFileReferences(): string[];
   export function checkDocumentedNpmScripts(): string[];
   export function checkMarkdownHeadingAnchors(): string[];
-  export function checkContributingE2ePaths(): string[];
   export function checkDurableDocumentReachability(rootDir?: string): string[];
   export function checkKnowledgeIndexCompleteness(): string[];
   export function checkSkillIndexCompleteness(): string[];
@@ -416,7 +414,7 @@ declare module "*/check-documentation-contract.mjs" {
 }
 
 declare module "*/archive-plans.mjs" {
-  export function archiveTerminalPlans(options?: { plansDir?: string }): string[];
+  export function archiveTerminalPlans(options?: { plansDir?: string; names?: string[]; dryRun?: boolean }): string[];
 }
 
 declare module "*/new-plan.mjs" {
@@ -658,7 +656,7 @@ declare module "*/audit.mjs" {
     forwardedArgs: string[];
   }
   export function parseAuditArgs(argv: string[]): AuditSelection;
-  export function resolveAuditScript(parsed: AuditSelection, hasArgs: boolean): string | null;
+  export function resolveAuditScript(parsed: AuditSelection): string;
 }
 
 declare module "*/prepare-assets.mjs" {

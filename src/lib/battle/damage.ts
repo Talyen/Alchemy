@@ -1,13 +1,13 @@
-import { resolvePendingBattleReactions } from "./enemy-attack-damage";
-import { applyEncounterThorns } from "./encounter-trait-events";
-import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
-import { UNIQUE_GEAR_COMBAT } from "../game-constants";
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
-import type { BattleState, CombatTextEvent } from "./types";
+import { UNIQUE_GEAR_COMBAT } from "../game-constants";
 import { computeCardDamageToEnemy } from "./damage-calc";
 import { applyDamageRiders } from "./damage-riders";
 import { tryDodgePlayerAttackPacket } from "./dodge";
+import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
+import { applyEncounterThorns } from "./encounter-trait-events";
+import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { dealPlayerTypedHit, dealTalentTypedHit } from "./player-typed-hit";
+import type { BattleState, CombatTextEvent } from "./types";
 
 export function dealDamageToEnemy(
   state: BattleState,
@@ -68,17 +68,11 @@ export function dealDamageToEnemy(
     damageState.gearEffects.dodgeReadiesVenomousHit > 0 &&
     damageState.uniqueGear.viperReady;
   const afterViper = viper ? { ...nextState, uniqueGear: { ...nextState.uniqueGear, viperReady: false } } : nextState;
-  let result = applyDamageRiders(
-    afterViper,
-    card,
-    packet,
-    modifiedDamage,
-    combatTexts,
-    false,
-    context?.cardHealing,
-    context?.companionAttack,
-    context?.onDamageDealt,
-  );
+  let result = applyDamageRiders(afterViper, card, packet, modifiedDamage, combatTexts, {
+    cardHealing: context?.cardHealing,
+    companionAttack: context?.companionAttack,
+    onDamageDealt: context?.onDamageDealt,
+  });
   if (viper && result.enemyHealth > 0) {
     const venomDamage = Math.round(modifiedDamage * UNIQUE_GEAR_COMBAT.viperDamageMultiplier);
     result = dealPlayerTypedHit(result, "poison", venomDamage, combatTexts);

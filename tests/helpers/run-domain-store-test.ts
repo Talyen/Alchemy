@@ -27,7 +27,6 @@ import {
   setScreen,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
-
 type RunStateFields = ActiveRunProgressFields & PermanentProgressFields & { initialized: boolean };
 
 export function resetRunDomainStore(): void {
@@ -122,6 +121,7 @@ const PERMANENT_PROGRESS_KEYS = [
 ] as const satisfies ReadonlyArray<keyof PermanentProgressFields>;
 
 const SESSION_KEYS = [
+  "activity",
   "hasActiveRun",
   "rewardClaimInFlight",
   "pendingDestinationClaim",
@@ -135,23 +135,11 @@ const SESSION_KEYS = [
   "runEndMaterials",
   "runEndTalentXP",
   "runEndItems",
-  "corruptionResult",
   "pendingCharacterId",
   "pendingContentSystemType",
   "labyrinthMap",
   "wildwoodDraft",
   "starterDraftChoices",
-  "shopState",
-  "alchemistState",
-  "trinketShopState",
-  "equipmentShopState",
-  "mysteryEvent",
-  "mysteryChosenChoice",
-  "mysteryPendingRemoval",
-  "mysteryCardChoices",
-  "mysteryGrantedTrinketIds",
-  "mysteryGrantedGearInstances",
-  "mysteryChosenCardId",
 ] as const satisfies ReadonlyArray<keyof RunSessionFields>;
 
 type AssertKeysCover<T, K extends ReadonlyArray<keyof T>> = [keyof T] extends [K[number]] ? true : never;

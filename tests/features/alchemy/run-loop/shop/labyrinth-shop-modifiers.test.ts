@@ -4,14 +4,14 @@ import { buildActions } from "./shop-actions-harness";
 import { setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { shopItemSlotKey } from "@/features/alchemy/run-loop/shop/shop-slot-keys";
-import { getCardKeywords, cardById } from "@/lib/game-data";
+import { cardById, getCardKeywords } from "@/lib/game-data";
 import { gearDefinitions } from "@/lib/gear";
 import { gearBaseItems, type GearBaseItemId } from "@/lib/gear/base-items";
-import { doublePotionPotency, createMixedPotion } from "@/lib/alchemist";
+import { createMixedPotion, doublePotionPotency } from "@/lib/alchemist";
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
-import { hydrateAlchemistState, serializeAlchemistState } from "@/lib/active-run-session";
+import { hydrateAlchemistState, readActivityData, serializeAlchemistState } from "@/lib/active-run-session";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
-
+import { playUISound } from "@/lib/audio";
 function room(id: EncounterRewardTraitId) {
   setRunProgress({
     contentSystemType: "labyrinth",
@@ -31,17 +31,21 @@ describe("Labyrinth shops", () => {
   ] as const)("%s keeps its specialty through refreshes", (id, theme) => {
     const actions = room(id);
     actions.merchant.initialize();
-    expect(readRunSession().shopState.cards).toHaveLength(3);
-    expect(readRunSession().shopState.cards.every((card) => getCardKeywords(card).includes(theme))).toBe(true);
+    expect(readActivityData(readRunSession().activity, "shop").cards).toHaveLength(3);
+    expect(
+      readActivityData(readRunSession().activity, "shop").cards.every((card) => getCardKeywords(card).includes(theme)),
+    ).toBe(true);
     expect(actions.merchant.refresh()).toBe(true);
-    expect(readRunSession().shopState.cards).toHaveLength(3);
-    expect(readRunSession().shopState.cards.every((card) => getCardKeywords(card).includes(theme))).toBe(true);
+    expect(readActivityData(readRunSession().activity, "shop").cards).toHaveLength(3);
+    expect(
+      readActivityData(readRunSession().activity, "shop").cards.every((card) => getCardKeywords(card).includes(theme)),
+    ).toBe(true);
   });
 
   it("Bargain Bin charges its displayed price once", () => {
     const actions = room("bargain-bin");
     actions.merchant.initialize();
-    const card = readRunSession().shopState.cards[0]!;
+    const card = readActivityData(readRunSession().activity, "shop").cards[0]!;
     expect(actions.merchant.getCardBuyPrice(card)).toBe(15);
     const slot = shopItemSlotKey(card.id, 0);
     expect(actions.merchant.buyCard(card, slot)).toBe(true);
@@ -57,21 +61,24 @@ describe("Labyrinth shops", () => {
     expect(actions.merchant.removeCard(0)).toBe(true);
     expect(actions.merchant.removeCard(0)).toBe(false);
     expect(readRunProfile().gold).toBe(500);
+    expect(playUISound).toHaveBeenCalledExactlyOnceWith("shopRemove");
   });
 
   it("Strong Spirits preserves potency on refresh, purchase, hydration, and mixing", () => {
     const actions = room("strong-spirits");
     actions.alchemist.initialize();
     const verify = () => {
-      for (const card of readRunSession().alchemistState.potions)
+      for (const card of readActivityData(readRunSession().activity, "alchemist").potions)
         expect(card).toEqual(doublePotionPotency(cardById[card.id]!));
     };
     verify();
     expect(actions.alchemist.refresh()).toBe(true);
     verify();
-    const saved = serializeAlchemistState(readRunSession().alchemistState);
-    expect(hydrateAlchemistState(JSON.parse(JSON.stringify(saved)))).toEqual(readRunSession().alchemistState);
-    const offered = readRunSession().alchemistState.potions[0]!;
+    const saved = serializeAlchemistState(readActivityData(readRunSession().activity, "alchemist"));
+    expect(hydrateAlchemistState(JSON.parse(JSON.stringify(saved)))).toEqual(
+      readActivityData(readRunSession().activity, "alchemist"),
+    );
+    const offered = readActivityData(readRunSession().activity, "alchemist").potions[0]!;
     expect(actions.alchemist.buyPotion(cardById[offered.id]!, shopItemSlotKey(offered.id, 0))).toBe(true);
     const bought = readActiveRun().runDeck.at(-1)!;
     expect(bought.effects).toEqual(offered.effects);
@@ -113,6 +120,7 @@ describe("Labyrinth shops", () => {
     expect(actions.alchemist.mixPotions(0, 1)).not.toBeNull();
     expect(readRunProfile().gold).toBe(500);
     expect(actions.alchemist.mixPotions(0, 1)).toBeNull();
+    expect(playUISound).toHaveBeenCalledExactlyOnceWith("alchemistMix");
   });
 
   it("free Potion and Trinket refreshes keep their existing limits", () => {
@@ -122,23 +130,25 @@ describe("Labyrinth shops", () => {
     expect(actions.alchemist.refresh()).toBe(true);
     expect(actions.alchemist.refresh()).toBe(false);
     expect(readRunProfile().gold).toBe(500);
+    expect(playUISound).toHaveBeenCalledExactlyOnceWith("shopRefresh");
     setRunSession({ activeLabyrinthRewardModifiers: ["fresh-curios"] });
     actions.trinket.initialize();
     expect(actions.trinket.getRefreshPrice(1)).toBe(0);
     expect(actions.trinket.refresh()).toBe(true);
     expect(actions.trinket.refresh()).toBe(false);
     expect(readRunProfile().gold).toBe(500);
+    expect(playUISound).toHaveBeenCalledTimes(2);
   });
 
   it("Happy Hour and Collector’s Favor charge discounted prices", () => {
     const actions = room("happy-hour");
     actions.alchemist.initialize();
-    const potion = readRunSession().alchemistState.potions[0]!;
+    const potion = readActivityData(readRunSession().activity, "alchemist").potions[0]!;
     expect(actions.alchemist.getPotionBuyPrice(potion)).toBe(15);
     expect(actions.alchemist.buyPotion(potion, shopItemSlotKey(potion.id, 0))).toBe(true);
     setRunSession({ activeLabyrinthRewardModifiers: ["collectors-favor"] });
     actions.trinket.initialize();
-    const trinket = readRunSession().trinketShopState.trinkets[0]!;
+    const trinket = readActivityData(readRunSession().activity, "trinket-shop").trinkets[0]!;
     expect(actions.trinket.getBuyPrice(trinket)).toBe(75);
     expect(actions.trinket.buy(trinket, shopItemSlotKey(trinket.id, 0))).toBe(true);
     expect(readRunProfile().gold).toBe(410);
@@ -148,7 +158,7 @@ describe("Labyrinth shops", () => {
     const actions = room(id);
     actions.equipment.initialize();
     const verify = () => {
-      const items = readRunSession().equipmentShopState.gear;
+      const items = readActivityData(readRunSession().activity, "equipment-shop").gear;
       expect(items).toHaveLength(3);
       for (const item of items) {
         const def = gearDefinitions[item.definitionId]!;
@@ -166,6 +176,6 @@ describe("Labyrinth shops", () => {
     const actions = room("bargain-bin");
     setRunProgress({ contentSystemType: "campaign" });
     actions.merchant.initialize();
-    expect(actions.merchant.getCardBuyPrice(readRunSession().shopState.cards[0]!)).toBe(30);
+    expect(actions.merchant.getCardBuyPrice(readActivityData(readRunSession().activity, "shop").cards[0]!)).toBe(30);
   });
 });

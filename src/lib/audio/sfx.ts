@@ -1,6 +1,6 @@
 import {
   battleEventSounds,
-  cardSounds,
+  getCardSounds,
   enemyAttackSounds,
   stingerSounds,
   uiSounds,
@@ -109,7 +109,7 @@ function playBuffer(
 }
 
 export function playCardSound(cardId: string) {
-  const sound = pickRandomUnsafe(cardSounds[cardId] ?? []);
+  const sound = pickRandomUnsafe(getCardSounds(cardId));
   if (!sound) return;
   playBuffer(sound);
 }

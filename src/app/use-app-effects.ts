@@ -105,7 +105,7 @@ export function useAppAudioEffects({
   const lastBattleActiveRef = useRef(hasActiveBattle);
   useEffect(() => {
     if (hasActiveBattle && !lastBattleActiveRef.current) {
-      const musicKey = pickMusicKey(screen);
+      const musicKey = pickMusicKey("battle");
       invalidateCacheForKey(musicKey);
     }
     lastBattleActiveRef.current = hasActiveBattle;

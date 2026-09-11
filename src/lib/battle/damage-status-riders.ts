@@ -54,7 +54,12 @@ function applyBurnStatusRider(state: BattleState, actualDamage: number, combatTe
   return applyGearBurnBleedMirrorLeech(nextState, actualDamage, "bleed", combatTexts);
 }
 
-function applyPoisonStatusRider(state: BattleState, actualDamage: number, combatTexts: CombatTextEvent[]): BattleState {
+function applyPoisonStatusRider(
+  state: BattleState,
+  actualDamage: number,
+  combatTexts: CombatTextEvent[],
+  preHitHealth: number,
+): BattleState {
   let nextState = addEnemyStatus(state, "poison", actualDamage);
   if (
     actualDamage > 0 &&
@@ -64,7 +69,7 @@ function applyPoisonStatusRider(state: BattleState, actualDamage: number, combat
     const poisonGold = nextState.talentEffects.goldOnFirstPoison;
     nextState = setFlag(addGoldWithCombatText(nextState, poisonGold, combatTexts), "goldOnFirstPoisonThisCombat", true);
   }
-  nextState = applyPoisonTalentRiders(nextState, actualDamage, combatTexts);
+  nextState = applyPoisonTalentRiders(nextState, Math.min(actualDamage, preHitHealth), combatTexts);
   return nextState;
 }
 
@@ -273,7 +278,7 @@ export function applyDamageStatuses(
     case "burn":
       return applyBurnStatusRider(state, actualDamage, combatTexts);
     case "poison":
-      return applyPoisonStatusRider(state, actualDamage, combatTexts);
+      return applyPoisonStatusRider(state, actualDamage, combatTexts, preHitHealth);
     case "bleed":
       return applyBleedStatusRider(state, effect, actualDamage, combatTexts);
     case "stun":

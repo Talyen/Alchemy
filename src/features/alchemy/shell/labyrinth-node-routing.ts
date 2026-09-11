@@ -1,13 +1,13 @@
-import type { LabyrinthNodeHandlers } from "./use-labyrinth-controller";
 import type { ShopActions } from "@/features/alchemy/run-loop/shop/shop-action-types";
-import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
 import { type EncounterCombatTraitId, type EncounterRewardTraitId } from "@/lib/content-systems/types";
 import { type BattleCard, type DifficultyModifier } from "@/lib/game-data";
+import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
+import type { LabyrinthNodeHandlers } from "@/features/alchemy/run-loop/run/labyrinth-controller";
 
 interface LabyrinthNodeRoutingDeps {
   applyLabyrinthBattleModifiers: (modifiers: EncounterCombatTraitId[]) => void;
   applyLabyrinthRewardModifiers: (modifiers: EncounterRewardTraitId[]) => void;
-  navigateTo: (screen: Screen, onRenderedScreenCommit?: () => void) => void;
+  navigateTo: (screen: Screen, prepareNavigation?: () => void) => void;
   labyrinth: {
     enterSelectedNode: (handlers: LabyrinthNodeHandlers) => boolean;
   };
