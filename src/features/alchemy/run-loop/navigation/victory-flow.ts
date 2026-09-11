@@ -9,7 +9,7 @@ import {
   type UnlockedTalents,
   type TalentEffectManifest,
 } from "@/lib/game-data";
-import type { BattleState } from "@/lib/battle";
+import type { BattleSnapshot } from "@/lib/battle";
 import type { HomesteadEffectManifest, MaterialInventory } from "@/lib/homestead/types";
 import type { RewardState } from "@/lib/active-run-session";
 import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
@@ -59,7 +59,7 @@ export interface VictoryRewardsInput {
   ownedUniqueIds?: ReadonlySet<string>;
   contentSystemType: ContentSystemId;
   activeLabyrinthRewardModifiers: EncounterRewardTraitId[];
-  battleState: BattleState;
+  battleState: BattleSnapshot;
   purseGold: number;
   runMaxHealth: number;
   destinationIndexInAct: number;
@@ -90,7 +90,7 @@ interface VictoryGoldRoll {
 }
 
 function rollVictoryGold(
-  battleState: BattleState,
+  battleState: BattleSnapshot,
   talentEffects: TalentEffectManifest,
   labyrinthRewardModifiers: EncounterRewardTraitId[],
   rng: () => number,
@@ -129,7 +129,7 @@ export function computeVictoryRewardState(
     equippedTrinketId?: string | null;
     ownedTrinketIds?: string[];
     ownedUniqueIds?: ReadonlySet<string>;
-    battleState: BattleState;
+    battleState: BattleSnapshot;
     gold: number;
     eliteBonus: number;
     generousBonus: number;

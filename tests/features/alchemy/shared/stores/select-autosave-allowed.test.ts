@@ -4,7 +4,6 @@ import { selectAutosaveAllowed } from "@/features/alchemy/shared/stores/run-read
 function battleState(enemyHealth: number, hasActiveBattle = true) {
   return {
     battle: { hasActiveBattle, battleState: { enemyHealth } },
-    session: { rewardClaimInFlight: false, rewardState: { choices: ["slash"] } },
   };
 }
 
@@ -23,7 +22,6 @@ describe("selectAutosaveAllowed", () => {
       selectAutosaveAllowed(
         {
           battle: { hasActiveBattle: false, battleState: { enemyHealth: 20 } },
-          session: { rewardClaimInFlight: false, rewardState: { choices: [] } },
         },
         "rewards",
       ),
@@ -36,7 +34,6 @@ describe("selectAutosaveAllowed", () => {
       selectAutosaveAllowed(
         {
           battle: { hasActiveBattle: false, battleState: { enemyHealth: 20 } },
-          session: { rewardClaimInFlight: true, rewardState: { choices: [] } },
         },
         "rewards",
       ),

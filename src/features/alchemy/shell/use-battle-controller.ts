@@ -1,3 +1,4 @@
+import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 import {
@@ -15,7 +16,7 @@ import type { Screen } from "@/lib/routing";
 import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { useBattleLifetimeFields } from "@/features/alchemy/shared/stores/run-reads";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
-import type { BattleState } from "@/lib/battle";
+import type { BattleSnapshot } from "@/lib/battle";
 import type { BattlePlaybackBind } from "@/features/alchemy/run-loop/battle/battle-context";
 import { preferredAutoplayEnabled, useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 
@@ -36,9 +37,11 @@ export function useBattleController({
   measureElementRect = defaultMeasureElementRect,
   measureVisualCardRect = defaultMeasureVisualCardRect,
 }: UseBattleControllerProps) {
-  const { hasActiveBattle, pendingBattleTransition, pendingTransitionResumeRequired } = useBattleLifetimeFields();
+  const { hasActiveBattle, pendingTransitionResumeRequired } = useBattleLifetimeFields();
 
-  const scheduleAutoEndTurnRef = useRef<((state?: BattleState) => void) | null>(null);
+  const openingDrawPending = useBattlePresentationStore((state) => state.openingDrawPending);
+
+  const scheduleAutoEndTurnRef = useRef<((state?: BattleSnapshot) => void) | null>(null);
   const clearAutoEndTurnRef = useRef<(() => void) | null>(null);
   const onBattleSessionPreparedRef = useRef<(() => void) | null>(null);
   const pendingTransitionResumeAttemptedRef = useRef(false);
@@ -138,7 +141,7 @@ export function useBattleController({
     }
     if (
       battle.pendingTransitionResumeRequired ||
-      battle.pendingBattleTransition?.kind !== "opening-draw" ||
+      !useBattlePresentationStore.getState().openingDrawPending ||
       !ctx.battleSceneRef.current ||
       !ctx.drawPileRef.current
     ) {
@@ -150,18 +153,13 @@ export function useBattleController({
   }, [actions.transferDeps, ctx]);
 
   useEffect(() => {
-    if (
-      !hasActiveBattle ||
-      screen !== "battle" ||
-      pendingTransitionResumeRequired ||
-      pendingBattleTransition?.kind !== "opening-draw"
-    ) {
+    if (!hasActiveBattle || screen !== "battle" || pendingTransitionResumeRequired || !openingDrawPending) {
       return;
     }
     playOpeningDrawWhenReady();
   }, [
     hasActiveBattle,
-    pendingBattleTransition,
+    openingDrawPending,
     pendingTransitionResumeRequired,
     playbackBindVersion,
     playOpeningDrawWhenReady,

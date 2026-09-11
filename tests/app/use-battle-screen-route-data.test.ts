@@ -16,7 +16,6 @@ describe("useBattleScreenRouteData", () => {
     expect(result.current.hasActiveBattle).toBe(false);
     expect(result.current.battleScreenData.activeLabyrinthModifiers).toEqual([]);
     expect(result.current.battleScreenData.runBoons).toEqual([]);
-    expect(result.current.battleScreenData.displayOverrides).toEqual({});
     expect(result.current.battleScreenData.battleState).toBeDefined();
   });
 

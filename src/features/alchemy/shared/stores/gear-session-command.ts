@@ -93,7 +93,7 @@ export function mutateGearWithRunHealthSync<T>(
 ): T & SynchronousResult<T> {
   const before = current(draft.gear);
   const result = options.mutate(gearCommandView(draft));
-  if (current(draft.gear) !== before && (options.syncRunHealth ?? draft.session.hasActiveRun)) {
+  if (current(draft.gear) !== before && (options.syncRunHealth ?? draft.session.activity.kind !== "inactive")) {
     rebindLiveRunMeta(draft);
   }
   return result;
@@ -106,7 +106,7 @@ export function dispatchGearSalvageWithMaterialGrant(
   return dispatchRunSessionCommand((draft) => {
     const salvageResult = mutateGearWithRunHealthSync(draft, { mutate, syncRunHealth: options?.syncRunHealth });
     if (!salvageResult) return null;
-    if (draft.session.hasActiveRun) {
+    if (draft.session.activity.kind !== "inactive") {
       awardMaterialsDuringRun(draft, salvageResult.yieldedMaterials);
     } else {
       addMaterials(draft, salvageResult.yieldedMaterials);

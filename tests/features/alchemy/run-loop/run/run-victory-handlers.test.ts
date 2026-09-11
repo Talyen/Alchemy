@@ -394,15 +394,15 @@ describe("createRunFlow victory paths", () => {
 
     expect(readActiveRun().runDeck).toHaveLength(1);
     expect(navigateTo).toHaveBeenCalledTimes(1);
-    expect(readRunSession().rewardClaimInFlight).toBe(true);
+    expect(readRunSession().rewardFlow.claim.kind === "reward").toBe(true);
 
-    expect(readRunSession().rewardState.destinations).toEqual([DESTINATIONS.NORMAL_COMBAT]);
-    expect(readRunSession().rewardState.choices).toEqual([]);
+    expect(readRunSession().rewardFlow.state.destinations).toEqual([DESTINATIONS.NORMAL_COMBAT]);
+    expect(readRunSession().rewardFlow.state.choices).toEqual([]);
 
     const onCommit = navigateTo.mock.calls[0][1] as () => void;
     onCommit();
-    expect(readRunSession().rewardClaimInFlight).toBe(false);
-    expect(readRunSession().rewardState.choices).toEqual([]);
+    expect(readRunSession().rewardFlow.claim.kind === "reward").toBe(false);
+    expect(readRunSession().rewardFlow.state.choices).toEqual([]);
   });
 
   it("claimRewardChoice commits the companion handoff before navigation", () => {
@@ -449,21 +449,21 @@ describe("createRunFlow victory paths", () => {
 
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.REWARDS, expect.any(Function));
     expect(readActiveRun().runDeck.map((card) => card.id)).toEqual([primary.id]);
-    expect(readRunSession().rewardClaimInFlight).toBe(true);
+    expect(readRunSession().rewardFlow.claim.kind === "reward").toBe(true);
 
-    expect(readRunSession().rewardState.choices).toEqual([companion]);
-    expect(readRunSession().companionRewardCards).toBeNull();
+    expect(readRunSession().rewardFlow.state.choices).toEqual([companion]);
+    expect(readRunSession().rewardFlow.companionCards).toBeNull();
 
     const onCommit = navigateTo.mock.calls[0]![1] as () => void;
     onCommit();
 
-    expect(readRunSession().rewardClaimInFlight).toBe(false);
-    expect(readRunSession().companionRewardCards).toBeNull();
-    const companionChoices = readRunSession().rewardState.choices;
+    expect(readRunSession().rewardFlow.claim.kind === "reward").toBe(false);
+    expect(readRunSession().rewardFlow.companionCards).toBeNull();
+    const companionChoices = readRunSession().rewardFlow.state.choices;
     expect(companionChoices.every((card) => "id" in card)).toBe(true);
     expect(companionChoices.map((card) => ("id" in card ? card.id : card.instanceId))).toEqual([companion.id]);
-    expect(readRunSession().rewardState.selectedId).toBeNull();
-    expect(readRunSession().rewardState.gold).toBe(0);
+    expect(readRunSession().rewardFlow.state.selectedId).toBeNull();
+    expect(readRunSession().rewardFlow.state.gold).toBe(0);
   });
 
   it("handleDestinationChoice ignores a second call after destinations are cleared", () => {
@@ -498,16 +498,16 @@ describe("createRunFlow victory paths", () => {
 
     expect(readActiveRun().completedDestinations).toEqual([]);
     expect(readActiveRun().destinationIndexInAct).toBe(0);
-    expect(readRunSession().pendingDestinationClaim).toBe(DESTINATIONS.CAMPFIRE);
-    expect(readRunSession().rewardState.destinations).toEqual([DESTINATIONS.CAMPFIRE, DESTINATIONS.CARD_SHOP]);
+    expect(readRunSession().rewardFlow.claim).toEqual({ kind: "destination", destination: DESTINATIONS.CAMPFIRE });
+    expect(readRunSession().rewardFlow.state.destinations).toEqual([DESTINATIONS.CAMPFIRE, DESTINATIONS.CARD_SHOP]);
 
     const onCommit = navigateTo.mock.calls[0][1] as () => void;
     onCommit();
 
     expect(readActiveRun().completedDestinations).toEqual([DESTINATIONS.CAMPFIRE]);
     expect(readActiveRun().destinationIndexInAct).toBe(1);
-    expect(readRunSession().rewardState.destinations).toEqual([]);
-    expect(readRunSession().pendingDestinationClaim).toBeNull();
+    expect(readRunSession().rewardFlow.state.destinations).toEqual([]);
+    expect(readRunSession().rewardFlow.claim).toEqual({ kind: "idle" });
   });
 
   it("handleDestinationChoice defers mystery destination commit until screen commit", () => {
@@ -536,15 +536,15 @@ describe("createRunFlow victory paths", () => {
 
     expect(beginMysteryEvent).toHaveBeenCalledTimes(1);
     expect(beginMysteryEvent).toHaveBeenCalledWith(expect.any(Function));
-    expect(readRunSession().pendingDestinationClaim).toBe(DESTINATIONS.MYSTERY);
-    expect(readRunSession().rewardState.destinations).toEqual([DESTINATIONS.MYSTERY, DESTINATIONS.CAMPFIRE]);
+    expect(readRunSession().rewardFlow.claim).toEqual({ kind: "destination", destination: DESTINATIONS.MYSTERY });
+    expect(readRunSession().rewardFlow.state.destinations).toEqual([DESTINATIONS.MYSTERY, DESTINATIONS.CAMPFIRE]);
     expect(readActiveRun().completedDestinations).toEqual([]);
 
     const onCommit = beginMysteryEvent.mock.calls[0]![0] as () => void;
     onCommit();
 
     expect(readActiveRun().completedDestinations).toEqual([DESTINATIONS.MYSTERY]);
-    expect(readRunSession().rewardState.destinations).toEqual([]);
-    expect(readRunSession().pendingDestinationClaim).toBeNull();
+    expect(readRunSession().rewardFlow.state.destinations).toEqual([]);
+    expect(readRunSession().rewardFlow.claim).toEqual({ kind: "idle" });
   });
 });

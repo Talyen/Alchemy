@@ -4,7 +4,7 @@ import { applyHealingWithCombatText } from "./combat-text";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { applyIronwoodBuckler } from "./bonus-effects";
 import { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
-import { isPlayerDefeated, type BattleState, type CombatTextEvent } from "./types";
+import { isPlayerDefeated, type BattleState, type BattleSnapshot, type CombatTextEvent } from "./types";
 import { processEnemyAbility } from "./enemy-turn-attack";
 import { processEnemyRegeneration, processEnemyTraits } from "./enemy-turn-traits";
 import { processEncounterTraitActionDamage, processEncounterTraitActionStart } from "./encounter-trait-events";
@@ -16,19 +16,19 @@ import {
   resolveDeathsDoorGraceExpiry,
 } from "./player-turn-transition";
 
-interface EndPlayerTurnResolutionBase {
-  state: BattleState;
+interface EndPlayerTurnResolutionBase<State extends BattleSnapshot> {
+  state: State;
   combatTexts: CombatTextEvent[];
   playerTurnSkipped: boolean;
   enemyTurnStartCombatTexts: CombatTextEvent[];
   enemyResolutionCombatTexts: CombatTextEvent[];
   enemyPerformedAbility: boolean;
-  afterAbilityState?: BattleState;
+  afterAbilityState?: State;
 }
 
-export type EndPlayerTurnResolution =
-  | (EndPlayerTurnResolutionBase & { kind: "haste" })
-  | (EndPlayerTurnResolutionBase & { kind: "skipped" | "standard"; enemyTurnStartState: BattleState });
+export type EndPlayerTurnResolution<State extends BattleSnapshot = BattleState> =
+  | (EndPlayerTurnResolutionBase<State> & { kind: "haste" })
+  | (EndPlayerTurnResolutionBase<State> & { kind: "skipped" | "standard"; enemyTurnStartState: State });
 
 function finalizePlayerTurn(
   state: BattleState,
@@ -111,7 +111,7 @@ function resolveSkippedEnemyTurn(state: BattleState, startResult = resolveEnemyT
   const nextState = startResult.state;
   const enemyTurnStartState = nextState;
 
-  if (enemyTurnStartState.enemyHealth <= 0) {
+  if (enemyTurnStartState.enemyHealth <= 0 || isPlayerDefeated(enemyTurnStartState)) {
     return {
       kind: "skipped" as const,
       ...finalizePlayerTurn(resolveDeathsDoorGraceExpiry(enemyTurnStartState), enemyTurnStartCombatTexts),
@@ -152,7 +152,7 @@ function resolveStandardEnemyTurn(nextState: BattleState) {
   const enemyTurnStartState = startResult.state;
   const enemyTurnStartCombatTexts = startResult.texts;
 
-  if (enemyTurnStartState.enemyHealth <= 0) {
+  if (enemyTurnStartState.enemyHealth <= 0 || isPlayerDefeated(enemyTurnStartState)) {
     return {
       kind: "standard" as const,
       ...finalizePlayerTurn(resolveDeathsDoorGraceExpiry(enemyTurnStartState), enemyTurnStartCombatTexts),

@@ -1,3 +1,4 @@
+import { battleSnapshot } from "@/lib/battle";
 import "../../../../helpers/mock-audio";
 import "../../../../helpers/mock-flush-save";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -61,15 +62,15 @@ describe("session slice", () => {
   });
 
   it("starts with empty reward state and no active run", () => {
-    expect(readRunSession().rewardState).toEqual(createEmptyRewardState());
+    expect(readRunSession().rewardFlow.state).toEqual(createEmptyRewardState());
     expect(readRunSession().hasActiveRun).toBe(false);
   });
 
   it("setRewardState accepts direct values and updaters", () => {
     setRewardState({ ...createEmptyRewardState(), gold: 50 });
-    expect(readRunSession().rewardState.gold).toBe(50);
+    expect(readRunSession().rewardFlow.state.gold).toBe(50);
     setRewardState((prev) => ({ ...prev, gold: prev.gold + 25 }));
-    expect(readRunSession().rewardState.gold).toBe(75);
+    expect(readRunSession().rewardFlow.state.gold).toBe(75);
   });
 });
 
@@ -100,7 +101,7 @@ describe("battle slice", () => {
     expect(readBattle().pendingTransitionResumeRequired).toBe(true);
     expect(readBattle().pendingBattleTransition).toEqual({
       kind: "enemy-turn",
-      resultState: { ...resultState, rng: expect.any(Function) },
+      resultState: battleSnapshot(resultState),
       playerTurnSkipped: false,
     });
   });

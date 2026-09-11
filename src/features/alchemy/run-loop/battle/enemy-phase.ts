@@ -1,169 +1,73 @@
 import { enemyAbilityDealsDamage, getEnemyAbilityCard } from "@/lib/game-data";
-import { isPlayerDefeated, type BattleState, type CombatTextEvent, type EndPlayerTurnResolution } from "@/lib/battle";
+import type { BattleTurnFrame, CombatTextEvent } from "@/lib/battle";
 import { playBattleEvent, playCardSound, playEnemyAttack } from "@/lib/audio";
-import { ENEMY_ATTACK_RECOVERY_DELAY, ENEMY_PHASE_DELAY } from "@/lib/game-constants";
+import { COMPANION_ATTACK_DELAY, ENEMY_ATTACK_RECOVERY_DELAY, ENEMY_PHASE_DELAY } from "@/lib/game-constants";
 import { delay } from "@/lib/animation/game-timer";
 import { markBattleStage } from "@/lib/performance/battle-stage-marks";
-import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
-import {
-  awardBattleDodgeXP,
-  beginBattleTransition,
-  commitBattleTransition,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
 import { applyCombatTextShakeFeedback } from "./battle-status";
-import { logBattleError, playCombatTextSounds } from "./controller-utils";
-import { runHandDrawSequence } from "./draw-sequence";
-import {
-  commitDrawAndResume,
-  getBattleContinuation,
-  type BattleTurnSession,
-  type ResolveEndTurn,
-  type TurnOrchestration,
-} from "./turn-continuation";
+import { playCombatTextSounds, playCompanionSound } from "./controller-utils";
+import { runHandDrawSequence, type HandDrawSequenceDeps } from "./draw-sequence";
+import type { BattlePresentationPort } from "./battle-presentation-store";
 
-export function persistEnemyTurnTransition(
-  draft: GameplayDraft,
-  result: Extract<EndPlayerTurnResolution, { kind: "skipped" | "standard" }>,
-  currentState: BattleState,
-): void {
-  awardBattleDodgeXP(draft, currentState, result.state);
-  if (result.state.enemyHealth <= 0 || isPlayerDefeated(result.state)) {
-    commitBattleTransition(draft, { ...result.state, turnPhase: "enemy", hand: [] }, null);
-    return;
-  }
-  beginBattleTransition(
-    draft,
-    { ...result.enemyTurnStartState, turnPhase: "enemy" },
-    {
-      kind: "enemy-turn",
-      resultState: result.state,
-      playerTurnSkipped: result.playerTurnSkipped,
-    },
-    {
-      hand: [],
-      playerHealth: currentState.playerHealth,
-      playerStatuses: currentState.playerStatuses,
-      turnPhase: "enemy",
-    },
-  );
+function showTexts(texts: CombatTextEvent[], presentation: BattlePresentationPort) {
+  presentation.showCombatTexts(texts);
+  applyCombatTextShakeFeedback(texts, presentation);
+  playCombatTextSounds(texts);
 }
 
-export function resolveNormalEnemyTurn(
-  result: Extract<EndPlayerTurnResolution, { kind: "skipped" | "standard" }>,
-  currentState: BattleState,
+/** Playback consumes resolved frames and has no gameplay write capability. */
+export async function playTurnFrames(
+  frames: BattleTurnFrame[],
   sessionNum: number,
-  battleSession: BattleTurnSession,
-  orch: TurnOrchestration,
-  resolveEndTurn: ResolveEndTurn,
-) {
-  if (!battleSession.isCurrentBattleSession(sessionNum)) return;
-  const enemyTurnStartTexts = result.enemyTurnStartCombatTexts;
-  const enemyResolutionTexts = result.enemyResolutionCombatTexts;
-  const vfx = orch.getPresentation();
-  const dotTexts = enemyTurnStartTexts.filter((ct) => ct.target === "enemy" || ct.kind === "heal");
-
-  if (result.state.enemyHealth <= 0 || isPlayerDefeated(result.state)) {
-    if (dotTexts.length > 0) vfx.showCombatTexts(dotTexts);
-    battleSession.handleVictoryDefeat(result.state.enemyHealth <= 0 ? "victory" : "defeat");
-    return;
-  }
-
-  if (dotTexts.length > 0) vfx.showCombatTexts(dotTexts);
-
-  if (battleSession.checkBattleEnd(result.state, sessionNum)) return;
-
-  void executeEnemyPhase(
-    result.state,
-    currentState,
-    enemyResolutionTexts,
-    sessionNum,
-    result.playerTurnSkipped,
-    result.enemyPerformedAbility,
-    battleSession,
-    orch,
-    resolveEndTurn,
-  );
-}
-
-export async function executeEnemyPhase(
-  resultState: BattleState,
-  currentState: BattleState,
-  combatTexts: CombatTextEvent[],
-  sessionNum: number,
-  playerTurnSkipped: boolean,
-  enemyPerformedAbility: boolean,
-  battleSession: BattleTurnSession,
-  orch: TurnOrchestration,
-  resolveEndTurn: ResolveEndTurn,
-) {
-  markBattleStage("enemy-start");
-  const playerTexts = combatTexts.filter((ct) => ct.target === "player");
-  await delay(ENEMY_PHASE_DELAY);
-  if (!battleSession.isCurrentBattleSession(sessionNum)) return;
-  const vfx = orch.getPresentation();
-  if (enemyPerformedAbility) {
-    const ability = resultState.lastEnemyAbilityId ? getEnemyAbilityCard(resultState.lastEnemyAbilityId) : null;
-    if (ability) playCardSound(ability.id);
-    else playEnemyAttack(currentState.currentEnemy.id);
-    if (!ability || enemyAbilityDealsDamage(ability)) {
-      vfx.telegraphAttack("enemy");
+  deps: HandDrawSequenceDeps,
+  presentation: BattlePresentationPort,
+): Promise<void> {
+  for (const { before, turn, companion } of frames) {
+    if (!deps.isSessionActive(sessionNum)) return;
+    if (turn.kind !== "haste") {
+      markBattleStage("enemy-start");
+      presentation.setDisplayedBattle({
+        ...turn.enemyTurnStartState,
+        hand: [],
+        playerHealth: before.playerHealth,
+        playerStatuses: before.playerStatuses,
+        turnPhase: "enemy",
+      });
+      showTexts(turn.enemyTurnStartCombatTexts, presentation);
+      await delay(ENEMY_PHASE_DELAY);
+      if (!deps.isSessionActive(sessionNum)) return;
+      if (turn.enemyPerformedAbility) {
+        const ability = turn.state.lastEnemyAbilityId ? getEnemyAbilityCard(turn.state.lastEnemyAbilityId) : null;
+        if (ability) playCardSound(ability.id);
+        else playEnemyAttack(before.currentEnemy.id);
+        if (!ability || enemyAbilityDealsDamage(ability)) presentation.telegraphAttack("enemy");
+        else presentation.telegraphCast("enemy");
+      }
+      presentation.setDisplayedBattle({ ...(turn.afterAbilityState ?? turn.state), hand: [], turnPhase: "enemy" });
+      if (!before.deathsDoorActive && turn.state.deathsDoorActive) playBattleEvent("deathsDoor");
+      showTexts(turn.enemyResolutionCombatTexts, presentation);
+      await delay(ENEMY_ATTACK_RECOVERY_DELAY);
+      if (!deps.isSessionActive(sessionNum)) return;
+      markBattleStage("enemy-end");
     } else {
-      vfx.telegraphCast("enemy");
+      showTexts(turn.combatTexts, presentation);
+    }
+    await runHandDrawSequence(
+      before.hand,
+      turn.state,
+      () => presentation.setDisplayedBattle(turn.state),
+      sessionNum,
+      deps,
+    );
+    if (!deps.isSessionActive(sessionNum)) return;
+    if (companion) {
+      await delay(COMPANION_ATTACK_DELAY);
+      if (!deps.isSessionActive(sessionNum)) return;
+      presentation.setDisplayedBattle(companion.state);
+      playCompanionSound(companion.id);
+      presentation.shakeCompanion();
+      presentation.telegraphAttack("companion");
+      showTexts(companion.texts, presentation);
     }
   }
-  if (!currentState.deathsDoorActive && resultState.deathsDoorActive) playBattleEvent("deathsDoor");
-  if (combatTexts.length > 0) vfx.showCombatTexts(combatTexts);
-  applyCombatTextShakeFeedback(playerTexts, vfx);
-  playCombatTextSounds(playerTexts);
-  await delay(ENEMY_ATTACK_RECOVERY_DELAY);
-  if (!battleSession.isCurrentBattleSession(sessionNum)) return;
-  markBattleStage("enemy-end");
-  await continueAfterEnemyDraw(
-    resultState,
-    currentState,
-    sessionNum,
-    playerTurnSkipped,
-    battleSession,
-    orch,
-    resolveEndTurn,
-  );
-}
-
-async function continueAfterEnemyDraw(
-  resultState: BattleState,
-  currentState: BattleState,
-  sessionNum: number,
-  playerTurnSkipped: boolean,
-  battleSession: BattleTurnSession,
-  orch: TurnOrchestration,
-  resolveEndTurn: ResolveEndTurn,
-) {
-  const continuation = getBattleContinuation(resultState, playerTurnSkipped);
-  let committedDuringDraw = false;
-  try {
-    await runHandDrawSequence(
-      currentState.hand,
-      resultState,
-      () => {
-        dispatchRunSessionCommand((draft) => commitBattleTransition(draft, resultState, continuation));
-        committedDuringDraw = true;
-      },
-      sessionNum,
-      orch.getDrawSequenceDeps(),
-    );
-  } catch (err) {
-    logBattleError("handle enemy resolution draw sequence", err);
-  }
-  if (!battleSession.isCurrentBattleSession(sessionNum)) return;
-  battleSession.runIfSessionActive(sessionNum, () => {
-    commitDrawAndResume(
-      resultState,
-      playerTurnSkipped,
-      sessionNum,
-      battleSession,
-      orch,
-      resolveEndTurn,
-      committedDuringDraw ? null : resultState,
-    );
-  });
 }

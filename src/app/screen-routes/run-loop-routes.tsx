@@ -171,7 +171,13 @@ function CampfireScreenRoute({ commands }: { commands: RunLoopCommands["destinat
   );
 }
 
-function CardShopScreenRoute({ commands }: { commands: RunLoopCommands["shop"]["merchant"] }) {
+function CardShopScreenRoute({
+  commands,
+  onContinue,
+}: {
+  onContinue: () => void;
+  commands: RunLoopCommands["shop"]["merchant"];
+}) {
   const r = useShopScreenData();
   return (
     <CardShopScreen
@@ -184,15 +190,21 @@ function CardShopScreenRoute({ commands }: { commands: RunLoopCommands["shop"]["
       getCardPrice={commands.getCardBuyPrice}
       removePrice={commands.getRemoveCardPrice()}
       refreshPrice={commands.getRefreshPrice(r.shopState.refreshesLeft)}
-      onBuyCard={commands.handleBuyCard}
-      onRemoveCard={commands.handleRemoveCard}
-      onRefresh={commands.handleRefresh}
-      onContinue={commands.handleContinue}
+      onBuyCard={commands.buyCard}
+      onRemoveCard={commands.removeCard}
+      onRefresh={commands.refresh}
+      onContinue={onContinue}
     />
   );
 }
 
-function AlchemistShopScreenRoute({ commands }: { commands: RunLoopCommands["shop"]["alchemist"] }) {
+function AlchemistShopScreenRoute({
+  commands,
+  onContinue,
+}: {
+  onContinue: () => void;
+  commands: RunLoopCommands["shop"]["alchemist"];
+}) {
   const r = useAlchemistScreenData();
   return (
     <AlchemistShopScreen
@@ -205,15 +217,21 @@ function AlchemistShopScreenRoute({ commands }: { commands: RunLoopCommands["sho
       getPotionPrice={commands.getPotionBuyPrice}
       mixPrice={commands.getMixPrice()}
       refreshPrice={commands.getRefreshPrice(r.alchemistState.refreshesLeft)}
-      onBuyCard={commands.handleBuyCard}
-      onRefresh={commands.handleRefresh}
-      onMixPotions={commands.handleMixPotions}
-      onContinue={commands.handleContinue}
+      onBuyCard={commands.buyPotion}
+      onRefresh={commands.refresh}
+      onMixPotions={commands.mixPotions}
+      onContinue={onContinue}
     />
   );
 }
 
-function TrinketShopScreenRoute({ commands }: { commands: RunLoopCommands["shop"]["trinket"] }) {
+function TrinketShopScreenRoute({
+  commands,
+  onContinue,
+}: {
+  onContinue: () => void;
+  commands: RunLoopCommands["shop"]["trinket"];
+}) {
   const r = useTrinketShopScreenData();
   return (
     <TrinketShopScreen
@@ -223,14 +241,20 @@ function TrinketShopScreenRoute({ commands }: { commands: RunLoopCommands["shop"
       purchasedSlotKeys={r.trinketShopState.purchasedSlotKeys}
       getTrinketPrice={commands.getBuyPrice}
       refreshPrice={commands.getRefreshPrice(r.trinketShopState.refreshesLeft)}
-      onBuyTrinket={commands.handleBuy}
-      onRefresh={commands.handleRefresh}
-      onContinue={commands.handleContinue}
+      onBuyTrinket={commands.buy}
+      onRefresh={commands.refresh}
+      onContinue={onContinue}
     />
   );
 }
 
-function EquipmentShopScreenRoute({ commands }: { commands: RunLoopCommands["shop"]["equipment"] }) {
+function EquipmentShopScreenRoute({
+  commands,
+  onContinue,
+}: {
+  onContinue: () => void;
+  commands: RunLoopCommands["shop"]["equipment"];
+}) {
   const r = useEquipmentShopScreenData();
   return (
     <EquipmentShopScreen
@@ -240,9 +264,9 @@ function EquipmentShopScreenRoute({ commands }: { commands: RunLoopCommands["sho
       purchasedSlotKeys={r.equipmentShopState.purchasedSlotKeys}
       getGearPrice={commands.getBuyPrice}
       refreshPrice={commands.getRefreshPrice(r.equipmentShopState.refreshesLeft)}
-      onBuyGear={commands.handleBuy}
-      onRefresh={commands.handleRefresh}
-      onContinue={commands.handleContinue}
+      onBuyGear={commands.buy}
+      onRefresh={commands.refresh}
+      onContinue={onContinue}
     />
   );
 }
@@ -281,10 +305,30 @@ export const runLoopScreenRoutes: {
   "wildwood-removal": ({ routeCommands }) => <WildwoodRemovalScreenRoute commands={routeCommands.runLoop.wildwood} />,
   destination: ({ routeCommands }) => <DestinationScreenRoute commands={routeCommands.runLoop.destinations} />,
   campfire: ({ routeCommands }) => <CampfireScreenRoute commands={routeCommands.runLoop.destinations} />,
-  shop: ({ routeCommands }) => <CardShopScreenRoute commands={routeCommands.runLoop.shop.merchant} />,
-  alchemist: ({ routeCommands }) => <AlchemistShopScreenRoute commands={routeCommands.runLoop.shop.alchemist} />,
-  "trinket-shop": ({ routeCommands }) => <TrinketShopScreenRoute commands={routeCommands.runLoop.shop.trinket} />,
-  "equipment-shop": ({ routeCommands }) => <EquipmentShopScreenRoute commands={routeCommands.runLoop.shop.equipment} />,
+  shop: ({ routeCommands }) => (
+    <CardShopScreenRoute
+      onContinue={routeCommands.runLoop.shop.continue}
+      commands={routeCommands.runLoop.shop.merchant}
+    />
+  ),
+  alchemist: ({ routeCommands }) => (
+    <AlchemistShopScreenRoute
+      onContinue={routeCommands.runLoop.shop.continue}
+      commands={routeCommands.runLoop.shop.alchemist}
+    />
+  ),
+  "trinket-shop": ({ routeCommands }) => (
+    <TrinketShopScreenRoute
+      onContinue={routeCommands.runLoop.shop.continue}
+      commands={routeCommands.runLoop.shop.trinket}
+    />
+  ),
+  "equipment-shop": ({ routeCommands }) => (
+    <EquipmentShopScreenRoute
+      onContinue={routeCommands.runLoop.shop.continue}
+      commands={routeCommands.runLoop.shop.equipment}
+    />
+  ),
   mystery: ({ routeCommands }) => <MysteryScreenRoute commands={routeCommands.runLoop.mystery} />,
   corruption: ({ routeCommands }) => <CorruptionScreenRoute commands={routeCommands.runLoop.corruption} />,
 };

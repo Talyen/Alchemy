@@ -33,7 +33,7 @@ describe("screen-specific run data hooks", () => {
     const { result } = renderHook(() => useRewardsScreenData());
 
     expect(result.current).toEqual({
-      rewardState: readRunSession().rewardState,
+      rewardState: readRunSession().rewardFlow.state,
       rewardClaimInFlight: false,
     });
     expect(result.current).not.toHaveProperty("runGold");
@@ -48,7 +48,7 @@ describe("screen-specific run data hooks", () => {
     });
 
     act(() => {
-      dispatchRunSessionCommand((draft) => setRewardState(draft, { ...readRunSession().rewardState }));
+      dispatchRunSessionCommand((draft) => setRewardState(draft, { ...readRunSession().rewardFlow.state }));
     });
 
     expect(renders).toBe(1);

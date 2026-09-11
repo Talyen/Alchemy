@@ -14,7 +14,7 @@ import {
   setRewardState,
   setRunMaxHealth,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import type { BattleState } from "@/lib/battle";
+import type { BattleSnapshot } from "@/lib/battle";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { getOwnedUniqueDefinitionIds } from "@/lib/gear";
@@ -28,7 +28,7 @@ import { computeVictoryRewards } from "../navigation/victory-flow";
 import type { RunOutcomeDeps } from "./run-flow";
 
 export interface CommitVictoryRewardsDeps {
-  battleState: BattleState;
+  battleState: BattleSnapshot;
   contentSystemType: ContentSystemId;
 }
 

@@ -13,6 +13,7 @@ import { halveRounded } from "./amount-helpers";
 import { takeRandomCardFromDeck, drawKeywordCard } from "./draw";
 import { tryDodgeEnemyAttackPacket } from "./dodge";
 import { applyDodgeTalentStatuses } from "./dodge-talent-rewards";
+import { applyArmorReward } from "./status-player";
 import { applyCardEffects } from "./effect-handlers";
 import {
   computeIncomingEnemyAttackDamage,
@@ -81,7 +82,7 @@ function applyOnPlayerDodge(state: BattleState, combatTexts: CombatTextEvent[], 
     nextState = addPlayerStatusWithCombatText(nextState, "block", dodgedAmount, combatTexts, { skipFightPacing: true });
   }
   const armor = nextState.gearEffects.armorOnDodge + nextState.talentEffects.armorOnDodge;
-  if (armor > 0) nextState = addPlayerStatusWithCombatText(nextState, "armor", armor, combatTexts);
+  if (armor > 0) nextState = applyArmorReward(nextState, armor, combatTexts);
   const healing = nextState.gearEffects.healOnDodge + nextState.talentEffects.healOnDodge;
   if (healing > 0) nextState = applyHealingWithCombatText(nextState, healing, combatTexts);
   nextState = applyDodgeTalentStatuses(nextState, combatTexts);

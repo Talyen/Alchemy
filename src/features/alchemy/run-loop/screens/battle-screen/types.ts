@@ -1,15 +1,14 @@
 import type { MouseEvent } from "react";
 
 import type { CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
-import type { BattleState } from "@/lib/battle";
-import type { DisplayOverrides } from "@/features/alchemy/shared/stores/run-reads";
+import type { BattleSnapshot } from "@/lib/battle";
 import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
 import type { BattleCard } from "@/lib/game-data";
 import type { StatusChip } from "../../../shared/types";
 import type { BattleRefs } from "../../../shared/types";
 
 export type BattleScreenState = Pick<
-  BattleState,
+  BattleSnapshot,
   | "playerHealth"
   | "playerMaxHealth"
   | "deathsDoorActive"
@@ -63,8 +62,7 @@ export interface BattleActionsProps {
 export type RequiredBattleViewProps = Required<BattleScreenViewProps>;
 
 export interface BattleScreenData {
-  battleState: BattleState;
-  displayOverrides: DisplayOverrides;
+  battleState: BattleSnapshot;
   activeLabyrinthModifiers: EncounterCombatTraitId[];
   runBoons: string[];
 }

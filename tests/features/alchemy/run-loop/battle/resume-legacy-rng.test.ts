@@ -8,7 +8,7 @@ import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-sta
 import { makeTestCardWithId } from "../../../../fixtures/battle";
 import { resetRunDomainStore } from "../../../../helpers/gameplay-store-test";
 import { setRunProgress } from "../../../../helpers/run-domain-store-test";
-import { makeBattleTurnSession, makeTurnOrchestration } from "./turn-orchestration-fixture";
+import { makeBattleTurnSession } from "./turn-orchestration-fixture";
 
 beforeEach(() => {
   resetRunDomainStore();
@@ -29,10 +29,10 @@ describe("legacy enemy-phase resume RNG", () => {
 
     dispatchRunSessionCommand((draft) => initializeActiveBattle(draft, enemyPhase, { kind: "legacy-enemy-turn" }));
 
-    expect(() => readGameplayState().battle.battleState.rng()).toThrow(/withDraftWorldBattleRng/);
+    expect(readGameplayState().battle.battleState).not.toHaveProperty("rng");
 
     const battleSession = makeBattleTurnSession();
-    resumePendingBattleTransition(1, battleSession, makeTurnOrchestration(), () => false);
+    resumePendingBattleTransition(1, battleSession);
 
     const recovered = readGameplayState().battle.battleState;
     expect(recovered.turnPhase).toBe("player");

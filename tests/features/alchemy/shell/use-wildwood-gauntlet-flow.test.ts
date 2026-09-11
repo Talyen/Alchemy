@@ -29,7 +29,7 @@ describe("Wildwood reward selection", () => {
 
     createRunFlow(makeFlowHandlerDeps()).claimRewardChoice("slash");
 
-    expect(readRunSession().rewardState.selectedId).toBeNull();
+    expect(readRunSession().rewardFlow.state.selectedId).toBeNull();
     expect(readRunSession().wildwoodDraft).toEqual(wildwoodDraft);
   });
   it("commits removal and the next boss once without waiting for a rendered screen", () => {

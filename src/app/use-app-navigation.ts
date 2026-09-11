@@ -15,7 +15,7 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { useSequentialFadeSwap } from "@/features/alchemy/shared/ui/use-fade";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
-import type { AlchemyRunCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
+import type { AlchemyRunCommands } from "@/features/alchemy/shell/route-commands";
 import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { MOTION_FADE_MS, PAGE_EXIT_MS } from "@/lib/game-constants";
 import { cardLibrary, enemyBestiary, trinketLibrary } from "@/lib/game-data";

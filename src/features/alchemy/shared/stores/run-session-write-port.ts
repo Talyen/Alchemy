@@ -28,8 +28,6 @@ export {
   awardBattleDodgeXP,
   awardCardXP,
   awardMysteryXP,
-  beginBattleTransition,
-  clearBattleTransition,
   clearPendingTransitionResumeRequired,
   clearRunMaterialsEarned,
   commitBattleTransition,
@@ -46,7 +44,6 @@ export {
   setCurrentAct,
   setDestinationIndexInAct,
   setDestinationOfferState,
-  setDisplayOverrides,
   setEncounteredRunEnemyIds,
   setGold,
   setHasActiveBattle,
@@ -58,8 +55,7 @@ export {
   setScreen,
   setSyncedBattleState,
   withDraftWorldBattleRng,
-  withRestingEndPlayerTurnResolution,
-  withRestingWorldBattleRng,
+  snapshotBattleState,
 } from "./write-port-run";
 export {
   abandonCorruptionDestinationVisit,

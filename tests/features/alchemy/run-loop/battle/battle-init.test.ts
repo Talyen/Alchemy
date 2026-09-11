@@ -51,8 +51,8 @@ describe("createBattleInit", () => {
     expect(battle.talentEffects.flatPhysicalDamage).toBe(expected.flatPhysicalDamage);
     expect(battle.currentEnemy.enemyType).toBe("normal");
 
-    expect(typeof battle.rng).toBe("function");
-    expect(() => battle.rng()).toThrow(/withDraftWorldBattleRng/);
+    expect(battle).not.toHaveProperty("rng");
+    expect(battle).not.toHaveProperty("rng");
   });
 
   it("beginBattle increments roomsEncountered and sets hasActiveBattle", () => {
@@ -64,15 +64,9 @@ describe("createBattleInit", () => {
     expect(readActiveRun().roomsEncountered).toBe(3);
     expect(readBattle().hasActiveBattle).toBe(true);
     expect(readBattle().pendingTransitionResumeRequired).toBe(false);
-    expect(readBattle().battleState.hand).toEqual([]);
-    expect(readBattle().pendingBattleTransition).toEqual(
-      expect.objectContaining({
-        kind: "opening-draw",
-        resultState: expect.objectContaining({ hand: expect.any(Array) }),
-      }),
-    );
-    const pending = readBattle().pendingBattleTransition;
-    expect(pending?.kind === "opening-draw" ? pending.resultState.hand.length : 0).toBeGreaterThan(0);
+    expect(readBattle().battleState.hand.length).toBeGreaterThan(0);
+    expect(readBattle().pendingBattleTransition).toBeNull();
+    expect(useBattlePresentationStore.getState().openingDrawPending).toBe(true);
     expect(useBattlePresentationStore.getState().cardTransferInProgress).toBe(true);
     expect(readActiveRun().encounteredRunEnemyIds).toContain(enemyId);
     expect(prepareBattleSessionForStart).toHaveBeenCalled();

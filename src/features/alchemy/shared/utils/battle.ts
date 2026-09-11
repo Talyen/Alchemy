@@ -1,4 +1,4 @@
-import type { BattleState, CombatTextEvent, CcState } from "@/lib/battle";
+import type { BattleSnapshot, CombatTextEvent, CcState } from "@/lib/battle";
 import { isPlayerCcControlled, isStunFreezeBuildupBlocked } from "@/lib/battle";
 import {
   DAMAGE_TYPES,
@@ -14,7 +14,11 @@ import { keywordIcons } from "../config/metadata";
 import { augmentDefinitions } from "../augment-definitions";
 import type { CombatImpactCue, StatusChip } from "../types";
 
-const ENEMY_MITIGATION_DISPLAY_ORDER: ReadonlyArray<keyof BattleState["enemyMitigation"]> = ["block", "armor", "forge"];
+const ENEMY_MITIGATION_DISPLAY_ORDER: ReadonlyArray<keyof BattleSnapshot["enemyMitigation"]> = [
+  "block",
+  "armor",
+  "forge",
+];
 
 export function getCombatTextColorClass(event: CombatTextEvent): string {
   if (event.stat === "deathsDoor") return "text-red-200";
@@ -91,7 +95,7 @@ function isDamageEffect(effect: BattleCardEffect): effect is Extract<BattleCardE
   return effect.kind === "damage";
 }
 
-function buildArmedPlayerChips(state: BattleState): StatusChip[] {
+function buildArmedPlayerChips(state: BattleSnapshot): StatusChip[] {
   const chips: StatusChip[] = [];
   const { flags } = state;
   if (flags.playNextCardTwice) chips.push({ id: "playNextCardTwice", value: 1, hideValue: true });
@@ -119,7 +123,7 @@ function buildArmedPlayerChips(state: BattleState): StatusChip[] {
   return chips;
 }
 
-function buildPendingEnemyChips(state: BattleState): StatusChip[] {
+function buildPendingEnemyChips(state: BattleSnapshot): StatusChip[] {
   const incomingByType = new Map<DamageType, number>();
   for (const pulse of state.pendingTurnStartEffects) {
     if (pulse.effects.length === 0) continue;
@@ -135,7 +139,7 @@ function buildPendingEnemyChips(state: BattleState): StatusChip[] {
   });
 }
 
-export function getPlayerStatusChips(state: BattleState | null | undefined): StatusChip[] {
+export function getPlayerStatusChips(state: BattleSnapshot | null | undefined): StatusChip[] {
   if (!state) return [];
   return insertAfterBuffTier(
     buildStatusChips(PLAYER_STATUS_DISPLAY_ORDER, state.playerStatuses, state.playerCC),
@@ -143,7 +147,7 @@ export function getPlayerStatusChips(state: BattleState | null | undefined): Sta
   );
 }
 
-export function getEnemyStatusChips(state: BattleState | null | undefined): StatusChip[] {
+export function getEnemyStatusChips(state: BattleSnapshot | null | undefined): StatusChip[] {
   if (!state) return [];
   const mitigationChips: StatusChip[] = [];
   for (const key of ENEMY_MITIGATION_DISPLAY_ORDER) {

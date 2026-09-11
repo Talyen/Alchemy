@@ -73,6 +73,8 @@ confirmation; its non-null `starterDraftChoices` (including an empty array after
 the last pick) must survive encoding and validation. This validation correction
 and the in-memory return-location field require no schema-version bump.
 
+The activity lifetime marker (`inactive` versus an active activity) and grouped `rewardFlow` are runtime-only. Codecs preserve the existing reward, shop, screen, and active-combat wire fields. `BattleSnapshot` excludes the execution RNG callback (which JSON never persisted). New turns and opening hands are fully committed before animation and encode no pending continuation. Older opening-draw, enemy-turn, continue-end-turn, and legacy-enemy-turn continuations still load and are consumed exactly once. These internal changes require no schema bump.
+
 Migration tests must verify gameplay progress, not just field presence:
 
 - Collection discoveries remain unlocked.

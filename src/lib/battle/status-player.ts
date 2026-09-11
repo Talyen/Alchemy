@@ -6,6 +6,7 @@ import {
   playerStatusDelta,
   setFlag,
   stripEnemyArmor,
+  withPreservedFlags,
   type BattleState,
   type CombatTextEvent,
 } from "./types";
@@ -38,6 +39,13 @@ export function applyCardHealing(
 
 export function countRemovableHarmfulStatuses(playerStatuses: BattleState["playerStatuses"]): number {
   return harmfulPlayerStatusIds.filter((statusId) => playerStatuses[statusId] > 0).length;
+}
+
+export function applyArmorReward(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
+  if (amount <= 0) return state;
+  return withPreservedFlags(state, (current) =>
+    applyPlayerStatusEffect(current, { kind: "player-status", status: "armor", amount }, combatTexts),
+  );
 }
 
 function clearHarmfulStatuses(playerStatuses: BattleState["playerStatuses"], statusTypesToClear: number) {

@@ -25,7 +25,6 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import {
   clearPendingTransitionResumeRequired,
-  setDisplayOverrides,
   setHasActiveRun,
   setSyncedBattleState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
@@ -52,7 +51,6 @@ describe("battle write-port", () => {
     expect(state.hasActiveBattle).toBe(true);
     expect(state.battleStartState?.turn).toBe(6);
     expect(state.battleStartState).toEqual(state.battleState);
-    expect(state.displayOverrides).toEqual({});
     expect(state.pendingTransitionResumeRequired).toBe(false);
   });
 
@@ -73,7 +71,6 @@ describe("battle write-port", () => {
   it("initializing with null clears every combat field", () => {
     dispatchRunSessionCommand((draft) => {
       initializeActiveBattle(draft, { ...defaultBattleState(), turn: 2 }, { kind: "continue-end-turn" });
-      setDisplayOverrides(draft, { playerHealth: 1 });
       initializeActiveBattle(draft, null);
     });
     const state = readBattle();
@@ -81,18 +78,15 @@ describe("battle write-port", () => {
     expect(state.battleStartState).toBeNull();
     expect(state.pendingBattleTransition).toBeNull();
     expect(state.pendingTransitionResumeRequired).toBe(false);
-    expect(state.displayOverrides).toEqual({});
   });
 
   it("setSyncedBattleState replaces state and drops stale display overrides", () => {
     dispatchRunSessionCommand((draft) => {
-      setDisplayOverrides(draft, { playerHealth: 99 });
       setSyncedBattleState(draft, { ...defaultBattleState(), playerHealth: 7 });
     });
     const state = readBattle();
     expect(state.battleState.playerHealth).toBe(7);
     expect(state.hasActiveBattle).toBe(false);
-    expect(state.displayOverrides).toEqual({});
   });
 });
 
@@ -125,34 +119,34 @@ describe("session write-port", () => {
 
   it("gates beginRewardClaim on one claim at a time so empty skips can finalize", () => {
     expect(dispatchRunSessionCommand((draft) => beginRewardClaim(draft))).toBe(true);
-    expect(readRunSession().rewardClaimInFlight).toBe(true);
+    expect(readRunSession().rewardFlow.claim.kind === "reward").toBe(true);
     expect(dispatchRunSessionCommand((draft) => beginRewardClaim(draft))).toBe(false);
 
     dispatchRunSessionCommand((draft) => releaseRewardClaim(draft));
-    expect(readRunSession().rewardClaimInFlight).toBe(false);
+    expect(readRunSession().rewardFlow.claim.kind === "reward").toBe(false);
 
     dispatchRunSessionCommand((draft) => setCompanionRewardCards(draft, [rewardCard]));
     expect(dispatchRunSessionCommand((draft) => beginRewardClaim(draft))).toBe(true);
-    expect(readRunSession().rewardClaimInFlight).toBe(true);
+    expect(readRunSession().rewardFlow.claim.kind === "reward").toBe(true);
     expect(dispatchRunSessionCommand((draft) => beginRewardClaim(draft))).toBe(false);
 
     dispatchRunSessionCommand((draft) => releaseRewardClaim(draft));
-    expect(readRunSession().rewardClaimInFlight).toBe(false);
+    expect(readRunSession().rewardFlow.claim.kind === "reward").toBe(false);
   });
 
   it("validates destination claims against offered destinations", () => {
     expect(dispatchRunSessionCommand((draft) => beginDestinationClaim(draft, DESTINATIONS.MYSTERY))).toBe(false);
-    expect(readRunSession().pendingDestinationClaim).toBeNull();
+    expect(readRunSession().rewardFlow.claim).toEqual({ kind: "idle" });
 
     dispatchRunSessionCommand((draft) =>
       setRewardState(draft, { ...createEmptyRewardState([DESTINATIONS.MYSTERY]), gold: 30 }),
     );
     expect(dispatchRunSessionCommand((draft) => beginDestinationClaim(draft, DESTINATIONS.MYSTERY))).toBe(true);
-    expect(readRunSession().pendingDestinationClaim).toBe(DESTINATIONS.MYSTERY);
+    expect(readRunSession().rewardFlow.claim).toEqual({ kind: "destination", destination: DESTINATIONS.MYSTERY });
     expect(dispatchRunSessionCommand((draft) => beginDestinationClaim(draft, DESTINATIONS.CAMPFIRE))).toBe(false);
 
     dispatchRunSessionCommand((draft) => cancelDestinationClaim(draft));
-    expect(readRunSession().pendingDestinationClaim).toBeNull();
+    expect(readRunSession().rewardFlow.claim).toEqual({ kind: "idle" });
   });
 
   it("clearTransientSession restores initial transient fields", () => {
@@ -163,8 +157,8 @@ describe("session write-port", () => {
     });
     const cleared = readRunSession();
     expect(cleared.hasActiveRun).toBe(false);
-    expect(cleared.rewardClaimInFlight).toBe(false);
-    expect(cleared.pendingDestinationClaim).toBeNull();
+    expect(cleared.rewardFlow.claim.kind).not.toBe("reward");
+    expect(cleared.rewardFlow.claim).toEqual({ kind: "idle" });
     expect(cleared.pendingCharacterId).toBeNull();
   });
 });

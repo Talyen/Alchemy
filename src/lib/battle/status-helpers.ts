@@ -30,6 +30,10 @@ export function getBurnBonusToBleedingMultiplier(state: Pick<BattleState, "enemy
   return 1 + state.gearEffects.burnDamageBonusToBleedingPercent / PERCENT_DENOMINATOR;
 }
 
+export function getPoisonBonusAgainstBleeding(state: Pick<BattleState, "enemyStatuses" | "talentEffects">): number {
+  return state.enemyStatuses.bleed > 0 ? state.talentEffects.bleedPoisonDamageTakenBonus : 0;
+}
+
 export function getEnemyTraitDamageMultiplier(state: Pick<BattleState, "currentEnemy">, damageType: string): number {
   const traits = state.currentEnemy.traits;
   for (const rule of TRAIT_DAMAGE_RULES) {

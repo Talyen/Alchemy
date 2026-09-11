@@ -13,7 +13,7 @@ describe("queued Golden Crucible rewards", () => {
     });
     const queued = addGoldWithCombatText(state, 1, []);
     const saved = PersistedBattleStateSchema.parse(JSON.parse(JSON.stringify(queued)));
-    const result = resolvePendingBattleReactions(saved, []);
+    const result = resolvePendingBattleReactions({ ...saved, rng: state.rng }, []);
     expect(result.playerStatuses.forge).toBe(4);
     expect(result.enemyHealth).toBe(state.enemyHealth - 8);
     expect(result.pendingForgeThresholds).toEqual([]);
@@ -26,6 +26,7 @@ describe("queued Golden Crucible rewards", () => {
     expect(result.pendingForgeThresholds).toEqual([]);
     expect(result.playerHealth).toBe(17);
     expect(result.gold).toBe(25);
-    expect(resolvePendingBattleReactions(result, [])).toBe(result);
+    const execution = { ...result, rng: () => 0.99 };
+    expect(resolvePendingBattleReactions(execution, [])).toBe(execution);
   });
 });

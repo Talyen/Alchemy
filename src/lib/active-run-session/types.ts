@@ -1,4 +1,4 @@
-import type { BattleState } from "@/lib/battle";
+import type { BattleSnapshot } from "@/lib/battle";
 import type { CorruptionResult } from "@/lib/corruption";
 import type { BattleCard, CharacterId, DifficultyId, TalentXP } from "@/lib/game-data";
 import type { MysteryChoice } from "@/lib/mystery";
@@ -56,11 +56,11 @@ export type LabyrinthPendingNodeId = string;
 export type PersistedBattleTransition =
   | {
       kind: "opening-draw";
-      resultState: BattleState;
+      resultState: BattleSnapshot;
     }
   | {
       kind: "enemy-turn";
-      resultState: BattleState;
+      resultState: BattleSnapshot;
       playerTurnSkipped: boolean;
     }
   | {
@@ -71,7 +71,7 @@ export type PersistedBattleTransition =
     };
 
 interface ActiveCombatData {
-  battleState: BattleState;
+  battleState: BattleSnapshot;
   pendingBattleTransition: PersistedBattleTransition | null;
   activeLabyrinthModifiers: EncounterCombatTraitId[];
   activeLabyrinthRewardModifiers: EncounterRewardTraitId[];

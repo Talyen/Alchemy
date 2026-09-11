@@ -9,7 +9,7 @@ import { battleBottomBarClass, battleBottomColumnClass, BUTTON_WIDTH_DIALOG } fr
 import { BattleHand } from "./hand";
 import type { BattleActionsProps, BattleRefsProps, BattleScreenState, RequiredBattleViewProps } from "./types";
 import { useCardTransferInProgress } from "../../battle/presentation/use-hand-presentation";
-import type { BattleState } from "@/lib/battle";
+import type { BattleSnapshot } from "@/lib/battle";
 
 export function BattleBottomBar({
   view,
@@ -20,7 +20,7 @@ export function BattleBottomBar({
   view: RequiredBattleViewProps;
   refs: BattleRefsProps;
   actions: BattleActionsProps;
-  playabilityState: BattleState;
+  playabilityState: BattleSnapshot;
 }) {
   const { battleState } = view;
   const { drawPileRef, discardPileRef } = refs;

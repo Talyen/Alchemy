@@ -54,10 +54,10 @@ export function BattleScreen(props: BattleScreenProps) {
     onCloseBoonInspect,
   } = props;
 
-  const { battleState, displayOverrides, activeLabyrinthModifiers, runBoons } = battleScreenData;
+  const { battleState, activeLabyrinthModifiers, runBoons } = battleScreenData;
   const cardTransferInProgress = useCardTransferInProgress();
 
-  const displayState = useMemo(() => ({ ...battleState, ...displayOverrides }), [battleState, displayOverrides]);
+  const displayState = battleState;
 
   const isBossBattle = battleState.currentEnemy.enemyType === "boss";
   const { particleColors, particleAlphaMultiplier, particleCount } = getScreenParticleConfig("battle", isBossBattle);

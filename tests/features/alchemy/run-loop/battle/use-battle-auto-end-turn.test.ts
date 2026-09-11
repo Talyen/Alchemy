@@ -6,7 +6,7 @@ import { useBattleAutoEndTurn } from "@/features/alchemy/run-loop/battle/use-bat
 import { useBattlePresentationGateRef } from "@/features/alchemy/run-loop/battle/presentation/use-hand-presentation";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
-import type { BattleState } from "@/lib/battle";
+import type { BattleSnapshot } from "@/lib/battle";
 import { AUTO_END_TURN_DELAY } from "@/lib/game-constants";
 import { ANIMATION_DISABLED_DURATION } from "@/lib/animation/animation-prefs";
 import * as animationPrefs from "@/lib/animation/animation-prefs";
@@ -21,7 +21,7 @@ const baseOptions = {
 function useAutoEndTurnUnderTest(
   options: Omit<Parameters<typeof useBattleAutoEndTurn>[0], "presentationGateRef" | "scheduleAutoEndTurnRef">,
 ) {
-  const scheduleAutoEndTurnRef = useRef<(state?: BattleState) => void>(() => {});
+  const scheduleAutoEndTurnRef = useRef<(state?: BattleSnapshot) => void>(() => {});
   const presentationGateRef = useBattlePresentationGateRef(scheduleAutoEndTurnRef);
   return useBattleAutoEndTurn({
     ...options,
@@ -234,7 +234,7 @@ describe("useBattleAutoEndTurn", () => {
   it("does not reschedule from a battleState rerender without an explicit schedule call", () => {
     const onEndTurn = vi.fn();
     const { rerender, result } = renderHook(
-      ({ battleState }: { battleState: BattleState }) =>
+      ({ battleState }: { battleState: BattleSnapshot }) =>
         useAutoEndTurnUnderTest({
           ...baseOptions,
           battleState,

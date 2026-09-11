@@ -590,7 +590,7 @@ describe("commitVictoryRewards", () => {
         contentSystemType: "labyrinth",
       }),
     );
-    expect(readGameplayState().session.rewardState).toMatchObject({
+    expect(readGameplayState().session.rewardFlow.state).toMatchObject({
       lastVictoryEnemyType: "boss",
       lastVictoryContentSystem: "labyrinth",
     });

@@ -10,7 +10,7 @@ import {
   type RunActivity,
   type RunObtainedItem,
 } from "@/lib/active-run-session";
-import { defaultBattleState, type BattleState, type PlayerStatusValues, type TurnPhase } from "@/lib/battle";
+import { battleSnapshot, defaultBattleState, type BattleSnapshot } from "@/lib/battle";
 import type {
   ContentSystemId,
   EncounterCombatTraitId,
@@ -24,20 +24,12 @@ import type { MaterialInventory } from "@/lib/homestead/types";
 import type { Destination, Screen } from "@/lib/routing";
 import { emptyParkedRuns, type ParkedRunsMap } from "./parked-runs";
 
-export interface DisplayOverrides {
-  hand?: BattleCard[];
-  turnPhase?: TurnPhase;
-  playerHealth?: number;
-  playerStatuses?: PlayerStatusValues;
-}
-
 export interface RunDomainBattleState {
-  battleState: BattleState;
+  battleState: BattleSnapshot;
   pendingBattleTransition: PersistedBattleTransition | null;
 
   pendingTransitionResumeRequired: boolean;
-  displayOverrides: DisplayOverrides;
-  battleStartState: BattleState | null;
+  battleStartState: BattleSnapshot | null;
   hasActiveBattle: boolean;
 }
 
@@ -51,17 +43,14 @@ export interface RunDomainDataState {
 
 export function createInitialSessionFields(): RunSessionFields {
   return {
-    activity: { kind: "idle" },
-    hasActiveRun: false,
-    rewardClaimInFlight: false,
-    pendingDestinationClaim: null,
+    activity: { kind: "inactive" },
+
     activeLabyrinthModifiers: [],
     activeLabyrinthRewardModifiers: [],
     activeLabyrinthPendingNode: null,
     selectedLabyrinthNodeId: null,
     runEndLabyrinthFloor: null,
-    rewardState: createEmptyRewardState(),
-    companionRewardCards: null,
+    rewardFlow: { state: createEmptyRewardState(), companionCards: null, claim: { kind: "idle" } },
     runEndMaterials: emptyInventory(),
     runEndTalentXP: {},
     runEndItems: [],
@@ -75,10 +64,9 @@ export function createInitialSessionFields(): RunSessionFields {
 
 export function createInitialBattleFields(): RunDomainBattleState {
   return {
-    battleState: defaultBattleState(),
+    battleState: battleSnapshot(defaultBattleState()),
     pendingBattleTransition: null,
     pendingTransitionResumeRequired: false,
-    displayOverrides: {},
     battleStartState: null,
     hasActiveBattle: false,
   };
@@ -96,16 +84,13 @@ export function createInitialRunDomainData(): RunDomainDataState {
 
 export interface RunSessionFields {
   activity: RunActivity;
-  hasActiveRun: boolean;
-  rewardClaimInFlight: boolean;
-  pendingDestinationClaim: Destination | null;
+
   activeLabyrinthModifiers: EncounterCombatTraitId[];
   activeLabyrinthRewardModifiers: EncounterRewardTraitId[];
   activeLabyrinthPendingNode: LabyrinthPendingNodeId | null;
   selectedLabyrinthNodeId: string | null;
   runEndLabyrinthFloor: number | null;
-  rewardState: RewardState;
-  companionRewardCards: BattleCard[] | null;
+  rewardFlow: RunRewardFlow;
   runEndMaterials: MaterialInventory;
   runEndTalentXP: TalentXP;
   runEndItems: RunObtainedItem[];
@@ -114,4 +99,10 @@ export interface RunSessionFields {
   labyrinthMap: LabyrinthMap | null;
   wildwoodDraft: WildwoodDraftState | null;
   starterDraftChoices: BattleCard[] | null;
+}
+
+export interface RunRewardFlow {
+  state: RewardState;
+  companionCards: BattleCard[] | null;
+  claim: { kind: "idle" } | { kind: "reward" } | { kind: "destination"; destination: Destination };
 }

@@ -1,3 +1,4 @@
+import type { AlchemyRouteCommands, AlchemyRunCommands } from "./route-commands";
 import { createRunOutcomes } from "@/features/alchemy/run-loop/run/run-flow";
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
 import {
@@ -35,7 +36,7 @@ const commandUnlockTalent = createRunSessionCommand(unlockTalent);
 const commandResetUnlockedTalents = createRunSessionCommand(resetUnlockedTalents);
 const commandUnlockAllTalents = createRunSessionCommand(unlockAllTalents);
 
-export function useAlchemyRunController() {
+export function useAlchemyRunController(): AlchemyRunCommands {
   const homesteadEffects = useHomesteadEffects();
   const talentEffects = useTalentEffects();
   const contentSystemType = useContentSystemType();
@@ -146,7 +147,7 @@ export function useAlchemyRunController() {
     handleAbandonRun();
   }, [screen, hasActiveBattle, handleBattleEndRun, contentSystemType, handleAbandonRun]);
 
-  const routeCommands = useMemo(
+  const routeCommands = useMemo<AlchemyRouteCommands>(
     () => ({
       meta: {
         goToScreen: nav.goToScreen,
@@ -156,16 +157,7 @@ export function useAlchemyRunController() {
         unlockTalent: commandUnlockTalent,
         resetUnlockedTalents: commandResetUnlockedTalents,
       },
-      runSetup: {
-        goToScreen: nav.goToScreen,
-        handleCharacterSelect: nav.handleCharacterSelect,
-        handleStandardDraftComplete: nav.handleStandardDraftComplete,
-        handleWildwoodDraftComplete: nav.handleWildwoodDraftComplete,
-        handleWildwoodDraftPick: nav.handleWildwoodDraftPick,
-        handleStarterDraftPick: nav.handleStarterDraftPick,
-        handleDifficultySelect: nav.handleDifficultySelect,
-        handleBackFromDifficultySelect: nav.handleBackFromDifficultySelect,
-      },
+      runSetup: nav,
       runLoop: {
         labyrinth: {
           handleNodeSelect: labyrinth.selectNode,
@@ -186,40 +178,7 @@ export function useAlchemyRunController() {
           removeCard: nav.handleWildwoodRemoveCard,
           skipRemoval: nav.handleWildwoodSkipRemoval,
         },
-        shop: {
-          merchant: {
-            handleBuyCard: shop.merchant.buyCard,
-            handleRemoveCard: shop.merchant.removeCard,
-            handleRefresh: shop.merchant.refresh,
-            handleContinue: nav.advanceToNextDestination,
-            getCardBuyPrice: shop.merchant.getCardBuyPrice,
-            getRemoveCardPrice: shop.merchant.getRemoveCardPrice,
-            getRefreshPrice: shop.merchant.getRefreshPrice,
-          },
-          alchemist: {
-            handleBuyCard: shop.alchemist.buyPotion,
-            handleRefresh: shop.alchemist.refresh,
-            handleMixPotions: shop.alchemist.mixPotions,
-            handleContinue: nav.advanceToNextDestination,
-            getPotionBuyPrice: shop.alchemist.getPotionBuyPrice,
-            getMixPrice: shop.alchemist.getMixPrice,
-            getRefreshPrice: shop.alchemist.getRefreshPrice,
-          },
-          trinket: {
-            handleBuy: shop.trinket.buy,
-            handleRefresh: shop.trinket.refresh,
-            handleContinue: nav.advanceToNextDestination,
-            getBuyPrice: shop.trinket.getBuyPrice,
-            getRefreshPrice: shop.trinket.getRefreshPrice,
-          },
-          equipment: {
-            handleBuy: shop.equipment.buy,
-            handleRefresh: shop.equipment.refresh,
-            handleContinue: nav.advanceToNextDestination,
-            getBuyPrice: shop.equipment.getBuyPrice,
-            getRefreshPrice: shop.equipment.getRefreshPrice,
-          },
-        },
+        shop: { ...shop, continue: nav.advanceToNextDestination },
         mystery: {
           handleChoice: nav.handleMysteryChoice,
           handleChooseCard: nav.handleMysteryChooseCard,
@@ -231,23 +190,7 @@ export function useAlchemyRunController() {
           handleExit: nav.handleCorruptionExit,
         },
       },
-      battle: {
-        handleCardClick: battle.handleCardClick,
-        handleWishChoice: battle.handleWishChoice,
-        handleEndTurn: battle.handleEndTurn,
-        handleAutoplayCard: battle.handleAutoplayCard,
-        skipCombatDevMode: battle.skipCombatDevMode,
-        refs: battle.refs,
-        bindPlayback: battle.bindPlayback,
-        isCardPlayInProgress: battle.isCardPlayInProgress,
-        screen: battle.screen,
-        isAutoplayEnabled: battle.isAutoplayEnabled,
-        setAutoplayEnabled: battle.setAutoplayEnabled,
-        toggleAutoplayEnabled: battle.toggleAutoplayEnabled,
-        boonInspectOpen: battle.boonInspectOpen,
-        toggleBoonInspect: battle.toggleBoonInspect,
-        closeBoonInspect: battle.closeBoonInspect,
-      },
+      battle,
       runEnd: {
         continueFromRunEnd: nav.continueFromRunEnd,
       },
@@ -266,7 +209,3 @@ export function useAlchemyRunController() {
     resetRunState: nav.resetRunState,
   };
 }
-
-type AlchemyRunController = ReturnType<typeof useAlchemyRunController>;
-export type AlchemyRouteCommands = AlchemyRunController["routeCommands"];
-export type AlchemyRunCommands = AlchemyRunController;

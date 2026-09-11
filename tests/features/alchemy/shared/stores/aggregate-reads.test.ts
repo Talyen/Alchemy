@@ -43,7 +43,7 @@ describe("aggregate read ports", () => {
 
     const session = readRunSession();
     expect(Object.isFrozen(session)).toBe(true);
-    expect(Object.isFrozen(session.rewardState)).toBe(true);
-    expect(Object.isFrozen(session.rewardState.destinations)).toBe(true);
+    expect(Object.isFrozen(session.rewardFlow.state)).toBe(true);
+    expect(Object.isFrozen(session.rewardFlow.state.destinations)).toBe(true);
   });
 });

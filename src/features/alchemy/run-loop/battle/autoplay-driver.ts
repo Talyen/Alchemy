@@ -1,11 +1,11 @@
 import { resolveGameDelay } from "@/lib/animation/game-timer";
-import { isPlayerDefeated, type BattleState } from "@/lib/battle";
+import { isPlayerDefeated, type BattleSnapshot } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 import type { Screen } from "@/lib/routing";
 
 import { handHasHiddenCard, type HiddenHandCardKeys } from "./playable-hand";
 
-function isAutoplayBattleOver(state: BattleState): boolean {
+function isAutoplayBattleOver(state: BattleSnapshot): boolean {
   return state.enemyHealth <= 0 || isPlayerDefeated(state);
 }
 
@@ -18,7 +18,7 @@ export function isBattlePlayInputBusy(options: {
 
 export function isBattlePlaybackBlocked(options: {
   screen: Screen;
-  battleState: BattleState;
+  battleState: BattleSnapshot;
   hasActiveBattle: boolean;
   cardTransferInProgress: boolean;
   hiddenHandCardKeys: HiddenHandCardKeys;

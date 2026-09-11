@@ -84,14 +84,14 @@ function restoreRunSession(draft: GameplayDraft, decoded: DecodedRunResumeSessio
 }
 
 export function parkForegroundRunInDraft(draft: GameplayDraft): void {
-  if (!draft.session.hasActiveRun) return;
+  if (draft.session.activity.kind === "inactive") return;
   const mode = draft.run.activeRun.contentSystemType;
   draft.run.parkedRuns[mode] = encodeParkedSnapshot(draft);
   draft.run.runRecency = touchRunRecency(draft.run.runRecency, mode);
 }
 
 export function parkAndDeactivateForegroundRunInDraft(draft: GameplayDraft): void {
-  if (!draft.session.hasActiveRun) return;
+  if (draft.session.activity.kind === "inactive") return;
   parkForegroundRunInDraft(draft);
   clearTransientSession(draft);
   setHasActiveRun(draft, false);
@@ -99,7 +99,7 @@ export function parkAndDeactivateForegroundRunInDraft(draft: GameplayDraft): voi
 }
 
 export function applyRestoreRunToDraft(draft: GameplayDraft, activeRun: ActiveRunData | null): void {
-  draft.session.activity = { kind: "idle" };
+  draft.session.activity = { kind: "inactive" };
   const decoded = activeRun ? decodeRunResumeSnapshot(activeRun) : null;
   if (decoded) initializeFromResumeSnapshot(draft, decoded.progress);
   else initializeActiveRun(draft, null);
@@ -153,7 +153,7 @@ export function applyRestoreRunToDraft(draft: GameplayDraft, activeRun: ActiveRu
 export function hydrateModeRunInDraft(draft: GameplayDraft, mode: ContentSystemId): boolean {
   const parked = draft.run.parkedRuns[mode];
   if (!parked) return false;
-  if (draft.session.hasActiveRun && draft.run.activeRun.contentSystemType !== mode) {
+  if (draft.session.activity.kind !== "inactive" && draft.run.activeRun.contentSystemType !== mode) {
     parkForegroundRunInDraft(draft);
   }
   draft.run.parkedRuns = omitParkedMode(draft.run.parkedRuns, mode);

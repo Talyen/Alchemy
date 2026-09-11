@@ -39,19 +39,21 @@ describe("RewardsScreen", () => {
     const user = userEvent.setup();
     const onClaimReward = vi.fn();
 
-    render(<RewardsScreen rewardState={readRunSession().rewardState} onSkip={vi.fn()} onClaimReward={onClaimReward} />);
+    render(
+      <RewardsScreen rewardState={readRunSession().rewardFlow.state} onSkip={vi.fn()} onClaimReward={onClaimReward} />,
+    );
 
     await user.click(screen.getByRole("button", { name: /select slash/i }));
 
     expect(onClaimReward).toHaveBeenCalledWith("slash");
-    expect(readRunSession().rewardState.selectedId).toBeNull();
+    expect(readRunSession().rewardFlow.state.selectedId).toBeNull();
   });
 
   it("disables claim actions while a reward claim is in flight", () => {
     render(
       <RewardsScreen
         rewardState={{
-          ...readRunSession().rewardState,
+          ...readRunSession().rewardFlow.state,
           selectedId: "slash",
         }}
         claimInFlight
@@ -91,14 +93,14 @@ describe("RewardsScreen", () => {
   });
 
   it("does not render a hamburger menu trigger inside the screen header", () => {
-    render(<RewardsScreen rewardState={readRunSession().rewardState} onSkip={vi.fn()} onClaimReward={vi.fn()} />);
+    render(<RewardsScreen rewardState={readRunSession().rewardFlow.state} onSkip={vi.fn()} onClaimReward={vi.fn()} />);
 
     expect(screen.queryByRole("button", { name: /menu/i })).toBeNull();
   });
 
   it("changes reward prompts with their content after the outgoing fade", async () => {
     const { rerender } = render(
-      <RewardsScreen rewardState={readRunSession().rewardState} onSkip={vi.fn()} onClaimReward={vi.fn()} />,
+      <RewardsScreen rewardState={readRunSession().rewardFlow.state} onSkip={vi.fn()} onClaimReward={vi.fn()} />,
     );
 
     expect(screen.getByRole("heading", { name: "Add a Card to your Deck" })).toBeTruthy();
@@ -162,7 +164,7 @@ describe("RewardsScreen", () => {
   });
 
   it("offers an immediate card choice without a confirmation button", () => {
-    render(<RewardsScreen rewardState={readRunSession().rewardState} onSkip={vi.fn()} onClaimReward={vi.fn()} />);
+    render(<RewardsScreen rewardState={readRunSession().rewardFlow.state} onSkip={vi.fn()} onClaimReward={vi.fn()} />);
 
     expect(screen.getByRole("button", { name: /select slash/i })).toHaveProperty("disabled", false);
     expect(screen.queryByRole("button", { name: /add card/i })).toBeNull();

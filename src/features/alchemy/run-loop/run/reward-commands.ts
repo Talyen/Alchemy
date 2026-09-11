@@ -49,8 +49,8 @@ export function claimRunReward(choiceId: string | null) {
     if (session.activity.kind !== "rewards") return null;
     if (
       choiceId === null
-        ? session.rewardState.rewardType !== "card" && session.rewardState.choices.length > 0
-        : !resolveRewardChoice(session.rewardState, choiceId)
+        ? session.rewardFlow.state.rewardType !== "card" && session.rewardFlow.state.choices.length > 0
+        : !resolveRewardChoice(session.rewardFlow.state, choiceId)
     )
       return null;
     if (!beginRewardClaim(draft)) return null;
@@ -65,8 +65,8 @@ export function claimRunReward(choiceId: string | null) {
       ),
     );
     const result = finalizeRewardState({
-      rewardState: { ...current(session.rewardState), selectedId: choiceId },
-      companionRewardCards: session.companionRewardCards ? current(session.companionRewardCards) : null,
+      rewardState: { ...current(session.rewardFlow.state), selectedId: choiceId },
+      companionRewardCards: session.rewardFlow.companionCards ? current(session.rewardFlow.companionCards) : null,
     });
 
     const isWildwood = contentSystemType === CONTENT_SYSTEMS.WILDWOOD;

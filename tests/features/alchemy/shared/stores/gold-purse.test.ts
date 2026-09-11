@@ -83,7 +83,7 @@ describe.each(["opening-draw", "enemy-turn"] as const)("pending %s gold", (kind)
     finishTransition();
     expect(readRunProfile().gold).toBe(157);
     expect(readGameplayState().run.activeRun.rng).toEqual(rng);
-    expect(() => readBattle().battleState.rng()).toThrow(/withDraftWorldBattleRng/);
+    expect(readBattle().battleState).not.toHaveProperty("rng");
   });
 
   it("retains unapplied earnings across repeated serialized save and restore", () => {

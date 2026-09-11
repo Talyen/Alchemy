@@ -2,6 +2,7 @@ import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 import { UNIQUE_GEAR_COMBAT } from "../game-constants";
 import { computeCardDamageToEnemy } from "./damage-calc";
 import { applyDamageRiders } from "./damage-riders";
+import { addGoldWithCombatText } from "./combat-text";
 import { tryDodgePlayerAttackPacket } from "./dodge";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import { applyEncounterThorns } from "./encounter-trait-events";
@@ -88,6 +89,10 @@ export function dealDamageToEnemy(
     if (packet.damageType !== "bleed" && bonuses.bleed > 0) {
       result = dealPlayerTypedHit(result, "bleed", bonuses.bleed, combatTexts);
     }
+  }
+  // Award once after the whole attack packet, including its secondary hits.
+  if (result.enemyHealth <= 0 && card.tags?.includes("archery") && result.talentEffects.goldOnArcheryKill > 0) {
+    result = addGoldWithCombatText(result, result.talentEffects.goldOnArcheryKill, combatTexts);
   }
   return resolvePendingBattleReactions(applyEncounterThorns(result, combatTexts), combatTexts);
 }

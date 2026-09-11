@@ -46,7 +46,7 @@ import { setModalRoot } from "@/features/alchemy/shared/ui/modal-root";
 import { HamburgerTrigger } from "@/features/alchemy/shared/ui/navigation";
 import { setTooltipRoot } from "@/features/alchemy/shared/ui/tooltip-root";
 import { useArtworkReady } from "@/features/alchemy/shared/ui/use-artwork-ready";
-import type { AlchemyRunCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
+import type { AlchemyRunCommands } from "@/features/alchemy/shell/route-commands";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import type { Screen } from "@/lib/routing";
 import { cn } from "@/lib/utils";

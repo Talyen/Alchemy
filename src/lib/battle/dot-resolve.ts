@@ -7,6 +7,7 @@ import {
   decayArmorAfterDamage,
   getEnemyDamageMultiplier,
   getBurnBonusToBleedingMultiplier,
+  getPoisonBonusAgainstBleeding,
 } from "./status-helpers";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 import { mergeCombatText, payKillPayouts } from "./combat-text";
@@ -64,13 +65,14 @@ export function detonateEnemyStatuses(
     if (amount <= 0) continue;
     let finalDamage = 0;
     let stacks = amount;
+    const bonus = status === "poison" ? getPoisonBonusAgainstBleeding(state) : 0;
     const multiplier =
       getEnemyDamageMultiplier(state, status) *
       (status === "burn" || (status === "bleed" && state.gearEffects.sharedBurnBleedBonuses > 0)
         ? getBurnBonusToBleedingMultiplier(state)
         : 1);
     while (stacks > 0) {
-      finalDamage += Math.round(stacks * multiplier);
+      finalDamage += Math.round((stacks + bonus) * multiplier);
       if (mode === "next-tick") break;
       stacks =
         status === "poison"

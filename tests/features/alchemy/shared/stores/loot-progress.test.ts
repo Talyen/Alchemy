@@ -43,7 +43,7 @@ describe("loot progression at run boundaries", () => {
   it("keeps Campaign loot depth stable before and after the destination transition commits", () => {
     setRunProgress({ currentAct: 1, destinationIndexInAct: 2, gold: 999 });
     dispatchRunSessionCommand((draft) => {
-      draft.session.rewardState = createEmptyRewardState([DESTINATIONS.GEAR_SHOP]);
+      draft.session.rewardFlow.state = createEmptyRewardState([DESTINATIONS.GEAR_SHOP]);
       expect(beginDestinationClaim(draft, DESTINATIONS.GEAR_SHOP)).toBe(true);
     });
     expect(progress().depth).toBe(4);
@@ -99,16 +99,16 @@ describe("loot progression at run boundaries", () => {
     });
     const choices = generateGearRewardChoicesForRarity(3, "unique", () => 0.2);
     dispatchRunSessionCommand((draft) => {
-      draft.session.hasActiveRun = true;
+      draft.session.activity = { kind: "idle" };
       draft.run.navigation.screen = "rewards";
       prepareRunNavigation(draft, "rewards");
-      draft.session.rewardState = { ...createEmptyRewardState(), rewardType: "gear", choices };
+      draft.session.rewardFlow.state = { ...createEmptyRewardState(), rewardType: "gear", choices };
     });
     const rngBefore = readActiveRun().rng;
     for (let attempt = 0; attempt < 2; attempt += 1) {
       const saved = snapshotRun();
       restoreRun(saved, {}, {});
-      expect(readRunSession().rewardState.choices).toEqual(choices);
+      expect(readRunSession().rewardFlow.state.choices).toEqual(choices);
       expect(readActiveRun().rng).toEqual(rngBefore);
       expect(progress().depth).toBe(1);
     }
@@ -125,7 +125,7 @@ describe("loot progression at run boundaries", () => {
     const map = gridLabyrinthMapFixture();
     const pending = Object.values(map.nodes).find((node) => node.type === "trinket-shop")!;
     dispatchRunSessionCommand((draft) => {
-      draft.session.hasActiveRun = true;
+      draft.session.activity = { kind: "idle" };
       draft.session.labyrinthMap = map;
       draft.session.activeLabyrinthPendingNode = pending.id;
       draft.run.navigation.screen = "trinket-shop";
@@ -156,7 +156,7 @@ describe("loot progression at run boundaries", () => {
     const pending = Object.values(map.nodes).find((node) => node.type === "equipment-shop")!;
     pending.rewardModifiers = ["masterwork"];
     dispatchRunSessionCommand((draft) => {
-      draft.session.hasActiveRun = true;
+      draft.session.activity = { kind: "idle" };
       draft.session.labyrinthMap = map;
       draft.session.activeLabyrinthPendingNode = pending.id;
       draft.session.activeLabyrinthRewardModifiers = ["masterwork"];

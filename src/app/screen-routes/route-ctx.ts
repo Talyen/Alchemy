@@ -1,5 +1,5 @@
 import type { CardInspectionView } from "@/features/alchemy/shared/types";
-import type { AlchemyRouteCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
+import type { AlchemyRouteCommands } from "@/features/alchemy/shell/route-commands";
 import type { Screen } from "@/lib/routing";
 
 export interface RenderAlchemyScreenProps {

@@ -5,7 +5,7 @@ import {
   chooseWishCard,
   isAttackCard,
   playBattleCardResolved,
-  type BattleState,
+  type BattleSnapshot,
   type CombatTextEvent,
 } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
@@ -25,7 +25,7 @@ import {
   awardCardXP,
   setBattleState,
   withDraftWorldBattleRng,
-  withRestingWorldBattleRng,
+  snapshotBattleState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { discoverCardIds } from "../../shared/stores/profile-store";
@@ -50,15 +50,14 @@ export function createBattleCardPlay(
     session.runIfSessionActive(sessionNum, () => {
       ctx.cardPlayInProgressRef.current = false;
       const state = getBattle().battleState;
-      session.checkBattleEnd(state, sessionNum);
       ctx.scheduleAutoEndTurnRef.current?.(state);
     });
   }
 
   function runDrawSequenceAndFinalize(
     oldHand: BattleCard[],
-    newState: BattleState,
-    onCommitState: () => void,
+    newState: BattleSnapshot,
+    onReveal: () => void,
     sessionNum: number,
     errorContext: string,
   ) {
@@ -67,7 +66,7 @@ export function createBattleCardPlay(
     void runBattleDraw({
       oldHand,
       newState,
-      applyState: onCommitState,
+      onReveal: onReveal,
       session: sessionNum,
       deps: transferDeps.getDrawSequenceDeps(),
       errorContext: `handle ${errorContext} draw sequence`,
@@ -75,7 +74,7 @@ export function createBattleCardPlay(
     });
   }
 
-  function canPlayCard(card: BattleCard, index: number, state: BattleState) {
+  function canPlayCard(card: BattleCard, index: number, state: BattleSnapshot) {
     const presentation = getPresentation();
     return (
       !isBattleInspectionOpen(useUiStore.getState()) &&
@@ -106,8 +105,8 @@ export function createBattleCardPlay(
 
   function playCardResolutionFeedback(
     card: BattleCard,
-    prePlayState: BattleState,
-    postPlayState: BattleState,
+    prePlayState: BattleSnapshot,
+    postPlayState: BattleSnapshot,
     combatTexts: CombatTextEvent[],
   ) {
     if (shouldPlayCardGoldGain(prePlayState, postPlayState, card)) playGoldGain();
@@ -136,12 +135,13 @@ export function createBattleCardPlay(
       const resolution = playBattleCardResolved(bound, card.id, index, PLAYABLE_HAND_OPTIONS);
       setBattleState(draft, resolution.state);
       awardCardXP(draft, card);
-      return { ...resolution, state: withRestingWorldBattleRng(resolution.state) };
+      return { ...resolution, state: snapshotBattleState(resolution.state) };
     });
     if (!played) {
       if (!options?.silentReject) playUISound("error");
       return false;
     }
+    session.checkBattleEnd(played.state, sessionNum);
     ctx.cardPlayInProgressRef.current = true;
     if (isAttackCard(card)) {
       getPresentation().telegraphAttack("player");
@@ -186,10 +186,11 @@ export function createBattleCardPlay(
       const next = chooseWishCard(bound, card.id);
       setBattleState(draft, next);
       discoverCardIds(draft, [card.id]);
-      return withRestingWorldBattleRng(next);
+      return snapshotBattleState(next);
     });
     if (!newState) return;
     const sessionNum = ctx.battleSessionRef.current;
+    session.checkBattleEnd(newState, sessionNum);
     runDrawSequenceAndFinalize(currentState.hand, newState, () => {}, sessionNum, "wish choice");
   }
 

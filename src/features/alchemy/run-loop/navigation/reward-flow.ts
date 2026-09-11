@@ -21,7 +21,7 @@ import {
   type ResolvedRewardChoice,
   type RewardState,
 } from "@/lib/active-run-session";
-import type { BattleState } from "@/lib/battle";
+import type { BattleSnapshot } from "@/lib/battle";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { computeRewardGold } from "./reward-math";
 
@@ -58,7 +58,7 @@ export interface BossRewardInput {
 
 export interface CombatRewardInput {
   lootProgress: LootProgress;
-  battleState: BattleState;
+  battleState: BattleSnapshot;
   runDeck: BattleCard[];
   gold: number;
   eliteBonus: number;

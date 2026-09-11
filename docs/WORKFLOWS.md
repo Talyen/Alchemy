@@ -131,7 +131,7 @@ export function awardMaterialReward(
 
 Inside an existing reward, shop, or mystery command, call the mutator with that command's draft instead of dispatching another command. Keep the existing claim guard and reward finalization in the owning flow.
 
-If an async battle flow persists an intermediate state, commit `activeCombat.pendingBattleTransition` with it and add a boot resume path. Presentation timers alone are not a gameplay continuation.
+Resolve battle gameplay and commit its RNG/XP before starting presentation. Return detached frames for playback; never commit gameplay from a draw or animation callback. `activeCombat.pendingBattleTransition` is retained only for consuming older saves, not for authoring new animation flows.
 
 ---
 

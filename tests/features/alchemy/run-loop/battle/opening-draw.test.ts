@@ -1,72 +1,31 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { playBattleOpeningDraw } from "@/features/alchemy/run-loop/battle/battle-init";
 import { defaultBattleState } from "@/lib/battle";
+import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { makeTestCardWithId } from "../../../../fixtures/battle";
-import { makeDrawSequenceDeps, makePresentationPort } from "./turn-orchestration-fixture";
+import { makeDrawSequenceDeps } from "./turn-orchestration-fixture";
 import { installImmediateRafForTests } from "./battle-test-reset";
 
-const commitBattleTransition = vi.fn();
-const presentation = makePresentationPort();
 const scheduleAutoEndTurn = vi.fn();
-const resultState = {
+const initial = {
   ...defaultBattleState(),
   hand: Array.from({ length: 4 }, (_, uid) => makeTestCardWithId(`card-${uid}`, { uid })),
 };
-let domain: {
-  battleState: ReturnType<typeof defaultBattleState>;
-  pendingBattleTransition: { kind: "opening-draw"; resultState: typeof resultState } | null;
-} = {
-  battleState: defaultBattleState(),
-  pendingBattleTransition: { kind: "opening-draw" as const, resultState },
-};
+let domain = { battleState: initial };
 
-vi.mock("@/features/alchemy/shared/stores/run-reads", () => ({
-  readBattle: () => domain,
-}));
+vi.mock("@/features/alchemy/shared/stores/run-reads", () => ({ readBattle: () => domain }));
 
-vi.mock("@/features/alchemy/shared/stores/run-session-command", () => ({
-  dispatchRunSessionCommand: (execute: (draft: unknown) => unknown) => execute({}),
-}));
-
-vi.mock("@/features/alchemy/shared/stores/run-session-write-port", () => ({
-  commitBattleTransition: (_draft: unknown, ...args: unknown[]) => commitBattleTransition(...args),
-}));
-
-describe("playBattleOpeningDraw", () => {
+describe("opening hand playback", () => {
   installImmediateRafForTests();
-
   beforeEach(() => {
-    domain = {
-      battleState: defaultBattleState(),
-      pendingBattleTransition: { kind: "opening-draw", resultState },
-    };
-    commitBattleTransition.mockReset();
-    commitBattleTransition.mockImplementation(() => {
-      domain = { battleState: resultState, pendingBattleTransition: null };
-    });
+    domain = { battleState: initial };
+    useBattlePresentationStore.getState().resetPresentation();
+    useBattlePresentationStore.getState().setOpeningDrawPending(true);
     scheduleAutoEndTurn.mockClear();
   });
 
-  it("commits and animates the pending opening hand before enabling playback", async () => {
-    const drawDeps = makeDrawSequenceDeps();
-    const ctx = {
-      battleSessionRef: { current: 3 },
-      scheduleAutoEndTurnRef: { current: scheduleAutoEndTurn },
-      getPresentation: () => presentation,
-    } as never;
-    const transferDeps = { getDrawSequenceDeps: () => drawDeps } as never;
-
-    await playBattleOpeningDraw(ctx, transferDeps);
-
-    expect(commitBattleTransition).toHaveBeenCalledWith(resultState, null);
-    expect(drawDeps.animateDrawnHand).toHaveBeenCalledWith(resultState.hand, resultState.hand, 3);
-    expect(drawDeps.setTransferInProgress).toHaveBeenCalledWith(true);
-    expect(drawDeps.setTransferInProgress).toHaveBeenLastCalledWith(false);
-    expect(scheduleAutoEndTurn).toHaveBeenCalledWith(resultState);
-  });
-
-  it("finishes playback after the committed transition clears the pending draw", async () => {
-    let finishAnimation: (() => void) | undefined;
+  it("animates the already committed hand once and enables playback only after it settles", async () => {
+    let finishAnimation!: () => void;
     const drawDeps = makeDrawSequenceDeps({
       animateDrawnHand: vi.fn(
         () =>
@@ -75,26 +34,17 @@ describe("playBattleOpeningDraw", () => {
           }),
       ),
     });
-    commitBattleTransition.mockImplementationOnce(() => {
-      domain = { battleState: resultState, pendingBattleTransition: null };
-    });
-    const ctx = {
-      battleSessionRef: { current: 3 },
-      scheduleAutoEndTurnRef: { current: scheduleAutoEndTurn },
-      getPresentation: () => presentation,
-    } as never;
-    const transferDeps = { getDrawSequenceDeps: () => drawDeps } as never;
-
-    const playback = playBattleOpeningDraw(ctx, transferDeps);
-
+    const ctx = { battleSessionRef: { current: 3 }, scheduleAutoEndTurnRef: { current: scheduleAutoEndTurn } };
+    const transfers = { getDrawSequenceDeps: () => drawDeps };
+    const playback = playBattleOpeningDraw(ctx, transfers);
     await vi.waitFor(() => expect(drawDeps.animateDrawnHand).toHaveBeenCalledOnce());
-    expect(domain.pendingBattleTransition).toBeNull();
+    expect(useBattlePresentationStore.getState().openingDrawPending).toBe(false);
+    expect(await playBattleOpeningDraw(ctx, transfers)).toBe(false);
     expect(scheduleAutoEndTurn).not.toHaveBeenCalled();
-
-    domain = { ...domain, battleState: { ...resultState, hand: resultState.hand.slice(1), mana: 2 } };
-    finishAnimation?.();
+    expect(domain.battleState).toBe(initial);
+    domain = { battleState: { ...initial, hand: initial.hand.slice(1), mana: 2 } };
+    finishAnimation();
     await playback;
-
     expect(scheduleAutoEndTurn).toHaveBeenCalledWith(domain.battleState);
   });
 });

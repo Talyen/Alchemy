@@ -32,8 +32,8 @@ describe("run destination controller actions", () => {
 
     const handlers = createRunFlow(makeFlowHandlerDeps());
     handlers.claimRewardChoice("slash");
-    expect(readRunSession().rewardState.selectedId).toBeNull();
-    expect(readRunSession().rewardClaimInFlight).toBe(false);
+    expect(readRunSession().rewardFlow.state.selectedId).toBeNull();
+    expect(readRunSession().rewardFlow.claim.kind === "reward").toBe(false);
   });
 
   it("prepareDestinationScreen sets boss id for boss-only destinations", () => {
@@ -47,7 +47,7 @@ describe("run destination controller actions", () => {
     );
 
     createRunFlow(makeFlowHandlerDeps()).prepareDestinationScreen();
-    expect(readRunSession().rewardState.selectedBossId).toBe("mimic");
+    expect(readRunSession().rewardFlow.state.selectedBossId).toBe("mimic");
   });
 
   it("continues from campfire through the progression handler", () => {
@@ -91,7 +91,7 @@ describe("run destination controller actions", () => {
     handlers.advanceToNextDestination();
 
     expect(captured.at(-1)?.destinationIndexInAct).toBe(7);
-    expect(readRunSession().rewardState.destinations).toEqual([DESTINATIONS.BOSS_COMBAT]);
+    expect(readRunSession().rewardFlow.state.destinations).toEqual([DESTINATIONS.BOSS_COMBAT]);
   });
 
   it("advanceToNextDestination carries the live index so Corruption suppression applies after a non-combat continue", () => {
@@ -122,7 +122,7 @@ describe("run destination controller actions", () => {
 
     handlers.advanceToNextDestination();
 
-    const offered = readRunSession().rewardState.destinations;
+    const offered = readRunSession().rewardFlow.state.destinations;
     expect(offered.length).toBeGreaterThan(0);
     expect(offered).not.toContain(DESTINATIONS.CORRUPTION);
   });
@@ -196,7 +196,7 @@ describe("run destination controller actions", () => {
     expect(readActiveRun().destinationRoundsSinceOffered).toEqual({
       [DESTINATIONS.CAMPFIRE]: 0,
     });
-    expect(readRunSession().rewardState.destinations).toEqual(offered);
+    expect(readRunSession().rewardFlow.state.destinations).toEqual(offered);
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.DESTINATION, expect.any(Function));
   });
 
@@ -214,11 +214,11 @@ describe("run destination controller actions", () => {
     const navigateTo = vi.fn((_screen: string, onCommitted?: () => void) => onCommitted?.());
     createRunFlow(makeFlowHandlerDeps({ navigateTo })).returnToCurrentDestination();
 
-    expect(readRunSession().pendingDestinationClaim).toBeNull();
+    expect(readRunSession().rewardFlow.claim).toEqual({ kind: "idle" });
     expect(readActiveRun().roomsEncountered).toBe(3);
     expect(readActiveRun().destinationIndexInAct).toBe(1);
     expect(readActiveRun().completedDestinations).toEqual([DESTINATIONS.NORMAL_COMBAT]);
-    expect(readRunSession().rewardState.destinations).toEqual(offered);
+    expect(readRunSession().rewardFlow.state.destinations).toEqual(offered);
   });
 
   it("commitDestinationClaim seeds lastOfferedDestinations so Leave can restore an injected picker", () => {
@@ -239,7 +239,7 @@ describe("run destination controller actions", () => {
 
     createRunFlow(makeFlowHandlerDeps({ navigateTo })).returnToCurrentDestination();
 
-    expect(readRunSession().rewardState.destinations).toEqual(offered);
+    expect(readRunSession().rewardFlow.state.destinations).toEqual(offered);
     expect(readActiveRun().destinationIndexInAct).toBe(0);
     expect(readActiveRun().completedDestinations).toEqual([]);
   });

@@ -1,4 +1,4 @@
-import { applyCardHealing } from "./status-player";
+import { applyArmorReward, applyCardHealing } from "./status-player";
 import { hasEncounterBenefit } from "./types";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { type EnemyStatusId, type PlayerStatusId } from "@/lib/game-data";
@@ -100,7 +100,7 @@ function applyLeechManaRider(state: BattleState, combatTexts: CombatTextEvent[])
   return nextState;
 }
 
-function applyLeechTrinketSiphonRider(state: BattleState): BattleState {
+function applyLeechTrinketSiphonRider(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   if (rollTalentChance(state.talentEffects.trinketSiphonChance, state)) {
     const mit = state.enemyMitigation;
     const pool: Array<{ key: keyof EnemyMitigation; status: PlayerStatusId }> = [];
@@ -113,6 +113,9 @@ function applyLeechTrinketSiphonRider(state: BattleState): BattleState {
         ...state,
         enemyMitigation: { ...mit, [steal.key]: Math.max(0, mit[steal.key] - 1) },
       };
+      if (steal.status === "armor") {
+        return applyArmorReward(nextState, 1, combatTexts);
+      }
       if (steal.status === "block") {
         return addPlayerStatusWithCombatText(nextState, steal.status, 1, undefined, { skipFightPacing: true });
       }
@@ -122,11 +125,11 @@ function applyLeechTrinketSiphonRider(state: BattleState): BattleState {
   return state;
 }
 
-export function applyLeechHitRewards(state: BattleState, damage: number, _combatTexts: CombatTextEvent[]): BattleState {
+export function applyLeechHitRewards(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
   if (damage <= 0) return state;
   let nextState = state;
   nextState = applyLeechStatusRider(nextState, "bleed", state.talentEffects.leechBleedChance, damage);
-  nextState = applyLeechTrinketSiphonRider(nextState);
+  nextState = applyLeechTrinketSiphonRider(nextState, combatTexts);
   return applyLeechStatusRider(nextState, "poison", state.talentEffects.leechPoisonChance, damage);
 }
 

@@ -25,6 +25,9 @@ import {
   initializeActiveBattle,
   resetToDefaults,
   setScreen,
+  setHasActiveRun,
+  setRewardState,
+  setCompanionRewardCards,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 type RunStateFields = ActiveRunProgressFields & PermanentProgressFields & { initialized: boolean };
@@ -121,17 +124,13 @@ const PERMANENT_PROGRESS_KEYS = [
 ] as const satisfies ReadonlyArray<keyof PermanentProgressFields>;
 
 const SESSION_KEYS = [
+  "rewardFlow",
   "activity",
-  "hasActiveRun",
-  "rewardClaimInFlight",
-  "pendingDestinationClaim",
   "activeLabyrinthModifiers",
   "activeLabyrinthRewardModifiers",
   "activeLabyrinthPendingNode",
   "selectedLabyrinthNodeId",
   "runEndLabyrinthFloor",
-  "rewardState",
-  "companionRewardCards",
   "runEndMaterials",
   "runEndTalentXP",
   "runEndItems",
@@ -172,9 +171,27 @@ export function setRunProgress(partial: Partial<RunStateFields>, replace = false
   });
 }
 
-export function setRunSession(partial: Partial<RunSessionFields>, replace = false): void {
+export function setRunSession(
+  partial: Partial<RunSessionFields> & {
+    hasActiveRun?: boolean;
+    rewardState?: RunSessionFields["rewardFlow"]["state"];
+    companionRewardCards?: RunSessionFields["rewardFlow"]["companionCards"];
+    rewardClaimInFlight?: boolean;
+    pendingDestinationClaim?: import("@/lib/routing").Destination | null;
+  },
+  replace = false,
+): void {
   dispatchRunSessionCommand((draft) => {
     if (replace) Object.assign(draft.session, createInitialSessionFields());
+    if (partial.hasActiveRun !== undefined) setHasActiveRun(draft, partial.hasActiveRun);
+    if (partial.rewardState !== undefined) setRewardState(draft, partial.rewardState);
+    if (partial.companionRewardCards !== undefined) setCompanionRewardCards(draft, partial.companionRewardCards);
+    if (partial.rewardClaimInFlight !== undefined)
+      draft.session.rewardFlow.claim = { kind: partial.rewardClaimInFlight ? "reward" : "idle" };
+    if (partial.pendingDestinationClaim !== undefined)
+      draft.session.rewardFlow.claim = partial.pendingDestinationClaim
+        ? { kind: "destination", destination: partial.pendingDestinationClaim }
+        : { kind: "idle" };
     for (const key of SESSION_KEYS) {
       if (key in partial && partial[key] !== undefined) {
         (draft.session as unknown as Record<string, unknown>)[key] = partial[key];

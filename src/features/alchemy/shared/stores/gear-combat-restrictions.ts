@@ -11,12 +11,12 @@ export interface GearCombatRestrictions {
 
 export function deriveGearCombatRestrictions(state: {
   run: Pick<GameplayState["run"], "activeRun" | "parkedRuns">;
-  session: Pick<GameplayState["session"], "hasActiveRun">;
+  session: Pick<GameplayState["session"], "activity">;
   battle: Pick<GameplayState["battle"], "hasActiveBattle">;
   gear: Pick<GameplayState["gear"], "loadouts" | "equippedTrinkets">;
 }): GearCombatRestrictions {
   const characters: GearCombatRestrictions["characters"] = {};
-  const foregroundMode = state.session.hasActiveRun ? state.run.activeRun.contentSystemType : null;
+  const foregroundMode = state.session.activity.kind !== "inactive" ? state.run.activeRun.contentSystemType : null;
   if (foregroundMode && state.battle.hasActiveBattle) {
     characters[state.run.activeRun.characterId] = [foregroundMode];
   }

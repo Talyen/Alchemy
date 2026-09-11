@@ -1,7 +1,7 @@
 import { useUiStore, isBattleInspectionOpen } from "../../shared/stores/ui-store";
 import { useCallback, useEffect, useRef, type RefObject } from "react";
 
-import { type BattleState } from "@/lib/battle";
+import { type BattleSnapshot } from "@/lib/battle";
 import { AUTO_END_TURN_DELAY } from "@/lib/game-constants";
 import { resolveGameDelay } from "@/lib/animation/game-timer";
 
@@ -14,13 +14,13 @@ import type { BattlePlaybackPresentationGate } from "./presentation/use-hand-pre
 interface AutoEndTurnOptions {
   autoEndTurn: boolean;
   screen: Screen;
-  battleState: BattleState;
+  battleState: BattleSnapshot;
   hasActiveBattle: boolean;
   gameMenuOpen?: boolean;
   isCardPlayInProgress?: () => boolean;
   onEndTurn: () => void;
   presentationGateRef: RefObject<BattlePlaybackPresentationGate>;
-  scheduleAutoEndTurnRef: RefObject<(state?: BattleState) => void>;
+  scheduleAutoEndTurnRef: RefObject<(state?: BattleSnapshot) => void>;
 }
 
 export function useBattleAutoEndTurn({
@@ -50,7 +50,7 @@ export function useBattleAutoEndTurn({
   }, []);
 
   const canAutoEndTurn = useCallback(
-    (current: BattleState) => {
+    (current: BattleSnapshot) => {
       const presentation = presentationGateRef.current;
       return (
         autoEndTurnRef.current &&
@@ -71,7 +71,7 @@ export function useBattleAutoEndTurn({
   );
 
   const scheduleAutoEndTurnRaw = useCallback(
-    (state?: BattleState) => {
+    (state?: BattleSnapshot) => {
       clearAutoEndTurn();
       if (!canAutoEndTurn(state ?? battleStateRef.current)) return;
       autoEndTimerRef.current = setTimeout(() => {
@@ -86,7 +86,7 @@ export function useBattleAutoEndTurn({
   scheduleAutoEndTurnRef.current = scheduleAutoEndTurnRaw;
 
   const scheduleAutoEndTurn = useCallback(
-    (state?: BattleState) => scheduleAutoEndTurnRef.current(state),
+    (state?: BattleSnapshot) => scheduleAutoEndTurnRef.current(state),
     [scheduleAutoEndTurnRef],
   );
 

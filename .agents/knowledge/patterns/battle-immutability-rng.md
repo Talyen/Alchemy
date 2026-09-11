@@ -18,7 +18,7 @@ Battle logic tempted to mutate `BattleState` in place, use `Math.random()` / `Ma
 - `src/lib/game-constants/combat-rules.ts` + topical constants — shared combat tuning lives there; content-owned magnitudes stay with their definitions.
 - `eslint.config.js` — `BATTLE_NO_MATH_FLOOR`, `BATTLE_NO_MATH_RANDOM`, and `BATTLE_NO_DIRECT_RNG` cover battle TypeScript and TSX, with narrow setup-helper exceptions.
 - `src/lib/rng/index.ts` — `placeholderRng` is only allowed constant RNG.
-- `docs/ARCHITECTURE.md#run-randomness` — `createDraftRunRandomSource(draft, stream)`, `withDraftWorldBattleRng` / `withRestingWorldBattleRng`.
+- `docs/ARCHITECTURE.md#run-randomness` — `createDraftRunRandomSource(draft, stream)`, `BattleResolutionContext`, `withDraftWorldBattleRng`, and data-only `battleSnapshot`.
 
 ## Resolution
 

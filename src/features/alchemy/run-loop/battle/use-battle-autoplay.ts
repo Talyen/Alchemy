@@ -2,7 +2,7 @@ import { useUiStore, isBattleInspectionOpen } from "../../shared/stores/ui-store
 import { useEffect, type RefObject } from "react";
 
 import { AUTOPLAY_POST_PLAY_DELAY_MS, AUTOPLAY_RETRY_DELAY_MS } from "@/lib/game-constants";
-import type { BattleState } from "@/lib/battle";
+import type { BattleSnapshot } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 import type { Screen } from "@/lib/routing";
 
@@ -14,7 +14,7 @@ import type { BattlePlaybackPresentationGate } from "./presentation/use-hand-pre
 interface UseBattleAutoplayOptions {
   enabled: boolean;
   screen: Screen;
-  battleState: BattleState;
+  battleState: BattleSnapshot;
   hasActiveBattle: boolean;
   isCardPlayInProgress: () => boolean;
   gameMenuOpen: boolean;

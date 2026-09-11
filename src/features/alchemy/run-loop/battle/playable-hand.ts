@@ -1,10 +1,10 @@
-import { canPlayCard, type BattleState, type CardPlayOptions } from "@/lib/battle";
+import { canPlayCard, type BattleSnapshot, type CardPlayOptions } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 
 export const PLAYABLE_HAND_OPTIONS: CardPlayOptions = { allowAfterEnemyDefeat: true };
 
 export function findFirstPlayableHandCard(
-  state: BattleState,
+  state: BattleSnapshot,
   options: CardPlayOptions = PLAYABLE_HAND_OPTIONS,
 ): { card: BattleCard; index: number } | null {
   for (let index = 0; index < state.hand.length; index++) {
@@ -17,7 +17,7 @@ export function findFirstPlayableHandCard(
   return null;
 }
 
-export function handHasPlayableCard(state: BattleState, options: CardPlayOptions = PLAYABLE_HAND_OPTIONS): boolean {
+export function handHasPlayableCard(state: BattleSnapshot, options: CardPlayOptions = PLAYABLE_HAND_OPTIONS): boolean {
   return findFirstPlayableHandCard(state, options) !== null;
 }
 
@@ -47,7 +47,10 @@ export function hiddenHandKeysEqual(a: HiddenHandCardKeys, b: HiddenHandCardKeys
   return true;
 }
 
-export function handHasHiddenCard(state: Pick<BattleState, "hand">, hiddenHandCardKeys: HiddenHandCardKeys): boolean {
+export function handHasHiddenCard(
+  state: Pick<BattleSnapshot, "hand">,
+  hiddenHandCardKeys: HiddenHandCardKeys,
+): boolean {
   if (hiddenHandCardKeys.length === 0) return false;
   for (let index = 0; index < state.hand.length; index++) {
     const card = state.hand[index];
@@ -57,7 +60,7 @@ export function handHasHiddenCard(state: Pick<BattleState, "hand">, hiddenHandCa
   return false;
 }
 
-export function getPlayableHandCardKeys(battleState: BattleState): Set<string> {
+export function getPlayableHandCardKeys(battleState: BattleSnapshot): Set<string> {
   const keys = new Set<string>();
   for (let index = 0; index < battleState.hand.length; index++) {
     const card = battleState.hand[index];
@@ -70,7 +73,7 @@ export function getPlayableHandCardKeys(battleState: BattleState): Set<string> {
 }
 
 export function getPlayableHandCardKeysExcludingHidden(
-  battleState: BattleState,
+  battleState: BattleSnapshot,
   hiddenHandCardKeys: HiddenHandCardKeys,
   playableKeys?: Set<string>,
 ): Set<string> {

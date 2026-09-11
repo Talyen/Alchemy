@@ -1,3 +1,4 @@
+import { flatDamageBonus } from "./damage-modifiers";
 import { hasEncounterBenefit } from "./types";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
@@ -5,6 +6,7 @@ import {
   getBurnBonusToBleedingMultiplier,
   getEnemyDamageMultiplier,
   getEnemyTraitDamageMultiplier,
+  getPoisonBonusAgainstBleeding,
 } from "./status-helpers";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { gearFrozenDamageMultiplier } from "./gear-effects";
@@ -84,7 +86,7 @@ function computeBaseRawAmount(
 }
 
 function applyPhysicalScaling(state: BattleState, rawAmount: number): number {
-  let nextAmount = rawAmount + state.talentEffects.flatPhysicalDamage + state.gearEffects.flatPhysicalDamage;
+  let nextAmount = rawAmount + flatDamageBonus(state, "physical");
   if (state.talentEffects.armorToPhysicalDamage) {
     nextAmount += state.playerStatuses.armor;
   }
@@ -111,7 +113,7 @@ function applyPhysicalDamageModifiers(state: BattleState, rawAmount: number): nu
 }
 
 function applyHolyDamageModifiers(state: BattleState, rawAmount: number): number {
-  let nextAmount = rawAmount + state.gearEffects.flatHolyDamage;
+  let nextAmount = rawAmount + flatDamageBonus(state, "holy");
   nextAmount += scalePercent(state.gold, state.talentEffects.holyGoldPercent, PERCENT_DENOMINATOR);
   nextAmount += scalePercent(
     state.playerStatuses.block,
@@ -126,11 +128,11 @@ function applyHolyDamageModifiers(state: BattleState, rawAmount: number): number
 }
 
 function applyBleedDamageModifiers(state: BattleState, rawAmount: number): number {
-  return rawAmount + state.gearEffects.flatBleedDamage;
+  return rawAmount + flatDamageBonus(state, "bleed");
 }
 
 function applyStunDamageModifiers(state: BattleState, rawAmount: number): number {
-  let nextAmount = rawAmount + state.talentEffects.flatStunDamage + state.gearEffects.flatStunDamage;
+  let nextAmount = rawAmount + flatDamageBonus(state, "stun");
   if (state.talentEffects.blockToStunDamage) {
     nextAmount += scalePercent(state.playerStatuses.block, BLOCK_SCALED_DAMAGE_PERCENT, PERCENT_DENOMINATOR);
   }
@@ -138,7 +140,7 @@ function applyStunDamageModifiers(state: BattleState, rawAmount: number): number
 }
 
 function applyBurnDamageModifiers(state: BattleState, rawAmount: number): number {
-  let nextAmount = rawAmount + state.talentEffects.flatBurnDamage + state.gearEffects.flatBurnDamage;
+  let nextAmount = rawAmount + flatDamageBonus(state, "burn");
   if (state.talentEffects.burnDamagePerManaCrystal > 0) {
     nextAmount += scalePerMana(state.maxMana, state.talentEffects.burnDamagePerManaCrystal, "percent");
   }
@@ -152,7 +154,7 @@ function applyBurnDamageModifiers(state: BattleState, rawAmount: number): number
 }
 
 function applyFreezeDamageModifiers(state: BattleState, rawAmount: number): number {
-  let nextAmount = rawAmount + state.talentEffects.flatFreezeDamage + state.gearEffects.flatFreezeDamage;
+  let nextAmount = rawAmount + flatDamageBonus(state, "freeze");
   if (state.talentEffects.freezeDamagePerManaCrystal > 0) {
     nextAmount += scalePerMana(state.maxMana, state.talentEffects.freezeDamagePerManaCrystal, "half");
   }
@@ -160,7 +162,7 @@ function applyFreezeDamageModifiers(state: BattleState, rawAmount: number): numb
 }
 
 function applyNatureDamageModifiers(state: BattleState, rawAmount: number): number {
-  let nextAmount = rawAmount + state.talentEffects.flatNatureDamage + state.gearEffects.flatNatureDamage;
+  let nextAmount = rawAmount + flatDamageBonus(state, "nature");
   if (state.talentEffects.armorToNatureDamage) {
     nextAmount += state.playerStatuses.armor;
   }
@@ -171,11 +173,7 @@ function applyNatureDamageModifiers(state: BattleState, rawAmount: number): numb
 }
 
 function applyPoisonDamageModifiers(state: BattleState, rawAmount: number): number {
-  let nextAmount = rawAmount + state.gearEffects.flatPoisonDamage;
-  if (state.enemyStatuses.bleed > 0) {
-    nextAmount += state.talentEffects.bleedPoisonDamageTakenBonus;
-  }
-  return nextAmount;
+  return rawAmount + flatDamageBonus(state, "poison") + getPoisonBonusAgainstBleeding(state);
 }
 
 type DamageTypeHandler = (state: BattleState, rawAmount: number, card?: BattleCard) => number;

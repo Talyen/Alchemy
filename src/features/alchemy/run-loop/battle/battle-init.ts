@@ -1,3 +1,4 @@
+import { useBattlePresentationStore } from "./battle-presentation-store";
 import {
   createBattleStartState,
   drawOpeningHand,
@@ -10,8 +11,6 @@ import { getBossById, getCurrentEnemy, getBossEnemy, enemyById, isEnemyId } from
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import {
-  beginBattleTransition,
-  commitBattleTransition,
   createDraftRunRandomSource,
   initializeActiveBattle,
   setEncounteredEnemyIds,
@@ -36,14 +35,15 @@ export async function playBattleOpeningDraw(
   transferDeps: Pick<ReturnType<typeof createBattleTransferDeps>, "getDrawSequenceDeps">,
 ): Promise<boolean> {
   const current = readBattle();
-  const pending = current.pendingBattleTransition;
-  if (pending?.kind !== "opening-draw") return false;
+  const presentation = useBattlePresentationStore.getState();
+  if (!presentation.openingDrawPending) return false;
+  presentation.setOpeningDrawPending(false);
   const sessionNum = ctx.battleSessionRef.current;
 
   const completed = await runBattleDraw({
-    oldHand: current.battleState.hand,
-    newState: pending.resultState,
-    applyState: () => dispatchRunSessionCommand((draft) => commitBattleTransition(draft, pending.resultState, null)),
+    oldHand: [],
+    newState: current.battleState,
+    onReveal: () => {},
     session: sessionNum,
     deps: transferDeps.getDrawSequenceDeps(),
     errorContext: "draw opening hand",
@@ -120,8 +120,7 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
             nextBattleState = processCompanionTurnStart(nextBattleState, companionTexts);
         }
         const openingDrawState = drawOpeningHand(nextBattleState);
-        initializeActiveBattle(draft, nextBattleState, null);
-        beginBattleTransition(draft, nextBattleState, { kind: "opening-draw", resultState: openingDrawState }, {});
+        initializeActiveBattle(draft, openingDrawState, null);
         setEncounteredRunEnemyIds(draft, (current) => appendUnique(current, enemy.id));
         setEncounteredEnemyIds(draft, (current) => appendUnique(current, enemy.id));
 
@@ -156,6 +155,7 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
           session.prepareBattleSessionForStart();
           const presentationStore = ctx.getPresentation();
           presentationStore.resetPresentation();
+          presentationStore.setOpeningDrawPending(true);
           presentationStore.setCardTransferInProgress(true);
           if (companionId) {
             playCompanionSound(companionId);

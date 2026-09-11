@@ -1,12 +1,9 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
-import { createTurnOrchestration } from "@/features/alchemy/run-loop/battle/turn-orchestration";
 import { createTransferCancelRegistry } from "@/features/alchemy/run-loop/battle/card-transfer-animations";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { battleStageMarkName, markBattleStage } from "@/lib/performance/battle-stage-marks";
 import { defaultBattleState } from "@/lib/battle";
-import { companionLibrary } from "@/lib/game-data";
-import { COMPANION_ATTACK_DELAY } from "@/lib/game-constants";
 import { TimerGroup } from "@/lib/animation/game-timer";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { setHasActiveBattle, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
@@ -14,7 +11,6 @@ import { setSyncedBattleState } from "@/features/alchemy/shared/stores/run-sessi
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
-import type { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/battle-transfer-deps";
 
 function makeSession() {
   const battleSessionRef = { current: 1 };
@@ -23,8 +19,6 @@ function makeSession() {
   const transferCancelRegistryRef = { current: createTransferCancelRegistry() };
   const cardPlayInProgressRef = { current: false };
   const victoryDefeatHandledRef = { current: false };
-  const companionScheduledRef = { current: false };
-  const companionTimerGroupRef = { current: new TimerGroup() };
   const onBattleSessionPreparedRef = { current: null };
   const onBattleVictory = vi.fn();
   const onBattleDefeat = vi.fn();
@@ -36,8 +30,6 @@ function makeSession() {
     transferCancelRegistryRef,
     cardPlayInProgressRef,
     victoryDefeatHandledRef,
-    companionScheduledRef,
-    companionTimerGroupRef,
     onBattleSessionPreparedRef,
     onBattleVictory,
     onBattleDefeat,
@@ -54,8 +46,6 @@ function makeSession() {
     onBattleDefeat,
     transferCancelRegistryRef,
     battleTimerGroupRef,
-    companionTimerGroupRef,
-    companionScheduledRef,
   };
 }
 
@@ -130,7 +120,7 @@ describe("createBattleSession", () => {
       performance.clearMarks(name);
       markBattleStage("draw-end");
       markBattleStage("draw-end");
-      session.clearBattleTimeoutsKeepCompanion();
+      session.clearAllBattleTimeouts();
       expect(performance.getEntriesByName(name, "mark")).toHaveLength(2);
       session[reset]();
       expect(performance.getEntriesByName(name, "mark")).toHaveLength(0);
@@ -191,90 +181,5 @@ describe("createBattleSession", () => {
     expect(result).toBeUndefined();
     expect(onComplete).not.toHaveBeenCalled();
     expect(cardPlayInProgressRef.current).toBe(true);
-  });
-
-  it("keeps companion timers when clearing battle timeouts", () => {
-    vi.useFakeTimers();
-    const { session, battleTimerGroupRef, companionTimerGroupRef, companionScheduledRef } = makeSession();
-    const battleFn = vi.fn();
-    const companionFn = vi.fn();
-    battleTimerGroupRef.current.setTimeout(battleFn, 50);
-    companionTimerGroupRef.current.setTimeout(companionFn, 50);
-    companionScheduledRef.current = true;
-
-    session.clearBattleTimeoutsKeepCompanion();
-    vi.advanceTimersByTime(50);
-
-    expect(battleFn).not.toHaveBeenCalled();
-    expect(companionFn).toHaveBeenCalledOnce();
-    expect(companionScheduledRef.current).toBe(true);
-  });
-
-  it("cancels companion timers and resets the scheduled flag on full teardown", () => {
-    vi.useFakeTimers();
-    const { session, companionTimerGroupRef, companionScheduledRef } = makeSession();
-    const companionFn = vi.fn();
-    companionTimerGroupRef.current.setTimeout(companionFn, 50);
-    companionScheduledRef.current = true;
-
-    session.clearAllBattleTimeouts();
-    vi.advanceTimersByTime(50);
-
-    expect(companionFn).not.toHaveBeenCalled();
-    expect(companionScheduledRef.current).toBe(false);
-  });
-});
-
-function makeCompanionOrchestration(made: ReturnType<typeof makeSession>) {
-  const ctx = {
-    companionScheduledRef: made.companionScheduledRef,
-    companionTimerGroupRef: made.companionTimerGroupRef,
-    battleTimerGroupRef: made.battleTimerGroupRef,
-    getPresentation: () => useBattlePresentationStore.getState(),
-    scheduleAutoEndTurnRef: { current: null },
-  } as unknown as BattleControllerContext;
-  return createTurnOrchestration(ctx, made.session, { getDrawSequenceDeps: () => ({}) } as unknown as ReturnType<
-    typeof createBattleTransferDeps
-  >);
-}
-
-describe("scheduleCompanionFollowUp", () => {
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  it("still fires after end-turn clears battle timeouts", () => {
-    vi.useFakeTimers();
-    const made = makeSession();
-    dispatchRunSessionCommand((draft) =>
-      setSyncedBattleState(draft, {
-        ...defaultBattleState(),
-        activeCompanion: companionLibrary.wolf,
-        enemyHealth: 20,
-      }),
-    );
-    const orch = makeCompanionOrchestration(made);
-    orch.scheduleCompanionFollowUp(
-      { ...defaultBattleState(), activeCompanion: companionLibrary.wolf, enemyHealth: 20 },
-      1,
-    );
-    expect(made.companionScheduledRef.current).toBe(true);
-    made.session.clearBattleTimeoutsKeepCompanion();
-    vi.advanceTimersByTime(COMPANION_ATTACK_DELAY);
-    expect(made.companionScheduledRef.current).toBe(false);
-    expect(useBattlePresentationStore.getState().playerAttackToken).toBe(1);
-    expect(useBattlePresentationStore.getState().companionShaking).toBe(true);
-  });
-
-  it("allows a later turn to schedule after full teardown", () => {
-    vi.useFakeTimers();
-    const made = makeSession();
-    const orch = makeCompanionOrchestration(made);
-    const withCompanion = { ...defaultBattleState(), activeCompanion: companionLibrary.wolf, enemyHealth: 20 };
-    orch.scheduleCompanionFollowUp(withCompanion, 1);
-    made.session.clearAllBattleTimeouts();
-    expect(made.companionScheduledRef.current).toBe(false);
-    orch.scheduleCompanionFollowUp(withCompanion, 1);
-    expect(made.companionScheduledRef.current).toBe(true);
   });
 });

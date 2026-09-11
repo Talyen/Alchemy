@@ -1,4 +1,4 @@
-import { defaultBattleState, type BattleState } from "@/lib/battle";
+import { battleSnapshot, defaultBattleState, type BattleSnapshot } from "@/lib/battle";
 import {
   findEnemyAbilityCard,
   enemyById,
@@ -21,14 +21,6 @@ import {
   LEGACY_WISH_BLOCK_AMOUNT,
   MANABURN_DAMAGE_PERCENT,
 } from "@/lib/game-constants";
-
-const RESTING_WORLD_RNG = (): number => {
-  throw new Error("Battle world RNG must be drawn inside dispatchRunSessionCommand via withDraftWorldBattleRng");
-};
-
-function restingWorldRng(): () => number {
-  return RESTING_WORLD_RNG;
-}
 
 function mergeRecord<T extends object>(defaults: T, saved: Partial<T> | undefined): T {
   return { ...defaults, ...saved };
@@ -106,7 +98,7 @@ function restoreEnemyTraits(value: unknown, enemy: BestiaryEntry | undefined): E
   ];
 }
 
-export function normalizePersistedBattleState(saved: Partial<BattleState>): BattleState {
+export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): BattleSnapshot {
   const defaults = defaultBattleState();
   const savedEnemy = saved.currentEnemy;
   const catalogEnemy = savedEnemy && isEnemyId(savedEnemy.id) ? enemyById[savedEnemy.id] : undefined;
@@ -118,9 +110,9 @@ export function normalizePersistedBattleState(saved: Partial<BattleState>): Batt
     savedAbilityIds.every((id) => typeof id === "string" && findEnemyAbilityCard(id))
       ? savedAbilityIds
       : (catalogEnemy?.abilityIds ?? defaults.currentEnemy.abilityIds);
-  const merged: BattleState = {
+  const merged: BattleSnapshot = {
     ...defaults,
-    ...saved,
+    ...battleSnapshot({ ...defaults, ...saved }),
     encounterBenefits:
       saved.contentSystemType === "labyrinth" && Array.isArray(saved.encounterBenefits)
         ? sanitizeEncounterTraitIds(saved.encounterBenefits, "reward")
@@ -150,8 +142,6 @@ export function normalizePersistedBattleState(saved: Partial<BattleState>): Batt
       ? saved.lastEnemyAbilityId
       : null;
 
-  merged.rng = typeof saved.rng === "function" ? saved.rng : restingWorldRng();
-
   const savedFlags: Record<string, unknown> = saved.flags ?? {};
   if (!("legacyEnemyThornsReady" in savedFlags)) {
     merged.flags.legacyEnemyThornsReady =
@@ -175,7 +165,7 @@ export function normalizePersistedBattleState(saved: Partial<BattleState>): Batt
   return merged;
 }
 
-export function repairPersistedTrinketManifest(battleState: BattleState, runBoons: string[]): BattleState {
+export function repairPersistedTrinketManifest(battleState: BattleSnapshot, runBoons: string[]): BattleSnapshot {
   if (runBoons.length === 0) return battleState;
   if (!isDefaultTrinketManifest(battleState.trinketEffects)) return battleState;
   return {

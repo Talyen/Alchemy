@@ -1,6 +1,6 @@
 import { EncounterRewardTraitArraySchema } from "./labyrinth-schemas";
 import { z } from "zod";
-import { type BattleState } from "@/lib/battle";
+import { type BattleSnapshot } from "@/lib/battle";
 import { normalizePersistedBattleState } from "../normalize-persisted-battle-state";
 import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
 import { BattleCardEffectSchema, BattleCardSchema } from "./battle-card-schemas";
@@ -57,5 +57,5 @@ const PersistedBattleStateWireSchema = z.looseObject({
 });
 
 export const PersistedBattleStateSchema = PersistedBattleStateWireSchema.transform((data) =>
-  normalizePersistedBattleState(data as unknown as Partial<BattleState>),
+  normalizePersistedBattleState(data as unknown as Partial<BattleSnapshot>),
 );

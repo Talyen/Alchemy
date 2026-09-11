@@ -1,10 +1,10 @@
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { mergeCombatText } from "./combat-text";
+import { applyArmorReward } from "./status-player";
 import { BATTLE_CONFIG, FREEZE_THRESHOLD_FRACTION, STATUS_CONFIG, STUN_THRESHOLD_FRACTION } from "../game-constants";
 import {
   setEnemyStatus,
   setPlayerStatus,
-  addPlayerStatus,
   addEnemyMitigation,
   hasEnemyTrait,
   type BattleState,
@@ -75,13 +75,7 @@ export function resolvePlayerCrowdControlTrigger(input: PlayerCcTriggerInput): B
 
   if (state.gearEffects.armorOnStunOrFreeze > 0) {
     const armorAmount = state.gearEffects.armorOnStunOrFreeze;
-    nextState = addPlayerStatus(nextState, "armor", armorAmount);
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "status",
-      stat: "armor",
-      amount: armorAmount,
-    });
+    nextState = applyArmorReward(nextState, armorAmount, combatTexts);
   }
 
   if (stat === "freeze" && hasEnemyTrait(state, "yeti")) {

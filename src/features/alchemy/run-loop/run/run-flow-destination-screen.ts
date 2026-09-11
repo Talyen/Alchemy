@@ -26,7 +26,7 @@ export function createDestinationScreenHandlers(
     try {
       const choice = dispatchRunSessionCommand((draft) => {
         if (!beginDestinationClaim(draft, destination)) return null;
-        const rewardState = draft.session.rewardState;
+        const rewardState = draft.session.rewardFlow.state;
         const selectedBossId = destination === DESTINATIONS.BOSS_COMBAT ? rewardState.selectedBossId : null;
         return { selectedBossId };
       });

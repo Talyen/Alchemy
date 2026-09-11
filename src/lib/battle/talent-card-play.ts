@@ -1,6 +1,6 @@
 import { isPotionCard, getCardKeywords, type BattleCard } from "@/lib/game-data";
 import { addPlayerStatusWithCombatText } from "./combat-text";
-import { addForgeToPlayer, applyCleanseHeals, applyPlayerStatusEffect } from "./status-player";
+import { addForgeToPlayer, applyArmorReward, applyCleanseHeals, applyPlayerStatusEffect } from "./status-player";
 import { isAttackCard } from "./card-classification";
 import { applyDrawResult, drawFromState } from "./draw";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
@@ -66,9 +66,7 @@ export function prepareTalentCardPlay(state: BattleState, card: BattleCard, comb
   if (keywords.includes("leech") && talents.armorStealOnLeechCard > 0) {
     const stolen = Math.min(nextState.enemyMitigation.armor, talents.armorStealOnLeechCard);
     if (stolen > 0) {
-      nextState = addPlayerStatusWithCombatText(reduceEnemyArmor(nextState, stolen), "armor", stolen, combatTexts, {
-        skipFightPacing: true,
-      });
+      nextState = applyArmorReward(reduceEnemyArmor(nextState, stolen), stolen, combatTexts);
     }
   }
   if (nature && talents.thornsOnNatureCard > 0) {

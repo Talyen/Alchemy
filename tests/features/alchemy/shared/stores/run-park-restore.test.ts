@@ -35,9 +35,9 @@ describe("park and restore", () => {
       });
       dispatchRunSessionCommand(parkAndDeactivateForegroundRunInDraft);
       const snapshot = readParkedRuns().campaign;
-      expect(snapshot?.activeCombat?.battleState.rng).toEqual(expect.any(Function));
+      expect(snapshot?.activeCombat?.battleState).not.toHaveProperty("rng");
       const pending = snapshot?.activeCombat?.pendingBattleTransition;
-      expect(pending && "resultState" in pending && pending.resultState.rng).toEqual(expect.any(Function));
+      expect(pending && "resultState" in pending && pending.resultState).not.toHaveProperty("rng");
       if (!snapshot?.activeCombat || !pending || !("resultState" in pending)) throw new Error("Missing parked combat");
       snapshot.activeCombat.battleState.turn = 99;
       pending.resultState.turn = 99;

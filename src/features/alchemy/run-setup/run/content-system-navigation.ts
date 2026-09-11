@@ -76,7 +76,7 @@ function restoreResumedCampaignDestinations(
   getAvailableDestinations: ContentSystemNavigationDeps["getAvailableDestinations"],
 ): void {
   const active = draft.run.activeRun;
-  const reward = draft.session.rewardState;
+  const reward = draft.session.rewardFlow.state;
   if (
     reward.destinations.length > 0 &&
     (!reward.destinations.includes(DESTINATIONS.BOSS_COMBAT) || reward.selectedBossId)
@@ -256,7 +256,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
       return;
     }
     dispatchRunSessionCommand((draft) => {
-      if (draft.session.hasActiveRun && draft.run.activeRun.contentSystemType !== systemId) {
+      if (draft.session.activity.kind !== "inactive" && draft.run.activeRun.contentSystemType !== systemId) {
         parkAndDeactivateForegroundRunInDraft(draft);
       }
       setPendingCharacterId(draft, null);

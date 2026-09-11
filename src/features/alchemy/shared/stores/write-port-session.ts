@@ -7,7 +7,7 @@ import {
 } from "@/lib/active-run-session";
 import { enterWildwoodReward } from "@/lib/content-systems/wildwood/gauntlet";
 import { DESTINATIONS, type Destination } from "@/lib/routing";
-import { createInitialSessionFields, type RunSessionFields } from "./run-domain-types";
+import { createInitialSessionFields, type RunRewardFlow, type RunSessionFields } from "./run-domain-types";
 import type { GameplayDraft } from "./run-session-command";
 import {
   createDraftFieldSetter,
@@ -25,7 +25,8 @@ export const setWildwoodDraft = createSessionFieldSetter("wildwoodDraft");
 export const setStarterDraftChoices = createSessionFieldSetter("starterDraftChoices");
 
 export function setHasActiveRun(draft: GameplayDraft, active: boolean): void {
-  draft.session.hasActiveRun = active;
+  if (!active) draft.session.activity = { kind: "inactive" };
+  else if (draft.session.activity.kind === "inactive") draft.session.activity = { kind: "idle" };
 }
 
 export function clearTransientSession(draft: GameplayDraft): void {
@@ -37,11 +38,14 @@ export function applyRunStartSnapshot(draft: GameplayDraft, snapshot: RunStartSn
   draft.session.runEndTalentXP = {};
   draft.session.runEndItems = [];
   draft.session.runEndLabyrinthFloor = null;
-  draft.session.hasActiveRun = snapshot.hasActiveRun;
+  setHasActiveRun(draft, snapshot.hasActiveRun);
 }
 
-export const setRewardState = createSessionFieldSetter("rewardState");
-export const setCompanionRewardCards = createSessionFieldSetter("companionRewardCards");
+const createRewardFieldSetter = createDraftFieldSetter<RunRewardFlow, GameplayDraft>(
+  (draft) => draft.session.rewardFlow,
+);
+export const setRewardState = createRewardFieldSetter("state");
+export const setCompanionRewardCards = createRewardFieldSetter("companionCards");
 export const setRunEndMaterials = createSessionFieldSetter("runEndMaterials");
 export const setRunEndItems = createSessionFieldSetter("runEndItems");
 export function setCorruptionResult(draft: GameplayDraft, result: RunActivityData["corruption"]): void {
@@ -50,36 +54,37 @@ export function setCorruptionResult(draft: GameplayDraft, result: RunActivityDat
 }
 
 export function beginRewardClaim(draft: GameplayDraft): boolean {
-  if (draft.session.rewardClaimInFlight) return false;
-  draft.session.rewardClaimInFlight = true;
+  if (draft.session.rewardFlow.claim.kind !== "idle") return false;
+  draft.session.rewardFlow.claim = { kind: "reward" };
   return true;
 }
 
 export function releaseRewardClaim(draft: GameplayDraft): void {
-  draft.session.rewardClaimInFlight = false;
+  if (draft.session.rewardFlow.claim.kind === "reward") draft.session.rewardFlow.claim = { kind: "idle" };
 }
 
 export function beginDestinationClaim(draft: GameplayDraft, destination: Destination): boolean {
-  if (draft.session.pendingDestinationClaim !== null) return false;
-  if (!draft.session.rewardState.destinations.includes(destination)) return false;
-  draft.session.pendingDestinationClaim = destination;
+  const flow = draft.session.rewardFlow;
+  if (flow.claim.kind !== "idle" || !flow.state.destinations.includes(destination)) return false;
+  flow.claim = { kind: "destination", destination };
   return true;
 }
 
 export function cancelDestinationClaim(draft: GameplayDraft): void {
-  draft.session.pendingDestinationClaim = null;
+  if (draft.session.rewardFlow.claim.kind === "destination") draft.session.rewardFlow.claim = { kind: "idle" };
 }
 
 export function commitDestinationClaim(draft: GameplayDraft, destination: Destination): boolean {
   const transient = draft.session;
-  if (transient.pendingDestinationClaim !== destination) return false;
-  if (!transient.rewardState.destinations.includes(destination)) {
+  if (transient.rewardFlow.claim.kind !== "destination" || transient.rewardFlow.claim.destination !== destination)
+    return false;
+  if (!transient.rewardFlow.state.destinations.includes(destination)) {
     cancelDestinationClaim(draft);
     return false;
   }
   if (draft.run.activeRun.lastOfferedDestinations.length === 0) {
     setDestinationOfferState(draft, {
-      lastOfferedDestinations: [...transient.rewardState.destinations],
+      lastOfferedDestinations: [...transient.rewardFlow.state.destinations],
       roundsSinceOffered: { ...draft.run.activeRun.destinationRoundsSinceOffered },
     });
   }
@@ -93,14 +98,14 @@ export function commitDestinationClaim(draft: GameplayDraft, destination: Destin
 function abandonDestinationVisit(draft: GameplayDraft, destination: Destination): void {
   const transient = draft.session;
 
-  if (transient.pendingDestinationClaim === destination) {
+  if (transient.rewardFlow.claim.kind === "destination" && transient.rewardFlow.claim.destination === destination) {
     cancelDestinationClaim(draft);
   } else if (draft.run.activeRun.completedDestinations.at(-1) === destination) {
     setCompletedDestinations(draft, (prev) => prev.slice(0, -1));
     setDestinationIndexInAct(draft, (prev) => Math.max(0, prev - 1));
   }
 
-  if (transient.rewardState.destinations.length === 0) {
+  if (transient.rewardFlow.state.destinations.length === 0) {
     const restored = [...draft.run.activeRun.lastOfferedDestinations];
     if (restored.length > 0) {
       setRewardState(draft, (prev) => ({ ...prev, destinations: restored }));

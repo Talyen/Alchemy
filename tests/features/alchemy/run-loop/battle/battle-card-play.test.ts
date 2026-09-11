@@ -1,3 +1,4 @@
+import { battleSnapshot } from "@/lib/battle";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import "../../../../helpers/mock-audio";
 import { describe, expect, it, vi, beforeEach, type Mock } from "vitest";
@@ -29,12 +30,12 @@ vi.mock("@/features/alchemy/run-loop/battle/draw-sequence", async (importOrigina
   const actual = await importOriginal<typeof import("@/features/alchemy/run-loop/battle/draw-sequence")>();
   return {
     ...actual,
-    runHandDrawSequence: vi.fn(async (_oldHand, _newState, applyState) => {
-      applyState();
+    runHandDrawSequence: vi.fn(async (_oldHand, _newState, onReveal) => {
+      onReveal();
       return false;
     }),
     runBattleDraw: vi.fn(async (request) => {
-      request.applyState();
+      request.onReveal();
       request.onSettled?.();
       return false;
     }),
@@ -158,7 +159,7 @@ describe("createBattleCardPlay", () => {
     useUiStore.getState().setCardInspection("deck");
     clickCard(handleCardClick, slash, 0);
     expect(handleAutoplayCard(slash, 0)).toBe(false);
-    expect(readBattle().battleState).toEqual(state);
+    expect(readBattle().battleState).toEqual(battleSnapshot(state));
     expect(awardCardXP).not.toHaveBeenCalled();
   });
 
@@ -178,7 +179,7 @@ describe("createBattleCardPlay", () => {
     const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
     clickCard(handleCardClick, { ...expensive, uid: 2 }, 0);
 
-    expect(readBattle().battleState).toEqual(state);
+    expect(readBattle().battleState).toEqual(battleSnapshot(state));
     expect(ctx.scheduleAutoEndTurnRef.current).not.toHaveBeenCalled();
     expect(awardCardXP).not.toHaveBeenCalled();
     expect(playUISound).toHaveBeenCalledWith("error");
@@ -236,12 +237,12 @@ describe("createBattleCardPlay", () => {
     const settled: Array<() => void> = [];
     vi.mocked(runBattleDraw)
       .mockImplementationOnce(async (request) => {
-        request.applyState();
+        request.onReveal();
         settled.push(request.onSettled!);
         return true;
       })
       .mockImplementationOnce(async (request) => {
-        request.applyState();
+        request.onReveal();
         settled.push(request.onSettled!);
         return true;
       });
@@ -266,7 +267,7 @@ describe("createBattleCardPlay", () => {
     expect(handleAutoplayCard(first, 0)).toBe(false);
     settled[1]!();
     expect(ctx.cardPlayInProgressRef.current).toBe(true);
-    expect(session.checkBattleEnd).not.toHaveBeenCalled();
+    expect(session.checkBattleEnd).toHaveBeenCalledTimes(2);
     settled[0]!();
     expect(ctx.cardPlayInProgressRef.current).toBe(false);
     expect(session.checkBattleEnd).toHaveBeenCalledWith(readBattle().battleState, 1);
@@ -302,7 +303,7 @@ describe("createBattleCardPlay", () => {
     const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
     clickCard(handleCardClick, { ...slash, uid: 6 }, 0);
 
-    expect(readBattle().battleState).toEqual(state);
+    expect(readBattle().battleState).toEqual(battleSnapshot(state));
     expect(awardCardXP).not.toHaveBeenCalled();
     expect(playUISound).toHaveBeenCalledWith("error");
   });

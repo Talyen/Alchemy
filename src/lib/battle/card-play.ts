@@ -15,6 +15,7 @@ import { getCardKeywords, isPotionCard, type BattleCard } from "@/lib/game-data"
 import {
   type BattleResolution,
   type BattleState,
+  type BattleSnapshot,
   type CombatFlags,
   type CombatTextEvent,
   isPlayerDefeated,
@@ -48,7 +49,7 @@ function consumeCardDiscounts(state: BattleState, payment: ReturnType<typeof com
   return { ...state, flags: nextFlags };
 }
 
-function getPlayableCard(state: BattleState, cardId: string, index: number): BattleCard | null {
+function getPlayableCard(state: BattleSnapshot, cardId: string, index: number): BattleCard | null {
   if (state.wishOptions) return null;
   const card = state.hand[index];
   if (!card || card.id !== cardId) return null;
@@ -59,7 +60,7 @@ export interface CardPlayOptions {
   allowAfterEnemyDefeat?: boolean;
 }
 
-function cardHasOnlyCleanseEffect(card: BattleCard, state: BattleState): boolean {
+function cardHasOnlyCleanseEffect(card: BattleCard, state: BattleSnapshot): boolean {
   if (!card.effects.some((effect) => effect.kind === "remove-harmful-status")) return false;
   const hasUsefulEffect = card.effects.some(
     (effect) => effect.kind !== "remove-harmful-status" && effect.kind !== "self-damage",
@@ -67,7 +68,7 @@ function cardHasOnlyCleanseEffect(card: BattleCard, state: BattleState): boolean
   return !hasUsefulEffect && countRemovableHarmfulStatuses(state.playerStatuses) === 0;
 }
 
-function isCardInHand(state: BattleState, card: BattleCard, index: number): boolean {
+function isCardInHand(state: BattleSnapshot, card: BattleCard, index: number): boolean {
   const currentCard = state.hand[index];
   return !!currentCard && currentCard.id === card.id && currentCard.uid === card.uid;
 }
@@ -81,7 +82,7 @@ export function applyMortarAndPestlePotionUse(state: BattleState, card: BattleCa
 }
 
 function validateCardPlay(
-  state: BattleState,
+  state: BattleSnapshot,
   card: BattleCard,
   index: number,
   options?: CardPlayOptions,
@@ -98,7 +99,12 @@ function validateCardPlay(
   return payment;
 }
 
-export function canPlayCard(state: BattleState, card: BattleCard, index: number, options?: CardPlayOptions): boolean {
+export function canPlayCard(
+  state: BattleSnapshot,
+  card: BattleCard,
+  index: number,
+  options?: CardPlayOptions,
+): boolean {
   return validateCardPlay(state, card, index, options) !== null;
 }
 

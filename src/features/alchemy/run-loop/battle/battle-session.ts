@@ -1,5 +1,5 @@
 import { clearBattleStageMarks } from "@/lib/performance/battle-stage-marks";
-import { isPlayerDefeated, type BattleState } from "@/lib/battle";
+import { isPlayerDefeated, type BattleSnapshot } from "@/lib/battle";
 import { stopAllSfx } from "@/lib/audio";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { setBattleStartState } from "@/features/alchemy/shared/stores/run-session-write-port";
@@ -39,7 +39,7 @@ export function createBattleSession(ctx: BattleControllerContext) {
     }
   }
 
-  function checkBattleEnd(state: BattleState, session: number): boolean {
+  function checkBattleEnd(state: BattleSnapshot, session: number): boolean {
     if (!isCurrentBattleSession(session)) return false;
     if (isPlayerDefeated(state)) {
       handleVictoryDefeat("defeat");
@@ -61,12 +61,6 @@ export function createBattleSession(ctx: BattleControllerContext) {
   }
 
   function clearAllBattleTimeouts() {
-    ctx.battleTimerGroupRef.current.clearAll();
-    ctx.companionTimerGroupRef.current.clearAll();
-    ctx.companionScheduledRef.current = false;
-  }
-
-  function clearBattleTimeoutsKeepCompanion() {
     ctx.battleTimerGroupRef.current.clearAll();
   }
 
@@ -102,7 +96,6 @@ export function createBattleSession(ctx: BattleControllerContext) {
     registerTransferCancelCallback,
     clearTransferHandles,
     clearAllBattleTimeouts,
-    clearBattleTimeoutsKeepCompanion,
     resetBattleSession,
     prepareBattleSessionForStart,
   };

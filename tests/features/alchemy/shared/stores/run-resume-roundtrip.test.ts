@@ -141,7 +141,7 @@ describe("interrupted mid-claim rewards", () => {
     });
     const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo: vi.fn() }));
     handlers.claimRewardChoice(primary.id);
-    expect(readRunSession().rewardClaimInFlight).toBe(true);
+    expect(readRunSession().rewardFlow.claim.kind === "reward").toBe(true);
     const claimedDeck = readActiveRun().runDeck;
 
     const snap = snapshotRun(ROUTE_SCREENS.REWARDS);
@@ -161,13 +161,13 @@ describe("interrupted mid-claim rewards", () => {
     });
     restoreRun(snap, {}, {});
 
-    const restored = readRunSession().rewardState;
+    const restored = readRunSession().rewardFlow.state;
     expect(restored.rewardType).toBe("card");
     if (restored.rewardType === "card") {
       expect(restored.choices.map((choice) => choice.id)).toEqual([companion.id]);
     }
     expect(restored.materials).toEqual(emptyInventory());
-    expect(readRunSession().companionRewardCards).toBeNull();
+    expect(readRunSession().rewardFlow.companionCards).toBeNull();
     handlers.skipRewards();
     expect(readActiveRun().runDeck).toEqual(claimedDeck);
   });
@@ -197,8 +197,8 @@ describe.each(["companion", "archery", "wish", "nature"] as const)("%s bonus rew
 
     expect(readGameplayState().run.navigation.screen).toBe(ROUTE_SCREENS.REWARDS);
     expect(readRunSession().hasActiveRun).toBe(true);
-    expect(readRunSession().rewardState.choices).toEqual(choices);
-    expect(readRunSession().companionRewardCards).toEqual(bonusDisplayed ? null : bonuses);
+    expect(readRunSession().rewardFlow.state.choices).toEqual(choices);
+    expect(readRunSession().rewardFlow.companionCards).toEqual(bonusDisplayed ? null : bonuses);
     expect(readActiveRun().rng).toEqual(snap.rng);
   });
 
@@ -227,19 +227,19 @@ describe.each(["companion", "archery", "wish", "nature"] as const)("%s bonus rew
     restoreRun(snap, {}, {});
 
     expect(readGameplayState().run.navigation.screen).toBe(ROUTE_SCREENS.REWARDS);
-    expect(readRunSession().rewardState).toEqual({
+    expect(readRunSession().rewardFlow.state).toEqual({
       ...createEmptyRewardState(),
       choices: bonuses,
       lastVictoryContentSystem: "labyrinth",
       lastVictoryEnemyType: "elite",
     });
-    expect(readRunSession().companionRewardCards).toBeNull();
+    expect(readRunSession().rewardFlow.companionCards).toBeNull();
     expect(readGameplayState().runProfile.gold).toBe(profileBefore.gold);
     expect(readGameplayState().runProfile.materialInventory).toEqual(profileBefore.materialInventory);
     expect(readActiveRun().runMaterialsEarned).toEqual(snap.runMaterialsEarned);
     expect(readActiveRun().rng).toEqual(snap.rng);
     expect(
-      finalizeRewardState({ rewardState: readRunSession().rewardState, companionRewardCards: null }).materials,
+      finalizeRewardState({ rewardState: readRunSession().rewardFlow.state, companionRewardCards: null }).materials,
     ).toEqual(emptyInventory());
   });
 });
@@ -265,7 +265,7 @@ describe("primary reward resume", () => {
     restoreRun(snap, {}, {});
 
     expect(readGameplayState().run.navigation.screen).toBe(ROUTE_SCREENS.REWARDS);
-    const restored = readRunSession().rewardState;
+    const restored = readRunSession().rewardFlow.state;
     expect(restored.destinations).toEqual(["Card Shop"]);
     expect(restored.gold).toBe(7);
     expect(restored.materials).toEqual({ ...emptyInventory(), wood: 3 });
@@ -274,7 +274,7 @@ describe("primary reward resume", () => {
     const retrySnapshot = snapshotRun(ROUTE_SCREENS.REWARDS);
     resetRunDomainStore();
     restoreRun(retrySnapshot, {}, {});
-    expect(readRunSession().rewardState).toEqual(restored);
+    expect(readRunSession().rewardFlow.state).toEqual(restored);
     const materialsBefore = readActiveRun().runMaterialsEarned.wood;
     const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo: vi.fn() }));
     handlers.skipRewards();

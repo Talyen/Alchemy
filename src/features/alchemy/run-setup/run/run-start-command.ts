@@ -57,8 +57,9 @@ export function applyRunStartToDraft(
   snapshot: RunStartSnapshot,
   options: ApplyRunStartOptions = {},
 ): ApplyRunStartResult {
-  const switching = draft.session.hasActiveRun && draft.run.activeRun.contentSystemType !== snapshot.contentSystemType;
-  const isFreshStart = !draft.session.hasActiveRun || switching;
+  const switching =
+    draft.session.activity.kind !== "inactive" && draft.run.activeRun.contentSystemType !== snapshot.contentSystemType;
+  const isFreshStart = draft.session.activity.kind === "inactive" || switching;
   if (switching) {
     parkForegroundRunInDraft(draft);
     clearTransientSession(draft);

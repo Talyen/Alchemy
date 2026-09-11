@@ -10,7 +10,7 @@ export function resolveDraftLootProgress(draft: GameplayDraft): LootProgress {
         ? Math.max(1, run.roomsEncountered)
         : campaignLootDepth(
             run.currentAct,
-            run.destinationIndexInAct + (draft.session.pendingDestinationClaim === null ? 0 : 1),
+            run.destinationIndexInAct + (draft.session.rewardFlow.claim.kind === "destination" ? 1 : 0),
           );
   return createLootProgress(depth, draft.profile.completedDifficulties);
 }

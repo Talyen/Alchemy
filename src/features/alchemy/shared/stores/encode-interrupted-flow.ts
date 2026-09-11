@@ -35,10 +35,10 @@ function resolveExplorationScreen(
 function encodeDestinationFlow(session: RunSession["session"]): InterruptedFlow {
   return {
     kind: "destination",
-    destinations: [...session.rewardState.destinations],
-    selectedBossId: session.rewardState.selectedBossId,
-    lastVictoryEnemyType: session.rewardState.lastVictoryEnemyType,
-    lastVictoryContentSystem: session.rewardState.lastVictoryContentSystem,
+    destinations: [...session.rewardFlow.state.destinations],
+    selectedBossId: session.rewardFlow.state.selectedBossId,
+    lastVictoryEnemyType: session.rewardFlow.state.lastVictoryEnemyType,
+    lastVictoryContentSystem: session.rewardFlow.state.lastVictoryContentSystem,
   };
 }
 
@@ -47,7 +47,7 @@ export function encodeInterruptedFlow(
   currentScreen: Screen | null | undefined,
 ): InterruptedFlow {
   if (currentScreen === "rewards") {
-    const pending = serializePendingReward(session.rewardState, session.companionRewardCards);
+    const pending = serializePendingReward(session.rewardFlow.state, session.rewardFlow.companionCards);
     return pending ? { kind: "primary-reward", pending } : { kind: "none" };
   }
 
@@ -55,8 +55,8 @@ export function encodeInterruptedFlow(
     return encodeDestinationFlow(session);
   }
 
-  const pending = serializePendingReward(session.rewardState, session.companionRewardCards);
-  if (pending && (session.companionRewardCards?.length || session.rewardState.choices.length > 0)) {
+  const pending = serializePendingReward(session.rewardFlow.state, session.rewardFlow.companionCards);
+  if (pending && (session.rewardFlow.companionCards?.length || session.rewardFlow.state.choices.length > 0)) {
     return { kind: "primary-reward", pending };
   }
 

@@ -1,5 +1,5 @@
 import { useLayoutEffect, useMemo, useRef } from "react";
-import type { BattleState } from "@/lib/battle";
+import type { BattleSnapshot } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 import type { Screen } from "@/lib/routing";
 import { useLatestRef } from "@/features/alchemy/shared/hooks";
@@ -11,7 +11,7 @@ import { useBattlePresentationGateRef } from "@/features/alchemy/run-loop/battle
 
 interface UseBattlePlaybackProps {
   screen: Screen;
-  battleState: BattleState;
+  battleState: BattleSnapshot;
   hasActiveBattle: boolean;
   gameMenuOpen: boolean;
   isAutoplayEnabled: boolean;
@@ -33,7 +33,7 @@ export function useBattlePlayback({
   bindPlayback,
 }: UseBattlePlaybackProps) {
   const autoEndTurn = useSettingsStore((s) => s.autoEndTurn);
-  const scheduleAutoEndTurnRef = useRef<(state?: BattleState) => void>(() => {});
+  const scheduleAutoEndTurnRef = useRef<(state?: BattleSnapshot) => void>(() => {});
   const wakeAutoplayRef = useRef<(() => void) | null>(null);
 
   const onPlaybackGateChangeRef = useLatestRef(() => {

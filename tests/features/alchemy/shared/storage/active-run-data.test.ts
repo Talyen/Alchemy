@@ -1,3 +1,4 @@
+import { battleSnapshot } from "@/lib/battle";
 import { beforeEach, describe, expect, it } from "vitest";
 import { defaultBattleState, type BattleState } from "@/lib/battle";
 import { getStartingDeck, trinketLibrary } from "@/lib/game-data";
@@ -208,7 +209,7 @@ describe("encodeRunResumeSnapshot", () => {
 
     const result = encodeState();
 
-    expect(result.activeCombat?.battleState).toBe(battleState);
+    expect(result.activeCombat?.battleState).toEqual(battleSnapshot(battleState));
   });
 
   it("persists the current state during enemy phase instead of reverting to battle start", () => {
@@ -217,7 +218,7 @@ describe("encodeRunResumeSnapshot", () => {
 
     const result = encodeState();
 
-    expect(result.activeCombat?.battleState).toBe(enemyPhaseState);
+    expect(result.activeCombat?.battleState).toEqual(battleSnapshot(enemyPhaseState));
     expect(result.activeCombat!.battleState.turn).toBe(2);
     expect(result.activeCombat!.battleState.turnPhase).toBe("enemy");
   });

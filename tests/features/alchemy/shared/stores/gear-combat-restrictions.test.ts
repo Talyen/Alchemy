@@ -48,7 +48,7 @@ describe("combat equipment protection", () => {
       },
     });
     dispatchRunSessionCommand((draft) => {
-      draft.session.hasActiveRun = true;
+      draft.session.activity = { kind: "idle" };
       draft.battle.hasActiveBattle = true;
     });
   });

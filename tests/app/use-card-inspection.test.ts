@@ -22,7 +22,7 @@ beforeEach(() => {
   resetAllTestStores();
   useBattlePresentationStore.getState().resetPresentation();
   dispatchRunSessionCommand((draft) => {
-    draft.session.hasActiveRun = true;
+    draft.session.activity = { kind: "idle" };
     draft.battle.hasActiveBattle = true;
     draft.battle.battleState.enemyHealth = 30;
     draft.battle.battleState.playerHealth = 30;

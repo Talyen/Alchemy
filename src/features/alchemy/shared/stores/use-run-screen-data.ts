@@ -77,15 +77,15 @@ export function useLabyrinthMapScreenData(): ScreenData<"labyrinth-map"> {
 export function useRewardsScreenData(): ScreenData<"rewards"> {
   const data = useGameplayStateStore(
     useShallow((state) => ({
-      rewardState: state.session.rewardState,
-      rewardClaimInFlight: state.session.rewardClaimInFlight,
+      rewardState: state.session.rewardFlow.state,
+      rewardClaimInFlight: state.session.rewardFlow.claim.kind === "reward",
     })),
   );
   return useActivityScreenData("rewards", data);
 }
 
 export function useDestinationScreenData(): ScreenData<"destination"> {
-  const data = useGameplayStateStore(useShallow((state) => ({ rewardState: state.session.rewardState })));
+  const data = useGameplayStateStore(useShallow((state) => ({ rewardState: state.session.rewardFlow.state })));
   return useActivityScreenData("destination", data);
 }
 

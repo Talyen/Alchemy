@@ -1,4 +1,4 @@
-import type { BattleState, CombatTextEvent } from "@/lib/battle";
+import type { BattleSnapshot, CombatTextEvent } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 import type { Screen } from "@/lib/routing";
 import { setBattleState } from "@/features/alchemy/shared/stores/run-session-write-port";
@@ -6,7 +6,7 @@ import type { BattleControllerContext } from "./battle-context";
 import type { createBattleSession } from "./battle-session";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 
-export function shouldPlayCardGoldGain(previousState: BattleState, nextState: BattleState, card: BattleCard) {
+export function shouldPlayCardGoldGain(previousState: BattleSnapshot, nextState: BattleSnapshot, card: BattleCard) {
   return nextState.gold > previousState.gold && card.id !== "steal";
 }
 
@@ -33,7 +33,7 @@ export function isVictoryGraceActive(screen: Screen, enemyHealth: number, victor
 }
 
 export function createBattleDevOutcomes(ctx: BattleControllerContext, session: ReturnType<typeof createBattleSession>) {
-  function forceBattleOutcome(outcome: "victory" | "defeat", patch: (state: BattleState) => BattleState) {
+  function forceBattleOutcome(outcome: "victory" | "defeat", patch: (state: BattleSnapshot) => BattleSnapshot) {
     session.resetBattleSession();
     dispatchRunSessionCommand((draft) => setBattleState(draft, patch));
     session.handleVictoryDefeat(outcome);

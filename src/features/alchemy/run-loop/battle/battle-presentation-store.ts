@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 import { readBattle, readRunPhase } from "@/features/alchemy/shared/stores/run-reads";
 import { onClearBattlePresentation, onRunTeardown } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
-import type { CombatTextEvent } from "@/lib/battle";
+import type { BattleSnapshot, CombatTextEvent } from "@/lib/battle";
 import {
   COMBAT_TEXT_LANE_DELAY_MS,
   COMBAT_TEXT_LIFETIME_MS,
@@ -28,6 +28,10 @@ function getCombatTextDisplayText(event: CombatTextEvent): string {
 }
 
 interface BattlePresentationStore {
+  openingDrawPending: boolean;
+  setOpeningDrawPending: (pending: boolean) => void;
+  displayedBattle: BattleSnapshot | null;
+  setDisplayedBattle: (state: BattleSnapshot | null) => void;
   cardGhosts: CardGhost[];
   floatingCombatTexts: FloatingCombatText[];
   enemyShaking: boolean;
@@ -108,6 +112,8 @@ let ghostIdCounter = 0;
 
 type BattlePresentationState = Pick<
   BattlePresentationStore,
+  | "openingDrawPending"
+  | "displayedBattle"
   | "cardGhosts"
   | "floatingCombatTexts"
   | "enemyShaking"
@@ -125,6 +131,8 @@ type BattlePresentationState = Pick<
 >;
 
 const INITIAL_BATTLE_PRESENTATION_STATE: BattlePresentationState = {
+  openingDrawPending: false,
+  displayedBattle: null,
   cardGhosts: [],
   floatingCombatTexts: [],
   enemyShaking: false,
@@ -144,6 +152,8 @@ const INITIAL_BATTLE_PRESENTATION_STATE: BattlePresentationState = {
 export const useBattlePresentationStore = create<BattlePresentationStore>()(
   subscribeWithSelector((set) => ({
     ...INITIAL_BATTLE_PRESENTATION_STATE,
+    setOpeningDrawPending: (openingDrawPending) => set({ openingDrawPending }),
+    setDisplayedBattle: (displayedBattle) => set({ displayedBattle }),
 
     spawnCardGhost: (ghost) => {
       const id = `ghost-${++ghostIdCounter}`;
@@ -292,6 +302,8 @@ export type BattlePresentationPort = Pick<
   ReturnType<typeof useBattlePresentationStore.getState>,
   | "hiddenHandCardKeys"
   | "cardTransferInProgress"
+  | "setDisplayedBattle"
+  | "setOpeningDrawPending"
   | "spawnCardGhost"
   | "showCombatTexts"
   | "shakeCompanion"

@@ -1,7 +1,7 @@
 import { describe, expectTypeOf, it } from "vitest";
 import type { BattleCard } from "@/lib/game-data";
 import type { useBattleController } from "@/features/alchemy/shell/use-battle-controller";
-import type { AlchemyRunCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
+import type { AlchemyRunCommands } from "@/features/alchemy/shell/route-commands";
 import type { RunFlowHandlerDeps } from "@/features/alchemy/run-loop/run/run-flow";
 import type { RunScreenDataByScreen } from "@/features/alchemy/shared/stores/run-screen-data";
 import {
@@ -19,7 +19,7 @@ declare const maybeAsyncMutation: () => number | PromiseLike<number>;
 declare const draft: GameplayDraft;
 
 type WritePort = typeof import("@/features/alchemy/shared/stores/run-session-write-port");
-type PureBattleRngHelper = "withRestingWorldBattleRng" | "withRestingEndPlayerTurnResolution";
+type PureBattleRngHelper = "snapshotBattleState" | "snapshotBattleState";
 type NonDraftFirstWrite = Exclude<
   {
     [Key in keyof WritePort]: WritePort[Key] extends (...args: infer Args) => unknown

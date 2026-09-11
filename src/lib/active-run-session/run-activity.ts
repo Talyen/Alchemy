@@ -28,7 +28,7 @@ type ProgressActivityKind =
   | "wildwood-removal"
   | "draft-deck"
   | "difficulty-select";
-export type RunActivity = { kind: "idle" | ProgressActivityKind } | VisitActivity;
+export type RunActivity = { kind: "inactive" | "idle" | ProgressActivityKind } | VisitActivity;
 
 const EMPTY_VISITS: RunActivityData = {
   shop: emptyShopState(),
@@ -44,7 +44,7 @@ export function readActivityData<K extends keyof RunActivityData>(activity: RunA
 }
 
 export function runActivityScreen(activity: RunActivity): Screen | null {
-  return activity.kind === "idle" ? null : activity.kind;
+  return activity.kind === "idle" || activity.kind === "inactive" ? null : activity.kind;
 }
 
 export function transitionRunActivity(activity: RunActivity, screen: Screen): RunActivity {

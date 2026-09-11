@@ -4,14 +4,14 @@ import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { UNIQUE_GEAR_COMBAT } from "../game-constants";
 import { getCardKeywords, type BattleCard } from "@/lib/game-data";
 import { isPotionCard } from "@/lib/game-data/cards/card-pools";
-import { type BattleState, type CombatFlags } from "./types";
+import { type BattleSnapshot, type CombatFlags } from "./types";
 
 type BooleanCombatFlag = {
   [K in keyof CombatFlags]: CombatFlags[K] extends boolean ? K : never;
 }[keyof CombatFlags];
 
 type CardCostState = Pick<
-  BattleState,
+  BattleSnapshot,
   "flags" | "talentEffects" | "trinketEffects" | "gearEffects" | "uniqueGear" | "encounterBenefits"
 >;
 
@@ -143,7 +143,7 @@ export function computeEffectiveCost(state: CardCostState, card: BattleCard) {
   return result;
 }
 
-export function computeCardPayment(state: BattleState, card: BattleCard) {
+export function computeCardPayment(state: BattleSnapshot, card: BattleCard) {
   const cost = computeEffectiveCost(state, card);
   const missingMana = Math.max(0, cost.effectiveCost - state.mana);
   const usesBlock = missingMana > 0 && state.gearEffects.blockPaysFreezeMana > 0 && cardHasKeyword(card, "freeze");

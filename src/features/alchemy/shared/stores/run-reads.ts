@@ -1,6 +1,6 @@
-import type { ActiveRunData, ParkedRunsMap, PersistedBattleTransition } from "@/lib/active-run-session";
+import type { ParkedRunsMap, PersistedBattleTransition } from "@/lib/active-run-session";
 import { readActivityData, runActivityScreen } from "@/lib/active-run-session";
-import { isPlayerDefeated, type BattleState } from "@/lib/battle";
+import { isPlayerDefeated, type BattleSnapshot } from "@/lib/battle";
 import type { ContentSystemId, EncounterCombatTraitId } from "@/lib/content-systems/types";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type {
@@ -41,10 +41,9 @@ function selectContentNavigationFields(state: GameplayState): ContentNavigationR
   };
 }
 
-export type { DisplayOverrides } from "./run-domain-types";
 export type { ActiveRunReadView } from "./run-state-init";
 export type RunProfileReadView = Readonly<PermanentProgressFields>;
-export type RunSessionReadView = Readonly<RunSessionFields>;
+export type RunSessionReadView = Readonly<RunSessionFields> & { readonly hasActiveRun: boolean };
 export type BattleReadView = Readonly<RunDomainBattleState>;
 
 function useShallowRunSelector<T>(selector: (state: GameplayState) => T): T {
@@ -57,7 +56,8 @@ export function readRunProfile(): RunProfileReadView {
   return deepFreezeInDev({ ...readGameplayState().runProfile });
 }
 export function readRunSession(): RunSessionReadView {
-  return deepFreezeInDev({ ...readGameplayState().session });
+  const session = readGameplayState().session;
+  return deepFreezeInDev({ ...session, hasActiveRun: session.activity.kind !== "inactive" });
 }
 export function readShopFirstPurchaseUsed(
   shop: "shopState" | "alchemistState" | "trinketShopState" | "equipmentShopState",
@@ -77,40 +77,13 @@ export function readRunInitialized(): boolean {
   return readGameplayState().run.initialized;
 }
 export function readHasActiveRun(): boolean {
-  return readGameplayState().session.hasActiveRun;
+  return readGameplayState().session.activity.kind !== "inactive";
 }
 export function readHasActiveBattle(): boolean {
   return readGameplayState().battle.hasActiveBattle;
 }
-function cloneParkedBattleState(state: BattleState): BattleState {
-  const { rng, ...snapshot } = state;
-  return { ...structuredClone(snapshot), rng };
-}
-function cloneParkedRun(run: ActiveRunData): ActiveRunData {
-  const { activeCombat, ...snapshot } = run;
-  if (!activeCombat) return structuredClone(run);
-  const { battleState, pendingBattleTransition, ...combat } = activeCombat;
-  return {
-    ...structuredClone(snapshot),
-    activeCombat: {
-      ...structuredClone(combat),
-      battleState: cloneParkedBattleState(battleState),
-      pendingBattleTransition:
-        pendingBattleTransition && "resultState" in pendingBattleTransition
-          ? { ...pendingBattleTransition, resultState: cloneParkedBattleState(pendingBattleTransition.resultState) }
-          : structuredClone(pendingBattleTransition),
-    },
-  };
-}
 export function readParkedRuns(): ParkedRunsMap {
-  const parkedRuns = readGameplayState().run.parkedRuns;
-  const snapshot: ParkedRunsMap = {};
-  for (const [mode, rawRun] of Object.entries(parkedRuns)) {
-    const run = rawRun as ParkedRunsMap[ContentSystemId];
-    if (!run) continue;
-    snapshot[mode as ContentSystemId] = cloneParkedRun(run);
-  }
-  return snapshot;
+  return structuredClone(readGameplayState().run.parkedRuns);
 }
 export function readRunRecency(): ContentSystemId[] {
   return [...readGameplayState().run.runRecency];
@@ -120,11 +93,11 @@ export function readActiveRunScreen(): Screen {
 }
 export function readRunResumeScreen(): Screen | null {
   const state = readGameplayState();
-  return state.session.hasActiveRun ? runActivityScreen(state.session.activity) : null;
+  return state.session.activity.kind !== "inactive" ? runActivityScreen(state.session.activity) : null;
 }
 export function useRunResumeScreen(): Screen | null {
   return useGameplayStateStore((state) =>
-    state.session.hasActiveRun ? runActivityScreen(state.session.activity) : null,
+    state.session.activity.kind !== "inactive" ? runActivityScreen(state.session.activity) : null,
   );
 }
 export function readRunPhase(): RunPhase {
@@ -154,7 +127,6 @@ export function useActiveRunScreenValue(): Screen {
 export function selectAutosaveAllowed(
   state: {
     battle: { hasActiveBattle: boolean; battleState: { enemyHealth: number } };
-    session: { rewardClaimInFlight: boolean; rewardState: { choices: unknown[] } };
   },
   screen: Screen,
 ): boolean {
@@ -179,25 +151,26 @@ export function useHasActiveBattle(): boolean {
   return useGameplayStateStore((state) => state.battle.hasActiveBattle);
 }
 export function useHasActiveRun(): boolean {
-  return useGameplayStateStore((state) => state.session.hasActiveRun);
+  return useGameplayStateStore((state) => state.session.activity.kind !== "inactive");
 }
 export function useForegroundResumeKind(): "battle" | "run" | null {
   return useGameplayStateStore((state) => {
-    const liveMode = state.session.hasActiveRun ? state.run.activeRun.contentSystemType : null;
+    const liveMode = state.session.activity.kind !== "inactive" ? state.run.activeRun.contentSystemType : null;
     const mode = mostRecentResumableMode(
       state.run.runRecency,
       liveMode,
       state.run.parkedRuns,
-      state.session.hasActiveRun,
+      state.session.activity.kind !== "inactive",
     );
     if (!mode) return null;
-    if (state.session.hasActiveRun && liveMode === mode) return state.battle.hasActiveBattle ? "battle" : "run";
+    if (state.session.activity.kind !== "inactive" && liveMode === mode)
+      return state.battle.hasActiveBattle ? "battle" : "run";
     return state.run.parkedRuns[mode]?.activeCombat ? "battle" : "run";
   });
 }
 export function useResumableGameModes(): Record<ContentSystemId, boolean> {
   return useShallowRunSelector((state) => {
-    const live = state.session.hasActiveRun ? state.run.activeRun.contentSystemType : null;
+    const live = state.session.activity.kind !== "inactive" ? state.run.activeRun.contentSystemType : null;
     return {
       campaign: live === "campaign" || Boolean(state.run.parkedRuns.campaign),
       labyrinth: live === "labyrinth" || Boolean(state.run.parkedRuns.labyrinth),
@@ -205,9 +178,7 @@ export function useResumableGameModes(): Record<ContentSystemId, boolean> {
     };
   });
 }
-export function useDisplayOverrides() {
-  return useGameplayStateStore(useShallow((state) => state.battle.displayOverrides));
-}
+
 export function useBondedCompanions() {
   return useGameplayStateStore(useShallow((state) => state.runProfile.bondedCompanions));
 }
@@ -260,10 +231,10 @@ export function useActiveRunBoons(): string[] {
 }
 
 type RunSessionRunSlice = ActiveRunReadView & { talentXP: TalentXP; unlockedTalents: UnlockedTalents; gold: number };
-type RunSessionTransientSlice = RunSessionFields;
+type RunSessionTransientSlice = RunSessionReadView;
 interface RunSessionBattleSlice {
   hasActiveBattle: boolean;
-  battleState: BattleState;
+  battleState: BattleSnapshot;
   pendingBattleTransition: PersistedBattleTransition | null;
   pendingTransitionResumeRequired: boolean;
 }
@@ -288,7 +259,7 @@ export interface RunSessionNavigationSlice {
 }
 function pickRunSessionBattleSlice(battle: {
   hasActiveBattle: boolean;
-  battleState: BattleState;
+  battleState: BattleSnapshot;
   pendingBattleTransition: PersistedBattleTransition | null;
   pendingTransitionResumeRequired: boolean;
 }): RunSessionBattleSlice {
@@ -316,7 +287,7 @@ export function useRunSessionNavigationSlice(screen?: Screen): RunSessionNavigat
   const session = useShallowRunSelector((state) => ({
     screen: state.run.navigation.screen,
     hasActiveBattle: state.battle.hasActiveBattle,
-    hasActiveRun: state.session.hasActiveRun,
+    hasActiveRun: state.session.activity.kind !== "inactive",
     pendingCharacterId: state.session.pendingCharacterId,
     pendingContentSystemType: state.session.pendingContentSystemType,
   }));
@@ -340,7 +311,7 @@ export function getRunSessionFromState(state: GameplayState, screen?: Screen): R
     screen: resolvedScreen,
     phase: getRunPhase(resolvedScreen, battle.hasActiveBattle),
     run: { ...pickActiveRunView(state.run), talentXP, unlockedTalents, gold: state.runProfile.gold },
-    session: { ...state.session },
+    session: { ...state.session, hasActiveRun: state.session.activity.kind !== "inactive" },
     battle,
   };
 }
@@ -356,7 +327,7 @@ function selectCardInspectionData(state: GameplayState) {
     runSeed: run.rng.seed,
     characterId: run.characterId,
     mode: run.contentSystemType,
-    hasActiveRun: state.session.hasActiveRun,
+    hasActiveRun: state.session.activity.kind !== "inactive",
     hasActiveBattle: state.battle.hasActiveBattle,
     battleReady:
       state.battle.hasActiveBattle &&

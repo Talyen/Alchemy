@@ -1,5 +1,5 @@
 import { useRef, useMemo, useLayoutEffect, type RefObject } from "react";
-import type { BattleState } from "@/lib/battle";
+import type { BattleSnapshot } from "@/lib/battle";
 import type { BattleRefs, CardRect } from "@/features/alchemy/shared/types";
 import type { Screen } from "@/lib/routing";
 import { TimerGroup } from "@/lib/animation/game-timer";
@@ -8,7 +8,7 @@ import type { BattlePresentationPort } from "./battle-presentation-store";
 import { useBattlePresentationStore } from "./battle-presentation-store";
 
 export interface BattlePlaybackBind {
-  scheduleAutoEndTurn: (state?: BattleState) => void;
+  scheduleAutoEndTurn: (state?: BattleSnapshot) => void;
   clearAutoEndTurn: () => void;
 }
 
@@ -19,7 +19,7 @@ export interface BattleControllerContextProps {
   onBattleDefeat?: (() => void) | undefined;
   measureElementRect: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
   measureVisualCardRect: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
-  scheduleAutoEndTurnRef: RefObject<((state?: BattleState) => void) | null>;
+  scheduleAutoEndTurnRef: RefObject<((state?: BattleSnapshot) => void) | null>;
   clearAutoEndTurnRef: RefObject<(() => void) | null>;
   onBattleSessionPreparedRef: RefObject<(() => void) | null>;
   getPresentation?: () => BattlePresentationPort;
@@ -27,9 +27,7 @@ export interface BattleControllerContextProps {
 
 export interface BattleControllerContext extends Omit<BattleControllerContextProps, "getPresentation">, BattleRefs {
   cardPlayInProgressRef: RefObject<boolean>;
-  companionScheduledRef: RefObject<boolean>;
   battleTimerGroupRef: RefObject<TimerGroup>;
-  companionTimerGroupRef: RefObject<TimerGroup>;
   battleSessionRef: RefObject<number>;
   battleAbortControllerRef: RefObject<AbortController>;
   victoryDefeatHandledRef: RefObject<boolean>;
@@ -51,9 +49,7 @@ export function useBattleControllerContext(props: BattleControllerContextProps):
   const enemyPanelRef = useRef<HTMLDivElement | null>(null);
 
   const cardPlayInProgressRef = useRef(false);
-  const companionScheduledRef = useRef(false);
   const battleTimerGroupRef = useRef(new TimerGroup());
-  const companionTimerGroupRef = useRef(new TimerGroup());
   const battleSessionRef = useRef(0);
   const battleAbortControllerRef = useRef(new AbortController());
   const victoryDefeatHandledRef = useRef(false);
@@ -74,9 +70,7 @@ export function useBattleControllerContext(props: BattleControllerContextProps):
       enemyPanelRef,
 
       cardPlayInProgressRef,
-      companionScheduledRef,
       battleTimerGroupRef,
-      companionTimerGroupRef,
       battleSessionRef,
       battleAbortControllerRef,
       victoryDefeatHandledRef,

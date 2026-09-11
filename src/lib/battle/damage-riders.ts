@@ -2,7 +2,7 @@ import { type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 import { BATTLE_CONFIG, BLACKFLETCH_EXECUTE_HEALTH_PERCENT } from "../game-constants";
 import { halveRounded } from "./amount-helpers";
 import { applyLuckyCloverGold, applyNatureManaRefund } from "./bonus-effects";
-import { addGoldWithCombatText, mergeCombatText, payKillPayouts } from "./combat-text";
+import { mergeCombatText, payKillPayouts } from "./combat-text";
 import { computeReflectedHolyDamageToEnemy, forgeAppliesToDamageType } from "./damage-calc";
 import { applyDamageBlock, applyHolyLifesteal, applyHolyTithe } from "./damage-rider-leech";
 import { applyDamageStatuses } from "./damage-status-riders";
@@ -234,14 +234,6 @@ export function applyDamageRiders(
 
   nextState = decayArmorAfterDamage(nextState, modifiedDamage, "enemy");
 
-  if (
-    card.tags?.includes("archery") &&
-    nextState.talentEffects.goldOnArcheryKill > 0 &&
-    previousHealth > 0 &&
-    nextState.enemyHealth <= 0
-  ) {
-    nextState = addGoldWithCombatText(nextState, nextState.talentEffects.goldOnArcheryKill, combatTexts);
-  }
   if (effect.damageType === "physical" || effect.damageType === "bleed") {
     nextState = applyTalentHitConversions(nextState, effect.damageType, modifiedDamage, combatTexts);
   }

@@ -1,5 +1,5 @@
 import { repairShopOfferings, shopItemSlotKey } from "@/lib/active-run-session/shop-offering-repair";
-import type { BattleState } from "@/lib/battle";
+import type { BattleSnapshot } from "@/lib/battle";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { DRAFT_CHOICES, DRAFT_ROUNDS, MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
 import { cardById, characters, selectRewardCards, type BattleCard, type KeywordId } from "@/lib/game-data";
@@ -23,7 +23,7 @@ function filterLiveCards<T extends { id: string }>(cards: T[]): T[] {
   return cards.filter((card) => isLiveCardId(card.id));
 }
 
-function filterLiveBattleState(state: BattleState): BattleState {
+function filterLiveBattleState(state: BattleSnapshot): BattleSnapshot {
   return {
     ...state,
     deck: filterLiveCards(state.deck),

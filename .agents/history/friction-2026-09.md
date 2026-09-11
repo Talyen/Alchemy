@@ -2,6 +2,8 @@
 
 Historical evidence; current instructions live in the linked canonical owners.
 
+2026-09-10 — A turn-playback frame returned nested Immer proxies from a command; comparison after commit failed with a revoked-proxy error. Resolve from `current(draft.battle.battleState)` before assembling frames. The [run-state contract](../../docs/ARCHITECTURE.md#run-state) and resolved-turn regression now require detached, serializable frame results.
+
 2026-09-07 — A legacy multiplier test required enemy traits to suppress Shatter and Exploit Weakness, contradicting both talent descriptions. Focused history showed the expectation predated the talent redesign without a documented exception. The [battle rules](../../docs/GAME_RULES.md#damage-statuses-and-survival) now state that resistance/weakness combines with these talents; regression tests cover resistant and vulnerable enemies.
 
 2026-09-07 — Asset-cache freshness trusted unchanged size/mtime even after source bytes changed, while manifest and cleanup reads suppressed operational failures. Content-only streamed hashes and explicit filesystem errors now cover art, music, generated/curated sounds, and fallbacks. Prevention lives in [asset freshness](../../docs/WORKFLOWS-ASSETS.md#content-freshness-and-filesystem-failures); regression fixtures preserve timestamps and exercise unreadable paths.

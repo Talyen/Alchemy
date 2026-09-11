@@ -1,5 +1,5 @@
 import { vi } from "vitest";
-import type { AlchemyRouteCommands } from "@/features/alchemy/shell/use-alchemy-run-controller";
+import type { AlchemyRouteCommands } from "@/features/alchemy/shell/route-commands";
 
 export function createMockRouteCommands(): AlchemyRouteCommands {
   const fn = () => vi.fn();
@@ -33,35 +33,32 @@ export function createMockRouteCommands(): AlchemyRouteCommands {
       destinations: { prepare: fn(), choose: fn(), continueCampfire: fn() },
       wildwood: { removeCard: fn(), skipRemoval: fn() },
       shop: {
+        continue: fn(),
         merchant: {
-          handleBuyCard: fn(),
-          handleRemoveCard: fn(),
-          handleRefresh: fn(),
-          handleContinue: fn(),
+          buyCard: fn(),
+          removeCard: fn(),
+          refresh: fn(),
           getCardBuyPrice: fn(),
           getRemoveCardPrice: fn(),
           getRefreshPrice: fn(),
         },
         alchemist: {
-          handleBuyCard: fn(),
-          handleRefresh: fn(),
-          handleMixPotions: fn(),
-          handleContinue: fn(),
+          buyPotion: fn(),
+          refresh: fn(),
+          mixPotions: fn(),
           getPotionBuyPrice: fn(),
           getMixPrice: fn(),
           getRefreshPrice: fn(),
         },
         trinket: {
-          handleBuy: fn(),
-          handleRefresh: fn(),
-          handleContinue: fn(),
+          buy: fn(),
+          refresh: fn(),
           getBuyPrice: fn(),
           getRefreshPrice: fn(),
         },
         equipment: {
-          handleBuy: fn(),
-          handleRefresh: fn(),
-          handleContinue: fn(),
+          buy: fn(),
+          refresh: fn(),
           getBuyPrice: fn(),
           getRefreshPrice: fn(),
         },

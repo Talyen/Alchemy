@@ -2,12 +2,12 @@ import { LABYRINTH_REWARD_CONFIG } from "@/lib/game-constants";
 import { computeTrinketManifest } from "@/lib/trinkets";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { MATERIAL_IDS, type MaterialInventory } from "@/lib/homestead/types";
-import type { BattleState } from "@/lib/battle";
+import type { BattleSnapshot } from "@/lib/battle";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
 
 interface VictoryGoldInput {
-  battleState: Pick<BattleState, "gold">;
+  battleState: Pick<BattleSnapshot, "gold">;
   purseGold: number;
   runBoons: string[];
   gold: number;

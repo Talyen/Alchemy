@@ -69,7 +69,7 @@ export type GearArmorySlice = GearStateFields;
 export function useGearCombatRestrictions() {
   const selection = useGameplayStateStore(
     useShallow((s) => ({
-      hasActiveRun: s.session.hasActiveRun,
+      activity: s.session.activity,
       activeRun: s.run.activeRun,
       parkedRuns: s.run.parkedRuns,
       hasActiveBattle: s.battle.hasActiveBattle,
@@ -80,7 +80,7 @@ export function useGearCombatRestrictions() {
   return useMemo(
     () =>
       deriveGearCombatRestrictions({
-        session: { hasActiveRun: selection.hasActiveRun },
+        session: { activity: selection.activity },
         run: { activeRun: selection.activeRun, parkedRuns: selection.parkedRuns },
         battle: { hasActiveBattle: selection.hasActiveBattle },
         gear: { loadouts: selection.loadouts, equippedTrinkets: selection.equippedTrinkets },

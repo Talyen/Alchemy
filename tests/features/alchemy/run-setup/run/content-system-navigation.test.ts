@@ -147,7 +147,7 @@ describe("createContentSystemNavigation", () => {
       destinationIndexInAct: 0,
       maxHealth: expect.any(Number),
     });
-    expect(readRunSession().rewardState.destinations).toEqual([DESTINATIONS.NORMAL_COMBAT]);
+    expect(readRunSession().rewardFlow.state.destinations).toEqual([DESTINATIONS.NORMAL_COMBAT]);
     expect(readActiveRun().lastOfferedDestinations).toEqual([DESTINATIONS.NORMAL_COMBAT]);
   });
 

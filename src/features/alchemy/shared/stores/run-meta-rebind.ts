@@ -37,7 +37,7 @@ function applyDerivedMaxHealth(draft: GameplayDraft, gearBonus: number): void {
 }
 
 function rebindMetaHealth(draft: GameplayDraft, gearBonus: number): void {
-  if (!draft.session.hasActiveRun) return;
+  if (draft.session.activity.kind === "inactive") return;
   applyDerivedMaxHealth(draft, gearBonus);
 }
 
@@ -53,7 +53,7 @@ function rebindBattleState(draft: GameplayDraft, combatMeta: CombatMeta): void {
 }
 
 export function rebindLiveRunMeta(draft: GameplayDraft): void {
-  if (!draft.session.hasActiveRun) return;
+  if (draft.session.activity.kind === "inactive") return;
   const combatMeta = deriveCombatMeta(draft);
   rebindMetaHealth(draft, combatMeta.gearEffects.maxHealth);
   rebindBattleState(draft, combatMeta);

@@ -1,14 +1,9 @@
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { FREE_CARD_SENTINEL } from "../game-constants";
 import { drawFromState, applyDrawResult } from "./draw";
-import {
-  addGoldWithCombatText,
-  gainManaWithCombatText,
-  addPlayerStatusWithCombatText,
-  mergeCombatText,
-} from "./combat-text";
+import { addGoldWithCombatText, gainManaWithCombatText, addPlayerStatusWithCombatText } from "./combat-text";
 import { setFlag, stripEnemyArmor, stripEnemyBlock, type BattleState, type CombatTextEvent } from "./types";
-import { addForgeToPlayer } from "./status-player";
+import { addForgeToPlayer, applyArmorReward } from "./status-player";
 
 export interface CrowdControlTriggerBonuses {
   block?: number;
@@ -59,19 +54,7 @@ export function applyIronwoodBuckler(state: BattleState, combatTexts: CombatText
     state.trinketEffects.blockToArmorThreshold > 0 &&
     state.playerStatuses.block >= state.trinketEffects.blockToArmorThreshold
   ) {
-    state = {
-      ...state,
-      playerStatuses: {
-        ...state.playerStatuses,
-        armor: state.playerStatuses.armor + state.trinketEffects.blockToArmorAmount,
-      },
-    };
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "status",
-      stat: "armor",
-      amount: state.trinketEffects.blockToArmorAmount,
-    });
+    state = applyArmorReward(state, state.trinketEffects.blockToArmorAmount, combatTexts);
   }
   return state;
 }

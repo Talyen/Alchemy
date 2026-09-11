@@ -71,7 +71,7 @@ export function clearActiveRunInDraft(draft: GameplayDraft): void {
 
 export function teardownRun(): void {
   dispatchRunSessionCommand((draft) => {
-    if (draft.session.hasActiveRun) {
+    if (draft.session.activity.kind !== "inactive") {
       clearModeSlotInDraft(draft, draft.run.activeRun.contentSystemType);
     }
     clearActiveRunInDraft(draft);
@@ -103,7 +103,7 @@ function finalizeRunEndSessionState(
 ): MaterialInventory {
   const session = draft.session;
 
-  if (!session.hasActiveRun) {
+  if (session.activity.kind === "inactive") {
     return emptyInventory();
   }
 

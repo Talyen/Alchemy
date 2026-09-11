@@ -1,9 +1,6 @@
+import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { useMemo } from "react";
-import {
-  useActiveRunScreenValue,
-  useActiveRunBoons,
-  useDisplayOverrides,
-} from "@/features/alchemy/shared/stores/run-reads";
+import { useActiveRunScreenValue, useActiveRunBoons } from "@/features/alchemy/shared/stores/run-reads";
 import { useRunSessionBattleContext } from "@/features/alchemy/shared/stores/run-reads";
 import type { BattleScreenData } from "@/features/alchemy/run-loop/screens/battle-screen/types";
 
@@ -13,16 +10,15 @@ export function useBattleScreenRouteData() {
     battle: { battleState, hasActiveBattle },
     activeLabyrinthModifiers,
   } = useRunSessionBattleContext(screen);
-  const displayOverrides = useDisplayOverrides();
+  const displayedBattle = useBattlePresentationStore((state) => state.displayedBattle);
   const runBoons = useActiveRunBoons();
   const battleScreenData: BattleScreenData = useMemo(
     () => ({
-      battleState,
-      displayOverrides,
+      battleState: displayedBattle ?? battleState,
       activeLabyrinthModifiers,
       runBoons,
     }),
-    [battleState, displayOverrides, activeLabyrinthModifiers, runBoons],
+    [battleState, displayedBattle, activeLabyrinthModifiers, runBoons],
   );
 
   return {

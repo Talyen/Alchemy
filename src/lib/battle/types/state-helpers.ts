@@ -1,3 +1,4 @@
+import { flatDamageReduction, receivesHalfDamage, gearResistancePercent } from "../damage-modifiers";
 import { LABYRINTH_MODIFIER_CONFIG } from "../../game-constants";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { clamp } from "@/lib/math";
@@ -193,28 +194,13 @@ export function gainMana(state: BattleState, amount: number, allowOverflow = fal
   };
 }
 
-function computeDamageReduction(damage: number, damageType: string | undefined, state: BattleState): number {
-  if (damageType === "burn") return damage - state.talentEffects.burnDamageReduction;
-  if (damageType === "freeze") return damage - state.talentEffects.freezeDamageReduction;
-  if (damageType === "nature") return damage - state.talentEffects.natureDamageReduction;
-  if (damageType === "poison") return damage - state.talentEffects.poisonDamageReduction;
-  return damage;
-}
-
 export function scaleReceivedPlayerDamage(
   damage: number,
   talentEffects: BattleState["talentEffects"],
   damageType: string | undefined,
 ): number {
   if (damage <= 0) return damage;
-  const receiveHalf =
-    (damageType === "burn" && talentEffects.receiveHalfBurnDamage) ||
-    (damageType === "holy" && talentEffects.receiveHalfHolyDamage) ||
-    (damageType === "freeze" && talentEffects.receiveHalfFreezeDamage) ||
-    (damageType === "poison" && talentEffects.receiveHalfPoisonDamage) ||
-    (damageType === "bleed" && talentEffects.receiveHalfBleedDamage) ||
-    (damageType === "nature" && talentEffects.receiveHalfNatureDamage);
-  return receiveHalf ? halveRounded(damage) : damage;
+  return receivesHalfDamage(talentEffects, damageType) ? halveRounded(damage) : damage;
 }
 
 export function deathsDoorGraceTurns(extension: number): number {
@@ -238,7 +224,7 @@ export function mitigatePlayerCombatDamage(
     if (state.activeCompanion && state.talentEffects.damageReductionWithCompanion > 0) {
       reducedDamage -= state.talentEffects.damageReductionWithCompanion;
     }
-    reducedDamage = computeDamageReduction(reducedDamage, damageType, state);
+    reducedDamage -= flatDamageReduction(state.talentEffects, damageType);
     reducedDamage = Math.max(0, reducedDamage);
     reducedDamage = applyGearDamageResistance(reducedDamage, damageType, state.gearEffects);
   }
@@ -324,18 +310,7 @@ export function applyGearDamageResistance(
   damageType: string | undefined,
   gear: GearEffectManifest,
 ): number {
-  const RESIST_BY_DAMAGE_TYPE: Record<string, keyof GearEffectManifest> = {
-    physical: "resistPhysical",
-    stun: "resistStun",
-    holy: "resistHoly",
-    burn: "resistBurn",
-    poison: "resistPoison",
-    bleed: "resistBleed",
-    freeze: "resistFreeze",
-    nature: "resistNature",
-  };
-  const key = damageType ? RESIST_BY_DAMAGE_TYPE[damageType] : undefined;
-  const resist = key ? gear[key] : 0;
+  const resist = gearResistancePercent(gear, damageType);
   if (resist <= 0) return damage;
   return Math.max(0, Math.round(damage * (1 - resist / PERCENT_DENOMINATOR)));
 }

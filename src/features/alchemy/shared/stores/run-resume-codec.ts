@@ -23,7 +23,7 @@ import {
   type RewardState,
   type RunActivity,
 } from "@/lib/active-run-session";
-import { isPlayerDefeated } from "@/lib/battle";
+import { battleSnapshot, isPlayerDefeated } from "@/lib/battle";
 import { activeLabyrinthBenefits } from "@/lib/content-systems/labyrinth/room-rules";
 import type { EncounterCombatTraitId, EncounterRewardTraitId, LabyrinthMap } from "@/lib/content-systems/types";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
@@ -134,7 +134,7 @@ function encodeActiveRunFromSession(source: RunSession, resume: EncodeResumeFiel
   const activeCombat =
     battle.hasActiveBattle && battle.battleState.enemyHealth > 0 && !isPlayerDefeated(battle.battleState)
       ? {
-          battleState: battle.battleState,
+          battleState: battleSnapshot(battle.battleState),
           pendingBattleTransition: battle.pendingBattleTransition ?? null,
           activeLabyrinthModifiers: isLabyrinth ? session.activeLabyrinthModifiers : [],
           activeLabyrinthRewardModifiers: isLabyrinth ? session.activeLabyrinthRewardModifiers : [],
@@ -169,7 +169,7 @@ export function encodeRunResumeSnapshot(source: RunSession, screen?: Screen): Ac
     currentScreen,
     ...encodeActivityFields(source.session, currentScreen),
   });
-  return source.session.activity.kind === "idle"
+  return source.session.activity.kind === "idle" || source.session.activity.kind === "inactive"
     ? { ...snapshot, currentScreen: inferActiveRunScreen(snapshot) }
     : snapshot;
 }

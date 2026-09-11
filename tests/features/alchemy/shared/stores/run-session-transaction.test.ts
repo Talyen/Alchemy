@@ -10,7 +10,6 @@ import { mutateGearForTest } from "../../../../helpers/gameplay-store-test";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
 import {
-  beginBattleTransition,
   initializeActiveBattle,
   commitBattleTransition,
   createDraftRunRandomSource,
@@ -19,7 +18,7 @@ import {
   setHasActiveRun,
   setGold,
   withDraftWorldBattleRng,
-  withRestingWorldBattleRng,
+  snapshotBattleState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import {
   setDiscoveredCardIds,
@@ -36,7 +35,6 @@ import {
   readRunProfile,
 } from "@/features/alchemy/shared/stores/run-reads";
 import { defaultBattleState } from "@/lib/battle";
-import { placeholderRng } from "@/lib/rng";
 import { createRunRngState } from "@/lib/rng";
 import { createEmptyGearInventories, createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
 
@@ -226,24 +224,18 @@ describe("run-session transaction coordinator", () => {
     const resultState = { ...defaultBattleState(), turn: 2, playerHealth: 18 };
 
     dispatchRunSessionCommand((draft) =>
-      beginBattleTransition(
-        draft,
-        intermediate,
-        { kind: "enemy-turn", resultState, playerTurnSkipped: false },
-        { hand: [], turnPhase: "enemy" },
-      ),
+      commitBattleTransition(draft, intermediate, { kind: "enemy-turn", resultState, playerTurnSkipped: false }),
     );
 
     unsubscribe();
 
     expect(commits).toHaveLength(1);
     expect(readGameplayState().battle.battleState).toEqual({
-      ...intermediate,
-      rng: expect.any(Function),
+      ...snapshotBattleState(intermediate),
     });
     expect(readGameplayState().battle.pendingBattleTransition).toEqual({
       kind: "enemy-turn",
-      resultState: { ...resultState, rng: expect.any(Function) },
+      resultState: snapshotBattleState(resultState),
       playerTurnSkipped: false,
     });
     expect(readGameplayState().battle.pendingTransitionResumeRequired).toBe(false);
@@ -268,7 +260,7 @@ describe("run-session transaction coordinator", () => {
       expect(pending.resultState.turn).toBe(2);
       expect(pending.resultState.playerHealth).toBe(18);
       expect(pending.playerTurnSkipped).toBe(false);
-      expect(pending.resultState.rng).not.toBe(placeholderRng);
+      expect(pending.resultState).not.toHaveProperty("rng");
     }
 
     dispatchRunSessionCommand((draft) =>
@@ -283,7 +275,7 @@ describe("run-session transaction coordinator", () => {
     expect(readGameplayState().battle.pendingBattleTransition).toBeNull();
   });
 
-  it("rebinds world RNG when hydrating active combat from a stripped save", () => {
+  it("hydrates data-only battle snapshots and advances RNG only in commands", () => {
     setRunProgress({ rng: createRunRngState(() => 42 / 0x1_0000_0000) });
     const worldBefore = readGameplayState().run.activeRun.rng.counters.world;
     const strippedBattle = JSON.parse(JSON.stringify({ ...defaultBattleState(), turn: 5, playerHealth: 20 }));
@@ -298,8 +290,8 @@ describe("run-session transaction coordinator", () => {
     );
 
     const battle = readGameplayState().battle;
-    expect(battle.battleState.rng).not.toBe(placeholderRng);
-    expect(() => battle.battleState.rng()).toThrow(/withDraftWorldBattleRng/);
+    expect(battle.battleState).not.toHaveProperty("rng");
+    expect(battle.battleState).not.toHaveProperty("rng");
 
     dispatchRunSessionCommand((draft) => {
       createDraftRunRandomSource(draft, "world")();
@@ -309,8 +301,8 @@ describe("run-session transaction coordinator", () => {
     const pending = battle.pendingBattleTransition;
     expect(pending?.kind).toBe("enemy-turn");
     if (pending?.kind === "enemy-turn") {
-      expect(pending.resultState.rng).not.toBe(placeholderRng);
-      expect(() => pending.resultState.rng()).toThrow(/withDraftWorldBattleRng/);
+      expect(pending.resultState).not.toHaveProperty("rng");
+      expect(pending.resultState).not.toHaveProperty("rng");
       dispatchRunSessionCommand((draft) => {
         createDraftRunRandomSource(draft, "world")();
       });
@@ -318,17 +310,17 @@ describe("run-session transaction coordinator", () => {
     }
   });
 
-  it("returns resting rng from battle states written inside a command", () => {
+  it("returns serializable battle snapshots from commands", () => {
     setRunProgress({ rng: createRunRngState(() => 42 / 0x1_0000_0000) });
     const returned = dispatchRunSessionCommand((draft) => {
       const bound = withDraftWorldBattleRng(draft, draft.battle.battleState);
       const next = { ...bound, playerHealth: Math.max(1, bound.playerHealth - 1) };
       setBattleState(draft, next);
-      return withRestingWorldBattleRng(next);
+      return snapshotBattleState(next);
     });
 
-    expect(() => returned.rng()).toThrow(/withDraftWorldBattleRng/);
-    expect(() => readGameplayState().battle.battleState.rng()).toThrow(/withDraftWorldBattleRng/);
+    expect(returned).not.toHaveProperty("rng");
+    expect(readGameplayState().battle.battleState).not.toHaveProperty("rng");
   });
 
   it("keeps the committed root unchanged until the outer commit", () => {
@@ -341,13 +333,13 @@ describe("run-session transaction coordinator", () => {
       expect(draft.runProfile.gold).toBe(125);
       expect(useGameplayStateStore.getState()).toBe(before);
       expect(useGameplayStateStore.getState().runProfile.gold).toBe(0);
-      expect(useGameplayStateStore.getState().session.hasActiveRun).toBe(false);
+      expect(useGameplayStateStore.getState().session.activity.kind !== "inactive").toBe(false);
     });
 
     const after = useGameplayStateStore.getState();
     expect(after).not.toBe(before);
     expect(after.runProfile.gold).toBe(125);
-    expect(after.session.hasActiveRun).toBe(true);
+    expect(after.session.activity.kind !== "inactive").toBe(true);
   });
 
   it("runs completion effects for unchanged commands without publishing a revision", () => {
@@ -536,7 +528,7 @@ describe("run-session transaction coordinator", () => {
     expect(readProfileStore().discoveredCardIds).toEqual([]);
     expect(readGearState().craftingCurrencies.voidstone).toBe(initialVoidstone);
     expect(readGameplayState().runProfile.gold).toBe(0);
-    expect(readGameplayState().session.hasActiveRun).toBe(false);
+    expect(readGameplayState().session.activity.kind !== "inactive").toBe(false);
   });
 
   it("hydrates the complete active run before publishing its commit", () => {

@@ -15,3 +15,5 @@ export { getActiveCcKeyword, isPlayerCcControlled, type ActiveCcKeyword } from "
 export { getBattleCardPlayTarget } from "./card-play-target";
 
 export { createUniqueGearBattleState } from "./unique-gear-state";
+
+export { resolveBattleTurn, type BattleTurnFrame, type ResolvedBattleTurn } from "./turn-resolution";

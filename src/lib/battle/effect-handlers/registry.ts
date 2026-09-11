@@ -1,6 +1,6 @@
 import { resolvePendingBattleReactions } from "../enemy-attack-damage";
 import { resolveCompanionTurnStart } from "../companion-effects";
-import { hasEncounterBenefit } from "../types";
+import { hasEncounterBenefit, isPlayerDefeated } from "../types";
 import type { BattleCard, BattleCardEffect, BattleCardEffectKind } from "@/lib/game-data";
 import { isPotionCard } from "@/lib/game-data/cards/card-pools";
 import { isRecursiveBattleCardEffectKind } from "@/lib/game-data";
@@ -104,6 +104,7 @@ function applySingleEffect(
   combatTexts: CombatTextEvent[],
   context: CardEffectResolutionContext,
 ): BattleState {
+  if (isPlayerDefeated(state)) return state;
   if (effect.kind === "chance") {
     const rng = getBattleRng(state);
     const branch = rollChance(effect.probability, rng) ? effect.successEffects : effect.failureEffects;

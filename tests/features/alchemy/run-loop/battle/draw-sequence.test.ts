@@ -10,26 +10,26 @@ describe("runHandDrawSequence", () => {
   installImmediateRafForTests();
 
   it("returns false when the session is inactive", async () => {
-    const applyState = vi.fn();
+    const onReveal = vi.fn();
     const result = await runHandDrawSequence(
       [],
       { ...defaultBattleState(), hand: [makeTestCardWithId("slash", { uid: 1 })] },
-      applyState,
+      onReveal,
       1,
       makeDrawSequenceDeps({ isSessionActive: () => false }),
     );
     expect(result).toBe(false);
-    expect(applyState).not.toHaveBeenCalled();
+    expect(onReveal).not.toHaveBeenCalled();
   });
 
   it("applies state without animation when no new cards are drawn", async () => {
     const card = makeTestCardWithId("slash", { uid: 1 });
-    const applyState = vi.fn();
+    const onReveal = vi.fn();
     const deps = makeDrawSequenceDeps();
-    const result = await runHandDrawSequence([card], { ...defaultBattleState(), hand: [card] }, applyState, 1, deps);
+    const result = await runHandDrawSequence([card], { ...defaultBattleState(), hand: [card] }, onReveal, 1, deps);
 
     expect(result).toBe(false);
-    expect(applyState).toHaveBeenCalledOnce();
+    expect(onReveal).toHaveBeenCalledOnce();
     expect(deps.setTransferInProgress).not.toHaveBeenCalled();
     expect(deps.setHiddenHandCardKeys).not.toHaveBeenCalled();
     expect(deps.animateDrawnHand).not.toHaveBeenCalled();
@@ -38,7 +38,7 @@ describe("runHandDrawSequence", () => {
   it("hides new cards, applies state, animates, then clears hidden keys", async () => {
     const oldHand = [makeTestCardWithId("slash", { uid: 1 })];
     const newHand = [makeTestCardWithId("slash", { uid: 1 }), makeTestCardWithId("block", { uid: 2 })];
-    const applyState = vi.fn();
+    const onReveal = vi.fn();
     const hiddenKeys: unknown[] = [];
     const deps = makeDrawSequenceDeps({
       setHiddenHandCardKeys: (update) => {
@@ -46,10 +46,10 @@ describe("runHandDrawSequence", () => {
       },
     });
 
-    const result = await runHandDrawSequence(oldHand, { ...defaultBattleState(), hand: newHand }, applyState, 3, deps);
+    const result = await runHandDrawSequence(oldHand, { ...defaultBattleState(), hand: newHand }, onReveal, 3, deps);
 
     expect(result).toBe(true);
-    expect(applyState).toHaveBeenCalledOnce();
+    expect(onReveal).toHaveBeenCalledOnce();
     expect(deps.animateDrawnHand).toHaveBeenCalledWith([newHand[1]], newHand, 3);
     expect(deps.setTransferInProgress).toHaveBeenCalledWith(true);
     expect(deps.setTransferInProgress).toHaveBeenLastCalledWith(false);
@@ -89,7 +89,7 @@ describe("runHandDrawSequence", () => {
   it("does not mutate presentation when the battle session ends mid-draw", async () => {
     const oldHand = [makeTestCardWithId("slash", { uid: 1 })];
     const newHand = [makeTestCardWithId("slash", { uid: 1 }), makeTestCardWithId("block", { uid: 2 })];
-    const applyState = vi.fn();
+    const onReveal = vi.fn();
     const hiddenKeys: unknown[] = [];
     let sessionActive = true;
     const deps = makeDrawSequenceDeps({
@@ -103,7 +103,7 @@ describe("runHandDrawSequence", () => {
       },
     });
 
-    const result = await runHandDrawSequence(oldHand, { ...defaultBattleState(), hand: newHand }, applyState, 3, deps);
+    const result = await runHandDrawSequence(oldHand, { ...defaultBattleState(), hand: newHand }, onReveal, 3, deps);
 
     expect(result).toBe(false);
     expect(performance.getEntriesByName(battleStageMarkName("draw-end"), "mark")).toHaveLength(0);

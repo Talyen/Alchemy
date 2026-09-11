@@ -48,7 +48,7 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, completeRunV
   }
 
   function prepareDestinationScreen() {
-    const state = readRunSession().rewardState;
+    const state = readRunSession().rewardFlow.state;
     const bossOnly = state.destinations.length === 1 && state.destinations[0] === DESTINATIONS.BOSS_COMBAT;
     if (!bossOnly) {
       if (state.selectedBossId) {

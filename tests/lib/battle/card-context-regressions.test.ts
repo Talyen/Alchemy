@@ -54,7 +54,7 @@ describe("card context regressions", () => {
       pendingTurnStartEffects: [{ remainingTurns: 1, effects: [{ kind: "heal", amount: 4 }] }],
     });
     const resumed = PersistedBattleStateSchema.parse(JSON.parse(JSON.stringify(state)));
-    expect(advanceToPlayerTurn(resumed).playerHealth).toBe(9);
+    expect(advanceToPlayerTurn({ ...resumed, rng: () => 0.99 }).playerHealth).toBe(9);
   });
 
   it("Armor Siphon cannot steal Armor already depleted by Ecosystem", () => {

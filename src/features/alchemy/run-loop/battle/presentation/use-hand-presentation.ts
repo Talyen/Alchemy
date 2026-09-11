@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, type RefObject } from "react";
-import type { BattleState } from "@/lib/battle";
+import type { BattleSnapshot } from "@/lib/battle";
 import { useBattlePresentationStore, type BattlePresentationPort } from "../battle-presentation-store";
 import { getPlayableHandCardKeysExcludingHidden } from "../playable-hand";
 
@@ -11,7 +11,7 @@ export function useCardTransferInProgress() {
   return useBattlePresentationStore((s) => s.cardTransferInProgress);
 }
 
-export function useInteractiveHandCardKeys(battleState: BattleState, playableKeys?: Set<string>) {
+export function useInteractiveHandCardKeys(battleState: BattleSnapshot, playableKeys?: Set<string>) {
   const hiddenHandCardKeys = useHiddenHandCardKeys();
   return useMemo(
     () => getPlayableHandCardKeysExcludingHidden(battleState, hiddenHandCardKeys, playableKeys),

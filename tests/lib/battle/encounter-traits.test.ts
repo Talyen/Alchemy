@@ -592,7 +592,7 @@ describe("Cinder Skin Health damage reactions", () => {
     const queued = damageEnemyHealth(defended, 1).state;
     const resumed = normalizePersistedBattleState(queued);
     expect(resumed.flags.pendingCinderSkinReaction).toBe(true);
-    const resolved = resolvePendingBattleReactions(resumed, []);
+    const resolved = resolvePendingBattleReactions({ ...resumed, rng: state.rng }, []);
     expect(resolved.playerHealth).toBe(30);
     expect(resolved.enemyHealth).toBe(98);
     expect(resolved.flags.pendingCinderSkinReaction).toBe(false);

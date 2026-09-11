@@ -54,7 +54,7 @@ export function isStunFreezeBuildupBlocked(cc: CcState): boolean {
 
 export type { CombatFlags } from "../combat-flags";
 
-export interface BattleState {
+export interface BattleSnapshot {
   battleMetrics?: {
     enemyAttackActions: number;
     enemyAbilityActivations: Record<string, number>;
@@ -107,7 +107,6 @@ export interface BattleState {
   nextCardUid: number;
   difficultyModifiers: DifficultyModifier[];
   appliesFightPacing: boolean;
-  rng: () => number;
   pendingMaterials: MaterialInventory;
   contentSystemType: ContentSystemId;
   encounterBenefits: EncounterRewardTraitId[];
@@ -145,4 +144,17 @@ export type CombatTextEvent = NumericCombatTextEvent | NoticeCombatTextEvent;
 export interface BattleResolution {
   state: BattleState;
   combatTexts: CombatTextEvent[];
+}
+
+/** Execution-only dependency; never retained in a committed or saved snapshot. */
+export interface BattleResolutionContext {
+  rng: () => number;
+}
+
+export interface BattleState extends BattleSnapshot, BattleResolutionContext {}
+
+export function battleSnapshot(state: BattleSnapshot & Partial<BattleResolutionContext>): BattleSnapshot {
+  // eslint-disable-next-line no-restricted-syntax -- Serialization removes the execution dependency without drawing it.
+  const { rng: _rng, ...snapshot } = state;
+  return snapshot;
 }

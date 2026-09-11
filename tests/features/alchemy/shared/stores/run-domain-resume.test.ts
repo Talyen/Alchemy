@@ -59,7 +59,7 @@ describe("session facade API", () => {
     expect(session.run.runPlayerHealth).toBe(18);
     expect(session.run.gold).toBe(40);
     expect(session.battle.battleState.playerHealth).toBe(10);
-    expect(session.session.hasActiveRun).toBe(true);
+    expect(session.session.activity.kind !== "inactive").toBe(true);
     expect(session.phase).toBe("meta");
   });
 
@@ -154,7 +154,7 @@ describe("session facade API", () => {
     expect(parsed.interruptedFlow).toEqual(snap.interruptedFlow);
     restoreRun({ ...snap, interruptedFlow: parsed.interruptedFlow }, {}, {});
     expect(readActiveRunScreen()).toBe("rewards");
-    const rewardState = readRunSession().rewardState;
+    const rewardState = readRunSession().rewardFlow.state;
     expect(rewardState.choices).toEqual([]);
     expect(finalizeRewardState({ rewardState, companionRewardCards: null }).route).toBe(REWARD_ROUTES.ACT_COMPLETE);
   });
@@ -194,8 +194,8 @@ describe("session facade API", () => {
 
     setRewardState(createEmptyRewardState());
     restoreRun(snap, {}, {});
-    expect(readRunSession().rewardState.rewardType).toBe("gear");
-    expect(readRunSession().rewardState.choices).toEqual([instance]);
+    expect(readRunSession().rewardFlow.state.rewardType).toBe("gear");
+    expect(readRunSession().rewardFlow.state.choices).toEqual([instance]);
   });
 
   it("snapshots and restores companion reward handoffs", () => {
@@ -222,12 +222,12 @@ describe("session facade API", () => {
     setCompanionRewardCards(null);
     restoreRun(snap, {}, {});
 
-    const restoredRewardState = readRunSession().rewardState;
+    const restoredRewardState = readRunSession().rewardFlow.state;
     expect(restoredRewardState.rewardType).toBe("card");
     if (restoredRewardState.rewardType === "card") {
       expect(restoredRewardState.choices.map((choice) => choice.id)).toEqual([primary.id]);
     }
-    expect(readRunSession().companionRewardCards?.map((choice) => choice.id)).toEqual([companion.id]);
+    expect(readRunSession().rewardFlow.companionCards?.map((choice) => choice.id)).toEqual([companion.id]);
   });
 
   it("restores wildwood gear rewards from interruptedFlow", () => {
@@ -263,8 +263,8 @@ describe("session facade API", () => {
 
     setRewardState(createEmptyRewardState());
     restoreRun(activeRun, {}, {});
-    expect(readRunSession().rewardState.rewardType).toBe("gear");
-    expect(readRunSession().rewardState.choices).toEqual([instance]);
+    expect(readRunSession().rewardFlow.state.rewardType).toBe("gear");
+    expect(readRunSession().rewardFlow.state.choices).toEqual([instance]);
   });
 
   it("resumes a Wildwood card reward onto the Victory screen from interruptedFlow", () => {
@@ -305,7 +305,7 @@ describe("session facade API", () => {
     expect(readActiveRunScreen()).toBe(ROUTE_SCREENS.REWARDS);
     expect(readActiveRun().contentSystemType).toBe("wildwood");
     expect(readRunSession().wildwoodDraft?.phase).toBe("reward");
-    const rewardState = readRunSession().rewardState;
+    const rewardState = readRunSession().rewardFlow.state;
     expect(rewardState.rewardType).toBe("card");
     if (rewardState.rewardType === "card") {
       expect(rewardState.choices.map((choice) => choice.id)).toEqual(["slash", "bash", "block"]);
@@ -335,7 +335,7 @@ describe("session facade API", () => {
     setRewardState(createEmptyRewardState());
     restoreRun(activeRun, {}, {});
 
-    expect(readRunSession().rewardState.choices).toEqual([]);
+    expect(readRunSession().rewardFlow.state.choices).toEqual([]);
   });
 
   it("restores a mystery visit including the chosen summary phase", () => {
@@ -462,7 +462,7 @@ describe("session facade API", () => {
     expect(readActiveRunScreen()).toBe("destination");
     expect(readActivityData(readRunSession().activity, "mystery").mysteryEvent).toBeNull();
     expect(readActivityData(readRunSession().activity, "mystery").mysteryChosenChoice).toBeNull();
-    expect(readRunSession().rewardState.destinations).toEqual(["Mystery", "Campfire", "Normal Combat"]);
+    expect(readRunSession().rewardFlow.state.destinations).toEqual(["Mystery", "Campfire", "Normal Combat"]);
     expect(readActiveRun().completedDestinations).toEqual([]);
     expect(readActiveRun().destinationIndexInAct).toBe(0);
   });

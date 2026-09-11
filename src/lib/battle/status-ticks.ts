@@ -5,6 +5,7 @@ import { hasEncounterBenefit } from "./types";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import {
   applyPlayerCombatDamage,
+  isPlayerDefeated,
   mitigatePlayerCombatDamage,
   scaleReceivedPlayerDamage,
   setPlayerStatus,
@@ -17,6 +18,7 @@ import {
   decayPoisonStacks,
   getBurnBonusToBleedingMultiplier,
   getEnemyDamageMultiplier,
+  getPoisonBonusAgainstBleeding,
 } from "./status-helpers";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { POISON_GAIN_AMOUNT } from "../game-constants";
@@ -71,7 +73,7 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.enemyStatuses.poison;
   if (damage <= 0) return state;
   const multiplier = getEnemyDamageMultiplier(state, "poison");
-  const finalDamage = Math.round(damage * multiplier);
+  const finalDamage = Math.round((damage + getPoisonBonusAgainstBleeding(state)) * multiplier);
   mergeCombatText(combatTexts, {
     target: "enemy",
     kind: "damage",
@@ -128,15 +130,15 @@ function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
 }
 
 export function tickEnemyStatuses(state: BattleState, combatTexts: CombatTextEvent[]) {
-  if (state.enemyHealth <= 0) return state;
+  if (state.enemyHealth <= 0 || isPlayerDefeated(state)) return state;
   if (state.enemyStatuses.burn <= 0 && state.enemyStatuses.poison <= 0 && state.enemyStatuses.bleed <= 0) {
     if (state.pendingBleedLeechHealing === 0) return state;
     return { ...state, pendingBleedLeechHealing: 0 };
   }
   let nextState = resolvePendingBattleReactions(tickBurn(state, combatTexts), combatTexts);
-  if (nextState.enemyHealth <= 0) return nextState;
+  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
   nextState = resolvePendingBattleReactions(tickPoison(nextState, combatTexts), combatTexts);
-  if (nextState.enemyHealth <= 0) return nextState;
+  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
   nextState = resolvePendingBattleReactions(tickBleed(nextState, combatTexts), combatTexts);
   return nextState;
 }

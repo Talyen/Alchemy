@@ -1,4 +1,4 @@
-import type { BattleState } from "@/lib/battle";
+import type { BattleSnapshot } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import { getHandCardKey } from "./playable-hand";
@@ -13,9 +13,7 @@ export interface HandDrawSequenceDeps {
   setHiddenHandCardKeys: (update: (current: HiddenHandCardKeys) => Iterable<string>) => void;
 }
 
-export type DrawStateCommit = () => void;
-
-export const noopDrawCommit: DrawStateCommit = () => {};
+export type DrawPresentationReveal = () => void;
 
 const activeDraws = new WeakMap<HandDrawSequenceDeps, Map<number, number>>();
 
@@ -46,8 +44,8 @@ function getDrawnKeys(newHand: BattleCard[], drawnCards: BattleCard[]): Set<stri
 
 export async function runHandDrawSequence(
   oldHand: BattleCard[],
-  newState: BattleState,
-  applyState: DrawStateCommit,
+  newState: BattleSnapshot,
+  onReveal: DrawPresentationReveal,
   session: number,
   deps: HandDrawSequenceDeps,
 ): Promise<boolean> {
@@ -55,7 +53,7 @@ export async function runHandDrawSequence(
   const drawnCards = detectNewHandCards(oldHand, newState.hand);
   if (drawnCards.length === 0) {
     if (deps.isSessionActive(session)) {
-      applyState();
+      onReveal();
     }
     return false;
   }
@@ -67,7 +65,7 @@ export async function runHandDrawSequence(
   markBattleStage("draw-start");
   try {
     deps.setHiddenHandCardKeys((current) => new Set([...current, ...hiddenDrawKeys]));
-    applyState();
+    onReveal();
     await new Promise((resolve) => {
       requestAnimationFrame(resolve);
     });
@@ -89,8 +87,8 @@ export async function runHandDrawSequence(
 
 export interface BattleDrawRequest {
   oldHand: BattleCard[];
-  newState: BattleState;
-  applyState: DrawStateCommit;
+  newState: BattleSnapshot;
+  onReveal: DrawPresentationReveal;
   session: number;
   deps: HandDrawSequenceDeps;
   errorContext: string;
@@ -102,7 +100,7 @@ export async function runBattleDraw(request: BattleDrawRequest): Promise<boolean
     return await runHandDrawSequence(
       request.oldHand,
       request.newState,
-      request.applyState,
+      request.onReveal,
       request.session,
       request.deps,
     );

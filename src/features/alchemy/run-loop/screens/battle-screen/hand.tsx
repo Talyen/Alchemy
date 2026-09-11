@@ -29,7 +29,7 @@ import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
 import { getHandCardKey, getPlayableHandCardKeys } from "../../battle/playable-hand";
 import { getElementCenterX, playHandSlotReflow } from "./hand-slot-reflow";
 import { useHiddenHandCardKeys, useInteractiveHandCardKeys } from "../../battle/presentation/use-hand-presentation";
-import type { BattleState } from "@/lib/battle";
+import type { BattleSnapshot } from "@/lib/battle";
 import { getActiveCcKeyword, type ActiveCcKeyword } from "../../../shared/utils/cc-presentation";
 
 const HandCardItem = memo(function HandCardItem({
@@ -148,7 +148,7 @@ export function BattleHand({
   view: RequiredBattleViewProps;
   refs: BattleRefsProps;
   actions: BattleActionsProps;
-  playabilityState: BattleState;
+  playabilityState: BattleSnapshot;
 }) {
   const { battleState, stagePixelRatio } = view;
   const { handCardRefs } = refs;
