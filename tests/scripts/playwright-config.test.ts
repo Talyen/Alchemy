@@ -21,6 +21,7 @@ function configFor(preset: AlchemyPlaywrightPreset = "e2e") {
 beforeEach(() => {
   for (const name of [
     "CI",
+    "PLAYWRIGHT_NIGHTLY",
     "PLAYWRIGHT_PREPUSH",
     "PLAYWRIGHT_COLD_BOOT",
     "PLAYWRIGHT_VITE_MODE",
@@ -64,6 +65,11 @@ describe("Playwright server configuration", () => {
         ],
       },
     });
+  });
+
+  it("caps push-CI browser shards at two workers for animation headroom", () => {
+    vi.stubEnv("CI", "true");
+    expect(configFor().workers).toBe(2);
   });
 
   it("starts development mode on the overridden port", () => {

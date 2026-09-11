@@ -98,12 +98,15 @@ export function createAlchemyPlaywrightConfig(preset: AlchemyPlaywrightPreset) {
   const isFullE2eSuite = process.env.PLAYWRIGHT_E2E_FULL === "1";
   const maxFailures = isFullE2eSuite ? 5 : isCi ? 3 : 0;
   const defaultWorkers = Math.min(6, Math.max(3, os.cpus().length > 1 ? os.cpus().length - 1 : 3));
+  // GitHub runners need headroom for Vite, Chromium, and failure diagnostics;
+  // four workers per shard caused missed animation frames and action deadlines.
+  const ciWorkers = isCi ? 2 : isNightly ? Math.min(6, Math.max(4, os.cpus().length)) : defaultWorkers;
   return defineConfig({
     testDir: "./tests/e2e/specs",
     testMatch: "**/*.spec.ts",
     fullyParallel: true,
     maxFailures: isPrepush ? 5 : maxFailures,
-    workers: isPrepush ? 2 : isNightly || isCi ? Math.min(6, Math.max(4, os.cpus().length)) : defaultWorkers,
+    workers: isPrepush ? 2 : ciWorkers,
     globalTimeout: TIMEOUTS.e2e.global,
     timeout: isCi ? TIMEOUTS.e2e.ci : TIMEOUTS.e2e.local,
     ...playwrightCiSettings({ isCi, defaultJsonOut: "reports/playwright-results.json" }),
