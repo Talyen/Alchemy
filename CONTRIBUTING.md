@@ -81,6 +81,14 @@ For instruction changes that affect coding behavior, use the pinned [agent evalu
 | `npm run assets:check`            | Idempotent authored-asset preparation check                                                           |
 | `npm run test:e2e:critical`       | Every-push representative player journeys                                                             |
 
+Independent static checks finish even when a sibling fails, including the nested
+aggregate. The aggregate still fails if any checker fails; dependent build and
+smoke steps do not run after failure. Compact failure summaries share their
+budget across failed checkers, retain excerpts from both ends of long diagnostics,
+and link to numbered full-log locations. Exit status identifies a failed checker;
+when its diagnostic format is unrecognized, retain bounded output from both ends
+instead of reducing the summary to its exit footer.
+
 Builds only validate generated outputs and never prepare or rewrite tracked
 sources. `npm run dev` prepares assets through its `predev` lifecycle; use the
 explicit `sync:*` and asset authoring commands when intentionally regenerating

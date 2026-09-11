@@ -9,6 +9,8 @@ import { readDocumentSection } from "./document-sections.mjs";
 
 const owner = (path, heading) => ({ path, heading });
 const workflow = (heading) => owner("docs/WORKFLOWS.md", heading);
+const asset = (heading) => owner("docs/WORKFLOWS-ASSETS.md", heading);
+const assetCommon = [asset("Shared asset requirements"), asset("Skip mode and verification")];
 
 export const CONTEXT_TASKS = {
   battle: {
@@ -26,10 +28,15 @@ export const CONTEXT_TASKS = {
     docs: [
       owner("docs/UI.md", "Placement and boundaries"),
       owner("docs/UI.md", "Component conventions"),
-      owner("docs/UI.md", "Overlay lifecycle"),
       owner("docs/UI.md", "Verification"),
     ],
     entrypoints: ["src/features/alchemy/shared/ui", "src/styles/components.css"],
+  },
+  overlay: {
+    matches:
+      /(?:overlay|dialog|modal|use-fade|screen-transition|screen-navigation|use-app-navigation|route-commands|game-menu)/u,
+    docs: [owner("docs/UI.md", "Overlay lifecycle")],
+    entrypoints: ["src/features/alchemy/shared/ui/modal-overlay-shell.tsx"],
   },
   audio: {
     matches: /^(?:src|tests)\/lib\/audio\//u,
@@ -74,8 +81,47 @@ export const CONTEXT_TASKS = {
   },
   assets: {
     matches: /^(?:Raw Assets|src\/assets|scripts\/assets)\//u,
-    docs: [owner("docs/WORKFLOWS-ASSETS.md", null)],
+    docs: assetCommon,
     entrypoints: ["scripts/assets.mjs", "scripts/assets/asset-manifest.mjs"],
+  },
+  "assets-art": {
+    matches:
+      /^(?:scripts\/assets\/(?:core|card|content|talent)-assets\.mjs|src\/lib\/game-data\/assets(?:\.generated)?\.ts|Raw Assets\/(?!Gear\/|Music\/|Sound Effects\/)|src\/assets\/optimized\/)/u,
+    docs: [
+      ...assetCommon,
+      asset("Add or replace game art"),
+      asset("Resource and battle UI masters"),
+      asset("Importing art — barrel is the canonical surface"),
+    ],
+    entrypoints: ["scripts/assets/asset-manifest.mjs"],
+  },
+  "assets-gear": {
+    matches: /^(?:Raw Assets\/Gear\/|src\/lib\/game-data\/gear-art\.ts|scripts\/sync-art-barrels\.mjs)/u,
+    docs: [...assetCommon, asset("Add or replace Gear art"), asset("Importing art — barrel is the canonical surface")],
+    entrypoints: ["scripts/sync-art-barrels.mjs"],
+  },
+  "assets-sound": {
+    matches:
+      /^(?:Raw Assets\/Sound Effects\/|public\/sounds\/|scripts\/(?:assets\/sound-assets|optimize-sounds|lib\/audio-optimizer)\.mjs|src\/lib\/audio\/sound-registry\.ts)/u,
+    docs: [...assetCommon, asset("Add or replace sound")],
+    entrypoints: ["scripts/assets/sound-assets.mjs"],
+  },
+  "assets-music": {
+    matches: /^(?:Raw Assets\/Music\/|public\/Music\/|scripts\/optimize-music\.mjs|src\/lib\/audio\/music\.ts)/u,
+    docs: [...assetCommon, asset("Add or replace music")],
+    entrypoints: ["scripts/optimize-music.mjs"],
+  },
+  "assets-pipeline": {
+    matches:
+      /^scripts\/(?:assets|prepare-assets|optimize-assets|optimize-pipelines|check-prepared-assets|check-generated-fast|sync-generated|sync-art-barrels|lib\/asset-[^/]+|lib\/registry-validation|lib\/audio-optimizer)\.mjs$/u,
+    docs: [
+      ...assetCommon,
+      asset("Pipeline overview"),
+      asset("Content freshness and filesystem failures"),
+      asset("Authoring models"),
+      asset("Strict generated-art inputs"),
+    ],
+    entrypoints: ["scripts/prepare-assets.mjs"],
   },
   browser: {
     matches: /(?:\.spec\.ts$|^tests\/(?:e2e|electron|pages|fixtures)\/)/u,
@@ -89,13 +135,28 @@ export const CONTEXT_TASKS = {
   },
   tooling: {
     matches: /^(?:scripts\/|tests\/scripts\/|\.agents\/)/u,
-    docs: [owner("docs/REFERENCE.md", "Tooling ownership"), owner("docs/REFERENCE.md", "Agent discovery")],
+    docs: [owner("docs/REFERENCE.md", "Tooling ownership")],
     entrypoints: ["scripts/lib/change-routes.mjs", "scripts/README.md"],
+  },
+  discovery: {
+    matches:
+      /^(?:scripts\/(?:agent-(?:context|search|eval)|measure-agent-context|context-hotspots|lib\/agent-(?:context|discovery|events))\.mjs|tests\/scripts\/agent-(?:context|discovery|eval)\.test\.ts)$/u,
+    docs: [owner("docs/REFERENCE.md", "Agent discovery")],
+    entrypoints: ["scripts/lib/agent-context.mjs"],
   },
 };
 
+// Verification routes remain conservative. Only safety owners and genuinely
+// uncategorized work inherit their documentation; asset/tooling guidance above
+// is selected independently so broad test selection cannot force whole manuals.
+const FALLBACK_DOC_ROUTES = new Set(["save", "balance", "performance", "desktop", "documentation", "unit-test"]);
+
 export function selectContext(paths, task) {
   paths = paths.map((file) => file.replaceAll("\\", "/").replace(/^\.\//u, ""));
+  if (task && !Object.hasOwn(CONTEXT_TASKS, task)) {
+    const alternate = task.endsWith("s") ? task.slice(0, -1) : `${task}s`;
+    if (Object.hasOwn(CONTEXT_TASKS, alternate)) task = alternate;
+  }
   if (task && !Object.hasOwn(CONTEXT_TASKS, task))
     throw new Error(`Unknown task: ${task}. Choose ${Object.keys(CONTEXT_TASKS).join(", ")}`);
   const selected = Object.entries(CONTEXT_TASKS).filter(
@@ -104,20 +165,30 @@ export function selectContext(paths, task) {
   const plan = resolveRoutePlan(paths);
   const docs = selected.flatMap(([, entry]) => entry.docs);
   for (const route of plan.routes) {
-    if (route.id === "browser-test" && selected.some(([id]) => id === "browser")) continue;
+    if (FALLBACK_DOC_ROUTES.has(route.id)) docs.push(...route.docs);
+    if (route.id === "browser-test" && !selected.some(([id]) => id === "browser"))
+      docs.push(...CONTEXT_TASKS.browser.docs);
+    if (route.id === "tooling") docs.push(...CONTEXT_TASKS.tooling.docs);
+    if (route.id === "assets") docs.push(...assetCommon);
     if (
       route.id === "runtime" &&
       paths
         .filter((file) => /^(?:src\/|public\/|index\.html$)/u.test(file))
-        .every((file) => selected.some(([, entry]) => entry.matches.test(file)))
+        .some((file) => !selected.some(([, entry]) => entry.matches.test(file)))
     )
-      continue;
-    docs.push(...route.docs);
+      docs.push(...route.docs);
   }
+  const assetWork =
+    selected.some(([id]) => id.startsWith("assets")) || plan.routes.some((route) => route.id === "assets");
   const unique = new Map(docs.map((doc) => [`${doc.path}#${doc.heading ?? ""}`, doc]));
   const wholeFiles = new Set([...unique.values()].filter((doc) => !doc.heading).map((doc) => doc.path));
   return {
     tasks: selected.map(([id]) => id),
+    pointers: assetWork
+      ? Object.entries(CONTEXT_TASKS)
+          .filter(([id]) => id.startsWith("assets-") && !selected.some(([selectedId]) => selectedId === id))
+          .map(([task, entry]) => ({ task, ...entry.docs[assetCommon.length] }))
+      : [],
     docs: [...unique.values()].filter((doc) => !doc.heading || !wholeFiles.has(doc.path)),
     entrypoints: [...new Set(selected.flatMap(([, entry]) => entry.entrypoints))],
     plan,

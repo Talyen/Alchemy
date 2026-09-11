@@ -35,6 +35,59 @@ const keyed = { "two": { value: 3 }, three: { value: 4 } };`,
     expect(entries[2]?.text).toBe('"two": { value: 3 }');
   });
 
+  it("shares diagnostic space across failed checkers despite a noisy first failure", () => {
+    const output = [
+      ...Array.from(
+        { length: 100 },
+        (_, index) => `[static] [typecheck] [0] src/owner.ts(${index + 1},1): error TS2322: wrong type`,
+      ),
+      "[static] [typecheck] [0] src/lib/math.ts(3,3): error TS2322: root return type mismatch",
+      "[static] [typecheck] [0] tsc --noEmit exited with code 1",
+      "[static] [typecheck] npm run typecheck:all exited with code 1",
+      "[static] [format] [warn] src/other.ts",
+      "[static] [format] [warn] Code style issues found in the above file.",
+      "[static] [format] npm run format:check exited with code 1",
+      "[knip] Unused dependencies (1)",
+      "[knip] example-dependency package.json:1:1",
+      "[knip] npm run deadcode exited with code 1",
+      "[static] npm run check:static exited with code 1",
+    ].join("\n");
+    const summary = failureSummary(output);
+    expect(Buffer.byteLength(summary)).toBeLessThanOrEqual(4_000);
+    expect(summary).toContain("TS2322");
+    expect(summary).toContain("L1: src/owner.ts(1,1)");
+    expect(summary).toContain("L101: src/lib/math.ts(3,3)");
+    expect(summary).toContain("[warn] src/other.ts");
+    expect(summary).toContain("example-dependency");
+    expect(summary).toContain("L104: [warn] src/other.ts");
+    const locations = [...summary.matchAll(/^L(\d+):/gmu)].map((match) => Number(match[1]));
+    expect(locations).toEqual(locations.toSorted((a, b) => a - b));
+    expect(summary).toContain("diagnostic lines omitted");
+    expect(summary.match(/^Failed /gmu)).toHaveLength(3);
+  });
+
+  it("preserves unrecognized checker errors instead of selecting only their exit footers", () => {
+    const output = [
+      "[docs] Documentation contracts failed:",
+      "[docs] - missing owner heading: docs/UI.md#Overlay lifecycle",
+      "[docs] Plan checks passed (0 plan files).",
+      "[docs] npm run docs:check exited with code 1",
+      "[static] [boundaries] error no-circular: src/a.ts → src/b.ts → src/a.ts",
+      ...Array.from({ length: 100 }, () => "[static] [boundaries] "),
+      "[static] [boundaries] x 1 dependency violations (1 errors, 0 warnings). 2 modules, 2 dependencies cruised.",
+      "[static] [boundaries] ",
+      "[static] [boundaries] npm run lint:boundaries exited with code 1",
+      "[static] npm run check:static exited with code 1",
+    ].join("\n");
+    const summary = failureSummary(output, 1_000);
+    expect(summary).toContain("L2: - missing owner heading: docs/UI.md#Overlay lifecycle");
+    expect(summary).toContain("L5: error no-circular: src/a.ts → src/b.ts → src/a.ts");
+    expect(summary).toContain("1 dependency violations");
+    expect(summary.match(/^Failed /gmu)).toHaveLength(2);
+    expect(summary).toContain("diagnostic lines omitted");
+    expect(Buffer.byteLength(summary)).toBeLessThanOrEqual(1_000);
+  });
+
   it("suppresses only remembered sections and refreshes on edits, new sessions, or explicit reset", () => {
     const root = fixture({});
     const section = { path: "doc.md", start: 1, end: 1, text: "original" };
@@ -103,6 +156,9 @@ const keyed = { "two": { value: 3 }, three: { value: 4 } };`,
     const lint = failureSummary("/repo/src/file.ts\n\n  12:4  error  wrong boundary  alchemy/boundary\n");
     expect(lint).toContain("/repo/src/file.ts");
     expect(lint).toContain("alchemy/boundary");
+    expect(failureSummary("[lint] /repo/src/file.ts\n[lint] \n[lint] 12:4 error wrong boundary\n")).toContain(
+      "/repo/src/file.ts",
+    );
   });
 });
 

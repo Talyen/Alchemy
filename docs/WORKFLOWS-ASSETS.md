@@ -4,6 +4,16 @@ Canonical checklist for adding or changing raw art, gear art, sound, and music.
 Generated barrels and optimized outputs are committed build products, never the
 authoring source.
 
+## Shared asset requirements
+
+Edit raw sources and their owning manifests; generated barrels and optimized
+outputs are committed build products. Import art through the curated maps in
+`src/lib/game-data/assets.ts`, never directly from optimized files. Full
+preparation runs through `node scripts/assets.mjs --prepare`; operation-specific
+commands below support narrower iteration. Review generated changes and run the
+idempotence check before handoff. Pipeline maintenance must also preserve the
+failure and freshness contracts below.
+
 ## Pipeline overview
 
 | Asset kind    | Authoring source                             | Generated output                                 | Registry / consumer                                   |

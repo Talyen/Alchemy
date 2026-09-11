@@ -50,3 +50,7 @@ Before splitting a large catalog, correlate repeated-read events with the existi
 - [Dirty checkout](./tasks/dirty-checkout/README.md)
 
 Keep older baselines immutable. When game evolution requires a new baseline, change the pin and task version together and start a new comparison cohort. Evaluation records under `reports/` follow normal transient-artifact retention; preserve comparison summaries with the instruction-change evidence before cleanup when they need to survive it. Historical instruction and friction evidence lives in [history](../history/README.md); it is not a default preread.
+
+## Recorded results
+
+[September 11 context-efficiency trials](./results/context-efficiency-2026-09-11.md) record category-level measurements, setup exclusions, and the rejected test-navigation prototype.

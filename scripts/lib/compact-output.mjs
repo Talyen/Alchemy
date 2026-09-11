@@ -108,18 +108,17 @@ export function writeDiagnosticLog(reportsDir, name, output) {
   return filePath;
 }
 
-export function failureSummary(output, maxBytes = 4_000) {
-  const lines = sanitizeOutput(String(output ?? "")).split(/\r?\n/u);
+function diagnosticIndexes(lines) {
   const diagnostic =
-    /(?:\bFAIL\s|(?:Assertion|Type|Reference|Syntax)?Error:|error TS\d+|\berror\s{2,}|\d+:\d+\s+(?:error|warning)\b|^\s*(?:Expected|Received|Expected:|Received:)|^\s*[−+-]\s+(?:Expected|Received))/u;
+    /(?:\bFAIL\s|(?:Assertion|Type|Reference|Syntax)?Error:|error TS\d+|\berror\s{2,}|\d+:\d+\s+(?:error|warning)\b|^\s*(?:Expected|Received)|^\s*[−+-]\s+(?:Expected|Received)|\[warn\]|Unused (?:files|exports|dependencies)|Unlisted dependencies)/u;
   const selected = new Set();
-  for (const [index, line] of lines.entries()) {
-    if (!diagnostic.test(line)) continue;
-    if (/\d+:\d+\s+(?:error|warning)\b/u.test(line)) {
-      for (let previous = index - 1; previous >= 0; previous--) {
+  for (const [offset, { text }] of lines.entries()) {
+    if (!diagnostic.test(text)) continue;
+    if (/\d+:\d+\s+(?:error|warning)\b/u.test(text)) {
+      for (let previous = offset - 1; previous >= 0; previous--) {
         if (
           /^(?:\/|[A-Za-z]:[\\/]|(?:src|tests|scripts)\/).*\.[cm]?[jt]sx?$/u.test(
-            lines[previous].replace(/^(?:\[[^\]]+\]\s*)*/u, "").trim(),
+            lines[previous].text.replace(/^(?:\[[^\]]+\]\s*)*/u, "").trim(),
           )
         ) {
           selected.add(previous);
@@ -127,23 +126,73 @@ export function failureSummary(output, maxBytes = 4_000) {
         }
       }
     }
-    for (let nearby = Math.max(0, index - 1); nearby <= Math.min(lines.length - 1, index + 10); nearby++)
+    for (let nearby = Math.max(0, offset - 1); nearby <= Math.min(lines.length - 1, offset + 10); nearby++)
       selected.add(nearby);
   }
-  if (!selected.size) return tailOutput(output, maxBytes);
+  return [...selected].sort((a, b) => a - b).map((index) => lines[index]);
+}
+
+function diagnosticExcerpt(lines, maxBytes) {
   const result = [];
+  // Compiler root errors can follow their downstream failures. Give both ends
+  // space, then restore source order so log locations remain easy to follow.
+  const prioritized = [];
+  for (let first = 0, last = lines.length - 1; first <= last; first++, last--) {
+    prioritized.push(lines[first]);
+    if (first < last) prioritized.push(lines[last]);
+  }
   let omitted = 0;
-  for (const index of [...selected].sort((a, b) => a - b)) {
-    let excerpt = lines[index];
-    if (Buffer.byteLength(excerpt) > 700) {
-      excerpt = Array.from(excerpt).slice(0, 150).join("") + " […line clipped; see full log]";
-    }
+  for (const { text, index } of prioritized) {
+    const excerpt =
+      Buffer.byteLength(text) > 700 ? Array.from(text).slice(0, 150).join("") + " […line clipped; see full log]" : text;
     const line = `L${index + 1}: ${excerpt}`;
-    if (Buffer.byteLength([...result, line].join("\n")) <= maxBytes - 120) result.push(line);
+    if (Buffer.byteLength([...result.map((entry) => entry.line), line].join("\n")) <= maxBytes - 100)
+      result.push({ index, line });
     else omitted++;
   }
-  if (omitted) result.push(`${omitted} diagnostic lines omitted; inspect the full log at the numbered locations.`);
-  return result.join("\n");
+  const output = result.sort((a, b) => a.index - b.index).map((entry) => entry.line);
+  if (omitted) output.push(`${omitted} diagnostic lines omitted; see full log.`);
+  return output.join("\n");
+}
+
+export function failureSummary(output, maxBytes = 4_000) {
+  const rawLines = sanitizeOutput(String(output ?? "")).split(/\r?\n/u);
+  const groups = new Map();
+  for (const [index, raw] of rawLines.entries()) {
+    const prefix = /^(?:\[(?!(?:warn|error|info|debug)\])[^\]]+\]\s*)+/iu.exec(raw)?.[0] ?? "";
+    const key = prefix.trim().replace(/\]\s+\[/gu, "]/[");
+    const group = groups.get(key) ?? { key, lines: [], failed: false };
+    const text = raw.slice(prefix.length);
+    group.lines.push({ text, index });
+    group.failed ||= /exited with code (?!0\b)\S+/u.test(text);
+    groups.set(key, group);
+  }
+  // concurrently reports aggregate exits too. Prefer failed leaf checkers so
+  // wrapper failures cannot crowd out the actual diagnostics.
+  const failed = [...groups.values()].filter(
+    (group) =>
+      group.failed &&
+      group.key &&
+      ![...groups.values()].some((other) => other.failed && other.key.startsWith(group.key + "/")),
+  );
+  if (!failed.length) {
+    const selected = diagnosticIndexes(rawLines.map((text, index) => ({ text, index })));
+    return selected.length ? diagnosticExcerpt(selected, maxBytes) : tailOutput(output, maxBytes);
+  }
+  const headers = failed.map(
+    (group) => `Failed ${group.key} (full log L${group.lines[0].index + 1}–L${group.lines.at(-1).index + 1})`,
+  );
+  const available = maxBytes - Buffer.byteLength(headers.join("\n")) - failed.length * 2;
+  if (available < failed.length * 100) return tailOutput(headers.join("\n"), maxBytes);
+  const share = Math.floor(available / failed.length);
+  return failed
+    .map((group, index) => {
+      const selected = diagnosticIndexes(group.lines);
+      // An exit identifies the failed checker, not its cause. Unknown formats
+      // still need both ends of their output rather than just the exit footer.
+      return `${headers[index]}\n${diagnosticExcerpt(selected.length ? selected : group.lines, share)}`;
+    })
+    .join("\n\n");
 }
 
 export function writeFailureDigest(directory, command, result, runId, index) {

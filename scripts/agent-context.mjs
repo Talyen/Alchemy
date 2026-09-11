@@ -65,6 +65,8 @@ export function renderContext(selection, sections, budget = CONTEXT_OUTPUT_BYTES
     for (const [kind, files] of Object.entries(selection.related))
       for (const file of files) lines.push(`  ${kind}: ${file}`);
   }
+  for (const pointer of selection.pointers ?? [])
+    lines.push(`More guidance (--task ${pointer.task}): ${pointer.path} § ${pointer.heading}`);
   const included = [];
   let omitted = 0;
   for (const section of sections) {
@@ -104,7 +106,7 @@ export function renderSourceOutline(declarations, symbol = null, budget = CONTEX
     } else omitted++;
   }
   if (omitted) lines.push(`${omitted} more declarations omitted; use a scoped symbol search in the source file.`);
-  return { text: lines.join("\n"), included };
+  return { text: lines.join("\n") || "No outline entries found; use a scoped source search.", included };
 }
 
 export function main(argv = process.argv.slice(2)) {

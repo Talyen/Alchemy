@@ -135,6 +135,7 @@ describe("source-aware completion gate", () => {
       expect.objectContaining({ key: "ci-static", rawBytes: 21, exposedBytes: 21 }),
     );
     expect(record.summary).toBe("Check failed at CI static checks.");
+    expect(record.commandExposures.map((entry) => entry.key)).toEqual(["verification", "ci-static"]);
   });
 
   it("parses selections and captures a source digest", () => {

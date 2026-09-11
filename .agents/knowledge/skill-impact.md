@@ -52,3 +52,11 @@ Decision: preserve the existing document and skill boundaries; correct command e
 Evidence: user-approved documentation plan, source-checked APIs and migration history, and 15 passing context/scaffold tooling tests. The material-award example typechecks against actual imports; every current Unique has an interaction entry. No independent coding-agent evaluation or token-savings claim is made: these changes reconcile documentation and generated guidance with existing behavior rather than introduce a new coding strategy.
 
 Reason: passing link/path checks did not detect semantic errors or an unsupported archived completion claim. Keep current policy in its owner, useful rationale in history, and uncommitted handoff evidence intact.
+
+## 2026-09-11 — Measure before retaining context optimizations
+
+Decision: retain operation-specific documentation selection and complete independent static diagnostics. Reject the test-navigation prototype: its useful targeted excerpts did not replace surrounding reads and increased total investigation tokens by 44.4%.
+
+Evidence: [Matched investigation trials](../evals/results/context-efficiency-2026-09-11.md) record actual host counters, correctness review, patch identities, and setup exclusions. Documentation and static investigations reduced total input plus output by 12.7% and 38.8%, respectively. These are category-specific observations; cached-input variation prevents a billing-cost claim, and no repository-wide coding-task savings are established.
+
+Reason: smaller individual outputs are insufficient evidence. Apply the requested completed-task adoption threshold and keep rejected strategies discoverable without adding routine prereads.
