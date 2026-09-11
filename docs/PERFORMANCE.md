@@ -195,3 +195,11 @@ reduced that to 1,657,118 bytes. The remaining feature cost exceeded the previou
 to 1,658,880 bytes. The entry and game-data ceilings remain intact. This measured
 allowance covers the card resolver, migration, repertoire data, and trait/inspection
 presentation without new dependencies or deferred screen loading.
+
+The battle-toolbar change measured 1,659,709 bytes of total JavaScript. Moving
+live Gold and dev-only Skip Combat into the toolbar with the gold-increase
+highlight cost ~2.6 KiB over the previous measured total, so the total allowance
+increased by 2 KiB to 1,660,928 bytes. The entry and game-data ceilings remain
+intact. This measured allowance covers the toolbar counter, skip control, and
+their shared chrome/tooltip owners without new dependencies or deferred screen
+loading.
