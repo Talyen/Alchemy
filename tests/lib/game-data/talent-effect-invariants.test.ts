@@ -146,6 +146,7 @@ describe("talent effect invariants", () => {
         `battleTalents.${field}`,
         `talent.${field}`,
         `chance: "${field}"`,
+        `: "${field}"`,
         `["${field}"]`,
       ];
       if (!needles.some((needle) => corpus.includes(needle))) unread.push(field);

@@ -141,6 +141,7 @@ test.describe("Armory equip", critical, () => {
       "aria-disabled",
       "true",
     );
+    await expect(page.getByTestId("armory-item-picker").locator('[data-artwork-pending="true"]')).toHaveCount(0);
     await bodyItem.getByRole("button", { name: "Leather Armor", exact: true }).click({ force: true });
     await expect(page.getByText("Equipment cannot be changed during Combat.", { exact: true })).toBeVisible();
     await expect(equipmentSlotLocator(page, "body").locator("img")).toHaveCount(1);
