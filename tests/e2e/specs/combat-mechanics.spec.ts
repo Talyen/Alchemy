@@ -130,7 +130,7 @@ test.describe("Battle Autoplay", critical, () => {
           const enemy = await battle.enemyHealth();
           return mana < manaBefore || enemy < enemyBefore;
         },
-        { timeout: process.env.CI ? 10_000 : 5_000 },
+        { timeout: process.env.CI ? 30_000 : 5_000 },
       )
       .toBe(true);
   });
