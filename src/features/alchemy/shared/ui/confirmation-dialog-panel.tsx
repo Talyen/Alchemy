@@ -23,7 +23,7 @@ export function ConfirmationDialogPanel({
       aria-describedby={describedBy}
       tabIndex={-1}
       data-testid="confirmation-dialog"
-      className="motion-panel alchemy-shell max-h-[90dvh] w-fit max-w-[calc(33.6015*var(--content-rem,1rem))] overflow-y-auto rounded-shell-dialog border border-border/80 px-7 py-7 text-center"
+      className="alchemy-shell max-h-[90dvh] w-fit max-w-[calc(33.6015*var(--content-rem,1rem))] overflow-y-auto rounded-shell-dialog border border-border/80 px-7 py-7 text-center"
       onKeyDown={handleKeyDown}
       onClick={(event) => event.stopPropagation()}
     >

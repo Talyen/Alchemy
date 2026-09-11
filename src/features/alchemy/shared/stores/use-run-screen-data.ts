@@ -14,12 +14,16 @@ function selectShopCardBase(state: GameplayState) {
   };
 }
 
-function useActivityScreenData<S extends RunDataScreen>(screen: S, data: ScreenData<S>): ScreenData<S> {
-  const active = useGameplayStateStore((state) => state.session.activity.kind === screen);
+function useRetainedScreenData<T>(active: boolean, data: T): T {
   const [shown, setShown] = useState(data);
   // Retain each outgoing screen's own data while its committed successor fades in.
   if (active && shown !== data) setShown(data);
   return active ? data : shown;
+}
+
+function useActivityScreenData<S extends RunDataScreen>(screen: S, data: ScreenData<S>): ScreenData<S> {
+  const active = useGameplayStateStore((state) => state.session.activity.kind === screen);
+  return useRetainedScreenData(active, data);
 }
 
 function createShopDataHook<S extends RunDataScreen>(
@@ -66,12 +70,13 @@ export const useEquipmentShopScreenData = createShopDataHook<"equipment-shop">("
 }));
 
 export function useLabyrinthMapScreenData(): ScreenData<"labyrinth-map"> {
-  return useGameplayStateStore(
+  const data = useGameplayStateStore(
     useShallow((state) => ({
       labyrinthMap: state.session.labyrinthMap,
       selectedLabyrinthNodeId: state.session.selectedLabyrinthNodeId,
     })),
   );
+  return useActivityScreenData("labyrinth-map", data);
 }
 
 export function useRewardsScreenData(): ScreenData<"rewards"> {
@@ -118,7 +123,10 @@ export function useCorruptionScreenData(): ScreenData<"corruption"> {
 }
 
 export function useRunEndScreenData(): ScreenData<"game-over"> {
-  return useGameplayStateStore(
+  const active = useGameplayStateStore(
+    (state) => state.run.navigation.screen === "game-over" || state.run.navigation.screen === "run-victory",
+  );
+  const data = useGameplayStateStore(
     useShallow((state) => ({
       characterId: state.run.activeRun.characterId,
       runEndMaterials: state.session.runEndMaterials,
@@ -128,6 +136,7 @@ export function useRunEndScreenData(): ScreenData<"game-over"> {
       talentXP: state.runProfile.talentXP,
     })),
   );
+  return useRetainedScreenData(active, data);
 }
 
 export function useWildwoodRemovalScreenData(): ScreenData<"wildwood-removal"> {

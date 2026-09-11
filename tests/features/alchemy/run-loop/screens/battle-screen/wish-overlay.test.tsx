@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { resetEscapeStackForTests } from "@/app/escape-stack";
 import { WishOverlay } from "@/features/alchemy/run-loop/screens/battle-screen/wish-overlay";
 import type { BattleActionsProps, BattleScreenState } from "@/features/alchemy/run-loop/screens/battle-screen/types";
+import { waitForArtwork } from "../../../../../helpers/artwork-test";
 import type { BattleCard } from "@/lib/game-data";
 
 vi.mock("@/features/alchemy/shared/ui/card-button", () => ({
@@ -71,6 +72,7 @@ describe("WishOverlay", () => {
     const onWishChoice = vi.fn();
     renderWish(onWishChoice);
 
+    await waitForArtwork();
     const choice = screen.getByRole("button", { name: "Choose Wish Card" });
     await user.click(choice);
     await user.click(choice);
@@ -91,12 +93,14 @@ describe("WishOverlay", () => {
     const actions = { onWishChoice } as unknown as BattleActionsProps;
     const { rerender } = render(<WishOverlay open battleState={battleState} actions={actions} />);
 
+    await waitForArtwork();
     await user.click(screen.getByRole("button", { name: "Choose Wish Card" }));
     expect(onWishChoice).toHaveBeenCalledExactlyOnceWith(wishCard);
 
     rerender(<WishOverlay open battleState={{ ...battleState, wishOptions: [wishCard] }} actions={actions} />);
     expect(screen.queryByRole("button", { name: "Confirm" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Skip" })).toBeNull();
+    await waitForArtwork();
     await user.click(screen.getByRole("button", { name: "Choose Wish Card" }));
     expect(onWishChoice).toHaveBeenCalledTimes(2);
     expect(onWishChoice).toHaveBeenLastCalledWith(wishCard);
@@ -114,12 +118,14 @@ describe("WishOverlay", () => {
     const actions = { onWishChoice } as unknown as BattleActionsProps;
     const { rerender } = render(<WishOverlay open battleState={battleState} actions={actions} />);
 
+    await waitForArtwork();
     await user.click(screen.getByRole("button", { name: "Choose Wish Card" }));
     expect(onWishChoice).toHaveBeenCalledTimes(1);
 
     rerender(<WishOverlay open={false} battleState={battleState} actions={actions} />);
     rerender(<WishOverlay open battleState={battleState} actions={actions} />);
 
+    await waitForArtwork();
     await user.click(screen.getByRole("button", { name: "Choose Wish Card" }));
     expect(onWishChoice).toHaveBeenCalledTimes(2);
   });

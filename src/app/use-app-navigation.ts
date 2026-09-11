@@ -204,15 +204,18 @@ function isRadixEscapeTargetOpen(): boolean {
 
 export function useAppKeyboardShortcuts({
   renderedScreen,
+  screenInteractive,
   gameMenuOpen,
   onBack,
   toggleGameMenu,
 }: {
   renderedScreen: Screen;
+  screenInteractive: boolean;
   gameMenuOpen: boolean;
   onBack?: (() => void) | undefined;
   toggleGameMenu: () => void;
 }) {
+  const screenInteractiveRef = useLatestRef(screenInteractive);
   const gameMenuOpenRef = useLatestRef(gameMenuOpen);
   const renderedScreenRef = useLatestRef(renderedScreen);
   const onBackRef = useLatestRef(onBack);
@@ -226,7 +229,7 @@ export function useAppKeyboardShortcuts({
       priority: ESCAPE_PRIORITY.SCREEN_OVERLAY,
       onEscape: () => {
         if (isRadixEscapeTargetOpen()) return false;
-        if (gameMenuOpenRef.current) return false;
+        if (gameMenuOpenRef.current || !screenInteractiveRef.current) return false;
         if (onBackRef.current) {
           onBackRef.current();
           return;
@@ -239,6 +242,8 @@ export function useAppKeyboardShortcuts({
       id: "app-game-menu",
       priority: ESCAPE_PRIORITY.APP_MENU,
       onEscape: () => {
+        // An existing menu remains dismissible while navigation is locked.
+        if (!screenInteractiveRef.current && !gameMenuOpenRef.current) return false;
         if (renderedScreenRef.current === "menu") return false;
         if (isRadixEscapeTargetOpen()) return false;
         toggleGameMenuRef.current();

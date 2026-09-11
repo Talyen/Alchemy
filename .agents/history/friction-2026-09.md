@@ -2,6 +2,8 @@
 
 Historical evidence; current instructions live in the linked canonical owners.
 
+2026-09-11 — Transition frame sampling found an interrupted tab reveal jumping from 14% to full opacity, nested fades retaining old items under new headings, and inspection chrome appearing before artwork. Shared reversible fades, keyed identity subtrees, and complete modal preparation/exit snapshots now own prevention in [UI motion](../../docs/UI.md#screen-fade-motion). A 100ms prepared-navigation gap also allowed transient inspection opens; [navigation input](../../docs/ARCHITECTURE.md#data-flow) now gates it. Browser focus tracing showed that a control can still compute hidden after its wrapper is visible; dialog focus waits for the actual control. Real-timing tests cover interruption, delayed/failed artwork, reduced motion, and stable exits.
+
 2026-09-10 — A turn-playback frame returned nested Immer proxies from a command; comparison after commit failed with a revoked-proxy error. Resolve from `current(draft.battle.battleState)` before assembling frames. The [run-state contract](../../docs/ARCHITECTURE.md#run-state) and resolved-turn regression now require detached, serializable frame results.
 
 2026-09-07 — A legacy multiplier test required enemy traits to suppress Shatter and Exploit Weakness, contradicting both talent descriptions. Focused history showed the expectation predated the talent redesign without a documented exception. The [battle rules](../../docs/GAME_RULES.md#damage-statuses-and-survival) now state that resistance/weakness combines with these talents; regression tests cover resistant and vulnerable enemies.

@@ -1,5 +1,5 @@
 import { useArtworkReady } from "./use-artwork-ready";
-import { useEffect, useRef, useState, type HTMLAttributes, type ReactNode } from "react";
+import { Fragment, useEffect, useRef, useState, type HTMLAttributes, type ReactNode } from "react";
 
 import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { MOTION_FADE_MS } from "@/lib/game-constants";
@@ -81,7 +81,8 @@ export function useSequentialFadeSwap<T>({
     return () => window.clearTimeout(timeout);
   }, [target, shown, durationMs]);
 
-  return { shown, phase };
+  // The first changed render must already be exiting; an effect can miss a paint.
+  return { shown, phase: !Object.is(target, shown) ? "exit" : phase === "exit" ? "enter" : phase };
 }
 
 export function FadeSlot({
@@ -126,8 +127,10 @@ export function FadeSlot({
       {...restProps}
       inert={shownKey !== swapKey || (artworkPending ?? restProps.inert)}
     >
-      {/* eslint-disable-next-line react-hooks/refs -- hold the outgoing child while opacity is 0 */}
-      {shownKey === swapKey ? children : heldRef.current}
+      <Fragment key={shownKey}>
+        {/* eslint-disable-next-line react-hooks/refs -- hold the outgoing child while opacity is 0 */}
+        {shownKey === swapKey ? children : heldRef.current}
+      </Fragment>
     </div>
   );
 }

@@ -7,8 +7,10 @@ import { keywordDefinitions } from "@/lib/game-data";
 import { resetEscapeStackForTests } from "@/app/escape-stack";
 import { makeTestCard } from "../../../../fixtures/battle";
 import { installDisabledAnimationsForTests } from "../../../../helpers/animation-test";
+import { installReadyArtworkForTests, waitForArtwork } from "../../../../helpers/artwork-test";
 
 installDisabledAnimationsForTests();
+installReadyArtworkForTests();
 beforeEach(() => {
   vi.stubGlobal(
     "ResizeObserver",
@@ -56,7 +58,7 @@ describe("card inspection", () => {
     expect(sorted).toContain(mixed);
   });
 
-  it("renders each copy and focuses the close button", () => {
+  it("renders each copy and focuses the close button", async () => {
     render(<CardInspectionOverlay {...props} />);
     const grid = screen.getByTestId("card-selection-grid");
     expect(
@@ -67,7 +69,9 @@ describe("card inspection", () => {
     expect(screen.getByRole("heading", { name: "Deck" })).toBeTruthy();
     expect(grid.querySelector("p.mt-2")).toBeNull();
     expect(screen.getByRole("dialog").hasAttribute("aria-describedby")).toBe(false);
-    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Close card inspection" }));
+    await waitFor(() =>
+      expect(document.activeElement).toBe(screen.getByRole("button", { name: "Close card inspection" })),
+    );
     expect(screen.getByRole("dialog").getAttribute("aria-modal")).toBe("true");
   });
 
@@ -93,6 +97,8 @@ describe("card inspection", () => {
     const onClose = vi.fn();
     const view = render(<CardInspectionOverlay {...props} onClose={onClose} />);
     const close = screen.getByRole("button", { name: "Close card inspection" });
+    await waitForArtwork();
+    await waitFor(() => expect(document.activeElement).toBe(close));
     opener.focus();
     expect(document.activeElement).toBe(close);
     fireEvent.click(screen.getByTestId("card-selection-grid"));
@@ -141,6 +147,7 @@ describe("card inspection", () => {
     const collections = [{ id: "deck" as const, cards: many }];
     const onClose = vi.fn();
     const view = render(<CardInspectionOverlay {...props} collections={collections} onClose={onClose} />);
+    await waitForArtwork();
     fireEvent.click(screen.getByRole("button", { name: "Next page" }));
     await waitFor(() =>
       expect(screen.getByRole("button", { name: "Previous page" })).toHaveProperty("disabled", false),

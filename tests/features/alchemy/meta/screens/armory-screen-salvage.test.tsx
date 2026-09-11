@@ -2,9 +2,11 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { installArmoryScreenTestHooks, renderArmoryScreen } from "./armory/armory-screen-test-helpers";
+import { installReadyArtworkForTests, waitForArtwork } from "../../../../helpers/artwork-test";
 
 describe("ArmoryScreen salvage flow", () => {
   installArmoryScreenTestHooks();
+  installReadyArtworkForTests();
 
   it.each(["mouse", "Enter", "Space"])("keeps targeting armed after %s activation", async (input) => {
     const user = userEvent.setup();
@@ -28,6 +30,7 @@ describe("ArmoryScreen salvage flow", () => {
 
     await user.click(screen.getByLabelText("Salvage"));
     await user.click(screen.getByRole("button", { name: "Salvage Longsword" }));
+    await waitForArtwork();
     await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: /^Salvage$/ }));
 
     expect(onSalvage).toHaveBeenCalledWith(

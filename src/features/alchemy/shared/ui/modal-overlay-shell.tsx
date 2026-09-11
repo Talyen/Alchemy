@@ -1,9 +1,10 @@
-import type { KeyboardEvent, ReactNode, SyntheticEvent } from "react";
+import { useState, type KeyboardEvent, type ReactNode, type SyntheticEvent } from "react";
 import { createPortal } from "react-dom";
 import { useModalRoot } from "./modal-root";
 import { ESCAPE_PRIORITY } from "@/app/escape-stack";
 import { cn } from "@/lib/utils";
-import { fadePhaseClass, useFadePresence } from "./use-fade";
+import { fadePhaseClass, useFadePresence, useHeldWhile } from "./use-fade";
+import { useArtworkReady } from "./use-artwork-ready";
 import { useModalEscapeDismiss } from "./use-modal-escape-dismiss";
 
 interface ModalOverlayShellProps {
@@ -34,6 +35,44 @@ function blockInactiveKey(event: KeyboardEvent) {
   if (event.key !== "Tab") event.preventDefault();
 }
 
+function ModalContent({
+  open,
+  className,
+  children,
+}: {
+  open: boolean;
+  className: string | undefined;
+  children: ReactNode;
+}) {
+  const [session, setSession] = useState({ open, id: 0 });
+  if (session.open !== open) setSession({ open, id: session.id + (open ? 1 : 0) });
+  const { ref: artworkRef, pending: artworkPending } = useArtworkReady(session.id);
+  const shownChildren = useHeldWhile(open, children);
+  const shownClassName = useHeldWhile(open, className);
+  // A decode finishing during exit must not reveal a panel that was never shown.
+  const pending = useHeldWhile(open, artworkPending);
+  const interactive = open && !pending;
+  return (
+    <div
+      key={session.id}
+      ref={artworkRef}
+      data-modal-content
+      data-open={open}
+      data-artwork-pending={pending}
+      inert={!interactive}
+      className={cn("modal-fade absolute inset-0", shownClassName, fadePhaseClass(open ? "enter" : "exit"))}
+      onClick={(event) => {
+        // Leave only empty panel-layout space eligible for backdrop dismissal.
+        if (event.target !== event.currentTarget) event.stopPropagation();
+      }}
+      onClickCapture={!interactive ? blockInteraction : undefined}
+      onKeyDownCapture={!interactive ? blockInactiveKey : undefined}
+    >
+      {shownChildren}
+    </div>
+  );
+}
+
 export function ModalOverlayShell({
   open,
   escapeId,
@@ -49,7 +88,7 @@ export function ModalOverlayShell({
   children,
 }: ModalOverlayShellProps) {
   const root = useModalRoot();
-  const { mounted, phase } = useFadePresence(open);
+  const { mounted } = useFadePresence(open);
   const interactive = open && mount && mounted;
 
   useModalEscapeDismiss({
@@ -66,15 +105,18 @@ export function ModalOverlayShell({
       inert={!interactive}
       data-testid={testId}
       style={zIndex !== undefined ? { zIndex } : undefined}
-      className={cn("fixed inset-0", dim && "bg-black/70", fadePhaseClass(phase), className)}
+      className="fixed inset-0"
       onClick={(event) => {
         event.stopPropagation();
-        if (dismissOnBackdrop && interactive && event.target === event.currentTarget) onClose();
+        if (dismissOnBackdrop && interactive) onClose();
       }}
       onClickCapture={!interactive ? blockInteraction : undefined}
       onKeyDownCapture={!interactive ? blockInactiveKey : undefined}
     >
-      {children}
+      {dim && <div data-open={open} className="modal-fade pointer-events-none absolute inset-0 bg-black/70" />}
+      <ModalContent open={open} className={className}>
+        {children}
+      </ModalContent>
     </div>,
     root ?? document.body,
   );

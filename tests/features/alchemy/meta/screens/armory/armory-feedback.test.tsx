@@ -18,9 +18,9 @@ describe("Armory feedback", () => {
     await waitFor(() => expect(screen.queryByText("Item salvaged.")).toBeNull());
   });
 
-  it("renders combat-locked errors as an alert", () => {
+  it("retains the combat-locked alert and its color throughout dismissal", () => {
     const onDismiss = vi.fn();
-    render(
+    const { rerender } = render(
       <ArmoryFeedback
         notice="Equipment cannot be changed during Combat."
         result={null}
@@ -30,5 +30,12 @@ describe("Armory feedback", () => {
       />,
     );
     expect(screen.getByRole("alert").textContent).toBe("Equipment cannot be changed during Combat.");
+    const alert = screen.getByRole("alert");
+    const color = alert.className;
+    const frame = alert.parentElement!.className;
+    rerender(<ArmoryFeedback notice="" result={null} after={undefined} onDismiss={onDismiss} />);
+    expect(screen.getByRole("alert")).toBe(alert);
+    expect(alert.className).toBe(color);
+    expect(alert.parentElement!.className.replace("screen-fade-out", "screen-fade-in")).toBe(frame);
   });
 });

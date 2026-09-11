@@ -5,6 +5,24 @@ import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { MOTION_FADE_MS } from "@/lib/game-constants";
 
 describe("FadeSlot", () => {
+  it("replaces nested identities together instead of starting a second outgoing fade", () => {
+    vi.useFakeTimers();
+    const view = (identity: string) => (
+      <FadeSlot swapKey={identity}>
+        <h2>{identity} heading</h2>
+        <FadeSlot swapKey={identity}>
+          <p>{identity} content</p>
+        </FadeSlot>
+      </FadeSlot>
+    );
+    const { rerender } = render(view("first"));
+    rerender(view("second"));
+    expect(screen.getByText("first heading")).toBeTruthy();
+    act(() => vi.advanceTimersByTime(MOTION_FADE_MS));
+    expect(screen.getByText("second heading")).toBeTruthy();
+    expect(screen.getByText("second content")).toBeTruthy();
+    expect(screen.queryByText("first content")).toBeNull();
+  });
   afterEach(() => {
     cleanup();
     vi.useRealTimers();

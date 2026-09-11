@@ -1,5 +1,5 @@
 import userEvent from "@testing-library/user-event";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createRef } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resetEscapeStackForTests } from "@/app/escape-stack";
@@ -23,7 +23,7 @@ describe("ConfirmationDialog", () => {
     );
     const cancel = screen.getByRole("button", { name: "Cancel" });
     const confirm = screen.getByRole("button", { name: "Salvage" });
-    expect(document.activeElement).toBe(cancel);
+    await waitFor(() => expect(document.activeElement).toBe(cancel));
     await user.tab();
     expect(document.activeElement).toBe(confirm);
     await user.tab();
@@ -44,7 +44,7 @@ describe("ConfirmationDialog", () => {
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
-  it.each([false, true])("restores focus after exit with explicit target: %s", (explicitTarget) => {
+  it.each([false, true])("restores focus after exit with explicit target: %s", async (explicitTarget) => {
     vi.useFakeTimers();
     const returnFocusRef = createRef<HTMLButtonElement>();
     const onConfirm = vi.fn();
@@ -69,11 +69,14 @@ describe("ConfirmationDialog", () => {
     const opener = screen.getByRole("button", { name: "Opener" });
     opener.focus();
     rerender(dialog(true));
+    await act(async () => {});
+    await act(async () => vi.advanceTimersByTime(20));
+    await act(async () => vi.advanceTimersByTime(20));
     const cancel = screen.getByRole("button", { name: "Cancel" });
     const focusCancel = vi.spyOn(cancel, "focus");
     expect(document.activeElement).toBe(cancel);
     rerender(dialog(false));
-    expect((cancel as HTMLButtonElement).disabled).toBe(true);
+    expect(cancel.closest("[inert]")).not.toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Salvage" }));
     fireEvent.click(cancel);
     opener.focus();
@@ -103,10 +106,12 @@ describe("ConfirmationDialog", () => {
     expect(onCancel).not.toHaveBeenCalled();
   });
 
-  it("renders confirm and cancel actions", () => {
+  it("renders confirm and cancel actions", async () => {
     const onConfirm = vi.fn();
 
     render(<ConfirmationDialog title="Delete item?" confirmLabel="Delete" onConfirm={onConfirm} onCancel={vi.fn()} />);
+
+    await waitFor(() => expect(screen.getByRole("button", { name: "Delete" }).closest("[inert]")).toBeNull());
 
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
 

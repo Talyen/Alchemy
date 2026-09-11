@@ -42,7 +42,7 @@ export function useAlchemyRunController(): AlchemyRunCommands {
   const contentSystemType = useContentSystemType();
   const characterId = useActiveRunCharacterId();
   const screen = useActiveRunScreenValue();
-  const { navigateTo, transition, cancelPending } = useScreenTransitions(screen);
+  const { navigateTo, transition, cancelPending, navigationPending } = useScreenTransitions(screen);
 
   const setHoveredCardId = useCallback((id: string | null | ((prev: string | null) => string | null)) => {
     const store = useUiStore.getState();
@@ -200,6 +200,7 @@ export function useAlchemyRunController(): AlchemyRunCommands {
 
   return {
     screen,
+    navigationPending,
     homesteadEffects,
     routeCommands,
     unlockAllTalents: commandUnlockAllTalents,

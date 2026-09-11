@@ -8,8 +8,10 @@ import { EnemyTraits } from "@/features/alchemy/shared/ui/enemy-traits";
 import { EnemyInspectionOverlay } from "@/features/alchemy/shared/ui/enemy-inspection-overlay";
 import { resetEscapeStackForTests } from "@/app/escape-stack";
 import { installDisabledAnimationsForTests } from "../../../../helpers/animation-test";
+import { installReadyArtworkForTests, waitForArtwork } from "../../../../helpers/artwork-test";
 
 installDisabledAnimationsForTests();
+installReadyArtworkForTests();
 afterEach(() => {
   cleanup();
   resetEscapeStackForTests();
@@ -70,6 +72,7 @@ describe("enemy inspection presentation", () => {
   it("uses portrait-only cards and standard tooltips without playing or flipping them", async () => {
     const onClose = vi.fn();
     render(<EnemyInspectionOverlay open entry={enemyById.inquisitor} onClose={onClose} />);
+    await waitForArtwork();
     const dialog = screen.getByRole("dialog", { name: "Inquisitor" });
     expect(within(dialog).getByRole("heading", { name: "Traits" })).toBeTruthy();
     expect(within(dialog).getByRole("heading", { name: "Abilities" })).toBeTruthy();

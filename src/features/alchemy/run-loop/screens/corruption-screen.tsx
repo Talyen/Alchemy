@@ -16,6 +16,7 @@ import { CardTitle, getCardDisplayTitle } from "../../shared/ui/card-description
 import { SelectableCard } from "../../shared/ui/selectable-card";
 import { ScreenDescription, ShineAccentButton, TitledScreenShell } from "../../shared/ui/shared-ui";
 import { cn } from "@/lib/utils";
+import { FadeSlot } from "../../shared/ui/use-fade";
 
 function CorruptionDeckPicker({
   runDeck,
@@ -152,57 +153,59 @@ export function CorruptionScreen({
   }
 
   return (
-    <TitledScreenShell title="Altar of Corruption">
-      <div className="mt-6 flex flex-col items-center gap-6 text-center">
-        {result ? (
-          <CorruptionResultView result={result} onContinue={onExit} />
-        ) : selecting ? (
-          <div className="flex flex-col items-center gap-5">
-            <div>
-              <ScreenDescription tone="danger">
-                Select one card. The altar may weaken, strengthen, or remake it.
-              </ScreenDescription>
+    <FadeSlot swapKey={result ? "result" : selecting ? "select" : "intro"} className="h-full w-full">
+      <TitledScreenShell title="Altar of Corruption">
+        <div className="mt-6 flex flex-col items-center gap-6 text-center">
+          {result ? (
+            <CorruptionResultView result={result} onContinue={onExit} />
+          ) : selecting ? (
+            <div className="flex flex-col items-center gap-5">
+              <div>
+                <ScreenDescription tone="danger">
+                  Select one card. The altar may weaken, strengthen, or remake it.
+                </ScreenDescription>
+              </div>
+              <CorruptionDeckPicker
+                runDeck={runDeck}
+                selectedIndex={selectedIndex}
+                onSelect={setSelectedIndex}
+                page={page}
+                onPageChange={setPage}
+              />
+              <div className="flex justify-center gap-3">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={() => {
+                    setSelecting(false);
+                    setSelectedIndex(null);
+                    setPage(0);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <ShineAccentButton
+                  icon={Dices}
+                  accentClassName="text-red-400"
+                  shineColor={SHINE_PALETTES.corruption}
+                  disabled={selectedIndex === null}
+                  onClick={handleConfirm}
+                >
+                  Corrupt
+                </ShineAccentButton>
+              </div>
             </div>
-            <CorruptionDeckPicker
-              runDeck={runDeck}
-              selectedIndex={selectedIndex}
-              onSelect={setSelectedIndex}
-              page={page}
-              onPageChange={setPage}
+          ) : (
+            <CorruptionIntro
+              onBegin={() => {
+                setSelecting(true);
+                setPage(0);
+              }}
+              onLeave={onExit}
             />
-            <div className="flex justify-center gap-3">
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={() => {
-                  setSelecting(false);
-                  setSelectedIndex(null);
-                  setPage(0);
-                }}
-              >
-                Cancel
-              </Button>
-              <ShineAccentButton
-                icon={Dices}
-                accentClassName="text-red-400"
-                shineColor={SHINE_PALETTES.corruption}
-                disabled={selectedIndex === null}
-                onClick={handleConfirm}
-              >
-                Corrupt
-              </ShineAccentButton>
-            </div>
-          </div>
-        ) : (
-          <CorruptionIntro
-            onBegin={() => {
-              setSelecting(true);
-              setPage(0);
-            }}
-            onLeave={onExit}
-          />
-        )}
-      </div>
-    </TitledScreenShell>
+          )}
+        </div>
+      </TitledScreenShell>
+    </FadeSlot>
   );
 }

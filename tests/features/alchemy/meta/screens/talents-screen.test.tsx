@@ -58,7 +58,7 @@ describe("TalentsScreen", () => {
     });
   });
 
-  it("opens reset confirmation dialog and dispatches reset", () => {
+  it("opens reset confirmation dialog and dispatches reset", async () => {
     const onResetTalents = vi.fn();
     render(
       <TalentsScreen
@@ -74,6 +74,7 @@ describe("TalentsScreen", () => {
     fireEvent.click(resetButton);
 
     expect(screen.getByText("Reset Talents?")).toBeTruthy();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Reset Talents" }).closest("[inert]")).toBeNull());
     fireEvent.click(screen.getByRole("button", { name: "Reset Talents" }));
     expect(onResetTalents).toHaveBeenCalledTimes(1);
   });

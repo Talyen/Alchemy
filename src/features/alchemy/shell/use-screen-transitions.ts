@@ -5,7 +5,7 @@ import {
   setScreen as setScreenMutator,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { type Screen } from "@/lib/routing";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createScreenNavigation } from "./screen-navigation";
 
 const commandSetScreen = createRunSessionCommand(setScreenMutator);
@@ -13,6 +13,7 @@ const commandPrepareScreen = createRunSessionCommand(prepareRunNavigation);
 
 export function useScreenTransitions(currentScreen: Screen, setScreen: (screen: Screen) => void = commandSetScreen) {
   const currentScreenRef = useLatestRef(currentScreen);
+  const [navigationPending, setNavigationPending] = useState(false);
   const navigation = useMemo(
     () =>
       // eslint-disable-next-line react-hooks/refs -- factory stores the reader; it only runs when a navigation event arrives
@@ -20,9 +21,10 @@ export function useScreenTransitions(currentScreen: Screen, setScreen: (screen: 
         readScreen: () => currentScreenRef.current,
         prepareScreen: commandPrepareScreen,
         showScreen: setScreen,
+        onPendingChange: setNavigationPending,
       }),
     [currentScreenRef, setScreen],
   );
   useEffect(() => navigation.cancelPending, [navigation]);
-  return navigation;
+  return { ...navigation, navigationPending };
 }

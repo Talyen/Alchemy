@@ -159,47 +159,44 @@
     animation-name: cardGhostPlayTravel;
   }
 
-  .motion-overlay,
-  .wish-overlay-backdrop,
-  .motion-panel,
-  .wish-overlay-panel,
   .screen-fade-in {
-    animation-name: fadeIn;
-    animation-duration: var(--motion-fade-duration);
-    animation-timing-function: var(--motion-fade-ease);
-    animation-fill-mode: both;
+    opacity: 1;
+    transition: opacity var(--motion-fade-duration) var(--motion-fade-ease);
     will-change: opacity;
+
+    @starting-style {
+      opacity: 0;
+    }
   }
 
   .screen-fade-out {
-    animation-name: fadeOut;
-    animation-duration: var(--motion-fade-duration);
-    animation-timing-function: var(--motion-fade-ease);
-    animation-fill-mode: both;
+    opacity: 0;
+    transition: opacity var(--motion-fade-duration) var(--motion-fade-ease);
     pointer-events: none;
     will-change: opacity;
   }
 
-  .card-inspection-overlay.screen-fade-in > [role="dialog"] {
-    animation: cardInspectionSettle var(--motion-fade-duration) ease-out both;
+  .card-inspection-overlay > [role="dialog"] {
+    translate: 0 0;
+    transition: translate var(--motion-fade-duration) ease-out;
+
+    @starting-style {
+      translate: 0 6px;
+    }
+  }
+
+  .card-inspection-overlay[data-artwork-pending] > [role="dialog"] {
+    translate: 0 6px;
   }
 
   .card-inspection-overlay-empty > [role="dialog"] {
     min-width: min(20rem, 100%);
   }
 
-  @keyframes cardInspectionSettle {
-    from {
-      translate: 0 6px;
-    }
-    to {
-      translate: 0 0;
-    }
-  }
-
   @media (prefers-reduced-motion: reduce) {
-    .card-inspection-overlay.screen-fade-in > [role="dialog"] {
-      animation: none;
+    .card-inspection-overlay > [role="dialog"] {
+      translate: none !important;
+      transition: none;
     }
   }
 
@@ -267,12 +264,18 @@
 }
 
 @utility page-exit {
-  animation: fadeOut var(--motion-fade-duration) var(--motion-fade-ease) both;
+  opacity: 0;
+  transition: opacity var(--motion-fade-duration) var(--motion-fade-ease);
   pointer-events: none;
 }
 
 @utility page-enter {
-  animation: fadeIn var(--motion-fade-duration) var(--motion-fade-ease) both;
+  opacity: 1;
+  transition: opacity var(--motion-fade-duration) var(--motion-fade-ease);
+
+  @starting-style {
+    opacity: 0;
+  }
 }
 
 @utility image-rendering-pixelated {
@@ -539,24 +542,21 @@
   initial-value: #fbbf24;
 }
 
-@keyframes labyrinth-floor-in {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.labyrinth-floor-swap.screen-fade-in {
+  transform: translateY(0);
+  transition:
+    opacity var(--motion-fade-duration) var(--motion-fade-ease),
+    transform var(--motion-fade-duration) var(--motion-fade-ease);
 }
 
-.labyrinth-floor-swap.screen-fade-in {
-  animation-name: labyrinth-floor-in;
+.labyrinth-floor-swap.screen-fade-in[data-artwork-pending] {
+  transform: translateY(12px);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .labyrinth-floor-swap.screen-fade-in {
-    animation-name: none;
+  .labyrinth-floor-swap.screen-fade-in,
+  .labyrinth-floor-swap.screen-fade-in[data-artwork-pending] {
+    transform: none;
   }
 }
 
@@ -574,9 +574,26 @@
 }
 
 [data-artwork-pending] {
+  opacity: 0;
   visibility: hidden;
   animation-play-state: paused;
   pointer-events: none;
+}
+
+/* Each modal layer reverses from its current opacity, even during preparation. */
+.modal-fade {
+  animation: none;
+  opacity: 1;
+  transition: opacity var(--motion-fade-duration) var(--motion-fade-ease);
+
+  @starting-style {
+    opacity: 0;
+  }
+}
+
+.modal-fade[data-open="false"],
+.modal-fade[data-artwork-pending] {
+  opacity: 0;
 }
 
 .labyrinth-node {

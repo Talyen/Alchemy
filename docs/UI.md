@@ -48,13 +48,21 @@ populated panels retain content-based sizing without animated dimensions. Empty
 collections show centered, muted “Empty” text in a 10rem-high content area with a
 20rem minimum panel width, bounded by the available viewport with overflow scrolling.
 
+`ModalOverlayShell` reveals the backdrop immediately and prepares the entire panel
+with `useArtworkReady`, including its heading, pagination, and actions. Pending panels
+are hidden and inert; dismissible backdrops still accept dismissal. Focus moves inside
+only once the actual initial control is visible. Closing during preparation never
+reveals a late decode result.
+
 `ModalOverlayShell` owns overlay interaction eligibility: only open, rendered
-content accepts input or registers an Escape handler. Closing content remains
+overlays register an Escape handler, and only ready content accepts input. Closing content remains
 visible for its existing fade but is inert and rejects activation events;
 Tab keeps its native focus traversal while propagation to inactive controls is blocked;
 `mount=false` removes it immediately without retaining an Escape handler.
-Reopening cancels pending removal. Consumers retain action-specific guards such
-as Wish's single-selection latch and confirmation buttons' disabled state.
+The shell retains outgoing children and layout classes, so clearing a payload or
+resetting pagination cannot change the closing panel. Reopening cancels removal and
+starts a fresh panel mount and artwork gate. Consumers retain action-specific guards
+such as Wish's single-selection latch and confirmation buttons' disabled state.
 Confirmation focus containment pauses while the panel is inert; focus returns
 to its existing target when the panel unmounts.
 
@@ -70,10 +78,20 @@ to its existing target when the panel unmounts.
 
 Screen and `FadeSlot` reveals wait for the mounted images to load and decode through `useArtworkReady`, then allow a layout frame before starting the fade. While preparing a reveal, the gate also tracks artwork inserted after layout measurement and changed image sources; stale decode completions cannot reveal or hide the replacement. The observer disconnects after reveal, so normal battle updates do not restart the whole-screen gate. Startup preloading is a warm-up, not proof that a later mounted image is paint-ready. Failed or timed-out images stay hidden for that mount so they cannot pop in after the screen is revealed. Reserve intrinsic artwork dimensions when image height determines layout, including the menu logo.
 
+Opacity fades use reversible CSS transitions, so an interrupted reveal exits from
+its current opacity instead of restarting at full opacity. The first changed render
+already carries the exit phase. Screen input, including external battle chrome, stays
+blocked during pending navigation, the outgoing fade, and incoming artwork preparation.
+
 `FadeSlot` keeps outgoing and artwork-pending content inert. Identity-dependent
 headings, prompts, resources, and actions must travel with their content: Victory
 reward prompts/Skip share the reward-kind-and-choice identity, and Mystery titles
-share the event-and-phase identity. Do not animate `filter` on artwork whose
+share the event-and-phase identity. Corruption phases and Armory slot headings use
+the same boundary as their choices. An identity swap remounts the `FadeSlot` subtree,
+so nested fades cannot retain a previous identity beneath a new heading; state that
+must survive a swap belongs above that boundary. Labyrinth selection and run-end
+summaries retain their display data while navigation or teardown clears live state.
+Do not animate `filter` on artwork whose
 state uses grayscale; reveal opacity must settle to the underlying state opacity
 rather than force completed art to full color or full opacity.
 

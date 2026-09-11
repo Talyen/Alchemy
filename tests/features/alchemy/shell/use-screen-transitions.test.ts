@@ -22,6 +22,27 @@ function navigation() {
 }
 
 describe("screen navigation", () => {
+  it("reports pending navigation until commit or cancellation, including redirects", () => {
+    const onPendingChange = vi.fn();
+    const showScreen = vi.fn();
+    const nav = createScreenNavigation({
+      readScreen: () => "battle",
+      prepareScreen: vi.fn(),
+      showScreen,
+      onPendingChange,
+    });
+    nav.navigateTo("rewards");
+    expect(onPendingChange).toHaveBeenLastCalledWith(true);
+    nav.cancelPending();
+    expect(onPendingChange).toHaveBeenLastCalledWith(false);
+    vi.runAllTimers();
+    expect(showScreen).not.toHaveBeenCalled();
+    nav.navigateTo("rewards", () => nav.navigateTo("menu"));
+    expect(onPendingChange).toHaveBeenLastCalledWith(true);
+    vi.advanceTimersByTime(NAVIGATION_DELAY_MS);
+    expect(showScreen).toHaveBeenCalledExactlyOnceWith("menu");
+    expect(onPendingChange).toHaveBeenLastCalledWith(false);
+  });
   it("completes gameplay before delaying presentation, without a rendered-screen callback", () => {
     const nav = navigation();
     const prepare = vi.fn(() => expect(nav.showScreen).not.toHaveBeenCalled());

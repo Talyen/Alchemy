@@ -8,6 +8,7 @@ import {
   hasInspectableBoons,
   uniqueRunBoons,
 } from "@/features/alchemy/run-loop/screens/battle-screen/unique-run-boons";
+import { installReadyArtworkForTests, waitForArtwork } from "../../../../../helpers/artwork-test";
 import { TRINKET_PAGE_SIZE } from "@/lib/game-constants";
 import { trinketLibrary, type TrinketEntry } from "@/lib/game-data";
 
@@ -41,6 +42,7 @@ describe("uniqueRunBoons", () => {
 });
 
 describe("BattleBoonInspectOverlay", () => {
+  installReadyArtworkForTests();
   afterEach(() => {
     cleanup();
     resetEscapeStackForTests();
@@ -86,6 +88,7 @@ describe("BattleBoonInspectOverlay", () => {
     const onClose = vi.fn();
     render(<BattleBoonInspectOverlay open trinketIds={["brass-censer"]} onClose={onClose} />);
 
+    await waitForArtwork();
     await user.click(screen.getByRole("button", { name: "Close boons" }));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -110,6 +113,7 @@ describe("BattleBoonInspectOverlay", () => {
     expect(screen.getByRole("img", { name: trinketLibrary[0]!.title })).toBeTruthy();
     expect(screen.queryByRole("img", { name: trinketLibrary[TRINKET_PAGE_SIZE]!.title })).toBeNull();
 
+    await waitForArtwork();
     await user.click(screen.getByRole("button", { name: "Next page" }));
 
     expect(await screen.findByRole("img", { name: trinketLibrary[TRINKET_PAGE_SIZE]!.title })).toBeTruthy();
@@ -117,11 +121,12 @@ describe("BattleBoonInspectOverlay", () => {
     expect(screen.getAllByRole("img")).toHaveLength(1);
   });
 
-  it("returns to the first page when the overlay closes", async () => {
+  it("returns to the first page on reopening while preserving the closing page", async () => {
     const user = userEvent.setup();
     const ids = trinketLibrary.slice(0, TRINKET_PAGE_SIZE + 1).map((entry) => entry.id);
     const { rerender } = render(<BattleBoonInspectOverlay open trinketIds={ids} onClose={vi.fn()} />);
 
+    await waitForArtwork();
     await user.click(screen.getByRole("button", { name: "Next page" }));
     expect(await screen.findByRole("img", { name: trinketLibrary[TRINKET_PAGE_SIZE]!.title })).toBeTruthy();
 

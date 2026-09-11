@@ -154,7 +154,7 @@ function GameMenuPanel({
   return (
     <div
       data-testid="game-menu"
-      className="motion-panel alchemy-shell w-full max-w-[calc(28.8023*var(--content-rem,1rem))] overflow-visible rounded-shell-dialog border border-border/80 px-5 py-4"
+      className="alchemy-shell w-full max-w-[calc(28.8023*var(--content-rem,1rem))] overflow-visible rounded-shell-dialog border border-border/80 px-5 py-4"
       onClick={(e) => e.stopPropagation()}
     >
       <div className="grid gap-0.5">

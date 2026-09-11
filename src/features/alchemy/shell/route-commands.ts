@@ -93,6 +93,7 @@ export interface AlchemyRouteCommands {
 
 export interface AlchemyRunCommands {
   screen: Screen;
+  navigationPending: boolean;
   homesteadEffects: HomesteadEffectManifest;
   routeCommands: AlchemyRouteCommands;
   unlockAllTalents: () => void;

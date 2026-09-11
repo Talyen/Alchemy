@@ -129,12 +129,6 @@ function AppMainContent({
   const { phase: runPhase } = useRunSessionNavigationSlice(controllerScreen);
   const autosaveEnabled = useAutosaveAllowed(controllerScreen);
   const nav = useReturnToRunNavigation({ run, renderedScreen });
-  useAppKeyboardShortcuts({
-    renderedScreen,
-    gameMenuOpen: gameMenu.gameMenuOpen,
-    onBack: nav.screenBackHandler,
-    toggleGameMenu: gameMenu.toggleGameMenu,
-  });
 
   useAlchemyAutosaveFromStores(autosaveEnabled);
 
@@ -175,7 +169,15 @@ function AppMainContent({
   const hasInspectBoons = hasInspectableBoons(runBoons);
   const { ref: artworkRef, pending: artworkPending } = useArtworkReady(renderedScreen);
   const pagePhaseClass = pagePhase === "exit" ? "page-exit" : "page-enter";
-  const screenInteractive = controllerScreen === renderedScreen && pagePhase !== "exit";
+  const screenInteractive =
+    !run.navigationPending && controllerScreen === renderedScreen && pagePhase !== "exit" && !artworkPending;
+  useAppKeyboardShortcuts({
+    renderedScreen,
+    screenInteractive,
+    gameMenuOpen: gameMenu.gameMenuOpen,
+    onBack: nav.screenBackHandler,
+    toggleGameMenu: gameMenu.toggleGameMenu,
+  });
   const { closeGameMenu } = gameMenu;
   const closeInspectionPeers = useCallback(() => {
     closeGameMenu();
