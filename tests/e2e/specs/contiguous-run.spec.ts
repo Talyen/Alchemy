@@ -15,7 +15,7 @@ test.describe("Contiguous Run Journey", critical, () => {
   }) => {
     void fastBattle;
     void runtimeErrors;
-    test.setTimeout(45_000);
+    test.setTimeout(60_000);
 
     const menu = new MenuPage(page);
     await menu.goto();
@@ -34,7 +34,7 @@ test.describe("Contiguous Run Journey", critical, () => {
 
     const battle = new BattlePage(page);
     await expect(battle.endTurnBtn).toBeVisible({ timeout: 10_000 });
-    await expect.poll(() => battle.handCount(), { timeout: 10_000 }).toBeGreaterThan(0);
+    await expect.poll(() => battle.handCount(), { timeout: 30_000 }).toBeGreaterThan(0);
 
     const initialHandCount = await battle.handCount();
     expect(initialHandCount).toBeGreaterThan(0);

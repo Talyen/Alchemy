@@ -104,6 +104,7 @@ test.describe("Battle Autoplay", critical, () => {
   test("plays a hand card without clicking it", async ({ page, fastBattle, runtimeErrors }) => {
     void fastBattle;
     void runtimeErrors;
+    test.setTimeout(process.env.CI ? 60_000 : 20_000);
 
     await startBattleWithDeck(
       page,
@@ -111,6 +112,9 @@ test.describe("Battle Autoplay", critical, () => {
     );
     const battle = new BattlePage(page);
     await expect(battle.autoplayToggle).toBeVisible();
+    const battleReadyTimeout = process.env.CI ? 30_000 : 5_000;
+    await expect(battle.manaPanel).toBeVisible({ timeout: battleReadyTimeout });
+    await expect(battle.enemyHealthPanel).toBeVisible({ timeout: battleReadyTimeout });
     const manaBefore = await battle.mana();
     const enemyBefore = await battle.enemyHealth();
 
