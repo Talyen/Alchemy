@@ -130,9 +130,15 @@ test.describe("Battle Autoplay", critical, () => {
         async () => {
           if (await battle.victoryHeading.isVisible()) return true;
           if (!(await battle.manaPanel.isVisible()) || !(await battle.enemyHealthPanel.isVisible())) return false;
-          const mana = await battle.mana();
-          const enemy = await battle.enemyHealth();
-          return mana < manaBefore || enemy < enemyBefore;
+          try {
+            const mana = await battle.mana();
+            const enemy = await battle.enemyHealth();
+            return mana < manaBefore || enemy < enemyBefore;
+          } catch {
+            // Autoplay can briefly replace the battle HUD between the visibility
+            // check and the attribute read; let the poll observe the next state.
+            return false;
+          }
         },
         { timeout: process.env.CI ? 30_000 : 5_000 },
       )
