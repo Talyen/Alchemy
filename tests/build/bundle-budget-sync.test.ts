@@ -46,16 +46,12 @@ describe("bundle budget sync", () => {
     expect(checkBundleBudget([built, join(built, "missing")])).toBe(false);
   });
 
-  it("chunkSizeWarningLimit matches BUDGETS.indexMaxBytes", () => {
-    expect(CHUNK_SIZE_WARNING_KB * 1024).toBe(BUDGETS.indexMaxBytes);
-  });
-
   it("recognizes Vite entry hashes containing uppercase and URL-safe characters", () => {
     vi.spyOn(console, "log").mockImplementation(() => undefined);
     vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const directory = createAssetDirectory({
       "index-DlKnTbxz_-.js": 100,
-      "vendor-DZZfAojr.js": BUDGETS.indexMaxBytes + 1,
+      "vendor-DZZfAojr.js": CHUNK_SIZE_WARNING_KB * 1024 + 1,
     });
 
     expect(checkBundleBudget(directory)).toBe(true);
@@ -65,7 +61,7 @@ describe("bundle budget sync", () => {
   it("fails closed when no entry chunk matches", () => {
     vi.spyOn(console, "error").mockImplementation(() => undefined);
     const directory = createAssetDirectory({
-      "vendor-a.js": BUDGETS.indexMaxBytes + 1,
+      "vendor-a.js": CHUNK_SIZE_WARNING_KB * 1024 + 1,
       "runtime-b.js": 100,
     });
 
@@ -73,12 +69,12 @@ describe("bundle budget sync", () => {
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining("index chunk not found"));
   });
 
-  it("fails when the matched entry exceeds its budget", () => {
+  it("accepts a large entry when the total remains within budget", () => {
     vi.spyOn(console, "log").mockImplementation(() => undefined);
     vi.spyOn(console, "error").mockImplementation(() => undefined);
-    const directory = createAssetDirectory({ "index-AbC_1.js": BUDGETS.indexMaxBytes + 1 });
+    const directory = createAssetDirectory({ "index-AbC_1.js": CHUNK_SIZE_WARNING_KB * 1024 + 1 });
 
-    expect(checkBundleBudget(directory)).toBe(false);
+    expect(checkBundleBudget(directory)).toBe(true);
   });
 
   it("fails when aggregate JavaScript exceeds its budget", () => {

@@ -11,7 +11,7 @@ import {
 } from "@/features/alchemy/run-loop/battle/presentation/use-hand-presentation";
 import { handHasHiddenCard, type HiddenHandCardKeys } from "@/features/alchemy/run-loop/battle/playable-hand";
 import type { BattleSnapshot } from "@/lib/battle";
-import type { CardInspectionCollection } from "@/features/alchemy/shared/ui/card-inspection-overlay";
+import type { CardInspectionCollection } from "@/features/alchemy/shared/ui/inspection/card-inspection-overlay";
 
 const RUN_META_SCREENS: readonly Screen[] = ["armory", "talents", "homestead", "collection", "options"];
 
@@ -135,10 +135,13 @@ export function useCardInspection({
   const battleDescriptionContext = useMemo(
     () => ({
       ...data.talentEffects,
-      companionDamageBonus: data.companionDamageBonus,
-      companionDamageBuff: data.companionDamageBuff,
+      companionDamageModifiers: {
+        damageBonus: data.companionDamageBonus,
+        bleedDamageBonus: data.companionBleedDamageBonus,
+        damageMultiplier: data.companionDamageMultiplier,
+      },
     }),
-    [data.talentEffects, data.companionDamageBonus, data.companionDamageBuff],
+    [data.talentEffects, data.companionDamageBonus, data.companionBleedDamageBonus, data.companionDamageMultiplier],
   );
 
   return {

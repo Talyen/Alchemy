@@ -17,7 +17,7 @@ Do not run an uncited sibling audit, broaden into standing cleanup, or manufactu
 
 ## Investigate
 
-Follow the README discovery policy: start from paths changed since the prior pass, follow confirmed candidates through their causal neighborhood, prefer scoped `rg`, compiler/linter diagnostics, existing gates, and targeted reads. Keep probe output compact (`npm run audit:all`; bounded failure tail first). For multiple findings, publish a concise plan with disjoint file/symbol ownership and the cheapest matching verification per slice.
+Follow the [shared discovery and confirmation contract](../../../docs/Audits/README.md#discover-and-confirm) for scope coverage, repeat-pass starting points, evidence, and counterevidence. Keep probe output compact (`npm run audit:all`; bounded failure tail first). For multiple findings, publish a concise plan with disjoint file/symbol ownership and the cheapest matching verification per slice.
 
 ## Delegate implementation efficiently
 

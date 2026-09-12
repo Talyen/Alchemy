@@ -12,10 +12,18 @@ declare module "*/check-bundle-budget.mjs" {
 
 declare module "*/bundle-budget.mjs" {
   export const BUDGETS: Readonly<{
-    indexMaxBytes: number;
     totalJsMaxBytes: number;
   }>;
   export const CHUNK_SIZE_WARNING_KB: number;
+}
+
+declare module "*/desktop-build-config.mjs" {
+  export function validateDesktopBuildConfig(env?: NodeJS.ProcessEnv): {
+    sentryDsn: string;
+    sentryUploadEnabled: boolean;
+    steamAppId: string | undefined;
+    azureFields: Record<string, string | undefined>;
+  };
 }
 
 interface PatchNoteCommit {
@@ -44,7 +52,6 @@ declare module "*/patch-notes-core.mjs" {
 }
 
 declare module "*/git-release.mjs" {
-  export function listVersionTags(root: string): string[];
   export function latestVersionTag(root: string): string | null;
   export function previousVersionTag(root: string, currentTag: string): string | null;
   export function latestCommitHash(root: string, short?: boolean): string;
@@ -81,6 +88,7 @@ declare module "*/release-runner.mjs" {
 }
 
 declare module "*/release-checks.mjs" {
+  export function verifyPackagedRenderer(archivePath: string, musicDirectory?: string): void;
   export function verifyReleaseVersionTag(tag: string, version: string): string;
   export function verifyDesktopPackage(): Promise<void>;
 }
@@ -91,7 +99,6 @@ declare module "*/asset-constants.mjs" {
     gearArt: string;
     versionMetadata: string;
   }>;
-  export const PREPARED_ASSET_OUTPUTS: readonly string[];
 }
 
 declare module "*/desktop-artifact.mjs" {
@@ -250,6 +257,9 @@ interface VitestFailure {
   message: string;
 }
 interface VitestSummary {
+  failed: boolean;
+  runnerErrors: string[];
+  numFailedTestSuites: number;
   numTotalTests: number;
   numPassedTests: number;
   numFailedTests: number;
@@ -272,6 +282,8 @@ interface PlaywrightFailure {
   digestPath: string | null;
 }
 interface PlaywrightSummary {
+  failed: boolean;
+  runnerErrors: string[];
   total: number;
   expected: number;
   unexpected: number;
@@ -524,6 +536,15 @@ declare module "*/measure-agent-context.mjs" {
     outputFiles?: string[];
   }): ContextMeasurement;
   export function measureAllRoutes(): ContextMeasurement[];
+  export interface DiscoveryMeasurement {
+    task: string;
+    paths: string[];
+    selectedBytes: number;
+    emittedSectionBytes: number;
+    emittedBytes: number;
+    deferred: Array<{ path: string; heading: string | null }>;
+  }
+  export function measureDiscoveryContexts(): DiscoveryMeasurement[];
 }
 
 declare module "*/context-hotspots.mjs" {
@@ -551,11 +572,18 @@ declare module "*/context-hotspots.mjs" {
   export function buildContextHotspotReport(
     rootDir: string,
     options?: { last?: number; minBytes?: number },
-  ): { generatedAt: string; inspectedRuns: number; routes: ContextMeasurement[]; commands: CommandHotspot[] };
+  ): {
+    generatedAt: string;
+    inspectedRuns: number;
+    routes: ContextMeasurement[];
+    discovery: Array<import("*/measure-agent-context.mjs").DiscoveryMeasurement>;
+    commands: CommandHotspot[];
+  };
   export function formatContextHotspotReport(report: {
     generatedAt: string;
     inspectedRuns: number;
     routes: ContextMeasurement[];
+    discovery: Array<import("*/measure-agent-context.mjs").DiscoveryMeasurement>;
     commands: CommandHotspot[];
   }): string;
 }
@@ -830,18 +858,24 @@ declare module "*/agent-search.mjs" {
 }
 
 declare module "*/optimize-assets.mjs" {
-  export function optimizeAssets(): Promise<{ ok: boolean; error?: string }>;
+  export function optimizeAssets(options?: { check?: boolean }): Promise<{ ok: boolean; error?: string }>;
 }
 
 declare module "*/optimize-sounds.mjs" {
-  export function optimizeSounds(): Promise<{ ok: boolean; error?: string }>;
+  export function optimizeSounds(options?: { check?: boolean }): Promise<{ ok: boolean; error?: string }>;
 }
 
 declare module "*/optimize-music.mjs" {
-  export function optimizeMusic(): Promise<{ ok: boolean; error?: string }>;
+  export function optimizeMusic(options?: { check?: boolean }): Promise<{ ok: boolean; error?: string }>;
 }
 
 declare module "*/sync-generated.mjs" {
+  export function parseSyncArgs(argv: string[]): {
+    check: boolean;
+    gearOnly: boolean;
+    artOnly: boolean;
+    versionOnly: boolean;
+  };
   export function syncGenerated(options?: { check?: boolean }): Promise<void>;
 }
 
@@ -853,4 +887,41 @@ declare module "*/sync-art-barrels.mjs" {
   export function syncAssets(options?: { check?: boolean }): Promise<void>;
   export function syncGearArt(options?: { check?: boolean }): Promise<void>;
   export function syncArtBarrels(options?: { check?: boolean }): Promise<void>;
+}
+
+interface ScriptCommandResult {
+  status: number | null;
+  output: string;
+  elapsedMs: number;
+  error?: Error;
+  outputTruncated?: boolean;
+  timedOut?: boolean;
+  logPath?: string;
+}
+declare module "*/lib/run-command.mjs" {
+  export function runCommand(command: string, args?: string[], options?: Record<string, unknown>): ScriptCommandResult;
+  export function runCommandAsync(
+    command: string,
+    args?: string[],
+    options?: Record<string, unknown>,
+  ): Promise<ScriptCommandResult>;
+}
+declare module "*/lib/changed-paths.mjs" {
+  export function resolvePushPaths(root: string, input: string): string[];
+}
+declare module "*/audit-all.mjs" {
+  export function runAudits(
+    argv?: string[],
+    options?: {
+      rootDir?: string;
+      runner?: (command: string, args: string[], options: Record<string, unknown>) => Promise<ScriptCommandResult>;
+    },
+  ): Promise<number>;
+}
+declare module "*/run-performance.mjs" {
+  export function parsePerformanceArgs(argv: string[]): { runs: number | null };
+}
+
+declare module "*/lib/command-invocation.mjs" {
+  export function commandInvocation(command: string, args?: string[]): [string, string[]];
 }

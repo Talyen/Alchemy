@@ -47,6 +47,7 @@ export interface EnemyDamageOptions {
   amountMultiplier?: number;
   flatBonus?: number;
   ignorePlayerMitigation?: boolean;
+  ignoreArmor?: boolean;
   physicalBlockBreakMultiplier?: number;
   extraPoisonBlockStrip?: number;
   skipTraitReactions?: boolean;
@@ -59,12 +60,14 @@ function computeMitigatedDamage(
   effect: EnemyAttackEffect & { kind: "damage" },
   remainingDamage: number,
   ignorePlayerMitigation: boolean,
+  ignoreArmor: boolean,
 ) {
   const armorMitigatesDamage =
     effect.damageType === "physical" ||
     effect.damageType === "stun" ||
     armorMitigatesElementalDamage(state, effect.damageType);
-  const rawDamage = armorMitigatesDamage ? Math.max(0, remainingDamage - state.playerStatuses.armor) : remainingDamage;
+  const rawDamage =
+    armorMitigatesDamage && !ignoreArmor ? Math.max(0, remainingDamage - state.playerStatuses.armor) : remainingDamage;
   const scaledDamage = ignorePlayerMitigation
     ? rawDamage
     : scaleReceivedPlayerDamage(rawDamage, state.talentEffects, effect.damageType);
@@ -145,7 +148,13 @@ function calculateBlockAndArmorMitigation(
   if (totalExtraBlock > 0) {
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: totalExtraBlock });
   }
-  const actualDamage = computeMitigatedDamage(state, effect, remainingDamage, options.ignorePlayerMitigation === true);
+  const actualDamage = computeMitigatedDamage(
+    state,
+    effect,
+    remainingDamage,
+    options.ignorePlayerMitigation === true,
+    options.ignoreArmor === true,
+  );
   return { remainingDamage, blockAbsorb, blockSpent, totalExtraBlock, actualDamage };
 }
 
@@ -218,10 +227,10 @@ function applyBlockDepletedHeal(
   prevState: BattleState,
   nextState: BattleState,
   combatTexts: CombatTextEvent[],
+  isBlockDepleted: boolean,
 ): BattleState {
   let finalState = nextState;
   const healAmount = prevState.talentEffects.blockDepletedHeal + prevState.gearEffects.blockDepletedHeal;
-  const isBlockDepleted = prevState.playerStatuses.block > 0 && nextState.playerStatuses.block <= 0;
 
   if (isBlockDepleted && healAmount > 0) {
     finalState = applyHealingWithCombatText(finalState, healAmount, combatTexts);
@@ -331,7 +340,6 @@ function resolveEnemyDamageEffectCore(
     nextState = { ...nextState, uniqueGear: { ...nextState.uniqueGear, knightsAnswerReady: true } };
   }
   recordPlayerHealthLost(prevHealth, nextState, effect.damageType, combatTexts);
-  nextState = applyBlockDepletedHeal(state, nextState, combatTexts);
 
   if (
     nextState.enemyHealth > 0 &&
@@ -349,6 +357,12 @@ function resolveEnemyDamageEffectCore(
     actualDamage,
     effect.damageType,
     combatTexts,
+  );
+  nextState = applyBlockDepletedHeal(
+    state,
+    nextState,
+    combatTexts,
+    blockLost > 0 && blockLost === state.playerStatuses.block,
   );
 
   if (nextState.enemyHealth <= 0 || nextState.playerHealth <= 0) return { state: nextState, ...outcome };

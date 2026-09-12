@@ -9,7 +9,8 @@ import { cn } from "@/lib/utils";
 
 import { FadeSlot } from "../../../shared/ui/use-fade";
 import { ModalOverlayShell } from "../../../shared/ui/modal-overlay-shell";
-import { PaginationControls, ScreenHeader } from "../../../shared/ui/shared-ui";
+import { PaginationControls } from "../../../shared/ui/navigation";
+import { ScreenHeader } from "../../../shared/ui/layout-components";
 import { TrinketTile } from "../../../shared/ui/collection-art-tiles";
 import { usePaginatedRows } from "../../../shared/ui/use-paginated-rows";
 import { uniqueRunBoons } from "./unique-run-boons";

@@ -6,7 +6,7 @@ import { CardGhostLayer, CardTransferLayer } from "../../battle/presentation/pre
 import { useCardTransferInProgress } from "../../battle/presentation/use-hand-presentation";
 import { BattleActors } from "./actors";
 import { BattleBottomBar } from "./controls";
-import { PageLayout } from "../../../shared/ui/shared-ui";
+import { PageLayout } from "../../../shared/ui/layout-components";
 import { BattleBoonInspectOverlay } from "./boon-inspect";
 import { hasInspectableBoons } from "./unique-run-boons";
 import { WishOverlay } from "./wish-overlay";

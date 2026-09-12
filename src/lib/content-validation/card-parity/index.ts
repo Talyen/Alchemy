@@ -80,8 +80,23 @@ const COUNT_PARITY_RULES: CountParityRule[] = [
   },
   {
     label: "draw-cards",
-    countLines: (lines) => countLinesStartingWith(lines, "Draw "),
+    countLines: (lines) => lines.filter((line) => line.startsWith("Draw ") && line !== "Draw that many cards").length,
     countEffects: (effects) => countByKind(effects, "draw-cards"),
+  },
+  {
+    label: "random-draw",
+    countLines: (lines) => lines.filter((line) => line === "Draw that many cards").length,
+    countEffects: (effects) => countByKind(effects, "random-draw"),
+  },
+  {
+    label: "random-draw die",
+    countLines: (lines) => lines.filter((line) => line === "Roll a six-sided die").length,
+    countEffects: (effects) => countByKind(effects, "random-draw"),
+  },
+  {
+    label: "companion-action",
+    countLines: (lines) => countLinesStartingWith(lines, "Your Companion acts "),
+    countEffects: (effects) => countByKind(effects, "companion-action"),
   },
   {
     label: "remove-enemy-armor",

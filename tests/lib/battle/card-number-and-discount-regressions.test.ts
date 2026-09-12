@@ -34,7 +34,7 @@ describe("card number and discount regressions", () => {
     },
   );
 
-  it.each(["stab", "maul"])("updates both damage alternatives on %s", (id) => {
+  it.each(["maul"])("updates both damage alternatives on %s", (id) => {
     const original = cardById[id]!;
     const target = getEditableCorruptionTargets(original)[0]!;
     const changed = applyNumericCorruption(original, target, 1);
@@ -67,7 +67,7 @@ describe("card number and discount regressions", () => {
   });
 
   it("keeps a shared chance number separate from an equal-valued added effect", () => {
-    const original = cardById.stab!;
+    const original = cardById.maul!;
     const card = {
       ...original,
       descriptionLines: [...original.descriptionLines, "Gain 3 Gold"],

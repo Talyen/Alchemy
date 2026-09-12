@@ -1,4 +1,4 @@
-import { getCompanionDescriptionLines, type CompanionDefinition } from "@/lib/game-data";
+import { getCompanionDescriptionLines, type CompanionDefinition, type CompanionDamageModifiers } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
 import {
@@ -7,8 +7,8 @@ import {
   getCompanionShineColors,
   getPlasmaColorPairForCompanion,
 } from "../../config";
-import { TooltipHeader } from "../tooltip-panel";
-import { PortaledTooltip } from "../portaled-tooltip";
+import { TooltipHeader } from "../tooltips/tooltip-panel";
+import { PortaledTooltip } from "../tooltips/portaled-tooltip";
 import { useHoverVisible } from "../use-hover-visible";
 import { DescriptionLines } from "../card-description-ui";
 import { Surface } from "../surface";
@@ -29,7 +29,7 @@ export function CompanionPanel({
   companion: CompanionDefinition;
   compact?: boolean;
   shaking?: boolean;
-  damageBonus?: number;
+  damageBonus?: number | CompanionDamageModifiers;
   bondLevel?: number;
   ccKeyword?: ActiveCcKeyword | null;
   turnActive?: boolean;

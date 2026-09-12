@@ -1,7 +1,7 @@
 import type { BattleCard } from "@/lib/game-data";
 
 import { RemoveCardPanel } from "../../shared/ui/remove-card-panel";
-import { TitledScreenShell } from "../../shared/ui/shared-ui";
+import { TitledScreenShell } from "../../shared/ui/layout-components";
 
 interface Props {
   runDeck: BattleCard[];

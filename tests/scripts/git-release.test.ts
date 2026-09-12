@@ -96,4 +96,23 @@ describe("git-release", () => {
     tempDirs.push(root);
     expect(getCommitsSinceTag(root, null)).toBeNull();
   });
+
+  it("uses release ancestry for reruns and maintenance branches, including the first release", () => {
+    const root = gitRepo();
+    commitFile(root, "seed.txt", "chore: seed");
+    git(root, "git tag v0.1.0");
+    expect(previousVersionTag(root, "v0.1.0")).toBeNull();
+    commitFile(root, "release.txt", "feat: second release");
+    git(root, "git tag v0.2.0");
+    commitFile(root, "later.txt", "feat: later release");
+    git(root, "git tag v9.0.0");
+    expect(resolvePatchNoteRange(root, "v0.2.0")).toEqual({ since: "v0.1.0", until: "v0.2.0" });
+
+    git(root, "git checkout -qb maintenance v0.1.0");
+    commitFile(root, "hotfix.txt", "fix: maintenance release");
+    git(root, "git tag v0.1.1");
+    expect(previousVersionTag(root, "0.1.1")).toBe("v0.1.0");
+    expect(latestVersionTag(root)).toBe("v0.1.1");
+    expect(resolvePatchNoteRange(root, null)).toEqual({ since: "v0.1.1", until: "HEAD" });
+  });
 });

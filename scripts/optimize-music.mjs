@@ -20,7 +20,7 @@ const manifestPath = path.join(outputDir, MANIFEST_BASENAME);
 
 const SCHEMA_VERSION = ASSET_SCHEMA_VERSION;
 
-export async function optimizeMusic() {
+export async function optimizeMusic({ check = false } = {}) {
   const files = await discoverAudioFiles(sourceDir);
   if (files.length === 0) {
     const msg = `No music files found in ${sourceDir}.`;
@@ -28,7 +28,7 @@ export async function optimizeMusic() {
     return { ok: false, error: msg };
   }
 
-  await mkdir(outputDir, { recursive: true });
+  if (!check) await mkdir(outputDir, { recursive: true });
 
   const { results, nextManifest, failed } = await processManifestEntries({
     entries: files,
@@ -45,6 +45,7 @@ export async function optimizeMusic() {
         SCHEMA_VERSION,
         storedEntry,
         () => copyFile(sourcePath, outputPath),
+        { check },
       );
       return { message: `${file} ${fresh ? "already up to date" : "copied"}`, entry };
     },
@@ -57,6 +58,7 @@ export async function optimizeMusic() {
 
   await commitManifest(manifestPath, nextManifest, {
     outputDir,
+    check,
     manifestBasename: MANIFEST_BASENAME,
     label: "music file",
   });

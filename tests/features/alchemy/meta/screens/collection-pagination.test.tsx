@@ -9,12 +9,14 @@ vi.mock("@/features/alchemy/shared/ui/adaptive-grid", async (importOriginal) => 
   ...(await importOriginal<typeof import("@/features/alchemy/shared/ui/adaptive-grid")>()),
   useAdaptiveGrid: () => ({ pageSize: sizing.pageSize, columns: sizing.pageSize / 2, referenceTileWidth: 244.512 }),
 }));
-vi.mock("@/features/alchemy/shared/ui/collection-ui", () => ({
+vi.mock("@/features/alchemy/meta/screens/collection/collection-ui", () => ({
   CollectionGrid: ({ page }: { page: number }) => <output data-testid="page">{page}</output>,
   CollectionTabs: () => null,
   CollectionPagination: () => null,
 }));
-vi.mock("@/features/alchemy/shared/ui/collection-items", () => ({ getCollectionLibraryLength: () => 40 }));
+vi.mock("@/features/alchemy/meta/screens/collection/collection-items", () => ({
+  getCollectionLibraryLength: () => 40,
+}));
 
 const onPageChange = vi.fn();
 function CollectionHarness() {

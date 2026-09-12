@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 import { test } from "../../fixtures/e2e";
-import { injectDestinationAtIndex, injectMysterySummaryVisit, assertRowAlignment } from "../../helpers";
+import { injectDestinationAtIndex, injectMysterySummaryVisit, assertRowAlignment } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 import { DestinationPage } from "../../pages/destination-page";
 import { MysteryPage } from "../../pages/mystery-page";
@@ -9,10 +9,6 @@ import { expectRunPhase } from "../../pages/game-stage";
 import { critical } from "../../playwright-tags";
 
 test.describe("Destination Progression", () => {
-  test.beforeEach(async ({ runtimeErrors }) => {
-    void runtimeErrors;
-  });
-
   test("destination screen shows available choices from the pool", critical, async ({ page }) => {
     await injectDestinationAtIndex(page, {
       destinations: ["Normal Combat", "Campfire", "Mystery"],
@@ -66,8 +62,7 @@ test.describe("Destination Progression", () => {
 });
 
 test.describe("Mystery Event Flow", () => {
-  test("mystery completes and returns to destination choices", critical, async ({ page, runtimeErrors }) => {
-    void runtimeErrors;
+  test("mystery completes and returns to destination choices", critical, async ({ page }) => {
     await injectMysterySummaryVisit(page);
     await page.goto("/");
 

@@ -10,7 +10,8 @@ import {
   startAtDestination,
   startBattleWithDeck,
   enterPrimaryRewardScreen,
-} from "../../helpers";
+  failOnRuntimeErrors,
+} from "../../browser-helpers";
 import { injectMidCombatSave } from "../mid-combat-save";
 import { BattlePage } from "../../pages/battle-page";
 import { DestinationPage } from "../../pages/destination-page";
@@ -39,10 +40,6 @@ function persistedPurseGold(save: { gold?: unknown; activeRun?: { runGold?: unkn
 }
 
 test.describe("Save Persistence & Resume", () => {
-  test.beforeEach(async ({ runtimeErrors }) => {
-    void runtimeErrors;
-  });
-
   test("resume run restores exact state after reload", critical, async ({ page }) => {
     await seedRandom(page, 42);
     await injectSaveState(page, {
@@ -137,51 +134,67 @@ test.describe("Save Persistence & Resume", () => {
     expect(turnAfter).toBe(2);
   });
 
-  test(
-    "reload from an enemy-resolution continuation resumes a playable battle",
-    critical,
-    async ({ page, runtimeErrors }) => {
-      void runtimeErrors;
-      await startBattleWithDeck(
-        page,
-        Array.from({ length: 6 }, () => makeHighDamageCard()),
-      );
+  test("reload from an enemy-resolution continuation resumes a playable battle", critical, async ({ page }) => {
+    await startBattleWithDeck(
+      page,
+      Array.from({ length: 6 }, () => makeHighDamageCard()),
+    );
 
-      const battle = new BattlePage(page);
-      await expect(battle.endTurnBtn).toBeEnabled({ timeout: 5000 });
+    const battle = new BattlePage(page);
+    await expect(battle.endTurnBtn).toBeEnabled({ timeout: 5000 });
+    await expect
+      .poll(
+        () =>
+          page.evaluate((saveKey) => {
+            const activeRun = JSON.parse(localStorage.getItem(saveKey) || "{}").activeRun;
+            return activeRun?.activeCombat?.battleState?.turnPhase ?? null;
+          }, SAVE_KEY),
+        { timeout: 8000 },
+      )
+      .toBe("player");
+
+    const expectedHandSize = await page.evaluate((saveKey) => {
+      const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
+      const activeRun = save.activeRun;
+      const activeCombat = activeRun?.activeCombat;
+      if (!activeRun || !activeCombat) throw new Error("Expected an active combat save");
+      const resultState = activeCombat.battleState;
+      activeRun.currentScreen = "battle";
+      activeRun.activeCombat = {
+        ...activeCombat,
+        battleState: { ...resultState, turnPhase: "enemy", hand: [] },
+        pendingBattleTransition: {
+          kind: "enemy-turn",
+          resultState,
+          playerTurnSkipped: false,
+        },
+      };
+      localStorage.setItem(saveKey, JSON.stringify(save));
+      return resultState.hand.length as number;
+    }, SAVE_KEY);
+
+    expect(expectedHandSize).toBeGreaterThan(0);
+    // The original page's initializer would overwrite the interrupted save on reload.
+    const resumedPage = await page.context().newPage();
+    const errors = failOnRuntimeErrors(resumedPage);
+    try {
+      await resumedPage.goto("/");
+      const resumedBattle = new BattlePage(resumedPage);
+      await expect(resumedBattle.endTurnBtn).toBeEnabled({ timeout: 10000 });
+      await expect(resumedBattle.hand).toHaveCount(expectedHandSize);
       await expect
-        .poll(
-          () =>
-            page.evaluate((saveKey) => {
-              const activeRun = JSON.parse(localStorage.getItem(saveKey) || "{}").activeRun;
-              return activeRun?.activeCombat?.battleState?.turnPhase ?? null;
-            }, SAVE_KEY),
-          { timeout: 8000 },
+        .poll(() =>
+          resumedPage.evaluate((saveKey) => {
+            const combat = JSON.parse(localStorage.getItem(saveKey) || "{}").activeRun?.activeCombat;
+            return combat?.battleState?.turnPhase === "player" && !combat.pendingBattleTransition;
+          }, SAVE_KEY),
         )
-        .toBe("player");
-
-      await page.evaluate((saveKey) => {
-        const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-        const activeRun = save.activeRun;
-        const activeCombat = activeRun?.activeCombat;
-        if (!activeRun || !activeCombat) throw new Error("Expected an active combat save");
-        const resultState = activeCombat.battleState;
-        activeRun.currentScreen = "battle";
-        activeRun.activeCombat = {
-          ...activeCombat,
-          battleState: { ...resultState, turnPhase: "enemy", hand: [] },
-          pendingBattleTransition: {
-            kind: "enemy-turn",
-            resultState,
-            playerTurnSkipped: false,
-          },
-        };
-        localStorage.setItem(saveKey, JSON.stringify(save));
-      }, SAVE_KEY);
-
-      await expect(battle.endTurnBtn).toBeEnabled({ timeout: 10000 });
-    },
-  );
+        .toBe(true);
+      expect(errors).toEqual([]);
+    } finally {
+      await resumedPage.close();
+    }
+  });
 
   test("resumes a run from a current-schema campaign fixture", async ({ page }) => {
     const legacySave = currentSchemaCampaignSave();
@@ -209,9 +222,8 @@ test.describe("Save Persistence & Resume", () => {
 });
 
 test.describe("Autosave Cadence", () => {
-  test("save is written after the first end turn in battle", critical, async ({ page, fastBattle, runtimeErrors }) => {
+  test("save is written after the first end turn in battle", critical, async ({ page, fastBattle }) => {
     void fastBattle;
-    void runtimeErrors;
     await startBattleWithDeck(
       page,
       Array.from({ length: 6 }, () => makeHighDamageCard()),
@@ -226,8 +238,7 @@ test.describe("Autosave Cadence", () => {
     await expect.poll(() => getSavedLastSavedAt(page)).toBeGreaterThan(savedAtBefore);
   });
 
-  test("save is written after claiming a reward", critical, async ({ page, runtimeErrors }) => {
-    void runtimeErrors;
+  test("save is written after claiming a reward", critical, async ({ page }) => {
     await enterPrimaryRewardScreen(page, { rewardType: "card", choiceIds: ["slash", "bash"] });
 
     const savedAtBeforeReward = await getSavedLastSavedAt(page);

@@ -1,22 +1,28 @@
 import { expect, test } from "../../fixtures/e2e";
-import { failOnRuntimeErrors, SAVE_KEY } from "../../helpers";
+import { SAVE_KEY } from "../../browser-helpers";
 import { MenuPage } from "../../pages/menu-page";
 import { critical } from "../../playwright-tags";
 import { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation/metadata";
 
 test.describe("Save Error Paths", () => {
-  test("corrupted JSON in localStorage falls back to defaults gracefully", critical, async ({ page }) => {
-    await page.addInitScript((saveKey) => {
-      localStorage.setItem(saveKey, "not-valid-json{{{");
-    }, SAVE_KEY);
+  test(
+    "corrupted JSON in localStorage falls back to defaults gracefully",
+    critical,
+    async ({ page, runtimeErrors }) => {
+      await page.addInitScript((saveKey) => {
+        localStorage.setItem(saveKey, "not-valid-json{{{");
+      }, SAVE_KEY);
 
-    await page.goto("/");
-    const menu = new MenuPage(page);
-    await menu.expectMainMenu();
-  });
+      await page.goto("/");
+      const menu = new MenuPage(page);
+      await menu.expectMainMenu();
+      expect(runtimeErrors.splice(0)).toEqual([
+        expect.stringMatching(/^\[storage\] Save candidate JSON parse failed, trying next candidate\s+SyntaxError:/),
+      ]);
+    },
+  );
 
   test("missing save key still shows main menu", async ({ page }) => {
-    const errors = failOnRuntimeErrors(page);
     await page.addInitScript((saveKey) => {
       localStorage.removeItem(saveKey);
     }, SAVE_KEY);
@@ -26,11 +32,9 @@ test.describe("Save Error Paths", () => {
     await menu.expectMainMenu();
     await expect(menu.collectionBtn).toBeVisible();
     await expect(menu.optionsBtn).toBeVisible();
-    expect(errors).toEqual([]);
   });
 
   test("save with null activeRun does not crash", async ({ page }) => {
-    const errors = failOnRuntimeErrors(page);
     await page.addInitScript((saveKey) => {
       localStorage.setItem(
         saveKey,
@@ -48,23 +52,19 @@ test.describe("Save Error Paths", () => {
 
     await page.goto("/");
     await new MenuPage(page).expectMainMenu();
-    expect(errors).toEqual([]);
   });
 
   test("empty save object does not crash", async ({ page }) => {
-    const errors = failOnRuntimeErrors(page);
     await page.addInitScript((saveKey) => {
       localStorage.setItem(saveKey, JSON.stringify({}));
     }, SAVE_KEY);
 
     await page.goto("/");
     await new MenuPage(page).expectMainMenu();
-    expect(errors).toEqual([]);
   });
 
   test("fresh localStorage shows main menu without errors", critical, async ({ page }) => {
     test.setTimeout(60_000);
-    const errors = failOnRuntimeErrors(page);
 
     await page.addInitScript(() => {
       localStorage.clear();
@@ -72,8 +72,6 @@ test.describe("Save Error Paths", () => {
     });
     await page.goto("/", { waitUntil: "load" });
     await new MenuPage(page).expectMainMenuAfterColdStart(30_000);
-
-    expect(errors).toEqual([]);
   });
 
   test("blocks gameplay when save schema is newer than this build", critical, async ({ page }) => {

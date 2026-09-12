@@ -8,7 +8,7 @@ import {
   trinketArtImageClass,
 } from "@/features/alchemy/shared/config";
 import { ShineBorder } from "@/components/ui/shine-border";
-import { DetailPopup } from "@/features/alchemy/shared/ui/card-popup";
+import { DetailPopup } from "@/features/alchemy/shared/ui/tooltips/card-popup";
 import { TrinketItemTitle } from "@/features/alchemy/shared/ui/gear-item-title";
 import { Surface } from "@/features/alchemy/shared/ui/surface";
 import { GearSlotArt } from "./gear-slot-art";

@@ -8,7 +8,12 @@ import { spawnSync } from "node:child_process";
 import { changedGitPaths, ensureRunId, writeCurrentRun } from "./lib/current-run.mjs";
 import { writeFailureDigest } from "./lib/compact-output.mjs";
 import { summarizeStepResult } from "./lib/run-step.mjs";
-import { classifyCheckPaths, parseChangedPathsArgs, resolveSelectedPaths } from "./lib/changed-paths.mjs";
+import {
+  classifyCheckPaths,
+  parseChangedPathsArgs,
+  resolveSelectedPaths,
+  resolvePushPaths,
+} from "./lib/changed-paths.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { runCommand } from "./lib/run-command.mjs";
 
@@ -41,6 +46,11 @@ export function captureSourceDigest() {
 }
 
 export function parseCheckArgs(argv) {
+  if (argv.includes("--pre-push")) {
+    if (argv.length !== 1) throw new Error("--pre-push cannot be combined with other selections");
+    if (process.stdin.isTTY) throw new Error("--pre-push requires Git hook input on stdin");
+    return resolvePushPaths(ROOT, fs.readFileSync(0, "utf8"));
+  }
   const { flags, paths } = parseChangedPathsArgs(argv, {
     usage: "Provide paths or use --diff. Example: npm run check -- --diff",
   });
@@ -55,11 +65,11 @@ function classify(paths) {
   return { needsCodeChecks, lockfile, desktop, web };
 }
 
-function defaultRunner(_label, command, args, env) {
+function defaultRunner(label, command, args, env) {
   return runCommand(command, args, {
     cwd: ROOT,
     env,
-    shell: process.platform === "win32",
+    logPath: path.join(ROOT, "reports/runs", env.ALCHEMY_RUN_ID, "check", `${label.replaceAll(" ", "-")}.log`),
   });
 }
 
@@ -71,11 +81,21 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
   const runner = options.runner ?? defaultRunner;
   const digestFn = options.captureDigest ?? captureSourceDigest;
   const paths = parseCheckArgs(argv);
+  if (paths.length === 0) {
+    console.log("No changed source to check.");
+    return 0;
+  }
   const selection = classify(paths);
   const runId = ensureRunId("check");
   const env = { ...process.env, ALCHEMY_RUN_ID: runId };
   const before = digestFn();
-  const verifyArgs = paths.length > 0 ? paths : ["--diff"];
+  let verifyArgs = [...paths];
+  if (Buffer.byteLength(JSON.stringify(paths)) > 8_000) {
+    const selectionFile = path.join(ROOT, "reports/runs", runId, "paths.json");
+    fs.mkdirSync(path.dirname(selectionFile), { recursive: true });
+    fs.writeFileSync(selectionFile, JSON.stringify(paths));
+    verifyArgs = ["--paths-file", selectionFile];
+  }
   // Static checks rerun docs:check via lint:ci, so verification skips its own
   // copy on executable changes; documentation-only changes keep it here.
   if (selection.needsCodeChecks) verifyArgs.push("--skip-docs-check");
@@ -122,6 +142,14 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
       buildReason ?? "web runtime inputs unchanged",
     ),
     stepDefinition(
+      "web-bundle-budget",
+      "web bundle budget",
+      "npm",
+      ["run", "check:bundle"],
+      selection.web && !skipBuilds,
+      buildReason ?? "web build not required",
+    ),
+    stepDefinition(
       "preview-smoke",
       "preview smoke",
       "npm",
@@ -136,6 +164,14 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
       ["run", "build:desktop"],
       selection.desktop && !skipBuilds,
       buildReason ?? "desktop inputs unchanged",
+    ),
+    stepDefinition(
+      "desktop-bundle-budget",
+      "desktop bundle budget",
+      "npm",
+      ["run", "check:bundle"],
+      selection.desktop && !skipBuilds,
+      buildReason ?? "desktop build not required",
     ),
   ];
   const steps = [];

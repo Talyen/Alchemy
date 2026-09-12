@@ -1,6 +1,6 @@
 # Save migration history
 
-Completed structural migrations retained for compatibility and fixture review.
+Completed save and content changes retained for compatibility and fixture review.
 The current decision and implementation contract lives in
 [MIGRATIONS.md](./MIGRATIONS.md).
 
@@ -143,3 +143,20 @@ on kill with the standard catalog maxima. Definition overviews now derive from
 the signature affix, keeping Blackfletch's Health condition and Wardbreaker's
 single-effect Purge consistent with instance text. Current values remain in the
 affix catalog rather than this history.
+
+## Compatible battle-content updates
+
+These completed changes retained the save shape and content IDs. Their additive
+fields use safe defaults; captured older battle manifests keep their legacy
+readers until normal recomputation. This is historical compatibility evidence,
+not a field checklist for new content. Follow the current
+[save contract](./MIGRATIONS.md#test-expectations) and the owning schemas.
+
+- Dodge counters (`playerDodgeCount`, `dodgeChanceFromDamage`) default to zero in old battle snapshots and pending result states. New snapshots retain both values. Dodge XP is already present in run progress when an enemy-turn continuation is saved; restoring that continuation must not award it again.
+- Talent replacement IDs and unlocked progress are unchanged. New sequence, Companion bonus, Sanguine Overflow, and Dark Recovery flags default to false/zero in old battle snapshots and pending results; current snapshots preserve them. Retired effect fields and their readers remain for already-saved combat manifests; recomputing talents from unlocks uses the replacement definitions. Existing queued choices and resolved enemy-turn results are not rerolled or rewarded again.
+- The combat-feedback talent replacements retain all Holy/Nature/Leech IDs and purchased progress despite row reordering. Reordering never removes purchased talents, refunds points, or grants missing prerequisites. `wishExtraChoiceAfterHolyCard` defaults to false, `leechCardDamageVsLowHealthPercent` to zero, and `flags.nextWishExtraChoice` to false in old battles and pending results. Current snapshots preserve readiness and already-generated Wish choices. Retired `holyWishChance` and `leechHolyDamageVsLowHealth` readers remain for captured old manifests until the battle finishes; subsequent battles recompute the replacements. The legacy Cull the Weak extra Holy hit does not trigger another Leech-hit reaction; current manifests use the conditional Leech-card damage bonus instead. Combat-text bursts, IDs, and animation lifetimes are presentation-only and never enter saved state.
+- The distinct talent/card rework keeps all unlock and card IDs. New manifest fields default to zero/false; `nextHolyCardFree` and `killRewardsPaid` default to false and persist through saved battles and pending results. Retired first-use and direct-stack proc fields retain their readers for captured old manifests. New catalog cards all cost one Mana; valid saved cost, Consume, effects, descriptions, and corruption overrides retain their existing meanings.
+- Mana from Heaven banks its next-turn reward in `flags.pendingWishMana`, defaulting to zero in old snapshots and retained in current snapshots and pending enemy-turn results. The five talent interaction replacements keep their unlock IDs and add manifest fields with zero defaults; old saved manifests retain immediate Wish Mana, Burn-hit Forge, flat Holy retaliation, and first-card Leech until the battle finishes.
+- Queued turn-start pulses optionally retain `sourceCard` (ID, Consume, tags), preserving card bonuses after save/resume. Legacy pulses without this metadata retain their neutral-source behavior; the queue defaults to empty when absent.
+- Golden Crucible threshold reactions persist in `pendingForgeThresholds`, defaulting to an empty queue in older battles and pending results. Resuming drains each crossing once without granting its already-awarded Forge again.
+- The Stab, Burning Blade, Pack Tactics, Roll the Dice, and Acid Potion reworks added optional effect fields (`ignoreArmor`, `equalToForge`, `removeAll`) and the `companion-action` / `random-draw` kinds. Existing effect shapes keep their meanings, including saved chance-based Stab and Roll the Dice and the old Companion buff. No schema bump was needed: new cards use the catalog, while valid saved effects, descriptions, and Consume overrides remain paired under the card hydration contract. The Roll the Dice regression covers omitted Consume on complete legacy content and catalog fallback for incomplete content.

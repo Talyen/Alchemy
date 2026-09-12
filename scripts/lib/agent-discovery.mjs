@@ -76,7 +76,7 @@ function collectFilesFromGit(root, paths) {
   return result.stdout
     .split("\0")
     .filter(Boolean)
-    .filter((file) => !isExcluded(file))
+    .filter((file) => !isExcluded(file) && fs.lstatSync(path.join(root, file), { throwIfNoEntry: false })?.isFile())
     .sort();
 }
 
@@ -89,7 +89,13 @@ function searchWithoutRipgrep(root, options) {
   const expression = options.regex ? new RegExp(options.pattern) : null;
   const results = [];
   for (const file of files) {
-    const source = fs.readFileSync(path.join(root, file));
+    let source;
+    try {
+      source = fs.readFileSync(path.join(root, file));
+    } catch (error) {
+      if (error.code === "ENOENT") continue;
+      throw error;
+    }
     if (source.includes(0)) continue;
     const lines = source.toString("utf8").split(/\r?\n/u);
     const matches = lines.flatMap((text, index) => {

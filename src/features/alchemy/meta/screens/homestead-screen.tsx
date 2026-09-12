@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
 import { type BuildingId, type FarmId, type MaterialInventory, type ResearchId } from "@/lib/homestead/types";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
-import { PageLayout, PaginationControls, ScreenHeaderRow, ScreenShell } from "../../shared/ui/shared-ui";
+import { PageLayout, ScreenHeaderRow, ScreenShell } from "../../shared/ui/layout-components";
+import { PaginationControls } from "../../shared/ui/navigation";
 import { FadeSlot } from "../../shared/ui/use-fade";
 import { playUISound } from "@/lib/audio";
 import { cardLibrary, type CompanionId } from "@/lib/game-data";

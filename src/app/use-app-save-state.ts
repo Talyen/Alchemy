@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { readHasActiveRun, readRunPhase } from "@/features/alchemy/shared/stores/run-reads";
 import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
-import { useLatestRef } from "@/features/alchemy/shared/hooks";
+import { useLatestRef } from "@/features/alchemy/shared/ui/use-latest-ref";
 import {
   buildAlchemySaveDataFromStores,
   saveAlchemySaveData,

@@ -7,8 +7,8 @@ import { cn } from "@/lib/utils";
 import { tooltipBodyLineClass, tooltipHeaderClass } from "../config";
 import { tokenizeDescription } from "../utils";
 import { KeywordTag } from "./keyword-tag";
-import { TooltipBody } from "./tooltip-panel";
-import { PortaledTooltip } from "./portaled-tooltip";
+import { TooltipBody } from "./tooltips/tooltip-panel";
+import { PortaledTooltip } from "./tooltips/portaled-tooltip";
 import { useHoverVisible } from "./use-hover-visible";
 import { getCorruptedValueOffsets, splitCorruptedNumericParts } from "./card-text";
 

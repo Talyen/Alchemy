@@ -4,6 +4,7 @@ import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
 
+import { expandRepositoryPaths } from "./repository-paths.mjs";
 import { resolveRoutePlan } from "./change-routes.mjs";
 import { readDocumentSection } from "./document-sections.mjs";
 
@@ -15,13 +16,55 @@ const assetCommon = [asset("Shared asset requirements"), asset("Skip mode and ve
 export const CONTEXT_TASKS = {
   battle: {
     matches: /^(?:src\/lib\/(?:battle|game-constants)|tests\/lib\/battle)\//u,
-    docs: [owner("docs/ARCHITECTURE.md", "Battle path"), owner("docs/GAME_RULES.md", "Battle Implementation Rules")],
+    docs: [
+      owner("docs/ARCHITECTURE.md", "Battle path"),
+      owner("docs/GAME_RULES.md", "Engine invariants"),
+      owner("docs/GAME_RULES.md", "Turn order and resources"),
+    ],
     entrypoints: ["src/lib/battle/card-play.ts", "src/lib/battle/effect-handlers"],
+    fixture: "src/lib/battle/card-play.ts",
   },
   card: {
-    matches: /^src\/lib\/game-data\/(?:cards|effects)\//u,
-    docs: [workflow("Add a new card"), workflow("Add a new card effect `kind`")],
-    entrypoints: ["src/lib/game-data/cards/library/cards.ts", "src/lib/game-data/effects/registry.ts"],
+    matches: /^src\/lib\/game-data\/cards\//u,
+    docs: [workflow("Add a new card")],
+    entrypoints: ["src/lib/game-data/cards/library/cards.ts"],
+    fixture: "src/lib/game-data/cards/library/archery.ts",
+  },
+  effect: {
+    matches: /^(?:src\/lib\/game-data\/effects\/|src\/lib\/battle\/effect-handlers\/)/u,
+    docs: [owner("src/lib/game-data/effects/BATTLE_HANDLERS.md", "Adding a kind")],
+    entrypoints: ["src/lib/game-data/effects/registry.ts", "src/lib/battle/effect-handlers/registry.ts"],
+    fixture: "src/lib/game-data/effects/registry.ts",
+  },
+  talent: {
+    matches: /^src\/lib\/game-data\/(?:talents(?:\/|\.ts$)|talent-effect-manifest\.ts$)/u,
+    docs: [workflow("Add a new talent")],
+    entrypoints: [
+      "src/lib/game-data/talents/talent-pool-definitions.ts",
+      "src/lib/game-data/talent-effect-manifest.ts",
+    ],
+    fixture: "src/lib/game-data/talents/talent-pool-definitions.ts",
+  },
+  companion: {
+    matches: /^src\/lib\/(?:game-data\/companions\.ts|battle\/companion[^/]*\.ts)$/u,
+    docs: [workflow("Add a new companion"), owner("docs/GAME_RULES.md", "Companion Bond")],
+    entrypoints: ["src/lib/game-data/companions.ts"],
+    fixture: "src/lib/game-data/companions.ts",
+  },
+  enemy: {
+    matches: /^src\/lib\/game-data\/compendium\/enemies\.ts$/u,
+    docs: [workflow("Add a new enemy"), owner("docs/GAME_RULES.md", "Enemy abilities and traits")],
+    entrypoints: ["src/lib/game-data/compendium/enemies.ts"],
+    fixture: "src/lib/game-data/compendium/enemies.ts",
+  },
+  "enemy-ability": {
+    matches: /^src\/lib\/(?:game-data\/enemy-abilities|battle\/enemy-turn-attack)\.ts$/u,
+    docs: [
+      owner("src/lib/game-data/effects/BATTLE_HANDLERS.md", "Enemy abilities"),
+      owner("docs/GAME_RULES.md", "Enemy abilities and traits"),
+    ],
+    entrypoints: ["src/lib/game-data/enemy-abilities.ts", "src/lib/battle/enemy-turn-attack.ts"],
+    fixture: "src/lib/game-data/enemy-abilities.ts",
   },
   ui: {
     matches: /(?:\/(?:ui|screens)\/|^src\/styles\/)/u,
@@ -49,9 +92,15 @@ export const CONTEXT_TASKS = {
     entrypoints: ["src/lib/keyword-text.ts", "src/features/alchemy/shared/ui/card-description-ui.tsx"],
   },
   gear: {
-    matches: /(?:\/gear\/|\/armory\/|gear-store)/u,
+    matches: /(?:\/gear\/(?!affix)|\/armory\/|gear-store)/u,
     docs: [owner("docs/ARMORY.md", "State flow"), owner("docs/ARMORY.md", "Tests")],
     entrypoints: ["src/features/alchemy/meta/screens/armory/use-armory-controller.ts"],
+  },
+  affix: {
+    matches: /\/gear\/affix/u,
+    docs: [owner("docs/ARMORY.md", "Data model")],
+    entrypoints: ["src/lib/gear/affix-catalog.ts", "src/lib/gear/affix-pool.ts"],
+    fixture: "src/lib/gear/affix-catalog.ts",
   },
   rewards: {
     matches: /(?:victory|reward|run-materials)/u,
@@ -78,6 +127,27 @@ export const CONTEXT_TASKS = {
       "src/features/alchemy/shared/stores/run-session-command.ts",
       "src/features/alchemy/shared/stores/run-session-write-port.ts",
     ],
+    fixture: "src/features/alchemy/shared/stores/run-session-command.ts",
+  },
+  "run-persistence": {
+    matches: /(?:\/storage\/|\/save-schemas\/|run-resume|run-session-lifecycle|run-lifecycle)/u,
+    docs: [owner("docs/ARCHITECTURE.md", "Persistence API")],
+    entrypoints: ["src/features/alchemy/shared/stores/run-session-lifecycle-port.ts"],
+  },
+  "run-ports": {
+    matches: /(?:run-reads|run-session-(?:read|write)-port|route-commands)/u,
+    docs: [owner("docs/ARCHITECTURE.md", "Session capability ports")],
+    entrypoints: ["src/features/alchemy/shared/stores/run-reads.ts"],
+  },
+  "run-randomness": {
+    matches: /(?:run-rng|run-random|draft-world|\/rng(?:\/|\.))/u,
+    docs: [owner("docs/ARCHITECTURE.md", "Run randomness")],
+    entrypoints: ["src/lib/rng/index.ts"],
+  },
+  "run-setup": {
+    matches: /(?:\/run-setup\/|run-start|starter-draft)/u,
+    docs: [owner("docs/ARCHITECTURE.md", "Run setup ownership")],
+    entrypoints: ["src/features/alchemy/run-setup"],
   },
   assets: {
     matches: /^(?:Raw Assets|src\/assets|scripts\/assets)\//u,
@@ -138,6 +208,16 @@ export const CONTEXT_TASKS = {
     docs: [owner("docs/REFERENCE.md", "Tooling ownership")],
     entrypoints: ["scripts/lib/change-routes.mjs", "scripts/README.md"],
   },
+  verification: {
+    matches:
+      /^(?:scripts\/(?:check|verify-changed|lib\/(?:change-routes|changed-paths|run-step|verification-cache|test-commands))\.mjs|tests\/scripts\/(?:check|verify-changed|verification-cache)\.test\.ts)$/u,
+    docs: [
+      owner("scripts/README.md", "Checks / verification (nesting order)"),
+      owner("CONTRIBUTING.md", "What to run when you change…"),
+    ],
+    entrypoints: ["scripts/check.mjs", "scripts/verify-changed.mjs", "scripts/lib/change-routes.mjs"],
+    fixture: "scripts/check.mjs",
+  },
   discovery: {
     matches:
       /^(?:scripts\/(?:agent-(?:context|search|eval)|measure-agent-context|context-hotspots|lib\/agent-(?:context|discovery|events))\.mjs|tests\/scripts\/agent-(?:context|discovery|eval)\.test\.ts)$/u,
@@ -152,7 +232,7 @@ export const CONTEXT_TASKS = {
 const FALLBACK_DOC_ROUTES = new Set(["save", "balance", "performance", "desktop", "documentation", "unit-test"]);
 
 export function selectContext(paths, task) {
-  paths = paths.map((file) => file.replaceAll("\\", "/").replace(/^\.\//u, ""));
+  paths = expandRepositoryPaths(path.resolve(import.meta.dirname, "../.."), paths);
   if (task && !Object.hasOwn(CONTEXT_TASKS, task)) {
     const alternate = task.endsWith("s") ? task.slice(0, -1) : `${task}s`;
     if (Object.hasOwn(CONTEXT_TASKS, alternate)) task = alternate;
@@ -180,17 +260,28 @@ export function selectContext(paths, task) {
   }
   const assetWork =
     selected.some(([id]) => id.startsWith("assets")) || plan.routes.some((route) => route.id === "assets");
+  const runStateWork = selected.some(([id]) => id === "run-state");
+  const pointers = Object.entries(CONTEXT_TASKS)
+    .filter(
+      ([id]) =>
+        ((assetWork && id.startsWith("assets-")) ||
+          (runStateWork && ["run-persistence", "run-ports", "run-randomness", "run-setup"].includes(id))) &&
+        !selected.some(([selectedId]) => selectedId === id),
+    )
+    .map(([task, entry]) => ({ task, ...entry.docs[task.startsWith("assets-") ? assetCommon.length : 0] }));
   const unique = new Map(docs.map((doc) => [`${doc.path}#${doc.heading ?? ""}`, doc]));
   const wholeFiles = new Set([...unique.values()].filter((doc) => !doc.heading).map((doc) => doc.path));
   return {
     tasks: selected.map(([id]) => id),
-    pointers: assetWork
-      ? Object.entries(CONTEXT_TASKS)
-          .filter(([id]) => id.startsWith("assets-") && !selected.some(([selectedId]) => selectedId === id))
-          .map(([task, entry]) => ({ task, ...entry.docs[assetCommon.length] }))
-      : [],
+    pointers,
     docs: [...unique.values()].filter((doc) => !doc.heading || !wholeFiles.has(doc.path)),
-    entrypoints: [...new Set(selected.flatMap(([, entry]) => entry.entrypoints))],
+    entrypoints: [
+      ...new Set(
+        selected
+          .filter(([id]) => id !== "tooling" || !selected.some(([task]) => task === "verification"))
+          .flatMap(([, entry]) => entry.entrypoints),
+      ),
+    ],
     plan,
   };
 }
@@ -268,6 +359,8 @@ export function validateContextCatalog(rootDir) {
         errors.push(`${id}: ${error.message}`);
       }
     }
+    if (entry.fixture && (!fs.existsSync(path.join(rootDir, entry.fixture)) || !entry.matches.test(entry.fixture)))
+      errors.push(`${id}: discovery fixture must exist and match its category: ${entry.fixture}`);
     for (const file of entry.entrypoints)
       if (!fs.existsSync(path.join(rootDir, file))) errors.push(`${id}: missing ${file}`);
   }

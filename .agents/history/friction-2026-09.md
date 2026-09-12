@@ -2,6 +2,18 @@
 
 Historical evidence; current instructions live in the linked canonical owners.
 
+2026-09-12 — Review confirmed Stun's “more than half” tooltip contradicted the exact-half boundary in combat. Stun and Freeze keyword descriptions now identify the existing enemy pre-hit Health and hero maximum Health thresholds; the existing crowd-control tests protect the rule. Review also found a save-continuation browser test that wrote an interrupted save without loading it. It now boots a fresh page and verifies the restored hand and cleared continuation, following [save-test bootstrap](../../tests/e2e/README.md#navigation-and-bootstrap).
+
+2026-09-11 — Documentation checks passed despite a deletion table keyed to session state instead of the explicit Options wipe, an omitted Armory RNG exception, ambiguous shop commit ordering, and an off-by-one migration fixture range. Corrected the [save contract](../../src/features/alchemy/shared/storage/MIGRATIONS.md#deletion), [randomness scope](../../docs/ARCHITECTURE.md#run-randomness), and [shop workflow](../../docs/WORKFLOWS.md#change-a-shop) against callers and existing guards. Release reviews now appear at publishing/promotion, and ordinary save verification follows CONTRIBUTING's existing complete save suite. No runtime behavior changed.
+
+2026-09-11 — Focused documentation review corrected art-only commands, configured React Hooks diagnostics, and foreground-only Gold recovery guidance. Removed the July 30 and August 3 Armory audit deferrals: their drag-oriented product-decision and coverage prerequisites no longer describe the native button controls and shared click-targeting owner. The original concerns were keyboard interaction and duplicated targeting; future findings must use current evidence and [Armory interaction](../../docs/UI.md#armory-crafting-and-salvage), not those obsolete prerequisites. [Asset authoring](../../docs/WORKFLOWS-ASSETS.md#add-or-replace-game-art), [save defaults](../../src/features/alchemy/shared/storage/MIGRATIONS.md#defaults-and-resume-normalization), and [verification reuse](../../CONTRIBUTING.md#verification-reuse) retain the current instructions; battle ordering and compatibility exceptions were preserved while regrouping the guide.
+
+2026-09-11 — Documentation checks passed while current guidance still described intermediate battle commits, permanent Consume removal, and former material-grant owners. Source and nearby tests confirmed the corrections in [game rules](../../docs/GAME_RULES.md#turn-order-and-resources), [material workflow](../../docs/WORKFLOWS.md#grant-materials-during-a-run), and linked knowledge notes. Shared dialog focus and audit discovery now defer to their existing contracts; Companion Bond rules and named card-rework history reside with their respective owners.
+
+2026-09-11 — Documentation review found current Cull the Weak mixed with its legacy saved effect, conflicting empty-viewer text, an obsolete Gear activity flag, and a missing enemy ability-authoring step. Corrected the [game rules](../../docs/GAME_RULES.md), [UI](../../docs/UI.md), [Gear contract](../../docs/ARMORY.md#write-paths), and [enemy workflow](../../docs/WORKFLOWS.md#add-a-new-enemy) against source and existing tests. Current rules, historical compatibility details, and verified archived plans now have separate owners; audit and profiling guidance follows current targeting and bounded measurement practice.
+
+2026-09-11 — Adding Consume to Roll the Dice exposed hydration inheriting the new catalog flag onto complete saved reusable effects whose optional `consume` field was absent. [Card save compatibility](../../src/features/alchemy/shared/storage/MIGRATIONS.md#content-changes-without-a-save-bump) now preserves absent Consume with complete saved content and uses catalog defaults only during incomplete-content recovery; a legacy Dice round-trip regression covers both paths.
+
 2026-09-11 — Numeric corruption matching mistook a Companion summon summary for an added attack with the same number, so Powerful Wish could change the attack while displaying a stronger Companion instead. [Corruption rules](../../docs/GAME_RULES.md#corruption-altars) now exclude summon summaries from numeric effect targets; a corrupted Wolf regression verifies that the added Poison description changes with its effect.
 
 2026-09-11 — Transition frame sampling found an interrupted tab reveal jumping from 14% to full opacity, nested fades retaining old items under new headings, and inspection chrome appearing before artwork. Shared reversible fades, keyed identity subtrees, and complete modal preparation/exit snapshots now own prevention in [UI motion](../../docs/UI.md#screen-fade-motion). A 100ms prepared-navigation gap also allowed transient inspection opens; [navigation input](../../docs/ARCHITECTURE.md#data-flow) now gates it. Browser focus tracing showed that a control can still compute hidden after its wrapper is visible; dialog focus waits for the actual control. Real-timing tests cover interruption, delayed/failed artwork, reduced motion, and stable exits.
@@ -149,7 +161,7 @@ Labyrinth fresh-start regression (2026-09-04): resume-only browser coverage miss
 
 - 2026-09-07 — Talent design review assumed enemy Bleed ticks at turn end, but the engine ticks it before the enemy attack; it also discarded enemy-phase draws when dealing the next hand. Bloodrush now names the natural tick, and the next hand preserves those draws. Prevention lives in [talent event rules](../../docs/GAME_RULES.md#talent-event-rules) and [talent regressions](../../tests/lib/battle/talent-redesign.test.ts).
 
-- 2026-09-07 — Reviewing talent replacements exposed full-hand Returning Flight card loss, Block-break damage after a lethal counter, and Sanguine Overflow consumption by an unselected damage branch. Prevention lives in [talent regression tests](../../tests/lib/battle/talent-redesign.test.ts), [talent event rules](../../docs/GAME_RULES.md#talent-event-rules), and [unique item combat semantics](../../docs/UNIQUE_ITEMS.md#combat-semantics).
+- 2026-09-07 — Reviewing talent replacements exposed full-hand Returning Flight card loss, Block-break damage after a lethal counter, and Sanguine Overflow consumption by an unselected damage branch. Prevention lives in [talent regression tests](../../tests/lib/battle/talent-redesign.test.ts), [attack bonuses](../../docs/GAME_RULES.md#attack-bonuses), and [unique item combat semantics](../../docs/UNIQUE_ITEMS.md#combat-semantics).
 
 - 2026-09-07 — The six-worker talent/audio browser batch stalled at menu clicks with GPU ReadPixels warnings and teardown timeouts (`playwright-20260907t235722z-16699-8386f6`). The unchanged fresh-preview batch passed all six tests with `--workers=1` (`playwright-20260907t235823z-16975-e4916d`). Treat this as local browser contention; reproduce serially before changing interaction assertions or timeouts.
 
@@ -165,11 +177,11 @@ Labyrinth fresh-start regression (2026-09-04): resume-only browser coverage miss
 
 - 2026-09-09 — Labyrinth inspector sizing mixed stage and screen units: a 320px authored minimum rendered below 224px at small Game Size, while scaling Floating UI boundary padding clipped the long inspector on a 1280×480 viewport. The four-size browser regression now covers rendered width and containment; [UI sizing](../../docs/UI.md#labyrinth-map) distinguishes stage-adjusted dimensions from screen-pixel boundary padding.
 
-- 2026-09-09 — Moving all external card discounts ahead of talent allowances broke the intentional first-card priority in `card-payment.test.ts`. First-card allowances remain spent in their existing order; earned next-card discounts such as Divine Favor survive cards already made free by Gear or encounter discounts. The distinction is now recorded in [talent event rules](../../docs/GAME_RULES.md#talent-event-rules), with both overlap paths covered by battle regressions.
+- 2026-09-09 — Moving all external card discounts ahead of talent allowances broke the intentional first-card priority in `card-payment.test.ts`. First-card allowances remain spent in their existing order; earned next-card discounts such as Divine Favor survive cards already made free by Gear or encounter discounts. The distinction is now recorded in [card plays and costs](../../docs/GAME_RULES.md#card-plays-and-costs), with both overlap paths covered by battle regressions.
 
 - 2026-09-09 — Enemy Thorns and queued Bleed Leech were previously gated to encounter traits, so reusing Briar Shield/Fangs would have displayed complete cards while omitting part of their behavior. Enemy card resolution now supports ordinary Thorns and native Bleed Leech, reserving the legacy Thorns marker separately. Prevention and the actor-relative subset contract live in [enemy ability rules](../../docs/GAME_RULES.md#enemy-abilities-and-traits); mixed legacy/card Thorns and bonus-Bleed Leech regressions cover both cases.
 
-- 2026-09-09 — Enemy abilities and trait inspection exceeded the eager total-JavaScript budget by 9,157 bytes. Shared inspector content removed 679 bytes; the remaining 8,478-byte feature growth received a measured 10 KiB allowance, with entry/game-data limits retained. Measurement and rationale live in [eager bundle size](../../docs/PERFORMANCE.md#eager-bundle-size).
+- 2026-09-09 — Enemy abilities and trait inspection exceeded the eager total-JavaScript budget by 9,157 bytes. Shared inspector content removed 679 bytes; the remaining 8,478-byte feature growth received a measured 10 KiB allowance, with entry/game-data limits retained. The full measurements are retained in [bundle-budget decisions](#bundle-budget-decisions).
 
 - 2026-09-09 — Appending focused spec paths to `npm run test:e2e --` failed because Playwright consumed them as additional `--project` values. Browser script entries in `package.json` now bind `--project=chromium`; the focused-check syntax is owned by [the E2E guide](../../tests/e2e/README.md#running-focused-checks).
 
@@ -181,7 +193,7 @@ Labyrinth fresh-start regression (2026-09-04): resume-only browser coverage miss
 
 - 2026-09-09 — Report prose still claimed combat-only presets, but commit `8fe4c682` deliberately restored real tree-order investments, including economic talents, and `talent-preset.test.ts` pins Haggle inclusion. The methodology now distinguishes presets from combat-only talent sweeps; [balance simulation](../../docs/REFERENCE.md#balance-simulation) records the distinction.
 
-- 2026-09-09 — Replaying balance peaks showed a 180-damage Sunder becoming 4,500 Bleed through Parting Cut (seed `1932156875`) and 126 Physical becoming 2,518 Stun (seed `2409029082`). Equal-damage talent copies were re-entering full card scaling. They now use the existing derived resolver, and Footwork skips a second pacing pass on its copied Block amount. [Equal-damage copy rules](../../docs/GAME_RULES.md#distinct-talent-and-card-effects) and composed bonus/pacing regressions prevent recurrence; separately documented unique-item typed bonuses remain distinct.
+- 2026-09-09 — Replaying balance peaks showed a 180-damage Sunder becoming 4,500 Bleed through Parting Cut (seed `1932156875`) and 126 Physical becoming 2,518 Stun (seed `2409029082`). Equal-damage talent copies were re-entering full card scaling. They now use the existing derived resolver, and Footwork skips a second pacing pass on its copied Block amount. [Equal-damage copy rules](../../docs/GAME_RULES.md#triggered-and-copied-damage) and composed bonus/pacing regressions prevent recurrence; separately documented unique-item typed bonuses remain distinct.
 
 - 2026-09-09 — Moving Cinder Skin directly into shared Health damage created a cycle through enemy retaliation and hero damage riders. Health damage now queues the reaction, and action/tick resolvers drain it through the existing enemy hit owner; [battle rules](../../docs/GAME_RULES.md#enemy-abilities-and-traits) records the flag and save-default contract.
 
@@ -245,4 +257,112 @@ Labyrinth fresh-start regression (2026-09-04): resume-only browser coverage miss
 
 - 2026-09-11 — Push CI repeatedly missed 180ms overlay frames and hit early-battle readiness deadlines across different critical E2E tests while the affected preview specs passed repeatedly in isolation. Each browser shard forced at least four Chromium workers, leaving too little runner headroom for Vite and diagnostics; after capping push-CI browser workers at two in [playwright-shared.ts](../../tests/playwright-shared.ts), the overlay failures stopped. The remaining contiguous/autoplay races exposed controls before the battle panels and hand were ready, and autoplay could replace the HUD between a visibility check and its attribute read; those journeys now wait on actual ready controls with a 60-second test budget, while the autoplay poll retries transient HUD replacement within the existing 30-second CI budget.
 
-- 2026-09-11 — The Opening regression test encoded Physical-only consumption despite both Opening and Open Flank promising the next attack. Focused history confirmed the test originated with the old implementation. Updated the test and resolution to include non-Physical attacks while preserving Dodge and Companion exclusions; [Battle attack bonuses](../../docs/GAME_RULES.md#distinct-talent-and-card-effects) records the resolved rule.
+- 2026-09-11 — The Opening regression test encoded Physical-only consumption despite both Opening and Open Flank promising the next attack. Focused history confirmed the test originated with the old implementation. Updated the test and resolution to include non-Physical attacks while preserving Dodge and Companion exclusions; [Battle attack bonuses](../../docs/GAME_RULES.md#attack-bonuses) records the resolved rule.
+
+## Bundle-budget decisions
+
+Recorded measurements from the enemy-inspection and battle-toolbar changes;
+these describe their implementation builds, not current bundle sizes. Current
+ceilings and verification remain in [Performance](../../docs/PERFORMANCE.md#eager-bundle-size).
+
+The enemy ability and inspection change measured 1,657,797 bytes of total desktop
+JavaScript. Sharing `InspectionPanel` and `InspectionCardGrid` with deck inspection
+reduced that to 1,657,118 bytes. The remaining feature cost exceeded the previous
+1,648,640-byte ceiling by 8,478 bytes, so the total allowance increased by 10 KiB
+to 1,658,880 bytes. The entry and game-data ceilings were unchanged. This measured
+allowance covers the card resolver, migration, repertoire data, and trait/inspection
+presentation without new dependencies or deferred screen loading.
+
+The battle-toolbar change measured 1,659,709 bytes of total JavaScript. Moving
+live Gold and dev-only Skip Combat into the toolbar with the gold-increase
+highlight cost ~2.6 KiB over the previous measured total, so the total allowance
+increased by 2 KiB to 1,660,928 bytes. The entry and game-data ceilings were unchanged. This measured allowance covered the toolbar counter, skip control, and
+their shared chrome/tooltip owners without new dependencies or deferred screen
+loading.
+
+## 2026-09-12 — Script review reliability fixes
+
+A 2 MiB successful child command failed with ENOBUFS under the implicit capture
+limit, and a corrupt reused E2E report exited successfully after report parsing
+failed. The Git guard inspected the caller instead of the checkout selected by
+`-C`, while pre-push selection could omit earlier outgoing commits. Regression
+coverage now exercises these outcomes; [script execution ownership](../../scripts/README.md#command-execution-and-argument-handling)
+and [hook selection](../../CONTRIBUTING.md#hooks-and-workflow-hygiene) own prevention.
+
+## 2026-09-12 — Build and packaging review
+
+Windows packaging depended on an optionally skipped renderer job without overriding
+GitHub's implicit success condition. Its reused artifact excluded music, and the
+archive verifier inspected source maps beside the executable instead of inside
+ASAR. The corrected job condition and complete artifact are pinned by CI contract
+tests; archive fixtures cover missing or changed music and embedded maps.
+[Packaged Windows startup](../../docs/RELEASE.md#packaged-windows-startup-check)
+owns the real-executable check without weakening packaged debugging restrictions.
+
+The reviewed working tree measured 1,662,378 bytes of web JavaScript and 1,670,657
+bytes of desktop JavaScript. The total ceiling is now 1,800 KiB (1,843,200 bytes),
+about 10% above the desktop baseline, to allow ordinary content growth without
+repeated tiny increases. Entry and game-data ceilings remain unchanged.
+
+2026-09-11 — Documentation review found manual Companion Bond-default steps despite catalog-derived defaults, unconditional content/test checklists, and conflicting Gear and audit guidance. [Content workflows](../../docs/WORKFLOWS.md#add-a-new-companion) now distinguish derived and conditional work; [Architecture](../../docs/ARCHITECTURE.md#session-capability-ports) consolidates access ownership and separates controller composition from action execution. The Gear note defers Health synchronization to the active-run command owner, the save guide distinguishes contract enforcement from intent, and Runtime Correctness uses the shared single-primary-finding rule. Existing behavior and compatibility requirements are unchanged.
+
+## 2026-09-12 — Follow-up script review
+
+Pre-push selected committed paths but could test an uncommitted fix; local rename
+discovery discarded the old subsystem and its risk gates. A timeout killed only
+the wrapper while descendants continued, and a symlinked reports root exposed
+external files to pruning. Focused fixtures now cover these cases.
+[Hook selection](../../CONTRIBUTING.md#hooks-and-workflow-hygiene) and
+[script execution](../../scripts/README.md#command-execution-and-argument-handling)
+own prevention. Node 20 compatibility no longer depends on Node 22 glob APIs;
+asset arguments, report structure, and repeated promotion are checked locally.
+
+2026-09-11 — Folder review found `.cursorignore` still excluded a root `Music/` directory and referenced a removed AGENTS.md heading. Corrected it to `public/Music/` and a self-contained description; this was a one-off stale editor configuration reference.
+
+2026-09-11 — Build review reproduced zero snapshot copies in the older-Node glob fallback: its wildcard was compared literally. One directory walker now handles all Node versions, with the existing nested snapshot test exercising the same path everywhere. Release tag selection also used global version order, which could select unrelated or later releases; ancestry fixtures now cover reruns and maintenance branches. Prevention: [build implementation owners](../../scripts/README.md) and [release boundaries](../../docs/RELEASE.md).
+
+## 2026-09-12 — Targeted build and release improvements
+
+Build review found an Electron E2E fallback cache could restore an older installed
+binary while readiness checked only file size. Release preflight accepted malformed
+Steam IDs and Sentry uploads with source maps disabled. Local completion omitted
+bundle budgets, while release checked them after packaging. Separate branch/tag
+pushes could leave partial release state, and Steam upload failures left no retained
+workflow package. Exact Electron caches, early configuration and budget checks,
+atomic release pushes, and retained verified artifacts now address these findings.
+[Build gates](../../scripts/README.md#checks--verification-nesting-order) and
+[release recovery](../../docs/RELEASE.md#failed-release-and-rollback) own prevention.
+
+Build verification twice timed out in the accessibility configuration test while
+concurrent checks were running. Its valid-image lint loaded the full TypeScript
+project without testing a violation. The test now checks the effective alt-text
+rule severity directly, preserving the repository contract while removing that
+redundant lint pass. Existing production lint still applies the rule to UI code.
+
+## 2026-09-12 — Script review follow-up
+
+Script review reproduced a successful ship-gate exit after a signalled child,
+empty prune age being interpreted as zero, and shell interpretation of literal
+CLI arguments. It also found changed tests rerun inside an already selected suite,
+unreachable output-budget failure branches, and formatting scope drift. The
+[script execution owner](../../scripts/README.md#command-execution-and-argument-handling)
+now records the fixes. [Plan archiving](../../docs/Plans/README.md#task-handoff)
+rebases local links instead of requiring manual repair inside each moved plan.
+
+## 2026-09-12 — Documentation contract clarification
+
+Review found that command rejection results were not distinguished from thrown
+errors, additive progression guidance always requested a versioned fixture, and
+performance verification wording suggested profiling. The [command contract](../../docs/ARCHITECTURE.md#command-atomicity),
+[save checklist](../../src/features/alchemy/shared/storage/MIGRATIONS.md#progression-gate-fields),
+and [verification policy](../../CONTRIBUTING.md#what-to-run-when-you-change) now
+state the existing behavior explicitly. The RNG lesson links to the complete
+policy so its Armory exception is not lost in a second rule list.
+
+- 2026-09-12 — Script review reproduced skipped checks for directory/absolute selections, a preview smoke pass against an unrelated occupied port, dry-run Git commands classified for auto-stash, and fallback search failing on deleted tracked files. A Windows-path fixture also exposed archived-document exemption failures. Shared path resolution, owned Vite preview startup, dry-run classification, and surviving-file search now protect these cases; [script ownership](../../scripts/README.md) records the contracts. Worktree instructions now return to the original checkout before removal. Preview restart verification exposed pooled HTTP sockets from a closed server; one-shot smoke requests now close their connections explicitly. Isolated smoke fixtures let Vite bind an OS-assigned port directly, avoiding a reserve/release/rebind race during parallel tests.
+
+- 2026-09-12 — E2E review found four nightly-intended cases inherited `@critical` from parent suites, and raw animation imports bypassed the documented shared diagnostics. Mixed suites now tag representative cases individually; all browser specs use the common fixture. Prevention: [browser fixture and tag contract](../../tests/e2e/README.md).
+
+- 2026-09-12 — Full E2E verification (`playwright-20260912t171350z-17603-4180bf`) caught the autoplay assertion waiting on a vanished HUD after Victory. The test now injects a nonlethal enemy and disables auto-end turn, asserting hand consumption and damage directly. The turn helper also accepts victory arriving while the action control settles without retrying its click.
+
+- 2026-09-12 — Desktop verification found `launchElectronApp` reused the normal Electron profile while save smoke tests called `clearSave`. The existing tests had run before this was identified; the local profile contained the test payload with no backup-ring candidates remaining. Launches now preload an isolated temporary profile before the main process captures save paths, verify the selected profile, and clean it up on close. The save round-trip test checks the actual file inside that profile.

@@ -1,7 +1,9 @@
+import fs from "node:fs";
+import path from "node:path";
 import { expect, test } from "@playwright/test";
 import type { ElectronApplication, Page } from "@playwright/test";
 import { getElectronMainWindow, launchElectronApp } from "./electron-helpers";
-import { failOnRuntimeErrors } from "../helpers";
+import { failOnRuntimeErrors } from "../browser-helpers";
 import { MenuPage } from "../pages/menu-page";
 import { desktop } from "../playwright-tags";
 
@@ -37,6 +39,9 @@ test.describe("Electron desktop integration", { tag: [desktop.tag] }, () => {
       return window.alchemyDesktop?.writeSave(data) ?? false;
     }, payload);
     expect(wrote).toBe(true);
+    const profile = await electronApp!.evaluate(({ app }) => app.getPath("userData"));
+    expect(path.basename(profile)).toMatch(/^alchemy-electron-test-/);
+    expect(fs.readFileSync(path.join(profile, "save.json"), "utf8")).toBe(payload);
 
     const readBack = await window.evaluate(
       async () => ((await window.alchemyDesktop?.listSaveCandidates()) ?? [])[0] ?? null,

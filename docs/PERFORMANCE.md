@@ -37,8 +37,10 @@ Keep ordinary profiling at the default **one measured run per scenario** to limi
 local CPU/GPU use. The harness also performs one unmeasured warm-up so cold JIT,
 layout, and asset initialization do not contaminate the recorded sample. Pass
 `--electron --cold` to intentionally measure first use; each repetition launches a
-fresh Electron process and skips warm-up. Increase `--runs` only when explicitly
-requested for statistical investigation.
+fresh Electron process and skips warm-up. When noise prevents a reliable conclusion,
+use a bounded set of additional runs for the affected scenario under the same
+conditions. Report the repetitions and observed variation; do not select only the
+best sample or repeat the full scenario suite unnecessarily.
 
 Short smoke / harness iteration (not for baselines):
 
@@ -185,21 +187,13 @@ Related: [PerformanceAudit.md](./Audits/PerformanceAudit.md) (when to change cod
 
 ## Eager bundle size
 
-The gating ceilings live in `scripts/lib/bundle-budget.mjs` and are checked by
-`npm run check:bundle`. Screen and art loading remain eager.
+The total JavaScript ceiling lives in `scripts/lib/bundle-budget.mjs` and is
+checked by `npm run check:bundle`. Screen and art loading remain eager, so moving
+bytes between chunks does not reduce the eager payload. Individual chunk sizes
+and Vite's chunk warning remain diagnostic, not separate blocking budgets.
+Missing builds or missing entry chunks still fail.
 
-The enemy ability and inspection change measured 1,657,797 bytes of total desktop
-JavaScript. Sharing `InspectionPanel` and `InspectionCardGrid` with deck inspection
-reduced that to 1,657,118 bytes. The remaining feature cost exceeded the previous
-1,648,640-byte ceiling by 8,478 bytes, so the total allowance increased by 10 KiB
-to 1,658,880 bytes. The entry and game-data ceilings remain intact. This measured
-allowance covers the card resolver, migration, repertoire data, and trait/inspection
-presentation without new dependencies or deferred screen loading.
-
-The battle-toolbar change measured 1,659,709 bytes of total JavaScript. Moving
-live Gold and dev-only Skip Combat into the toolbar with the gold-increase
-highlight cost ~2.6 KiB over the previous measured total, so the total allowance
-increased by 2 KiB to 1,660,928 bytes. The entry and game-data ceilings remain
-intact. This measured allowance covers the toolbar counter, skip control, and
-their shared chrome/tooltip owners without new dependencies or deferred screen
-loading.
+Past allowances and their measurements are retained in
+[bundle-budget history](../.agents/history/friction-2026-09.md#bundle-budget-decisions).
+Use the current budget owner for ceilings; historical measurements are not new
+limits or permission to increase them.

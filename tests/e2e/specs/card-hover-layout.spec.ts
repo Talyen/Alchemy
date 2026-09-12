@@ -1,4 +1,5 @@
-import { expect, test, type Locator } from "@playwright/test";
+import { expect, test } from "../../fixtures/e2e";
+import type { Locator } from "@playwright/test";
 import { openArmory, createEmptyGearLoadouts, equipmentSlotLocator } from "../armory";
 import { HomesteadPage } from "../../pages/homestead-page";
 import { gridLabyrinthMapFixture } from "../../fixtures/labyrinth-map";
@@ -8,7 +9,7 @@ import {
   makeCard,
   makeGoblinBattleState,
   injectLabyrinthRun,
-} from "../../helpers";
+} from "../../browser-helpers";
 import { MenuPage } from "../../pages/menu-page";
 
 async function expectStableHoverLayout(card: Locator) {

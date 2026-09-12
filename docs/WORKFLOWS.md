@@ -11,7 +11,7 @@ only when a checklist crosses that boundary. Generated asset barrels are
 outputs; use the [asset workflow](./WORKFLOWS-ASSETS.md) for their sources and
 regeneration. Each checklist's tests are selected by the changed-path route
 ([CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change)); only
-catalog-external tests are named inline. Named suites identify existing protection and verification entry points, not a requirement to add a test for every feature variant. Apply [test value](../CONTRIBUTING.md#test-value-and-coverage-strategy) when choosing coverage; preserve explicit save-compatibility and browser-timing requirements.
+catalog-external tests are named inline. Named suites are verification entry points. Apply the [test value policy](../CONTRIBUTING.md#test-value-and-coverage-strategy) throughout; section-specific save-compatibility and browser-timing requirements still apply.
 
 ## Task index
 
@@ -43,7 +43,7 @@ Policy (when to bump, stamp-only floor, migrate steps, public save contract): [`
 
 1. Decide bump vs safe additive default using that contract — do not add a `migrateVNToVNPlus1` step for stamp-only or defaulted additive fields.
 2. Follow the Required pattern in `MIGRATIONS.md` (version stamp, transform step only when needed, Zod/defaults/fixtures, CI guards).
-3. Verify with the save-migration tests named there. `npm run check:ship` covers the production parse path; `npm run test:ship:unit` is the inner unit slice of that gate.
+3. Use the [task-scoped gate](../CONTRIBUTING.md#what-to-run-when-you-change), which selects the complete save/persistence unit suite, including the migration guards. The save contract owns required compatibility scenarios.
 
 ---
 
@@ -61,12 +61,10 @@ Policy (when to bump, stamp-only floor, migrate steps, public save contract): [`
 
 Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-session-write-port.ts`) so homestead inventory and `activeRun.runMaterialsEarned` stay aligned for the run-end summary.
 
-| Step                                                                          | File(s)                                                                                                                                                                                                                                                  |
-| ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Call `awardMaterialsDuringRun(draft, materials)` inside the owning command | Mystery: `run-loop/navigation/mystery-flow.ts` (`gainMysteryMaterial` / `mysteryApplyHandlers`); combat gems: `run-loop/run/run-flow-victory.ts` (`commitVictoryRewards`); reward-screen materials: `run-loop/run/run-flow-rewards.ts` (`finishRewards`) |
-| 2. Apply homestead find bonus when appropriate                                | `applyMaterialFindBonus()` from `@/lib/homestead/loot` before awarding (mystery/combat already do this)                                                                                                                                                  |
-| 3. Run-end display (no change needed if step 1 is correct)                    | `awardRunEndMaterials` in `run-loop/run/run-flow-defeat.ts` (used by `run-flow-defeat.ts`/`run-flow-victory.ts`) merges `runMaterialsEarned` + `applyEndOfRunHomesteadBonuses` into `session.runEndMaterials`                                            |
-| 4. Tests                                                                      | `tests/features/alchemy/run-loop/run/run-victory-handlers.test.ts`; mystery/reward-flow tests if adding a new source                                                                                                                                     |
+1. Apply the Homestead find bonus when appropriate with `applyMaterialFindBonus()` from `@/lib/homestead/loot`; existing mystery and combat grants already do this.
+2. Call `awardMaterialsDuringRun(draft, materials)` inside the owning command: `gainMysteryMaterial` / `mysteryApplyHandlers` in `run-loop/navigation/mystery-flow.ts`, `commitVictoryRewards` in `run-loop/run/victory-commands.ts`, or `claimRunReward` in `run-loop/run/reward-commands.ts`.
+3. Reuse the run-end display: `awardRunEndMaterials` in `run-loop/run/run-flow-defeat.ts`, used by both defeat and victory flows, merges `runMaterialsEarned` and `applyEndOfRunHomesteadBonuses` into `session.runEndMaterials`.
+4. Check `tests/features/alchemy/run-loop/run/run-victory-handlers.test.ts` and the affected mystery/reward-flow tests when adding a new source.
 
 **Do not** call `addMaterials()` on the run profile store directly from run-loop or mystery code for player loot.
 
@@ -138,22 +136,22 @@ Resolve battle gameplay and commit its RNG/XP before starting presentation. Retu
 ## Add a new status effect
 
 1. Define the status type in `src/lib/game-data/types.ts` — extend `PlayerStatusId` or `EnemyStatusId` string unions (discriminated union pattern).
-2. Add tick logic in `src/lib/battle/status-ticks.ts`
-3. Add player-side application logic in `src/lib/battle/status-player.ts`; add damage-type status riders in `src/lib/battle/damage-status-riders.ts`
-4. Add CC threshold logic in `src/lib/battle/status-cc.ts`
-5. Add matching keyword in `src/lib/game-data/keywords.ts`
+2. If the status ticks or expires during turn processing, add that behavior in `src/lib/battle/status-ticks.ts`.
+3. Add player-side application logic in `src/lib/battle/status-player.ts` when applicable; add riders in `src/lib/battle/damage-status-riders.ts` only when damage applies the status.
+4. If the status provides crowd control, add its threshold logic in `src/lib/battle/status-cc.ts`.
+5. If the status introduces a keyword, define it in `src/lib/game-data/keywords.ts`.
+
+Persisted status changes follow the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md).
 
 ---
 
 ## Add a new card
 
-| Step                                                              | File(s)                                                                                                                                                                                                   |
-| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Define card in the matching topical library                    | `src/lib/game-data/cards/library/` (`core.ts`, `archery.ts`, `consumables.ts`, `companions.ts`, or `defense.ts`); `cards.ts` assembles these groups                                                       |
-| 2. Add effects (discriminated union on `kind`)                    | same card entry, `effects: [...]`                                                                                                                                                                         |
-| 3. Add art reference                                              | `src/lib/game-data/assets.ts` (or `placeholderCard` while WIP)                                                                                                                                            |
-| 4. (Optional) Register card sound                                 | `src/lib/audio/sound-registry.ts` (`cardSounds` record)                                                                                                                                                   |
-| 5. Update `descriptionLines` to match effects; context-aware text | same entry; pure text `src/lib/game-data/card-description.ts`, UI tokens `shared/ui/card-description-ui.tsx`, homestead/talent context `shared/context/card-description-context.tsx` (wired in `App.tsx`) |
+1. Define card in the matching topical library — `src/lib/game-data/cards/library/` (`core.ts`, `archery.ts`, `consumables.ts`, `companions.ts`, or `defense.ts`); `cards.ts` assembles these groups
+2. Add effects (discriminated union on `kind`) — same card entry, `effects: [...]`
+3. Add art reference — `src/lib/game-data/assets.ts` (or `placeholderCard` while WIP)
+4. (Optional) Register card sound — `src/lib/audio/sound-registry.ts` (`cardSounds` record)
+5. Update `descriptionLines` to match effects; context-aware text — same entry; pure text `src/lib/game-data/card-description.ts`, UI tokens `shared/ui/card-description-ui.tsx`, homestead/talent context `shared/context/card-description-context.tsx` (wired in `App.tsx`)
 
 Card IDs are stable strings on `BattleCard`, not a separate union. The assembled
 `cardLibrary` rejects duplicate IDs; preserve save compatibility when removing
@@ -184,6 +182,12 @@ effect ordering, and the focused schema/handler/description tests.
 
 ## Add a new enemy
 
+Assign three distinct canonical card IDs in `abilityIds`. Each card must satisfy
+the supported enemy subset in [enemy abilities](./GAME_RULES.md#enemy-abilities-and-traits);
+[content validation](../src/lib/content-validation/validators.ts) checks the
+references and supported effects, and [the enemy schema](../src/lib/content-validation/schemas.ts)
+checks count and uniqueness.
+
 | Step                                                                   | File(s)                                                 |
 | ---------------------------------------------------------------------- | ------------------------------------------------------- |
 | 1. Define entry in `enemyBestiary` (`id` becomes `EnemyId`)            | `src/lib/game-data/compendium/enemies.ts`               |
@@ -199,7 +203,7 @@ effect ordering, and the focused schema/handler/description tests.
 One definition powers a permanent Armory Trinket and a run-scoped **Boon**. Both reveal one Collection entry; Boons occupy no slot. `combineTrinketEffectIds` deduplicates matching forms.
 
 1. Add data/art in `game-data/compendium/trinkets.ts` and `game-data/assets.ts`.
-2. Extend `TrinketManifest` and `defaultTrinketEffects` in `src/lib/game-data/trinket-manifest.ts`; check battle/run consumers and Boon exclusions. Content validation derives effect field types from these defaults and requires at least one active effect.
+2. Reuse existing effects when they express the new Trinket. Only for a new effect, extend `TrinketManifest` and `defaultTrinketEffects` in `src/lib/game-data/trinket-manifest.ts` and wire its battle/run consumers; check Boon exclusions. Content validation derives effect field types from these defaults and requires at least one active effect.
 3. Add a rule in `src/lib/content-validation/card-parity/trinket-parity.ts` covering the complete trigger and outcome, numeric captures in effect-key order, and required boolean effects. Keep the rule and regression tests in `tests/lib/content-validation/trinket-validation.test.ts` aligned with wording changes; numeric expectations come from authored effects.
 4. Verify Gear-aggregate ownership/equip plus permanent and ephemeral UI/discovery.
 
@@ -207,20 +211,22 @@ One definition powers a permanent Armory Trinket and a run-scoped **Boon**. Both
 
 1. Add base item metadata in `src/lib/gear/base-items.ts` (slots, two-hand rule, affinity keywords, available rarities, thematic homestead `salvageByRarity`). Salvage consumes `salvageValue` on the generated definition.
 2. Register Gear art via the [asset workflow § Add or replace Gear art](./WORKFLOWS-ASSETS.md#add-or-replace-gear-art) (naming/slot violations throw during sync).
-3. Variant definitions are built automatically in `src/lib/gear/definitions.ts` as `{baseItemId}-{rarity}`.
-4. Add new affix definitions in `src/lib/gear/affix-catalog.ts` with a stable ID, `keywordId`, effect key, value range, and eligible slots. Display/roll helpers live in `affixes.ts`.
-5. Reward generation rolls instances in `src/lib/gear/generation.ts`; rewards screen stores the exact `GearInstance` (never re-roll on accept). Mid-reward progress for every content system, including Wildwood, is persisted in `activeRun.interruptedFlow` (`primary-reward` / `companion-reward` arms; gear stores full instances; cards/trinkets store choice ids).
-6. Keep owned items as unique `GearInstance` records with `affixes: GearAffixRoll[]`; never put definition objects or art URLs into save data.
-7. Battle applies aggregated `gearEffects` from `computeGearManifest()` during battle creation.
-8. Keep each affix's `keywordId` aligned with affinity weighting and its `effectKey` aligned with `GEAR_EFFECT_KEYS`; architecture tests enforce registry coverage.
-9. Update Gear save schemas/defaults and migration fixtures when instance or loadout shapes change.
-10. Cover pure operations, generation, persistence, reward selection, Armory interaction, and battle snapshot behavior. HP-sync write paths: [ARMORY.md § Write paths](./ARMORY.md#write-paths).
+3. Register the base item's Unique in `src/lib/gear/unique-catalog.ts`, with one exclusive fixed signature and three fixed standard supporting affixes. Every base item needs one Unique; ordinary variant generation does not create it. Follow [Unique affix and combat contracts](./UNIQUE_ITEMS.md) for signature implementation and interaction documentation.
+4. For new affixes, add definitions in `src/lib/gear/affix-catalog.ts` with stable IDs, `keywordId`, effect keys, value ranges, and eligible slots. Keep `keywordId` aligned with affinity weighting and `effectKey` aligned with `GEAR_EFFECT_KEYS`; wire new effects into the manifest and their consumers. Display/roll helpers live in `affixes.ts`.
+5. Update Gear save schemas/defaults and migration fixtures when instance or loadout shapes change.
+6. Check affected Gear behavior, including existing Unique catalog coverage and save compatibility for instance or loadout shape changes. HP-sync write paths: [ARMORY.md § Write paths](./ARMORY.md#write-paths).
+
+Existing generation builds Basic/Astral definitions in `src/lib/gear/definitions.ts` as `{baseItemId}-{rarity}`. Reward generation rolls instances in `src/lib/gear/generation.ts`; rewards store the exact `GearInstance` and never re-roll on acceptance. Every mode, including Wildwood, persists mid-reward progress in `activeRun.interruptedFlow` (`primary-reward` / `companion-reward` arms; Gear stores full instances, cards/Trinkets store choice IDs).
+
+Owned items remain unique `GearInstance` records with `affixes: GearAffixRoll[]`; never put definition objects or art URLs into saves. Battle creation already applies aggregated `gearEffects` through `computeGearManifest()`.
 
 ---
 
 ## Add a new companion
 
-Companion combat and descriptions share `getCompanionBondEffects()` in `src/lib/game-data/companions.ts`. Bond 0 preserves the baseline. Damage, healing, Gold, and Scarab Block gain +1 per Bond level; Wolf Block stays 1. Mana Moth and Library Owl retain their guaranteed baseline and gain a 25%/50%/75% chance of one extra Mana/card at Bond I/II/III. Will-o’-Wisp keeps cleansing one status and additionally heals 1/2/3 Health. Both Fox outcomes scale. Summon cards and active Companion tooltips display all resolved effects. Bond levels and costs retain their existing save representation.
+Companion combat and descriptions share `getCompanionBondEffects()` in `src/lib/game-data/companions.ts`. Follow [Companion Bond rules](./GAME_RULES.md#companion-bond) for progression and displayed effects; Bond levels and costs retain their existing save representation.
+
+`defaultCompanionBondLevels` derives zero values from `companionLibrary`; talent and Homestead defaults both copy that map, so new Companions need no separate default registration. If Bond behavior differs from the shared scaling, update `getCompanionBondEffects()` and its descriptions together; change Homestead tiers or costs only when intended.
 
 | Step                                                                                                              | File(s)                                                                                                    |
 | ----------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
@@ -230,9 +236,7 @@ Companion combat and descriptions share `getCompanionBondEffects()` in `src/lib/
 | 4. Add summon card via `summonCompanionCard()` in `cardLibrary` (`src/lib/game-data/cards/library/companions.ts`) | `src/lib/game-data/cards/card-builders.ts` — companion must have **at least one** `turnStartEffects` entry |
 | 5. Give the summon card a stable, unique string ID                                                                | `src/lib/game-data/cards/library/companions.ts`; the assembled `cardLibrary` checks uniqueness             |
 | 6. (Optional) Register card sound                                                                                 | `src/lib/audio/sound-registry.ts`                                                                          |
-| 7. Add bond level to talent defaults (`companionBondLevels`)                                                      | `src/lib/game-data/talents/manifest-defaults.ts`                                                           |
-| 8. Add bond level to homestead defaults                                                                           | `src/lib/homestead/defaults.ts`                                                                            |
-| 9. Update description lines                                                                                       | `tests/lib/game-data/companions.test.ts` guards companion copy                                             |
+| 7. Update description lines                                                                                       | `tests/lib/game-data/companions.test.ts` guards companion copy                                             |
 
 ---
 
@@ -246,34 +250,32 @@ Put talent-owned magnitudes on the talent ops (not only in `game-constants`) so 
 
 Incoming `receiveHalf*` resist talents use `scaleReceivedPlayerDamage` in `src/lib/battle/types/state-helpers.ts`. Enemy attacks scale once in `computeMitigatedDamage`; player DoTs scale once in `status-ticks.ts`. Do not also scale in `applyPlayerCombatDamage`.
 
-| Step                                                                                            | File(s)                                                                                                                                                                                                                                                                                           |
-| ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Add effect field if the talent needs a new battle bonus                                      | `src/lib/game-data/talent-effect-manifest.ts` + default in `talents/manifest-defaults.ts`                                                                                                                                                                                                         |
-| 2. Define the talent (`id`, `keywordId`, name, description, effects, `icon` Lucide export name) | `src/lib/game-data/talents/talent-pool-definitions.ts` (keyword-grouped table that builds `talentPool`; `pool/index.ts` re-exports for compat). Trees flow any count ≥ 1 into 1/2/3/4 rows (overflow gets its own row). Register the icon in `src/features/alchemy/shared/config/talent-icons.ts` |
-| 3. Keyword portrait art (new keyword or replacement art)                                        | [Asset workflow § Add or replace game art](./WORKFLOWS-ASSETS.md#add-or-replace-game-art) (`scripts/assets/talent-assets.mjs` + `talentArt` in `src/lib/game-data/assets.ts`)                                                                                                                     |
-| 4. XP is keyword-based                                                                          | `src/lib/game-data/talents/progression.ts` — no per-talent XP hook unless the keyword is new                                                                                                                                                                                                      |
+1. Add effect field if the talent needs a new battle bonus — `src/lib/game-data/talent-effect-manifest.ts` + default in `talents/manifest-defaults.ts`
+2. Define the talent (`id`, `keywordId`, name, description, effects, and Lucide `icon` name) in `src/lib/game-data/talents/talent-pool-definitions.ts`; its keyword-grouped table builds `talentPool`, with `pool/index.ts` re-exporting for compatibility. Register the icon in `src/features/alchemy/shared/config/talent-icons.ts`.
+3. Keyword portrait art (new keyword or replacement art) — [Asset workflow § Add or replace game art](./WORKFLOWS-ASSETS.md#add-or-replace-game-art) (`scripts/assets/talent-assets.mjs` + `talentArt` in `src/lib/game-data/assets.ts`)
+4. XP is keyword-based — `src/lib/game-data/talents/progression.ts` — no per-talent XP hook unless the keyword is new
+
+Talent trees accept any count ≥ 1 in rows of 1/2/3/4, with overflow in its own row.
 
 `talent-effect-invariants` must stay green: every manifest field is written by a talent or homestead key (or an explicit unused allowlist), every talent-written field is read in battle/meta code, and non-boolean `set` fields have a single writer unless they are arrays. Talent descriptions are free text with no numeric parity lint (typography lint still applies) — keep them in lockstep with effects by hand.
 
 Run-end keyword cards intentionally show level + XP bar only; the Talents screens own the unspent-point indicator. Dodge earns 1 XP per successful hero Dodge through `awardBattleDodgeXP`, using the battle counter delta in the same command that persists the resolved enemy turn. Ordinary card keyword XP and run-end multipliers still apply. Random damage grants the Physical keyword; a damage-type pool grants every possible type rather than its placeholder type. Never count combat text or award XP again while resuming a pending transition.
 
-Talent keywords without portrait art remain selectable with a blank panel and their keyword icon; add a `talentArt` entry when art is ready. All implemented talent nodes support Enter and Space when eligible for purchase.
+Add a `talentArt` entry when art is ready; missing-art and keyboard behavior follow [UI component conventions](./UI.md#component-conventions).
 
 New keywords still follow [Add a new keyword](#add-a-new-keyword) first.
 
 ## Add a homestead upgrade
 
-| Step                                                                       | File(s)                                                                                                                                                                    |
-| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Add `BuildingId` / `FarmId` / `ResearchId`                              | `src/lib/homestead/types.ts`                                                                                                                                               |
-| 2. Define the item with `defineBuilding` / `defineFarm` / `defineResearch` | `src/lib/homestead/data.ts` (costs via `data-builders.ts` / `costs.ts`; stacking helpers `stackingTiers` + `single/dualMaterialCosts`)                                     |
-| 3. New battle or meta effect keys                                          | `HomesteadEffectManifest` + `HOMESTEAD_BATTLE_*_KEYS` in `types.ts`; defaults in `defaults.ts`                                                                             |
-| 4. Companion bond tiers (if companion)                                     | `src/lib/homestead/companions.ts` (`COMPANION_BOND_TIERS` + `companionTierItems`) + `src/lib/game-data/companions.ts`                                                      |
-| 5. Art & palette                                                           | Add `helpers.tsx:itemArt` entry in `src/features/alchemy/meta/screens/homestead/helpers.tsx` + art via the [asset workflow](./WORKFLOWS-ASSETS.md#add-or-replace-game-art) |
-| 6. Pagination / constants                                                  | `HOMESTEAD_CONFIG` in `helpers.tsx` (companion page size, aspect ratios)                                                                                                   |
-| 7. Tests                                                                   | Changed-path route ([CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change)); homestead lib + screen suites plus the homestead E2E flow                             |
+1. Add `BuildingId` / `FarmId` / `ResearchId` — `src/lib/homestead/types.ts`
+2. Define the item with `defineBuilding` / `defineFarm` / `defineResearch` — `src/lib/homestead/data.ts` (costs via `data-builders.ts` / `costs.ts`; stacking helpers `stackingTiers` + `single/dualMaterialCosts`)
+3. Add effect keys only when existing keys cannot express the upgrade — `HomesteadEffectManifest` + `HOMESTEAD_BATTLE_*_KEYS` in `types.ts`; defaults in `defaults.ts`
+4. Companion bond tiers (if companion) — `src/lib/homestead/companions.ts` (`COMPANION_BOND_TIERS` + `companionTierItems`) + `src/lib/game-data/companions.ts`
+5. Art & palette — Add `helpers.tsx:itemArt` entry in `src/features/alchemy/meta/screens/homestead/helpers.tsx` + art via the [asset workflow](./WORKFLOWS-ASSETS.md#add-or-replace-game-art)
+6. Change layout constants only for an intended layout change — `HOMESTEAD_CONFIG` in `helpers.tsx` (companion page size, aspect ratios)
+7. Check affected rules or interactions; saved-shape changes follow the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md).
 
-Homestead screens (like all screen directories) are excluded from `vitest` coverage thresholds — see the coverage `exclude` list in `vitest.config.ts` — and are covered by E2E `tests/e2e/specs/homestead-flow.spec.ts` plus the unit `homestead/*.test.tsx` suites. Use `npm run test:e2e:homestead` for the focused Playwright flow and `npm run test -- tests/lib/homestead` for the lib contract.
+Homestead screens (like all screen directories) are excluded from `vitest` coverage thresholds — see the coverage `exclude` list in `vitest.config.ts` — and are covered by E2E `tests/e2e/specs/homestead-flow.spec.ts` plus the unit `homestead/*.test.tsx` suites. Use `npm run test -- tests/lib/homestead` for the lib contract and `npm run test:e2e:homestead` when the change needs browser verification.
 
 ## Add a new keyword
 
@@ -289,116 +291,65 @@ Homestead screens (like all screen directories) are excluded from `vitest` cover
 
 Ownership: [ARCHITECTURE.md § Shop commands](./ARCHITECTURE.md#shop-commands).
 
-Kind `"merchant"` maps to the player-facing **Card Shop**. Persist only `session.activity`'s shop visit through `encodePersistedShops`; presentation navigation does not select the shelf to save.
-
-1. Keep `create-shop-actions.ts` as composition; put shop behavior in the matching `*-shop-commands.ts` module and draft recipes in `shop-transactions.ts`.
-2. Dispatch purchases/refreshes through the existing shop command seam so paid effects and SFX run after a successful commit. Keep slot identity helpers separate from command/audio modules. Equipment purchases resolve price and acquired contents from the live shelf item by instance ID.
+1. Locate the shop's command module, sampler, and draft recipe using the ownership map above; keep slot identity helpers separate from command/audio modules.
+2. Dispatch purchases/refreshes through the existing shop transaction seam; play SFX only when its result confirms success. Equipment purchases resolve price and acquired contents from the live shelf item by instance ID.
 3. Preserve the per-visit `firstPurchaseUsed` reset and use `mutateGearWithRunHealthSync` inside an open command draft; use the dispatching gear wrapper only at the outer boundary ([ARMORY.md § Write paths](./ARMORY.md#write-paths)).
 4. Route every refresh through `refreshShopOfferings` with a sampler from `shop-state-init.ts` and an explicit typed shelf assignment. Apply potency or other offering modifiers inside the sampler so returned items match the committed shelf. The recipe clears purchased slots and consumes a refresh only on success; rejected refreshes never sample. Refreshes avoid the current offering set when enough eligible alternatives exist. Equipment refreshes compare base items across rarities and preserve room themes. When a pool is nearly exhausted, keep the shelf full while maximizing novel offerings.
 5. Potion mixing scales amounts inside every chance branch while preserving probabilities; descriptions must reflect every alternative outcome. Same-ID ingredients combine through doubling only when their effects match; different-potency copies preserve both effect lists so ingredient order cannot create or destroy potency.
 
 ## Content system behavior
 
-Campaign, labyrinth, and Wildwood differ at setup and resume. Read the
-[run-setup ownership](./ARCHITECTURE.md#run-setup-ownership) section before
-changing the navigation seam. Keep each content system’s persisted draft and
-resume path in its existing owner, then cover the changed setup/resume route
-with the dependency-related tests selected by `verify`.
+[Game rules](./GAME_RULES.md#content-systems) own mode resume, shared progression,
+Labyrinth exploration, and room modifiers. Read
+[run-setup ownership](./ARCHITECTURE.md#run-setup-ownership) before changing their
+navigation. Keep persisted drafts and resume paths in their existing owners.
 
-Players may keep one saved run per mode. Selecting a mode resumes its saved run
-or opens hero selection if its slot is empty. Backing out of setup preserves
-every existing run; Return to Run resumes the most recently played one. Starting
-another mode never abandons a run, and ending a run clears only that mode's slot.
-Gold, talents, Homestead progress, and equipment remain shared. Mode tiles show
-Resume when their slot is occupied. Both resume controls use the same saved
-gameplay location; menus and uncommitted setup never become that location.
-
-Labyrinth maps persist on `activeRun.labyrinthMap` as Open Field floors
-(`floors` + `nodes`). Run initialization generates floor 1 with seeded world RNG
-in the same command as the starting deck, including after a Wildcard starter
-draft. Each floor contains twenty rooms in rows of 4 / 6 / 6 / 4: a 4×4 core
-plus one extra cell on each side of both middle rows. Core columns are 0–3;
-side rooms use columns -1 and 4. A completed entrance starts in the top row and
-one boss occupies the bottom row, at least two columns away. The existing
-encounter pool and Trait rules supply the other eighteen rooms.
-
-An uncleared room is enterable when it shares a north/south/east/west edge with
-any completed room on the current floor. Players can select any such frontier
-room without manually walking through completed rooms. `currentNodeId` records
-the last completed room; inspecting completed rooms does not move it or replay
-encounters. Completing a pending reachable room marks it cleared and updates
-that location atomically. Entering, inspecting, or leaving an unfinished room
-does not extend discovery.
-
-Discovery derives from completion: completed rooms, their cardinal neighbors,
-and the boss are visible. Unknown room types, artwork, Traits, and interaction
-themes remain concealed. The boss can be inspected from the start but requires
-a completed adjacent room before fighting. Boss victory leaves the floor open
-for exploration; Descend is available from its inspector without backtracking.
-Descent advances once and generates the next floor only when needed;
-already-generated next floors are reused. Prior floors cannot be entered.
-
-Resume preserves geography, completion, and pending encounters. Invalid location
-references fall back to the floor's completed entrance. Existing sixteen-room
-Open Field saves gain four side rooms without changing existing rooms, progress,
-or in-flight encounters; the scoped migration is recorded in
-[MIGRATION_HISTORY.md](../src/features/alchemy/shared/storage/MIGRATION_HISTORY.md#schema-18--labyrinth-side-rooms).
-
-Labyrinth modifiers use the shared encounter catalog. New definitions live in
-`content-systems/labyrinth/trait-catalog.ts`; `labyrinth/modifiers.ts` owns node
-eligibility, incompatible pairs, and exclusion of superseded modifiers from new
-rolls. Existing saved IDs retain their behavior. Red combat modifiers strengthen
-the enemy; green reward modifiers include battle benefits and destination
-services. Normal Combat rolls one red and one green, Elites/Bosses two compatible
-reds and one green, support rooms one matching green, and Entrance none. Keep
-player-facing descriptions at ten words or fewer, omit periods, use one theme, and never call
-a theme a “keyword” in that text. Native enemy traits also participate in
-compatibility checks. Stronger red modifiers are restricted to Elites/Bosses.
-
-Support-room modifiers travel through the existing active reward-modifier list
-before destination initialization. Campaign and Wildwood ignore Labyrinth room
-rules. Card Shop themes survive refreshes. Gear specialties constrain both
-ordinary and Unique offers and fallbacks. Shop displays and transactions share
-price calculations; free services retain their usual visit limits. Strong
-Spirits doubles Potion amounts and matching description numbers, preserving
-probabilities, cost, and Consume; purchases use the actual shelf card. Modified
-Potions remain modified when acquired, mixed, or restored. Trinket theme shops
-require enough unowned matching content; the current catalog has only two
-direct healing Trinkets and no Archery-specific Trinkets, so neither theme rolls.
-Mystery rooms select a compatible event and modify its displayed choices before
-resolution; resume reconstructs the same offers without reapplying rewards.
-Corruption chambers reuse the Campaign altar flow and pass their green bonus
-into the corruption roll; leaving before corrupting abandons the pending visit
-and returns to the maze with the chamber still reachable.
-
-Historical grid-map recovery
-is recorded in [MIGRATION_HISTORY.md](../src/features/alchemy/shared/storage/MIGRATION_HISTORY.md#schema-14--labyrinth-hex-floors).
+- Labyrinth maps persist on `activeRun.labyrinthMap` as Open Field `floors` and
+  `nodes`. Generate floor 1 with seeded world RNG in the same command as the
+  starting deck, including after a Wildcard starter draft. Core columns are 0–3;
+  side rooms use columns -1 and 4. `currentNodeId` records the last completed room.
+- Add modifiers in `content-systems/labyrinth/trait-catalog.ts`;
+  `labyrinth/modifiers.ts` owns node eligibility, incompatible pairs, and exclusion
+  of superseded modifiers from new rolls. Preserve existing saved IDs. Write
+  descriptions of at most ten words, omit periods, use one theme, and never call
+  a theme a “keyword.”
+- Pass support-room modifiers through the existing active reward-modifier list
+  before destination initialization. Apply offering modifiers before storing the
+  shelf or event choices; see [shop changes](#change-a-shop),
+  [Mystery effects](#adding-a-new-mystery-effect-kind), and
+  [Corruption flow](#adding--changing-corruption-flow).
+- Preserve saved geography and in-flight encounters. Historical
+  [grid recovery](../src/features/alchemy/shared/storage/MIGRATION_HISTORY.md#schema-14--labyrinth-hex-floors),
+  [hex retirement](../src/features/alchemy/shared/storage/MIGRATION_HISTORY.md#schema-17--labyrinth-open-field),
+  and [side-room expansion](../src/features/alchemy/shared/storage/MIGRATION_HISTORY.md#schema-18--labyrinth-side-rooms)
+  belong to their migration steps, not new navigation logic.
+- Cover the changed setup/resume route with the dependency-related tests selected
+  by `verify`.
 
 ## Change battle playback
 
 Layout and ownership: [ARCHITECTURE.md § Battle path](./ARCHITECTURE.md#battle-path).
+Visible behavior: [UI battle feedback](./UI.md#battle-feedback) and [battle motion](./UI.md#battle-motion).
 
 - Keep playback ticks on the battle route and session autoplay preferences in the controller so route remounts do not lose the setting.
 - Presentation updates may wake autoplay readiness/retry waits, but cannot shorten the post-play pause. Measure that pause from the start of the successful play, counting transfer time toward it; longer transfers add no extra pause. Teardown cancels either wait, and autoplay rechecks current playback gates before the next play.
-- Manual card plays commit immediately and remain available during other card draws and hand reflow; only the incoming hidden cards and actual turn transitions are unavailable. Resolve clicked cards by hand identity so reflow cannot invalidate their old slot. Autoplay, auto-end-turn, and End Turn retain the presentation gate. Floating combat text is consolidated by target, kind, and type within each action, then shown as an immediate typed burst. Successive actions keep separate burst identities and lifetimes; they never join older numbers or wait in a feedback queue. At most three active bursts per target are retained, fading the oldest on overflow without delaying state changes or card flights. Concurrent draws preserve each other’s hidden cards and transfers; settlement checks the current battle state. Schedule auto-end explicitly after draws/resume; do not rely on React battle-state ticks. Opening the game menu cancels the auto-end countdown; closing it starts a fresh normal countdown only when eligible. Recheck the latest playback gates and hand playability when the countdown expires.
-- Player and enemy deaths share the slice effect and battle-end delay; defer defeat teardown until the delayed screen transition commits. Death’s Door is not defeat, and voluntary run exits remain immediate.
+- Manual card plays commit immediately and remain available during other card draws and hand reflow; only the incoming hidden cards and actual turn transitions are unavailable. Resolve clicked cards by hand identity so reflow cannot invalidate their old slot. Autoplay, auto-end-turn, and End Turn retain the presentation gate. Send each resolved action to the existing burst owner under the [battle feedback contract](./UI.md#battle-feedback). Concurrent draws preserve each other’s hidden cards and transfers; settlement checks the current battle state. Schedule auto-end explicitly after draws/resume; do not rely on React battle-state ticks. Opening the game menu cancels the auto-end countdown; closing it starts a fresh normal countdown only when eligible. Recheck the latest playback gates and hand playability when the countdown expires.
+- Defer defeat teardown until the delayed screen transition commits; preserve the death and survival behavior in [UI battle motion](./UI.md#battle-motion).
 - Wish choices open after active card transfers finish. Cards with both Draw and Wish show their draws first; queued Wishes also wait for the previous chosen card to reach the hand. Use the existing transfer-in-progress presentation signal without delaying gameplay commits.
 - Preserve immutable hidden-hand keys, callback binding, post-death navigation timing, and the rule that mid-enemy-turn reload skips presentation replay.
-- Attacker lunge is presentation-only: nest it outside shake so hit VFX still compose; do not retime playback delays for it. Player lunge fires only for cards with a damage effect and moves the portrait, not the HP/status column. All entries in a typed burst and its single portrait impact flash appear as soon as resolution feedback is available, independently of the attack animation. Health damage takes priority over Block-only impacts, then the largest eligible amount wins (first occurrence breaks ties). Each action requests each combat sound family at most once. The 8 px wind-up ends at 12% / 114 ms and the swing reaches full extension at 24% / 228 ms of the 950 ms lunge. Keep `ATTACK_SWING_APEX_MS` aligned with `combatant-attack-lunge` in `keyframes.css` and the shake delay in `theme.css`.
+- Nest the presentation-only attacker lunge outside shake so both effects compose; do not retime playback delays for it. Keep [battle timing](../src/lib/game-constants/battle-timing.ts) aligned with `combatant-attack-lunge` in [keyframes](../src/styles/keyframes.css) and the shake delay in [theme styles](../src/styles/theme.css). These owners define the exact phases and durations.
 - Run the focused battle playback tests and the selection from `verify`; use the raw Playwright path for animation coverage.
 
 ## Adding a new screen
 
-| Step                                                                                                                                                                                                        | File(s)                                                                                                                                                                                                                                                                                      |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Add string to `Screen` union and `ROUTE_SCREENS`                                                                                                                                                         | `src/lib/routing/screens.ts`                                                                                                                                                                                                                                                                 |
-| 2. Classify the screen and add every legal interactive edge                                                                                                                                                 | `src/lib/routing/run-screen-router.ts` (`SCREEN_PHASE`), `src/lib/routing/screen-transition-policy.ts` (allowed edges; run-loop lists are derived from `SCREEN_PHASE`). Do not put taxonomy in `use-screen-transitions.ts` — that hook only owns delay / immediate / commit timing.          |
-| 3. Create component in `run-loop/screens/`, `run-setup/screens/`, or `meta/screens/` + barrel export                                                                                                        | `index.ts` (local screen index under that subdirectory)                                                                                                                                                                                                                                      |
-| 4. Wrap in `TitledScreenShell` (`ScreenShell` is transparent/layout-only); the game menu button is global in `App.tsx` so screens wire no menu props                                                        | `shared/ui/layout-components.tsx`; `TitledScreenShell` owns the full-stage overflow wrapper so plasma shows through. The app stage owns the background. Use `alchemy-shell` only for contained panels. Exceptions: Main Menu and Battle. Choosers use widths from `shared/config/layout.ts`. |
-| 5. Wire route handler in the matching phase table (`meta-routes`, `run-setup-routes`, `run-loop-routes`, …)                                                                                                 | `src/app/screen-routes/`                                                                                                                                                                                                                                                                     |
-| 6. Resumable / anti-flash screens — add a thin route wrapper (see `app/screen-routes/mystery-screen-route.tsx`) that holds visit state with `useHeldWhile` and falls back to a shell while data is clearing |                                                                                                                                                                                                                                                                                              |
-| 7. Extend phase route ctx / `RenderAlchemyScreenProps` if new props are needed                                                                                                                              | `src/app/screen-routes/route-ctx.ts`, `src/app/screen-routes/index.tsx`                                                                                                                                                                                                                      |
-| 8. Wire navigation trigger                                                                                                                                                                                  | caller of `goToScreen("<name>")`                                                                                                                                                                                                                                                             |
+1. Add the screen to `Screen` and `ROUTE_SCREENS` in `src/lib/routing/screens.ts`.
+2. Classify it in `src/lib/routing/run-screen-router.ts` (`SCREEN_PHASE`) and add every legal interactive edge in `src/lib/routing/screen-transition-policy.ts`. Run-loop lists derive from `SCREEN_PHASE`; `use-screen-transitions.ts` owns delay/immediate/commit timing, not taxonomy.
+3. Create the component under `run-loop/screens/`, `run-setup/screens/`, or `meta/screens/`, and export it from that directory's `index.ts`.
+4. Use `TitledScreenShell` from `shared/ui/layout-components.tsx`; `ScreenShell` is transparent and layout-only. `TitledScreenShell` owns the full-stage overflow wrapper so plasma shows through, and the app stage owns the background. Reserve `alchemy-shell` for contained panels. Main Menu and Battle are exceptions; choosers use widths from `shared/config/layout.ts`. The global menu button lives in `App.tsx`, so screens wire no menu props.
+5. Wire the route in the matching phase table under `src/app/screen-routes/` (`meta-routes`, `run-setup-routes`, or `run-loop-routes`).
+6. For resumable screens that can lose visit data during a fade, use a thin route wrapper with `useHeldWhile` and a shell fallback, following `app/screen-routes/mystery-screen-route.tsx`.
+7. If new props are needed, extend the phase route context and `RenderAlchemyScreenProps` in `src/app/screen-routes/route-ctx.ts` and `src/app/screen-routes/index.tsx`.
+8. Wire the navigation trigger at the caller of `goToScreen("<name>")`.
 
 Boot restore/hydration sets a validated saved screen directly and intentionally bypasses the interactive transition table. Screen components subscribing to Zustand stores should select narrow slices or use `useShallow` to prevent render churn during high-frequency combat ticks.
 

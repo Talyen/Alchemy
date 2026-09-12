@@ -15,7 +15,7 @@ import {
   getBossShineColors,
 } from "../config";
 import { ChooserArtTile } from "./chooser-art-tile";
-import { EnemyTooltip } from "./enemy-tooltip";
+import { EnemyTooltip } from "./tooltips/enemy-tooltip";
 import { FadeSlot } from "./use-fade";
 
 export function DestinationChoices({

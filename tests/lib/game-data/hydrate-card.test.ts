@@ -19,6 +19,27 @@ const modifiedCard: BattleCard = {
 };
 
 describe("saved card content restoration", () => {
+  it("does not add catalog Consume to a complete reusable saved Roll the Dice", () => {
+    const legacy: BattleCard = {
+      ...cardById["roll-the-dice"]!,
+      descriptionLines: ["Deal 3 Random damage or gain 3 Gold"],
+      effects: [
+        {
+          kind: "chance",
+          probability: 0.5,
+          successEffects: [{ kind: "random-damage", minAmount: 3, maxAmount: 3 }],
+          failureEffects: [{ kind: "gain-gold", amount: 3 }],
+        },
+      ],
+    };
+    delete legacy.consume;
+    const restored = hydrateCard(BattleCardSchema.parse(JSON.parse(JSON.stringify(legacy))));
+    expect(restored).toEqual(legacy);
+    expect(restored.consume).toBeUndefined();
+    expect(hydrateCard(restored)).toEqual(restored);
+    expect(hydrateCard({ ...legacy, effects: [] }).consume).toBe(true);
+  });
+
   it.each([
     ["one invalid effect", { effects: [modifiedCard.effects[0], { kind: "missing-effect" }] }],
     [

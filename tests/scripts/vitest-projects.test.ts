@@ -1,10 +1,12 @@
-import { globSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { testEnvironmentForPath } from "../../vitest.config";
 
 describe("Vitest projects", () => {
   it("assigns every unit test to exactly one supported environment", () => {
-    const files = globSync("tests/**/*.test.{ts,tsx}").filter((filePath) => !filePath.startsWith("tests/balance/"));
+    const files = readdirSync("tests", { recursive: true, encoding: "utf8" })
+      .map((filePath) => `tests/${filePath.replaceAll("\\", "/")}`)
+      .filter((filePath) => /\.test\.tsx?$/u.test(filePath) && !filePath.startsWith("tests/balance/"));
     const assignments = files.map((filePath) => [filePath, testEnvironmentForPath(filePath)] as const);
 
     expect(assignments).toHaveLength(files.length);

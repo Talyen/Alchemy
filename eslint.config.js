@@ -413,18 +413,17 @@ export default tseslint.config(
   // Animation specs must not disable animations via fastBattle or enableFastMode.
   {
     files: [
-      "tests/e2e/specs/draw-discard-animations.spec.ts",
+      "tests/e2e/specs/*animations.spec.ts",
+      "tests/e2e/specs/*-transitions.spec.ts",
+      "tests/e2e/specs/tooltip-motion.spec.ts",
+      "tests/e2e/specs/player-death-animation.spec.ts",
+      "tests/e2e/specs/stun-enemy-turn-presentation.spec.ts",
       "tests/e2e/specs/battle-end-turn-canary.spec.ts",
       "performance/scenarios/**/*.perf.ts",
     ],
     rules: {
       "no-restricted-imports": restrictedImports({
         paths: [
-          {
-            name: "../../fixtures/e2e",
-            message:
-              "Animation specs must use @playwright/test directly — fixtures/e2e enables fastBattle/enableFastMode.",
-          },
           {
             name: "../tests/fixtures/e2e",
             message: "Performance scenarios must keep real animations — do not import fixtures/e2e (fastBattle).",
@@ -437,8 +436,8 @@ export default tseslint.config(
       }),
       "no-restricted-syntax": restrictedSyntax(
         {
-          selector: 'CallExpression[callee.name="enableFastMode"]',
-          message: "Do not call enableFastMode in animation-focused specs or performance scenarios.",
+          selector: "Identifier[name=/^(enableFastMode|useFastBattle|fastBattle)$/]",
+          message: "Keep real animations: do not request fastBattle or use a fast-mode helper in timing specs.",
         },
         ...ASSET_BARREL_NO_VALUE_IMPORT_SELECTORS,
       ),
@@ -537,9 +536,9 @@ export default tseslint.config(
     rules: { "@typescript-eslint/no-require-imports": "off" },
   },
 
-  // Electron's .cjs entry uses runtime-injected CJS globals, so no-undef stays off.
+  // Electron entry points and test preloads use runtime-injected CommonJS globals.
   {
-    files: ["desktop/**/*.cjs"],
+    files: ["desktop/**/*.cjs", "tests/electron/*.cjs"],
     rules: { "@typescript-eslint/no-require-imports": "off", "no-undef": "off" },
   },
 );

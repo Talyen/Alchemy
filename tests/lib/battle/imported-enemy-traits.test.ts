@@ -231,7 +231,7 @@ describe("imported enemy attack reactions", () => {
   });
 
   it.each([
-    ["hellhound", "burning-blade", { burn: 1 }, 96],
+    ["hellhound", "burning-blade", { burn: 1 }, 97],
     ["dire-wolf", "fangs", { bleed: 1 }, 95],
     ["banshee", "bash", { stun: 1 }, 97],
     ["ice-wraith", "frostbolt", undefined, 96],

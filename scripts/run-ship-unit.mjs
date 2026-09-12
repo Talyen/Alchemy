@@ -7,6 +7,7 @@
 // Keep this list in sync with the suites that must pass before shipping a
 // save-affecting change: storage/persistence, autosave, validation, the
 // architecture invariants, and the bespoke scripts.
+import { commandInvocation } from "./lib/command-invocation.mjs";
 import { spawnSync } from "node:child_process";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -36,9 +37,7 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
-const result = spawnSync(
-  join(root, "..", "node_modules", ".bin", process.platform === "win32" ? "vitest.cmd" : "vitest"),
-  ["run", "--maxWorkers=4", ...SUITES],
-  { stdio: "inherit", shell: process.platform === "win32" },
-);
-process.exit(result.status ?? (result.error ? 1 : 0));
+const result = spawnSync(...commandInvocation("npx", ["vitest", "run", "--maxWorkers=4", ...SUITES]), {
+  stdio: "inherit",
+});
+process.exit(result.status ?? 1);

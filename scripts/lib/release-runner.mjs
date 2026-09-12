@@ -1,3 +1,4 @@
+import { commandInvocation } from "./command-invocation.mjs";
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -8,16 +9,16 @@ import { verifyReleaseVersionTag } from "./release-checks.mjs";
 
 const currentFile = fileURLToPath(import.meta.url);
 const root = path.resolve(path.dirname(currentFile), "../..");
-const npx = process.platform === "win32" ? "npx.cmd" : "npx";
-const npm = process.platform === "win32" ? "npm.cmd" : "npm";
+const npx = "npx";
+const npm = "npm";
 
 function run(command, args) {
   console.log(`▸ ${command} ${args.join(" ")}`);
-  execFileSync(command, args, { cwd: root, stdio: "inherit" });
+  execFileSync(...commandInvocation(command, args), { cwd: root, stdio: "inherit" });
 }
 
 function capture(command, args) {
-  return execFileSync(command, args, {
+  return execFileSync(...commandInvocation(command, args), {
     cwd: root,
     stdio: ["ignore", "pipe", "ignore"],
     encoding: "utf8",
@@ -156,7 +157,6 @@ export async function runRelease({ label, gates, bumpArgs = [], dryRun = false }
   }
 
   console.log("\n═══ Pushing ═══\n");
-  run("git", ["push", "--no-verify", "origin", "main"]);
-  run("git", ["push", "--no-verify", "origin", tag]);
+  run("git", ["push", "--atomic", "--no-verify", "origin", "main", tag]);
   await watchRelease({ label, tag });
 }

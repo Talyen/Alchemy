@@ -26,6 +26,7 @@ describe("local unit verification reuse", () => {
     expect(cache.finish([{ command, passed: true, result: { elapsedMs: 1_000 } }], "first")).toBe(true);
     expect(cache.read(command)?.runId).toBe("first");
     expect(cache.read({ ...command, args: [...command.args, "tests/other.test.ts"] })).toBeNull();
+    expect(cache.read({ ...command, args: [...command.args].reverse() })).toBeNull();
     now = 3_500_000;
     cache.finish([{ command, passed: true, reused: "first" }], "second");
     now = 3_600_001;

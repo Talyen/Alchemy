@@ -41,11 +41,18 @@ export const consumableCards: BattleCard[] = [
     art: assetRefs.stoneskinPotion,
     effect: { kind: "player-status", status: "armor", amount: 4 },
   }),
-  cardBuilders.consumableCard({
+  {
     id: "acid-potion",
+    title: "Acid Potion",
     art: assetRefs.acidPotion,
-    effect: { kind: "damage", damageType: "poison", amount: 3 },
-  }),
+    cost: 1,
+    consume: true,
+    descriptionLines: ["Remove all enemy Armor", "Deal 1 Poison damage", CONSUME_DESCRIPTION_LINE],
+    effects: [
+      { kind: "remove-enemy-armor", amount: 1, removeAll: true },
+      { kind: "damage", damageType: "poison", amount: 1 },
+    ],
+  },
   {
     id: "apple",
     title: "Apple",

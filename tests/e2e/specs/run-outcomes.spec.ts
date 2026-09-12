@@ -10,16 +10,12 @@ import {
   makeGoblinBattleState,
   startAtDestination,
   SAVE_KEY,
-} from "../../helpers";
+} from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 import { DestinationPage } from "../../pages/destination-page";
 import { critical } from "../../playwright-tags";
 
 test.describe("Run Outcomes", critical, () => {
-  test.beforeEach(async ({ runtimeErrors }) => {
-    void runtimeErrors;
-  });
-
   test.describe("Victory Flow", () => {
     test(
       "beating Act I boss completes victory flow and displays Act II destination choices",
@@ -145,13 +141,8 @@ async function startInDeathsDoorGrace(page: import("@playwright/test").Page, han
 }
 
 test.describe("Death's Door", critical, () => {
-  test("grace floors damage at 1 HP and expiry ends the run with defeat", async ({
-    page,
-    fastBattle,
-    runtimeErrors,
-  }) => {
+  test("grace floors damage at 1 HP and expiry ends the run with defeat", async ({ page, fastBattle }) => {
     void fastBattle;
-    void runtimeErrors;
 
     await startInDeathsDoorGrace(
       page,

@@ -70,10 +70,9 @@ export function captureVerificationInputs(rootDir, env = process.env) {
 }
 
 function receiptPath(rootDir, command) {
-  // Sort args so identical file sets in different git-status order share a key.
   const key = crypto
     .createHash("sha256")
-    .update(JSON.stringify([command.key, command.command, [...command.args].sort()]))
+    .update(JSON.stringify([command.key, command.command, command.args]))
     .digest("hex");
   return path.join(rootDir, "reports/verification-cache", `${key}.json`);
 }

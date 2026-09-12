@@ -5,7 +5,7 @@ import { type BattleSnapshot } from "@/lib/battle";
 import { AUTO_END_TURN_DELAY } from "@/lib/game-constants";
 import { resolveGameDelay } from "@/lib/animation/game-timer";
 
-import { useLatestRef } from "../../shared/hooks";
+import { useLatestRef } from "../../shared/ui/use-latest-ref";
 import type { Screen } from "@/lib/routing";
 import { isBattlePlaybackBlocked } from "./autoplay-driver";
 import { handHasPlayableCard } from "./playable-hand";

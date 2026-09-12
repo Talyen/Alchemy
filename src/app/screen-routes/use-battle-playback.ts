@@ -2,7 +2,7 @@ import { useLayoutEffect, useMemo, useRef } from "react";
 import type { BattleSnapshot } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 import type { Screen } from "@/lib/routing";
-import { useLatestRef } from "@/features/alchemy/shared/hooks";
+import { useLatestRef } from "@/features/alchemy/shared/ui/use-latest-ref";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import { useBattleAutoEndTurn } from "@/features/alchemy/run-loop/battle/use-battle-auto-end-turn";
 import { useBattleAutoplay } from "@/features/alchemy/run-loop/battle/use-battle-autoplay";

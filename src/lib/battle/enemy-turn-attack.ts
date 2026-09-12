@@ -125,6 +125,8 @@ function applyAbilityDamage(
   const banditBonus = trait("bandit") && !state.flags.enemyFirstHitDoubleUsed;
   if (banditBonus) amountMultiplier *= BANDIT_FIRST_HIT_MULTIPLIER;
   let damage = scaleEnemyAbilityDamage(state, effect);
+  // Enemy Forge already contains its room scaling; read the live resource once.
+  if (effect.equalToForge) damage = { ...damage, amount: state.enemyMitigation.forge };
   if (effect.doubleIfEnemyBleeding && state.playerStatuses.bleed > 0) damage = { ...damage, amount: damage.amount * 2 };
   if (trait("blood-cultist") && effect.damageType === "bleed" && state.playerStatuses.bleed > 0) {
     flatBonus += CONDITIONAL_FLAT_BONUS;
@@ -132,6 +134,7 @@ function applyAbilityDamage(
   }
   const result = resolveEnemyAttackHit(nextState, damage, combatTexts, {
     canDodge: true,
+    ignoreArmor: effect.ignoreArmor === true,
     amountMultiplier,
     flatBonus,
     traitSet: context.traitSet,
@@ -178,7 +181,9 @@ function applyEnemyEffect(
       return addEnemyStatus(state, "thorns", amount);
     }
     case "remove-enemy-armor": {
-      const amount = Math.min(state.playerStatuses.armor, scaleByRoomMultiplier(state, effect.amount));
+      const amount = effect.removeAll
+        ? state.playerStatuses.armor
+        : Math.min(state.playerStatuses.armor, scaleByRoomMultiplier(state, effect.amount));
       if (amount <= 0) return state;
       mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "armor", amount });
       return removePlayerArmor(state, amount, combatTexts);

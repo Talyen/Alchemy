@@ -12,7 +12,7 @@ Merges the former Async & Race (01), Behavior Hardening (02), and Bug Hunting (0
 | Persistence hardening | Idempotency of transitions/grants, silent save failures, recovery at decode→mutate→persist→acknowledge→recover boundaries |
 | Opportunistic defects | Confirmed crashes, data loss, wrong state, round-trip divergence — not a sibling re-run                                   |
 
-Sibling routing: audio playback handling → SideEffectSurface; typing escapes → TypeSafety; unused API → Simplification (dead code). A connected companion fix may ship here when required to complete the same invariant; report both classifications.
+Sibling routing: audio playback handling → SideEffectSurface; typing escapes → TypeSafety; unused API → Simplification (dead code). Keep connected causes and fixes together under one primary finding, following the [shared reporting contract](README.md#prioritize-and-remedy).
 
 ## Hard stops
 

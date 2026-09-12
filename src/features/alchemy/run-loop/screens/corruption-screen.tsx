@@ -14,7 +14,8 @@ import { CardSelectionGrid } from "../../shared/ui/card-selection-grid";
 import { BattleCardButton } from "../../shared/ui/card-button";
 import { CardTitle, getCardDisplayTitle } from "../../shared/ui/card-description-ui";
 import { SelectableCard } from "../../shared/ui/selectable-card";
-import { ScreenDescription, ShineAccentButton, TitledScreenShell } from "../../shared/ui/shared-ui";
+import { ScreenDescription, TitledScreenShell } from "../../shared/ui/layout-components";
+import { ShineAccentButton } from "../../shared/ui/shine-accent-button";
 import { cn } from "@/lib/utils";
 import { FadeSlot } from "../../shared/ui/use-fade";
 

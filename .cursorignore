@@ -1,9 +1,9 @@
 ﻿# Cursor indexing only — does not affect git or builds.
-# Aligns with AGENTS.md "Large / Generated / Heavy Files".
+# Excludes authored media, generated assets, dependencies, and local reports.
 
 Raw Assets/**
 src/assets/optimized/**
-Music/**
+public/Music/**
 dist/**
 release-desktop/**
 coverage/**

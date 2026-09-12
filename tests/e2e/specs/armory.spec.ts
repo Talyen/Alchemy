@@ -19,7 +19,7 @@ import {
 import { createEmptyGearInventories, createEmptyGearLoadouts } from "@/lib/gear/types";
 import { assertGearFlatDamageBoostsPhysicalDamage } from "../gear-combat";
 import { seedRandom } from "../rng";
-import { injectActiveBattle, makeGoblinBattleState, makeHighDamageCard } from "../../helpers";
+import { injectActiveBattle, makeGoblinBattleState, makeHighDamageCard } from "../../browser-helpers";
 import { MenuPage } from "../../pages/menu-page";
 import { test } from "../../fixtures/e2e";
 import { critical, slow } from "../../playwright-tags";
@@ -32,12 +32,8 @@ const affixedSword = {
 
 const emptyCraftingCurrencies = { ...EMPTY_CRAFTING_CURRENCIES };
 
-test.describe("Armory equip", critical, () => {
-  test.beforeEach(async ({ runtimeErrors }) => {
-    void runtimeErrors;
-  });
-
-  test("click-equips, unequips, and switches characters", async ({ page }) => {
+test.describe("Armory equip", () => {
+  test("click-equips, unequips, and switches characters", critical, async ({ page }) => {
     await openArmory(page);
 
     await selectArmorySlot(page, "body");
@@ -114,50 +110,48 @@ test.describe("Armory equip", critical, () => {
     await expect(equipmentSlotLocator(page, "main-hand").locator("img")).toHaveCount(2);
   });
 
-  test("keeps the battling hero browse-only while other heroes remain editable", async ({
-    page,
-    fastBattle,
-    runtimeErrors,
-  }) => {
-    void fastBattle;
-    void runtimeErrors;
-    const gearInventories = createEmptyGearInventories();
-    gearInventories.knight = [bodyGear];
-    const menu = new MenuPage(page);
+  test(
+    "keeps the battling hero browse-only while other heroes remain editable",
+    critical,
+    async ({ page, fastBattle }) => {
+      void fastBattle;
+      const gearInventories = createEmptyGearInventories();
+      gearInventories.knight = [bodyGear];
+      const menu = new MenuPage(page);
 
-    await menu.gotoWithUnlockedMeta({
-      gearInventories,
-      gearLoadouts: createEmptyGearLoadouts(),
-    });
-    await injectActiveBattle(page, makeGoblinBattleState());
+      await menu.gotoWithUnlockedMeta({
+        gearInventories,
+        gearLoadouts: createEmptyGearLoadouts(),
+      });
+      await injectActiveBattle(page, makeGoblinBattleState());
 
-    await page.getByRole("button", { name: "Open game menu" }).click();
-    await page.getByRole("button", { name: "Armory" }).click();
-    await expect(page.getByText("Equipment cannot be changed during Combat.", { exact: true })).toHaveCount(0);
-    await selectArmorySlot(page, "body");
-    const bodyItem = gearItemLocator(page, "Leather Armor");
-    await expect(bodyItem).toBeVisible();
-    await expect(bodyItem.getByRole("button", { name: "Leather Armor", exact: true })).toHaveAttribute(
-      "aria-disabled",
-      "true",
-    );
-    await expect(page.getByTestId("armory-item-picker").locator('[data-artwork-pending="true"]')).toHaveCount(0);
-    await bodyItem.getByRole("button", { name: "Leather Armor", exact: true }).click({ force: true });
-    await expect(page.getByText("Equipment cannot be changed during Combat.", { exact: true })).toBeVisible();
-    await expect(equipmentSlotLocator(page, "body").locator("img")).toHaveCount(1);
-    await page.getByRole("button", { name: "Rogue", exact: true }).click();
-    await expect(page.getByText("Equipment cannot be changed during Combat.", { exact: true })).toHaveCount(0);
-    await gearItemLocator(page, "Leather Armor").getByRole("button", { name: "Leather Armor", exact: true }).click();
-    await expect(equipmentSlotLocator(page, "body").locator("img")).toHaveCount(2);
-  });
+      await page.getByRole("button", { name: "Open game menu" }).click();
+      await page.getByRole("button", { name: "Armory" }).click();
+      await expect(page.getByText("Equipment cannot be changed during Combat.", { exact: true })).toHaveCount(0);
+      await selectArmorySlot(page, "body");
+      const bodyItem = gearItemLocator(page, "Leather Armor");
+      await expect(bodyItem).toBeVisible();
+      await expect(bodyItem.getByRole("button", { name: "Leather Armor", exact: true })).toHaveAttribute(
+        "aria-disabled",
+        "true",
+      );
+      await expect(page.getByTestId("armory-item-picker").locator('[data-artwork-pending="true"]')).toHaveCount(0);
+      await bodyItem.getByRole("button", { name: "Leather Armor", exact: true }).click({ force: true });
+      await expect(page.getByText("Equipment cannot be changed during Combat.", { exact: true })).toBeVisible();
+      await expect(equipmentSlotLocator(page, "body").locator("img")).toHaveCount(1);
+      await page.getByRole("button", { name: "Rogue", exact: true }).click();
+      await expect(page.getByText("Equipment cannot be changed during Combat.", { exact: true })).toHaveCount(0);
+      await gearItemLocator(page, "Leather Armor").getByRole("button", { name: "Leather Armor", exact: true }).click();
+      await expect(equipmentSlotLocator(page, "body").locator("img")).toHaveCount(2);
+    },
+  );
 });
 
 test(
   "reserves shared equipment across reload and releases it after victory",
   critical,
-  async ({ page, fastBattle, runtimeErrors }) => {
+  async ({ page, fastBattle }) => {
     void fastBattle;
-    void runtimeErrors;
     const gearInventories = createEmptyGearInventories();
     gearInventories.knight = [affixedSword, bodyGear];
     const gearLoadouts = createEmptyGearLoadouts();
@@ -197,12 +191,8 @@ test(
   },
 );
 
-test.describe("Armory crafting", critical, () => {
-  test.beforeEach(async ({ runtimeErrors }) => {
-    void runtimeErrors;
-  });
-
-  test("salvages gear and grants crafting materials", async ({ page }) => {
+test.describe("Armory crafting", () => {
+  test("salvages gear and grants crafting materials", critical, async ({ page }) => {
     await seedRandom(page, 0);
     const sword = {
       instanceId: "gear-sword",
@@ -249,7 +239,7 @@ test.describe("Armory crafting", critical, () => {
     await expect(gearItemLocator(page, "Ruby Ring")).toHaveCount(1);
   });
 
-  test("voidstone targeting lifecycle and affix display", async ({ page }) => {
+  test("voidstone targeting lifecycle and affix display", critical, async ({ page }) => {
     await openArmory(page, {
       inventory: [affixedSword],
       craftingCurrencies: { ...emptyCraftingCurrencies, voidstone: 1 },
@@ -271,7 +261,7 @@ test.describe("Armory crafting", critical, () => {
     await expect(page.getByText("Ironbound")).toHaveCount(0);
   });
 
-  test("rejects invalid voidstone target without consuming currency", async ({ page }) => {
+  test("rejects invalid voidstone target without consuming currency", critical, async ({ page }) => {
     await openArmory(page, {
       inventory: [bodyGear],
       craftingCurrencies: { ...emptyCraftingCurrencies, voidstone: 1 },
@@ -297,10 +287,9 @@ test.describe("Armory crafting", critical, () => {
   });
 });
 
-test.describe("Gear combat", critical, () => {
-  test("equipped gear increases physical damage in battle", async ({ page, fastBattle, runtimeErrors }) => {
+test.describe("Gear combat", () => {
+  test("equipped gear increases physical damage in battle", critical, async ({ page, fastBattle }) => {
     void fastBattle;
-    void runtimeErrors;
 
     await assertGearFlatDamageBoostsPhysicalDamage(page, {
       instanceId: "gear-1",

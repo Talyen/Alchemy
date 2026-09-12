@@ -4,7 +4,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { collectionGridGapXClass, collectionGridTileWidthClass, gearArtAspectClass } from "../../../shared/config";
 import { FadeSlot } from "../../../shared/ui/use-fade";
-import { PaginationControls } from "../../../shared/ui/shared-ui";
+import { PaginationControls } from "../../../shared/ui/navigation";
 
 const ARMORY_PICKER_COLUMNS = 3;
 const ARMORY_PICKER_ROWS = 2;

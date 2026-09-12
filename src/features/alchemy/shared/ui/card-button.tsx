@@ -18,7 +18,7 @@ import { cardArtImageClass, cardHoverScaleClass, cardSurfaceClass, getPlasmaColo
 import { useCardDescriptionContext } from "@/features/alchemy/shared/context/card-description-context";
 import { getEffectiveCardDescriptionLines, type CardDescriptionContext } from "@/lib/game-data";
 import { CardTitle, getCardDisplayTitle } from "./card-description-ui";
-import { DetailPopup } from "./card-popup";
+import { DetailPopup } from "./tooltips/card-popup";
 import { Surface } from "./surface";
 
 interface BattleCardButtonBaseProps {

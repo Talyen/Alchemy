@@ -153,3 +153,31 @@ export function getCompanionBondEffects(companion: CompanionDefinition, bondLeve
   }
   return companion.turnStartEffects.map(scaleEffect);
 }
+
+export interface CompanionDamageModifiers {
+  damageBonus: number;
+  bleedDamageBonus: number;
+  damageMultiplier: number;
+}
+
+export function getModifiedCompanionEffects(
+  companion: CompanionDefinition,
+  bondLevel: number,
+  modifiers: CompanionDamageModifiers,
+): BattleCardEffect[] {
+  function scale(effect: BattleCardEffect): BattleCardEffect {
+    if (effect.kind === "damage") {
+      const bonus = modifiers.damageBonus + (effect.damageType === "bleed" ? modifiers.bleedDamageBonus : 0);
+      return { ...effect, amount: Math.round((effect.amount + bonus) * modifiers.damageMultiplier) };
+    }
+    if (effect.kind === "chance") {
+      return {
+        ...effect,
+        successEffects: effect.successEffects.map(scale),
+        failureEffects: effect.failureEffects.map(scale),
+      };
+    }
+    return effect;
+  }
+  return getCompanionBondEffects(companion, bondLevel).map(scale);
+}

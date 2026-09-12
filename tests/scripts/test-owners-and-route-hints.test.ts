@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import { formatRouteHintLine, routeHintForPath } from "../../scripts/lib/route-hints.mjs";
 
 describe("route hints", () => {
+  it("keeps reports from another checkout readable without selecting external paths", () => {
+    expect(routeHintForPath("/old-checkout/tests/example.test.ts")).toEqual({ routes: ["unknown"], focusedE2E: [] });
+  });
+
   it("names only the retained save-focused E2E from changed paths", () => {
     const save = routeHintForPath("src/features/alchemy/shared/storage/io.ts");
     expect(save.focusedE2E).toContain("save");

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-import { ScreenDescription, TitledScreenShell } from "../../shared/ui/shared-ui";
+import { ScreenDescription, TitledScreenShell } from "../../shared/ui/layout-components";
 import { Button } from "@/components/ui/button";
 import { campfire } from "@/features/alchemy/shared/config/game-data-catalog";
 import { BUTTON_WIDTH_ACTION } from "@/features/alchemy/shared/config";

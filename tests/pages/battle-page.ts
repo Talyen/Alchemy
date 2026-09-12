@@ -74,10 +74,13 @@ export class BattlePage {
 
     await expect(async () => {
       if (await this.isBattleOver()) return;
-      const endTurn = this.page.getByRole("button", { name: "End Turn" });
-      await expect(endTurn).toBeEnabled({ timeout: turnTimeout });
-      await endTurn.click({ force: true });
+      await expect(this.endTurnBtn).toBeEnabled({ timeout: turnTimeout });
     }).toPass({ timeout: settleTimeout });
+    if (await this.isBattleOver()) return;
+    await this.endTurnBtn.click().catch(async (error) => {
+      // The last card can finish combat while the turn control is settling.
+      if (!(await this.isBattleOver())) throw error;
+    });
 
     await expect(async () => {
       if (await this.isBattleOver()) return;
@@ -103,7 +106,7 @@ export class BattlePage {
       const card = this.hand.filter({ visible: true }).first();
       if (!(await card.isVisible({ timeout: 1000 }).catch(() => false))) break;
       if (!(await card.isEnabled({ timeout: 1000 }).catch(() => false))) break;
-      await card.click({ force: true, timeout: 2000 }).catch(async (e) => {
+      await card.click({ timeout: 2000 }).catch(async (e) => {
         if (await this.isBattleOver()) return;
         throw e;
       });

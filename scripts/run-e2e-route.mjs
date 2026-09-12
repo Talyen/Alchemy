@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { commandInvocation } from "./lib/command-invocation.mjs";
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 
@@ -152,9 +153,8 @@ if (invokedAsCli) {
     );
     process.exit(1);
   }
-  const result = spawnSync("npx", [...resolved.args, ...extra], {
+  const result = spawnSync(...commandInvocation("npx", [...resolved.args, ...extra]), {
     stdio: "inherit",
-    shell: process.platform === "win32",
   });
   process.exit(result.status ?? 1);
 }

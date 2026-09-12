@@ -56,7 +56,7 @@ function effectDescriptionLine(effect: BattleCardEffect): string {
     case "wish":
       return `Wish ${effect.amount}`;
     case "remove-enemy-armor":
-      return `Remove ${effect.amount} enemy Armor`;
+      return effect.removeAll ? "Remove all enemy Armor" : `Remove ${effect.amount} enemy Armor`;
     case "next-hit-crit":
       return "Your next damaging card is a critical strike";
     case "play-next-card-twice":
@@ -72,6 +72,8 @@ function effectDescriptionLine(effect: BattleCardEffect): string {
     case "remove-player-status":
     case "self-damage":
     case "buff-companion":
+    case "companion-action":
+    case "random-draw":
     case "lose-health":
     case "draw-cards":
     case "multiply-enemy-status":

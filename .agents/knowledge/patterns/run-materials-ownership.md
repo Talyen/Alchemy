@@ -13,7 +13,7 @@ An inventory award without its run-ledger entry makes the recap disagree with th
 
 ## Evidence
 
-- `docs/WORKFLOWS.md#grant-materials-during-a-run` — checklist + call sites (`mystery-flow.ts` `gainMysteryMaterial`, `run-flow-victory.ts` `commitVictoryRewards`, `run-flow-rewards.ts` `finishRewards`).
+- `docs/WORKFLOWS.md#grant-materials-during-a-run` — checklist + call sites (`mystery-flow.ts` `gainMysteryMaterial`, `victory-commands.ts` `commitVictoryRewards`, `reward-commands.ts` `claimRunReward`).
 - `src/features/alchemy/shared/stores/run-session-write-port.ts` — `awardMaterialsDuringRun`.
 - `src/lib/homestead/loot.ts` — `applyMaterialFindBonus()` bonus before award (mystery/combat already apply).
 - `eslint/plugin.js` — `alchemy/no-run-earned-add-materials` (error in `src/**`).

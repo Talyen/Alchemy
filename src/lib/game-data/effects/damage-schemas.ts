@@ -12,6 +12,8 @@ export const damageEffectDefinition = {
       lifesteal: z.boolean().optional(),
       equalToBlock: z.boolean().optional(),
       equalToArmor: z.boolean().optional(),
+      equalToForge: z.boolean().optional(),
+      ignoreArmor: z.boolean().optional(),
       equalToGoldPercent: z.number().int().min(0).max(100).optional(),
       doubleIfEnemyBurning: z.boolean().optional(),
       doubleIfEnemyBleeding: z.boolean().optional(),
@@ -24,9 +26,10 @@ export const damageEffectDefinition = {
     })
     .refine(
       (data) =>
-        [data.equalToBlock, data.equalToArmor, data.equalToGoldPercent !== undefined].filter(Boolean).length <= 1,
+        [data.equalToBlock, data.equalToArmor, data.equalToForge, data.equalToGoldPercent !== undefined].filter(Boolean)
+          .length <= 1,
       {
-        message: "damage effect must have at most one of equalToBlock/equalToArmor/equalToGoldPercent",
+        message: "damage effect must have at most one of equalToBlock/equalToArmor/equalToForge/equalToGoldPercent",
       },
     )
     .refine((data) => !(data.doubleIfEnemyBurning && data.tripleIfEnemyNotBurning), {
@@ -61,5 +64,6 @@ export const removeEnemyArmorEffectDefinition = {
   schema: z.object({
     kind: z.literal("remove-enemy-armor"),
     amount: PositiveAmountSchema,
+    removeAll: z.boolean().optional(),
   }),
 } satisfies EffectKindDefinition<"remove-enemy-armor">;

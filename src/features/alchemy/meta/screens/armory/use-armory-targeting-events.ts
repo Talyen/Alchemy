@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import type { CraftingCurrencyId, GearInstance } from "@/lib/gear";
-import { useLatestRef } from "../../../shared/hooks";
+import { useLatestRef } from "../../../shared/ui/use-latest-ref";
 
 interface UseArmoryTargetingEventsOptions {
   salvageMode: boolean;

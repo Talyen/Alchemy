@@ -62,47 +62,13 @@ export function artPreset(kind) {
   return ART_PRESETS[kind];
 }
 
-export const WIDTH = Object.freeze({
-  card: ART_PRESETS.card.width,
-  talent: ART_PRESETS.talent.width,
-  boon: ART_PRESETS.boon.width,
-  hero: ART_PRESETS.hero.width,
-  enemy: ART_PRESETS.enemy.width,
-  destination: ART_PRESETS.destination.width,
-  gameMode: ART_PRESETS.gameMode.width,
-  homestead: ART_PRESETS.homestead.width,
-  mystery: ART_PRESETS.mystery.width,
-  difficulty: ART_PRESETS.difficulty.width,
-  difficultyPlaceholder: ART_PRESETS.difficultyPlaceholder.width,
-  resource: ART_PRESETS.resource.width,
-  logo: ART_PRESETS.logo.width,
-  crafting: ART_PRESETS.crafting.width,
-  cursor: ART_PRESETS.cursor.width,
-  gear: ART_PRESETS.gear.width,
-});
+export const WIDTH = Object.freeze(
+  Object.fromEntries(Object.entries(ART_PRESETS).map(([kind, preset]) => [kind, preset.width])),
+);
 
 export const QUALITY = Object.freeze({
-  card: ART_PRESETS.card.quality,
-  cardHaste: CARD_QUALITY_OVERRIDES.cardHaste,
-  cardManaCrystal: CARD_QUALITY_OVERRIDES.cardManaCrystal,
-  cardMixedPotion: CARD_QUALITY_OVERRIDES.cardMixedPotion,
-  cardPlaceholder: CARD_QUALITY_OVERRIDES.cardPlaceholder,
-  talent: ART_PRESETS.talent.quality,
-  boon: ART_PRESETS.boon.quality,
-  hero: ART_PRESETS.hero.quality,
-  enemy: ART_PRESETS.enemy.quality,
-  enemyPlaceholder: CARD_QUALITY_OVERRIDES.enemyPlaceholder,
-  destination: ART_PRESETS.destination.quality,
-  gameMode: ART_PRESETS.gameMode.quality,
-  homestead: ART_PRESETS.homestead.quality,
-  mystery: ART_PRESETS.mystery.quality,
-  difficulty: ART_PRESETS.difficulty.quality,
-  difficultyPlaceholder: ART_PRESETS.difficultyPlaceholder.quality,
-  resource: ART_PRESETS.resource.quality,
-  logo: ART_PRESETS.logo.quality,
-  crafting: ART_PRESETS.crafting.quality,
-  cursor: ART_PRESETS.cursor.quality,
-  gear: ART_PRESETS.gear.quality,
+  ...Object.fromEntries(Object.entries(ART_PRESETS).map(([kind, preset]) => [kind, preset.quality])),
+  ...CARD_QUALITY_OVERRIDES,
 });
 
 export const LOUDNORM_FILTER = "loudnorm=I=-16:TP=-1.5:LRA=11";
@@ -127,12 +93,8 @@ export function soundTransformSettings(sourceExt) {
 export const MUSIC_SETTINGS = Object.freeze({ mode: "copy" });
 export const MANIFEST_BASENAME = ".asset-hashes.json";
 
-/** Every pipeline output; single source for check-prepared-assets and barrel paths. */
-const PREPARED_OUTPUT_DIRS = Object.freeze(["src/assets/optimized", "public/sounds", "public/Music"]);
 export const GENERATED_OUTPUTS = Object.freeze({
   assets: "src/lib/game-data/assets.generated.ts",
   gearArt: "src/lib/game-data/gear-art.ts",
   versionMetadata: "src/lib/validation/metadata.generated.ts",
 });
-const GENERATED_BARREL_FILES = Object.freeze(Object.values(GENERATED_OUTPUTS));
-export const PREPARED_ASSET_OUTPUTS = Object.freeze([...PREPARED_OUTPUT_DIRS, ...GENERATED_BARREL_FILES]);

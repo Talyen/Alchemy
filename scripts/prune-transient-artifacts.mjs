@@ -12,7 +12,7 @@ const DEFAULT_DAYS = 1;
 
 function parseDays(value) {
   const days = Number(value);
-  if (!Number.isFinite(days) || days < 0) throw new Error("--days must be a non-negative number");
+  if (!value.trim() || !Number.isFinite(days) || days < 0) throw new Error("--days must be a non-negative number");
   return days;
 }
 
@@ -80,7 +80,8 @@ export function pruneTransientArtifacts({
   const removed = [];
   for (const relative of transientDirs) {
     const target = path.join(rootDir, relative);
-    if (fs.existsSync(target)) pruneDirectory(target, cutoff, dryRun, removed, rootDir);
+    if (fs.lstatSync(target, { throwIfNoEntry: false })?.isDirectory())
+      pruneDirectory(target, cutoff, dryRun, removed, rootDir);
   }
   return { removed, bytes: removed.reduce((sum, entry) => sum + entry.bytes, 0) };
 }

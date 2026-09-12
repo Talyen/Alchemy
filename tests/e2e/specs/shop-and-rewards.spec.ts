@@ -4,7 +4,7 @@ import { ShopPage } from "../../pages/shop-page";
 import { expectRunPhase } from "../../pages/game-stage";
 import { RewardPage } from "../../pages/reward-page";
 import { DestinationPage } from "../../pages/destination-page";
-import { enterPrimaryRewardScreen, SAVE_KEY, startAtDestination } from "../../helpers";
+import { enterPrimaryRewardScreen, SAVE_KEY, startAtDestination } from "../../browser-helpers";
 import { critical, slow } from "../../playwright-tags";
 
 async function enterShop(page: import("@playwright/test").Page, gold: number, destination: "Card Shop" | "Gear Shop") {
@@ -15,8 +15,7 @@ async function enterShop(page: import("@playwright/test").Page, gold: number, de
 
 test.describe("Card Shop", critical, () => {
   test.describe("with sufficient gold", () => {
-    test.beforeEach(async ({ page, runtimeErrors }) => {
-      void runtimeErrors;
+    test.beforeEach(async ({ page }) => {
       await enterShop(page, 9999, "Card Shop");
     });
 
@@ -33,12 +32,11 @@ test.describe("Card Shop", critical, () => {
   });
 });
 
-test.describe("Shop fade-out", critical, () => {
+test.describe("Shop fade-out", () => {
   for (const destination of ["Card Shop", "Gear Shop"] as const) {
     const gate = destination === "Card Shop" ? critical : slow;
 
-    test(`keeps ${destination} offerings mounted through route fade-out`, gate, async ({ page, runtimeErrors }) => {
-      void runtimeErrors;
+    test(`keeps ${destination} offerings mounted through route fade-out`, gate, async ({ page }) => {
       const shop = new ShopPage(page);
       await enterShop(page, 9999, destination);
       const offeringCount = await shop.buyBtn.count();
@@ -53,9 +51,8 @@ test.describe("Shop fade-out", critical, () => {
 });
 
 test.describe("Reward Flow", critical, () => {
-  test("card reward: clicking a card claims it immediately", critical, async ({ page, fastBattle, runtimeErrors }) => {
+  test("card reward: clicking a card claims it immediately", critical, async ({ page, fastBattle }) => {
     void fastBattle;
-    void runtimeErrors;
     await enterPrimaryRewardScreen(page, { rewardType: "card", choiceIds: ["slash", "bash"] });
 
     const reward = new RewardPage(page);
@@ -63,9 +60,8 @@ test.describe("Reward Flow", critical, () => {
     await new DestinationPage(page).expectVisible();
   });
 
-  test("Skip ignores a resumed card reward selection", async ({ page, fastBattle, runtimeErrors }) => {
+  test("Skip ignores a resumed card reward selection", async ({ page, fastBattle }) => {
     void fastBattle;
-    void runtimeErrors;
     await enterPrimaryRewardScreen(page, { rewardType: "card", choiceIds: ["slash", "bash"], selectedId: "bash" });
     await page.getByRole("button", { name: "Skip", exact: true }).click();
     await new DestinationPage(page).expectVisible();
@@ -77,9 +73,8 @@ test.describe("Reward Flow", critical, () => {
     expect(deck.some((card) => card.id === "bash")).toBe(false);
   });
 
-  test("boon, trinket, and gear rewards persist correctly", async ({ page, fastBattle, runtimeErrors }) => {
+  test("boon, trinket, and gear rewards persist correctly", async ({ page, fastBattle }) => {
     void fastBattle;
-    void runtimeErrors;
 
     await enterPrimaryRewardScreen(page, {
       rewardType: "boon",
@@ -129,13 +124,8 @@ test.describe("Reward Flow", critical, () => {
       .toBe(true);
   });
 
-  test("unclaimed rewards survive reload and can be claimed immediately", async ({
-    page,
-    fastBattle,
-    runtimeErrors,
-  }) => {
+  test("unclaimed rewards survive reload and can be claimed immediately", async ({ page, fastBattle }) => {
     void fastBattle;
-    void runtimeErrors;
     await enterPrimaryRewardScreen(page, {
       rewardType: "trinket",
       choiceIds: ["tattered-pages", "companions-collar"],

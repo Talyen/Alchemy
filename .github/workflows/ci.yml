@@ -57,6 +57,7 @@ jobs:
               - "scripts/build-verified.mjs"
               - "scripts/lib/vite-*.mjs"
               - "scripts/lib/sentry-release.mjs"
+              - "scripts/lib/desktop-build-config.mjs"
               - ".github/**"
               - "package.json"
               - "package-lock.json"
@@ -74,11 +75,14 @@ jobs:
               - "scripts/dist-desktop*"
               - "scripts/lib/desktop-artifact*"
               - "scripts/verify-desktop-package*"
+              - "scripts/lib/release-checks.mjs"
+              - "scripts/smoke-desktop*"
               - "scripts/sync-steam-appid*"
             desktop_renderer:
               - "scripts/build-verified.mjs"
               - "scripts/lib/vite-*.mjs"
               - "scripts/lib/sentry-release.mjs"
+              - "scripts/lib/desktop-build-config.mjs"
               - ".github/**"
               - "package.json"
               - "package-lock.json"
@@ -107,6 +111,8 @@ jobs:
               - "scripts/ensure-electron*"
               - "scripts/electron-download*"
               - "scripts/verify-desktop-package*"
+              - "scripts/lib/release-checks.mjs"
+              - "scripts/smoke-desktop*"
             assets:
               - ".github/**"
               - "package.json"
@@ -194,7 +200,7 @@ jobs:
       - uses: ./.github/actions/setup
       - run: npm run build
 
-      - name: Check bundle budget (index 640 KiB / total 1620 KiB)
+      - name: Check bundle budget
         run: node scripts/check-bundle-budget.mjs
 
       - name: Smoke test production build
@@ -203,9 +209,8 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: dist
-          path: |
-            dist/
-            !dist/Music/
+          path: dist/
+          compression-level: 0
           retention-days: 1
 
   e2e:
@@ -232,6 +237,9 @@ jobs:
           name: dist
           path: dist/
 
+      - name: Smoke test downloaded build including music
+        run: npm run smoke:preview
+
       - name: Setup Playwright Chromium
         uses: ./.github/actions/setup-playwright
 
@@ -245,11 +253,21 @@ jobs:
           PLAYWRIGHT_JSON_OUTPUT_NAME: reports/playwright-results-${{ matrix.shard }}.json
 
       - name: Summarize e2e tests
+        id: playwright-summary
         if: always()
         run: node scripts/ci-summarize.mjs --playwright reports/playwright-results-${{ matrix.shard }}.json
 
+      - name: Upload Playwright results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-critical-${{ matrix.shard }}-results
+          path: reports/playwright-results-${{ matrix.shard }}.json
+          retention-days: 7
+          if-no-files-found: ignore
+
       - name: Upload Playwright report
-        if: failure()
+        if: failure() || steps.playwright-summary.outputs.retain-diagnostics == 'true'
         uses: actions/upload-artifact@v7
         with:
           name: playwright-report-critical-${{ matrix.shard }}
@@ -263,8 +281,7 @@ jobs:
 
   ship-gate:
     needs: changes
-    # Only produces the dist-desktop artifact consumed by electron-e2e, so it is
-    # path-gated on the same electron filter rather than running on every push.
+    # Produces the complete renderer for Electron tests and Windows packaging.
     if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.desktop_renderer == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -280,12 +297,14 @@ jobs:
       - name: Build desktop renderer
         run: npm run build:desktop
 
+      - name: Check desktop bundle budget
+        run: npm run check:bundle
+
       - uses: actions/upload-artifact@v7
         with:
           name: dist-desktop
-          path: |
-            dist/
-            !dist/Music/
+          path: dist/
+          compression-level: 0
           retention-days: 1
 
   assets:
@@ -320,6 +339,9 @@ jobs:
           name: dist
           path: dist/
 
+      - name: Smoke test downloaded build including music
+        run: npm run smoke:preview
+
       - uses: ./.github/actions/setup-playwright
 
       - run: mkdir -p reports
@@ -329,11 +351,21 @@ jobs:
           PLAYWRIGHT_VITE_MODE: preview
 
       - name: Summarize save journeys
+        id: playwright-summary
         if: always()
         run: node scripts/ci-summarize.mjs --playwright
 
+      - name: Upload Playwright results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-save-gate-results
+          path: reports/playwright-results.json
+          retention-days: 7
+          if-no-files-found: ignore
+
       - name: Upload save failure report
-        if: failure()
+        if: failure() || steps.playwright-summary.outputs.retain-diagnostics == 'true'
         uses: actions/upload-artifact@v7
         with:
           name: playwright-report-save-gate
@@ -352,8 +384,9 @@ jobs:
     # instead of paying for a second full Vite build; a failed renderer build
     # fails this job instead of repackaging a known-bad bundle.
     if: >-
+      !cancelled() && needs.changes.result == 'success' &&
       (github.event_name == 'workflow_dispatch' || needs.changes.outputs.desktop == 'true') &&
-      needs.ship-gate.result != 'failure' && needs.ship-gate.result != 'cancelled'
+      (needs.ship-gate.result == 'success' || needs.ship-gate.result == 'skipped')
     runs-on: windows-latest
     timeout-minutes: 45
     steps:
@@ -365,8 +398,6 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
-        with:
-          skip-electron-download: "false"
 
       - name: Cache Electron binary
         uses: actions/cache@v6
@@ -376,8 +407,9 @@ jobs:
             node_modules/electron/dist
             node_modules/electron/path.txt
           key: electron-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            electron-${{ runner.os }}-
+
+      - name: Ensure Electron binary
+        run: npm run ensure:electron
 
       - name: Sync Steam App ID
         run: npm run sync:steam-appid
@@ -389,13 +421,22 @@ jobs:
         with:
           name: dist-desktop
           path: dist/
+          compression-level: 0
 
       - name: Build desktop renderer
         if: steps.renderer-download.outcome != 'success'
         run: npm run build:desktop
 
+      - name: Check fallback desktop bundle budget
+        if: steps.renderer-download.outcome != 'success'
+        run: npm run check:bundle
+
       - name: Package Windows installer
         run: node scripts/dist-desktop.mjs
+
+      - name: Smoke test packaged Windows game
+        timeout-minutes: 2
+        run: npm run smoke:desktop
 
       - name: Upload desktop artifact
         uses: actions/upload-artifact@v7
@@ -423,6 +464,7 @@ jobs:
         with:
           name: dist-desktop
           path: dist/
+          compression-level: 0
 
       - name: Cache Electron binary
         uses: actions/cache@v6
@@ -433,8 +475,6 @@ jobs:
             node_modules/electron/dist
             node_modules/electron/path.txt
           key: electron-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            electron-${{ runner.os }}-
 
       - name: Ensure Electron binary
         run: node scripts/ensure-electron.mjs
@@ -447,11 +487,21 @@ jobs:
           CI: true
 
       - name: Summarize Electron e2e
+        id: playwright-summary
         if: always()
         run: node scripts/ci-summarize.mjs --playwright reports/playwright-electron-results.json
 
+      - name: Upload Playwright results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-electron-results
+          path: reports/playwright-electron-results.json
+          retention-days: 7
+          if-no-files-found: ignore
+
       - name: Upload Electron Playwright report
-        if: failure()
+        if: failure() || steps.playwright-summary.outputs.retain-diagnostics == 'true'
         uses: actions/upload-artifact@v7
         with:
           name: playwright-report-electron

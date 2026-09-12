@@ -1,12 +1,12 @@
-import { expect, test } from "@playwright/test";
-import { failOnRuntimeErrors, makeStatusCard, startBattleWithDeck } from "../../helpers";
+import { expect, test } from "../../fixtures/e2e";
+import { makeStatusCard, startBattleWithDeck } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 import { slow } from "../../playwright-tags";
 
 test.describe("Stunned enemy turn presentation", slow, () => {
   test("stunned enemy shows Enemy Turn and draws hand without a flash", async ({ page }) => {
     test.setTimeout(60_000);
-    const errors = failOnRuntimeErrors(page);
+
     const flyingCards = page.locator("[data-flying-card]");
     const enemyTurn = page.getByTestId("turn-badge-enemy");
     const yourTurn = page.getByTestId("turn-badge-player");
@@ -45,6 +45,5 @@ test.describe("Stunned enemy turn presentation", slow, () => {
     await expect(yourTurn).toHaveAttribute("data-active", "true", { timeout: 20_000 });
     await expect(battle.endTurnBtn).toBeEnabled({ timeout: 20_000 });
     expect(await battle.handCount()).toBeGreaterThan(0);
-    expect(errors).toEqual([]);
   });
 });

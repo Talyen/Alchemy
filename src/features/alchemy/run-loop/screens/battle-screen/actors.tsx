@@ -1,4 +1,4 @@
-import { isPlayerDefeated } from "@/lib/battle";
+import { isPlayerDefeated, getBattleCompanionDamageModifiers } from "@/lib/battle";
 import { BATTLE_ACTOR_TOP } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 
@@ -76,11 +76,7 @@ export function BattleActors({
                     turnActive={isPlayerTurn}
                     turnShineColors={getCompanionShineColors(battleState.activeCompanion)}
                     bondLevel={battleState.talentEffects.companionBondLevels[battleState.activeCompanion.id] ?? 0}
-                    damageBonus={
-                      battleState.companionDamageBuff +
-                      battleState.talentEffects.companionDamage +
-                      battleState.trinketEffects.companionDamageBonus
-                    }
+                    damageBonus={getBattleCompanionDamageModifiers(battleState)}
                   />
                 </div>
               ) : null

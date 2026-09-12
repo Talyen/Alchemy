@@ -29,6 +29,7 @@ export type BattleScreenState = Pick<
   | "enemyCC"
   | "talentEffects"
   | "trinketEffects"
+  | "gearEffects"
   | "flags"
 >;
 

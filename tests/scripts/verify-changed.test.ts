@@ -16,6 +16,17 @@ import { TEST_SUITES, validateTestSuitePaths } from "../../scripts/lib/test-comm
 import { formatPlan, filterPlanCommands, parseVerifyArgs } from "../../scripts/verify-changed.mjs";
 
 describe("verification selection", () => {
+  it("normalizes absolute and relative files and expands directories before selecting coverage", () => {
+    const file = "src/features/alchemy/shared/storage/io.ts";
+    expect(resolveRoutePlan([path.resolve(file), "./" + file])).toEqual(resolveRoutePlan([file]));
+    for (const directory of ["scripts", "scripts/", path.resolve("scripts")]) {
+      const selected = parseVerifyArgs([directory, "--plan"]).paths;
+      expect(selected).toContain("scripts/check.mjs");
+      expect(resolveRoutePlan(selected).commands.map((command) => command.key)).toContain("unit-tooling");
+    }
+    expect(() => parseVerifyArgs(["../outside.ts"])).toThrow("outside repository");
+  });
+
   it("uses a small broad category catalog", () => {
     expect(ROUTES.length).toBeLessThanOrEqual(10);
     expect(ROUTES.reduce((count, route) => count + route.patterns.length, 0)).toBeLessThanOrEqual(70);
@@ -34,6 +45,29 @@ describe("verification selection", () => {
       "--run",
       "--passWithNoTests",
     ]);
+  });
+
+  it("uses complete unit coverage for oversized selections while preserving non-unit gates", () => {
+    const paths = [
+      ...Array.from({ length: 500 }, (_, index) => `src/lib/example-${index}.ts`),
+      "scripts/sync-generated.mjs",
+    ];
+    const plan = resolveRoutePlan(paths);
+    expect(plan.commands.map((command) => command.key)).toEqual(["assets-check", "unit-all"]);
+    expect(plan.commands.find((command) => command.key === "unit-all")?.args).toEqual(["test"]);
+  });
+
+  it("loads a large selection losslessly from a JSON file", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "verify-paths-"));
+    try {
+      const filename = path.join(root, "paths.json");
+      const paths = ["src/a space.ts", "src/another.ts"];
+      fs.writeFileSync(filename, JSON.stringify(paths));
+      expect(parseVerifyArgs(["--paths-file", filename, "--plan"]).paths).toEqual(paths);
+      expect(() => parseVerifyArgs(["--paths-file", filename, "--diff"])).toThrow("Choose");
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
   });
 
   it("executes changed tests directly", () => {
@@ -115,9 +149,19 @@ describe("verification selection", () => {
     expect(resolveRoutePlan(["tests/e2e/specs/shop-and-rewards.spec.ts"]).commands).toEqual([]);
   });
 
+  it("runs changed tests only when the selected suite does not already cover them", () => {
+    const plan = resolveRoutePlan([
+      "scripts/lib/run-command.mjs",
+      "tests/scripts/script-reliability.test.ts",
+      "tests/lib/game-data/keywords.test.ts",
+    ]);
+    expect(plan.commands.map((command) => command.key)).toEqual(["unit-tooling", "unit-changed"]);
+    expect(plan.commands[1].args).toEqual(["vitest", "run", "tests/lib/game-data/keywords.test.ts"]);
+  });
+
   it("retains desktop and browser selection after folder moves", () => {
     expect(resolveRoutePlan(["tests/desktop/desktop-security.test.ts"]).commands.map((command) => command.key)).toEqual(
-      ["unit-desktop", "unit-changed"],
+      ["unit-desktop"],
     );
     for (const file of ["tests/electron/electron-helpers.ts", "tests/electron/electron-global-setup.ts"]) {
       expect(resolveRoutes([file]).map((route) => route.id)).toEqual(["browser-test"]);

@@ -1,5 +1,5 @@
-import { expect, test } from "@playwright/test";
-import { failOnRuntimeErrors, makeCard, startBattleWithDeck } from "../../helpers";
+import { expect, test } from "../../fixtures/e2e";
+import { makeCard, startBattleWithDeck } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 import { slow } from "../../playwright-tags";
 
@@ -16,7 +16,7 @@ async function waitForOpeningDeal(page: import("@playwright/test").Page) {
 test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
   test("battle mounts with an empty hand and deals the opening four", async ({ page }) => {
     test.setTimeout(60_000);
-    const errors = failOnRuntimeErrors(page);
+
     await page.addInitScript(() => {
       const testWindow = window as Window & { openingFlyingCardSeen?: boolean; openingHandCounts?: number[] };
       testWindow.openingFlyingCardSeen = false;
@@ -53,11 +53,9 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
     const handCounts = opening.handCounts;
     expect(handCounts[0]).toBe(0);
     expect(handCounts).toContain(4);
-    expect(errors).toEqual([]);
   });
 
   test("play card shows ghost overlay", async ({ page }) => {
-    const errors = failOnRuntimeErrors(page);
     const ghostOverlays = page.locator(".card-ghost-overlay");
 
     await startBattleWithDeck(
@@ -70,12 +68,11 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
     await expect(battle.hand.first()).toBeVisible({ timeout: 5000 });
     await battle.playFirstCard();
     await expect(ghostOverlays.first()).toBeVisible({ timeout: 5000 });
-    expect(errors).toEqual([]);
   });
 
   test("accepts consecutive plays while draws and hand reflow are running", async ({ page }) => {
     test.setTimeout(60_000);
-    const errors = failOnRuntimeErrors(page);
+
     await startBattleWithDeck(
       page,
       Array.from({ length: 12 }, () =>
@@ -125,12 +122,11 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
     );
     expect(overlap.secondDrawStart).toBeLessThan(overlap.firstDrawEnd!);
     await expect(visibleCards).toHaveCount(4);
-    expect(errors).toEqual([]);
   });
 
   test("end turn shows card transfers during transition", async ({ page }) => {
     test.setTimeout(60_000);
-    const errors = failOnRuntimeErrors(page);
+
     const flyingCards = page.locator("[data-flying-card]");
 
     await startBattleWithDeck(
@@ -151,12 +147,11 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
       })
       .toBeGreaterThan(0);
     await Promise.all([transfersDuringTurn, endTurnDone]);
-    expect(errors).toEqual([]);
   });
 
   test("playable hand cards stay colored during discard and draw transfers", async ({ page }) => {
     test.setTimeout(60_000);
-    const errors = failOnRuntimeErrors(page);
+
     const flyingCards = page.locator("[data-flying-card]");
     const visibleHandCards = page.locator('[aria-label^="Play "]:not(.opacity-0)');
 
@@ -224,6 +219,5 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
       return testWindow.drawGrayscaleFlashes ?? [];
     });
     expect(drawGrayscaleFlashes).toEqual([]);
-    expect(errors).toEqual([]);
   });
 });

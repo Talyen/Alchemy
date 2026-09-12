@@ -8,6 +8,7 @@ import {
   formatContextHotspotReport,
   parseContextHotspotArgs,
 } from "../../scripts/context-hotspots.mjs";
+import { CONTEXT_TASKS } from "../../scripts/lib/agent-context.mjs";
 import { writeCurrentRun } from "../../scripts/lib/current-run.mjs";
 
 describe("context hotspot reporting", () => {
@@ -21,12 +22,13 @@ describe("context hotspot reporting", () => {
     expect(() => parseContextHotspotArgs(["--last", "0"])).toThrow("--last must be a positive integer");
   });
 
-  it("ranks repeated commands by raw output and reports avoided exposure", () => {
+  it("ranks repeated commands by exposed output and reports avoided exposure", () => {
     const commands = aggregateCommandExposures(
       [
         {
           commandExposures: [
-            { key: "lint", label: "lint", status: 0, rawBytes: 8_000, exposedBytes: 0, rawLines: 100 },
+            { key: "lint", label: "lint", status: 0, rawBytes: 800_000, exposedBytes: 0, rawLines: 100 },
+            { key: "quiet", rawBytes: 2_000_000, exposedBytes: 0 },
             { key: "test", label: "test", status: 1, rawBytes: 2_000, exposedBytes: 1_000, rawLines: 20 },
           ],
         },
@@ -38,16 +40,16 @@ describe("context hotspot reporting", () => {
       ],
       1_000,
     );
-    expect(commands.map((command) => command.key)).toEqual(["lint", "test"]);
+    expect(commands.map((command) => command.key)).toEqual(["lint", "test", "quiet"]);
     expect(commands[0]).toMatchObject({
       occurrences: 2,
       failures: 1,
-      rawBytes: 12_000,
+      rawBytes: 804_000,
       exposedBytes: 2_000,
-      maxRawBytes: 8_000,
+      maxRawBytes: 800_000,
       maxExposedBytes: 2_000,
       overBudgetOccurrences: 0,
-      avoidedPercent: 83.3,
+      avoidedPercent: 99.8,
     });
   });
 
@@ -90,8 +92,25 @@ describe("context hotspot reporting", () => {
         ],
       });
       expect(report.inspectedRuns).toBe(1);
+      expect(report.discovery).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ task: "battle", paths: [], deferred: [] }),
+          expect.objectContaining({ task: "talent", paths: ["src/lib/game-data/talents/talent-pool-definitions.ts"] }),
+        ]),
+      );
+      expect(
+        report.discovery
+          .filter((row) => row.paths.length === 0)
+          .map((row) => row.task)
+          .sort(),
+      ).toEqual(Object.keys(CONTEXT_TASKS).sort());
+      for (const row of report.discovery) {
+        expect(row.emittedSectionBytes).toBeLessThanOrEqual(row.selectedBytes);
+        expect(row.emittedSectionBytes).toBeLessThanOrEqual(row.emittedBytes);
+        expect(row.emittedBytes).toBeLessThanOrEqual(12_000);
+      }
       expect(report.commands[0]).toMatchObject({ key: "typecheck", rawBytes: 5_000, avoidedPercent: 100 });
-      expect(formatContextHotspotReport(report)).toContain("TypeScript: 5,000 B raw / 0 B exposed");
+      expect(formatContextHotspotReport(report)).toContain("TypeScript: 0 B exposed / 5,000 B raw");
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }

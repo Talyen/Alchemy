@@ -6,7 +6,7 @@ import type { BattleSnapshot } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 import type { Screen } from "@/lib/routing";
 
-import { useLatestRef } from "../../shared/hooks";
+import { useLatestRef } from "../../shared/ui/use-latest-ref";
 import { driveAutoplay, isBattlePlaybackBlocked } from "./autoplay-driver";
 import { findFirstPlayableHandCard } from "./playable-hand";
 import type { BattlePlaybackPresentationGate } from "./presentation/use-hand-presentation";

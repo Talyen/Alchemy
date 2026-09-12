@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { LockedFeatureTooltip } from "./locked-feature-tooltip";
-import { PortaledTooltip } from "./portaled-tooltip";
-import type { PortaledTooltipSide } from "./portaled-tooltip-placement";
+import { LockedFeatureTooltip } from "./tooltips/locked-feature-tooltip";
+import { PortaledTooltip } from "./tooltips/portaled-tooltip";
+import type { PortaledTooltipSide } from "./tooltips/portaled-tooltip-placement";
 import { useHoverVisible } from "./use-hover-visible";
 import { cn } from "@/lib/utils";
 import { playUISound } from "@/lib/audio";

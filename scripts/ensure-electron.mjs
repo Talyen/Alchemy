@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { commandInvocation } from "./lib/command-invocation.mjs";
 
 import { spawnSync } from "node:child_process";
 import path from "node:path";
@@ -18,12 +19,11 @@ function envWithoutSkip() {
 
 function runNpmRebuildElectronSync() {
   console.log("Running npm rebuild electron...");
-  const result = spawnSync("npm", ["rebuild", "electron"], {
+  const result = spawnSync(...commandInvocation("npm", ["rebuild", "electron"]), {
     cwd: projectRoot,
     env: envWithoutSkip(),
     stdio: "inherit",
     timeout: 600_000,
-    shell: true,
   });
 
   if (result.error) {

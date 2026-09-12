@@ -17,8 +17,8 @@ import type { StatusChip } from "../../types";
 import { renderColoredKeywords } from "../card-description-ui";
 import { canonicalizeKeywordText } from "../../utils/string";
 import { KeywordTag } from "../keyword-tag";
-import { PortaledTooltip } from "../portaled-tooltip";
-import { TooltipBody, TooltipHeader } from "../tooltip-panel";
+import { PortaledTooltip } from "../tooltips/portaled-tooltip";
+import { TooltipBody, TooltipHeader } from "../tooltips/tooltip-panel";
 import { useHoverVisible } from "../use-hover-visible";
 
 function StatusChipShell({

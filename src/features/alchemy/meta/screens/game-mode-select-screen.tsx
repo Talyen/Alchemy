@@ -8,12 +8,12 @@ import {
   chooserRowGapClass,
   gameModeRowShellWidthClass,
 } from "@/features/alchemy/shared/config";
-import { TitledScreenShell } from "../../shared/ui/shared-ui";
+import { TitledScreenShell } from "../../shared/ui/layout-components";
 import { ChooserArtTile } from "../../shared/ui/chooser-art-tile";
 import { playUISound } from "@/lib/audio";
 import { renderUnlockMessage } from "../../shared/ui/unlock-text";
-import { TooltipBody, TooltipHeader } from "../../shared/ui/tooltip-panel";
-import { PortaledTooltip } from "../../shared/ui/portaled-tooltip";
+import { TooltipBody, TooltipHeader } from "../../shared/ui/tooltips/tooltip-panel";
+import { PortaledTooltip } from "../../shared/ui/tooltips/portaled-tooltip";
 import {
   getGameModeUnlockMessage,
   isGameModeUnlocked,

@@ -1,25 +1,12 @@
-// Smoke-test a production Vite build via `vite preview` (CI / release).
-import { spawn } from "node:child_process";
+// Smoke-test a production Vite build using an owned preview server.
+import { readFile, readdir } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { setTimeout as delay } from "node:timers/promises";
+import { preview } from "vite";
 import { isMainModule } from "./lib/is-main-module.mjs";
-import { waitForHttp } from "./lib/wait-for-http.mjs";
 import { parsePort, SMOKE_PREVIEW_PORT } from "./lib/dev-port.mjs";
-import { resolveViteBin } from "./lib/vite-bin.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const DEFAULT_PORT = SMOKE_PREVIEW_PORT;
-const TIMEOUT_MS = 30_000;
-const POLL_MS = 250;
-
-/**
- * @param {number} port
- */
-async function waitForPreview(port) {
-  const url = `http://127.0.0.1:${port}`;
-  return waitForHttp(url, { timeoutMs: TIMEOUT_MS, pollMs: POLL_MS });
-}
 
 /**
  * Return the executable resources that prove Vite's generated HTML points at
@@ -27,28 +14,36 @@ async function waitForPreview(port) {
  * @param {string} html
  * @param {string} documentUrl
  */
-export function extractBuildResourceUrls(html, documentUrl) {
-  const urls = new Set();
+export function extractBuildResources(html, documentUrl) {
+  const resources = new Map();
   for (const match of html.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/giu)) {
-    urls.add(new URL(match[1], documentUrl).href);
+    resources.set(new URL(match[1], documentUrl).href, "script");
   }
   for (const match of html.matchAll(/<link\b[^>]*\brel=["']stylesheet["'][^>]*\bhref=["']([^"']+)["'][^>]*>/giu)) {
-    urls.add(new URL(match[1], documentUrl).href);
+    resources.set(new URL(match[1], documentUrl).href, "style");
   }
-  return [...urls];
+  return [...resources].map(([url, type]) => ({ url, type }));
 }
 
-async function verifyBuildResources(html, documentUrl) {
-  const resourceUrls = extractBuildResourceUrls(html, documentUrl);
-  if (resourceUrls.length === 0) {
-    throw new Error("Preview HTML did not reference any executable build resources");
+export async function verifyBuildResources(html, documentUrl) {
+  const resources = extractBuildResources(html, documentUrl);
+  if (!resources.some(({ type }) => type === "script")) {
+    throw new Error("Preview HTML did not reference an application script");
   }
 
   await Promise.all(
-    resourceUrls.map(async (resourceUrl) => {
-      const response = await fetch(resourceUrl, { signal: AbortSignal.timeout(5_000) });
+    resources.map(async ({ url: resourceUrl, type }) => {
+      const response = await fetch(resourceUrl, {
+        signal: AbortSignal.timeout(5_000),
+        headers: { Connection: "close" },
+      });
       if (!response.ok) {
         throw new Error(`Build resource responded with HTTP ${response.status}: ${resourceUrl}`);
+      }
+      const contentType = response.headers.get("content-type")?.split(";", 1)[0].trim().toLowerCase();
+      const expectedTypes = type === "script" ? ["text/javascript", "application/javascript"] : ["text/css"];
+      if (!expectedTypes.includes(contentType)) {
+        throw new Error(`Build resource has unexpected content type ${contentType ?? "(missing)"}: ${resourceUrl}`);
       }
       const body = await response.arrayBuffer();
       if (body.byteLength === 0) {
@@ -58,105 +53,43 @@ async function verifyBuildResources(html, documentUrl) {
   );
 }
 
-export function watchChildProcess(child) {
-  let exited = false;
-  const exit = new Promise((resolve) => {
-    child.once("error", (error) => {
-      if (exited) return;
-      exited = true;
-      resolve({ kind: "error", error });
-    });
-    child.once("exit", (code, signal) => {
-      if (exited) return;
-      exited = true;
-      resolve({ kind: "exit", code, signal });
-    });
+async function verifyMusicResource(rootDir, documentUrl) {
+  const musicDir = join(rootDir, "public", "Music");
+  const track = (await readdir(musicDir)).filter((name) => name.endsWith(".mp3")).sort()[0];
+  if (!track) throw new Error("No authored MP3 music found for preview verification.");
+  const response = await fetch(new URL(`Music/${encodeURIComponent(track)}`, documentUrl), {
+    signal: AbortSignal.timeout(5_000),
+    headers: { Connection: "close" },
   });
-  return { exit, hasExited: () => exited };
-}
-
-function earlyExitError(label, outcome) {
-  if (outcome.kind === "error") return outcome.error;
-  const detail = outcome.signal ? `signal ${outcome.signal}` : `code ${outcome.code ?? "unknown"}`;
-  return new Error(`${label} exited before it became ready (${detail})`);
-}
-
-export async function waitForProcessReady(readiness, watcher, label) {
-  const result = await Promise.race([
-    readiness.then((value) => ({ kind: "ready", value })),
-    watcher.exit.then((outcome) => ({ kind: "stopped", outcome })),
-  ]);
-  if (result.kind === "ready") return result.value;
-  throw earlyExitError(label, result.outcome);
-}
-
-function signalChild(child, signal) {
-  try {
-    child.kill(signal);
-  } catch (error) {
-    if (!error || typeof error !== "object" || !("code" in error) || error.code !== "ESRCH") throw error;
+  if (!response.ok || response.headers.get("content-type")?.split(";", 1)[0] !== "audio/mpeg") {
+    throw new Error(`Music resource is unavailable or has unexpected content type: ${track}`);
+  }
+  const expected = await readFile(join(musicDir, track));
+  if (expected.length === 0 || !Buffer.from(await response.arrayBuffer()).equals(expected)) {
+    throw new Error(`Music resource differs from authored output: ${track}`);
   }
 }
 
-export async function stopChildProcess(child, watcher, { graceMs = 2_000, label = "child process" } = {}) {
-  if (watcher.hasExited()) return;
-
-  signalChild(child, "SIGTERM");
-  const exitedGracefully = await Promise.race([watcher.exit.then(() => true), delay(graceMs, false)]);
-  if (exitedGracefully) return;
-
-  signalChild(child, "SIGKILL");
-  const exitedForcefully = await Promise.race([watcher.exit.then(() => true), delay(graceMs, false)]);
-  if (!exitedForcefully) {
-    throw new Error(`${label} did not exit after SIGKILL`);
-  }
-}
-
-/**
- * @param {{ port?: number }} [options]
- */
 export async function smokePreview(options = {}) {
-  const port = parsePort(options.port ?? process.env.ALCHEMY_SMOKE_PORT ?? DEFAULT_PORT, "ALCHEMY_SMOKE_PORT");
-
-  const child = spawn(
-    process.execPath,
-    [resolveViteBin(), "preview", "--host", "127.0.0.1", "--port", String(port), "--strictPort"],
-    {
-      cwd: root,
-      stdio: "ignore",
-    },
-  );
-  const watcher = watchChildProcess(child);
-  let operationError;
-
+  const port =
+    options.port === 0
+      ? 0
+      : parsePort(options.port ?? process.env.ALCHEMY_SMOKE_PORT ?? SMOKE_PREVIEW_PORT, "ALCHEMY_SMOKE_PORT");
+  // preview() resolves only after our listener binds; an occupied port rejects.
+  const server = await preview({
+    root: options.rootDir ?? root,
+    preview: { host: "127.0.0.1", port, strictPort: true, open: false },
+  });
+  // One-shot requests must not pool sockets across preview server restarts.
   try {
-    await waitForProcessReady(waitForPreview(port), watcher, "vite preview");
-    const documentUrl = `http://127.0.0.1:${port}`;
-    const response = await fetch(documentUrl);
-    if (!response.ok) {
-      throw new Error(`Preview responded with HTTP ${response.status}`);
-    }
+    const documentUrl = `http://127.0.0.1:${server.httpServer.address().port}`;
+    const response = await fetch(documentUrl, { signal: AbortSignal.timeout(5_000), headers: { Connection: "close" } });
+    if (!response.ok) throw new Error(`Preview responded with HTTP ${response.status}`);
     await verifyBuildResources(await response.text(), documentUrl);
-  } catch (error) {
-    operationError = error;
+    await verifyMusicResource(options.rootDir ?? root, documentUrl);
+  } finally {
+    await server.close();
   }
-
-  let teardownError;
-  try {
-    await stopChildProcess(child, watcher, { label: "vite preview" });
-  } catch (error) {
-    teardownError = error;
-  }
-
-  if (operationError) {
-    if (teardownError) {
-      console.error(
-        `Failed to stop vite preview after its primary failure: ${teardownError instanceof Error ? teardownError.message : teardownError}`,
-      );
-    }
-    throw operationError;
-  }
-  if (teardownError) throw teardownError;
 }
 
 if (isMainModule(import.meta.url)) {

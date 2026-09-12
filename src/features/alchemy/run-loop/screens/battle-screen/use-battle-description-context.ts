@@ -1,13 +1,13 @@
 import { useMemo } from "react";
+import { getBattleCompanionDamageModifiers } from "@/lib/battle";
 import type { BattleScreenState } from "./types";
 
 export function useBattleDescriptionContext(state: BattleScreenState) {
   return useMemo(
     () => ({
       ...state.talentEffects,
-      companionDamageBonus: state.trinketEffects.companionDamageBonus,
-      companionDamageBuff: state.companionDamageBuff,
+      companionDamageModifiers: getBattleCompanionDamageModifiers(state),
     }),
-    [state.talentEffects, state.trinketEffects.companionDamageBonus, state.companionDamageBuff],
+    [state],
   );
 }

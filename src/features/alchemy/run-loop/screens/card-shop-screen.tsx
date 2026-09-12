@@ -3,9 +3,10 @@ import { Trash2 } from "lucide-react";
 
 import type { BattleCard } from "@/lib/game-data";
 
-import { PurchasableCardItem } from "../../shared/ui/purchasable-shop-item";
+import { PurchasableCardItem } from "../shop/ui/purchasable-shop-item";
 import { RemoveCardPanel } from "../../shared/ui/remove-card-panel";
-import { ScreenHeaderRow, ScreenShell, ServiceButton } from "../../shared/ui/shared-ui";
+import { ScreenHeaderRow, ScreenShell } from "../../shared/ui/layout-components";
+import { ServiceButton } from "../shop/ui/service-button";
 import { shopItemSlotKey } from "../shop/shop-slot-keys";
 import { GenericShopScreen } from "./generic-shop-screen";
 import { FadeSlot } from "../../shared/ui/use-fade";

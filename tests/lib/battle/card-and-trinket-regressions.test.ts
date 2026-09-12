@@ -11,7 +11,11 @@ import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 const drawingPotion = {
   ...cardById["acid-potion"]!,
   corrupted: true,
-  descriptionLines: ["Deal 3 Poison damage", "Draw a card", "Consume"],
+  descriptionLines: [
+    ...cardById["acid-potion"]!.descriptionLines.filter((line) => line !== "Consume"),
+    "Draw a card",
+    "Consume",
+  ],
   effects: [...cardById["acid-potion"]!.effects, { kind: "draw-cards" as const, amount: 1 }],
 };
 

@@ -24,8 +24,8 @@ import {
   trinketArtImageClass,
   trinketArtTileClass,
 } from "../config";
-import { DetailPopup } from "./card-popup";
-import { GearDetailPopup } from "./gear-detail-popup";
+import { DetailPopup } from "./tooltips/card-popup";
+import { GearDetailPopup } from "./tooltips/gear-detail-popup";
 import { InteractiveArtTile } from "./interactive-art-tile";
 import { TrinketItemTitle } from "./gear-item-title";
 

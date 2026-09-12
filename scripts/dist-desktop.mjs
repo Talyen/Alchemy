@@ -5,29 +5,15 @@ import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { assertSupportedTargets, targetToBuilderFlag } from "./lib/desktop-artifact.mjs";
 import { resolveSentryRelease } from "./lib/sentry-release.mjs";
+import { validateDesktopBuildConfig } from "./lib/desktop-build-config.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const config = JSON.parse(readFileSync(join(root, "steam/platforms.json"), "utf8"));
 const targets = config.targets ?? ["win"];
 assertSupportedTargets(targets);
-const sentryDsn = process.env.SENTRY_DSN?.trim() ?? "";
+const { sentryDsn, sentryUploadEnabled, steamAppId, azureFields } = validateDesktopBuildConfig();
 const sentryRelease = resolveSentryRelease();
-const sentryUploadFields = [
-  process.env.SENTRY_AUTH_TOKEN?.trim(),
-  process.env.SENTRY_ORG?.trim(),
-  process.env.SENTRY_PROJECT?.trim(),
-];
-const configuredSentryUploadFields = sentryUploadFields.filter(Boolean);
-if (configuredSentryUploadFields.length > 0 && configuredSentryUploadFields.length !== sentryUploadFields.length) {
-  throw new Error("Sentry source-map configuration is partial; configure token, organization, and project together.");
-}
-if (
-  process.env.CI_RELEASE === "true" &&
-  Boolean(sentryDsn) !== (configuredSentryUploadFields.length === sentryUploadFields.length)
-) {
-  throw new Error("Production crash reporting requires both the public DSN and complete source-map upload settings.");
-}
-if (process.env.CI_RELEASE === "true" && configuredSentryUploadFields.length === sentryUploadFields.length) {
+if (process.env.CI_RELEASE === "true" && sentryUploadEnabled) {
   const pending = [join(root, "dist")];
   while (pending.length > 0) {
     const directory = pending.pop();
@@ -61,24 +47,10 @@ if (process.env.CI_RELEASE === "true" && sentryDsn) {
   );
 }
 
-const steamAppId = process.env.STEAM_APP_ID?.trim();
 if (process.env.CI_RELEASE === "true") {
-  if (!steamAppId || steamAppId === "480") {
-    throw new Error("CI_RELEASE builds require STEAM_APP_ID to be set to the production Steam App ID (not 480).");
-  }
   builderArgs.push(`-c.extraMetadata.steamAppId=${steamAppId}`);
 }
-const azureFields = {
-  publisherName: process.env.AZURE_CODE_SIGNING_PUBLISHER_NAME?.trim(),
-  endpoint: process.env.AZURE_CODE_SIGNING_ENDPOINT?.trim(),
-  codeSigningAccountName: process.env.AZURE_CODE_SIGNING_ACCOUNT_NAME?.trim(),
-  certificateProfileName: process.env.AZURE_CODE_SIGNING_CERTIFICATE_PROFILE_NAME?.trim(),
-};
-const configuredAzureFields = Object.values(azureFields).filter(Boolean);
-if (configuredAzureFields.length > 0 && configuredAzureFields.length !== Object.keys(azureFields).length) {
-  throw new Error("Azure Trusted Signing configuration is partial; configure all four public signing values.");
-}
-if (configuredAzureFields.length > 0) {
+if (azureFields.publisherName) {
   for (const [key, value] of Object.entries(azureFields)) {
     builderArgs.push(`-c.win.azureSignOptions.${key}=${value}`);
   }

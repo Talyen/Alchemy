@@ -9,7 +9,7 @@ Battle logic tempted to mutate `BattleState` in place, use `Math.random()` / `Ma
 
 ## Why it matters
 
-`BattleState` is treated as immutable; every card/effect handler returns a new state. Combat magnitudes use `Math.round` (nearest integer), never `Math.floor`. Live combat draws the persisted `world` run stream; engine consumers use `getBattleRng(state)` while setup helpers own direct callback access. `Math.random()` is allowed only for a fresh run seed or presentation-only values that cannot affect gameplay or persisted state.
+`BattleState` is treated as immutable; every card/effect handler returns a new state. Combat magnitudes use `Math.round` (nearest integer), never `Math.floor`. Live combat draws the persisted `world` run stream; engine consumers use `getBattleRng(state)` while setup helpers own direct callback access. [Run randomness](../../../docs/ARCHITECTURE.md#run-randomness) owns the complete policy, including seed creation, presentation randomness, and the intentional Armory crafting/dev-spawn exception.
 
 ## Evidence
 

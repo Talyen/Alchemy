@@ -19,15 +19,17 @@ const KNOWN_FLAGS = new Set(["--prepare", "--optimize", "--sync", "--check", "--
 
 async function main() {
   const args = process.argv.slice(2);
-  if (args.includes("--help") || args.includes("-h")) {
-    printHelp();
-    return;
-  }
-  const unknown = args.filter((arg) => arg.startsWith("-") && !KNOWN_FLAGS.has(arg));
-  if (unknown.length > 0) {
-    console.error(`Unknown flag: ${unknown.join(", ")}`);
+  const unknown = args.filter((arg) => !KNOWN_FLAGS.has(arg));
+  const modes = ["--prepare", "--optimize", "--sync"].filter((flag) => args.includes(flag));
+  const conflicting = modes.length > 1 || (args.includes("--check") && modes.some((mode) => mode !== "--sync"));
+  if (unknown.length > 0 || conflicting) {
+    console.error(unknown.length > 0 ? `Unknown argument: ${unknown.join(", ")}` : "Conflicting asset modes.");
     printHelp();
     process.exitCode = 2;
+    return;
+  }
+  if (args.includes("--help") || args.includes("-h")) {
+    printHelp();
     return;
   }
   if (process.env.ALCHEMY_SKIP_ASSETS === "1") {
@@ -37,14 +39,6 @@ async function main() {
   const hasOptimize = args.includes("--optimize");
   const hasSync = args.includes("--sync");
   const check = args.includes("--check");
-  const hasPrepare = args.includes("--prepare") || args.length === 0;
-
-  if ((hasOptimize || args.includes("--prepare")) && (check || hasSync)) {
-    console.error("Conflicting flags: --optimize/--prepare cannot combine with --sync/--check.");
-    printHelp();
-    process.exitCode = 2;
-    return;
-  }
   if (check || hasSync) {
     await syncGenerated({ check });
     return;
@@ -53,10 +47,7 @@ async function main() {
     await runAllOptimizePipelines();
     return;
   }
-  if (hasPrepare) {
-    await prepareAssets();
-    return;
-  }
+  await prepareAssets();
 }
 
 if (isMainModule(import.meta.url)) {

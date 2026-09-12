@@ -4,7 +4,7 @@ import type { BattleCard, KeywordId, TalentXP, TrinketEntry } from "@/lib/game-d
 import type { GearInstance } from "@/lib/gear";
 import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
 
-import { ScreenDescription, TitledScreenShell } from "../../../shared/ui/shared-ui";
+import { ScreenDescription, TitledScreenShell } from "../../../shared/ui/layout-components";
 import { usePlasmaBaseline } from "../../../shared/ui/use-plasma-source";
 import { getPlasmaColorPair } from "@/features/alchemy/shared/config";
 import { FadeSlot } from "../../../shared/ui/use-fade";

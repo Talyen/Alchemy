@@ -101,6 +101,28 @@ describe.each([
     expect(fixture.transform).not.toHaveBeenCalled();
   });
 
+  it("checks freshness and rejects stale or orphan outputs without transforming or writing", async () => {
+    await optimize();
+    fixture.transform.mockClear();
+    vi.mocked(copyFile).mockClear();
+    vi.mocked(writeFile).mockClear();
+    await expect(optimize({ check: true })).resolves.toEqual({ ok: true });
+    expect(writeFile).not.toHaveBeenCalled();
+    await writeFile(path.join(source, `a.${input}`), "changed source");
+    vi.mocked(writeFile).mockClear();
+    await expect(optimize({ check: true })).resolves.toMatchObject({ ok: false });
+    expect(writeFile).not.toHaveBeenCalled();
+    expect(copyFile).not.toHaveBeenCalled();
+    expect(fixture.transform).not.toHaveBeenCalled();
+    await optimize();
+    const orphan = path.join(output, `orphan.${extension}`);
+    await writeFile(orphan, "orphan");
+    vi.mocked(writeFile).mockClear();
+    await expect(optimize({ check: true })).rejects.toThrow("Orphan prepared assets");
+    expect(await readFile(orphan, "utf8")).toBe("orphan");
+    expect(writeFile).not.toHaveBeenCalled();
+  });
+
   it("detects same-size source replacements with restored timestamps", async () => {
     const sourcePath = path.join(source, `a.${input}`);
     const fixed = new Date("2020-01-01T00:00:00Z");

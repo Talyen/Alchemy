@@ -49,7 +49,10 @@ describe("steam platform config", () => {
 
   it("supports optional Azure signing and future fail-closed releases", () => {
     const distDesktop = readFileSync(join(ROOT, "scripts/dist-desktop.mjs"), "utf8");
-    expect(distDesktop).toContain("AZURE_CODE_SIGNING_ENDPOINT");
+    expect(distDesktop).toContain("validateDesktopBuildConfig()");
+    expect(readFileSync(join(ROOT, "scripts/lib/desktop-build-config.mjs"), "utf8")).toContain(
+      "AZURE_CODE_SIGNING_ENDPOINT",
+    );
     expect(distDesktop).toContain("forceCodeSigning=true");
     expect(distDesktop).toContain('"electron-builder", "out", "cli", "cli.js"');
     expect(distDesktop).toContain('["--publish", "never"]');

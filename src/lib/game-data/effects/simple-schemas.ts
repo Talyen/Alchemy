@@ -27,6 +27,24 @@ export const gainGoldEffectDefinition = {
   }),
 } satisfies EffectKindDefinition<"gain-gold">;
 
+export const companionActionEffectDefinition = {
+  kind: "companion-action",
+  schema: z.object({ kind: z.literal("companion-action"), amount: PositiveAmountSchema }),
+} satisfies EffectKindDefinition<"companion-action">;
+
+export const randomDrawEffectDefinition = {
+  kind: "random-draw",
+  schema: z
+    .object({
+      kind: z.literal("random-draw"),
+      minAmount: PositiveAmountSchema,
+      maxAmount: PositiveAmountSchema,
+    })
+    .refine((data) => data.maxAmount >= data.minAmount, {
+      message: "random-draw maxAmount must be >= minAmount",
+    }),
+} satisfies EffectKindDefinition<"random-draw">;
+
 export const wishEffectDefinition = {
   kind: "wish",
   schema: z.object({

@@ -6,6 +6,8 @@ Use one or two representative tasks before promoting an instruction change that 
 
 [The task catalog](./tasks.json) pins a full base revision and five exact requests. Create separate disposable worktrees from that revision for before and after; never run an eval in the user's working checkout. Install the pinned dependencies with `npm ci`. Use the same model, reasoning effort, tool availability, task prompt and dirty-tree setup. Apply only the workflow change being evaluated to the candidate checkout; record that patch/revision in acceptance evidence. Supply the task prompt from this catalog to both variants, even if the base predates these task files.
 
+When a new cohort includes an uncommitted source snapshot, freeze that snapshot once and apply the candidate change to the frozen copy. Before launching, compare the source inventories and require that only the intended candidate paths differ. Never populate a candidate from live files while another session may be editing them; record the snapshot and candidate patch hashes.
+
 Use different variant names, but identical comparison settings. Put the per-variant instruction patch identity in acceptance evidence, not the shared settings. Run at least two trials per variant before claiming a reliable improvement. Use fresh verification (`ALCHEMY_VERIFY_FRESH=1`) in both variants for discovery comparisons; evaluate cache effectiveness separately with the same warm/cold procedure. Never compare an empty baseline event capture with an instrumented candidate as if that established savings.
 
 ## Record and compare
@@ -54,3 +56,5 @@ Keep older baselines immutable. When game evolution requires a new baseline, cha
 ## Recorded results
 
 [September 11 context-efficiency trials](./results/context-efficiency-2026-09-11.md) record category-level measurements, setup exclusions, and the rejected test-navigation prototype.
+
+[September 12 discovery-context trials](./results/context-discovery-2026-09-12.md) record battle/run-state adoption and the excluded concurrent-edit setup.

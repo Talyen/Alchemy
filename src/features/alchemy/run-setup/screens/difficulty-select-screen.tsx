@@ -16,7 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { KeywordToken, renderTokenizedDescription } from "../../shared/ui/card-description-ui";
 import { KeywordTag } from "../../shared/ui/keyword-tag";
-import { TitledScreenShell } from "../../shared/ui/shared-ui";
+import { TitledScreenShell } from "../../shared/ui/layout-components";
 import { Surface } from "../../shared/ui/surface";
 import {
   BUTTON_WIDTH_ACTION,
@@ -31,8 +31,8 @@ import {
   sectionTitleClass,
   surfaceSelectedRingClass,
 } from "@/features/alchemy/shared/config";
-import { PortaledTooltip } from "../../shared/ui/portaled-tooltip";
-import { TooltipBody } from "../../shared/ui/tooltip-panel";
+import { PortaledTooltip } from "../../shared/ui/tooltips/portaled-tooltip";
+import { TooltipBody } from "../../shared/ui/tooltips/tooltip-panel";
 import { renderUnlockMessage } from "../../shared/ui/unlock-text";
 import { useHoverVisible } from "../../shared/ui/use-hover-visible";
 import { useInteractiveCard } from "../../shared/ui/use-interactive-card";

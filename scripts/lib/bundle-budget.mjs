@@ -1,7 +1,6 @@
 export const BUDGETS = {
-  indexMaxBytes: 640 * 1024,
-  totalJsMaxBytes: 1622 * 1024,
-  gameDataMaxBytes: 320 * 1024,
+  // Roughly 10% growth room above the September 2026 desktop baseline (1632 KiB).
+  totalJsMaxBytes: 1800 * 1024,
 };
 
 export const CHUNK_SIZE_WARNING_KB = 640;

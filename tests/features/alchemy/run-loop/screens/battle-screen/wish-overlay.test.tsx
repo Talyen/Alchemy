@@ -3,9 +3,10 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resetEscapeStackForTests } from "@/app/escape-stack";
 import { WishOverlay } from "@/features/alchemy/run-loop/screens/battle-screen/wish-overlay";
-import type { BattleActionsProps, BattleScreenState } from "@/features/alchemy/run-loop/screens/battle-screen/types";
+import type { BattleActionsProps } from "@/features/alchemy/run-loop/screens/battle-screen/types";
 import { waitForArtwork } from "../../../../../helpers/artwork-test";
 import type { BattleCard } from "@/lib/game-data";
+import { patchBattleState } from "../../../../../fixtures/battle";
 
 vi.mock("@/features/alchemy/shared/ui/card-button", () => ({
   BattleCardButton: ({ ariaLabel, onClick }: { ariaLabel: string; onClick: () => void }) => (
@@ -35,12 +36,7 @@ const wishCard = {
 } as BattleCard;
 
 function renderWish(onWishChoice = vi.fn()) {
-  const battleState = {
-    wishOptions: [wishCard],
-    talentEffects: {},
-    trinketEffects: { companionDamageBonus: 0 },
-    companionDamageBuff: 0,
-  } as unknown as BattleScreenState;
+  const battleState = patchBattleState({ wishOptions: [wishCard] });
   const actions = { onWishChoice } as unknown as BattleActionsProps;
   return render(<WishOverlay open battleState={battleState} actions={actions} />);
 }
@@ -84,12 +80,7 @@ describe("WishOverlay", () => {
   it("resets the activation guard and accepts a queued Wish with the same card options", async () => {
     const user = userEvent.setup();
     const onWishChoice = vi.fn();
-    const battleState = {
-      wishOptions: [wishCard],
-      talentEffects: {},
-      trinketEffects: { companionDamageBonus: 0 },
-      companionDamageBuff: 0,
-    } as unknown as BattleScreenState;
+    const battleState = patchBattleState({ wishOptions: [wishCard] });
     const actions = { onWishChoice } as unknown as BattleActionsProps;
     const { rerender } = render(<WishOverlay open battleState={battleState} actions={actions} />);
 
@@ -109,12 +100,7 @@ describe("WishOverlay", () => {
   it("accepts a new choice after the overlay reopens", async () => {
     const user = userEvent.setup();
     const onWishChoice = vi.fn();
-    const battleState = {
-      wishOptions: [wishCard],
-      talentEffects: {},
-      trinketEffects: { companionDamageBonus: 0 },
-      companionDamageBuff: 0,
-    } as unknown as BattleScreenState;
+    const battleState = patchBattleState({ wishOptions: [wishCard] });
     const actions = { onWishChoice } as unknown as BattleActionsProps;
     const { rerender } = render(<WishOverlay open battleState={battleState} actions={actions} />);
 

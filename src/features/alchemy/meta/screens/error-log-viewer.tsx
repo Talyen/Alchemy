@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useErrorLogStore } from "@/features/alchemy/shared/stores/error-log-store";
-import { ScreenHeaderRow, ScreenShell } from "../../shared/ui/shared-ui";
+import { ScreenHeaderRow, ScreenShell } from "../../shared/ui/layout-components";
 
 export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
   const errors = useErrorLogStore((s) => s.errors);

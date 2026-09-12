@@ -43,13 +43,19 @@ const manifestPath = path.join(outputDir, MANIFEST_BASENAME);
 const SCHEMA_VERSION = ASSET_SCHEMA_VERSION;
 const TRANSFORM_CONCURRENCY = SOUND_TRANSFORM_CONCURRENCY;
 
-async function optimizeSound({ source, target }, storedEntry) {
+async function optimizeSound({ source, target }, storedEntry, check) {
   const sourcePath = path.join(sourceDir, source);
   const outputPath = path.join(outputDir, target);
   const ext = path.extname(source).toLowerCase();
   const settings = soundTransformSettings(ext);
-  const { fresh, entry } = await processFreshEntry(sourcePath, outputPath, settings, SCHEMA_VERSION, storedEntry, () =>
-    convertSound(sourcePath, outputPath, settings),
+  const { fresh, entry } = await processFreshEntry(
+    sourcePath,
+    outputPath,
+    settings,
+    SCHEMA_VERSION,
+    storedEntry,
+    () => convertSound(sourcePath, outputPath, settings),
+    { check },
   );
   return {
     message: `${target} ${fresh ? "already up to date" : settings.mode === "copy" ? "copied" : "converted"}`,
@@ -81,21 +87,21 @@ async function convertSound(sourcePath, outputPath, settings) {
   ]);
 }
 
-export async function optimizeSounds() {
-  if (!ffmpegPath) {
+export async function optimizeSounds({ check = false } = {}) {
+  if (!check && !ffmpegPath) {
     const msg = "ffmpeg-static binary not found. Run: npm install";
     console.error(msg);
     return { ok: false, error: msg };
   }
 
-  await mkdir(outputDir, { recursive: true });
+  if (!check) await mkdir(outputDir, { recursive: true });
   await validateSoundAssetRegistry({ sourceDir });
 
   const { previousManifest, nextManifest, results, failed } = await processManifestEntries({
     entries: generatedSoundAssets,
     manifestPath,
     concurrency: TRANSFORM_CONCURRENCY,
-    processEntry: optimizeSound,
+    processEntry: (asset, storedEntry) => optimizeSound(asset, storedEntry, check),
     handleError: targetErrorHandler,
   });
 
@@ -110,7 +116,7 @@ export async function optimizeSounds() {
   const generatedEntries = Object.fromEntries(
     Object.entries(nextManifest).map(([name, entry]) => [name, { ...entry, owner: SOUND_ENTRY_OWNERS.generated }]),
   );
-  const { mp3Entries, curatedOggEntries, mp3Failures } = await ensureMp3Fallbacks(previousManifest, managedOggs);
+  const { mp3Entries, curatedOggEntries, mp3Failures } = await ensureMp3Fallbacks(previousManifest, managedOggs, check);
   if (mp3Failures.length > 0) {
     console.warn("Skipping sound manifest write and orphan sweep because MP3 fallback conversion failed.");
     return { ok: false, error: mp3Failures.join(" ") };
@@ -118,13 +124,14 @@ export async function optimizeSounds() {
   const completeManifest = { ...generatedEntries, ...curatedOggEntries, ...mp3Entries };
   await commitManifest(manifestPath, completeManifest, {
     outputDir,
+    check,
     manifestBasename: MANIFEST_BASENAME,
     label: "sound file",
   });
   return { ok: true };
 }
 
-async function ensureMp3Fallbacks(previousManifest, managedOggs) {
+async function ensureMp3Fallbacks(previousManifest, managedOggs, check) {
   const files = new Set(await readdir(outputDir));
   const oggs = [...managedOggs, ...curatedSoundFiles];
   /** @type {Record<string, import("./lib/asset-manifest-cache.mjs").ManifestEntry>} */
@@ -145,6 +152,7 @@ async function ensureMp3Fallbacks(previousManifest, managedOggs) {
         const storedOgg = previousManifest[ogg];
         const oggEntry = await resolveSourceHash(oggPath, CURATED_SOUND_SETTINGS, SCHEMA_VERSION);
         const oggFresh = await isOutputFresh(oggPath, storedOgg, oggEntry.hash);
+        if (check && !oggFresh) throw new Error(`Stale curated sound: ${oggPath}`);
         curatedOggEntries[ogg] = {
           ...(oggFresh ? storedOgg : await withOutputHash(oggEntry, oggPath)),
           owner: SOUND_ENTRY_OWNERS.curated,
@@ -152,6 +160,7 @@ async function ensureMp3Fallbacks(previousManifest, managedOggs) {
       }
 
       if (!(await isOutputFresh(mp3Path, stored, sourceEntry.hash))) {
+        if (check) throw new Error(`Stale prepared asset: ${mp3Path}`);
         await execFileAsync(ffmpegPath, [
           "-y",
           "-i",

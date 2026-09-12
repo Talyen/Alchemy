@@ -7,7 +7,8 @@ import {
   getBossEnemy,
   getBossTextShineColors,
 } from "@/features/alchemy/shared/config";
-import { DestinationChoices, TitledScreenShell } from "../../shared/ui/shared-ui";
+import { DestinationChoices } from "../../shared/ui/destination-choices";
+import { TitledScreenShell } from "../../shared/ui/layout-components";
 import { ShineText } from "../../shared/ui/shine-text";
 import { DESTINATIONS, type Destination } from "@/lib/routing";
 import type { RewardState } from "@/lib/active-run-session";

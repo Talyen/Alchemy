@@ -9,7 +9,7 @@ import {
   type CharacterId,
 } from "@/features/alchemy/shared/config/game-data-catalog";
 import { CyclingShineBorder } from "../../shared/ui/cycling-shine-border";
-import { HeroTooltip } from "../../shared/ui/hero-tooltip";
+import { HeroTooltip } from "../../shared/ui/tooltips/hero-tooltip";
 import { TitledScreenShell } from "../../shared/ui/layout-components";
 import { Surface } from "../../shared/ui/surface";
 import { useHoverVisible } from "../../shared/ui/use-hover-visible";

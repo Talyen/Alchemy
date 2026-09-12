@@ -16,7 +16,8 @@ import {
 import { cn } from "@/lib/utils";
 
 import { TalentOverviewGrid } from "../talents/talent-overview-grid";
-import { ConfirmationDialog, TitledScreenShell } from "../../shared/ui/shared-ui";
+import { ConfirmationDialog } from "../../shared/ui/dialogs";
+import { TitledScreenShell } from "../../shared/ui/layout-components";
 import { ChromeIconButton } from "../../shared/ui/chrome-icon-button";
 import { usePlasmaInteraction } from "../../shared/ui/use-plasma-source";
 import { getPlasmaColorPair, getPlasmaKeywordsForTalent } from "../../shared/config";

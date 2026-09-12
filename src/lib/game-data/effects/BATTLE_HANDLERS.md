@@ -18,11 +18,17 @@ Add the union member in [`src/lib/game-data/types.ts`](../types.ts), a schema de
 - `restore-mana` may opt into `allowOverflow` for temporary extra Mana (Mana Moth). Omission preserves capped restoration; restoration never removes existing overflow. This does not add Mana Crystals.
 - `restore-mana` with `ifEnemyFrozen` compares live `enemyCC.freezeSkipTurns` against the frozen `enemyFreezeSkipTurnsAtStart` — so a `damage`→`freeze` earlier on the same card enables the restore, but only if the threshold was crossed by that card's own effects.
 - `damage` with `equalToBlock`/`equalToArmor`/`equalToGoldPercent` intentionally bypasses per-type flat/gear/talent modifiers — only `forgeBonus` and `applyConsumeBonus` apply; this matches card text for Tithe / Blessed Aegis.
+- `damage.equalToForge` reads live Forge as the base, without adding Forge a second time through Forge-to-Burn talents. It follows the other equal-resource effects' flat-modifier bypass and normal hit multipliers. Burning Blade resolves this Burn hit before its Physical hit; ordinary Forge spending still applies. Enemies read their own already room-scaled Forge without scaling that resource again.
+- `damage.ignoreArmor` bypasses only the target's Armor reduction. Block, Dodge, other mitigation, normal Armor decay, and gear reactions still apply, for both heroes and enemies.
+- `remove-enemy-armor.removeAll` removes the target's current Armor before subsequent effects. Its retained `amount` field is ignored and is not an editable numeric target. Omission preserves fixed-amount removal for saved cards.
+- `random-draw` rolls a uniformly distributed integer between its inclusive bounds using the world RNG, then uses ordinary drawing, reshuffling, and hand limits. Roll the Dice has fixed bounds 1–6; its die faces are rules rather than upgradeable magnitudes.
+- `companion-action` invokes the existing Companion resolver once per `amount`, including utility actions, Bond bonuses, and reactions. No Companion is a no-op; victory or hero defeat prevents later actions. These actions do not count as additional card plays. Pack Tactics' implicit “twice” is an editable amount, like “Draw a card”; Whistle still grants its separate action once per card play.
 - `random-damage` enforces `maxAmount >= minAmount` at schema level and throws loudly on inverted bounds at runtime. Corruption clamps either bound at the other bound, keeping the description and effect valid even after repeated mutations. Direct random-damage cards trigger the same once-per-card enemy retaliation as direct damage cards.
 - `damage` cannot have both `doubleIfEnemyBurning` and `tripleIfEnemyNotBurning`.
 - `gain-gold` with `ifEnemyStunned` fizzles unless the enemy is stunned at all.
 
 - Numeric upgrades and corruption share `updateCardNumericValue` in `src/lib/corruption/numeric.ts`. Targets address nested scheduled effects and both chance branches. Chance paths index success effects followed by failure effects; probabilities and schedule durations are not editable magnitudes. A fixed Random damage amount displayed as one number updates both bounds together. A scheduled effect sharing one authored amount with an immediate effect changes with that amount; separately authored delayed amounts change independently. “Draw a card” represents one editable draw. Keep original catalog effects immutable.
+- Immediate and delayed damage may share a description line: “Deal 1 Freeze damage now and 3 at the start of your next turn” retains two independently editable magnitudes. “Deal 2 Stun damage now and at the start of your next turn” shares one magnitude across both hits.
 
 ## Enemy abilities
 
@@ -40,6 +46,6 @@ retaining existing encounter exceptions. Selection and trait limits are owned by
 
 - [`tests/lib/battle/effect-handlers-registry.test.ts`](../../../../tests/lib/battle/effect-handlers-registry.test.ts) — every non-recursive kind has a handler.
 - [`tests/lib/battle/apply-effects-*.test.ts`](../../../../tests/lib/battle/) — canonical apply-path coverage by concern (`apply-effects.test.ts`, `apply-effects-mana.test.ts`, `apply-effects-utility.test.ts`, `apply-effects-special.test.ts`).
-- [`tests/lib/battle/effect-handlers.test.ts`](../../../../tests/lib/battle/effect-handlers.test.ts) — handler contract (mismatched kind throws), Death's Door, status/CC, cleanse/multiply, `convertCurrentMana` percent semantics, and `ifEnemyFrozen` branches.
+- [`tests/lib/battle/effect-handlers.test.ts`](../../../../tests/lib/battle/effect-handlers.test.ts) — handler contract (mismatched kind throws), Death's Door, status/CC, cleanse/multiply, `convertCurrentMana` Block-per-Mana semantics, and `ifEnemyFrozen` branches.
 - [`tests/lib/game-data/effects-registry.test.ts`](../../../../tests/lib/game-data/effects-registry.test.ts) — every kind has a schema, refines reject contradictory flags, and conditional fields parse.
 - [`tests/lib/game-data/descriptions-match-effects.test.ts`](../../../../tests/lib/game-data/descriptions-match-effects.test.ts) — card `descriptionLines` reflect their `effects`.

@@ -14,6 +14,25 @@ import {
 
 const require = createRequire(import.meta.url);
 
+/** Inspect the artifact itself, including assets that JavaScript imports cannot validate. */
+export function verifyPackagedRenderer(archivePath, musicDirectory = resolve("public/Music")) {
+  const asar = require("@electron/asar");
+  const entries = asar.listPackage(archivePath).map((entry) => entry.replaceAll("\\", "/").replace(/^\//u, ""));
+  if (entries.some((entry) => entry.endsWith(".map"))) {
+    throw new Error("Source maps were found inside app.asar.");
+  }
+  if (!entries.includes("dist/index.html")) throw new Error("Packaged renderer is missing dist/index.html.");
+  const music = readdirSync(musicDirectory).filter((name) => name.endsWith(".mp3"));
+  if (music.length === 0) throw new Error("No authored music found for package verification.");
+  for (const name of music) {
+    const entry = `dist/Music/${name}`;
+    if (!entries.includes(entry)) throw new Error(`Packaged music is missing: ${entry}`);
+    if (!asar.extractFile(archivePath, entry).equals(readFileSync(join(musicDirectory, name)))) {
+      throw new Error(`Packaged music differs from authored output: ${entry}`);
+    }
+  }
+}
+
 /** Throw when a release git tag does not match the package.json version. */
 export function verifyReleaseVersionTag(tag, version) {
   if (!tag) throw new Error("RELEASE_TAG or GITHUB_REF_NAME is required");
@@ -63,6 +82,7 @@ export async function verifyDesktopPackage() {
 
   const packagedAsar = join(appDirectory, "resources", "app.asar");
   if (!existsSync(packagedAsar)) throw new Error("Packaged application is not stored in app.asar.");
+  verifyPackagedRenderer(packagedAsar);
   if (readdirSync(appDirectory).some((name) => name.endsWith(".map"))) {
     throw new Error("Source maps were found beside the packaged executable.");
   }
@@ -130,6 +150,6 @@ export async function verifyDesktopPackage() {
   }
 
   console.log(
-    "Packaged Electron fuses, ASAR boundary, Steamworks natives, source maps, secrets, and signing state verified.",
+    "Packaged renderer, music, Electron fuses, ASAR boundary, Steamworks natives, source maps, secrets, and signing state verified.",
   );
 }

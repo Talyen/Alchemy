@@ -29,6 +29,7 @@ export function commandExposure({
   budgetBytes = ROUTINE_EXPOSURE_BUDGET_BYTES,
 }) {
   const raw = outputStats(result?.output);
+  if (Number.isFinite(result?.outputBytes)) raw.bytes = result.outputBytes;
   const exposed = outputStats(exposedOutput);
   const omittedBytes = Math.max(0, raw.bytes - exposed.bytes);
   const normalizedBudget = budgetBytes == null ? null : Math.max(0, Number(budgetBytes) || 0);
@@ -198,7 +199,7 @@ export function failureSummary(output, maxBytes = 4_000) {
 export function writeFailureDigest(directory, command, result, runId, index) {
   fs.mkdirSync(directory, { recursive: true });
   const stem = `${String(index + 1).padStart(2, "0")}-${command.key}`;
-  const logPath = writeDiagnosticLog(directory, stem, result.output);
+  const logPath = result.logPath ?? writeDiagnosticLog(directory, stem, result.output);
   const digestPath = path.join(directory, `${stem}.md`);
   const excerpt = failureSummary(result.output).replaceAll("```", "``\u200b`");
   fs.writeFileSync(
@@ -207,7 +208,7 @@ export function writeFailureDigest(directory, command, result, runId, index) {
       `# Verification failure: ${command.label}`,
       "",
       `- Run: \`${runId}\``,
-      `- Full log: ${path.basename(logPath)} (L numbers refer to this log)`,
+      `- Full log: ${path.basename(logPath)} (${result.outputTruncated ? "L numbers refer to the bounded capture; search the full log for omitted output" : "L numbers refer to this log"})`,
       `- Command key: \`${command.key}\``,
       `- Exit: \`${result.status ?? "unknown"}\``,
       `- Duration: \`${(result.elapsedMs / 1000).toFixed(1)}s\``,

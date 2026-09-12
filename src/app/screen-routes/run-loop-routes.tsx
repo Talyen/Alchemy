@@ -1,7 +1,7 @@
 import { labyrinthCampfireHealing } from "@/lib/content-systems/labyrinth/room-rules";
 import { useEffect, useRef, type ReactNode } from "react";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
-import { EnemyInspectionOverlay } from "@/features/alchemy/shared/ui/enemy-inspection-overlay";
+import { EnemyInspectionOverlay } from "@/features/alchemy/shared/ui/inspection/enemy-inspection-overlay";
 import {
   readCardAnimationInProgress,
   readPlaybackPresentationGate,

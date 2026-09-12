@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { readFileSync, rmSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { captureSourceDigest, parseCheckArgs, runCheck } from "../../scripts/check.mjs";
@@ -11,11 +11,18 @@ describe("source-aware completion gate", () => {
   beforeEach(() => {
     runId = `check-test-${randomUUID()}`;
     vi.stubEnv("ALCHEMY_RUN_ID", runId);
+    vi.stubEnv("ALCHEMY_CHECK_SKIP_BUILD", "");
   });
 
   afterEach(() => {
     vi.unstubAllEnvs();
     rmSync(join(process.cwd(), "reports/runs", runId), { recursive: true, force: true });
+  });
+
+  it("selects identical package gates regardless of path spelling", () => {
+    for (const file of ["./package.json", resolve("package.json"), "scripts/../package.json"]) {
+      expect(parseCheckArgs([file])).toEqual(["package.json"]);
+    }
   });
 
   it("runs documentation checks without unit, build, or browser work", async () => {
@@ -44,7 +51,13 @@ describe("source-aware completion gate", () => {
       captureDigest: () => ({ head: "abc", hash: "same" }),
     });
     expect(code).toBe(0);
-    expect(calls).toEqual(["changed-path verification", "CI static checks", "web build", "preview smoke"]);
+    expect(calls).toEqual([
+      "changed-path verification",
+      "CI static checks",
+      "web build",
+      "web bundle budget",
+      "preview smoke",
+    ]);
   });
 
   it("checks the lockfile only for package changes", async () => {
@@ -78,6 +91,44 @@ describe("source-aware completion gate", () => {
     expect(calls).toContain("web build");
     expect(calls).toContain("preview smoke");
     expect(calls).toContain("desktop build");
+    expect(calls[calls.indexOf("web build") + 1]).toBe("web bundle budget");
+    expect(calls[calls.indexOf("desktop build") + 1]).toBe("desktop bundle budget");
+  });
+
+  it.each(["web bundle budget", "desktop bundle budget"])("stops on a failed %s", async (budget) => {
+    const calls: string[] = [];
+    const code = await runCheck(["vite.config.ts"], {
+      runner: vi.fn((label: string, command: string, args: string[]) => {
+        calls.push(label);
+        if (label === budget) {
+          expect(command).toBe("npm");
+          expect(args).toEqual(["run", "check:bundle"]);
+          return 1;
+        }
+        return 0;
+      }),
+      captureDigest: () => ({ head: "abc", hash: "same" }),
+    });
+    expect(code).toBe(1);
+    expect(calls.at(-1)).toBe(budget);
+    if (budget === "web bundle budget") {
+      expect(calls).not.toContain("preview smoke");
+      expect(calls).not.toContain("desktop build");
+    }
+  });
+
+  it("skips budgets together with builds", async () => {
+    vi.stubEnv("ALCHEMY_CHECK_SKIP_BUILD", "1");
+    const calls: string[] = [];
+    const code = await runCheck(["vite.config.ts"], {
+      runner: vi.fn((label: string) => {
+        calls.push(label);
+        return 0;
+      }),
+      captureDigest: () => ({ head: "abc", hash: "same" }),
+    });
+    expect(code).toBe(0);
+    expect(calls).toEqual(["changed-path verification", "CI static checks"]);
   });
 
   it("lets static checks own docs:check on executable changes only", async () => {

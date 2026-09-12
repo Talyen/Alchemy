@@ -4,7 +4,9 @@ import { cn } from "@/lib/utils";
 import { ErrorLogViewer } from "./error-log-viewer";
 
 import { FadeSlot } from "../../shared/ui/use-fade";
-import { ConfirmationDialog, PageLayout, ScreenHeaderRow, ScreenShell, TabBar } from "../../shared/ui/shared-ui";
+import { ConfirmationDialog } from "../../shared/ui/dialogs";
+import { PageLayout, ScreenHeaderRow, ScreenShell } from "../../shared/ui/layout-components";
+import { TabBar } from "../../shared/ui/tab-bar";
 import {
   AudioOptionsPanel,
   DisplayOptionsPanel,

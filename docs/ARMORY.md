@@ -30,7 +30,7 @@ contract and controller seams.
 - Definitions own compatible slots, hand rules, affinity keywords, salvage value, and presentation metadata. One-handed melee weapons and wands may occupy `main-hand` or `off-hand`; two-handers and ranged weapons stay main-hand only (ranged pairs with a quiver off-hand).
 - Hand conflicts are resolved when equipping a hand slot; equipping body armor or accessories preserves valid weapon/off-hand pairs. Removing, salvaging, or transferring a ranged weapon also unequips its unsupported Quiver without removing the Quiver from inventory. The same cleanup repairs unsupported saved Quivers.
 - Gear slots are `main-hand`, `off-hand`, `body`, `left-accessory`, and `right-accessory`. Both Accessory slots accept Rings or Amulets. The Armory lays these out over `left-accessory | trinket | right-accessory`; the dedicated Trinket slot accepts only permanent Trinkets.
-- **Unique** is a third Gear rarity (alongside basic and astral). Each of the 29 base items has exactly one named Unique with one exclusive signature and three fixed standard supporting affixes. Supporting rolls always use the standard Unique/Astral maximum from the affix catalog; the signature has its own fixed magnitude. Generation, tooltips, manifests, and saved-item normalization share these canonical affixes. Existing items keep their instance ID when supporting values change. Crafting currencies cannot modify uniques. Unique salvage follows the crafting and homestead salvage definitions. Collection tracks discovered unique definition IDs independently of current inventory, so salvage does not hide an already-found unique.
+- **Unique** is a third Gear rarity (alongside basic and astral). Each base item has exactly one named Unique with one exclusive signature and three fixed standard supporting affixes. Supporting rolls always use the standard Unique/Astral maximum from the affix catalog; the signature has its own fixed magnitude. Generation, tooltips, manifests, and saved-item normalization share these canonical affixes. Existing items keep their instance ID when supporting values change. Crafting currencies cannot modify uniques. Unique salvage follows the crafting and homestead salvage definitions. Collection tracks discovered unique definition IDs independently of current inventory, so salvage does not hide an already-found unique.
 - Uniqueness is inventory-scoped: a unique definition is excluded from shops and rewards while any character still holds an instance. Salvaging it returns that definition to the drop pool. Reward and shop screens never offer the same unique twice, and never pair a unique with another item of the same base item.
 - Random loot uses `src/lib/loot/`: source weights, depth curves, and account multipliers live together in `src/lib/game-constants/run-rewards.ts`. Combat, Wildwood, equipment shops, and random mystery Gear resolve these weights before choosing rewards. Boons, crafting, and explicitly promised items are separate from permanent-Trinket eligibility.
 - Depth counts locations equally. Campaign includes its opening battle, then destinations across Acts (first boss: depth 9). A pending destination claim counts during initial shop/event generation, keeping depth unchanged when navigation commits that visit. Labyrinth counts cleared non-entrance rooms across floors plus the current pending room, including side rooms and excluding revisits. Wildwood uses its encounter ordinal. `shared/stores/loot-progress.ts` adapts the existing saved state; rewards, follow-ups, and shop refreshes never advance depth.
@@ -38,7 +38,7 @@ contract and controller seams.
 - Reward screens roll one group from summed eligible weights, then roll each Gear choice independently from those same weights. Cards, Trinkets, and Boons stay grouped. Unavailable pools are excluded before sampling and eligibility is recomputed after every Gear choice. An empty premium/Gear-only source uses Basic Gear; cards are the terminal combat fallback when Gear is unavailable. Bosses can therefore award Basic Gear before premium eligibility. Narrow equipment-shop pools may repeat ordinary bases to fill shelves, but never repeat Uniques or pair a Unique with another offering of its base.
 - Newly offered Trinket shops and Astral-guaranteeing events/modifiers respect the same eligibility gates. Labyrinth generation substitutes an equipment shop for an ineligible Trinket shop and uses the minimum reachable room ordinal when assigning Masterwork. Existing maps, saved offers, and explicitly promised Astrals retain their contents; hydration never rerolls or reapplies eligibility. Entering an already-promised Trinket shop initializes its shelf even on an older shallow map; saved shelves remain purchasable, but refreshing is blocked until Trinkets are eligible.
 
-Astral instance titles and borders derive their shine keywords from the rolled affix descriptions, using the same keyword recognition as tooltip text (`src/lib/keyword-text.ts`). Base affinity only prioritizes present keywords for the three-keyword title limit; it never adds absent keywords. Max-roll Astral and Unique affix names use the first three distinct keywords from their own description, including aliases such as Stunned, Frozen, and Consumed. Tooltip entries carry affix identity and normalized value together so description text and max-roll shine cannot diverge. Text uses each keyword’s primary color with a faded stop; borders retain full palettes. Definition-only previews use base affinities, and Unique item titles and borders retain their gold palette. Gear hover backgrounds use only actual affix keywords, with neutral gray for no recognized keywords; Unique gear uses the same gold hex pair in inventory, equipped slots, and collection. CSS text fades must not feed the hex-only background renderer.
+Presentation follows [UI item shine](./UI.md#item-shine). Pass affix identity and normalized values together so tooltip text and max-roll shine use the same item data.
 
 ### Loot tuning
 
@@ -81,7 +81,7 @@ Homestead mutation timing remains unchanged.
 
 ### Read paths
 
-- **`Armory lock`** — computed from generated Gear or permanent Trinket ownership via `useIsArmoryLocked()` in `gear-store.ts`; `MenuScreen` receives a `locked` prop, it does not read the store. Combat preserves browsing but makes each battling hero’s Armory tab read-only; see [Combat equipment restrictions](#combat-equipment-restrictions). Blocked attempts on a reserved hero’s tab play the error sound and show a red Combat-locked message; reserved items show a lock with a reason naming the reserved hero while preserving inspection.
+- **`Armory lock`** — computed from generated Gear or permanent Trinket ownership via `useIsArmoryLocked()` in `gear-store.ts`; `MenuScreen` receives a `locked` prop, it does not read the store. Combat preserves browsing but makes each battling hero’s Armory tab read-only; see [Combat equipment restrictions](#combat-equipment-restrictions).
 - **`ArmoryScreen`** — reads Gear, Trinket ownership/equipment, and crafting currencies via `useGearArmorySlice`, combat reservations via `useGearCombatRestrictions`, plus finished-run and active-run reads bundled in `useArmoryController`.
 - **`useArmoryController`** — facade hook that bundles the read-only slice plus the mutation callbacks.
 - **Battle** — `computeGearManifest` is applied at battle start and rebound onto the live `BattleState` whenever gear, talents, or homestead change.
@@ -96,11 +96,11 @@ There is no external `useGearStore` hook. Gear mutations run against a `GearStor
 | Outside a run command (Armory screen, dev spawn)        | `dispatchGearMutationWithRunHealthSync({ mutate, syncRunHealth? })` |
 | Inside an existing command (shop buy, rewards, mystery) | `mutateGearWithRunHealthSync(draft, { mutate, syncRunHealth? })`    |
 
-HP sync runs through `rebindLiveRunMeta` when `syncRunHealth ?? draft.session.hasActiveRun`. `mutate` receives a `GearStore` handle and may edit any character's loadout (for example Armory browsing another hero while a run is in progress): `(state) => state.equip(loadoutCharacterId, slot, instance)`.
+After a Gear change, `rebindLiveRunMeta` synchronizes health when a run is active, unless the caller explicitly overrides `syncRunHealth`. Unchanged or rejected mutations do not rebind. `mutate` receives a `GearStore` handle and may edit any character's loadout (for example Armory browsing another hero while a run is in progress): `(state) => state.equip(loadoutCharacterId, slot, instance)`.
 
 1. **Equip / Unequip** — `dispatchGearMutationWithRunHealthSync({ mutate: (state) => state.equip(characterId, slot, instance) })` and `(state) => state.unequip(characterId, slot)`.
 2. **Salvage** — preview with `computeSalvageYield` (definition `salvageValue` homestead materials + crafting currencies drawn from the existing rarity table using a seed derived from the stable instance ID). Reopening, reloading, and changing affixes do not reroll rewards; upgrading rarity uses the new rarity table. Confirm passes that frozen yield into `dispatchGearSalvageWithMaterialGrant((state) => state.salvage(instanceId, { yield }))`, which HP-syncs, then grants homestead materials in the same command via `awardMaterialsDuringRun` (active run) or `addMaterials` (meta). Confirm always pays exactly the preview.
-3. **Crafting-currency apply** — `(state) => state.applyCurrency(currencyId, instanceId, { rng })` mutates the item's affixes via `applyCraftingCurrency`.
+3. **Crafting-currency apply** — `(state) => state.applyCurrency(currencyId, instanceId, { rng })` mutates the item's affixes via `applyCraftingCurrency`. The controller injects profile-lifetime randomness, defaulting to `Math.random`, for crafting and dev spawning; neither consumes a run RNG stream. Salvage uses its stable instance-derived seed instead.
 4. **Add new instance (rewards / shop / dev spawn)** — Armory/dev spawn: `dispatchGearMutationWithRunHealthSync({ mutate: (state) => state.addInstance(instance, characterId) })`. Shop and in-run reward commands already own a draft: `mutateGearWithRunHealthSync(draft, { mutate: (gear) => gear.addInstance(instance, characterId) })`.
 5. **Permanent Trinkets** — use `addTrinket`, `equipTrinket`, and `unequipTrinket` on the Gear aggregate. Rewards and the Trinket Shop add ownership inside their existing run-session command; acquisition never auto-equips or creates a Boon.
 
@@ -110,14 +110,7 @@ Base item construction owns homestead salvage materials; rarity increases quanti
 
 ### `useArmoryController` facade
 
-The route wrapper (`src/app/screen-routes/meta-routes.tsx`) does not mutate gear directly. It consumes `useArmoryController()`, which:
-
-- Reads `inventories`, `loadouts`, and `craftingCurrencies` from `useGearArmorySlice`.
-- Routes `equip`/`unequip`/`equipTrinket`/`unequipTrinket` through `dispatchGearMutationWithRunHealthSync` (HP-sync side effect) and flushes the save on success only — failed taps are feedback-only, no save.
-- Routes `applyCurrency` through `dispatchGearMutationWithRunHealthSync` and flushes the save on success.
-- Routes `salvage` through `dispatchGearSalvageWithMaterialGrant` (HP-syncs once, then grants homestead materials without a second rebind) and flushes the save on success.
-- Provides a dev-only `onSpawnDevGear` that calls `generateDevRandomGearInstance` through `dispatchGearMutationWithRunHealthSync` and flushes the save.
-- Reports derived `combatRestrictions` by character and reserved Gear/Trinket ID, plus `finishedRunCharacters`, for the screen.
+The route wrapper (`src/app/screen-routes/meta-routes.tsx`) consumes `useArmoryController` for the [read paths](#read-paths) and [write paths](#write-paths) above. The facade supplies combat reservations and finished-run characters, routes mutations through the appropriate Gear wrapper, and calls `flushSaveAfterGearMutation` only after success. Rejected taps remain feedback-only. Dev spawning uses `generateDevRandomGearInstance` through the same mutation and flush boundary.
 
 ## Battle integration
 
@@ -153,9 +146,8 @@ Do not duplicate the current schema number here. [`MIGRATIONS.md`](../src/featur
 
 ## Tests
 
-Use the path-scoped Gear gate in
-[`CONTRIBUTING.md`](../CONTRIBUTING.md#what-to-run-when-you-change) rather than
-maintaining a second exhaustive command here. Test ownership is split between
-pure Gear rules, aggregate/persistence contracts, Armory screen behavior,
-architecture guards, and player flows; the changed-path route selects the
-current files for each layer. These are verification entry points, not a requirement for coverage of every item or affix at every layer. Apply [test value](../CONTRIBUTING.md#test-value-and-coverage-strategy) to select representative flows and distinct rule risks, and consolidate or retire low-value cases when justified.
+Test ownership spans pure Gear rules, aggregate/persistence contracts, Armory
+interaction, architecture guards, and player flows. Use CONTRIBUTING's
+[changed-path gate](../CONTRIBUTING.md#what-to-run-when-you-change) and
+[test value policy](../CONTRIBUTING.md#test-value-and-coverage-strategy) to select
+checks for the affected risks.

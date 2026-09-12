@@ -88,6 +88,8 @@ export type BattleCardEffect =
       lifesteal?: boolean;
       equalToBlock?: boolean;
       equalToArmor?: boolean;
+      equalToForge?: boolean;
+      ignoreArmor?: boolean;
       equalToGoldPercent?: number;
       doubleIfEnemyBurning?: boolean;
       doubleIfEnemyBleeding?: boolean;
@@ -115,9 +117,11 @@ export type BattleCardEffect =
   | { kind: "remove-player-status"; status: EnemyStatusDamageId }
   | { kind: "self-damage"; damageType: EnemyStatusDamageId; amount: number }
   | { kind: "buff-companion"; amount: number }
+  | { kind: "companion-action"; amount: number }
   | { kind: "lose-health"; amount: number }
   | { kind: "draw-cards"; amount: number }
-  | { kind: "remove-enemy-armor"; amount: number }
+  | { kind: "random-draw"; minAmount: number; maxAmount: number }
+  | { kind: "remove-enemy-armor"; amount: number; removeAll?: boolean }
   | { kind: "multiply-enemy-status"; status: EnemyStatusDamageId; factor: number }
   | {
       kind: "cleanse-player-status-to-damage";

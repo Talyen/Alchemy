@@ -8,7 +8,7 @@ vi.mock("@/lib/audio", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/audio")>()),
   playMusic: vi.fn(),
 }));
-vi.mock("@/features/alchemy/shared/ui/collection-ui", () => ({
+vi.mock("@/features/alchemy/meta/screens/collection/collection-ui", () => ({
   CollectionGrid: ({ onEnemyActivate }: { onEnemyActivate: (id: string) => void }) => (
     <>
       {["forge-golem", "frostwarden", "blight-treant", "iron-bear", "unknown-boss", "goblin-scout"].map((id) => (

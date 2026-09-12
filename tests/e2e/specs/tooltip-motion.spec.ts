@@ -1,5 +1,6 @@
-import { expect, test, type Page } from "@playwright/test";
-import { injectActiveBattle, makeGoblinBattleState } from "../../helpers";
+import { expect, test } from "../../fixtures/e2e";
+import type { Page } from "@playwright/test";
+import { injectActiveBattle, makeGoblinBattleState } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 import { critical } from "../../playwright-tags";
 

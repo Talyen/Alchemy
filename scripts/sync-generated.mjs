@@ -33,19 +33,31 @@ function printHelp() {
     --version-only  Sync metadata.generated.ts only`);
 }
 
+export function parseSyncArgs(argv) {
+  const allowed = new Set(["--check", "--art-only", "--gear-only", "--version-only", "--help", "-h"]);
+  for (const arg of argv) if (!allowed.has(arg)) throw new Error(`Unknown sync option: ${arg}`);
+  if (["--art-only", "--gear-only", "--version-only"].filter((flag) => argv.includes(flag)).length > 1)
+    throw new Error("Choose only one of --art-only, --gear-only, or --version-only");
+  return {
+    check: argv.includes("--check"),
+    artOnly: argv.includes("--art-only"),
+    gearOnly: argv.includes("--gear-only"),
+    versionOnly: argv.includes("--version-only"),
+  };
+}
+
 if (isMainModule(import.meta.url)) {
   const argv = process.argv.slice(2);
-  if (argv.includes("--help") || argv.includes("-h")) {
-    printHelp();
-  } else {
-    syncGenerated({
-      check: argv.includes("--check"),
-      artOnly: argv.includes("--art-only"),
-      gearOnly: argv.includes("--gear-only"),
-      versionOnly: argv.includes("--version-only"),
-    }).catch((error) => {
-      console.error("Failed to sync generated modules:", error);
-      process.exitCode = 1;
-    });
+  try {
+    const options = parseSyncArgs(argv);
+    if (argv.includes("--help") || argv.includes("-h")) printHelp();
+    else
+      syncGenerated(options).catch((error) => {
+        console.error("Failed to sync generated modules:", error);
+        process.exitCode = 1;
+      });
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
   }
 }

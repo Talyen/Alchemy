@@ -49,20 +49,24 @@ function checkDealLine(
 ): boolean {
   if (!line.startsWith("Deal ")) return false;
   const describedAmount = parseLeadingNumber(line, "Deal ");
-  const hitCount = line.includes("twice") ? 2 : 1;
+  const delayedAmount = / now and (\d+) at the start of your next turn$/.exec(line);
+  const sharedDelayedAmount = line.endsWith(" now and at the start of your next turn");
+  const hitCount = line.includes("twice") || delayedAmount || sharedDelayedAmount ? 2 : 1;
   for (let hit = 0; hit < hitCount; hit += 1) {
     const effect = nextDamage();
     if (
       !effect ||
       effect.equalToBlock ||
       effect.equalToArmor ||
+      effect.equalToForge ||
       effect.equalToGoldPercent ||
       line.includes("equal to") ||
       line.toLowerCase().includes("random")
     ) {
       continue;
     }
-    if (describedAmount !== effect.amount) pushValueMismatch(issues, cardId, line, effect.amount);
+    const expected = hit === 1 && delayedAmount ? Number(delayedAmount[1]) : describedAmount;
+    if (expected !== effect.amount) pushValueMismatch(issues, cardId, line, effect.amount);
   }
   return true;
 }
@@ -178,8 +182,34 @@ export function validateCardNumericParity(card: BattleCard): ContentValidationIs
   const nextLoseHealth = getNext("lose-health");
   const nextGainMaxMana = getNext("gain-max-mana");
   const nextRemoveArmor = getNext("remove-enemy-armor");
+  const nextRandomDraw = getNext("random-draw");
+  const nextCompanionAction = getNext("companion-action");
 
   for (const line of descriptionLines) {
+    if (line === "Roll a six-sided die") {
+      const effect = nextRandomDraw();
+      if (!effect) pushMissingEffect(issues, card.id, line);
+      else if (effect.minAmount !== 1 || effect.maxAmount !== 6)
+        pushValueMismatch(issues, card.id, line, effect.maxAmount);
+      continue;
+    }
+    if (line === "Draw that many cards") continue;
+    if (line.startsWith("Your Companion acts ")) {
+      const effect = nextCompanionAction();
+      const amount = line.endsWith("twice")
+        ? 2
+        : line.endsWith("once")
+          ? 1
+          : parseLeadingNumber(line, "Your Companion acts ");
+      if (!effect) pushMissingEffect(issues, card.id, line);
+      else if (amount !== effect.amount) pushValueMismatch(issues, card.id, line, effect.amount);
+      continue;
+    }
+    if (line === "Remove all enemy Armor") {
+      const effect = nextRemoveArmor();
+      if (!effect?.removeAll) pushMissingEffect(issues, card.id, line);
+      continue;
+    }
     if (line.startsWith("Deals ")) continue;
     if (checkDealLine(line, nextDamage, issues, card.id)) continue;
     if (checkGoldLine(line, nextGold, issues, card.id)) continue;

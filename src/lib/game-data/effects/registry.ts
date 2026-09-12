@@ -25,6 +25,8 @@ import {
 import {
   summonCompanionEffectDefinition,
   buffCompanionEffectDefinition,
+  companionActionEffectDefinition,
+  randomDrawEffectDefinition,
   gainGoldEffectDefinition,
   wishEffectDefinition,
   drawCardsEffectDefinition,
@@ -55,6 +57,8 @@ export const TEMPLATE_EFFECT_DEFINITIONS = [
   removePlayerStatusEffectDefinition,
   selfDamageEffectDefinition,
   buffCompanionEffectDefinition,
+  companionActionEffectDefinition,
+  randomDrawEffectDefinition,
   loseHealthEffectDefinition,
   drawCardsEffectDefinition,
   removeEnemyArmorEffectDefinition,

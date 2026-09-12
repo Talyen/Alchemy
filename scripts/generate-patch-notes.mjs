@@ -11,6 +11,7 @@ import { buildPatchNotesMarkdown } from "./lib/patch-notes-core.mjs";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 export function parseGeneratePatchNotesArgs(argv, env = process.env) {
+  for (const arg of argv) if (arg !== "--dry-run") throw new Error(`Unknown patch-note option: ${arg}`);
   const raw = env.RELEASE_VERSION?.replace(/^v/, "") || "";
   if (raw) assertValidSemver(raw);
   return {

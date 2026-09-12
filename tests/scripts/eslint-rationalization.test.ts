@@ -117,15 +117,10 @@ describe("eslint rationalization", () => {
     expect(allowedProvider.length).toBeGreaterThan(0);
   });
 
-  it("enforces alt-text on images", async () => {
+  it("enables alt-text errors for application images", async () => {
     const eslint = new ESLint({ cwd: ROOT });
-    const results = await eslint.lintText(`export function Foo(){ return <img src="x" alt="" /> }`, {
-      filePath: path.join(ROOT, "src/features/alchemy/shared/ui/test.tsx"),
-    });
-    const altOk = results.flatMap((r) => r.messages).filter((m) => m.ruleId === "jsx-a11y/alt-text");
-    expect(altOk.length).toBe(0);
     const config = await eslint.calculateConfigForFile("src/features/alchemy/shared/ui/test.tsx");
-    expect(config.rules?.["jsx-a11y/alt-text"]).toBeDefined();
+    expect(config.rules?.["jsx-a11y/alt-text"]?.[0]).toBe(2);
   });
 
   it("disables react-hooks for Playwright specs but enables for React unit tests", async () => {
@@ -174,7 +169,14 @@ it.each(["tests/e2e/specs/draw-discard-animations.spec.ts", "tests/e2e/specs/bat
       filePath: path.join(ROOT, filePath),
     });
     const rules = results.flatMap((result) => result.messages).map((message) => message.ruleId);
-    expect(rules).toContain("no-restricted-imports");
+    expect(rules).not.toContain("no-restricted-imports");
     expect(rules).toContain("no-restricted-syntax");
+    for (const code of [
+      'test("timing", async ({ page, fastBattle }) => { void fastBattle; });',
+      'import { useFastBattle as fast } from "../../fixtures/e2e";',
+    ]) {
+      const [result] = await eslint.lintText(code, { filePath: path.join(ROOT, filePath) });
+      expect(result.messages.some((message) => message.ruleId === "no-restricted-syntax")).toBe(true);
+    }
   },
 );

@@ -18,32 +18,29 @@ export function assertValidTag(tag) {
   }
 }
 
-export function listVersionTags(root) {
+function nearestVersionTag(root, revision) {
   try {
-    const output = execFileSync("git", ["tag", "--list", "v*", "--sort=-v:refname"], {
-      cwd: root,
-      stdio: ["ignore", "pipe", "ignore"],
-    })
-      .toString()
-      .trim();
-    if (!output) return [];
-    return output.split("\n").filter(Boolean);
+    return (
+      execFileSync("git", ["describe", "--tags", "--match", "v[0-9]*", "--abbrev=0", revision], {
+        cwd: root,
+        stdio: ["ignore", "pipe", "ignore"],
+        encoding: "utf8",
+      }).trim() || null
+    );
   } catch {
-    return [];
+    return null;
   }
 }
 
 export function latestVersionTag(root) {
-  const tags = listVersionTags(root);
-  return tags[0] ?? null;
+  return nearestVersionTag(root, "HEAD");
 }
 
 export function previousVersionTag(root, currentTag) {
-  const tags = listVersionTags(root);
+  assertValidTag(currentTag);
   const normalized = currentTag.startsWith("v") ? currentTag : `v${currentTag}`;
-  const index = tags.indexOf(normalized);
-  if (index === -1) return tags[0] ?? null;
-  return tags[index + 1] ?? null;
+  // Start before this release so reruns cannot select their own tag or a later release.
+  return nearestVersionTag(root, `${normalized}^`);
 }
 
 export function latestCommitHash(root, short = true) {

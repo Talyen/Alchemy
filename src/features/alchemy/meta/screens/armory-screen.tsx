@@ -26,10 +26,9 @@ import {
   trinketById,
 } from "@/features/alchemy/shared/config/game-data-catalog";
 import { FadeSlot } from "../../shared/ui/use-fade";
-import { PageLayout } from "../../shared/ui/shared-ui";
+import { PageLayout, ScreenHeaderRow } from "../../shared/ui/layout-components";
 import { renderUnlockMessage } from "../../shared/ui/unlock-text";
 import { ArmoryCharacterTabs, ArmoryOverlays, type ArmoryScreenProps } from "./armory";
-import { ScreenHeaderRow } from "../../shared/ui/shared-ui";
 import { applyCurrencyToGear, itemsMatchingSlot } from "./armory/armory-screen-actions";
 import { COMBAT_LOCKED_MESSAGE } from "./armory/armory-item-state";
 import { useArmoryTargetingState } from "./armory/use-armory-targeting-state";

@@ -9,7 +9,7 @@ import { GearTile, TrinketTile } from "../../shared/ui/collection-art-tiles";
 import { FoundResourcesRow } from "../../shared/ui/found-resources-row";
 import { SelectableCard } from "../../shared/ui/selectable-card";
 import { Button } from "@/components/ui/button";
-import { TitledScreenShell } from "../../shared/ui/shared-ui";
+import { TitledScreenShell } from "../../shared/ui/layout-components";
 import { usePlasmaInteraction } from "../../shared/ui/use-plasma-source";
 import { FadeSlot } from "../../shared/ui/use-fade";
 import {

@@ -1,4 +1,5 @@
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
+import { applyHealingWithCombatText } from "./combat-text";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import {
@@ -48,7 +49,7 @@ function initializePlayerHealthAndBlock(
 ) {
   const maxHealth = options.maxHealth ?? MAX_PLAYER_HEALTH;
   const playerHealth = options.playerHealth ?? MAX_PLAYER_HEALTH;
-  const startingHealth = Math.min(maxHealth, playerHealth + talentEffects.startHealth + gearEffects.startHeal);
+  const startingHealth = Math.min(maxHealth, playerHealth);
   const baseBlock = talentEffects.startBlock + startBlock + gearEffects.startBlock;
   const startingBlock = baseBlock > 0 ? baseBlock + gearEffects.flatBlockGained : 0;
   const startingArmor = talentEffects.startArmor + gearEffects.startArmor;
@@ -180,9 +181,15 @@ export function createBattleStartState(options: CreateBattleStateOptions): Battl
     contentSystemType: battleContentSystem,
     appliesFightPacing: battleAppliesFightPacing,
   };
+  const healedState = resolvePendingBattleReactions(
+    applyHealingWithCombatText(state, battleTalents.startHealth + battleGearEffects.startHeal, [], {
+      skipFightPacing: true,
+    }),
+    [],
+  );
   const startFreeze = battleTalents.startFreeze + battleGearEffects.startFreeze;
-  if (startFreeze <= 0) return state;
-  return resolvePendingBattleReactions(dealPlayerTypedHit(state, "freeze", startFreeze, []), []);
+  if (startFreeze <= 0 || healedState.enemyHealth <= 0 || healedState.playerHealth <= 0) return healedState;
+  return resolvePendingBattleReactions(dealPlayerTypedHit(healedState, "freeze", startFreeze, []), []);
 }
 
 export function createBattleState(options: CreateBattleStateOptions): BattleState {

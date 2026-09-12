@@ -11,7 +11,7 @@ import { getTalentTreeKeywordIds, type CharacterId, type KeywordId, type TalentX
 import type { RunObtainedItem } from "@/lib/active-run-session";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { cn } from "@/lib/utils";
-import { TitledScreenShell } from "../../shared/ui/shared-ui";
+import { TitledScreenShell } from "../../shared/ui/layout-components";
 import { usePlasmaBaseline } from "../../shared/ui/use-plasma-source";
 import { FoundResourcesRow } from "../../shared/ui/found-resources-row";
 import { KeywordProgressGrid } from "./keyword-progress-grid";

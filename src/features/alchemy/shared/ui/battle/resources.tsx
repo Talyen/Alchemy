@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 import { cardArtImageClass, cardSurfaceClass, pileCardWidthClass } from "../../config";
 import { Surface } from "../surface";
-import { useChangeToken } from "./use-change-token";
+import { useChangeToken } from "../use-change-token";
 
 export function PilePanel({
   label,

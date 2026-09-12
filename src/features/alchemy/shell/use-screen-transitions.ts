@@ -1,4 +1,4 @@
-import { useLatestRef } from "@/features/alchemy/shared/hooks";
+import { useLatestRef } from "@/features/alchemy/shared/ui/use-latest-ref";
 import { createRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   prepareRunNavigation,

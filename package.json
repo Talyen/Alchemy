@@ -30,8 +30,9 @@
     "dev:desktop": "concurrently \"vite --mode desktop --host 127.0.0.1\" \"node scripts/wait-dev-server.mjs && electron .\"",
     "build": "node scripts/build-verified.mjs",
     "build:desktop": "node scripts/build-verified.mjs --desktop",
-    "dist:desktop": "npm run sync:steam-appid && npm run build:desktop && node scripts/dist-desktop.mjs",
+    "dist:desktop": "npm run sync:steam-appid && npm run build:desktop && npm run check:bundle && node scripts/dist-desktop.mjs",
     "package:win": "npm run dist:desktop -- --dir",
+    "smoke:desktop": "node scripts/smoke-desktop.mjs",
     "smoke:preview": "node scripts/smoke-preview.mjs",
     "generate:patch-notes": "node scripts/generate-patch-notes.mjs",
     "content:audit": "node scripts/content-audit.mjs",
@@ -205,6 +206,7 @@
     "files": [
       "desktop/**/*",
       "dist/**/*",
+      "!**/*.map",
       "package.json"
     ],
     "win": {

@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 import { test } from "../../fixtures/e2e";
-import { assertHorizontalNeighborGap, SAVE_KEY } from "../../helpers";
+import { assertHorizontalNeighborGap, SAVE_KEY } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 import { MenuPage } from "../../pages/menu-page";
 import { critical } from "../../playwright-tags";
@@ -18,10 +18,6 @@ async function unlockDifficulties(page: import("@playwright/test").Page, difficu
 }
 
 test.describe("Character Select", critical, () => {
-  test.beforeEach(async ({ runtimeErrors }) => {
-    void runtimeErrors;
-  });
-
   test("hero portraits keep horizontal gaps between neighbors", async ({ page }) => {
     await new MenuPage(page).goToCharacterSelect();
 
@@ -63,8 +59,7 @@ test.describe("Character Select", critical, () => {
 });
 
 test.describe("Difficulty Select", critical, () => {
-  test.beforeEach(async ({ page, runtimeErrors }) => {
-    void runtimeErrors;
+  test.beforeEach(async ({ page }) => {
     await unlockDifficulties(page, ["difficulty-1"]);
   });
 
@@ -116,8 +111,7 @@ test.describe("Difficulty Select", critical, () => {
 });
 
 test.describe("Difficulty Skip (first-time player)", critical, () => {
-  test("selecting a character with no completed difficulties skips to battle", async ({ page, runtimeErrors }) => {
-    void runtimeErrors;
+  test("selecting a character with no completed difficulties skips to battle", async ({ page }) => {
     await page.addInitScript((saveKey) => {
       localStorage.setItem(saveKey, JSON.stringify({ finishedRunCharacters: [] }));
     }, SAVE_KEY);

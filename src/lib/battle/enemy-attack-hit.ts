@@ -38,10 +38,11 @@ function applyDodgeDrawAndPlay(state: BattleState, combatTexts: CombatTextEvent[
     deck: drawn.deck,
     discard: drawn.discard,
     nextCardUid: drawn.nextCardUid,
+    uniqueGear: drawn.uniqueGear,
   };
 
   const talentPlay = prepareTalentCardPlay(nextState, drawn.card, combatTexts);
-  nextState = talentPlay.state;
+  nextState = resolvePendingBattleReactions(talentPlay.state, combatTexts);
   const damageEffects: NonNullable<CardEffectResolutionContext["damageEffects"]> = [];
   const playContext = {
     damageEffects,

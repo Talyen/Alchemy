@@ -17,7 +17,7 @@ import {
   type CharacterId,
   type KeywordId,
 } from "@/features/alchemy/shared/config/game-data-catalog";
-import { TabBar } from "../../../shared/ui/shared-ui";
+import { TabBar } from "../../../shared/ui/tab-bar";
 
 export const CHARACTER_ICONS: Record<CharacterId, LucideIcon> = {
   knight: Shield,

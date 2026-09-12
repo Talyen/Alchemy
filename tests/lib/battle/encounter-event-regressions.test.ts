@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cardById, cardLibrary } from "@/lib/game-data";
+import { cardById, cardLibrary, type BattleCard } from "@/lib/game-data";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { resolveEnemyAttackHit } from "@/lib/battle/enemy-attack-hit";
@@ -46,8 +46,20 @@ describe("encounter event regressions", () => {
     expect(result.enemyPhysicalDamageBonus).toBe(1);
   });
 
-  it.each([0.25, 0.75])("Holy Retribution follows Roll the Dice's resolved branch (%s)", (roll) => {
-    const card = cardById["roll-the-dice"]!;
+  it.each([0.25, 0.75])("Holy Retribution follows a legacy Roll the Dice's resolved branch (%s)", (roll) => {
+    const card: BattleCard = {
+      ...cardById["roll-the-dice"]!,
+      consume: false,
+      descriptionLines: ["Deal 3 Random damage or gain 3 Gold"],
+      effects: [
+        {
+          kind: "chance",
+          probability: 0.5,
+          successEffects: [{ kind: "random-damage", minAmount: 3, maxAmount: 3 }],
+          failureEffects: [{ kind: "gain-gold", amount: 3 }],
+        },
+      ],
+    };
     const result = playBattleCardResolved(
       { ...battle("holy-retribution"), hand: [card], rng: () => roll },
       card.id,
@@ -115,12 +127,9 @@ describe("encounter event regressions", () => {
     expect(potion.descriptionLines[0]).toBe("Gain 5 Mana or gain 5 Gold or gain 5 Block");
     expect(JSON.stringify(potion.effects)).not.toContain('"amount":4');
     const dice = options.find((card) => card.id === "roll-the-dice")!;
-    expect(dice.descriptionLines[0]).toBe("Deal 4 Random damage or gain 4 Gold");
+    expect(dice.descriptionLines).toEqual(cardById["roll-the-dice"]!.descriptionLines);
     expect(dice.effects.every((effect) => BattleCardEffectSchema.safeParse(effect).success)).toBe(true);
-    expect(dice.effects[0]).toMatchObject({
-      successEffects: [{ minAmount: 4, maxAmount: 4 }],
-      failureEffects: [{ amount: 4 }],
-    });
+    expect(dice.effects).toEqual([{ kind: "random-draw", minAmount: 1, maxAmount: 6 }]);
     const original = cardById["luck-potion"]!;
     const target = getEditableCorruptionTargets(original).at(-1)!;
     const corrupted = applyNumericCorruption(original, target, 1);

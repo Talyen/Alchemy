@@ -64,6 +64,20 @@ describe("sound manifest publication", () => {
     expect(fixture.convert).not.toHaveBeenCalled();
   });
 
+  it.each(["curated.ogg", "generated.mp3"])("rejects changed %s without rewriting or converting", async (name) => {
+    await optimizeSounds();
+    vi.mocked(writeFile).mockClear();
+    fixture.convert.mockClear();
+    await expect(optimizeSounds({ check: true })).resolves.toEqual({ ok: true });
+    expect(writeFile).not.toHaveBeenCalled();
+    await writeFile(path.join(outputDir, name), "changed bytes");
+    vi.mocked(writeFile).mockClear();
+    await expect(optimizeSounds({ check: true })).resolves.toMatchObject({ ok: false });
+    expect(fixture.convert).not.toHaveBeenCalled();
+    expect(writeFile).not.toHaveBeenCalled();
+    expect(await readFile(path.join(outputDir, name), "utf8")).toBe("changed bytes");
+  });
+
   it.each([
     {
       source: path.join(sourceDir, "raw.ogg"),

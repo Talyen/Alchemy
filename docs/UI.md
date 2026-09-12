@@ -6,16 +6,23 @@ Alchemy's accessibility stance. Screen wiring checklists remain in
 [below](#armory-crafting-and-salvage); Gear data and mutation rules live in
 [ARMORY.md](./ARMORY.md).
 
+## Guide index
+
+- Shared primitives: [placement](#placement-and-boundaries), [components and item shine](#component-conventions), [buttons](#buttons-and-interactive-surfaces), [tooltips](#hover-tooltips), [accessibility](#accessibility-stance).
+- Motion: [overlays](#overlay-lifecycle), [screen fades](#screen-fade-motion), [battle feedback](#battle-feedback), [battle motion](#battle-motion).
+- Sizing and browsing: [display sizing](#display-sizing), [Collection and Armory](#collection-and-armory-browsing), [card removal](#card-removal-browsing).
+- Inspection: [Deck and piles](#deck-and-pile-inspection), [enemies](#enemy-inspection).
+- Screen behavior: [rewards and Wishes](#rewards-and-wishes), [Options](#options), [Labyrinth](#labyrinth-map), [Corrupted text](#corrupted-card-text), [Armory crafting and salvage](#armory-crafting-and-salvage).
+- [Verification](#verification).
+
 ## Placement and boundaries
 
 - `src/components/ui/` owns generic Tailwind/Radix primitives with no game-domain knowledge. These components receive domain data through props and do not import `@/features` or subscribe to gameplay stores.
-- `src/features/alchemy/shared/ui/` owns reusable game widgets such as cards, choice buttons, status icons, actor panels, shop slots, and map nodes. They receive run, battle, and session data through props. Presentation-only `ui-store` state is allowed.
-- Screens and feature-local presentation stay with their owning feature until at least two feature domains need the same widget.
+- `src/features/alchemy/shared/ui/` owns reusable game widgets such as cards, choice buttons, status icons, actor panels, and map nodes. They receive run, battle, and session data through props. Presentation-only `ui-store` state is allowed.
+- Screens and feature-local presentation stay with their owning feature until at least two feature domains need the same widget. Collection presentation belongs in `meta/screens/collection/`; shop purchase and service widgets belong in `run-loop/shop/ui/`. Mystery outcome badges belong in `run-loop/screens/mystery/`; Options controls belong beside the Options panels in `meta/screens/`. Import shared widgets directly from their owning modules.
 - Static catalogs used by shared game widgets come from `shared/config/game-data-catalog.ts`, not the token `config/` barrel.
 
 Use `ScreenShell`, `TitledScreenShell`, `ScreenHeader`, and `PageLayout` for page structure. Use shared chrome before recreating buttons, progress bars, switches, cards, or tooltips.
-
-For flow-specific rules, use [display sizing](#display-sizing), [Collection and Armory browsing](#collection-and-armory-browsing), [card removal](#card-removal-browsing), [rewards and Wishes](#rewards-and-wishes), or [Options](#options).
 
 ## Component conventions
 
@@ -24,10 +31,82 @@ For flow-specific rules, use [display sizing](#display-sizing), [Collection and 
 - Use `cn()` for conditional classes and existing CVA variants for semantic states.
 - Generic interactive primitives preserve standard ARIA roles, names, values, keyboard behavior, and disabled states. Eligible talent nodes use native buttons for Enter and Space; keyword trees without portrait art remain selectable using a blank portrait and the keyword icon.
 - `Surface` is the shared interactive card/tile owner (`onClick` works for both `button` and `div` renderings; prefer `as="button"` for actions). `PortaledTooltip` with `TooltipPanel` owns tooltip chrome. `ShineText` with `GearItemTitle`/`TrinketItemTitle` (both in `gear-item-title.tsx`) own keyword/item shine typography.
-- Astral gear and Trinket title shine uses at most three described keywords, each with its primary color and a 55%-opacity stop. Gear prefers matching base affinities; Trinkets retain description order. Unique gear titles stay gold. Artwork and border palettes remain independent.
+- Item title and affix palettes follow [item shine](#item-shine).
 - Over-art price chips use an opaque dark scrim with light text and shadow so card art cannot wash them out; affordable shop prices keep gold border and text on that scrim.
 - `TraitBox` owns Trait containers, colored icons, keyword descriptions, and title shine across Labyrinth map details and enemy hover/inspection. Encounter icon themes live in shared configuration and also drive map effects. Enemy Traits and encounter modifiers form one deduplicated list; inspection uses two equal columns at 40rem of available content width, with a single-column fallback and full-width sole Traits. Hover and map Traits stay stacked. Apply inline-size containment only to the inspection layout: shrink-to-fit tooltips need their contents to contribute intrinsic width.
 - Modal interaction and dismissal follow [Overlay lifecycle](#overlay-lifecycle).
+
+### Item shine
+
+Astral instance titles and borders derive their shine keywords from the rolled affix descriptions, using the same keyword recognition as tooltip text (`src/lib/keyword-text.ts`). Base affinity only prioritizes present keywords for the three-keyword title limit; it never adds absent keywords.
+
+Max-roll Astral and Unique affix names use the first three distinct keywords from their own description, including aliases such as Stunned, Frozen, and Consumed. Tooltip entries carry affix identity and normalized value together so description text and max-roll shine cannot diverge. Text uses each keyword’s primary color with a 55%-opacity stop; borders retain full palettes. Trinket titles use at most three described keywords in description order. Artwork palettes remain independent.
+
+Definition-only previews use base affinities, and Unique item titles and borders retain their gold palette. Gear hover backgrounds use only actual affix keywords, with neutral gray for no recognized keywords; Unique gear uses the same gold hex pair in inventory, equipped slots, and collection. CSS text fades must not feed the hex-only background renderer.
+
+## Buttons and interactive surfaces
+
+Game-specific button shape and layout tokens live in `src/features/alchemy/shared/config/button-tokens.ts`. Primitive hover constants live in `src/lib/game-constants/ui-motion.ts` and are imported through the game-constants barrel.
+
+`Button` always renders a native button. `wrapperClassName` optionally adds a layout span; `className`, refs, event handlers, and native button attributes belong to the button itself. Omitted `type` retains native form behavior.
+
+| Concern        | Standard                                                                                                                                                                                                 |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Shape          | Rounded rectangles through `BUTTON_SHAPE`                                                                                                                                                                |
+| Primary        | `Button variant="primary"` for Play, Continue, and Confirm                                                                                                                                               |
+| Secondary      | `Button variant="outline"` for Back, Cancel, Skip, and alternate navigation                                                                                                                              |
+| Accent         | `ShineAccentButton` only for accent-intent forward actions                                                                                                                                               |
+| Paired actions | Secondary left and primary right; shared button width tokens                                                                                                                                             |
+| Equal choices  | `DestinationChoices` and `Surface`, with an accessible tile name                                                                                                                                         |
+| Tabs           | `TabBar`                                                                                                                                                                                                 |
+| Chrome icons   | [ChromeIconButton](../src/features/alchemy/shared/ui/chrome-icon-button.tsx) owns header and battle-corner icon buttons, including shared hover, active, and toggle feedback.                            |
+| Hover / press  | Primary buttons use CSS bloom without scaling; secondary buttons use background feedback. Preserve surface-specific CSS scaling and shared `active:` feedback; do not add parallel Motion hover scaling. |
+
+Card and collection artwork, including gear and trinket tiles, reserves a 1px frame across available, selected, disabled, purchased, and shine states, so changing interaction state cannot resize its artwork or row or recenter the screen. The thicker hover and selection outline is an absolute overlay, preserving the thin default border. Hover-only shine uses `card-art-shine`; persistent shine uses `has-shine-border`. Both hide the frame color while preserving its space. Pass frame Shine through `Surface.overlay` so the artwork clipping layer cannot hide it.
+
+Artwork surfaces resolve their clipping radius from the same inline theme token and local content scale as the outer frame. The artwork radius subtracts the frame width so portrait and landscape corners meet in resting, hovered, and selected states.
+
+Labyrinth's rectangular art nodes reuse `Surface`, shared shimmer, and Shine Border. Hover, keyboard focus, and selection enlarge only the emphasized tile to 106%; unknown tiles stay neutral. Completed art remains subdued. Reduced motion makes emphasis immediate and shine static. See [Labyrinth map](#labyrinth-map) for discovery and movement.
+
+## Hover tooltips
+
+Tooltips render through `PortaledTooltip` into the root-space `#tooltip-root`.
+Placement follows the Floating UI standard (`@floating-ui/dom`: preferred side,
+then automatic flip to a fitting side, then shift to stay in bounds), bounded to
+`[data-testid="vr-stage"]` with `documentElement` as a fallback, so panels keep
+an independent CSS-pixel scale and avoid clipped ancestors. Tooltip Size
+(90–125%, 5% steps; default 100%) scales text, chrome, and preferred width
+together. Enemy tooltip headers, outer padding, and preferred width remain
+independent of Game Size. Only the nested Trait list uses the game content scale
+as its baseline, matching Labyrinth and inspection Trait text, icons, and spacing;
+Tooltip Size also multiplies that baseline. Enemy tooltips prefer 28rem of width
+at the independent tooltip scale to give boxed Trait descriptions room to wrap. Placement recomputes width bounds when the stage or tooltip changes
+size; position-only updates preserve the resolved width to avoid forced layout. Long
+descriptions can use available width to fit; tooltips never scroll or truncate.
+
+- Drive ordinary hover with `useHoverVisible()` and `triggerRef`. For card/tile grids that already track hover via `useInteractiveCard`, use `useTileHoverPopup` (a `useHoverVisible` preset with the shared `TOOLTIP_FADE_MS` hold) — see those hooks for the exact call shape.
+- Use `placement="side-start"` or `"side-end"` for explicitly side-anchored panels.
+- Use `maxWidthFraction` for small-window bounds.
+- Tooltip entrance fades and moves away from the trigger; exit fades with a return movement. [Component styles](../src/styles/components.css) own the offsets and easing, with durations from [motion constants](../src/lib/game-constants/ui-motion.ts). CSS `@starting-style` supplies the first-render entrance, and transitions reverse smoothly on re-hover. Hover remains immediate for rapid inspection. Keep `--tooltip-exit-duration` in sync with `TOOLTIP_FADE_MS`.
+- Tooltip panels are `pointer-events-none`; nested interactive tooltips are unsupported.
+- `PortaledTooltip` retains the complete last visible content through fade-out, including descriptions computed only while hovered. Header and body enter and exit as one panel.
+- State-driven triggers mount the portal only while hovered; exit fades complete via the shared `TOOLTIP_FADE_MS` hold — do not add a second hold alongside `PortaledTooltip`.
+- Fade primitives are consolidated in `src/features/alchemy/shared/ui/use-fade.tsx` (import `FadeSlot`, `useFadePresence`, `useSequentialFadeSwap`, `useHeldWhile` from there directly); placement helpers live in `shared/ui/tooltips/portaled-tooltip-placement.ts`, content slots in `shared/ui/tooltips/tooltip-panel.tsx`. `DisabledTooltip` lives in `shared/ui/tooltips/disabled-tooltip.tsx`.
+
+## Accessibility stance
+
+Alchemy is visual-heavy and intentionally ships no dedicated accessibility
+feature set beyond semantic robustness. Preserve semantic buttons,
+programmatic names and states, keyboard behavior supplied by shared primitives,
+and `aria-hidden` on decorative art. Preserve and reuse shared dialog focus
+containment and restoration for confirmations, card inspection, and enemy
+inspection, following [overlay lifecycle](#overlay-lifecycle). New focus behavior
+outside that contract, screen-reader announcement systems, contrast tooling,
+and per-component reduced-motion variants require a product decision.
+Preserve the existing [Armory reduced-motion handling](#armory-crafting-and-salvage).
+Shared motion accommodations live in
+`src/styles/keyframes.css` and `src/styles/components.css`; Armory also disables
+inventory movement and crafting feedback motion locally.
 
 ## Overlay lifecycle
 
@@ -41,8 +120,9 @@ underlying screen handlers. Required choices such as Wish remain non-dismissible
 Panels size to their contents with bounded width and height and scroll overflow;
 card inspection retains adaptive pagination without reserving an empty full-screen panel.
 
-Draw Pile, Discard Pile, and Deck inspection share the existing 180ms backdrop fade
-with a 6px upward panel settle on opening, easing out over the same duration. Closing
+Draw Pile, Discard Pile, and Deck inspection share the backdrop fade and upward
+panel settle defined in [component styles](../src/styles/components.css), using
+the shared [motion duration](../src/lib/game-constants/ui-motion.ts). Closing
 uses only the fade; reduced motion omits the settle. Cards appear together, and
 populated panels retain content-based sizing without animated dimensions. Empty
 collections show centered, muted “Empty” text in a 10rem-high content area with a
@@ -100,43 +180,10 @@ rather than force completed art to full color or full opacity.
 Motion tokens live in `src/lib/game-constants/ui-motion.ts` (`MOTION_FADE_MS`, `TOOLTIP_FADE_MS`) and are mirrored to CSS as `var(--motion-fade-duration)` and `var(--tooltip-exit-duration)` in `src/styles/theme.css` / `src/styles/components.css`. Keep each JS duration and its CSS counterpart in sync; `npm run lint:architecture-smoke` asserts this.
 
 Campfire snapshots the starting and restored Health when Rest is pressed. Its number
-and bar share a 1.2-second eased refill, then hold the exact result for 800 ms before
-continuing. Keep that snapshot through the outgoing screen fade so applying the heal
-cannot restart the visible refill. Timing lives in `src/lib/game-constants/battle-timing.ts`.
-
-## Buttons and interactive surfaces
-
-Game-specific button shape and layout tokens live in `src/features/alchemy/shared/config/button-tokens.ts`. Primitive hover constants live in `src/lib/game-constants/ui-motion.ts` and are imported through the game-constants barrel.
-
-`Button` always renders a native button. `wrapperClassName` optionally adds a layout span; `className`, refs, event handlers, and native button attributes belong to the button itself. Omitted `type` retains native form behavior.
-
-| Concern        | Standard                                                                                                                                                                                                                                                                 |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Shape          | `rounded-xl` rectangles through `BUTTON_SHAPE`                                                                                                                                                                                                                           |
-| Primary        | `Button variant="primary"` for Play, Continue, and Confirm                                                                                                                                                                                                               |
-| Secondary      | `Button variant="outline"` for Back, Cancel, Skip, and alternate navigation                                                                                                                                                                                              |
-| Accent         | `ShineAccentButton` only for accent-intent forward actions                                                                                                                                                                                                               |
-| Paired actions | Secondary left and primary right; shared button width tokens                                                                                                                                                                                                             |
-| Equal choices  | `DestinationChoices` and `Surface`, with an accessible tile name                                                                                                                                                                                                         |
-| Tabs           | `TabBar`                                                                                                                                                                                                                                                                 |
-| Chrome icons   | `ChromeIconButton` owns header and battle-corner icon buttons (back, deck, menu, autoplay, boons): ghost `h-11 w-11` dim `text-muted-foreground/60` with `hover:bg-muted/40 hover:text-foreground`; active uses `bg-muted/40 text-foreground`, toggle-on uses `primary`. |
-| Hover / press  | Primary buttons use CSS bloom without scaling; secondary buttons use background feedback. Preserve surface-specific CSS scaling and shared `active:` feedback; do not add parallel Motion hover scaling.                                                                 |
-
-Card and collection artwork, including gear and trinket tiles, reserves a 1px frame across available, selected, disabled, purchased, and shine states, so changing interaction state cannot resize its artwork or row or recenter the screen. The thicker hover and selection outline is an absolute overlay, preserving the thin default border. Hover-only shine uses `card-art-shine`; persistent shine uses `has-shine-border`. Both hide the frame color while preserving its space. Pass frame Shine through `Surface.overlay` so the artwork clipping layer cannot hide it.
-
-Artwork surfaces resolve their clipping radius from the same inline theme token and local content scale as the outer frame. The artwork radius subtracts the frame width so portrait and landscape corners meet in resting, hovered, and selected states.
-
-Labyrinth's rectangular art nodes reuse `Surface`, shared shimmer, and Shine Border. Hover, keyboard focus, and selection enlarge only the emphasized tile to 106%; unknown tiles stay neutral. Completed art remains subdued. Reduced motion makes emphasis immediate and shine static. See [Labyrinth map](#labyrinth-map) for discovery and movement.
-
-## Battle feedback
-
-Each resolved action shows a compact burst over each affected combatant. Preserve separate typed icons, colors, and signed values for damage and positive effects; merge only matching target/kind/type within that action. Notices come first, damage/loss next, healing/gains last, with stable order within each group. Up to three numeric entries use one centered column; larger bursts use two columns, with notices spanning both. Death’s Door retains its skull-only notice.
-
-Bursts render in the battle scene above card-flight overlays, pinned to the moving portrait references using scene-local coordinates. While bursts are visible, their overlay geometry follows the portrait each animation frame, including lunges, casts, shake, and Companion shifts, without restarting the text animation. Tracking stops when the target has no bursts or the layer unmounts. The newest burst starts at the original portrait-center rail origin (half the portrait height minus 3rem); measured burst height keeps that origin stable as grouping changes. Bursts use natural layout dimensions to move earlier actions upward without changing their numbers or restarting their animation. Each new action appears immediately. Keep at most three active bursts per target; overflow fades the oldest early rather than truncating the new action’s types or queuing feedback. Preserve the original text/icon sizing (3.5 × 10.8 design pixels, icons at 94%) and animation: 2× pop, 1.8× hold, 200 ms entrance, 200 ms hold, 500 ms shrink overlapping a 700 ms cubic rise of 240 design pixels, and a 400 ms fade. The 1100 ms visible animation also sets the normal burst lifetime. Use the existing game-delay policy with a 400 ms minimum text lifetime; reduced motion or disabled animations remove pop, travel, and animated repositioning. Presentation teardown cancels all burst lifetimes.
-
-Combat text uses a 1.5px dark stroke painted behind its colored fill, icon stroke width 3, and two tight dark drop shadows (1px and 2px blur) for contrast against artwork. Keep these treatments static; do not add per-frame shadow changes or duplicate outline elements.
-
-Divine Intervention readiness uses an armed player status chip, not another floating notice. Its tooltip explains the extra choice, nonstacking behavior, and combat lifetime.
+and bar share an eased refill, then hold the exact result before continuing. Keep
+that snapshot through the outgoing screen fade so applying the heal cannot restart
+the visible refill. Use `CAMPFIRE_ANIMATION_MS` and `CAMPFIRE_CONTINUE_DELAY` from
+[battle timing](../src/lib/game-constants/battle-timing.ts).
 
 ## Display sizing
 
@@ -168,6 +215,110 @@ centers, independent of raised artwork and reflow motion. Hidden transfer cards
 cannot receive pointer selection. Keyboard focus uses the native card buttons.
 Enlarged actors shift upward to keep health and battle controls clear. Backgrounds
 fill the frame.
+
+## Battle feedback
+
+Each resolved action shows a compact burst over each affected combatant. Preserve separate typed icons, colors, and signed values for damage and positive effects; merge only matching target/kind/type within that action. Notices come first, damage/loss next, healing/gains last, with stable order within each group. Up to three numeric entries use one centered column; larger bursts use two columns, with notices spanning both. Death’s Door retains its skull-only notice.
+
+Each action appears immediately above card flights, anchored to its moving portrait.
+Measured layout moves earlier bursts upward without changing their values or
+restarting their animations. Keep at most three active bursts per target; overflow
+fades the oldest early without truncating the new action's types or queuing feedback.
+Reduced motion or disabled animations remove pop, travel, and animated repositioning.
+Use the existing game-delay policy and minimum readable lifetime; teardown cancels
+all lifetimes and tracking stops when no bursts remain or the layer unmounts.
+
+Preserve text and icon sizing, portrait-relative placement, and static dark outlines
+and shadows for contrast against artwork. Exact geometry, typography, and animation
+curves live in [combat text](../src/features/alchemy/shared/ui/battle/combat-text.tsx);
+lifetimes and limits live in [motion constants](../src/lib/game-constants/ui-motion.ts).
+Do not duplicate outline elements or animate shadows. Implementation and playback
+ordering follow [the battle workflow](./WORKFLOWS.md#change-battle-playback).
+
+Divine Intervention readiness uses an armed player status chip, not another floating notice. Its tooltip explains the extra choice, nonstacking behavior, and combat lifetime.
+
+## Battle motion
+
+This guide owns visible battle feedback; [the playback workflow](./WORKFLOWS.md#change-battle-playback)
+owns wiring and lifecycle. Battle VFX live in `run-loop/battle` and its
+`presentation/` leaves.
+
+Player lunges occur only for cards with a damage effect and move the portrait,
+not the Health/status column. Feedback and the single portrait impact flash appear
+as soon as the action resolves, independently of the attack animation. Health
+damage takes priority over Block-only impacts; the largest eligible amount wins,
+with first occurrence breaking ties. Each action requests each combat sound family
+at most once. Player and enemy deaths share the slice effect and battle-end delay;
+Death's Door is not defeat, and voluntary run exits remain immediate.
+
+## Deck and pile inspection
+
+The stacked-cards icon opens the run Deck during drafting,
+run screens, and meta detours from that run. Drafting exposes picks so far through
+the icon; it does not add a previous-picks strip. The icon has no tooltip. Draw
+and Discard piles have keyboard-accessible inspection actions without visible
+counters; counts remain in accessible action names.
+Titled screen headers place Deck on the left alongside any Back control and Menu
+on the right, with the title centered between them.
+
+`CardInspectionOverlay` is controlled by props and reuses the modal shell,
+`useDialogFocus`, card presentation, and adaptive pagination. Each copy remains
+visible individually, sorted by displayed title with an instance-content tie
+break independent of draw order. The grid uses [`viewCardWidthClass`](../src/features/alchemy/shared/config/layout.ts),
+matching `CardSelectionGrid`’s reference width; larger Collection tiles do not fit
+that measurement. The viewer shows only a centered collection title, cards,
+and an upper-right close button, plus pagination controls when needed. It has no
+collection tabs, counts, instructional text, or labels below cards. Empty collections
+show “Empty” using the shared [overlay layout](#overlay-lifecycle).
+Open each collection from its own opener. Pagination resets on reopening.
+Full Deck is the run deck, including cards Consumed in the current battle;
+battle-only generated cards appear in their current piles instead. Deck, Draw
+Pile, and Discard Pile cards show their keyword Shine Border on hover or
+keyboard focus, with neutral shine when no keywords resolve, matching
+Collection, Wish, and reward choices.
+
+Inspection opens only between actions on a surviving player’s turn, with no
+Wish, pending transition, hidden hand card, card ghost, or card transfer. While
+open it contains focus and blocks underlying input, autoplay, and automatic End
+Turn without changing saved automation preferences. Navigation, run replacement,
+battle teardown, or opening a peer menu closes it. Escape, backdrop, and the close
+button dismiss it and return focus to the opener. Pile measurement wrappers must
+match the artwork bounds: their button is block-level so inline baseline spacing
+does not shift transfer anchors.
+
+## Enemy inspection
+
+Battle enemy portraits and discovered Bestiary entries open the shared
+`EnemyInspectionOverlay`, sharing `InspectionPanel` and `InspectionCardGrid` with
+deck inspection. The enemy name is the modal header, followed by Traits
+and Abilities headings without a divider. Abilities reuse `BattleCardButton`,
+`viewCardWidthClass`, the standard keyword border/hover behavior, and adaptive
+card pagination. Cards show portrait art only; effects appear in ordinary card
+tooltips on hover or keyboard focus. Inspection cards cannot be played or flipped
+and do not inherit the hero's description context. Ability tooltip text is universal: edit the canonical card description once for
+all inspection and play surfaces.
+
+Enemy portrait tooltips show traits only, with no repeated-attack text, ability
+cards, or upcoming-action indicator. `EnemyTraits` renders the same named trait
+sections in Battle hover, Bestiary hover, and the modal. Each subheader pairs a
+small static Lucide icon with `ShineText`; colors come from up to three distinct
+keywords in description order through `getKeywordTextShineColors`. Descriptions
+use the shared keyword tokenizer for bold/color emphasis. No-keyword titles use
+the normal neutral fallback. Encounter modifiers use the same rendering and are
+shown once in their existing separate group. Enemy trait copy refers to heroes.
+
+Opening inspection dismisses the portrait tooltip through its standard fade.
+`useHoverVisible` supports `suspended` and `dismiss`: restored focus must not flash
+the old tooltip back; deliberate pointer movement or a new focus visit can show
+it again. While the modal is open, Battle input, autoplay, and automatic End Turn
+use the shared inspection gate. Opening is restricted to the same safe decision
+window as deck inspection. Modal dismissal and focus return follow the shared
+overlay lifecycle.
+
+Bestiary clicks retain the enemy sound and Boss music preview. Opening, closing,
+and reopening the modal do not restart or stop preview music; existing page/tab
+changes still restore menu music. Undiscovered entries retain their current
+concealment and audio behavior and cannot open inspection.
 
 ## Collection and Armory browsing
 
@@ -208,9 +359,9 @@ keyboard focus. Their existing Shine palettes and item-title colors are preserve
 
 Hover-only Shine Borders and persistent Shine Borders that strengthen on hover pair
 with the shared keyword glow, including their existing focus activation. `ShineBorder`
-owns the optional `glow` treatment: zero offset, 16px blur, 45% opacity, and a 200ms
-transition, tinted with the palette's first color. Wildcard glow follows its cycling
-color. The outer layer casts the glow around the masked inner border; keep it outside
+owns the optional `glow` treatment, tinted with the palette's first color;
+[component styles](../src/styles/components.css) own its blur, opacity, and transition.
+Wildcard glow follows its cycling color. The outer layer casts the glow around the masked inner border; keep it outside
 artwork clips. Paired glow replaces the ordinary gold hover glow without changing
 scale or press feedback. Selection alone retains its existing treatment. Purely
 persistent decoration, turn indicators, and Death’s Door borders do not opt in.
@@ -291,124 +442,6 @@ Combat, services, and rewards retain their existing actions.
 
 Corrupted card titles retain the animated red-and-white shine on the “Corrupted” prefix only. Corrupted numerical values use solid `text-destructive` dark red with no animation. Keywords retain their normal colors, including added Leech and Consume; removed Consume disappears without a placeholder. The altar uses the existing card picker and before/after result, with no extra outcome choices or previews.
 
-## Hover tooltips
-
-Tooltips render through `PortaledTooltip` into the root-space `#tooltip-root`.
-Placement follows the Floating UI standard (`@floating-ui/dom`: preferred side,
-then automatic flip to a fitting side, then shift to stay in bounds), bounded to
-`[data-testid="vr-stage"]` with `documentElement` as a fallback, so panels keep
-an independent CSS-pixel scale and avoid clipped ancestors. Tooltip Size
-(90–125%, 5% steps; default 100%) scales text, chrome, and preferred width
-together. Enemy tooltip headers, outer padding, and preferred width remain
-independent of Game Size. Only the nested Trait list uses the game content scale
-as its baseline, matching Labyrinth and inspection Trait text, icons, and spacing;
-Tooltip Size also multiplies that baseline. Enemy tooltips prefer 28rem of width
-at the independent tooltip scale to give boxed Trait descriptions room to wrap. Placement recomputes width bounds when the stage or tooltip changes
-size; position-only updates preserve the resolved width to avoid forced layout. Long
-descriptions can use available width to fit; tooltips never scroll or truncate.
-
-- Drive ordinary hover with `useHoverVisible()` and `triggerRef`. For card/tile grids that already track hover via `useInteractiveCard`, use `useTileHoverPopup` (a `useHoverVisible` preset with the shared `TOOLTIP_FADE_MS` hold) — see those hooks for the exact call shape.
-- Use `placement="side-start"` or `"side-end"` for explicitly side-anchored panels.
-- Use `maxWidthFraction` for small-window bounds.
-- Tooltip entrance uses a 180 ms ease-out fade with 4 px of movement away from the trigger; exit uses a 120 ms fade with 2 px of return movement. CSS `@starting-style` supplies the first-render entrance, and transitions reverse smoothly on re-hover. Hover remains immediate for rapid inspection. Keep `--tooltip-exit-duration` in sync with `TOOLTIP_FADE_MS`.
-- Tooltip panels are `pointer-events-none`; nested interactive tooltips are unsupported.
-- `PortaledTooltip` retains the complete last visible content through fade-out, including descriptions computed only while hovered. Header and body enter and exit as one panel.
-- State-driven triggers mount the portal only while hovered; exit fades complete via the shared `TOOLTIP_FADE_MS` hold — do not add a second hold alongside `PortaledTooltip`.
-- Fade primitives are consolidated in `src/features/alchemy/shared/ui/use-fade.tsx` (import `FadeSlot`, `useFadePresence`, `useSequentialFadeSwap`, `useHeldWhile` from there directly); placement helpers live in `portaled-tooltip-placement.ts`, content slots in `tooltip-panel.tsx`. `DisabledTooltip` lives in `disabled-tooltip.tsx`.
-
-## Accessibility stance
-
-Alchemy is visual-heavy and intentionally ships no dedicated accessibility
-feature set beyond semantic robustness. Preserve semantic buttons,
-programmatic names and states, keyboard behavior supplied by shared primitives,
-and `aria-hidden` on decorative art. Do not add focus traps/restoration,
-screen-reader announcement systems, contrast tooling, or per-component
-reduced-motion variants without a product decision. Preserve the existing
-Armory confirmation focus behavior and reduced-motion handling documented
-[below](#armory-crafting-and-salvage). Shared motion accommodations live in
-`src/styles/keyframes.css` and `src/styles/components.css`; Armory also disables
-inventory movement and crafting feedback motion locally.
-
-## Battle motion
-
-Battle VFX (lunge, shake, ghost layers, combat-text rails) is owned by
-`run-loop/battle` + `run-loop/battle/presentation`. Guidance lives in
-[WORKFLOWS.md](./WORKFLOWS.md#change-battle-playback); this file owns only the
-shared widget/motion primitives above.
-
-## Deck and pile inspection
-
-The stacked-cards icon opens the run Deck during drafting,
-run screens, and meta detours from that run. Drafting exposes picks so far through
-the icon; it does not add a previous-picks strip. The icon has no tooltip. Draw
-and Discard piles have keyboard-accessible inspection actions without visible
-counters; counts remain in accessible action names.
-Titled screen headers place Deck on the left alongside any Back control and Menu
-on the right, with the title centered between them.
-
-`CardInspectionOverlay` is controlled by props and reuses the modal shell,
-`useDialogFocus`, card presentation, and adaptive pagination. Each copy remains
-visible individually, sorted by displayed title with an instance-content tie
-break independent of draw order. The grid uses `viewCardWidthClass`, matching
-`CardSelectionGrid`’s 230.472 px reference width; larger Collection tiles do not
-fit that measurement. The viewer shows only a centered collection title, cards,
-and an upper-right close button, plus pagination controls when needed. It has no
-collection tabs, counts, instructional or empty-state text, or labels below cards.
-Open each collection from its own opener. Pagination resets on reopening.
-Full Deck is the run deck, including cards Consumed in the current battle;
-battle-only generated cards appear in their current piles instead. Deck, Draw
-Pile, and Discard Pile cards show their keyword Shine Border on hover or
-keyboard focus, with neutral shine when no keywords resolve, matching
-Collection, Wish, and reward choices.
-
-Inspection opens only between actions on a surviving player’s turn, with no
-Wish, pending transition, hidden hand card, card ghost, or card transfer. While
-open it contains focus and blocks underlying input, autoplay, and automatic End
-Turn without changing saved automation preferences. Navigation, run replacement,
-battle teardown, or opening a peer menu closes it. Escape, backdrop, and the close
-button dismiss it and return focus to the opener. Pile measurement wrappers must
-match the artwork bounds: their button is block-level so inline baseline spacing
-does not shift transfer anchors.
-
-## Enemy inspection
-
-Battle enemy portraits and discovered Bestiary entries open the shared
-`EnemyInspectionOverlay`, sharing `InspectionPanel` and `InspectionCardGrid` with
-deck inspection. The enemy name is the modal header, followed by Traits
-and Abilities headings without a divider. Abilities reuse `BattleCardButton`,
-`viewCardWidthClass`, the standard keyword border/hover behavior, and adaptive
-card pagination. Cards show portrait art only; effects appear in ordinary card
-tooltips on hover or keyboard focus. Inspection cards cannot be played or flipped
-and do not inherit the hero's description context. Ability tooltip text is universal: edit the canonical card description once for
-all inspection and play surfaces.
-
-Enemy portrait tooltips show traits only, with no repeated-attack text, ability
-cards, or upcoming-action indicator. `EnemyTraits` renders the same named trait
-sections in Battle hover, Bestiary hover, and the modal. Each subheader pairs a
-small static Lucide icon with `ShineText`; colors come from up to three distinct
-keywords in description order through `getKeywordTextShineColors`. Descriptions
-use the shared keyword tokenizer for bold/color emphasis. No-keyword titles use
-the normal neutral fallback. Encounter modifiers use the same rendering and are
-shown once in their existing separate group. Enemy trait copy refers to heroes.
-
-Opening inspection dismisses the portrait tooltip through its standard fade.
-`useHoverVisible` supports `suspended` and `dismiss`: restored focus must not flash
-the old tooltip back; deliberate pointer movement or a new focus visit can show
-it again. While the modal is open, Battle input, autoplay, and automatic End Turn
-use the shared inspection gate. Opening is restricted to the same safe decision
-window as deck inspection. Modal dismissal and focus return follow the shared
-overlay lifecycle.
-
-Bestiary clicks retain the enemy sound and Boss music preview. Opening, closing,
-and reopening the modal do not restart or stop preview music; existing page/tab
-changes still restore menu music. Undiscovered entries retain their current
-concealment and audio behavior and cannot open inspection.
-
-## Verification
-
-Use the changed-path route and [test value policy](../CONTRIBUTING.md#test-value-and-coverage-strategy) in CONTRIBUTING. Cover shared interaction behavior and representative browser risks; do not multiply UI tests for every mechanic or cosmetic variant. Interaction
-or browser-journey work also follows [tests/e2e/README.md](../tests/e2e/README.md).
-
 ## Armory crafting and salvage
 
 Targeting cancellation treats icon descendants, including SVG paths, like their containing controls. Currency targeting survives clicks within the workspace and its recognized controls; salvage targeting survives clicks on salvageable items, the salvage toggle, and the crafting strip. Other clicks cancel targeting. Right-clicks on gear, Trinkets, equipment slots, and crafting currencies leave targeting active; other right-clicks cancel, suppressing the browser context menu only within the workspace. Escape, window blur, and hiding the document also cancel targeting. Activation clicks do not cancel the mode they enable, and cancellation listeners are active without a timer delay. Salvage confirmation owns its own dismissal while targeting listeners are suspended.
@@ -418,3 +451,8 @@ Currency artwork shares one 5rem size between the crafting strip, pointer attach
 Selecting an item for salvage immediately ends targeting and clears its cursor and highlights. Confirm, Cancel, and Escape return to browsing. The dialog uses the heading “Salvage,” a wrapping shining item name in “Salvaging [item] will yield:”, a portrait, full-size currency rewards, and an equipped-character warning where applicable. Confirmations focus Cancel, contain keyboard focus, and disable actions during exit.
 
 Crafting consumes one currency per activation. Escape cancels targeting; invalid targets explain their restriction in tooltips and after selection. Success shows actual before/after affix descriptions in a dismissible panel pinned inside the viewport, a brief item pulse, and count feedback only when quantities change. Inventory movement uses a short position transition; reduced-motion preferences disable these animations.
+
+## Verification
+
+Use the changed-path route and [test value policy](../CONTRIBUTING.md#test-value-and-coverage-strategy) in CONTRIBUTING. Cover shared interaction behavior and representative browser risks; do not multiply UI tests for every mechanic or cosmetic variant. Interaction
+or browser-journey work also follows [tests/e2e/README.md](../tests/e2e/README.md).

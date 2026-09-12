@@ -9,7 +9,7 @@ Feature code occasionally bypasses the aggregate command boundary — calling st
 
 ## Why it matters
 
-Bypassing the shared command boundary causes inconsistent reads, unpersisted writes, torn autosave, and non-rollbackable side effects. Nested dispatches and async spans break atomicity; battle continuity depends on committing the intermediate state and its continuation together. [Run-state ownership](../../../docs/ARCHITECTURE.md#run-state) defines publication, unchanged-command behavior, and post-commit effects.
+Bypassing the shared command boundary causes inconsistent reads, unpersisted writes, torn autosave, and non-rollbackable side effects. Nested dispatches and async spans break atomicity; battle continuity depends on committing resolved gameplay, RNG, and XP before presentation. Pending continuations are retained only to resume older saves without repeating their rolls or rewards. [Run-state ownership](../../../docs/ARCHITECTURE.md#run-state) defines publication, unchanged-command behavior, and post-commit effects.
 
 ## Evidence
 

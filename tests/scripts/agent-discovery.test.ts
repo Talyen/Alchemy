@@ -184,6 +184,8 @@ it("keeps isolated worktree documentation out of repository reachability checks"
     "README.md": "[Guide](./docs/guide.md)",
     "docs/guide.md": "Reachable guide",
     "docs/orphan.md": "Actual orphan",
+    "docs/Plans/Archived/Old.md": "Exempt archived plan",
+    ".agents/history/old.md": "Exempt agent history",
     ".worktrees/eval/README.md": "Isolated checkout",
     ".worktrees/eval/docs/unlinked.md": "Not this repository's documentation",
   });

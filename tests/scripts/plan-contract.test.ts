@@ -16,6 +16,31 @@ describe("execution-plan contract", () => {
     expect(metadata.updated?.toISOString().slice(0, 10)).toBe("2026-08-20");
   });
 
+  it("preserves prose and reference link destinations when archiving plans together", () => {
+    const plansDir = fs.mkdtempSync(path.join(os.tmpdir(), "alchemy-plan-links-"));
+    const content =
+      planTemplate("First", "2026-09-11").replace("status: active", "status: complete") +
+      '\n[Second](Second.md#notes)\n![Picture](../../image.png "caption")\n[Guide][ref]\n[ref]: ../../CONTRIBUTING.md#checks\n' +
+      "[Web](https://example.com) [Anchor](#notes) `[Example](./code.md)`\n```md\n[Example](./code.md)\n```\n";
+    try {
+      fs.writeFileSync(path.join(plansDir, "First.md"), content);
+      fs.writeFileSync(path.join(plansDir, "Second.md"), content);
+      archiveTerminalPlans({ plansDir, dryRun: true });
+      expect(fs.readFileSync(path.join(plansDir, "First.md"), "utf8")).toBe(content);
+      archiveTerminalPlans({ plansDir });
+      const archived = fs.readFileSync(path.join(plansDir, "Archived/First.md"), "utf8");
+      expect(archived).toContain("../../../CONTRIBUTING.md#what-to-run-when-you-change");
+      expect(archived).toContain("../README.md#task-handoff");
+      expect(archived).toContain("[Second](Second.md#notes)");
+      expect(archived).toContain('![Picture](../../../image.png "caption")');
+      expect(archived).toContain("[ref]: ../../../CONTRIBUTING.md#checks");
+      expect(archived).toContain("[Web](https://example.com) [Anchor](#notes) `[Example](./code.md)`");
+      expect(archived).toContain("```md\n[Example](./code.md)\n```");
+    } finally {
+      fs.rmSync(plansDir, { recursive: true, force: true });
+    }
+  });
+
   it("requires a reason for blocked plans and rejects invalid names", () => {
     const blocked = parsePlanMetadata(
       planTemplate("ExamplePlan", "2026-08-20").replace("status: active", "status: blocked"),
@@ -71,9 +96,30 @@ describe("execution-plan contract", () => {
 });
 
 describe("transient artifact cleanup", () => {
+  it("never traverses a symlinked transient root, including during dry runs", () => {
+    const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), "alchemy-prune-"));
+    const external = fs.mkdtempSync(path.join(os.tmpdir(), "alchemy-retained-"));
+    try {
+      const retained = path.join(external, "keep.log");
+      fs.writeFileSync(retained, "retained evidence");
+      fs.utimesSync(retained, new Date(0), new Date(0));
+      fs.symlinkSync(external, path.join(rootDir, "reports"), process.platform === "win32" ? "junction" : "dir");
+      for (const dryRun of [true, false]) {
+        expect(pruneTransientArtifacts({ rootDir, dryRun }).removed).toEqual([]);
+        expect(fs.readFileSync(retained, "utf8")).toBe("retained evidence");
+      }
+    } finally {
+      fs.rmSync(rootDir, { recursive: true, force: true });
+      fs.rmSync(external, { recursive: true, force: true });
+    }
+  });
+
   it("parses a one-day dry-run policy", () => {
     expect(parsePruneArgs(["--dry-run", "--days=2"])).toEqual({ days: 2, dryRun: true });
     expect(() => parsePruneArgs(["--days=-1"])).toThrow(/non-negative/);
+    expect(() => parsePruneArgs(["--days="])).toThrow(/non-negative/);
+    expect(() => parsePruneArgs(["--days= "])).toThrow(/non-negative/);
+    expect(parsePruneArgs(["--days=0"])).toEqual({ days: 0, dryRun: false });
   });
 
   it("removes only stale files and preserves fresh evidence", () => {

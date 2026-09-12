@@ -8,22 +8,27 @@ import { extractSubcommand, isDestructive } from "./lib/git-classify.mjs";
 const ownShimDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "scripts", "bin");
 
 const args = process.argv.slice(2);
+const { subcommand, subIndex } = extractSubcommand(args);
+// Git resolves repeated -C and explicit work-tree/git-dir options itself.
+// Use the identical prelude for inspection, backup, and the requested command.
+const prelude = args.slice(0, Math.max(0, subIndex)).filter((arg) => arg !== "--");
 
 function hasDirtyTree() {
-  const diff = spawnSync(realGit, ["diff", "--quiet"], { cwd: process.cwd(), stdio: "ignore" });
-  const diffCached = spawnSync(realGit, ["diff", "--cached", "--quiet"], { cwd: process.cwd(), stdio: "ignore" });
-  const untracked = spawnSync(realGit, ["ls-files", "--others", "--exclude-standard"], {
+  const result = spawnSync(realGit, [...prelude, "status", "--porcelain", "--untracked-files=all", "-z"], {
     cwd: process.cwd(),
     encoding: "utf8",
   });
-  const hasUntracked = untracked.stdout && untracked.stdout.trim().length > 0;
-  return diff.status !== 0 || diffCached.status !== 0 || hasUntracked;
+  if (result.status !== 0) {
+    console.error(`Could not inspect the target checkout; command blocked. ${result.error?.message ?? result.stderr}`);
+    process.exit(1);
+  }
+  return result.stdout.length > 0;
 }
 
 function stashBackup(cmd) {
   const ts = new Date().toISOString().replace(/[:.]/g, "-");
   const msg = `auto-backup pre-${cmd} ${ts}`;
-  const result = spawnSync(realGit, ["stash", "push", "-m", msg, "--include-untracked"], {
+  const result = spawnSync(realGit, [...prelude, "stash", "push", "-m", msg, "--include-untracked"], {
     cwd: process.cwd(),
     encoding: "utf8",
   });
@@ -43,20 +48,10 @@ function findRealGit() {
 }
 
 function execRealGit(realGit, gitArgs) {
-  const bypassEnv = { ...process.env };
-  const destructiveAliases = ["reset", "checkout", "restore", "clean", "switch", "branch", "push"];
-  let idx = 0;
-  for (const a of destructiveAliases) {
-    bypassEnv[`GIT_CONFIG_KEY_${idx}`] = `alias.${a}`;
-    bypassEnv[`GIT_CONFIG_VALUE_${idx}`] = "";
-    idx++;
-  }
-  bypassEnv.GIT_CONFIG_COUNT = String(idx);
-  if (process.env.GIT_CONFIG_COUNT) {
-    bypassEnv.GIT_CONFIG_COUNT = String(idx);
-  }
-  const result = spawnSync(realGit, gitArgs, { cwd: process.cwd(), stdio: "inherit", env: bypassEnv });
-  process.exit(result.status ?? 0);
+  // Built-in commands take precedence over aliases; preserve caller Git config.
+  const result = spawnSync(realGit, gitArgs, { cwd: process.cwd(), stdio: "inherit" });
+  if (result.error) console.error(result.error.message);
+  process.exit(result.status ?? 1);
 }
 
 const realGit = findRealGit();
@@ -69,11 +64,11 @@ if (!hasDirtyTree()) {
   execRealGit(realGit, args);
 }
 
-const { subcommand } = extractSubcommand(args);
 const backup = stashBackup(subcommand || "destructive");
 console.error("");
 console.error("blocked: destructive git command with dirty tree");
 console.error(`  attempted: git ${args.join(" ")}`);
+if (prelude.length) console.error(`  Recovery commands below require the same Git options: ${prelude.join(" ")}`);
 if (backup.status === 0) {
   console.error(`  backup: git stash push -m "${backup.msg}" --include-untracked`);
 } else {

@@ -123,7 +123,7 @@ export function checkLocalMarkdownLinks() {
 export function checkInlineRepositoryPaths() {
   const missing = [];
   for (const file of markdownFiles()) {
-    if (file.endsWith("CHANGELOG.md") || file.includes("/.agents/history/")) continue;
+    if (file.endsWith("CHANGELOG.md") || file.replaceAll("\\", "/").includes("/.agents/history/")) continue;
     const source = stripFencedBlocks(readMarkdownSource(file));
     for (const match of source.matchAll(/`([^`\n]+)`/gu)) {
       const candidate = match[1].trim();
@@ -178,7 +178,7 @@ export function checkDocumentedNpmScripts() {
   const packageJson = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"));
   const missing = [];
   for (const file of markdownFiles()) {
-    if (file.includes("/.agents/history/")) continue;
+    if (file.replaceAll("\\", "/").includes("/.agents/history/")) continue;
     const source = readMarkdownSource(file);
     for (const match of source.matchAll(/npm run ([a-zA-Z0-9:_-]+)/gu)) {
       const script = match[1];
@@ -201,7 +201,7 @@ export function checkMarkdownHeadingAnchors() {
   };
   const broken = [];
   for (const file of markdownFiles()) {
-    if (file.endsWith("CHANGELOG.md") || file.includes("/.agents/history/")) continue;
+    if (file.endsWith("CHANGELOG.md") || file.replaceAll("\\", "/").includes("/.agents/history/")) continue;
     const source = readMarkdownSource(file);
     for (const match of source.matchAll(/\[[^\]]*\]\(([^)]+)\)/gu)) {
       const target = match[1]?.split(/\s+/u)[0]?.replace(/^<|>$/gu, "");
@@ -226,7 +226,7 @@ export function checkDurableDocumentReachability(rootDir = ROOT) {
     relativePath === "CHANGELOG.md" || relativePath.startsWith("docs/Plans/") || relativePath.startsWith(".agents/");
   const documents = new Map();
   for (const file of markdownFiles(rootDir)) {
-    const relativePath = file.slice(rootDir.length + 1);
+    const relativePath = file.slice(rootDir.length + 1).replaceAll("\\", "/");
     if (isExempt(relativePath)) continue;
     const targets = new Set();
     for (const match of readMarkdownSource(file).matchAll(/\[[^\]]*\]\(([^)]+)\)/gu)) {
@@ -234,7 +234,7 @@ export function checkDurableDocumentReachability(rootDir = ROOT) {
       if (!target || /^(?:https?:|mailto:|#)/u.test(target)) continue;
       const absolutePath = resolve(dirname(file), decodeURIComponent(target.split("#")[0]));
       if (!/\.(?:md|mdx)$/u.test(absolutePath)) continue;
-      const targetRelativePath = absolutePath.slice(rootDir.length + 1);
+      const targetRelativePath = absolutePath.slice(rootDir.length + 1).replaceAll("\\", "/");
       if (targetRelativePath !== relativePath && !isExempt(targetRelativePath)) targets.add(targetRelativePath);
     }
     documents.set(relativePath, targets);

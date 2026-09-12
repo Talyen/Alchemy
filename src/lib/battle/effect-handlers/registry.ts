@@ -32,6 +32,8 @@ import {
 import {
   applySummonCompanionEffect,
   applyBuffCompanionEffect,
+  createCompanionActionHandler,
+  applyRandomDrawEffect,
   applyGainGoldEffect,
   applyWishEffectHandler,
   applyDrawCardsEffect,
@@ -59,6 +61,8 @@ export const EFFECT_APPLY_BY_KIND = {
   "remove-player-status": applyRemovePlayerStatusEffect,
   "self-damage": applySelfDamageEffect,
   "buff-companion": applyBuffCompanionEffect,
+  "companion-action": createCompanionActionHandler(applyCardEffects),
+  "random-draw": applyRandomDrawEffect,
   "lose-health": applyLoseHealthEffect,
   "draw-cards": applyDrawCardsEffect,
   "remove-enemy-armor": applyRemoveEnemyArmorEffect,

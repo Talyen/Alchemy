@@ -83,11 +83,12 @@ function applyForgeStunRider(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   combatTexts: CombatTextEvent[],
+  forgeBeforeHit: number,
 ) {
   if (
     effect.damageType !== "physical" ||
     state.trinketEffects.forgeStunThreshold <= 0 ||
-    state.playerStatuses.forge < state.trinketEffects.forgeStunThreshold
+    forgeBeforeHit < state.trinketEffects.forgeStunThreshold
   )
     return state;
 
@@ -216,7 +217,8 @@ export function applyDamageRiders(
   const hit = damageEnemyHealth(prePurgeState, modifiedDamage);
   const previousHealth = hit.previousHealth;
   onDamageDealt?.(hit.healthDamage);
-  let nextState: BattleState = hit.state;
+  // Spend the resource used by this packet before its rewards grant fresh Forge.
+  let nextState = consumeForgeAfterDamage(hit.state, effect, modifiedDamage, companionAttack);
 
   nextState = decayArmorAfterDamage(nextState, modifiedDamage, "enemy");
 
@@ -227,7 +229,7 @@ export function applyDamageRiders(
   if (effect.detonateIfEnemyBurning && enemyWasBurningBefore) {
     nextState = detonateEnemyStatuses(nextState, ["burn"], combatTexts);
   }
-  if (modifiedDamage > 0) nextState = applyForgeStunRider(nextState, effect, combatTexts);
+  if (modifiedDamage > 0) nextState = applyForgeStunRider(nextState, effect, combatTexts, state.playerStatuses.forge);
   if (effect.damageType === "physical" && modifiedDamage > 0) {
     const stunChance = nextState.talentEffects.physicalStunChance + nextState.gearEffects.physicalStunChance;
     if (rollTalentChance(stunChance, nextState)) {
@@ -307,8 +309,6 @@ export function applyDamageRiders(
   nextState = processEncounterTraitHealthThreshold(previousHealth, nextState, combatTexts);
 
   nextState = payKillPayouts(nextState, hit.enemyWasAlive, combatTexts);
-  // Spend the Forge used by this hit before granting Forge earned from its frozen target.
-  nextState = consumeForgeAfterDamage(nextState, effect, modifiedDamage, companionAttack);
   if (
     modifiedDamage > 0 &&
     enemyWasFrozen &&

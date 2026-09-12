@@ -25,7 +25,7 @@ function publishVitest(reportPath) {
   publishCiSummary({
     rootDir: process.cwd(),
     markdown,
-    status: summary ? (summary.numFailedTests > 0 ? "failed" : "passed") : "missing-report",
+    status: summary ? (summary.failed ? "failed" : "passed") : "missing-report",
     command: process.env.GITHUB_JOB ? `vitest (${process.env.GITHUB_JOB})` : "vitest",
     artifacts: [path.relative(process.cwd(), resolved)],
     summary: summary ? `Vitest: ${summary.numPassedTests}/${summary.numTotalTests} passed.` : "Vitest report missing.",
@@ -43,6 +43,12 @@ function publishPlaywright(reportPath) {
   const markdown = summary
     ? formatPlaywrightSummaryMarkdown(summary)
     : `## Playwright\n\n_No report at \`${reportPath}\`._\n`;
+  if (process.env.GITHUB_OUTPUT) {
+    fs.appendFileSync(
+      process.env.GITHUB_OUTPUT,
+      `retain-diagnostics=${!summary || summary.failed || summary.flaky > 0}\n`,
+    );
+  }
   const failureIndex = writeFailureIndex(process.cwd());
   const exactDigests = (summary?.failures ?? [])
     .map((failure) => failure.digestPath)
@@ -50,7 +56,7 @@ function publishPlaywright(reportPath) {
   publishCiSummary({
     rootDir: process.cwd(),
     markdown,
-    status: summary ? (summary.unexpected > 0 ? "failed" : "passed") : "missing-report",
+    status: summary ? (summary.failed ? "failed" : "passed") : "missing-report",
     command: process.env.GITHUB_JOB ? `playwright (${process.env.GITHUB_JOB})` : "playwright",
     artifacts: [
       ...exactDigests.map((filePath) => ({ path: filePath, role: "primary" })),
@@ -114,7 +120,8 @@ export function parseSummaryArgs(args) {
       continue;
     }
 
-    if (!arg.startsWith("-")) positionalPaths.push(arg);
+    if (arg.startsWith("-")) throw new Error(`Unknown summary option: ${arg}`);
+    positionalPaths.push(arg);
   }
 
   if (selected.all) {
@@ -129,6 +136,7 @@ export function parseSummaryArgs(args) {
       paths[mode] = positionalPaths.shift();
     }
   }
+  if (positionalPaths.length) throw new Error(`Unexpected report paths: ${positionalPaths.join(", ")}`);
 
   return {
     vitest: selected.vitest,

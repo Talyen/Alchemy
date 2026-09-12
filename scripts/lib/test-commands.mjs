@@ -1,4 +1,5 @@
-import { globSync } from "node:fs";
+import { readdirSync, statSync } from "node:fs";
+import path from "node:path";
 
 const NPM = process.platform === "win32" ? "npm.cmd" : "npm";
 
@@ -22,17 +23,29 @@ export const TEST_SUITES = Object.freeze({
   shipUnit: Object.freeze([...SAVE_CORE_SUITES, "tests/scripts", "tests/architecture"]),
 });
 
-function testFilesUnder(rootDir, rootPath) {
-  const pattern =
-    rootPath.endsWith(".test.ts") || rootPath.endsWith(".test.tsx") ? rootPath : `${rootPath}/**/*.test.{ts,tsx}`;
-  return globSync(pattern, { cwd: rootDir });
+function hasTestFiles(filename) {
+  const stats = statSync(filename, { throwIfNoEntry: false });
+  if (!stats) return false;
+  if (stats.isFile()) return /\.test\.tsx?$/u.test(filename);
+  if (!stats.isDirectory()) return false;
+  return readdirSync(filename, { withFileTypes: true }).some((entry) =>
+    entry.isDirectory()
+      ? hasTestFiles(path.join(filename, entry.name))
+      : entry.isFile() && /\.test\.tsx?$/u.test(entry.name),
+  );
 }
 
 export function validateTestSuitePaths(rootDir, suites = TEST_SUITES.shipUnit) {
-  return suites.filter((entry) => testFilesUnder(rootDir, entry).length === 0);
+  return suites.filter((entry) => !hasTestFiles(path.join(rootDir, entry)));
 }
 
 export const COMMANDS = Object.freeze({
+  "unit-all": {
+    label: "complete unit suite",
+    reason: "large selections use full coverage without exceeding platform argument limits",
+    command: NPM,
+    args: ["test"],
+  },
   related: {
     label: "dependency-related unit tests",
     reason: "Vitest selects tests that import the changed implementation",

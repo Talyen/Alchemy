@@ -4,8 +4,8 @@ import { MenuPage } from "../../pages/menu-page";
 import { injectHomestead, injectTalentUnlocks } from "../save-injection";
 import { critical, slow } from "../../playwright-tags";
 
-test.describe("Talents Flow", critical, () => {
-  test("shows talent overview grid and navigates to keyword tree and back", async ({ page }) => {
+test.describe("Talents Flow", () => {
+  test("shows talent overview grid and navigates to keyword tree and back", critical, async ({ page }) => {
     const menu = new MenuPage(page);
     await menu.gotoWithUnlockedMeta();
     await menu.openTalents();
@@ -43,8 +43,7 @@ test.describe("Talents Flow", critical, () => {
     await expect(page.getByRole("button", { name: "Cancel" })).toBeVisible();
   });
 
-  test("keyboard navigation unlocks consecutive talents without leaving the tree", async ({ page, runtimeErrors }) => {
-    void runtimeErrors;
+  test("keyboard navigation unlocks consecutive talents without leaving the tree", critical, async ({ page }) => {
     const menu = new MenuPage(page);
     await menu.gotoWithUnlockedMeta({ talentXP: { dodge: 550 }, unlockedTalents: {} });
     await menu.openTalents();
@@ -68,8 +67,7 @@ test.describe("Talents Flow", critical, () => {
     }
   });
 
-  test("long talent descriptions fit on a small viewport", slow, async ({ page, runtimeErrors }) => {
-    void runtimeErrors;
+  test("long talent descriptions fit on a small viewport", slow, async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
     const menu = new MenuPage(page);
     await menu.gotoWithUnlockedMeta();

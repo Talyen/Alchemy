@@ -15,9 +15,9 @@ import {
 import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
 import { Surface } from "../../../shared/ui/surface";
 import { BattleCardButton } from "../../../shared/ui/card-button";
-import { MysteryEffectList } from "../../../shared/ui/mystery-effect-badge";
+import { MysteryEffectList } from "./mystery-effect-badge";
 import { FadeSlot } from "../../../shared/ui/use-fade";
-import { PortaledTooltip } from "../../../shared/ui/portaled-tooltip";
+import { PortaledTooltip } from "../../../shared/ui/tooltips/portaled-tooltip";
 import { useHoverVisible } from "../../../shared/ui/use-hover-visible";
 import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
 

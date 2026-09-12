@@ -1,7 +1,7 @@
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { prepareTalentCardPlay } from "./talent-card-play";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
-import { drawFromState, applyDrawResult } from "./draw";
+import { drawFromState, applyDrawResult, remapDrawnCardBenefits } from "./draw";
 import { applyCardEffects } from "./effect-handlers";
 import {
   addGoldWithCombatText,
@@ -79,7 +79,8 @@ function isCardInHand(state: BattleSnapshot, card: BattleCard, index: number): b
 }
 
 export function applyMortarAndPestlePotionUse(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]) {
-  if (!isPotionCard(card) || state.trinketEffects.mortarPestlePoisonOnPotionUse <= 0) return state;
+  if (isPlayerDefeated(state) || !isPotionCard(card) || state.trinketEffects.mortarPestlePoisonOnPotionUse <= 0)
+    return state;
   return resolvePendingBattleReactions(
     dealPlayerTypedHit(state, "poison", state.trinketEffects.mortarPestlePoisonOnPotionUse, combatTexts),
     combatTexts,
@@ -132,7 +133,7 @@ function executeCardPlayState(
   };
 
   const talentPlay = prepareTalentCardPlay(nextState, card, combatTexts);
-  nextState = talentPlay.state;
+  nextState = resolvePendingBattleReactions(talentPlay.state, combatTexts);
   const playContext = {
     attackBonuses: talentPlay.attackBonuses,
     cardHealing: true,
@@ -166,7 +167,7 @@ function executeCardPlayState(
 }
 
 function applyTwinCasting(state: BattleState, card: BattleCard): BattleState {
-  if (state.gearEffects.elementalTwinCasting <= 0) return state;
+  if (isPlayerDefeated(state) || state.gearEffects.elementalTwinCasting <= 0) return state;
   if (state.hand.length >= MAX_HAND_SIZE) return state;
 
   const hasBurn = cardHasKeyword(card, "burn");
@@ -202,6 +203,7 @@ function applyTwinCasting(state: BattleState, card: BattleCard): BattleState {
     deck: nextDeck,
     hand: [...state.hand, drawnCard],
     nextCardUid: state.nextCardUid + 1,
+    uniqueGear: remapDrawnCardBenefits(state, [{ previous: rawDrawnCard.uid, next: drawnCard.uid }]),
   };
 }
 
@@ -225,6 +227,7 @@ export function applyCardPlayTalentRewards(
   card: BattleCard,
   combatTexts: CombatTextEvent[],
 ): BattleState {
+  if (isPlayerDefeated(state)) return state;
   let nextState = applyNatureCardPlayTalents(state, card, combatTexts);
   if (nextState.talentEffects.companionActsOnCard && getCardKeywords(card).includes("companion")) {
     nextState = processCompanionTurnStart(nextState, combatTexts);

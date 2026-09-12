@@ -1,4 +1,4 @@
-import { companionLibrary } from "./companions";
+import { companionLibrary, type CompanionDamageModifiers } from "./companions";
 import { getCompanionDescriptionLines } from "./cards/companion-turn-description";
 import type { BattleCard } from "./types";
 
@@ -7,6 +7,7 @@ export interface CardDescriptionContext {
   companionDamage?: number;
   companionDamageBonus?: number;
   companionDamageBuff?: number;
+  companionDamageModifiers?: CompanionDamageModifiers;
   companionBondLevels?: Record<string, number>;
   potionPotency?: number;
 }
@@ -21,7 +22,8 @@ export function getEffectiveCardDescriptionLines(
       ...getCompanionDescriptionLines(
         companionLibrary[summon.companionId],
         context.companionBondLevels?.[summon.companionId] ?? 0,
-        (context.companionDamage ?? 0) + (context.companionDamageBonus ?? 0) + (context.companionDamageBuff ?? 0),
+        context.companionDamageModifiers ??
+          (context.companionDamage ?? 0) + (context.companionDamageBonus ?? 0) + (context.companionDamageBuff ?? 0),
       ),
       ...card.descriptionLines.slice(1),
     ];

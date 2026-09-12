@@ -4,12 +4,12 @@ import { MUSIC_KEYS } from "@/lib/game-constants";
 import { useControlledPagination } from "../../shared/ui/use-pagination";
 import { useAdaptiveGrid } from "../../shared/ui/adaptive-grid";
 import { GridMeasurement } from "../../shared/ui/grid-measurement";
-import { getCollectionLibraryLength } from "../../shared/ui/collection-items";
+import { getCollectionLibraryLength } from "./collection/collection-items";
 import { collectionShellWidthClass } from "../../shared/config";
-import { PageLayout, ScreenHeaderRow, ScreenShell } from "../../shared/ui/shared-ui";
-import { CollectionGrid, CollectionTabs, CollectionPagination } from "../../shared/ui/collection-ui";
+import { PageLayout, ScreenHeaderRow, ScreenShell } from "../../shared/ui/layout-components";
+import { CollectionGrid, CollectionTabs, CollectionPagination } from "./collection/collection-ui";
 import { enemyById, type CharacterId, type BestiaryEntry } from "../../shared/config/game-data-catalog";
-import { EnemyInspectionOverlay } from "../../shared/ui/enemy-inspection-overlay";
+import { EnemyInspectionOverlay } from "../../shared/ui/inspection/enemy-inspection-overlay";
 import type { CollectionTab } from "../../shared/types";
 
 export function CollectionScreen({

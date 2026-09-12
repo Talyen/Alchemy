@@ -4,11 +4,7 @@ import { PRETTIER_GLOBS, filterPrettierPaths } from "../../scripts/prettier-path
 describe("prettier-paths", () => {
   it("exports the shared format globs", () => {
     expect(PRETTIER_GLOBS).toEqual(
-      expect.arrayContaining([
-        "*.{js,json,md,ts,yml,yaml}",
-        ".prettierrc",
-        "{src,tests,scripts,desktop,docs,performance,eslint}/**/*.{ts,tsx,css,mjs,cjs,js,md}",
-      ]),
+      expect.arrayContaining(["**/*.{ts,tsx,css,mjs,cjs,js,json,md,yml,yaml}", ".prettierrc"]),
     );
   });
 
@@ -20,7 +16,20 @@ describe("prettier-paths", () => {
         "src/App.tsx",
         "package-lock.json",
         "Raw Assets/foo.png",
+        ".github/workflows/ci.yml",
+        ".agents/skills/verifier/SKILL.md",
+        "performance/catalog.json",
+        "stryker.config.mjs",
       ]),
-    ).toEqual(["docs/ARCHITECTURE.md", "eslint.config.js", "src/App.tsx", "package-lock.json"]);
+    ).toEqual([
+      "docs/ARCHITECTURE.md",
+      "eslint.config.js",
+      "src/App.tsx",
+      "package-lock.json",
+      ".github/workflows/ci.yml",
+      ".agents/skills/verifier/SKILL.md",
+      "performance/catalog.json",
+      "stryker.config.mjs",
+    ]);
   });
 });

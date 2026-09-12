@@ -1,11 +1,9 @@
 const path = require("node:path");
-const { copyFile, glob: fsGlob } = require("node:fs/promises");
+const { copyFile, readdir } = require("node:fs/promises");
 const { flipFuses, FuseV1Options, FuseVersion } = require("@electron/fuses");
 const { executablePathForPackContext } = require("./package-layout.cjs");
 
-async function* fallbackGlob(pattern, options) {
-  const { readdir, stat } = require("node:fs/promises");
-  const cwd = options?.cwd ?? ".";
+async function* findDefaultSnapshots(cwd) {
   const pending = [""];
   while (pending.length > 0) {
     const relative = pending.pop();
@@ -13,23 +11,17 @@ async function* fallbackGlob(pattern, options) {
     const entries = await readdir(absolute, { withFileTypes: true });
     for (const entry of entries) {
       const entryRelative = path.join(relative, entry.name);
-      const entryAbsolute = path.join(cwd, entryRelative);
       if (entry.isDirectory()) {
         pending.push(entryRelative);
-      } else if (entry.isFile()) {
-        const matches = entryRelative === pattern || entryRelative.endsWith(pattern.replace("**/", ""));
-        if (matches && entryRelative.includes("v8_context_snapshot")) {
-          const s = await stat(entryAbsolute).catch(() => null);
-          if (s) yield entryRelative;
-        }
+      } else if (entry.isFile() && /^v8_context_snapshot.*\.bin$/u.test(entry.name)) {
+        yield entryRelative;
       }
     }
   }
 }
 
 async function installBrowserProcessSnapshots(appOutDir) {
-  const globImpl = typeof fsGlob === "function" ? fsGlob : fallbackGlob;
-  for await (const defaultSnapshot of globImpl("**/v8_context_snapshot*.bin", { cwd: appOutDir })) {
+  for await (const defaultSnapshot of findDefaultSnapshots(appOutDir)) {
     const snapshotDirectory = path.dirname(defaultSnapshot);
     await copyFile(
       path.join(appOutDir, defaultSnapshot),

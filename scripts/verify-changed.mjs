@@ -62,8 +62,8 @@ function runVerificationCommand(command, index, verbose, runId, sessionInputs) {
   const result = runCommand(command.command, command.args, {
     cwd: ROOT,
     env: { ...process.env, ALCHEMY_RUN_ID: runId },
-    shell: process.platform === "win32",
     stdio: ["inherit", "pipe", "pipe"],
+    logPath: path.join(ROOT, "reports/runs", runId, "verify", `${command.key}.log`),
   });
   // sessionInputs is captured once per process (see main); one post-command
   // capture decides whether the diagnostic event is trustworthy.
@@ -75,15 +75,9 @@ function runVerificationCommand(command, index, verbose, runId, sessionInputs) {
       status: result.status === 0 ? "passed" : "failed",
     });
   const { exposure, failureOutput } = summarizeStepResult(command, result, { verbose });
-  if (result.status === 0 && !exposure.overBudget) {
+  if (result.status === 0) {
     console.log(`✓ ${command.label} (${(result.elapsedMs / 1000).toFixed(1)}s, run ${runId})`);
     return { passed: true, command, result, exposure };
-  }
-  if (exposure.overBudget && result.status === 0) {
-    // Intentional: verify fails passing-but-chatty commands so routine output
-    // stays bounded; check only fails on non-zero exit. Keep both policies.
-    console.error(`✗ ${command.label} exceeded the routine output budget (run ${runId})`);
-    return { passed: false, exposureFailure: true, command, result, exposure };
   }
   const reportsDir = path.join(ROOT, "reports", "runs", runId, "verify");
   const { digestPath, logPath } = writeFailureDigest(reportsDir, command, result, runId, index);

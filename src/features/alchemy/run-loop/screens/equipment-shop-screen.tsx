@@ -1,6 +1,6 @@
 import type { GearInstance } from "@/lib/gear";
 
-import { PurchasableGearItem } from "../../shared/ui/purchasable-shop-item";
+import { PurchasableGearItem } from "../shop/ui/purchasable-shop-item";
 import { GenericShopScreen } from "./generic-shop-screen";
 
 export function EquipmentShopScreen({

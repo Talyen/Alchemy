@@ -33,7 +33,7 @@ export const FLAG_DEFINITIONS = {
 
   resonantChimeUsedThisTurn: { default: false as const, preserveAs: true as const },
   runicQuillUsedThisTurn: { default: false as const, preserveAs: true as const },
-  emberforgedUsedThisTurn: { default: false as const, preserveAs: true as const },
+  emberforgedUsedThisTurn: { default: false as const, preserveAs: null },
   consumeDrawUsedThisTurn: { default: false as const, preserveAs: true as const },
   pendingCinderSkinReaction: { default: false as const, preserveAs: null },
   cinderSkinUsedThisTurn: { default: false as const, preserveAs: null },

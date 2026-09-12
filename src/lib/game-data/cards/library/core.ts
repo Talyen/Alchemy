@@ -8,17 +8,10 @@ export const coreCards: BattleCard[] = [
   {
     id: "stab",
     title: "Stab",
-    descriptionLines: ["Deal 3 Physical or Bleed damage"],
+    descriptionLines: ["Deal 4 Physical damage, ignoring Armor"],
     art: assetRefs.stab,
     cost: 1,
-    effects: [
-      {
-        kind: "chance",
-        probability: 0.5,
-        successEffects: [{ kind: "damage", damageType: "physical", amount: 3 }],
-        failureEffects: [{ kind: "damage", damageType: "bleed", amount: 3 }],
-      },
-    ],
+    effects: [{ kind: "damage", damageType: "physical", amount: 4, ignoreArmor: true }],
   },
   cardBuilders.singleEffectCard({
     id: "cleanse",
@@ -89,7 +82,7 @@ export const coreCards: BattleCard[] = [
   {
     id: "ray-of-frost",
     title: "Ray of Frost",
-    descriptionLines: ["Deal 1 Freeze damage", "Deal 3 Freeze damage at the start of your next turn"],
+    descriptionLines: ["Deal 1 Freeze damage now and 3 at the start of your next turn"],
     art: assetRefs.rayOfFrost,
     cost: 1,
     effects: [
@@ -129,17 +122,11 @@ export const coreCards: BattleCard[] = [
   {
     id: "roll-the-dice",
     title: "Roll the Dice",
-    descriptionLines: ["Deal 3 Random damage or gain 3 Gold"],
+    descriptionLines: ["Roll a six-sided die", "Draw that many cards", CONSUME_DESCRIPTION_LINE],
     art: assetRefs.rollTheDice,
     cost: 1,
-    effects: [
-      {
-        kind: "chance",
-        probability: 0.5,
-        successEffects: [{ kind: "random-damage", minAmount: 3, maxAmount: 3 }],
-        failureEffects: [{ kind: "gain-gold", amount: 3 }],
-      },
-    ],
+    consume: true,
+    effects: [{ kind: "random-draw", minAmount: 1, maxAmount: 6 }],
   },
   cardBuilders.damageCard({ id: "lightning-bolt", art: assetRefs.lightningBolt, damageType: "nature", amount: 4 }),
   {
@@ -204,14 +191,17 @@ export const coreCards: BattleCard[] = [
     cost: 1,
     effects: [{ kind: "gain-gold", amount: 4 }],
   },
-  cardBuilders.dualDamageCard({
+  {
     id: "burning-blade",
+    title: "Burning Blade",
     art: assetRefs.burningBlade,
-    hits: [
-      { damageType: "physical", amount: 2 },
-      { damageType: "burn", amount: 1 },
+    cost: 1,
+    descriptionLines: ["Deal Burn damage equal to your Forge", "Deal 2 Physical damage"],
+    effects: [
+      { kind: "damage", damageType: "burn", amount: 0, equalToForge: true },
+      { kind: "damage", damageType: "physical", amount: 2 },
     ],
-  }),
+  },
   {
     id: "cauterize",
     title: "Cauterize",
@@ -303,13 +293,10 @@ export const coreCards: BattleCard[] = [
   {
     id: "pack-tactics",
     title: "Pack Tactics",
-    descriptionLines: ["Increase Companion damage by 1", "Deal 3 Nature damage"],
+    descriptionLines: ["Your Companion acts twice"],
     art: assetRefs.packTactics,
     cost: 1,
-    effects: [
-      { kind: "buff-companion", amount: 1 },
-      { kind: "damage", damageType: "nature", amount: 3 },
-    ],
+    effects: [{ kind: "companion-action", amount: 2 }],
   },
   cardBuilders.dualDamageCard({
     id: "serrated-edge",
@@ -323,8 +310,8 @@ export const coreCards: BattleCard[] = [
     id: "caustic-jab",
     art: assetRefs.causticJab,
     effects: [
-      { kind: "damage", damageType: "poison", amount: 2 },
       { kind: "remove-enemy-armor", amount: 2 },
+      { kind: "damage", damageType: "poison", amount: 2 },
     ],
   }),
   {
@@ -346,7 +333,7 @@ export const coreCards: BattleCard[] = [
   {
     id: "earthquake",
     title: "Earthquake",
-    descriptionLines: ["Deal 2 Stun damage this turn and next turn"],
+    descriptionLines: ["Deal 2 Stun damage now and at the start of your next turn"],
     art: assetRefs.earthquake,
     cost: 1,
     effects: [

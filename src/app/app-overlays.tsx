@@ -1,4 +1,4 @@
-import { GameMenu } from "@/features/alchemy/shared/ui/shared-ui";
+import { GameMenu } from "@/features/alchemy/shared/ui/game-menu";
 import { BackgroundParticles } from "@/features/alchemy/shared/ui/background-particles";
 import { isDesktop, quitDesktopApp } from "@/lib/platform";
 import { isRunLoopScreen, type Screen } from "@/lib/routing";

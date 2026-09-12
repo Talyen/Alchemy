@@ -1,6 +1,6 @@
 import { expect, type Locator } from "@playwright/test";
 import { test } from "../../fixtures/e2e";
-import { assertNoOverflow, assertHorizontalNeighborGap } from "../../helpers";
+import { assertNoOverflow, assertHorizontalNeighborGap } from "../../browser-helpers";
 import { MenuPage } from "../../pages/menu-page";
 import { critical } from "../../playwright-tags";
 
@@ -18,13 +18,9 @@ async function expectHoverOnlyShine(entry: Locator) {
   await expect(entry.locator(".shine-border")).toHaveCount(0);
 }
 
-test.describe("Collection", critical, () => {
-  test.beforeEach(async ({ runtimeErrors }) => {
-    void runtimeErrors;
-  });
-
+test.describe("Collection", () => {
   test.describe("with a discovered card", () => {
-    test("collection shows tabs, card inspection, and keeps tile gaps", async ({ page }) => {
+    test("collection shows tabs, card inspection, and keeps tile gaps", critical, async ({ page }) => {
       await new MenuPage(page).gotoCollection({ discoveredCardIds: ["anvil"] });
 
       await expect(page.getByRole("button", { name: "Heroes" })).toBeVisible();
@@ -67,7 +63,7 @@ test.describe("Collection", critical, () => {
   });
 
   test.describe("heroes tab", () => {
-    test("defaults to Heroes and shows the starting-deck tooltip for unlocked heroes", async ({ page }) => {
+    test("defaults to Heroes and shows the starting-deck tooltip for unlocked heroes", critical, async ({ page }) => {
       await new MenuPage(page).gotoCollection();
       await expect(page.getByRole("button", { name: "Inspect Knight" })).toBeVisible();
 
@@ -77,7 +73,7 @@ test.describe("Collection", critical, () => {
       await expect(page.getByText(/Anvil/).first()).toBeVisible();
     });
 
-    test("locked heroes keep their name and unlock tooltip", async ({ page }) => {
+    test("locked heroes keep their name and unlock tooltip", critical, async ({ page }) => {
       await new MenuPage(page).gotoCollection({ finishedRunCharacters: [] });
       const rogue = page.getByRole("button", { name: "Inspect Rogue (Locked)" });
       await expect(rogue).toBeVisible();

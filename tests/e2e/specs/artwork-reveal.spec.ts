@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../../fixtures/e2e";
 import { MenuPage } from "../../pages/menu-page";
 
 test("screen reveals wait for mounted artwork on arrival and return", async ({ page }) => {

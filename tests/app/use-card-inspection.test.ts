@@ -6,6 +6,7 @@ import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-sta
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { makeTestCard } from "../fixtures/battle";
+import { getEffectiveCardDescriptionLines } from "@/lib/game-data/card-description";
 import { resetAllTestStores } from "../helpers/gameplay-store-test";
 
 const base = {
@@ -32,6 +33,27 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("run card inspection", () => {
+  it("keeps inspected Companion bonuses current as battle modifiers change", () => {
+    const summon = makeTestCard({
+      effects: [{ kind: "summon-companion", companionId: "phoenix" }],
+      descriptionLines: ["old", "Companion"],
+    });
+    dispatchRunSessionCommand((draft) => {
+      draft.battle.battleState.gearEffects.companionDamageBonus = 4;
+    });
+    const { result } = renderHook(() => useCardInspection(base));
+    expect(getEffectiveCardDescriptionLines(summon, result.current.battleDescriptionContext!)[0]).toBe(
+      "Deals 5 Burn damage each turn",
+    );
+    act(() =>
+      dispatchRunSessionCommand((draft) => {
+        draft.battle.battleState.gearEffects.companionDamageBonus = 8;
+      }),
+    );
+    expect(getEffectiveCardDescriptionLines(summon, result.current.battleDescriptionContext!)[0]).toBe(
+      "Deals 9 Burn damage each turn",
+    );
+  });
   it("limits icon visibility to the draft, run, and its meta detours", () => {
     expect(isDeckInspectionVisible("draft-deck", false, null)).toBe(true);
     expect(isDeckInspectionVisible("rewards", true, null)).toBe(true);

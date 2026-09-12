@@ -1,6 +1,7 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "../../fixtures/e2e";
+import type { Page } from "@playwright/test";
 import { gridLabyrinthMapFixture } from "../../fixtures/labyrinth-map";
-import { failOnRuntimeErrors, injectLabyrinthRun, makeCard } from "../../helpers";
+import { injectLabyrinthRun, makeCard } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 import { critical } from "../../playwright-tags";
 
@@ -76,7 +77,6 @@ for (const type of ["combat", "mystery", "shop"] as const) {
     `${type} round-trip waits for artwork and never flashes completed map rooms in color`,
     critical,
     async ({ page }) => {
-      const errors = failOnRuntimeErrors(page);
       const map = gridLabyrinthMapFixture();
       const target = map.nodes["labyrinth-floor-1-n0"]!;
       target.type = type;
@@ -126,7 +126,6 @@ for (const type of ["combat", "mystery", "shop"] as const) {
         .poll(() => page.evaluate(() => (window as unknown as ProbeWindow).artworkProbe.samples))
         .toBeGreaterThan(0);
       expect(await page.evaluate(() => (window as unknown as ProbeWindow).artworkProbe.failures)).toEqual([]);
-      expect(errors).toEqual([]);
     },
   );
 }

@@ -11,11 +11,18 @@ export function summarizeVitestReport(report, options = {}) {
   const root = report && typeof report === "object" ? report : {};
   const testResults = Array.isArray(root.testResults) ? root.testResults : [];
   const failures = [];
+  const runnerErrors = [];
+  if (!Array.isArray(root.testResults)) runnerErrors.push("Invalid Vitest report: missing testResults array");
   for (const fileResult of testResults) {
     if (!fileResult || typeof fileResult !== "object") continue;
     const file = fileResult;
     const fileName = typeof file.name === "string" ? file.name : "unknown";
     const assertions = Array.isArray(file.assertionResults) ? file.assertionResults : [];
+    if (file.status === "failed" && !assertions.some((row) => row?.status === "failed")) {
+      runnerErrors.push(
+        `${fileName}: ${String(file.message || "Suite failed before assertions completed").slice(0, MESSAGE_CHARS)}`,
+      );
+    }
     for (const assertion of assertions) {
       if (!assertion || typeof assertion !== "object") continue;
       const row = assertion;
@@ -34,10 +41,18 @@ export function summarizeVitestReport(report, options = {}) {
       });
     }
   }
+  const numFailedTests = Number(root.numFailedTests) || failures.length;
+  const numFailedTestSuites = Number(root.numFailedTestSuites) || 0;
+  const failed = root.success === false || numFailedTests > 0 || numFailedTestSuites > 0 || runnerErrors.length > 0;
+  if (failed && !numFailedTests && !runnerErrors.length)
+    runnerErrors.push("Vitest reported a failed run without assertion details.");
   return {
+    failed,
+    runnerErrors: runnerErrors.slice(0, maxFailures),
+    numFailedTestSuites,
     numTotalTests: Number(root.numTotalTests) || 0,
     numPassedTests: Number(root.numPassedTests) || 0,
-    numFailedTests: Number(root.numFailedTests) || failures.length,
+    numFailedTests,
     numPendingTests: Number(root.numPendingTests) || 0,
     failures: failures.slice(0, maxFailures),
   };
@@ -51,6 +66,9 @@ export function formatVitestSummaryMarkdown(summary) {
     `- Passed: ${summary.numPassedTests}`,
     `- Failed: ${summary.numFailedTests}`,
     `- Pending: ${summary.numPendingTests}`,
+    ...(summary.runnerErrors?.length
+      ? ["", "### Runner errors", "", ...summary.runnerErrors.map((message) => `- ${message}`)]
+      : []),
   ];
   if (summary.failures.length === 0) {
     lines.push(

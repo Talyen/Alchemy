@@ -2,7 +2,7 @@ import { type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { type MaterialInventory } from "@/lib/homestead/types";
 import { canAfford, emptyInventory } from "@/lib/homestead/inventory";
-import { DetailPopup } from "../../../shared/ui/card-popup";
+import { DetailPopup } from "../../../shared/ui/tooltips/card-popup";
 import { InteractiveArtTile, type PopupContext } from "../../../shared/ui/interactive-art-tile";
 import { StarRating } from "../../../shared/ui/star-rating";
 import {

@@ -3,7 +3,7 @@ import type { BattleCard, BattleCardEffect, BestiaryEntry } from "./types";
 
 export type EnemyAbilityDamageEffect = Pick<
   Extract<BattleCardEffect, { kind: "damage" }>,
-  "kind" | "damageType" | "amount" | "lifesteal" | "doubleIfEnemyBleeding"
+  "kind" | "damageType" | "amount" | "lifesteal" | "doubleIfEnemyBleeding" | "equalToForge" | "ignoreArmor"
 >;
 
 export type EnemyAbilityEffect =
@@ -27,15 +27,24 @@ function hasOnlyFields(effect: BattleCardEffect, fields: readonly string[]): boo
 function supportsEnemyEffect(effect: BattleCardEffect): effect is EnemyAbilityEffect {
   switch (effect.kind) {
     case "damage":
-      return hasOnlyFields(effect, ["kind", "damageType", "amount", "lifesteal", "doubleIfEnemyBleeding"]);
+      return hasOnlyFields(effect, [
+        "kind",
+        "damageType",
+        "amount",
+        "lifesteal",
+        "doubleIfEnemyBleeding",
+        "equalToForge",
+        "ignoreArmor",
+      ]);
     case "player-status":
       return (
         ["block", "armor", "forge", "thorns"].includes(effect.status) &&
         hasOnlyFields(effect, ["kind", "status", "amount"])
       );
     case "heal":
-    case "remove-enemy-armor":
       return hasOnlyFields(effect, ["kind", "amount"]);
+    case "remove-enemy-armor":
+      return hasOnlyFields(effect, ["kind", "amount", "removeAll"]);
     case "multiply-enemy-status":
       return effect.status === "freeze" && hasOnlyFields(effect, ["kind", "status", "factor"]);
     case "chance":
@@ -52,6 +61,8 @@ function supportsEnemyEffect(effect: BattleCardEffect): effect is EnemyAbilityEf
     case "remove-player-status":
     case "self-damage":
     case "buff-companion":
+    case "companion-action":
+    case "random-draw":
     case "lose-health":
     case "draw-cards":
     case "cleanse-player-status-to-damage":

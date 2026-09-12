@@ -97,7 +97,9 @@ if (cmd === "create") {
     const r = runGit(args, { stdio: "inherit" });
     if (r.status !== 0) process.exit(r.status ?? 1);
     console.log(`detached worktree ready: ${worktreePath} at ${base} (verification only)`);
-    console.log(`  cd ${path.relative(root, worktreePath)}`);
+    console.log(`  cd "${worktreePath}"`);
+    console.log("  npm ci  # install dependencies before verification");
+    console.log(`  cd "${root}"  # return before cleanup`);
     console.log(`  node scripts/agent-worktree.mjs remove --task ${task}  # after verification`);
     process.exit(0);
   }
@@ -113,7 +115,9 @@ if (cmd === "create") {
   const r = runGit(args, { stdio: "inherit" });
   if (r.status !== 0) process.exit(r.status ?? 1);
   console.log(`worktree ready: ${worktreePath} on ${branch} (base ${base})`);
-  console.log(`  cd ${path.relative(root, worktreePath)}  # work in isolation`);
+  console.log(`  cd "${worktreePath}"  # work in isolation`);
+  console.log("  npm ci  # install dependencies before verification");
+  console.log(`  cd "${root}"  # return before cleanup`);
   console.log(`  node scripts/agent-worktree.mjs remove --task ${task}  # after merging to main`);
   process.exit(0);
 }

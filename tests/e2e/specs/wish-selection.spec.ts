@@ -1,19 +1,14 @@
 import { expect } from "@playwright/test";
 import { test } from "../../fixtures/e2e";
-import { injectActiveBattle, makeCard, makeGoblinBattleState, startBattleWithDeck } from "../../helpers";
+import { injectActiveBattle, makeCard, makeGoblinBattleState, startBattleWithDeck } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 
 for (const viewport of [
   { width: 1280, height: 720 },
   { width: 1920, height: 1080 },
 ]) {
-  test(`Wish choices fit and consecutive wishes resolve at ${viewport.width}`, async ({
-    page,
-    fastBattle,
-    runtimeErrors,
-  }) => {
+  test(`Wish choices fit and consecutive wishes resolve at ${viewport.width}`, async ({ page, fastBattle }) => {
     void fastBattle;
-    void runtimeErrors;
     await page.setViewportSize(viewport);
     await startBattleWithDeck(
       page,
@@ -46,9 +41,8 @@ for (const viewport of [
   { width: 1280, height: 720 },
   { width: 1920, height: 1080 },
 ]) {
-  test(`Four Wish choices share one row at ${viewport.width}`, async ({ page, fastBattle, runtimeErrors }) => {
+  test(`Four Wish choices share one row at ${viewport.width}`, async ({ page, fastBattle }) => {
     void fastBattle;
-    void runtimeErrors;
     await page.setViewportSize(viewport);
     const wishOptions = ["slash", "block", "wish", "wishing-well"].map((id) => makeCard({ id }));
     await injectActiveBattle(page, makeGoblinBattleState({ wishOptions }));

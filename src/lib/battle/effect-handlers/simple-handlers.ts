@@ -6,6 +6,24 @@ import { addGoldWithCombatText } from "../combat-text";
 import { applyWishEffect } from "../wish";
 import { drawFromState, applyDrawResult } from "../draw";
 import { defineHandler } from "./handler-types";
+import { resolveCompanionTurnStart } from "../companion-effects";
+import { getBattleRng, rngInt } from "@/lib/rng";
+
+export function createCompanionActionHandler(applyEffects: Parameters<typeof resolveCompanionTurnStart>[2]) {
+  return defineHandler("companion-action", (state, _card, effect, _potionMult, combatTexts) => {
+    let nextState = state;
+    for (let action = 0; action < effect.amount; action += 1) {
+      nextState = resolveCompanionTurnStart(nextState, combatTexts, applyEffects);
+    }
+    return nextState;
+  });
+}
+
+export const applyRandomDrawEffect = defineHandler("random-draw", (state, _card, effect, potionMult) => {
+  if (effect.maxAmount < effect.minAmount) throw new Error("random-draw maxAmount must be >= minAmount");
+  const amount = effect.minAmount + rngInt(getBattleRng(state), effect.maxAmount - effect.minAmount + 1);
+  return applyDrawResult(state, drawFromState(state, applyPotionMultiplier(amount, potionMult)));
+});
 
 export const applySummonCompanionEffect = defineHandler(
   "summon-companion",

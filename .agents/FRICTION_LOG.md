@@ -6,6 +6,8 @@ Add one short row for unresolved friction with the observation and next useful a
 
 ## Open
 
+- 2026-09-11 — Folder-reorganization verification failed the descendant-deadline case in `tests/scripts/script-reliability.test.ts` during the tooling suite (`check-20260912t054605z-45705-73cda5`); the same file then passed all 16 tests in isolation. The fixture writes a marker after 1 second while the parent schedules termination after 500 ms. The interrupt variant recurred in `check-20260912t060011z-19569-0c8297` with no descendant-ready output and passed all 17 cases alone. That variant now waits for a child readiness marker before signaling; the deadline variants still merit scheduling investigation if they recur.
+
 - 2026-09-10 — A newly written `combat-feedback-sounds.test.ts` was absent from an unrestricted `git status --short` despite not being ignored or tracked; targeted `git status --short --untracked-files=all -- <path>` then found it. Both `core.fsmonitor` and `core.untrackedCache` were enabled. When a newly created test is missing from changed-path discovery, verify with a targeted status or disable fsmonitor for that diagnostic command before selecting verification paths.
 
 - 2026-09-10 — Image generation with approved transparent icons as references baked checkerboards into five opaque PNGs; background-only image edits repeated the issue. Fresh generations without image references produced real alpha for all five. Validate PNG alpha before asset import; if this recurs, isolate reference-image handling rather than accepting the visible checkerboard as evidence of transparency.

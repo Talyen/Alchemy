@@ -5,9 +5,9 @@ import type { BestiaryEntry } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import { SHINE_PALETTES } from "../../config";
 import { DescriptionLines } from "../card-description-ui";
-import { EnemyTooltip } from "../enemy-tooltip";
-import { TooltipHeader } from "../tooltip-panel";
-import { PortaledTooltip } from "../portaled-tooltip";
+import { EnemyTooltip } from "../tooltips/enemy-tooltip";
+import { TooltipHeader } from "../tooltips/tooltip-panel";
+import { PortaledTooltip } from "../tooltips/portaled-tooltip";
 
 const ACTOR_PANEL_CONFIG = {
   deathDoorShineDurationSeconds: 4,

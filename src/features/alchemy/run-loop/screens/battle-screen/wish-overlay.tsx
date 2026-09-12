@@ -6,13 +6,13 @@ import { BattleCardButton } from "../../../shared/ui/card-button";
 import { useHeldWhile } from "../../../shared/ui/use-fade";
 import { getCardDisplayTitle } from "../../../shared/ui/card-description-ui";
 import { ModalOverlayShell } from "../../../shared/ui/modal-overlay-shell";
-import { ScreenHeader } from "../../../shared/ui/shared-ui";
+import { ScreenHeader } from "../../../shared/ui/layout-components";
 import {
   collectionTileWidthClass,
   getInspectionKeywordShineColors,
   bodyTextClass,
 } from "@/features/alchemy/shared/config";
-import { useLatestRef } from "@/features/alchemy/shared/hooks";
+import { useLatestRef } from "@/features/alchemy/shared/ui/use-latest-ref";
 import { cn } from "@/lib/utils";
 import { WISH_OVERLAY_Z_INDEX } from "@/lib/game-constants";
 import type { BattleActionsProps, BattleScreenState } from "./types";

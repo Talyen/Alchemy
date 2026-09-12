@@ -12,6 +12,7 @@ import { addPlayerStatusWithCombatText, mergeCombatText } from "./combat-text";
 import {
   applyPlayerCombatDamage,
   isPlayerDefeated,
+  mitigatePlayerCombatDamage,
   scaleReceivedPlayerDamage,
   setPlayerStatus,
   type BattleState,
@@ -70,12 +71,13 @@ export function dealSelfDamage(
   const damage = armorMitigatesElementalDamage(state, statLabel)
     ? Math.max(0, scaled - state.playerStatuses.armor)
     : scaled;
+  const resolvedDamage = healthCost ? damage : mitigatePlayerCombatDamage(state, damage, statLabel);
   const postDamage = applyPlayerCombatDamage(
     state,
-    damage,
+    resolvedDamage,
     "self",
     statLabel,
-    { ignoreMitigation: healthCost },
+    { ignoreMitigation: true },
     combatTexts,
   );
   const healthLost = Math.max(0, state.playerHealth - postDamage.playerHealth);
@@ -87,7 +89,10 @@ export function dealSelfDamage(
       amount: healthLost,
     });
   }
-  return { state: postDamage, healthLost };
+  return {
+    state: healthCost ? postDamage : decayArmorAfterDamage(postDamage, resolvedDamage, "player", combatTexts),
+    healthLost,
+  };
 }
 
 export function rollTalentChance(chance: number, state: { rng?: () => number }): boolean {

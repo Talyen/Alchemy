@@ -1,11 +1,11 @@
-import { expect, test } from "@playwright/test";
-import { failOnRuntimeErrors, makeCard, seedRandom, startBattleWithDeck } from "../../helpers";
+import { expect, test } from "../../fixtures/e2e";
+import { makeCard, seedRandom, startBattleWithDeck } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 import { slow } from "../../playwright-tags";
 
 test("waits for real card animations and preserves pile transfer anchors", slow, async ({ page }) => {
   test.setTimeout(60_000);
-  const errors = failOnRuntimeErrors(page);
+
   await seedRandom(page, 42);
   await page.addInitScript(() => {
     const state = window as Window & { inspectionBlockedDuringDeal?: boolean };
@@ -44,5 +44,4 @@ test("waits for real card animations and preserves pile transfer anchors", slow,
   await expect(icon).toHaveAttribute("aria-disabled", "false", { timeout: 20_000 });
   await icon.click();
   await expect(page.getByRole("dialog")).toBeVisible();
-  expect(errors).toEqual([]);
 });

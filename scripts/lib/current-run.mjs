@@ -55,7 +55,7 @@ function gitOutput(rootDir, args) {
 /**
  * Paths reported by `git status --short --untracked-files=all`. Rename entries
  * emit the new path as the entry and the original path as a following
- * NUL-delimited field; only the target path is kept. Returns null when git
+ * NUL-delimited field; both paths are kept for risk selection. Returns null when git
  * itself fails so callers can distinguish "clean tree" from "could not ask".
  */
 export function changedGitPaths(rootDir) {
@@ -70,12 +70,12 @@ export function changedGitPaths(rootDir) {
   for (let i = 0; i < fields.length; i += 1) {
     const entry = fields[i];
     if (!entry.trim()) continue;
-    paths.push((entry.length >= 3 && entry[2] === " " ? entry.slice(3) : entry).trim());
-    // Rename/copy entries carry the original path in the next NUL field — skip it.
+    paths.push(entry.length >= 3 && entry[2] === " " ? entry.slice(3) : entry);
+    // Moving out of a high-risk subsystem must retain its verification gates.
     const status = entry.slice(0, 2);
-    if (/^[RC]/.test(status) && i + 1 < fields.length) i += 1;
+    if (/[RC]/.test(status) && fields[i + 1]) paths.push(fields[++i]);
   }
-  return paths;
+  return [...new Set(paths)];
 }
 
 function sourceState(rootDir, commit) {

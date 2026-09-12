@@ -1,11 +1,10 @@
 import type { BattleCard } from "@/lib/game-data";
-import { expect, test } from "@playwright/test";
-import { failOnRuntimeErrors, injectActiveBattle, makeCard, makeGoblinBattleState } from "../../helpers";
+import { expect, test } from "../../fixtures/e2e";
+import { injectActiveBattle, makeCard, makeGoblinBattleState } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 
 for (const wishFirst of [true, false]) {
   test(`Draw finishes before Wish choices with Wish ${wishFirst ? "first" : "last"}`, async ({ page }) => {
-    const errors = failOnRuntimeErrors(page);
     const effects: BattleCard["effects"] = [
       { kind: "wish", amount: 2 },
       { kind: "draw-cards", amount: 2 },
@@ -47,6 +46,5 @@ for (const wishFirst of [true, false]) {
       .click();
     await expect(page.locator(".wish-overlay-panel")).toBeHidden();
     expect(await page.evaluate(() => (window as Window & { wishDrawOverlap?: boolean }).wishDrawOverlap)).toBe(false);
-    expect(errors).toEqual([]);
   });
 }

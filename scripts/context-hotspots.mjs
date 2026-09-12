@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { ROUTINE_EXPOSURE_BUDGET_BYTES } from "./lib/compact-output.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
-import { ROUTE_CONTEXT_BUDGETS, measureAllRoutes } from "./measure-agent-context.mjs";
+import { ROUTE_CONTEXT_BUDGETS, measureAllRoutes, measureDiscoveryContexts } from "./measure-agent-context.mjs";
 import { readRecentRuns } from "./show-runs.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -79,7 +79,9 @@ export function aggregateCommandExposures(runs, minBytes = 0) {
           ? 0
           : Math.max(0, Math.round(((group.rawBytes - group.exposedBytes) / group.rawBytes) * 1_000) / 10),
     }))
-    .sort((a, b) => b.rawBytes - a.rawBytes || b.maxRawBytes - a.maxRawBytes || a.key.localeCompare(b.key));
+    .sort(
+      (a, b) => b.exposedBytes - a.exposedBytes || b.maxExposedBytes - a.maxExposedBytes || a.key.localeCompare(b.key),
+    );
 }
 
 export function readRunById(rootDir, runId) {
@@ -102,6 +104,7 @@ export function buildContextHotspotReport(rootDir, options = {}) {
     generatedAt: new Date().toISOString(),
     inspectedRuns: runs.length,
     routes: measureAllRoutes(),
+    discovery: measureDiscoveryContexts(),
     commands: aggregateCommandExposures(runs, options.minBytes ?? 4_000),
   };
 }
@@ -118,11 +121,20 @@ export function formatContextHotspotReport(report) {
         `(preread ${formatBytes(row.selectedBytes)}; fixture ${formatBytes(row.changedFileBytes)})`,
     );
   }
+  lines.push("", "Discovery context hotspots (owner-section bytes; emitted output includes navigation):");
+  for (const row of report.discovery) {
+    lines.push(
+      `  ${row.paths.length ? row.paths.join(", ") : `--task ${row.task}`}: ` +
+        `${formatBytes(row.selectedBytes)} selected / ${formatBytes(row.emittedSectionBytes)} emitted sections / ${formatBytes(row.emittedBytes)} output`,
+    );
+    for (const section of row.deferred)
+      lines.push(`    Deferred: ${section.path} § ${section.heading ?? "whole document"}`);
+  }
   lines.push("", `Captured command-output hotspots (${report.inspectedRuns} recent runs):`);
   if (report.commands.length === 0) lines.push("  No recorded commands met the byte threshold.");
   for (const row of report.commands) {
     lines.push(
-      `  ${row.label}: ${formatBytes(row.rawBytes)} raw / ${formatBytes(row.exposedBytes)} exposed ` +
+      `  ${row.label}: ${formatBytes(row.exposedBytes)} exposed / ${formatBytes(row.rawBytes)} raw ` +
         `(${row.avoidedPercent}% avoided; ${row.occurrences} runs; max raw ${formatBytes(row.maxRawBytes)}` +
         `${row.overBudgetOccurrences > 0 ? `; ${row.overBudgetOccurrences} over budget` : ""})`,
     );

@@ -1,18 +1,13 @@
-import { expect, test as motionTest } from "@playwright/test";
-import { test } from "../../fixtures/e2e";
+import { expect, test } from "../../fixtures/e2e";
 import { gridLabyrinthMapFixture, twoFloorLabyrinthMapFixture } from "../../fixtures/labyrinth-map";
 import { critical } from "../../playwright-tags";
-import { failOnRuntimeErrors, injectLabyrinthRun } from "../../helpers";
+import { failOnRuntimeErrors, injectLabyrinthRun } from "../../browser-helpers";
 import { MenuPage } from "../../pages/menu-page";
 import { CorruptionPage } from "../../pages/corruption-page";
 
 const chamberDetails = "Chamber details";
 
 test.describe("Labyrinth exploration", critical, () => {
-  test.beforeEach(async ({ runtimeErrors }) => {
-    void runtimeErrors;
-  });
-
   test("a new run opens twenty rooms, with hidden encounters and an inspectable distant boss", async ({ page }) => {
     const menu = new MenuPage(page);
     await menu.goToCharacterSelectUnlocked("labyrinth");
@@ -81,7 +76,7 @@ test.describe("Labyrinth exploration", critical, () => {
         .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("style"))),
     ).toEqual(layout);
     const fresh = await page.context().newPage();
-    const errors = failOnRuntimeErrors(fresh);
+    const freshErrors = failOnRuntimeErrors(fresh);
     try {
       await fresh.goto("/");
       await expect(fresh.locator('[data-labyrinth-node="labyrinth-floor-1-n3"] button')).toHaveAttribute(
@@ -91,7 +86,7 @@ test.describe("Labyrinth exploration", critical, () => {
       );
       await expect(fresh.locator('[data-labyrinth-node="labyrinth-floor-1-n4"] img')).toHaveCount(1);
       await expect(fresh.locator(`[data-labyrinth-node="${target.id}"]`)).toHaveAttribute("data-state", "cleared");
-      expect(errors).toEqual([]);
+      expect(freshErrors).toEqual([]);
     } finally {
       await fresh.close();
     }
@@ -145,11 +140,7 @@ for (const { width, height, gameSizePercent } of [
   { width: 1280, height: 480, gameSizePercent: 120 },
   { width: 600, height: 900, gameSizePercent: 100 },
 ]) {
-  test(`full grid and overlay fit ${width}×${height} at Game Size ${gameSizePercent}`, async ({
-    page,
-    runtimeErrors,
-  }) => {
-    void runtimeErrors;
+  test(`full grid and overlay fit ${width}×${height} at Game Size ${gameSizePercent}`, async ({ page }) => {
     await page.addInitScript((size) => {
       localStorage.setItem(
         "alchemy-device-display-v1",
@@ -217,8 +208,7 @@ for (const { width, height, gameSizePercent } of [
 test.describe("Labyrinth touch", () => {
   test.use({ hasTouch: true });
 
-  test("opens and dismisses room details", async ({ page, runtimeErrors }) => {
-    void runtimeErrors;
+  test("opens and dismisses room details", async ({ page }) => {
     await page.setViewportSize({ width: 600, height: 900 });
     await injectLabyrinthRun(page, {
       labyrinthMap: gridLabyrinthMapFixture(),
@@ -233,8 +223,7 @@ test.describe("Labyrinth touch", () => {
   });
 });
 
-motionTest("node hover, focus and selection retain shared shine without moving neighboring rooms", async ({ page }) => {
-  const errors = failOnRuntimeErrors(page);
+test("node hover, focus and selection retain shared shine without moving neighboring rooms", async ({ page }) => {
   await injectLabyrinthRun(page, { labyrinthMap: gridLabyrinthMapFixture() });
   const room = page.locator('[data-labyrinth-node="labyrinth-floor-1-n0"] button');
   const neighbor = page.locator('[data-labyrinth-node="labyrinth-floor-1-n1"]');
@@ -251,11 +240,9 @@ motionTest("node hover, focus and selection retain shared shine without moving n
   await expect(page.getByRole("complementary", { name: chamberDetails })).toBeVisible();
   await expect(room.locator("..")).toHaveCSS("scale", "1.06");
   expect(await neighbor.boundingBox()).toEqual(neighborBefore);
-  expect(errors).toEqual([]);
 });
 
-motionTest("current amber, dim room borders and the boss glow remain stable through hover", async ({ page }) => {
-  const errors = failOnRuntimeErrors(page);
+test("current amber, dim room borders and the boss glow remain stable through hover", async ({ page }) => {
   await injectLabyrinthRun(page, { labyrinthMap: gridLabyrinthMapFixture() });
   const entrance = page.getByRole("button", { name: "Entrance chamber, you are here", exact: true });
   const room = page.locator('[data-labyrinth-node="labyrinth-floor-1-n0"] button');
@@ -279,5 +266,4 @@ motionTest("current amber, dim room borders and the boss glow remain stable thro
   await expect(room.locator("..")).toHaveCSS("scale", "1.06");
   await expect(room.locator("..")).toHaveCSS("transition-property", "none");
   await expect(room.locator(".shine-border")).toHaveCSS("animation-name", "none");
-  expect(errors).toEqual([]);
 });

@@ -1,5 +1,5 @@
 import { capitalizeWord } from "@/lib/utils";
-import { getCompanionBondEffects } from "../companions";
+import { getModifiedCompanionEffects, type CompanionDamageModifiers } from "../companions";
 import type { CompanionDefinition, BattleCardEffect } from "../types";
 
 function companionTurnLine(effect: BattleCardEffect, amountOverride?: number): string | null {
@@ -39,6 +39,8 @@ function companionTurnLine(effect: BattleCardEffect, amountOverride?: number): s
     case "remove-player-status":
     case "self-damage":
     case "buff-companion":
+    case "companion-action":
+    case "random-draw":
     case "lose-health":
     case "remove-enemy-armor":
     case "multiply-enemy-status":
@@ -84,9 +86,15 @@ export function formatCompanionTurnStartLine(
   return formatCompanionTurnLineBase(turnEffect);
 }
 
-export function getCompanionDescriptionLines(companion: CompanionDefinition, bondLevel = 0, damageBonus = 0): string[] {
-  const effects = getCompanionBondEffects(companion, bondLevel);
-  const lines = effects.map((effect) => formatCompanionTurnStartLine(effect, { damageBonus }));
+export function getCompanionDescriptionLines(
+  companion: CompanionDefinition,
+  bondLevel = 0,
+  damageBonus: number | CompanionDamageModifiers = 0,
+): string[] {
+  const modifiers =
+    typeof damageBonus === "number" ? { damageBonus, bleedDamageBonus: 0, damageMultiplier: 1 } : damageBonus;
+  const effects = getModifiedCompanionEffects(companion, bondLevel, modifiers);
+  const lines = effects.map((effect) => formatCompanionTurnStartLine(effect));
   const bonus = effects[1];
   if (bonus?.kind === "chance" && bonus.failureEffects.length === 0 && lines[0]) {
     const action = companion.id === "mana-moth" ? "grant" : "draw";

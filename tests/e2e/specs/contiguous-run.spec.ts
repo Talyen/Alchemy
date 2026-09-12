@@ -5,18 +5,17 @@ import { DestinationPage } from "../../pages/destination-page";
 import { MenuPage } from "../../pages/menu-page";
 import { RewardPage } from "../../pages/reward-page";
 import { critical } from "../../playwright-tags";
-import { SAVE_KEY } from "../../helpers";
+import { SAVE_KEY, seedRandom } from "../../browser-helpers";
 
 test.describe("Contiguous Run Journey", critical, () => {
   test("completes contiguous flow from menu through battle, reward, and next destination", async ({
     page,
     fastBattle,
-    runtimeErrors,
   }) => {
     void fastBattle;
-    void runtimeErrors;
     test.setTimeout(60_000);
 
+    await seedRandom(page, 42);
     const menu = new MenuPage(page);
     await menu.goto();
     await menu.expectMainMenu();
@@ -52,16 +51,17 @@ test.describe("Contiguous Run Journey", critical, () => {
     });
     await expect(choices.first()).toBeVisible({ timeout: 5000 });
 
-    const savedState = await page.evaluate((key) => {
-      const raw = localStorage.getItem(key);
-      return raw ? JSON.parse(raw) : null;
-    }, SAVE_KEY);
+    await expect
+      .poll(() =>
+        page.evaluate((key) => {
+          const run = JSON.parse(localStorage.getItem(key) || "{}").activeRun;
+          return run?.characterId === "knight" && run.roomsEncountered >= 1;
+        }, SAVE_KEY),
+      )
+      .toBe(true);
 
-    expect(savedState?.activeRun).toBeTruthy();
-    expect(savedState?.activeRun?.characterId).toBe("knight");
-    expect(savedState?.activeRun?.roomsEncountered).toBeGreaterThanOrEqual(1);
-
-    await choices.first().click();
-    await expect(page.getByRole("heading", { name: "Choose Destination" })).toHaveCount(0);
+    await destination.enterAnyCombat();
+    await expect(battle.endTurnBtn).toBeEnabled();
+    await expect(battle.hand.first()).toBeVisible();
   });
 });

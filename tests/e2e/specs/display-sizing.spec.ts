@@ -5,7 +5,7 @@ import {
   failOnRuntimeErrors,
   makeCard,
   startBattleWithDeck,
-} from "../../helpers";
+} from "../../browser-helpers";
 import { MenuPage } from "../../pages/menu-page";
 import { slow } from "../../playwright-tags";
 
@@ -22,8 +22,7 @@ async function setSlider(slider: import("@playwright/test").Locator, value: numb
 }
 
 test.describe("Responsive display sizes", slow, () => {
-  test("menu, collections, and options fit the viewport matrix", async ({ page, runtimeErrors }) => {
-    void runtimeErrors;
+  test("menu, collections, and options fit the viewport matrix", async ({ page }) => {
     test.setTimeout(60000);
     const menu = new MenuPage(page);
     for (const viewport of VIEWPORTS) {
@@ -42,8 +41,7 @@ test.describe("Responsive display sizes", slow, () => {
     }
   });
 
-  test("independent size controls apply live and survive reload", async ({ page, runtimeErrors }) => {
-    void runtimeErrors;
+  test("independent size controls apply live and survive reload", async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1080 });
     const menu = new MenuPage(page);
     await menu.goto();
@@ -77,9 +75,8 @@ test.describe("Responsive display sizes", slow, () => {
     await expect(page.getByRole("slider", { name: "Tooltip Size", exact: true })).toHaveValue("100");
   });
 
-  test("battle cards and tooltips fit at large and small game sizes", async ({ page, fastBattle, runtimeErrors }) => {
+  test("battle cards and tooltips fit at large and small game sizes", async ({ page, fastBattle }) => {
     void fastBattle;
-    void runtimeErrors;
     for (const gameSizePercent of [80, 120]) {
       await page.addInitScript(
         ({ gameSizePercent }) => {
@@ -200,8 +197,7 @@ test.describe("Responsive display sizes", slow, () => {
     }
   });
 
-  test("collection retains its resized page across portrait and landscape tabs", async ({ page, runtimeErrors }) => {
-    void runtimeErrors;
+  test("collection retains its resized page across portrait and landscape tabs", async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1080 });
     await new MenuPage(page).gotoCollection();
     await page.getByRole("button", { name: "Cards", exact: true }).click();
@@ -229,8 +225,7 @@ test.describe("Responsive display sizes", slow, () => {
     }
   });
 
-  test("hero descriptions fit at maximum tooltip size on a small viewport", async ({ page, runtimeErrors }) => {
-    void runtimeErrors;
+  test("hero descriptions fit at maximum tooltip size on a small viewport", async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem(
         "alchemy-device-display-v1",

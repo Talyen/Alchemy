@@ -91,6 +91,8 @@ describe("desktop package layout", () => {
     await mkdir(nested, { recursive: true });
     await writeFile(path.join(root, "v8_context_snapshot.bin"), "root-snapshot");
     await writeFile(path.join(nested, "v8_context_snapshot.arm64.bin"), "nested-snapshot");
+    await writeFile(path.join(root, "browser_v8_context_snapshot.bin"), "old-browser-snapshot");
+    await writeFile(path.join(root, "v8_context_snapshot.bin.backup"), "unrelated-backup");
 
     await afterPack.installBrowserProcessSnapshots(root);
 
@@ -98,5 +100,7 @@ describe("desktop package layout", () => {
     await expect(readFile(path.join(nested, "browser_v8_context_snapshot.bin"), "utf8")).resolves.toBe(
       "nested-snapshot",
     );
+    await afterPack.installBrowserProcessSnapshots(root);
+    await expect(readFile(path.join(root, "browser_v8_context_snapshot.bin"), "utf8")).resolves.toBe("root-snapshot");
   });
 });

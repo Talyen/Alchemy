@@ -4,7 +4,7 @@ import { cn, formatLargeAmount } from "@/lib/utils";
 
 import { ChromeIconButton } from "@/features/alchemy/shared/ui/chrome-icon-button";
 import { HomesteadResourceArtwork } from "@/features/alchemy/shared/ui/material-icons";
-import { PortaledTooltip } from "@/features/alchemy/shared/ui/portaled-tooltip";
+import { PortaledTooltip } from "@/features/alchemy/shared/ui/tooltips/portaled-tooltip";
 
 export function BattleGoldCounter({ gold }: { gold: number }) {
   const [previousGold, setPreviousGold] = useState(gold);

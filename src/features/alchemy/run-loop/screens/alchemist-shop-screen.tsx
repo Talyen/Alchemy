@@ -7,10 +7,11 @@ import { MIXED_POTION_TITLE } from "@/lib/game-constants";
 import { collectionTileWidthClass, BUTTON_WIDTH_ACTION } from "@/features/alchemy/shared/config";
 
 import { BattleCardButton } from "../../shared/ui/card-button";
-import { PurchasableCardItem } from "../../shared/ui/purchasable-shop-item";
+import { PurchasableCardItem } from "../shop/ui/purchasable-shop-item";
 import { SelectableCard } from "../../shared/ui/selectable-card";
 import { CardSelectionGrid } from "../../shared/ui/card-selection-grid";
-import { ScreenDescription, ServiceButton } from "../../shared/ui/shared-ui";
+import { ScreenDescription } from "../../shared/ui/layout-components";
+import { ServiceButton } from "../shop/ui/service-button";
 import { useCaptureEscapeCancel } from "../../shared/ui/use-modal-escape-dismiss";
 import { RefreshShopServiceButton, ShopBrowseOfferings, ShopBrowseShell } from "./shop-browse-shell";
 import { FadeSlot } from "../../shared/ui/use-fade";

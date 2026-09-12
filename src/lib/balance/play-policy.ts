@@ -16,7 +16,7 @@ function scoreEffects(effects: readonly BattleCardEffect[], state: BattleState):
 function scoreEffect(effect: BattleCardEffect, state: BattleState): number {
   switch (effect.kind) {
     case "damage":
-      return effect.amount;
+      return effect.equalToForge ? state.playerStatuses.forge : effect.amount;
     case "random-damage":
       return (effect.minAmount + effect.maxAmount) / 2;
     case "enemy-status":
@@ -38,18 +38,22 @@ function scoreEffect(effect: BattleCardEffect, state: BattleState): number {
       return effect.remainingTurns * scoreEffects(effect.effects, state);
     case "draw-cards":
       return effect.amount * 2;
+    case "random-draw":
+      return effect.minAmount + effect.maxAmount;
     case "restore-mana":
       return effect.amount * 2;
     case "summon-companion":
       return 6;
     case "buff-companion":
       return effect.amount * 2;
+    case "companion-action":
+      return state.activeCompanion ? effect.amount * scoreEffects(state.activeCompanion.turnStartEffects, state) : 0;
     case "multiply-enemy-status": {
       const current = state.enemyStatuses[effect.status] ?? 0;
       return current > 0 ? (effect.factor - 1) * current : 0;
     }
     case "remove-enemy-armor":
-      return Math.min(effect.amount, state.enemyMitigation.armor);
+      return effect.removeAll ? state.enemyMitigation.armor : Math.min(effect.amount, state.enemyMitigation.armor);
     case "next-hit-crit":
       return 4;
     case "play-next-card-twice":

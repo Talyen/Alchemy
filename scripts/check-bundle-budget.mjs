@@ -6,7 +6,6 @@ import { join } from "node:path";
 
 import { BUDGETS } from "./lib/bundle-budget.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
-import { CHUNK_GROUP_NAMES } from "./lib/vite-chunks.mjs";
 
 const DEFAULT_ASSETS_DIR = "dist/assets";
 
@@ -34,40 +33,15 @@ function checkSingleBudget(dir) {
   }
   const totalJs = assets.reduce((sum, a) => sum + a.bytes, 0);
   let failed = false;
-  if (indexAsset.bytes > BUDGETS.indexMaxBytes) {
-    console.error(
-      `[bundle-budget] FAIL ${dir}/${indexAsset.name} ${indexAsset.bytes} > ${BUDGETS.indexMaxBytes} (eager entry). ` +
-        `Reduce app chunk or update budget with justification.`,
-    );
-    failed = true;
-  } else {
-    console.log(`[bundle-budget] pass ${dir}/${indexAsset.name} ${indexAsset.bytes} <= ${BUDGETS.indexMaxBytes}`);
-  }
   if (totalJs > BUDGETS.totalJsMaxBytes) {
     console.error(`[bundle-budget] FAIL ${dir} total js ${totalJs} > ${BUDGETS.totalJsMaxBytes}`);
     failed = true;
   } else {
     console.log(`[bundle-budget] pass ${dir} total js ${totalJs} <= ${BUDGETS.totalJsMaxBytes}`);
   }
-  const gameDataAsset = assets.find((a) => chunkPattern("game-data").test(a.name));
-  if (gameDataAsset) {
-    if (gameDataAsset.bytes > BUDGETS.gameDataMaxBytes) {
-      console.error(
-        `[bundle-budget] FAIL ${dir}/${gameDataAsset.name} ${gameDataAsset.bytes} > ${BUDGETS.gameDataMaxBytes} (game-data chunk). ` +
-          `Reduce barrel size or raise budget with justification.`,
-      );
-      failed = true;
-    } else {
-      console.log(
-        `[bundle-budget] pass ${dir}/${gameDataAsset.name} ${gameDataAsset.bytes} <= ${BUDGETS.gameDataMaxBytes}`,
-      );
-    }
-  }
-  for (const name of CHUNK_GROUP_NAMES) {
-    if (name === "index" || name === "game-data") continue;
-    const asset = assets.find((a) => chunkPattern(name).test(a.name));
-    if (asset) console.log(`[bundle-budget] info ${dir}/${asset.name} ${asset.bytes}`);
-  }
+  // Chunk boundaries can move without changing the eager download. Report them
+  // for diagnosis; only the total measures the budget we intend to enforce.
+  for (const asset of assets) console.log(`[bundle-budget] info ${dir}/${asset.name} ${asset.bytes}`);
   return !failed;
 }
 

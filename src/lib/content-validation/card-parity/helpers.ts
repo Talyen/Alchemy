@@ -59,7 +59,10 @@ function hasEqualToBlockOrArmor(effects: BattleCardEffect[]): boolean {
   return effects.some(
     (effect) =>
       effect.kind === "damage" &&
-      (effect.equalToBlock === true || effect.equalToArmor === true || effect.equalToGoldPercent !== undefined),
+      (effect.equalToBlock === true ||
+        effect.equalToArmor === true ||
+        effect.equalToForge === true ||
+        effect.equalToGoldPercent !== undefined),
   );
 }
 

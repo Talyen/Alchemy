@@ -36,6 +36,10 @@ export function extractSubcommand(argv) {
         i += 1;
         continue;
       }
+      if (arg.startsWith("-C") && arg.length > 2) {
+        i += 1;
+        continue;
+      }
       if (arg.startsWith("-c")) {
         i += 1;
         if (!arg.includes("=") && i < argv.length && !argv[i].startsWith("-")) i += 1;
@@ -64,6 +68,17 @@ export function isDestructive(parsedArgs) {
   }
   if (subcommand === "restore") {
     return true;
+  }
+  if (subcommand === "clean" || subcommand === "push") {
+    const end = args.indexOf("--");
+    const options = args.slice(1, end < 0 ? undefined : end);
+    const takesValue =
+      subcommand === "clean" ? ["-e", "--exclude"] : ["--repo", "--receive-pack", "--exec", "-o", "--push-option"];
+    for (let index = 0; index < options.length; index++) {
+      const option = options[index];
+      if (takesValue.includes(option)) index++;
+      else if (option === "--dry-run" || /^-[dfinqxXvu]*n[dfinqxXvu]*$/u.test(option)) return false;
+    }
   }
   if (subcommand === "clean") {
     return args.some((a) => a.startsWith("-") && a.includes("f"));

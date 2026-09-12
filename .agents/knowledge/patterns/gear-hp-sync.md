@@ -9,12 +9,12 @@ Gear equip/unequip/salvage/crafting mutates `GearStore` and must sync live run h
 
 ## Why it matters
 
-`computeGearManifest(...).maxHealth` changes live `activeRun` HP bounds. Without HP-sync, battle `maxHealth` and on-screen HP diverge; autosave writes stale HP. Nested dispatches inside a shop/reward command break atomicity (one draft expected). Metagame-only mutations must not trigger run HP rebinding.
+`computeGearManifest(...).maxHealth` changes live `activeRun` HP bounds. Without HP-sync, battle `maxHealth` and on-screen HP diverge; autosave writes stale HP. Nested dispatches inside a shop/reward command break atomicity (one draft expected). Browsing meta screens does not end an active run. The Gear command owner decides whether changed Gear requires live-run Health rebinding; do not suppress it based on the visible screen. With no active run, the default path skips rebinding.
 
 ## Evidence
 
 - `docs/ARMORY.md#write-paths` — `dispatchGearMutationWithRunHealthSync` (outside command) vs `mutateGearWithRunHealthSync(draft, ...)` (inside command); `mutate` receives `GearStore` handle for any character.
-- `src/features/alchemy/shared/stores/gear-session-command.ts` — HP-sync wrappers + `syncRunHealth ?? draft.session.hasActiveRun`.
+- `src/features/alchemy/shared/stores/gear-session-command.ts` — HP-sync wrappers; changed Gear rebinds an active run unless the caller explicitly overrides synchronization. Unchanged or rejected mutations preserve state identity.
 - `src/features/alchemy/shared/stores/run-meta-rebind.ts` — `rebindLiveRunMeta` definition; callers in `gear-session-command.ts`, `write-port-homestead.ts`, `write-port-meta.ts`, `run-park-restore.ts`.
 - `src/features/alchemy/run-loop/shop/*-shop-commands.ts`, `src/features/alchemy/run-loop/run/run-flow-rewards.ts` — gear grants inside open command use draft variant.
 - `src/app/screen-routes/meta-routes.tsx` via `useArmoryController` — outer dispatch + `flushSaveAfterGearMutation` outside run.

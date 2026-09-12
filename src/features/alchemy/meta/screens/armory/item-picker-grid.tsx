@@ -21,7 +21,7 @@ import {
   gearArtAspectClass,
   gearArtFillClass,
 } from "../../../shared/config";
-import { GearDetailPopup } from "../../../shared/ui/gear-detail-popup";
+import { GearDetailPopup } from "../../../shared/ui/tooltips/gear-detail-popup";
 import { InteractiveArtTile } from "../../../shared/ui/interactive-art-tile";
 import { CHARACTER_ICONS, CHARACTER_KEYWORDS } from "./armory-character-tabs";
 import { targetingRingClass } from "./targeting-highlight";

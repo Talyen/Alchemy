@@ -33,13 +33,16 @@ export function hydrateCard(savedCard: SavedCard): BattleCard {
     savedCard.descriptionLines.length > 0 &&
     savedCard.descriptionLines.every((line) => typeof line === "string");
   const content = keepSavedContent ? savedCard : libraryCard;
+  const { consume: catalogConsume, ...catalogMetadata } = libraryCard;
+  // Missing Consume meant reusable in complete saved content, even if the catalog now Consumes.
+  const consume = savedCard.consume ?? (keepSavedContent ? undefined : catalogConsume);
 
   return {
-    ...libraryCard,
+    ...catalogMetadata,
     descriptionLines: [...content.descriptionLines],
     effects: content.effects.map(cloneEffect),
     cost: hydrateCost(savedCard, libraryCard),
-    ...(savedCard.consume !== undefined && { consume: savedCard.consume }),
+    ...(consume !== undefined && { consume }),
     ...(savedCard.uid !== undefined && { uid: savedCard.uid }),
     ...(keepSavedContent && savedCard.corrupted !== undefined && { corrupted: savedCard.corrupted }),
     ...(keepSavedContent && savedCard.baseTitle !== undefined && { baseTitle: savedCard.baseTitle }),

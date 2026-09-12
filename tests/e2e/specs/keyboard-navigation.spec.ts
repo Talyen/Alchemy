@@ -1,14 +1,13 @@
 import { expect } from "@playwright/test";
-import { makeCard, startBattleWithDeck, enterPrimaryRewardScreen } from "../../helpers";
+import { makeCard, startBattleWithDeck, enterPrimaryRewardScreen } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 import { DestinationPage } from "../../pages/destination-page";
 import { test } from "../../fixtures/e2e";
 import { critical } from "../../playwright-tags";
 
 test.describe("Keyboard Navigation", critical, () => {
-  test("keyboard controls and hotkeys work in combat", async ({ page, fastBattle, runtimeErrors }) => {
+  test("keyboard controls and hotkeys work in combat", async ({ page, fastBattle }) => {
     void fastBattle;
-    void runtimeErrors;
 
     await startBattleWithDeck(
       page,
@@ -58,9 +57,8 @@ test.describe("Keyboard Navigation", critical, () => {
     await expect(battle.endTurnBtn).toBeEnabled({ timeout: 5000 });
   });
 
-  test("keyboard navigation selects destinations and claims rewards", async ({ page, fastBattle, runtimeErrors }) => {
+  test("keyboard navigation selects destinations and claims rewards", async ({ page, fastBattle }) => {
     void fastBattle;
-    void runtimeErrors;
 
     await enterPrimaryRewardScreen(page, {
       rewardType: "card",

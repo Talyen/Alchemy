@@ -8,6 +8,7 @@ export { canPlayCard, playBattleCardResolved, type CardPlayOptions } from "./car
 export { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 export { chooseWishCard } from "./wish";
 export { processCompanionTurnStart } from "./companion";
+export { getBattleCompanionDamageModifiers } from "./companion-scaling";
 export { endPlayerTurn, recoverLegacyEnemyPhase, type EndPlayerTurnResolution } from "./enemy-turn";
 export { collectUncoveredDifficultyModifierKinds, collectUncoveredEnemyTraitIds } from "./enemy-turn-traits";
 export { regrowEnemyThorns } from "./encounter-trait-events";

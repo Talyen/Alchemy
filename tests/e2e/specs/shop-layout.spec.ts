@@ -1,14 +1,13 @@
 import { expect } from "@playwright/test";
 import { test } from "../../fixtures/e2e";
-import { startAtDestination, makeCard } from "../../helpers";
+import { startAtDestination, makeCard } from "../../browser-helpers";
 import { ShopPage } from "../../pages/shop-page";
 import { critical, slow } from "../../playwright-tags";
 
 for (const destination of ["Card Shop", "Alchemist's Shop", "Gear Shop", "Trinket Shop"] as const) {
   const gate = destination === "Card Shop" || destination === "Alchemist's Shop" ? critical : slow;
 
-  test(`${destination} keeps artwork and layout stable after purchases`, gate, async ({ page, runtimeErrors }) => {
-    void runtimeErrors;
+  test(`${destination} keeps artwork and layout stable after purchases`, gate, async ({ page }) => {
     await startAtDestination(page, { runGold: 9999 }, { forceDestination: destination });
     await page.getByRole("button", { name: destination, exact: true }).click();
     await expect(page.getByRole("heading", { name: destination, exact: true })).toBeVisible();
@@ -41,8 +40,7 @@ for (const destination of ["Card Shop", "Alchemist's Shop", "Gear Shop", "Trinke
   });
 }
 
-test("Mixed Potion result shows the reward directly below the header", critical, async ({ page, runtimeErrors }) => {
-  void runtimeErrors;
+test("Mixed Potion result shows the reward directly below the header", critical, async ({ page }) => {
   await startAtDestination(
     page,
     {

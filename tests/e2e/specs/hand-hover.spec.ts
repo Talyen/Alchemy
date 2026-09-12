@@ -1,5 +1,6 @@
-import { expect, test, type Page } from "@playwright/test";
-import { injectActiveBattle, makeCard, makeGoblinBattleState, failOnRuntimeErrors } from "../../helpers";
+import { expect, test } from "../../fixtures/e2e";
+import type { Page } from "@playwright/test";
+import { injectActiveBattle, makeCard, makeGoblinBattleState } from "../../browser-helpers";
 import { critical, slow } from "../../playwright-tags";
 
 test.setTimeout(60_000);
@@ -70,7 +71,6 @@ async function sweep(page: Page) {
 }
 
 test("six and seven cards select in order and clicks follow the highlighted card", critical, async ({ page }) => {
-  const errors = failOnRuntimeErrors(page);
   await openHand(page);
   await inspectOuterEdges(page);
   await sweep(page);
@@ -91,11 +91,9 @@ test("six and seven cards select in order and clicks follow the highlighted card
   await expect(page.locator("[data-hand-slot]").nth(2)).toHaveAttribute("data-hovered", "true");
   await keyboardCard.press("Enter");
   await expect(page.locator("[data-hand-slot]")).toHaveCount(5);
-  expect(errors).toEqual([]);
 });
 
 test("hover reconciles through a play, draw, and reflow with the pointer in the hand", critical, async ({ page }) => {
-  const errors = failOnRuntimeErrors(page);
   await openHand(page, 7, true);
   const slot = (await geometry(page))[3]!;
   await page.mouse.move(slot.x, slot.y + slot.height / 2);
@@ -105,7 +103,6 @@ test("hover reconciles through a play, draw, and reflow with the pointer in the 
   await expect(page.locator("[data-hand-hidden]")).toHaveCount(0);
   await expect(page.locator("[data-hand-slot][data-hovered='true']")).toHaveCount(1);
   await sweep(page);
-  expect(errors).toEqual([]);
 });
 
 for (const { width, height, gameSizePercent } of [
@@ -114,7 +111,6 @@ for (const { width, height, gameSizePercent } of [
   { width: 2560, height: 1080, gameSizePercent: 80 },
 ]) {
   test(`hand fits and controls stay fixed at ${width} / ${gameSizePercent}%`, slow, async ({ page }) => {
-    const errors = failOnRuntimeErrors(page);
     await page.setViewportSize({ width, height });
     await page.addInitScript(
       (size) =>
@@ -164,6 +160,5 @@ for (const { width, height, gameSizePercent } of [
         await page.mouse.click(slot.x, slot.y + slot.height / 2);
       }
     }
-    expect(errors).toEqual([]);
   });
 }

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import { FadeSlot } from "../../../shared/ui/use-fade";
-import { ScreenShell, ScreenHeaderRow } from "../../../shared/ui/shared-ui";
+import { ScreenShell, ScreenHeaderRow } from "../../../shared/ui/layout-components";
 import type { LabyrinthMap } from "@/lib/content-systems/types";
 import { canInspectLabyrinthNode, floorNodes } from "@/lib/content-systems/labyrinth/map-state";
 import { LabyrinthMapViewport } from "./labyrinth-map-viewport";

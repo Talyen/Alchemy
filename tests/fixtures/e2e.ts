@@ -21,11 +21,16 @@ export const test = base.extend<E2EFixtures>({
     await enableFastMode(page);
     await run();
   },
-  runtimeErrors: async ({ page }, run) => {
-    const errors = failOnRuntimeErrors(page);
-    await run(errors);
-    expect(errors).toEqual([]);
-  },
+  runtimeErrors: [
+    async ({ page, autoDiagnostic }, run) => {
+      // Keep diagnostics alive until the error assertion completes.
+      void autoDiagnostic;
+      const errors = failOnRuntimeErrors(page);
+      await run(errors);
+      expect(errors).toEqual([]);
+    },
+    { auto: true },
+  ],
   autoDiagnostic: [
     async ({ page }, run, testInfo) => {
       const consoleLogs: string[] = [];

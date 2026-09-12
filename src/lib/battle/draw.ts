@@ -4,6 +4,17 @@ import { getBattleRng, rngInt, shuffle, takeRandomItem } from "@/lib/rng";
 import type { BattleState } from "./types";
 import { MAX_HAND_SIZE } from "../game-constants";
 
+interface CardUidChange {
+  previous: number | undefined;
+  next: number;
+}
+
+/** Draw IDs change for presentation; a turn-long card benefit follows the same instance. */
+export function remapDrawnCardBenefits(state: BattleState, changes: readonly CardUidChange[]) {
+  const change = changes.find((entry) => entry.previous === state.uniqueGear.redHarvestUid);
+  return change ? { ...state.uniqueGear, redHarvestUid: change.next } : state.uniqueGear;
+}
+
 function refillDeck(
   deck: BattleCard[],
   discard: BattleCard[],
@@ -26,6 +37,7 @@ export function drawCards(
   let nextDiscard = [...discard];
   const nextHand = [...hand];
   let uid = nextCardUid;
+  const uidChanges: CardUidChange[] = [];
 
   for (let i = 0; i < amount && nextHand.length < MAX_HAND_SIZE; i++) {
     const refilled = refillDeck(nextDeck, nextDiscard, rng);
@@ -36,10 +48,11 @@ export function drawCards(
     const card = nextDeck.pop();
     if (!card) break;
     nextHand.push({ ...card, uid });
+    if (card.uid !== undefined) uidChanges.push({ previous: card.uid, next: uid });
     uid += 1;
   }
 
-  return { deck: nextDeck, discard: nextDiscard, hand: nextHand, nextCardUid: uid };
+  return { deck: nextDeck, discard: nextDiscard, hand: nextHand, nextCardUid: uid, uidChanges };
 }
 
 export function takeRandomCardFromDeck(state: BattleState): {
@@ -47,6 +60,7 @@ export function takeRandomCardFromDeck(state: BattleState): {
   deck: BattleCard[];
   discard: BattleCard[];
   nextCardUid: number;
+  uniqueGear: BattleState["uniqueGear"];
 } | null {
   const refilled = refillDeck(state.deck, state.discard, getBattleRng(state));
   if (!refilled || refilled.deck.length === 0) return null;
@@ -58,6 +72,7 @@ export function takeRandomCardFromDeck(state: BattleState): {
     deck,
     discard: refilled.discard,
     nextCardUid: state.nextCardUid + 1,
+    uniqueGear: remapDrawnCardBenefits(state, [{ previous: rawCard.uid, next: state.nextCardUid }]),
   };
 }
 
@@ -72,6 +87,7 @@ export function applyDrawResult(state: BattleState, draw: ReturnType<typeof draw
     discard: draw.discard,
     hand: draw.hand,
     nextCardUid: draw.nextCardUid,
+    uniqueGear: remapDrawnCardBenefits(state, draw.uidChanges),
   };
 }
 
@@ -89,5 +105,6 @@ export function drawKeywordCard(state: BattleState, keyword: string): BattleStat
     discard: refilled.discard,
     hand: [...state.hand, card],
     nextCardUid: state.nextCardUid + 1,
+    uniqueGear: remapDrawnCardBenefits(state, [{ previous: refilled.deck[index]!.uid, next: card.uid }]),
   };
 }

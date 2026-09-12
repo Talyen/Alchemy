@@ -1,5 +1,5 @@
-import { expect, test } from "@playwright/test";
-import { injectActiveBattle, makeCard, makeGoblinBattleState, failOnRuntimeErrors } from "../../helpers";
+import { expect, test } from "../../fixtures/e2e";
+import { injectActiveBattle, makeCard, makeGoblinBattleState } from "../../browser-helpers";
 import { critical } from "../../playwright-tags";
 import { MenuPage } from "../../pages/menu-page";
 import { CorruptionPage } from "../../pages/corruption-page";
@@ -149,7 +149,6 @@ test("Armory slot headings never label the outgoing items", async ({ page }) => 
 });
 
 test("inspection reveals a complete panel and retains its page through exit", critical, async ({ page }) => {
-  const errors = failOnRuntimeErrors(page);
   const cards = Array.from({ length: 40 }, (_, uid) => makeCard({ uid: uid + 1 }));
   await injectActiveBattle(page, makeGoblinBattleState({ hand: [cards[0]!], deck: cards.slice(1) }), {
     runDeck: cards,
@@ -201,5 +200,4 @@ test("inspection reveals a complete panel and retains its page through exit", cr
   await expect(panel.getByRole("button", { name: "Previous page" })).toBeDisabled();
   await page.keyboard.press("Escape");
   await expect(overlay).toHaveCount(0);
-  expect(errors).toEqual([]);
 });

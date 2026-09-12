@@ -81,8 +81,8 @@ export const defenseCards: BattleCard[] = [
     id: "sunder",
     art: assetRefs.sunder,
     effects: [
-      { kind: "damage", damageType: "physical", amount: 4 },
       { kind: "remove-enemy-armor", amount: 2 },
+      { kind: "damage", damageType: "physical", amount: 4 },
     ],
   }),
   cardBuilders.dualDamageCard({

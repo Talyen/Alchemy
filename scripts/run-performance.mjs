@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { commandInvocation } from "./lib/command-invocation.mjs";
 /**
  * On-demand FPS / hitch profiling runner.
  * Usage:
@@ -15,6 +16,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { writeCurrentRun } from "./lib/current-run.mjs";
 import { PERF_PREVIEW_PORT } from "./lib/dev-port.mjs";
+import { isMainModule } from "./lib/is-main-module.mjs";
 import { checkEnvironmentCompatibility, compareReports } from "../performance/compare-model.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -24,7 +26,7 @@ const DIAG_SCENARIOS = PERFORMANCE_CATALOG.diagnosticScenarios;
 const SCENARIOS = [...METRIC_SCENARIOS, ...DIAG_SCENARIOS];
 const DEFAULT_SCENARIO = PERFORMANCE_CATALOG.defaultScenario;
 
-function parseArgs(argv) {
+export function parsePerformanceArgs(argv) {
   const args = {
     scenario: null,
     runs: null,
@@ -36,6 +38,11 @@ function parseArgs(argv) {
     skipBuild: false,
     help: false,
   };
+  const value = (index, flag) => {
+    const supplied = argv[index];
+    if (!supplied || supplied.startsWith("-")) throw new Error(`${flag} requires a value`);
+    return supplied;
+  };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--help" || a === "-h") args.help = true;
@@ -44,13 +51,29 @@ function parseArgs(argv) {
     else if (a === "--cold") args.cold = true;
     else if (a === "--skip-build") args.skipBuild = true;
     else if (a === "--all") args.all = true;
-    else if (a === "--scenario") args.scenario = argv[++i];
-    else if (a === "--runs") args.runs = Number.parseInt(argv[++i], 10);
+    else if (a === "--scenario") args.scenario = value(++i, a);
+    else if (a === "--runs") args.runs = Number(value(++i, a));
     else if (a === "--compare") {
-      args.compare = [argv[++i], argv[++i]];
+      args.compare = [value(++i, a), value(++i, a)];
     } else if (a.startsWith("--scenario=")) args.scenario = a.slice("--scenario=".length);
-    else if (a.startsWith("--runs=")) args.runs = Number.parseInt(a.slice("--runs=".length), 10);
+    else if (a.startsWith("--runs=")) args.runs = Number(a.slice("--runs=".length));
+    else throw new Error(`Unknown performance option: ${a}`);
   }
+  if (args.runs !== null && (!Number.isSafeInteger(args.runs) || args.runs < 1))
+    throw new Error("--runs must be a positive integer");
+  if (args.scenario !== null && !SCENARIOS.includes(args.scenario))
+    throw new Error(`Unknown scenario: ${args.scenario}`);
+  if (
+    args.compare &&
+    (args.scenario !== null ||
+      args.runs !== null ||
+      args.all ||
+      args.trace ||
+      args.electron ||
+      args.cold ||
+      args.skipBuild)
+  )
+    throw new Error("--compare cannot be combined with profiling options");
   return args;
 }
 
@@ -81,10 +104,9 @@ Options:
 function buildDist({ onlyIfMissing = false } = {}) {
   if (onlyIfMissing && fs.existsSync(path.join(root, "dist", "index.html"))) return;
   console.log("Building production renderer for performance profiling…");
-  const result = spawnSync("npm", ["run", "build"], {
+  const result = spawnSync(...commandInvocation("npm", ["run", "build"]), {
     cwd: root,
     stdio: "inherit",
-    shell: process.platform === "win32",
   });
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
@@ -185,7 +207,7 @@ function runCompare(beforeDir, afterDir) {
 }
 
 function main() {
-  const args = parseArgs(process.argv.slice(2));
+  const args = parsePerformanceArgs(process.argv.slice(2));
   if (args.help) {
     printHelp();
     return;
@@ -220,10 +242,9 @@ function main() {
 
   if (args.electron) {
     console.log("Ensuring Electron binary…");
-    const ensure = spawnSync("npm", ["run", "ensure:electron"], {
+    const ensure = spawnSync(...commandInvocation("npm", ["run", "ensure:electron"]), {
       cwd: root,
       stdio: "inherit",
-      shell: process.platform === "win32",
     });
     if (ensure.status !== 0) process.exit(ensure.status ?? 1);
   }
@@ -253,12 +274,14 @@ function main() {
     `Runtime: ${args.electron ? "electron" : "chromium"} | Cold: ${args.cold ? "yes" : "no"} | Trace: ${args.trace ? "yes" : "no"} | Scenario: ${args.all ? METRIC_SCENARIOS.join(",") : (scenario ?? "all")} | Runs: ${env.PERF_RUNS}`,
   );
 
-  const result = spawnSync("npx", ["playwright", "test", "--config", "playwright.performance.config.ts", ...grepArgs], {
-    cwd: root,
-    stdio: "inherit",
-    env,
-    shell: process.platform === "win32",
-  });
+  const result = spawnSync(
+    ...commandInvocation("npx", ["playwright", "test", "--config", "playwright.performance.config.ts", ...grepArgs]),
+    {
+      cwd: root,
+      stdio: "inherit",
+      env,
+    },
+  );
 
   const summaryPath = path.join(outDir, "summary.md");
   if (fs.existsSync(summaryPath)) {
@@ -279,4 +302,11 @@ function main() {
   process.exit(result.status ?? 1);
 }
 
-main();
+if (isMainModule(import.meta.url)) {
+  try {
+    main();
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+  }
+}

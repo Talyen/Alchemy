@@ -58,18 +58,12 @@ export const archeryCards: BattleCard[] = [
       },
     ],
   },
-  {
+  cardBuilders.archeryDamageCard({
     id: "lightning-arrow",
-    title: "Lightning Arrow",
     art: assetRefs.lightningArrow,
-    cost: 1,
-    descriptionLines: ["Deal 1 Nature damage", "Gain 1 Forge", "Archery"],
-    tags: ["archery"],
-    effects: [
-      { kind: "damage", damageType: "nature", amount: 1 },
-      { kind: "player-status", status: "forge", amount: 1 },
-    ],
-  },
+    damageType: "nature",
+    amount: 3,
+  }),
   cardBuilders.effectsCard({
     id: "bounty-shot",
     art: assetRefs.bountyShot,

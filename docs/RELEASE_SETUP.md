@@ -2,7 +2,7 @@
 
 One-time shipping setup for Alchemy: crash reporting, provenance, signing, secrets, and listing baseline. Active release flow stays in [RELEASE.md](./RELEASE.md). Coding rules: [AGENTS.md](../AGENTS.md).
 
-Revalidate these sections only when rotating credentials, changing the listing, or preparing the first public release. Keep the documented configuration aligned with the release workflow when it changes.
+Account and credential setup is one-time; revisit it when configuration or credentials change. Before public promotion, follow the [notice and provenance review](#player-notices-and-asset-provenance), [Steam Input revalidation conditions](#steam-input-default-mapping-controller-playable), and [listing baseline](#steam-listing-baseline-windows). Keep configuration aligned with the release workflow.
 
 ## Desktop crash reporting (one-time setup)
 
@@ -21,7 +21,8 @@ identity or save data. Otherwise, events use Sentry's standard Electron error co
    runtime contract (canonical wording owned by [PRIVACY.md](../PRIVACY.md)).
 
 Release desktop builds create hidden source maps, upload them as `alchemy@<package version>`, and delete them before
-electron-builder assembles the application. The packaging verifier checks that maps and CI credentials are absent.
+electron-builder assembles the application. All packages also exclude source maps, including builds without Sentry.
+The packaging verifier inspects `app.asar` for maps and CI credentials.
 Reporting failures and offline play never block startup, saves, gameplay, or quit.
 
 Build version stamping (`src/lib/validation/metadata.generated.ts` via `npm run sync:version`) runs in the release pipeline; art authoring sources stay in [WORKFLOWS-ASSETS](./WORKFLOWS-ASSETS.md).

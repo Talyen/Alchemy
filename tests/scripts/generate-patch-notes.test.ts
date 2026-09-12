@@ -20,6 +20,10 @@ import {
 } from "../../scripts/lib/patch-notes-core.mjs";
 
 describe("generate-patch-notes", () => {
+  it("rejects misspelled options instead of writing during an intended preview", () => {
+    expect(() => parseGeneratePatchNotesArgs(["--dryrun"], {})).toThrow("Unknown patch-note option");
+    expect(parseGeneratePatchNotesArgs(["--dry-run"], {})).toMatchObject({ dryRun: true });
+  });
   it("includes player-facing conventional commits only", () => {
     const markdown = buildPatchNotesMarkdown("1.2.3", [
       { subject: "feat(cards): add meteor shower", body: "" },
@@ -145,6 +149,9 @@ describe("generate-patch-notes", () => {
     expect(promoted).toContain("## [Unreleased]");
     expect(promoted).toContain("_No changes yet._");
     expect(promoted).toContain("## [0.1.0] (2026-06-11)");
+    expect(promoteUnreleasedSection(promoted, "v0.2.0", "2026-06-18")).toBe(promoted);
+    const conflicting = promoted.replace("_No changes yet._", "- fix: a new change");
+    expect(() => promoteUnreleasedSection(conflicting, "0.2.0", "2026-06-18")).toThrow("already contains");
   });
 
   it("replaces only the unreleased block", () => {

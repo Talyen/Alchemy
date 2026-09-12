@@ -69,6 +69,9 @@ function computeBaseRawAmount(
 ): number {
   const forgeBonus = getForgeBonusForDamage(state, effect.damageType, companionAttack);
 
+  // Forge is already the entire base, including when a talent grants Forge to Burn.
+  if (effect.equalToForge) return state.playerStatuses.forge;
+
   if (effect.equalToBlock) {
     return state.playerStatuses.block + forgeBonus;
   }
@@ -198,7 +201,7 @@ function computeBaseDamage(
   const hasBlock = effect.equalToBlock === true;
   const hasArmor = effect.equalToArmor === true;
   const hasGold = effect.equalToGoldPercent !== undefined;
-  const isEqualTo = hasBlock || hasArmor || hasGold;
+  const isEqualTo = hasBlock || hasArmor || hasGold || effect.equalToForge === true;
   if (isEqualTo) return Math.max(0, rawAmount);
   const modifier = DAMAGE_TYPE_HANDLERS[effect.damageType];
   if (!modifier) throw new Error(`Missing DamageType handler: ${effect.damageType}`);
@@ -437,7 +440,8 @@ export function computeCardDamageToEnemy(
     serpent || kingbreaker
       ? stateWithCritCleared
       : applySunderingArmorPiercing(stateWithCritCleared, isPhysicalOrStun, card);
-  const effectiveArmor = isPhysicalOrStun && !serpent && !kingbreaker ? nextState.enemyMitigation.armor : 0;
+  const effectiveArmor =
+    isPhysicalOrStun && !serpent && !kingbreaker && !effect.ignoreArmor ? nextState.enemyMitigation.armor : 0;
   const damageAfterArmor = Math.max(0, damageAfterBlock - effectiveArmor);
   return { nextState, modifiedDamage: damageAfterArmor };
 }

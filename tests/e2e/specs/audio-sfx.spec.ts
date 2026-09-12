@@ -1,12 +1,10 @@
-import { expect, test as baseTest } from "@playwright/test";
-import { failOnRuntimeErrors } from "../../helpers";
+import { expect, test } from "../../fixtures/e2e";
 import { MenuPage } from "../../pages/menu-page";
 import { critical } from "../../playwright-tags";
 import { FADE_OUT_DURATION, MUSIC_FADE_TICK_MS, NAVIGATION_DELAY_MS, PAGE_EXIT_MS } from "@/lib/game-constants";
 
-baseTest.describe("SFX playback", critical, () => {
-  baseTest("menu interaction starts at least one SFX", async ({ page }) => {
-    const errors = failOnRuntimeErrors(page);
+test.describe("SFX playback", critical, () => {
+  test("menu interaction starts at least one SFX", async ({ page }) => {
     await page.addInitScript(() => {
       const headlessUserAgent = navigator.userAgent;
       Object.defineProperty(navigator, "webdriver", { configurable: true, get: () => false });
@@ -44,13 +42,12 @@ baseTest.describe("SFX playback", critical, () => {
 
     const plays = await page.evaluate(() => (window as Window & { __alchemySfxPlays?: number }).__alchemySfxPlays ?? 0);
     expect(plays).toBeGreaterThan(0);
-    expect(errors).toEqual([]);
   });
 });
 
-baseTest("Bestiary boss music follows portrait activation and browsing", critical, async ({ page }) => {
-  baseTest.setTimeout(60_000);
-  const errors = failOnRuntimeErrors(page);
+test("Bestiary boss music follows portrait activation and browsing", critical, async ({ page }) => {
+  test.setTimeout(60_000);
+
   await page.addInitScript(() => {
     const userAgent = navigator.userAgent;
     Object.defineProperty(navigator, "webdriver", { configurable: true, get: () => false });
@@ -142,5 +139,4 @@ baseTest("Bestiary boss music follows portrait activation and browsing", critica
   await page.clock.resume();
   await menu.expectMainMenu();
   await expect.poll(activeMusic).toEqual([expect.stringMatching(/Menu \d\.mp3/)]);
-  expect(errors).toEqual([]);
 });

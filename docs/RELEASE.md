@@ -29,12 +29,17 @@ Infra-only commits stay out of player notes even when typed `feat`.
 latest `v*` tag (`sync-changelog.mjs`, prerelease), then promote it to a dated
 version section (`release-changelog.mjs`, postbump). Never edit, trim, or
 reorganize it by hand. If it becomes hard to consume, improve the generator's
-filtering/grouping with tests or cut a release.
+filtering/grouping with tests or cut a release. Repeating promotion for an existing
+version leaves it unchanged when Unreleased is empty; new unreleased content
+against that version is a conflict and is preserved for review.
 
 Player notes come directly from git through `generate-patch-notes.mjs`, using
 types, changed paths, and trailers. `npm run generate:patch-notes` writes
 `release-notes/UNRELEASED.md`; tag CI writes `release-notes/vX.Y.Z.md` from the
-previous tag to the current tag. `npm run release -- --dry-run` prints the draft
+nearest preceding release tag in the current tag's ancestry to the current tag.
+Commit validation uses the same boundary; later or unrelated tags do not affect
+release reruns. Unreleased notes start at the nearest release tag reachable from
+HEAD. `npm run release -- --dry-run` prints the draft
 without gates, a bump, a tag, or a push. A real release prints it after gates
 and before tagging.
 
@@ -44,26 +49,63 @@ if monitoring is unavailable, inspect the printed workflow link.
 
 ## Agent release flow
 
-1. Ensure your working tree is clean and you're on `main`.
+Desktop builds validate Steam, Sentry, and signing configuration before invoking
+Vite, so invalid configuration fails before source-map uploads. Packaging repeats
+this validation when invoked directly and retains its post-build artifact checks.
+These checks validate configuration completeness; signing credentials are still
+authenticated by the signing provider during packaging.
+
+Production Steam App IDs must contain only digits and represent a positive safe
+integer other than 480. Releases with Sentry reporting reject
+`ALCHEMY_SKIP_SOURCEMAP=1`; local builds can still omit maps, and release crash
+reporting remains optional. `dist:desktop` checks the renderer bundle budget
+before creating or signing installers.
+
+1. Ensure your working tree is clean and you're on `main`. Before publishing, confirm the applicable [release setup](./RELEASE_SETUP.md) is current, including notice and provenance review for changed assets or service use.
 2. Run **`npm run release`** — runs `check:ship:full`, prints the player-facing patch-note draft, bumps version (inferred from commits via `commit-and-tag-version`), creates the release commit + `vX.Y.Z` tag, pushes both to origin, and watches the release workflow (matched by the tag name, not `main`). Preview notes without shipping: **`npm run release -- --dry-run`**.
 3. For urgent hotfixes: **`npm run release:hotfix`** — lighter gate (`check:ship` + critical E2E), forces a patch bump.
 4. [`.github/workflows/release.yml`](../.github/workflows/release.yml) is the
    source of truth for release job ordering, gates, packaging, patch notes, and
    Steam publishing. The release job must not introduce a second desktop build
    when the workflow already produced the release artifact.
-5. After a successful Steam upload, **manually promote** the new build to the live branch in Steamworks (`setlive` is empty so uploads do not auto-publish).
+5. Before promotion, complete the [notice and provenance review](./RELEASE_SETUP.md#player-notices-and-asset-provenance), revalidate [Steam Input when its listed triggers apply](./RELEASE_SETUP.md#steam-input-default-mapping-controller-playable), and verify the [listing baseline](./RELEASE_SETUP.md#steam-listing-baseline-windows). After a successful Steam upload, **manually promote** the new build to the live branch in Steamworks (`setlive` is empty so uploads do not auto-publish).
+
+## Packaged Windows startup check
+
+`npm run smoke:desktop` launches the unpacked Windows executable and waits up to
+60 seconds for the title screen's enabled Play button using Windows accessibility
+APIs. It isolates the player profile and closes the game afterward. It runs after
+packaging in Windows CI and before Steam upload in release CI. The packaged fuses,
+ASAR, and renderer policy remain intact; no development server or debug interface
+is required. Run this check on Windows; renderer builds and unit tests on other
+hosts do not substitute for it.
+
+Desktop renderer artifacts used for packaging include music. The package verifier
+compares packaged MP3 bytes with `public/Music/` and rejects source maps inside
+`app.asar`, independently of whether crash reporting is configured.
 
 ## Failed release and rollback
 
-`npm run release` pushes the release commit and tag before it watches GitHub
-Actions. A workflow failure is therefore a published failed release attempt,
-not an uncommitted local operation.
+`npm run release` pushes `main` and the release tag atomically before watching
+GitHub Actions. A rejected push updates neither remote ref and stops without
+retrying separate pushes or starting the watcher. A workflow failure after a
+successful push is a published failed release attempt, not an uncommitted local operation.
+
+After package verification and startup smoke pass, release CI retains the complete
+desktop package and versioned release notes for seven days before contacting
+Steam. The artifact name includes the tag and producing run attempt. A separate
+publishing job downloads the exact artifact ID exported by the packaging job,
+then uploads to Steam and GitHub. Retrying only the failed publishing job reuses
+that verified package without rebuilding or signing again. Retry within the
+seven-day retention window; an expired artifact requires rerunning packaging.
+Rerunning all jobs intentionally creates a new package.
 
 - If a job fails before Steam upload, fix the cause on `main` and use a new
   patch release. Do not move or reuse the published tag.
 - If packaging succeeds but Steam upload fails, leave the current live branch
-  untouched, repair credentials or workflow configuration, and rerun the
-  failed workflow for the same immutable tag.
+  untouched, repair credentials or the external service, and rerun only the
+  failed publishing job for the same immutable tag. Code or workflow changes
+  require a new patch release.
 - If a promoted build is defective, use Steamworks to restore the previously
   known-good build to the live branch, then ship a new hotfix tag. Record the
   rollback and affected versions in the release or incident notes.
@@ -87,7 +129,7 @@ or unreviewed build cannot become player-visible automatically.
 
 ## One-time setup
 
-Crash reporting, provenance, signing, secrets, and listing baseline live in [RELEASE_SETUP.md](./RELEASE_SETUP.md). Revalidate only when rotating credentials, changing the listing, or preparing the first public release.
+Account setup, signing, and secrets live in [RELEASE_SETUP.md](./RELEASE_SETUP.md); revisit them when configuration or credentials change. That guide also owns the recurring notice, provenance, input, and listing reviews linked from the release flow above.
 
 ## CI jobs
 

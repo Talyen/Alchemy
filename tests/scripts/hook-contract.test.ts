@@ -19,7 +19,8 @@ describe("canonical verification commands", () => {
     expect(pkg.scripts.release).toBe("node scripts/release.mjs");
     for (const removed of ["verify:changed", "check:push", "check:handoff"])
       expect(pkg.scripts[removed]).toBeUndefined();
-    expect(lefthook).toContain("npm run check -- --diff");
+    expect(lefthook).toContain("npm run check -- --pre-push");
+    expect(lefthook).toContain("use_stdin: true");
     expect(contributing).toContain("npm run verify -- --diff");
     expect(contributing).toContain("npm run check -- --diff");
     expect(skill).toMatch(/npm run check -- (?:--diff|<paths>)/);

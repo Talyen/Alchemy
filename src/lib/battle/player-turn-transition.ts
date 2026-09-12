@@ -30,7 +30,9 @@ function applyPlagueDoctorMask(state: BattleState, combatTexts: CombatTextEvent[
     combatTexts,
   );
   return resolvePendingBattleReactions(
-    dealPlayerTypedHit(cleansed, "poison", halveRounded(removed), combatTexts),
+    withPreservedFlags(cleansed, (current) =>
+      dealPlayerTypedHit(current, "poison", halveRounded(removed), combatTexts),
+    ),
     combatTexts,
   );
 }
@@ -242,7 +244,7 @@ export function advanceToPlayerTurn(
     combatTexts,
   );
   const healedState =
-    drawnState.gearEffects.healthPerTurn > 0
+    drawnState.enemyHealth > 0 && !isPlayerDefeated(drawnState) && drawnState.gearEffects.healthPerTurn > 0
       ? applyHealingWithCombatText(drawnState, drawnState.gearEffects.healthPerTurn, combatTexts)
       : drawnState;
   return resolvePendingBattleReactions(healedState, combatTexts);

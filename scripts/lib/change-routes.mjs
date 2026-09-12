@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import { globToRegExp } from "./glob-pattern.mjs";
+import { expandRepositoryPaths } from "./repository-paths.mjs";
 import { COMMANDS } from "./test-commands.mjs";
 
 const ROOT_DIR = path.resolve(import.meta.dirname, "../..");
@@ -27,6 +28,7 @@ export const SHARED_BUILD_PATTERNS = Object.freeze([
   "scripts/build-verified.mjs",
   "scripts/lib/vite-*.mjs",
   "scripts/lib/sentry-release.mjs",
+  "scripts/lib/desktop-build-config.mjs",
 ]);
 
 export const ROUTES = Object.freeze([
@@ -87,7 +89,7 @@ export const ROUTES = Object.freeze([
       "desktop/**",
       "src/lib/desktop-api.ts",
       "src/lib/platform.ts",
-      "scripts/**desktop*.mjs",
+      "scripts/**desktop*",
       "scripts/lib/release-checks.mjs",
       "tests/desktop/**",
     ],
@@ -164,7 +166,7 @@ export const ROUTES = Object.freeze([
       "tests/fixtures/**",
       "tests/pages/**",
       "tests/playwright-*.ts",
-      "tests/helpers.ts",
+      "tests/browser-helpers.ts",
     ],
     [],
     [doc("tests/e2e/README.md", null, "browser test contract")],
@@ -211,11 +213,17 @@ function isRelatedInput(filePath) {
 }
 
 export function resolveRoutePlan(paths) {
-  const normalized = paths.map(normalize);
+  const normalized = expandRepositoryPaths(ROOT_DIR, paths);
   const routes = resolveRoutes(normalized);
   const keys = new Set(routes.flatMap((candidate) => candidate.commands));
+  const coveredPaths = [...keys]
+    .filter((key) => key.startsWith("unit-") && key !== "unit-changed")
+    .flatMap((key) => COMMANDS[key].args.filter((arg) => arg.startsWith("tests/")));
   const changedTests = normalized.filter(
-    (filePath) => isUnitTest(filePath) && existsSync(path.join(ROOT_DIR, filePath)),
+    (filePath) =>
+      isUnitTest(filePath) &&
+      existsSync(path.join(ROOT_DIR, filePath)) &&
+      !coveredPaths.some((covered) => filePath === covered || filePath.startsWith(`${covered}/`)),
   );
   const tooling = routes.find((candidate) => candidate.id === "tooling");
   const relatedInputs = normalized.filter(
@@ -223,6 +231,12 @@ export function resolveRoutePlan(paths) {
   );
   if (changedTests.length === 0) keys.delete("unit-changed");
   if (relatedInputs.length === 0) keys.delete("related");
+  // A first push can select the entire tree. Full unit coverage is cheaper and
+  // safer than shell-sized batches of overlapping dependency-related commands.
+  if (Buffer.byteLength(JSON.stringify([...relatedInputs, ...changedTests])) > 8_000) {
+    for (const key of keys) if (key === "related" || key.startsWith("unit-")) keys.delete(key);
+    keys.add("unit-all");
+  }
   return {
     paths: normalized,
     routes,

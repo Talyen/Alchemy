@@ -1,5 +1,5 @@
 import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
-import { useLatestRef } from "@/features/alchemy/shared/hooks";
+import { useLatestRef } from "@/features/alchemy/shared/ui/use-latest-ref";
 import { discoverCardIds, discoverTrinketIds, discoverUniqueIds } from "@/features/alchemy/shared/stores/profile-store";
 import { clearAllPersistentGameData } from "@/features/alchemy/shared/stores/reset";
 import {

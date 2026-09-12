@@ -1,100 +1,44 @@
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
-import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { mapPool } from "../../scripts/lib/map-pool.mjs";
+vi.mock("../../scripts/optimize-assets.mjs", () => ({ optimizeAssets: vi.fn() }));
+vi.mock("../../scripts/optimize-sounds.mjs", () => ({ optimizeSounds: vi.fn() }));
+vi.mock("../../scripts/optimize-music.mjs", () => ({ optimizeMusic: vi.fn() }));
+vi.mock("../../scripts/sync-generated.mjs", () => ({ syncGenerated: vi.fn() }));
 
-const fixture = vi.hoisted(() => ({ root: "" }));
-vi.mock("../../scripts/prepare-assets.mjs", () => ({ prepareAssets: vi.fn() }));
-vi.mock("../../scripts/lib/sync-generated-helpers.mjs", () => ({ resolveRootDir: () => fixture.root }));
-
-fixture.root = mkdtempSync(join(tmpdir(), "alchemy-prepared-assets-"));
-const { prepareAssets } = await import("../../scripts/prepare-assets.mjs");
+const { optimizeAssets } = await import("../../scripts/optimize-assets.mjs");
+const { optimizeSounds } = await import("../../scripts/optimize-sounds.mjs");
+const { optimizeMusic } = await import("../../scripts/optimize-music.mjs");
+const { syncGenerated } = await import("../../scripts/sync-generated.mjs");
 const { checkPreparedAssets } = await import("../../scripts/check-prepared-assets.mjs");
-const metadata = "src/lib/validation/metadata.generated.ts";
-const art = "src/assets/optimized/card.webp";
-
-function write(relativePath: string, contents: string) {
-  const target = join(fixture.root, relativePath);
-  mkdirSync(dirname(target), { recursive: true });
-  writeFileSync(target, contents);
-}
 
 describe("checkPreparedAssets", () => {
   beforeEach(() => {
-    rmSync(fixture.root, { recursive: true, force: true });
-    mkdirSync(fixture.root);
     vi.stubEnv("ALCHEMY_SKIP_ASSETS", "");
-    vi.mocked(prepareAssets).mockReset();
+    for (const optimize of [optimizeAssets, optimizeSounds, optimizeMusic]) {
+      vi.mocked(optimize).mockReset().mockResolvedValue({ ok: true });
+    }
+    vi.mocked(syncGenerated).mockReset().mockResolvedValue(undefined);
     vi.spyOn(console, "log").mockImplementation(() => {});
   });
 
-  afterAll(() => {
-    rmSync(fixture.root, { recursive: true, force: true });
-    vi.unstubAllEnvs();
-  });
-
-  it("refuses to run when asset preparation is skipped", async () => {
+  it("refuses skip mode before checking any outputs", async () => {
     vi.stubEnv("ALCHEMY_SKIP_ASSETS", "1");
     await expect(checkPreparedAssets()).rejects.toThrow("cannot run with ALCHEMY_SKIP_ASSETS=1");
-    expect(prepareAssets).not.toHaveBeenCalled();
+    expect(optimizeAssets).not.toHaveBeenCalled();
   });
 
-  it("accepts unchanged outputs", async () => {
-    write(art, "current art");
+  it("checks every pipeline and generated metadata in read-only mode", async () => {
     await expect(checkPreparedAssets()).resolves.toBeUndefined();
-    expect(readFileSync(join(fixture.root, art), "utf8")).toBe("current art");
+    for (const check of [optimizeAssets, optimizeSounds, optimizeMusic, syncGenerated]) {
+      expect(check).toHaveBeenCalledWith({ check: true });
+    }
   });
 
-  it("detects and restores version metadata changes", async () => {
-    write(metadata, "old version");
-    vi.mocked(prepareAssets).mockImplementation(async () => write(metadata, "new version"));
-    await expect(checkPreparedAssets()).rejects.toThrow("metadata.generated.ts");
-    expect(readFileSync(join(fixture.root, metadata), "utf8")).toBe("old version");
-  });
-
-  it("restores only after delayed conversion writes finish", async () => {
-    write(art, "original art");
-    const gate = Promise.withResolvers<void>();
-    const started = Promise.withResolvers<void>();
-    vi.mocked(prepareAssets).mockImplementation(async () => {
-      await mapPool([0, 1], 2, async (item) => {
-        if (item === 0) throw new Error("conversion failed");
-        started.resolve();
-        await gate.promise;
-        write(art, "late conversion");
-      });
-    });
-    let settled = false;
-    const result = checkPreparedAssets().catch((error: unknown) => {
-      settled = true;
-      return error;
-    });
-    await started.promise;
-    await new Promise<void>((resolve) => {
-      setImmediate(resolve);
-    });
-    expect(settled).toBe(false);
-    gate.resolve();
-    expect(await result).toBeInstanceOf(AggregateError);
-    expect(readFileSync(join(fixture.root, art), "utf8")).toBe("original art");
-  });
-
-  it("restores changed and deleted outputs and removes new files after preparation fails", async () => {
-    write(art, "original art");
-    write(metadata, "original version");
-    const added = "public/sounds/new.ogg";
-    const failure = new Error("prepare exploded");
-    vi.mocked(prepareAssets).mockImplementation(async () => {
-      write(art, "changed art");
-      rmSync(join(fixture.root, metadata));
-      write(added, "new sound");
-      throw failure;
-    });
-    await expect(checkPreparedAssets()).rejects.toBe(failure);
-    expect(readFileSync(join(fixture.root, art), "utf8")).toBe("original art");
-    expect(readFileSync(join(fixture.root, metadata), "utf8")).toBe("original version");
-    expect(existsSync(join(fixture.root, added))).toBe(false);
+  it("reports pipeline failures and stale version metadata together", async () => {
+    vi.mocked(optimizeAssets).mockResolvedValue({ ok: false, error: "stale art" });
+    vi.mocked(optimizeMusic).mockRejectedValue(new Error("missing music"));
+    vi.mocked(syncGenerated).mockRejectedValue(new Error("stale version"));
+    await expect(checkPreparedAssets()).rejects.toThrow(/stale art[\s\S]*missing music[\s\S]*stale version/);
+    expect(optimizeSounds).toHaveBeenCalledWith({ check: true });
   });
 });

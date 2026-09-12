@@ -22,7 +22,7 @@ describe("keywordDefinitions", () => {
 
 it.each([
   ["gamblers-shot", ["physical", "archery"]],
-  ["roll-the-dice", ["physical", "gold"]],
+  ["roll-the-dice", ["consume"]],
   ["astral-arrow", ["freeze", "burn", "holy", "consume", "archery"]],
 ])("keeps %s eligible for all of its keyword rewards", (id, expected) => {
   const card = cardLibrary.find((entry) => entry.id === id);

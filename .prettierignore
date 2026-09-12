@@ -17,3 +17,8 @@ src/lib/validation/metadata.generated.ts
 src/lib/game-data/assets.generated.ts
 src/lib/game-data/gear-art.ts
 package-lock.json
+.worktrees/
+.git/
+blob-report/
+.stryker-tmp/
+.vercel/

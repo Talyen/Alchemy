@@ -12,14 +12,15 @@
  * for the static gate).
  */
 import path from "node:path";
+import fs from "node:fs";
+import { isMainModule } from "./lib/is-main-module.mjs";
 import { fileURLToPath } from "node:url";
 import { commandExposure, tailOutput, writeDiagnosticLog } from "./lib/compact-output.mjs";
-import { writeCurrentRun } from "./lib/current-run.mjs";
+import { ensureRunId, writeCurrentRun } from "./lib/current-run.mjs";
 import { runCommandAsync } from "./lib/run-command.mjs";
 
 const currentFile = fileURLToPath(import.meta.url);
 const ROOT = path.resolve(path.dirname(currentFile), "..");
-const verbose = process.argv.includes("--verbose");
 
 const STEPS = [
   {
@@ -61,75 +62,103 @@ const STEPS = [
   { name: "content-audit", cmd: "node", args: ["scripts/content-audit.mjs"], timeout: 180_000 },
 ];
 
-const started = Date.now();
-console.log("Running all measurable audits…\n");
+export async function runAudits(argv = process.argv.slice(2), { rootDir = ROOT, runner = runCommandAsync } = {}) {
+  if (argv.some((arg) => arg !== "--verbose")) throw new Error("audit:all accepts only --verbose");
+  const verbose = argv.includes("--verbose");
+  const runId = ensureRunId("audit");
+  const reportsDir = path.join(rootDir, "reports/runs", runId, "audit");
+  const logFor = (step) => path.join(reportsDir, step.name.toLowerCase().replaceAll(/[^a-z0-9]+/gu, "-") + ".log");
+  const report = ["# Audit findings", ""];
+  const started = Date.now();
+  console.log("Running all measurable audits…\n");
 
-// Probes are independent and output is captured, so they run concurrently and
-// results print in a stable order once all have finished.
-const outcomes = await Promise.all(
-  STEPS.map(async (step) => ({
-    step,
-    r: await runCommandAsync(step.cmd, step.args, { cwd: ROOT, timeout: step.timeout }),
-  })),
-);
+  // Probes are independent and output is captured, so they run concurrently and
+  // results print in a stable order once all have finished.
+  const outcomes = await Promise.all(
+    STEPS.map(async (step) => ({
+      step,
+      r: await runner(step.cmd, step.args, { cwd: rootDir, timeout: step.timeout, logPath: logFor(step) }),
+    })),
+  );
 
-let failed = 0;
-const commandExposures = [];
-for (const { step, r } of outcomes) {
-  const ms = r.elapsedMs;
-  const { output } = r;
-  const verboseOutput = verbose && output ? output : "";
-  if (verboseOutput) process.stdout.write(output.endsWith("\n") ? output : `${output}\n`);
-  let exposedOutput = verboseOutput;
-  let failureTail = "";
-  if (r.status !== 0) {
-    failureTail = tailOutput(output);
-    exposedOutput = verboseOutput ? `${verboseOutput}\n${failureTail}` : failureTail;
-  }
-  const exposure = commandExposure({
-    key: step.name,
-    label: step.name,
-    command: `${step.cmd} ${step.args.join(" ")}`,
-    result: r,
-    exposedOutput,
-    budgetBytes: verbose ? null : undefined,
-  });
-  commandExposures.push(exposure);
-  if (r.status !== 0) {
-    failed++;
-    const safeName = step.name.toLowerCase().replaceAll(/[^a-z0-9]+/gu, "-");
-    const logPath = writeDiagnosticLog(path.join(ROOT, "reports", "audit-all"), safeName, output);
-    console.log(`── ${step.name} ──`);
-    console.log(`  ✗ failed (${ms}ms, exit ${r.status ?? "unknown"})`);
-    console.log(`  ${failureTail}`);
-    console.log(`  Full output: ${path.relative(ROOT, logPath)}\n`);
-  } else if (exposure.overBudget) {
-    failed++;
-    const safeName = step.name.toLowerCase().replaceAll(/[^a-z0-9]+/gu, "-");
-    const logPath = writeDiagnosticLog(path.join(ROOT, "reports", "audit-all"), safeName, output);
-    console.log(`── ${step.name} ──`);
-    console.log(
-      `  ✗ exposed ${exposure.exposedBytes.toLocaleString()} bytes; ` +
-        `routine budget is ${exposure.budgetBytes?.toLocaleString()} bytes`,
+  let failed = 0;
+  const commandExposures = [];
+  for (const { step, r } of outcomes) {
+    const ms = r.elapsedMs;
+    const { output } = r;
+    const verboseOutput = verbose && output ? output : "";
+    if (verboseOutput) process.stdout.write(output.endsWith("\n") ? output : `${output}\n`);
+    const logPath = r.logPath ?? writeDiagnosticLog(reportsDir, path.basename(logFor(step), ".log"), output);
+    const findings = tailOutput(output, 700);
+    report.push(
+      `## ${step.name} — ${r.status === 0 ? "passed" : "failed"}`,
+      "",
+      findings,
+      "",
+      `Full output: [log](${path.basename(logPath)})`,
+      "",
     );
-    console.log(`  Full output: ${path.relative(ROOT, logPath)}\n`);
-  } else {
-    console.log(`── ${step.name} ── ✓ ok (${ms}ms)\n`);
+    let exposedOutput = verboseOutput || (r.status === 0 ? findings : "");
+    let failureTail = "";
+    if (r.status !== 0) {
+      failureTail = tailOutput(output);
+      exposedOutput = verboseOutput ? `${verboseOutput}\n${failureTail}` : failureTail;
+    }
+    const exposure = commandExposure({
+      key: step.name,
+      label: step.name,
+      command: `${step.cmd} ${step.args.join(" ")}`,
+      result: r,
+      exposedOutput,
+      budgetBytes: verbose ? null : undefined,
+    });
+    commandExposures.push(exposure);
+    if (r.status !== 0) {
+      failed++;
+      console.log(`── ${step.name} ──`);
+      console.log(`  ✗ failed (${ms}ms, exit ${r.status ?? "unknown"})`);
+      console.log(`  ${failureTail}`);
+      console.log(`  Full output: ${path.relative(rootDir, logPath)}\n`);
+    } else {
+      console.log(`── ${step.name} ── ✓ ok (${ms}ms)`);
+      if (!verbose && findings) console.log(findings);
+      console.log(`  Full output: ${path.relative(rootDir, logPath)}\n`);
+    }
   }
+
+  const totalMs = Date.now() - started;
+  console.log("─".repeat(60));
+  console.log(`Total: ${STEPS.length - failed}/${STEPS.length} passed in ${(totalMs / 1000).toFixed(1)}s`);
+  const summaryPath = path.join(reportsDir, "summary.md");
+  fs.mkdirSync(reportsDir, { recursive: true });
+  fs.writeFileSync(summaryPath, report.join("\n"));
+  writeCurrentRun({
+    rootDir,
+    runId,
+    status: failed > 0 ? "failed" : "passed",
+    command: "npm run audit:all",
+    artifacts: [
+      { path: summaryPath, role: "primary" },
+      { path: reportsDir, role: "secondary" },
+    ],
+    commandExposures,
+    summary: `${STEPS.length - failed}/${STEPS.length} audit probes passed.`,
+  });
+  if (failed > 0) {
+    console.log(`${failed} audit(s) failed — see output above`);
+    return 1;
+  }
+
+  return 0;
 }
 
-const totalMs = Date.now() - started;
-console.log("─".repeat(60));
-console.log(`Total: ${STEPS.length - failed}/${STEPS.length} passed in ${(totalMs / 1000).toFixed(1)}s`);
-writeCurrentRun({
-  rootDir: ROOT,
-  status: failed > 0 ? "failed" : "passed",
-  command: "npm run audit:all",
-  artifacts: [{ path: "reports/audit-all", role: "secondary" }],
-  commandExposures,
-  summary: `${STEPS.length - failed}/${STEPS.length} audit probes passed.`,
-});
-if (failed > 0) {
-  console.log(`${failed} audit(s) failed — see output above`);
-  process.exit(1);
+if (isMainModule(import.meta.url)) {
+  runAudits()
+    .then((code) => {
+      process.exitCode = code;
+    })
+    .catch((error) => {
+      console.error(error.message);
+      process.exitCode = 1;
+    });
 }

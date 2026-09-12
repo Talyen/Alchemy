@@ -50,8 +50,16 @@ export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget
   const valueQueue = new Map<number, Array<Pick<CorruptionTarget, "effectIndex" | "effectPath" | "field">>>();
   const sharedDamageLines = new Set<string>();
   function collect(effect: BattleCardEffect, effectIndex: number, effectPath: number[] = []) {
+    // The die's faces are fixed rules, not editable card magnitudes.
+    if (effect.kind === "random-draw") return;
     const record = effect as Record<string, unknown>;
     for (const field of CORRUPTIBLE_NUMERIC_FIELDS) {
+      if (
+        field === "amount" &&
+        ((effect.kind === "remove-enemy-armor" && effect.removeAll) ||
+          (effect.kind === "damage" && effect.equalToForge))
+      )
+        continue;
       if (field === "maxAmount" && hasSharedRandomAmount(card, effect)) continue;
       if (field === "amount" && effectPath.length > 0) {
         const lineIndex = card.descriptionLines.findIndex((line) => sharesDamageAmount(line, effect));
@@ -75,7 +83,13 @@ export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget
     // The summon summary describes the Companion's actions, not this card's effects.
     if (lineIndex === 0 && card.effects.some((effect) => effect.kind === "summon-companion")) return;
     const matches =
-      line === "Draw a card" ? [{ index: 5, 0: "1" }] : [...line.matchAll(CORRUPTION_TEXT_PATTERNS.authoredNumber)];
+      line === "Draw a card"
+        ? [{ index: 5, 0: "1" }]
+        : line === "Your Companion acts twice"
+          ? [{ index: 20, 0: "2" }]
+          : line === "Your Companion acts once"
+            ? [{ index: 20, 0: "1" }]
+            : [...line.matchAll(CORRUPTION_TEXT_PATTERNS.authoredNumber)];
     for (const match of matches) {
       const matchIndex = match.index;
       if (matchIndex === undefined) continue;
@@ -95,6 +109,9 @@ export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget
 }
 
 export function replaceNumberAt(line: string, matchIndex: number, nextValue: number): string {
+  if (line.startsWith("Your Companion acts ") && matchIndex === 20) {
+    return `Your Companion acts ${nextValue === 1 ? "once" : nextValue === 2 ? "twice" : `${nextValue} times`}`;
+  }
   if (line === "Draw a card" && matchIndex === 5) return nextValue === 1 ? line : `Draw ${nextValue} cards`;
   if (matchIndex < 0 || matchIndex >= line.length) return line;
   const match = line.slice(matchIndex).match(CORRUPTION_TEXT_PATTERNS.leadingNumber);
@@ -168,6 +185,7 @@ export function applyNumericCorruption(card: BattleCard, target: CorruptionTarge
   let nextValue = Math.max(CORRUPTION_MIN_VALUE, target.value + delta);
   if (target.field === "equalToGoldPercent") nextValue = Math.min(PERCENT_DENOMINATOR, nextValue);
   const sourceEffect = getCorruptionTargetEffect(card, target);
+  if (sourceEffect?.kind === "companion-action") nextValue = Math.max(1, nextValue);
   if (sourceEffect?.kind === "random-damage" && !hasSharedRandomAmount(card, sourceEffect)) {
     if (target.field === "minAmount") nextValue = Math.min(nextValue, sourceEffect.maxAmount);
     if (target.field === "maxAmount") nextValue = Math.max(nextValue, sourceEffect.minAmount);

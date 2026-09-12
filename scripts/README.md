@@ -8,14 +8,16 @@ and this map to locate their implementation owners.
 
 [WORKFLOWS-ASSETS](../docs/WORKFLOWS-ASSETS.md) owns authoring commands and the
 choice between fast generated checks and prepared-output verification.
+Asset and synchronization CLIs validate selectors before writing, including in
+skip mode; keep that validation at each entry point.
 
-| Concern                                     | Implementation owner                                                                          |
-| ------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Asset CLI and preparation                   | `assets.mjs` → `prepare-assets.mjs`                                                           |
-| Art, sound, and music optimization          | `optimize-pipelines.mjs` → `optimize-assets.mjs`, `optimize-sounds.mjs`, `optimize-music.mjs` |
-| Generated art barrels and version metadata  | `sync-generated.mjs` → `sync-art-barrels.mjs`, `sync-version-metadata.mjs`                    |
-| Fast generated-output validation            | `check-generated-fast.mjs`                                                                    |
-| Prepared-output idempotence and restoration | `check-prepared-assets.mjs`                                                                   |
+| Concern                                    | Implementation owner                                                                          |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| Asset CLI and preparation                  | `assets.mjs` → `prepare-assets.mjs`                                                           |
+| Art, sound, and music optimization         | `optimize-pipelines.mjs` → `optimize-assets.mjs`, `optimize-sounds.mjs`, `optimize-music.mjs` |
+| Generated art barrels and version metadata | `sync-generated.mjs` → `sync-art-barrels.mjs`, `sync-version-metadata.mjs`                    |
+| Fast generated-output validation           | `check-generated-fast.mjs`                                                                    |
+| Read-only prepared-output freshness        | `check-prepared-assets.mjs`                                                                   |
 
 Shared: `lib/asset-constants.mjs` (tuning), `lib/asset-manifest-cache.mjs` (freshness),
 `lib/process-helpers.mjs` (generic `formatProcessError`), `lib/audio-optimizer.mjs` (audio discovery/runner).
@@ -33,22 +35,30 @@ Shared: `lib/asset-constants.mjs` (tuning), `lib/asset-manifest-cache.mjs` (fres
 [Agent discovery](../docs/REFERENCE.md#agent-discovery) documents command options
 and limitations; [evaluations](../.agents/evals/README.md) owns pinned setup and
 interpretation. Discovery metadata must reference canonical prose rather than
-copying it, and it does not own verification selection.
+copying it, and it does not own verification selection. The search fallback skips deleted
+tracked files and files removed during a search, while other read errors fail.
 
 ## Checks / verification (nesting order)
 
 Gate composition, CI tiers, and reuse policy live in
 [CONTRIBUTING](../CONTRIBUTING.md#static-build-and-ci-policy).
 
-| Concern                                   | Implementation owner                                                    |
-| ----------------------------------------- | ----------------------------------------------------------------------- |
-| Completion orchestration                  | `check.mjs`                                                             |
-| Related tests and risk escalations        | `verify-changed.mjs`                                                    |
-| Finished-step exposure/digest reporting   | `lib/run-step.mjs` (shared by `check` + `verify`)                       |
-| Path parsing and classification           | `lib/changed-paths.mjs` + `lib/change-routes.mjs`                       |
-| Documentation contracts and plan metadata | `check-docs.mjs`, `check-documentation-contract.mjs`, `check-plans.mjs` |
-| Passing unit receipts                     | `lib/verification-cache.mjs`                                            |
-| Bundle budgets                            | `lib/bundle-budget.mjs`                                                 |
+| Concern                                   | Implementation owner                                                                         |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Completion orchestration                  | `check.mjs`                                                                                  |
+| Related tests and risk escalations        | `verify-changed.mjs`                                                                         |
+| Finished-step exposure/digest reporting   | `lib/run-step.mjs` (shared by `check` + `verify`)                                            |
+| Path parsing and classification           | `lib/changed-paths.mjs` + `lib/change-routes.mjs`                                            |
+| Documentation contracts and plan metadata | `check-docs.mjs`, `check-documentation-contract.mjs`, `check-plans.mjs`                      |
+| Passing unit receipts                     | `lib/verification-cache.mjs`                                                                 |
+| Bundle budgets                            | `lib/bundle-budget.mjs`                                                                      |
+| Full and staged formatting                | `prettier-paths.mjs` + `.prettierignore`                                                     |
+| Plan creation and archiving               | `new-plan.mjs` + `archive-plans.mjs`; [plan lifecycle](../docs/Plans/README.md#task-handoff) |
+
+`lib/repository-paths.mjs` normalizes selections for checks and discovery. Relative
+and absolute paths inside the checkout are equivalent. Directory selections use
+tracked and untracked nonignored Git paths, including deleted tracked files;
+empty directory selections fail explicitly.
 
 CI path filters (`.github/workflows/ci.yml` `changes` job) stay owned by the
 workflows; `tests/scripts/ci-path-filters.test.ts` pins the intended
@@ -60,16 +70,29 @@ Documentation and ESLint inventories exclude isolated `.worktrees/` checkouts,
 reports, and installed dependencies. Documentation checks share one file inventory;
 current-file checks cover E2E paths as well as other source references. Instruction
 history is advisory and does not require an entry for each skill or knowledge edit.
+Repository-relative matching uses forward slashes on every platform, including
+history and archived-plan exemptions.
 
 Ambient script-test declarations belong in
 `tests/scripts/global.d.ts`; standalone unreferenced declarations fail dead-code
 checks. Shared build inputs select both renderer builds through the existing
 change routes. Test selection preserves deleted paths for classification and risk escalations, but executes only surviving changed unit files. When consolidating tests, include the surviving files in the task selection; update stale suite references rather than disabling their validation. [Test value](../CONTRIBUTING.md#test-value-and-coverage-strategy) owns coverage decisions.
 
-`check:bundle` checks the current `dist/assets/` and fails when the build is missing
-or empty. Web and desktop renderer builds both write `dist/`; check immediately
-after the relevant build. CI checks web bundles on every push and release; ship
-and release gates also check desktop bundles.
+`check:bundle` enforces total JavaScript size, reports individual chunk sizes, and checks the current `dist/assets/` and fails when the build is missing
+or empty. Web and desktop renderer builds both write `dist/`; run them sequentially and check immediately
+after the relevant build. The local completion gate checks each selected build
+before continuing; skipping builds also skips their budgets. CI checks web bundles
+on every push and release; ship gates check desktop bundles, and `dist:desktop`
+checks before packaging or signing.
+
+Preview smoke checks start and close their own server through Vite’s preview API;
+an occupied port fails before any HTTP validation. They require an application script and nonempty JavaScript/CSS responses with matching content types, plus a served MP3 matching authored bytes. HTML fallbacks cannot stand in for missing resources. CI browser artifacts include music and run this smoke check after download.
+
+### Verification cache
+
+`lib/verification-cache.mjs` implements the [reuse policy](../CONTRIBUTING.md#verification-reuse). A command becomes eligible after an observed duration of at least five seconds, and reuse must save more than twice the measured input-scan cost. The first run records duration without scanning dependencies; a subsequent slow run establishes its receipt. The exact executable and ordered argument list identify coverage.
+
+Input identity covers tracked and untracked nonignored files, root environment files and npm configuration, installed dependency file identities, Node executable/version/platform, checkout location, and environment. File identities include mode, size, nanosecond modification/change times, and inode; this is local filesystem reuse, not a portable content-addressed build cache. Dependency caches are excluded. Linked source or external dependency symlinks, unreadable inputs, a missing npm install receipt, or changed inputs disable reuse. Fresh successes replace receipts atomically; failures invalidate them. Reuse preserves the original run ID and expiry. Each verifier writes a run-specific `verify/summary.json`, linked by the outer completion report.
 
 ## Release / changelog (three stages, shared `lib/patch-notes-core.mjs` + `lib/git-release.mjs`)
 
@@ -90,6 +113,14 @@ and the release decision flow.
 
 Desktop: `ensure-electron.mjs` (orchestrator) → `electron-download.mjs` + `electron-path.mjs`
 (pure predicates); `dist-desktop.mjs` → `verify-desktop-package.mjs`.
+`lib/desktop-build-config.mjs` validates release configuration before both the
+verified desktop build and direct packaging. `desktop/after-pack.cjs` locates
+default V8 snapshots with one directory walker on all supported Node versions,
+then installs the browser-process copies before enabling their fuse. The build wrapper rejects conflicting mode selectors before validation or Vite, so `build:desktop` always builds desktop mode.
+Packaged Windows startup: `smoke-desktop.mjs` resolves the artifact and invokes
+`smoke-desktop.ps1` for native accessibility verification (see [RELEASE](../docs/RELEASE.md#packaged-windows-startup-check)).
+
+`platforms.json` owns the desktop target list; `package.json` build blocks own per-platform packaging configuration. Sentry release and desktop sourcemap mode are owned by `lib/sentry-release.mjs`; chunk splitting is owned by `lib/vite-chunks.mjs`. Vite uses only Rolldown chunk groups.
 
 ## Audits (periodic sweep, not a push gate)
 
@@ -110,7 +141,12 @@ Every `E2E_ROUTES` entry has a matching `test:e2e:<name>` alias
 (`tests/scripts/run-e2e-route.test.ts` pins the set); legacy screen names
 `shop-screen` and `homestead-screen` remain accepted as aliases.
 `ci-summarize.mjs --vitest/--playwright/--all` is the single CI summary entry;
-workflows call it directly with the matching flag.
+workflows call it directly with the matching flag. Report parsing lives in
+`lib/vitest-summary.mjs` and `lib/playwright-summary.mjs`; malformed reports
+must fail rather than appear to be successful zero-test runs.
+
+`run-performance.mjs` owns profiling options and validates them before builds
+or downloads. Measurements and interpretation follow [PERFORMANCE](../docs/PERFORMANCE.md).
 
 ## Development
 
@@ -125,9 +161,8 @@ also removes build outputs and stops Alchemy-owned test-server processes; add
 `--include-dev-port` to include the development server. `npm run prune:transient`
 deletes stale local artifacts by age. Neither command removes shared Playwright
 browser caches.
-Both share `lib/clean-dev-artifacts.mjs` transient roots. `platforms.json` owns the desktop target list;
-`package.json` build blocks own per-platform packaging config. Sentry release and desktop sourcemap mode are
-owned by `lib/sentry-release.mjs`; chunk splitting is owned by `lib/vite-chunks.mjs`.
+Age-based pruning skips symlinked transient roots as well as nested symlink traversal.
+Both share `lib/clean-dev-artifacts.mjs` transient roots.
 
 ## Worktree / git safety
 
@@ -142,3 +177,21 @@ and explicit `--force`. An empty normalized task name is rejected.
 
 `scripts/bin/git` shims destructive git through
 `git-safety-guard.mjs` (auto-stash backup); `setup-git-safety.mjs` installs the PATH hook.
+Inspection and backup must honor the caller's Git options and checkout; failed
+inspection blocks the operation. Git clean and push dry runs bypass backup so
+inspection never stashes the working tree. Creation instructions return to the
+original checkout before worktree removal.
+
+## Command execution and argument handling
+
+`lib/run-command.mjs` owns captured subprocess execution. Use `logPath` for
+complete file-backed output from checks, verification, audits, and E2E analysis;
+only bounded excerpts enter summaries. Failure digests retain the original log
+under normal transient retention. The async runner stops the entire command tree
+on deadlines or capture-limit failures; use it when tree-wide cancellation is
+required. Synchronous execution uses Node's native subprocess behavior.
+
+`lib/command-invocation.mjs` resolves installed Node tools and npm without a shell,
+keeping arguments literal and never downloading missing tools. Interrupted
+commands fail even without a numeric exit status. Output formatters bound display
+without changing command success; exposure metrics remain advisory.

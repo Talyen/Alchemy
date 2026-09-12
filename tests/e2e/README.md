@@ -7,7 +7,7 @@ When a command or E2E test fails, follow [failure-first triage](../../docs/REFER
 
 Browser specs live in [`specs/`](./specs/). Electron specs and their launch/setup helpers live in [`tests/electron/`](../electron/). Shared fixtures and page objects also serve performance checks.
 
-Helpers live in this directory and are re-exported from [`tests/helpers.ts`](../helpers.ts) (all modules, including `mid-combat-save` and `gear-combat`). Layout assertions are in [`layout-assertions.ts`](./layout-assertions.ts), page objects in [`tests/pages/`](../pages/), and fixtures in [`tests/fixtures/e2e.ts`](../fixtures/e2e.ts). Run-phase assertions use `expectRunPhase(page, phase)` from [`tests/pages/game-stage.ts`](../pages/game-stage.ts).
+Helpers live in this directory and are re-exported from [`tests/browser-helpers.ts`](../browser-helpers.ts) (all modules, including `mid-combat-save` and `gear-combat`). Layout assertions are in [`layout-assertions.ts`](./layout-assertions.ts), page objects in [`tests/pages/`](../pages/), and fixtures in [`tests/fixtures/e2e.ts`](../fixtures/e2e.ts). Run-phase assertions use `expectRunPhase(page, phase)` from [`tests/pages/game-stage.ts`](../pages/game-stage.ts).
 
 ## Choosing browser coverage
 
@@ -25,16 +25,16 @@ Run the full Vitest suite separately from browser and performance batches. Concu
 
 ## Test import
 
-| Import                                      | Use                                                                                                                                                                       |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `import { test } from "../../fixtures/e2e"` | Most battle/flow specs; opt in to `fastBattle` and `runtimeErrors`                                                                                                        |
-| `import { test } from "@playwright/test"`   | Animation specs, boot-only smoke, and Electron specs; never enable fast mode for animation coverage. `audio-sfx` uses `baseTest.describe` to opt out of `autoDiagnostic`. |
+Use `import { test, expect } from "../../fixtures/e2e"` for all browser specs,
+including animation, audio, and cold-start tests. Import Playwright types from
+`@playwright/test`. Electron specs keep their separate launch fixture. `launchElectronApp` gives each
+launch a temporary user-data and browser-session profile before the app captures
+save paths, verifies that isolation, and removes it on close. Never run save tests
+against the normal desktop profile.
 
-Decision order:
-
-1. Animation canary/focused spec → raw `@playwright/test`, no `enableFastMode`/`fastBattle`.
-2. Combat or turn cycling → fixture test with `{ page, fastBattle, runtimeErrors }`; reference both fixture values.
-3. Visibility-only battle check → fast mode is recommended but optional.
+Diagnostics and runtime-error assertions are automatic. Request `fastBattle`
+only for gameplay flows where real timing is not under test; animation canaries
+must never request it or call `enableFastMode`/`useFastBattle`.
 
 ## Navigation and bootstrap
 
@@ -50,21 +50,21 @@ Decision order:
 - `winBattleAndClaimReward` wins via combat and claims the first reward card.
 - `assertDefeatFromEndRun` ends a run and asserts defeat.
 - `injectMidCombatSave`, `injectDestinationAtIndex`, and `injectMysterySummaryVisit` inject exact persisted states.
-- `failOnRuntimeErrors` is the manual console/page-error collector for specs that do not use the fixture.
+- `failOnRuntimeErrors` collects errors on extra pages created by a test or on Electron pages; assert the collected errors before closing those pages. The browser fixture covers its own `page` automatically.
 
 ## Cards and battle page
 
 - Card factories are in `cards.ts`; use named presets when the assertion depends on a specific card.
 - Injected decks and draft choices must use live library ids as shells (for example `slash`): hydrate drops unknown ids via `filterLiveCards` and `hydrateCard` renders titles from the library while keeping the injected effects and cost, so play cards by the library title.
 - `enableFastMode` disables animations and is forbidden in animation-focused specs.
-- `BattlePage.endTurn` must work with animations both on and off; changing it requires the critical animation canary.
+- `BattlePage.endTurn` must work with animations both on and off; changing it requires the critical animation canary, which checks enemy damage and hand replenishment. Ordinary battle actions use actionable clicks without `force`.
 - Prefer `winViaCombat`, `playCardNamed`, or `playFirstCard`; `playAllCards` is normally internal.
 - Do not use `skipCombatToVictory`, `skipCombatBtn`, or production-hidden Unlock All/Skip Combat strings. Legitimate in-game Skip actions remain valid.
 
 ## Fixtures and diagnostics
 
 - `fastBattle` enables fast mode when explicitly requested. New specs may call `useFastBattle(page)` from `tests/fixtures/e2e.ts` instead of destructuring the `void` fixture.
-- `runtimeErrors` collects page errors and asserts that none occurred.
+- `runtimeErrors` automatically fails on uncaught page errors and console errors, including sound failures and React warnings emitted as errors. No global message exclusions apply. For an intentionally provoked error, request `runtimeErrors` and assert the exact expected entries with `expect(runtimeErrors.splice(0)).toEqual([...])` after the behavior settles. This consumes only errors the test explicitly checks; later errors still fail teardown.
 - `autoDiagnostic` runs for every test. On failure it writes one run-attributed bounded digest with an accessibility snapshot and an exact entry in `test-results/failures/<run-id>/index.json`. If the page can no longer provide that snapshot, the digest falls back to bounded HTML; raw traces remain secondary evidence.
 
 Page objects: `BattlePage`, `MenuPage`, `DestinationPage`, `RewardPage`, `ShopPage`, `MysteryPage`, `CorruptionPage`, `HomesteadPage`, plus `expectRunPhase(page, phase)`.
@@ -77,6 +77,12 @@ Page objects: `BattlePage`, `MenuPage`, `DestinationPage`, `RewardPage`, `ShopPa
 Combine tags with the array form — `{ tag: [a.tag, b.tag] }` — never object
 spread, which silently drops every tag but the last. Tests with no tag run only
 in the nightly/full suite, not in the every-push `@critical` gate;
-tag a test `@critical` when its journey must gate every push.
+tag a test `@critical` when its journey must gate every push. Tags are inherited:
+adding `@slow` to a child does not remove a parent's `@critical`. In mixed suites,
+tag representative tests individually so secondary variants stay nightly-only.
+
+CI retains JSON results on every run and failure diagnostics on failed or flaky
+runs, including tests that pass on retry. A retry remains permitted; flakes do
+not create an additional gate.
 
 The path-filtered `save-gate` intentionally reruns full save specs, including overlapping `@critical` tests, for save-touching pushes.

@@ -4,8 +4,8 @@ import { cn } from "@/lib/utils";
 
 import { getPlasmaColorPair, keywordIcons, tooltipHeaderClass } from "../config";
 import { canonicalizeKeywordText } from "../utils/string";
-import { PortaledTooltip } from "./portaled-tooltip";
-import { TooltipBody } from "./tooltip-panel";
+import { PortaledTooltip } from "./tooltips/portaled-tooltip";
+import { TooltipBody } from "./tooltips/tooltip-panel";
 import { useHoverVisible } from "./use-hover-visible";
 
 export interface KeywordTagProps {

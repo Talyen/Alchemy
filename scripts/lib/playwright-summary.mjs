@@ -9,7 +9,7 @@ const MESSAGE_CHARS = 240;
 
 /**
  * @typedef {{ file: string, line: number, title: string, message: string, status: string, digestPath: string|null, routeHint: string }} PlaywrightFailure
- * @typedef {{ total: number, expected: number, unexpected: number, flaky: number, skipped: number, failures: PlaywrightFailure[] }} PlaywrightSummary
+ * @typedef {{ total: number, expected: number, unexpected: number, flaky: number, skipped: number, failures: PlaywrightFailure[], failed: boolean, runnerErrors: string[] }} PlaywrightSummary
  */
 
 function* testsInSuites(suites) {
@@ -132,7 +132,13 @@ export function summarizePlaywrightReport(report, options = {}) {
   }
 
   const hasStats = Boolean(root.stats && typeof root.stats === "object");
+  const runnerErrors = (Array.isArray(root.errors) ? root.errors : []).map((error) =>
+    String(error?.message ?? error?.value ?? error).slice(0, MESSAGE_CHARS),
+  );
+  if (!Array.isArray(root.suites)) runnerErrors.push("Invalid Playwright report: missing suites array");
   return {
+    failed: unexpected > 0 || Number(stats.unexpected) > 0 || runnerErrors.length > 0,
+    runnerErrors: runnerErrors.slice(0, maxFailures),
     total: hasStats
       ? Number(stats.expected ?? 0) +
         Number(stats.unexpected ?? 0) +
@@ -156,6 +162,9 @@ export function formatPlaywrightSummaryMarkdown(summary) {
     `- Failed: ${summary.unexpected}`,
     `- Flaky: ${summary.flaky}`,
     `- Skipped: ${summary.skipped}`,
+    ...(summary.runnerErrors?.length
+      ? ["", "### Runner errors", "", ...summary.runnerErrors.map((message) => `- ${message}`)]
+      : []),
   ];
   if (summary.failures.length === 0) {
     lines.push(

@@ -6,7 +6,7 @@ import {
   startAtDestination,
   assertNoOverflow,
   assertStageFitsViewport,
-} from "../../helpers";
+} from "../../browser-helpers";
 import { slow } from "../../playwright-tags";
 
 async function setAspectRatio(page: import("@playwright/test").Page, aspectRatio: string) {
@@ -77,8 +77,7 @@ test.describe("high-DPR layout", slow, () => {
 });
 
 test.describe("Card Selection Grid Layout", slow, () => {
-  test("removal actions stay visible and stable across pages at maximum game size", async ({ page, runtimeErrors }) => {
-    void runtimeErrors;
+  test("removal actions stay visible and stable across pages at maximum game size", async ({ page }) => {
     await page.addInitScript((gameSizePercent) => {
       localStorage.setItem(
         "alchemy-device-display-v1",

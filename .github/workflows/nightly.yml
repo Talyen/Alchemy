@@ -32,9 +32,8 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: dist
-          path: |
-            dist/
-            !dist/Music/
+          path: dist/
+          compression-level: 0
           retention-days: 1
 
   e2e-web:
@@ -63,6 +62,9 @@ jobs:
           name: dist
           path: dist/
 
+      - name: Smoke test downloaded build including music
+        run: npm run smoke:preview
+
       - name: Setup Playwright Chromium
         uses: ./.github/actions/setup-playwright
 
@@ -75,11 +77,21 @@ jobs:
           CI: true
 
       - name: Summarize web e2e shard
+        id: playwright-summary
         if: always()
         run: node scripts/ci-summarize.mjs --playwright
 
+      - name: Upload Playwright results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-nightly-web-${{ matrix.shard }}-results
+          path: reports/playwright-results.json
+          retention-days: 7
+          if-no-files-found: ignore
+
       - name: Upload Playwright report
-        if: failure()
+        if: failure() || steps.playwright-summary.outputs.retain-diagnostics == 'true'
         uses: actions/upload-artifact@v7
         with:
           name: playwright-report-nightly-web-${{ matrix.shard }}
@@ -117,7 +129,38 @@ jobs:
       - name: Setup Playwright Chromium
         uses: ./.github/actions/setup-playwright
 
-      - run: npm run check:ship:full
+      - run: npm run check:ship
+
+      - name: Run save journeys
+        run: npm run test:ship:e2e
+
+      # Preserve this run before Electron replaces Playwright's output directories.
+      - name: Summarize save journeys
+        id: save-summary
+        if: always()
+        run: node scripts/ci-summarize.mjs --playwright
+
+      - name: Upload save results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-nightly-save-results
+          path: reports/playwright-results.json
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Upload save diagnostics
+        if: failure() || steps.save-summary.outputs.retain-diagnostics == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-nightly-save
+          path: |
+            playwright-report/
+            test-results/
+            reports/playwright-results.json
+            reports/current-run.*
+            reports/runs/
+          retention-days: 7
 
       - run: mkdir -p reports
 
@@ -127,11 +170,21 @@ jobs:
           CI: true
 
       - name: Summarize Electron e2e
+        id: playwright-summary
         if: always()
         run: node scripts/ci-summarize.mjs --playwright reports/playwright-electron-results.json
 
+      - name: Upload Playwright results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-nightly-electron-results
+          path: reports/playwright-electron-results.json
+          retention-days: 7
+          if-no-files-found: ignore
+
       - name: Upload Electron Playwright report
-        if: failure()
+        if: failure() || steps.playwright-summary.outputs.retain-diagnostics == 'true'
         uses: actions/upload-artifact@v7
         with:
           name: playwright-report-nightly-electron

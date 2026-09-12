@@ -16,9 +16,16 @@ import {
   renderSourceOutline,
 } from "../../scripts/agent-context.mjs";
 
+import { resolveRoutePlan } from "../../scripts/lib/change-routes.mjs";
 import { readDocumentSection } from "../../scripts/lib/document-sections.mjs";
 
 describe("agent discovery", () => {
+  it("discovers tooling owners for a directory with either path spelling", () => {
+    const selected = selectContext(["scripts"]);
+    expect(selected.tasks).toContain("tooling");
+    expect(selectContext(["scripts/"])).toEqual(selected);
+  });
+
   it("keeps every owner section and entry point live", () => {
     expect(validateContextCatalog(process.cwd())).toEqual([]);
     for (const task of Object.keys(CONTEXT_TASKS)) {
@@ -27,6 +34,87 @@ describe("agent discovery", () => {
       expect(sections.length).toBeGreaterThan(0);
       expect(Buffer.byteLength(renderContext(selection, sections).text)).toBeLessThanOrEqual(CONTEXT_OUTPUT_BYTES);
     }
+  });
+
+  it("emits isolated battle and run-state contracts without deferring them", () => {
+    for (const [task, headings] of [
+      ["battle", ["Battle path", "Engine invariants", "Turn order and resources"]],
+      ["run-state", ["Run state", "Gameplay command boundary"]],
+    ] as const) {
+      const selection = selectContext([], task);
+      const sections = contextSections(process.cwd(), selection);
+      const rendered = renderContext(selection, sections);
+      expect(rendered.included.map((section) => section.heading)).toEqual([...headings]);
+      expect(rendered.text).not.toContain("Deferred section:");
+      expect(Buffer.byteLength(rendered.text)).toBeLessThanOrEqual(CONTEXT_OUTPUT_BYTES);
+    }
+    const run = selectContext([], "run-state");
+    expect(renderContext(run, contextSections(process.cwd(), run)).text).toContain("--task run-ports");
+    expect(readDocumentSection(process.cwd(), "docs/ARCHITECTURE.md", "Run state").text).not.toContain(
+      "## Persistence API",
+    );
+    for (const heading of [
+      "Activity and rewards",
+      "Anti-patterns",
+      "Run randomness",
+      "Persistence API",
+      "Session capability ports",
+      "Card inspection and combat equipment reservations",
+      "Run phase",
+      "Run setup ownership",
+    ]) {
+      expect(readDocumentSection(process.cwd(), "docs/ARCHITECTURE.md", heading).text).toMatch(/^## /u);
+    }
+  });
+
+  it("routes content and verification work to direct owners without changing verification", () => {
+    for (const [file, task, heading, entry] of [
+      [
+        "src/lib/game-data/talents/talent-pool-definitions.ts",
+        "talent",
+        "Add a new talent",
+        "src/lib/game-data/talent-effect-manifest.ts",
+      ],
+      ["src/lib/game-data/companions.ts", "companion", "Companion Bond", "src/lib/game-data/companions.ts"],
+      [
+        "src/lib/game-data/compendium/enemies.ts",
+        "enemy",
+        "Add a new enemy",
+        "src/lib/game-data/compendium/enemies.ts",
+      ],
+      [
+        "src/lib/game-data/enemy-abilities.ts",
+        "enemy-ability",
+        "Enemy abilities",
+        "src/lib/battle/enemy-turn-attack.ts",
+      ],
+      ["src/lib/gear/affix-catalog.ts", "affix", "Data model", "src/lib/gear/affix-pool.ts"],
+      [
+        "src/lib/game-data/cards/library/archery.ts",
+        "card",
+        "Add a new card",
+        "src/lib/game-data/cards/library/cards.ts",
+      ],
+      ["src/lib/game-data/effects/registry.ts", "effect", "Adding a kind", "src/lib/game-data/effects/registry.ts"],
+      ["scripts/check.mjs", "verification", "Checks / verification (nesting order)", "scripts/check.mjs"],
+    ] as const) {
+      const selection = selectContext([file]);
+      expect(selection.tasks).toContain(task);
+      expect(selection.entrypoints).toContain(entry);
+      const rendered = renderContext(selection, contextSections(process.cwd(), selection));
+      expect(rendered.included.some((section) => section.heading === heading)).toBe(true);
+      expect(selection.docs.some((doc) => doc.heading?.startsWith("Directory layout"))).toBe(false);
+      expect(selection.plan).toEqual(resolveRoutePlan([file]));
+    }
+    expect(selectContext(["src/lib/gear/affix-catalog.ts"]).tasks).not.toContain("gear");
+    expect(selectContext(["src/lib/game-data/cards/library/archery.ts"]).tasks).not.toContain("effect");
+    expect(selectContext(["src/lib/game-data/effects/registry.ts"]).tasks).not.toContain("card");
+    expect(selectContext(["scripts/check.mjs"]).entrypoints).not.toContain("scripts/README.md");
+    expect(selectContext(["src/features/alchemy/meta/screens/armory/use-armory-controller.ts"]).tasks).toContain(
+      "gear",
+    );
+    const unknown = selectContext(["src/unknown.ts"]);
+    expect(unknown.docs.some((doc) => doc.heading?.startsWith("Directory layout"))).toBe(true);
   });
 
   it("routes battle and save work without suppressing safety owners", () => {

@@ -5,17 +5,37 @@ import { spawnSync } from "node:child_process";
 import { syncGenerated } from "./sync-generated.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { resolveViteBin } from "./lib/vite-bin.mjs";
+import { validateDesktopBuildConfig } from "./lib/desktop-build-config.mjs";
 
 async function main(argv = process.argv.slice(2)) {
-  const isDesktop =
-    argv.includes("--desktop") || (argv.includes("--mode") && argv[argv.indexOf("--mode") + 1] === "desktop");
+  const modes = [];
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg === "--mode" || arg === "-m") {
+      const mode = argv[++index];
+      if (!mode || mode.startsWith("-")) throw new Error("Build mode requires a value.");
+      modes.push(mode);
+    } else if (arg.startsWith("--mode=") || arg.startsWith("-m=")) {
+      const mode = arg.slice(arg.indexOf("=") + 1);
+      if (!mode) throw new Error("Build mode requires a value.");
+      modes.push(mode);
+    }
+  }
+  const isDesktop = argv.includes("--desktop") || modes.includes("desktop");
+  if (new Set(modes).size > 1 || (isDesktop && modes.some((mode) => mode !== "desktop"))) {
+    throw new Error("Conflicting build modes: desktop builds require mode desktop.");
+  }
   const viteForward = argv.filter((a) => a !== "--desktop");
+
+  if (isDesktop) validateDesktopBuildConfig();
 
   // Validate all generated outputs without mutating. Throws if stale.
   await syncGenerated({ check: true });
 
   const viteArgs = [resolveViteBin(), "build"];
-  if (isDesktop && !viteForward.includes("--mode")) viteArgs.push("--mode", "desktop");
+  if (isDesktop && modes.length === 0) {
+    viteArgs.push("--mode", "desktop");
+  }
   if (viteForward.length > 0) {
     viteArgs.push(...viteForward.filter((a) => a !== "vite" && a !== "build"));
   }

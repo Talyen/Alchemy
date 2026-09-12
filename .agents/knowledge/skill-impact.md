@@ -60,3 +60,11 @@ Decision: retain operation-specific documentation selection and complete indepen
 Evidence: [Matched investigation trials](../evals/results/context-efficiency-2026-09-11.md) record actual host counters, correctness review, patch identities, and setup exclusions. Documentation and static investigations reduced total input plus output by 12.7% and 38.8%, respectively. These are category-specific observations; cached-input variation prevents a billing-cost claim, and no repository-wide coding-task savings are established.
 
 Reason: smaller individual outputs are insufficient evidence. Apply the requested completed-task adoption threshold and keep rejected strategies discoverable without adding routine prereads.
+
+## 2026-09-12 — Fit core context and route directly to owners
+
+Decision: retain bounded battle core sections, independently addressable run-state sections, direct content/verification routing, and discovery-category exposure reporting. Verification selection and the 12 KB context limit remain unchanged.
+
+Evidence: [Matched investigations](../evals/results/context-discovery-2026-09-12.md) found 3.7% lower summed input-plus-output usage for battle and 10.8% for run state across two trials per variant, with passing source-based acceptance. Battle results varied in direction; these are limited investigation observations, not guaranteed repository-wide savings. Initial trials contaminated by concurrent architecture edits were excluded and restarted from compared frozen snapshots.
+
+Reason: oversized parent sections were always deferred and broad route fixtures hid the problem. Existing owners can supply core guidance directly without another navigation tool or duplicated prose. Content routing repairs use direct regression evidence; no whole-task savings are claimed for them.

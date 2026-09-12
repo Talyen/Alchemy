@@ -16,7 +16,7 @@ import { CHUNK_SIZE_WARNING_KB } from "./scripts/lib/bundle-budget.mjs";
 import { VITE_ALIAS_PATH, VITE_ALIAS_TARGET } from "./scripts/lib/vite-aliases.mjs";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- scripts are JS without declarations
 // @ts-ignore no types for vite-chunks.mjs
-import { resolveManualChunk, rolldownCodeSplittingGroups } from "./scripts/lib/vite-chunks.mjs";
+import { rolldownCodeSplittingGroups } from "./scripts/lib/vite-chunks.mjs";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- scripts are JS without declarations
 // @ts-ignore no types for sentry-release.mjs
 import { resolveSentryRelease, resolveSourcemapMode } from "./scripts/lib/sentry-release.mjs";
@@ -83,11 +83,6 @@ export default defineConfig(({ mode, command }) => {
           codeSplitting: {
             groups: rolldownCodeSplittingGroups(),
           },
-        },
-      },
-      rollupOptions: {
-        output: {
-          manualChunks: resolveManualChunk,
         },
       },
       chunkSizeWarningLimit: CHUNK_SIZE_WARNING_KB,

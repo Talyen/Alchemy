@@ -1,4 +1,4 @@
-import { CardGhostOverlay } from "@/features/alchemy/shared/ui/card-ghost-overlay";
+import { CardGhostOverlay } from "@/features/alchemy/run-loop/battle/presentation/card-ghost-overlay";
 import { useBattlePresentationStore } from "../battle-presentation-store";
 import { CardTransferOverlay } from "./card-transfer-overlay";
 

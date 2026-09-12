@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { GearTooltipContent } from "@/features/alchemy/shared/ui/gear-tooltip-content";
+import { GearTooltipContent } from "@/features/alchemy/shared/ui/tooltips/gear-tooltip-content";
 import { keywordDefinitions } from "@/lib/game-data";
 import { extractKeywordIds } from "@/lib/keyword-text";
 import { gearAffixCatalog, gearDefinitions, getGearAffixTextShineColors, type GearInstance } from "@/lib/gear";

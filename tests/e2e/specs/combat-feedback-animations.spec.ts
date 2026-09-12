@@ -1,5 +1,5 @@
-import { expect, test } from "@playwright/test";
-import { failOnRuntimeErrors, injectActiveBattle, makeCard, makeGoblinBattleState } from "../../helpers";
+import { expect, test } from "../../fixtures/e2e";
+import { injectActiveBattle, makeCard, makeGoblinBattleState } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 import { slow } from "../../playwright-tags";
 
@@ -7,7 +7,6 @@ test.describe("Combat feedback animations", slow, () => {
   test.setTimeout(60_000);
 
   test("combat text stays pinned as the portrait moves through an attack", async ({ page }) => {
-    const errors = failOnRuntimeErrors(page);
     const hand = [
       makeCard({
         cost: 0,
@@ -59,12 +58,10 @@ test.describe("Combat feedback animations", slow, () => {
     ).toBeGreaterThan(10);
     expect(samples.every((sample) => sample.error < 2)).toBe(true);
     await expect(burst).toHaveCount(0);
-    expect(errors).toEqual([]);
   });
 
   for (const side of ["player", "enemy"] as const) {
     test(`${side} feedback appears during the wind-up`, async ({ page }, testInfo) => {
-      const errors = failOnRuntimeErrors(page);
       const hand = [makeCard({ cost: 0 })];
       await injectActiveBattle(page, makeGoblinBattleState({ hand }), { runDeck: hand, autoEndTurn: false });
       const battle = new BattlePage(page);
@@ -92,7 +89,6 @@ test.describe("Combat feedback animations", slow, () => {
         contentType: "application/json",
       });
       expect(elapsed).toBeLessThan(114);
-      expect(errors).toEqual([]);
     });
   }
 });
@@ -106,7 +102,6 @@ for (const { width, height, size, reducedMotion } of [
     `grouped bursts retain original styling at ${width}/${size}% (reduced motion=${reducedMotion})`,
     slow,
     async ({ page }, testInfo) => {
-      const errors = failOnRuntimeErrors(page);
       await page.setViewportSize({ width, height });
       await page.emulateMedia({ reducedMotion: reducedMotion ? "reduce" : "no-preference" });
       await page.addInitScript((gameSizePercent) => {
@@ -207,7 +202,6 @@ for (const { width, height, size, reducedMotion } of [
         );
       }
       await expect(page.getByTestId("combat-text-burst")).toHaveCount(0, { timeout: 3000 });
-      expect(errors).toEqual([]);
     },
   );
 }

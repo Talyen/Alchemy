@@ -24,7 +24,7 @@ import { PortraitImpactVfx } from "./portrait-hurt-vfx";
 import { useImpactPulse } from "./use-hurt-pulse";
 import { SliceDeath } from "./slice-death";
 import { DeathsDoorStatusIcon, StatusIcon } from "./status-icons";
-import { useChangeToken } from "./use-change-token";
+import { useChangeToken } from "../use-change-token";
 
 import {
   ActorTooltip,

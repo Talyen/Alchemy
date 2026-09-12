@@ -19,12 +19,34 @@ import {
   writeFailureDiagnostic,
 } from "../../scripts/lib/playwright-diagnostics.mjs";
 import fs from "node:fs";
+import { execFileSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
 import { formatRecentRun, parseShowRunsArgs, readRecentRuns } from "../../scripts/show-runs.mjs";
 import PlaywrightRunReporter from "../../scripts/lib/playwright-run-reporter.mjs";
 
 describe("ci-summarize (vitest)", () => {
+  it("rejects structurally invalid reports while allowing a valid empty run", () => {
+    for (const report of [null, {}, { testResults: {} }]) {
+      const summary = summarizeVitestReport(report);
+      expect(summary.failed).toBe(true);
+      expect(formatVitestSummaryMarkdown(summary)).toContain("Invalid Vitest report");
+    }
+    expect(summarizeVitestReport({ success: true, testResults: [] }).failed).toBe(false);
+  });
+  it("reports failed suites and unsuccessful runs even when no assertions fail", () => {
+    const summary = summarizeVitestReport({
+      success: false,
+      numFailedTests: 0,
+      numFailedTestSuites: 1,
+      testResults: [
+        { name: "tests/import.test.ts", status: "failed", message: "Cannot import module", assertionResults: [] },
+      ],
+    });
+    expect(summary.failed).toBe(true);
+    expect(formatVitestSummaryMarkdown(summary)).toContain("Cannot import module");
+    expect(summarizeVitestReport({ success: false, testResults: [] }).failed).toBe(true);
+  });
   it("resolves defaults and positional paths for single and combined modes", () => {
     expect(parseSummaryArgs(["--vitest"])).toMatchObject({
       vitest: true,
@@ -98,6 +120,44 @@ describe("ci-summarize (vitest)", () => {
 });
 
 describe("ci-summarize (playwright)", () => {
+  it("retains diagnostics for failures and recovered retries, but not clean runs", () => {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "alchemy-ci-retention-"));
+    const script = path.resolve("scripts/ci-summarize.mjs");
+    try {
+      for (const [unexpected, flaky, retain] of [
+        [0, 0, false],
+        [1, 0, true],
+        [0, 1, true],
+      ] as const) {
+        const output = path.join(directory, "github-output");
+        fs.writeFileSync(output, "");
+        fs.writeFileSync(
+          path.join(directory, "report.json"),
+          JSON.stringify({
+            suites: [],
+            stats: { expected: 1, unexpected, flaky, skipped: 0 },
+          }),
+        );
+        execFileSync(process.execPath, [script, "--playwright", "report.json"], {
+          cwd: directory,
+          env: { ...process.env, GITHUB_OUTPUT: output, GITHUB_STEP_SUMMARY: path.join(directory, "summary") },
+          stdio: "pipe",
+        });
+        expect(fs.readFileSync(output, "utf8")).toBe(`retain-diagnostics=${retain}\n`);
+      }
+    } finally {
+      fs.rmSync(directory, { recursive: true, force: true });
+    }
+  });
+  it("reports setup errors independently of test failures", () => {
+    const summary = summarizePlaywrightReport({
+      suites: [],
+      stats: { unexpected: 0 },
+      errors: [{ message: "globalSetup failed" }],
+    });
+    expect(summary.failed).toBe(true);
+    expect(formatPlaywrightSummaryMarkdown(summary)).toContain("globalSetup failed");
+  });
   it("prints a self-identifying final summary", () => {
     const priorRunId = process.env.ALCHEMY_RUN_ID;
     process.env.ALCHEMY_RUN_ID = "playwright-reporter-run";

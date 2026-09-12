@@ -251,9 +251,9 @@ describe("repeatable card and Consume rewards", () => {
     expect(first.playerStatuses.forge).toBe(0);
     expect(first.hand).toHaveLength(1);
     const second = play({ ...first, flags: { ...first.flags, playNextCardTwice: true } }, cardById["pack-tactics"]!);
-    expect(second.companionDamageBuff).toBe(2);
-    expect(second.enemyHealth).toBe(90);
-    expect(second.playerStatuses.block).toBe(2);
+    expect(second.companionDamageBuff).toBe(0);
+    expect(second.enemyHealth).toBe(94);
+    expect(second.playerStatuses.block).toBe(6);
     expect(second.hand).toHaveLength(2);
   });
 

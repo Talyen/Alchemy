@@ -29,10 +29,7 @@ jobs:
       - name: Commitlint since previous release tag
         shell: bash
         run: |
-          PREV_TAG="$(git tag --list 'v*' --sort=-v:refname | sed -n '2p')"
-          if [ -z "$PREV_TAG" ]; then
-            PREV_TAG="$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true)"
-          fi
+          PREV_TAG="$(node --input-type=module -e 'import { previousVersionTag } from "./scripts/lib/git-release.mjs"; console.log(previousVersionTag(process.cwd(), process.env.GITHUB_REF_NAME) ?? "")')"
           if [ -n "$PREV_TAG" ]; then
             npx commitlint --from "$PREV_TAG" --to HEAD --verbose
           else
@@ -97,9 +94,8 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: dist
-          path: |
-            dist/
-            !dist/Music/
+          path: dist/
+          compression-level: 0
           retention-days: 1
 
   e2e-full:
@@ -127,6 +123,9 @@ jobs:
           name: dist
           path: dist/
 
+      - name: Smoke test downloaded build including music
+        run: npm run smoke:preview
+
       - run: mkdir -p reports
 
       - uses: ./.github/actions/setup-playwright
@@ -137,11 +136,21 @@ jobs:
           CI: true
 
       - name: Summarize e2e tests
+        id: playwright-summary
         if: always()
         run: node scripts/ci-summarize.mjs --playwright
 
+      - name: Upload Playwright results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-release-${{ matrix.shard }}-results
+          path: reports/playwright-results.json
+          retention-days: 7
+          if-no-files-found: ignore
+
       - name: Upload Playwright report
-        if: failure()
+        if: failure() || steps.playwright-summary.outputs.retain-diagnostics == 'true'
         uses: actions/upload-artifact@v7
         with:
           name: playwright-report-release-${{ matrix.shard }}
@@ -153,20 +162,30 @@ jobs:
             reports/runs/
           retention-days: 7
 
-  release:
+  package:
+    outputs:
+      artifact-id: ${{ steps.package-upload.outputs.artifact-id }}
     needs: [lint, test, e2e-full]
     runs-on: windows-latest
     timeout-minutes: 60
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - uses: ./.github/actions/setup
+
+      - name: Cache Electron binary
+        uses: actions/cache@v6
         with:
-          skip-electron-download: "false"
+          path: |
+            ~/.cache/electron
+            node_modules/electron/dist
+            node_modules/electron/path.txt
+          key: electron-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Ensure Electron binary
+        run: npm run ensure:electron
 
       - name: Verify release tag matches package.json
         run: node scripts/verify-release-version.mjs
@@ -199,8 +218,39 @@ jobs:
           AZURE_CODE_SIGNING_CERTIFICATE_PROFILE_NAME: ${{ secrets.AZURE_CODE_SIGNING_CERTIFICATE_PROFILE_NAME }}
           REQUIRE_CODE_SIGNING: ${{ vars.REQUIRE_CODE_SIGNING }}
 
-      - name: Check desktop bundle budget
-        run: npm run check:bundle
+      - name: Smoke test packaged Windows game
+        timeout-minutes: 2
+        run: npm run smoke:desktop
+
+      - name: Retain verified release package
+        id: package-upload
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-package-${{ github.ref_name }}-${{ github.run_attempt }}
+          path: |
+            release-desktop/
+            release-notes/${{ github.ref_name }}.md
+          retention-days: 7
+          compression-level: 0
+          if-no-files-found: error
+
+  release:
+    needs: package
+    runs-on: windows-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup
+
+      # The producer's ID remains valid when only this failed job is retried.
+      - name: Download verified release package
+        uses: actions/download-artifact@v8
+        with:
+          artifact-ids: ${{ needs.package.outputs.artifact-id }}
+          merge-multiple: true
+          path: .
 
       # windows-latest does not ship SteamCMD; pin a known setup action by version tag.
       - name: Install SteamCMD

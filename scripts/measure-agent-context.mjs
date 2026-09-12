@@ -5,7 +5,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { ROUTES, resolveRoutePlan } from "./lib/change-routes.mjs";
 import { readDocumentSection } from "./lib/document-sections.mjs";
-import { selectContext, contextSections } from "./lib/agent-context.mjs";
+import { CONTEXT_TASKS, selectContext, contextSections } from "./lib/agent-context.mjs";
+import { renderContext } from "./agent-context.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -122,6 +123,28 @@ export function measureAllRoutes() {
   const rows = ROUTES.map((route) => measureContext({ paths: [route.fixture], routes: [route] }));
   rows.push(measureContext({ paths: ["unknown.file"] }));
   return rows.sort((a, b) => b.totalContextBytes - a.totalContextBytes);
+}
+
+/** Exercise actual discovery selections, independently of verification fixtures. */
+export function measureDiscoveryContexts() {
+  const measure = (task, paths) => {
+    const selection = selectContext(paths, paths.length ? undefined : task);
+    const sections = contextSections(ROOT, selection);
+    const rendered = renderContext(selection, sections);
+    return {
+      task,
+      paths,
+      selectedBytes: sections.reduce((total, section) => total + Buffer.byteLength(section.text), 0),
+      emittedSectionBytes: rendered.included.reduce((total, section) => total + Buffer.byteLength(section.text), 0),
+      emittedBytes: Buffer.byteLength(rendered.text),
+      deferred: sections
+        .filter((section) => !rendered.included.includes(section))
+        .map(({ path, heading }) => ({ path, heading })),
+    };
+  };
+  return Object.entries(CONTEXT_TASKS)
+    .flatMap(([task, entry]) => [measure(task, []), ...(entry.fixture ? [measure(task, [entry.fixture])] : [])])
+    .sort((a, b) => b.selectedBytes - a.selectedBytes || a.task.localeCompare(b.task));
 }
 
 function formatDocument(entry) {

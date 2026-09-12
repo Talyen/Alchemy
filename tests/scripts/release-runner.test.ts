@@ -17,6 +17,24 @@ afterEach(() => {
 });
 
 describe("release workflow result", () => {
+  it("stops after a rejected atomic push without retrying refs or monitoring", async () => {
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.mocked(readFileSync)
+      .mockReturnValueOnce(JSON.stringify({ version: "0.1.0" }))
+      .mockReturnValueOnce(JSON.stringify({ version: "0.1.1" }));
+    vi.mocked(execFileSync).mockImplementation((_command, args) => {
+      const argv = args as string[];
+      if (argv[0] === "rev-parse") return "main";
+      if (argv[0] === "push") throw new Error("atomic push rejected");
+      return "";
+    });
+    await expect(runRelease({ label: "Release", gates: [] })).rejects.toThrow("atomic push rejected");
+    const pushes = vi.mocked(execFileSync).mock.calls.filter(([, args]) => args?.[0] === "push");
+    expect(pushes).toHaveLength(1);
+    expect(pushes[0][1]).toEqual(["push", "--atomic", "--no-verify", "origin", "main", "v0.1.1"]);
+    expect(vi.mocked(execFileSync).mock.calls.some(([command]) => command === "gh")).toBe(false);
+  });
+
   it("rejects a failed watched workflow after publishing the release", async () => {
     vi.useFakeTimers();
     vi.spyOn(console, "log").mockImplementation(() => {});

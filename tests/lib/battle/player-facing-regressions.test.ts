@@ -65,10 +65,7 @@ describe("player-facing combat regressions", () => {
     const upgraded = buildWishOptions(state, makeTestCard({ id: "wish-source" })).find(
       (card) => card.id === original.id,
     );
-    expect(upgraded?.descriptionLines).toEqual([
-      "Deal 2 Freeze damage",
-      "Deal 4 Freeze damage at the start of your next turn",
-    ]);
+    expect(upgraded?.descriptionLines).toEqual(["Deal 2 Freeze damage now and 4 at the start of your next turn"]);
     expect(upgraded?.effects).toEqual([
       { kind: "damage", damageType: "freeze", amount: 2 },
       { kind: "repeat-over-turns", remainingTurns: 1, effects: [{ kind: "damage", damageType: "freeze", amount: 4 }] },

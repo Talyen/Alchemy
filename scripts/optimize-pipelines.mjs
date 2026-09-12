@@ -17,9 +17,9 @@ export const OPTIMIZE_PIPELINES = {
   },
 };
 
-export async function runAllOptimizePipelinesSettled() {
+export async function runAllOptimizePipelinesSettled(options) {
   const pipelines = Object.entries(OPTIMIZE_PIPELINES);
-  const results = await Promise.allSettled(pipelines.map(async ([, pipeline]) => pipeline.run()));
+  const results = await Promise.allSettled(pipelines.map(async ([, pipeline]) => pipeline.run(options)));
   return results.map((result, index) => ({ key: pipelines[index][0], ...result }));
 }
 

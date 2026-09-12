@@ -1,5 +1,5 @@
-import { expect, test } from "@playwright/test";
-import { injectActiveBattle, makeGoblinBattleState, SAVE_KEY } from "../../helpers";
+import { expect, test } from "../../fixtures/e2e";
+import { injectActiveBattle, makeGoblinBattleState, SAVE_KEY } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 import { critical } from "../../playwright-tags";
 

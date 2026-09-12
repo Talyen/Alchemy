@@ -82,11 +82,20 @@ export async function resolveSourceHash(sourcePath, settings, schemaVersion) {
  * Shared freshness gate: hash the source, reuse the stored entry when the
  * committed output still matches, otherwise run the caller transform.
  */
-export async function processFreshEntry(sourcePath, outputPath, settings, schemaVersion, storedEntry, transform) {
+export async function processFreshEntry(
+  sourcePath,
+  outputPath,
+  settings,
+  schemaVersion,
+  storedEntry,
+  transform,
+  { check = false } = {},
+) {
   const sourceEntry = await resolveSourceHash(sourcePath, settings, schemaVersion);
   if (await isOutputFresh(outputPath, storedEntry, sourceEntry.hash)) {
     return { fresh: true, sourceEntry, entry: storedEntry };
   }
+  if (check) throw new Error(`Stale prepared asset: ${outputPath}`);
   await transform();
   return { fresh: false, sourceEntry, entry: await withOutputHash(sourceEntry, outputPath) };
 }
@@ -98,8 +107,19 @@ export async function processFreshEntry(sourcePath, outputPath, settings, schema
 export async function commitManifest(
   manifestPath,
   nextManifest,
-  { outputDir, manifestBasename = "", label = "asset" },
+  { outputDir, manifestBasename = "", label = "asset", check = false },
 ) {
+  if (check) {
+    const expected = `${JSON.stringify(sortManifest(nextManifest), null, 2)}\n`;
+    if ((await readFile(manifestPath, "utf8")) !== expected) {
+      throw new Error(`Stale prepared asset manifest: ${manifestPath}`);
+    }
+    const orphans = (await readdir(outputDir)).filter(
+      (name) => name !== manifestBasename && !Object.hasOwn(nextManifest, name),
+    );
+    if (orphans.length > 0) throw new Error(`Orphan prepared assets in ${outputDir}: ${orphans.join(", ")}`);
+    return 0;
+  }
   await writeManifestIfChanged(manifestPath, nextManifest);
   const removed = await removeOrphanOutputs(outputDir, new Set(Object.keys(nextManifest)), {
     manifestBasename,

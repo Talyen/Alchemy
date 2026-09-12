@@ -1,6 +1,8 @@
 import { expect, type Page } from "@playwright/test";
 import {
   startBattleWithDeck,
+  injectActiveBattle,
+  makeGoblinBattleState,
   makeStatusCard,
   WOLF_COMPANION_CARD,
   makeCard,
@@ -9,7 +11,7 @@ import {
   AEGIS_CARD,
   BLOCK_CARD,
   ANVIL_CARD,
-} from "../../helpers";
+} from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 import { test } from "../../fixtures/e2e";
 import { critical, slow } from "../../playwright-tags";
@@ -32,19 +34,10 @@ const DOT_STATUS_CASES = [
 
 const DOT_ENCOUNTER_OVERRIDES = { encounteredRunEnemyIds: ["goblin"] };
 
-test.describe("Damage-over-Time Status Effects", critical, () => {
+test.describe("Damage-over-Time Status Effects", () => {
   for (const statusCase of DOT_STATUS_CASES) {
-    const body = async ({
-      page,
-      fastBattle,
-      runtimeErrors,
-    }: {
-      page: Page;
-      fastBattle: void;
-      runtimeErrors: string[];
-    }) => {
+    const body = async ({ page, fastBattle }: { page: Page; fastBattle: void }) => {
       void fastBattle;
-      void runtimeErrors;
 
       await seedRandom(page, 42);
       const title = statusCase.damageType.charAt(0).toUpperCase() + statusCase.damageType.slice(1);
@@ -69,7 +62,7 @@ test.describe("Damage-over-Time Status Effects", critical, () => {
       }
     };
     if (statusCase.damageType === "burn") {
-      test(statusCase.name, body);
+      test(statusCase.name, critical, body);
     } else {
       test(statusCase.name, slow, body);
     }
@@ -79,9 +72,8 @@ test.describe("Damage-over-Time Status Effects", critical, () => {
 test.describe("Companion Battle Behavior", critical, () => {
   const COMPANION_DECK = Array.from({ length: 6 }, () => WOLF_COMPANION_CARD);
 
-  test("summon companion card places companion in battle panel", async ({ page, fastBattle, runtimeErrors }) => {
+  test("summon companion card places companion in battle panel", async ({ page, fastBattle }) => {
     void fastBattle;
-    void runtimeErrors;
 
     await startBattleWithDeck(page, COMPANION_DECK);
     const battle = new BattlePage(page);
@@ -101,55 +93,33 @@ test.describe("Companion Battle Behavior", critical, () => {
 });
 
 test.describe("Battle Autoplay", critical, () => {
-  test("plays a hand card without clicking it", async ({ page, fastBattle, runtimeErrors }) => {
+  test("plays a hand card without clicking it", async ({ page, fastBattle }) => {
     void fastBattle;
-    void runtimeErrors;
-    test.setTimeout(process.env.CI ? 60_000 : 20_000);
-
-    await startBattleWithDeck(
+    // Keep combat alive so the assertion observes card play, not disappearing HUD controls.
+    await injectActiveBattle(
       page,
-      Array.from({ length: 6 }, () => makeCard()),
+      makeGoblinBattleState({
+        hand: Array.from({ length: 4 }, () => makeCard({ cost: 1 })),
+        enemyHealth: 200,
+        enemyMaxHealth: 200,
+      }),
+      { autoEndTurn: false, autoplayEnabled: false },
     );
     const battle = new BattlePage(page);
-    await expect(battle.autoplayToggle).toBeVisible();
-    const battleReadyTimeout = process.env.CI ? 30_000 : 5_000;
-    await expect(battle.manaPanel).toBeVisible({ timeout: battleReadyTimeout });
-    await expect(battle.enemyHealthPanel).toBeVisible({ timeout: battleReadyTimeout });
-    const manaBefore = await battle.mana();
-    const enemyBefore = await battle.enemyHealth();
+    await expect(battle.hand).toHaveCount(4);
+    await expect(battle.autoplayToggle).toHaveAttribute("aria-pressed", "false");
 
     await battle.autoplayToggle.click();
 
-    await expect(async () => {
-      if (!(await battle.autoplayToggle.isVisible())) return;
-      await expect(battle.autoplayToggle).toHaveAttribute("aria-pressed", "true", { timeout: 250 });
-    }).toPass({ timeout: 5_000 });
-
-    await expect
-      .poll(
-        async () => {
-          if (await battle.victoryHeading.isVisible()) return true;
-          if (!(await battle.manaPanel.isVisible()) || !(await battle.enemyHealthPanel.isVisible())) return false;
-          try {
-            const mana = await battle.mana();
-            const enemy = await battle.enemyHealth();
-            return mana < manaBefore || enemy < enemyBefore;
-          } catch {
-            // Autoplay can briefly replace the battle HUD between the visibility
-            // check and the attribute read; let the poll observe the next state.
-            return false;
-          }
-        },
-        { timeout: process.env.CI ? 30_000 : 5_000 },
-      )
-      .toBe(true);
+    await expect(battle.autoplayToggle).toHaveAttribute("aria-pressed", "true");
+    await expect.poll(() => battle.handCount()).toBeLessThan(4);
+    await expect.poll(() => battle.enemyHealth()).toBeLessThan(200);
   });
 });
 
-test.describe("Block and Status Invariants", critical, () => {
-  test("blessed aegis plays against a live block value", async ({ page, fastBattle, runtimeErrors }) => {
+test.describe("Block and Status Invariants", () => {
+  test("blessed aegis plays against a live block value", async ({ page, fastBattle }) => {
     void fastBattle;
-    void runtimeErrors;
 
     await startBattleWithDeck(page, [BLOCK_CARD, AEGIS_CARD, BLOCK_CARD, AEGIS_CARD, BLOCK_CARD, AEGIS_CARD]);
     const battle = new BattlePage(page);
@@ -164,9 +134,8 @@ test.describe("Block and Status Invariants", critical, () => {
     await expect.poll(async () => battle.block(), { timeout: 5000 }).toBe(blockBeforeAegis);
   });
 
-  test("forge status persists across end turn", async ({ page, fastBattle, runtimeErrors }) => {
+  test("forge status persists across end turn", async ({ page, fastBattle }) => {
     void fastBattle;
-    void runtimeErrors;
     await startBattleWithDeck(page, [ANVIL_CARD, ANVIL_CARD, ANVIL_CARD, ANVIL_CARD, ANVIL_CARD, ANVIL_CARD]);
     const battle = new BattlePage(page);
 

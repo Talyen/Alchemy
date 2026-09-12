@@ -12,28 +12,28 @@ Use the gate appropriate to the work. `check` includes `verify`, so do not run b
 | Push and handoff | `npm run check -- --diff`  | Verification, the CI static aggregate for executable changes, lockfile consistency, pure builds, and preview smoke |
 | Release          | `npm run release`          | Full release, desktop packaging, tag, push, and CI watch                                                           |
 
-`npm run verify -- --diff --plan` previews selection without running it. Explicit paths may replace `--diff`. When the checkout contains unrelated work, use the complete set of task-owned paths (including incidental fixes) for task verification and state that scope at handoff; the pre-push hook still checks the full diff. A failure elsewhere must be reported or resolved under the incidental-fix policy, not hidden by narrowing a failed check. Browser flows remain available through the `test:e2e:*` scripts when investigation needs them, but local handoff does not rerun the every-push critical suite.
+`npm run verify -- --diff --plan` previews selection without running it. Explicit file or directory paths may replace `--diff`; relative and absolute paths within the checkout select the same checks. Directories expand to tracked and untracked nonignored files, retaining deleted tracked paths for risk selection. When the checkout contains unrelated work, use the complete set of task-owned paths (including incidental fixes) for task verification and state that scope at handoff; the pre-push hook selects the complete outgoing revision range. A failure elsewhere must be reported or resolved under the incidental-fix policy, not hidden by narrowing a failed check. Browser flows remain available through the `test:e2e:*` scripts when investigation needs them, but local handoff does not rerun the every-push critical suite.
 
 The risk escalations are intentionally broad and few:
 
 - Save changes run the complete save/persistence unit suite.
-- Asset source or pipeline changes run the idempotent prepared-output check.
+- Asset source or pipeline changes run the read-only prepared-output freshness check.
 - Desktop changes run the desktop boundary unit suite.
-- Balance and performance changes run their dedicated report/harness checks.
+- Balance changes run the report-construction check; performance changes run performance harness unit tests. FPS/hitch profiling remains opt-in under [PERFORMANCE](./docs/PERFORMANCE.md).
 - Tooling and configuration changes run the complete tooling and architecture unit suite because those tests inspect repository files directly. When gameplay changes are included, their dependency-related tests still run.
 - Other implementation changes use Vitest dependency selection; changed test files execute directly.
 
 Eligible expensive unit commands can reuse a recent passing result under the [verification reuse policy](#verification-reuse). Use `ALCHEMY_VERIFY_FRESH=1` for fresh observations during nondeterminism investigation.
 
-The completion gate records every passed, failed, and skipped stage under one run ID, retains bounded failure evidence, and rejects results if tracked source inputs change during the run. Documentation-only changes run documentation and format checks without unit, build, or browser work, including Markdown under source, script, and test directories. Executable changes run the same static aggregate as CI, but not full Vitest or browser journeys. Runtime inputs trigger a non-mutating build and preview smoke. Package manifests trigger `npm ci --dry-run --ignore-scripts`; other pushes do not.
+The completion gate records every passed, failed, and skipped stage under one run ID, retains bounded failure evidence, and rejects results if tracked source inputs change during the run. Documentation-only changes run documentation and format checks without unit, build, or browser work, including Markdown under source, script, and test directories. Executable changes run the same static aggregate as CI, but not full Vitest or browser journeys. Runtime inputs trigger a non-mutating build, its bundle budget check, and preview smoke. Package manifests trigger `npm ci --dry-run --ignore-scripts`; other pushes do not.
 
 ## Verification reuse
 
-`verify` keeps local passing receipts under `reports/verification-cache/`. After a command has been observed to take at least five seconds, it can reuse dependency-related and changed unit tests plus save, desktop and performance unit suites. It never reuses tooling suites, report generators, assets, static checks, builds, smoke tests or browser runs. The first run records duration without scanning dependencies; a subsequent slow run establishes its receipt. Reuse must also save more time than twice the measured input-scan cost. The exact executable and argument list identify coverage; a narrower prior command cannot satisfy a broader command.
+`verify` keeps local passing receipts under `reports/verification-cache/` for eligible slow commands: dependency-related and changed unit tests plus save, desktop, and performance unit suites. Reuse requires unchanged inputs and the same executable and arguments; a narrower command cannot satisfy broader coverage. Tooling suites, reports, assets, static checks, builds, smoke tests, browser runs, and CI always execute.
 
-Input identity covers tracked and untracked nonignored files, root environment files and npm configuration, installed dependency file identities, Node executable/version/platform, checkout location and environment. File identities include mode, size, nanosecond modification/change times and inode; this is local filesystem reuse, not a portable content-addressed build cache. Dependency caches are excluded. Linked source or external dependency symlinks, unreadable inputs, a missing npm install receipt or changed inputs disable reuse. Fresh successes replace receipts atomically; failures invalidate them. Reused results retain the original run ID and expiry rather than renewing their age. Each verifier writes a run-specific `verify/summary.json`; the outer completion report links it so reuse provenance survives the final report.
+Receipts expire after one hour. Reused results retain their original run ID and expiry, with provenance in the run-specific `verify/summary.json` linked by the completion report. Failures invalidate receipts; changed or unverifiable inputs prevent reuse. Normal report cleanup removes disposable receipts.
 
-CI always executes tests. Set `ALCHEMY_VERIFY_FRESH=1` to bypass reads locally; actual outcomes still replace or invalidate local receipts. Use it for nondeterminism investigation and benchmark comparisons. Receipts are disposable and age out after one hour; normal report cleanup removes them. Build and browser artifact validity is handled by always executing those stages.
+Set `ALCHEMY_VERIFY_FRESH=1` for fresh local observations, including nondeterminism investigations and benchmark comparisons. Actual outcomes still replace or invalidate receipts. [Cache implementation details](./scripts/README.md#verification-cache) document input identity and the cost threshold.
 
 ## Test value and coverage strategy
 
@@ -51,9 +51,7 @@ Keep scenarios focused and failures diagnosable. Combining unrelated checks into
 
 When removing or moving suites, update maintained references and explicit gate selections to match the surviving protection. Include deleted paths in verification scope; changed unit files that no longer exist are not executed, but their route escalations remain. For consolidation, also select the surviving test files; for retirement without replacement, run applicable gates and report material lost protection. Use timing and coverage reports as evidence when useful, without inventing quotas, mandatory measurements, or automatic threshold ratcheting.
 
-## E2E policy
-
-Fixture, bootstrap, page-object, tag, and diagnostic instructions live in [tests/e2e/README.md](./tests/e2e/README.md). Every push runs the `@critical` suite once; save-touching pushes additionally run the complete save specs, intentionally repeating their overlapping critical tests. Nightly and release workflows own the full browser suite; nightly also owns coverage, mutation, deep entry-export analysis, and full Electron coverage.
+### Component and hook tests
 
 Vitest runs React, hook, and browser-adapter suites in the `dom` project; pure engine, validation, desktop-contract, and tooling suites run in the `node` project. `vitest.config.ts:testEnvironmentForPath` owns that classification.
 
@@ -61,9 +59,13 @@ Preserve test import order when a shared harness registers mocks or hooks. Impor
 
 Hook tests pass changing inputs through `renderHook(callback, { initialProps })` and `rerender(nextProps)`. `rerender` updates props; it does not replace the render callback.
 
+## E2E policy
+
+Fixture, bootstrap, page-object, tag, and diagnostic instructions live in [tests/e2e/README.md](./tests/e2e/README.md). Every push runs the `@critical` suite once; save-touching pushes additionally run the complete save specs, intentionally repeating their overlapping critical tests. Nightly and release workflows own the full browser suite; nightly also owns coverage, mutation, deep entry-export analysis, and full Electron coverage.
+
 ## Hooks and workflow hygiene
 
-`lefthook` pre-push invokes only `npm run check -- --diff`. Pre-commit formats staged files selected by `scripts/prettier-paths.mjs`; commit-msg runs commitlint. Install hooks with `npm run prepare`.
+`lefthook` pre-push invokes only `npm run check -- --pre-push`, forwarding Git’s ref/object-ID pairs through stdin. The gate selects the union of outgoing changes, including removed paths; a new remote ref selects its full tree. Deleted remote refs require no checks. Large selections travel through a JSON path file and use the complete unit suite rather than exceeding platform command limits. Outgoing commits must match the checked-out HEAD, and unavailable base revisions fail explicitly. When source checks are needed, pre-push requires a clean checkout (including nonignored untracked files) so tests cannot pass against an uncommitted fix. Ordinary task checks still support dirty work. Local `--diff` continues to select working-tree changes, retaining both sides of renames for risk selection and falling back to HEAD’s changes when clean. Pre-commit formats staged files selected by `scripts/prettier-paths.mjs`; commit-msg runs commitlint. Install hooks with `npm run prepare`.
 
 Execution plans under `docs/Plans/` are workflow artifacts, not product correctness gates. Follow the [plan lifecycle](./docs/Plans/README.md) to finish and archive only task-owned plans, then validate with `npm run docs:check` (also included in the handoff gate). `npm run docs:check:final` is an explicit repository-wide closure check; another task's active plan does not require cancellation or block ordinary handoff.
 
@@ -78,7 +80,7 @@ For instruction changes that affect coding behavior, use the pinned [agent evalu
 | `npm run check:static`            | Generated outputs, formatting, source/test types, ESLint, import boundaries, and architecture smoke   |
 | `npm run lint:ci`                 | The canonical every-push static aggregate: `check:static`, docs, dead code, and Playwright collection |
 | `npm run build` / `build:desktop` | Pure generated-output-validating web or desktop build                                                 |
-| `npm run assets:check`            | Idempotent authored-asset preparation check                                                           |
+| `npm run assets:check`            | Read-only authored-asset freshness check                                                              |
 | `npm run test:e2e:critical`       | Every-push representative player journeys                                                             |
 
 Independent static checks finish even when a sibling fails, including the nested
@@ -94,7 +96,7 @@ sources. `npm run dev` prepares assets through its `predev` lifecycle; use the
 explicit `sync:*` and asset authoring commands when intentionally regenerating
 outputs for a build.
 
-Every push to `main` runs the static aggregate, full Vitest, one web build plus preview smoke, and the critical browser suite. Only save persistence, prepared assets, desktop packaging, and Electron tests remain path-gated. Dependency setup skips Electron downloads by default; only packaging and Electron test jobs install the binary. Browser setup installs OS dependencies even when browser binaries are cached. Asset idempotence jobs use a full checkout. CI topology is owned solely by `.github/workflows/`; local test selection is owned by the broad categories in `scripts/lib/change-routes.mjs`.
+Every push to `main` runs the static aggregate, full Vitest, one web build plus preview smoke, and the critical browser suite. Only save persistence, prepared assets, desktop packaging, and Electron tests remain path-gated. Dependency setup skips Electron downloads by default; only packaging and Electron test jobs install the binary. Installed Electron binaries use exact lockfile-specific caches without fallback to an older dependency set. Browser setup installs OS dependencies even when browser binaries are cached. Asset freshness jobs use a full checkout. CI topology is owned solely by `.github/workflows/`; local test selection is owned by the broad categories in `scripts/lib/change-routes.mjs`.
 
 [Bugbot](./.cursor/BUGBOT.md) remains an optional post-push review aid for gameplay, save, and battle-rule changes; it is not a required status check.
 

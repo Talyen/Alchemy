@@ -1,14 +1,8 @@
 import type { LabyrinthMap } from "@/lib/content-systems/types";
 import { gridLabyrinthMapFixture } from "../../fixtures/labyrinth-map";
-import { expect, test, type Locator } from "@playwright/test";
-import {
-  failOnRuntimeErrors,
-  makeCard,
-  seedRandom,
-  startBattleWithDeck,
-  assertNoOverflow,
-  injectLabyrinthRun,
-} from "../../helpers";
+import { expect, test } from "../../fixtures/e2e";
+import type { Locator } from "@playwright/test";
+import { makeCard, seedRandom, startBattleWithDeck, assertNoOverflow, injectLabyrinthRun } from "../../browser-helpers";
 import { MenuPage } from "../../pages/menu-page";
 import { critical } from "../../playwright-tags";
 
@@ -17,7 +11,7 @@ test(
   critical,
   async ({ page }) => {
     test.setTimeout(60_000);
-    const errors = failOnRuntimeErrors(page);
+
     await seedRandom(page, 42);
     await startBattleWithDeck(
       page,
@@ -59,7 +53,6 @@ test(
     await expect(dialog).toHaveCount(0);
     await expect(page.getByTestId("player-health")).toHaveText(health);
     await expect(page.getByTestId("enemy-health")).toHaveText(enemyHealth);
-    expect(errors).toEqual([]);
   },
 );
 
@@ -67,7 +60,6 @@ test(
   "Bestiary uses the same trait and ability inspection without revealing undiscovered enemies",
   critical,
   async ({ page }) => {
-    const errors = failOnRuntimeErrors(page);
     await new MenuPage(page).gotoCollection({ encounteredEnemyIds: ["bandit"] });
     await page.getByRole("button", { name: "Bestiary", exact: true }).click();
     const bandit = page.getByRole("button", { name: "Inspect Bandit", exact: true });
@@ -94,7 +86,6 @@ test(
     await expect(tooltip.locator("[data-enemy-trait]")).toHaveCount(0);
     await undiscovered.click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
-    expect(errors).toEqual([]);
   },
 );
 
@@ -112,7 +103,6 @@ async function readTraitSizing(trait: Locator) {
 }
 
 test("enemy Trait boxes stay unified and adapt to inspection width", async ({ page }, testInfo) => {
-  const errors = failOnRuntimeErrors(page);
   await page.setViewportSize({ width: 1280, height: 720 });
   const map: LabyrinthMap = gridLabyrinthMapFixture();
   const node = map.nodes["labyrinth-floor-1-n0"]!;
@@ -181,5 +171,4 @@ test("enemy Trait boxes stay unified and adapt to inspection width", async ({ pa
     .toBe(true);
   await assertNoOverflow(page, "narrow enemy Traits");
   await page.screenshot({ path: testInfo.outputPath("traits-inspection-narrow.png") });
-  expect(errors).toEqual([]);
 });

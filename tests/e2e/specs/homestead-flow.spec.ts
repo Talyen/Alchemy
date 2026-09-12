@@ -1,14 +1,10 @@
 import type { Locator } from "@playwright/test";
 import { expect, test } from "../../fixtures/e2e";
 import { HomesteadPage } from "../../pages/homestead-page";
-import { assertRowAlignment } from "../../helpers";
+import { assertRowAlignment } from "../../browser-helpers";
 import { critical } from "../../playwright-tags";
 
 test.describe("Homestead Flow", critical, () => {
-  test.beforeEach(async ({ runtimeErrors }) => {
-    void runtimeErrors;
-  });
-
   test.describe("with custom materials", () => {
     test.beforeEach(async ({ page }) => {
       await new HomesteadPage(page).goto({

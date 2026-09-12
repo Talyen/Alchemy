@@ -1,24 +1,7 @@
-import type { ChildProcess } from "node:child_process";
-
-export type ChildExitOutcome =
-  | { kind: "error"; error: Error }
-  | { kind: "exit"; code: number | null; signal: NodeJS.Signals | null };
-
-export interface ChildProcessWatcher {
-  exit: Promise<ChildExitOutcome>;
-  hasExited: () => boolean;
-}
-
-export function extractBuildResourceUrls(html: string, documentUrl: string): string[];
-export function watchChildProcess(child: ChildProcess): ChildProcessWatcher;
-export function waitForProcessReady<T>(
-  readiness: Promise<T>,
-  watcher: ChildProcessWatcher,
-  label: string,
-): Promise<T>;
-export function stopChildProcess(
-  child: ChildProcess,
-  watcher: ChildProcessWatcher,
-  options?: { graceMs?: number; label?: string },
-): Promise<void>;
-export function smokePreview(options?: { port?: number }): Promise<void>;
+export function extractBuildResources(
+  html: string,
+  documentUrl: string,
+): Array<{ url: string; type: "script" | "style" }>;
+export function verifyBuildResources(html: string, documentUrl: string): Promise<void>;
+/** An explicit port of zero requests an OS-assigned port for isolated callers. */
+export function smokePreview(options?: { port?: number; rootDir?: string }): Promise<void>;

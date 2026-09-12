@@ -1,4 +1,4 @@
-import { expect, test as animationTest } from "@playwright/test";
+import { expect, test } from "../../fixtures/e2e";
 import {
   injectLabyrinthRun,
   injectActiveBattle,
@@ -9,8 +9,7 @@ import {
   enableLoadingScreen,
   failOnRuntimeErrors,
   injectHomestead,
-} from "../../helpers";
-import { test } from "../../fixtures/e2e";
+} from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 import { expectRunPhase } from "../../pages/game-stage";
 import { MenuPage } from "../../pages/menu-page";
@@ -18,10 +17,6 @@ import { LOADING_WORDS } from "@/app/loading-words";
 import { critical, slow } from "../../playwright-tags";
 
 test.describe("Menu", critical, () => {
-  test.beforeEach(async ({ runtimeErrors }) => {
-    void runtimeErrors;
-  });
-
   test("main menu reports the meta run phase and shows all buttons", async ({ page }) => {
     const menu = new MenuPage(page);
     await menu.goto();
@@ -76,10 +71,8 @@ test.describe("Menu", critical, () => {
   test("Campaign combat and Labyrinth progress both survive a reload and mode switching", async ({
     page,
     fastBattle,
-    runtimeErrors,
   }) => {
     void fastBattle;
-    void runtimeErrors;
     await injectLabyrinthRun(page, {
       deck: [makeCard()],
       runOverrides: { roomsEncountered: 3, runPlayerHealth: 17 },
@@ -106,7 +99,7 @@ test.describe("Menu", critical, () => {
       .toEqual({ active: "campaign", combat: "player", labyrinthHealth: 17, labyrinthRooms: 3 });
 
     const reloaded = await page.context().newPage();
-    const errors = failOnRuntimeErrors(reloaded);
+    const freshErrors = failOnRuntimeErrors(reloaded);
     try {
       await reloaded.goto("/");
       await expectRunPhase(reloaded, "battle");
@@ -122,7 +115,7 @@ test.describe("Menu", critical, () => {
       await new MenuPage(reloaded).openGameModeSelect();
       await reloaded.getByRole("button", { name: "Resume The Campaign" }).click();
       await expectRunPhase(reloaded, "battle");
-      expect(errors).toEqual([]);
+      expect(freshErrors).toEqual([]);
     } finally {
       await reloaded.close();
     }
@@ -130,13 +123,8 @@ test.describe("Menu", critical, () => {
 });
 
 test.describe("Navigation", critical, () => {
-  test("in-battle menu allows navigation to collection, options, and talents", async ({
-    page,
-    fastBattle,
-    runtimeErrors,
-  }) => {
+  test("in-battle menu allows navigation to collection, options, and talents", async ({ page, fastBattle }) => {
     void fastBattle;
-    void runtimeErrors;
     await startBattleWithDeck(
       page,
       Array.from({ length: 6 }, () => makeCard()),
@@ -211,8 +199,7 @@ test.describe("Options Screen", critical, () => {
   });
 });
 
-animationTest("closing the game menu prevents keyboard navigation during its fade", async ({ page }) => {
-  const errors = failOnRuntimeErrors(page);
+test("closing the game menu prevents keyboard navigation during its fade", async ({ page }) => {
   const menu = new MenuPage(page);
   await menu.goto();
   await menu.openOptions();
@@ -242,7 +229,6 @@ animationTest("closing the game menu prevents keyboard navigation during its fad
   ).toBe(false);
   await expect(panel).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Options", exact: true })).toBeVisible();
-  expect(errors).toEqual([]);
 });
 
 test.describe("Auto-End Turn", critical, () => {
@@ -266,7 +252,6 @@ test.describe("Startup Loading Screen", slow, () => {
   test("loading screen appears and transitions to main menu", async ({ page }) => {
     await enableLoadingScreen(page);
 
-    const errors = failOnRuntimeErrors(page);
     await page.goto("/");
 
     await expect(page.getByText(loadingPhrase)).toBeVisible({ timeout: 5000 });
@@ -276,7 +261,6 @@ test.describe("Startup Loading Screen", slow, () => {
     expect(await logo.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
 
     await expect(page.getByRole("button", { name: "Play" })).toBeVisible({ timeout: 15000 });
-    expect(errors).toEqual([]);
   });
 });
 

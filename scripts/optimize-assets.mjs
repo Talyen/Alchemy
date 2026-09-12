@@ -149,30 +149,36 @@ function applyArtTransform(image, settings) {
  * @param {{ source: string, target: string, width: number, quality: number }} asset
  * @param {import("./lib/asset-manifest-cache.mjs").ManifestEntry | undefined} storedEntry
  */
-async function optimizeAsset(asset, storedEntry) {
+async function optimizeAsset(asset, storedEntry, check) {
   const sourcePath = path.join(sourceDir, asset.source);
   const outputPath = path.join(outputDir, asset.target);
   const settings = artTransformSettings({ width: asset.width, quality: asset.quality });
 
-  const { fresh, entry } = await processFreshEntry(sourcePath, outputPath, settings, SCHEMA_VERSION, storedEntry, () =>
-    applyArtTransform(sharp(sourcePath), settings).toFile(outputPath),
+  const { fresh, entry } = await processFreshEntry(
+    sourcePath,
+    outputPath,
+    settings,
+    SCHEMA_VERSION,
+    storedEntry,
+    () => applyArtTransform(sharp(sourcePath), settings).toFile(outputPath),
+    { check },
   );
   return { message: `${asset.target} ${fresh ? "already up to date" : "optimized"}`, entry };
 }
 
-export async function optimizeAssets() {
+export async function optimizeAssets({ check = false } = {}) {
   const gearAssets = await discoverGearAssets();
   const gearSlotBackgrounds = await discoverGearSlotBackgrounds();
   const allAssets = [...staticAssets, ...gearAssets, ...gearSlotBackgrounds];
   await validateAssetRegistry(allAssets, { sourceDir });
 
-  await mkdir(outputDir, { recursive: true });
+  if (!check) await mkdir(outputDir, { recursive: true });
 
   const { results, nextManifest, failed } = await processManifestEntries({
     entries: allAssets,
     manifestPath,
     concurrency: TRANSFORM_CONCURRENCY,
-    processEntry: optimizeAsset,
+    processEntry: (asset, storedEntry) => optimizeAsset(asset, storedEntry, check),
     handleError: targetErrorHandler,
   });
 
@@ -182,12 +188,13 @@ export async function optimizeAssets() {
 
   await commitManifest(manifestPath, nextManifest, {
     outputDir,
+    check,
     manifestBasename: MANIFEST_BASENAME,
     label: "optimized asset",
   });
 
   console.log(
-    `Optimized ${results.length} art assets (${gearAssets.length} gear, ${gearSlotBackgrounds.length} gear slot backgrounds).`,
+    `${check ? "Checked" : "Optimized"} ${results.length} art assets (${gearAssets.length} gear, ${gearSlotBackgrounds.length} gear slot backgrounds).`,
   );
   return { ok: true };
 }

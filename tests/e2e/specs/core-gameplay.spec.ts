@@ -8,7 +8,7 @@ import {
   startAtDestination,
   startBattleWithDeck,
   winBattleAndClaimReward,
-} from "../../helpers";
+} from "../../browser-helpers";
 import { test } from "../../fixtures/e2e";
 import { BattlePage } from "../../pages/battle-page";
 import { DestinationPage } from "../../pages/destination-page";
@@ -16,9 +16,8 @@ import { expectRunPhase } from "../../pages/game-stage";
 import { critical, slow } from "../../playwright-tags";
 
 test.describe("Battle Flow", critical, () => {
-  test("normal combat can be won by playing cards and ending turns", async ({ page, fastBattle, runtimeErrors }) => {
+  test("normal combat can be won by playing cards and ending turns", async ({ page, fastBattle }) => {
     void fastBattle;
-    void runtimeErrors;
     await startBattleWithDeck(
       page,
       Array.from({ length: 6 }, () => makeHighDamageCard()),
@@ -28,9 +27,8 @@ test.describe("Battle Flow", critical, () => {
     await expect(battle.victoryHeading).toBeVisible();
   });
 
-  test("end turn triggers enemy phase and draws new cards", async ({ page, fastBattle, runtimeErrors }) => {
+  test("end turn triggers enemy phase and draws new cards", async ({ page, fastBattle }) => {
     void fastBattle;
-    void runtimeErrors;
     await startBattleWithDeck(
       page,
       Array.from({ length: 6 }, () => makeCard()),
@@ -46,9 +44,8 @@ test.describe("Battle Flow", critical, () => {
     expect(handAfterTurn).toBe(4);
   });
 
-  test("maximum hand remains visible beyond the battle scene boundary", async ({ page, fastBattle, runtimeErrors }) => {
+  test("maximum hand remains visible beyond the battle scene boundary", async ({ page, fastBattle }) => {
     void fastBattle;
-    void runtimeErrors;
     await injectActiveBattle(
       page,
       makeGoblinBattleState({
@@ -90,10 +87,8 @@ test.describe("Card Interactions", slow, () => {
   test("multiple copies of the same card in hand can be hovered and played independently", async ({
     page,
     fastBattle,
-    runtimeErrors,
   }) => {
     void fastBattle;
-    void runtimeErrors;
     await startBattleWithDeck(
       page,
       Array.from({ length: 8 }, () => makeCard()),
@@ -121,8 +116,7 @@ test.describe("Card Interactions", slow, () => {
     await expect(async () => expect(await battle.handCount()).toBe(handBefore - 2)).toPass({ timeout: 3000 });
   });
 
-  test("campfire screen restores Health and continues to next battle", async ({ page, runtimeErrors }) => {
-    void runtimeErrors;
+  test("campfire screen restores Health and continues to next battle", async ({ page }) => {
     await startAtDestination(page, { runPlayerHealth: 10, runMaxHealth: 30 }, { forceDestination: "Campfire" });
 
     const destination = new DestinationPage(page);
@@ -137,9 +131,8 @@ test.describe("Card Interactions", slow, () => {
 });
 
 test.describe("Elite Combat", critical, () => {
-  test("elite combat destination starts a battle that can be won", async ({ page, fastBattle, runtimeErrors }) => {
+  test("elite combat destination starts a battle that can be won", async ({ page, fastBattle }) => {
     void fastBattle;
-    void runtimeErrors;
     await startAtDestination(
       page,
       { runDeck: Array.from({ length: 6 }, () => makeHighDamageCard()) },

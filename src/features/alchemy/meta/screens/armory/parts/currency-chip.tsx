@@ -1,9 +1,9 @@
 import { Fragment, type ReactNode } from "react";
-import { useChangeToken } from "../../../../shared/ui/battle/use-change-token";
+import { useChangeToken } from "../../../../shared/ui/use-change-token";
 import { cn } from "@/lib/utils";
 import type { CraftingCurrencyDefinition } from "@/lib/gear";
-import { PortaledTooltip } from "../../../../shared/ui/portaled-tooltip";
-import { TooltipBody, TooltipHeader } from "../../../../shared/ui/tooltip-panel";
+import { PortaledTooltip } from "../../../../shared/ui/tooltips/portaled-tooltip";
+import { TooltipBody, TooltipHeader } from "../../../../shared/ui/tooltips/tooltip-panel";
 import { useHoverVisible } from "../../../../shared/ui/use-hover-visible";
 import { surfaceSelectedRingClass } from "../../../../shared/config";
 

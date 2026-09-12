@@ -1,6 +1,6 @@
 import type { ParkedRunsMap, PersistedBattleTransition } from "@/lib/active-run-session";
 import { readActivityData, runActivityScreen } from "@/lib/active-run-session";
-import { isPlayerDefeated, type BattleSnapshot } from "@/lib/battle";
+import { isPlayerDefeated, getBattleCompanionDamageModifiers, type BattleSnapshot } from "@/lib/battle";
 import type { ContentSystemId, EncounterCombatTraitId } from "@/lib/content-systems/types";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type {
@@ -322,6 +322,7 @@ export function getRunSession(screen?: Screen): RunSession {
 function selectCardInspectionData(state: GameplayState) {
   const run = state.run.activeRun;
   const battle = state.battle.battleState;
+  const companionModifiers = getBattleCompanionDamageModifiers(battle);
   return {
     runDeck: run.runDeck,
     runSeed: run.rng.seed,
@@ -340,8 +341,9 @@ function selectCardInspectionData(state: GameplayState) {
     drawPile: battle.deck,
     discardPile: battle.discard,
     talentEffects: battle.talentEffects,
-    companionDamageBonus: battle.trinketEffects.companionDamageBonus,
-    companionDamageBuff: battle.companionDamageBuff,
+    companionDamageBonus: companionModifiers.damageBonus,
+    companionBleedDamageBonus: companionModifiers.bleedDamageBonus,
+    companionDamageMultiplier: companionModifiers.damageMultiplier,
   };
 }
 

@@ -355,8 +355,13 @@ export function replaceChangelogUnreleased(content, unreleasedMarkdown) {
 
 export function promoteUnreleasedSection(content, version, dateIso) {
   const unreleased = extractChangelogSection(content, "## [Unreleased]");
-  const versionHeading = `## [${version.replace(/^v/, "")}] (${dateIso})`;
+  const heading = `## [${version.replace(/^v/, "")}]`;
   const rawBody = (unreleased ?? "").replace(/^_No changes yet\._$/u, "").trim();
+  if (extractChangelogSection(content, heading) !== null) {
+    if (rawBody) throw new Error(`Changelog already contains ${heading}; unreleased changes were not promoted.`);
+    return content;
+  }
+  const versionHeading = `${heading} (${dateIso})`;
   const promotedBody = rawBody === "" ? "_No changes yet._" : rawBody;
   const emptyUnreleased = buildChangelogUnreleased([]);
 

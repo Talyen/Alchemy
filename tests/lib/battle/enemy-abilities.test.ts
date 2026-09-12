@@ -179,7 +179,8 @@ describe("enemy card effects", () => {
     const base = enemyState();
     const state = { ...base, playerStatuses: { ...base.playerStatuses, armor: 5, bleed: 1 } };
     const sunder = useAbility(state, "sunder");
-    expect(sunder.playerStatuses.armor).toBe(3);
+    expect(sunder.playerStatuses.armor).toBe(2);
+    expect(sunder.playerHealth).toBe(99);
     expect(sunder.enemyMitigation.armor).toBe(0);
     expect(useAbility(state, "rend").playerHealth).toBe(96);
     const frozen = useAbility({ ...base, playerStatuses: { ...base.playerStatuses, freeze: 25 } }, "cold-snap");
