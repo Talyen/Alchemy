@@ -5,6 +5,7 @@ import {
   addPlayerStatus,
   playerStatusDelta,
   setFlag,
+  setPlayerStatus,
   stripEnemyArmor,
   withPreservedFlags,
   type BattleState,
@@ -48,17 +49,17 @@ export function applyArmorReward(state: BattleState, amount: number, combatTexts
   );
 }
 
-function clearHarmfulStatuses(playerStatuses: BattleState["playerStatuses"], statusTypesToClear: number) {
-  const nextPlayerStatuses = { ...playerStatuses };
+function clearHarmfulStatuses(state: BattleState, statusTypesToClear: number) {
+  let nextState = state;
   let removed = 0;
   const limit = Number.isFinite(statusTypesToClear) ? statusTypesToClear : harmfulPlayerStatusIds.length;
   for (const statusId of harmfulPlayerStatusIds) {
     if (removed >= limit) break;
-    if (nextPlayerStatuses[statusId] <= 0) continue;
-    nextPlayerStatuses[statusId] = 0;
+    if (nextState.playerStatuses[statusId] <= 0) continue;
+    nextState = setPlayerStatus(nextState, statusId, 0);
     removed++;
   }
-  return { nextPlayerStatuses, removed };
+  return { nextState, removed };
 }
 
 export function applyCleanseHeals(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
@@ -72,9 +73,9 @@ export function applyCleanseHeals(state: BattleState, combatTexts?: CombatTextEv
 }
 
 export function removeHarmfulPlayerStatuses(state: BattleState, amount: number, combatTexts?: CombatTextEvent[]) {
-  const { nextPlayerStatuses, removed } = clearHarmfulStatuses(state.playerStatuses, amount);
-  let nextState = { ...state, playerStatuses: nextPlayerStatuses };
-  if (removed) {
+  const cleared = clearHarmfulStatuses(state, amount);
+  let nextState = cleared.nextState;
+  if (cleared.removed) {
     nextState = applyCleanseHeals(nextState, combatTexts);
   }
   return nextState;
@@ -243,6 +244,27 @@ export function addForgeToPlayer(state: BattleState, baseAmount: number, combatT
     });
   }
   return nextState;
+}
+
+/** Only attack spending is eligible for Patient Edge recovery. */
+export function spendPlayerForgeForAttack(state: BattleState, amount: number): BattleState {
+  const spent = Math.min(state.playerStatuses.forge, Math.max(0, amount));
+  if (spent <= 0) return state;
+  const next = setPlayerStatus(state, "forge", state.playerStatuses.forge - spent);
+  return state.gearEffects.recoverSpentForge > 0
+    ? { ...next, uniqueGear: { ...next.uniqueGear, spentForge: next.uniqueGear.spentForge + spent } }
+    : next;
+}
+
+/** Restore after the turn reset so threshold rewards belong to the new turn. */
+export function restoreSpentPlayerForge(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
+  const amount = state.uniqueGear.spentForge;
+  if (amount <= 0) return state;
+  const cleared = { ...state, uniqueGear: { ...state.uniqueGear, spentForge: 0 } };
+  if (state.gearEffects.recoverSpentForge <= 0) return cleared;
+  const previousForge = state.playerStatuses.forge;
+  const restored = addPlayerStatusWithCombatText(cleared, "forge", amount, combatTexts, { skipFightPacing: true });
+  return applyForgeThresholdRewards(restored, previousForge, restored.playerStatuses.forge, combatTexts);
 }
 
 export function applyForgeThresholdRewards(

@@ -145,9 +145,6 @@ function applyBurnDamageModifiers(state: BattleState, rawAmount: number): number
   if (state.talentEffects.burnDamagePerManaCrystal > 0) {
     nextAmount += scalePerMana(state.maxMana, state.talentEffects.burnDamagePerManaCrystal, "percent");
   }
-  if (state.gearEffects.burnDamagePerManaPercent > 0) {
-    nextAmount += scalePerMana(state.maxMana, state.gearEffects.burnDamagePerManaPercent, "percent");
-  }
   if (state.talentEffects.blockToBurnDamage) {
     nextAmount += scalePercent(state.playerStatuses.block, BURN_BLOCK_SCALED_DAMAGE_PERCENT, PERCENT_DENOMINATOR);
   }
@@ -223,6 +220,10 @@ function computeAdditiveDamageBonus(
   if (effect.doubleIfEnemyBurning && state.enemyStatuses.burn > 0) bonus += 1;
   if (effect.doubleIfEnemyBleeding && state.enemyStatuses.bleed > 0) bonus += 1;
   if (effect.tripleIfEnemyNotBurning && state.enemyStatuses.burn === 0) bonus += 2;
+
+  if (effect.damageType === "burn" || (effect.damageType === "bleed" && state.gearEffects.sharedBurnBleedBonuses > 0)) {
+    bonus += (state.maxMana * state.gearEffects.burnDamagePerManaPercent) / PERCENT_DENOMINATOR;
+  }
 
   if (effect.damageType === "physical") {
     if (doublingActive(state.talentEffects.physicalDoubledVsStunned, state.enemyCC.stunSkipTurns)) bonus += 1;
@@ -398,7 +399,8 @@ export function computeCardDamageToEnemy(
   const baseDamage = computeBaseDamage(state, effect, card, context?.baseDamageBonus, context?.companionAttack);
   const { state: stateAfterFirst, firstBonus } = applyFirstDamageBonus(state, effect);
   const unwoundedBonus =
-    effect.damageType === "bleed" && state.enemyStatuses.bleed === 0
+    (effect.damageType === "bleed" || (effect.damageType === "burn" && state.gearEffects.sharedBurnBleedBonuses > 0)) &&
+    state.enemyStatuses.bleed === 0
       ? state.talentEffects.bleedUnwoundedBonusPercent / 100
       : 0;
   const cullBonus =

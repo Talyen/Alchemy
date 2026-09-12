@@ -83,8 +83,12 @@ export function applyPoisonTalentRiders(
     nextState = reduceEnemyArmor(nextState, 1);
   }
   if (damage > 0) {
-    const leechChance = nextState.talentEffects.poisonLeechChance + nextState.gearEffects.poisonLeechChance;
-    if (rollPercent(leechChance, getBattleRng(nextState))) {
+    const leechChances = [
+      state.trinketEffects.parasiticBloomLeechChance,
+      state.talentEffects.poisonLeechChance + state.gearEffects.poisonLeechChance,
+    ];
+    for (const chance of leechChances) {
+      if (!rollPercent(chance, getBattleRng(nextState))) continue;
       nextState = applyLeechHealing(
         nextState,
         scalePlayerLeechHeal(

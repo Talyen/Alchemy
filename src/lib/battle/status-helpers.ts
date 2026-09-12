@@ -9,7 +9,14 @@ import {
   TRAIT_DAMAGE_WEAKNESS,
 } from "../game-constants";
 import { addPlayerStatusWithCombatText, mergeCombatText } from "./combat-text";
-import { applyPlayerCombatDamage, scaleReceivedPlayerDamage, type BattleState, type CombatTextEvent } from "./types";
+import {
+  applyPlayerCombatDamage,
+  isPlayerDefeated,
+  scaleReceivedPlayerDamage,
+  setPlayerStatus,
+  type BattleState,
+  type CombatTextEvent,
+} from "./types";
 import type { EnemyStatusDamageId } from "@/lib/game-data";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { halveRounded } from "./amount-helpers";
@@ -59,7 +66,10 @@ export function dealSelfDamage(
   combatTexts: CombatTextEvent[],
 ): { state: BattleState; healthLost: number } {
   const healthCost = statLabel === "health";
-  const damage = healthCost ? amount : scaleReceivedPlayerDamage(amount, state.talentEffects, statLabel);
+  const scaled = healthCost ? amount : scaleReceivedPlayerDamage(amount, state.talentEffects, statLabel);
+  const damage = armorMitigatesElementalDamage(state, statLabel)
+    ? Math.max(0, scaled - state.playerStatuses.armor)
+    : scaled;
   const postDamage = applyPlayerCombatDamage(
     state,
     damage,
@@ -86,6 +96,26 @@ export function rollTalentChance(chance: number, state: { rng?: () => number }):
 
 export type ArmorDecayTarget = "player" | "enemy";
 
+export function armorMitigatesElementalDamage(state: BattleState, damageType: string): boolean {
+  return (
+    (damageType === "burn" && state.talentEffects.armorMitigatesBurn) ||
+    (damageType === "bleed" && state.talentEffects.armorMitigatesBleed)
+  );
+}
+
+export function removePlayerArmor(state: BattleState, amount: number, combatTexts?: CombatTextEvent[]): BattleState {
+  if (amount <= 0 || state.playerStatuses.armor <= 0) return state;
+  const nextState = setPlayerStatus(state, "armor", Math.max(0, state.playerStatuses.armor - amount));
+  if (
+    nextState.playerStatuses.armor === 0 &&
+    nextState.talentEffects.armorBreakBlock > 0 &&
+    !isPlayerDefeated(nextState)
+  ) {
+    return addPlayerStatusWithCombatText(nextState, "block", nextState.talentEffects.armorBreakBlock, combatTexts);
+  }
+  return nextState;
+}
+
 function decayEnemyArmor(state: BattleState): BattleState {
   if (hasEnemyTrait(state, "unbreakable") || state.enemyMitigation.armor <= MIN_ARMOR_AMOUNT) {
     return state;
@@ -104,23 +134,7 @@ function decayPlayerArmor(state: BattleState, combatTexts?: CombatTextEvent[]): 
     return state;
   }
 
-  const armorBefore = state.playerStatuses.armor;
-  let nextState: BattleState = {
-    ...state,
-    playerStatuses: {
-      ...state.playerStatuses,
-      armor: Math.max(0, state.playerStatuses.armor - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT),
-    },
-  };
-
-  const armorBroke = armorBefore > MIN_ARMOR_AMOUNT && nextState.playerStatuses.armor === MIN_ARMOR_AMOUNT;
-  const hasArmorBreakTalent = nextState.talentEffects.armorBreakBlock > 0;
-
-  if (armorBroke && hasArmorBreakTalent) {
-    nextState = addPlayerStatusWithCombatText(nextState, "block", nextState.talentEffects.armorBreakBlock, combatTexts);
-  }
-
-  return nextState;
+  return removePlayerArmor(state, BATTLE_CONFIG.ARMOR_DECAY_AMOUNT, combatTexts);
 }
 
 export function decayArmorAfterDamage(

@@ -29,6 +29,7 @@ import { addEnemyMitigationWithCombatText } from "./encounter-trait-health-thres
 import { scaleByRoomMultiplier } from "./enemy-turn-traits";
 import { dealPlayerTypedHit } from "./player-typed-hit";
 import { applyPlayerStatusFromAttack } from "./status-player";
+import { removePlayerArmor } from "./status-helpers";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
 import {
   addEnemyStatus,
@@ -180,13 +181,15 @@ function applyEnemyEffect(
       const amount = Math.min(state.playerStatuses.armor, scaleByRoomMultiplier(state, effect.amount));
       if (amount <= 0) return state;
       mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "armor", amount });
-      return setPlayerStatus(state, "armor", state.playerStatuses.armor - amount);
+      return removePlayerArmor(state, amount, combatTexts);
     }
     case "multiply-enemy-status": {
       if (isStunFreezeBuildupBlocked(state.playerCC)) return state;
       const amount = Math.round(state.playerStatuses.freeze * effect.factor);
       const nextState = setPlayerStatus(state, "freeze", amount);
-      mergeCombatText(combatTexts, { target: "player", kind: "multiply", stat: "freeze", amount: effect.factor });
+      const added = amount - state.playerStatuses.freeze;
+      if (added > 0)
+        mergeCombatText(combatTexts, { target: "player", kind: "multiply", stat: "freeze", amount: added });
       return resolvePlayerCrowdControlTriggers(nextState, combatTexts);
     }
   }
@@ -248,7 +251,11 @@ function applyAbilityFollowups(
       (stat) => nextState.playerStatuses[stat] > 0,
     );
     if (purgeTarget) {
-      nextState = setPlayerStatus(recordEnemyAbilityActivation(nextState, "banshee"), purgeTarget, 0);
+      nextState = recordEnemyAbilityActivation(nextState, "banshee");
+      nextState =
+        purgeTarget === "armor"
+          ? removePlayerArmor(nextState, nextState.playerStatuses.armor, combatTexts)
+          : setPlayerStatus(nextState, purgeTarget, 0);
       combatTexts.push({ target: "player", kind: "notice", stat: purgeTarget, text: "Purged" });
     }
   }

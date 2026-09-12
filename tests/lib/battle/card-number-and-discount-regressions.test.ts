@@ -7,6 +7,33 @@ import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
 import { patchBattleState } from "../../fixtures/battle";
 
 describe("card number and discount regressions", () => {
+  it.each(["quickdraw", "threefold", "knight"] as const)(
+    "a saved zero-cost card preserves the %s discount for the next paid card",
+    (source) => {
+      const card = cardById[source === "threefold" ? "fireball" : "venom-arrow"]!;
+      const free = { ...card, cost: 0, uid: 1 };
+      const paid = { ...card, uid: 2 };
+      const state = patchBattleState({
+        rng: () => 0.99,
+        hand: [free, paid],
+        mana: 0,
+        enemyHealth: 100,
+        enemyMaxHealth: 100,
+        encounterBenefits: source === "quickdraw" ? ["quickdraw"] : [],
+        gearEffects: {
+          firstElementalCardsFree: source === "threefold" ? 1 : 0,
+          blockReadiesFreePhysical: source === "knight" ? 1 : 0,
+        },
+        uniqueGear: { knightsAnswerReady: source === "knight" },
+      });
+      const first = playBattleCardResolved(state, free.id, 0).state;
+      const second = playBattleCardResolved(first, paid.id, 0).state;
+      expect(second.cardsPlayedThisTurn).toBe(2);
+      expect(second.mana).toBe(0);
+      expect(second.hand).toHaveLength(0);
+    },
+  );
+
   it.each(["stab", "maul"])("updates both damage alternatives on %s", (id) => {
     const original = cardById[id]!;
     const target = getEditableCorruptionTargets(original)[0]!;

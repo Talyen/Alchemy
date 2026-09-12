@@ -15,6 +15,7 @@ import { resolvePlayerCrowdControlTriggers } from "./status-cc";
 import type { EnemyAttackEffect } from "@/lib/game-data";
 import {
   applyPlayerCombatDamage,
+  isPlayerDefeated,
   mitigatePlayerCombatDamage,
   scaleReceivedPlayerDamage,
   type BattleState,
@@ -24,7 +25,7 @@ import {
 import { BATTLE_CONFIG, PERCENT_DENOMINATOR } from "../game-constants";
 import { computeLeechHeal } from "./damage-rider-leech";
 import { isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-traits";
-import { decayArmorAfterDamage } from "./status-helpers";
+import { armorMitigatesElementalDamage, decayArmorAfterDamage } from "./status-helpers";
 import { paceCombatDamage } from "./fight-pacing";
 import { dealPlayerTypedHit } from "./player-typed-hit";
 import { getEnemyTraitSet, hasEnemyTrait } from "./types/state-helpers";
@@ -49,7 +50,7 @@ export interface EnemyDamageOptions {
   physicalBlockBreakMultiplier?: number;
   extraPoisonBlockStrip?: number;
   skipTraitReactions?: boolean;
-  incomingDamage?: number;
+  preparedDamage?: { attemptedDamage: number; incomingDamage: number };
   traitSet?: ReadonlySet<string>;
 }
 
@@ -59,7 +60,10 @@ function computeMitigatedDamage(
   remainingDamage: number,
   ignorePlayerMitigation: boolean,
 ) {
-  const armorMitigatesDamage = effect.damageType === "physical" || effect.damageType === "stun";
+  const armorMitigatesDamage =
+    effect.damageType === "physical" ||
+    effect.damageType === "stun" ||
+    armorMitigatesElementalDamage(state, effect.damageType);
   const rawDamage = armorMitigatesDamage ? Math.max(0, remainingDamage - state.playerStatuses.armor) : remainingDamage;
   const scaledDamage = ignorePlayerMitigation
     ? rawDamage
@@ -69,12 +73,13 @@ function computeMitigatedDamage(
   });
 }
 
-export function computeIncomingEnemyAttackDamage(
+export function prepareEnemyDamage(
   state: BattleState,
   effect: EnemyAttackEffect & { kind: "damage" },
   options: EnemyDamageOptions = {},
 ) {
-  let remainingDamage = applyPhysicalForgeBonus(state, effect);
+  const baseDamage = applyPhysicalForgeBonus(state, effect);
+  let remainingDamage = baseDamage;
   if (!options.ignorePlayerMitigation && state.gearEffects.damageReductionPerMana > 0) {
     const absorb = state.gearEffects.damageReductionPerMana * state.mana;
     remainingDamage = Math.max(0, remainingDamage - absorb);
@@ -82,22 +87,26 @@ export function computeIncomingEnemyAttackDamage(
   if (!options.ignorePlayerMitigation && state.enemyStatuses.poison > 0) {
     remainingDamage = Math.max(0, remainingDamage - state.talentEffects.poisonReducesEnemyDamage);
   }
-  if (effect.damageType === "burn") {
-    remainingDamage += state.enemyStatuses.burnBonus;
-  }
-  if (effect.damageType === "freeze") {
-    remainingDamage += state.enemyStatuses.freezeBonus;
-  }
-  remainingDamage = Math.max(0, remainingDamage + (options.flatBonus ?? 0));
-  remainingDamage = remainingDamage * (options.amountMultiplier ?? 1);
-  if (
-    effect.damageType === "physical" &&
-    hasEnemyTrait(state, "executioner") &&
-    state.enemyHealth < state.enemyMaxHealth / 2
-  )
-    remainingDamage *= LABYRINTH_MODIFIER_CONFIG.double;
-  const paced = paceCombatDamage(state, remainingDamage, "enemy");
-  return Math.round(paced);
+  const elementalBonus =
+    effect.damageType === "burn"
+      ? state.enemyStatuses.burnBonus
+      : effect.damageType === "freeze"
+        ? state.enemyStatuses.freezeBonus
+        : 0;
+  const scale = (amount: number) => {
+    let damage = Math.max(0, amount + (options.flatBonus ?? 0)) * (options.amountMultiplier ?? 1);
+    if (
+      effect.damageType === "physical" &&
+      hasEnemyTrait(state, "executioner") &&
+      state.enemyHealth < state.enemyMaxHealth / 2
+    )
+      damage *= LABYRINTH_MODIFIER_CONFIG.double;
+    return Math.round(paceCombatDamage(state, damage, "enemy"));
+  };
+  return {
+    attemptedDamage: scale(baseDamage + elementalBonus),
+    incomingDamage: scale(remainingDamage + elementalBonus),
+  };
 }
 
 function calculateBlockAndArmorMitigation(
@@ -136,10 +145,8 @@ function calculateBlockAndArmorMitigation(
   if (totalExtraBlock > 0) {
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: totalExtraBlock });
   }
-  const armorMitigatesDamage = effect.damageType === "physical" || effect.damageType === "stun";
-  const armorAbsorb = armorMitigatesDamage ? Math.min(remainingDamage, state.playerStatuses.armor) : 0;
   const actualDamage = computeMitigatedDamage(state, effect, remainingDamage, options.ignorePlayerMitigation === true);
-  return { remainingDamage, blockAbsorb, blockSpent, totalExtraBlock, armorAbsorb, actualDamage };
+  return { remainingDamage, blockAbsorb, blockSpent, totalExtraBlock, actualDamage };
 }
 
 function applyVanguardCrestAfterBlock(
@@ -251,8 +258,14 @@ function applyBlockedAttackRetaliation(
 
 export interface EnemyDamageResult {
   state: BattleState;
+  /** Magnitude before defensive reductions; determines contact independently of Health loss. */
+  attemptedDamage: number;
+  /** Damage after defenses, before Health clamping and death prevention. */
+  resolvedDamage: number;
   healthDamage: number;
   landed: boolean;
+  dodged: boolean;
+  killed: boolean;
 }
 
 function resolveEnemyDamageEffectCore(
@@ -261,11 +274,25 @@ function resolveEnemyDamageEffectCore(
   combatTexts: CombatTextEvent[],
   options: EnemyDamageOptions = {},
 ): EnemyDamageResult {
-  if (state.playerHealth <= 0) return { state, healthDamage: 0, landed: false };
-  const incomingDamage = options.incomingDamage ?? computeIncomingEnemyAttackDamage(state, effect, options);
+  if (state.playerHealth <= 0)
+    return {
+      state,
+      attemptedDamage: 0,
+      resolvedDamage: 0,
+      healthDamage: 0,
+      landed: false,
+      dodged: false,
+      killed: false,
+    };
+  const { attemptedDamage, incomingDamage } = options.preparedDamage ?? prepareEnemyDamage(state, effect, options);
 
-  const { remainingDamage, blockAbsorb, blockSpent, totalExtraBlock, armorAbsorb, actualDamage } =
-    calculateBlockAndArmorMitigation(state, effect, incomingDamage, combatTexts, options);
+  const { remainingDamage, blockAbsorb, blockSpent, totalExtraBlock, actualDamage } = calculateBlockAndArmorMitigation(
+    state,
+    effect,
+    incomingDamage,
+    combatTexts,
+    options,
+  );
 
   let attackState = state;
   if (totalExtraBlock > 0) {
@@ -286,7 +313,11 @@ function resolveEnemyDamageEffectCore(
   const blockLost = Math.min(blockSpent + totalExtraBlock, damagedState.playerStatuses.block);
   const outcome = {
     healthDamage: Math.max(0, prevHealth - damagedState.playerHealth),
-    landed: blockLost > 0 || armorAbsorb > 0 || actualDamage > 0,
+    attemptedDamage,
+    resolvedDamage: actualDamage,
+    landed: attemptedDamage > 0,
+    dodged: false,
+    killed: !isPlayerDefeated(state) && isPlayerDefeated(damagedState),
   };
   let nextState: BattleState = {
     ...damagedState,

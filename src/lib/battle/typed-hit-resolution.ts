@@ -3,14 +3,14 @@ import { mergeCombatText, payKillPayouts } from "./combat-text";
 import { applyDamageStatuses } from "./damage-status-riders";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 import { decayArmorAfterDamage } from "./status-helpers";
-import { damageEnemyHealth, type BattleState, type CombatTextEvent } from "./types";
+import { damageEnemyHealth, type BattleState, type CombatTextEvent, type EnemyHitHealth } from "./types";
 
 export function resolveTypedEnemyHit(
   state: BattleState,
   effect: { kind: "damage"; damageType: DamageType; amount: number },
   resolvedDamage: number,
   combatTexts: CombatTextEvent[],
-): { state: BattleState; previousHealth: number } {
+): EnemyHitHealth {
   const hit = damageEnemyHealth(state, resolvedDamage);
   let next = decayArmorAfterDamage(hit.state, resolvedDamage, "enemy", combatTexts);
   // Buildup can trigger another hit. Resolve it before thresholds and once-only kill rewards.
@@ -20,5 +20,5 @@ export function resolveTypedEnemyHit(
   }
   next = processEncounterTraitHealthThreshold(hit.previousHealth, next, combatTexts);
   next = payKillPayouts(next, hit.enemyWasAlive, combatTexts);
-  return { state: next, previousHealth: hit.previousHealth };
+  return { ...hit, state: next };
 }

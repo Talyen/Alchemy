@@ -16,7 +16,7 @@ import { applyDodgeTalentStatuses } from "./dodge-talent-rewards";
 import { applyArmorReward } from "./status-player";
 import { applyCardEffects } from "./effect-handlers";
 import {
-  computeIncomingEnemyAttackDamage,
+  prepareEnemyDamage,
   resolveEnemyDamageEffect,
   resolvePendingBattleReactions,
   type EnemyDamageOptions,
@@ -153,12 +153,21 @@ export function resolveEnemyAttackHit(
 ): EnemyDamageResult {
   const { canDodge, ...damageOptions } = options;
   if (canDodge && hasEnemyTrait(state, "ravenous")) effect = { ...effect, lifesteal: true };
-  const incomingDamage = computeIncomingEnemyAttackDamage(state, effect, damageOptions);
-  const dodged = tryDodgeEnemyDamagePacket(state, combatTexts, canDodge, incomingDamage);
-  if (dodged) return { state: resolvePendingBattleReactions(dodged, combatTexts), healthDamage: 0, landed: false };
+  const preparedDamage = prepareEnemyDamage(state, effect, damageOptions);
+  const dodged = tryDodgeEnemyDamagePacket(state, combatTexts, canDodge, preparedDamage.incomingDamage);
+  if (dodged)
+    return {
+      state: resolvePendingBattleReactions(dodged, combatTexts),
+      attemptedDamage: preparedDamage.attemptedDamage,
+      resolvedDamage: 0,
+      healthDamage: 0,
+      landed: false,
+      dodged: true,
+      killed: false,
+    };
   return resolveEnemyDamageEffect(state, effect, combatTexts, {
     ...damageOptions,
-    incomingDamage,
+    preparedDamage,
     triggerBlockRetaliation: canDodge,
   });
 }

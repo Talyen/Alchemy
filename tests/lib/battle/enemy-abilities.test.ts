@@ -285,6 +285,37 @@ describe("enemy card effects", () => {
 });
 
 describe("ability trait boundaries", () => {
+  it.each(["bandit", "banshee"])("Aetherward preserves landed-hit reactions for %s", (enemy) => {
+    const initial = enemyState(enemy, {
+      mana: 3,
+      enemyHealth: 50,
+      playerStatuses: defaultPlayerStatusValues({ thorns: 3, armor: 4 }),
+      difficultyModifiers: [{ kind: "enemy-attacks-gain-leech" }],
+    });
+    const result = useAbility(
+      { ...initial, gearEffects: { ...initial.gearEffects, damageReductionPerMana: 10 } },
+      "slash",
+    );
+    expect(result.playerHealth).toBe(100);
+    expect(result.enemyHealth).toBe(47);
+    expect(result.playerStatuses.thorns).toBe(0);
+    if (enemy === "bandit") expect(result.flags.enemyFirstHitDoubleUsed).toBe(true);
+    else expect(result.playerStatuses.armor).toBe(0);
+  });
+
+  it("triggers landed-hit reactions when resistance prevents all Health damage", () => {
+    const initial = enemyState("bandit", {
+      enemyHealth: 50,
+      playerStatuses: defaultPlayerStatusValues({ thorns: 3 }),
+      difficultyModifiers: [{ kind: "enemy-attacks-gain-leech" }],
+    });
+    const result = useAbility({ ...initial, gearEffects: { ...initial.gearEffects, resistPhysical: 100 } }, "slash");
+    expect(result.playerHealth).toBe(100);
+    expect(result.flags.enemyFirstHitDoubleUsed).toBe(true);
+    expect(result.playerStatuses.thorns).toBe(0);
+    expect(result.enemyHealth).toBe(47);
+  });
+
   it("consumes Ambush and triggers Thorns on an Armor-absorbed hit without granting Leech", () => {
     const result = useAbility(
       enemyState("bandit", {

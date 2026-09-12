@@ -2,7 +2,7 @@ import { makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
 import { defaultTalentEffects } from "@/lib/battle";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
-import { computeIncomingEnemyAttackDamage } from "@/lib/battle/enemy-attack-damage";
+import { prepareEnemyDamage } from "@/lib/battle/enemy-attack-damage";
 import { scaleEnemyAbilityDamage } from "@/lib/battle/battle-enemy-setup";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { companionLibrary } from "@/lib/game-data";
@@ -34,7 +34,7 @@ describe("Dodge talent rewrites", () => {
       },
     });
     const effect = { kind: "damage", damageType: "physical", amount: 8 } as const;
-    const incoming = computeIncomingEnemyAttackDamage(state, scaleEnemyAbilityDamage(state, effect));
+    const { incomingDamage: incoming } = prepareEnemyDamage(state, scaleEnemyAbilityDamage(state, effect));
     const result = applyEnemyAbility(state, makeEnemyTestCard({ effects: [effect] }), makeCombatTexts());
     expect(result.playerHealth).toBe(100);
     expect(result.enemyHealth).toBe(1000 - incoming);

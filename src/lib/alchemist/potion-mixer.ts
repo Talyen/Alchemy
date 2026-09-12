@@ -96,6 +96,10 @@ function scaleCardDescriptionLines(card: BattleCard, multiplier: number, potency
   }
 
   return linesWithoutConsume.map((line) => {
+    if (line === "Draw a card" && scaleMap.has(1)) {
+      const amount = scaleMap.get(1)!;
+      return amount === 1 ? line : `Draw ${amount} cards`;
+    }
     return line
       .split(" or ")
       .map((alternative) => {

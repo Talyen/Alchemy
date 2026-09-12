@@ -115,7 +115,7 @@ describe("Dodge gear affixes", () => {
     expect(result.flags.nextHitPhysicalBonus).toBe(4);
   });
 
-  it("does not consume Opening on a non-Physical attack", () => {
+  it("adds Opening's Physical damage to a non-Physical attack", () => {
     const state = patchBattleState({
       enemyHealth: 100,
       enemyMaxHealth: 100,
@@ -123,7 +123,7 @@ describe("Dodge gear affixes", () => {
       rng: () => 0.99,
     });
     const result = dealDamage(state, makeTestCard({ effects: [makeEffect("holy", 5)] }));
-    expect(result.enemyHealth).toBe(95);
-    expect(result.flags.nextHitPhysicalBonus).toBe(4);
+    expect(result.enemyHealth).toBe(91);
+    expect(result.flags.nextHitPhysicalBonus).toBe(0);
   });
 });

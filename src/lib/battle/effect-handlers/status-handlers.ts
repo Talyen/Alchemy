@@ -1,12 +1,12 @@
 import { applyPotionMultiplier } from "../amount-helpers";
-import { addEnemyStatus, type BattleState, type CombatTextEvent } from "../types";
+import { addEnemyStatus, setPlayerStatus, type BattleState, type CombatTextEvent } from "../types";
 import { mergeCombatText } from "../combat-text";
 import { defineHandler } from "./handler-types";
 import { applyPlayerStatusEffect, applyCleanseHeals, removeHarmfulPlayerStatuses } from "../status-player";
 import { tryTriggerEnemyFreeze } from "../damage-status-riders";
 import { resolveStunTrigger } from "../status-stun-resolve";
 import { dealDamageToEnemy } from "../damage";
-import { type EnemyStatusDamageId, type EnemyStatusId } from "@/lib/game-data";
+import { type EnemyStatusId } from "@/lib/game-data";
 import { dealPlayerTypedHit } from "../player-typed-hit";
 
 function resolveEnemyStatusCcTrigger(
@@ -18,10 +18,6 @@ function resolveEnemyStatusCcTrigger(
   if (status === "freeze") return tryTriggerEnemyFreeze(preHitState, nextState, combatTexts);
   if (status === "stun") return resolveStunTrigger(nextState, combatTexts);
   return nextState;
-}
-
-function zeroPlayerStatus(state: BattleState, status: EnemyStatusDamageId): BattleState {
-  return { ...state, playerStatuses: { ...state.playerStatuses, [status]: 0 } };
 }
 
 export const applyPlayerStatusEffectHandler = defineHandler(
@@ -66,7 +62,7 @@ export const applyRemovePlayerStatusEffect = defineHandler(
   "remove-player-status",
   (state, _card, effect, _potionMult, combatTexts) => {
     if (state.playerStatuses[effect.status] <= 0) return state;
-    return applyCleanseHeals(zeroPlayerStatus(state, effect.status), combatTexts);
+    return applyCleanseHeals(setPlayerStatus(state, effect.status, 0), combatTexts);
   },
 );
 
@@ -94,7 +90,7 @@ export const applyCleansePlayerStatusToDamageEffect = defineHandler(
     const stacks = state.playerStatuses[effect.status];
     if (stacks <= 0) return state;
 
-    const cleansed = applyCleanseHeals(zeroPlayerStatus(state, effect.status), combatTexts);
+    const cleansed = applyCleanseHeals(setPlayerStatus(state, effect.status, 0), combatTexts);
     const amount = applyPotionMultiplier(stacks, potionMult);
 
     return dealDamageToEnemy(

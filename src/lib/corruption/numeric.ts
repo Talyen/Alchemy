@@ -72,6 +72,8 @@ export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget
   const queueCursor = new Map<number, number>();
 
   card.descriptionLines.forEach((line, lineIndex) => {
+    // The summon summary describes the Companion's actions, not this card's effects.
+    if (lineIndex === 0 && card.effects.some((effect) => effect.kind === "summon-companion")) return;
     const matches =
       line === "Draw a card" ? [{ index: 5, 0: "1" }] : [...line.matchAll(CORRUPTION_TEXT_PATTERNS.authoredNumber)];
     for (const match of matches) {

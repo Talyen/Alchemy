@@ -37,6 +37,7 @@ import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session
 export interface MysteryEffectResult {
   followUp: "choose-card" | null;
   goldSound?: "gain" | "spend";
+  materialAward?: { material: MaterialId; amount: number };
 }
 
 export interface MysteryEffectContext {
@@ -169,8 +170,9 @@ function gainMysteryGeneratedGear(baseItemId: string, context: MysteryEffectCont
 function gainMysteryMaterial(material: MaterialId, amount: number, context: MysteryEffectContext) {
   const matInv = emptyInventory();
   matInv[material] = amount;
-  awardMaterialsDuringRun(context.draft, applyMaterialFindBonus(matInv, context.draft.runProfile.effects));
-  return { followUp: null };
+  const awarded = applyMaterialFindBonus(matInv, context.draft.runProfile.effects);
+  awardMaterialsDuringRun(context.draft, awarded);
+  return { followUp: null, materialAward: { material, amount: awarded[material] } };
 }
 
 function assertNever(value: never): never {

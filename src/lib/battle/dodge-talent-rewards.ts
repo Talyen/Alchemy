@@ -2,7 +2,7 @@ import { applyDrawResult, drawFromState } from "./draw";
 import { addPlayerStatusWithCombatText } from "./combat-text";
 import { addForgeToPlayer, applyCleanseHeals } from "./status-player";
 import { dealTalentTypedHit } from "./player-typed-hit";
-import type { BattleState, CombatTextEvent } from "./types";
+import { setPlayerStatus, type BattleState, type CombatTextEvent } from "./types";
 
 export function applyDodgeTalentStatuses(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   let nextState = state;
@@ -30,13 +30,11 @@ export function applyDodgeTalentStatuses(state: BattleState, combatTexts: Combat
   const amount = state.talentEffects.cleanseStacksOnDodge;
   if (amount <= 0) return nextState;
 
-  const playerStatuses = { ...nextState.playerStatuses };
   let removedStatus = false;
   for (const status of ["burn", "poison", "bleed"] as const) {
-    const previous = playerStatuses[status];
-    playerStatuses[status] = Math.max(0, previous - amount);
-    removedStatus ||= previous > 0 && playerStatuses[status] === 0;
+    const previous = nextState.playerStatuses[status];
+    nextState = setPlayerStatus(nextState, status, Math.max(0, previous - amount));
+    removedStatus ||= previous > 0 && nextState.playerStatuses[status] === 0;
   }
-  nextState = { ...nextState, playerStatuses };
   return removedStatus ? applyCleanseHeals(nextState, combatTexts) : nextState;
 }

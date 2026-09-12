@@ -43,15 +43,13 @@ export function addPlayerStatus(state: BattleState, status: PlayerStatusId, delt
     return state;
   }
   const effectiveDelta = playerStatusDelta(state, status, delta);
-  const playerStatuses = {
-    ...state.playerStatuses,
-    [status]: state.playerStatuses[status] + effectiveDelta,
-  };
+  const updated = setPlayerStatus(state, status, state.playerStatuses[status] + effectiveDelta);
+  const playerStatuses = updated.playerStatuses;
   if (status === "block" && effectiveDelta > 0 && state.trinketEffects.ironwoodBucklerThornsOnBlock > 0) {
     playerStatuses.thorns += state.trinketEffects.ironwoodBucklerThornsOnBlock;
   }
   return {
-    ...state,
+    ...updated,
     playerStatuses,
     uniqueGear:
       status === "forge" &&
@@ -64,7 +62,12 @@ export function addPlayerStatus(state: BattleState, status: PlayerStatusId, delt
 }
 
 export function setPlayerStatus(state: BattleState, status: PlayerStatusId, value: number): BattleState {
-  return { ...state, playerStatuses: { ...state.playerStatuses, [status]: value } };
+  return {
+    ...state,
+    playerStatuses: { ...state.playerStatuses, [status]: value },
+    pendingEnemyBleedLeechHealing:
+      status === "bleed" ? Math.min(state.pendingEnemyBleedLeechHealing, value) : state.pendingEnemyBleedLeechHealing,
+  };
 }
 
 export function addEnemyStatus(state: BattleState, status: EnemyStatusId, delta: number): BattleState {
@@ -164,6 +167,9 @@ export interface EnemyHitHealth {
   state: BattleState;
   previousHealth: number;
   enemyWasAlive: boolean;
+  resolvedDamage: number;
+  healthDamage: number;
+  killed: boolean;
 }
 
 export function damageEnemyHealth(state: BattleState, damage: number): EnemyHitHealth {
@@ -183,6 +189,9 @@ export function damageEnemyHealth(state: BattleState, damage: number): EnemyHitH
     },
     previousHealth,
     enemyWasAlive: previousHealth > 0,
+    resolvedDamage: damage,
+    healthDamage: Math.max(0, previousHealth - enemyHealth),
+    killed: previousHealth > 0 && enemyHealth <= 0,
   };
 }
 

@@ -1,5 +1,4 @@
 import { checkHealthThresholds } from "./status-player";
-import { scaledGearLeechHeal } from "./gear-effects";
 import { drawKeywordCard } from "./draw";
 import { hasEncounterBenefit } from "./types";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
@@ -13,6 +12,7 @@ import {
   type CombatTextEvent,
 } from "./types";
 import {
+  armorMitigatesElementalDamage,
   decayArmorAfterDamage,
   decayHalvedStatus,
   decayPoisonStacks,
@@ -22,7 +22,6 @@ import {
 } from "./status-helpers";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { POISON_GAIN_AMOUNT } from "../game-constants";
-import { addBloodDebtHealing, applyLeechHealing, computeLeechHeal, scalePlayerLeechHeal } from "./damage-rider-leech";
 import { applyPoisonTalentRiders } from "./damage-status-riders";
 import { mergeCombatText } from "./combat-text";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
@@ -53,22 +52,6 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   return dealEnemyDotTick(state, "burn", finalDamage, nextBurn, combatTexts);
 }
 
-function applyParasiticBloomLeech(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
-  if (damage <= 0) return state;
-  if (!rollPercent(state.trinketEffects.parasiticBloomLeechChance, getBattleRng(state))) return state;
-  return applyLeechHealing(
-    state,
-    scalePlayerLeechHeal(
-      state,
-      scaledGearLeechHeal(addBloodDebtHealing(state, computeLeechHeal(damage)), state.gearEffects),
-    ),
-    combatTexts,
-    {
-      afflicted: true,
-    },
-  );
-}
-
 function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.enemyStatuses.poison;
   if (damage <= 0) return state;
@@ -90,13 +73,8 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
       hasEncounterBenefit(state, "venomous") ? LABYRINTH_MODIFIER_CONFIG.half : 1,
     );
   }
-  return dealEnemyDotTick(state, "poison", finalDamage, nextPoison, combatTexts, (nextState) => {
-    const healthLost = Math.max(0, state.enemyHealth - nextState.enemyHealth);
-    const afterRiders = applyPoisonTalentRiders(
-      applyParasiticBloomLeech(nextState, healthLost, combatTexts),
-      healthLost,
-      combatTexts,
-    );
+  return dealEnemyDotTick(state, "poison", finalDamage, nextPoison, combatTexts, (nextState, hit) => {
+    const afterRiders = applyPoisonTalentRiders(nextState, hit.healthDamage, combatTexts);
     return tryPoisonStunProc(afterRiders, finalDamage, combatTexts);
   });
 }
@@ -176,9 +154,9 @@ function mitigatePlayerDot(state: BattleState, damage: number, status: "burn" | 
   const blockReduction = status === "burn" ? state.talentEffects.blockReduceBurnDamage : 0;
   const afterBlock =
     blockReduction > 0 && state.playerStatuses.block > 0 ? Math.max(0, scaled - blockReduction) : scaled;
-  const armorMitigates =
-    status === "burn" ? state.talentEffects.armorMitigatesBurn : state.talentEffects.armorMitigatesBleed;
-  return armorMitigates ? Math.max(0, afterBlock - state.playerStatuses.armor) : afterBlock;
+  return armorMitigatesElementalDamage(state, status)
+    ? Math.max(0, afterBlock - state.playerStatuses.armor)
+    : afterBlock;
 }
 
 function tickPlayerBurn(state: BattleState, combatTexts: CombatTextEvent[]) {

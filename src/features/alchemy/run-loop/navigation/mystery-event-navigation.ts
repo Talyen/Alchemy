@@ -74,13 +74,21 @@ export function createMysteryEventNavigation({
         )
           return [];
         setMysteryChosenChoice(draft, choice);
+        const resolvedEffects = [...choice.effects];
         const goldSounds: Array<"gain" | "spend"> = [];
         const rng = createDraftRunRandomSource(draft, "events");
-        for (const effect of choice.effects) {
+        for (const [index, effect] of choice.effects.entries()) {
           const result = applyMysteryEffect(effect, { draft, rng });
+          if (effect.kind === "gainMaterial" && result.materialAward) {
+            resolvedEffects[index] = {
+              ...effect,
+              amount: result.materialAward.amount,
+            };
+          }
           if (result.goldSound) goldSounds.push(result.goldSound);
-          if (result.followUp) return goldSounds;
+          if (result.followUp) break;
         }
+        setMysteryChosenChoice(draft, { ...choice, effects: resolvedEffects });
         return goldSounds;
       },
       {

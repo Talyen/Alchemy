@@ -10,6 +10,7 @@ import { type MysteryEffect } from "@/lib/mystery";
 import { playGoldGain, playGoldSpend, playUISound } from "@/lib/audio";
 import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
 import { emptyHydratedMysteryVisit, readActivityData } from "@/lib/active-run-session";
+import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 function renderMysteryNav(navigateTo = vi.fn((_screen: Screen, onCommit?: () => void) => onCommit?.())) {
   const hook = renderHook(() => createMysteryEventNavigation({ navigateTo }));
   return { ...hook, navigateTo };
@@ -22,6 +23,24 @@ beforeEach(() => {
 });
 
 describe("createMysteryEventNavigation", () => {
+  it("records the Herbs actually awarded, including the Homestead find bonus", () => {
+    setRunProgress({ effects: { ...defaultHomesteadEffects, herbFindBonus: 0.5 } });
+    const before = readRunProfile().materialInventory.herbs;
+    const { result } = renderMysteryNav();
+    const choice = {
+      label: "Gather Herbs",
+      effects: [{ kind: "gainMaterial" as const, material: "herbs" as const, amount: 3 }],
+    };
+
+    act(() => result.current.handleMysteryChoice(choice));
+
+    expect(readRunProfile().materialInventory.herbs - before).toBe(4);
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryChosenChoice?.effects).toEqual([
+      { kind: "gainMaterial", material: "herbs", amount: 4 },
+    ]);
+    expect(choice.effects[0]?.amount).toBe(3);
+  });
+
   it("beginMysteryEvent stores an event and navigates", () => {
     const { result, navigateTo } = renderMysteryNav();
 

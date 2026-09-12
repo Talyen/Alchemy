@@ -1,6 +1,12 @@
 import { hasEncounterBenefit } from "./types";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
-import { damageEnemyHealth, setEnemyStatus, type BattleState, type CombatTextEvent } from "./types";
+import {
+  damageEnemyHealth,
+  setEnemyStatus,
+  type BattleState,
+  type CombatTextEvent,
+  type EnemyHitHealth,
+} from "./types";
 import {
   decayHalvedStatus,
   decayPoisonStacks,
@@ -25,7 +31,7 @@ export function applyEnemyDotDamage(
   state: BattleState,
   pulses: readonly EnemyDotPulse[],
   combatTexts: CombatTextEvent[],
-  applyRiders?: (state: BattleState) => BattleState,
+  applyRiders?: (state: BattleState, hit: EnemyHitHealth) => BattleState,
 ): BattleState {
   const finalDamage = pulses.reduce((sum, pulse) => sum + pulse.finalDamage, 0);
   const hit = damageEnemyHealth(state, finalDamage);
@@ -36,7 +42,7 @@ export function applyEnemyDotDamage(
   for (const pulse of pulses) {
     nextState = setEnemyStatus(nextState, pulse.status, pulse.nextStacks);
   }
-  if (applyRiders) nextState = applyRiders(nextState);
+  if (applyRiders) nextState = applyRiders(nextState, hit);
   nextState = decayArmorAfterDamage(nextState, finalDamage, "enemy", combatTexts);
   return processEncounterTraitHealthThreshold(previousHealth, nextState, combatTexts);
 }
@@ -47,7 +53,7 @@ export function dealEnemyDotTick(
   finalDamage: number,
   nextStacks: number,
   combatTexts: CombatTextEvent[],
-  applyRiders?: (state: BattleState) => BattleState,
+  applyRiders?: (state: BattleState, hit: EnemyHitHealth) => BattleState,
 ): BattleState {
   return applyEnemyDotDamage(state, [{ status, finalDamage, nextStacks }], combatTexts, applyRiders);
 }

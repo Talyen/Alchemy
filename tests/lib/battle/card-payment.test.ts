@@ -39,15 +39,19 @@ describe("card payment", () => {
   it("preserves overlapping talent, armed, gear, and encounter discount priorities", () => {
     const card = makeTestCard({
       cost: 3,
-      tags: ["archery", "holy"],
-      effects: [{ kind: "damage", damageType: "holy", amount: 1 }],
+      tags: ["archery", "holy", "burn", "freeze"],
+      effects: [
+        { kind: "damage", damageType: "holy", amount: 1 },
+        { kind: "damage", damageType: "physical", amount: 1 },
+      ],
     });
     const state = patchBattleState({
       mana: 0,
       hand: [card],
       talentEffects: { firstHolyCardFree: true, firstArcheryCardFree: true },
       flags: { nextArcheryCardFree: true },
-      gearEffects: { firstElementalCardsFree: 1 },
+      gearEffects: { firstElementalCardsFree: 1, blockReadiesFreePhysical: 1 },
+      uniqueGear: { knightsAnswerReady: true },
       encounterBenefits: ["quickdraw"],
       rng: () => 0.99,
     });
@@ -55,6 +59,12 @@ describe("card payment", () => {
     expect(payment.effectiveCost).toBe(0);
     expect(payment.consumedFlags).toEqual(new Set(["firstHolyCardFreeUsed", "encounterArcheryUsed"]));
     expect(payment.disarmedFlags.size).toBe(0);
+    expect(payment.uniqueDiscounts).toEqual({
+      knightsAnswerReady: false,
+      freeHolyUsed: true,
+      freeBurnUsed: true,
+      freeFreezeUsed: true,
+    });
     expect(canPlayCard(state, card, 0)).toBe(true);
     expect(canPlayCard(state, card, 0)).toBe(true);
     expect(state.flags.firstHolyCardFreeUsed).toBe(false);
@@ -65,7 +75,7 @@ describe("card payment", () => {
       nextArcheryCardFree: true,
       encounterArcheryUsed: true,
     });
-    expect(result.uniqueGear.freeHolyUsed).toBe(true);
+    expect(result.uniqueGear).toMatchObject(payment.uniqueDiscounts);
     expect(result.mana).toBe(0);
   });
 

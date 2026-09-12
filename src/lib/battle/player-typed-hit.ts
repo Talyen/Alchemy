@@ -1,6 +1,6 @@
 import type { BattleCard, DamageType, TalentEffectManifest } from "@/lib/game-data";
 import { getBattleRng, rollPercent } from "@/lib/rng";
-import { applyNatureManaRefund } from "./bonus-effects";
+import { applyLuckyCloverGold, applyNatureManaRefund } from "./bonus-effects";
 import { computeCardDamageToEnemy, computeTalentDamageToEnemy } from "./damage-calc";
 import {
   applyDamageBlock,
@@ -35,7 +35,10 @@ export function dealPlayerTypedHit(
   const hit = resolveTypedEnemyHit(afterMods, effect, modifiedDamage, combatTexts);
   const preHitHealth = hit.previousHealth;
   let nextState = hit.state;
-  if (damageType === "nature") nextState = applyNatureManaRefund(nextState, modifiedDamage, combatTexts);
+  if (damageType === "nature") {
+    nextState = applyLuckyCloverGold(nextState, modifiedDamage, combatTexts);
+    nextState = applyNatureManaRefund(nextState, modifiedDamage, combatTexts);
+  }
   return damageType === "holy" ? applyBrassCenser(nextState, modifiedDamage, combatTexts, preHitHealth) : nextState;
 }
 
@@ -75,7 +78,10 @@ export function dealTalentTypedHit(
     nextState = applyDamageBlock(nextState, resolved, combatTexts);
     nextState = applyHolyTithe(nextState, resolved, combatTexts);
   }
-  if (damageType === "nature") nextState = applyNatureManaRefund(nextState, resolved, combatTexts);
+  if (damageType === "nature") {
+    nextState = applyLuckyCloverGold(nextState, resolved, combatTexts);
+    nextState = applyNatureManaRefund(nextState, resolved, combatTexts);
+  }
   if (damageType === "burn" && nextState.talentEffects.forgeOnBurnDealt > 0) {
     nextState = addForgeToPlayer(nextState, nextState.talentEffects.forgeOnBurnDealt, combatTexts);
   }

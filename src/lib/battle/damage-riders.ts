@@ -20,7 +20,7 @@ import {
   tryTalentTypedHit,
 } from "./player-typed-hit";
 import { decayArmorAfterDamage, getEnemyDamageMultiplier, rollTalentChance } from "./status-helpers";
-import { addForgeToPlayer } from "./status-player";
+import { addForgeToPlayer, spendPlayerForgeForAttack } from "./status-player";
 import {
   addEnemyStatus,
   damageEnemyHealth,
@@ -157,21 +157,7 @@ function consumeForgeAfterDamage(
 
   if (!forgeWasApplied || damage <= 0 || state.playerStatuses.forge <= 0) return state;
 
-  return {
-    ...state,
-    playerStatuses: {
-      ...state.playerStatuses,
-      forge: Math.max(0, state.playerStatuses.forge - BATTLE_CONFIG.FORGE_DECAY_AMOUNT),
-    },
-    uniqueGear:
-      state.gearEffects.recoverSpentForge > 0
-        ? {
-            ...state.uniqueGear,
-            spentForge:
-              state.uniqueGear.spentForge + Math.min(state.playerStatuses.forge, BATTLE_CONFIG.FORGE_DECAY_AMOUNT),
-          }
-        : state.uniqueGear,
-  };
+  return spendPlayerForgeForAttack(state, BATTLE_CONFIG.FORGE_DECAY_AMOUNT);
 }
 
 function applyArcheryDetonate(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
@@ -229,7 +215,7 @@ export function applyDamageRiders(
   if (prePurgeState.enemyHealth <= 0) return prePurgeState;
   const hit = damageEnemyHealth(prePurgeState, modifiedDamage);
   const previousHealth = hit.previousHealth;
-  onDamageDealt?.(Math.max(0, previousHealth - hit.state.enemyHealth));
+  onDamageDealt?.(hit.healthDamage);
   let nextState: BattleState = hit.state;
 
   nextState = decayArmorAfterDamage(nextState, modifiedDamage, "enemy");

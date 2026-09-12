@@ -115,6 +115,7 @@ export function resolveCompanionTurnStart(
       companionCard,
       combatTexts,
       damageEffects.length > 0,
+      { cardPlayed: false },
     );
 
     afterEffects = { ...afterEffects, flags: { ...afterEffects.flags, companionNextAttackBonus: attackBonuses.flat } };

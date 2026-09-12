@@ -27,9 +27,7 @@ function applyStunTriggerBonuses(state: BattleState, combatTexts?: CombatTextEve
 }
 
 function applyStunGearDamage(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
-  return applyGearCcPhysicalDamage(state, state.gearEffects.damageOnStunPhysical, combatTexts ?? [], {
-    grantLuckyClover: true,
-  });
+  return applyGearCcPhysicalDamage(state, state.gearEffects.damageOnStunPhysical, combatTexts ?? []);
 }
 
 function applyStunTrinketEffects(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {

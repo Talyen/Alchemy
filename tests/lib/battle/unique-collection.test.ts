@@ -106,6 +106,22 @@ describe("Unique damage and resource rules", () => {
     expect(advanceToPlayerTurn(restored).playerStatuses.forge).toBe(5);
   });
 
+  it("Patient Edge recovery triggers crossed Forge thresholds without multiplying the recovered amount", () => {
+    const initial = battle({
+      gearEffects: { recoverSpentForge: 1 },
+      playerStatuses: { forge: 5 },
+      enemyMitigation: { armor: 4 },
+      uniqueGear: { spentForge: 1 },
+      talentEffects: { flatForgeGained: 3, forgeStripArmorThreshold: 6, forgeBlockThreshold: 6, forgeBlockAmount: 10 },
+    });
+    const restored = advanceToPlayerTurn(initial);
+    expect(restored.playerStatuses.forge).toBe(6);
+    expect(restored.enemyMitigation.armor).toBe(0);
+    expect(restored.playerStatuses.block).toBe(10);
+    expect(restored.uniqueGear.spentForge).toBe(0);
+    expect(advanceToPlayerTurn(restored).playerStatuses.block).toBe(5);
+  });
+
   it("Lingering Bell retains a quarter of buildup without immediately Stunning again", () => {
     const result = resolveStunTrigger(battle({ gearEffects: { retainStunBuildup: 1 }, enemyStatuses: { stun: 600 } }));
     expect(result.enemyStatuses.stun).toBe(150);

@@ -40,7 +40,7 @@ export function dealDamageToEnemy(
   const packet = convertToPoison ? { ...effect, damageType: "poison" as const } : effect;
   let damageState = convertToPoison ? { ...state, flags: { ...state.flags, nextHitPoison: false } } : state;
 
-  if (packet.damageType === "physical" && damageState.flags.nextHitPhysicalBonus > 0) {
+  if (damageState.flags.nextHitPhysicalBonus > 0) {
     bonuses.physical += damageState.flags.nextHitPhysicalBonus;
     damageState = {
       ...damageState,

@@ -1,10 +1,12 @@
 import { recordEnemyAbilityActivation } from "./battle-metrics";
+import { isNatureCard } from "./card-classification";
 import type { BattleCard } from "@/lib/game-data";
 import { applyEnemyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { applyEnemyLeechHealing, processEnemyDamageEffect, resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { addEnemyMitigationWithCombatText } from "./encounter-trait-health-threshold";
 import { isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-traits";
 import { getBattleRng, rollPercent } from "@/lib/rng";
+import { removePlayerArmor } from "./status-helpers";
 import { hasEnemyTrait, setEnemyStatus, setFlag, type BattleState, type CombatTextEvent } from "./types";
 
 function addEnemyStatusText(
@@ -76,13 +78,7 @@ export function processEncounterTraitActionDamage(state: BattleState, combatText
   if (hasEnemyTrait(nextState, "caustic")) {
     nextState = recordEnemyAbilityActivation(nextState, "caustic");
     nextState = dealTraitDamage(nextState, "poison", 1, combatTexts);
-    nextState = {
-      ...nextState,
-      playerStatuses: {
-        ...nextState.playerStatuses,
-        armor: Math.max(0, nextState.playerStatuses.armor - scaleByRoomMultiplier(nextState, 1)),
-      },
-    };
+    nextState = removePlayerArmor(nextState, scaleByRoomMultiplier(nextState, 1), combatTexts);
   }
   if (hasEnemyTrait(nextState, "flesheater")) {
     nextState = recordEnemyAbilityActivation(nextState, "flesheater");
@@ -119,6 +115,7 @@ export function processEncounterTraitCardAction(
   card: BattleCard,
   combatTexts: CombatTextEvent[],
   attackAttempted: boolean,
+  options: { cardPlayed?: boolean } = {},
 ): BattleState {
   let nextState = state;
   const scale = (amount: number) => scaleByRoomMultiplier(nextState, amount);
@@ -126,10 +123,7 @@ export function processEncounterTraitCardAction(
     nextState = recordEnemyAbilityActivation(nextState, "insatiable");
     nextState = { ...nextState, enemyPhysicalDamageBonus: nextState.enemyPhysicalDamageBonus + scale(1) };
   }
-  if (
-    card.effects.some((effect) => effect.kind === "damage" && effect.damageType === "nature") &&
-    hasEnemyTrait(nextState, "rooted")
-  ) {
+  if (options.cardPlayed !== false && isNatureCard(card) && hasEnemyTrait(nextState, "rooted")) {
     nextState = recordEnemyAbilityActivation(nextState, "rooted");
     nextState = addEnemyStatusText(nextState, "block", scale(1), combatTexts);
   }

@@ -7,7 +7,7 @@ import {
   replaceNumberAt,
 } from "@/lib/corruption";
 import { getCorruptionMutationGroups } from "@/lib/corruption/mutations";
-import { applyNumericCorruption } from "@/lib/corruption/numeric";
+import { applyNumericCorruption, updateCardNumericValue } from "@/lib/corruption/numeric";
 import { cardById, cardLibrary } from "@/lib/game-data";
 import type { CORRUPTION_OUTCOME_WEIGHTS } from "@/lib/game-constants";
 import { makeTestCard } from "../../../fixtures/cards";
@@ -24,6 +24,24 @@ function outcome(id: string, kind: keyof typeof CORRUPTION_OUTCOME_WEIGHTS) {
 }
 
 describe("card corruption outcomes", () => {
+  it("can add Block to an Armor card without adding duplicate Block to a Block card", () => {
+    const secondaryEffects = (id: string) =>
+      getCorruptionMutationGroups(cardById[id]!)
+        .find((group) => group.kind === "secondary")!
+        .mutations.map(({ card }) => card.effects.at(-1));
+    expect(secondaryEffects("golden-plate")).toContainEqual({ kind: "player-status", status: "block", amount: 2 });
+    expect(secondaryEffects("block")).not.toContainEqual({ kind: "player-status", status: "block", amount: 2 });
+  });
+
+  it("marks a damage conversion even when its amount stays the same", () => {
+    const group = getCorruptionMutationGroups(cardById["lightning-bolt"]!).find((entry) => entry.kind === "convert")!;
+    const next = group.mutations.find(
+      ({ card }) => card.effects[0]?.kind === "damage" && card.effects[0].damageType === "holy",
+    )!.card;
+    expect(next.descriptionLines).toEqual(["Deal 4 Holy damage"]);
+    expect(next.corruptedValuePositions).toContainEqual({ lineIndex: 0, matchIndex: 5 });
+  });
+
   it("strengthens ordinary damage proportionally and scarce resources by one", () => {
     expect(outcome("slash", "strengthen").descriptionLines).toEqual(["Deal 9 Physical damage"]);
     expect(outcome("slash", "strengthen").effects).toEqual([{ kind: "damage", damageType: "physical", amount: 9 }]);
@@ -304,6 +322,22 @@ describe("labyrinth corruption room modifiers", () => {
 });
 
 describe("numeric text alignment", () => {
+  it("upgrades a corrupted Companion's added attack rather than its summon description", () => {
+    const wolf = cardLibrary.find((card) =>
+      card.effects.some((effect) => effect.kind === "summon-companion" && effect.companionId === "wolf"),
+    )!;
+    const card = getCorruptionMutationGroups(wolf)
+      .find((group) => group.kind === "secondary")!
+      .mutations.find(({ card: candidate }) =>
+        candidate.effects.some((effect) => effect.kind === "damage" && effect.damageType === "poison"),
+      )!.card;
+    const target = getEditableCorruptionTargets(card)[0]!;
+    const upgraded = updateCardNumericValue(card, target, target.value + 1);
+    expect(upgraded.descriptionLines[0]).toBe(wolf.descriptionLines[0]);
+    expect(upgraded.descriptionLines).toContain("Deal 2 Poison damage");
+    expect(upgraded.effects.at(-1)).toEqual({ kind: "damage", damageType: "poison", amount: 2 });
+  });
+
   it("matches multiple values and ignores unrelated numbers", () => {
     const card = makeTestCard({
       descriptionLines: ["Deal 3 Physical and 5 Bleed damage to 2 enemies"],

@@ -207,7 +207,7 @@ describe("Sun-Struck Shield reflection", () => {
       { kind: "damage", damageType: "physical", amount: 10 },
       [],
       {
-        incomingDamage: 10,
+        preparedDamage: { attemptedDamage: 10, incomingDamage: 10 },
         triggerBlockRetaliation: true,
       },
     );

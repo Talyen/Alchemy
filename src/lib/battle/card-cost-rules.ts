@@ -116,7 +116,10 @@ function computeStandardCost(
 export function computeEffectiveCost(state: CardCostState, card: BattleCard) {
   const fleeting = card.consume && hasEncounterBenefit(state, "fleeting");
   const quickdraw =
-    cardHasKeyword(card, "archery") && hasEncounterBenefit(state, "quickdraw") && !state.flags.encounterArcheryUsed;
+    card.cost > 0 &&
+    cardHasKeyword(card, "archery") &&
+    hasEncounterBenefit(state, "quickdraw") &&
+    !state.flags.encounterArcheryUsed;
   const encounterDiscount =
     (fleeting ? LABYRINTH_MODIFIER_CONFIG.costReduction : 0) +
     (quickdraw ? LABYRINTH_MODIFIER_CONFIG.costReduction : 0);
@@ -140,7 +143,22 @@ export function computeEffectiveCost(state: CardCostState, card: BattleCard) {
       : Math.max(0, card.cost - encounterDiscount - (returned ? UNIQUE_GEAR_COMBAT.returnedCardDiscount : 0));
   const result = computeStandardCost(state, card, discountedCost);
   if (quickdraw) result.consumedFlags.add("encounterArcheryUsed");
-  return result;
+  const uniqueDiscounts: Partial<
+    Pick<
+      BattleSnapshot["uniqueGear"],
+      "knightsAnswerReady" | "freeBurnUsed" | "freeFreezeUsed" | "freeHolyUsed" | "returningFlightUid"
+    >
+  > = {};
+  if (card.cost > 0) {
+    if (physicalFree) uniqueDiscounts.knightsAnswerReady = false;
+    if (gear.firstElementalCardsFree > 0) {
+      if (cardHasKeyword(card, "burn")) uniqueDiscounts.freeBurnUsed = true;
+      if (cardHasKeyword(card, "freeze")) uniqueDiscounts.freeFreezeUsed = true;
+      if (cardHasKeyword(card, "holy")) uniqueDiscounts.freeHolyUsed = true;
+    }
+  }
+  if (card.uid === unique.returningFlightUid) uniqueDiscounts.returningFlightUid = null;
+  return { ...result, uniqueDiscounts };
 }
 
 export function computeCardPayment(state: BattleSnapshot, card: BattleCard) {

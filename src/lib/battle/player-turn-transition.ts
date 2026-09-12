@@ -4,10 +4,10 @@ import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import type { BattleCard } from "@/lib/game-data";
 import { processArcheryEchoes } from "./unique-card-effects";
 import { CARDS_PER_TURN, MAX_HAND_SIZE } from "../game-constants";
-import { addPlayerStatusWithCombatText, applyHealingWithCombatText, gainManaWithCombatText } from "./combat-text";
+import { applyHealingWithCombatText, gainManaWithCombatText } from "./combat-text";
 import { halveRounded } from "./amount-helpers";
 import { dealPlayerTypedHit } from "./player-typed-hit";
-import { applyCleanseHeals } from "./status-player";
+import { applyCleanseHeals, restoreSpentPlayerForge } from "./status-player";
 import { drawCards, applyDrawResult, drawFromState } from "./draw";
 import { applyCardEffects } from "./effect-handlers";
 import { finalizeCcSkipTurnDecrement, isPlayerCcControlled } from "./status-cc";
@@ -109,7 +109,6 @@ function resetPlayerTurnState(
       freeHolyUsed: false,
       lastArcheryUid: null,
       returningFlightUid: null,
-      spentForge: 0,
     },
     flags: {
       ...state.flags,
@@ -220,12 +219,10 @@ export function advanceToPlayerTurn(
     };
   }
 
-  if (state.gearEffects.recoverSpentForge > 0 && state.uniqueGear.spentForge > 0) {
-    nextState = addPlayerStatusWithCombatText(nextState, "forge", state.uniqueGear.spentForge, combatTexts, {
-      skipFightPacing: true,
-    });
-  }
-  const reset = performDrawAndResetPhase(nextState, deathsDoorNeedsRecoveryTurn, options);
+  nextState = performDrawAndResetPhase(nextState, deathsDoorNeedsRecoveryTurn, options);
+  nextState = resolvePendingBattleReactions(restoreSpentPlayerForge(nextState, combatTexts), combatTexts);
+  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
+  const reset = nextState;
   const wished =
     state.flags.pendingWishMana > 0
       ? gainManaWithCombatText(reset, state.flags.pendingWishMana, combatTexts, {

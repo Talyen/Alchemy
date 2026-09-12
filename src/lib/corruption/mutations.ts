@@ -118,7 +118,18 @@ function conversionMutations(card: BattleCard, target: CorruptionTarget | undefi
       const next = applyNumericCorruption(card, target, amount - target.value);
       const descriptionLines = [...next.descriptionLines];
       descriptionLines[target.lineIndex] = `Deal ${amount} ${capitalizeWord(damageType)} damage`;
-      return { ...next, corrupted: true, descriptionLines, effects: [{ ...effect, damageType, amount }] };
+      return {
+        ...next,
+        corrupted: true,
+        descriptionLines,
+        effects: [{ ...effect, damageType, amount }],
+        corruptedValuePositions: [
+          ...(next.corruptedValuePositions ?? []).filter(
+            (position) => position.lineIndex !== target.lineIndex || position.matchIndex !== target.matchIndex,
+          ),
+          { lineIndex: target.lineIndex, matchIndex: target.matchIndex },
+        ],
+      };
     });
 }
 
@@ -217,7 +228,10 @@ export function getCorruptionMutationGroups(
             !card.effects.some(
               (existing) =>
                 existing.kind === effect.kind &&
-                (effect.kind !== "damage" || existing.kind !== "damage" || existing.damageType === effect.damageType),
+                (effect.kind !== "damage" || existing.kind !== "damage" || existing.damageType === effect.damageType) &&
+                (effect.kind !== "player-status" ||
+                  existing.kind !== "player-status" ||
+                  existing.status === effect.status),
             ),
         )
         .map(({ effect, line }) => addLine(card, line, effect)),

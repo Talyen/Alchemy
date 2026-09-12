@@ -31,8 +31,8 @@ export const applyWishEffectHandler = defineHandler("wish", (state, card, effect
   return applyWishEffect(state, card, adjustedWish, combatTexts);
 });
 
-export const applyDrawCardsEffect = defineHandler("draw-cards", (state, _card, effect) => {
-  return applyDrawResult(state, drawFromState(state, effect.amount));
+export const applyDrawCardsEffect = defineHandler("draw-cards", (state, _card, effect, potionMult) => {
+  return applyDrawResult(state, drawFromState(state, applyPotionMultiplier(effect.amount, potionMult)));
 });
 
 const FLAG_EFFECTS = {

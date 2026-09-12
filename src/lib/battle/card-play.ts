@@ -38,15 +38,20 @@ import { isPlayerCcControlled } from "./status-cc";
 import { MAX_HAND_SIZE, WISH_TRINKET_FORK_PERCENT } from "../game-constants";
 
 function consumeCardDiscounts(state: BattleState, payment: ReturnType<typeof computeCardPayment>): BattleState {
-  const { consumedFlags, disarmedFlags, spentArmedDiscount } = payment;
-  if (consumedFlags.size === 0 && disarmedFlags.size === 0 && !spentArmedDiscount) {
+  const { consumedFlags, disarmedFlags, spentArmedDiscount, uniqueDiscounts } = payment;
+  if (
+    consumedFlags.size === 0 &&
+    disarmedFlags.size === 0 &&
+    !spentArmedDiscount &&
+    Object.keys(uniqueDiscounts).length === 0
+  ) {
     return state;
   }
   const nextFlags: CombatFlags = { ...state.flags };
   for (const flag of consumedFlags) nextFlags[flag] = true;
   for (const flag of disarmedFlags) nextFlags[flag] = false;
   if (spentArmedDiscount) nextFlags.nextCardCostReduction = 0;
-  return { ...state, flags: nextFlags };
+  return { ...state, flags: nextFlags, uniqueGear: { ...state.uniqueGear, ...uniqueDiscounts } };
 }
 
 function getPlayableCard(state: BattleSnapshot, cardId: string, index: number): BattleCard | null {
@@ -368,6 +373,7 @@ export function playBattleCardResolved(
       { ...card, consume: false },
       combatTexts,
       played.repeatAttackAttempted,
+      { cardPlayed: false },
     );
 
   const playerAlive = !isPlayerDefeated(nextState);
