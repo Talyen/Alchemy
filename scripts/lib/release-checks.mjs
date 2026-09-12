@@ -25,10 +25,11 @@ export function verifyPackagedRenderer(archivePath, musicDirectory = resolve("pu
   const music = readdirSync(musicDirectory).filter((name) => name.endsWith(".mp3"));
   if (music.length === 0) throw new Error("No authored music found for package verification.");
   for (const name of music) {
-    const entry = `dist/Music/${name}`;
-    if (!entries.includes(entry)) throw new Error(`Packaged music is missing: ${entry}`);
-    if (!asar.extractFile(archivePath, entry).equals(readFileSync(join(musicDirectory, name)))) {
-      throw new Error(`Packaged music differs from authored output: ${entry}`);
+    const archiveEntry = join("dist", "Music", name);
+    const normalizedEntry = archiveEntry.replaceAll("\\", "/");
+    if (!entries.includes(normalizedEntry)) throw new Error(`Packaged music is missing: ${normalizedEntry}`);
+    if (!asar.extractFile(archivePath, archiveEntry).equals(readFileSync(join(musicDirectory, name)))) {
+      throw new Error(`Packaged music differs from authored output: ${normalizedEntry}`);
     }
   }
 }
