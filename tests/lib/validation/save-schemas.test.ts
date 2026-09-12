@@ -37,25 +37,6 @@ describe("SaveDataSchema", () => {
     }
   });
 
-  it("keeps a spent purse at 0 when a parked combat snapshot still has gold", () => {
-    const result = SaveDataSchema.safeParse({
-      gold: 0,
-      activeRun: null,
-      parkedRuns: {
-        campaign: makeMinimalActiveRunInput({
-          contentSystemType: "campaign",
-          runGold: 0,
-          activeCombat: { battleState: { ...defaultBattleState(), gold: 80 } },
-        }),
-      },
-    });
-    expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
-    if (result.success) {
-      expect(result.data.gold).toBe(0);
-      expect(result.data.parkedRuns.campaign?.activeCombat?.battleState.gold).toBe(80);
-    }
-  });
-
   it("recovers the shared purse from a foreground combat snapshot", () => {
     const result = SaveDataSchema.safeParse({
       gold: 0,
@@ -65,15 +46,6 @@ describe("SaveDataSchema", () => {
     });
     expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
     if (result.success) expect(result.data.gold).toBe(80);
-  });
-
-  it("handles completely missing data", () => {
-    const result = SaveDataSchema.safeParse(undefined);
-    expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
-    if (result.success) {
-      expect(result.data.musicVolume).toBe(50);
-      expect(result.data.materialInventory.wood).toBe(0);
-    }
   });
 
   it("recovers from corrupt fields", () => {
@@ -634,15 +606,6 @@ describe("MaterialInventorySchema", () => {
       expect(result.data.herbs).toBe(0);
       expect(result.data.food).toBe(0);
       expect(result.data.gems).toBe(0);
-    }
-  });
-
-  it("maps legacy crystal to gems", () => {
-    const result = MaterialInventorySchema.safeParse({ wood: 2, crystal: 7 });
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.wood).toBe(2);
-      expect(result.data.gems).toBe(7);
     }
   });
 

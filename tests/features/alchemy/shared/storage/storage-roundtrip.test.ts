@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 import { createSeededRng } from "@/lib/utils";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { evaluateSaveCandidates } from "@/features/alchemy/shared/storage/save-candidates";
+import { CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import type { SaveData } from "@/features/alchemy/shared/storage/types";
 
 function parseSave(value: unknown): SaveData {
-  const result = evaluateSaveCandidates([JSON.stringify(value)]);
+  const result = evaluateSaveCandidates([
+    JSON.stringify({ saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION, ...(value as object) }),
+  ]);
   expect(result.status.kind).toBe("ok");
   return result.data;
 }

@@ -78,13 +78,7 @@ describe("useAlchemyBootstrap", () => {
 
     expect(calls).toEqual(["stores", "run"]);
     expect(hook.current).toBe(result);
-    expect(restoreRun).toHaveBeenCalledWith(
-      null,
-      { armor: 12 },
-      defaultSaveData.unlockedTalents,
-      defaultSaveData.parkedRuns,
-      defaultSaveData.runRecency,
-    );
+    expect(restoreRun).toHaveBeenCalledWith(null, { armor: 12 }, defaultSaveData.unlockedTalents);
   });
 
   it("does not replace an aggregate that was initialized before bootstrap completed", async () => {

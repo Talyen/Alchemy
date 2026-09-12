@@ -155,6 +155,8 @@ ALCHEMY_BALANCE_PACING=off npm run balance:sim
 npm run test:balance
 ```
 
+`play-policy.ts` names the skill-floor scoring weights; changing them changes simulation policy, not game balance. `findings.ts` collects candidates, while `findings-selection.ts` owns deduplication, ranking, matchup clustering, and bucket selection. `report-methodology.ts` supplies shared HTML/JSON methodology without importing the simulation runner.
+
 The simulator covers deterministic early/mid/late progression scenarios using
 tree-order talent presets and seeded loadouts. Presets include economic talents and exclude placeholders; only the individual-talent sweep filters out meta-only talents. Exact presets, finding bands, and
 report grouping are owned by `src/lib/balance/` and the generated report; use

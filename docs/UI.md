@@ -456,3 +456,15 @@ Crafting consumes one currency per activation. Escape cancels targeting; invalid
 
 Use the changed-path route and [test value policy](../CONTRIBUTING.md#test-value-and-coverage-strategy) in CONTRIBUTING. Cover shared interaction behavior and representative browser risks; do not multiply UI tests for every mechanic or cosmetic variant. Interaction
 or browser-journey work also follows [tests/e2e/README.md](../tests/e2e/README.md).
+
+## Plasma availability
+
+`KeywordPlasmaBackground` uses the single WebGL renderer entry point in
+`keyword-plasma.ts`. A failed context/shader setup or lost context shows a static
+CSS gradient with the same interaction colors, focal offset, blending, and
+intensity. Hide that gradient while WebGL is available to avoid doubling the
+glow. Context restoration rebuilds resources once; do not poll or keep a second
+animated Canvas backend. Zero intensity hides both layers, and motion-disabled
+preferences keep their existing unanimated appearance without color-animation
+frames. Availability belongs to the renderer lifecycle; failures are logged,
+not shown in a player-facing dialog.

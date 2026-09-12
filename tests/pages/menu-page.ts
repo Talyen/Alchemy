@@ -35,7 +35,8 @@ export class MenuPage {
   }
 
   async expectMainMenu(timeout = 5000) {
-    await expect(this.playBtn).toBeVisible({ timeout });
+    await expect(this.page.getByRole("img", { name: "Alchemy logo", exact: true })).toBeVisible({ timeout });
+    await expect(this.page.getByRole("button", { name: /^(Play|Continue)$/ })).toBeVisible({ timeout });
   }
 
   async expectMainMenuAfterColdStart(timeout = 15_000) {

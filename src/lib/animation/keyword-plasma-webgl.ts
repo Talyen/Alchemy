@@ -75,10 +75,18 @@ function compileShader(gl: WebGLRenderingContext, type: number, source: string):
 function createProgram(gl: WebGLRenderingContext): WebGLProgram | null {
   const vertex = compileShader(gl, gl.VERTEX_SHADER, VERTEX_SHADER);
   const fragment = compileShader(gl, gl.FRAGMENT_SHADER, FRAGMENT_SHADER);
-  if (!vertex || !fragment) return null;
+  if (!vertex || !fragment) {
+    if (vertex) gl.deleteShader(vertex);
+    if (fragment) gl.deleteShader(fragment);
+    return null;
+  }
 
   const program = gl.createProgram();
-  if (!program) return null;
+  if (!program) {
+    gl.deleteShader(vertex);
+    gl.deleteShader(fragment);
+    return null;
+  }
   gl.attachShader(program, vertex);
   gl.attachShader(program, fragment);
   gl.linkProgram(program);
@@ -100,13 +108,13 @@ function tryGetWebGLContext(canvas: HTMLCanvasElement): WebGLRenderingContext | 
   }
 }
 
-export function startWebGLKeywordPlasma(options: PlasmaRendererOptions): () => void {
+export function startWebGLKeywordPlasma(options: PlasmaRendererOptions): (() => void) | null {
   const { canvas, colorsRef, focalYOffset, active, onWakeReady } = options;
   const gl = tryGetWebGLContext(canvas);
-  if (!gl) return () => {};
+  if (!gl) return null;
 
   const program = createProgram(gl);
-  if (!program) return () => {};
+  if (!program) return null;
 
   const positionLoc = gl.getAttribLocation(program, "aPosition");
   const sizeLoc = gl.getUniformLocation(program, "uSize");
@@ -116,6 +124,11 @@ export function startWebGLKeywordPlasma(options: PlasmaRendererOptions): () => v
   const focalLoc = gl.getUniformLocation(program, "uFocalCenter");
 
   const buffer = gl.createBuffer();
+  if (!buffer || positionLoc < 0 || !sizeLoc || !timeLoc || !primaryLoc || !secondaryLoc || !focalLoc) {
+    if (buffer) gl.deleteBuffer(buffer);
+    gl.deleteProgram(program);
+    return null;
+  }
   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
 

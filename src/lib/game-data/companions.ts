@@ -1,5 +1,7 @@
 import {
   bearCompanion,
+  foxCompanion,
+  frostWhelpCompanion,
   goldenRetrieverCompanion,
   libraryOwlCompanion,
   lizardScoutCompanion,
@@ -11,8 +13,6 @@ import {
   shieldScarabCompanion,
   willOWispCompanion,
   wolfCompanion,
-  frostWhelpCompanion,
-  foxCompanion,
 } from "./assets";
 import type { BattleCardEffect, CompanionDefinition, CompanionId } from "./types";
 
@@ -117,7 +117,7 @@ export const defaultCompanionBondLevels: Record<CompanionId, number> = Object.fr
   Object.keys(companionLibrary).map((id) => [id, 0]),
 ) as Record<CompanionId, number>;
 
-export function getCompanionBondEffects(companion: CompanionDefinition, bondLevel = 0): BattleCardEffect[] {
+function getCompanionBondEffects(companion: CompanionDefinition, bondLevel = 0): BattleCardEffect[] {
   if (bondLevel === 0) return companion.turnStartEffects;
   if (companion.id === "mana-moth" || companion.id === "library-owl") {
     return [

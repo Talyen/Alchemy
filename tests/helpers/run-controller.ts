@@ -5,6 +5,7 @@ export function createMockRouteCommands(): AlchemyRouteCommands {
   const fn = () => vi.fn();
   return {
     meta: {
+      resumeRun: vi.fn(),
       goToScreen: fn(),
       beginCampaign: fn(),
       beginLabyrinth: fn(),

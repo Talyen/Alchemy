@@ -4,7 +4,6 @@ import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-
 import {
   useActiveRunCharacterId,
   useActiveRunScreenValue,
-  useContentSystemType,
   useHomesteadEffects,
   useTalentEffects,
 } from "@/features/alchemy/shared/stores/run-reads";
@@ -23,7 +22,6 @@ import {
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import type { EncounterCombatTraitId, EncounterRewardTraitId } from "@/lib/content-systems/types";
 import { useCallback, useMemo } from "react";
-import { shouldSurrenderBattleOnEndRun } from "./end-run-policy";
 import { createLabyrinthNodeRouting } from "./labyrinth-node-routing";
 import { getRunAvailableDestinations } from "./run-destination-wiring";
 import { useBattleController } from "./use-battle-controller";
@@ -39,7 +37,6 @@ const commandUnlockAllTalents = createRunSessionCommand(unlockAllTalents);
 export function useAlchemyRunController(): AlchemyRunCommands {
   const homesteadEffects = useHomesteadEffects();
   const talentEffects = useTalentEffects();
-  const contentSystemType = useContentSystemType();
   const characterId = useActiveRunCharacterId();
   const screen = useActiveRunScreenValue();
   const { navigateTo, transition, cancelPending, navigationPending } = useScreenTransitions(screen);
@@ -103,8 +100,7 @@ export function useAlchemyRunController(): AlchemyRunCommands {
 
   useSteamRichPresence(screen, nav.runPhase, characterId);
 
-  const hasActiveBattle = battle.hasActiveBattle;
-  const handleBattleEndRun = battle.handleEndRun;
+  const cancelBattle = battle.cancelBattle;
   const handleAbandonRun = nav.handleAbandonRun;
 
   const resetCorruptionResult = useCallback(() => {
@@ -140,16 +136,14 @@ export function useAlchemyRunController(): AlchemyRunCommands {
   );
 
   const handleEndRun = useCallback(() => {
-    if (shouldSurrenderBattleOnEndRun(screen, hasActiveBattle, contentSystemType)) {
-      handleBattleEndRun();
-      return;
-    }
+    cancelBattle();
     handleAbandonRun();
-  }, [screen, hasActiveBattle, handleBattleEndRun, contentSystemType, handleAbandonRun]);
+  }, [cancelBattle, handleAbandonRun]);
 
   const routeCommands = useMemo<AlchemyRouteCommands>(
     () => ({
       meta: {
+        resumeRun: nav.returnToBattle,
         goToScreen: nav.goToScreen,
         beginCampaign: nav.beginCampaign,
         beginLabyrinth: nav.beginLabyrinth,

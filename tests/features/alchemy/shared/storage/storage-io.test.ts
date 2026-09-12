@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import type { SaveData } from "@/features/alchemy/shared/storage/types";
 import { defaultSaveData } from "@/features/alchemy/shared/storage/defaults";
-import { currentSchemaCampaignSave } from "../../../../fixtures/legacy-saves";
+import { currentSchemaCampaignSave } from "../../../../fixtures/current-saves";
 import { SAVE_KEY } from "@/lib/game-constants";
 import { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import {
@@ -191,7 +191,7 @@ describe("storage io", () => {
 
   it("does not report warnings for harmless save defaults", async () => {
     vi.spyOn(console, "info").mockImplementation(() => {});
-    mockStorage[SAVE_KEY] = JSON.stringify({ musicVolume: 50 });
+    mockStorage[SAVE_KEY] = JSON.stringify({ saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION, musicVolume: 50 });
     const loaded = await loadAlchemySaveState();
 
     expect(loaded.status.kind).toBe("ok");
@@ -201,6 +201,7 @@ describe("storage io", () => {
   it("reports warnings when an active run cannot be restored and allows writes", async () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
     mockStorage[SAVE_KEY] = JSON.stringify({
+      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
       activeRun: {
         characterId: "bard",
         runDeck: [],

@@ -27,7 +27,7 @@ import {
 import { MATERIAL_IDS } from "@/lib/homestead/types";
 import { type RunRngState } from "@/lib/rng";
 
-const MaterialIdPersistSchema = z.preprocess((val) => (val === "crystal" ? "gems" : val), z.enum(MATERIAL_IDS));
+const MaterialIdPersistSchema = z.enum(MATERIAL_IDS);
 
 const RunObtainedGearItemSchema = z.object({
   kind: z.literal("gear"),
@@ -197,20 +197,15 @@ const EquipmentShopPersistSchema = createShopObjectSchema({
   .nullable()
   .catch(null);
 
-const WildwoodDraftObjectSchema = z
-  .object({
-    phase: z.enum(["draft", "battle", "recovery", "reward", "removal"]),
-    draftChoices: z.array(BattleCardSchema),
-    remainingBossIds: WildwoodBossIdListSchema,
-    previousBossId: OptionalWildwoodBossIdSchema,
-    currentBossId: OptionalWildwoodBossIdSchema,
-    currentCombatTraitIds: EncounterCombatTraitArraySchema.catch([]),
-    currentRewardTraitIds: EncounterRewardTraitArraySchema.catch([]),
-  })
-  .transform((state) => ({
-    ...state,
-    phase: state.phase === "recovery" ? ("reward" as const) : state.phase,
-  }));
+const WildwoodDraftObjectSchema = z.object({
+  phase: z.enum(["draft", "battle", "reward", "removal"]),
+  draftChoices: z.array(BattleCardSchema),
+  remainingBossIds: WildwoodBossIdListSchema,
+  previousBossId: OptionalWildwoodBossIdSchema,
+  currentBossId: OptionalWildwoodBossIdSchema,
+  currentCombatTraitIds: EncounterCombatTraitArraySchema.catch([]),
+  currentRewardTraitIds: EncounterRewardTraitArraySchema.catch([]),
+});
 export type WildwoodDraftState = z.output<typeof WildwoodDraftObjectSchema>;
 const WildwoodDraftStateSchema = WildwoodDraftObjectSchema.nullable().catch(null);
 
@@ -305,10 +300,7 @@ const ActiveRunDataObjectSchema = z.object({
   runTalentXP: TalentXPSchema.default({}),
   runMaterialsEarned: MaterialInventorySchema.default(emptyInventory()),
   runObtainedItems: RunObtainedItemArraySchema.default([]),
-  currentScreen: z.preprocess(
-    (value) => (value === "wildwood-recovery" ? "rewards" : value),
-    z.enum(ROUTE_SCREEN_VALUES).nullable().catch(null).default(null),
-  ),
+  currentScreen: z.enum(ROUTE_SCREEN_VALUES).nullable().catch(null).default(null),
   interruptedFlow: InterruptedFlowSchema,
   shopState: ShopPersistSchema.default(null),
   alchemistState: AlchemistPersistSchema.default(null),

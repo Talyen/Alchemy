@@ -1,18 +1,23 @@
 export { checkHealthThresholds } from "./status-player";
-import { computeCardDamageToEnemy } from "./damage-calc";
-import { applyDamageRiders, reflectBlockedAttackAsHoly } from "./damage-riders";
-import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
+import type { EnemyAttackEffect } from "@/lib/game-data";
+import { BATTLE_CONFIG, LABYRINTH_MODIFIER_CONFIG, PERCENT_DENOMINATOR } from "../game-constants";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { applyEnemyHealingWithCombatText, applyHealingWithCombatText, mergeCombatText } from "./combat-text";
+import { computeCardDamageToEnemy } from "./damage-calc";
+import { computeLeechHeal } from "./damage-rider-leech";
+import { applyDamageRiders, reflectBlockedAttackAsHoly } from "./damage-riders";
+import { isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-traits";
+import { paceCombatDamage } from "./fight-pacing";
+import { dealPlayerTypedHit } from "./player-typed-hit";
+import { resolvePlayerCrowdControlTriggers } from "./status-cc";
+import { armorMitigatesElementalDamage, decayArmorAfterDamage } from "./status-helpers";
 import {
   addForgeToPlayer,
   applyForgeThresholdRewards,
   applyPlayerDamageStatuses,
-  shouldBlockPreventStatusBuildup,
   checkHealthThresholds,
+  shouldBlockPreventStatusBuildup,
 } from "./status-player";
-import { resolvePlayerCrowdControlTriggers } from "./status-cc";
-import type { EnemyAttackEffect } from "@/lib/game-data";
 import {
   applyPlayerCombatDamage,
   isPlayerDefeated,
@@ -22,12 +27,6 @@ import {
   type CombatTextEvent,
   type CombatTextStat,
 } from "./types";
-import { BATTLE_CONFIG, PERCENT_DENOMINATOR } from "../game-constants";
-import { computeLeechHeal } from "./damage-rider-leech";
-import { isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-traits";
-import { armorMitigatesElementalDamage, decayArmorAfterDamage } from "./status-helpers";
-import { paceCombatDamage } from "./fight-pacing";
-import { dealPlayerTypedHit } from "./player-typed-hit";
 import { getEnemyTraitSet, hasEnemyTrait } from "./types/state-helpers";
 
 function applyPhysicalForgeBonus(state: BattleState, effect: EnemyAttackEffect & { kind: "damage" }) {
@@ -277,32 +276,23 @@ export interface EnemyDamageResult {
   killed: boolean;
 }
 
-function resolveEnemyDamageEffectCore(
+type EnemyMitigationResult = ReturnType<typeof calculateBlockAndArmorMitigation>;
+
+interface EnemyHitFacts {
+  readonly before: BattleState;
+  readonly mitigation: EnemyMitigationResult;
+  readonly blockLost: number;
+  readonly outcome: Omit<EnemyDamageResult, "state">;
+}
+
+function applyEnemyHealthHit(
   state: BattleState,
   effect: EnemyAttackEffect & { kind: "damage" },
+  attemptedDamage: number,
+  mitigation: EnemyMitigationResult,
   combatTexts: CombatTextEvent[],
-  options: EnemyDamageOptions = {},
-): EnemyDamageResult {
-  if (state.playerHealth <= 0)
-    return {
-      state,
-      attemptedDamage: 0,
-      resolvedDamage: 0,
-      healthDamage: 0,
-      landed: false,
-      dodged: false,
-      killed: false,
-    };
-  const { attemptedDamage, incomingDamage } = options.preparedDamage ?? prepareEnemyDamage(state, effect, options);
-
-  const { remainingDamage, blockAbsorb, blockSpent, totalExtraBlock, actualDamage } = calculateBlockAndArmorMitigation(
-    state,
-    effect,
-    incomingDamage,
-    combatTexts,
-    options,
-  );
-
+): { state: BattleState; facts: EnemyHitFacts } {
+  const { actualDamage, totalExtraBlock, blockSpent } = mitigation;
   let attackState = state;
   if (totalExtraBlock > 0) {
     if (effect.damageType === "physical" && hasEnemyTrait(state, "ogre"))
@@ -328,7 +318,7 @@ function resolveEnemyDamageEffectCore(
     dodged: false,
     killed: !isPlayerDefeated(state) && isPlayerDefeated(damagedState),
   };
-  let nextState: BattleState = {
+  const nextState: BattleState = {
     ...damagedState,
     playerStatuses: {
       ...damagedState.playerStatuses,
@@ -336,6 +326,21 @@ function resolveEnemyDamageEffectCore(
     },
   };
 
+  return { state: nextState, facts: { before: state, mitigation, blockLost, outcome } };
+}
+
+function applyPlayerDefensiveReactions(
+  nextState: BattleState,
+  effect: EnemyAttackEffect & { kind: "damage" },
+  facts: EnemyHitFacts,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  const {
+    before: state,
+    mitigation: { blockAbsorb, remainingDamage, actualDamage },
+    blockLost,
+  } = facts;
+  const prevHealth = state.playerHealth;
   if (blockAbsorb > 0 && state.gearEffects.blockReadiesFreePhysical > 0) {
     nextState = { ...nextState, uniqueGear: { ...nextState.uniqueGear, knightsAnswerReady: true } };
   }
@@ -365,14 +370,21 @@ function resolveEnemyDamageEffectCore(
     blockLost > 0 && blockLost === state.playerStatuses.block,
   );
 
-  if (nextState.enemyHealth <= 0 || nextState.playerHealth <= 0) return { state: nextState, ...outcome };
+  return nextState;
+}
 
-  nextState = resolvePlayerCrowdControlTriggers(nextState, combatTexts);
-
+function applyEnemyHitLeech(
+  nextState: BattleState,
+  effect: EnemyAttackEffect & { kind: "damage" },
+  facts: EnemyHitFacts,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  const {
+    before: state,
+    outcome: { resolvedDamage: actualDamage, healthDamage },
+  } = facts;
   if (effect.lifesteal && actualDamage > 0) {
-    const healthLost = hasEnemyTrait(state, "ravenous")
-      ? Math.max(0, prevHealth - damagedState.playerHealth)
-      : actualDamage;
+    const healthLost = hasEnemyTrait(state, "ravenous") ? healthDamage : actualDamage;
     nextState = applyEnemyLeechHealing(nextState, healthLost, combatTexts);
     if (effect.damageType === "bleed") {
       nextState = {
@@ -384,7 +396,42 @@ function resolveEnemyDamageEffectCore(
     }
   }
 
-  if (blockAbsorb > 0 && options.triggerBlockRetaliation) {
+  return nextState;
+}
+
+function resolveEnemyDamageEffectCore(
+  state: BattleState,
+  effect: EnemyAttackEffect & { kind: "damage" },
+  combatTexts: CombatTextEvent[],
+  options: EnemyDamageOptions = {},
+): EnemyDamageResult {
+  if (state.playerHealth <= 0)
+    return {
+      state,
+      attemptedDamage: 0,
+      resolvedDamage: 0,
+      healthDamage: 0,
+      landed: false,
+      dodged: false,
+      killed: false,
+    };
+  const { attemptedDamage, incomingDamage } = options.preparedDamage ?? prepareEnemyDamage(state, effect, options);
+
+  const mitigation = calculateBlockAndArmorMitigation(state, effect, incomingDamage, combatTexts, options);
+
+  const hit = applyEnemyHealthHit(state, effect, attemptedDamage, mitigation, combatTexts);
+  const { facts } = hit;
+  const { blockLost, outcome } = facts;
+  // Capture Health loss before threshold healing, then resolve retaliation only for survivors.
+  let nextState = applyPlayerDefensiveReactions(hit.state, effect, facts, combatTexts);
+
+  if (nextState.enemyHealth <= 0 || nextState.playerHealth <= 0) return { state: nextState, ...outcome };
+
+  nextState = resolvePlayerCrowdControlTriggers(nextState, combatTexts);
+
+  nextState = applyEnemyHitLeech(nextState, effect, facts, combatTexts);
+
+  if (mitigation.blockAbsorb > 0 && options.triggerBlockRetaliation) {
     nextState = applyBlockedAttackRetaliation(nextState, blockLost, combatTexts);
   }
 

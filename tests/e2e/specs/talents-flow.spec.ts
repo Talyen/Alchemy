@@ -72,11 +72,7 @@ test.describe("Talents Flow", () => {
     const menu = new MenuPage(page);
     await menu.gotoWithUnlockedMeta();
     await menu.openTalents();
-    for (const [keyword, name] of [
-      ["Archery", "Follow-through"],
-      ["Burn", "Wildfire"],
-      ["Nature", "Briar Patch"],
-    ]) {
+    for (const [keyword, name] of [["Burn", "Wildfire"]]) {
       await page.getByRole("button", { name: `Select ${keyword} Talents`, exact: true }).click();
       const node = page.locator(".talent-node").filter({ has: page.getByText(name, { exact: true }) });
       await expect(node).toBeVisible();

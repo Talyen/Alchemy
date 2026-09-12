@@ -39,9 +39,8 @@ describe("gear affix shine rendering", () => {
     }
   });
 
-  it.each(Object.values(gearAffixCatalog).map((affix) => [affix.name, affix] as const))(
-    "%s follows description keywords",
-    (_, affix) => {
+  it("keeps every affix description keyword represented in its shine colors", () => {
+    for (const affix of Object.values(gearAffixCatalog)) {
       const keywords = extractKeywordIds(affix.descriptionTemplate);
       expect(keywords.length).toBeGreaterThan(0);
       const colors = getGearAffixTextShineColors(affix);
@@ -49,8 +48,8 @@ describe("gear affix shine rendering", () => {
       for (const id of keywords.slice(0, 3)) {
         expect(colors.join(" ")).toContain(keywordDefinitions[id].shineColors[0]!);
       }
-    },
-  );
+    }
+  });
 
   it("uses normalized legacy rolls without shifting colors after an invalid affix", () => {
     render(

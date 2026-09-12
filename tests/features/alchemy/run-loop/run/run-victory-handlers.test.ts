@@ -176,31 +176,23 @@ describe("createRunFlow victory paths", () => {
     }
   });
 
-  it("handleAbandonRun invokes applyRunDefeatTeardown for campaign", () => {
-    setRunProgress({ contentSystemType: CONTENT_SYSTEMS.CAMPAIGN });
-    const transition = vi.fn();
-    const handlers = createRunFlow(makeFlowHandlerDeps({ transition }));
-    handlers.handleAbandonRun();
-    expect(applyRunDefeatTeardown).toHaveBeenCalledWith(
-      expect.objectContaining({
-        awardRunEndMaterials,
-        finalizeRunXP: expect.any(Function),
-        clearCombatState,
-      }),
-    );
-    expect(transition).toHaveBeenCalledWith(ROUTE_SCREENS.GAME_OVER, expect.objectContaining({ immediate: true }));
-  });
-
-  it("handleAbandonRun abandons labyrinth run without failing the current node", () => {
-    setRunProgress({ contentSystemType: CONTENT_SYSTEMS.LABYRINTH });
-    const navigateTo = vi.fn();
-    const transition = vi.fn();
-    const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo, transition }));
-    handlers.handleAbandonRun();
-    expect(navigateTo).not.toHaveBeenCalledWith(ROUTE_SCREENS.LABYRINTH_MAP);
-    expect(applyRunDefeatTeardown).toHaveBeenCalled();
-    expect(transition).toHaveBeenCalledWith(ROUTE_SCREENS.GAME_OVER, expect.objectContaining({ immediate: true }));
-  });
+  it.each(["campaign", "labyrinth", "wildwood"] as const)(
+    "manual End Run clears %s once and returns directly to Menu",
+    (contentSystemType) => {
+      setRunProgress({ contentSystemType, runTalentXP: { physical: 10 }, gold: 42 });
+      const transition = vi.fn();
+      const handlers = createRunFlow(makeFlowHandlerDeps({ transition }));
+      handlers.handleAbandonRun();
+      expect(readRunSession().hasActiveRun).toBe(false);
+      expect(readBattle().hasActiveBattle).toBe(false);
+      expect(readRunProfile().gold).toBe(42);
+      const profile = structuredClone(readRunProfile());
+      handlers.handleAbandonRun();
+      expect(readRunProfile()).toEqual(profile);
+      expect(transition).toHaveBeenCalledWith(ROUTE_SCREENS.MENU, { immediate: true });
+      expect(transition).not.toHaveBeenCalledWith(ROUTE_SCREENS.GAME_OVER, expect.anything());
+    },
+  );
 
   it("endLabyrinthRun uses live content system, not a stale handler port", () => {
     setRunProgress({ contentSystemType: CONTENT_SYSTEMS.CAMPAIGN });

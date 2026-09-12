@@ -11,7 +11,6 @@ describe("GameModeSelectScreen", () => {
   });
 
   const defaultProps = {
-    resumableModes: { campaign: false, labyrinth: false, wildwood: false },
     finishedRunCharacters: ["knight" as const, "rogue" as const, "ranger" as const],
     onSelectCampaign: vi.fn(),
     onSelectLabyrinth: vi.fn(),
@@ -49,14 +48,6 @@ describe("GameModeSelectScreen", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Wildwood Draft" }));
     expect(onSelectWildwood).toHaveBeenCalledTimes(1);
-  });
-
-  it("indicates resume state in the aria label when a mode has an active run", () => {
-    render(
-      <GameModeSelectScreen {...defaultProps} resumableModes={{ campaign: true, labyrinth: false, wildwood: false }} />,
-    );
-
-    expect(screen.getByRole("button", { name: "Resume The Campaign" })).toBeTruthy();
   });
 
   it("locks modes when unlock prerequisites are not met", () => {

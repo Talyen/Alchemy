@@ -1,12 +1,8 @@
 import "../../../../../helpers/mock-audio";
-import { describe, expect, it, vi } from "vitest";
+import { applyCurrencyToGear, itemsMatchingSlot } from "@/features/alchemy/meta/screens/armory/armory-screen-actions";
 import { playUISound } from "@/lib/audio";
 import { type GearInstance } from "@/lib/gear";
-import {
-  applyCurrencyToGear,
-  itemsMatchingSlot,
-  resetArmoryTargeting,
-} from "@/features/alchemy/meta/screens/armory/armory-screen-actions";
+import { describe, expect, it, vi } from "vitest";
 
 function basicSword(): GearInstance {
   return { instanceId: "sword-1", definitionId: "shortsword-basic", affixes: [{ id: "flat-physical", value: 1 }] };
@@ -27,18 +23,6 @@ describe("itemsMatchingSlot", () => {
   it("drops items with unknown definitions", () => {
     const unknown: GearInstance = { instanceId: "x-1", definitionId: "missing-definition", affixes: [] };
     expect(itemsMatchingSlot([unknown], "main-hand")).toEqual([]);
-  });
-});
-
-describe("resetArmoryTargeting", () => {
-  it("clears salvage, currency, and pending yield", () => {
-    const setSalvageMode = vi.fn();
-    const setActiveCurrencyId = vi.fn();
-    const setSalvagePending = vi.fn();
-    resetArmoryTargeting({ setSalvageMode, setActiveCurrencyId, setSalvagePending });
-    expect(setSalvageMode).toHaveBeenCalledWith(false);
-    expect(setActiveCurrencyId).toHaveBeenCalledWith(null);
-    expect(setSalvagePending).toHaveBeenCalledWith(null);
   });
 });
 

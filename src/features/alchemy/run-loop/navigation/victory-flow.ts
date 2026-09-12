@@ -1,4 +1,23 @@
-import type { LootProgress } from "@/lib/loot";
+import {
+  sampleDestinationChoices,
+  withSelectedBossForDestinations,
+  type DestinationOfferState,
+  type DestinationOptionsInput,
+} from "@/features/alchemy/shared/run-flow/destination-flow";
+import type { RewardState } from "@/lib/active-run-session";
+import type { BattleSnapshot } from "@/lib/battle";
+import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
+import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
+import {
+  BOSS_GOLD_BONUS_FRACTION,
+  COMPANION_GOLD_FIND_CHANCE,
+  COMPANION_GOLD_MULTIPLIER,
+  ELITE_GOLD_BONUS_FRACTION,
+  ENEMY_TRAIT_IDS,
+  GOLD_REWARD_MAX,
+  GOLD_REWARD_MIN,
+  GOLD_TROVE_REWARD_MULTIPLIER,
+} from "@/lib/game-constants";
 import {
   computeTalentEffects,
   ENEMY_TYPES,
@@ -6,46 +25,27 @@ import {
   type BattleCard,
   type CharacterId,
   type DifficultyId,
-  type UnlockedTalents,
   type TalentEffectManifest,
+  type UnlockedTalents,
 } from "@/lib/game-data";
-import type { BattleSnapshot } from "@/lib/battle";
+import { applyMaterialFindBonus, getEnemyMaterialLoot } from "@/lib/homestead/loot";
 import type { HomesteadEffectManifest, MaterialInventory } from "@/lib/homestead/types";
-import type { RewardState } from "@/lib/active-run-session";
-import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
-import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
+import type { LootProgress } from "@/lib/loot";
 import type { Destination } from "@/lib/routing";
-import { getEnemyMaterialLoot, applyMaterialFindBonus } from "@/lib/homestead/loot";
+import { combineTrinketEffectIds } from "@/lib/trinkets";
 import {
-  COMPANION_GOLD_FIND_CHANCE,
-  COMPANION_GOLD_MULTIPLIER,
-  ELITE_GOLD_BONUS_FRACTION,
-  BOSS_GOLD_BONUS_FRACTION,
-  ENEMY_TRAIT_IDS,
-  GOLD_REWARD_MIN,
-  GOLD_REWARD_MAX,
-  GOLD_TROVE_REWARD_MULTIPLIER,
-} from "@/lib/game-constants";
+  createBossRewardState as createBossRewardStateFromFlow,
+  createCombatRewardState as createCombatRewardStateFromFlow,
+  createWildwoodRewardState,
+} from "./reward-flow";
 import {
-  getActiveRewardModifiersForContentSystem,
   applyLabyrinthRewardMaterialModifiers,
   computeVictoryGold,
+  getActiveRewardModifiersForContentSystem,
   getGenerousGoldBonus,
   getWealthyGoldBonus,
   getWellProvisionedHealing,
 } from "./reward-math";
-import {
-  createCombatRewardState as createCombatRewardStateFromFlow,
-  createBossRewardState as createBossRewardStateFromFlow,
-  createWildwoodRewardState,
-} from "./reward-flow";
-import {
-  sampleDestinationChoices,
-  withSelectedBossForDestinations,
-  type DestinationOfferState,
-  type DestinationOptionsInput,
-} from "@/features/alchemy/shared/run-flow/destination-flow";
-import { combineTrinketEffectIds } from "@/lib/trinkets";
 
 export interface VictoryRewardsInput {
   lootProgress: LootProgress;
@@ -193,6 +193,56 @@ export function computeVictoryRewardState(
   );
 }
 
+function computeWildwoodVictoryRewards(
+  input: VictoryRewardsInput,
+  talentEffects: TalentEffectManifest,
+  activeTrinketEffectIds: string[],
+  labyrinthRewardModifiers: EncounterRewardTraitId[],
+  rng: () => number,
+): VictoryRewardsResult {
+  const companionGold = input.battleState.activeCompanion ? talentEffects.companionVictoryGold : 0;
+  const goldEarned = Math.max(0, input.battleState.gold - input.purseGold) + companionGold;
+  return {
+    rewardState: createWildwoodRewardState(
+      input.runDeck,
+      rng,
+      input.lootProgress,
+      input.homesteadEffects.gearAstralChanceBonus,
+      activeTrinketEffectIds,
+      input.ownedTrinketIds ?? [],
+      input.ownedUniqueIds ?? new Set(),
+    ),
+    labyrinthRewardModifiers,
+    goldEarned,
+    persistedGold: Math.max(input.purseGold, input.battleState.gold) + companionGold,
+    playerHealth: input.battleState.playerHealth,
+    maxHealthDelta: talentEffects.maxHealthPerCombat > 0 ? talentEffects.maxHealthPerCombat : 0,
+    destinationOfferState: input.destinationOfferState,
+  };
+}
+
+function prepareVictoryDestinations(
+  input: VictoryRewardsInput,
+  playerHealth: number,
+  persistedGold: number,
+  effectiveMaxHealth: number,
+  destinationRng: () => number,
+) {
+  const skipDestinationSampling = input.contentSystemType === CONTENT_SYSTEMS.LABYRINTH;
+  const eligibleDestinations = skipDestinationSampling
+    ? []
+    : input.getAvailableDestinations({
+        currentHealth: playerHealth,
+        currentGold: persistedGold,
+        destinationIndexInAct: input.destinationIndexInAct,
+        maxHealth: effectiveMaxHealth,
+      });
+  const sampled = skipDestinationSampling
+    ? { choices: [] as Destination[], offerState: input.destinationOfferState }
+    : sampleDestinationChoices(eligibleDestinations, input.destinationOfferState, destinationRng);
+  return sampled;
+}
+
 export function computeVictoryRewards(
   input: VictoryRewardsInput,
   rng: () => number,
@@ -206,25 +256,7 @@ export function computeVictoryRewards(
 
   const talentEffects = computeTalentEffects(input.unlockedTalents);
   if (input.contentSystemType === CONTENT_SYSTEMS.WILDWOOD) {
-    const companionGold = input.battleState.activeCompanion ? talentEffects.companionVictoryGold : 0;
-    const goldEarned = Math.max(0, input.battleState.gold - input.purseGold) + companionGold;
-    return {
-      rewardState: createWildwoodRewardState(
-        input.runDeck,
-        rng,
-        input.lootProgress,
-        input.homesteadEffects.gearAstralChanceBonus,
-        activeTrinketEffectIds,
-        input.ownedTrinketIds ?? [],
-        input.ownedUniqueIds ?? new Set(),
-      ),
-      labyrinthRewardModifiers,
-      goldEarned,
-      persistedGold: Math.max(input.purseGold, input.battleState.gold) + companionGold,
-      playerHealth: input.battleState.playerHealth,
-      maxHealthDelta: talentEffects.maxHealthPerCombat > 0 ? talentEffects.maxHealthPerCombat : 0,
-      destinationOfferState: input.destinationOfferState,
-    };
+    return computeWildwoodVictoryRewards(input, talentEffects, activeTrinketEffectIds, labyrinthRewardModifiers, rng);
   }
   const { gold, eliteBonus, bossBonus, generousBonus, wealthyBonus } = rollVictoryGold(
     input.battleState,
@@ -265,18 +297,13 @@ export function computeVictoryRewards(
     labyrinthRewardModifiers,
   );
 
-  const skipDestinationSampling = input.contentSystemType === CONTENT_SYSTEMS.LABYRINTH;
-  const eligibleDestinations = skipDestinationSampling
-    ? []
-    : input.getAvailableDestinations({
-        currentHealth: playerHealth,
-        currentGold: goldResult.persistedGold,
-        destinationIndexInAct: input.destinationIndexInAct,
-        maxHealth: effectiveMaxHealth,
-      });
-  const sampled = skipDestinationSampling
-    ? { choices: [] as Destination[], offerState: input.destinationOfferState }
-    : sampleDestinationChoices(eligibleDestinations, input.destinationOfferState, destinationRng);
+  const sampled = prepareVictoryDestinations(
+    input,
+    playerHealth,
+    goldResult.persistedGold,
+    effectiveMaxHealth,
+    destinationRng,
+  );
   const destinations = sampled.choices;
 
   const rewardState = computeVictoryRewardState(

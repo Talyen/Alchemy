@@ -10,10 +10,6 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readBattle, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
-import {
-  hydrateModeRunInDraft,
-  parkAndDeactivateForegroundRunInDraft,
-} from "@/features/alchemy/shared/stores/run-park-restore";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { makeTestBattleState } from "../../../../fixtures/battle";
@@ -48,27 +44,28 @@ describe.each(["opening-draw", "enemy-turn"] as const)("pending %s gold", (kind)
     { purse: 40, resultGold: 107, expected: 47 },
     { purse: 150, resultGold: 107, expected: 157 },
     { purse: 40, resultGold: 100, expected: 40 },
-  ])("preserves parked earnings with purse $purse and saved result $resultGold", ({ purse, resultGold, expected }) => {
-    startBattle(resultGold);
-    dispatchRunSessionCommand(parkAndDeactivateForegroundRunInDraft);
-    dispatchRunSessionCommand((draft) => setGold(draft, purse));
-    dispatchRunSessionCommand((draft) => {
-      expect(hydrateModeRunInDraft(draft, "campaign")).toBe(true);
-    });
+  ])(
+    "preserves restored earnings with purse $purse and saved result $resultGold",
+    ({ purse, resultGold, expected }) => {
+      startBattle(resultGold);
+      const saved = snapshotRun();
+      dispatchRunSessionCommand((draft) => setGold(draft, purse));
+      restoreRun(saved, {}, {});
 
-    expect(readRunProfile().gold).toBe(purse);
-    expect(readBattle().battleState.gold).toBe(purse);
-    expect(readBattle().pendingBattleTransition).toMatchObject({ kind, resultState: { gold: expected, turn: 3 } });
-    expect(readBattle().pendingTransitionResumeRequired).toBe(true);
+      expect(readRunProfile().gold).toBe(purse);
+      expect(readBattle().battleState.gold).toBe(purse);
+      expect(readBattle().pendingBattleTransition).toMatchObject({ kind, resultState: { gold: expected, turn: 3 } });
+      expect(readBattle().pendingTransitionResumeRequired).toBe(true);
 
-    finishTransition();
-    expect(readRunProfile().gold).toBe(expected);
-    expect(readBattle().battleState).toMatchObject({ gold: expected, turn: 3 });
-    expect(readBattle().pendingBattleTransition).toBeNull();
-    expect(readBattle().pendingTransitionResumeRequired).toBe(false);
-    finishTransition();
-    expect(readRunProfile().gold).toBe(expected);
-  });
+      finishTransition();
+      expect(readRunProfile().gold).toBe(expected);
+      expect(readBattle().battleState).toMatchObject({ gold: expected, turn: 3 });
+      expect(readBattle().pendingBattleTransition).toBeNull();
+      expect(readBattle().pendingTransitionResumeRequired).toBe(false);
+      finishTransition();
+      expect(readRunProfile().gold).toBe(expected);
+    },
+  );
 
   it("keeps pending earnings through repeated live purse writes and clamps spending at zero", () => {
     startBattle();

@@ -1,14 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  buildSmoothShineBorderGradient,
   buildSmoothShineGradient,
   getCardKeywordShineColors,
   getCharacterShineColors,
   getShineColorsForKeywords,
   getTrinketShineColors,
   getTrinketTextShineColors,
-  getTrinketShineGradient,
   SHINE_PALETTES,
   WILDCARD_KEYWORD_SHINE_COLORS,
 } from "@/features/alchemy/shared/config";
@@ -74,7 +72,6 @@ describe("getTrinketShineColors", () => {
   it("uses description keywords when the trinket names them", () => {
     const colors = getTrinketShineColors("meteorite");
     expect(colors).toEqual(expect.arrayContaining([...keywordDefinitions.burn.shineColors]));
-    expect(getTrinketShineGradient("meteorite")).toMatch(/^linear-gradient\(in oklab/);
   });
 
   it("falls back to the boon palette when no keywords resolve", () => {
@@ -107,28 +104,16 @@ describe("Trinket text shine", () => {
 });
 
 describe("buildSmoothShineGradient", () => {
-  it("repeats a color band with a foreground highlight for a seamless traveling blend", () => {
-    expect(buildSmoothShineGradient(["#111111", "#222222"])).toBe(
-      "linear-gradient(in oklab 90deg, #111111, #222222, #ffffff, #111111, #222222, #ffffff, #111111)",
-    );
-  });
-
-  it("adds a traveling highlight to single-color palettes", () => {
-    expect(buildSmoothShineGradient(["#111111"])).toBe(
-      "linear-gradient(in oklab 90deg, #111111, #ffffff, #111111, #ffffff, #111111)",
-    );
-  });
-});
-
-describe("buildSmoothShineBorderGradient", () => {
-  it("mirrors palette stops without the text highlight", () => {
-    expect(buildSmoothShineBorderGradient(["#111111", "#222222"])).toBe(
-      "linear-gradient(in oklab 90deg, #111111, #222222, #111111)",
-    );
-  });
-
-  it("repeats a single color for a seamless loop", () => {
-    expect(buildSmoothShineBorderGradient(["#111111"])).toBe("linear-gradient(in oklab 90deg, #111111, #111111)");
+  it.each([
+    [["#111111", "#222222"], 2],
+    [["#111111"], 2],
+  ] as const)("repeats palettes with traveling highlights", (colors, expectedHighlights) => {
+    const gradient = buildSmoothShineGradient(colors);
+    expect(gradient).not.toBeNull();
+    if (gradient === null) return;
+    expect(gradient).toMatch(/^linear-gradient\(in oklab/);
+    expect(gradient.match(/#ffffff/g)).toHaveLength(expectedHighlights);
+    expect(gradient).toContain(colors[0]);
   });
 });
 

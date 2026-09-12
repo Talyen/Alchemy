@@ -26,16 +26,16 @@ Import lib catalogs through their eslint-enforced barrels (`@/lib/game-data`, `@
 
 Gameplay state has one authoritative nested Zustand aggregate in `shared/stores/gameplay-state-store.ts`. Its `run`, `session`, `battle`, `runProfile`, `profile`, and `gear` objects are the domain-shaped state, and the aggregate is data-only: draft mutators in `write-port-*.ts` (plus `homestead-actions.ts` / `gear-actions.ts`) compose atomic changes. A command owns the full aggregate draft; importing a write port does not itself restrict which domains that command can access. Feature orchestration should call intent-level commands rather than assemble field updates. `profile-store.ts` and `gear-store.ts` are thin aggregate-backed persistence/adapter modules; they do not own shadow state. The capability ports are the feature-facing seams.
 
-| Aggregate region | Concern                                                                                                                                                                                    | Lifetime                                                                                                                     |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
-| `run`            | Deck, HP, acts, run Boons on `run.activeRun`; presentation screen on `run.navigation`; parked mode snapshots (`parkedRuns`, `runRecency`)                                                  | Live run resets on teardown of that mode; other parked slots remain                                                          |
-| `session`        | One active activity/visit, rewards, labyrinth progress, pending selections, and run-flow claims                                                                                            | Per live run; active visits persist via the resume codec; every mode’s reward bundles persist in `activeRun.interruptedFlow` |
-| `battle`         | Combat snapshot, battle-start state, and legacy resume state                                                                                                                               | Transient per battle; rebound from live meta on hydrate                                                                      |
-| `runProfile`     | Homestead (buildings/farms/research/companions), talent XP / unlocks, derived `effects`, and the shared gold purse — persisted as flat top-level save fields via `run-profile-codec` codec | Profile lifetime                                                                                                             |
-| `profile`        | Collection discoveries, completed difficulties, and finished-run character unlocks; collection tab/page UI is transient in-memory, outside `ProfileSaveFields`                             | Profile lifetime                                                                                                             |
-| `gear`           | Permanent inventories, loadouts, and crafting currencies                                                                                                                                   | Profile lifetime                                                                                                             |
+| Aggregate region | Concern                                                                                                                                                                                    | Lifetime                                                                                                                  |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| `run`            | Deck, HP, acts, run Boons on `run.activeRun`; presentation screen on `run.navigation`; one resumable active run                                                                            | Resets on run termination                                                                                                 |
+| `session`        | One active activity/visit, rewards, labyrinth progress, pending selections, and run-flow claims                                                                                            | Per live run; active visits persist via the resume codec; the run’s reward bundles persist in `activeRun.interruptedFlow` |
+| `battle`         | Combat snapshot, battle-start state, and legacy resume state                                                                                                                               | Transient per battle; rebound from live meta on hydrate                                                                   |
+| `runProfile`     | Homestead (buildings/farms/research/companions), talent XP / unlocks, derived `effects`, and the shared gold purse — persisted as flat top-level save fields via `run-profile-codec` codec | Profile lifetime                                                                                                          |
+| `profile`        | Collection discoveries, completed difficulties, and finished-run character unlocks; collection tab/page UI is transient in-memory, outside `ProfileSaveFields`                             | Profile lifetime                                                                                                          |
+| `gear`           | Permanent inventories, loadouts, and crafting currencies                                                                                                                                   | Profile lifetime                                                                                                          |
 
-Live ports and screen data expose `runProfile.gold` as `gold`; `startGold` grants once on a new run start. Legacy `activeRun.runGold` is copied into the purse on load and omitted from the current wire shape. `profile` never owns gameplay currency. Homestead and talent mutations rebind live Health and battle manifests through the owning command. Battle VFX live separately in `run-loop/battle/battle-presentation-store.ts` and are not persisted.
+Live ports and screen data expose `runProfile.gold` as `gold`; `startGold` grants once on a new run start. `profile` never owns gameplay currency. Homestead and talent mutations rebind live Health and battle manifests through the owning command. Battle VFX live separately in `run-loop/battle/battle-presentation-store.ts` and are not persisted.
 
 ### Command atomicity
 
@@ -106,7 +106,7 @@ Activity encoding follows the [persistence API](#persistence-api); [navigation d
 
 ## Run randomness
 
-Run-level randomness is persisted in `activeRun.rng` as one seed plus counters for the named `rewards`, `destinations`, `events`, `shops`, and `world` streams. Commands obtain generators through `createDraftRunRandomSource(draft, stream)` so counters commit or roll back with gameplay. `BattleSnapshot` contains only data. `BattleResolutionContext` supplies the RNG to `resolveBattleTurn`; individual engine handlers use the execution-only `BattleState` supplied by `withDraftWorldBattleRng`. Engine draws use `getBattleRng(state)`. `battleSnapshot` (also exposed as `snapshotBattleState` by the write port) removes that execution dependency before publication or return. Stored snapshots, parked runs, and presentation frames contain no RNG callback. Advancing one stream cannot perturb another, and save/resume continues at the exact next draw.
+Run-level randomness is persisted in `activeRun.rng` as one seed plus counters for the named `rewards`, `destinations`, `events`, `shops`, and `world` streams. Commands obtain generators through `createDraftRunRandomSource(draft, stream)` so counters commit or roll back with gameplay. `BattleSnapshot` contains only data. `BattleResolutionContext` supplies the RNG to `resolveBattleTurn`; individual engine handlers use the execution-only `BattleState` supplied by `withDraftWorldBattleRng`. Engine draws use `getBattleRng(state)`. `battleSnapshot` (also exposed as `snapshotBattleState` by the write port) removes that execution dependency before publication or return. Stored snapshots and presentation frames contain no RNG callback. Advancing one stream cannot perturb another, and save/resume continues at the exact next draw.
 
 `Math.random()` may create a fresh run seed or presentation-only values that cannot affect gameplay or persisted state. [Armory crafting and dev spawning](./ARMORY.md#write-paths) are the intentional gameplay exception: they use injected profile-lifetime randomness, defaulting to `Math.random`, without consuming a run stream. Salvage instead derives its fixed reward seed from the item instance ID. Other run outcomes use the persisted streams above.
 
@@ -114,7 +114,7 @@ Run-luck helpers live in `@/lib/rng` (the single door), small math in `@/lib/mat
 
 ## Persistence API
 
-`run-resume-codec.ts` is the single feature-owned `RunSession` ↔ `ActiveRunData` translation boundary. `encodeRunResumeSnapshot(source)` assembles the wire shape through `encodeActiveRunFromSession`, `encodePersistedShops`, and `encode-interrupted-flow.ts`; `decodeRunResumeSnapshot(data)` returns aggregate session fields. Legacy screen inference remains for decoding and an uninitialized activity. `run-park-restore.ts` applies decoded fields to the command draft.
+`run-resume-codec.ts` is the single feature-owned `RunSession` ↔ `ActiveRunData` translation boundary. `encodeRunResumeSnapshot(source)` assembles the wire shape through `encodeActiveRunFromSession`, `encodePersistedShops`, and `encode-interrupted-flow.ts`; `decodeRunResumeSnapshot(data)` returns aggregate session fields. Legacy screen inference remains for decoding and an uninitialized activity. `run-restore.ts` applies decoded fields to the command draft.
 
 The lifecycle port exposes `snapshotRun(screen?)` and `restoreRun(…)` for snapshotting and boot/resume, including Trinket-manifest repair. `parseActiveRun(raw)` validates JSON before hydration; `toActiveRunData` in `lib/active-run-session/parse.ts` handles run parsing, while `PersistedBattleStateSchema` owns battle wire parsing and default merging. Legacy pending transitions follow the [command and playback contract](#run-state).
 
@@ -122,13 +122,15 @@ Domain persistence codecs own field selection, defaults, encoding, hydration, an
 
 `shared/storage/save-candidates.ts` owns save parsing, validation, and future-version protection (deterministic `evaluateSaveCandidates`, for testability); `shared/storage/io.ts` collects candidates, applies the write-disable policy, and owns write serialization. Both delegate raw persistence to one `SaveBackend` configured during bootstrap. `platform-save-backend.ts` owns browser/desktop transport, backup/cloud candidate order, and recoverable write/clear ordering. `initializeSteam()` returns an explicit `cloudSyncEnabled` capability; it does not mutate shared platform state. Candidate order, Steam Cloud as a one-way mirror, and wipe/protect behavior: [MIGRATIONS.md § Public save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#public-save-contract).
 
-Parked-run reads use `structuredClone` to return detached data, including any legacy pending battle result. Resuming a parked run with active combat returns to battle before considering the mode's map or destination route.
+Current-run reads remain detached. Restoring active combat returns to battle before considering the mode map or destination route.
 
-`session.activity` is a discriminated `RunActivity`: it records the logical gameplay location and owns exactly one shop, Mystery visit, or Corruption result. Persistent mode progress and reward bundles remain session data because they span activities. `run.navigation.screen` is presentation navigation; opening menus never replaces the activity. Shop initialization and battle/victory commands establish their activities, and `prepareRunNavigation` records a gameplay destination before presentation delays. New-run initialization clears the activity; restore decodes the existing wire fields into one activity. Autosave, Armory flushes, and parking encode its location as `ActiveRunData.currentScreen`. Mystery visits remain encoded only while `ActiveRunData.currentScreen` is mystery. The save format is unchanged.
+`session.activity` is a discriminated `RunActivity`: it records the logical gameplay location and owns exactly one shop, Mystery visit, or Corruption result. Persistent mode progress and reward bundles remain session data because they span activities. `run.navigation.screen` is presentation navigation; opening menus never replaces the activity. Shop initialization and battle/victory commands establish their activities, and `prepareRunNavigation` records a gameplay destination before presentation delays. New-run initialization clears the activity; restore decodes the existing wire fields into one activity. Autosave and Armory flushes encode its location as `ActiveRunData.currentScreen`. Mystery visits remain encoded only while `ActiveRunData.currentScreen` is mystery. Activity encoding retains the existing active-run fields; the single-run envelope follows the current save baseline.
 
 Reward grants and bundle advancement follow [Activity and rewards](#activity-and-rewards); mode selection and resume follow [Run setup ownership](#run-setup-ownership).
 
 Purse-to-battle synchronization updates both the current battle and any pending opening-draw or enemy-turn result. The pending result retains its unapplied Gold change relative to the current battle, so restoring a run preserves Gold earned or spent elsewhere. Hydration retains both saved Gold values until this synchronization runs; completing the transition applies the remaining change once through the battle-to-purse commit.
+
+- **Autosave scheduling:** `app/autosave-scheduler.ts` owns revision acknowledgement, cancellation generations, maximum wait, and retry decisions for one subscription lifetime. The React adapter supplies time, timers, lifecycle events, snapshots, and storage writes. Late completions from cancelled generations cannot acknowledge new progress.
 
 ## Session capability ports
 
@@ -166,8 +168,7 @@ playback recheck the UI gate at execution time.
 
 Gear commands and Armory presentation share the derived combat reservation
 policy from `gear-combat-restrictions.ts`, exposed by the Gear read owner. The
-policy includes unfinished parked battles and ignores obsolete copies of the
-foreground mode. It protects reserved loadouts and item mutations before any
+policy covers the sole active battle, including while visiting meta screens. It protects reserved loadouts and item mutations before any
 resource or health changes. [ARMORY](./ARMORY.md#combat-equipment-restrictions)
 owns the player-facing restriction; existing Talent/Homestead rebinding remains.
 
@@ -178,7 +179,8 @@ owns the player-facing restriction; existing Talent/Homestead rebinding remains.
 ## Run setup ownership
 
 `run-setup/run/content-system-navigation.ts` owns content-system selection,
-character/difficulty routing, and resume. Run-start snapshots belong to
+character/difficulty routing. `run-resume-navigation.ts` owns current-run resume;
+`new-run-initialization.ts` prepares new runs and drafts in commands before navigation. Run-start snapshots belong to
 `run-start-command.ts`; wildcard starter-draft and novice Campaign helpers belong
 to `shared/run-flow/starter-draft.ts` and `shared/run-flow/campaign-start.ts`.
 Wildwood post-entry progression belongs to
@@ -186,7 +188,7 @@ Wildwood post-entry progression belongs to
 between Campaign, Labyrinth, and Wildwood are covered by the [content-system
 workflow](./WORKFLOWS.md#content-system-behavior).
 
-`content-system-navigation.resumeRun` owns both mode-button resume and the shell's `returnToBattle` command. An explicit mode selects its slot; otherwise recency selects the last played run. Browsing another mode's setup creates no slot and does not promote that mode. Restoring a slot clears abandoned setup selections and returns to its saved screen, including unfinished rewards, shops, events, and drafts. No separate Labyrinth entry guard may block parked slots or regenerate their map.
+The main menu offers Continue when a run is unfinished, otherwise Play. Continue delegates to `content-system-navigation.resumeRun` through route props. A requested mode cannot replace an active run. End Run in the existing red menu action cancels pending battle/navigation work, finalizes earned progression once, clears the current run, and returns immediately to the menu without confirmation. Ordinary defeat and victory retain their outcome screens. Drafting belongs to the active run; finishing its starter draft is the only supported re-application of a start snapshot. Menu/meta visits do not replace the activity's resume location. There are no parked slots or recency fields.
 
 Destination offer construction is pure in `shared/run-flow/destination-flow.ts`.
 Callers supply offer history, boss ID, and command-bound RNG; destination
@@ -216,13 +218,15 @@ BattleScreenRoute → useBattleScreenRouteData → displayed frame or committed 
 
 ### Data flow
 
+Readiness and saving use [Boot and loading](#boot-and-loading) and the [Persistence API](#persistence-api).
+
 - **Card play:** UI → `useBattleController.playCard()` → `playBattleCardResolved()` → `applyCardEffects()` → new `BattleState` → store.
 - **Combat feedback:** each presentation call is one resolved action batch. The presentation store copies and consolidates its events into ephemeral `CombatTextBurst` records (identity, target, typed entries, lifetime); burst state is never persisted or used for gameplay. Enemy-turn start, ability resolution, and separately presented Companion actions retain their batch boundaries, including immediate battle-ending presentation.
 - **Enemy turn:** `commitEndTurn()` → `resolveBattleTurn(snapshot, context)` → committed result and XP → `playTurnFrames()` for presentation only.
 - **Screen transition:** `navigateTo` → `transition` → `assertScreenTransitionAllowed()` → gameplay preparation and `session.activity` → delayed `navigation.screen` → `renderAlchemyScreenRoute()`. Interactive transitions use the exhaustive `ALLOWED_SCREEN_TRANSITIONS` table in `src/lib/routing/screen-transition-policy.ts`; boot restore/hydration bypasses that policy after save validation. `createScreenNavigation` validates the request and checks its guard before cancelling pending presentation. It runs `prepare` and commits the activity synchronously, so saves and subsequent commands see the completed gameplay even before the screen appears. Only presentation waits for `delayMs` or `NAVIGATION_DELAY_MS`; `immediate` takes precedence. A redirect during preparation supersedes the original request. Cancellation and hook unmount clear pending presentation timers without undoing completed gameplay. The rendered-screen fade runs independently and never commits gameplay; activity route data retains its outgoing snapshot for that fade.
 - **Run-loop screens:** `screen-routes` call their screen-specific read hook for display props; `routeCommands` from the shell controller provide actions.
 - **Navigation input:** `useScreenTransitions` exposes transient `navigationPending` through `AlchemyRunCommands`. It spans the prepared destination's presentation delay, clears on commit/cancellation, and is never persisted. App input remains inert until this flag clears, the rendered screen matches the committed screen, and mounted artwork is ready. Global Escape Back and menu-opening shortcuts follow the same gate; active dialogs and an already-open menu remain dismissible. Outgoing run-end summaries retain their screen data when teardown clears the live run.
-- **Shell preload / autosave:** App warms `essentialGameArt` before reveal and starts the remaining per-item Gear art as soon as that essential preload settles; autosave and chrome read needed fields through capability modules. Critical UI sounds load eagerly. Battle initialization then prioritizes the visible hand and current enemy sounds; the remaining manifest decodes one item at a time during input-idle work so background audio warming cannot compete with interaction frames.
+- **Opening draw readiness:** `run-loop/battle/use-battle-opening-draw.ts` waits for playback binding and mounted refs; the battle controller owns session resume and teardown. Opening-hand gameplay is committed before this presentation hook runs.
 
 ## Controller entry points
 
@@ -277,6 +281,8 @@ Enforced in `eslint.config.js` (composition in `eslint/fragments.js` + `eslint/b
 
 ## Boot and loading
 
+- **Shell preload / autosave:** App warms `essentialGameArt` before reveal and starts the remaining per-item Gear art as soon as that essential preload settles; autosave and chrome read needed fields through capability modules. Critical UI sounds load eagerly. Battle initialization then prioritizes the visible hand and current enemy sounds; the remaining manifest decodes one item at a time during input-idle work so background audio warming cannot compete with interaction frames.
+
 One loading experience at cold start, then navigation through the shared fade — no per-route "Loading …" fallbacks. Route and in-screen reveals hold the fade until mounted artwork has decoded; see [UI](./UI.md#screen-fade-motion).
 
 | Layer     | Where                                                                          | Policy                                                                                                                                  |
@@ -294,3 +300,9 @@ One loading experience at cold start, then navigation through the shared fade �
 **E2E bypass:** `localStorage["alchemy-skip-loading-screen"]` — startup gate only (`shouldSkipStartupLoadingGate()`).
 
 Path-specific test commands: [CONTRIBUTING.md § What to run](../CONTRIBUTING.md#what-to-run-when-you-change).
+
+Manual End Run clears resumable activity and pending work immediately, but keeps
+the final battle snapshot available to the outgoing screen until the route
+transition completes. Clearing it to default enemy/card data early can render
+invalid artwork during the exit frame. The inactive activity excludes the
+snapshot from saves, and the next run/battle initializes fresh state.

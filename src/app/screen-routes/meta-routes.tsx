@@ -27,7 +27,7 @@ import {
 import {
   useBondedCompanions,
   useHomesteadProgressSlice,
-  useResumableGameModes,
+  useHasActiveRun,
   useTalentProgressSlice,
 } from "@/features/alchemy/shared/stores/run-reads";
 import type { MetaCommands, MetaRouteCtx } from "./route-ctx";
@@ -43,11 +43,13 @@ const bondCompanionCommand = createRunSessionCommand(bondCompanion);
 
 function MenuScreenRoute({ commands }: { commands: MetaCommands }) {
   const { hasUnspentTalents, hasAffordableHomestead } = useMenuBadges();
+  const hasActiveRun = useHasActiveRun();
   const isArmoryLocked = useIsArmoryLocked();
   const finishedRunCharacters = useFinishedRunCharacters();
   return (
     <MenuScreen
-      onPlay={() => commands.goToScreen("game-mode-select")}
+      hasActiveRun={hasActiveRun}
+      onPlay={hasActiveRun ? commands.resumeRun : () => commands.goToScreen("game-mode-select")}
       onCollection={() => commands.goToScreen("collection")}
       onOptions={() => commands.goToScreen("options")}
       onHomestead={() => commands.goToScreen("homestead")}
@@ -83,11 +85,9 @@ function GameModeSelectScreenRoute({
   onBack?: (() => void) | undefined;
   onOpenGameMenu: (rect: DOMRect) => void;
 }) {
-  const resumableModes = useResumableGameModes();
   const finishedRunCharacters = useFinishedRunCharacters();
   return (
     <GameModeSelectScreen
-      resumableModes={resumableModes}
       finishedRunCharacters={finishedRunCharacters}
       onSelectCampaign={commands.beginCampaign}
       onSelectLabyrinth={commands.beginLabyrinth}

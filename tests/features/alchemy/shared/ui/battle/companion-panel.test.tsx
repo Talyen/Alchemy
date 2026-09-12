@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { getKeywordListShineColors } from "@/features/alchemy/shared/config";
 import { CompanionPanel } from "@/features/alchemy/shared/ui/battle/companion-panel";
-import { companionLibrary, keywordDefinitions } from "@/lib/game-data";
+import { companionLibrary } from "@/lib/game-data";
 
 afterEach(() => {
   cleanup();
@@ -56,29 +56,6 @@ describe("CompanionPanel turn shine border", () => {
     render(<CompanionPanel companion={companionLibrary.wolf} turnActive />);
     const expectedColors = getKeywordListShineColors(["bleed"]);
     expectShineContains("turn-badge-companion", expectedColors);
-  });
-
-  it("uses burn keyword shine colors for phoenix companion", () => {
-    render(<CompanionPanel companion={companionLibrary.phoenix} turnActive />);
-    const expectedColors = getKeywordListShineColors(["burn"]);
-    expectShineContains("turn-badge-companion", expectedColors);
-  });
-
-  it("uses freeze keyword shine colors for frost whelp companion", () => {
-    render(<CompanionPanel companion={companionLibrary["frost-whelp"]} turnActive />);
-    const expectedColors = getKeywordListShineColors(["freeze"]);
-    expectShineContains("turn-badge-companion", expectedColors);
-  });
-
-  it("uses bleed and gold keyword shine colors for fox companion", () => {
-    render(<CompanionPanel companion={companionLibrary.fox} turnActive />);
-    const expectedColors = getKeywordListShineColors(["bleed", "gold"]);
-    expectShineContains("turn-badge-companion", expectedColors);
-  });
-
-  it("uses companion keyword palette fallback for will-o-wisp", () => {
-    render(<CompanionPanel companion={companionLibrary["will-o-wisp"]} turnActive />);
-    expectShineContains("turn-badge-companion", keywordDefinitions.companion.shineColors);
   });
 
   it("allows custom turnShineColors override if provided", () => {

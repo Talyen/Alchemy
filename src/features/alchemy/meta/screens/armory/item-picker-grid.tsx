@@ -1,6 +1,5 @@
-import { useMemo } from "react";
-import { motion, useReducedMotion } from "motion/react";
-import type { CraftingResult } from "./crafting-result";
+import { keywordDefinitions, type CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
+import { playUISound } from "@/lib/audio";
 import {
   gearDefinitions,
   getAstralShineColors,
@@ -12,22 +11,23 @@ import {
   type GearLoadouts,
   type GearSlot,
 } from "@/lib/gear";
-import { keywordDefinitions, type CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
 import { cn } from "@/lib/utils";
-import { playUISound } from "@/lib/audio";
+import { motion, useReducedMotion } from "motion/react";
+import { useMemo } from "react";
 import {
   cardSurfaceClass,
   collectionGridTileWidthClass,
   gearArtAspectClass,
   gearArtFillClass,
 } from "../../../shared/config";
-import { GearDetailPopup } from "../../../shared/ui/tooltips/gear-detail-popup";
 import { InteractiveArtTile } from "../../../shared/ui/interactive-art-tile";
+import { GearDetailPopup } from "../../../shared/ui/tooltips/gear-detail-popup";
 import { CHARACTER_ICONS, CHARACTER_KEYWORDS } from "./armory-character-tabs";
-import { targetingRingClass } from "./targeting-highlight";
-import { getArmoryTargetState, reservedReasonFor } from "./armory-item-state";
-import { CraftingFlash, ReservedLock } from "./parts/armory-item-chrome";
+import { getArmoryItemInteraction, performArmoryItemAction, reservedReasonFor } from "./armory-item-state";
+import type { CraftingResult } from "./crafting-result";
 import { ArmoryPagedGrid } from "./paged-picker-grid";
+import { CraftingFlash, ReservedLock } from "./parts/armory-item-chrome";
+import { targetingRingClass } from "./targeting-highlight";
 
 export function ItemPickerGrid({
   reservedGear,
@@ -92,9 +92,16 @@ export function ItemPickerGrid({
         const colorClass = keywordId ? keywordDefinitions[keywordId]?.colorClass : undefined;
         const loadoutLegal = definition ? isGearCompatibleWithLoadoutSlot(definition, slot, loadout, inventory) : false;
         const shineColor = getAstralShineColors(item);
-        const target = getArmoryTargetState({ instance: item, salvageMode, activeCurrencyId, reservedBy });
+        const target = getArmoryItemInteraction({
+          instance: item,
+          salvageMode,
+          activeCurrencyId,
+          reservedBy,
+          editable,
+          surface: { kind: "inventory", loadoutLegal },
+        });
         const { salvageable, blockedReason, mode, targetAriaLabel } = target;
-        const disabled = editable && !salvageMode && !activeCurrencyId && !loadoutLegal;
+        const disabled = target.incompatible;
         const ariaLabel = targetAriaLabel ?? title;
 
         return (
@@ -119,30 +126,19 @@ export function ItemPickerGrid({
                 as="button"
                 interactive
                 ariaLabel={reservationReason ? `${title}. ${reservationReason}` : ariaLabel}
-                ariaDisabled={!editable || Boolean(reservedBy) || disabled}
+                ariaDisabled={target.ariaDisabled}
                 className={cn(cardSurfaceClass, collectionGridTileWidthClass, gearArtAspectClass)}
                 imageClassName={gearArtFillClass}
                 shineColor={shineColor}
-                onClick={() => {
-                  if (reservedBy) return;
-                  if (!editable) {
-                    onCombatLockedAttempt();
-                    return;
-                  }
-                  if (salvageMode) {
-                    onSalvage(item);
-                    return;
-                  }
-                  if (activeCurrencyId) {
-                    onApplyCurrency(item);
-                    return;
-                  }
-                  if (!loadoutLegal) {
-                    playUISound("error");
-                    return;
-                  }
-                  onEquip(item);
-                }}
+                onClick={() =>
+                  performArmoryItemAction(target.action, {
+                    "combat-locked": onCombatLockedAttempt,
+                    salvage: () => onSalvage(item),
+                    craft: () => onApplyCurrency(item),
+                    incompatible: () => playUISound("error"),
+                    equip: () => onEquip(item),
+                  })
+                }
                 popup={({ visible, triggerRef }) => (
                   <GearDetailPopup
                     definition={definition}

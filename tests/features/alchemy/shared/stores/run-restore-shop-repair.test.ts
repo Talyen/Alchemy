@@ -7,6 +7,7 @@ import { readActiveRunScreen, readBattle, readRunSession } from "@/features/alch
 import { mutateGearForTest, resetAllTestStores, resetGearForTest } from "../../../../helpers/gameplay-store-test";
 import { makeActiveRunData } from "./active-run-data-fixture";
 import { cardById, trinketLibrary } from "@/lib/game-data";
+import { CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import { evaluateSaveCandidates } from "@/features/alchemy/shared/storage/save-candidates";
 import { makeMinimalActiveRunInput } from "../../../../fixtures/active-run";
 import { makeTestBattleState } from "../../../../fixtures/battle";
@@ -57,7 +58,9 @@ describe("saved battle card recovery", () => {
           pendingBattleTransition: { kind, resultState: battleState, playerTurnSkipped: false },
         },
       });
-      const loaded = evaluateSaveCandidates([JSON.stringify({ activeRun })]);
+      const loaded = evaluateSaveCandidates([
+        JSON.stringify({ saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION, activeRun }),
+      ]);
       expect(loaded.status.kind).toBe("ok");
       const reloaded = evaluateSaveCandidates([JSON.stringify(loaded.data)]);
       expect(reloaded.data.activeRun).not.toBeNull();

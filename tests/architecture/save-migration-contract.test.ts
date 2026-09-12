@@ -13,7 +13,7 @@ const ROOT = join(import.meta.dirname, "../..");
 
 describe("save migration contract", () => {
   it("tracks launch baseline at or below current schema version", () => {
-    expect(LAUNCH_SAVE_SCHEMA_VERSION).toBe(11);
+    expect(LAUNCH_SAVE_SCHEMA_VERSION).toBe(19);
     expect(CURRENT_SAVE_SCHEMA_VERSION).toBeGreaterThanOrEqual(LAUNCH_SAVE_SCHEMA_VERSION);
   });
 
@@ -65,10 +65,8 @@ describe("save migration contract", () => {
       "muteInBackground",
       "ownedTrinketIds",
       "musicVolume",
-      "parkedRuns",
       "plantedFarms",
       "rememberAutoplayPreference",
-      "runRecency",
       "saveSchemaVersion",
       "selectedAspectRatio",
       "sfxVolume",

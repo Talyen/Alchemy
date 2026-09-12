@@ -18,7 +18,7 @@ Write for a product manager, designer, player, or user who knows Alchemy as a ga
 
 ## Documentation owners
 
-After inspecting status, run `npm run context -- <relevant paths>` (or `--task <category>` before paths are known); it prints the relevant owner sections and entry points. Read emitted sections once; expand when a dependency or unresolved question crosses their boundary. When docs, tests, and implementation disagree, investigate intent rather than treating any one as automatically correct. Update the canonical owner in the same change as its invariant.
+Use `npm run context -- <relevant paths>` (or `--task <category>` before paths are known) to discover relevant owner sections and entry points. An obvious typo or isolated edit with sufficient local context needs no separate discovery pass. Before store, port, save, constant, or routing changes, read the relevant owner sections and inspect the subsystem and its consumers. Read sections once; expand when a dependency or unresolved question crosses their boundary. When docs, tests, and implementation disagree, investigate intent rather than treating any one as automatically correct. Update the canonical owner in the same change as its invariant.
 
 | Need                                                | Read                                                                                                                                                                                                                                               |
 | --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -30,11 +30,11 @@ After inspecting status, run `npm run context -- <relevant paths>` (or `--task <
 | Save compatibility                                  | [MIGRATIONS](./src/features/alchemy/shared/storage/MIGRATIONS.md)                                                                                                                                                                                  |
 | Armory / gear, card handlers, UI/audio/perf/release | [ARMORY](./docs/ARMORY.md), [BATTLE_HANDLERS](./src/lib/game-data/effects/BATTLE_HANDLERS.md), [UI](./docs/UI.md), [AUDIO](./docs/AUDIO.md), [PERFORMANCE](./docs/PERFORMANCE.md), [RELEASE](./docs/RELEASE.md) ([setup](./docs/RELEASE_SETUP.md)) |
 
-Discovery: use `npm run context -- --outline <file>` before reading a large unfamiliar module; add `--symbol <name>` for a declaration. Headings and touched paths/symbols first. Exclude `Raw Assets/`, `reports/`, `dist/`, `CHANGELOG.md`, and lockfiles from broad searches; inspect them when the task or diagnostics specifically require them.
+For large unfamiliar modules, `npm run context -- --outline <file>` and `--symbol <name>` help locate relevant declarations; use them when they save broader reading. Exclude `Raw Assets/`, `reports/`, `dist/`, `CHANGELOG.md`, and lockfiles from broad searches; inspect them when the task or diagnostics specifically require them.
 
 ## Skills & knowledge
 
-[Skill routing](./.agents/skills/README.md) identifies specialized pre-edit workflows; ordinary edits need no pre-edit skill. After edits, use `verifier`.
+[Skill routing](./.agents/skills/README.md) identifies specialized pre-edit workflows; ordinary edits need no pre-edit skill.
 [Knowledge](./.agents/knowledge/index.md) explains recurring failures and rejected approaches. Read it when that context is needed; implementation procedures stay in the canonical owners.
 
 ## High-risk invariants
@@ -49,9 +49,8 @@ Discovery: use `npm run context -- --outline <file>` before reading a large unfa
 
 ## Change guards
 
-- Before store/port/save/constant/routing change, search the touched subsystem and its consumers; follow further dependencies when evidence requires it.
 - If docs + nearest tests leave rule ambiguous, inspect focused history (start with at most five relevant commits); record the resolved invariant.
-- Post-edit: review the diff and enough surrounding code to check behavior and integration. Prefer removing redundancy and reusing owners before introducing abstractions. Use names, types, and tests to express behavior. Add concise comments when they explain non-obvious reasons, ordering, or compatibility constraints; avoid narrating the code. ESLint suppressions must explain their reason (`alchemy/require-disable-reason`). New cross-boundary contract → `architect` skill.
+- Post-edit: review the diff and enough surrounding code to check behavior and integration. Use names, types, and tests to express behavior. Add concise comments when they explain non-obvious reasons, ordering, or compatibility constraints; avoid narrating the code. ESLint suppressions must explain their reason (`alchemy/require-disable-reason`). New cross-boundary contract → `architect` skill.
 
 ## UI
 
@@ -59,9 +58,9 @@ Plain function components with typed props (no `React.FC`), `cn()` for classes. 
 
 ## Verification & environment
 
-Prefer fewer, higher-value tests; use the [test value policy](./CONTRIBUTING.md#test-value-and-coverage-strategy) to choose meaningful risks and the cheapest effective layer. Per-mechanic UI/E2E coverage is not a goal. During related work, proactively consolidate, streamline, or delete tests when justified, including unique low-value cases; no replacement or separate approval is required. Preserve meaningful protection and briefly explain material retirements.
+After edits, use [verifier](./.agents/skills/verifier/SKILL.md) before handoff. [CONTRIBUTING](./CONTRIBUTING.md#what-to-run-when-you-change) owns gate tiers and the [test value policy](./CONTRIBUTING.md#test-value-and-coverage-strategy), including permission to consolidate or retire low-value tests during related work. Preserve meaningful protection and report material retirements.
 
-After edits use `verifier` skill. Tiers in [CONTRIBUTING](./CONTRIBUTING.md#what-to-run-when-you-change), command catalog in [REFERENCE](./docs/REFERENCE.md#environment--commands); triage in [REFERENCE#failure-first-triage](./docs/REFERENCE.md#failure-first-triage). Node/npm versions in `package.json`.
+The command catalog is in [REFERENCE](./docs/REFERENCE.md#environment--commands); Node/npm versions are in `package.json`.
 
 ## Branch and commits
 

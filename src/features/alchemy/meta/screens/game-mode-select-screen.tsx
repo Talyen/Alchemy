@@ -29,17 +29,15 @@ function GameModeTile({
   modeId,
   meta,
   isLocked,
-  canResume,
   onSelect,
 }: {
   modeId: GameModeId;
   meta: GameModeMeta;
   isLocked: boolean;
-  canResume: boolean;
   onSelect: () => void;
 }) {
   const Icon = meta.icon;
-  const ariaLabel = isLocked ? `${meta.title} (Locked)` : canResume ? `Resume ${meta.title}` : meta.title;
+  const ariaLabel = isLocked ? `${meta.title} (Locked)` : meta.title;
   const tileTriggerRef = useRef<HTMLButtonElement>(null);
 
   return (
@@ -48,7 +46,7 @@ function GameModeTile({
       interactionId={modeId}
       art={meta.art}
       icon={Icon}
-      label={canResume ? `Resume ${meta.title}` : meta.title}
+      label={meta.title}
       ariaLabel={ariaLabel}
       accentClassName={meta.accentClassName}
       plasmaColorPair={isLocked ? null : meta.plasmaColorPair}
@@ -74,7 +72,6 @@ function GameModeTile({
               ) : (
                 <>
                   <p>{meta.description}</p>
-                  {canResume ? <p>Resume your run</p> : null}
                 </>
               )}
             </TooltipBody>
@@ -86,7 +83,6 @@ function GameModeTile({
 }
 
 export function GameModeSelectScreen({
-  resumableModes,
   finishedRunCharacters,
   onSelectCampaign,
   onSelectLabyrinth,
@@ -94,7 +90,6 @@ export function GameModeSelectScreen({
   onBack,
   onMenu,
 }: {
-  resumableModes: Record<GameModeId, boolean>;
   finishedRunCharacters: CharacterId[];
   onSelectCampaign: () => void;
   onSelectLabyrinth: () => void;
@@ -124,14 +119,7 @@ export function GameModeSelectScreen({
             const isLocked = !isGameModeUnlocked(modeId, finishedRunCharacters);
 
             return (
-              <GameModeTile
-                key={modeId}
-                modeId={modeId}
-                meta={meta}
-                isLocked={isLocked}
-                canResume={resumableModes[modeId]}
-                onSelect={handlers[modeId]}
-              />
+              <GameModeTile key={modeId} modeId={modeId} meta={meta} isLocked={isLocked} onSelect={handlers[modeId]} />
             );
           })}
         </div>

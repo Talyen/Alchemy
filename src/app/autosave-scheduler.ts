@@ -37,7 +37,7 @@ interface AutosaveProgress {
 
 export interface CompletionInput extends AutosaveProgress {
   savingRevision: number;
-  outcome: SaveWriteOutcome;
+  outcome: Exclude<SaveWriteOutcome, "skipped">;
   now: number;
   maxWaitMs: number;
 }
@@ -48,16 +48,6 @@ export interface CompletionResult extends AutosaveProgress {
 }
 
 export function applyAutosaveCompletion(input: CompletionInput): CompletionResult {
-  if (input.outcome === "skipped") {
-    return {
-      revision: 0,
-      acknowledgedRevision: 0,
-      submittedRevision: 0,
-      retryAt: 0,
-      schedule: false,
-      cancelTimer: true,
-    };
-  }
   if (input.outcome === "saved") {
     const acknowledgedRevision = Math.max(input.acknowledgedRevision, input.savingRevision);
     const retryAt = input.savingRevision === input.submittedRevision ? 0 : input.retryAt;
@@ -88,5 +78,67 @@ export function applyAutosaveCompletion(input: CompletionInput): CompletionResul
     retryAt: input.retryAt,
     schedule: false,
     cancelTimer: false,
+  };
+}
+
+interface SaveSubmission {
+  readonly revision: number;
+  readonly generation: number;
+}
+
+type CompletionAction = "ignore" | "cancel" | "schedule";
+
+/** Owns one subscription lifetime. The adapter supplies clocks, timers, and storage. */
+export function createAutosaveScheduler(maxWaitMs: number) {
+  let revision = 0;
+  let acknowledgedRevision = 0;
+  let submittedRevision = 0;
+  let generation = 0;
+  let dirtySince = 0;
+  let retryAt = 0;
+
+  function cancel() {
+    generation++;
+    revision = acknowledgedRevision = submittedRevision = dirtySince = retryAt = 0;
+  }
+
+  return {
+    cancel,
+    markDirty(now: number) {
+      if (revision === submittedRevision) dirtySince = now;
+      revision++;
+    },
+    nextDelay(now: number, debounceMs: number): number | null {
+      if (revision <= submittedRevision) return null;
+      return computeAutosaveDelay({ debounceMs, maxWaitMs, now, dirtySince, retryAt });
+    },
+    submit(terminal: boolean): SaveSubmission | null {
+      if (!shouldAttemptFlush({ enabled: true, revision, acknowledgedRevision, submittedRevision, terminal })) {
+        return null;
+      }
+      submittedRevision = revision;
+      return { revision, generation };
+    },
+    complete(submission: SaveSubmission, outcome: SaveWriteOutcome, now: number): CompletionAction {
+      if (submission.generation !== generation) return "ignore";
+      if (outcome === "skipped") {
+        cancel();
+        return "cancel";
+      }
+      const next = applyAutosaveCompletion({
+        revision,
+        acknowledgedRevision,
+        submittedRevision,
+        retryAt,
+        savingRevision: submission.revision,
+        outcome,
+        now,
+        maxWaitMs,
+      });
+      acknowledgedRevision = next.acknowledgedRevision;
+      submittedRevision = next.submittedRevision;
+      retryAt = next.retryAt;
+      return next.cancelTimer ? "cancel" : next.schedule ? "schedule" : "ignore";
+    },
   };
 }

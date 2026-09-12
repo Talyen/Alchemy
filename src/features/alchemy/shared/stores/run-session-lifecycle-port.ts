@@ -5,6 +5,7 @@ export {
   syncRunToBattleStart,
   syncBattleToRun,
   teardownRun,
+  abandonRun,
   flushSaveAfterGearMutation,
   finalizeRunEndSession,
   applyRunDefeatTeardown,
@@ -13,4 +14,3 @@ export {
   clearBattleUi,
   clearBattlePresentationUi,
 } from "./run-lifecycle";
-export { hydrateModeRunInDraft } from "./run-park-restore";

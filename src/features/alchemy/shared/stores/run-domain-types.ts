@@ -22,7 +22,6 @@ import type { BattleCard, CharacterId, TalentXP } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { Destination, Screen } from "@/lib/routing";
-import { emptyParkedRuns, type ParkedRunsMap } from "./parked-runs";
 
 export interface RunDomainBattleState {
   battleState: BattleSnapshot;
@@ -35,8 +34,6 @@ export interface RunDomainBattleState {
 
 export interface RunDomainDataState {
   activeRun: ActiveRunProgressFields;
-  parkedRuns: ParkedRunsMap;
-  runRecency: ContentSystemId[];
   initialized: boolean;
   navigation: { screen: Screen };
 }
@@ -75,8 +72,6 @@ export function createInitialBattleFields(): RunDomainBattleState {
 export function createInitialRunDomainData(): RunDomainDataState {
   return {
     activeRun: createInitialActiveRunFields(null),
-    parkedRuns: emptyParkedRuns(),
-    runRecency: [],
     initialized: false,
     navigation: { screen: "menu" },
   };

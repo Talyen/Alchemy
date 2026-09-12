@@ -1,25 +1,25 @@
-import type { CraftingResult } from "../crafting-result";
-import { memo } from "react";
+import { ShineBorder } from "@/components/ui/shine-border";
 import {
+  GEAR_ASTRAL_SHINE_BORDER_WIDTH,
   gearDefinitions,
   getAstralShineColors,
-  GEAR_ASTRAL_SHINE_BORDER_WIDTH,
   type CraftingCurrencyId,
   type GearInstance,
   type GearSlot,
 } from "@/lib/gear";
-import { ShineBorder } from "@/components/ui/shine-border";
 import { cn } from "@/lib/utils";
+import { memo } from "react";
 import { getPlasmaColorPairForGear } from "../../../../shared/config";
 import { Surface } from "../../../../shared/ui/surface";
-import { PortaledTooltip } from "../../../../shared/ui/tooltips/portaled-tooltip";
 import { GearTooltipContent } from "../../../../shared/ui/tooltips/gear-tooltip-content";
+import { PortaledTooltip } from "../../../../shared/ui/tooltips/portaled-tooltip";
+import { getArmoryItemInteraction, performArmoryItemAction } from "../armory-item-state";
+import type { CraftingResult } from "../crafting-result";
+import { targetingRingClass } from "../targeting-highlight";
+import { CraftingFlash } from "./armory-item-chrome";
+import { ARMORY_GEAR_SLOT_TESTID, armorySlotSurfaceClass, useArmorySlotHover } from "./armory-slot-shell";
 import { GearSlotArt } from "./gear-slot-art";
 import { SLOT_ARIA_LABELS } from "./slot-labels";
-import { ARMORY_GEAR_SLOT_TESTID, armorySlotSurfaceClass, useArmorySlotHover } from "./armory-slot-shell";
-import { CraftingFlash } from "./armory-item-chrome";
-import { targetingRingClass } from "../targeting-highlight";
-import { getArmoryTargetState } from "../armory-item-state";
 
 export const EquipmentSlotButton = memo(function EquipmentSlotButton({
   slot,
@@ -51,7 +51,13 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
   const definition = instance ? gearDefinitions[instance.definitionId] : undefined;
   const shineColors = instance ? getAstralShineColors(instance) : undefined;
   const showShine = Boolean(shineColors);
-  const target = getArmoryTargetState({ instance, salvageMode, activeCurrencyId });
+  const target = getArmoryItemInteraction({
+    instance,
+    salvageMode,
+    activeCurrencyId,
+    editable,
+    surface: { kind: "equipment", selected },
+  });
   const { salvageable, blockedReason, mode, targetAriaLabel } = target;
   const ariaLabel = targetAriaLabel ?? SLOT_ARIA_LABELS[slot];
   const {
@@ -106,29 +112,19 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
         onFocus={handleHoverStart}
         onBlur={handleBlur}
         className={armorySlotSurfaceClass(editable, showShine)}
-        onClick={() => {
-          if (!editable) {
-            if (instance && (selected || salvageMode || activeCurrencyId)) {
-              onCombatLockedAttempt();
-              return;
-            }
-            onSelect(slot);
-            return;
-          }
-          if (salvageMode) {
-            if (instance) onSalvage(instance);
-            return;
-          }
-          if (activeCurrencyId && instance) {
-            onApplyCurrency(instance);
-            return;
-          }
-          if (selected && instance) {
-            onUnequip(slot);
-            return;
-          }
-          onSelect(slot);
-        }}
+        onClick={() =>
+          performArmoryItemAction(target.action, {
+            "combat-locked": onCombatLockedAttempt,
+            salvage: () => {
+              if (instance) onSalvage(instance);
+            },
+            craft: () => {
+              if (instance) onApplyCurrency(instance);
+            },
+            unequip: () => onUnequip(slot),
+            select: () => onSelect(slot),
+          })
+        }
       >
         <GearSlotArt definition={definition} slot={slot} />
       </Surface>

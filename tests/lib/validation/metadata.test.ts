@@ -4,12 +4,12 @@ import {
   CURRENT_GAME_BUILD_VERSION,
   CURRENT_SAVE_SCHEMA_VERSION,
 } from "@/lib/validation/metadata";
-import { migrateSaveDataToCurrent } from "@/lib/validation/migration";
-import { currentSchemaCampaignSave } from "../../fixtures/legacy-saves";
+import { SaveDataSchema } from "@/lib/validation";
+import { currentSchemaCampaignSave } from "../../fixtures/current-saves";
 
 describe("validation metadata", () => {
-  it("CURRENT_SAVE_SCHEMA_VERSION matches migrated legacy save version", () => {
-    const migrated = migrateSaveDataToCurrent(currentSchemaCampaignSave());
+  it("CURRENT_SAVE_SCHEMA_VERSION matches the current save fixture", () => {
+    const migrated = SaveDataSchema.parse(currentSchemaCampaignSave());
     expect(migrated.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
   });
 

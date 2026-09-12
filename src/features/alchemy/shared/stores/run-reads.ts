@@ -1,4 +1,4 @@
-import type { ParkedRunsMap, PersistedBattleTransition } from "@/lib/active-run-session";
+import type { PersistedBattleTransition } from "@/lib/active-run-session";
 import { readActivityData, runActivityScreen } from "@/lib/active-run-session";
 import { isPlayerDefeated, getBattleCompanionDamageModifiers, type BattleSnapshot } from "@/lib/battle";
 import type { ContentSystemId, EncounterCombatTraitId } from "@/lib/content-systems/types";
@@ -16,7 +16,6 @@ import { getRunPhase, type Destination, type RunPhase, type Screen } from "@/lib
 import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { readGameplayState, useGameplayStateStore, type GameplayState } from "./gameplay-state-store";
-import { mostRecentResumableMode } from "./parked-runs";
 import type { RunDomainBattleState, RunSessionFields } from "./run-domain-types";
 import type { PermanentProgressFields } from "./run-state-init";
 import { pickActiveRunView, type ActiveRunReadView } from "./run-state-init";
@@ -81,12 +80,6 @@ export function readHasActiveRun(): boolean {
 }
 export function readHasActiveBattle(): boolean {
   return readGameplayState().battle.hasActiveBattle;
-}
-export function readParkedRuns(): ParkedRunsMap {
-  return structuredClone(readGameplayState().run.parkedRuns);
-}
-export function readRunRecency(): ContentSystemId[] {
-  return [...readGameplayState().run.runRecency];
 }
 export function readActiveRunScreen(): Screen {
   return readGameplayState().run.navigation.screen;
@@ -155,27 +148,8 @@ export function useHasActiveRun(): boolean {
 }
 export function useForegroundResumeKind(): "battle" | "run" | null {
   return useGameplayStateStore((state) => {
-    const liveMode = state.session.activity.kind !== "inactive" ? state.run.activeRun.contentSystemType : null;
-    const mode = mostRecentResumableMode(
-      state.run.runRecency,
-      liveMode,
-      state.run.parkedRuns,
-      state.session.activity.kind !== "inactive",
-    );
-    if (!mode) return null;
-    if (state.session.activity.kind !== "inactive" && liveMode === mode)
-      return state.battle.hasActiveBattle ? "battle" : "run";
-    return state.run.parkedRuns[mode]?.activeCombat ? "battle" : "run";
-  });
-}
-export function useResumableGameModes(): Record<ContentSystemId, boolean> {
-  return useShallowRunSelector((state) => {
-    const live = state.session.activity.kind !== "inactive" ? state.run.activeRun.contentSystemType : null;
-    return {
-      campaign: live === "campaign" || Boolean(state.run.parkedRuns.campaign),
-      labyrinth: live === "labyrinth" || Boolean(state.run.parkedRuns.labyrinth),
-      wildwood: live === "wildwood" || Boolean(state.run.parkedRuns.wildwood),
-    };
+    if (state.session.activity.kind === "inactive") return null;
+    return state.battle.hasActiveBattle ? "battle" : "run";
   });
 }
 

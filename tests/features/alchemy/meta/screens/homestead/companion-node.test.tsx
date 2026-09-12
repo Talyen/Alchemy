@@ -69,43 +69,6 @@ describe("CompanionCardNode", () => {
     expect(onBond).not.toHaveBeenCalled();
   });
 
-  it("shows matching shine and glow for undiscovered companions during hover", () => {
-    const inventory = { ...emptyInventory(), food: 100 };
-    const discovered = render(
-      <CompanionCardNode
-        card={wolfCard}
-        discovered
-        bondedCompanions={{} as any}
-        materialInventory={inventory}
-        onBond={vi.fn()}
-      />,
-    );
-    const button = screen.getByRole("button");
-    fireEvent.mouseEnter(button.parentElement!);
-    const discoveredColor = button.querySelector<HTMLElement>(".shine-border-paint")?.style.backgroundColor;
-    expect(discoveredColor).toBeTruthy();
-    fireEvent.mouseLeave(button.parentElement!);
-    discovered.unmount();
-    useUiStore.setState({ hoveredCardId: null, shimmerState: null });
-
-    const { container } = render(
-      <CompanionCardNode
-        card={wolfCard}
-        discovered={false}
-        bondedCompanions={{} as any}
-        materialInventory={emptyInventory()}
-        onBond={vi.fn()}
-      />,
-    );
-    const surface = container.querySelector(".card-interactive-glow");
-    expect(surface).toBeTruthy();
-    expect(container.querySelector(".shine-border")).toBeNull();
-    fireEvent.mouseEnter(surface!.parentElement!);
-    expect(container.querySelector<HTMLElement>(".shine-border-paint")?.style.backgroundColor).toBe(discoveredColor);
-    fireEvent.mouseLeave(surface!.parentElement!);
-    expect(container.querySelector(".shine-border")).toBeNull();
-  });
-
   it("renders art-only tile without button when complete", () => {
     render(
       <CompanionCardNode

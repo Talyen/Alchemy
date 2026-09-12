@@ -1,107 +1,66 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
 import { resolvePlasmaBackingScale } from "@/lib/animation/keyword-plasma-lifecycle";
 import { startKeywordPlasma } from "@/lib/animation/keyword-plasma";
+import { startWebGLKeywordPlasma } from "@/lib/animation/keyword-plasma-webgl";
 
-describe("resolvePlasmaBackingScale", () => {
-  beforeEach(() => {
-    vi.stubGlobal("devicePixelRatio", 1);
-  });
+vi.mock("@/lib/animation/keyword-plasma-webgl", () => ({ startWebGLKeywordPlasma: vi.fn() }));
+vi.mock("@/lib/error-logger", () => ({ logError: vi.fn() }));
 
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
+beforeEach(() => vi.clearAllMocks());
+afterEach(() => vi.unstubAllGlobals());
 
-  it("caps backing scale for large surfaces", () => {
-    const scale = resolvePlasmaBackingScale(1920, 1080);
-    expect(scale).toBeLessThanOrEqual(0.75);
-    expect(scale).toBeGreaterThan(0);
-  });
+it("bounds the backing surface on large displays", () => {
+  vi.stubGlobal("devicePixelRatio", 2);
+  const scale = resolvePlasmaBackingScale(3840, 2160);
+  expect(3840 * 2160 * scale * scale).toBeLessThanOrEqual(1_500_001);
+  expect(scale).toBeGreaterThan(0);
 });
 
-describe("startKeywordPlasma", () => {
-  beforeEach(() => {
-    vi.stubGlobal("devicePixelRatio", 1);
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  it("returns noop cleanup when canvas has no parent", () => {
+describe("plasma availability", () => {
+  function setup() {
     const canvas = document.createElement("canvas");
-    const colorsRef = { current: { primary: "#ff0000", secondary: "#0000ff" } };
-    const cleanup = startKeywordPlasma("canvas", {
+    const available = vi.fn();
+    const cleanup = startKeywordPlasma({
       canvas,
-      colorsRef,
-      focalYOffset: 75,
+      colorsRef: { current: { primary: "#ff0000", secondary: "#0000ff" } },
+      focalYOffset: 0,
       active: () => true,
+      onAvailabilityChange: available,
     });
-    expect(() => cleanup()).not.toThrow();
-  });
-
-  it("starts and stops canvas renderer without throwing", () => {
-    const parent = document.createElement("div");
-    Object.defineProperty(parent, "clientWidth", { value: 800, configurable: true });
-    Object.defineProperty(parent, "clientHeight", { value: 600, configurable: true });
-    const canvas = document.createElement("canvas");
-    parent.appendChild(canvas);
-    document.body.appendChild(parent);
-
-    const colorsRef = { current: { primary: "#ff8040", secondary: "#4080ff" } };
-    const cleanup = startKeywordPlasma("canvas", {
-      canvas,
-      colorsRef,
-      focalYOffset: 75,
-      active: () => true,
-    });
-
-    expect(() => cleanup()).not.toThrow();
-    parent.remove();
-  });
-
-  it("does not schedule frames when animations are disabled", () => {
-    localStorage.setItem("alchemy-disable-animations", "true");
-    const raf = vi.fn();
-    vi.stubGlobal("requestAnimationFrame", raf);
-
-    const parent = document.createElement("div");
-    Object.defineProperty(parent, "clientWidth", { value: 800, configurable: true });
-    Object.defineProperty(parent, "clientHeight", { value: 600, configurable: true });
-    const canvas = document.createElement("canvas");
-    parent.appendChild(canvas);
-    document.body.appendChild(parent);
-
-    const cleanup = startKeywordPlasma("canvas", {
-      canvas,
-      colorsRef: { current: { primary: "#ff8040", secondary: "#4080ff" } },
-      focalYOffset: 75,
-      active: () => true,
-    });
-
-    expect(raf).not.toHaveBeenCalled();
+    return { canvas, available, cleanup };
+  }
+  it("reports failed initialization for static decoration without scheduling retries", () => {
+    vi.mocked(startWebGLKeywordPlasma).mockReturnValue(null);
+    const { canvas, available, cleanup } = setup();
+    expect(available).toHaveBeenLastCalledWith(false);
     cleanup();
-    parent.remove();
-    localStorage.removeItem("alchemy-disable-animations");
+    canvas.dispatchEvent(new Event("webglcontextrestored"));
+    expect(startWebGLKeywordPlasma).toHaveBeenCalledTimes(1);
   });
-
-  it("starts and stops webgl renderer (falling back gracefully without throwing in jsdom)", () => {
-    const parent = document.createElement("div");
-    Object.defineProperty(parent, "clientWidth", { value: 800, configurable: true });
-    Object.defineProperty(parent, "clientHeight", { value: 600, configurable: true });
-    const canvas = document.createElement("canvas");
-    parent.appendChild(canvas);
-    document.body.appendChild(parent);
-
-    const colorsRef = { current: { primary: "#ff8040", secondary: "#4080ff" } };
-    const cleanup = startKeywordPlasma("webgl", {
-      canvas,
-      colorsRef,
-      focalYOffset: 75,
-      active: () => true,
-    });
-
-    expect(() => cleanup()).not.toThrow();
-    parent.remove();
+  it("stops a lost context, rebuilds on restoration, and removes all listeners on cleanup", () => {
+    const firstStop = vi.fn(),
+      secondStop = vi.fn();
+    vi.mocked(startWebGLKeywordPlasma).mockReturnValueOnce(firstStop).mockReturnValueOnce(secondStop);
+    const { canvas, available, cleanup } = setup();
+    expect(available).toHaveBeenLastCalledWith(true);
+    const lost = new Event("webglcontextlost", { cancelable: true });
+    canvas.dispatchEvent(lost);
+    expect(lost.defaultPrevented).toBe(true);
+    expect(firstStop).toHaveBeenCalledOnce();
+    expect(available).toHaveBeenLastCalledWith(false);
+    canvas.dispatchEvent(new Event("webglcontextrestored"));
+    expect(available).toHaveBeenLastCalledWith(true);
+    cleanup();
+    expect(secondStop).toHaveBeenCalledOnce();
+    canvas.dispatchEvent(new Event("webglcontextrestored"));
+    expect(startWebGLKeywordPlasma).toHaveBeenCalledTimes(2);
+  });
+  it("keeps the fallback when restoration cannot rebuild resources", () => {
+    vi.mocked(startWebGLKeywordPlasma).mockReturnValueOnce(vi.fn()).mockReturnValueOnce(null);
+    const { canvas, available, cleanup } = setup();
+    canvas.dispatchEvent(new Event("webglcontextlost", { cancelable: true }));
+    canvas.dispatchEvent(new Event("webglcontextrestored"));
+    expect(available).toHaveBeenLastCalledWith(false);
+    cleanup();
   });
 });

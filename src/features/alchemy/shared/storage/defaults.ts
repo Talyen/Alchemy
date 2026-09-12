@@ -10,8 +10,6 @@ export function createDefaultSaveData(): SaveData {
     contentVersion: CURRENT_CONTENT_VERSION,
     ...createDefaultPersistenceFields(),
     activeRun: null,
-    parkedRuns: {},
-    runRecency: [],
     lastSavedAt: 0,
   };
 }

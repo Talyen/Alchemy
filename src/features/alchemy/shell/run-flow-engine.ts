@@ -103,7 +103,10 @@ export function createRunFlowEngine(
     beginWildwood: contentNav.beginWildwood,
     beginMysteryEvent: mystery.beginMysteryEvent,
     endLabyrinthRun: flowHandlers.endLabyrinthRun,
-    handleAbandonRun: flowHandlers.handleAbandonRun,
+    handleAbandonRun: () => {
+      cancelPending();
+      flowHandlers.handleAbandonRun();
+    },
     handleCharacterSelect: contentNav.handleCharacterSelect,
     handleStandardDraftComplete: contentNav.handleStandardDraftComplete,
     handleWildwoodDraftComplete: wildwood.handleWildwoodDraftComplete,

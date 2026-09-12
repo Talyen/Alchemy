@@ -1,208 +1,32 @@
-import { logError } from "@/lib/error-logger";
-import { DEFAULT_BATTLE_ENEMY_TYPE, DRAFT_ROUNDS } from "@/lib/game-constants";
-import { playGoldGain } from "@/lib/audio";
-import {
-  setPendingCharacterId,
-  setPendingContentSystemType,
-  setStarterDraftChoices,
-  createDraftRunRandomSource,
-  setRunDeck,
-  setDestinationOfferState,
-  setRewardState,
-  setLabyrinthMap,
-  setWildwoodDraft,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+import { afterCampaignCharacterResolved } from "@/features/alchemy/shared/run-flow/campaign-start";
+import { createStarterDraftChoices } from "@/features/alchemy/shared/run-flow/starter-draft";
 import { discoverCardIds, readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import {
   readActiveRun,
-  readHasActiveRun,
   readHasActiveBattle,
-  readParkedRuns,
-  readRunRecency,
+  readHasActiveRun,
   readRunSession,
 } from "@/features/alchemy/shared/stores/run-reads";
-import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
-import { hydrateModeRunInDraft, snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
-import { mostRecentResumableMode } from "@/features/alchemy/shared/stores/parked-runs";
-import { parkAndDeactivateForegroundRunInDraft } from "@/features/alchemy/shared/stores/run-park-restore";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
-  createInitialDestinationResult,
-  restoreOrCreateDestinationRewardState,
-} from "@/features/alchemy/shared/run-flow/destination-flow";
-import { rollFreshBossId } from "@/features/alchemy/shared/config";
-import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
-import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
-import { applyRunStartToDraft, createDraftRunStartSnapshot } from "./run-start-command";
-import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
-import { afterCampaignCharacterResolved } from "@/features/alchemy/shared/run-flow/campaign-start";
-import { createStarterDraftChoices } from "@/features/alchemy/shared/run-flow/starter-draft";
+  createDraftRunRandomSource,
+  setPendingCharacterId,
+  setRunDeck,
+  setStarterDraftChoices,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
+import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
+import { logError } from "@/lib/error-logger";
+import { DEFAULT_BATTLE_ENEMY_TYPE, DRAFT_ROUNDS } from "@/lib/game-constants";
+import { getDifficultyModifiers, isDifficultyUnlocked, type CharacterId, type DifficultyId } from "@/lib/game-data";
+import { ROUTE_SCREENS } from "@/lib/routing";
 import type { ContentSystemNavigationDeps } from "./content-system-navigation-types";
-import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
-import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
-import {
-  getDifficultyModifiers,
-  isDifficultyUnlocked,
-  type BattleCard,
-  type CharacterId,
-  type DifficultyId,
-} from "@/lib/game-data";
-
-function sampleAndApplyInitialCampaignDestinations(
-  draft: GameplayDraft,
-  getAvailableDestinations: ContentSystemNavigationDeps["getAvailableDestinations"],
-  maxHealth: number,
-): void {
-  const run = draft.run.activeRun;
-  const initialDestinations = createInitialDestinationResult({
-    availableDestinations: getAvailableDestinations({
-      currentHealth: maxHealth,
-      currentGold: draft.runProfile.gold,
-      destinationIndexInAct: 0,
-      maxHealth,
-    }),
-    offerState: {
-      lastOfferedDestinations: run.lastOfferedDestinations,
-      roundsSinceOffered: run.destinationRoundsSinceOffered,
-    },
-    bossEnemyId: rollFreshBossId(createDraftRunRandomSource(draft, "world")),
-    rng: createDraftRunRandomSource(draft, "destinations"),
-  });
-  setDestinationOfferState(draft, initialDestinations.offerState);
-  setRewardState(draft, initialDestinations.rewardState);
-}
-
-function restoreResumedCampaignDestinations(
-  draft: GameplayDraft,
-  getAvailableDestinations: ContentSystemNavigationDeps["getAvailableDestinations"],
-): void {
-  const active = draft.run.activeRun;
-  const reward = draft.session.rewardFlow.state;
-  if (
-    reward.destinations.length > 0 &&
-    (!reward.destinations.includes(DESTINATIONS.BOSS_COMBAT) || reward.selectedBossId)
-  )
-    return;
-  setRewardState(draft, (prev) =>
-    restoreOrCreateDestinationRewardState(prev, {
-      availableDestinations: getAvailableDestinations({
-        currentHealth: active.runPlayerHealth,
-        currentGold: draft.runProfile.gold,
-        destinationIndexInAct: active.destinationIndexInAct,
-        maxHealth: active.runMaxHealth,
-      }),
-      offerState: {
-        lastOfferedDestinations: active.lastOfferedDestinations,
-        roundsSinceOffered: active.destinationRoundsSinceOffered,
-      },
-      bossEnemyId: rollFreshBossId(createDraftRunRandomSource(draft, "world")),
-      rng: createDraftRunRandomSource(draft, "destinations"),
-      onSampled: (result) => setDestinationOfferState(draft, result.offerState),
-    }),
-  );
-}
-
-function cloneDraftCard(card: BattleCard): BattleCard {
-  return { ...card, effects: card.effects ? [...card.effects] : card.effects };
-}
-
-function createStartSnapshot(
-  draft: GameplayDraft,
-  characterId: CharacterId,
-  contentSystemType: ContentSystemId,
-  difficultyId?: DifficultyId | null,
-  draftedDeck?: BattleCard[],
-): RunStartSnapshot {
-  const resolvedDraft =
-    draftedDeck ?? (characterId === "wildcard" ? draft.run.activeRun.runDeck.map(cloneDraftCard) : undefined);
-  return createDraftRunStartSnapshot(draft, {
-    characterId,
-    contentSystemType,
-    ...(difficultyId === undefined ? {} : { difficultyId }),
-    ...(resolvedDraft === undefined ? {} : { draftedDeck: resolvedDraft }),
-  });
-}
-
-function startRunSession<T>(
-  deps: ContentSystemNavigationDeps,
-  draftMutator: (draft: GameplayDraft) => { result: T; playGold: boolean; onNavigate?: () => void },
-): T {
-  let playGold = false;
-  let onNavigate: (() => void) | undefined;
-  let result!: T;
-  dispatchRunSessionCommand(
-    (draft) => {
-      const outcome = draftMutator(draft);
-      playGold = outcome.playGold;
-      onNavigate = outcome.onNavigate;
-      result = outcome.result;
-    },
-    {
-      afterCommit: () => {
-        if (playGold) playGoldGain();
-        deps.clearCardHover();
-        onNavigate?.();
-      },
-    },
-  );
-  return result;
-}
+import { cloneDraftCard, createNewRunInitialization } from "./new-run-initialization";
+import { createRunResumeNavigation } from "./run-resume-navigation";
 
 export function createContentSystemNavigation(deps: ContentSystemNavigationDeps) {
-  function initializeRunForDifficulty(characterId: CharacterId, difficultyId: DifficultyId) {
-    return startRunSession(deps, (draft) => {
-      const startSnapshot = createStartSnapshot(draft, characterId, CONTENT_SYSTEMS.CAMPAIGN, difficultyId);
-      const { startGoldGranted } = applyRunStartToDraft(draft, startSnapshot, { discoverDeck: true });
-      setStarterDraftChoices(draft, null);
-      sampleAndApplyInitialCampaignDestinations(draft, deps.getAvailableDestinations, startSnapshot.runMaxHealth);
-      return {
-        result: { freshDeck: startSnapshot.freshDeck, totalStartGold: draft.runProfile.gold },
-        playGold: startGoldGranted > 0,
-      };
-    });
-  }
-
-  function initializeLabyrinthRun(characterId: CharacterId) {
-    startRunSession(deps, (draft) => {
-      const snapshot = createStartSnapshot(draft, characterId, CONTENT_SYSTEMS.LABYRINTH);
-      const { startGoldGranted } = applyRunStartToDraft(draft, snapshot, { discoverDeck: true });
-      setLabyrinthMap(draft, generateLabyrinthMap(createDraftRunRandomSource(draft, "world")));
-      setStarterDraftChoices(draft, null);
-      return {
-        result: undefined,
-        playGold: startGoldGranted > 0,
-        onNavigate: () => deps.navigateTo(ROUTE_SCREENS.LABYRINTH_MAP),
-      };
-    });
-  }
-
-  function initializeWildwoodRun(characterId: CharacterId) {
-    startRunSession(deps, (draft) => {
-      const startSnapshot = createStartSnapshot(draft, characterId, CONTENT_SYSTEMS.WILDWOOD, null, []);
-      const { startGoldGranted } = applyRunStartToDraft(draft, startSnapshot);
-      setStarterDraftChoices(draft, null);
-      setWildwoodDraft(draft, createInitialWildwoodDraftState(characterId, createDraftRunRandomSource(draft, "world")));
-      setPendingCharacterId(draft, characterId);
-      return {
-        result: undefined,
-        playGold: startGoldGranted > 0,
-        onNavigate: () => deps.navigateTo(ROUTE_SCREENS.DRAFT_DECK),
-      };
-    });
-  }
-
-  function initializeStarterDraftRun(contentSystemType: ContentSystemId) {
-    startRunSession(deps, (draft) => {
-      const startSnapshot = createStartSnapshot(draft, "wildcard", contentSystemType, null, []);
-      const { startGoldGranted } = applyRunStartToDraft(draft, startSnapshot);
-      setPendingCharacterId(draft, "wildcard");
-      setStarterDraftChoices(draft, createStarterDraftChoices([], createDraftRunRandomSource(draft, "rewards")));
-      return {
-        result: undefined,
-        playGold: startGoldGranted > 0,
-        onNavigate: () => deps.navigateTo(ROUTE_SCREENS.DRAFT_DECK),
-      };
-    });
-  }
+  const { initializeRunForDifficulty, initializeLabyrinthRun, initializeWildwoodRun, initializeStarterDraftRun } =
+    createNewRunInitialization(deps);
+  const { resumeRun, beginContentSystem } = createRunResumeNavigation(deps);
 
   const noviceCampaignDeps = () => ({
     completedDifficulties: readProfileStore().completedDifficulties,
@@ -215,55 +39,6 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
         dispatchRunSessionCommand((draft) => setPendingCharacterId(draft, null)),
       ),
   });
-
-  function resumeRun(requestedMode?: ContentSystemId) {
-    const hasLive = readHasActiveRun();
-    const liveMode = hasLive ? readActiveRun().contentSystemType : null;
-    const parked = readParkedRuns();
-    const mode = requestedMode ?? mostRecentResumableMode(readRunRecency(), liveMode, parked, hasLive);
-    if (!mode || (liveMode !== mode && !parked[mode])) return;
-    dispatchRunSessionCommand((draft) => {
-      if (liveMode !== mode) hydrateModeRunInDraft(draft, mode);
-      setPendingContentSystemType(draft, mode);
-      setPendingCharacterId(draft, null);
-    });
-    const screen = snapshotRun().currentScreen;
-    if (!screen) return;
-    deps.clearCardHover();
-    if (screen === ROUTE_SCREENS.DESTINATION && mode === CONTENT_SYSTEMS.CAMPAIGN) {
-      deps.navigateTo(screen, () => {
-        dispatchRunSessionCommand((draft) => {
-          restoreResumedCampaignDestinations(draft, deps.getAvailableDestinations);
-        });
-      });
-    } else if (screen === ROUTE_SCREENS.BATTLE && mode === CONTENT_SYSTEMS.WILDWOOD && !readHasActiveBattle()) {
-      deps.onResumeWildwood();
-    } else {
-      deps.navigateTo(screen);
-    }
-  }
-
-  function beginContentSystem(systemId: ContentSystemId) {
-    const hasActiveRun = readHasActiveRun();
-    const runType = hasActiveRun ? readActiveRun().contentSystemType : null;
-    if (hasActiveRun && runType === systemId) {
-      resumeRun(systemId);
-      return;
-    }
-    const parked = readParkedRuns()[systemId];
-    if (parked) {
-      resumeRun(systemId);
-      return;
-    }
-    dispatchRunSessionCommand((draft) => {
-      if (draft.session.activity.kind !== "inactive" && draft.run.activeRun.contentSystemType !== systemId) {
-        parkAndDeactivateForegroundRunInDraft(draft);
-      }
-      setPendingCharacterId(draft, null);
-      setPendingContentSystemType(draft, systemId);
-    });
-    deps.navigateTo(ROUTE_SCREENS.CHARACTER_SELECT);
-  }
 
   function beginCampaign() {
     beginContentSystem(CONTENT_SYSTEMS.CAMPAIGN);
@@ -278,6 +53,10 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
   }
 
   function handleCharacterSelect(selectedId: CharacterId) {
+    if (readHasActiveRun()) {
+      resumeRun();
+      return;
+    }
     const systemType = readRunSession().pendingContentSystemType;
 
     if (systemType === CONTENT_SYSTEMS.WILDWOOD) {
@@ -366,6 +145,18 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
   }
 
   function handleDifficultySelect(difficultyId: DifficultyId) {
+    const session = readRunSession();
+    if (
+      readHasActiveRun() &&
+      !(
+        readActiveRun().characterId === "wildcard" &&
+        session.activity.kind === "difficulty-select" &&
+        !readHasActiveBattle()
+      )
+    ) {
+      resumeRun();
+      return;
+    }
     const pendingCharacterId = readRunSession().pendingCharacterId;
     const activeCharacterId = readHasActiveRun() ? readActiveRun().characterId : null;
     const selectedId = pendingCharacterId ?? activeCharacterId;

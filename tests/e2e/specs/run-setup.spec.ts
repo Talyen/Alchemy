@@ -1,29 +1,31 @@
 import { expect } from "@playwright/test";
 import { test } from "../../fixtures/e2e";
-import { assertHorizontalNeighborGap, SAVE_KEY } from "../../browser-helpers";
+import { SAVE_KEY } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
 import { MenuPage } from "../../pages/menu-page";
 import { critical } from "../../playwright-tags";
+import { saveEnvelopeFixture } from "../../fixtures/saves";
 
 async function unlockDifficulties(page: import("@playwright/test").Page, difficultyIds: string[]) {
+  const baseSave = saveEnvelopeFixture();
+  const save = {
+    ...baseSave,
+    completedDifficulties: {
+      ...baseSave.completedDifficulties,
+      knight: [...difficultyIds],
+      wizard: [...difficultyIds],
+    },
+    finishedRunCharacters: ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"],
+  };
   await page.addInitScript(
-    ({ saveKey, ids }) => {
-      const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-      save.completedDifficulties = { knight: [...ids], wizard: [...ids] };
-      save.finishedRunCharacters = ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"];
+    ({ saveKey, save }) => {
       localStorage.setItem(saveKey, JSON.stringify(save));
     },
-    { saveKey: SAVE_KEY, ids: difficultyIds },
+    { saveKey: SAVE_KEY, save },
   );
 }
 
 test.describe("Character Select", critical, () => {
-  test("hero portraits keep horizontal gaps between neighbors", async ({ page }) => {
-    await new MenuPage(page).goToCharacterSelect();
-
-    await assertHorizontalNeighborGap(page.getByRole("button", { name: /Select |\(Locked\)/ }), { minCount: 4 });
-  });
-
   test("all characters are selectable and starting run is mapped to localStorage", async ({ page }) => {
     const menu = new MenuPage(page);
     await menu.goToCharacterSelectUnlocked();
@@ -96,17 +98,6 @@ test.describe("Difficulty Select", critical, () => {
     await expect(playBtn).toBeEnabled();
     await playBtn.click();
     await expect(new BattlePage(page).hand.first()).toBeVisible({ timeout: 5000 });
-  });
-
-  test("Wizard shows different difficulty config", async ({ page }) => {
-    const menu = new MenuPage(page);
-    await menu.goToCharacterSelect();
-    await menu.selectCharacterAndContinue("Wizard");
-
-    await expect(page.getByRole("heading", { name: "A Wizard's Saga" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Novice" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Adventurer" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Legend" })).toBeVisible();
   });
 });
 

@@ -1,7 +1,3 @@
-import { useEffect } from "react";
-import { readHasActiveRun, readRunPhase } from "@/features/alchemy/shared/stores/run-reads";
-import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
-import { useLatestRef } from "@/features/alchemy/shared/ui/use-latest-ref";
 import {
   buildAlchemySaveDataFromStores,
   saveAlchemySaveData,
@@ -10,21 +6,20 @@ import {
   subscribeSaveCancellation,
   type SaveWriteOutcome,
 } from "@/features/alchemy/shared/storage";
+import { readHasActiveRun, readRunPhase } from "@/features/alchemy/shared/stores/run-reads";
+import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { useLatestRef } from "@/features/alchemy/shared/ui/use-latest-ref";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import { AUTOSAVE_DEBOUNCE_MS, AUTOSAVE_MAX_WAIT_MS, BATTLE_AUTOSAVE_DEBOUNCE_MS } from "@/lib/game-constants";
-import { applyAutosaveCompletion, computeAutosaveDelay, shouldAttemptFlush } from "./autosave-scheduler";
+import { useEffect } from "react";
+import { createAutosaveScheduler } from "./autosave-scheduler";
 
 export function useAlchemyAutosaveFromStores(enabled = true) {
   const enabledRef = useLatestRef(enabled);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
-    let revision = 0;
-    let acknowledgedRevision = 0;
-    let submittedRevision = 0;
-    let generation = 0;
-    let dirtySince = 0;
-    let retryAt = 0;
+    const scheduler = createAutosaveScheduler(AUTOSAVE_MAX_WAIT_MS);
     let mounted = true;
 
     const cancelTimer = () => {
@@ -34,24 +29,20 @@ export function useAlchemyAutosaveFromStores(enabled = true) {
 
     const cancelPending = () => {
       cancelTimer();
-      generation++;
-      revision = 0;
-      acknowledgedRevision = 0;
-      submittedRevision = 0;
-      dirtySince = 0;
-      retryAt = 0;
+      scheduler.cancel();
     };
 
     const schedule = () => {
       cancelTimer();
-      if (!mounted || !enabledRef.current || revision <= submittedRevision) return;
+      if (!mounted || !enabledRef.current) return;
       const now = Date.now();
       const debounceMs = isAnimationDisabled()
         ? 0
         : readRunPhase() === "battle"
           ? BATTLE_AUTOSAVE_DEBOUNCE_MS
           : AUTOSAVE_DEBOUNCE_MS;
-      const delay = computeAutosaveDelay({ debounceMs, maxWaitMs: AUTOSAVE_MAX_WAIT_MS, now, dirtySince, retryAt });
+      const delay = scheduler.nextDelay(now, debounceMs);
+      if (delay === null) return;
       timer = setTimeout(() => {
         timer = null;
         flush();
@@ -63,46 +54,16 @@ export function useAlchemyAutosaveFromStores(enabled = true) {
         cancelPending();
         return;
       }
-      if (
-        !shouldAttemptFlush({
-          enabled: true,
-          revision,
-          acknowledgedRevision,
-          submittedRevision,
-          terminal,
-        })
-      )
-        return;
+      const submission = scheduler.submit(terminal);
+      if (!submission) return;
       cancelTimer();
-      const savingRevision = revision;
-      const savingGeneration = generation;
-      submittedRevision = savingRevision;
       const activeRun = resolveActiveRunForSave(readHasActiveRun());
       const save = buildAlchemySaveDataFromStores(activeRun);
       const complete = (outcome: SaveWriteOutcome) => {
-        if (!mounted || !enabledRef.current || savingGeneration !== generation) return;
-        if (outcome === "skipped") {
-          // Writes disabled (e.g. after a save wipe): drop all pending state locally.
-          // The scheduler's skipped branch mirrors this for testability but isn't
-          // consumed here because cancelPending also bumps generation.
-          cancelPending();
-          return;
-        }
-        const next = applyAutosaveCompletion({
-          revision,
-          acknowledgedRevision,
-          submittedRevision,
-          retryAt,
-          savingRevision,
-          outcome,
-          now: Date.now(),
-          maxWaitMs: AUTOSAVE_MAX_WAIT_MS,
-        });
-        acknowledgedRevision = next.acknowledgedRevision;
-        submittedRevision = next.submittedRevision;
-        retryAt = next.retryAt;
-        if (next.cancelTimer) cancelTimer();
-        else if (next.schedule && (outcome !== "saved" || timer === null)) schedule();
+        if (!mounted || !enabledRef.current) return;
+        const action = scheduler.complete(submission, outcome, Date.now());
+        if (action === "cancel") cancelTimer();
+        else if (action === "schedule" && (outcome !== "saved" || timer === null)) schedule();
       };
       const outcome = terminal ? saveAlchemySaveDataForExit(save) : saveAlchemySaveData(save);
       void outcome.then(complete);
@@ -110,8 +71,7 @@ export function useAlchemyAutosaveFromStores(enabled = true) {
 
     const triggerSave = () => {
       if (!enabledRef.current) return;
-      if (revision === submittedRevision) dirtySince = Date.now();
-      revision++;
+      scheduler.markDirty(Date.now());
       schedule();
     };
 
@@ -145,8 +105,8 @@ export function useAlchemyAutosaveFromStores(enabled = true) {
       cancelTimer();
       unsubscribeCancellation();
     };
-    // enabledRef is stable (useLatestRef mutates during render); [enabled] alone
-    // controls resubscription so toggling autosave doesn't lose pending revisions.
+    // Each enabled state owns a subscription lifetime. The latest value prevents
+    // the outgoing effect from writing after a render has disabled saving.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- enabledRef is a stable latest-ref; freshness without resubscription
   }, [enabled]);
 }

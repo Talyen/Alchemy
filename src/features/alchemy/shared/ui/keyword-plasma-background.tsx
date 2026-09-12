@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   getPlasmaColorPair,
@@ -7,7 +7,7 @@ import {
 } from "@/features/alchemy/shared/config/plasma-palettes";
 import type { KeywordId } from "@/features/alchemy/shared/config/game-data-catalog";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
-import { startKeywordPlasma, type PlasmaColorState, type PlasmaRendererMode } from "@/lib/animation/keyword-plasma";
+import { startKeywordPlasma, type PlasmaColorState } from "@/lib/animation/keyword-plasma";
 
 const COLOR_LERP_MS = 400;
 
@@ -16,7 +16,6 @@ const BLACK_PAIR: PlasmaColorPair = { primary: "#000000", secondary: "#000000" }
 export function KeywordPlasmaBackground({
   keywordIds,
   colorPair: explicitColorPair,
-  renderer = "webgl",
   focalYOffset = 0,
   active = true,
   className,
@@ -24,12 +23,16 @@ export function KeywordPlasmaBackground({
 }: {
   keywordIds?: readonly KeywordId[] | null | undefined;
   colorPair?: PlasmaColorPair | null | undefined;
-  renderer?: PlasmaRendererMode | undefined;
   focalYOffset?: number | undefined;
   active?: boolean | undefined;
   className?: string | undefined;
   intensity?: number | undefined;
 }) {
+  const [webglAvailable, setWebglAvailable] = useState(true);
+  const visible = intensity > 0;
+  const motionAllowed =
+    !isAnimationDisabled() &&
+    (typeof window.matchMedia !== "function" || !window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const colorPair =
     explicitColorPair !== undefined ? explicitColorPair : keywordIds ? getPlasmaColorPair(keywordIds) : null;
@@ -52,6 +55,11 @@ export function KeywordPlasmaBackground({
     targetRef.current = currentTarget;
     if (idleTimerRef.current !== null) window.clearTimeout(idleTimerRef.current);
 
+    if (!motionAllowed || !visible || !active || !webglAvailable) {
+      colorsRef.current = currentTarget;
+      activeRef.current = colorPair !== null;
+      return;
+    }
     const from = { ...colorsRef.current };
     if (from.primary === targetPrimary && from.secondary === targetSecondary) {
       activeRef.current = colorPair !== null;
@@ -87,18 +95,17 @@ export function KeywordPlasmaBackground({
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
       if (idleTimerRef.current !== null) window.clearTimeout(idleTimerRef.current);
     };
-  }, [colorPair, targetPrimary, targetSecondary]);
+  }, [colorPair, targetPrimary, targetSecondary, motionAllowed, visible, active, webglAvailable]);
 
   useEffect(() => {
-    if (typeof window.matchMedia !== "function") return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    if (isAnimationDisabled()) return;
+    if (!motionAllowed || !visible) return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const stop = startKeywordPlasma(renderer, {
+    const stop = startKeywordPlasma({
       canvas,
+      onAvailabilityChange: setWebglAvailable,
       colorsRef,
       focalYOffset,
       active: () => active && activeRef.current,
@@ -108,17 +115,31 @@ export function KeywordPlasmaBackground({
     });
 
     return () => stop();
-  }, [renderer, focalYOffset, active]);
+  }, [focalYOffset, active, motionAllowed, visible]);
 
   if (intensity <= 0) return null;
 
   return (
-    <canvas
-      ref={canvasRef}
+    <div
       aria-hidden
-      data-testid="global-plasma-background"
       className={cn("pointer-events-none absolute inset-0 mix-blend-plus-lighter", className)}
       style={{ opacity: Math.max(0, Math.min(1, intensity / 100)) }}
-    />
+    >
+      <canvas
+        ref={canvasRef}
+        data-testid="global-plasma-background"
+        className="absolute inset-0"
+        style={{ visibility: webglAvailable ? "visible" : "hidden" }}
+      />
+      {!webglAvailable && motionAllowed && active && colorPair !== null ? (
+        <div
+          data-testid="static-plasma-background"
+          className="absolute inset-0"
+          style={{
+            background: `radial-gradient(ellipse at 50% calc(50% - ${focalYOffset}px), color-mix(in srgb, ${targetPrimary} 13%, transparent), color-mix(in srgb, ${targetSecondary} 7%, transparent) 35%, transparent 75%)`,
+          }}
+        />
+      ) : null}
+    </div>
   );
 }

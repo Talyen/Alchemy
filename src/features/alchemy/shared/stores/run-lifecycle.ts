@@ -19,9 +19,7 @@ import {
 } from "./write-port-run";
 import { clearTransientSession, setHasActiveRun } from "./write-port-session";
 import { applyTalentState, setFinishedRunCharacters } from "./write-port-meta";
-import { applyRestoreRunToDraft, clearModeSlotInDraft } from "./run-park-restore";
-import { touchRunRecency, type ParkedRunsMap } from "./parked-runs";
-import type { ContentSystemId } from "@/lib/content-systems/types";
+import { applyRestoreRunToDraft } from "./run-restore";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { useUiStore } from "./ui-store";
 
@@ -29,17 +27,10 @@ export function restoreRun(
   activeRun: ActiveRunData | null,
   talentXP: TalentXP,
   unlockedTalents: UnlockedTalents,
-  parkedRuns: ParkedRunsMap = {},
-  runRecency: ContentSystemId[] = [],
 ): void {
   dispatchRunSessionCommand((draft) => {
     applyTalentState(draft, talentXP, unlockedTalents);
-    draft.run.parkedRuns = { ...parkedRuns };
-    draft.run.runRecency = [...runRecency];
     applyRestoreRunToDraft(draft, activeRun);
-    if (activeRun) {
-      draft.run.runRecency = touchRunRecency(draft.run.runRecency, activeRun.contentSystemType);
-    }
   });
 }
 
@@ -71,9 +62,6 @@ export function clearActiveRunInDraft(draft: GameplayDraft): void {
 
 export function teardownRun(): void {
   dispatchRunSessionCommand((draft) => {
-    if (draft.session.activity.kind !== "inactive") {
-      clearModeSlotInDraft(draft, draft.run.activeRun.contentSystemType);
-    }
     clearActiveRunInDraft(draft);
   });
   clearTransientUiOnTeardown();
@@ -121,7 +109,6 @@ function finalizeRunEndSessionState(
     setRunEndLabyrinthFloor(draft, floor);
   }
 
-  clearModeSlotInDraft(draft, draft.run.activeRun.contentSystemType);
   setHasActiveRun(draft, false);
   return materials;
 }
@@ -135,6 +122,35 @@ export function finalizeRunEndSession(options: {
       flushSaveAfterRunEnd();
     },
   });
+}
+
+/** Manual termination shares earned progression, but does not simulate a defeat. */
+export function abandonRun(options: {
+  awardRunEndMaterials: (draft: GameplayDraft) => MaterialInventory;
+  finalizeRunXP: (draft: GameplayDraft) => void;
+}): void {
+  dispatchRunSessionCommand(
+    (draft) => {
+      if (draft.session.activity.kind === "inactive") return false;
+      finalizeRunEndSessionState(options, draft);
+      // The outgoing battle still renders until the route transition completes.
+      // Retain its last snapshot, but remove all resumable activity and continuations.
+      clearTransientSession(draft);
+      setHasActiveBattle(draft, false);
+      draft.battle.pendingBattleTransition = null;
+      draft.battle.pendingTransitionResumeRequired = false;
+      return true;
+    },
+    {
+      afterCommit: (ended) => {
+        if (!ended) return;
+        stopAllSfx();
+        clearBattlePresentationUi();
+        notifyRunTeardown();
+        flushSaveAfterRunEnd();
+      },
+    },
+  );
 }
 
 export function applyRunDefeatTeardown(options: {

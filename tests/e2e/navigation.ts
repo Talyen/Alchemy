@@ -14,26 +14,17 @@ export async function openGameModeSelect(page: Page) {
   }).toPass({ timeout: 15000 });
 }
 
-export async function selectGameMode(page: Page, mode: GameMode, action: "Play" | "Resume" = "Play") {
+export async function selectGameMode(page: Page, mode: GameMode) {
   await openGameModeSelect(page);
-  const title = GAME_MODE_TITLES[mode];
-  const modeButton = page.getByRole("button", {
-    name: action === "Resume" ? `Resume ${title}` : title,
-  });
-  await modeButton.click();
-}
-
-async function resumeGameMode(page: Page, mode: Exclude<GameMode, "wildwood"> = "campaign") {
-  await selectGameMode(page, mode, "Resume");
+  await page.getByRole("button", { name: GAME_MODE_TITLES[mode] }).click();
 }
 
 export async function resumeCampaignRun(page: Page) {
   const destination = page.getByRole("heading", { name: "Choose Destination" });
-  const playButton = page.getByRole("button", { name: "Play", exact: true });
-
+  const continueButton = page.getByRole("button", { name: "Continue", exact: true });
   try {
-    await playButton.waitFor({ state: "visible", timeout: 3000 });
-    await resumeGameMode(page, "campaign");
+    await continueButton.waitFor({ state: "visible", timeout: 3000 });
+    await continueButton.click();
   } catch {}
   await expect(destination).toBeVisible({ timeout: 10000 });
 }

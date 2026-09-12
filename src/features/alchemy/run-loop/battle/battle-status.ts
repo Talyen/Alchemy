@@ -39,21 +39,10 @@ export function createBattleDevOutcomes(ctx: BattleControllerContext, session: R
     session.handleVictoryDefeat(outcome);
   }
 
-  function handleEndRun() {
-    if (ctx.screen !== "battle") return;
-    forceBattleOutcome("defeat", (c) => ({
-      ...c,
-      playerHealth: 0,
-      deathsDoorUsed: true,
-      deathsDoorActive: false,
-      deathsDoorGraceTurnsRemaining: null,
-    }));
-  }
-
   function skipCombatDevMode() {
     if (!import.meta.env.DEV || ctx.screen !== "battle") return;
     forceBattleOutcome("victory", (c) => ({ ...c, enemyHealth: 0, wishOptions: null, wishQueue: [] }));
   }
 
-  return { handleEndRun, skipCombatDevMode };
+  return { skipCombatDevMode };
 }

@@ -37,7 +37,7 @@ describe("@/lib/validation barrel", () => {
     expect(validationBarrel.ActiveRunDataSchema).toBeDefined();
     expect(validationBarrel.SaveDataSchema).toBeDefined();
     expect(validationBarrel.CURRENT_SAVE_SCHEMA_VERSION).toBeTypeOf("number");
-    expect(validationBarrel.migrateSaveDataToCurrent).toBeTypeOf("function");
+    expect(validationBarrel.getRawSaveSchemaVersion).toBeTypeOf("function");
   });
 });
 

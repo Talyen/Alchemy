@@ -9,21 +9,19 @@ Save changes can break supported progress when schemas, defaults, migrations, an
 
 ## Why it matters
 
-After public launch `LAUNCH_SAVE_SCHEMA_VERSION` freezes; every bump `>= launch` is a commitment that any supported save loads and remains playable. CI enforces contract; missing fixture or silent `activeRun` drop fails `test:ship:unit`.
+At the first distribution promising persistent progress, `LAUNCH_SAVE_SCHEMA_VERSION` freezes; every bump `>= launch` is a commitment that any supported save loads and remains playable. CI enforces contract; missing fixture or silent `activeRun` drop fails `test:ship:unit`.
 
 ## Evidence
 
 - `src/features/alchemy/shared/storage/MIGRATIONS.md` — single-responsibility rule, when to bump, required pattern, progression gate fields, future-version protection.
 - `src/lib/validation/metadata.ts` — `LAUNCH_SAVE_SCHEMA_VERSION` / `CURRENT_SAVE_SCHEMA_VERSION`.
-- `src/lib/validation/migration/index.ts` — `migrateSaveDataToCurrent` stamping + chaining.
-- `src/lib/validation/migration/content-steps.ts` + `steps-*.ts` — versioned transforms.
-- `tests/fixtures/legacy-saves.ts` — `CURRENT_SCHEMA_SAVE_FIXTURES_BY_SOURCE_VERSION` covers every supported source version through the previous schema version.
-- `tests/architecture/save-migration-guard.test.ts` + `save-migration-contract.test.ts` — gameplay assertions (collection, talents, homestead, `activeRun` not dropped, parked runs, battle trinket/gear manifests, interruptedFlow, hex floors).
+- `src/lib/validation/migration/index.ts` — raw-version readers and supported migration table.
+- `tests/fixtures/current-saves.ts` — current supported fixtures; below-baseline development data is disposable.
+- `tests/architecture/save-migration-guard.test.ts` + `save-migration-contract.test.ts` — gameplay assertions (collection, talents, homestead, `activeRun` not dropped, battle manifests, interruptedFlow, baseline rejection).
 - `src/features/alchemy/shared/storage/save-candidates.ts` — `safeParseWithErrors` production path vs `normalizeSaveData` test path.
 
 ## Resolution
 
 [MIGRATIONS.md](../../../src/features/alchemy/shared/storage/MIGRATIONS.md)
 owns the bump-vs-additive decision, required pattern, and progression gate
-fields. The `save-migration-guard` / `save-migration-contract` tests plus the
-tombstone guard enforce gameplay outcomes; prose never replaces those gates.
+fields. The `save-migration-guard` / `save-migration-contract` tests enforce gameplay outcomes; prose never replaces those gates.

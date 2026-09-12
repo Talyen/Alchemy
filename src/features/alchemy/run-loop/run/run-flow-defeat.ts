@@ -2,6 +2,7 @@ import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   applyRunDefeatTeardown,
+  abandonRun,
   clearBattlePresentationUi,
 } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import {
@@ -77,8 +78,8 @@ export function createDefeatHandlers(deps: RunOutcomeDeps) {
   }
 
   function handleAbandonRun() {
-    deps.actions.clearCardHover();
-    endRunAndShowGameOver();
+    abandonRun({ awardRunEndMaterials, finalizeRunXP });
+    deps.actions.transition(ROUTE_SCREENS.MENU, { immediate: true });
   }
 
   return {

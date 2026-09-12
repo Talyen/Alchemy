@@ -3,14 +3,8 @@ import type { ContentSystemId } from "@/lib/content-systems/types";
 import { computeGearManifest, flattenGearInventories } from "@/lib/gear";
 import { discoverCardIds } from "@/features/alchemy/shared/stores/profile-store";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
-import {
-  applyRunStartSnapshot,
-  clearTransientSession,
-  grantStartGold,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+import { applyRunStartSnapshot, grantStartGold } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { createRunStartSnapshot, type RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
-import { parkForegroundRunInDraft } from "@/features/alchemy/shared/stores/run-park-restore";
-import { omitParkedMode, touchRunRecency } from "@/features/alchemy/shared/stores/parked-runs";
 
 interface CreateRunStartSnapshotInput {
   characterId: CharacterId;
@@ -57,20 +51,25 @@ export function applyRunStartToDraft(
   snapshot: RunStartSnapshot,
   options: ApplyRunStartOptions = {},
 ): ApplyRunStartResult {
-  const switching =
-    draft.session.activity.kind !== "inactive" && draft.run.activeRun.contentSystemType !== snapshot.contentSystemType;
-  const isFreshStart = draft.session.activity.kind === "inactive" || switching;
-  if (switching) {
-    parkForegroundRunInDraft(draft);
-    clearTransientSession(draft);
+  const isFreshStart = draft.session.activity.kind === "inactive";
+  // Only completing this run's starter draft may re-apply its start snapshot.
+  if (
+    !isFreshStart &&
+    !(
+      draft.run.activeRun.characterId === "wildcard" &&
+      snapshot.characterId === "wildcard" &&
+      draft.run.activeRun.contentSystemType === snapshot.contentSystemType &&
+      !draft.battle.hasActiveBattle &&
+      (draft.session.activity.kind === "draft-deck" || draft.session.activity.kind === "difficulty-select")
+    )
+  ) {
+    throw new Error("Cannot replace an unfinished run");
   }
   applyRunStartSnapshot(draft, snapshot);
   const startGoldGranted = isFreshStart ? snapshot.startGoldGrant : 0;
   if (startGoldGranted > 0) {
     grantStartGold(draft, startGoldGranted);
   }
-  draft.run.runRecency = touchRunRecency(draft.run.runRecency, snapshot.contentSystemType);
-  draft.run.parkedRuns = omitParkedMode(draft.run.parkedRuns, snapshot.contentSystemType);
   if (options.discoverDeck || snapshot.characterId === "wildcard") {
     discoverCardIds(
       draft,

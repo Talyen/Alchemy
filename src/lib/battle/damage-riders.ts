@@ -199,29 +199,23 @@ interface DamageRiderOptions {
   onDamageDealt?: ((amount: number) => void) | undefined;
 }
 
-export function applyDamageRiders(
-  state: BattleState,
-  card: BattleCard,
+interface CardHitFacts {
+  readonly enemyWasBurningBefore: boolean;
+  readonly enemyWasStunned: boolean;
+  readonly enemyWasFrozen: boolean;
+  readonly forgeBeforeHit: number;
+  readonly talentEffects: BattleState["talentEffects"];
+  readonly previousHealth: number;
+}
+
+function applyCardStatusReactions(
+  nextState: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   modifiedDamage: number,
   combatTexts: CombatTextEvent[],
-  options: DamageRiderOptions = {},
-) {
-  const { isExtraHit = false, cardHealing = false, companionAttack = false, onDamageDealt } = options;
-  const enemyWasBurningBefore = state.enemyStatuses.burn > 0;
-  const enemyWasStunned = state.enemyCC.stunSkipTurns > 0;
-  const enemyWasFrozen = state.enemyCC.freezeSkipTurns > 0;
-  // Capture target conditions before purge and secondary hits can change them.
-  const prePurgeState = isExtraHit ? state : applyAttackPurgeRider(state, combatTexts);
-  if (prePurgeState.enemyHealth <= 0) return prePurgeState;
-  const hit = damageEnemyHealth(prePurgeState, modifiedDamage);
-  const previousHealth = hit.previousHealth;
-  onDamageDealt?.(hit.healthDamage);
-  // Spend the resource used by this packet before its rewards grant fresh Forge.
-  let nextState = consumeForgeAfterDamage(hit.state, effect, modifiedDamage, companionAttack);
-
-  nextState = decayArmorAfterDamage(nextState, modifiedDamage, "enemy");
-
+  facts: CardHitFacts,
+): BattleState {
+  const { enemyWasBurningBefore, previousHealth } = facts;
   if (effect.damageType === "physical" || effect.damageType === "bleed") {
     nextState = applyTalentHitConversions(nextState, effect.damageType, modifiedDamage, combatTexts);
   }
@@ -229,7 +223,7 @@ export function applyDamageRiders(
   if (effect.detonateIfEnemyBurning && enemyWasBurningBefore) {
     nextState = detonateEnemyStatuses(nextState, ["burn"], combatTexts);
   }
-  if (modifiedDamage > 0) nextState = applyForgeStunRider(nextState, effect, combatTexts, state.playerStatuses.forge);
+  if (modifiedDamage > 0) nextState = applyForgeStunRider(nextState, effect, combatTexts, facts.forgeBeforeHit);
   if (effect.damageType === "physical" && modifiedDamage > 0) {
     const stunChance = nextState.talentEffects.physicalStunChance + nextState.gearEffects.physicalStunChance;
     if (rollTalentChance(stunChance, nextState)) {
@@ -244,9 +238,23 @@ export function applyDamageRiders(
     nextState = applyBurnDamageRiders(nextState, modifiedDamage, combatTexts);
   }
 
+  return nextState;
+}
+
+function applyCardLeechAndFrozenReactions(
+  nextState: BattleState,
+  card: BattleCard,
+  effect: Extract<BattleCardEffect, { kind: "damage" }>,
+  modifiedDamage: number,
+  combatTexts: CombatTextEvent[],
+  facts: CardHitFacts,
+  options: DamageRiderOptions,
+): BattleState {
+  const { enemyWasStunned, enemyWasFrozen, previousHealth } = facts;
+  const { cardHealing = false, companionAttack = false } = options;
   if (
     effect.lifesteal ||
-    (effect.damageType === "physical" && enemyWasStunned && state.talentEffects.physicalLeechVsStunned)
+    (effect.damageType === "physical" && enemyWasStunned && facts.talentEffects.physicalLeechVsStunned)
   ) {
     nextState = applyLifestealAndPlayerHitTriggers(
       nextState,
@@ -263,12 +271,25 @@ export function applyDamageRiders(
       nextState = dealTalentTypedHit(
         nextState,
         "freeze",
-        state.talentEffects.companionFreezeDamageVsFrozen,
+        facts.talentEffects.companionFreezeDamageVsFrozen,
         combatTexts,
       );
     if (card.tags?.includes("archery"))
-      nextState = dealTalentTypedHit(nextState, "holy", state.talentEffects.archeryHolyDamageVsFrozen, combatTexts);
+      nextState = dealTalentTypedHit(nextState, "holy", facts.talentEffects.archeryHolyDamageVsFrozen, combatTexts);
   }
+  return nextState;
+}
+
+function applyCardArcheryReactions(
+  nextState: BattleState,
+  card: BattleCard,
+  effect: Extract<BattleCardEffect, { kind: "damage" }>,
+  modifiedDamage: number,
+  combatTexts: CombatTextEvent[],
+  facts: CardHitFacts,
+  options: DamageRiderOptions,
+): BattleState {
+  const { isExtraHit = false } = options;
   if (card.tags?.includes("archery") && modifiedDamage > 0) {
     if (!isExtraHit && rollTalentChance(nextState.talentEffects.archeryPlayTwiceChance, nextState)) {
       const secondHit = halveRounded(modifiedDamage);
@@ -283,17 +304,55 @@ export function applyDamageRiders(
     if (!isExtraHit) {
       nextState = tryTalentTypedHit(
         nextState,
-        state.talentEffects.archeryBleedDamageChance,
+        facts.talentEffects.archeryBleedDamageChance,
         "bleed",
         modifiedDamage,
         combatTexts,
       );
-      if (rollTalentChance(state.talentEffects.archeryBleedChance, nextState)) {
+      if (rollTalentChance(facts.talentEffects.archeryBleedChance, nextState)) {
         nextState = addEnemyStatus(nextState, "bleed", modifiedDamage);
       }
       nextState = applyArcheryDetonate(nextState, combatTexts);
     }
   }
+  return nextState;
+}
+
+export function applyDamageRiders(
+  state: BattleState,
+  card: BattleCard,
+  effect: Extract<BattleCardEffect, { kind: "damage" }>,
+  modifiedDamage: number,
+  combatTexts: CombatTextEvent[],
+  options: DamageRiderOptions = {},
+) {
+  const { isExtraHit = false, companionAttack = false, onDamageDealt } = options;
+  const enemyWasBurningBefore = state.enemyStatuses.burn > 0;
+  const enemyWasStunned = state.enemyCC.stunSkipTurns > 0;
+  const enemyWasFrozen = state.enemyCC.freezeSkipTurns > 0;
+  // Capture target conditions before purge and secondary hits can change them.
+  const prePurgeState = isExtraHit ? state : applyAttackPurgeRider(state, combatTexts);
+  if (prePurgeState.enemyHealth <= 0) return prePurgeState;
+  const hit = damageEnemyHealth(prePurgeState, modifiedDamage);
+  const previousHealth = hit.previousHealth;
+  const facts: CardHitFacts = {
+    enemyWasBurningBefore,
+    enemyWasStunned,
+    enemyWasFrozen,
+    forgeBeforeHit: state.playerStatuses.forge,
+    talentEffects: state.talentEffects,
+    previousHealth,
+  };
+  onDamageDealt?.(hit.healthDamage);
+  // Spend the resource used by this packet before its rewards grant fresh Forge.
+  let nextState = consumeForgeAfterDamage(hit.state, effect, modifiedDamage, companionAttack);
+
+  nextState = decayArmorAfterDamage(nextState, modifiedDamage, "enemy");
+
+  // Reactions stay depth-first: Archery's extra hit finishes before the outer hit's payout.
+  nextState = applyCardStatusReactions(nextState, effect, modifiedDamage, combatTexts, facts);
+  nextState = applyCardLeechAndFrozenReactions(nextState, card, effect, modifiedDamage, combatTexts, facts, options);
+  nextState = applyCardArcheryReactions(nextState, card, effect, modifiedDamage, combatTexts, facts, options);
   if (effect.damageType === "holy") {
     nextState = applyHolyDamageRiders(nextState, card, modifiedDamage, combatTexts, previousHealth);
   }

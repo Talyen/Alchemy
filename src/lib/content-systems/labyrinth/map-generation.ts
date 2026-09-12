@@ -192,41 +192,6 @@ export function generateLabyrinthMap(rng: () => number): LabyrinthMap {
   };
 }
 
-export function addLabyrinthSideRooms(map: LabyrinthMap, rng: () => number): LabyrinthMap {
-  const nodes = { ...map.nodes };
-  const usedEnemies = usedEnemyIds(map);
-  const floors = map.floors.map((floor) => {
-    const rooms = floorNodes(map, floor.depth);
-    const occupied = new Set(rooms.map((node) => gridKey(node.gridPosition)));
-    const usedTypes = new Set(rooms.map((node) => node.type));
-    const missing = labyrinthGridPositions().filter((position) => !occupied.has(gridKey(position)));
-    const added = missing.map((gridPosition) => {
-      const type = pickRandom<LabyrinthNodeType>(
-        ["combat", "combat", "elite", ...LABYRINTH_SUPPORT_TYPES.filter((type) => !usedTypes.has(type))],
-        rng,
-      )!;
-      usedTypes.add(type);
-      const enemyId = COMBAT_NODE_TYPES.has(type)
-        ? pickEnemyId(type === "elite" ? "elite" : "normal", usedEnemies, rng)
-        : undefined;
-      if (enemyId) usedEnemies.add(enemyId);
-      const node = makeNode({
-        id: `${floor.id}-side-${gridPosition.row}-${gridPosition.col}`,
-        type,
-        floor: floor.depth,
-        gridPosition,
-        lootDepth: Object.values(map.nodes).filter((node) => node.cleared && node.type !== "entrance").length + 1,
-        rng,
-        ...(enemyId ? { enemyId } : {}),
-      });
-      nodes[node.id] = node;
-      return node.id;
-    });
-    return added.length ? { ...floor, nodeIds: [...floor.nodeIds, ...added] } : floor;
-  });
-  return { ...map, floors, nodes };
-}
-
 export function expandBeyondBoss(map: LabyrinthMap, bossId: string, rng: () => number): LabyrinthMap {
   if (!canDescendFromLabyrinthNode(map, bossId)) return map;
 

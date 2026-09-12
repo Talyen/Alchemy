@@ -7,16 +7,12 @@ import {
 } from "@/lib/game-constants";
 
 describe("getScreenParticleConfig", () => {
-  it("returns boss intensity and count for boss battles", () => {
-    const config = getScreenParticleConfig("battle", true);
-    expect(config.particleAlphaMultiplier).toBe(BATTLE_PARTICLE_INTENSITY_BOSS);
-    expect(config.particleCount).toBe(BATTLE_PARTICLE_COUNT);
-    expect(config.particleColors).toBeDefined();
-  });
-
-  it("returns normal intensity and count for non-boss battles", () => {
-    const config = getScreenParticleConfig("battle", false);
-    expect(config.particleAlphaMultiplier).toBe(BATTLE_PARTICLE_INTENSITY_NORMAL);
+  it.each([
+    ["boss", true, BATTLE_PARTICLE_INTENSITY_BOSS],
+    ["normal", false, BATTLE_PARTICLE_INTENSITY_NORMAL],
+  ] as const)("returns %s battle intensity and count", (_, isBossBattle, expectedIntensity) => {
+    const config = getScreenParticleConfig("battle", isBossBattle);
+    expect(config.particleAlphaMultiplier).toBe(expectedIntensity);
     expect(config.particleCount).toBe(BATTLE_PARTICLE_COUNT);
   });
 
@@ -25,10 +21,5 @@ describe("getScreenParticleConfig", () => {
     const normal = getScreenParticleConfig("menu", false);
     expect(boss.particleAlphaMultiplier).toBe(normal.particleAlphaMultiplier);
     expect(boss.particleCount).toBeUndefined();
-  });
-
-  it("returns undefined colors for screens without a palette", () => {
-    expect(getScreenParticleConfig("menu", false).particleColors).toBeUndefined();
-    expect(getScreenParticleConfig("campfire", false).particleColors).toBeDefined();
   });
 });

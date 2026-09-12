@@ -40,17 +40,6 @@ describe("gear shine", () => {
     expect(keywordIds).toEqual(["burn", "leech", "poison"]);
   });
 
-  it("includes all Stalwart keywords and keeps Stun yellow", () => {
-    expect(getGearAffixTextShineColors(gearAffixCatalog["armor-on-cc"])).toEqual([
-      "#9ca3af",
-      "color-mix(in srgb, #9ca3af 55%, transparent)",
-      "#fcd34d",
-      "color-mix(in srgb, #fcd34d 55%, transparent)",
-      "#67e8f9",
-      "color-mix(in srgb, #67e8f9 55%, transparent)",
-    ]);
-  });
-
   it("uses described keywords instead of hidden affix tags", () => {
     expect(getGearAffixTextShineColors(gearAffixCatalog["dance-of-blades"])).toEqual([
       "#bef264",
@@ -175,13 +164,6 @@ describe("gear shine", () => {
       "color-mix(in srgb, #fbbf24 55%, transparent)",
     ]);
     expect(getUniqueGearTextShineColors()).toEqual(["#fbbf24", "color-mix(in srgb, #fbbf24 55%, transparent)"]);
-  });
-
-  it("uses two text stops per keyword while leaving border palettes unchanged", () => {
-    expect(getGearAffixTextShineColors(gearAffixCatalog["flat-burn"])).toEqual([
-      "#fb923c",
-      "color-mix(in srgb, #fb923c 55%, transparent)",
-    ]);
   });
 
   it("shines definition-only astral titles from affinity keywords and leaves basic plain", () => {

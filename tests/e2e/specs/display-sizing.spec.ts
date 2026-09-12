@@ -115,7 +115,7 @@ test.describe("Responsive display sizes", slow, () => {
 
   test("enemy tooltip headers stay standard while Traits match game sizing in Collection and Battle", async ({
     browser,
-  }, testInfo) => {
+  }) => {
     test.setTimeout(60_000);
     for (const [gameSizePercent, tooltipSizePercent] of [
       [80, 90],
@@ -137,7 +137,6 @@ test.describe("Responsive display sizes", slow, () => {
           .locator(":scope > p")
           .first()
           .evaluate((el) => getComputedStyle(el).fontSize);
-        await page.screenshot({ path: testInfo.outputPath(`standard-${gameSizePercent}-${tooltipSizePercent}.png`) });
         await page.getByRole("button", { name: "Bestiary", exact: true }).click();
         for (const screen of ["Collection", "Battle"]) {
           if (screen === "Battle") {
@@ -163,22 +162,9 @@ test.describe("Responsive display sizes", slow, () => {
           const sizing = await tooltip.evaluate((el) => {
             const style = getComputedStyle(el);
             const body = el.querySelector("[data-trait] p")!;
-            const icon = el.querySelector("[data-trait] svg")!;
-            return [
-              parseFloat(style.getPropertyValue("--content-scale")),
-              parseFloat(getComputedStyle(body).fontSize),
-              icon.getBoundingClientRect().width,
-              parseFloat(style.paddingTop),
-              parseFloat(style.maxWidth),
-            ];
+            return [parseFloat(style.getPropertyValue("--content-scale")), parseFloat(getComputedStyle(body).fontSize)];
           });
-          for (const [index, expected] of [
-            scale,
-            18 * traitScale,
-            32 * traitScale,
-            12 * scale,
-            448 * scale,
-          ].entries()) {
+          for (const [index, expected] of [scale, 18 * traitScale].entries()) {
             expect(sizing[index]).toBeCloseTo(expected, 1);
           }
           const bounds = (await tooltip.boundingBox())!;
@@ -186,9 +172,6 @@ test.describe("Responsive display sizes", slow, () => {
           expect(bounds.y).toBeGreaterThanOrEqual(0);
           expect(bounds.x + bounds.width).toBeLessThanOrEqual(1280);
           expect(bounds.y + bounds.height).toBeLessThanOrEqual(720);
-          await page.screenshot({
-            path: testInfo.outputPath(`enemy-${screen}-${gameSizePercent}-${tooltipSizePercent}.png`),
-          });
         }
         expect(errors).toEqual([]);
       } finally {

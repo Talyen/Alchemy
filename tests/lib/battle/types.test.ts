@@ -222,6 +222,21 @@ describe("withPreservedFlags", () => {
     expect(result.flags.nextCardCostReduction).toBe(2);
   });
 
+  it("keeps newly earned cost reduction and ordinary reaction flags across nested non-card effects", () => {
+    const state = makeTestBattleState({ flags: defaultCombatFlags({ nextCardCostReduction: 2, nextHitCrit: true }) });
+    const result = withPreservedFlags(state, (outer) =>
+      withPreservedFlags(outer, (inner) => ({
+        ...inner,
+        flags: { ...inner.flags, nextCardCostReduction: 3, pendingWishMana: 1 },
+      })),
+    );
+    expect(result.flags.nextCardCostReduction).toBe(3);
+    expect(result.flags.nextHitCrit).toBe(true);
+    expect(result.flags.pendingWishMana).toBe(1);
+    expect(state.flags.nextCardCostReduction).toBe(2);
+    expect(state.flags.pendingWishMana).toBe(0);
+  });
+
   it("forces non-card flags inactive during the callback so companions/pulses cannot consume them", () => {
     const state = makeTestBattleState({
       flags: defaultCombatFlags({ nextHitCrit: true, playNextCardTwice: true }),

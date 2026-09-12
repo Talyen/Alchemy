@@ -21,7 +21,7 @@ Sibling routing: async/lifetime → RuntimeCorrectness; type escapes → TypeSaf
 
 - Do not weaken tests/gates/diagnostics/generated-output checks; do not hand-edit generated output — fix sources and regenerate.
 - Prove dead candidates are not entry points, dynamic-import keys, barrel registrations, or externally consumed exports; read `knip.config.js` allowlists first and update them deliberately.
-- Do not delete a migration path while save/resume/fixture consumers still need the old shape (check `MIGRATIONS.md`, `tests/fixtures/legacy-saves.ts`, guard tests). Deprecation comments alone do not close a window.
+- Do not delete a migration path while save/resume/fixture consumers still need the old shape (check `MIGRATIONS.md`, `tests/fixtures/current-saves.ts`, guard tests). Deprecation comments alone do not close a window.
 - Do not collapse [intentional dual seams](README.md#intentional-seams-do-not-collapse); Vite web vs Electron entries are this audit's extra seam to leave alone.
 - A shared abstraction needs concrete consumers and a coherent responsibility. Do not force distinct product variants into configuration flags to satisfy a duplication count; follow existing UI ownership rules.
 - Complexity scores and file length are discovery aids. Preserve cohesive rule code, wire formats, composition roots, and catalogs unless there is a demonstrated comprehension or change problem.

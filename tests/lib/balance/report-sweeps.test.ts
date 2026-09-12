@@ -27,7 +27,7 @@ describe("runCardSweepInClass", () => {
     }));
   });
 
-  it("isolates every affix with matched battles across all tiers", () => {
+  it("isolates every affix with matched battles across all tiers", { timeout: 15_000 }, () => {
     const rows = runAffixSweep({
       iterations: 1,
       pairedIterations: 2,

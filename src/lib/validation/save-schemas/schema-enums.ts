@@ -1,24 +1,21 @@
-import { z } from "zod";
+import { CONTENT_SYSTEM_IDS } from "@/lib/content-systems/types";
 import {
   characters,
   DIFFICULTY_ORDER,
+  ENEMY_STATUS_DISPLAY_ORDER,
+  ENEMY_TYPE_VALUES,
   normalizeUnlockedTalents,
   type CharacterId,
   type DifficultyId,
-  type UnlockedTalents,
-  DAMAGE_TYPES,
-  ENEMY_TYPE_VALUES,
-  PLAYER_STATUS_DISPLAY_ORDER,
-  ENEMY_STATUS_DISPLAY_ORDER,
-  type PlayerStatusId,
   type EnemyStatusId,
+  type UnlockedTalents,
 } from "@/lib/game-data";
-import { CONTENT_SYSTEM_IDS } from "@/lib/content-systems/types";
 import { EMPTY_CRAFTING_CURRENCIES, normalizeCraftingCurrencies } from "@/lib/gear/crafting-ids";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
 import { filterValidDestinations } from "@/lib/routing";
 import { ASPECT_RATIO_VALUES, DISPLAY_MODE_VALUES } from "@/lib/settings-values";
+import { z } from "zod";
 import { deduplicateStrings } from "./validation-utils";
 
 function toNonEmptyTuple<T extends string>(values: readonly T[], label: string): [T, ...T[]] {
@@ -48,13 +45,8 @@ export const DestinationArraySchema = z
   .catch([])
   .transform((values) => filterValidDestinations(values));
 
-const DAMAGE_TYPE_VALUES = toNonEmptyTuple(DAMAGE_TYPES, "Damage types");
-const PLAYER_STATUS_IDS = toNonEmptyTuple(PLAYER_STATUS_DISPLAY_ORDER as PlayerStatusId[], "Player status IDs");
 const ENEMY_STATUS_IDS = toNonEmptyTuple(ENEMY_STATUS_DISPLAY_ORDER as EnemyStatusId[], "Enemy status IDs");
 
-export const DamageTypeSchema = z.enum(DAMAGE_TYPE_VALUES);
-export const PlayerStatusIdSchema = z.enum(PLAYER_STATUS_IDS);
-export const EnemyStatusIdSchema = z.enum(ENEMY_STATUS_IDS);
 // Stable id list for content lint without reaching into zod internals (.options).
 export const ENEMY_STATUS_IDS_LIST: readonly string[] = ENEMY_STATUS_IDS;
 export const LabyrinthNodeTypeSchema = z.enum([
@@ -80,22 +72,7 @@ export const CraftingCurrencyInventorySchema = z
   .catch(CRAFTING_CURRENCY_ZERO_INVENTORY)
   .transform((inventory) => normalizeCraftingCurrencies(inventory));
 
-export const MaterialInventorySchema = z
-  .preprocess((val) => {
-    if (!val || typeof val !== "object") return val;
-    const obj = val as Record<string, unknown>;
-    if ("crystal" in obj) {
-      const crystalValue = obj.crystal;
-      const gemsValue = obj.gems;
-      const crystalAmount = typeof crystalValue === "number" && Number.isFinite(crystalValue) ? crystalValue : 0;
-      const gemsAmount = typeof gemsValue === "number" && Number.isFinite(gemsValue) ? gemsValue : 0;
-      const { crystal: _crystal, ...rest } = obj;
-      void _crystal;
-      return { ...rest, gems: gemsAmount + crystalAmount };
-    }
-    return val;
-  }, z.object(createMaterialInventoryShape()))
-  .catch(MATERIAL_ZERO_INVENTORY);
+export const MaterialInventorySchema = z.object(createMaterialInventoryShape()).catch(MATERIAL_ZERO_INVENTORY);
 
 export const TalentXPSchema = z.preprocess((val) => {
   if (!val || typeof val !== "object") return {};

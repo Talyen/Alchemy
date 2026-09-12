@@ -38,47 +38,6 @@ describe("HomesteadUpgradeNode", () => {
     expect(onAction).not.toHaveBeenCalled();
   });
 
-  it("shows matching shine and glow for unaffordable tiles during hover or focus", () => {
-    const affordableInventory = { ...emptyInventory(), iron: 100 };
-    const affordable = render(
-      <HomesteadUpgradeNode
-        item={buildingItem}
-        currentLevel={0}
-        materialInventory={affordableInventory}
-        onAction={vi.fn()}
-      />,
-    );
-    let button = screen.getByRole("button", { name: /Blacksmith/ });
-    expect(button.querySelector(".shine-border")).toBeNull();
-    fireEvent.mouseEnter(button.parentElement!);
-    const affordableColor = button.querySelector<HTMLElement>(".shine-border-paint")?.style.backgroundColor;
-    expect(affordableColor).toBeTruthy();
-    expect(button.className).toContain("card-interactive-glow");
-    fireEvent.mouseLeave(button.parentElement!);
-    affordable.unmount();
-    useUiStore.setState({ hoveredCardId: null, shimmerState: null });
-
-    render(
-      <HomesteadUpgradeNode
-        item={buildingItem}
-        currentLevel={0}
-        materialInventory={emptyInventory()}
-        onAction={vi.fn()}
-      />,
-    );
-    button = screen.getByRole("button", { name: /Blacksmith/ });
-    expect(button.querySelector(".shine-border")).toBeNull();
-    fireEvent.mouseEnter(button.parentElement!);
-    expect(button.querySelector<HTMLElement>(".shine-border-paint")?.style.backgroundColor).toBe(affordableColor);
-    expect(button.className).toContain("card-interactive-glow");
-    fireEvent.mouseLeave(button.parentElement!);
-    expect(button.querySelector(".shine-border")).toBeNull();
-    fireEvent.focus(button);
-    expect(button.querySelector<HTMLElement>(".shine-border-paint")?.style.backgroundColor).toBe(affordableColor);
-    fireEvent.blur(button);
-    expect(button.querySelector(".shine-border")).toBeNull();
-  });
-
   it("renders art-only tile with no button when at max tier", () => {
     const maxLevel = buildingItem.data.tiers.length;
     render(
@@ -91,29 +50,5 @@ describe("HomesteadUpgradeNode", () => {
     );
     expect(screen.queryByRole("button")).toBeNull();
     expect(screen.queryByText(buildingItem.data.title)).toBeNull();
-  });
-
-  it("applies tier0 dim to image", () => {
-    const { container } = render(
-      <HomesteadUpgradeNode
-        item={buildingItem}
-        currentLevel={0}
-        materialInventory={emptyInventory()}
-        onAction={vi.fn()}
-      />,
-    );
-    const img = container.querySelector("img");
-    expect(img?.className).toContain("grayscale");
-    expect(img?.className).toContain("group-hover:grayscale-0");
-    expect(img?.className).toContain("group-hover:opacity-100");
-  });
-
-  it("does not apply tier0 dim when already leveled", () => {
-    const inventory = { ...emptyInventory(), iron: 100 };
-    const { container } = render(
-      <HomesteadUpgradeNode item={buildingItem} currentLevel={1} materialInventory={inventory} onAction={vi.fn()} />,
-    );
-    const img = container.querySelector("img");
-    expect(img?.className).not.toContain("opacity-60");
   });
 });

@@ -1,14 +1,42 @@
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 import { UNIQUE_GEAR_COMBAT } from "../game-constants";
+import { addGoldWithCombatText } from "./combat-text";
 import { computeCardDamageToEnemy } from "./damage-calc";
 import { applyDamageRiders } from "./damage-riders";
-import { addGoldWithCombatText } from "./combat-text";
 import { tryDodgePlayerAttackPacket } from "./dodge";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import { applyEncounterThorns } from "./encounter-trait-events";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { dealPlayerTypedHit, dealTalentTypedHit } from "./player-typed-hit";
 import type { BattleState, CombatTextEvent } from "./types";
+
+function applyAttackPacketFollowUps(
+  result: BattleState,
+  damageType: Extract<BattleCardEffect, { kind: "damage" }>["damageType"],
+  modifiedDamage: number,
+  bonuses: { physical: number; bleed: number },
+  viper: boolean,
+  applyPartingCut: boolean,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  if (viper && result.enemyHealth > 0) {
+    const venomDamage = Math.round(modifiedDamage * UNIQUE_GEAR_COMBAT.viperDamageMultiplier);
+    result = dealPlayerTypedHit(result, "poison", venomDamage, combatTexts);
+    result = dealPlayerTypedHit(result, "bleed", venomDamage, combatTexts);
+  }
+  if (applyPartingCut && modifiedDamage > 0 && result.enemyHealth > 0) {
+    result = dealTalentTypedHit(result, "bleed", modifiedDamage, combatTexts, true);
+  }
+  if (modifiedDamage > 0 && result.enemyHealth > 0) {
+    if (damageType !== "physical" && bonuses.physical > 0) {
+      result = dealPlayerTypedHit(result, "physical", bonuses.physical, combatTexts);
+    }
+    if (damageType !== "bleed" && bonuses.bleed > 0) {
+      result = dealPlayerTypedHit(result, "bleed", bonuses.bleed, combatTexts);
+    }
+  }
+  return result;
+}
 
 export function dealDamageToEnemy(
   state: BattleState,
@@ -74,22 +102,15 @@ export function dealDamageToEnemy(
     companionAttack: context?.companionAttack,
     onDamageDealt: context?.onDamageDealt,
   });
-  if (viper && result.enemyHealth > 0) {
-    const venomDamage = Math.round(modifiedDamage * UNIQUE_GEAR_COMBAT.viperDamageMultiplier);
-    result = dealPlayerTypedHit(result, "poison", venomDamage, combatTexts);
-    result = dealPlayerTypedHit(result, "bleed", venomDamage, combatTexts);
-  }
-  if (applyPartingCut && modifiedDamage > 0 && result.enemyHealth > 0) {
-    result = dealTalentTypedHit(result, "bleed", modifiedDamage, combatTexts, true);
-  }
-  if (modifiedDamage > 0 && result.enemyHealth > 0) {
-    if (packet.damageType !== "physical" && bonuses.physical > 0) {
-      result = dealPlayerTypedHit(result, "physical", bonuses.physical, combatTexts);
-    }
-    if (packet.damageType !== "bleed" && bonuses.bleed > 0) {
-      result = dealPlayerTypedHit(result, "bleed", bonuses.bleed, combatTexts);
-    }
-  }
+  result = applyAttackPacketFollowUps(
+    result,
+    packet.damageType,
+    modifiedDamage,
+    bonuses,
+    Boolean(viper),
+    applyPartingCut,
+    combatTexts,
+  );
   // Award once after the whole attack packet, including its secondary hits.
   if (result.enemyHealth <= 0 && card.tags?.includes("archery") && result.talentEffects.goldOnArcheryKill > 0) {
     result = addGoldWithCombatText(result, result.talentEffects.goldOnArcheryKill, combatTexts);

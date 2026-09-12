@@ -151,34 +151,6 @@ describe("RunEndScreen", () => {
     expect(Array.from(grid.children).every((card, index) => card === cards[index])).toBe(true);
   });
 
-  it("shows ten stable-width talent XP cards without paging", () => {
-    const keywords = getTalentTreeKeywordIds().slice(0, 10);
-    expect(keywords).toHaveLength(10);
-    const runEndTalentXP = Object.fromEntries(keywords.map((kw) => [kw, 1]));
-    renderRunEnd({ runEndTalentXP, talentXP: runEndTalentXP });
-
-    const firstLabel = keywordDefinitions[keywords[0]!]!.label;
-    const grid = screen.getByText(firstLabel).closest(".justify-center");
-    expect(grid?.children).toHaveLength(10);
-    expect(grid?.className).toContain("max-w-[calc(73*var(--content-rem,1rem))]");
-    expect(grid?.firstElementChild?.className).toContain("w-56");
-    expect(screen.queryByRole("button", { name: "Next page" })).toBeNull();
-  });
-
-  it("shows all talent categories within four five-column rows without paging", () => {
-    const keywords = getTalentTreeKeywordIds();
-    expect(keywords.length).toBeGreaterThan(15);
-    expect(keywords.length).toBeLessThanOrEqual(20);
-    const runEndTalentXP = Object.fromEntries(keywords.map((kw) => [kw, 1]));
-    renderRunEnd({ runEndTalentXP, talentXP: runEndTalentXP });
-
-    for (const kw of keywords) {
-      expect(screen.getByText(keywordDefinitions[kw]!.label).isConnected).toBe(true);
-    }
-    expect(screen.queryByRole("button", { name: "Next page" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Previous page" })).toBeNull();
-  });
-
   it("hides obtained items when the recap is empty", () => {
     renderRunEnd();
     expect(screen.queryByRole("img")).toBeNull();

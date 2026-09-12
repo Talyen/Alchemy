@@ -114,7 +114,7 @@ limits, repeated damage, Blackfletch detonation, and saved battle-local opportun
 - **Repeatable rewards** — Last Supper, Second Helping, Rotgut, and Combustible reward each consumed card, excluding summon cards, without a turn cap. A repeated card still Consumes only once. Divine Favor readies the next Holy card after a real harmful-status cleanse, including Companion and scheduled cleansing; it survives turns and only actual Holy-card payment spends it. The armed benefit appears as a Divine Favor status indicator. Last Resort cleanses on a surviving downward crossing below 25% Health, including hostile ticks and Health costs. The triggering hit applies its harmful buildup before Last Resort cleanses, so that buildup is removed too. It can trigger again after healing above its threshold.
 - **Free Follow-up** — Stun from any source, including Companions and delayed effects, readies the next card discount. It survives turn changes and is spent only when it reduces a card payment.
 - **Consume reactions** — resolving a card twice still Consumes one card and grants Insatiable one bonus. Consuming Gear deals immediate triggered Burn damage, with resistance, pacing, Burn buildup, Armor decay, and kill rewards; it preserves bonuses reserved for the next card.
-- **Talent progression** — Row eligibility requires every talent in prior rows. Purchased talents retain their IDs and progress when rows are reordered; see [compatible battle-content history](../src/features/alchemy/shared/storage/MIGRATION_HISTORY.md#compatible-battle-content-updates).
+- **Talent progression** — Row eligibility requires every talent in prior rows. Purchased talents retain their IDs and progress when rows are reordered; see [compatible battle-content history](../src/features/alchemy/shared/storage/MIGRATIONS.md#supported-baseline).
 
 #### Attack bonuses
 
@@ -176,6 +176,7 @@ Simulation-only instrumentation and measurement semantics live in [Balance simul
 - **Card classification** — `src/lib/battle/card-classification.ts` owns attack, damage-type, and keyword queries. Damage classification includes direct damage, Physical random damage, and cleanse-to-damage, including every type in a damage pool, both chance branches, and scheduled effects. Keyword queries use the same effect-derived keywords and tags shown on cards; tags alone do not make a card an attack. Effect execution, replay selection, and target selection retain their own semantics.
 - **Damage outcomes** — enemy hit results distinguish attempted damage before defenses, resolved damage after defenses, actual Health loss after death prevention, Dodge, contact, and defeat. Contact is independent of defensive absorption. Player Health-hit results capture resolved damage, actual Health loss, and defeat before threshold healing or secondary reactions; DoT and Companion damage rewards use that captured Health loss. These results are execution-only and do not change saves.
 - **Status ownership** — `addPlayerStatus` delegates assignment to `setPlayerStatus`, so both absolute updates and deltas cap pending enemy Bleed Leech when changing Bleed. Explicit Armor loss uses `removePlayerArmor` so Reactive Guard cannot be skipped. `spendPlayerForgeForAttack` records only attack spending; `restoreSpentPlayerForge` consumes that record once after the turn reset, bypasses gain bonuses, and owns recovery threshold rewards. Initialization and hydration retain raw state construction.
+- **Card and enemy hit stages** — capture pre-hit conditions and preserve each source’s explicit reaction order, Health-loss facts, `talentEffects` manifests, depth-first Archery hits, RNG, and combat text. Details: [Non-card reaction eligibility](#non-card-reaction-eligibility).
 - **Typed hit resolution** — `typed-hit-resolution.ts` owns the shared Health → Armor decay → buildup → combat text → threshold → kill-payout order for player follow-up and talent hits. Card attack riders retain their distinct ordering, including recursive Archery hits and post-hit Forge consumption. `player-typed-hit.ts` declares recurring damage-conversion reactions in ordered data; changing that order changes RNG consumption. Talent manifest types derive from their defaults, retaining every existing saved field and value.
 - **State and arithmetic** — treat `BattleState` as immutable. Combat magnitudes use nearest-integer `Math.round()`, never `Math.floor()`; the battle-engine lint boundary enforces this convention.
 - **Common damage modifiers** — `damage-modifiers.ts` owns the typed mapping from damage types to Talent and Gear flat bonuses, flat reductions, half-damage traits, and Gear resistances. Preserve their existing application stages and rounding; special conversion and reaction handlers keep their explicit order. Saved source manifests retain their existing fields.
@@ -201,13 +202,15 @@ Simulation-only instrumentation and measurement semantics live in [Balance simul
 
 ### Saved runs and shared progression
 
-Players may keep one saved run per mode. Selecting a mode resumes its saved run
-or opens hero selection if its slot is empty. Backing out of setup preserves
-every existing run; Return to Run resumes the most recently played one. Starting
-another mode never abandons a run, and ending a run clears only that mode's slot.
-Gold, talents, Homestead progress, and equipment remain shared. Mode tiles show
-Resume when their slot is occupied. Both resume controls use the same saved
-gameplay location; menus and uncommitted setup never become that location.
+Players keep one unfinished run. The main menu offers Continue when it exists,
+otherwise Play opens the existing mode/hero setup. Continue restores the exact
+activity, including pending battle results, rewards, events, shops, and drafts.
+Menu and meta visits preserve that location. The existing red End Run menu action
+ends the run immediately without confirmation and returns to the main menu;
+earned progression is kept and unclaimed choices are not granted. Normal defeat
+and victory retain their outcome screens. Drafting is part of the run, not setup
+for a second run. Gold, Talents, Homestead progress, and equipment remain permanent
+profile data. A current battle still protects its equipped items during meta visits.
 
 ### Labyrinth exploration
 
@@ -235,7 +238,7 @@ already-generated next floors are reused. Prior floors cannot be entered.
 Resume preserves geography, completion, and pending encounters. Invalid location
 references fall back to the floor's completed entrance. Discovery is derived,
 not separately saved. Map-version recovery follows the
-[save migration history](../src/features/alchemy/shared/storage/MIGRATION_HISTORY.md#schema-18--labyrinth-side-rooms).
+[save migration history](../src/features/alchemy/shared/storage/MIGRATIONS.md#supported-baseline).
 
 ### Labyrinth room modifiers
 
@@ -304,3 +307,27 @@ Definitions of common terms used in the Alchemy codebase.
 | **Trinket**              | Permanent unique Armory collectible stored by definition ID and equipped in the dedicated Trinket slot. It has no rarity, affixes, duplicates, crafting, or salvage.                                                                                                                                                                                                                                        |
 | **Boon**                 | Run-scoped form of a Trinket definition. It shares the name, art, effect, and Collection discovery, but does not enter the Armory or occupy a slot. A matching equipped Trinket and Boon apply once.                                                                                                                                                                                                        |
 | **Wish**                 | Offers cards from the eligible offer pool, excluding the source card; the chosen card is added to the hand. Choice bonuses and queued offerings follow [Wishes and Mana](#wishes-and-mana).                                                                                                                                                                                                                 |
+
+### Non-card reaction eligibility
+
+- **Card and enemy hit stages** — `damage-riders.ts` captures pre-purge conditions and resolves status reactions, Leech/Frozen reactions, depth-first Archery hits, typed rewards, then feedback/thresholds/payout. `enemy-attack-damage.ts` captures Health loss and Block spending before defensive reactions, then resolves crowd control, Leech, retaliation, and trait follow-ups. Captured hit outcomes never include later healing. Captured Talent manifests retain the `talentEffects` name so the source-based Talent-reader invariant recognizes their consumers. These paths deliberately retain distinct ordering; RNG draws and combat-text order are behavior.
+
+Resolution remains explicit and depth-first. Card and enemy hit handlers capture
+pre-hit facts separately from the changing battle snapshot; an Archery extra hit
+finishes before the outer hit pays its rewards. Do not replace this order with a
+queued reaction pipeline.
+
+| Origin                                                                  | Card-only benefits                                                                 | Other reactions                                               |
+| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Played card                                                             | Eligible; consume first-use and next-card benefits normally                        | Resolve in the owning card/hit order                          |
+| Companion turn-start action                                             | Suppress and restore preserved first-use, next-hit and next-card flags             | Companion bonuses and ordinary damage reactions still resolve |
+| Repeated card effects                                                   | Suppress the same preserved flags; `uniqueRepeatActive` prevents recursive repeats | Keep the repeated effect's explicit source/context rules      |
+| Delayed turn-start effects and reactive hits using `withPreservedFlags` | Suppress the same preserved flags                                                  | Keep eligible status, healing and follow-up reactions         |
+
+`combat-flags.ts` owns the exact preserved set. `withPreservedFlags` works on a
+local snapshot, not global state. Ordinary unpreserved flags survive. Cost
+reduction is special: keep the greater of the prior reduction and newly earned
+reduction, including nested effects. The scope remains intentional because
+replacing it with context checks throughout all flag consumers would spread the
+same eligibility policy rather than simplify it. No new persisted fields are
+needed for these resolution facts.

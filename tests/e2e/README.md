@@ -42,13 +42,13 @@ must never request it or call `enableFastMode`/`useFastBattle`.
 - Save injectors install page-level initialization scripts that run again on navigation and reload. To verify changes persisted after injection, open a fresh page in the same browser context (shared storage, no page-level seeding script), collect its runtime errors, and close it after assertions.
 - The fresh-storage cold-start test keeps real loading enabled, with a 30-second menu wait inside a 60-second test budget for parallel suite load. Ordinary menu checks retain their shorter budgets.
 - `openGameModeSelect` retries Play if bootstrap unmounts the menu.
-- `selectGameMode(page, mode, action?)` clicks the mode card with `Play` (default) or `Resume ${title}`.
+- `selectGameMode(page, mode)` clicks a mode after Play; it never resumes a separate slot.
 - `selectCharacterAndContinue` clicks a hero portrait; character select has no Back/Continue footer.
-- `resumeCampaignRun` waits for the saved destination rather than clicking Play during hydrate.
+- `resumeCampaignRun` waits for the saved destination or uses the main-menu Continue action.
 - `startBattleWithDeck` and `startAtDestination` bootstrap battle.
 - `injectActiveBattle` injects a mid-battle snapshot and boots straight into the battle screen.
 - `winBattleAndClaimReward` wins via combat and claims the first reward card.
-- `assertDefeatFromEndRun` ends a run and asserts defeat.
+- `assertEndRunReturnsToMenu` ends a run immediately without confirmation and asserts the main menu.
 - `injectMidCombatSave`, `injectDestinationAtIndex`, and `injectMysterySummaryVisit` inject exact persisted states.
 - `failOnRuntimeErrors` collects errors on extra pages created by a test or on Electron pages; assert the collected errors before closing those pages. The browser fixture covers its own `page` automatically.
 

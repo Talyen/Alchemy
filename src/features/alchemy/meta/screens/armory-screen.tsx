@@ -1,43 +1,43 @@
-import { useCallback, useMemo, useState, useRef } from "react";
-import { Lock } from "lucide-react";
-import {
-  EMPTY_CRAFTING_CURRENCIES,
-  computeSalvageYield,
-  craftingCurrencyBlockedReason,
-  findGearEquippedCharacter,
-  getGearInstanceTitle,
-  flattenGearInventories,
-  type CraftingCurrencyId,
-  type GearInstance,
-  type GearSlot,
-  type ArmorySlot,
-} from "@/lib/gear";
-import { playUISound } from "@/lib/audio";
-import type { CraftingResult } from "./armory/crafting-result";
-import { ArmoryFeedback } from "./armory/armory-feedback";
-import { cn } from "@/lib/utils";
 import { collectionGridGapXClass, screenShellPaddingClass, sectionTitleClass } from "@/features/alchemy/shared/config";
 import {
   characters,
   getRequiredPreviousCharacter,
   isCharacterUnlocked,
-  type CharacterId,
-  trinketLibrary,
   trinketById,
+  trinketLibrary,
+  type CharacterId,
 } from "@/features/alchemy/shared/config/game-data-catalog";
-import { FadeSlot } from "../../shared/ui/use-fade";
+import { playUISound } from "@/lib/audio";
+import {
+  EMPTY_CRAFTING_CURRENCIES,
+  computeSalvageYield,
+  craftingCurrencyBlockedReason,
+  findGearEquippedCharacter,
+  flattenGearInventories,
+  getGearInstanceTitle,
+  type ArmorySlot,
+  type CraftingCurrencyId,
+  type GearInstance,
+  type GearSlot,
+} from "@/lib/gear";
+import { cn } from "@/lib/utils";
+import { Lock } from "lucide-react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { PageLayout, ScreenHeaderRow } from "../../shared/ui/layout-components";
 import { renderUnlockMessage } from "../../shared/ui/unlock-text";
+import { FadeSlot } from "../../shared/ui/use-fade";
 import { ArmoryCharacterTabs, ArmoryOverlays, type ArmoryScreenProps } from "./armory";
-import { applyCurrencyToGear, itemsMatchingSlot } from "./armory/armory-screen-actions";
+import { ArmoryFeedback } from "./armory/armory-feedback";
 import { COMBAT_LOCKED_MESSAGE } from "./armory/armory-item-state";
-import { useArmoryTargetingState } from "./armory/use-armory-targeting-state";
 import { ArmoryPickerPanel } from "./armory/armory-picker-panel";
-import { EquipmentSlotButton } from "./armory/parts/equipment-slot-button";
+import { applyCurrencyToGear, itemsMatchingSlot } from "./armory/armory-screen-actions";
+import "./armory/armory-screen.css";
+import type { CraftingResult } from "./armory/crafting-result";
 import { CraftingStrip } from "./armory/parts/crafting-strip";
+import { EquipmentSlotButton } from "./armory/parts/equipment-slot-button";
 import { EQUIP_SLOTS } from "./armory/parts/slot-labels";
 import { TrinketSlotButton } from "./armory/parts/trinket-slot-button";
-import "./armory/armory-screen.css";
+import { useArmoryTargetingState } from "./armory/use-armory-targeting-state";
 
 export function ArmoryScreen({
   inventories,
@@ -87,11 +87,11 @@ export function ArmoryScreen({
 
   const {
     salvageMode,
-    setSalvageMode,
+    toggleSalvage,
     activeCurrencyId,
-    setActiveCurrencyId,
+    selectCurrency,
     salvagePending,
-    setSalvagePending,
+    confirmSalvage,
     clearTargeting,
   } = useArmoryTargetingState({ editable, craftingCurrencies, characterId, inventoryById });
 
@@ -117,8 +117,7 @@ export function ArmoryScreen({
       return;
     }
     if (craftingCurrencies[currencyId] <= 0) return;
-    setActiveCurrencyId((current) => (current === currencyId ? null : currencyId));
-    setSalvageMode(false);
+    selectCurrency(currencyId);
     setCraftingResult(null);
     setNotice("");
   }
@@ -130,20 +129,11 @@ export function ArmoryScreen({
         return;
       }
       if (combatRestrictions.gear[instance.instanceId]) return;
-      setSalvageMode(false);
-      setActiveCurrencyId(null);
       setNotice("");
       setCraftingResult(null);
-      setSalvagePending({ instance, yield: computeSalvageYield(instance) });
+      confirmSalvage({ instance, yield: computeSalvageYield(instance) });
     },
-    [
-      editable,
-      combatRestrictions.gear,
-      handleCombatLockedAttempt,
-      setActiveCurrencyId,
-      setSalvageMode,
-      setSalvagePending,
-    ],
+    [editable, combatRestrictions.gear, handleCombatLockedAttempt, confirmSalvage],
   );
 
   const handleApplyCurrency = useCallback(
@@ -164,21 +154,14 @@ export function ArmoryScreen({
         activeCurrencyId,
         instance,
         onApplyCurrency,
-        clearCurrency: () => setActiveCurrencyId(null),
+        clearCurrency: clearTargeting,
       });
       if (applied) {
         setNotice("");
         setCraftingResult({ before: instance, currencyId: activeCurrencyId });
       } else setNotice("Crafting could not be completed. No currency was spent.");
     },
-    [
-      editable,
-      activeCurrencyId,
-      onApplyCurrency,
-      combatRestrictions.gear,
-      handleCombatLockedAttempt,
-      setActiveCurrencyId,
-    ],
+    [editable, activeCurrencyId, onApplyCurrency, combatRestrictions.gear, handleCombatLockedAttempt, clearTargeting],
   );
 
   const handleSlotSelect = useCallback(
@@ -311,8 +294,7 @@ export function ArmoryScreen({
                   onToggleSalvageMode={() => {
                     setNotice("");
                     setCraftingResult(null);
-                    setSalvageMode((current) => !current);
-                    setActiveCurrencyId(null);
+                    toggleSalvage();
                   }}
                 />
                 {locked && requiredCharacterId ? (
@@ -373,7 +355,7 @@ export function ArmoryScreen({
               );
             return success;
           }}
-          onClearSalvageTarget={() => setSalvagePending(null)}
+          onClearSalvageTarget={clearTargeting}
         />
       </div>
     </PageLayout>

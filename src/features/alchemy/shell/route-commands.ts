@@ -14,6 +14,7 @@ import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 
 export interface AlchemyRouteCommands {
   meta: {
+    resumeRun: () => void;
     goToScreen: (nextScreen: Screen) => void;
     beginCampaign: () => void;
     beginLabyrinth: () => void;

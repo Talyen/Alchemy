@@ -5,7 +5,6 @@ import { runProfilePersistenceCodec } from "@/features/alchemy/shared/stores/run
 import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import type { ActiveRunData } from "@/lib/active-run-session";
 import type { AlchemyPersistenceFields, SaveData } from "./types";
-import { readParkedRuns, readRunRecency } from "@/features/alchemy/shared/stores/run-reads";
 import {
   subscribeRunSessionCommits,
   dispatchRunSessionCommand,
@@ -71,8 +70,6 @@ export function buildAlchemySaveDataFromStores(activeRun: ActiveRunData | null):
     contentVersion: CURRENT_CONTENT_VERSION,
     ...persistenceFields,
     activeRun,
-    parkedRuns: readParkedRuns(),
-    runRecency: readRunRecency(),
     lastSavedAt: 0,
   };
 }

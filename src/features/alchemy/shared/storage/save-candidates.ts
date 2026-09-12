@@ -1,6 +1,7 @@
 import { toActiveRunData } from "@/lib/active-run-session";
 import {
   SaveDataSchema,
+  LAUNCH_SAVE_SCHEMA_VERSION,
   safeParseWithErrors,
   getRawContentVersion,
   getRawLastSavedAt,
@@ -24,18 +25,10 @@ export interface SaveLoadState {
   status: SaveLoadStatus;
 }
 
-function countParkedRuns(value: unknown): number {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return 0;
-  return Object.keys(value).length;
-}
-
 function collectSaveRepairWarnings(raw: Partial<SaveData>, normalized: ParsedSaveData): string[] {
   const warnings: string[] = [];
   if (raw.activeRun && !normalized.activeRun) {
     warnings.push("active run could not be restored");
-  }
-  if (countParkedRuns(raw.parkedRuns) > countParkedRuns(normalized.parkedRuns)) {
-    warnings.push("a parked run could not be restored");
   }
   const rawGold = (raw as { gold?: unknown }).gold;
   if (rawGold !== undefined && rawGold !== normalized.gold) {
@@ -47,16 +40,6 @@ function collectSaveRepairWarnings(raw: Partial<SaveData>, normalized: ParsedSav
 function hydrateActiveRunDeck(activeRun: ParsedSaveData["activeRun"]): SaveData["activeRun"] {
   if (!activeRun) return null;
   return toActiveRunData(activeRun);
-}
-
-function hydrateParkedRuns(parked: ParsedSaveData["parkedRuns"]): SaveData["parkedRuns"] {
-  const next: SaveData["parkedRuns"] = {};
-  for (const [mode, run] of Object.entries(parked)) {
-    if (!run) continue;
-    const hydrated = hydrateActiveRunDeck(run as ParsedSaveData["activeRun"]);
-    if (hydrated) next[mode as keyof SaveData["parkedRuns"]] = hydrated;
-  }
-  return next;
 }
 
 function getFutureSaveStatus(parsed: unknown): SaveLoadStatus | null {
@@ -99,6 +82,8 @@ export function evaluateSaveCandidates(candidates: string[]): SaveLoadState {
       continue;
     }
 
+    // Reject disposable formats before field defaults can stamp them as current.
+    if (getRawSaveSchemaVersion(parsed) < LAUNCH_SAVE_SCHEMA_VERSION) continue;
     const result = safeParseWithErrors(SaveDataSchema, parsed);
     if (!result.success) {
       logStorageFailure("Save candidate failed validation, trying next candidate", result.error);
@@ -122,7 +107,6 @@ export function evaluateSaveCandidates(candidates: string[]): SaveLoadState {
     const hydrated: SaveData = {
       ...bestData,
       activeRun: hydrateActiveRunDeck(bestData.activeRun),
-      parkedRuns: hydrateParkedRuns(bestData.parkedRuns),
     };
     playable = { data: hydrated, status: warnings.length > 0 ? { kind: "ok", warnings } : { kind: "ok" } };
   }

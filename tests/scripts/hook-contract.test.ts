@@ -126,7 +126,7 @@ setTimeout(() => { fs.writeFileSync(name.replaceAll(":", "-") + ".done", "done")
         "package-lock.json",
         "src/lib/platform.ts",
         "src/features/alchemy/shell/use-alchemy-run-controller*",
-        "tests/fixtures/legacy-saves*",
+        "tests/fixtures/current-saves*",
         "tests/e2e/mid-combat-save*",
         "tests/e2e/specs/save-*",
       ].toSorted(),

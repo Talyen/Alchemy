@@ -1,18 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
-  migrateSaveDataToCurrent,
   getRawSaveSchemaVersion,
   getRawContentVersion,
   isUnsupportedFutureSaveData,
   isUnsupportedFutureContentData,
 } from "@/lib/validation/migration";
-import { CURRENT_SAVE_SCHEMA_VERSION, CURRENT_CONTENT_VERSION } from "@/lib/validation/metadata";
-import {
-  currentSchemaCampaignSave,
-  currentSchemaLabyrinthRunSave,
-  currentSchemaCorruptedCardRunSave,
-} from "../../fixtures/legacy-saves";
-
+import { CURRENT_SAVE_SCHEMA_VERSION, CURRENT_CONTENT_VERSION } from "@/lib/validation";
 describe("getRawSaveSchemaVersion", () => {
   it("returns 0 for null/undefined input", () => {
     expect(getRawSaveSchemaVersion(null)).toBe(0);
@@ -62,117 +55,6 @@ describe("getRawContentVersion", () => {
   });
 });
 
-describe("migrateSaveDataToCurrent", () => {
-  it("returns an empty object for null input", () => {
-    expect(migrateSaveDataToCurrent(null)).toEqual({});
-  });
-
-  it("sets saveSchemaVersion to current for v0 saves", () => {
-    const result = migrateSaveDataToCurrent({});
-    expect(result.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
-  });
-
-  it("preserves existing fields while stamping the current schema version", () => {
-    const result = migrateSaveDataToCurrent({ musicVolume: 75, activeRun: null });
-    expect(result.musicVolume).toBe(75);
-    expect(result.activeRun).toBeNull();
-    expect(result.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
-  });
-
-  it("stamps current schema version without reshaping gear inventories", () => {
-    const inventories = { knight: [{ instanceId: "g1", definitionId: "leather-armor-basic", affixes: [] }] };
-    const result = migrateSaveDataToCurrent({
-      saveSchemaVersion: 9,
-      gearInventories: inventories,
-      gearLoadouts: {},
-    });
-    expect(result.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
-    expect(result.gearInventories).toEqual(inventories);
-  });
-
-  it("remaps sunder-armor card ids when content version is below 2", () => {
-    const result = migrateSaveDataToCurrent({
-      contentVersion: 1,
-      discoveredCardIds: ["sunder-armor", "slash"],
-      activeRun: {
-        deck: [{ id: "sunder-armor", title: "Sunder Armor" }],
-      },
-    });
-    expect(result.contentVersion).toBe(CURRENT_CONTENT_VERSION);
-    expect(result.discoveredCardIds).toEqual(["sunder", "slash"]);
-    expect(result.activeRun).toEqual({ deck: [{ id: "sunder", title: "Sunder Armor" }] });
-  });
-
-  it("remaps roulette card ids when content version is below 3", () => {
-    const result = migrateSaveDataToCurrent({
-      contentVersion: 2,
-      discoveredCardIds: ["roulette", "slash"],
-      activeRun: {
-        deck: [{ id: "roulette", title: "Roulette" }],
-      },
-    });
-    expect(result.contentVersion).toBe(CURRENT_CONTENT_VERSION);
-    expect(result.discoveredCardIds).toEqual(["roll-the-dice", "slash"]);
-    expect(result.activeRun).toEqual({ deck: [{ id: "roll-the-dice", title: "Roulette" }] });
-  });
-
-  it("leaves card prose matching a remapped id untouched", () => {
-    const result = migrateSaveDataToCurrent({
-      contentVersion: 2,
-      discoveredCardIds: ["slash"],
-      activeRun: {
-        deck: [{ id: "slash", title: "roulette", descriptionLines: ["roulette"], art: "roulette" }],
-      },
-    });
-    expect(result.activeRun).toEqual({
-      deck: [{ id: "slash", title: "roulette", descriptionLines: ["roulette"], art: "roulette" }],
-    });
-  });
-
-  it("leaves non-card id fields matching a remapped card id untouched", () => {
-    const result = migrateSaveDataToCurrent({
-      contentVersion: 1,
-      discoveredCardIds: ["sunder-armor"],
-      encounteredEnemyIds: ["sunder-armor"],
-      activeRun: {
-        deck: [{ id: "sunder-armor", title: "Sunder Armor" }],
-      },
-    });
-    expect(result.discoveredCardIds).toEqual(["sunder"]);
-    expect(result.encounteredEnemyIds).toEqual(["sunder-armor"]);
-  });
-
-  it("remaps card ids in reward and mystery choice fields", () => {
-    const result = migrateSaveDataToCurrent({
-      contentVersion: 2,
-      discoveredCardIds: ["slash"],
-      activeRun: {
-        mysteryVisit: { chosenCardId: "roulette" },
-        interruptedFlow: {
-          kind: "primary-reward",
-          pending: {
-            rewardType: "card",
-            choiceIds: ["roulette"],
-            selectedId: "roulette",
-            companionChoiceIds: ["roulette"],
-          },
-        },
-      },
-    });
-    expect(result.activeRun).toMatchObject({
-      mysteryVisit: { chosenCardId: "roll-the-dice" },
-      interruptedFlow: {
-        kind: "primary-reward",
-        pending: {
-          choiceIds: ["roll-the-dice"],
-          selectedId: "roll-the-dice",
-          companionChoiceIds: ["roll-the-dice"],
-        },
-      },
-    });
-  });
-});
-
 describe("isUnsupportedFutureSaveData", () => {
   it("returns false for current version", () => {
     expect(isUnsupportedFutureSaveData({ saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION })).toBe(false);
@@ -202,42 +84,5 @@ describe("isUnsupportedFutureContentData", () => {
 
   it("returns false for malformed input", () => {
     expect(isUnsupportedFutureContentData(null)).toBe(false);
-  });
-});
-
-describe("schema version stamping determinism", () => {
-  it("campaign fixture stamps idempotently", () => {
-    const first = migrateSaveDataToCurrent(currentSchemaCampaignSave());
-    const second = migrateSaveDataToCurrent(first);
-    expect(second).toEqual(first);
-  });
-
-  it("labyrinth fixture stamps idempotently", () => {
-    const first = migrateSaveDataToCurrent(currentSchemaLabyrinthRunSave());
-    const second = migrateSaveDataToCurrent(first);
-    expect(second).toEqual(first);
-  });
-
-  it("corrupted-card fixture stamps idempotently", () => {
-    const first = migrateSaveDataToCurrent(currentSchemaCorruptedCardRunSave());
-    const second = migrateSaveDataToCurrent(first);
-    expect(second).toEqual(first);
-  });
-
-  it("campaign fixture round-trips through JSON serialize", () => {
-    const first = migrateSaveDataToCurrent(currentSchemaCampaignSave());
-    const serialized = JSON.stringify(first);
-    const deserialized = JSON.parse(serialized);
-    const second = migrateSaveDataToCurrent(deserialized);
-    expect(second).toEqual(first);
-  });
-
-  it("all scenario fixtures produce stable saveSchemaVersion", () => {
-    const campaign = migrateSaveDataToCurrent(currentSchemaCampaignSave());
-    const labyrinth = migrateSaveDataToCurrent(currentSchemaLabyrinthRunSave());
-    const corrupted = migrateSaveDataToCurrent(currentSchemaCorruptedCardRunSave());
-    expect(campaign.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
-    expect(labyrinth.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
-    expect(corrupted.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
   });
 });

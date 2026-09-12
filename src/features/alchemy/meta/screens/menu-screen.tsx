@@ -43,6 +43,7 @@ function MenuPlasmaHover({ colorPair, children }: { colorPair: PlasmaColorPair; 
 
 export function MenuScreen({
   onPlay,
+  hasActiveRun,
   onCollection,
   onOptions,
   onTalents,
@@ -56,6 +57,7 @@ export function MenuScreen({
   finishedRunCharacters,
 }: {
   onPlay: () => void;
+  hasActiveRun: boolean;
   onCollection: () => void;
   onOptions: () => void;
   onTalents: () => void;
@@ -75,7 +77,7 @@ export function MenuScreen({
     <div className="flex h-full w-full flex-col items-center justify-center gap-5 py-4 text-center">
       <Surface
         clipContents={false}
-        className="relative flex min-h-0 w-full max-w-[calc(44.86*var(--content-rem,1rem))] justify-center"
+        className="relative flex min-h-0 w-full max-w-[calc(49.346*var(--content-rem,1rem))] justify-center"
       >
         <img
           width={1200}
@@ -97,7 +99,7 @@ export function MenuScreen({
             onClick={onPlay}
           >
             <Swords className="h-7 w-7" />
-            Play
+            {hasActiveRun ? "Continue" : "Play"}
           </Button>
         </MenuPlasmaHover>
         <div className="grid grid-cols-2 gap-3">

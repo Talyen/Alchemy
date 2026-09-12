@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import {
   getBossById,
   getBossShineColors,
-  getBossShineGradient,
   getBossTextShineColors,
   SHINE_PALETTES,
 } from "@/features/alchemy/shared/config";
@@ -42,17 +41,5 @@ describe("getBossShineColors", () => {
 
   it("removes repeated palette stops for broader text bands", () => {
     expect(getBossTextShineColors(makeBoss())).toEqual(["#cbd5e1", "#64748b"]);
-  });
-});
-
-describe("getBossShineGradient", () => {
-  it("builds a horizontal linear gradient from boss shine colors", () => {
-    const boss = makeBoss();
-    const gradient = getBossShineGradient(boss);
-
-    expect(gradient).toMatch(/^linear-gradient\(in oklab/);
-    for (const color of SHINE_PALETTES.bossVictoryFallback) {
-      expect(gradient).toContain(color);
-    }
   });
 });

@@ -8,6 +8,8 @@ Use one or two representative tasks before promoting an instruction change that 
 
 When a new cohort includes an uncommitted source snapshot, freeze that snapshot once and apply the candidate change to the frozen copy. Before launching, compare the source inventories and require that only the intended candidate paths differ. Never populate a candidate from live files while another session may be editing them; record the snapshot and candidate patch hashes.
 
+Before coding trials, confirm that the evaluation sandbox supports the selected gates, including local loopback listeners used by tooling tests and preview smoke. Record sandbox and network settings in the comparison settings. Exclude setup failures and restart affected comparisons with matching capabilities.
+
 Use different variant names, but identical comparison settings. Put the per-variant instruction patch identity in acceptance evidence, not the shared settings. Run at least two trials per variant before claiming a reliable improvement. Use fresh verification (`ALCHEMY_VERIFY_FRESH=1`) in both variants for discovery comparisons; evaluate cache effectiveness separately with the same warm/cold procedure. Never compare an empty baseline event capture with an instrumented candidate as if that established savings.
 
 ## Record and compare
@@ -58,3 +60,5 @@ Keep older baselines immutable. When game evolution requires a new baseline, cha
 [September 11 context-efficiency trials](./results/context-efficiency-2026-09-11.md) record category-level measurements, setup exclusions, and the rejected test-navigation prototype.
 
 [September 12 discovery-context trials](./results/context-discovery-2026-09-12.md) record battle/run-state adoption and the excluded concurrent-edit setup.
+
+[September 12 instruction-guidance trials](./results/instruction-guidance-2026-09-12.md) record the proportional-discovery and skill-simplification comparison, including mixed token results and the excluded sandbox setup.

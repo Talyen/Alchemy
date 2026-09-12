@@ -32,12 +32,6 @@ test.describe("Homestead Flow", critical, () => {
     test.beforeEach(async ({ page }) => {
       await new HomesteadPage(page).goto();
     });
-
-    test("building construction button is visible for blacksmiths forge", async ({ page }) => {
-      const homestead = new HomesteadPage(page);
-      await homestead.switchTab("Buildings");
-      await expect(await homestead.constructButton()).toBeVisible({ timeout: 3000 });
-    });
   });
 
   test.describe("with custom companions", () => {

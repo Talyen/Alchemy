@@ -76,6 +76,14 @@ describe("getTalentsForKeyword", () => {
 });
 
 describe("talent row layout", () => {
+  it("chunks by fixed size", () => {
+    expect(chunkIntoRows([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]]);
+  });
+
+  it("chunks by explicit sizes", () => {
+    expect(chunkIntoRows(["a", "b", "c", "d"], [1, 2, 3])).toEqual([["a"], ["b", "c"], ["d"]]);
+  });
+
   it("keeps overflow entries in a final row instead of dropping them", () => {
     expect(chunkIntoRows([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], [1, 2, 3, 4])).toEqual([
       [1],

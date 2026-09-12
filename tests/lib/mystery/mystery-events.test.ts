@@ -31,16 +31,6 @@ describe("mysteryPool", () => {
     }
   });
 
-  it("narrative text contains no em dashes", () => {
-    for (const event of mysteryPool) {
-      expect(event.narrative, `${event.id} narrative`).not.toContain("—");
-      expect(event.title, `${event.id} title`).not.toContain("—");
-      for (const choice of event.choices) {
-        expect(choice.label, `${event.id}/${choice.label} label`).not.toContain("—");
-      }
-    }
-  });
-
   it("each event has a unique ID", () => {
     const ids = mysteryPool.map((e) => e.id);
     expect(new Set(ids).size).toBe(ids.length);

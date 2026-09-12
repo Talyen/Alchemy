@@ -1,3 +1,5 @@
+import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
+import type { ContentSystemId } from "@/lib/content-systems/types";
 import type {
   BattleCard,
   BattleCardEffect,
@@ -11,13 +13,11 @@ import type {
   TrinketManifest,
 } from "@/lib/game-data";
 import type { GearEffectManifest } from "@/lib/gear";
-
-export type { TrinketManifest };
 import type { MaterialInventory } from "@/lib/homestead/types";
-import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
-import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { CombatFlags } from "../combat-flags";
 import type { UniqueGearBattleState } from "../unique-gear-state";
+
+export type { TrinketManifest };
 
 interface PendingTurnStartPulse {
   sourceCard?: Pick<BattleCard, "id" | "consume" | "tags">;
@@ -28,7 +28,7 @@ interface PendingTurnStartPulse {
 export type PlayerStatusValues = Record<PlayerStatusId, number>;
 export type EnemyStatusValues = Record<EnemyStatusId, number>;
 
-export type TurnPhase = "player" | "enemy";
+type TurnPhase = "player" | "enemy";
 
 export interface EnemyMitigation {
   armor: number;

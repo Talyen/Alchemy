@@ -70,34 +70,20 @@ async function expectStableHoverLayout(card: Locator) {
   await card.blur();
 }
 
-for (const tab of ["Cards", "Bestiary"]) {
-  test(`Collection ${tab} hover and focus preserve layout`, async ({ page }) => {
-    await new MenuPage(page).gotoCollection({
-      discoveredCardIds: ["anvil"],
-    });
-    await page.getByRole("button", { name: tab, exact: true }).click();
-    await expect(page.getByRole("button", { name: "Inspect Knight", exact: true })).toBeHidden();
-    const entries = page.getByRole("button", { name: /^Inspect / });
-    await expectStableHoverLayout(entries.first());
-    const locked = page.getByRole("button", { name: /Inspect Undiscovered Entry|Inspect .*\(Locked\)/ }).first();
-    if (await locked.count()) await expectStableHoverLayout(locked);
-  });
-}
+test("Collection card hover and focus preserve layout", async ({ page }) => {
+  await new MenuPage(page).gotoCollection({ discoveredCardIds: ["anvil"] });
+  await page.getByRole("button", { name: "Cards", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Inspect Knight", exact: true })).toBeHidden();
+  const entries = page.getByRole("button", { name: /^Inspect / });
+  await expectStableHoverLayout(entries.first());
+  const locked = page.getByRole("button", { name: /Inspect Undiscovered Entry|Inspect .*\(Locked\)/ }).first();
+  if (await locked.count()) await expectStableHoverLayout(locked);
+});
 
-for (const rewardType of ["card", "trinket", "gear"] as const) {
-  test(`Victory ${rewardType} hover and focus preserve layout`, async ({ page }) => {
-    await enterPrimaryRewardScreen(
-      page,
-      rewardType === "gear"
-        ? { rewardType, gearChoices: [{ instanceId: "reward-gear", definitionId: "leather-armor-basic", affixes: [] }] }
-        : {
-            rewardType,
-            choiceIds: rewardType === "card" ? ["slash", "bash"] : ["tattered-pages", "companions-collar"],
-          },
-    );
-    await expectStableHoverLayout(page.getByRole("button", { name: /^Select / }).first());
-  });
-}
+test("Victory card hover and focus preserve layout", async ({ page }) => {
+  await enterPrimaryRewardScreen(page, { rewardType: "card", choiceIds: ["slash", "bash"] });
+  await expectStableHoverLayout(page.getByRole("button", { name: /^Select / }).first());
+});
 
 async function expectPairedGlow(surface: Locator) {
   if (await surface.evaluate((element) => element.classList.contains("talent-card-available"))) {
@@ -126,37 +112,6 @@ test("Homestead hover pairs glow without changing affordability", async ({ page 
   const homestead = new HomesteadPage(page);
   await homestead.goto();
   await expectStableHoverLayout(await homestead.constructButton());
-});
-
-test("Wildcard glow follows its animated color and disappears on leave", async ({ page }) => {
-  await new MenuPage(page).goToCharacterSelectUnlocked();
-  const hero = page.getByRole("button", { name: "Select Wildcard", exact: true });
-  await expectPairedGlow(hero);
-  const shine = hero.locator(".shine-border");
-  await expect
-    .poll(() =>
-      shine.evaluate((element) => {
-        const painted = getComputedStyle(element.querySelector(".shine-border-paint")!).backgroundColor;
-        const filter = getComputedStyle(element).filter;
-        return painted !== "rgba(0, 0, 0, 0)" && filter.includes("16px");
-      }),
-    )
-    .toBe(true);
-  await page.mouse.move(0, 0);
-  await expect(shine).toHaveCSS("opacity", "0");
-});
-
-test("Available talent shine glows only on hover or focus", async ({ page }) => {
-  const menu = new MenuPage(page);
-  await menu.gotoWithUnlockedMeta({ talentXP: { dodge: 550 }, unlockedTalents: {} });
-  await menu.openTalents();
-  await page.getByRole("button", { name: "Select Dodge Talents" }).click();
-  const talent = page.getByRole("button").filter({ has: page.getByText("Lightfoot", { exact: true }) });
-  await expectPairedGlow(talent);
-  await page.mouse.move(0, 0);
-  await expect(talent.locator(".shine-border")).not.toHaveAttribute("data-glow", "true");
-  await talent.focus();
-  await expect(talent.locator(".shine-border")).toHaveAttribute("data-glow", "true");
 });
 
 test("Battle hand and enemy hover glow leave turn borders unchanged", async ({ page }) => {

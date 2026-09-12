@@ -1,4 +1,3 @@
-import { isPlayerDefeated } from "@/lib/battle";
 import type { CharacterId } from "@/lib/game-data";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { GameplayState } from "./gameplay-state-store";
@@ -10,7 +9,7 @@ export interface GearCombatRestrictions {
 }
 
 export function deriveGearCombatRestrictions(state: {
-  run: Pick<GameplayState["run"], "activeRun" | "parkedRuns">;
+  run: Pick<GameplayState["run"], "activeRun">;
   session: Pick<GameplayState["session"], "activity">;
   battle: Pick<GameplayState["battle"], "hasActiveBattle">;
   gear: Pick<GameplayState["gear"], "loadouts" | "equippedTrinkets">;
@@ -19,13 +18,6 @@ export function deriveGearCombatRestrictions(state: {
   const foregroundMode = state.session.activity.kind !== "inactive" ? state.run.activeRun.contentSystemType : null;
   if (foregroundMode && state.battle.hasActiveBattle) {
     characters[state.run.activeRun.characterId] = [foregroundMode];
-  }
-  for (const [mode, run] of Object.entries(state.run.parkedRuns)) {
-    if (mode === foregroundMode || !run?.activeCombat) continue;
-    const battle = run.activeCombat.battleState;
-    if (battle.enemyHealth <= 0 || isPlayerDefeated(battle)) continue;
-    const modes = characters[run.characterId] ?? [];
-    characters[run.characterId] = [...modes, run.contentSystemType];
   }
   const gear: GearCombatRestrictions["gear"] = {};
   const trinkets: GearCombatRestrictions["trinkets"] = {};

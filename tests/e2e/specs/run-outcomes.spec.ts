@@ -4,7 +4,7 @@ import { test } from "../../fixtures/e2e";
 import {
   injectBossState,
   injectActiveBattle,
-  assertDefeatFromEndRun,
+  assertEndRunReturnsToMenu,
   winBattleAndClaimReward,
   makeCard,
   makeGoblinBattleState,
@@ -55,23 +55,19 @@ test.describe("Run Outcomes", critical, () => {
   });
 
   test.describe("Defeat and Run End Flow", () => {
-    test("ending a run from destination screen shows defeat screen", critical, async ({ page }) => {
+    test("ending a run from destination returns directly to menu", critical, async ({ page }) => {
       await startAtDestination(page, {}, { forceDestination: "Normal Combat" });
       await page.keyboard.press("Escape");
       await expect(page.getByRole("button", { name: "End Run" })).toBeVisible({ timeout: 3000 });
       await page.getByRole("button", { name: "End Run" }).click();
-      await expect(page.getByRole("heading", { name: "Defeat" })).toBeVisible({ timeout: 5000 });
-      await expect(page.getByRole("button", { name: "Continue" })).toBeVisible({ timeout: 5000 });
+      await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible({ timeout: 5000 });
     });
 
-    test("after defeat in battle, Continue lands on main menu and active run is cleared", async ({
-      page,
-      fastBattle,
-    }) => {
+    test("manual End Run in battle returns to menu and clears the active run", async ({ page, fastBattle }) => {
       void fastBattle;
 
       await injectActiveBattle(page, makeGoblinBattleState());
-      await assertDefeatFromEndRun(page, { returnToMenu: true });
+      await assertEndRunReturnsToMenu(page);
 
       const activeRun = await page.evaluate((saveKey) => {
         const save = JSON.parse(localStorage.getItem(saveKey) || "{}");

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { applyAutosaveCompletion, computeAutosaveDelay, shouldAttemptFlush } from "@/app/autosave-scheduler";
+import {
+  applyAutosaveCompletion,
+  createAutosaveScheduler,
+  computeAutosaveDelay,
+  shouldAttemptFlush,
+} from "@/app/autosave-scheduler";
 
 describe("computeAutosaveDelay", () => {
   it("uses the debounce when max wait is far away and no retry is pending", () => {
@@ -72,21 +77,6 @@ describe("shouldAttemptFlush", () => {
 });
 
 describe("applyAutosaveCompletion", () => {
-  it("resets progress on skipped writes", () => {
-    expect(
-      applyAutosaveCompletion({
-        revision: 3,
-        acknowledgedRevision: 1,
-        submittedRevision: 3,
-        retryAt: 500,
-        savingRevision: 3,
-        outcome: "skipped",
-        now: 2_000,
-        maxWaitMs: 10_000,
-      }),
-    ).toMatchObject({ revision: 0, acknowledgedRevision: 0, submittedRevision: 0, retryAt: 0 });
-  });
-
   it("acknowledges saved revisions and clears the retry", () => {
     expect(
       applyAutosaveCompletion({
@@ -145,5 +135,22 @@ describe("applyAutosaveCompletion", () => {
         maxWaitMs: 10_000,
       }),
     ).toMatchObject({ schedule: false, cancelTimer: false, retryAt: 0 });
+  });
+});
+
+describe("autosave subscription lifecycle", () => {
+  it("invalidates skipped and cancelled submissions without acknowledging new progress", () => {
+    const scheduler = createAutosaveScheduler(10_000);
+    scheduler.markDirty(100);
+    const old = scheduler.submit(false)!;
+    expect(scheduler.complete(old, "skipped", 200)).toBe("cancel");
+    scheduler.markDirty(300);
+    expect(scheduler.complete(old, "saved", 400)).toBe("ignore");
+    const next = scheduler.submit(false)!;
+    scheduler.cancel();
+    scheduler.markDirty(500);
+    expect(scheduler.complete(next, "failed", 600)).toBe("ignore");
+    expect(scheduler.nextDelay(600, 500)).toBe(500);
+    expect(scheduler.submit(false)).not.toBeNull();
   });
 });

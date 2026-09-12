@@ -17,7 +17,7 @@ import { BattlePage } from "../../pages/battle-page";
 import { DestinationPage } from "../../pages/destination-page";
 import { RewardPage } from "../../pages/reward-page";
 import { critical } from "../../playwright-tags";
-import { currentSchemaCampaignSave } from "../../fixtures/legacy-saves";
+import { currentSchemaCampaignSave } from "../../fixtures/current-saves";
 
 function getSavedLastSavedAt(page: import("@playwright/test").Page): Promise<number> {
   return page.evaluate((saveKey) => {

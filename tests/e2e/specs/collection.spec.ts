@@ -146,15 +146,5 @@ test.describe("Collection", () => {
       for (const ratio of ratios) expect(ratio).toBeCloseTo(3 / 4, 2);
       await assertNoOverflow(page, "collection trinkets");
     });
-
-    test("unique tiles use portrait art without collection overflow", async ({ page }) => {
-      await new MenuPage(page).gotoCollection();
-      await page.getByRole("button", { name: "Uniques" }).click();
-      const uniqueImages = page.locator('button[aria-label="Inspect Undiscovered Entry"] img');
-      await expect(uniqueImages.first()).toBeVisible();
-      const ratios = await settledAspectRatios(uniqueImages);
-      for (const ratio of ratios) expect(ratio).toBeCloseTo(3 / 4, 2);
-      await assertNoOverflow(page, "collection uniques");
-    });
   });
 });

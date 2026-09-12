@@ -2,7 +2,6 @@ import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import {
-  createEmptyEquippedTrinkets,
   createEmptyGearLoadouts,
   EMPTY_CRAFTING_CURRENCIES,
   generateUniqueGearInstance,
@@ -80,36 +79,6 @@ describe("ArmoryScreen tooltip integration", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Leather Armor").closest(".armory-inventory-tooltip")).toBeTruthy();
-    });
-  });
-
-  it("sizes trinket inventory tiles like gear and omits Armory tooltip chips", async () => {
-    const user = userEvent.setup();
-    renderArmoryScreen({ ownedTrinketIds: ["brass-censer"] });
-
-    await user.click(screen.getByLabelText("Trinket equipment slot"));
-    const trinketTile = screen.getByRole("button", { name: "Equip Brass Censer" });
-    expectGridTileWidth(trinketTile);
-
-    fireEvent.mouseEnter(trinketTile.parentElement!);
-    await waitFor(() => {
-      const panel = tooltipPanelFor("Brass Censer");
-      expect(within(panel).getByText("Brass Censer")).toBeTruthy();
-      expectNoCategoryChip(panel);
-    });
-  });
-
-  it("omits Armory chips from equipped trinket tooltips", async () => {
-    const equippedTrinkets = createEmptyEquippedTrinkets();
-    equippedTrinkets.knight = "brass-censer";
-    renderArmoryScreen({ ownedTrinketIds: ["brass-censer"], equippedTrinkets });
-
-    const slot = screen.getByLabelText("Trinket equipment slot");
-    fireEvent.mouseEnter(slot.parentElement!);
-    await waitFor(() => {
-      const panel = tooltipPanelFor("Brass Censer");
-      expect(within(panel).getByText("Brass Censer")).toBeTruthy();
-      expectNoCategoryChip(panel);
     });
   });
 

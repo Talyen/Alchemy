@@ -8,18 +8,16 @@ describe("TitledScreenShell", () => {
     cleanup();
   });
 
-  it("renders header actions without a hamburger trigger when onMenu is omitted", () => {
-    render(
+  it("renders header actions with or without the hamburger trigger", () => {
+    const { rerender } = render(
       <TitledScreenShell title="Test" headerActions={<button type="button">Action</button>}>
         Body
       </TitledScreenShell>,
     );
     expect(screen.getByRole("button", { name: "Action" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: /menu/i })).toBeNull();
-  });
 
-  it("renders header actions alongside the hamburger trigger when onMenu is provided", () => {
-    render(
+    rerender(
       <TitledScreenShell title="Test" headerActions={<button type="button">Action</button>} onMenu={() => {}}>
         Body
       </TitledScreenShell>,

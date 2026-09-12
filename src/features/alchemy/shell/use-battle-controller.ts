@@ -1,24 +1,23 @@
-import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createBattleCardPlay } from "@/features/alchemy/run-loop/battle/battle-card-play";
+import type { BattlePlaybackBind } from "@/features/alchemy/run-loop/battle/battle-context";
+import { useBattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
+import { createBattleInit } from "@/features/alchemy/run-loop/battle/battle-init";
 import { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
+import { createBattleDevOutcomes, isVictoryGraceActive } from "@/features/alchemy/run-loop/battle/battle-status";
+import { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/battle-transfer-deps";
 import {
   defaultMeasureElementRect,
   defaultMeasureVisualCardRect,
 } from "@/features/alchemy/run-loop/battle/controller-utils";
 import { createBattleEndTurnUi } from "@/features/alchemy/run-loop/battle/end-turn-ui";
-import { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/battle-transfer-deps";
-import { createBattleInit, playBattleOpeningDraw } from "@/features/alchemy/run-loop/battle/battle-init";
-import { createBattleCardPlay } from "@/features/alchemy/run-loop/battle/battle-card-play";
-import { createBattleDevOutcomes, isVictoryGraceActive } from "@/features/alchemy/run-loop/battle/battle-status";
-import { useBattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
-import type { CardRect } from "@/features/alchemy/shared/types";
-import type { Screen } from "@/lib/routing";
+import { useBattleOpeningDraw } from "@/features/alchemy/run-loop/battle/use-battle-opening-draw";
+import { readBattle, useBattleLifetimeFields } from "@/features/alchemy/shared/stores/run-reads";
 import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
-import { useBattleLifetimeFields } from "@/features/alchemy/shared/stores/run-reads";
-import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
-import type { BattleSnapshot } from "@/lib/battle";
-import type { BattlePlaybackBind } from "@/features/alchemy/run-loop/battle/battle-context";
 import { preferredAutoplayEnabled, useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
+import type { CardRect } from "@/features/alchemy/shared/types";
+import type { BattleSnapshot } from "@/lib/battle";
+import type { Screen } from "@/lib/routing";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 interface UseBattleControllerProps {
   screen: Screen;
@@ -38,8 +37,6 @@ export function useBattleController({
   measureVisualCardRect = defaultMeasureVisualCardRect,
 }: UseBattleControllerProps) {
   const { hasActiveBattle, pendingTransitionResumeRequired } = useBattleLifetimeFields();
-
-  const openingDrawPending = useBattlePresentationStore((state) => state.openingDrawPending);
 
   const scheduleAutoEndTurnRef = useRef<((state?: BattleSnapshot) => void) | null>(null);
   const clearAutoEndTurnRef = useRef<(() => void) | null>(null);
@@ -131,40 +128,14 @@ export function useBattleController({
     actions.endTurnUi.resumePendingBattleTransition();
   }, [actions.endTurnUi, hasActiveBattle, pendingTransitionResumeRequired, screen]);
 
-  const playOpeningDrawWhenReady = useCallback(() => {
-    let battle: ReturnType<typeof readBattle>;
-    try {
-      battle = readBattle();
-    } catch (error) {
-      if (import.meta.env.DEV) console.warn("[battle] unable to read opening-draw state", error);
-      return undefined;
-    }
-    if (
-      battle.pendingTransitionResumeRequired ||
-      !useBattlePresentationStore.getState().openingDrawPending ||
-      !ctx.battleSceneRef.current ||
-      !ctx.drawPileRef.current
-    ) {
-      return undefined;
-    }
-    void playBattleOpeningDraw(ctx, actions.transferDeps).catch((error: unknown) => {
-      if (import.meta.env.DEV) console.warn("[openingDraw] best-effort presentation failed", error);
-    });
-  }, [actions.transferDeps, ctx]);
-
-  useEffect(() => {
-    if (!hasActiveBattle || screen !== "battle" || pendingTransitionResumeRequired || !openingDrawPending) {
-      return;
-    }
-    playOpeningDrawWhenReady();
-  }, [
+  useBattleOpeningDraw({
+    ctx,
+    transferDeps: actions.transferDeps,
     hasActiveBattle,
-    openingDrawPending,
+    screen,
     pendingTransitionResumeRequired,
     playbackBindVersion,
-    playOpeningDrawWhenReady,
-    screen,
-  ]);
+  });
 
   useEffect(() => {
     if (hasActiveBattle) return;
@@ -220,7 +191,7 @@ export function useBattleController({
       handleWishChoice: actions.cardPlay.handleWishChoice,
       handleAutoplayCard: actions.cardPlay.handleAutoplayCard,
       handleEndTurn: actions.endTurnUi.handleEndTurn,
-      handleEndRun: actions.devOutcomes.handleEndRun,
+      cancelBattle: actions.session.resetBattleSession,
       skipCombatDevMode: actions.devOutcomes.skipCombatDevMode,
     }),
     [

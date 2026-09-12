@@ -44,7 +44,6 @@ export type {
   ActiveRunData,
   InterruptedFlow,
   LabyrinthPendingNodeId,
-  ParkedRunsMap,
   PersistedAlchemistState,
   PersistedBattleTransition,
   PersistedEquipmentShopState,

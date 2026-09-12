@@ -50,7 +50,7 @@ jobs:
               - "src/app/use-app-save-state.ts"
               - "src/app/use-alchemy-bootstrap.ts"
               - "src/features/alchemy/shell/use-alchemy-run-controller*"
-              - "tests/fixtures/legacy-saves*"
+              - "tests/fixtures/current-saves*"
               - "tests/e2e/mid-combat-save*"
               - "tests/e2e/specs/save-*"
             desktop:

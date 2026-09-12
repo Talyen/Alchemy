@@ -14,13 +14,6 @@ import {
   sanitizeEncounterTraitIds,
   sanitizePersistedEnemyTraits,
 } from "@/lib/content-systems/encounter-traits";
-import {
-  LEGACY_BLEED_EXECUTE_MULTIPLIER,
-  LEGACY_FIRST_BURN_BONUS_MULTIPLIER,
-  LEGACY_MANABURN_PER_CRYSTAL_ENABLED,
-  LEGACY_WISH_BLOCK_AMOUNT,
-  MANABURN_DAMAGE_PERCENT,
-} from "@/lib/game-constants";
 
 function mergeRecord<T extends object>(defaults: T, saved: Partial<T> | undefined): T {
   return { ...defaults, ...saved };
@@ -31,31 +24,8 @@ function normalizeTalentEffects(
   saved: Partial<TalentEffectManifest> | undefined,
 ): TalentEffectManifest {
   const merged = mergeRecord(defaults, saved);
-  if (!Array.isArray(merged.healthThresholdArmor)) {
-    const legacy = merged.healthThresholdArmor as unknown;
-    merged.healthThresholdArmor =
-      legacy && typeof legacy === "object" ? [legacy as TalentEffectManifest["healthThresholdArmor"][number]] : [];
-  }
-  const savedRecord = (saved ?? {}) as Partial<TalentEffectManifest> & {
-    firstBurnCardDoubled?: boolean;
-    receiveHalfFreezeBuildUp?: boolean;
-  };
-  if (savedRecord.firstBurnCardDoubled === true && (savedRecord.firstBurnCardBonusMultiplier ?? 0) <= 0) {
-    merged.firstBurnCardBonusMultiplier = LEGACY_FIRST_BURN_BONUS_MULTIPLIER;
-  }
-  if (savedRecord.receiveHalfFreezeBuildUp === true) {
-    merged.receiveHalfFreezeDamage = true;
-  }
-  if ((savedRecord.bleedExecuteThreshold ?? 0) > 0 && !("bleedExecuteMultiplier" in savedRecord)) {
-    merged.bleedExecuteMultiplier = LEGACY_BLEED_EXECUTE_MULTIPLIER;
-  }
-  if ((savedRecord.wishBlockBelowHealthPct ?? 0) > 0 && !("wishBlockAmount" in savedRecord)) {
-    merged.wishBlockAmount = LEGACY_WISH_BLOCK_AMOUNT;
-  }
-
-  if (savedRecord.burnDamagePerManaCrystal === LEGACY_MANABURN_PER_CRYSTAL_ENABLED) {
-    merged.burnDamagePerManaCrystal = MANABURN_DAMAGE_PERCENT;
-  }
+  if (!Array.isArray(merged.healthThresholdArmor)) merged.healthThresholdArmor = [];
+  const savedRecord = saved ?? {};
   merged.wishExtraChoiceAfterHolyCard = savedRecord.wishExtraChoiceAfterHolyCard === true;
   merged.leechCardDamageVsLowHealthPercent = clampNonNegative(merged.leechCardDamageVsLowHealthPercent, 0);
   return merged;
@@ -151,10 +121,6 @@ export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): B
       : null;
 
   const savedFlags: Record<string, unknown> = saved.flags ?? {};
-  if (!("legacyEnemyThornsReady" in savedFlags)) {
-    merged.flags.legacyEnemyThornsReady =
-      merged.currentEnemy.traits.some((trait) => trait.id === "thorns") && merged.enemyStatuses.thorns > 0;
-  }
   merged.flags.pendingCinderSkinReaction = savedFlags.pendingCinderSkinReaction === true;
   merged.flags.nextWishExtraChoice = savedFlags.nextWishExtraChoice === true;
   merged.flags.previousCardWasArchery = savedFlags.previousCardWasArchery === true;

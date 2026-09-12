@@ -1,5 +1,5 @@
 import "../../../../helpers/mock-audio";
-import { describe, expect, it, beforeEach, vi, type Mock } from "vitest";
+import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
 import { resetAllTestStores } from "../../../../helpers/gameplay-store-test";
 import { DEFAULT_CAMPAIGN_DIFFICULTY_ID, DRAFT_ROUNDS } from "@/lib/game-constants";
@@ -9,13 +9,12 @@ import {
   dispatchRunSessionCommand,
   subscribeRunSessionCommits,
 } from "@/features/alchemy/shared/stores/run-session-command";
-import { readActiveRun, readBattle, readParkedRuns, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
+import { readActiveRun, readBattle, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { getStartingDeck } from "@/lib/game-data";
-import { parkAndDeactivateForegroundRunInDraft } from "@/features/alchemy/shared/stores/run-park-restore";
 import { makeTestBattleState } from "../../../../fixtures/battle";
 import { canEnterLabyrinthNode } from "@/lib/content-systems/labyrinth/map-state";
 
@@ -96,7 +95,7 @@ describe("createContentSystemNavigation", () => {
   });
 
   it.each([CONTENT_SYSTEMS.CAMPAIGN, CONTENT_SYSTEMS.LABYRINTH, CONTENT_SYSTEMS.WILDWOOD])(
-    "returns to a parked %s battle",
+    "returns to the current %s battle",
     (mode) => {
       setRunProgress({ contentSystemType: mode, characterId: "knight" });
       setRunSession({ hasActiveRun: true });
@@ -105,7 +104,7 @@ describe("createContentSystemNavigation", () => {
         draft.battle.battleState = makeTestBattleState({ turn: 4 });
         setScreen(draft, ROUTE_SCREENS.BATTLE);
       });
-      dispatchRunSessionCommand(parkAndDeactivateForegroundRunInDraft);
+      dispatchRunSessionCommand((draft) => setScreen(draft, ROUTE_SCREENS.MENU));
       const deps = makeDeps();
       const nav = createContentSystemNavigation(deps);
       const begin = { campaign: nav.beginCampaign, labyrinth: nav.beginLabyrinth, wildwood: nav.beginWildwood };
@@ -243,6 +242,7 @@ describe("createContentSystemNavigation", () => {
     const nav = createContentSystemNavigation(deps);
     nav.beginLabyrinth();
     expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.DRAFT_DECK);
+    dispatchRunSessionCommand((draft) => setScreen(draft, ROUTE_SCREENS.DRAFT_DECK));
     nav.handleStandardDraftComplete();
     expect(readRunSession().labyrinthMap).not.toBeNull();
     expect(readActiveRun().runDeck).toEqual(drafted);
@@ -263,6 +263,7 @@ describe("createContentSystemNavigation", () => {
     });
     const deps = makeDeps();
     const nav = createContentSystemNavigation(deps);
+    dispatchRunSessionCommand((draft) => setScreen(draft, ROUTE_SCREENS.DRAFT_DECK));
     nav.handleStandardDraftComplete();
     expect(readRunSession().labyrinthMap).not.toBeNull();
     expect(readActiveRun().contentSystemType).toBe(CONTENT_SYSTEMS.LABYRINTH);
@@ -288,65 +289,31 @@ describe("createContentSystemNavigation", () => {
     const deps = makeDeps();
     const nav = createContentSystemNavigation(deps);
 
+    dispatchRunSessionCommand((draft) => setScreen(draft, ROUTE_SCREENS.DRAFT_DECK));
     nav.handleStandardDraftComplete();
+    dispatchRunSessionCommand((draft) => setScreen(draft, ROUTE_SCREENS.DIFFICULTY_SELECT));
     nav.handleDifficultySelect(DEFAULT_CAMPAIGN_DIFFICULTY_ID);
 
     expect(readActiveRun().contentSystemType).toBe(CONTENT_SYSTEMS.CAMPAIGN);
     expect(readActiveRun().runDeck).toEqual(draftedCards);
     expect(deps.onStartBattle).toHaveBeenCalledOnce();
   });
-
-  it("parks the live campaign when beginning another mode", () => {
-    setRunProgress({ contentSystemType: CONTENT_SYSTEMS.CAMPAIGN, characterId: "knight" });
-    setRunSession({ hasActiveRun: true });
-    dispatchRunSessionCommand((draft) => setScreen(draft, ROUTE_SCREENS.DESTINATION));
-    const deps = makeDeps();
-    setRunSession({ pendingContentSystemType: CONTENT_SYSTEMS.LABYRINTH });
-    const nav = createContentSystemNavigation(deps);
-    nav.beginLabyrinth();
-    expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.CHARACTER_SELECT);
-    expect(readRunSession().hasActiveRun).toBe(false);
-    expect(readParkedRuns().campaign?.contentSystemType).toBe(CONTENT_SYSTEMS.CAMPAIGN);
-  });
-
-  it("resumes a parked campaign instead of opening character select", () => {
-    setRunProgress({ contentSystemType: CONTENT_SYSTEMS.CAMPAIGN, characterId: "knight" });
-    setRunSession({ hasActiveRun: true });
-    dispatchRunSessionCommand((draft) => setScreen(draft, ROUTE_SCREENS.DESTINATION));
-    setRunSession({ pendingContentSystemType: CONTENT_SYSTEMS.LABYRINTH });
-    createContentSystemNavigation(makeDeps()).beginLabyrinth();
-
-    const resume = makeDeps();
-    const nav = createContentSystemNavigation(resume);
-    nav.beginCampaign();
-    expect(resume.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.DESTINATION, expect.any(Function));
-    expect(readRunSession().hasActiveRun).toBe(true);
-    expect(readActiveRun().contentSystemType).toBe(CONTENT_SYSTEMS.CAMPAIGN);
-  });
-
-  it("samples resumed campaign destinations from the hydrated run", () => {
+  it("repairs missing Campaign destinations using the current run's progress without switching runs", () => {
     setRunProgress({
-      contentSystemType: CONTENT_SYSTEMS.CAMPAIGN,
+      contentSystemType: "campaign",
       characterId: "knight",
       destinationIndexInAct: 2,
-      completedDestinations: [DESTINATIONS.NORMAL_COMBAT, DESTINATIONS.CAMPFIRE],
       runPlayerHealth: 12,
       runMaxHealth: 30,
     });
     setRunSession({ hasActiveRun: true });
     dispatchRunSessionCommand((draft) => setScreen(draft, ROUTE_SCREENS.DESTINATION));
-    setRunSession({ pendingContentSystemType: CONTENT_SYSTEMS.LABYRINTH });
-    createContentSystemNavigation(makeDeps()).beginLabyrinth();
-    setRunSession({ pendingContentSystemType: CONTENT_SYSTEMS.LABYRINTH });
-    createContentSystemNavigation(makeDeps()).handleCharacterSelect("knight");
-
     const getAvailableDestinations = vi.fn(() => [DESTINATIONS.NORMAL_COMBAT]);
-    const resume = makeDeps({ getAvailableDestinations });
-    createContentSystemNavigation(resume).beginCampaign();
-
-    const onCommit = (resume.navigateTo as Mock).mock.calls[0]?.[1] as (() => void) | undefined;
-    expect(onCommit).toEqual(expect.any(Function));
-    onCommit?.();
+    const deps = makeDeps({ getAvailableDestinations });
+    createContentSystemNavigation(deps).resumeRun();
+    const prepare = vi.mocked(deps.navigateTo).mock.calls[0]?.[1];
+    expect(prepare).toBeTypeOf("function");
+    prepare?.();
     expect(getAvailableDestinations).toHaveBeenCalledWith({
       currentHealth: 12,
       currentGold: expect.any(Number),

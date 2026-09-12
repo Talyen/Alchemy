@@ -3,7 +3,18 @@ import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 
 const DOT_STATUSES = new Set(["burn", "poison", "bleed"]);
 const CONTROL_STATUSES = new Set(["stun", "freeze"]);
-const BLOCK_WEIGHT = 0.5;
+// Skill-floor priorities, not predicted combat outcomes. Changing these weights changes the policy.
+const EFFECT_SCORE = {
+  defense: 0.5,
+  cleanse: 3,
+  draw: 2,
+  mana: 2,
+  summon: 6,
+  companionBuff: 2,
+  criticalHit: 4,
+  repeatCard: 5,
+  wish: 3,
+} as const;
 
 function scoreEffects(effects: readonly BattleCardEffect[], state: BattleState): number {
   let total = 0;
@@ -23,12 +34,12 @@ function scoreEffect(effect: BattleCardEffect, state: BattleState): number {
       if (DOT_STATUSES.has(effect.status) || CONTROL_STATUSES.has(effect.status)) return effect.amount;
       return 0;
     case "player-status":
-      if (effect.status === "block" || effect.status === "armor") return effect.amount * BLOCK_WEIGHT;
+      if (effect.status === "block" || effect.status === "armor") return effect.amount * EFFECT_SCORE.defense;
       return 0;
     case "heal":
       return state.playerHealth < state.playerMaxHealth ? effect.amount : 0;
     case "remove-harmful-status":
-      return effect.amount * 3;
+      return effect.amount * EFFECT_SCORE.cleanse;
     case "chance":
       return (
         effect.probability * scoreEffects(effect.successEffects, state) +
@@ -37,15 +48,15 @@ function scoreEffect(effect: BattleCardEffect, state: BattleState): number {
     case "repeat-over-turns":
       return effect.remainingTurns * scoreEffects(effect.effects, state);
     case "draw-cards":
-      return effect.amount * 2;
+      return effect.amount * EFFECT_SCORE.draw;
     case "random-draw":
-      return effect.minAmount + effect.maxAmount;
+      return ((effect.minAmount + effect.maxAmount) / 2) * EFFECT_SCORE.draw;
     case "restore-mana":
-      return effect.amount * 2;
+      return effect.amount * EFFECT_SCORE.mana;
     case "summon-companion":
-      return 6;
+      return EFFECT_SCORE.summon;
     case "buff-companion":
-      return effect.amount * 2;
+      return effect.amount * EFFECT_SCORE.companionBuff;
     case "companion-action":
       return state.activeCompanion ? effect.amount * scoreEffects(state.activeCompanion.turnStartEffects, state) : 0;
     case "multiply-enemy-status": {
@@ -55,11 +66,11 @@ function scoreEffect(effect: BattleCardEffect, state: BattleState): number {
     case "remove-enemy-armor":
       return effect.removeAll ? state.enemyMitigation.armor : Math.min(effect.amount, state.enemyMitigation.armor);
     case "next-hit-crit":
-      return 4;
+      return EFFECT_SCORE.criticalHit;
     case "play-next-card-twice":
-      return 5;
+      return EFFECT_SCORE.repeatCard;
     case "wish":
-      return 3;
+      return EFFECT_SCORE.wish;
     case "lose-mana":
     case "lose-max-mana":
     case "gain-max-mana":
@@ -87,7 +98,7 @@ export function getImmediateDefense(card: BattleCard): number {
     if (effect.kind === "player-status" && (effect.status === "block" || effect.status === "armor")) {
       return total + effect.amount;
     }
-    if (effect.kind === "remove-harmful-status") return total + effect.amount * 3;
+    if (effect.kind === "remove-harmful-status") return total + effect.amount * EFFECT_SCORE.cleanse;
     return total;
   }, 0);
 }

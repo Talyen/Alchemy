@@ -1,6 +1,6 @@
 ---
 name: run-audits
-description: Run one or more Alchemy codebase audits from docs/Audits, including evidence gathering, finding triage, token-efficient subagent implementation, root review, and path-scoped verification. Use when a user asks to run, execute, carry out, or rerun a named audit or all audits in docs/Audits. Do not treat an uncited audit as backlog merely because it resembles the current task.
+description: Run user-requested Alchemy audits from docs/Audits. Use for a named audit or all audits; do not activate for unrelated cleanup.
 ---
 
 # Run Alchemy audits
@@ -25,7 +25,7 @@ Delegate only when confirmed independent slices justify it; a single finding usu
 
 ## Review and verify
 
-Inspect each worker diff against its brief and the audit evidence bar; reject speculative growth, forwarding wrappers, duplicate paths, concealed defects, or tests whose cost is unjustified by their distinct protection. Apply the shared [test value policy](../../../CONTRIBUTING.md#test-value-and-coverage-strategy) to additions and retirements; a finding does not automatically require new coverage. Resolve overlaps centrally, then verify per the README verification contract.
+Inspect each worker diff against its brief and the audit evidence bar; reject speculative growth, forwarding wrappers, duplicate paths, concealed defects, or tests whose cost is unjustified by their distinct protection. Use the shared [test value policy](../../../CONTRIBUTING.md#test-value-and-coverage-strategy) for additions and retirements. Resolve overlaps centrally, then verify per the README verification contract.
 
 Do not edit guides to record results. Rejected/deferred proposals and intentionally kept borderline candidates get one row in `decisions.md`.
 

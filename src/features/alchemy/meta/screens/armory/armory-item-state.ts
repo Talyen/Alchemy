@@ -58,3 +58,53 @@ export function getArmoryTargetState({
 export function formatTrinketEquipAriaLabel(title: string, equippedBy: CharacterId | null | undefined): string {
   return `Equip ${title}${equippedBy ? ` from ${equippedBy}` : ""}`;
 }
+
+type ArmoryItemAction =
+  | "none"
+  | "combat-locked"
+  | "salvage"
+  | "craft"
+  | "incompatible"
+  | "equip"
+  | "unequip"
+  | "select";
+
+type ArmoryItemSurface = { kind: "inventory"; loadoutLegal: boolean } | { kind: "equipment"; selected: boolean };
+
+/** Shared click policy; equipped slots additionally allow browsing while locked. */
+export function getArmoryItemInteraction(
+  input: Parameters<typeof getArmoryTargetState>[0] & {
+    editable: boolean;
+    surface: ArmoryItemSurface;
+  },
+) {
+  const { instance, editable, surface, salvageMode, activeCurrencyId, reservedBy } = input;
+  const targeting = getArmoryTargetState(input);
+  function action(): ArmoryItemAction {
+    if (reservedBy) return "none";
+    if (!editable) {
+      if (surface.kind === "inventory") return "combat-locked";
+      return instance && (surface.selected || salvageMode || activeCurrencyId) ? "combat-locked" : "select";
+    }
+    if (salvageMode) return instance ? "salvage" : "none";
+    if (activeCurrencyId && instance) return "craft";
+    if (surface.kind === "inventory") return surface.loadoutLegal ? "equip" : "incompatible";
+    return surface.selected && instance ? "unequip" : "select";
+  }
+  const itemAction = action();
+  const incompatible =
+    surface.kind === "inventory" && editable && !salvageMode && !activeCurrencyId && !surface.loadoutLegal;
+  return {
+    ...targeting,
+    action: itemAction,
+    incompatible,
+    ariaDisabled: !editable || Boolean(reservedBy) || incompatible,
+  };
+}
+
+export function performArmoryItemAction(
+  action: ArmoryItemAction,
+  handlers: Partial<Record<ArmoryItemAction, () => void>>,
+) {
+  handlers[action]?.();
+}

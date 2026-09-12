@@ -68,3 +68,11 @@ Decision: retain bounded battle core sections, independently addressable run-sta
 Evidence: [Matched investigations](../evals/results/context-discovery-2026-09-12.md) found 3.7% lower summed input-plus-output usage for battle and 10.8% for run state across two trials per variant, with passing source-based acceptance. Battle results varied in direction; these are limited investigation observations, not guaranteed repository-wide savings. Initial trials contaminated by concurrent architecture edits were excluded and restarted from compared frozen snapshots.
 
 Reason: oversized parent sections were always deferred and broad route fixtures hid the problem. Existing owners can supply core guidance directly without another navigation tool or duplicated prose. Content routing repairs use direct regression evidence; no whole-task savings are claimed for them.
+
+## 2026-09-12 — Make instruction discovery proportional
+
+Decision: permit sufficient local context for obvious small edits while retaining required owner/consumer discovery for sensitive changes. Narrow the Playwright and audit triggers and route repeated verification/test guidance to its existing owner. Keep the four skills, game invariants, completion gate, and Git authorization boundaries.
+
+Evidence: [Eight matched coding trials](../evals/results/instruction-guidance-2026-09-12.md) passed task-owned completion gates and existing-work preservation; all four save trials also passed independent compatibility acceptance. Small-edit total input plus output increased 5.1%; save-task usage decreased 29.8%. One save baseline’s formatting retry is included; an invalid sandbox setup is excluded. These are limited task-level observations, not reliable universal savings.
+
+Reason: retain the clearer task boundaries and canonical policy routing with demonstrated correct completion. Skipping a discovery command is not itself an efficiency result; continue judging future changes by complete tasks and preserved behavior.

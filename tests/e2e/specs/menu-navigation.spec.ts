@@ -32,93 +32,52 @@ test.describe("Menu", critical, () => {
     await expect(page.getByRole("button", { name: /Wildwood Draft/ })).toBeVisible();
   });
 
-  test("menu shows Resume Run when a campaign battle is active", async ({ page }) => {
+  test("Continue is the only play action until End Run clears the current adventure", async ({ page }) => {
     await injectActiveBattle(page, makeGoblinBattleState());
-    const menu = new MenuPage(page);
-    const battle = new BattlePage(page);
-    await expectRunPhase(page, "battle");
-    await battle.menuBtn.click();
+    await new BattlePage(page).menuBtn.click();
     await page.getByRole("button", { name: "Main Menu" }).click();
-    await menu.openGameModeSelect();
-    await expect(page.getByRole("button", { name: "Resume The Campaign" })).toBeVisible();
-  });
-
-  test("Labyrinth resumes after backing out of Campaign setup through either resume control", async ({ page }) => {
-    await injectLabyrinthRun(page, {
-      deck: [makeCard()],
-      discoveredCardIds: ["slash", "bash", "block"],
-      runOverrides: { roomsEncountered: 1, destinationIndexInAct: 1 },
-    });
-    const menu = new MenuPage(page);
-    for (const control of ["mode", "menu"]) {
-      await page.getByRole("button", { name: "Open game menu" }).click();
-      await page.getByRole("button", { name: "Main Menu" }).click();
-      await menu.openGameModeSelect();
-      await page.getByRole("button", { name: "The Campaign", exact: true }).click();
-      await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
-      await page.keyboard.press("Escape");
-      await expect(page.getByRole("heading", { name: "Choose a Path" })).toBeVisible();
-      if (control === "mode") {
-        await page.getByRole("button", { name: "Resume The Labyrinth" }).click();
-      } else {
-        await page.getByRole("button", { name: "Open game menu" }).click();
-        await page.getByRole("button", { name: "Return to Run" }).click();
-      }
-      await expect(page.getByLabel("Labyrinth map", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Continue", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: /^(Play|New Run)$/ })).toHaveCount(0);
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
+    await expectRunPhase(page, "battle");
+    await new BattlePage(page).menuBtn.click();
+    await page.getByRole("button", { name: "End Run", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect
+      .poll(() => page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? "{}").activeRun, SAVE_KEY))
+      .toBeNull();
+    const reloaded = await page.context().newPage();
+    const errors = failOnRuntimeErrors(reloaded);
+    try {
+      await reloaded.goto("/");
+      await expect(reloaded.getByRole("button", { name: "Play", exact: true })).toBeVisible();
+      expect(errors).toEqual([]);
+    } finally {
+      await reloaded.close();
     }
   });
 
-  test("Campaign combat and Labyrinth progress both survive a reload and mode switching", async ({
-    page,
-    fastBattle,
-  }) => {
-    void fastBattle;
-    await injectLabyrinthRun(page, {
-      deck: [makeCard()],
-      runOverrides: { roomsEncountered: 3, runPlayerHealth: 17 },
-    });
+  test("Labyrinth resumes unchanged after menu and meta visits", async ({ page }) => {
+    await injectLabyrinthRun(page, { deck: [makeCard()], runOverrides: { roomsEncountered: 3, runPlayerHealth: 17 } });
+    await page.getByRole("button", { name: "Open game menu" }).click();
+    await page.getByRole("button", { name: "Options", exact: true }).click();
     await page.getByRole("button", { name: "Open game menu" }).click();
     await page.getByRole("button", { name: "Main Menu" }).click();
-    const menu = new MenuPage(page);
-    await menu.openGameModeSelect();
-    await page.getByRole("button", { name: "The Campaign", exact: true }).click();
-    await menu.selectCharacterAndContinue();
-    await expectRunPhase(page, "battle");
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
+    await expect(page.getByLabel("Labyrinth map", { exact: true })).toBeVisible();
     await expect
       .poll(() =>
         page.evaluate((key) => {
           const save = JSON.parse(localStorage.getItem(key) ?? "{}");
           return {
-            active: save.activeRun?.contentSystemType,
-            combat: save.activeRun?.activeCombat?.battleState.turnPhase,
-            labyrinthHealth: save.parkedRuns?.labyrinth?.runPlayerHealth,
-            labyrinthRooms: save.parkedRuns?.labyrinth?.roomsEncountered,
+            rooms: save.activeRun?.roomsEncountered,
+            health: save.activeRun?.runPlayerHealth,
+            parked: save.parkedRuns,
           };
         }, SAVE_KEY),
       )
-      .toEqual({ active: "campaign", combat: "player", labyrinthHealth: 17, labyrinthRooms: 3 });
-
-    const reloaded = await page.context().newPage();
-    const freshErrors = failOnRuntimeErrors(reloaded);
-    try {
-      await reloaded.goto("/");
-      await expectRunPhase(reloaded, "battle");
-      await new BattlePage(reloaded).menuBtn.click();
-      await reloaded.getByRole("button", { name: "Main Menu" }).click();
-      await new MenuPage(reloaded).openGameModeSelect();
-      await expect(reloaded.getByText("Resume The Campaign", { exact: true })).toBeVisible();
-      await expect(reloaded.getByText("Resume The Labyrinth", { exact: true })).toBeVisible();
-      await reloaded.getByRole("button", { name: "Resume The Labyrinth" }).click();
-      await expect(reloaded.getByLabel("Labyrinth map", { exact: true })).toBeVisible();
-      await reloaded.getByRole("button", { name: "Open game menu" }).click();
-      await reloaded.getByRole("button", { name: "Main Menu" }).click();
-      await new MenuPage(reloaded).openGameModeSelect();
-      await reloaded.getByRole("button", { name: "Resume The Campaign" }).click();
-      await expectRunPhase(reloaded, "battle");
-      expect(freshErrors).toEqual([]);
-    } finally {
-      await reloaded.close();
-    }
+      .toEqual({ rooms: 3, health: 17, parked: undefined });
   });
 });
 

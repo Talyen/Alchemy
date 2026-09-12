@@ -8,6 +8,7 @@ import { emptyInventory } from "@/lib/homestead/inventory";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { setRewardState } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { resetRunSessionSlice } from "../../../../helpers/run-domain-store-test";
 
 const testCard: BattleCard = {
@@ -20,6 +21,7 @@ const testCard: BattleCard = {
 };
 
 beforeEach(() => {
+  useUiStore.setState({ hoveredCardId: null, shimmerState: null, plasmaInteraction: null });
   resetRunSessionSlice();
   dispatchRunSessionCommand((draft) =>
     setRewardState(draft, {
@@ -170,37 +172,6 @@ describe("RewardsScreen", () => {
     expect(screen.queryByRole("button", { name: /add card/i })).toBeNull();
   });
 
-  it("shows shine on astral gear rewards and hover chrome on basic gear", () => {
-    render(
-      <RewardsScreen
-        rewardState={{
-          ...createEmptyRewardState(),
-          rewardType: "gear",
-          choices: [
-            { instanceId: "basic-sword", definitionId: "longsword-basic", affixes: [] },
-            { instanceId: "astral-sword", definitionId: "longsword-astral", affixes: [] },
-          ],
-        }}
-        onSkip={vi.fn()}
-        onClaimReward={vi.fn()}
-      />,
-    );
-
-    const basic = screen.getByRole("button", { name: "Select Longsword" });
-    const astral = screen.getByRole("button", { name: "Select Astral Longsword" });
-    expect(basic.querySelector(".shine-border")).toBeNull();
-    expect(basic.className).toMatch(/card-interactive-glow/);
-    expect(astral.querySelector(".shine-border")).toBeNull();
-    fireEvent.mouseEnter(basic.parentElement!);
-    expect(basic.querySelector(".shine-border")).not.toBeNull();
-    fireEvent.mouseLeave(basic.parentElement!);
-    expect(basic.querySelector(".shine-border")).toBeNull();
-    fireEvent.focus(astral);
-    expect(astral.querySelector(".shine-border")).not.toBeNull();
-    expect(astral.className).toMatch(/card-interactive-glow/);
-    expect(astral.className).toMatch(/card-art-shine/);
-  });
-
   it("offers neutral hover Shine for a card without keywords", () => {
     render(
       <RewardsScreen
@@ -249,33 +220,5 @@ describe("RewardsScreen", () => {
     fireEvent.blur(unique);
     expect(unique.querySelector(".shine-border")).toBeNull();
     expect(screen.queryByRole("button", { name: "Skip" })).toBeNull();
-  });
-
-  it("shows shine on trinket rewards", () => {
-    render(
-      <RewardsScreen
-        rewardState={{
-          ...createEmptyRewardState(),
-          rewardType: "trinket",
-          choices: [
-            {
-              id: "meteorite",
-              title: "Meteorite",
-              descriptionLines: ["Your first Burn damage each combat is doubled."],
-              art: "",
-              effects: {},
-            },
-          ],
-        }}
-        onSkip={vi.fn()}
-        onClaimReward={vi.fn()}
-      />,
-    );
-
-    const trinket = screen.getByRole("button", { name: "Select Meteorite" });
-    expect(trinket.querySelector(".shine-border")).toBeNull();
-    fireEvent.mouseEnter(trinket.parentElement!);
-    expect(trinket.querySelector(".shine-border")).not.toBeNull();
-    expect(trinket.className).toMatch(/card-art-shine/);
   });
 });

@@ -1,5 +1,3 @@
-export type PlasmaRendererMode = "canvas" | "webgl";
-
 export interface PlasmaColorState {
   primary: string;
   secondary: string;
@@ -10,10 +8,9 @@ export interface PlasmaRendererOptions {
   colorsRef: { current: PlasmaColorState };
   focalYOffset: number;
   active: () => boolean;
+  onAvailabilityChange?: (available: boolean) => void;
   onWakeReady?: (wake: () => void) => void;
 }
-
-export type StartPlasmaRenderer = (options: PlasmaRendererOptions) => () => void;
 
 export const PLASMA_FRAME_MS = 1000 / 30;
 export const PLASMA_MAX_BACKING_PIXELS = 1_500_000;

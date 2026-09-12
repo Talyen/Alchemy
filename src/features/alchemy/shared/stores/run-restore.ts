@@ -1,15 +1,12 @@
 import type { ActiveRunData, EquipmentShopState, TrinketShopState } from "@/lib/active-run-session";
-import { readActivityData, repairShopOfferings, runActivityScreen, shopItemSlotKey } from "@/lib/active-run-session";
-import type { ContentSystemId } from "@/lib/content-systems/types";
+import { readActivityData, repairShopOfferings, shopItemSlotKey } from "@/lib/active-run-session";
 import { gearDefinitions, getOwnedUniqueDefinitionIds } from "@/lib/gear";
 import { eventHasUnresolvedRandomTrinket, repairUnresolvedMysteryTrinkets } from "@/lib/mystery";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { combineTrinketEffectIds } from "@/lib/trinkets";
 import { repairPersistedTrinketManifest } from "@/lib/validation";
-import { omitParkedMode, removeRunRecency, touchRunRecency } from "./parked-runs";
 import { rebindLiveRunMeta } from "./run-meta-rebind";
-import { getRunSessionFromState } from "./run-reads";
-import { decodeRunResumeSnapshot, encodeRunResumeSnapshot, type DecodedRunResumeSession } from "./run-resume-codec";
+import { decodeRunResumeSnapshot, type DecodedRunResumeSession } from "./run-resume-codec";
 import type { GameplayDraft } from "./run-session-command";
 import {
   createDraftRunRandomSource,
@@ -33,10 +30,6 @@ import {
   setStarterDraftChoices,
   setWildwoodDraft,
 } from "./write-port-session";
-
-function encodeParkedSnapshot(draft: GameplayDraft): ActiveRunData {
-  return encodeRunResumeSnapshot(getRunSessionFromState(draft), runActivityScreen(draft.session.activity) ?? undefined);
-}
 
 function repairRestoredTrinketShop(state: TrinketShopState, ownedIds: readonly string[]): TrinketShopState {
   const owned = new Set(ownedIds);
@@ -81,21 +74,6 @@ function restoreRunSession(draft: GameplayDraft, decoded: DecodedRunResumeSessio
   if (activity.kind === "equipment-shop") {
     activity.data = repairRestoredEquipmentShop(activity.data, draft.gear.inventories);
   }
-}
-
-export function parkForegroundRunInDraft(draft: GameplayDraft): void {
-  if (draft.session.activity.kind === "inactive") return;
-  const mode = draft.run.activeRun.contentSystemType;
-  draft.run.parkedRuns[mode] = encodeParkedSnapshot(draft);
-  draft.run.runRecency = touchRunRecency(draft.run.runRecency, mode);
-}
-
-export function parkAndDeactivateForegroundRunInDraft(draft: GameplayDraft): void {
-  if (draft.session.activity.kind === "inactive") return;
-  parkForegroundRunInDraft(draft);
-  clearTransientSession(draft);
-  setHasActiveRun(draft, false);
-  initializeActiveBattle(draft, null);
 }
 
 export function applyRestoreRunToDraft(draft: GameplayDraft, activeRun: ActiveRunData | null): void {
@@ -148,21 +126,4 @@ export function applyRestoreRunToDraft(draft: GameplayDraft, activeRun: ActiveRu
     setScreen(draft, ROUTE_SCREENS.DESTINATION);
   }
   rebindLiveRunMeta(draft);
-}
-
-export function hydrateModeRunInDraft(draft: GameplayDraft, mode: ContentSystemId): boolean {
-  const parked = draft.run.parkedRuns[mode];
-  if (!parked) return false;
-  if (draft.session.activity.kind !== "inactive" && draft.run.activeRun.contentSystemType !== mode) {
-    parkForegroundRunInDraft(draft);
-  }
-  draft.run.parkedRuns = omitParkedMode(draft.run.parkedRuns, mode);
-  applyRestoreRunToDraft(draft, parked);
-  draft.run.runRecency = touchRunRecency(draft.run.runRecency, mode);
-  return true;
-}
-
-export function clearModeSlotInDraft(draft: GameplayDraft, mode: ContentSystemId): void {
-  draft.run.parkedRuns = omitParkedMode(draft.run.parkedRuns, mode);
-  draft.run.runRecency = removeRunRecency(draft.run.runRecency, mode);
 }

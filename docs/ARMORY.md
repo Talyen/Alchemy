@@ -46,12 +46,7 @@ Edit the source weights and progression points in `run-rewards.ts`, then run `np
 
 ## Combat equipment restrictions
 
-`gear-combat-restrictions.ts` derives reservations from the foreground battle and
-unfinished battles in parked mode snapshots. A live mode supersedes a stale
-parked copy of that mode. The foreground remains reserved through pending
-transitions until battle resolution clears its lifecycle; a hero with another
-unfinished parked battle remains reserved. These restrictions are derived after
-reload and require no new save fields.
+`gear-combat-restrictions.ts` derives reservations from the current battle, including while visiting meta screens. The loadout stays reserved through pending transitions until the battle lifecycle ends; ending the run releases it. Restrictions are derived after reload and require no extra saved fields.
 
 A reserved hero’s Armory tab remains browsable but cannot equip, unequip, craft,
 salvage. Other heroes remain editable. Blocked
@@ -83,6 +78,7 @@ Homestead mutation timing remains unchanged.
 
 - **`Armory lock`** — computed from generated Gear or permanent Trinket ownership via `useIsArmoryLocked()` in `gear-store.ts`; `MenuScreen` receives a `locked` prop, it does not read the store. Combat preserves browsing but makes each battling hero’s Armory tab read-only; see [Combat equipment restrictions](#combat-equipment-restrictions).
 - **`ArmoryScreen`** — reads Gear, Trinket ownership/equipment, and crafting currencies via `useGearArmorySlice`, combat reservations via `useGearCombatRestrictions`, plus finished-run and active-run reads bundled in `useArmoryController`.
+- **Interaction policy** — `armory-item-state.ts` owns inventory/equipment click decisions alongside targeting affordances. Equipped slots retain locked browsing; inventory tiles retain reservation and compatibility guards. `use-armory-targeting-state.ts` owns mutually exclusive idle, salvage, currency, and salvage-confirmation modes through intent callbacks. Store commands still validate authoritative mutations.
 - **`useArmoryController`** — facade hook that bundles the read-only slice plus the mutation callbacks.
 - **Battle** — `computeGearManifest` is applied at battle start and rebound onto the live `BattleState` whenever gear, talents, or homestead change.
 - **Run start** — `run-start-command.ts` snapshots `computeGearManifest.maxHealth` into `RunStartSnapshot.gearMaxHealthBonus`.

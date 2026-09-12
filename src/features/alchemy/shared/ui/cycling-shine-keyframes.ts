@@ -14,7 +14,7 @@ export function getShineCycleAnimationName(colors: readonly string[]): string {
   return hash.length > 0 ? `alchemy-shine-cycle-${hash}` : "alchemy-shine-cycle-empty";
 }
 
-export function buildShineColorCycleKeyframes(animationName: string, colors: readonly string[]): string {
+function buildShineColorCycleKeyframes(animationName: string, colors: readonly string[]): string {
   const first = colors[0];
   if (!first) return "";
 

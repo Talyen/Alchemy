@@ -21,30 +21,6 @@ beforeEach(() => {
   dispatchRunSessionCommand((draft) => setSyncedBattleState(draft, defaultBattleState()));
 });
 
-describe("handleEndRun", () => {
-  it("forces defeat with deaths door consumed on the battle screen", () => {
-    const { api, resetBattleSession, handleVictoryDefeat } = makeDevOutcomes("battle");
-
-    api.handleEndRun();
-
-    expect(resetBattleSession).toHaveBeenCalledOnce();
-    expect(handleVictoryDefeat).toHaveBeenCalledWith("defeat");
-    const state = readBattle().battleState;
-    expect(state.playerHealth).toBe(0);
-    expect(state.deathsDoorUsed).toBe(true);
-    expect(state.deathsDoorActive).toBe(false);
-  });
-
-  it("no-ops off the battle screen", () => {
-    const { api, resetBattleSession, handleVictoryDefeat } = makeDevOutcomes("rewards");
-
-    api.handleEndRun();
-
-    expect(resetBattleSession).not.toHaveBeenCalled();
-    expect(handleVictoryDefeat).not.toHaveBeenCalled();
-  });
-});
-
 describe("skipCombatDevMode", () => {
   it("forces victory and clears wish state on the battle screen", () => {
     const { api, handleVictoryDefeat } = makeDevOutcomes("battle");

@@ -71,7 +71,6 @@ export function useGearCombatRestrictions() {
     useShallow((s) => ({
       activity: s.session.activity,
       activeRun: s.run.activeRun,
-      parkedRuns: s.run.parkedRuns,
       hasActiveBattle: s.battle.hasActiveBattle,
       loadouts: s.gear.loadouts,
       equippedTrinkets: s.gear.equippedTrinkets,
@@ -81,7 +80,7 @@ export function useGearCombatRestrictions() {
     () =>
       deriveGearCombatRestrictions({
         session: { activity: selection.activity },
-        run: { activeRun: selection.activeRun, parkedRuns: selection.parkedRuns },
+        run: { activeRun: selection.activeRun },
         battle: { hasActiveBattle: selection.hasActiveBattle },
         gear: { loadouts: selection.loadouts, equippedTrinkets: selection.equippedTrinkets },
       }),

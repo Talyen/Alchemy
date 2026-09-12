@@ -41,13 +41,7 @@ export function useAlchemyBootstrap(): SaveLoadState | null {
       if (cancelled) return;
       hydrateAlchemyPersistenceFields(result.data);
       if (!readRunInitialized()) {
-        restoreRun(
-          result.data.activeRun,
-          result.data.talentXP,
-          result.data.unlockedTalents,
-          result.data.parkedRuns,
-          result.data.runRecency,
-        );
+        restoreRun(result.data.activeRun, result.data.talentXP, result.data.unlockedTalents);
       }
       setBootstrapResult(result);
     })();

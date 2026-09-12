@@ -115,5 +115,3 @@ export interface ActiveRunData {
   mysteryVisit: PersistedMysteryVisit | null;
   corruptionResult: CorruptionResult | null;
 }
-
-export type ParkedRunsMap = Partial<Record<ContentSystemId, ActiveRunData>>;

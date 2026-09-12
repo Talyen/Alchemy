@@ -11,16 +11,10 @@ import {
   evaluateSaveCandidates,
   hydrateAlchemyPersistenceFields,
 } from "@/features/alchemy/shared/storage";
-import { restoreRun, snapshotRun, teardownRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { setGold, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
-import {
-  readActiveRunScreen,
-  readParkedRuns,
-  readRunProfile,
-  readRunRecency,
-  readRunSession,
-} from "@/features/alchemy/shared/stores/run-reads";
+import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { readActiveRunScreen, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { resetAllTestStores, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { ANCIENT_ALTAR_MYSTERY_VISIT } from "../../shared/stores/active-run-data-fixture";
 
@@ -56,56 +50,27 @@ function reloadSavedRuns() {
   expect(loaded.status.kind).toBe("ok");
   resetAllTestStores();
   hydrateAlchemyPersistenceFields(loaded.data);
-  const { activeRun, talentXP, unlockedTalents, parkedRuns, runRecency } = loaded.data;
-  restoreRun(activeRun, talentXP, unlockedTalents, parkedRuns, runRecency);
+  const { activeRun, talentXP, unlockedTalents } = loaded.data;
+  restoreRun(activeRun, talentXP, unlockedTalents);
 }
 
 describe("saved mode navigation", () => {
-  it.each([
-    ["labyrinth", "campaign"],
-    ["campaign", "wildwood"],
-    ["wildwood", "labyrinth"],
-  ] as const)("preserves %s while browsing, starting, and ending %s", (first, second) => {
-    const nav = createNavigation();
-    startMode(nav, first);
-    setRunProgress({ runPlayerHealth: 17, roomsEncountered: 3 });
-    const firstRun = snapshotRun();
-    dispatchRunSessionCommand((draft) => setScreen(draft, "game-mode-select"));
-    const begin = { campaign: nav.beginCampaign, labyrinth: nav.beginLabyrinth, wildwood: nav.beginWildwood };
-    begin[second]();
-    expect(readActiveRunScreen()).toBe("character-select");
-    expect(readRunSession().hasActiveRun).toBe(false);
-    expect(readParkedRuns()[first]).toEqual(firstRun);
-    expect(readRunRecency()).toEqual([first]);
-    dispatchRunSessionCommand((draft) => setScreen(draft, "game-mode-select"));
-    nav.resumeRun();
-    expect(snapshotRun()).toEqual(firstRun);
+  it.each(["campaign", "labyrinth", "wildwood"] as const)(
+    "keeps the sole %s run when another mode is requested",
+    (mode) => {
+      const nav = createNavigation();
+      startMode(nav, mode);
+      const checkpoint = snapshotRun();
+      dispatchRunSessionCommand((draft) => setScreen(draft, "menu"));
+      nav.beginCampaign();
+      nav.handleCharacterSelect("rogue");
+      expect(snapshotRun()).toEqual(checkpoint);
+      reloadSavedRuns();
+      expect(snapshotRun()).toEqual(checkpoint);
+    },
+  );
 
-    dispatchRunSessionCommand((draft) => setScreen(draft, "game-mode-select"));
-    startMode(nav, second);
-    setRunProgress({ runPlayerHealth: 23, roomsEncountered: 1 });
-    const secondRun = snapshotRun();
-    dispatchRunSessionCommand((draft) => setGold(draft, 73));
-    reloadSavedRuns();
-    expect(readActiveRunScreen()).toBe(secondRun.currentScreen);
-    expect(snapshotRun()).toEqual(secondRun);
-    expect(readParkedRuns()[first]).toEqual(firstRun);
-    nav.resumeRun(first);
-    expect(readActiveRunScreen()).toBe(firstRun.currentScreen);
-    expect(snapshotRun()).toEqual(firstRun);
-    expect(readRunProfile().gold).toBe(73);
-    nav.resumeRun(second);
-    expect(snapshotRun()).toEqual(secondRun);
-    teardownRun();
-    expect(readParkedRuns()[first]).toEqual(firstRun);
-    expect(readParkedRuns()[second]).toBeUndefined();
-    reloadSavedRuns();
-    nav.resumeRun();
-    expect(snapshotRun()).toEqual(firstRun);
-    expect(readRunRecency()).toEqual([first]);
-  });
-
-  it("preserves the final Wildcard draft confirmation through mode switching and reload", () => {
+  it("preserves the final Wildcard draft confirmation through attempted mode switching and reload", () => {
     const nav = createNavigation();
     nav.beginLabyrinth();
     nav.handleCharacterSelect("wildcard");
@@ -123,7 +88,7 @@ describe("saved mode navigation", () => {
   });
 
   it.each(["shop", "rewards", "mystery", "corruption"] as const)(
-    "returns to the unfinished %s after menu navigation, mode switching, and reload",
+    "returns to the unfinished %s after menu navigation, attempted mode switching, and reload",
     (screen) => {
       const nav = createNavigation();
       startMode(nav, "labyrinth");
@@ -160,14 +125,4 @@ describe("saved mode navigation", () => {
       expect(readRunProfile()).toEqual(profile);
     },
   );
-
-  it("recovers a parked Labyrinth snapshot that recorded the game-mode menu", () => {
-    const nav = createNavigation();
-    startMode(nav, "labyrinth");
-    const checkpoint = snapshotRun();
-    restoreRun(null, {}, {}, { labyrinth: { ...checkpoint, currentScreen: "game-mode-select" } }, ["labyrinth"]);
-    nav.resumeRun();
-    expect(readActiveRunScreen()).toBe("labyrinth-map");
-    expect(snapshotRun()).toEqual(checkpoint);
-  });
 });

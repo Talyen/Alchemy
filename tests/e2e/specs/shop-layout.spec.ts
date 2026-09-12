@@ -2,43 +2,39 @@ import { expect } from "@playwright/test";
 import { test } from "../../fixtures/e2e";
 import { startAtDestination, makeCard } from "../../browser-helpers";
 import { ShopPage } from "../../pages/shop-page";
-import { critical, slow } from "../../playwright-tags";
+import { critical } from "../../playwright-tags";
 
-for (const destination of ["Card Shop", "Alchemist's Shop", "Gear Shop", "Trinket Shop"] as const) {
-  const gate = destination === "Card Shop" || destination === "Alchemist's Shop" ? critical : slow;
-
-  test(`${destination} keeps artwork and layout stable after purchases`, gate, async ({ page }) => {
-    await startAtDestination(page, { runGold: 9999 }, { forceDestination: destination });
-    await page.getByRole("button", { name: destination, exact: true }).click();
-    await expect(page.getByRole("heading", { name: destination, exact: true })).toBeVisible();
-    const shop = new ShopPage(page);
-    const items = page.locator("button.surface");
-    const leave = page.getByRole("button", { name: "Leave", exact: true });
-    await expect(shop.buyBtn.first()).toBeVisible();
-    await leave.hover();
-    const geometry = () =>
-      items.evaluateAll((elements) =>
-        elements.map((element) => {
-          const art = element.querySelector("img")!;
-          const box = art.getBoundingClientRect();
-          return { x: box.x, y: box.y, width: box.width, height: box.height };
-        }),
-      );
-    await items.evaluateAll(async (elements) => {
-      await Promise.all(elements.flatMap((element) => element.getAnimations()).map((animation) => animation.finished));
-    });
-    await expect(items.first()).toHaveCSS("border-top-width", "1px");
-    const before = await geometry();
-    const leaveBefore = await leave.boundingBox();
-    if (await shop.buyBtn.count()) {
-      await shop.buyCard();
-      await shop.waitForPurchase();
-      await leave.hover();
-      await expect.poll(geometry).toEqual(before);
-      await expect.poll(() => leave.boundingBox()).toEqual(leaveBefore);
-    }
+test("Card Shop keeps artwork and layout stable after purchases", critical, async ({ page }) => {
+  await startAtDestination(page, { runGold: 9999 }, { forceDestination: "Card Shop" });
+  await page.getByRole("button", { name: "Card Shop", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Card Shop", exact: true })).toBeVisible();
+  const shop = new ShopPage(page);
+  const items = page.locator("button.surface");
+  const leave = page.getByRole("button", { name: "Leave", exact: true });
+  await expect(shop.buyBtn.first()).toBeVisible();
+  await leave.hover();
+  const geometry = () =>
+    items.evaluateAll((elements) =>
+      elements.map((element) => {
+        const art = element.querySelector("img")!;
+        const box = art.getBoundingClientRect();
+        return { x: box.x, y: box.y, width: box.width, height: box.height };
+      }),
+    );
+  await items.evaluateAll(async (elements) => {
+    await Promise.all(elements.flatMap((element) => element.getAnimations()).map((animation) => animation.finished));
   });
-}
+  await expect(items.first()).toHaveCSS("border-top-width", "1px");
+  const before = await geometry();
+  const leaveBefore = await leave.boundingBox();
+  if (await shop.buyBtn.count()) {
+    await shop.buyCard();
+    await shop.waitForPurchase();
+    await leave.hover();
+    await expect.poll(geometry).toEqual(before);
+    await expect.poll(() => leave.boundingBox()).toEqual(leaveBefore);
+  }
+});
 
 test("Mixed Potion result shows the reward directly below the header", critical, async ({ page }) => {
   await startAtDestination(

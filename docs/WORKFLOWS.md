@@ -318,11 +318,7 @@ navigation. Keep persisted drafts and resume paths in their existing owners.
   shelf or event choices; see [shop changes](#change-a-shop),
   [Mystery effects](#adding-a-new-mystery-effect-kind), and
   [Corruption flow](#adding--changing-corruption-flow).
-- Preserve saved geography and in-flight encounters. Historical
-  [grid recovery](../src/features/alchemy/shared/storage/MIGRATION_HISTORY.md#schema-14--labyrinth-hex-floors),
-  [hex retirement](../src/features/alchemy/shared/storage/MIGRATION_HISTORY.md#schema-17--labyrinth-open-field),
-  and [side-room expansion](../src/features/alchemy/shared/storage/MIGRATION_HISTORY.md#schema-18--labyrinth-side-rooms)
-  belong to their migration steps, not new navigation logic.
+- Preserve supported saved geography and in-flight encounters. Below-baseline development maps are disposable under the [save baseline](../src/features/alchemy/shared/storage/MIGRATIONS.md#supported-baseline); no historical grid/hex migration belongs in navigation.
 - Cover the changed setup/resume route with the dependency-related tests selected
   by `verify`.
 

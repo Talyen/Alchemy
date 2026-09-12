@@ -8,7 +8,6 @@ vi.mock("@/features/alchemy/shared/ui/battle/hurt-spark-burst", () => ({
 }));
 
 import { ArtPanel } from "@/features/alchemy/shared/ui/battle/actor-panel";
-import { getKeywordListShineColors } from "@/features/alchemy/shared/config";
 import type { BestiaryEntry } from "@/lib/game-data";
 import { installDisabledAnimationsForTests } from "../../../../../helpers/animation-test";
 
@@ -36,14 +35,6 @@ const enemy: BestiaryEntry = {
   abilityIds: ["frostbolt"],
 };
 
-function hexToRgb(hex: string): string {
-  const clean = hex.replace("#", "");
-  const r = parseInt(clean.slice(0, 2), 16);
-  const g = parseInt(clean.slice(2, 4), 16);
-  const b = parseInt(clean.slice(4, 6), 16);
-  return `rgb(${r}, ${g}, ${b})`;
-}
-
 describe("ArtPanel hover motion", () => {
   installDisabledAnimationsForTests();
 
@@ -58,25 +49,6 @@ describe("ArtPanel hover motion", () => {
     rerender(<ArtPanel {...baseProps} isDead />);
 
     expect(screen.getByTestId("battle-player-art-panel").classList.contains("card-hover-scale")).toBe(false);
-  });
-
-  it("shows the enemy keyword shine only while the enemy is hovered", () => {
-    const { getByTestId, queryByTestId } = render(<ArtPanel {...baseProps} side="enemy" currentEnemy={enemy} />);
-    const surface = getByTestId("battle-enemy-art-panel");
-    const wrapper = surface.parentElement;
-    expect(wrapper).not.toBeNull();
-    expect(queryByTestId("keyword-shine-enemy")).toBeNull();
-
-    fireEvent.mouseEnter(wrapper!);
-
-    const shine = getByTestId("keyword-shine-enemy");
-    expect(shine.className).toMatch(/\bshine-border\b/);
-    for (const color of getKeywordListShineColors(["poison", "freeze"])) {
-      expect(shine.querySelector<HTMLElement>(".shine-border-paint")!.style.backgroundImage).toContain(hexToRgb(color));
-    }
-
-    fireEvent.mouseLeave(wrapper!);
-    expect(queryByTestId("keyword-shine-enemy")).toBeNull();
   });
 
   it("capitalizes keywords in the enemy ability tooltip", async () => {

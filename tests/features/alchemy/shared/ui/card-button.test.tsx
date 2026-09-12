@@ -16,15 +16,13 @@ const card: BattleCard = {
 describe("BattleCardButton", () => {
   afterEach(cleanup);
 
-  it("uses scale-only hover motion", () => {
-    render(<BattleCardButton card={card} ariaLabel="Test Card" shimmerActive={false} shimmerToken={undefined} />);
+  it("uses scale-only hover motion unless a custom transform opts out", () => {
+    const { rerender } = render(
+      <BattleCardButton card={card} ariaLabel="Test Card" shimmerActive={false} shimmerToken={undefined} />,
+    );
+    expect(screen.getByRole("button", { name: "Test Card" }).classList.contains("card-hover-scale")).toBe(true);
 
-    const button = screen.getByRole("button", { name: "Test Card" });
-    expect(button.classList.contains("card-hover-scale")).toBe(true);
-  });
-
-  it("allows custom-transform cards to opt out of the shared scale", () => {
-    render(
+    rerender(
       <BattleCardButton
         card={card}
         ariaLabel="Test Card"
@@ -33,9 +31,9 @@ describe("BattleCardButton", () => {
         scaleOnHover={false}
       />,
     );
-
     expect(screen.getByRole("button", { name: "Test Card" }).classList.contains("card-hover-scale")).toBe(false);
   });
+
   it("pairs keyword shine and glow only while eligible for hover", () => {
     const props = {
       ariaLabel: "Test Card",

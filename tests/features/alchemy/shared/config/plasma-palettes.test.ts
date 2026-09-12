@@ -66,18 +66,10 @@ describe("getPlasmaColorPairFromColors", () => {
   });
 });
 
-describe("getPlasmaKeywordsForCharacter", () => {
-  it("returns knight affinity keywords in catalog order", () => {
+describe("character plasma mapping", () => {
+  it("returns knight affinities in catalog order and wildcard has no affinities", () => {
     expect(getPlasmaKeywordsForCharacter("knight")).toEqual(characters.knight.keywords);
-  });
-
-  it("returns empty list for wildcard", () => {
     expect(getPlasmaKeywordsForCharacter("wildcard")).toEqual([]);
-  });
-});
-
-describe("getPlasmaColorPairForCharacter", () => {
-  it("maps knight affinities to plasma stops", () => {
     expect(getPlasmaColorPairForCharacter("knight")).toEqual({
       primary: keywordDefinitions.block.shineColors[0],
       secondary: keywordDefinitions.armor.shineColors[0],
@@ -171,28 +163,13 @@ describe("getPlasmaKeywordsForEnemy", () => {
     abilityIds: [],
   };
 
-  it("collects keywords from canonical ability cards", () => {
-    const entry: BestiaryEntry = {
-      ...baseEntry,
-      abilityIds: ["fireball"],
-    };
-    expect(getPlasmaKeywordsForEnemy(entry)).toEqual(["burn"]);
-  });
-
-  it("collects keywords from trait descriptions", () => {
+  it("collects trait and all canonical ability keywords", () => {
     const entry: BestiaryEntry = {
       ...baseEntry,
       traits: [{ id: "t1", title: "Spores", description: "Applies Poison to the hero." }],
-    };
-    expect(getPlasmaKeywordsForEnemy(entry)).toEqual(["poison"]);
-  });
-
-  it("collects every ability without choosing an upcoming action", () => {
-    const entry: BestiaryEntry = {
-      ...baseEntry,
       abilityIds: ["frostbolt", "fireball"],
     };
-    expect(getPlasmaKeywordsForEnemy(entry)).toEqual(["freeze", "burn"]);
+    expect(getPlasmaKeywordsForEnemy(entry)).toEqual(["poison", "freeze", "burn"]);
   });
 
   it("maps trait and ability keywords to the enemy shine palette", () => {

@@ -1,7 +1,8 @@
+import { useHasActiveRun } from "@/features/alchemy/shared/stores/run-reads";
 import { GameMenu } from "@/features/alchemy/shared/ui/game-menu";
 import { BackgroundParticles } from "@/features/alchemy/shared/ui/background-particles";
 import { isDesktop, quitDesktopApp } from "@/lib/platform";
-import { isRunLoopScreen, type Screen } from "@/lib/routing";
+import { type Screen } from "@/lib/routing";
 import { UnsupportedSaveVersionScreen } from "@/app/unsupported-save-version-screen";
 import type { useReturnToRunNavigation } from "@/app/use-app-navigation";
 import { isProgressionFeatureUnlocked, type CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
@@ -69,6 +70,7 @@ export function GameMenuOverlay({
   isArmoryLocked: boolean;
   onEndRun: (() => void) | undefined;
 }) {
+  const hasActiveRun = useHasActiveRun();
   return (
     <GameMenu
       isOpen={saveBlockedByNewerVersion ? false : gameMenuOpen}
@@ -90,7 +92,7 @@ export function GameMenuOverlay({
             returnToRunLabel: nav.returnToRunTarget === "battle" ? "Return to Battle" : "Return to Run",
           }
         : {})}
-      {...(isRunLoopScreen(currentScreen) && onEndRun ? { onEndRun } : {})}
+      {...(hasActiveRun && onEndRun ? { onEndRun } : {})}
     />
   );
 }
