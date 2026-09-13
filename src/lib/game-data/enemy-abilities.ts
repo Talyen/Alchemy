@@ -76,14 +76,32 @@ function supportsEnemyEffect(effect: BattleCardEffect): effect is EnemyAbilityEf
   }
 }
 
+const ENEMY_ABILITY_CARD_VALIDITY_CACHE = new WeakMap<BattleCard, boolean>();
+const ENEMY_ABILITY_CARD_BY_ID_CACHE = new Map<string, EnemyAbilityCard | undefined>();
+const ENEMY_ABILITY_DEALS_DAMAGE_CACHE = new WeakMap<object, boolean>();
+
 export function isEnemyAbilityCard(card: BattleCard): card is EnemyAbilityCard {
-  return !card.consume && card.effects.length > 0 && card.effects.every(supportsEnemyEffect);
+  const cached = ENEMY_ABILITY_CARD_VALIDITY_CACHE.get(card);
+  if (cached !== undefined) return cached;
+
+  const valid = !card.consume && card.effects.length > 0 && card.effects.every(supportsEnemyEffect);
+  ENEMY_ABILITY_CARD_VALIDITY_CACHE.set(card, valid);
+  return valid;
 }
 
 export function findEnemyAbilityCard(id: string): EnemyAbilityCard | undefined {
-  if (!Object.hasOwn(cardById, id)) return undefined;
+  if (ENEMY_ABILITY_CARD_BY_ID_CACHE.has(id)) {
+    return ENEMY_ABILITY_CARD_BY_ID_CACHE.get(id);
+  }
+
+  if (!Object.hasOwn(cardById, id)) {
+    ENEMY_ABILITY_CARD_BY_ID_CACHE.set(id, undefined);
+    return undefined;
+  }
   const card = cardById[id];
-  return card && isEnemyAbilityCard(card) ? card : undefined;
+  const result = card && isEnemyAbilityCard(card) ? card : undefined;
+  ENEMY_ABILITY_CARD_BY_ID_CACHE.set(id, result);
+  return result;
 }
 
 export function getEnemyAbilityCard(id: string): EnemyAbilityCard {
@@ -97,11 +115,16 @@ export function getEnemyAbilities(enemy: Pick<BestiaryEntry, "abilityIds">): Ene
 }
 
 export function enemyAbilityDealsDamage(card: Pick<BattleCard, "effects">): boolean {
-  return card.effects.some(
+  const cached = ENEMY_ABILITY_DEALS_DAMAGE_CACHE.get(card);
+  if (cached !== undefined) return cached;
+
+  const dealsDamage = card.effects.some(
     (effect) =>
       effect.kind === "damage" ||
       (effect.kind === "chance" &&
         (enemyAbilityDealsDamage({ effects: effect.successEffects }) ||
           enemyAbilityDealsDamage({ effects: effect.failureEffects }))),
   );
+  ENEMY_ABILITY_DEALS_DAMAGE_CACHE.set(card, dealsDamage);
+  return dealsDamage;
 }

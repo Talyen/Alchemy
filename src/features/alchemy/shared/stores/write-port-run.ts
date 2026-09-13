@@ -289,7 +289,7 @@ export function commitBattleTransition(
   battleState: BattleSnapshot,
   pendingBattleTransition: PersistedBattleTransition | null,
 ): void {
-  setSyncedBattleState(draft, battleSnapshot(battleState));
+  setSyncedBattleState(draft, battleState);
   setPendingBattleTransition(draft, rebindPendingTransitionWorldRng(pendingBattleTransition));
   clearPendingTransitionResumeRequired(draft);
   syncPurseFromBattleGold(draft);

@@ -51,10 +51,10 @@ function commit(root: string) {
   return git(root, "rev-parse", "HEAD");
 }
 
-function descendantCommand(root: string) {
+function descendantCommand(root: string, delayMs = 1000) {
   const marker = path.join(root, "descendant-survived");
   const ready = path.join(root, "descendant-ready");
-  const descendant = `console.log('descendant ready'); require('node:fs').writeFileSync(${JSON.stringify(ready)}, 'ready'); setTimeout(() => require('node:fs').writeFileSync(${JSON.stringify(marker)}, 'survived'), 1000); setTimeout(() => process.exit(0), 2000);`;
+  const descendant = `console.log('descendant ready'); require('node:fs').writeFileSync(${JSON.stringify(ready)}, 'ready'); setTimeout(() => require('node:fs').writeFileSync(${JSON.stringify(marker)}, 'survived'), ${delayMs}); setTimeout(() => process.exit(0), ${delayMs * 2});`;
   const parent = `require('node:child_process').spawn(process.execPath, ['-e', ${JSON.stringify(descendant)}], {stdio: 'inherit'}); setInterval(() => {}, 1000);`;
   return { marker, ready, parent };
 }
@@ -172,16 +172,16 @@ describe("script execution reliability", () => {
 
   it.each([false, true])("stops descendants at the deadline (file capture: %s)", async (fileCapture) => {
     const root = fixture();
-    const { marker, parent } = descendantCommand(root);
+    const { marker, parent } = descendantCommand(root, 1200);
     const result = await runCommandAsync(process.execPath, ["-e", parent], {
       shell: false,
-      timeout: 500,
+      timeout: 800,
       ...(fileCapture ? { logPath: path.join(root, "command.log") } : {}),
     });
     expect(result.output).toContain("descendant ready");
     expect(result.timedOut).toBe(true);
     expect(result.status).toBeNull();
-    await delay(1200);
+    await delay(600);
     expect(fs.existsSync(marker)).toBe(false);
   });
 

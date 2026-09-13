@@ -64,6 +64,8 @@ Game-specific button shape and layout tokens live in `src/features/alchemy/share
 
 Card and collection artwork, including gear and trinket tiles, reserves a 1px frame across available, selected, disabled, purchased, and shine states, so changing interaction state cannot resize its artwork or row or recenter the screen. The thicker hover and selection outline is an absolute overlay, preserving the thin default border. Hover-only shine uses `card-art-shine`; persistent shine uses `has-shine-border`. Both hide the frame color while preserving its space. Pass frame Shine through `Surface.overlay` so the artwork clipping layer cannot hide it.
 
+Battle's enabled End Turn button adds the standard 103.5% CSS hover scale over 200ms ease-out alongside its primary-button bloom. Battle pile artwork, individual mana crystals, the gold counter, and the main menu logo use the same hover scale. Pile transfer anchors remain unscaled; mana hover wrappers preserve the crystals' independent refresh animations.
+
 Artwork surfaces resolve their clipping radius from the same inline theme token and local content scale as the outer frame. The artwork radius subtracts the frame width so portrait and landscape corners meet in resting, hovered, and selected states.
 
 Labyrinth's rectangular art nodes reuse `Surface`, shared shimmer, and Shine Border. Hover, keyboard focus, and selection enlarge only the emphasized tile to 106%; unknown tiles stay neutral. Completed art remains subdued. Reduced motion makes emphasis immediate and shine static. See [Labyrinth map](#labyrinth-map) for discovery and movement.

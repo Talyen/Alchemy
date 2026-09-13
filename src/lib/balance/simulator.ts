@@ -205,6 +205,7 @@ export function simulateBattle(config: BattleSimulationConfig): BattleSimulation
   const outcome: BattleSimulationOutcome =
     state.enemyHealth <= 0 ? "win" : isPlayerDefeated(state) ? "loss" : "timeout";
 
+  const battleMetrics = state.battleMetrics ?? { enemyAttackActions: 0, enemyAbilityActivations: {} };
   return {
     characterId: config.characterId,
     enemyId: enemy.id,
@@ -215,10 +216,10 @@ export function simulateBattle(config: BattleSimulationConfig): BattleSimulation
     playerMaxHealth,
     enemyHealth: state.enemyHealth,
     enemyMaxHealth: state.enemyMaxHealth,
-    enemyAttackActions: state.battleMetrics!.enemyAttackActions,
-    enemyAbilityActivations: state.battleMetrics!.enemyAbilityActivations,
-    enemyAbilityUses: state.battleMetrics!.enemyAbilityUses ?? {},
-    wonBeforeEnemyAttack: outcome === "win" && state.battleMetrics!.enemyAttackActions === 0,
+    enemyAttackActions: battleMetrics.enemyAttackActions,
+    enemyAbilityActivations: battleMetrics.enemyAbilityActivations,
+    enemyAbilityUses: battleMetrics.enemyAbilityUses ?? {},
+    wonBeforeEnemyAttack: outcome === "win" && battleMetrics.enemyAttackActions === 0,
     cardsPlayed,
     totalCardsPlayed: Object.values(cardsPlayed).reduce((total, count) => total + count, 0),
     combatGoldEarned: state.gold - initialState.gold,

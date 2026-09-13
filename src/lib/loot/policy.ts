@@ -18,14 +18,15 @@ export interface LootProgress {
 export function lootDepthMultiplier(kind: PremiumLootKind, depth: number): number {
   const curve = LOOT_DEPTH_CURVES[kind];
   const first = curve[0];
-  if (depth < first.depth) return 0;
+  if (!first || depth < first.depth) return 0;
   for (let index = 1; index < curve.length; index += 1) {
-    const before = curve[index - 1]!;
-    const after = curve[index]!;
-    if (depth <= after.depth)
+    const before = curve[index - 1];
+    const after = curve[index];
+    if (before && after && depth <= after.depth)
       return lerp(before.weight, after.weight, (depth - before.depth) / (after.depth - before.depth));
   }
-  return curve[curve.length - 1]!.weight;
+  const last = curve[curve.length - 1];
+  return last ? last.weight : 0;
 }
 
 export function isLootEligible(kind: PremiumLootKind, depth: number): boolean {
@@ -43,8 +44,9 @@ function normalizeLootWeights(weights: LootWeights, available: LootAvailability 
   }
   let total = Object.values(filtered).reduce((sum, weight) => sum + weight, 0);
   if (total === 0) {
-    if (available.basic !== false) filtered.basic = 1;
-    else if (available.card !== false) filtered.card = 1;
+    const fallbackCandidates: LootKind[] = ["basic", "card", "astral", "unique", "boon", "trinket"];
+    const fallback = fallbackCandidates.find((kind) => available[kind] !== false);
+    if (fallback) filtered[fallback] = 1;
     total = Object.values(filtered).reduce((sum, weight) => sum + weight, 0);
   }
   if (total > 0) {
@@ -88,7 +90,8 @@ function pickWeighted<T extends string>(weights: Record<T, number>, rng: () => n
     remaining -= weights[kind];
     if (remaining < 0) return kind;
   }
-  return last!;
+  if (!last) throw new Error("Cannot select from an empty loot pool");
+  return last;
 }
 
 function lootGroupWeights(weights: LootWeights): Record<LootGroup, number> {

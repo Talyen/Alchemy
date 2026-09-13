@@ -20,6 +20,9 @@ import { rolldownCodeSplittingGroups } from "./scripts/lib/vite-chunks.mjs";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- scripts are JS without declarations
 // @ts-ignore no types for sentry-release.mjs
 import { resolveSentryRelease, resolveSourcemapMode } from "./scripts/lib/sentry-release.mjs";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment -- scripts are JS without declarations
+// @ts-ignore no types for clean-dev-artifacts.mjs
+import { TRANSIENT_ARTIFACT_DIRS } from "./scripts/lib/clean-dev-artifacts.mjs";
 
 // Single port contract shared with scripts/lib/dev-port.mjs consumers (polling/stop/cleanup).
 const devPort = resolveDevPort(process.env);
@@ -36,7 +39,14 @@ export default defineConfig(({ mode, command }) => {
   return {
     base: mode === "desktop" ? "./" : "/",
 
-    server: { open: mode !== "desktop", port: devPort, strictPort: true },
+    server: {
+      open: mode !== "desktop",
+      port: devPort,
+      strictPort: true,
+      watch: {
+        ignored: TRANSIENT_ARTIFACT_DIRS.map((dir: string) => `**/${dir}/**`),
+      },
+    },
     preview: { open: false },
     plugins: [
       tailwind(),

@@ -1,7 +1,13 @@
 import type { BattleCard, CompanionDefinition, KeywordDefinition, KeywordId } from "./types";
 import { collectKeywordsFromBattleEffect } from "./effect-metadata";
 
+const CARD_KEYWORD_CACHE = new WeakMap<BattleCard, KeywordId[]>();
+const COMPANION_KEYWORD_CACHE = new WeakMap<CompanionDefinition, KeywordId[]>();
+
 export function getCardKeywords(card: BattleCard): KeywordId[] {
+  const cached = CARD_KEYWORD_CACHE.get(card);
+  if (cached) return cached;
+
   const keywords = new Set<KeywordId>();
 
   for (const effect of card.effects) {
@@ -16,10 +22,15 @@ export function getCardKeywords(card: BattleCard): KeywordId[] {
     keywords.add(tag);
   }
 
-  return Array.from(keywords);
+  const result = Array.from(keywords);
+  CARD_KEYWORD_CACHE.set(card, result);
+  return result;
 }
 
 export function getCompanionKeywords(companion: CompanionDefinition): KeywordId[] {
+  const cached = COMPANION_KEYWORD_CACHE.get(companion);
+  if (cached) return cached;
+
   const keywords = new Set<KeywordId>();
 
   for (const effect of companion.turnStartEffects) {
@@ -28,7 +39,9 @@ export function getCompanionKeywords(companion: CompanionDefinition): KeywordId[
     }
   }
 
-  return Array.from(keywords);
+  const result = Array.from(keywords);
+  COMPANION_KEYWORD_CACHE.set(companion, result);
+  return result;
 }
 
 export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {

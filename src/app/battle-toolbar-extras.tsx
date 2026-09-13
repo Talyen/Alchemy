@@ -3,6 +3,7 @@ import { SkipForward } from "lucide-react";
 import { cn, formatLargeAmount } from "@/lib/utils";
 
 import { ChromeIconButton } from "@/features/alchemy/shared/ui/chrome-icon-button";
+import { cardHoverScaleClass } from "@/features/alchemy/shared/config";
 import { HomesteadResourceArtwork } from "@/features/alchemy/shared/ui/material-icons";
 import { PortaledTooltip } from "@/features/alchemy/shared/ui/tooltips/portaled-tooltip";
 
@@ -18,7 +19,8 @@ export function BattleGoldCounter({ gold }: { gold: number }) {
     <div
       key={increaseToken}
       className={cn(
-        "flex h-11 items-center gap-1.5 rounded-md px-2 text-sm font-semibold text-amber-200 tabular-nums",
+        "flex h-11 items-center gap-1.5 rounded-md px-2 text-xl font-semibold text-amber-200 tabular-nums",
+        cardHoverScaleClass,
         increaseToken > 0 && "battle-gold-increase",
       )}
       aria-label={`Gold: ${gold}`}

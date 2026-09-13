@@ -62,7 +62,8 @@ function neighborSlots(positions: readonly LabyrinthGridPosition[], index: numbe
   if (!source) return [];
   const neighbors: number[] = [];
   for (let other = 0; other < positions.length; other += 1) {
-    if (other !== index && areGridNeighbors(source, positions[other]!)) neighbors.push(other);
+    const target = positions[other];
+    if (other !== index && target && areGridNeighbors(source, target)) neighbors.push(other);
   }
   return neighbors;
 }
@@ -89,13 +90,16 @@ export function orderTypesForPositions(
     for (const [index, first] of slots.entries()) {
       for (const second of slots.slice(index + 1)) {
         if (seated[first] === seated[second]) continue;
-        [seated[first], seated[second]] = [seated[second]!, seated[first]!];
+        const firstType = seated[first];
+        const secondType = seated[second];
+        if (firstType === undefined || secondType === undefined) continue;
+        [seated[first], seated[second]] = [secondType, firstType];
         const score = conflicts();
         if (score < best) {
           best = score;
           improved = true;
         } else {
-          [seated[first], seated[second]] = [seated[second], seated[first]];
+          [seated[first], seated[second]] = [firstType, secondType];
         }
       }
     }
@@ -136,12 +140,12 @@ function makeNode(input: {
 function generateFloorPositions(rng: () => number): LabyrinthGridPosition[] {
   const columns = Array.from({ length: LABYRINTH_GRID.columns }, (_, col) => col);
   const entrance = { row: 0, col: randomInt(0, LABYRINTH_GRID.columns - 1, rng) };
+  const eligibleColumns = columns.filter(
+    (col) => Math.abs(col - entrance.col) >= LABYRINTH_GRID.minimumBossColumnDistance,
+  );
   const boss = {
     row: LABYRINTH_GRID.rows - 1,
-    col: pickRandom(
-      columns.filter((col) => Math.abs(col - entrance.col) >= LABYRINTH_GRID.minimumBossColumnDistance),
-      rng,
-    )!,
+    col: pickRandom(eligibleColumns, rng) ?? 0,
   };
   const endpoints = new Set([gridKey(entrance), gridKey(boss)]);
   const middle = labyrinthGridPositions().filter((position) => !endpoints.has(gridKey(position)));
@@ -157,24 +161,23 @@ function generateFloor(
   const positions = generateFloorPositions(rng);
   const types = plannedTypes(positions.length, rng, completedRooms + 1);
   const used = new Set(usedEnemies);
+  const origin = positions[0] ?? { row: 0, col: 0 };
   const nodes = orderTypesForPositions(types, positions, rng).map((type, index) => {
     const enemyType: EnemyType = type === "boss" ? "boss" : type === "elite" ? "elite" : "normal";
     const enemyId = COMBAT_NODE_TYPES.has(type) ? pickEnemyId(enemyType, used, rng) : undefined;
     if (enemyId) used.add(enemyId);
+    const gridPos = positions[index] ?? origin;
     return makeNode({
       id: labyrinthNodeId(depth, index),
       type,
       floor: depth,
-      gridPosition: positions[index]!,
-      lootDepth:
-        completedRooms +
-        Math.abs(positions[index]!.row - positions[0]!.row) +
-        Math.abs(positions[index]!.col - positions[0]!.col),
+      gridPosition: gridPos,
+      lootDepth: completedRooms + Math.abs(gridPos.row - origin.row) + Math.abs(gridPos.col - origin.col),
       rng,
       ...(enemyId ? { enemyId } : {}),
     });
   });
-  const entryId = nodes[0]!.id;
+  const entryId = nodes[0]?.id ?? labyrinthNodeId(depth, 0);
   return {
     floor: { id: labyrinthFloorId(depth), depth, nodeIds: nodes.map((node) => node.id) },
     nodes,

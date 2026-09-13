@@ -3,7 +3,7 @@ import { BookOpen, Cog, Shield, Swords, TreePine, WandSparkles } from "lucide-re
 import { Button } from "@/components/ui/button";
 import { ShineBorder } from "@/components/ui/shine-border";
 import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
-import { BUTTON_WIDTH_MENU } from "@/features/alchemy/shared/config";
+import { BUTTON_WIDTH_MENU, cardHoverScaleClass } from "@/features/alchemy/shared/config";
 import { Surface } from "../../shared/ui/surface";
 import { usePlasmaInteraction } from "../../shared/ui/use-plasma-source";
 import { cn } from "@/lib/utils";
@@ -84,7 +84,7 @@ export function MenuScreen({
           height={1046}
           src={logoSrc}
           alt="Alchemy logo"
-          className="h-full max-h-full w-auto max-w-full object-contain brightness-90"
+          className={cn("h-full max-h-full w-auto max-w-full object-contain brightness-90", cardHoverScaleClass)}
           loading="eager"
         />
       </Surface>

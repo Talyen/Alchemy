@@ -76,8 +76,9 @@ function buildPoints(): SlicePoint[] {
 export const SLICE_CRACK_POINTS: readonly SlicePoint[] = buildPoints();
 
 function segmentAspectLength(index: number): number {
-  const a = SLICE_CRACK_POINTS[index]!;
-  const b = SLICE_CRACK_POINTS[index + 1]!;
+  const a = SLICE_CRACK_POINTS[index];
+  const b = SLICE_CRACK_POINTS[index + 1];
+  if (!a || !b) return 0;
   return Math.hypot((b.x - a.x) * SLICE_ASPECT_WIDTH, (b.y - a.y) * SLICE_ASPECT_HEIGHT);
 }
 
@@ -91,7 +92,7 @@ const CUMULATIVE_ASPECT_LENGTHS: number[] = (() => {
   return lengths;
 })();
 
-const SLICE_CRACK_TOTAL_ASPECT_LENGTH = CUMULATIVE_ASPECT_LENGTHS[CUMULATIVE_ASPECT_LENGTHS.length - 1]!;
+const SLICE_CRACK_TOTAL_ASPECT_LENGTH = CUMULATIVE_ASPECT_LENGTHS[CUMULATIVE_ASPECT_LENGTHS.length - 1] ?? 1;
 
 export const SLICE_CARD_FRACTION_RANGE = {
   start: END_PADDING / SLICE_CRACK_TOTAL_ASPECT_LENGTH,
@@ -102,16 +103,17 @@ export function sliceCrackPointAtFraction(fraction: number): SlicePoint {
   const lead = Math.min(Math.max(fraction, 0), 1);
   const target = lead * SLICE_CRACK_TOTAL_ASPECT_LENGTH;
   for (let index = 0; index < SLICE_CRACK_POINTS.length - 1; index++) {
-    const start = CUMULATIVE_ASPECT_LENGTHS[index]!;
-    const end = CUMULATIVE_ASPECT_LENGTHS[index + 1]!;
+    const start = CUMULATIVE_ASPECT_LENGTHS[index] ?? 0;
+    const end = CUMULATIVE_ASPECT_LENGTHS[index + 1] ?? start;
     if (target <= end) {
-      const a = SLICE_CRACK_POINTS[index]!;
-      const b = SLICE_CRACK_POINTS[index + 1]!;
+      const a = SLICE_CRACK_POINTS[index];
+      const b = SLICE_CRACK_POINTS[index + 1];
+      if (!a || !b) continue;
       const local = end > start ? (target - start) / (end - start) : 0;
       return { x: a.x + (b.x - a.x) * local, y: a.y + (b.y - a.y) * local };
     }
   }
-  return SLICE_CRACK_POINTS[SLICE_CRACK_POINTS.length - 1]!;
+  return SLICE_CRACK_POINTS[SLICE_CRACK_POINTS.length - 1] ?? { x: 0.5, y: 0.5 };
 }
 
 export function sliceCrackPointAtFractionInSize(fraction: number, width: number, height: number): SlicePoint {
@@ -121,14 +123,15 @@ export function sliceCrackPointAtFractionInSize(fraction: number, width: number,
 
 export function sliceCrackPolylineToFraction(fraction: number, width: number, height: number): SlicePoint[] {
   const lead = Math.min(Math.max(fraction, 0), 1);
-  const first = SLICE_CRACK_POINTS[0]!;
+  const first = SLICE_CRACK_POINTS[0] ?? { x: 0.5, y: 0.5 };
   const result: SlicePoint[] = [{ x: first.x * width, y: first.y * height }];
   if (lead <= 0) return result;
   const target = lead * SLICE_CRACK_TOTAL_ASPECT_LENGTH;
   let remaining = target;
   for (let index = 0; index < SLICE_CRACK_POINTS.length - 1; index++) {
-    const a = SLICE_CRACK_POINTS[index]!;
-    const b = SLICE_CRACK_POINTS[index + 1]!;
+    const a = SLICE_CRACK_POINTS[index];
+    const b = SLICE_CRACK_POINTS[index + 1];
+    if (!a || !b) continue;
     const segmentLength = segmentAspectLength(index);
     if (segmentLength <= remaining) {
       result.push({ x: b.x * width, y: b.y * height });
@@ -151,13 +154,15 @@ export function sliceCrackTangentAtFraction(fraction: number): SliceVec {
   const lastIndex = SLICE_CRACK_POINTS.length - 2;
   let segmentIndex = lastIndex;
   for (let index = 0; index < lastIndex; index++) {
-    if (target <= CUMULATIVE_ASPECT_LENGTHS[index + 1]!) {
+    const nextCumLength = CUMULATIVE_ASPECT_LENGTHS[index + 1];
+    if (nextCumLength !== undefined && target <= nextCumLength) {
       segmentIndex = index;
       break;
     }
   }
-  const a = SLICE_CRACK_POINTS[segmentIndex]!;
-  const b = SLICE_CRACK_POINTS[segmentIndex + 1]!;
+  const a = SLICE_CRACK_POINTS[segmentIndex];
+  const b = SLICE_CRACK_POINTS[segmentIndex + 1];
+  if (!a || !b) return SLICE_ALONG;
   const dx = (b.x - a.x) * SLICE_ASPECT_WIDTH;
   const dy = (b.y - a.y) * SLICE_ASPECT_HEIGHT;
   const length = Math.hypot(dx, dy);
@@ -171,8 +176,9 @@ export function sliceCrackSide(point: SlicePoint): number {
   let nearestDistance = Number.POSITIVE_INFINITY;
   let nearestSign = 1;
   for (let index = 0; index < SLICE_CRACK_POINTS.length - 1; index++) {
-    const a = SLICE_CRACK_POINTS[index]!;
-    const b = SLICE_CRACK_POINTS[index + 1]!;
+    const a = SLICE_CRACK_POINTS[index];
+    const b = SLICE_CRACK_POINTS[index + 1];
+    if (!a || !b) continue;
     const ax = a.x * SLICE_ASPECT_WIDTH;
     const ay = a.y * SLICE_ASPECT_HEIGHT;
     const bx = b.x * SLICE_ASPECT_WIDTH;
@@ -218,10 +224,12 @@ function sliceCrackHalfCorners(isPrimary: boolean): SlicePoint[] {
   const onHalf = (point: SlicePoint) => (isPrimary ? sliceCrackSide(point) < 0 : sliceCrackSide(point) > 0);
   const halfCorners = CARD_CORNERS_CW.filter(onHalf);
   if (halfCorners.length === 0) return [];
-  const last = SLICE_CRACK_POINTS[SLICE_CRACK_POINTS.length - 1]!;
+  const last = SLICE_CRACK_POINTS[SLICE_CRACK_POINTS.length - 1] ?? { x: 0.5, y: 0.5 };
   let start = 0;
   for (let index = 1; index < halfCorners.length; index++) {
-    if (dist2(halfCorners[index]!, last) < dist2(halfCorners[start]!, last)) start = index;
+    const candidate = halfCorners[index];
+    const current = halfCorners[start];
+    if (candidate && current && dist2(candidate, last) < dist2(current, last)) start = index;
   }
   return [...halfCorners.slice(start), ...halfCorners.slice(0, start)];
 }

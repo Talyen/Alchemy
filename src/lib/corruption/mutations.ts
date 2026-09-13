@@ -81,7 +81,8 @@ function isPlainMagnitude(effect: BattleCardEffect): boolean {
 
 function numericMutations(card: BattleCard, targets: CorruptionTarget[], strengthen: boolean): Mutation[] {
   return targets.flatMap((target) => {
-    const effect = getCorruptionTargetEffect(card, target)!;
+    const effect = getCorruptionTargetEffect(card, target);
+    if (!effect) return [];
     const harmful = ["lose-health", "self-damage", "lose-mana", "lose-max-mana"].includes(effect.kind);
     const direction = strengthen !== harmful ? 1 : -1;
     const scalable =
@@ -97,7 +98,8 @@ function numericMutations(card: BattleCard, targets: CorruptionTarget[], strengt
 }
 
 function plainTarget(card: BattleCard, targets: CorruptionTarget[]): CorruptionTarget | undefined {
-  if (card.effects.length !== 1 || !isPlainMagnitude(card.effects[0]!)) return undefined;
+  const first = card.effects[0];
+  if (card.effects.length !== 1 || !first || !isPlainMagnitude(first)) return undefined;
   return targets.find((target) => target.field === "amount" && target.value > 0);
 }
 
@@ -135,8 +137,8 @@ function conversionMutations(card: BattleCard, target: CorruptionTarget | undefi
 }
 
 function canRemoveConsume(card: BattleCard): boolean {
-  if (!card.consume || card.effects.length !== 1) return false;
-  const effect = card.effects[0]!;
+  const effect = card.effects[0];
+  if (!card.consume || card.effects.length !== 1 || !effect) return false;
   if (effect.kind === "heal") return effect.amount <= 8;
   if (effect.kind === "player-status") {
     return (
@@ -254,8 +256,8 @@ export function getCorruptionMutationGroups(
       ]);
       add("mana", [addLine(card, `Gain ${amount} Mana`, { kind: "restore-mana", amount })]);
     }
-    const effect = card.effects[0]!;
-    if (effect.kind === "damage" && !effect.lifesteal && !card.descriptionLines.includes("Leech")) {
+    const effect = card.effects[0];
+    if (effect && effect.kind === "damage" && !effect.lifesteal && !card.descriptionLines.includes("Leech")) {
       add("leech", [addLine({ ...card, effects: [{ ...effect, lifesteal: true }] }, "Leech")]);
     }
     add("consume", [

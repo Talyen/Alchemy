@@ -4,7 +4,12 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 import { ManaPanel, PilePanel } from "../../../shared/ui/battle/resources";
-import { battleBottomBarClass, battleBottomColumnClass, BUTTON_WIDTH_DIALOG } from "@/features/alchemy/shared/config";
+import {
+  battleBottomBarClass,
+  battleBottomColumnClass,
+  BUTTON_WIDTH_DIALOG,
+  cardHoverScaleClass,
+} from "@/features/alchemy/shared/config";
 import { BattleHand } from "./hand";
 import type { BattleActionsProps, BattleRefsProps, BattleScreenState, RequiredBattleViewProps } from "./types";
 import { useCardTransferInProgress } from "../../battle/presentation/use-hand-presentation";
@@ -65,7 +70,7 @@ function BattleControls({
         <Button
           variant="primary"
           size="lg"
-          className={cn("font-bold", BUTTON_WIDTH_DIALOG)}
+          className={cn("font-bold", BUTTON_WIDTH_DIALOG, cardHoverScaleClass)}
           onClick={onEndTurn}
           disabled={battleState.turnPhase !== "player" || cardTransferInProgress}
         >

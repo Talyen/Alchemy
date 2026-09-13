@@ -2,6 +2,10 @@
 
 Historical evidence; current instructions live in the linked canonical owners.
 
+2026-09-12 — Manual browser testing sessions reloaded during parallel Playwright runs because Vite tracked transient report and artifact directories as HMR triggers. Added `TRANSIENT_ARTIFACT_DIRS` to Vite's `server.watch.ignored` configuration in `vite.config.ts`, preventing unexpected resets during development and testing.
+
+2026-09-12 — Tooling verification occasionally flaked on the descendant deadline test in `tests/scripts/script-reliability.test.ts` during concurrent test runs because the 500ms timeout expired before the descendant node process could initialize under heavy CPU load. Increased the child initialization budget to 800ms with a 1200ms survival marker and shortened post-timeout delay, preventing race failures while speeding up total test execution.
+
 2026-09-12 — Review confirmed Stun's “more than half” tooltip contradicted the exact-half boundary in combat. Stun and Freeze keyword descriptions now identify the existing enemy pre-hit Health and hero maximum Health thresholds; the existing crowd-control tests protect the rule. Review also found a save-continuation browser test that wrote an interrupted save without loading it. It now boots a fresh page and verifies the restored hand and cleared continuation, following [save-test bootstrap](../../tests/e2e/README.md#navigation-and-bootstrap).
 
 2026-09-11 — Documentation checks passed despite a deletion table keyed to session state instead of the explicit Options wipe, an omitted Armory RNG exception, ambiguous shop commit ordering, and an off-by-one migration fixture range. Corrected the [save contract](../../src/features/alchemy/shared/storage/MIGRATIONS.md#deletion), [randomness scope](../../docs/ARCHITECTURE.md#run-randomness), and [shop workflow](../../docs/WORKFLOWS.md#change-a-shop) against callers and existing guards. Release reviews now appear at publishing/promotion, and ordinary save verification follows CONTRIBUTING's existing complete save suite. No runtime behavior changed.

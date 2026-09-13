@@ -38,10 +38,14 @@ function hasSharedRandomAmount(card: BattleCard, effect: BattleCardEffect): bool
 function sharesDamageAmount(line: string, effect: BattleCardEffect): boolean {
   if (effect.kind !== "damage") return false;
   const match = /^Deal (\d+) (\w+) or (\w+) damage$/.exec(line);
+  if (!match) return false;
+  const first = match[2]?.toLowerCase();
+  const second = match[3]?.toLowerCase();
   return (
-    match !== null &&
     Number(match[1]) === effect.amount &&
-    [match[2]!.toLowerCase(), match[3]!.toLowerCase()].includes(effect.damageType)
+    first !== undefined &&
+    second !== undefined &&
+    [first, second].includes(effect.damageType)
   );
 }
 
@@ -71,8 +75,13 @@ export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget
       }
       const value = record[field];
       if (typeof value !== "number" || !Number.isFinite(value)) continue;
-      if (!valueQueue.has(value)) valueQueue.set(value, []);
-      valueQueue.get(value)!.push({ effectIndex, ...(effectPath.length ? { effectPath } : {}), field });
+      const queue = valueQueue.get(value);
+      const entry = { effectIndex, ...(effectPath.length ? { effectPath } : {}), field };
+      if (!queue) {
+        valueQueue.set(value, [entry]);
+      } else {
+        queue.push(entry);
+      }
     }
     nestedEffects(effect).forEach((child, index) => collect(child, effectIndex, [...effectPath, index]));
   }

@@ -1,7 +1,7 @@
 import { battleManaCrystal, pileDiscardArt, pileDrawArt } from "@/features/alchemy/shared/config/game-data-catalog";
 import { cn } from "@/lib/utils";
 
-import { cardArtImageClass, cardSurfaceClass, pileCardWidthClass } from "../../config";
+import { cardArtImageClass, cardHoverScaleClass, cardSurfaceClass, pileCardWidthClass } from "../../config";
 import { Surface } from "../surface";
 import { useChangeToken } from "../use-change-token";
 
@@ -39,7 +39,7 @@ export function PilePanel({
     <div ref={ref} data-testid={`${type}-pile`} data-count={count} className={cn("relative", pileCardWidthClass)}>
       <Surface
         as="button"
-        className={cn(cardSurfaceClass, "block w-full bg-transparent")}
+        className={cn(cardSurfaceClass, cardHoverScaleClass, "block w-full bg-transparent")}
         ariaLabel={`Inspect ${label} · ${count} cards`}
         ariaDisabled={!inspectable}
         onClick={(event) => {
@@ -65,18 +65,20 @@ export function ManaPanel({ mana, maxMana }: { mana: number; maxMana: number }) 
           const isFilled = index < mana;
           const isOverflow = index >= maxMana;
           return (
-            <img
-              key={`mana-${index}-${manaToken}-${isFilled}`}
-              src={battleManaCrystal}
-              alt=""
-              draggable={false}
-              className={cn(
-                "h-[calc(1.8225*var(--content-rem,1rem))] w-[calc(1.8225*var(--content-rem,1rem))] object-contain transition-opacity duration-200 select-none",
-                isFilled && "mana-gem-active",
-                isFilled && isOverflow && "brightness-125 drop-shadow-mana-overflow-glow",
-                !isFilled && "opacity-20",
-              )}
-            />
+            <span key={`mana-${index}`} className={cn("inline-flex", cardHoverScaleClass)}>
+              <img
+                key={`mana-${manaToken}-${isFilled}`}
+                src={battleManaCrystal}
+                alt=""
+                draggable={false}
+                className={cn(
+                  "h-[calc(1.8225*var(--content-rem,1rem))] w-[calc(1.8225*var(--content-rem,1rem))] object-contain transition-opacity duration-200 select-none",
+                  isFilled && "mana-gem-active",
+                  isFilled && isOverflow && "brightness-125 drop-shadow-mana-overflow-glow",
+                  !isFilled && "opacity-20",
+                )}
+              />
+            </span>
           );
         })}
       </div>

@@ -95,6 +95,10 @@ describe("shared loot policy", () => {
       available: { basic: false, astral: false, unique: false },
     });
     expect(rollLootGroup(cards, () => 0)).toBe("card");
+
+    // When both basic and card are unavailable, rolls can fall back to astral without throwing
+    const astralFallback = rollLootGearRarity(basic, () => 0.5, { basic: false });
+    expect(astralFallback).toBe("astral");
   });
 
   it("selects groups and conditional rarities from the same weights and is seed reproducible", () => {
