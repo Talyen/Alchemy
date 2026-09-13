@@ -2,11 +2,11 @@ import { describe, expect, it, vi } from "vitest";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { defaultGearEffects } from "@/lib/gear/gear-effect-manifest";
 import { companionLibrary, type CompanionId } from "@/lib/game-data";
-import { makeCombatTexts as makeTexts, makeTestBattleState, makeTestCard } from "../../fixtures/battle";
+import { makeCombatTexts as makeTexts, makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("processCompanionTurnStart", () => {
   it("returns state unchanged when no active companion", () => {
-    const state = makeTestBattleState({ activeCompanion: null });
+    const state = patchBattleState({ activeCompanion: null });
     const texts = makeTexts();
     const result = processCompanionTurnStart(state, texts);
     expect(result).toBe(state);
@@ -14,7 +14,7 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("returns state unchanged when enemy health is 0", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 0,
       activeCompanion: companionLibrary.wolf,
     });
@@ -24,7 +24,7 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("Wolf companion deals bleed damage and applies bleed status", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       activeCompanion: companionLibrary.wolf,
     });
     const texts = makeTexts();
@@ -35,7 +35,7 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("Lizard Scout companion deals poison damage", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       activeCompanion: companionLibrary["lizard-scout"],
     });
     const texts = makeTexts();
@@ -45,7 +45,7 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("Frost Whelp companion deals freeze damage", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       activeCompanion: companionLibrary["frost-whelp"],
     });
     const texts = makeTexts();
@@ -55,7 +55,7 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("Bear companion deals stun damage and applies stun", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       activeCompanion: companionLibrary.bear,
     });
     const texts = makeTexts();
@@ -65,7 +65,7 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("Panther companion deals stronger Bleed than Wolf", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       activeCompanion: companionLibrary.panther,
     });
     const texts = makeTexts();
@@ -76,7 +76,7 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("Phoenix companion deals burn damage", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       activeCompanion: companionLibrary.phoenix,
     });
     const texts = makeTexts();
@@ -86,7 +86,7 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("companionDamageBuff adds to base damage", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       activeCompanion: companionLibrary.wolf,
       companionDamageBuff: 2,
     });
@@ -98,10 +98,9 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("companionDamage talent adds to base damage", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       activeCompanion: companionLibrary.phoenix,
       talentEffects: {
-        ...makeTestBattleState().talentEffects,
         companionDamage: 3,
       },
     });
@@ -111,12 +110,12 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("companion bond level adds to base damage", () => {
-    const state = makeTestBattleState({
+    const baseBondLevels = patchBattleState().talentEffects.companionBondLevels;
+    const state = patchBattleState({
       activeCompanion: companionLibrary["lizard-scout"],
       talentEffects: {
-        ...makeTestBattleState().talentEffects,
         companionBondLevels: {
-          ...makeTestBattleState().talentEffects.companionBondLevels,
+          ...baseBondLevels,
           "lizard-scout": 2,
         },
       },
@@ -127,14 +126,14 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("all damage bonuses stack together", () => {
-    const state = makeTestBattleState({
+    const baseBondLevels = patchBattleState().talentEffects.companionBondLevels;
+    const state = patchBattleState({
       activeCompanion: companionLibrary.wolf,
       companionDamageBuff: 1,
       talentEffects: {
-        ...makeTestBattleState().talentEffects,
         companionDamage: 2,
         companionBondLevels: {
-          ...makeTestBattleState().talentEffects.companionBondLevels,
+          ...baseBondLevels,
           wolf: 3,
         },
       },
@@ -145,7 +144,7 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("processCompanionTurnStart produces combat texts for damage", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       activeCompanion: companionLibrary.wolf,
     });
     const texts = makeTexts();
@@ -155,14 +154,12 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("retains the goldOnFirstPoisonThisCombat flag when Lizard Scout companion applies poison", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       activeCompanion: companionLibrary["lizard-scout"],
       talentEffects: {
-        ...makeTestBattleState().talentEffects,
         goldOnFirstPoison: 5,
       },
       flags: {
-        ...makeTestBattleState().flags,
         goldOnFirstPoisonThisCombat: false,
       },
     });
@@ -172,18 +169,15 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("does not consume or benefit from firstBurnCardDoubled/firstBurnBoonDoubled when Phoenix companion deals burn damage", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       activeCompanion: companionLibrary.phoenix,
       talentEffects: {
-        ...makeTestBattleState().talentEffects,
         firstBurnCardBonusMultiplier: 1.5,
       },
       trinketEffects: {
-        ...makeTestBattleState().trinketEffects,
         firstBurnDoubled: true,
       },
       flags: {
-        ...makeTestBattleState().flags,
         firstBurnCardDoubledUsed: false,
         firstBurnTrinketDoubledUsed: false,
       },
@@ -198,10 +192,9 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("companionBleedDamageBonus adds to bleed-type companion (Panther) damage", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       activeCompanion: companionLibrary.panther,
       talentEffects: {
-        ...makeTestBattleState().talentEffects,
         companionBleedDamageBonus: 3,
       },
     });
@@ -211,11 +204,10 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("companionVsFrozenBonus adds when enemy has freeze skip turns", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       activeCompanion: companionLibrary.phoenix,
       enemyCC: { freezeSkipTurns: 1, stunSkipTurns: 0, cooldown: 0 },
       talentEffects: {
-        ...makeTestBattleState().talentEffects,
         companionVsFrozenBonus: 3,
       },
     });
@@ -225,12 +217,11 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("companionDoubledVsLowHealth doubles damage when enemy is below 30% HP", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       activeCompanion: companionLibrary.phoenix,
       enemyHealth: 8,
       enemyMaxHealth: 30,
       talentEffects: {
-        ...makeTestBattleState().talentEffects,
         companionDoubledVsLowHealth: true,
       },
     });
@@ -240,11 +231,10 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("companionDamagePerManaCrystal scales damage with max mana", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       activeCompanion: companionLibrary.phoenix,
       maxMana: 6,
       talentEffects: {
-        ...makeTestBattleState().talentEffects,
         companionDamagePerManaCrystal: 200,
       },
     });
@@ -254,7 +244,7 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("companionDamageBonus gear adds flat damage to companion", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       activeCompanion: companionLibrary.phoenix,
       gearEffects: { ...defaultGearEffects, companionDamageBonus: 5 },
     });
@@ -264,7 +254,7 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("gearEffects.companionDamageBonus adds to companion damage", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       activeCompanion: companionLibrary.phoenix,
       gearEffects: { ...defaultGearEffects, companionDamageBonus: 5 },
     });
@@ -274,12 +264,11 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("healOnCompanionAttack heals player when companion deals damage", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       activeCompanion: companionLibrary.phoenix,
       playerHealth: 10,
       playerMaxHealth: 30,
       gearEffects: {
-        ...makeTestBattleState().gearEffects,
         healOnCompanionAttack: 4,
       },
     });
@@ -289,12 +278,11 @@ describe("processCompanionTurnStart", () => {
 
   it("healOnCompanionAttack combat text uses actual health gained near max HP", () => {
     const texts = makeTexts();
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       activeCompanion: companionLibrary.phoenix,
       playerHealth: 29,
       playerMaxHealth: 30,
       gearEffects: {
-        ...makeTestBattleState().gearEffects,
         healOnCompanionAttack: 4,
       },
     });
@@ -309,12 +297,11 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("healOnCompanionAttack no-ops when companion has no damage effect", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       activeCompanion: companionLibrary["shield-scarab"],
       playerHealth: 10,
       playerMaxHealth: 30,
       gearEffects: {
-        ...makeTestBattleState().gearEffects,
         healOnCompanionAttack: 4,
       },
     });
@@ -324,12 +311,11 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("companionLeechChance triggers leech heal on damage", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       activeCompanion: companionLibrary.phoenix,
       playerHealth: 10,
       playerMaxHealth: 30,
       talentEffects: {
-        ...makeTestBattleState().talentEffects,
         companionLeechChance: 100,
       },
     });
@@ -340,12 +326,11 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("companionLeechChance no-ops on failed roll", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       activeCompanion: companionLibrary.wolf,
       playerHealth: 10,
       playerMaxHealth: 30,
       talentEffects: {
-        ...makeTestBattleState().talentEffects,
         companionLeechChance: 50,
       },
       rng: () => 0.99,
@@ -356,16 +341,14 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("applies both healOnCompanionAttack gear and companionLeechChance talent when both are active", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       activeCompanion: companionLibrary.phoenix,
       playerHealth: 10,
       playerMaxHealth: 30,
       gearEffects: {
-        ...makeTestBattleState().gearEffects,
         healOnCompanionAttack: 4,
       },
       talentEffects: {
-        ...makeTestBattleState().talentEffects,
         companionLeechChance: 100,
       },
     });
@@ -379,9 +362,9 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("does not crit or consume nextHitCrit on companion damage", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       activeCompanion: companionLibrary.wolf,
-      flags: { ...makeTestBattleState().flags, nextHitCrit: true },
+      flags: { nextHitCrit: true },
     });
     const result = processCompanionTurnStart(state, makeTexts());
     expect(result.enemyHealth).toBe(29);
@@ -389,9 +372,9 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("does not consume Opening on companion damage", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       activeCompanion: companionLibrary.wolf,
-      flags: { ...makeTestBattleState().flags, nextHitPhysicalBonus: 4 },
+      flags: { nextHitPhysicalBonus: 4 },
     });
     const result = processCompanionTurnStart(state, makeTexts());
     expect(result.enemyHealth).toBe(29);
@@ -399,13 +382,12 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("healOnCompanionAttack heals Fox when the damage branch resolves", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       activeCompanion: companionLibrary.fox,
       playerHealth: 10,
       playerMaxHealth: 30,
       rng: () => 0.1,
       gearEffects: {
-        ...makeTestBattleState().gearEffects,
         healOnCompanionAttack: 4,
       },
     });
@@ -415,14 +397,13 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("healOnCompanionAttack no-ops when Fox takes the gold branch", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       activeCompanion: companionLibrary.fox,
       playerHealth: 10,
       playerMaxHealth: 30,
       gold: 0,
       rng: () => 0.9,
       gearEffects: {
-        ...makeTestBattleState().gearEffects,
         healOnCompanionAttack: 4,
       },
     });
@@ -433,10 +414,9 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("Watchdog grants Block when the companion deals damage", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       activeCompanion: companionLibrary.wolf,
       talentEffects: {
-        ...makeTestBattleState().talentEffects,
         blockOnCompanionDamage: 2,
       },
     });
@@ -445,10 +425,9 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("Watchdog no-ops when the companion deals no damage", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       activeCompanion: companionLibrary.pixie,
       talentEffects: {
-        ...makeTestBattleState().talentEffects,
         blockOnCompanionDamage: 2,
       },
     });
@@ -457,10 +436,9 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("Takedown stuns when the companion deals damage and the roll succeeds", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       activeCompanion: companionLibrary.phoenix,
       talentEffects: {
-        ...makeTestBattleState().talentEffects,
         companionStunChance: 100,
       },
     });
@@ -469,10 +447,9 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("Takedown does not stun when the roll fails", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       activeCompanion: companionLibrary.phoenix,
       talentEffects: {
-        ...makeTestBattleState().talentEffects,
         companionStunChance: 50,
       },
       rng: () => 0.99,
@@ -482,7 +459,7 @@ describe("processCompanionTurnStart", () => {
   });
 
   it("handles missing or undefined companionBondLevels gracefully without NaN", () => {
-    const base = makeTestBattleState();
+    const base = patchBattleState();
     const state = {
       ...base,
       activeCompanion: companionLibrary.wolf,
@@ -499,7 +476,7 @@ describe("processCompanionTurnStart", () => {
 
 describe("Mana Moth extra Mana", () => {
   it.each([4, 5])("grants extra Mana after refill or Wellspring at %i Mana", (mana) => {
-    const state = makeTestBattleState({ mana, maxMana: 4, activeCompanion: companionLibrary["mana-moth"] });
+    const state = patchBattleState({ mana, maxMana: 4, activeCompanion: companionLibrary["mana-moth"] });
     const result = processCompanionTurnStart(state, []);
     expect(result.mana).toBe(mana + 1);
     expect(result.maxMana).toBe(4);
@@ -508,7 +485,7 @@ describe("Mana Moth extra Mana", () => {
 
 describe("Companion Bond progression", () => {
   function bondedState(id: CompanionId, level: number) {
-    const base = makeTestBattleState({ activeCompanion: companionLibrary[id] });
+    const base = patchBattleState({ activeCompanion: companionLibrary[id] });
     return {
       ...base,
       talentEffects: {
@@ -571,11 +548,11 @@ describe("Predator's Instinct threshold", () => {
     [10, 32, 1],
     [9, 32, 2],
   ])("deals %i / %i Health enemies the correctly scaled damage", (enemyHealth, enemyMaxHealth, damage) => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       activeCompanion: companionLibrary.phoenix,
       enemyHealth,
       enemyMaxHealth,
-      talentEffects: { ...makeTestBattleState().talentEffects, companionDoubledVsLowHealth: true },
+      talentEffects: { companionDoubledVsLowHealth: true },
     });
     expect(processCompanionTurnStart(state, []).enemyHealth).toBe(enemyHealth - damage);
   });

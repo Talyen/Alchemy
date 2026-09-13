@@ -7,7 +7,7 @@ import {
   sampleAnomalies,
 } from "@/lib/balance/anomalies";
 import type { CombatTextEvent } from "@/lib/battle/types";
-import { makeTestBattleState } from "../../fixtures/battle";
+import { makeTestBattleState, patchBattleState } from "../../fixtures/battle";
 
 describe("getAnomalyThreshold", () => {
   it("returns tiered thresholds", () => {
@@ -50,8 +50,8 @@ describe("sampleAnomalies", () => {
   });
   it("records status peaks from battle state", () => {
     const anomalies = createEmptyAnomalies();
-    const state = makeTestBattleState({
-      playerStatuses: { ...makeTestBattleState().playerStatuses, burn: 50 },
+    const state = patchBattleState({
+      playerStatuses: { burn: 50 },
     });
     sampleAnomalies(state, [], anomalies);
     expect(anomalies.maxPlayerBurn).toBe(50);
@@ -60,8 +60,8 @@ describe("sampleAnomalies", () => {
   it("never lowers an existing peak", () => {
     const anomalies = createEmptyAnomalies();
     anomalies.maxPlayerBurn = 50;
-    const state = makeTestBattleState({
-      playerStatuses: { ...makeTestBattleState().playerStatuses, burn: 10 },
+    const state = patchBattleState({
+      playerStatuses: { burn: 10 },
     });
     sampleAnomalies(state, [], anomalies);
     expect(anomalies.maxPlayerBurn).toBe(50);
@@ -102,15 +102,15 @@ describe("sampleAnomalies", () => {
   it("monotonically increases peaks across multiple samples", () => {
     const anomalies = createEmptyAnomalies();
     sampleAnomalies(
-      makeTestBattleState({
-        enemyStatuses: { ...makeTestBattleState().enemyStatuses, poison: 4 },
+      patchBattleState({
+        enemyStatuses: { poison: 4 },
       }),
       [{ target: "enemy", kind: "damage", stat: "physical", amount: 10 }],
       anomalies,
     );
     sampleAnomalies(
-      makeTestBattleState({
-        enemyStatuses: { ...makeTestBattleState().enemyStatuses, poison: 9 },
+      patchBattleState({
+        enemyStatuses: { poison: 9 },
       }),
       [{ target: "enemy", kind: "damage", stat: "physical", amount: 25 }],
       anomalies,

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { applyDamageStatuses, applyPoisonTalentRiders } from "@/lib/battle/damage-status-riders";
 import { applyDamageRiders } from "@/lib/battle/damage-riders";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
-import { makeCombatTexts as makeTexts, makeTestBattleState, makeTestCard, seededRng } from "../../fixtures/battle";
+import { makeCombatTexts as makeTexts, makeTestCard, patchBattleState, seededRng } from "../../fixtures/battle";
 import {
   defaultEnemyStatusValues,
   defaultEnemyMitigation,
@@ -14,11 +14,11 @@ import {
 
 describe("applyDamageStatuses", () => {
   it.each([3, 4, 6])("freeze restores only missing mana when starting with %i mana", (mana) => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       mana,
       maxMana: 4,
       enemyHealth: 30,
-      gearEffects: { ...makeTestBattleState().gearEffects, freezeGrantsBlockAndMana: 1 },
+      gearEffects: { freezeGrantsBlockAndMana: 1 },
     });
     const texts = makeTexts();
     const result = applyDamageStatuses(state, { kind: "damage", damageType: "freeze", amount: 20 }, 20, texts);
@@ -30,16 +30,16 @@ describe("applyDamageStatuses", () => {
   });
 
   it("burn adds to enemy burn stack", () => {
-    const state = makeTestBattleState();
+    const state = patchBattleState();
     const effect = { kind: "damage" as const, damageType: "burn" as const, amount: 5 };
     const result = applyDamageStatuses(state, effect, 7, []);
     expect(result.enemyStatuses.burn).toBe(7);
   });
 
   it("burn removes enemy armor with burnRemovesEnemyArmor", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyMitigation: defaultEnemyMitigation({ armor: 5, forge: 0 }),
-      talentEffects: { ...defaultTalentEffects, ...makeTestBattleState().talentEffects, burnRemovesEnemyArmor: true },
+      talentEffects: { ...defaultTalentEffects, burnRemovesEnemyArmor: true },
     });
     const effect = { kind: "damage" as const, damageType: "burn" as const, amount: 5 };
     const result = applyDamageStatuses(state, effect, 3, []);
@@ -47,9 +47,9 @@ describe("applyDamageStatuses", () => {
   });
 
   it("burn removes armor but not below 0", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyMitigation: defaultEnemyMitigation({ armor: 2, forge: 0 }),
-      talentEffects: { ...defaultTalentEffects, ...makeTestBattleState().talentEffects, burnRemovesEnemyArmor: true },
+      talentEffects: { ...defaultTalentEffects, burnRemovesEnemyArmor: true },
     });
     const effect = { kind: "damage" as const, damageType: "burn" as const, amount: 5 };
     const result = applyDamageStatuses(state, effect, 5, []);
@@ -57,15 +57,15 @@ describe("applyDamageStatuses", () => {
   });
 
   it("poison adds to enemy poison stack", () => {
-    const state = makeTestBattleState();
+    const state = patchBattleState();
     const effect = { kind: "damage" as const, damageType: "poison" as const, amount: 3 };
     const result = applyDamageStatuses(state, effect, 4, []);
     expect(result.enemyStatuses.poison).toBe(4);
   });
 
   it("poison grants goldOnFirstPoison on first hit", () => {
-    const state = makeTestBattleState({
-      talentEffects: { ...defaultTalentEffects, ...makeTestBattleState().talentEffects, goldOnFirstPoison: 8 },
+    const state = patchBattleState({
+      talentEffects: { ...defaultTalentEffects, goldOnFirstPoison: 8 },
     });
     const effect = { kind: "damage" as const, damageType: "poison" as const, amount: 3 };
     const texts = makeTexts();
@@ -76,9 +76,9 @@ describe("applyDamageStatuses", () => {
   });
 
   it("scales goldOnFirstPoison combat text with goldGainPercent", () => {
-    const state = makeTestBattleState({
-      talentEffects: { ...defaultTalentEffects, ...makeTestBattleState().talentEffects, goldOnFirstPoison: 8 },
-      gearEffects: { ...makeTestBattleState().gearEffects, goldGainPercent: 50 },
+    const state = patchBattleState({
+      talentEffects: { ...defaultTalentEffects, goldOnFirstPoison: 8 },
+      gearEffects: { goldGainPercent: 50 },
     });
     const effect = { kind: "damage" as const, damageType: "poison" as const, amount: 3 };
     const texts = makeTexts();
@@ -88,10 +88,10 @@ describe("applyDamageStatuses", () => {
   });
 
   it("poison grants goldOnFirstPoison only once", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       gold: 10,
-      talentEffects: { ...defaultTalentEffects, ...makeTestBattleState().talentEffects, goldOnFirstPoison: 8 },
-      flags: defaultCombatFlags({ ...makeTestBattleState().flags, goldOnFirstPoisonThisCombat: true }),
+      talentEffects: { ...defaultTalentEffects, goldOnFirstPoison: 8 },
+      flags: defaultCombatFlags({ goldOnFirstPoisonThisCombat: true }),
     });
     const effect = { kind: "damage" as const, damageType: "poison" as const, amount: 3 };
     const result = applyDamageStatuses(state, effect, 3, []);
@@ -99,22 +99,22 @@ describe("applyDamageStatuses", () => {
   });
 
   it("bleed adds status to bleed stack", () => {
-    const state = makeTestBattleState();
+    const state = patchBattleState();
     const effect = { kind: "damage" as const, damageType: "bleed" as const, amount: 5 };
     const result = applyDamageStatuses(state, effect, 5, []);
     expect(result.enemyStatuses.bleed).toBe(5);
   });
 
   it("bleed with lifesteal adds pending bleed leech healing", () => {
-    const state = makeTestBattleState();
+    const state = patchBattleState();
     const effect = { kind: "damage" as const, damageType: "bleed" as const, amount: 5, lifesteal: true };
     const result = applyDamageStatuses(state, effect, 5, []);
     expect(result.pendingBleedLeechHealing).toBe(5);
   });
 
   it("cutpurseGoldOnBleed grants gold on bleed", () => {
-    const state = makeTestBattleState({
-      trinketEffects: defaultTrinketManifest({ ...makeTestBattleState().trinketEffects, cutpurseGoldOnBleed: 2 }),
+    const state = patchBattleState({
+      trinketEffects: defaultTrinketManifest({ cutpurseGoldOnBleed: 2 }),
     });
     const effect = { kind: "damage" as const, damageType: "bleed" as const, amount: 5 };
     const texts = makeTexts();
@@ -124,9 +124,9 @@ describe("applyDamageStatuses", () => {
   });
 
   it("scales cutpurseGoldOnBleed combat text with goldGainPercent", () => {
-    const state = makeTestBattleState({
-      trinketEffects: defaultTrinketManifest({ ...makeTestBattleState().trinketEffects, cutpurseGoldOnBleed: 2 }),
-      gearEffects: { ...makeTestBattleState().gearEffects, goldGainPercent: 50 },
+    const state = patchBattleState({
+      trinketEffects: defaultTrinketManifest({ cutpurseGoldOnBleed: 2 }),
+      gearEffects: { goldGainPercent: 50 },
     });
     const effect = { kind: "damage" as const, damageType: "bleed" as const, amount: 5 };
     const texts = makeTexts();
@@ -136,7 +136,7 @@ describe("applyDamageStatuses", () => {
   });
 
   it("stun adds to stun stack and triggers resolveStunTrigger", () => {
-    const base = makeTestBattleState();
+    const base = patchBattleState();
     const state = {
       ...base,
       enemyHealth: 30,
@@ -153,17 +153,17 @@ describe("applyDamageStatuses", () => {
   });
 
   it("freeze adds to freeze stack", () => {
-    const state = makeTestBattleState();
+    const state = patchBattleState();
     const effect = { kind: "damage" as const, damageType: "freeze" as const, amount: 3 };
     const result = applyDamageStatuses(state, effect, 3, []);
     expect(result.enemyStatuses.freeze).toBe(3);
   });
 
   it("freeze triggers skip when above threshold", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyStatuses: defaultEnemyStatusValues({ ...makeTestBattleState().enemyStatuses, freeze: 15 }),
+      enemyStatuses: defaultEnemyStatusValues({ freeze: 15 }),
     });
     const effect = { kind: "damage" as const, damageType: "freeze" as const, amount: 10 };
     const texts = makeTexts();
@@ -174,11 +174,11 @@ describe("applyDamageStatuses", () => {
   });
 
   it("freeze skip adds freezeDurationExtension", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyStatuses: defaultEnemyStatusValues({ ...makeTestBattleState().enemyStatuses, freeze: 15 }),
-      trinketEffects: defaultTrinketManifest({ ...makeTestBattleState().trinketEffects, freezeDurationExtension: 2 }),
+      enemyStatuses: defaultEnemyStatusValues({ freeze: 15 }),
+      trinketEffects: defaultTrinketManifest({ freezeDurationExtension: 2 }),
     });
     const effect = { kind: "damage" as const, damageType: "freeze" as const, amount: 10 };
     const result = applyDamageStatuses(state, effect, 10, []);
@@ -186,11 +186,11 @@ describe("applyDamageStatuses", () => {
   });
 
   it("freeze triggers frozenHeartDamage on skip", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyStatuses: defaultEnemyStatusValues({ ...makeTestBattleState().enemyStatuses, freeze: 15 }),
-      trinketEffects: defaultTrinketManifest({ ...makeTestBattleState().trinketEffects, frozenHeartDamage: 6 }),
+      enemyStatuses: defaultEnemyStatusValues({ freeze: 15 }),
+      trinketEffects: defaultTrinketManifest({ frozenHeartDamage: 6 }),
     });
     const effect = { kind: "damage" as const, damageType: "freeze" as const, amount: 10 };
     const texts = makeTexts();
@@ -200,11 +200,11 @@ describe("applyDamageStatuses", () => {
   });
 
   it("freeze CC immunity suppresses second freeze trigger within cooldown", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
       enemyCC: defaultCcState({ cooldown: 0 }),
-      enemyStatuses: defaultEnemyStatusValues({ ...makeTestBattleState().enemyStatuses, freeze: 15 }),
+      enemyStatuses: defaultEnemyStatusValues({ freeze: 15 }),
     });
     const effect = { kind: "damage" as const, damageType: "freeze" as const, amount: 10 };
     const texts = makeTexts();
@@ -223,12 +223,12 @@ describe("applyDamageStatuses", () => {
   });
 
   it("withholds freeze rewards when CC immunity clears the stack", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
       enemyCC: defaultCcState({ cooldown: 1 }),
-      enemyStatuses: defaultEnemyStatusValues({ ...makeTestBattleState().enemyStatuses, freeze: 15 }),
-      trinketEffects: defaultTrinketManifest({ ...makeTestBattleState().trinketEffects, frozenHeartDamage: 6 }),
+      enemyStatuses: defaultEnemyStatusValues({ freeze: 15 }),
+      trinketEffects: defaultTrinketManifest({ frozenHeartDamage: 6 }),
     });
     const effect = { kind: "damage" as const, damageType: "freeze" as const, amount: 10 };
     const texts = makeTexts();
@@ -240,10 +240,10 @@ describe("applyDamageStatuses", () => {
   });
 
   it("freeze triggers on glacial-body enemies when threshold is met", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyStatuses: defaultEnemyStatusValues({ ...makeTestBattleState().enemyStatuses, freeze: 15 }),
+      enemyStatuses: defaultEnemyStatusValues({ freeze: 15 }),
       currentEnemy: {
         id: "ice-golem",
         title: "Ice Golem",
@@ -264,9 +264,9 @@ describe("applyDamageStatuses", () => {
 
 describe("zero-duration status edge cases", () => {
   it("applying 0 burn to enemy leaves status unchanged", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
-      enemyStatuses: defaultEnemyStatusValues({ ...makeTestBattleState().enemyStatuses, burn: 5 }),
+      enemyStatuses: defaultEnemyStatusValues({ burn: 5 }),
     });
     const effect = { kind: "damage" as const, damageType: "burn" as const, amount: 0 };
     const result = applyDamageStatuses(state, effect, 0, []);
@@ -274,10 +274,10 @@ describe("zero-duration status edge cases", () => {
   });
 
   it("applying 0 stun to enemy leaves stun unchanged", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyStatuses: defaultEnemyStatusValues({ ...makeTestBattleState().enemyStatuses, stun: 5 }),
+      enemyStatuses: defaultEnemyStatusValues({ stun: 5 }),
     });
     const effect = { kind: "damage" as const, damageType: "stun" as const, amount: 0 };
     const result = applyDamageStatuses(state, effect, 0, []);
@@ -286,10 +286,10 @@ describe("zero-duration status edge cases", () => {
   });
 
   it("applying 0 freeze to enemy leaves freeze unchanged", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyStatuses: defaultEnemyStatusValues({ ...makeTestBattleState().enemyStatuses, freeze: 5 }),
+      enemyStatuses: defaultEnemyStatusValues({ freeze: 5 }),
     });
     const effect = { kind: "damage" as const, damageType: "freeze" as const, amount: 0 };
     const result = applyDamageStatuses(state, effect, 0, []);
@@ -298,8 +298,8 @@ describe("zero-duration status edge cases", () => {
   });
 
   it("applying 0 poison leaves poison stack unchanged", () => {
-    const state = makeTestBattleState({
-      enemyStatuses: defaultEnemyStatusValues({ ...makeTestBattleState().enemyStatuses, poison: 4 }),
+    const state = patchBattleState({
+      enemyStatuses: defaultEnemyStatusValues({ poison: 4 }),
     });
     const effect = { kind: "damage" as const, damageType: "poison" as const, amount: 0 };
     const result = applyDamageStatuses(state, effect, 0, []);
@@ -309,15 +309,14 @@ describe("zero-duration status edge cases", () => {
 
 describe("poison and physical stun chance", () => {
   it("stuns enemy when poisonStunChance procs on a poison tick", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
       enemyStatuses: defaultEnemyStatusValues({
-        ...makeTestBattleState().enemyStatuses,
         poison: 4,
         stun: 16,
       }),
-      talentEffects: { ...defaultTalentEffects, ...makeTestBattleState().talentEffects, poisonStunChance: 100 },
+      talentEffects: { ...defaultTalentEffects, poisonStunChance: 100 },
       rng: () => 0,
     });
     const texts = makeTexts();
@@ -326,10 +325,10 @@ describe("poison and physical stun chance", () => {
   });
 
   it("leeches health when poisonLeechChance procs", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 18,
       enemyHealth: 30,
-      talentEffects: { ...defaultTalentEffects, ...makeTestBattleState().talentEffects, poisonLeechChance: 100 },
+      talentEffects: { ...defaultTalentEffects, poisonLeechChance: 100 },
       rng: () => 0,
     });
     const texts = makeTexts();
@@ -339,9 +338,9 @@ describe("poison and physical stun chance", () => {
   });
 
   it("strips one armor when poisonStripArmor is active", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyMitigation: defaultEnemyMitigation({ armor: 3, forge: 0 }),
-      talentEffects: { ...defaultTalentEffects, ...makeTestBattleState().talentEffects, poisonStripArmor: true },
+      talentEffects: { ...defaultTalentEffects, poisonStripArmor: true },
       rng: seededRng(42),
     });
     const result = applyPoisonTalentRiders(state, 4, []);
@@ -351,13 +350,13 @@ describe("poison and physical stun chance", () => {
 
 describe("applyDamageStatuses — physical riders", () => {
   it("detonates bleed when physicalDetonatesBleed is active", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyStatuses: defaultEnemyStatusValues({ ...makeTestBattleState().enemyStatuses, bleed: 8 }),
+      enemyStatuses: defaultEnemyStatusValues({ bleed: 8 }),
       talentEffects: {
         ...defaultTalentEffects,
-        ...makeTestBattleState().talentEffects,
+
         physicalDetonatesBleed: true,
       },
       rng: seededRng(42),
@@ -371,18 +370,18 @@ describe("applyDamageStatuses — physical riders", () => {
   });
 
   it("a lethal detonation pays Bone Charm and gear kill rewards", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 20,
       playerMaxHealth: 30,
       enemyHealth: 5,
       enemyMaxHealth: 30,
-      enemyStatuses: defaultEnemyStatusValues({ ...makeTestBattleState().enemyStatuses, bleed: 8 }),
+      enemyStatuses: defaultEnemyStatusValues({ bleed: 8 }),
       talentEffects: {
         ...defaultTalentEffects,
-        ...makeTestBattleState().talentEffects,
+
         physicalDetonatesBleed: true,
       },
-      gearEffects: { ...makeTestBattleState().gearEffects, goldOnKill: 4 },
+      gearEffects: { goldOnKill: 4 },
       trinketEffects: defaultTrinketManifest({ boneCharmHealOnKill: 2 }),
       rng: seededRng(42),
     });
@@ -394,16 +393,16 @@ describe("applyDamageStatuses — physical riders", () => {
   });
 
   it("detonation pays out queued bleed leech healing immediately", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 20,
       playerMaxHealth: 30,
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyStatuses: defaultEnemyStatusValues({ ...makeTestBattleState().enemyStatuses, bleed: 8 }),
+      enemyStatuses: defaultEnemyStatusValues({ bleed: 8 }),
       pendingBleedLeechHealing: 16,
       talentEffects: {
         ...defaultTalentEffects,
-        ...makeTestBattleState().talentEffects,
+
         physicalDetonatesBleed: true,
       },
       rng: seededRng(42),
@@ -418,16 +417,16 @@ describe("applyDamageStatuses — physical riders", () => {
   });
 
   it("caps detonation leech payout at the health actually lost", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 20,
       playerMaxHealth: 30,
       enemyHealth: 4,
       enemyMaxHealth: 30,
-      enemyStatuses: defaultEnemyStatusValues({ ...makeTestBattleState().enemyStatuses, bleed: 8 }),
+      enemyStatuses: defaultEnemyStatusValues({ bleed: 8 }),
       pendingBleedLeechHealing: 16,
       talentEffects: {
         ...defaultTalentEffects,
-        ...makeTestBattleState().talentEffects,
+
         physicalDetonatesBleed: true,
       },
       rng: seededRng(42),
@@ -440,17 +439,17 @@ describe("applyDamageStatuses — physical riders", () => {
   });
 
   it("detonation leech payout scales with leechHealBonusPercent", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 20,
       playerMaxHealth: 40,
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyStatuses: defaultEnemyStatusValues({ ...makeTestBattleState().enemyStatuses, bleed: 8 }),
+      enemyStatuses: defaultEnemyStatusValues({ bleed: 8 }),
       pendingBleedLeechHealing: 4,
-      gearEffects: { ...makeTestBattleState().gearEffects, leechHealBonusPercent: 50 },
+      gearEffects: { leechHealBonusPercent: 50 },
       talentEffects: {
         ...defaultTalentEffects,
-        ...makeTestBattleState().talentEffects,
+
         physicalDetonatesBleed: true,
       },
       rng: seededRng(42),
@@ -462,11 +461,11 @@ describe("applyDamageStatuses — physical riders", () => {
   });
 
   it("physical stun chance procs at 100%", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyStatuses: defaultEnemyStatusValues({ ...makeTestBattleState().enemyStatuses, stun: 16 }),
-      talentEffects: { ...defaultTalentEffects, ...makeTestBattleState().talentEffects, physicalStunChance: 100 },
+      enemyStatuses: defaultEnemyStatusValues({ stun: 16 }),
+      talentEffects: { ...defaultTalentEffects, physicalStunChance: 100 },
       rng: () => 0,
     });
     const effect = { kind: "damage" as const, damageType: "physical" as const, amount: 4 };
@@ -478,10 +477,10 @@ describe("applyDamageStatuses — physical riders", () => {
 
 describe("applyDamageStatuses — freeze threshold uses pre-hit health", () => {
   it("does not freeze when stacks are below pre-hit threshold", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyStatuses: defaultEnemyStatusValues({ ...makeTestBattleState().enemyStatuses, freeze: 0 }),
+      enemyStatuses: defaultEnemyStatusValues({ freeze: 0 }),
       rng: seededRng(42),
     });
     const effect = { kind: "damage" as const, damageType: "freeze" as const, amount: 6 };

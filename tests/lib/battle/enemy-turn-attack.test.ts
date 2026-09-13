@@ -5,14 +5,14 @@ import { enemyBestiary } from "@/lib/game-data";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import { BATTLE_CONFIG } from "@/lib/game-constants";
-import { makeCombatTexts as makeTexts, makeTestBattleState } from "../../fixtures/battle";
+import { makeCombatTexts as makeTexts, patchBattleState } from "../../fixtures/battle";
 import { defaultCcState } from "../../fixtures/default-battle-state";
 
 describe("applyEnemyAbility", () => {
   it("player block absorbs before health", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 10, armor: 0 },
+      playerStatuses: { block: 10, armor: 0 },
     });
     const result = applyEnemyAbility(
       state,
@@ -24,10 +24,10 @@ describe("applyEnemyAbility", () => {
   });
 
   it("applies enemy forge bonus to physical damage", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
-      enemyMitigation: { ...makeTestBattleState().enemyMitigation, forge: 3 },
+      playerStatuses: { block: 0, armor: 0 },
+      enemyMitigation: { forge: 3 },
     });
     const result = applyEnemyAbility(
       state,
@@ -38,9 +38,9 @@ describe("applyEnemyAbility", () => {
   });
 
   it("applies burn status rider on burn damage dealt", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0 },
+      playerStatuses: { block: 0 },
     });
     const result = applyEnemyAbility(
       state,
@@ -52,9 +52,9 @@ describe("applyEnemyAbility", () => {
   });
 
   it("triggers Death's Door fields when attack is lethal", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 5,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
+      playerStatuses: { block: 0, armor: 0 },
       deathsDoorUsed: false,
       turn: 3,
     });
@@ -70,9 +70,9 @@ describe("applyEnemyAbility", () => {
   });
 
   it("player armor reduces physical damage before health", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 3 },
+      playerStatuses: { block: 0, armor: 3 },
     });
     const result = applyEnemyAbility(
       state,
@@ -83,10 +83,10 @@ describe("applyEnemyAbility", () => {
   });
 
   it("halves holy damage when receiveHalfHolyDamage talent is active", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
-      talentEffects: { ...makeTestBattleState().talentEffects, receiveHalfHolyDamage: true },
+      playerStatuses: { block: 0, armor: 0 },
+      talentEffects: { receiveHalfHolyDamage: true },
     });
     const result = applyEnemyAbility(
       state,
@@ -97,10 +97,10 @@ describe("applyEnemyAbility", () => {
   });
 
   it("halves freeze damage and buildup when receiveHalfFreezeDamage talent is active", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
-      talentEffects: { ...makeTestBattleState().talentEffects, receiveHalfFreezeDamage: true },
+      playerStatuses: { block: 0, armor: 0 },
+      talentEffects: { receiveHalfFreezeDamage: true },
     });
     const result = applyEnemyAbility(
       state,
@@ -113,10 +113,10 @@ describe("applyEnemyAbility", () => {
   });
 
   it("halves enemy burn damage and burn stacks when receiveHalfBurnDamage is active", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
-      talentEffects: { ...makeTestBattleState().talentEffects, receiveHalfBurnDamage: true },
+      playerStatuses: { block: 0, armor: 0 },
+      talentEffects: { receiveHalfBurnDamage: true },
     });
     const result = applyEnemyAbility(
       state,
@@ -128,10 +128,10 @@ describe("applyEnemyAbility", () => {
   });
 
   it("halves enemy nature damage when receiveHalfNatureDamage is active", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
-      talentEffects: { ...makeTestBattleState().talentEffects, receiveHalfNatureDamage: true },
+      playerStatuses: { block: 0, armor: 0 },
+      talentEffects: { receiveHalfNatureDamage: true },
     });
     const result = applyEnemyAbility(
       state,
@@ -142,10 +142,10 @@ describe("applyEnemyAbility", () => {
   });
 
   it("adds enemy burnBonus to burn damage", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0 },
-      enemyStatuses: { ...makeTestBattleState().enemyStatuses, burnBonus: 2 },
+      playerStatuses: { block: 0 },
+      enemyStatuses: { burnBonus: 2 },
     });
     const result = applyEnemyAbility(
       state,
@@ -156,10 +156,10 @@ describe("applyEnemyAbility", () => {
   });
 
   it("adds enemy freezeBonus to freeze damage and buildup", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0 },
-      enemyStatuses: { ...makeTestBattleState().enemyStatuses, freezeBonus: 2 },
+      playerStatuses: { block: 0 },
+      enemyStatuses: { freezeBonus: 2 },
     });
     const result = applyEnemyAbility(
       state,
@@ -171,11 +171,11 @@ describe("applyEnemyAbility", () => {
   });
 
   it("reduces incoming damage when enemy is poisoned and poisonReducesEnemyDamage is active", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
-      enemyStatuses: { ...makeTestBattleState().enemyStatuses, poison: 3 },
-      talentEffects: { ...makeTestBattleState().talentEffects, poisonReducesEnemyDamage: 2 },
+      playerStatuses: { block: 0, armor: 0 },
+      enemyStatuses: { poison: 3 },
+      talentEffects: { poisonReducesEnemyDamage: 2 },
     });
     const result = applyEnemyAbility(
       state,
@@ -186,10 +186,10 @@ describe("applyEnemyAbility", () => {
   });
 
   it("increases block absorption for physical hits with blockAbsorbPhysicalBonus", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 10, armor: 0 },
-      talentEffects: { ...makeTestBattleState().talentEffects, blockAbsorbPhysicalBonus: 20 },
+      playerStatuses: { block: 10, armor: 0 },
+      talentEffects: { blockAbsorbPhysicalBonus: 20 },
     });
     const result = applyEnemyAbility(
       state,
@@ -201,9 +201,9 @@ describe("applyEnemyAbility", () => {
   });
 
   it("decays player armor when health damage is taken", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 3 },
+      playerStatuses: { block: 0, armor: 3 },
     });
     const result = applyEnemyAbility(
       state,
@@ -214,10 +214,10 @@ describe("applyEnemyAbility", () => {
   });
 
   it("grants block when armor breaks with armorBreakBlock talent", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 1 },
-      talentEffects: { ...makeTestBattleState().talentEffects, armorBreakBlock: 5 },
+      playerStatuses: { block: 0, armor: 1 },
+      talentEffects: { armorBreakBlock: 5 },
     });
     const texts = makeTexts();
     const result = applyEnemyAbility(
@@ -231,10 +231,10 @@ describe("applyEnemyAbility", () => {
   });
 
   it("decays enemy forge after dealing physical health damage", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
-      enemyMitigation: { ...makeTestBattleState().enemyMitigation, forge: 3 },
+      playerStatuses: { block: 0, armor: 0 },
+      enemyMitigation: { forge: 3 },
     });
     const result = applyEnemyAbility(
       state,
@@ -245,9 +245,9 @@ describe("applyEnemyAbility", () => {
   });
 
   it("heals enemy for half damage on lifesteal attacks", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
+      playerStatuses: { block: 0, armor: 0 },
       enemyHealth: 20,
       enemyMaxHealth: 30,
     });
@@ -262,12 +262,12 @@ describe("applyEnemyAbility", () => {
   });
 
   it("does not heal enemy on lifesteal when blockEnemyLeech talent is active", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
+      playerStatuses: { block: 0, armor: 0 },
       enemyHealth: 20,
       enemyMaxHealth: 30,
-      talentEffects: { ...makeTestBattleState().talentEffects, blockEnemyLeech: true },
+      talentEffects: { blockEnemyLeech: true },
     });
     const result = applyEnemyAbility(
       state,
@@ -278,13 +278,13 @@ describe("applyEnemyAbility", () => {
   });
 
   it("does not heal enemy on lifesteal when freeze blocks regen", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
+      playerStatuses: { block: 0, armor: 0 },
       enemyHealth: 20,
       enemyMaxHealth: 30,
       enemyCC: defaultCcState({ freezeSkipTurns: 1 }),
-      talentEffects: { ...makeTestBattleState().talentEffects, freezeBlocksRegen: true },
+      talentEffects: { freezeBlocksRegen: true },
     });
     const result = applyEnemyAbility(
       state,
@@ -295,7 +295,7 @@ describe("applyEnemyAbility", () => {
   });
 
   it("applies player-status attack effects", () => {
-    const state = makeTestBattleState({});
+    const state = patchBattleState({});
     const result = applyPlayerStatusFromAttack(
       state,
       { kind: "player-status", status: "poison", amount: 2 },
@@ -305,9 +305,9 @@ describe("applyEnemyAbility", () => {
   });
 
   it("armor reduces Stun ability damage", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 3 },
+      playerStatuses: { block: 0, armor: 3 },
     });
     const texts = makeTexts();
     const result = applyEnemyAbility(
@@ -321,10 +321,10 @@ describe("applyEnemyAbility", () => {
   });
 
   it("immediately triggers player stun when incoming buildup reaches threshold", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
       playerMaxHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
+      playerStatuses: { block: 0, armor: 0 },
     });
     const texts = makeTexts();
     const result = applyEnemyAbility(
@@ -338,11 +338,11 @@ describe("applyEnemyAbility", () => {
   });
 
   it("Grounding prevents stun buildup when the player has block", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
       playerMaxHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 4, armor: 0 },
-      talentEffects: { ...makeTestBattleState().talentEffects, blockPreventsStun: true },
+      playerStatuses: { block: 4, armor: 0 },
+      talentEffects: { blockPreventsStun: true },
     });
     const result = applyEnemyAbility(
       state,
@@ -354,11 +354,11 @@ describe("applyEnemyAbility", () => {
   });
 
   it("Grounding still prevents stun buildup when the hit spends the last Block", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
       playerMaxHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 3, armor: 0 },
-      talentEffects: { ...makeTestBattleState().talentEffects, blockPreventsStun: true },
+      playerStatuses: { block: 3, armor: 0 },
+      talentEffects: { blockPreventsStun: true },
     });
     const result = applyEnemyAbility(
       state,
@@ -371,10 +371,10 @@ describe("applyEnemyAbility", () => {
   });
 
   it("immediately triggers player freeze when incoming buildup reaches threshold", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
       playerMaxHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
+      playerStatuses: { block: 0, armor: 0 },
     });
     const texts = makeTexts();
     const result = applyEnemyAbility(
@@ -388,10 +388,10 @@ describe("applyEnemyAbility", () => {
   });
 
   it("grants forge from vanguard crest when block fully absorbs the attack", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 10, armor: 0 },
-      trinketEffects: { ...makeTestBattleState().trinketEffects, vanguardCrestForgeOnBlockAbsorb: 2 },
+      playerStatuses: { block: 10, armor: 0 },
+      trinketEffects: { vanguardCrestForgeOnBlockAbsorb: 2 },
     });
     const texts = makeTexts();
     const result = applyEnemyAbility(
@@ -405,10 +405,10 @@ describe("applyEnemyAbility", () => {
   });
 
   it("heals player when block is depleted with blockDepletedHeal talent", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 20,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 2, armor: 0 },
-      talentEffects: { ...makeTestBattleState().talentEffects, blockDepletedHeal: 3 },
+      playerStatuses: { block: 2, armor: 0 },
+      talentEffects: { blockDepletedHeal: 3 },
     });
     const result = applyEnemyAbility(
       state,
@@ -420,11 +420,11 @@ describe("applyEnemyAbility", () => {
 
   it("emits actual health gained when block-depleted heal overheals", () => {
     const texts = makeTexts();
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 29,
       playerMaxHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 5, armor: 0 },
-      talentEffects: { ...makeTestBattleState().talentEffects, blockDepletedHeal: 4 },
+      playerStatuses: { block: 5, armor: 0 },
+      talentEffects: { blockDepletedHeal: 4 },
     });
     const result = applyEnemyAbility(
       state,
@@ -441,11 +441,10 @@ describe("applyEnemyAbility", () => {
   });
 
   it("consumes phoenix feather and resurrects player when attack is lethal", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 5,
       playerMaxHealth: 30,
       playerStatuses: {
-        ...makeTestBattleState().playerStatuses,
         block: 0,
         armor: 0,
         phoenixFeather: 1,
@@ -466,9 +465,9 @@ describe("applyEnemyAbility", () => {
 
   it("Dodges an enemy damage packet before Block and Armor", () => {
     const texts = makeTexts();
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 10, armor: 5 },
+      playerStatuses: { block: 10, armor: 5 },
       rng: () => 0.01,
     });
     const result = applyEnemyAbility(
@@ -488,9 +487,9 @@ describe("applyEnemyAbility", () => {
   });
 
   it("does not Dodge status-only enemy attacks", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, poison: 0 },
+      playerStatuses: { block: 0, poison: 0 },
       rng: () => 0.01,
     });
     const result = applyPlayerStatusFromAttack(
@@ -503,9 +502,9 @@ describe("applyEnemyAbility", () => {
   });
 
   it("does not Dodge encounter-style damage that omits canDodge", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0 },
+      playerStatuses: { block: 0, armor: 0 },
       rng: () => 0.01,
     });
     const result = processEnemyDamageEffect(state, { kind: "damage", damageType: "physical", amount: 8 }, makeTexts());
@@ -514,10 +513,10 @@ describe("applyEnemyAbility", () => {
 
   it("banshee purges one defensive status in priority order block→armor→forge→haste", () => {
     const banshee = enemyBestiary.find((e) => e.id === "banshee")!;
-    const base = makeTestBattleState({
+    const base = patchBattleState({
       currentEnemy: banshee,
       playerHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 10, armor: 2, forge: 1, haste: 1 },
+      playerStatuses: { block: 10, armor: 2, forge: 1, haste: 1 },
       rng: () => 0.99,
     });
     const texts = makeTexts();
@@ -530,10 +529,10 @@ describe("applyEnemyAbility", () => {
     expect(purgedBlock.playerStatuses.armor).toBe(2);
     expect(texts).toContainEqual({ target: "player", kind: "notice", stat: "block", text: "Purged" });
 
-    const noBlock = makeTestBattleState({
+    const noBlock = patchBattleState({
       currentEnemy: banshee,
       playerHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 2, forge: 1, haste: 1 },
+      playerStatuses: { block: 0, armor: 2, forge: 1, haste: 1 },
       rng: () => 0.99,
     });
     const purgedArmor = applyEnemyAbility(
@@ -547,7 +546,7 @@ describe("applyEnemyAbility", () => {
 
   it("blood-countess damages itself only on actual hero healing", async () => {
     const { applyEnemyHealingWithCombatText, applyHealingWithCombatText } = await import("@/lib/battle/combat-text");
-    const countessState = makeTestBattleState({
+    const countessState = patchBattleState({
       currentEnemy: enemyBestiary.find((e) => e.id === "blood-countess")!,
       playerHealth: 20,
       playerMaxHealth: 30,
@@ -558,7 +557,7 @@ describe("applyEnemyAbility", () => {
     expect(healed.enemyHealth).toBe(9);
     expect(healed.playerHealth).toBe(25);
 
-    const enemyHealState = makeTestBattleState({
+    const enemyHealState = patchBattleState({
       currentEnemy: enemyBestiary.find((e) => e.id === "blood-countess")!,
       playerHealth: 20,
       playerMaxHealth: 30,
@@ -572,9 +571,9 @@ describe("applyEnemyAbility", () => {
 
 describe("player Thorns", () => {
   it("fires held thorns back as nature damage when an attack lands and consumes the stack", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0, thorns: 3 },
+      playerStatuses: { block: 0, armor: 0, thorns: 3 },
       enemyHealth: 30,
       rng: () => 0.99,
     });
@@ -589,9 +588,9 @@ describe("player Thorns", () => {
   });
 
   it("still fires when block absorbs the hit", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 10, armor: 0, thorns: 2 },
+      playerStatuses: { block: 10, armor: 0, thorns: 2 },
       enemyHealth: 30,
       rng: () => 0.99,
     });
@@ -607,9 +606,9 @@ describe("player Thorns", () => {
   });
 
   it("does not fire when the attack is dodged", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 0, armor: 0, thorns: 3 },
+      playerStatuses: { block: 0, armor: 0, thorns: 3 },
       enemyHealth: 30,
       rng: () => 0.01,
     });

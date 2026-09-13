@@ -6,10 +6,11 @@ import {
   getEnemyDamageMultiplier,
 } from "@/lib/battle/status-helpers";
 import { rollPercent } from "@/lib/rng";
-import { BATTLE_CONFIG, PERCENT_DENOMINATOR } from "@/lib/game-constants";
+import { BATTLE_CONFIG, PERCENT_DENOMINATOR, TRAIT_DAMAGE_RULES } from "@/lib/game-constants";
 import type { CombatTextEvent } from "@/lib/battle/types";
-import { makeTestBattleState } from "../../fixtures/battle";
+import { patchBattleState } from "../../fixtures/battle";
 import {
+  defaultCcState,
   defaultPlayerStatusValues,
   defaultEnemyMitigation,
   defaultTalentEffects,
@@ -64,11 +65,71 @@ describe("decayPoisonStacks", () => {
 
 describe("getEnemyDamageMultiplier", () => {
   it("does not activate freezeDoubleDamage when freezeSkipTurns is 0", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyCC: { stunSkipTurns: 0, freezeSkipTurns: 0, cooldown: 0 },
-      talentEffects: { ...makeTestBattleState().talentEffects, freezeDoubleDamage: true },
+      talentEffects: { freezeDoubleDamage: true },
     });
     expect(getEnemyDamageMultiplier(state, "physical")).toBe(1);
+  });
+
+  it("returns 1 when no multipliers apply", () => {
+    const state = patchBattleState();
+    expect(getEnemyDamageMultiplier(state, "physical")).toBe(1);
+  });
+
+  it("returns 2x when stunDoubleDamage is active and enemy is stunned", () => {
+    const state = patchBattleState({
+      enemyCC: defaultCcState({ stunSkipTurns: 1 }),
+      talentEffects: { ...defaultTalentEffects, stunDoubleDamage: true },
+    });
+    expect(getEnemyDamageMultiplier(state, "physical")).toBe(2);
+  });
+
+  it("returns 2x when freezeDoubleDamage is active and enemy is frozen", () => {
+    const state = patchBattleState({
+      enemyCC: defaultCcState({ freezeSkipTurns: 1 }),
+      talentEffects: { ...defaultTalentEffects, freezeDoubleDamage: true },
+    });
+    expect(getEnemyDamageMultiplier(state, "physical")).toBe(2);
+  });
+
+  it("returns 4x when both stun and freeze double damage are active", () => {
+    const state = patchBattleState({
+      enemyCC: defaultCcState({ stunSkipTurns: 1, freezeSkipTurns: 1 }),
+      talentEffects: { ...defaultTalentEffects, stunDoubleDamage: true, freezeDoubleDamage: true },
+    });
+    expect(getEnemyDamageMultiplier(state, "physical")).toBe(4);
+  });
+
+  it("combines trait weakness with stun/freeze multipliers", () => {
+    const state = patchBattleState({
+      enemyCC: defaultCcState({ stunSkipTurns: 1, freezeSkipTurns: 1 }),
+      talentEffects: { ...defaultTalentEffects, stunDoubleDamage: true, freezeDoubleDamage: true },
+      currentEnemy: {
+        id: "brittle-skeleton",
+        title: "Brittle Skeleton",
+        subtitle: "",
+        descriptionLines: [""],
+        art: "",
+        enemyType: "normal",
+        traits: [{ id: "holy-vulnerability", title: "Unholy Bones", description: "Receives double Holy damage" }],
+        abilityIds: ["slash", "bash", "block"],
+      },
+    });
+    expect(getEnemyDamageMultiplier(state, "holy")).toBe(8);
+  });
+
+  it("applies every TRAIT_DAMAGE_RULES multiplier", () => {
+    const base = patchBattleState();
+    for (const rule of TRAIT_DAMAGE_RULES) {
+      const state = patchBattleState({
+        currentEnemy: {
+          ...base.currentEnemy,
+          traits: [{ id: rule.traitId, title: rule.traitId, description: "" }],
+        },
+      });
+      expect(getEnemyDamageMultiplier(state, rule.damageType), rule.traitId).toBe(rule.multiplier);
+    }
   });
 });
 
@@ -98,7 +159,7 @@ describe("rollPercent", () => {
 describe("decayArmorAfterDamage", () => {
   describe("enemy armor decay", () => {
     it("decays enemy armor by ARMOR_DECAY_AMOUNT when damage > 0", () => {
-      const state = makeTestBattleState({
+      const state = patchBattleState({
         enemyMitigation: defaultEnemyMitigation({ armor: 5, forge: 0 }),
       });
       const result = decayArmorAfterDamage(state, 3, "enemy");
@@ -106,7 +167,7 @@ describe("decayArmorAfterDamage", () => {
     });
 
     it("does not decay enemy armor when damage is 0", () => {
-      const state = makeTestBattleState({
+      const state = patchBattleState({
         enemyMitigation: defaultEnemyMitigation({ armor: 5, forge: 0 }),
       });
       const result = decayArmorAfterDamage(state, 0, "enemy");
@@ -114,7 +175,7 @@ describe("decayArmorAfterDamage", () => {
     });
 
     it("does not decay enemy armor when already 0", () => {
-      const state = makeTestBattleState({
+      const state = patchBattleState({
         enemyMitigation: defaultEnemyMitigation({ armor: 0, forge: 0 }),
       });
       const result = decayArmorAfterDamage(state, 3, "enemy");
@@ -122,7 +183,7 @@ describe("decayArmorAfterDamage", () => {
     });
 
     it("clamps enemy armor to 0 (does not go negative)", () => {
-      const state = makeTestBattleState({
+      const state = patchBattleState({
         enemyMitigation: defaultEnemyMitigation({ armor: 1, forge: 0 }),
       });
       const result = decayArmorAfterDamage(state, 3, "enemy");
@@ -130,7 +191,7 @@ describe("decayArmorAfterDamage", () => {
     });
 
     it("does not mutate original state for enemy decay", () => {
-      const state = makeTestBattleState({
+      const state = patchBattleState({
         enemyMitigation: defaultEnemyMitigation({ armor: 5, forge: 0 }),
       });
       decayArmorAfterDamage(state, 3, "enemy");
@@ -140,7 +201,7 @@ describe("decayArmorAfterDamage", () => {
 
   describe("player armor decay", () => {
     it("decays player armor by ARMOR_DECAY_AMOUNT when damage > 0", () => {
-      const state = makeTestBattleState({
+      const state = patchBattleState({
         playerStatuses: defaultPlayerStatusValues({ armor: 5 }),
       });
       const result = decayArmorAfterDamage(state, 3, "player");
@@ -148,7 +209,7 @@ describe("decayArmorAfterDamage", () => {
     });
 
     it("does not decay player armor when damage is 0", () => {
-      const state = makeTestBattleState({
+      const state = patchBattleState({
         playerStatuses: defaultPlayerStatusValues({ armor: 5 }),
       });
       const result = decayArmorAfterDamage(state, 0, "player");
@@ -156,7 +217,7 @@ describe("decayArmorAfterDamage", () => {
     });
 
     it("does not decay player armor when armor is already 0", () => {
-      const state = makeTestBattleState({
+      const state = patchBattleState({
         playerStatuses: defaultPlayerStatusValues({ armor: 0 }),
       });
       const result = decayArmorAfterDamage(state, 3, "player");
@@ -164,7 +225,7 @@ describe("decayArmorAfterDamage", () => {
     });
 
     it("does not mutate original state", () => {
-      const state = makeTestBattleState({
+      const state = patchBattleState({
         playerStatuses: defaultPlayerStatusValues({ armor: 5 }),
       });
       decayArmorAfterDamage(state, 3, "player");
@@ -174,7 +235,7 @@ describe("decayArmorAfterDamage", () => {
 
   describe("armorBreakBlock talent on player armor break", () => {
     it("grants block when armor breaks and armorBreakBlock talent is active", () => {
-      const state = makeTestBattleState({
+      const state = patchBattleState({
         playerStatuses: defaultPlayerStatusValues({ armor: 1 }),
         talentEffects: { ...defaultTalentEffects, armorBreakBlock: 4 },
       });
@@ -186,10 +247,10 @@ describe("decayArmorAfterDamage", () => {
     });
 
     it("includes flatBlockGained when armor breaks", () => {
-      const state = makeTestBattleState({
+      const state = patchBattleState({
         playerStatuses: defaultPlayerStatusValues({ armor: 1 }),
         talentEffects: { ...defaultTalentEffects, armorBreakBlock: 4 },
-        gearEffects: { ...makeTestBattleState().gearEffects, flatBlockGained: 2 },
+        gearEffects: { flatBlockGained: 2 },
       });
       const texts: CombatTextEvent[] = [];
       const result = decayArmorAfterDamage(state, 3, "player", texts);
@@ -198,7 +259,7 @@ describe("decayArmorAfterDamage", () => {
     });
 
     it("does not grant block when armor does not break (still positive after decay)", () => {
-      const state = makeTestBattleState({
+      const state = patchBattleState({
         playerStatuses: defaultPlayerStatusValues({ armor: 5 }),
         talentEffects: { ...defaultTalentEffects, armorBreakBlock: 4 },
       });
@@ -210,7 +271,7 @@ describe("decayArmorAfterDamage", () => {
     });
 
     it("does not grant block when armorBreakBlock is 0", () => {
-      const state = makeTestBattleState({
+      const state = patchBattleState({
         playerStatuses: defaultPlayerStatusValues({ armor: 1 }),
         talentEffects: { ...defaultTalentEffects, armorBreakBlock: 0 },
       });
@@ -222,7 +283,7 @@ describe("decayArmorAfterDamage", () => {
     });
 
     it("does not emit combat text when texts array is not provided", () => {
-      const state = makeTestBattleState({
+      const state = patchBattleState({
         playerStatuses: defaultPlayerStatusValues({ armor: 1 }),
         talentEffects: { ...defaultTalentEffects, armorBreakBlock: 4 },
       });
@@ -231,7 +292,7 @@ describe("decayArmorAfterDamage", () => {
     });
 
     it("clamps player armor to 0 when decay exceeds current", () => {
-      const state = makeTestBattleState({
+      const state = patchBattleState({
         playerStatuses: defaultPlayerStatusValues({ armor: 0 }),
       });
       const result = decayArmorAfterDamage(state, 3, "player");
@@ -239,7 +300,7 @@ describe("decayArmorAfterDamage", () => {
     });
 
     it("does not grant armorBreakBlock when armor was already 0", () => {
-      const state = makeTestBattleState({
+      const state = patchBattleState({
         playerStatuses: defaultPlayerStatusValues({ armor: 0 }),
         talentEffects: { ...defaultTalentEffects, armorBreakBlock: 4 },
       });

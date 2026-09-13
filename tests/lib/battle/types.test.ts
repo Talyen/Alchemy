@@ -10,12 +10,12 @@ import {
   withPreservedFlags,
 } from "@/lib/battle/types";
 import type { PlayerStatusId, EnemyStatusId } from "@/lib/game-data";
-import { makeTestBattleState } from "../../fixtures/battle";
+import { makeTestBattleState, patchBattleState } from "../../fixtures/battle";
 import { defaultCombatFlags } from "../../fixtures/default-battle-state";
 
 describe("addPlayerStatus", () => {
   it("adds delta to the given player status", () => {
-    const state = makeTestBattleState({ playerStatuses: { ...makeTestBattleState().playerStatuses, block: 5 } });
+    const state = patchBattleState({ playerStatuses: { block: 5 } });
     const next = addPlayerStatus(state, "block", 3);
     expect(next.playerStatuses.block).toBe(8);
   });
@@ -28,7 +28,7 @@ describe("addPlayerStatus", () => {
   });
 
   it("supports negative delta", () => {
-    const state = makeTestBattleState({ playerStatuses: { ...makeTestBattleState().playerStatuses, forge: 10 } });
+    const state = patchBattleState({ playerStatuses: { forge: 10 } });
     const next = addPlayerStatus(state, "forge", -3);
     expect(next.playerStatuses.forge).toBe(7);
   });
@@ -58,7 +58,7 @@ describe("addEnemyStatus", () => {
   });
 
   it("supports negative delta", () => {
-    const state = makeTestBattleState({ enemyStatuses: { ...makeTestBattleState().enemyStatuses, burn: 4 } });
+    const state = patchBattleState({ enemyStatuses: { burn: 4 } });
     const next = addEnemyStatus(state, "burn", -1);
     expect(next.enemyStatuses.burn).toBe(3);
   });
@@ -102,8 +102,8 @@ describe("setFlag", () => {
   });
 
   it("preserves other flags", () => {
-    const state = makeTestBattleState({
-      flags: { ...makeTestBattleState().flags, firstArmorCardDoubledUsed: true },
+    const state = patchBattleState({
+      flags: { firstArmorCardDoubledUsed: true },
     });
     const next = setFlag(state, "firstHolyCardFreeUsed", true);
     expect(next.flags.firstHolyCardFreeUsed).toBe(true);
@@ -175,11 +175,11 @@ describe("applyPlayerHealing", () => {
   });
 
   it("converts overhealing to block if overhealToBlockRatio talent is active", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 25,
       playerMaxHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 2 },
-      talentEffects: { ...makeTestBattleState().talentEffects, overhealToBlockRatio: 0.5 },
+      playerStatuses: { block: 2 },
+      talentEffects: { overhealToBlockRatio: 0.5 },
     });
 
     const next = applyPlayerHealing(state, 15);

@@ -15,12 +15,12 @@ import { defaultTalentEffects } from "@/lib/battle";
 import { CARDS_PER_TURN } from "@/lib/game-constants";
 import { defaultGearEffects } from "@/lib/gear";
 import type { CombatTextEvent } from "@/lib/battle/types";
-import { makeTestBattleState, makeTestCardWithId } from "../../fixtures/battle";
+import { makeTestCardWithId, patchBattleState } from "../../fixtures/battle";
 import { defaultPlayerStatusValues, defaultCcState } from "../../fixtures/default-battle-state";
 
 describe("advanceToPlayerTurn", () => {
   it("draws CARDS_PER_TURN and sets mana to maxMana", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       turnPhase: "enemy",
       deck: [
         makeTestCardWithId("d1"),
@@ -42,7 +42,7 @@ describe("advanceToPlayerTurn", () => {
   });
 
   it("halves player block via decayHalvedStatus", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       turnPhase: "enemy",
       playerStatuses: defaultPlayerStatusValues({ block: 9 }),
       deck: [makeTestCardWithId("d1")],
@@ -53,7 +53,7 @@ describe("advanceToPlayerTurn", () => {
   });
 
   it("adds wellspring bonus when unspent mana", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       turnPhase: "enemy",
       mana: 2,
       maxMana: 4,
@@ -66,7 +66,7 @@ describe("advanceToPlayerTurn", () => {
   });
 
   it("advances to player turn and draws cards even when player CC is active", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       turnPhase: "enemy",
       playerCC: defaultCcState({ stunSkipTurns: 1 }),
       deck: [makeTestCardWithId("d1"), makeTestCardWithId("d2")],
@@ -79,7 +79,7 @@ describe("advanceToPlayerTurn", () => {
   });
 
   it("Death's Door recovery suppresses CC skip", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       turnPhase: "enemy",
       playerHealth: 0,
       deathsDoorActive: true,
@@ -98,7 +98,7 @@ describe("advanceToPlayerTurn", () => {
   });
 
   it("heals from gear healthPerTurn and emits combat text", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       turnPhase: "enemy",
       playerHealth: 10,
       playerMaxHealth: 30,
@@ -114,7 +114,7 @@ describe("advanceToPlayerTurn", () => {
   });
 
   it("healthPerTurn combat text uses actual health gained near max HP", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       turnPhase: "enemy",
       playerHealth: 29,
       playerMaxHealth: 30,
@@ -137,8 +137,8 @@ describe("advanceToPlayerTurn", () => {
 
 describe("resetEnemyTurnState", () => {
   it("halves enemy block at the start of the enemy turn", () => {
-    const state = makeTestBattleState({
-      enemyMitigation: { ...makeTestBattleState().enemyMitigation, block: 9 },
+    const state = patchBattleState({
+      enemyMitigation: { block: 9 },
     });
     const result = resetEnemyTurnState(state);
     expect(result.enemyMitigation.block).toBe(5);
@@ -147,12 +147,12 @@ describe("resetEnemyTurnState", () => {
 
 describe("isFreezeActiveForAspect", () => {
   it("returns false when enemy has no freeze skip", () => {
-    const state = makeTestBattleState({ enemyCC: defaultCcState({ freezeSkipTurns: 0 }) });
+    const state = patchBattleState({ enemyCC: defaultCcState({ freezeSkipTurns: 0 }) });
     expect(isFreezeActiveForAspect(state, "regen")).toBe(false);
   });
 
   it("respects freezeBlocksRegen for regen aspect", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyCC: defaultCcState({ freezeSkipTurns: 1 }),
       talentEffects: { ...defaultTalentEffects, freezeBlocksRegen: true },
     });
@@ -161,7 +161,7 @@ describe("isFreezeActiveForAspect", () => {
   });
 
   it("respects freezePreventsEnemyScaling for scaling aspect", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyCC: defaultCcState({ freezeSkipTurns: 1 }),
       talentEffects: { ...defaultTalentEffects, freezePreventsEnemyScaling: true },
     });
@@ -171,8 +171,8 @@ describe("isFreezeActiveForAspect", () => {
 
 describe("checkHealthThresholds", () => {
   it("applies a configured bonus only when health crosses its threshold", () => {
-    const base = makeTestBattleState();
-    const state = makeTestBattleState({
+    const base = patchBattleState();
+    const state = patchBattleState({
       playerMaxHealth: 30,
       talentEffects: { ...base.talentEffects, healthThresholdBlock: { threshold: 50, amount: 4 } },
     });
@@ -181,7 +181,7 @@ describe("checkHealthThresholds", () => {
   });
 
   it("triggers block talent when crossing health threshold", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerMaxHealth: 30,
       talentEffects: { ...defaultTalentEffects, healthThresholdBlock: { threshold: 50, amount: 5 } },
     });
@@ -192,7 +192,7 @@ describe("checkHealthThresholds", () => {
   });
 
   it("fires every healthThresholdArmor crossing independently", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerMaxHealth: 100,
       talentEffects: {
         ...defaultTalentEffects,
@@ -210,7 +210,7 @@ describe("checkHealthThresholds", () => {
   });
 
   it("applies flatArmorAmount when health-threshold armor triggers", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerMaxHealth: 30,
       talentEffects: {
         ...defaultTalentEffects,
@@ -225,7 +225,7 @@ describe("checkHealthThresholds", () => {
 
 describe("resolveDeathsDoorGraceExpiry", () => {
   it("deactivates Death's Door when grace expires", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       deathsDoorActive: true,
       deathsDoorTriggeredTurn: 1,
       deathsDoorGraceTurnsRemaining: 0,
@@ -238,18 +238,18 @@ describe("resolveDeathsDoorGraceExpiry", () => {
   });
 
   it("no-ops when Death's Door inactive", () => {
-    const state = makeTestBattleState();
+    const state = patchBattleState();
     expect(resolveDeathsDoorGraceExpiry(state)).toBe(state);
   });
 });
 
 describe("enemy turn scaling rules", () => {
   it("keeps scaling and freeze checks pure", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       turn: 2,
       roomScalingMultiplier: 1.5,
-      enemyCC: { ...makeTestBattleState().enemyCC, freezeSkipTurns: 1 },
-      talentEffects: { ...makeTestBattleState().talentEffects, freezeBlocksRegen: true },
+      enemyCC: { freezeSkipTurns: 1 },
+      talentEffects: { freezeBlocksRegen: true },
     });
     expect(isEveryOtherTurnScalingTurn(state)).toBe(true);
     expect(scaleByRoomMultiplier(state, 3)).toBe(5);
@@ -259,8 +259,8 @@ describe("enemy turn scaling rules", () => {
 
 describe("enemy trait query", () => {
   it("supports direct and cached trait lookup", () => {
-    const base = makeTestBattleState();
-    const state = makeTestBattleState({
+    const base = patchBattleState();
+    const state = patchBattleState({
       currentEnemy: {
         ...base.currentEnemy,
         traits: [{ id: "vampire", title: "Vampire", description: "" }],

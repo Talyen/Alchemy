@@ -86,7 +86,7 @@ export function applyHealthThresholdCleanse(
   state: BattleState,
   combatTexts?: CombatTextEvent[],
 ): BattleState {
-  const threshold = (state.playerMaxHealth * state.talentEffects.cleanseBelowHealthPercent) / 100;
+  const threshold = (state.playerMaxHealth * state.talentEffects.cleanseBelowHealthPercent) / PERCENT_DENOMINATOR;
   return threshold > 0 && previousHealth >= threshold && state.playerHealth < threshold && state.playerHealth > 0
     ? removeHarmfulPlayerStatuses(state, Infinity, combatTexts)
     : state;
@@ -143,26 +143,35 @@ function scaleArmorAmount(state: BattleState, amount: number): { state: BattleSt
   return { state: nextState, amount: nextAmount };
 }
 
+function onFirstCrossThreshold(
+  prevValue: number,
+  nextValue: number,
+  threshold: number,
+  onCross: (s: BattleState) => BattleState,
+  state: BattleState,
+): BattleState {
+  if (threshold <= 0 || prevValue >= threshold || nextValue < threshold) return state;
+  return onCross(state);
+}
+
 function procArmorBlockThreshold(state: BattleState, newArmor: number, combatTexts: CombatTextEvent[]) {
-  if (
-    state.talentEffects.armorBlockThreshold <= 0 ||
-    state.playerStatuses.armor >= state.talentEffects.armorBlockThreshold ||
-    newArmor < state.talentEffects.armorBlockThreshold
-  ) {
-    return state;
-  }
-  return addPlayerStatusWithCombatText(state, "block", state.talentEffects.armorBlockAmount, combatTexts);
+  return onFirstCrossThreshold(
+    state.playerStatuses.armor,
+    newArmor,
+    state.talentEffects.armorBlockThreshold,
+    (s) => addPlayerStatusWithCombatText(s, "block", s.talentEffects.armorBlockAmount, combatTexts),
+    state,
+  );
 }
 
 function procArmorCleanseThreshold(state: BattleState, newArmor: number, combatTexts: CombatTextEvent[]) {
-  if (
-    state.talentEffects.armorCleanseThreshold <= 0 ||
-    state.playerStatuses.armor >= state.talentEffects.armorCleanseThreshold ||
-    newArmor < state.talentEffects.armorCleanseThreshold
-  ) {
-    return state;
-  }
-  return removeHarmfulPlayerStatuses(state, Number.POSITIVE_INFINITY, combatTexts);
+  return onFirstCrossThreshold(
+    state.playerStatuses.armor,
+    newArmor,
+    state.talentEffects.armorCleanseThreshold,
+    (s) => removeHarmfulPlayerStatuses(s, Number.POSITIVE_INFINITY, combatTexts),
+    state,
+  );
 }
 
 function applyArmorTalentChecks(state: BattleState, amount: number, combatTexts: CombatTextEvent[]) {
@@ -173,38 +182,33 @@ function applyArmorTalentChecks(state: BattleState, amount: number, combatTexts:
   return { state: withCleanse, amount: scaled.amount };
 }
 
-function onForgeFirstCrossThreshold(
-  state: BattleState,
-  prevForge: number,
-  nextForge: number,
-  threshold: number,
-  onCross: (s: BattleState) => BattleState,
-): BattleState {
-  if (threshold <= 0 || prevForge >= threshold || nextForge < threshold) return state;
-  return onCross(state);
-}
-
 function applyForgeBurnBurst(state: BattleState, oldForge: number, newForge: number, combatTexts?: CombatTextEvent[]) {
-  return onForgeFirstCrossThreshold(state, oldForge, newForge, state.talentEffects.forgeBurnThreshold, (s) => {
-    if (s.enemyHealth <= 0) return s;
-    return dealEnemyScaledDamage(s, s.talentEffects.forgeBurnDamage, "burn", combatTexts ?? [], {
-      multiplier: getEnemyDamageMultiplier(s, "burn"),
-      riders: (damaged, damage, texts) => {
-        const burning = addEnemyStatus(damaged, "burn", damage);
-        const decayed = decayArmorAfterDamage(burning, damage, "enemy", texts);
-        return payKillPayouts(processEncounterTraitHealthThreshold(s.enemyHealth, decayed, texts), true, texts);
-      },
-    });
-  });
+  return onFirstCrossThreshold(
+    oldForge,
+    newForge,
+    state.talentEffects.forgeBurnThreshold,
+    (s) => {
+      if (s.enemyHealth <= 0) return s;
+      return dealEnemyScaledDamage(s, s.talentEffects.forgeBurnDamage, "burn", combatTexts ?? [], {
+        multiplier: getEnemyDamageMultiplier(s, "burn"),
+        riders: (damaged, damage, texts) => {
+          const burning = addEnemyStatus(damaged, "burn", damage);
+          const decayed = decayArmorAfterDamage(burning, damage, "enemy", texts);
+          return payKillPayouts(processEncounterTraitHealthThreshold(s.enemyHealth, decayed, texts), true, texts);
+        },
+      });
+    },
+    state,
+  );
 }
 
 function applyForgeStripArmorBurst(state: BattleState, oldForge: number, newForge: number): BattleState {
-  return onForgeFirstCrossThreshold(
-    state,
+  return onFirstCrossThreshold(
     oldForge,
     newForge,
     state.talentEffects.forgeStripArmorThreshold,
     stripEnemyArmor,
+    state,
   );
 }
 
@@ -214,14 +218,20 @@ function applyForgeBlockBurst(
   newForge: number,
   combatTexts?: CombatTextEvent[],
 ): BattleState {
-  return onForgeFirstCrossThreshold(state, oldForge, newForge, state.talentEffects.forgeBlockThreshold, (s) => {
-    let amount = s.talentEffects.forgeBlockAmount;
-    if (s.talentEffects.forgeToBlock) {
-      amount += newForge;
-    }
-    amount = paceCombatMagnitude(s, amount, "player");
-    return addPlayerStatusWithCombatText(s, "block", amount, combatTexts, { skipFightPacing: true });
-  });
+  return onFirstCrossThreshold(
+    oldForge,
+    newForge,
+    state.talentEffects.forgeBlockThreshold,
+    (s) => {
+      let amount = s.talentEffects.forgeBlockAmount;
+      if (s.talentEffects.forgeToBlock) {
+        amount += newForge;
+      }
+      amount = paceCombatMagnitude(s, amount, "player");
+      return addPlayerStatusWithCombatText(s, "block", amount, combatTexts, { skipFightPacing: true });
+    },
+    state,
+  );
 }
 
 export function addForgeToPlayer(state: BattleState, baseAmount: number, combatTexts?: CombatTextEvent[]): BattleState {

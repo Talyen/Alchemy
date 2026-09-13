@@ -15,6 +15,7 @@ import { LABYRINTH_MODIFIER_CONFIG } from "@/lib/game-constants";
 import { computeTalentEffects } from "@/lib/game-data";
 import { DESTINATIONS, type Destination } from "@/lib/routing";
 import { getRandomPotionCard } from "../navigation/reward-flow";
+import { logError } from "@/lib/error-logger";
 import { routeDestinationChoice } from "./run-destination-handlers";
 import type { AdvanceToNextDestination, RunFlowHandlerDeps } from "./run-flow";
 
@@ -22,6 +23,19 @@ export function createDestinationScreenHandlers(
   deps: RunFlowHandlerDeps,
   advanceToNextDestination: AdvanceToNextDestination,
 ) {
+  function safeCancelDestinationClaim(where: string, destination: Destination) {
+    try {
+      dispatchRunSessionCommand((draft) => cancelDestinationClaim(draft));
+    } catch (rollbackError) {
+      logError("cancelDestinationClaim failed", "other", {
+        where,
+        destination,
+        rollbackError: String(rollbackError),
+        stack: rollbackError instanceof Error ? rollbackError.stack : undefined,
+      });
+    }
+  }
+
   function handleDestinationChoice(destination: Destination) {
     try {
       const choice = dispatchRunSessionCommand((draft) => {
@@ -37,9 +51,12 @@ export function createDestinationScreenHandlers(
           const committed = dispatchRunSessionCommand((draft) => commitDestinationClaim(draft, destination));
           if (!committed) throw new Error("commitDestinationProgress failed");
         } catch (error) {
-          try {
-            dispatchRunSessionCommand((draft) => cancelDestinationClaim(draft));
-          } catch {}
+          safeCancelDestinationClaim("commit", destination);
+          logError("commitDestinationProgress failed", "other", {
+            destination,
+            error: String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+          });
           throw new Error("commitDestinationProgress failed", { cause: error });
         }
       };
@@ -52,7 +69,7 @@ export function createDestinationScreenHandlers(
         resetCorruption: () => dispatchRunSessionCommand((draft) => setCorruptionResult(draft, null)),
       });
     } catch (error) {
-      dispatchRunSessionCommand((draft) => cancelDestinationClaim(draft));
+      safeCancelDestinationClaim("choice", destination);
       throw error;
     }
   }

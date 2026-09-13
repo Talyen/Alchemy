@@ -52,6 +52,22 @@ export function forgeAppliesToDamageType(
   );
 }
 
+function sharesBurnBleedBonuses(state: BattleState): boolean {
+  return state.gearEffects.sharedBurnBleedBonuses > 0;
+}
+
+function isBurnLikeDamage(damageType: DamageType, state: BattleState): boolean {
+  return damageType === "burn" || (damageType === "bleed" && sharesBurnBleedBonuses(state));
+}
+
+function isBleedLikeDamage(damageType: DamageType, state: BattleState): boolean {
+  return damageType === "bleed" || (damageType === "burn" && sharesBurnBleedBonuses(state));
+}
+
+function blockScaledDamage(state: BattleState, percent: number): number {
+  return scalePercent(state.playerStatuses.block, percent, PERCENT_DENOMINATOR);
+}
+
 function getForgeBonusForDamage(state: BattleState, damageType: DamageType, companionAttack = false): number {
   if (!forgeAppliesToDamageType(damageType, state.talentEffects, state.gearEffects, companionAttack)) return 0;
   const forge = state.playerStatuses.forge;
@@ -126,7 +142,7 @@ function applyHolyDamageModifiers(state: BattleState, rawAmount: number): number
   );
   nextAmount += scalePercent(state.gold, state.gearEffects.holyDamageFromGoldPercent, PERCENT_DENOMINATOR);
   if (state.talentEffects.blockToHolyDamage) {
-    nextAmount += scalePercent(state.playerStatuses.block, BLOCK_SCALED_DAMAGE_PERCENT, PERCENT_DENOMINATOR);
+    nextAmount += blockScaledDamage(state, BLOCK_SCALED_DAMAGE_PERCENT);
   }
   return nextAmount;
 }
@@ -138,7 +154,7 @@ function applyBleedDamageModifiers(state: BattleState, rawAmount: number): numbe
 function applyStunDamageModifiers(state: BattleState, rawAmount: number): number {
   let nextAmount = rawAmount + flatDamageBonus(state, "stun");
   if (state.talentEffects.blockToStunDamage) {
-    nextAmount += scalePercent(state.playerStatuses.block, BLOCK_SCALED_DAMAGE_PERCENT, PERCENT_DENOMINATOR);
+    nextAmount += blockScaledDamage(state, BLOCK_SCALED_DAMAGE_PERCENT);
   }
   return nextAmount;
 }
@@ -149,7 +165,7 @@ function applyBurnDamageModifiers(state: BattleState, rawAmount: number): number
     nextAmount += scalePerMana(state.maxMana, state.talentEffects.burnDamagePerManaCrystal, "percent");
   }
   if (state.talentEffects.blockToBurnDamage) {
-    nextAmount += scalePercent(state.playerStatuses.block, BURN_BLOCK_SCALED_DAMAGE_PERCENT, PERCENT_DENOMINATOR);
+    nextAmount += blockScaledDamage(state, BURN_BLOCK_SCALED_DAMAGE_PERCENT);
   }
   return nextAmount;
 }
@@ -224,7 +240,7 @@ function computeAdditiveDamageBonus(
   if (effect.doubleIfEnemyBleeding && state.enemyStatuses.bleed > 0) bonus += 1;
   if (effect.tripleIfEnemyNotBurning && state.enemyStatuses.burn === 0) bonus += 2;
 
-  if (effect.damageType === "burn" || (effect.damageType === "bleed" && state.gearEffects.sharedBurnBleedBonuses > 0)) {
+  if (isBurnLikeDamage(effect.damageType, state)) {
     bonus += (state.maxMana * state.gearEffects.burnDamagePerManaPercent) / PERCENT_DENOMINATOR;
   }
 
@@ -238,7 +254,7 @@ function computeAdditiveDamageBonus(
     bonus += state.talentEffects.holyVsBurnMultiplier / PERCENT_DENOMINATOR;
   }
 
-  if (effect.damageType === "bleed" || (effect.damageType === "burn" && state.gearEffects.sharedBurnBleedBonuses > 0)) {
+  if (isBleedLikeDamage(effect.damageType, state)) {
     if (isBelowHalfHealth(state) && state.talentEffects.bleedDesperateMultiplier > 1) {
       bonus += state.talentEffects.bleedDesperateMultiplier - 1;
     }
@@ -254,7 +270,7 @@ function computeAdditiveDamageBonus(
     bonus += state.talentEffects.consumeDamageBonusPercent / PERCENT_DENOMINATOR;
   }
   if (
-    (effect.damageType === "burn" || (effect.damageType === "bleed" && state.gearEffects.sharedBurnBleedBonuses > 0)) &&
+    isBurnLikeDamage(effect.damageType, state) &&
     card?.consume &&
     state.talentEffects.consumeBurnDamageBonusPercent > 0
   ) {
@@ -304,7 +320,7 @@ function applyFirstDamageBonus(
   let nextState: BattleState = state;
   let firstBonus = 0;
 
-  if (effect.damageType === "burn" || (effect.damageType === "bleed" && state.gearEffects.sharedBurnBleedBonuses > 0)) {
+  if (isBurnLikeDamage(effect.damageType, state)) {
     if (nextState.talentEffects.firstBurnCardBonusMultiplier > 1 && !nextState.flags.firstBurnCardDoubledUsed) {
       firstBonus += nextState.talentEffects.firstBurnCardBonusMultiplier - 1;
       nextState = setFlag(nextState, "firstBurnCardDoubledUsed", true);
@@ -370,18 +386,15 @@ export function computeReflectedHolyDamageToEnemy(state: BattleState, blockLost:
 }
 
 function computeBurnMultiplier(effect: Extract<BattleCardEffect, { kind: "damage" }>, state: BattleState): number {
-  if (effect.damageType !== "burn" && !(effect.damageType === "bleed" && state.gearEffects.sharedBurnBleedBonuses > 0))
-    return 1;
+  if (!isBurnLikeDamage(effect.damageType, state)) return 1;
   return getBurnBonusToBleedingMultiplier(state);
 }
 
-export function computeCardDamageToEnemy(
+function resolveEncounterFirstHit(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
-  card?: BattleCard,
-  context?: CardEffectResolutionContext,
-) {
-  let encounterMultiplier = 1;
+  playedCard: boolean,
+): { state: BattleState; multiplier: number } {
   const firstAttack =
     effect.damageType === "physical"
       ? { id: "heavy-hand" as const, flag: "encounterPhysicalUsed" as const }
@@ -390,34 +403,76 @@ export function computeCardDamageToEnemy(
         : effect.damageType === "nature"
           ? { id: "wildheart" as const, flag: "encounterNatureUsed" as const }
           : null;
-  if (
-    context?.playedCard &&
-    firstAttack &&
-    hasEncounterBenefit(state, firstAttack.id) &&
-    !state.flags[firstAttack.flag]
-  ) {
-    encounterMultiplier = LABYRINTH_MODIFIER_CONFIG.double;
-    state = setFlag(state, firstAttack.flag, true);
+  if (playedCard && firstAttack && hasEncounterBenefit(state, firstAttack.id) && !state.flags[firstAttack.flag]) {
+    return { state: setFlag(state, firstAttack.flag, true), multiplier: LABYRINTH_MODIFIER_CONFIG.double };
   }
-  const baseDamage = computeBaseDamage(state, effect, card, context?.baseDamageBonus, context?.companionAttack);
-  const { state: stateAfterFirst, firstBonus } = applyFirstDamageBonus(state, effect);
+  return { state, multiplier: 1 };
+}
+
+function resolveDamageBonusMultiplier(
+  state: BattleState,
+  effect: Extract<BattleCardEffect, { kind: "damage" }>,
+  card: BattleCard | undefined,
+  firstBonus: number,
+  companionAttack = false,
+): number {
   const unwoundedBonus =
-    (effect.damageType === "bleed" || (effect.damageType === "burn" && state.gearEffects.sharedBurnBleedBonuses > 0)) &&
-    state.enemyStatuses.bleed === 0
+    isBleedLikeDamage(effect.damageType, state) && state.enemyStatuses.bleed === 0
       ? state.talentEffects.bleedUnwoundedBonusPercent / PERCENT_DENOMINATOR
       : 0;
   const cullBonus =
     state.talentEffects.leechCardDamageVsLowHealthPercent > 0 &&
     card &&
-    !context?.companionAttack &&
+    !companionAttack &&
     cardHasKeyword(card, "leech") &&
     state.enemyHealth < state.enemyMaxHealth / HALF_DIVISOR
       ? state.talentEffects.leechCardDamageVsLowHealthPercent / PERCENT_DENOMINATOR
       : 0;
-  const totalBonus =
-    computeAdditiveDamageBonus(stateAfterFirst, effect, card) + firstBonus + unwoundedBonus + cullBonus;
-  const totalMultiplier = Math.max(MIN_DAMAGE_MULTIPLIER, 1 + totalBonus);
-  const scaledDamage = Math.round(baseDamage * totalMultiplier * encounterMultiplier);
+  const totalBonus = computeAdditiveDamageBonus(state, effect, card) + firstBonus + unwoundedBonus + cullBonus;
+  return Math.max(MIN_DAMAGE_MULTIPLIER, 1 + totalBonus);
+}
+
+function resolveDamageAfterMitigation(
+  state: BattleState,
+  effect: Extract<BattleCardEffect, { kind: "damage" }>,
+  card: BattleCard | undefined,
+  finalDamage: number,
+): { nextState: BattleState; modifiedDamage: number } {
+  const { state: stateAfterBlock, remainingDamage: damageAfterBlock } = applyBlockAbsorption(state, finalDamage);
+  const stateWithCritCleared = stateAfterBlock.flags.nextHitCrit
+    ? setFlag(stateAfterBlock, "nextHitCrit", false)
+    : stateAfterBlock;
+  const isPhysicalOrStun = effect.damageType === "physical" || effect.damageType === "stun";
+  const serpent =
+    state.gearEffects.poisonedAttacksPierce > 0 && state.enemyStatuses.poison > 0 && !!card?.effects.length;
+  const kingbreaker = effect.damageType === "stun" && state.gearEffects.armorIncreasesStun > 0;
+  const nextState =
+    serpent || kingbreaker
+      ? stateWithCritCleared
+      : applySunderingArmorPiercing(stateWithCritCleared, isPhysicalOrStun, card);
+  const effectiveArmor =
+    isPhysicalOrStun && !serpent && !kingbreaker && !effect.ignoreArmor ? nextState.enemyMitigation.armor : 0;
+  return { nextState, modifiedDamage: Math.max(0, damageAfterBlock - effectiveArmor) };
+}
+
+export function computeCardDamageToEnemy(
+  state: BattleState,
+  effect: Extract<BattleCardEffect, { kind: "damage" }>,
+  card?: BattleCard,
+  context?: CardEffectResolutionContext,
+) {
+  const encounter = resolveEncounterFirstHit(state, effect, Boolean(context?.playedCard));
+  state = encounter.state;
+  const baseDamage = computeBaseDamage(state, effect, card, context?.baseDamageBonus, context?.companionAttack);
+  const { state: stateAfterFirst, firstBonus } = applyFirstDamageBonus(state, effect);
+  const totalMultiplier = resolveDamageBonusMultiplier(
+    stateAfterFirst,
+    effect,
+    card,
+    firstBonus,
+    context?.companionAttack,
+  );
+  const scaledDamage = Math.round(baseDamage * totalMultiplier * encounter.multiplier);
   const pacedDamage = paceCombatDamage(stateAfterFirst, scaledDamage, "player");
   const repeatedDamage = Math.round(pacedDamage * (context?.damageMultiplier ?? 1));
   const criticalDamage = context?.guaranteedCrit
@@ -426,22 +481,5 @@ export function computeCardDamageToEnemy(
   const kingbreaker = effect.damageType === "stun" && state.gearEffects.armorIncreasesStun > 0;
   const finalDamage = criticalDamage + (kingbreaker ? state.enemyMitigation.armor : 0);
 
-  const { state: stateAfterBlock, remainingDamage: damageAfterBlock } = applyBlockAbsorption(
-    stateAfterFirst,
-    finalDamage,
-  );
-  const stateWithCritCleared = stateAfterBlock.flags.nextHitCrit
-    ? setFlag(stateAfterBlock, "nextHitCrit", false)
-    : stateAfterBlock;
-  const isPhysicalOrStun = effect.damageType === "physical" || effect.damageType === "stun";
-  const serpent =
-    state.gearEffects.poisonedAttacksPierce > 0 && state.enemyStatuses.poison > 0 && !!card?.effects.length;
-  const nextState =
-    serpent || kingbreaker
-      ? stateWithCritCleared
-      : applySunderingArmorPiercing(stateWithCritCleared, isPhysicalOrStun, card);
-  const effectiveArmor =
-    isPhysicalOrStun && !serpent && !kingbreaker && !effect.ignoreArmor ? nextState.enemyMitigation.armor : 0;
-  const damageAfterArmor = Math.max(0, damageAfterBlock - effectiveArmor);
-  return { nextState, modifiedDamage: damageAfterArmor };
+  return resolveDamageAfterMitigation(stateAfterFirst, effect, card, finalDamage);
 }

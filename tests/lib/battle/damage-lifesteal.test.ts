@@ -2,7 +2,20 @@ import { describe, expect, it } from "vitest";
 import { patchBattleState } from "../../fixtures/battle";
 import { defaultTalentEffects } from "../../fixtures/default-battle-state";
 import { dealDamage, makeCombatTexts, makeEffect, makeTestCard } from "../../fixtures/battle";
+import { computeLeechHeal } from "@/lib/battle/damage-rider-leech";
 import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/player-typed-hit";
+
+describe("computeLeechHeal rounding", () => {
+  it("returns zero for non-positive damage", () => {
+    expect(computeLeechHeal(0)).toBe(0);
+    expect(computeLeechHeal(-4)).toBe(0);
+  });
+
+  it("heals for half the triggering damage rounded", () => {
+    expect(computeLeechHeal(4)).toBe(2);
+    expect(computeLeechHeal(5)).toBe(3);
+  });
+});
 
 describe("dealDamageToEnemy — lifesteal", () => {
   it("heals player when effect has lifesteal", () => {

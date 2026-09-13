@@ -40,7 +40,47 @@ function areEffectsEquivalent(a: readonly BattleCardEffect[], b: readonly Battle
   return a.length === b.length && a.every((effect, index) => isDeepEqual(effect, b[index]));
 }
 
+function scaledAmount(amount: number, multiplier: number, potencyBonus: number): number {
+  // Single rounding point for combat magnitudes; callers may pass fractional bonuses.
+  return Math.round(amount * multiplier + potencyBonus);
+}
+
+function nestedPotionChildren(effect: BattleCardEffect): BattleCardEffect[] {
+  if (effect.kind === "chance") return [...effect.successEffects, ...effect.failureEffects];
+  if (effect.kind === "repeat-over-turns") return [...effect.effects];
+  // Generic fallback so future nesting kinds do not silently skip scaling/collection.
+  const nested = effect as Partial<{
+    successEffects: BattleCardEffect[];
+    failureEffects: BattleCardEffect[];
+    effects: BattleCardEffect[];
+  }>;
+  return [...(nested.successEffects ?? []), ...(nested.failureEffects ?? []), ...(nested.effects ?? [])];
+}
+
+function scaleNestedArrays(
+  effect: BattleCardEffect,
+  multiplier: number,
+  potencyBonus: number,
+): BattleCardEffect | null {
+  const nested = effect as Partial<{
+    successEffects: BattleCardEffect[];
+    failureEffects: BattleCardEffect[];
+    effects: BattleCardEffect[];
+  }>;
+  if (!nested.successEffects && !nested.failureEffects && !nested.effects) return null;
+  const scaled: Record<string, unknown> = { ...effect };
+  if (nested.successEffects)
+    scaled.successEffects = nested.successEffects.map((child) => scalePotionEffect(child, multiplier, potencyBonus));
+  if (nested.failureEffects)
+    scaled.failureEffects = nested.failureEffects.map((child) => scalePotionEffect(child, multiplier, potencyBonus));
+  if (nested.effects)
+    scaled.effects = nested.effects.map((child) => scalePotionEffect(child, multiplier, potencyBonus));
+  return scaled as BattleCardEffect;
+}
+
 function scalePotionEffect(effect: BattleCardEffect, multiplier: number, potencyBonus: number): BattleCardEffect {
+  // Branch shapes stay in sync with nestedPotionChildren above; scale
+  // reconstructs success/failure groupings while the collector flattens them.
   if (effect.kind === "chance") {
     return {
       ...effect,
@@ -54,8 +94,10 @@ function scalePotionEffect(effect: BattleCardEffect, multiplier: number, potency
       effects: effect.effects.map((child) => scalePotionEffect(child, multiplier, potencyBonus)),
     };
   }
+  const generic = scaleNestedArrays(effect, multiplier, potencyBonus);
+  if (generic) return generic;
   if ("amount" in effect && typeof effect.amount === "number") {
-    return { ...effect, amount: effect.amount * multiplier + potencyBonus };
+    return { ...effect, amount: scaledAmount(effect.amount, multiplier, potencyBonus) };
   }
   return { ...effect };
 }
@@ -66,17 +108,13 @@ function collectScaledAmounts(
   potencyBonus: number,
   scaleMap: Map<number, number>,
 ): void {
-  if (effect.kind === "chance") {
-    for (const child of effect.successEffects) collectScaledAmounts(child, multiplier, potencyBonus, scaleMap);
-    for (const child of effect.failureEffects) collectScaledAmounts(child, multiplier, potencyBonus, scaleMap);
-    return;
-  }
-  if (effect.kind === "repeat-over-turns") {
-    for (const child of effect.effects) collectScaledAmounts(child, multiplier, potencyBonus, scaleMap);
+  const children = nestedPotionChildren(effect);
+  if (children.length > 0) {
+    for (const child of children) collectScaledAmounts(child, multiplier, potencyBonus, scaleMap);
     return;
   }
   if ("amount" in effect && typeof effect.amount === "number" && effect.amount > 0) {
-    scaleMap.set(effect.amount, effect.amount * multiplier + potencyBonus);
+    scaleMap.set(effect.amount, scaledAmount(effect.amount, multiplier, potencyBonus));
   }
 }
 

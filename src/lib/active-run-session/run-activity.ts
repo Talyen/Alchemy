@@ -43,6 +43,10 @@ export function readActivityData<K extends keyof RunActivityData>(activity: RunA
   return activity.kind === kind && "data" in activity ? (activity.data as RunActivityData[K]) : EMPTY_VISITS[kind];
 }
 
+export function isActiveRunActivity(activity: RunActivity): boolean {
+  return activity.kind !== "inactive";
+}
+
 export function runActivityScreen(activity: RunActivity): Screen | null {
   return activity.kind === "idle" || activity.kind === "inactive" ? null : activity.kind;
 }

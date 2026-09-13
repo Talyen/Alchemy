@@ -6,8 +6,7 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 
 import { changedGitPaths, ensureRunId, writeCurrentRun } from "./lib/current-run.mjs";
-import { writeFailureDigest } from "./lib/compact-output.mjs";
-import { summarizeStepResult } from "./lib/run-step.mjs";
+import { summarizeAndReportFailure, summarizeStepResult } from "./lib/run-step.mjs";
 import {
   classifyCheckPaths,
   parseChangedPathsArgs,
@@ -90,7 +89,10 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
   const env = { ...process.env, ALCHEMY_RUN_ID: runId };
   const before = digestFn();
   let verifyArgs = [...paths];
-  if (Buffer.byteLength(JSON.stringify(paths)) > 8_000) {
+  // Byte budget for inline CLI args before spilling the selection to paths.json.
+  // Distinct from the related-test arg limit in change-routes.mjs.
+  const PATHS_INLINE_BYTES = 8_000;
+  if (Buffer.byteLength(JSON.stringify(paths)) > PATHS_INLINE_BYTES) {
     const selectionFile = path.join(ROOT, "reports/runs", runId, "paths.json");
     fs.mkdirSync(path.dirname(selectionFile), { recursive: true });
     fs.writeFileSync(selectionFile, JSON.stringify(paths));
@@ -101,6 +103,8 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
   if (selection.needsCodeChecks) verifyArgs.push("--skip-docs-check");
   const skipBuilds = process.env.ALCHEMY_CHECK_SKIP_BUILD === "1";
   const buildReason = skipBuilds ? "skipped via ALCHEMY_CHECK_SKIP_BUILD=1 (CI still builds)" : undefined;
+  const webEnabled = selection.web && !skipBuilds;
+  const desktopEnabled = selection.desktop && !skipBuilds;
   const definitions = [
     stepDefinition(
       "verification",
@@ -138,7 +142,7 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
       "web build",
       "npm",
       ["run", "build"],
-      selection.web && !skipBuilds,
+      webEnabled,
       buildReason ?? "web runtime inputs unchanged",
     ),
     stepDefinition(
@@ -146,7 +150,7 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
       "web bundle budget",
       "npm",
       ["run", "check:bundle"],
-      selection.web && !skipBuilds,
+      webEnabled,
       buildReason ?? "web build not required",
     ),
     stepDefinition(
@@ -154,7 +158,7 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
       "preview smoke",
       "npm",
       ["run", "smoke:preview"],
-      selection.web && !skipBuilds,
+      webEnabled,
       buildReason ?? "web build not required",
     ),
     stepDefinition(
@@ -162,7 +166,7 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
       "desktop build",
       "npm",
       ["run", "build:desktop"],
-      selection.desktop && !skipBuilds,
+      desktopEnabled,
       buildReason ?? "desktop inputs unchanged",
     ),
     stepDefinition(
@@ -170,7 +174,7 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
       "desktop bundle budget",
       "npm",
       ["run", "check:bundle"],
-      selection.desktop && !skipBuilds,
+      desktopEnabled,
       buildReason ?? "desktop build not required",
     ),
   ];
@@ -207,18 +211,16 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
     const code = result.status ?? 1;
     const status = code === 0 ? "passed" : "failed";
     steps.push({ label: definition.label, status, durationMs });
-    const { exposure, failureOutput } = summarizeStepResult(definition, result);
-    exposures.push(exposure);
     if (code !== 0) {
       const reportsDir = path.join(ROOT, "reports", "runs", runId, "check");
-      const evidence = writeFailureDigest(reportsDir, definition, result, runId, steps.length - 1);
+      const evidence = summarizeAndReportFailure(reportsDir, definition, result, runId, steps.length - 1, ROOT);
+      exposures.push(evidence.exposure);
       artifacts.push({ path: evidence.digestPath, role: "primary" }, { path: evidence.logPath, role: "secondary" });
       failed = { label: definition.label, code, ...evidence };
-      console.error(`  ${failureOutput}`);
-      console.error(`  Failure digest: ${path.relative(ROOT, evidence.digestPath)}`);
-      console.error(`  Full log: ${path.relative(ROOT, evidence.logPath)}`);
       break;
     }
+    const { exposure } = summarizeStepResult(definition, result);
+    exposures.push(exposure);
     console.log(`✓ ${definition.label} (${(durationMs / 1000).toFixed(1)}s)`);
   }
   for (const definition of definitions.slice(steps.length)) {

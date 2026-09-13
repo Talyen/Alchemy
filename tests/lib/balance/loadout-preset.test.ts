@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { countUnlockedCombatTalents, resolveSimLoadout, simulateBattle, TIER_GOLD } from "@/lib/balance";
+import { buildTypicalGearEffects } from "@/lib/balance/gear-preset";
+import { createSeededRng } from "@/lib/utils";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { characters } from "@/lib/game-data";
 import { defaultGearEffects } from "@/lib/gear/gear-effect-manifest";
@@ -31,6 +33,19 @@ describe("resolveSimLoadout", () => {
     const first = resolveSimLoadout({ preset: "late", characterId: "wizard", mode: "typical", seed: 42 });
     const second = resolveSimLoadout({ preset: "late", characterId: "wizard", mode: "typical", seed: 42 });
     expect(first.gearEffects).toEqual(second.gearEffects);
+  });
+});
+
+describe("buildTypicalGearEffects", () => {
+  it("returns empty gear for early", () => {
+    expect(buildTypicalGearEffects("rogue", "early", createSeededRng(1))).toEqual(defaultGearEffects);
+  });
+
+  it("rolls affinity-matching gear that is stable for a given rng seed", () => {
+    const first = buildTypicalGearEffects("ranger", "late", createSeededRng(88));
+    const second = buildTypicalGearEffects("ranger", "late", createSeededRng(88));
+    expect(first).toEqual(second);
+    expect(first).not.toEqual(defaultGearEffects);
   });
 });
 

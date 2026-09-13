@@ -44,10 +44,14 @@ export function addPlayerStatus(state: BattleState, status: PlayerStatusId, delt
   }
   const effectiveDelta = playerStatusDelta(state, status, delta);
   const updated = setPlayerStatus(state, status, state.playerStatuses[status] + effectiveDelta);
-  const playerStatuses = updated.playerStatuses;
-  if (status === "block" && effectiveDelta > 0 && state.trinketEffects.ironwoodBucklerThornsOnBlock > 0) {
-    playerStatuses.thorns += state.trinketEffects.ironwoodBucklerThornsOnBlock;
-  }
+  const thornsBonus =
+    status === "block" && effectiveDelta > 0 && state.trinketEffects.ironwoodBucklerThornsOnBlock > 0
+      ? state.trinketEffects.ironwoodBucklerThornsOnBlock
+      : 0;
+  const playerStatuses =
+    thornsBonus > 0
+      ? { ...updated.playerStatuses, thorns: updated.playerStatuses.thorns + thornsBonus }
+      : updated.playerStatuses;
   return {
     ...updated,
     playerStatuses,
@@ -128,14 +132,17 @@ export function addEnemyMitigation(state: BattleState, field: keyof EnemyMitigat
   };
 }
 
+export function stripEnemyMitigation(state: BattleState, field: keyof EnemyMitigation): BattleState {
+  if (state.enemyMitigation[field] <= 0) return state;
+  return { ...state, enemyMitigation: { ...state.enemyMitigation, [field]: 0 } };
+}
+
 export function stripEnemyArmor(state: BattleState): BattleState {
-  if (state.enemyMitigation.armor <= 0) return state;
-  return { ...state, enemyMitigation: { ...state.enemyMitigation, armor: 0 } };
+  return stripEnemyMitigation(state, "armor");
 }
 
 export function stripEnemyBlock(state: BattleState): BattleState {
-  if (state.enemyMitigation.block <= 0) return state;
-  return { ...state, enemyMitigation: { ...state.enemyMitigation, block: 0 } };
+  return stripEnemyMitigation(state, "block");
 }
 
 export function reduceEnemyArmor(state: BattleState, delta: number): BattleState {

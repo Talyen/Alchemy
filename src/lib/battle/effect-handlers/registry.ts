@@ -6,6 +6,7 @@ import { isPotionCard } from "@/lib/game-data/cards/card-pools";
 import { isRecursiveBattleCardEffectKind } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "../types";
 import { getBattleRng, rollChance } from "@/lib/rng";
+import { logError } from "../../error-logger";
 import type { CardEffectResolutionContext, EffectHandler } from "./handler-types";
 import {
   applyDamageEffect,
@@ -90,6 +91,7 @@ export function applyEffectByKind(
 ): BattleState {
   if (!hasEffectApplyHandler(kind)) {
     console.warn(`[Battle] Missing handler for effect kind: ${kind}`);
+    logError(`Missing handler for effect kind: ${kind}`, "battle", { kind });
     return state;
   }
   let nextState = EFFECT_APPLY_BY_KIND[kind](state, card, effect, potionMult, combatTexts, context);

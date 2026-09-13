@@ -1,5 +1,10 @@
 import type { BattleCard, DamageType, TalentEffectManifest } from "@/lib/game-data";
 import { getBattleRng, rollPercent } from "@/lib/rng";
+import {
+  BRASS_CENSER_SPLIT_CHANCE,
+  TALENT_CONVERSION_BLEED_FRACTION,
+  TALENT_CONVERSION_DEFAULT_FRACTION,
+} from "../game-constants";
 import { applyLuckyCloverGold, applyNatureManaRefund } from "./bonus-effects";
 import { computeCardDamageToEnemy, computeTalentDamageToEnemy } from "./damage-calc";
 import {
@@ -55,7 +60,7 @@ export function applyBrassCenser(
   enemyHealthBeforeHit = state.enemyHealth,
 ): BattleState {
   if (damage <= 0 || !rollPercent(state.trinketEffects.brassCenserProcChance, getBattleRng(state))) return state;
-  if (rollPercent(50, getBattleRng(state))) {
+  if (rollPercent(BRASS_CENSER_SPLIT_CHANCE, getBattleRng(state))) {
     return dealPlayerTypedHit(state, "burn", damage, combatTexts);
   }
   return applyLifestealAndPlayerHitTriggers(state, damage, combatTexts, false, false, enemyHealthBeforeHit);
@@ -100,7 +105,13 @@ export function tryTalentTypedHit(
   combatTexts: CombatTextEvent[],
 ): BattleState {
   if (sourceDamage <= 0 || state.enemyHealth <= 0 || !rollTalentChance(chance, state)) return state;
-  return dealTalentTypedHit(state, damageType, sourceDamage * (damageType === "bleed" ? 0.25 : 0.5), combatTexts, true);
+  return dealTalentTypedHit(
+    state,
+    damageType,
+    sourceDamage * (damageType === "bleed" ? TALENT_CONVERSION_BLEED_FRACTION : TALENT_CONVERSION_DEFAULT_FRACTION),
+    combatTexts,
+    true,
+  );
 }
 
 export function applyLifestealAndPlayerHitTriggers(

@@ -55,6 +55,7 @@ export type {
 } from "./types";
 
 export {
+  isActiveRunActivity,
   readActivityData,
   runActivityScreen,
   transitionRunActivity,

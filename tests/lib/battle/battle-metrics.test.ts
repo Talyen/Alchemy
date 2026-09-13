@@ -5,14 +5,14 @@ import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { processEnemyTraits } from "@/lib/battle/enemy-turn-traits";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { normalizePersistedBattleState } from "@/lib/validation/normalize-persisted-battle-state";
-import { makeTestBattleState, makeTestCard } from "../../fixtures/battle";
+import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 const metrics = () => ({ enemyAttackActions: 0, enemyAbilityActivations: {} });
 
 describe("battle measurements", () => {
   it("counts a blocked multi-hit attack once without changing combat", () => {
-    const state = makeTestBattleState({
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 50 },
+    const state = patchBattleState({
+      playerStatuses: { block: 50 },
       rng: () => 0.99,
     });
     const measured = applyEnemyAbility(
@@ -42,7 +42,7 @@ describe("battle measurements", () => {
   });
 
   it("counts no attacks for Haste or enemy crowd control", () => {
-    const base = makeTestBattleState();
+    const base = patchBattleState();
     const haste = endPlayerTurn({
       ...base,
       battleMetrics: metrics(),
@@ -58,7 +58,7 @@ describe("battle measurements", () => {
   });
 
   it("records Iron Hide only on its scheduled turns and respects Freeze suppression", () => {
-    const base = makeTestBattleState();
+    const base = patchBattleState();
     const state = {
       ...base,
       battleMetrics: metrics(),
@@ -80,7 +80,7 @@ describe("battle measurements", () => {
 
   it("drops simulation-only measurements when loading a battle save", () => {
     expect(
-      normalizePersistedBattleState({ ...makeTestBattleState(), battleMetrics: metrics() }).battleMetrics,
+      normalizePersistedBattleState({ ...patchBattleState(), battleMetrics: metrics() }).battleMetrics,
     ).toBeUndefined();
   });
 });
@@ -90,7 +90,7 @@ describe("Shield Slam", () => {
     [1, 3],
     [0, 5],
   ])("removes two Armor only while Block is held (%i Block)", (block, armor) => {
-    const base = makeTestBattleState();
+    const base = patchBattleState();
     const state = {
       ...base,
       playerStatuses: { ...base.playerStatuses, block },

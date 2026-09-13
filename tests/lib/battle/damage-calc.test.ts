@@ -3,7 +3,7 @@ import { computeCardDamageToEnemy, forgeAppliesToDamageType } from "@/lib/battle
 import { defaultTalentEffects } from "@/lib/battle";
 import { CRIT_MULTIPLIER } from "@/lib/game-constants";
 import type { BattleCardEffect } from "@/lib/game-data";
-import { makeTestBattleState, seededRng } from "../../fixtures/battle";
+import { patchBattleState, seededRng } from "../../fixtures/battle";
 
 describe("forgeAppliesToDamageType", () => {
   it.each(["physical", "stun"] as const)("always applies to %s", (damageType) => {
@@ -28,9 +28,9 @@ describe("computeCardDamageToEnemy", () => {
   };
 
   it("absorbs enemy block before health", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
-      enemyMitigation: { ...makeTestBattleState().enemyMitigation, block: 4 },
+      enemyMitigation: { block: 4 },
       rng: seededRng(99),
     });
     const { nextState, modifiedDamage } = computeCardDamageToEnemy(state, physicalEffect);
@@ -40,8 +40,8 @@ describe("computeCardDamageToEnemy", () => {
   });
 
   it("applies sundering armor pierce for physical damage", () => {
-    const base = makeTestBattleState();
-    const state = makeTestBattleState({
+    const base = patchBattleState();
+    const state = patchBattleState({
       enemyHealth: 30,
       enemyMitigation: { ...base.enemyMitigation, armor: 10, block: 0 },
       trinketEffects: { ...base.trinketEffects, sunderingArmorPiercing: 10 },
@@ -51,8 +51,8 @@ describe("computeCardDamageToEnemy", () => {
   });
 
   it("applies crit multiplier when random rolls below threshold", () => {
-    const state = makeTestBattleState({
-      enemyMitigation: { ...makeTestBattleState().enemyMitigation, block: 0, armor: 0 },
+    const state = patchBattleState({
+      enemyMitigation: { block: 0, armor: 0 },
       rng: () => 0,
     });
     const { modifiedDamage } = computeCardDamageToEnemy(state, physicalEffect);
@@ -60,9 +60,9 @@ describe("computeCardDamageToEnemy", () => {
   });
 
   it("doubles forge contribution for physical with expert blacksmith", () => {
-    const state = makeTestBattleState({
-      playerStatuses: { ...makeTestBattleState().playerStatuses, forge: 3 },
-      enemyMitigation: { ...makeTestBattleState().enemyMitigation, block: 0, armor: 0 },
+    const state = patchBattleState({
+      playerStatuses: { forge: 3 },
+      enemyMitigation: { block: 0, armor: 0 },
       talentEffects: { ...defaultTalentEffects, forgeToPhysicalDamageMultiplier: 2 },
       rng: () => 0.99,
     });
@@ -71,9 +71,9 @@ describe("computeCardDamageToEnemy", () => {
   });
 
   it("adds half block to physical via blockToPhysicalDamageMultiplier", () => {
-    const state = makeTestBattleState({
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 10 },
-      enemyMitigation: { ...makeTestBattleState().enemyMitigation, block: 0, armor: 0 },
+    const state = patchBattleState({
+      playerStatuses: { block: 10 },
+      enemyMitigation: { block: 0, armor: 0 },
       talentEffects: { ...defaultTalentEffects, blockToPhysicalDamageMultiplier: 0.5 },
       rng: () => 0.99,
     });
@@ -87,8 +87,8 @@ describe("computeCardDamageToEnemy", () => {
       damageType: "holy",
       amount: 10,
     };
-    const state = makeTestBattleState({
-      enemyMitigation: { ...makeTestBattleState().enemyMitigation, block: 0, armor: 0 },
+    const state = patchBattleState({
+      enemyMitigation: { block: 0, armor: 0 },
       talentEffects: { ...defaultTalentEffects, consumeDamageBonusPercent: 20 },
       rng: () => 0.99,
     });
@@ -107,8 +107,8 @@ describe("computeCardDamageToEnemy", () => {
 
 describe("low-health damage bonuses", () => {
   it.each([14, 15, 16])("requires strictly below half Health at %s/30", (playerHealth) => {
-    const base = makeTestBattleState();
-    const state = makeTestBattleState({
+    const base = patchBattleState();
+    const state = patchBattleState({
       playerHealth,
       playerMaxHealth: 30,
       rng: () => 0.99,

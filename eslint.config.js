@@ -25,6 +25,13 @@ function tsxSyntax(...extras) {
   return restrictedSyntax(...CLASSNAME_NO_TEMPLATE, ...extras);
 }
 
+const UNUSED_VARS_OPTIONS = {
+  argsIgnorePattern: "^_",
+  varsIgnorePattern: "^_",
+  caughtErrorsIgnorePattern: "^_",
+  destructuredArrayIgnorePattern: "^_",
+};
+
 function syntaxBlock(files, ignores, ...fragments) {
   return {
     files,
@@ -259,15 +266,7 @@ export default tseslint.config(
   // Allow unused vars and args prefixed with _
   {
     rules: {
-      "@typescript-eslint/no-unused-vars": [
-        "error",
-        {
-          argsIgnorePattern: "^_",
-          varsIgnorePattern: "^_",
-          caughtErrorsIgnorePattern: "^_",
-          destructuredArrayIgnorePattern: "^_",
-        },
-      ],
+      "@typescript-eslint/no-unused-vars": ["error", UNUSED_VARS_OPTIONS],
     },
   },
 
@@ -275,15 +274,7 @@ export default tseslint.config(
   {
     files: ["tests/**/*.ts", "tests/**/*.tsx", "performance/**/*.ts"],
     rules: {
-      "@typescript-eslint/no-unused-vars": [
-        "error",
-        {
-          argsIgnorePattern: "^_",
-          varsIgnorePattern: "^_",
-          caughtErrorsIgnorePattern: "^_",
-          destructuredArrayIgnorePattern: "^_",
-        },
-      ],
+      "@typescript-eslint/no-unused-vars": ["error", UNUSED_VARS_OPTIONS],
       "@typescript-eslint/no-explicit-any": "off",
     },
   },
@@ -447,69 +438,71 @@ export default tseslint.config(
   // Final no-restricted-syntax routing. Flat config replaces rule values, so
   // overlapping path policies must be composed in the same path-specific block.
   // ts/tsx pairs are built with syntaxBlock/tsxBlock so new fragments stay in sync.
-  syntaxBlock(
-    ["src/**/*.ts"],
-    [
-      "src/features/alchemy/shared/stores/**",
-      "src/features/alchemy/run-loop/**",
-      "src/features/alchemy/shell/**",
-      "src/lib/battle/**",
-    ],
-    ...AGGREGATE_NO_DIRECT_MUTATION,
-    ...NO_UNOWNED_CONTEXT_CREATION,
-  ),
-  tsxBlock(
-    ["src/**/*.tsx"],
-    [
-      "src/features/alchemy/shared/stores/**",
-      "src/features/alchemy/run-loop/**",
-      "src/features/alchemy/shell/**",
-      "src/lib/battle/**",
-      "src/app/app-screen-chrome-context.tsx",
-      "src/features/alchemy/shared/context/card-description-context.tsx",
-    ],
-    ...AGGREGATE_NO_DIRECT_MUTATION,
-    ...NO_UNOWNED_CONTEXT_CREATION,
-  ),
-  syntaxBlock(
-    ["src/lib/battle/**/*.ts"],
-    ["src/lib/battle/status-helpers.ts", "src/lib/battle/battle-setup.ts"],
-    ...BATTLE_NO_MATH_RANDOM,
-    ...BATTLE_NO_MATH_FLOOR,
-    ...BATTLE_NO_DIRECT_RNG,
-    ...AGGREGATE_NO_DIRECT_MUTATION,
-    ...NO_UNOWNED_CONTEXT_CREATION,
-  ),
-  syntaxBlock(
-    ["src/lib/battle/status-helpers.ts", "src/lib/battle/battle-setup.ts"],
-    undefined,
-    ...BATTLE_NO_MATH_RANDOM,
-    ...BATTLE_NO_MATH_FLOOR,
-    ...AGGREGATE_NO_DIRECT_MUTATION,
-    ...NO_UNOWNED_CONTEXT_CREATION,
-  ),
-  tsxBlock(
-    ["src/lib/battle/**/*.tsx"],
-    undefined,
-    ...BATTLE_NO_MATH_RANDOM,
-    ...BATTLE_NO_MATH_FLOOR,
-    ...BATTLE_NO_DIRECT_RNG,
-    ...AGGREGATE_NO_DIRECT_MUTATION,
-    ...NO_UNOWNED_CONTEXT_CREATION,
-  ),
-  syntaxBlock(
-    ["src/features/alchemy/run-loop/**/*.ts", "src/features/alchemy/shell/**/*.ts"],
-    undefined,
-    ...GEAR_NO_OUTER_DISPATCH,
-    ...AGGREGATE_NO_DIRECT_MUTATION,
-    ...NO_UNOWNED_CONTEXT_CREATION,
-  ),
-  tsxBlock(
-    ["src/features/alchemy/run-loop/**/*.tsx", "src/features/alchemy/shell/**/*.tsx"],
-    undefined,
-    ...GEAR_NO_OUTER_DISPATCH,
-    ...AGGREGATE_NO_DIRECT_MUTATION,
-    ...NO_UNOWNED_CONTEXT_CREATION,
+  // Order matters: later entries win on overlapping paths, so keep this table in
+  // most-general to most-specific order.
+  ...[
+    {
+      make: syntaxBlock,
+      files: ["src/**/*.ts"],
+      ignores: [
+        "src/features/alchemy/shared/stores/**",
+        "src/features/alchemy/run-loop/**",
+        "src/features/alchemy/shell/**",
+        "src/lib/battle/**",
+      ],
+      extra: [],
+    },
+    {
+      make: tsxBlock,
+      files: ["src/**/*.tsx"],
+      ignores: [
+        "src/features/alchemy/shared/stores/**",
+        "src/features/alchemy/run-loop/**",
+        "src/features/alchemy/shell/**",
+        "src/lib/battle/**",
+        "src/app/app-screen-chrome-context.tsx",
+        "src/features/alchemy/shared/context/card-description-context.tsx",
+      ],
+      extra: [],
+    },
+    {
+      make: syntaxBlock,
+      files: ["src/lib/battle/**/*.ts"],
+      ignores: ["src/lib/battle/status-helpers.ts", "src/lib/battle/battle-setup.ts"],
+      extra: [...BATTLE_NO_MATH_RANDOM, ...BATTLE_NO_MATH_FLOOR, ...BATTLE_NO_DIRECT_RNG],
+    },
+    {
+      make: syntaxBlock,
+      files: ["src/lib/battle/status-helpers.ts", "src/lib/battle/battle-setup.ts"],
+      ignores: undefined,
+      extra: [...BATTLE_NO_MATH_RANDOM, ...BATTLE_NO_MATH_FLOOR],
+    },
+    {
+      make: tsxBlock,
+      files: ["src/lib/battle/**/*.tsx"],
+      ignores: undefined,
+      extra: [...BATTLE_NO_MATH_RANDOM, ...BATTLE_NO_MATH_FLOOR, ...BATTLE_NO_DIRECT_RNG],
+    },
+    {
+      make: syntaxBlock,
+      files: ["src/features/alchemy/run-loop/**/*.ts", "src/features/alchemy/shell/**/*.ts"],
+      ignores: undefined,
+      extra: [...GEAR_NO_OUTER_DISPATCH],
+    },
+    {
+      make: tsxBlock,
+      files: ["src/features/alchemy/run-loop/**/*.tsx", "src/features/alchemy/shell/**/*.tsx"],
+      ignores: undefined,
+      extra: [...GEAR_NO_OUTER_DISPATCH],
+    },
+  ].map((route) =>
+    route.make(
+      [...route.files],
+      route.ignores ? [...route.ignores] : undefined,
+      ...route.extra,
+      ...AGGREGATE_NO_DIRECT_MUTATION,
+      ...NO_UNOWNED_CONTEXT_CREATION,
+    ),
   ),
 
   // Node.js scripts (CommonJS + ESM) — after base rules so overrides take effect.

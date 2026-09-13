@@ -5,7 +5,7 @@ import {
   defaultTalentEffects,
   defaultTrinketManifest,
 } from "../../fixtures/default-battle-state";
-import { makeCombatTexts as makeTexts, makeTestBattleState, patchBattleState } from "../../fixtures/battle";
+import { makeCombatTexts as makeTexts, patchBattleState } from "../../fixtures/battle";
 
 describe("tickEnemyStatuses", () => {
   it.each([
@@ -90,7 +90,7 @@ describe("tickEnemyStatuses", () => {
       playerMaxHealth: 40,
       enemyStatuses: defaultEnemyStatusValues({ bleed: 6 }),
       pendingBleedLeechHealing: 4,
-      gearEffects: { ...makeTestBattleState().gearEffects, leechHealBonusPercent: 50 },
+      gearEffects: { leechHealBonusPercent: 50 },
     });
     const texts = makeTexts();
 
@@ -260,7 +260,7 @@ describe("DoT tick kills pay lethality payouts", () => {
       enemyHealth: 5,
       playerHealth: 20,
       enemyStatuses: defaultEnemyStatusValues({ burn: 10 }),
-      gearEffects: { ...makeTestBattleState().gearEffects, healOnKill: 3, goldOnKill: 4 },
+      gearEffects: { healOnKill: 3, goldOnKill: 4 },
       trinketEffects: defaultTrinketManifest({ boneCharmHealOnKill: 2 }),
     });
     const texts = makeTexts();
@@ -275,7 +275,7 @@ describe("DoT tick kills pay lethality payouts", () => {
       enemyHealth: 1,
       playerHealth: 20,
       enemyStatuses: defaultEnemyStatusValues({ burn: 1 }),
-      gearEffects: { ...makeTestBattleState().gearEffects, healOnBurnEnemyDefeated: 6 },
+      gearEffects: { healOnBurnEnemyDefeated: 6 },
     });
     const next = tickEnemyStatuses(state, makeTexts());
     expect(next.enemyHealth).toBe(0);
@@ -287,7 +287,7 @@ describe("DoT tick kills pay lethality payouts", () => {
       enemyHealth: 5,
       playerHealth: 20,
       enemyStatuses: defaultEnemyStatusValues({ [status]: 8 }),
-      gearEffects: { ...makeTestBattleState().gearEffects, healOnKill: 3, goldOnKill: 4 },
+      gearEffects: { healOnKill: 3, goldOnKill: 4 },
       trinketEffects: defaultTrinketManifest({ boneCharmHealOnKill: 2 }),
     });
     const next = tickEnemyStatuses(state, makeTexts());
@@ -302,7 +302,7 @@ describe("DoT tick kills pay lethality payouts", () => {
       playerHealth: 20,
       enemyMaxHealth: 30,
       enemyStatuses: defaultEnemyStatusValues({ burn: 10, poison: 8, bleed: 6 }),
-      gearEffects: { ...makeTestBattleState().gearEffects, healOnKill: 3, goldOnKill: 4 },
+      gearEffects: { healOnKill: 3, goldOnKill: 4 },
       trinketEffects: defaultTrinketManifest({ boneCharmHealOnKill: 2 }),
     });
     const next = tickEnemyStatuses(state, makeTexts());

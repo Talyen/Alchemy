@@ -16,7 +16,7 @@ import { tryTriggerEnemyFreeze } from "@/lib/battle/damage-status-riders";
 import type { BattleState } from "@/lib/battle/types";
 import { defaultPlayerStatusValues } from "../../fixtures/default-battle-state";
 import { defaultTrinketManifest } from "../../fixtures/default-battle-state";
-import { makeCombatTexts as makeTexts, makeTestBattleState } from "../../fixtures/battle";
+import { makeCombatTexts as makeTexts, patchBattleState } from "../../fixtures/battle";
 
 describe("shouldShowCombatText", () => {
   it("hides harmful status application text", () => {
@@ -84,7 +84,7 @@ describe("emitOverhealBlockText", () => {
 
 describe("applyHealingWithCombatText", () => {
   it("emits only actual health gained on overheal", () => {
-    const state = makeTestBattleState({ playerHealth: 29, playerMaxHealth: 30 });
+    const state = patchBattleState({ playerHealth: 29, playerMaxHealth: 30 });
     const texts = makeTexts();
     applyHealingWithCombatText(state, 10, texts);
     const healText = texts.find((t) => t.kind === "heal");
@@ -92,7 +92,7 @@ describe("applyHealingWithCombatText", () => {
   });
 
   it("grants Grove's Favor Thorns when Health is actually restored", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 10,
       playerMaxHealth: 30,
       trinketEffects: defaultTrinketManifest({ grovesFavorThornsOnHealthRestore: 1 }),
@@ -108,7 +108,7 @@ describe("applyHealingWithCombatText", () => {
   });
 
   it("does not grant Grove's Favor Thorns at full Health", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       trinketEffects: defaultTrinketManifest({ grovesFavorThornsOnHealthRestore: 1 }),
     });
     const texts = makeTexts();
@@ -121,8 +121,8 @@ describe("applyHealingWithCombatText", () => {
   });
 
   it("does not grant Grove's Favor Thorns for overheal converted to Block", () => {
-    const base = makeTestBattleState();
-    const state = makeTestBattleState({
+    const base = patchBattleState();
+    const state = patchBattleState({
       trinketEffects: defaultTrinketManifest({ grovesFavorThornsOnHealthRestore: 1 }),
       talentEffects: { ...base.talentEffects, overhealToBlockRatio: 1 },
     });
@@ -137,7 +137,7 @@ describe("applyHealingWithCombatText", () => {
   });
 
   it("grants Ironwood Buckler Thorns once for each positive Block gain", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       trinketEffects: defaultTrinketManifest({ ironwoodBucklerThornsOnBlock: 1 }),
     });
     const texts = makeTexts();
@@ -153,7 +153,7 @@ describe("applyHealingWithCombatText", () => {
 
 describe("addGoldWithCombatText", () => {
   it("adds gold to battle state and emits scaled combat text", () => {
-    const state = makeTestBattleState({ gold: 10 });
+    const state = patchBattleState({ gold: 10 });
     const texts = makeTexts();
     const nextState = addGoldWithCombatText(state, 5, texts);
     expect(nextState.gold).toBe(15);
@@ -161,9 +161,9 @@ describe("addGoldWithCombatText", () => {
   });
 
   it("scales gold using gear multiplier when present", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       gold: 10,
-      gearEffects: { ...makeTestBattleState().gearEffects, goldGainPercent: 50 },
+      gearEffects: { goldGainPercent: 50 },
     });
     const texts = makeTexts();
     const nextState = addGoldWithCombatText(state, 10, texts);
@@ -172,7 +172,7 @@ describe("addGoldWithCombatText", () => {
   });
 
   it("no-ops when amount is 0 or negative", () => {
-    const state = makeTestBattleState({ gold: 10 });
+    const state = patchBattleState({ gold: 10 });
     const texts = makeTexts();
     const nextState = addGoldWithCombatText(state, 0, texts);
     expect(nextState.gold).toBe(10);
@@ -181,7 +181,7 @@ describe("addGoldWithCombatText", () => {
 });
 
 function ccProcKillState(): BattleState {
-  return makeTestBattleState({
+  return patchBattleState({
     enemyHealth: 5,
     enemyMaxHealth: 30,
     playerHealth: 20,
@@ -245,11 +245,11 @@ describe("lethality payouts — every kill path pays the same rewards", () => {
 
 describe("Arcane Mending from bonus Mana", () => {
   it.each([true, false])("heals once per gain with combat text enabled: %s", (collectText) => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       mana: 0,
       maxMana: 4,
       playerHealth: 10,
-      talentEffects: { ...makeTestBattleState().talentEffects, healOnManaGain: 2 },
+      talentEffects: { healOnManaGain: 2 },
     });
     const texts = makeTexts();
     const next = gainManaWithCombatText(state, 3, collectText ? texts : undefined);
@@ -260,11 +260,11 @@ describe("Arcane Mending from bonus Mana", () => {
   });
 
   it("does not heal when Mana is already full", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       mana: 4,
       maxMana: 4,
       playerHealth: 10,
-      talentEffects: { ...makeTestBattleState().talentEffects, healOnManaGain: 2 },
+      talentEffects: { healOnManaGain: 2 },
     });
     expect(gainManaWithCombatText(state, 3, []).playerHealth).toBe(10);
   });

@@ -3,8 +3,7 @@
 import path from "node:path";
 import fs from "node:fs";
 
-import { writeFailureDigest } from "./lib/compact-output.mjs";
-import { summarizeStepResult } from "./lib/run-step.mjs";
+import { summarizeAndReportFailure, summarizeStepResult } from "./lib/run-step.mjs";
 import { resolveRoutePlan } from "./lib/change-routes.mjs";
 import { parseChangedPathsArgs, resolveSelectedPaths } from "./lib/changed-paths.mjs";
 import { ensureRunId, writeCurrentRun } from "./lib/current-run.mjs";
@@ -74,18 +73,22 @@ function runVerificationCommand(command, index, verbose, runId, sessionInputs) {
       inputHash: sessionInputs,
       status: result.status === 0 ? "passed" : "failed",
     });
-  const { exposure, failureOutput } = summarizeStepResult(command, result, { verbose });
   if (result.status === 0) {
+    const { exposure } = summarizeStepResult(command, result, { verbose });
     console.log(`✓ ${command.label} (${(result.elapsedMs / 1000).toFixed(1)}s, run ${runId})`);
     return { passed: true, command, result, exposure };
   }
   const reportsDir = path.join(ROOT, "reports", "runs", runId, "verify");
-  const { digestPath, logPath } = writeFailureDigest(reportsDir, command, result, runId, index);
+  const reported = summarizeAndReportFailure(reportsDir, command, result, runId, index, ROOT, { verbose });
   console.error(`✗ ${command.label} (${(result.elapsedMs / 1000).toFixed(1)}s, exit ${result.status ?? "unknown"})`);
-  console.error(`  ${failureOutput}`);
-  console.error(`  Failure digest: ${path.relative(ROOT, digestPath)}`);
-  console.error(`  Full log: ${path.relative(ROOT, logPath)}`);
-  return { passed: false, command, result, exposure, digestPath, logPath };
+  return {
+    passed: false,
+    command,
+    result,
+    exposure: reported.exposure,
+    digestPath: reported.digestPath,
+    logPath: reported.logPath,
+  };
 }
 
 export function main(argv = process.argv.slice(2)) {

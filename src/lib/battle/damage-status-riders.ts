@@ -18,8 +18,8 @@ import {
   FREEZE_THRESHOLD_FRACTION,
   MIN_FREEZE_THRESHOLD_FRACTION,
 } from "../game-constants";
-import { applyGearCcPhysicalDamage, dealEnemyScaledDamage, scaledGearLeechHeal } from "./gear-effects";
-import { addBloodDebtHealing, applyLeechHealing, computeLeechHeal, scalePlayerLeechHeal } from "./damage-rider-leech";
+import { applyGearCcPhysicalDamage, dealEnemyScaledDamage } from "./gear-effects";
+import { applyScaledLeechHealing, computeLeechHeal } from "./damage-rider-leech";
 import { detonateEnemyStatuses } from "./dot-resolve";
 import { halveRounded } from "./amount-helpers";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
@@ -36,14 +36,7 @@ function applyGearBurnBleedMirrorLeech(
     nextState = addEnemyStatus(nextState, mirrorTarget, actualDamage);
   }
   const healAmount = Math.max(1, halveRounded(actualDamage));
-  return applyLeechHealing(
-    nextState,
-    scalePlayerLeechHeal(
-      nextState,
-      scaledGearLeechHeal(addBloodDebtHealing(nextState, healAmount), nextState.gearEffects),
-    ),
-    combatTexts,
-  );
+  return applyScaledLeechHealing(nextState, healAmount, combatTexts);
 }
 
 function applyBurnStatusRider(state: BattleState, actualDamage: number, combatTexts: CombatTextEvent[]): BattleState {
@@ -89,15 +82,7 @@ export function applyPoisonTalentRiders(
     ];
     for (const chance of leechChances) {
       if (!rollPercent(chance, getBattleRng(nextState))) continue;
-      nextState = applyLeechHealing(
-        nextState,
-        scalePlayerLeechHeal(
-          nextState,
-          scaledGearLeechHeal(addBloodDebtHealing(nextState, computeLeechHeal(damage)), nextState.gearEffects),
-        ),
-        combatTexts,
-        { afflicted: true },
-      );
+      nextState = applyScaledLeechHealing(nextState, computeLeechHeal(damage), combatTexts, { afflicted: true });
     }
   }
   return nextState;

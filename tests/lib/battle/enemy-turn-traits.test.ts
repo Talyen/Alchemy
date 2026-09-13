@@ -17,7 +17,7 @@ import {
   TRAIT_FORGE_PER_TURN,
   TRAIT_FREEZE_BONUS_PER_TURN,
 } from "@/lib/game-constants";
-import { makeTestBattleState } from "../../fixtures/battle";
+import { patchBattleState } from "../../fixtures/battle";
 import { defaultCcState } from "../../fixtures/default-battle-state";
 
 describe("enemy turn trait coverage", () => {
@@ -74,7 +74,7 @@ describe("enemy turn trait coverage", () => {
 
 describe("processEnemyRegeneration", () => {
   it("heals enemy when regeneration is active and not frozen for regen", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 20,
       enemyMaxHealth: 30,
       enemyRegeneration: 3,
@@ -87,13 +87,12 @@ describe("processEnemyRegeneration", () => {
   });
 
   it("no-ops when freeze blocks regen", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 20,
       enemyMaxHealth: 30,
       enemyRegeneration: 3,
       enemyCC: defaultCcState({ freezeSkipTurns: 1 }),
       talentEffects: {
-        ...makeTestBattleState().talentEffects,
         freezeBlocksRegen: true,
       },
     });
@@ -102,13 +101,12 @@ describe("processEnemyRegeneration", () => {
   });
 
   it("halves regen when enemy has poison and poisonHalvesHealing talent", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 20,
       enemyMaxHealth: 30,
       enemyRegeneration: 5,
-      enemyStatuses: { ...makeTestBattleState().enemyStatuses, poison: 3 },
+      enemyStatuses: { poison: 3 },
       talentEffects: {
-        ...makeTestBattleState().talentEffects,
         poisonHalvesHealing: true,
       },
     });
@@ -118,13 +116,12 @@ describe("processEnemyRegeneration", () => {
   });
 
   it("halves regen when enemy has bleed and bleedHalvesEnemyHealing talent", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 20,
       enemyMaxHealth: 30,
       enemyRegeneration: 5,
-      enemyStatuses: { ...makeTestBattleState().enemyStatuses, bleed: 3 },
+      enemyStatuses: { bleed: 3 },
       talentEffects: {
-        ...makeTestBattleState().talentEffects,
         bleedHalvesEnemyHealing: true,
       },
     });
@@ -134,13 +131,12 @@ describe("processEnemyRegeneration", () => {
   });
 
   it("halves regen twice when enemy has both poison and bleed with both talents", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 20,
       enemyMaxHealth: 30,
       enemyRegeneration: 8,
-      enemyStatuses: { ...makeTestBattleState().enemyStatuses, poison: 3, bleed: 3 },
+      enemyStatuses: { poison: 3, bleed: 3 },
       talentEffects: {
-        ...makeTestBattleState().talentEffects,
         poisonHalvesHealing: true,
         bleedHalvesEnemyHealing: true,
       },
@@ -151,13 +147,12 @@ describe("processEnemyRegeneration", () => {
   });
 
   it("still heals 1 when regen is 1 and halved by poison (rounds up)", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 20,
       enemyMaxHealth: 30,
       enemyRegeneration: 1,
-      enemyStatuses: { ...makeTestBattleState().enemyStatuses, poison: 3 },
+      enemyStatuses: { poison: 3 },
       talentEffects: {
-        ...makeTestBattleState().talentEffects,
         poisonHalvesHealing: true,
       },
     });
@@ -174,28 +169,28 @@ describe("processEnemyTraits", () => {
   const skeleton = enemyBestiary.find((e) => e.id === "skeleton")!;
 
   it("applies rusting-carapace forge every other turn (not room-scaled)", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       currentEnemy: forgeGolem,
       turn: 2,
       roomScalingMultiplier: 2,
-      enemyMitigation: { ...makeTestBattleState().enemyMitigation, forge: 0 },
+      enemyMitigation: { forge: 0 },
     });
     const result = processEnemyTraits(state, []);
     expect(result.enemyMitigation.forge).toBe(TRAIT_FORGE_PER_TURN);
   });
 
   it("does not apply rusting-carapace on odd turns", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       currentEnemy: forgeGolem,
       turn: 1,
-      enemyMitigation: { ...makeTestBattleState().enemyMitigation, forge: 0 },
+      enemyMitigation: { forge: 0 },
     });
     const result = processEnemyTraits(state, []);
     expect(result.enemyMitigation.forge).toBe(0);
   });
 
   it("iron-hide grows Armor every other turn without a random choice", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       currentEnemy: ironBear,
       turn: 2,
       roomScalingMultiplier: 1,
@@ -212,7 +207,7 @@ describe("processEnemyTraits", () => {
   });
 
   it("builds Glacial Surge to its cap without removing a larger saved bonus", () => {
-    const state = makeTestBattleState({ currentEnemy: frostwarden, turn: 2, roomScalingMultiplier: 1 });
+    const state = patchBattleState({ currentEnemy: frostwarden, turn: 2, roomScalingMultiplier: 1 });
     const result = processEnemyTraits(state, []);
     expect(result.enemyStatuses.freezeBonus).toBe(TRAIT_FREEZE_BONUS_PER_TURN);
     let next = result;
@@ -225,7 +220,7 @@ describe("processEnemyTraits", () => {
   });
 
   it("applies enemy-gains-forge-each-turn difficulty modifier", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       currentEnemy: skeleton,
       difficultyModifiers: [{ kind: "enemy-gains-forge-each-turn" }],
     });
@@ -241,12 +236,12 @@ describe("processEnemyTraits", () => {
   });
 
   it("skips scaling traits when freeze prevents enemy scaling", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       currentEnemy: forgeGolem,
       turn: 2,
       enemyCC: defaultCcState({ freezeSkipTurns: 1 }),
-      enemyMitigation: { ...makeTestBattleState().enemyMitigation, forge: 0 },
-      talentEffects: { ...makeTestBattleState().talentEffects, freezePreventsEnemyScaling: true },
+      enemyMitigation: { forge: 0 },
+      talentEffects: { freezePreventsEnemyScaling: true },
     });
     const result = processEnemyTraits(state, []);
     expect(result.enemyMitigation.forge).toBe(0);
@@ -254,21 +249,21 @@ describe("processEnemyTraits", () => {
 
   it("does not run handlers for passive-only regeneration trait", () => {
     const blightTreant = enemyBestiary.find((e) => e.id === "blight-treant")!;
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       currentEnemy: blightTreant,
-      enemyMitigation: { ...makeTestBattleState().enemyMitigation, forge: 0 },
+      enemyMitigation: { forge: 0 },
     });
     const result = processEnemyTraits(state, []);
     expect(result.enemyMitigation.forge).toBe(0);
   });
 
   it("applies trait and difficulty handlers in one pass", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       currentEnemy: forgeGolem,
       turn: 2,
       roomScalingMultiplier: 1,
       difficultyModifiers: [{ kind: "enemy-gains-forge-each-turn" }],
-      enemyMitigation: { ...makeTestBattleState().enemyMitigation, forge: 0 },
+      enemyMitigation: { forge: 0 },
     });
     const result = processEnemyTraits(state, []);
     expect(result.enemyMitigation.forge).toBe(TRAIT_FORGE_PER_TURN + DIFFICULTY_FORGE_PER_TURN);

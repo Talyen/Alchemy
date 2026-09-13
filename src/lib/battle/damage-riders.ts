@@ -1,5 +1,5 @@
 import { type BattleCard, type BattleCardEffect } from "@/lib/game-data";
-import { BATTLE_CONFIG, BLACKFLETCH_EXECUTE_HEALTH_PERCENT } from "../game-constants";
+import { BATTLE_CONFIG, BLACKFLETCH_EXECUTE_HEALTH_PERCENT, PERCENT_DENOMINATOR } from "../game-constants";
 import { halveRounded } from "./amount-helpers";
 import { applyLuckyCloverGold, applyNatureManaRefund } from "./bonus-effects";
 import { mergeCombatText, payKillPayouts } from "./combat-text";
@@ -167,7 +167,8 @@ function consumeForgeAfterDamage(
 
 function applyArcheryDetonate(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   if (state.gearEffects.archeryDetonateBleedPoison <= 0 || state.enemyHealth <= 0) return state;
-  if (state.enemyHealth * 100 >= state.enemyMaxHealth * BLACKFLETCH_EXECUTE_HEALTH_PERCENT) return state;
+  if (state.enemyHealth * PERCENT_DENOMINATOR >= state.enemyMaxHealth * BLACKFLETCH_EXECUTE_HEALTH_PERCENT)
+    return state;
   return detonateEnemyStatuses(state, ["bleed", "poison"], combatTexts, "remaining-ticks");
 }
 

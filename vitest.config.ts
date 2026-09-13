@@ -27,7 +27,6 @@ function testEnvironmentForPath(filePath: string): "dom" | "node" {
   if (filePath.endsWith(".dom.test.ts")) return "dom";
   if (domTestPrefixes.some((prefix) => filePath.startsWith(prefix))) return "dom";
   if (domLibPrefixes.some((prefix) => filePath.startsWith(prefix))) return "dom";
-  if (filePath.startsWith("tests/lib/animation/")) return "dom";
   return "node";
 }
 

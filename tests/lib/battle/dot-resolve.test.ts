@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { applyEnemyDotDamage, dealEnemyDotTick, detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
 import { BATTLE_CONFIG } from "@/lib/game-constants";
 import { defaultEnemyMitigation, defaultEnemyStatusValues } from "../../fixtures/default-battle-state";
-import { makeCombatTexts as makeTexts, makeTestBattleState, patchBattleState } from "../../fixtures/battle";
+import { makeCombatTexts as makeTexts, patchBattleState } from "../../fixtures/battle";
 
 describe("applyEnemyDotDamage", () => {
   it("sums pulses into one health transition and applies every stack update", () => {
@@ -28,7 +28,7 @@ describe("applyEnemyDotDamage", () => {
       enemyHealth: 1,
       playerHealth: 20,
       enemyStatuses: defaultEnemyStatusValues({ burn: 1 }),
-      gearEffects: { ...makeTestBattleState().gearEffects, healOnBurnEnemyDefeated: 6 },
+      gearEffects: { healOnBurnEnemyDefeated: 6 },
     });
     const next = applyEnemyDotDamage(state, [{ status: "burn", finalDamage: 1, nextStacks: 0 }], makeTexts());
     expect(next.enemyHealth).toBe(0);
@@ -182,7 +182,6 @@ describe("remaining-tick detonation", () => {
       enemyMaxHealth: 100,
       enemyStatuses: { poison: 5 },
       currentEnemy: {
-        ...makeTestBattleState().currentEnemy,
         traits: [{ id: "poison-resistance", title: "Poison Resistance", description: "" }],
       },
       rng: () => {
@@ -210,7 +209,7 @@ describe("remaining-tick detonation", () => {
       enemyHealth: 6,
       enemyMaxHealth: 10,
       currentEnemy: { traits: [{ id: "second-wind", title: "Second Wind", description: "" }] },
-      gearEffects: { ...makeTestBattleState().gearEffects, healOnBurnEnemyDefeated: 6 },
+      gearEffects: { healOnBurnEnemyDefeated: 6 },
       playerHealth: 20,
       playerMaxHealth: 30,
     });

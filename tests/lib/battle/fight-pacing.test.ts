@@ -16,14 +16,14 @@ import { appliesFightPacingFromEnv } from "@/lib/balance";
 import { FIGHT_PACING, STUN_THRESHOLD_FRACTION } from "@/lib/game-constants";
 import type { BattleCardEffect } from "@/lib/game-data";
 import type { CombatTextEvent } from "@/lib/battle/types";
-import { makeTestBattleState, makeTestCard } from "../../fixtures/battle";
+import { makeTestCard, patchBattleState, type BattleStatePatch } from "../../fixtures/battle";
 
 function noCritRng() {
   return 0.99;
 }
 
-function pacedState(overrides: Parameters<typeof makeTestBattleState>[0] = {}): ReturnType<typeof makeTestBattleState> {
-  return makeTestBattleState({ appliesFightPacing: true, rng: noCritRng, ...overrides });
+function pacedState(overrides: BattleStatePatch = {}): ReturnType<typeof patchBattleState> {
+  return patchBattleState({ appliesFightPacing: true, rng: noCritRng, ...overrides });
 }
 
 const evenMetrics = {
@@ -96,7 +96,7 @@ describe("fight pacing multipliers", () => {
 
 describe("paceCombatMagnitude", () => {
   it("returns the authored amount when fight pacing is disabled", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       appliesFightPacing: false,
       playerHealth: 5,
       enemyHealth: 30,
@@ -224,7 +224,7 @@ describe("fight pacing in combat pipelines", () => {
       enemyHealth: 40,
       enemyMaxHealth: 40,
       enemyMitigation: { armor: 0, forge: 0, block: 0 },
-      enemyStatuses: { ...makeTestBattleState().enemyStatuses, burn: 10 },
+      enemyStatuses: { burn: 10 },
     });
     const pacedTick = paceCombatMagnitude(state, 10, "player");
     expect(pacedTick).toBeGreaterThan(10);
@@ -249,7 +249,7 @@ describe("fight pacing in combat pipelines", () => {
 
 describe("Forge gain pacing", () => {
   it("scales Forge before evaluating threshold rewards", () => {
-    const base = makeTestBattleState();
+    const base = patchBattleState();
     const state = pacedState({
       playerHealth: 8,
       playerMaxHealth: 30,

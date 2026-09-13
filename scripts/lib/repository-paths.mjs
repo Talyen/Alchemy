@@ -9,6 +9,18 @@ function normalizeRepositoryPath(rootDir, file) {
   return relative || ".";
 }
 
+/** List tracked + untracked repository files via Git's inventory. Throws on Git failure. */
+export function listRepositoryFiles(rootDir) {
+  const result = spawnSync("git", ["ls-files", "--cached", "--others", "--exclude-standard", "-z"], {
+    cwd: rootDir,
+    encoding: "utf8",
+    maxBuffer: 16 * 1024 * 1024,
+  });
+  if (result.status !== 0)
+    throw new Error(`Could not list repository files: ${result.error?.message ?? result.stderr}`);
+  return [...new Set(result.stdout.split("\0").filter(Boolean))].sort();
+}
+
 /** Expand directories from Git's inventory, retaining deleted files for risk selection. */
 export function expandRepositoryPaths(rootDir, paths) {
   let inventory;
@@ -20,14 +32,16 @@ export function expandRepositoryPaths(rootDir, paths) {
       continue;
     }
     if (!inventory) {
-      const result = spawnSync("git", ["ls-files", "--cached", "--others", "--exclude-standard", "-z"], {
-        cwd: rootDir,
-        encoding: "utf8",
-        maxBuffer: 16 * 1024 * 1024,
-      });
-      if (result.status !== 0)
-        throw new Error(`Could not expand directory selection: ${result.error?.message ?? result.stderr}`);
-      inventory = [...new Set(result.stdout.split("\0").filter(Boolean))].sort();
+      try {
+        inventory = listRepositoryFiles(rootDir);
+      } catch (error) {
+        throw new Error(
+          `Could not expand directory selection ${file}: ${error instanceof Error ? error.message : String(error)}`,
+          {
+            cause: error,
+          },
+        );
+      }
     }
     const files = inventory.filter((entry) => relative === "." || entry.startsWith(`${relative}/`));
     if (!files.length) throw new Error(`Directory contains no repository files: ${file}`);

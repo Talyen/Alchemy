@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
+import { listRepositoryFiles } from "./repository-paths.mjs";
 
 const REUSABLE_COMMANDS = new Set(["related", "unit-changed", "unit-save", "unit-desktop", "unit-performance"]);
 // Only fast deterministic unit selections reuse receipts: docs-check,
@@ -38,19 +38,15 @@ function fileIdentity(filename, hash, rootDir) {
 
 export function captureVerificationInputs(rootDir, env = process.env) {
   try {
-    const result = spawnSync("git", ["ls-files", "--cached", "--others", "--exclude-standard", "-z"], {
-      cwd: rootDir,
-      encoding: "utf8",
-      maxBuffer: 16 * 1024 * 1024,
-    });
-    if (result.status !== 0 || !fs.existsSync(path.join(rootDir, "node_modules/.package-lock.json"))) return null;
+    if (!fs.existsSync(path.join(rootDir, "node_modules/.package-lock.json"))) return null;
+    const listed = listRepositoryFiles(rootDir);
     const hash = crypto.createHash("sha256");
     hash.update(JSON.stringify([1, rootDir, process.execPath, process.version, process.platform, process.arch]));
     const environment = Object.entries(env)
       .filter(([key]) => !VOLATILE_ENV.test(key))
       .sort(([a], [b]) => a.localeCompare(b));
     hash.update(JSON.stringify(environment));
-    const files = new Set(result.stdout.split("\0").filter(Boolean));
+    const files = new Set(listed);
     for (const name of fs.readdirSync(rootDir)) if (name === ".npmrc" || name.startsWith(".env")) files.add(name);
     for (const file of [...files].sort()) fileIdentity(path.join(rootDir, file), hash, rootDir);
     const walk = (directory) => {

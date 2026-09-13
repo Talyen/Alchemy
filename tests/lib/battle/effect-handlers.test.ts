@@ -29,10 +29,10 @@ import {
   applyDrawCardsEffect,
   applyNextArcheryFreeEffect,
 } from "@/lib/battle/effect-handlers/simple-handlers";
-import { makeTestBattleState, makeTestCard } from "../../fixtures/battle";
+import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 type EffectHandler = (
-  state: ReturnType<typeof makeTestBattleState>,
+  state: ReturnType<typeof patchBattleState>,
   card: never,
   effect: never,
   multiplier: number,
@@ -63,17 +63,17 @@ describe("effect handlers reject mismatched kinds", () => {
     { name: "applyWishEffectHandler", apply: applyWishEffectHandler },
     { name: "applyDrawCardsEffect", apply: applyDrawCardsEffect },
   ] as const)("$name throws for a mismatched kind", ({ apply }) => {
-    const state = makeTestBattleState();
+    const state = patchBattleState();
     expect(() => (apply as EffectHandler)(state, {} as never, { kind: "__never__" } as never, 1, [])).toThrow();
   });
 });
 
 describe("applySelfDamageEffect", () => {
   it("does not grant rider status when Death's Door absorbs the full hit", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 1,
       playerMaxHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, burn: 0 },
+      playerStatuses: { burn: 0 },
     });
     const texts: CombatTextEvent[] = [];
     const result = applySelfDamageEffect(
@@ -91,7 +91,7 @@ describe("applySelfDamageEffect", () => {
 
 describe("applyPlayerStatusEffectHandler", () => {
   it("applies perManaCrystal scaling", () => {
-    const state = makeTestBattleState({ maxMana: 5 });
+    const state = patchBattleState({ maxMana: 5 });
     const result = applyPlayerStatusEffectHandler(
       state,
       {} as never,
@@ -103,7 +103,7 @@ describe("applyPlayerStatusEffectHandler", () => {
   });
 
   it("converts current mana as block per mana and zeroes mana", () => {
-    const state = makeTestBattleState({ mana: 4, maxMana: 5 });
+    const state = patchBattleState({ mana: 4, maxMana: 5 });
     const result = applyPlayerStatusEffectHandler(
       state,
       {} as never,
@@ -116,7 +116,7 @@ describe("applyPlayerStatusEffectHandler", () => {
   });
 
   it("respects potion multiplier on convertCurrentMana", () => {
-    const state = makeTestBattleState({ mana: 4, maxMana: 5 });
+    const state = patchBattleState({ mana: 4, maxMana: 5 });
     const result = applyPlayerStatusEffectHandler(
       state,
       {} as never,
@@ -128,7 +128,7 @@ describe("applyPlayerStatusEffectHandler", () => {
   });
 
   it("uses frozen manaAtStart snapshot, not live mana", () => {
-    const state = makeTestBattleState({ mana: 4, maxMana: 5 });
+    const state = patchBattleState({ mana: 4, maxMana: 5 });
     const result = applyPlayerStatusEffectHandler(
       state,
       {} as never,
@@ -144,8 +144,8 @@ describe("applyPlayerStatusEffectHandler", () => {
 describe("applyEnemyStatusEffect", () => {
   it("applies freeze and triggers freeze resolution", () => {
     const texts: CombatTextEvent[] = [];
-    const state = makeTestBattleState({
-      enemyStatuses: { ...makeTestBattleState().enemyStatuses, freeze: 0 },
+    const state = patchBattleState({
+      enemyStatuses: { freeze: 0 },
       enemyCC: { freezeSkipTurns: 0, stunSkipTurns: 0, cooldown: 0 },
     });
     const result = applyEnemyStatusEffect(
@@ -160,7 +160,7 @@ describe("applyEnemyStatusEffect", () => {
 
   it("applies stun and triggers stun resolution", () => {
     const texts: CombatTextEvent[] = [];
-    const state = makeTestBattleState();
+    const state = patchBattleState();
     const result = applyEnemyStatusEffect(
       state,
       {} as never,
@@ -174,12 +174,12 @@ describe("applyEnemyStatusEffect", () => {
 
 describe("applyRemovePlayerStatusEffect", () => {
   it("removes player status and applies heals from trinkets and talents", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       playerHealth: 10,
       playerMaxHealth: 30,
-      playerStatuses: { ...makeTestBattleState().playerStatuses, burn: 5 },
-      trinketEffects: { ...makeTestBattleState().trinketEffects, sinEaterHealOnHarmfulStatusRemove: 3 },
-      talentEffects: { ...makeTestBattleState().talentEffects, healOnStatusCleanse: 2 },
+      playerStatuses: { burn: 5 },
+      trinketEffects: { sinEaterHealOnHarmfulStatusRemove: 3 },
+      talentEffects: { healOnStatusCleanse: 2 },
     });
     const result = applyRemovePlayerStatusEffect(
       state,
@@ -193,8 +193,8 @@ describe("applyRemovePlayerStatusEffect", () => {
   });
 
   it("no-ops when player has 0 stacks of the status", () => {
-    const state = makeTestBattleState({
-      playerStatuses: { ...makeTestBattleState().playerStatuses, burn: 0 },
+    const state = patchBattleState({
+      playerStatuses: { burn: 0 },
     });
     const result = applyRemovePlayerStatusEffect(
       state,
@@ -209,8 +209,8 @@ describe("applyRemovePlayerStatusEffect", () => {
 
 describe("applyMultiplyEnemyStatusEffect", () => {
   it("no-ops when current status is 0", () => {
-    const state = makeTestBattleState({
-      enemyStatuses: { ...makeTestBattleState().enemyStatuses, poison: 0 },
+    const state = patchBattleState({
+      enemyStatuses: { poison: 0 },
     });
     const result = applyMultiplyEnemyStatusEffect(
       state,
@@ -223,8 +223,8 @@ describe("applyMultiplyEnemyStatusEffect", () => {
   });
 
   it("multiplies enemy status and triggers freeze resolution", () => {
-    const state = makeTestBattleState({
-      enemyStatuses: { ...makeTestBattleState().enemyStatuses, freeze: 4 },
+    const state = patchBattleState({
+      enemyStatuses: { freeze: 4 },
     });
     const result = applyMultiplyEnemyStatusEffect(
       state,
@@ -239,7 +239,7 @@ describe("applyMultiplyEnemyStatusEffect", () => {
 
 describe("applyCleansePlayerStatusToDamageEffect", () => {
   it("no-ops when player has 0 stacks", () => {
-    const state = makeTestBattleState();
+    const state = patchBattleState();
     const result = applyCleansePlayerStatusToDamageEffect(
       state,
       makeTestCard(),
@@ -251,8 +251,8 @@ describe("applyCleansePlayerStatusToDamageEffect", () => {
   });
 
   it("cleanses status and deals damage", () => {
-    const state = makeTestBattleState({
-      playerStatuses: { ...makeTestBattleState().playerStatuses, burn: 5 },
+    const state = patchBattleState({
+      playerStatuses: { burn: 5 },
       enemyHealth: 30,
     });
     const result = applyCleansePlayerStatusToDamageEffect(
@@ -269,7 +269,7 @@ describe("applyCleansePlayerStatusToDamageEffect", () => {
 
 describe("applyRestoreManaEffect ifEnemyFrozen", () => {
   it("no-ops when enemy not frozen and ifEnemyFrozen set", () => {
-    const state = makeTestBattleState({ enemyCC: { freezeSkipTurns: 0, stunSkipTurns: 0, cooldown: 0 } });
+    const state = patchBattleState({ enemyCC: { freezeSkipTurns: 0, stunSkipTurns: 0, cooldown: 0 } });
     const result = applyRestoreManaEffect(
       state,
       {} as never,
@@ -282,7 +282,7 @@ describe("applyRestoreManaEffect ifEnemyFrozen", () => {
   });
 
   it("restores when enemy frozen at start", () => {
-    const state = makeTestBattleState({ mana: 1, enemyCC: { freezeSkipTurns: 2, stunSkipTurns: 0, cooldown: 0 } });
+    const state = patchBattleState({ mana: 1, enemyCC: { freezeSkipTurns: 2, stunSkipTurns: 0, cooldown: 0 } });
     const result = applyRestoreManaEffect(
       state,
       {} as never,
@@ -297,7 +297,7 @@ describe("applyRestoreManaEffect ifEnemyFrozen", () => {
 
 describe("applyGainGoldEffect ifEnemyStunned", () => {
   it("no-ops when the enemy is not stunned and ifEnemyStunned is set", () => {
-    const state = makeTestBattleState({ enemyCC: { freezeSkipTurns: 0, stunSkipTurns: 0, cooldown: 0 } });
+    const state = patchBattleState({ enemyCC: { freezeSkipTurns: 0, stunSkipTurns: 0, cooldown: 0 } });
     const result = applyGainGoldEffect(
       state,
       {} as never,
@@ -310,7 +310,7 @@ describe("applyGainGoldEffect ifEnemyStunned", () => {
   });
 
   it("pays gold when the enemy is stunned", () => {
-    const state = makeTestBattleState({ gold: 5, enemyCC: { freezeSkipTurns: 0, stunSkipTurns: 2, cooldown: 0 } });
+    const state = patchBattleState({ gold: 5, enemyCC: { freezeSkipTurns: 0, stunSkipTurns: 2, cooldown: 0 } });
     const texts: CombatTextEvent[] = [];
     const result = applyGainGoldEffect(
       state,
@@ -325,10 +325,10 @@ describe("applyGainGoldEffect ifEnemyStunned", () => {
   });
 
   it("ignores stun buildup that has not skipped a turn", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       gold: 0,
       enemyCC: { freezeSkipTurns: 0, stunSkipTurns: 0, cooldown: 0 },
-      enemyStatuses: { ...makeTestBattleState().enemyStatuses, stun: 5 },
+      enemyStatuses: { stun: 5 },
     });
     const result = applyGainGoldEffect(
       state,
@@ -344,7 +344,7 @@ describe("applyGainGoldEffect ifEnemyStunned", () => {
 
 describe("applyNextArcheryFreeEffect", () => {
   it("raises the free-archery flag", () => {
-    const state = makeTestBattleState();
+    const state = patchBattleState();
     expect(state.flags.nextArcheryCardFree).toBe(false);
     const result = applyNextArcheryFreeEffect(state, {} as never, { kind: "next-archery-free" } as never, 1, []);
     expect(result.flags.nextArcheryCardFree).toBe(true);

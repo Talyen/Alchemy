@@ -3,19 +3,19 @@ import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import type { BattleState } from "@/lib/battle/types";
 import { defaultTalentEffects } from "@/lib/battle";
 import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
-import { makeTestBattleState } from "../../fixtures/battle";
+import { patchBattleState, type BattleStatePatch } from "../../fixtures/battle";
 import { defaultTrinketManifest } from "../../fixtures/default-battle-state";
 
-function makeState(overrides: Partial<BattleState> = {}): BattleState {
-  return makeTestBattleState({
-    currentEnemy: { ...makeTestBattleState().currentEnemy, abilityIds: ["slash", "bash", "sunder"] },
+function makeState(overrides: BattleStatePatch = {}): BattleState {
+  return patchBattleState({
+    currentEnemy: { abilityIds: ["slash", "bash", "sunder"] },
     rng: () => 0.99,
     playerHealth: 30,
     playerMaxHealth: 30,
-    playerStatuses: { ...makeTestBattleState().playerStatuses, block: 10 },
+    playerStatuses: { block: 10 },
     enemyHealth: 30,
     enemyMaxHealth: 30,
-    enemyStatuses: { ...makeTestBattleState().enemyStatuses },
+    enemyStatuses: {},
     deck: [],
     mana: 4,
     maxMana: 4,
@@ -26,7 +26,7 @@ function makeState(overrides: Partial<BattleState> = {}): BattleState {
 
 describe("block decay timing", () => {
   it("absorbs enemy damage before block decays", () => {
-    const state = makeState({ playerStatuses: { ...makeTestBattleState().playerStatuses, block: 10 } });
+    const state = makeState({ playerStatuses: { block: 10 } });
     const result = endPlayerTurn(state);
 
     expect(result.state.playerHealth).toBe(30);
@@ -42,7 +42,7 @@ describe("block decay timing", () => {
   });
 
   it("block absorbs partial damage then decays remainder", () => {
-    const state = makeState({ playerStatuses: { ...makeTestBattleState().playerStatuses, block: 3 } });
+    const state = makeState({ playerStatuses: { block: 3 } });
     const result = endPlayerTurn(state);
 
     expect(result.state.playerHealth).toBe(29);
@@ -51,7 +51,7 @@ describe("block decay timing", () => {
 
   it("block decays during turn transition after enemy phase completes", () => {
     const state = makeState({
-      playerStatuses: { ...makeTestBattleState().playerStatuses, block: 9 },
+      playerStatuses: { block: 9 },
     });
     const result = endPlayerTurn(state);
 
@@ -68,7 +68,7 @@ describe("block decay timing", () => {
     );
     const preserved = endPlayerTurn(
       makeState({
-        playerStatuses: { ...makeTestBattleState().playerStatuses, block: 10, haste: 1 },
+        playerStatuses: { block: 10, haste: 1 },
         trinketEffects,
       }),
     );
@@ -80,7 +80,7 @@ describe("block decay timing", () => {
 
   it("enemy block decays at the start of the enemy phase after the player had an attack window", () => {
     const state = makeState({
-      enemyMitigation: { ...makeTestBattleState().enemyMitigation, block: 9 },
+      enemyMitigation: { block: 9 },
     });
     const result = endPlayerTurn(state);
     expect(result.state.enemyMitigation.block).toBe(5);
@@ -88,14 +88,13 @@ describe("block decay timing", () => {
 
   it("enemy block gained during the enemy phase survives until the next enemy phase", () => {
     const reinforcedEnemy = {
-      ...makeTestBattleState().currentEnemy,
       traits: [ENCOUNTER_TRAITS.reinforced.enemyTrait],
       abilityIds: ["slash", "bash", "sunder"],
     };
     const first = endPlayerTurn(
       makeState({
         currentEnemy: reinforcedEnemy,
-        enemyMitigation: { ...makeTestBattleState().enemyMitigation, block: 0 },
+        enemyMitigation: { block: 0 },
       }),
     );
     expect(first.state.enemyMitigation.block).toBe(2);

@@ -1,10 +1,12 @@
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { describe, expect, it } from "vitest";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
-import { applyDamageRiders } from "@/lib/battle/damage-riders";
+import { applyAttackPurgeRider, applyDamageRiders } from "@/lib/battle/damage-riders";
+import { paceCombatDamage } from "@/lib/battle/fight-pacing";
+import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
 import { defaultTalentEffects } from "@/lib/battle";
 import type { CombatTextEvent } from "@/lib/battle/types";
-import { makeTestBattleState, makeTestCard, seededRng } from "../../fixtures/battle";
+import { dealDamage, makeCombatTexts, makeTestCard, patchBattleState, seededRng } from "../../fixtures/battle";
 import {
   defaultPlayerStatusValues,
   defaultEnemyStatusValues,
@@ -13,7 +15,7 @@ import {
 
 describe("applyDamageRiders", () => {
   it("applies enemy damage and forge decay on physical hit", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
       playerStatuses: defaultPlayerStatusValues({ forge: 3 }),
@@ -28,7 +30,7 @@ describe("applyDamageRiders", () => {
   });
 
   it("triggers forge stun rider when forge exceeds threshold", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
       playerStatuses: defaultPlayerStatusValues({ forge: 8 }),
@@ -46,7 +48,7 @@ describe("applyDamageRiders", () => {
 
 describe("damage riders via applyCardEffects", () => {
   it("armorToPhysicalDamage adds armor to physical damage", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
       playerStatuses: defaultPlayerStatusValues({ armor: 6 }),
@@ -64,7 +66,7 @@ describe("damage riders via applyCardEffects", () => {
   });
 
   it("applies the full multiplied status gain", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyStatuses: defaultEnemyStatusValues({ poison: 4 }),
     });
     const card = makeTestCard({ effects: [{ kind: "multiply-enemy-status", status: "poison", factor: 2 }] });
@@ -74,10 +76,10 @@ describe("damage riders via applyCardEffects", () => {
   });
 
   it("applies forge on burn via talent forgeOnBurnDealt", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
-      talentEffects: { ...makeTestBattleState().talentEffects, forgeOnBurnDealt: 3 },
+      talentEffects: { forgeOnBurnDealt: 3 },
       rng: () => 0.5,
       deck: [],
       hand: [],
@@ -91,10 +93,10 @@ describe("damage riders via applyCardEffects", () => {
   });
 
   it("applies forge on burn via gear forgeOnBurnDealt", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
-      gearEffects: { ...makeTestBattleState().gearEffects, forgeOnBurnDealt: 2 },
+      gearEffects: { forgeOnBurnDealt: 2 },
       rng: () => 0.5,
       deck: [],
       hand: [],
@@ -108,7 +110,7 @@ describe("damage riders via applyCardEffects", () => {
   });
 
   it("archery play-twice ent ers the archery branch without recursion when chance is 0", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
       playerStatuses: defaultPlayerStatusValues({ forge: 0 }),
@@ -128,7 +130,7 @@ describe("damage riders via applyCardEffects", () => {
   });
 
   it("nature leech heals player when natureLeechChance procs", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
       playerHealth: 10,
@@ -147,11 +149,11 @@ describe("damage riders via applyCardEffects", () => {
   });
 
   it("holy tithe combat text shows scaled gold when goldGainPercent gear is active", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
       talentEffects: { ...defaultTalentEffects, holyGoldChance: 100 },
-      gearEffects: { ...makeTestBattleState().gearEffects, goldGainPercent: 50 },
+      gearEffects: { goldGainPercent: 50 },
       rng: () => 0.5,
       deck: [],
       hand: [],
@@ -166,7 +168,7 @@ describe("damage riders via applyCardEffects", () => {
   });
 
   it("burn stun rider applies stun when talent procs on burn damage", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
       talentEffects: { ...defaultTalentEffects, burnStunChance: 100 },
@@ -183,7 +185,7 @@ describe("damage riders via applyCardEffects", () => {
   });
 
   it("nature stun rider applies stun when Entangle procs", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
       talentEffects: { ...defaultTalentEffects, natureStunChance: 100 },
@@ -200,7 +202,7 @@ describe("damage riders via applyCardEffects", () => {
   });
 
   it("armorToNatureDamage adds armor to nature damage", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
       playerStatuses: defaultPlayerStatusValues({ armor: 4 }),
@@ -220,11 +222,11 @@ describe("damage riders via applyCardEffects", () => {
 
 describe("Emberforged turn limit", () => {
   it("grants Forge once across multiple Burn hits and refreshes next turn", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 1000,
       enemyMaxHealth: 1000,
       playerStatuses: defaultPlayerStatusValues(),
-      gearEffects: { ...makeTestBattleState().gearEffects, forgeOnBurnDealt: 2 },
+      gearEffects: { forgeOnBurnDealt: 2 },
       talentEffects: { ...defaultTalentEffects, forgeOnBurnDealt: 3 },
     });
     const card = makeTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 1 }] });
@@ -237,5 +239,101 @@ describe("Emberforged turn limit", () => {
     expect(refreshed.flags.emberforgedUsedThisTurn).toBe(false);
     const third = applyCardEffects(refreshed, card, []);
     expect(third.playerStatuses.forge).toBe(refreshed.playerStatuses.forge + 5);
+  });
+});
+
+describe("damage rider regressions", () => {
+  it("copies a resolved Physical hit once for Parting Cut and Stun even with large offensive bonuses", () => {
+    const state = patchBattleState({
+      rng: () => 0.99,
+      appliesFightPacing: true,
+      turn: 26,
+      currentEnemy: { enemyType: "boss", traits: [] },
+      enemyHealth: 10000,
+      enemyMaxHealth: 10000,
+      playerStatuses: { forge: 7 },
+      talentEffects: { physicalStunChance: 100, flatStunDamage: 50 },
+      gearEffects: { flatBleedDamage: 50 },
+      flags: { nextPhysicalDealsBleed: true, nextHitCrit: true },
+    });
+    const texts = makeCombatTexts();
+    const result = dealDamage(
+      state,
+      makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 4 }] }),
+      texts,
+    );
+    const damage = (stat: string) =>
+      texts.reduce(
+        (total, text) =>
+          total + (text.kind === "damage" && text.target === "enemy" && text.stat === stat ? text.amount : 0),
+        0,
+      );
+    expect(damage("physical")).toBeGreaterThan(20);
+    expect(damage("stun")).toBe(damage("physical"));
+    expect(damage("bleed")).toBe(damage("physical"));
+    expect(result.enemyHealth).toBe(state.enemyHealth - damage("physical") * 3);
+    expect(result.flags.nextPhysicalDealsBleed).toBe(false);
+  });
+
+  it("activates Divine Aegis when Wardbreaker crosses half Health", () => {
+    const state = patchBattleState({
+      enemyHealth: 6,
+      enemyMaxHealth: 10,
+      currentEnemy: { traits: [ENCOUNTER_TRAITS["divine-aegis"].enemyTrait] },
+      enemyMitigation: { armor: 1 },
+      gearEffects: { attackPurgeDealHolyPerEffect: 1 },
+    });
+    const result = applyAttackPurgeRider(state, []);
+    expect(result.enemyHealth).toBe(5);
+    expect(result.flags.divineAegisTriggered).toBe(true);
+    expect(result.enemyMitigation).toMatchObject({ armor: 2, block: 4 });
+    expect(state.flags.divineAegisTriggered).toBe(false);
+  });
+
+  it("scales Wardbreaker damage with fight pacing", () => {
+    const state = patchBattleState({
+      appliesFightPacing: true,
+      turn: 40,
+      enemyHealth: 1000,
+      enemyMaxHealth: 1000,
+      enemyMitigation: { armor: 1 },
+      gearEffects: { attackPurgeDealHolyPerEffect: 10 },
+    });
+    const expectedDamage = paceCombatDamage(state, 10, "player");
+    expect(expectedDamage).toBeGreaterThan(10);
+    expect(applyAttackPurgeRider(state, []).enemyHealth).toBe(state.enemyHealth - expectedDamage);
+  });
+
+  it("does not trigger Obsidian Hammer when Block absorbs all Physical damage", () => {
+    const state = patchBattleState({
+      rng: () => 0.99,
+      playerStatuses: { forge: 4 },
+      enemyMitigation: { block: 9 },
+      trinketEffects: { forgeStunThreshold: 4, forgeStunAmount: 1 },
+    });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });
+    const result = dealDamage(state, card);
+    expect(result.enemyMitigation.block).toBe(0);
+    expect(result.enemyHealth).toBe(state.enemyHealth);
+    expect(result.enemyStatuses.stun).toBe(0);
+    expect(result.playerStatuses.forge).toBe(4);
+  });
+
+  it("skips the main hit when Wardbreaker purge kills the enemy", () => {
+    const state = patchBattleState({
+      rng: () => 0.99,
+      enemyHealth: 3,
+      enemyMaxHealth: 30,
+      playerHealth: 20,
+      playerMaxHealth: 30,
+      enemyMitigation: { armor: 0, block: 5, forge: 0 },
+      gearEffects: { attackPurgeDealHolyPerEffect: 5 },
+    });
+    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10, lifesteal: true }] });
+    const texts = makeCombatTexts();
+    const result = applyDamageRiders(state, card, card.effects[0] as never, 10, texts);
+    expect(result.enemyHealth).toBe(0);
+    expect(result.playerHealth).toBe(20);
+    expect(texts.some((entry) => entry.stat === "physical")).toBe(false);
   });
 });

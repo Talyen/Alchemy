@@ -58,7 +58,7 @@ export function applyLeechHealing(
     restored = addPlayerStatusWithCombatText(
       restored,
       "block",
-      Math.round((actualHealing * state.talentEffects.leechBlockBelowHalfPercent) / 100),
+      Math.round((actualHealing * state.talentEffects.leechBlockBelowHalfPercent) / PERCENT_DENOMINATOR),
       combatTexts,
       { skipFightPacing: true },
     );
@@ -81,6 +81,21 @@ function executePlayerHealing(
 ): BattleState {
   if (amount <= 0) return state;
   return applyLeechHealing(state, scalePlayerLeechHeal(state, amount), combatTexts, { cardHealing });
+}
+
+export function applyScaledLeechHealing(
+  state: BattleState,
+  rawAmount: number,
+  combatTexts: CombatTextEvent[],
+  options: { cardHealing?: boolean; afflicted?: boolean } = {},
+): BattleState {
+  if (rawAmount <= 0) return state;
+  return applyLeechHealing(
+    state,
+    scalePlayerLeechHeal(state, scaledGearLeechHeal(addBloodDebtHealing(state, rawAmount), state.gearEffects)),
+    combatTexts,
+    options,
+  );
 }
 
 function applyLeechStatusRider(state: BattleState, status: EnemyStatusId, chance: number, damage: number): BattleState {
@@ -171,11 +186,7 @@ export function applyHolyLifesteal(state: BattleState, damage: number, combatTex
   if (damage <= 0 || state.talentEffects.holyLifestealPercent <= 0) return state;
   const healAmount = scalePercent(damage, state.talentEffects.holyLifestealPercent);
   if (healAmount <= 0) return state;
-  return executePlayerHealing(
-    state,
-    scaledGearLeechHeal(addBloodDebtHealing(state, healAmount), state.gearEffects),
-    combatTexts,
-  );
+  return applyScaledLeechHealing(state, healAmount, combatTexts);
 }
 
 export function applyDamageBlock(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
@@ -209,15 +220,7 @@ export function payPendingBleedLeech(
   };
   const leechPaid = Math.min(leechAmount, healthLost);
   if (leechPaid > 0) {
-    nextState = applyLeechHealing(
-      nextState,
-      scalePlayerLeechHeal(
-        nextState,
-        scaledGearLeechHeal(addBloodDebtHealing(nextState, computeLeechHeal(leechPaid)), nextState.gearEffects),
-      ),
-      combatTexts,
-      { afflicted },
-    );
+    nextState = applyScaledLeechHealing(nextState, computeLeechHeal(leechPaid), combatTexts, { afflicted });
   }
   return nextState;
 }

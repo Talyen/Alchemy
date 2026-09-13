@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
-import { makeCombatTexts as makeTexts, makeTestBattleState } from "../../fixtures/battle";
+import { applyCardEffects } from "@/lib/battle";
+import { defaultTalentEffects } from "@/lib/battle";
+import type { CombatTextEvent } from "@/lib/battle/types";
+import {
+  makeCombatTexts as makeTexts,
+  makeStateWithFailedRolls,
+  makeTestCard,
+  patchBattleState,
+} from "../../fixtures/battle";
 import { defaultGearEffects } from "@/lib/gear";
 import {
   defaultEnemyMitigation,
@@ -11,7 +19,7 @@ import {
 
 describe("resolveStunTrigger", () => {
   it("does nothing when stun is below threshold", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
       enemyStatuses: defaultEnemyStatusValues({ stun: 5 }),
     });
@@ -20,7 +28,7 @@ describe("resolveStunTrigger", () => {
   });
 
   it("resets stun and skips turns when stun exceeds threshold", () => {
-    const base = makeTestBattleState();
+    const base = patchBattleState();
     const state = {
       ...base,
       enemyHealth: 30,
@@ -34,7 +42,7 @@ describe("resolveStunTrigger", () => {
   });
 
   it("does nothing when enemy is dead", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 0,
       enemyMaxHealth: 30,
       enemyCC: defaultCcState({ stunSkipTurns: 0 }),
@@ -45,12 +53,12 @@ describe("resolveStunTrigger", () => {
   });
 
   it("skips additional turns with stunDurationExtension", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
       enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
-      talentEffects: { ...makeTestBattleState().talentEffects, stunDurationExtension: 2 },
+      talentEffects: { stunDurationExtension: 2 },
     });
     const result = resolveStunTrigger(state);
     expect(result.enemyCC.stunSkipTurns).toBe(3);
@@ -65,13 +73,13 @@ describe("resolveStunTrigger", () => {
       cost: 1,
       effects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 4 }],
     };
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       deck: [card, card, card],
       enemyHealth: 30,
       enemyMaxHealth: 30,
       enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
-      talentEffects: { ...makeTestBattleState().talentEffects, drawOnStun: 2 },
+      talentEffects: { drawOnStun: 2 },
     });
     const result = resolveStunTrigger(state);
     expect(result.hand).toHaveLength(2);
@@ -79,24 +87,24 @@ describe("resolveStunTrigger", () => {
   });
 
   it("sets nextCardCostReduction with nextCardFreeOnStun", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
       enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
-      talentEffects: { ...makeTestBattleState().talentEffects, nextCardFreeOnStun: true },
+      talentEffects: { nextCardFreeOnStun: true },
     });
     const result = resolveStunTrigger(state);
     expect(result.flags.nextCardCostReduction).toBe(99);
   });
 
   it("deals thunderstone damage and generates combat text", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
       enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
-      trinketEffects: { ...makeTestBattleState().trinketEffects, thunderstoneDamageOnStun: 5 },
+      trinketEffects: { thunderstoneDamageOnStun: 5 },
     });
     const texts = makeTexts();
     const result = resolveStunTrigger(state, texts);
@@ -105,25 +113,24 @@ describe("resolveStunTrigger", () => {
   });
 
   it("thunderstone damage does not generate combat text when texts omitted", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
       enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
-      trinketEffects: { ...makeTestBattleState().trinketEffects, thunderstoneDamageOnStun: 5 },
+      trinketEffects: { thunderstoneDamageOnStun: 5 },
     });
     const result = resolveStunTrigger(state);
     expect(result.enemyHealth).toBe(25);
   });
 
   it("applies lucky clover gold from thunderstone even when texts are omitted", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
       enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
       trinketEffects: {
-        ...makeTestBattleState().trinketEffects,
         thunderstoneDamageOnStun: 5,
         luckyCloverGoldChance: 100,
       },
@@ -136,7 +143,7 @@ describe("resolveStunTrigger", () => {
   });
 
   it("uses stunThresholdReduction to lower threshold", () => {
-    const base = makeTestBattleState();
+    const base = patchBattleState();
     const state = {
       ...base,
       enemyHealth: 30,
@@ -150,7 +157,7 @@ describe("resolveStunTrigger", () => {
   });
 
   it("CC immunity suppresses second stun trigger within cooldown", () => {
-    const base = makeTestBattleState();
+    const base = patchBattleState();
     const state = {
       ...base,
       enemyHealth: 30,
@@ -173,14 +180,14 @@ describe("resolveStunTrigger", () => {
   });
 
   it("withholds stun rewards when CC immunity clears the stack", () => {
-    const base = makeTestBattleState();
+    const base = patchBattleState();
     const state = {
       ...base,
       enemyHealth: 30,
       enemyMaxHealth: 30,
       enemyCC: defaultCcState({ cooldown: 1 }),
       enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
-      talentEffects: { ...makeTestBattleState().talentEffects, blockOnStun: 3 },
+      talentEffects: { ...base.talentEffects, blockOnStun: 3 },
       gearEffects: { ...defaultGearEffects, damageOnStunPhysical: 7 },
     };
     const texts = makeTexts();
@@ -193,12 +200,12 @@ describe("resolveStunTrigger", () => {
   });
 
   it("grants block on stun with blockOnStun talent", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
       enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
-      talentEffects: { ...makeTestBattleState().talentEffects, blockOnStun: 3 },
+      talentEffects: { blockOnStun: 3 },
     });
     const texts = makeTexts();
     const result = resolveStunTrigger(state, texts);
@@ -207,12 +214,12 @@ describe("resolveStunTrigger", () => {
   });
 
   it("grants forge on stun with forgeOnStun talent", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
       enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
-      talentEffects: { ...makeTestBattleState().talentEffects, forgeOnStun: 2 },
+      talentEffects: { forgeOnStun: 2 },
     });
     const texts = makeTexts();
     const result = resolveStunTrigger(state, texts);
@@ -221,14 +228,13 @@ describe("resolveStunTrigger", () => {
   });
 
   it("triggers forge burn burst when forgeOnStun crosses threshold", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
       enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       playerStatuses: defaultPlayerStatusValues({ forge: 3 }),
       enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
       talentEffects: {
-        ...makeTestBattleState().talentEffects,
         forgeOnStun: 2,
         forgeBurnThreshold: 4,
         forgeBurnDamage: 8,
@@ -243,14 +249,13 @@ describe("resolveStunTrigger", () => {
   });
 
   it("does not trigger forge burn burst when forge stays below threshold", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
       enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       playerStatuses: defaultPlayerStatusValues({ forge: 1 }),
       enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
       talentEffects: {
-        ...makeTestBattleState().talentEffects,
         forgeOnStun: 2,
         forgeBurnThreshold: 4,
         forgeBurnDamage: 8,
@@ -262,39 +267,39 @@ describe("resolveStunTrigger", () => {
   });
 
   it("strips enemy armor on stun with stunStripArmor talent", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
       enemyMitigation: defaultEnemyMitigation({ armor: 5, forge: 0 }),
       enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
-      talentEffects: { ...makeTestBattleState().talentEffects, stunStripArmor: true },
+      talentEffects: { stunStripArmor: true },
     });
     const result = resolveStunTrigger(state);
     expect(result.enemyMitigation.armor).toBe(0);
   });
 
   it("stunStripArmor does nothing when enemy has no armor", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
       enemyMitigation: defaultEnemyMitigation({ armor: 0, forge: 0 }),
       enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
-      talentEffects: { ...makeTestBattleState().talentEffects, stunStripArmor: true },
+      talentEffects: { stunStripArmor: true },
     });
     const result = resolveStunTrigger(state);
     expect(result.enemyMitigation.armor).toBe(0);
   });
 
   it("restores mana on stun with manaOnStun talent", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
       mana: 2,
       enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
-      talentEffects: { ...makeTestBattleState().talentEffects, manaOnStun: 1 },
+      talentEffects: { manaOnStun: 1 },
     });
     const texts = makeTexts();
     const result = resolveStunTrigger(state, texts);
@@ -303,7 +308,7 @@ describe("resolveStunTrigger", () => {
   });
 
   it("deals physical damage on stun with gear damageOnStunPhysical", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
       enemyCC: defaultCcState({ stunSkipTurns: 0 }),
@@ -315,7 +320,7 @@ describe("resolveStunTrigger", () => {
   });
 
   it("deals physical damage on stun with gear damageOnStunPhysical and produces combat text", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
       enemyCC: defaultCcState({ stunSkipTurns: 0 }),
@@ -329,7 +334,7 @@ describe("resolveStunTrigger", () => {
   });
 
   it("applies gear forgeOnStun with combat text", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
       enemyCC: defaultCcState({ stunSkipTurns: 0 }),
@@ -343,7 +348,7 @@ describe("resolveStunTrigger", () => {
   });
 
   it("applies gear blockOnStun with combat text", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
       enemyCC: defaultCcState({ stunSkipTurns: 0 }),
@@ -357,7 +362,7 @@ describe("resolveStunTrigger", () => {
   });
 
   it("applies gear manaOnStun with combat text", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
       mana: 3,
@@ -371,5 +376,61 @@ describe("resolveStunTrigger", () => {
 
     expect(result.mana).toBe(4);
     expect(texts).toContainEqual({ target: "player", kind: "status", stat: "mana", amount: 1 });
+  });
+});
+
+describe("resolveStunTrigger via applyCardEffects", () => {
+  it("resolves and triggers stun when stun is added from burn damage riders", () => {
+    const talentEffects = { ...defaultTalentEffects, burnStunChance: 100 };
+    const card = makeTestCard({
+      id: "fireball",
+      effects: [{ kind: "damage", damageType: "burn", amount: 12 }],
+    });
+    const state = makeStateWithFailedRolls({
+      mana: 10,
+      enemyHealth: 20,
+      enemyMaxHealth: 20,
+      talentEffects,
+      hand: [card],
+      rng: () => 0.5,
+    });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.enemyStatuses.stun).toBe(0);
+    expect(result.enemyCC.stunSkipTurns).toBe(1);
+    expect(result.enemyCC.cooldown).toBe(0);
+    expect(texts).toContainEqual({ target: "enemy", kind: "notice", stat: "stun", text: "Stunned" });
+  });
+
+  it("resolves and triggers stun when stun status is applied directly via enemy-status effect", () => {
+    const card = makeTestCard({
+      id: "apply-stun",
+      effects: [{ kind: "enemy-status", status: "stun", amount: 11 }],
+    });
+    const state = makeStateWithFailedRolls({ mana: 10, enemyHealth: 20, enemyMaxHealth: 20, hand: [card] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.enemyStatuses.stun).toBe(0);
+    expect(result.enemyCC.stunSkipTurns).toBe(1);
+    expect(texts).toContainEqual({ target: "enemy", kind: "notice", stat: "stun", text: "Stunned" });
+  });
+
+  it("resolves and triggers freeze when freeze status is doubled via multiply-enemy-status effect", () => {
+    const card = makeTestCard({
+      id: "double-freeze",
+      effects: [{ kind: "multiply-enemy-status", status: "freeze", factor: 2 }],
+    });
+    const state = makeStateWithFailedRolls({
+      mana: 10,
+      enemyHealth: 20,
+      enemyMaxHealth: 20,
+      enemyStatuses: defaultEnemyStatusValues({ freeze: 6 }),
+      hand: [card],
+    });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.enemyStatuses.freeze).toBe(0);
+    expect(result.enemyCC.freezeSkipTurns).toBe(1);
+    expect(texts).toContainEqual({ target: "enemy", kind: "notice", stat: "freeze", text: "Frozen" });
   });
 });

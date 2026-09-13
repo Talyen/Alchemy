@@ -8,12 +8,12 @@ import { defaultTalentEffects } from "@/lib/battle";
 import { FREE_CARD_SENTINEL } from "@/lib/game-constants";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { defaultGearEffects } from "@/lib/gear";
-import { makeTestBattleState, makeTestCardWithId, patchBattleState } from "../../fixtures/battle";
+import { makeTestCardWithId, patchBattleState } from "../../fixtures/battle";
 import { defaultPlayerStatusValues, defaultTrinketManifest } from "../../fixtures/default-battle-state";
 
 describe("applyCrowdControlTriggerBonuses", () => {
   it("no-ops when all bonuses are empty", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       deck: [makeTestCardWithId("d1")],
       hand: [],
     });
@@ -22,7 +22,7 @@ describe("applyCrowdControlTriggerBonuses", () => {
   });
 
   it("draws N cards", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       deck: [makeTestCardWithId("d1"), makeTestCardWithId("d2"), makeTestCardWithId("d3")],
       hand: [],
       discard: [],
@@ -34,14 +34,14 @@ describe("applyCrowdControlTriggerBonuses", () => {
   });
 
   it("sets FREE_CARD_SENTINEL when nextCardFree is true", () => {
-    const result = applyCrowdControlTriggerBonuses(makeTestBattleState(), { nextCardFree: true });
+    const result = applyCrowdControlTriggerBonuses(patchBattleState(), { nextCardFree: true });
     expect(result.flags.nextCardCostReduction).toBe(FREE_CARD_SENTINEL);
   });
 
   it("adds combined block once so flatBlockGained applies a single time", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       talentEffects: { ...defaultTalentEffects, blockOnStun: 4 },
-      gearEffects: { ...makeTestBattleState().gearEffects, flatBlockGained: 2, blockOnStun: 3 },
+      gearEffects: { flatBlockGained: 2, blockOnStun: 3 },
     });
     const texts: CombatTextEvent[] = [];
     const result = applyCrowdControlTriggerBonuses(state, { block: 4 + 3 }, texts);
@@ -51,28 +51,28 @@ describe("applyCrowdControlTriggerBonuses", () => {
 
   it("grants forge through addForgeToPlayer", () => {
     const texts: CombatTextEvent[] = [];
-    const result = applyCrowdControlTriggerBonuses(makeTestBattleState(), { forge: 2 }, texts);
+    const result = applyCrowdControlTriggerBonuses(patchBattleState(), { forge: 2 }, texts);
     expect(result.playerStatuses.forge).toBe(2);
   });
 
   it("strips enemy armor", () => {
-    const state = makeTestBattleState({
-      enemyMitigation: { ...makeTestBattleState().enemyMitigation, armor: 5 },
+    const state = patchBattleState({
+      enemyMitigation: { armor: 5 },
     });
     const result = applyCrowdControlTriggerBonuses(state, { stripArmor: true });
     expect(result.enemyMitigation.armor).toBe(0);
   });
 
   it("strips enemy Block", () => {
-    const state = makeTestBattleState({
-      enemyMitigation: { ...makeTestBattleState().enemyMitigation, block: 6 },
+    const state = patchBattleState({
+      enemyMitigation: { block: 6 },
     });
     const result = applyCrowdControlTriggerBonuses(state, { stripBlock: true });
     expect(result.enemyMitigation.block).toBe(0);
   });
 
   it("restores mana and emits combat text", () => {
-    const state = makeTestBattleState({ mana: 1 });
+    const state = patchBattleState({ mana: 1 });
     const texts: CombatTextEvent[] = [];
     const result = applyCrowdControlTriggerBonuses(state, { mana: 2 }, texts);
     expect(result.mana).toBe(3);

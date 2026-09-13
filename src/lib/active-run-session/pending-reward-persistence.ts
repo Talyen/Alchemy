@@ -1,5 +1,5 @@
 import { cardById, trinketById, type BattleCard, type TrinketEntry } from "@/lib/game-data";
-import type { GearInstance } from "@/lib/gear";
+import { logError } from "@/lib/error-logger";
 import { filterValidDestinations } from "@/lib/routing";
 import type { PersistedPendingReward } from "./types";
 import type { PendingRewardSharedFields } from "./pending-reward-shared";
@@ -16,18 +16,54 @@ export function lookupTrinketEntries(ids: string[]): TrinketEntry[] {
   return ids.map((id) => trinketById[id]).filter((trinket): trinket is TrinketEntry => Boolean(trinket));
 }
 
-function resolveGearChoices(gearChoices: GearInstance[]): GearInstance[] | null {
-  return gearChoices.length === 0 ? null : gearChoices;
+function nonEmptyChoicesOrNull<T>(choices: T[]): T[] | null {
+  return choices.length === 0 ? null : choices;
+}
+
+interface ResolvedChoices<T> {
+  valid: T[];
+  droppedIds: string[];
+}
+
+function resolveCardChoicesWithDropped(choiceIds: string[]): ResolvedChoices<BattleCard> {
+  const valid: BattleCard[] = [];
+  const droppedIds: string[] = [];
+  for (const id of choiceIds) {
+    const entry = cardById[id];
+    if (entry) valid.push(entry);
+    else droppedIds.push(id);
+  }
+  return { valid, droppedIds };
+}
+
+function resolveTrinketChoicesWithDropped(choiceIds: string[]): ResolvedChoices<TrinketEntry> {
+  const valid: TrinketEntry[] = [];
+  const droppedIds: string[] = [];
+  for (const id of choiceIds) {
+    const entry = trinketById[id];
+    if (entry) valid.push(entry);
+    else droppedIds.push(id);
+  }
+  return { valid, droppedIds };
 }
 
 function resolveCardChoices(choiceIds: string[]): BattleCard[] | null {
-  const choices = choiceIds.map((id) => cardById[id]).filter((entry): entry is BattleCard => Boolean(entry));
-  return choices.length === 0 ? null : choices;
+  const { valid, droppedIds } = resolveCardChoicesWithDropped(choiceIds);
+  if (droppedIds.length > 0 && choiceIds.length > 0) {
+    logError("Dropped invalid pending companion choices", "storage", { droppedIds });
+  }
+  return nonEmptyChoicesOrNull(valid);
 }
 
-function resolveTrinketChoices(choiceIds: string[]): TrinketEntry[] | null {
-  const choices = lookupTrinketEntries(choiceIds);
-  return choices.length === 0 ? null : choices;
+function hasSharedRewardValue(state: RewardState): boolean {
+  return (
+    state.gold > 0 ||
+    Object.values(state.materials).some((amount) => amount > 0) ||
+    state.destinations.length > 0 ||
+    state.selectedBossId !== null ||
+    state.lastVictoryEnemyType !== null ||
+    state.lastVictoryContentSystem !== null
+  );
 }
 
 function sharedRewardFields(
@@ -94,22 +130,58 @@ export function restorePendingReward(persisted: PersistedPendingReward): RewardS
   const shared = restoreSharedRewardFields(persisted);
 
   if (persisted.rewardType === "gear") {
-    const choices = resolveGearChoices(persisted.gearChoices);
-    if (!choices) return null;
+    const choices = nonEmptyChoicesOrNull(persisted.gearChoices);
+    if (!choices) {
+      // Empty gear means “no choices offered”; preserve shared gold/materials
+      // the same way card/trinket restores do instead of dropping them.
+      return hasSharedRewardValue(shared)
+        ? ({ ...shared, rewardType: "card", choices: [] } satisfies CardRewardState)
+        : null;
+    }
     return { ...shared, rewardType: "gear", choices } satisfies GearRewardState;
   }
 
   if (persisted.rewardType === "card") {
-    const choices = resolveCardChoices(persisted.choiceIds);
-    if (!choices) return null;
-    return { ...shared, rewardType: "card", choices } satisfies CardRewardState;
+    if (persisted.choiceIds.length === 0) {
+      // Empty means “no choices offered” (e.g. gold-only reward), not invalid data.
+      // With no shared value there is nothing to restore.
+      return hasSharedRewardValue(shared)
+        ? ({ ...shared, rewardType: "card", choices: [] } satisfies CardRewardState)
+        : null;
+    }
+    const { valid, droppedIds } = resolveCardChoicesWithDropped(persisted.choiceIds);
+    if (droppedIds.length > 0) {
+      logError("Dropped invalid pending card choices", "storage", { droppedIds });
+    }
+    if (valid.length === 0) {
+      // Preserve shared gold/materials/destinations as a standalone reward instead of dropping them.
+      return hasSharedRewardValue(shared)
+        ? ({ ...shared, rewardType: "card", choices: [] } satisfies CardRewardState)
+        : null;
+    }
+    return { ...shared, rewardType: "card", choices: valid } satisfies CardRewardState;
   }
 
-  const choices = resolveTrinketChoices(persisted.choiceIds);
-  if (!choices) return null;
+  if (persisted.choiceIds.length === 0) {
+    if (!hasSharedRewardValue(shared)) return null;
+    return persisted.rewardType === "boon"
+      ? ({ ...shared, rewardType: "boon", choices: [] } satisfies BoonRewardState)
+      : ({ ...shared, rewardType: "trinket", choices: [] } satisfies TrinketRewardState);
+  }
+  const { valid, droppedIds } = resolveTrinketChoicesWithDropped(persisted.choiceIds);
+  if (droppedIds.length > 0) {
+    logError("Dropped invalid pending trinket/boon choices", "storage", { droppedIds });
+  }
+  if (valid.length === 0) {
+    return hasSharedRewardValue(shared)
+      ? persisted.rewardType === "boon"
+        ? ({ ...shared, rewardType: "boon", choices: [] } satisfies BoonRewardState)
+        : ({ ...shared, rewardType: "trinket", choices: [] } satisfies TrinketRewardState)
+      : null;
+  }
   return persisted.rewardType === "boon"
-    ? ({ ...shared, rewardType: "boon", choices } satisfies BoonRewardState)
-    : ({ ...shared, rewardType: "trinket", choices } satisfies TrinketRewardState);
+    ? ({ ...shared, rewardType: "boon", choices: valid } satisfies BoonRewardState)
+    : ({ ...shared, rewardType: "trinket", choices: valid } satisfies TrinketRewardState);
 }
 
 export interface RestoredPendingReward {

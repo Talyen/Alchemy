@@ -1,20 +1,11 @@
 import { create } from "zustand";
 import type { ErrorSource, LogEntry } from "@/lib/error-logger";
-import { registerErrorSink } from "@/lib/error-logger";
+import { ERROR_SOURCE_IDS, registerErrorSink } from "@/lib/error-logger";
+import { createInstanceId } from "@/lib/utils";
 
 const MAX_ERRORS = 100;
 const STORAGE_KEY = "alchemy-error-log";
-const ERROR_SOURCES = new Set<ErrorSource>([
-  "react",
-  "global",
-  "promise",
-  "battle",
-  "storage",
-  "validation",
-  "audio",
-  "card",
-  "other",
-]);
+const ERROR_SOURCES = new Set<ErrorSource>(ERROR_SOURCE_IDS);
 
 export interface LoggedError {
   id: string;
@@ -85,6 +76,8 @@ function loadPersisted(): LoggedError[] {
     const raw = localStorage.getItem(STORAGE_KEY);
     return parsePersistedErrorLog(raw);
   } catch {
+    // Avoid logError here: this store is itself an error sink, so reporting would recurse.
+    console.warn("[error-log] Failed to load persisted errors");
     return [];
   }
 }
@@ -93,13 +86,14 @@ function persist(errors: LoggedError[]): void {
   if (typeof window === "undefined" || typeof localStorage === "undefined") return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(errors));
-  } catch {}
+  } catch {
+    // Avoid logError here: this store is itself an error sink, so reporting would recurse.
+    console.warn("[error-log] Failed to persist errors");
+  }
 }
 
-let nextId = 0;
-
 function createLoggedErrorId(): string {
-  return `err_${Date.now()}_${nextId++}_${Math.random().toString(36).slice(2, 7)}`;
+  return `err_${createInstanceId()}`;
 }
 
 export const useErrorLogStore = create<ErrorLogStore>()((set) => ({
@@ -118,25 +112,25 @@ export const useErrorLogStore = create<ErrorLogStore>()((set) => ({
         context: entry.context,
         reviewed: false,
       };
-      const next = [...s.errors.slice(-(MAX_ERRORS - 1)), logged];
-      persist(next);
-      return { errors: next };
+      return { errors: [...s.errors.slice(-(MAX_ERRORS - 1)), logged] };
     });
   },
 
   clearErrors: () => {
-    persist([]);
     set({ errors: [] });
   },
 
   markReviewed: (id: string) => {
-    set((s) => {
-      const next = s.errors.map((e) => (e.id === id ? { ...e, reviewed: true } : e));
-      persist(next);
-      return { errors: next };
-    });
+    set((s) => ({
+      errors: s.errors.map((e) => (e.id === id ? { ...e, reviewed: true } : e)),
+    }));
   },
 }));
+
+// Persist outside the zustand updater so the setter stays pure.
+useErrorLogStore.subscribe((state) => {
+  persist(state.errors);
+});
 
 registerErrorSink((entry) => {
   useErrorLogStore.getState().pushError(entry);

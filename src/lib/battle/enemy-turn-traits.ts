@@ -42,20 +42,16 @@ const EVERY_OTHER_TURN_TRAITS = new Set(["rusting-carapace", "iron-hide", "glaci
 
 type EnemyTurnStartHandler = (state: BattleState, combatTexts: CombatTextEvent[]) => BattleState;
 
+function makeMitigationHandler(stat: "forge" | "armor" | "block", amount: number): EnemyTurnStartHandler {
+  return (state, combatTexts) => {
+    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat, amount });
+    return addEnemyMitigation(state, stat, amount);
+  };
+}
+
 const enemyTraitTurnStartHandlers: Record<string, EnemyTurnStartHandler> = {
-  "rusting-carapace": (state, combatTexts) => {
-    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "forge", amount: TRAIT_FORGE_PER_TURN });
-    return addEnemyMitigation(state, "forge", TRAIT_FORGE_PER_TURN);
-  },
-  "iron-hide": (state, combatTexts) => {
-    mergeCombatText(combatTexts, {
-      target: "enemy",
-      kind: "status",
-      stat: "armor",
-      amount: IRON_HIDE_ARMOR_PER_TURN,
-    });
-    return addEnemyMitigation(state, "armor", IRON_HIDE_ARMOR_PER_TURN);
-  },
+  "rusting-carapace": makeMitigationHandler("forge", TRAIT_FORGE_PER_TURN),
+  "iron-hide": makeMitigationHandler("armor", IRON_HIDE_ARMOR_PER_TURN),
   "glacial-shell": (state, combatTexts) => {
     const amount = Math.min(
       TRAIT_FREEZE_BONUS_PER_TURN,
@@ -70,74 +66,41 @@ const enemyTraitTurnStartHandlers: Record<string, EnemyTurnStartHandler> = {
     });
     return addEnemyStatus(state, "freezeBonus", amount);
   },
-  cleric: (state, combatTexts) => {
-    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "block", amount: 1 });
-    return addEnemyMitigation(state, "block", 1);
-  },
-  "stone-golem": (state, combatTexts) => {
-    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "block", amount: 1 });
-    return addEnemyMitigation(state, "block", 1);
-  },
+  cleric: makeMitigationHandler("block", 1),
+  "stone-golem": makeMitigationHandler("block", 1),
 };
 
 const difficultyTurnStartHandlers: Partial<Record<DifficultyModifier["kind"], EnemyTurnStartHandler>> = {
-  "enemy-gains-forge-each-turn": (state, combatTexts) => {
-    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "forge", amount: DIFFICULTY_FORGE_PER_TURN });
-    return addEnemyMitigation(state, "forge", DIFFICULTY_FORGE_PER_TURN);
-  },
+  "enemy-gains-forge-each-turn": makeMitigationHandler("forge", DIFFICULTY_FORGE_PER_TURN),
 };
 
-const ENEMY_TRAIT_DEFINITIONS: Record<string, { passive: boolean; reaction: boolean; turnStart: boolean }> = (() => {
-  const passiveIds: string[] = [
-    "brittle-bones",
-    "glacial-body",
-    "minor-freeze-vulnerability",
-    "cold-blooded",
-    "minor-holy-vulnerability",
-    "tough-hide",
-    "vampiric-curse",
-    "frozen-apparition",
-    "winter-hide",
-    "earthen-body",
-    "holy-vulnerability",
-    "burn-resistance",
-    "burn-vulnerability",
-    "living-armor",
-    "thick-hide",
-    "poison-resistance",
-    "gold-trove",
-    "starting-block",
-    "regeneration",
-    "freeze-vulnerability",
-    "amorphous",
-    "cinder-skin",
-    ...COMBAT_ENCOUNTER_TRAIT_IDS,
-  ];
-  const reactionIds: string[] = [...REACTION_ONLY_IDS] as string[];
-  const turnStartIds: string[] = Object.keys(enemyTraitTurnStartHandlers);
-  const allIds = new Set<string>([...passiveIds, ...reactionIds, ...turnStartIds]);
-  const defs: Record<string, { passive: boolean; reaction: boolean; turnStart: boolean }> = {};
-  for (const id of allIds) {
-    defs[id] = {
-      passive: passiveIds.includes(id),
-      reaction: reactionIds.includes(id),
-      turnStart: turnStartIds.includes(id),
-    };
-  }
-  return defs;
-})();
+const PASSIVE_ONLY_TRAITS = new Set<string>([
+  "brittle-bones",
+  "glacial-body",
+  "minor-freeze-vulnerability",
+  "cold-blooded",
+  "minor-holy-vulnerability",
+  "tough-hide",
+  "vampiric-curse",
+  "frozen-apparition",
+  "winter-hide",
+  "earthen-body",
+  "holy-vulnerability",
+  "burn-resistance",
+  "burn-vulnerability",
+  "living-armor",
+  "thick-hide",
+  "poison-resistance",
+  "gold-trove",
+  "starting-block",
+  "regeneration",
+  "freeze-vulnerability",
+  "amorphous",
+  "cinder-skin",
+  ...COMBAT_ENCOUNTER_TRAIT_IDS,
+]);
 
-const PASSIVE_ONLY_TRAITS = new Set(
-  Object.entries(ENEMY_TRAIT_DEFINITIONS)
-    .filter(([, v]) => v.passive)
-    .map(([k]) => k),
-);
-
-const REACTION_ONLY_TRAITS: ReadonlySet<string> = new Set(
-  Object.entries(ENEMY_TRAIT_DEFINITIONS)
-    .filter(([, v]) => v.reaction)
-    .map(([k]) => k),
-);
+const REACTION_ONLY_TRAITS: ReadonlySet<string> = new Set<string>([...REACTION_ONLY_IDS]);
 
 const PASSIVE_ONLY_MODIFIERS = new Set<DifficultyModifier["kind"]>([
   "enemy-starting-armor",

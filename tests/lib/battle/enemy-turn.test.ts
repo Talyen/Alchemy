@@ -4,7 +4,7 @@ import { endPlayerTurn, recoverLegacyEnemyPhase } from "@/lib/battle/enemy-turn"
 import type { BattleState, EnemyStatusValues } from "@/lib/battle/types";
 import { isPlayerDefeated } from "@/lib/battle/types";
 import { defaultTalentEffects } from "@/lib/battle";
-import { makeTestBattleState, makeTestCard } from "../../fixtures/battle";
+import { makeTestCard, patchBattleState, type BattleStatePatch } from "../../fixtures/battle";
 import type { BestiaryEntry } from "@/lib/game-data";
 import {
   defaultCcState,
@@ -30,8 +30,8 @@ function baseEnemy(enemyId: string): BestiaryEntry {
 const emptyStatuses: EnemyStatusValues = defaultEnemyStatusValues();
 const emptyPlayerStatuses = defaultPlayerStatusValues();
 
-function battleState(overrides: Partial<BattleState> = {}): BattleState {
-  return makeTestBattleState({
+function battleState(overrides: BattleStatePatch = {}): BattleState {
+  return patchBattleState({
     rng: () => 0.99,
     enemyPhysicalDamageBonus: 6,
     enemyHealth: 50,
@@ -493,7 +493,7 @@ describe("endPlayerTurn — pending turn-start pulses", () => {
   it("does not crit or consume nextHitCrit on delayed pulses", () => {
     const state = battleState({
       enemyHealth: 30,
-      flags: { ...makeTestBattleState().flags, nextHitCrit: true },
+      flags: { nextHitCrit: true },
       pendingTurnStartEffects: [{ remainingTurns: 1, effects: [{ kind: "damage", damageType: "freeze", amount: 2 }] }],
     });
     const result = endPlayerTurn(state);
@@ -508,7 +508,7 @@ describe("terminal battle turns", () => {
       playerHealth: 1,
       deathsDoorUsed: true,
       deathsDoorActive: false,
-      gearEffects: { ...makeTestBattleState().gearEffects, healthPerTurn: 1 },
+      gearEffects: { healthPerTurn: 1 },
       playerStatuses: { ...emptyPlayerStatuses, poison: poison ? 2 : 0 },
       enemyCC: defaultCcState({ stunSkipTurns: poison ? 1 : 0 }),
       rng: () => 0.99,
@@ -521,7 +521,7 @@ describe("terminal battle turns", () => {
 });
 
 it("stops enemy trait pulses when Poison defeats the hero", () => {
-  const base = makeTestBattleState();
+  const base = patchBattleState();
   const state = battleState({
     playerHealth: 1,
     deathsDoorUsed: true,
