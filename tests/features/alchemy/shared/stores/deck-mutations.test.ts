@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { makeDiscoveryCard } from "../../../../helpers/discovery-store-mock";
+import { makeTestCard } from "../../../../fixtures/battle";
 import {
   appendCardToRunWithDiscovery,
   appendBoonToRunWithDiscovery,
@@ -37,7 +37,7 @@ beforeEach(() => {
 
 describe("appendCardToRunWithDiscovery", () => {
   it("appends card to deck and updates discovered IDs", () => {
-    const card = makeDiscoveryCard();
+    const card = makeTestCard();
     const draft = {} as GameplayDraft;
     appendCardToRunWithDiscovery(draft, card);
 
@@ -47,7 +47,7 @@ describe("appendCardToRunWithDiscovery", () => {
   });
 
   it("discovers the same card id on each append", () => {
-    const card = makeDiscoveryCard();
+    const card = makeTestCard();
     const draft = {} as GameplayDraft;
     appendCardToRunWithDiscovery(draft, card);
     appendCardToRunWithDiscovery(draft, card);

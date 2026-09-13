@@ -7,7 +7,7 @@ import {
   dispatchRunSessionCommand,
   createRunSessionCommand,
 } from "@/features/alchemy/shared/stores/run-session-command";
-import { resetAllTestStores, resetGearForTest } from "../../../../helpers/gameplay-store-test";
+import { resetAllTestStores, resetGearForTest } from "../../../../helpers/run-domain-store-test";
 import {
   setShopState as mutateShopState,
   setAlchemistState as mutateAlchemistState,

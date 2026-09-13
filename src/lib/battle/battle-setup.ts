@@ -17,7 +17,7 @@ import { computeTrinketManifest } from "../trinkets";
 import { applyDrawResult, drawCards } from "./draw";
 import { defaultBattleState, defaultTalentEffects } from "./battle-setup-defaults";
 import { initializeEnemyState } from "./battle-enemy-setup";
-import { placeholderRng, shuffle } from "@/lib/rng";
+import { placeholderRng, shuffle, getBattleRng } from "@/lib/rng";
 import { dealPlayerTypedHit } from "./player-typed-hit";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 
@@ -65,7 +65,7 @@ export function drawOpeningHand(state: BattleState): BattleState {
       state.hand,
       CARDS_PER_TURN + state.trinketEffects.extraDrawPerBattle,
       state.nextCardUid,
-      state.rng,
+      getBattleRng(state),
     ),
   );
 }

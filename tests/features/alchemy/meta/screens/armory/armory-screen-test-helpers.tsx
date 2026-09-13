@@ -10,7 +10,7 @@ import {
 } from "@/lib/gear";
 import type { CharacterId } from "@/lib/game-data";
 import { resetEscapeStackForTests } from "@/app/escape-stack";
-import { resetGearForTest } from "../../../../../helpers/gameplay-store-test";
+import { resetGearForTest } from "../../../../../helpers/run-domain-store-test";
 import { installDisabledAnimationsForTests } from "../../../../../helpers/animation-test";
 
 const DEFAULT_ARMORY_INVENTORY: GearInstance[] = [

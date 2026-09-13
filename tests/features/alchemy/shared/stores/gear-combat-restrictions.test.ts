@@ -6,7 +6,7 @@ import {
   dispatchGearSalvageWithMaterialGrant,
 } from "@/features/alchemy/shared/stores/gear-session-command";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { resetAllTestStores } from "../../../../helpers/gameplay-store-test";
+import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
 import type { GearInstance } from "@/lib/gear";
 
 const sword: GearInstance = { instanceId: "reserved-sword", definitionId: "longsword-basic", affixes: [] };

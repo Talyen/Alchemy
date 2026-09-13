@@ -6,7 +6,7 @@ import { createMysteryEventNavigation } from "@/features/alchemy/run-loop/naviga
 import { useCampfireScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
-import { resetAllTestStores } from "../../../../helpers/gameplay-store-test";
+import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
 import { setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";

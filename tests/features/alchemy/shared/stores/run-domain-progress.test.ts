@@ -22,7 +22,7 @@ import {
   resetRunXP as mutateResetRunXP,
 } from "@/features/alchemy/shared/stores/write-port-run";
 import { applyTalentState as mutateApplyTalentState } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { mutateGearForTest } from "../../../../helpers/gameplay-store-test";
+import { mutateGearForTest } from "../../../../helpers/run-domain-store-test";
 import { createEmptyGearInventories, createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
 import { createRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { rebindLiveRunMeta } from "@/features/alchemy/shared/stores/run-meta-rebind";

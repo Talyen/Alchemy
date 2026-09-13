@@ -16,7 +16,7 @@ import { teardownRun } from "@/features/alchemy/shared/stores/run-session-lifecy
 import { emptyShopState, readActivityData } from "@/lib/active-run-session";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
-import { resetAllTestStores } from "../../../../helpers/gameplay-store-test";
+import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
 import { setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 
 beforeEach(() => {

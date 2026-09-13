@@ -2,6 +2,7 @@ import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { hasEncounterBenefit, hasEnemyTrait } from "./types";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import type { BattleCard } from "@/lib/game-data";
+import { emptyBattleCard } from "./damage-calc";
 import { processArcheryEchoes } from "./unique-card-effects";
 import { CARDS_PER_TURN, MAX_HAND_SIZE } from "../game-constants";
 import { applyHealingWithCombatText, gainManaWithCombatText } from "./combat-text";
@@ -54,14 +55,7 @@ function processPendingTurnStartEffects(state: BattleState, combatTexts: CombatT
     due.push(pulse);
     if (pulse.remainingTurns > 1) kept.push({ ...pulse, remainingTurns: pulse.remainingTurns - 1 });
   }
-  const pulseCard: BattleCard = {
-    id: "pending-turn-start",
-    title: "",
-    descriptionLines: [],
-    art: "",
-    cost: 0,
-    effects: [],
-  };
+  const pulseCard: BattleCard = emptyBattleCard("pending-turn-start");
   return withPreservedFlags({ ...state, pendingTurnStartEffects: kept }, (nextState) =>
     due.reduce(
       (current, pulse) =>

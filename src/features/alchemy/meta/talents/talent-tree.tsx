@@ -149,6 +149,7 @@ export function TalentTree({
   const unlockTimerRef = useRef<number | null>(null);
   const unlockingTalentIdRef = useRef<string | null>(null);
   const rows = useMemo(() => chunkIntoRows(allTalents, TALENT_ROW_SIZES), [allTalents]);
+  const unlockedSet = useMemo(() => new Set(unlockedIds), [unlockedIds]);
 
   useEffect(() => {
     return () => {
@@ -163,7 +164,7 @@ export function TalentTree({
     (talentId: string) => {
       if (!onUnlock) return;
       if (!hasUnspentPoints) return;
-      if (unlockedIds.includes(talentId) || !allocatableIds.has(talentId)) return;
+      if (unlockedSet.has(talentId) || !allocatableIds.has(talentId)) return;
       if (unlockingTalentIdRef.current === talentId) return;
 
       unlockingTalentIdRef.current = talentId;
@@ -180,7 +181,7 @@ export function TalentTree({
         unlockTimerRef.current = null;
       }, TALENT_UNLOCK_ANIMATION_MS);
     },
-    [allocatableIds, hasUnspentPoints, onUnlock, onUnlockBegin, unlockedIds],
+    [allocatableIds, hasUnspentPoints, onUnlock, onUnlockBegin, unlockedSet],
   );
 
   if (allTalents.length === 0) {
@@ -197,7 +198,7 @@ export function TalentTree({
               <TalentCard
                 key={talent.id}
                 talent={talent}
-                isUnlocked={unlockedIds.includes(talent.id)}
+                isUnlocked={unlockedSet.has(talent.id)}
                 isAllocatable={allocatableIds.has(talent.id)}
                 canAfford={hasUnspentPoints}
                 isUnlocking={unlockingTalentId === talent.id}

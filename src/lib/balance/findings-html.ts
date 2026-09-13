@@ -14,15 +14,12 @@ import {
   WIN_RATE_BAND_BY_TYPE,
 } from "./findings-bands";
 import type { BalanceReportModel } from "./report-model";
-
-function escapeHtml(value: string): string {
-  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
-}
+import { escapeHtml, formatPercent } from "./report-format";
 
 function formatObserved(metric: FindingMetric, value: number): string {
   if (metric === "averageTurns") return value.toFixed(1);
   if (metric === "anomaly") return String(Math.round(value));
-  return `${(value * 100).toFixed(1)}%`;
+  return formatPercent(value);
 }
 
 function severityClass(severity: BalanceFinding["severity"]): string {

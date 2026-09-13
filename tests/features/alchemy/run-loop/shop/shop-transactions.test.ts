@@ -9,7 +9,7 @@ import {
 import { setShopState as mutateShopState } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { cardById, type BattleCard } from "@/lib/game-data";
 import { emptyShopState, readActivityData, type ShopState } from "@/lib/active-run-session";
-import { resetAllTestStores } from "../../../../helpers/gameplay-store-test";
+import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
 import { setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 const setShopState = createRunSessionCommand(mutateShopState);

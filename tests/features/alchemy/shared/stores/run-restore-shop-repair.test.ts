@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { readActivityData, shopItemSlotKey } from "@/lib/active-run-session";
 import { restoreRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { readActiveRunScreen, readBattle, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { mutateGearForTest, resetAllTestStores, resetGearForTest } from "../../../../helpers/gameplay-store-test";
+import { mutateGearForTest, resetAllTestStores, resetGearForTest } from "../../../../helpers/run-domain-store-test";
 import { makeActiveRunData } from "./active-run-data-fixture";
 import { cardById, trinketLibrary } from "@/lib/game-data";
 import { CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";

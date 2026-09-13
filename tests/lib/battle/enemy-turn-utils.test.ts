@@ -4,7 +4,7 @@ import {
   resetEnemyTurnState,
   resolveDeathsDoorGraceExpiry,
 } from "@/lib/battle/player-turn-transition";
-import { checkHealthThresholds } from "@/lib/battle/enemy-attack-damage";
+import { checkHealthThresholds } from "@/lib/battle/status-player";
 import {
   isEveryOtherTurnScalingTurn,
   isFreezeActiveForAspect,

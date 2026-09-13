@@ -1,7 +1,7 @@
 import "../../../../helpers/mock-audio";
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
-import { resetAllTestStores } from "../../../../helpers/gameplay-store-test";
+import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
 import { DEFAULT_CAMPAIGN_DIFFICULTY_ID, DRAFT_ROUNDS } from "@/lib/game-constants";
 import { makeTestCard } from "../../../../fixtures/battle";
 import { setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";

@@ -78,16 +78,21 @@ export function LabyrinthMapViewport({ map, nodes, selectedNodeId, onEnter, onDe
           flip({ boundary: viewport, padding: 8, fallbackPlacements: ["left", "top", "bottom"] }),
           shift({ boundary: viewport, padding: 8, crossAxis: true }),
         ],
-      }).then(({ x, y }) => {
-        if (cancelled) return;
-        inspector.style.left = `${x}px`;
-        inspector.style.top = `${y}px`;
-        inspector.style.visibility = "visible";
-        if (needsFocus) {
-          needsFocus = false;
-          inspector.focus({ preventScroll: true });
-        }
-      });
+      }).then(
+        ({ x, y }) => {
+          if (cancelled) return;
+          inspector.style.left = `${x}px`;
+          inspector.style.top = `${y}px`;
+          inspector.style.visibility = "visible";
+          if (needsFocus) {
+            needsFocus = false;
+            inspector.focus({ preventScroll: true });
+          }
+        },
+        () => {
+          // Positioning can reject when the inspector unmounts mid-flight; the next autoUpdate pass repositions.
+        },
+      );
     };
     const cleanup = autoUpdate(trigger, inspector, update);
     return () => {

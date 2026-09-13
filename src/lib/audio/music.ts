@@ -12,7 +12,7 @@ import {
 } from "../game-constants";
 import { audioState } from "./state";
 import { clamp } from "../math";
-import { pickRandomUnsafe } from "../utils";
+import { pickRandomUnsafe } from "../rng";
 
 const musicBase = audioUrl(MUSIC_BASE_PATH);
 

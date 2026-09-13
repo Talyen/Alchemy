@@ -4,7 +4,7 @@ import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { companionLibrary } from "@/lib/game-data";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
-import { checkHealthThresholds } from "@/lib/battle/enemy-attack-damage";
+import { checkHealthThresholds } from "@/lib/battle/status-player";
 import { applyWishEffect } from "@/lib/battle/wish";
 import { dealDamage, makeTestCard, patchBattleState } from "../../fixtures/battle";
 

@@ -27,6 +27,13 @@ function npmCli() {
   throw new Error("Cannot locate npm-cli.js. Install npm or run this command through npm run.");
 }
 
+/** Absolute path to a bundled Node CLI, avoiding npx resolution and shell quirks. */
+export function resolveNodeCli(label, ...segments) {
+  const bin = path.join(ROOT, "node_modules", ...segments);
+  if (!fs.existsSync(bin)) throw new Error(`${label} CLI is missing: ${bin} (run npm ci)`);
+  return bin;
+}
+
 /** Resolve our Node tools without a shell interpreting spaces, quotes or pipes. */
 export function commandInvocation(command, args = []) {
   if (command === "node") return [process.execPath, args];

@@ -52,14 +52,11 @@ export function forgeAppliesToDamageType(
   );
 }
 
-export const REFLECTED_HOLY_CARD: BattleCard = {
-  id: "sun-struck-shield",
-  title: "",
-  descriptionLines: [],
-  art: "",
-  cost: 0,
-  effects: [],
-};
+export function emptyBattleCard(id: string): BattleCard {
+  return { id, title: "", descriptionLines: [], art: "", cost: 0, effects: [] };
+}
+
+export const REFLECTED_HOLY_CARD: BattleCard = emptyBattleCard("sun-struck-shield");
 
 function sharesBurnBleedBonuses(state: BattleState): boolean {
   return state.gearEffects.sharedBurnBleedBonuses > 0;

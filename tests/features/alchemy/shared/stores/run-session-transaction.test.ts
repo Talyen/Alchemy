@@ -6,7 +6,7 @@ import {
   subscribeRunSessionCommits,
 } from "@/features/alchemy/shared/stores/run-session-command";
 import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
-import { mutateGearForTest } from "../../../../helpers/gameplay-store-test";
+import { mutateGearForTest } from "../../../../helpers/run-domain-store-test";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
 import {

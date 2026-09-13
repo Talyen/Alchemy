@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { makeDiscoveryCard } from "../../../../helpers/discovery-store-mock";
+import { makeTestCard } from "../../../../fixtures/battle";
 import * as rewardGold from "@/features/alchemy/run-loop/navigation/reward-flow";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { trinketLibrary } from "@/lib/game-data";
@@ -34,7 +34,7 @@ beforeEach(() => {
 
 describe("applyRewardSelection", () => {
   it("appends card rewards with discovery", () => {
-    const card = makeDiscoveryCard({ id: "slash", title: "Slash", cost: 1 });
+    const card = makeTestCard({ id: "slash", title: "Slash", cost: 1 });
     const draft = {} as GameplayDraft;
     applyRewardSelection({ reward: { rewardType: "card", choice: card }, draft });
 
@@ -60,7 +60,7 @@ describe("applyRewardSelection", () => {
 
 describe("applyAlchemistPotion", () => {
   it("adds a random potion card with discovery", () => {
-    const potion = makeDiscoveryCard({ id: "mana-potion" });
+    const potion = makeTestCard({ id: "mana-potion" });
     vi.spyOn(rewardGold, "getRandomPotionCard").mockReturnValue(potion);
 
     const draft = {} as GameplayDraft;

@@ -1,4 +1,3 @@
-export { checkHealthThresholds } from "./status-player";
 import type { EnemyAttackEffect } from "@/lib/game-data";
 import { BATTLE_CONFIG, LABYRINTH_MODIFIER_CONFIG, PERCENT_DENOMINATOR } from "../game-constants";
 import { recordEnemyAbilityActivation } from "./battle-metrics";

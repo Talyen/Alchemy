@@ -9,7 +9,7 @@ import {
 import { audioState } from "./state";
 import { getSoundUrl } from "./preload";
 import { clamp } from "../math";
-import { pickRandomUnsafe } from "../utils";
+import { pickRandomUnsafe } from "../rng";
 import {
   SFX_COOLDOWN_MS,
   SFX_DEFEAT_VOLUME,

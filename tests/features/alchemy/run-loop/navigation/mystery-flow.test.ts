@@ -8,7 +8,7 @@ import {
 import { cardLibrary, getCardKeywords } from "@/lib/game-data";
 import * as cardPools from "@/lib/game-data/cards/card-pools";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
-import { resetAllTestStores, resetProfileForTest } from "../../../../helpers/gameplay-store-test";
+import { resetAllTestStores, resetProfileForTest } from "../../../../helpers/run-domain-store-test";
 import { setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";

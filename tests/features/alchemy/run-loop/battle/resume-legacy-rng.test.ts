@@ -6,7 +6,7 @@ import { initializeActiveBattle } from "@/features/alchemy/shared/stores/run-ses
 import { resumePendingBattleTransition } from "@/features/alchemy/run-loop/battle/turn-orchestration";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { makeTestCardWithId } from "../../../../fixtures/battle";
-import { resetRunDomainStore } from "../../../../helpers/gameplay-store-test";
+import { resetRunDomainStore } from "../../../../helpers/run-domain-store-test";
 import { setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { makeBattleTurnSession } from "./turn-orchestration-fixture";
 

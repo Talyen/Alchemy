@@ -2,7 +2,7 @@ import "../../../helpers/mock-audio";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createMysteryEventNavigation } from "@/features/alchemy/run-loop/navigation/mystery-event-navigation";
-import { resetAllTestStores } from "../../../helpers/gameplay-store-test";
+import { resetAllTestStores } from "../../../helpers/run-domain-store-test";
 import { setRunProgress } from "../../../helpers/run-domain-store-test";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";

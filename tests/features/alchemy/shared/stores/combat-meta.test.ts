@@ -4,7 +4,7 @@ import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-
 import { computeGearManifest, flattenGearInventories } from "@/lib/gear";
 import { computeTalentEffects } from "@/lib/game-data";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
-import { resetAllTestStores } from "../../../../helpers/gameplay-store-test";
+import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
 
 beforeEach(() => resetAllTestStores());
 

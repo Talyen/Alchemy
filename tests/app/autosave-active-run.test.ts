@@ -5,7 +5,7 @@ import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-se
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readHasActiveRun } from "@/features/alchemy/shared/stores/run-reads";
 import { setHasActiveRun, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { resetAllTestStores } from "../helpers/gameplay-store-test";
+import { resetAllTestStores } from "../helpers/run-domain-store-test";
 import { setRunProgress } from "../helpers/run-domain-store-test";
 
 vi.mock("@/features/alchemy/shared/storage", async (importOriginal) => {

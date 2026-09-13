@@ -35,7 +35,7 @@ import {
   readBattle,
   readRunSession,
 } from "@/features/alchemy/shared/stores/run-reads";
-import { resetAllTestStores } from "../../../../helpers/gameplay-store-test";
+import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
 import { setRunProgress } from "../../../../helpers/run-domain-store-test";
 
 beforeEach(() => {

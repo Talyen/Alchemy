@@ -6,7 +6,7 @@ import {
 } from "@/features/alchemy/shared/storage/persistence";
 import { defaultSaveData } from "@/features/alchemy/shared/storage";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
-import { mutateGearForTest, resetRunDomainStore } from "../../../../helpers/gameplay-store-test";
+import { mutateGearForTest, resetRunDomainStore } from "../../../../helpers/run-domain-store-test";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   handleCollectionTabChange,

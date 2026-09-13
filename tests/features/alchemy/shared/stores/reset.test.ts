@@ -26,7 +26,7 @@ import { addMaterials } from "@/features/alchemy/shared/stores/run-session-write
 import { setDiscoveredCardIds } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import { setHasActiveBattle, setHasActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { resetProfileForTest } from "../../../../helpers/gameplay-store-test";
+import { resetProfileForTest } from "../../../../helpers/run-domain-store-test";
 import { resetRunDomainStore, setRunProgress } from "../../../../helpers/run-domain-store-test";
 
 const mockedClearSave = vi.mocked(clearAlchemySaveData);

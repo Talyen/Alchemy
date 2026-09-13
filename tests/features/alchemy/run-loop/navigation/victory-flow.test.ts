@@ -16,7 +16,7 @@ import type { Destination } from "@/lib/routing";
 import { getAvailableDestinations } from "@/lib/routing/destination-availability";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
-import { resetRunDomainStore } from "../../../../helpers/gameplay-store-test";
+import { resetRunDomainStore } from "../../../../helpers/run-domain-store-test";
 import { setRunProgress } from "../../../../helpers/run-domain-store-test";
 import { commitVictoryRewards, type CommitVictoryRewardsDeps } from "@/features/alchemy/run-loop/run/victory-commands";
 beforeEach(() => resetRunDomainStore());

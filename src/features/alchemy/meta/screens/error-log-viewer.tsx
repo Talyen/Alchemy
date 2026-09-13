@@ -8,17 +8,37 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
   const errors = useErrorLogStore((s) => s.errors);
   const clearErrors = useErrorLogStore((s) => s.clearErrors);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [copyFeedback, setCopyFeedback] = useState<{ status: "copied" | "failed"; errorCount: number } | null>(null);
 
   const reversedErrors = useMemo(() => [...errors].reverse(), [errors]);
+  // Feedback is shown only while it describes the current list; a new error or
+  // Clear invalidates it via the errorCount check below without an effect.
+  const visibleCopyFeedback = copyFeedback && copyFeedback.errorCount === errors.length ? copyFeedback : null;
 
   function handleCopyAll() {
+    const errorCount = errors.length;
+    setCopyFeedback(null);
     const text = errors
       .map(
         (e) =>
           `[${e.source}] ${e.message}\n  at ${new Date(e.timestamp).toISOString()}\n  stack: ${e.stack ?? "(none)"}\n  context: ${JSON.stringify(e.context)}\n`,
       )
       .join("\n---\n");
-    navigator.clipboard?.writeText?.(text)?.catch(() => {});
+    let pending: unknown;
+    try {
+      pending = navigator.clipboard?.writeText?.(text);
+    } catch {
+      setCopyFeedback({ status: "failed", errorCount });
+      return;
+    }
+    if (!pending || typeof (pending as Promise<void>).then !== "function") {
+      setCopyFeedback({ status: "failed", errorCount });
+      return;
+    }
+    (pending as Promise<void>).then(
+      () => setCopyFeedback({ status: "copied", errorCount }),
+      () => setCopyFeedback({ status: "failed", errorCount }),
+    );
   }
 
   return (
@@ -40,6 +60,11 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
           Clear
         </Button>
         <span className="ml-auto self-center text-sm text-muted-foreground">
+          {visibleCopyFeedback?.status === "copied"
+            ? "Copied. "
+            : visibleCopyFeedback?.status === "failed"
+              ? "Copy failed. "
+              : null}
           {errors.length} error{errors.length !== 1 ? "s" : ""}
         </span>
       </div>

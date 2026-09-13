@@ -4,7 +4,7 @@ import { readActiveRun } from "@/features/alchemy/shared/stores/run-reads";
 import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
 import type { GearInstance } from "@/lib/gear";
 import { trinketLibrary } from "@/lib/game-data";
-import { resetAllTestStores } from "../../../../helpers/gameplay-store-test";
+import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
 import { setRunSession } from "../../../../helpers/run-domain-store-test";
 import { applyRewardSelection } from "@/features/alchemy/run-loop/run/reward-commands";
 const armor: GearInstance = {

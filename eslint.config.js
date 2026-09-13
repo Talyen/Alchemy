@@ -182,7 +182,7 @@ export default tseslint.config(
     plugins: { alchemy: alchemyPlugin },
   },
   {
-    files: ["src/**/*.{ts,tsx}", "tests/**/*.{ts,tsx}"],
+    files: ["src/**/*.{ts,tsx}", "tests/**/*.{ts,tsx}", "scripts/**/*.mjs"],
     rules: {
       "alchemy/require-disable-reason": "error",
     },
@@ -472,12 +472,12 @@ export default tseslint.config(
     {
       make: syntaxBlock,
       files: ["src/lib/battle/**/*.ts"],
-      ignores: ["src/lib/battle/status-helpers.ts", "src/lib/battle/battle-setup.ts"],
+      ignores: ["src/lib/battle/battle-setup.ts"],
       extra: [...BATTLE_NO_MATH_RANDOM, ...BATTLE_NO_MATH_FLOOR, ...BATTLE_NO_DIRECT_RNG],
     },
     {
       make: syntaxBlock,
-      files: ["src/lib/battle/status-helpers.ts", "src/lib/battle/battle-setup.ts"],
+      files: ["src/lib/battle/battle-setup.ts"],
       ignores: undefined,
       extra: [...BATTLE_NO_MATH_RANDOM, ...BATTLE_NO_MATH_FLOOR],
     },

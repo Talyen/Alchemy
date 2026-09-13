@@ -6,7 +6,7 @@ import {
   TALENT_CONVERSION_DEFAULT_FRACTION,
 } from "../game-constants";
 import { applyLuckyCloverGold, applyNatureManaRefund } from "./bonus-effects";
-import { computeCardDamageToEnemy, computeTalentDamageToEnemy } from "./damage-calc";
+import { computeCardDamageToEnemy, computeTalentDamageToEnemy, emptyBattleCard } from "./damage-calc";
 import {
   applyDamageBlock,
   applyHolyLifesteal,
@@ -19,14 +19,7 @@ import { addForgeToPlayer } from "./status-player";
 import { resolveTypedEnemyHit } from "./typed-hit-resolution";
 import { setFlag, type BattleState, type CombatTextEvent } from "./types";
 
-const FOLLOW_UP_CARD: BattleCard = {
-  id: "follow-up-typed-hit",
-  title: "",
-  descriptionLines: [],
-  art: "",
-  cost: 0,
-  effects: [],
-};
+const FOLLOW_UP_CARD: BattleCard = emptyBattleCard("follow-up-typed-hit");
 
 export function dealPlayerTypedHit(
   state: BattleState,

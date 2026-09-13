@@ -21,7 +21,7 @@ import {
 } from "@/lib/game-data";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
-import { createRunStreamRng } from "@/lib/rng";
+import { createRunStreamRng, getBattleRng, rngInt } from "@/lib/rng";
 import { MAX_PLAYER_HEALTH } from "../game-constants";
 import { createEmptyAnomalies, sampleAnomalies, type BattleAnomalies } from "./anomalies";
 import { buildSimCompanionBondLevels } from "./homestead-preset";
@@ -41,7 +41,7 @@ const DEFAULT_LOADOUT: BalanceLoadoutMode = "typical";
 export const DEFAULT_SEED = 1;
 
 function randomIndex(rng: () => number, length: number): number {
-  return Math.floor(rng() * length);
+  return rngInt(rng, length);
 }
 
 function getPlayableCards(state: BattleState): Array<{ card: BattleCard; index: number }> {
@@ -59,15 +59,15 @@ function chooseCardToPlay(state: BattleState, policy: BalancePlayPolicy): { card
   }
   if (policy === "defensive-random" && state.playerHealth <= state.playerMaxHealth / 2) {
     const defensive = playable.filter(({ card }) => getImmediateDefense(card) > 0);
-    if (defensive.length > 0) return defensive[randomIndex(state.rng, defensive.length)] ?? null;
+    if (defensive.length > 0) return defensive[randomIndex(getBattleRng(state), defensive.length)] ?? null;
   }
-  return playable[randomIndex(state.rng, playable.length)] ?? null;
+  return playable[randomIndex(getBattleRng(state), playable.length)] ?? null;
 }
 
 function choosePendingWishCards(state: BattleState): BattleState {
   let nextState = state;
   while (nextState.wishOptions && nextState.wishOptions.length > 0) {
-    const choice = nextState.wishOptions[randomIndex(nextState.rng, nextState.wishOptions.length)];
+    const choice = nextState.wishOptions[randomIndex(getBattleRng(nextState), nextState.wishOptions.length)];
     if (!choice) break;
     nextState = chooseWishCard(nextState, choice.id);
   }

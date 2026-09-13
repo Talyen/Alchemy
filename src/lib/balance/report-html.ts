@@ -2,18 +2,11 @@ import { enemyById, isEnemyId, talentPool } from "@/lib/game-data";
 import { ANOMALY_THRESHOLD_BY_PRESET } from "./anomalies";
 import { formatLengthBand, formatWinRateBand, isLengthOutsideBand, isWinRateOutsideTypeBand } from "./findings-bands";
 import { TITLE_LOOKUPS, type ReportEnemyType } from "./report-catalog";
+import { escapeHtml, formatPercent as percent } from "./report-format";
 import { reportMethodologyLines } from "./report-methodology";
 import type { BalanceReportModel, PairedTierRow } from "./report-model";
 import type { ReportRunOptions } from "./report-options";
 import type { PairedDelta, RateCell } from "./report-rankings";
-
-function escapeHtml(value: string): string {
-  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
-}
-
-function percent(value: number): string {
-  return `${(value * 100).toFixed(1)}%`;
-}
 
 function titleFor(kind: keyof typeof TITLE_LOOKUPS | "talent", id: string): string {
   if (kind === "talent") {

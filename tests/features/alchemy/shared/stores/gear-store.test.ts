@@ -7,7 +7,7 @@ import {
   getUniqueItemDefinition,
   type GearInstance,
 } from "@/lib/gear";
-import { mutateGearForTest, resetGearForTest, resetProfileForTest } from "../../../../helpers/gameplay-store-test";
+import { mutateGearForTest, resetGearForTest, resetProfileForTest } from "../../../../helpers/run-domain-store-test";
 import { createInitialGearState } from "@/features/alchemy/shared/stores/gear-store-initial-state";
 import { readGearState, readHasAnyOwnedGear } from "@/features/alchemy/shared/stores/gear-store";
 import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";

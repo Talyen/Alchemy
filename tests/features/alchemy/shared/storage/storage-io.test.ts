@@ -198,6 +198,25 @@ describe("storage io", () => {
     expect(loaded.status.kind === "ok" ? loaded.status.warnings : []).toBeUndefined();
   });
 
+  it("reports warnings when corrupt gear sections reset to empty defaults", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    mockStorage[SAVE_KEY] = JSON.stringify({
+      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+      gearInventories: "corrupt",
+      ownedTrinketIds: [123],
+      craftingCurrencies: "corrupt",
+      materialInventory: "corrupt",
+    });
+    const loaded = await loadAlchemySaveState();
+
+    expect(loaded.status.kind).toBe("ok");
+    const warnings = loaded.status.kind === "ok" ? (loaded.status.warnings ?? []) : [];
+    expect(warnings).toContain("gear collection could not be fully restored");
+    expect(warnings).toContain("owned trinkets could not be fully restored");
+    expect(warnings).toContain("crafting currencies could not be fully restored");
+    expect(warnings).toContain("homestead materials could not be fully restored");
+  });
+
   it("reports warnings when an active run cannot be restored and allows writes", async () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
     mockStorage[SAVE_KEY] = JSON.stringify({

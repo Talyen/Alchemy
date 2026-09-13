@@ -7,7 +7,7 @@ import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { makeTestCard } from "../fixtures/battle";
 import { getEffectiveCardDescriptionLines } from "@/lib/game-data/card-description";
-import { resetAllTestStores } from "../helpers/gameplay-store-test";
+import { resetAllTestStores } from "../helpers/run-domain-store-test";
 
 const base = {
   screen: "battle" as const,

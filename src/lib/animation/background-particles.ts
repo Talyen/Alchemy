@@ -1,5 +1,5 @@
 import { clamp, lerp } from "@/lib/math";
-import { pickRandomUnsafe } from "@/lib/utils";
+import { pickRandomUnsafe } from "@/lib/rng";
 
 export type ParticleVariant = "embers" | "dust" | "hand_glow";
 

@@ -3,7 +3,7 @@ import path from "node:path";
 
 const ANSI_PATTERN = new RegExp(String.raw`\u001B(?:[@-_][0-?]*[ -/]*[@-~]|\][^\u0007]*(?:\u0007|\u001B\\))`, "gu");
 
-// eslint-disable-next-line no-control-regex
+// eslint-disable-next-line no-control-regex -- intentional control-char strip for terminal output
 const NON_PRINTABLE_PATTERN = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/gu;
 export const ROUTINE_EXPOSURE_BUDGET_BYTES = 4_096;
 

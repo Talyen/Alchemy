@@ -10,7 +10,7 @@ import {
   resetStorageIoForTests,
   setWritesDisabled,
 } from "@/features/alchemy/shared/storage";
-import { resetAllTestStores } from "../helpers/gameplay-store-test";
+import { resetAllTestStores } from "../helpers/run-domain-store-test";
 import { deferred } from "../helpers/deferred";
 import type { SaveBackend } from "@/lib/platform-save-backend";
 

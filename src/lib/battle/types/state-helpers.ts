@@ -132,7 +132,7 @@ export function addEnemyMitigation(state: BattleState, field: keyof EnemyMitigat
   };
 }
 
-export function stripEnemyMitigation(state: BattleState, field: keyof EnemyMitigation): BattleState {
+function stripEnemyMitigation(state: BattleState, field: keyof EnemyMitigation): BattleState {
   if (state.enemyMitigation[field] <= 0) return state;
   return { ...state, enemyMitigation: { ...state.enemyMitigation, [field]: 0 } };
 }

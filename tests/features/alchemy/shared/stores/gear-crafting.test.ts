@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { type GearInstance, createEmptyGearInventories, createEmptyGearLoadouts, equipGear } from "@/lib/gear";
-import { mutateGearForTest, resetGearForTest } from "../../../../helpers/gameplay-store-test";
+import { mutateGearForTest, resetGearForTest } from "../../../../helpers/run-domain-store-test";
 import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
 
 function knightInventories(...items: GearInstance[]) {
