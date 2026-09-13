@@ -204,4 +204,21 @@ describe("remaining-tick detonation", () => {
     expect(next).toBe(state);
     expect(texts).toEqual([]);
   });
+
+  it("resolves enemy health thresholds before kill payouts during DoT damage", () => {
+    const state = patchBattleState({
+      enemyHealth: 6,
+      enemyMaxHealth: 10,
+      currentEnemy: { traits: [{ id: "second-wind", title: "Second Wind", description: "" }] },
+      gearEffects: { ...makeTestBattleState().gearEffects, healOnBurnEnemyDefeated: 6 },
+      playerHealth: 20,
+      playerMaxHealth: 30,
+    });
+    // 4 burn damage brings enemy from 6 to 2 (crosses half-health 5). Second Wind triggers.
+    // The enemy is healed rather than dying, so healOnBurnEnemyDefeated must not fire prematurely.
+    const next = applyEnemyDotDamage(state, [{ status: "burn", finalDamage: 4, nextStacks: 0 }], makeTexts());
+    expect(next.flags.secondWindTriggered).toBe(true);
+    expect(next.enemyHealth).toBeGreaterThan(2);
+    expect(next.playerHealth).toBe(20);
+  });
 });

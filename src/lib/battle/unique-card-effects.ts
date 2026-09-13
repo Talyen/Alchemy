@@ -83,7 +83,11 @@ export function finishUniqueCardDamage(
 
 export function returnHarvestCard(state: BattleState, card: BattleCard): BattleState {
   if (card.consume || state.hand.length >= MAX_HAND_SIZE || isPlayerDefeated(state)) return state;
-  const index = state.discard.findLastIndex((candidate) => candidate === card);
+  // Cards in battle always receive a uid from the draw system, so uid matching
+  // reliably identifies cloned cards that lost reference equality.
+  const index = state.discard.findLastIndex(
+    (candidate) => candidate === card || (card.uid !== undefined && candidate.uid === card.uid),
+  );
   if (index < 0) return state;
   const returned = { ...card, uid: state.nextCardUid };
   return {
@@ -97,6 +101,7 @@ export function returnHarvestCard(state: BattleState, card: BattleCard): BattleS
 
 export function processArcheryEchoes(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   const echoes = state.uniqueGear.archeryEchoes;
+  if (echoes.length === 0) return state;
   let next: BattleState = { ...state, uniqueGear: { ...state.uniqueGear, archeryEchoes: [] } };
   if (state.gearEffects.archeryEchoNextTurn <= 0) return next;
   for (const card of echoes) {

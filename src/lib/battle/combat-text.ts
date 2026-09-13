@@ -191,6 +191,7 @@ export function applyGearKillRewards(
   state: BattleState,
   enemyWasAlive: boolean,
   combatTexts: CombatTextEvent[],
+  enemyStatusesOverride?: BattleState["enemyStatuses"],
 ): BattleState {
   if (state.enemyHealth > 0 || !enemyWasAlive) return state;
   let nextState = state;
@@ -198,7 +199,8 @@ export function applyGearKillRewards(
   if (healOnKill > 0) {
     nextState = applyKillRewardHealing(nextState, healOnKill, combatTexts);
   }
-  if (healOnBurnEnemyDefeated > 0 && state.enemyStatuses.burn > 0) {
+  const statuses = enemyStatusesOverride ?? state.enemyStatuses;
+  if (healOnBurnEnemyDefeated > 0 && statuses.burn > 0) {
     nextState = applyKillRewardHealing(nextState, healOnBurnEnemyDefeated, combatTexts);
   }
   if (goldOnKill > 0) {
@@ -211,18 +213,15 @@ export function payKillPayouts(
   state: BattleState,
   enemyWasAlive: boolean,
   combatTexts: CombatTextEvent[],
+  enemyStatusesOverride?: BattleState["enemyStatuses"],
 ): BattleState {
   if (state.enemyHealth > 0 || !enemyWasAlive || state.flags.killRewardsPaid) return state;
   state = { ...state, flags: { ...state.flags, killRewardsPaid: true } };
-  if (state.enemyStatuses.poison > 0 && state.talentEffects.goldOnPoisonedKill > 0) {
+  const statuses = enemyStatusesOverride ?? state.enemyStatuses;
+  if (statuses.poison > 0 && state.talentEffects.goldOnPoisonedKill > 0) {
     state = addGoldWithCombatText(state, state.talentEffects.goldOnPoisonedKill, combatTexts);
   }
-  const afterBoneCharm =
-    state.enemyHealth <= 0 && enemyWasAlive
-      ? applyKillRewardHealing(state, state.trinketEffects.boneCharmHealOnKill, combatTexts)
-      : state;
-  const rewarded = applyGearKillRewards(afterBoneCharm, enemyWasAlive, combatTexts);
-  return rewarded.enemyHealth <= 0 && rewarded.dodgeChanceFromDamage > 0
-    ? { ...rewarded, dodgeChanceFromDamage: 0 }
-    : rewarded;
+  const afterBoneCharm = applyKillRewardHealing(state, state.trinketEffects.boneCharmHealOnKill, combatTexts);
+  const rewarded = applyGearKillRewards(afterBoneCharm, enemyWasAlive, combatTexts, statuses);
+  return rewarded.dodgeChanceFromDamage > 0 ? { ...rewarded, dodgeChanceFromDamage: 0 } : rewarded;
 }

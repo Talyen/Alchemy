@@ -74,7 +74,10 @@ export function scaleEnemyAbilityDamage(
   let amount = Math.round(effect.amount * state.roomScalingMultiplier);
   amount = Math.round(amount * pressure * damageMultiplier);
   for (const modifier of modifiers) {
-    if (modifier.kind === "increase-enemy-physical-damage" || modifier.kind === "increase-enemy-damage") {
+    if (
+      (modifier.kind === "increase-enemy-physical-damage" && effect.damageType === "physical") ||
+      modifier.kind === "increase-enemy-damage"
+    ) {
       amount += modifier.amount;
     }
     if (

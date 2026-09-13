@@ -6,6 +6,8 @@ import { dealPlayerTypedHit } from "@/lib/battle/player-typed-hit";
 import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { validateCardDescriptionParity } from "@/lib/content-validation/card-parity";
+import { reflectBlockedAttackAsHoly } from "@/lib/battle/damage-riders";
+import { returnHarvestCard } from "@/lib/battle/unique-card-effects";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 const drawingPotion = {
@@ -92,5 +94,38 @@ describe("player-facing card and trinket regressions", () => {
       rng: () => 0.99,
     });
     expect(playBattleCardResolved(state, potion.id, 0).state.hand).toHaveLength(4);
+  });
+
+  it("reflectBlockedAttackAsHoly triggers enemy threshold reactions before paying kill rewards", () => {
+    const state = patchBattleState({
+      enemyHealth: 6,
+      enemyMaxHealth: 10,
+      currentEnemy: { traits: [{ id: "second-wind", title: "Second Wind", description: "" }] },
+      talentEffects: { holyReflectionBlockLostPercent: 100 },
+      gearEffects: { healOnKill: 10 },
+      playerHealth: 20,
+      playerMaxHealth: 30,
+    });
+    // Enemy has 6 HP out of 10. Reflected holy damage of 4 drops enemy to 2 HP (crosses half-health 5 HP).
+    // Second wind triggers and heals the enemy. Enemy should not be considered killed, so healOnKill shouldn't fire prematurely.
+    const result = reflectBlockedAttackAsHoly(state, 4, []);
+    expect(result.flags.secondWindTriggered).toBe(true);
+    expect(result.enemyHealth).toBeGreaterThan(2);
+    expect(result.playerHealth).toBe(20);
+  });
+
+  it("returnHarvestCard matches cloned card with identical uid in discard", () => {
+    const card = makeTestCard({ id: "strike", uid: 42 });
+    const clonedCard = { ...card };
+    const state = patchBattleState({
+      hand: [],
+      discard: [clonedCard],
+      nextCardUid: 100,
+    });
+    const result = returnHarvestCard(state, card);
+    expect(result.hand).toHaveLength(1);
+    expect(result.discard).toHaveLength(0);
+    expect(result.hand[0]!.uid).toBe(100);
+    expect(result.uniqueGear.redHarvestUid).toBe(100);
   });
 });

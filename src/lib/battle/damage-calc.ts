@@ -404,15 +404,15 @@ export function computeCardDamageToEnemy(
   const unwoundedBonus =
     (effect.damageType === "bleed" || (effect.damageType === "burn" && state.gearEffects.sharedBurnBleedBonuses > 0)) &&
     state.enemyStatuses.bleed === 0
-      ? state.talentEffects.bleedUnwoundedBonusPercent / 100
+      ? state.talentEffects.bleedUnwoundedBonusPercent / PERCENT_DENOMINATOR
       : 0;
   const cullBonus =
     state.talentEffects.leechCardDamageVsLowHealthPercent > 0 &&
     card &&
     !context?.companionAttack &&
     cardHasKeyword(card, "leech") &&
-    state.enemyHealth < state.enemyMaxHealth / 2
-      ? state.talentEffects.leechCardDamageVsLowHealthPercent / 100
+    state.enemyHealth < state.enemyMaxHealth / HALF_DIVISOR
+      ? state.talentEffects.leechCardDamageVsLowHealthPercent / PERCENT_DENOMINATOR
       : 0;
   const totalBonus =
     computeAdditiveDamageBonus(stateAfterFirst, effect, card) + firstBonus + unwoundedBonus + cullBonus;

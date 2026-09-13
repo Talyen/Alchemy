@@ -38,13 +38,13 @@ export function applyEnemyDotDamage(
   const previousHealth = hit.previousHealth;
   let nextState: BattleState = hit.state;
 
-  nextState = payKillPayouts(nextState, hit.enemyWasAlive, combatTexts);
   for (const pulse of pulses) {
     nextState = setEnemyStatus(nextState, pulse.status, pulse.nextStacks);
   }
   if (applyRiders) nextState = applyRiders(nextState, hit);
   nextState = decayArmorAfterDamage(nextState, finalDamage, "enemy", combatTexts);
-  return processEncounterTraitHealthThreshold(previousHealth, nextState, combatTexts);
+  nextState = processEncounterTraitHealthThreshold(previousHealth, nextState, combatTexts);
+  return payKillPayouts(nextState, hit.enemyWasAlive, combatTexts, state.enemyStatuses);
 }
 
 export function dealEnemyDotTick(

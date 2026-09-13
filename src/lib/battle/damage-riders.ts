@@ -125,11 +125,14 @@ export function reflectBlockedAttackAsHoly(
 ): BattleState {
   const { state: mitigated, remainingDamage } = computeReflectedHolyDamageToEnemy(state, blockLost);
   if (remainingDamage <= 0) return mitigated;
+  // Capture statuses before damage riders can modify them so status-conditional
+  // kill rewards (e.g. healOnBurnEnemyDefeated) evaluate against the pre-hit state,
+  // matching the defensive pattern used in applyEnemyDotDamage.
+  const preDamageStatuses = mitigated.enemyStatuses;
   const hit = damageEnemyHealth(mitigated, remainingDamage);
   let nextState = decayArmorAfterDamage(hit.state, remainingDamage, "enemy", combatTexts);
   mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "holy", amount: remainingDamage });
   const card = { id: "sun-struck-shield", title: "", descriptionLines: [], art: "", cost: 0, effects: [] };
-  nextState = payKillPayouts(nextState, hit.enemyWasAlive, combatTexts);
   nextState = applyDamageStatuses(
     nextState,
     { kind: "damage", damageType: "holy", amount: remainingDamage },
@@ -138,7 +141,8 @@ export function reflectBlockedAttackAsHoly(
     hit.previousHealth,
   );
   nextState = applyHolyDamageRiders(nextState, card, remainingDamage, combatTexts, hit.previousHealth);
-  return processEncounterTraitHealthThreshold(hit.previousHealth, nextState, combatTexts);
+  nextState = processEncounterTraitHealthThreshold(hit.previousHealth, nextState, combatTexts);
+  return payKillPayouts(nextState, hit.enemyWasAlive, combatTexts, preDamageStatuses);
 }
 
 function consumeForgeAfterDamage(

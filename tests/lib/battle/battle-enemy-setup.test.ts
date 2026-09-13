@@ -200,4 +200,18 @@ describe("enemy ability damage floor", () => {
       expect(applyEnemyAbility(defense, ability, []).playerHealth).toBe(state.playerHealth);
     }
   });
+
+  it("applies increase-enemy-physical-damage only to physical damage effects", () => {
+    const state = {
+      currentEnemy: getEnemy("skeleton"),
+      roomScalingMultiplier: 1,
+      difficultyModifiers: [{ kind: "increase-enemy-physical-damage", amount: 3 }] as DifficultyModifier[],
+    };
+    const physical = scaleEnemyAbilityDamage(state, { kind: "damage", damageType: "physical", amount: 4 });
+    const holy = scaleEnemyAbilityDamage(state, { kind: "damage", damageType: "holy", amount: 4 });
+    const poison = scaleEnemyAbilityDamage(state, { kind: "damage", damageType: "poison", amount: 4 });
+    expect(physical.amount).toBe(7);
+    expect(holy.amount).toBe(4);
+    expect(poison.amount).toBe(4);
+  });
 });

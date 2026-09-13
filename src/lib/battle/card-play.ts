@@ -11,7 +11,7 @@ import {
   mergeCombatText,
   payKillPayouts,
 } from "./combat-text";
-import { getCardKeywords, isPotionCard, type BattleCard } from "@/lib/game-data";
+import { isPotionCard, type BattleCard } from "@/lib/game-data";
 import {
   type BattleResolution,
   type BattleState,
@@ -192,12 +192,12 @@ function applyTwinCasting(state: BattleState, card: BattleCard): BattleState {
   }
   if (eligibleIndices.length === 0) return state;
   const pick = rngInt(getBattleRng(state), eligibleIndices.length);
-  const targetIndex = eligibleIndices[pick] ?? eligibleIndices[0]!;
+  const targetIndex = eligibleIndices[pick] ?? eligibleIndices[0] ?? 0;
   const rawDrawnCard = state.deck[targetIndex];
   if (!rawDrawnCard) return state;
 
   const drawnCard = { ...rawDrawnCard, uid: state.nextCardUid };
-  const nextDeck = [...state.deck.slice(0, targetIndex), ...state.deck.slice(targetIndex + 1)];
+  const nextDeck = state.deck.filter((_, i) => i !== targetIndex);
   return {
     ...state,
     deck: nextDeck,
@@ -229,7 +229,7 @@ export function applyCardPlayTalentRewards(
 ): BattleState {
   if (isPlayerDefeated(state)) return state;
   let nextState = applyNatureCardPlayTalents(state, card, combatTexts);
-  if (nextState.talentEffects.companionActsOnCard && getCardKeywords(card).includes("companion")) {
+  if (nextState.talentEffects.companionActsOnCard && cardHasKeyword(card, "companion")) {
     nextState = processCompanionTurnStart(nextState, combatTexts);
   }
   return nextState;
