@@ -97,14 +97,18 @@ export function drawKeywordCard(state: BattleState, keyword: string): BattleStat
   if (!refilled) return state;
   const indices = refilled.deck.flatMap((card, index) => (cardHasKeyword(card, keyword) ? [index] : []));
   if (indices.length === 0) return state;
-  const index = indices[rngInt(getBattleRng(state), indices.length)]!;
-  const card = { ...refilled.deck[index]!, uid: state.nextCardUid };
+  const sampled = indices[rngInt(getBattleRng(state), indices.length)];
+  if (sampled === undefined) return state;
+  const index = sampled;
+  const deckCard = refilled.deck[index];
+  if (!deckCard) return state;
+  const card = { ...deckCard, uid: state.nextCardUid };
   return {
     ...state,
     deck: refilled.deck.filter((_, i) => i !== index),
     discard: refilled.discard,
     hand: [...state.hand, card],
     nextCardUid: state.nextCardUid + 1,
-    uniqueGear: remapDrawnCardBenefits(state, [{ previous: refilled.deck[index]!.uid, next: card.uid }]),
+    uniqueGear: remapDrawnCardBenefits(state, [{ previous: deckCard.uid, next: card.uid }]),
   };
 }

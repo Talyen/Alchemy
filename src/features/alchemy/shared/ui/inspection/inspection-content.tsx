@@ -3,12 +3,14 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getCardKeywords, type BattleCard } from "../../config/game-data-catalog";
 import type { CardDescriptionContext } from "@/lib/game-data";
-import { getInspectionKeywordShineColors, viewCardWidthClass } from "../../config";
+import { viewCardWidthClass } from "../../config/layout";
+import { getInspectionKeywordShineColors } from "../../config/shine-palettes";
 import { BattleCardButton } from "../card-button";
 import { getCardDisplayTitle } from "../card-description-ui";
 import { CardSelectionGrid } from "../card-selection-grid";
 import { sortInspectionCards } from "./card-inspection-sort";
 import { useDialogFocus } from "../use-dialog-focus";
+import { ModalOverlayShell } from "../modal-overlay-shell";
 
 export function InspectionCardGrid({
   cards,
@@ -49,7 +51,45 @@ export function InspectionCardGrid({
   );
 }
 
-export function InspectionPanel({
+export function InspectionOverlayShell({
+  open,
+  escapeId,
+  testId,
+  title,
+  closeLabel,
+  onClose,
+  returnFocusRef,
+  overlayClassName,
+  children,
+}: {
+  open: boolean;
+  escapeId: string;
+  testId: string;
+  title: string;
+  closeLabel: string;
+  onClose: () => void;
+  returnFocusRef?: RefObject<HTMLElement | null> | undefined;
+  overlayClassName?: string;
+  children: ReactNode;
+}) {
+  return (
+    <ModalOverlayShell
+      open={open}
+      escapeId={escapeId}
+      onClose={onClose}
+      dismissOnBackdrop
+      zIndex={85}
+      testId={testId}
+      className={overlayClassName ?? "flex items-center justify-center p-6"}
+    >
+      <InspectionPanel title={title} closeLabel={closeLabel} onClose={onClose} returnFocusRef={returnFocusRef}>
+        {children}
+      </InspectionPanel>
+    </ModalOverlayShell>
+  );
+}
+
+function InspectionPanel({
   title,
   closeLabel,
   onClose,

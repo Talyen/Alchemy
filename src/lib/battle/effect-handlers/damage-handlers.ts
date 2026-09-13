@@ -1,6 +1,6 @@
 import { checkHealthThresholds } from "../status-player";
 import { DAMAGE_TYPES } from "@/lib/game-data";
-import { getBattleRng, rngInt } from "@/lib/rng";
+import { getBattleRng, pickRandom, rngInt } from "@/lib/rng";
 import { applyPotionMultiplier } from "../amount-helpers";
 import { dealDamageToEnemy } from "../damage";
 import { dealSelfDamage } from "../status-helpers";
@@ -10,8 +10,8 @@ import { defineHandler } from "./handler-types";
 export const applyDamageEffect = defineHandler("damage", (state, card, effect, potionMult, combatTexts, context) => {
   let damageType = effect.damageType;
   if (effect.damageTypePool && effect.damageTypePool.length > 0) {
-    const rng = getBattleRng(state);
-    damageType = effect.damageTypePool[rngInt(rng, effect.damageTypePool.length)]!;
+    const picked = pickRandom(effect.damageTypePool, getBattleRng(state));
+    if (picked) damageType = picked;
   }
   const adjustedEffect = {
     ...effect,
@@ -40,7 +40,11 @@ export const applyRandomDamageEffect = defineHandler(
       );
     }
     const rng = getBattleRng(state);
-    const damageType = DAMAGE_TYPES[rngInt(rng, DAMAGE_TYPES.length)]!;
+    const damageType =
+      pickRandom(DAMAGE_TYPES, rng) ??
+      (() => {
+        throw new Error("[Battle] DAMAGE_TYPES catalog is empty");
+      })();
 
     const span = effect.maxAmount - effect.minAmount + 1;
     const rolled = effect.minAmount + rngInt(rng, span);

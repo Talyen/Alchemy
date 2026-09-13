@@ -20,7 +20,7 @@ import {
 import { scaledGearLeechHeal } from "./gear-effects";
 import { rollTalentChance } from "./status-helpers";
 import { getBattleRng, pickRandom, rollPercent } from "@/lib/rng";
-import { scalePercent } from "./amount-helpers";
+import { applyPercentBonus, scalePercent } from "./amount-helpers";
 import { FIRST_EFFECT_MULTIPLIER, HALF_DIVISOR, LEECH_HEAL_FRACTION, PERCENT_DENOMINATOR } from "../game-constants";
 
 export function computeLeechHeal(damageDealt: number): number {
@@ -28,12 +28,12 @@ export function computeLeechHeal(damageDealt: number): number {
   return Math.round(damageDealt * LEECH_HEAL_FRACTION);
 }
 
-export function addBloodDebtHealing(state: BattleState, amount: number): number {
+function addBloodDebtHealing(state: BattleState, amount: number): number {
   if (amount <= 0 || state.talentEffects.leechMissingHealthStep <= 0) return amount;
   return amount + Math.round((state.playerMaxHealth - state.playerHealth) / state.talentEffects.leechMissingHealthStep);
 }
 
-export function scalePlayerLeechHeal(state: BattleState, amount: number): number {
+function scalePlayerLeechHeal(state: BattleState, amount: number): number {
   return amount * (hasEncounterBenefit(state, "blood-feast") ? LABYRINTH_MODIFIER_CONFIG.double : 1);
 }
 
@@ -45,7 +45,7 @@ export function applyLeechHealing(
 ): BattleState {
   const afflicted = options.afflicted ?? (state.enemyStatuses.poison > 0 || state.enemyStatuses.bleed > 0);
   const bonus = afflicted ? state.talentEffects.afflictionLeechBonusPercent : 0;
-  const healing = Math.round(amount * (1 + bonus / PERCENT_DENOMINATOR));
+  const healing = applyPercentBonus(amount, bonus, PERCENT_DENOMINATOR);
   let restored = options.cardHealing
     ? applyCardHealing(state, healing, combatTexts, { skipFightPacing: true })
     : applyHealingWithCombatText(state, healing, combatTexts, { skipFightPacing: true });
@@ -165,18 +165,18 @@ export function applyLeechHitHealing(
   }
 
   if (state.talentEffects.leechDesperateMultiplier > 0 && state.playerHealth < state.playerMaxHealth / HALF_DIVISOR) {
-    healAmount = Math.round(healAmount * (1 + state.talentEffects.leechDesperateMultiplier / PERCENT_DENOMINATOR));
+    healAmount = applyPercentBonus(healAmount, state.talentEffects.leechDesperateMultiplier, PERCENT_DENOMINATOR);
   }
 
   if (state.talentEffects.leechExecuteMultiplier > 0 && state.enemyHealth < state.enemyMaxHealth / HALF_DIVISOR) {
-    healAmount = Math.round(healAmount * (1 + state.talentEffects.leechExecuteMultiplier / PERCENT_DENOMINATOR));
+    healAmount = applyPercentBonus(healAmount, state.talentEffects.leechExecuteMultiplier, PERCENT_DENOMINATOR);
   }
 
   healAmount = addBloodDebtHealing(state, healAmount);
 
   healAmount = scaledGearLeechHeal(healAmount, state.gearEffects);
   if (cardLeech && state.talentEffects.cardLeechBonusPercent > 0) {
-    healAmount = Math.round(healAmount * (1 + state.talentEffects.cardLeechBonusPercent / PERCENT_DENOMINATOR));
+    healAmount = applyPercentBonus(healAmount, state.talentEffects.cardLeechBonusPercent, PERCENT_DENOMINATOR);
   }
 
   return executePlayerHealing(state, healAmount, combatTexts, cardHealing);

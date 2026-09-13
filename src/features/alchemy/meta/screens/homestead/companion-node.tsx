@@ -80,7 +80,7 @@ export function CompanionCardNode({
   const isComplete = currentLevel >= COMPANION_MAX_TIER;
   const bondTierIndex = Math.min(currentLevel, COMPANION_MAX_TIER - 1);
   const bondCost = COMPANION_BOND_TIERS[bondTierIndex];
-  const bondAffordable = Boolean(bondCost) && discovered && !isComplete && canAfford(materialInventory, bondCost!);
+  const bondAffordable = bondCost !== undefined && discovered && !isComplete && canAfford(materialInventory, bondCost);
 
   const detailTooltip = getCompanionTooltip(
     card,

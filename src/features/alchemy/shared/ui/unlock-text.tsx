@@ -2,6 +2,10 @@ import { Fragment, type ReactNode } from "react";
 
 const UNLOCK_HIGHLIGHT_SOURCE = String.raw`\*\*([^*]+)\*\*|\b(Knight|Rogue|Wizard|Ranger|Alchemist|Warlock|Druid|Wildcard|Run|Runs|Gear|Difficulty|Difficulties|Companion|Companions|Gold|Resources|Potions)\b`;
 
+export function renderUnlockNode(message: ReactNode): ReactNode {
+  return typeof message === "string" ? renderUnlockMessage(message) : message;
+}
+
 export function renderUnlockMessage(text: string): ReactNode {
   const parts: ReactNode[] = [];
   let lastIndex = 0;

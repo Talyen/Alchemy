@@ -99,7 +99,9 @@ function validateCardPlay(
   if (state.turnPhase !== "player") return null;
   if (isPlayerCcControlled(state.playerCC)) return null;
   if (!isCardInHand(state, card, index)) return null;
-  const payment = computeCardPayment(state, state.hand[index]!);
+  const handCard = state.hand[index];
+  if (!handCard) return null;
+  const payment = computeCardPayment(state, handCard);
   if (!payment.affordable) return null;
   if (cardHasOnlyCleanseEffect(card, state)) return null;
   return payment;
@@ -192,7 +194,8 @@ function applyTwinCasting(state: BattleState, card: BattleCard): BattleState {
   }
   if (eligibleIndices.length === 0) return state;
   const pick = rngInt(getBattleRng(state), eligibleIndices.length);
-  const targetIndex = eligibleIndices[pick] ?? eligibleIndices[0] ?? 0;
+  const targetIndex = eligibleIndices[pick];
+  if (targetIndex === undefined) throw new Error("[Battle] keyword draw pick out of bounds");
   const rawDrawnCard = state.deck[targetIndex];
   if (!rawDrawnCard) return state;
 

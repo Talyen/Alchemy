@@ -44,13 +44,14 @@ export function canDescendFromLabyrinthNode(map: LabyrinthMap, nodeId: string): 
 }
 
 export function withClearedNode(map: LabyrinthMap, nodeId: string): LabyrinthMap {
-  if (!canEnterLabyrinthNode(map, nodeId)) return map;
+  const node = map.nodes[nodeId];
+  if (!node || !canEnterLabyrinthNode(map, nodeId)) return map;
   return {
     ...map,
     currentNodeId: nodeId,
     nodes: {
       ...map.nodes,
-      [nodeId]: { ...map.nodes[nodeId]!, cleared: true },
+      [nodeId]: { ...node, cleared: true },
     },
   };
 }

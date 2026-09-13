@@ -10,7 +10,10 @@ export function tryUpgradeTierItem(
   if (!item || currentLevel >= item.tiers.length) {
     return { ok: false, inventory, nextLevel: currentLevel };
   }
-  const tier = item.tiers[currentLevel]!;
+  const tier = item.tiers[currentLevel];
+  if (!tier) {
+    return { ok: false, inventory, nextLevel: currentLevel };
+  }
   if (!canAfford(inventory, tier.cost)) {
     return { ok: false, inventory, nextLevel: currentLevel };
   }

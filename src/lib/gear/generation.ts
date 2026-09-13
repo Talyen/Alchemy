@@ -222,7 +222,11 @@ export function generateGearRewardChoicesForRarities(
   return generateGearOfferings({
     count: rarities.length,
     rng,
-    rollTier: () => rarities[index++]!,
+    rollTier: () => {
+      const rarity = rarities[index++];
+      if (!rarity) throw new Error("generateGearRewardChoicesForRarities: rarity index out of range");
+      return rarity;
+    },
     ownedUniqueIds,
   });
 }

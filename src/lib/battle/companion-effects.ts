@@ -3,13 +3,12 @@ import type { CardEffectResolutionContext } from "./effect-handlers/handler-type
 import { damageOnlyEffects } from "./damage-effect-selection";
 import { getModifiedCompanionEffects, type BattleCard } from "@/lib/game-data";
 import { isPlayerDefeated, type BattleState, type CombatTextEvent, withPreservedFlags } from "./types";
-import { addBloodDebtHealing, applyLeechHealing, computeLeechHeal, scalePlayerLeechHeal } from "./damage-rider-leech";
+import { applyScaledLeechHealing, computeLeechHeal } from "./damage-rider-leech";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { addPlayerStatusWithCombatText, applyHealingWithCombatText } from "./combat-text";
 import { rollTalentChance } from "./status-helpers";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { dealTalentTypedHit } from "./player-typed-hit";
-import { scaledGearLeechHeal } from "./gear-effects";
 import { getBattleCompanionDamageModifiers } from "./companion-scaling";
 
 export function resolveCompanionTurnStart(
@@ -83,16 +82,7 @@ export function resolveCompanionTurnStart(
 
     if (damageDealt > 0 && state.talentEffects.companionLeechChance > 0) {
       if (rollPercent(state.talentEffects.companionLeechChance, getBattleRng(state))) {
-        const leechHeal = scalePlayerLeechHeal(
-          afterEffects,
-          scaledGearLeechHeal(
-            addBloodDebtHealing(afterEffects, computeLeechHeal(damageDealt)),
-            afterEffects.gearEffects,
-          ),
-        );
-        if (leechHeal > 0) {
-          afterEffects = applyLeechHealing(afterEffects, leechHeal, combatTexts);
-        }
+        afterEffects = applyScaledLeechHealing(afterEffects, computeLeechHeal(damageDealt), combatTexts);
       }
     }
 

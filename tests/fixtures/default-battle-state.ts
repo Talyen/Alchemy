@@ -11,14 +11,12 @@ import { defaultTrinketEffects } from "@/lib/trinkets";
 
 export { defaultTalentEffects };
 
-const template = defaultBattleState();
-
 export function defaultPlayerStatusValues(overrides?: Partial<PlayerStatusValues>): PlayerStatusValues {
-  return { ...template.playerStatuses, ...overrides };
+  return { ...defaultBattleState().playerStatuses, ...overrides };
 }
 
 export function defaultEnemyStatusValues(overrides?: Partial<EnemyStatusValues>): EnemyStatusValues {
-  return { ...template.enemyStatuses, ...overrides };
+  return { ...defaultBattleState().enemyStatuses, ...overrides };
 }
 
 export function defaultEnemyMitigation(overrides?: Partial<EnemyMitigation>): EnemyMitigation {
@@ -26,11 +24,11 @@ export function defaultEnemyMitigation(overrides?: Partial<EnemyMitigation>): En
 }
 
 export function defaultCcState(overrides?: Partial<CcState>): CcState {
-  return { ...template.playerCC, ...overrides };
+  return { ...defaultBattleState().playerCC, ...overrides };
 }
 
 export function defaultCombatFlags(overrides?: Partial<CombatFlags>): CombatFlags {
-  return { ...template.flags, ...overrides };
+  return { ...defaultBattleState().flags, ...overrides };
 }
 
 export function defaultTrinketManifest(overrides?: Partial<TrinketManifest>): TrinketManifest {

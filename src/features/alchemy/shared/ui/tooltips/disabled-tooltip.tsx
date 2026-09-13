@@ -2,10 +2,10 @@ import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
-import { tooltipBodyClass } from "../../config";
+import { tooltipBodyClass } from "../../config/typography";
 import { PortaledTooltip } from "./portaled-tooltip";
 import { useHoverVisible } from "../use-hover-visible";
-import { renderUnlockMessage } from "../unlock-text";
+import { renderUnlockNode } from "../unlock-text";
 
 export function DisabledTooltip({
   show,
@@ -24,7 +24,7 @@ export function DisabledTooltip({
       {show ? (
         <PortaledTooltip triggerRef={triggerRef} visible={visible} className="whitespace-nowrap">
           <p className={cn(tooltipBodyClass, "mt-0 space-y-0 leading-none text-foreground")}>
-            {typeof message === "string" ? renderUnlockMessage(message) : message}
+            {renderUnlockNode(message)}
           </p>
         </PortaledTooltip>
       ) : null}

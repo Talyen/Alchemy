@@ -7,7 +7,7 @@ import {
   SALVAGE_BASIC_VOIDSTONE_CHANCE,
   SALVAGE_DICE_HIGH_CHANCE,
 } from "@/lib/game-constants";
-import { createSeededRng, hashStringToUint32, pickRandom } from "@/lib/rng";
+import { createSeededRng, hashStringToUint32, pickRandom, rngInt } from "@/lib/rng";
 import { craftingArt } from "@/lib/game-data";
 import { buildEligibleAffixPool, rollAffixes } from "./affix-pool";
 import { rollAffixValue } from "./affixes";
@@ -174,7 +174,7 @@ const CRAFTING_CURRENCY_BEHAVIORS: Record<CraftingCurrencyId, CraftingCurrencyBe
     canApply: hasAnyAffix,
     apply: (item, rng) => {
       if (item.affixes.length === 0) return item;
-      const index = Math.floor(rng() * item.affixes.length);
+      const index = rngInt(rng, item.affixes.length);
       return { ...item, affixes: item.affixes.filter((_, affixIndex) => affixIndex !== index) };
     },
   },

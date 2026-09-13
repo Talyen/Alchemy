@@ -6,9 +6,9 @@ export interface PlasmaColorPair {
 export function parsePlasmaHexColor(hex: string): [number, number, number] {
   const normalized = hex.trim().replace(/^#/, "");
   if (normalized.length === 3) {
-    const r = Number.parseInt(normalized[0]! + normalized[0]!, 16) / 255;
-    const g = Number.parseInt(normalized[1]! + normalized[1]!, 16) / 255;
-    const b = Number.parseInt(normalized[2]! + normalized[2]!, 16) / 255;
+    const r = Number.parseInt(normalized.charAt(0) + normalized.charAt(0), 16) / 255;
+    const g = Number.parseInt(normalized.charAt(1) + normalized.charAt(1), 16) / 255;
+    const b = Number.parseInt(normalized.charAt(2) + normalized.charAt(2), 16) / 255;
     return [r, g, b];
   }
   if (normalized.length === 6) {
@@ -21,11 +21,17 @@ export function parsePlasmaHexColor(hex: string): [number, number, number] {
 }
 
 export function lerpPlasmaColor(a: string, b: string, t: number): string {
-  const [ar, ag, ab] = parsePlasmaHexColor(a);
-  const [br, bg, bb] = parsePlasmaHexColor(b);
-  const mix = (from: number, to: number) => Math.round((from + (to - from) * t) * 255);
-  const r = mix(ar, br);
-  const g = mix(ag, bg);
-  const bl = mix(ab, bb);
-  return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${bl.toString(16).padStart(2, "0")}`;
+  return lerpParsedPlasmaColor(parsePlasmaHexColor(a), parsePlasmaHexColor(b), t);
+}
+
+export function lerpParsedPlasmaColor(
+  from: readonly [number, number, number],
+  to: readonly [number, number, number],
+  t: number,
+): string {
+  const mix = (start: number, end: number) => Math.round((start + (end - start) * t) * 255);
+  const r = mix(from[0], to[0]);
+  const g = mix(from[1], to[1]);
+  const b = mix(from[2], to[2]);
+  return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
 }

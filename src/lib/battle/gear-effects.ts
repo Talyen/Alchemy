@@ -1,5 +1,6 @@
 import type { GearEffectManifest } from "@/lib/gear";
 import { PERCENT_DENOMINATOR } from "../game-constants";
+import { applyPercentBonus } from "./amount-helpers";
 import { payKillPayouts } from "./combat-text";
 import { getEnemyDamageMultiplier } from "./status-helpers";
 import { type BattleState, type CombatTextEvent } from "./types";
@@ -14,8 +15,7 @@ export function gearFrozenDamageMultiplier(state: BattleState): number {
 }
 
 export function scaledGearLeechHeal(baseHeal: number, gear: GearEffectManifest): number {
-  if (gear.leechHealBonusPercent <= 0) return baseHeal;
-  return Math.round(baseHeal * (1 + gear.leechHealBonusPercent / PERCENT_DENOMINATOR));
+  return applyPercentBonus(baseHeal, gear.leechHealBonusPercent, PERCENT_DENOMINATOR);
 }
 
 export function applyGearCcPhysicalDamage(

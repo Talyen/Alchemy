@@ -9,7 +9,7 @@ import {
   type CompanionId,
   type KeywordId,
 } from "@/lib/game-data";
-import { createSeededRng, sampleItems, shuffle } from "@/lib/utils";
+import { createSeededRng, pickRandom, sampleItems, shuffle } from "@/lib/utils";
 import type { TalentPreset } from "./types";
 
 const ALCHEMIST_MIXED_POTION_COUNT = 2;
@@ -37,8 +37,11 @@ function buildAlchemistMixedPotions(seed: number): BattleCard[] {
   const rng = createSeededRng(seed + 9_001);
   const mixed: BattleCard[] = [];
   for (let i = 0; i < ALCHEMIST_MIXED_POTION_COUNT; i++) {
-    const cardA = { ...pool[Math.floor(rng() * pool.length)]!, uid: i * 2 };
-    const cardB = { ...pool[Math.floor(rng() * pool.length)]!, uid: i * 2 + 1 };
+    const baseA = pickRandom(pool, rng);
+    const baseB = pickRandom(pool, rng);
+    if (!baseA || !baseB) throw new Error("buildAlchemistMixedPotions: potion pool is empty");
+    const cardA = { ...baseA, uid: i * 2 };
+    const cardB = { ...baseB, uid: i * 2 + 1 };
     mixed.push(createMixedPotion(cardA, cardB));
   }
   return mixed;

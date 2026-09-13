@@ -1,9 +1,8 @@
 import { useMemo, type RefObject } from "react";
 import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
 import { getEnemyAbilities, type BestiaryEntry } from "../../config/game-data-catalog";
-import { InspectionCardGrid, InspectionPanel } from "./inspection-content";
+import { InspectionCardGrid, InspectionOverlayShell } from "./inspection-content";
 import { EnemyTraits } from "../enemy-traits";
-import { ModalOverlayShell } from "../modal-overlay-shell";
 import { useHeldWhile } from "../use-fade";
 
 interface EnemyInspectionProps {
@@ -14,42 +13,48 @@ interface EnemyInspectionProps {
   returnFocusRef?: RefObject<HTMLElement | null>;
 }
 
-function EnemyInspectionPanel({ entry, modifiers, onClose, returnFocusRef, open }: EnemyInspectionProps) {
+function EnemyInspectionContent({
+  entry,
+  modifiers,
+  open,
+}: {
+  entry: BestiaryEntry;
+  modifiers?: readonly EncounterCombatTraitId[];
+  open: boolean;
+}) {
   const cards = useMemo(() => getEnemyAbilities(entry), [entry]);
   return (
-    <InspectionPanel
-      title={entry.title}
-      closeLabel="Close enemy inspection"
-      onClose={onClose}
-      returnFocusRef={returnFocusRef}
-    >
-      <div className="flex flex-col gap-5">
-        <section className="flex flex-col gap-3">
-          <h3 className="font-sans text-xl font-semibold">Traits</h3>
-          <EnemyTraits layout="inspection" entry={entry} {...(modifiers ? { modifiers } : {})} />
-        </section>
-        <section className="flex flex-col gap-3">
-          <h3 className="font-sans text-xl font-semibold">Abilities</h3>
-          <InspectionCardGrid cards={cards} descriptionContext={{}} resetKey={`${entry.id}:${open}`} sort={false} />
-        </section>
-      </div>
-    </InspectionPanel>
+    <div className="flex flex-col gap-5">
+      <section className="flex flex-col gap-3">
+        <h3 className="font-sans text-xl font-semibold">Traits</h3>
+        <EnemyTraits layout="inspection" entry={entry} {...(modifiers ? { modifiers } : {})} />
+      </section>
+      <section className="flex flex-col gap-3">
+        <h3 className="font-sans text-xl font-semibold">Abilities</h3>
+        <InspectionCardGrid cards={cards} descriptionContext={{}} resetKey={`${entry.id}:${open}`} sort={false} />
+      </section>
+    </div>
   );
 }
 
 export function EnemyInspectionOverlay(props: EnemyInspectionProps) {
   const heldEntry = useHeldWhile(props.open, props.entry);
   return (
-    <ModalOverlayShell
+    <InspectionOverlayShell
       open={props.open}
       escapeId="enemy-inspection"
-      onClose={props.onClose}
-      dismissOnBackdrop
-      zIndex={85}
       testId="enemy-inspection-overlay"
-      className="flex items-center justify-center p-6"
+      title={heldEntry.title}
+      closeLabel="Close enemy inspection"
+      onClose={props.onClose}
+      returnFocusRef={props.returnFocusRef}
     >
-      <EnemyInspectionPanel key={heldEntry.id} {...props} entry={heldEntry} />
-    </ModalOverlayShell>
+      <EnemyInspectionContent
+        key={heldEntry.id}
+        entry={heldEntry}
+        open={props.open}
+        {...(props.modifiers ? { modifiers: props.modifiers } : {})}
+      />
+    </InspectionOverlayShell>
   );
 }

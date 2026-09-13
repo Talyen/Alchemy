@@ -1,6 +1,12 @@
 import { z } from "zod";
 import type { EffectKindDefinition } from "./registry";
-import { CompanionIdSchema, PositiveAmountSchema } from "./shared-schemas";
+import {
+  CompanionIdSchema,
+  PositiveAmountSchema,
+  defineAmountEffect,
+  defineFlagEffect,
+  defineRangedEffect,
+} from "./shared-schemas";
 
 export const summonCompanionEffectDefinition = {
   kind: "summon-companion",
@@ -10,13 +16,9 @@ export const summonCompanionEffectDefinition = {
   }),
 } satisfies EffectKindDefinition<"summon-companion">;
 
-export const buffCompanionEffectDefinition = {
-  kind: "buff-companion",
-  schema: z.object({
-    kind: z.literal("buff-companion"),
-    amount: PositiveAmountSchema,
-  }),
-} satisfies EffectKindDefinition<"buff-companion">;
+export const buffCompanionEffectDefinition = defineAmountEffect(
+  "buff-companion",
+) satisfies EffectKindDefinition<"buff-companion">;
 
 export const gainGoldEffectDefinition = {
   kind: "gain-gold",
@@ -27,56 +29,30 @@ export const gainGoldEffectDefinition = {
   }),
 } satisfies EffectKindDefinition<"gain-gold">;
 
-export const companionActionEffectDefinition = {
-  kind: "companion-action",
-  schema: z.object({ kind: z.literal("companion-action"), amount: PositiveAmountSchema }),
-} satisfies EffectKindDefinition<"companion-action">;
+export const companionActionEffectDefinition = defineAmountEffect(
+  "companion-action",
+) satisfies EffectKindDefinition<"companion-action">;
 
-export const randomDrawEffectDefinition = {
-  kind: "random-draw",
-  schema: z
-    .object({
-      kind: z.literal("random-draw"),
-      minAmount: PositiveAmountSchema,
-      maxAmount: PositiveAmountSchema,
-    })
-    .refine((data) => data.maxAmount >= data.minAmount, {
-      message: "random-draw maxAmount must be >= minAmount",
-    }),
-} satisfies EffectKindDefinition<"random-draw">;
+export const randomDrawEffectDefinition = defineRangedEffect(
+  "random-draw",
+) satisfies EffectKindDefinition<"random-draw">;
 
-export const wishEffectDefinition = {
-  kind: "wish",
-  schema: z.object({
-    kind: z.literal("wish"),
-    amount: PositiveAmountSchema,
-  }),
-} satisfies EffectKindDefinition<"wish">;
+export const wishEffectDefinition = defineAmountEffect("wish") satisfies EffectKindDefinition<"wish">;
 
-export const drawCardsEffectDefinition = {
-  kind: "draw-cards",
-  schema: z.object({
-    kind: z.literal("draw-cards"),
-    amount: PositiveAmountSchema,
-  }),
-} satisfies EffectKindDefinition<"draw-cards">;
+export const drawCardsEffectDefinition = defineAmountEffect("draw-cards") satisfies EffectKindDefinition<"draw-cards">;
 
-export const nextHitCritEffectDefinition = {
-  kind: "next-hit-crit",
-  schema: z.object({ kind: z.literal("next-hit-crit") }),
-} satisfies EffectKindDefinition<"next-hit-crit">;
+export const nextHitCritEffectDefinition = defineFlagEffect(
+  "next-hit-crit",
+) satisfies EffectKindDefinition<"next-hit-crit">;
 
-export const playNextCardTwiceEffectDefinition = {
-  kind: "play-next-card-twice",
-  schema: z.object({ kind: z.literal("play-next-card-twice") }),
-} satisfies EffectKindDefinition<"play-next-card-twice">;
+export const playNextCardTwiceEffectDefinition = defineFlagEffect(
+  "play-next-card-twice",
+) satisfies EffectKindDefinition<"play-next-card-twice">;
 
-export const nextHitPoisonEffectDefinition = {
-  kind: "next-hit-poison",
-  schema: z.object({ kind: z.literal("next-hit-poison") }),
-} satisfies EffectKindDefinition<"next-hit-poison">;
+export const nextHitPoisonEffectDefinition = defineFlagEffect(
+  "next-hit-poison",
+) satisfies EffectKindDefinition<"next-hit-poison">;
 
-export const nextArcheryFreeEffectDefinition = {
-  kind: "next-archery-free",
-  schema: z.object({ kind: z.literal("next-archery-free") }),
-} satisfies EffectKindDefinition<"next-archery-free">;
+export const nextArcheryFreeEffectDefinition = defineFlagEffect(
+  "next-archery-free",
+) satisfies EffectKindDefinition<"next-archery-free">;

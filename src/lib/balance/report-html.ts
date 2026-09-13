@@ -1,19 +1,12 @@
-import { enemyById, isEnemyId, talentPool } from "@/lib/game-data";
+import { enemyById, isEnemyId } from "@/lib/game-data";
 import { ANOMALY_THRESHOLD_BY_PRESET } from "./anomalies";
 import { formatLengthBand, formatWinRateBand, isLengthOutsideBand, isWinRateOutsideTypeBand } from "./findings-bands";
-import { TITLE_LOOKUPS, type ReportEnemyType } from "./report-catalog";
+import { titleFor, type ReportEnemyType, type TitleLookupKind } from "./report-catalog";
 import { escapeHtml, formatPercent as percent } from "./report-format";
 import { reportMethodologyLines } from "./report-methodology";
 import type { BalanceReportModel, PairedTierRow } from "./report-model";
 import type { ReportRunOptions } from "./report-options";
 import type { PairedDelta, RateCell } from "./report-rankings";
-
-function titleFor(kind: keyof typeof TITLE_LOOKUPS | "talent", id: string): string {
-  if (kind === "talent") {
-    return talentPool.find((talent) => talent.id === id)?.name ?? id;
-  }
-  return TITLE_LOOKUPS[kind][id] ?? id;
-}
 
 function rateCells(cell: RateCell, enemyType?: ReportEnemyType): string {
   const winTarget = enemyType ? `<div class="meta">Target ${formatWinRateBand(enemyType)}</div>` : "";
@@ -31,7 +24,7 @@ function deltaCell(delta: PairedDelta): string {
   return `<td class="${cls}">${percent(delta.delta)}${mark}<div class="meta">SE ${percent(delta.se)} · n=${delta.n}</div>${turns}</td>`;
 }
 
-function pairedRows(rows: readonly PairedTierRow[], kind: keyof typeof TITLE_LOOKUPS | "talent"): string {
+function pairedRows(rows: readonly PairedTierRow[], kind: TitleLookupKind): string {
   return rows
     .map(
       (row) =>

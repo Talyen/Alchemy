@@ -24,3 +24,32 @@ const COMPANION_IDS = Object.keys(companionLibrary) as [CompanionId, ...Companio
 export const CompanionIdSchema = z.enum(COMPANION_IDS);
 
 export const AmountSchema = z.number().int().min(0).max(999);
+
+export function defineAmountEffect<const K extends string>(kind: K) {
+  return {
+    kind,
+    schema: z.object({ kind: z.literal(kind), amount: PositiveAmountSchema }),
+  };
+}
+
+export function defineFlagEffect<const K extends string>(kind: K) {
+  return {
+    kind,
+    schema: z.object({ kind: z.literal(kind) }),
+  };
+}
+
+export function defineRangedEffect<const K extends string>(kind: K) {
+  return {
+    kind,
+    schema: z
+      .object({
+        kind: z.literal(kind),
+        minAmount: PositiveAmountSchema,
+        maxAmount: PositiveAmountSchema,
+      })
+      .refine((data) => data.maxAmount >= data.minAmount, {
+        message: `${kind} maxAmount must be >= minAmount`,
+      }),
+  };
+}

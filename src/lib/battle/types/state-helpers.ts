@@ -6,7 +6,7 @@ import type { EnemyStatusId, PlayerStatusId } from "@/lib/game-data";
 import { CAMPFIRE_HEAL_FRACTION, DEATHS_DOOR_GRACE_TURNS, PERCENT_DENOMINATOR } from "../../game-constants";
 import type { GearEffectManifest } from "@/lib/gear";
 import { getBattleRng, rollPercent } from "@/lib/rng";
-import { halveRounded } from "../amount-helpers";
+import { applyPercentBonus, applyPercentReduction, halveRounded } from "../amount-helpers";
 import type { BattleState, CombatFlags, CombatTextEvent, EnemyMitigation } from "./state-types";
 import { isStunFreezeBuildupBlocked } from "./state-types";
 import { PRESERVED_FLAG_KEYS, PRESERVED_FLAG_VALUES, type PreservedFlagKey } from "../combat-flags";
@@ -327,13 +327,11 @@ export function applyGearDamageResistance(
   gear: GearEffectManifest,
 ): number {
   const resist = gearResistancePercent(gear, damageType);
-  if (resist <= 0) return damage;
-  return Math.max(0, Math.round(damage * (1 - resist / PERCENT_DENOMINATOR)));
+  return applyPercentReduction(damage, resist, PERCENT_DENOMINATOR);
 }
 
 export function scaleGoldReward(baseGold: number, gear: GearEffectManifest): number {
-  if (gear.goldGainPercent <= 0) return baseGold;
-  return Math.round(baseGold * (1 + gear.goldGainPercent / PERCENT_DENOMINATOR));
+  return applyPercentBonus(baseGold, gear.goldGainPercent, PERCENT_DENOMINATOR);
 }
 
 export function isPlayerDefeated(state: Pick<BattleState, "playerHealth" | "deathsDoorActive">): boolean {

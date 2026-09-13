@@ -3,7 +3,7 @@ import type { BalanceFinding, BalanceFindingsReport, FindingScope } from "./find
 export { FINDING_BUCKET_LABELS, FINDING_BUCKET_ORDER } from "./findings-types";
 export type { BalanceFinding, BalanceFindingsReport, FindingBucket, FindingMetric } from "./findings-types";
 
-import { enemyById, isEnemyId, talentPool } from "@/lib/game-data";
+import { enemyById, isEnemyId } from "@/lib/game-data";
 import { ANOMALY_THRESHOLD_BY_PRESET } from "./anomalies";
 import {
   EQUITY_SPREAD,
@@ -22,7 +22,7 @@ import {
   type EnemyTypeBand,
   type FindingsTier,
 } from "./findings-bands";
-import { REPORT_ENEMY_TYPES, REPORT_TIERS, TITLE_LOOKUPS } from "./report-catalog";
+import { REPORT_ENEMY_TYPES, REPORT_TIERS, titleFor } from "./report-catalog";
 import type { BalanceReportModel, ClassMatchupRow, PairedTierRow, TierRateRow } from "./report-model";
 import type { ReportRunOptions } from "./report-options";
 import type { RateCell } from "./report-rankings";
@@ -51,31 +51,31 @@ function enemyTypeOf(id: string): EnemyTypeBand | undefined {
 }
 
 function titleEnemy(id: string): string {
-  return TITLE_LOOKUPS.enemy[id] ?? id;
+  return titleFor("enemy", id);
 }
 
 function titleClass(id: string): string {
-  return TITLE_LOOKUPS.character[id] ?? id;
+  return titleFor("character", id);
 }
 
 function titleCard(id: string): string {
-  return TITLE_LOOKUPS.card[id] ?? id;
+  return titleFor("card", id);
 }
 
 function titleBoon(id: string): string {
-  return TITLE_LOOKUPS.boon[id] ?? id;
+  return titleFor("boon", id);
 }
 
 function titleCompanion(id: string): string {
-  return TITLE_LOOKUPS.companion[id] ?? id;
+  return titleFor("companion", id);
 }
 
 function titleTalent(id: string): string {
-  return talentPool.find((talent) => talent.id === id)?.name ?? id;
+  return titleFor("talent", id);
 }
 
 function titleGear(id: string): string {
-  return TITLE_LOOKUPS.gear[id] ?? id;
+  return titleFor("gear", id);
 }
 
 function median(values: readonly number[]): number {
@@ -157,7 +157,7 @@ function collectBalanceFindings(model: BalanceReportModel): BalanceFinding[] {
   collectPairedFindings(model.talents, "talent", titleTalent, add);
   collectPairedFindings(model.companions, "companion", titleCompanion, add);
   collectPairedFindings(model.gear, "gear", titleGear, add);
-  collectPairedFindings(model.affixes, "affix", (id) => TITLE_LOOKUPS.affix[id] ?? id, add);
+  collectPairedFindings(model.affixes, "affix", (id) => titleFor("affix", id), add);
   collectAnomalies(model, add);
 
   return candidates;

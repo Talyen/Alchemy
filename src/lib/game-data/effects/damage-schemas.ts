@@ -1,6 +1,12 @@
 import { z } from "zod";
 import type { EffectKindDefinition } from "./registry";
-import { AmountSchema, DamageTypeSchema, EnemyStatusDamageIdSchema, PositiveAmountSchema } from "./shared-schemas";
+import {
+  AmountSchema,
+  DamageTypeSchema,
+  PositiveAmountSchema,
+  defineRangedEffect,
+  EnemyStatusDamageIdSchema,
+} from "./shared-schemas";
 
 export const damageEffectDefinition = {
   kind: "damage",
@@ -46,18 +52,9 @@ export const selfDamageEffectDefinition = {
   }),
 } satisfies EffectKindDefinition<"self-damage">;
 
-export const randomDamageEffectDefinition = {
-  kind: "random-damage",
-  schema: z
-    .object({
-      kind: z.literal("random-damage"),
-      minAmount: PositiveAmountSchema,
-      maxAmount: PositiveAmountSchema,
-    })
-    .refine((data) => data.maxAmount >= data.minAmount, {
-      message: "random-damage maxAmount must be >= minAmount",
-    }),
-} satisfies EffectKindDefinition<"random-damage">;
+export const randomDamageEffectDefinition = defineRangedEffect(
+  "random-damage",
+) satisfies EffectKindDefinition<"random-damage">;
 
 export const removeEnemyArmorEffectDefinition = {
   kind: "remove-enemy-armor",

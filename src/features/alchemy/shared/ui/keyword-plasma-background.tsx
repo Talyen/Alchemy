@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   getPlasmaColorPair,
-  lerpPlasmaColor,
+  lerpParsedPlasmaColor,
+  parsePlasmaHexColor,
   type PlasmaColorPair,
 } from "@/features/alchemy/shared/config/plasma-palettes";
 import type { KeywordId } from "@/features/alchemy/shared/config/game-data-catalog";
@@ -70,6 +71,8 @@ export function KeywordPlasmaBackground({
     wakeRef.current();
 
     const start = performance.now();
+    const fromPrimary = parsePlasmaHexColor(from.primary);
+    const fromSecondary = parsePlasmaHexColor(from.secondary);
 
     function tick(now: number) {
       const activeTarget = targetRef.current;
@@ -77,8 +80,8 @@ export function KeywordPlasmaBackground({
 
       const t = Math.min(1, (now - start) / COLOR_LERP_MS);
       colorsRef.current = {
-        primary: lerpPlasmaColor(from.primary, activeTarget.primary, t),
-        secondary: lerpPlasmaColor(from.secondary, activeTarget.secondary, t),
+        primary: lerpParsedPlasmaColor(fromPrimary, parsePlasmaHexColor(activeTarget.primary), t),
+        secondary: lerpParsedPlasmaColor(fromSecondary, parsePlasmaHexColor(activeTarget.secondary), t),
       };
 
       if (t < 1) {

@@ -134,8 +134,9 @@ const renderRandomTrinketBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "ga
   effect,
   ctx,
 ) => {
-  const colors =
-    effect.fromIds && effect.fromIds.length === 1 ? getTrinketTextShineColors(effect.fromIds[0]!) : SHINE_PALETTES.boon;
+  const fromIds = effect.fromIds;
+  const fromId = fromIds?.length === 1 ? fromIds[0] : undefined;
+  const colors = fromId ? getTrinketTextShineColors(fromId) : SHINE_PALETTES.boon;
 
   return ctx.tooltip ? (
     <span className="text-sm text-muted-foreground">

@@ -79,7 +79,7 @@ const DifficultyCard = memo(function DifficultyCard({
   const fullDescription = bonusLine ? `${description}\n${bonusLine}` : description;
   const renderedDescription = useMemo(() => renderDescription(fullDescription), [fullDescription]);
   const showUnlockedArt = !locked;
-  const diffArt = difficultyArt[difficultyId] ?? difficultyArt["difficulty-3"]!;
+  const diffArt = difficultyArt[difficultyId] ?? difficultyArt["difficulty-3"] ?? "";
   const { triggerRef, visible, onMouseEnter, onMouseLeave } = useHoverVisible();
   const { shimmerActive, shimmerToken, onHoverStart } = useInteractiveCard("difficulty-select", difficultyId);
 

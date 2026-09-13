@@ -8,7 +8,7 @@ import {
   type EnemyAbilityDamageEffect,
   type EnemyAbilityEffect,
 } from "@/lib/game-data";
-import { getBattleRng, rngInt, rollChance } from "@/lib/rng";
+import { getBattleRng, pickRandom, rollChance } from "@/lib/rng";
 import {
   BANDIT_FIRST_HIT_MULTIPLIER,
   BRAWLER_PENALTY_MULTIPLIER,
@@ -304,6 +304,7 @@ export function processEnemyAbility(state: BattleState, combatTexts: CombatTextE
   if (state.enemyHealth <= 0 || isPlayerDefeated(state)) return state;
   const candidates = state.currentEnemy.abilityIds.filter((id) => id !== state.lastEnemyAbilityId);
   if (candidates.length === 0) throw new Error(`Enemy has no available ability: ${state.currentEnemy.id}`);
-  const id = candidates[rngInt(getBattleRng(state), candidates.length)]!;
+  const id = pickRandom(candidates, getBattleRng(state));
+  if (!id) throw new Error(`Enemy has no available ability: ${state.currentEnemy.id}`);
   return applyEnemyAbility(state, getEnemyAbilityCard(id), combatTexts);
 }

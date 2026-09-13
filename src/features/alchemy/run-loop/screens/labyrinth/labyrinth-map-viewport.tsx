@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { autoUpdate, computePosition, flip, offset, shift } from "@floating-ui/dom";
 import type { LabyrinthMap, LabyrinthNode } from "@/lib/content-systems/types";
 import { usePlasmaInteraction } from "@/features/alchemy/shared/ui/use-plasma-source";
@@ -24,14 +24,19 @@ export function LabyrinthMapViewport({ map, nodes, selectedNodeId, onEnter, onDe
   const [size, setSize] = useState({ width: 0, height: 0, scale: 1 });
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
-  const selectedNode = nodes.find((node) => node.id === selectedNodeId) ?? null;
-  const emphasizedNode = nodes.find(
-    (node) => node.id === (hoveredNodeId ?? focusedNodeId) && isNodeDiscovered(map, node.id),
+  const nodesById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
+  const selectedNode = selectedNodeId ? (nodesById.get(selectedNodeId) ?? null) : null;
+  const emphasizedId = hoveredNodeId ?? focusedNodeId;
+  const emphasizedNode = useMemo(() => {
+    if (!emphasizedId) return null;
+    const candidate = nodesById.get(emphasizedId) ?? null;
+    return candidate && isNodeDiscovered(map, candidate.id) ? candidate : null;
+  }, [nodesById, emphasizedId, map]);
+  const emphasizedPlasmaPair = useMemo(
+    () => (emphasizedNode && emphasizedNode.id !== selectedNodeId ? getLabyrinthNodePlasmaPair(emphasizedNode) : null),
+    [emphasizedNode, selectedNodeId],
   );
-  usePlasmaInteraction(
-    emphasizedNode && emphasizedNode.id !== selectedNodeId ? getLabyrinthNodePlasmaPair(emphasizedNode) : null,
-    Boolean(emphasizedNode),
-  );
+  usePlasmaInteraction(emphasizedPlasmaPair, Boolean(emphasizedNode));
 
   useLayoutEffect(() => {
     const element = viewportRef.current;
@@ -60,7 +65,9 @@ export function LabyrinthMapViewport({ map, nodes, selectedNodeId, onEnter, onDe
     };
   }, []);
 
-  const layout = layoutFloorNodes(nodes, size.width, size.height);
+  const layout = useMemo(() => layoutFloorNodes(nodes, size.width, size.height), [nodes, size.width, size.height]);
+  const handleHover = useCallback((nodeId: string | null) => setHoveredNodeId(nodeId), []);
+  const handleFocus = useCallback((nodeId: string | null) => setFocusedNodeId(nodeId), []);
 
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
@@ -125,7 +132,8 @@ export function LabyrinthMapViewport({ map, nodes, selectedNodeId, onEnter, onDe
           {size.width > 0 && size.height > 0 ? (
             <>
               {nodes.map((node) => {
-                const point = layout.positions.get(node.id)!;
+                const point = layout.positions.get(node.id);
+                if (!point) return null;
                 return (
                   <LabyrinthNodeSeal
                     key={node.id}
@@ -138,8 +146,8 @@ export function LabyrinthMapViewport({ map, nodes, selectedNodeId, onEnter, onDe
                     width={layout.metrics.width}
                     height={layout.metrics.height}
                     onSelect={onSelect}
-                    onHover={setHoveredNodeId}
-                    onFocus={setFocusedNodeId}
+                    onHover={handleHover}
+                    onFocus={handleFocus}
                   />
                 );
               })}

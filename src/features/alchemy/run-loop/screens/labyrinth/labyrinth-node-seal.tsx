@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { SHINE_PALETTES } from "@/features/alchemy/shared/config/shine-palettes";
 import { Surface } from "@/features/alchemy/shared/ui/surface";
@@ -7,7 +7,7 @@ import { LABYRINTH_GRID } from "@/lib/content-systems/labyrinth/grid";
 import { NODE_TYPE_LABELS } from "@/lib/content-systems/labyrinth/data";
 import { labyrinthNodeVisualState } from "@/lib/content-systems/labyrinth/map-state";
 import type { LabyrinthMap, LabyrinthNode } from "@/lib/content-systems/types";
-import { LABYRINTH_NODE_META } from "@/features/alchemy/shared/config";
+import { LABYRINTH_NODE_META } from "@/features/alchemy/shared/config/labyrinth-map";
 import { enemyById, isEnemyId } from "@/features/alchemy/shared/config/game-data-catalog";
 import { cn } from "@/lib/utils";
 
@@ -25,7 +25,7 @@ interface Props {
   onFocus: (nodeId: string | null) => void;
 }
 
-export function LabyrinthNodeSeal({
+export const LabyrinthNodeSeal = memo(function LabyrinthNodeSeal({
   node,
   map,
   selected,
@@ -138,4 +138,4 @@ export function LabyrinthNodeSeal({
       </Surface>
     </div>
   );
-}
+});

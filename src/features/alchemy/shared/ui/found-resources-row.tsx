@@ -21,7 +21,7 @@ export function FoundResourcesRow({
     <div className={cn("flex flex-wrap items-center justify-center gap-3", className)}>
       {gold > 0 ? <GoldPill amount={gold} showsIncreasePrefix size={size} /> : null}
       {earnedMaterials.map((mat) => (
-        <MaterialPill key={mat} material={mat} amount={materials![mat]!} showsIncreasePrefix size={size} />
+        <MaterialPill key={mat} material={mat} amount={materials?.[mat] ?? 0} showsIncreasePrefix size={size} />
       ))}
     </div>
   );

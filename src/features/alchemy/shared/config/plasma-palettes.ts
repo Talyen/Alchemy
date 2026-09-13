@@ -25,7 +25,7 @@ import {
 import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
 
 export type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
-export { lerpPlasmaColor, parsePlasmaHexColor } from "@/lib/animation/plasma-colors";
+export { lerpParsedPlasmaColor, lerpPlasmaColor, parsePlasmaHexColor } from "@/lib/animation/plasma-colors";
 
 export const DEATHS_DOOR_PLASMA_PAIR: PlasmaColorPair = {
   primary: SHINE_PALETTES.deathsDoorArt[1] ?? "#dc2626",
@@ -75,16 +75,15 @@ export function getPlasmaKeywordsForText(text: string): KeywordId[] {
 }
 
 export function getPlasmaColorPair(keywordIds: readonly KeywordId[]): PlasmaColorPair | null {
-  if (keywordIds.length === 0) return WILDCARD_PLASMA_PAIR;
+  const [firstId, secondId] = keywordIds;
+  if (!firstId) return WILDCARD_PLASMA_PAIR;
 
-  const firstPalette = getKeywordShineColors(keywordIds[0]!);
+  const firstPalette = getKeywordShineColors(firstId);
   const primary = firstPalette[0];
   if (!primary) return null;
 
   const secondary =
-    keywordIds.length > 1
-      ? (getKeywordShineColors(keywordIds[1]!)[0] ?? firstPalette[1])
-      : (firstPalette[1] ?? primary);
+    secondId !== undefined ? (getKeywordShineColors(secondId)[0] ?? firstPalette[1]) : (firstPalette[1] ?? primary);
 
   return { primary, secondary: secondary ?? primary };
 }

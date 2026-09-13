@@ -1,4 +1,5 @@
-import { useLayoutEffect, useMemo, useRef, type RefObject } from "react";
+import { useLayoutEffect, useRef, type RefObject } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { CombatTextRail } from "@/features/alchemy/shared/ui/battle/combat-text";
 import type { BattleRefs, CardRect } from "@/features/alchemy/shared/types";
 import { defaultMeasureElementRect } from "../controller-utils";
@@ -22,8 +23,9 @@ function CombatTextTarget({
   anchorRef: RefObject<HTMLDivElement | null>;
   sceneRef: RefObject<HTMLDivElement | null>;
 }) {
-  const allBursts = useBattlePresentationStore((state) => state.floatingCombatBursts);
-  const bursts = useMemo(() => allBursts.filter((burst) => burst.target === target), [allBursts, target]);
+  const bursts = useBattlePresentationStore(
+    useShallow((state) => state.floatingCombatBursts.filter((burst) => burst.target === target)),
+  );
   const layerRef = useRef<HTMLDivElement>(null);
   const active = bursts.length > 0;
 

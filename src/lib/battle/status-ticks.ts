@@ -30,18 +30,22 @@ import { tryPoisonStunProc } from "./player-typed-hit";
 import { payPendingBleedLeech } from "./damage-rider-leech";
 import { dealEnemyDotTick } from "./dot-resolve";
 
+function emitDotCombatText(
+  combatTexts: CombatTextEvent[],
+  target: "enemy" | "player",
+  stat: "burn" | "poison" | "bleed",
+  amount: number,
+) {
+  mergeCombatText(combatTexts, { target, kind: "damage", stat, amount });
+}
+
 function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.enemyStatuses.burn;
   if (damage <= 0) return state;
 
   const multiplier = getEnemyDamageMultiplier(state, "burn") * getBurnBonusToBleedingMultiplier(state);
   const finalDamage = Math.round(damage * multiplier);
-  mergeCombatText(combatTexts, {
-    target: "enemy",
-    kind: "damage",
-    stat: "burn",
-    amount: finalDamage,
-  });
+  emitDotCombatText(combatTexts, "enemy", "burn", finalDamage);
   let nextBurn = state.enemyStatuses.burn;
   const preventsDecay =
     state.talentEffects.burnPreventDecayChance > 0 &&
@@ -57,12 +61,7 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (damage <= 0) return state;
   const multiplier = getEnemyDamageMultiplier(state, "poison");
   const finalDamage = Math.round((damage + getPoisonBonusAgainstBleeding(state)) * multiplier);
-  mergeCombatText(combatTexts, {
-    target: "enemy",
-    kind: "damage",
-    stat: "poison",
-    amount: finalDamage,
-  });
+  emitDotCombatText(combatTexts, "enemy", "poison", finalDamage);
   const isFrozenPreserved = state.enemyCC.freezeSkipTurns > 0 && state.talentEffects.freezePreventsPoisonDecay;
   let nextPoison = state.enemyStatuses.poison;
   if (rollPercent(state.talentEffects.poisonGainChance, getBattleRng(state))) {
@@ -91,12 +90,7 @@ function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
     (state.gearEffects.sharedBurnBleedBonuses > 0 ? getBurnBonusToBleedingMultiplier(state) : 1);
   const finalDamage = Math.round(damage * multiplier);
 
-  mergeCombatText(combatTexts, {
-    target: "enemy",
-    kind: "damage",
-    stat: "bleed",
-    amount: finalDamage,
-  });
+  emitDotCombatText(combatTexts, "enemy", "bleed", finalDamage);
   const healthBeforeBleed = state.enemyHealth;
   const nextBleed = state.gearEffects.bleedDecaysByHalf > 0 ? decayHalvedStatus(damage) : 0;
   return dealEnemyDotTick(state, "bleed", finalDamage, nextBleed, combatTexts, (nextState) => {
@@ -138,12 +132,7 @@ function dealPlayerDotTick(
   if (applyRiders) nextState = applyRiders(nextState);
   const healthLost = state.playerHealth - nextState.playerHealth;
   if (healthLost > 0) {
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "damage",
-      stat: status,
-      amount: healthLost,
-    });
+    emitDotCombatText(combatTexts, "player", status, healthLost);
   }
   nextState = checkHealthThresholds(state.playerHealth, nextState.playerHealth, nextState, combatTexts);
   return decayArmorAfterDamage(nextState, reducedDamage, "player", combatTexts);

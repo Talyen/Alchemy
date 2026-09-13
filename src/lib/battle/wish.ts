@@ -126,9 +126,15 @@ export function applyWishEffect(state: BattleState, card: BattleCard, amount: nu
     if (state.flags.nextWishExtraChoice) state = { ...state, flags: { ...state.flags, nextWishExtraChoice: false } };
     if (hasEncounterBenefit(state, "wishful")) state = { ...state, flags: { ...state.flags, encounterWishUsed: true } };
   }
-  let nextState: BattleState = state.wishOptions
-    ? { ...state, wishQueue: [...state.wishQueue, ...nextWishOptions] }
-    : { ...state, wishOptions: nextWishOptions[0]!, wishQueue: [...state.wishQueue, ...nextWishOptions.slice(1)] };
+  const queuedOptions = nextWishOptions.filter((options) => options.length > 0);
+  let nextState: BattleState =
+    state.wishOptions || queuedOptions.length === 0
+      ? { ...state, wishQueue: [...state.wishQueue, ...queuedOptions] }
+      : {
+          ...state,
+          wishOptions: queuedOptions[0] ?? [],
+          wishQueue: [...state.wishQueue, ...queuedOptions.slice(1)],
+        };
   nextState = processEncounterTraitWish(nextState);
 
   for (let i = 0; i < wishCount; i += 1) {

@@ -5,6 +5,7 @@ import {
   enemyBestiary,
   enemiesByType,
   getDifficultyModifiers,
+  talentPool,
   trinketLibrary,
   type CharacterId,
   type DifficultyModifier,
@@ -48,7 +49,9 @@ export function reportTierRecord<T>(valueFor: (preset: TalentPreset) => T): Repo
 }
 
 export function reportTierForPreset(preset: TalentPreset): ReportTier {
-  return REPORT_TIERS.find((tier) => tier.preset === preset)!;
+  const tier = REPORT_TIERS.find((entry) => entry.preset === preset);
+  if (!tier) throw new Error(`Unknown report preset: ${preset}`);
+  return tier;
 }
 
 export function reportCharacterIds(): CharacterId[] {
@@ -104,7 +107,7 @@ export const BOON_GAUNTLET = [
   { enemyId: "iron-bear", depthDelta: 7 },
 ] as const;
 
-export const TITLE_LOOKUPS = {
+const TITLE_LOOKUPS = {
   enemy: Object.fromEntries(enemyBestiary.map((entry) => [entry.id, entry.title])),
   character: Object.fromEntries(Object.values(characters).map((entry) => [entry.id, entry.name])),
   boon: Object.fromEntries(trinketLibrary.map((entry) => [entry.id, entry.title])),
@@ -113,3 +116,12 @@ export const TITLE_LOOKUPS = {
   affix: Object.fromEntries(gearAffixList.map((entry) => [entry.id, entry.name])),
   gear: Object.fromEntries(gearBaseItemList.map((entry) => [entry.id, entry.displayName])),
 };
+
+export type TitleLookupKind = keyof typeof TITLE_LOOKUPS | "talent";
+
+export function titleFor(kind: TitleLookupKind, id: string): string {
+  if (kind === "talent") {
+    return talentPool.find((talent) => talent.id === id)?.name ?? id;
+  }
+  return TITLE_LOOKUPS[kind][id] ?? id;
+}

@@ -18,6 +18,12 @@ function withoutEncountered(pool: readonly BestiaryEntry[], encounteredEnemyIds:
 
 export { enemyById, isEnemyId };
 
+function resolveEnemyFallback(): BestiaryEntry {
+  const fallback = enemyBestiary[0];
+  if (!fallback) throw new Error("Enemy bestiary is empty");
+  return fallback;
+}
+
 export function getCurrentEnemy(
   enemyType?: EnemyType,
   encounteredEnemyIds: readonly string[] = [],
@@ -27,14 +33,14 @@ export function getCurrentEnemy(
   const available = pool.length > 0 ? pool : encounterEnemies;
   const preferred = withoutEncountered(available, encounteredEnemyIds);
   const candidates = preferred.length > 0 ? preferred : available;
-  return (rng ? pickRandom(candidates, rng) : candidates[0]) ?? enemyBestiary[0]!;
+  return (rng ? pickRandom(candidates, rng) : candidates[0]) ?? resolveEnemyFallback();
 }
 
 export function getBossEnemy(encounteredEnemyIds: readonly string[] = [], rng?: () => number): BestiaryEntry {
   const pool = bossEnemies;
   const preferred = withoutEncountered(pool, encounteredEnemyIds);
   const candidates = preferred.length > 0 ? preferred : pool;
-  return (rng ? pickRandom(candidates, rng) : candidates[0]) ?? enemyBestiary[0]!;
+  return (rng ? pickRandom(candidates, rng) : candidates[0]) ?? resolveEnemyFallback();
 }
 
 export function getBossById(bossId: string): BestiaryEntry | undefined {

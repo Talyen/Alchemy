@@ -122,9 +122,15 @@ export interface CardTransferAnimationDeps {
   stableHandCardDeps: StableHandCardRectDeps;
 }
 
+function safeTransferScale(numerator: number, denominator: number): number {
+  if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator === 0) return 1;
+  const scale = numerator / denominator;
+  return Number.isFinite(scale) && scale > 0 ? scale : 1;
+}
+
 export async function animateDiscardedHand(cards: BattleCard[], session: number, deps: CardTransferAnimationDeps) {
   const discardPileRect = deps.measureDiscardPile();
-  if (!discardPileRect || cards.length === 0) return;
+  if (!discardPileRect || discardPileRect.width <= 0 || cards.length === 0) return;
   const speedMul = getCardTransferBatchSpeed(cards.length);
   const cardInterval = transferCardIntervalSeconds(
     CARD_TRANSFER_CONFIG.discardDurationSeconds,
@@ -142,18 +148,20 @@ export async function animateDiscardedHand(cards: BattleCard[], session: number,
       deps.setTransferInProgress(false);
       return;
     }
-    const card = cards[index]!;
+    const card = cards[index];
+    if (!card) continue;
     const cardKey = getHandCardKey(card, index);
     const sourceRect = deps.measureHandCard(cardKey);
     if (!sourceRect) continue;
     const targetRect = centeredRectForSize(discardPileRect, sourceRect.width, sourceRect.height);
     deps.setHiddenHandCardKeys((current) => (current.includes(cardKey) ? current : [...current, cardKey]));
+    if (sourceRect.width <= 0) continue;
     await deps.runCardTransfer({
       card,
       from: sourceRect,
       to: targetRect,
       fromScale: 1,
-      toScale: discardPileRect.width / sourceRect.width,
+      toScale: safeTransferScale(discardPileRect.width, sourceRect.width),
       fromRotation: (index - (cards.length - 1) / 2) * HAND_FAN_ROTATION_DEGREES,
       toRotation: 0,
       rotateY: [...CARD_TRANSFER_CONFIG.discardFlipKeyframes],
@@ -169,7 +177,7 @@ export async function animateDrawnHand(
   deps: CardTransferAnimationDeps,
 ) {
   const drawPileRect = deps.measureDrawPile();
-  if (!drawPileRect || cards.length === 0) return;
+  if (!drawPileRect || drawPileRect.width <= 0 || cards.length === 0) return;
   const speedMul = getCardTransferBatchSpeed(cards.length);
   const cardInterval = transferCardIntervalSeconds(
     CARD_TRANSFER_CONFIG.drawDurationSeconds,
@@ -191,12 +199,13 @@ export async function animateDrawnHand(
     const targetRect = await waitForStableHandCardRect(cardKey, fallbackRect, deps.stableHandCardDeps);
     if (!deps.isSessionActive(session)) return;
     const sourceRect = centeredRectForSize(drawPileRect, targetRect.width, targetRect.height);
+    if (targetRect.width <= 0) continue;
     await deps.runCardTransfer(
       {
         card,
         from: sourceRect,
         to: targetRect,
-        fromScale: drawPileRect.width / targetRect.width,
+        fromScale: safeTransferScale(drawPileRect.width, targetRect.width),
         toScale: 1,
         fromRotation: 0,
         toRotation: (safeIndex - (allHandCards.length - 1) / 2) * HAND_FAN_ROTATION_DEGREES,
