@@ -1,4 +1,3 @@
-import { type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { type BattleCard, type TalentXP, type TrinketEntry } from "@/lib/game-data";
 import { type MaterialId } from "@/lib/homestead/types";
@@ -96,50 +95,48 @@ function MysteryRewardEffectItem({
   grantedGear: GearInstance | undefined;
   chosenCardId: string | null;
 } & LookupProps) {
-  const rewardRenderers: Record<string, () => ReactNode> = {
-    addCard: () => {
-      const card = findCard((effect as { cardId: string }).cardId);
+  switch (effect.kind) {
+    case "addCard": {
+      const card = findCard(effect.cardId);
       return card ? <MysteryCardRewardItem card={card} /> : null;
-    },
-    chooseCard: () => {
+    }
+    case "chooseCard": {
       const card = chosenCardId ? findCard(chosenCardId) : undefined;
       return card ? <MysteryCardRewardItem card={card} /> : null;
-    },
-    gainTrinket: () => {
-      const boon = findTrinket((effect as { trinketId: string }).trinketId);
+    }
+    case "gainTrinket": {
+      const boon = findTrinket(effect.trinketId);
       return boon ? <MysteryTrinketRewardItem boon={boon} /> : null;
-    },
-    gainRandomTrinket: () => {
+    }
+    case "gainRandomTrinket": {
       const boon = grantedTrinketId ? findTrinket(grantedTrinketId) : undefined;
       if (boon) return <MysteryTrinketRewardItem boon={boon} />;
       if (grantedGear) return <MysteryGearRewardItem instance={grantedGear} />;
       return <p className={cn(controlLabelClass, "text-balance")}>Gained a random Boon for this run</p>;
-    },
-    gainGeneratedGear: () => {
-      if (!grantedGear) return <p className={cn(controlLabelClass, "text-balance")}>Added Gear to your Armory</p>;
+    }
+    case "gainGeneratedGear":
+    case "gainRandomGear": {
+      const fallbackLabel =
+        effect.kind === "gainGeneratedGear" ? "Added Gear to your Armory" : "Added random Gear to your Armory";
+      if (!grantedGear) return <p className={cn(controlLabelClass, "text-balance")}>{fallbackLabel}</p>;
       return <MysteryGearRewardItem instance={grantedGear} />;
-    },
-    gainRandomGear: () => {
-      if (!grantedGear) {
-        return <p className={cn(controlLabelClass, "text-balance")}>Added random Gear to your Armory</p>;
-      }
-      return <MysteryGearRewardItem instance={grantedGear} />;
-    },
-    gainGold: () => renderFoundOrLost(effect, "Found"),
-    gainMaterial: () => renderFoundOrLost(effect, "Found"),
-    loseGold: () => renderFoundOrLost(effect, "Lost"),
-    removeCard: () => null,
-  };
-
-  const render =
-    rewardRenderers[effect.kind] ??
-    (() => (
-      <p className={bodyTextClass}>
-        <MysteryEffectBadge effect={effect} findCard={findCard} findTrinket={findTrinket} />
-      </p>
-    ));
-
-  return render();
+    }
+    case "gainGold":
+    case "gainMaterial":
+      return renderFoundOrLost(effect, "Found");
+    case "loseGold":
+      return renderFoundOrLost(effect, "Lost");
+    case "removeCard":
+      return null;
+    case "healHealth":
+    case "damageHealth":
+    case "gainXP":
+      return (
+        <p className={bodyTextClass}>
+          <MysteryEffectBadge effect={effect} findCard={findCard} findTrinket={findTrinket} />
+        </p>
+      );
+  }
 }
 
 export function MysteryRewardSummary({

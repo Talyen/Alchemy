@@ -23,10 +23,12 @@ export function CraftingResultPreview({
 }) {
   const beforeEntries = getGearAffixTooltipEntries(result.before.affixes, gearInstanceRarity(result.before));
   const afterEntries = getGearAffixTooltipEntries(after.affixes, gearInstanceRarity(after));
-  const ids = new Set([...beforeEntries, ...afterEntries].map((entry) => entry.affixId));
+  const beforeById = new Map(beforeEntries.map((entry) => [entry.affixId, entry]));
+  const afterById = new Map(afterEntries.map((entry) => [entry.affixId, entry]));
+  const ids = new Set([...beforeById.keys(), ...afterById.keys()]);
   const changes = [...ids].flatMap((id) => {
-    const previous = beforeEntries.find((entry) => entry.affixId === id);
-    const current = afterEntries.find((entry) => entry.affixId === id);
+    const previous = beforeById.get(id);
+    const current = afterById.get(id);
     if (previous?.value === current?.value) return [];
     return [
       {

@@ -60,7 +60,6 @@ function TalentCard({
   return (
     <Element
       type={interactive ? "button" : undefined}
-      aria-disabled={!isPlaceholder && !isUnlocked && !interactive ? true : undefined}
       onClick={interactive ? () => onUnlock?.(talent.id) : undefined}
       onMouseEnter={() => {
         setHovered(true);

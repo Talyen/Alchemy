@@ -7,9 +7,10 @@ export function ReservedLock() {
 
 export function CraftingFlash({ result, instanceId }: { result: CraftingResult | null; instanceId: string }) {
   if (result?.before.instanceId !== instanceId) return null;
+  const flashKey = `${result.currencyId}:${result.before.affixes.map((affix) => `${affix.id}=${affix.value}`).join(";")}`;
   return (
     <span
-      key={JSON.stringify(result)}
+      key={flashKey}
       aria-hidden="true"
       className="armory-item-feedback pointer-events-none absolute inset-0 z-20 rounded-shell-hero"
     />

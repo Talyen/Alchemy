@@ -178,20 +178,20 @@ export function MaterialCost({
   );
 }
 
-export function MaterialPill({
-  material,
+function ResourcePill({
+  resource,
   amount,
   showsIncreasePrefix = false,
   size = "md",
 }: {
-  material: MaterialId;
+  resource: HomesteadResource;
   amount: number;
   showsIncreasePrefix?: boolean | undefined;
   size?: "md" | "lg" | undefined;
 }) {
   return (
     <TrinketWalletResourcePill
-      resource={material}
+      resource={resource}
       amount={amount}
       showsIncreasePrefix={showsIncreasePrefix}
       fillsAvailableWidth={false}
@@ -203,6 +203,20 @@ export function MaterialPill({
   );
 }
 
+export function MaterialPill({
+  material,
+  amount,
+  showsIncreasePrefix = false,
+  size = "md",
+}: {
+  material: MaterialId;
+  amount: number;
+  showsIncreasePrefix?: boolean | undefined;
+  size?: "md" | "lg" | undefined;
+}) {
+  return <ResourcePill resource={material} amount={amount} showsIncreasePrefix={showsIncreasePrefix} size={size} />;
+}
+
 export function GoldPill({
   amount,
   showsIncreasePrefix = false,
@@ -212,18 +226,7 @@ export function GoldPill({
   showsIncreasePrefix?: boolean | undefined;
   size?: "md" | "lg" | undefined;
 }) {
-  return (
-    <TrinketWalletResourcePill
-      resource="gold"
-      amount={amount}
-      showsIncreasePrefix={showsIncreasePrefix}
-      fillsAvailableWidth={false}
-      size={size}
-      className={
-        size === "lg" ? "min-w-[calc(160px*var(--content-scale,1))]" : "min-w-[calc(136px*var(--content-scale,1))]"
-      }
-    />
-  );
+  return <ResourcePill resource="gold" amount={amount} showsIncreasePrefix={showsIncreasePrefix} size={size} />;
 }
 
 export function MaterialInlineChip({

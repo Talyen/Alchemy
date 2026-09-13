@@ -3,7 +3,7 @@ import { BATTLE_CONFIG, BLACKFLETCH_EXECUTE_HEALTH_PERCENT, PERCENT_DENOMINATOR 
 import { halveRounded } from "./amount-helpers";
 import { applyLuckyCloverGold, applyNatureManaRefund } from "./bonus-effects";
 import { mergeCombatText, payKillPayouts } from "./combat-text";
-import { computeReflectedHolyDamageToEnemy, forgeAppliesToDamageType } from "./damage-calc";
+import { computeReflectedHolyDamageToEnemy, forgeAppliesToDamageType, REFLECTED_HOLY_CARD } from "./damage-calc";
 import { applyDamageBlock, applyHolyLifesteal, applyHolyTithe } from "./damage-rider-leech";
 import { applyDamageStatuses } from "./damage-status-riders";
 import { detonateEnemyStatuses } from "./dot-resolve";
@@ -132,7 +132,7 @@ export function reflectBlockedAttackAsHoly(
   const hit = damageEnemyHealth(mitigated, remainingDamage);
   let nextState = decayArmorAfterDamage(hit.state, remainingDamage, "enemy", combatTexts);
   mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "holy", amount: remainingDamage });
-  const card = { id: "sun-struck-shield", title: "", descriptionLines: [], art: "", cost: 0, effects: [] };
+  const card = REFLECTED_HOLY_CARD;
   nextState = applyDamageStatuses(
     nextState,
     { kind: "damage", damageType: "holy", amount: remainingDamage },

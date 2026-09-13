@@ -46,19 +46,15 @@ interface MenuItem {
   handler: () => void;
 }
 
-interface BuildMenuItemsArgs {
-  onClose: () => void;
-  onMainMenu: () => void;
-  onCollection: () => void;
-  onTalents: () => void;
-  onHomestead: () => void;
-  onArmory: () => void;
-  onOptions: () => void;
+type BuildMenuItemsArgs = Pick<
+  GameMenuProps,
+  "onClose" | "onMainMenu" | "onCollection" | "onTalents" | "onHomestead" | "onArmory" | "onOptions"
+> & {
   onEndRun: (() => void) | undefined;
   onReturnToRun: (() => void) | undefined;
   returnToRunLabel: "Return to Run" | "Return to Battle";
   currentScreen: Screen | undefined;
-}
+};
 
 function buildMenuItems({
   onClose,

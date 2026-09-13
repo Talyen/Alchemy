@@ -1,3 +1,11 @@
+/**
+ * Stubs the global `Audio` element so tests can observe playback behavior
+ * (src, play/pause calls, volume, mute handling).
+ *
+ * Use for audio playback tests (sfx/music/volume/host/preload). For logic
+ * tests that only need audio calls silenced, import `./mock-audio` instead,
+ * which blanket-mocks `@/lib/audio` with `vi.fn()`s.
+ */
 import { vi, type Mock } from "vitest";
 import { audioState } from "@/lib/audio/state";
 import { resetHtmlSfxRuntime } from "@/lib/audio/sfx";

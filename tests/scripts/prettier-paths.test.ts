@@ -14,7 +14,6 @@ describe("prettier-paths", () => {
         "docs/ARCHITECTURE.md",
         "eslint.config.js",
         "src/App.tsx",
-        "package-lock.json",
         "Raw Assets/foo.png",
         ".github/workflows/ci.yml",
         ".agents/skills/verifier/SKILL.md",
@@ -25,11 +24,22 @@ describe("prettier-paths", () => {
       "docs/ARCHITECTURE.md",
       "eslint.config.js",
       "src/App.tsx",
-      "package-lock.json",
       ".github/workflows/ci.yml",
       ".agents/skills/verifier/SKILL.md",
       "performance/catalog.json",
       "stryker.config.mjs",
     ]);
+  });
+
+  it("skips prettier-ignored paths even when staged explicitly", () => {
+    expect(
+      filterPrettierPaths([
+        "package-lock.json",
+        "CHANGELOG.md",
+        "src/lib/game-data/assets.generated.ts",
+        "src/lib/game-data/gear-art.ts",
+        "src/App.tsx",
+      ]),
+    ).toEqual(["src/App.tsx"]);
   });
 });

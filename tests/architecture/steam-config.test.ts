@@ -54,7 +54,10 @@ describe("steam platform config", () => {
       "AZURE_CODE_SIGNING_ENDPOINT",
     );
     expect(distDesktop).toContain("forceCodeSigning=true");
-    expect(distDesktop).toContain('"electron-builder", "out", "cli", "cli.js"');
+    expect(distDesktop).toContain("resolveBuilderBin()");
+    expect(readFileSync(join(ROOT, "scripts/lib/builder-bin.mjs"), "utf8")).toContain(
+      '"electron-builder", "out", "cli", "cli.js"',
+    );
     expect(distDesktop).toContain('["--publish", "never"]');
     expect(distDesktop).toContain("ALCHEMY_PACKAGE_DIR");
     expect(distDesktop).not.toContain('"npx.cmd"');

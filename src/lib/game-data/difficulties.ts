@@ -85,9 +85,9 @@ export const DIFFICULTY_ORDER: DifficultyId[] = ["difficulty-1", "difficulty-2",
 
 export function isDifficultyUnlocked(difficultyId: DifficultyId, completedDifficulties: DifficultyId[]): boolean {
   const idx = DIFFICULTY_ORDER.indexOf(difficultyId);
-  if (idx === 0) return true;
-  const prevDifficulty = DIFFICULTY_ORDER[idx - 1]!;
-  return completedDifficulties.includes(prevDifficulty);
+  if (idx <= 0) return idx === 0;
+  const prevDifficulty = DIFFICULTY_ORDER[idx - 1];
+  return prevDifficulty !== undefined && completedDifficulties.includes(prevDifficulty);
 }
 
 export function getDifficultyModifiers(characterId: CharacterId, difficultyId: DifficultyId): DifficultyModifier[] {

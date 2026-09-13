@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ActiveRunDataSchema } from "@/lib/validation";
-import { baseActiveRunInput, makeWildwoodDraft } from "../../fixtures/active-run";
+import { makeWildwoodDraft, parseActiveRunData, tombstonedCard, tombstonedCard2 } from "../../fixtures/active-run";
 import { createRunRngState } from "@/lib/rng";
 import { isTombstonedCardId } from "@/lib/validation/migration/tombstoned-content-ids";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
@@ -8,17 +7,8 @@ import { DRAFT_ROUNDS } from "@/lib/game-constants";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { createSeededRng } from "@/lib/utils";
 
-const tombstoned = { id: "antivenom-potion" };
-const tombstoned2 = { id: "imp-companion" };
-
 function makeRng() {
   return createRunRngState(() => 0.42);
-}
-
-function parseActiveRunData(overrides: Record<string, unknown>) {
-  const result = ActiveRunDataSchema.safeParse({ ...baseActiveRunInput(), ...overrides });
-  if (!result.success) throw new Error(result.error.message);
-  return result.data;
 }
 
 describe("ActiveRunDataSchema empty-choice repair", () => {
@@ -29,7 +19,7 @@ describe("ActiveRunDataSchema empty-choice repair", () => {
       contentSystemType: "campaign",
       runDeck: [{ id: "slash", effects: [] }],
       rng,
-      starterDraftChoices: [tombstoned, tombstoned2, tombstoned],
+      starterDraftChoices: [tombstonedCard, tombstonedCard2, tombstonedCard],
     });
     const repaired = result.starterDraftChoices!;
     expect(repaired.length).toBe(3);
@@ -48,7 +38,7 @@ describe("ActiveRunDataSchema empty-choice repair", () => {
       labyrinthMap: generateLabyrinthMap(createSeededRng(1)),
       runDeck: [{ id: "slash", effects: [] }],
       rng,
-      starterDraftChoices: [tombstoned, tombstoned, tombstoned],
+      starterDraftChoices: [tombstonedCard, tombstonedCard, tombstonedCard],
     });
     const repaired = result.starterDraftChoices!;
     expect(repaired.length).toBe(3);
@@ -62,7 +52,7 @@ describe("ActiveRunDataSchema empty-choice repair", () => {
       contentSystemType: "campaign",
       runDeck: fullDeck,
       rng,
-      starterDraftChoices: [tombstoned, tombstoned, tombstoned],
+      starterDraftChoices: [tombstonedCard, tombstonedCard, tombstonedCard],
     });
     expect(result.starterDraftChoices).toEqual([]);
     expect(result.rng.counters.rewards).toBe(0);
@@ -87,7 +77,7 @@ describe("ActiveRunDataSchema empty-choice repair", () => {
       contentSystemType: "wildwood",
       runDeck: [{ id: "slash", effects: [] }],
       rng,
-      wildwoodDraft: makeWildwoodDraft({ draftChoices: [tombstoned, tombstoned, tombstoned] }),
+      wildwoodDraft: makeWildwoodDraft({ draftChoices: [tombstonedCard, tombstonedCard, tombstonedCard] }),
     });
     const draft = result.wildwoodDraft!;
     expect(draft.draftChoices.length).toBe(3);
@@ -104,7 +94,7 @@ describe("ActiveRunDataSchema empty-choice repair", () => {
       rng,
       wildwoodDraft: makeWildwoodDraft({
         phase: "reward",
-        draftChoices: [tombstoned, tombstoned, tombstoned],
+        draftChoices: [tombstonedCard, tombstonedCard, tombstonedCard],
       }),
     });
     expect(result.wildwoodDraft?.draftChoices).toEqual([]);
@@ -120,7 +110,7 @@ describe("ActiveRunDataSchema empty-choice repair", () => {
       mysteryVisit: {
         eventId: "ancient-altar",
         chosenChoice: null,
-        cardChoices: [tombstoned, tombstoned, tombstoned],
+        cardChoices: [tombstonedCard, tombstonedCard, tombstonedCard],
         grantedTrinketIds: [],
         grantedGear: [],
         chosenCardId: null,
@@ -142,7 +132,7 @@ describe("ActiveRunDataSchema empty-choice repair", () => {
       mysteryVisit: {
         eventId: "ancient-altar",
         chosenChoice: null,
-        cardChoices: [tombstoned, tombstoned, tombstoned],
+        cardChoices: [tombstonedCard, tombstonedCard, tombstonedCard],
         grantedTrinketIds: [],
         grantedGear: [],
         chosenCardId: "slash",
@@ -160,7 +150,7 @@ describe("ActiveRunDataSchema empty-choice repair", () => {
       contentSystemType: "campaign",
       runDeck: [],
       rng,
-      starterDraftChoices: [tombstoned, tombstoned, tombstoned],
+      starterDraftChoices: [tombstonedCard, tombstonedCard, tombstonedCard],
     });
     for (const card of result.starterDraftChoices!) expect(poolIds.has(card.id)).toBe(true);
   });

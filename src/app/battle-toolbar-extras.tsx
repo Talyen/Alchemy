@@ -24,6 +24,7 @@ export function BattleGoldCounter({ gold }: { gold: number }) {
         increaseToken > 0 && "battle-gold-increase",
       )}
       aria-label={`Gold: ${gold}`}
+      role="img"
       data-testid="battle-gold"
     >
       <HomesteadResourceArtwork resource="gold" size="md" alt="" />

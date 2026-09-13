@@ -3,17 +3,14 @@ import { ActiveRunDataSchema } from "@/lib/validation";
 import { defaultBattleState } from "@/lib/battle";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { createSeededRng } from "@/lib/utils";
-import { baseActiveRunInput, makeWildwoodDraft } from "../../fixtures/active-run";
+import {
+  baseActiveRunInput,
+  liveCard,
+  makeWildwoodDraft,
+  parseActiveRunData,
+  tombstonedCard,
+} from "../../fixtures/active-run";
 import { DRAFT_ROUNDS } from "@/lib/game-constants";
-
-const tombstoned = { id: "antivenom-potion" };
-const live = { id: "slash" };
-
-function parseActiveRunData(overrides: Record<string, unknown> = {}) {
-  const result = ActiveRunDataSchema.safeParse({ ...baseActiveRunInput(), ...overrides });
-  if (!result.success) throw new Error(result.error.message);
-  return result.data;
-}
 
 describe("ActiveRunDataSchema normalize", () => {
   it("passes through an active campaign run and nulls foreign content fields", () => {
@@ -86,40 +83,40 @@ describe("ActiveRunDataSchema normalize", () => {
     const result = parseActiveRunData({
       contentSystemType: "wildwood",
       wildwoodDraft: makeWildwoodDraft(),
-      starterDraftChoices: [live],
+      starterDraftChoices: [liveCard],
     });
     expect(result.starterDraftChoices).toBeNull();
   });
 
-  it("filters tombstoned starter draft choices instead of nulling them on campaign runs", () => {
+  it("filters tombstonedCard starter draft choices instead of nulling them on campaign runs", () => {
     const result = parseActiveRunData({
       contentSystemType: "campaign",
-      starterDraftChoices: [live, tombstoned],
+      starterDraftChoices: [liveCard, tombstonedCard],
     });
     expect(result.starterDraftChoices?.map((card) => card.id)).toEqual(["slash"]);
   });
 
-  it("strips tombstoned card ids from every persisted card collection", () => {
+  it("strips tombstonedCard card ids from every persisted card collection", () => {
     const fullDeck = Array.from({ length: DRAFT_ROUNDS }, () => ({ id: "slash" }));
     const result = parseActiveRunData({
       contentSystemType: "wildwood",
       runDeck: fullDeck,
-      starterDraftChoices: [tombstoned],
-      wildwoodDraft: makeWildwoodDraft({ draftChoices: [tombstoned] }),
+      starterDraftChoices: [tombstonedCard],
+      wildwoodDraft: makeWildwoodDraft({ draftChoices: [tombstonedCard] }),
       activeCombat: {
         battleState: {
           ...defaultBattleState(),
-          deck: [live, tombstoned],
-          hand: [tombstoned],
-          discard: [live],
-          exhausted: [tombstoned],
-          wishOptions: [tombstoned],
-          wishQueue: [[live], [tombstoned, live]],
+          deck: [liveCard, tombstonedCard],
+          hand: [tombstonedCard],
+          discard: [liveCard],
+          exhausted: [tombstonedCard],
+          wishOptions: [tombstonedCard],
+          wishQueue: [[liveCard], [tombstonedCard, liveCard]],
         },
       },
-      shopState: { cards: [live, tombstoned] },
-      alchemistState: { potions: [tombstoned] },
-      mysteryVisit: { eventId: "e", cardChoices: [tombstoned], chosenCardId: "slash" },
+      shopState: { cards: [liveCard, tombstonedCard] },
+      alchemistState: { potions: [tombstonedCard] },
+      mysteryVisit: { eventId: "e", cardChoices: [tombstonedCard], chosenCardId: "slash" },
     });
 
     expect(result.runDeck.map((card) => card.id)).toEqual(Array(DRAFT_ROUNDS).fill("slash"));
@@ -132,22 +129,22 @@ describe("ActiveRunDataSchema normalize", () => {
     expect(state.discard.map((card) => card.id)).toEqual(["slash"]);
     expect(state.exhausted).toEqual([]);
     expect(state.wishOptions).toEqual([]);
-    expect(state.wishQueue.map((queue) => queue.map((card) => card.id))).toEqual([[live.id], [live.id]]);
+    expect(state.wishQueue.map((queue) => queue.map((card) => card.id))).toEqual([[liveCard.id], [liveCard.id]]);
 
     expect(result.shopState?.cards.map((card) => card.id)).toEqual(["slash"]);
     expect(result.alchemistState?.potions).toEqual([]);
     expect(result.mysteryVisit?.cardChoices).toEqual([]);
   });
 
-  it("remaps shop purchasedSlotKeys when a tombstoned offering is dropped", () => {
+  it("remaps shop purchasedSlotKeys when a tombstonedCard offering is dropped", () => {
     const result = parseActiveRunData({
       shopState: {
-        cards: [tombstoned, live],
+        cards: [tombstonedCard, liveCard],
         purchasedSlotKeys: ["slash-1"],
         refreshesLeft: 1,
       },
       alchemistState: {
-        potions: [tombstoned, live],
+        potions: [tombstonedCard, liveCard],
         purchasedSlotKeys: ["slash-1"],
         mixUsed: false,
       },
@@ -162,18 +159,18 @@ describe("ActiveRunDataSchema normalize", () => {
   it("drops malformed wishQueue entries instead of aborting the parse", () => {
     const result = parseActiveRunData({
       activeCombat: {
-        battleState: { ...defaultBattleState(), wishQueue: [[live], "junk", 7] },
+        battleState: { ...defaultBattleState(), wishQueue: [[liveCard], "junk", 7] },
       },
     });
     expect(result.activeCombat?.battleState.wishQueue.map((queue) => queue.map((card) => card.id))).toEqual([
-      [live.id],
+      [liveCard.id],
     ]);
   });
 
   it("nulls mysteryVisit when currentScreen is not mystery", () => {
     const result = parseActiveRunData({
       currentScreen: "shop",
-      mysteryVisit: { eventId: "cardless-shrine", cardChoices: [live] },
+      mysteryVisit: { eventId: "cardless-shrine", cardChoices: [liveCard] },
     });
     expect(result.mysteryVisit).toBeNull();
   });
@@ -181,7 +178,7 @@ describe("ActiveRunDataSchema normalize", () => {
   it("keeps mysteryVisit when currentScreen is mystery", () => {
     const result = parseActiveRunData({
       currentScreen: "mystery",
-      mysteryVisit: { eventId: "cardless-shrine", cardChoices: [live] },
+      mysteryVisit: { eventId: "cardless-shrine", cardChoices: [liveCard] },
     });
     expect(result.mysteryVisit).toMatchObject({ eventId: "cardless-shrine" });
     expect(result.mysteryVisit?.cardChoices?.map((card) => card.id)).toEqual(["slash"]);
@@ -189,7 +186,7 @@ describe("ActiveRunDataSchema normalize", () => {
 
   it("keeps mysteryVisit when currentScreen is unset so resume can infer mystery", () => {
     const result = parseActiveRunData({
-      mysteryVisit: { eventId: "cardless-shrine", cardChoices: [live] },
+      mysteryVisit: { eventId: "cardless-shrine", cardChoices: [liveCard] },
     });
     expect(result.currentScreen).toBeNull();
     expect(result.mysteryVisit).toMatchObject({ eventId: "cardless-shrine" });

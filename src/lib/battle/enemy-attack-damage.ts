@@ -3,7 +3,7 @@ import type { EnemyAttackEffect } from "@/lib/game-data";
 import { BATTLE_CONFIG, LABYRINTH_MODIFIER_CONFIG, PERCENT_DENOMINATOR } from "../game-constants";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { applyEnemyHealingWithCombatText, applyHealingWithCombatText, mergeCombatText } from "./combat-text";
-import { computeCardDamageToEnemy } from "./damage-calc";
+import { computeCardDamageToEnemy, REFLECTED_HOLY_CARD } from "./damage-calc";
 import { computeLeechHeal } from "./damage-rider-leech";
 import { applyDamageRiders, reflectBlockedAttackAsHoly } from "./damage-riders";
 import { isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-traits";
@@ -258,7 +258,7 @@ function applyBlockedAttackRetaliation(
   }
   const amount = state.talentEffects.holyOnAttackBlocked;
   if (amount <= 0 || state.enemyHealth <= 0 || state.playerHealth <= 0) return state;
-  const card = { id: "sun-struck-shield", title: "", descriptionLines: [], art: "", cost: 0, effects: [] };
+  const card = REFLECTED_HOLY_CARD;
   const effect = { kind: "damage" as const, damageType: "holy" as const, amount };
   const { nextState, modifiedDamage } = computeCardDamageToEnemy(state, effect, card);
   return applyDamageRiders(nextState, card, effect, modifiedDamage, combatTexts);

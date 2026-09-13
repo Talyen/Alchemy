@@ -1,4 +1,4 @@
-import type { BattleCard, KeywordId } from "@/lib/game-data";
+import type { BattleCard } from "@/lib/game-data";
 import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import {
   getKeywordListShineColors,
@@ -36,13 +36,9 @@ const chipPillClass = (ctx: BadgeCtx) =>
   cn(
     "inline-flex items-center gap-1 rounded-full border shadow-xs",
     ctx.tooltip
-      ? cn("mx-0.5 px-1.5 py-0.5 align-middle", tooltipChipClass, "leading-none")
+      ? ["mx-0.5 px-1.5 py-0.5 align-middle", tooltipChipClass, "leading-none"]
       : "px-3 py-1 text-xs leading-none font-semibold",
   );
-
-function getKeywordsShineColors(keywords: readonly KeywordId[]): readonly string[] {
-  return getKeywordListShineColors(keywords);
-}
 
 const mysteryShineTextProps = { className: "font-bold", fallbackClassName: "text-foreground" } as const;
 
@@ -172,7 +168,7 @@ const renderGeneratedGearBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "ga
       : "Gear";
 
   const keywords = baseItem?.affinityKeywords ?? [];
-  const colors = uniqueItem ? getUniqueGearTextShineColors() : effect.astral ? getKeywordsShineColors(keywords) : [];
+  const colors = uniqueItem ? getUniqueGearTextShineColors() : effect.astral ? getKeywordListShineColors(keywords) : [];
 
   if (ctx.tooltip) {
     const titleNode =

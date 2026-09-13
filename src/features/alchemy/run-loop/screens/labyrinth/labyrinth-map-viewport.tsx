@@ -41,7 +41,12 @@ export function LabyrinthMapViewport({ map, nodes, selectedNodeId, onEnter, onDe
       const width = Number.parseFloat(style.width) || element.clientWidth;
       const height = Number.parseFloat(style.height) || element.clientHeight;
       const scale = width > 0 ? element.getBoundingClientRect().width / width : 1;
-      setSize({ width, height, scale: scale > 0 ? scale : 1 });
+      const next = { width, height, scale: scale > 0 ? scale : 1 };
+      setSize((previous) =>
+        previous.width === next.width && previous.height === next.height && previous.scale === next.scale
+          ? previous
+          : next,
+      );
     };
     const observer = new ResizeObserver(update);
     observer.observe(element);

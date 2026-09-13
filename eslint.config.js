@@ -66,8 +66,12 @@ export default tseslint.config(
       "coverage",
       "release-desktop",
       "reports",
+      "blob-report",
       ".knip-output.json",
       ".eslintcache",
+      // Generated barrels are outputs (edit the manifest, regenerate).
+      "src/**/*.generated.ts",
+      "src/lib/game-data/gear-art.ts",
     ],
   },
   {

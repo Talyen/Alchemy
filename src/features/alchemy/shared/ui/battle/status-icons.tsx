@@ -21,6 +21,8 @@ import { PortaledTooltip } from "../tooltips/portaled-tooltip";
 import { TooltipBody, TooltipHeader } from "../tooltips/tooltip-panel";
 import { useHoverVisible } from "../use-hover-visible";
 
+const STATUS_ICON_CLASS = "h-[calc(1.8225*var(--content-rem,1rem))] w-[calc(1.8225*var(--content-rem,1rem))]";
+
 function StatusChipShell({
   ariaLabel,
   buttonClassName,
@@ -114,14 +116,7 @@ export function StatusIcon({ chip }: { chip: StatusChip }) {
   return (
     <StatusChipShell
       ariaLabel={`${definition.label} ${chip.value}`}
-      icon={
-        <Icon
-          className={cn(
-            "h-[calc(1.8225*var(--content-rem,1rem))] w-[calc(1.8225*var(--content-rem,1rem))]",
-            definition.colorClass,
-          )}
-        />
-      }
+      icon={<Icon className={cn(STATUS_ICON_CLASS, definition.colorClass)} />}
       tooltip={
         <StatusTooltip
           labelNode={<KeywordTag keywordId={kw} className="text-sm sm:text-base" />}
@@ -147,14 +142,7 @@ function AugmentStatusIcon({
   return (
     <StatusChipShell
       ariaLabel={chip.hideValue ? augment.label : `${augment.label} ${chip.value}`}
-      icon={
-        <Icon
-          className={cn(
-            "h-[calc(1.8225*var(--content-rem,1rem))] w-[calc(1.8225*var(--content-rem,1rem))]",
-            augment.colorClass,
-          )}
-        />
-      }
+      icon={<Icon className={cn(STATUS_ICON_CLASS, augment.colorClass)} />}
       tooltip={
         <StatusTooltip
           labelNode={<TooltipHeader className="mb-0">{augment.label}</TooltipHeader>}
@@ -173,9 +161,7 @@ function HasteStatusIcon({ value }: { value: number }) {
   return (
     <StatusChipShell
       ariaLabel={`Haste ${value}`}
-      icon={
-        <Sparkles className="h-[calc(1.8225*var(--content-rem,1rem))] w-[calc(1.8225*var(--content-rem,1rem))] text-fuchsia-300" />
-      }
+      icon={<Sparkles className={cn(STATUS_ICON_CLASS, "text-fuchsia-300")} />}
       tooltip={
         <StatusTooltip
           labelNode={<TooltipHeader className="mb-0">Haste</TooltipHeader>}
@@ -194,7 +180,7 @@ export function DeathsDoorStatusIcon() {
     <StatusChipShell
       ariaLabel="Death's Door"
       buttonClassName="rounded-full bg-red-950/70 text-red-200 ring-1 ring-red-400/60"
-      icon={<Skull className="h-[calc(1.8225*var(--content-rem,1rem))] w-[calc(1.8225*var(--content-rem,1rem))]" />}
+      icon={<Skull className={STATUS_ICON_CLASS} />}
       tooltip={
         <>
           <TooltipHeader>Death's Door</TooltipHeader>

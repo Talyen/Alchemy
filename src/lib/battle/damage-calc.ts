@@ -52,16 +52,29 @@ export function forgeAppliesToDamageType(
   );
 }
 
+export const REFLECTED_HOLY_CARD: BattleCard = {
+  id: "sun-struck-shield",
+  title: "",
+  descriptionLines: [],
+  art: "",
+  cost: 0,
+  effects: [],
+};
+
 function sharesBurnBleedBonuses(state: BattleState): boolean {
   return state.gearEffects.sharedBurnBleedBonuses > 0;
 }
 
+function isLikeDamage(damageType: DamageType, target: "burn" | "bleed", state: BattleState): boolean {
+  return damageType === target || (sharesBurnBleedBonuses(state) && (damageType === "burn" || damageType === "bleed"));
+}
+
 function isBurnLikeDamage(damageType: DamageType, state: BattleState): boolean {
-  return damageType === "burn" || (damageType === "bleed" && sharesBurnBleedBonuses(state));
+  return isLikeDamage(damageType, "burn", state);
 }
 
 function isBleedLikeDamage(damageType: DamageType, state: BattleState): boolean {
-  return damageType === "bleed" || (damageType === "burn" && sharesBurnBleedBonuses(state));
+  return isLikeDamage(damageType, "bleed", state);
 }
 
 function blockScaledDamage(state: BattleState, percent: number): number {

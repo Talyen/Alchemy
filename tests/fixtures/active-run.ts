@@ -1,3 +1,5 @@
+import { ActiveRunDataSchema } from "@/lib/validation";
+
 const BASE_RUN_TEMPLATE = {
   characterId: "knight",
   runDeck: [],
@@ -61,4 +63,14 @@ export function makeWildwoodDraft(overrides: Record<string, unknown> = {}): Reco
     currentRewardTraitIds: [],
     ...overrides,
   };
+}
+
+export const tombstonedCard = { id: "antivenom-potion" };
+export const tombstonedCard2 = { id: "imp-companion" };
+export const liveCard = { id: "slash" };
+
+export function parseActiveRunData(overrides: Record<string, unknown> = {}) {
+  const result = ActiveRunDataSchema.safeParse({ ...baseActiveRunInput(), ...overrides });
+  if (!result.success) throw new Error(result.error.message);
+  return result.data;
 }

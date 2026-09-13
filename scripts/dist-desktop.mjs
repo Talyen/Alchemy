@@ -4,6 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { assertSupportedTargets, targetToBuilderFlag } from "./lib/desktop-artifact.mjs";
+import { resolveBuilderBin } from "./lib/builder-bin.mjs";
 import { resolveSentryRelease } from "./lib/sentry-release.mjs";
 import { validateDesktopBuildConfig } from "./lib/desktop-build-config.mjs";
 
@@ -27,7 +28,7 @@ if (process.env.CI_RELEASE === "true" && sentryUploadEnabled) {
   }
 }
 
-const builderCli = join(root, "node_modules", "electron-builder", "out", "cli", "cli.js");
+const builderCli = resolveBuilderBin();
 // Publishing is an explicit release-workflow responsibility. electron-builder
 // otherwise infers publishing from CI environment variables.
 const packageDir = process.env.ALCHEMY_PACKAGE_DIR === "1" || process.argv.includes("--dir");

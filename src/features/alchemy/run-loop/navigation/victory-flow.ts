@@ -89,6 +89,10 @@ interface VictoryGoldRoll {
   wealthyBonus: number;
 }
 
+function victoryGoldPerCombat(talentEffects: TalentEffectManifest, battleState: BattleSnapshot): number {
+  return talentEffects.goldPerCombat + (battleState.activeCompanion ? talentEffects.companionVictoryGold : 0);
+}
+
 function rollVictoryGold(
   battleState: BattleSnapshot,
   talentEffects: TalentEffectManifest,
@@ -119,17 +123,20 @@ function rollVictoryGold(
 }
 
 export function computeVictoryRewardState(
-  input: {
-    lootProgress: LootProgress;
-    characterId: CharacterId;
-    selectedDifficulty: DifficultyId | null;
-    unlockedTalents: UnlockedTalents;
-    runDeck: BattleCard[];
-    runBoons: string[];
-    equippedTrinketId?: string | null;
-    ownedTrinketIds?: string[];
-    ownedUniqueIds?: ReadonlySet<string>;
-    battleState: BattleSnapshot;
+  input: Pick<
+    VictoryRewardsInput,
+    | "lootProgress"
+    | "characterId"
+    | "selectedDifficulty"
+    | "unlockedTalents"
+    | "runDeck"
+    | "runBoons"
+    | "equippedTrinketId"
+    | "ownedTrinketIds"
+    | "ownedUniqueIds"
+    | "battleState"
+    | "bossEnemyId"
+  > & {
     gold: number;
     eliteBonus: number;
     generousBonus: number;
@@ -138,7 +145,6 @@ export function computeVictoryRewardState(
     materials: MaterialInventory;
     destinations: Destination[];
     talentEffects?: TalentEffectManifest;
-    bossEnemyId?: string | null | undefined;
     gearAstralChanceBonus?: number;
   },
   rng: () => number,
@@ -155,8 +161,7 @@ export function computeVictoryRewardState(
       bossBonus: input.bossBonus,
       generousBonus: input.generousBonus,
       wealthyBonus: input.wealthyBonus,
-      talentGoldPerCombat:
-        talentEffects.goldPerCombat + (input.battleState.activeCompanion ? talentEffects.companionVictoryGold : 0),
+      talentGoldPerCombat: victoryGoldPerCombat(talentEffects, input.battleState),
       materials: input.materials,
       trinketIds: activeTrinketEffectIds,
       goldMultiplier,
@@ -177,8 +182,7 @@ export function computeVictoryRewardState(
       eliteBonus: input.eliteBonus,
       generousBonus: input.generousBonus,
       wealthyBonus: input.wealthyBonus,
-      talentGoldPerCombat:
-        talentEffects.goldPerCombat + (input.battleState.activeCompanion ? talentEffects.companionVictoryGold : 0),
+      talentGoldPerCombat: victoryGoldPerCombat(talentEffects, input.battleState),
       materials: input.materials,
       destinations: input.destinations,
       trinketIds: activeTrinketEffectIds,
@@ -216,7 +220,7 @@ function computeWildwoodVictoryRewards(
     goldEarned,
     persistedGold: Math.max(input.purseGold, input.battleState.gold) + companionGold,
     playerHealth: input.battleState.playerHealth,
-    maxHealthDelta: talentEffects.maxHealthPerCombat > 0 ? talentEffects.maxHealthPerCombat : 0,
+    maxHealthDelta: Math.max(0, talentEffects.maxHealthPerCombat),
     destinationOfferState: input.destinationOfferState,
   };
 }
@@ -274,12 +278,11 @@ export function computeVictoryRewards(
     generousBonus,
     wealthyBonus,
     bossBonus,
-    talentGoldPerCombat:
-      talentEffects.goldPerCombat + (input.battleState.activeCompanion ? talentEffects.companionVictoryGold : 0),
+    talentGoldPerCombat: victoryGoldPerCombat(talentEffects, input.battleState),
     goldMultiplier: getGoldMultiplier(input.characterId, input.selectedDifficulty),
   });
 
-  const maxHealthDelta = talentEffects.maxHealthPerCombat > 0 ? talentEffects.maxHealthPerCombat : 0;
+  const maxHealthDelta = Math.max(0, talentEffects.maxHealthPerCombat);
   const effectiveMaxHealth = input.runMaxHealth + maxHealthDelta;
   const wellProvisionedHealing = getWellProvisionedHealing(labyrinthRewardModifiers, effectiveMaxHealth);
   const playerHealth =

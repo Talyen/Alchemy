@@ -9,10 +9,18 @@ export const PRETTIER_GLOBS = Object.freeze([`**/*.{${EXTENSIONS.join(",")}}`, "
 /** Extensions / basenames Prettier should format when given explicit file paths (hooks). */
 const PRETTIER_PATH_RE = new RegExp(`(?:^|/)(?:\\.prettierrc)$|\\.(?:${EXTENSIONS.join("|")})$`, "i");
 
+// Paths Prettier must skip even when staged explicitly (mirrors .prettierignore).
+const PRETTIER_NEVER_FORMAT_RE =
+  /(?:^|\/)(?:package-lock\.json|CHANGELOG\.md)$|\.generated\.ts$|(?:^|\/)src\/lib\/game-data\/gear-art\.ts$/;
+
 /**
  * @param {readonly string[]} paths
  * @returns {string[]}
  */
 export function filterPrettierPaths(paths) {
-  return paths.filter((p) => PRETTIER_PATH_RE.test(p.replaceAll("\\", "/")));
+  return paths.filter((p) => {
+    const normalized = p.replaceAll("\\", "/");
+    if (PRETTIER_NEVER_FORMAT_RE.test(normalized)) return false;
+    return PRETTIER_PATH_RE.test(normalized);
+  });
 }

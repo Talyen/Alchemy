@@ -69,20 +69,5 @@ describe("shop invalid index guards", () => {
       expect(readRunProfile().gold).toBe(999);
       expect(readActivityData(readRunSession().activity, "alchemist").mixUsed).toBe(false);
     });
-
-    it("succeeds for valid distinct potion indices", () => {
-      const potionA = makeCard({ id: "fire-potion" } as unknown as never);
-      const potionB = makeCard({ id: "frost-potion" } as unknown as never);
-
-      const a = { ...potionA, id: "fire-potion" };
-      const b = { ...potionB, id: "ice-potion" };
-      setRunProgress({ gold: 999, runDeck: [a as unknown as never, b as unknown as never, makeCard({ id: "other" })] });
-      setAlchemistState(createInitialAlchemistState([a as unknown as never, b as unknown as never]));
-      const actions = buildActions();
-
-      const result = actions.alchemist.mixPotions(0, 1);
-
-      expect([true, false].includes(result !== null)).toBe(true);
-    });
   });
 });
