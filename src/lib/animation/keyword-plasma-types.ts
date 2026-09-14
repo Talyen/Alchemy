@@ -12,7 +12,6 @@ export interface PlasmaRendererOptions {
   onWakeReady?: (wake: () => void) => void;
 }
 
-export const PLASMA_FRAME_MS = 1000 / 30;
 export const PLASMA_MAX_BACKING_PIXELS = 1_500_000;
 export const PLASMA_BACKING_SCALE = 0.45;
 export const PLASMA_MIN_BACKING_SCALE = 0.25;

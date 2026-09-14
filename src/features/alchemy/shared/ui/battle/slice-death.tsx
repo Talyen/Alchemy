@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState } from "react";
 
-import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
+import { shouldReduceMotion } from "@/lib/animation/animation-prefs";
 import { SLICE_PRIMARY_CLIP_PATH, SLICE_SECONDARY_CLIP_PATH } from "@/lib/animation/slice-crack";
 import { drawSliceFrame } from "@/lib/animation/slice-draw";
 import { computeSliceVisual } from "@/lib/animation/slice-timeline";
@@ -14,15 +14,6 @@ interface SliceDeathProps {
   imageUrl: string;
   alt: string;
   imageClassName: string;
-}
-
-function prefersReducedMotion(): boolean {
-  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-}
-
-function shouldSkipSlice(): boolean {
-  return isAnimationDisabled() || prefersReducedMotion();
 }
 
 function applyHalfTransform(
@@ -41,10 +32,10 @@ export function SliceDeath({ imageUrl, alt, imageClassName }: SliceDeathProps) {
   const leftRef = useRef<HTMLImageElement>(null);
   const rightRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [complete, setComplete] = useState(shouldSkipSlice);
+  const [complete, setComplete] = useState(shouldReduceMotion);
 
   useLayoutEffect(() => {
-    if (shouldSkipSlice()) return;
+    if (shouldReduceMotion()) return;
 
     const root = rootRef.current;
     const canvas = canvasRef.current;

@@ -6,6 +6,9 @@ const isAnimationDisabled = vi.fn(() => false);
 
 vi.mock("@/lib/animation/animation-prefs", () => ({
   isAnimationDisabled: () => isAnimationDisabled(),
+  shouldReduceMotion: () => isAnimationDisabled(),
+  prefersReducedMotion: () => false,
+  ANIMATION_DISABLED_DURATION: 1,
 }));
 
 import { playSliceDeath } from "@/lib/audio";

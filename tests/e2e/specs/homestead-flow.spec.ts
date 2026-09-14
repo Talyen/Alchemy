@@ -58,7 +58,7 @@ test.describe("Homestead Flow", critical, () => {
 
       await homestead.goto({
         materialInventory: { wood: 100, iron: 50, herbs: 25, food: 10, gems: 5 },
-        constructedBuildings: { "blacksmiths-forge": 1, carpentry: 0 },
+        constructedBuildings: { "blacksmiths-forge": 1 },
       });
       await expect(homestead.buildingsTab).toBeVisible();
       await expect(homestead.materialPill("Wood", 100)).toBeVisible({ timeout: 3000 });

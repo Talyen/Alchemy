@@ -1,22 +1,25 @@
 import type { TalentEffectManifest } from "@/lib/game-data";
 import type { HomesteadEffectManifest } from "./types";
-import { HOMESTEAD_BATTLE_NUMERIC_KEYS, HOMESTEAD_BATTLE_BOOLEAN_KEYS, HOMESTEAD_BATTLE_RECORD_KEYS } from "./types";
+import { HOMESTEAD_BATTLE_NUMERIC_KEYS, HOMESTEAD_BATTLE_BOOLEAN_KEYS } from "./types";
 import { defaultHomesteadEffects } from "./defaults";
 import { buildings, farmPlots, researchUpgrades } from "./data";
 
-type HomesteadBattleRecordKey = (typeof HOMESTEAD_BATTLE_RECORD_KEYS)[number];
+function addNumericEffect(current: number, added: number): number {
+  const sum = current + added;
+  return Number.isInteger(sum) ? sum : Math.round(sum * 10000) / 10000;
+}
 
 function applyTierEffects(base: HomesteadEffectManifest, partial?: Partial<HomesteadEffectManifest>): void {
   if (!partial) return;
   for (const key of Object.keys(partial) as Array<keyof HomesteadEffectManifest>) {
     const val = partial[key];
     if (typeof val === "number") {
-      (base[key] as number) += val;
+      (base[key] as number) = addNumericEffect(base[key] as number, val);
     } else if (typeof val === "boolean") {
       (base[key] as boolean) = (base[key] as boolean) || val;
-    } else if (typeof val === "object") {
+    } else if (typeof val === "object" && val !== null) {
       const baseVal = base[key];
-      if (typeof baseVal === "object") {
+      if (typeof baseVal === "object" && baseVal !== null) {
         const merged = { ...(baseVal as Record<string, number>) };
         for (const [k, v] of Object.entries(val)) {
           merged[k] = (merged[k] ?? 0) + v;
@@ -41,23 +44,21 @@ function applyItemTiers(
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- generic preserves record key relation between target and source
-function mergeRecordEffect<K extends HomesteadBattleRecordKey>(
-  target: TalentEffectManifest,
-  source: HomesteadEffectManifest,
-  key: K,
-): void {
-  const sourceValue = source[key];
-  if (Object.keys(sourceValue).length === 0) return;
-  const merged = { ...target[key] } as Record<string, number>;
-  for (const [k, v] of Object.entries(sourceValue)) {
-    if (key === "cardHealBonus") {
-      merged[k] = (merged[k] ?? 0) + v;
-    } else {
-      merged[k] = Math.max(merged[k] ?? 0, v);
-    }
+function mergeCardHealBonus(target: TalentEffectManifest, source: HomesteadEffectManifest): void {
+  if (Object.keys(source.cardHealBonus).length === 0) return;
+  const merged = { ...target.cardHealBonus };
+  for (const [k, v] of Object.entries(source.cardHealBonus)) {
+    merged[k] = (merged[k] ?? 0) + v;
   }
-  target[key] = merged as TalentEffectManifest[K];
+  target.cardHealBonus = merged;
+}
+
+function mergeCompanionBonds(target: TalentEffectManifest, source: HomesteadEffectManifest): void {
+  const merged = { ...target.companionBondLevels };
+  for (const [k, v] of Object.entries(source.companionBondLevels)) {
+    merged[k as keyof typeof merged] = Math.max(merged[k as keyof typeof merged] ?? 0, v);
+  }
+  target.companionBondLevels = merged;
 }
 
 export function computeHomesteadEffects(
@@ -92,7 +93,7 @@ export function mergeIntoManifest(
   const merged: TalentEffectManifest = { ...talentEffects };
 
   for (const key of HOMESTEAD_BATTLE_NUMERIC_KEYS) {
-    merged[key] += homesteadEffects[key];
+    merged[key] = addNumericEffect(merged[key], homesteadEffects[key]);
   }
 
   for (const key of HOMESTEAD_BATTLE_BOOLEAN_KEYS) {
@@ -101,9 +102,8 @@ export function mergeIntoManifest(
     }
   }
 
-  for (const key of HOMESTEAD_BATTLE_RECORD_KEYS) {
-    mergeRecordEffect(merged, homesteadEffects, key);
-  }
+  mergeCardHealBonus(merged, homesteadEffects);
+  mergeCompanionBonds(merged, homesteadEffects);
 
   return merged;
 }

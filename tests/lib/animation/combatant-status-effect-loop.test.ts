@@ -136,4 +136,81 @@ describe("startCombatantStatusEffectLoop", () => {
     expect(canvas.width).toBe(120);
     stop();
   });
+
+  it.each(["stun", "freeze"] as const)("resumes %s after zero-size mounting and collapse", (kind) => {
+    const pending = new Map<number, FrameRequestCallback>();
+    let nextId = 0;
+    let notifyResize = () => {};
+    vi.stubGlobal("devicePixelRatio", 1);
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+      pending.set(++nextId, callback);
+      return nextId;
+    });
+    vi.stubGlobal("cancelAnimationFrame", (id: number) => pending.delete(id));
+    const disconnect = vi.fn();
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        constructor(callback: () => void) {
+          notifyResize = callback;
+        }
+        observe() {}
+        disconnect = disconnect;
+      },
+    );
+    const canvas = attachCanvas();
+    let width = 0;
+    Object.defineProperty(canvas.parentElement!, "clientWidth", { get: () => width, configurable: true });
+    const onFrame = vi.fn();
+    const stop = startCombatantStatusEffectLoop({ canvas, kind, onFrame });
+    expect(pending.size).toBe(0);
+    expect(onFrame).not.toHaveBeenCalled();
+
+    width = 48;
+    notifyResize();
+    notifyResize();
+    expect(pending.size).toBe(1);
+    const advanceFrame = () => {
+      const [id, callback] = [...pending.entries()][0]!;
+      pending.delete(id);
+      callback(performance.now());
+    };
+    advanceFrame();
+    expect(onFrame).toHaveBeenCalledOnce();
+
+    width = 0;
+    notifyResize();
+    advanceFrame();
+    expect(pending.size).toBe(0);
+    expect(onFrame).toHaveBeenCalledOnce();
+    width = 48;
+    notifyResize();
+    advanceFrame();
+    expect(onFrame).toHaveBeenCalledTimes(2);
+
+    stop();
+    expect(disconnect).toHaveBeenCalledOnce();
+    notifyResize();
+    window.dispatchEvent(new Event("focus"));
+    expect(pending.size).toBe(0);
+  });
+
+  it("refreshes dimensions on focus before resuming without ResizeObserver", () => {
+    vi.stubGlobal("ResizeObserver", undefined);
+    vi.stubGlobal("devicePixelRatio", 1);
+    const raf = vi.fn(() => 1);
+    vi.stubGlobal("requestAnimationFrame", raf);
+    vi.stubGlobal("cancelAnimationFrame", vi.fn());
+    const canvas = attachCanvas();
+    let width = 0;
+    Object.defineProperty(canvas.parentElement!, "clientWidth", { get: () => width, configurable: true });
+    const stop = startCombatantStatusEffectLoop({ canvas, kind: "stun", onFrame: vi.fn() });
+    expect(raf).not.toHaveBeenCalled();
+    width = 48;
+    window.dispatchEvent(new Event("focus"));
+    window.dispatchEvent(new Event("focus"));
+    expect(canvas.width).toBe(48);
+    expect(raf).toHaveBeenCalledOnce();
+    stop();
+  });
 });

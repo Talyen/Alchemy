@@ -10,7 +10,23 @@ import type {
   MaterialInventory,
   ResearchId,
 } from "./types";
-import { dualMaterialCosts, materialCost, singleMaterialCosts } from "./costs";
+import type { MaterialId } from "./types";
+import { emptyInventory } from "./inventory";
+
+const HOMESTEAD_SINGLE_TIER_COSTS = [20, 30, 40] as const;
+const HOMESTEAD_DUAL_TIER_COSTS = [10, 15, 20] as const;
+
+export function materialCost(partial: Partial<MaterialInventory>): MaterialInventory {
+  return { ...emptyInventory(), ...partial };
+}
+
+export function singleMaterialCosts(material: MaterialId): MaterialInventory[] {
+  return HOMESTEAD_SINGLE_TIER_COSTS.map((amount) => materialCost({ [material]: amount }));
+}
+
+export function dualMaterialCosts(a: MaterialId, b: MaterialId): MaterialInventory[] {
+  return HOMESTEAD_DUAL_TIER_COSTS.map((amount) => materialCost({ [a]: amount, [b]: amount }));
+}
 
 export function stackingTiers(
   costs: readonly MaterialInventory[],
@@ -45,5 +61,3 @@ export function defineFarm(id: FarmId, title: string, tiers: HomesteadUpgradeTie
 export function defineResearch(id: ResearchId, title: string, tiers: HomesteadUpgradeTier[]): HomesteadResearch {
   return defineUpgradeItem(id, title, tiers);
 }
-
-export { dualMaterialCosts, materialCost, singleMaterialCosts };

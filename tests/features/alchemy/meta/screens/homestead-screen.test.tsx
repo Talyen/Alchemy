@@ -21,7 +21,7 @@ describe("HomesteadScreen", () => {
     plantedFarms: {} as any,
     completedResearch: {} as any,
     bondedCompanions: {} as any,
-    discoveredCardIds: ["summon-wolf"],
+    discoveredCardIds: ["wolf-companion"],
     onConstructBuilding: vi.fn(() => true),
     onPlantFarm: vi.fn(() => true),
     onCompleteResearch: vi.fn(() => true),

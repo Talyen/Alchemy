@@ -1,5 +1,6 @@
-import { clamp, lerp } from "@/lib/math";
+import { lerp } from "@/lib/math";
 import { pickRandomUnsafe } from "@/lib/rng";
+import { createCanvasLifecycle } from "./canvas-lifecycle";
 
 export type ParticleVariant = "embers" | "dust" | "hand_glow";
 
@@ -66,13 +67,6 @@ const MAX_PARTICLE_BACKING_SCALE = 1.5;
 const MAX_PARTICLE_BACKING_PIXELS = 3_000_000;
 const MIN_PARTICLE_BACKING_SCALE = 0.25;
 
-function resolveParticleBackingScale(width: number, height: number, requestedScale: number): number {
-  const safeWidth = Math.max(1, width);
-  const safeHeight = Math.max(1, height);
-  const pixelLimitedScale = Math.sqrt(MAX_PARTICLE_BACKING_PIXELS / (safeWidth * safeHeight));
-  return clamp(Math.min(requestedScale, pixelLimitedScale), MIN_PARTICLE_BACKING_SCALE, MAX_PARTICLE_BACKING_SCALE);
-}
-
 function spawnParticle(width: number, height: number, config: BackgroundParticleConfig): BackgroundParticle {
   const alpha = lerp(config.minAlpha, config.maxAlpha, Math.random());
   const rawColor = pickRandomUnsafe(config.colors);
@@ -138,16 +132,10 @@ export function startBackgroundParticles(
 
   const parent = canvas.parentElement;
   if (!parent) return () => {};
-  const activeCanvas: HTMLCanvasElement = canvas;
-  const activeCtx: CanvasRenderingContext2D = ctx;
-  const activeParent: HTMLElement = parent;
 
-  let running = true;
   let particles: BackgroundParticle[] = [];
-  let lastTime = performance.now();
   let logicalWidth = 0;
   let logicalHeight = 0;
-  let animFrameId: number | null = null;
   const config = CONFIGS[variant];
   const resolvedColors = (colors ?? config.colors).map((c) => c.replace("X", "1"));
   const mult = alphaMultiplier ?? 1;
@@ -159,106 +147,45 @@ export function startBackgroundParticles(
     particleCount: particleCount ?? config.particleCount,
   };
 
-  function resize() {
-    const w = activeParent.clientWidth;
-    const h = activeParent.clientHeight;
-    const cssWidth = `${w}px`;
-    const cssHeight = `${h}px`;
-    if (activeCanvas.style.width !== cssWidth) activeCanvas.style.width = cssWidth;
-    if (activeCanvas.style.height !== cssHeight) activeCanvas.style.height = cssHeight;
-    if (w <= 0 || h <= 0) {
-      if (activeCanvas.width !== 1) activeCanvas.width = 1;
-      if (activeCanvas.height !== 1) activeCanvas.height = 1;
-      logicalWidth = 0;
-      logicalHeight = 0;
-      return;
-    }
-
-    const backingScale = resolveParticleBackingScale(w, h, devicePixelRatio || 1);
-    const backingWidth = Math.max(1, Math.floor(w * backingScale));
-    const backingHeight = Math.max(1, Math.floor(h * backingScale));
-    if (activeCanvas.width !== backingWidth) activeCanvas.width = backingWidth;
-    if (activeCanvas.height !== backingHeight) activeCanvas.height = backingHeight;
-    activeCtx.setTransform(activeCanvas.width / w, 0, 0, activeCanvas.height / h, 0, 0);
-    if (particles.length === 0 || logicalWidth <= 0 || logicalHeight <= 0) {
-      particles = Array.from({ length: patchedConfig.particleCount }, () => spawnParticle(w, h, patchedConfig));
-    } else if (w !== logicalWidth || h !== logicalHeight) {
-      const scaleX = w / logicalWidth;
-      const scaleY = h / logicalHeight;
-      for (const p of particles) {
-        p.x *= scaleX;
-        p.y *= scaleY;
+  const lifecycle = createCanvasLifecycle({
+    canvas,
+    backingScale: {
+      scaleMultiplier: 1,
+      minScale: MIN_PARTICLE_BACKING_SCALE,
+      maxScale: MAX_PARTICLE_BACKING_SCALE,
+      maxPixels: MAX_PARTICLE_BACKING_PIXELS,
+    },
+    onResize: (w, h) => {
+      if (w <= 0 || h <= 0) {
+        logicalWidth = 0;
+        logicalHeight = 0;
+        return;
       }
-    }
-    logicalWidth = w;
-    logicalHeight = h;
-    scheduleFrame();
-  }
-
-  resize();
-
-  const ro = new ResizeObserver(resize);
-  ro.observe(activeParent);
-
-  function isPaused() {
-    return document.hidden || !document.hasFocus() || activeCanvas.width < 2 || activeCanvas.height < 2;
-  }
-
-  function scheduleFrame() {
-    if (!running || isPaused() || animFrameId !== null) return;
-    animFrameId = requestAnimationFrame(frame);
-  }
-
-  function frame(now: number) {
-    animFrameId = null;
-    if (!running || isPaused()) {
-      lastTime = now;
-      return;
-    }
-    const dt = Math.min((now - lastTime) / 16.67, 3);
-    lastTime = now;
-    const w = logicalWidth;
-    const h = logicalHeight;
-
-    activeCtx.clearRect(0, 0, w, h);
-
-    for (const p of particles) {
-      updateParticle(p, dt, now, w, h);
-      renderParticle(activeCtx, p);
-    }
-
-    scheduleFrame();
-  }
-
-  function resume() {
-    if (!running || animFrameId !== null) return;
-    lastTime = performance.now();
-    scheduleFrame();
-  }
-
-  function handleVisibilityChange() {
-    if (!document.hidden && running) resume();
-  }
-
-  function handleWindowBlur() {
-    if (animFrameId !== null) {
-      cancelAnimationFrame(animFrameId);
-      animFrameId = null;
-    }
-  }
-
-  document.addEventListener("visibilitychange", handleVisibilityChange);
-  window.addEventListener("blur", handleWindowBlur);
-  window.addEventListener("focus", resume);
-  scheduleFrame();
+      ctx.setTransform(canvas.width / w, 0, 0, canvas.height / h, 0, 0);
+      if (particles.length === 0 || logicalWidth <= 0 || logicalHeight <= 0) {
+        particles = Array.from({ length: patchedConfig.particleCount }, () => spawnParticle(w, h, patchedConfig));
+      } else if (w !== logicalWidth || h !== logicalHeight) {
+        const scaleX = w / logicalWidth;
+        const scaleY = h / logicalHeight;
+        for (const p of particles) {
+          p.x *= scaleX;
+          p.y *= scaleY;
+        }
+      }
+      logicalWidth = w;
+      logicalHeight = h;
+    },
+    onFrame: (now, dt, w, h) => {
+      ctx.clearRect(0, 0, w, h);
+      for (const p of particles) {
+        updateParticle(p, dt, now, w, h);
+        renderParticle(ctx, p);
+      }
+    },
+  });
 
   return () => {
-    running = false;
-    if (animFrameId !== null) cancelAnimationFrame(animFrameId);
-    document.removeEventListener("visibilitychange", handleVisibilityChange);
-    window.removeEventListener("blur", handleWindowBlur);
-    window.removeEventListener("focus", resume);
-    ro.disconnect();
+    lifecycle.dispose();
     onStop?.();
   };
 }

@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
 import { type BuildingId, type FarmId, type MaterialInventory, type ResearchId } from "@/lib/homestead/types";
-import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { PageLayout, ScreenHeaderRow, ScreenShell } from "../../shared/ui/layout-components";
 import { PaginationControls } from "../../shared/ui/navigation";
 import { FadeSlot } from "../../shared/ui/use-fade";
@@ -13,7 +12,16 @@ import {
   collectionGridGapXClass,
   collectionGridMinHeightClass,
 } from "../../shared/config";
-import { HOMESTEAD_CONFIG, type GoalItem, type Tab, MaterialsBar, HomesteadTabs, getItems } from "./homestead/helpers";
+import {
+  BUILDING_GOAL_ITEMS,
+  FARM_GOAL_ITEMS,
+  HOMESTEAD_CONFIG,
+  type GoalItem,
+  type Tab,
+  MaterialsBar,
+  HomesteadTabs,
+  RESEARCH_GOAL_ITEMS,
+} from "./homestead/helpers";
 import { CompanionCardNode } from "./homestead/companion-node";
 import { HomesteadUpgradeNode } from "./homestead/upgrade-node";
 
@@ -52,9 +60,6 @@ export function HomesteadScreen({
   const [companionPage, setCompanionPage] = useState(0);
   const [upgradePage, setUpgradePage] = useState(0);
 
-  const buildingsItems = useMemo(() => getItems("buildings", buildings), []);
-  const farmItems = useMemo(() => getItems("farm", farmPlots), []);
-  const researchItems = useMemo(() => getItems("research", researchUpgrades), []);
   const discoveredIds = useMemo(() => new Set(discoveredCardIds), [discoveredCardIds]);
 
   function handleAction(item: GoalItem) {
@@ -67,7 +72,8 @@ export function HomesteadScreen({
     if (success) playUISound("talentUnlock");
   }
 
-  const upgradeItems = tab === "buildings" ? buildingsItems : tab === "farm" ? farmItems : researchItems;
+  const upgradeItems =
+    tab === "buildings" ? BUILDING_GOAL_ITEMS : tab === "farm" ? FARM_GOAL_ITEMS : RESEARCH_GOAL_ITEMS;
   const upgradeLevels = tab === "buildings" ? constructedBuildings : tab === "farm" ? plantedFarms : completedResearch;
   const upgradePages = Math.max(1, Math.ceil(upgradeItems.length / HOMESTEAD_CONFIG.upgradePageSize));
   const safeUpgradePage = Math.min(upgradePage, upgradePages - 1);
@@ -90,11 +96,8 @@ export function HomesteadScreen({
     setUpgradePage(0);
   }
 
-  function handleBondCompanion(card: (typeof cardLibrary)[number]) {
-    const effect = card.effects.find(
-      (e): e is { kind: "summon-companion"; companionId: CompanionId } => e.kind === "summon-companion",
-    );
-    if (effect && onBondCompanion(effect.companionId)) {
+  function handleBondCompanion(companionId: CompanionId) {
+    if (onBondCompanion(companionId)) {
       playUISound("talentUnlock");
     }
   }

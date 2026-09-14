@@ -1,19 +1,21 @@
 import { type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { type MaterialInventory } from "@/lib/homestead/types";
-import { canAfford, emptyInventory } from "@/lib/homestead/inventory";
+import { emptyInventory } from "@/lib/homestead/inventory";
+import { canUpgradeTierItem, getNextTierCost } from "@/lib/homestead/upgrades";
 import { DetailPopup } from "../../../shared/ui/tooltips/card-popup";
 import { InteractiveArtTile, type PopupContext } from "../../../shared/ui/interactive-art-tile";
 import { StarRating } from "../../../shared/ui/star-rating";
+import { cardSurfaceClass, collectionGridBestiaryWidthClass, landscapeArtImageClass } from "../../../shared/config";
 import {
-  cardSurfaceClass,
-  collectionGridBestiaryWidthClass,
-  getInspectionKeywordShineColors,
-  landscapeArtImageClass,
-} from "../../../shared/config";
-import { HOMESTEAD_CONFIG, type GoalItem, formatMaterialCostSummary, getArt, renderTextWithMaterials } from "./helpers";
+  HOMESTEAD_CONFIG,
+  type GoalItem,
+  formatMaterialCostSummary,
+  getArt,
+  getHomesteadUpgradeShineColors,
+  renderTextWithMaterials,
+} from "./helpers";
 import { HomesteadTooltipCost, homesteadCompletedSurfaceClass, homesteadTileDimClass } from "./homestead-tile-node";
-import { extractKeywordIds } from "@/lib/keyword-text";
 
 const ZERO_COST: MaterialInventory = emptyInventory();
 
@@ -32,9 +34,9 @@ export function HomesteadUpgradeNode({
   const isTier0 = currentLevel === 0;
   const isCompleted = currentLevel >= maxTiers;
   const nextTierIndex = isCompleted ? maxTiers - 1 : Math.min(currentLevel, maxTiers - 1);
-  const tier = item.data.tiers[nextTierIndex];
-  const itemCost = tier?.cost ?? ZERO_COST;
-  const itemAffordable = !isCompleted && canAfford(materialInventory, itemCost);
+  const nextCost = getNextTierCost(item.data, currentLevel);
+  const itemCost = nextCost ?? item.data.tiers[nextTierIndex]?.cost ?? ZERO_COST;
+  const itemAffordable = canUpgradeTierItem(item.data, currentLevel, materialInventory);
 
   const detailTooltip = getUpgradeTooltip(
     item,
@@ -77,13 +79,6 @@ export function HomesteadUpgradeNode({
   );
 }
 
-function getHomesteadUpgradeShineColors(item: GoalItem): readonly string[] {
-  const text = item.data.tiers
-    .flatMap((tier) => [tier.benefitDescription, tier.nonCombatBenefitDescription ?? ""])
-    .join("\n");
-  return getInspectionKeywordShineColors(extractKeywordIds(text));
-}
-
 function getUpgradeTooltip(
   item: GoalItem,
   nextTierIndex: number,
@@ -100,7 +95,9 @@ function getUpgradeTooltip(
       if (currentTier) {
         if (currentTier.benefitDescription) {
           for (const line of currentTier.benefitDescription.split("\n")) {
-            nodes.push(<div key={`b-${nodes.length}`}>{renderTextWithMaterials(line)}</div>);
+            if (line.trim()) {
+              nodes.push(<div key={`b-${nodes.length}`}>{renderTextWithMaterials(line)}</div>);
+            }
           }
         }
         if (currentTier.nonCombatBenefitDescription) {

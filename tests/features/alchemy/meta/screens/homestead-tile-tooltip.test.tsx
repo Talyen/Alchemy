@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { HomesteadTooltipCost } from "@/features/alchemy/meta/screens/homestead/homestead-tile-node";
 import { HomesteadUpgradeNode } from "@/features/alchemy/meta/screens/homestead/upgrade-node";
-import { buildings } from "@/lib/homestead/data";
+import { buildings, researchUpgrades } from "@/lib/homestead/data";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import type { GoalItem } from "@/features/alchemy/meta/screens/homestead/helpers";
@@ -93,6 +93,29 @@ describe("HomesteadUpgradeNode hover tooltip", () => {
       expect(panelText()).toContain("Blacksmith");
       expect(panelText()).toContain("Max Level");
     });
+  });
+
+  it("does not duplicate non-combat descriptions in upgrade tooltips", async () => {
+    const leylineItem: GoalItem = { kind: "research", data: researchUpgrades.find((r) => r.id === "leyline-energy")! };
+    render(
+      <HomesteadUpgradeNode
+        item={leylineItem}
+        currentLevel={1}
+        materialInventory={{ ...emptyInventory(), gems: 100 }}
+        onAction={() => {}}
+      />,
+    );
+
+    const trigger = screen.getByRole("button", { name: /Leyline Energy/ }).parentElement as HTMLElement;
+    fireEvent.mouseEnter(trigger);
+
+    await waitFor(() => {
+      expect(document.querySelector(".hover-popup-panel[data-visible]")).toBeTruthy();
+    });
+
+    const text = panelText();
+    const occurrences = (text.match(/Gain Gems after each run/g) || []).length;
+    expect(occurrences).toBe(1);
   });
 });
 

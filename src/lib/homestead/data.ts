@@ -139,17 +139,20 @@ export const farmPlots = [
     {
       cost: materialCost({ gems: 20 }),
       effects: { endRunGemsPerRoom: 2 },
-      benefitDescription: "Gain Gems after each run",
+      benefitDescription: "",
+      nonCombatBenefitDescription: "Gain Gems after each run",
     },
     {
       cost: materialCost({ gems: 30 }),
       effects: { startMana: 1, endRunGemsPerRoom: 2 },
-      benefitDescription: "Start combat with 1 additional Mana\nGain Gems after each run",
+      benefitDescription: "Start combat with 1 additional Mana",
+      nonCombatBenefitDescription: "Gain Gems after each run",
     },
     {
       cost: materialCost({ gems: 40 }),
       effects: { runMaxManaBonus: 1, endRunGemsPerRoom: 2 },
-      benefitDescription: "Gain 1 Mana Crystal\nGain Gems after each run",
+      benefitDescription: "Gain 1 Mana Crystal",
+      nonCombatBenefitDescription: "Gain Gems after each run",
     },
   ]),
 ];
@@ -164,13 +167,13 @@ export const researchUpgrades = [
     {
       cost: materialCost({ gems: 30 }),
       effects: { startMana: 1, endRunGemsPerRoom: 1 },
-      benefitDescription: "Increases starting Mana by 2\nGain Gems after each run",
+      benefitDescription: "Increases starting Mana by 2",
       nonCombatBenefitDescription: "Gain Gems after each run",
     },
     {
       cost: materialCost({ gems: 40 }),
       effects: { startMana: 2, endRunGemsPerRoom: 1 },
-      benefitDescription: "Increases starting Mana by 4\nGain Gems after each run",
+      benefitDescription: "Increases starting Mana by 4",
       nonCombatBenefitDescription: "Gain Gems after each run",
     },
   ]),

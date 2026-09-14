@@ -9,6 +9,7 @@ import {
   COMBATANT_STATUS_STAR_COUNT,
 } from "@/lib/game-constants";
 import { clamp01 } from "@/lib/math";
+import { animationNoise } from "./animation-noise";
 
 export type CombatantStatusEffectKind = "stun" | "freeze";
 
@@ -16,24 +17,40 @@ export interface CombatantStatusPalette {
   primary: string;
   secondary: string;
   glow: string;
+  primaryRgb: readonly [number, number, number];
+  secondaryRgb: readonly [number, number, number];
+  glowRgb: readonly [number, number, number];
+}
+
+function parseHexRgb(hex: string): readonly [number, number, number] {
+  const normalized = hex.replace("#", "");
+  if (normalized.length === 6) {
+    return [
+      Number.parseInt(normalized.slice(0, 2), 16),
+      Number.parseInt(normalized.slice(2, 4), 16),
+      Number.parseInt(normalized.slice(4, 6), 16),
+    ];
+  }
+  return [255, 255, 255];
 }
 
 export function combatantStatusPalette(keyword: ActiveCcKeyword): CombatantStatusPalette {
   const shine = keywordDefinitions[keyword].shineColors;
+  const primary = shine[0] ?? "#fcd34d";
+  const secondary = shine[1] ?? "#d97706";
+  const glow = shine[2] ?? shine[0] ?? "#fcd34d";
   return {
-    primary: shine[0] ?? "#fcd34d",
-    secondary: shine[1] ?? "#d97706",
-    glow: shine[2] ?? shine[0] ?? "#fcd34d",
+    primary,
+    secondary,
+    glow,
+    primaryRgb: parseHexRgb(primary),
+    secondaryRgb: parseHexRgb(secondary),
+    glowRgb: parseHexRgb(glow),
   };
 }
 
 export function combatantStatusProgress(elapsedMs: number): number {
   return elapsedMs / COMBATANT_STATUS_EFFECT_PHASE_MS;
-}
-
-function combatantCardEffectNoise(index: number, salt: number): number {
-  const n = Math.sin(index * 12989 + salt * 78433) * 43758.5453;
-  return n - Math.floor(n);
 }
 
 export function combatantStatusWobbleDegrees(kind: CombatantStatusEffectKind, progress: number): number {
@@ -43,13 +60,25 @@ export function combatantStatusWobbleDegrees(kind: CombatantStatusEffectKind, pr
   return Math.sin(progress * Math.PI * 2) * 2.2 * appear;
 }
 
+function withAlpha(color: readonly [number, number, number] | string, alpha: number): string {
+  if (typeof color !== "string") {
+    return `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${alpha})`;
+  }
+  const normalized = color.replace("#", "");
+  if (normalized.length !== 6) return color;
+  const r = Number.parseInt(normalized.slice(0, 2), 16);
+  const g = Number.parseInt(normalized.slice(2, 4), 16);
+  const b = Number.parseInt(normalized.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 function drawStar(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
   size: number,
-  primary: string,
-  secondary: string,
+  primary: readonly [number, number, number],
+  secondary: readonly [number, number, number],
   opacity: number,
 ): void {
   const spikes = 4;
@@ -76,8 +105,8 @@ function drawSnowflake(
   centerY: number,
   radius: number,
   rotation: number,
-  primary: string,
-  secondary: string,
+  primary: readonly [number, number, number],
+  secondary: readonly [number, number, number],
   opacity: number,
 ): void {
   const petals = 6;
@@ -111,15 +140,6 @@ function drawSnowflake(
   }
 }
 
-function withAlpha(hex: string, alpha: number): string {
-  const normalized = hex.replace("#", "");
-  if (normalized.length !== 6) return hex;
-  const r = Number.parseInt(normalized.slice(0, 2), 16);
-  const g = Number.parseInt(normalized.slice(2, 4), 16);
-  const b = Number.parseInt(normalized.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
 function drawSwirlingStars(
   ctx: CanvasRenderingContext2D,
   width: number,
@@ -137,14 +157,14 @@ function drawSwirlingStars(
   const angleBase = progress * Math.PI * 2;
 
   for (let index = 0; index < COMBATANT_STATUS_STAR_COUNT; index++) {
-    const noise = combatantCardEffectNoise(index, 17);
+    const noise = animationNoise(index, 17);
     const angle = angleBase + (index / COMBATANT_STATUS_STAR_COUNT) * Math.PI * 2 + noise * 0.35;
     const radial = radius * (0.85 + noise * 0.3);
     const x = centerX + Math.cos(angle) * radial;
     const y = centerY + Math.sin(angle) * radial;
     const starSize = 4 + noise * 5;
     const twinkle = 0.45 + 0.55 * Math.abs(Math.sin(progress * Math.PI * 4 + noise * Math.PI * 2));
-    drawStar(ctx, x, y, starSize, palette.primary, palette.secondary, twinkle * appear);
+    drawStar(ctx, x, y, starSize, palette.primaryRgb, palette.secondaryRgb, twinkle * appear);
   }
 }
 
@@ -171,21 +191,21 @@ function drawIceCrystals(
     height / 2,
     Math.max(edgeRadius, clearRadius + 1),
   );
-  gradient.addColorStop(0, withAlpha(palette.glow, 0));
-  gradient.addColorStop(0.45, withAlpha(palette.glow, 0.06 * veilOpacity));
-  gradient.addColorStop(0.75, withAlpha(palette.primary, 0.18 * veilOpacity));
-  gradient.addColorStop(1, withAlpha(palette.secondary, 0.32 * veilOpacity));
+  gradient.addColorStop(0, withAlpha(palette.glowRgb, 0));
+  gradient.addColorStop(0.45, withAlpha(palette.glowRgb, 0.06 * veilOpacity));
+  gradient.addColorStop(0.75, withAlpha(palette.primaryRgb, 0.18 * veilOpacity));
+  gradient.addColorStop(1, withAlpha(palette.secondaryRgb, 0.32 * veilOpacity));
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
 
   for (let index = 0; index < COMBATANT_STATUS_FLAKE_COUNT; index++) {
-    const along = combatantCardEffectNoise(index, 41);
+    const along = animationNoise(index, 41);
     const edge = index % 4;
     const delay = (index / COMBATANT_STATUS_FLAKE_COUNT) * 0.72;
     const flakeAppear = clamp01((encroach - delay) / 0.28);
     if (flakeAppear <= 0.02) continue;
 
-    const insetNoise = combatantCardEffectNoise(index, 47);
+    const insetNoise = animationNoise(index, 47);
     const inset = 4 + insetNoise * (6 + crackDensity * 10);
     let centerX: number;
     let centerY: number;
@@ -218,8 +238,8 @@ function drawIceCrystals(
       centerY,
       flakeRadius,
       along * Math.PI + insetNoise + progress * 0.15,
-      palette.primary,
-      palette.secondary,
+      palette.primaryRgb,
+      palette.secondaryRgb,
       opacity,
     );
   }
@@ -249,6 +269,6 @@ export function drawCombatantStatusEffectStatic(
   palette: CombatantStatusPalette,
 ): void {
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = withAlpha(palette.primary, kind === "stun" ? 0.12 : 0.18);
+  ctx.fillStyle = withAlpha(palette.primaryRgb, kind === "stun" ? 0.12 : 0.18);
   ctx.fillRect(0, 0, width, height);
 }

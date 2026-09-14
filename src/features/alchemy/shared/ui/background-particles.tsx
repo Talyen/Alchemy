@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { shouldReduceMotion } from "@/lib/animation/animation-prefs";
 import { startBackgroundParticles } from "@/lib/animation/background-particles";
 import type { ParticleVariant } from "@/lib/animation/background-particles";
 
@@ -16,8 +17,7 @@ export function BackgroundParticles({
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (mql.matches) return;
+    if (shouldReduceMotion()) return;
 
     const stop = startBackgroundParticles(canvasRef, variant, colors, alphaMultiplier, particleCount);
 

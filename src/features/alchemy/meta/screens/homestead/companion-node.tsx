@@ -70,7 +70,7 @@ export function CompanionCardNode({
   discovered: boolean;
   bondedCompanions: Record<CompanionId, number>;
   materialInventory: MaterialInventory;
-  onBond: (card: BattleCard) => void;
+  onBond: (companionId: CompanionId) => void;
 }) {
   const companionEffect = card.effects.find(
     (e): e is { kind: "summon-companion"; companionId: CompanionId } => e.kind === "summon-companion",
@@ -118,9 +118,9 @@ export function CompanionCardNode({
       shineColor={getInspectionKeywordShineColors(getCardKeywords(card))}
       {...(interactive ? { ariaDisabled: !bondAffordable } : {})}
       onClick={
-        interactive && bondAffordable
+        interactive && bondAffordable && companionId
           ? () => {
-              if (discovered && !isComplete) onBond(card);
+              if (discovered && !isComplete) onBond(companionId);
             }
           : undefined
       }

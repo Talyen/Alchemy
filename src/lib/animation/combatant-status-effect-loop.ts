@@ -1,4 +1,4 @@
-import { isAnimationDisabled } from "./animation-prefs";
+import { shouldReduceMotion } from "./animation-prefs";
 import {
   combatantStatusPalette,
   combatantStatusProgress,
@@ -26,9 +26,6 @@ export function startCombatantStatusEffectLoop({
   if (!ctx) return () => {};
 
   const palette = combatantStatusPalette(kind);
-  const reducedMotion =
-    typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const animationDisabled = isAnimationDisabled();
   let running = true;
   let rafId: number | null = null;
   const startTime = performance.now();
@@ -57,7 +54,7 @@ export function startCombatantStatusEffectLoop({
     onFrame({ progress: 0, wobbleDegrees: 0 });
   };
 
-  if (reducedMotion || animationDisabled) {
+  if (shouldReduceMotion()) {
     paintStatic();
     return () => {
       running = false;
@@ -66,15 +63,44 @@ export function startCombatantStatusEffectLoop({
 
   let observer: ResizeObserver | null = null;
 
+  const isPaused = () => {
+    if (!running) return true;
+    if (typeof document !== "undefined" && document.hidden) return true;
+    return canvas.width < 2 || canvas.height < 2;
+  };
+
+  const scheduleFrame = () => {
+    if (isPaused() || rafId !== null) return;
+    rafId = requestAnimationFrame(frame);
+  };
+
   const frame = (now: number) => {
     rafId = null;
     if (!running) return;
+    if (isPaused()) return;
 
     if (!observer || Math.max(window.devicePixelRatio || 1, 1) !== lastPixelRatio) resize();
     const progress = combatantStatusProgress(now - startTime);
     drawCombatantStatusEffect(ctx, lastWidth, lastHeight, kind, progress, palette);
     onFrame({ progress, wobbleDegrees: combatantStatusWobbleDegrees(kind, progress) });
-    rafId = requestAnimationFrame(frame);
+    scheduleFrame();
+  };
+
+  const resume = () => {
+    if (!running) return;
+    resize();
+    scheduleFrame();
+  };
+
+  const handleVisibilityChange = () => {
+    if (typeof document !== "undefined" && !document.hidden && running) resume();
+  };
+
+  const handleWindowBlur = () => {
+    if (rafId !== null) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
   };
 
   resize();
@@ -82,8 +108,17 @@ export function startCombatantStatusEffectLoop({
     observer = new ResizeObserver(() => {
       if (!running) return;
       resize();
+      scheduleFrame();
     });
     observer.observe(canvas.parentElement);
+  }
+
+  if (typeof document !== "undefined") {
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+  }
+  if (typeof window !== "undefined") {
+    window.addEventListener("blur", handleWindowBlur);
+    window.addEventListener("focus", resume);
   }
 
   frame(startTime);
@@ -92,5 +127,12 @@ export function startCombatantStatusEffectLoop({
     running = false;
     if (rafId !== null) cancelAnimationFrame(rafId);
     observer?.disconnect();
+    if (typeof document !== "undefined") {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    }
+    if (typeof window !== "undefined") {
+      window.removeEventListener("blur", handleWindowBlur);
+      window.removeEventListener("focus", resume);
+    }
   };
 }

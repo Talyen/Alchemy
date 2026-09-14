@@ -1,7 +1,7 @@
 import { MATERIAL_IDS, type MaterialId, type MaterialInventory } from "./types";
 import type { HomesteadEffectManifest } from "./types";
 import { emptyInventory, materialAmount } from "./inventory";
-import { materialCost } from "./costs";
+import { materialCost } from "./data-builders";
 import { HOMESTEAD_LOOT_MULTIPLIERS } from "../game-constants";
 
 interface MaterialLootEntry {

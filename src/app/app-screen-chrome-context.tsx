@@ -17,6 +17,7 @@ import {
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/lib/homestead/companions";
 import { canAfford } from "@/lib/homestead/inventory";
+import { canUpgradeTierItem } from "@/lib/homestead/upgrades";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { useProfileDiscoverySlice } from "@/features/alchemy/shared/stores/profile-store";
 import {
@@ -67,29 +68,15 @@ export function hasAffordableHomesteadUpgrade(input: {
     discoveredCardIds,
   } = input;
 
-  const affordableBuilding = buildings.some((b) => {
-    const currentLevel = constructedBuildings[b.id] ?? 0;
-    if (currentLevel >= b.tiers.length) return false;
-    const tier = b.tiers[currentLevel];
-    if (!tier) return false;
-    return canAfford(materialInventory, tier.cost);
-  });
+  const affordableBuilding = buildings.some((b) =>
+    canUpgradeTierItem(b, constructedBuildings[b.id] ?? 0, materialInventory),
+  );
 
-  const affordableFarm = farmPlots.some((f) => {
-    const currentLevel = plantedFarms[f.id] ?? 0;
-    if (currentLevel >= f.tiers.length) return false;
-    const tier = f.tiers[currentLevel];
-    if (!tier) return false;
-    return canAfford(materialInventory, tier.cost);
-  });
+  const affordableFarm = farmPlots.some((f) => canUpgradeTierItem(f, plantedFarms[f.id] ?? 0, materialInventory));
 
-  const affordableResearch = researchUpgrades.some((r) => {
-    const currentLevel = completedResearch[r.id] ?? 0;
-    if (currentLevel >= r.tiers.length) return false;
-    const tier = r.tiers[currentLevel];
-    if (!tier) return false;
-    return canAfford(materialInventory, tier.cost);
-  });
+  const affordableResearch = researchUpgrades.some((r) =>
+    canUpgradeTierItem(r, completedResearch[r.id] ?? 0, materialInventory),
+  );
 
   const discoveredSet = new Set(discoveredCardIds);
   const affordableBond = COMPANION_CARDS.some(({ id, companionId }) => {
@@ -97,8 +84,7 @@ export function hasAffordableHomesteadUpgrade(input: {
     const currentLevel = bondedCompanions[companionId] ?? 0;
     if (currentLevel >= COMPANION_MAX_TIER) return false;
     const bondTier = COMPANION_BOND_TIERS[currentLevel];
-    if (!bondTier) return false;
-    return canAfford(materialInventory, bondTier);
+    return bondTier !== undefined && canAfford(materialInventory, bondTier);
   });
 
   return affordableBuilding || affordableFarm || affordableResearch || affordableBond;

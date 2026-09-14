@@ -7,7 +7,7 @@ import {
   type PlasmaColorPair,
 } from "@/features/alchemy/shared/config/plasma-palettes";
 import type { KeywordId } from "@/features/alchemy/shared/config/game-data-catalog";
-import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
+import { shouldReduceMotion } from "@/lib/animation/animation-prefs";
 import { startKeywordPlasma, type PlasmaColorState } from "@/lib/animation/keyword-plasma";
 
 const COLOR_LERP_MS = 400;
@@ -31,9 +31,7 @@ export function KeywordPlasmaBackground({
 }) {
   const [webglAvailable, setWebglAvailable] = useState(true);
   const visible = intensity > 0;
-  const motionAllowed =
-    !isAnimationDisabled() &&
-    (typeof window.matchMedia !== "function" || !window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  const motionAllowed = !shouldReduceMotion();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const colorPair =
     explicitColorPair !== undefined ? explicitColorPair : keywordIds ? getPlasmaColorPair(keywordIds) : null;
@@ -73,15 +71,24 @@ export function KeywordPlasmaBackground({
     const start = performance.now();
     const fromPrimary = parsePlasmaHexColor(from.primary);
     const fromSecondary = parsePlasmaHexColor(from.secondary);
+    let cachedTarget: PlasmaColorPair | null = null;
+    let toPrimary = parsePlasmaHexColor(currentTarget.primary);
+    let toSecondary = parsePlasmaHexColor(currentTarget.secondary);
 
     function tick(now: number) {
       const activeTarget = targetRef.current;
       if (!activeTarget) return;
 
+      if (cachedTarget !== activeTarget) {
+        cachedTarget = activeTarget;
+        toPrimary = parsePlasmaHexColor(activeTarget.primary);
+        toSecondary = parsePlasmaHexColor(activeTarget.secondary);
+      }
+
       const t = Math.min(1, (now - start) / COLOR_LERP_MS);
       colorsRef.current = {
-        primary: lerpParsedPlasmaColor(fromPrimary, parsePlasmaHexColor(activeTarget.primary), t),
-        secondary: lerpParsedPlasmaColor(fromSecondary, parsePlasmaHexColor(activeTarget.secondary), t),
+        primary: lerpParsedPlasmaColor(fromPrimary, toPrimary, t),
+        secondary: lerpParsedPlasmaColor(fromSecondary, toSecondary, t),
       };
 
       if (t < 1) {

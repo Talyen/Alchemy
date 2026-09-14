@@ -12,6 +12,7 @@ import {
 } from "@/lib/homestead/loot";
 import { enemyBestiary } from "@/lib/game-data/compendium/enemies";
 import { createEmptyTalentEffectManifest } from "@/lib/game-data";
+import { canUpgradeTierItem, getNextTierCost } from "@/lib/homestead/upgrades";
 
 describe("emptyInventory", () => {
   it("returns all materials at 0", () => {
@@ -452,5 +453,39 @@ describe("homestead content integrity", () => {
         expect(tier.effects?.endRunGemsPerRoom).toBeGreaterThan(0);
       }
     }
+  });
+
+  it("keeps combat and non-combat benefit descriptions separate for leyline-energy and crystal-garden", () => {
+    const leyline = researchUpgrades.find((r) => r.id === "leyline-energy")!;
+    expect(leyline.tiers[1]?.benefitDescription).toBe("Increases starting Mana by 2");
+    expect(leyline.tiers[1]?.nonCombatBenefitDescription).toBe("Gain Gems after each run");
+    expect(leyline.tiers[2]?.benefitDescription).toBe("Increases starting Mana by 4");
+    expect(leyline.tiers[2]?.nonCombatBenefitDescription).toBe("Gain Gems after each run");
+
+    const crystalGarden = farmPlots.find((f) => f.id === "crystal-garden")!;
+    for (const tier of crystalGarden.tiers) {
+      expect(tier.nonCombatBenefitDescription).toBe("Gain Gems after each run");
+      expect(tier.benefitDescription).not.toContain("Gain Gems after each run");
+    }
+  });
+});
+
+describe("upgrade tier helpers", () => {
+  const building = buildings[0]!;
+
+  it("getNextTierCost returns cost of next level and null when maxed", () => {
+    expect(getNextTierCost(building, 0)).toEqual(building.tiers[0]!.cost);
+    expect(getNextTierCost(building, 1)).toEqual(building.tiers[1]!.cost);
+    expect(getNextTierCost(building, building.tiers.length)).toBeNull();
+    expect(getNextTierCost(undefined, 0)).toBeNull();
+    expect(getNextTierCost(building, -1)).toBeNull();
+  });
+
+  it("canUpgradeTierItem checks affordability and level bounds", () => {
+    const cost = building.tiers[0]!.cost;
+    expect(canUpgradeTierItem(building, 0, cost)).toBe(true);
+    expect(canUpgradeTierItem(building, 0, emptyInventory())).toBe(false);
+    expect(canUpgradeTierItem(building, building.tiers.length, cost)).toBe(false);
+    expect(canUpgradeTierItem(undefined, 0, cost)).toBe(false);
   });
 });

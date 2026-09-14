@@ -25,6 +25,14 @@ export class TimerGroup {
     };
   }
 
+  setGameTimeout(fn: () => void, ms: number): () => void {
+    return this.setTimeout(fn, resolveGameDelay(ms));
+  }
+
+  get size(): number {
+    return this.ids.size;
+  }
+
   clearAll() {
     for (const id of this.ids) {
       clearTimeout(id);
