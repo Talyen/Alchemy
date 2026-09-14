@@ -16,7 +16,7 @@ skip mode; keep that validation at each entry point.
 | Asset CLI and preparation                  | `assets.mjs` → `prepare-assets.mjs`                                                           |
 | Art, sound, and music optimization         | `optimize-pipelines.mjs` → `optimize-assets.mjs`, `optimize-sounds.mjs`, `optimize-music.mjs` |
 | Generated art barrels and version metadata | `sync-generated.mjs` → `sync-art-barrels.mjs`, `sync-version-metadata.mjs`                    |
-| Fast generated-output validation           | `check-generated-fast.mjs`                                                                    |
+| Fast generated-output validation           | `sync-generated.mjs --check`                                                                  |
 | Read-only prepared-output freshness        | `check-prepared-assets.mjs`                                                                   |
 
 Shared: `lib/asset-constants.mjs` (tuning), `lib/asset-manifest-cache.mjs` (freshness),
@@ -96,17 +96,17 @@ Input identity covers tracked and untracked nonignored files, root environment f
 
 ## Release / changelog (three stages, shared `lib/patch-notes-core.mjs` + `lib/git-release.mjs`)
 
-| Output or operation                                          | Implementation owner                                                             |
-| ------------------------------------------------------------ | -------------------------------------------------------------------------------- |
-| Developer Unreleased history                                 | `sync-changelog.mjs`                                                             |
-| Versioned changelog section                                  | `release-changelog.mjs`                                                          |
-| Player notes from commits and trailers                       | `generate-patch-notes.mjs`                                                       |
-| Release orchestration (`release`, `release:hotfix --hotfix`) | `release.mjs` → `lib/release-runner.mjs`                                         |
-| Build version stamping                                       | `sync-version-metadata.mjs` (sequenced by `release-runner.mjs` post-bump)        |
-| Release artifact validation                                  | `verify-release.mjs` → `lib/release-checks.mjs`                                  |
-| Tag-vs-package check                                         | `verify-release-version.mjs` (also run locally pre-push by `release-runner.mjs`) |
-| Steam upload                                                 | `steam-upload.mjs`                                                               |
-| Verified build                                               | `build-verified.mjs`                                                             |
+| Output or operation                                          | Implementation owner                                                                    |
+| ------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| Developer Unreleased history                                 | `sync-changelog.mjs`                                                                    |
+| Versioned changelog section                                  | `release-changelog.mjs`                                                                 |
+| Player notes from commits and trailers                       | `generate-patch-notes.mjs`                                                              |
+| Release orchestration (`release`, `release:hotfix --hotfix`) | `release.mjs` → `lib/release-runner.mjs`                                                |
+| Build version stamping                                       | `sync-version-metadata.mjs` (sequenced by `release-runner.mjs` post-bump)               |
+| Release artifact validation                                  | `verify-release.mjs` → `lib/release-checks.mjs`                                         |
+| Tag-vs-package check                                         | `verify-release.mjs --skip-package` (also run locally pre-push by `release-runner.mjs`) |
+| Steam upload                                                 | `steam-upload.mjs`                                                                      |
+| Verified build                                               | `build-verified.mjs`                                                                    |
 
 [RELEASE](../docs/RELEASE.md#changelog-release-time-only) owns timing, note policy,
 and the release decision flow.

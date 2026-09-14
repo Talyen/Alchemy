@@ -15,6 +15,10 @@ export function fadePhaseClass(phase: FadePhase): string | undefined {
 }
 
 export function useHeldWhile<T>(hold: boolean, value: T): T {
+  // Callers must memoize composite inputs and narrow data props (e.g. hold
+  // wish options + scaling context, not a full battle snapshot): the held
+  // reference retains the value through the exit fade. `children` is the
+  // blessed exception — element trees are already memoized by React.
   const heldRef = useRef(value);
   if (hold) {
     // eslint-disable-next-line react-hooks/refs -- snapshot live value for exit phase before hold drops

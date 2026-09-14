@@ -2,12 +2,11 @@ import { type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 import { BATTLE_CONFIG, BLACKFLETCH_EXECUTE_HEALTH_PERCENT, PERCENT_DENOMINATOR } from "../game-constants";
 import { halveRounded } from "./amount-helpers";
 import { applyLuckyCloverGold, applyNatureManaRefund } from "./bonus-effects";
-import { mergeCombatText, payKillPayouts } from "./combat-text";
+import { applyHitEpilogue, mergeCombatText } from "./combat-text";
 import { computeReflectedHolyDamageToEnemy, forgeAppliesToDamageType, REFLECTED_HOLY_CARD } from "./damage-calc";
 import { applyDamageBlock, applyHolyLifesteal, applyHolyTithe } from "./damage-rider-leech";
 import { applyDamageStatuses } from "./damage-status-riders";
 import { detonateEnemyStatuses } from "./dot-resolve";
-import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 import { paceCombatDamage } from "./fight-pacing";
 import {
   applyBrassCenser,
@@ -141,8 +140,7 @@ export function reflectBlockedAttackAsHoly(
     hit.previousHealth,
   );
   nextState = applyHolyDamageRiders(nextState, card, remainingDamage, combatTexts, hit.previousHealth);
-  nextState = processEncounterTraitHealthThreshold(hit.previousHealth, nextState, combatTexts);
-  return payKillPayouts(nextState, hit.enemyWasAlive, combatTexts, preDamageStatuses);
+  return applyHitEpilogue(nextState, hit.previousHealth, hit.enemyWasAlive, combatTexts, preDamageStatuses);
 }
 
 function consumeForgeAfterDamage(
@@ -190,8 +188,7 @@ export function applyAttackPurgeRider(state: BattleState, combatTexts: CombatTex
   if (holyDamage > 0) {
     mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "holy", amount: holyDamage });
     const hit = damageEnemyHealth(nextState, holyDamage);
-    nextState = processEncounterTraitHealthThreshold(hit.previousHealth, hit.state, combatTexts);
-    nextState = payKillPayouts(nextState, hit.enemyWasAlive, combatTexts);
+    nextState = applyHitEpilogue(hit.state, hit.previousHealth, hit.enemyWasAlive, combatTexts);
     nextState = applyBrassCenser(nextState, holyDamage, combatTexts, hit.previousHealth);
   }
   return nextState;
@@ -370,9 +367,7 @@ export function applyDamageRiders(
     mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: effect.damageType, amount: modifiedDamage });
   }
 
-  nextState = processEncounterTraitHealthThreshold(previousHealth, nextState, combatTexts);
-
-  nextState = payKillPayouts(nextState, hit.enemyWasAlive, combatTexts);
+  nextState = applyHitEpilogue(nextState, previousHealth, hit.enemyWasAlive, combatTexts);
   if (
     modifiedDamage > 0 &&
     enemyWasFrozen &&

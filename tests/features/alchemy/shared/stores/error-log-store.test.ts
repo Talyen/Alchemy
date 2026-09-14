@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { parsePersistedErrorLog, useErrorLogStore } from "@/features/alchemy/shared/stores/error-log-store";
+import {
+  flushPersistedErrorLog,
+  parsePersistedErrorLog,
+  useErrorLogStore,
+} from "@/features/alchemy/shared/stores/error-log-store";
 
 const STORAGE_KEY = "alchemy-error-log";
 
@@ -7,6 +11,8 @@ describe("useErrorLogStore", () => {
   beforeEach(() => {
     localStorage.clear();
     useErrorLogStore.setState({ errors: [] });
+    flushPersistedErrorLog();
+    localStorage.clear();
   });
 
   it("pushError appends an unreviewed entry with a unique id", () => {
@@ -41,12 +47,14 @@ describe("useErrorLogStore", () => {
   it("clearErrors empties state and localStorage", () => {
     useErrorLogStore.getState().pushError({ message: "boom", source: "storage" });
     useErrorLogStore.getState().clearErrors();
+    flushPersistedErrorLog();
     expect(useErrorLogStore.getState().errors).toEqual([]);
     expect(localStorage.getItem(STORAGE_KEY)).toBe("[]");
   });
 
   it("persists errors to localStorage", () => {
     useErrorLogStore.getState().pushError({ message: "persisted", source: "storage" });
+    flushPersistedErrorLog();
     const raw = localStorage.getItem(STORAGE_KEY);
     expect(raw).toContain("persisted");
     const parsed = JSON.parse(raw ?? "[]") as Array<{ message: string }>;

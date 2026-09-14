@@ -139,7 +139,13 @@ export function evaluateSaveCandidates(candidates: string[]): SaveLoadState {
     }
 
     // Reject disposable formats before field defaults can stamp them as current.
-    if (getRawSaveSchemaVersion(parsed) < LAUNCH_SAVE_SCHEMA_VERSION) continue;
+    const detectedVersion = getRawSaveSchemaVersion(parsed);
+    if (detectedVersion < LAUNCH_SAVE_SCHEMA_VERSION) {
+      logStorageFailure(
+        `Save candidate rejected: schema version ${detectedVersion} predates launch version ${LAUNCH_SAVE_SCHEMA_VERSION}, trying next candidate`,
+      );
+      continue;
+    }
     const result = safeParseWithErrors(SaveDataSchema, parsed);
     if (!result.success) {
       logStorageFailure("Save candidate failed validation, trying next candidate", result.error);

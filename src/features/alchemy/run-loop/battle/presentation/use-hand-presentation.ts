@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, type RefObject } from "react";
 import type { BattleSnapshot } from "@/lib/battle";
 import { useBattlePresentationStore, type BattlePresentationPort } from "../battle-presentation-store";
-import { getPlayableHandCardKeysExcludingHidden } from "../playable-hand";
+import { getPlayableHandCardKeys, getPlayableHandCardKeysExcludingHidden } from "../playable-hand";
 
 export function useHiddenHandCardKeys() {
   return useBattlePresentationStore((s) => s.hiddenHandCardKeys);
@@ -11,12 +11,79 @@ export function useCardTransferInProgress() {
   return useBattlePresentationStore((s) => s.cardTransferInProgress);
 }
 
+// Playability depends on hand, mana, turn/CC state, and cost-effect slices. Depending on
+// the whole snapshot would recompute on every committed tick (enemy HP, block, DoT ticks).
+// Immer structural sharing keeps untouched slices referentially stable, so listing the
+// inputs explicitly skips recompute when unrelated battle fields change.
+export function usePlayableHandCardKeys(playabilityState: BattleSnapshot) {
+  const {
+    hand,
+    mana,
+    turnPhase,
+    playerCC,
+    playerStatuses,
+    playerHealth,
+    deathsDoorActive,
+    enemyHealth,
+    wishOptions,
+    flags,
+    talentEffects,
+    trinketEffects,
+    gearEffects,
+    uniqueGear,
+    encounterBenefits,
+  } = playabilityState;
+  return useMemo(
+    () =>
+      getPlayableHandCardKeys({
+        ...playabilityState,
+        hand,
+        mana,
+        turnPhase,
+        playerCC,
+        playerStatuses,
+        playerHealth,
+        deathsDoorActive,
+        enemyHealth,
+        wishOptions,
+        flags,
+        talentEffects,
+        trinketEffects,
+        gearEffects,
+        uniqueGear,
+        encounterBenefits,
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- playabilityState spread is reconstructed from the listed slices above; listing the whole snapshot would defeat the memo.
+    [
+      hand,
+      mana,
+      turnPhase,
+      playerCC,
+      playerStatuses,
+      playerHealth,
+      deathsDoorActive,
+      enemyHealth,
+      wishOptions,
+      flags,
+      talentEffects,
+      trinketEffects,
+      gearEffects,
+      uniqueGear,
+      encounterBenefits,
+    ],
+  );
+}
+
 export function useInteractiveHandCardKeys(battleState: BattleSnapshot, playableKeys?: Set<string>) {
   const hiddenHandCardKeys = useHiddenHandCardKeys();
-  return useMemo(
-    () => getPlayableHandCardKeysExcludingHidden(battleState, hiddenHandCardKeys, playableKeys),
-    [battleState, hiddenHandCardKeys, playableKeys],
-  );
+  return useMemo(() => {
+    if (playableKeys) {
+      const next = new Set(playableKeys);
+      for (const hiddenKey of hiddenHandCardKeys) next.delete(hiddenKey);
+      return next;
+    }
+    return getPlayableHandCardKeysExcludingHidden(battleState, hiddenHandCardKeys, playableKeys);
+  }, [battleState, hiddenHandCardKeys, playableKeys]);
 }
 
 export function useCardAnimationInProgress() {

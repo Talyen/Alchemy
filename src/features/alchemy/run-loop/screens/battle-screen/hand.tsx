@@ -1,4 +1,4 @@
-import { type MouseEvent, type RefObject, memo, useLayoutEffect, useMemo, useRef } from "react";
+import { type MouseEvent, type RefObject, memo, useLayoutEffect, useRef } from "react";
 
 import {
   HAND_CARD_BASE_Z_INDEX,
@@ -26,9 +26,13 @@ import type { BattleActionsProps, BattleRefsProps, RequiredBattleViewProps } fro
 import { useHandPointer } from "./use-hand-pointer";
 import { useBattleDescriptionContext } from "./use-battle-description-context";
 import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
-import { getHandCardKey, getPlayableHandCardKeys } from "../../battle/playable-hand";
+import { getHandCardKey } from "../../battle/playable-hand";
 import { getElementCenterX, playHandSlotReflow } from "./hand-slot-reflow";
-import { useHiddenHandCardKeys, useInteractiveHandCardKeys } from "../../battle/presentation/use-hand-presentation";
+import {
+  useHiddenHandCardKeys,
+  useInteractiveHandCardKeys,
+  usePlayableHandCardKeys,
+} from "../../battle/presentation/use-hand-presentation";
 import type { BattleSnapshot } from "@/lib/battle";
 import { getActiveCcKeyword, type ActiveCcKeyword } from "../../../shared/utils/cc-presentation";
 
@@ -154,7 +158,7 @@ export function BattleHand({
   const { handCardRefs } = refs;
   const { onCardClick } = actions;
   const hiddenHandCardKeys = useHiddenHandCardKeys();
-  const visuallyPlayableHandCardKeys = useMemo(() => getPlayableHandCardKeys(playabilityState), [playabilityState]);
+  const visuallyPlayableHandCardKeys = usePlayableHandCardKeys(playabilityState);
   const interactiveHandCardKeys = useInteractiveHandCardKeys(playabilityState, visuallyPlayableHandCardKeys);
   const pointer = useHandPointer(battleState.hand, hiddenHandCardKeys, handCardRefs);
   const handWidthClass = handCardWidthClass;

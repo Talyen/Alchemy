@@ -3,8 +3,8 @@ import { addEnemyStatus, reduceEnemyArmor, setFlag, type BattleState, type Comba
 import {
   addGoldWithCombatText,
   addPlayerStatusWithCombatText,
+  applyHitEpilogue,
   gainManaWithCombatText,
-  payKillPayouts,
 } from "./combat-text";
 import { applyCrowdControlTriggerBonuses } from "./bonus-effects";
 import { tryTriggerEnemyCc } from "./status-cc";
@@ -22,7 +22,6 @@ import { applyGearCcPhysicalDamage, dealEnemyScaledDamage } from "./gear-effects
 import { applyScaledLeechHealing, computeLeechHeal } from "./damage-rider-leech";
 import { detonateEnemyStatuses } from "./dot-resolve";
 import { halveRounded } from "./amount-helpers";
-import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 
 function applyGearBurnBleedMirrorLeech(
   state: BattleState,
@@ -154,12 +153,7 @@ function applyFrozenHeartDamage(state: BattleState, combatTexts: CombatTextEvent
   const enemyWasAlive = state.enemyHealth > 0;
   return dealEnemyScaledDamage(state, state.trinketEffects.frozenHeartDamage, "physical", combatTexts, {
     multiplier: getEnemyDamageMultiplier(state, "physical"),
-    riders: (damagedState) =>
-      payKillPayouts(
-        processEncounterTraitHealthThreshold(state.enemyHealth, damagedState, combatTexts),
-        enemyWasAlive,
-        combatTexts,
-      ),
+    riders: (damagedState) => applyHitEpilogue(damagedState, state.enemyHealth, enemyWasAlive, combatTexts),
   });
 }
 

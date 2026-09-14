@@ -69,13 +69,13 @@ describe("run RNG", () => {
     expect([stream(), stream(), stream(), stream(), stream()]).toEqual(expected);
   });
 
-  it("supports numeric seeds and defaults to Math.random", () => {
+  it("supports numeric and RNG seeds (callers pass Math.random explicitly)", () => {
     const fromNum = createRunRngState(123456);
     expect(fromNum.seed).toBe(123456);
 
-    const fromDefault = createRunRngState();
-    expect(fromDefault.seed).toBeGreaterThanOrEqual(0);
-    expect(fromDefault.seed).toBeLessThanOrEqual(0xffff_ffff);
+    const fromRandom = createRunRngState(Math.random);
+    expect(fromRandom.seed).toBeGreaterThanOrEqual(0);
+    expect(fromRandom.seed).toBeLessThanOrEqual(0xffff_ffff);
 
     expect(createRunRngState(NaN).seed).toBe(0);
     expect(createRunRngState(Infinity).seed).toBe(0);

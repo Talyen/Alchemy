@@ -52,7 +52,7 @@ export function createSeededRng(seed: number): Rng {
   };
 }
 
-export function createRunRngState(seedOrRng: number | Rng = Math.random): RunRngState {
+export function createRunRngState(seedOrRng: number | Rng): RunRngState {
   let seed: number;
   if (typeof seedOrRng === "number") {
     seed = Number.isFinite(seedOrRng) ? toUint32(Math.trunc(seedOrRng)) : 0;
@@ -154,5 +154,7 @@ export function takeRandomItem<T>(items: T[], rng: Rng): T | undefined {
 }
 
 export function pickRandomUnsafe<T>(items: readonly T[]): T | undefined {
+  // Presentation-only helper (audio variation, canvas decoration). Gameplay and
+  // run outcomes must draw the persisted run streams or battle RNG instead.
   return pickRandom(items, Math.random);
 }

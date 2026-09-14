@@ -4,6 +4,7 @@ import {
   BATTLE_NO_FRAMEWORK_PATHS,
   DOMAIN_STORE_PATTERNS,
   GAME_DATA_NO_BATTLE,
+  GAMEPLAY_NO_UNSAFE_RANDOM_PICK,
   layerImports,
   layerImportsWithPaths,
   LIB_BARREL_PATTERNS,
@@ -62,6 +63,13 @@ const BOUNDARY_TABLE = [
     extra: [],
   },
   { files: ["src/features/alchemy/shared/stores/**/*.{ts,tsx}"], onlyBarrel: true },
+  // Later blocks replace earlier ones in flat config, so this restates the
+  // barrel union and adds the presentation-only RNG ban for gameplay stores.
+  {
+    files: ["src/features/alchemy/shared/stores/**/*.{ts,tsx}"],
+    paths: GAMEPLAY_NO_UNSAFE_RANDOM_PICK,
+    patterns: [BARREL_PATTERNS],
+  },
   {
     files: ["src/lib/**/*.{ts,tsx}"],
     paths: LIB_NO_FRAMEWORK_PATHS,

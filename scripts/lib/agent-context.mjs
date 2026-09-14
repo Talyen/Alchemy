@@ -183,7 +183,7 @@ export const CONTEXT_TASKS = {
   },
   "assets-pipeline": {
     matches:
-      /^scripts\/(?:assets|prepare-assets|optimize-assets|optimize-pipelines|check-prepared-assets|check-generated-fast|sync-generated|sync-art-barrels|lib\/asset-[^/]+|lib\/registry-validation|lib\/audio-optimizer)\.mjs$/u,
+      /^scripts\/(?:assets|prepare-assets|optimize-assets|optimize-pipelines|check-prepared-assets|sync-generated|sync-art-barrels|lib\/asset-[^/]+|lib\/registry-validation|lib\/audio-optimizer)\.mjs$/u,
     docs: [
       ...assetCommon,
       asset("Pipeline overview"),

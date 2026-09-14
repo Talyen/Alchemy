@@ -1,5 +1,4 @@
-import { useLayoutEffect, useRef, type RefObject } from "react";
-import { useShallow } from "zustand/react/shallow";
+import { useLayoutEffect, useMemo, useRef, type RefObject } from "react";
 import { CombatTextRail } from "@/features/alchemy/shared/ui/battle/combat-text";
 import type { BattleRefs, CardRect } from "@/features/alchemy/shared/types";
 import { defaultMeasureElementRect } from "../controller-utils";
@@ -23,11 +22,10 @@ function CombatTextTarget({
   anchorRef: RefObject<HTMLDivElement | null>;
   sceneRef: RefObject<HTMLDivElement | null>;
 }) {
-  const bursts = useBattlePresentationStore(
-    useShallow((state) => state.floatingCombatBursts.filter((burst) => burst.target === target)),
-  );
+  const bursts = useBattlePresentationStore((state) => state.floatingCombatBursts);
+  const targetBursts = useMemo(() => bursts.filter((burst) => burst.target === target), [bursts, target]);
   const layerRef = useRef<HTMLDivElement>(null);
-  const active = bursts.length > 0;
+  const active = targetBursts.length > 0;
 
   useLayoutEffect(() => {
     if (!active) return;
@@ -65,7 +63,7 @@ function CombatTextTarget({
   // Portraits establish their own transform stacking contexts. Text must sit above card flights in the scene.
   return (
     <div ref={layerRef} data-testid="combat-text-layer" className="pointer-events-none absolute z-[100]">
-      <CombatTextRail bursts={bursts} />
+      <CombatTextRail bursts={targetBursts} />
     </div>
   );
 }

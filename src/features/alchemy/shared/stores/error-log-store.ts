@@ -127,10 +127,48 @@ export const useErrorLogStore = create<ErrorLogStore>()((set) => ({
   },
 }));
 
-// Persist outside the zustand updater so the setter stays pure.
+// Persist outside the zustand updater so the setter stays pure. Error bursts (e.g. a
+// render-loop throw hitting the sink) would otherwise add synchronous serialization +
+// storage I/O on top of every failure, so writes are debounced with a pagehide flush.
+const ERROR_LOG_PERSIST_DEBOUNCE_MS = 500;
+let errorLogPersistTimer: ReturnType<typeof setTimeout> | null = null;
+let pendingErrorLogErrors: LoggedError[] | null = null;
+
+function scheduleErrorLogPersist(errors: LoggedError[]): void {
+  pendingErrorLogErrors = errors;
+  if (errorLogPersistTimer !== null) return;
+  errorLogPersistTimer = setTimeout(() => {
+    errorLogPersistTimer = null;
+    const pending = pendingErrorLogErrors;
+    pendingErrorLogErrors = null;
+    if (pending) persist(pending);
+  }, ERROR_LOG_PERSIST_DEBOUNCE_MS);
+}
+
+function flushErrorLogPersist(): void {
+  if (errorLogPersistTimer !== null) {
+    clearTimeout(errorLogPersistTimer);
+    errorLogPersistTimer = null;
+  }
+  if (pendingErrorLogErrors) {
+    const pending = pendingErrorLogErrors;
+    pendingErrorLogErrors = null;
+    persist(pending);
+  }
+}
+
+// Exported for tests so debounced writes can be flushed deterministically.
+export function flushPersistedErrorLog(): void {
+  flushErrorLogPersist();
+}
+
 useErrorLogStore.subscribe((state) => {
-  persist(state.errors);
+  scheduleErrorLogPersist(state.errors);
 });
+
+if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+  window.addEventListener("pagehide", flushErrorLogPersist);
+}
 
 registerErrorSink((entry) => {
   useErrorLogStore.getState().pushError(entry);

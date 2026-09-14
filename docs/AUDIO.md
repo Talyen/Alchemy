@@ -32,6 +32,6 @@ Playback modules live together in `src/lib/audio/`; callers use `@/lib/audio`, b
 1. Register new card or UI sounds in the owning sound registry or audio module.
 2. Add or replace source audio through the asset workflow and regenerate committed outputs.
 3. Keep host visibility, volume, cache, and failure behavior in the runtime audio owners above.
-4. Run the changed-path unit route. Use `npm run test:e2e:audio` when the browser playback journey is part of the change.
+4. Run the changed-path unit route. Use `npm run test:e2e:route -- audio` when the browser playback journey is part of the change.
 
 Changed-path and CI tier policy: [CONTRIBUTING.md](../CONTRIBUTING.md#what-to-run-when-you-change).

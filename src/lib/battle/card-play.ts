@@ -7,9 +7,9 @@ import {
   addGoldWithCombatText,
   addPlayerStatusWithCombatText,
   applyHealingWithCombatText,
+  applyHitEpilogue,
   gainManaWithCombatText,
   mergeCombatText,
-  payKillPayouts,
 } from "./combat-text";
 import { isPotionCard, type BattleCard } from "@/lib/game-data";
 import {
@@ -29,7 +29,6 @@ import { getBattleRng, rngInt, rollPercent } from "@/lib/rng";
 import { dealTalentTypedHit, dealPlayerTypedHit } from "./player-typed-hit";
 import { dealEnemyScaledDamage } from "./gear-effects";
 import { decayArmorAfterDamage, getEnemyDamageMultiplier } from "./status-helpers";
-import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 
 import { prepareUniqueCardPlay, finishUniqueCardDamage, returnHarvestCard } from "./unique-card-effects";
 import { computeCardPayment } from "./card-cost-rules";
@@ -306,7 +305,7 @@ function applyConsumeBurn(state: BattleState, combatTexts: CombatTextEvent[]): B
     riders: (damaged, damage, texts) => {
       const burning = addEnemyStatus(damaged, "burn", damage);
       const decayed = decayArmorAfterDamage(burning, damage, "enemy", texts);
-      return payKillPayouts(processEncounterTraitHealthThreshold(state.enemyHealth, decayed, texts), true, texts);
+      return applyHitEpilogue(decayed, state.enemyHealth, true, texts);
     },
   });
 }

@@ -90,10 +90,28 @@ export const LIB_NO_FRAMEWORK_PATHS = [
   { name: "lucide-react", message: "src/lib must stay React-free. Map icon ids in features." },
 ];
 
+/** @type {ImportPath[]} — presentation-only RNG must not leak into gameplay/battle code. */
+export const GAMEPLAY_NO_UNSAFE_RANDOM_PICK = [
+  {
+    name: "@/lib/rng",
+    importNames: ["pickRandomUnsafe"],
+    message:
+      "pickRandomUnsafe is presentation-only (audio variation, canvas decoration). Gameplay must draw persisted run streams or getBattleRng(state).",
+  },
+  {
+    name: "@/lib/rng/index",
+    importNames: ["pickRandomUnsafe"],
+    message:
+      "pickRandomUnsafe is presentation-only (audio variation, canvas decoration). Gameplay must draw persisted run streams or getBattleRng(state).",
+  },
+];
+
 /** @type {ImportPath[]} */
 export const BATTLE_NO_FRAMEWORK_PATHS = [
   ...LIB_NO_FRAMEWORK_PATHS,
   { name: "zustand", message: "lib/battle must stay framework-agnostic." },
+  // Presentation-only RNG must not leak into battle determinism.
+  ...GAMEPLAY_NO_UNSAFE_RANDOM_PICK,
 ];
 
 /** @type {ImportPattern[]} */

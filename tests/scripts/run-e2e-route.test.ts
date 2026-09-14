@@ -27,10 +27,11 @@ describe("e2e routes", () => {
     expect(resolveE2eRoute("homestead-screen")).toBe(E2E_ROUTES.homestead);
   });
 
-  it("keeps a test:e2e:<name> alias for every route", () => {
+  it("exposes routes through the single test:e2e:route entry instead of per-route aliases", () => {
     const scripts = JSON.parse(readFileSync(path.join(repoRoot, "package.json"), "utf8")).scripts;
+    expect(scripts["test:e2e:route"]).toBe("node scripts/run-e2e-route.mjs");
     for (const name of Object.keys(E2E_ROUTES)) {
-      expect(scripts[`test:e2e:${name}`], name).toBe(`node scripts/run-e2e-route.mjs ${name}`);
+      expect(scripts[`test:e2e:${name}`], name).toBeUndefined();
     }
   });
 

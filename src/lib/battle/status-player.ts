@@ -14,14 +14,13 @@ import {
 import {
   addPlayerStatusWithCombatText,
   applyHealingWithCombatText,
+  applyHitEpilogue,
   mergeCombatText,
-  payKillPayouts,
 } from "./combat-text";
 import { BLEED_STATUS_MULTIPLIER, FIRST_EFFECT_MULTIPLIER, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
 import { paceCombatMagnitude } from "./fight-pacing";
 import { dealEnemyScaledDamage } from "./scaled-damage";
 import { decayArmorAfterDamage, getEnemyDamageMultiplier } from "./status-helpers";
-import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 
 export function applyCardHealing(
   state: BattleState,
@@ -210,7 +209,7 @@ function applyForgeBurnBurst(state: BattleState, oldForge: number, newForge: num
         riders: (damaged, damage, texts) => {
           const burning = addEnemyStatus(damaged, "burn", damage);
           const decayed = decayArmorAfterDamage(burning, damage, "enemy", texts);
-          return payKillPayouts(processEncounterTraitHealthThreshold(s.enemyHealth, decayed, texts), true, texts);
+          return applyHitEpilogue(decayed, s.enemyHealth, true, texts);
         },
       });
     },

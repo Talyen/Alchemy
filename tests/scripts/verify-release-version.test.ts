@@ -19,9 +19,9 @@ describe("verifyReleaseVersionTag", () => {
   });
 });
 
-describe("verify-release-version CLI", () => {
+describe("verify-release --skip-package CLI", () => {
   it("passes when tag matches package.json", () => {
-    const result = spawnSync("node", ["scripts/verify-release-version.mjs"], {
+    const result = spawnSync("node", ["scripts/verify-release.mjs", "--skip-package"], {
       cwd: ROOT,
       env: { ...process.env, RELEASE_TAG: "v0.1.0" },
       encoding: "utf8",
@@ -30,7 +30,7 @@ describe("verify-release-version CLI", () => {
   });
 
   it("fails when tag mismatches package.json", () => {
-    const result = spawnSync("node", ["scripts/verify-release-version.mjs"], {
+    const result = spawnSync("node", ["scripts/verify-release.mjs", "--skip-package"], {
       cwd: ROOT,
       env: { ...process.env, RELEASE_TAG: "v9.9.9" },
       encoding: "utf8",

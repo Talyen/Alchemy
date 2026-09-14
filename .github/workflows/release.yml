@@ -188,7 +188,7 @@ jobs:
         run: npm run ensure:electron
 
       - name: Verify release tag matches package.json
-        run: node scripts/verify-release-version.mjs
+        run: node scripts/verify-release.mjs --skip-package
         env:
           RELEASE_TAG: ${{ github.ref_name }}
 

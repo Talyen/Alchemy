@@ -225,3 +225,21 @@ export function payKillPayouts(
   const rewarded = applyGearKillRewards(afterBoneCharm, enemyWasAlive, combatTexts, statuses);
   return rewarded.dodgeChanceFromDamage > 0 ? { ...rewarded, dodgeChanceFromDamage: 0 } : rewarded;
 }
+
+// Shared end-of-hit epilogue: encounter-trait health thresholds first, then kill
+// payouts. Status-conditional kill rewards evaluate against pre-hit statuses when an
+// override is supplied (defensive pattern from applyEnemyDotDamage).
+export function applyHitEpilogue(
+  state: BattleState,
+  preHitHealth: number,
+  enemyWasAlive: boolean,
+  combatTexts: CombatTextEvent[],
+  enemyStatusesOverride?: BattleState["enemyStatuses"],
+): BattleState {
+  return payKillPayouts(
+    processEncounterTraitHealthThreshold(preHitHealth, state, combatTexts),
+    enemyWasAlive,
+    combatTexts,
+    enemyStatusesOverride,
+  );
+}
