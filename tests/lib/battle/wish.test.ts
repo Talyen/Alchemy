@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildWishOptions, applyWishEffect, chooseWishCard } from "@/lib/battle/wish";
+import { shouldConvertCrystalWishToGold } from "@/lib/content-systems/battle-content";
+import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { patchBattleState } from "../../fixtures/battle";
 import { makeTestCard } from "../../fixtures/cards";
@@ -427,5 +429,13 @@ describe("new wish talents", () => {
     });
     const result = applyWishEffect(state, card, 1, []);
     expect(result.enemyHealth).toBe(27);
+  });
+});
+
+describe("battle content helpers", () => {
+  it("converts crystal wish to gold exclusively in Wildwood", () => {
+    expect(shouldConvertCrystalWishToGold(CONTENT_SYSTEMS.WILDWOOD)).toBe(true);
+    expect(shouldConvertCrystalWishToGold(CONTENT_SYSTEMS.CAMPAIGN)).toBe(false);
+    expect(shouldConvertCrystalWishToGold(CONTENT_SYSTEMS.LABYRINTH)).toBe(false);
   });
 });

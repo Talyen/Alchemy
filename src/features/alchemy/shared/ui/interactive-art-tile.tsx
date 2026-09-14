@@ -38,6 +38,44 @@ interface InteractiveArtTileProps {
   onHoverChange?: ((hovered: boolean) => void) | undefined;
 }
 
+interface TileVisualResolutionProps {
+  interactive: boolean;
+  disabled: boolean;
+  interactiveChrome: boolean;
+  selected: boolean;
+  isHovered: boolean;
+  shineColor: string | readonly string[] | null | undefined;
+  shineOnHover: boolean;
+  showGlowOverride?: boolean | undefined;
+  shimmerActive: boolean;
+  shimmerToken?: number | undefined;
+}
+
+function resolveArtTileVisualState(props: TileVisualResolutionProps) {
+  const canInteract = props.interactive && !props.disabled;
+  const shineColors: string | readonly string[] =
+    props.shineColor == null ? [] : Array.isArray(props.shineColor) ? props.shineColor : [props.shineColor];
+  const showShine =
+    shineColors.length > 0 && !props.disabled && (!props.shineOnHover || (props.interactive && props.isHovered));
+  const showGlow = props.showGlowOverride ?? (props.interactiveChrome && canInteract);
+
+  const shineClassName = showShine ? (props.shineOnHover ? "card-art-shine" : cardShineFrameClass) : undefined;
+  const glowClassName = showGlow ? cardInteractiveGlowClass : undefined;
+  const frameClassName = props.interactiveChrome ? "card-art-frame border border-border/80" : undefined;
+
+  return {
+    canInteract,
+    shineColors,
+    showShine,
+    activeShimmer: canInteract && props.shimmerActive,
+    activeShimmerToken: canInteract ? props.shimmerToken : undefined,
+    surfaceSelected: props.interactiveChrome && props.selected,
+    shineClassName,
+    glowClassName,
+    frameClassName,
+  };
+}
+
 export function InteractiveArtTile({
   id,
   interactionKey,
@@ -79,10 +117,19 @@ export function InteractiveArtTile({
     onHoverStart: wrappedHoverStart,
     onHoverEnd: wrappedHoverEnd,
   });
-  const shineColors = shineColor == null ? [] : Array.isArray(shineColor) ? shineColor : [shineColor];
 
-  const showShine = shineColors.length > 0 && !disabled && (!shineOnHover || (interactive && isHovered));
-  const showGlow = showGlowOverride ?? (interactiveChrome && interactive && !disabled);
+  const visual = resolveArtTileVisualState({
+    interactive,
+    disabled,
+    interactiveChrome,
+    selected,
+    isHovered,
+    shineColor,
+    shineOnHover,
+    showGlowOverride,
+    shimmerActive,
+    shimmerToken,
+  });
 
   return (
     <div
@@ -96,23 +143,22 @@ export function InteractiveArtTile({
       {interactive && popup && showPopup ? popup({ visible: isHovered, triggerRef: wrapperRef }) : null}
       <Surface
         as={as}
-        className={cn(
-          className,
-          "group shadow-md",
-          showShine && (shineOnHover ? "card-art-shine" : cardShineFrameClass),
-          interactiveChrome && "card-art-frame border border-border/80",
-          showGlow && cardInteractiveGlowClass,
-        )}
-        shimmerActive={interactive && !disabled ? shimmerActive : false}
-        shimmerToken={interactive && !disabled ? shimmerToken : undefined}
+        className={cn(className, "group shadow-md", visual.shineClassName, visual.frameClassName, visual.glowClassName)}
+        shimmerActive={visual.activeShimmer}
+        shimmerToken={visual.activeShimmerToken}
         overlay={
-          showShine ? (
-            <ShineBorder glow={interactive && isHovered} shineColor={shineColors} borderWidth={2} className="z-20" />
+          visual.showShine ? (
+            <ShineBorder
+              glow={interactive && isHovered}
+              shineColor={visual.shineColors}
+              borderWidth={2}
+              className="z-20"
+            />
           ) : null
         }
-        selected={interactiveChrome && selected}
+        selected={visual.surfaceSelected}
         disabled={disabled}
-        onClick={interactive && !disabled ? onClick : undefined}
+        onClick={visual.canInteract ? onClick : undefined}
         {...(interactive ? { onFocus: handleHoverStart, onBlur: handleBlur } : {})}
         ariaLabel={ariaLabel ?? title}
         {...(ariaDisabled !== undefined ? { ariaDisabled } : {})}

@@ -172,22 +172,22 @@ describe("script execution reliability", () => {
 
   it.each([false, true])("stops descendants at the deadline (file capture: %s)", async (fileCapture) => {
     const root = fixture();
-    const { marker, parent } = descendantCommand(root, 1200);
+    const { marker, parent } = descendantCommand(root, 500);
     const result = await runCommandAsync(process.execPath, ["-e", parent], {
       shell: false,
-      timeout: 800,
+      timeout: 250,
       ...(fileCapture ? { logPath: path.join(root, "command.log") } : {}),
     });
     expect(result.output).toContain("descendant ready");
     expect(result.timedOut).toBe(true);
     expect(result.status).toBeNull();
-    await delay(600);
+    await delay(350);
     expect(fs.existsSync(marker)).toBe(false);
   });
 
   it("stops active command trees when the runner receives an interrupt", async () => {
     const root = fixture();
-    const { marker, ready, parent } = descendantCommand(root);
+    const { marker, ready, parent } = descendantCommand(root, 500);
     const runnerUrl = pathToFileURL(path.join(ROOT, "scripts/lib/run-command.mjs")).href;
     const source = `import fs from "node:fs";
       import {runCommandAsync} from ${JSON.stringify(runnerUrl)};
@@ -205,7 +205,7 @@ describe("script execution reliability", () => {
     });
     expect(result.stdout).toContain("descendant ready");
     expect(result.status).toBe(130);
-    await delay(1200);
+    await delay(600);
     expect(fs.existsSync(marker)).toBe(false);
   });
 

@@ -34,7 +34,7 @@ export const KNIGHT_UNLOCK_MESSAGE = getUnlockMessage("knight");
 const characterUnlockRequirements: Record<CharacterId, { requiredChar: CharacterId | null; requiredName: string }> =
   Object.fromEntries(
     UNLOCK_CHAIN.map((id, index) => {
-      const requiredChar = index === 0 ? null : UNLOCK_CHAIN[index - 1]!;
+      const requiredChar = index === 0 ? null : (UNLOCK_CHAIN[index - 1] ?? null);
       return [id, { requiredChar, requiredName: requiredChar ? characters[requiredChar].name : "" }];
     }),
   ) as Record<CharacterId, { requiredChar: CharacterId | null; requiredName: string }>;

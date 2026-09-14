@@ -54,15 +54,14 @@ export function useRenderedScreenTransition(controllerScreen: Screen) {
     durationMs: PAGE_EXIT_MS,
     initialPhase: "enter",
   });
-  const [tooltipBlocked, setTooltipBlocked] = useState(true);
+  const [unblockedScreen, setUnblockedScreen] = useState<Screen | null>(null);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- resets transient tooltip suppression after screen changes
-    setTooltipBlocked(true);
-    const timer = window.setTimeout(() => setTooltipBlocked(false), resolveGameDelay(MOTION_FADE_MS));
+    const timer = window.setTimeout(() => setUnblockedScreen(renderedScreen), resolveGameDelay(MOTION_FADE_MS));
     return () => window.clearTimeout(timer);
   }, [renderedScreen]);
 
+  const tooltipBlocked = renderedScreen !== unblockedScreen;
   const pagePhase: "enter" | "exit" = fadePhase === "exit" ? "exit" : "enter";
   return { renderedScreen, pagePhase, tooltipBlocked };
 }
@@ -101,7 +100,6 @@ export function useReturnToRunNavigation({
   renderedScreen: Screen;
 }) {
   const returnToRunScreen = useRunResumeScreen();
-  const [optionsReturnScreen, setOptionsReturnScreen] = useState<Screen>("menu");
   const hasActiveBattle = useHasActiveBattle();
   const resumeKind = useForegroundResumeKind();
   const returnToRunTarget = resolveReturnToRunTarget(
@@ -109,30 +107,38 @@ export function useReturnToRunNavigation({
     hasActiveBattle || resumeKind === "battle",
     resumeKind != null,
   );
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- track the screen Options should restore
-    setOptionsReturnScreen((prev) => rememberNonOptionsScreen(renderedScreen, prev));
-  }, [renderedScreen]);
-
-  function navigateToMeta(screen: Extract<Screen, "collection" | "talents" | "homestead" | "options" | "armory">) {
-    run.goToScreen(screen);
+  const [navState, setNavState] = useState<{ prevScreen: Screen; optionsReturnScreen: Screen }>({
+    prevScreen: renderedScreen,
+    optionsReturnScreen: "menu",
+  });
+  let optionsReturnScreen = navState.optionsReturnScreen;
+  if (renderedScreen !== navState.prevScreen) {
+    const next = rememberNonOptionsScreen(renderedScreen, navState.optionsReturnScreen);
+    optionsReturnScreen = next;
+    setNavState({ prevScreen: renderedScreen, optionsReturnScreen: next });
   }
 
-  function backFromOptions() {
+  const navigateToMeta = useCallback(
+    (screen: Extract<Screen, "collection" | "talents" | "homestead" | "options" | "armory">) => {
+      run.goToScreen(screen);
+    },
+    [run],
+  );
+
+  const backFromOptions = useCallback(() => {
     const target = resolveOptionsBackTarget(optionsReturnScreen, hasActiveBattle);
     if (target.kind === "returnToBattle") run.returnToBattle();
     else run.goToScreen(target.screen);
-  }
+  }, [optionsReturnScreen, hasActiveBattle, run]);
 
-  function returnToRun() {
+  const returnToRun = useCallback(() => {
     if (!returnToRunTarget) return;
     run.returnToBattle();
-  }
+  }, [returnToRunTarget, run]);
 
-  function handleMainMenu() {
+  const handleMainMenu = useCallback(() => {
     run.goToScreen("menu");
-  }
+  }, [run]);
 
   const screenBackHandler = resolveScreenBackHandler({
     renderedScreen,

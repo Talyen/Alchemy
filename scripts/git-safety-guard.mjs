@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import fs from "node:fs";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -37,13 +38,23 @@ function stashBackup(cmd) {
 
 function findRealGit() {
   if (process.env.REAL_GIT) return process.env.REAL_GIT;
-  const which = spawnSync("bash", ["-lc", "which -a git 2>/dev/null | head -20"], { encoding: "utf8" });
-  const candidates = (which.stdout ?? "")
-    .split("\n")
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .filter((p) => path.dirname(p) !== ownShimDir);
-  if (candidates.length > 0) return candidates[0];
+  const pathDirs = (process.env.PATH || "").split(path.delimiter);
+  const extensions = process.platform === "win32" ? [".exe", ".cmd", ".bat", ""] : [""];
+  for (const dir of pathDirs) {
+    if (!dir) continue;
+    const resolvedDir = path.resolve(dir);
+    if (resolvedDir === ownShimDir) continue;
+    for (const ext of extensions) {
+      const candidate = path.join(resolvedDir, `git${ext}`);
+      try {
+        if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+          return candidate;
+        }
+      } catch {
+        // ignore unreadable path entries
+      }
+    }
+  }
   return "git";
 }
 

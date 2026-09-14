@@ -69,8 +69,9 @@ export type GearArmorySlice = GearStateFields;
 export function useGearCombatRestrictions() {
   const selection = useGameplayStateStore(
     useShallow((s) => ({
-      activity: s.session.activity,
-      activeRun: s.run.activeRun,
+      activityKind: s.session.activity.kind,
+      characterId: s.run.activeRun.characterId,
+      contentSystemType: s.run.activeRun.contentSystemType,
       hasActiveBattle: s.battle.hasActiveBattle,
       loadouts: s.gear.loadouts,
       equippedTrinkets: s.gear.equippedTrinkets,
@@ -79,8 +80,8 @@ export function useGearCombatRestrictions() {
   return useMemo(
     () =>
       deriveGearCombatRestrictions({
-        session: { activity: selection.activity },
-        run: { activeRun: selection.activeRun },
+        session: { activity: { kind: selection.activityKind } },
+        run: { activeRun: { characterId: selection.characterId, contentSystemType: selection.contentSystemType } },
         battle: { hasActiveBattle: selection.hasActiveBattle },
         gear: { loadouts: selection.loadouts, equippedTrinkets: selection.equippedTrinkets },
       }),
@@ -124,15 +125,8 @@ export function readHasUnownedTrinkets(): boolean {
   return readGameplayState().gear.ownedTrinketIds.length < trinketLibrary.length;
 }
 
-function useHasAnyOwnedGear(): boolean {
-  const { inventories, ownedTrinketIds } = useGameplayStateStore(
-    useShallow((state) => ({ inventories: state.gear.inventories, ownedTrinketIds: state.gear.ownedTrinketIds })),
-  );
-  return useMemo(() => hasAnyOwnedGear(inventories, ownedTrinketIds), [inventories, ownedTrinketIds]);
-}
-
 export function useIsArmoryLocked(): boolean {
-  return !useHasAnyOwnedGear();
+  return useGameplayStateStore((state) => !hasAnyOwnedGear(state.gear.inventories, state.gear.ownedTrinketIds));
 }
 
 export function readEquippedTrinketId(characterId: CharacterId): string | null {

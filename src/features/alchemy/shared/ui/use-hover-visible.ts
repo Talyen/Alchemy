@@ -77,14 +77,12 @@ export function useHoverVisible<T extends HTMLElement = HTMLDivElement>(options?
     doHide({ checkFocusWithin: false });
   }, [doHide]);
 
+  if (holdMs > 0 && visible && !mounted) {
+    setMounted(true);
+  }
+
   useEffect(() => {
-    if (holdMs <= 0) return;
-    if (visible) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- hold mounts hover popup through fade-out
-      setMounted(true);
-      return;
-    }
-    if (!mounted) return;
+    if (holdMs <= 0 || visible || !mounted) return;
     const timer = window.setTimeout(() => setMounted(false), holdMs);
     return () => window.clearTimeout(timer);
   }, [visible, mounted, holdMs]);

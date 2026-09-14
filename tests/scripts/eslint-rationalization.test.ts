@@ -17,21 +17,33 @@ import {
 
 const ROOT = path.resolve(import.meta.dirname, "../..");
 
-async function lintSyntax(relativePath: string, code: string, selectors: ReturnType<typeof restrictedSyntax>) {
-  const eslint = new ESLint({
-    cwd: ROOT,
-    overrideConfigFile: true,
-    overrideConfig: [
-      {
-        files: ["**/*.{ts,tsx}"],
-        languageOptions: {
-          parser: tseslint.parser,
-          parserOptions: { ecmaVersion: 2022, sourceType: "module", ecmaFeatures: { jsx: true } },
+const eslintInstances = new Map<string, ESLint>();
+
+function getOrCreateEslint(selectors: ReturnType<typeof restrictedSyntax>): ESLint {
+  const key = JSON.stringify(selectors);
+  let instance = eslintInstances.get(key);
+  if (!instance) {
+    instance = new ESLint({
+      cwd: ROOT,
+      overrideConfigFile: true,
+      overrideConfig: [
+        {
+          files: ["**/*.{ts,tsx}"],
+          languageOptions: {
+            parser: tseslint.parser,
+            parserOptions: { ecmaVersion: 2022, sourceType: "module", ecmaFeatures: { jsx: true } },
+          },
+          rules: { "no-restricted-syntax": selectors },
         },
-        rules: { "no-restricted-syntax": selectors },
-      },
-    ],
-  });
+      ],
+    });
+    eslintInstances.set(key, instance);
+  }
+  return instance;
+}
+
+async function lintSyntax(relativePath: string, code: string, selectors: ReturnType<typeof restrictedSyntax>) {
+  const eslint = getOrCreateEslint(selectors);
   const results = await eslint.lintText(code, { filePath: path.join(ROOT, relativePath) });
   return results.flatMap((r) => r.messages.filter((m) => m.ruleId === "no-restricted-syntax"));
 }

@@ -2,6 +2,7 @@ import { existsSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { allRegisteredMusicFiles } from "@/lib/audio/music";
 import { allRegisteredSoundFiles } from "@/lib/audio/sound-registry";
 import {
   curatedSoundFiles,
@@ -9,11 +10,26 @@ import {
   validateSoundAssetRegistry,
 } from "../../../scripts/assets/sound-assets.mjs";
 
-const soundsDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "../../../public/sounds");
-const rawSoundsDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "../../../Raw Assets/Sound Effects");
+const rootDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "../../..");
+const soundsDir = path.join(rootDir, "public/sounds");
+const rawSoundsDir = path.join(rootDir, "Raw Assets/Sound Effects");
+const musicDir = path.join(rootDir, "public/Music");
 
 const hasRawSounds = existsSync(rawSoundsDir);
 const declaredSounds = new Set([...generatedSoundAssets.map(({ target }) => target), ...curatedSoundFiles]);
+
+describe("registered music assets", () => {
+  it("keeps every registered track on disk", () => {
+    const missing = allRegisteredMusicFiles().filter((file) => !existsSync(path.join(musicDir, file)));
+    expect(missing).toEqual([]);
+  });
+
+  it("registers every music file on disk", () => {
+    const registered = new Set(allRegisteredMusicFiles());
+    const onDisk = readdirSync(musicDir).filter((file) => !file.startsWith("."));
+    expect(onDisk.filter((file) => !registered.has(file))).toEqual([]);
+  });
+});
 
 describe("registered SFX assets", () => {
   it("keeps generated and curated ownership structurally valid", async () => {

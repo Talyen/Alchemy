@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { defaultBattleState, defaultTalentEffects } from "@/lib/battle";
 import { drawCards } from "@/lib/battle/draw";
+import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { shuffle } from "@/lib/utils";
-import { MAX_HAND_SIZE } from "@/lib/game-constants";
-import { makeTestCardWithId } from "../../fixtures/battle";
+import { CARDS_PER_TURN, MAX_HAND_SIZE } from "@/lib/game-constants";
+import { makeTestBattleState, makeTestCardWithId } from "../../fixtures/battle";
 import { makeTestCard } from "../../fixtures/cards";
 
 const makeCard = makeTestCardWithId;
@@ -195,5 +196,22 @@ describe("drawCards — edge cases", () => {
     const fromZero = drawCards(deck, discard, [], 4, 0, alwaysZero);
     const fromMax = drawCards(deck, discard, [], 4, 0, alwaysMax);
     expect(fromZero.hand.map((c: { id: string }) => c.id)).not.toEqual(fromMax.hand.map((c: { id: string }) => c.id));
+  });
+});
+
+describe("player turn transition", () => {
+  it("draws the next hand and restores player mana", () => {
+    const state = makeTestBattleState({
+      turnPhase: "enemy",
+      deck: Array.from({ length: 5 }, (_, index) => makeTestCardWithId(`draw-${index}`)),
+      hand: [],
+      mana: 0,
+      maxMana: 4,
+      rng: () => 0,
+    });
+    const result = advanceToPlayerTurn(state);
+    expect(result.hand).toHaveLength(CARDS_PER_TURN);
+    expect(result.mana).toBe(4);
+    expect(result.turnPhase).toBe("player");
   });
 });

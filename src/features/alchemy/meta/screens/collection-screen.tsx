@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getBossMusicKey, playMusic } from "@/lib/audio";
 import { MUSIC_KEYS } from "@/lib/game-constants";
 import { useControlledPagination } from "../../shared/ui/use-pagination";
@@ -76,18 +76,21 @@ export function CollectionScreen({
     restoreMenuMusic();
   }, [collectionTab, activePage]);
 
-  function handleEnemyActivate(enemyId: string, trigger: HTMLButtonElement) {
-    if (collectionTab !== "bestiary") return;
-    const enemy = enemyById[enemyId];
-    if (enemy && encounteredEnemyIds.includes(enemyId)) {
-      returnFocusRef.current = trigger;
-      setInspection({ key: inspectionKey, entry: enemy });
-    }
-    const musicKey = getBossMusicKey(enemyId);
-    if (!musicKey || musicKey === previewMusicKey.current) return;
-    previewMusicKey.current = musicKey;
-    playMusic(musicKey);
-  }
+  const handleEnemyActivate = useCallback(
+    (enemyId: string, trigger: HTMLButtonElement) => {
+      if (collectionTab !== "bestiary") return;
+      const enemy = enemyById[enemyId];
+      if (enemy && encounteredEnemyIds.includes(enemyId)) {
+        returnFocusRef.current = trigger;
+        setInspection({ key: inspectionKey, entry: enemy });
+      }
+      const musicKey = getBossMusicKey(enemyId);
+      if (!musicKey || musicKey === previewMusicKey.current) return;
+      previewMusicKey.current = musicKey;
+      playMusic(musicKey);
+    },
+    [collectionTab, encounteredEnemyIds, inspectionKey],
+  );
 
   return (
     <PageLayout>

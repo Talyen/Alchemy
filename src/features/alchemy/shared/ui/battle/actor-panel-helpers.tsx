@@ -62,7 +62,7 @@ export function ArtTurnActiveBorder({
   side: "player" | "enemy";
   active: boolean;
   urgentHide?: boolean;
-  shineColor?: readonly string[];
+  shineColor?: readonly string[] | undefined;
   testId?: string;
 }) {
   const palette = shineColor ?? SHINE_PALETTES.turnEnemy;
@@ -83,7 +83,13 @@ export function ArtTurnActiveBorder({
   );
 }
 
-export function ArtHoverKeywordBorder({ active, shineColor }: { active: boolean; shineColor?: readonly string[] }) {
+export function ArtHoverKeywordBorder({
+  active,
+  shineColor,
+}: {
+  active: boolean;
+  shineColor?: readonly string[] | undefined;
+}) {
   if (!active || !shineColor || shineColor.length === 0) return null;
 
   return (

@@ -53,8 +53,7 @@ export function TextAnimate({
   const [animationDisabled, setAnimationDisabled] = useState(false);
   useEffect(() => {
     const media = window.matchMedia?.("(prefers-reduced-motion: reduce)");
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-boolean-literal-compare -- explicit check for optional media query match
-    const sync = () => setAnimationDisabled(isAnimationDisabled() || media?.matches === true);
+    const sync = () => setAnimationDisabled(isAnimationDisabled() || (media?.matches ?? false));
     sync();
     media?.addEventListener?.("change", sync);
     return () => media?.removeEventListener?.("change", sync);

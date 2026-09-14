@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, cleanup, act } from "@testing-library/react";
-import { useFadePresence, useSequentialFadeSwap, FadeSlot } from "@/features/alchemy/shared/ui/use-fade";
+import {
+  useFadePresence,
+  useSequentialFadeSwap,
+  FadeSlot,
+  fadePhaseClass,
+} from "@/features/alchemy/shared/ui/use-fade";
 import { MOTION_FADE_MS } from "@/lib/game-constants";
 
 afterEach(() => cleanup());
@@ -94,5 +99,13 @@ describe("FadeSlot", () => {
     });
     expect(screen.getByTestId("child").textContent).toBe("B");
     vi.useRealTimers();
+  });
+});
+
+describe("fadePhaseClass", () => {
+  it("maps enter and exit to screen fade classes", () => {
+    expect(fadePhaseClass("enter")).toBe("screen-fade-in");
+    expect(fadePhaseClass("exit")).toBe("screen-fade-out");
+    expect(fadePhaseClass("idle")).toBeUndefined();
   });
 });

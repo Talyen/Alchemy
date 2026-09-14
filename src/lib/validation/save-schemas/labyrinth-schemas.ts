@@ -52,39 +52,51 @@ interface LabyrinthMapShape {
   currentFloor: number;
 }
 
+function validateFloorNodes(
+  floor: { id: string; depth: number; nodeIds: string[] },
+  nodes: Record<string, LabyrinthNode>,
+  seenNodeIds: Set<string>,
+): boolean {
+  const occupied = new Set<string>();
+  let entrance: LabyrinthNode | undefined;
+  let boss: LabyrinthNode | undefined;
+
+  for (const nodeId of floor.nodeIds) {
+    const node = nodes[nodeId];
+    if (!node || node.id !== nodeId || node.floor !== floor.depth || seenNodeIds.has(nodeId)) {
+      return false;
+    }
+    seenNodeIds.add(nodeId);
+    if (!isInLabyrinthGrid(node.gridPosition)) return false;
+
+    const key = gridKey(node.gridPosition);
+    if (occupied.has(key)) return false;
+    occupied.add(key);
+
+    if (node.type === "entrance") {
+      if (entrance || !node.cleared || node.gridPosition.row !== 0) return false;
+      entrance = node;
+    }
+    if (node.type === "boss") {
+      if (boss || node.gridPosition.row !== LABYRINTH_GRID.rows - 1) return false;
+      boss = node;
+    }
+  }
+
+  if (!entrance || !boss) return false;
+  return Math.abs(entrance.gridPosition.col - boss.gridPosition.col) >= LABYRINTH_GRID.minimumBossColumnDistance;
+}
+
 function isValidLabyrinthMap(map: LabyrinthMapShape): boolean {
   const floorDepths = new Set<number>();
   const seenNodeIds = new Set<string>();
+
   for (const floor of map.floors) {
     if (floorDepths.has(floor.depth)) return false;
     floorDepths.add(floor.depth);
-    const occupied = new Set<string>();
-    let entrance: LabyrinthNode | undefined;
-    let boss: LabyrinthNode | undefined;
-    for (const nodeId of floor.nodeIds) {
-      const node = map.nodes[nodeId];
-      if (!node || node.id !== nodeId || node.floor !== floor.depth || seenNodeIds.has(nodeId)) return false;
-      seenNodeIds.add(nodeId);
-      if (!isInLabyrinthGrid(node.gridPosition)) return false;
-      const key = gridKey(node.gridPosition);
-      if (occupied.has(key)) return false;
-      occupied.add(key);
-      if (node.type === "entrance") {
-        if (entrance || !node.cleared || node.gridPosition.row !== 0) return false;
-        entrance = node;
-      }
-      if (node.type === "boss") {
-        if (boss || node.gridPosition.row !== LABYRINTH_GRID.rows - 1) return false;
-        boss = node;
-      }
-    }
-    if (
-      !entrance ||
-      !boss ||
-      Math.abs(entrance.gridPosition.col - boss.gridPosition.col) < LABYRINTH_GRID.minimumBossColumnDistance
-    )
-      return false;
+    if (!validateFloorNodes(floor, map.nodes, seenNodeIds)) return false;
   }
+
   return (
     Object.keys(map.nodes).length === seenNodeIds.size &&
     floorDepths.has(map.currentFloor) &&
@@ -107,10 +119,13 @@ export const LabyrinthMapSchema = z
     // If the refine is ever relaxed, this becomes a silent null-map fallback.
     const entrance = Object.values(map.nodes).find(
       (node) => node.floor === map.currentFloor && node.type === "entrance",
-    )!;
+    );
     return {
       ...map,
-      currentNodeId: currentNode?.floor === map.currentFloor && currentNode.cleared ? currentNode.id : entrance.id,
+      currentNodeId:
+        currentNode?.floor === map.currentFloor && currentNode.cleared
+          ? currentNode.id
+          : (entrance?.id ?? map.currentNodeId),
     };
   })
   .nullable()

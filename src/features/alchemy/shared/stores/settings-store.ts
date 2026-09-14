@@ -178,3 +178,7 @@ export type AppSettings = SettingsSaveFields;
 export function useAppSettings(): AppSettings {
   return useSettingsStore(useShallow(selectSettingsSaveFields));
 }
+
+export function useSelectedAspectRatio(): AspectRatioOption {
+  return useSettingsStore((s) => s.selectedAspectRatio);
+}

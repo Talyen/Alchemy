@@ -1,4 +1,5 @@
 import { useArtworkReady } from "./use-artwork-ready";
+import { useLatestRef } from "./use-latest-ref";
 import { Fragment, useEffect, useRef, useState, type HTMLAttributes, type ReactNode } from "react";
 
 import { resolveGameDelay } from "@/lib/animation/game-timer";
@@ -14,13 +15,13 @@ export function fadePhaseClass(phase: FadePhase): string | undefined {
 }
 
 export function useHeldWhile<T>(hold: boolean, value: T): T {
-  const [held, setHeld] = useState(value);
-  useEffect(() => {
-    if (!hold) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- snapshot the last live value so outro can keep rendering it
-    setHeld(value);
-  }, [hold, value]);
-  return hold ? value : held;
+  const heldRef = useRef(value);
+  if (hold) {
+    // eslint-disable-next-line react-hooks/refs -- snapshot live value for exit phase before hold drops
+    heldRef.current = value;
+  }
+  // eslint-disable-next-line react-hooks/refs -- read snapshotted value during exit phase
+  return hold ? value : heldRef.current;
 }
 
 export function useFadePresence(
@@ -31,22 +32,18 @@ export function useFadePresence(
   phase: "enter" | "exit";
 } {
   const [mounted, setMounted] = useState(open);
-  const [phase, setPhase] = useState<"enter" | "exit">(open ? "enter" : "exit");
+
+  if (open && !mounted) {
+    setMounted(true);
+  }
 
   useEffect(() => {
-    if (open) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- presence mounts and plays enter when open becomes true
-      setMounted(true);
-      setPhase("enter");
-      return;
-    }
-    if (!mounted) return;
-    setPhase("exit");
+    if (open || !mounted) return;
     const timeout = window.setTimeout(() => setMounted(false), resolveGameDelay(durationMs));
     return () => window.clearTimeout(timeout);
   }, [open, mounted, durationMs]);
 
-  return { mounted, phase };
+  return { mounted: open || mounted, phase: open ? "enter" : "exit" };
 }
 
 export function useSequentialFadeSwap<T>({
@@ -62,27 +59,30 @@ export function useSequentialFadeSwap<T>({
 }): { shown: T; phase: FadePhase } {
   const [shown, setShown] = useState(target);
   const [phase, setPhase] = useState<FadePhase>(initialPhase);
-  const onSwapRef = useRef(onSwap);
-  // eslint-disable-next-line react-hooks/refs -- latest onSwap; not a render input
-  onSwapRef.current = onSwap;
+  const [prevTarget, setPrevTarget] = useState(target);
+  const onSwapRef = useLatestRef(onSwap);
+
+  if (!Object.is(target, prevTarget)) {
+    setPrevTarget(target);
+    if (Object.is(target, shown)) {
+      setPhase("enter");
+    }
+  }
 
   useEffect(() => {
     if (Object.is(target, shown)) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- cancelled swap must not leave the view on fade-out
-      setPhase((current) => (current === "exit" ? "enter" : current));
       return;
     }
-    setPhase("exit");
     const timeout = window.setTimeout(() => {
       onSwapRef.current?.();
       setShown(target);
       setPhase("enter");
     }, resolveGameDelay(durationMs));
     return () => window.clearTimeout(timeout);
-  }, [target, shown, durationMs]);
+  }, [target, shown, durationMs, onSwapRef]);
 
   // The first changed render must already be exiting; an effect can miss a paint.
-  return { shown, phase: !Object.is(target, shown) ? "exit" : phase === "exit" ? "enter" : phase };
+  return { shown, phase: !Object.is(target, shown) ? "exit" : phase };
 }
 
 export function FadeSlot({
@@ -99,17 +99,10 @@ export function FadeSlot({
     durationMs: MOTION_FADE_MS,
   });
   const { ref: artworkRef, pending: artworkPending } = useArtworkReady(shownKey);
-  const heldRef = useRef(children);
-  const heldClassNameRef = useRef(className);
-  const heldStyleRef = useRef((props as { style?: React.CSSProperties }).style);
-  if (shownKey === swapKey) {
-    // eslint-disable-next-line react-hooks/refs -- snapshot the outgoing view before swapKey changes
-    heldRef.current = children;
-    // eslint-disable-next-line react-hooks/refs -- snapshot wrapper layout with the outgoing view
-    heldClassNameRef.current = className;
-    // eslint-disable-next-line react-hooks/refs -- snapshot wrapper style with the outgoing view
-    heldStyleRef.current = (props as { style?: React.CSSProperties }).style;
-  }
+  const isLive = shownKey === swapKey;
+  const heldChildren = useHeldWhile(isLive, children);
+  const heldClassName = useHeldWhile(isLive, className);
+  const heldStyle = useHeldWhile(isLive, (props as { style?: React.CSSProperties }).style);
 
   const { style: _style, ...restProps } = props;
 
@@ -117,20 +110,12 @@ export function FadeSlot({
     <div
       ref={artworkRef}
       data-artwork-pending={artworkPending}
-      className={cn(
-        fadePhaseClass(phase),
-        // eslint-disable-next-line react-hooks/refs -- hold outgoing layout while opacity is 0
-        shownKey === swapKey ? className : heldClassNameRef.current,
-      )}
-      // eslint-disable-next-line react-hooks/refs -- hold outgoing layout while opacity is 0
-      style={shownKey === swapKey ? _style : heldStyleRef.current}
+      className={cn(fadePhaseClass(phase), isLive ? className : heldClassName)}
+      style={isLive ? _style : heldStyle}
       {...restProps}
-      inert={shownKey !== swapKey || (artworkPending ?? restProps.inert)}
+      inert={!isLive || (artworkPending ?? restProps.inert)}
     >
-      <Fragment key={shownKey}>
-        {/* eslint-disable-next-line react-hooks/refs -- hold the outgoing child while opacity is 0 */}
-        {shownKey === swapKey ? children : heldRef.current}
-      </Fragment>
+      <Fragment key={shownKey}>{isLive ? children : heldChildren}</Fragment>
     </div>
   );
 }

@@ -14,7 +14,7 @@ import { PRESERVED_FLAG_KEYS, PRESERVED_FLAG_VALUES, type PreservedFlagKey } fro
 export function withPreservedFlags(state: BattleState, mutate: (s: BattleState) => BattleState): BattleState {
   const saved: Partial<Pick<CombatFlags, PreservedFlagKey>> = {};
   for (const key of PRESERVED_FLAG_KEYS) {
-    saved[key] = state.flags[key] as never;
+    (saved as Record<string, unknown>)[key] = state.flags[key];
   }
   const blockedState: BattleState = {
     ...state,

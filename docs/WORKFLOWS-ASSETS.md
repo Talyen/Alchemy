@@ -100,7 +100,7 @@ Place supported audio files under `Raw Assets/Music/` and run
 `public/Music/`. The optimizer removes files without a corresponding source;
 there is no curated-source exception for music. Register playable tracks in
 `src/lib/audio/music.ts`. Its `allRegisteredMusicFiles()` list is cross-checked
-against `public/Music/` by `tests/lib/audio/music-assets.test.ts`.
+against `public/Music/` by `tests/lib/audio/audio-assets.test.ts`.
 
 ## Importing art — barrel is the canonical surface
 

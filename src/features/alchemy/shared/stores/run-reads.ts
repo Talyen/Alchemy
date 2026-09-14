@@ -255,6 +255,15 @@ function pickRunSessionBattleSlice(battle: {
 function useRunSessionBattleSlice(): RunSessionBattleSlice {
   return useShallowRunSelector((state) => pickRunSessionBattleSlice(state.battle));
 }
+export function useBattleClusterState(): { gold: number; hasWishOptions: boolean } {
+  return useGameplayStateStore(
+    useShallow((state) => ({
+      gold: state.battle.battleState.gold,
+      hasWishOptions: Boolean(state.battle.battleState.wishOptions),
+    })),
+  );
+}
+
 export function useRunSessionBattleContext(screen?: Screen): RunSessionBattleContext {
   const battle = useRunSessionBattleSlice();
   const activeLabyrinthModifiers = useGameplayStateStore(useShallow((state) => state.session.activeLabyrinthModifiers));

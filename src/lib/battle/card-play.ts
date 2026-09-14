@@ -73,9 +73,9 @@ function cardHasOnlyCleanseEffect(card: BattleCard, state: BattleSnapshot): bool
   return !hasUsefulEffect && countRemovableHarmfulStatuses(state.playerStatuses) === 0;
 }
 
-function isCardInHand(state: BattleSnapshot, card: BattleCard, index: number): boolean {
+function isCardInHand(state: BattleSnapshot, card: BattleCard, index: number): BattleCard | null {
   const currentCard = state.hand[index];
-  return !!currentCard && currentCard.id === card.id && currentCard.uid === card.uid;
+  return currentCard && currentCard.id === card.id && currentCard.uid === card.uid ? currentCard : null;
 }
 
 export function applyMortarAndPestlePotionUse(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]) {
@@ -98,8 +98,7 @@ function validateCardPlay(
   if (state.wishOptions) return null;
   if (state.turnPhase !== "player") return null;
   if (isPlayerCcControlled(state.playerCC)) return null;
-  if (!isCardInHand(state, card, index)) return null;
-  const handCard = state.hand[index];
+  const handCard = isCardInHand(state, card, index);
   if (!handCard) return null;
   const payment = computeCardPayment(state, handCard);
   if (!payment.affordable) return null;
@@ -316,7 +315,7 @@ export function handlePostPlayCardDestination(
   state: BattleState,
   card: BattleCard,
   triggerConsumeRiders = true,
-  combatTexts?: CombatTextEvent[],
+  combatTexts: CombatTextEvent[] = [],
 ): BattleState {
   if (card.consume) {
     let nextState = { ...state, exhausted: [...state.exhausted, card] };
@@ -328,8 +327,8 @@ export function handlePostPlayCardDestination(
           flags: { ...nextState.flags, runicQuillUsedThisTurn: true },
         };
       }
-      nextState = applyConsumeBurn(nextState, combatTexts ?? []);
-      nextState = applyConsumeTalentRiders(nextState, card, combatTexts ?? []);
+      nextState = applyConsumeBurn(nextState, combatTexts);
+      nextState = applyConsumeTalentRiders(nextState, card, combatTexts);
     }
     return nextState;
   }

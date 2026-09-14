@@ -27,19 +27,17 @@ import { hasInspectableBoons } from "@/features/alchemy/run-loop/screens/battle-
 import { CardDescriptionProvider } from "@/features/alchemy/shared/context/card-description-context";
 import { useVirtualResolution } from "@/features/alchemy/shared/ui/use-virtual-resolution";
 import { clearAlchemySaveData } from "@/features/alchemy/shared/storage";
-import { useDeviceDisplayStore } from "@/features/alchemy/shared/stores/device-display-store";
-import { useIsArmoryLocked } from "@/features/alchemy/shared/stores/gear-store";
-import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profile-store";
+import { useDeviceDisplayPreferences } from "@/features/alchemy/shared/stores/device-display-store";
 import {
   useActiveRunBoons,
   useActiveRunScreenValue,
   useAutosaveAllowed,
+  useBattleClusterState,
   useBondedCompanions,
-  useRunSessionBattleContext,
   useRunSessionNavigationSlice,
   useTalentEffects,
 } from "@/features/alchemy/shared/stores/run-reads";
-import { useAppSettings } from "@/features/alchemy/shared/stores/settings-store";
+import { useAppSettings, useSelectedAspectRatio } from "@/features/alchemy/shared/stores/settings-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { CardInspectionOverlay } from "@/features/alchemy/shared/ui/inspection/card-inspection-overlay";
 import { DeckInspectButton } from "@/features/alchemy/shared/ui/deck-inspect-button";
@@ -89,22 +87,29 @@ function BattleCluster({
   onOpenGameMenu: (rect?: DOMRect) => void;
   onSkipCombat: () => void;
 }) {
-  const { battle } = useRunSessionBattleContext("battle");
+  const { gold, hasWishOptions } = useBattleClusterState();
   return (
     <div inert={inert} className="absolute top-4 right-4 z-[80] flex items-center gap-2">
-      <BattleGoldCounter gold={battle.battleState.gold} />
+      <BattleGoldCounter gold={gold} />
       {deckInspection ? <DeckInspectButton {...deckInspection} /> : null}
       <BattleAutoplayToggle enabled={isAutoplayEnabled} onToggle={toggleAutoplayEnabled} />
       {hasInspectBoons ? <BattleBoonInspectButton open={boonInspectOpen} onToggle={toggleBoonInspect} /> : null}
       {isAlchemyDevBuild() ? (
-        <BattleSkipCombatButton
-          onSkip={onSkipCombat}
-          disabled={gameMenuOpen || boonInspectOpen || Boolean(battle.battleState.wishOptions)}
-        />
+        <BattleSkipCombatButton onSkip={onSkipCombat} disabled={gameMenuOpen || boonInspectOpen || hasWishOptions} />
       ) : null}
       <HamburgerTrigger onClick={onOpenGameMenu} label="Open game menu" active={gameMenuOpen} />
     </div>
   );
+}
+
+function AppKeywordPlasmaBackground({ renderedScreen, intensity }: { renderedScreen: Screen; intensity: number }) {
+  const plasmaColorPair = useUiStore(
+    (state) => state.plasmaInteraction?.colorPair ?? state.plasmaBaseline?.colorPair ?? null,
+  );
+  const effectivePlasmaColorPair =
+    plasmaColorPair ?? (renderedScreen === "options" ? OPTIONS_PREVIEW_PLASMA_PAIR : null);
+
+  return <KeywordPlasmaBackground colorPair={effectivePlasmaColorPair} intensity={intensity} />;
 }
 
 function AppMainContent({
@@ -136,8 +141,6 @@ function AppMainContent({
   tooltipBlocked: boolean;
   gameMenu: GameMenuState;
 }) {
-  const finishedRunCharacters = useFinishedRunCharacters();
-  const isArmoryLocked = useIsArmoryLocked();
   const { screen: controllerScreen } = run;
   const { phase: runPhase } = useRunSessionNavigationSlice(controllerScreen);
   const autosaveEnabled = useAutosaveAllowed(controllerScreen);
@@ -159,12 +162,6 @@ function AppMainContent({
     }),
     [homesteadBondedCompanions, homesteadEffects, talentEffects],
   );
-
-  const plasmaColorPair = useUiStore(
-    (state) => state.plasmaInteraction?.colorPair ?? state.plasmaBaseline?.colorPair ?? null,
-  );
-  const effectivePlasmaColorPair =
-    plasmaColorPair ?? (renderedScreen === "options" ? OPTIONS_PREVIEW_PLASMA_PAIR : null);
 
   const [deletingUnsupportedSave, setDeletingUnsupportedSave] = useState(false);
   const handleDeleteUnsupportedSave = useCallback(() => {
@@ -280,7 +277,7 @@ function AppMainContent({
           renderedScreen={renderedScreen}
           backgroundParticlesIntensity={backgroundParticlesIntensity}
         />
-        <KeywordPlasmaBackground colorPair={effectivePlasmaColorPair} intensity={backgroundGlowIntensity} />
+        <AppKeywordPlasmaBackground renderedScreen={renderedScreen} intensity={backgroundGlowIntensity} />
         {content}
         {showBattleCluster ? (
           <BattleCluster
@@ -316,8 +313,6 @@ function AppMainContent({
         currentScreen={renderedScreen}
         onClose={gameMenu.closeGameMenu}
         nav={nav}
-        finishedRunCharacters={finishedRunCharacters}
-        isArmoryLocked={isArmoryLocked}
         onEndRun={run.handleEndRun}
       />
     </>
@@ -388,9 +383,9 @@ function AppInner({
 }
 
 export default function App() {
-  const settings = useAppSettings();
-  const displayPreferences = useDeviceDisplayStore();
-  const displayLayout = useVirtualResolution(settings.selectedAspectRatio, false, displayPreferences);
+  const selectedAspectRatio = useSelectedAspectRatio();
+  const displayPreferences = useDeviceDisplayPreferences();
+  const displayLayout = useVirtualResolution(selectedAspectRatio, false, displayPreferences);
   const { contentScale } = displayLayout;
   useLayoutEffect(() => {
     document.documentElement.style.setProperty("--content-scale", String(contentScale));

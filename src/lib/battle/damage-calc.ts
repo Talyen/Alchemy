@@ -239,31 +239,33 @@ function computeBaseDamage(
   return Math.max(0, amount);
 }
 
-function computeAdditiveDamageBonus(
-  state: BattleState,
+function computeEffectBonusMultiplier(
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
-  card?: BattleCard,
+  state: BattleState,
 ): number {
   let bonus = 0;
-
   if (effect.doubleIfEnemyBurning && state.enemyStatuses.burn > 0) bonus += 1;
   if (effect.doubleIfEnemyBleeding && state.enemyStatuses.bleed > 0) bonus += 1;
   if (effect.tripleIfEnemyNotBurning && state.enemyStatuses.burn === 0) bonus += 2;
+  return bonus;
+}
 
+function computeTypeSpecificDamageBonus(
+  state: BattleState,
+  effect: Extract<BattleCardEffect, { kind: "damage" }>,
+): number {
+  let bonus = 0;
   if (isBurnLikeDamage(effect.damageType, state)) {
     bonus += (state.maxMana * state.gearEffects.burnDamagePerManaPercent) / PERCENT_DENOMINATOR;
   }
-
   if (effect.damageType === "physical") {
     if (doublingActive(state.talentEffects.physicalDoubledVsStunned, state.enemyCC.stunSkipTurns)) bonus += 1;
     if (doublingActive(state.talentEffects.physicalDoubledVsFrozen, state.enemyCC.freezeSkipTurns)) bonus += 1;
     if (isBelowHalfHealth(state) && state.talentEffects.physicalDoubledBelowHalfHealth) bonus += 1;
   }
-
   if (effect.damageType === "holy" && state.enemyStatuses.burn > 0 && state.talentEffects.holyVsBurnMultiplier > 0) {
     bonus += state.talentEffects.holyVsBurnMultiplier / PERCENT_DENOMINATOR;
   }
-
   if (isBleedLikeDamage(effect.damageType, state)) {
     if (isBelowHalfHealth(state) && state.talentEffects.bleedDesperateMultiplier > 1) {
       bonus += state.talentEffects.bleedDesperateMultiplier - 1;
@@ -275,7 +277,15 @@ function computeAdditiveDamageBonus(
       bonus += state.talentEffects.bleedExecuteMultiplier - 1;
     }
   }
+  return bonus;
+}
 
+function computeCardSpecificTalentBonus(
+  state: BattleState,
+  effect: Extract<BattleCardEffect, { kind: "damage" }>,
+  card?: BattleCard,
+): number {
+  let bonus = 0;
   if (card?.consume && state.talentEffects.consumeDamageBonusPercent > 0) {
     bonus += state.talentEffects.consumeDamageBonusPercent / PERCENT_DENOMINATOR;
   }
@@ -286,7 +296,6 @@ function computeAdditiveDamageBonus(
   ) {
     bonus += state.talentEffects.consumeBurnDamageBonusPercent / PERCENT_DENOMINATOR;
   }
-
   if (card?.tags?.includes("archery")) {
     const cc = state.enemyCC;
     const talentEffects = state.talentEffects;
@@ -305,7 +314,14 @@ function computeAdditiveDamageBonus(
       bonus += 1;
     }
   }
+  return bonus;
+}
 
+function computeExternalDamageMultipliers(
+  state: BattleState,
+  effect: Extract<BattleCardEffect, { kind: "damage" }>,
+): number {
+  let bonus = 0;
   const enemyMultiplier = getEnemyDamageMultiplier(state, effect.damageType);
   if (enemyMultiplier !== 1) bonus += enemyMultiplier - 1;
 
@@ -316,6 +332,19 @@ function computeAdditiveDamageBonus(
   if (burnBonusToBleeding !== 1) bonus += burnBonusToBleeding - 1;
 
   return bonus;
+}
+
+function computeAdditiveDamageBonus(
+  state: BattleState,
+  effect: Extract<BattleCardEffect, { kind: "damage" }>,
+  card?: BattleCard,
+): number {
+  return (
+    computeEffectBonusMultiplier(effect, state) +
+    computeTypeSpecificDamageBonus(state, effect) +
+    computeCardSpecificTalentBonus(state, effect, card) +
+    computeExternalDamageMultipliers(state, effect)
+  );
 }
 
 function applyCrit(damage: number, state: BattleState) {

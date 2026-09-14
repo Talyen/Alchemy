@@ -9,8 +9,8 @@ export interface GearCombatRestrictions {
 }
 
 export function deriveGearCombatRestrictions(state: {
-  run: Pick<GameplayState["run"], "activeRun">;
-  session: Pick<GameplayState["session"], "activity">;
+  run: { activeRun: Pick<GameplayState["run"]["activeRun"], "characterId" | "contentSystemType"> };
+  session: { activity: Pick<GameplayState["session"]["activity"], "kind"> };
   battle: Pick<GameplayState["battle"], "hasActiveBattle">;
   gear: Pick<GameplayState["gear"], "loadouts" | "equippedTrinkets">;
 }): GearCombatRestrictions {

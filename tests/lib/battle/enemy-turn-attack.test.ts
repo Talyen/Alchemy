@@ -1,7 +1,7 @@
 import { applyPlayerStatusFromAttack } from "@/lib/battle/status-player";
 import { makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
 import { describe, expect, it } from "vitest";
-import { enemyBestiary } from "@/lib/game-data";
+import { cardById, enemyBestiary } from "@/lib/game-data";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import { BATTLE_CONFIG } from "@/lib/game-constants";
@@ -620,5 +620,18 @@ describe("player Thorns", () => {
     expect(result.playerHealth).toBe(30);
     expect(result.enemyHealth).toBe(30);
     expect(result.playerStatuses.thorns).toBe(3);
+  });
+
+  it("reports Cold Snap Freeze buildup added by doubling, rather than the multiplier", () => {
+    const state = patchBattleState({
+      rng: () => 0.99,
+      playerHealth: 100,
+      playerMaxHealth: 100,
+      playerStatuses: { freeze: 4 },
+    });
+    const texts = makeTexts();
+    const result = applyEnemyAbility(state, cardById["cold-snap"]!, texts);
+    expect(result.playerStatuses.freeze).toBe(10);
+    expect(texts).toContainEqual({ target: "player", kind: "multiply", stat: "freeze", amount: 5 });
   });
 });

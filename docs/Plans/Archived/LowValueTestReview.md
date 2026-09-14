@@ -27,7 +27,7 @@ When a test mixes low-value assertions with a meaningful contract, retain the me
 - [`tests/app/startup-pref.test.ts`](../../../tests/app/startup-pref.test.ts): retain both the enabled and default branches. The global reduced-motion preference is an accessibility and startup contract, and there is no equivalent integration assertion.
 - [`tests/app/particle-config.test.ts`](../../../tests/app/particle-config.test.ts): consolidate to a compact table-driven test covering boss versus normal battle intensity and the stale boss flag being ignored off the battle screen. Do not remove the off-battle guard.
 - The former consolidation-only row helper test was removed after its cases moved into [`tests/lib/game-data/talent-pool.test.ts`](../../../tests/lib/game-data/talent-pool.test.ts), retaining both `chunkIntoRows` overloads.
-- [`tests/features/alchemy/shared/ui/fade-presence.test.ts`](../../../tests/features/alchemy/shared/ui/fade-presence.test.ts): retain the direct `fadePhaseClass` mapping or fold it into `use-fade.test.tsx` with explicit CSS-class assertions. The existing hook tests assert phases, not the generated classes.
+- [`tests/features/alchemy/shared/ui/use-fade.test.tsx`](../../../tests/features/alchemy/shared/ui/use-fade.test.tsx): contains the direct `fadePhaseClass` mapping folded from `fade-presence.test.ts` with explicit CSS-class assertions alongside existing hook tests.
 - [`tests/features/alchemy/shared/ui/unlock-text.test.tsx`](../../../tests/features/alchemy/shared/ui/unlock-text.test.tsx): consolidate to representative implicit-keyword coverage plus the explicit `**...**` markdown branch. Do not reduce all parser branches to one case.
 
 ### Item-shine and palette contracts

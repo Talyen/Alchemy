@@ -1,5 +1,6 @@
 import { readDeviceDisplayPreferences, writeDeviceDisplayPreferences } from "@/features/alchemy/shared/storage";
 import { create } from "zustand";
+import { useShallow } from "zustand/react/shallow";
 import { DEFAULT_DEVICE_DISPLAY, normalizeDisplayPercent, type DeviceDisplayPreferences } from "@/lib/settings-values";
 
 interface DeviceDisplayStore extends DeviceDisplayPreferences {
@@ -16,3 +17,9 @@ export const useDeviceDisplayStore = create<DeviceDisplayStore>((set) => ({
 }));
 
 useDeviceDisplayStore.subscribe(writeDeviceDisplayPreferences);
+
+export function useDeviceDisplayPreferences(): DeviceDisplayPreferences {
+  return useDeviceDisplayStore(
+    useShallow((s) => ({ gameSizePercent: s.gameSizePercent, tooltipSizePercent: s.tooltipSizePercent })),
+  );
+}

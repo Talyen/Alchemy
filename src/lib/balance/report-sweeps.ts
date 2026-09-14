@@ -175,7 +175,8 @@ export function runCardSweepIsolated(options: ReportRunOptions, enemyId: string)
   const iterations = Math.max(10, Math.floor(options.iterations / 10));
   for (const tier of REPORT_TIERS) {
     for (let index = 0; index < options.cardDeckSamples; index += 1) {
-      const characterId = ids[index % ids.length]!;
+      const characterId = ids[index % ids.length] ?? ids[0];
+      if (!characterId) continue;
       const deckSeed = balanceScenarioSeed("card-isolated-deck", tier.preset, enemyId, index);
       const seed = balanceScenarioSeed("card-isolated-fight", tier.preset, characterId, enemyId, index);
       const shared = {

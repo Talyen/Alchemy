@@ -51,40 +51,32 @@ export function runActivityScreen(activity: RunActivity): Screen | null {
   return activity.kind === "idle" || activity.kind === "inactive" ? null : activity.kind;
 }
 
+const ACTIVITY_FACTORIES: Partial<Record<Screen, () => RunActivity>> = {
+  shop: () => ({ kind: "shop", data: emptyShopState() }),
+  alchemist: () => ({ kind: "alchemist", data: emptyAlchemistState() }),
+  "trinket-shop": () => ({ kind: "trinket-shop", data: emptyTrinketShopState() }),
+  "equipment-shop": () => ({ kind: "equipment-shop", data: emptyEquipmentShopState() }),
+  mystery: () => ({ kind: "mystery", data: emptyHydratedMysteryVisit() }),
+  corruption: () => ({ kind: "corruption", data: null }),
+};
+
+const STATELESS_RUN_SCREENS = new Set<ProgressActivityKind>([
+  "battle",
+  "rewards",
+  "destination",
+  "campfire",
+  "labyrinth-map",
+  "wildwood-removal",
+  "draft-deck",
+  "difficulty-select",
+]);
+
 export function transitionRunActivity(activity: RunActivity, screen: Screen): RunActivity {
   if (activity.kind === screen) return activity;
-  switch (screen) {
-    case "shop":
-      return { kind: screen, data: emptyShopState() };
-    case "alchemist":
-      return { kind: screen, data: emptyAlchemistState() };
-    case "trinket-shop":
-      return { kind: screen, data: emptyTrinketShopState() };
-    case "equipment-shop":
-      return { kind: screen, data: emptyEquipmentShopState() };
-    case "mystery":
-      return { kind: screen, data: emptyHydratedMysteryVisit() };
-    case "corruption":
-      return { kind: screen, data: null };
-    case "battle":
-    case "rewards":
-    case "destination":
-    case "campfire":
-    case "labyrinth-map":
-    case "wildwood-removal":
-    case "draft-deck":
-    case "difficulty-select":
-      return { kind: screen };
-    case "menu":
-    case "game-mode-select":
-    case "character-select":
-    case "options":
-    case "collection":
-    case "talents":
-    case "homestead":
-    case "armory":
-    case "game-over":
-    case "run-victory":
-      return activity;
+  const factory = ACTIVITY_FACTORIES[screen];
+  if (factory) return factory();
+  if (STATELESS_RUN_SCREENS.has(screen as ProgressActivityKind)) {
+    return { kind: screen as ProgressActivityKind };
   }
+  return activity;
 }

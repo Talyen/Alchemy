@@ -82,8 +82,9 @@ export function useBattleAutoEndTurn({
     [battleStateRef, canAutoEndTurn, clearAutoEndTurn, onEndTurnRef],
   );
 
-  // eslint-disable-next-line react-hooks/refs -- latest scheduler; not a render input
-  scheduleAutoEndTurnRef.current = scheduleAutoEndTurnRaw;
+  useEffect(() => {
+    scheduleAutoEndTurnRef.current = scheduleAutoEndTurnRaw;
+  });
 
   const scheduleAutoEndTurn = useCallback(
     (state?: BattleSnapshot) => scheduleAutoEndTurnRef.current(state),

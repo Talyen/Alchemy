@@ -167,8 +167,8 @@ export function ArtPanel({
               turnUrgentHide={turnUrgentHide}
               ccKeyword={ccKeyword}
               hoverShineActive={side === "enemy" && tooltipVisible}
-              {...(hoverShineColors === undefined ? {} : { hoverShineColors })}
-              {...(turnShineColors === undefined ? {} : { turnShineColors })}
+              hoverShineColors={hoverShineColors}
+              turnShineColors={turnShineColors}
             />
           </div>
           {artCorner}
@@ -226,9 +226,9 @@ function ActorArtFrame({
   impactCue?: CombatImpactCue | null;
   turnActive?: boolean;
   turnUrgentHide?: boolean;
-  turnShineColors?: readonly string[];
+  turnShineColors?: readonly string[] | undefined;
   hoverShineActive?: boolean;
-  hoverShineColors?: readonly string[];
+  hoverShineColors?: readonly string[] | undefined;
   ccKeyword?: ActiveCcKeyword | null;
 }) {
   const { pulse, sparksOverflow } = useImpactPulse(impactCue);
@@ -266,13 +266,10 @@ function ActorArtFrame({
           side={side}
           active={turnActive && !isDead}
           urgentHide={turnUrgentHide}
-          {...(turnShineColors === undefined ? {} : { shineColor: turnShineColors })}
+          shineColor={turnShineColors}
         />
         {deathsDoorActive ? <ArtDeathDoorBorder /> : null}
-        <ArtHoverKeywordBorder
-          active={hoverShineActive && !isDead}
-          {...(hoverShineColors === undefined ? {} : { shineColor: hoverShineColors })}
-        />
+        <ArtHoverKeywordBorder active={hoverShineActive && !isDead} shineColor={hoverShineColors} />
         {isDead ? (
           <SliceDeath
             imageUrl={art}

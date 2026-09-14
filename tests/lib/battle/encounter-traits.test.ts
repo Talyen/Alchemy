@@ -14,6 +14,7 @@ import { resolvePendingBattleReactions } from "@/lib/battle/enemy-attack-damage"
 import { damageEnemyHealth } from "@/lib/battle/types";
 import { normalizePersistedBattleState } from "@/lib/validation/normalize-persisted-battle-state";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
+import { processEncounterTraitHealthThreshold } from "@/lib/battle/encounter-trait-health-threshold";
 import { makeTestBattleState, patchBattleState } from "../../fixtures/battle";
 import { defaultCcState } from "../../fixtures/default-battle-state";
 
@@ -609,5 +610,37 @@ describe("Cinder Skin Health damage reactions", () => {
     expect(result.enemyHealth).toBe(0);
     expect(result.playerHealth).toBe(28);
     expect(result.flags.cinderSkinUsedThisTurn).toBe(true);
+  });
+});
+
+describe("encounter trait health threshold", () => {
+  it("triggers Divine Aegis once when enemy health crosses half", () => {
+    const base = makeTestBattleState();
+    const state = makeTestBattleState({
+      enemyHealth: 9,
+      enemyMaxHealth: 20,
+      currentEnemy: {
+        ...base.currentEnemy,
+        traits: [{ id: "divine-aegis", title: "Divine Aegis", description: "" }],
+      },
+    });
+    const result = processEncounterTraitHealthThreshold(11, state, []);
+    expect(result.flags.divineAegisTriggered).toBe(true);
+    expect(result.enemyMitigation).toMatchObject({ armor: 2, block: 4 });
+    expect(processEncounterTraitHealthThreshold(11, result, [])).toBe(result);
+  });
+
+  it("triggers Divine Aegis when the hit starts exactly at half health", () => {
+    const base = makeTestBattleState();
+    const state = makeTestBattleState({
+      enemyHealth: 9,
+      enemyMaxHealth: 20,
+      currentEnemy: {
+        ...base.currentEnemy,
+        traits: [{ id: "divine-aegis", title: "Divine Aegis", description: "" }],
+      },
+    });
+    const result = processEncounterTraitHealthThreshold(10, state, []);
+    expect(result.flags.divineAegisTriggered).toBe(true);
   });
 });

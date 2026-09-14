@@ -1,3 +1,5 @@
+import { useIsArmoryLocked } from "@/features/alchemy/shared/stores/gear-store";
+import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profile-store";
 import { useHasActiveRun } from "@/features/alchemy/shared/stores/run-reads";
 import { GameMenu } from "@/features/alchemy/shared/ui/game-menu";
 import { BackgroundParticles } from "@/features/alchemy/shared/ui/background-particles";
@@ -5,7 +7,7 @@ import { isDesktop, quitDesktopApp } from "@/lib/platform";
 import { type Screen } from "@/lib/routing";
 import { UnsupportedSaveVersionScreen } from "@/app/unsupported-save-version-screen";
 import type { useReturnToRunNavigation } from "@/app/use-app-navigation";
-import { isProgressionFeatureUnlocked, type CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
+import { isProgressionFeatureUnlocked } from "@/features/alchemy/shared/config/game-data-catalog";
 
 import { getScreenParticleConfig } from "@/app/screen-particle-config";
 
@@ -56,8 +58,6 @@ export function GameMenuOverlay({
   currentScreen,
   onClose,
   nav,
-  finishedRunCharacters,
-  isArmoryLocked,
   onEndRun,
 }: {
   saveBlockedByNewerVersion: boolean;
@@ -66,11 +66,11 @@ export function GameMenuOverlay({
   currentScreen: Screen;
   onClose: () => void;
   nav: ReturnType<typeof useReturnToRunNavigation>;
-  finishedRunCharacters: CharacterId[];
-  isArmoryLocked: boolean;
   onEndRun: (() => void) | undefined;
 }) {
   const hasActiveRun = useHasActiveRun();
+  const finishedRunCharacters = useFinishedRunCharacters();
+  const isArmoryLocked = useIsArmoryLocked();
   return (
     <GameMenu
       isOpen={saveBlockedByNewerVersion ? false : gameMenuOpen}

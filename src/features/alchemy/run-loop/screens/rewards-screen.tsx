@@ -132,6 +132,16 @@ function getRewardPrompt(rewardType: RewardState["rewardType"]): string {
   }
 }
 
+function RewardPlasmaController({ rewardState }: { rewardState: RewardState }) {
+  const hoveredCardId = useUiStore((s) => s.hoveredCardId);
+  const hoveredReward = useMemo(() => {
+    const hoveredId = hoveredCardId?.startsWith("reward-") ? hoveredCardId.slice("reward-".length) : null;
+    return hoveredId === null ? null : resolveRewardChoice(rewardState, hoveredId);
+  }, [hoveredCardId, rewardState]);
+  usePlasmaInteraction(getRewardColorPair(hoveredReward), hoveredReward !== null);
+  return null;
+}
+
 export function RewardsScreen({
   rewardState,
   onSkip,
@@ -148,19 +158,13 @@ export function RewardsScreen({
   const rewardMaterials = rewardState.materials;
   const choicePrompt = getRewardPrompt(rewardState.rewardType);
 
-  const hoveredCardId = useUiStore((s) => s.hoveredCardId);
-  const hoveredReward = useMemo(() => {
-    const hoveredId = hoveredCardId?.startsWith("reward-") ? hoveredCardId.slice("reward-".length) : null;
-    return hoveredId === null ? null : resolveRewardChoice(rewardState, hoveredId);
-  }, [hoveredCardId, rewardState]);
-
   const claimLocked = claimInFlight || rewardChoices.length === 0;
   const skipDisabled = claimInFlight;
   const showSkip = rewardState.rewardType === "card" || rewardChoices.length === 0;
-  usePlasmaInteraction(getRewardColorPair(hoveredReward), hoveredReward !== null);
 
   return (
     <TitledScreenShell title="Victory" maxWidthClass="max-w-6xl">
+      <RewardPlasmaController rewardState={rewardState} />
       <FadeSlot
         swapKey={`${rewardState.rewardType}:${rewardChoices.map((item) => getRewardChoiceId(item)).join("-")}`}
         className="flex flex-col"
