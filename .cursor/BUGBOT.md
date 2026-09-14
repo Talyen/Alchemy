@@ -9,4 +9,4 @@ Prioritize:
 - Run-session write ports vs direct store mutation.
 - Changed game behavior without a trustworthy regression assertion at its owning layer. Inspect existing consumer and integration tests before calling a gap; a matching test filename is neither required nor proof of coverage.
 
-Do not duplicate ESLint, import-boundary, or Prettier findings. Ignore generated asset barrels and committed optimized outputs.
+Do not duplicate ESLint, import-boundary, or Prettier findings. Skip routine generated bulk, but inspect relevant generated asset barrels and optimized outputs when investigating missing assets, incorrect mappings, or generation defects. Fix their authoring sources rather than hand-editing generated output.

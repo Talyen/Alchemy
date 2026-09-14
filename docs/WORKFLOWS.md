@@ -6,8 +6,9 @@ For refactors and simplification passes on attached paths, use [docs/Audits](./A
 
 **Import paths:** only `@/*` → `src/*` in `tsconfig.json`. Use **on-disk** capability paths under `src/features/alchemy/` (for example `@/features/alchemy/shared/stores/run-reads`) — not legacy alias paths that skip `shared/`.
 
-**Read scope:** use the task index and open one workflow section at a time. Expand
-only when a checklist crosses that boundary. Generated asset barrels are
+**Read scope:** use the task index to locate missing context. Batch related
+sections when useful and skip material already understood; follow dependencies
+when they matter to the requested behavior. Generated asset barrels are
 outputs; use the [asset workflow](./WORKFLOWS-ASSETS.md) for their sources and
 regeneration. Each checklist's tests are selected by the changed-path route
 ([CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change)); only
@@ -257,7 +258,7 @@ Incoming `receiveHalf*` resist talents use `scaleReceivedPlayerDamage` in `src/l
 
 Talent trees accept any count ≥ 1 in rows of 1/2/3/4, with overflow in its own row.
 
-`talent-effect-invariants` must stay green: every manifest field is written by a talent or homestead key (or an explicit unused allowlist), every talent-written field is read in battle/meta code, and non-boolean `set` fields have a single writer unless they are arrays. Talent descriptions are free text with no numeric parity lint (typography lint still applies) — keep them in lockstep with effects by hand.
+`talent-effect-invariants` must stay green: every manifest field is written by a talent or homestead key (or an explicit unused allowlist), every talent-written field is read in battle/meta code, and non-boolean `set` fields have a single writer unless they are arrays. Reader discovery uses typed property access, destructuring, and typed key registrations rather than receiver names. It checks wiring presence, not reachability or correct combat behavior; meaningful behavior tests remain necessary. Talent descriptions are free text with no numeric parity lint (typography lint still applies) — keep them in lockstep with effects by hand.
 
 Run-end keyword cards intentionally show level + XP bar only; the Talents screens own the unspent-point indicator. Dodge earns 1 XP per successful hero Dodge through `awardBattleDodgeXP`, using the battle counter delta in the same command that persists the resolved enemy turn. Ordinary card keyword XP and run-end multipliers still apply. Random damage grants the Physical keyword; a damage-type pool grants every possible type rather than its placeholder type. Never count combat text or award XP again while resuming a pending transition.
 
@@ -334,7 +335,7 @@ Visible behavior: [UI battle feedback](./UI.md#battle-feedback) and [battle moti
 - Wish choices open after active card transfers finish. Cards with both Draw and Wish show their draws first; queued Wishes also wait for the previous chosen card to reach the hand. Use the existing transfer-in-progress presentation signal without delaying gameplay commits.
 - Preserve immutable hidden-hand keys, callback binding, post-death navigation timing, and the rule that mid-enemy-turn reload skips presentation replay.
 - Nest the presentation-only attacker lunge outside shake so both effects compose; do not retime playback delays for it. Keep [battle timing](../src/lib/game-constants/battle-timing.ts) aligned with `combatant-attack-lunge` in [keyframes](../src/styles/keyframes.css) and the shake delay in [theme styles](../src/styles/theme.css). These owners define the exact phases and durations.
-- Run the focused battle playback tests and the selection from `verify`; use the raw Playwright path for animation coverage.
+- Run the focused battle playback tests and the selection from `verify`; use the shared browser fixture with real timing for animation coverage, following [the E2E guide](../tests/e2e/README.md#test-import). Do not request `fastBattle` or enable fast mode when timing is under test.
 
 ## Adding a new screen
 

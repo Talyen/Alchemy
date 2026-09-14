@@ -1,6 +1,6 @@
 # Contributing
 
-Install dependencies with `npm ci`. Use `npm run context -- <relevant paths>` for the applicable owner sections, or `npm run context` to list task categories. The [documentation map](./README.md#documentation) is the human index; [AGENTS.md](./AGENTS.md) owns scope, preservation of existing work, and Git authorization.
+Install dependencies with `npm ci`. `npm run context -- <relevant paths>` can locate applicable owner sections; `npm run context` lists task categories. Direct reads and scoped searches are equally valid. The [documentation map](./README.md#documentation) is the human index; [AGENTS.md](./AGENTS.md) owns scope, preservation of existing work, and Git authorization.
 
 ## What to run when you change…
 
@@ -69,7 +69,7 @@ Fixture, bootstrap, page-object, tag, and diagnostic instructions live in [tests
 
 Execution plans under `docs/Plans/` are workflow artifacts, not product correctness gates. Follow the [plan lifecycle](./docs/Plans/README.md) to finish and archive only task-owned plans, then validate with `npm run docs:check` (also included in the handoff gate). `npm run docs:check:final` is an explicit repository-wide closure check; another task's active plan does not require cancellation or block ordinary handoff.
 
-For instruction changes that affect coding behavior, use the pinned [agent evaluations](./.agents/evals/README.md); compare correctness alongside observed reads, retries and available host usage.
+Use matched [agent evaluations](./.agents/evals/README.md) for uncertain workflow changes, consequential changes to safeguards, or claims of improved agent performance. Straightforward contradiction removal and procedural simplification can use source review and documentation checks. Compare correctness alongside observed reads, retries, and available host usage when running trials.
 
 `npm run context:hotspots` and `npm run runs:show -- --last 10` are advisory process evidence. They never block push or handoff.
 
@@ -104,7 +104,7 @@ Release validation remains deliberately redundant because it protects published 
 
 ## Failure-first triage
 
-Follow [REFERENCE.md](./docs/REFERENCE.md#failure-first-triage). Start with the compact run record or failure digest, then open raw logs or traces only when the digest does not identify the next seam. Do not paste full reports into agent context.
+Follow [REFERENCE.md](./docs/REFERENCE.md#failure-first-triage). Start with the compact run record or failure digest when the cause is unclear. Open relevant logs or traces directly for a specific hypothesis; keep excerpts focused rather than pasting full reports into agent context.
 
 ## Changelog and patch notes
 

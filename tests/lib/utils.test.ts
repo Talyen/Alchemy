@@ -4,10 +4,15 @@ import {
   appendUniqueMany,
   capitalizeWord,
   clamp,
+  clamp01,
   createInstanceId,
   formatLargeAmount,
+  isValidDeckIndex,
   lerp,
 } from "@/lib/utils";
+import { removeWildwoodCard, createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
+import { applyMixToDeck } from "@/lib/alchemist";
+import { makeTestCard } from "../fixtures/cards";
 
 describe("clamp", () => {
   it("returns value when within bounds", () => {
@@ -33,6 +38,24 @@ describe("clamp", () => {
 
   it("throws when min exceeds max", () => {
     expect(() => clamp(5, 10, 0)).toThrow();
+  });
+});
+
+describe("clamp01", () => {
+  it("returns value when within [0, 1]", () => {
+    expect(clamp01(0.5)).toBe(0.5);
+    expect(clamp01(0)).toBe(0);
+    expect(clamp01(1)).toBe(1);
+  });
+
+  it("clamps values below 0 to 0", () => {
+    expect(clamp01(-0.1)).toBe(0);
+    expect(clamp01(-100)).toBe(0);
+  });
+
+  it("clamps values above 1 to 1", () => {
+    expect(clamp01(1.1)).toBe(1);
+    expect(clamp01(100)).toBe(1);
   });
 });
 
@@ -131,5 +154,65 @@ describe("appendUniqueMany", () => {
 
   it("works with strings", () => {
     expect(appendUniqueMany(["a", "b"], ["b", "c", "a"])).toEqual(["a", "b", "c"]);
+  });
+});
+
+function makeCard(id: string) {
+  return makeTestCard({ id, cost: 1, effects: [] });
+}
+
+describe("isValidDeckIndex", () => {
+  it("accepts valid integer indices", () => {
+    expect(isValidDeckIndex(0, 3)).toBe(true);
+    expect(isValidDeckIndex(2, 3)).toBe(true);
+  });
+  it("rejects fractional, NaN, Infinity, out of bounds", () => {
+    expect(isValidDeckIndex(0.5, 3)).toBe(false);
+    expect(isValidDeckIndex(NaN, 3)).toBe(false);
+    expect(isValidDeckIndex(Infinity, 3)).toBe(false);
+    expect(isValidDeckIndex(-1, 3)).toBe(false);
+    expect(isValidDeckIndex(3, 3)).toBe(false);
+    expect(isValidDeckIndex(10, 3)).toBe(false);
+  });
+});
+
+describe("removeWildwoodCard", () => {
+  it("rejects non-integer indices", () => {
+    const state = { ...createInitialWildwoodDraftState("knight", () => 0.5), phase: "removal" as const };
+    const deck = [
+      makeCard("a"),
+      makeCard("b"),
+      makeCard("c"),
+      makeCard("d"),
+      makeCard("e"),
+      makeCard("f"),
+      makeCard("g"),
+      makeCard("h"),
+    ];
+    expect(removeWildwoodCard(state, deck, 0.5)).toBeNull();
+    expect(removeWildwoodCard(state, deck, NaN)).toBeNull();
+    expect(removeWildwoodCard(state, deck, Infinity)).toBeNull();
+    expect(removeWildwoodCard(state, deck, -1)).toBeNull();
+    expect(removeWildwoodCard(state, deck, 8)).toBeNull();
+  });
+});
+
+describe("applyMixToDeck", () => {
+  it("throws for fractional or NaN indices", () => {
+    const deck = [makeCard("a"), makeCard("b"), makeCard("c")];
+    const mixed = makeCard("mixed");
+    expect(() => applyMixToDeck(deck, 0.5 as unknown as number, 1, mixed)).toThrow();
+    expect(() => applyMixToDeck(deck, NaN, 1, mixed)).toThrow();
+    expect(() => applyMixToDeck(deck, 0, 1.2, mixed)).toThrow();
+    expect(() => applyMixToDeck(deck, 0, 0, mixed)).toThrow();
+    expect(() => applyMixToDeck(deck, -1, 1, mixed)).toThrow();
+    expect(() => applyMixToDeck(deck, 0, 5, mixed)).toThrow();
+  });
+  it("succeeds for valid distinct indices", () => {
+    const deck = [makeCard("a"), makeCard("b"), makeCard("c")];
+    const mixed = makeCard("mixed");
+    const result = applyMixToDeck(deck, 0, 1, mixed);
+    expect(result).toHaveLength(2);
+    expect(result[result.length - 1].id).toBe("mixed");
   });
 });

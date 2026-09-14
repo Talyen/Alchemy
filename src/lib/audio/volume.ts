@@ -2,7 +2,7 @@ import { isNonPlayerAudioHost } from "./host";
 import { audioState } from "./state";
 import { applyMusicVolume, pauseAllMusic } from "./music";
 import { syncActiveHtmlSfxPlayback } from "./sfx";
-import { clamp } from "../math";
+import { clamp01 } from "../math";
 
 function applyMuteToElements() {
   syncActiveHtmlSfxPlayback();
@@ -26,12 +26,12 @@ export function initAudioHost() {
 }
 
 export function setSfxVolume(value: number) {
-  audioState.sfxVolume = clamp(value, 0, 1);
+  audioState.sfxVolume = clamp01(value);
   syncActiveHtmlSfxPlayback();
 }
 
 export function setMasterVolume(value: number) {
-  audioState.masterVolume = clamp(value, 0, 1);
+  audioState.masterVolume = clamp01(value);
   syncActiveHtmlSfxPlayback();
 
   if (audioState.currentMusic) {
@@ -40,7 +40,7 @@ export function setMasterVolume(value: number) {
 }
 
 export function setMusicVolume(value: number) {
-  audioState.musicVolume = clamp(value, 0, 1);
+  audioState.musicVolume = clamp01(value);
 
   if (audioState.currentMusic) {
     applyMusicVolume(audioState.currentMusic);

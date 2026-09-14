@@ -17,7 +17,7 @@ Do not run an uncited sibling audit, broaden into standing cleanup, or manufactu
 
 ## Investigate
 
-Follow the [shared discovery and confirmation contract](../../../docs/Audits/README.md#discover-and-confirm) for scope coverage, repeat-pass starting points, evidence, and counterevidence. Keep probe output compact (`npm run audit:all`; bounded failure tail first). For multiple findings, publish a concise plan with disjoint file/symbol ownership and the cheapest matching verification per slice.
+Follow the [shared discovery and confirmation contract](../../../docs/Audits/README.md#discover-and-confirm) for scope coverage, repeat-pass starting points, evidence, and counterevidence. Keep probe output compact (`npm run audit:all`); use summaries when the cause is unclear and open relevant evidence directly for a specific hypothesis. For multiple findings, publish a concise plan with disjoint file/symbol ownership and the cheapest matching verification per slice.
 
 ## Delegate implementation efficiently
 

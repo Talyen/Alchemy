@@ -1,5 +1,5 @@
 export { cn } from "./cn";
-export { clamp, lerp } from "./math";
+export { clamp, clamp01, lerp } from "./math";
 
 export function capitalizeWord(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);

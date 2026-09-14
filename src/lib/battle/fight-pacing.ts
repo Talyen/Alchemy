@@ -1,4 +1,5 @@
 import { FIGHT_PACING } from "../game-constants";
+import { clamp01 } from "../math";
 import type { EnemyType } from "@/lib/game-data";
 import type { BattleState } from "./types";
 
@@ -37,11 +38,11 @@ export function fightPacingPoolMetrics(state: BattleState): FightPacingPoolMetri
 }
 
 function bandedBonus(severity: number, minBonus: number, maxBonus: number): number {
-  return minBonus + (maxBonus - minBonus) * Math.min(1, Math.max(0, severity));
+  return minBonus + (maxBonus - minBonus) * clamp01(severity);
 }
 
 function smoothstep(value: number): number {
-  const clamped = Math.min(Math.max(value, 0), 1);
+  const clamped = clamp01(value);
   return clamped * clamped * (3 - 2 * clamped);
 }
 
@@ -55,7 +56,7 @@ export function fightPacingComebackMultiplier(side: FightPacingSide, metrics: Fi
   if (!applies) return 1;
 
   const span = Math.max(SPAN_EPSILON, FIGHT_PACING.maxDelta - FIGHT_PACING.evenThreshold);
-  const severity = Math.min(1, (absDelta - FIGHT_PACING.evenThreshold) / span);
+  const severity = clamp01((absDelta - FIGHT_PACING.evenThreshold) / span);
   return 1 + bandedBonus(severity, FIGHT_PACING.comebackMin, FIGHT_PACING.comebackMax);
 }
 

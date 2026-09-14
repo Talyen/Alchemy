@@ -60,22 +60,12 @@ function applyDodgeDrawAndPlay(state: BattleState, combatTexts: CombatTextEvent[
   return nextState;
 }
 
-function applyOnPlayerDodge(state: BattleState, combatTexts: CombatTextEvent[], dodgedAmount: number): BattleState {
-  let nextState = {
-    ...state,
-    uniqueGear: {
-      ...state.uniqueGear,
-      viperReady: state.uniqueGear.viperReady || state.gearEffects.dodgeReadiesVenomousHit > 0,
-      wildheartReady: state.uniqueGear.wildheartReady || state.gearEffects.dodgeReadiesNatureCrit > 0,
-    },
-  };
-  if (state.gearEffects.dodgeSpendsPreservedBlock > 0 && state.playerStatuses.block > 0) {
-    const spent = halveRounded(state.playerStatuses.block);
-    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: spent });
-    nextState = setPlayerStatus(nextState, "block", state.playerStatuses.block - spent);
-    nextState = dealPlayerTypedHit(nextState, "physical", spent, combatTexts);
-  }
-  if (state.gearEffects.archeryDodgeAndDraw > 0) nextState = drawKeywordCard(nextState, "archery");
+function applyDodgeDefensiveReactions(
+  state: BattleState,
+  combatTexts: CombatTextEvent[],
+  dodgedAmount: number,
+): BattleState {
+  let nextState = state;
   if (nextState.gearEffects.blockOnDodge > 0) {
     nextState = addPlayerStatusWithCombatText(nextState, "block", nextState.gearEffects.blockOnDodge, combatTexts);
   }
@@ -86,7 +76,15 @@ function applyOnPlayerDodge(state: BattleState, combatTexts: CombatTextEvent[], 
   if (armor > 0) nextState = applyArmorReward(nextState, armor, combatTexts);
   const healing = nextState.gearEffects.healOnDodge + nextState.talentEffects.healOnDodge;
   if (healing > 0) nextState = applyHealingWithCombatText(nextState, healing, combatTexts);
-  nextState = applyDodgeTalentStatuses(nextState, combatTexts);
+  return applyDodgeTalentStatuses(nextState, combatTexts);
+}
+
+function applyDodgeCounterAttacks(
+  state: BattleState,
+  combatTexts: CombatTextEvent[],
+  dodgedAmount: number,
+): BattleState {
+  let nextState = state;
   if (nextState.gearEffects.physicalOnDodge > 0 && nextState.enemyHealth > 0) {
     nextState = dealPlayerTypedHit(nextState, "physical", nextState.gearEffects.physicalOnDodge, combatTexts);
   }
@@ -99,6 +97,11 @@ function applyOnPlayerDodge(state: BattleState, combatTexts: CombatTextEvent[], 
   if (nextState.talentEffects.goldOnDodge > 0) {
     nextState = addGoldWithCombatText(nextState, nextState.talentEffects.goldOnDodge, combatTexts);
   }
+  return nextState;
+}
+
+function applyDodgeOffensiveBuffs(state: BattleState): BattleState {
+  let nextState = state;
   const nextAttackBonus =
     nextState.gearEffects.nextAttackPhysicalOnDodge + nextState.talentEffects.nextAttackPhysicalOnDodge;
   if (nextAttackBonus > 0) {
@@ -125,6 +128,28 @@ function applyOnPlayerDodge(state: BattleState, combatTexts: CombatTextEvent[], 
   if (nextState.talentEffects.nextNatureCardFreeOnDodge) {
     nextState = { ...nextState, flags: { ...nextState.flags, nextNatureCardFree: true } };
   }
+  return nextState;
+}
+
+function applyOnPlayerDodge(state: BattleState, combatTexts: CombatTextEvent[], dodgedAmount: number): BattleState {
+  let nextState = {
+    ...state,
+    uniqueGear: {
+      ...state.uniqueGear,
+      viperReady: state.uniqueGear.viperReady || state.gearEffects.dodgeReadiesVenomousHit > 0,
+      wildheartReady: state.uniqueGear.wildheartReady || state.gearEffects.dodgeReadiesNatureCrit > 0,
+    },
+  };
+  if (state.gearEffects.dodgeSpendsPreservedBlock > 0 && state.playerStatuses.block > 0) {
+    const spent = halveRounded(state.playerStatuses.block);
+    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: spent });
+    nextState = setPlayerStatus(nextState, "block", state.playerStatuses.block - spent);
+    nextState = dealPlayerTypedHit(nextState, "physical", spent, combatTexts);
+  }
+  if (state.gearEffects.archeryDodgeAndDraw > 0) nextState = drawKeywordCard(nextState, "archery");
+  nextState = applyDodgeDefensiveReactions(nextState, combatTexts, dodgedAmount);
+  nextState = applyDodgeCounterAttacks(nextState, combatTexts, dodgedAmount);
+  nextState = applyDodgeOffensiveBuffs(nextState);
   if (nextState.talentEffects.companionAttacksOnDodge) {
     nextState = processCompanionTurnStart(nextState, combatTexts);
   }

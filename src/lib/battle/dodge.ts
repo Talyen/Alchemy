@@ -7,6 +7,7 @@ import {
   STATUS_CONFIG,
   UNIQUE_GEAR_COMBAT,
 } from "../game-constants";
+import { clamp } from "../math";
 import { mergeCombatText } from "./combat-text";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { hasEncounterBenefit, hasEnemyTrait, type BattleState, type CombatTextEvent } from "./types";
@@ -35,7 +36,7 @@ function getPlayerDodgeChance(
   if (state.talentEffects.dodgeChanceBelowHalfHealth > 0 && state.playerHealth < state.playerMaxHealth / HALF_DIVISOR) {
     chance += state.talentEffects.dodgeChanceBelowHalfHealth;
   }
-  return Math.min(MAX_PLAYER_DODGE_CHANCE, Math.max(0, chance));
+  return clamp(chance, 0, MAX_PLAYER_DODGE_CHANCE);
 }
 
 function tryDodgePacket(

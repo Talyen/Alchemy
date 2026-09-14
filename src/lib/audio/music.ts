@@ -11,7 +11,7 @@ import {
   MUSIC_MASTER_GAIN,
 } from "../game-constants";
 import { audioState } from "./state";
-import { clamp } from "../math";
+import { clamp01 } from "../math";
 import { pickRandomUnsafe } from "../rng";
 
 const musicBase = audioUrl(MUSIC_BASE_PATH);
@@ -144,14 +144,10 @@ export function applyMusicVolume(
   key: string | null = musicElementKeys.get(el) ?? audioState.currentMusicKey,
   fadeProgress?: number,
 ) {
-  if (fadeProgress !== undefined) musicElementFadeGains.set(el, clamp(fadeProgress, 0, 1));
-  const fadeGain = clamp(fadeProgress ?? musicElementFadeGains.get(el) ?? 1, 0, 1);
+  if (fadeProgress !== undefined) musicElementFadeGains.set(el, clamp01(fadeProgress));
+  const fadeGain = clamp01(fadeProgress ?? musicElementFadeGains.get(el) ?? 1);
   const boost = key && BOSS_MUSIC_KEYS.has(key) ? MUSIC_BOSS_VOLUME_BOOST : 1;
-  el.volume = clamp(
-    audioState.musicVolume * audioState.masterVolume * MUSIC_MASTER_GAIN * fadeGain * boost,
-    MUSIC_CONFIG.VOLUME_MIN,
-    1,
-  );
+  el.volume = clamp01(audioState.musicVolume * audioState.masterVolume * MUSIC_MASTER_GAIN * fadeGain * boost);
 }
 
 export function isMusicPaused(): boolean {

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { cn } from "@/lib/utils";
+import { clamp01, cn } from "@/lib/utils";
 import {
   getPlasmaColorPair,
   lerpParsedPlasmaColor,
@@ -126,7 +126,7 @@ export function KeywordPlasmaBackground({
     <div
       aria-hidden
       className={cn("pointer-events-none absolute inset-0 mix-blend-plus-lighter", className)}
-      style={{ opacity: Math.max(0, Math.min(1, intensity / 100)) }}
+      style={{ opacity: clamp01(intensity / 100) }}
     >
       <canvas
         ref={canvasRef}

@@ -8,6 +8,7 @@ import {
   COMBATANT_STATUS_ORBIT_RADIUS,
   COMBATANT_STATUS_STAR_COUNT,
 } from "@/lib/game-constants";
+import { clamp01 } from "@/lib/math";
 
 export type CombatantStatusEffectKind = "stun" | "freeze";
 
@@ -37,7 +38,7 @@ function combatantCardEffectNoise(index: number, salt: number): number {
 
 export function combatantStatusWobbleDegrees(kind: CombatantStatusEffectKind, progress: number): number {
   if (kind !== "stun") return 0;
-  const appear = Math.min(Math.max(progress / 0.12, 0), 1);
+  const appear = clamp01(progress / 0.12);
   if (appear <= 0.01) return 0;
   return Math.sin(progress * Math.PI * 2) * 2.2 * appear;
 }
@@ -126,7 +127,7 @@ function drawSwirlingStars(
   progress: number,
   palette: CombatantStatusPalette,
 ): void {
-  const appear = Math.min(Math.max(progress / 0.12, 0), 1);
+  const appear = clamp01(progress / 0.12);
   if (appear <= 0.01) return;
 
   const minDim = Math.min(width, height);
@@ -154,7 +155,7 @@ function drawIceCrystals(
   progress: number,
   palette: CombatantStatusPalette,
 ): void {
-  const encroach = Math.min(Math.max(progress / COMBATANT_FREEZE_ENCROACH_PROGRESS, 0), 1);
+  const encroach = clamp01(progress / COMBATANT_FREEZE_ENCROACH_PROGRESS);
   const minDim = Math.min(width, height);
   const crackDensity = 0.7;
   const clearRadius = minDim * 0.55 * (1 - encroach * (0.55 + crackDensity * 0.3));
@@ -181,7 +182,7 @@ function drawIceCrystals(
     const along = combatantCardEffectNoise(index, 41);
     const edge = index % 4;
     const delay = (index / COMBATANT_STATUS_FLAKE_COUNT) * 0.72;
-    const flakeAppear = Math.min(Math.max((encroach - delay) / 0.28, 0), 1);
+    const flakeAppear = clamp01((encroach - delay) / 0.28);
     if (flakeAppear <= 0.02) continue;
 
     const insetNoise = combatantCardEffectNoise(index, 47);

@@ -16,7 +16,7 @@ import { emptyInventory } from "@/lib/homestead/inventory";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { gearDefinitionId, gearDefinitions, gearInstanceRarity } from "./definitions";
 import { type GearInstance, type GearAffixRoll, type GearRarity } from "./types";
-import { clamp, lerp } from "@/lib/math";
+import { clamp, clamp01, lerp } from "@/lib/math";
 import { EMPTY_CRAFTING_CURRENCIES, type CraftingCurrencyId } from "./crafting-ids";
 export type { CraftingCurrencyId } from "./crafting-ids";
 
@@ -119,7 +119,7 @@ function upgradeAffixValueToAstral(roll: GearAffixRoll): GearAffixRoll {
   const basic = def.roll.basic;
   const astral = def.roll.astral;
   const basicSpan = Math.max(1, basic.max - basic.min);
-  const progress = clamp((roll.value - basic.min) / basicSpan, 0, 1);
+  const progress = clamp01((roll.value - basic.min) / basicSpan);
   return {
     ...roll,
     value: clamp(Math.round(lerp(astral.min, astral.max, progress)), astral.min, astral.max),

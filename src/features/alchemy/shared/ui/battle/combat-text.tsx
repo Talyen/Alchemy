@@ -2,7 +2,7 @@ import { createElement, useLayoutEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
-import { cn } from "@/lib/utils";
+import { clamp01, cn } from "@/lib/utils";
 
 import type { CombatTextBurst, FloatingCombatText } from "../../types";
 import { getCombatTextColorClass, getCombatTextIcon } from "../../utils";
@@ -41,10 +41,9 @@ const FCT_ANIMATION_PROPS = (() => {
     new Set([0, tPopPeak, tPopEnd, tHoldEnd, tShrinkEnd, tFadeStart, ...riseSteps, totalDuration]),
   ).sort((a, b) => a - b);
 
-  const lerp = (start: number, end: number, progress: number) =>
-    start + (end - start) * Math.min(1, Math.max(0, progress));
+  const lerp = (start: number, end: number, progress: number) => start + (end - start) * clamp01(progress);
 
-  const getRiseEaseIn = (p: number) => Math.pow(Math.min(1, Math.max(0, p)), 3);
+  const getRiseEaseIn = (p: number) => Math.pow(clamp01(p), 3);
 
   const scaleAt = (t: number) => {
     if (t <= 0) return 0.5;

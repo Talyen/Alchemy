@@ -2,7 +2,7 @@
 
 On-demand FPS / hitch profiling for Alchemy. **Not** part of CI, pre-push, or ordinary E2E discovery.
 
-For harness failures, use the [failure-first triage guide](./REFERENCE.md#failure-first-triage) before opening a trace or per-run artifact.
+For harness failures, the [failure-first triage guide](./REFERENCE.md#failure-first-triage) helps locate evidence; open a known relevant trace or per-run artifact directly when useful.
 
 Use this when you are actively optimizing frame pacing and need repeatable numbers plus optional deep Chrome traces.
 
@@ -21,12 +21,12 @@ npm run perf -- --help
 ```
 
 `reports/current-run.md` and `reports/current-run.json` point to the latest
-report-producing command. Open that pointer first; it is ephemeral — overwritten on the next
+report-producing command. Use it to locate an unknown run; it is ephemeral — overwritten on the next
 run — and is not a historical index. `reports/` is otherwise opt-in evidence, not committed history.
 
-Agent read order: open the summary first, then the machine-readable result, and
-only then a relevant per-run file or trace. Traces are opt-in evidence and
-should not be loaded for an ordinary FPS question.
+Start with the summary when the cause is unclear. Open a relevant result,
+per-run file, or trace directly for a specific hypothesis. Choose evidence
+that answers the question; ordinary FPS questions usually need only the summary.
 
 Open a deep trace in Chrome: DevTools → Performance → Load profile → select the `.json` file.
 

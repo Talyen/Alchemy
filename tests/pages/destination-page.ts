@@ -1,3 +1,4 @@
+import { destinationLabel, type Destination } from "@/lib/routing/destinations";
 import { expect, type Locator, type Page } from "@playwright/test";
 
 const DESTINATION_NAME = /Boss|Combat|Campfire|Card Shop|Alchemist|Mystery|Corruption|Trinket Shop|Gear Shop/;
@@ -18,7 +19,8 @@ export class DestinationPage {
   }
 
   destinationButton(name: string) {
-    return this.page.getByRole("button", { name, exact: true });
+    const label = destinationLabel(name as Destination);
+    return this.page.getByRole("button", { name: label, exact: true });
   }
 
   async pick(name: string) {

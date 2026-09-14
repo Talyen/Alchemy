@@ -8,7 +8,7 @@ import {
 } from "./sound-registry";
 import { audioState } from "./state";
 import { getSoundUrl } from "./preload";
-import { clamp } from "../math";
+import { clamp01 } from "../math";
 import { pickRandomUnsafe } from "../rng";
 import {
   SFX_COOLDOWN_MS,
@@ -36,7 +36,7 @@ const activeHtmlSfx = new Set<ActiveHtmlSfx>();
 let sfxStopToken = 0;
 
 function htmlSfxVolume(volume: number): number {
-  return clamp(volume * audioState.sfxVolume * audioState.masterVolume, 0, 1);
+  return clamp01(volume * audioState.sfxVolume * audioState.masterVolume);
 }
 
 function applyHtmlSfxPlayback(entry: ActiveHtmlSfx) {

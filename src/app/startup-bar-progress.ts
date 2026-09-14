@@ -6,6 +6,7 @@ import {
   STARTUP_LOAD_FONT_WEIGHT,
   STARTUP_LOAD_IMAGE_WEIGHT,
 } from "@/lib/game-constants";
+import { clamp, clamp01 } from "@/lib/math";
 
 const CAUGHT_UP_EPSILON = 0.002;
 const MAX_FRAME_SECONDS = 0.1;
@@ -22,7 +23,7 @@ export function computeStartupLoadTarget({
   bootstrapReady: boolean;
 }): number {
   const imagesDone = imageTotal <= 0 || imageLoaded >= imageTotal;
-  const imageFrac = imageTotal <= 0 ? 1 : Math.min(1, Math.max(0, imageLoaded / imageTotal));
+  const imageFrac = imageTotal <= 0 ? 1 : clamp01(imageLoaded / imageTotal);
   const raw =
     STARTUP_LOAD_IMAGE_WEIGHT * imageFrac +
     STARTUP_LOAD_FONT_WEIGHT * (fontsReady ? 1 : 0) +
@@ -33,7 +34,7 @@ export function computeStartupLoadTarget({
 }
 
 export function advanceStartupBar(display: number, dtSeconds: number, target: number, complete: boolean): number {
-  const dt = Math.min(MAX_FRAME_SECONDS, Math.max(0, dtSeconds));
+  const dt = clamp(dtSeconds, 0, MAX_FRAME_SECONDS);
   const tau = STARTUP_BAR_TAU_MS / 1000;
   const chase = 1 - Math.exp(-dt / tau);
   let next = display + (target - display) * chase;

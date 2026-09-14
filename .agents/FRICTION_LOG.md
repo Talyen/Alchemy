@@ -2,7 +2,7 @@
 
 Read only when the current task encounters a related failure or surprise. Current procedures belong in canonical owners, not this log.
 
-Add one short row for unresolved friction with the observation and next useful action. When fixed, move the evidence to the current month's file in [history](./history/README.md), link the canonical prevention or explain why it was a one-off, and remove the active row. Do not reread resolved history routinely.
+Record unresolved recurring friction and consequential lessons with the observation and next useful action. Corrected typos, one-off environment issues, and self-explanatory fixes need no entry. When resolving an existing entry, preserve its useful evidence in [history](./history/README.md) and link reusable prevention in the canonical owner. Preserve existing history; do not create a record solely to log routine maintenance or reread resolved history routinely.
 
 ## Open
 

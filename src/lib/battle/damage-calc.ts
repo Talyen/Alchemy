@@ -33,23 +33,28 @@ export function forgeAppliesToDamageType(
   gearEffects?: BattleState["gearEffects"],
   companionAttack = false,
 ): boolean {
-  const holyForge =
-    damageType === "holy" &&
-    ((gearEffects?.holyPreservesForge ?? 0) > 0 || (gearEffects?.goldGrantsForgeAndHoly ?? 0) > 0);
-  const sharedForge =
-    (gearEffects?.sharedBurnBleedBonuses ?? 0) > 0 &&
-    (damageType === "burn" || damageType === "bleed") &&
-    (talentEffects.forgeToBurn || talentEffects.forgeToBleed);
-  return (
-    (companionAttack && (gearEffects?.companionBenefitsFromForge ?? 0) > 0) ||
-    holyForge ||
-    sharedForge ||
-    damageType === "physical" ||
-    damageType === "stun" ||
-    (damageType === "burn" && talentEffects.forgeToBurn) ||
-    (damageType === "holy" && talentEffects.forgeToHoly) ||
-    (damageType === "bleed" && talentEffects.forgeToBleed)
-  );
+  if (companionAttack && (gearEffects?.companionBenefitsFromForge ?? 0) > 0) return true;
+
+  const shared = (gearEffects?.sharedBurnBleedBonuses ?? 0) > 0;
+  switch (damageType) {
+    case "physical":
+    case "stun":
+      return true;
+    case "holy":
+      return (
+        talentEffects.forgeToHoly ||
+        (gearEffects?.holyPreservesForge ?? 0) > 0 ||
+        (gearEffects?.goldGrantsForgeAndHoly ?? 0) > 0
+      );
+    case "burn":
+      return talentEffects.forgeToBurn || (shared && talentEffects.forgeToBleed);
+    case "bleed":
+      return talentEffects.forgeToBleed || (shared && talentEffects.forgeToBurn);
+    case "poison":
+    case "freeze":
+    case "nature":
+      return false;
+  }
 }
 
 export function emptyBattleCard(id: string): BattleCard {

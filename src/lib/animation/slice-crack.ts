@@ -1,4 +1,5 @@
 import { sliceEffectNoise } from "./slice-noise";
+import { clamp01 } from "@/lib/math";
 
 export interface SlicePoint {
   x: number;
@@ -100,7 +101,7 @@ export const SLICE_CARD_FRACTION_RANGE = {
 } as const;
 
 export function sliceCrackPointAtFraction(fraction: number): SlicePoint {
-  const lead = Math.min(Math.max(fraction, 0), 1);
+  const lead = clamp01(fraction);
   const target = lead * SLICE_CRACK_TOTAL_ASPECT_LENGTH;
   for (let index = 0; index < SLICE_CRACK_POINTS.length - 1; index++) {
     const start = CUMULATIVE_ASPECT_LENGTHS[index] ?? 0;
@@ -122,7 +123,7 @@ export function sliceCrackPointAtFractionInSize(fraction: number, width: number,
 }
 
 export function sliceCrackPolylineToFraction(fraction: number, width: number, height: number): SlicePoint[] {
-  const lead = Math.min(Math.max(fraction, 0), 1);
+  const lead = clamp01(fraction);
   const first = SLICE_CRACK_POINTS[0] ?? { x: 0.5, y: 0.5 };
   const result: SlicePoint[] = [{ x: first.x * width, y: first.y * height }];
   if (lead <= 0) return result;
@@ -149,7 +150,7 @@ export function sliceCrackPolylineToFraction(fraction: number, width: number, he
 }
 
 export function sliceCrackTangentAtFraction(fraction: number): SliceVec {
-  const lead = Math.min(Math.max(fraction, 0), 1);
+  const lead = clamp01(fraction);
   const target = lead * SLICE_CRACK_TOTAL_ASPECT_LENGTH;
   const lastIndex = SLICE_CRACK_POINTS.length - 2;
   let segmentIndex = lastIndex;
@@ -189,7 +190,7 @@ export function sliceCrackSide(point: SlicePoint): number {
     const apy = py - ay;
     const abLength2 = abx * abx + aby * aby;
     if (abLength2 <= 0) continue;
-    const local = Math.min(Math.max((apx * abx + apy * aby) / abLength2, 0), 1);
+    const local = clamp01((apx * abx + apy * aby) / abLength2);
     const closestX = ax + abx * local;
     const closestY = ay + aby * local;
     const dx = px - closestX;

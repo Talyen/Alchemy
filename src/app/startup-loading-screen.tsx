@@ -1,4 +1,5 @@
 import { INITIAL_LOAD_MIN_DURATION_MS, LOADING_WORD_FADE_MS } from "@/lib/game-constants";
+import { clamp01 } from "@/lib/math";
 import { useSyncedLoadingWord } from "./use-synced-loading-word";
 
 interface Props {
@@ -6,7 +7,7 @@ interface Props {
 }
 
 export function StartupLoadingScreen({ progress }: Props) {
-  const fill = Math.min(1, Math.max(0, progress));
+  const fill = clamp01(progress);
   const { wordIndex, loadingWord } = useSyncedLoadingWord();
 
   return (

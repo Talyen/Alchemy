@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { CAMPFIRE_ANIMATION_MS } from "@/lib/game-constants";
+import { clamp01 } from "@/lib/math";
 
 export function useEasedHealth({
   from,
@@ -45,7 +46,7 @@ export function useEasedHealth({
 
     const startTime = performance.now();
     function animate(now: number) {
-      const progress = Math.min(1, Math.max(0, (now - startTime) / durationMs));
+      const progress = clamp01((now - startTime) / durationMs);
       const eased = easing === "linear" ? progress : 1 - Math.pow(1 - progress, 3);
       setAnimatedHealth(from + (to - from) * eased);
       if (progress < 1) {

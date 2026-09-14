@@ -12,7 +12,7 @@ import {
 import { BASE_PLAYER_MANA, CARDS_PER_TURN, MAX_PLAYER_HEALTH } from "../game-constants";
 import type { GearEffectManifest } from "@/lib/gear";
 import { defaultGearEffects } from "@/lib/gear";
-import { EMPTY_ENEMY_MITIGATION, type BattleState } from "./types";
+import { EMPTY_ENEMY_MITIGATION, type BattleState, type EnemyMitigation } from "./types";
 import { computeTrinketManifest } from "../trinkets";
 import { applyDrawResult, drawCards } from "./draw";
 import { defaultBattleState, defaultTalentEffects } from "./battle-setup-defaults";
@@ -68,6 +68,45 @@ export function drawOpeningHand(state: BattleState): BattleState {
       getBattleRng(state),
     ),
   );
+}
+
+function resolveStartingEnemyMitigation(
+  traits: BestiaryEntry["traits"],
+  startingArmor: number,
+  startingBlock: number,
+): EnemyMitigation {
+  const hasFortress = traits.some((trait) => trait.id === "iron-fortress");
+  return {
+    ...EMPTY_ENEMY_MITIGATION,
+    armor: startingArmor + (hasFortress ? LABYRINTH_MODIFIER_CONFIG.fortressArmor : 0),
+    block: startingBlock,
+  };
+}
+
+function resolveStartingPlayerStatuses(
+  baseStatuses: BattleState["playerStatuses"],
+  encounterBenefits: string[],
+  battleTalents: TalentEffectManifest,
+  battleGearEffects: BattleState["gearEffects"],
+  startingBlock: number,
+  playerStartingArmor: number,
+  mana: number,
+): BattleState["playerStatuses"] {
+  return {
+    ...baseStatuses,
+    phoenixFeather: encounterBenefits.includes("phoenix-nest") ? 1 : 0,
+    thorns: encounterBenefits.includes("bramblecoat") ? LABYRINTH_MODIFIER_CONFIG.playerThornsMinimum : 0,
+    block: startingBlock + (battleTalents.manaBulwarkActive ? mana : 0),
+    forge: battleTalents.startForge + battleGearEffects.startForge,
+    armor: playerStartingArmor + (battleTalents.manaShellActive ? mana : 0),
+  };
+}
+
+function resolveStartingEnemyThorns(traits: BestiaryEntry["traits"]): number {
+  if (traits.some((trait) => trait.id === "briar-crown")) return LABYRINTH_MODIFIER_CONFIG.bossThornsMinimum;
+  if (traits.some((trait) => trait.id === "thornhide")) return LABYRINTH_MODIFIER_CONFIG.enemyThornsMinimum;
+  if (traits.some((trait) => trait.id === "thorns")) return 1;
+  return 0;
 }
 
 export function createBattleStartState(options: CreateBattleStateOptions): BattleState {
@@ -136,32 +175,19 @@ export function createBattleStartState(options: CreateBattleStateOptions): Battl
     enemyMaxHealth,
     enemyRegeneration,
     roomScalingMultiplier,
-    enemyMitigation: {
-      ...EMPTY_ENEMY_MITIGATION,
-      armor:
-        startingArmor +
-        (battleEnemy.traits.some((trait) => trait.id === "iron-fortress")
-          ? LABYRINTH_MODIFIER_CONFIG.fortressArmor
-          : 0),
-      block: startingEnemyBlock,
-    },
-    playerStatuses: {
-      ...baseState.playerStatuses,
-      phoenixFeather: encounterBenefits.includes("phoenix-nest") ? 1 : 0,
-      thorns: encounterBenefits.includes("bramblecoat") ? LABYRINTH_MODIFIER_CONFIG.playerThornsMinimum : 0,
-      block: startingBlock + (battleTalents.manaBulwarkActive ? mana : 0),
-      forge: battleTalents.startForge + battleGearEffects.startForge,
-      armor: playerStartingArmor + (battleTalents.manaShellActive ? mana : 0),
-    },
+    enemyMitigation: resolveStartingEnemyMitigation(battleEnemy.traits, startingArmor, startingEnemyBlock),
+    playerStatuses: resolveStartingPlayerStatuses(
+      baseState.playerStatuses,
+      encounterBenefits,
+      battleTalents,
+      battleGearEffects,
+      startingBlock,
+      playerStartingArmor,
+      mana,
+    ),
     enemyStatuses: {
       ...baseState.enemyStatuses,
-      thorns: battleEnemy.traits.some((trait) => trait.id === "briar-crown")
-        ? LABYRINTH_MODIFIER_CONFIG.bossThornsMinimum
-        : battleEnemy.traits.some((trait) => trait.id === "thornhide")
-          ? LABYRINTH_MODIFIER_CONFIG.enemyThornsMinimum
-          : battleEnemy.traits.some((trait) => trait.id === "thorns")
-            ? 1
-            : 0,
+      thorns: resolveStartingEnemyThorns(battleEnemy.traits),
     },
     activeCompanion: startCompanion ? (companionLibrary[startCompanionId] ?? companionLibrary["wolf"]) : null,
     currentEnemy: battleEnemy,

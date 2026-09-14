@@ -30,6 +30,11 @@ const CHUNK_GROUPS = Object.freeze([
     test: /[\\/]src[\\/]lib[\\/]validation[\\/]/,
     priority: 7,
   },
+  {
+    name: "meta-features",
+    test: /[\\/]src[\\/]features[\\/]alchemy[\\/]meta[\\/]/,
+    priority: 6,
+  },
 ]);
 
 const BY_PRIORITY = [...CHUNK_GROUPS].sort((a, b) => b.priority - a.priority);

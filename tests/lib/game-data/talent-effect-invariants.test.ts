@@ -1,6 +1,7 @@
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
+import ts from "typescript";
+import { collectTalentEffectReaders } from "../../helpers/talent-effect-readers";
 import {
   computeTalentEffects,
   createEmptyTalentEffectManifest,
@@ -94,20 +95,6 @@ const HOMESTEAD_KEYS = new Set<string>([
 
 const APPLICATION_DIRS = ["src/lib/battle", "src/lib/homestead", "src/features/alchemy", "src/lib/validation"];
 
-function walkTsFiles(dir: string): string[] {
-  const entries = readdirSync(dir, { withFileTypes: true });
-  const files: string[] = [];
-  for (const entry of entries) {
-    const full = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      files.push(...walkTsFiles(full));
-      continue;
-    }
-    if (entry.name.endsWith(".ts") || entry.name.endsWith(".tsx")) files.push(full);
-  }
-  return files;
-}
-
 function talentWrittenFields(): Set<keyof TalentEffectManifest> {
   const fields = new Set<keyof TalentEffectManifest>();
   for (const talent of talentPool) {
@@ -138,23 +125,23 @@ describe("talent effect invariants", () => {
   });
 
   it("every talent-written field has an application reader or registered reaction", () => {
-    const sources = APPLICATION_DIRS.flatMap((dir) => walkTsFiles(join(ROOT, dir)));
-    const corpus = sources.map((file) => readFileSync(file, "utf8")).join("\n");
-    const unread: string[] = [];
-    for (const field of talentWrittenFields()) {
-      const needles = [
-        `talentEffects.${field}`,
-        `talents.${field}`,
-        `battleTalents.${field}`,
-        `talent.${field}`,
-        `chance: "${field}"`,
-        `: "${field}"`,
-        `["${field}"]`,
-      ];
-      if (!needles.some((needle) => corpus.includes(needle))) unread.push(field);
-    }
+    const config = ts.readConfigFile(join(ROOT, "tsconfig.json"), ts.sys.readFile);
+    const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, ROOT);
+    const program = ts.createProgram(parsed.fileNames, parsed.options);
+    const checker = program.getTypeChecker();
+    const defaults = program.getSourceFile(join(ROOT, "src/lib/game-data/talents/manifest-defaults.ts"))!;
+    const module = checker.getSymbolAtLocation(defaults)!;
+    const manifestSymbol = checker.getExportsOfModule(module).find((symbol) => symbol.name === "TalentEffectManifest")!;
+    const manifest = checker.getDeclaredTypeOfSymbol(manifestSymbol);
+    const sources = program
+      .getSourceFiles()
+      .filter((source) =>
+        APPLICATION_DIRS.some((dir) => relative(ROOT, source.fileName).replaceAll("\\", "/").startsWith(`${dir}/`)),
+      );
+    const readers = collectTalentEffectReaders(checker, manifest, sources);
+    const unread = [...talentWrittenFields()].filter((field) => !readers.has(field));
     expect(unread).toEqual([]);
-  });
+  }, 15000);
 
   it("non-boolean set fields have a single writer unless they concatenate as arrays", () => {
     const writers = new Map<string, string[]>();

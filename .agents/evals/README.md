@@ -1,6 +1,6 @@
 # Reproducible agent evaluations
 
-Use one or two representative tasks before promoting an instruction change that affects routine coding. Keep this a small set of real coding exercises, not an autonomous benchmark service. Formatting and link repairs need no behavioral trial.
+Use matched trials for uncertain workflow changes, consequential changes to safeguards, or claims of improved agent performance. Straightforward contradiction removal, procedural simplification, formatting, and link repairs can use source review and documentation checks. When trials are warranted, choose one or two representative tasks; keep this a small set of real coding exercises, not an autonomous benchmark service.
 
 ## Fixed setup
 
@@ -11,6 +11,8 @@ When a new cohort includes an uncommitted source snapshot, freeze that snapshot 
 Before coding trials, confirm that the evaluation sandbox supports the selected gates, including local loopback listeners used by tooling tests and preview smoke. Record sandbox and network settings in the comparison settings. Exclude setup failures and restart affected comparisons with matching capabilities.
 
 Use different variant names, but identical comparison settings. Put the per-variant instruction patch identity in acceptance evidence, not the shared settings. Run at least two trials per variant before claiming a reliable improvement. Use fresh verification (`ALCHEMY_VERIFY_FRESH=1`) in both variants for discovery comparisons; evaluate cache effectiveness separately with the same warm/cold procedure. Never compare an empty baseline event capture with an instrumented candidate as if that established savings.
+
+For new cohorts, include outcome-focused requests that leave implementation discovery to the agent. Keep acceptance checks separate from the request where they would disclose the workflow being evaluated. For example, a save-preference request can specify its default and persistence behavior without prescribing the schema, codec, fixture, or migration edits. Preserve historical prompts and baselines; give a changed request a new task version and use it identically in both variants.
 
 ## Record and compare
 
