@@ -12,6 +12,7 @@ import {
 } from "@/lib/utils";
 import { removeWildwoodCard, createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import { applyMixToDeck } from "@/lib/alchemist";
+import { createNumericManifest, mergeNumericManifests } from "@/lib/manifest-utils";
 import { makeTestCard } from "../fixtures/cards";
 
 describe("clamp", () => {
@@ -214,5 +215,21 @@ describe("applyMixToDeck", () => {
     const result = applyMixToDeck(deck, 0, 1, mixed);
     expect(result).toHaveLength(2);
     expect(result[result.length - 1].id).toBe("mixed");
+  });
+});
+
+describe("manifest utilities", () => {
+  it("creates a zeroed manifest for each declared key", () => {
+    expect(createNumericManifest(["damage", "block"] as const)).toEqual({ damage: 0, block: 0 });
+  });
+
+  it("merges numeric values while preserving the declared shape", () => {
+    const keys = ["damage", "block"] as const;
+    const base = { damage: 3, block: 4 };
+    const addition = { damage: 2, block: 1 };
+
+    expect(mergeNumericManifests(base, addition, keys)).toEqual({ damage: 5, block: 5 });
+    expect(base).toEqual({ damage: 3, block: 4 });
+    expect(addition).toEqual({ damage: 2, block: 1 });
   });
 });

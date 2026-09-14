@@ -16,6 +16,43 @@ import {
   runAffixSweep,
 } from "@/lib/balance/report-sweeps";
 
+function affixScenarioViolations(groups: Map<number, BalanceBatchConfig[]>) {
+  let count = 0;
+  const examples: string[] = [];
+  for (const [seed, configs] of groups) {
+    const baseline = configs[0];
+    const record = (message: string) => {
+      count += 1;
+      if (examples.length < 10)
+        examples.push(
+          `seed=${seed} ${baseline?.characterId}/${baseline?.talentPreset}/${baseline?.enemyId}: ${message}`,
+        );
+    };
+    if (configs.length !== gearAffixList.length + 1)
+      record(`expected one baseline and ${gearAffixList.length} treatments; got ${configs.length} calls`);
+    if (!baseline?.deck) record("missing baseline deck");
+    if (Object.values(baseline?.gearEffects ?? {}).some((value) => value !== 0))
+      record("baseline contains an affix effect");
+    for (let index = 1; index < configs.length; index += 1) {
+      const config = configs[index];
+      const affix = gearAffixList[index - 1];
+      if (config.deck !== baseline?.deck) record(`${affix?.id}: changed paired deck`);
+      if (
+        config.seed !== baseline?.seed ||
+        config.characterId !== baseline?.characterId ||
+        config.enemyId !== baseline?.enemyId ||
+        config.talentPreset !== baseline?.talentPreset ||
+        config.iterations !== baseline?.iterations
+      )
+        record(`${affix?.id}: changed paired battle`);
+      const active = Object.entries(config.gearEffects ?? {}).filter(([, value]) => value !== 0);
+      if (active.length !== 1 || active[0]?.[0] !== affix?.effectKey)
+        record(`${affix?.id}: expected its single effect, got ${active.map(([key]) => key).join(", ") || "none"}`);
+    }
+  }
+  return { count, examples };
+}
+
 describe("runCardSweepInClass", () => {
   beforeEach(() => {
     simulateWinSeries.mockReset();
@@ -44,18 +81,26 @@ describe("runCardSweepInClass", () => {
       groups.set(config.seed!, group);
     }
     expect(groups.size).toBe(3 * 8 * 2 * 4);
-    for (const configs of groups.values()) {
-      expect(configs).toHaveLength(gearAffixList.length + 1);
-      expect(configs.every((config) => config.deck === configs[0]?.deck)).toBe(true);
-      for (const config of configs.slice(1)) {
-        expect(Object.values(config.gearEffects!).filter((value) => value !== 0)).toHaveLength(1);
-      }
-    }
+    // Collect all failures without invoking a matcher for every affix in every battle.
+    expect(affixScenarioViolations(groups)).toEqual({ count: 0, examples: [] });
     for (const row of rows) {
       expect(row.deltas.early.n).toBe(8 * 2 * 4 * 2);
       expect(row.deltas.mid.n).toBe(row.deltas.early.n);
       expect(row.deltas.late.n).toBe(row.deltas.early.n);
     }
+
+    const [seed, configs] = [...groups][0];
+    const broken = configs.map((config, index) =>
+      index === 1
+        ? { ...config, deck: [...config.deck!], gearEffects: {} as NonNullable<BalanceBatchConfig["gearEffects"]> }
+        : config,
+    );
+    const violations = affixScenarioViolations(new Map([[seed, broken]]));
+    expect(violations.count).toBe(2);
+    expect(violations.examples).toEqual([
+      expect.stringContaining("changed paired deck"),
+      expect.stringContaining("expected its single effect, got none"),
+    ]);
   });
 
   it("runs each full base deck once per tier and character", () => {

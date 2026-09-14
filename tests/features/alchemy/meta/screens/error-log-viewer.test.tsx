@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ErrorLogViewer } from "@/features/alchemy/meta/screens/error-log-viewer";
 import { useErrorLogStore } from "@/features/alchemy/shared/stores/error-log-store";
@@ -23,7 +24,8 @@ describe("ErrorLogViewer", () => {
     expect(screen.getByText("0 errors")).toBeTruthy();
   });
 
-  it("renders logged error items and expands on click", () => {
+  it("expands logged errors with click, Enter, and Space while exposing the expanded state", async () => {
+    const user = userEvent.setup();
     useErrorLogStore.getState().pushError({
       message: "Network test failure",
       source: "global",
@@ -36,9 +38,21 @@ describe("ErrorLogViewer", () => {
     expect(screen.getByText("Network test failure")).toBeTruthy();
     expect(screen.getByText("1 error")).toBeTruthy();
 
-    fireEvent.click(screen.getByText("Network test failure"));
+    const entry = screen.getByRole("button", { name: /Network test failure/, expanded: false });
+    await user.click(entry);
+    expect(entry.getAttribute("aria-expanded")).toBe("true");
     expect(screen.getByText("Stack:")).toBeTruthy();
     expect(screen.getByText("Error: at line 10")).toBeTruthy();
+    expect(document.activeElement).toBe(entry);
+
+    await user.keyboard("{Enter}");
+    expect(entry.getAttribute("aria-expanded")).toBe("false");
+    expect(screen.queryByText("Stack:")).toBeNull();
+
+    await user.keyboard(" ");
+    expect(entry.getAttribute("aria-expanded")).toBe("true");
+    await user.click(screen.getByText("Error: at line 10"));
+    expect(entry.getAttribute("aria-expanded")).toBe("true");
   });
 
   it("clears logged errors when Clear button is clicked", () => {

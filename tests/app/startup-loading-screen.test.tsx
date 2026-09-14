@@ -2,6 +2,7 @@ import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { StartupLoadingScreen } from "@/app/startup-loading-screen";
+import { applyInitialAnimationPreference } from "@/startup";
 import { INITIAL_LOAD_MIN_DURATION_MS, LOADING_WORD_INTERVAL_MS } from "@/lib/game-constants";
 
 function stubMatchMedia(matches: boolean) {
@@ -60,5 +61,26 @@ describe("StartupLoadingScreen", () => {
     expect(heading.textContent).toBe("AlchemyAlchemy");
     expect(heading.querySelector(".alchemy-loading-logo-fill")).toBeTruthy();
     expect(vi.getTimerCount()).toBe(0);
+  });
+});
+
+const ANIMATION_FLAG = "alchemy-disable-animations";
+const ANIMATION_CLASS = "alchemy-disable-animations";
+
+describe("applyInitialAnimationPreference", () => {
+  afterEach(() => {
+    localStorage.removeItem(ANIMATION_FLAG);
+    document.documentElement.classList.remove(ANIMATION_CLASS);
+  });
+
+  it("adds the animation-disable class when the flag is set", () => {
+    localStorage.setItem(ANIMATION_FLAG, "true");
+    applyInitialAnimationPreference();
+    expect(document.documentElement.classList.contains(ANIMATION_CLASS)).toBe(true);
+  });
+
+  it("leaves the class off without the flag", () => {
+    applyInitialAnimationPreference();
+    expect(document.documentElement.classList.contains(ANIMATION_CLASS)).toBe(false);
   });
 });

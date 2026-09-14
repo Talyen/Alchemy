@@ -1,8 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment -- scripts are JS without declarations
-// @ts-ignore no types for vite-aliases.mjs
 import { SSR_OPTIMIZE_INCLUDE } from "../../scripts/lib/vite-aliases.mjs";
 
 const ROOT = join(import.meta.dirname, "../..");

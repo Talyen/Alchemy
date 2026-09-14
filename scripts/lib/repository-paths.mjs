@@ -2,6 +2,10 @@ import { spawnSync } from "node:child_process";
 import { statSync } from "node:fs";
 import path from "node:path";
 
+// Verification must see new files even when Git's filesystem caches are stale.
+// Command-local overrides leave the user's persistent Git configuration intact.
+export const UNCACHED_GIT_OPTIONS = ["-c", "core.fsmonitor=false", "-c", "core.untrackedCache=false"];
+
 function normalizeRepositoryPath(rootDir, file) {
   const relative = path.relative(rootDir, path.resolve(rootDir, file.replaceAll("\\", "/"))).replaceAll(path.sep, "/");
   if (relative === ".." || relative.startsWith("../") || path.isAbsolute(relative))
@@ -11,11 +15,15 @@ function normalizeRepositoryPath(rootDir, file) {
 
 /** List tracked + untracked repository files via Git's inventory. Throws on Git failure. */
 export function listRepositoryFiles(rootDir) {
-  const result = spawnSync("git", ["ls-files", "--cached", "--others", "--exclude-standard", "-z"], {
-    cwd: rootDir,
-    encoding: "utf8",
-    maxBuffer: 16 * 1024 * 1024,
-  });
+  const result = spawnSync(
+    "git",
+    [...UNCACHED_GIT_OPTIONS, "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
+    {
+      cwd: rootDir,
+      encoding: "utf8",
+      maxBuffer: 16 * 1024 * 1024,
+    },
+  );
   if (result.status !== 0)
     throw new Error(`Could not list repository files: ${result.error?.message ?? result.stderr}`);
   return [...new Set(result.stdout.split("\0").filter(Boolean))].sort();

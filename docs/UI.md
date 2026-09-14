@@ -110,6 +110,12 @@ Shared motion accommodations live in
 `src/styles/keyframes.css` and `src/styles/components.css`; Armory also disables
 inventory movement and crafting feedback motion locally.
 
+ESLint checks keyboard counterparts for click actions and rejects focusable
+controls marked `aria-hidden`. Prefer native buttons with exposed state (for
+example, Error Log expansion uses `aria-expanded`). Backdrops and click shields
+may use line-scoped, explained exceptions: their keyboard behavior belongs to
+the existing Escape handler and child controls, not an extra action on the wrapper.
+
 ## Overlay lifecycle
 
 Modals and panels use `useModalEscapeDismiss` or `useCaptureEscapeCancel` so the global Escape stack remains ordered.

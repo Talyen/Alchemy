@@ -33,7 +33,7 @@ import { decayArmorAfterDamage, getEnemyDamageMultiplier } from "./status-helper
 import { prepareUniqueCardPlay, finishUniqueCardDamage, returnHarvestCard } from "./unique-card-effects";
 import { computeCardPayment } from "./card-cost-rules";
 import { cardHasKeyword, isNatureCard } from "./card-classification";
-import { isPlayerCcControlled } from "./status-cc";
+import { isCcControlled } from "./status-cc";
 import { MAX_HAND_SIZE, WISH_TRINKET_FORK_PERCENT } from "../game-constants";
 
 function consumeCardDiscounts(state: BattleState, payment: ReturnType<typeof computeCardPayment>): BattleState {
@@ -96,7 +96,7 @@ function validateCardPlay(
   if (isPlayerDefeated(state)) return null;
   if (state.wishOptions) return null;
   if (state.turnPhase !== "player") return null;
-  if (isPlayerCcControlled(state.playerCC)) return null;
+  if (isCcControlled(state.playerCC)) return null;
   const handCard = isCardInHand(state, card, index);
   if (!handCard) return null;
   const payment = computeCardPayment(state, handCard);

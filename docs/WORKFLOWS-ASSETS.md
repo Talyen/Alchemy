@@ -45,6 +45,10 @@ use transparent backgrounds, while crafting currencies retain their illustrated
 dark backgrounds. Check the actual alpha channel before importing transparent
 art: a visible checkerboard may be baked into an opaque image.
 
+Set `requiresTransparency: true` in the owning art manifest when an image must have a transparent background; omission defaults to false. The eight resource icons, battle Mana, and both piles require it. Preparation and read-only freshness checks validate decoded source and prepared pixels, including cache hits: each must contain fully transparent pixels and visible artwork. The requirement participates in the asset fingerprint. Replacement images are staged and validated before publication; failure preserves that image's previous output and skips manifest publication and orphan removal.
+
+Also inspect approved artwork against light and dark backgrounds. The pixel check rejects opaque checkerboards and empty images but cannot prove that every background pixel is correct. If reference-based image generation repeatedly paints a checkerboard into the image, regenerate without image references using the approved visual description, then repeat pixel and visual checks. Current approved masters remain the authoring sources.
+
 `Raw Assets/Misc/Card Back.png` is the single card used in transfer animations.
 `Draw Pile.png` and `Discard Pile.png` are the approved stack and its horizontal
 mirror; both retain transparent margins and a 3:4 canvas. Keep pile artwork

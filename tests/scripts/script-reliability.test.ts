@@ -7,9 +7,10 @@ import { pathToFileURL } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { commandInvocation } from "../../scripts/lib/command-invocation.mjs";
 import { runCommand, runCommandAsync } from "../../scripts/lib/run-command.mjs";
-import { resolvePushPaths } from "../../scripts/lib/changed-paths.mjs";
+import { resolvePushPaths, resolveSelectedPaths } from "../../scripts/lib/changed-paths.mjs";
+import { expandRepositoryPaths, listRepositoryFiles } from "../../scripts/lib/repository-paths.mjs";
 import { changedGitPaths } from "../../scripts/lib/current-run.mjs";
-import { resolveRoutePlan } from "../../scripts/lib/change-routes.mjs";
+import { resolveRoutePlan, resolveRoutes } from "../../scripts/lib/change-routes.mjs";
 import { validateTestSuitePaths } from "../../scripts/lib/test-commands.mjs";
 import { runAudits } from "../../scripts/audit-all.mjs";
 import { parsePerformanceArgs } from "../../scripts/run-performance.mjs";
@@ -223,6 +224,46 @@ describe("script execution reliability", () => {
     const selected = changedGitPaths(root);
     expect(selected).toEqual(expect.arrayContaining([old, next, " spaced.ts"]));
     expect(resolveRoutePlan(selected ?? []).commands.map((command) => command.key)).toContain("unit-save");
+  });
+
+  it("discovers new tests after warming Git caches without changing repository settings", () => {
+    const root = repository();
+    const directory = "tests/lib";
+    fs.mkdirSync(path.join(root, directory), { recursive: true });
+    fs.writeFileSync(path.join(root, directory, "existing.test.ts"), "existing");
+    fs.writeFileSync(path.join(root, ".gitignore"), "ignored.test.ts\n");
+    const head = commit(root);
+    git(root, "config", "core.untrackedCache", "true");
+    git(root, "config", "core.fsmonitor", "true");
+    try {
+      for (let index = 0; index < 3; index += 1) git(root, "status", "--short", "--untracked-files=all");
+      const added = `${directory}/new é space.test.ts`;
+      fs.writeFileSync(path.join(root, added), "new test");
+      fs.writeFileSync(path.join(root, "ignored.test.ts"), "ignored");
+      fs.unlinkSync(path.join(root, "game.ts"));
+      expect(changedGitPaths(root)?.sort()).toEqual(["game.ts", added].sort());
+      expect(resolveSelectedPaths(root, { paths: [] }).sort()).toEqual(["game.ts", added].sort());
+      expect(expandRepositoryPaths(root, [directory])).toContain(added);
+      expect(listRepositoryFiles(root)).not.toContain("ignored.test.ts");
+      expect(resolveRoutes([added]).flatMap((route) => route.commands)).toContain("unit-changed");
+      // Untracked source alone must also reject a pre-push check.
+      fs.writeFileSync(path.join(root, "game.ts"), "original");
+      expect(() => resolvePushPaths(root, `refs/heads/main ${head} refs/heads/main ${"0".repeat(40)}\n`)).toThrow(
+        "clean checkout",
+      );
+      expect(git(root, "config", "--get", "core.fsmonitor")).toBe("true");
+      expect(git(root, "config", "--get", "core.untrackedCache")).toBe("true");
+    } finally {
+      spawnSync("git", ["fsmonitor--daemon", "stop"], { cwd: root, stdio: "ignore" });
+    }
+  });
+
+  it("fails verification discovery explicitly when Git cannot read the repository", () => {
+    const root = fixture();
+    expect(changedGitPaths(root)).toBeNull();
+    expect(() => resolveSelectedPaths(root, { paths: [] })).toThrow("git status failed");
+    expect(() => listRepositoryFiles(root)).toThrow("Could not list repository files");
+    expect(() => resolvePushPaths(root, "")).toThrow("Could not inspect push revisions");
   });
 
   it("keeps deleted paths for verification while fallback search reads only surviving files", () => {

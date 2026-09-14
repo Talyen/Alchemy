@@ -52,7 +52,7 @@
     "outputHash": "f8129b11f7401559a7e65733d002dac0"
   },
   "battle-mana-crystal.webp": {
-    "hash": "be51ecddd504f7dd25d7e585a077be43",
+    "hash": "81af874f5f69308947f42b18d207d6ec",
     "outputHash": "4f94fa5011472369d990bee7c43756b9"
   },
   "bear-companion.webp": {
@@ -244,11 +244,11 @@
     "outputHash": "d3dd1e2b7b88425a7e2521ecee113436"
   },
   "discard-pile.webp": {
-    "hash": "41bf9257f7246c39d536f63741811a23",
+    "hash": "0bf28b1ab9b582a00c67f6706ca4cac4",
     "outputHash": "9068c26a9d97cfce3bbef9e5c803786e"
   },
   "draw-pile.webp": {
-    "hash": "180ac17d4161f37cd59fbdbdbd92bb8b",
+    "hash": "db0a94e31d1c31cf0a817888dcb37f31",
     "outputHash": "826683940bb8010a7849da819dc10a91"
   },
   "druid.webp": {
@@ -984,35 +984,35 @@
     "outputHash": "1c27013c6d552683f945a83220ce17fb"
   },
   "resource-crystal.webp": {
-    "hash": "52a1290c227ff579acb36ca725ddbfe4",
+    "hash": "d7d2d5b0853506ef73184b764039ab89",
     "outputHash": "9f849807e0c2ce6888275f8000ba81ca"
   },
   "resource-food.webp": {
-    "hash": "1928e684737c4436adebdf02a19887a3",
+    "hash": "2b30e4e45f9d6f99421e2d9a52a2e796",
     "outputHash": "8ed80f307beab258f3af013f782debbb"
   },
   "resource-gold.webp": {
-    "hash": "c7e4178135e75cbfe27b87e82b3fa103",
+    "hash": "f7384b3f85fb174b7f1d9ede37879f2f",
     "outputHash": "0f5d9fcfe2630419fdcb3860708a9262"
   },
   "resource-herbs.webp": {
-    "hash": "120dccaa3ba15a4ab40d517ca0e62af2",
+    "hash": "6652cf852b01bef4d0b62ec67504a7a2",
     "outputHash": "4991820ff0836d8ea5becdf9584875e0"
   },
   "resource-hide.webp": {
-    "hash": "310a11dac5f946c5ad059fcbab2f0261",
+    "hash": "8d2bc5427f1de631e7bb4f2e6cdd53b3",
     "outputHash": "d082d4d08ca745bf0169fdab88924a8c"
   },
   "resource-iron.webp": {
-    "hash": "432e34d1bb19a3eeb2ada922139a8423",
+    "hash": "cf366f8f4486e0cd725ea44346189b74",
     "outputHash": "a52f6a096d3bb005f7ca14b2b73b60dd"
   },
   "resource-stone.webp": {
-    "hash": "9db1224898cbe49e42c299f7f90bf10c",
+    "hash": "9bbcc6846e4c4e13a6afdd89e358b444",
     "outputHash": "8632017ab2a8c1f55cf158c95ee2a3ca"
   },
   "resource-wood.webp": {
-    "hash": "d7d67a0a1b974008ccba6cf04ee50177",
+    "hash": "e0ccf1b4f5ad7458b934fecc8485be0e",
     "outputHash": "1376937f9534cc401eacdaa38b260434"
   },
   "risen-skeleton-companion.webp": {

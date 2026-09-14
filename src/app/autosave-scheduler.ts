@@ -1,4 +1,5 @@
 import type { SaveWriteOutcome } from "@/features/alchemy/shared/storage";
+import { clamp } from "@/lib/math";
 
 export interface AutosaveDelayInput {
   debounceMs: number;
@@ -10,7 +11,7 @@ export interface AutosaveDelayInput {
 
 export function computeAutosaveDelay(input: AutosaveDelayInput): number {
   const maxWaitDelay = Math.max(0, input.maxWaitMs - (input.now - input.dirtySince));
-  return Math.max(input.retryAt - input.now, Math.min(input.debounceMs, maxWaitDelay));
+  return Math.max(input.retryAt - input.now, clamp(maxWaitDelay, 0, input.debounceMs));
 }
 
 export interface FlushGate {

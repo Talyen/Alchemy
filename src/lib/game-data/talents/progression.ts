@@ -7,6 +7,7 @@ import {
   XP_TRIANGULAR_MULTIPLIER,
 } from "@/lib/game-constants";
 import type { KeywordId } from "../types";
+import { clamp } from "@/lib/math";
 
 const TALENT_PROGRESS_CONFIG = {
   MAX_PERCENT: 100,
@@ -99,7 +100,7 @@ export function getTalentKeywordProgress(
   const spentPoints = unlockedCount;
   const unspentPoints = Math.max(0, points - spentPoints);
   const cappedUnspent =
-    totalTalents !== undefined ? Math.max(0, Math.min(unspentPoints, totalTalents - unlockedCount)) : unspentPoints;
+    totalTalents !== undefined ? clamp(unspentPoints, 0, Math.max(0, totalTalents - unlockedCount)) : unspentPoints;
   return {
     totalXP,
     points,

@@ -21,12 +21,12 @@ export function getActiveCcKeyword(cc: CcState): ActiveCcKeyword | null {
   return null;
 }
 
-export function isPlayerCcControlled(cc: CcState): boolean {
+export function isCcControlled(cc: CcState): boolean {
   return cc.stunSkipTurns > 0 || cc.freezeSkipTurns > 0;
 }
 
 export function finalizeCcSkipTurnDecrement(prev: CcState, next: CcState): CcState {
-  if (isPlayerCcControlled(prev) && !isPlayerCcControlled(next)) {
+  if (isCcControlled(prev) && !isCcControlled(next)) {
     return { ...next, cooldown: BATTLE_CONFIG.CC_IMMUNITY_DURATION };
   }
   return next;
@@ -161,7 +161,7 @@ export type EnemyCcTriggerResult = { kind: "skip"; state: BattleState } | { kind
 
 export function tryTriggerEnemyCc(input: EnemyCcTriggerCheckInput): EnemyCcTriggerResult | null {
   const { preHitHealth, nextState, stat, stackValue, thresholdFraction, ccCooldown, skipDuration, combatTexts } = input;
-  if (isPlayerCcControlled(nextState.enemyCC)) return null;
+  if (isCcControlled(nextState.enemyCC)) return null;
   if (preHitHealth <= 0 || stackValue < preHitHealth * thresholdFraction) return null;
   const immuneClear = applyEnemyCcImmunityClear({ nextState, stat, ccCooldown });
   if (immuneClear) return { kind: "immune", state: immuneClear };

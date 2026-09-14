@@ -1,4 +1,4 @@
-import { clamp01 } from "@/lib/math";
+import { clamp, clamp01 } from "@/lib/math";
 import { SLICE_NORMAL } from "./slice-crack";
 
 const SLICE_INTENSITY = 0.5;
@@ -41,7 +41,7 @@ export function computeSliceVisual(progress: number, width: number, height: numb
   const twistDeg = 7 * splitT * SLICE_INTENSITY;
   const dissolve = rawSplitT ** 2.6;
   const halfOpacity = 1 - dissolve;
-  const drawDuration = Math.min(SLICE_CRACK_DRAW_DURATION, Math.max(delay, 0.001));
+  const drawDuration = clamp(delay, 0.001, SLICE_CRACK_DRAW_DURATION);
   const crackDraw = clamp01(p / drawDuration);
   const fade = 1 - clamp01((p - delay) / 0.18);
   const lineOpacity = fade * Math.max(SLICE_INTENSITY, 0.35) * (0.55 + SLICE_TINT_STRENGTH * 0.7);

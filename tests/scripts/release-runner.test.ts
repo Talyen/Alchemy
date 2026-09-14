@@ -57,6 +57,7 @@ describe("release workflow result", () => {
       if (argv[1] === "watch" && argv.includes("--exit-status")) throw new Error("workflow failed");
       return "";
     });
+    // eslint-disable-next-line vitest/valid-expect -- attach the rejection assertion before advancing fake timers, then await it below
     const result = expect(runRelease({ label: "Release", gates: [] })).rejects.toThrow(
       "Release v0.1.1 failed (failure)",
     );

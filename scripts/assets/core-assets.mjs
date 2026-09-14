@@ -5,14 +5,27 @@ export const coreAssets = [
   { source: "Logo/Alchemy Logo.png", target: "alchemy-logo.webp", width: WIDTH.logo, quality: QUALITY.logo },
   // Misc
   // Piles share the boon preset (82): flat graphic fields band at QUALITY.card (80).
-  { source: "Misc/Draw Pile.png", target: "draw-pile.webp", width: WIDTH.card, quality: QUALITY.boon },
-  { source: "Misc/Discard Pile.png", target: "discard-pile.webp", width: WIDTH.card, quality: QUALITY.boon },
+  {
+    source: "Misc/Draw Pile.png",
+    target: "draw-pile.webp",
+    width: WIDTH.card,
+    quality: QUALITY.boon,
+    requiresTransparency: true,
+  },
+  {
+    source: "Misc/Discard Pile.png",
+    target: "discard-pile.webp",
+    width: WIDTH.card,
+    quality: QUALITY.boon,
+    requiresTransparency: true,
+  },
   { source: "Misc/Card Back.png", target: "card-back.webp", width: WIDTH.card, quality: QUALITY.boon },
   {
     source: "Misc/Mana Crystal.png",
     target: "battle-mana-crystal.webp",
     width: WIDTH.resource,
     quality: QUALITY.resource,
+    requiresTransparency: true,
   },
   {
     source: "Misc/pointer_c_shaded.png",

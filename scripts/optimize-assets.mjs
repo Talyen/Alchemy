@@ -1,4 +1,5 @@
-import { mkdir, readdir } from "node:fs/promises";
+import { mkdir, readdir, rename, rm } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
 import path from "node:path";
 
 import sharp from "sharp";
@@ -131,11 +132,12 @@ async function discoverGearSlotBackgrounds() {
   return discovered;
 }
 
-function artTransformSettings({ width, quality }) {
+function artTransformSettings({ width, quality, requiresTransparency = false }) {
   return {
     width,
     quality,
     ...SHARP_DEFAULTS,
+    ...(requiresTransparency ? { requiresTransparency: true } : {}),
   };
 }
 
@@ -145,14 +147,28 @@ function applyArtTransform(image, settings) {
     .webp({ quality: settings.quality, alphaQuality: settings.alphaQuality, effort: settings.effort });
 }
 
+async function validateTransparency(filename, label) {
+  const image = sharp(filename);
+  const { hasAlpha } = await image.metadata();
+  if (hasAlpha) {
+    const { channels } = await image.stats();
+    const alpha = channels.at(-1);
+    if (alpha.min === 0 && alpha.max > 0) return;
+  }
+  throw new Error(
+    `${label} requires fully transparent pixels and visible artwork; an alpha channel or painted checkerboard alone is insufficient.`,
+  );
+}
+
 /**
- * @param {{ source: string, target: string, width: number, quality: number }} asset
+ * @param {{ source: string, target: string, width: number, quality: number, requiresTransparency?: boolean }} asset
  * @param {import("./lib/asset-manifest-cache.mjs").ManifestEntry | undefined} storedEntry
  */
 async function optimizeAsset(asset, storedEntry, check) {
   const sourcePath = path.join(sourceDir, asset.source);
   const outputPath = path.join(outputDir, asset.target);
-  const settings = artTransformSettings({ width: asset.width, quality: asset.quality });
+  const settings = artTransformSettings(asset);
+  if (asset.requiresTransparency) await validateTransparency(sourcePath, `Source ${asset.source}`);
 
   const { fresh, entry } = await processFreshEntry(
     sourcePath,
@@ -160,9 +176,20 @@ async function optimizeAsset(asset, storedEntry, check) {
     settings,
     SCHEMA_VERSION,
     storedEntry,
-    () => applyArtTransform(sharp(sourcePath), settings).toFile(outputPath),
+    async () => {
+      // Validate staged bytes before replacing the last usable prepared image.
+      const temporaryPath = `${outputPath}.${randomUUID()}.tmp`;
+      try {
+        await applyArtTransform(sharp(sourcePath), settings).toFile(temporaryPath);
+        if (asset.requiresTransparency) await validateTransparency(temporaryPath, `Prepared ${asset.target}`);
+        await rename(temporaryPath, outputPath);
+      } finally {
+        await rm(temporaryPath, { force: true });
+      }
+    },
     { check },
   );
+  if (fresh && asset.requiresTransparency) await validateTransparency(outputPath, `Prepared ${asset.target}`);
   return { message: `${asset.target} ${fresh ? "already up to date" : "optimized"}`, entry };
 }
 

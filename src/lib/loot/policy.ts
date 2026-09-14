@@ -1,6 +1,6 @@
 import { LOOT_ACCOUNT_MULTIPLIERS, LOOT_DEPTH_CURVES, LOOT_SOURCE_WEIGHTS } from "@/lib/game-constants";
 import type { DifficultyId } from "@/lib/game-data";
-import { lerp } from "@/lib/math";
+import { clamp, lerp } from "@/lib/math";
 
 export type LootSource = keyof typeof LOOT_SOURCE_WEIGHTS;
 type LootKind = keyof (typeof LOOT_SOURCE_WEIGHTS)[LootSource];
@@ -67,7 +67,7 @@ export function resolveLootWeights({
   available?: LootAvailability;
 }): LootWeights {
   const weights: LootWeights = { ...LOOT_SOURCE_WEIGHTS[source] };
-  const transfer = Math.min(weights.basic, Math.max(0, astralChanceBonus));
+  const transfer = clamp(astralChanceBonus, 0, weights.basic);
   weights.basic -= transfer;
   weights.astral += transfer;
   const accountMultiplier = lootAccountMultiplier(progress.highestCompletedDifficulty);

@@ -16,6 +16,7 @@ import {
   DestinationArraySchema,
   TalentXPSchema,
   MaterialInventorySchema,
+  MaterialIdSchema,
 } from "./schema-enums";
 import { BattleCardSchema } from "./battle-card-schemas";
 import {
@@ -24,10 +25,7 @@ import {
   EncounterCombatTraitArraySchema,
   EncounterRewardTraitArraySchema,
 } from "./labyrinth-schemas";
-import { MATERIAL_IDS } from "@/lib/homestead/types";
 import { type RunRngState } from "@/lib/rng";
-
-const MaterialIdPersistSchema = z.enum(MATERIAL_IDS);
 
 const RunObtainedGearItemSchema = z.object({
   kind: z.literal("gear"),
@@ -76,7 +74,7 @@ const MysteryEffectSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("gainRandomTrinket"), fromIds: z.array(z.string()).optional() }),
   z.object({ kind: z.literal("gainRandomGear") }),
   z.object({ kind: z.literal("gainGeneratedGear"), baseItemId: z.string(), astral: z.literal(true).optional() }),
-  z.object({ kind: z.literal("gainMaterial"), material: MaterialIdPersistSchema, amount: z.number() }),
+  z.object({ kind: z.literal("gainMaterial"), material: MaterialIdSchema, amount: z.number() }),
 ]);
 
 const MysteryChoicePersistSchema = z.object({
@@ -220,22 +218,18 @@ const PersistedPendingRewardBaseSchema = {
   lastVictoryContentSystem: ContentSystemIdSchema.nullable().catch(null),
 };
 
+function createChoicePendingRewardSchema(rewardType: "card" | "boon" | "trinket") {
+  return z.object({
+    rewardType: z.literal(rewardType),
+    choiceIds: z.array(z.string()),
+    ...PersistedPendingRewardBaseSchema,
+  });
+}
+
 const PersistedPendingRewardUnionSchema = z.discriminatedUnion("rewardType", [
-  z.object({
-    rewardType: z.literal("card"),
-    choiceIds: z.array(z.string()),
-    ...PersistedPendingRewardBaseSchema,
-  }),
-  z.object({
-    rewardType: z.literal("boon"),
-    choiceIds: z.array(z.string()),
-    ...PersistedPendingRewardBaseSchema,
-  }),
-  z.object({
-    rewardType: z.literal("trinket"),
-    choiceIds: z.array(z.string()),
-    ...PersistedPendingRewardBaseSchema,
-  }),
+  createChoicePendingRewardSchema("card"),
+  createChoicePendingRewardSchema("boon"),
+  createChoicePendingRewardSchema("trinket"),
   z.object({
     rewardType: z.literal("gear"),
     // If every saved gear instance is invalid (catalog rotation), min(1) fails

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { TALENT_ICONS } from "@/features/alchemy/shared/config";
 import type { KeywordId } from "@/lib/game-data";
 import {
   talentPool,
@@ -291,5 +292,15 @@ describe("combat feedback talent progression", () => {
     expect(normalizeUnlockedTalents(purchased)).toEqual(purchased);
     expect(computeTalentEffects(purchased).holyGoldChance).toBe(10);
     expect(getAllocatableTalentChoices("holy", purchased.holy).map((talent) => talent.name)).toEqual(["Faith Barrier"]);
+  });
+});
+
+describe("talent icon registry", () => {
+  it("resolves every authored talent icon id", () => {
+    const missing = talentPool
+      .filter((talent) => talent.icon)
+      .filter((talent) => !(talent.icon && talent.icon in TALENT_ICONS))
+      .map((talent) => `${talent.id}:${talent.icon}`);
+    expect(missing).toEqual([]);
   });
 });

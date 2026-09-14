@@ -35,9 +35,6 @@ test.describe("Contiguous Run Journey", critical, () => {
     await expect(battle.endTurnBtn).toBeVisible({ timeout: 10_000 });
     await expect.poll(() => battle.handCount(), { timeout: 30_000 }).toBeGreaterThan(0);
 
-    const initialHandCount = await battle.handCount();
-    expect(initialHandCount).toBeGreaterThan(0);
-
     await battle.winViaCombat(10);
 
     const reward = new RewardPage(page);

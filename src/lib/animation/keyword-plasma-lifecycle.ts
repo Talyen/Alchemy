@@ -6,13 +6,14 @@ import {
   PLASMA_MIN_BACKING_SCALE,
   PLASMA_MAX_BACKING_SCALE,
 } from "./keyword-plasma-types";
+import { clamp } from "@/lib/math";
 
 export function resolvePlasmaBackingScale(width: number, height: number): number {
   const safeWidth = Math.max(1, width);
   const safeHeight = Math.max(1, height);
   const requested = (devicePixelRatio || 1) * PLASMA_BACKING_SCALE;
   const pixelLimited = Math.sqrt(PLASMA_MAX_BACKING_PIXELS / (safeWidth * safeHeight));
-  return Math.min(Math.max(requested, PLASMA_MIN_BACKING_SCALE), PLASMA_MAX_BACKING_SCALE, pixelLimited);
+  return Math.min(clamp(requested, PLASMA_MIN_BACKING_SCALE, PLASMA_MAX_BACKING_SCALE), pixelLimited);
 }
 
 export interface PlasmaLifecycle {

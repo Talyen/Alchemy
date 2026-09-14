@@ -10,7 +10,7 @@ export { applyCardEffects } from "./effect-handlers";
 export { regrowEnemyThorns } from "./encounter-trait-events";
 export { endPlayerTurn, recoverLegacyEnemyPhase } from "./enemy-turn";
 export { collectUncoveredDifficultyModifierKinds, collectUncoveredEnemyTraitIds } from "./enemy-turn-traits";
-export { getActiveCcKeyword, isPlayerCcControlled, type ActiveCcKeyword } from "./status-cc";
+export { getActiveCcKeyword, isCcControlled, type ActiveCcKeyword } from "./status-cc";
 export { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 export * from "./types";
 export { chooseWishCard } from "./wish";

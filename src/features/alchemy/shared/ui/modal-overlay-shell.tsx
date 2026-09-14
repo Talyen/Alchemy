@@ -53,6 +53,7 @@ function ModalContent({
   const pending = useHeldWhile(open, artworkPending);
   const interactive = open && !pending;
   return (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events -- only shields content clicks from the backdrop; child controls own keyboard actions
     <div
       key={session.id}
       ref={artworkRef}
@@ -101,6 +102,7 @@ export function ModalOverlayShell({
   if (!mounted || !mount) return null;
 
   return createPortal(
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events -- backdrop dismissal has the shared Escape handler; the backdrop is not a keyboard control
     <div
       inert={!interactive}
       data-testid={testId}

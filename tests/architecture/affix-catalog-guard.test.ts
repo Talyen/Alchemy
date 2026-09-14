@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { GEAR_AFFIX_COUNT } from "@/lib/game-constants";
 import { GEAR_AFFIX_IDS, gearAffixCatalog } from "@/lib/gear/affix-catalog";
+import { type GearBaseItemDefinition, gearBaseItemList } from "@/lib/gear/base-items";
+import { gearDefinitions } from "@/lib/gear/definitions";
+import { buildEligibleAffixPool } from "@/lib/gear/generation";
 import { GEAR_EFFECT_KEYS } from "@/lib/gear/gear-effect-manifest";
 
 describe("affix catalog guard", () => {
@@ -60,5 +64,48 @@ describe("affix catalog guard", () => {
         expect(range.min, `${definition.id} uniqueOnly should have fixed roll`).toBe(range.max);
       }
     }
+  });
+});
+
+describe("gear affix pool guard", () => {
+  it("every gear definition has an eligible pool at least as large as its minimum affix count", () => {
+    const failures: string[] = [];
+
+    for (const definition of Object.values(gearDefinitions)) {
+      if (definition.rarity === null) continue;
+      const pool = buildEligibleAffixPool(definition);
+      const minCount = GEAR_AFFIX_COUNT[definition.rarity].min;
+      if (pool.length < minCount) {
+        failures.push(`${definition.id}: pool ${pool.length} < min ${minCount}`);
+      }
+    }
+
+    expect(failures).toEqual([]);
+  });
+});
+
+describe("ranged weapon tagging", () => {
+  const list = gearBaseItemList as GearBaseItemDefinition[];
+
+  it("every base item has an explicit slotRule", () => {
+    const untagged = list.filter((item) => item.slotRule === undefined);
+    expect(untagged, untagged.map((i) => i.id).join(", ")).toEqual([]);
+  });
+
+  it("only known ranged weapons have slotRule 'ranged'", () => {
+    const ranged = list.filter((item) => item.slotRule === "ranged");
+    const ids = ranged.map((item) => item.id).sort();
+    expect(ids).toEqual(["crossbow", "longbow", "recurve-bow", "shortbow"]);
+  });
+
+  it("quiver has slotRule 'quiver'", () => {
+    const quiver = list.find((item) => item.id === "quiver");
+    expect(quiver?.slotRule).toBe("quiver");
+  });
+
+  it("no item other than quiver has slotRule 'quiver'", () => {
+    const quivers = list.filter((item) => item.slotRule === "quiver");
+    expect(quivers).toHaveLength(1);
+    expect(quivers[0]!.id).toBe("quiver");
   });
 });

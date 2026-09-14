@@ -74,14 +74,15 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
           <p className="py-8 text-center text-sm text-muted-foreground">No errors logged.</p>
         ) : (
           reversedErrors.map((e) => (
-            <div
-              key={e.id}
-              className="cursor-pointer rounded-shell-card border border-border/70 p-4 text-left surface-muted"
-              onClick={() => setExpandedId(expandedId === e.id ? null : e.id)}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
+            <div key={e.id} className="rounded-shell-card border border-border/70 p-4 text-left surface-muted">
+              <button
+                type="button"
+                aria-expanded={expandedId === e.id}
+                className="flex w-full cursor-pointer items-start justify-between gap-2 rounded-sm text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+                onClick={() => setExpandedId(expandedId === e.id ? null : e.id)}
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-2">
                     <span
                       className={cn(
                         "inline-block rounded-full px-2 py-0.5 text-xs font-semibold",
@@ -95,10 +96,12 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
                       {e.source}
                     </span>
                     <span className="truncate text-sm font-semibold text-foreground">{e.message}</span>
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground">{new Date(e.timestamp).toLocaleString()}</p>
-                </div>
-              </div>
+                  </span>
+                  <span className="mt-1 block text-xs text-muted-foreground">
+                    {new Date(e.timestamp).toLocaleString()}
+                  </span>
+                </span>
+              </button>
 
               {expandedId === e.id && (
                 <div className="mt-3 space-y-2 border-t border-border/40 pt-3">

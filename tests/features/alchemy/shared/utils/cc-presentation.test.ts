@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getActiveCcKeyword, isPlayerCcControlled } from "@/features/alchemy/shared/utils/cc-presentation";
+import { getActiveCcKeyword, isCcControlled } from "@/features/alchemy/shared/utils/cc-presentation";
 import { defaultCcState } from "../../../../fixtures/default-battle-state";
 
 describe("cc-presentation", () => {
@@ -19,7 +19,7 @@ describe("cc-presentation", () => {
   });
 
   it("detects player CC control from skip turns", () => {
-    expect(isPlayerCcControlled(defaultCcState({ stunSkipTurns: 1 }))).toBe(true);
-    expect(isPlayerCcControlled(defaultCcState({ cooldown: 2 }))).toBe(false);
+    expect(isCcControlled(defaultCcState({ stunSkipTurns: 1 }))).toBe(true);
+    expect(isCcControlled(defaultCcState({ cooldown: 2 }))).toBe(false);
   });
 });

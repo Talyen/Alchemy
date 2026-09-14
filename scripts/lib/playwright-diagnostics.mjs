@@ -81,7 +81,7 @@ export function buildFailureDiagnostic(input, options = {}) {
     errorMessage.replaceAll("```", "``\u200b`"),
     "```",
     "",
-    "## Console and page errors",
+    "## Browser diagnostics",
     "",
     ...(logs.lines.length > 0 ? logs.lines : ["- None captured"]),
     ...(logs.omitted > 0 ? [`- _${logs.omitted} earlier entries omitted_`] : []),

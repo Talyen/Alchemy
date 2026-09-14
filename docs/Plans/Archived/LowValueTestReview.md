@@ -24,7 +24,7 @@ When a test mixes low-value assertions with a meaningful contract, retain the me
 
 ### App seams and shared helpers
 
-- [`tests/app/startup-pref.test.ts`](../../../tests/app/startup-pref.test.ts): retain both the enabled and default branches. The global reduced-motion preference is an accessibility and startup contract, and there is no equivalent integration assertion.
+- [`tests/app/startup-loading-screen.test.tsx`](../../../tests/app/startup-loading-screen.test.tsx) (`applyInitialAnimationPreference`): retain both the enabled and default branches. The global reduced-motion preference is an accessibility and startup contract, and there is no equivalent integration assertion.
 - [`tests/app/particle-config.test.ts`](../../../tests/app/particle-config.test.ts): consolidate to a compact table-driven test covering boss versus normal battle intensity and the stale boss flag being ignored off the battle screen. Do not remove the off-battle guard.
 - The former consolidation-only row helper test was removed after its cases moved into [`tests/lib/game-data/talent-pool.test.ts`](../../../tests/lib/game-data/talent-pool.test.ts), retaining both `chunkIntoRows` overloads.
 - [`tests/features/alchemy/shared/ui/use-fade.test.tsx`](../../../tests/features/alchemy/shared/ui/use-fade.test.tsx): contains the direct `fadePhaseClass` mapping folded from `fade-presence.test.ts` with explicit CSS-class assertions alongside existing hook tests.

@@ -9,6 +9,7 @@ import {
   setMaterials,
 } from "@/features/alchemy/shared/stores/homestead-actions";
 import { emptyInventory } from "@/lib/homestead/inventory";
+import { createEmptyTierRecord, type TieredItem } from "@/lib/homestead/tiers";
 import { createInitialPermanentFields } from "@/features/alchemy/shared/stores/run-state-init";
 import * as errorLogger from "@/lib/error-logger";
 import type { CompanionId } from "@/lib/game-data";
@@ -126,6 +127,24 @@ describe("homestead-actions", () => {
       const success = bondCompanion(profile, "wolf");
       expect(success).toBe(false);
       expect(profile.bondedCompanions.wolf).toBe(0);
+    });
+  });
+
+  describe("createEmptyTierRecord", () => {
+    const testItems: Array<TieredItem<"a" | "b" | "c", number>> = [
+      { id: "a", tiers: [1, 2, 3] },
+      { id: "b", tiers: [1, 2] },
+      { id: "c", tiers: [1] },
+    ];
+
+    it("creates zero-filled record", () => {
+      const result = createEmptyTierRecord(testItems);
+      expect(result).toEqual({ a: 0, b: 0, c: 0 });
+    });
+
+    it("handles empty items", () => {
+      const result = createEmptyTierRecord([]);
+      expect(result).toEqual({});
     });
   });
 });

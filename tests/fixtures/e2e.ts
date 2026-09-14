@@ -4,6 +4,7 @@ import { ensureRunId } from "../../scripts/lib/current-run.mjs";
 import { buildFailureDiagnostic, writeFailureDiagnostic } from "../../scripts/lib/playwright-diagnostics.mjs";
 import { enableFastMode } from "../e2e/battle-setup";
 import { failOnRuntimeErrors } from "../e2e/errors";
+import { collectStartupDiagnostics } from "../e2e/startup-diagnostics";
 import type { Page } from "@playwright/test";
 
 export async function useFastBattle(page: Page) {
@@ -53,15 +54,25 @@ export const test = base.extend<E2EFixtures>({
 
       page.on("console", handleConsole);
       page.on("pageerror", handlePageError);
+      const startup = collectStartupDiagnostics(
+        page,
+        {
+          mode: process.env.PLAYWRIGHT_VITE_MODE === "dev" ? "dev" : "preview",
+          workers: testInfo.config.workers,
+        },
+        recordLog,
+      );
 
       try {
         await run();
       } finally {
         page.off("console", handleConsole);
         page.off("pageerror", handlePageError);
+        startup.stop();
 
         if (testInfo.status !== testInfo.expectedStatus) {
           try {
+            await startup.snapshot();
             const runId = ensureRunId("playwright");
             const url = page.url();
             let accessibilitySnapshot = "";

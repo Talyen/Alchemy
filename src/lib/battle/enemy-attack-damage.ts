@@ -131,16 +131,14 @@ function calculateBlockAndArmorMitigation(
   if (blockSpent > 0) {
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: blockSpent });
   }
+  const remainingBlock = Math.max(0, state.playerStatuses.block - blockSpent);
   const extraPhysicalBlock =
     effect.damageType === "physical" && (options.physicalBlockBreakMultiplier ?? 1) > 1
-      ? Math.min(
-          Math.max(0, state.playerStatuses.block - blockSpent),
-          Math.round(blockSpent * ((options.physicalBlockBreakMultiplier ?? 1) - 1)),
-        )
+      ? Math.min(remainingBlock, Math.round(blockSpent * ((options.physicalBlockBreakMultiplier ?? 1) - 1)))
       : 0;
   const extraPoisonBlock =
     effect.damageType === "poison" && !options.ignorePlayerMitigation
-      ? Math.min(Math.max(0, state.playerStatuses.block - blockSpent), options.extraPoisonBlockStrip ?? 0)
+      ? Math.min(remainingBlock, options.extraPoisonBlockStrip ?? 0)
       : 0;
   const totalExtraBlock = Math.max(extraPhysicalBlock, extraPoisonBlock);
   if (totalExtraBlock > 0) {

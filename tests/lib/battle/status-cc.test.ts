@@ -3,6 +3,7 @@ import {
   applyEnemyCcImmunityClear,
   assignEnemyCrowdControlSkip,
   finalizeCcSkipTurnDecrement,
+  isCcControlled,
   resolvePlayerCrowdControlTrigger,
 } from "@/lib/battle/status-cc";
 import { addEnemyStatus, addPlayerStatus } from "@/lib/battle";
@@ -190,5 +191,14 @@ describe("stun/freeze buildup gate", () => {
     });
     const next = addPlayerStatus(state, "freeze", 10);
     expect(next.playerStatuses.freeze).toBe(0);
+  });
+});
+
+describe("isCcControlled", () => {
+  it("detects active stun or freeze skips", () => {
+    expect(isCcControlled(defaultCcState({ stunSkipTurns: 1 }))).toBe(true);
+    expect(isCcControlled(defaultCcState({ freezeSkipTurns: 1 }))).toBe(true);
+    expect(isCcControlled(defaultCcState({ stunSkipTurns: 0, freezeSkipTurns: 0 }))).toBe(false);
+    expect(isCcControlled(defaultCcState({ cooldown: 2 }))).toBe(false);
   });
 });

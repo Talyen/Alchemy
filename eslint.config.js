@@ -17,6 +17,7 @@ import {
   CLASSNAME_NO_TEMPLATE,
   GEAR_NO_OUTER_DISPATCH,
   NO_UNOWNED_CONTEXT_CREATION,
+  PREVIEW_NO_DEV_CONTROLS,
   restrictedImports,
   restrictedSyntax,
 } from "./eslint/fragments.js";
@@ -31,6 +32,31 @@ const UNUSED_VARS_OPTIONS = {
   caughtErrorsIgnorePattern: "^_",
   destructuredArrayIgnorePattern: "^_",
 };
+
+const NODE_GLOBALS = Object.fromEntries(
+  [
+    "console",
+    "process",
+    "require",
+    "module",
+    "__dirname",
+    "__filename",
+    "Buffer",
+    "setTimeout",
+    "clearTimeout",
+    "setInterval",
+    "clearInterval",
+    "fetch",
+    "AbortSignal",
+    "URL",
+    "Response",
+  ].map((name) => [name, "readonly"]),
+);
+
+const CONTEXT_PROVIDERS = [
+  "src/app/app-screen-chrome-context.tsx",
+  "src/features/alchemy/shared/context/card-description-context.tsx",
+];
 
 function syntaxBlock(files, ignores, ...fragments) {
   return {
@@ -180,9 +206,6 @@ export default tseslint.config(
 
   {
     plugins: { alchemy: alchemyPlugin },
-  },
-  {
-    files: ["src/**/*.{ts,tsx}", "tests/**/*.{ts,tsx}", "scripts/**/*.mjs"],
     rules: {
       "alchemy/require-disable-reason": "error",
     },
@@ -285,7 +308,7 @@ export default tseslint.config(
 
   // Vitest unit tests — use recommended vitest linting
   {
-    files: ["tests/**/*.test.ts", "tests/**/*.test.tsx", "tests/**/*.dom.test.ts", "performance/**/*.ts"],
+    files: ["tests/**/*.test.ts", "tests/**/*.test.tsx", "tests/**/*.dom.test.ts"],
     plugins: {
       vitest,
     },
@@ -293,7 +316,7 @@ export default tseslint.config(
       ...vitest.configs.recommended.rules,
       "vitest/no-conditional-expect": "off",
       "vitest/expect-expect": "off",
-      "vitest/valid-expect": "off",
+      "vitest/valid-expect": ["error", { maxArgs: 2 }],
       "vitest/no-interpolation-in-snapshots": "off",
     },
   },
@@ -330,6 +353,8 @@ export default tseslint.config(
       "jsx-a11y/role-has-required-aria-props": "error",
       "jsx-a11y/no-noninteractive-element-interactions": "error",
       "jsx-a11y/interactive-supports-focus": "error",
+      "jsx-a11y/click-events-have-key-events": "error",
+      "jsx-a11y/no-aria-hidden-on-focusable": "error",
       "jsx-a11y/anchor-is-valid": "error",
       "jsx-a11y/label-has-associated-control": "error",
       "jsx-a11y/no-noninteractive-tabindex": "error",
@@ -363,26 +388,7 @@ export default tseslint.config(
   {
     files: ["tests/**/*.spec.ts"],
     rules: {
-      "no-restricted-syntax": restrictedSyntax(
-        {
-          selector: 'MemberExpression[property.name="skipCombatBtn"]',
-          message:
-            "Skip Combat is dev-only. Use winViaCombat(), playCardNamed(), or damage cards; CI e2e runs preview builds.",
-        },
-        {
-          selector: 'CallExpression[callee.property.name="skipCombatToVictory"]',
-          message: "skipCombatToVictory() is dev-only. Use winViaCombat() or playCardNamed() in preview-safe specs.",
-        },
-        {
-          selector: 'Literal[value="Skip Combat"]',
-          message: "Skip Combat is dev-only UI. Do not target it in e2e specs.",
-        },
-        {
-          selector: 'Literal[value="Unlock All"]',
-          message: "Unlock All is dev-only UI. Do not target it in e2e specs.",
-        },
-        ...ASSET_BARREL_NO_VALUE_IMPORT_SELECTORS,
-      ),
+      "no-restricted-syntax": restrictedSyntax(...PREVIEW_NO_DEV_CONTROLS, ...ASSET_BARREL_NO_VALUE_IMPORT_SELECTORS),
     },
   },
 
@@ -434,6 +440,7 @@ export default tseslint.config(
           selector: "Identifier[name=/^(enableFastMode|useFastBattle|fastBattle)$/]",
           message: "Keep real animations: do not request fastBattle or use a fast-mode helper in timing specs.",
         },
+        ...PREVIEW_NO_DEV_CONTROLS,
         ...ASSET_BARREL_NO_VALUE_IMPORT_SELECTORS,
       ),
     },
@@ -464,8 +471,7 @@ export default tseslint.config(
         "src/features/alchemy/run-loop/**",
         "src/features/alchemy/shell/**",
         "src/lib/battle/**",
-        "src/app/app-screen-chrome-context.tsx",
-        "src/features/alchemy/shared/context/card-description-context.tsx",
+        ...CONTEXT_PROVIDERS,
       ],
       extra: [],
     },
@@ -509,33 +515,24 @@ export default tseslint.config(
     ),
   ),
 
+  // Stores own aggregate access, but may not create providers. Approved providers
+  // are exempt only from context creation, not the other TSX conventions.
+  syntaxBlock(["src/features/alchemy/shared/stores/**/*.ts"], undefined, ...NO_UNOWNED_CONTEXT_CREATION),
+  tsxBlock(["src/features/alchemy/shared/stores/**/*.tsx"], undefined, ...NO_UNOWNED_CONTEXT_CREATION),
+  tsxBlock(CONTEXT_PROVIDERS, undefined, ...AGGREGATE_NO_DIRECT_MUTATION),
+
   // Node.js scripts (CommonJS + ESM) — after base rules so overrides take effect.
   {
-    files: ["scripts/**/*.mjs", "eslint/**/*.js"],
+    files: ["scripts/**/*.mjs", "eslint/**/*.js", "desktop/**/*.cjs", "tests/electron/*.cjs"],
     languageOptions: {
-      globals: {
-        console: "readable",
-        process: "readable",
-        require: "readable",
-        module: "readable",
-        __dirname: "readable",
-        __filename: "readable",
-        Buffer: "readable",
-        setTimeout: "readable",
-        clearTimeout: "readable",
-        setInterval: "readable",
-        clearInterval: "readable",
-        fetch: "readable",
-        AbortSignal: "readable",
-        URL: "readable",
-      },
+      globals: NODE_GLOBALS,
     },
     rules: { "@typescript-eslint/no-require-imports": "off" },
   },
 
-  // Electron entry points and test preloads use runtime-injected CommonJS globals.
+  // Only the renderer preload can also access the DOM.
   {
-    files: ["desktop/**/*.cjs", "tests/electron/*.cjs"],
-    rules: { "@typescript-eslint/no-require-imports": "off", "no-undef": "off" },
+    files: ["desktop/preload.cjs"],
+    languageOptions: { globals: { document: "readonly" } },
   },
 );

@@ -158,12 +158,16 @@ describe("Dodge tree rewards", () => {
 
 describe("Rolling Recovery", () => {
   it.each([
-    [4, 4],
-    [5, 5],
-    [6, 5],
-    [10, 9],
-  ])("rounds incoming %s Stun buildup to %s", (amount, expected) => {
-    const state = patchBattleState({ talentEffects: { stunBuildupReductionPercent: 10 }, playerStatuses: { stun: 2 } });
+    [4, 10, 4],
+    [5, 10, 5],
+    [6, 10, 5],
+    [10, 10, 9],
+    [4.5, 0, 5],
+  ])("rounds incoming %s Stun with %s percent reduction to %s", (amount, reduction, expected) => {
+    const state = patchBattleState({
+      talentEffects: { stunBuildupReductionPercent: reduction },
+      playerStatuses: { stun: 2 },
+    });
     expect(addPlayerStatus(state, "stun", amount).playerStatuses.stun).toBe(2 + expected);
     expect(applyPlayerDamageStatuses(state, { damageType: "stun" }, amount).playerStatuses.stun).toBe(2 + expected);
   });

@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { countUnlockedCombatTalents, resolveSimLoadout, simulateBattle, TIER_GOLD } from "@/lib/balance";
 import { buildTypicalGearEffects } from "@/lib/balance/gear-preset";
+import { buildSimCompanionBondLevels, companionIdsFromDeck } from "@/lib/balance/homestead-preset";
 import { createSeededRng } from "@/lib/utils";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
-import { characters } from "@/lib/game-data";
+import { characters, getStartingDeck } from "@/lib/game-data";
 import { defaultGearEffects } from "@/lib/gear/gear-effect-manifest";
 
 describe("resolveSimLoadout", () => {
@@ -142,5 +143,26 @@ describe("simulateBattle loadout", () => {
       policy: "random-playable",
     });
     expect(bare.playerMaxHealth).toBe(MAX_PLAYER_HEALTH + loadout.talentPointHealth);
+  });
+});
+
+describe("buildSimCompanionBondLevels", () => {
+  it("bonds companions found in the deck by preset tier", () => {
+    const deck = getStartingDeck("ranger");
+    const ids = companionIdsFromDeck(deck);
+    expect(ids.length).toBeGreaterThan(0);
+
+    const early = buildSimCompanionBondLevels(deck, "early");
+    const late = buildSimCompanionBondLevels(deck, "late");
+    for (const id of ids) {
+      expect(early[id]).toBe(1);
+      expect(late[id]).toBe(3);
+    }
+  });
+
+  it("leaves bond at zero for companions not in the deck", () => {
+    const deck = getStartingDeck("knight");
+    const bonds = buildSimCompanionBondLevels(deck, "late");
+    expect(bonds.wolf).toBe(0);
   });
 });

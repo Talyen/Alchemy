@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from "react";
 import { autoUpdate, computePosition, flip, offset, shift, type Placement } from "@floating-ui/dom";
+import { clamp } from "@/lib/math";
 
 export type PortaledTooltipSide = "side-start" | "side-end";
 
@@ -13,7 +14,7 @@ function getVrStageElement(): Element {
 }
 
 export function horizontalInsetForStage(stage: Pick<DOMRect, "left" | "right">): number {
-  return Math.min(DEFAULT_HORIZONTAL_INSET, Math.max(48, (stage.right - stage.left) / 4));
+  return clamp((stage.right - stage.left) / 4, 48, DEFAULT_HORIZONTAL_INSET);
 }
 
 export function preferredFloatingPlacement(placement: PortaledTooltipPlacement): Placement {

@@ -7,6 +7,11 @@ import { validateRegistryEntries } from "../lib/registry-validation.mjs";
 export const staticAssets = [...coreAssets, ...cardAssets, ...contentAssets, ...talentAssets];
 
 export async function validateAssetRegistry(entries, { sourceDir } = {}) {
+  for (const entry of entries) {
+    if (entry.requiresTransparency !== undefined && typeof entry.requiresTransparency !== "boolean") {
+      throw new Error(`Asset registry: requiresTransparency must be boolean for ${entry.source}.`);
+    }
+  }
   try {
     await validateRegistryEntries(entries, {
       sourceDir,

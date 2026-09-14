@@ -1,5 +1,5 @@
 import type { BattleSnapshot, CombatTextEvent, CcState } from "@/lib/battle";
-import { isPlayerCcControlled, isStunFreezeBuildupBlocked } from "@/lib/battle";
+import { isCcControlled, isStunFreezeBuildupBlocked } from "@/lib/battle";
 import {
   DAMAGE_TYPES,
   ENEMY_STATUS_DISPLAY_ORDER,
@@ -76,7 +76,7 @@ function buildActiveCcChips(cc: CcState): StatusChip[] {
 }
 
 function buildCcImmunityChip(cc: CcState): StatusChip[] {
-  if (isPlayerCcControlled(cc) || cc.cooldown <= 0) return [];
+  if (isCcControlled(cc) || cc.cooldown <= 0) return [];
   return [{ id: "ccImmunity", value: cc.cooldown, hideValue: true }];
 }
 

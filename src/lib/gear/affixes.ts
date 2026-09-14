@@ -5,6 +5,7 @@ import { defaultGearEffects } from "./gear-effect-manifest";
 import { gearDefinitions } from "./definitions";
 import { getUniqueAffixes } from "./unique-catalog";
 import type { GearAffixRoll, GearInstance, GearRarity } from "./types";
+import { clamp } from "@/lib/math";
 
 function isGearAffixId(value: string): value is GearAffixId {
   return value in gearAffixCatalog;
@@ -45,7 +46,7 @@ export function normalizeAffixRolls(
     return [
       {
         id: entry.id,
-        value: range ? Math.min(range.max, Math.max(range.min, Math.round(entry.value))) : Math.round(entry.value),
+        value: range ? clamp(Math.round(entry.value), range.min, range.max) : Math.round(entry.value),
       },
     ];
   });

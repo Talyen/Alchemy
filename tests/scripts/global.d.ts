@@ -1,7 +1,13 @@
 declare module "*/assets/asset-manifest.mjs" {
-  export const staticAssets: Array<{ source: string; target: string; width: number; quality: number }>;
+  export const staticAssets: Array<{
+    source: string;
+    target: string;
+    width: number;
+    quality: number;
+    requiresTransparency?: boolean;
+  }>;
   export function validateAssetRegistry(
-    entries: Array<{ source: string; target: string }>,
+    entries: Array<{ source: string; target: string; requiresTransparency?: boolean }>,
     options?: { sourceDir?: string },
   ): Promise<Array<{ source: string; target: string }>>;
 }
@@ -908,6 +914,11 @@ declare module "*/lib/run-command.mjs" {
 }
 declare module "*/lib/changed-paths.mjs" {
   export function resolvePushPaths(root: string, input: string): string[];
+  export function resolveSelectedPaths(root: string, selection: { paths: string[] }): string[];
+}
+declare module "*/lib/repository-paths.mjs" {
+  export function listRepositoryFiles(root: string): string[];
+  export function expandRepositoryPaths(root: string, paths: string[]): string[];
 }
 declare module "*/audit-all.mjs" {
   export function runAudits(

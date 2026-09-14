@@ -59,8 +59,8 @@ export function measurePath(absolutePath) {
       try {
         if (entry.isDirectory()) {
           stack.push(child);
-        } else if (entry.isFile()) {
-          bytes += fs.statSync(child).size;
+        } else if (entry.isFile() || entry.isSymbolicLink()) {
+          bytes += fs.lstatSync(child).size;
         }
       } catch {
         // Race with concurrent writers; skip unreadable entries.

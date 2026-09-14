@@ -1,8 +1,6 @@
 import { fileURLToPath, URL } from "node:url";
 
 import { defineConfig } from "vitest/config";
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment -- scripts are JS without declarations
-// @ts-ignore no types for vite-aliases.mjs
 import { SSR_OPTIMIZE_INCLUDE, VITE_ALIAS_PATH, VITE_ALIAS_TARGET } from "./scripts/lib/vite-aliases.mjs";
 
 const excludedTestPaths = ["tests/balance/**"];

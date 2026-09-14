@@ -8,15 +8,19 @@ import {
   CompletedDifficultiesSchema,
   UnlockedTalentsSchema,
   CURRENT_SAVE_SCHEMA_VERSION,
+  CURRENT_CONTENT_VERSION,
+  CURRENT_GAME_BUILD_VERSION,
 } from "@/lib/validation";
 import { defaultBattleState } from "@/lib/battle";
 import { enemyById } from "@/lib/game-data";
 import { GEAR_EFFECT_KEYS } from "@/lib/gear";
 import { createSeededRng } from "@/lib/utils";
+import { deduplicateFromSet, deduplicatedSetArraySchema } from "@/lib/validation/save-schemas/validation-utils";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { withClearedNode } from "@/lib/content-systems/labyrinth/map-state";
 import { canEnterLabyrinthNode } from "@/lib/content-systems/labyrinth/map-state";
 import { baseHomesteadSave } from "../../fixtures/saves";
+import { currentSchemaCampaignSave } from "../../fixtures/current-saves";
 import { makeMinimalActiveRunInput } from "../../fixtures/active-run";
 import { ASPECT_RATIO_VALUES, DISPLAY_MODE_VALUES, SETTINGS_RANGES } from "@/lib/settings-values";
 
@@ -666,5 +670,33 @@ describe("CompletedDifficultiesSchema", () => {
       expect(result.data.druid).toEqual([]);
       expect(result.data.wildcard).toEqual([]);
     }
+  });
+});
+
+describe("deduplicateFromSet and deduplicatedSetArraySchema", () => {
+  it("deduplicates and filters unknown elements against valid set", () => {
+    const valid = ["a", "b", "c"] as const;
+    expect(deduplicateFromSet(["a", "b", "a", "d", 123, null], valid)).toEqual(["a", "b"]);
+    expect(deduplicateFromSet("not an array", valid)).toEqual([]);
+  });
+
+  it("parses valid array and falls back safely using schema", () => {
+    const schema = deduplicatedSetArraySchema(["knight", "rogue"] as const);
+    expect(schema.parse(["knight", "rogue", "knight", "unknown"])).toEqual(["knight", "rogue"]);
+    expect(schema.parse("invalid")).toEqual([]);
+    expect(schema.parse(null)).toEqual([]);
+  });
+});
+
+describe("validation metadata", () => {
+  it("CURRENT_SAVE_SCHEMA_VERSION matches the current save fixture", () => {
+    const migrated = SaveDataSchema.parse(currentSchemaCampaignSave());
+    expect(migrated.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
+  });
+
+  it("exposes stable game and content version constants", () => {
+    expect(CURRENT_SAVE_SCHEMA_VERSION).toBeGreaterThanOrEqual(1);
+    expect(CURRENT_GAME_BUILD_VERSION).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(CURRENT_CONTENT_VERSION).toBeGreaterThanOrEqual(1);
   });
 });

@@ -1,7 +1,9 @@
+import { clamp } from "@/lib/math";
+
 export function getPagination(itemCount: number, page: number, pageSize: number) {
   const size = Math.max(1, pageSize);
   const totalPages = Math.max(1, Math.ceil(itemCount / size));
-  return { page: Math.max(0, Math.min(page, totalPages - 1)), totalPages, pageSize: size };
+  return { page: clamp(page, 0, totalPages - 1), totalPages, pageSize: size };
 }
 
 export function anchoredPage(

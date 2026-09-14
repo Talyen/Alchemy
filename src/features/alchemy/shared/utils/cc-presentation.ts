@@ -1,1 +1,1 @@
-export { getActiveCcKeyword, isPlayerCcControlled, type ActiveCcKeyword } from "@/lib/battle";
+export { getActiveCcKeyword, isCcControlled, type ActiveCcKeyword } from "@/lib/battle";

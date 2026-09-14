@@ -1,3 +1,5 @@
+import { clamp } from "./math";
+
 export const ASPECT_RATIO_VALUES = ["auto", "16:9", "16:10", "21:9"] as const;
 
 export type AspectRatioOption = (typeof ASPECT_RATIO_VALUES)[number];
@@ -37,5 +39,5 @@ export const DEFAULT_DEVICE_DISPLAY: DeviceDisplayPreferences = {
 export function normalizeDisplayPercent(key: keyof DeviceDisplayPreferences, value: unknown): number {
   if (typeof value !== "number" || !Number.isFinite(value)) return DEFAULT_DEVICE_DISPLAY[key];
   const { min, max, step } = DEVICE_DISPLAY_RANGES[key];
-  return Math.max(min, Math.min(max, Math.round(value / step) * step));
+  return clamp(Math.round(value / step) * step, min, max);
 }

@@ -11,7 +11,7 @@ import { dealPlayerTypedHit } from "./player-typed-hit";
 import { applyCleanseHeals, restoreSpentPlayerForge } from "./status-player";
 import { drawCards, applyDrawResult, drawFromState } from "./draw";
 import { applyCardEffects } from "./effect-handlers";
-import { finalizeCcSkipTurnDecrement, isPlayerCcControlled } from "./status-cc";
+import { finalizeCcSkipTurnDecrement, isCcControlled } from "./status-cc";
 import { decayHalvedStatus } from "./status-helpers";
 import { getBattleRng } from "@/lib/rng";
 import {
@@ -147,7 +147,7 @@ export function resetEnemyTurnState(state: BattleState): BattleState {
 
 export function reducePlayerSkipTurns(state: BattleState): BattleState {
   const prevCc = state.playerCC;
-  if (!isPlayerCcControlled(prevCc)) return state;
+  if (!isCcControlled(prevCc)) return state;
   const decrementedCc = {
     ...prevCc,
     stunSkipTurns: Math.max(0, prevCc.stunSkipTurns - 1),

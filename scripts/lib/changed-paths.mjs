@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import path from "node:path";
-import { expandRepositoryPaths } from "./repository-paths.mjs";
+import { expandRepositoryPaths, UNCACHED_GIT_OPTIONS } from "./repository-paths.mjs";
 import { readFileSync } from "node:fs";
 
 import { changedGitPaths } from "./current-run.mjs";
@@ -79,7 +79,10 @@ export function resolvePushPaths(rootDir, input) {
       : git(["diff", "--no-renames", "--name-only", "-z", remoteOid, commit, "--"]);
     for (const file of output.split("\0").filter(Boolean)) paths.add(file);
   }
-  if (paths.size > 0 && git(["status", "--porcelain", "--untracked-files=all", "-z"]).length > 0)
+  if (
+    paths.size > 0 &&
+    git([...UNCACHED_GIT_OPTIONS, "status", "--porcelain", "--untracked-files=all", "-z"]).length > 0
+  )
     throw new Error("Pre-push verification requires a clean checkout. Commit or stash changes before pushing.");
   return [...paths].sort();
 }

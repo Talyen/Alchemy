@@ -21,6 +21,7 @@ import { BLEED_STATUS_MULTIPLIER, FIRST_EFFECT_MULTIPLIER, HALF_DIVISOR, PERCENT
 import { paceCombatMagnitude } from "./fight-pacing";
 import { dealEnemyScaledDamage } from "./scaled-damage";
 import { decayArmorAfterDamage, getEnemyDamageMultiplier } from "./status-helpers";
+import { clamp } from "@/lib/math";
 
 export function applyCardHealing(
   state: BattleState,
@@ -273,7 +274,7 @@ export function addForgeToPlayer(state: BattleState, baseAmount: number, combatT
 
 /** Only attack spending is eligible for Patient Edge recovery. */
 export function spendPlayerForgeForAttack(state: BattleState, amount: number): BattleState {
-  const spent = Math.min(state.playerStatuses.forge, Math.max(0, amount));
+  const spent = clamp(amount, 0, state.playerStatuses.forge);
   if (spent <= 0) return state;
   const next = setPlayerStatus(state, "forge", state.playerStatuses.forge - spent);
   return state.gearEffects.recoverSpentForge > 0

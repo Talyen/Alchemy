@@ -18,6 +18,13 @@ import {
 const ROOT = path.resolve(import.meta.dirname, "../..");
 
 const eslintInstances = new Map<string, ESLint>();
+const effectiveEslint = new ESLint({ cwd: ROOT, overrideConfig: [tseslint.configs.disableTypeChecked] });
+
+async function effectiveMessages(filePath: string, code: string, ruleId: string) {
+  const [result] = await effectiveEslint.lintText(code, { filePath: path.join(ROOT, filePath) });
+  expect(result.fatalErrorCount, code).toBe(0);
+  return result.messages.filter((message) => message.ruleId === ruleId);
+}
 
 function getOrCreateEslint(selectors: ReturnType<typeof restrictedSyntax>): ESLint {
   const key = JSON.stringify(selectors);
@@ -121,12 +128,6 @@ describe("eslint rationalization", () => {
       selectors,
     );
     expect(banned.length).toBeGreaterThan(0);
-    const allowedProvider = await lintSyntax(
-      "src/app/app-screen-chrome-context.tsx",
-      `import { createContext } from "react"; const Ctx = createContext(null);`,
-      selectors,
-    );
-    expect(allowedProvider.length).toBeGreaterThan(0);
   });
 
   it("enables alt-text errors for application images", async () => {
@@ -163,14 +164,20 @@ it("ignores isolated worktrees without excluding the active checkout", async () 
   expect(await eslint.isPathIgnored("scripts/agent-context.mjs")).toBe(false);
 });
 
-it("keeps production-only UI restrictions on relocated browser specs", async () => {
-  const eslint = new ESLint({ cwd: ROOT });
-  const results = await eslint.lintText('page.getByRole("button", { name: "Skip Combat" });', {
-    filePath: path.join(ROOT, "tests/e2e/specs/core-gameplay.spec.ts"),
-  });
-  expect(results.flatMap((result) => result.messages).map((message) => message.ruleId)).toContain(
-    "no-restricted-syntax",
-  );
+it.each([
+  "tests/e2e/specs/core-gameplay.spec.ts",
+  "tests/e2e/specs/draw-discard-animations.spec.ts",
+  "tests/e2e/specs/battle-end-turn-canary.spec.ts",
+  "performance/scenarios/battle-end-turn.perf.ts",
+])("keeps development-only controls out of %s", async (file) => {
+  for (const code of [
+    'page.getByRole("button", { name: "Skip Combat" });',
+    'page.getByRole("button", { name: "Unlock All" });',
+    "battle.skipCombatBtn.click();",
+    "battle.skipCombatToVictory();",
+  ]) {
+    expect(await effectiveMessages(file, code, "no-restricted-syntax"), code).toHaveLength(1);
+  }
 });
 
 it.each(["tests/e2e/specs/draw-discard-animations.spec.ts", "tests/e2e/specs/battle-end-turn-canary.spec.ts"])(
@@ -192,3 +199,134 @@ it.each(["tests/e2e/specs/draw-discard-animations.spec.ts", "tests/e2e/specs/bat
     }
   },
 );
+
+it("keeps context and aggregate exceptions independent from TSX conventions", async () => {
+  const context = 'import { createContext as context } from "react"; export const value = context(null);';
+  const aggregate = "useGameplayStateStore.getState();";
+  for (const file of [
+    "src/features/alchemy/shared/stores/lint-probe.ts",
+    "src/features/alchemy/shared/stores/lint-probe.tsx",
+    "src/features/alchemy/run-loop/screens/lint-probe.tsx",
+  ]) {
+    expect(await effectiveMessages(file, context, "no-restricted-syntax"), file).not.toEqual([]);
+    const messages = await effectiveMessages(file, aggregate, "no-restricted-syntax");
+    expect(messages.length, file).toBe(file.includes("/stores/") ? 0 : 1);
+  }
+  for (const file of [
+    "src/app/app-screen-chrome-context.tsx",
+    "src/features/alchemy/shared/context/card-description-context.tsx",
+  ]) {
+    expect(await effectiveMessages(file, context, "no-restricted-syntax"), file).toEqual([]);
+    expect(await effectiveMessages(file, aggregate, "no-restricted-syntax"), file).toHaveLength(1);
+  }
+  for (const file of [
+    "src/features/alchemy/shared/stores/lint-probe.tsx",
+    "src/app/app-screen-chrome-context.tsx",
+    "src/features/alchemy/shared/context/card-description-context.tsx",
+  ]) {
+    for (const expression of ["`a ${active}`", '"a " + active']) {
+      const code = `export const view = <div className={${expression}} />;`;
+      expect(await effectiveMessages(file, code, "no-restricted-syntax"), file).toHaveLength(1);
+    }
+    expect(
+      await effectiveMessages(file, 'export const view = <div className={cn("a", active)} />;', "no-restricted-syntax"),
+      file,
+    ).toEqual([]);
+  }
+});
+
+it("allows erased type imports while blocking asset-loading imports across browser test categories", async () => {
+  for (const file of [
+    "tests/e2e/specs/core-gameplay.spec.ts",
+    "tests/e2e/specs/draw-discard-animations.spec.ts",
+    "tests/helpers/lint-probe.ts",
+    "performance/scenarios/battle-end-turn.perf.ts",
+  ]) {
+    for (const imports of ["import type { Card }", "import { type Card }", "import { type Card, type Enemy }"]) {
+      expect(
+        await effectiveMessages(file, `${imports} from "@/lib/game-data";`, "no-restricted-syntax"),
+        imports,
+      ).toEqual([]);
+    }
+    for (const imports of [
+      "import { Card, type Enemy }",
+      "import { Card }",
+      "import Cards",
+      "import * as Cards",
+      "import {}",
+    ]) {
+      expect(
+        await effectiveMessages(file, `${imports} from "@/lib/game-data";`, "no-restricted-syntax"),
+        imports,
+      ).toHaveLength(1);
+    }
+    expect(await effectiveMessages(file, 'import "@/lib/game-data";', "no-restricted-syntax"), file).toHaveLength(1);
+  }
+});
+
+it("checks assertion completeness and awaits while allowing messages and returned promises", async () => {
+  const file = "tests/lib/utils.test.ts";
+  for (const statement of ["expect(1);", "expect(1).toBe;", "expect(Promise.resolve(1)).resolves.toBe(1);"]) {
+    const code = `import { it, expect } from "vitest"; it("checks", () => { ${statement} });`;
+    expect(await effectiveMessages(file, code, "vitest/valid-expect"), statement).toHaveLength(1);
+  }
+  for (const statement of [
+    "expect(1, message).toBe(1);",
+    "return expect(Promise.resolve(1)).resolves.toBe(1);",
+    "await expect(Promise.resolve(1)).resolves.toBe(1);",
+  ]) {
+    const code = `import { it, expect } from "vitest"; it("checks", async () => { ${statement} });`;
+    expect(await effectiveMessages(file, code, "vitest/valid-expect"), statement).toEqual([]);
+  }
+});
+
+it("checks desktop globals without allowing DOM access in the main process", async () => {
+  for (const file of ["desktop/main.cjs", "desktop/preload.cjs", "tests/electron/profile.cjs"]) {
+    expect(await effectiveMessages(file, 'consoel.log("boot");', "no-undef"), file).toHaveLength(1);
+    expect(
+      await effectiveMessages(file, "module.exports = { process, Buffer, require, __dirname, Response };", "no-undef"),
+      file,
+    ).toEqual([]);
+    const messages = await effectiveMessages(file, 'document.getElementById("mock");', "no-undef");
+    expect(messages.length, file).toBe(file === "desktop/preload.cjs" ? 0 : 1);
+  }
+});
+
+it("requires suppression reasons in tooling, configuration, desktop and performance files", async () => {
+  for (const file of [
+    "eslint/plugin.js",
+    "eslint.config.js",
+    "desktop/main.cjs",
+    "performance/metrics.ts",
+    "scripts/check.mjs",
+  ]) {
+    const statement = "if (value == 1) {}";
+    expect(
+      await effectiveMessages(
+        file,
+        `// eslint-disable-next-line eqeqeq\n${statement}`,
+        "alchemy/require-disable-reason",
+      ),
+      file,
+    ).toHaveLength(1);
+    expect(
+      await effectiveMessages(
+        file,
+        `// eslint-disable-next-line eqeqeq -- intentional coercion fixture\n${statement}`,
+        "alchemy/require-disable-reason",
+      ),
+      file,
+    ).toEqual([]);
+  }
+});
+
+it("checks mouse-only actions and focusable controls hidden from assistive technology", async () => {
+  const file = "src/features/alchemy/shared/ui/lint-probe.tsx";
+  for (const [rule, rejected, allowed] of [
+    ["jsx-a11y/click-events-have-key-events", "<div onClick={action} />", "<button onClick={action} />"],
+    ["jsx-a11y/no-aria-hidden-on-focusable", '<button aria-hidden="true" />', '<span aria-hidden="true" />'],
+  ]) {
+    expect(await effectiveMessages(file, `export const view = ${rejected};`, rule), rule).toHaveLength(1);
+    expect(await effectiveMessages(file, `export const view = ${allowed};`, rule), rule).toEqual([]);
+  }
+});

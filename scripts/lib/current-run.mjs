@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { UNCACHED_GIT_OPTIONS } from "./repository-paths.mjs";
 
 function runSlug(value) {
   return String(value ?? "")
@@ -59,10 +60,11 @@ function gitOutput(rootDir, args) {
  * itself fails so callers can distinguish "clean tree" from "could not ask".
  */
 export function changedGitPaths(rootDir) {
-  const result = spawnSync("git", ["status", "--short", "--untracked-files=all", "-z"], {
+  const result = spawnSync("git", [...UNCACHED_GIT_OPTIONS, "status", "--short", "--untracked-files=all", "-z"], {
     cwd: rootDir,
     encoding: "utf8",
     stdio: ["ignore", "pipe", "ignore"],
+    maxBuffer: 16 * 1024 * 1024,
   });
   if (result.status !== 0) return null;
   const fields = (result.stdout ?? "").split("\0");

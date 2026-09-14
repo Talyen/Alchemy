@@ -67,6 +67,8 @@ must never request it or call `enableFastMode`/`useFastBattle`.
 - `runtimeErrors` automatically fails on uncaught page errors and console errors, including sound failures and React warnings emitted as errors. No global message exclusions apply. For an intentionally provoked error, request `runtimeErrors` and assert the exact expected entries with `expect(runtimeErrors.splice(0)).toEqual([...])` after the behavior settles. This consumes only errors the test explicitly checks; later errors still fail teardown.
 - `autoDiagnostic` runs for every test. On failure it writes one run-attributed bounded digest with an accessibility snapshot and an exact entry in `test-results/failures/<run-id>/index.json`. If the page can no longer provide that snapshot, the digest falls back to bounded HTML; raw traces remain secondary evidence.
 
+The same digest includes development/preview mode, configured worker count, navigation timing, and pending/failed document or module requests. Request tracking keeps at most 40 pending entries, shows at most five examples, and reports omitted observations. These details share the existing 40-entry/5 KiB log budget and 16 KiB digest cap; timing capture gives up after two seconds if the page cannot answer. A zero DOM-ready/load timestamp means that event had not completed at capture. When audio tests remain on Loading, inspect this startup evidence before changing playback assertions. Keep the music journey's 60-second ceiling, use development mode for current-source iteration, and rebuild before preview acceptance checks.
+
 Page objects: `BattlePage`, `MenuPage`, `DestinationPage`, `RewardPage`, `ShopPage`, `MysteryPage`, `CorruptionPage`, `HomesteadPage`, plus `expectRunPhase(page, phase)`.
 
 ## Tags

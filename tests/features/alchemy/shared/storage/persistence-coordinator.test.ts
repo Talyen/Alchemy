@@ -11,11 +11,11 @@ import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-
 import {
   handleCollectionTabChange,
   setDiscoveredCardIds,
+  setGold,
   setHasActiveRun,
   setMaterials as setRunProfileMaterials,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { addGearCurrencies } from "@/features/alchemy/shared/stores/gear-actions";
-import { setGold } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import { readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import { createEmptyGearInventories, generateUniqueGearInstance, getUniqueItemDefinition } from "@/lib/gear";

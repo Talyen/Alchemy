@@ -32,7 +32,11 @@ function effectTarget(effect: BattleCardEffect): "player" | "enemy" | null {
     case "next-archery-free":
       return "player";
     case "chance":
-      for (const nested of [...effect.successEffects, ...effect.failureEffects]) {
+      for (const nested of effect.successEffects) {
+        const target = effectTarget(nested);
+        if (target) return target;
+      }
+      for (const nested of effect.failureEffects) {
         const target = effectTarget(nested);
         if (target) return target;
       }

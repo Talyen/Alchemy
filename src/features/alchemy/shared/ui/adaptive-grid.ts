@@ -1,10 +1,9 @@
 import { useLayoutEffect, useState, type CSSProperties } from "react";
+import { clamp } from "@/lib/math";
 
 export function getGridCapacity(width: number, tileWidth: number, gap: number, maxColumns: number) {
-  const columns = Math.max(
-    1,
-    Math.min(maxColumns, Math.floor((Math.max(0, width) + gap + 0.5) / Math.max(1, tileWidth + gap))),
-  );
+  const rawColumns = Math.floor((Math.max(0, width) + gap + 0.5) / Math.max(1, tileWidth + gap));
+  const columns = clamp(rawColumns, 1, maxColumns);
   return { columns, pageSize: columns * 2 };
 }
 

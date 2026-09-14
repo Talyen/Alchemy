@@ -60,3 +60,21 @@ export function deduplicateStrings(val: unknown): string[] {
 export function deduplicatedStringArraySchema() {
   return z.preprocess(deduplicateStrings, z.array(z.string())).catch([]);
 }
+
+export function deduplicateFromSet<T extends string>(val: unknown, validIds: ReadonlySet<T> | readonly T[]): T[] {
+  if (!Array.isArray(val)) return [];
+  const set = validIds instanceof Set ? validIds : new Set<string>(validIds);
+  return [...new Set(val.filter((v): v is T => typeof v === "string" && set.has(v as T)))];
+}
+
+export function deduplicatedSetArraySchema<T extends string>(
+  validIds: ReadonlySet<T> | readonly T[],
+  itemSchema?: z.ZodType<T>,
+) {
+  return z
+    .preprocess(
+      (val) => deduplicateFromSet(val, validIds),
+      z.array(itemSchema ?? z.custom<T>((val) => typeof val === "string")),
+    )
+    .catch([]);
+}

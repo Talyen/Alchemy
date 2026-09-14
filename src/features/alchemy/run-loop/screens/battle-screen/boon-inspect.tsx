@@ -58,6 +58,7 @@ export function BattleBoonInspectOverlay({
       mount={trinkets.length > 0}
       className="flex items-center justify-center px-6 py-8"
     >
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events -- only shields panel clicks from the backdrop; Close and Escape own dismissal */}
       <div
         className="alchemy-shell relative max-h-full w-fit max-w-full overflow-y-auto rounded-shell-screen border border-border/80 px-8 py-8"
         onClick={(event) => event.stopPropagation()}

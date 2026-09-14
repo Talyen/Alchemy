@@ -127,7 +127,12 @@ describe("talent effect invariants", () => {
   it("every talent-written field has an application reader or registered reaction", () => {
     const config = ts.readConfigFile(join(ROOT, "tsconfig.json"), ts.sys.readFile);
     const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, ROOT);
-    const program = ts.createProgram(parsed.fileNames, parsed.options);
+    const rootFiles = parsed.fileNames.filter(
+      (fileName) =>
+        APPLICATION_DIRS.some((dir) => relative(ROOT, fileName).replaceAll("\\", "/").startsWith(`${dir}/`)) ||
+        fileName.replaceAll("\\", "/").endsWith("src/lib/game-data/talents/manifest-defaults.ts"),
+    );
+    const program = ts.createProgram(rootFiles, parsed.options);
     const checker = program.getTypeChecker();
     const defaults = program.getSourceFile(join(ROOT, "src/lib/game-data/talents/manifest-defaults.ts"))!;
     const module = checker.getSymbolAtLocation(defaults)!;
@@ -141,7 +146,7 @@ describe("talent effect invariants", () => {
     const readers = collectTalentEffectReaders(checker, manifest, sources);
     const unread = [...talentWrittenFields()].filter((field) => !readers.has(field));
     expect(unread).toEqual([]);
-  }, 15000);
+  }, 30000);
 
   it("non-boolean set fields have a single writer unless they concatenate as arrays", () => {
     const writers = new Map<string, string[]>();

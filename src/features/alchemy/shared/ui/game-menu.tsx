@@ -148,6 +148,7 @@ function GameMenuPanel({
   messages: Record<Gate, string>;
 }) {
   return (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events -- only shields menu clicks from the backdrop; menu buttons own keyboard actions
     <div
       data-testid="game-menu"
       className="alchemy-shell w-full max-w-[calc(28.8023*var(--content-rem,1rem))] overflow-visible rounded-shell-dialog border border-border/80 px-5 py-4"

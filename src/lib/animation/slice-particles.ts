@@ -9,6 +9,7 @@ import {
 } from "./slice-crack";
 import { sliceEffectNoise } from "./slice-noise";
 import { SLICE_PARTICLE_COUNT } from "./slice-timeline";
+import { clamp01 } from "@/lib/math";
 
 export const SLICE_SPARK_COLOR = "rgb(185, 28, 28)";
 export const SLICE_CRACK_LINE_COLOR = "rgb(226, 232, 240)";
@@ -160,7 +161,7 @@ export function sampleBorderSpark(
   const distance = BORDER_DISTANCE + particle.distanceNoise * BORDER_DISTANCE_VARIATION;
   const delay = particle.delayNoise * BORDER_DELAY;
   const lifetime = BORDER_LIFETIME + particle.lifetimeNoise * BORDER_LIFETIME_VARIATION;
-  const age = Math.min(Math.max((progress - delay) / Math.max(lifetime, 0.01), 0), 1);
+  const age = clamp01((progress - delay) / Math.max(lifetime, 0.01));
   const easedAge = 1 - (1 - age) ** BORDER_AGE_EASE;
   const startX = particle.origin.x * cardWidth;
   const startY = particle.origin.y * cardHeight;

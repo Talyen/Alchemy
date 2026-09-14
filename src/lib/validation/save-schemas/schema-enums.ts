@@ -16,7 +16,8 @@ import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
 import { filterValidDestinations } from "@/lib/routing";
 import { ASPECT_RATIO_VALUES, DISPLAY_MODE_VALUES } from "@/lib/settings-values";
 import { z } from "zod";
-import { deduplicateStrings } from "./validation-utils";
+import { clamp } from "@/lib/math";
+import { deduplicateFromSet, deduplicateStrings } from "./validation-utils";
 
 function toNonEmptyTuple<T extends string>(values: readonly T[], label: string): [T, ...T[]] {
   if (values.length === 0) throw new Error(`${label} must define at least one value`);
@@ -39,6 +40,7 @@ export const CharacterIdSchema = z.enum(CHARACTER_IDS);
 export const DifficultyIdSchema = z.enum(DIFFICULTY_IDS);
 export const ContentSystemIdSchema = z.enum(CONTENT_SYSTEM_IDS);
 export const EnemyTypeSchema = z.enum(ENEMY_TYPE_VALUES);
+export const MaterialIdSchema = z.enum(MATERIAL_IDS);
 
 export const DestinationArraySchema = z
   .array(z.string())
@@ -107,13 +109,12 @@ export const UnlockedTalentsSchema = recordOfStringArraysSchema().transform((dat
   normalizeUnlockedTalents(data as UnlockedTalents),
 );
 
-const DIFFICULTY_ID_SET = new Set<string>(DIFFICULTY_IDS);
+const DIFFICULTY_ID_SET = new Set<DifficultyId>(DIFFICULTY_IDS);
 
 function normalizeCompletedDifficulties(data: Record<string, string[]>): Record<CharacterId, DifficultyId[]> {
   const result = {} as Record<CharacterId, DifficultyId[]>;
   for (const characterId of CHARACTER_IDS) {
-    const raw = data[characterId] ?? [];
-    result[characterId] = [...new Set(raw.filter((id): id is DifficultyId => DIFFICULTY_ID_SET.has(id)))];
+    result[characterId] = deduplicateFromSet(data[characterId], DIFFICULTY_ID_SET);
   }
   return result;
 }
@@ -160,7 +161,7 @@ export function createTierRecordSchema<T extends string>(
       const result: Record<T, number> = {} as Record<T, number>;
       for (const id of validIds) {
         const maxTier = maxTierById.get(id) ?? 0;
-        result[id] = Math.min(maxTier, Math.max(0, data[id] ?? 0));
+        result[id] = clamp(data[id] ?? 0, 0, maxTier);
       }
       return result;
     });
