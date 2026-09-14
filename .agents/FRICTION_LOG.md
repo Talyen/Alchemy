@@ -14,6 +14,8 @@ Add one short row for unresolved friction with the observation and next useful a
 
 - 2026-09-06 — Broad combat-feedback verification twice timed out the 5-second affix sweep in `tests/lib/balance/report-sweeps.test.ts`; the exact file passed in a focused run (alongside both combat-feedback unit files). Latest failed run: `check-20260906t230621z-43224-30899b`. Check suite contention before changing the test or its timeout.
 
+- 2026-09-14 — `tests/e2e/specs/contiguous-run.spec.ts` fails identically (a passing `handCount` poll followed ~170ms later by a zero single-read, Victory screen at teardown, no console/page errors) on unrelated mains (`34735747719`, `34737987106`, `34798101391`) while unit, build, and lint stay green. If it recurs, re-poll the read instead of single-reading and trace the opening deal/remount timing before touching battle behavior.
+
 ## Resolved history
 
 [September 2026](./history/friction-2026-09.md). All previous resolved entries are preserved there.

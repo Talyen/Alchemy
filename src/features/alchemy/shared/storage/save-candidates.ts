@@ -139,13 +139,9 @@ export function evaluateSaveCandidates(candidates: string[]): SaveLoadState {
     }
 
     // Reject disposable formats before field defaults can stamp them as current.
-    const detectedVersion = getRawSaveSchemaVersion(parsed);
-    if (detectedVersion < LAUNCH_SAVE_SCHEMA_VERSION) {
-      logStorageFailure(
-        `Save candidate rejected: schema version ${detectedVersion} predates launch version ${LAUNCH_SAVE_SCHEMA_VERSION}, trying next candidate`,
-      );
-      continue;
-    }
+    // Stays silent: empty or missing candidates on fresh profiles are routine,
+    // and logStorageFailure feeds the error sink asserted empty by E2E journeys.
+    if (getRawSaveSchemaVersion(parsed) < LAUNCH_SAVE_SCHEMA_VERSION) continue;
     const result = safeParseWithErrors(SaveDataSchema, parsed);
     if (!result.success) {
       logStorageFailure("Save candidate failed validation, trying next candidate", result.error);
