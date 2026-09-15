@@ -141,6 +141,7 @@ export type BattleCardEffect =
       effects: BattleCardEffect[];
     }
   | { kind: "next-hit-crit" }
+  | { kind: "next-hit-leech" }
   | { kind: "play-next-card-twice" }
   | { kind: "next-hit-poison" }
   | { kind: "next-archery-free" };

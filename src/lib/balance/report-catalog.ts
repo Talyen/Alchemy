@@ -115,13 +115,11 @@ const TITLE_LOOKUPS = {
   companion: Object.fromEntries(Object.values(companionLibrary).map((entry) => [entry.id, entry.title])),
   affix: Object.fromEntries(gearAffixList.map((entry) => [entry.id, entry.name])),
   gear: Object.fromEntries(gearBaseItemList.map((entry) => [entry.id, entry.displayName])),
+  talent: Object.fromEntries(talentPool.map((entry) => [entry.id, entry.name])),
 };
 
-export type TitleLookupKind = keyof typeof TITLE_LOOKUPS | "talent";
+export type TitleLookupKind = keyof typeof TITLE_LOOKUPS;
 
 export function titleFor(kind: TitleLookupKind, id: string): string {
-  if (kind === "talent") {
-    return talentPool.find((talent) => talent.id === id)?.name ?? id;
-  }
   return TITLE_LOOKUPS[kind][id] ?? id;
 }

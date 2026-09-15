@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import type { CharacterId, TrinketEntry } from "@/lib/game-data";
 import type { EquippedTrinkets } from "@/lib/gear";
 import { TrinketTile } from "@/features/alchemy/shared/ui/collection-art-tiles";
@@ -23,6 +24,14 @@ export function TrinketPickerGrid({
   onEquip: (trinketId: string) => void;
   onCombatLockedAttempt: () => void;
 }) {
+  const equippedBy = useMemo(() => {
+    const byTrinket = new Map<string, CharacterId>();
+    for (const [charId, trinketId] of Object.entries(equippedTrinkets) as Array<[CharacterId, string | null]>) {
+      if (trinketId) byTrinket.set(trinketId, charId);
+    }
+    return byTrinket;
+  }, [equippedTrinkets]);
+
   return (
     <ArmoryPagedGrid
       items={trinkets}
@@ -33,9 +42,7 @@ export function TrinketPickerGrid({
       renderItem={(trinket) => {
         const reservedBy = reservedTrinkets[trinket.id];
         const reservationReason = reservedReasonFor(reservedBy ?? null);
-        const equippedBy = (Object.entries(equippedTrinkets) as Array<[CharacterId, string | null]>).find(
-          ([, id]) => id === trinket.id,
-        )?.[0];
+        const equippedCharacterId = equippedBy.get(trinket.id);
         return (
           <div key={trinket.id} data-testid="armory-trinket-item" data-trinket-id={trinket.id} className="relative">
             <TrinketTile
@@ -50,7 +57,7 @@ export function TrinketPickerGrid({
               ariaLabel={
                 reservationReason
                   ? `${trinket.title}. ${reservationReason}`
-                  : formatTrinketEquipAriaLabel(trinket.title, equippedBy)
+                  : formatTrinketEquipAriaLabel(trinket.title, equippedCharacterId)
               }
             >
               {reservedBy ? <ReservedLock /> : null}

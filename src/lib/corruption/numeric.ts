@@ -37,7 +37,7 @@ function hasSharedRandomAmount(card: BattleCard, effect: BattleCardEffect): bool
 
 function sharesDamageAmount(line: string, effect: BattleCardEffect): boolean {
   if (effect.kind !== "damage") return false;
-  const match = /^Deal (\d+) (\w+) or (\w+) damage$/.exec(line);
+  const match = /^Deal (\d+) (\w+) or (\w+) damage( at random)?$/.exec(line);
   if (!match) return false;
   const first = match[2]?.toLowerCase();
   const second = match[3]?.toLowerCase();

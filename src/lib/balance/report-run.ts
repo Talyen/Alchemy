@@ -2,6 +2,7 @@ import { cardById, type CharacterId } from "@/lib/game-data";
 import { ANOMALY_METRICS, getAnomalyThreshold } from "./anomalies";
 import { buildClassSimDeck } from "./class-deck";
 import {
+  balanceScenarioSeed,
   coreMatchupsForTier,
   coreScenarioSeeds,
   REPORT_ENEMY_TYPES,
@@ -74,16 +75,21 @@ function runCoreScenarios(options: ReportRunOptions): CoreRow[] {
   const rows: CoreRow[] = [];
   for (const tier of REPORT_TIERS) {
     for (const characterId of reportCharacterIds()) {
+      const decks = Array.from({ length: options.deckSeeds }, (_, deckIndex) => {
+        const deckSeed = balanceScenarioSeed("core-deck", tier.preset, characterId, deckIndex);
+        return buildClassSimDeck(characterId, tier.preset, deckSeed);
+      });
       for (const matchup of coreMatchupsForTier(tier)) {
         const batches: BalanceBatchResult[] = [];
         for (let deckIndex = 0; deckIndex < options.deckSeeds; deckIndex += 1) {
-          const { deckSeed, fightSeed } = coreScenarioSeeds({
+          const { fightSeed } = coreScenarioSeeds({
             tier: tier.preset,
             characterId,
             enemyId: matchup.enemyId,
             depth: matchup.depth,
             deckIndex,
           });
+          const deck = decks[deckIndex];
           batches.push(
             simulateBatch(
               buildBalanceBatchConfig(options, {
@@ -92,7 +98,7 @@ function runCoreScenarios(options: ReportRunOptions): CoreRow[] {
                 depth: matchup.depth,
                 preset: tier.preset,
                 seed: fightSeed,
-                deck: buildClassSimDeck(characterId, tier.preset, deckSeed),
+                ...(deck ? { deck } : {}),
               }),
             ),
           );

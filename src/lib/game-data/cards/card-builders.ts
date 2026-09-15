@@ -59,6 +59,8 @@ function effectDescriptionLine(effect: BattleCardEffect): string {
       return effect.removeAll ? "Remove all enemy Armor" : `Remove ${effect.amount} enemy Armor`;
     case "next-hit-crit":
       return "Your next damaging card is a critical strike";
+    case "next-hit-leech":
+      return "Your next damaging card has Leech";
     case "play-next-card-twice":
       return "Your next card is played twice";
     case "next-hit-poison":

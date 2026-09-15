@@ -100,6 +100,7 @@ function buildArmedPlayerChips(state: BattleSnapshot): StatusChip[] {
   const { flags } = state;
   if (flags.playNextCardTwice) chips.push({ id: "playNextCardTwice", value: 1, hideValue: true });
   if (flags.nextHitCrit) chips.push({ id: "nextHitCrit", value: 1, hideValue: true });
+  if (flags.nextHitLeech) chips.push({ id: "nextHitLeech", value: 1, hideValue: true });
   if (flags.nextHitPoison) chips.push({ id: "nextHitPoison", value: 1, hideValue: true });
   if (flags.nextHitPhysicalBonus > 0) {
     chips.push({ id: "nextHitPhysicalBonus", value: flags.nextHitPhysicalBonus });

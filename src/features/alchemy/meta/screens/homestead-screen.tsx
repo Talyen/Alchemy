@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { type BuildingId, type FarmId, type MaterialInventory, type ResearchId } from "@/lib/homestead/types";
 import { PageLayout, ScreenHeaderRow, ScreenShell } from "../../shared/ui/layout-components";
 import { PaginationControls } from "../../shared/ui/navigation";
+import { getPagination } from "../../shared/ui/pagination";
 import { FadeSlot } from "../../shared/ui/use-fade";
 import { playUISound } from "@/lib/audio";
 import { cardLibrary, type CompanionId } from "@/lib/game-data";
@@ -75,15 +76,21 @@ export function HomesteadScreen({
   const upgradeItems =
     tab === "buildings" ? BUILDING_GOAL_ITEMS : tab === "farm" ? FARM_GOAL_ITEMS : RESEARCH_GOAL_ITEMS;
   const upgradeLevels = tab === "buildings" ? constructedBuildings : tab === "farm" ? plantedFarms : completedResearch;
-  const upgradePages = Math.max(1, Math.ceil(upgradeItems.length / HOMESTEAD_CONFIG.upgradePageSize));
-  const safeUpgradePage = Math.min(upgradePage, upgradePages - 1);
+  const { page: safeUpgradePage, totalPages: upgradePages } = getPagination(
+    upgradeItems.length,
+    upgradePage,
+    HOMESTEAD_CONFIG.upgradePageSize,
+  );
   const visibleUpgradeItems = upgradeItems.slice(
     safeUpgradePage * HOMESTEAD_CONFIG.upgradePageSize,
     (safeUpgradePage + 1) * HOMESTEAD_CONFIG.upgradePageSize,
   );
 
-  const companionPages = Math.max(1, Math.ceil(companionCards.length / HOMESTEAD_CONFIG.companionPageSize));
-  const safeCompanionPage = Math.min(companionPage, companionPages - 1);
+  const { page: safeCompanionPage, totalPages: companionPages } = getPagination(
+    companionCards.length,
+    companionPage,
+    HOMESTEAD_CONFIG.companionPageSize,
+  );
   const visibleCompanionCards = companionCards.slice(
     safeCompanionPage * HOMESTEAD_CONFIG.companionPageSize,
     (safeCompanionPage + 1) * HOMESTEAD_CONFIG.companionPageSize,

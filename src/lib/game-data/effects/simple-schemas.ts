@@ -45,6 +45,10 @@ export const nextHitCritEffectDefinition = defineFlagEffect(
   "next-hit-crit",
 ) satisfies EffectKindDefinition<"next-hit-crit">;
 
+export const nextHitLeechEffectDefinition = defineFlagEffect(
+  "next-hit-leech",
+) satisfies EffectKindDefinition<"next-hit-leech">;
+
 export const playNextCardTwiceEffectDefinition = defineFlagEffect(
   "play-next-card-twice",
 ) satisfies EffectKindDefinition<"play-next-card-twice">;

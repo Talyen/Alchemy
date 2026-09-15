@@ -4,7 +4,6 @@ import type { GearEffectManifest } from "@/lib/gear/gear-effect-manifest";
 import type { BattleAnomalies } from "./anomalies";
 import type { BalanceLoadoutMode } from "./loadout-preset";
 import type { TalentPreset } from "./types";
-
 export type BalancePlayPolicy = "random-playable" | "greedy-damage" | "defensive-random" | "greedy-effective-damage";
 export type BattleSimulationOutcome = "win" | "loss" | "timeout";
 
@@ -26,6 +25,7 @@ export interface BattleSimulationConfig {
   playerMaxHealth?: number;
   gold?: number;
   appliesFightPacing?: boolean;
+  trackAnomalies?: boolean;
 }
 
 export interface BattleSimulationResult {

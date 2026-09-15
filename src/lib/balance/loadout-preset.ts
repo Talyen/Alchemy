@@ -30,8 +30,16 @@ export interface SimLoadout {
   talentPointHealth: number;
 }
 
+const TALENT_HEALTH_CACHE = new Map<string, number>();
+
 function talentPointHealthForCharacter(characterId: CharacterId, preset: TalentPreset): number {
-  return countUnlockedCombatTalents(characters[characterId].keywords, preset) * MAX_HEALTH_PER_TALENT_POINT;
+  const key = `${characterId}:${preset}`;
+  let cached = TALENT_HEALTH_CACHE.get(key);
+  if (cached === undefined) {
+    cached = countUnlockedCombatTalents(characters[characterId].keywords, preset) * MAX_HEALTH_PER_TALENT_POINT;
+    TALENT_HEALTH_CACHE.set(key, cached);
+  }
+  return cached;
 }
 
 export function resolveSimLoadout(options: {

@@ -367,7 +367,7 @@ export const coreCards: BattleCard[] = [
   {
     id: "maul",
     title: "Maul",
-    descriptionLines: ["Deal 3 Stun or Bleed damage"],
+    descriptionLines: ["Deal 3 Stun or Bleed damage at random"],
     art: assetRefs.maul,
     cost: 1,
     effects: [
@@ -388,12 +388,14 @@ export const coreCards: BattleCard[] = [
     consume: true,
     effects: [{ kind: "draw-cards", amount: 1 }, { kind: "next-archery-free" }],
   },
-  cardBuilders.singleEffectCard({
+  {
     id: "predators-focus",
     title: "Predator's Focus",
+    descriptionLines: ["Your next damaging card is a critical strike and has Leech"],
     art: assetRefs.predatorsFocus,
-    effect: { kind: "next-hit-crit" },
-  }),
+    cost: 1,
+    effects: [{ kind: "next-hit-crit" }, { kind: "next-hit-leech" }],
+  },
   {
     id: "blizzard",
     title: "Blizzard",

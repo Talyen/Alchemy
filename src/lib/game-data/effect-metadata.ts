@@ -42,6 +42,7 @@ const FORMATTERS: { [K in BattleCardEffect["kind"]]: KeywordFormatter<K> } = {
   "self-damage": (effect) => [effect.damageType],
   "repeat-over-turns": (effect) => effect.effects.flatMap(collectKeywordsFromBattleEffect),
   "next-hit-crit": () => [],
+  "next-hit-leech": () => ["leech"],
   "play-next-card-twice": () => [],
   "next-hit-poison": () => [],
   "next-archery-free": () => ["archery"],

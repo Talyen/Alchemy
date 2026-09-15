@@ -11,9 +11,7 @@ const server = await createServer({
 });
 
 try {
-  const { buildLootBalanceReport, renderLootBalanceReport } = await server.ssrLoadModule(
-    "/src/lib/balance/loot-report.ts",
-  );
+  const { buildLootBalanceReport, renderLootBalanceReport } = await server.ssrLoadModule("/src/lib/balance/index.ts");
   const report = buildLootBalanceReport(Number(process.env.ALCHEMY_LOOT_SAMPLES ?? 1000));
   const directory = resolve("reports/loot-progression");
   mkdirSync(directory, { recursive: true });

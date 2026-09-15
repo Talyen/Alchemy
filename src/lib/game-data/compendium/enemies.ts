@@ -153,7 +153,7 @@ export const enemyBestiary = [
     title: "Bandit",
     art: assetRefs.bandit,
     enemyType: "normal",
-    traits: [trait("bandit", "Ambush", "Deals double damage on its first attack")],
+    traits: [trait("bandit", "Ambush", "Deals double Physical damage on its first attack")],
     abilityIds: ["slash", "serrated-edge", "block"],
   }),
   defineEnemy({
@@ -349,7 +349,7 @@ export const enemyBestiary = [
     art: assetRefs.banshee,
     enemyType: "normal",
     traits: [
-      trait("banshee", "Dread Wail", "Attacks Purge one beneficial effect"),
+      trait("banshee", "Dread Wail", "Attacks Purge one beneficial effect (Block, Armor, Forge, or Haste)"),
       trait("holy-vulnerability", "Holy Vulnerability", "Receives double Holy damage"),
     ],
     abilityIds: ["bash", "frostbolt", "cold-snap"],

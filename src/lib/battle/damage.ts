@@ -65,8 +65,17 @@ export function dealDamageToEnemy(
   }
 
   const convertToPoison = state.flags.nextHitPoison;
-  const packet = convertToPoison ? { ...effect, damageType: "poison" as const } : effect;
+  const poisonPacket = convertToPoison ? { ...effect, damageType: "poison" as const } : effect;
   let damageState = convertToPoison ? { ...state, flags: { ...state.flags, nextHitPoison: false } } : state;
+
+  // Predator's Focus grants Leech on the next damaging card. Consume the flag
+  // here so dodge preserves it (early return above) while companion and
+  // delayed pulses cannot observe it (withPreservedFlags forces it false).
+  const leechNext = damageState.flags.nextHitLeech;
+  const packet = leechNext ? { ...poisonPacket, lifesteal: true as const } : poisonPacket;
+  if (leechNext) {
+    damageState = { ...damageState, flags: { ...damageState.flags, nextHitLeech: false } };
+  }
 
   if (damageState.flags.nextHitPhysicalBonus > 0) {
     bonuses.physical += damageState.flags.nextHitPhysicalBonus;

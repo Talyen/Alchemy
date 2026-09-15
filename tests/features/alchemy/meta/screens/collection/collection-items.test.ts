@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  getCollectionFillerCount,
   getCollectionPageItems,
   getCollectionTotalPages,
 } from "@/features/alchemy/meta/screens/collection/collection-items";
@@ -112,18 +111,6 @@ describe("collection item helpers", () => {
     });
 
     expect(overflow.map((item) => item.id)).toEqual(last.map((item) => item.id));
-  });
-
-  it("fills incomplete collection pages to the configured page size", () => {
-    expect(getCollectionFillerCount(0, "heroes")).toBe(COLLECTION_PAGE_SIZE);
-    expect(getCollectionFillerCount(COLLECTION_PAGE_SIZE, "heroes")).toBe(0);
-    expect(getCollectionFillerCount(0, "cards")).toBe(COLLECTION_PAGE_SIZE);
-    expect(getCollectionFillerCount(COLLECTION_PAGE_SIZE - 1, "cards")).toBe(1);
-    expect(getCollectionFillerCount(COLLECTION_PAGE_SIZE, "cards")).toBe(0);
-    expect(getCollectionFillerCount(0, "uniques")).toBe(TRINKET_PAGE_SIZE);
-    expect(getCollectionFillerCount(uniqueItemList.length, "uniques")).toBe(
-      Math.max(0, TRINKET_PAGE_SIZE - uniqueItemList.length),
-    );
   });
 
   it("returns hidden unique copy until the unique is discovered", () => {

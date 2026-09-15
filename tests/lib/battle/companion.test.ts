@@ -371,6 +371,16 @@ describe("processCompanionTurnStart", () => {
     expect(result.flags.nextHitCrit).toBe(true);
   });
 
+  it("does not consume nextHitLeech on companion damage", () => {
+    const state = patchBattleState({
+      activeCompanion: companionLibrary.wolf,
+      flags: { nextHitLeech: true },
+    });
+    const result = processCompanionTurnStart(state, makeTexts());
+    expect(result.enemyHealth).toBe(29);
+    expect(result.flags.nextHitLeech).toBe(true);
+  });
+
   it("does not consume Opening on companion damage", () => {
     const state = patchBattleState({
       activeCompanion: companionLibrary.wolf,

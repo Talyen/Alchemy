@@ -1,4 +1,4 @@
-import { createElement, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { createElement, memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 
 import { Lock } from "lucide-react";
 
@@ -27,7 +27,7 @@ export interface TalentTreeProps {
   onHoverTalent?: ((talent: TalentDefinition | null) => void) | undefined;
 }
 
-function TalentCard({
+const TalentCard = memo(function TalentCard({
   talent,
   isUnlocked,
   isAllocatable,
@@ -134,7 +134,7 @@ function TalentCard({
       ) : null}
     </Element>
   );
-}
+});
 
 export function TalentTree({
   allTalents,

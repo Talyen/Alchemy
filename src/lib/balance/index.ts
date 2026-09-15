@@ -19,3 +19,4 @@ export * from "./findings-bands";
 export * from "./findings";
 export * from "./findings-html";
 export * from "./findings-json";
+export * from "./loot-report";

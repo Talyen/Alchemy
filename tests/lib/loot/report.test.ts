@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { buildLootBalanceReport, renderLootBalanceReport } from "@/lib/balance/loot-report";
+import { buildLootBalanceReport, renderLootBalanceReport } from "@/lib/balance";
 
 it("produces reproducible offer estimates with explicit route and collection assumptions", () => {
   const report = buildLootBalanceReport(2);

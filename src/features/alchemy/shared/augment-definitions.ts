@@ -14,6 +14,7 @@ export interface AugmentDefinition {
 export type ArmedFlagChipId =
   | "playNextCardTwice"
   | "nextHitCrit"
+  | "nextHitLeech"
   | "nextHitPoison"
   | "nextHitPhysicalBonus"
   | "nextPhysicalDealsBleed"
@@ -118,6 +119,13 @@ export const augmentDefinitions: Record<AugmentId, AugmentDefinition> = {
     description: "Your next damaging card is a critical strike.",
     icon: Focus,
     colorClass: "text-amber-200",
+  },
+  nextHitLeech: {
+    id: "nextHitLeech",
+    label: "Predator's Hunger",
+    description: "Your next damaging card has Leech.",
+    icon: keywordIcons.leech,
+    colorClass: keywordDefinitions.leech.colorClass,
   },
   nextHitPoison: {
     id: "nextHitPoison",

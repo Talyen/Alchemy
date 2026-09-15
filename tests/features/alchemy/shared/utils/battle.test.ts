@@ -66,6 +66,7 @@ describe("getPlayerStatusChips", () => {
     const state = makeProductionBattleState();
     state.flags.playNextCardTwice = true;
     state.flags.nextHitCrit = true;
+    state.flags.nextHitLeech = true;
     state.flags.nextHitPhysicalBonus = 4;
     state.flags.nextPhysicalDealsBleed = true;
     state.flags.nextArcheryCardFree = true;
@@ -74,6 +75,7 @@ describe("getPlayerStatusChips", () => {
     const chips = getPlayerStatusChips(state);
     expect(chips).toContainEqual({ id: "playNextCardTwice", value: 1, hideValue: true });
     expect(chips).toContainEqual({ id: "nextHitCrit", value: 1, hideValue: true });
+    expect(chips).toContainEqual({ id: "nextHitLeech", value: 1, hideValue: true });
     expect(chips).toContainEqual({ id: "nextHitPhysicalBonus", value: 4 });
     expect(chips).toContainEqual({ id: "nextPhysicalDealsBleed", value: 1, hideValue: true });
     expect(chips).toContainEqual({ id: "nextArcheryCardFree", value: 1, hideValue: true });

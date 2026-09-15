@@ -157,6 +157,13 @@ describe("applyCardEffects — next-hit-crit and play-next-card-twice", () => {
     expect(result.flags.nextHitCrit).toBe(true);
   });
 
+  it("arms nextHitLeech", () => {
+    const state = makeState();
+    const card = makeTestCard({ effects: [{ kind: "next-hit-leech" }] });
+    const result = applyCardEffects(state, card, []);
+    expect(result.flags.nextHitLeech).toBe(true);
+  });
+
   it("arms playNextCardTwice", () => {
     const state = makeState();
     const card = makeTestCard({ effects: [{ kind: "play-next-card-twice" }] });

@@ -41,6 +41,8 @@ export const CHARACTER_KEYWORDS: Record<CharacterId, KeywordId> = {
   wildcard: "wish",
 };
 
+const CHARACTER_IDS: readonly CharacterId[] = Object.keys(characters) as CharacterId[];
+
 export function ArmoryCharacterTabs({
   activeTab,
   finishedRunCharacters,
@@ -54,7 +56,7 @@ export function ArmoryCharacterTabs({
     <div data-testid="armory-character-selector" className="mt-4 w-full py-2">
       <TabBar
         className="flex-nowrap gap-2"
-        tabs={(Object.keys(characters) as CharacterId[]).map((id) => {
+        tabs={CHARACTER_IDS.map((id) => {
           const isLocked = !isCharacterUnlocked(id, finishedRunCharacters);
           return {
             id,

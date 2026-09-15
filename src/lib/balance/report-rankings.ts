@@ -37,31 +37,47 @@ export function emptyRateCell(): RateCell {
 export function combineRateCells(cells: readonly RateCell[]): RateCell {
   if (cells.length === 0) return emptyRateCell();
   let n = 0;
-  let wins = 0;
-  let timeouts = 0;
-  let turns = 0;
-  let health = 0;
+  let winsTotal = 0;
+  let lossesTotal = 0;
+  let timeoutsTotal = 0;
+  let winRateWeighted = 0;
+  let timeoutRateWeighted = 0;
+  let turnsWeighted = 0;
+  let healthWeighted = 0;
+  let attacksWeighted = 0;
+  let abilityUsesWeighted = 0;
+  let abilityActivationsWeighted = 0;
+  let winsBeforeAttackWeighted = 0;
+
   for (const cell of cells) {
-    n += cell.n;
-    wins += cell.winRate * cell.n;
-    timeouts += cell.timeoutRate * cell.n;
-    turns += cell.averageTurns * cell.n;
-    health += cell.averageHealthRemaining * cell.n;
+    const weight = cell.n;
+    n += weight;
+    winsTotal += cell.wins;
+    lossesTotal += cell.losses;
+    timeoutsTotal += cell.timeouts;
+    winRateWeighted += cell.winRate * weight;
+    timeoutRateWeighted += cell.timeoutRate * weight;
+    turnsWeighted += cell.averageTurns * weight;
+    healthWeighted += cell.averageHealthRemaining * weight;
+    attacksWeighted += cell.averageEnemyAttacks * weight;
+    abilityUsesWeighted += cell.averageEnemyAbilityUses * weight;
+    abilityActivationsWeighted += cell.averageEnemyAbilityActivations * weight;
+    winsBeforeAttackWeighted += cell.winsBeforeEnemyAttackRate * weight;
   }
+
   if (n === 0) return emptyRateCell();
   return {
-    wins: cells.reduce((sum, cell) => sum + cell.wins, 0),
-    losses: cells.reduce((sum, cell) => sum + cell.losses, 0),
-    timeouts: cells.reduce((sum, cell) => sum + cell.timeouts, 0),
-    winRate: wins / n,
-    timeoutRate: timeouts / n,
-    averageTurns: turns / n,
-    averageEnemyAttacks: cells.reduce((sum, cell) => sum + cell.averageEnemyAttacks * cell.n, 0) / n,
-    averageEnemyAbilityUses: cells.reduce((sum, cell) => sum + cell.averageEnemyAbilityUses * cell.n, 0) / n,
-    averageEnemyAbilityActivations:
-      cells.reduce((sum, cell) => sum + cell.averageEnemyAbilityActivations * cell.n, 0) / n,
-    winsBeforeEnemyAttackRate: cells.reduce((sum, cell) => sum + cell.winsBeforeEnemyAttackRate * cell.n, 0) / n,
-    averageHealthRemaining: health / n,
+    wins: winsTotal,
+    losses: lossesTotal,
+    timeouts: timeoutsTotal,
+    winRate: winRateWeighted / n,
+    timeoutRate: timeoutRateWeighted / n,
+    averageTurns: turnsWeighted / n,
+    averageEnemyAttacks: attacksWeighted / n,
+    averageEnemyAbilityUses: abilityUsesWeighted / n,
+    averageEnemyAbilityActivations: abilityActivationsWeighted / n,
+    winsBeforeEnemyAttackRate: winsBeforeAttackWeighted / n,
+    averageHealthRemaining: healthWeighted / n,
     n,
   };
 }
@@ -141,18 +157,17 @@ export function pairedWinStats(
 }
 
 export function combinePairedWinStats(stats: readonly PairedWinStats[]): PairedWinStats {
-  return stats.reduce(
-    (combined, entry) => ({
-      n: combined.n + entry.n,
-      treatmentWins: combined.treatmentWins + entry.treatmentWins,
-      baselineWins: combined.baselineWins + entry.baselineWins,
-      squaredDifferenceSum: combined.squaredDifferenceSum + entry.squaredDifferenceSum,
-      treatmentTurns: combined.treatmentTurns + entry.treatmentTurns,
-      baselineTurns: combined.baselineTurns + entry.baselineTurns,
-      squaredTurnDifferenceSum: combined.squaredTurnDifferenceSum + entry.squaredTurnDifferenceSum,
-    }),
-    emptyPairedWinStats(),
-  );
+  const combined = emptyPairedWinStats();
+  for (const entry of stats) {
+    combined.n += entry.n;
+    combined.treatmentWins += entry.treatmentWins;
+    combined.baselineWins += entry.baselineWins;
+    combined.squaredDifferenceSum += entry.squaredDifferenceSum;
+    combined.treatmentTurns += entry.treatmentTurns;
+    combined.baselineTurns += entry.baselineTurns;
+    combined.squaredTurnDifferenceSum += entry.squaredTurnDifferenceSum;
+  }
+  return combined;
 }
 
 export function makePairedDelta(id: string, stats: PairedWinStats): PairedDelta {

@@ -128,12 +128,3 @@ export function getHomesteadUpgradeShineColors(item: GoalItem): readonly string[
   upgradeShineColorsCache.set(item.data.id, colors);
   return colors;
 }
-
-export function getItems(
-  tab: Tab,
-  pool: readonly HomesteadBuilding[] | readonly HomesteadFarm[] | readonly HomesteadResearch[],
-): GoalItem[] {
-  if (tab === "farm") return (pool as readonly HomesteadFarm[]).map((data) => ({ kind: "farm", data }));
-  if (tab === "research") return (pool as readonly HomesteadResearch[]).map((data) => ({ kind: "research", data }));
-  return (pool as readonly HomesteadBuilding[]).map((data) => ({ kind: "building", data }));
-}

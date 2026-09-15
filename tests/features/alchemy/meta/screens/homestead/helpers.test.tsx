@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
-import {
-  HOMESTEAD_CONFIG,
-  getArt,
-  getItems,
-  renderTextWithMaterials,
-} from "@/features/alchemy/meta/screens/homestead/helpers";
-import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
+import { HOMESTEAD_CONFIG, getArt, renderTextWithMaterials } from "@/features/alchemy/meta/screens/homestead/helpers";
 
 describe("renderTextWithMaterials", () => {
   it("renders multiple chips in one line and plain text segments", () => {
@@ -30,24 +24,6 @@ describe("getArt", () => {
 
   it("returns fallback empty for unknown id", () => {
     expect(getArt("unknown-id")).toBe("");
-  });
-});
-
-describe("getItems", () => {
-  it("maps buildings pool to GoalItem with building kind", () => {
-    const items = getItems("buildings", buildings);
-    expect(items).toHaveLength(buildings.length);
-    expect(items[0]?.kind).toBe("building");
-  });
-
-  it("maps farm pool to GoalItem with farm kind", () => {
-    const items = getItems("farm", farmPlots);
-    expect(items.every((i) => i.kind === "farm")).toBe(true);
-  });
-
-  it("maps research pool to GoalItem with research kind", () => {
-    const items = getItems("research", researchUpgrades);
-    expect(items.every((i) => i.kind === "research")).toBe(true);
   });
 });
 

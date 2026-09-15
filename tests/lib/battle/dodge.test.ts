@@ -380,13 +380,14 @@ describe("enemy Dodge", () => {
     expect(result.enemyHealth).toBe(30);
   });
 
-  it("preserves next-hit buffs (crit, poison conversion, flat bonus, parting cut) when the enemy Dodges", () => {
+  it("preserves next-hit buffs (crit, leech, poison conversion, flat bonus, parting cut) when the enemy Dodges", () => {
     const state = patchBattleState({
       enemyHealth: 30,
       rng: () => 0.01,
       flags: {
         ...patchBattleState().flags,
         nextHitCrit: true,
+        nextHitLeech: true,
         nextHitPoison: true,
         nextHitPhysicalBonus: 5,
         nextPhysicalDealsBleed: true,
@@ -396,6 +397,7 @@ describe("enemy Dodge", () => {
     const result = dealDamage(state, card);
     expect(result.enemyHealth).toBe(30);
     expect(result.flags.nextHitCrit).toBe(true);
+    expect(result.flags.nextHitLeech).toBe(true);
     expect(result.flags.nextHitPoison).toBe(true);
     expect(result.flags.nextHitPhysicalBonus).toBe(5);
     expect(result.flags.nextPhysicalDealsBleed).toBe(true);
@@ -408,6 +410,7 @@ describe("enemy Dodge", () => {
       flags: {
         ...patchBattleState().flags,
         nextHitCrit: true,
+        nextHitLeech: true,
         nextHitPhysicalBonus: 5,
         nextPhysicalDealsBleed: true,
       },
@@ -415,6 +418,7 @@ describe("enemy Dodge", () => {
     const card = makeTestCard({ effects: [makeEffect("physical", 5)] });
     const result = dealDamage(state, card);
     expect(result.flags.nextHitCrit).toBe(false);
+    expect(result.flags.nextHitLeech).toBe(false);
     expect(result.flags.nextHitPhysicalBonus).toBe(0);
     expect(result.flags.nextPhysicalDealsBleed).toBe(false);
   });
@@ -432,6 +436,23 @@ describe("enemy Dodge", () => {
     const result = dealDamage(state, card);
     expect(result.flags.nextHitPoison).toBe(false);
     expect(result.enemyStatuses.poison).toBeGreaterThan(0);
+  });
+
+  it("heals via Leech and consumes nextHitLeech on the next damaging card", () => {
+    const state = patchBattleState({
+      enemyHealth: 50,
+      playerHealth: 20,
+      playerMaxHealth: 30,
+      rng: () => 0.99,
+      flags: {
+        ...patchBattleState().flags,
+        nextHitLeech: true,
+      },
+    });
+    const card = makeTestCard({ effects: [makeEffect("physical", 6)] });
+    const result = dealDamage(state, card);
+    expect(result.flags.nextHitLeech).toBe(false);
+    expect(result.playerHealth).toBeGreaterThan(20);
   });
 
   it("still deals damage when the Dodge roll misses", () => {

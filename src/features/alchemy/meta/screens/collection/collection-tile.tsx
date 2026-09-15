@@ -57,8 +57,8 @@ export const CollectionTile = memo(function CollectionTile({
       onHoverEnd,
     });
 
-  const shineColors = collectionTileShineColors(item);
-  const showShine = visible && shineColors.length > 0;
+  const shineColors = visible ? collectionTileShineColors(item) : undefined;
+  const showShine = Boolean(shineColors && shineColors.length > 0);
 
   return (
     <div
@@ -76,7 +76,11 @@ export const CollectionTile = memo(function CollectionTile({
         onBlur={handleBlur}
         shimmerActive={shimmerActive}
         shimmerToken={shimmerToken}
-        overlay={showShine ? <ShineBorder glow shineColor={shineColors} borderWidth={2} className="z-20" /> : null}
+        overlay={
+          showShine && shineColors ? (
+            <ShineBorder glow shineColor={shineColors} borderWidth={2} className="z-20" />
+          ) : null
+        }
         className={cn(
           "group card-art-frame border border-border/80 shadow-md",
           showShine && "card-art-shine",

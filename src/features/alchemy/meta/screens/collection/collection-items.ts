@@ -18,7 +18,6 @@ import { gearDefinitions, uniqueItemList } from "@/lib/gear";
 import type { CollectionTab } from "../../../shared/types";
 
 const COLLECTION_ITEMS_CONFIG = {
-  pageSize: COLLECTION_PAGE_SIZE,
   hiddenTitle: "Undiscovered",
   hiddenCardDescription: "Discover this card during a run to reveal it here.",
   hiddenEnemyDescription: "Encounter this enemy to record its details.",
@@ -104,10 +103,6 @@ export function getCollectionPageItems({
     return getUniqueItems(discoveredUniqueIds, start, size);
   }
   return getTrinketItems(discoveredTrinketIds, start, size);
-}
-
-export function getCollectionFillerCount(itemCount: number, collectionTab: CollectionTab) {
-  return Math.max(0, getCollectionPageSize(collectionTab) - itemCount);
 }
 
 function sortByTitle<T extends { title: string }>(entries: T[]): T[] {

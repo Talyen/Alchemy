@@ -42,6 +42,7 @@ export const FLAG_DEFINITIONS = {
   divineAegisTriggered: { default: false as const, preserveAs: null },
 
   nextHitCrit: { default: false as const, preserveAs: false as const },
+  nextHitLeech: { default: false as const, preserveAs: false as const },
   playNextCardTwice: { default: false as const, preserveAs: false as const },
   nextHitPoison: { default: false as const, preserveAs: false as const },
   nextHitPhysicalBonus: { default: 0 as const, preserveAs: 0 as const },

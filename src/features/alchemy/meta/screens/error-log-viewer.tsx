@@ -15,7 +15,7 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
   // Clear invalidates it via the errorCount check below without an effect.
   const visibleCopyFeedback = copyFeedback && copyFeedback.errorCount === errors.length ? copyFeedback : null;
 
-  function handleCopyAll() {
+  async function handleCopyAll() {
     const errorCount = errors.length;
     setCopyFeedback(null);
     const text = errors
@@ -24,21 +24,16 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
           `[${e.source}] ${e.message}\n  at ${new Date(e.timestamp).toISOString()}\n  stack: ${e.stack ?? "(none)"}\n  context: ${JSON.stringify(e.context)}\n`,
       )
       .join("\n---\n");
-    let pending: unknown;
     try {
-      pending = navigator.clipboard?.writeText?.(text);
+      if (!navigator.clipboard?.writeText) {
+        setCopyFeedback({ status: "failed", errorCount });
+        return;
+      }
+      await navigator.clipboard.writeText(text);
+      setCopyFeedback({ status: "copied", errorCount });
     } catch {
       setCopyFeedback({ status: "failed", errorCount });
-      return;
     }
-    if (!pending || typeof (pending as Promise<void>).then !== "function") {
-      setCopyFeedback({ status: "failed", errorCount });
-      return;
-    }
-    (pending as Promise<void>).then(
-      () => setCopyFeedback({ status: "copied", errorCount }),
-      () => setCopyFeedback({ status: "failed", errorCount }),
-    );
   }
 
   return (
@@ -53,7 +48,7 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
       />
 
       <div className="mt-4 flex gap-2">
-        <Button size="sm" variant="outline" onClick={handleCopyAll} disabled={errors.length === 0}>
+        <Button size="sm" variant="outline" onClick={() => void handleCopyAll()} disabled={errors.length === 0}>
           Copy All
         </Button>
         <Button size="sm" variant="destructive" onClick={clearErrors} disabled={errors.length === 0}>

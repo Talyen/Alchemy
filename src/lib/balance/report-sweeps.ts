@@ -172,7 +172,7 @@ export function runTrinketSweep(options: ReportRunOptions): PairedTierRow[] {
 export function runCardSweepIsolated(options: ReportRunOptions, enemyId: string): PairedTierRow[] {
   const collected: PairedStatsById = new Map();
   const ids = reportCharacterIds();
-  const iterations = Math.max(10, Math.floor(options.iterations / 10));
+  const iterations = Math.max(1, Math.min(options.pairedIterations, Math.floor(options.iterations / 10) || 1));
   for (const tier of REPORT_TIERS) {
     for (let index = 0; index < options.cardDeckSamples; index += 1) {
       const characterId = ids[index % ids.length] ?? ids[0];
@@ -212,7 +212,7 @@ export const IN_CLASS_CARD_GAUNTLET = [
 
 export function runCardSweepInClass(options: ReportRunOptions): PairedTierRow[] {
   const collected: PairedStatsById = new Map();
-  const iterations = Math.max(10, Math.floor(options.iterations / 5));
+  const iterations = Math.max(1, Math.min(options.pairedIterations, Math.floor(options.iterations / 5) || 1));
   for (const tier of REPORT_TIERS) {
     for (const characterId of reportCharacterIds()) {
       const deckSeed = balanceScenarioSeed("card-in-class-deck", tier.preset, characterId);
@@ -392,6 +392,15 @@ export function runGearSweep(options: ReportRunOptions): PairedTierRow[] {
 export function runAffixSweep(options: ReportRunOptions): PairedTierRow[] {
   const collected: PairedStatsById = new Map();
   for (const tier of REPORT_TIERS) {
+    const tierAffixes = gearAffixList.map((affix) => {
+      const rarity = affix.uniqueOnly ? "unique" : tier.preset === "late" ? "astral" : "basic";
+      const range = affix.roll[rarity];
+      const value = Math.round((range.min + range.max) / 2);
+      return {
+        id: affix.id,
+        gearEffects: effectsForAffixRolls([{ id: affix.id, value }], rarity),
+      };
+    });
     for (const characterId of reportCharacterIds()) {
       for (let deckIndex = 0; deckIndex < options.deckSeeds; deckIndex += 1) {
         const deck = buildClassSimDeck(
@@ -411,15 +420,10 @@ export function runAffixSweep(options: ReportRunOptions): PairedTierRow[] {
             iterations: options.pairedIterations,
           };
           const baseline = runSeries(options, { ...shared, gearEffects: defaultGearEffects });
-          for (const affix of gearAffixList) {
-            const range = affix.roll[affix.uniqueOnly ? "unique" : tier.preset === "late" ? "astral" : "basic"];
-            const value = Math.round((range.min + range.max) / 2);
-            recordComparison(options, collected, tier.preset, affix.id, baseline, {
+          for (const { id: affixId, gearEffects } of tierAffixes) {
+            recordComparison(options, collected, tier.preset, affixId, baseline, {
               ...shared,
-              gearEffects: effectsForAffixRolls(
-                [{ id: affix.id, value }],
-                affix.uniqueOnly ? "unique" : tier.preset === "late" ? "astral" : "basic",
-              ),
+              gearEffects,
             });
           }
         }

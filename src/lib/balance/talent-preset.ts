@@ -87,9 +87,23 @@ export function countAffinityCombatTalents(keywords: readonly KeywordId[], prese
   return keywords.reduce((total, keywordId) => total + (unlocked[keywordId]?.length ?? 0), 0);
 }
 
+const PRESET_MANIFEST_CACHE = new Map<string, TalentEffectManifest>();
+
 export function buildPresetManifest(keywords: readonly KeywordId[], preset: TalentPreset): TalentEffectManifest {
   if (preset === "early") return defaultTalentEffects;
-  return computeTalentEffects(buildPresetUnlockedTalents(keywords, preset));
+  const key = `${keywords.join(",")}:${preset}`;
+  let cached = PRESET_MANIFEST_CACHE.get(key);
+  if (!cached) {
+    cached = computeTalentEffects(buildPresetUnlockedTalents(keywords, preset));
+    PRESET_MANIFEST_CACHE.set(key, cached);
+  }
+  // The cache template is shared: return a copy so callers can never mutate it.
+  return {
+    ...cached,
+    companionBondLevels: { ...cached.companionBondLevels },
+    cardHealBonus: { ...cached.cardHealBonus },
+    healthThresholdArmor: [...cached.healthThresholdArmor],
+  };
 }
 
 export function withTalent(unlocked: UnlockedTalents, talent: TalentDefinition): UnlockedTalents {

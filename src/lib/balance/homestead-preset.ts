@@ -35,12 +35,6 @@ export function buildSimCompanionBondLevels(
   return bonds;
 }
 
-const TYPICAL_HOMESTEAD_STARS: Record<TalentPreset, number> = {
-  early: 0,
-  mid: 1,
-  late: 2,
-};
-
 function filledTierRecord(
   items: ReadonlyArray<{ id: string; tiers: readonly unknown[] }>,
   stars: number,
@@ -52,18 +46,30 @@ function filledTierRecord(
   return record;
 }
 
+const TYPICAL_HOMESTEAD_CACHE: Record<TalentPreset, HomesteadEffectManifest> = {
+  early: {
+    ...defaultHomesteadEffects,
+    companionBondLevels: { ...defaultHomesteadEffects.companionBondLevels },
+    cardHealBonus: { ...defaultHomesteadEffects.cardHealBonus },
+  },
+  mid: computeHomesteadEffects(
+    filledTierRecord(buildings, 1),
+    filledTierRecord(farmPlots, 1),
+    filledTierRecord(researchUpgrades, 1),
+  ),
+  late: computeHomesteadEffects(
+    filledTierRecord(buildings, 2),
+    filledTierRecord(farmPlots, 2),
+    filledTierRecord(researchUpgrades, 2),
+  ),
+};
+
 export function buildTypicalHomesteadEffects(preset: TalentPreset): HomesteadEffectManifest {
-  const stars = TYPICAL_HOMESTEAD_STARS[preset];
-  if (stars <= 0) {
-    return {
-      ...defaultHomesteadEffects,
-      companionBondLevels: { ...defaultHomesteadEffects.companionBondLevels },
-      cardHealBonus: { ...defaultHomesteadEffects.cardHealBonus },
-    };
-  }
-  return computeHomesteadEffects(
-    filledTierRecord(buildings, stars),
-    filledTierRecord(farmPlots, stars),
-    filledTierRecord(researchUpgrades, stars),
-  );
+  // The cache template is shared: return a copy so callers can never mutate it.
+  const cached = TYPICAL_HOMESTEAD_CACHE[preset];
+  return {
+    ...cached,
+    companionBondLevels: { ...cached.companionBondLevels },
+    cardHealBonus: { ...cached.cardHealBonus },
+  };
 }

@@ -27,6 +27,7 @@ function effectTarget(effect: BattleCardEffect): "player" | "enemy" | null {
     case "remove-player-status":
     case "self-damage":
     case "next-hit-crit":
+    case "next-hit-leech":
     case "play-next-card-twice":
     case "next-hit-poison":
     case "next-archery-free":

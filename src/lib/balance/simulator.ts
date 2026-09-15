@@ -78,7 +78,7 @@ function playAutomatedTurn(
   state: BattleState,
   policy: BalancePlayPolicy,
   cardsPlayed: Record<string, number>,
-  anomalies: BattleAnomalies,
+  anomalies: BattleAnomalies | null,
 ): { state: BattleState; combatTexts: CombatTextEvent[] } {
   let nextState = choosePendingWishCards(state);
   const allCombatTexts: CombatTextEvent[] = [];
@@ -92,7 +92,7 @@ function playAutomatedTurn(
 
     allCombatTexts.push(...result.combatTexts);
     cardsPlayed[selection.card.id] = (cardsPlayed[selection.card.id] ?? 0) + 1;
-    sampleAnomalies(result.state, result.combatTexts, anomalies, selection.card.id);
+    if (anomalies) sampleAnomalies(result.state, result.combatTexts, anomalies, selection.card.id);
     nextState = choosePendingWishCards(result.state);
   }
 
@@ -120,22 +120,24 @@ function runSimTurn(
   state: BattleState,
   policy: BalancePlayPolicy,
   cardsPlayed: Record<string, number>,
-  anomalies: BattleAnomalies,
+  anomalies: BattleAnomalies | null,
 ): BattleState {
   const turnCombatTexts: CombatTextEvent[] = [];
   state = processCompanionTurnStart(state, turnCombatTexts);
-  sampleAnomalies(state, turnCombatTexts, anomalies);
+  if (anomalies) sampleAnomalies(state, turnCombatTexts, anomalies);
   if (state.enemyHealth <= 0 || isPlayerDefeated(state)) return state;
 
   const turnResult = playAutomatedTurn(state, policy, cardsPlayed, anomalies);
   state = turnResult.state;
-  sampleAnomalies(state, [], anomalies);
+  if (anomalies) sampleAnomalies(state, [], anomalies);
   if (state.enemyHealth <= 0 || isPlayerDefeated(state)) return state;
 
   const resolution = endPlayerTurn(state);
-  if (resolution.afterAbilityState) sampleAnomalies(resolution.afterAbilityState, [], anomalies);
+  if (anomalies) {
+    if (resolution.afterAbilityState) sampleAnomalies(resolution.afterAbilityState, [], anomalies);
+  }
   state = choosePendingWishCards(resolution.state);
-  sampleAnomalies(state, resolution.combatTexts, anomalies);
+  if (anomalies) sampleAnomalies(state, resolution.combatTexts, anomalies);
   return state;
 }
 
@@ -183,6 +185,8 @@ function buildSimBattleConfig(config: BattleSimulationConfig, rng: () => number,
   };
 }
 
+const EMPTY_ANOMALIES_SENTINEL: BattleAnomalies = Object.freeze(createEmptyAnomalies());
+
 export function simulateBattle(config: BattleSimulationConfig): BattleSimulationResult {
   const seed = orFallback(config.seed, DEFAULT_SEED);
   const rng = createRunStreamRng(seed, "world");
@@ -192,7 +196,8 @@ export function simulateBattle(config: BattleSimulationConfig): BattleSimulation
   const { state: initialState, playerMaxHealth, trinketIds } = buildSimBattleConfig(config, rng, enemy, seed);
   const maxTurns = orFallback(config.maxTurns, DEFAULT_MAX_TURNS);
   const cardsPlayed: Record<string, number> = {};
-  const anomalies = createEmptyAnomalies();
+  const trackAnomalies = config.trackAnomalies !== false;
+  const anomalies = trackAnomalies ? createEmptyAnomalies() : null;
 
   let state: BattleState = { ...initialState, battleMetrics: { enemyAttackActions: 0, enemyAbilityActivations: {} } };
   let turns = 0;
@@ -226,6 +231,6 @@ export function simulateBattle(config: BattleSimulationConfig): BattleSimulation
     trinketIds,
     policy: orFallback(config.policy, DEFAULT_POLICY),
     seed,
-    anomalies,
+    anomalies: anomalies ?? EMPTY_ANOMALIES_SENTINEL,
   };
 }

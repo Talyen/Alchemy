@@ -24,6 +24,11 @@ export const collectionShellWidthClass = "max-w-[1280px]";
 
 export const collectionGridBestiaryWidthClass = "mx-auto w-full max-w-[calc(25.8323*var(--content-rem,1rem))]";
 
+export const COLLECTION_CARD_REFERENCE_WIDTH = 244.512;
+export const COLLECTION_BESTIARY_REFERENCE_WIDTH = 390;
+export const COLLECTION_CARD_MAX_COLUMNS = 4;
+export const COLLECTION_BESTIARY_MAX_COLUMNS = 3;
+
 export type TileWidthVariant = "collection" | "view" | "bestiary" | "collectionCard";
 
 export function getTileWidthClass(variant: TileWidthVariant): string {

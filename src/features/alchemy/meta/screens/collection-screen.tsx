@@ -5,7 +5,13 @@ import { useControlledPagination } from "../../shared/ui/use-pagination";
 import { useAdaptiveGrid } from "../../shared/ui/adaptive-grid";
 import { GridMeasurement } from "../../shared/ui/grid-measurement";
 import { getCollectionLibraryLength } from "./collection/collection-items";
-import { collectionShellWidthClass } from "../../shared/config";
+import {
+  collectionShellWidthClass,
+  COLLECTION_BESTIARY_MAX_COLUMNS,
+  COLLECTION_BESTIARY_REFERENCE_WIDTH,
+  COLLECTION_CARD_MAX_COLUMNS,
+  COLLECTION_CARD_REFERENCE_WIDTH,
+} from "../../shared/config";
 import { PageLayout, ScreenHeaderRow, ScreenShell } from "../../shared/ui/layout-components";
 import { CollectionGrid, CollectionTabs, CollectionPagination } from "./collection/collection-ui";
 import { enemyById, type CharacterId, type BestiaryEntry } from "../../shared/config/game-data-catalog";
@@ -39,10 +45,13 @@ export function CollectionScreen({
   onBack?: (() => void) | undefined;
   onMenu?: ((rect: DOMRect) => void) | undefined;
 }) {
-  const { onContainer, onMeasure, referenceTileWidth, pageSize, columns } = useAdaptiveGrid(
-    collectionTab === "bestiary" ? 390 : 244.512,
-    collectionTab === "bestiary" ? 3 : 4,
-    collectionTab === "bestiary" ? 6 : 8,
+  const isBestiary = collectionTab === "bestiary";
+  const referenceTileWidth = isBestiary ? COLLECTION_BESTIARY_REFERENCE_WIDTH : COLLECTION_CARD_REFERENCE_WIDTH;
+  const maxColumns = isBestiary ? COLLECTION_BESTIARY_MAX_COLUMNS : COLLECTION_CARD_MAX_COLUMNS;
+  const { onContainer, onMeasure, pageSize, columns, gridStyle } = useAdaptiveGrid(
+    referenceTileWidth,
+    maxColumns,
+    maxColumns,
   );
   const returnFocusRef = useRef<HTMLElement | null>(null);
   const previewMusicKey = useRef<string | undefined>(undefined);
@@ -111,6 +120,7 @@ export function CollectionScreen({
               page={activePage}
               pageSize={pageSize}
               columns={columns}
+              gridStyle={gridStyle}
               bondedCompanions={bondedCompanions}
               onEnemyActivate={handleEnemyActivate}
               inspectionOpen={inspectedEnemy !== null}

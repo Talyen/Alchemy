@@ -67,6 +67,8 @@ function scoreEffect(effect: BattleCardEffect, state: BattleState): number {
       return effect.removeAll ? state.enemyMitigation.armor : Math.min(effect.amount, state.enemyMitigation.armor);
     case "next-hit-crit":
       return EFFECT_SCORE.criticalHit;
+    case "next-hit-leech":
+      return 0;
     case "play-next-card-twice":
       return EFFECT_SCORE.repeatCard;
     case "wish":

@@ -67,13 +67,7 @@ function GameModeTile({
           <PortaledTooltip triggerRef={tileTriggerRef} visible className="text-center">
             <TooltipHeader>{meta.title}</TooltipHeader>
             <TooltipBody>
-              {isLocked ? (
-                <p>{renderUnlockMessage(getGameModeUnlockMessage(modeId))}</p>
-              ) : (
-                <>
-                  <p>{meta.description}</p>
-                </>
-              )}
+              {isLocked ? <p>{renderUnlockMessage(getGameModeUnlockMessage(modeId))}</p> : <p>{meta.description}</p>}
             </TooltipBody>
           </PortaledTooltip>
         ) : null

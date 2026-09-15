@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import { PaginationControls } from "../../../shared/ui/navigation";
 import { FadeSlot } from "../../../shared/ui/use-fade";
@@ -8,6 +8,8 @@ import {
   collectionGridBestiaryWidthClass,
   collectionGridMinHeightClass,
   collectionTabMeta,
+  COLLECTION_BESTIARY_REFERENCE_WIDTH,
+  COLLECTION_CARD_REFERENCE_WIDTH,
 } from "../../../shared/config";
 import type { CharacterId } from "@/features/alchemy/shared/config/game-data-catalog";
 import type { CollectionTab } from "../../../shared/types";
@@ -25,6 +27,7 @@ export function CollectionGrid({
   page,
   pageSize,
   columns,
+  gridStyle,
   bondedCompanions,
   onEnemyActivate,
   inspectionOpen = false,
@@ -38,6 +41,7 @@ export function CollectionGrid({
   page: number;
   pageSize: number;
   columns: number;
+  gridStyle?: CSSProperties;
   bondedCompanions: Record<string, number>;
   onEnemyActivate?: (enemyId: string, trigger: HTMLButtonElement) => void;
   inspectionOpen?: boolean;
@@ -73,15 +77,14 @@ export function CollectionGrid({
       ? cn(collectionGridBestiaryWidthClass, "aspect-[4/3]")
       : cn(collectionCardGridTileWidthClass, "aspect-[3/4]");
 
+  const computedGridStyle: CSSProperties = gridStyle ?? {
+    gridTemplateColumns: `repeat(${columns}, minmax(0, calc(${collectionTab === "bestiary" ? COLLECTION_BESTIARY_REFERENCE_WIDTH : COLLECTION_CARD_REFERENCE_WIDTH}px * var(--content-scale, 1))))`,
+    justifyContent: "center",
+  };
+
   return (
     <FadeSlot swapKey={`${collectionTab}-${page}`} className={cn("overflow-visible", collectionGridMinHeightClass)}>
-      <div
-        className={cn("grid w-full gap-x-5", artTileGridRowsClass)}
-        style={{
-          gridTemplateColumns: `repeat(${columns}, minmax(0, calc(${collectionTab === "bestiary" ? 390 : 244.512}px * var(--content-scale, 1))))`,
-          justifyContent: "center",
-        }}
-      >
+      <div className={cn("grid w-full gap-x-5", artTileGridRowsClass)} style={computedGridStyle}>
         {pageItems.map((item) => (
           <div key={`${item.hoverScope}-${item.id}`} className="relative">
             <CollectionTile item={item} onEnemyActivate={onEnemyActivate} inspectionOpen={inspectionOpen} />

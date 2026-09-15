@@ -1,4 +1,5 @@
 import type { BattleState, CombatTextEvent } from "@/lib/battle";
+import type { TalentPreset } from "./types";
 
 export interface BattleAnomalies {
   enemyHealing: number;
@@ -68,7 +69,7 @@ export const ANOMALY_METRICS: Array<{ key: keyof BattleAnomalies; label: string 
   { key: "maxSingleHeal", label: "Player Heal" },
 ];
 
-export type AnomalyPreset = "early" | "mid" | "late";
+export type AnomalyPreset = TalentPreset;
 
 export const ANOMALY_THRESHOLD_BY_PRESET: Record<AnomalyPreset, number> = {
   early: 100,
@@ -86,12 +87,31 @@ export function createEmptyAnomalies(): BattleAnomalies {
     heroHealthDamage: 0,
     enemyBlockGranted: 0,
     enemyArmorGranted: 0,
-    ...Object.fromEntries(ANOMALY_METRICS.map(({ key }) => [key, 0])),
+    maxPlayerBlock: 0,
+    maxPlayerArmor: 0,
+    maxPlayerBurn: 0,
+    maxPlayerPoison: 0,
+    maxPlayerBleed: 0,
+    maxPlayerFreeze: 0,
+    maxPlayerStun: 0,
+    maxEnemyBurn: 0,
+    maxEnemyPoison: 0,
+    maxEnemyBleed: 0,
+    maxEnemyFreeze: 0,
+    maxEnemyStun: 0,
+    maxEnemyArmor: 0,
+    maxEnemyForge: 0,
+    maxEnemyFreezeBonus: 0,
+    maxEnemyBurnBonus: 0,
+    maxEnemyBlock: 0,
+    maxSingleHitDamageToEnemy: 0,
+    maxSingleHitDamageToPlayer: 0,
+    maxSingleHeal: 0,
     maxSingleHitDamageToEnemyStat: "",
     maxSingleHitDamageToPlayerStat: "",
     maxSingleHitDamageToEnemyCardId: "",
     maxSingleHitDamageToPlayerCardId: "",
-  } as BattleAnomalies;
+  };
 }
 
 export function sampleAnomalies(

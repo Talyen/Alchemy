@@ -55,6 +55,7 @@ export const applyDrawCardsEffect = defineHandler("draw-cards", (state, _card, e
 
 const FLAG_EFFECTS = {
   "next-hit-crit": "nextHitCrit",
+  "next-hit-leech": "nextHitLeech",
   "play-next-card-twice": "playNextCardTwice",
   "next-hit-poison": "nextHitPoison",
 } as const satisfies Record<
@@ -70,6 +71,7 @@ function makeFlagHandler<K extends keyof typeof FLAG_EFFECTS>(kind: K): ReturnTy
 }
 
 export const applyNextHitCritEffect = makeFlagHandler("next-hit-crit");
+export const applyNextHitLeechEffect = makeFlagHandler("next-hit-leech");
 export const applyPlayNextCardTwiceEffect = makeFlagHandler("play-next-card-twice");
 export const applyNextHitPoisonEffect = makeFlagHandler("next-hit-poison");
 
