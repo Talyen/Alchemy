@@ -1,4 +1,4 @@
-import type { AutoplayCardHandler } from "./battle-context";
+import type { AutoplayCardHandler, AutoplayWishHandler } from "./battle-context";
 import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { isPlayerDefeated, type BattleSnapshot } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
@@ -43,9 +43,38 @@ export interface DriveAutoplayDeps {
   isBlocked: () => boolean;
   findPlayableCard: () => { card: BattleCard; index: number } | null;
   playCard: AutoplayCardHandler;
+  /** Wish auto-pick plumbing. Absent (or a blocked check) disables the Wish branch. */
+  isWishBlocked?: () => boolean;
+  findWishChoice?: () => BattleCard | null;
+  playWish?: AutoplayWishHandler;
   delayMs: number;
   postPlayDelayMs: number;
   wakeRef?: { current: (() => void) | null } | undefined;
+}
+
+/**
+ * Gate for Wish auto-picks: same inputs as the card gate except Wish options
+ * must be present (instead of absent) for the branch to proceed. Hand
+ * transfers, menus, inspection, phase, and battle-over still block.
+ */
+export function isWishPlaybackBlocked(options: {
+  screen: Screen;
+  battleState: BattleSnapshot;
+  hasActiveBattle: boolean;
+  cardTransferInProgress: boolean;
+  hiddenHandCardKeys: HiddenHandCardKeys;
+  cardPlayInProgress: boolean;
+  gameMenuOpen?: boolean;
+  inspectionOpen?: boolean;
+}): boolean {
+  if (options.gameMenuOpen || options.inspectionOpen) return true;
+  if (!options.hasActiveBattle || options.screen !== "battle") return true;
+  if (isBattlePlayInputBusy(options)) return true;
+  if (handHasHiddenCard(options.battleState, options.hiddenHandCardKeys)) return true;
+  if (options.battleState.turnPhase !== "player") return true;
+  if (!options.battleState.wishOptions) return true;
+  if (isAutoplayBattleOver(options.battleState)) return true;
+  return false;
 }
 
 async function waitForAutoplayRetry(
@@ -77,7 +106,45 @@ async function waitForAutoplayRetry(
 
 export async function driveAutoplay(deps: DriveAutoplayDeps): Promise<void> {
   const retryDelayMs = resolveGameDelay(deps.delayMs);
+  const isWishReady = () =>
+    deps.isWishBlocked !== undefined &&
+    deps.findWishChoice !== undefined &&
+    deps.playWish !== undefined &&
+    !deps.isWishBlocked();
+  // After a successful play, wait for presentation to settle. The card gate
+  // stays blocked while Wish options show, so break early when a Wish becomes
+  // ready — otherwise the loop would stall behind this wait instead of
+  // reaching the Wish branch above (e.g. after playing a Wish-granting card).
+  const waitForPlayToSettle = async (playStartedAt: number): Promise<void> => {
+    while (!deps.signal.aborted && deps.isEnabled() && deps.isBlocked() && !isWishReady()) {
+      await waitForAutoplayRetry(retryDelayMs, deps.signal, deps.wakeRef);
+    }
+    const remainingMs = resolveGameDelay(deps.postPlayDelayMs) - (performance.now() - playStartedAt);
+    await waitForAutoplayRetry(remainingMs, deps.signal);
+  };
   while (!deps.signal.aborted && deps.isEnabled()) {
+    if (isWishReady()) {
+      const wish = deps.findWishChoice?.() ?? null;
+      if (!wish) {
+        await waitForAutoplayRetry(retryDelayMs, deps.signal, deps.wakeRef);
+        continue;
+      }
+
+      const playStartedAt = performance.now();
+      if (
+        !(await deps.playWish?.(wish, {
+          signal: deps.signal,
+          canCommit: () => !deps.signal.aborted && deps.isEnabled() && !deps.isWishBlocked?.(),
+        }))
+      ) {
+        await waitForAutoplayRetry(retryDelayMs, deps.signal, deps.wakeRef);
+        continue;
+      }
+
+      await waitForPlayToSettle(playStartedAt);
+      continue;
+    }
+
     if (deps.isBlocked()) {
       await waitForAutoplayRetry(retryDelayMs, deps.signal, deps.wakeRef);
       continue;
@@ -100,11 +167,6 @@ export async function driveAutoplay(deps: DriveAutoplayDeps): Promise<void> {
       continue;
     }
 
-    while (!deps.signal.aborted && deps.isEnabled() && deps.isBlocked()) {
-      await waitForAutoplayRetry(retryDelayMs, deps.signal, deps.wakeRef);
-    }
-
-    const remainingMs = resolveGameDelay(deps.postPlayDelayMs) - (performance.now() - playStartedAt);
-    await waitForAutoplayRetry(remainingMs, deps.signal);
+    await waitForPlayToSettle(playStartedAt);
   }
 }

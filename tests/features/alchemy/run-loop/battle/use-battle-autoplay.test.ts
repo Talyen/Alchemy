@@ -19,14 +19,16 @@ describe("isBattlePlaybackBlocked", () => {
 });
 
 function useAutoplayUnderTest(
-  options: Omit<Parameters<typeof useBattleAutoplay>[0], "presentationGateRef" | "wakeRef">,
+  options: Omit<Parameters<typeof useBattleAutoplay>[0], "presentationGateRef" | "wakeRef" | "playWish"> &
+    Partial<Pick<Parameters<typeof useBattleAutoplay>[0], "playWish">>,
 ) {
   const wakeRef = useRef<(() => void) | null>(null);
   const onGateChangeRef = useRef(() => {
     wakeRef.current?.();
   });
   const presentationGateRef = useBattlePresentationGateRef(onGateChangeRef);
-  useBattleAutoplay({ ...options, presentationGateRef, wakeRef });
+  const { playWish = () => false, ...rest } = options;
+  useBattleAutoplay({ ...rest, playWish, presentationGateRef, wakeRef });
 }
 
 describe("useBattleAutoplay", () => {

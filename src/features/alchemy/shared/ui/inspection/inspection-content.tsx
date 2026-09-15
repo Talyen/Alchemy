@@ -1,5 +1,5 @@
 import { useId, useMemo, useState, type ReactNode, type RefObject } from "react";
-import { X } from "lucide-react";
+import { X, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getCardKeywords, type BattleCard } from "../../config/game-data-catalog";
 import type { CardDescriptionContext } from "@/lib/game-data";
@@ -48,6 +48,18 @@ export function InspectionCardGrid({
         </div>
       )}
     />
+  );
+}
+
+export function InspectionEmptyState({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
+  return (
+    <div
+      role="img"
+      aria-label={label}
+      className="flex min-h-40 shrink-0 items-center justify-center text-muted-foreground"
+    >
+      <Icon aria-hidden="true" className="h-12 w-12" />
+    </div>
   );
 }
 

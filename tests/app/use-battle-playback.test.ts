@@ -18,6 +18,7 @@ function renderPlayback(overrides: Partial<Parameters<typeof useBattlePlayback>[
         isAutoplayEnabled: false,
         handleEndTurn: vi.fn(),
         handleAutoplayCard: vi.fn(() => false),
+        handleAutoplayWish: vi.fn(() => false),
         isCardPlayInProgress: () => false,
         ...overrides,
         ...props,

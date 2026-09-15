@@ -1,4 +1,4 @@
-import type { AutoplayCardHandler } from "./battle-context";
+import type { AutoplayCardHandler, AutoplayWishHandler } from "./battle-context";
 import { useEffect, type RefObject } from "react";
 
 import { AUTOPLAY_POST_PLAY_DELAY_MS, AUTOPLAY_RETRY_DELAY_MS } from "@/lib/game-constants";
@@ -7,8 +7,8 @@ import type { Screen } from "@/lib/routing";
 
 import { useLatestRef } from "../../shared/ui/use-latest-ref";
 import { driveAutoplay } from "./autoplay-driver";
-import { findFirstPlayableHandCard } from "./playable-hand";
-import { usePlaybackBlocked } from "./use-battle-playback-blocked";
+import { findBestPlayableHandCard, findBestWishChoice } from "./playable-hand";
+import { usePlaybackBlocked, useWishPlaybackBlocked } from "./use-battle-playback-blocked";
 import type { BattlePlaybackPresentationGate } from "./presentation/use-hand-presentation";
 
 interface UseBattleAutoplayOptions {
@@ -19,6 +19,7 @@ interface UseBattleAutoplayOptions {
   isCardPlayInProgress: () => boolean;
   gameMenuOpen: boolean;
   playCard: AutoplayCardHandler;
+  playWish: AutoplayWishHandler;
   presentationGateRef: RefObject<BattlePlaybackPresentationGate>;
   wakeRef?: RefObject<(() => void) | null>;
 }
@@ -31,13 +32,23 @@ export function useBattleAutoplay({
   isCardPlayInProgress,
   gameMenuOpen,
   playCard,
+  playWish,
   presentationGateRef,
   wakeRef,
 }: UseBattleAutoplayOptions) {
   const battleStateRef = useLatestRef(battleState);
   const enabledRef = useLatestRef(enabled);
   const playCardRef = useLatestRef(playCard);
+  const playWishRef = useLatestRef(playWish);
   const isBlocked = usePlaybackBlocked({
+    screen,
+    battleState,
+    hasActiveBattle,
+    gameMenuOpen,
+    isCardPlayInProgress,
+    presentationGateRef,
+  });
+  const isWishBlocked = useWishPlaybackBlocked({
     screen,
     battleState,
     hasActiveBattle,
@@ -56,9 +67,12 @@ export function useBattleAutoplay({
       wakeRef,
       isEnabled: () => enabledRef.current && !controller.signal.aborted,
       isBlocked,
-      findPlayableCard: () => findFirstPlayableHandCard(battleStateRef.current),
+      isWishBlocked,
+      findPlayableCard: () => findBestPlayableHandCard(battleStateRef.current),
       playCard: (card, index, control) => playCardRef.current(card, index, control),
+      findWishChoice: () => findBestWishChoice(battleStateRef.current),
+      playWish: (card, control) => playWishRef.current(card, control),
     });
     return () => controller.abort();
-  }, [enabled, battleStateRef, enabledRef, isBlocked, playCardRef, wakeRef]);
+  }, [enabled, battleStateRef, enabledRef, isBlocked, isWishBlocked, playCardRef, playWishRef, wakeRef]);
 }

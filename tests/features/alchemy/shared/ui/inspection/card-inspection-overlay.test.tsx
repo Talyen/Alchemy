@@ -84,7 +84,7 @@ describe("card inspection", () => {
       />,
     );
     expect(screen.getByRole("heading", { name: "Discard Pile" })).toBeTruthy();
-    expect(within(screen.getByRole("dialog")).getByText("Empty")).toBeTruthy();
+    expect(within(screen.getByRole("dialog")).getByRole("img", { name: "Empty Discard Pile" })).toBeTruthy();
     expect(screen.queryByRole("group", { name: "Card collections" })).toBeNull();
     expect(screen.getAllByRole("button")).toHaveLength(1);
     expect(screen.queryByTestId("card-selection-grid")).toBeNull();

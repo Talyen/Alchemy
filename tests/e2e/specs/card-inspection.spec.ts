@@ -87,7 +87,7 @@ test("shows an empty draft and updates the viewer after each pick", critical, as
   await page.goto("/");
   await page.getByRole("button", { name: "View Deck · 0 cards" }).click();
   await expect(page.getByRole("dialog").getByRole("heading", { name: "Deck", exact: true })).toBeVisible();
-  await expect(page.getByRole("dialog").getByText("Empty", { exact: true })).toBeVisible();
+  await expect(page.getByRole("dialog").getByRole("img", { name: "Empty Deck", exact: true })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await page
@@ -155,7 +155,7 @@ for (const viewport of [
     await expect(dialog).toHaveCount(0);
     await page.getByRole("button", { name: "Inspect Discard Pile · 0 cards" }).click();
     await expect(dialog.getByRole("heading", { name: "Discard Pile", exact: true })).toBeVisible();
-    const empty = dialog.getByText("Empty", { exact: true });
+    const empty = dialog.getByRole("img", { name: "Empty Discard Pile", exact: true });
     await expect(empty).toBeVisible();
     const emptyBounds = await empty.boundingBox();
     const emptyPanelBounds = await dialog.boundingBox();

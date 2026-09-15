@@ -190,6 +190,7 @@ export function useBattleController({
       handleCardClick: actions.cardPlay.handleCardClick,
       handleWishChoice: actions.cardPlay.handleWishChoice,
       handleAutoplayCard: actions.cardPlay.handleAutoplayCard,
+      handleAutoplayWish: actions.cardPlay.handleAutoplayWish,
       handleEndTurn: actions.endTurnUi.handleEndTurn,
       cancelBattle: actions.session.resetBattleSession,
       skipCombatDevMode: actions.devOutcomes.skipCombatDevMode,

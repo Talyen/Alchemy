@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { ShoppingBag, X } from "lucide-react";
+import { Trophy, X } from "lucide-react";
 
 import { ChromeIconButton } from "../../../shared/ui/chrome-icon-button";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { battleTrinketInspectRowMaxWidthClass } from "@/features/alchemy/shared/
 import { TRINKET_PAGE_SIZE } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 
+import { InspectionEmptyState } from "../../../shared/ui/inspection/inspection-content";
 import { FadeSlot } from "../../../shared/ui/use-fade";
 import { ModalOverlayShell } from "../../../shared/ui/modal-overlay-shell";
 import { PaginationControls } from "../../../shared/ui/navigation";
@@ -25,7 +26,7 @@ export function BattleBoonInspectButton({ open, onToggle }: { open: boolean; onT
       aria-label={open ? "Close Boons" : "Inspect Boons"}
       data-testid="battle-boon-inspect-toggle"
     >
-      <ShoppingBag className="h-6 w-6" />
+      <Trophy className="h-6 w-6" />
     </ChromeIconButton>
   );
 }
@@ -55,7 +56,6 @@ export function BattleBoonInspectOverlay({
       dismissOnBackdrop
       zIndex={80}
       testId="battle-boon-inspect-overlay"
-      mount={trinkets.length > 0}
       className="flex items-center justify-center px-6 py-8"
     >
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events -- only shields panel clicks from the backdrop; Close and Escape own dismissal */}
@@ -78,26 +78,35 @@ export function BattleBoonInspectOverlay({
           </Button>
         </div>
 
-        <FadeSlot swapKey={safePage} className={cn("mt-6 flex flex-col gap-y-6", battleTrinketInspectRowMaxWidthClass)}>
-          {rows.map((row) => (
-            <div key={row.map((trinket) => trinket.id).join("-")} className="flex justify-center gap-x-6">
-              {row.map((trinket) => (
-                <TrinketTile
-                  key={trinket.id}
-                  trinket={trinket}
-                  interactionKey="battle-trinket"
-                  idPrefix={`battle-trinket-${trinket.id}`}
-                  as="div"
-                  temporary
-                />
+        {trinkets.length === 0 ? (
+          <InspectionEmptyState icon={Trophy} label="Empty Boons" />
+        ) : (
+          <>
+            <FadeSlot
+              swapKey={safePage}
+              className={cn("mt-6 flex flex-col gap-y-6", battleTrinketInspectRowMaxWidthClass)}
+            >
+              {rows.map((row) => (
+                <div key={row.map((trinket) => trinket.id).join("-")} className="flex justify-center gap-x-6">
+                  {row.map((trinket) => (
+                    <TrinketTile
+                      key={trinket.id}
+                      trinket={trinket}
+                      interactionKey="battle-trinket"
+                      idPrefix={`battle-trinket-${trinket.id}`}
+                      as="div"
+                      temporary
+                    />
+                  ))}
+                </div>
               ))}
-            </div>
-          ))}
-        </FadeSlot>
+            </FadeSlot>
 
-        <div className="flex justify-center">
-          <PaginationControls page={safePage} totalPages={totalPages} onPageChange={setPage} />
-        </div>
+            <div className="flex justify-center">
+              <PaginationControls page={safePage} totalPages={totalPages} onPageChange={setPage} />
+            </div>
+          </>
+        )}
       </div>
     </ModalOverlayShell>
   );

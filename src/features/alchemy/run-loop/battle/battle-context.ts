@@ -19,6 +19,8 @@ export type AutoplayCardHandler = (
   control: AutoplayCardControl,
 ) => boolean | Promise<boolean>;
 
+export type AutoplayWishHandler = (card: BattleCard, control: AutoplayCardControl) => boolean | Promise<boolean>;
+
 export interface BattlePlaybackBind {
   scheduleAutoEndTurn: (state?: BattleSnapshot) => void;
   clearAutoEndTurn: () => void;

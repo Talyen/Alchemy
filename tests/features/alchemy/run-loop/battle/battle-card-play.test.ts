@@ -427,6 +427,84 @@ describe("createBattleCardPlay", () => {
     }
   });
 
+  it("autoplay wish commits the chosen wish option to hand", async () => {
+    const weak = makeTestCard({
+      id: "weak-wish",
+      cost: 1,
+      effects: [{ kind: "damage", damageType: "physical", amount: 2 }],
+    });
+    const strong = makeTestCard({
+      id: "strong-wish",
+      cost: 1,
+      effects: [{ kind: "damage", damageType: "physical", amount: 9 }],
+    });
+    dispatchRunSessionCommand((draft) =>
+      setSyncedBattleState(
+        draft,
+        makeTestBattleState({ hand: [], mana: 3, enemyHealth: 30, wishOptions: [weak, strong] }),
+      ),
+    );
+
+    const { ctx, session, transferDeps } = makeDeps();
+    const { handleAutoplayWish } = createBattleCardPlay(ctx, session, transferDeps);
+
+    await expect(handleAutoplayWish(strong, autoplayControl)).resolves.toBe(true);
+    const next = readBattle().battleState;
+    expect(next.wishOptions).toBeNull();
+    expect(next.hand.map((card) => card.id)).toEqual(["strong-wish"]);
+    expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();
+  });
+
+  it("autoplay wish rejects an option that is no longer offered", async () => {
+    const offered = makeTestCard({
+      id: "offered-wish",
+      cost: 1,
+      effects: [{ kind: "damage", damageType: "physical", amount: 9 }],
+    });
+    const stale = makeTestCard({
+      id: "stale-wish",
+      cost: 1,
+      effects: [{ kind: "damage", damageType: "physical", amount: 9 }],
+    });
+    const initialState = makeTestBattleState({ hand: [], mana: 3, enemyHealth: 30, wishOptions: [offered] });
+    dispatchRunSessionCommand((draft) => setSyncedBattleState(draft, initialState));
+
+    const { ctx, session, transferDeps } = makeDeps();
+    const { handleAutoplayWish } = createBattleCardPlay(ctx, session, transferDeps);
+
+    await expect(handleAutoplayWish(stale, autoplayControl)).resolves.toBe(false);
+    expect(readBattle().battleState).toEqual(battleSnapshot(initialState));
+    expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();
+  });
+
+  it("flashes a hover preview before autoplaying a wish", async () => {
+    vi.mocked(shouldReduceMotion).mockReturnValue(false);
+    vi.useFakeTimers();
+    try {
+      const wish = makeTestCard({
+        id: "strong-wish",
+        cost: 1,
+        effects: [{ kind: "damage", damageType: "physical", amount: 9 }],
+      });
+      dispatchRunSessionCommand((draft) =>
+        setSyncedBattleState(draft, makeTestBattleState({ hand: [], mana: 3, enemyHealth: 30, wishOptions: [wish] })),
+      );
+
+      const { ctx, session, transferDeps } = makeDeps();
+      const { handleAutoplayWish } = createBattleCardPlay(ctx, session, transferDeps);
+      const pending = handleAutoplayWish(wish, autoplayControl);
+
+      expect(useUiStore.getState().autoplayPreviewCardId).toBe("wish-strong-wish");
+      await vi.advanceTimersByTimeAsync(AUTOPLAY_PREVIEW_MS);
+      await expect(pending).resolves.toBe(true);
+      expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();
+      expect(readBattle().battleState.wishOptions).toBeNull();
+    } finally {
+      vi.useRealTimers();
+      vi.mocked(shouldReduceMotion).mockReturnValue(true);
+    }
+  });
+
   it("abandons the autoplay preview when the battle session turns over", async () => {
     vi.mocked(shouldReduceMotion).mockReturnValue(false);
     vi.useFakeTimers();
@@ -478,6 +556,7 @@ describe("createBattleCardPlay", () => {
             battleState: readBattle().battleState,
             isCardPlayInProgress: () => ctx.cardPlayInProgressRef.current,
             playCard: actions.handleAutoplayCard,
+            playWish: actions.handleAutoplayWish,
             presentationGateRef: gate,
           }),
         { initialProps: { enabled: true, gameMenuOpen: false } },

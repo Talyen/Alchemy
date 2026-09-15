@@ -80,6 +80,23 @@ describe("SaveWriteQueue", () => {
     expect(await queue.enqueue(snapshot(2), write)).toBe("saved");
   });
 
+  it.each(["reported", "thrown"])("reports a %s clear failure and keeps the queue usable", async (failure) => {
+    const queue = new SaveWriteQueue();
+    const error = new Error("clear denied");
+    const onError = vi.fn();
+    await expect(
+      queue.enqueueClear(
+        async () => {
+          if (failure === "thrown") throw error;
+          return { ok: false, error };
+        },
+        { onError },
+      ),
+    ).resolves.toBe(false);
+    expect(onError).toHaveBeenCalledExactlyOnceWith(error);
+    expect(await queue.enqueue(snapshot(1), async () => "saved")).toBe("saved");
+  });
+
   it("keeps write protection isolated per queue instance", async () => {
     const protectedQueue = new SaveWriteQueue();
     const openQueue = new SaveWriteQueue();

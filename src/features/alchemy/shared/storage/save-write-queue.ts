@@ -1,10 +1,10 @@
-import type { SaveData } from "./types";
+import type { UnstampedSaveData } from "./types";
 import { logStorageFailure } from "@/lib/storage-logging";
 
 export type SaveWriteOutcome = "saved" | "failed" | "skipped";
 
 interface PendingSave {
-  data: SaveData;
+  data: UnstampedSaveData;
   generation: number;
   completion: Promise<SaveWriteOutcome>;
   resolve: (outcome: SaveWriteOutcome) => void;
@@ -51,7 +51,10 @@ export class SaveWriteQueue {
     };
   }
 
-  enqueue(data: SaveData, write: (data: SaveData) => Promise<SaveWriteOutcome>): Promise<SaveWriteOutcome> {
+  enqueue(
+    data: UnstampedSaveData,
+    write: (data: UnstampedSaveData) => Promise<SaveWriteOutcome>,
+  ): Promise<SaveWriteOutcome> {
     if (this.writesDisabled || this.isClearPending) {
       this.discardPending();
       return Promise.resolve("skipped");
@@ -122,7 +125,7 @@ export class SaveWriteQueue {
 
   private async runPending(
     pending: PendingSave,
-    write: (data: SaveData) => Promise<SaveWriteOutcome>,
+    write: (data: UnstampedSaveData) => Promise<SaveWriteOutcome>,
   ): Promise<SaveWriteOutcome> {
     if (this.writesDisabled || this.isClearPending || pending.generation !== this.writeGeneration) return "skipped";
     try {

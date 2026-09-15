@@ -5,6 +5,7 @@ import {
   subscribeAlchemyPersistence,
 } from "@/features/alchemy/shared/storage/persistence";
 import { defaultSaveData } from "@/features/alchemy/shared/storage";
+import { SaveDataSchema } from "@/lib/validation";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import { mutateGearForTest, resetRunDomainStore } from "../../../../helpers/run-domain-store-test";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
@@ -126,5 +127,21 @@ describe("persistence coordinator", () => {
     });
 
     expect(readProfileStore().discoveredUniqueIds).toEqual(["wardbreaker"]);
+  });
+
+  it("hydrates schema-repaired data without throwing or keeping damage", () => {
+    const repaired = SaveDataSchema.parse({
+      activeRun: { characterId: "bard" },
+      gearInventories: { knight: "junk" },
+      ownedTrinketIds: "junk",
+      gold: -5,
+    });
+
+    expect(() => hydrateAlchemyPersistenceFields(repaired)).not.toThrow();
+
+    const encoded = encodePersistenceFields();
+    expect(encoded.gearInventories.knight).toEqual([]);
+    expect(encoded.ownedTrinketIds).toEqual([]);
+    expect(encoded.gold).toBe(0);
   });
 });

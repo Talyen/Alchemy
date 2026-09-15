@@ -3,7 +3,10 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { resetEscapeStackForTests } from "@/app/escape-stack";
-import { BattleBoonInspectOverlay } from "@/features/alchemy/run-loop/screens/battle-screen/boon-inspect";
+import {
+  BattleBoonInspectButton,
+  BattleBoonInspectOverlay,
+} from "@/features/alchemy/run-loop/screens/battle-screen/boon-inspect";
 import {
   hasInspectableBoons,
   uniqueRunBoons,
@@ -46,6 +49,21 @@ describe("BattleBoonInspectOverlay", () => {
   afterEach(() => {
     cleanup();
     resetEscapeStackForTests();
+  });
+
+  it("uses the trophy icon for the Boons toggle", () => {
+    const { container } = render(<BattleBoonInspectButton open={false} onToggle={vi.fn()} />);
+    expect(container.querySelector("svg.lucide-trophy")).not.toBeNull();
+    expect(container.querySelector("svg.lucide-shopping-bag")).toBeNull();
+  });
+
+  it("shows an empty Boons icon when nothing resolves and keeps close available", () => {
+    render(<BattleBoonInspectOverlay open trinketIds={["missing"]} onClose={vi.fn()} />);
+
+    expect(screen.getByRole("heading", { name: "Boons" })).toBeTruthy();
+    expect(screen.getByRole("img", { name: "Empty Boons" })).toBeTruthy();
+    expect(screen.getAllByRole("button")).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "Close boons" })).toBeTruthy();
   });
 
   it("lists unique Boon art and shows a Boon tooltip on hover", () => {

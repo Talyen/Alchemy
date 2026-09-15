@@ -25,3 +25,17 @@ export function futureSaveCandidate(lastSavedAt: number | undefined, overrides: 
     ...overrides,
   });
 }
+
+export function futureContentSaveCandidate(
+  lastSavedAt: number | undefined,
+  overrides: Record<string, unknown> = {},
+): string {
+  return JSON.stringify({
+    saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+    contentVersion: CURRENT_CONTENT_VERSION + 1,
+    ...(lastSavedAt === undefined ? {} : { lastSavedAt }),
+    discoveredCardIds: ["slash"],
+    activeRun: null,
+    ...overrides,
+  });
+}

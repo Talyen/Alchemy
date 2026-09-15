@@ -133,8 +133,11 @@ panel settle defined in [component styles](../src/styles/components.css), using
 the shared [motion duration](../src/lib/game-constants/ui-motion.ts). Closing
 uses only the fade; reduced motion omits the settle. Cards appear together, and
 populated panels retain content-based sizing without animated dimensions. Empty
-collections show centered, muted “Empty” text in a 10rem-high content area with a
+collections show a centered, muted collection icon in a 10rem-high content area with a
 20rem minimum panel width, bounded by the available viewport with overflow scrolling.
+Deck, Draw Pile, and Discard Pile use the stacked-cards icon; Boons uses the trophy icon.
+Each empty icon is exposed as an image labelled Empty Deck, Empty Draw Pile,
+Empty Discard Pile, or Empty Boons.
 
 `ModalOverlayShell` reveals the backdrop immediately and prepares the entire panel
 with `useArtworkReady`, including its heading, pagination, and actions. Pending panels
@@ -283,7 +286,7 @@ matching `CardSelectionGrid`’s reference width; larger Collection tiles do not
 that measurement. The viewer shows only a centered collection title, cards,
 and an upper-right close button, plus pagination controls when needed. It has no
 collection tabs, counts, instructional text, or labels below cards. Empty collections
-show “Empty” using the shared [overlay layout](#overlay-lifecycle).
+show the collection icon using the shared [overlay layout](#overlay-lifecycle).
 Open each collection from its own opener. Pagination resets on reopening.
 Full Deck is the run deck, including cards Consumed in the current battle;
 battle-only generated cards appear in their current piles instead. Deck, Draw

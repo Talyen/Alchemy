@@ -1,4 +1,5 @@
 import { canPlayCard, type BattleSnapshot, type CardPlayOptions } from "@/lib/battle";
+import { getEffectiveDamageScore, getImmediateDefense, pickHighestScoring } from "@/lib/balance/play-policy";
 import type { BattleCard } from "@/lib/game-data";
 
 export const PLAYABLE_HAND_OPTIONS: CardPlayOptions = { allowAfterEnemyDefeat: true };
@@ -7,18 +8,66 @@ export function findFirstPlayableHandCard(
   state: BattleSnapshot,
   options: CardPlayOptions = PLAYABLE_HAND_OPTIONS,
 ): { card: BattleCard; index: number } | null {
-  for (let index = 0; index < state.hand.length; index++) {
-    const card = state.hand[index];
-    if (!card) continue;
-    if (canPlayCard(state, card, index, options)) {
-      return { card, index };
-    }
-  }
-  return null;
+  return getPlayableHandCards(state, options)[0] ?? null;
 }
 
 export function handHasPlayableCard(state: BattleSnapshot, options: CardPlayOptions = PLAYABLE_HAND_OPTIONS): boolean {
   return findFirstPlayableHandCard(state, options) !== null;
+}
+
+function getPlayableHandCards(
+  state: BattleSnapshot,
+  options: CardPlayOptions = PLAYABLE_HAND_OPTIONS,
+): Array<{ card: BattleCard; index: number }> {
+  const playable: Array<{ card: BattleCard; index: number }> = [];
+  for (let index = 0; index < state.hand.length; index++) {
+    const card = state.hand[index];
+    if (!card) continue;
+    if (canPlayCard(state, card, index, options)) {
+      playable.push({ card, index });
+    }
+  }
+  return playable;
+}
+
+/**
+ * Greedy autoplay pick: highest effective-damage score wins, with ties going
+ * to the leftmost card. At half health or below, the pick is restricted to
+ * defensive cards when any are playable (deterministic form of the balance
+ * simulator's defensive bias — no RNG draw, so the run stream is untouched).
+ */
+export function findBestPlayableHandCard(
+  state: BattleSnapshot,
+  options: CardPlayOptions = PLAYABLE_HAND_OPTIONS,
+): { card: BattleCard; index: number } | null {
+  const playable = getPlayableHandCards(state, options);
+  if (playable.length === 0) return null;
+  if (state.playerHealth <= state.playerMaxHealth / 2) {
+    const defensive = playable.filter(({ card }) => getImmediateDefense(card) > 0);
+    if (defensive.length > 0) {
+      return pickHighestScoring(defensive, (card) => getEffectiveDamageScore(card, state));
+    }
+  }
+  return pickHighestScoring(playable, (card) => getEffectiveDamageScore(card, state));
+}
+
+/** Greedy Wish pick: highest effective-damage score wins, ties go to the earliest option. */
+export function findBestWishChoice(state: BattleSnapshot): BattleCard | null {
+  const options = state.wishOptions;
+  if (!options || options.length === 0) return null;
+  let best = options[0];
+  if (!best) return null;
+  let bestScore = getEffectiveDamageScore(best, state);
+  for (let i = 1; i < options.length; i++) {
+    const candidate = options[i];
+    if (!candidate) continue;
+    const score = getEffectiveDamageScore(candidate, state);
+    if (score > bestScore) {
+      best = candidate;
+      bestScore = score;
+    }
+  }
+  return best;
 }
 
 export function getHandCardKey(card: BattleCard, index?: number): string {

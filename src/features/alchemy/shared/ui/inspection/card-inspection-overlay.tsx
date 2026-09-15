@@ -1,11 +1,18 @@
 import type { RefObject } from "react";
+import { Layers } from "lucide-react";
 import type { BattleCard, CardDescriptionContext } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import type { CardInspectionView } from "../../types";
-import { InspectionCardGrid, InspectionOverlayShell } from "./inspection-content";
+import { InspectionCardGrid, InspectionEmptyState, InspectionOverlayShell } from "./inspection-content";
 import { useHeldWhile } from "../use-fade";
 
 const LABELS: Record<CardInspectionView, string> = { deck: "Deck", draw: "Draw Pile", discard: "Discard Pile" };
+
+const EMPTY_LABELS: Record<CardInspectionView, string> = {
+  deck: "Empty Deck",
+  draw: "Empty Draw Pile",
+  discard: "Empty Discard Pile",
+};
 
 export interface CardInspectionCollection {
   id: CardInspectionView;
@@ -40,7 +47,7 @@ export function CardInspectionOverlay(props: CardInspectionOverlayProps) {
       )}
     >
       {cards.length === 0 ? (
-        <p className="flex min-h-40 shrink-0 items-center justify-center text-sm text-muted-foreground">Empty</p>
+        <InspectionEmptyState icon={Layers} label={EMPTY_LABELS[heldSelected]} />
       ) : (
         <InspectionCardGrid
           cards={cards}

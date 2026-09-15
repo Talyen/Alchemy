@@ -87,6 +87,7 @@ function BattleScreenRoute({
     isAutoplayEnabled: commands.isAutoplayEnabled,
     handleEndTurn: commands.handleEndTurn,
     handleAutoplayCard: commands.handleAutoplayCard,
+    handleAutoplayWish: commands.handleAutoplayWish,
     isCardPlayInProgress: commands.isCardPlayInProgress,
     bindPlayback: commands.bindPlayback,
   });

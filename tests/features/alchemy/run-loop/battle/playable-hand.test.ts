@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { defaultBattleState } from "@/lib/battle";
 import {
+  findBestPlayableHandCard,
+  findBestWishChoice,
   getPlayableHandCardKeys,
   getPlayableHandCardKeysExcludingHidden,
   handHasHiddenCard,
 } from "@/features/alchemy/run-loop/battle/playable-hand";
+import { makeTestBattleState } from "../../../../fixtures/battle";
+import { makeTestCard } from "../../../../fixtures/cards";
 import type { BattleCard } from "@/lib/game-data";
 
 const affordableCard: BattleCard = {
@@ -164,5 +168,145 @@ describe("handHasHiddenCard", () => {
       hand: [affordableCard],
     };
     expect(handHasHiddenCard(state, ["meteor-2"])).toBe(false);
+  });
+});
+
+describe("findBestPlayableHandCard", () => {
+  const weakHit = makeTestCard({
+    id: "weak-hit",
+    cost: 1,
+    effects: [{ kind: "damage", damageType: "physical", amount: 2 }],
+  });
+  const strongHit = makeTestCard({
+    id: "strong-hit",
+    cost: 1,
+    effects: [{ kind: "damage", damageType: "physical", amount: 9 }],
+  });
+  const guard = makeTestCard({
+    id: "guard",
+    cost: 1,
+    effects: [{ kind: "player-status", status: "block", amount: 5 }],
+  });
+
+  function greedyState(hand: BattleCard[], overrides = {}) {
+    return makeTestBattleState({
+      hand,
+      mana: 3,
+      turnPhase: "player",
+      wishOptions: null,
+      enemyHealth: 30,
+      playerHealth: 100,
+      playerMaxHealth: 100,
+      ...overrides,
+    });
+  }
+
+  it("picks the highest-scoring card ahead of hand order", () => {
+    const state = greedyState([
+      { ...weakHit, uid: 1 },
+      { ...strongHit, uid: 2 },
+    ]);
+
+    expect(findBestPlayableHandCard(state)?.card.uid).toBe(2);
+  });
+
+  it("breaks score ties with the leftmost card", () => {
+    const state = greedyState([
+      { ...weakHit, uid: 1 },
+      { ...weakHit, uid: 2 },
+    ]);
+
+    expect(findBestPlayableHandCard(state)?.card.uid).toBe(1);
+  });
+
+  it("skips unaffordable cards even when they score highest", () => {
+    const pricey = makeTestCard({
+      id: "pricey",
+      cost: 9,
+      effects: [{ kind: "damage", damageType: "burn", amount: 20 }],
+    });
+    const state = greedyState(
+      [
+        { ...pricey, uid: 1 },
+        { ...weakHit, uid: 2 },
+      ],
+      { mana: 1 },
+    );
+
+    expect(findBestPlayableHandCard(state)?.card.uid).toBe(2);
+  });
+
+  it("prefers damage at full health over a weaker guard", () => {
+    const state = greedyState([
+      { ...guard, uid: 1 },
+      { ...strongHit, uid: 2 },
+    ]);
+
+    expect(findBestPlayableHandCard(state)?.card.uid).toBe(2);
+  });
+
+  it("restricts to defensive cards at half health when any are playable", () => {
+    const state = greedyState(
+      [
+        { ...strongHit, uid: 1 },
+        { ...guard, uid: 2 },
+      ],
+      { playerHealth: 50 },
+    );
+
+    expect(findBestPlayableHandCard(state)?.card.uid).toBe(2);
+  });
+
+  it("still plays damage at half health when no defensive card is playable", () => {
+    const state = greedyState(
+      [
+        { ...weakHit, uid: 1 },
+        { ...strongHit, uid: 2 },
+      ],
+      { playerHealth: 50 },
+    );
+
+    expect(findBestPlayableHandCard(state)?.card.uid).toBe(2);
+  });
+
+  it("returns null when nothing is playable", () => {
+    const state = greedyState([{ ...strongHit, uid: 1 }], { mana: 0 });
+
+    expect(findBestPlayableHandCard(state)).toBeNull();
+  });
+});
+
+describe("findBestWishChoice", () => {
+  it("picks the highest-scoring wish option", () => {
+    const slash = makeTestCard({
+      id: "slash",
+      effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
+    });
+    const ignite = makeTestCard({
+      id: "ignite",
+      effects: [{ kind: "enemy-status", status: "burn", amount: 10 }],
+    });
+    const state = makeTestBattleState({ wishOptions: [slash, ignite] });
+
+    expect(findBestWishChoice(state)?.id).toBe("ignite");
+  });
+
+  it("breaks score ties with the earliest option", () => {
+    const first = makeTestCard({
+      id: "first",
+      effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
+    });
+    const second = makeTestCard({
+      id: "second",
+      effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
+    });
+    const state = makeTestBattleState({ wishOptions: [first, second] });
+
+    expect(findBestWishChoice(state)?.id).toBe("first");
+  });
+
+  it("returns null without wish options", () => {
+    expect(findBestWishChoice(makeTestBattleState({ wishOptions: null }))).toBeNull();
+    expect(findBestWishChoice(makeTestBattleState({ wishOptions: [] }))).toBeNull();
   });
 });

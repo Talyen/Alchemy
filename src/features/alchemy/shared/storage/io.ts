@@ -1,11 +1,12 @@
 import { SAVE_KEY } from "@/lib/game-constants";
 import { createPlatformSaveBackend, type SaveBackend } from "@/lib/platform-save-backend";
 
-import type { SaveData } from "./types";
+import type { SaveData, UnstampedSaveData } from "./types";
 import { evaluateSaveCandidates, type SaveLoadState } from "./save-candidates";
 import { createDefaultSaveData } from "./defaults";
 import { setWritesDisabled, sharedSaveQueue, type SaveWriteOutcome } from "./save-write-queue";
 import { logStorageFailure } from "@/lib/storage-logging";
+import { isClientContext } from "@/lib/storage-environment";
 
 let saveBackend: SaveBackend = createPlatformSaveBackend();
 
@@ -27,7 +28,7 @@ function applySaveWritePolicy(result: SaveLoadState): SaveLoadState {
 }
 
 export async function loadAlchemySaveState(): Promise<SaveLoadState> {
-  if (typeof window === "undefined") {
+  if (!isClientContext()) {
     return applySaveWritePolicy({ data: createDefaultSaveData(), status: { kind: "ok" } });
   }
 
@@ -51,7 +52,7 @@ export async function resetStorageIoForTests(): Promise<void> {
   saveBackend = createPlatformSaveBackend();
 }
 
-function trySerializeSaveSnapshot(data: SaveData, context: string): string | null {
+function trySerializeSaveSnapshot(data: UnstampedSaveData, context: string): string | null {
   try {
     return serializeSaveSnapshot(data);
   } catch (error) {
@@ -60,7 +61,7 @@ function trySerializeSaveSnapshot(data: SaveData, context: string): string | nul
   }
 }
 
-async function writeSaveSnapshot(data: SaveData): Promise<SaveWriteOutcome> {
+async function writeSaveSnapshot(data: UnstampedSaveData): Promise<SaveWriteOutcome> {
   const serialized = trySerializeSaveSnapshot(data, "");
   if (serialized === null) return "failed";
   return writeSerializedSnapshot(serialized);
@@ -77,46 +78,54 @@ async function writeSerializedSnapshot(serialized: string): Promise<SaveWriteOut
   return "failed";
 }
 
-function serializeSaveSnapshot(data: SaveData, now: number = Date.now()): string {
+function serializeSaveSnapshot(data: UnstampedSaveData, now: number = Date.now()): string {
   const payload: SaveData = { ...data, lastSavedAt: now };
   return JSON.stringify(payload);
 }
 
-export async function saveAlchemySaveData(data: SaveData): Promise<SaveWriteOutcome> {
-  if (typeof window === "undefined") return "skipped";
+export async function saveAlchemySaveData(data: UnstampedSaveData): Promise<SaveWriteOutcome> {
+  if (!isClientContext()) return "skipped";
   return await sharedSaveQueue.enqueue(data, writeSaveSnapshot);
 }
 
-export async function saveAlchemySaveDataForExit(data: SaveData): Promise<SaveWriteOutcome> {
-  if (typeof window === "undefined" || sharedSaveQueue.areWritesDisabled() || sharedSaveQueue.isClearPending) {
-    return "skipped";
-  }
-  const serialized = trySerializeSaveSnapshot(data, " during page exit");
-  if (serialized === null) return "failed";
+/**
+ * Exit flush: the synchronous write uses one pre-serialized payload; when the
+ * queue is busy, a trailing queued write re-serializes the same snapshot so it
+ * stamps its own fresh lastSavedAt. The sync write and the idle check below
+ * run without an interleaving await, so the check-and-enqueue is atomic on the
+ * event loop: the trailing enqueue supersedes queued stale snapshots so an
+ * in-flight async write cannot land after the exit snapshot.
+ */
+async function flushSerializedExitSave(data: UnstampedSaveData, serialized: string): Promise<SaveWriteOutcome> {
+  let syncResult;
   try {
-    const result = saveBackend.writeSync(SAVE_KEY, serialized);
-    if (result === null) return await sharedSaveQueue.enqueue(data, writeSaveSnapshot);
-    if (!result.ok) {
-      logStorageFailure("Save data could not be written during page exit", result.error);
-      return "failed";
-    }
-    // No await sits between writeSync and this read, so no other task can
-    // interleave: the check-and-enqueue below is atomic on the event loop.
-    // The trailing enqueue supersedes a queued stale snapshot so an in-flight
-    // async write cannot land after the exit snapshot; each physical write
-    // stamps its own lastSavedAt at serialization time.
-    if (sharedSaveQueue.isIdle) return "saved";
-    return await sharedSaveQueue.enqueue(data, writeSaveSnapshot);
+    syncResult = saveBackend.writeSync(SAVE_KEY, serialized);
   } catch (error) {
     logStorageFailure("Save data could not be written during page exit", error);
     return "failed";
   }
+  if (syncResult === null) return await sharedSaveQueue.enqueue(data, writeSaveSnapshot);
+  if (!syncResult.ok) {
+    logStorageFailure("Save data could not be written during page exit", syncResult.error);
+    return "failed";
+  }
+  if (sharedSaveQueue.isIdle) return "saved";
+  return await sharedSaveQueue.enqueue(data, writeSaveSnapshot);
+}
+
+export async function saveAlchemySaveDataForExit(data: UnstampedSaveData): Promise<SaveWriteOutcome> {
+  if (!isClientContext() || sharedSaveQueue.areWritesDisabled() || sharedSaveQueue.isClearPending) {
+    return "skipped";
+  }
+  const serialized = trySerializeSaveSnapshot(data, " during page exit");
+  if (serialized === null) return "failed";
+  return flushSerializedExitSave(data, serialized);
 }
 
 export async function clearAlchemySaveData(
   mode: "default" | "localWipe" | "wipeForReload" = "default",
 ): Promise<boolean> {
-  if (typeof window === "undefined") return true;
+  if (!isClientContext()) return true;
   const forceLocalWipe = mode !== "default";
   const keepWritesDisabled = mode === "wipeForReload";
   return await sharedSaveQueue.enqueueClear(() => saveBackend.clear(SAVE_KEY, { forceLocalWipe }), {

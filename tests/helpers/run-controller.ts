@@ -74,6 +74,7 @@ export function createMockRouteCommands(): AlchemyRouteCommands {
       handleWishChoice: fn(),
       handleEndTurn: fn(),
       handleAutoplayCard: fn(),
+      handleAutoplayWish: fn(),
       skipCombatDevMode: fn(),
       bindPlayback: fn(),
       isCardPlayInProgress: vi.fn(() => false),

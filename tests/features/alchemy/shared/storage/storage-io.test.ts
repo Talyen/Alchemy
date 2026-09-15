@@ -18,6 +18,11 @@ import {
   teardownMockWindow,
 } from "../../../../helpers/desktop-save-mock-helper";
 import { installStorageIoTestHooks } from "../../../../helpers/storage-io-test-setup";
+import {
+  futureContentSaveCandidate,
+  futureSaveCandidate,
+  playableSaveCandidate,
+} from "../../../../helpers/save-candidate-fixtures";
 
 const globalWithWindow = globalThis as unknown as { window?: object };
 const mockStorage: Record<string, string> = {};
@@ -41,11 +46,7 @@ function setupDesktopSaveCandidates(candidates: string[]) {
 const futureSaveCases = [
   {
     label: "newer schema",
-    payload: {
-      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
-      lastSavedAt: 2000,
-      discoveredCardIds: ["future-card"],
-    },
+    payload: futureSaveCandidate(2000, { discoveredCardIds: ["future-card"] }),
     expectedStatus: {
       kind: "unsupported-newer-schema" as const,
       detectedSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
@@ -53,12 +54,7 @@ const futureSaveCases = [
   },
   {
     label: "newer content",
-    payload: {
-      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
-      contentVersion: CURRENT_CONTENT_VERSION + 1,
-      lastSavedAt: 2000,
-      discoveredCardIds: ["future-card"],
-    },
+    payload: futureContentSaveCandidate(2000, { discoveredCardIds: ["future-card"] }),
     expectedStatus: {
       kind: "unsupported-newer-content" as const,
       detectedContentVersion: CURRENT_CONTENT_VERSION + 1,
@@ -410,26 +406,21 @@ describe("storage io", () => {
 
   it.each(futureSaveCases)("does not overwrite a browser save with $label", async ({ payload, expectedStatus }) => {
     vi.spyOn(console, "error").mockImplementation(() => {});
-    mockStorage[SAVE_KEY] = JSON.stringify(payload);
+    mockStorage[SAVE_KEY] = payload;
 
     const loaded = await loadAlchemySaveState();
 
     expect(loaded.data).toEqual(defaultSaveData);
     expect(loaded.status).toEqual(expectedStatus);
     await saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["slash"] });
-    expect(JSON.parse(mockStorage[SAVE_KEY])).toEqual(payload);
+    expect(mockStorage[SAVE_KEY]).toBe(payload);
   });
 
   it.each(futureSaveCases)(
     "protects a desktop $label authoritative save instead of loading an older backup",
     async ({ payload, expectedStatus }) => {
-      const compatibleBackup = JSON.stringify({
-        saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
-        contentVersion: CURRENT_CONTENT_VERSION,
-        lastSavedAt: 1000,
-        discoveredCardIds: ["slash"],
-      });
-      const { writeSave } = setupDesktopSaveCandidates([JSON.stringify(payload), compatibleBackup]);
+      const compatibleBackup = playableSaveCandidate(1000);
+      const { writeSave } = setupDesktopSaveCandidates([payload, compatibleBackup]);
 
       const loaded = await loadAlchemySaveState();
 
@@ -441,16 +432,8 @@ describe("storage io", () => {
 
   it("protects a future backup after a corrupt local candidate", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
-    const futureBackup = JSON.stringify({
-      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
-      lastSavedAt: 2000,
-    });
-    const compatibleOlderBackup = JSON.stringify({
-      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
-      contentVersion: CURRENT_CONTENT_VERSION,
-      lastSavedAt: 1000,
-      discoveredCardIds: ["slash"],
-    });
+    const futureBackup = futureSaveCandidate(2000);
+    const compatibleOlderBackup = playableSaveCandidate(1000);
     const { writeSave } = setupDesktopSaveCandidates(["not-valid-json", futureBackup, compatibleOlderBackup]);
 
     const loaded = await loadAlchemySaveState();
@@ -464,12 +447,8 @@ describe("storage io", () => {
   });
 
   it("uses a compatible authoritative save without inspecting a future fallback", async () => {
-    const compatibleSave = JSON.stringify({
-      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
-      contentVersion: CURRENT_CONTENT_VERSION,
-      discoveredCardIds: ["slash"],
-    });
-    const futureBackup = JSON.stringify({ saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1 });
+    const compatibleSave = playableSaveCandidate(0);
+    const futureBackup = futureSaveCandidate(undefined);
     const { writeSave } = setupDesktopSaveCandidates([compatibleSave, futureBackup]);
 
     const loaded = await loadAlchemySaveState();
@@ -483,11 +462,7 @@ describe("storage io", () => {
   it("walks backup.1 when local is corrupt on desktop", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
 
-    const validFromBackup = JSON.stringify({
-      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
-      contentVersion: CURRENT_CONTENT_VERSION,
-      discoveredCardIds: ["slash", "block"],
-    });
+    const validFromBackup = playableSaveCandidate(0, { discoveredCardIds: ["slash", "block"] });
     const corruptLocal = "not-valid-json";
 
     setupMockWindowDesktop({ saveCandidates: [corruptLocal, validFromBackup], steamName: null });
@@ -525,24 +500,14 @@ describe("storage io", () => {
 
   describe("desktop cloud merge", () => {
     it("prefers local save over cloud on desktop cold boot", async () => {
-      const localSave = {
-        saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
-        lastSavedAt: 0,
-        discoveredCardIds: ["slash"],
-        activeRun: null,
-      };
-      const cloudSave = {
-        saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
-        lastSavedAt: 0,
-        discoveredCardIds: ["slash", "block"],
-        activeRun: null,
-      };
+      const localSave = playableSaveCandidate(0);
+      const cloudSave = playableSaveCandidate(0, { discoveredCardIds: ["slash", "block"] });
 
       const desktop = setupMockWindowDesktop({
-        saveCandidates: [JSON.stringify(localSave)],
+        saveCandidates: [localSave],
         steamName: null,
       });
-      desktop.steamCloudRead.mockResolvedValue(JSON.stringify(cloudSave));
+      desktop.steamCloudRead.mockResolvedValue(cloudSave);
 
       const loaded = await loadAlchemySaveState();
 
@@ -550,24 +515,14 @@ describe("storage io", () => {
     });
 
     it("loads the fresher cloud save over a stale local save", async () => {
-      const localSave = {
-        saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
-        lastSavedAt: 1000,
-        discoveredCardIds: ["slash"],
-        activeRun: null,
-      };
-      const cloudSave = {
-        saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
-        lastSavedAt: 2000,
-        discoveredCardIds: ["slash", "block"],
-        activeRun: null,
-      };
+      const localSave = playableSaveCandidate(1000);
+      const cloudSave = playableSaveCandidate(2000, { discoveredCardIds: ["slash", "block"] });
 
       const desktop = setupMockWindowDesktop({
-        saveCandidates: [JSON.stringify(localSave)],
+        saveCandidates: [localSave],
         steamName: null,
       });
-      desktop.steamCloudRead.mockResolvedValue(JSON.stringify(cloudSave));
+      desktop.steamCloudRead.mockResolvedValue(cloudSave);
 
       const loaded = await loadAlchemySaveState();
 
@@ -576,23 +531,32 @@ describe("storage io", () => {
     });
 
     it("falls back to cloud when local save is missing", async () => {
-      const cloudSave = {
-        saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
-        lastSavedAt: 0,
-        discoveredCardIds: ["slash", "block"],
-        activeRun: null,
-      };
+      const cloudSave = playableSaveCandidate(0, { discoveredCardIds: ["slash", "block"] });
 
       const desktop = setupMockWindowDesktop({
         saveCandidates: [],
         steamName: null,
       });
-      desktop.steamCloudRead.mockResolvedValue(JSON.stringify(cloudSave));
+      desktop.steamCloudRead.mockResolvedValue(cloudSave);
 
       const loaded = await loadAlchemySaveState();
 
       expect(loaded.data.discoveredCardIds).toEqual(["slash", "block"]);
       expect(loaded.status.kind).toBe("ok");
+    });
+
+    it("ignores a corrupt cloud candidate when the local save is valid", async () => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      const desktop = setupMockWindowDesktop({
+        saveCandidates: [playableSaveCandidate(1000)],
+        steamName: null,
+      });
+      desktop.steamCloudRead.mockResolvedValue("not-valid-json");
+
+      const loaded = await loadAlchemySaveState();
+
+      expect(loaded.status.kind).toBe("ok");
+      expect(loaded.data.discoveredCardIds).toEqual(["slash"]);
     });
   });
 

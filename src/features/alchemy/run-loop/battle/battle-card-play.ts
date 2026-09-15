@@ -169,11 +169,10 @@ export function createBattleCardPlay(
     handlePlayCard(card, index, getCardRect(event.currentTarget.getBoundingClientRect()));
   }
 
-  async function handleAutoplayCard(card: BattleCard, index: number, control: AutoplayCardControl): Promise<boolean> {
-    const sessionNum = ctx.battleSessionRef.current;
-    if (control.signal.aborted || !control.canCommit()) return false;
+  // Flash the hover treatment before committing so autoplay reads like a manual
+  // play. Returns a cleanup that only clears the preview it set.
+  async function previewAutoplayChoice(control: AutoplayCardControl, previewId: string): Promise<() => void> {
     const sequence = ++autoplayPreviewSequence;
-    const previewId = getHoverId("hand", getHandCardKey(card, index));
     const clearPreview = () => {
       const ui = useUiStore.getState();
       // An abandoned invocation must not clear a newer preview of the same card.
@@ -181,22 +180,30 @@ export function createBattleCardPlay(
         ui.setAutoplayPreviewCardId(null);
       }
     };
+    if (!shouldReduceMotion()) {
+      const ui = useUiStore.getState();
+      ui.setAutoplayPreviewCardId(previewId);
+      ui.maybeTriggerShimmer(previewId);
+      await new Promise<void>((resolve) => {
+        const finish = () => {
+          clearTimeout(timer);
+          control.signal.removeEventListener("abort", finish);
+          if (control.signal.aborted) clearPreview();
+          resolve();
+        };
+        const timer = setTimeout(finish, resolveGameDelay(AUTOPLAY_PREVIEW_MS));
+        control.signal.addEventListener("abort", finish, { once: true });
+      });
+    }
+    return clearPreview;
+  }
+
+  async function handleAutoplayCard(card: BattleCard, index: number, control: AutoplayCardControl): Promise<boolean> {
+    const sessionNum = ctx.battleSessionRef.current;
+    if (control.signal.aborted || !control.canCommit()) return false;
+    const previewId = getHoverId("hand", getHandCardKey(card, index));
+    const clearPreview = await previewAutoplayChoice(control, previewId);
     try {
-      if (!shouldReduceMotion()) {
-        const ui = useUiStore.getState();
-        ui.setAutoplayPreviewCardId(previewId);
-        ui.maybeTriggerShimmer(previewId);
-        await new Promise<void>((resolve) => {
-          const finish = () => {
-            clearTimeout(timer);
-            control.signal.removeEventListener("abort", finish);
-            if (control.signal.aborted) clearPreview();
-            resolve();
-          };
-          const timer = setTimeout(finish, resolveGameDelay(AUTOPLAY_PREVIEW_MS));
-          control.signal.addEventListener("abort", finish, { once: true });
-        });
-      }
       if (sessionNum !== ctx.battleSessionRef.current || control.signal.aborted || !control.canCommit()) return false;
       // Measure after the preview so the ghost starts from the lifted position, like a manual play.
       const element = ctx.handCardRefs.current[getHandCardKey(card, index)];
@@ -207,7 +214,34 @@ export function createBattleCardPlay(
     }
   }
 
+  async function handleAutoplayWish(card: BattleCard, control: AutoplayCardControl): Promise<boolean> {
+    const sessionNum = ctx.battleSessionRef.current;
+    if (control.signal.aborted || !control.canCommit()) return false;
+    const clearPreview = await previewAutoplayChoice(control, getHoverId("wish", card.id));
+    try {
+      if (sessionNum !== ctx.battleSessionRef.current || control.signal.aborted || !control.canCommit()) return false;
+      const currentState = getBattle().battleState;
+      if (!currentState.wishOptions?.some((option) => option.id === card.id)) return false;
+      const newState = dispatchRunSessionCommand((draft) => {
+        const bound = withDraftWorldBattleRng(draft, currentState);
+        if (!bound.wishOptions?.some((option) => option.id === card.id)) return null;
+        const next = chooseWishCard(bound, card.id);
+        setBattleState(draft, next);
+        discoverCardIds(draft, [card.id]);
+        return snapshotBattleState(next);
+      });
+      if (!newState) return false;
+      session.checkBattleEnd(newState, sessionNum);
+      runDrawSequenceAndFinalize(currentState.hand, newState, () => {}, sessionNum, "autoplay wish choice");
+      return true;
+    } finally {
+      clearPreview();
+    }
+  }
+
   function handleWishChoice(card: BattleCard) {
+    // A stale autoplay preview must never linger past the pick it teased (manual takeover included).
+    useUiStore.getState().setAutoplayPreviewCardId(null);
     const currentState = getBattle().battleState;
     if (!currentState.wishOptions) return;
     const newState = dispatchRunSessionCommand((draft) => {
@@ -224,5 +258,5 @@ export function createBattleCardPlay(
     runDrawSequenceAndFinalize(currentState.hand, newState, () => {}, sessionNum, "wish choice");
   }
 
-  return { handleCardClick, handleWishChoice, handleAutoplayCard };
+  return { handleCardClick, handleWishChoice, handleAutoplayCard, handleAutoplayWish };
 }

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 import {
   BattleCardSchema,
   SaveDataSchema,
@@ -55,5 +56,18 @@ describe("safeParseWithErrors nested card warnings", () => {
       effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
     });
     expect(good.success && good.errors).toEqual([]);
+  });
+
+  it("isolates a nested parse from the enclosing warning sink", () => {
+    const outerSchema = z.object({ card: BattleCardSchema }).transform((value) => {
+      const inner = safeParseWithErrors(BattleCardSchema, badEffectCard);
+      expect(inner.success && inner.errors.length).toBeGreaterThan(0);
+      return value;
+    });
+    const outer = safeParseWithErrors(outerSchema, { card: badEffectCard });
+    expect(outer.success).toBe(true);
+    if (!outer.success) return;
+    // One warning from the outer card; the nested parse kept its own.
+    expect(outer.errors.filter((error) => error.path.startsWith("effects["))).toHaveLength(1);
   });
 });

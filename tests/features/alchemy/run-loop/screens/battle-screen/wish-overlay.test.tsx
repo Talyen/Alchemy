@@ -3,17 +3,19 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resetEscapeStackForTests } from "@/app/escape-stack";
 import { WishOverlay } from "@/features/alchemy/run-loop/screens/battle-screen/wish-overlay";
+import { BattleCardButton } from "@/features/alchemy/shared/ui/card-button";
+import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import type { BattleActionsProps } from "@/features/alchemy/run-loop/screens/battle-screen/types";
 import { waitForArtwork } from "../../../../../helpers/artwork-test";
 import type { BattleCard } from "@/lib/game-data";
 import { patchBattleState } from "../../../../../fixtures/battle";
 
 vi.mock("@/features/alchemy/shared/ui/card-button", () => ({
-  BattleCardButton: ({ ariaLabel, onClick }: { ariaLabel: string; onClick: () => void }) => (
+  BattleCardButton: vi.fn(({ ariaLabel, onClick }: { ariaLabel: string; onClick: () => void }) => (
     <button type="button" onClick={onClick}>
       {ariaLabel}
     </button>
-  ),
+  )),
 }));
 
 vi.mock("@/features/alchemy/shared/ui/use-interactive-card", () => ({
@@ -45,6 +47,7 @@ describe("WishOverlay", () => {
   afterEach(() => {
     cleanup();
     resetEscapeStackForTests();
+    useUiStore.getState().setAutoplayPreviewCardId(null);
   });
 
   it("ignores Escape and stops GameMenu from receiving the key", async () => {
@@ -114,5 +117,28 @@ describe("WishOverlay", () => {
     await waitForArtwork();
     await user.click(screen.getByRole("button", { name: "Choose Wish Card" }));
     expect(onWishChoice).toHaveBeenCalledTimes(2);
+  });
+
+  it("highlights the autoplay-previewed wish option without its tooltip", async () => {
+    vi.mocked(BattleCardButton).mockClear();
+    useUiStore.getState().setAutoplayPreviewCardId("wish-wish-card");
+    renderWish();
+
+    await waitForArtwork();
+    const calls = vi.mocked(BattleCardButton).mock.calls;
+    expect(calls.length).toBeGreaterThan(0);
+    expect(calls[calls.length - 1]?.[0]).toEqual(expect.objectContaining({ hovered: true, suppressTooltip: true }));
+  });
+
+  it("leaves wish options unhighlighted without an autoplay preview", async () => {
+    vi.mocked(BattleCardButton).mockClear();
+    renderWish();
+
+    await waitForArtwork();
+    const calls = vi.mocked(BattleCardButton).mock.calls;
+    expect(calls.length).toBeGreaterThan(0);
+    for (const call of calls) {
+      expect(call[0]).toEqual(expect.objectContaining({ hovered: false }));
+    }
   });
 });

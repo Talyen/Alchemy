@@ -74,7 +74,7 @@ export const CraftingCurrencyInventorySchema = z
   .catch(CRAFTING_CURRENCY_ZERO_INVENTORY)
   .transform((inventory) => normalizeCraftingCurrencies(inventory));
 
-export const MaterialInventorySchema = z.object(createMaterialInventoryShape()).catch(MATERIAL_ZERO_INVENTORY);
+export const MaterialInventorySchema = z.object(createMaterialInventoryShape()).catch(() => emptyInventory());
 
 export const TalentXPSchema = z.preprocess((val) => {
   if (!val || typeof val !== "object") return {};

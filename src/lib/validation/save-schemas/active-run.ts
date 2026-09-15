@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ROUTE_SCREEN_VALUES } from "@/lib/routing";
-import { ACTS_PER_RUN } from "@/lib/game-constants";
+import { ACTS_PER_RUN, MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { sanitizeWildwoodBossId, sanitizeWildwoodBossIds } from "@/lib/content-systems/wildwood/bosses";
 import { normalizeActiveRunData } from "../normalize-active-run-data";
 import { GearInstanceArraySchema, GearInstanceSchema, normalizeGearInstanceArray } from "./gear-schemas";
@@ -267,36 +267,38 @@ const ActiveRunDataObjectSchema = z.object({
   characterId: CharacterIdSchema,
   runDeck: z.array(BattleCardSchema),
   runPlayerHealth: z.number().int().nonnegative().catch(0),
-  runMaxHealth: z.number().int().positive().catch(30),
-  runMetaMaxHealth: z.number().int().nonnegative().catch(0).default(0),
+  runMaxHealth: z.number().int().positive().catch(MAX_PLAYER_HEALTH),
+  // A zero runMetaMaxHealth means "unset" and is rewritten to runMaxHealth in
+  // normalizeActiveRunData; the catch keeps the sentinel, it is not a default.
+  runMetaMaxHealth: z.number().int().nonnegative().catch(0),
   roomsEncountered: z.number().int().nonnegative().catch(0),
   currentAct: z.number().int().min(1).max(ACTS_PER_RUN).catch(1),
   destinationIndexInAct: z.number().int().nonnegative().catch(0),
   completedDestinations: DestinationArraySchema,
-  lastOfferedDestinations: DestinationArraySchema.default([]),
-  destinationRoundsSinceOffered: z.record(z.string(), z.number().int().nonnegative()).catch({}).default({}),
+  lastOfferedDestinations: DestinationArraySchema,
+  destinationRoundsSinceOffered: z.record(z.string(), z.number().int().nonnegative()).catch({}),
   runBoons: z.array(z.string()).catch([]),
-  encounteredRunEnemyIds: deduplicatedStringArraySchema().default([]),
-  selectedDifficulty: DifficultyIdSchema.nullable().catch(null).default(null),
+  encounteredRunEnemyIds: deduplicatedStringArraySchema(),
+  selectedDifficulty: DifficultyIdSchema.nullable().catch(null),
   contentSystemType: ContentSystemIdSchema.catch("campaign"),
   rng: RunRngStateSchema.default(createFallbackRunRngState),
   labyrinthMap: LabyrinthMapSchema.nullable().catch(null),
   labyrinthPendingNode: LabyrinthPendingNodeSchema,
-  activeLabyrinthModifiers: EncounterCombatTraitArraySchema.catch([]).default([]),
-  activeLabyrinthRewardModifiers: EncounterRewardTraitArraySchema.catch([]).default([]),
-  wildwoodDraft: WildwoodDraftStateSchema.default(null),
-  starterDraftChoices: z.array(BattleCardSchema).nullable().catch(null).default(null),
-  activeCombat: ActiveCombatDataSchema.catch(null).default(null),
+  activeLabyrinthModifiers: EncounterCombatTraitArraySchema,
+  activeLabyrinthRewardModifiers: EncounterRewardTraitArraySchema,
+  wildwoodDraft: WildwoodDraftStateSchema,
+  starterDraftChoices: z.array(BattleCardSchema).nullable().catch(null),
+  activeCombat: ActiveCombatDataSchema.catch(null),
 
-  runTalentXP: TalentXPSchema.default({}),
-  runMaterialsEarned: MaterialInventorySchema.default(emptyInventory()),
-  runObtainedItems: RunObtainedItemArraySchema.default([]),
-  currentScreen: z.enum(ROUTE_SCREEN_VALUES).nullable().catch(null).default(null),
+  runTalentXP: TalentXPSchema,
+  runMaterialsEarned: MaterialInventorySchema,
+  runObtainedItems: RunObtainedItemArraySchema,
+  currentScreen: z.enum(ROUTE_SCREEN_VALUES).nullable().catch(null),
   interruptedFlow: InterruptedFlowSchema,
-  shopState: ShopPersistSchema.default(null),
-  alchemistState: AlchemistPersistSchema.default(null),
-  trinketShopState: TrinketShopPersistSchema.default(null),
-  equipmentShopState: EquipmentShopPersistSchema.default(null),
+  shopState: ShopPersistSchema,
+  alchemistState: AlchemistPersistSchema,
+  trinketShopState: TrinketShopPersistSchema,
+  equipmentShopState: EquipmentShopPersistSchema,
   mysteryVisit: MysteryVisitPersistSchema,
   corruptionResult: CorruptionResultPersistSchema,
 });

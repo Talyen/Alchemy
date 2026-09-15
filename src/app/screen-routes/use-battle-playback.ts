@@ -5,7 +5,11 @@ import { useLatestRef } from "@/features/alchemy/shared/ui/use-latest-ref";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import { useBattleAutoEndTurn } from "@/features/alchemy/run-loop/battle/use-battle-auto-end-turn";
 import { useBattleAutoplay } from "@/features/alchemy/run-loop/battle/use-battle-autoplay";
-import type { AutoplayCardHandler, BattlePlaybackBind } from "@/features/alchemy/run-loop/battle/battle-context";
+import type {
+  AutoplayCardHandler,
+  AutoplayWishHandler,
+  BattlePlaybackBind,
+} from "@/features/alchemy/run-loop/battle/battle-context";
 import { useBattlePresentationGateRef } from "@/features/alchemy/run-loop/battle/presentation/use-hand-presentation";
 
 interface UseBattlePlaybackProps {
@@ -16,6 +20,7 @@ interface UseBattlePlaybackProps {
   isAutoplayEnabled: boolean;
   handleEndTurn: () => void;
   handleAutoplayCard: AutoplayCardHandler;
+  handleAutoplayWish: AutoplayWishHandler;
   isCardPlayInProgress: () => boolean;
   bindPlayback?: ((bind: BattlePlaybackBind | null) => void) | undefined;
 }
@@ -28,6 +33,7 @@ export function useBattlePlayback({
   isAutoplayEnabled,
   handleEndTurn,
   handleAutoplayCard,
+  handleAutoplayWish,
   isCardPlayInProgress,
   bindPlayback,
 }: UseBattlePlaybackProps) {
@@ -61,6 +67,7 @@ export function useBattlePlayback({
     isCardPlayInProgress,
     gameMenuOpen,
     playCard: handleAutoplayCard,
+    playWish: handleAutoplayWish,
     presentationGateRef,
     wakeRef: wakeAutoplayRef,
   });

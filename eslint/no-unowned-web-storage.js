@@ -5,6 +5,7 @@ const ALLOWED_PREFIXES = ["src/features/alchemy/shared/storage/", "src/lib/activ
 
 const ALLOWED_FILES = new Set([
   "src/lib/platform-save-backend.ts",
+  "src/lib/storage-environment.ts",
   "src/startup.ts",
   "src/features/alchemy/shared/stores/error-log-store.ts",
   "src/features/alchemy/shared/utils/dev-mode.ts",

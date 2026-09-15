@@ -98,7 +98,7 @@ Feature code uses [`run-session-lifecycle-port.ts`](../src/features/alchemy/shar
 
 - `teardownRun()` — clear the active run session after victory, defeat, or abandon.
 - `finalizeRunEndSession()` — run-end bookkeeping plus persist (navigation calls this on run end).
-- `flushSaveAfterGearMutation()` — immediate persist after Armory gear mutations (bypasses autosave debounce).
+- `flushSaveAfterGearMutation()` — immediate persist after Armory gear mutations (fast path alongside the autosave debounce; both share the save queue).
 
 [`reset.ts`](../src/features/alchemy/shared/stores/reset.ts) owns test/teardown and Options wipe:
 
@@ -329,6 +329,7 @@ Layout and ownership: [ARCHITECTURE.md § Battle path](./ARCHITECTURE.md#battle-
 Visible behavior: [UI battle feedback](./UI.md#battle-feedback) and [battle motion](./UI.md#battle-motion).
 
 - Keep playback ticks on the battle route and session autoplay preferences in the controller so route remounts do not lose the setting.
+- Autoplay picks greedily: highest `getEffectiveDamageScore` wins (ties go left), restricted to defensive cards at half health or below, and Wish options resolve with the same score plus a hover preview. Score weights live in `src/lib/balance/play-policy.ts` and also drive balance reports — retuning them changes live autoplay.
 - Presentation updates may wake autoplay readiness/retry waits, but cannot shorten the post-play pause. Measure that pause from the start of the successful play, counting transfer time toward it; longer transfers add no extra pause. Teardown cancels either wait, and autoplay rechecks current playback gates before the next play.
 - Autoplay previews are uncommitted: the route forwards the driver’s abort signal and live playback eligibility check to the card handler. Disabling autoplay or unmounting cancels the preview; after its delay, recheck the session and all playback gates before committing. A cancelled preview must not clear a newer preview.
 - Manual card plays commit immediately and remain available during other card draws and hand reflow; only the incoming hidden cards and actual turn transitions are unavailable. Resolve clicked cards by hand identity so reflow cannot invalidate their old slot. Autoplay, auto-end-turn, and End Turn retain the presentation gate. Send each resolved action to the existing burst owner under the [battle feedback contract](./UI.md#battle-feedback). Concurrent draws preserve each other’s hidden cards and transfers; settlement checks the current battle state. Schedule auto-end explicitly after draws/resume; do not rely on React battle-state ticks. Opening the game menu cancels the auto-end countdown; closing it starts a fresh normal countdown only when eligible. Recheck the latest playback gates and hand playability when the countdown expires.

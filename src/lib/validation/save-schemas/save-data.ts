@@ -58,10 +58,11 @@ function characterShape<T extends z.ZodType>(factory: (id: string) => T): Record
 }
 
 const GearInventorySchema = GearInstanceArraySchema;
-const emptyGearInventories = createEmptyGearInventories();
+// Object-valued catch templates are factories so no two parses share
+// containers: hydrate paths can alias parsed output into live state.
 const GearInventoriesSchema = z
   .object(characterShape(() => GearInventorySchema.catch([])))
-  .catch(emptyGearInventories)
+  .catch(createEmptyGearInventories)
   .transform((inventories) => inventories as GearInventories);
 const GearLoadoutSchema = z
   .record(z.string(), z.union([z.string(), z.null()]))
@@ -71,10 +72,9 @@ const emptyGearLoadouts = createEmptyGearLoadouts();
 const GearLoadoutsSchema = z
   .object(characterShape((id) => GearLoadoutSchema.catch(emptyGearLoadouts[id as keyof typeof emptyGearLoadouts])))
   .transform((loadouts) => normalizeExclusiveGearLoadouts(loadouts as GearLoadouts));
-const emptyEquippedTrinkets = createEmptyEquippedTrinkets();
 const EquippedTrinketsSchema = z
   .object(characterShape(() => z.string().nullable().catch(null)))
-  .catch(emptyEquippedTrinkets)
+  .catch(createEmptyEquippedTrinkets)
   .transform((value) => value as EquippedTrinkets);
 
 function resolvePersistedGold(purseGold: number, liveCombatGold: unknown): number {
@@ -101,8 +101,8 @@ export const SaveDataSchema = z
     encounteredEnemyIds: deduplicatedStringArraySchema(),
     discoveredTrinketIds: deduplicatedStringArraySchema(),
     discoveredUniqueIds: deduplicatedStringArraySchema(),
-    gearInventories: GearInventoriesSchema.catch(emptyGearInventories),
-    gearLoadouts: GearLoadoutsSchema.catch(emptyGearLoadouts),
+    gearInventories: GearInventoriesSchema.catch(createEmptyGearInventories),
+    gearLoadouts: GearLoadoutsSchema.catch(createEmptyGearLoadouts),
     ownedTrinketIds: deduplicatedStringArraySchema(),
     equippedTrinkets: EquippedTrinketsSchema,
     talentXP: TalentXPSchema,
@@ -117,12 +117,12 @@ export const SaveDataSchema = z
     autoplayEnabled: z.boolean().catch(false),
     activeRun: ActiveRunDataSchema.nullable().catch(null),
     gold: z.number().int().nonnegative().catch(0),
-    materialInventory: MaterialInventorySchema.catch(MATERIAL_ZERO_INVENTORY),
-    craftingCurrencies: CraftingCurrencyInventorySchema.catch(CRAFTING_CURRENCY_ZERO_INVENTORY),
-    constructedBuildings: createTierRecordSchema(buildings).catch(createEmptyTierRecord(buildings)),
-    plantedFarms: createTierRecordSchema(farmPlots).catch(createEmptyTierRecord(farmPlots)),
-    completedResearch: createTierRecordSchema(researchUpgrades).catch(createEmptyTierRecord(researchUpgrades)),
-    bondedCompanions: createTierRecordSchema(companionTierItems).catch(createEmptyTierRecord(companionTierItems)),
+    materialInventory: MaterialInventorySchema.catch(() => ({ ...MATERIAL_ZERO_INVENTORY })),
+    craftingCurrencies: CraftingCurrencyInventorySchema.catch(() => ({ ...CRAFTING_CURRENCY_ZERO_INVENTORY })),
+    constructedBuildings: createTierRecordSchema(buildings).catch(() => createEmptyTierRecord(buildings)),
+    plantedFarms: createTierRecordSchema(farmPlots).catch(() => createEmptyTierRecord(farmPlots)),
+    completedResearch: createTierRecordSchema(researchUpgrades).catch(() => createEmptyTierRecord(researchUpgrades)),
+    bondedCompanions: createTierRecordSchema(companionTierItems).catch(() => createEmptyTierRecord(companionTierItems)),
     completedDifficulties: CompletedDifficultiesSchema.catch(EMPTY_COMPLETED_DIFFICULTIES),
     finishedRunCharacters: deduplicatedSetArraySchema(CHARACTER_IDS, CharacterIdSchema),
     lastSavedAt: z.number().int().nonnegative().catch(0),
@@ -131,6 +131,11 @@ export const SaveDataSchema = z
     const flatInventory = flattenGearInventories(save.gearInventories);
     return {
       ...save,
+      // Load-only repairs (encode never applies these): live combat gold
+      // overrides the purse so a reloaded fight keeps its stakes, and orphan
+      // loadout references are pruned against the restored inventory.
+      // save-candidates.ts suppresses warnings for the gold override because
+      // it is intentional, not damage.
       gold: resolvePersistedGold(save.gold, save.activeRun?.activeCombat?.battleState.gold),
       autoplayEnabled: resolveAutoplayEnabled(save),
       gearLoadouts: pruneOrphanGearLoadouts(flatInventory, save.gearLoadouts),

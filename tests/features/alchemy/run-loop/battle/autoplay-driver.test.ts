@@ -3,6 +3,7 @@ import {
   driveAutoplay,
   isBattlePlayInputBusy,
   isBattlePlaybackBlocked,
+  isWishPlaybackBlocked,
 } from "@/features/alchemy/run-loop/battle/autoplay-driver";
 import { findFirstPlayableHandCard } from "@/features/alchemy/run-loop/battle/playable-hand";
 import * as animationPrefs from "@/lib/animation/animation-prefs";
@@ -52,6 +53,30 @@ describe("isBattlePlaybackBlocked", () => {
         battleState: { ...openBattle.battleState, wishOptions: [{ ...playableCard, uid: 2 }] },
       }),
     ).toBe(true);
+  });
+});
+
+describe("isWishPlaybackBlocked", () => {
+  const openBattle = makeOpenBattle();
+  const wishedBattle = {
+    ...openBattle,
+    battleState: { ...openBattle.battleState, wishOptions: [{ ...playableCard, uid: 2 }] },
+  };
+
+  it("blocks without wish options", () => {
+    expect(isWishPlaybackBlocked(openBattle)).toBe(true);
+  });
+
+  it("allows an open player turn with wish options", () => {
+    expect(isWishPlaybackBlocked(wishedBattle)).toBe(false);
+  });
+
+  it("blocks when the game menu is open", () => {
+    expect(isWishPlaybackBlocked({ ...wishedBattle, gameMenuOpen: true })).toBe(true);
+  });
+
+  it("blocks while a card transfer is in progress", () => {
+    expect(isWishPlaybackBlocked({ ...wishedBattle, cardTransferInProgress: true })).toBe(true);
   });
 });
 
@@ -108,6 +133,93 @@ describe("driveAutoplay", () => {
     });
 
     expect(played).toEqual([1, 2]);
+  });
+
+  it("auto-picks a wish choice while the card gate is blocked", async () => {
+    const wish = { ...playableCard, uid: 3 };
+    const played: number[] = [];
+    const playCard = vi.fn(() => true);
+    const controller = new AbortController();
+
+    await driveAutoplay({
+      signal: controller.signal,
+      delayMs: 0,
+      postPlayDelayMs: 0,
+      isEnabled: () => played.length < 1,
+      isBlocked: () => true,
+      findPlayableCard: () => {
+        throw new Error("card branch must not run while wishes are showing");
+      },
+      playCard,
+      isWishBlocked: () => false,
+      findWishChoice: () => wish,
+      playWish: (card) => {
+        played.push(card.uid ?? 0);
+        return true;
+      },
+    });
+
+    expect(played).toEqual([3]);
+    expect(playCard).not.toHaveBeenCalled();
+  });
+
+  it("resolves a wish granted by the just-played card instead of stalling", async () => {
+    const card = { ...playableCard, uid: 1 };
+    const wish = { ...playableCard, uid: 9 };
+    let cardPlayed = false;
+    let wishPlayed = false;
+    const controller = new AbortController();
+
+    await driveAutoplay({
+      signal: controller.signal,
+      delayMs: 0,
+      postPlayDelayMs: 0,
+      isEnabled: () => !wishPlayed,
+      // After the card play the card gate stays blocked by the granted wish.
+      isBlocked: () => cardPlayed && !wishPlayed,
+      findPlayableCard: () => (cardPlayed ? null : { card, index: 0 }),
+      playCard: () => {
+        cardPlayed = true;
+        return true;
+      },
+      isWishBlocked: () => !cardPlayed || wishPlayed,
+      findWishChoice: () => (cardPlayed && !wishPlayed ? wish : null),
+      playWish: (choice) => {
+        wishPlayed = choice.uid === wish.uid;
+        return wishPlayed;
+      },
+    });
+
+    expect(cardPlayed).toBe(true);
+    expect(wishPlayed).toBe(true);
+  });
+
+  it("retries a rejected wish pick instead of stopping", async () => {
+    const wish = { ...playableCard, uid: 3 };
+    let attempts = 0;
+    const played: number[] = [];
+    const controller = new AbortController();
+
+    await driveAutoplay({
+      signal: controller.signal,
+      delayMs: 0,
+      postPlayDelayMs: 0,
+      isEnabled: () => played.length < 1 && attempts < 5,
+      isBlocked: () => true,
+      findPlayableCard: () => null,
+      playCard: () => true,
+      isWishBlocked: () => false,
+      findWishChoice: () => wish,
+      playWish: (card) => {
+        attempts += 1;
+        if (attempts === 1) return false;
+        played.push(card.uid ?? 0);
+        return true;
+      },
+    });
+
+    expect(attempts).toBeGreaterThan(1);
+    expect(played).toEqual([3]);
   });
 
   it("retries after a rejected play instead of stopping", async () => {

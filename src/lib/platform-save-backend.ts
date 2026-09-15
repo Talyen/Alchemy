@@ -1,5 +1,6 @@
 import { getDesktopApi } from "./desktop-api";
 import { logStorageFailure } from "./storage-logging";
+import { tryLocalStorageGetItem, tryLocalStorageRemoveItem, tryLocalStorageSetItem } from "./storage-environment";
 
 type SaveBackendReadResult = { ok: true; candidates: string[] } | { ok: false; error: unknown };
 type SaveBackendWriteResult = { ok: true } | { ok: false; error: unknown };
@@ -85,73 +86,85 @@ async function readDesktopCandidates(desktop: DesktopApi): Promise<string[]> {
   return uniqueCandidates(cloudCandidate ? [...localCandidates, cloudCandidate] : localCandidates);
 }
 
-export function createPlatformSaveBackend({ cloudSyncEnabled = false }: PlatformSaveBackendOptions = {}): SaveBackend {
+export function createBrowserSaveBackend(): SaveBackend {
   return {
-    async readCandidates(key) {
-      const desktop = getDesktopApi();
-      if (desktop?.isDesktop === true) {
-        return { ok: true, candidates: await readDesktopCandidates(desktop) };
-      }
-
-      try {
-        const local = window.localStorage.getItem(key);
-        return { ok: true, candidates: local ? [local] : [] };
-      } catch (error) {
-        return { ok: false, error };
-      }
+    readCandidates(key) {
+      const stored = tryLocalStorageGetItem(key);
+      if (!stored.ok) return Promise.resolve(stored);
+      return Promise.resolve({ ok: true, candidates: stored.value ? [stored.value] : [] });
     },
 
-    async write(key, value) {
-      const desktop = getDesktopApi();
-      if (desktop?.isDesktop === true) {
-        try {
-          const localWritten = await desktop.writeSave(value);
-          if (!localWritten) {
-            return { ok: false, error: new Error("Failed to write desktop save file") };
-          }
-          if (cloudSyncEnabled) await mirrorCloudWriteBestEffort(desktop, value);
-          return { ok: true };
-        } catch (error) {
-          return { ok: false, error };
-        }
-      }
-
-      try {
-        window.localStorage.setItem(key, value);
-        return { ok: true };
-      } catch (error) {
-        return { ok: false, error };
-      }
+    write(key, value) {
+      const stored = tryLocalStorageSetItem(key, value);
+      if (!stored.ok) return Promise.resolve(stored);
+      return Promise.resolve({ ok: true });
     },
 
     writeSync(key, value) {
-      if (getDesktopApi()?.isDesktop === true) return null;
-
-      try {
-        window.localStorage.setItem(key, value);
-        return { ok: true };
-      } catch (error) {
-        return { ok: false, error };
-      }
+      const stored = tryLocalStorageSetItem(key, value);
+      if (!stored.ok) return stored;
+      return { ok: true };
     },
 
-    async clear(key, options?: SaveBackendClearOptions) {
+    clear(key) {
+      const removed = tryLocalStorageRemoveItem(key);
+      if (!removed.ok) return Promise.resolve(removed);
+      return Promise.resolve({ ok: true });
+    },
+  };
+}
+
+export function createDesktopSaveBackend({ cloudSyncEnabled = false }: PlatformSaveBackendOptions = {}): SaveBackend {
+  return {
+    async readCandidates() {
       const desktop = getDesktopApi();
-      if (desktop?.isDesktop === true) {
-        try {
-          if (options?.forceLocalWipe) return await clearDesktopForced(desktop, cloudSyncEnabled);
-          return await clearDesktopNormal(desktop, cloudSyncEnabled);
-        } catch (error) {
-          return { ok: false, error };
-        }
-      }
+      if (desktop?.isDesktop !== true) return { ok: false, error: new Error("Desktop save API is unavailable") };
+      return { ok: true, candidates: await readDesktopCandidates(desktop) };
+    },
 
+    async write(_key, value) {
+      const desktop = getDesktopApi();
+      if (desktop?.isDesktop !== true) return { ok: false, error: new Error("Desktop save API is unavailable") };
       try {
-        window.localStorage.removeItem(key);
+        const localWritten = await desktop.writeSave(value);
+        if (!localWritten) {
+          return { ok: false, error: new Error("Failed to write desktop save file") };
+        }
+        if (cloudSyncEnabled) await mirrorCloudWriteBestEffort(desktop, value);
         return { ok: true };
       } catch (error) {
         return { ok: false, error };
       }
     },
+
+    // Desktop persistence is async IPC: exit flushes go through the queue.
+    writeSync() {
+      return null;
+    },
+
+    async clear(_key, options?: SaveBackendClearOptions) {
+      const desktop = getDesktopApi();
+      if (desktop?.isDesktop !== true) return { ok: false, error: new Error("Desktop save API is unavailable") };
+      try {
+        if (options?.forceLocalWipe) return await clearDesktopForced(desktop, cloudSyncEnabled);
+        return await clearDesktopNormal(desktop, cloudSyncEnabled);
+      } catch (error) {
+        return { ok: false, error };
+      }
+    },
+  };
+}
+
+export function createPlatformSaveBackend({ cloudSyncEnabled = false }: PlatformSaveBackendOptions = {}): SaveBackend {
+  const browser = createBrowserSaveBackend();
+  const desktop = createDesktopSaveBackend({ cloudSyncEnabled });
+  // Dispatched per call (not at creation): tests and bootstrap swap the
+  // environment between backend creation and use.
+  const active = () => (getDesktopApi()?.isDesktop === true ? desktop : browser);
+  return {
+    readCandidates: (key) => active().readCandidates(key),
+    write: (key, value) => active().write(key, value),
+    writeSync: (key, value) => active().writeSync(key, value),
+    clear: (key, options) => active().clear(key, options),
   };
 }

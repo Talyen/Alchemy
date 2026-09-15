@@ -16,6 +16,9 @@ export function createDefaultProfileSaveFields(): ProfileSaveFields {
     encounteredEnemyIds: [],
     discoveredTrinketIds: [],
     discoveredUniqueIds: [],
+    // Hardcoded per character on purpose: importing the character catalog here
+    // would drag content into store types. Drift against CHARACTER_IDS is
+    // pinned by tests/architecture/save-migration-contract.test.ts.
     completedDifficulties: {
       knight: [],
       rogue: [],

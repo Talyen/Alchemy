@@ -9,7 +9,7 @@ import type { Screen, Destination } from "@/lib/routing";
 import type { KeywordId, CharacterId, DifficultyId, BattleCard } from "@/lib/game-data";
 import type { MysteryChoice } from "@/lib/mystery";
 import type { MouseEvent } from "react";
-import type { AutoplayCardHandler, BattlePlaybackBind } from "../run-loop/battle/battle-context";
+import type { AutoplayCardHandler, AutoplayWishHandler, BattlePlaybackBind } from "../run-loop/battle/battle-context";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 
 export interface AlchemyRouteCommands {
@@ -75,6 +75,7 @@ export interface AlchemyRouteCommands {
     handleWishChoice: (card: BattleCard) => void;
     handleEndTurn: () => void;
     handleAutoplayCard: AutoplayCardHandler;
+    handleAutoplayWish: AutoplayWishHandler;
     skipCombatDevMode: () => void;
     refs: BattleRefs;
     bindPlayback: (bind: BattlePlaybackBind | null) => void;

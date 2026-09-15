@@ -66,13 +66,13 @@ Homestead mutation timing remains unchanged.
 
 ## State flow
 
-| Layer       | Owner                                                                                                                                     |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| Pure rules  | `src/lib/gear/` — types, definitions, affixes, crafting, generation                                                                       |
-| Aggregate   | `gameplay-state-store` gear region via `gear-store.ts` (selectors + persistence codec) and `gear-session-command.ts` (HP-sync wrapper)    |
-| Screen      | Armory route → `use-armory-controller.ts` → `armory-screen.tsx`                                                                           |
-| Battle      | `computeGearManifest` → `BattleState.gearEffects`; rebound on live meta mutation                                                          |
-| Persistence | `subscribeAlchemyPersistence` / `encodePersistenceFields` + immediate `flushSaveAfterGearMutation` (fire-and-forget; autosave owns retry) |
+| Layer       | Owner                                                                                                                                            |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Pure rules  | `src/lib/gear/` — types, definitions, affixes, crafting, generation                                                                              |
+| Aggregate   | `gameplay-state-store` gear region via `gear-store.ts` (selectors + persistence codec) and `gear-session-command.ts` (HP-sync wrapper)           |
+| Screen      | Armory route → `use-armory-controller.ts` → `armory-screen.tsx`                                                                                  |
+| Battle      | `computeGearManifest` → `BattleState.gearEffects`; rebound on live meta mutation                                                                 |
+| Persistence | `subscribeAlchemyPersistence` / `buildAlchemySaveDataFromStores` + immediate `flushSaveAfterGearMutation` (fire-and-forget; autosave owns retry) |
 
 ### Read paths
 
@@ -122,7 +122,7 @@ Effect keys are listed in `GEAR_EFFECT_KEYS` (`src/lib/gear/gear-effect-manifest
 
 ## Persistence
 
-Saves are written/read via `buildAlchemySaveDataFromStores` (`src/features/alchemy/shared/storage/persistence.ts`), which serializes five Gear-owned fields:
+Saves are written/read via `buildAlchemySaveDataFromStores` (`src/features/alchemy/shared/storage/persistence.ts`), which assembles the full save snapshot (settings + profile + gear + run-profile fields, plus versions and the active run). Five of those fields are Gear-owned:
 
 | Field                | Notes                                                              |
 | -------------------- | ------------------------------------------------------------------ |

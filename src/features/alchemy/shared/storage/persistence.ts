@@ -4,7 +4,7 @@ import { gearPersistenceCodec } from "@/features/alchemy/shared/stores/gear-stor
 import { runProfilePersistenceCodec } from "@/features/alchemy/shared/stores/run-profile-codec";
 import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import type { ActiveRunData } from "@/lib/active-run-session";
-import type { AlchemyPersistenceFields, SaveData } from "./types";
+import type { AlchemyPersistenceFields, UnstampedSaveData } from "./types";
 import {
   subscribeRunSessionCommits,
   dispatchRunSessionCommand,
@@ -46,7 +46,7 @@ export function subscribeAlchemyPersistence(listener: () => void): () => void {
   };
 }
 
-export function buildAlchemySaveDataFromStores(activeRun: ActiveRunData | null): SaveData {
+export function buildAlchemySaveDataFromStores(activeRun: ActiveRunData | null): UnstampedSaveData {
   const persistenceFields = encodePersistenceFields();
   return {
     saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
@@ -54,6 +54,5 @@ export function buildAlchemySaveDataFromStores(activeRun: ActiveRunData | null):
     contentVersion: CURRENT_CONTENT_VERSION,
     ...persistenceFields,
     activeRun,
-    lastSavedAt: 0,
   };
 }

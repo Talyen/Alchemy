@@ -1,9 +1,10 @@
-import type { BattleState } from "@/lib/battle";
+import type { BattleSnapshot } from "@/lib/battle";
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 
 const DOT_STATUSES = new Set(["burn", "poison", "bleed"]);
 const CONTROL_STATUSES = new Set(["stun", "freeze"]);
-// Skill-floor priorities, not predicted combat outcomes. Changing these weights changes the policy.
+// Skill-floor priorities shared by the balance simulator and live autoplay.
+// Changing these weights changes both offline reports and autoplay picks.
 const EFFECT_SCORE = {
   defense: 0.5,
   cleanse: 3,
@@ -16,7 +17,7 @@ const EFFECT_SCORE = {
   wish: 3,
 } as const;
 
-function scoreEffects(effects: readonly BattleCardEffect[], state: BattleState): number {
+function scoreEffects(effects: readonly BattleCardEffect[], state: BattleSnapshot): number {
   let total = 0;
   for (const effect of effects) {
     total += scoreEffect(effect, state);
@@ -24,7 +25,7 @@ function scoreEffects(effects: readonly BattleCardEffect[], state: BattleState):
   return total;
 }
 
-function scoreEffect(effect: BattleCardEffect, state: BattleState): number {
+function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot): number {
   switch (effect.kind) {
     case "damage":
       return effect.equalToForge ? state.playerStatuses.forge : effect.amount;
@@ -105,7 +106,7 @@ export function getImmediateDefense(card: BattleCard): number {
   }, 0);
 }
 
-export function getEffectiveDamageScore(card: BattleCard, state: BattleState): number {
+export function getEffectiveDamageScore(card: BattleCard, state: BattleSnapshot): number {
   return scoreEffects(card.effects, state);
 }
 

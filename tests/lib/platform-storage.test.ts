@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { installDesktopApi } from "../helpers/desktop-save-mock-helper";
-import { createPlatformSaveBackend } from "@/lib/platform-save-backend";
+import {
+  createBrowserSaveBackend,
+  createDesktopSaveBackend,
+  createPlatformSaveBackend,
+} from "@/lib/platform-save-backend";
 
 function createMockStorage() {
   const data = new Map<string, string>();
@@ -130,5 +134,34 @@ describe("platform save backend", () => {
     ).resolves.toEqual({ ok: true });
     expect(order).toEqual(["local", "cloud"]);
     vi.mocked(console.warn).mockRestore();
+  });
+
+  it("defers desktop exit flushes to the async queue", () => {
+    installDesktopApi({});
+    expect(createDesktopSaveBackend().writeSync("ignored", "payload")).toBeNull();
+  });
+
+  it("reports desktop unavailability instead of throwing when used directly", async () => {
+    window.alchemyDesktop = undefined;
+    const backend = createDesktopSaveBackend();
+    await expect(backend.readCandidates("ignored")).resolves.toEqual({ ok: false, error: expect.anything() });
+    await expect(backend.write("ignored", "payload")).resolves.toEqual({ ok: false, error: expect.anything() });
+    // Sync writes always defer to the async queue on desktop, even without an API.
+    expect(backend.writeSync("ignored", "payload")).toBeNull();
+    await expect(backend.clear("ignored")).resolves.toEqual({ ok: false, error: expect.anything() });
+  });
+
+  it("reports browser storage failure instead of throwing without browser globals", async () => {
+    vi.stubGlobal("window", undefined);
+    vi.stubGlobal("localStorage", undefined);
+    try {
+      const backend = createBrowserSaveBackend();
+      await expect(backend.readCandidates("ignored")).resolves.toEqual({ ok: false, error: expect.anything() });
+      await expect(backend.write("ignored", "payload")).resolves.toEqual({ ok: false, error: expect.anything() });
+      expect(backend.writeSync("ignored", "payload")).toEqual({ ok: false, error: expect.anything() });
+      await expect(backend.clear("ignored")).resolves.toEqual({ ok: false, error: expect.anything() });
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

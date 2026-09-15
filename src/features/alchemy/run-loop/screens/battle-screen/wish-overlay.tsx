@@ -18,6 +18,8 @@ import { WISH_OVERLAY_Z_INDEX } from "@/lib/game-constants";
 import type { BattleActionsProps, BattleScreenState } from "./types";
 import { useBattleDescriptionContext } from "./use-battle-description-context";
 import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
+import { useUiStore } from "../../../shared/stores/ui-store";
+import { getHoverId } from "../../../shared/utils";
 
 function WishCardItem({
   card,
@@ -31,11 +33,14 @@ function WishCardItem({
   descriptionContext: CardDescriptionContext;
 }) {
   const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard("wish", card.id);
+  // Autoplay previews reuse the hover lift without the description popup.
+  const isPreview = useUiStore((s) => s.autoplayPreviewCardId === getHoverId("wish", card.id));
 
   return (
     <BattleCardButton
       card={card}
-      hovered={isHovered}
+      hovered={isHovered || isPreview}
+      suppressTooltip={isPreview && !isHovered}
       onHoverStart={onHoverStart}
       onHoverEnd={onHoverEnd}
       onClick={() => onSelect(card)}
