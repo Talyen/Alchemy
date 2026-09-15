@@ -6,6 +6,7 @@ import {
   gearDefinitionList,
   gearDefinitions,
   gearAffixCatalog,
+  uniqueItemList,
   GEAR_AFFIX_IDS,
   GEAR_EFFECT_KEYS,
   GEAR_RARITIES,
@@ -76,6 +77,50 @@ function validateGearAffixes(collector: ReturnType<typeof createCollector>): voi
   }
 }
 
+function validateUniqueItems(collector: ReturnType<typeof createCollector>): void {
+  const baseItemIds = new Set(Object.keys(gearBaseItems));
+  const seenBases = new Set<string>();
+  const seenSignatures = new Set<string>();
+  for (const unique of uniqueItemList) {
+    if (!baseItemIds.has(unique.baseItemId)) {
+      collector.error("gear", unique.id, `Unique references unknown base item ${unique.baseItemId}`);
+    }
+    if (seenBases.has(unique.baseItemId)) {
+      collector.error("gear", unique.id, `Duplicate unique for base item ${unique.baseItemId}`);
+    }
+    seenBases.add(unique.baseItemId);
+    if (seenSignatures.has(unique.signatureAffix.id)) {
+      collector.error("gear", unique.id, `Duplicate unique signature ${unique.signatureAffix.id}`);
+    }
+    seenSignatures.add(unique.signatureAffix.id);
+    const signature = gearAffixCatalog[unique.signatureAffix.id];
+    if (!signature?.uniqueOnly) {
+      collector.error("gear", unique.id, `Signature ${unique.signatureAffix.id} must be uniqueOnly`);
+    }
+    if (unique.supportingAffixes.length !== 3) {
+      collector.error("gear", unique.id, "Unique must have exactly three supporting affixes");
+    }
+    for (const supporting of unique.supportingAffixes) {
+      const def = gearAffixCatalog[supporting.id];
+      if (def?.uniqueOnly) {
+        collector.error("gear", unique.id, `Supporting affix ${supporting.id} must not be uniqueOnly`);
+      }
+      if (def && supporting.value !== def.roll.unique.max) {
+        collector.error(
+          "gear",
+          unique.id,
+          `Supporting affix ${supporting.id} must roll the unique maximum (${def.roll.unique.max})`,
+        );
+      }
+    }
+  }
+  for (const baseItemId of baseItemIds) {
+    if (!seenBases.has(baseItemId)) {
+      collector.error("gear", baseItemId, "Base item has no unique item");
+    }
+  }
+}
+
 export function validateGear(collector: ReturnType<typeof createCollector>): void {
   const baseItems = Object.values(gearBaseItems);
   addDuplicateIssues(
@@ -95,4 +140,5 @@ export function validateGear(collector: ReturnType<typeof createCollector>): voi
   validateBaseItems(collector);
   validateGearDefinitions(collector);
   validateGearAffixes(collector);
+  validateUniqueItems(collector);
 }

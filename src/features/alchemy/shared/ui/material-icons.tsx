@@ -5,7 +5,9 @@ import {
   resourceFood,
   resourceGold,
   resourceHerbs,
+  resourceHide,
   resourceIron,
+  resourceStone,
   resourceWood,
 } from "@/lib/game-data";
 
@@ -13,10 +15,12 @@ export type HomesteadResource = MaterialId | "gold";
 
 const RESOURCE_ART_MAP: Record<HomesteadResource, string> = {
   wood: resourceWood,
+  stone: resourceStone,
   iron: resourceIron,
-  herbs: resourceHerbs,
   food: resourceFood,
-  gems: resourceCrystal,
+  herbs: resourceHerbs,
+  hide: resourceHide,
+  crystal: resourceCrystal,
   gold: resourceGold,
 };
 
@@ -27,18 +31,22 @@ const RESOURCE_LABELS: Record<HomesteadResource, string> = {
 
 export const matTextColor: Record<MaterialId, string> = {
   wood: "text-[#AC8E68]",
+  stone: "text-[#8E8E93]",
   iron: "text-[#8CA2B8]",
-  herbs: "text-[#30D158]",
   food: "text-[#FF9F0A]",
-  gems: "text-[#0A84FF]",
+  herbs: "text-[#30D158]",
+  hide: "text-[#D94F30]",
+  crystal: "text-[#0A84FF]",
 };
 
 export const matPillStyle: Record<MaterialId, string> = {
   wood: "bg-[#AC8E68]/15 border-[#AC8E68]/30",
+  stone: "bg-[#8E8E93]/15 border-[#8E8E93]/30",
   iron: "bg-[#4C637A]/20 border-[#4C637A]/30",
-  herbs: "bg-[#30D158]/15 border-[#30D158]/30",
   food: "bg-[#FF9F0A]/15 border-[#FF9F0A]/30",
-  gems: "bg-[#0A84FF]/15 border-[#0A84FF]/30",
+  herbs: "bg-[#30D158]/15 border-[#30D158]/30",
+  hide: "bg-[#D94F30]/15 border-[#D94F30]/30",
+  crystal: "bg-[#0A84FF]/15 border-[#0A84FF]/30",
 };
 
 export const goldTextColor = "text-[#D6B85A]";
@@ -142,7 +150,7 @@ export function HomesteadResourceWallet({
 }) {
   return (
     <div className={cn("mx-auto w-full max-w-4xl", className)}>
-      <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-6">
+      <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-8">
         <TrinketWalletResourcePill resource="gold" amount={gold} />
         {MATERIAL_IDS.map((mat) => (
           <TrinketWalletResourcePill key={mat} resource={mat} amount={materialInventory[mat] ?? 0} />

@@ -24,20 +24,27 @@ function allowedAspectsForDefinition(def: GearDefinition): GearAffixAspect[] {
   return ["defensive"];
 }
 
-const eligibleAffixPoolCache = new Map<string, GearAffixDefinition[]>();
+const eligibleAffixPoolCache = new Map<string, readonly GearAffixDefinition[]>();
 
 function eligibleAffixCacheKey(definition: GearDefinition): string {
+  // Safe to key on base item: buildVariantDefinitions copies compatibleSlots
+  // and affinityKeywords straight from the base item, so same base always
+  // yields the same pool. The cached array is frozen; copy before mutating.
   return definition.baseItemId;
 }
 
-export function buildEligibleAffixPool(definition: GearDefinition): GearAffixDefinition[] {
+export function buildEligibleAffixPool(definition: GearDefinition): readonly GearAffixDefinition[] {
   const cacheKey = eligibleAffixCacheKey(definition);
   const cached = eligibleAffixPoolCache.get(cacheKey);
   if (cached) return cached;
   const allowedAspects = new Set(allowedAspectsForDefinition(definition));
-  const pool = gearAffixList.filter(
-    (affix) =>
-      !affix.uniqueOnly && allowedAspects.has(affix.aspect) && affixMatchesAffinity(affix, definition.affinityKeywords),
+  const pool = Object.freeze(
+    gearAffixList.filter(
+      (affix) =>
+        !affix.uniqueOnly &&
+        allowedAspects.has(affix.aspect) &&
+        affixMatchesAffinity(affix, definition.affinityKeywords),
+    ),
   );
   eligibleAffixPoolCache.set(cacheKey, pool);
   return pool;

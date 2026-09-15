@@ -20,6 +20,7 @@ import {
   readRunSession,
 } from "@/features/alchemy/shared/stores/run-reads";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
+import { emptyInventory } from "@/lib/homestead/inventory";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   addMaterials,
@@ -43,7 +44,7 @@ beforeEach(() => {
 describe("clearAllPersistentGameData", () => {
   it("wipes app, run permanent data, and homestead after a successful disk clear", async () => {
     dispatchRunSessionCommand((draft) => {
-      addMaterials(draft, { wood: 10, iron: 0, herbs: 0, food: 0, gems: 0 });
+      addMaterials(draft, { wood: 10, iron: 0, herbs: 0, food: 0, crystal: 0, stone: 0, hide: 0 });
       setDiscoveredCardIds(draft, ["card-a"]);
     });
     setRunProgress({ unlockedTalents: { physical: ["test-talent"] } });
@@ -51,13 +52,7 @@ describe("clearAllPersistentGameData", () => {
     await expect(clearAllPersistentGameData()).resolves.toBe(true);
 
     expect(mockedClearSave).toHaveBeenCalledWith("localWipe");
-    expect(readRunProfile().materialInventory).toEqual({
-      wood: 0,
-      iron: 0,
-      herbs: 0,
-      food: 0,
-      gems: 0,
-    });
+    expect(readRunProfile().materialInventory).toEqual(emptyInventory());
     expect(readRunProfile().unlockedTalents).toEqual({});
     expect(readProfileStore().discoveredCardIds).toEqual(defaultSaveData.discoveredCardIds);
     expect(readProfileStore().discoveredCardIds).not.toContain("card-a");
@@ -81,7 +76,7 @@ describe("clearAllPersistentGameData", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     mockedClearSave.mockResolvedValue(false);
     dispatchRunSessionCommand((draft) => {
-      addMaterials(draft, { wood: 10, iron: 0, herbs: 0, food: 0, gems: 0 });
+      addMaterials(draft, { wood: 10, iron: 0, herbs: 0, food: 0, crystal: 0, stone: 0, hide: 0 });
       setDiscoveredCardIds(draft, ["card-a"]);
     });
     setRunProgress({ unlockedTalents: { physical: ["test-talent"] } });

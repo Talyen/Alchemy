@@ -11,10 +11,12 @@ import type { GearAffixRoll, GearDefinition, GearInstance, GearRarity } from "./
 export { buildEligibleAffixPool } from "./affix-pool";
 
 export function generateUniqueGearInstance(uniqueDef: UniqueItemDefinition): GearInstance {
+  // Unique affixes are canonical per definition (see getUniqueAffixes); the
+  // instance stores no rolls so saved items can never diverge from the catalog.
   return {
     instanceId: createInstanceId(),
     definitionId: uniqueDef.id,
-    affixes: [uniqueDef.signatureAffix, ...uniqueDef.supportingAffixes].map((affix) => ({ ...affix })),
+    affixes: [],
   };
 }
 
@@ -142,18 +144,22 @@ function generateGearOfferings({
     const eligible = unused.length > 0 ? unused : fillCount ? repeatable : [];
     if (eligible.length === 0) break;
     const excluded = new Set([...ownedUniqueIds, ...offeredUniqueIds]);
-    const available = getGearLootAvailability(
+    const unusedAvailability = getGearLootAvailability(
       excluded,
-      eligible.map((base) => base.id),
+      unused.map((base) => base.id),
     );
+    // When nothing is left unused, eligibility falls back to repeatables, but
+    // Unique availability is still gated on the unused set (a Unique must
+    // never pair with another offering of its base).
+    const available =
+      eligible === unused
+        ? unusedAvailability
+        : getGearLootAvailability(
+            excluded,
+            eligible.map((base) => base.id),
+          );
     available.unique =
-      Boolean(
-        getGearLootAvailability(
-          excluded,
-          unused.map((base) => base.id),
-        ).unique,
-      ) &&
-      (index === count - 1 || !fillCount || repeatable.length > 1);
+      Boolean(unusedAvailability.unique) && (index === count - 1 || !fillCount || repeatable.length > 1);
     const instance = rollOfferingInstance(
       rollTier(available),
       ownedUniqueIds,
@@ -234,7 +240,15 @@ export function generateGearRewardChoicesForRarities(
 export function rollAffixCount(rarity: GearRarity, rng: () => number): number {
   const range = GEAR_AFFIX_COUNT[rarity];
   if (range.max <= range.min) return range.min;
-  return rng() < GEAR_AFFIX_COUNT_MIN_WEIGHT ? range.min : range.max;
+  const draw = rng();
+  if (draw < GEAR_AFFIX_COUNT_MIN_WEIGHT) return range.min;
+  // Uniform across the remaining counts so wider future ranges can hit middles.
+  const rest = range.max - range.min;
+  return (
+    range.min +
+    1 +
+    Math.min(rest - 1, Math.floor(((draw - GEAR_AFFIX_COUNT_MIN_WEIGHT) / (1 - GEAR_AFFIX_COUNT_MIN_WEIGHT)) * rest))
+  );
 }
 
 export function createGearInstance(definition: GearDefinition, affixes: GearAffixRoll[] = []): GearInstance {

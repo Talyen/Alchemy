@@ -192,7 +192,11 @@ export function ArmoryScreen({
   const handleEquipGear = useCallback(
     (instance: GearInstance) => {
       requireEditable(() => {
-        if (selectedSlot !== "trinket") onEquip(characterId, selectedSlot, instance);
+        if (selectedSlot === "trinket") return;
+        if (!onEquip(characterId, selectedSlot, instance)) {
+          setNotice("That item cannot be equipped there.");
+          playUISound("error");
+        }
       });
     },
     [requireEditable, selectedSlot, onEquip, characterId],
@@ -344,8 +348,8 @@ export function ArmoryScreen({
           activeCurrencyId={activeCurrencyId}
           editable={editable}
           equippedCharacterName={equippedSalvageCharacter ? characters[equippedSalvageCharacter].name : null}
-          onSalvage={(instanceId, salvageYield) => {
-            const success = onSalvage(instanceId, salvageYield);
+          onSalvage={(instanceId) => {
+            const success = onSalvage(instanceId);
             if (success)
               setNotice(
                 `${salvagePending ? getGearInstanceTitle(salvagePending.instance) : "Item"} salvaged. Rewards added.`,

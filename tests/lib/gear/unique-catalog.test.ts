@@ -6,6 +6,7 @@ import {
   generateUniqueGearInstance,
   gearAffixCatalog,
   gearBaseItemList,
+  getGearInstanceAffixes,
   normalizeGearInstance,
   effectsForInstance,
   getGearInstanceTooltipEntries,
@@ -42,9 +43,9 @@ describe("unique item catalog", () => {
 
       const instance = generateUniqueGearInstance(unique);
       expect(instance.definitionId).toBe(unique.id);
-      expect(instance.affixes).toHaveLength(4);
-      expect(instance.affixes[0]).toEqual(unique.signatureAffix);
-      expect(instance.affixes.slice(1)).toEqual(unique.supportingAffixes);
+      // Instances store no rolls; affixes resolve canonically per definition.
+      expect(instance.affixes).toEqual([]);
+      expect(getGearInstanceAffixes(instance)).toEqual([unique.signatureAffix, ...unique.supportingAffixes]);
       expect(getGearInstanceTitle(instance)).toBe(unique.displayName);
     }
   });
@@ -97,7 +98,9 @@ describe("fixed Unique compatibility", () => {
     };
     const expected = [unique.signatureAffix, ...unique.supportingAffixes];
     const normalized = normalizeGearInstance(original)!;
-    expect(normalized).toEqual({ ...original, affixes: expected });
+    // Divergent stored rolls are dropped; reads resolve the canonical affixes.
+    expect(normalized).toEqual({ ...original, affixes: [] });
+    expect(getGearInstanceAffixes(normalized)).toEqual(expected);
     expect(normalizeGearInstance(normalized)).toEqual(normalized);
     expect(effectsForInstance(original)).toEqual(effectsForInstance(normalized));
     expect(getGearInstanceTooltipEntries(original)).toEqual(getGearInstanceTooltipEntries(normalized));
@@ -112,10 +115,10 @@ describe("fixed Unique compatibility", () => {
 
   it("does not share mutable rolls between instances or the catalog", () => {
     const unique = uniqueItemList[0];
-    const first = generateUniqueGearInstance(unique);
-    const second = generateUniqueGearInstance(unique);
-    first.affixes[1].value = 999;
-    expect(second.affixes[1]).toEqual(unique.supportingAffixes[0]);
+    const first = getGearInstanceAffixes(generateUniqueGearInstance(unique));
+    const second = getGearInstanceAffixes(generateUniqueGearInstance(unique));
+    first[1].value = 999;
+    expect(second[1]).toEqual(unique.supportingAffixes[0]);
     expect(unique.supportingAffixes[0].value).not.toBe(999);
   });
 });

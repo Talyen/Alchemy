@@ -13,7 +13,7 @@ import {
 import { initializeActiveRun } from "@/features/alchemy/shared/stores/write-port-run";
 import { readActiveRun, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
-import { computeSalvageYield, createEmptyGearInventories, type GearInstance } from "@/lib/gear";
+import { createEmptyGearInventories, type GearInstance } from "@/lib/gear";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { flushSaveAfterGearMutation } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
 
@@ -42,11 +42,10 @@ describe("useArmoryController", () => {
     mutateGearForTest((gear) => gear.initialize(inventories, gear.loadouts));
 
     const { result } = renderHook(() => useArmoryController());
-    const salvageYield = computeSalvageYield(armor);
 
     act(() => {
       dispatchRunSessionCommand((draft) => setMaterials(draft, emptyInventory()));
-      expect(result.current.onSalvage(armor.instanceId, salvageYield)).toBe(true);
+      expect(result.current.onSalvage(armor.instanceId)).toBe(true);
     });
 
     expect(flushSaveAfterGearMutation).toHaveBeenCalledWith(null);
@@ -94,10 +93,9 @@ describe("useArmoryController", () => {
     });
 
     const { result } = renderHook(() => useArmoryController());
-    const salvageYield = computeSalvageYield(armor);
 
     act(() => {
-      expect(result.current.onSalvage(armor.instanceId, salvageYield)).toBe(true);
+      expect(result.current.onSalvage(armor.instanceId)).toBe(true);
     });
 
     expect(readRunProfile().materialInventory.iron).toBe(9);
@@ -194,7 +192,7 @@ describe("useArmoryController", () => {
     const { result } = renderHook(() => useArmoryController());
 
     act(() => {
-      expect(result.current.onSalvage("missing", { currencies: {}, materials: {} } as never)).toBe(false);
+      expect(result.current.onSalvage("missing")).toBe(false);
     });
     expect(flushSaveAfterGearMutation).not.toHaveBeenCalled();
 

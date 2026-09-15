@@ -6,7 +6,6 @@ import type {
   GearLoadouts,
   GearSlot,
   EquippedTrinkets,
-  SalvageYield,
 } from "@/lib/gear";
 import type { MaterialInventory } from "@/lib/homestead/types";
 
@@ -42,10 +41,7 @@ export interface GearStore {
   addTrinket: (trinketId: string) => boolean;
   equipTrinket: (characterId: CharacterId, trinketId: string) => boolean;
   unequipTrinket: (characterId: CharacterId) => boolean;
-  salvage: (
-    instanceId: string,
-    options?: { yield?: SalvageYield },
-  ) => {
+  salvage: (instanceId: string) => {
     inventories: GearInventories;
     yieldedCurrencies: Record<CraftingCurrencyId, number>;
     yieldedMaterials: MaterialInventory;

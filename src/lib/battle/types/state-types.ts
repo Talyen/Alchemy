@@ -121,7 +121,7 @@ export type CombatTextStat =
   | "health"
   | "mana"
   | "gold"
-  | "gems"
+  | "crystal"
   | "dodge"
   | "deathsDoor";
 

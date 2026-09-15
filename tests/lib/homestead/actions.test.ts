@@ -47,8 +47,8 @@ describe("homestead-actions", () => {
 
     it("sets materials on profile directly", () => {
       const profile = createInitialPermanentFields();
-      setMaterials(profile, { ...emptyInventory(), gems: 99 });
-      expect(profile.materialInventory.gems).toBe(99);
+      setMaterials(profile, { ...emptyInventory(), crystal: 99 });
+      expect(profile.materialInventory.crystal).toBe(99);
       expect(profile.materialInventory.wood).toBe(0);
     });
   });
@@ -64,12 +64,13 @@ describe("homestead-actions", () => {
 
     it("upgrades building, deducts cost, and updates computed effects", () => {
       const profile = createInitialPermanentFields();
-      profile.materialInventory = { ...emptyInventory(), iron: 50 };
+      profile.materialInventory = { ...emptyInventory(), iron: 50, stone: 50 };
 
       const success = constructBuilding(profile, "blacksmiths-forge");
       expect(success).toBe(true);
       expect(profile.constructedBuildings["blacksmiths-forge"]).toBe(1);
       expect(profile.materialInventory.iron).toBe(30);
+      expect(profile.materialInventory.stone).toBe(40);
       expect(profile.effects.flatPhysicalDamage).toBe(1);
       expect(profile.effects.forgeToBurn).toBe(true);
     });
@@ -99,7 +100,7 @@ describe("homestead-actions", () => {
 
     it("completes research and updates computed effects", () => {
       const profile = createInitialPermanentFields();
-      profile.materialInventory = { ...emptyInventory(), gems: 100 };
+      profile.materialInventory = { ...emptyInventory(), crystal: 100 };
 
       const success = completeResearch(profile, "leyline-energy");
       expect(success).toBe(true);

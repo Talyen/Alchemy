@@ -15,7 +15,7 @@ interface Props {
   activeCurrencyId: CraftingCurrencyId | null;
   equippedCharacterName: string | null;
   editable: boolean;
-  onSalvage: (instanceId: string, salvageYield: ArmorySalvagePending["yield"]) => boolean;
+  onSalvage: (instanceId: string) => boolean;
   onClearSalvageTarget: () => void;
 }
 
@@ -70,7 +70,7 @@ export function ArmoryOverlays({
             onClearSalvageTarget();
             return;
           }
-          if (onSalvage(heldPending.instance.instanceId, heldPending.yield)) {
+          if (onSalvage(heldPending.instance.instanceId)) {
             playUISound("salvage");
             onClearSalvageTarget();
           } else {

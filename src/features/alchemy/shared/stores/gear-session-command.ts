@@ -1,4 +1,4 @@
-import { gearDefinitions } from "@/lib/gear";
+import { findGearEquippedCharacter, findGearInventoryOwner, gearDefinitions } from "@/lib/gear";
 import { current } from "immer";
 import { deriveGearCombatRestrictions } from "./gear-combat-restrictions";
 import type { GearStore } from "./gear-store-types";
@@ -23,6 +23,16 @@ import { rebindLiveRunMeta } from "./run-meta-rebind";
 function gearCommandView(state: GameplayDraft): GearStore {
   const gear = state.gear;
   const restrictions = deriveGearCombatRestrictions(state);
+  // restrictions.gear only tracks equipped items of the locked hero; an
+  // unequipped item sitting in their inventory is locked too.
+  const isInstanceLocked = (instanceId: string): boolean => {
+    if (restrictions.gear[instanceId]) return true;
+    const owner = findGearInventoryOwner(gear.inventories, instanceId);
+    if (owner && restrictions.characters[owner]) return true;
+    const equippedBy = findGearEquippedCharacter(gear.loadouts, instanceId);
+    if (equippedBy && restrictions.characters[equippedBy]) return true;
+    return false;
+  };
   return {
     get inventories() {
       return gear.inventories;
@@ -64,12 +74,12 @@ function gearCommandView(state: GameplayDraft): GearStore {
       if (restrictions.characters[characterId]) return false;
       return unequipPermanentTrinket(gear, characterId);
     },
-    salvage: (instanceId, options) => {
-      if (restrictions.gear[instanceId]) return null;
-      return salvageGearInstance(gear, instanceId, options);
+    salvage: (instanceId) => {
+      if (isInstanceLocked(instanceId)) return null;
+      return salvageGearInstance(gear, instanceId);
     },
     applyCurrency: (currencyId, instanceId, options) => {
-      if (restrictions.gear[instanceId]) return false;
+      if (isInstanceLocked(instanceId)) return false;
       return applyGearCurrency(gear, currencyId, instanceId, options);
     },
     addCurrencies: (currencies) => addGearCurrencies(gear, currencies),
@@ -93,7 +103,10 @@ export function mutateGearWithRunHealthSync<T>(
 ): T & SynchronousResult<T> {
   const before = current(draft.gear);
   const result = options.mutate(gearCommandView(draft));
-  if (current(draft.gear) !== before && (options.syncRunHealth ?? draft.session.activity.kind !== "inactive")) {
+  // current() snapshots are never referentially equal, so compare by value:
+  // failed or rejected mutations must not rebind live battle meta.
+  const changed = JSON.stringify(current(draft.gear)) !== JSON.stringify(before);
+  if (changed && (options.syncRunHealth ?? draft.session.activity.kind !== "inactive")) {
     rebindLiveRunMeta(draft);
   }
   return result;

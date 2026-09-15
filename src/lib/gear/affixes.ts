@@ -43,12 +43,15 @@ export function normalizeAffixRolls(
   return rawAffixes.flatMap((entry) => {
     if (!entry || !isGearAffixId(entry.id) || !Number.isFinite(entry.value) || entry.value <= 0) return [];
     const range = rarity ? gearAffixCatalog[entry.id].roll[rarity] : undefined;
-    return [
-      {
-        id: entry.id,
-        value: range ? clamp(Math.round(entry.value), range.min, range.max) : Math.round(entry.value),
-      },
-    ];
+    if (!range) return [{ id: entry.id, value: Math.round(entry.value) }];
+    const rounded = Math.round(entry.value);
+    const clamped = clamp(rounded, range.min, range.max);
+    if (clamped !== rounded) {
+      console.warn(
+        `normalizeAffixRolls: clamped out-of-range save value for ${entry.id} (${rounded} not in ${range.min}-${range.max})`,
+      );
+    }
+    return [{ id: entry.id, value: clamped }];
   });
 }
 

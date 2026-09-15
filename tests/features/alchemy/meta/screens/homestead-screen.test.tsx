@@ -16,7 +16,7 @@ describe("HomesteadScreen", () => {
 
   const defaultProps = {
     gold: 50,
-    materialInventory: { ...emptyInventory(), iron: 100, wood: 100, food: 100 },
+    materialInventory: { ...emptyInventory(), iron: 100, stone: 100, wood: 100, food: 100 },
     constructedBuildings: { "blacksmiths-forge": 0 } as any,
     plantedFarms: {} as any,
     completedResearch: {} as any,

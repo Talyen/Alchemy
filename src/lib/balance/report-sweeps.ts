@@ -12,7 +12,7 @@ import {
   type TalentEffectManifest,
 } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
-import { generateLootGearChoices, gearBaseItemList, gearInstanceRarity, type GearEffectManifest } from "@/lib/gear";
+import { effectsForInstance, generateLootGearChoices, gearBaseItemList, type GearEffectManifest } from "@/lib/gear";
 import { gearAffixList } from "@/lib/gear/affix-catalog";
 import { effectsForAffixRolls } from "@/lib/gear/affixes";
 import { defaultGearEffects } from "@/lib/gear/gear-effect-manifest";
@@ -375,9 +375,7 @@ export function runGearSweep(options: ReportRunOptions): PairedTierRow[] {
             new Set(),
             [item.id],
           )[0];
-          const treatmentGear = instance
-            ? effectsForAffixRolls(instance.affixes, gearInstanceRarity(instance))
-            : defaultGearEffects;
+          const treatmentGear = instance ? effectsForInstance(instance) : defaultGearEffects;
           recordComparison(options, collected, tier.preset, item.id, baseline, {
             ...shared,
             gearEffects: treatmentGear,

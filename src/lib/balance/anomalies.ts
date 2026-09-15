@@ -131,7 +131,7 @@ export function sampleAnomalies(
     if (
       ct.kind === "damage" &&
       ct.target === "player" &&
-      !["block", "armor", "forge", "thorns", "mana", "gold", "gems"].includes(ct.stat)
+      !["block", "armor", "forge", "thorns", "mana", "gold", "crystal"].includes(ct.stat)
     )
       anomalies.heroHealthDamage += ct.amount;
     if (ct.kind !== "damage" && ct.kind !== "heal") continue;

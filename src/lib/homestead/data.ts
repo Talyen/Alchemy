@@ -11,12 +11,12 @@ import {
 export const buildings = [
   defineBuilding("blacksmiths-forge", "Blacksmith", [
     {
-      cost: materialCost({ iron: 20 }),
+      cost: materialCost({ iron: 20, stone: 10 }),
       effects: { flatPhysicalDamage: 1, forgeToBurn: true },
       benefitDescription: "Increases Physical damage dealt by 1\nForge effect also increases Burn damage",
     },
     ...stackingTiers(
-      [materialCost({ iron: 30 }), materialCost({ iron: 40 })],
+      [materialCost({ iron: 30, stone: 15 }), materialCost({ iron: 40, stone: 20 })],
       { flatPhysicalDamage: 1 },
       (tier) => `Increases Physical damage dealt by ${tier + 1}`,
     ),
@@ -25,10 +25,10 @@ export const buildings = [
     "hunters-lodge",
     "Hunter's Lodge",
     stackingTiers(
-      dualMaterialCosts("wood", "food"),
-      { flatArrowDamage: 1, flatNatureDamage: 1, endRunFoodPerRoom: 1 },
+      dualMaterialCosts("wood", "hide"),
+      { flatArrowDamage: 1, flatNatureDamage: 1, endRunFoodPerRoom: 1, endRunHidePerRoom: 1 },
       (tier) => `Increases Archery and Nature damage by ${tier}`,
-      "Gain Food after each run",
+      "Gain Food and Hide after each run",
     ),
   ),
   defineBuilding("alchemy-lab", "Alchemy Lab", [
@@ -38,29 +38,29 @@ export const buildings = [
       benefitDescription: "Potions are 20% more potent",
     },
     {
-      cost: materialCost({ herbs: 30 }),
+      cost: materialCost({ herbs: 30, stone: 15 }),
       effects: { potionPotency: 0.15 },
       benefitDescription: "Potions are 35% more potent",
     },
     {
-      cost: materialCost({ herbs: 40 }),
+      cost: materialCost({ herbs: 40, stone: 20 }),
       effects: { potionPotency: 0.15 },
       benefitDescription: "Potions are 50% more potent",
     },
   ]),
   defineBuilding("runesmiths-workshop", "Runesmith", [
     {
-      cost: materialCost({ iron: 10, gems: 10 }),
+      cost: materialCost({ iron: 10, crystal: 10 }),
       effects: { flatBurnDamage: 1 },
       benefitDescription: "Increases Burn damage by 1",
     },
     {
-      cost: materialCost({ iron: 15, gems: 15 }),
+      cost: materialCost({ iron: 15, crystal: 15 }),
       effects: { flatFreezeDamage: 1 },
       benefitDescription: "Increases Burn and Freeze damage by 1",
     },
     {
-      cost: materialCost({ iron: 20, gems: 20 }),
+      cost: materialCost({ iron: 20, crystal: 20 }),
       effects: { flatNatureDamage: 1 },
       benefitDescription: "Increases Burn, Freeze, and Nature damage by 1",
     },
@@ -78,9 +78,9 @@ export const buildings = [
     "wishing-well",
     "Wishing Well",
     stackingTiers(
-      dualMaterialCosts("wood", "iron"),
+      dualMaterialCosts("stone", "wood"),
       { wishCrystalGold: 1 },
-      (tier) => `Gain ${tier} Gems or Gold when you Wish`,
+      (tier) => `Gain ${tier} Crystal or Gold when you Wish`,
     ),
   ),
 ];
@@ -137,22 +137,22 @@ export const farmPlots = [
   ),
   defineFarm("crystal-garden", "Crystal Garden", [
     {
-      cost: materialCost({ gems: 20 }),
-      effects: { endRunGemsPerRoom: 2 },
+      cost: materialCost({ stone: 10, crystal: 20 }),
+      effects: { endRunCrystalPerRoom: 2 },
       benefitDescription: "",
-      nonCombatBenefitDescription: "Gain Gems after each run",
+      nonCombatBenefitDescription: "Gain Crystal after each run",
     },
     {
-      cost: materialCost({ gems: 30 }),
-      effects: { startMana: 1, endRunGemsPerRoom: 2 },
+      cost: materialCost({ stone: 15, crystal: 30 }),
+      effects: { startMana: 1, endRunCrystalPerRoom: 2 },
       benefitDescription: "Start combat with 1 additional Mana",
-      nonCombatBenefitDescription: "Gain Gems after each run",
+      nonCombatBenefitDescription: "Gain Crystal after each run",
     },
     {
-      cost: materialCost({ gems: 40 }),
-      effects: { runMaxManaBonus: 1, endRunGemsPerRoom: 2 },
+      cost: materialCost({ stone: 20, crystal: 40 }),
+      effects: { runMaxManaBonus: 1, endRunCrystalPerRoom: 2 },
       benefitDescription: "Gain 1 Mana Crystal",
-      nonCombatBenefitDescription: "Gain Gems after each run",
+      nonCombatBenefitDescription: "Gain Crystal after each run",
     },
   ]),
 ];
@@ -160,36 +160,36 @@ export const farmPlots = [
 export const researchUpgrades = [
   defineResearch("leyline-energy", "Leyline Energy", [
     {
-      cost: materialCost({ gems: 20 }),
+      cost: materialCost({ crystal: 20 }),
       effects: { startMana: 1 },
       benefitDescription: "Increases starting Mana by 1",
     },
     {
-      cost: materialCost({ gems: 30 }),
-      effects: { startMana: 1, endRunGemsPerRoom: 1 },
+      cost: materialCost({ crystal: 30 }),
+      effects: { startMana: 1, endRunCrystalPerRoom: 1 },
       benefitDescription: "Increases starting Mana by 2",
-      nonCombatBenefitDescription: "Gain Gems after each run",
+      nonCombatBenefitDescription: "Gain Crystal after each run",
     },
     {
-      cost: materialCost({ gems: 40 }),
-      effects: { startMana: 2, endRunGemsPerRoom: 1 },
+      cost: materialCost({ crystal: 40 }),
+      effects: { startMana: 2, endRunCrystalPerRoom: 1 },
       benefitDescription: "Increases starting Mana by 4",
-      nonCombatBenefitDescription: "Gain Gems after each run",
+      nonCombatBenefitDescription: "Gain Crystal after each run",
     },
   ]),
   defineResearch("detect-magic", "Detect Magic", [
     {
-      cost: materialCost({ gems: 20 }),
+      cost: materialCost({ crystal: 20 }),
       effects: { gearAstralChanceBonus: 0.03 },
       benefitDescription: "3% increased chance to find higher rarity equipment",
     },
     {
-      cost: materialCost({ gems: 30 }),
+      cost: materialCost({ crystal: 30 }),
       effects: { gearAstralChanceBonus: 0.03 },
       benefitDescription: "6% increased chance to find higher rarity equipment",
     },
     {
-      cost: materialCost({ gems: 40 }),
+      cost: materialCost({ crystal: 40 }),
       effects: { gearAstralChanceBonus: 0.04 },
       benefitDescription: "10% increased chance to find higher rarity equipment",
     },
@@ -214,17 +214,17 @@ export const researchUpgrades = [
   ),
   defineResearch("wool-tailoring", "Wool Tailoring", [
     {
-      cost: materialCost({ food: 20 }),
+      cost: materialCost({ wood: 10, hide: 10 }),
       effects: { freezeDamageReduction: 1 },
       benefitDescription: "Reduces Freeze damage taken by 1",
     },
     {
-      cost: materialCost({ food: 30 }),
+      cost: materialCost({ wood: 15, hide: 15 }),
       effects: { burnDamageReduction: 1 },
       benefitDescription: "Reduces Freeze and Burn damage taken by 1",
     },
     {
-      cost: materialCost({ food: 40 }),
+      cost: materialCost({ wood: 20, hide: 20 }),
       effects: { natureDamageReduction: 1 },
       benefitDescription: "Reduces Freeze, Burn, and Nature damage taken by 1",
     },
@@ -233,7 +233,7 @@ export const researchUpgrades = [
     "agility-training",
     "Agility Training",
     stackingTiers(
-      singleMaterialCosts("food"),
+      dualMaterialCosts("food", "hide"),
       { companionDamage: 1 },
       (tier) => `Companion damage increased by ${tier}`,
     ),

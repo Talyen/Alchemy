@@ -4,7 +4,7 @@ import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { getTalentTreeKeywordIds } from "@/lib/game-data";
 
-const RICH = { wood: 999, iron: 999, herbs: 999, food: 999, gems: 999 };
+const RICH = { wood: 999, iron: 999, herbs: 999, food: 999, crystal: 999, stone: 0, hide: 0 };
 
 function freshProgress() {
   return {

@@ -88,7 +88,8 @@ function resolveHandConflicts(
   }
   const offHandDef = resolveEquippedDefinitionAt(inventory, characterLoadout, "off-hand");
   if (!offHandDef) return characterLoadout;
-  if (isTwoHanded(offHandDef)) return { ...characterLoadout, "off-hand": null };
+  // Note: no off-hand-compatible base is two-handed (two-handers are all
+  // main-hand only), so only quiver/range pairing needs repair here.
   if (isQuiver(offHandDef) && !isRangedWeapon(definition)) return { ...characterLoadout, "off-hand": null };
   if (isRangedWeapon(definition) && !isQuiver(offHandDef)) return { ...characterLoadout, "off-hand": null };
   return characterLoadout;
@@ -205,11 +206,18 @@ export function normalizeGearInstance(raw: unknown): GearInstance | null {
   if (!instanceId || !definitionId || !gearDefinitions[definitionId]) return null;
 
   const rawAffixes = readAffixEntries(raw.affixes);
+  const definition = gearDefinitions[definitionId];
+
+  // Unique affixes resolve canonically at read time; stored rolls are dropped
+  // so older saves carrying them converge on the catalog without a migration.
+  if (getUniqueAffixes(definitionId)) {
+    return { instanceId, definitionId, affixes: [] };
+  }
 
   return {
     instanceId,
     definitionId,
-    affixes: getUniqueAffixes(definitionId) ?? normalizeAffixRolls(rawAffixes, gearDefinitions[definitionId].rarity),
+    affixes: normalizeAffixRolls(rawAffixes, definition.rarity),
   };
 }
 

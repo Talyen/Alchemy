@@ -14,7 +14,7 @@ describe("HomesteadUpgradeNode", () => {
 
   it("renders clickable art tile when affordable and fires onAction", () => {
     const onAction = vi.fn();
-    const inventory = { ...emptyInventory(), iron: 100 };
+    const inventory = { ...emptyInventory(), iron: 100, stone: 100 };
     const { container } = render(
       <HomesteadUpgradeNode item={buildingItem} currentLevel={0} materialInventory={inventory} onAction={onAction} />,
     );

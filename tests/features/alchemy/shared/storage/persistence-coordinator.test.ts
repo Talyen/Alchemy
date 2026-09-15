@@ -50,7 +50,7 @@ describe("persistence coordinator", () => {
       musicVolume: 37,
       discoveredCardIds: ["slash"],
       talentXP: { burn: 25 },
-      materialInventory: { wood: 4, iron: 3, herbs: 2, food: 1, gems: 0 },
+      materialInventory: { wood: 4, iron: 3, herbs: 2, food: 1, crystal: 0, stone: 0, hide: 0 },
     });
 
     useSettingsStore.getState().setShowClearSaveConfirm(true);
@@ -61,7 +61,7 @@ describe("persistence coordinator", () => {
     expect(encoded.musicVolume).toBe(37);
     expect(encoded.discoveredCardIds).toEqual(["slash"]);
     expect(encoded.talentXP).toEqual({ burn: 25 });
-    expect(encoded.materialInventory).toEqual({ wood: 4, iron: 3, herbs: 2, food: 1, gems: 0 });
+    expect(encoded.materialInventory).toEqual({ wood: 4, iron: 3, herbs: 2, food: 1, crystal: 0, stone: 0, hide: 0 });
     expect(encoded).not.toHaveProperty("showClearSaveConfirm");
     expect(encoded).not.toHaveProperty("collectionTab");
   });
@@ -86,7 +86,7 @@ describe("persistence coordinator", () => {
     dispatchRunSessionCommand((draft) => setDiscoveredCardIds(draft, ["slash"]));
     mutateGearForTest((gear) => gear.addCurrencies({ voidstone: 1 }));
     dispatchRunSessionCommand((draft) =>
-      setRunProfileMaterials(draft, { wood: 1, iron: 0, herbs: 0, food: 0, gems: 0 }),
+      setRunProfileMaterials(draft, { wood: 1, iron: 0, herbs: 0, food: 0, crystal: 0, stone: 0, hide: 0 }),
     );
 
     expect(listener).toHaveBeenCalledTimes(4);
@@ -105,7 +105,7 @@ describe("persistence coordinator", () => {
       setHasActiveRun(draft, true);
       setDiscoveredCardIds(draft, ["slash"]);
       addGearCurrencies(draft.gear, { voidstone: 1 });
-      setRunProfileMaterials(draft, { wood: 1, iron: 0, herbs: 0, food: 0, gems: 0 });
+      setRunProfileMaterials(draft, { wood: 1, iron: 0, herbs: 0, food: 0, crystal: 0, stone: 0, hide: 0 });
     });
 
     expect(listener).toHaveBeenCalledOnce();

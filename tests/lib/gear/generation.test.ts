@@ -74,6 +74,8 @@ describe("gear generation", () => {
     expect(GEAR_AFFIX_COUNT_MIN_WEIGHT).toBe(0.8);
     expect(rollAffixCount("astral", () => 0.799999)).toBe(3);
     expect(rollAffixCount("astral", () => 0.8)).toBe(4);
+    expect(rollAffixCount("basic", () => 0)).toBe(1);
+    expect(rollAffixCount("basic", () => 0.99)).toBe(2);
   });
 
   it("generates three choices at a forced reward rarity", () => {

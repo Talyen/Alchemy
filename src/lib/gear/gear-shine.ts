@@ -58,34 +58,37 @@ export function getUniqueGearTextShineColors(): readonly string[] {
   return UNIQUE_TEXT_SHINE_COLORS;
 }
 
+function resolveShineColors(
+  rarity: string | null | undefined,
+  mode: "border" | "text",
+  keywordIds: readonly KeywordId[],
+): readonly string[] {
+  if (rarity === "unique") return mode === "text" ? [...UNIQUE_TEXT_SHINE_COLORS] : [...UNIQUE_SHINE_COLORS];
+  if (rarity !== "astral") return [];
+  return collectShineColors(keywordIds, mode);
+}
+
 export function getGearDefinitionShineColors(definition: GearDefinition): readonly string[] {
-  if (definition.rarity === "unique") return [...UNIQUE_SHINE_COLORS];
-  if (definition.rarity !== "astral") return [];
-  return collectShineColors(definition.affinityKeywords, "border");
+  return resolveShineColors(definition.rarity, "border", definition.affinityKeywords);
 }
 
 export function getGearInstanceShineColors(instance: GearInstance): readonly string[] {
   const definition = gearDefinitions[instance.definitionId];
   if (!definition) return [];
-  if (definition.rarity === "unique") return [...UNIQUE_SHINE_COLORS];
-  if (definition.rarity !== "astral") return [];
-  return collectShineColors(getGearInstanceKeywordIds(instance), "border");
+  return resolveShineColors(definition.rarity, "border", getGearInstanceKeywordIds(instance));
 }
 
 export function getGearDefinitionTextShineColors(definition: GearDefinition): readonly string[] {
-  if (definition.rarity === "unique") return [...UNIQUE_TEXT_SHINE_COLORS];
-  if (definition.rarity !== "astral") return [];
-  return collectShineColors(definition.affinityKeywords, "text");
+  return resolveShineColors(definition.rarity, "text", definition.affinityKeywords);
 }
 
 export function getGearInstanceTextShineColors(instance: GearInstance): readonly string[] {
   const definition = gearDefinitions[instance.definitionId];
   if (!definition) return [];
-  if (definition.rarity === "unique") return [...UNIQUE_TEXT_SHINE_COLORS];
-  if (definition.rarity !== "astral") return [];
-  return collectShineColors(
-    selectTextShineKeywordIds(getGearInstanceKeywordIds(instance), definition.affinityKeywords),
+  return resolveShineColors(
+    definition.rarity,
     "text",
+    selectTextShineKeywordIds(getGearInstanceKeywordIds(instance), definition.affinityKeywords),
   );
 }
 

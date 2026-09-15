@@ -25,6 +25,7 @@ export const defaultHomesteadEffects: HomesteadEffectManifest = {
   herbFindBonus: 0,
   endRunFoodPerRoom: 0,
   endRunHerbsPerRoom: 0,
-  endRunGemsPerRoom: 0,
+  endRunHidePerRoom: 0,
+  endRunCrystalPerRoom: 0,
   gearAstralChanceBonus: 0,
 };

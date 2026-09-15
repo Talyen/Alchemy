@@ -29,6 +29,7 @@ import {
   GEAR_DEFINITION_IDS,
   GEAR_SLOTS,
 } from "@/lib/gear";
+import { emptyInventory } from "@/lib/homestead/inventory";
 
 const ring: GearInstance = { instanceId: "ring-1", definitionId: "ruby-ring-basic", affixes: [] };
 
@@ -124,15 +125,10 @@ describe("gear domain", () => {
     });
   });
 
-  it("rolls basic and astral affix counts with 80/20 min vs max weighting", () => {
-    expect(rollAffixCount("basic", () => 0)).toBe(1);
+  it("rolls the minimum affix count at the 80/20 boundary", () => {
+    // Full boundary coverage lives in generation.test.ts; this pins the contract here.
     expect(rollAffixCount("basic", () => 0.79)).toBe(1);
     expect(rollAffixCount("basic", () => 0.8)).toBe(2);
-    expect(rollAffixCount("basic", () => 0.99)).toBe(2);
-    expect(rollAffixCount("astral", () => 0)).toBe(3);
-    expect(rollAffixCount("astral", () => 0.79)).toBe(3);
-    expect(rollAffixCount("astral", () => 0.8)).toBe(4);
-    expect(rollAffixCount("astral", () => 0.99)).toBe(4);
   });
 
   it("clears off-hand when equipping a two-handed main-hand weapon", () => {
@@ -200,13 +196,7 @@ describe("gear domain", () => {
     expect(result?.inventory).toEqual([]);
     expect(result?.loadouts.knight["left-accessory"]).toBeNull();
     expect(result?.yieldedCurrencies).toEqual(computeSalvageYield(ring).currencies);
-    expect(result?.yieldedMaterials).toEqual({
-      wood: 0,
-      iron: 0,
-      herbs: 0,
-      food: 0,
-      gems: 3,
-    });
+    expect(result?.yieldedMaterials).toEqual({ ...emptyInventory(), crystal: 3 });
   });
 
   it("reports equipped gear as salvage eligible", () => {

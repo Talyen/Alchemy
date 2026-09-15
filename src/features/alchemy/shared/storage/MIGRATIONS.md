@@ -30,7 +30,7 @@ Choose the intended new-player default. Safe additive fields retain that default
 
 ## Content changes without a save bump
 
-Preserve complete saved card effects, descriptions, and explicit Consume overrides together. Incomplete card content recovers from the live catalog. Gear/loadout ownership cleanup, native enemy Trait refresh, current catalog filtering, and safe manifest defaults remain current-data repair, not historical migrations. Persisted battle scalars and collections repair field-by-field to battle defaults; a battle block without any card piles is a fragment, not a fight, and drops the combat session instead of fabricating one. Battle telemetry is runtime-only and is never persisted.
+Preserve complete saved card effects, descriptions, and explicit Consume overrides together. Incomplete card content recovers from the live catalog. Gear/loadout ownership cleanup, native enemy Trait refresh, current catalog filtering, and safe manifest defaults remain current-data repair, not historical migrations. Stored Unique affix rolls are dropped at normalization in favor of the canonical catalog affixes; pre-release material renames (gems to crystal) and additions (stone, hide) resolve through schema defaults, not aliases or migrations. Persisted battle scalars and collections repair field-by-field to battle defaults; a battle block without any card piles is a fragment, not a fight, and drops the combat session instead of fabricating one. Battle telemetry is runtime-only and is never persisted.
 
 ## Defaults and resume normalization
 

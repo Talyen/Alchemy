@@ -8,7 +8,6 @@ import {
   type GearLoadouts,
   type GearSlot,
   type EquippedTrinkets,
-  type SalvageYield,
 } from "@/lib/gear";
 import {
   resolveActiveRunForSave,
@@ -48,11 +47,11 @@ export interface ArmoryController {
   craftingCurrencies: Record<CraftingCurrencyId, number>;
   finishedRunCharacters: CharacterId[];
   combatRestrictions: GearCombatRestrictions;
-  onEquip: (characterId: CharacterId, slot: GearSlot, instance: GearInstance) => void;
+  onEquip: (characterId: CharacterId, slot: GearSlot, instance: GearInstance) => boolean;
   onUnequip: (characterId: CharacterId, slot: GearSlot) => void;
   onEquipTrinket: (characterId: CharacterId, trinketId: string) => void;
   onUnequipTrinket: (characterId: CharacterId) => void;
-  onSalvage: (instanceId: string, salvageYield: SalvageYield) => boolean;
+  onSalvage: (instanceId: string) => boolean;
   onApplyCurrency: (currencyId: CraftingCurrencyId, instanceId: string) => boolean;
   onSpawnDevGear?: (characterId: CharacterId) => void;
 }
@@ -72,9 +71,7 @@ export function useArmoryController(options?: { rng?: () => number }): ArmoryCon
   }, [hasActiveRun]);
 
   const onEquip = useCallback<ArmoryController["onEquip"]>(
-    (characterId, slot, instance) => {
-      mutateGearWithFlush(flush, (state) => state.equip(characterId, slot, instance));
-    },
+    (characterId, slot, instance) => mutateGearWithFlush(flush, (state) => state.equip(characterId, slot, instance)),
     [flush],
   );
 
@@ -100,10 +97,10 @@ export function useArmoryController(options?: { rng?: () => number }): ArmoryCon
   );
 
   const onSalvage = useCallback<ArmoryController["onSalvage"]>(
-    (instanceId, salvageYield) => {
-      const result = dispatchGearSalvageWithMaterialGrant((state) =>
-        state.salvage(instanceId, { yield: salvageYield }),
-      );
+    (instanceId) => {
+      // Yield is recomputed authoritatively in the store; the preview shown in
+      // the confirm dialog is deterministic, so the payout always matches it.
+      const result = dispatchGearSalvageWithMaterialGrant((state) => state.salvage(instanceId));
       if (result) flush();
       return Boolean(result);
     },

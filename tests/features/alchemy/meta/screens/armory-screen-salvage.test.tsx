@@ -33,12 +33,9 @@ describe("ArmoryScreen salvage flow", () => {
     await waitForArtwork();
     await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: /^Salvage$/ }));
 
-    expect(onSalvage).toHaveBeenCalledWith(
-      "gear-sword",
-      expect.objectContaining({
-        materials: expect.objectContaining({ iron: 6 }),
-      }),
-    );
+    // Yield is recomputed authoritatively in the store; the dialog only
+    // previews it, so the confirm path passes the instance ID alone.
+    expect(onSalvage).toHaveBeenCalledWith("gear-sword");
     expect(screen.getByTestId("armory-salvage-toggle").getAttribute("aria-pressed")).toBe("false");
   });
 

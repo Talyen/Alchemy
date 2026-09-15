@@ -96,18 +96,19 @@ function addRandomAffix(item: GearInstance, rng: () => number): GearInstance {
   };
 }
 
-function availableAffixesForItem(item: GearInstance) {
+function eligibleNewAffixes(item: GearInstance) {
   const def = gearDefinitions[item.definitionId];
   if (!def) return [];
   const presentIds = new Set(item.affixes.map((affix) => affix.id));
   return buildEligibleAffixPool(def).filter((affix) => !presentIds.has(affix.id));
 }
 
+function availableAffixesForItem(item: GearInstance) {
+  return eligibleNewAffixes(item);
+}
+
 function hasAvailableAffix(item: GearInstance): boolean {
-  const def = gearDefinitions[item.definitionId];
-  if (!def) return false;
-  const presentIds = new Set(item.affixes.map((affix) => affix.id));
-  return buildEligibleAffixPool(def).some((affix) => !presentIds.has(affix.id));
+  return eligibleNewAffixes(item).length > 0;
 }
 
 function affixMaxValue(roll: GearAffixRoll, rarity: GearRarity): number {

@@ -216,8 +216,9 @@ Item model, generation, Uniques, and write paths: [ARMORY.md](./ARMORY.md) (data
 2. Register Gear art via the [asset workflow § Add or replace Gear art](./WORKFLOWS-ASSETS.md#add-or-replace-gear-art) (naming/slot violations throw during sync).
 3. Register the base item's Unique in `src/lib/gear/unique-catalog.ts`, with one exclusive fixed signature and three fixed standard supporting affixes. Every base item needs one Unique; ordinary variant generation does not create it. Follow [Unique affix and combat contracts](./UNIQUE_ITEMS.md) for signature implementation and interaction documentation.
 4. For new affixes, add definitions in `src/lib/gear/affix-catalog.ts` with stable IDs, `keywordId`, effect keys, value ranges, and eligible slots. Keep `keywordId` aligned with affinity weighting and `effectKey` aligned with `GEAR_EFFECT_KEYS`; wire new effects into the manifest and their consumers. Display/roll helpers live in `affixes.ts`.
-5. Update Gear save schemas/defaults and migration fixtures when instance or loadout shapes change.
-6. Check affected Gear behavior, including existing Unique catalog coverage and save compatibility for instance or loadout shape changes. HP-sync write paths: [ARMORY.md § Write paths](./ARMORY.md#write-paths). Rewards store the exact `GearInstance` and never re-roll on acceptance; never put definition objects or art URLs into saves.
+5. Update Gear save schemas/defaults and migration fixtures when instance or loadout shapes change. Unique instances store no affix rolls — only identity — with reads resolving `getUniqueAffixes()`.
+6. Run `npm run content:audit` (enforces the affix-catalog, pool, and Unique invariants in `validators-gear.ts`) and `npm run balance:loot` when loot weights or depth curves change. New affixes must also satisfy the `uniqueOnly` fixed-roll rule and the description typography rule.
+7. Check affected Gear behavior, including existing Unique catalog coverage and save compatibility for instance or loadout shape changes. HP-sync write paths: [ARMORY.md § Write paths](./ARMORY.md#write-paths). Rewards store the exact `GearInstance` and never re-roll on acceptance; never put definition objects or art URLs into saves.
 
 ---
 

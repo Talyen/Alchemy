@@ -30,7 +30,7 @@ contract and controller seams.
 - Definitions own compatible slots, hand rules, affinity keywords, salvage value, and presentation metadata. One-handed melee weapons and wands may occupy `main-hand` or `off-hand`; two-handers and ranged weapons stay main-hand only (ranged pairs with a quiver off-hand).
 - Hand conflicts are resolved when equipping a hand slot; equipping body armor or accessories preserves valid weapon/off-hand pairs. The Armory grid UI enforces slot legality via `isGearCompatibleWithLoadoutSlot` before allowing equipment (e.g. requiring a player to unequip a Quiver before equipping a melee weapon), while `pruneOrphanGearLoadouts` and `salvageGear` ensure cascade-pruning against the updated inventory. Removing, salvaging, or transferring a ranged weapon also unequips its unsupported Quiver without removing the Quiver from inventory. The same cleanup repairs unsupported saved Quivers.
 - Gear slots are `main-hand`, `off-hand`, `body`, `left-accessory`, and `right-accessory`. Both Accessory slots accept Rings or Amulets. The Armory lays these out over `left-accessory | trinket | right-accessory`; the dedicated Trinket slot accepts only permanent Trinkets.
-- **Unique** is a third Gear rarity (alongside basic and astral). Each base item has exactly one named Unique with one exclusive signature and three fixed standard supporting affixes. Supporting rolls always use the standard Unique/Astral maximum from the affix catalog; the signature has its own fixed magnitude. Generation, tooltips, manifests, and saved-item normalization share these canonical affixes. Existing items keep their instance ID when supporting values change. Crafting currencies cannot modify uniques. Unique salvage follows the crafting and homestead salvage definitions. Collection tracks discovered unique definition IDs independently of current inventory, so salvage does not hide an already-found unique.
+- **Unique** is a third Gear rarity (alongside basic and astral). Each base item has exactly one named Unique with one exclusive signature and three fixed standard supporting affixes. Supporting rolls always use the standard Unique/Astral maximum from the affix catalog; the signature has its own fixed magnitude. Generation, tooltips, manifests, and saved-item normalization share these canonical affixes, and saved Unique instances store no rolls at all — older saves carrying stored rolls converge on the catalog at load without changing identity, ownership, or Collection discovery. Crafting currencies cannot modify uniques. Unique salvage follows the crafting and homestead salvage definitions. Collection tracks discovered unique definition IDs independently of current inventory, so salvage does not hide an already-found unique.
 - Uniqueness is inventory-scoped: a unique definition is excluded from shops and rewards while any character still holds an instance. Salvaging it returns that definition to the drop pool. Reward and shop screens never offer the same unique twice, and never pair a unique with another item of the same base item.
 - Random loot uses `src/lib/loot/`: source weights, depth curves, and account multipliers live together in `src/lib/game-constants/run-rewards.ts`. Combat, Wildwood, equipment shops, and random mystery Gear resolve these weights before choosing rewards. Boons, crafting, and explicitly promised items are separate from permanent-Trinket eligibility.
 - Depth counts locations equally. Campaign includes its opening battle, then destinations across Acts (first boss: depth 9). A pending destination claim counts during initial shop/event generation, keeping depth unchanged when navigation commits that visit. Labyrinth counts cleared non-entrance rooms across floors plus the current pending room, including side rooms and excluding revisits. Wildwood uses its encounter ordinal. `shared/stores/loot-progress.ts` adapts the existing saved state; rewards, follow-ups, and shop refreshes never advance depth.
@@ -54,8 +54,10 @@ attempts on the reserved hero’s tab play the error sound and show a red
 “Equipment cannot be changed during Combat.” message; browsing the tab stays
 silent with no persistent banner. Inventory is
 browsed across characters: Gear and permanent Trinkets equipped by a reserved
-hero cannot be taken by another hero, and reserved Gear cannot be crafted
-or salvaged from another tab. Unused items remain
+hero cannot be taken by another hero, and no item owned by or equipped on the
+reserved hero can be crafted or salvaged from any tab — including unequipped
+items in their inventory, which the store boundary blocks even when reached
+through another hero's tab. Unused items owned by other heroes remain
 editable through other heroes’ tabs. Acquisition adds inventory normally.
 
 The `GearStore` command boundary (`gear-session-command.ts` via `dispatchGearMutationWithRunHealthSync` / `dispatchGearSalvageWithMaterialGrant`) enforces the same reservations before running the mutator;
@@ -95,14 +97,14 @@ There is no external `useGearStore` hook. Gear mutations run against a `GearStor
 After a Gear change, `rebindLiveRunMeta` synchronizes health when a run is active, unless the caller explicitly overrides `syncRunHealth`. Unchanged or rejected mutations do not rebind. `mutate` receives a `GearStore` handle and may edit any character's loadout (for example Armory browsing another hero while a run is in progress): `(state) => state.equip(loadoutCharacterId, slot, instance)`.
 
 1. **Equip / Unequip** — `dispatchGearMutationWithRunHealthSync({ mutate: (state) => state.equip(characterId, slot, instance) })` and `(state) => state.unequip(characterId, slot)`.
-2. **Salvage** — preview with `computeSalvageYield` (definition `salvageValue` homestead materials + crafting currencies drawn from the existing rarity table using a seed derived from the stable instance ID). Reopening, reloading, and changing affixes do not reroll rewards; upgrading rarity uses the new rarity table. Confirm passes that frozen yield into `dispatchGearSalvageWithMaterialGrant((state) => state.salvage(instanceId, { yield }))`, which HP-syncs, then grants homestead materials in the same command via `awardMaterialsDuringRun` (active run) or `addMaterials` (meta). Confirm always pays exactly the preview.
+2. **Salvage** — preview with `computeSalvageYield` (definition `salvageValue` homestead materials + crafting currencies drawn from the existing rarity table using a seed derived from the stable instance ID). Reopening, reloading, and changing affixes do not reroll rewards; upgrading rarity uses the new rarity table. Confirm calls `dispatchGearSalvageWithMaterialGrant((state) => state.salvage(instanceId))`, which recomputes the same deterministic yield in the store rather than trusting the preview value, then HP-syncs and grants homestead materials in the same command via `awardMaterialsDuringRun` (active run) or `addMaterials` (meta). Confirm always pays exactly the preview.
 3. **Crafting-currency apply** — `(state) => state.applyCurrency(currencyId, instanceId, { rng })` mutates the item's affixes via `applyCraftingCurrency`. The controller injects profile-lifetime randomness, defaulting to `Math.random`, for crafting and dev spawning; neither consumes a run RNG stream. Salvage uses its stable instance-derived seed instead.
 4. **Add new instance (rewards / shop / dev spawn)** — Armory/dev spawn: `dispatchGearMutationWithRunHealthSync({ mutate: (state) => state.addInstance(instance, characterId) })`. Shop and in-run reward commands already own a draft: `mutateGearWithRunHealthSync(draft, { mutate: (gear) => gear.addInstance(instance, characterId) })`.
 5. **Permanent Trinkets** — use `addTrinket`, `equipTrinket`, and `unequipTrinket` on the Gear aggregate. Rewards and the Trinket Shop add ownership inside their existing run-session command; acquisition never auto-equips or creates a Boon.
 
 ### Salvage materials
 
-Base item construction owns homestead salvage materials; rarity increases quantities rather than introducing affinity-based Herbs. Metal equipment yields Iron, wooden equipment yields Wood, magical staves and wands combine Wood and Gems, and jewelry and spellbooks yield Gems. Leather Armor and Quivers yield crafting currencies only because the material inventory has no leather equivalent. The Leather Buckler retains Wood for its backing. Herbs remain available from enemy loot, Herb Garden progression, and run-end Homestead bonuses; removing gear Herbs reduces an optional supply, not access to progression. Currency rarity distributions remain unchanged.
+Base item construction owns homestead salvage materials; rarity increases quantities rather than introducing affinity-based Herbs. Metal equipment yields Iron, wooden equipment yields Wood, magical staves and wands combine Wood and Crystal, and jewelry and spellbooks yield Crystal. Leather Armor and Quivers yield Hide, and the Leather Buckler yields Wood and Hide for its backing. Herbs remain available from enemy loot, Herb Garden progression, and run-end Homestead bonuses; removing gear Herbs reduces an optional supply, not access to progression. Currency rarity distributions remain unchanged.
 
 ### `useArmoryController` facade
 
@@ -142,8 +144,16 @@ Do not duplicate the current schema number here. [`MIGRATIONS.md`](../src/featur
 
 ## Tests
 
-Test ownership spans pure Gear rules, aggregate/persistence contracts, Armory
-interaction, architecture guards, and player flows. Use CONTRIBUTING's
-[changed-path gate](../CONTRIBUTING.md#what-to-run-when-you-change) and
+Gear rule coverage lives in `tests/lib/gear/` (`gear`, `generation`,
+`crafting`, `crafting-ids`, `salvage-yield`, `unique-catalog`, `gear-shine`,
+`display`, `definitions-art`); aggregate and persistence contracts in
+`tests/features/alchemy/shared/stores/gear-*`; Armory interaction in
+`tests/features/alchemy/meta/screens/armory*`; architecture guards in
+`tests/architecture/affix-catalog-guard.test.ts` and
+`gear-affix-pool-guard.test.ts`; Unique battle behavior in
+`tests/lib/battle/unique-effects.test.ts` and `unique-collection.test.ts`.
+`src/lib/content-validation/validators-gear.ts` mirrors the catalog guards so
+`npm run content:audit` enforces the same invariants outside vitest. Use
+CONTRIBUTING's [changed-path gate](../CONTRIBUTING.md#what-to-run-when-you-change) and
 [test value policy](../CONTRIBUTING.md#test-value-and-coverage-strategy) to select
 checks for the affected risks.

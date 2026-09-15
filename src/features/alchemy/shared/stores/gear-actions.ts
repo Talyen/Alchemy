@@ -2,6 +2,7 @@ import {
   equipGear,
   flattenGearInventories,
   findGearInventoryOwner,
+  pruneOrphanGearLoadouts,
   salvageGear,
   unequipGear,
   canApplyCraftingCurrency,
@@ -19,7 +20,6 @@ import type {
   GearLoadouts,
   GearSlot,
   EquippedTrinkets,
-  SalvageYield,
 } from "@/lib/gear";
 import type { CharacterId } from "@/lib/game-data";
 import type { MaterialInventory } from "@/lib/homestead/types";
@@ -37,7 +37,9 @@ export function initializeGear(
   equippedTrinkets?: EquippedTrinkets,
 ): void {
   gear.inventories = inventories;
-  gear.loadouts = loadouts;
+  // Dangling equipped IDs (e.g. from older saves) are pruned here as well as
+  // in the save pipeline, so in-memory state never references missing items.
+  gear.loadouts = pruneOrphanGearLoadouts(flattenGearInventories(inventories), loadouts);
   gear.ownedTrinketIds = [...new Set(ownedTrinketIds.filter(isTrinketId))];
   const owned = new Set(gear.ownedTrinketIds);
   const normalized = normalizeEquippedTrinkets(equippedTrinkets);
@@ -107,7 +109,6 @@ export function unequipPermanentTrinket(gear: Draft<GearStateFields>, characterI
 export function salvageGearInstance(
   gear: Draft<GearStateFields>,
   instanceId: string,
-  options?: { yield?: SalvageYield },
 ): {
   inventories: GearInventories;
   yieldedCurrencies: Record<CraftingCurrencyId, number>;
@@ -115,7 +116,10 @@ export function salvageGearInstance(
 } | null {
   const owner = findGearInventoryOwner(gear.inventories, instanceId);
   if (!owner) return null;
-  const result = salvageGear(flattenGearInventories(gear.inventories), gear.loadouts, instanceId, options?.yield);
+  // Yield is always recomputed authoritatively: the preview shown in the
+  // confirm dialog is deterministic (seeded by instance ID), so preview and
+  // payout agree without trusting a frozen client value.
+  const result = salvageGear(flattenGearInventories(gear.inventories), gear.loadouts, instanceId);
   if (!result) return null;
   gear.inventories = {
     ...gear.inventories,
