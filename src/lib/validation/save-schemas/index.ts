@@ -3,4 +3,4 @@ export { BattleCardEffectSchema, BattleCardSchema } from "./battle-card-schemas"
 export * from "./labyrinth-schemas";
 export { SaveDataSchema, type ParsedSaveData } from "./save-data";
 export * from "./schema-enums";
-export { safeParseWithErrors } from "./validation-utils";
+export { isUsableLiveCombatGold, safeParseWithErrors } from "./validation-utils";

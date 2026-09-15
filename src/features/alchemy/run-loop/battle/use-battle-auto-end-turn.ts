@@ -7,7 +7,7 @@ import { resolveGameDelay } from "@/lib/animation/game-timer";
 
 import { useLatestRef } from "../../shared/ui/use-latest-ref";
 import type { Screen } from "@/lib/routing";
-import { isBattlePlaybackBlocked } from "./autoplay-driver";
+import { usePlaybackBlocked } from "./use-battle-playback-blocked";
 import { handHasPlayableCard } from "./playable-hand";
 import type { BattlePlaybackPresentationGate } from "./presentation/use-hand-presentation";
 
@@ -36,13 +36,17 @@ export function useBattleAutoEndTurn({
 }: AutoEndTurnOptions) {
   const inspectionOpen = useUiStore(isBattleInspectionOpen);
   const onEndTurnRef = useLatestRef(onEndTurn);
-  const isCardPlayInProgressRef = useLatestRef(isCardPlayInProgress);
   const battleStateRef = useLatestRef(battleState);
-  const screenRef = useLatestRef(screen);
-  const hasActiveBattleRef = useLatestRef(hasActiveBattle);
   const autoEndTurnRef = useLatestRef(autoEndTurn);
-  const gameMenuOpenRef = useLatestRef(gameMenuOpen);
   const autoEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isPlaybackBlocked = usePlaybackBlocked({
+    screen,
+    battleState,
+    hasActiveBattle,
+    gameMenuOpen,
+    isCardPlayInProgress,
+    presentationGateRef,
+  });
 
   const clearAutoEndTurn = useCallback(() => {
     if (autoEndTimerRef.current) clearTimeout(autoEndTimerRef.current);
@@ -51,24 +55,15 @@ export function useBattleAutoEndTurn({
 
   const canAutoEndTurn = useCallback(
     (current: BattleSnapshot) => {
-      const presentation = presentationGateRef.current;
-      return (
-        autoEndTurnRef.current &&
-        !isBattlePlaybackBlocked({
-          screen: screenRef.current,
-          battleState: current,
-          hasActiveBattle: hasActiveBattleRef.current,
-          cardTransferInProgress: presentation.cardTransferInProgress,
-          hiddenHandCardKeys: presentation.hiddenHandCardKeys,
-          cardPlayInProgress: Boolean(isCardPlayInProgressRef.current?.()),
-          gameMenuOpen: gameMenuOpenRef.current,
-          inspectionOpen: isBattleInspectionOpen(useUiStore.getState()),
-        }) &&
-        !handHasPlayableCard(current)
-      );
+      return autoEndTurnRef.current && !isPlaybackBlocked(current) && !handHasPlayableCard(current);
     },
-    [autoEndTurnRef, screenRef, hasActiveBattleRef, presentationGateRef, isCardPlayInProgressRef, gameMenuOpenRef],
+    [autoEndTurnRef, isPlaybackBlocked],
   );
+
+  // React-lifecycle timer by design, not a battle-session timer: it is cleared
+  // on unmount, on every reschedule, and explicitly on end-turn commit via
+  // clearAutoEndTurn, and the fire-time gate above re-checks live battle state,
+  // so a stale fire after a battle transition is a no-op.
 
   const scheduleAutoEndTurnRaw = useCallback(
     (state?: BattleSnapshot) => {

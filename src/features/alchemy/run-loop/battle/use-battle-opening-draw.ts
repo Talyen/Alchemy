@@ -33,7 +33,7 @@ export function useBattleOpeningDraw({
     }
     if (
       battle.pendingTransitionResumeRequired ||
-      !useBattlePresentationStore.getState().openingDrawPending ||
+      !ctx.getPresentation().openingDrawPending ||
       !ctx.battleSceneRef.current ||
       !ctx.drawPileRef.current
     ) {

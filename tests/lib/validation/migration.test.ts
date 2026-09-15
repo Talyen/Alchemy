@@ -6,83 +6,44 @@ import {
   isUnsupportedFutureContentData,
 } from "@/lib/validation/migration";
 import { CURRENT_SAVE_SCHEMA_VERSION, CURRENT_CONTENT_VERSION } from "@/lib/validation";
-describe("getRawSaveSchemaVersion", () => {
-  it("returns 0 for null/undefined input", () => {
-    expect(getRawSaveSchemaVersion(null)).toBe(0);
-    expect(getRawSaveSchemaVersion(undefined)).toBe(0);
-  });
 
-  it("returns 0 for non-object input", () => {
-    expect(getRawSaveSchemaVersion("string")).toBe(0);
-    expect(getRawSaveSchemaVersion(42)).toBe(0);
-  });
-
-  it("returns 0 when version is missing", () => {
-    expect(getRawSaveSchemaVersion({})).toBe(0);
-  });
-
-  it("returns 0 for negative version", () => {
-    expect(getRawSaveSchemaVersion({ saveSchemaVersion: -1 })).toBe(0);
-  });
-
-  it("returns 0 for non-integer version", () => {
-    expect(getRawSaveSchemaVersion({ saveSchemaVersion: 1.5 })).toBe(0);
-    expect(getRawSaveSchemaVersion({ saveSchemaVersion: NaN })).toBe(0);
-    expect(getRawSaveSchemaVersion({ saveSchemaVersion: Infinity })).toBe(0);
+describe("raw version readers", () => {
+  it.each([
+    ["null", null],
+    ["undefined", undefined],
+    ["string", "string"],
+    ["number", 42],
+    ["missing version", {}],
+    ["negative version", { saveSchemaVersion: -1, contentVersion: -5 }],
+    ["non-integer version", { saveSchemaVersion: 1.5 }],
+    ["NaN version", { saveSchemaVersion: NaN }],
+    ["infinite version", { saveSchemaVersion: Infinity }],
+  ])("returns 0 for %s", (_label, input) => {
+    expect(getRawSaveSchemaVersion(input)).toBe(0);
+    expect(getRawContentVersion(input)).toBe(0);
   });
 
   it("returns the version when valid", () => {
-    expect(getRawSaveSchemaVersion({ saveSchemaVersion: 1 })).toBe(1);
     expect(getRawSaveSchemaVersion({ saveSchemaVersion: 5 })).toBe(5);
-  });
-});
-
-describe("getRawContentVersion", () => {
-  it("returns 0 for null input", () => {
-    expect(getRawContentVersion(null)).toBe(0);
-  });
-
-  it("returns 0 when contentVersion is missing", () => {
-    expect(getRawContentVersion({})).toBe(0);
-  });
-
-  it("returns 0 for negative content version", () => {
-    expect(getRawContentVersion({ contentVersion: -5 })).toBe(0);
-  });
-
-  it("returns the version when valid", () => {
     expect(getRawContentVersion({ contentVersion: CURRENT_CONTENT_VERSION })).toBe(CURRENT_CONTENT_VERSION);
   });
 });
 
-describe("isUnsupportedFutureSaveData", () => {
-  it("returns false for current version", () => {
-    expect(isUnsupportedFutureSaveData({ saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION })).toBe(false);
+describe("future version gates", () => {
+  it.each([
+    ["current schema", { saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION }, false],
+    ["older schema", { saveSchemaVersion: 0 }, false],
+    ["newer schema", { saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1 }, true],
+    ["malformed", null, false],
+  ])("schema gate returns %s -> %s", (_label, input, expected) => {
+    expect(isUnsupportedFutureSaveData(input)).toBe(expected);
   });
 
-  it("returns false for older versions", () => {
-    expect(isUnsupportedFutureSaveData({ saveSchemaVersion: 0 })).toBe(false);
-  });
-
-  it("returns true for newer versions", () => {
-    expect(isUnsupportedFutureSaveData({ saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1 })).toBe(true);
-  });
-
-  it("returns false for malformed input", () => {
-    expect(isUnsupportedFutureSaveData(null)).toBe(false);
-  });
-});
-
-describe("isUnsupportedFutureContentData", () => {
-  it("returns false for current content version", () => {
-    expect(isUnsupportedFutureContentData({ contentVersion: CURRENT_CONTENT_VERSION })).toBe(false);
-  });
-
-  it("returns true for newer content versions", () => {
-    expect(isUnsupportedFutureContentData({ contentVersion: CURRENT_CONTENT_VERSION + 1 })).toBe(true);
-  });
-
-  it("returns false for malformed input", () => {
-    expect(isUnsupportedFutureContentData(null)).toBe(false);
+  it.each([
+    ["current content", { contentVersion: CURRENT_CONTENT_VERSION }, false],
+    ["newer content", { contentVersion: CURRENT_CONTENT_VERSION + 1 }, true],
+    ["malformed", null, false],
+  ])("content gate returns %s -> %s", (_label, input, expected) => {
+    expect(isUnsupportedFutureContentData(input)).toBe(expected);
   });
 });

@@ -103,6 +103,13 @@ function availableAffixesForItem(item: GearInstance) {
   return buildEligibleAffixPool(def).filter((affix) => !presentIds.has(affix.id));
 }
 
+function hasAvailableAffix(item: GearInstance): boolean {
+  const def = gearDefinitions[item.definitionId];
+  if (!def) return false;
+  const presentIds = new Set(item.affixes.map((affix) => affix.id));
+  return buildEligibleAffixPool(def).some((affix) => !presentIds.has(affix.id));
+}
+
 function affixMaxValue(roll: GearAffixRoll, rarity: GearRarity): number {
   const def = gearAffixCatalog[roll.id];
   return def ? def.roll[rarity].max : roll.value;
@@ -147,7 +154,7 @@ const CRAFTING_CURRENCY_BEHAVIORS: Record<CraftingCurrencyId, CraftingCurrencyBe
     canApply: (item) => {
       const rarity = gearInstanceRarity(item);
       if (!rarity) return false;
-      return item.affixes.length < GEAR_AFFIX_COUNT[rarity].max && availableAffixesForItem(item).length > 0;
+      return item.affixes.length < GEAR_AFFIX_COUNT[rarity].max && hasAvailableAffix(item);
     },
     apply: addRandomAffix,
   },

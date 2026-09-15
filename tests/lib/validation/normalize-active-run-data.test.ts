@@ -167,6 +167,18 @@ describe("ActiveRunDataSchema normalize", () => {
     ]);
   });
 
+  it("preserves activeCombat when battle scalars are corrupt", () => {
+    const result = parseActiveRunData({
+      activeCombat: {
+        battleState: { ...defaultBattleState(), mana: "four", gold: -5, turn: 0 },
+      },
+    });
+    expect(result.activeCombat).not.toBeNull();
+    expect(result.activeCombat?.battleState.mana).toBe(0);
+    expect(result.activeCombat?.battleState.gold).toBe(0);
+    expect(result.activeCombat?.battleState.turn).toBe(1);
+  });
+
   it("nulls mysteryVisit when currentScreen is not mystery", () => {
     const result = parseActiveRunData({
       currentScreen: "shop",

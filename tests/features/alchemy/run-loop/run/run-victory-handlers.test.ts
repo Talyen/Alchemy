@@ -4,7 +4,8 @@ import "../../../../helpers/mock-audio";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
 import { createVictoryHandlers } from "@/features/alchemy/run-loop/run/run-flow-victory";
-import { awardRunEndMaterials, clearCombatState } from "@/features/alchemy/run-loop/run/run-flow-defeat";
+import { clearCombatState } from "@/features/alchemy/run-loop/run/run-flow-defeat";
+import { awardRunEndMaterials } from "@/features/alchemy/run-loop/run/run-materials";
 import { readActiveRun, readBattle, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import {
   addRunMaterialsEarned,

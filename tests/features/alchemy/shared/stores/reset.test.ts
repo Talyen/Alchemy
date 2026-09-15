@@ -50,6 +50,7 @@ describe("clearAllPersistentGameData", () => {
 
     await expect(clearAllPersistentGameData()).resolves.toBe(true);
 
+    expect(mockedClearSave).toHaveBeenCalledWith("localWipe");
     expect(readRunProfile().materialInventory).toEqual({
       wood: 0,
       iron: 0,

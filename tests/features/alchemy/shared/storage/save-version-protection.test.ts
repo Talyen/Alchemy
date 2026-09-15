@@ -1,26 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import { evaluateSaveCandidates } from "@/features/alchemy/shared/storage";
-
-function playableSave(lastSavedAt: number) {
-  return JSON.stringify({
-    saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
-    contentVersion: CURRENT_CONTENT_VERSION,
-    lastSavedAt,
-    discoveredCardIds: ["slash"],
-    activeRun: null,
-  });
-}
-
-function futureSave(lastSavedAt: number | undefined) {
-  return JSON.stringify({
-    saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
-    contentVersion: CURRENT_CONTENT_VERSION,
-    ...(lastSavedAt === undefined ? {} : { lastSavedAt }),
-    discoveredCardIds: ["slash"],
-    activeRun: null,
-  });
-}
+import {
+  futureSaveCandidate as futureSave,
+  playableSaveCandidate as playableSave,
+} from "../../../../helpers/save-candidate-fixtures";
 
 describe("save version protection", () => {
   it("protects the session when the newer-version copy arrives after the playable backup", () => {

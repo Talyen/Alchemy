@@ -6,7 +6,7 @@ import { playGoldGain, playVictory, stopAllSfx } from "@/lib/audio";
 import { BATTLE_END_TRANSITION_DELAY } from "@/lib/game-constants";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import type { RunOutcomeDeps } from "./run-flow";
-import { awardRunEndMaterials } from "./run-flow-defeat";
+import { awardRunEndMaterials } from "./run-materials";
 import { createVictoryCommand } from "./victory-commands";
 
 export function createVictoryHandlers(deps: RunOutcomeDeps) {

@@ -1,13 +1,15 @@
 # Local skill routing
 
-Use a skill when its workflow applies. [AGENTS.md](../../AGENTS.md#documentation-owners) owns discovery requirements and [verification](../../AGENTS.md#verification--environment). Ordinary implementation needs no pre-edit skill.
+Use a skill when its workflow applies. [AGENTS.md](../../AGENTS.md#documentation-owners) owns discovery requirements and [verification](../../AGENTS.md#verification--environment). Ordinary implementation needs no skill.
 
-| When                                                                          | Skill                                         |
-| ----------------------------------------------------------------------------- | --------------------------------------------- |
-| Add or structurally redesign a contract across a feature boundary             | [`architect`](./architect/SKILL.md)           |
-| Write/debug Alchemy Playwright tests or use its browser fixtures/page objects | [`playwright-e2e`](./playwright-e2e/SKILL.md) |
-| Run a user-cited audit or all audits                                          | [`run-audits`](./run-audits/SKILL.md)         |
-| Verify edits during work and before handoff                                   | [`verifier`](./verifier/SKILL.md)             |
+| When                                                                                                                                                                      | Skill                                         |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| Add or structurally redesign a contract across a feature boundary (e.g. new capability port, store schema, or persistence contract; not ordinary use or a private helper) | [`architect`](./architect/SKILL.md)           |
+| Write/debug Alchemy Playwright tests or use its browser fixtures/page objects                                                                                             | [`playwright-e2e`](./playwright-e2e/SKILL.md) |
+| Run a user-cited audit or all audits                                                                                                                                      | [`run-audits`](./run-audits/SKILL.md)         |
+| Verify edits during work and before handoff                                                                                                                               | [`verifier`](./verifier/SKILL.md)             |
+
+Load order: for authoring/debugging browser tests use `playwright-e2e`; for gating edited work use `verifier`. `architect` designs the contract; `run-audits` proposes findings against it.
 
 [AGENTS.md](../../AGENTS.md#documentation-owners) routes implementation work to canonical owners. In particular, use [asset workflows](../../docs/WORKFLOWS-ASSETS.md) for generated assets, [boot and loading](../../docs/ARCHITECTURE.md#boot-and-loading) for route loading, and [Armory write paths](../../docs/ARMORY.md#write-paths) for gear mutations.
 

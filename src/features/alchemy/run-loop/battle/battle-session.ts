@@ -4,6 +4,7 @@ import { stopAllSfx } from "@/lib/audio";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { setBattleStartState } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { clearPendingDraws } from "./draw-sequence";
 import type { BattleControllerContext } from "./battle-context";
 
 export function createBattleSession(ctx: BattleControllerContext) {
@@ -77,6 +78,7 @@ export function createBattleSession(ctx: BattleControllerContext) {
     ctx.battleAbortControllerRef.current.abort();
     ctx.battleAbortControllerRef.current = new AbortController();
     ctx.battleSessionRef.current += 1;
+    clearPendingDraws(ctx.battleSessionRef.current);
     clearAllBattleTimeouts();
     clearTransferHandles();
     clearBattleStageMarks();
@@ -84,7 +86,10 @@ export function createBattleSession(ctx: BattleControllerContext) {
     ctx.cardPlayInProgressRef.current = false;
     ctx.victoryDefeatHandledRef.current = false;
     ctx.onBattleSessionPreparedRef.current?.();
-    getPresentationStore().clearFloatingCombatTexts();
+    // Full reset lives here (not just floating texts) so callers cannot get
+    // the session-bump/reset ordering wrong; battle start then only arms the
+    // new battle's pending flags.
+    getPresentationStore().resetPresentation();
   }
 
   return {

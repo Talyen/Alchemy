@@ -21,6 +21,9 @@ import {
   rollAffixCount,
   salvageGear,
   unequipGear,
+  getGearInstanceAffixes,
+  getGearInstanceShineColors,
+  getGearInstanceTextShineColors,
   type GearInstance,
   type GearLoadouts,
   GEAR_DEFINITION_IDS,
@@ -455,6 +458,59 @@ describe("gear domain", () => {
       ).toBe(false);
       const result = equipGear(loadouts, "knight", "off-hand", dagger, inventory);
       expect(result.knight["off-hand"]).toBeNull();
+    });
+  });
+
+  describe("canonical affix resolution & shine optimizations", () => {
+    it("getGearInstanceAffixes returns canonical affixes for unique instances", () => {
+      const uniqueInstance: GearInstance = {
+        instanceId: "unique-1",
+        definitionId: "wardbreaker",
+        affixes: [], // Empty raw affixes
+      };
+      const resolved = getGearInstanceAffixes(uniqueInstance);
+      expect(resolved.length).toBe(4);
+      expect(resolved[0].id).toBe("wardbreaker-purge");
+
+      const basicInstance: GearInstance = {
+        instanceId: "basic-1",
+        definitionId: "longsword-basic",
+        affixes: [{ id: "flat-physical", value: 3 }],
+      };
+      expect(getGearInstanceAffixes(basicInstance)).toEqual([{ id: "flat-physical", value: 3 }]);
+    });
+
+    it("getGearInstanceShineColors short-circuits for basic and unique items", () => {
+      const basicInstance: GearInstance = {
+        instanceId: "basic-1",
+        definitionId: "longsword-basic",
+        affixes: [{ id: "flat-physical", value: 3 }],
+      };
+      expect(getGearInstanceShineColors(basicInstance)).toEqual([]);
+      expect(getGearInstanceTextShineColors(basicInstance)).toEqual([]);
+
+      const uniqueInstance: GearInstance = {
+        instanceId: "unique-1",
+        definitionId: "wardbreaker",
+        affixes: [],
+      };
+      expect(getGearInstanceShineColors(uniqueInstance).length).toBeGreaterThan(0);
+      expect(getGearInstanceTextShineColors(uniqueInstance).length).toBeGreaterThan(0);
+    });
+
+    it("salvageGear cleans up loadouts with post-salvage inventory", () => {
+      const longsword: GearInstance = { instanceId: "sword-1", definitionId: "longsword-basic", affixes: [] };
+      const otherItem: GearInstance = { instanceId: "other-1", definitionId: "dagger-basic", affixes: [] };
+      const inventory = [longsword, otherItem];
+      const loadouts = createEmptyGearLoadouts();
+      loadouts.knight["main-hand"] = longsword.instanceId;
+      loadouts.knight["off-hand"] = "nonexistent-item";
+
+      const result = salvageGear(inventory, loadouts, longsword.instanceId);
+      expect(result).not.toBeNull();
+      expect(result!.inventory).toEqual([otherItem]);
+      expect(result!.loadouts.knight["main-hand"]).toBeNull();
+      expect(result!.loadouts.knight["off-hand"]).toBeNull();
     });
   });
 });

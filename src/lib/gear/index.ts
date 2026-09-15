@@ -7,7 +7,6 @@ export * from "./affix-pool";
 export * from "./base-items";
 export * from "./gear-effect-manifest";
 export * from "./generation";
-export * from "./item-names";
 export * from "./gear-shine";
 export * from "./crafting";
 export * from "./crafting-ids";

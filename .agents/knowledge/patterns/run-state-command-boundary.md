@@ -3,27 +3,8 @@
 Status: enforced-rationale
 Confidence: high
 
-## Observation
+Why: bypassing the single-draft command boundary causes torn reads, unpersisted writes, and non-rollbackable effects.
 
-Feature code occasionally bypasses the aggregate command boundary — calling store mutators directly, nesting `dispatchRunSessionCommand` inside an already-open command, reading committed state inside a draft, or performing async/navigation/audio work inside the command body.
+Owner: [ARCHITECTURE.md](../../../docs/ARCHITECTURE.md#run-state) owns the aggregate, ports, and `afterCommit` contract.
 
-## Why it matters
-
-Bypassing the shared command boundary causes inconsistent reads, unpersisted writes, torn autosave, and non-rollbackable side effects. Nested dispatches and async spans break atomicity; battle continuity depends on committing resolved gameplay, RNG, and XP before presentation. Pending continuations are retained only to resume older saves without repeating their rolls or rewards. [Run-state ownership](../../../docs/ARCHITECTURE.md#run-state) defines publication, unchanged-command behavior, and post-commit effects.
-
-## Evidence
-
-- `docs/ARCHITECTURE.md#run-state` — aggregate ownership, ports, anti-patterns.
-- `src/features/alchemy/shared/stores/run-session-command.ts` — `dispatchRunSessionCommand`, single draft, `afterCommit` seam.
-- `src/features/alchemy/shared/stores/run-session-write-port.ts` + `write-port-*.ts` — draft-first mutators.
-- `src/features/alchemy/shared/stores/run-reads.ts` — committed reads only.
-- `src/features/alchemy/shared/stores/run-session-lifecycle-port.ts` — `teardownRun`, `finalizeRunEndSession`.
-- `eslint/boundaries.js` — `gameplay-state-store.ts` internal; feature code uses ports.
-- `docs/ARMORY.md#write-paths` — `dispatchGearMutationWithRunHealthSync` vs `mutateGearWithRunHealthSync`.
-
-## Resolution
-
-[ARCHITECTURE.md](../../../docs/ARCHITECTURE.md#run-state) owns the
-aggregate, ports, and command contract. Boundary lint (`DOMAIN_STORE_PATTERNS`,
-`AGGREGATE_NO_DIRECT_MUTATION`) keeps `gameplay-state-store.ts` internal and
-rejects direct `getState`/`setState` outside `shared/stores/`.
+Enforcement: boundary lint (`DOMAIN_STORE_PATTERNS`, `AGGREGATE_NO_DIRECT_MUTATION`) keeps `gameplay-state-store.ts` internal.

@@ -5,7 +5,7 @@ import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 
 export type ShopKind = "merchant" | "alchemist" | "trinket" | "equipment";
 
-type ShopRefreshModifiers = readonly EncounterRewardTraitId[];
+export type ShopRefreshModifiers = readonly EncounterRewardTraitId[];
 
 export interface CreateShopActionsDeps {
   talentEffects: TalentEffectManifest;

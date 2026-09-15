@@ -20,13 +20,13 @@ export function DestinationScreen({
 }: {
   rewardState: RewardState;
   onChoose: (destination: Destination) => void;
-  onPrepare: () => void;
+  onPrepare?: () => void;
 }) {
   const destinationOptions = rewardState.destinations;
   const bossOnly = destinationOptions.length === 1 && destinationOptions[0] === DESTINATIONS.BOSS_COMBAT;
 
   useEffect(() => {
-    onPrepare();
+    onPrepare?.();
   }, [onPrepare]);
 
   useEffect(() => {

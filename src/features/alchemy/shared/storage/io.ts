@@ -5,7 +5,7 @@ import type { SaveData } from "./types";
 import { evaluateSaveCandidates, type SaveLoadState } from "./save-candidates";
 import { createDefaultSaveData } from "./defaults";
 import { setWritesDisabled, sharedSaveQueue, type SaveWriteOutcome } from "./save-write-queue";
-import { logStorageFailure } from "./save-logging";
+import { logStorageFailure } from "@/lib/storage-logging";
 
 let saveBackend: SaveBackend = createPlatformSaveBackend();
 
@@ -100,6 +100,11 @@ export async function saveAlchemySaveDataForExit(data: SaveData): Promise<SaveWr
       logStorageFailure("Save data could not be written during page exit", result.error);
       return "failed";
     }
+    // No await sits between writeSync and this read, so no other task can
+    // interleave: the check-and-enqueue below is atomic on the event loop.
+    // The trailing enqueue supersedes a queued stale snapshot so an in-flight
+    // async write cannot land after the exit snapshot; each physical write
+    // stamps its own lastSavedAt at serialization time.
     if (sharedSaveQueue.isIdle) return "saved";
     return await sharedSaveQueue.enqueue(data, writeSaveSnapshot);
   } catch (error) {
@@ -108,14 +113,14 @@ export async function saveAlchemySaveDataForExit(data: SaveData): Promise<SaveWr
   }
 }
 
-export async function clearAlchemySaveData(options?: {
-  keepWritesDisabled?: boolean;
-  forceLocalWipe?: boolean;
-}): Promise<boolean> {
+export async function clearAlchemySaveData(
+  mode: "default" | "localWipe" | "wipeForReload" = "default",
+): Promise<boolean> {
   if (typeof window === "undefined") return true;
-  const forceLocalWipe = options?.forceLocalWipe ?? sharedSaveQueue.areWritesDisabled();
+  const forceLocalWipe = mode !== "default";
+  const keepWritesDisabled = mode === "wipeForReload";
   return await sharedSaveQueue.enqueueClear(() => saveBackend.clear(SAVE_KEY, { forceLocalWipe }), {
-    keepWritesDisabled: options?.keepWritesDisabled,
+    keepWritesDisabled,
     onError: (error) => logStorageFailure("Save data could not be cleared", error),
   });
 }

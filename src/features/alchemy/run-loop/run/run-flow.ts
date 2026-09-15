@@ -51,6 +51,9 @@ export function createRunOutcomes(deps: RunOutcomeDeps) {
 export type RunOutcomes = ReturnType<typeof createRunOutcomes>;
 
 export function createRunFlow(deps: RunFlowHandlerDeps, outcomes = createRunOutcomes(deps)) {
+  // outcomes and deps must share one getAvailableDestinations: victory samples
+  // destinations through outcomes while progression samples through deps, and
+  // the two offer sets disagree if the functions ever diverge.
   const { victory, defeat } = outcomes;
   const progression = createProgressionHandlers(deps, victory.completeRunVictory);
   const destination = createDestinationScreenHandlers(deps, progression.advanceToNextDestination);

@@ -1,6 +1,6 @@
 ---
-status: complete
-updated: 2026-09-07
+status: superseded
+updated: 2026-09-15
 archived_in: f07bbb72
 ---
 

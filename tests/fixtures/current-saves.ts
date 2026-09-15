@@ -1,10 +1,10 @@
 import { saveEnvelopeFixture } from "./saves";
-function currentSaveEnvelope(overrides: Record<string, unknown>) {
-  return saveEnvelopeFixture(overrides);
-}
 
+// Intentionally non-default values exercise round-trip recovery: every
+// override below is valid but differs from SaveDataSchema defaults, while
+// omitted fields rely on load-tolerant .catch defaults.
 export function currentSchemaCampaignSave() {
-  return currentSaveEnvelope({
+  return saveEnvelopeFixture({
     selectedAspectRatio: "auto",
     displayMode: "fullscreen",
     discoveredCardIds: ["slash", "block", "bash"],

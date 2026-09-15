@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getGearInstanceTitle } from "@/lib/gear/item-names";
-import type { GearInstance } from "@/lib/gear/types";
+import { getGearInstanceTitle, type GearInstance } from "@/lib/gear";
 
 function instance(overrides: Partial<GearInstance> & Pick<GearInstance, "instanceId" | "definitionId">): GearInstance {
   return {

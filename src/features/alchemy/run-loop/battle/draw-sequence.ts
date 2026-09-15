@@ -6,6 +6,8 @@ import { logBattleError } from "./controller-utils";
 import { markBattleStage } from "@/lib/performance/battle-stage-marks";
 import { type HiddenHandCardKeys } from "./playable-hand";
 
+import { onRunTeardown } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+
 export interface HandDrawSequenceDeps {
   isSessionActive: (session: number) => boolean;
   animateDrawnHand: (cards: BattleCard[], allHandCards: BattleCard[], session: number) => Promise<void>;
@@ -16,6 +18,37 @@ export interface HandDrawSequenceDeps {
 export type DrawPresentationReveal = () => void;
 
 const activeDraws = new WeakMap<HandDrawSequenceDeps, Map<number, number>>();
+
+// Initiated card-play draws per session, owned here so input gating and the
+// animation pipeline share one counter. Unlike `activeDraws` above (which only
+// tracks non-empty animated draws per deps object), this counts every draw
+// started through `runDrawSequenceAndFinalize`, including ones that reveal no
+// new cards, and is keyed by session alone so all callers agree.
+const pendingDrawCounts = new Map<number, number>();
+
+export function getPendingDrawCount(session: number): number {
+  return pendingDrawCounts.get(session) ?? 0;
+}
+
+export function incrementPendingDraw(session: number): void {
+  pendingDrawCounts.set(session, (pendingDrawCounts.get(session) ?? 0) + 1);
+}
+
+export function decrementPendingDraw(session: number): number {
+  const remaining = (pendingDrawCounts.get(session) ?? 1) - 1;
+  if (remaining > 0) pendingDrawCounts.set(session, remaining);
+  else pendingDrawCounts.delete(session);
+  return remaining;
+}
+
+export function clearPendingDraws(session?: number): void {
+  if (session !== undefined) pendingDrawCounts.delete(session);
+  else pendingDrawCounts.clear();
+}
+
+onRunTeardown(() => {
+  clearPendingDraws();
+});
 
 function detectNewHandCards(oldHand: BattleCard[], newHand: BattleCard[]): BattleCard[] {
   const oldUidSet = new Set(oldHand.map((c) => c.uid).filter((uid): uid is number => uid !== undefined));
@@ -76,6 +109,9 @@ export async function runHandDrawSequence(
     const remaining = (sessions.get(session) ?? 1) - 1;
     if (remaining > 0) sessions.set(session, remaining);
     else sessions.delete(session);
+    // Deliberately skipped when the session died mid-draw: the abandoned
+    // battle tears down its UI anyway, and the next battle resets the
+    // presentation store, which clears these keys.
     if (deps.isSessionActive(session)) {
       markBattleStage("draw-end");
       deps.setTransferInProgress(remaining > 0);

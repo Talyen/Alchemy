@@ -43,8 +43,8 @@ catalog-external tests are named inline. Named suites are verification entry poi
 Policy (when to bump, stamp-only floor, migrate steps, public save contract): [`MIGRATIONS.md`](../src/features/alchemy/shared/storage/MIGRATIONS.md).
 
 1. Decide bump vs safe additive default using that contract — do not add a `migrateVNToVNPlus1` step for stamp-only or defaulted additive fields.
-2. Follow the Required pattern in `MIGRATIONS.md` (version stamp, transform step only when needed, Zod/defaults/fixtures, CI guards).
-3. Use the [task-scoped gate](../CONTRIBUTING.md#what-to-run-when-you-change), which selects the complete save/persistence unit suite, including the migration guards. The save contract owns required compatibility scenarios.
+2. Follow the Required pattern in `MIGRATIONS.md` (version stamp, transform step only when needed, Zod/defaults/fixtures, CI guards). `createDefaultSaveData()` delegates to `SaveDataSchema.parse({})` — update the schema, not parallel defaults. Clear-save changes use an explicit mode (`"default"` | `"localWipe"` | `"wipeForReload"`).
+3. Use the [task-scoped gate](../CONTRIBUTING.md#what-to-run-when-you-change), which selects the complete save/persistence unit suite, including the migration guards. Canonical matrices: `save-version-protection.test.ts` (unit) + `storage-io.test.ts` (integration, incl. desktop cloud merge); shared builders live in `tests/helpers/save-candidate-fixtures.ts`.
 
 ---
 
@@ -64,7 +64,7 @@ Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-sess
 
 1. Apply the Homestead find bonus when appropriate with `applyMaterialFindBonus()` from `@/lib/homestead/loot`; existing mystery and combat grants already do this.
 2. Call `awardMaterialsDuringRun(draft, materials)` inside the owning command: `gainMysteryMaterial` / `mysteryApplyHandlers` in `run-loop/navigation/mystery-flow.ts`, `commitVictoryRewards` in `run-loop/run/victory-commands.ts`, or `claimRunReward` in `run-loop/run/reward-commands.ts`.
-3. Reuse the run-end display: `awardRunEndMaterials` in `run-loop/run/run-flow-defeat.ts`, used by both defeat and victory flows, merges `runMaterialsEarned` and `applyEndOfRunHomesteadBonuses` into `session.runEndMaterials`.
+3. Reuse the run-end display: `awardRunEndMaterials` in `run-loop/run/run-materials.ts`, used by both defeat and victory flows, merges `runMaterialsEarned` and `applyEndOfRunHomesteadBonuses` into `session.runEndMaterials`.
 4. Check `tests/features/alchemy/run-loop/run/run-victory-handlers.test.ts` and the affected mystery/reward-flow tests when adding a new source.
 
 **Do not** call `addMaterials()` on the run profile store directly from run-loop or mystery code for player loot.
@@ -217,7 +217,7 @@ One definition powers a permanent Armory Trinket and a run-scoped **Boon**. Both
 5. Update Gear save schemas/defaults and migration fixtures when instance or loadout shapes change.
 6. Check affected Gear behavior, including existing Unique catalog coverage and save compatibility for instance or loadout shape changes. HP-sync write paths: [ARMORY.md § Write paths](./ARMORY.md#write-paths).
 
-Existing generation builds Basic/Astral definitions in `src/lib/gear/definitions.ts` as `{baseItemId}-{rarity}`. Reward generation rolls instances in `src/lib/gear/generation.ts`; rewards store the exact `GearInstance` and never re-roll on acceptance. Every mode, including Wildwood, persists mid-reward progress in `activeRun.interruptedFlow` (`primary-reward` / `companion-reward` arms; Gear stores full instances, cards/Trinkets store choice IDs).
+Existing generation builds Basic/Astral definitions in `src/lib/gear/definitions.ts` as `{baseItemId}-{rarity}`. Uniques are fixed catalog entries (one per base item), not generated variants — see [Unique contracts](./UNIQUE_ITEMS.md). Reward generation rolls instances in `src/lib/gear/generation.ts`; rewards store the exact `GearInstance` and never re-roll on acceptance. Every mode, including Wildwood, persists mid-reward progress in `activeRun.interruptedFlow` (`primary-reward` / `companion-reward` arms; Gear stores full instances, cards/Trinkets store choice IDs).
 
 Owned items remain unique `GearInstance` records with `affixes: GearAffixRoll[]`; never put definition objects or art URLs into saves. Battle creation already applies aggregated `gearEffects` through `computeGearManifest()`.
 
@@ -290,7 +290,7 @@ Homestead screens (like all screen directories) are excluded from `vitest` cover
 
 ## Change a shop
 
-Ownership: [ARCHITECTURE.md § Shop commands](./ARCHITECTURE.md#shop-commands).
+Ownership: [ARCHITECTURE.md § Shop commands](./ARCHITECTURE.md#shop-commands). Kind `"merchant"` is the player-facing Card Shop.
 
 1. Locate the shop's command module, sampler, and draft recipe using the ownership map above; keep slot identity helpers separate from command/audio modules.
 2. Dispatch purchases/refreshes through the existing shop transaction seam; play SFX only when its result confirms success. Equipment purchases resolve price and acquired contents from the live shelf item by instance ID.
@@ -390,8 +390,8 @@ Numeric corruption also updates matching delayed repeats of the changed effect, 
 | Step                                               | File(s)                                                                                        |
 | -------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | 1. Card mutation rules                             | `src/lib/corruption/`                                                                          |
-| 2. Destination handlers (corrupt / exit / abandon) | `run-loop/navigation/run-navigation-corruption.ts`                                             |
-| 2b. Shell wiring                                   | `createCorruptionFlowHandlers()` in `shell/use-run-flow-engine.ts`                             |
+| 2. Destination handlers (corrupt / exit / abandon) | `run-loop/navigation/corruption-flow.ts`                                                       |
+| 2b. Shell wiring                                   | `createCorruptionFlowHandlers()` in `shell/run-flow-engine.ts`                                 |
 | 3. Screen                                          | `run-loop/screens/corruption-screen.tsx`                                                       |
 | 4. Resume                                          | `session.corruptionResult` via `run-resume-codec.ts` (`encodeCorruptionResult`, screen-scoped) |
 | 5. Tests                                           | `tests/features/alchemy/run-loop/corruption.test.ts`, destination E2E Mystery/Corruption cases |

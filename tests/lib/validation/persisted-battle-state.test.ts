@@ -50,24 +50,36 @@ describe("PersistedBattleStateSchema", () => {
     expect(PersistedBattleStateSchema.safeParse("battle").success).toBe(false);
   });
 
-  it("rejects when deck is not an array", () => {
-    const state = { ...validState(), deck: "not-array" };
-    expect(PersistedBattleStateSchema.safeParse(state).success).toBe(false);
+  it("repairs a non-array deck to empty instead of discarding the battle", () => {
+    const result = PersistedBattleStateSchema.safeParse({ ...validState(), deck: "not-array" });
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.deck).toEqual([]);
+    expect(result.data.mana).toBe(4);
   });
 
-  it("rejects when mana is not a number", () => {
-    const state = { ...validState(), mana: "four" };
-    expect(PersistedBattleStateSchema.safeParse(state).success).toBe(false);
+  it("repairs a non-numeric mana to the battle default", () => {
+    const result = PersistedBattleStateSchema.safeParse({ ...validState(), mana: "four" });
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.mana).toBe(0);
+    expect(result.data.turnPhase).toBe("player");
   });
 
-  it("rejects when turnPhase is invalid", () => {
-    const state = { ...validState(), turnPhase: "idle" };
-    expect(PersistedBattleStateSchema.safeParse(state).success).toBe(false);
+  it("repairs an invalid turnPhase to player", () => {
+    const result = PersistedBattleStateSchema.safeParse({ ...validState(), turnPhase: "idle" });
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.turnPhase).toBe("player");
   });
 
-  it("rejects when currentEnemy is missing", () => {
+  it("repairs a missing currentEnemy to the placeholder default", () => {
     const { currentEnemy: _, ...state } = validState();
-    expect(PersistedBattleStateSchema.safeParse(state).success).toBe(false);
+    const result = PersistedBattleStateSchema.safeParse(state);
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.currentEnemy.id).toBe("skeleton");
+    expect(result.data.currentEnemy.abilityIds).toEqual(["slash", "bash", "block"]);
   });
 
   it("repairs invalid last-ability history without discarding the battle", () => {
@@ -76,19 +88,61 @@ describe("PersistedBattleStateSchema", () => {
     expect(result.currentEnemy.abilityIds).toEqual(["slash", "bash", "block"]);
   });
 
-  it("rejects when playerStatuses is missing", () => {
+  it("repairs missing playerStatuses to zeroed records", () => {
     const { playerStatuses: _, ...state } = validState();
-    expect(PersistedBattleStateSchema.safeParse(state).success).toBe(false);
+    const result = PersistedBattleStateSchema.safeParse(state);
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.playerStatuses.block).toBe(0);
+    expect(result.data.playerHealth).toBe(30);
   });
 
-  it("rejects when discoveredCardIds is not an array", () => {
-    const state = { ...validState(), discoveredCardIds: "none" };
-    expect(PersistedBattleStateSchema.safeParse(state).success).toBe(false);
+  it("repairs non-array discovery and modifier lists to empty", () => {
+    const result = PersistedBattleStateSchema.safeParse({
+      ...validState(),
+      discoveredCardIds: "none",
+      difficultyModifiers: null,
+    });
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.discoveredCardIds).toEqual([]);
+    expect(result.data.difficultyModifiers).toEqual([]);
   });
 
-  it("rejects when difficultyModifiers is not an array", () => {
-    const state = { ...validState(), difficultyModifiers: null };
-    expect(PersistedBattleStateSchema.safeParse(state).success).toBe(false);
+  it("rejects a battle fragment with no card piles", () => {
+    expect(PersistedBattleStateSchema.safeParse({ turn: 2 }).success).toBe(false);
+    expect(PersistedBattleStateSchema.safeParse({ turn: 2, deck: "junk" }).success).toBe(false);
+  });
+
+  it("keeps a battle whose piles are present but empty", () => {
+    const result = PersistedBattleStateSchema.safeParse({
+      ...validState(),
+      deck: [],
+      hand: [],
+      discard: [],
+      exhausted: [],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("repairs several corrupt scalars at once without discarding the battle", () => {
+    const result = PersistedBattleStateSchema.safeParse({
+      ...validState(),
+      deck: "junk",
+      mana: "four",
+      gold: -5,
+      turn: 0,
+      turnPhase: "idle",
+      currentEnemy: null,
+    });
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.deck).toEqual([]);
+    expect(result.data.mana).toBe(0);
+    expect(result.data.gold).toBe(0);
+    expect(result.data.turn).toBe(1);
+    expect(result.data.turnPhase).toBe("player");
+    expect(result.data.currentEnemy.id).toBe("skeleton");
   });
 
   it("accepts enemy turnPhase", () => {

@@ -5,7 +5,6 @@ export {
   LAUNCH_SAVE_SCHEMA_VERSION,
 } from "./metadata";
 export {
-  SCHEMA_MIGRATIONS,
   getRawContentVersion,
   getRawLastSavedAt,
   getRawSaveSchemaVersion,
@@ -24,6 +23,7 @@ export {
   MaterialInventorySchema,
   SaveDataSchema,
   UnlockedTalentsSchema,
+  isUsableLiveCombatGold,
   safeParseWithErrors,
   type ParsedActiveRunData,
   type ParsedSaveData,

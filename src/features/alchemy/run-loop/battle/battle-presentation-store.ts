@@ -296,6 +296,7 @@ onRunTeardown(() => {
 
 export type BattlePresentationPort = Pick<
   ReturnType<typeof useBattlePresentationStore.getState>,
+  | "openingDrawPending"
   | "hiddenHandCardKeys"
   | "cardTransferInProgress"
   | "setDisplayedBattle"

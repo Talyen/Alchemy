@@ -19,10 +19,6 @@ Do not run an uncited sibling audit, broaden into standing cleanup, or manufactu
 
 Follow the [shared discovery and confirmation contract](../../../docs/Audits/README.md#discover-and-confirm) for scope coverage, repeat-pass starting points, evidence, and counterevidence. Keep probe output compact (`npm run audit:all`); use summaries when the cause is unclear and open relevant evidence directly for a specific hypothesis. For multiple findings, publish a concise plan with disjoint file/symbol ownership and the cheapest matching verification per slice.
 
-## Delegate implementation efficiently
-
-Delegate only when confirmed independent slices justify it; a single finding usually stays in the root. Give each worker the evidence, expected outcome, owned files, hard stops, and focused verification. Use isolated worktrees per [AGENTS.md](../../../AGENTS.md#working-style), with disjoint ownership; integrate and review worker changes before the final gate. Supply the relevant context rather than the entire conversation.
-
 ## Review and verify
 
 Inspect each worker diff against its brief and the audit evidence bar; reject speculative growth, forwarding wrappers, duplicate paths, concealed defects, or tests whose cost is unjustified by their distinct protection. Use the shared [test value policy](../../../CONTRIBUTING.md#test-value-and-coverage-strategy) for additions and retirements. Resolve overlaps centrally, then verify per the README verification contract.

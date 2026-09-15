@@ -105,12 +105,14 @@ const CorruptionResultPersistSchema = z
   .nullable()
   .catch(null);
 
-// Shared frozen fallback; normalize-active-run-data defensively copies
-// seed+counters before use, so no consumer may mutate this reference.
-const FALLBACK_RUN_RNG_STATE: RunRngState = Object.freeze({
-  seed: 1,
-  counters: Object.freeze({ rewards: 0, destinations: 0, events: 0, shops: 0, world: 0 }),
-});
+// Fresh fallback per use: stepRunRng advances counters in place, so sharing
+// one frozen object across parses would hand live runs an unusable state.
+function createFallbackRunRngState(): RunRngState {
+  return {
+    seed: 1,
+    counters: { rewards: 0, destinations: 0, events: 0, shops: 0, world: 0 },
+  };
+}
 
 const RunRngStateSchema = z
   .object({
@@ -125,7 +127,7 @@ const RunRngStateSchema = z
       })
       .catch({ rewards: 0, destinations: 0, events: 0, shops: 0, world: 0 }),
   })
-  .catch(FALLBACK_RUN_RNG_STATE);
+  .catch(createFallbackRunRngState);
 
 const PersistedBattleTransitionSchema = z
   .union([
@@ -183,17 +185,15 @@ const AlchemistObjectSchema = createShopObjectSchema({
 export type AlchemistState = z.output<typeof AlchemistObjectSchema>;
 const AlchemistPersistSchema = AlchemistObjectSchema.nullable().catch(null);
 
-const TrinketShopPersistSchema = createShopObjectSchema({
+const TrinketShopObjectSchema = createShopObjectSchema({
   trinketIds: z.array(z.string()),
-})
-  .nullable()
-  .catch(null);
+});
+const TrinketShopPersistSchema = TrinketShopObjectSchema.nullable().catch(null);
 
-const EquipmentShopPersistSchema = createShopObjectSchema({
+const EquipmentShopObjectSchema = createShopObjectSchema({
   gear: GearInstanceArraySchema,
-})
-  .nullable()
-  .catch(null);
+});
+const EquipmentShopPersistSchema = EquipmentShopObjectSchema.nullable().catch(null);
 
 const WildwoodDraftObjectSchema = z.object({
   phase: z.enum(["draft", "battle", "reward", "removal"]),
@@ -279,10 +279,7 @@ const ActiveRunDataObjectSchema = z.object({
   encounteredRunEnemyIds: deduplicatedStringArraySchema().default([]),
   selectedDifficulty: DifficultyIdSchema.nullable().catch(null).default(null),
   contentSystemType: ContentSystemIdSchema.catch("campaign"),
-  rng: RunRngStateSchema.default(() => ({
-    seed: FALLBACK_RUN_RNG_STATE.seed,
-    counters: { ...FALLBACK_RUN_RNG_STATE.counters },
-  })),
+  rng: RunRngStateSchema.default(createFallbackRunRngState),
   labyrinthMap: LabyrinthMapSchema.nullable().catch(null),
   labyrinthPendingNode: LabyrinthPendingNodeSchema,
   activeLabyrinthModifiers: EncounterCombatTraitArraySchema.catch([]).default([]),

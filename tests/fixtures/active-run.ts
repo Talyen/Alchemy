@@ -1,5 +1,9 @@
 import { ActiveRunDataSchema } from "@/lib/validation";
 
+// Fixture roles: makeMinimalActiveRunInput is the base for ad-hoc run payloads,
+// makeRunCandidate adds a deck plus progress for storage-level tests,
+// baseActiveRunInput pins the selections most schema tests start from, and
+// parseActiveRunData parses or throws for repair-focused assertions.
 const BASE_RUN_TEMPLATE = {
   characterId: "knight",
   runDeck: [],

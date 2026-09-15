@@ -57,7 +57,7 @@ const OPTIONS_PREVIEW_PLASMA_PAIR = { primary: "#fbbf24", secondary: "#78350f" }
 type GameMenuState = ReturnType<typeof useGameMenuState>;
 
 async function wipeUnsupportedSaveAndReload() {
-  const cleared = await clearAlchemySaveData({ keepWritesDisabled: true });
+  const cleared = await clearAlchemySaveData("wipeForReload");
   if (!cleared) {
     throw new Error("Save data could not be cleared");
   }

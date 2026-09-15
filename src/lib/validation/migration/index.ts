@@ -1,5 +1,8 @@
 import { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "../metadata";
 
+// Raw version readers for load gating. Sole consumer is
+// storage/save-candidates.ts#getFutureSaveStatus, which applies schema-first
+// precedence and freshness comparison; see MIGRATIONS.md future-schema saves.
 function getRawVersion(parsed: unknown, key: string): number {
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return 0;
   const value = (parsed as Record<string, unknown>)[key];
@@ -17,13 +20,6 @@ export function getRawLastSavedAt(parsed: unknown): number | null {
   const value = (parsed as Record<string, unknown>).lastSavedAt;
   return typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : null;
 }
-
-// The supported floor and current format coincide. Add only supported future transformations here.
-export const SCHEMA_MIGRATIONS: Array<{
-  from: number;
-  to: number;
-  migrate: (data: Record<string, unknown>) => Record<string, unknown>;
-}> = [];
 
 export function isUnsupportedFutureSaveData(parsed: unknown): boolean {
   return getRawSaveSchemaVersion(parsed) > CURRENT_SAVE_SCHEMA_VERSION;

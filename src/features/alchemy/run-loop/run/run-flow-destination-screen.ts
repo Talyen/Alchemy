@@ -1,4 +1,3 @@
-import { appendCardToRunWithDiscovery } from "@/features/alchemy/shared/stores/deck-mutations";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   addGold,
@@ -14,9 +13,9 @@ import { activeLabyrinthBenefits, labyrinthCampfireHealing } from "@/lib/content
 import { LABYRINTH_MODIFIER_CONFIG } from "@/lib/game-constants";
 import { computeTalentEffects } from "@/lib/game-data";
 import { DESTINATIONS, type Destination } from "@/lib/routing";
-import { getRandomPotionCard } from "../navigation/reward-flow";
 import { logError } from "@/lib/error-logger";
 import { routeDestinationChoice } from "./run-destination-handlers";
+import { applyAlchemistPotion } from "./reward-commands";
 import type { AdvanceToNextDestination, RunFlowHandlerDeps } from "./run-flow";
 
 export function createDestinationScreenHandlers(
@@ -46,6 +45,9 @@ export function createDestinationScreenHandlers(
       });
       if (!choice) return;
       deps.actions.clearCardHover();
+      // Prepare-then-commit: shop/battle/mystery setup runs before the
+      // destination-claim commit, which is deferred into navigateTo's
+      // prepareNavigation. Setup must therefore not read claim state.
       const commitDestinationProgress = () => {
         try {
           const committed = dispatchRunSessionCommand((draft) => commitDestinationClaim(draft, destination));
@@ -89,7 +91,7 @@ export function createDestinationScreenHandlers(
         );
         if (modifiers.includes("hidden-purse")) addGold(draft, LABYRINTH_MODIFIER_CONFIG.hiddenPurseGold);
         if (modifiers.includes("herbal-hearth"))
-          appendCardToRunWithDiscovery(draft, getRandomPotionCard(createDraftRunRandomSource(draft, "rewards")));
+          applyAlchemistPotion({ draft, rng: createDraftRunRandomSource(draft, "rewards") });
         setRunPlayerHealth(draft, (prev) =>
           getCampfireRestHealth(prev, draft.run.activeRun.runMaxHealth, healFraction),
         );

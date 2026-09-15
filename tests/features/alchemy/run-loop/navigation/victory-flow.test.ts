@@ -214,6 +214,18 @@ describe("computeVictoryRewards", () => {
     expect(result.maxHealthDelta).toBe(0);
   });
 
+  it("synchronizes rewardState.gold with net purse gold when in-combat gold is earned", () => {
+    const result = computeVictoryRewards(
+      baseInput({
+        purseGold: 10,
+        battleState: baseBattleState({ gold: 18 }),
+      }),
+      testRng,
+    );
+    expect(result.persistedGold).toBe(33);
+    expect(result.rewardState.gold).toBe(23);
+  });
+
   it("applies elite gold bonus for elite enemies", () => {
     const result = computeVictoryRewards(
       baseInput({

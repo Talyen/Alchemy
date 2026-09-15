@@ -1,17 +1,18 @@
 import type { BattleCard } from "@/lib/game-data";
 import {
+  CARD_TRANSFER_CONFIG,
   GHOST_FALLBACK_CENTER_Y_RATIO,
   GHOST_FALLBACK_HEIGHT_PX,
   GHOST_FALLBACK_WIDTH_PX,
   GHOST_PLAYER_OFFSET_RATIO,
   GHOST_TARGET_Y_RATIO,
   GHOST_TRAVEL_SCALE,
+  HAND_FAN_ROTATION_DEGREES,
 } from "@/lib/game-constants";
 import { getBattleCardPlayTarget } from "@/lib/battle";
 import type { CardGhost, CardRect } from "../../shared/types";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import { getCardRect } from "../../shared/utils";
-import { CARD_TRANSFER_CONFIG, HAND_FAN_ROTATION_DEGREES } from "@/lib/game-constants";
 import type { CardTransfer } from "../../shared/types";
 import {
   centeredRectForSize,

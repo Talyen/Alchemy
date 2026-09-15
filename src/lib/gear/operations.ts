@@ -1,4 +1,4 @@
-import { effectsForAffixRolls, normalizeAffixRolls } from "./affixes";
+import { effectsForAffixRolls, getGearInstanceAffixes, normalizeAffixRolls } from "./affixes";
 import { computeSalvageYield, type SalvageYield } from "./crafting";
 import { gearDefinitions } from "./definitions";
 import { getUniqueAffixes } from "./unique-catalog";
@@ -172,9 +172,10 @@ export function salvageGear(
   const instance = inventory.find((item) => item.instanceId === instanceId);
   if (!instance) return null;
   const salvageYield = frozenYield ?? computeSalvageYield(instance);
+  const nextInventory = inventory.filter((item) => item.instanceId !== instanceId);
   return {
-    inventory: inventory.filter((item) => item.instanceId !== instanceId),
-    loadouts: pruneOrphanGearLoadouts(inventory, removeGearFromLoadouts(loadouts, instanceId)),
+    inventory: nextInventory,
+    loadouts: pruneOrphanGearLoadouts(nextInventory, removeGearFromLoadouts(loadouts, instanceId)),
     yieldedCurrencies: salvageYield.currencies,
     yieldedMaterials: salvageYield.materials,
   };
@@ -215,7 +216,7 @@ export function normalizeGearInstance(raw: unknown): GearInstance | null {
 export function effectsForInstance(instance: GearInstance): GearEffectManifest {
   const definition = gearDefinitions[instance.definitionId];
   if (!definition) return { ...defaultGearEffects };
-  return effectsForAffixRolls(getUniqueAffixes(instance.definitionId) ?? instance.affixes, definition.rarity);
+  return effectsForAffixRolls(getGearInstanceAffixes(instance), definition.rarity);
 }
 
 export function computeGearManifest(

@@ -32,6 +32,7 @@ interface RewardGoldInput {
   talentGoldPerCombat: number;
   trinketIds: string[];
   goldMultiplier: number;
+  inCombatGold?: number | undefined;
 }
 
 function hasRewardModifier(modifiers: EncounterRewardTraitId[], kind: EncounterRewardTraitId): boolean {
@@ -111,6 +112,7 @@ function sumGoldBonuses(
 export function computeRewardGold(input: RewardGoldInput): number {
   return Math.round(
     (input.baseGold +
+      (input.inCombatGold ?? 0) +
       sumGoldBonuses(
         input.bonusGold,
         input.generousBonus,

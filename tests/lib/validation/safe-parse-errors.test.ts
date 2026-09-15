@@ -47,4 +47,13 @@ describe("safeParseWithErrors nested card warnings", () => {
     expect(bad.success && bad.errors.length).toBeGreaterThan(0);
     expect(good.success && good.errors).toEqual([]);
   });
+
+  it("does not leak warnings from direct parses into later calls", () => {
+    expect(BattleCardSchema.safeParse(badEffectCard).success).toBe(true);
+    const good = safeParseWithErrors(BattleCardSchema, {
+      ...badEffectCard,
+      effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
+    });
+    expect(good.success && good.errors).toEqual([]);
+  });
 });

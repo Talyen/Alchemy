@@ -1,12 +1,14 @@
 import { repoRelativePosix } from "./filename.js";
 
 const ALLOWED = new Set([
+  // Keep in sync with tests/scripts/eslint-alchemy-plugin.test.ts, which pins
+  // the allowed owner. Moving an allowed call site means updating both.
   "src/features/alchemy/shared/stores/homestead-actions.ts",
   "src/features/alchemy/shared/stores/write-port-homestead.ts",
   "src/features/alchemy/shared/stores/write-port-session.ts",
   "src/features/alchemy/shared/stores/run-session-write-port.ts",
   "src/features/alchemy/shared/stores/gear-session-command.ts",
-  "src/features/alchemy/run-loop/run/run-flow-defeat.ts",
+  "src/features/alchemy/run-loop/run/run-materials.ts",
 ]);
 
 function importedName(specifier) {

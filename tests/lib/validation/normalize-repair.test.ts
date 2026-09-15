@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { makeWildwoodDraft, parseActiveRunData, tombstonedCard, tombstonedCard2 } from "../../fixtures/active-run";
-import { createRunRngState } from "@/lib/rng";
-import { isTombstonedCardId } from "@/lib/validation/migration/tombstoned-content-ids";
+import { createRunRngState, stepRunRng } from "@/lib/rng";
+import { TOMBSTONED_CARD_IDS, isTombstonedCardId } from "@/lib/validation/migration/tombstoned-content-ids";
+import { cardById } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { DRAFT_ROUNDS } from "@/lib/game-constants";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
@@ -153,5 +154,20 @@ describe("ActiveRunDataSchema empty-choice repair", () => {
       starterDraftChoices: [tombstonedCard, tombstonedCard, tombstonedCard],
     });
     for (const card of result.starterDraftChoices!) expect(poolIds.has(card.id)).toBe(true);
+  });
+});
+
+describe("tombstoned content ids", () => {
+  it("stays absent from the live catalog", () => {
+    expect(TOMBSTONED_CARD_IDS.length).toBeGreaterThan(0);
+    for (const id of TOMBSTONED_CARD_IDS) expect(cardById[id]).toBeUndefined();
+  });
+});
+
+describe("ActiveRunDataSchema rng fallback", () => {
+  it("hands a corrupt rng back as mutable run state", () => {
+    const result = parseActiveRunData({ rng: "junk" });
+    expect(() => stepRunRng(result.rng, "rewards")).not.toThrow();
+    expect(result.rng.counters.rewards).toBe(1);
   });
 });

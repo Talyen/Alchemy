@@ -43,6 +43,7 @@ npm run balance:loot        # Seeded loot progression report (reports/loot-progr
 npm run perf                # FPS / hitch profiling ([PERFORMANCE.md](./PERFORMANCE.md))
 npm run clean               # Remove local diagnostics/artifacts
 npm run release             # Full release: gates, commit/tag, push, CI watch ([RELEASE.md](./RELEASE.md))
+npm run test:e2e:route -- <name>  # Focused browser journey (e.g. `-- audio`, `-- homestead`); see [tests/e2e/README.md](../tests/e2e/README.md#choosing-browser-coverage)
 ```
 
 This is the curated agent subset. The full catalog is `package.json` (exhaustive); what each gate includes and when it applies is owned by [CONTRIBUTING.md](../CONTRIBUTING.md#what-to-run-when-you-change).
@@ -60,10 +61,8 @@ This is the curated agent subset. The full catalog is `package.json` (exhaustive
 
 **Skip flags:**
 
-- `ALCHEMY_SKIP_ASSETS=1` — skip optimization and barrel regeneration when
-  invoking the preparation pipeline; ordinary builds do not prepare assets.
-  Semantics are owned by
-  [`WORKFLOWS-ASSETS.md`](./WORKFLOWS-ASSETS.md).
+- `ALCHEMY_SKIP_ASSETS=1` — only for direct asset-preparation invocation; semantics owned by
+  [`WORKFLOWS-ASSETS.md`](./WORKFLOWS-ASSETS.md#skip-mode-and-verification).
 - `ALCHEMY_ENABLE_CHECKER=1` — opt-in to the in-Vite `vite-plugin-checker` typecheck (off by default so `npm run dev` stays snappy; use `npm run typecheck:watch`, `npm run dev:checked`, or this flag when you need live type errors). `ALCHEMY_SKIP_CHECKER=1` is a hard off used by the Playwright preview server.
 - `ALCHEMY_SKIP_SOURCEMAP=1` — opt-out of hidden sourcemaps for `mode=desktop` builds when fast local iterate is preferred; rejected for releases with Sentry reporting. `npm run clean -- --builds` removes existing build outputs and their maps.
 - `ALCHEMY_CHECK_SKIP_BUILD=1` — skip web/desktop builds, their bundle budgets, and preview smoke in `npm run check` for fast local iteration; CI and ship gates still build.
@@ -157,38 +156,12 @@ npm run test:balance
 
 `play-policy.ts` names the skill-floor scoring weights; changing them changes simulation policy, not game balance. `findings.ts` collects candidates, while `findings-selection.ts` owns deduplication, ranking, matchup clustering, and bucket selection. `report-methodology.ts` supplies shared HTML/JSON methodology without importing the simulation runner.
 
-The simulator covers deterministic early/mid/late progression scenarios using
-tree-order talent presets and seeded loadouts. Presets include economic talents and exclude placeholders; only the individual-talent sweep filters out meta-only talents. Exact presets, finding bands, and
-report grouping are owned by `src/lib/balance/` and the generated report; use
-findings as review input rather than applying tunings automatically. The
-summary opens `reports/balance-findings.html` and writes a JSON companion.
-The enemy, hero, and matchup tables also show average enemy attack actions, card ability uses, triggered trait activations, and the fraction of all battles won before the first enemy attack. Blocked and dodged attacks count; multi-hit attacks count once. Haste and crowd-control skips do not count. Individual `simulateBattle` results retain separate counts by card ability ID and trait ID. Ability uses include defensive cards; passive resistances, starting stats, and difficulty modifiers are excluded from trait counts. These measurements are descriptive evidence, not additional automatic balance thresholds.
+Exact presets, finding bands, report grouping, pairing methodology, and measurement semantics are owned by `src/lib/balance/` and the generated report; use findings as review input rather than applying tunings automatically. The summary opens `reports/balance-findings.html` and writes a JSON companion.
 
-Simulation measurements opt into `BattleState.battleMetrics`. Enemy attack and triggered-trait owners update immutable counters without additional RNG draws or combat text. Normal battles omit the field; battle-save normalization strips it. Triggered effects can count even if their damage is blocked or their healing overflows; passive resistances and starting stats do not count.
-
-Numeric environment values must be positive integers. Policy and loadout values
-must exactly match the choices above; pacing accepts `on`/`1`/`true` or
-`off`/`0`/`false` (anything else fails fast). Invalid configuration fails before report files are written.
-`ALCHEMY_BALANCE_FINDINGS_CAP` controls the number of findings in both rendered summaries (default: 100). Scenario seeds derive from tier, class, enemy, depth, replicate, and sweep identity instead of loop position, so adding or reordering unrelated content does not re-key existing comparisons. Core matchups reuse each tier/class deck sample across enemies while retaining distinct fight randomness; isolation sweeps keep baseline and treatment paired.
-The report uses paired battle iterations for trinket, talent, companion, gear, and affix sweeps, and independent card-deck samples for isolated-card sweeps. Each isolated-card comparison uses ten non-target cards for its baseline and the same nine non-target cards plus the target for treatment; a target card can never appear in its own baseline. The nine shared cards retain their positions before the paired seeded shuffle so only the replaced card changes the initial draw order.
-Hero-versus-enemy rows aggregate every tested depth and deck sample. Durations count rounds actually played (a capped fight reports 30, not 31), including losses and timeouts; a shorter fight can mean an earlier defeat, so read duration alongside win rate. Hero and enemy spread checks cover all three tiers. Paired win and duration findings use their own standard errors, with category medians calculated before filtering noisy results.
-Enemy targets apply at Early, Mid, and Late. Compare each enemy/tier against the win-rate, duration, and timeout targets shown in the report, owned by [findings bands](../src/lib/balance/findings-bands.ts). The matrix shows targets beside observations and preserves actual wins, defeats, and timeouts separately from rates; class outcome counts are raw even though class aggregate rates weight enemy types equally. A rounded displayed percentage or a capped findings list is not a substitute for checking all enemy/tier rows.
-Individual affix probes compare one affix against no gear across every hero, tier, gauntlet enemy, and configured deck seed. Basic midpoint rolls are used early/mid, Astral midpoint rolls late, and unique affixes use their fixed rolls. These probes measure sensitivity, including hypothetical early access to unique effects; they do not model acquisition or stacked affixes. The existing rolled-item sweep remains separate.
+Numeric environment values must be positive integers. Policy and loadout values must exactly match the choices above; pacing accepts `on`/`1`/`true` or `off`/`0`/`false` (anything else fails fast). Invalid configuration fails before report files are written. `ALCHEMY_BALANCE_FINDINGS_CAP` controls the number of findings in both rendered summaries (default: 100).
 `balance:sim` generates reports; `test:balance` verifies finite full-report
 construction and render purity without touching `reports/`. Changed balance
 implementation runs both the focused unit suite and this report check.
-
----
-
-## Battle Implementation Rules
-
-Canonical rules live in [GAME_RULES.md](./GAME_RULES.md#battle-implementation-rules). Engine tests: `tests/lib/battle/`.
-
----
-
-## Domain Glossary
-
-Canonical definitions live in [GAME_RULES.md](./GAME_RULES.md#domain-glossary).
 
 ---
 
@@ -215,6 +188,8 @@ Lookup for modules not covered in [ARCHITECTURE.md](./ARCHITECTURE.md). Paths ar
 | Potion mixing                          | `src/lib/alchemist/potion-mixer.ts`                                                                                                                                                                                                          |
 | Platform / Steam                       | `src/lib/platform.ts`, `src/lib/desktop-api.ts`, `src/lib/platform-save-backend.ts`, `desktop/`                                                                                                                                              |
 | Reward card sampling                   | `src/features/alchemy/run-loop/navigation/reward-flow.ts`                                                                                                                                                                                    |
+| Reward math (gold / traits)            | `src/features/alchemy/run-loop/navigation/reward-math.ts`                                                                                                                                                                                    |
+| Run loop layering                      | [ARCHITECTURE.md § Run loop overview](./ARCHITECTURE.md#run-loop-overview)                                                                                                                                                                   |
 | Run lifecycle / capability ports       | [ARCHITECTURE.md](./ARCHITECTURE.md)                                                                                                                                                                                                         |
 | Run screen taxonomy                    | `src/lib/routing/run-screen-router.ts`                                                                                                                                                                                                       |
 | Save migrations doc                    | `src/features/alchemy/shared/storage/MIGRATIONS.md`                                                                                                                                                                                          |
@@ -224,3 +199,4 @@ Lookup for modules not covered in [ARCHITECTURE.md](./ARCHITECTURE.md). Paths ar
 | Startup validation                     | `src/lib/validate-startup.ts`                                                                                                                                                                                                                |
 | Talent XP math vs talent data          | `src/lib/game-data/talents/progression.ts` vs `src/lib/game-data/talents/`                                                                                                                                                                   |
 | Tuning                                 | Topical files under `src/lib/game-constants/` (`combat-rules`, `battle-timing`, `progression`, `run-rewards`, `audio`, `ui-motion`, `enemy-traits`, `homestead-loot`, `storage`, `gear`), exported through `src/lib/game-constants/index.ts` |
+| Unique items (signatures/combat)       | [UNIQUE_ITEMS.md](./UNIQUE_ITEMS.md)                                                                                                                                                                                                         |

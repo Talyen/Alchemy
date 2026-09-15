@@ -1,12 +1,20 @@
+import { readActivityData } from "@/lib/active-run-session";
 import type { BattleCard, TalentEffectManifest, TrinketEntry } from "@/lib/game-data";
+import type { ShopRefreshModifiers } from "./shop-action-types";
 import type { GearInstance } from "@/lib/gear";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { getShopBuyPrice, getShopRefreshPrice, type ShopBuyKind, type ShopRefreshKind } from "./shop-pricing";
-import { resolveDraftShopPricingContext, resolveReadShopModifiers } from "./shop-pricing-context";
+import {
+  resolveDraftShopModifiers,
+  resolveDraftShopPricingContext,
+  resolveReadShopModifiers,
+} from "./shop-pricing-context";
 import { shopItemSlotKey, findShopOffering } from "./shop-slot-keys";
 import {
   commitShopInitialize,
   purchaseShopOffering,
+  refreshShopOfferings,
+  runShopTransaction,
   type DraftStateWriter,
   type ShopTransactionResult,
 } from "./shop-transactions";
@@ -22,8 +30,55 @@ export function readRefreshPrice(
   kind: ShopRefreshKind,
   talentEffects: TalentEffectManifest,
   refreshesLeft: number,
+  modifiers: ShopRefreshModifiers = resolveReadShopModifiers(),
 ): number {
-  return getShopRefreshPrice(kind, talentEffects, refreshesLeft, resolveReadShopModifiers());
+  return getShopRefreshPrice(kind, talentEffects, refreshesLeft, modifiers);
+}
+
+export function createGetRefreshPrice(
+  kind: ShopRefreshKind,
+  talentEffects: TalentEffectManifest,
+): (refreshesLeft: number, modifiers?: ShopRefreshModifiers) => number {
+  return (refreshesLeft: number, modifiers?: ShopRefreshModifiers) =>
+    readRefreshPrice(kind, talentEffects, refreshesLeft, modifiers ?? resolveReadShopModifiers());
+}
+
+export function createShopRefreshAction<TState extends { refreshesLeft: number; purchasedSlotKeys: string[] }, TItem>({
+  activity,
+  kind,
+  talentEffects,
+  setState,
+  mapState,
+  resample,
+  guard,
+}: {
+  activity: "shop" | "alchemist" | "trinket-shop" | "equipment-shop";
+  kind: ShopRefreshKind;
+  talentEffects: TalentEffectManifest;
+  setState: DraftStateWriter<TState>;
+  mapState: (previous: TState, newItems: TItem[]) => TState;
+  resample: (draft: GameplayDraft, state: TState, modifiers: ShopRefreshModifiers) => TItem[];
+  guard?: (draft: GameplayDraft, state: TState) => boolean;
+}): () => boolean {
+  return () =>
+    runShopTransaction(
+      activity,
+      (draft) => {
+        const state = readActivityData(draft.session.activity, activity) as unknown as TState;
+        if (guard && !guard(draft, state)) return { committed: false, price: 0, value: null };
+        const modifiers = resolveDraftShopModifiers(draft);
+        const price = getShopRefreshPrice(kind, talentEffects, state.refreshesLeft, modifiers);
+        return refreshShopOfferings({
+          draft,
+          price,
+          refreshesLeft: state.refreshesLeft,
+          setState,
+          mapState,
+          resample: () => resample(draft, state, modifiers),
+        });
+      },
+      "shopRefresh",
+    ).committed;
 }
 
 export function cardSlotKeyOf(card: BattleCard, index: number): string {

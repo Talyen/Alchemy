@@ -121,21 +121,30 @@ export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): B
       : null;
 
   const savedFlags: Record<string, unknown> = saved.flags ?? {};
-  merged.flags.pendingCinderSkinReaction = savedFlags.pendingCinderSkinReaction === true;
-  merged.flags.nextWishExtraChoice = savedFlags.nextWishExtraChoice === true;
-  merged.flags.previousCardWasArchery = savedFlags.previousCardWasArchery === true;
-  merged.flags.previousCardWasNature = savedFlags.previousCardWasNature === true;
-  merged.flags.companionNextAttackBonus = clampNonNegative(merged.flags.companionNextAttackBonus, 0);
-  merged.flags.sanguinePhysicalBonus = clampNonNegative(merged.flags.sanguinePhysicalBonus, 0);
-  merged.flags.darkRecoveryMana = clampNonNegative(merged.flags.darkRecoveryMana, 0);
-  merged.flags.pendingWishMana = clampNonNegative(merged.flags.pendingWishMana, 0);
-  merged.playerDodgeCount = clampNonNegative(merged.playerDodgeCount, 0);
-  merged.dodgeChanceFromDamage = clampNonNegative(merged.dodgeChanceFromDamage, 0);
-  merged.playerHealth = clampNonNegative(merged.playerHealth, defaults.playerHealth);
-  merged.enemyHealth = clampNonNegative(merged.enemyHealth, defaults.enemyHealth);
-  merged.playerMaxHealth = clampNonNegative(merged.playerMaxHealth, defaults.playerMaxHealth);
-  merged.enemyMaxHealth = clampNonNegative(merged.enemyMaxHealth, defaults.enemyMaxHealth);
-  merged.gold = clampNonNegative(merged.gold, defaults.gold);
+  // Only these transient signals require an exact boolean; every other saved
+  // flag keeps its persisted value via the manifest merge above.
+  for (const key of [
+    "pendingCinderSkinReaction",
+    "nextWishExtraChoice",
+    "previousCardWasArchery",
+    "previousCardWasNature",
+  ] as const) {
+    merged.flags[key] = savedFlags[key] === true;
+  }
+  for (const key of [
+    "companionNextAttackBonus",
+    "sanguinePhysicalBonus",
+    "darkRecoveryMana",
+    "pendingWishMana",
+  ] as const) {
+    merged.flags[key] = clampNonNegative(merged.flags[key], 0);
+  }
+  for (const key of ["playerDodgeCount", "dodgeChanceFromDamage"] as const) {
+    merged[key] = clampNonNegative(merged[key], 0);
+  }
+  for (const key of ["playerHealth", "enemyHealth", "playerMaxHealth", "enemyMaxHealth", "gold"] as const) {
+    merged[key] = clampNonNegative(merged[key], defaults[key]);
+  }
   // Load-path truncation (not battle Math.round): turn must stay an integer ≥1.
   merged.turn = Number.isFinite(merged.turn) && merged.turn >= 1 ? Math.trunc(merged.turn) : defaults.turn;
   return merged;

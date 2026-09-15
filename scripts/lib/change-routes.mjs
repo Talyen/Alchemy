@@ -1,9 +1,10 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import path from "node:path";
 
 import { globToRegExp } from "./glob-pattern.mjs";
 import { expandRepositoryPaths } from "./repository-paths.mjs";
 import { COMMANDS } from "./test-commands.mjs";
+import { readDocumentSection } from "./document-sections.mjs";
 
 const ROOT_DIR = path.resolve(import.meta.dirname, "../..");
 
@@ -233,6 +234,7 @@ export function resolveRoutePlan(paths) {
   if (relatedInputs.length === 0) keys.delete("related");
   // A first push can select the entire tree. Full unit coverage is cheaper and
   // safer than shell-sized batches of overlapping dependency-related commands.
+  // Budget is intentionally separate from the inline CLI-arg budget in check.mjs.
   if (Buffer.byteLength(JSON.stringify([...relatedInputs, ...changedTests])) > 8_000) {
     for (const key of keys) if (key === "related" || key.startsWith("unit-")) keys.delete(key);
     keys.add("unit-all");
@@ -251,11 +253,6 @@ export function resolveRoutePlan(paths) {
   };
 }
 
-function headingExists(source, heading) {
-  const escaped = heading.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
-  return new RegExp(`^#{1,6}\\s+${escaped}\\s*$`, "imu").test(source);
-}
-
 export function validateRouteCatalog({ rootDir = ROOT_DIR } = {}) {
   const errors = [];
   for (const candidate of ROUTES) {
@@ -265,8 +262,12 @@ export function validateRouteCatalog({ rootDir = ROOT_DIR } = {}) {
     for (const owner of candidate.docs) {
       const ownerPath = path.join(rootDir, owner.path);
       if (!existsSync(ownerPath)) errors.push(`${candidate.id} owner document does not exist: ${owner.path}`);
-      else if (owner.heading && !headingExists(readFileSync(ownerPath, "utf8"), owner.heading)) {
-        errors.push(`${candidate.id} owner heading does not exist: ${owner.path}#${owner.heading}`);
+      else if (owner.heading) {
+        try {
+          readDocumentSection(rootDir, owner.path, owner.heading);
+        } catch {
+          errors.push(`${candidate.id} owner heading does not exist: ${owner.path}#${owner.heading}`);
+        }
       }
     }
   }

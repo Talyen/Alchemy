@@ -26,14 +26,11 @@ import { shouldGrantCompanionReward } from "../navigation/reward-math";
 import type { VictoryRewardsResult } from "../navigation/victory-flow";
 import { computeVictoryRewards } from "../navigation/victory-flow";
 import type { RunOutcomeDeps } from "./run-flow";
+import { awardsRunMaterialsFor } from "./run-materials";
 
 export interface CommitVictoryRewardsDeps {
   battleState: BattleSnapshot;
   contentSystemType: ContentSystemId;
-}
-
-export function awardsRunMaterialsFor(contentSystemType: ContentSystemId): boolean {
-  return contentSystemType !== CONTENT_SYSTEMS.WILDWOOD;
 }
 
 function hasAnyPendingMaterial(materials: MaterialInventory): boolean {

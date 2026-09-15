@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createCorruptionFlowHandlers } from "@/features/alchemy/run-loop/navigation/run-navigation-corruption";
+import { createCorruptionFlowHandlers } from "@/features/alchemy/run-loop/navigation/corruption-flow";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   abandonLabyrinthCorruptionVisit,

@@ -83,6 +83,6 @@ export const BattleCardSchema = z
       ...(saved.baseTitle !== undefined ? { baseTitle: saved.baseTitle } : {}),
       ...(corruptedValuePositions && corruptedValuePositions.length > 0 ? { corruptedValuePositions } : {}),
     };
-    recordNestedValidationWarnings(result, [...described.errors, ...effects.errors]);
+    recordNestedValidationWarnings([...described.errors, ...effects.errors]);
     return result;
   });

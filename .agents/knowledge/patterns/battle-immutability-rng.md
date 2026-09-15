@@ -3,26 +3,8 @@
 Status: enforced-rationale
 Confidence: high
 
-## Observation
+Why: mutating `BattleState` or using unseeded randomness breaks replay, balance sim, and rounding.
 
-Battle logic tempted to mutate `BattleState` in place, use `Math.random()` / `Math.floor()`, or add stochastic choices without seeding. Past risks: nondeterministic replay, divergent balance sim, incorrect rounding.
+Owner: [GAME_RULES.md](../../../docs/GAME_RULES.md#battle-implementation-rules) owns immutable state, `Math.round`, and the `world`-stream contract; [run randomness](../../../docs/ARCHITECTURE.md#run-randomness) owns seeding details.
 
-## Why it matters
-
-`BattleState` is treated as immutable; every card/effect handler returns a new state. Combat magnitudes use `Math.round` (nearest integer), never `Math.floor`. Live combat draws the persisted `world` run stream; engine consumers use `getBattleRng(state)` while setup helpers own direct callback access. [Run randomness](../../../docs/ARCHITECTURE.md#run-randomness) owns the complete policy, including seed creation, presentation randomness, and the intentional Armory crafting/dev-spawn exception.
-
-## Evidence
-
-- `docs/GAME_RULES.md#battle-implementation-rules` — immutable state, `Math.round`, RNG rules, dodge/block/haste/death's-door.
-- `src/lib/battle/` — `damage-calc.ts`, `dot-resolve.ts`, `status-ticks.ts`, `types/state-helpers.ts` (`addEnemyStatus`/`setEnemyStatus`).
-- `src/lib/game-constants/combat-rules.ts` + topical constants — shared combat tuning lives there; content-owned magnitudes stay with their definitions.
-- `eslint.config.js` — `BATTLE_NO_MATH_FLOOR`, `BATTLE_NO_MATH_RANDOM`, and `BATTLE_NO_DIRECT_RNG` cover battle TypeScript and TSX, with narrow setup-helper exceptions.
-- `src/lib/rng/index.ts` — `placeholderRng` is only allowed constant RNG.
-- `docs/ARCHITECTURE.md#run-randomness` — `createDraftRunRandomSource(draft, stream)`, `BattleResolutionContext`, `withDraftWorldBattleRng`, and data-only `battleSnapshot`.
-
-## Resolution
-
-[GAME_RULES.md](../../../docs/GAME_RULES.md#battle-implementation-rules) owns the
-working rules. Lint bans, the command boundary, and nightly mutation coverage
-enforce the repeatable parts; retain this pattern as the reason those gates
-exist rather than a second implementation checklist.
+Enforcement: `BATTLE_NO_MATH_FLOOR`, `BATTLE_NO_MATH_RANDOM`, `BATTLE_NO_DIRECT_RNG` lint plus command boundary.

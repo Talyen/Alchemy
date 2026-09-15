@@ -16,7 +16,7 @@ import { getCardRect, getHoverId } from "../../shared/utils";
 import { applyCombatTextShakeFeedback, shouldPlayCardGoldGain } from "./battle-status";
 import { playCombatTextSounds } from "./controller-utils";
 import { PLAYABLE_HAND_OPTIONS, getHandCardKey } from "./playable-hand";
-import { runBattleDraw } from "./draw-sequence";
+import { runBattleDraw, getPendingDrawCount, incrementPendingDraw, decrementPendingDraw } from "./draw-sequence";
 import { type createBattleSession } from "./battle-session";
 import type { createBattleTransferDeps } from "./battle-transfer-deps";
 import type { BattleControllerContext } from "./battle-context";
@@ -38,15 +38,8 @@ export function createBattleCardPlay(
   const getBattle = () => readBattle();
   const getPresentation = () => ctx.getPresentation();
 
-  const pendingDraws = new Map<number, number>();
-
   function finishDrawSequence(sessionNum: number) {
-    const remaining = (pendingDraws.get(sessionNum) ?? 1) - 1;
-    if (remaining > 0) {
-      pendingDraws.set(sessionNum, remaining);
-      return;
-    }
-    pendingDraws.delete(sessionNum);
+    if (decrementPendingDraw(sessionNum) > 0) return;
     session.runIfSessionActive(sessionNum, () => {
       ctx.cardPlayInProgressRef.current = false;
       const state = getBattle().battleState;
@@ -61,7 +54,7 @@ export function createBattleCardPlay(
     sessionNum: number,
     errorContext: string,
   ) {
-    pendingDraws.set(sessionNum, (pendingDraws.get(sessionNum) ?? 0) + 1);
+    incrementPendingDraw(sessionNum);
     ctx.cardPlayInProgressRef.current = true;
     void runBattleDraw({
       oldHand,
@@ -79,7 +72,7 @@ export function createBattleCardPlay(
     return (
       !isBattleInspectionOpen(useUiStore.getState()) &&
       ctx.screen === "battle" &&
-      (!ctx.cardPlayInProgressRef.current || (pendingDraws.get(ctx.battleSessionRef.current) ?? 0) > 0) &&
+      (!ctx.cardPlayInProgressRef.current || getPendingDrawCount(ctx.battleSessionRef.current) > 0) &&
       canPlayCardInBattle(state, card, index, PLAYABLE_HAND_OPTIONS) &&
       !presentation.hiddenHandCardKeys.includes(getHandCardKey(card, index))
     );

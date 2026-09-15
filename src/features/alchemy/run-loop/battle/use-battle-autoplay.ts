@@ -1,4 +1,3 @@
-import { useUiStore, isBattleInspectionOpen } from "../../shared/stores/ui-store";
 import { useEffect, type RefObject } from "react";
 
 import { AUTOPLAY_POST_PLAY_DELAY_MS, AUTOPLAY_RETRY_DELAY_MS } from "@/lib/game-constants";
@@ -7,8 +6,9 @@ import type { BattleCard } from "@/lib/game-data";
 import type { Screen } from "@/lib/routing";
 
 import { useLatestRef } from "../../shared/ui/use-latest-ref";
-import { driveAutoplay, isBattlePlaybackBlocked } from "./autoplay-driver";
+import { driveAutoplay } from "./autoplay-driver";
 import { findFirstPlayableHandCard } from "./playable-hand";
+import { usePlaybackBlocked } from "./use-battle-playback-blocked";
 import type { BattlePlaybackPresentationGate } from "./presentation/use-hand-presentation";
 
 interface UseBattleAutoplayOptions {
@@ -35,12 +35,16 @@ export function useBattleAutoplay({
   wakeRef,
 }: UseBattleAutoplayOptions) {
   const battleStateRef = useLatestRef(battleState);
-  const screenRef = useLatestRef(screen);
-  const hasActiveBattleRef = useLatestRef(hasActiveBattle);
-  const gameMenuOpenRef = useLatestRef(gameMenuOpen);
-  const playCardRef = useLatestRef(playCard);
   const enabledRef = useLatestRef(enabled);
-  const isCardPlayInProgressRef = useLatestRef(isCardPlayInProgress);
+  const playCardRef = useLatestRef(playCard);
+  const isBlocked = usePlaybackBlocked({
+    screen,
+    battleState,
+    hasActiveBattle,
+    gameMenuOpen,
+    isCardPlayInProgress,
+    presentationGateRef,
+  });
 
   useEffect(() => {
     if (!enabled) return;
@@ -51,31 +55,10 @@ export function useBattleAutoplay({
       postPlayDelayMs: AUTOPLAY_POST_PLAY_DELAY_MS,
       wakeRef,
       isEnabled: () => enabledRef.current && !controller.signal.aborted,
-      isBlocked: () =>
-        isBattlePlaybackBlocked({
-          screen: screenRef.current,
-          battleState: battleStateRef.current,
-          hasActiveBattle: hasActiveBattleRef.current,
-          cardTransferInProgress: presentationGateRef.current.cardTransferInProgress,
-          hiddenHandCardKeys: presentationGateRef.current.hiddenHandCardKeys,
-          cardPlayInProgress: isCardPlayInProgressRef.current(),
-          gameMenuOpen: gameMenuOpenRef.current,
-          inspectionOpen: isBattleInspectionOpen(useUiStore.getState()),
-        }),
+      isBlocked,
       findPlayableCard: () => findFirstPlayableHandCard(battleStateRef.current),
       playCard: (card, index) => playCardRef.current(card, index),
     });
     return () => controller.abort();
-  }, [
-    enabled,
-    battleStateRef,
-    enabledRef,
-    gameMenuOpenRef,
-    hasActiveBattleRef,
-    isCardPlayInProgressRef,
-    playCardRef,
-    presentationGateRef,
-    screenRef,
-    wakeRef,
-  ]);
+  }, [enabled, battleStateRef, enabledRef, isBlocked, playCardRef, wakeRef]);
 }

@@ -5,20 +5,13 @@ import {
   abandonRun,
   clearBattlePresentationUi,
 } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
-import {
-  addMaterials,
-  clearRunMaterialsEarned,
-  finalizeRunXP,
-  setHasActiveBattle,
-  setRunEndMaterials,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+import { finalizeRunXP, setHasActiveBattle } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { BATTLE_END_TRANSITION_DELAY } from "@/lib/game-constants";
-import { addInventory, emptyInventory } from "@/lib/homestead/inventory";
-import { applyEndOfRunHomesteadBonuses } from "@/lib/homestead/loot";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import type { RunOutcomeDeps } from "./run-flow";
+import { awardRunEndMaterials } from "./run-materials";
 
 export function clearCombatState(draft: GameplayDraft) {
   setHasActiveBattle(draft, false);
@@ -26,23 +19,6 @@ export function clearCombatState(draft: GameplayDraft) {
 
 function clearCombatPresentation() {
   clearBattlePresentationUi();
-}
-
-export function awardRunEndMaterials(draft: GameplayDraft): ReturnType<typeof emptyInventory> {
-  const runState = draft.run.activeRun;
-  const runProfile = draft.runProfile;
-  if (runState.contentSystemType === CONTENT_SYSTEMS.WILDWOOD) {
-    clearRunMaterialsEarned(draft);
-    const none = emptyInventory();
-    setRunEndMaterials(draft, none);
-    return none;
-  }
-  const runCollected = runState.runMaterialsEarned;
-  const homesteadBonus = applyEndOfRunHomesteadBonuses(emptyInventory(), runProfile.effects, runState.roomsEncountered);
-  addMaterials(draft, homesteadBonus);
-  setRunEndMaterials(draft, addInventory(runCollected, homesteadBonus));
-  clearRunMaterialsEarned(draft);
-  return homesteadBonus;
 }
 
 export function createDefeatHandlers(deps: RunOutcomeDeps) {

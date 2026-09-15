@@ -523,6 +523,79 @@ describe("storage io", () => {
     );
   });
 
+  describe("desktop cloud merge", () => {
+    it("prefers local save over cloud on desktop cold boot", async () => {
+      const localSave = {
+        saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+        lastSavedAt: 0,
+        discoveredCardIds: ["slash"],
+        activeRun: null,
+      };
+      const cloudSave = {
+        saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+        lastSavedAt: 0,
+        discoveredCardIds: ["slash", "block"],
+        activeRun: null,
+      };
+
+      const desktop = setupMockWindowDesktop({
+        saveCandidates: [JSON.stringify(localSave)],
+        steamName: null,
+      });
+      desktop.steamCloudRead.mockResolvedValue(JSON.stringify(cloudSave));
+
+      const loaded = await loadAlchemySaveState();
+
+      expect(loaded.data.discoveredCardIds).toEqual(["slash"]);
+    });
+
+    it("loads the fresher cloud save over a stale local save", async () => {
+      const localSave = {
+        saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+        lastSavedAt: 1000,
+        discoveredCardIds: ["slash"],
+        activeRun: null,
+      };
+      const cloudSave = {
+        saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+        lastSavedAt: 2000,
+        discoveredCardIds: ["slash", "block"],
+        activeRun: null,
+      };
+
+      const desktop = setupMockWindowDesktop({
+        saveCandidates: [JSON.stringify(localSave)],
+        steamName: null,
+      });
+      desktop.steamCloudRead.mockResolvedValue(JSON.stringify(cloudSave));
+
+      const loaded = await loadAlchemySaveState();
+
+      expect(loaded.data.discoveredCardIds).toEqual(["slash", "block"]);
+      expect(loaded.data.lastSavedAt).toBe(2000);
+    });
+
+    it("falls back to cloud when local save is missing", async () => {
+      const cloudSave = {
+        saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+        lastSavedAt: 0,
+        discoveredCardIds: ["slash", "block"],
+        activeRun: null,
+      };
+
+      const desktop = setupMockWindowDesktop({
+        saveCandidates: [],
+        steamName: null,
+      });
+      desktop.steamCloudRead.mockResolvedValue(JSON.stringify(cloudSave));
+
+      const loaded = await loadAlchemySaveState();
+
+      expect(loaded.data.discoveredCardIds).toEqual(["slash", "block"]);
+      expect(loaded.status.kind).toBe("ok");
+    });
+  });
+
   it("coalesces overlapping saveAlchemySaveData writes to the latest snapshot", async () => {
     let releaseFirstWrite: (() => void) | undefined;
     const firstWriteGate = new Promise<void>((resolve) => {
@@ -602,7 +675,7 @@ describe("storage io", () => {
     const loaded = await loadAlchemySaveState();
     expect(loaded.status.kind).toBe("unsupported-newer-schema");
 
-    await expect(clearAlchemySaveData({ keepWritesDisabled: true })).resolves.toBe(true);
+    await expect(clearAlchemySaveData("wipeForReload")).resolves.toBe(true);
     expect(mockStorage[SAVE_KEY]).toBeUndefined();
 
     await expect(
@@ -612,6 +685,8 @@ describe("storage io", () => {
   });
 
   it("clears local saves even when Steam Cloud delete fails", async () => {
+    // Save Protected escape hatch (App wipe-for-reload) explicitly requests a
+    // forced local wipe; plain default clears stay fail-closed (next test).
     vi.spyOn(console, "log").mockImplementation(() => {});
     vi.spyOn(console, "error").mockImplementation(() => {});
     vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -627,7 +702,7 @@ describe("storage io", () => {
     const loaded = await bootstrapAlchemySaveState();
     expect(loaded.status.kind).toBe("unsupported-newer-schema");
 
-    await expect(clearAlchemySaveData()).resolves.toBe(true);
+    await expect(clearAlchemySaveData("wipeForReload")).resolves.toBe(true);
     expect(desktop.clearSave).toHaveBeenCalledOnce();
     expect(desktop.steamCloudDelete).toHaveBeenCalledOnce();
   });
@@ -654,7 +729,7 @@ describe("storage io", () => {
     const loaded = await bootstrapAlchemySaveState();
     expect(loaded.status.kind).toBe("ok");
 
-    await expect(clearAlchemySaveData({ forceLocalWipe: true })).resolves.toBe(true);
+    await expect(clearAlchemySaveData("localWipe")).resolves.toBe(true);
     expect(desktop.clearSave).toHaveBeenCalledOnce();
   });
 });

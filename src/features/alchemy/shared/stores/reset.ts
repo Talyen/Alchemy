@@ -19,7 +19,7 @@ export async function clearAllPersistentGameData(): Promise<boolean> {
   if (persistentClearInFlight) return false;
   persistentClearInFlight = true;
   try {
-    const cleared = await clearAlchemySaveData({ forceLocalWipe: true });
+    const cleared = await clearAlchemySaveData("localWipe");
     if (!cleared) {
       logStorageFailure("Save data could not be cleared; memory was left unchanged");
       return false;

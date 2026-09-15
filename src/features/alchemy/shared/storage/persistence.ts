@@ -14,22 +14,6 @@ import { getOwnedUniqueDefinitionIds } from "@/lib/gear";
 
 export type { AlchemyPersistenceFields } from "./types";
 
-export const PERSISTENCE_CODECS = [
-  settingsPersistenceCodec,
-  profilePersistenceCodec,
-  gearPersistenceCodec,
-  runProfilePersistenceCodec,
-] as const;
-
-export function createDefaultPersistenceFields(): AlchemyPersistenceFields {
-  return {
-    ...settingsPersistenceCodec.createDefault(),
-    ...profilePersistenceCodec.createDefault(),
-    ...gearPersistenceCodec.createDefault(),
-    ...runProfilePersistenceCodec.createDefault(),
-  };
-}
-
 export function encodePersistenceFields(): AlchemyPersistenceFields {
   return {
     ...settingsPersistenceCodec.encode(),

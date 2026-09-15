@@ -13,20 +13,21 @@ import { getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { isValidDeckIndex } from "@/lib/utils";
 import type { AlchemistShopCommands } from "./shop-action-types";
-import { cardSlotKeyOf, initializeShop, purchaseSlotOffering } from "./shop-commands-core";
-import { computeMixPotionPrice, getShopBuyPrice, getShopRefreshPrice } from "./shop-pricing";
+import {
+  cardSlotKeyOf,
+  createGetRefreshPrice,
+  createShopRefreshAction,
+  initializeShop,
+  purchaseSlotOffering,
+} from "./shop-commands-core";
+import { computeMixPotionPrice, getShopBuyPrice } from "./shop-pricing";
 import {
   resolveDraftShopModifiers,
   resolveReadShopModifiers,
   resolveReadShopPricingContext,
 } from "./shop-pricing-context";
 import { applyStrongSpiritsToPotions, createInitialAlchemistState, resampleCardShopOfferings } from "./shop-state-init";
-import {
-  commitShopService,
-  refreshShopOfferings,
-  runShopTransaction,
-  type ShopTransactionResult,
-} from "./shop-transactions";
+import { commitShopService, runShopTransaction, type ShopTransactionResult } from "./shop-transactions";
 
 export function createAlchemistShopCommands({
   talentEffects,
@@ -39,8 +40,7 @@ export function createAlchemistShopCommands({
     return getShopBuyPrice("alchemistPotion", card, resolveReadShopPricingContext(talentEffects, "alchemistState"));
   };
   const getMixPrice = () => computeMixPotionPrice(talentEffects, resolveReadShopModifiers());
-  const getRefreshPrice = (refreshesLeft: number, modifiers = resolveReadShopModifiers()) =>
-    getShopRefreshPrice("alchemist", talentEffects, refreshesLeft, modifiers);
+  const getRefreshPrice = createGetRefreshPrice("alchemist", talentEffects);
 
   const initialize = initializeShop(setAlchemistState, (draft) =>
     createInitialAlchemistState(
@@ -106,34 +106,24 @@ export function createAlchemistShopCommands({
     );
   }
 
-  function refresh(): boolean {
-    return runShopTransaction(
-      "alchemist",
-      (draft) => {
-        const state = readActivityData(draft.session.activity, "alchemist");
-        const modifiers = resolveDraftShopModifiers(draft);
-        return refreshShopOfferings({
-          draft,
-          price: getShopRefreshPrice("alchemist", talentEffects, state.refreshesLeft, modifiers),
-          refreshesLeft: state.refreshesLeft,
-          setState: setAlchemistState,
-          mapState: (previous, items) => ({ ...previous, potions: items }),
-          resample: () =>
-            applyStrongSpiritsToPotions(
-              resampleCardShopOfferings(
-                draft.run.activeRun.runDeck,
-                getStandardPotionPool(),
-                state.potions,
-                ALCHEMIST_POTIONS_OFFERED,
-                createDraftRunRandomSource(draft, "shops"),
-              ),
-              modifiers,
-            ),
-        });
-      },
-      "shopRefresh",
-    ).committed;
-  }
+  const refresh = createShopRefreshAction({
+    activity: "alchemist",
+    kind: "alchemist",
+    talentEffects,
+    setState: setAlchemistState,
+    mapState: (previous, potions: BattleCard[]) => ({ ...previous, potions }),
+    resample: (draft, state, modifiers) =>
+      applyStrongSpiritsToPotions(
+        resampleCardShopOfferings(
+          draft.run.activeRun.runDeck,
+          getStandardPotionPool(),
+          state.potions,
+          ALCHEMIST_POTIONS_OFFERED,
+          createDraftRunRandomSource(draft, "shops"),
+        ),
+        modifiers,
+      ),
+  });
 
   return { initialize, buyPotion, mixPotions, refresh, getPotionBuyPrice, getMixPrice, getRefreshPrice };
 }

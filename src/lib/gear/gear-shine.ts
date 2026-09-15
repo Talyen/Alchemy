@@ -2,6 +2,7 @@ import { buildSmoothShineBorderGradient } from "@/lib/animation/shine-gradient";
 import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
 import { extractKeywordIds } from "@/lib/keyword-text";
 import { getKeywordTextShineColors, MAX_TEXT_SHINE_KEYWORDS } from "@/lib/keyword-text-shine";
+import { getGearInstanceAffixes } from "./affixes";
 import { gearAffixCatalog } from "./affix-catalog";
 import { gearDefinitions, type GearDefinition } from "./definitions";
 import type { GearInstance } from "./types";
@@ -30,7 +31,7 @@ export function selectTextShineKeywordIds(
 export function getGearInstanceKeywordIds(instance: GearInstance): KeywordId[] {
   const keywordIds = new Set<KeywordId>();
 
-  for (const roll of instance.affixes) {
+  for (const roll of getGearInstanceAffixes(instance)) {
     const affix = gearAffixCatalog[roll.id];
     if (affix) {
       for (const keywordId of extractKeywordIds(affix.descriptionTemplate)) keywordIds.add(keywordId);
@@ -49,16 +50,6 @@ function collectShineColors(keywordIds: readonly KeywordId[], mode: "border" | "
   return mode === "border" ? [...ASTRAL_SHINE_FALLBACK] : ASTRAL_SHINE_FALLBACK.slice(0, 2);
 }
 
-function getShineColorsForRarity(
-  rarity: string | null | undefined,
-  keywordIds: readonly KeywordId[],
-  mode: "border" | "text",
-): readonly string[] {
-  if (rarity === "unique") return mode === "border" ? [...UNIQUE_SHINE_COLORS] : [...UNIQUE_TEXT_SHINE_COLORS];
-  if (rarity !== "astral") return [];
-  return collectShineColors(keywordIds, mode);
-}
-
 export function getUniqueGearShineColors(): readonly string[] {
   return UNIQUE_SHINE_COLORS;
 }
@@ -68,24 +59,31 @@ export function getUniqueGearTextShineColors(): readonly string[] {
 }
 
 export function getGearDefinitionShineColors(definition: GearDefinition): readonly string[] {
-  return getShineColorsForRarity(definition.rarity, definition.affinityKeywords, "border");
+  if (definition.rarity === "unique") return [...UNIQUE_SHINE_COLORS];
+  if (definition.rarity !== "astral") return [];
+  return collectShineColors(definition.affinityKeywords, "border");
 }
 
 export function getGearInstanceShineColors(instance: GearInstance): readonly string[] {
   const definition = gearDefinitions[instance.definitionId];
   if (!definition) return [];
-  return getShineColorsForRarity(definition.rarity, getGearInstanceKeywordIds(instance), "border");
+  if (definition.rarity === "unique") return [...UNIQUE_SHINE_COLORS];
+  if (definition.rarity !== "astral") return [];
+  return collectShineColors(getGearInstanceKeywordIds(instance), "border");
 }
 
 export function getGearDefinitionTextShineColors(definition: GearDefinition): readonly string[] {
-  return getShineColorsForRarity(definition.rarity, definition.affinityKeywords, "text");
+  if (definition.rarity === "unique") return [...UNIQUE_TEXT_SHINE_COLORS];
+  if (definition.rarity !== "astral") return [];
+  return collectShineColors(definition.affinityKeywords, "text");
 }
 
 export function getGearInstanceTextShineColors(instance: GearInstance): readonly string[] {
   const definition = gearDefinitions[instance.definitionId];
   if (!definition) return [];
-  return getShineColorsForRarity(
-    definition.rarity,
+  if (definition.rarity === "unique") return [...UNIQUE_TEXT_SHINE_COLORS];
+  if (definition.rarity !== "astral") return [];
+  return collectShineColors(
     selectTextShineKeywordIds(getGearInstanceKeywordIds(instance), definition.affinityKeywords),
     "text",
   );

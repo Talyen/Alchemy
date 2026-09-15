@@ -17,7 +17,7 @@ import { filterValidDestinations } from "@/lib/routing";
 import { ASPECT_RATIO_VALUES, DISPLAY_MODE_VALUES } from "@/lib/settings-values";
 import { z } from "zod";
 import { clamp } from "@/lib/math";
-import { deduplicateFromSet, deduplicateStrings } from "./validation-utils";
+import { deduplicateFromSet, deduplicateStrings, toFiniteNonNegativeInt } from "./validation-utils";
 
 function toNonEmptyTuple<T extends string>(values: readonly T[], label: string): [T, ...T[]] {
   if (values.length === 0) throw new Error(`${label} must define at least one value`);
@@ -80,9 +80,8 @@ export const TalentXPSchema = z.preprocess((val) => {
   if (!val || typeof val !== "object") return {};
   const result: Record<string, number> = {};
   for (const [key, xp] of Object.entries(val as Record<string, unknown>)) {
-    if (typeof xp === "number" && Number.isFinite(xp) && xp >= 0) {
-      result[key] = Math.floor(xp);
-    }
+    const floored = toFiniteNonNegativeInt(xp);
+    if (floored !== null) result[key] = floored;
   }
   return result;
 }, z.record(z.string(), z.number().int().nonnegative()).catch({}));
@@ -139,7 +138,7 @@ function normalizeArrayInput(arr: unknown[]): Record<string, number> {
 function normalizeObjectInput(obj: Record<string, unknown>): Record<string, number> {
   const result: Record<string, number> = {};
   for (const [id, level] of Object.entries(obj)) {
-    result[id] = typeof level === "number" && Number.isFinite(level) ? Math.max(0, Math.floor(level)) : 0;
+    result[id] = toFiniteNonNegativeInt(level) ?? 0;
   }
   return result;
 }

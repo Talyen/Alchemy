@@ -1,4 +1,4 @@
-import { useBattlePresentationStore } from "./battle-presentation-store";
+import { useBattlePresentationStore, type BattlePresentationPort } from "./battle-presentation-store";
 import {
   createBattleStartState,
   drawOpeningHand,
@@ -23,19 +23,25 @@ import { withWildwoodModifier, type WildwoodModifierId } from "@/lib/content-sys
 import { appendEncounterTraits } from "@/lib/content-systems/encounter-traits";
 import { preloadBattleSounds } from "@/lib/audio";
 import { applyCombatTextShakeFeedback } from "./battle-status";
-import { playCompanionSound, playCombatTextSounds } from "./controller-utils";
+import { logBattleError, playCompanionSound, playCombatTextSounds } from "./controller-utils";
 import type { BattleControllerContext } from "./battle-context";
 import type { createBattleSession } from "./battle-session";
 import type { createBattleTransferDeps } from "./battle-transfer-deps";
 import { runBattleDraw } from "./draw-sequence";
 import { deriveCombatMeta } from "@/features/alchemy/shared/stores/run-meta-rebind";
 
+export interface BattleOpeningDrawContext {
+  battleSessionRef: BattleControllerContext["battleSessionRef"];
+  scheduleAutoEndTurnRef: BattleControllerContext["scheduleAutoEndTurnRef"];
+  getPresentation?: () => Pick<BattlePresentationPort, "openingDrawPending" | "setOpeningDrawPending">;
+}
+
 export async function playBattleOpeningDraw(
-  ctx: Pick<BattleControllerContext, "battleSessionRef" | "scheduleAutoEndTurnRef">,
+  ctx: BattleOpeningDrawContext,
   transferDeps: Pick<ReturnType<typeof createBattleTransferDeps>, "getDrawSequenceDeps">,
 ): Promise<boolean> {
   const current = readBattle();
-  const presentation = useBattlePresentationStore.getState();
+  const presentation = ctx.getPresentation?.() ?? useBattlePresentationStore.getState();
   if (!presentation.openingDrawPending) return false;
   presentation.setOpeningDrawPending(false);
   const sessionNum = ctx.battleSessionRef.current;
@@ -93,84 +99,100 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
     gold: number | undefined,
     modifiers?: DifficultyModifier[],
   ) {
-    dispatchRunSessionCommand(
-      (draft) => {
-        const enemy = resolveEnemy(draft);
-        const startingHealth = syncRunToBattleStart(draft);
-        const run = draft.run.activeRun;
-        const nextRoomsEncountered = run.roomsEncountered + 1;
-        setRoomsEncountered(draft, nextRoomsEncountered);
-        const encounterTraitIds = run.contentSystemType === "labyrinth" ? draft.session.activeLabyrinthModifiers : [];
-        const battleEnemy = encounterTraitIds.length > 0 ? appendEncounterTraits(enemy, encounterTraitIds) : enemy;
-        let nextBattleState = createBattleForEnemy(
-          draft,
-          battleEnemy,
-          deck ?? run.runDeck,
-          gold ?? draft.runProfile.gold,
-          startingHealth,
-          nextRoomsEncountered,
-          createDraftRunRandomSource(draft, "world"),
-          modifiers,
-        );
-        const companionTexts: CombatTextEvent[] = [];
-        const companionId = nextBattleState.activeCompanion?.id ?? null;
-        if (companionId) {
-          nextBattleState = processCompanionTurnStart(nextBattleState, companionTexts);
-          if (nextBattleState.encounterBenefits.includes("eager-pack"))
-            nextBattleState = processCompanionTurnStart(nextBattleState, companionTexts);
-        }
-        const openingDrawState = drawOpeningHand(nextBattleState);
-        initializeActiveBattle(draft, openingDrawState, null);
-        setEncounteredRunEnemyIds(draft, (current) => appendUnique(current, enemy.id));
-        setEncounteredEnemyIds(draft, (current) => appendUnique(current, enemy.id));
+    dispatchRunSessionCommand((draft) => resolveBattleStartState(draft, resolveEnemy, deck, gold, modifiers), {
+      afterCommit: presentBattleStart,
+    });
+  }
 
-        const startingTexts: CombatTextEvent[] = [...companionTexts];
-        if (nextBattleState.enemyMitigation.armor > 0) {
-          startingTexts.push({
-            target: "enemy",
-            kind: "status",
-            stat: "armor",
-            amount: nextBattleState.enemyMitigation.armor,
-          });
-        }
-        if (nextBattleState.enemyMitigation.block > 0) {
-          startingTexts.push({
-            target: "enemy",
-            kind: "status",
-            stat: "block",
-            amount: nextBattleState.enemyMitigation.block,
-          });
-        }
-        const outcome: "victory" | "defeat" | null = isPlayerDefeated(nextBattleState)
-          ? "defeat"
-          : nextBattleState.enemyHealth <= 0
-            ? "victory"
-            : null;
-        return { startingTexts, companionId, outcome, openingCardIds: openingDrawState.hand.map((card) => card.id) };
-      },
-      {
-        afterCommit: ({ startingTexts, companionId, outcome, openingCardIds }) => {
-          const battleState = readBattle().battleState;
-          preloadBattleSounds([...openingCardIds, ...battleState.currentEnemy.abilityIds], battleState.currentEnemy.id);
-          session.prepareBattleSessionForStart();
-          const presentationStore = ctx.getPresentation();
-          presentationStore.resetPresentation();
-          presentationStore.setOpeningDrawPending(true);
-          presentationStore.setCardTransferInProgress(true);
-          if (companionId) {
-            playCompanionSound(companionId);
-            presentationStore.shakeCompanion();
-            presentationStore.telegraphAttack("companion");
-          }
-          if (startingTexts.length > 0) {
-            presentationStore.showCombatTexts(startingTexts);
-            applyCombatTextShakeFeedback(startingTexts, presentationStore);
-            playCombatTextSounds(startingTexts);
-          }
-          if (outcome) session.handleVictoryDefeat?.(outcome);
-        },
-      },
+  function resolveBattleStartState(
+    draft: GameplayDraft,
+    resolveEnemy: (draft: GameplayDraft) => BestiaryEntry,
+    deck: BattleCard[] | undefined,
+    gold: number | undefined,
+    modifiers?: DifficultyModifier[],
+  ) {
+    const enemy = resolveEnemy(draft);
+    const startingHealth = syncRunToBattleStart(draft);
+    const run = draft.run.activeRun;
+    const nextRoomsEncountered = run.roomsEncountered + 1;
+    setRoomsEncountered(draft, nextRoomsEncountered);
+    const encounterTraitIds = run.contentSystemType === "labyrinth" ? draft.session.activeLabyrinthModifiers : [];
+    const battleEnemy = encounterTraitIds.length > 0 ? appendEncounterTraits(enemy, encounterTraitIds) : enemy;
+    let nextBattleState = createBattleForEnemy(
+      draft,
+      battleEnemy,
+      deck ?? run.runDeck,
+      gold ?? draft.runProfile.gold,
+      startingHealth,
+      nextRoomsEncountered,
+      createDraftRunRandomSource(draft, "world"),
+      modifiers,
     );
+    const companionTexts: CombatTextEvent[] = [];
+    const companionId = nextBattleState.activeCompanion?.id ?? null;
+    if (companionId) {
+      nextBattleState = processCompanionTurnStart(nextBattleState, companionTexts);
+      if (nextBattleState.encounterBenefits.includes("eager-pack"))
+        nextBattleState = processCompanionTurnStart(nextBattleState, companionTexts);
+    }
+    const openingDrawState = drawOpeningHand(nextBattleState);
+    initializeActiveBattle(draft, openingDrawState, null);
+    setEncounteredRunEnemyIds(draft, (current) => appendUnique(current, enemy.id));
+    setEncounteredEnemyIds(draft, (current) => appendUnique(current, enemy.id));
+
+    const startingTexts: CombatTextEvent[] = [...companionTexts];
+    if (nextBattleState.enemyMitigation.armor > 0) {
+      startingTexts.push({
+        target: "enemy",
+        kind: "status",
+        stat: "armor",
+        amount: nextBattleState.enemyMitigation.armor,
+      });
+    }
+    if (nextBattleState.enemyMitigation.block > 0) {
+      startingTexts.push({
+        target: "enemy",
+        kind: "status",
+        stat: "block",
+        amount: nextBattleState.enemyMitigation.block,
+      });
+    }
+    const outcome: "victory" | "defeat" | null = isPlayerDefeated(nextBattleState)
+      ? "defeat"
+      : nextBattleState.enemyHealth <= 0
+        ? "victory"
+        : null;
+    return { startingTexts, companionId, outcome, openingCardIds: openingDrawState.hand.map((card) => card.id) };
+  }
+
+  function presentBattleStart({
+    startingTexts,
+    companionId,
+    outcome,
+    openingCardIds,
+  }: {
+    startingTexts: CombatTextEvent[];
+    companionId: string | null;
+    outcome: "victory" | "defeat" | null;
+    openingCardIds: string[];
+  }) {
+    const battleState = readBattle().battleState;
+    preloadBattleSounds([...openingCardIds, ...battleState.currentEnemy.abilityIds], battleState.currentEnemy.id);
+    session.prepareBattleSessionForStart();
+    const presentationStore = ctx.getPresentation();
+    presentationStore.setOpeningDrawPending(true);
+    presentationStore.setCardTransferInProgress(true);
+    if (companionId) {
+      playCompanionSound(companionId);
+      presentationStore.shakeCompanion();
+      presentationStore.telegraphAttack("companion");
+    }
+    if (startingTexts.length > 0) {
+      presentationStore.showCombatTexts(startingTexts);
+      applyCombatTextShakeFeedback(startingTexts, presentationStore);
+      playCombatTextSounds(startingTexts);
+    }
+    if (outcome) session.handleVictoryDefeat?.(outcome);
   }
 
   function startBattle(
@@ -214,7 +236,7 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
   ): boolean {
     const boss = getBossById(bossId);
     if (!boss) {
-      console.warn(`startBossById: boss "${bossId}" not found`);
+      logBattleError(`start boss "${bossId}" (unknown boss id)`, new Error(`boss "${bossId}" not found`));
       return false;
     }
     beginBattle(

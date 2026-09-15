@@ -5,7 +5,6 @@ import { DRAFT_CHOICES, DRAFT_ROUNDS, MYSTERY_CARD_CHOICES } from "@/lib/game-co
 import { cardById, characters, selectRewardCards, type BattleCard, type KeywordId } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { stepRunRng, type RunRngState, type RunRngStream } from "@/lib/rng";
-import { isTombstonedCardId } from "./migration/tombstoned-content-ids";
 import type {
   ActiveCombatData,
   AlchemistState,
@@ -20,15 +19,10 @@ function isLiveCardId(id: string): boolean {
   return cardById[id] !== undefined;
 }
 
-// Tombstoned ids are known-retired content (quiet drop, covered by guard test);
-// unknown ids are dropped identically today. The distinction is kept explicit
-// so future load telemetry can count unknown ids without re-deriving history.
-function isDroppedCardId(id: string): boolean {
-  return !isLiveCardId(id) && !isTombstonedCardId(id);
-}
-
+// Deliberate removals are recorded in TOMBSTONED_CARD_IDS for explicit
+// fixtures; load drops every non-live id identically via this single check.
 function filterLiveCards<T extends { id: string }>(cards: T[]): T[] {
-  return cards.filter((card) => !isTombstonedCardId(card.id) && !isDroppedCardId(card.id));
+  return cards.filter((card) => isLiveCardId(card.id));
 }
 
 function filterLiveBattleState(state: BattleSnapshot): BattleSnapshot {
@@ -77,22 +71,25 @@ function normalizeLabyrinthModifiers(
   };
 }
 
-const keepLiveCard = (card: { id: string }) => isLiveCardId(card.id);
-const shopCardSlotKey = (card: { id: string }, index: number) => shopItemSlotKey(card.id, index);
-
-function repairLiveCardOfferings<T extends { id: string }>(items: T[], purchasedSlotKeys: string[]) {
-  return repairShopOfferings(items, purchasedSlotKeys, keepLiveCard, shopCardSlotKey);
-}
-
 function normalizeShopState(state: ShopState | null): ShopState | null {
   if (!state) return null;
-  const repaired = repairLiveCardOfferings(state.cards, state.purchasedSlotKeys);
+  const repaired = repairShopOfferings(
+    state.cards,
+    state.purchasedSlotKeys,
+    (card) => isLiveCardId(card.id),
+    (card, index) => shopItemSlotKey(card.id, index),
+  );
   return { ...state, cards: repaired.items, purchasedSlotKeys: repaired.purchasedSlotKeys };
 }
 
 function normalizeAlchemistState(state: AlchemistState | null): AlchemistState | null {
   if (!state) return null;
-  const repaired = repairLiveCardOfferings(state.potions, state.purchasedSlotKeys);
+  const repaired = repairShopOfferings(
+    state.potions,
+    state.purchasedSlotKeys,
+    (potion) => isLiveCardId(potion.id),
+    (potion, index) => shopItemSlotKey(potion.id, index),
+  );
   return { ...state, potions: repaired.items, purchasedSlotKeys: repaired.purchasedSlotKeys };
 }
 
@@ -136,6 +133,40 @@ function repairEmptyCardChoices(
   return repaired.length > 0 ? repaired : null;
 }
 
+function reDealEmptiedChoices(
+  choices: PersistedBattleCard[],
+  args: {
+    awaitPick: boolean;
+    checkDeckSize: boolean;
+    runDeck: BattleCard[];
+    rngState: RunRngState | null;
+    stream: RunRngStream;
+    count: number;
+    seedKeywords: KeywordId[];
+    alreadyOwned?: BattleCard[];
+  },
+): PersistedBattleCard[] {
+  const filtered = filterLiveCards(choices);
+  if (
+    filtered.length > 0 ||
+    !args.awaitPick ||
+    (args.checkDeckSize && args.runDeck.length >= DRAFT_ROUNDS) ||
+    !args.rngState
+  ) {
+    return filtered;
+  }
+  return (
+    repairEmptyCardChoices(
+      args.rngState,
+      args.stream,
+      args.count,
+      args.runDeck,
+      args.seedKeywords,
+      args.alreadyOwned,
+    ) ?? filtered
+  );
+}
+
 function repairWildwoodDraft(
   data: ValidatedActiveRunData,
   runDeck: BattleCard[],
@@ -144,18 +175,18 @@ function repairWildwoodDraft(
   if (data.contentSystemType !== "wildwood") return null;
   const draft = data.wildwoodDraft;
   if (!draft) return null;
-  let draftChoices = filterLiveCards(draft.draftChoices);
-  if (draftChoices.length === 0 && draft.phase === "draft" && runDeck.length < DRAFT_ROUNDS && rngState) {
-    const repaired = repairEmptyCardChoices(
-      rngState,
-      "world",
-      DRAFT_CHOICES,
+  return {
+    ...draft,
+    draftChoices: reDealEmptiedChoices(draft.draftChoices, {
+      awaitPick: draft.phase === "draft",
+      checkDeckSize: true,
       runDeck,
-      characters[data.characterId].keywords,
-    );
-    if (repaired) draftChoices = repaired;
-  }
-  return { ...draft, draftChoices };
+      rngState,
+      stream: "world",
+      count: DRAFT_CHOICES,
+      seedKeywords: characters[data.characterId].keywords,
+    }),
+  };
 }
 
 function repairStarterDraft(
@@ -164,12 +195,16 @@ function repairStarterDraft(
   rngState: RunRngState | null,
 ): PersistedBattleCard[] | null {
   if (data.contentSystemType === "wildwood") return null;
-  const filtered = data.starterDraftChoices ? filterLiveCards(data.starterDraftChoices) : null;
-  if (filtered !== null && filtered.length === 0 && runDeck.length < DRAFT_ROUNDS && rngState) {
-    const repaired = repairEmptyCardChoices(rngState, "rewards", DRAFT_CHOICES, runDeck, []);
-    if (repaired) return repaired;
-  }
-  return filtered;
+  if (!data.starterDraftChoices) return null;
+  return reDealEmptiedChoices(data.starterDraftChoices, {
+    awaitPick: true,
+    checkDeckSize: true,
+    runDeck,
+    rngState,
+    stream: "rewards",
+    count: DRAFT_CHOICES,
+    seedKeywords: [],
+  });
 }
 
 function repairMysteryVisit(
@@ -180,12 +215,20 @@ function repairMysteryVisit(
   if (data.currentScreen != null && data.currentScreen !== "mystery") return null;
   const visit = data.mysteryVisit;
   if (!visit) return null;
-  let cardChoices = visit.cardChoices ? filterLiveCards(visit.cardChoices) : null;
-  if (cardChoices !== null && cardChoices.length === 0 && visit.chosenCardId == null && rngState) {
-    const repaired = repairEmptyCardChoices(rngState, "events", MYSTERY_CARD_CHOICES, runDeck, [], []);
-    if (repaired) cardChoices = repaired;
-  }
-  return { ...visit, cardChoices };
+  if (!visit.cardChoices) return { ...visit, cardChoices: null };
+  return {
+    ...visit,
+    cardChoices: reDealEmptiedChoices(visit.cardChoices, {
+      awaitPick: visit.chosenCardId == null,
+      checkDeckSize: false,
+      runDeck,
+      rngState,
+      stream: "events",
+      count: MYSTERY_CARD_CHOICES,
+      seedKeywords: [],
+      alreadyOwned: [],
+    }),
+  };
 }
 
 function normalizeCorruptionResult(

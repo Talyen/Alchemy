@@ -19,7 +19,7 @@ import { REWARD_ROUTES } from "@/lib/routing";
 import { current } from "immer";
 import { finalizeRewardState, getRandomPotionCard } from "../navigation/reward-flow";
 import { getActiveRewardModifiersForContentSystem, shouldGrantAlchemistReward } from "../navigation/reward-math";
-import { awardsRunMaterialsFor } from "./victory-commands";
+import { awardsRunMaterialsFor } from "./run-materials";
 
 export function applyRewardSelection({ reward, draft }: { reward: ResolvedRewardChoice; draft: GameplayDraft }) {
   switch (reward.rewardType) {
@@ -47,10 +47,14 @@ export function claimRunReward(choiceId: string | null) {
   return dispatchRunSessionCommand((draft) => {
     const session = draft.session;
     if (session.activity.kind !== "rewards") return null;
+    // Skipping is only permitted for card rewards (or when no choices are offered).
+    // Non-card rewards (gear, trinket, boon) must be claimed with an explicit choice,
+    // so a null claim there is rejected and the rewards screen stays put (matching the UI).
+    const rewardState = session.rewardFlow.state;
     if (
       choiceId === null
-        ? session.rewardFlow.state.rewardType !== "card" && session.rewardFlow.state.choices.length > 0
-        : !resolveRewardChoice(session.rewardFlow.state, choiceId)
+        ? rewardState.rewardType !== "card" && rewardState.choices.length > 0
+        : !resolveRewardChoice(rewardState, choiceId)
     )
       return null;
     if (!beginRewardClaim(draft)) return null;

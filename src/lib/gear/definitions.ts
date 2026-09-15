@@ -1,33 +1,8 @@
-import type { KeywordId } from "@/lib/game-data";
-import type { MaterialInventory } from "@/lib/homestead/types";
 import { gearArtByDefinitionId } from "@/lib/game-data";
-import { gearBaseItems, type GearBaseItemId, type GearSlotRule } from "./base-items";
-import type { GearRarity, GearSlot } from "./types";
-import type { GearAffixId } from "./affix-catalog";
+import { gearBaseItems, type GearBaseItemId } from "./base-items";
+import type { GearDefinition, GearInstance, GearRarity } from "./types";
+export type { GearAffixRoll, GearDefinition, GearInstance } from "./types";
 import { getUniqueItemDefinition, uniqueItemList } from "./unique-catalog";
-
-export interface GearAffixRoll {
-  id: GearAffixId;
-  value: number;
-}
-
-export interface GearDefinition {
-  id: string;
-  baseItemId: GearBaseItemId;
-  rarity: GearRarity | null;
-  descriptionLines: string[];
-  art: string;
-  compatibleSlots: GearSlot[];
-  slotRule: GearSlotRule;
-  affinityKeywords: KeywordId[];
-  salvageValue: MaterialInventory;
-}
-
-export interface GearInstance {
-  instanceId: string;
-  definitionId: string;
-  affixes: GearAffixRoll[];
-}
 
 export function gearInstanceRarity(instance: GearInstance): GearRarity | null {
   return gearDefinitions[instance.definitionId]?.rarity ?? null;

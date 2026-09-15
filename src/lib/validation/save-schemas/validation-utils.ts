@@ -5,37 +5,15 @@ export interface ValidationError {
   message: string;
 }
 
-// Per-card repair notes (e.g. dropped effects) are recorded against the parsed
-// card object itself instead of a module-global collector, so nested parses
-// (parked runs inside a save) cannot clobber each other. Entries are held
-// weakly and collected by traversing the successful parse result.
-const nestedWarnings = new WeakMap<object, ValidationError[]>();
+// Per-card repair notes (e.g. dropped effects) are collected in a sink scoped
+// to the enclosing safeParseWithErrors call, so sibling cards in one save
+// cannot clobber each other and successful parses never pay for a full-save
+// traversal to recover warnings.
+let activeWarningSink: ValidationError[] | null = null;
 
-export function recordNestedValidationWarnings(target: object, errors: ValidationError[]): void {
-  if (errors.length === 0) return;
-  const existing = nestedWarnings.get(target);
-  if (existing) existing.push(...errors);
-  else nestedWarnings.set(target, [...errors]);
-}
-
-function collectNestedValidationWarnings(root: unknown): ValidationError[] {
-  const collected: ValidationError[] = [];
-  const seen = new Set<object>();
-  const visit = (value: unknown): void => {
-    if (!value || typeof value !== "object") return;
-    const node: object = value;
-    if (seen.has(node)) return;
-    seen.add(node);
-    const warnings = nestedWarnings.get(node);
-    if (warnings) collected.push(...warnings);
-    if (Array.isArray(value)) {
-      for (const item of value) visit(item);
-      return;
-    }
-    for (const entry of Object.values(value as Record<string, unknown>)) visit(entry);
-  };
-  visit(root);
-  return collected;
+export function recordNestedValidationWarnings(errors: ValidationError[]): void {
+  if (errors.length === 0 || !activeWarningSink) return;
+  activeWarningSink.push(...errors);
 }
 
 export function safeParseWithErrors<T>(
@@ -44,17 +22,24 @@ export function safeParseWithErrors<T>(
 ):
   | { success: true; data: T; errors: ValidationError[] }
   | { success: false; error: z.ZodError; errors: ValidationError[] } {
-  const result = schema.safeParse(data);
-  if (result.success) return { success: true, data: result.data, errors: collectNestedValidationWarnings(result.data) };
-  const zodErrors: ValidationError[] = result.error.issues.map((issue) => ({
-    path: issue.path.join("."),
-    message: issue.message,
-  }));
-  return { success: false, error: result.error, errors: zodErrors };
+  const previousSink = activeWarningSink;
+  const collected: ValidationError[] = [];
+  activeWarningSink = collected;
+  try {
+    const result = schema.safeParse(data);
+    if (result.success) return { success: true, data: result.data, errors: collected };
+    const zodErrors: ValidationError[] = result.error.issues.map((issue) => ({
+      path: issue.path.join("."),
+      message: issue.message,
+    }));
+    return { success: false, error: result.error, errors: zodErrors };
+  } finally {
+    activeWarningSink = previousSink;
+  }
 }
 
 export function deduplicateStrings(val: unknown): string[] {
-  return Array.isArray(val) ? [...new Set(val.filter((v): v is string => typeof v === "string"))] : [];
+  return collectUniqueStrings(val);
 }
 
 export function deduplicatedStringArraySchema() {
@@ -63,8 +48,26 @@ export function deduplicatedStringArraySchema() {
 
 export function deduplicateFromSet<T extends string>(val: unknown, validIds: ReadonlySet<T> | readonly T[]): T[] {
   if (!Array.isArray(val)) return [];
-  const set = validIds instanceof Set ? validIds : new Set<string>(validIds);
-  return [...new Set(val.filter((v): v is T => typeof v === "string" && set.has(v as T)))];
+  const set: ReadonlySet<string> = validIds instanceof Set ? validIds : new Set<string>(validIds);
+  return collectUniqueStrings(val, (id) => set.has(id)) as T[];
+}
+
+function collectUniqueStrings(val: unknown, isValid: (id: string) => boolean = () => true): string[] {
+  if (!Array.isArray(val)) return [];
+  const seen = new Set<string>();
+  for (const entry of val) {
+    if (typeof entry !== "string" || !isValid(entry)) continue;
+    seen.add(entry);
+  }
+  return [...seen];
+}
+
+export function toFiniteNonNegativeInt(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 ? Math.floor(value) : null;
+}
+
+export function isUsableLiveCombatGold(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0;
 }
 
 export function deduplicatedSetArraySchema<T extends string>(

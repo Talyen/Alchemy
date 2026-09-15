@@ -1,5 +1,5 @@
 import { createMysteryEventNavigation } from "@/features/alchemy/run-loop/navigation/mystery-event-navigation";
-import { createCorruptionFlowHandlers } from "@/features/alchemy/run-loop/navigation/run-navigation-corruption";
+import { createCorruptionFlowHandlers } from "@/features/alchemy/run-loop/navigation/corruption-flow";
 import type { RunFlowShellActions, RunOutcomes } from "@/features/alchemy/run-loop/run/run-flow";
 import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
 import { createWildwoodGauntletFlow } from "@/features/alchemy/run-loop/run/wildwood-gauntlet-flow";

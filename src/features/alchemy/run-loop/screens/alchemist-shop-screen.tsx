@@ -13,9 +13,10 @@ import { CardSelectionGrid } from "../../shared/ui/card-selection-grid";
 import { ScreenDescription } from "../../shared/ui/layout-components";
 import { ServiceButton } from "../shop/ui/service-button";
 import { useCaptureEscapeCancel } from "../../shared/ui/use-modal-escape-dismiss";
-import { RefreshShopServiceButton, ShopBrowseOfferings, ShopBrowseShell } from "./shop-browse-shell";
+import { GenericShopScreen } from "./generic-shop-screen";
+import { ShopBrowseShell } from "./shop-browse-shell";
 import { FadeSlot } from "../../shared/ui/use-fade";
-import { shopItemSlotKey, shopOfferingsSwapKey } from "../shop/shop-slot-keys";
+import { shopItemSlotKey } from "../shop/shop-slot-keys";
 
 export function AlchemistShopScreen({
   gold,
@@ -97,9 +98,9 @@ export function AlchemistShopScreen({
   const modeKey = mixedCard ? "result" : mixMode ? "mix" : "browse";
 
   return (
-    <ShopBrowseShell title="Alchemist's Shop" gold={gold} showGold={!mixedCard}>
-      <FadeSlot swapKey={modeKey} className="min-h-[56cqh] w-full">
-        {mixedCard ? (
+    <FadeSlot swapKey={modeKey} className="h-full min-h-[56cqh] w-full">
+      {mixedCard ? (
+        <ShopBrowseShell title="Alchemist's Shop" gold={gold} showGold={false}>
           <div className="flex flex-col items-center gap-6">
             <div className="flex flex-col items-center gap-3">
               <BattleCardButton
@@ -123,51 +124,9 @@ export function AlchemistShopScreen({
               </Button>
             </div>
           </div>
-        ) : !mixMode ? (
-          <ShopBrowseOfferings
-            swapKey={shopOfferingsSwapKey(
-              potionCards.map((card, i) => shopItemSlotKey(card.id, i)),
-              refreshesLeft,
-            )}
-            onLeave={onContinue}
-            serviceClassName="gap-4"
-            services={
-              <>
-                <ServiceButton
-                  icon={FlaskConical}
-                  label="Mix Potions"
-                  cost={mixPrice}
-                  disabled={mixDisabled}
-                  disabledMessage={mixDisabledMessage}
-                  used={mixUsed}
-                  soldOutText="Mix Potions - Sold Out"
-                  onClick={startMix}
-                />
-                <RefreshShopServiceButton
-                  gold={gold}
-                  refreshesLeft={refreshesLeft}
-                  refreshPrice={refreshPrice}
-                  onRefresh={onRefresh}
-                  label="Refresh Shop"
-                />
-              </>
-            }
-          >
-            {potionCards.map((card, i) => {
-              const slotKey = shopItemSlotKey(card.id, i);
-              return (
-                <PurchasableCardItem
-                  key={slotKey}
-                  card={card}
-                  price={getPotionPrice(card)}
-                  gold={gold}
-                  purchased={purchasedSlotKeys.includes(slotKey)}
-                  onBuy={() => onBuyCard(card, slotKey)}
-                />
-              );
-            })}
-          </ShopBrowseOfferings>
-        ) : (
+        </ShopBrowseShell>
+      ) : mixMode ? (
+        <ShopBrowseShell title="Alchemist's Shop" gold={gold}>
           <div>
             <ScreenDescription className="mb-3">Select two Potions to Combine</ScreenDescription>
             <CardSelectionGrid
@@ -200,8 +159,37 @@ export function AlchemistShopScreen({
               </Button>
             </div>
           </div>
-        )}
-      </FadeSlot>
-    </ShopBrowseShell>
+        </ShopBrowseShell>
+      ) : (
+        <GenericShopScreen
+          title="Alchemist's Shop"
+          gold={gold}
+          items={potionCards}
+          refreshesLeft={refreshesLeft}
+          refreshPrice={refreshPrice}
+          purchasedSlotKeys={purchasedSlotKeys}
+          getSlotKey={(card, i) => shopItemSlotKey(card.id, i)}
+          getPrice={getPotionPrice}
+          onBuy={onBuyCard}
+          onRefresh={onRefresh}
+          onContinue={onContinue}
+          extraServices={
+            <ServiceButton
+              icon={FlaskConical}
+              label="Mix Potions"
+              cost={mixPrice}
+              disabled={mixDisabled}
+              disabledMessage={mixDisabledMessage}
+              used={mixUsed}
+              soldOutText="Mix Potions - Sold Out"
+              onClick={startMix}
+            />
+          }
+          renderItem={(card, price, purchased, onBuy) => (
+            <PurchasableCardItem card={card} price={price} gold={gold} purchased={purchased} onBuy={onBuy} />
+          )}
+        />
+      )}
+    </FadeSlot>
   );
 }

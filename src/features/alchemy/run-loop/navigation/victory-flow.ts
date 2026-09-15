@@ -146,6 +146,7 @@ export function computeVictoryRewardState(
     destinations: Destination[];
     talentEffects?: TalentEffectManifest;
     gearAstralChanceBonus?: number;
+    purseGold?: number;
   },
   rng: () => number,
 ): RewardState {
@@ -153,6 +154,7 @@ export function computeVictoryRewardState(
   const goldMultiplier = getGoldMultiplier(input.characterId, input.selectedDifficulty);
   const gearAstralChanceBonus = input.gearAstralChanceBonus ?? 0;
   const activeTrinketEffectIds = combineTrinketEffectIds(input.runBoons, input.equippedTrinketId ?? null);
+  const inCombatGold = input.purseGold !== undefined ? Math.max(0, input.battleState.gold - input.purseGold) : 0;
 
   if (input.battleState.currentEnemy.enemyType === ENEMY_TYPES.BOSS) {
     return createBossRewardStateFromFlow({
@@ -169,6 +171,7 @@ export function computeVictoryRewardState(
       gearAstralChanceBonus,
       ownedTrinketIds: input.ownedTrinketIds ?? [],
       ownedUniqueIds: input.ownedUniqueIds ?? new Set(),
+      inCombatGold,
     });
   }
 
@@ -192,11 +195,15 @@ export function computeVictoryRewardState(
       ownedTrinketIds: input.ownedTrinketIds ?? [],
       ownedUniqueIds: input.ownedUniqueIds ?? new Set(),
       gearAstralChanceBonus,
+      inCombatGold,
     }),
     input.bossEnemyId,
   );
 }
 
+// Gauntlet economy: Wildwood gold is purse-vs-battle plus companion bonus only,
+// deliberately ignoring the difficulty/talent/elite multipliers campaign and
+// labyrinth apply in computeVictoryGold below.
 function computeWildwoodVictoryRewards(
   input: VictoryRewardsInput,
   talentEffects: TalentEffectManifest,
@@ -321,6 +328,7 @@ export function computeVictoryRewards(
       ownedTrinketIds: input.ownedTrinketIds ?? [],
       ownedUniqueIds: input.ownedUniqueIds ?? new Set(),
       battleState: input.battleState,
+      purseGold: input.purseGold,
       gold,
       eliteBonus,
       generousBonus,

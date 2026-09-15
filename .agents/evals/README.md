@@ -55,7 +55,7 @@ Before splitting a large catalog, correlate repeated-read events with the existi
 - [Button interaction](./tasks/ui-button-default/README.md)
 - [Dirty checkout](./tasks/dirty-checkout/README.md)
 
-Keep older baselines immutable. When game evolution requires a new baseline, change the pin and task version together and start a new comparison cohort. Evaluation records under `reports/` follow normal transient-artifact retention; preserve comparison summaries with the instruction-change evidence before cleanup when they need to survive it. Historical instruction and friction evidence lives in [history](../history/README.md); it is not a default preread.
+Keep older baselines immutable. When game evolution requires a new baseline, change the pin and task version together and start a new comparison cohort. `tasks.json` pins the coding-task catalog (v1); investigation cohorts pin their own bases in their result docs. Evaluation records under `reports/` follow normal transient-artifact retention; preserve comparison summaries with the instruction-change evidence before cleanup when they need to survive it. What survives pruning is the result-doc counters, decisions, and setup exclusions; raw streams, prompts, manifests, and checkout locations under `reports/` are transient. Historical instruction and friction evidence lives in [history](../history/README.md); it is not a default preread.
 
 ## Recorded results
 

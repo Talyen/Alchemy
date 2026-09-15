@@ -47,4 +47,21 @@ describe("opening hand playback", () => {
     await playback;
     expect(scheduleAutoEndTurn).toHaveBeenCalledWith(domain.battleState);
   });
+
+  it("prefers the injected presentation over the global store", async () => {
+    const drawDeps = makeDrawSequenceDeps({ animateDrawnHand: vi.fn(async () => {}) });
+    const setOpeningDrawPending = vi.fn();
+    const ctx = {
+      battleSessionRef: { current: 3 },
+      scheduleAutoEndTurnRef: { current: scheduleAutoEndTurn },
+      getPresentation: () => ({ openingDrawPending: true, setOpeningDrawPending }),
+    };
+    const transfers = { getDrawSequenceDeps: () => drawDeps };
+    // Global store stays unarmed; only the injected seam is consumed.
+    useBattlePresentationStore.getState().setOpeningDrawPending(false);
+    await expect(playBattleOpeningDraw(ctx, transfers)).resolves.toBe(true);
+    expect(setOpeningDrawPending).toHaveBeenCalledWith(false);
+    expect(useBattlePresentationStore.getState().openingDrawPending).toBe(false);
+    expect(scheduleAutoEndTurn).toHaveBeenCalledWith(domain.battleState);
+  });
 });

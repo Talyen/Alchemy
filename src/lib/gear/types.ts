@@ -19,13 +19,38 @@ export const GEAR_CHARACTER_IDS = [
 ] as const satisfies readonly string[];
 export type GearCharacterId = (typeof GEAR_CHARACTER_IDS)[number];
 
+import type { KeywordId } from "@/lib/game-data";
+import type { MaterialInventory } from "@/lib/homestead/types";
+import type { GearBaseItemId, GearSlotRule } from "./base-items";
+
 export type { GearEffectManifest } from "./gear-effect-manifest";
 export { defaultGearEffects, GEAR_EFFECT_KEYS } from "./gear-effect-manifest";
 
 export type { GearAffixId } from "./affix-catalog";
+import type { GearAffixId } from "./affix-catalog";
 
-export type { GearAffixRoll, GearDefinition, GearInstance } from "./definitions";
-import type { GearInstance } from "./definitions";
+export interface GearAffixRoll {
+  id: GearAffixId;
+  value: number;
+}
+
+export interface GearDefinition {
+  id: string;
+  baseItemId: GearBaseItemId;
+  rarity: GearRarity | null;
+  descriptionLines: string[];
+  art: string;
+  compatibleSlots: GearSlot[];
+  slotRule: GearSlotRule;
+  affinityKeywords: KeywordId[];
+  salvageValue: MaterialInventory;
+}
+
+export interface GearInstance {
+  instanceId: string;
+  definitionId: string;
+  affixes: GearAffixRoll[];
+}
 
 export type GearInventory = GearInstance[];
 export type GearInventories = Record<GearCharacterId, GearInventory>;

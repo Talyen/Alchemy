@@ -1,5 +1,5 @@
 import type { SaveData } from "./types";
-import { logStorageFailure } from "./save-logging";
+import { logStorageFailure } from "@/lib/storage-logging";
 
 export type SaveWriteOutcome = "saved" | "failed" | "skipped";
 
@@ -11,8 +11,16 @@ interface PendingSave {
 }
 
 export class SaveWriteQueue {
+  // Async serialization chain: writes and clears run one at a time. The
+  // coalesced slot holds the latest pending write; the runner drains it in a
+  // loop so overlapping enqueues collapse to two physical writes at most.
+  // writeGeneration invalidates stale writes on clear/protection/reset; it is
+  // distinct from the autosave scheduler generation, which guards hook-lifetime
+  // revision counters (see autosave-scheduler.ts).
   private chain: Promise<void> = Promise.resolve();
   private coalesced: PendingSave | null = null;
+  // Counter (not boolean): overlapping clears must each hold the write gate
+  // until all finish, otherwise a write could slip between two clears.
   private pendingClears = 0;
   private runnerActive = false;
   private writesDisabled = false;

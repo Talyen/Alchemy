@@ -1,17 +1,14 @@
 import type { SaveData } from "./types";
-import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
-import { createDefaultPersistenceFields } from "./persistence";
+import { SaveDataSchema } from "@/lib/validation";
 import { deepFreezeInDev } from "../stores/store-utils";
 
+// Single defaults owner: the Zod schema is the oracle so codec defaults,
+// schema .catch defaults, and fixtures cannot drift. The contract test in
+// save-migration-contract.test.ts pins this alignment. activeRun is null in
+// defaults so no hydration (toActiveRunData) is required.
 export function createDefaultSaveData(): SaveData {
-  return {
-    saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
-    gameBuildVersion: CURRENT_GAME_BUILD_VERSION,
-    contentVersion: CURRENT_CONTENT_VERSION,
-    ...createDefaultPersistenceFields(),
-    activeRun: null,
-    lastSavedAt: 0,
-  };
+  const parsed = SaveDataSchema.parse({});
+  return { ...parsed, activeRun: null };
 }
 
 export const defaultSaveData: SaveData = createDefaultSaveData();

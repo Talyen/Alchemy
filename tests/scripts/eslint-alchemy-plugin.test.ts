@@ -56,7 +56,7 @@ describe("alchemy ESLint plugin", () => {
     );
     expect(banned.length).toBeGreaterThan(0);
     const allowed = await lintRule(
-      "src/features/alchemy/run-loop/run/run-flow-defeat.ts",
+      "src/features/alchemy/run-loop/run/run-materials.ts",
       `import { addMaterials } from "@/features/alchemy/shared/stores/run-session-write-port";\naddMaterials({} as never, {} as never);\n`,
       "no-run-earned-add-materials",
     );

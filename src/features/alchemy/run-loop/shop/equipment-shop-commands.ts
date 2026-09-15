@@ -8,11 +8,17 @@ import { readActivityData } from "@/lib/active-run-session";
 import type { TalentEffectManifest } from "@/lib/game-data";
 import { getOwnedUniqueDefinitionIds, type GearInstance } from "@/lib/gear";
 import type { EquipmentShopCommands } from "./shop-action-types";
-import { gearSlotKeyOf, initializeShop, purchaseSlotOffering, readRefreshPrice } from "./shop-commands-core";
-import { getShopBuyPrice, getShopRefreshPrice } from "./shop-pricing";
+import {
+  createGetRefreshPrice,
+  createShopRefreshAction,
+  gearSlotKeyOf,
+  initializeShop,
+  purchaseSlotOffering,
+} from "./shop-commands-core";
+import { getShopBuyPrice } from "./shop-pricing";
 import { resolveDraftShopModifiers, resolveReadShopPricingContext } from "./shop-pricing-context";
 import { createInitialEquipmentShopState, resampleEquipmentShopOfferings } from "./shop-state-init";
-import { refreshShopOfferings, runShopTransaction } from "./shop-transactions";
+import { runShopTransaction } from "./shop-transactions";
 
 export function createEquipmentShopCommands({
   talentEffects,
@@ -24,7 +30,7 @@ export function createEquipmentShopCommands({
   const getBuyPrice = (instance: GearInstance) => {
     return getShopBuyPrice("gear", instance, resolveReadShopPricingContext(talentEffects, "equipmentShopState"));
   };
-  const getRefreshPrice = (refreshesLeft: number) => readRefreshPrice("equipment", talentEffects, refreshesLeft);
+  const getRefreshPrice = createGetRefreshPrice("equipment", talentEffects);
 
   const initialize = initializeShop(setEquipmentShopState, (draft) =>
     createInitialEquipmentShopState(
@@ -55,31 +61,22 @@ export function createEquipmentShopCommands({
     }).committed;
   }
 
-  function refresh(): boolean {
-    return runShopTransaction(
-      "equipment-shop",
-      (draft) => {
-        const state = readActivityData(draft.session.activity, "equipment-shop");
-        return refreshShopOfferings({
-          draft,
-          price: getShopRefreshPrice("equipment", talentEffects, state.refreshesLeft, resolveDraftShopModifiers(draft)),
-          refreshesLeft: state.refreshesLeft,
-          setState: setEquipmentShopState,
-          mapState: (previous, items) => ({ ...previous, gear: items }),
-          resample: () =>
-            resampleEquipmentShopOfferings(
-              createDraftRunRandomSource(draft, "shops"),
-              resolveDraftLootProgress(draft),
-              gearAstralChanceBonus,
-              getOwnedUniqueDefinitionIds(draft.gear.inventories),
-              resolveDraftShopModifiers(draft),
-              state.gear,
-            ),
-        });
-      },
-      "shopRefresh",
-    ).committed;
-  }
+  const refresh = createShopRefreshAction({
+    activity: "equipment-shop",
+    kind: "equipment",
+    talentEffects,
+    setState: setEquipmentShopState,
+    mapState: (previous, gear: GearInstance[]) => ({ ...previous, gear }),
+    resample: (draft, state, modifiers) =>
+      resampleEquipmentShopOfferings(
+        createDraftRunRandomSource(draft, "shops"),
+        resolveDraftLootProgress(draft),
+        gearAstralChanceBonus,
+        getOwnedUniqueDefinitionIds(draft.gear.inventories),
+        modifiers,
+        state.gear,
+      ),
+  });
 
   return { initialize, buy, refresh, getBuyPrice, getRefreshPrice };
 }

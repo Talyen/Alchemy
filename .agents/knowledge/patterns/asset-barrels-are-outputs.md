@@ -1,27 +1,7 @@
 # Asset Barrels Are Outputs
 
-Status: enforced-rationale
-Confidence: high
+Status: enforced-rationale (historical)
 
-## Observation
+Why: direct edits to generated barrels are discarded on next preparation; `Raw Assets/` is the source of truth.
 
-Edits directly to `src/lib/game-data/assets.generated.ts`, `src/lib/game-data/gear-art.ts`, `src/assets/optimized/**`, or `public/sounds/**` built outputs get clobbered on next `prepare-assets`. Adding Gear art without synchronizing both the asset exports and their Gear mappings leaves generated modules inconsistent; follow the [Gear-art checklist](../../../docs/WORKFLOWS-ASSETS.md#add-or-replace-gear-art).
-
-## Why it matters
-
-`Raw Assets/` is source of truth. Generated barrels are deterministic outputs; CI `assets:check` fails if preparation would change outputs (idempotency gate). Asset barrel value-imports break Playwright's esbuild collection entirely.
-
-## Evidence
-
-- `docs/WORKFLOWS-ASSETS.md` — authored asset workflow, manifest/regeneration pipeline.
-- [Boot and loading](../../../docs/ARCHITECTURE.md#boot-and-loading) — current startup-critical and deferred art policy.
-- `scripts/prepare-assets.mjs`, `sync-generated.mjs`, `optimize-assets.mjs` — generation pipeline.
-- `eslint.config.js` — `ASSET_BARREL_NO_VALUE_IMPORT_REASONS` bans value imports of `@/lib/game-data` / `@/lib/gear` in Playwright-collected files.
-- `scripts/lib/change-routes.mjs` — `assets` route → `assets-check` command.
-- `package.json` scripts — `predev` prepares assets; builds validate outputs without rewriting them; `assets:check` enforces idempotency.
-
-## Resolution
-
-The asset workflow is canonical. `assets:check`, generated-output checks, ESLint,
-and dependency boundaries enforce the recurring failure class; consult this
-pattern only to understand why direct output edits are discarded.
+Owner: [WORKFLOWS-ASSETS.md](../../../docs/WORKFLOWS-ASSETS.md) is canonical.

@@ -12,7 +12,7 @@ import {
 } from "@/lib/game-constants";
 import { CURRENT_SAVE_SCHEMA_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_CONTENT_VERSION } from "../metadata";
 import { SETTINGS_RANGES, resolveAutoplayEnabled } from "@/lib/settings-values";
-import { deduplicatedSetArraySchema, deduplicatedStringArraySchema } from "./validation-utils";
+import { deduplicatedSetArraySchema, deduplicatedStringArraySchema, isUsableLiveCombatGold } from "./validation-utils";
 import {
   CHARACTER_IDS,
   CharacterIdSchema,
@@ -78,7 +78,10 @@ const EquippedTrinketsSchema = z
   .transform((value) => value as EquippedTrinkets);
 
 function resolvePersistedGold(purseGold: number, liveCombatGold: unknown): number {
-  return typeof liveCombatGold === "number" ? liveCombatGold : purseGold;
+  if (isUsableLiveCombatGold(liveCombatGold)) {
+    return Math.floor(liveCombatGold);
+  }
+  return purseGold;
 }
 
 export const SaveDataSchema = z

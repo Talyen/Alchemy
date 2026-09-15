@@ -232,6 +232,25 @@ Readiness and saving use [Boot and loading](#boot-and-loading) and the [Persiste
 
 The [session capability reference](#session-capability-ports) lists controller, route, and domain entry points together. Use the [battle path](#battle-path), [shop commands](#shop-commands), and [run setup ownership](#run-setup-ownership) sections for their distinct execution contracts.
 
+### Run loop overview
+
+`run-loop/` splits each outcome into three layers: pure computation in
+`navigation/` (`reward-flow`, `victory-flow`, `mystery-flow`, `reward-math`),
+store commits in `run/` (`reward-commands`, `victory-commands`), and
+navigation plus sound in `run-flow-*.ts` shells composed by `run/run-flow.ts`.
+`shell/run-flow-engine.ts` wires the factories to route actions. Reading order
+for a change: `run-flow.ts` → the `run-flow-*` file for the outcome → its
+`*-commands` → the `navigation/` pure function. Gold: `victory-flow.ts` gold
+roll → `reward-math.ts` → `reward-flow.ts` reward states.
+
+Single owners to know: `run/run-materials.ts` owns the "Wildwood awards no
+materials" rule for both during-run and end-of-run awards;
+`battle/use-battle-playback-blocked.ts` owns the shared autoplay /
+auto-end-turn gate; `battle/draw-sequence.ts` owns both draw counters
+(initiated card-play draws for input gating, animated draws for transfer UI);
+`battle/battle-session.ts` owns the full presentation reset on session start,
+so battle start only arms the new battle's pending flags.
+
 ## Shop commands
 
 `create-shop-actions.ts` composes the matching `*-shop-commands.ts` modules;
@@ -255,7 +274,7 @@ shelf assignment, and modifier ordering, follow
 - `lib/settings-values.ts` owns the shared value sets and numeric bounds consumed by save validation, Options, audio,
   and the desktop bridge; the settings codec still owns defaults, encoding, and hydration.
 
-Gameplay progression remains in the [aggregate regions](#run-state); persistence follows the [codec contract](#persistence-api). Run reward finalization uses the write and lifecycle ports (`finalizeRunXP`, `awardMaterialsDuringRun`), never the discovery-only profile region.
+Gameplay progression remains in the [aggregate regions](#run-state); persistence follows the [codec contract](#persistence-api). Run reward finalization uses the write and lifecycle ports (`finalizeRunXP`, `awardMaterialsDuringRun` — see [grant materials](./WORKFLOWS.md#grant-materials-during-a-run)), never the discovery-only profile region.
 
 ## Permanent Gear (`gear-store`)
 

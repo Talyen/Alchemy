@@ -2,6 +2,7 @@ import { toActiveRunData } from "@/lib/active-run-session";
 import {
   SaveDataSchema,
   LAUNCH_SAVE_SCHEMA_VERSION,
+  isUsableLiveCombatGold,
   safeParseWithErrors,
   getRawContentVersion,
   getRawLastSavedAt,
@@ -11,7 +12,7 @@ import {
   type ParsedSaveData,
 } from "@/lib/validation";
 import { createDefaultSaveData } from "./defaults";
-import { logStorageFailure } from "./save-logging";
+import { logStorageFailure } from "@/lib/storage-logging";
 import type { SaveData } from "./types";
 
 type SaveLoadStatus =
@@ -55,7 +56,12 @@ function collectSaveRepairWarnings(raw: Partial<SaveData>, normalized: ParsedSav
     warnings.push("active run could not be restored");
   }
   const rawGold = (raw as { gold?: unknown }).gold;
-  if (rawGold !== undefined && rawGold !== normalized.gold) {
+  // Live combat gold intentionally overrides the purse (see SaveDataSchema
+  // resolvePersistedGold); that override is not a repair.
+  const rawCombatGold = (raw as { activeRun?: { activeCombat?: { battleState?: { gold?: unknown } } } }).activeRun
+    ?.activeCombat?.battleState?.gold;
+  const combatOverrideApplies = isUsableLiveCombatGold(rawCombatGold) && Math.floor(rawCombatGold) === normalized.gold;
+  if (rawGold !== undefined && rawGold !== normalized.gold && !combatOverrideApplies) {
     warnings.push(`Field "gold" was repaired (raw ${JSON.stringify(rawGold)} -> ${normalized.gold})`);
   }
   // Zod `.catch()` silently resets corrupt sections to empty defaults, so a

@@ -4,18 +4,18 @@
 
 `LAUNCH_SAVE_SCHEMA_VERSION` in `src/lib/validation/metadata.ts` is the minimum supported format. The single-run baseline is the current schema; development formats below it are disposable. `evaluateSaveCandidates` rejects those candidates before permissive field validation can stamp defaults. If no supported or protecting future candidate remains, load defaults through the normal save path without explicitly clearing backup or Cloud sources. Do not salvage old profiles or parked runs.
 
-Game build identity is distinct from schema and content versions. Ordinary compatible builds do not reset saves. Freeze the supported floor at the first distribution whose progress is promised to persist, including a playtest or Early Access release. Preserve subsequent supported formats.
+Game build identity is distinct from schema and content versions. Ordinary compatible builds do not reset saves. Freeze the supported floor at the first distribution whose progress is promised to persist, including a playtest or Early Access release. Preserve subsequent supported formats. Version sources are split: the build version is generated from `package.json` by `scripts/sync-version-metadata.mjs`, while schema and content versions are hardcoded in `src/lib/validation/metadata.ts`.
 
 ## When to increment
 
-Increment the schema version for structural or meaning changes that require a supported payload transformation. Do not bump for safe additive defaults. Content versions are reserved for content ID/meaning remaps, not ordinary balance tuning. The baseline removes historical transforms; `migration/index.ts` retains raw-version readers, future protection, and the supported migration table. Add only transformations for supported formats when those become necessary.
+Increment the schema version for structural or meaning changes that require a supported payload transformation. Do not bump for safe additive defaults. Content versions are reserved for content ID/meaning remaps, not ordinary balance tuning. The baseline removes historical transforms; `migration/index.ts` retains raw-version readers and future protection. Add only transformations for supported formats when those become necessary.
 
 ## Required pattern (automated)
 
 1. Decide whether a compatible default or supported transformation is required.
 2. Change version metadata only as required; never advance the supported floor casually.
-3. For a supported transformation, add an ordered step and apply it before current-shape validation. Update schema and hydration defaults together.
-4. Add previous-version fixtures to `tests/fixtures/current-saves.ts` when supported versions diverge. Preserve playable state and progression, not just field presence. The migration contract test checks step continuity.
+3. For a supported transformation, (re)introduce an ordered migration table covering every increment and apply it before current-shape validation. Update schema and hydration defaults together.
+4. Add previous-version fixtures to `tests/fixtures/current-saves.ts` when supported versions diverge. Preserve playable state and progression, not just field presence. The migration contract test pins the floor while no migrations are pending.
 5. Run the changed-path gate, which selects the full save/persistence suite.
 
 ## Test expectations
@@ -30,11 +30,11 @@ Choose the intended new-player default. Safe additive fields retain that default
 
 ## Content changes without a save bump
 
-Preserve complete saved card effects, descriptions, and explicit Consume overrides together. Incomplete card content recovers from the live catalog. Gear/loadout ownership cleanup, native enemy Trait refresh, current catalog filtering, and safe manifest defaults remain current-data repair, not historical migrations. Battle telemetry is runtime-only and is never persisted.
+Preserve complete saved card effects, descriptions, and explicit Consume overrides together. Incomplete card content recovers from the live catalog. Gear/loadout ownership cleanup, native enemy Trait refresh, current catalog filtering, and safe manifest defaults remain current-data repair, not historical migrations. Persisted battle scalars and collections repair field-by-field to battle defaults; a battle block without any card piles is a fragment, not a fight, and drops the combat session instead of fabricating one. Battle telemetry is runtime-only and is never persisted.
 
 ## Defaults and resume normalization
 
-Validation supplies safe current-field defaults. Normalization repairs current-run choices and catalog references; hydration restores runtime cards and manifests. Preserve valid saved card modifications, Health, defenses, flags, pending choices, and RNG. Never reapply starting grants or resolve an action during normalization. Keep material defaults and current field names; retired crystal/recovery and historical Talent conversions are no longer accepted as aliases.
+`createDefaultSaveData()` (`storage/defaults.ts`) is the single defaults owner and delegates to `SaveDataSchema.parse({})`, so codec defaults, schema `.catch` defaults, and fixtures cannot drift; the migration contract test pins key/value alignment. Validation supplies safe current-field defaults. Normalization repairs current-run choices and catalog references; hydration restores runtime cards and manifests. Preserve valid saved card modifications, Health, defenses, flags, pending choices, and RNG. Never reapply starting grants or resolve an action during normalization. Keep material defaults and current field names; retired crystal/recovery and historical Talent conversions are no longer accepted as aliases. Live combat gold intentionally overrides the purse when finite and non-negative; that override is not a repair warning.
 
 ## Public save contract
 
@@ -60,32 +60,32 @@ Normal saves and explicit flushes return `saved`, `failed`, or `skipped`. `saved
 
 Autosave retains unacknowledged changes until a covering write succeeds. In-memory revisions prevent an older completion from clearing newer progress. Failed writes retry through the existing single timer no sooner than 10 seconds after failure, including when animations are disabled or new changes arrive. Timing math lives in `src/app/autosave-scheduler.ts` with unit coverage; the React hook owns only subscriptions and lifecycle listeners. Exit signals may bypass that cooldown. Clear requests and write protection invalidate pending acknowledgements and cancel scheduled autosaves; disabled persistence and hook cleanup also stop retries. A late completion cannot restart cancelled work. No scheduling metadata is persisted.
 
-Browser lifecycle exits (`visibilitychange`, `pagehide`, and `beforeunload`) synchronously flush the latest unacknowledged snapshot to `localStorage` via `writeSync`. A successful synchronous flush returns `saved` immediately when the queue is idle. If an older write may still land, the latest snapshot also replaces pending queue work and completion waits for that final write. Desktop IPC uses the same serialized coalescing queue and returns a promise for the actual write outcome. A failed synchronous exit remains retryable while mounted. Desktop shutdown remains best effort, so earlier visibility/pagehide signals give IPC time to finish before the window closes. Terminal saves supersede queued snapshots that have not started writing.
+Browser lifecycle exits (`visibilitychange`, `pagehide`, and `beforeunload`) synchronously flush the latest unacknowledged snapshot to `localStorage` via `writeSync`. A successful synchronous flush returns `saved` immediately when the queue is idle. If an older write may still land, the latest snapshot also replaces pending queue work and completion waits for that final write. No await sits between the sync write and the idle check, so check-and-enqueue is atomic on the event loop. Each physical write stamps its own `lastSavedAt` at serialization time. Desktop IPC uses the same serialized coalescing queue and returns a promise for the actual write outcome. A failed synchronous exit remains retryable while mounted. Desktop shutdown remains best effort, so earlier visibility/pagehide signals give IPC time to finish before the window closes. Terminal saves supersede queued snapshots that have not started writing.
 
 #### Deletion
 
-Deletion order is selected by the operation, not by the visible screen.
-When Steam Cloud is enabled, the desktop backend supports two paths:
+Deletion mode is explicit (`"default"` | `"localWipe"` | `"wipeForReload"`), not inferred from the visible screen or write protection:
 
-- **Default backend clear:** delete the Cloud mirror first, then local data.
+- **`default`:** delete the Cloud mirror first, then local data.
   Cloud deletion failure leaves local data untouched and reports failure,
   preventing a surviving mirror from silently restoring a deleted save.
-- **Explicit local wipe (`forceLocalWipe: true`):** clear local candidates
+- **`localWipe`:** clear local candidates
   (`save.json`, `bak.1–3`, and `tmp`) first, then attempt Cloud deletion
   best-effort. Local failure reports failure without deleting Cloud data;
   Cloud failure after a successful local wipe is logged but does not prevent
   success. The next successful mirror write replaces any residual Cloud save.
+  Options' clear-save action and deliberate resets use this path.
+- **`wipeForReload`:** same forced local wipe as `localWipe`, but keeps writes
+  disabled so a terminal flush cannot resurrect the save before reload. The
+  Save Protected escape hatch uses this path.
 
-Options' clear-save action explicitly requests the local-wipe path, even during
-normal play. When no override is supplied, `clearAlchemySaveData` selects that
-path if writes are disabled, including Save Protected; otherwise it uses the
-default backend clear. Browser deletion removes local storage only.
+Browser deletion removes local storage only.
 
 Dev builds also accept `?wipeLocalSave=1` to clear before bootstrap. Device display preferences survive either deletion path.
 
 ### Load order
 
-Candidate compatibility/freshness checks → current-shape validation → normalization → hydration → restore. Future supported migration steps, when needed, execute after compatibility checks and before validation. `SaveDataSchema` is a load-tolerant shape validator; raw-version acceptance belongs to candidate evaluation and must occur first. Test-only direct parsing is not the compatibility gate.
+Candidate compatibility/freshness checks → current-shape validation → normalization → hydration → restore. If supported versions ever diverge, migration steps execute after compatibility checks and before validation. `SaveDataSchema` is a load-tolerant shape validator; raw-version acceptance belongs to candidate evaluation and must occur first. Test-only direct parsing is not the compatibility gate.
 
 ### Implementation rules
 

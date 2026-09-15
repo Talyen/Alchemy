@@ -1,5 +1,5 @@
 import { DEFAULT_DEVICE_DISPLAY, normalizeDisplayPercent, type DeviceDisplayPreferences } from "@/lib/settings-values";
-import { logStorageFailure } from "./save-logging";
+import { logStorageFailure } from "@/lib/storage-logging";
 
 export const DEVICE_DISPLAY_STORAGE_KEY = "alchemy-device-display-v1";
 const DEVICE_DISPLAY_STORAGE_VERSION = 1;

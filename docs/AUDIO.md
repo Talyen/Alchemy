@@ -30,7 +30,7 @@ Playback modules live together in `src/lib/audio/`; callers use `@/lib/audio`, b
 ## Change checklist
 
 1. Register new card or UI sounds in the owning sound registry or audio module.
-2. Add or replace source audio through the asset workflow and regenerate committed outputs.
+2. Add or replace source audio through [the asset workflow](./WORKFLOWS-ASSETS.md#add-or-replace-sound) and regenerate committed outputs.
 3. Keep host visibility, volume, cache, and failure behavior in the runtime audio owners above.
 4. Run the changed-path unit route. Use `npm run test:e2e:route -- audio` when the browser playback journey is part of the change.
 

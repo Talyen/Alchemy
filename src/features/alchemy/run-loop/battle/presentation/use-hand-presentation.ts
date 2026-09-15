@@ -76,14 +76,10 @@ export function usePlayableHandCardKeys(playabilityState: BattleSnapshot) {
 
 export function useInteractiveHandCardKeys(battleState: BattleSnapshot, playableKeys?: Set<string>) {
   const hiddenHandCardKeys = useHiddenHandCardKeys();
-  return useMemo(() => {
-    if (playableKeys) {
-      const next = new Set(playableKeys);
-      for (const hiddenKey of hiddenHandCardKeys) next.delete(hiddenKey);
-      return next;
-    }
-    return getPlayableHandCardKeysExcludingHidden(battleState, hiddenHandCardKeys, playableKeys);
-  }, [battleState, hiddenHandCardKeys, playableKeys]);
+  return useMemo(
+    () => getPlayableHandCardKeysExcludingHidden(battleState, hiddenHandCardKeys, playableKeys),
+    [battleState, hiddenHandCardKeys, playableKeys],
+  );
 }
 
 export function useCardAnimationInProgress() {

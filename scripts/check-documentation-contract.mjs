@@ -26,6 +26,23 @@ const PATH_TEMPLATE_CHARS = /[*?{}$<>"'`]/u;
 const markdownSourceCache = new Map();
 let repositoryFileCache = null;
 
+// History-only docs are exempt from content checks; reachability has its own
+// broader exemption below. Backticked references add plan/decision exemptions
+// because those records pin historical paths by design.
+function isHistoryOnlyDoc(relativePath) {
+  return relativePath === "CHANGELOG.md" || relativePath.startsWith(".agents/history/");
+}
+
+function extractMarkdownLinkTargets(source) {
+  const targets = [];
+  for (const match of source.matchAll(/\[[^\]]*\]\(([^)]+)\)/gu)) {
+    const target = match[1]?.split(/\s+/u)[0]?.replace(/^<|>$/gu, "");
+    if (!target) continue;
+    targets.push({ target, index: match.index ?? 0 });
+  }
+  return targets;
+}
+
 function markdownFiles(directory = ROOT) {
   return repositoryFiles(directory).filter((file) => [".md", ".mdx"].includes(extname(file)));
 }
@@ -106,14 +123,13 @@ export function checkLocalMarkdownLinks() {
   const broken = [];
   for (const file of markdownFiles()) {
     const source = readMarkdownSource(file);
-    for (const match of source.matchAll(/\[[^\]]*\]\(([^)]+)\)/gu)) {
-      const target = match[1]?.split(/\s+/u)[0]?.replace(/^<|>$/gu, "");
-      if (!target || /^(?:https?:|mailto:|#)/u.test(target)) continue;
+    for (const { target, index } of extractMarkdownLinkTargets(source)) {
+      if (/^(?:https?:|mailto:|#)/u.test(target)) continue;
       const relativePath = target.split("#")[0];
       if (!relativePath) continue;
       const absolutePath = resolve(dirname(file), decodeURIComponent(relativePath));
       if (!existsSync(absolutePath)) {
-        broken.push(`${file.slice(ROOT.length + 1)}:${lineNumberAt(source, match.index)} -> ${target}`);
+        broken.push(`${file.slice(ROOT.length + 1)}:${lineNumberAt(source, index)} -> ${target}`);
       }
     }
   }
@@ -123,7 +139,7 @@ export function checkLocalMarkdownLinks() {
 export function checkInlineRepositoryPaths() {
   const missing = [];
   for (const file of markdownFiles()) {
-    if (file.endsWith("CHANGELOG.md") || file.replaceAll("\\", "/").includes("/.agents/history/")) continue;
+    if (isHistoryOnlyDoc(file.slice(ROOT.length + 1).replaceAll("\\", "/"))) continue;
     const source = stripFencedBlocks(readMarkdownSource(file));
     for (const match of source.matchAll(/`([^`\n]+)`/gu)) {
       const candidate = match[1].trim();
@@ -178,7 +194,7 @@ export function checkDocumentedNpmScripts() {
   const packageJson = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"));
   const missing = [];
   for (const file of markdownFiles()) {
-    if (file.replaceAll("\\", "/").includes("/.agents/history/")) continue;
+    if (isHistoryOnlyDoc(file.slice(ROOT.length + 1).replaceAll("\\", "/"))) continue;
     const source = readMarkdownSource(file);
     for (const match of source.matchAll(/npm run ([a-zA-Z0-9:_-]+)/gu)) {
       const script = match[1];
@@ -201,11 +217,10 @@ export function checkMarkdownHeadingAnchors() {
   };
   const broken = [];
   for (const file of markdownFiles()) {
-    if (file.endsWith("CHANGELOG.md") || file.replaceAll("\\", "/").includes("/.agents/history/")) continue;
+    if (isHistoryOnlyDoc(file.slice(ROOT.length + 1).replaceAll("\\", "/"))) continue;
     const source = readMarkdownSource(file);
-    for (const match of source.matchAll(/\[[^\]]*\]\(([^)]+)\)/gu)) {
-      const target = match[1]?.split(/\s+/u)[0]?.replace(/^<|>$/gu, "");
-      if (!target || /^(?:https?:|mailto:)/u.test(target) || !target.includes("#")) continue;
+    for (const { target, index } of extractMarkdownLinkTargets(source)) {
+      if (/^(?:https?:|mailto:)/u.test(target) || !target.includes("#")) continue;
       const [relativePath, ...anchorParts] = target.split("#");
       const anchor = decodeURIComponent(anchorParts.join("#"));
       if (!anchor) continue;
@@ -214,7 +229,7 @@ export function checkMarkdownHeadingAnchors() {
         continue;
       }
       if (!slugsFor(absolutePath).has(anchor)) {
-        broken.push(`${file.slice(ROOT.length + 1)}:${lineNumberAt(source, match.index)} -> ${target}`);
+        broken.push(`${file.slice(ROOT.length + 1)}:${lineNumberAt(source, index)} -> ${target}`);
       }
     }
   }
@@ -229,9 +244,8 @@ export function checkDurableDocumentReachability(rootDir = ROOT) {
     const relativePath = file.slice(rootDir.length + 1).replaceAll("\\", "/");
     if (isExempt(relativePath)) continue;
     const targets = new Set();
-    for (const match of readMarkdownSource(file).matchAll(/\[[^\]]*\]\(([^)]+)\)/gu)) {
-      const target = match[1]?.split(/\s+/u)[0]?.replace(/^<|>$/gu, "");
-      if (!target || /^(?:https?:|mailto:|#)/u.test(target)) continue;
+    for (const { target } of extractMarkdownLinkTargets(readMarkdownSource(file))) {
+      if (/^(?:https?:|mailto:|#)/u.test(target)) continue;
       const absolutePath = resolve(dirname(file), decodeURIComponent(target.split("#")[0]));
       if (!/\.(?:md|mdx)$/u.test(absolutePath)) continue;
       const targetRelativePath = absolutePath.slice(rootDir.length + 1).replaceAll("\\", "/");

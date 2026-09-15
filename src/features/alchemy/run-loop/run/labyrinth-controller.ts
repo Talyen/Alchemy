@@ -12,6 +12,7 @@ import type {
   LabyrinthNodeType,
 } from "@/lib/content-systems/types";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { logError } from "@/lib/error-logger";
 import {
   createDraftRunRandomSource,
   setActiveLabyrinthPendingNode,
@@ -107,8 +108,11 @@ export function createLabyrinthController(): LabyrinthController {
       }
       return pendingNode;
     });
+    // The pending node is set in enterSelectedNode and cleared here; a clear
+    // with nothing pending means a node handler navigated without ever
+    // clearing (or a double-clear), so log rather than silently ignoring.
     if (!pending) {
-      console.warn("[createLabyrinthController] onNodeCleared called without a pending node");
+      logError("[createLabyrinthController] onNodeCleared called without a pending node", "other");
     }
   };
   const descend = () => {

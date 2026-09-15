@@ -34,6 +34,9 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, completeRunV
   function setNextDestinationState(draft: GameplayDraft, destinationIndexInAct?: number) {
     const run = draft.run.activeRun;
     const indexInAct = destinationIndexInAct ?? run.destinationIndexInAct;
+    // Boss offers are rolled in three places that must stay consistent (same
+    // "world" RNG stream and boss-only invariant): here, prepareDestinationScreen
+    // below, and computeVictoryResult in victory-commands.ts.
     const initialDestinations = createInitialDestinationResult({
       availableDestinations: deps.getAvailableDestinations({ destinationIndexInAct: indexInAct }),
       offerState: {
@@ -124,6 +127,9 @@ export function createProgressionHandlers(deps: RunFlowHandlerDeps, completeRunV
 
   function advanceToNextDestination() {
     const activity = readRunSession().activity.kind;
+    // Rewards exits through claimRunReward -> executeRewardRouteTransition, never
+    // through here, so "rewards" is intentionally absent: advancing from the
+    // rewards screen is a no-op rather than a second, conflicting transition.
     if (
       !["campfire", "shop", "alchemist", "trinket-shop", "equipment-shop", "mystery", "corruption"].includes(activity)
     )

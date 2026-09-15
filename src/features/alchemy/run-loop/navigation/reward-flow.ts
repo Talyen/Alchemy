@@ -54,6 +54,7 @@ export interface BossRewardInput {
   gearAstralChanceBonus?: number;
   ownedTrinketIds?: string[];
   ownedUniqueIds?: ReadonlySet<string>;
+  inCombatGold?: number | undefined;
 }
 
 export interface CombatRewardInput {
@@ -74,6 +75,7 @@ export interface CombatRewardInput {
   ownedTrinketIds?: string[];
   ownedUniqueIds?: ReadonlySet<string>;
   gearAstralChanceBonus?: number;
+  inCombatGold?: number | undefined;
 }
 
 export function createNextRewardState(rewardState: RewardState): CardRewardState {
@@ -215,6 +217,7 @@ export function createBossRewardState(input: BossRewardInput): RewardState {
       talentGoldPerCombat: input.talentGoldPerCombat,
       trinketIds: input.trinketIds,
       goldMultiplier: input.goldMultiplier ?? 1,
+      inCombatGold: input.inCombatGold,
     }),
     materials: input.materials,
   };
@@ -253,6 +256,7 @@ export function createCombatRewardState(input: CombatRewardInput): RewardState {
       talentGoldPerCombat: input.talentGoldPerCombat,
       trinketIds: input.trinketIds,
       goldMultiplier: input.goldMultiplier ?? 1,
+      inCombatGold: input.inCombatGold,
     }),
     materials: input.materials,
     destinations: input.destinations,

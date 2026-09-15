@@ -129,7 +129,7 @@ or unreviewed build cannot become player-visible automatically.
 
 ## One-time setup
 
-Account setup, signing, and secrets live in [RELEASE_SETUP.md](./RELEASE_SETUP.md); revisit them when configuration or credentials change. That guide also owns the recurring notice, provenance, input, and listing reviews linked from the release flow above.
+Account setup, signing, and secrets live in [RELEASE_SETUP.md](./RELEASE_SETUP.md); revisit them when configuration or credentials change. That guide also owns the recurring pre-promotion gates (notice, provenance, input, listing) linked from the release flow above.
 
 ## CI jobs
 

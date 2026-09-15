@@ -89,7 +89,13 @@ interface SaveSubmission {
 
 type CompletionAction = "ignore" | "cancel" | "schedule";
 
-/** Owns one subscription lifetime. The adapter supplies clocks, timers, and storage. */
+/** Owns one subscription lifetime. The adapter supplies clocks, timers, and storage.
+ *
+ * Scheduler generation guards hook-lifetime invalidation (cancel on unmount or
+ * disable must ignore late completions). SaveWriteQueue.writeGeneration guards
+ * storage invalidation (clear or write protection must skip stale writes).
+ * Both are required: the queue cannot repair scheduler revision counters from
+ * a "skipped" outcome alone once the scheduler has reset. */
 export function createAutosaveScheduler(maxWaitMs: number) {
   let revision = 0;
   let acknowledgedRevision = 0;

@@ -101,6 +101,9 @@ export function createMysteryEventNavigation({
       },
     );
   };
+  // Choose/remove report success because the deck-picker screens use the
+  // boolean to update selection UI; choice/begin stay void (feedback travels
+  // via afterCommit sounds), matching the route-commands contract.
   const handleMysteryChooseCard = (cardId: string): boolean => {
     return dispatchRunSessionCommand((draft) => {
       if (readActivityData(draft.session.activity, "mystery").mysteryChosenCardId !== null) return false;

@@ -45,6 +45,8 @@ const DESTINATION_HANDLERS: Record<Destination, (deps: DestinationRouteDeps) => 
 };
 
 export function routeDestinationChoice(destination: Destination, deps: DestinationRouteDeps) {
+  // Unknown destinations fall back to normal combat rather than throwing, so a
+  // content gap still yields a playable battle instead of a stuck screen.
   const handler = DESTINATION_HANDLERS[destination] ?? DESTINATION_HANDLERS[DESTINATIONS.NORMAL_COMBAT];
   handler(deps);
 }

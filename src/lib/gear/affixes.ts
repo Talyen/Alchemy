@@ -88,14 +88,15 @@ export function affixMatchesAffinity(def: GearAffixDefinition, affinityKeywords:
   );
 }
 
+export function getGearInstanceAffixes(instance: GearInstance): GearAffixRoll[] {
+  return getUniqueAffixes(instance.definitionId) ?? instance.affixes;
+}
+
 export function getGearInstanceTooltipEntries(
   instance: GearInstance,
 ): Array<{ key: string; name?: string; text: string; affixId?: GearAffixId; value?: number }> {
   const definition = gearDefinitions[instance.definitionId];
-  const affixEntries = getGearAffixTooltipEntries(
-    getUniqueAffixes(instance.definitionId) ?? instance.affixes,
-    definition?.rarity,
-  );
+  const affixEntries = getGearAffixTooltipEntries(getGearInstanceAffixes(instance), definition?.rarity);
   if (affixEntries.length > 0) return affixEntries;
   return (definition?.descriptionLines ?? []).map((text, index) => ({ key: `definition-${index}`, text }));
 }
