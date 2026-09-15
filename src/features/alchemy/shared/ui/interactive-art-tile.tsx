@@ -163,7 +163,7 @@ export function InteractiveArtTile({
         ariaLabel={ariaLabel ?? title}
         {...(ariaDisabled !== undefined ? { ariaDisabled } : {})}
       >
-        <img src={art ?? undefined} alt={title} className={imageClassName} />
+        {art ? <img src={art} alt={title} className={imageClassName} /> : null}
         {children}
       </Surface>
     </div>

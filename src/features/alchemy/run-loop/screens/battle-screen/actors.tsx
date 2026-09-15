@@ -48,7 +48,7 @@ export function BattleActors({
         <div
           className={cn(
             "relative transition-transform duration-500 ease-out",
-            hasCompanion && "-translate-x-[clamp(0.625cqw,1.2cqw,1.146cqw)]",
+            hasCompanion && "-translate-x-[clamp(0.625cqw,1.146cqw,1.2cqw)]",
           )}
         >
           <ShakingArtPanel

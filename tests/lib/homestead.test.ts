@@ -179,11 +179,12 @@ describe("computeHomesteadEffects", () => {
     expect(effects.flatNatureDamage).toBe(1);
   });
 
-  it("hunters-lodge adds flatArrowDamage, flatNatureDamage, and endRunFoodPerRoom", () => {
+  it("hunters-lodge adds flatArrowDamage, flatNatureDamage, endRunFoodPerRoom, and endRunHidePerRoom", () => {
     const effects = computeHomesteadEffects({ "hunters-lodge": 3 }, {}, {});
     expect(effects.flatArrowDamage).toBe(3);
     expect(effects.flatNatureDamage).toBe(3);
     expect(effects.endRunFoodPerRoom).toBe(3);
+    expect(effects.endRunHidePerRoom).toBe(3);
 
     const huntersLodge = buildings.find((b) => b.id === "hunters-lodge");
     expect(huntersLodge).toBeDefined();
@@ -410,12 +411,13 @@ describe("applyEndOfRunHomesteadBonuses", () => {
     const effects = {
       endRunFoodPerRoom: 2,
       endRunHerbsPerRoom: 1,
-      endRunHidePerRoom: 0,
+      endRunHidePerRoom: 2,
       endRunCrystalPerRoom: 1,
       herbFindBonus: 0.1,
     };
     const result = applyEndOfRunHomesteadBonuses(base, effects, 4);
     expect(result.food).toBe(3 + 8);
+    expect(result.hide).toBe(0 + 8);
     expect(result.crystal).toBe(1 + 4);
     expect(result.herbs).toBe(Math.floor((10 + 4) * 1.1));
     expect(result.wood).toBe(4);
@@ -438,7 +440,7 @@ describe("homestead content integrity", () => {
     for (const building of buildings) {
       for (const tier of building.tiers) {
         if (!tier.nonCombatBenefitDescription) continue;
-        expect(tier.effects?.endRunFoodPerRoom).toBeGreaterThan(0);
+        expect((tier.effects?.endRunFoodPerRoom ?? 0) + (tier.effects?.endRunHidePerRoom ?? 0)).toBeGreaterThan(0);
       }
     }
     for (const farm of farmPlots) {

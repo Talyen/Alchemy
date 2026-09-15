@@ -30,6 +30,34 @@ export function choiceHasDisplayableSummary(choice: MysteryChoice): boolean {
   return choice.effects.some((effect) => effect.kind !== "removeCard");
 }
 
+export interface ResolvedMysteryRewardGrant {
+  effect: MysteryEffect;
+  grantedTrinketId?: string | undefined;
+  grantedGear?: GearInstance | undefined;
+}
+
+export function pairMysteryEffectsWithGrants(
+  effects: readonly MysteryEffect[],
+  grantedTrinketIds: readonly string[],
+  grantedGearInstances: readonly GearInstance[],
+): ResolvedMysteryRewardGrant[] {
+  let trinketIndex = 0;
+  let gearIndex = 0;
+  return effects.map((effect) => {
+    let grantedTrinketId: string | undefined;
+    let grantedGear: GearInstance | undefined;
+    if (effect.kind === "gainRandomTrinket") {
+      grantedTrinketId = grantedTrinketIds[trinketIndex++];
+      if (grantedTrinketId === undefined) {
+        grantedGear = grantedGearInstances[gearIndex++];
+      }
+    } else if (effect.kind === "gainRandomGear" || effect.kind === "gainGeneratedGear") {
+      grantedGear = grantedGearInstances[gearIndex++];
+    }
+    return { effect, grantedTrinketId, grantedGear };
+  });
+}
+
 export function getPlasmaKeywordsForMysteryReward({
   choice,
   findCard,
@@ -44,10 +72,9 @@ export function getPlasmaKeywordsForMysteryReward({
   findCard: (id: string) => BattleCard | undefined;
 }): KeywordId[] {
   const keywords = new Set<KeywordId>();
-  let randomTrinketCursor = 0;
-  let generatedGearCursor = 0;
+  const paired = pairMysteryEffectsWithGrants(choice.effects, grantedTrinketIds, grantedGearInstances);
 
-  for (const effect of choice.effects) {
+  for (const { effect, grantedTrinketId, grantedGear } of paired) {
     if (effect.kind === "gainXP") {
       keywords.add(effect.keyword);
     } else if (effect.kind === "addCard") {
@@ -63,19 +90,14 @@ export function getPlasmaKeywordsForMysteryReward({
     } else if (effect.kind === "gainTrinket") {
       for (const kw of getTrinketKeywords(effect.trinketId)) keywords.add(kw);
     } else if (effect.kind === "gainRandomTrinket") {
-      const trinketId = grantedTrinketIds[randomTrinketCursor++];
-      if (trinketId) {
-        for (const kw of getTrinketKeywords(trinketId)) keywords.add(kw);
-      } else {
-        const gear = grantedGearInstances[generatedGearCursor++];
-        if (gear) {
-          for (const kw of getPlasmaKeywordsForGear(gear)) keywords.add(kw);
-        }
+      if (grantedTrinketId) {
+        for (const kw of getTrinketKeywords(grantedTrinketId)) keywords.add(kw);
+      } else if (grantedGear) {
+        for (const kw of getPlasmaKeywordsForGear(grantedGear)) keywords.add(kw);
       }
     } else if (effect.kind === "gainRandomGear" || effect.kind === "gainGeneratedGear") {
-      const gear = grantedGearInstances[generatedGearCursor++];
-      if (gear) {
-        for (const kw of getPlasmaKeywordsForGear(gear)) keywords.add(kw);
+      if (grantedGear) {
+        for (const kw of getPlasmaKeywordsForGear(grantedGear)) keywords.add(kw);
       }
     }
   }

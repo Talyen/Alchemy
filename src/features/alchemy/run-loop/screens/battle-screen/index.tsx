@@ -56,26 +56,24 @@ export function BattleScreen(props: BattleScreenProps) {
   const { battleState, activeLabyrinthModifiers, runBoons } = battleScreenData;
   const cardTransferInProgress = useCardTransferInProgress();
 
-  const displayState = battleState;
-
   const isBossBattle = battleState.currentEnemy.enemyType === "boss";
   const { particleColors, particleAlphaMultiplier, particleCount } = getScreenParticleConfig("battle", isBossBattle);
   const backgroundParticlesIntensity = useSettingsStore((s) => s.backgroundParticlesIntensity);
   const particleAlpha = ((particleAlphaMultiplier ?? 1) * backgroundParticlesIntensity) / 100;
 
-  const playerStatusChips = useMemo(() => getPlayerStatusChips(displayState), [displayState]);
+  const playerStatusChips = useMemo(() => getPlayerStatusChips(battleState), [battleState]);
   const enemyStatusChips = useMemo(() => getEnemyStatusChips(battleState), [battleState]);
 
   const view = useMemo(
     () => ({
-      battleState: displayState,
+      battleState,
       characterId,
       heroArt,
       playerName,
       aspectMode,
       stagePixelRatio,
     }),
-    [displayState, characterId, heroArt, playerName, aspectMode, stagePixelRatio],
+    [battleState, characterId, heroArt, playerName, aspectMode, stagePixelRatio],
   );
 
   const feedback: BattleFeedbackProps = useMemo(
@@ -135,7 +133,7 @@ export function BattleScreen(props: BattleScreenProps) {
 
               <WishOverlay
                 open={Boolean(battleState.wishOptions) && !cardTransferInProgress}
-                battleState={displayState}
+                battleState={battleState}
                 actions={actions}
               />
 

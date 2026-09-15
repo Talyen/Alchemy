@@ -133,7 +133,7 @@ describe("useArmoryController", () => {
     expect(result.current.combatRestrictions.characters.knight).toEqual(["campaign"]);
 
     act(() => {
-      result.current.onEquip("knight", "body", armor);
+      expect(result.current.onEquip("knight", "body", armor)).toBe(false);
     });
 
     expect(readGearState().loadouts.knight.body).toBeNull();
@@ -160,7 +160,7 @@ describe("useArmoryController", () => {
     const { result } = renderHook(() => useArmoryController({ rng: () => 0 }));
 
     act(() => {
-      result.current.onEquip("knight", "body", armor);
+      expect(result.current.onEquip("knight", "body", armor)).toBe(true);
     });
     expect(flushSaveAfterGearMutation).toHaveBeenCalledTimes(1);
 

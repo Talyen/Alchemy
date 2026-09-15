@@ -236,7 +236,7 @@ describe("gear domain", () => {
     const body: GearInstance = {
       instanceId: "body-1",
       definitionId: "leather-armor-basic",
-      affixes: [{ id: "max-health", value: 2 }],
+      affixes: [{ id: "max-health", value: 7 }],
     };
     const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "body", body, [body]);
     expect(computeGearManifest("knight", [body], loadouts).maxHealth).toBeGreaterThan(0);

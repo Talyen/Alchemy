@@ -45,13 +45,7 @@ export function normalizeAffixRolls(
     const range = rarity ? gearAffixCatalog[entry.id].roll[rarity] : undefined;
     if (!range) return [{ id: entry.id, value: Math.round(entry.value) }];
     const rounded = Math.round(entry.value);
-    const clamped = clamp(rounded, range.min, range.max);
-    if (clamped !== rounded) {
-      console.warn(
-        `normalizeAffixRolls: clamped out-of-range save value for ${entry.id} (${rounded} not in ${range.min}-${range.max})`,
-      );
-    }
-    return [{ id: entry.id, value: clamped }];
+    return [{ id: entry.id, value: clamp(rounded, range.min, range.max) }];
   });
 }
 

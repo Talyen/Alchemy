@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { type BattleCard, type TalentXP, type TrinketEntry } from "@/lib/game-data";
 import { type MaterialId } from "@/lib/homestead/types";
@@ -20,6 +21,7 @@ import { GearItemTitle, TrinketItemTitle } from "../../../shared/ui/gear-item-ti
 import { MysteryEffectBadge } from "./mystery-effect-badge";
 import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
 import { KeywordProgressGrid } from "../keyword-progress-grid";
+import { pairMysteryEffectsWithGrants } from "./mystery-choice-utils";
 
 interface LookupProps {
   findCard: (id: string) => BattleCard | undefined;
@@ -160,9 +162,6 @@ export function MysteryRewardSummary({
 } & LookupProps) {
   const xpEffects = choice.effects.filter((e): e is Extract<MysteryEffect, { kind: "gainXP" }> => e.kind === "gainXP");
   const resourceEffects = choice.effects.filter((e) => e.kind === "gainGold" || e.kind === "gainMaterial");
-  const otherEffects = choice.effects.filter(
-    (e) => e.kind !== "gainGold" && e.kind !== "gainMaterial" && e.kind !== "gainXP",
-  );
 
   const xpKeywords = [...new Set(xpEffects.map((effect) => effect.keyword))];
 
@@ -177,8 +176,12 @@ export function MysteryRewardSummary({
     }
   }
 
-  let randomTrinketCursor = 0;
-  let generatedGearCursor = 0;
+  const resolvedOtherEffects = useMemo(() => {
+    const others = choice.effects.filter(
+      (e) => e.kind !== "gainGold" && e.kind !== "gainMaterial" && e.kind !== "gainXP",
+    );
+    return pairMysteryEffectsWithGrants(others, grantedTrinketIds, grantedGearInstances);
+  }, [choice.effects, grantedTrinketIds, grantedGearInstances]);
 
   return (
     <div className="flex min-h-[56cqh] w-full flex-1 flex-col items-center justify-center space-y-6 text-center">
@@ -190,28 +193,18 @@ export function MysteryRewardSummary({
         size="lg"
       />
 
-      {otherEffects.map((effect, i) => {
-        const grantedTrinketId =
-          effect.kind === "gainRandomTrinket" ? grantedTrinketIds[randomTrinketCursor++] : undefined;
-        const grantedGear =
-          effect.kind === "gainGeneratedGear" ||
-          effect.kind === "gainRandomGear" ||
-          (effect.kind === "gainRandomTrinket" && grantedTrinketId === undefined)
-            ? grantedGearInstances[generatedGearCursor++]
-            : undefined;
-        return (
-          <div key={i}>
-            <MysteryRewardEffectItem
-              effect={effect}
-              findCard={findCard}
-              findTrinket={findTrinket}
-              grantedTrinketId={grantedTrinketId}
-              grantedGear={grantedGear}
-              chosenCardId={chosenCardId}
-            />
-          </div>
-        );
-      })}
+      {resolvedOtherEffects.map(({ effect, grantedTrinketId, grantedGear }, i) => (
+        <div key={`${effect.kind}-${i}`}>
+          <MysteryRewardEffectItem
+            effect={effect}
+            findCard={findCard}
+            findTrinket={findTrinket}
+            grantedTrinketId={grantedTrinketId}
+            grantedGear={grantedGear}
+            chosenCardId={chosenCardId}
+          />
+        </div>
+      ))}
 
       {resourceEffects.length > 0 ? (
         <div>

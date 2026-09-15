@@ -34,7 +34,7 @@ export function EquipmentShopScreen({
       purchasedSlotKeys={purchasedSlotKeys}
       getSlotKey={(g) => g.instanceId}
       getPrice={getGearPrice}
-      onBuy={(instance, slotKey) => onBuyGear(instance, slotKey)}
+      onBuy={onBuyGear}
       onRefresh={onRefresh}
       onContinue={onContinue}
       renderItem={(instance, price, purchased, onBuy) => (

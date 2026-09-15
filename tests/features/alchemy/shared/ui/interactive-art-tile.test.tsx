@@ -126,4 +126,24 @@ describe("InteractiveArtTile hover popup", () => {
     expect(button.className).toMatch(/card-interactive-glow/);
     expect(button.className).toMatch(/has-shine-border/);
   });
+
+  it("renders image only when art is provided", () => {
+    const { rerender } = renderTile();
+    expect(screen.queryByRole("img")).toBeNull();
+
+    rerender(
+      <InteractiveArtTile
+        id="ruby-ring"
+        interactionKey="reward"
+        title="Ruby Ring"
+        art="ruby-ring.webp"
+        className=""
+        imageClassName=""
+        as="button"
+      />,
+    );
+    const img = screen.getByRole("img", { name: "Ruby Ring" });
+    expect(img).toBeTruthy();
+    expect(img.getAttribute("src")).toBe("ruby-ring.webp");
+  });
 });

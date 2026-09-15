@@ -33,7 +33,7 @@ vi.mock("@/features/alchemy/shared/run-flow/destination-flow", async (importOrig
 });
 
 vi.mock("@/lib/homestead/loot", () => ({
-  getEnemyMaterialLoot: vi.fn(() => ({ wood: 1, iron: 0, herbs: 0, food: 0, crystal: 0 })),
+  getEnemyMaterialLoot: vi.fn(() => ({ wood: 1, stone: 0, iron: 0, food: 0, herbs: 0, hide: 0, crystal: 0 })),
   applyMaterialFindBonus: vi.fn((mats: unknown) => mats),
 }));
 
