@@ -26,7 +26,7 @@ export function initializeShop<T>(
   return () => commitShopInitialize(setState, createInitial);
 }
 
-export function readRefreshPrice(
+function readRefreshPrice(
   kind: ShopRefreshKind,
   talentEffects: TalentEffectManifest,
   refreshesLeft: number,
