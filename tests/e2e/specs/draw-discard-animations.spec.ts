@@ -55,7 +55,7 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
     expect(handCounts).toContain(4);
   });
 
-  test("play card shows ghost overlay", async ({ page }) => {
+  test("play card shows ghost overlay", async ({ page }, testInfo) => {
     const ghostOverlays = page.locator(".card-ghost-overlay");
 
     await startBattleWithDeck(
@@ -68,6 +68,13 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
     await expect(battle.hand.first()).toBeVisible({ timeout: 5000 });
     await battle.playFirstCard();
     await expect(ghostOverlays.first()).toBeVisible({ timeout: 5000 });
+    // The played card flies as artwork and pops before fading on arrival.
+    const ghostKind = await ghostOverlays.first().evaluate((node) => node.tagName.toLowerCase());
+    expect(ghostKind).toBe("img");
+    await testInfo.attach("card-ghost-midflight", {
+      body: await page.screenshot(),
+      contentType: "image/png",
+    });
   });
 
   test("accepts consecutive plays while draws and hand reflow are running", async ({ page }) => {

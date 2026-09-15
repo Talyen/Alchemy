@@ -35,7 +35,7 @@ describe("Labyrinth inspector", () => {
     expect(heading.style.backgroundImage).toBe(expected.style.backgroundImage);
     expect(screen.getByText("Alchemist").className).toContain("boss-title-shine");
     expect(document.querySelector('[data-trait="alchemist"] svg')?.getAttribute("class")).toContain(
-      keywordDefinitions.poison.colorClass,
+      keywordDefinitions.consume.colorClass,
     );
     expect(document.querySelector('[data-trait="flesheater"] p')?.textContent).toBe(
       "Deals 1 Bleed damage each turn\nLeech",

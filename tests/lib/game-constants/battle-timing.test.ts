@@ -3,6 +3,7 @@ import {
   ATTACK_LUNGE_DURATION_MS,
   AUTO_END_TURN_DELAY,
   AUTOPLAY_POST_PLAY_DELAY_MS,
+  AUTOPLAY_PREVIEW_MS,
   AUTOPLAY_RETRY_DELAY_MS,
   CAMPFIRE_ANIMATION_MS,
   CAMPFIRE_CONTINUE_DELAY,
@@ -20,6 +21,7 @@ describe("battle timing constants", () => {
   it("keeps presentation delays positive and ordered", () => {
     for (const value of [
       AUTO_END_TURN_DELAY,
+      AUTOPLAY_PREVIEW_MS,
       AUTOPLAY_RETRY_DELAY_MS,
       AUTOPLAY_POST_PLAY_DELAY_MS,
       SLICE_DEATH_DURATION_MS,

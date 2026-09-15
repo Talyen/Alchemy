@@ -44,6 +44,8 @@ interface BattleCardButtonBaseProps {
 
   shineColor?: readonly string[] | undefined;
 
+  suppressTooltip?: boolean | undefined;
+
   tooltipPadding?: number | undefined;
   children?: ReactNode | undefined;
 }
@@ -55,7 +57,14 @@ export type BattleCardButtonProps = BattleCardButtonBaseProps &
   );
 
 export function BattleCardButton(props: BattleCardButtonProps) {
-  const { wrapperClassName, wrapperStyle, wrapperDataCardKey, hoverLeaveDelayMs = 0, dragging = false } = props;
+  const {
+    wrapperClassName,
+    wrapperStyle,
+    wrapperDataCardKey,
+    hoverLeaveDelayMs = 0,
+    dragging = false,
+    suppressTooltip = false,
+  } = props;
   const inheritedDescriptionContext = useCardDescriptionContext();
   const descriptionContext = props.descriptionContext ?? inheritedDescriptionContext;
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -106,7 +115,7 @@ export function BattleCardButton(props: BattleCardButtonProps) {
     >
       <CardHoverPopup
         card={props.card}
-        visible={hovered && !dragging}
+        visible={hovered && !dragging && !suppressTooltip}
         triggerRef={wrapperRef}
         descriptionContext={descriptionContext}
         padding={props.tooltipPadding}

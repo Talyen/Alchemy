@@ -1,3 +1,4 @@
+import type { AutoplayCardHandler } from "./battle-context";
 import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { isPlayerDefeated, type BattleSnapshot } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
@@ -41,7 +42,7 @@ export interface DriveAutoplayDeps {
   isEnabled: () => boolean;
   isBlocked: () => boolean;
   findPlayableCard: () => { card: BattleCard; index: number } | null;
-  playCard: (card: BattleCard, index: number) => boolean;
+  playCard: AutoplayCardHandler;
   delayMs: number;
   postPlayDelayMs: number;
   wakeRef?: { current: (() => void) | null } | undefined;
@@ -89,7 +90,12 @@ export async function driveAutoplay(deps: DriveAutoplayDeps): Promise<void> {
     }
 
     const playStartedAt = performance.now();
-    if (!deps.playCard(playable.card, playable.index)) {
+    if (
+      !(await deps.playCard(playable.card, playable.index, {
+        signal: deps.signal,
+        canCommit: () => !deps.signal.aborted && deps.isEnabled() && !deps.isBlocked(),
+      }))
+    ) {
       await waitForAutoplayRetry(retryDelayMs, deps.signal, deps.wakeRef);
       continue;
     }

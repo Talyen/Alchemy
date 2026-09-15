@@ -37,6 +37,7 @@ function CombatTextTarget({
     let frame: number;
     // ResizeObserver cannot follow ancestor transforms (lunge, shake, Companion shifts).
     // Update only the overlay geometry, without rerendering or restarting its bursts.
+    // Position via transform (compositor-only) rather than left/top to avoid layout work per frame.
     const measure = () => {
       const next = defaultMeasureElementRect(anchor, scene);
       if (
@@ -47,8 +48,7 @@ function CombatTextTarget({
           next.width !== previous.width ||
           next.height !== previous.height)
       ) {
-        layer.style.left = `${next.x}px`;
-        layer.style.top = `${next.y}px`;
+        layer.style.transform = `translate3d(${next.x}px, ${next.y}px, 0)`;
         layer.style.width = `${next.width}px`;
         layer.style.height = `${next.height}px`;
         previous = next;
@@ -62,7 +62,11 @@ function CombatTextTarget({
   if (!active) return null;
   // Portraits establish their own transform stacking contexts. Text must sit above card flights in the scene.
   return (
-    <div ref={layerRef} data-testid="combat-text-layer" className="pointer-events-none absolute z-[100]">
+    <div
+      ref={layerRef}
+      data-testid="combat-text-layer"
+      className="pointer-events-none absolute top-0 left-0 z-[100] will-change-transform"
+    >
       <CombatTextRail bursts={targetBursts} />
     </div>
   );

@@ -155,7 +155,7 @@
   }
 
   .card-ghost-overlay[data-variant="play-travel"] {
-    animation-duration: 528ms;
+    animation-duration: 600ms;
     animation-name: cardGhostPlayTravel;
   }
 

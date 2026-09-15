@@ -78,6 +78,21 @@ describe("battle-presentation-store", () => {
     expect(useBattlePresentationStore.getState().cardGhosts).toHaveLength(0);
   });
 
+  it("caps overlapping ghosts, shedding the oldest", () => {
+    for (let i = 0; i < 8; i += 1) {
+      useBattlePresentationStore.getState().spawnCardGhost({
+        art: `test-${i}.webp`,
+        rect: { x: 0, y: 0, width: 10, height: 10 },
+        rotation: 0,
+        delay: 0,
+        variant: "activate",
+      });
+    }
+    const ghosts = useBattlePresentationStore.getState().cardGhosts;
+    expect(ghosts).toHaveLength(6);
+    expect(ghosts[0]?.art).toBe("test-2.webp");
+  });
+
   it("shakeEnemy sets and clears enemyShaking", async () => {
     vi.useFakeTimers();
     useBattlePresentationStore.getState().shakeEnemy();

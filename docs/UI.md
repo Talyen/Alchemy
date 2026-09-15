@@ -259,6 +259,12 @@ with first occurrence breaking ties. Each action requests each combat sound fami
 at most once. Player and enemy deaths share the slice effect and battle-end delay;
 Death's Door is not defeat, and voluntary run exits remain immediate.
 
+Played cards fly as artwork and finish with a small pop before fading on
+arrival, marking the activation. At most six flight ghosts overlap; the oldest
+sheds first. Motion-disabled preferences skip the flight.
+Autoplay flashes the hover lift, scale, and shine for a beat before committing,
+without the description popup; reduced motion plays instantly with no preview.
+
 ## Deck and pile inspection
 
 The stacked-cards icon opens the run Deck during drafting,

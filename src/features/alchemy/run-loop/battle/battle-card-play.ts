@@ -10,7 +10,9 @@ import {
 } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 import { playCardSound, playGoldGain, playUISound } from "@/lib/audio";
-import { CARD_ACTIVATION_ROTATION_DEGREES } from "@/lib/game-constants";
+import { AUTOPLAY_PREVIEW_MS, CARD_ACTIVATION_ROTATION_DEGREES } from "@/lib/game-constants";
+import { shouldReduceMotion } from "@/lib/animation/animation-prefs";
+import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { animateCardActivation } from "./card-transfer-animations";
 import { getCardRect, getHoverId } from "../../shared/utils";
 import { applyCombatTextShakeFeedback, shouldPlayCardGoldGain } from "./battle-status";
@@ -19,7 +21,7 @@ import { PLAYABLE_HAND_OPTIONS, getHandCardKey } from "./playable-hand";
 import { runBattleDraw, getPendingDrawCount, incrementPendingDraw, decrementPendingDraw } from "./draw-sequence";
 import { type createBattleSession } from "./battle-session";
 import type { createBattleTransferDeps } from "./battle-transfer-deps";
-import type { BattleControllerContext } from "./battle-context";
+import type { AutoplayCardControl, BattleControllerContext } from "./battle-context";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   awardCardXP,
@@ -35,6 +37,7 @@ export function createBattleCardPlay(
   session: ReturnType<typeof createBattleSession>,
   transferDeps: ReturnType<typeof createBattleTransferDeps>,
 ) {
+  let autoplayPreviewSequence = 0;
   const getBattle = () => readBattle();
   const getPresentation = () => ctx.getPresentation();
 
@@ -113,6 +116,8 @@ export function createBattleCardPlay(
     sourceRect: { x: number; y: number; width: number; height: number },
     options?: { silentReject?: boolean },
   ): boolean {
+    // A stale autoplay preview must never linger past the play it teased (manual takeover included).
+    useUiStore.getState().setAutoplayPreviewCardId(null);
     const currentState = getBattle().battleState;
     if (card.uid !== undefined) {
       index = currentState.hand.findIndex((candidate) => candidate.uid === card.uid && candidate.id === card.id);
@@ -164,10 +169,42 @@ export function createBattleCardPlay(
     handlePlayCard(card, index, getCardRect(event.currentTarget.getBoundingClientRect()));
   }
 
-  function handleAutoplayCard(card: BattleCard, index: number): boolean {
-    const element = ctx.handCardRefs.current[getHandCardKey(card, index)];
-    const sourceRect = element ? getCardRect(element.getBoundingClientRect()) : { x: 0, y: 0, width: 0, height: 0 };
-    return handlePlayCard(card, index, sourceRect, { silentReject: true });
+  async function handleAutoplayCard(card: BattleCard, index: number, control: AutoplayCardControl): Promise<boolean> {
+    const sessionNum = ctx.battleSessionRef.current;
+    if (control.signal.aborted || !control.canCommit()) return false;
+    const sequence = ++autoplayPreviewSequence;
+    const previewId = getHoverId("hand", getHandCardKey(card, index));
+    const clearPreview = () => {
+      const ui = useUiStore.getState();
+      // An abandoned invocation must not clear a newer preview of the same card.
+      if (sequence === autoplayPreviewSequence && ui.autoplayPreviewCardId === previewId) {
+        ui.setAutoplayPreviewCardId(null);
+      }
+    };
+    try {
+      if (!shouldReduceMotion()) {
+        const ui = useUiStore.getState();
+        ui.setAutoplayPreviewCardId(previewId);
+        ui.maybeTriggerShimmer(previewId);
+        await new Promise<void>((resolve) => {
+          const finish = () => {
+            clearTimeout(timer);
+            control.signal.removeEventListener("abort", finish);
+            if (control.signal.aborted) clearPreview();
+            resolve();
+          };
+          const timer = setTimeout(finish, resolveGameDelay(AUTOPLAY_PREVIEW_MS));
+          control.signal.addEventListener("abort", finish, { once: true });
+        });
+      }
+      if (sessionNum !== ctx.battleSessionRef.current || control.signal.aborted || !control.canCommit()) return false;
+      // Measure after the preview so the ghost starts from the lifted position, like a manual play.
+      const element = ctx.handCardRefs.current[getHandCardKey(card, index)];
+      const sourceRect = element ? getCardRect(element.getBoundingClientRect()) : { x: 0, y: 0, width: 0, height: 0 };
+      return handlePlayCard(card, index, sourceRect, { silentReject: true });
+    } finally {
+      clearPreview();
+    }
   }
 
   function handleWishChoice(card: BattleCard) {

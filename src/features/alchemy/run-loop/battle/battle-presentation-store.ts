@@ -67,6 +67,8 @@ interface BattlePresentationStore {
 
 const shakeDuration = SHAKE_DURATION;
 
+const MAX_CARD_GHOSTS = 6;
+
 let combatTextSequence = 0;
 let combatImpactSequence = 0;
 const combatTextTimers = new TimerGroup();
@@ -152,7 +154,9 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()(
 
     spawnCardGhost: (ghost) => {
       const id = `ghost-${++ghostIdCounter}`;
-      set((s) => ({ cardGhosts: [...s.cardGhosts, { ...ghost, id }] }));
+      // Departing cards finish independently; cap overlapping ghosts so rapid
+      // plays shed the oldest instead of stacking canvases (Trinket parity: 6).
+      set((s) => ({ cardGhosts: [...s.cardGhosts.slice(-(MAX_CARD_GHOSTS - 1)), { ...ghost, id }] }));
     },
 
     removeCardGhost: (id) => set((s) => ({ cardGhosts: s.cardGhosts.filter((g) => g.id !== id) })),

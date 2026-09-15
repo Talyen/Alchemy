@@ -57,8 +57,7 @@ export const CARD_TRANSFER_CONFIG = {
 } as const;
 
 export const GHOST_TRAVEL_SCALE = 0.74;
-export const GHOST_PLAYER_OFFSET_RATIO = 0.16;
-export const GHOST_TARGET_Y_RATIO = 0.82;
+export const GHOST_TARGET_Y_RATIO = 0.95;
 export const GHOST_FALLBACK_WIDTH_PX = 160;
 export const GHOST_FALLBACK_HEIGHT_PX = 220;
 export const GHOST_FALLBACK_CENTER_Y_RATIO = 0.3;

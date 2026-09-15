@@ -17,10 +17,12 @@ interface UiStore {
   cardInspection: CardInspectionView | null;
   setCardInspection: (view: CardInspectionView | null) => void;
   hoveredCardId: string | null;
+  autoplayPreviewCardId: string | null;
   shimmerState: ShimmerState;
   plasmaBaseline: PlasmaRegistration | null;
   plasmaInteraction: PlasmaRegistration | null;
   setHoveredCardId: (id: string | null | ((prev: string | null) => string | null)) => void;
+  setAutoplayPreviewCardId: (id: string | null) => void;
   clearCardHover: () => void;
   maybeTriggerShimmer: (cardId: string) => void;
   setPlasmaBaseline: (registration: PlasmaRegistration) => void;
@@ -37,12 +39,14 @@ export const useUiStore = create<UiStore>()((set, get) => ({
   setCardInspection: (cardInspection) =>
     set({ cardInspection, ...(cardInspection ? { enemyInspectionOpen: false } : {}) }),
   hoveredCardId: null,
+  autoplayPreviewCardId: null,
   shimmerState: null,
   plasmaBaseline: null,
   plasmaInteraction: null,
 
   setHoveredCardId: (id) => set((s) => ({ hoveredCardId: typeof id === "function" ? id(s.hoveredCardId) : id })),
-  clearCardHover: () => set({ hoveredCardId: null }),
+  setAutoplayPreviewCardId: (autoplayPreviewCardId) => set({ autoplayPreviewCardId }),
+  clearCardHover: () => set({ hoveredCardId: null, autoplayPreviewCardId: null }),
   maybeTriggerShimmer: (cardId) => {
     const state = get();
     if (

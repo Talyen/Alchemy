@@ -15,7 +15,7 @@ const FCT_HOLD_DURATION = 0.2;
 const FCT_SHRINK_DURATION = 0.5;
 const FCT_RISE_DURATION = 0.7;
 const FCT_RISE_DISTANCE_PX = 240;
-const FCT_FADE_DURATION = 0.4;
+const FCT_FADE_DURATION = 0.25;
 
 const FCT_ANIMATION_PROPS = (() => {
   const popScale = FCT_POP_SCALE;

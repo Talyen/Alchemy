@@ -1,8 +1,8 @@
+import type { AutoplayCardHandler } from "./battle-context";
 import { useEffect, type RefObject } from "react";
 
 import { AUTOPLAY_POST_PLAY_DELAY_MS, AUTOPLAY_RETRY_DELAY_MS } from "@/lib/game-constants";
 import type { BattleSnapshot } from "@/lib/battle";
-import type { BattleCard } from "@/lib/game-data";
 import type { Screen } from "@/lib/routing";
 
 import { useLatestRef } from "../../shared/ui/use-latest-ref";
@@ -18,7 +18,7 @@ interface UseBattleAutoplayOptions {
   hasActiveBattle: boolean;
   isCardPlayInProgress: () => boolean;
   gameMenuOpen: boolean;
-  playCard: (card: BattleCard, index: number) => boolean;
+  playCard: AutoplayCardHandler;
   presentationGateRef: RefObject<BattlePlaybackPresentationGate>;
   wakeRef?: RefObject<(() => void) | null>;
 }
@@ -57,7 +57,7 @@ export function useBattleAutoplay({
       isEnabled: () => enabledRef.current && !controller.signal.aborted,
       isBlocked,
       findPlayableCard: () => findFirstPlayableHandCard(battleStateRef.current),
-      playCard: (card, index) => playCardRef.current(card, index),
+      playCard: (card, index, control) => playCardRef.current(card, index, control),
     });
     return () => controller.abort();
   }, [enabled, battleStateRef, enabledRef, isBlocked, playCardRef, wakeRef]);

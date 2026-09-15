@@ -1,12 +1,11 @@
 import { useLayoutEffect, useMemo, useRef } from "react";
 import type { BattleSnapshot } from "@/lib/battle";
-import type { BattleCard } from "@/lib/game-data";
 import type { Screen } from "@/lib/routing";
 import { useLatestRef } from "@/features/alchemy/shared/ui/use-latest-ref";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import { useBattleAutoEndTurn } from "@/features/alchemy/run-loop/battle/use-battle-auto-end-turn";
 import { useBattleAutoplay } from "@/features/alchemy/run-loop/battle/use-battle-autoplay";
-import type { BattlePlaybackBind } from "@/features/alchemy/run-loop/battle/battle-context";
+import type { AutoplayCardHandler, BattlePlaybackBind } from "@/features/alchemy/run-loop/battle/battle-context";
 import { useBattlePresentationGateRef } from "@/features/alchemy/run-loop/battle/presentation/use-hand-presentation";
 
 interface UseBattlePlaybackProps {
@@ -16,7 +15,7 @@ interface UseBattlePlaybackProps {
   gameMenuOpen: boolean;
   isAutoplayEnabled: boolean;
   handleEndTurn: () => void;
-  handleAutoplayCard: (card: BattleCard, index: number) => boolean;
+  handleAutoplayCard: AutoplayCardHandler;
   isCardPlayInProgress: () => boolean;
   bindPlayback?: ((bind: BattlePlaybackBind | null) => void) | undefined;
 }

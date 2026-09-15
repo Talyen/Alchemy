@@ -17,7 +17,7 @@ export const coreCards: BattleCard[] = [
     id: "cleanse",
     art: assetRefs.cleanse,
     effect: { kind: "remove-harmful-status", amount: 1 },
-    descriptionLine: "Cleanse 1 harmful status effect",
+    descriptionLine: "Cleanse 1 harmful status effect (Burn, Poison, Bleed, Freeze, or Stun)",
   }),
   cardBuilders.singleEffectCard({ id: "heal", art: assetRefs.heal, effect: { kind: "heal", amount: 4 } }),
   {

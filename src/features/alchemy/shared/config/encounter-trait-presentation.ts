@@ -37,7 +37,7 @@ export const ENCOUNTER_COMBAT_TRAIT_KEYWORDS: Partial<Record<EncounterCombatTrai
 export const ENCOUNTER_REWARD_TRAIT_KEYWORDS: Partial<Record<EncounterRewardTraitId, KeywordId[]>> = {
   ...additionalTraitKeywords("reward"),
   generous: ["gold"],
-  alchemist: ["poison"],
+  alchemist: ["consume"],
   scavenger: ["forge"],
   companion: ["companion"],
   wealthy: ["gold"],

@@ -88,7 +88,7 @@ test.describe("Combat feedback animations", slow, () => {
         body: JSON.stringify({ elapsed }),
         contentType: "application/json",
       });
-      expect(elapsed).toBeLessThan(114);
+      expect(elapsed).toBeLessThan(170);
     });
   }
 });

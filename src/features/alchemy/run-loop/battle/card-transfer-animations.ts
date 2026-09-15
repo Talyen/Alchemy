@@ -4,7 +4,6 @@ import {
   GHOST_FALLBACK_CENTER_Y_RATIO,
   GHOST_FALLBACK_HEIGHT_PX,
   GHOST_FALLBACK_WIDTH_PX,
-  GHOST_PLAYER_OFFSET_RATIO,
   GHOST_TARGET_Y_RATIO,
   GHOST_TRAVEL_SCALE,
   HAND_FAN_ROTATION_DEGREES,
@@ -286,13 +285,9 @@ function getCardPlayGhostTargetRect(
         ? enemyPanelRef.current?.getBoundingClientRect()
         : null;
   if (panelRect) {
-    const panelTarget = sceneRect
-      ? viewportRectToBattleSceneRect(getCardRect(panelRect), sceneRect)
-      : getCardRect(panelRect);
-    if (target === "player") {
-      return { ...panelTarget, x: panelTarget.x - panelTarget.width * GHOST_PLAYER_OFFSET_RATIO };
-    }
-    return panelTarget;
+    // Panel refs sit on the art frames themselves, so both sides land on the
+    // combatant's horizontal center with no per-side fudge.
+    return sceneRect ? viewportRectToBattleSceneRect(getCardRect(panelRect), sceneRect) : getCardRect(panelRect);
   }
   const battleRect = battleSceneRef.current?.getBoundingClientRect();
   if (!battleRect) return null;

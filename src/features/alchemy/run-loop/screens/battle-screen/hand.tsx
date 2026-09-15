@@ -15,6 +15,8 @@ import { cn } from "@/lib/utils";
 import type { BattleCard, CardDescriptionContext } from "@/lib/game-data";
 
 import { BattleCardButton } from "../../../shared/ui/card-button";
+import { useUiStore } from "../../../shared/stores/ui-store";
+import { getHoverId } from "../../../shared/utils";
 import { CombatantStatusEffectPresentation } from "../../../shared/ui/battle/combatant-status-effect-presentation";
 import { getCardDisplayTitle } from "../../../shared/ui/card-description-ui";
 import {
@@ -65,6 +67,9 @@ const HandCardItem = memo(function HandCardItem({
 }) {
   const cardKey = getHandCardKey(card, index);
   const { isHovered, shimmerActive, shimmerToken } = useInteractiveCard("hand", cardKey);
+  // Autoplay previews reuse the hover lift + shine without the description popup.
+  const isPreview = useUiStore((s) => s.autoplayPreviewCardId === getHoverId("hand", cardKey));
+  const visualHovered = isHovered || isPreview;
   const offset = index - (handLength - 1) / 2;
 
   const elementRef = useRef<HTMLButtonElement | null>(null);
@@ -102,14 +107,15 @@ const HandCardItem = memo(function HandCardItem({
       data-hand-hidden={isHidden || undefined}
       className="relative flex min-w-0 shrink basis-[calc(var(--hand-card-width)-3*var(--content-rem,1rem))] justify-center"
       style={{
-        zIndex: isHovered ? HAND_CARD_HOVER_Z_INDEX : HAND_CARD_BASE_Z_INDEX + index,
+        zIndex: visualHovered ? HAND_CARD_HOVER_Z_INDEX : HAND_CARD_BASE_Z_INDEX + index,
       }}
     >
       <div className="flex shrink-0 justify-center">
         <CombatantStatusEffectPresentation keyword={ccKeyword}>
           <BattleCardButton
             card={card}
-            hovered={isHovered}
+            hovered={visualHovered}
+            suppressTooltip={isPreview && !isHovered}
             onHoverStart={ignoreArtworkHover}
             onHoverEnd={ignoreArtworkHover}
             onClick={(event) => onCardClick(card, index, event)}
@@ -119,14 +125,14 @@ const HandCardItem = memo(function HandCardItem({
             shimmerActive={shimmerActive}
             shimmerToken={shimmerToken}
             baseTransform={
-              isHovered
+              visualHovered
                 ? getHoverHandTransform(offset, stagePixelRatio)
                 : getRestingHandTransform(offset, stagePixelRatio)
             }
             className={cn(
               handWidthClass,
               "hand-card-motion",
-              isHovered ? "scale-[1.035]" : "scale-100",
+              visualHovered ? "scale-[1.035]" : "scale-100",
               !isInteractionEnabled && "cursor-default",
               !isVisuallyPlayable && "grayscale",
             )}

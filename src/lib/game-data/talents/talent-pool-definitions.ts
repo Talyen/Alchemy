@@ -891,7 +891,7 @@ export const talentPool: TalentDefinition[] = [
     "health-max-4",
     "health",
     "Will to Live",
-    "Death's Door lasts 1 turn longer",
+    "Death's Door leaves you at 1 Health and lasts 1 turn longer",
     "Activity",
     setEffect("deathsDoorExtension", 1),
   ),

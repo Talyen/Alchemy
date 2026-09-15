@@ -24,6 +24,12 @@ describe("clearCardHover", () => {
     useUiStore.getState().clearCardHover();
     expect(useUiStore.getState().hoveredCardId).toBeNull();
   });
+
+  it("clears a pending autoplay preview", () => {
+    useUiStore.getState().setAutoplayPreviewCardId("hand-slash-1");
+    useUiStore.getState().clearCardHover();
+    expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();
+  });
 });
 
 describe("plasma registrations", () => {

@@ -74,11 +74,13 @@ export const ENCOUNTER_TRAITS = defineEncounterTraits({
   "holy-retribution": combat("Holy Retribution", "Enemy deals 1 Holy damage whenever you attack\nOnce per turn"),
   "divine-aegis": combat("Divine Aegis", "Gains 2 Armor and 4 Block the first time reaching 50% Health"),
   generous: reward("Generous", "Gain 50% more Gold after victory", ["labyrinth"]),
-  alchemist: reward("Alchemist", "Gain an extra random Potion after victory", ["labyrinth", "wildwood"]),
-  scavenger: reward("Scavenger", "Gain twice the Materials after victory", ["labyrinth"]),
+  alchemist: reward("Alchemist", "Gain an extra random Potion to Consume after victory", ["labyrinth", "wildwood"]),
+  scavenger: reward("Scavenger", "Gain twice the Materials after victory for your Forge", ["labyrinth"]),
   companion: reward("Companion", "Choose a free Companion card after victory", ["labyrinth", "wildwood"]),
   wealthy: reward("Wealthy", `Gain ${LABYRINTH_REWARD_CONFIG.wealthyGoldBonus} bonus Gold`, ["labyrinth"]),
-  herbalist: reward("Herbalist", `Gain ${LABYRINTH_REWARD_CONFIG.herbalistHerbBonus} bonus Herbs`, ["labyrinth"]),
+  herbalist: reward("Herbalist", `Gain ${LABYRINTH_REWARD_CONFIG.herbalistHerbBonus} bonus Nature Herbs`, [
+    "labyrinth",
+  ]),
   wellProvisioned: reward(
     "Well-Provisioned",
     `Restore ${Math.round(LABYRINTH_REWARD_CONFIG.wellProvisionedHealFraction * 100)}% Health after victory`,

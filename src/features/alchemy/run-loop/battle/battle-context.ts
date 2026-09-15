@@ -1,4 +1,5 @@
 import { useRef, useMemo, useLayoutEffect, type RefObject } from "react";
+import type { BattleCard } from "@/lib/game-data";
 import type { BattleSnapshot } from "@/lib/battle";
 import type { BattleRefs, CardRect } from "@/features/alchemy/shared/types";
 import type { Screen } from "@/lib/routing";
@@ -6,6 +7,17 @@ import { TimerGroup } from "@/lib/animation/game-timer";
 import { createTransferCancelRegistry, type TransferCancelRegistry } from "./card-transfer-animations";
 import type { BattlePresentationPort } from "./battle-presentation-store";
 import { useBattlePresentationStore } from "./battle-presentation-store";
+
+export interface AutoplayCardControl {
+  signal: AbortSignal;
+  canCommit: () => boolean;
+}
+
+export type AutoplayCardHandler = (
+  card: BattleCard,
+  index: number,
+  control: AutoplayCardControl,
+) => boolean | Promise<boolean>;
 
 export interface BattlePlaybackBind {
   scheduleAutoEndTurn: (state?: BattleSnapshot) => void;
