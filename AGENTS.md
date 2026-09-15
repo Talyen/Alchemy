@@ -64,7 +64,7 @@ The command catalog is in [REFERENCE](./docs/REFERENCE.md#environment--commands)
 
 ## Branch and commits
 
-Trunk-based: use the current checkout; default to `main` for commits. Commit, push, or create a branch/PR only when requested; do not switch away from an existing branch implicitly. Conventional Commits (`feat`/`fix`/`balance`/`perf` player-facing, `User-Facing` trailer owned by [CONTRIBUTING](./CONTRIBUTING.md#changelog-and-patch-notes)). Do not edit `CHANGELOG.md`.
+Trunk-based: use the current checkout; default to `main` for commits. Commit, push, or create a branch/PR only when requested; do not switch away from an existing branch implicitly. Conventional Commits + `User-Facing` trailer (see [RELEASE.md](./docs/RELEASE.md#changelog-release-time-only)). Do not edit `CHANGELOG.md`.
 
 ## Handoff
 

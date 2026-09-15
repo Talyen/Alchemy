@@ -28,6 +28,7 @@ export interface CanvasLifecycleOptions {
   backingScale?: CanvasBackingScaleOptions;
   fpsLimit?: number;
   pauseOnBlur?: boolean;
+  immediate?: boolean;
   onResize?: (width: number, height: number, backingScale: number) => void;
   onFrame: (now: number, dt: number, width: number, height: number) => void;
 }
@@ -45,6 +46,7 @@ export function createCanvasLifecycle({
   backingScale: backingScaleOptions,
   fpsLimit,
   pauseOnBlur = true,
+  immediate = false,
   onResize,
   onFrame,
 }: CanvasLifecycleOptions): CanvasLifecycle {
@@ -69,6 +71,8 @@ export function createCanvasLifecycle({
 
   let ro: ResizeObserver | null = null;
   let lastDpr = typeof devicePixelRatio !== "undefined" ? devicePixelRatio : 1;
+  let lastBackingWidth = -1;
+  let lastBackingHeight = -1;
 
   function resize() {
     lastDpr = typeof devicePixelRatio !== "undefined" ? devicePixelRatio : 1;
@@ -80,8 +84,14 @@ export function createCanvasLifecycle({
     if (canvas.style.height !== cssHeight) canvas.style.height = cssHeight;
 
     if (w <= 0 || h <= 0) {
-      if (canvas.width !== 1) canvas.width = 1;
-      if (canvas.height !== 1) canvas.height = 1;
+      if (lastBackingWidth !== 1) {
+        canvas.width = 1;
+        lastBackingWidth = 1;
+      }
+      if (lastBackingHeight !== 1) {
+        canvas.height = 1;
+        lastBackingHeight = 1;
+      }
       lifecycle.logicalWidth = 0;
       lifecycle.logicalHeight = 0;
       onResize?.(0, 0, 1);
@@ -91,8 +101,14 @@ export function createCanvasLifecycle({
     const scale = resolveCanvasBackingScale(w, h, backingScaleOptions);
     const backingWidth = Math.max(1, Math.floor(w * scale));
     const backingHeight = Math.max(1, Math.floor(h * scale));
-    if (canvas.width !== backingWidth) canvas.width = backingWidth;
-    if (canvas.height !== backingHeight) canvas.height = backingHeight;
+    if (lastBackingWidth !== backingWidth) {
+      canvas.width = backingWidth;
+      lastBackingWidth = backingWidth;
+    }
+    if (lastBackingHeight !== backingHeight) {
+      canvas.height = backingHeight;
+      lastBackingHeight = backingHeight;
+    }
 
     const prevW = lifecycle.logicalWidth;
     const prevH = lifecycle.logicalHeight;
@@ -146,7 +162,9 @@ export function createCanvasLifecycle({
   }
 
   function resume() {
-    if (!running || animFrameId !== null) return;
+    if (!running) return;
+    resize();
+    if (animFrameId !== null) return;
     lastTime = performance.now();
     lastFrameAt = 0;
     scheduleFrame();
@@ -180,7 +198,17 @@ export function createCanvasLifecycle({
     window.addEventListener("focus", resume);
   }
 
-  scheduleFrame();
+  if (immediate && !isPaused()) {
+    // resize() above may have already queued a frame; drop it before running
+    // the synchronous first frame so dispose() tracks the only pending id.
+    if (animFrameId !== null) {
+      cancelAnimationFrame(animFrameId);
+      animFrameId = null;
+    }
+    frame(lastTime);
+  } else {
+    scheduleFrame();
+  }
 
   lifecycle.scheduleFrame = scheduleFrame;
   lifecycle.dispose = () => {

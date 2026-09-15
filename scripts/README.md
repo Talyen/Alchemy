@@ -43,17 +43,17 @@ tracked files and files removed during a search, while other read errors fail.
 Gate composition, CI tiers, and reuse policy live in
 [CONTRIBUTING](../CONTRIBUTING.md#static-build-and-ci-policy).
 
-| Concern                                   | Implementation owner                                                                         |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Completion orchestration                  | `check.mjs`                                                                                  |
-| Related tests and risk escalations        | `verify-changed.mjs`                                                                         |
-| Finished-step exposure/digest reporting   | `lib/run-step.mjs` (shared by `check` + `verify`)                                            |
-| Path parsing and classification           | `lib/changed-paths.mjs` + `lib/change-routes.mjs`                                            |
-| Documentation contracts and plan metadata | `check-docs.mjs`, `check-documentation-contract.mjs`, `check-plans.mjs`                      |
-| Passing unit receipts                     | `lib/verification-cache.mjs`                                                                 |
-| Bundle budgets                            | `lib/bundle-budget.mjs`                                                                      |
-| Full and staged formatting                | `prettier-paths.mjs` + `.prettierignore`                                                     |
-| Plan creation and archiving               | `new-plan.mjs` + `archive-plans.mjs`; [plan lifecycle](../docs/Plans/README.md#task-handoff) |
+| Concern                                   | Implementation owner                                                                                                                                                                                                                   |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Completion orchestration                  | `check.mjs`                                                                                                                                                                                                                            |
+| Related tests and risk escalations        | `verify-changed.mjs`                                                                                                                                                                                                                   |
+| Finished-step exposure/digest reporting   | `lib/run-step.mjs` (shared by `check` + `verify`)                                                                                                                                                                                      |
+| Path parsing and classification           | `lib/changed-paths.mjs` + `lib/change-routes.mjs`                                                                                                                                                                                      |
+| Documentation contracts and plan metadata | `check-docs.mjs` (also serves `plans:check` via `--plans-only` and `docs:check:final` via `--final`), `check-documentation-contract.mjs`, `check-plans.mjs` (thin CLI over `lib/plan-checks.mjs`; `archive-plans.mjs` shares that lib) |
+| Passing unit receipts                     | `lib/verification-cache.mjs`                                                                                                                                                                                                           |
+| Bundle budgets                            | `lib/bundle-budget.mjs`                                                                                                                                                                                                                |
+| Full and staged formatting                | `prettier-paths.mjs` + `.prettierignore`                                                                                                                                                                                               |
+| Plan creation and archiving               | `new-plan.mjs` + `archive-plans.mjs`; [plan lifecycle](../docs/Plans/README.md#task-handoff)                                                                                                                                           |
 
 `lib/repository-paths.mjs` normalizes selections for checks and discovery. Relative
 and absolute paths inside the checkout are equivalent. Directory selections use
@@ -67,8 +67,12 @@ once per gate: verification skips its copy (`--skip-docs-check`) when `check`
 will run it through the static aggregate.
 
 Documentation and ESLint inventories exclude isolated `.worktrees/` checkouts,
-reports, and installed dependencies. Documentation checks share one file inventory;
-current-file checks cover E2E paths as well as other source references. Instruction
+reports, and installed dependencies. Documentation contract checks share one
+per-file fact walk (`links`, backticked candidates, script names) plus one
+Markdown helper (`lib/markdown-sections.mjs`) and one exemption owner per scope
+(`isHistoryOnlyDoc` / `isHistoricalDoc` / `isReachabilityExempt` in
+`check-documentation-contract.mjs`); route context budgets live in
+`lib/route-context-budgets.mjs`. Current-file checks cover E2E paths as well as other source references. Instruction
 history is advisory and does not require an entry for each skill or knowledge edit.
 Repository-relative matching uses forward slashes on every platform, including
 history and archived-plan exemptions.

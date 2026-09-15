@@ -1,4 +1,4 @@
-import { sliceEffectNoise } from "./slice-noise";
+import { animationNoise } from "./animation-noise";
 import { clamp01 } from "@/lib/math";
 
 export interface SlicePoint {
@@ -66,7 +66,7 @@ function buildPoints(): SlicePoint[] {
   for (let index = 1; index <= interiorCount; index++) {
     const fraction = index / SLICE_SEGMENT_COUNT;
     const aspectOffset = span.min + (span.max - span.min) * fraction;
-    const noise = sliceEffectNoise(index, 211);
+    const noise = animationNoise(index, 211);
     const offset = SLICE_WOBBLE * (0.5 + 0.5 * noise) * (index % 2 === 0 ? 1 : -1);
     vertices.push(offsetPoint(aspectOffset, offset));
   }
@@ -117,11 +117,6 @@ export function sliceCrackPointAtFraction(fraction: number): SlicePoint {
   return SLICE_CRACK_POINTS[SLICE_CRACK_POINTS.length - 1] ?? { x: 0.5, y: 0.5 };
 }
 
-export function sliceCrackPointAtFractionInSize(fraction: number, width: number, height: number): SlicePoint {
-  const unit = sliceCrackPointAtFraction(fraction);
-  return { x: unit.x * width, y: unit.y * height };
-}
-
 export function sliceCrackPolylineToFraction(fraction: number, width: number, height: number): SlicePoint[] {
   const lead = clamp01(fraction);
   const first = SLICE_CRACK_POINTS[0] ?? { x: 0.5, y: 0.5 };
@@ -133,7 +128,9 @@ export function sliceCrackPolylineToFraction(fraction: number, width: number, he
     const a = SLICE_CRACK_POINTS[index];
     const b = SLICE_CRACK_POINTS[index + 1];
     if (!a || !b) continue;
-    const segmentLength = segmentAspectLength(index);
+    const start = CUMULATIVE_ASPECT_LENGTHS[index] ?? 0;
+    const end = CUMULATIVE_ASPECT_LENGTHS[index + 1] ?? start;
+    const segmentLength = end - start;
     if (segmentLength <= remaining) {
       result.push({ x: b.x * width, y: b.y * height });
       remaining -= segmentLength;

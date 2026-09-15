@@ -210,16 +210,14 @@ One definition powers a permanent Armory Trinket and a run-scoped **Boon**. Both
 
 ## Add permanent Gear
 
+Item model, generation, Uniques, and write paths: [ARMORY.md](./ARMORY.md) (data model, write paths, battle integration, persistence).
+
 1. Add base item metadata in `src/lib/gear/base-items.ts` (slots, two-hand rule, affinity keywords, available rarities, thematic homestead `salvageByRarity`). Salvage consumes `salvageValue` on the generated definition.
 2. Register Gear art via the [asset workflow § Add or replace Gear art](./WORKFLOWS-ASSETS.md#add-or-replace-gear-art) (naming/slot violations throw during sync).
 3. Register the base item's Unique in `src/lib/gear/unique-catalog.ts`, with one exclusive fixed signature and three fixed standard supporting affixes. Every base item needs one Unique; ordinary variant generation does not create it. Follow [Unique affix and combat contracts](./UNIQUE_ITEMS.md) for signature implementation and interaction documentation.
 4. For new affixes, add definitions in `src/lib/gear/affix-catalog.ts` with stable IDs, `keywordId`, effect keys, value ranges, and eligible slots. Keep `keywordId` aligned with affinity weighting and `effectKey` aligned with `GEAR_EFFECT_KEYS`; wire new effects into the manifest and their consumers. Display/roll helpers live in `affixes.ts`.
 5. Update Gear save schemas/defaults and migration fixtures when instance or loadout shapes change.
-6. Check affected Gear behavior, including existing Unique catalog coverage and save compatibility for instance or loadout shape changes. HP-sync write paths: [ARMORY.md § Write paths](./ARMORY.md#write-paths).
-
-Existing generation builds Basic/Astral definitions in `src/lib/gear/definitions.ts` as `{baseItemId}-{rarity}`. Uniques are fixed catalog entries (one per base item), not generated variants — see [Unique contracts](./UNIQUE_ITEMS.md). Reward generation rolls instances in `src/lib/gear/generation.ts`; rewards store the exact `GearInstance` and never re-roll on acceptance. Every mode, including Wildwood, persists mid-reward progress in `activeRun.interruptedFlow` (`primary-reward` / `companion-reward` arms; Gear stores full instances, cards/Trinkets store choice IDs).
-
-Owned items remain unique `GearInstance` records with `affixes: GearAffixRoll[]`; never put definition objects or art URLs into saves. Battle creation already applies aggregated `gearEffects` through `computeGearManifest()`.
+6. Check affected Gear behavior, including existing Unique catalog coverage and save compatibility for instance or loadout shape changes. HP-sync write paths: [ARMORY.md § Write paths](./ARMORY.md#write-paths). Rewards store the exact `GearInstance` and never re-roll on acceptance; never put definition objects or art URLs into saves.
 
 ---
 
@@ -325,18 +323,16 @@ navigation. Keep persisted drafts and resume paths in their existing owners.
 
 ## Change battle playback
 
-Layout and ownership: [ARCHITECTURE.md § Battle path](./ARCHITECTURE.md#battle-path).
-Visible behavior: [UI battle feedback](./UI.md#battle-feedback) and [battle motion](./UI.md#battle-motion).
+Wiring: [ARCHITECTURE.md § Battle path](./ARCHITECTURE.md#battle-path) (ticks stay on the battle route; session autoplay preferences stay in the controller).
+Visible behavior: [UI battle feedback](./UI.md#battle-feedback) and [battle motion](./UI.md#battle-motion) (burst contract, death/survival behavior, attacker lunge and timing owners).
 
-- Keep playback ticks on the battle route and session autoplay preferences in the controller so route remounts do not lose the setting.
 - Autoplay picks greedily: highest `getEffectiveDamageScore` wins (ties go left), restricted to defensive cards at half health or below, and Wish options resolve with the same score plus a hover preview. Score weights live in `src/lib/balance/play-policy.ts` and also drive balance reports — retuning them changes live autoplay.
 - Presentation updates may wake autoplay readiness/retry waits, but cannot shorten the post-play pause. Measure that pause from the start of the successful play, counting transfer time toward it; longer transfers add no extra pause. Teardown cancels either wait, and autoplay rechecks current playback gates before the next play.
 - Autoplay previews are uncommitted: the route forwards the driver’s abort signal and live playback eligibility check to the card handler. Disabling autoplay or unmounting cancels the preview; after its delay, recheck the session and all playback gates before committing. A cancelled preview must not clear a newer preview.
 - Manual card plays commit immediately and remain available during other card draws and hand reflow; only the incoming hidden cards and actual turn transitions are unavailable. Resolve clicked cards by hand identity so reflow cannot invalidate their old slot. Autoplay, auto-end-turn, and End Turn retain the presentation gate. Send each resolved action to the existing burst owner under the [battle feedback contract](./UI.md#battle-feedback). Concurrent draws preserve each other’s hidden cards and transfers; settlement checks the current battle state. Schedule auto-end explicitly after draws/resume; do not rely on React battle-state ticks. Opening the game menu cancels the auto-end countdown; closing it starts a fresh normal countdown only when eligible. Recheck the latest playback gates and hand playability when the countdown expires.
-- Defer defeat teardown until the delayed screen transition commits; preserve the death and survival behavior in [UI battle motion](./UI.md#battle-motion).
+- Defer defeat teardown until the delayed screen transition commits; keep [battle timing](../src/lib/game-constants/battle-timing.ts) aligned with `combatant-attack-lunge` in [keyframes](../src/styles/keyframes.css) and the shake delay in [theme styles](../src/styles/theme.css). Death, survival, and lunge composition details live in [UI battle motion](./UI.md#battle-motion).
 - Wish choices open after active card transfers finish. Cards with both Draw and Wish show their draws first; queued Wishes also wait for the previous chosen card to reach the hand. Use the existing transfer-in-progress presentation signal without delaying gameplay commits.
 - Preserve immutable hidden-hand keys, callback binding, post-death navigation timing, and the rule that mid-enemy-turn reload skips presentation replay.
-- Nest the presentation-only attacker lunge outside shake so both effects compose; do not retime playback delays for it. Keep [battle timing](../src/lib/game-constants/battle-timing.ts) aligned with `combatant-attack-lunge` in [keyframes](../src/styles/keyframes.css) and the shake delay in [theme styles](../src/styles/theme.css). These owners define the exact phases and durations.
 - Run the focused battle playback tests and the selection from `verify`; use the shared browser fixture with real timing for animation coverage, following [the E2E guide](../tests/e2e/README.md#test-import). Do not request `fastBattle` or enable fast mode when timing is under test.
 
 ## Adding a new screen

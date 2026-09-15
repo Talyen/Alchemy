@@ -131,19 +131,17 @@ describe("eslint rationalization", () => {
   });
 
   it("enables alt-text errors for application images", async () => {
-    const eslint = new ESLint({ cwd: ROOT });
-    const config = await eslint.calculateConfigForFile("src/features/alchemy/shared/ui/test.tsx");
+    const config = await effectiveEslint.calculateConfigForFile("src/features/alchemy/shared/ui/test.tsx");
     expect(config.rules?.["jsx-a11y/alt-text"]?.[0]).toBe(2);
   });
 
   it("disables react-hooks for Playwright specs but enables for React unit tests", async () => {
-    const eslint = new ESLint({ cwd: ROOT });
-    const specConfig = await eslint.calculateConfigForFile("tests/pages/foo.spec.ts");
+    const specConfig = await effectiveEslint.calculateConfigForFile("tests/pages/foo.spec.ts");
     const specRule = specConfig.rules?.["react-hooks/rules-of-hooks"];
     const specOff =
       specRule === "off" || specRule === 0 || (Array.isArray(specRule) && (specRule[0] === "off" || specRule[0] === 0));
     expect(specOff).toBe(true);
-    const unitConfig = await eslint.calculateConfigForFile("tests/features/alchemy/meta/screens/foo.test.tsx");
+    const unitConfig = await effectiveEslint.calculateConfigForFile("tests/features/alchemy/meta/screens/foo.test.tsx");
     const unitRule = unitConfig.rules?.["react-hooks/rules-of-hooks"];
     const unitOff =
       unitRule === "off" || unitRule === 0 || (Array.isArray(unitRule) && (unitRule[0] === "off" || unitRule[0] === 0));
@@ -151,17 +149,15 @@ describe("eslint rationalization", () => {
   });
 
   it("uses vitest recommended without hand-written .only selectors", async () => {
-    const eslint = new ESLint({ cwd: ROOT });
-    const unitConfig = await eslint.calculateConfigForFile("tests/features/alchemy/meta/screens/foo.test.ts");
+    const unitConfig = await effectiveEslint.calculateConfigForFile("tests/features/alchemy/meta/screens/foo.test.ts");
     expect(unitConfig.rules?.["vitest/no-disabled-tests"]).toBeDefined();
     expect(unitConfig.rules?.["vitest/no-focused-tests"]).toBeDefined();
   });
 });
 
 it("ignores isolated worktrees without excluding the active checkout", async () => {
-  const eslint = new ESLint({ cwd: ROOT });
-  expect(await eslint.isPathIgnored(".worktrees/evaluation/src/example.ts")).toBe(true);
-  expect(await eslint.isPathIgnored("scripts/agent-context.mjs")).toBe(false);
+  expect(await effectiveEslint.isPathIgnored(".worktrees/evaluation/src/example.ts")).toBe(true);
+  expect(await effectiveEslint.isPathIgnored("scripts/agent-context.mjs")).toBe(false);
 });
 
 it.each([
@@ -183,8 +179,7 @@ it.each([
 it.each(["tests/e2e/specs/draw-discard-animations.spec.ts", "tests/e2e/specs/battle-end-turn-canary.spec.ts"])(
   "keeps real animation timing in %s",
   async (filePath) => {
-    const eslint = new ESLint({ cwd: ROOT });
-    const results = await eslint.lintText('import { test } from "../../fixtures/e2e"; enableFastMode(page);', {
+    const results = await effectiveEslint.lintText('import { test } from "../../fixtures/e2e"; enableFastMode(page);', {
       filePath: path.join(ROOT, filePath),
     });
     const rules = results.flatMap((result) => result.messages).map((message) => message.ruleId);
@@ -194,7 +189,7 @@ it.each(["tests/e2e/specs/draw-discard-animations.spec.ts", "tests/e2e/specs/bat
       'test("timing", async ({ page, fastBattle }) => { void fastBattle; });',
       'import { useFastBattle as fast } from "../../fixtures/e2e";',
     ]) {
-      const [result] = await eslint.lintText(code, { filePath: path.join(ROOT, filePath) });
+      const [result] = await effectiveEslint.lintText(code, { filePath: path.join(ROOT, filePath) });
       expect(result.messages.some((message) => message.ruleId === "no-restricted-syntax")).toBe(true);
     }
   },

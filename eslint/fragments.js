@@ -302,6 +302,15 @@ export const BATTLE_NO_MATH_RANDOM = [
 ];
 
 /** @type {SyntaxSelector[]} */
+export const GAMEPLAY_NO_MATH_RANDOM = [
+  {
+    selector: 'MemberExpression[object.name="Math"][property.name="random"]',
+    message:
+      "Gameplay code must take a seeded rng instead of Math.random (persisted streams only). Armory crafting/dev-spawn randomness lives in meta screens by design — see ARCHITECTURE.md Run randomness.",
+  },
+];
+
+/** @type {SyntaxSelector[]} */
 export const BATTLE_NO_MATH_FLOOR = [
   {
     selector: 'CallExpression[callee.object.name="Math"][callee.property.name="floor"]',
@@ -390,7 +399,7 @@ export const NO_DIRECT_ASSET_IMPORT = [
 
 /** Playwright esbuild cannot parse .webp barrels — flag value imports only.
  * Keep in sync with scripts/sync-art-barrels.mjs ART_BARRELS + metadata.generated.
- * Architecture test guards drift (see tests/architecture/barrel-sync.test.ts).
+ * Architecture tests guard drift (see tests/architecture/asset-loading-contract.test.ts).
  */
 export const ASSET_BARREL_NO_VALUE_IMPORT_REASONS = {
   "@/lib/game-data": "its barrel re-exports .webp assets esbuild can't parse. Use `import type` or a safe deep import.",

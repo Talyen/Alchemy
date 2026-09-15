@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef } from "react";
 
+import { shouldReduceMotion } from "@/lib/animation/animation-prefs";
 import { animateHurtSparks, createHurtSparks } from "@/lib/animation/hurt-sparks";
 import { HURT_SPARK_COUNT, HURT_SPARK_DURATION_MS } from "@/lib/game-constants";
 
@@ -13,8 +14,7 @@ export function HurtSparkBurst({ flashToken, colors }: { flashToken: number; col
   useLayoutEffect(() => {
     if (flashToken <= 0) return;
 
-    const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (mql.matches) return;
+    if (shouldReduceMotion()) return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;

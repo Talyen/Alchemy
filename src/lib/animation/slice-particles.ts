@@ -1,13 +1,12 @@
 import {
   SLICE_CARD_FRACTION_RANGE,
   sliceCrackPointAtFraction,
-  sliceCrackPointAtFractionInSize,
   sliceCrackSide,
   sliceCrackTangentAtFraction,
   type SlicePoint,
   type SliceVec,
 } from "./slice-crack";
-import { sliceEffectNoise } from "./slice-noise";
+import { animationNoise } from "./animation-noise";
 import { SLICE_PARTICLE_COUNT } from "./slice-timeline";
 import { clamp01 } from "@/lib/math";
 
@@ -43,6 +42,8 @@ export interface SliceCutParticle {
   speed: number;
   size: number;
   lifetime: number;
+  unitOrigin: SlicePoint;
+  sprayDir: SliceVec;
 }
 
 interface EdgeSample {
@@ -87,12 +88,12 @@ function edgeSample(edge: number, along: number, halfSign: number): EdgeSample |
 
 function makeBorderParticle(index: number, salt: number, origin: SlicePoint, outward: SliceVec): SliceBorderParticle {
   const tangent = { dx: -outward.dy, dy: outward.dx };
-  const spray = (sliceEffectNoise(index + salt, 29) - 0.5) * 1.6;
-  const inward = sliceEffectNoise(index + salt, 31) * 0.35;
+  const spray = (animationNoise(index + salt, 29) - 0.5) * 1.6;
+  const inward = animationNoise(index + salt, 31) * 0.35;
   let dx = outward.dx * (1 - inward) + tangent.dx * spray;
   let dy = outward.dy * (1 - inward) + tangent.dy * spray;
-  if (sliceEffectNoise(index + salt, 37) > 0.72) {
-    const freeAngle = sliceEffectNoise(index + salt, 41) * Math.PI * 2;
+  if (animationNoise(index + salt, 37) > 0.72) {
+    const freeAngle = animationNoise(index + salt, 41) * Math.PI * 2;
     dx = Math.cos(freeAngle);
     dy = Math.sin(freeAngle);
   }
@@ -100,10 +101,10 @@ function makeBorderParticle(index: number, salt: number, origin: SlicePoint, out
   return {
     origin,
     direction: { dx: dx / length, dy: dy / length },
-    delayNoise: sliceEffectNoise(index + salt, 53),
-    lifetimeNoise: sliceEffectNoise(index + salt, 59),
-    distanceNoise: sliceEffectNoise(index + salt, 61),
-    sizeNoise: sliceEffectNoise(index + salt, 67),
+    delayNoise: animationNoise(index + salt, 53),
+    lifetimeNoise: animationNoise(index + salt, 59),
+    distanceNoise: animationNoise(index + salt, 61),
+    sizeNoise: animationNoise(index + salt, 67),
   };
 }
 
@@ -113,7 +114,7 @@ function makeSliceBorderParticles(count: number, isPrimary: boolean, salt = 0): 
   let index = 0;
   let guardLimit = Math.max(count * 8, 1);
   while (particles.length < count && guardLimit > 0) {
-    const sample = edgeSample((index + salt) % 5, sliceEffectNoise(index + salt, 13), halfSign);
+    const sample = edgeSample((index + salt) % 5, animationNoise(index + salt, 13), halfSign);
     if (sample) {
       particles.push(makeBorderParticle(index, salt, sample.origin, sample.outward));
     }
@@ -125,15 +126,29 @@ function makeSliceBorderParticles(count: number, isPrimary: boolean, salt = 0): 
 
 function makeSliceCutParticles(count: number): SliceCutParticle[] {
   const particles: SliceCutParticle[] = [];
+  const span = SLICE_CARD_FRACTION_RANGE.end - SLICE_CARD_FRACTION_RANGE.start;
   for (let index = 0; index < count; index++) {
+    const linePosition = (animationNoise(index, 101) - 0.5) * 1.3;
+    const side = index % 2 === 0 ? 1 : -1;
+    const sprayAngle = (animationNoise(index, 107) - 0.5) * 0.8;
+    const spanFraction = (linePosition + 0.65) / 1.3;
+    const fraction = SLICE_CARD_FRACTION_RANGE.start + spanFraction * span;
+    const unitOrigin = sliceCrackPointAtFraction(fraction);
+    const tangent = sliceCrackTangentAtFraction(fraction);
+    const localNormal = { dx: tangent.dy, dy: -tangent.dx };
+    const sprayDx = localNormal.dx * side + tangent.dx * sprayAngle;
+    const sprayDy = localNormal.dy * side + tangent.dy * sprayAngle;
+
     particles.push({
-      linePosition: (sliceEffectNoise(index, 101) - 0.5) * 1.3,
-      side: index % 2 === 0 ? 1 : -1,
-      sprayAngle: (sliceEffectNoise(index, 107) - 0.5) * 0.8,
-      delay: sliceEffectNoise(index, 113) * 0.12,
-      speed: 45 + sliceEffectNoise(index, 127) * 95,
-      size: 2.5 + sliceEffectNoise(index, 131) * 3.5,
-      lifetime: 0.35 + sliceEffectNoise(index, 139) * 0.35,
+      linePosition,
+      side,
+      sprayAngle,
+      delay: animationNoise(index, 113) * 0.12,
+      speed: 45 + animationNoise(index, 127) * 95,
+      size: 2.5 + animationNoise(index, 131) * 3.5,
+      lifetime: 0.35 + animationNoise(index, 139) * 0.35,
+      unitOrigin,
+      sprayDir: { dx: sprayDx, dy: sprayDy },
     });
   }
   return particles;
@@ -189,21 +204,13 @@ export function sampleCutSpark(
   const age = (crackProgress - particle.delay) / particle.lifetime;
   if (age <= 0 || age >= 1) return null;
   const easedAge = 1 - (1 - age) ** 2;
-  const span = SLICE_CARD_FRACTION_RANGE.end - SLICE_CARD_FRACTION_RANGE.start;
-  const spanFraction = (particle.linePosition + 0.65) / 1.3;
-  const fraction = SLICE_CARD_FRACTION_RANGE.start + spanFraction * span;
-  const origin = sliceCrackPointAtFractionInSize(fraction, cardWidth, cardHeight);
-  const tangent = sliceCrackTangentAtFraction(fraction);
-  const localNormal = { dx: tangent.dy, dy: -tangent.dx };
-  const sprayDx = localNormal.dx * particle.side + tangent.dx * particle.sprayAngle;
-  const sprayDy = localNormal.dy * particle.side + tangent.dy * particle.sprayAngle;
   const dist = particle.speed * easedAge;
   const diameter = particle.size * (1 - 0.3 * age);
   const opacity = (1 - age) ** 1.4;
   if (diameter <= 0 || opacity <= 0) return null;
   return {
-    x: origin.x + sprayDx * dist,
-    y: origin.y + sprayDy * dist,
+    x: particle.unitOrigin.x * cardWidth + particle.sprayDir.dx * dist,
+    y: particle.unitOrigin.y * cardHeight + particle.sprayDir.dy * dist,
     diameter,
     opacity,
   };

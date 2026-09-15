@@ -9,16 +9,16 @@ import { isMainModule } from "./lib/is-main-module.mjs";
 function main(argv = process.argv.slice(2)) {
   const flags = new Set(argv);
   if (flags.has("--help") || flags.has("-h")) {
-    console.log("Usage: npm run docs:check [-- --final]");
+    console.log("Usage: npm run docs:check [-- --final] [--plans-only]");
     return 0;
   }
-  const unknown = [...flags].filter((flag) => flag !== "--final");
+  const unknown = [...flags].filter((flag) => flag !== "--final" && flag !== "--plans-only");
   if (unknown.length > 0) {
     console.error(`Unknown argument(s): ${unknown.join(", ")}`);
     return 2;
   }
 
-  const documentationPassed = reportDocumentationContracts();
+  const documentationPassed = flags.has("--plans-only") ? true : reportDocumentationContracts();
   const plansPassed = reportPlanChecks({ final: flags.has("--final") });
   return documentationPassed && plansPassed ? 0 : 1;
 }

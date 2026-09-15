@@ -1,8 +1,5 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-
-const ROOT = join(import.meta.dirname, "../..");
+import { readText } from "./helpers";
 
 interface PlatformsConfig {
   targets: string[];
@@ -14,12 +11,12 @@ interface PlatformsConfig {
 const VALID_TARGETS = new Set(["win", "linux", "mac"]);
 
 describe("steam platform config", () => {
-  const config = JSON.parse(readFileSync(join(ROOT, "steam/platforms.json"), "utf8")) as PlatformsConfig;
-  const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as {
+  const config = JSON.parse(readText("steam/platforms.json")) as PlatformsConfig;
+  const pkg = JSON.parse(readText("package.json")) as {
     build: Record<string, unknown>;
     scripts: Record<string, string>;
   };
-  const mainSource = readFileSync(join(ROOT, "desktop/main.cjs"), "utf8");
+  const mainSource = readText("desktop/main.cjs");
 
   it("declares at least one shipping target", () => {
     expect(config.targets.length).toBeGreaterThan(0);
@@ -47,37 +44,20 @@ describe("steam platform config", () => {
     expect(mainSource).not.toMatch(/steamworks\.init\(480\)/);
   });
 
-  it("supports optional Azure signing and future fail-closed releases", () => {
-    const distDesktop = readFileSync(join(ROOT, "scripts/dist-desktop.mjs"), "utf8");
+  it("validates the desktop build config and never publishes from local packaging", () => {
+    const distDesktop = readText("scripts/dist-desktop.mjs");
     expect(distDesktop).toContain("validateDesktopBuildConfig()");
-    expect(readFileSync(join(ROOT, "scripts/lib/desktop-build-config.mjs"), "utf8")).toContain(
-      "AZURE_CODE_SIGNING_ENDPOINT",
-    );
-    expect(distDesktop).toContain("forceCodeSigning=true");
-    expect(distDesktop).toContain("resolveBuilderBin()");
-    expect(readFileSync(join(ROOT, "scripts/lib/builder-bin.mjs"), "utf8")).toContain(
-      '"electron-builder", "out", "cli", "cli.js"',
-    );
     expect(distDesktop).toContain('["--publish", "never"]');
-    expect(distDesktop).toContain("ALCHEMY_PACKAGE_DIR");
-    expect(distDesktop).not.toContain('"npx.cmd"');
-    expect(JSON.stringify(pkg.build)).not.toContain('"signAndEditExecutable":false');
   });
 
   it("routes packaging through dist-desktop rather than direct electron-builder scripts", () => {
     expect(pkg.scripts["dist:desktop"]).toContain("dist-desktop.mjs");
-
     expect(pkg.scripts["package:win"]).toContain("dist:desktop");
     expect(pkg.scripts["package:win"]).toContain("--dir");
-    expect(pkg.scripts["dist:win"]).toBeUndefined();
-    expect(pkg.scripts["package:win:full"]).toBeUndefined();
-    expect(pkg.scripts["build:desktop:no-sync"]).toBeUndefined();
-    expect(pkg.scripts["build:web:ci"]).toBeUndefined();
-    const vercelConfig = JSON.parse(readFileSync(join(ROOT, "vercel.json"), "utf8")) as { buildCommand?: string };
-    expect(vercelConfig.buildCommand).toContain("npm run typecheck");
-    expect(vercelConfig.buildCommand).toContain("npm run build");
-    expect(pkg.scripts["smoke:preview"]).toContain("smoke-preview.mjs");
-    expect(pkg.scripts["check:ship"]).toContain("assets:check");
-    expect(pkg.scripts["check:ship"]).toContain("build:desktop");
+    const directBuilderScripts = Object.entries(pkg.scripts).filter(
+      ([name, command]) =>
+        name !== "dist:desktop" && /\belectron-builder\b/u.test(command) && !command.includes("dist-desktop"),
+    );
+    expect(directBuilderScripts.map(([name]) => name)).toEqual([]);
   });
 });

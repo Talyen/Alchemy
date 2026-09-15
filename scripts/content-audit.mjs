@@ -4,6 +4,7 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { createServer } from "vite";
 import { writeCurrentRun } from "./lib/current-run.mjs";
+import { VITE_ALIAS_PATH } from "./lib/vite-aliases.mjs";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const reportsDir = path.join(rootDir, "reports");
@@ -35,9 +36,12 @@ function renderMarkdown(result) {
   return `${lines.join("\n").trimEnd()}\n`;
 }
 
+// Content validation is pure data/rules plus the `@` alias, so boot Vite with a
+// minimal config instead of the full app config (tailwind/react/sentry/visualizer).
 const server = await createServer({
-  configFile: path.join(rootDir, "vite.config.ts"),
+  configFile: false,
   root: rootDir,
+  resolve: { alias: { [VITE_ALIAS_PATH]: path.join(rootDir, "src") } },
   server: { middlewareMode: true },
 });
 

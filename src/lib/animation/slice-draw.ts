@@ -11,18 +11,8 @@ import {
 } from "./slice-particles";
 import type { SliceOffset, SliceVisual } from "./slice-timeline";
 
-function rotateAround(x: number, y: number, cx: number, cy: number, degrees: number): { x: number; y: number } {
-  const radians = (degrees * Math.PI) / 180;
-  const cos = Math.cos(radians);
-  const sin = Math.sin(radians);
-  const dx = x - cx;
-  const dy = y - cy;
-  return { x: cx + dx * cos - dy * sin, y: cy + dx * sin + dy * cos };
-}
-
 function fillSpark(ctx: CanvasRenderingContext2D, x: number, y: number, diameter: number, opacity: number): void {
   ctx.globalAlpha = opacity;
-  ctx.fillStyle = SLICE_SPARK_COLOR;
   ctx.beginPath();
   ctx.arc(x, y, diameter / 2, 0, Math.PI * 2);
   ctx.fill();
@@ -42,11 +32,20 @@ function drawBorderSparks(
   if (dissolve <= 0.001) return;
   const cx = cardWidth / 2;
   const cy = cardHeight / 2;
+  const radians = (twistDeg * Math.PI) / 180;
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  // fillSpark relies on the caller's fillStyle; set it here so border sparks
+  // stay correct even if draw ordering changes above.
+  ctx.fillStyle = SLICE_SPARK_COLOR;
   for (const particle of particles) {
     const sample = sampleBorderSpark(particle, dissolve, cardWidth, cardHeight);
     if (!sample) continue;
-    const rotated = rotateAround(sample.x, sample.y, cx, cy, twistDeg);
-    fillSpark(ctx, originX + rotated.x + offset.x, originY + rotated.y + offset.y, sample.diameter, sample.opacity);
+    const dx = sample.x - cx;
+    const dy = sample.y - cy;
+    const rx = cx + dx * cos - dy * sin;
+    const ry = cy + dx * sin + dy * cos;
+    fillSpark(ctx, originX + rx + offset.x, originY + ry + offset.y, sample.diameter, sample.opacity);
   }
 }
 
@@ -93,6 +92,7 @@ export function drawSliceFrame(
     ctx.fill();
   }
 
+  ctx.fillStyle = SLICE_SPARK_COLOR;
   for (const particle of SLICE_CUT_PARTICLES) {
     const sample = sampleCutSpark(particle, visual.crackT, cardWidth, cardHeight);
     if (!sample) continue;

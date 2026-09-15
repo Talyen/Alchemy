@@ -19,7 +19,7 @@ Implemented on 2026-09-12. This record supersedes the earlier replacement-run fl
 
 ## Compatibility consequences
 
-Single-run format with schema 19 as the supported baseline; below-baseline saves rejected. Removed parked-run state, below-baseline migrations/aliases, historical fixtures, and the animated Canvas backend. Durable rules moved to their owners before trimming: single-run navigation and End Run in [ARCHITECTURE](../../ARCHITECTURE.md#run-setup-ownership), save baseline in [MIGRATIONS](../../../src/features/alchemy/shared/storage/MIGRATIONS.md#supported-baseline), plasma fallback in [UI](../../UI.md). Full implementation steps and acceptance scenarios remain in git history.
+Single-run format with schema 19 as the supported baseline; below-baseline saves rejected. Removed parked-run state, below-baseline migrations/aliases, historical fixtures, and the animated Canvas backend. Durable rules moved to their owners before trimming: single-run navigation and End Run in [ARCHITECTURE](../../ARCHITECTURE.md#run-setup-ownership), save baseline in [MIGRATIONS](../../../src/features/alchemy/shared/storage/MIGRATIONS.md#supported-baseline), plasma fallback in [UI](../../UI.md#plasma-availability). Full implementation steps and acceptance scenarios remain in git history.
 
 ## Verification summary
 

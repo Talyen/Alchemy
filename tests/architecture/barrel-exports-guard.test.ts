@@ -58,15 +58,9 @@ describe("@/features/alchemy/shared/utils barrel", () => {
 
 describe("@/features/alchemy/shared/storage barrel", () => {
   it("exports known symbols", async () => {
-    const origWindow = (globalThis as Record<string, unknown>).window;
-    (globalThis as Record<string, unknown>).window = {} as Window & typeof globalThis;
-    try {
-      const mod = await import("@/features/alchemy/shared/storage");
-      expect(mod.loadAlchemySaveState).toBeTypeOf("function");
-      expect(mod.saveAlchemySaveData).toBeTypeOf("function");
-      expect(mod.clearAlchemySaveData).toBeTypeOf("function");
-    } finally {
-      (globalThis as Record<string, unknown>).window = origWindow;
-    }
+    const mod = await import("@/features/alchemy/shared/storage");
+    expect(mod.loadAlchemySaveState).toBeTypeOf("function");
+    expect(mod.saveAlchemySaveData).toBeTypeOf("function");
+    expect(mod.clearAlchemySaveData).toBeTypeOf("function");
   });
 });

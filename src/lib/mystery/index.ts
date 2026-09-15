@@ -1,4 +1,5 @@
 export type { MysteryChoice, MysteryEffect, MysteryEvent } from "./types";
+export { MYSTERY_EFFECT_KINDS } from "./types";
 export { getMysteryEffectRank, sortMysteryEffectsByDisplayOrder } from "./effect-order";
 export { findMysteryEvent, mysteryPool, pickMysteryEvent, pickResolvedMysteryEvent } from "./pool";
 export {

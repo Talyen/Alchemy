@@ -39,13 +39,15 @@ describe("card descriptions vs effects", () => {
     );
   });
 
-  it.each(cardLibrary.map((c) => [c.id, c.title, c] as const))(
-    "%s — descriptions match effects",
-    (_id, _title, card) => {
-      const issues = validateCardDescriptionParity(card);
-      expect(issues, issues.map((i) => i.message).join("; ")).toEqual([]);
-    },
-  );
+  it("collects card description parity violations with bounded examples", () => {
+    const violations = cardLibrary.flatMap((card) =>
+      validateCardDescriptionParity(card).map((issue) => `${card.id}: ${issue.message}`),
+    );
+    expect(
+      violations.length === 0 ? [] : [...violations.slice(0, 10), `… ${violations.length} total`],
+      `${violations.length} parity violations`,
+    ).toEqual([]);
+  });
 
   it("summon cards advertise companion turn damage from companionLibrary", () => {
     for (const card of cardLibrary) {

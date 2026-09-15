@@ -1,19 +1,13 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { BATTLE_CARD_EFFECT_KINDS } from "@/lib/game-data/effects/registry";
 import { DAMAGE_TYPES } from "@/lib/game-data/types";
 import { ROUTE_SCREEN_VALUES, isRunResumeScreen } from "@/lib/routing";
 import { runActivityScreen, transitionRunActivity } from "@/lib/active-run-session";
-
-const ROOT = join(import.meta.dirname, "../..");
-
-function readSource(relativePath: string): string {
-  return readFileSync(join(ROOT, relativePath), "utf8");
-}
+import { MYSTERY_EFFECT_KINDS } from "@/lib/mystery";
+import { readText } from "./helpers";
 
 function assertContainsCases(filePath: string, kinds: readonly string[], options: { allowDefault?: boolean } = {}) {
-  const source = readSource(filePath);
+  const source = readText(filePath);
   if (!options.allowDefault) {
     const hasDefault = /default\s*:/u.test(source);
     expect(hasDefault, `${filePath} must not use default: — enumerate every kind`).toBe(false);
@@ -41,22 +35,7 @@ describe("exhaustive switch coverage", () => {
   });
 
   it("mystery effect-order covers every MysteryEffect kind", () => {
-    const mysteryKinds = [
-      "addCard",
-      "chooseCard",
-      "healHealth",
-      "damageHealth",
-      "gainGold",
-      "loseGold",
-      "gainXP",
-      "removeCard",
-      "gainTrinket",
-      "gainRandomTrinket",
-      "gainRandomGear",
-      "gainGeneratedGear",
-      "gainMaterial",
-    ] as const;
-    assertContainsCases("src/lib/mystery/effect-order.ts", mysteryKinds);
+    assertContainsCases("src/lib/mystery/effect-order.ts", MYSTERY_EFFECT_KINDS);
   });
 
   it("maps every gameplay screen to an activity and preserves it across menu navigation", () => {

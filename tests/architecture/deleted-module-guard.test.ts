@@ -1,10 +1,13 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-
-const ROOT = join(import.meta.dirname, "../..");
+import { repoRoot } from "./helpers";
 
 describe("deleted module guard", () => {
+  // Expiry policy: entries cover refactor deletions that imports or docs may
+  // still reference. Remove an entry once the launch baseline moves past it
+  // (i.e. CURRENT_SAVE_SCHEMA_VERSION > the version it was deleted in) or
+  // after two releases, whichever documents the deletion in MIGRATIONS.md.
   it("removed run glue modules are not present", () => {
     const deleted = [
       "src/features/alchemy/shared/stores/run-lifecycle-coordinator.ts",
@@ -38,7 +41,7 @@ describe("deleted module guard", () => {
       "src/lib/battle/enemy-trait-query.ts",
     ];
     for (const path of deleted) {
-      expect(existsSync(join(ROOT, path)), path).toBe(false);
+      expect(existsSync(join(repoRoot, path)), path).toBe(false);
     }
   });
 });

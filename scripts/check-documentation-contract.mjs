@@ -5,6 +5,7 @@ import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateContextCatalog } from "./lib/agent-context.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
+import { extractMarkdownLinkTargets, headingSlugs, stripFencedBlocks } from "./lib/markdown-sections.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const IGNORED_DIRECTORIES = new Set([
@@ -29,18 +30,25 @@ let repositoryFileCache = null;
 // History-only docs are exempt from content checks; reachability has its own
 // broader exemption below. Backticked references add plan/decision exemptions
 // because those records pin historical paths by design.
-function isHistoryOnlyDoc(relativePath) {
+export function isHistoryOnlyDoc(relativePath) {
   return relativePath === "CHANGELOG.md" || relativePath.startsWith(".agents/history/");
 }
 
-function extractMarkdownLinkTargets(source) {
-  const targets = [];
-  for (const match of source.matchAll(/\[[^\]]*\]\(([^)]+)\)/gu)) {
-    const target = match[1]?.split(/\s+/u)[0]?.replace(/^<|>$/gu, "");
-    if (!target) continue;
-    targets.push({ target, index: match.index ?? 0 });
-  }
-  return targets;
+/** Superset of isHistoryOnlyDoc: transient plans and decision records pin old paths by design. */
+export function isHistoricalDoc(relativePath) {
+  return (
+    isHistoryOnlyDoc(relativePath) ||
+    relativePath.startsWith("docs/Plans/") ||
+    relativePath === "docs/Audits/decisions.md" ||
+    relativePath === ".agents/knowledge/skill-impact.md"
+  );
+}
+
+/** Reachability exemption: archives and agent-local records need no inbound owner links. */
+export function isReachabilityExempt(relativePath) {
+  return (
+    relativePath === "CHANGELOG.md" || relativePath.startsWith("docs/Plans/") || relativePath.startsWith(".agents/")
+  );
 }
 
 function markdownFiles(directory = ROOT) {
@@ -71,59 +79,39 @@ function lineNumberAt(source, index) {
   return source.slice(0, index).split("\n").length;
 }
 
-function githubHeadingSlug(title) {
-  return title
-    .toLowerCase()
-    .replaceAll(/<[^>]*>/gu, "")
-    .replaceAll(/[\u2000-\u206F\u2E00-\u2E7F\\'!"#$%&()*+,./:;<=>?@[\]^`{|}~]/gu, "")
-    .replaceAll(/\s/gu, "-");
-}
-
-function headingPlainText(raw) {
-  return raw
-    .replaceAll(/\[([^\]]+)\]\([^)]+\)/gu, "$1")
-    .replaceAll(/\[([^\]]+)\]\[[^\]]*\]/gu, "$1")
-    .replaceAll(/`([^`]+)`/gu, "$1")
-    .replaceAll(/\*/gu, "")
-    .trim();
-}
-
-function headingSlugs(source) {
-  const slugs = new Set();
-  const seen = new Map();
-  let inFence = false;
-  for (const line of source.split("\n")) {
-    if (/^\s{0,3}```/u.test(line)) {
-      inFence = !inFence;
-      continue;
+/**
+ * One walk over every Markdown file: source, fence-stripped text, link
+ * targets, backticked candidates, and documented npm scripts. The individual
+ * contract checks below read from these facts instead of re-scanning sources.
+ */
+const markdownFactsCache = new Map();
+function markdownFacts() {
+  const facts = [];
+  for (const file of markdownFiles()) {
+    let fact = markdownFactsCache.get(file);
+    if (!fact) {
+      const source = readMarkdownSource(file);
+      const stripped = stripFencedBlocks(source);
+      fact = {
+        file,
+        relative: file.slice(ROOT.length + 1).replaceAll("\\", "/"),
+        source,
+        stripped,
+        links: extractMarkdownLinkTargets(source),
+        backticked: [...stripped.matchAll(/`([^`\n]+)`/gu)],
+        scripts: [...source.matchAll(/npm run ([a-zA-Z0-9:_-]+)/gu)],
+      };
+      markdownFactsCache.set(file, fact);
     }
-    if (inFence) continue;
-    const match = /^(#{1,6})\s+(.+?)\s*#*\s*$/u.exec(line);
-    if (!match?.[2]) continue;
-    const base = githubHeadingSlug(headingPlainText(match[2]));
-    if (!base) continue;
-    const count = seen.get(base) ?? 0;
-    seen.set(base, count + 1);
-    slugs.add(count === 0 ? base : `${base}-${count}`);
+    facts.push(fact);
   }
-  return slugs;
-}
-
-function stripFencedBlocks(source) {
-  const kept = [];
-  let inFence = false;
-  for (const line of source.split("\n")) {
-    if (/^\s{0,3}(?:```|~~~)/u.test(line)) inFence = !inFence;
-    else if (!inFence) kept.push(line);
-  }
-  return kept.join("\n");
+  return facts;
 }
 
 export function checkLocalMarkdownLinks() {
   const broken = [];
-  for (const file of markdownFiles()) {
-    const source = readMarkdownSource(file);
-    for (const { target, index } of extractMarkdownLinkTargets(source)) {
+  for (const { file, source, links } of markdownFacts()) {
+    for (const { target, index } of links) {
       if (/^(?:https?:|mailto:|#)/u.test(target)) continue;
       const relativePath = target.split("#")[0];
       if (!relativePath) continue;
@@ -138,10 +126,9 @@ export function checkLocalMarkdownLinks() {
 
 export function checkInlineRepositoryPaths() {
   const missing = [];
-  for (const file of markdownFiles()) {
-    if (isHistoryOnlyDoc(file.slice(ROOT.length + 1).replaceAll("\\", "/"))) continue;
-    const source = stripFencedBlocks(readMarkdownSource(file));
-    for (const match of source.matchAll(/`([^`\n]+)`/gu)) {
+  for (const { file, relative, backticked } of markdownFacts()) {
+    if (isHistoryOnlyDoc(relative)) continue;
+    for (const match of backticked) {
       const candidate = match[1].trim();
       if (!REPO_PATH_PREFIX.test(candidate) || PATH_TEMPLATE_CHARS.test(candidate)) continue;
       const target = candidate.split("#")[0];
@@ -154,22 +141,14 @@ export function checkInlineRepositoryPaths() {
 }
 
 export function checkBacktickedCurrentFileReferences() {
-  const isHistorical = (relativePath) =>
-    relativePath === "CHANGELOG.md" ||
-    relativePath.startsWith("docs/Plans/") ||
-    relativePath.startsWith(".agents/history/") ||
-    relativePath === "docs/Audits/decisions.md" ||
-    relativePath === ".agents/knowledge/skill-impact.md";
   const repositoryPaths = repositoryFiles().map((file) => file.slice(ROOT.length + 1).replaceAll("\\", "/"));
   const repositoryBasenames = new Set(repositoryPaths.map((file) => file.split("/").at(-1)));
   const generatedReferencePrefixes = ["reports/", "release-notes/"];
   const missing = [];
 
-  for (const file of markdownFiles()) {
-    const relativeDocumentPath = file.slice(ROOT.length + 1).replaceAll("\\", "/");
-    if (isHistorical(relativeDocumentPath)) continue;
-    const source = stripFencedBlocks(readMarkdownSource(file));
-    for (const match of source.matchAll(/`([^`\n]+)`/gu)) {
+  for (const { file, relative: relativeDocumentPath, stripped, backticked } of markdownFacts()) {
+    if (isHistoricalDoc(relativeDocumentPath)) continue;
+    for (const match of backticked) {
       const candidate = match[1]?.trim();
       if (!candidate || PATH_TEMPLATE_CHARS.test(candidate) || candidate.includes(" ")) continue;
       const reference = /^(.+?\.(?:[cm]?[jt]sx?|mdx?))(?:[:#].*)?$/u.exec(candidate)?.[1];
@@ -177,14 +156,14 @@ export function checkBacktickedCurrentFileReferences() {
       if (generatedReferencePrefixes.some((prefix) => reference.startsWith(prefix))) continue;
       if (reference.startsWith("./") || reference.startsWith("../")) {
         if (existsSync(resolve(dirname(file), reference))) continue;
-        missing.push(`${relativeDocumentPath}:${lineNumberAt(source, match.index)} -> ${candidate}`);
+        missing.push(`${relativeDocumentPath}:${lineNumberAt(stripped, match.index)} -> ${candidate}`);
         continue;
       }
       const normalized = reference.startsWith("@/") ? `src/${reference.slice(2)}` : reference;
       const exists = normalized.includes("/")
         ? repositoryPaths.some((repoPath) => repoPath === normalized || repoPath.endsWith(`/${normalized}`))
         : repositoryBasenames.has(normalized);
-      if (!exists) missing.push(`${relativeDocumentPath}:${lineNumberAt(source, match.index)} -> ${candidate}`);
+      if (!exists) missing.push(`${relativeDocumentPath}:${lineNumberAt(stripped, match.index)} -> ${candidate}`);
     }
   }
   return missing;
@@ -193,10 +172,9 @@ export function checkBacktickedCurrentFileReferences() {
 export function checkDocumentedNpmScripts() {
   const packageJson = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"));
   const missing = [];
-  for (const file of markdownFiles()) {
-    if (isHistoryOnlyDoc(file.slice(ROOT.length + 1).replaceAll("\\", "/"))) continue;
-    const source = readMarkdownSource(file);
-    for (const match of source.matchAll(/npm run ([a-zA-Z0-9:_-]+)/gu)) {
+  for (const { file, relative, source, scripts } of markdownFacts()) {
+    if (isHistoryOnlyDoc(relative)) continue;
+    for (const match of scripts) {
       const script = match[1];
       if (script && !packageJson.scripts[script]) {
         missing.push(`${file.slice(ROOT.length + 1)}:${lineNumberAt(source, match.index)} -> ${script}`);
@@ -216,10 +194,9 @@ export function checkMarkdownHeadingAnchors() {
     return slugs;
   };
   const broken = [];
-  for (const file of markdownFiles()) {
-    if (isHistoryOnlyDoc(file.slice(ROOT.length + 1).replaceAll("\\", "/"))) continue;
-    const source = readMarkdownSource(file);
-    for (const { target, index } of extractMarkdownLinkTargets(source)) {
+  for (const { file, relative, source, links } of markdownFacts()) {
+    if (isHistoryOnlyDoc(relative)) continue;
+    for (const { target, index } of links) {
       if (/^(?:https?:|mailto:)/u.test(target) || !target.includes("#")) continue;
       const [relativePath, ...anchorParts] = target.split("#");
       const anchor = decodeURIComponent(anchorParts.join("#"));
@@ -237,8 +214,7 @@ export function checkMarkdownHeadingAnchors() {
 }
 
 export function checkDurableDocumentReachability(rootDir = ROOT) {
-  const isExempt = (relativePath) =>
-    relativePath === "CHANGELOG.md" || relativePath.startsWith("docs/Plans/") || relativePath.startsWith(".agents/");
+  const isExempt = isReachabilityExempt;
   const documents = new Map();
   for (const file of markdownFiles(rootDir)) {
     const relativePath = file.slice(rootDir.length + 1).replaceAll("\\", "/");

@@ -23,7 +23,14 @@ export interface CombatantStatusPalette {
 }
 
 function parseHexRgb(hex: string): readonly [number, number, number] {
-  const normalized = hex.replace("#", "");
+  const normalized = hex.trim().replace(/^#/, "");
+  if (normalized.length === 3) {
+    return [
+      Number.parseInt(normalized.charAt(0) + normalized.charAt(0), 16),
+      Number.parseInt(normalized.charAt(1) + normalized.charAt(1), 16),
+      Number.parseInt(normalized.charAt(2) + normalized.charAt(2), 16),
+    ];
+  }
   if (normalized.length === 6) {
     return [
       Number.parseInt(normalized.slice(0, 2), 16),
@@ -60,16 +67,8 @@ export function combatantStatusWobbleDegrees(kind: CombatantStatusEffectKind, pr
   return Math.sin(progress * Math.PI * 2) * 2.2 * appear;
 }
 
-function withAlpha(color: readonly [number, number, number] | string, alpha: number): string {
-  if (typeof color !== "string") {
-    return `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${alpha})`;
-  }
-  const normalized = color.replace("#", "");
-  if (normalized.length !== 6) return color;
-  const r = Number.parseInt(normalized.slice(0, 2), 16);
-  const g = Number.parseInt(normalized.slice(2, 4), 16);
-  const b = Number.parseInt(normalized.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+function withAlpha(color: readonly [number, number, number], alpha: number): string {
+  return `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${alpha})`;
 }
 
 function drawStar(

@@ -48,7 +48,7 @@
     "context:hotspots": "node scripts/context-hotspots.mjs",
     "new:plan": "node scripts/new-plan.mjs",
     "archive:plans": "node scripts/archive-plans.mjs",
-    "plans:check": "node scripts/check-plans.mjs",
+    "plans:check": "node scripts/check-docs.mjs --plans-only",
     "docs:check": "node scripts/check-docs.mjs",
     "docs:check:final": "node scripts/check-docs.mjs --final",
     "prune:transient": "node scripts/prune-transient-artifacts.mjs",

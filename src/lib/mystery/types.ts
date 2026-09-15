@@ -16,6 +16,34 @@ export type MysteryEffect =
   | { kind: "gainGeneratedGear"; baseItemId: string; astral?: true }
   | { kind: "gainMaterial"; material: MaterialId; amount: number };
 
+type MysteryEffectKind = MysteryEffect["kind"];
+
+// Canonical kind list shared by effect-order and the exhaustive-switch guard.
+// The compile-time assertions below fail if a kind is added without updating
+// this tuple, so the test cannot drift from the union.
+export const MYSTERY_EFFECT_KINDS = [
+  "addCard",
+  "chooseCard",
+  "healHealth",
+  "damageHealth",
+  "gainGold",
+  "loseGold",
+  "gainXP",
+  "removeCard",
+  "gainTrinket",
+  "gainRandomTrinket",
+  "gainRandomGear",
+  "gainGeneratedGear",
+  "gainMaterial",
+] as const;
+
+type MissingMysteryKind = Exclude<MysteryEffectKind, (typeof MYSTERY_EFFECT_KINDS)[number]>;
+const assertNoMissingKinds: MissingMysteryKind extends never ? true : never = true;
+type ExtraMysteryKind = Exclude<(typeof MYSTERY_EFFECT_KINDS)[number], MysteryEffectKind>;
+const assertNoExtraKinds: ExtraMysteryKind extends never ? true : never = true;
+void assertNoMissingKinds;
+void assertNoExtraKinds;
+
 export interface MysteryChoice {
   label: string;
   effects: MysteryEffect[];

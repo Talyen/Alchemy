@@ -2,8 +2,9 @@
 /** Move terminal execution plans out of the active plans directory. */
 import fs from "node:fs";
 import path from "node:path";
-import { parsePlanMetadata } from "./check-plans.mjs";
+import { parsePlanMetadata } from "./lib/plan-checks.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
+import { mapUnfencedLines } from "./lib/markdown-sections.mjs";
 import { PLANS_DIR } from "./lib/plan-contract.mjs";
 
 const TERMINAL_STATUSES = new Set(["complete", "cancelled"]);
@@ -23,24 +24,13 @@ function rebasePlanLinks(content, source, destination, moves) {
     const encoded = relative.split("/").map(encodeURIComponent).join("/") + suffix;
     return angle ? `<${encoded}>` : encoded;
   };
-  let fence = null;
-  return content
-    .split(/(\r?\n)/u)
-    .map((line) => {
-      const marker = /^ {0,3}(`{3,}|~{3,})/u.exec(line)?.[1];
-      if (marker) {
-        if (!fence) fence = marker;
-        else if (marker[0] === fence[0] && marker.length >= fence.length) fence = null;
-        return line;
-      }
-      if (fence) return line;
-      return line
-        .replace(/(`+)[^`]*?\1|(!?\[[^\]\n]*\]\(\s*)(<[^>\n]+>|[^\s)]+)/gu, (match, code, prefix, target) =>
-          code ? match : prefix + rebase(target),
-        )
-        .replace(/^( {0,3}\[[^\]\n]+\]:\s*)(<[^>\n]+>|\S+)/u, (_match, prefix, target) => prefix + rebase(target));
-    })
-    .join("");
+  return mapUnfencedLines(content, (line) =>
+    line
+      .replace(/(`+)[^`]*?\1|(!?\[[^\]\n]*\]\(\s*)(<[^>\n]+>|[^\s)]+)/gu, (match, code, prefix, target) =>
+        code ? match : prefix + rebase(target),
+      )
+      .replace(/^( {0,3}\[[^\]\n]+\]:\s*)(<[^>\n]+>|\S+)/u, (_match, prefix, target) => prefix + rebase(target)),
+  );
 }
 
 export function archiveTerminalPlans({ plansDir = PLANS_DIR, names = [], dryRun = false } = {}) {
