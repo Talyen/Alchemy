@@ -1,4 +1,4 @@
-import type { CharacterId, DifficultyId } from "@/lib/game-data";
+import { characters, type CharacterId, type DifficultyId } from "@/lib/game-data";
 import type { CollectionTab } from "@/features/alchemy/shared/types";
 
 export interface ProfileSaveFields {
@@ -10,25 +10,21 @@ export interface ProfileSaveFields {
   finishedRunCharacters: CharacterId[];
 }
 
+function createEmptyCompletedDifficulties(): Record<CharacterId, DifficultyId[]> {
+  // Derived from the character registry so new heroes are covered automatically.
+  return Object.fromEntries((Object.keys(characters) as CharacterId[]).map((id) => [id, []])) as unknown as Record<
+    CharacterId,
+    DifficultyId[]
+  >;
+}
+
 export function createDefaultProfileSaveFields(): ProfileSaveFields {
   return {
     discoveredCardIds: [],
     encounteredEnemyIds: [],
     discoveredTrinketIds: [],
     discoveredUniqueIds: [],
-    // Hardcoded per character on purpose: importing the character catalog here
-    // would drag content into store types. Drift against CHARACTER_IDS is
-    // pinned by tests/architecture/save-migration-contract.test.ts.
-    completedDifficulties: {
-      knight: [],
-      rogue: [],
-      wizard: [],
-      ranger: [],
-      alchemist: [],
-      warlock: [],
-      druid: [],
-      wildcard: [],
-    },
+    completedDifficulties: createEmptyCompletedDifficulties(),
     finishedRunCharacters: [],
   };
 }

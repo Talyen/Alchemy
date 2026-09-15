@@ -19,8 +19,8 @@ import {
   getBurnBonusToBleedingMultiplier,
   getEnemyDamageMultiplier,
   getPoisonBonusAgainstBleeding,
+  rollTalentChance,
 } from "./status-helpers";
-import { getBattleRng, rollPercent } from "@/lib/rng";
 import { POISON_GAIN_AMOUNT } from "../game-constants";
 import { applyPoisonTalentRiders } from "./damage-status-riders";
 import { mergeCombatText } from "./combat-text";
@@ -49,7 +49,7 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   let nextBurn = state.enemyStatuses.burn;
   const preventsDecay =
     state.talentEffects.burnPreventDecayChance > 0 &&
-    rollPercent(state.talentEffects.burnPreventDecayChance, getBattleRng(state));
+    rollTalentChance(state.talentEffects.burnPreventDecayChance, state);
   if (!preventsDecay && !hasEncounterBenefit(state, "eternal-flame")) {
     nextBurn = decayHalvedStatus(nextBurn);
   }
@@ -64,7 +64,7 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
   emitDotCombatText(combatTexts, "enemy", "poison", finalDamage);
   const isFrozenPreserved = state.enemyCC.freezeSkipTurns > 0 && state.talentEffects.freezePreventsPoisonDecay;
   let nextPoison = state.enemyStatuses.poison;
-  if (rollPercent(state.talentEffects.poisonGainChance, getBattleRng(state))) {
+  if (rollTalentChance(state.talentEffects.poisonGainChance, state)) {
     nextPoison += POISON_GAIN_AMOUNT;
   } else if (!isFrozenPreserved) {
     nextPoison = decayPoisonStacks(
@@ -138,7 +138,7 @@ function dealPlayerDotTick(
   return decayArmorAfterDamage(nextState, reducedDamage, "player", combatTexts);
 }
 
-function mitigatePlayerDot(state: BattleState, damage: number, status: "burn" | "bleed"): number {
+function mitigatePlayerDot(state: BattleState, damage: number, status: "burn" | "poison" | "bleed"): number {
   const scaled = scaleReceivedPlayerDamage(damage, state.talentEffects, status);
   const blockReduction = status === "burn" ? state.talentEffects.blockReduceBurnDamage : 0;
   const afterBlock =
@@ -158,7 +158,7 @@ function tickPlayerBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
 function tickPlayerPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.playerStatuses.poison;
   if (damage <= 0) return state;
-  const reducedDamage = scaleReceivedPlayerDamage(damage, state.talentEffects, "poison");
+  const reducedDamage = mitigatePlayerDot(state, damage, "poison");
   return dealPlayerDotTick(state, reducedDamage, "poison", decayPoisonStacks(state.playerStatuses.poison), combatTexts);
 }
 
@@ -182,22 +182,30 @@ function tickPlayerBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   });
 }
 
+function resolvePlayerEndOfTickReactions(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+  // A dead player (outside death's-door) gains no crowd control; reactions still drain.
+  if (state.playerHealth <= 0 && !state.deathsDoorActive) {
+    return resolvePendingBattleReactions(state, combatTexts);
+  }
+  return resolvePendingBattleReactions(resolvePlayerCrowdControlTriggers(state, combatTexts), combatTexts);
+}
+
 export function tickPlayerStatuses(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (state.playerStatuses.burn <= 0 && state.playerStatuses.poison <= 0 && state.playerStatuses.bleed <= 0) {
     let nextState = state;
     if (nextState.pendingEnemyBleedLeechHealing !== 0) {
       nextState = { ...nextState, pendingEnemyBleedLeechHealing: 0 };
     }
-    return resolvePendingBattleReactions(resolvePlayerCrowdControlTriggers(nextState, combatTexts), combatTexts);
+    return resolvePlayerEndOfTickReactions(nextState, combatTexts);
   }
   let nextState = tickPlayerBurn(state, combatTexts);
   if (nextState.playerHealth <= 0 && !nextState.deathsDoorActive) {
-    return resolvePendingBattleReactions(resolvePlayerCrowdControlTriggers(nextState, combatTexts), combatTexts);
+    return resolvePlayerEndOfTickReactions(nextState, combatTexts);
   }
   nextState = tickPlayerPoison(nextState, combatTexts);
   if (nextState.playerHealth <= 0 && !nextState.deathsDoorActive) {
-    return resolvePendingBattleReactions(resolvePlayerCrowdControlTriggers(nextState, combatTexts), combatTexts);
+    return resolvePlayerEndOfTickReactions(nextState, combatTexts);
   }
   nextState = tickPlayerBleed(nextState, combatTexts);
-  return resolvePendingBattleReactions(resolvePlayerCrowdControlTriggers(nextState, combatTexts), combatTexts);
+  return resolvePlayerEndOfTickReactions(nextState, combatTexts);
 }

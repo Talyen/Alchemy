@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { rebindLiveRunMeta } from "@/features/alchemy/shared/stores/run-meta-rebind";
+import { rebindLiveRunMeta } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { setHasActiveBattle } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { setSyncedBattleState } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readActiveRun, readBattle } from "@/features/alchemy/shared/stores/run-reads";

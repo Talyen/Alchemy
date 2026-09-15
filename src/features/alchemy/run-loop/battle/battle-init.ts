@@ -17,7 +17,7 @@ import {
   setEncounteredRunEnemyIds,
   setRoomsEncountered,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { syncRunToBattleStart } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { syncRunToBattleStart } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { appendUnique } from "@/lib/utils";
 import { withWildwoodModifier, type WildwoodModifierId } from "@/lib/content-systems/wildwood/gauntlet";
 import { appendEncounterTraits } from "@/lib/content-systems/encounter-traits";
@@ -28,7 +28,7 @@ import type { BattleControllerContext } from "./battle-context";
 import type { createBattleSession } from "./battle-session";
 import type { createBattleTransferDeps } from "./battle-transfer-deps";
 import { runBattleDraw } from "./draw-sequence";
-import { deriveCombatMeta } from "@/features/alchemy/shared/stores/run-meta-rebind";
+import { deriveCombatMeta } from "@/features/alchemy/shared/stores/run-session-write-port";
 
 export interface BattleOpeningDrawContext {
   battleSessionRef: BattleControllerContext["battleSessionRef"];

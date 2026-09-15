@@ -10,7 +10,7 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readBattle, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
-import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { makeTestBattleState } from "../../../../fixtures/battle";
 import type { PersistedBattleTransition } from "@/lib/active-run-session";

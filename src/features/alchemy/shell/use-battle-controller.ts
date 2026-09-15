@@ -12,7 +12,7 @@ import {
 import { createBattleEndTurnUi } from "@/features/alchemy/run-loop/battle/end-turn-ui";
 import { useBattleOpeningDraw } from "@/features/alchemy/run-loop/battle/use-battle-opening-draw";
 import { readBattle, useBattleLifetimeFields } from "@/features/alchemy/shared/stores/run-reads";
-import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { preferredAutoplayEnabled, useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import type { CardRect } from "@/features/alchemy/shared/types";
 import type { BattleSnapshot } from "@/lib/battle";

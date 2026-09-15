@@ -2,7 +2,12 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { createRunRngState, createRunStreamRng, nextRunRngValue, stepRunRng } from "@/lib/rng";
 import { createDraftRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
+import {
+  createInitialActiveRunFields,
+  generateRunSeed,
+  setTestRunSeedOverride,
+} from "@/features/alchemy/shared/stores/run-state-init";
 import { resetRunDomainStore } from "../helpers/run-domain-store-test";
 import { setRunProgress } from "../helpers/run-domain-store-test";
 
@@ -112,5 +117,24 @@ describe("run RNG", () => {
   it("rejects a non-integer startCounter", () => {
     expect(() => createRunStreamRng(7, "world", 0.5)).toThrow();
     expect(() => createRunStreamRng(7, "world", -1)).toThrow();
+  });
+
+  it("seeds fresh runs deterministically under the test override", () => {
+    setTestRunSeedOverride(777);
+    try {
+      expect(createInitialActiveRunFields(null).rng.seed).toBe(777);
+      expect(createInitialActiveRunFields(null).rng.seed).toBe(777);
+    } finally {
+      setTestRunSeedOverride(null);
+    }
+  });
+
+  it("generates uint32 seeds without an override", () => {
+    setTestRunSeedOverride(null);
+    for (const seed of [generateRunSeed(), generateRunSeed()]) {
+      expect(Number.isInteger(seed)).toBe(true);
+      expect(seed).toBeGreaterThanOrEqual(0);
+      expect(seed).toBeLessThanOrEqual(0xffff_ffff);
+    }
   });
 });

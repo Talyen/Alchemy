@@ -8,12 +8,12 @@ import { type BattleState, type CombatTextEvent } from "./types";
 import {
   addGoldWithCombatText,
   applyHealingWithCombatText,
+  applyHitEpilogue,
   gainManaWithCombatText,
   mergeCombatText,
-  payKillPayouts,
 } from "./combat-text";
 import { removeHarmfulPlayerStatuses, applyPlayerStatusEffect } from "./status-player";
-import { getEnemyDamageMultiplier } from "./status-helpers";
+import { getEnemyDamageMultiplier, rollTalentChance } from "./status-helpers";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { getEditableCorruptionTargets, updateCardNumericValue } from "@/lib/corruption";
 import {
@@ -24,8 +24,8 @@ import {
   MAX_HAND_SIZE,
 } from "../game-constants";
 import { shouldConvertCrystalWishToGold } from "@/lib/content-systems/battle-content";
-import { dealEnemyScaledDamage, gearFrozenDamageMultiplier } from "./gear-effects";
-import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
+import { dealEnemyScaledDamage } from "./scaled-damage";
+import { gearFrozenDamageMultiplier } from "./gear-effects";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { scaleByRoomMultiplier } from "./enemy-turn-traits";
 
@@ -50,7 +50,7 @@ export function buildWishOptions(state: BattleState, card: BattleCard): BattleCa
     state.talentEffects.wishExtraChoices +
     (state.flags.nextWishExtraChoice ? 1 : 0) +
     (hasEncounterBenefit(state, "wishful") && !state.flags.encounterWishUsed ? 1 : 0) +
-    (rollPercent(state.talentEffects.wishExtraChoiceChance, getBattleRng(state)) ? 1 : 0);
+    (rollTalentChance(state.talentEffects.wishExtraChoiceChance, state) ? 1 : 0);
 
   const candidates = getOfferableCardPool().filter((candidate) => candidate.id !== card.id);
   const fullDeck = [...state.deck, ...state.hand, ...state.discard, ...state.exhausted];
@@ -157,11 +157,10 @@ function applyWishBurnTrigger(state: BattleState, combatTexts: CombatTextEvent[]
   if (burnAmount <= 0 || state.enemyHealth <= 0) return state;
   const enemyWasAlive = state.enemyHealth > 0;
   const multiplier = getEnemyDamageMultiplier(state, "burn") * gearFrozenDamageMultiplier(state);
-  const afterThreshold = dealEnemyScaledDamage(state, burnAmount, "burn", combatTexts, {
+  return dealEnemyScaledDamage(state, burnAmount, "burn", combatTexts, {
     multiplier,
-    riders: (damagedState) => processEncounterTraitHealthThreshold(state.enemyHealth, damagedState, combatTexts),
+    riders: (damagedState) => applyHitEpilogue(damagedState, state.enemyHealth, enemyWasAlive, combatTexts),
   });
-  return payKillPayouts(afterThreshold, enemyWasAlive, combatTexts);
 }
 
 function applyWishTrinketTrigger(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {

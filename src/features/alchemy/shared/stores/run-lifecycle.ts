@@ -9,16 +9,20 @@ import type { MaterialInventory } from "@/lib/homestead/types";
 import { getRunSession, readRunResumeScreen } from "./run-reads";
 import { encodeRunResumeSnapshot } from "./run-resume-codec";
 import { dispatchRunSessionCommand, type GameplayDraft } from "./run-session-command";
-import { initializeActiveBattle, setRunEndItems, setRunEndLabyrinthFloor } from "./run-session-write-port";
 import {
+  applyTalentState,
+  clearTransientSession,
   cloneRunObtainedItem,
+  initializeActiveBattle,
   resetNavigation,
   resetProgress,
+  setFinishedRunCharacters,
   setHasActiveBattle,
+  setHasActiveRun,
+  setRunEndItems,
+  setRunEndLabyrinthFloor,
   setRunPlayerHealth,
-} from "./write-port-run";
-import { clearTransientSession, setHasActiveRun } from "./write-port-session";
-import { applyTalentState, setFinishedRunCharacters } from "./write-port-meta";
+} from "./run-session-write-port";
 import { applyRestoreRunToDraft } from "./run-restore";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { useUiStore } from "./ui-store";
@@ -209,10 +213,14 @@ export function clearBattleUi(): void {
   clearBattlePresentationUi();
 }
 
-export function clearBattlePresentationUi(): void {
+function clearBattleUiState(): void {
   useUiStore.getState().setCardInspection(null);
   useUiStore.getState().setEnemyInspectionOpen(false);
   useUiStore.getState().clearCardHover();
+}
+
+export function clearBattlePresentationUi(): void {
+  clearBattleUiState();
   clearPresentationListeners.forEach((listener) => listener());
 }
 
@@ -221,7 +229,5 @@ function notifyRunTeardown(): void {
 }
 
 function clearTransientUiOnTeardown(): void {
-  useUiStore.getState().setCardInspection(null);
-  useUiStore.getState().setEnemyInspectionOpen(false);
-  useUiStore.getState().clearCardHover();
+  clearBattleUiState();
 }

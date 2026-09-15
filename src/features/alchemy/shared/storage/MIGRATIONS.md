@@ -15,8 +15,9 @@ Increment the schema version for structural or meaning changes that require a su
 1. Decide whether a compatible default or supported transformation is required.
 2. Change version metadata only as required; never advance the supported floor casually.
 3. For a supported transformation, (re)introduce an ordered migration table covering every increment and apply it before current-shape validation. Update schema and hydration defaults together.
-4. Add previous-version fixtures to `tests/fixtures/current-saves.ts` when supported versions diverge. Preserve playable state and progression, not just field presence. The migration contract test pins the floor while no migrations are pending.
-5. Run the changed-path gate, which selects the full save/persistence suite.
+4. Change the save shape, its codec, its fixtures, and `RUN_PROFILE_SAVE_KEYS` together: the run-profile key list is an explicit tuple with a compile-time completeness check, so adding a `PermanentProgressFields` member fails the build until the save contract is updated deliberately.
+5. Add previous-version fixtures to `tests/fixtures/current-saves.ts` when supported versions diverge. Preserve playable state and progression, not just field presence. The migration contract test pins the floor while no migrations are pending.
+6. Run the changed-path gate, which selects the full save/persistence suite.
 
 ## Test expectations
 

@@ -1,6 +1,6 @@
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import {
-  addMaterials,
+  addMaterialsToStockpile,
   clearRunMaterialsEarned,
   setRunEndMaterials,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
@@ -30,7 +30,7 @@ export function awardRunEndMaterials(draft: GameplayDraft): ReturnType<typeof em
   }
   const runCollected = runState.runMaterialsEarned;
   const homesteadBonus = applyEndOfRunHomesteadBonuses(emptyInventory(), runProfile.effects, runState.roomsEncountered);
-  addMaterials(draft, homesteadBonus);
+  addMaterialsToStockpile(draft, homesteadBonus);
   setRunEndMaterials(draft, addInventory(runCollected, homesteadBonus));
   clearRunMaterialsEarned(draft);
   return homesteadBonus;

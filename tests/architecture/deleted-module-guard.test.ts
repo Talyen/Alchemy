@@ -39,6 +39,13 @@ describe("deleted module guard", () => {
       "src/lib/battle/leech-heal.ts",
       "src/lib/battle/start-health.ts",
       "src/lib/battle/enemy-trait-query.ts",
+      "src/features/alchemy/shared/stores/write-port-run.ts",
+      "src/features/alchemy/shared/stores/write-port-session.ts",
+      "src/features/alchemy/shared/stores/write-port-meta.ts",
+      "src/features/alchemy/shared/stores/write-port-homestead.ts",
+      "src/features/alchemy/shared/stores/run-session-lifecycle-port.ts",
+      "src/features/alchemy/shared/stores/gear-store-initial-state.ts",
+      "src/features/alchemy/shared/stores/run-meta-rebind.ts",
     ];
     for (const path of deleted) {
       expect(existsSync(join(repoRoot, path)), path).toBe(false);

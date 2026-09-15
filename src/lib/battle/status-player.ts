@@ -1,7 +1,6 @@
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import type { BattleCardEffect, DamageType, EnemyAttackEffect, PlayerStatusId } from "@/lib/game-data";
 import {
-  addEnemyStatus,
   addPlayerStatus,
   playerStatusDelta,
   setFlag,
@@ -11,16 +10,11 @@ import {
   type BattleState,
   type CombatTextEvent,
 } from "./types";
-import {
-  addPlayerStatusWithCombatText,
-  applyHealingWithCombatText,
-  applyHitEpilogue,
-  mergeCombatText,
-} from "./combat-text";
+import { addPlayerStatusWithCombatText, applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { BLEED_STATUS_MULTIPLIER, FIRST_EFFECT_MULTIPLIER, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
 import { paceCombatMagnitude } from "./fight-pacing";
-import { dealEnemyScaledDamage } from "./scaled-damage";
-import { decayArmorAfterDamage, getEnemyDamageMultiplier } from "./status-helpers";
+import { dealScaledBurnWithStacks } from "./scaled-damage";
+import { getEnemyDamageMultiplier } from "./status-helpers";
 import { clamp } from "@/lib/math";
 
 export function applyCardHealing(
@@ -205,13 +199,8 @@ function applyForgeBurnBurst(state: BattleState, oldForge: number, newForge: num
     state.talentEffects.forgeBurnThreshold,
     (s) => {
       if (s.enemyHealth <= 0) return s;
-      return dealEnemyScaledDamage(s, s.talentEffects.forgeBurnDamage, "burn", combatTexts ?? [], {
+      return dealScaledBurnWithStacks(s, s.talentEffects.forgeBurnDamage, combatTexts ?? [], {
         multiplier: getEnemyDamageMultiplier(s, "burn"),
-        riders: (damaged, damage, texts) => {
-          const burning = addEnemyStatus(damaged, "burn", damage);
-          const decayed = decayArmorAfterDamage(burning, damage, "enemy", texts);
-          return applyHitEpilogue(decayed, s.enemyHealth, true, texts);
-        },
       });
     },
     state,

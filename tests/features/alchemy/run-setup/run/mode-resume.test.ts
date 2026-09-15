@@ -11,7 +11,7 @@ import {
   evaluateSaveCandidates,
   hydrateAlchemyPersistenceFields,
 } from "@/features/alchemy/shared/storage";
-import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readActiveRunScreen, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";

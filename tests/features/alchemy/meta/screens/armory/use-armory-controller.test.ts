@@ -10,19 +10,19 @@ import {
   setRunMaxHealth,
   setRunPlayerHealth,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { initializeActiveRun } from "@/features/alchemy/shared/stores/write-port-run";
+import { initializeActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readActiveRun, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
 import { createEmptyGearInventories, type GearInstance } from "@/lib/gear";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import { flushSaveAfterGearMutation } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { flushSaveAfterGearMutation } from "@/features/alchemy/shared/stores/run-lifecycle";
 
 vi.mock("@/app/app-screen-chrome-context", () => ({
   useAppScreenChrome: () => ({ returnToRunScreen: null }),
 }));
 
-vi.mock("@/features/alchemy/shared/stores/run-session-lifecycle-port", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/alchemy/shared/stores/run-session-lifecycle-port")>();
+vi.mock("@/features/alchemy/shared/stores/run-lifecycle", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/alchemy/shared/stores/run-lifecycle")>();
   return {
     ...actual,
     flushSaveAfterGearMutation: vi.fn(),

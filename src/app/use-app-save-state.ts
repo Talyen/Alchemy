@@ -7,7 +7,7 @@ import {
   type SaveWriteOutcome,
 } from "@/features/alchemy/shared/storage";
 import { readHasActiveRun, readRunPhase } from "@/features/alchemy/shared/stores/run-reads";
-import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { useLatestRef } from "@/features/alchemy/shared/ui/use-latest-ref";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import { AUTOSAVE_DEBOUNCE_MS, AUTOSAVE_MAX_WAIT_MS, BATTLE_AUTOSAVE_DEBOUNCE_MS } from "@/lib/game-constants";

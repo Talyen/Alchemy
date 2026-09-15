@@ -125,14 +125,8 @@ export const BATTLE_NO_FEATURES = [
 /** @type {ImportPattern[]} */
 export const DOMAIN_STORE_PATTERNS = [
   {
-    group: [
-      "**/gameplay-state-store",
-      "@/features/alchemy/shared/stores/gameplay-state-store",
-      "**/run-lifecycle",
-      "@/features/alchemy/shared/stores/run-lifecycle",
-    ],
-    message:
-      "Import a capability-specific run-session port instead of the low-level gameplay aggregate or lifecycle internals.",
+    group: ["**/gameplay-state-store", "@/features/alchemy/shared/stores/gameplay-state-store"],
+    message: "Import capability reads, writes, commands, or run-lifecycle instead of the low-level gameplay aggregate.",
   },
 ];
 
@@ -148,9 +142,11 @@ export const WRITE_PORT_PATTERNS = [
       "@/features/alchemy/shared/stores/write-port-homestead",
       "**/write-port-meta",
       "@/features/alchemy/shared/stores/write-port-meta",
+      "**/run-session-lifecycle-port",
+      "@/features/alchemy/shared/stores/run-session-lifecycle-port",
     ],
     message:
-      "Import from @/features/alchemy/shared/stores/run-session-write-port instead of write-port internals — outside shared/stores/* the barrel is the canonical seam.",
+      "That store module was consolidated: import gameplay writes from @/features/alchemy/shared/stores/run-session-write-port and lifecycle from @/features/alchemy/shared/stores/run-lifecycle.",
   },
 ];
 

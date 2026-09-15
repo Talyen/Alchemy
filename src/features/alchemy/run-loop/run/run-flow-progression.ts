@@ -2,7 +2,7 @@ import { getBossById, rollFreshBossId } from "@/features/alchemy/shared/config";
 import { createInitialDestinationResult } from "@/features/alchemy/shared/run-flow/destination-flow";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
-import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-lifecycle";
 import {
   abandonCorruptionDestinationVisit,
   clearMysteryVisitState,

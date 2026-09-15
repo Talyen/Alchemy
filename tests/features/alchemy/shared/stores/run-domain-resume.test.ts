@@ -6,7 +6,7 @@ import { defaultBattleState } from "@/lib/battle";
 import { finalizeRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import { REWARD_ROUTES, ROUTE_SCREENS } from "@/lib/routing";
 import { createEmptyRewardState, readActivityData, type ActiveRunData } from "@/lib/active-run-session";
-import { restoreRun, snapshotRun, teardownRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { restoreRun, snapshotRun, teardownRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { getCurrentRunPhase } from "../../../../helpers/run-session-assertions";
 import {
   getRunSession,
@@ -29,7 +29,7 @@ import {
   setScreen as mutateSetScreen,
   setSyncedBattleState as mutateSyncedBattleState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { resetProgress as mutateResetProgress } from "@/features/alchemy/shared/stores/write-port-run";
+import { resetProgress as mutateResetProgress } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetRunDomainStore, setRunProgress } from "../../../../helpers/run-domain-store-test";
 const resetProgress = createRunSessionCommand(mutateResetProgress);
 const setSyncedBattleState = createRunSessionCommand(mutateSyncedBattleState);

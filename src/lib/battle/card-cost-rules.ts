@@ -102,6 +102,8 @@ function computeStandardCost(
   }
   if (effectiveCost === 0) return { effectiveCost, consumedFlags, disarmedFlags, spentArmedDiscount };
 
+  // A dual-keyword card with both flags spends archery first; nature survives
+  // for the next card. Priority is array order here, matching FIRST_CARD_FREE_RULES.
   if (state.flags.nextArcheryCardFree && cardHasKeyword(card, "archery")) {
     effectiveCost = 0;
     disarmedFlags.add("nextArcheryCardFree");

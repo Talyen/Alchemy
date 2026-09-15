@@ -8,6 +8,10 @@ export function damageOnlyEffects(effects: readonly BattleCardEffect[]): BattleC
       const failureEffects = damageOnlyEffects(effect.failureEffects);
       return successEffects.length || failureEffects.length ? [{ ...effect, successEffects, failureEffects }] : [];
     }
+    if (effect.kind === "repeat-over-turns") {
+      const inner = damageOnlyEffects(effect.effects);
+      return inner.length ? [{ ...effect, effects: inner }] : [];
+    }
     return [];
   });
 }

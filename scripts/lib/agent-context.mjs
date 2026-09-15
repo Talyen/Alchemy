@@ -132,7 +132,7 @@ export const CONTEXT_TASKS = {
   "run-persistence": {
     matches: /(?:\/storage\/|\/save-schemas\/|run-resume|run-session-lifecycle|run-lifecycle)/u,
     docs: [owner("docs/ARCHITECTURE.md", "Persistence API")],
-    entrypoints: ["src/features/alchemy/shared/stores/run-session-lifecycle-port.ts"],
+    entrypoints: ["src/features/alchemy/shared/stores/run-lifecycle.ts"],
   },
   "run-ports": {
     matches: /(?:run-reads|run-session-(?:read|write)-port|route-commands)/u,

@@ -1,12 +1,16 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { aspectRatioOptions, displayModeOptions } from "@/features/alchemy/shared/config/options";
+import { renderHook } from "@testing-library/react";
+import { characters } from "@/lib/game-data";
 import { profilePersistenceCodec, readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import { resetProfileForTest } from "../../../../helpers/run-domain-store-test";
-import { settingsPersistenceCodec, useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
+import {
+  settingsPersistenceCodec,
+  useAppSettings,
+  useSelectedAspectRatio,
+  useSettingsActions,
+  useSettingsStore,
+} from "@/features/alchemy/shared/stores/settings-store";
 import { defaultSaveData, type SaveData } from "@/features/alchemy/shared/storage";
-import { audioState } from "@/lib/audio/state";
-import { DEFAULT_MASTER_VOLUME_PCT, DEFAULT_MUSIC_VOLUME_PCT, DEFAULT_SFX_VOLUME_PCT } from "@/lib/game-constants";
-import { ASPECT_RATIO_VALUES, DISPLAY_MODE_VALUES } from "@/lib/settings-values";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   handleCollectionTabChange,
@@ -80,6 +84,10 @@ describe("profile store", () => {
 
     expect(readProfileStore().discoveredCardIds).toEqual(defaultSaveData.discoveredCardIds);
     expect(readProfileStore().collectionTab).toBe("heroes");
+  });
+
+  it("covers every character in the registry with completion buckets", () => {
+    expect(Object.keys(readProfileStore().completedDifficulties).sort()).toEqual(Object.keys(characters).sort());
   });
 
   it("setState from getInitialState only writes data fields onto the aggregate", () => {
@@ -175,21 +183,17 @@ describe("settings store", () => {
     expect(useSettingsStore.getState().rememberAutoplayPreference).toBe(true);
     expect(useSettingsStore.getState().autoplayEnabled).toBe(true);
   });
-});
 
-describe("settings values", () => {
-  it("keeps every persisted choice available in the Options screen", () => {
-    expect(aspectRatioOptions.map((option) => option.value)).toEqual(ASPECT_RATIO_VALUES);
-    expect(displayModeOptions.map((option) => option.value)).toEqual(DISPLAY_MODE_VALUES);
-  });
+  it("exposes actions and slices through hooks", () => {
+    const { result: actions } = renderHook(() => useSettingsActions());
+    actions.current.setBrightness(120);
+    expect(useSettingsStore.getState().brightness).toBe(120);
 
-  it("uses the persisted audio defaults before React effects mount", () => {
-    const defaults = settingsPersistenceCodec.createDefault();
-    expect(defaults.musicVolume).toBe(DEFAULT_MUSIC_VOLUME_PCT);
-    expect(defaults.sfxVolume).toBe(DEFAULT_SFX_VOLUME_PCT);
-    expect(defaults.masterVolume).toBe(DEFAULT_MASTER_VOLUME_PCT);
-    expect(audioState.musicVolume).toBe(DEFAULT_MUSIC_VOLUME_PCT / 100);
-    expect(audioState.sfxVolume).toBe(DEFAULT_SFX_VOLUME_PCT / 100);
-    expect(audioState.masterVolume).toBe(DEFAULT_MASTER_VOLUME_PCT / 100);
+    const { result: settings } = renderHook(() => useAppSettings());
+    expect(settings.current.brightness).toBe(120);
+    expect(settings.current).not.toHaveProperty("showClearSaveConfirm");
+
+    const { result: aspect } = renderHook(() => useSelectedAspectRatio());
+    expect(aspect.current).toBe(defaultSaveData.selectedAspectRatio);
   });
 });

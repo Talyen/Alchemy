@@ -67,7 +67,7 @@ Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-sess
 3. Reuse the run-end display: `awardRunEndMaterials` in `run-loop/run/run-materials.ts`, used by both defeat and victory flows, merges `runMaterialsEarned` and `applyEndOfRunHomesteadBonuses` into `session.runEndMaterials`.
 4. Check `tests/features/alchemy/run-loop/run/run-victory-handlers.test.ts` and the affected mystery/reward-flow tests when adding a new source.
 
-**Do not** call `addMaterials()` on the run profile store directly from run-loop or mystery code for player loot.
+**Do not** call `addMaterialsToStockpile()` on the run profile store directly from run-loop or mystery code for player loot.
 
 Permanent Gear and Armory Trinkets use `recordRunObtainedItem()` at each grant site (reward Gear/Trinket picks, equipment shop, trinket shop, mystery generated Gear). `finalizeRunEndSession` copies `activeRun.runObtainedItems` into `session.runEndItems` for the run-end recap. Do not record Boons or cards.
 
@@ -94,7 +94,7 @@ Destination eligibility uses health and maximum health after victory bonuses and
 
 ## Run teardown
 
-Feature code uses [`run-session-lifecycle-port.ts`](../src/features/alchemy/shared/stores/run-session-lifecycle-port.ts):
+Feature code uses [`run-lifecycle.ts`](../src/features/alchemy/shared/stores/run-lifecycle.ts):
 
 - `teardownRun()` — clear the active run session after victory, defeat, or abandon.
 - `finalizeRunEndSession()` — run-end bookkeeping plus persist (navigation calls this on run end).

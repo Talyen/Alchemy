@@ -2,7 +2,7 @@ import { rollFreshBossId } from "@/features/alchemy/shared/config";
 import { restoreOrCreateDestinationRewardState } from "@/features/alchemy/shared/run-flow/destination-flow";
 import { readActiveRun, readHasActiveBattle, readHasActiveRun } from "@/features/alchemy/shared/stores/run-reads";
 import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
-import { snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import {
   createDraftRunRandomSource,
   setDestinationOfferState,

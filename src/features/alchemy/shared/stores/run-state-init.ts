@@ -121,7 +121,27 @@ function createEmptyActiveRunCollections(): Pick<
 }
 
 function createFreshRunRngState(): RunRngState {
-  return createRunRngState(Math.random);
+  return createRunRngState(generateRunSeed());
+}
+
+// Explicit seed seam for new runs: crypto-random per run (persisted in
+// `rng` from here on, so every later draw is reproducible), injectable in
+// tests via the optional override. Gameplay never draws Math.random directly.
+let testRunSeedOverride: number | null = null;
+let fallbackRunSeedCounter = 0;
+
+export function setTestRunSeedOverride(seed: number | null): void {
+  testRunSeedOverride = seed;
+}
+
+export function generateRunSeed(): number {
+  if (testRunSeedOverride !== null) return testRunSeedOverride >>> 0;
+  if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+    return crypto.getRandomValues(new Uint32Array(1))[0] as number;
+  }
+  // Last resort for runtimes without WebCrypto: time + process counter.
+  fallbackRunSeedCounter += 1;
+  return (Date.now() + Math.imul(fallbackRunSeedCounter, 0x9e37_79b9)) >>> 0;
 }
 
 function createFreshActiveRunFields(characterId: CharacterId): ActiveRunProgressFields {

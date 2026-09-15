@@ -10,6 +10,48 @@ import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { dealPlayerTypedHit, dealTalentTypedHit } from "./player-typed-hit";
 import type { BattleState, CombatTextEvent } from "./types";
 
+type DamageEffect = Extract<BattleCardEffect, { kind: "damage" }>;
+
+interface AttackPacket {
+  packet: DamageEffect;
+  /** Flat amount the caller adds to the physical follow-up bonus. */
+  physicalBonus: number;
+  applyPartingCut: boolean;
+}
+
+// Single owner for per-hit flag consumption. It runs after the dodge
+// early-return in dealDamageToEnemy, so a dodged attack preserves every
+// flag consumed here (matching the leech/poison comment below).
+function consumeAttackPacketFlags(state: BattleState, effect: DamageEffect): { state: BattleState } & AttackPacket {
+  const convertToPoison = state.flags.nextHitPoison;
+  const poisonPacket = convertToPoison ? { ...effect, damageType: "poison" as const } : effect;
+  let damageState = convertToPoison ? { ...state, flags: { ...state.flags, nextHitPoison: false } } : state;
+
+  // Predator's Focus grants Leech on the next damaging card. Consume the flag
+  // here so dodge preserves it (early return above) while companion and
+  // delayed pulses cannot observe it (withPreservedFlags forces it false).
+  const leechNext = damageState.flags.nextHitLeech;
+  const packet = leechNext ? { ...poisonPacket, lifesteal: true as const } : poisonPacket;
+  if (leechNext) {
+    damageState = { ...damageState, flags: { ...damageState.flags, nextHitLeech: false } };
+  }
+
+  let physicalBonus = 0;
+  if (damageState.flags.nextHitPhysicalBonus > 0) {
+    physicalBonus = damageState.flags.nextHitPhysicalBonus;
+    damageState = {
+      ...damageState,
+      flags: { ...damageState.flags, nextHitPhysicalBonus: 0 },
+    };
+  }
+
+  const applyPartingCut = packet.damageType === "physical" && damageState.flags.nextPhysicalDealsBleed;
+  if (applyPartingCut) {
+    damageState = { ...damageState, flags: { ...damageState.flags, nextPhysicalDealsBleed: false } };
+  }
+  return { state: damageState, packet, physicalBonus, applyPartingCut };
+}
+
 function applyAttackPacketFollowUps(
   result: BattleState,
   damageType: Extract<BattleCardEffect, { kind: "damage" }>["damageType"],
@@ -64,31 +106,10 @@ export function dealDamageToEnemy(
     return dodged;
   }
 
-  const convertToPoison = state.flags.nextHitPoison;
-  const poisonPacket = convertToPoison ? { ...effect, damageType: "poison" as const } : effect;
-  let damageState = convertToPoison ? { ...state, flags: { ...state.flags, nextHitPoison: false } } : state;
-
-  // Predator's Focus grants Leech on the next damaging card. Consume the flag
-  // here so dodge preserves it (early return above) while companion and
-  // delayed pulses cannot observe it (withPreservedFlags forces it false).
-  const leechNext = damageState.flags.nextHitLeech;
-  const packet = leechNext ? { ...poisonPacket, lifesteal: true as const } : poisonPacket;
-  if (leechNext) {
-    damageState = { ...damageState, flags: { ...damageState.flags, nextHitLeech: false } };
-  }
-
-  if (damageState.flags.nextHitPhysicalBonus > 0) {
-    bonuses.physical += damageState.flags.nextHitPhysicalBonus;
-    damageState = {
-      ...damageState,
-      flags: { ...damageState.flags, nextHitPhysicalBonus: 0 },
-    };
-  }
-
-  const applyPartingCut = packet.damageType === "physical" && damageState.flags.nextPhysicalDealsBleed;
-  if (applyPartingCut) {
-    damageState = { ...damageState, flags: { ...damageState.flags, nextPhysicalDealsBleed: false } };
-  }
+  const consumed = consumeAttackPacketFlags(state, effect);
+  const { packet, applyPartingCut } = consumed;
+  const damageState = consumed.state;
+  bonuses.physical += consumed.physicalBonus;
 
   const { nextState, modifiedDamage } = computeCardDamageToEnemy(damageState, packet, card, {
     manaAtStart: damageState.mana,

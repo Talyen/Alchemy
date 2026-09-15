@@ -2,7 +2,7 @@ import "../../../../helpers/mock-audio";
 import "../../../../helpers/mock-flush-save";
 import { beforeEach, describe, expect, it } from "vitest";
 import { readActivityData, shopItemSlotKey } from "@/lib/active-run-session";
-import { restoreRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readActiveRunScreen, readBattle, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { mutateGearForTest, resetAllTestStores, resetGearForTest } from "../../../../helpers/run-domain-store-test";
 import { makeActiveRunData } from "./active-run-data-fixture";

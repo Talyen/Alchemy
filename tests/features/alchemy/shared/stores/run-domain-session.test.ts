@@ -1,6 +1,7 @@
 import { battleSnapshot } from "@/lib/battle";
 import "../../../../helpers/mock-audio";
 import "../../../../helpers/mock-flush-save";
+import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defaultBattleState } from "@/lib/battle";
 import { ROUTE_SCREENS } from "@/lib/routing";
@@ -11,8 +12,9 @@ import {
   syncBattleToRun as mutateBattleToRun,
   syncRunToBattleStart as mutateRunToBattleStart,
   teardownRun,
-} from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+} from "@/features/alchemy/shared/stores/run-lifecycle";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
+import { subscribeGameplayCommits } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import {
   createRunSessionCommand,
   subscribeRunSessionCommits,
@@ -30,6 +32,8 @@ import {
   readActiveRunScreen,
   readBattle,
   readRunSession,
+  useRunSessionBattleContext,
+  useRunSessionNavigationSlice,
 } from "@/features/alchemy/shared/stores/run-reads";
 import { saveAlchemySaveData } from "@/features/alchemy/shared/storage";
 import { playDefeat, stopAllSfx } from "@/lib/audio";
@@ -196,5 +200,30 @@ describe("run transitions", () => {
     expect(readBattle().hasActiveBattle).toBe(false);
     expect(stopAllSfx).toHaveBeenCalledOnce();
     expect(playDefeat).toHaveBeenCalledOnce();
+  });
+});
+
+describe("session narrow hooks", () => {
+  it("useRunSessionBattleContext reports battle phase when combat is active", () => {
+    setHasActiveBattle(true);
+    const { result } = renderHook(() => useRunSessionBattleContext(ROUTE_SCREENS.BATTLE));
+    expect(result.current.phase).toBe("battle");
+    expect(result.current.battle.hasActiveBattle).toBe(true);
+  });
+
+  it("useRunSessionNavigationSlice reports meta on menu", () => {
+    const { result } = renderHook(() => useRunSessionNavigationSlice(ROUTE_SCREENS.MENU));
+    expect(result.current.phase).toBe("meta");
+    expect(result.current.hasActiveBattle).toBe(false);
+  });
+
+  it("notifies the session and gameplay commit subscriptions once per command", () => {
+    const calls: string[] = [];
+    const unsubscribeSession = subscribeRunSessionCommits(() => calls.push("session"));
+    const unsubscribeGameplay = subscribeGameplayCommits(() => calls.push("gameplay"));
+    setHasActiveBattle(true);
+    unsubscribeSession();
+    unsubscribeGameplay();
+    expect(calls).toEqual(["session", "gameplay"]);
   });
 });

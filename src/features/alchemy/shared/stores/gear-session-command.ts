@@ -1,7 +1,6 @@
 import { findGearEquippedCharacter, findGearInventoryOwner, gearDefinitions } from "@/lib/gear";
-import { current } from "immer";
 import { deriveGearCombatRestrictions } from "./gear-combat-restrictions";
-import type { GearStore } from "./gear-store-types";
+import type { GearDraftView, GearStore } from "./gear-store-types";
 import {
   addGearCurrencies,
   addGearInstance,
@@ -17,10 +16,10 @@ import {
 } from "./gear-actions";
 import { discoverUniqueIds } from "./profile-store";
 import { dispatchRunSessionCommand, type GameplayDraft, type SynchronousResult } from "./run-session-command";
-import { addMaterials, awardMaterialsDuringRun } from "./write-port-homestead";
-import { rebindLiveRunMeta } from "./run-meta-rebind";
+import { addMaterialsToStockpile, awardMaterialsDuringRun } from "./run-session-write-port";
+import { rebindLiveRunMeta } from "./run-session-write-port";
 
-function gearCommandView(state: GameplayDraft): GearStore {
+function gearCommandView(state: GameplayDraft, markMutated: () => void): GearStore {
   const gear = state.gear;
   const restrictions = deriveGearCombatRestrictions(state);
   // restrictions.gear only tracks equipped items of the locked hero; an
@@ -32,6 +31,13 @@ function gearCommandView(state: GameplayDraft): GearStore {
     const equippedBy = findGearEquippedCharacter(gear.loadouts, instanceId);
     if (equippedBy && restrictions.characters[equippedBy]) return true;
     return false;
+  };
+  // Void actions always write; boolean actions report success. Either way the
+  // view records actual writes explicitly so commands know whether live battle
+  // meta needs rebinding — no snapshot comparison required.
+  const wrote = <T>(result: T): T => {
+    if (result) markMutated();
+    return result;
   };
   return {
     get inventories() {
@@ -49,9 +55,12 @@ function gearCommandView(state: GameplayDraft): GearStore {
     get craftingCurrencies() {
       return gear.craftingCurrencies;
     },
-    initialize: (inventories, loadouts, craftingCurrencies, ownedTrinketIds, equippedTrinkets) =>
-      initializeGear(gear, inventories, loadouts, craftingCurrencies, ownedTrinketIds, equippedTrinkets),
+    initialize: (inventories, loadouts, craftingCurrencies, ownedTrinketIds, equippedTrinkets) => {
+      markMutated();
+      initializeGear(gear, inventories, loadouts, craftingCurrencies, ownedTrinketIds, equippedTrinkets);
+    },
     addInstance: (instance, characterId) => {
+      markMutated();
       addGearInstance(gear, instance, characterId);
       if (gearDefinitions[instance.definitionId]?.rarity === "unique") {
         discoverUniqueIds(state, [instance.definitionId]);
@@ -59,31 +68,39 @@ function gearCommandView(state: GameplayDraft): GearStore {
     },
     equip: (characterId, slot, instance) => {
       if (restrictions.characters[characterId] || restrictions.gear[instance.instanceId]) return false;
-      return equipGearInstance(gear, characterId, slot, instance);
+      return wrote(equipGearInstance(gear, characterId, slot, instance));
     },
     unequip: (characterId, slot) => {
       if (restrictions.characters[characterId]) return false;
-      return unequipGearInstance(gear, characterId, slot);
+      return wrote(unequipGearInstance(gear, characterId, slot));
     },
-    addTrinket: (trinketId) => addPermanentTrinket(gear, trinketId),
+    addTrinket: (trinketId) => wrote(addPermanentTrinket(gear, trinketId)),
     equipTrinket: (characterId, trinketId) => {
       if (restrictions.characters[characterId] || restrictions.trinkets[trinketId]) return false;
-      return equipPermanentTrinket(gear, characterId, trinketId);
+      return wrote(equipPermanentTrinket(gear, characterId, trinketId));
     },
     unequipTrinket: (characterId) => {
       if (restrictions.characters[characterId]) return false;
-      return unequipPermanentTrinket(gear, characterId);
+      return wrote(unequipPermanentTrinket(gear, characterId));
     },
     salvage: (instanceId) => {
       if (isInstanceLocked(instanceId)) return null;
-      return salvageGearInstance(gear, instanceId);
+      const result = salvageGearInstance(gear, instanceId);
+      if (result) markMutated();
+      return result;
     },
     applyCurrency: (currencyId, instanceId, options) => {
       if (isInstanceLocked(instanceId)) return false;
-      return applyGearCurrency(gear, currencyId, instanceId, options);
+      return wrote(applyGearCurrency(gear, currencyId, instanceId, options));
     },
-    addCurrencies: (currencies) => addGearCurrencies(gear, currencies),
-    reset: () => resetGear(gear),
+    addCurrencies: (currencies) => {
+      markMutated();
+      addGearCurrencies(gear, currencies);
+    },
+    reset: () => {
+      markMutated();
+      resetGear(gear);
+    },
   };
 }
 
@@ -101,28 +118,29 @@ export function mutateGearWithRunHealthSync<T>(
     syncRunHealth?: boolean | undefined;
   },
 ): T & SynchronousResult<T> {
-  const before = current(draft.gear);
-  const result = options.mutate(gearCommandView(draft));
-  // current() snapshots are never referentially equal, so compare by value:
-  // failed or rejected mutations must not rebind live battle meta.
-  const changed = JSON.stringify(current(draft.gear)) !== JSON.stringify(before);
-  if (changed && (options.syncRunHealth ?? draft.session.activity.kind !== "inactive")) {
+  let mutated = false;
+  const result = options.mutate(
+    gearCommandView(draft, () => {
+      mutated = true;
+    }),
+  );
+  if (mutated && (options.syncRunHealth ?? draft.session.activity.kind !== "inactive")) {
     rebindLiveRunMeta(draft);
   }
   return result;
 }
 
 export function dispatchGearSalvageWithMaterialGrant(
-  mutate: (gear: GearStore) => ReturnType<GearStore["salvage"]>,
+  mutate: (gear: GearStore) => ReturnType<GearDraftView["salvage"]>,
   options?: { syncRunHealth?: boolean | undefined },
-): ReturnType<GearStore["salvage"]> {
+): ReturnType<GearDraftView["salvage"]> {
   return dispatchRunSessionCommand((draft) => {
     const salvageResult = mutateGearWithRunHealthSync(draft, { mutate, syncRunHealth: options?.syncRunHealth });
     if (!salvageResult) return null;
     if (draft.session.activity.kind !== "inactive") {
       awardMaterialsDuringRun(draft, salvageResult.yieldedMaterials);
     } else {
-      addMaterials(draft, salvageResult.yieldedMaterials);
+      addMaterialsToStockpile(draft, salvageResult.yieldedMaterials);
     }
     return salvageResult;
   });

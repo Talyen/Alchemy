@@ -60,7 +60,7 @@ items in their inventory, which the store boundary blocks even when reached
 through another hero's tab. Unused items owned by other heroes remain
 editable through other heroes’ tabs. Acquisition adds inventory normally.
 
-The `GearStore` command boundary (`gear-session-command.ts` via `dispatchGearMutationWithRunHealthSync` / `dispatchGearSalvageWithMaterialGrant`) enforces the same reservations before running the mutator;
+The gear command boundary (`gear-session-command.ts` via `dispatchGearMutationWithRunHealthSync` / `dispatchGearSalvageWithMaterialGrant`) enforces the same reservations before running the mutator;
 blocked actions spend no currencies, roll no RNG, award no salvage, and trigger
 neither combat rebinding nor an explicit save flush. The UI shows a lock and a
 reason naming the reserved hero while preserving inspection. Talent and
@@ -87,17 +87,17 @@ Homestead mutation timing remains unchanged.
 
 ### Write paths
 
-There is no external `useGearStore` hook. Gear mutations run against a `GearStore` view of the aggregate state and commit through session commands. Which wrapper to use:
+There is no external `useGearStore` hook. Gear mutations run against a `GearDraftView` of the aggregate state and commit through session commands. Which wrapper to use:
 
 | Situation                                               | Call                                                                |
 | ------------------------------------------------------- | ------------------------------------------------------------------- |
 | Outside a run command (Armory screen, dev spawn)        | `dispatchGearMutationWithRunHealthSync({ mutate, syncRunHealth? })` |
 | Inside an existing command (shop buy, rewards, mystery) | `mutateGearWithRunHealthSync(draft, { mutate, syncRunHealth? })`    |
 
-After a Gear change, `rebindLiveRunMeta` synchronizes health when a run is active, unless the caller explicitly overrides `syncRunHealth`. Unchanged or rejected mutations do not rebind. `mutate` receives a `GearStore` handle and may edit any character's loadout (for example Armory browsing another hero while a run is in progress): `(state) => state.equip(loadoutCharacterId, slot, instance)`.
+After a Gear change, `rebindLiveRunMeta` synchronizes health when a run is active, unless the caller explicitly overrides `syncRunHealth`. Unchanged or rejected mutations do not rebind. `mutate` receives a `GearDraftView` handle and may edit any character's loadout (for example Armory browsing another hero while a run is in progress): `(state) => state.equip(loadoutCharacterId, slot, instance)`.
 
 1. **Equip / Unequip** — `dispatchGearMutationWithRunHealthSync({ mutate: (state) => state.equip(characterId, slot, instance) })` and `(state) => state.unequip(characterId, slot)`.
-2. **Salvage** — preview with `computeSalvageYield` (definition `salvageValue` homestead materials + crafting currencies drawn from the existing rarity table using a seed derived from the stable instance ID). Reopening, reloading, and changing affixes do not reroll rewards; upgrading rarity uses the new rarity table. Confirm calls `dispatchGearSalvageWithMaterialGrant((state) => state.salvage(instanceId))`, which recomputes the same deterministic yield in the store rather than trusting the preview value, then HP-syncs and grants homestead materials in the same command via `awardMaterialsDuringRun` (active run) or `addMaterials` (meta). Confirm always pays exactly the preview.
+2. **Salvage** — preview with `computeSalvageYield` (definition `salvageValue` homestead materials + crafting currencies drawn from the existing rarity table using a seed derived from the stable instance ID). Reopening, reloading, and changing affixes do not reroll rewards; upgrading rarity uses the new rarity table. Confirm calls `dispatchGearSalvageWithMaterialGrant((state) => state.salvage(instanceId))`, which recomputes the same deterministic yield in the store rather than trusting the preview value, then HP-syncs and grants homestead materials in the same command via `awardMaterialsDuringRun` (active run) or `addMaterialsToStockpile` (meta). Confirm always pays exactly the preview.
 3. **Crafting-currency apply** — `(state) => state.applyCurrency(currencyId, instanceId, { rng })` mutates the item's affixes via `applyCraftingCurrency`. The controller injects profile-lifetime randomness, defaulting to `Math.random`, for crafting and dev spawning; neither consumes a run RNG stream. Salvage uses its stable instance-derived seed instead.
 4. **Add new instance (rewards / shop / dev spawn)** — Armory/dev spawn: `dispatchGearMutationWithRunHealthSync({ mutate: (state) => state.addInstance(instance, characterId) })`. Shop and in-run reward commands already own a draft: `mutateGearWithRunHealthSync(draft, { mutate: (gear) => gear.addInstance(instance, characterId) })`.
 5. **Permanent Trinkets** — use `addTrinket`, `equipTrinket`, and `unequipTrinket` on the Gear aggregate. Rewards and the Trinket Shop add ownership inside their existing run-session command; acquisition never auto-equips or creates a Boon.
@@ -136,7 +136,7 @@ Saves are written/read via `buildAlchemySaveDataFromStores` (`src/features/alche
 
 Do not duplicate the current schema number here. [`MIGRATIONS.md`](../src/features/alchemy/shared/storage/MIGRATIONS.md) and `src/lib/validation/metadata.ts` own the supported floor and current version. Gear shape changes follow that migration contract: safe additive fields may use schema defaults, while transforms require a versioned migration.
 
-`use-app-save-state.ts` (`useAlchemyAutosaveFromStores`) subscribes through `subscribeAlchemyPersistence`, which combines settings changes with the committed gameplay-session revision signal; changes are debounced before writing. `buildAlchemySaveDataFromStores` assembles the snapshot through `encodePersistenceFields`. The gear mutation callbacks in `useArmoryController` also call `flushSaveAfterGearMutation` (lifecycle port) after successful mutations.
+`use-app-save-state.ts` (`useAlchemyAutosaveFromStores`) subscribes through `subscribeAlchemyPersistence`, which combines settings changes with the committed gameplay-session revision signal; changes are debounced before writing. `buildAlchemySaveDataFromStores` assembles the snapshot through `encodePersistenceFields`. The gear mutation callbacks in `useArmoryController` also call `flushSaveAfterGearMutation` (`run-lifecycle.ts`) after successful mutations.
 
 ## Unique combat effects
 

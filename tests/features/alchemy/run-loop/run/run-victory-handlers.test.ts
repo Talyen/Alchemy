@@ -17,13 +17,13 @@ import { setRunProgress, setRunSession } from "../../../../helpers/run-domain-st
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { applyRunDefeatTeardown } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { applyRunDefeatTeardown } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { playGoldGain } from "@/lib/audio";
 import { BATTLE_END_TRANSITION_DELAY } from "@/lib/game-constants";
 import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
-vi.mock("@/features/alchemy/shared/stores/run-session-lifecycle-port", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/alchemy/shared/stores/run-session-lifecycle-port")>();
+vi.mock("@/features/alchemy/shared/stores/run-lifecycle", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/alchemy/shared/stores/run-lifecycle")>();
   return {
     ...actual,
     applyRunDefeatTeardown: vi.fn(),

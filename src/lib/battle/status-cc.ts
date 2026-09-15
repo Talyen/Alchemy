@@ -87,6 +87,10 @@ export function resolvePlayerCrowdControlTrigger(input: PlayerCcTriggerInput): B
 }
 
 export function resolvePlayerCrowdControlTriggers(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+  // Mirror the enemy guard in tryTriggerEnemyCc: while controlled, new buildup
+  // banks for later instead of extending the skip or firing the other stat on
+  // a follow-up packet of the same attack.
+  if (isCcControlled(state.playerCC)) return state;
   let nextState = resolvePlayerCrowdControlTrigger({
     state,
     stat: "stun",
@@ -94,6 +98,8 @@ export function resolvePlayerCrowdControlTriggers(state: BattleState, combatText
     thresholdFraction: STUN_THRESHOLD_FRACTION,
     combatTexts,
   });
+  // A stun that just fired controls the player; don't also freeze on the same packet.
+  if (isCcControlled(nextState.playerCC)) return nextState;
   nextState = resolvePlayerCrowdControlTrigger({
     state: nextState,
     stat: "freeze",

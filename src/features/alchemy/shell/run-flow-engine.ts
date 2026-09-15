@@ -9,7 +9,7 @@ import {
   createRunSessionCommand,
   dispatchRunSessionCommand,
 } from "@/features/alchemy/shared/stores/run-session-command";
-import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import {
   abandonLabyrinthCorruptionVisit,
   setHasActiveBattle as setDraftHasActiveBattle,

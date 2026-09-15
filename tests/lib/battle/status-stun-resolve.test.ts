@@ -142,6 +142,22 @@ describe("resolveStunTrigger", () => {
     expect(result.gold).toBe(5);
   });
 
+  it("never drops the stun threshold below the shared 10% floor", () => {
+    const base = patchBattleState();
+    const belowFloor = {
+      ...base,
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      enemyCC: defaultCcState({ stunSkipTurns: 0 }),
+      enemyStatuses: defaultEnemyStatusValues({ stun: 2 }),
+      talentEffects: { ...base.talentEffects, stunThresholdReduction: 0.45 },
+    };
+    expect(resolveStunTrigger(belowFloor).enemyCC.stunSkipTurns).toBe(0);
+
+    const atFloor = { ...belowFloor, enemyStatuses: defaultEnemyStatusValues({ stun: 3 }) };
+    expect(resolveStunTrigger(atFloor).enemyCC.stunSkipTurns).toBe(1);
+  });
+
   it("uses stunThresholdReduction to lower threshold", () => {
     const base = patchBattleState();
     const state = {

@@ -5,7 +5,7 @@ import { flattenGearInventories } from "@/lib/gear";
 import { useShallow } from "zustand/react/shallow";
 import { type GameplayPersistenceCodec } from "./persistence-codec";
 import type { GearSaveFields, GearStateFields } from "./gear-store-types";
-import { createInitialGearState } from "./gear-store-initial-state";
+import { createInitialGearState } from "./gear-actions";
 import { initializeGear } from "./gear-actions";
 import { readGameplayState, useGameplayStateStore } from "./gameplay-state-store";
 import { deriveGearCombatRestrictions } from "./gear-combat-restrictions";

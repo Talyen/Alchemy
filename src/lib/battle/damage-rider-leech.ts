@@ -19,7 +19,7 @@ import {
 } from "./combat-text";
 import { scaledGearLeechHeal } from "./gear-effects";
 import { rollTalentChance } from "./status-helpers";
-import { getBattleRng, pickRandom, rollPercent } from "@/lib/rng";
+import { getBattleRng, pickRandom } from "@/lib/rng";
 import { applyPercentBonus, scalePercent } from "./amount-helpers";
 import { FIRST_EFFECT_MULTIPLIER, HALF_DIVISOR, LEECH_HEAL_FRACTION, PERCENT_DENOMINATOR } from "../game-constants";
 
@@ -198,7 +198,7 @@ export function applyDamageBlock(state: BattleState, damage: number, combatTexts
 
 export function applyHolyTithe(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
   if (damage <= 0 || state.talentEffects.holyGoldChance <= 0) return state;
-  if (rollPercent(state.talentEffects.holyGoldChance, getBattleRng(state))) {
+  if (rollTalentChance(state.talentEffects.holyGoldChance, state)) {
     return addGoldWithCombatText(state, damage, combatTexts);
   }
   return state;

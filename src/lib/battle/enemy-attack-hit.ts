@@ -1,7 +1,5 @@
 import type { EnemyAttackEffect } from "@/lib/game-data";
-import { prepareTalentCardPlay } from "./talent-card-play";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
-import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import {
   mergeCombatText,
   addGoldWithCombatText,
@@ -14,7 +12,7 @@ import { takeRandomCardFromDeck, drawKeywordCard } from "./draw";
 import { tryDodgeEnemyAttackPacket } from "./dodge";
 import { applyDodgeTalentStatuses } from "./dodge-talent-rewards";
 import { applyArmorReward } from "./status-player";
-import { applyCardEffects } from "./effect-handlers";
+import { handlePostPlayCardDestination, resolveCardEffectChain } from "./card-play";
 import {
   prepareEnemyDamage,
   resolveEnemyDamageEffect,
@@ -22,7 +20,6 @@ import {
   type EnemyDamageOptions,
   type EnemyDamageResult,
 } from "./enemy-attack-damage";
-import { applyCardPlayTalentRewards, applyMortarAndPestlePotionUse, handlePostPlayCardDestination } from "./card-play";
 import { dealPlayerTypedHit, dealTalentTypedHit } from "./player-typed-hit";
 import { hasEnemyTrait, isPlayerDefeated, setPlayerStatus, type BattleState, type CombatTextEvent } from "./types";
 
@@ -41,21 +38,9 @@ function applyDodgeDrawAndPlay(state: BattleState, combatTexts: CombatTextEvent[
     uniqueGear: drawn.uniqueGear,
   };
 
-  const talentPlay = prepareTalentCardPlay(nextState, drawn.card, combatTexts);
-  nextState = resolvePendingBattleReactions(talentPlay.state, combatTexts);
-  const damageEffects: NonNullable<CardEffectResolutionContext["damageEffects"]> = [];
-  const playContext = {
-    damageEffects,
-    attackBonuses: talentPlay.attackBonuses,
-    cardHealing: true,
-    manaAtStart: nextState.mana,
-    enemyFreezeSkipTurnsAtStart: nextState.enemyCC.freezeSkipTurns,
-  };
-
-  nextState = applyCardEffects(nextState, drawn.card, combatTexts, playContext);
-  nextState = applyMortarAndPestlePotionUse(nextState, drawn.card, combatTexts);
-  nextState = applyCardPlayTalentRewards(nextState, drawn.card, combatTexts);
-  nextState = processEncounterTraitCardAction(nextState, drawn.card, combatTexts, damageEffects.length > 0);
+  const chained = resolveCardEffectChain(nextState, drawn.card, combatTexts);
+  nextState = chained.state;
+  nextState = processEncounterTraitCardAction(nextState, drawn.card, combatTexts, chained.attackAttempted);
   nextState = handlePostPlayCardDestination(nextState, drawn.card, !isPlayerDefeated(nextState), combatTexts);
   return nextState;
 }

@@ -5,7 +5,7 @@ import {
   TALENT_CONVERSION_BLEED_FRACTION,
   TALENT_CONVERSION_DEFAULT_FRACTION,
 } from "../game-constants";
-import { applyLuckyCloverGold, applyNatureManaRefund } from "./bonus-effects";
+import { applyBurnForgePayout, applyLuckyCloverGold, applyNatureManaRefund } from "./bonus-effects";
 import { computeCardDamageToEnemy, computeTalentDamageToEnemy, emptyBattleCard } from "./damage-calc";
 import {
   applyDamageBlock,
@@ -15,11 +15,18 @@ import {
   applyLeechHitRewards,
 } from "./damage-rider-leech";
 import { rollTalentChance } from "./status-helpers";
-import { addForgeToPlayer } from "./status-player";
 import { resolveTypedEnemyHit } from "./typed-hit-resolution";
-import { setFlag, type BattleState, type CombatTextEvent } from "./types";
+import { type BattleState, type CombatTextEvent } from "./types";
 
 const FOLLOW_UP_CARD: BattleCard = emptyBattleCard("follow-up-typed-hit");
+
+// Rider depth by hit phase (deliberate, not drift):
+// - card hits run the full riders in damage-riders.ts (conversions, status
+//   rolls, lifesteal/block/tithe, wish, brass).
+// - player follow-up hits below run nature refunds and holy brass only.
+// - talent follow-up hits below run holy lifesteal/block/tithe and burn forge only.
+// Follow-ups stay shallow so conversion chains terminate instead of
+// re-entering themselves.
 
 export function dealPlayerTypedHit(
   state: BattleState,
@@ -52,7 +59,7 @@ export function applyBrassCenser(
   combatTexts: CombatTextEvent[],
   enemyHealthBeforeHit = state.enemyHealth,
 ): BattleState {
-  if (damage <= 0 || !rollPercent(state.trinketEffects.brassCenserProcChance, getBattleRng(state))) return state;
+  if (damage <= 0 || !rollTalentChance(state.trinketEffects.brassCenserProcChance, state)) return state;
   if (rollPercent(BRASS_CENSER_SPLIT_CHANCE, getBattleRng(state))) {
     return dealPlayerTypedHit(state, "burn", damage, combatTexts);
   }
@@ -64,6 +71,11 @@ export function dealTalentTypedHit(
   damageType: DamageType,
   amount: number,
   combatTexts: CombatTextEvent[],
+  // Derived hits convert already-paced damage (fractions of a card hit, parting
+  // cut, stun procs): they round and use the trait-only multiplier so fight
+  // pacing is not applied twice. Standalone procs with fixed talent amounts
+  // (wish burn, dodge burn, consume poison, frozen bonus hits) omit it and go
+  // through pacing like any new damage.
   derived = false,
 ): BattleState {
   if (amount <= 0 || state.enemyHealth <= 0) return state;
@@ -80,12 +92,8 @@ export function dealTalentTypedHit(
     nextState = applyLuckyCloverGold(nextState, resolved, combatTexts);
     nextState = applyNatureManaRefund(nextState, resolved, combatTexts);
   }
-  if (damageType === "burn" && nextState.talentEffects.forgeOnBurnDealt > 0) {
-    nextState = addForgeToPlayer(nextState, nextState.talentEffects.forgeOnBurnDealt, combatTexts);
-  }
-  if (damageType === "burn" && nextState.gearEffects.forgeOnBurnDealt > 0 && !nextState.flags.emberforgedUsedThisTurn) {
-    nextState = setFlag(nextState, "emberforgedUsedThisTurn", true);
-    nextState = addForgeToPlayer(nextState, nextState.gearEffects.forgeOnBurnDealt, combatTexts);
+  if (damageType === "burn") {
+    nextState = applyBurnForgePayout(nextState, combatTexts);
   }
   return nextState;
 }

@@ -14,7 +14,7 @@ import { ROUTE_SCREENS } from "@/lib/routing";
 import { decodeRunResumeSnapshot, encodePersistedShops } from "@/features/alchemy/shared/stores/run-resume-codec";
 import { runProfilePersistenceCodec } from "@/features/alchemy/shared/stores/run-profile-codec";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import {
   setCompanionRewardCards,
   setEquipmentShopState,

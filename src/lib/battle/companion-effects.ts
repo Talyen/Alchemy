@@ -7,7 +7,6 @@ import { applyScaledLeechHealing, computeLeechHeal } from "./damage-rider-leech"
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { addPlayerStatusWithCombatText, applyHealingWithCombatText } from "./combat-text";
 import { rollTalentChance } from "./status-helpers";
-import { getBattleRng, rollPercent } from "@/lib/rng";
 import { dealTalentTypedHit } from "./player-typed-hit";
 import { getBattleCompanionDamageModifiers } from "./companion-scaling";
 
@@ -81,7 +80,7 @@ export function resolveCompanionTurnStart(
     }
 
     if (damageDealt > 0 && state.talentEffects.companionLeechChance > 0) {
-      if (rollPercent(state.talentEffects.companionLeechChance, getBattleRng(state))) {
+      if (rollTalentChance(state.talentEffects.companionLeechChance, state)) {
         afterEffects = applyScaledLeechHealing(afterEffects, computeLeechHeal(damageDealt), combatTexts);
       }
     }

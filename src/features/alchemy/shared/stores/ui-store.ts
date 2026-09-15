@@ -4,7 +4,7 @@ import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
 
 import type { CardInspectionView } from "../types";
 
-type ShimmerState = { cardId: string; token: number } | null;
+type ShimmerState = { cardId: string; token: number; triggeredAt: number } | null;
 
 interface PlasmaRegistration {
   ownerId: string;
@@ -49,13 +49,16 @@ export const useUiStore = create<UiStore>()((set, get) => ({
   clearCardHover: () => set({ hoveredCardId: null, autoplayPreviewCardId: null }),
   maybeTriggerShimmer: (cardId) => {
     const state = get();
+    // Monotonic token (change signal) plus a Date.now cooldown timestamp, so
+    // tests can drive timing with fake timers instead of performance.now().
+    const now = Date.now();
     if (
       state.shimmerState &&
       state.shimmerState.cardId === cardId &&
-      performance.now() - state.shimmerState.token < SHIMMER_COOLDOWN_MS
+      now - state.shimmerState.triggeredAt < SHIMMER_COOLDOWN_MS
     )
       return;
-    set({ shimmerState: { cardId, token: performance.now() } });
+    set({ shimmerState: { cardId, token: (state.shimmerState?.token ?? 0) + 1, triggeredAt: now } });
   },
   setPlasmaBaseline: (registration) => set({ plasmaBaseline: registration }),
   clearPlasmaBaseline: (ownerId) =>

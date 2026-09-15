@@ -6,7 +6,7 @@ import {
   clearAlchemySaveData,
   hydrateAlchemyPersistenceFields,
 } from "@/features/alchemy/shared/storage";
-import { restoreRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readRunInitialized } from "@/features/alchemy/shared/stores/run-reads";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 import { useAlchemyBootstrap } from "@/app/use-alchemy-bootstrap";
@@ -21,7 +21,7 @@ vi.mock("@/features/alchemy/shared/storage", async (importOriginal) => {
   };
 });
 
-vi.mock("@/features/alchemy/shared/stores/run-session-lifecycle-port", () => ({
+vi.mock("@/features/alchemy/shared/stores/run-lifecycle", () => ({
   restoreRun: vi.fn(),
 }));
 

@@ -3,10 +3,10 @@ import {
   addEnemyStatus,
   endPlayerTurn,
   playBattleCardResolved,
-  regrowEnemyThorns,
   tickEnemyStatuses,
   tickPlayerStatuses,
 } from "@/lib/battle";
+import { regrowEnemyThorns } from "@/lib/battle/encounter-trait-events";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
 import { companionLibrary, enemyById, type BattleCard, type BestiaryEntry } from "@/lib/game-data";

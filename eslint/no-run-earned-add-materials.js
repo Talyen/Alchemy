@@ -3,9 +3,6 @@ import { repoRelativePosix } from "./filename.js";
 const ALLOWED = new Set([
   // Keep in sync with tests/scripts/eslint-alchemy-plugin.test.ts, which pins
   // the allowed owner. Moving an allowed call site means updating both.
-  "src/features/alchemy/shared/stores/homestead-actions.ts",
-  "src/features/alchemy/shared/stores/write-port-homestead.ts",
-  "src/features/alchemy/shared/stores/write-port-session.ts",
   "src/features/alchemy/shared/stores/run-session-write-port.ts",
   "src/features/alchemy/shared/stores/gear-session-command.ts",
   "src/features/alchemy/run-loop/run/run-materials.ts",
@@ -19,10 +16,10 @@ function importedName(specifier) {
   return "";
 }
 
-function isAddMaterialsCallee(node) {
-  if (node.type === "Identifier") return node.name === "addMaterials";
+function isStockpileGrantCallee(node) {
+  if (node.type === "Identifier") return node.name === "addMaterialsToStockpile";
   if (node.type === "MemberExpression" && !node.computed && node.property.type === "Identifier") {
-    return node.property.name === "addMaterials";
+    return node.property.name === "addMaterialsToStockpile";
   }
   return false;
 }
@@ -33,12 +30,12 @@ export const noRunEarnedAddMaterials = {
     type: "problem",
     docs: {
       description:
-        "Run-earned materials must use awardMaterialsDuringRun(); progress addMaterials is limited to homestead-bonus and meta salvage.",
+        "Run-earned materials must use awardMaterialsDuringRun(); progress addMaterialsToStockpile is limited to homestead-bonus and meta salvage.",
     },
     schema: [],
     messages: {
       addMaterials:
-        "Use awardMaterialsDuringRun() for run-earned materials. addMaterials() is only for homestead end-of-run bonuses and meta salvage.",
+        "Use awardMaterialsDuringRun() for run-earned materials. addMaterialsToStockpile() is only for homestead end-of-run bonuses and meta salvage.",
     },
   },
   create(context) {
@@ -47,7 +44,7 @@ export const noRunEarnedAddMaterials = {
     const report = (node) => context.report({ node, messageId: "addMaterials" });
     return {
       ImportSpecifier(node) {
-        if (importedName(node) === "addMaterials") report(node);
+        if (importedName(node) === "addMaterialsToStockpile") report(node);
       },
       ExportSpecifier(node) {
         const exported = node.exported;
@@ -57,10 +54,10 @@ export const noRunEarnedAddMaterials = {
             : exported?.type === "Literal" && typeof exported.value === "string"
               ? exported.value
               : "";
-        if (name === "addMaterials") report(node);
+        if (name === "addMaterialsToStockpile") report(node);
       },
       CallExpression(node) {
-        if (isAddMaterialsCallee(node.callee)) report(node.callee);
+        if (isStockpileGrantCallee(node.callee)) report(node.callee);
       },
     };
   },

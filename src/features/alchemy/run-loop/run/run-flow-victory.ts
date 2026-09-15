@@ -1,5 +1,5 @@
 import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { clearBattleUi, finalizeRunEndSession } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { clearBattleUi, finalizeRunEndSession } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { finalizeRunXP } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { playGoldGain, playVictory, stopAllSfx } from "@/lib/audio";

@@ -8,7 +8,7 @@ import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../hel
 import { makeFlowHandlerDeps } from "../../../helpers/run-flow-handler-deps";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { createWildwoodGauntletFlow } from "@/features/alchemy/run-loop/run/wildwood-gauntlet-flow";
-import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { cardById } from "@/lib/game-data";
 describe("Wildwood reward selection", () => {
   beforeEach(() => {

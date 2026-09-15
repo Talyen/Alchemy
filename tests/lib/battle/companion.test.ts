@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
+import { getBattleCompanionDamageModifiers } from "@/lib/battle/companion-scaling";
 import { defaultGearEffects } from "@/lib/gear/gear-effect-manifest";
 import { companionLibrary, type CompanionId } from "@/lib/game-data";
 import { makeCombatTexts as makeTexts, makeTestCard, patchBattleState } from "../../fixtures/battle";
@@ -565,5 +566,34 @@ describe("Predator's Instinct threshold", () => {
       talentEffects: { companionDoubledVsLowHealth: true },
     });
     expect(processCompanionTurnStart(state, []).enemyHealth).toBe(enemyHealth - damage);
+  });
+});
+
+describe("getBattleCompanionDamageModifiers", () => {
+  const scaling = (overrides = {}) => getBattleCompanionDamageModifiers(patchBattleState(overrides));
+
+  it("stacks flat talent, gear, trinket, and buff bonuses", () => {
+    const mods = scaling({
+      talentEffects: { ...patchBattleState().talentEffects, companionDamage: 2 },
+      gearEffects: { ...patchBattleState().gearEffects, companionDamageBonus: 3 },
+      companionDamageBuff: 1,
+    });
+    expect(mods.damageBonus).toBeGreaterThanOrEqual(6);
+    expect(mods.bleedDamageBonus).toBe(patchBattleState().talentEffects.companionBleedDamageBonus);
+  });
+
+  it("adds the frozen bonus only while the enemy skips from freeze", () => {
+    const base = { talentEffects: { ...patchBattleState().talentEffects, companionVsFrozenBonus: 4 } };
+    const frozen = scaling({ ...base, enemyCC: { ...patchBattleState().enemyCC, freezeSkipTurns: 1 } });
+    const awake = scaling(base);
+    expect(frozen.damageBonus - awake.damageBonus).toBe(4);
+  });
+
+  it("doubles below 30% health but not at the boundary", () => {
+    const talents = { ...patchBattleState().talentEffects, companionDoubledVsLowHealth: true };
+    const low = scaling({ talentEffects: talents, enemyHealth: 29, enemyMaxHealth: 100 });
+    expect(low.damageMultiplier).toBe(2);
+    const boundary = scaling({ talentEffects: talents, enemyHealth: 30, enemyMaxHealth: 100 });
+    expect(boundary.damageMultiplier).toBe(1);
   });
 });

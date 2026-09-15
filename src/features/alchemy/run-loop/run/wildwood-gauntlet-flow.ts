@@ -2,7 +2,7 @@ import { wildwoodPhaseToScreen } from "@/features/alchemy/shared/run-flow/wildwo
 import { appendCardToRunWithDiscovery } from "@/features/alchemy/shared/stores/deck-mutations";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { teardownRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { teardownRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import {
   createDraftRunRandomSource,
   prepareRunNavigation,

@@ -13,7 +13,7 @@ import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { patchBattleState, makeTestCard } from "../../../../fixtures/battle";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
-import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { setHasActiveBattle, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";

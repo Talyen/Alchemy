@@ -4,7 +4,7 @@ import {
   applyRunDefeatTeardown,
   abandonRun,
   clearBattlePresentationUi,
-} from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+} from "@/features/alchemy/shared/stores/run-lifecycle";
 import { finalizeRunXP, setHasActiveBattle } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";

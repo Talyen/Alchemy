@@ -1,15 +1,18 @@
 import { describe, expect, it } from "vitest";
 import {
+  createEmptyEquippedTrinkets,
   createEmptyGearInventories,
   createEmptyGearLoadouts,
+  EMPTY_CRAFTING_CURRENCIES,
   flattenGearInventories,
   generateUniqueGearInstance,
   getUniqueItemDefinition,
   type GearInstance,
 } from "@/lib/gear";
 import { mutateGearForTest, resetGearForTest, resetProfileForTest } from "../../../../helpers/run-domain-store-test";
-import { createInitialGearState } from "@/features/alchemy/shared/stores/gear-store-initial-state";
-import { readGearState, readHasAnyOwnedGear } from "@/features/alchemy/shared/stores/gear-store";
+import { createInitialGearState } from "@/features/alchemy/shared/stores/gear-actions";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { gearPersistenceCodec, readGearState, readHasAnyOwnedGear } from "@/features/alchemy/shared/stores/gear-store";
 import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import {
   dispatchGearMutationWithRunHealthSync,
@@ -114,6 +117,30 @@ describe("gear-store", () => {
     dispatchGearSalvageWithMaterialGrant((gear) => gear.salvage(unique.instanceId));
     expect(flattenGearInventories(readGearState().inventories)).toEqual([]);
     expect(readProfileStore().discoveredUniqueIds).toEqual(["wardbreaker"]);
+    resetGearForTest();
+  });
+
+  it("prunes dangling loadouts, unknown trinkets, and duplicate equips on hydrate", () => {
+    resetGearForTest();
+    const loadouts = createEmptyGearLoadouts();
+    loadouts.knight["left-accessory"] = "missing-ring";
+    dispatchRunSessionCommand((draft) =>
+      gearPersistenceCodec.hydrate(
+        {
+          gearInventories: createEmptyGearInventories(),
+          gearLoadouts: loadouts,
+          ownedTrinketIds: ["bone-charm", "bogus-trinket"],
+          equippedTrinkets: { ...createEmptyEquippedTrinkets(), knight: "bone-charm", rogue: "bone-charm" },
+          craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES },
+        },
+        draft,
+      ),
+    );
+
+    expect(readGearState().loadouts.knight["left-accessory"]).toBeNull();
+    expect(readGearState().ownedTrinketIds).toEqual(["bone-charm"]);
+    expect(readGearState().equippedTrinkets.knight).toBe("bone-charm");
+    expect(readGearState().equippedTrinkets.rogue).toBeNull();
     resetGearForTest();
   });
 });

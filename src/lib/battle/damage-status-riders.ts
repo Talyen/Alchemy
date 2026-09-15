@@ -9,16 +9,17 @@ import {
 import { applyCrowdControlTriggerBonuses } from "./bonus-effects";
 import { tryTriggerEnemyCc } from "./status-cc";
 import { resolveStunTrigger } from "./status-stun-resolve";
-import { getEnemyDamageMultiplier } from "./status-helpers";
+import { getEnemyDamageMultiplier, rollTalentChance } from "./status-helpers";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import {
   BLEED_STATUS_MULTIPLIER,
   BATTLE_CONFIG,
   BURN_BLEED_MIRROR_CHANCE,
   FREEZE_THRESHOLD_FRACTION,
-  MIN_FREEZE_THRESHOLD_FRACTION,
+  MIN_CC_THRESHOLD_FRACTION,
 } from "../game-constants";
-import { applyGearCcPhysicalDamage, dealEnemyScaledDamage } from "./gear-effects";
+import { applyGearCcPhysicalDamage } from "./gear-effects";
+import { dealEnemyScaledDamage } from "./scaled-damage";
 import { applyScaledLeechHealing, computeLeechHeal } from "./damage-rider-leech";
 import { detonateEnemyStatuses } from "./dot-resolve";
 import { halveRounded } from "./amount-helpers";
@@ -80,7 +81,7 @@ export function applyPoisonTalentRiders(
       state.talentEffects.poisonLeechChance + state.gearEffects.poisonLeechChance,
     ];
     for (const chance of leechChances) {
-      if (!rollPercent(chance, getBattleRng(nextState))) continue;
+      if (!rollTalentChance(chance, nextState)) continue;
       nextState = applyScaledLeechHealing(nextState, computeLeechHeal(damage), combatTexts, { afflicted: true });
     }
   }
@@ -99,7 +100,7 @@ function queueBleedLeech(
 ): BattleState {
   if (bleedAmount <= 0) return state;
   const leechFromCard = effect.lifesteal;
-  const leechFromTalent = rollPercent(state.talentEffects.bleedLeechChance, getBattleRng(state));
+  const leechFromTalent = rollTalentChance(state.talentEffects.bleedLeechChance, state);
   if (!leechFromCard && !leechFromTalent) return state;
   return { ...state, pendingBleedLeechHealing: state.pendingBleedLeechHealing + bleedAmount };
 }
@@ -109,7 +110,7 @@ function procBleedPoison(state: BattleState, actualDamage: number, bleedAmount: 
     bleedAmount <= 0 ||
     actualDamage <= 0 ||
     state.talentEffects.bleedPoisonChance <= 0 ||
-    !rollPercent(state.talentEffects.bleedPoisonChance, getBattleRng(state))
+    !rollTalentChance(state.talentEffects.bleedPoisonChance, state)
   )
     return state;
   return addEnemyStatus(state, "poison", actualDamage);
@@ -128,7 +129,7 @@ function applyBleedStatusRider(
 ): BattleState {
   let nextState = stackBleed(state, actualDamage);
   const bleedAmount = nextState.enemyStatuses.bleed - state.enemyStatuses.bleed;
-  if (actualDamage > 0 && rollPercent(nextState.talentEffects.bleedHalveArmorChance, getBattleRng(nextState))) {
+  if (actualDamage > 0 && rollTalentChance(nextState.talentEffects.bleedHalveArmorChance, nextState)) {
     const halved = halveRounded(nextState.enemyMitigation.armor);
     const removed = nextState.enemyMitigation.armor - halved;
     if (removed > 0) nextState = reduceEnemyArmor(nextState, removed);
@@ -172,7 +173,7 @@ export function tryTriggerEnemyFreeze(
   preHitHealth = preHitState.enemyHealth,
 ): BattleState {
   const freezeThreshold = Math.max(
-    MIN_FREEZE_THRESHOLD_FRACTION,
+    MIN_CC_THRESHOLD_FRACTION,
     FREEZE_THRESHOLD_FRACTION - preHitState.talentEffects.freezeThresholdReduction,
   );
   const triggered = tryTriggerEnemyCc({
@@ -181,7 +182,8 @@ export function tryTriggerEnemyFreeze(
     stat: "freeze",
     stackValue: nextState.enemyStatuses.freeze,
     thresholdFraction: freezeThreshold,
-    ccCooldown: preHitState.enemyCC.cooldown,
+    // Immunity is judged on the latest state, matching the stun path.
+    ccCooldown: nextState.enemyCC.cooldown,
     skipDuration: BATTLE_CONFIG.BASE_CC_DURATION + nextState.trinketEffects.freezeDurationExtension,
     combatTexts,
   });
@@ -225,7 +227,7 @@ function applyFreezeStatusRider(
 
 function applyPhysicalBleedChance(state: BattleState, actualDamage: number): BattleState {
   const bleedChance = state.talentEffects.physicalBleedChance + state.gearEffects.physicalBleedChance;
-  if (actualDamage <= 0 || !rollPercent(bleedChance, getBattleRng(state))) return state;
+  if (actualDamage <= 0 || !rollTalentChance(bleedChance, state)) return state;
   return addEnemyStatus(state, "bleed", actualDamage);
 }
 

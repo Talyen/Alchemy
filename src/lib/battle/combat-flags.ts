@@ -27,6 +27,10 @@ export const FLAG_DEFINITIONS = {
   firstCompanionCardFreeUsed: { default: false as const, preserveAs: true as const },
   firstArcheryCardFreeUsed: { default: false as const, preserveAs: true as const },
 
+  // Unlike every other preserved flag (restored verbatim), withPreservedFlags
+  // keeps Math.max(before, after) for this one so a discount granted inside a
+  // companion/repeat pulse is not lost when the pulse ends. See
+  // withPreservedFlags in types/state-helpers.ts.
   nextCardCostReduction: { default: 0 as const, preserveAs: 0 as const },
 
   goldOnFirstPoisonThisCombat: { default: false as const, preserveAs: null },

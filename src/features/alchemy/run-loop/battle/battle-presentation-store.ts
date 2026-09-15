@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 import { readBattle, readRunPhase } from "@/features/alchemy/shared/stores/run-reads";
-import { onClearBattlePresentation, onRunTeardown } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { onClearBattlePresentation, onRunTeardown } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { mergeCombatText, type BattleSnapshot, type CombatTextEvent } from "@/lib/battle";
 import {
   COMBAT_TEXT_LIFETIME_MS,

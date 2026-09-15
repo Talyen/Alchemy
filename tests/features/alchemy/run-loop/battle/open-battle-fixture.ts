@@ -1,5 +1,6 @@
 import { makeTestBattleState, makeTestCard } from "../../../../fixtures/battle";
 import type { BattleState } from "@/lib/battle";
+import type { BattleCard } from "@/lib/game-data";
 import type { Screen } from "@/lib/routing";
 import { EMPTY_HIDDEN_HAND_KEYS, type HiddenHandCardKeys } from "@/features/alchemy/run-loop/battle/playable-hand";
 
@@ -31,36 +32,25 @@ export function makeOpenBattle<T extends object>(overrides: T = {} as T): OpenBa
     cardTransferInProgress: false,
     hiddenHandCardKeys: EMPTY_HIDDEN_HAND_KEYS,
     cardPlayInProgress: false,
-    battleState: makeTestBattleState({
-      hand: [{ ...playableCard, uid: 1 }],
-      mana: 3,
-      turnPhase: "player",
-      enemyHealth: 20,
-    }),
+    battleState: openBattleState([{ ...playableCard, uid: 1 }], 3),
     ...overrides,
   };
 }
 
+function openBattleState(hand: BattleCard[], mana: number): BattleState {
+  return makeTestBattleState({ hand, mana, turnPhase: "player", enemyHealth: 20 });
+}
+
 export function makeUnplayableBattle<T extends object>(overrides: T = {} as T): OpenBattleGate & T {
   return makeOpenBattle({
-    battleState: makeTestBattleState({
-      hand: [{ ...unplayableCard, uid: 1 }],
-      mana: 1,
-      turnPhase: "player",
-      enemyHealth: 20,
-    }),
+    battleState: openBattleState([{ ...unplayableCard, uid: 1 }], 1),
     ...overrides,
   });
 }
 
 export function makeEmptyHandBattle<T extends object>(overrides: T = {} as T): OpenBattleGate & T {
   return makeOpenBattle({
-    battleState: makeTestBattleState({
-      hand: [],
-      mana: 3,
-      turnPhase: "player",
-      enemyHealth: 20,
-    }),
+    battleState: openBattleState([], 3),
     ...overrides,
   });
 }

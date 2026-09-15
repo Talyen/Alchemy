@@ -47,6 +47,9 @@ export function subscribeAlchemyPersistence(listener: () => void): () => void {
 }
 
 export function buildAlchemySaveDataFromStores(activeRun: ActiveRunData | null): UnstampedSaveData {
+  // Single save join point: flat persistence fields (settings/profile/gear/run
+  // profile codecs) plus the active-run resume snapshot from run-lifecycle's
+  // snapshotRun. Callers snapshot the run first; this function only stamps.
   const persistenceFields = encodePersistenceFields();
   return {
     saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,

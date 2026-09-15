@@ -8,7 +8,10 @@ export const CRIT_MULTIPLIER = 2;
 export const BLEED_STATUS_MULTIPLIER = 1;
 export const STUN_THRESHOLD_FRACTION = 0.5;
 export const FREEZE_THRESHOLD_FRACTION = 0.5;
-export const MIN_FREEZE_THRESHOLD_FRACTION = 0.1;
+// Shared floor for crowd-control trigger thresholds: reduction effects can
+// never push a threshold below 10% of max health, so buildup alone cannot
+// trigger a skip for free.
+export const MIN_CC_THRESHOLD_FRACTION = 0.1;
 export const WISH_CHOICE_COUNT = 3;
 export const MIN_MAX_MANA_FLOOR = 1;
 

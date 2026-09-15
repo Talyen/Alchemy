@@ -58,7 +58,7 @@ export default {
     "src/features/alchemy/shared/stores/profile-store.ts": ["exports"],
     "src/lib/game-data/talents/talent-pool-definitions.ts": ["exports"],
     "src/features/alchemy/shared/stores/persistence-codec.ts": ["types"],
-    "src/features/alchemy/shared/stores/write-port-run.ts": ["exports"],
+    "src/features/alchemy/shared/stores/run-session-write-port.ts": ["exports"],
     "src/lib/content-systems/types.ts": ["exports", "types"],
     // Testable save-load seams: evaluated via storage-io tests; platform dedup is public API.
     "src/features/alchemy/shared/storage/io.ts": ["exports", "types"],

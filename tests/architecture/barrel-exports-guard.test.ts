@@ -29,6 +29,17 @@ describe("@/lib/battle barrel", () => {
     expect(battleBarrel.defaultBattleState).toBeTypeOf("function");
     expect(battleBarrel.playBattleCardResolved).toBeTypeOf("function");
     expect(battleBarrel.chooseWishCard).toBeTypeOf("function");
+    expect(battleBarrel.resolveBattleTurn).toBeTypeOf("function");
+    expect(battleBarrel.battleSnapshot).toBeTypeOf("function");
+    expect(battleBarrel.canPlayCard).toBeTypeOf("function");
+  });
+
+  it("keeps hit-pipeline staging helpers internal", () => {
+    expect(battleBarrel).not.toHaveProperty("remapDrawnCardBenefits");
+    expect(battleBarrel).not.toHaveProperty("playerStatusDelta");
+    expect(battleBarrel).not.toHaveProperty("mitigatePlayerCombatDamage");
+    expect(battleBarrel).not.toHaveProperty("scaleReceivedPlayerDamage");
+    expect(battleBarrel).not.toHaveProperty("regrowEnemyThorns");
   });
 });
 

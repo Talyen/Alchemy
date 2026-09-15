@@ -1,7 +1,7 @@
 import { type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 import { BATTLE_CONFIG, BLACKFLETCH_EXECUTE_HEALTH_PERCENT, PERCENT_DENOMINATOR } from "../game-constants";
 import { halveRounded } from "./amount-helpers";
-import { applyLuckyCloverGold, applyNatureManaRefund } from "./bonus-effects";
+import { applyBurnForgePayout, applyLuckyCloverGold, applyNatureManaRefund } from "./bonus-effects";
 import { applyHitEpilogue, mergeCombatText } from "./combat-text";
 import { computeReflectedHolyDamageToEnemy, forgeAppliesToDamageType, REFLECTED_HOLY_CARD } from "./damage-calc";
 import { applyDamageBlock, applyHolyLifesteal, applyHolyTithe } from "./damage-rider-leech";
@@ -24,7 +24,6 @@ import {
   addEnemyStatus,
   damageEnemyHealth,
   hasEncounterBenefit,
-  setFlag,
   type BattleState,
   type CombatTextEvent,
 } from "./types";
@@ -35,19 +34,9 @@ function applyBurnDamageRiders(
   modifiedDamage: number,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  let nextState = state;
-  if (state.talentEffects.forgeOnBurnDealt > 0) {
-    nextState = addForgeToPlayer(nextState, state.talentEffects.forgeOnBurnDealt, combatTexts);
-  }
-  if (state.gearEffects.forgeOnBurnDealt > 0 && !state.flags.emberforgedUsedThisTurn) {
-    nextState = setFlag(
-      addForgeToPlayer(nextState, state.gearEffects.forgeOnBurnDealt, combatTexts),
-      "emberforgedUsedThisTurn",
-      true,
-    );
-  }
+  const nextState = applyBurnForgePayout(state, combatTexts);
   if (rollTalentChance(state.talentEffects.burnStunChance, state)) {
-    nextState = dealTalentTypedHit(nextState, "stun", modifiedDamage, combatTexts, true);
+    return dealTalentTypedHit(nextState, "stun", modifiedDamage, combatTexts, true);
   }
   return nextState;
 }

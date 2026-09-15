@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { createInitialRunDomainData, createInitialSessionFields, createInitialBattleFields } from "./run-domain-types";
 import { createInitialPermanentFields } from "./run-state-init";
 import { createInitialProfileState } from "./profile-store-types";
-import { createInitialGearState } from "./gear-store-initial-state";
+import { createInitialGearState } from "./gear-actions";
 import type { RunDomainDataState, RunDomainBattleState, RunSessionFields } from "./run-domain-types";
 import type { PermanentProgressFields } from "./run-state-init";
 import type { GearStateFields } from "./gear-store-types";

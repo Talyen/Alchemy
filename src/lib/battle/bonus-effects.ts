@@ -1,5 +1,5 @@
-import { getBattleRng, rollPercent } from "@/lib/rng";
 import { FREE_CARD_SENTINEL } from "../game-constants";
+import { rollTalentChance } from "./status-helpers";
 import { drawFromState, applyDrawResult } from "./draw";
 import { addGoldWithCombatText, gainManaWithCombatText, addPlayerStatusWithCombatText } from "./combat-text";
 import { setFlag, stripEnemyArmor, stripEnemyBlock, type BattleState, type CombatTextEvent } from "./types";
@@ -61,7 +61,7 @@ export function applyIronwoodBuckler(state: BattleState, combatTexts: CombatText
 
 export function applyLuckyCloverGold(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
   if (state.trinketEffects.luckyCloverGoldChance <= 0 || damage <= 0) return state;
-  if (rollPercent(state.trinketEffects.luckyCloverGoldChance, getBattleRng(state))) {
+  if (rollTalentChance(state.trinketEffects.luckyCloverGoldChance, state)) {
     return addGoldWithCombatText(state, damage, combatTexts);
   }
   return state;
@@ -69,7 +69,24 @@ export function applyLuckyCloverGold(state: BattleState, damage: number, combatT
 
 export function applyNatureManaRefund(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
   if (damage <= 0 || state.gearEffects.manaOnNatureDamageChance <= 0) return state;
-  return rollPercent(state.gearEffects.manaOnNatureDamageChance, getBattleRng(state))
+  return rollTalentChance(state.gearEffects.manaOnNatureDamageChance, state)
     ? gainManaWithCombatText(state, 1, combatTexts)
     : state;
+}
+
+// Shared burn-hit forge payout (card hits and talent follow-ups grant the
+// same forge; kept here so the two call sites cannot drift apart).
+export function applyBurnForgePayout(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+  let nextState = state;
+  if (state.talentEffects.forgeOnBurnDealt > 0) {
+    nextState = addForgeToPlayer(nextState, state.talentEffects.forgeOnBurnDealt, combatTexts);
+  }
+  if (state.gearEffects.forgeOnBurnDealt > 0 && !state.flags.emberforgedUsedThisTurn) {
+    nextState = setFlag(
+      addForgeToPlayer(nextState, state.gearEffects.forgeOnBurnDealt, combatTexts),
+      "emberforgedUsedThisTurn",
+      true,
+    );
+  }
+  return nextState;
 }

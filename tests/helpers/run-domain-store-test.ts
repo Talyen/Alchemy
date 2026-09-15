@@ -18,7 +18,7 @@ import {
 } from "@/features/alchemy/shared/stores/run-state-init";
 import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
 import type { GearStore } from "@/features/alchemy/shared/stores/gear-store-types";
-import { createInitialGearState } from "@/features/alchemy/shared/stores/gear-store-initial-state";
+import { createInitialGearState } from "@/features/alchemy/shared/stores/gear-actions";
 import { createInitialProfileState } from "@/features/alchemy/shared/stores/profile-store-types";
 import {
   clearTransientSession,

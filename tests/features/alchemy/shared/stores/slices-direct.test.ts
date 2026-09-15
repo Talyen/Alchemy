@@ -28,7 +28,7 @@ import {
   setHasActiveRun,
   setSyncedBattleState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { nextRunRandom, resetProgress } from "@/features/alchemy/shared/stores/write-port-run";
+import { nextRunRandom, resetProgress } from "@/features/alchemy/shared/stores/run-session-write-port";
 import {
   readActiveRun,
   readActiveRunScreen,

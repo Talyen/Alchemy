@@ -1,13 +1,12 @@
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { prepareTalentCardPlay } from "./talent-card-play";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
-import { drawFromState, applyDrawResult, remapDrawnCardBenefits } from "./draw";
+import { drawFromState, applyDrawResult, drawKeywordCard } from "./draw";
 import { applyCardEffects } from "./effect-handlers";
 import {
   addGoldWithCombatText,
   addPlayerStatusWithCombatText,
   applyHealingWithCombatText,
-  applyHitEpilogue,
   gainManaWithCombatText,
   mergeCombatText,
 } from "./combat-text";
@@ -25,10 +24,10 @@ import { processCompanionTurnStart } from "./companion";
 import { detonateEnemyStatuses } from "./dot-resolve";
 import { addForgeToPlayer, countRemovableHarmfulStatuses } from "./status-player";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
-import { getBattleRng, rngInt, rollPercent } from "@/lib/rng";
+import { getBattleRng, rollPercent } from "@/lib/rng";
 import { dealTalentTypedHit, dealPlayerTypedHit } from "./player-typed-hit";
-import { dealEnemyScaledDamage } from "./gear-effects";
-import { decayArmorAfterDamage, getEnemyDamageMultiplier } from "./status-helpers";
+import { dealScaledBurnWithStacks } from "./scaled-damage";
+import { getEnemyDamageMultiplier } from "./status-helpers";
 
 import { prepareUniqueCardPlay, finishUniqueCardDamage, returnHarvestCard } from "./unique-card-effects";
 import { computeCardPayment } from "./card-cost-rules";
@@ -53,10 +52,11 @@ function consumeCardDiscounts(state: BattleState, payment: ReturnType<typeof com
   return { ...state, flags: nextFlags, uniqueGear: { ...state.uniqueGear, ...uniqueDiscounts } };
 }
 
-function getPlayableCard(state: BattleSnapshot, cardId: string, index: number): BattleCard | null {
+function getHandCard(state: BattleSnapshot, cardId: string, index: number, uid?: number): BattleCard | null {
   if (state.wishOptions) return null;
   const card = state.hand[index];
   if (!card || card.id !== cardId) return null;
+  if (uid !== undefined && card.uid !== uid) return null;
   return card;
 }
 
@@ -72,12 +72,7 @@ function cardHasOnlyCleanseEffect(card: BattleCard, state: BattleSnapshot): bool
   return !hasUsefulEffect && countRemovableHarmfulStatuses(state.playerStatuses) === 0;
 }
 
-function isCardInHand(state: BattleSnapshot, card: BattleCard, index: number): BattleCard | null {
-  const currentCard = state.hand[index];
-  return currentCard && currentCard.id === card.id && currentCard.uid === card.uid ? currentCard : null;
-}
-
-export function applyMortarAndPestlePotionUse(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]) {
+function applyMortarAndPestlePotionUse(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]) {
   if (isPlayerDefeated(state) || !isPotionCard(card) || state.trinketEffects.mortarPestlePoisonOnPotionUse <= 0)
     return state;
   return resolvePendingBattleReactions(
@@ -94,10 +89,9 @@ function validateCardPlay(
 ): ReturnType<typeof computeCardPayment> | null {
   if (state.enemyHealth <= 0 && !options?.allowAfterEnemyDefeat) return null;
   if (isPlayerDefeated(state)) return null;
-  if (state.wishOptions) return null;
   if (state.turnPhase !== "player") return null;
   if (isCcControlled(state.playerCC)) return null;
-  const handCard = isCardInHand(state, card, index);
+  const handCard = getHandCard(state, card.id, index, card.uid);
   if (!handCard) return null;
   const payment = computeCardPayment(state, handCard);
   if (!payment.affordable) return null;
@@ -114,6 +108,48 @@ export function canPlayCard(
   return validateCardPlay(state, card, index, options) !== null;
 }
 
+export interface CardEffectChainOptions {
+  playedCard?: boolean;
+  guaranteedCrit?: boolean;
+  damageEffects?: NonNullable<CardEffectResolutionContext["damageEffects"]>;
+  manaAtStart?: number;
+  enemyFreezeSkipTurnsAtStart?: number;
+  skipTalentRewards?: boolean;
+}
+
+// Shared core for playing a card's effects: talent pre-triggers, pending
+// reactions, the effect dispatch itself, potion use, and talent rewards.
+// Normal plays and dodge-drawn plays differ only in cost handling, unique
+// repeats, and twin-casting, which stay with their callers.
+export function resolveCardEffectChain(
+  state: BattleState,
+  card: BattleCard,
+  combatTexts: CombatTextEvent[],
+  options: CardEffectChainOptions = {},
+): {
+  state: BattleState;
+  attackAttempted: boolean;
+  attackBonuses: NonNullable<CardEffectResolutionContext["attackBonuses"]>;
+} {
+  const talentPlay = prepareTalentCardPlay(state, card, combatTexts);
+  const reacted = resolvePendingBattleReactions(talentPlay.state, combatTexts);
+  const damageEffects = options.damageEffects ?? [];
+  let nextState = applyCardEffects(reacted, card, combatTexts, {
+    attackBonuses: talentPlay.attackBonuses,
+    cardHealing: true,
+    damageEffects,
+    manaAtStart: options.manaAtStart ?? reacted.mana,
+    enemyFreezeSkipTurnsAtStart: options.enemyFreezeSkipTurnsAtStart ?? reacted.enemyCC.freezeSkipTurns,
+    ...(options.playedCard === undefined ? {} : { playedCard: options.playedCard }),
+    ...(options.guaranteedCrit === undefined ? {} : { guaranteedCrit: options.guaranteedCrit }),
+  });
+  nextState = applyMortarAndPestlePotionUse(nextState, card, combatTexts);
+  if (!options.skipTalentRewards) {
+    nextState = applyCardPlayTalentRewards(nextState, card, combatTexts);
+  }
+  return { state: nextState, attackAttempted: damageEffects.length > 0, attackBonuses: talentPlay.attackBonuses };
+}
+
 function executeCardPlayState(
   state: BattleState,
   card: BattleCard,
@@ -124,7 +160,7 @@ function executeCardPlayState(
   guaranteedCrit: boolean,
   damageEffects: NonNullable<CardEffectResolutionContext["damageEffects"]>,
 ) {
-  let nextState: BattleState = {
+  const stripped: BattleState = {
     ...state,
     hand: state.hand.filter((_, i) => i !== index),
     flags: { ...state.flags, playNextCardTwice: false },
@@ -132,30 +168,32 @@ function executeCardPlayState(
     mana: Math.max(0, state.mana - effectiveCost),
   };
 
-  const talentPlay = prepareTalentCardPlay(nextState, card, combatTexts);
-  nextState = resolvePendingBattleReactions(talentPlay.state, combatTexts);
-  const playContext = {
-    attackBonuses: talentPlay.attackBonuses,
-    cardHealing: true,
+  const chained = resolveCardEffectChain(stripped, card, combatTexts, {
     playedCard: true,
-    damageEffects,
     guaranteedCrit,
+    damageEffects,
     manaAtStart: state.mana,
     enemyFreezeSkipTurnsAtStart: state.enemyCC.freezeSkipTurns,
-  };
-  nextState = applyCardEffects(nextState, card, combatTexts, playContext);
-  nextState = applyMortarAndPestlePotionUse(nextState, card, combatTexts);
+    // Play-twice resolves both damage copies before talent rewards so
+    // companion/nature triggers fire once after the full play.
+    skipTalentRewards: playTwice,
+  });
+  let nextState = chained.state;
 
   const repeatedDamageEffects: NonNullable<CardEffectResolutionContext["damageEffects"]> = [];
   if (playTwice) {
     nextState = applyCardEffects(nextState, card, combatTexts, {
-      ...playContext,
+      attackBonuses: chained.attackBonuses,
+      cardHealing: true,
+      playedCard: true,
       damageEffects: repeatedDamageEffects,
+      guaranteedCrit,
+      manaAtStart: state.mana,
+      enemyFreezeSkipTurnsAtStart: state.enemyCC.freezeSkipTurns,
     });
     nextState = applyMortarAndPestlePotionUse(nextState, card, combatTexts);
+    nextState = applyCardPlayTalentRewards(nextState, card, combatTexts);
   }
-
-  nextState = applyCardPlayTalentRewards(nextState, card, combatTexts);
 
   nextState = applyTwinCasting(nextState, card);
 
@@ -182,30 +220,7 @@ function applyTwinCasting(state: BattleState, card: BattleCard): BattleState {
     targetType = "burn";
   }
   if (!targetType) return state;
-
-  const eligibleIndices: number[] = [];
-  for (let i = 0; i < state.deck.length; i++) {
-    const candidate = state.deck[i];
-    if (candidate && cardHasKeyword(candidate, targetType)) {
-      eligibleIndices.push(i);
-    }
-  }
-  if (eligibleIndices.length === 0) return state;
-  const pick = rngInt(getBattleRng(state), eligibleIndices.length);
-  const targetIndex = eligibleIndices[pick];
-  if (targetIndex === undefined) throw new Error("[Battle] keyword draw pick out of bounds");
-  const rawDrawnCard = state.deck[targetIndex];
-  if (!rawDrawnCard) return state;
-
-  const drawnCard = { ...rawDrawnCard, uid: state.nextCardUid };
-  const nextDeck = state.deck.filter((_, i) => i !== targetIndex);
-  return {
-    ...state,
-    deck: nextDeck,
-    hand: [...state.hand, drawnCard],
-    nextCardUid: state.nextCardUid + 1,
-    uniqueGear: remapDrawnCardBenefits(state, [{ previous: rawDrawnCard.uid, next: drawnCard.uid }]),
-  };
+  return drawKeywordCard(state, targetType, { refillFromDiscard: false });
 }
 
 function applyResonantChimeTrinket(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
@@ -223,11 +238,7 @@ function applyResonantChimeTrinket(state: BattleState, combatTexts: CombatTextEv
   return state;
 }
 
-export function applyCardPlayTalentRewards(
-  state: BattleState,
-  card: BattleCard,
-  combatTexts: CombatTextEvent[],
-): BattleState {
+function applyCardPlayTalentRewards(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]): BattleState {
   if (isPlayerDefeated(state)) return state;
   let nextState = applyNatureCardPlayTalents(state, card, combatTexts);
   if (nextState.talentEffects.companionActsOnCard && cardHasKeyword(card, "companion")) {
@@ -300,13 +311,8 @@ function applyConsumeTalentRiders(state: BattleState, card: BattleCard, combatTe
 
 function applyConsumeBurn(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   if (state.enemyHealth <= 0 || state.gearEffects.burnOnConsume <= 0) return state;
-  return dealEnemyScaledDamage(state, state.gearEffects.burnOnConsume, "burn", combatTexts, {
+  return dealScaledBurnWithStacks(state, state.gearEffects.burnOnConsume, combatTexts, {
     multiplier: getEnemyDamageMultiplier(state, "burn"),
-    riders: (damaged, damage, texts) => {
-      const burning = addEnemyStatus(damaged, "burn", damage);
-      const decayed = decayArmorAfterDamage(burning, damage, "enemy", texts);
-      return applyHitEpilogue(decayed, state.enemyHealth, true, texts);
-    },
   });
 }
 
@@ -343,7 +349,7 @@ export function playBattleCardResolved(
   const combatTexts: CombatTextEvent[] = [];
   const enemyWasAlive = state.enemyHealth > 0;
 
-  const card = getPlayableCard(state, cardId, index);
+  const card = getHandCard(state, cardId, index);
   if (!card) return { state, combatTexts };
   const payment = validateCardPlay(state, card, index, options);
   if (!payment) return { state, combatTexts };

@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import { isBattleInspectionOpen, useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 
 beforeEach(() => {
   useUiStore.setState(useUiStore.getInitialState(), true);
@@ -57,22 +57,43 @@ describe("plasma registrations", () => {
 
 describe("maybeTriggerShimmer", () => {
   it("is per-card cooldown not global", () => {
-    const nowSpy = vi.spyOn(performance, "now").mockReturnValue(1000);
+    const nowSpy = vi.spyOn(Date, "now").mockReturnValue(1000);
     const store = useUiStore.getState();
     store.maybeTriggerShimmer("card-a");
-    const tokenA = useUiStore.getState().shimmerState?.token;
-    expect(tokenA).toBe(1000);
+    const first = useUiStore.getState().shimmerState;
+    expect(first?.cardId).toBe("card-a");
+    expect(first?.token).toBe(1);
 
     nowSpy.mockReturnValue(1005);
     store.maybeTriggerShimmer("card-a");
-    expect(useUiStore.getState().shimmerState?.token).toBe(tokenA);
+    expect(useUiStore.getState().shimmerState?.token).toBe(1);
 
     store.maybeTriggerShimmer("card-b");
     expect(useUiStore.getState().shimmerState?.cardId).toBe("card-b");
+    expect(useUiStore.getState().shimmerState?.token).toBe(2);
 
-    nowSpy.mockReturnValue((tokenA ?? 0) + 10_000);
+    nowSpy.mockReturnValue(2000);
     store.maybeTriggerShimmer("card-a");
     expect(useUiStore.getState().shimmerState?.cardId).toBe("card-a");
     nowSpy.mockRestore();
+  });
+});
+
+describe("inspection mutual exclusion", () => {
+  it("keeps card and enemy inspection mutually exclusive", () => {
+    const store = useUiStore.getState();
+    store.setCardInspection("deck");
+    expect(isBattleInspectionOpen(useUiStore.getState())).toBe(true);
+
+    store.setEnemyInspectionOpen(true);
+    expect(useUiStore.getState().cardInspection).toBeNull();
+    expect(useUiStore.getState().enemyInspectionOpen).toBe(true);
+
+    store.setCardInspection("draw");
+    expect(useUiStore.getState().enemyInspectionOpen).toBe(false);
+    expect(useUiStore.getState().cardInspection).toBe("draw");
+
+    store.setCardInspection(null);
+    expect(isBattleInspectionOpen(useUiStore.getState())).toBe(false);
   });
 });

@@ -10,7 +10,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/loot-progress";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readActiveRun, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { createShopActions } from "@/features/alchemy/run-loop/shop/create-shop-actions";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { createEmptyTalentEffectManifest, getStartingDeck } from "@/lib/game-data";

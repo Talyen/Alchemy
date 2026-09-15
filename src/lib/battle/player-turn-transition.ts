@@ -13,14 +13,24 @@ import { drawCards, applyDrawResult, drawFromState } from "./draw";
 import { applyCardEffects } from "./effect-handlers";
 import { finalizeCcSkipTurnDecrement, isCcControlled } from "./status-cc";
 import { decayHalvedStatus } from "./status-helpers";
+import { PER_TURN_UNIQUE_GEAR_RESET } from "./unique-gear-state";
 import { getBattleRng } from "@/lib/rng";
 import {
   isPlayerDefeated,
   deathsDoorGraceTurns,
   type BattleState,
+  type CcState,
   type CombatTextEvent,
   withPreservedFlags,
 } from "./types";
+
+function decrementCcSkipTurns(cc: CcState): CcState {
+  return {
+    ...cc,
+    stunSkipTurns: Math.max(0, cc.stunSkipTurns - 1),
+    freezeSkipTurns: Math.max(0, cc.freezeSkipTurns - 1),
+  };
+}
 
 function applyPlagueDoctorMask(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   if (state.playerHealth <= 0 || state.enemyHealth <= 0) return state;
@@ -95,16 +105,7 @@ function resetPlayerTurnState(
     cardsPlayedThisTurn: 0,
     uniqueGear: {
       ...state.uniqueGear,
-      redHarvestUsed: false,
-      redHarvestUid: null,
-      huntsmasterUsed: false,
-      wrenflightActive: false,
-      finalSparkUsed: false,
-      freeBurnUsed: false,
-      freeFreezeUsed: false,
-      freeHolyUsed: false,
-      lastArcheryUid: null,
-      returningFlightUid: null,
+      ...PER_TURN_UNIQUE_GEAR_RESET,
     },
     flags: {
       ...state.flags,
@@ -148,14 +149,9 @@ export function resetEnemyTurnState(state: BattleState): BattleState {
 export function reducePlayerSkipTurns(state: BattleState): BattleState {
   const prevCc = state.playerCC;
   if (!isCcControlled(prevCc)) return state;
-  const decrementedCc = {
-    ...prevCc,
-    stunSkipTurns: Math.max(0, prevCc.stunSkipTurns - 1),
-    freezeSkipTurns: Math.max(0, prevCc.freezeSkipTurns - 1),
-  };
   return {
     ...state,
-    playerCC: finalizeCcSkipTurnDecrement(prevCc, decrementedCc),
+    playerCC: finalizeCcSkipTurnDecrement(prevCc, decrementCcSkipTurns(prevCc)),
   };
 }
 
@@ -246,11 +242,7 @@ export function advanceToPlayerTurn(
 
 export function reduceSkipTurns(state: BattleState): BattleState {
   const prevCc = state.enemyCC;
-  const decrementedCc = {
-    ...prevCc,
-    stunSkipTurns: Math.max(0, prevCc.stunSkipTurns - 1),
-    freezeSkipTurns: Math.max(0, prevCc.freezeSkipTurns - 1),
-  };
+  const decrementedCc = decrementCcSkipTurns(prevCc);
   const nextState = {
     ...state,
     enemyCC: finalizeCcSkipTurnDecrement(prevCc, decrementedCc),

@@ -1,11 +1,7 @@
 import "../../../../helpers/mock-audio";
 import "../../../../helpers/mock-flush-save";
 import { beforeEach, describe, expect, it } from "vitest";
-import {
-  restoreRun,
-  snapshotRun,
-  finalizeRunEndSession,
-} from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { restoreRun, snapshotRun, finalizeRunEndSession } from "@/features/alchemy/shared/stores/run-lifecycle";
 import {
   applyRunStartSnapshot as mutateRunStartSnapshot,
   awardCardXP as mutateAwardCardXP,
@@ -20,12 +16,12 @@ import {
   initializeActiveRun as mutateInitializeActiveRun,
   resetProgress as mutateResetProgress,
   resetRunXP as mutateResetRunXP,
-} from "@/features/alchemy/shared/stores/write-port-run";
+} from "@/features/alchemy/shared/stores/run-session-write-port";
 import { applyTalentState as mutateApplyTalentState } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { mutateGearForTest } from "../../../../helpers/run-domain-store-test";
 import { createEmptyGearInventories, createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
 import { createRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { rebindLiveRunMeta } from "@/features/alchemy/shared/stores/run-meta-rebind";
+import { rebindLiveRunMeta } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { computeTalentPoints, type BattleCard } from "@/lib/game-data";
 import {
   readActiveRun,

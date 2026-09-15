@@ -12,7 +12,7 @@ import {
   useRunEndScreenData,
   useLabyrinthMapScreenData,
 } from "@/features/alchemy/shared/stores/use-run-screen-data";
-import { teardownRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { teardownRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { emptyShopState, readActivityData } from "@/lib/active-run-session";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";

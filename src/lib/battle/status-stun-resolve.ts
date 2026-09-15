@@ -1,13 +1,18 @@
-import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { hasEnemyTrait, setFlag, setEnemyStatus, type BattleState, type CombatTextEvent } from "./types";
-import { addGoldWithCombatText, payKillPayouts } from "./combat-text";
+import { addGoldWithCombatText, applyHitEpilogue } from "./combat-text";
 import { applyLuckyCloverGold, applyNatureManaRefund } from "./bonus-effects";
-import { applyGearCcPhysicalDamage, dealEnemyScaledDamage } from "./gear-effects";
+import { applyGearCcPhysicalDamage } from "./gear-effects";
+import { dealEnemyScaledDamage } from "./scaled-damage";
 import { getEnemyDamageMultiplier } from "./status-helpers";
 import { applyCrowdControlTriggerBonuses } from "./bonus-effects";
 import { tryTriggerEnemyCc } from "./status-cc";
-import { BATTLE_CONFIG, STUN_THRESHOLD_FRACTION, UNIQUE_GEAR_COMBAT } from "../game-constants";
+import {
+  BATTLE_CONFIG,
+  MIN_CC_THRESHOLD_FRACTION,
+  STUN_THRESHOLD_FRACTION,
+  UNIQUE_GEAR_COMBAT,
+} from "../game-constants";
 
 function applyStunTriggerBonuses(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
   const talents = state.talentEffects;
@@ -42,19 +47,15 @@ function applyStunTrinketEffects(state: BattleState, combatTexts?: CombatTextEve
       combatTexts ?? [],
       {
         multiplier: getEnemyDamageMultiplier(nextState, "nature"),
-        riders: (damagedState, finalDamage) =>
-          payKillPayouts(
-            applyLuckyCloverGold(
-              applyNatureManaRefund(
-                processEncounterTraitHealthThreshold(previousHealth, damagedState, combatTexts ?? []),
-                finalDamage,
-                combatTexts ?? [],
-              ),
-              finalDamage,
-              combatTexts ?? [],
-            ),
+        // Nature refunds resolve before the shared threshold/kill epilogue.
+        // Order against the epilogue is cosmetic (independent resources), so
+        // the extras run first and the canonical tail stays in one place.
+        riders: (damagedState, finalDamage, texts) =>
+          applyHitEpilogue(
+            applyLuckyCloverGold(applyNatureManaRefund(damagedState, finalDamage, texts), finalDamage, texts),
+            previousHealth,
             enemyWasAlive,
-            combatTexts ?? [],
+            texts,
           ),
       },
     );
@@ -75,7 +76,10 @@ export function resolveStunTrigger(
   combatTexts?: CombatTextEvent[],
   preHitHealth = state.enemyHealth,
 ) {
-  const threshold = STUN_THRESHOLD_FRACTION - state.talentEffects.stunThresholdReduction;
+  const threshold = Math.max(
+    MIN_CC_THRESHOLD_FRACTION,
+    STUN_THRESHOLD_FRACTION - state.talentEffects.stunThresholdReduction,
+  );
   const triggered = tryTriggerEnemyCc({
     preHitHealth,
     nextState: state,

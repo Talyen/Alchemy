@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { logError } from "@/lib/error-logger";
 import {
   flushPersistedErrorLog,
   parsePersistedErrorLog,
@@ -79,6 +80,13 @@ describe("useErrorLogStore", () => {
     };
 
     expect(parsePersistedErrorLog(JSON.stringify([null, valid, { ...valid, source: "unknown" }]))).toEqual([valid]);
+  });
+
+  it("receives entries reported through the shared error sink", () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    logError("sink-wired", "other");
+    expect(useErrorLogStore.getState().errors.at(-1)?.message).toBe("sink-wired");
+    consoleSpy.mockRestore();
   });
 
   it("normalizes optional fields and caps restored entries", () => {

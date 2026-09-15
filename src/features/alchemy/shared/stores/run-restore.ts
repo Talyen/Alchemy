@@ -5,20 +5,17 @@ import { eventHasUnresolvedRandomTrinket, repairUnresolvedMysteryTrinkets } from
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { combineTrinketEffectIds } from "@/lib/trinkets";
 import { repairPersistedTrinketManifest } from "@/lib/validation";
-import { rebindLiveRunMeta } from "./run-meta-rebind";
+import { rebindLiveRunMeta } from "./run-session-write-port";
 import { decodeRunResumeSnapshot, type DecodedRunResumeSession } from "./run-resume-codec";
 import type { GameplayDraft } from "./run-session-command";
-import {
-  createDraftRunRandomSource,
-  initializeActiveBattle,
-  initializeActiveRun,
-  initializeFromResumeSnapshot,
-  setScreen,
-} from "./write-port-run";
 import {
   abandonMysteryDestinationVisit,
   clearMysteryVisitState,
   clearTransientSession,
+  createDraftRunRandomSource,
+  initializeActiveBattle,
+  initializeActiveRun,
+  initializeFromResumeSnapshot,
   setActiveLabyrinthModifiers,
   setActiveLabyrinthPendingNode,
   setActiveLabyrinthRewardModifiers,
@@ -27,9 +24,10 @@ import {
   setLabyrinthMap,
   setMysteryEvent,
   setRewardState,
+  setScreen,
   setStarterDraftChoices,
   setWildwoodDraft,
-} from "./write-port-session";
+} from "./run-session-write-port";
 
 function repairRestoredTrinketShop(state: TrinketShopState, ownedIds: readonly string[]): TrinketShopState {
   const owned = new Set(ownedIds);
@@ -97,6 +95,9 @@ export function applyRestoreRunToDraft(draft: GameplayDraft, activeRun: ActiveRu
 
   clearTransientSession(draft);
   setHasActiveRun(draft, true);
+  // Order matters: install the decoded activity first, then navigate. setScreen
+  // re-syncs the activity to the screen via prepareRunNavigation, which is an
+  // identity for the matching visit and repairs stale activity/screen pairs.
   if (decoded) restoreRunSession(draft, decoded.session);
   if (resumeScreen) setScreen(draft, resumeScreen);
   const mysteryEvent = readActivityData(draft.session.activity, "mystery").mysteryEvent;

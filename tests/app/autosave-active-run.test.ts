@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { buildAlchemySaveDataFromStores } from "@/features/alchemy/shared/storage/persistence";
-import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readHasActiveRun } from "@/features/alchemy/shared/stores/run-reads";
 import { setHasActiveRun, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";

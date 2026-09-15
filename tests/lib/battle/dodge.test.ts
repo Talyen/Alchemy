@@ -493,3 +493,35 @@ describe("player Dodge chance from gear", () => {
     ).toBe(30);
   });
 });
+
+describe("dodged player attacks preserve hit flags", () => {
+  const burnCard = () => makeTestCard({ effects: [makeEffect("burn", 10)] });
+  const dodgeFirstRng = () => {
+    let calls = 0;
+    return () => {
+      calls += 1;
+      return calls === 1 ? 0.01 : 0.99;
+    };
+  };
+
+  it("a dodged burn card preserves the once-per-combat burn double and hit flags", () => {
+    const state = patchBattleState({
+      rng: dodgeFirstRng(),
+      talentEffects: { ...defaultTalentEffects, firstBurnCardBonusMultiplier: 1.5 },
+      flags: { nextHitLeech: true, nextHitPhysicalBonus: 3 },
+    });
+    const result = dealDamage(state, burnCard(), makeCombatTexts());
+    expect(result.flags.firstBurnCardDoubledUsed).toBe(false);
+    expect(result.flags.nextHitLeech).toBe(true);
+    expect(result.flags.nextHitPhysicalBonus).toBe(3);
+  });
+
+  it("the same burn card consumes the burn double when it is not dodged", () => {
+    const state = patchBattleState({
+      rng: () => 0.99,
+      talentEffects: { ...defaultTalentEffects, firstBurnCardBonusMultiplier: 1.5 },
+    });
+    const result = dealDamage(state, burnCard(), makeCombatTexts());
+    expect(result.flags.firstBurnCardDoubledUsed).toBe(true);
+  });
+});

@@ -133,7 +133,7 @@ export async function main() {
     "src/features/alchemy/run-loop/battle/battle-presentation-store.ts",
   );
   for (const restriction of [
-    "run-lifecycle",
+    "run-session-lifecycle-port",
     "gameplay-state-store",
     "write-port-run",
     "assets/optimized",

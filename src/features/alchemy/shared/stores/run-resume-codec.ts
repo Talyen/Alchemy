@@ -67,15 +67,53 @@ const EMPTY_PERSISTED_SHOPS: PersistedShops = Object.freeze({
   equipmentShopState: null,
 });
 
+// Single source for each shop's save/load pairing: adding a shop touches one
+// entry, and encode/decode cannot drift apart.
+const SHOP_VISIT_CODECS = {
+  shop: {
+    serialize: (activity: Extract<RunActivity, { kind: "shop" }>) => serializeShopState(activity.data),
+    hydrate: (persisted: NonNullable<ActiveRunData["shopState"]>): RunActivity => ({
+      kind: "shop",
+      data: hydrateShopState(persisted),
+    }),
+  },
+  alchemist: {
+    serialize: (activity: Extract<RunActivity, { kind: "alchemist" }>) => serializeAlchemistState(activity.data),
+    hydrate: (persisted: NonNullable<ActiveRunData["alchemistState"]>): RunActivity => ({
+      kind: "alchemist",
+      data: hydrateAlchemistState(persisted),
+    }),
+  },
+  "trinket-shop": {
+    serialize: (activity: Extract<RunActivity, { kind: "trinket-shop" }>) => serializeTrinketShopState(activity.data),
+    hydrate: (persisted: NonNullable<ActiveRunData["trinketShopState"]>): RunActivity => ({
+      kind: "trinket-shop",
+      data: hydrateTrinketShopState(persisted),
+    }),
+  },
+  "equipment-shop": {
+    serialize: (activity: Extract<RunActivity, { kind: "equipment-shop" }>) =>
+      serializeEquipmentShopState(activity.data),
+    hydrate: (persisted: NonNullable<ActiveRunData["equipmentShopState"]>): RunActivity => ({
+      kind: "equipment-shop",
+      data: hydrateEquipmentShopState(persisted),
+    }),
+  },
+} as const;
+
 export function encodePersistedShops(session: RunSession["session"]): PersistedShops {
   const activity = session.activity;
-  if (activity.kind === "shop") return { ...EMPTY_PERSISTED_SHOPS, shopState: serializeShopState(activity.data) };
+  if (activity.kind === "shop")
+    return { ...EMPTY_PERSISTED_SHOPS, shopState: SHOP_VISIT_CODECS.shop.serialize(activity) };
   if (activity.kind === "alchemist")
-    return { ...EMPTY_PERSISTED_SHOPS, alchemistState: serializeAlchemistState(activity.data) };
+    return { ...EMPTY_PERSISTED_SHOPS, alchemistState: SHOP_VISIT_CODECS.alchemist.serialize(activity) };
   if (activity.kind === "trinket-shop")
-    return { ...EMPTY_PERSISTED_SHOPS, trinketShopState: serializeTrinketShopState(activity.data) };
+    return { ...EMPTY_PERSISTED_SHOPS, trinketShopState: SHOP_VISIT_CODECS["trinket-shop"].serialize(activity) };
   if (activity.kind === "equipment-shop")
-    return { ...EMPTY_PERSISTED_SHOPS, equipmentShopState: serializeEquipmentShopState(activity.data) };
+    return {
+      ...EMPTY_PERSISTED_SHOPS,
+      equipmentShopState: SHOP_VISIT_CODECS["equipment-shop"].serialize(activity),
+    };
   return EMPTY_PERSISTED_SHOPS;
 }
 
@@ -99,6 +137,9 @@ interface EncodeResumeFields {
 }
 
 function synthesizeLegacyEnemyTurnTransition(activeRun: ActiveRunData): PersistedBattleTransition | null {
+  // Legacy compat: saves written before pending transitions existed may resume
+  // mid-enemy-turn. Kept deliberately (no save wipe planned); removal needs a
+  // schema version gate per MIGRATIONS.md.
   if (activeRun.activeCombat?.battleState.turnPhase === "enemy") {
     return { kind: "legacy-enemy-turn" };
   }
@@ -115,13 +156,9 @@ function encodeActivityFields(
   session: RunSession["session"],
   screen: Screen | null | undefined,
 ): Omit<EncodeResumeFields, "currentScreen"> {
-  const shops = encodePersistedShops(session);
   return {
     interruptedFlow: encodeInterruptedFlow(session, screen),
-    shopState: shops.shopState,
-    alchemistState: shops.alchemistState,
-    trinketShopState: shops.trinketShopState,
-    equipmentShopState: shops.equipmentShopState,
+    ...encodePersistedShops(session),
     mysteryVisit: session.activity.kind === "mystery" ? serializeMysteryVisit(session.activity.data) : null,
     corruptionResult: session.activity.kind === "corruption" ? session.activity.data : null,
   };
@@ -221,13 +258,13 @@ export function decodeRunResumeSnapshot(activeRun: ActiveRunData): DecodedRunRes
 }
 
 function decodeRunActivity(activeRun: ActiveRunData, screen: Screen): RunActivity {
-  if (screen === "shop" && activeRun.shopState) return { kind: screen, data: hydrateShopState(activeRun.shopState) };
+  if (screen === "shop" && activeRun.shopState) return SHOP_VISIT_CODECS.shop.hydrate(activeRun.shopState);
   if (screen === "alchemist" && activeRun.alchemistState)
-    return { kind: screen, data: hydrateAlchemistState(activeRun.alchemistState) };
+    return SHOP_VISIT_CODECS.alchemist.hydrate(activeRun.alchemistState);
   if (screen === "trinket-shop" && activeRun.trinketShopState)
-    return { kind: screen, data: hydrateTrinketShopState(activeRun.trinketShopState) };
+    return SHOP_VISIT_CODECS["trinket-shop"].hydrate(activeRun.trinketShopState);
   if (screen === "equipment-shop" && activeRun.equipmentShopState)
-    return { kind: screen, data: hydrateEquipmentShopState(activeRun.equipmentShopState) };
+    return SHOP_VISIT_CODECS["equipment-shop"].hydrate(activeRun.equipmentShopState);
   if (screen === "mystery")
     return {
       kind: screen,

@@ -1,20 +1,34 @@
 import { getCardKeywords, type BattleCard, type BattleCardEffect, type KeywordId } from "@/lib/game-data";
 
-function collectDamageTypes(effects: readonly BattleCardEffect[], set: Set<string>): void {
+// Single owner for walking nested effects. The recursive wrappers are
+// "chance" (success/failure branches) and "repeat-over-turns" (scheduled
+// effects); every battle-side walker must descend into both so new wrappers
+// cannot silently fall out of targeting, classification, or replays.
+export function forEachNestedEffect(
+  effects: readonly BattleCardEffect[],
+  visit: (effect: BattleCardEffect) => void,
+): void {
   for (const effect of effects) {
+    visit(effect);
+    if (effect.kind === "chance") {
+      forEachNestedEffect(effect.successEffects, visit);
+      forEachNestedEffect(effect.failureEffects, visit);
+    } else if (effect.kind === "repeat-over-turns") {
+      forEachNestedEffect(effect.effects, visit);
+    }
+  }
+}
+
+function collectDamageTypes(effects: readonly BattleCardEffect[], set: Set<string>): void {
+  forEachNestedEffect(effects, (effect) => {
     if (effect.kind === "damage" && effect.damageTypePool?.length) {
       for (const type of effect.damageTypePool) set.add(type);
     } else if (effect.kind === "damage" || effect.kind === "cleanse-player-status-to-damage") {
       set.add(effect.damageType);
     } else if (effect.kind === "random-damage") {
       set.add("physical");
-    } else if (effect.kind === "chance") {
-      collectDamageTypes(effect.successEffects, set);
-      collectDamageTypes(effect.failureEffects, set);
-    } else if (effect.kind === "repeat-over-turns") {
-      collectDamageTypes(effect.effects, set);
     }
-  }
+  });
 }
 
 const CARD_DAMAGE_TYPES_CACHE = new WeakMap<BattleCard, Set<string>>();
@@ -29,22 +43,17 @@ function getCardDamageTypes(card: BattleCard): Set<string> {
 }
 
 export function hasDamageEffect(effects: readonly BattleCardEffect[]): boolean {
-  return effects.some((effect) => {
+  let found = false;
+  forEachNestedEffect(effects, (effect) => {
     if (
       effect.kind === "damage" ||
       effect.kind === "cleanse-player-status-to-damage" ||
       effect.kind === "random-damage"
     ) {
-      return true;
+      found = true;
     }
-    if (effect.kind === "chance") {
-      return hasDamageEffect(effect.successEffects) || hasDamageEffect(effect.failureEffects);
-    }
-    if (effect.kind === "repeat-over-turns") {
-      return hasDamageEffect(effect.effects);
-    }
-    return false;
   });
+  return found;
 }
 
 const ATTACK_CARD_CACHE = new WeakMap<object, boolean>();

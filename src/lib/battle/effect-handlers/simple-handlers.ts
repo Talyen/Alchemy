@@ -58,8 +58,9 @@ const FLAG_EFFECTS = {
   "next-hit-leech": "nextHitLeech",
   "play-next-card-twice": "playNextCardTwice",
   "next-hit-poison": "nextHitPoison",
+  "next-archery-free": "nextArcheryCardFree",
 } as const satisfies Record<
-  Extract<BattleCardEffect["kind"], `next-hit-${string}` | "play-next-card-twice">,
+  Extract<BattleCardEffect["kind"], `next-hit-${string}` | "play-next-card-twice" | "next-archery-free">,
   keyof BattleState["flags"]
 >;
 
@@ -74,7 +75,4 @@ export const applyNextHitCritEffect = makeFlagHandler("next-hit-crit");
 export const applyNextHitLeechEffect = makeFlagHandler("next-hit-leech");
 export const applyPlayNextCardTwiceEffect = makeFlagHandler("play-next-card-twice");
 export const applyNextHitPoisonEffect = makeFlagHandler("next-hit-poison");
-
-export const applyNextArcheryFreeEffect = defineHandler("next-archery-free", (state) => {
-  return { ...state, flags: { ...state.flags, nextArcheryCardFree: true } };
-});
+export const applyNextArcheryFreeEffect = makeFlagHandler("next-archery-free");

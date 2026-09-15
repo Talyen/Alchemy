@@ -6,7 +6,7 @@ import { logBattleError } from "./controller-utils";
 import { markBattleStage } from "@/lib/performance/battle-stage-marks";
 import { type HiddenHandCardKeys } from "./playable-hand";
 
-import { onRunTeardown } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { onRunTeardown } from "@/features/alchemy/shared/stores/run-lifecycle";
 
 export interface HandDrawSequenceDeps {
   isSessionActive: (session: number) => boolean;

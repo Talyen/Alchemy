@@ -5,8 +5,10 @@ import {
   finalizeCcSkipTurnDecrement,
   isCcControlled,
   resolvePlayerCrowdControlTrigger,
+  resolvePlayerCrowdControlTriggers,
 } from "@/lib/battle/status-cc";
 import { addEnemyStatus, addPlayerStatus } from "@/lib/battle";
+import type { CombatTextEvent } from "@/lib/battle/types";
 import { BATTLE_CONFIG, FREEZE_THRESHOLD_FRACTION, STUN_THRESHOLD_FRACTION } from "@/lib/game-constants";
 import { makeTestBattleState } from "../../fixtures/battle";
 import {
@@ -200,5 +202,31 @@ describe("isCcControlled", () => {
     expect(isCcControlled(defaultCcState({ freezeSkipTurns: 1 }))).toBe(true);
     expect(isCcControlled(defaultCcState({ stunSkipTurns: 0, freezeSkipTurns: 0 }))).toBe(false);
     expect(isCcControlled(defaultCcState({ cooldown: 2 }))).toBe(false);
+  });
+});
+
+describe("resolvePlayerCrowdControlTriggers", () => {
+  it("banks buildup while already controlled instead of extending or double-firing", () => {
+    const state = makeTestBattleState({
+      playerStatuses: defaultPlayerStatusValues({ stun: 20, freeze: 20 }),
+      playerMaxHealth: 30,
+      playerCC: defaultCcState({ stunSkipTurns: 1 }),
+    });
+    const texts: CombatTextEvent[] = [];
+    const result = resolvePlayerCrowdControlTriggers(state, texts);
+    expect(result.playerCC.stunSkipTurns).toBe(1);
+    expect(result.playerCC.freezeSkipTurns).toBe(0);
+    expect(texts).toHaveLength(0);
+  });
+
+  it("fires stun once when both stats cross threshold on the same packet", () => {
+    const state = makeTestBattleState({
+      playerStatuses: defaultPlayerStatusValues({ stun: 20, freeze: 20 }),
+      playerMaxHealth: 30,
+    });
+    const texts: CombatTextEvent[] = [];
+    const result = resolvePlayerCrowdControlTriggers(state, texts);
+    expect(result.playerCC.stunSkipTurns).toBe(1);
+    expect(result.playerCC.freezeSkipTurns).toBe(0);
   });
 });

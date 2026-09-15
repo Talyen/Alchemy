@@ -9,7 +9,7 @@ import {
   setDiscoveredCardIds as setDiscoveredCardIdsInDraft,
   setDiscoveredTrinketIds as setDiscoveredTrinketIdsInDraft,
   setDiscoveredUniqueIds as setDiscoveredUniqueIdsInDraft,
-} from "./write-port-meta";
+} from "./run-session-write-port";
 
 export type { ProfileSaveFields } from "./profile-store-types";
 

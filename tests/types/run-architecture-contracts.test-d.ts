@@ -19,7 +19,8 @@ declare const maybeAsyncMutation: () => number | PromiseLike<number>;
 declare const draft: GameplayDraft;
 
 type WritePort = typeof import("@/features/alchemy/shared/stores/run-session-write-port");
-type PureBattleRngHelper = "snapshotBattleState" | "snapshotBattleState";
+// Pure (non-mutating) helpers are exempt from the draft-first rule.
+type PureWriteHelper = "snapshotBattleState" | "cloneRunObtainedItem";
 type NonDraftFirstWrite = Exclude<
   {
     [Key in keyof WritePort]: WritePort[Key] extends (...args: infer Args) => unknown
@@ -28,7 +29,7 @@ type NonDraftFirstWrite = Exclude<
         : Key
       : never;
   }[keyof WritePort],
-  PureBattleRngHelper
+  PureWriteHelper
 >;
 
 describe("run architecture type contracts", () => {

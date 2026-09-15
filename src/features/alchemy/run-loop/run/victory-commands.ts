@@ -1,7 +1,7 @@
 import { rollFreshBossId } from "@/features/alchemy/shared/config";
 import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/loot-progress";
 import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
-import { syncBattleToRun } from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { syncBattleToRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import {
   awardMaterialsDuringRun,
   createDraftRunRandomSource,

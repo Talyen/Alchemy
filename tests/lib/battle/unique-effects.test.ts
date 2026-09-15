@@ -9,7 +9,10 @@ import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import type { BattleCardEffect } from "@/lib/game-data";
 import type { CombatTextEvent } from "@/lib/battle/types";
+import { damageOnlyEffects } from "@/lib/battle/damage-effect-selection";
 import { defaultGearEffects } from "@/lib/gear";
+import { prepareUniqueCardPlay, processArcheryEchoes, returnHarvestCard } from "@/lib/battle/unique-card-effects";
+import { MAX_HAND_SIZE } from "@/lib/game-constants";
 
 function dodgeThenMissRng() {
   let calls = 0;
@@ -430,5 +433,150 @@ describe("unique item battle effects", () => {
       resolution.state.enemyStatuses.burn > 0 ||
       resolution.state.enemyHealth === 46;
     expect(hasStatus).toBe(true);
+  });
+});
+
+describe("damageOnlyEffects", () => {
+  it("preserves scheduled damage inside repeat-over-turns for echoes and repeats", () => {
+    const scheduled: BattleCardEffect = {
+      kind: "repeat-over-turns",
+      remainingTurns: 2,
+      effects: [{ kind: "damage", damageType: "burn", amount: 4 }],
+    } as BattleCardEffect;
+    const filtered = damageOnlyEffects([scheduled]);
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0]).toMatchObject({ kind: "repeat-over-turns", remainingTurns: 2 });
+    expect((filtered[0] as { effects: BattleCardEffect[] }).effects).toHaveLength(1);
+  });
+
+  it("drops repeat-over-turns wrappers with no damage inside", () => {
+    const scheduled: BattleCardEffect = {
+      kind: "repeat-over-turns",
+      remainingTurns: 2,
+      effects: [{ kind: "draw-cards", amount: 1 }],
+    } as BattleCardEffect;
+    expect(damageOnlyEffects([scheduled])).toHaveLength(0);
+  });
+});
+
+describe("prepareUniqueCardPlay flag matrix", () => {
+  const gear = (overrides = {}) => ({ ...defaultGearEffects, ...overrides });
+
+  it("arms final spark only when the card spends all remaining mana", () => {
+    const burnPhysical = () =>
+      makeTestCard({
+        cost: 3,
+        tags: ["burn"],
+        effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
+      });
+    const armed = prepareUniqueCardPlay(
+      patchBattleState({ mana: 3, gearEffects: gear({ lastManaElementalRepeat: 1 }) }),
+      burnPhysical(),
+      3,
+    );
+    expect(armed.repeatCount).toBe(1);
+    expect(armed.state.uniqueGear.finalSparkUsed).toBe(true);
+
+    const spareMana = prepareUniqueCardPlay(
+      patchBattleState({ mana: 4, gearEffects: gear({ lastManaElementalRepeat: 1 }) }),
+      burnPhysical(),
+      3,
+    );
+    expect(spareMana.repeatCount).toBe(0);
+
+    const broke = prepareUniqueCardPlay(
+      patchBattleState({ mana: 0, gearEffects: gear({ lastManaElementalRepeat: 1 }) }),
+      burnPhysical(),
+      0,
+    );
+    expect(broke.repeatCount).toBe(0);
+  });
+
+  it("stacks everkeen and final spark repeats and consumes everkeen", () => {
+    const prepared = prepareUniqueCardPlay(
+      patchBattleState({
+        mana: 2,
+        gearEffects: gear({ lastManaElementalRepeat: 1, forgeReadiesPhysicalRepeat: 1 }),
+        uniqueGear: { everkeenReady: true },
+      }),
+      makeTestCard({
+        cost: 2,
+        tags: ["freeze"],
+        effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+      }),
+      2,
+    );
+    expect(prepared.repeatCount).toBe(2);
+    expect(prepared.state.uniqueGear.everkeenReady).toBe(false);
+    expect(prepared.state.uniqueGear.finalSparkUsed).toBe(true);
+  });
+
+  it("crits nature cards while wildheart is ready and consumes it", () => {
+    const prepared = prepareUniqueCardPlay(
+      patchBattleState({
+        gearEffects: gear({ dodgeReadiesNatureCrit: 1 }),
+        uniqueGear: { wildheartReady: true },
+      }),
+      makeTestCard({ tags: ["nature"], effects: [{ kind: "damage", damageType: "nature", amount: 4 }] }),
+      1,
+    );
+    expect(prepared.critical).toBe(true);
+    expect(prepared.state.uniqueGear.wildheartReady).toBe(false);
+  });
+
+  it("marks harvest and hunt once each", () => {
+    const physical = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 4 }] });
+    const harvest = prepareUniqueCardPlay(
+      patchBattleState({ gearEffects: gear({ returnFirstPhysicalCard: 1 }) }),
+      physical,
+      1,
+    );
+    expect(harvest.harvest).toBe(true);
+    expect(harvest.state.uniqueGear.redHarvestUsed).toBe(true);
+
+    const archery = makeTestCard({
+      tags: ["archery"],
+      effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
+    });
+    const hunt = prepareUniqueCardPlay(
+      patchBattleState({ gearEffects: gear({ firstArcheryCompanionAttack: 1 }) }),
+      archery,
+      1,
+    );
+    expect(hunt.hunt).toBe(true);
+    expect(hunt.state.uniqueGear.huntsmasterUsed).toBe(true);
+  });
+});
+
+describe("processArcheryEchoes and returnHarvestCard", () => {
+  it("clears queued echoes even when the echo gear is disabled", () => {
+    const echo = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 4 }] });
+    const state = patchBattleState({
+      enemyHealth: 40,
+      uniqueGear: { archeryEchoes: [echo] },
+      gearEffects: { ...defaultGearEffects, archeryEchoNextTurn: 0 },
+    });
+    const result = processArcheryEchoes(state, []);
+    expect(result.uniqueGear.archeryEchoes).toEqual([]);
+    expect(result.enemyHealth).toBe(40);
+  });
+
+  it("returns a harvested card by uid and tracks the new instance", () => {
+    const card = { ...makeTestCard({ uid: 7 }), cost: 1 };
+    const state = patchBattleState({ discard: [card] });
+    const result = returnHarvestCard(state, card);
+    expect(result.hand).toHaveLength(state.hand.length + 1);
+    expect(result.uniqueGear.redHarvestUid).toBe(result.hand[result.hand.length - 1]?.uid);
+  });
+
+  it("refuses harvest returns for consume cards and full hands", () => {
+    const card = { ...makeTestCard({ uid: 7 }), cost: 1 };
+    const state = patchBattleState({ discard: [card] });
+    expect(returnHarvestCard(state, { ...card, consume: true }).hand).toHaveLength(state.hand.length);
+    const full = patchBattleState({
+      discard: [card],
+      hand: Array.from({ length: MAX_HAND_SIZE }, (_, index) => makeTestCard({ uid: 100 + index })),
+    });
+    expect(returnHarvestCard(full, card).hand).toHaveLength(MAX_HAND_SIZE);
   });
 });

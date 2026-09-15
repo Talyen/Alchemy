@@ -48,16 +48,16 @@ async function fixRule(relativePath: string, code: string, ruleId: string, optio
 }
 
 describe("alchemy ESLint plugin", () => {
-  it("bans progress addMaterials outside the homestead-bonus and meta salvage owners", async () => {
+  it("bans progress addMaterialsToStockpile outside the homestead-bonus and meta salvage owners", async () => {
     const banned = await lintRule(
       "src/features/alchemy/run-loop/navigation/mystery-flow.ts",
-      `import { addMaterials } from "@/features/alchemy/shared/stores/run-session-write-port";\naddMaterials({} as never, {} as never);\n`,
+      `import { addMaterialsToStockpile } from "@/features/alchemy/shared/stores/run-session-write-port";\naddMaterialsToStockpile({} as never, {} as never);\n`,
       "no-run-earned-add-materials",
     );
     expect(banned.length).toBeGreaterThan(0);
     const allowed = await lintRule(
       "src/features/alchemy/run-loop/run/run-materials.ts",
-      `import { addMaterials } from "@/features/alchemy/shared/stores/run-session-write-port";\naddMaterials({} as never, {} as never);\n`,
+      `import { addMaterialsToStockpile } from "@/features/alchemy/shared/stores/run-session-write-port";\naddMaterialsToStockpile({} as never, {} as never);\n`,
       "no-run-earned-add-materials",
     );
     expect(allowed).toEqual([]);

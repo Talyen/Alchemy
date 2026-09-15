@@ -9,6 +9,9 @@ import {
   applyCraftingCurrency,
   addCraftingCurrencies,
   normalizeCraftingCurrencies,
+  createEmptyEquippedTrinkets,
+  createEmptyGearInventories,
+  createEmptyGearLoadouts,
   EMPTY_CRAFTING_CURRENCIES,
   GEAR_CHARACTER_IDS,
   normalizeEquippedTrinkets,
@@ -24,9 +27,18 @@ import type {
 import type { CharacterId } from "@/lib/game-data";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { Draft } from "immer";
-import { createInitialGearState } from "./gear-store-initial-state";
 import type { GearStateFields } from "./gear-store-types";
 import { isTrinketId } from "@/lib/game-data";
+
+export function createInitialGearState(): GearStateFields {
+  return {
+    inventories: createEmptyGearInventories(),
+    loadouts: createEmptyGearLoadouts(),
+    ownedTrinketIds: [],
+    equippedTrinkets: createEmptyEquippedTrinkets(),
+    craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES },
+  };
+}
 
 export function initializeGear(
   gear: Draft<GearStateFields>,

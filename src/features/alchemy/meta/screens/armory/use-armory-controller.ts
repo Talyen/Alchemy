@@ -9,10 +9,7 @@ import {
   type GearSlot,
   type EquippedTrinkets,
 } from "@/lib/gear";
-import {
-  resolveActiveRunForSave,
-  flushSaveAfterGearMutation,
-} from "@/features/alchemy/shared/stores/run-session-lifecycle-port";
+import { resolveActiveRunForSave, flushSaveAfterGearMutation } from "@/features/alchemy/shared/stores/run-lifecycle";
 import {
   dispatchGearMutationWithRunHealthSync,
   dispatchGearSalvageWithMaterialGrant,

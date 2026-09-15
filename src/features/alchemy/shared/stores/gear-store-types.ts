@@ -18,11 +18,14 @@ export interface GearSaveFields {
 }
 
 export type GearStateFields = Pick<
-  GearStore,
+  GearDraftView,
   "inventories" | "loadouts" | "ownedTrinketIds" | "equippedTrinkets" | "craftingCurrencies"
 >;
 
-export interface GearStore {
+// Per-command draft view over the aggregate's gear slice (not a Zustand store:
+// it borrows the live draft, enforces combat reservations, and reports whether
+// it wrote). Constructed fresh for each gear command by gear-session-command.
+export interface GearDraftView {
   inventories: GearInventories;
   loadouts: GearLoadouts;
   ownedTrinketIds: string[];
@@ -50,3 +53,6 @@ export interface GearStore {
   addCurrencies: (currencies: Partial<Record<CraftingCurrencyId, number>>) => void;
   reset: () => void;
 }
+
+// Back-compat alias for external controllers: prefer GearDraftView for new code.
+export type GearStore = GearDraftView;

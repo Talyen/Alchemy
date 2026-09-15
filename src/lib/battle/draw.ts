@@ -9,10 +9,26 @@ interface CardUidChange {
   next: number;
 }
 
-/** Draw IDs change for presentation; a turn-long card benefit follows the same instance. */
-export function remapDrawnCardBenefits(state: BattleState, changes: readonly CardUidChange[]) {
-  const change = changes.find((entry) => entry.previous === state.uniqueGear.redHarvestUid);
-  return change ? { ...state.uniqueGear, redHarvestUid: change.next } : state.uniqueGear;
+/** Draw IDs change for presentation; turn-long card benefits follow the same instance. */
+function remapDrawnCardBenefits(state: BattleState, changes: readonly CardUidChange[]) {
+  // Echoed archery cards need no remap: echoes replay by reference, not by uid.
+  const remapUid = (uid: number | null) => {
+    if (uid === null) return null;
+    const change = changes.find((entry) => entry.previous === uid);
+    return change ? change.next : uid;
+  };
+  const uniqueGear = state.uniqueGear;
+  const redHarvestUid = remapUid(uniqueGear.redHarvestUid);
+  const returningFlightUid = remapUid(uniqueGear.returningFlightUid);
+  const lastArcheryUid = remapUid(uniqueGear.lastArcheryUid);
+  if (
+    redHarvestUid === uniqueGear.redHarvestUid &&
+    returningFlightUid === uniqueGear.returningFlightUid &&
+    lastArcheryUid === uniqueGear.lastArcheryUid
+  ) {
+    return uniqueGear;
+  }
+  return { ...uniqueGear, redHarvestUid, returningFlightUid, lastArcheryUid };
 }
 
 function refillDeck(
@@ -91,9 +107,19 @@ export function applyDrawResult(state: BattleState, draw: ReturnType<typeof draw
   };
 }
 
-export function drawKeywordCard(state: BattleState, keyword: string): BattleState {
+export function drawKeywordCard(
+  state: BattleState,
+  keyword: string,
+  options: { refillFromDiscard?: boolean } = {},
+): BattleState {
   if (state.hand.length >= MAX_HAND_SIZE) return state;
-  const refilled = refillDeck(state.deck, state.discard, getBattleRng(state));
+  // Twin-casting only tutors from the deck itself; ordinary draws reshuffle.
+  const refilled =
+    options.refillFromDiscard === false
+      ? state.deck.length > 0
+        ? { deck: state.deck, discard: state.discard }
+        : null
+      : refillDeck(state.deck, state.discard, getBattleRng(state));
   if (!refilled) return state;
   const indices = refilled.deck.flatMap((card, index) => (cardHasKeyword(card, keyword) ? [index] : []));
   if (indices.length === 0) return state;

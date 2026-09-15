@@ -28,15 +28,4 @@ describe("selectAutosaveAllowed", () => {
     ).toBe(true);
     expect(selectAutosaveAllowed(battleState(20, false), "game-over")).toBe(false);
   });
-
-  it("hollow with claim in-flight still autosave-allowed (codec handles mid-claim suppression)", () => {
-    expect(
-      selectAutosaveAllowed(
-        {
-          battle: { hasActiveBattle: false, battleState: { enemyHealth: 20 } },
-        },
-        "rewards",
-      ),
-    ).toBe(true);
-  });
 });

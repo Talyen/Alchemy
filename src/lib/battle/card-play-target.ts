@@ -1,4 +1,5 @@
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
+import { forEachNestedEffect } from "./card-classification";
 
 function effectTarget(effect: BattleCardEffect): "player" | "enemy" | null {
   switch (effect.kind) {
@@ -33,28 +34,17 @@ function effectTarget(effect: BattleCardEffect): "player" | "enemy" | null {
     case "next-archery-free":
       return "player";
     case "chance":
-      for (const nested of effect.successEffects) {
-        const target = effectTarget(nested);
-        if (target) return target;
-      }
-      for (const nested of effect.failureEffects) {
-        const target = effectTarget(nested);
-        if (target) return target;
-      }
-      return null;
     case "repeat-over-turns":
-      for (const nested of effect.effects) {
-        const target = effectTarget(nested);
-        if (target) return target;
-      }
       return null;
   }
 }
 
 export function getBattleCardPlayTarget(card: BattleCard): "player" | "enemy" {
-  for (const effect of card.effects) {
-    const target = effectTarget(effect);
-    if (target) return target;
-  }
-  return "enemy";
+  let target: "player" | "enemy" | null = null;
+  // Depth-first, in card order — the same sequence the previous recursive
+  // walk visited — so the first concrete target still wins.
+  forEachNestedEffect(card.effects, (effect) => {
+    target ??= effectTarget(effect);
+  });
+  return target ?? "enemy";
 }

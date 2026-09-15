@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { deriveCombatMeta } from "@/features/alchemy/shared/stores/run-meta-rebind";
+import { deriveCombatMeta } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { computeGearManifest, flattenGearInventories } from "@/lib/gear";
 import { computeTalentEffects } from "@/lib/game-data";
@@ -20,6 +20,16 @@ describe("deriveCombatMeta", () => {
     expect(combatMeta.activeTrinketIds).toEqual(["bone-charm", "meteorite"]);
     expect(combatMeta.talentEffects.flatPhysicalDamage).toBe(2);
     expect(combatMeta.gearEffects).toBeDefined();
+  });
+
+  it("dedupes a trinket shared by run boons and the equipped loadout", () => {
+    const combatMeta = dispatchRunSessionCommand((draft) => {
+      draft.run.activeRun.runBoons = ["bone-charm"];
+      draft.gear.equippedTrinkets[draft.run.activeRun.characterId] = "bone-charm";
+      return deriveCombatMeta(draft);
+    });
+
+    expect(combatMeta.activeTrinketIds).toEqual(["bone-charm"]);
   });
 
   it("matches direct gear and talent manifest computations", () => {

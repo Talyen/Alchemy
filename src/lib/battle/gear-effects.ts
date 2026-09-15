@@ -1,13 +1,10 @@
 import type { GearEffectManifest } from "@/lib/gear";
 import { PERCENT_DENOMINATOR } from "../game-constants";
 import { applyPercentBonus } from "./amount-helpers";
-import { payKillPayouts } from "./combat-text";
+import { applyHitEpilogue } from "./combat-text";
 import { getEnemyDamageMultiplier } from "./status-helpers";
 import { type BattleState, type CombatTextEvent } from "./types";
-import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 import { dealEnemyScaledDamage } from "./scaled-damage";
-
-export { dealEnemyScaledDamage } from "./scaled-damage";
 
 export function gearFrozenDamageMultiplier(state: BattleState): number {
   if (state.enemyCC.freezeSkipTurns <= 0 || state.gearEffects.frozenEnemyDamageBonusPercent <= 0) return 1;
@@ -27,9 +24,6 @@ export function applyGearCcPhysicalDamage(
   const enemyWasAlive = state.enemyHealth > 0;
   return dealEnemyScaledDamage(state, gearDamage, "physical", combatTexts, {
     multiplier: getEnemyDamageMultiplier(state, "physical") * gearFrozenDamageMultiplier(state),
-    riders: (nextState, _finalDamage, texts) => {
-      const afterThreshold = processEncounterTraitHealthThreshold(state.enemyHealth, nextState, texts);
-      return payKillPayouts(afterThreshold, enemyWasAlive, texts);
-    },
+    riders: (nextState, _finalDamage, texts) => applyHitEpilogue(nextState, state.enemyHealth, enemyWasAlive, texts),
   });
 }
