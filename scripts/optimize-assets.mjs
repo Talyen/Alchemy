@@ -14,8 +14,7 @@ import {
   SHARP_DEFAULTS,
   artPreset,
 } from "./lib/asset-constants.mjs";
-import { failedOptimizeResult, targetErrorHandler } from "./lib/process-helpers.mjs";
-import { runPipelineScript } from "./lib/audio-optimizer.mjs";
+import { failedOptimizeResult, runPipelineScript, targetErrorHandler } from "./lib/process-helpers.mjs";
 import { getOptimizedManifestPath, resolveRootDir } from "./lib/sync-generated-helpers.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { LOOT_SOURCE_WEIGHTS } from "@/lib/game-constants";
+import { LOOT_DEPTH_CURVES, LOOT_SOURCE_WEIGHTS } from "@/lib/game-constants";
 import { createSeededRng } from "@/lib/rng";
 import {
   highestCompletedLootDifficulty,
@@ -116,5 +116,23 @@ describe("shared loot policy", () => {
       return Array.from({ length: 100 }, () => [rollLootGroup(weights, rng), rollLootGearRarity(weights, rng)]);
     };
     expect(sample()).toEqual(sample());
+  });
+
+  it("keeps the loot weight table and depth curves well-shaped", () => {
+    const kinds = ["card", "basic", "boon", "astral", "trinket", "unique"];
+    for (const [source, weights] of Object.entries(LOOT_SOURCE_WEIGHTS)) {
+      expect(Object.keys(weights).sort(), source).toEqual([...kinds].sort());
+      for (const [kind, weight] of Object.entries(weights)) {
+        expect(Number.isFinite(weight), `${source}.${kind}`).toBe(true);
+        expect(weight, `${source}.${kind}`).toBeGreaterThanOrEqual(0);
+      }
+    }
+    for (const [kind, curve] of Object.entries(LOOT_DEPTH_CURVES)) {
+      const depths = curve.map((point) => point.depth);
+      expect(
+        [...depths].sort((a, b) => a - b),
+        kind,
+      ).toEqual(depths);
+    }
   });
 });

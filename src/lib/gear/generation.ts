@@ -8,8 +8,6 @@ import { GEAR_RARITIES } from "./types";
 import { uniqueItemList, type UniqueItemDefinition } from "./unique-catalog";
 import type { GearAffixRoll, GearDefinition, GearInstance, GearRarity } from "./types";
 
-export { buildEligibleAffixPool } from "./affix-pool";
-
 export function generateUniqueGearInstance(uniqueDef: UniqueItemDefinition): GearInstance {
   // Unique affixes are canonical per definition (see getUniqueAffixes); the
   // instance stores no rolls so saved items can never diverge from the catalog.
@@ -91,7 +89,7 @@ export function getGearLootAvailability(
 interface GenerateGearOfferingsOptions {
   count: number;
   rng: () => number;
-  rollTier: (available: LootAvailability) => GearRarity;
+  rollTier: (available: LootAvailability, index: number) => GearRarity;
   ownedUniqueIds?: ReadonlySet<string>;
   fallbackUniqueToAstral?: boolean;
   fillCount?: boolean;
@@ -159,9 +157,13 @@ function generateGearOfferings({
             eligible.map((base) => base.id),
           );
     available.unique =
+      // A Unique must never share its base with another offering, so Unique
+      // eligibility is gated on the unused set even when filling from
+      // repeatables — except on the last slot (or when repeats are allowed
+      // and more than one repeatable base remains).
       Boolean(unusedAvailability.unique) && (index === count - 1 || !fillCount || repeatable.length > 1);
     const instance = rollOfferingInstance(
-      rollTier(available),
+      rollTier(available, index),
       ownedUniqueIds,
       offeredUniqueIds,
       usedBaseIds,
@@ -224,12 +226,11 @@ export function generateGearRewardChoicesForRarities(
   rng: () => number,
   ownedUniqueIds: ReadonlySet<string> = new Set(),
 ): GearInstance[] {
-  let index = 0;
   return generateGearOfferings({
     count: rarities.length,
     rng,
-    rollTier: () => {
-      const rarity = rarities[index++];
+    rollTier: (_available, index) => {
+      const rarity = rarities[index];
       if (!rarity) throw new Error("generateGearRewardChoicesForRarities: rarity index out of range");
       return rarity;
     },
@@ -282,9 +283,14 @@ export function generateDevRandomGearInstance(rng: () => number): GearInstance {
     const unique = pickRandom(uniqueItemList, rng);
     if (unique) return generateUniqueGearInstance(unique);
   }
+  // A missed Unique roll (exhausted pool) falls back to Astral, never to a
+  // nonexistent "<base>-unique" definition.
+  const fallbackRarity = rarity === "unique" ? "astral" : rarity;
   const baseItem = pickRandom(gearBaseItemList, rng);
   if (!baseItem) throw new Error("gearBaseItemList is empty");
-  const definition = gearDefinitions[gearDefinitionId(baseItem.id, rarity)];
-  if (!definition) throw new Error(`Missing gear definition for ${baseItem.id}-${rarity}`);
-  return rollAndCreateInstance(definition, rarity, rng);
+  const definition =
+    gearDefinitions[gearDefinitionId(baseItem.id, fallbackRarity)] ??
+    gearDefinitions[gearDefinitionId(baseItem.id, "basic")];
+  if (!definition?.rarity) throw new Error(`Missing gear definition for ${baseItem.id}`);
+  return rollAndCreateInstance(definition, definition.rarity, rng);
 }

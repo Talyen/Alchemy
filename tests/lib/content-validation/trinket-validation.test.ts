@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { trinketLibrary, type TrinketEntry } from "@/lib/game-data";
+import type { TrinketManifest } from "@/lib/battle/types";
+import { defaultTrinketEffects } from "@/lib/trinkets";
+import { validateTrinkets } from "@/lib/content-validation/validators";
 import { TrinketContentSchema } from "@/lib/content-validation/schemas";
+import { createCollector } from "@/lib/content-validation/utils";
 import {
   TRINKET_PARITY_RULES,
   validateTrinketDescriptionParity,
@@ -134,5 +138,66 @@ describe("Trinket description parity", () => {
     ],
   ])("derives numeric expectations from effects for %s", (id, description, effects) => {
     expect(parityMessages({ ...getTrinket(id), descriptionLines: [description], effects })).toEqual([]);
+  });
+
+  it("preserves parity issues through validateTrinkets without coercion", () => {
+    const mutated: TrinketEntry = {
+      ...chimes,
+      effects: { resonantChimeCardsRequired: 99, resonantChimeMana: chimes.effects.resonantChimeMana },
+    };
+    const expected = validateTrinketDescriptionParity(mutated);
+    expect(expected.length).toBeGreaterThan(0);
+
+    const collector = createCollector();
+    validateTrinkets(collector, [mutated]);
+    // The collector must keep parity issues as-is (severity included) so a
+    // future warning is never silently upgraded to an error.
+    expect(collector.issues).toEqual(expected);
+  });
+});
+
+// Every manifest key must be granted by a trinket and have a documented
+// consumer. The Record type fails compilation when a key is added or removed
+// without updating this map, so dead effects cannot silently accumulate.
+const TRINKET_EFFECT_CONSUMERS: Record<keyof TrinketManifest, string> = {
+  extraDrawPerBattle: "battle-setup.ts (cards per turn)",
+  brassCenserProcChance: "player-typed-hit.ts",
+  firstBurnDoubled: "damage-calc.ts",
+  boneCharmHealOnKill: "combat-text.ts (kill rewards)",
+  forgeStunThreshold: "damage-riders.ts",
+  forgeStunAmount: "damage-riders.ts",
+  frozenHeartDamage: "damage-status-riders.ts",
+  ironwoodBucklerThornsOnBlock: "types/state-helpers.ts (block gain)",
+  runicQuillDrawOnConsume: "card-play.ts",
+  sinEaterHealOnHarmfulStatusRemove: "status-player.ts",
+  vanguardCrestForgeOnBlockAbsorb: "enemy-attack-damage.ts",
+  parasiticBloomLeechChance: "damage-status-riders.ts",
+  cutpurseGoldOnBleed: "damage-status-riders.ts",
+  wishingWellGoldOnWish: "wish.ts",
+  plagueDoctorPoisonCleanse: "player-turn-transition.ts",
+  mortarPestlePoisonOnPotionUse: "card-play.ts",
+  sunderingArmorPiercing: "damage-calc.ts",
+  resonantChimeCardsRequired: "card-play.ts",
+  resonantChimeMana: "card-play.ts",
+  smugglersMapGoldBonus: "navigation/reward-math.ts (outside battle)",
+  grovesFavorThornsOnHealthRestore: "types/state-helpers.ts (healing)",
+  merchantsFavorDiscount: "shop/shop-pricing.ts (outside battle)",
+  companionDamageBonus: "companion-scaling.ts",
+  freezeDurationExtension: "damage-status-riders.ts",
+  thunderstoneDamageOnStun: "status-stun-resolve.ts",
+  luckyCloverGoldChance: "bonus-effects.ts",
+};
+
+describe("Trinket manifest coverage", () => {
+  it("grants every manifest effect from at least one trinket", () => {
+    const granted = new Set(trinketLibrary.flatMap((entry) => Object.keys(entry.effects)));
+    const missing = (Object.keys(defaultTrinketEffects) as Array<keyof TrinketManifest>).filter(
+      (key) => !granted.has(key),
+    );
+    expect(missing).toEqual([]);
+  });
+
+  it("documents a consumer for every manifest effect", () => {
+    expect(Object.keys(TRINKET_EFFECT_CONSUMERS).sort()).toEqual(Object.keys(defaultTrinketEffects).sort());
   });
 });

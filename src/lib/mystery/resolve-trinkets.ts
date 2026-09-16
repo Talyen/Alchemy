@@ -40,6 +40,11 @@ function resolveMysteryTrinketEffect(
   fallbackSeed: string,
 ): MysteryEffect {
   if (effect.kind !== "gainTrinket" && effect.kind !== "gainRandomTrinket") return effect;
+  if (effect.kind === "gainTrinket" && owned.has(effect.trinketId)) {
+    // The named reward is already owned: grant fallback gear rather than an
+    // unrelated random trinket the narrative does not name.
+    return mysteryTrinketFallbackEffect(fallbackSeed);
+  }
   const id = pickMysteryTrinketGrantId(
     effect.kind === "gainTrinket"
       ? { preferredId: effect.trinketId, owned, rng }
@@ -55,24 +60,19 @@ export function resolveMysteryEventTrinkets(
   ownedTrinketIds: readonly string[],
   rng: () => number,
 ): MysteryEvent {
-  const owned = new Set(ownedTrinketIds);
   return {
     ...event,
+    // Each choice resolves independently from the pre-event collection: the
+    // player picks only one choice, so offerings must not steal from each
+    // other. Effects within a single choice still accumulate, keeping
+    // sequential random grants in one choice distinct.
     choices: event.choices.map((choice, choiceIndex) => {
       const choiceOwned = new Set(ownedTrinketIds);
       return {
         ...choice,
         effects: choice.effects.map((effect, effectIndex) => {
           const seed = `${event.id}:${choiceIndex}:${effectIndex}`;
-          let resolved = resolveMysteryTrinketEffect(effect, owned, rng, seed);
-          if (
-            resolved.kind === "gainGeneratedGear" &&
-            (effect.kind === "gainTrinket" || effect.kind === "gainRandomTrinket")
-          ) {
-            resolved = resolveMysteryTrinketEffect(effect, choiceOwned, rng, seed);
-          }
-          if (resolved.kind === "gainTrinket") choiceOwned.add(resolved.trinketId);
-          return resolved;
+          return resolveMysteryTrinketEffect(effect, choiceOwned, rng, seed);
         }),
       };
     }),
@@ -136,15 +136,15 @@ export function applyResolvedMysteryTrinketIds(
 export function isMysteryLootEligible(
   event: MysteryEvent,
   progress: LootProgress,
-  ownedBoonIds: readonly string[],
+  ownedTrinketIds: readonly string[],
 ): boolean {
   if (isLootEligible("astral", progress.depth)) return true;
-  const availableBoons = trinketLibrary.filter((entry) => !ownedBoonIds.includes(entry.id)).length;
+  const availableTrinkets = trinketLibrary.filter((entry) => !ownedTrinketIds.includes(entry.id)).length;
   return event.choices.every((choice) => {
     if (choice.effects.some((effect) => effect.kind === "gainGeneratedGear" && effect.astral)) return false;
     return (
       choice.effects.filter((effect) => effect.kind === "gainTrinket" || effect.kind === "gainRandomTrinket").length <=
-      availableBoons
+      availableTrinkets
     );
   });
 }

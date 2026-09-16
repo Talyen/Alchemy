@@ -21,7 +21,6 @@ export const FLAG_DEFINITIONS = {
   firstPoisonCardFreeUsed: { default: false as const, preserveAs: true as const },
   firstBleedCardFreeUsed: { default: false as const, preserveAs: true as const },
   firstBurnTrinketDoubledUsed: { default: false as const, preserveAs: true as const },
-  firstPotionFreeUsed: { default: false as const, preserveAs: true as const },
   firstLeechCardDoubledUsed: { default: false as const, preserveAs: true as const },
   firstConsumeCardFreeUsed: { default: false as const, preserveAs: true as const },
   firstCompanionCardFreeUsed: { default: false as const, preserveAs: true as const },

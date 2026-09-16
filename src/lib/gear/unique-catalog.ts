@@ -1,5 +1,5 @@
 import type { GearBaseItemId } from "./base-items";
-import { gearAffixCatalog, type GearAffixId } from "./affix-catalog";
+import { formatAffixDescription, gearAffixCatalog, type GearAffixId } from "./affix-catalog";
 import type { GearAffixRoll } from "./types";
 
 export interface UniqueItemDefinition {
@@ -27,7 +27,7 @@ function uniqueItem(
     id,
     displayName,
     baseItemId,
-    description: gearAffixCatalog[signatureId].descriptionTemplate.replace("{value}", String(signatureAffix.value)),
+    description: formatAffixDescription(gearAffixCatalog[signatureId].descriptionTemplate, signatureAffix.value),
     signatureAffix,
     supportingAffixes: [maxAffix(supports[0]), maxAffix(supports[1]), maxAffix(supports[2])],
   };

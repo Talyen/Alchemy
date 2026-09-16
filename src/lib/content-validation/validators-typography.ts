@@ -10,40 +10,32 @@ import {
 import { gearAffixList, gearDefinitionList } from "@/lib/gear";
 import { mysteryPool } from "@/lib/mystery/pool";
 import { ENCOUNTER_TRAITS } from "../content-systems/encounter-traits";
-import type { createCollector } from "./utils";
+import type { Collector } from "./utils";
 import type { ContentValidationArea } from "./types";
 
 const EM_DASH = "\u2014";
 
-function hasEmDash(text: string): boolean {
-  return text.includes(EM_DASH);
-}
-
-function hasPeriod(text: string): boolean {
-  return text.includes(".");
-}
-
 function checkNoPeriod(
-  collector: ReturnType<typeof createCollector>,
+  collector: Collector,
   group: ContentValidationArea,
   id: string,
   label: string,
   text: string,
 ): void {
-  if (hasPeriod(text)) {
+  if (text.includes(".")) {
     collector.error(group, id, `${label} contains a period — rewrite without periods: "${text}"`);
   }
 }
 
 function checkTextTypography(
-  collector: ReturnType<typeof createCollector>,
+  collector: Collector,
   group: ContentValidationArea,
   id: string,
   label: string,
   text: string,
   options?: { allowPeriod?: boolean; sliceLimit?: number },
 ): void {
-  if (hasEmDash(text)) {
+  if (text.includes(EM_DASH)) {
     const snippet = options?.sliceLimit ? text.slice(0, options.sliceLimit) : text;
     collector.error(group, id, `${label} contains em dash — rewrite without —: "${snippet}"`);
   }
@@ -52,92 +44,125 @@ function checkTextTypography(
   }
 }
 
-export function validateTypography(collector: ReturnType<typeof createCollector>): void {
+interface TypographyEntry {
+  area: ContentValidationArea;
+  id: string;
+  label: string;
+  text: string;
+  allowPeriod?: boolean;
+  sliceLimit?: number;
+}
+
+// Style policy: description lines stay period-free for inline display; titles
+// and narrative may use periods. Exceptions: unique-rarity gear descriptions
+// (flavor text) and unique-only affix templates (checked separately below).
+function* collectTypographyEntries(): Generator<TypographyEntry> {
   for (const event of mysteryPool) {
-    checkTextTypography(collector, "rewards", event.id, "Mystery title", event.title, { allowPeriod: true });
-    checkTextTypography(collector, "rewards", event.id, "Mystery narrative", event.narrative, {
+    yield { area: "rewards", id: event.id, label: "Mystery title", text: event.title, allowPeriod: true };
+    yield {
+      area: "rewards",
+      id: event.id,
+      label: "Mystery narrative",
+      text: event.narrative,
       allowPeriod: true,
       sliceLimit: 80,
-    });
+    };
     for (const choice of event.choices) {
-      checkTextTypography(collector, "rewards", `${event.id}/${choice.label}`, "Mystery choice label", choice.label, {
+      yield {
+        area: "rewards",
+        id: `${event.id}/${choice.label}`,
+        label: "Mystery choice label",
+        text: choice.label,
         allowPeriod: true,
-      });
+      };
     }
   }
 
   for (const card of cardLibrary) {
-    checkTextTypography(collector, "cards", card.id, "Card title", card.title, { allowPeriod: true });
+    yield { area: "cards", id: card.id, label: "Card title", text: card.title, allowPeriod: true };
     for (const line of card.descriptionLines) {
-      checkTextTypography(collector, "cards", card.id, "Card description", line);
+      yield { area: "cards", id: card.id, label: "Card description", text: line };
     }
   }
 
   for (const trinket of trinketLibrary) {
-    checkTextTypography(collector, "trinkets", trinket.id, "Trinket title", trinket.title, { allowPeriod: true });
+    yield { area: "trinkets", id: trinket.id, label: "Trinket title", text: trinket.title, allowPeriod: true };
     for (const line of trinket.descriptionLines) {
-      checkTextTypography(collector, "trinkets", trinket.id, "Trinket description", line);
+      yield { area: "trinkets", id: trinket.id, label: "Trinket description", text: line };
     }
   }
 
   for (const enemy of enemyBestiary) {
-    checkTextTypography(collector, "enemies", enemy.id, "Enemy title", enemy.title, { allowPeriod: true });
-    checkTextTypography(collector, "enemies", enemy.id, "Enemy subtitle", enemy.subtitle, { allowPeriod: true });
+    yield { area: "enemies", id: enemy.id, label: "Enemy title", text: enemy.title, allowPeriod: true };
+    yield { area: "enemies", id: enemy.id, label: "Enemy subtitle", text: enemy.subtitle, allowPeriod: true };
     for (const trait of enemy.traits) {
-      checkTextTypography(collector, "enemies", trait.id, "Enemy trait title", trait.title, { allowPeriod: true });
-      checkTextTypography(collector, "enemies", trait.id, "Enemy trait description", trait.description);
+      yield { area: "enemies", id: trait.id, label: "Enemy trait title", text: trait.title, allowPeriod: true };
+      yield { area: "enemies", id: trait.id, label: "Enemy trait description", text: trait.description };
     }
   }
 
   for (const [id, companion] of Object.entries(companionLibrary)) {
-    checkTextTypography(collector, "companions", id, "Companion title", companion.title, { allowPeriod: true });
+    yield { area: "companions", id, label: "Companion title", text: companion.title, allowPeriod: true };
   }
 
   for (const definition of gearDefinitionList) {
     for (const line of definition.descriptionLines) {
-      checkTextTypography(collector, "gear", definition.id, "Gear description", line, {
+      yield {
+        area: "gear",
+        id: definition.id,
+        label: "Gear description",
+        text: line,
         allowPeriod: definition.rarity === "unique",
-      });
+      };
     }
   }
 
   for (const [id, character] of Object.entries(characters)) {
-    checkTextTypography(collector, "keywords", id, "Character name", character.name, { allowPeriod: true });
-    checkTextTypography(collector, "keywords", id, "Character description", character.description, {
-      allowPeriod: true,
-    });
-    checkTextTypography(collector, "keywords", id, "Character role", character.role, { allowPeriod: true });
+    yield { area: "keywords", id, label: "Character name", text: character.name, allowPeriod: true };
+    yield { area: "keywords", id, label: "Character description", text: character.description, allowPeriod: true };
+    yield { area: "keywords", id, label: "Character role", text: character.role, allowPeriod: true };
   }
 
   for (const talent of talentPool) {
-    checkTextTypography(collector, "talents", talent.id, "Talent description", talent.description);
+    yield { area: "talents", id: talent.id, label: "Talent description", text: talent.description };
   }
 
   for (const [id, definition] of Object.entries(keywordDefinitions)) {
-    checkTextTypography(collector, "keywords", id, "Keyword label", definition.label, { allowPeriod: true });
-    checkTextTypography(collector, "keywords", id, "Keyword description", definition.description);
+    yield { area: "keywords", id, label: "Keyword label", text: definition.label, allowPeriod: true };
+    yield { area: "keywords", id, label: "Keyword description", text: definition.description };
   }
 
   for (const [id, trait] of Object.entries(ENCOUNTER_TRAITS)) {
-    checkTextTypography(collector, "encounter-traits", id, "Encounter trait label", trait.label, {
-      allowPeriod: true,
-    });
-    checkTextTypography(collector, "encounter-traits", id, "Encounter trait description", trait.description);
-    checkTextTypography(collector, "encounter-traits", id, "Encounter trait enemy title", trait.enemyTrait.title, {
-      allowPeriod: true,
-    });
-    checkTextTypography(
-      collector,
-      "encounter-traits",
+    yield { area: "encounter-traits", id, label: "Encounter trait label", text: trait.label, allowPeriod: true };
+    yield { area: "encounter-traits", id, label: "Encounter trait description", text: trait.description };
+    yield {
+      area: "encounter-traits",
       id,
-      "Encounter trait enemy description",
-      trait.enemyTrait.description,
-    );
+      label: "Encounter trait enemy title",
+      text: trait.enemyTrait.title,
+      allowPeriod: true,
+    };
+    yield {
+      area: "encounter-traits",
+      id,
+      label: "Encounter trait enemy description",
+      text: trait.enemyTrait.description,
+    };
+  }
+}
+
+export function validateTypography(collector: Collector): void {
+  for (const entry of collectTypographyEntries()) {
+    const options: { allowPeriod?: boolean; sliceLimit?: number } = {};
+    if (entry.allowPeriod !== undefined) options.allowPeriod = entry.allowPeriod;
+    if (entry.sliceLimit !== undefined) options.sliceLimit = entry.sliceLimit;
+    checkTextTypography(collector, entry.area, entry.id, entry.label, entry.text, options);
   }
 
   for (const affix of gearAffixList) {
-    // Unique-only affix templates render with flavor punctuation; only shared
-    // pool templates must stay period-free for inline display.
+    // Unique-only affix templates render with flavor punctuation and skip the
+    // em-dash check entirely; only shared pool templates must stay
+    // period-free for inline display.
     if (!affix.uniqueOnly) {
       checkNoPeriod(collector, "gear", affix.id, "Gear affix description", affix.descriptionTemplate);
     }

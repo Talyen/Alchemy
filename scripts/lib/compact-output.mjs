@@ -77,9 +77,10 @@ export function tailOutput(output, maxBytes = 4_000) {
   if (rawBytes <= maxBytes) return normalized;
   let prefix = `[...${rawBytes} bytes omitted...]\n`;
   let suffix = "";
+  const candidateTail = normalized.length > maxBytes ? normalized.slice(-maxBytes) : normalized;
   for (let pass = 0; pass < 2; pass += 1) {
     let remaining = Math.max(0, maxBytes - Buffer.byteLength(prefix, "utf8"));
-    const codePoints = Array.from(normalized);
+    const codePoints = Array.from(candidateTail);
     let start = codePoints.length;
     while (start > 0) {
       const bytes = Buffer.byteLength(codePoints[start - 1], "utf8");
@@ -143,13 +144,19 @@ function diagnosticExcerpt(lines, maxBytes) {
     if (first < last) prioritized.push(lines[last]);
   }
   let omitted = 0;
+  let currentBytes = 0;
+  const budget = maxBytes - 100;
   for (const { text, index } of prioritized) {
     const excerpt =
       Buffer.byteLength(text) > 700 ? Array.from(text).slice(0, 150).join("") + " […line clipped; see full log]" : text;
     const line = `L${index + 1}: ${excerpt}`;
-    if (Buffer.byteLength([...result.map((entry) => entry.line), line].join("\n")) <= maxBytes - 100)
+    const lineBytes = Buffer.byteLength(line, "utf8") + (result.length > 0 ? 1 : 0);
+    if (currentBytes + lineBytes <= budget) {
       result.push({ index, line });
-    else omitted++;
+      currentBytes += lineBytes;
+    } else {
+      omitted++;
+    }
   }
   const output = result.sort((a, b) => a.index - b.index).map((entry) => entry.line);
   if (omitted) output.push(`${omitted} diagnostic lines omitted; see full log.`);

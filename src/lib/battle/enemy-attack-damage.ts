@@ -1,5 +1,5 @@
 import type { EnemyAttackEffect } from "@/lib/game-data";
-import { BATTLE_CONFIG, LABYRINTH_MODIFIER_CONFIG, PERCENT_DENOMINATOR } from "../game-constants";
+import { BATTLE_CONFIG, HALF_DIVISOR, LABYRINTH_MODIFIER_CONFIG, PERCENT_DENOMINATOR } from "../game-constants";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { applyEnemyHealingWithCombatText, applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { computeCardDamageToEnemy, REFLECTED_HOLY_CARD } from "./damage-calc";
@@ -99,7 +99,7 @@ export function prepareEnemyDamage(
     if (
       effect.damageType === "physical" &&
       hasEnemyTrait(state, "executioner") &&
-      state.enemyHealth < state.enemyMaxHealth / 2
+      state.enemyHealth < state.enemyMaxHealth / HALF_DIVISOR
     )
       damage *= LABYRINTH_MODIFIER_CONFIG.double;
     return Math.round(paceCombatDamage(state, damage, "enemy"));

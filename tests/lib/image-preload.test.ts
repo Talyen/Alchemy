@@ -28,6 +28,7 @@ function uniqueUrl(): string {
 const mockImageInstances: MockImage[] = [];
 beforeEach(() => {
   mockImageInstances.length = 0;
+  resetImagePreloadCache();
 
   vi.stubGlobal("Image", function () {
     const instance = createMockImage();
@@ -41,7 +42,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-const { preloadImage, preloadImagesInBatches } = await import("@/lib/image-preload");
+const { preloadImage, preloadImagesInBatches, resetImagePreloadCache } = await import("@/lib/image-preload");
 
 describe("preloadImage", () => {
   it("creates an Image and sets decoding to async", async () => {
@@ -125,6 +126,71 @@ describe("preloadImage", () => {
 
   it("handles empty string safely", async () => {
     await expect(preloadImage("")).resolves.toBeUndefined();
+  });
+
+  it("evicts cached entries when resetImagePreloadCache is called", async () => {
+    const src = "reset-test.png";
+    const p1 = preloadImage(src);
+    mockImageInstances[0].onload?.();
+    await p1;
+
+    expect(mockImageInstances).toHaveLength(1);
+    resetImagePreloadCache();
+
+    const p2 = preloadImage(src);
+    expect(mockImageInstances).toHaveLength(2);
+    mockImageInstances[1].onload?.();
+    await p2;
+  });
+
+  it("allows retrying when an error occurs synchronously during instantiation", async () => {
+    // Stub Image so setting src immediately triggers onerror synchronously
+    vi.stubGlobal("Image", function () {
+      let currentSrc = "";
+      const instance: MockImage = {
+        decoding: "",
+        onload: null,
+        onerror: null,
+        decode: vi.fn().mockResolvedValue(undefined),
+        get src() {
+          return currentSrc;
+        },
+        set src(value: string) {
+          currentSrc = value;
+          // Synchronous error trigger:
+          instance.onerror?.();
+        },
+      };
+      mockImageInstances.push(instance);
+      return instance;
+    } as unknown as typeof Image);
+
+    const src = "sync-error-test.png";
+    await preloadImage(src);
+
+    // After synchronous error, retrying should create a new Image, not return a cached failure
+    const retry = preloadImage(src);
+    expect(mockImageInstances.length).toBe(2);
+    await retry;
+  });
+
+  it("gracefully falls back to onload when image.decode is undefined", async () => {
+    vi.stubGlobal("Image", function () {
+      const instance = {
+        src: "",
+        decoding: "",
+        onload: null,
+        onerror: null,
+        // No decode method
+      };
+      mockImageInstances.push(instance as unknown as MockImage);
+      return instance;
+    } as unknown as typeof Image);
+
+    const src = "no-decode.png";
+    const promise = preloadImage(src);
+    mockImageInstances[0].onload?.();
+    await expect(promise).resolves.toBeUndefined();
   });
 });
 

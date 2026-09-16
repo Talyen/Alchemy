@@ -72,7 +72,7 @@ describe("createBattleState", () => {
       currentEnemy: skeleton,
       rng: seededRng(42),
     });
-    expect(result.enemyHealth).toBe(88);
+    expect(result.enemyHealth).toBe(83);
     expect(result.currentEnemy.abilityIds).toEqual(skeleton.abilityIds);
     expect(result.lastEnemyAbilityId).toBeNull();
   });

@@ -6,7 +6,7 @@ import { incrementalContext, relatedLocations, repositorySearch } from "../../sc
 import { checkDurableDocumentReachability } from "../../scripts/check-documentation-contract.mjs";
 import { searchMain } from "../../scripts/agent-search.mjs";
 import { sourceOutline } from "../../scripts/lib/agent-context.mjs";
-import { failureSummary } from "../../scripts/lib/compact-output.mjs";
+import { failureSummary, tailOutput } from "../../scripts/lib/compact-output.mjs";
 
 const roots: string[] = [];
 function fixture(files: Record<string, string>) {
@@ -190,4 +190,12 @@ it("keeps isolated worktree documentation out of repository reachability checks"
     ".worktrees/eval/docs/unlinked.md": "Not this repository's documentation",
   });
   expect(checkDurableDocumentReachability(root)).toEqual(["docs/orphan.md"]);
+});
+
+it("extracts the tail of large outputs within budget and preserves UTF-8 boundaries", () => {
+  const largeOutput = "a".repeat(100_000) + "\nfinal message: all tests completed";
+  const tail = tailOutput(largeOutput, 200);
+  expect(Buffer.byteLength(tail)).toBeLessThanOrEqual(200);
+  expect(tail).toContain("final message: all tests completed");
+  expect(tail).toMatch(/^\[\.\.\.\d+ bytes omitted\.\.\.\]\n/);
 });

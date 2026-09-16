@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import {
   getSoundUrl,
+  preloadSound,
   preloadSounds,
   preloadAllSounds,
   preloadBattleSounds,
@@ -68,6 +69,25 @@ describe("preloadSounds", () => {
     preloadSounds(["a.ogg"]);
     expect(soundedFakeAudio()).toHaveLength(1);
   });
+
+  it("warms a single sound via preloadSound", () => {
+    preloadSound("single-sound.ogg");
+    const warmed = createdFakeAudio.filter((el) => el.preload === "auto");
+    expect(warmed).toHaveLength(1);
+    expect(warmed[0]?.src).toContain("single-sound.");
+  });
+
+  it("cancels stall timers when resetSoundPreloadCache is called", () => {
+    vi.useFakeTimers();
+    preloadSound("stall-test.ogg");
+    expect(soundedFakeAudio()).toHaveLength(1);
+
+    resetSoundPreloadCache();
+    // Advancing past the 30-second stall timer should not trigger any errors or unhandled events
+    vi.advanceTimersByTime(35_000);
+
+    vi.useRealTimers();
+  });
 });
 
 describe("preloadBattleSounds", () => {
@@ -105,5 +125,20 @@ describe("preloadAllSounds", () => {
     await vi.waitFor(() => expect(callbacks.length).toBe(2));
 
     expect(AudioContextCtor).not.toHaveBeenCalled();
+  });
+
+  it("is idempotent and does not schedule duplicate idle loops when called multiple times", () => {
+    const callbacks: IdleRequestCallback[] = [];
+    window.requestIdleCallback = vi.fn((cb: IdleRequestCallback) => {
+      callbacks.push(cb);
+      return callbacks.length;
+    });
+
+    preloadAllSounds();
+    expect(callbacks).toHaveLength(1);
+
+    // Second call should be a no-op:
+    preloadAllSounds();
+    expect(callbacks).toHaveLength(1);
   });
 });

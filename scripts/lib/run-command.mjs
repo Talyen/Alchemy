@@ -28,18 +28,19 @@ function openCapture(options) {
     finish() {
       try {
         const outputBytes = fs.fstatSync(fd).size;
-        const head = Buffer.alloc(Math.min(outputBytes, maxBuffer));
-        fs.readSync(fd, head, 0, head.length, 0);
         const outputTruncated = outputBytes > maxBuffer;
-        let output = head.toString("utf8");
+        let output;
         if (outputTruncated) {
           const half = Math.floor(maxBuffer / 2);
+          const head = Buffer.alloc(half);
+          fs.readSync(fd, head, 0, half, 0);
           const tail = Buffer.alloc(half);
           fs.readSync(fd, tail, 0, half, outputBytes - half);
-          output =
-            head.subarray(0, half).toString("utf8") +
-            `\n[...output omitted; full log: ${logPath}...]\n` +
-            tail.toString("utf8");
+          output = head.toString("utf8") + `\n[...output omitted; full log: ${logPath}...]\n` + tail.toString("utf8");
+        } else {
+          const head = Buffer.alloc(outputBytes);
+          fs.readSync(fd, head, 0, outputBytes, 0);
+          output = head.toString("utf8");
         }
         return { output, outputBytes, outputTruncated, logPath };
       } finally {

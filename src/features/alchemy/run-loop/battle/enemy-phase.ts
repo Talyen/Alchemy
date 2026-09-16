@@ -1,7 +1,7 @@
 import { enemyAbilityDealsDamage, getEnemyAbilityCard } from "@/lib/game-data";
 import type { BattleTurnFrame, CombatTextEvent } from "@/lib/battle";
 import { playBattleEvent, playCardSound, playEnemyAttack } from "@/lib/audio";
-import { COMPANION_ATTACK_DELAY, ENEMY_ATTACK_RECOVERY_DELAY, ENEMY_PHASE_DELAY } from "@/lib/game-constants";
+import { COMPANION_ATTACK_DELAY_MS, ENEMY_ATTACK_RECOVERY_DELAY_MS, ENEMY_PHASE_DELAY_MS } from "@/lib/game-constants";
 import { delay } from "@/lib/animation/game-timer";
 import { markBattleStage } from "@/lib/performance/battle-stage-marks";
 import { applyCombatTextShakeFeedback } from "./battle-status";
@@ -40,7 +40,7 @@ export async function playTurnFrames(
         turnPhase: "enemy",
       });
       showTexts(turn.enemyTurnStartCombatTexts, presentation);
-      await delay(ENEMY_PHASE_DELAY);
+      await delay(ENEMY_PHASE_DELAY_MS);
       if (!deps.isSessionActive(sessionNum)) return;
       if (turn.enemyPerformedAbility) {
         const ability = turn.state.lastEnemyAbilityId ? getEnemyAbilityCard(turn.state.lastEnemyAbilityId) : null;
@@ -52,7 +52,7 @@ export async function playTurnFrames(
       presentation.setDisplayedBattle({ ...(turn.afterAbilityState ?? turn.state), hand: [], turnPhase: "enemy" });
       if (!before.deathsDoorActive && turn.state.deathsDoorActive) playBattleEvent("deathsDoor");
       showTexts(turn.enemyResolutionCombatTexts, presentation);
-      await delay(ENEMY_ATTACK_RECOVERY_DELAY);
+      await delay(ENEMY_ATTACK_RECOVERY_DELAY_MS);
       if (!deps.isSessionActive(sessionNum)) return;
       markBattleStage("enemy-end");
     } else {
@@ -68,7 +68,7 @@ export async function playTurnFrames(
     if (!deps.isSessionActive(sessionNum)) return;
     options?.onHandDrawn?.();
     if (companion) {
-      await delay(COMPANION_ATTACK_DELAY);
+      await delay(COMPANION_ATTACK_DELAY_MS);
       if (!deps.isSessionActive(sessionNum)) return;
       if (!options?.isCardPlayInProgress?.()) {
         presentation.setDisplayedBattle(companion.state);

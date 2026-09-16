@@ -1,4 +1,4 @@
-export const CORRUPTION_TRANSFORM_CHANCE = 0.1;
+export const CORRUPTION_TRANSFORM_CHANCE_FRACTION = 0.1;
 export const CORRUPTION_MIN_VALUE = 0;
 export const CORRUPTION_TEXT_PATTERNS = {
   authoredNumber: /\d+/g,

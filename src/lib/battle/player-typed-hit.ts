@@ -1,7 +1,8 @@
 import type { BattleCard, DamageType, TalentEffectManifest } from "@/lib/game-data";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import {
-  BRASS_CENSER_SPLIT_CHANCE,
+  BRASS_CENSER_SPLIT_CHANCE_PERCENT,
+  HALF_DIVISOR,
   TALENT_CONVERSION_BLEED_FRACTION,
   TALENT_CONVERSION_DEFAULT_FRACTION,
 } from "../game-constants";
@@ -60,7 +61,7 @@ export function applyBrassCenser(
   enemyHealthBeforeHit = state.enemyHealth,
 ): BattleState {
   if (damage <= 0 || !rollTalentChance(state.trinketEffects.brassCenserProcChance, state)) return state;
-  if (rollPercent(BRASS_CENSER_SPLIT_CHANCE, getBattleRng(state))) {
+  if (rollPercent(BRASS_CENSER_SPLIT_CHANCE_PERCENT, getBattleRng(state))) {
     return dealPlayerTypedHit(state, "burn", damage, combatTexts);
   }
   return applyLifestealAndPlayerHitTriggers(state, damage, combatTexts, false, false, enemyHealthBeforeHit);
@@ -126,7 +127,7 @@ export function applyLifestealAndPlayerHitTriggers(
   if (damage <= 0) return state;
   let nextState = applyLeechHitHealing(state, damage, combatTexts, cardHealing, cardLeech);
   nextState = applyTalentHitConversions(nextState, "leech", damage, combatTexts);
-  if (enemyHealthBeforeHit < state.enemyMaxHealth / 2) {
+  if (enemyHealthBeforeHit < state.enemyMaxHealth / HALF_DIVISOR) {
     nextState = dealTalentTypedHit(nextState, "holy", state.talentEffects.leechHolyDamageVsLowHealth, combatTexts);
   }
   return applyLeechHitRewards(nextState, damage, combatTexts);

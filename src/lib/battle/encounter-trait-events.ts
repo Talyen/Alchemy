@@ -6,7 +6,7 @@ import { applyEnemyLeechHealing, processEnemyDamageEffect, resolvePendingBattleR
 import { addEnemyMitigationWithCombatText } from "./encounter-trait-health-threshold";
 import { isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-traits";
 import { getBattleRng, rollPercent } from "@/lib/rng";
-import { SEPTIC_SPLIT_CHANCE } from "../game-constants";
+import { SEPTIC_SPLIT_CHANCE_PERCENT } from "../game-constants";
 import { removePlayerArmor } from "./status-helpers";
 import { hasEnemyTrait, setEnemyStatus, setFlag, type BattleState, type CombatTextEvent } from "./types";
 
@@ -71,7 +71,7 @@ export function processEncounterTraitActionDamage(state: BattleState, combatText
     nextState = recordEnemyAbilityActivation(nextState, "septic");
     nextState = dealTraitDamage(
       nextState,
-      rollPercent(SEPTIC_SPLIT_CHANCE, getBattleRng(nextState)) ? "poison" : "bleed",
+      rollPercent(SEPTIC_SPLIT_CHANCE_PERCENT, getBattleRng(nextState)) ? "poison" : "bleed",
       1,
       combatTexts,
     );

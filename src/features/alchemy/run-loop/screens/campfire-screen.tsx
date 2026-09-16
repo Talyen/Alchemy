@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { campfire } from "@/features/alchemy/shared/config/game-data-catalog";
 import { BUTTON_WIDTH_ACTION } from "@/features/alchemy/shared/config";
 import { getCampfireRestHealth } from "@/lib/campfire-heal";
-import { CAMPFIRE_CONTINUE_DELAY } from "@/lib/game-constants";
+import { CAMPFIRE_CONTINUE_DELAY_MS } from "@/lib/game-constants";
 import { HealthRestoreMeter } from "../../shared/ui/health-restore-meter";
 import { useEasedHealth } from "../../shared/ui/use-eased-health";
 
@@ -32,7 +32,7 @@ export function CampfireScreen({
 
   useEffect(() => {
     if (!done) return;
-    const timeout = setTimeout(onContinue, CAMPFIRE_CONTINUE_DELAY);
+    const timeout = setTimeout(onContinue, CAMPFIRE_CONTINUE_DELAY_MS);
     return () => clearTimeout(timeout);
   }, [done, onContinue]);
 

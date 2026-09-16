@@ -10,7 +10,7 @@ import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-tra
 import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
 import {
   BOSS_GOLD_BONUS_FRACTION,
-  COMPANION_GOLD_FIND_CHANCE,
+  COMPANION_GOLD_FIND_CHANCE_FRACTION,
   COMPANION_GOLD_MULTIPLIER,
   ELITE_GOLD_BONUS_FRACTION,
   ENEMY_TRAIT_IDS,
@@ -102,7 +102,11 @@ function rollVictoryGold(
   const baseGold = Math.floor(rng() * (GOLD_REWARD_MAX - GOLD_REWARD_MIN + 1) + GOLD_REWARD_MIN);
   let gold = Math.round(baseGold * (1 + talentEffects.enemyGoldDropBonus));
 
-  if (talentEffects.companionGoldFindActive && battleState.activeCompanion && rng() < COMPANION_GOLD_FIND_CHANCE) {
+  if (
+    talentEffects.companionGoldFindActive &&
+    battleState.activeCompanion &&
+    rng() < COMPANION_GOLD_FIND_CHANCE_FRACTION
+  ) {
     gold = Math.round(gold * COMPANION_GOLD_MULTIPLIER);
   }
 
@@ -168,6 +172,7 @@ export function computeVictoryRewardState(
       trinketIds: activeTrinketEffectIds,
       goldMultiplier,
       rng,
+      excludedBoonIds: activeTrinketEffectIds,
       gearAstralChanceBonus,
       ownedTrinketIds: input.ownedTrinketIds ?? [],
       ownedUniqueIds: input.ownedUniqueIds ?? new Set(),

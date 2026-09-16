@@ -133,7 +133,7 @@ export async function animateDiscardedHand(cards: BattleCard[], session: number,
   if (!discardPileRect || discardPileRect.width <= 0 || cards.length === 0) return;
   const speedMul = getCardTransferBatchSpeed(cards.length);
   const cardInterval = transferCardIntervalSeconds(
-    CARD_TRANSFER_CONFIG.discardDurationSeconds,
+    CARD_TRANSFER_CONFIG.discardDurationSec,
     speedMul,
     CARD_TRANSFER_CONFIG.completionBufferMs,
   );
@@ -165,7 +165,7 @@ export async function animateDiscardedHand(cards: BattleCard[], session: number,
       fromRotation: (index - (cards.length - 1) / 2) * HAND_FAN_ROTATION_DEGREES,
       toRotation: 0,
       rotateY: [...CARD_TRANSFER_CONFIG.discardFlipKeyframes],
-      duration: CARD_TRANSFER_CONFIG.discardDurationSeconds / speedMul,
+      duration: CARD_TRANSFER_CONFIG.discardDurationSec / speedMul,
     });
   }
 }
@@ -180,7 +180,7 @@ export async function animateDrawnHand(
   if (!drawPileRect || drawPileRect.width <= 0 || cards.length === 0) return;
   const speedMul = getCardTransferBatchSpeed(cards.length);
   const cardInterval = transferCardIntervalSeconds(
-    CARD_TRANSFER_CONFIG.drawDurationSeconds,
+    CARD_TRANSFER_CONFIG.drawDurationSec,
     speedMul,
     CARD_TRANSFER_CONFIG.completionBufferMs,
   );
@@ -210,7 +210,7 @@ export async function animateDrawnHand(
         fromRotation: 0,
         toRotation: (safeIndex - (allHandCards.length - 1) / 2) * HAND_FAN_ROTATION_DEGREES,
         rotateY: [...CARD_TRANSFER_CONFIG.drawFlipKeyframes],
-        duration: CARD_TRANSFER_CONFIG.drawDurationSeconds / speedMul,
+        duration: CARD_TRANSFER_CONFIG.drawDurationSec / speedMul,
       },
       () => {
         deps.setHiddenHandCardKeys((current) => current.filter((key) => key !== cardKey));

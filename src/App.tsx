@@ -15,14 +15,11 @@ import {
   useRenderedScreenTransition,
   useReturnToRunNavigation,
 } from "@/app/app-shell";
-import { BattleAutoplayToggle } from "@/app/battle-autoplay-toggle";
-import { BattleGoldCounter, BattleSkipCombatButton } from "@/app/battle-toolbar-extras";
-import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
+import { BattleCluster } from "@/app/battle-cluster";
 import { renderAlchemyScreenRoute } from "@/app/screen-routes";
 import { useAlchemyBootstrap } from "@/app/use-alchemy-bootstrap";
 import { useCardInspection } from "@/app/use-card-inspection";
 import { ErrorBoundary } from "@/components/error-boundary";
-import { BattleBoonInspectButton } from "@/features/alchemy/run-loop/screens/battle-screen/boon-inspect";
 import { hasInspectableBoons } from "@/features/alchemy/run-loop/screens/battle-screen/unique-run-boons";
 import { CardDescriptionProvider } from "@/features/alchemy/shared/context/card-description-context";
 import { useVirtualResolution } from "@/features/alchemy/shared/ui/use-virtual-resolution";
@@ -32,7 +29,6 @@ import {
   useActiveRunBoons,
   useActiveRunScreenValue,
   useAutosaveAllowed,
-  useBattleClusterState,
   useBondedCompanions,
   useRunSessionNavigationSlice,
   useTalentEffects,
@@ -40,10 +36,8 @@ import {
 import { useAppSettings, useSelectedAspectRatio } from "@/features/alchemy/shared/stores/settings-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { CardInspectionOverlay } from "@/features/alchemy/shared/ui/inspection/card-inspection-overlay";
-import { DeckInspectButton } from "@/features/alchemy/shared/ui/deck-inspect-button";
 import { KeywordPlasmaBackground } from "@/features/alchemy/shared/ui/keyword-plasma-background";
 import { setModalRoot } from "@/features/alchemy/shared/ui/modal-root";
-import { HamburgerTrigger } from "@/features/alchemy/shared/ui/navigation";
 import { setTooltipRoot } from "@/features/alchemy/shared/ui/tooltips/tooltip-root";
 import { useArtworkReady } from "@/features/alchemy/shared/ui/use-artwork-ready";
 import type { AlchemyRunCommands } from "@/features/alchemy/shell/route-commands";
@@ -62,44 +56,6 @@ async function wipeUnsupportedSaveAndReload() {
     throw new Error("Save data could not be cleared");
   }
   window.location.reload();
-}
-
-function BattleCluster({
-  inert,
-  deckInspection,
-  isAutoplayEnabled,
-  toggleAutoplayEnabled,
-  hasInspectBoons,
-  boonInspectOpen,
-  toggleBoonInspect,
-  gameMenuOpen,
-  onOpenGameMenu,
-  onSkipCombat,
-}: {
-  inert: boolean;
-  deckInspection: { count: number; disabled: boolean; onOpen: () => void } | undefined;
-  isAutoplayEnabled: boolean;
-  toggleAutoplayEnabled: () => void;
-  hasInspectBoons: boolean;
-  boonInspectOpen: boolean;
-  toggleBoonInspect: () => void;
-  gameMenuOpen: boolean;
-  onOpenGameMenu: (rect?: DOMRect) => void;
-  onSkipCombat: () => void;
-}) {
-  const { gold, hasWishOptions } = useBattleClusterState();
-  return (
-    <div inert={inert} className="absolute top-4 right-4 z-[80] flex items-center gap-2">
-      <BattleGoldCounter gold={gold} />
-      {deckInspection ? <DeckInspectButton {...deckInspection} /> : null}
-      <BattleAutoplayToggle enabled={isAutoplayEnabled} onToggle={toggleAutoplayEnabled} />
-      {hasInspectBoons ? <BattleBoonInspectButton open={boonInspectOpen} onToggle={toggleBoonInspect} /> : null}
-      {isAlchemyDevBuild() ? (
-        <BattleSkipCombatButton onSkip={onSkipCombat} disabled={gameMenuOpen || boonInspectOpen || hasWishOptions} />
-      ) : null}
-      <HamburgerTrigger onClick={onOpenGameMenu} label="Open game menu" active={gameMenuOpen} />
-    </div>
-  );
 }
 
 function AppKeywordPlasmaBackground({ renderedScreen, intensity }: { renderedScreen: Screen; intensity: number }) {

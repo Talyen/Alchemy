@@ -2,7 +2,6 @@ import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { hasEncounterBenefit } from "./types";
 import { applyHealingWithCombatText } from "./combat-text";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
-import { applyIronwoodBuckler } from "./bonus-effects";
 import { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 import { isPlayerDefeated, type BattleState, type BattleSnapshot, type CombatTextEvent } from "./types";
 import { processEnemyAbility } from "./enemy-turn-attack";
@@ -38,8 +37,7 @@ function finalizePlayerTurn(
   if (state.enemyHealth <= 0 || isPlayerDefeated(state)) {
     return { state, combatTexts, playerTurnSkipped: false };
   }
-  const nextState = applyIronwoodBuckler(state, combatTexts);
-  const finalState = advanceToPlayerTurn(nextState, combatTexts, options);
+  const finalState = advanceToPlayerTurn(state, combatTexts, options);
   return { state: finalState, combatTexts, playerTurnSkipped: finalState.turnPhase === "enemy" };
 }
 

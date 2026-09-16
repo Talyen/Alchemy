@@ -16,12 +16,12 @@ import { type BattleCard, type BattleCardEffect, type DamageType, type TalentEff
 import { reduceEnemyArmor, setFlag, type BattleState } from "./types";
 import { paceCombatDamage } from "./fight-pacing";
 import {
-  ARCHERY_HIGH_HEALTH_THRESHOLD_PERCENT,
+  ARCHERY_FULL_HEALTH_THRESHOLD_PERCENT,
   ARCHERY_LOW_HEALTH_THRESHOLD_PERCENT,
   BLOCK_SCALED_DAMAGE_PERCENT,
   BURN_BLOCK_SCALED_DAMAGE_PERCENT,
   CRIT_MULTIPLIER,
-  GLOBAL_CRIT_CHANCE,
+  GLOBAL_CRIT_CHANCE_PERCENT,
   HALF_DIVISOR,
   MIN_DAMAGE_MULTIPLIER,
   PERCENT_DENOMINATOR,
@@ -308,7 +308,7 @@ function computeCardSpecificTalentBonus(
     if (doublingActive(talentEffects.archeryDoubledVsFrozen, cc.freezeSkipTurns)) bonus += 1;
     if (
       talentEffects.archeryDoubledVsHighHealth &&
-      state.enemyHealth * PERCENT_DENOMINATOR >= state.enemyMaxHealth * ARCHERY_HIGH_HEALTH_THRESHOLD_PERCENT
+      state.enemyHealth * PERCENT_DENOMINATOR >= state.enemyMaxHealth * ARCHERY_FULL_HEALTH_THRESHOLD_PERCENT
     ) {
       bonus += 1;
     }
@@ -354,7 +354,7 @@ function computeAdditiveDamageBonus(
 
 function applyCrit(damage: number, state: BattleState) {
   if (state.flags.nextHitCrit) return damage * CRIT_MULTIPLIER;
-  return rollPercent(GLOBAL_CRIT_CHANCE, getBattleRng(state)) ? damage * CRIT_MULTIPLIER : damage;
+  return rollPercent(GLOBAL_CRIT_CHANCE_PERCENT, getBattleRng(state)) ? damage * CRIT_MULTIPLIER : damage;
 }
 
 function applyFirstDamageBonus(

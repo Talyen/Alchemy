@@ -27,10 +27,14 @@ function allowedAspectsForDefinition(def: GearDefinition): GearAffixAspect[] {
 const eligibleAffixPoolCache = new Map<string, readonly GearAffixDefinition[]>();
 
 function eligibleAffixCacheKey(definition: GearDefinition): string {
-  // Safe to key on base item: buildVariantDefinitions copies compatibleSlots
-  // and affinityKeywords straight from the base item, so same base always
-  // yields the same pool. The cached array is frozen; copy before mutating.
-  return definition.baseItemId;
+  // Key on the actual pool inputs — not just the base item — so future
+  // per-rarity or per-variant affinity can never collide silently. The cached
+  // array is frozen; copy before mutating.
+  return [
+    definition.baseItemId,
+    ...[...definition.compatibleSlots].sort(),
+    ...[...definition.affinityKeywords].sort(),
+  ].join("|");
 }
 
 export function buildEligibleAffixPool(definition: GearDefinition): readonly GearAffixDefinition[] {

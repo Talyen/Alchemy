@@ -1,6 +1,7 @@
 import { canPlayCard, type BattleSnapshot, type CardPlayOptions } from "@/lib/battle";
 import { getEffectiveDamageScore, getImmediateDefense, pickHighestScoring } from "@/lib/balance/play-policy";
 import type { BattleCard } from "@/lib/game-data";
+import { HALF_DIVISOR } from "@/lib/game-constants";
 
 export const PLAYABLE_HAND_OPTIONS: CardPlayOptions = { allowAfterEnemyDefeat: true };
 
@@ -42,7 +43,7 @@ export function findBestPlayableHandCard(
 ): { card: BattleCard; index: number } | null {
   const playable = getPlayableHandCards(state, options);
   if (playable.length === 0) return null;
-  if (state.playerHealth <= state.playerMaxHealth / 2) {
+  if (state.playerHealth <= state.playerMaxHealth / HALF_DIVISOR) {
     const defensive = playable.filter(({ card }) => getImmediateDefense(card) > 0);
     if (defensive.length > 0) {
       return pickHighestScoring(defensive, (card) => getEffectiveDamageScore(card, state));

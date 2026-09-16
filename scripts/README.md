@@ -20,7 +20,7 @@ skip mode; keep that validation at each entry point.
 | Read-only prepared-output freshness        | `check-prepared-assets.mjs`                                                                   |
 
 Shared: `lib/asset-constants.mjs` (tuning), `lib/asset-manifest-cache.mjs` (freshness),
-`lib/process-helpers.mjs` (generic `formatProcessError`), `lib/audio-optimizer.mjs` (audio discovery/runner).
+`lib/process-helpers.mjs` (generic `formatProcessError`, `runPipelineScript`), `lib/audio-optimizer.mjs` (audio discovery).
 
 ## Agent discovery and evaluation
 

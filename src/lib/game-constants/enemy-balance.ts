@@ -7,7 +7,7 @@ export const ENEMY_BALANCE_BY_TYPE = {
   },
   elite: {
     health: { base: 1.75, linear: 0.06, quadratic: 0.007 },
-    pressure: { base: 0.15, linear: 0.171, quadratic: -0.004 },
+    pressure: { base: 0.15, linear: 0.171, quadratic: 0 },
   },
   boss: {
     health: { base: 1.2, linear: 0.06, quadratic: 0.005 },

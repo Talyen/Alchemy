@@ -16,20 +16,20 @@ export const VAMPIRE_BLOOD_SCENT_DAMAGE = 1;
 export const OGRE_BLOCK_BREAK_MULTIPLIER = 2;
 export const GIANT_SNAKE_EXTRA_BLOCK_STRIP = 1;
 
-export const TRAIT_DAMAGE_WEAKNESS = 2;
-const TRAIT_DAMAGE_RESISTANCE = 0.5;
+export const TRAIT_DAMAGE_WEAKNESS_MULTIPLIER = 2;
+export const TRAIT_DAMAGE_RESISTANCE_MULTIPLIER = 0.5;
 
-const TRAIT_BURN_VULNERABILITY = 1.3;
+export const TRAIT_BURN_VULNERABILITY_MULTIPLIER = 1.3;
 
-const POISON_RESISTANCE_MULTIPLIER = 0.75;
+export const POISON_RESISTANCE_MULTIPLIER = 0.75;
 
-const LIVING_ARMOR_BLEED_MULTIPLIER = 0.75;
+export const LIVING_ARMOR_BLEED_MULTIPLIER = 0.75;
 
-const AMORPHOUS_DAMAGE_MULTIPLIER = 0.9;
+export const AMORPHOUS_DAMAGE_MULTIPLIER = 0.9;
 
-const TRAIT_MINOR_VULNERABILITY = 1.3;
-const TRAIT_MINOR_RESISTANCE = 0.7;
-const TRAIT_LIGHT_RESISTANCE = 0.8;
+export const TRAIT_MINOR_VULNERABILITY_MULTIPLIER = 1.3;
+export const TRAIT_MINOR_RESISTANCE_MULTIPLIER = 0.7;
+export const TRAIT_LIGHT_RESISTANCE_MULTIPLIER = 0.8;
 
 export const ENEMY_TRAIT_IDS = {
   GLACIAL_BODY: "glacial-body",
@@ -83,35 +83,43 @@ export const ENEMY_TRAIT_IDS = {
 } as const;
 
 export const TRAIT_DAMAGE_RULES: Array<{ traitId: string; damageType: string; multiplier: number }> = [
-  { traitId: ENEMY_TRAIT_IDS.BRITTLE_BONES, damageType: "stun", multiplier: TRAIT_DAMAGE_WEAKNESS },
-  { traitId: ENEMY_TRAIT_IDS.HOLY_VULNERABILITY, damageType: "holy", multiplier: TRAIT_DAMAGE_WEAKNESS },
-  { traitId: ENEMY_TRAIT_IDS.BURN_RESISTANCE, damageType: "burn", multiplier: TRAIT_DAMAGE_RESISTANCE },
-  { traitId: ENEMY_TRAIT_IDS.BURN_VULNERABILITY, damageType: "burn", multiplier: TRAIT_BURN_VULNERABILITY },
+  { traitId: ENEMY_TRAIT_IDS.BRITTLE_BONES, damageType: "stun", multiplier: TRAIT_DAMAGE_WEAKNESS_MULTIPLIER },
+  { traitId: ENEMY_TRAIT_IDS.HOLY_VULNERABILITY, damageType: "holy", multiplier: TRAIT_DAMAGE_WEAKNESS_MULTIPLIER },
+  { traitId: ENEMY_TRAIT_IDS.BURN_RESISTANCE, damageType: "burn", multiplier: TRAIT_DAMAGE_RESISTANCE_MULTIPLIER },
+  { traitId: ENEMY_TRAIT_IDS.BURN_VULNERABILITY, damageType: "burn", multiplier: TRAIT_BURN_VULNERABILITY_MULTIPLIER },
   { traitId: ENEMY_TRAIT_IDS.LIVING_ARMOR, damageType: "bleed", multiplier: LIVING_ARMOR_BLEED_MULTIPLIER },
-  { traitId: ENEMY_TRAIT_IDS.THICK_HIDE, damageType: "physical", multiplier: TRAIT_DAMAGE_RESISTANCE },
+  { traitId: ENEMY_TRAIT_IDS.THICK_HIDE, damageType: "physical", multiplier: TRAIT_DAMAGE_RESISTANCE_MULTIPLIER },
   { traitId: ENEMY_TRAIT_IDS.POISON_RESISTANCE, damageType: "poison", multiplier: POISON_RESISTANCE_MULTIPLIER },
-  { traitId: ENEMY_TRAIT_IDS.GLACIAL_BODY, damageType: "freeze", multiplier: TRAIT_DAMAGE_RESISTANCE },
-  { traitId: ENEMY_TRAIT_IDS.GLACIAL_BODY, damageType: "burn", multiplier: TRAIT_BURN_VULNERABILITY },
-  { traitId: ENEMY_TRAIT_IDS.FREEZE_VULNERABILITY, damageType: "freeze", multiplier: TRAIT_DAMAGE_WEAKNESS },
+  { traitId: ENEMY_TRAIT_IDS.GLACIAL_BODY, damageType: "freeze", multiplier: TRAIT_DAMAGE_RESISTANCE_MULTIPLIER },
+  { traitId: ENEMY_TRAIT_IDS.GLACIAL_BODY, damageType: "burn", multiplier: TRAIT_BURN_VULNERABILITY_MULTIPLIER },
+  { traitId: ENEMY_TRAIT_IDS.FREEZE_VULNERABILITY, damageType: "freeze", multiplier: TRAIT_DAMAGE_WEAKNESS_MULTIPLIER },
   { traitId: ENEMY_TRAIT_IDS.AMORPHOUS, damageType: "physical", multiplier: AMORPHOUS_DAMAGE_MULTIPLIER },
   { traitId: ENEMY_TRAIT_IDS.AMORPHOUS, damageType: "poison", multiplier: AMORPHOUS_DAMAGE_MULTIPLIER },
-  { traitId: ENEMY_TRAIT_IDS.WILL_O_WISP, damageType: "physical", multiplier: TRAIT_MINOR_RESISTANCE },
-  { traitId: ENEMY_TRAIT_IDS.WILL_O_WISP, damageType: "freeze", multiplier: TRAIT_MINOR_RESISTANCE },
-  { traitId: ENEMY_TRAIT_IDS.MINOR_FREEZE_VULNERABILITY, damageType: "freeze", multiplier: TRAIT_MINOR_VULNERABILITY },
-  { traitId: ENEMY_TRAIT_IDS.COLD_BLOODED, damageType: "freeze", multiplier: TRAIT_MINOR_VULNERABILITY },
-  { traitId: ENEMY_TRAIT_IDS.MINOR_HOLY_VULNERABILITY, damageType: "holy", multiplier: TRAIT_MINOR_VULNERABILITY },
+  { traitId: ENEMY_TRAIT_IDS.WILL_O_WISP, damageType: "physical", multiplier: TRAIT_MINOR_RESISTANCE_MULTIPLIER },
+  { traitId: ENEMY_TRAIT_IDS.WILL_O_WISP, damageType: "freeze", multiplier: TRAIT_MINOR_RESISTANCE_MULTIPLIER },
+  {
+    traitId: ENEMY_TRAIT_IDS.MINOR_FREEZE_VULNERABILITY,
+    damageType: "freeze",
+    multiplier: TRAIT_MINOR_VULNERABILITY_MULTIPLIER,
+  },
+  { traitId: ENEMY_TRAIT_IDS.COLD_BLOODED, damageType: "freeze", multiplier: TRAIT_MINOR_VULNERABILITY_MULTIPLIER },
+  {
+    traitId: ENEMY_TRAIT_IDS.MINOR_HOLY_VULNERABILITY,
+    damageType: "holy",
+    multiplier: TRAIT_MINOR_VULNERABILITY_MULTIPLIER,
+  },
   { traitId: ENEMY_TRAIT_IDS.TOUGH_HIDE, damageType: "physical", multiplier: AMORPHOUS_DAMAGE_MULTIPLIER },
-  { traitId: ENEMY_TRAIT_IDS.VAMPIRIC_CURSE, damageType: "holy", multiplier: TRAIT_MINOR_VULNERABILITY },
-  { traitId: ENEMY_TRAIT_IDS.VAMPIRIC_CURSE, damageType: "burn", multiplier: TRAIT_MINOR_VULNERABILITY },
-  { traitId: ENEMY_TRAIT_IDS.BLOOD_COUNTESS, damageType: "holy", multiplier: TRAIT_MINOR_VULNERABILITY },
-  { traitId: ENEMY_TRAIT_IDS.PALADIN, damageType: "holy", multiplier: TRAIT_MINOR_RESISTANCE },
-  { traitId: ENEMY_TRAIT_IDS.FROZEN_APPARITION, damageType: "physical", multiplier: TRAIT_MINOR_RESISTANCE },
-  { traitId: ENEMY_TRAIT_IDS.FROZEN_APPARITION, damageType: "burn", multiplier: TRAIT_MINOR_VULNERABILITY },
-  { traitId: ENEMY_TRAIT_IDS.FROZEN_APPARITION, damageType: "holy", multiplier: TRAIT_MINOR_VULNERABILITY },
-  { traitId: ENEMY_TRAIT_IDS.WINTER_HIDE, damageType: "freeze", multiplier: TRAIT_MINOR_RESISTANCE },
-  { traitId: ENEMY_TRAIT_IDS.WINTER_HIDE, damageType: "burn", multiplier: TRAIT_MINOR_VULNERABILITY },
-  { traitId: ENEMY_TRAIT_IDS.EARTHEN_BODY, damageType: "freeze", multiplier: TRAIT_LIGHT_RESISTANCE },
-  { traitId: ENEMY_TRAIT_IDS.EARTHEN_BODY, damageType: "burn", multiplier: TRAIT_LIGHT_RESISTANCE },
+  { traitId: ENEMY_TRAIT_IDS.VAMPIRIC_CURSE, damageType: "holy", multiplier: TRAIT_MINOR_VULNERABILITY_MULTIPLIER },
+  { traitId: ENEMY_TRAIT_IDS.VAMPIRIC_CURSE, damageType: "burn", multiplier: TRAIT_MINOR_VULNERABILITY_MULTIPLIER },
+  { traitId: ENEMY_TRAIT_IDS.BLOOD_COUNTESS, damageType: "holy", multiplier: TRAIT_MINOR_VULNERABILITY_MULTIPLIER },
+  { traitId: ENEMY_TRAIT_IDS.PALADIN, damageType: "holy", multiplier: TRAIT_MINOR_RESISTANCE_MULTIPLIER },
+  { traitId: ENEMY_TRAIT_IDS.FROZEN_APPARITION, damageType: "physical", multiplier: TRAIT_MINOR_RESISTANCE_MULTIPLIER },
+  { traitId: ENEMY_TRAIT_IDS.FROZEN_APPARITION, damageType: "burn", multiplier: TRAIT_MINOR_VULNERABILITY_MULTIPLIER },
+  { traitId: ENEMY_TRAIT_IDS.FROZEN_APPARITION, damageType: "holy", multiplier: TRAIT_MINOR_VULNERABILITY_MULTIPLIER },
+  { traitId: ENEMY_TRAIT_IDS.WINTER_HIDE, damageType: "freeze", multiplier: TRAIT_MINOR_RESISTANCE_MULTIPLIER },
+  { traitId: ENEMY_TRAIT_IDS.WINTER_HIDE, damageType: "burn", multiplier: TRAIT_MINOR_VULNERABILITY_MULTIPLIER },
+  { traitId: ENEMY_TRAIT_IDS.EARTHEN_BODY, damageType: "freeze", multiplier: TRAIT_LIGHT_RESISTANCE_MULTIPLIER },
+  { traitId: ENEMY_TRAIT_IDS.EARTHEN_BODY, damageType: "burn", multiplier: TRAIT_LIGHT_RESISTANCE_MULTIPLIER },
 ];
 
 export const REACTION_ONLY_ENEMY_TRAIT_IDS = [
@@ -141,10 +149,3 @@ export const REACTION_ONLY_ENEMY_TRAIT_IDS = [
   ENEMY_TRAIT_IDS.EARTH_ELEMENTAL,
   ENEMY_TRAIT_IDS.STONE_TITAN,
 ] as const;
-
-export const COMPANION_GOLD_FIND_CHANCE = 0.5;
-export const COMPANION_GOLD_MULTIPLIER = 1.2;
-export const COMPANION_SOUND_CARD_IDS: Record<string, string> = {
-  wolf: "wolf-companion",
-  "lizard-scout": "lizard-scout-companion",
-};

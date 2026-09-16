@@ -38,7 +38,7 @@ export function createMysteryEventNavigation({
           draft.run.activeRun.contentSystemType,
           draft.session.activeLabyrinthRewardModifiers,
         );
-        const ownedBoons = combineTrinketEffectIds(
+        const ownedTrinkets = combineTrinketEffectIds(
           draft.run.activeRun.runBoons,
           draft.gear.equippedTrinkets[draft.run.activeRun.characterId],
         );
@@ -48,9 +48,10 @@ export function createMysteryEventNavigation({
           applyLabyrinthMysteryModifiers(
             pickResolvedMysteryEvent(
               rng,
-              ownedBoons,
+              ownedTrinkets,
               (event) =>
-                isLabyrinthMysteryEligible(event, modifiers) && isMysteryLootEligible(event, lootProgress, ownedBoons),
+                isLabyrinthMysteryEligible(event, modifiers) &&
+                isMysteryLootEligible(event, lootProgress, ownedTrinkets),
             ),
             modifiers,
             draft.run.activeRun.runMaxHealth,

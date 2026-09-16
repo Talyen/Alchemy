@@ -3,7 +3,6 @@ import { hasEncounterBenefit } from "./types";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { UNIQUE_GEAR_COMBAT } from "../game-constants";
 import { getCardKeywords, type BattleCard } from "@/lib/game-data";
-import { isPotionCard } from "@/lib/game-data/cards/card-pools";
 import { type BattleSnapshot, type CombatFlags } from "./types";
 
 type BooleanCombatFlag = {
@@ -12,7 +11,7 @@ type BooleanCombatFlag = {
 
 type CardCostState = Pick<
   BattleSnapshot,
-  "flags" | "talentEffects" | "trinketEffects" | "gearEffects" | "uniqueGear" | "encounterBenefits"
+  "flags" | "talentEffects" | "gearEffects" | "uniqueGear" | "encounterBenefits"
 >;
 
 const FIRST_CARD_FREE_RULES: Array<{
@@ -50,10 +49,6 @@ function applyCostDiscount(cost: number, reduction: number): number {
   return reduction > 0 ? Math.max(0, cost - reduction) : cost;
 }
 
-function checkTrinketFreePotion(state: CardCostState, card: BattleCard): boolean {
-  return !state.flags.firstPotionFreeUsed && state.trinketEffects.mortarPestleFreeFirstPotion && isPotionCard(card);
-}
-
 function computeStandardCost(
   state: CardCostState,
   card: BattleCard,
@@ -80,11 +75,6 @@ function computeStandardCost(
         spentArmedDiscount: false,
       };
     }
-  }
-
-  if (checkTrinketFreePotion(state, card)) {
-    consumedFlags.add("firstPotionFreeUsed");
-    return { effectiveCost: 0, consumedFlags, disarmedFlags, spentArmedDiscount: false };
   }
 
   if (discountedCost === 0) {

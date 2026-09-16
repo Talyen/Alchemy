@@ -28,10 +28,20 @@ function npmCli() {
 }
 
 /** Absolute path to a bundled Node CLI, avoiding npx resolution and shell quirks. */
-export function resolveNodeCli(label, ...segments) {
+function resolveNodeCli(label, ...segments) {
   const bin = path.join(ROOT, "node_modules", ...segments);
   if (!fs.existsSync(bin)) throw new Error(`${label} CLI is missing: ${bin} (run npm ci)`);
   return bin;
+}
+
+/** Absolute path to the bundled electron-builder CLI, avoiding npx resolution and shell quirks. */
+export function resolveBuilderBin() {
+  return resolveNodeCli("electron-builder", "electron-builder", "out", "cli", "cli.js");
+}
+
+/** Absolute path to the bundled Vite CLI, avoiding npx resolution and shell quirks. */
+export function resolveViteBin() {
+  return resolveNodeCli("Vite", "vite", "bin", "vite.js");
 }
 
 /** Resolve our Node tools without a shell interpreting spaces, quotes or pipes. */

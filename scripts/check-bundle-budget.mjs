@@ -56,5 +56,6 @@ export function checkBundleBudget(dist = DEFAULT_ASSETS_DIR) {
 }
 
 if (isMainModule(import.meta.url)) {
-  process.exitCode = checkBundleBudget() ? 0 : 1;
+  const customDirs = process.argv.slice(2).filter((arg) => !arg.startsWith("-"));
+  process.exitCode = checkBundleBudget(customDirs.length > 0 ? customDirs : DEFAULT_ASSETS_DIR) ? 0 : 1;
 }

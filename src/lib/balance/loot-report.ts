@@ -1,4 +1,4 @@
-import { LOOT_DEPTH_CURVES, LOOT_SOURCE_WEIGHTS } from "@/lib/game-constants";
+import { ACTS_PER_RUN, DESTINATIONS_PER_ACT, LOOT_DEPTH_CURVES, LOOT_SOURCE_WEIGHTS } from "@/lib/game-constants";
 import { trinketLibrary, type DifficultyId } from "@/lib/game-data";
 import { generateLootGearChoices, gearDefinitions, getGearLootAvailability, uniqueItemList } from "@/lib/gear";
 import { isLootEligible, resolveLootWeights, rollLootGroup, type LootSource } from "@/lib/loot";
@@ -20,14 +20,29 @@ interface LootReportCell {
   offeredPerScreen: OfferedCounts;
 }
 
+const NEARLY_COMPLETE_REMAINING_UNIQUES = 2;
+const NEARLY_COMPLETE_REMAINING_TRINKETS = 2;
+
+// One representative eight-destination Act. Labyrinth and Wildwood stay
+// explicit comparison scenarios (see the report prose), but Campaign derives
+// its act count and length from routing constants so it cannot drift from
+// ACTS_PER_RUN × DESTINATIONS_PER_ACT.
+const CAMPAIGN_ACT_PATTERN: ReadonlyArray<LootSource | "rest"> = [
+  "normal",
+  "mystery",
+  "normal",
+  "equipment",
+  "elite",
+  "rest",
+  "normal",
+  "boss",
+];
+if (CAMPAIGN_ACT_PATTERN.length !== DESTINATIONS_PER_ACT) {
+  throw new Error("Campaign loot-report act pattern drifted from DESTINATIONS_PER_ACT");
+}
+
 const ROUTES: Record<string, ReadonlyArray<LootSource | "rest">> = {
-  Campaign: [
-    "normal",
-    ...Array.from(
-      { length: 3 },
-      () => ["normal", "mystery", "normal", "equipment", "elite", "rest", "normal", "boss"] as const,
-    ).flat(),
-  ],
+  Campaign: ["normal", ...Array.from({ length: ACTS_PER_RUN }, () => CAMPAIGN_ACT_PATTERN).flat()],
   Labyrinth: [
     "normal",
     "rest",
@@ -64,8 +79,10 @@ function measureCell(
   collection: LootReportCell["collection"],
   samples: number,
 ): LootReportCell {
-  const ownedUniqueIds = new Set(collection === "fresh" ? [] : uniqueItemList.slice(0, -2).map((entry) => entry.id));
-  const trinketCount = collection === "fresh" ? trinketLibrary.length : 2;
+  const ownedUniqueIds = new Set(
+    collection === "fresh" ? [] : uniqueItemList.slice(0, -NEARLY_COMPLETE_REMAINING_UNIQUES).map((entry) => entry.id),
+  );
+  const trinketCount = collection === "fresh" ? trinketLibrary.length : NEARLY_COMPLETE_REMAINING_TRINKETS;
   const available =
     source === "trinket"
       ? isLootEligible("trinket", depth)
@@ -182,7 +199,7 @@ export function renderLootBalanceReport(report: ReturnType<typeof buildLootBalan
         `<tr data-account="${route.account}" data-collection="${route.collection}"><td>${route.name}</td><td>${route.premiumScreens.toFixed(2)}</td><td>${route.offered.astral.toFixed(2)}</td><td>${route.offered.unique.toFixed(2)}</td><td>${route.offered.trinket.toFixed(2)}</td></tr>`,
     )
     .join("");
-  return `<!doctype html><html lang="en"><meta charset="utf-8"><title>Alchemy loot progression</title><style>body{font:16px system-ui;max-width:1100px;margin:40px auto;padding:0 24px;color:#e6e3ee;background:#17151e}h1,h2{color:#e9cc8a}table{border-collapse:collapse;width:100%;margin:20px 0}th,td{text-align:left;padding:8px 12px;border-bottom:1px solid #393442}th{position:sticky;top:0;background:#28232f}select{padding:8px;margin:0 24px 0 8px}p{line-height:1.6}details{margin:24px 0}[hidden]{display:none}</style><h1>Alchemy loot progression</h1><p>Reproducible estimates from ${report.samplesPerCell.toLocaleString()} seeded screens per source, depth, account tier, and collection. Sampling error is at most approximately ±${(98 / Math.sqrt(report.samplesPerCell)).toFixed(1)} percentage points at 95% confidence per screen-rate estimate.</p><p>These numbers count <strong>offers, not acquisitions</strong>. Gear and Trinket rewards offer up to three choices; a player takes one. Shops list three items and may sell several; mystery Gear grants one. No shop refreshes are included. Collection ownership stays fixed along each route; exclusions within each screen use the live generator. “Nearly complete” leaves two Uniques and two permanent Trinkets unowned; Boons remain available. Loot bonuses other than account progress are zero.</p><label>Best account clear<select id="account">${Object.entries(
+  return `<!doctype html><html lang="en"><meta charset="utf-8"><title>Alchemy loot progression</title><style>body{font:16px system-ui;max-width:1100px;margin:40px auto;padding:0 24px;color:#e6e3ee;background:#17151e}h1,h2{color:#e9cc8a}table{border-collapse:collapse;width:100%;margin:20px 0}th,td{text-align:left;padding:8px 12px;border-bottom:1px solid #393442}th{position:sticky;top:0;background:#28232f}select{padding:8px;margin:0 24px 0 8px}p{line-height:1.6}details{margin:24px 0}[hidden]{display:none}</style><h1>Alchemy loot progression</h1><p>Reproducible estimates from ${report.samplesPerCell.toLocaleString()} seeded screens per source, depth, account tier, and collection. Sampling error is at most approximately ±${(98 / Math.sqrt(report.samplesPerCell)).toFixed(1)} percentage points at 95% confidence per screen-rate estimate.</p><p>These numbers count <strong>offers, not acquisitions</strong>. Gear and Trinket rewards offer up to three choices; a player takes one. Shops list three items and may sell several; mystery Gear grants one. No shop refreshes are included. Collection ownership stays fixed along each route; exclusions within each screen use the live generator. “Nearly complete” leaves ${NEARLY_COMPLETE_REMAINING_UNIQUES} Uniques and ${NEARLY_COMPLETE_REMAINING_TRINKETS} permanent Trinkets unowned; Boons remain available. Loot bonuses other than account progress are zero.</p><label>Best account clear<select id="account">${Object.entries(
     accountNames,
   )
     .map(([value, label]) => `<option value="${value}">${label}</option>`)
@@ -197,5 +214,5 @@ export function renderLootBalanceReport(report: ReturnType<typeof buildLootBalan
     )
     .join(
       "",
-    )}<p>Campaign includes its opening battle, followed by three eight-destination Acts. Rest counts toward depth but offers no loot. The other routes are explicit comparison scenarios, not forecasts of the randomly generated map.</p></details><h2>Premium availability and offers per screen</h2><table><thead><tr><th>Source</th><th>Depth</th><th>At least one premium</th><th>Astrals</th><th>Uniques</th><th>Trinkets</th></tr></thead><tbody>${rows}</tbody></table><script>const account=document.getElementById('account'),collection=document.getElementById('collection');function filter(){document.querySelectorAll('tr[data-account]').forEach(row=>{row.hidden=row.dataset.account!==account.value||row.dataset.collection!==collection.value})}account.addEventListener('change',filter);collection.addEventListener('change',filter);filter();</script></html>`;
+    )}<p>Campaign includes its opening battle, followed by ${ACTS_PER_RUN} ${DESTINATIONS_PER_ACT}-destination Acts. Rest counts toward depth but offers no loot. The other routes are explicit comparison scenarios, not forecasts of the randomly generated map.</p></details><h2>Premium availability and offers per screen</h2><table><thead><tr><th>Source</th><th>Depth</th><th>At least one premium</th><th>Astrals</th><th>Uniques</th><th>Trinkets</th></tr></thead><tbody>${rows}</tbody></table><script>const account=document.getElementById('account'),collection=document.getElementById('collection');function filter(){document.querySelectorAll('tr[data-account]').forEach(row=>{row.hidden=row.dataset.account!==account.value||row.dataset.collection!==collection.value})}account.addEventListener('change',filter);collection.addEventListener('change',filter);filter();</script></html>`;
 }

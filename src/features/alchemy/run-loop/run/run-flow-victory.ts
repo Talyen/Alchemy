@@ -3,7 +3,7 @@ import { clearBattleUi, finalizeRunEndSession } from "@/features/alchemy/shared/
 import { finalizeRunXP } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { playGoldGain, playVictory, stopAllSfx } from "@/lib/audio";
-import { BATTLE_END_TRANSITION_DELAY } from "@/lib/game-constants";
+import { BATTLE_END_TRANSITION_DELAY_MS } from "@/lib/game-constants";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import type { RunOutcomeDeps } from "./run-flow";
 import { awardRunEndMaterials } from "./run-materials";
@@ -26,7 +26,7 @@ export function createVictoryHandlers(deps: RunOutcomeDeps) {
     if (readRunSession().hasActiveRun) {
       const nextScreen = ROUTE_SCREENS.REWARDS;
       deps.actions.transition(nextScreen, {
-        delayMs: resolveGameDelay(BATTLE_END_TRANSITION_DELAY),
+        delayMs: resolveGameDelay(BATTLE_END_TRANSITION_DELAY_MS),
         guard: () => readRunSession().hasActiveRun,
       });
     }

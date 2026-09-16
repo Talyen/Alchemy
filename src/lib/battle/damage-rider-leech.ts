@@ -51,7 +51,7 @@ export function applyLeechHealing(
     : applyHealingWithCombatText(state, healing, combatTexts, { skipFightPacing: true });
   const actualHealing = Math.max(0, restored.playerHealth - state.playerHealth);
   if (
-    state.playerHealth < state.playerMaxHealth / 2 &&
+    state.playerHealth < state.playerMaxHealth / HALF_DIVISOR &&
     state.talentEffects.leechBlockBelowHalfPercent > 0 &&
     actualHealing > 0
   ) {

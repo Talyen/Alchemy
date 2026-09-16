@@ -160,6 +160,8 @@ or renaming one through the [save contract](../src/features/alchemy/shared/stora
 
 Cards in `cardLibrary` are automatically included in card shop, combat rewards, mysteries, wish, and draft via `getOfferableCardPool()` — no separate pool registration. Exclude a card with `excludeFromOfferPool: true` (`mixed-potion` is the current example).
 
+Run `npm run content:audit` before handing off: card text must match effects (count + numeric parity in `src/lib/content-validation/card-parity/`, with shared line shapes in `line-classifiers.ts`) and prose must pass the typography rules (no em dashes; description lines stay period-free).
+
 ---
 
 ## Add a new card effect `kind`
@@ -187,7 +189,9 @@ Assign three distinct canonical card IDs in `abilityIds`. Each card must satisfy
 the supported enemy subset in [enemy abilities](./GAME_RULES.md#enemy-abilities-and-traits);
 [content validation](../src/lib/content-validation/validators.ts) checks the
 references and supported effects, and [the enemy schema](../src/lib/content-validation/schemas.ts)
-checks count and uniqueness.
+checks count and uniqueness. Enemy-trait descriptions must mention their
+mechanical term ([enemy-trait parity](../src/lib/content-validation/card-parity/enemy-trait-parity.ts)),
+and titles/descriptions must pass the typography rules. Run `npm run content:audit` before handing off.
 
 | Step                                                                   | File(s)                                                 |
 | ---------------------------------------------------------------------- | ------------------------------------------------------- |
@@ -205,7 +209,7 @@ One definition powers a permanent Armory Trinket and a run-scoped **Boon**. Both
 
 1. Add data/art in `game-data/compendium/trinkets.ts` and `game-data/assets.ts`.
 2. Reuse existing effects when they express the new Trinket. Only for a new effect, extend `TrinketManifest` and `defaultTrinketEffects` in `src/lib/game-data/trinket-manifest.ts` and wire its battle/run consumers; check Boon exclusions. Content validation derives effect field types from these defaults and requires at least one active effect.
-3. Add a rule in `src/lib/content-validation/card-parity/trinket-parity.ts` covering the complete trigger and outcome, numeric captures in effect-key order, and required boolean effects. Keep the rule and regression tests in `tests/lib/content-validation/trinket-validation.test.ts` aligned with wording changes; numeric expectations come from authored effects.
+3. Add a rule in `src/lib/content-validation/card-parity/trinket-parity.ts` covering the complete trigger and outcome, numeric captures in effect-key order, and required boolean effects. Keep the rule and regression tests in `tests/lib/content-validation/trinket-validation.test.ts` aligned with wording changes; numeric expectations come from authored effects. Run `npm run content:audit` before handing off.
 4. Verify Gear-aggregate ownership/equip plus permanent and ephemeral UI/discovery.
 
 ## Add permanent Gear
@@ -213,9 +217,9 @@ One definition powers a permanent Armory Trinket and a run-scoped **Boon**. Both
 Item model, generation, Uniques, and write paths: [ARMORY.md](./ARMORY.md) (data model, write paths, battle integration, persistence).
 
 1. Add base item metadata in `src/lib/gear/base-items.ts` (slots, two-hand rule, affinity keywords, available rarities, thematic homestead `salvageByRarity`). Salvage consumes `salvageValue` on the generated definition.
-2. Register Gear art via the [asset workflow § Add or replace Gear art](./WORKFLOWS-ASSETS.md#add-or-replace-gear-art) (naming/slot violations throw during sync).
+2. Register Gear art via the [asset workflow § Add or replace Gear art](./WORKFLOWS-ASSETS.md#add-or-replace-gear-art) (naming/slot violations throw during sync). A base without art still builds its definitions with fallback art so loot and saves keep working, but the gap fails `content:audit` and the definitions tests — never ship with `missingGearArtDefinitionIds` non-empty.
 3. Register the base item's Unique in `src/lib/gear/unique-catalog.ts`, with one exclusive fixed signature and three fixed standard supporting affixes. Every base item needs one Unique; ordinary variant generation does not create it. Follow [Unique affix and combat contracts](./UNIQUE_ITEMS.md) for signature implementation and interaction documentation.
-4. For new affixes, add definitions in `src/lib/gear/affix-catalog.ts` with stable IDs, `keywordId`, effect keys, value ranges, and eligible slots. Keep `keywordId` aligned with affinity weighting and `effectKey` aligned with `GEAR_EFFECT_KEYS`; wire new effects into the manifest and their consumers. Display/roll helpers live in `affixes.ts`.
+4. For new affixes, add definitions in `src/lib/gear/affix-catalog.ts` with stable IDs, `keywordId`, effect keys, value ranges, and eligible slots. Keep `keywordId` aligned with affinity weighting and `effectKey` aligned with `GEAR_EFFECT_KEYS`; wire new effects into the manifest and their consumers. Display/roll helpers live in `affixes.ts`, pool filtering in `affix-pool.ts`, and description formatting in `formatAffixDescription` (`affix-catalog.ts`), shared by tooltips and the unique catalog. Percent-based bonuses use `ROLL_PERCENT`, never the resist-only `ROLL_RESIST`.
 5. Update Gear save schemas/defaults and migration fixtures when instance or loadout shapes change. Unique instances store no affix rolls — only identity — with reads resolving `getUniqueAffixes()`.
 6. Run `npm run content:audit` (enforces the affix-catalog, pool, and Unique invariants in `validators-gear.ts`) and `npm run balance:loot` when loot weights or depth curves change. New affixes must also satisfy the `uniqueOnly` fixed-roll rule and the description typography rule.
 7. Check affected Gear behavior, including existing Unique catalog coverage and save compatibility for instance or loadout shape changes. HP-sync write paths: [ARMORY.md § Write paths](./ARMORY.md#write-paths). Rewards store the exact `GearInstance` and never re-roll on acceptance; never put definition objects or art URLs into saves.
@@ -238,6 +242,8 @@ Companion combat and descriptions share `getCompanionBondEffects()` in `src/lib/
 | 6. (Optional) Register card sound                                                                                 | `src/lib/audio/sound-registry.ts`                                                                          |
 | 7. Update description lines                                                                                       | `tests/lib/game-data/companions.test.ts` guards companion copy                                             |
 
+Run `npm run content:audit` before handing off (companion record checks, summon-card parity, typography).
+
 ---
 
 ## Add a new talent
@@ -257,7 +263,7 @@ Incoming `receiveHalf*` resist talents use `scaleReceivedPlayerDamage` in `src/l
 
 Talent trees accept any count ≥ 1 in rows of 1/2/3/4, with overflow in its own row.
 
-`talent-effect-invariants` must stay green: every manifest field is written by a talent or homestead key (or an explicit unused allowlist), every talent-written field is read in battle/meta code, and non-boolean `set` fields have a single writer unless they are arrays. Reader discovery uses typed property access, destructuring, and typed key registrations rather than receiver names. It checks wiring presence, not reachability or correct combat behavior; meaningful behavior tests remain necessary. Talent descriptions are free text with no numeric parity lint (typography lint still applies) — keep them in lockstep with effects by hand.
+`talent-effect-invariants` must stay green: every manifest field is written by a talent or homestead key (or an explicit unused allowlist), every talent-written field is read in battle/meta code, and non-boolean `set` fields have a single writer unless they are arrays. Reader discovery uses typed property access, destructuring, and typed key registrations rather than receiver names. It checks wiring presence, not reachability or correct combat behavior; meaningful behavior tests remain necessary. Talent descriptions are free text with no numeric parity lint (typography lint still applies — run `npm run content:audit`) — keep them in lockstep with effects by hand.
 
 Run-end keyword cards intentionally show level + XP bar only; the Talents screens own the unspent-point indicator. Dodge earns 1 XP per successful hero Dodge through `awardBattleDodgeXP`, using the battle counter delta in the same command that persists the resolved enemy turn. Ordinary card keyword XP and run-end multipliers still apply. Random damage grants the Physical keyword; a damage-type pool grants every possible type rather than its placeholder type. Never count combat text or award XP again while resuming a pending transition.
 
@@ -284,6 +290,8 @@ Homestead screens (like all screen directories) are excluded from `vitest` cover
 | 1. Define keyword config (label, description, colors) | `src/lib/game-data/keywords.ts`                                     |
 | 2. Add display config if needed                       | `src/features/alchemy/shared/config/keywords.ts`                    |
 | 3. Add talent XP trigger                              | `src/lib/game-data/talents/progression.ts` (keyword-based XP logic) |
+
+Keyword labels and descriptions must pass the typography rules (no em dashes; descriptions stay period-free — see `src/lib/content-validation/validators-typography.ts`). Run `npm run content:audit` before handing off.
 
 ---
 
@@ -312,7 +320,7 @@ navigation. Keep persisted drafts and resume paths in their existing owners.
   `labyrinth/modifiers.ts` owns node eligibility, incompatible pairs, and exclusion
   of superseded modifiers from new rolls. Preserve existing saved IDs. Write
   descriptions of at most ten words, omit periods, use one theme, and never call
-  a theme a “keyword.”
+  a theme a “keyword” (enforced by `src/lib/content-validation/validators-typography.ts`; run `npm run content:audit`).
 - Pass support-room modifiers through the existing active reward-modifier list
   before destination initialization. Apply offering modifiers before storing the
   shelf or event choices; see [shop changes](#change-a-shop),

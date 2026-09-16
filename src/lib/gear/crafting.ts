@@ -1,11 +1,11 @@
 import {
   GEAR_AFFIX_COUNT,
-  SALVAGE_ADVANCED_MAW_CHANCE,
-  SALVAGE_ADVANCED_SEAL_CHANCE,
-  SALVAGE_ADVANCED_WHETSTONE_CHANCE,
-  SALVAGE_BASIC_SPRIG_CHANCE,
-  SALVAGE_BASIC_VOIDSTONE_CHANCE,
-  SALVAGE_DICE_HIGH_CHANCE,
+  SALVAGE_ADVANCED_MAW_CHANCE_FRACTION,
+  SALVAGE_ADVANCED_SEAL_CHANCE_FRACTION,
+  SALVAGE_ADVANCED_WHETSTONE_CHANCE_FRACTION,
+  SALVAGE_BASIC_SPRIG_CHANCE_FRACTION,
+  SALVAGE_BASIC_VOIDSTONE_CHANCE_FRACTION,
+  SALVAGE_DICE_HIGH_CHANCE_FRACTION,
 } from "@/lib/game-constants";
 import { createSeededRng, hashStringToUint32, pickRandom, rngInt } from "@/lib/rng";
 import { craftingArt } from "@/lib/game-data";
@@ -87,7 +87,7 @@ function addRandomAffix(item: GearInstance, rng: () => number): GearInstance {
   const def = gearDefinitions[item.definitionId];
   if (!def) return item;
   const rarity = gearInstanceRarity(item) ?? "basic";
-  const available = availableAffixesForItem(item);
+  const available = eligibleNewAffixes(item);
   const chosen = pickRandom(available, rng);
   if (!chosen) return item;
   return {
@@ -101,10 +101,6 @@ function eligibleNewAffixes(item: GearInstance) {
   if (!def) return [];
   const presentIds = new Set(item.affixes.map((affix) => affix.id));
   return buildEligibleAffixPool(def).filter((affix) => !presentIds.has(affix.id));
-}
-
-function availableAffixesForItem(item: GearInstance) {
-  return eligibleNewAffixes(item);
 }
 
 function hasAvailableAffix(item: GearInstance): boolean {
@@ -248,14 +244,14 @@ export function rollSalvageYield(rarity: GearRarity, rng: () => number): Record<
     return yieldRecord;
   }
 
-  yieldRecord["discordant-dice"] = rng() < SALVAGE_DICE_HIGH_CHANCE ? 2 : 1;
+  yieldRecord["discordant-dice"] = rng() < SALVAGE_DICE_HIGH_CHANCE_FRACTION ? 2 : 1;
   if (rarity === "basic") {
-    if (rng() < SALVAGE_BASIC_SPRIG_CHANCE) yieldRecord["sprig-of-growth"] = 1;
-    if (rng() < SALVAGE_BASIC_VOIDSTONE_CHANCE) yieldRecord.voidstone = 1;
+    if (rng() < SALVAGE_BASIC_SPRIG_CHANCE_FRACTION) yieldRecord["sprig-of-growth"] = 1;
+    if (rng() < SALVAGE_BASIC_VOIDSTONE_CHANCE_FRACTION) yieldRecord.voidstone = 1;
   } else {
-    if (rng() < SALVAGE_ADVANCED_SEAL_CHANCE) yieldRecord["ascension-seal"] = 1;
-    if (rng() < SALVAGE_ADVANCED_MAW_CHANCE) yieldRecord["severance-maw"] = 1;
-    if (rng() < SALVAGE_ADVANCED_WHETSTONE_CHANCE) yieldRecord["smiths-whetstone"] = 1;
+    if (rng() < SALVAGE_ADVANCED_SEAL_CHANCE_FRACTION) yieldRecord["ascension-seal"] = 1;
+    if (rng() < SALVAGE_ADVANCED_MAW_CHANCE_FRACTION) yieldRecord["severance-maw"] = 1;
+    if (rng() < SALVAGE_ADVANCED_WHETSTONE_CHANCE_FRACTION) yieldRecord["smiths-whetstone"] = 1;
   }
 
   return yieldRecord;

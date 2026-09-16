@@ -6,7 +6,7 @@ import {
   POISON_DECAY_PERCENT,
   STATUS_DECAY_THRESHOLD,
   TRAIT_DAMAGE_RULES,
-  TRAIT_DAMAGE_WEAKNESS,
+  TRAIT_DAMAGE_WEAKNESS_MULTIPLIER,
 } from "../game-constants";
 import { addPlayerStatusWithCombatText, mergeCombatText } from "./combat-text";
 import {
@@ -55,8 +55,10 @@ export function getEnemyDamageMultiplier(
   damageType: string,
 ): number {
   let multiplier = getEnemyTraitDamageMultiplier(state, damageType);
-  if (state.enemyCC.stunSkipTurns > 0 && state.talentEffects.stunDoubleDamage) multiplier *= TRAIT_DAMAGE_WEAKNESS;
-  if (state.enemyCC.freezeSkipTurns > 0 && state.talentEffects.freezeDoubleDamage) multiplier *= TRAIT_DAMAGE_WEAKNESS;
+  if (state.enemyCC.stunSkipTurns > 0 && state.talentEffects.stunDoubleDamage)
+    multiplier *= TRAIT_DAMAGE_WEAKNESS_MULTIPLIER;
+  if (state.enemyCC.freezeSkipTurns > 0 && state.talentEffects.freezeDoubleDamage)
+    multiplier *= TRAIT_DAMAGE_WEAKNESS_MULTIPLIER;
   return multiplier;
 }
 

@@ -27,9 +27,11 @@ function CharacterSelectScreenRoute({
 
 function DifficultySelectScreenRoute({
   commands,
+  onBack,
   onOpenGameMenu,
 }: {
   commands: RunSetupCommands;
+  onBack?: (() => void) | undefined;
   onOpenGameMenu: (rect: DOMRect) => void;
 }) {
   const { characterId, selectedDifficulty } = useDifficultySelectSlice();
@@ -41,7 +43,7 @@ function DifficultySelectScreenRoute({
       selectedDifficulty={selectedDifficulty}
       completedDifficulties={completedDifficulties}
       onSelect={commands.handleDifficultySelect}
-      onBack={commands.handleBackFromDifficultySelect}
+      onBack={onBack ?? commands.handleBackFromDifficultySelect}
       onMenu={onOpenGameMenu}
     />
   );
@@ -70,7 +72,7 @@ export const runSetupScreenRoutes: {
     <CharacterSelectScreenRoute commands={routeCommands.runSetup} onBack={onBack} onOpenGameMenu={onOpenGameMenu} />
   ),
   "draft-deck": ({ routeCommands }) => <DraftDeckScreenRoute commands={routeCommands.runSetup} />,
-  "difficulty-select": ({ routeCommands, onOpenGameMenu }) => (
-    <DifficultySelectScreenRoute commands={routeCommands.runSetup} onOpenGameMenu={onOpenGameMenu} />
+  "difficulty-select": ({ routeCommands, onBack, onOpenGameMenu }) => (
+    <DifficultySelectScreenRoute commands={routeCommands.runSetup} onBack={onBack} onOpenGameMenu={onOpenGameMenu} />
   ),
 };

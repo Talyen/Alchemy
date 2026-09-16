@@ -1,3 +1,4 @@
+import path from "node:path";
 import { resolveRoutes } from "./change-routes.mjs";
 
 /**
@@ -6,11 +7,8 @@ import { resolveRoutes } from "./change-routes.mjs";
  * @returns {string}
  */
 function repoRelativePath(filePath, rootDir = process.cwd()) {
-  const normalized = filePath.replaceAll("\\", "/");
-  const root = rootDir.replaceAll("\\", "/");
-  if (normalized === root) return "";
-  if (normalized.startsWith(`${root}/`)) return normalized.slice(root.length + 1);
-  return normalized.replace(/^\.\//u, "");
+  const relative = path.relative(rootDir, path.resolve(rootDir, filePath)).replaceAll(path.sep, "/");
+  return relative === "." ? "" : relative;
 }
 
 /**

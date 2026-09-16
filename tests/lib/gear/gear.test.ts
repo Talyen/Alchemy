@@ -30,6 +30,7 @@ import {
   GEAR_SLOTS,
 } from "@/lib/gear";
 import { emptyInventory } from "@/lib/homestead/inventory";
+import { makeGearInstance } from "../../helpers/gear-fixtures";
 
 const ring: GearInstance = { instanceId: "ring-1", definitionId: "ruby-ring-basic", affixes: [] };
 
@@ -230,6 +231,34 @@ describe("gear domain", () => {
     const pruned = pruneOrphanGearLoadouts([], loadouts);
     expect(pruned.knight["left-accessory"]).toBeNull();
     expect(pruneOrphanGearLoadouts(inventory, loadouts).knight["left-accessory"]).toBe("ring-1");
+  });
+
+  it("repairs a two-handed main-hand with an occupied off-hand on load", () => {
+    const staff = makeGearInstance("staff-basic", "staff-1");
+    const shield = makeGearInstance("leather-buckler-basic", "shield-1");
+    const loadouts = {
+      ...createEmptyGearLoadouts(),
+      knight: { ...createEmptyGearLoadouts().knight, "main-hand": staff.instanceId, "off-hand": shield.instanceId },
+    };
+    const pruned = pruneOrphanGearLoadouts([staff, shield], loadouts);
+    expect(pruned.knight["main-hand"]).toBe(staff.instanceId);
+    expect(pruned.knight["off-hand"]).toBeNull();
+  });
+
+  it("repairs a ranged main-hand with a non-quiver off-hand on load", () => {
+    const longbow = makeGearInstance("longbow-basic", "longbow-1");
+    const buckler = makeGearInstance("leather-buckler-basic", "buckler-1");
+    const loadouts = {
+      ...createEmptyGearLoadouts(),
+      knight: {
+        ...createEmptyGearLoadouts().knight,
+        "main-hand": longbow.instanceId,
+        "off-hand": buckler.instanceId,
+      },
+    };
+    const pruned = pruneOrphanGearLoadouts([longbow, buckler], loadouts);
+    expect(pruned.knight["main-hand"]).toBe(longbow.instanceId);
+    expect(pruned.knight["off-hand"]).toBeNull();
   });
 
   it("reports gear max-health bonus from equipped loadout", () => {

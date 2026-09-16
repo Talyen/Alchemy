@@ -1,5 +1,5 @@
 import type { GearAffixId } from "./affix-catalog";
-import { gearAffixCatalog, type GearAffixDefinition } from "./affix-catalog";
+import { gearAffixCatalog, formatAffixDescription, type GearAffixDefinition } from "./affix-catalog";
 import type { GearEffectManifest } from "./gear-effect-manifest";
 import { defaultGearEffects } from "./gear-effect-manifest";
 import { gearDefinitions } from "./definitions";
@@ -9,10 +9,6 @@ import { clamp } from "@/lib/math";
 
 function isGearAffixId(value: string): value is GearAffixId {
   return value in gearAffixCatalog;
-}
-
-function formatAffixDescription(def: GearAffixDefinition, roll: GearAffixRoll): string {
-  return def.descriptionTemplate.replaceAll("{value}", String(roll.value));
 }
 
 export function resolveAffixEffects(affixes: readonly GearAffixRoll[]): GearEffectManifest {
@@ -72,7 +68,7 @@ export function getGearAffixTooltipEntries(
         affixId: roll.id,
         value: roll.value,
         name: getGearAffixDisplayName(roll.id),
-        text: formatAffixDescription(def, roll),
+        text: formatAffixDescription(def.descriptionTemplate, roll.value),
       },
     ];
   });

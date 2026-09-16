@@ -7,7 +7,7 @@ import {
   type UISound,
 } from "./sound-registry";
 import { audioState } from "./state";
-import { getSoundUrl } from "./preload";
+import { getSoundUrl } from "./url";
 import { clamp01 } from "../math";
 import { pickRandomUnsafe } from "../rng";
 import {

@@ -7,7 +7,7 @@ import { useBattlePresentationGateRef } from "@/features/alchemy/run-loop/battle
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import type { BattleSnapshot } from "@/lib/battle";
-import { AUTO_END_TURN_DELAY } from "@/lib/game-constants";
+import { AUTO_END_TURN_DELAY_MS } from "@/lib/game-constants";
 import { ANIMATION_DISABLED_DURATION } from "@/lib/animation/animation-prefs";
 import * as animationPrefs from "@/lib/animation/animation-prefs";
 import { makeEmptyHandBattle, makeOpenBattle, makeUnplayableBattle } from "./open-battle-fixture";
@@ -54,14 +54,14 @@ describe("useBattleAutoEndTurn", () => {
           ? useUiStore.getState().setCardInspection("deck")
           : useUiStore.getState().setEnemyInspectionOpen(true),
       );
-      act(() => vi.advanceTimersByTime(AUTO_END_TURN_DELAY * 2));
+      act(() => vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS * 2));
       expect(onEndTurn).not.toHaveBeenCalled();
       act(() =>
         kind === "cards"
           ? useUiStore.getState().setCardInspection(null)
           : useUiStore.getState().setEnemyInspectionOpen(false),
       );
-      act(() => vi.advanceTimersByTime(AUTO_END_TURN_DELAY));
+      act(() => vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS));
       expect(onEndTurn).toHaveBeenCalledOnce();
     },
   );
@@ -77,7 +77,7 @@ describe("useBattleAutoEndTurn", () => {
     );
 
     act(() => {
-      vi.advanceTimersByTime(AUTO_END_TURN_DELAY);
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS);
     });
 
     expect(onEndTurn).toHaveBeenCalledOnce();
@@ -95,7 +95,7 @@ describe("useBattleAutoEndTurn", () => {
 
     act(() => {
       result.current.clearAutoEndTurn();
-      vi.advanceTimersByTime(AUTO_END_TURN_DELAY + 100);
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS + 100);
     });
 
     expect(onEndTurn).not.toHaveBeenCalled();
@@ -115,7 +115,7 @@ describe("useBattleAutoEndTurn", () => {
     act(() => {
       result.current.clearAutoEndTurn();
       result.current.scheduleAutoEndTurn(battleState);
-      vi.advanceTimersByTime(AUTO_END_TURN_DELAY);
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS);
     });
 
     expect(onEndTurn).toHaveBeenCalledOnce();
@@ -133,13 +133,13 @@ describe("useBattleAutoEndTurn", () => {
     );
 
     act(() => {
-      vi.advanceTimersByTime(AUTO_END_TURN_DELAY + 100);
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS + 100);
     });
     expect(onEndTurn).not.toHaveBeenCalled();
 
     act(() => {
       useBattlePresentationStore.setState({ cardTransferInProgress: false });
-      vi.advanceTimersByTime(AUTO_END_TURN_DELAY);
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS);
     });
 
     expect(onEndTurn).toHaveBeenCalledOnce();
@@ -157,13 +157,13 @@ describe("useBattleAutoEndTurn", () => {
     );
 
     act(() => {
-      vi.advanceTimersByTime(AUTO_END_TURN_DELAY + 100);
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS + 100);
     });
     expect(onEndTurn).not.toHaveBeenCalled();
 
     act(() => {
       useBattlePresentationStore.getState().setHiddenHandCardKeys(() => []);
-      vi.advanceTimersByTime(AUTO_END_TURN_DELAY);
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS);
     });
 
     expect(onEndTurn).toHaveBeenCalledOnce();
@@ -183,13 +183,13 @@ describe("useBattleAutoEndTurn", () => {
     );
 
     act(() => {
-      vi.advanceTimersByTime(AUTO_END_TURN_DELAY + 100);
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS + 100);
     });
     expect(onEndTurn).not.toHaveBeenCalled();
 
     rerender({ autoEndTurn: true });
     act(() => {
-      vi.advanceTimersByTime(AUTO_END_TURN_DELAY);
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS);
     });
 
     expect(onEndTurn).toHaveBeenCalledOnce();
@@ -207,7 +207,7 @@ describe("useBattleAutoEndTurn", () => {
     );
 
     act(() => {
-      vi.advanceTimersByTime(AUTO_END_TURN_DELAY);
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS);
     });
 
     expect(onEndTurn).toHaveBeenCalledOnce();
@@ -244,19 +244,19 @@ describe("useBattleAutoEndTurn", () => {
     );
 
     act(() => {
-      vi.advanceTimersByTime(AUTO_END_TURN_DELAY + 100);
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS + 100);
     });
     expect(onEndTurn).not.toHaveBeenCalled();
 
     rerender({ battleState: makeEmptyHandBattle().battleState });
     act(() => {
-      vi.advanceTimersByTime(AUTO_END_TURN_DELAY + 100);
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS + 100);
     });
     expect(onEndTurn).not.toHaveBeenCalled();
 
     act(() => {
       result.current.scheduleAutoEndTurn(makeEmptyHandBattle().battleState);
-      vi.advanceTimersByTime(AUTO_END_TURN_DELAY);
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS);
     });
     expect(onEndTurn).toHaveBeenCalledOnce();
   });
@@ -270,23 +270,23 @@ describe("useBattleAutoEndTurn", () => {
     );
     if (!initiallyOpen) {
       act(() => {
-        vi.advanceTimersByTime(AUTO_END_TURN_DELAY / 2);
+        vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS / 2);
       });
       rerender({ gameMenuOpen: true });
     }
     act(() => {
-      vi.advanceTimersByTime(AUTO_END_TURN_DELAY * 2);
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS * 2);
     });
     expect(onEndTurn).not.toHaveBeenCalled();
 
     rerender({ gameMenuOpen: false });
     act(() => {
-      vi.advanceTimersByTime(AUTO_END_TURN_DELAY / 2);
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS / 2);
     });
     rerender({ gameMenuOpen: true });
     rerender({ gameMenuOpen: false });
     act(() => {
-      vi.advanceTimersByTime(AUTO_END_TURN_DELAY - 1);
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS - 1);
     });
     expect(onEndTurn).not.toHaveBeenCalled();
     act(() => {
@@ -294,7 +294,7 @@ describe("useBattleAutoEndTurn", () => {
     });
     expect(onEndTurn).toHaveBeenCalledOnce();
     act(() => {
-      vi.advanceTimersByTime(AUTO_END_TURN_DELAY * 2);
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS * 2);
     });
     expect(onEndTurn).toHaveBeenCalledOnce();
   });
@@ -316,7 +316,7 @@ describe("useBattleAutoEndTurn", () => {
         { initialProps: { battleState: initialState, hasActiveBattle: true, busy: false } },
       );
       act(() => {
-        vi.advanceTimersByTime(AUTO_END_TURN_DELAY / 2);
+        vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS / 2);
       });
       rerender({
         battleState: change === "playable hand" ? makeOpenBattle().battleState : initialState,
@@ -324,7 +324,7 @@ describe("useBattleAutoEndTurn", () => {
         busy: change === "card play in progress",
       });
       act(() => {
-        vi.advanceTimersByTime(AUTO_END_TURN_DELAY);
+        vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS);
       });
       expect(onEndTurn).not.toHaveBeenCalled();
     },
@@ -338,12 +338,12 @@ describe("useBattleAutoEndTurn", () => {
       { initialProps: { autoEndTurn: true } },
     );
     act(() => {
-      vi.advanceTimersByTime(AUTO_END_TURN_DELAY / 2);
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS / 2);
     });
     if (change === "disable") rerender({ autoEndTurn: false });
     else unmount();
     act(() => {
-      vi.advanceTimersByTime(AUTO_END_TURN_DELAY);
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS);
     });
     expect(onEndTurn).not.toHaveBeenCalled();
   });

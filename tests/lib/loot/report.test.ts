@@ -18,3 +18,27 @@ it("produces reproducible offer estimates with explicit route and collection ass
   expect(html).toContain("Route definitions");
   expect(html).toContain("Unavailable");
 });
+
+it("rejects invalid sample counts", () => {
+  expect(() => buildLootBalanceReport(0)).toThrow("positive integer");
+  expect(() => buildLootBalanceReport(1.5)).toThrow("positive integer");
+});
+
+it("pins the explicit comparison route lengths", () => {
+  const report = buildLootBalanceReport(2);
+  expect(report.routeDefinitions.Labyrinth).toHaveLength(24);
+  expect(report.routeDefinitions.Wildwood).toHaveLength(24);
+});
+
+it("marks gated sources unavailable below their depth thresholds", () => {
+  const report = buildLootBalanceReport(2);
+  const trinketEarly = report.cells.find(
+    (cell) => cell.source === "trinket" && cell.depth === 1 && cell.account === "none",
+  );
+  expect(trinketEarly?.available).toBe(false);
+  expect(trinketEarly?.premiumScreenChance).toBe(0);
+  const masterworkEarly = report.cells.find(
+    (cell) => cell.source === "masterwork" && cell.depth === 1 && cell.account === "none",
+  );
+  expect(masterworkEarly?.available).toBe(false);
+});

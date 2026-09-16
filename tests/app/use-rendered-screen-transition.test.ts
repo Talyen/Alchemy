@@ -3,13 +3,14 @@ import { describe, expect, it, vi } from "vitest";
 import { useRenderedScreenTransition } from "@/app/use-app-navigation";
 import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
 import { resolveGameDelay } from "@/lib/animation/game-timer";
-import { PAGE_EXIT_MS } from "@/lib/game-constants";
+import { MOTION_FADE_MS } from "@/lib/game-constants";
 describe("useRenderedScreenTransition", () => {
   it("exposes a non-menu initial controller screen immediately without an exit catch-up", () => {
     const { result } = renderHook(() => useRenderedScreenTransition(ROUTE_SCREENS.BATTLE));
 
     expect(result.current.renderedScreen).toBe(ROUTE_SCREENS.BATTLE);
     expect(result.current.pagePhase).toBe("enter");
+    expect(result.current.tooltipBlocked).toBe(false);
   });
 
   it("still runs the exit/enter lag for mid-session screen changes", () => {
@@ -25,7 +26,7 @@ describe("useRenderedScreenTransition", () => {
     expect(result.current.renderedScreen).toBe(ROUTE_SCREENS.MENU);
 
     act(() => {
-      vi.advanceTimersByTime(resolveGameDelay(PAGE_EXIT_MS));
+      vi.advanceTimersByTime(resolveGameDelay(MOTION_FADE_MS));
     });
 
     expect(result.current.renderedScreen).toBe(ROUTE_SCREENS.DESTINATION);
@@ -34,7 +35,7 @@ describe("useRenderedScreenTransition", () => {
     vi.useRealTimers();
   });
 
-  it("cancels exit when the controller screen reverts before PAGE_EXIT_MS", () => {
+  it("cancels exit when the controller screen reverts before MOTION_FADE_MS", () => {
     vi.useFakeTimers();
     const { result, rerender } = renderHook(({ screen }: { screen: Screen }) => useRenderedScreenTransition(screen), {
       initialProps: { screen: ROUTE_SCREENS.MENU as Screen },
@@ -49,7 +50,7 @@ describe("useRenderedScreenTransition", () => {
     expect(result.current.renderedScreen).toBe(ROUTE_SCREENS.MENU);
 
     act(() => {
-      vi.advanceTimersByTime(resolveGameDelay(PAGE_EXIT_MS));
+      vi.advanceTimersByTime(resolveGameDelay(MOTION_FADE_MS));
     });
 
     expect(result.current.renderedScreen).toBe(ROUTE_SCREENS.MENU);

@@ -7,7 +7,7 @@ import {
   COMBAT_TEXT_LIFETIME_MS,
   COMBAT_TEXT_MIN_LIFETIME_MS,
   COMBAT_TEXT_MAX_BURSTS_PER_RAIL,
-  SHAKE_DURATION,
+  SHAKE_DURATION_MS,
 } from "@/lib/game-constants";
 import { resolveGameDelay, TimerGroup } from "@/lib/animation/game-timer";
 import type { CardGhost, CardTransfer, CombatImpactCue, CombatTextBurst } from "../../shared/types";
@@ -65,7 +65,7 @@ interface BattlePresentationStore {
   resetPresentation: () => void;
 }
 
-const shakeDuration = SHAKE_DURATION;
+const shakeDuration = SHAKE_DURATION_MS;
 
 const MAX_CARD_GHOSTS = 6;
 

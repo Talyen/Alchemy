@@ -10,18 +10,3 @@ export async function discoverAudioFiles(dir, extensions = DEFAULT_AUDIO_EXTENSI
     .map((entry) => entry.name)
     .sort();
 }
-
-export function runPipelineScript(label, scriptFn) {
-  scriptFn()
-    .then((result) => {
-      if (!result || result.ok !== true) {
-        if (result?.error) console.error(result.error);
-        process.exitCode = 1;
-      }
-    })
-    .catch((error) => {
-      console.error(`${label} failed.`);
-      console.error(error);
-      process.exitCode = 1;
-    });
-}

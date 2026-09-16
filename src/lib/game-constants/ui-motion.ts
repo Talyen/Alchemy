@@ -2,8 +2,11 @@ export const IMAGE_PRELOAD_BATCH_SIZE = 4;
 export const IMAGE_PRELOAD_TIMEOUT_MS = 15_000;
 
 export const MOTION_FADE_MS = 180;
-export const PAGE_EXIT_MS = MOTION_FADE_MS;
 export const TOOLTIP_FADE_MS = 120;
+
+export const NAVIGATION_DELAY_MS = 100;
+export const CAMPFIRE_ANIMATION_MS = 1200;
+export const CAMPFIRE_CONTINUE_DELAY_MS = 800;
 
 export const INITIAL_LOAD_MIN_DURATION_MS = 3000;
 export const FONT_PRELOAD_TIMEOUT_MS = 10_000;
@@ -37,8 +40,8 @@ export const COMBATANT_STATUS_FROST_OPACITY = 0.75;
 export const COMBATANT_STATUS_FLAKE_COUNT = 12;
 
 export const CARD_TRANSFER_CONFIG = {
-  drawDurationSeconds: 0.5,
-  discardDurationSeconds: 0.5,
+  drawDurationSec: 0.5,
+  discardDurationSec: 0.5,
   completionBufferMs: 120,
   requiredStableSlotFrames: 2,
   maxSlotStabilizeFrames: 12,
@@ -64,12 +67,7 @@ export const GHOST_FALLBACK_CENTER_Y_RATIO = 0.3;
 export const BATTLE_PARTICLE_COUNT = 80;
 export const BATTLE_PARTICLE_INTENSITY_NORMAL = 2.0;
 export const BATTLE_PARTICLE_INTENSITY_BOSS = 2.9;
-export const STAGE_HEIGHT = 1080;
 
-export const COLLECTION_PAGE_SIZE = 8;
-export const BESTIARY_PAGE_SIZE = 6;
-export const TRINKET_PAGE_SIZE = 8;
-export const BATTLE_ACTOR_TOP = "34%";
 export const HAND_FAN_VERTICAL_STEP_PX = 10;
 export const HAND_FAN_ROTATION_DEGREES = 4.2;
 export const HAND_REST_DROP_PX = 12;
@@ -83,8 +81,3 @@ export const HAND_CARD_BASE_Z_INDEX = 10;
 export const HAND_CARD_HOVER_Z_INDEX = 40;
 
 export const WISH_OVERLAY_Z_INDEX = 90;
-
-export const BUTTON_HOVER_TRANSITION = "transition-[background-color,box-shadow] duration-150";
-export const BUTTON_HOVER_PRIMARY = "button-primary-bloom";
-export const BUTTON_HOVER_DESTRUCTIVE = "hover:bg-destructive/90";
-export const BUTTON_HOVER_SECONDARY = "hover:bg-muted/80";

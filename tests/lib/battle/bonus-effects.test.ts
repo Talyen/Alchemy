@@ -1,15 +1,11 @@
 import { describe, expect, it } from "vitest";
-import {
-  applyCrowdControlTriggerBonuses,
-  applyIronwoodBuckler,
-  applyLuckyCloverGold,
-} from "@/lib/battle/bonus-effects";
+import { applyCrowdControlTriggerBonuses, applyLuckyCloverGold } from "@/lib/battle/bonus-effects";
 import { defaultTalentEffects } from "@/lib/battle";
 import { FREE_CARD_SENTINEL } from "@/lib/game-constants";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { defaultGearEffects } from "@/lib/gear";
 import { makeTestCardWithId, patchBattleState } from "../../fixtures/battle";
-import { defaultPlayerStatusValues, defaultTrinketManifest } from "../../fixtures/default-battle-state";
+import { defaultTrinketManifest } from "../../fixtures/default-battle-state";
 
 describe("applyCrowdControlTriggerBonuses", () => {
   it("no-ops when all bonuses are empty", () => {
@@ -77,49 +73,6 @@ describe("applyCrowdControlTriggerBonuses", () => {
     const result = applyCrowdControlTriggerBonuses(state, { mana: 2 }, texts);
     expect(result.mana).toBe(3);
     expect(texts).toEqual([{ target: "player", kind: "status", stat: "mana", amount: 2 }]);
-  });
-});
-
-describe("applyIronwoodBuckler", () => {
-  it("converts block to armor when block >= threshold", () => {
-    const state = patchBattleState({
-      playerStatuses: defaultPlayerStatusValues({ block: 10 }),
-      trinketEffects: defaultTrinketManifest({ blockToArmorThreshold: 5, blockToArmorAmount: 3 }),
-    });
-    const texts: CombatTextEvent[] = [];
-    const next = applyIronwoodBuckler(state, texts);
-    expect(next.playerStatuses.armor).toBe(3);
-    expect(next.playerStatuses.block).toBe(10);
-    expect(texts).toEqual([{ target: "player", kind: "status", stat: "armor", amount: 3 }]);
-  });
-
-  it("does nothing when block is below threshold", () => {
-    const state = patchBattleState({
-      playerStatuses: defaultPlayerStatusValues({ block: 3 }),
-      trinketEffects: defaultTrinketManifest({ blockToArmorThreshold: 5, blockToArmorAmount: 3 }),
-    });
-    const texts: CombatTextEvent[] = [];
-    const next = applyIronwoodBuckler(state, texts);
-    expect(next.playerStatuses.armor).toBe(0);
-    expect(texts).toEqual([]);
-  });
-
-  it("does nothing when threshold is 0 (boon not owned)", () => {
-    const state = patchBattleState({ playerStatuses: defaultPlayerStatusValues({ block: 10 }) });
-    const texts: CombatTextEvent[] = [];
-    const next = applyIronwoodBuckler(state, texts);
-    expect(next.playerStatuses.armor).toBe(0);
-    expect(texts).toEqual([]);
-  });
-
-  it("does not mutate original state", () => {
-    const state = patchBattleState({
-      playerStatuses: defaultPlayerStatusValues({ block: 10 }),
-      trinketEffects: defaultTrinketManifest({ blockToArmorThreshold: 5, blockToArmorAmount: 3 }),
-    });
-    const texts: CombatTextEvent[] = [];
-    applyIronwoodBuckler(state, texts);
-    expect(state.playerStatuses.armor).toBe(0);
   });
 });
 

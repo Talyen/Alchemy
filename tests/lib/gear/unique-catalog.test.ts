@@ -14,9 +14,10 @@ import {
   getGearInstanceTitle,
   rollSalvageYield,
   uniqueItemList,
+  type GearAffixId,
   type GearInstance,
 } from "@/lib/gear";
-import { EQUIPMENT_SHOP_UNIQUE_PRICE } from "@/lib/game-constants";
+import { EQUIPMENT_SHOP_UNIQUE_PRICE, UNIQUE_GEAR_COMBAT } from "@/lib/game-constants";
 import { getEquipmentShopPrice } from "@/features/alchemy/run-loop/shop/shop-pricing";
 
 describe("unique item catalog", () => {
@@ -120,5 +121,24 @@ describe("fixed Unique compatibility", () => {
     first[1].value = 999;
     expect(second[1]).toEqual(unique.supportingAffixes[0]);
     expect(unique.supportingAffixes[0].value).not.toBe(999);
+  });
+
+  it("keeps UNIQUE_GEAR_COMBAT magnitudes in sync with signature descriptions", () => {
+    const descriptionOf = (id: GearAffixId) => gearAffixCatalog[id].descriptionTemplate;
+    // Numeric prose: the number in text must equal the combat constant.
+    expect(descriptionOf("wrenflight")).toContain(`${UNIQUE_GEAR_COMBAT.wrenflightDodgeChancePercent}% Dodge`);
+    expect(descriptionOf("winters-credit")).toContain(
+      `Spend ${UNIQUE_GEAR_COMBAT.winterBlockPerMana} Block per missing Mana`,
+    );
+    expect(descriptionOf("the-returning-flight")).toContain(
+      `costs ${UNIQUE_GEAR_COMBAT.returnedCardDiscount} less Mana`,
+    );
+    // Word prose: changing the fraction means rewording the description too.
+    expect(UNIQUE_GEAR_COMBAT.retainedStunMultiplier).toBe(0.25);
+    expect(descriptionOf("the-lingering-bell")).toContain("quarter");
+    expect(UNIQUE_GEAR_COMBAT.echoDamageMultiplier).toBe(0.5);
+    expect(descriptionOf("the-returning-gale")).toContain("half strength");
+    expect(UNIQUE_GEAR_COMBAT.viperDamageMultiplier).toBe(0.5);
+    expect(descriptionOf("vipers-courtesy")).toContain("half its damage");
   });
 });

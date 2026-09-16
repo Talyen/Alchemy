@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { ROUTE_SCREENS } from "@/lib/routing";
-import { COMBAT_TEXT_LIFETIME_MS, SHAKE_DURATION } from "@/lib/game-constants";
+import { COMBAT_TEXT_LIFETIME_MS, SHAKE_DURATION_MS } from "@/lib/game-constants";
 import type { CombatTextEvent } from "@/lib/battle";
 import {
   companionLibrary,
@@ -97,7 +97,7 @@ describe("battle-presentation-store", () => {
     vi.useFakeTimers();
     useBattlePresentationStore.getState().shakeEnemy();
     expect(useBattlePresentationStore.getState().enemyShaking).toBe(true);
-    await vi.advanceTimersByTimeAsync(SHAKE_DURATION);
+    await vi.advanceTimersByTimeAsync(SHAKE_DURATION_MS);
     expect(useBattlePresentationStore.getState().enemyShaking).toBe(false);
     vi.useRealTimers();
   });
@@ -105,11 +105,11 @@ describe("battle-presentation-store", () => {
   it("restarts a shake timer so an older hit cannot clear a newer shake", async () => {
     vi.useFakeTimers();
     useBattlePresentationStore.getState().shakeEnemy();
-    await vi.advanceTimersByTimeAsync(SHAKE_DURATION - 100);
+    await vi.advanceTimersByTimeAsync(SHAKE_DURATION_MS - 100);
     useBattlePresentationStore.getState().shakeEnemy();
     await vi.advanceTimersByTimeAsync(150);
     expect(useBattlePresentationStore.getState().enemyShaking).toBe(true);
-    await vi.advanceTimersByTimeAsync(SHAKE_DURATION - 149);
+    await vi.advanceTimersByTimeAsync(SHAKE_DURATION_MS - 149);
     expect(useBattlePresentationStore.getState().enemyShaking).toBe(false);
     vi.useRealTimers();
   });

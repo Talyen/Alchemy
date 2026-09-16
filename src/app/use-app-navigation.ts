@@ -17,7 +17,7 @@ import { useSequentialFadeSwap } from "@/features/alchemy/shared/ui/use-fade";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 import type { AlchemyRunCommands } from "@/features/alchemy/shell/route-commands";
 import { resolveGameDelay } from "@/lib/animation/game-timer";
-import { MOTION_FADE_MS, PAGE_EXIT_MS } from "@/lib/game-constants";
+import { MOTION_FADE_MS } from "@/lib/game-constants";
 import { cardLibrary, enemyBestiary, trinketLibrary } from "@/lib/game-data";
 import { uniqueItemList } from "@/lib/gear";
 import type { Screen } from "@/lib/routing";
@@ -51,10 +51,10 @@ export function useGameMenuState() {
 export function useRenderedScreenTransition(controllerScreen: Screen) {
   const { shown: renderedScreen, phase: fadePhase } = useSequentialFadeSwap({
     target: controllerScreen,
-    durationMs: PAGE_EXIT_MS,
+    durationMs: MOTION_FADE_MS,
     initialPhase: "enter",
   });
-  const [unblockedScreen, setUnblockedScreen] = useState<Screen | null>(null);
+  const [unblockedScreen, setUnblockedScreen] = useState<Screen>(controllerScreen);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setUnblockedScreen(renderedScreen), resolveGameDelay(MOTION_FADE_MS));
@@ -191,6 +191,9 @@ export function resolveScreenBackHandler({
   }
   if (renderedScreen === "character-select") {
     return () => goToScreen("game-mode-select");
+  }
+  if (renderedScreen === "difficulty-select") {
+    return () => goToScreen("character-select");
   }
   return undefined;
 }

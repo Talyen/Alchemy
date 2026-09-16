@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { defaultSaveData, type SaveLoadState } from "@/features/alchemy/shared/storage";
 import {
   bootstrapAlchemySaveState,
@@ -44,9 +44,14 @@ function deferred<T>() {
 describe("useAlchemyBootstrap", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(console, "error").mockImplementation(() => {});
     vi.mocked(readRunInitialized).mockReturnValue(false);
     vi.mocked(isAlchemyDevBuild).mockReturnValue(false);
     window.history.replaceState({}, "", "/");
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("publishes readiness only after persistence owners and the active run are restored", async () => {

@@ -10,9 +10,9 @@ export const MUSIC_KEYS = {
   BOSS_IRON_BEAR: "boss-iron-bear",
 } as const;
 
-export const FADE_OUT_DURATION = 300;
-export const FADE_IN_DELAY = 600;
-export const FADE_IN_DURATION = 1400;
+export const FADE_OUT_DURATION_MS = 300;
+export const FADE_IN_DELAY_MS = 600;
+export const FADE_IN_DURATION_MS = 1400;
 export const MUSIC_MASTER_GAIN = 0.7;
 
 export const SFX_UI_VOLUME = 0.6;
@@ -25,3 +25,8 @@ export const SFX_COOLDOWN_MS = 80;
 
 export const MUSIC_BOSS_VOLUME_BOOST = 2;
 export const MUSIC_FADE_TICK_MS = 30;
+
+export const COMPANION_SOUND_CARD_IDS: Record<string, string> = {
+  wolf: "wolf-companion",
+  "lizard-scout": "lizard-scout-companion",
+};

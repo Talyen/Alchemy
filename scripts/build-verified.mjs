@@ -4,7 +4,7 @@ import { spawnSync } from "node:child_process";
 
 import { syncGenerated } from "./sync-generated.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
-import { resolveViteBin } from "./lib/vite-bin.mjs";
+import { resolveViteBin } from "./lib/command-invocation.mjs";
 import { validateDesktopBuildConfig } from "./lib/desktop-build-config.mjs";
 
 async function main(argv = process.argv.slice(2)) {

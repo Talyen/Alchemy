@@ -80,13 +80,18 @@ export function useCardInspection({
         battleState: data,
         hiddenHandCardKeys,
       }));
-  const close = useCallback(() => useUiStore.getState().setCardInspection(null), []);
+  const close = useCallback(() => {
+    if (useUiStore.getState().cardInspection !== null) {
+      useUiStore.getState().setCardInspection(null);
+    }
+  }, []);
 
   // Close inspection whenever the run/screen/battle identity changes underneath it.
-  useLayoutEffect(
-    () => () => close(),
-    [close, screen, data.mode, data.characterId, data.runSeed, data.hasActiveBattle],
-  );
+  useLayoutEffect(() => {
+    return () => {
+      close();
+    };
+  }, [close, screen, data.mode, data.characterId, data.runSeed, data.hasActiveBattle]);
   useLayoutEffect(() => {
     if (!canOpen || gameMenuOpen || boonInspectOpen) close();
   }, [canOpen, close, gameMenuOpen, boonInspectOpen]);

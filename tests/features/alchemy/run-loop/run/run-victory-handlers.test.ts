@@ -19,7 +19,7 @@ import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { applyRunDefeatTeardown } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { playGoldGain } from "@/lib/audio";
-import { BATTLE_END_TRANSITION_DELAY } from "@/lib/game-constants";
+import { BATTLE_END_TRANSITION_DELAY_MS } from "@/lib/game-constants";
 import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 vi.mock("@/features/alchemy/shared/stores/run-lifecycle", async (importOriginal) => {
@@ -143,7 +143,7 @@ describe("createRunFlow victory paths", () => {
     expect(applyRunDefeatTeardown).not.toHaveBeenCalled();
     expect(transition).toHaveBeenCalledWith(
       ROUTE_SCREENS.GAME_OVER,
-      expect.objectContaining({ delayMs: BATTLE_END_TRANSITION_DELAY }),
+      expect.objectContaining({ delayMs: BATTLE_END_TRANSITION_DELAY_MS }),
     );
     transition.mock.calls[0][1].prepare();
     expect(applyRunDefeatTeardown).toHaveBeenCalledWith(
@@ -163,14 +163,14 @@ describe("createRunFlow victory paths", () => {
       const { result } = renderHook(() => useScreenTransitions(ROUTE_SCREENS.BATTLE, setScreen));
       const handlers = createRunFlow(makeFlowHandlerDeps({ transition: result.current.transition }));
       act(() => handlers.handleBattleDefeat());
-      act(() => vi.advanceTimersByTime(BATTLE_END_TRANSITION_DELAY - 1));
+      act(() => vi.advanceTimersByTime(BATTLE_END_TRANSITION_DELAY_MS - 1));
       expect(setScreen).not.toHaveBeenCalled();
       expect(applyRunDefeatTeardown).toHaveBeenCalledOnce();
       if (cancelled) result.current.cancelPending();
       act(() => vi.advanceTimersByTime(1));
       expect(setScreen).toHaveBeenCalledTimes(cancelled ? 0 : 1);
       expect(applyRunDefeatTeardown).toHaveBeenCalledOnce();
-      act(() => vi.advanceTimersByTime(BATTLE_END_TRANSITION_DELAY));
+      act(() => vi.advanceTimersByTime(BATTLE_END_TRANSITION_DELAY_MS));
       expect(applyRunDefeatTeardown).toHaveBeenCalledOnce();
     } finally {
       vi.useRealTimers();

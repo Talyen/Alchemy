@@ -44,10 +44,6 @@ export default {
     "src/lib/routing/index.ts": ["exports"],
     // Unified persistence seam: single source in persistence.ts.
     "src/features/alchemy/shared/storage/persistence.ts": ["exports"],
-    // Semantic alias: corruption weight mirrors default for now, intentional duplicate.
-    "src/lib/game-constants/run-rewards.ts": ["duplicates"],
-    // Semantic aliases: page-exit and tooltip fades intentionally mirror the shared fade duration.
-    "src/lib/game-constants/ui-motion.ts": ["duplicates"],
     // Content-navigation read ports: invariant-tested consumption seam for persisted run/talent fields.
     "src/features/alchemy/shared/stores/run-reads.ts": ["exports", "types"],
     // Compat barrel: talentPool is single source, per-keyword arrays are filtered views for legacy imports.

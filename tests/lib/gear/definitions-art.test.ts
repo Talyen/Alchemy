@@ -4,7 +4,13 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { gearArtByDefinitionId } from "@/lib/game-data/gear-art";
 import { gearBaseItems } from "@/lib/gear/base-items";
-import { gearDefinitions, gearDefinitionList, GEAR_DEFINITION_IDS } from "@/lib/gear/definitions";
+import {
+  gearDefinitions,
+  gearDefinitionList,
+  GEAR_DEFINITION_IDS,
+  missingGearArtDefinitionIds,
+} from "@/lib/gear/definitions";
+import { uniqueItemList } from "@/lib/gear/unique-catalog";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const optimizedDir = path.join(rootDir, "src", "assets", "optimized");
@@ -32,6 +38,19 @@ describe("gear definitions and art", () => {
 
   it("keeps definition ids aligned with the catalog", () => {
     expect(GEAR_DEFINITION_IDS.length).toBe(gearDefinitionList.length);
+  });
+
+  it("builds a definition for every unique item", () => {
+    for (const unique of uniqueItemList) {
+      const definition = gearDefinitions[unique.id];
+      expect(definition, `${unique.id} missing definition`).toBeDefined();
+      expect(definition?.rarity).toBe("unique");
+      expect(definition?.baseItemId).toBe(unique.baseItemId);
+    }
+  });
+
+  it("resolves art for every definition without missing-art fallbacks", () => {
+    expect(missingGearArtDefinitionIds).toEqual([]);
   });
 
   it("maps art for every gear variant", () => {

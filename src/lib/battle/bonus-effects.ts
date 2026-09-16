@@ -3,7 +3,7 @@ import { rollTalentChance } from "./status-helpers";
 import { drawFromState, applyDrawResult } from "./draw";
 import { addGoldWithCombatText, gainManaWithCombatText, addPlayerStatusWithCombatText } from "./combat-text";
 import { setFlag, stripEnemyArmor, stripEnemyBlock, type BattleState, type CombatTextEvent } from "./types";
-import { addForgeToPlayer, applyArmorReward } from "./status-player";
+import { addForgeToPlayer } from "./status-player";
 
 export interface CrowdControlTriggerBonuses {
   block?: number;
@@ -47,16 +47,6 @@ export function applyCrowdControlTriggerBonuses(
     nextState = gainManaWithCombatText(nextState, mana, combatTexts);
   }
   return nextState;
-}
-
-export function applyIronwoodBuckler(state: BattleState, combatTexts: CombatTextEvent[]) {
-  if (
-    state.trinketEffects.blockToArmorThreshold > 0 &&
-    state.playerStatuses.block >= state.trinketEffects.blockToArmorThreshold
-  ) {
-    state = applyArmorReward(state, state.trinketEffects.blockToArmorAmount, combatTexts);
-  }
-  return state;
 }
 
 export function applyLuckyCloverGold(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {

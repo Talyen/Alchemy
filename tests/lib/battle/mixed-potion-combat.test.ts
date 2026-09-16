@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { computeEffectiveCost } from "@/lib/battle/card-cost-rules";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { createMixedPotion, tryCreateMixedPotion } from "@/lib/alchemist";
@@ -47,19 +46,6 @@ describe("Mixed potion classification and combat mechanics", () => {
     const nextState = applyCardEffects(state, mixed, texts);
 
     expect(nextState.playerHealth).toBe(26);
-  });
-
-  it("allows Mortar & Pestle free-first-potion discount to apply to mixed potions", () => {
-    const mixed = createMixedPotion(healthPotion, manaPotion);
-    const state = makeState({
-      trinketEffects: defaultTrinketManifest({
-        mortarPestleFreeFirstPotion: true,
-      }),
-    });
-
-    const { effectiveCost, consumedFlags } = computeEffectiveCost(state, mixed);
-    expect(effectiveCost).toBe(0);
-    expect(consumedFlags.has("firstPotionFreeUsed")).toBe(true);
   });
 
   it("deals Poison for a standard Potion use", () => {

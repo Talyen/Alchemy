@@ -1,6 +1,14 @@
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 import type { ContentValidationIssue } from "../types";
 import { flattenEffects, parseLeadingNumber, pushMissingEffect, pushValueMismatch } from "./helpers";
+import {
+  isCompanionActionLine,
+  isDieRollLine,
+  isPerManaBlockLine,
+  isRandomDrawLine,
+  isRemoveEnemyArmorLine,
+  isRemoveHarmfulStatusLine,
+} from "./line-classifiers";
 
 function checkSimpleValueLine(
   line: string,
@@ -27,6 +35,9 @@ function checkRestoreLine(
   issues: ContentValidationIssue[],
   cardId: string,
 ): boolean {
+  // Intentionally prefix-based, unlike the shared isRestoreManaLine/isHealLine
+  // count predicates: mid-sentence "Restore ... Mana" phrasing counts for
+  // count parity but does not consume a numeric cursor here.
   const prefix = line.startsWith("Restore ")
     ? "Restore "
     : resource === "Mana" && line.startsWith("Gain ")
@@ -77,6 +88,9 @@ function checkGoldLine(
   issues: ContentValidationIssue[],
   cardId: string,
 ): boolean {
+  // Intentionally narrower than the shared isGoldLine count predicate (which
+  // matches looser phrasing): only Gain/Steal-prefixed lines consume the
+  // gain-gold cursor here.
   const prefix = line.startsWith("Gain ") ? "Gain " : line.startsWith("Steal ") ? "Steal " : null;
   if (!prefix || !line.includes(" Gold")) return false;
   return checkSimpleValueLine(line, prefix, nextGold, issues, cardId);
@@ -88,7 +102,7 @@ function checkPerManaBlockLine(
   issues: ContentValidationIssue[],
   cardId: string,
 ): boolean {
-  if (!line.startsWith("Gain ") || !line.includes(" Block") || !line.includes("per Mana Crystal")) return false;
+  if (!line.startsWith("Gain ") || !line.includes(" Block") || !isPerManaBlockLine(line)) return false;
   const effect = nextPlayerStatus();
   const perManaCrystal = effect?.status === "block" ? effect.perManaCrystal : undefined;
   if (perManaCrystal !== undefined && parseLeadingNumber(line, "Gain ") !== perManaCrystal)
@@ -102,6 +116,10 @@ function checkStatusLine(
   issues: ContentValidationIssue[],
   cardId: string,
 ): boolean {
+  // Runs after checkPerManaBlockLine, so per-mana lines never reach here. The
+  // count side splits this space further (isBlockLine excludes convert-mana
+  // and each-turn phrasing); this checker covers plain Gain Block/Armor/
+  // Thorns/Forge values only.
   if (
     !line.startsWith("Gain ") ||
     !(line.includes(" Block") || line.includes(" Armor") || line.includes(" Thorns") || line.includes(" Forge"))
@@ -126,7 +144,7 @@ function checkRemoveHarmfulLine(
   issues: ContentValidationIssue[],
   cardId: string,
 ): boolean {
-  if (!(line.startsWith("Remove ") || line.startsWith("Cleanse ")) || !line.includes("harmful status")) return false;
+  if (!isRemoveHarmfulStatusLine(line)) return false;
   const effect = nextRemoveHarmful();
   const prefix = line.startsWith("Remove ") ? "Remove " : "Cleanse ";
   if (!effect) {
@@ -162,8 +180,7 @@ export function validateCardNumericParity(card: BattleCard): ContentValidationIs
   const issues: ContentValidationIssue[] = [];
   const { effects, descriptionLines } = card;
 
-  // Single flatten shared by all per-kind cursors below (helpers memoize
-  // across cards as well, so count parity and numeric parity share the walk).
+  // Single flatten shared by all per-kind cursors below.
   const flat = flattenEffects(effects);
   const getNext = <T extends BattleCardEffect["kind"]>(kind: T) => {
     const filtered = flat.filter((e) => e.kind === kind) as Array<Extract<BattleCardEffect, { kind: T }>>;
@@ -186,15 +203,15 @@ export function validateCardNumericParity(card: BattleCard): ContentValidationIs
   const nextCompanionAction = getNext("companion-action");
 
   for (const line of descriptionLines) {
-    if (line === "Roll a six-sided die") {
+    if (isDieRollLine(line)) {
       const effect = nextRandomDraw();
       if (!effect) pushMissingEffect(issues, card.id, line);
       else if (effect.minAmount !== 1 || effect.maxAmount !== 6)
         pushValueMismatch(issues, card.id, line, effect.maxAmount);
       continue;
     }
-    if (line === "Draw that many cards") continue;
-    if (line.startsWith("Your Companion acts ")) {
+    if (isRandomDrawLine(line)) continue;
+    if (isCompanionActionLine(line)) {
       const effect = nextCompanionAction();
       const amount = line.endsWith("twice")
         ? 2
@@ -222,7 +239,7 @@ export function validateCardNumericParity(card: BattleCard): ContentValidationIs
     if (checkLoseHealthLine(line, nextLoseHealth, issues, card.id)) continue;
     if (checkGainMaxManaLine(line, nextGainMaxMana, issues, card.id)) continue;
     if (checkSimpleValueLine(line, "Strip ", nextRemoveArmor, issues, card.id)) continue;
-    if (line.includes("enemy Armor") && checkSimpleValueLine(line, "Remove ", nextRemoveArmor, issues, card.id))
+    if (isRemoveEnemyArmorLine(line) && checkSimpleValueLine(line, "Remove ", nextRemoveArmor, issues, card.id))
       continue;
     checkRemoveHarmfulLine(line, nextRemoveHarmful, issues, card.id);
   }

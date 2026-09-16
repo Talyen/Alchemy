@@ -13,10 +13,10 @@ export async function checkPreparedAssets() {
   try {
     await syncGenerated({ check: true });
   } catch (error) {
-    failures.push(error);
+    failures.push(error instanceof Error ? error : new Error(String(error), { cause: error }));
   }
   if (failures.length > 0) {
-    throw new AggregateError(failures, failures.map(String).join("\n"));
+    throw new AggregateError(failures, failures.map((error) => error.message || String(error)).join("\n"));
   }
   console.log("Prepared asset outputs are current.");
 }

@@ -51,6 +51,7 @@ export interface BossRewardInput {
   trinketIds: string[];
   goldMultiplier?: number;
   rng: () => number;
+  excludedBoonIds?: string[];
   gearAstralChanceBonus?: number;
   ownedTrinketIds?: string[];
   ownedUniqueIds?: ReadonlySet<string>;
@@ -172,6 +173,11 @@ function createLootRewardState({
   ownedUniqueIds?: ReadonlySet<string>;
 }): RewardState {
   const cards = getOfferableCardPool();
+  // "boon" and "trinket" rewards draw from the same trinketLibrary with
+  // different exclusion sets: boons exclude currently-active effects (so a
+  // reward never duplicates what is already equipped), trinkets exclude the
+  // permanent collection. The split is load-bearing for persistence, which
+  // serializes each reward type on its own branch.
   const boons = trinketLibrary.filter((entry) => !excludedBoonIds.includes(entry.id));
   const trinkets = trinketLibrary.filter((entry) => !ownedTrinketIds.includes(entry.id));
   const weights = resolveLootWeights({

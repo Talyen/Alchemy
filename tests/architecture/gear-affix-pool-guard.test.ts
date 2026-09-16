@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { GEAR_AFFIX_COUNT } from "@/lib/game-constants";
 import { gearDefinitions } from "@/lib/gear/definitions";
-import { buildEligibleAffixPool } from "@/lib/gear/generation";
+import { buildEligibleAffixPool } from "@/lib/gear/affix-pool";
 
 describe("gear affix pool guard", () => {
   it("every gear definition has an eligible pool at least as large as its minimum affix count", () => {

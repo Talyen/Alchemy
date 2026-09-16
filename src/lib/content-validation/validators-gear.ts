@@ -14,9 +14,9 @@ import {
 import { GEAR_AFFIX_COUNT } from "@/lib/game-constants";
 import { GearDefinitionContentSchema, GearAffixContentSchema } from "./schemas";
 import { addDuplicateIssues, collectSchemaIssues, validateArt } from "./utils";
-import type { createCollector } from "./utils";
+import type { Collector } from "./utils";
 
-function validateGearAffixIds(collector: ReturnType<typeof createCollector>): void {
+function validateGearAffixIds(collector: Collector): void {
   const affixIds = Object.keys(gearAffixCatalog);
   if (GEAR_AFFIX_IDS.length !== new Set(GEAR_AFFIX_IDS).size) {
     collector.error("gear", "GEAR_AFFIX_IDS", "Gear affix id list contains duplicates");
@@ -33,7 +33,7 @@ function validateGearAffixIds(collector: ReturnType<typeof createCollector>): vo
   }
 }
 
-function validateBaseItems(collector: ReturnType<typeof createCollector>): void {
+function validateBaseItems(collector: Collector): void {
   for (const baseItemId of Object.keys(gearBaseItems)) {
     for (const rarity of ["basic", "astral"] as const) {
       const definitionId = gearDefinitionId(baseItemId, rarity);
@@ -43,7 +43,7 @@ function validateBaseItems(collector: ReturnType<typeof createCollector>): void 
   }
 }
 
-function validateGearDefinitions(collector: ReturnType<typeof createCollector>): void {
+function validateGearDefinitions(collector: Collector): void {
   for (const definition of gearDefinitionList) {
     collectSchemaIssues(GearDefinitionContentSchema, definition, "gear", definition.id, collector.error);
     validateArt("gear", definition.id, definition.art, collector.error, collector.warning);
@@ -62,7 +62,7 @@ function validateGearDefinitions(collector: ReturnType<typeof createCollector>):
   }
 }
 
-function validateGearAffixes(collector: ReturnType<typeof createCollector>): void {
+function validateGearAffixes(collector: Collector): void {
   const usedEffectKeys = new Set<string>();
   for (const affix of Object.values(gearAffixCatalog)) {
     collectSchemaIssues(GearAffixContentSchema, affix, "gear", affix.id, collector.error);
@@ -77,7 +77,7 @@ function validateGearAffixes(collector: ReturnType<typeof createCollector>): voi
   }
 }
 
-function validateUniqueItems(collector: ReturnType<typeof createCollector>): void {
+function validateUniqueItems(collector: Collector): void {
   const baseItemIds = new Set(Object.keys(gearBaseItems));
   const seenBases = new Set<string>();
   const seenSignatures = new Set<string>();
@@ -121,7 +121,7 @@ function validateUniqueItems(collector: ReturnType<typeof createCollector>): voi
   }
 }
 
-export function validateGear(collector: ReturnType<typeof createCollector>): void {
+export function validateGear(collector: Collector): void {
   const baseItems = Object.values(gearBaseItems);
   addDuplicateIssues(
     baseItems.map((item) => item.id),

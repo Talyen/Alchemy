@@ -1,7 +1,7 @@
 import { expect, test } from "../../fixtures/e2e";
 import { MenuPage } from "../../pages/menu-page";
 import { critical } from "../../playwright-tags";
-import { FADE_OUT_DURATION, MUSIC_FADE_TICK_MS, NAVIGATION_DELAY_MS, PAGE_EXIT_MS } from "@/lib/game-constants";
+import { FADE_OUT_DURATION_MS, MUSIC_FADE_TICK_MS, NAVIGATION_DELAY_MS, MOTION_FADE_MS } from "@/lib/game-constants";
 
 test.describe("SFX playback", critical, () => {
   test("menu interaction starts at least one SFX", async ({ page }) => {
@@ -135,7 +135,7 @@ test("Bestiary boss music follows portrait activation and browsing", critical, a
   await expect(outgoingScreen).toHaveAttribute("inert", "");
   await page.keyboard.press("Enter");
   await boss.dispatchEvent("click");
-  await page.clock.runFor(PAGE_EXIT_MS + FADE_OUT_DURATION + MUSIC_FADE_TICK_MS);
+  await page.clock.runFor(MOTION_FADE_MS + FADE_OUT_DURATION_MS + MUSIC_FADE_TICK_MS);
   await page.clock.resume();
   await menu.expectMainMenu();
   await expect.poll(activeMusic).toEqual([expect.stringMatching(/Menu \d\.mp3/)]);

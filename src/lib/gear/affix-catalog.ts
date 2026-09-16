@@ -24,6 +24,9 @@ function uniqueRoll(value: number): AffixRollRange {
 
 const ROLL_SMALL = rollRange(1, 2, 3, 4);
 const ROLL_RESIST = rollRange(10, 15, 15, 20);
+// Percent-based bonuses share the resist numbers today but tune independently:
+// retuning resists must never silently retune the economy.
+const ROLL_PERCENT = rollRange(10, 15, 15, 20);
 const ROLL_MEDIUM = rollRange(3, 4, 5, 6);
 
 export interface GearAffixDefinition {
@@ -39,6 +42,12 @@ export interface GearAffixDefinition {
 }
 
 type AffixRowInput = Omit<GearAffixDefinition, "id"> & { id: string };
+
+// Single description formatter for every consumer (tooltips and the unique
+// catalog). Templates may contain more than one {value} placeholder.
+export function formatAffixDescription(template: string, value: number): string {
+  return template.replaceAll("{value}", String(value));
+}
 
 function uniqueAffix<const T extends string>(
   id: T,
@@ -469,7 +478,7 @@ const affixRows = [
     keywordId: "burn",
     descriptionTemplate: "Increases Burn damage by {value}% per Mana Crystal",
     effectKey: "burnDamagePerManaPercent",
-    roll: ROLL_RESIST,
+    roll: ROLL_PERCENT,
     secondaryKeywordId: "mana",
   },
   {
@@ -547,7 +556,7 @@ const affixRows = [
     keywordId: "consume",
     descriptionTemplate: "Increases Health restored by Consumed cards by {value}%",
     effectKey: "consumeHealBonusPercent",
-    roll: ROLL_RESIST,
+    roll: ROLL_PERCENT,
     secondaryKeywordId: "health",
   },
   {
@@ -615,7 +624,7 @@ const affixRows = [
     keywordId: "holy",
     descriptionTemplate: "Increases Holy damage by {value}% of your Block",
     effectKey: "holyDamageFromBlockPercent",
-    roll: ROLL_RESIST,
+    roll: ROLL_PERCENT,
     secondaryKeywordId: "block",
   },
   {
@@ -625,7 +634,7 @@ const affixRows = [
     keywordId: "leech",
     descriptionTemplate: "Leech restores {value}% more Health",
     effectKey: "leechHealBonusPercent",
-    roll: ROLL_RESIST,
+    roll: ROLL_PERCENT,
   },
   {
     id: "frozen-vulnerable",
@@ -634,7 +643,7 @@ const affixRows = [
     keywordId: "freeze",
     descriptionTemplate: "Frozen enemies take {value}% more damage",
     effectKey: "frozenEnemyDamageBonusPercent",
-    roll: ROLL_RESIST,
+    roll: ROLL_PERCENT,
   },
   uniqueAffix(
     "companion-forge-power",
@@ -688,7 +697,7 @@ const affixRows = [
     keywordId: "gold",
     descriptionTemplate: "Increases Gold gained by {value}%",
     effectKey: "goldGainPercent",
-    roll: ROLL_RESIST,
+    roll: ROLL_PERCENT,
   },
   {
     id: "max-health",
@@ -746,7 +755,7 @@ const affixRows = [
     keywordId: "leech",
     descriptionTemplate: "Leech has a {value}% chance to restore 1 Mana",
     effectKey: "manaOnLeechChance",
-    roll: ROLL_RESIST,
+    roll: ROLL_PERCENT,
     secondaryKeywordId: "mana",
   },
   {
@@ -756,7 +765,7 @@ const affixRows = [
     keywordId: "poison",
     descriptionTemplate: "Poison has a {value}% chance to remove 1 Armor",
     effectKey: "poisonArmorShredChance",
-    roll: ROLL_RESIST,
+    roll: ROLL_PERCENT,
     secondaryKeywordId: "armor",
   },
   {
@@ -766,7 +775,7 @@ const affixRows = [
     keywordId: "nature",
     descriptionTemplate: "Nature damage has a {value}% chance to restore 1 Mana",
     effectKey: "manaOnNatureDamageChance",
-    roll: ROLL_RESIST,
+    roll: ROLL_PERCENT,
     secondaryKeywordId: "mana",
   },
   {
@@ -776,7 +785,7 @@ const affixRows = [
     keywordId: "bleed",
     descriptionTemplate: "Burn deals {value}% more damage to Bleeding enemies",
     effectKey: "burnDamageBonusToBleedingPercent",
-    roll: ROLL_RESIST,
+    roll: ROLL_PERCENT,
     secondaryKeywordId: "burn",
   },
   {
@@ -962,5 +971,11 @@ export const GEAR_AFFIX_IDS = affixRows.map((row) => row.id) as [GearAffixId, ..
 export const gearAffixCatalog: Record<GearAffixId, GearAffixDefinition> = Object.fromEntries(
   affixRows.map((row) => [row.id, { ...row }]),
 ) as Record<GearAffixId, GearAffixDefinition>;
+
+// Object.fromEntries silently overwrites duplicate ids, so fail fast here
+// instead of shipping a catalog that lost a row.
+if (affixRows.length !== new Set(affixRows.map((row) => row.id)).size) {
+  throw new Error("gearAffixCatalog has duplicate affix ids");
+}
 
 export const gearAffixList = Object.values(gearAffixCatalog);

@@ -2,7 +2,7 @@
 // Slow ESLint smoke: lint representative files and verify their effective stacked rules.
 // Kept in the static-analysis tier because cold ESLint startup does not belong in Vitest.
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { ESLint } from "eslint";
 import { isMainModule } from "./lib/is-main-module.mjs";
@@ -246,6 +246,21 @@ export async function main() {
     Number(loadingWordCssMatch[1]),
     "LOADING_WORD_FADE_MS must equal loadingWordFade duration",
   );
+  assert.ok(!uiMotion.includes("PAGE_EXIT_MS"), "PAGE_EXIT_MS alias must stay removed; use MOTION_FADE_MS directly");
+
+  const constantsDir = path.join(process.cwd(), "src/lib/game-constants");
+  const seenExports = new Map();
+  for (const file of readdirSync(constantsDir).filter((name) => name.endsWith(".ts") && name !== "index.ts")) {
+    const source = readFileSync(path.join(constantsDir, file), "utf8");
+    for (const match of source.matchAll(/export\s+(?:const|function|class|enum|interface|type)\s+([A-Za-z0-9_]+)/g)) {
+      const name = match[1];
+      assert.ok(
+        !seenExports.has(name),
+        `game-constants export collision: ${name} defined in both ${seenExports.get(name)} and ${file}`,
+      );
+      seenExports.set(name, file);
+    }
+  }
 
   const componentsUiConfig = await getConfig("src/components/ui/button.tsx");
   const componentsUiImports = restrictedImports(componentsUiConfig);

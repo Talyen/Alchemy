@@ -4,14 +4,14 @@ import { emptyInventory, materialAmount } from "./inventory";
 import { materialCost } from "./data-builders";
 import { HOMESTEAD_LOOT_MULTIPLIERS } from "../game-constants";
 
-interface MaterialLootEntry {
+export interface MaterialLootEntry {
   material: MaterialId;
   min: number;
   max: number;
   weight: number;
 }
 
-interface EnemyLootTable {
+export interface EnemyLootTable {
   guaranteed: MaterialInventory;
   bonuses: MaterialLootEntry[];
 }
@@ -20,7 +20,7 @@ function lootEntry(material: MaterialId, min: number, max: number, weight = 1): 
   return { material, min, max, weight };
 }
 
-const enemyLootTables: Record<string, EnemyLootTable> = {
+export const enemyLootTables: Record<string, EnemyLootTable> = {
   skeleton: {
     guaranteed: emptyInventory(),
     bonuses: [lootEntry("herbs", 0, 1, 0.3)],
@@ -191,7 +191,9 @@ function applyTypeMultiplier(loot: MaterialInventory, enemyType: string): Materi
   if (multiplier === HOMESTEAD_LOOT_MULTIPLIERS.normal) return loot;
   const result = { ...loot };
   for (const mat of MATERIAL_IDS) {
-    result[mat] = Math.floor(materialAmount(result, mat) * multiplier);
+    // Battle-standard rounding: flooring a 1.3x elite multiplier would leave
+    // every singleton drop identical to normal.
+    result[mat] = Math.round(materialAmount(result, mat) * multiplier);
   }
   return result;
 }
@@ -213,7 +215,7 @@ export function applyMaterialFindBonus(
   effects: Pick<HomesteadEffectManifest, "herbFindBonus">,
 ): MaterialInventory {
   if (effects.herbFindBonus <= 0 || materials.herbs <= 0) return materials;
-  return { ...materials, herbs: Math.floor(materials.herbs * (1 + effects.herbFindBonus)) };
+  return { ...materials, herbs: Math.round(materials.herbs * (1 + effects.herbFindBonus)) };
 }
 
 type EndOfRunHomesteadEffects = Pick<

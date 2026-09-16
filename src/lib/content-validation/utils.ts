@@ -27,6 +27,8 @@ export function createCollector() {
   };
 }
 
+export type Collector = ReturnType<typeof createCollector>;
+
 function formatZodIssue(issue: { path: ReadonlyArray<string | number | symbol>; message: string }): string {
   const path = issue.path.length > 0 ? `${issue.path.join(".")}: ` : "";
   return `${path}${issue.message}`;

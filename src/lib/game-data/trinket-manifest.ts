@@ -6,8 +6,6 @@ export interface TrinketManifest {
   forgeStunThreshold: number;
   forgeStunAmount: number;
   frozenHeartDamage: number;
-  blockToArmorThreshold: number;
-  blockToArmorAmount: number;
   ironwoodBucklerThornsOnBlock: number;
   runicQuillDrawOnConsume: number;
   sinEaterHealOnHarmfulStatusRemove: number;
@@ -16,13 +14,11 @@ export interface TrinketManifest {
   cutpurseGoldOnBleed: number;
   wishingWellGoldOnWish: number;
   plagueDoctorPoisonCleanse: number;
-  mortarPestleFreeFirstPotion: boolean;
   mortarPestlePoisonOnPotionUse: number;
   sunderingArmorPiercing: number;
   resonantChimeCardsRequired: number;
   resonantChimeMana: number;
   smugglersMapGoldBonus: number;
-  grovesFavorStartHeal: number;
   grovesFavorThornsOnHealthRestore: number;
   merchantsFavorDiscount: number;
   companionDamageBonus: number;
@@ -39,8 +35,6 @@ export const defaultTrinketEffects: TrinketManifest = {
   forgeStunThreshold: 0,
   forgeStunAmount: 0,
   frozenHeartDamage: 0,
-  blockToArmorThreshold: 0,
-  blockToArmorAmount: 0,
   ironwoodBucklerThornsOnBlock: 0,
   runicQuillDrawOnConsume: 0,
   sinEaterHealOnHarmfulStatusRemove: 0,
@@ -49,13 +43,11 @@ export const defaultTrinketEffects: TrinketManifest = {
   cutpurseGoldOnBleed: 0,
   wishingWellGoldOnWish: 0,
   plagueDoctorPoisonCleanse: 0,
-  mortarPestleFreeFirstPotion: false,
   mortarPestlePoisonOnPotionUse: 0,
   sunderingArmorPiercing: 0,
   resonantChimeCardsRequired: 0,
   resonantChimeMana: 0,
   smugglersMapGoldBonus: 0,
-  grovesFavorStartHeal: 0,
   grovesFavorThornsOnHealthRestore: 0,
   merchantsFavorDiscount: 0,
   companionDamageBonus: 0,

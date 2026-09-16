@@ -8,7 +8,7 @@ import {
 import { finalizeRunXP, setHasActiveBattle } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
-import { BATTLE_END_TRANSITION_DELAY } from "@/lib/game-constants";
+import { BATTLE_END_TRANSITION_DELAY_MS } from "@/lib/game-constants";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import type { RunOutcomeDeps } from "./run-flow";
 import { awardRunEndMaterials } from "./run-materials";
@@ -38,7 +38,7 @@ export function createDefeatHandlers(deps: RunOutcomeDeps) {
 
   function handleBattleDefeat() {
     deps.actions.transition(ROUTE_SCREENS.GAME_OVER, {
-      delayMs: resolveGameDelay(BATTLE_END_TRANSITION_DELAY),
+      delayMs: resolveGameDelay(BATTLE_END_TRANSITION_DELAY_MS),
       guard: () => readRunSession().hasActiveRun,
       prepare: finalizeDefeat,
     });

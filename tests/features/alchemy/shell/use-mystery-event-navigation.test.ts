@@ -34,9 +34,9 @@ describe("createMysteryEventNavigation", () => {
 
     act(() => result.current.handleMysteryChoice(choice));
 
-    expect(readRunProfile().materialInventory.herbs - before).toBe(4);
+    expect(readRunProfile().materialInventory.herbs - before).toBe(5);
     expect(readActivityData(readRunSession().activity, "mystery").mysteryChosenChoice?.effects).toEqual([
-      { kind: "gainMaterial", material: "herbs", amount: 4 },
+      { kind: "gainMaterial", material: "herbs", amount: 5 },
     ]);
     expect(choice.effects[0]?.amount).toBe(3);
   });

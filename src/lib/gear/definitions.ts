@@ -12,6 +12,25 @@ export function gearDefinitionId(baseItemId: string, rarity: GearRarity): string
   return `${baseItemId}-${rarity}`;
 }
 
+// Base ids whose art is missing from the generated barrel. Their definitions
+// are still built with fallback art so a content gap never silently shrinks
+// loot or saves at runtime; content-audit and the definitions tests fail
+// loudly instead (see validateGearDefinitions).
+export const missingGearArtDefinitionIds: string[] = [];
+
+function resolveGearArt(id: string, fallbackId?: string): string | undefined {
+  return (
+    gearArtByDefinitionId[id] ??
+    (fallbackId ? gearArtByDefinitionId[fallbackId] : undefined) ??
+    Object.values(gearArtByDefinitionId)[0]
+  );
+}
+
+function trackMissingArt(id: string, context: string): void {
+  console.warn(`Missing gear art for ${id} (${context}) - using fallback art`);
+  missingGearArtDefinitionIds.push(id);
+}
+
 function buildVariantDefinitions(): Record<string, GearDefinition> {
   const variants: Record<string, GearDefinition> = {};
 
@@ -19,11 +38,13 @@ function buildVariantDefinitions(): Record<string, GearDefinition> {
     const baseItem = gearBaseItems[baseItemId];
     for (const rarity of ["basic", "astral"] as const) {
       const id = gearDefinitionId(baseItemId, rarity);
-      const art = gearArtByDefinitionId[id];
+      const art = resolveGearArt(id, gearDefinitionId(baseItemId, rarity === "basic" ? "astral" : "basic"));
       if (!art) {
-        console.warn(`Missing gear art for ${id} - using placeholder`);
+        console.warn(`Missing gear art for ${id} - skipping definition`);
+        missingGearArtDefinitionIds.push(id);
         continue;
       }
+      if (art !== gearArtByDefinitionId[id]) trackMissingArt(id, `base ${baseItemId}`);
       variants[id] = {
         id,
         baseItemId,
@@ -41,12 +62,17 @@ function buildVariantDefinitions(): Record<string, GearDefinition> {
   for (const unique of uniqueItemList) {
     const baseItem = gearBaseItems[unique.baseItemId];
     if (!baseItem) continue;
-    const art =
-      gearArtByDefinitionId[gearDefinitionId(unique.baseItemId, "astral")] ??
-      gearArtByDefinitionId[gearDefinitionId(unique.baseItemId, "basic")];
+    const art = resolveGearArt(
+      gearDefinitionId(unique.baseItemId, "astral"),
+      gearDefinitionId(unique.baseItemId, "basic"),
+    );
     if (!art) {
       console.warn(`Missing gear art for unique ${unique.id} (base ${unique.baseItemId}) - skipping`);
+      missingGearArtDefinitionIds.push(unique.id);
       continue;
+    }
+    if (art !== gearArtByDefinitionId[gearDefinitionId(unique.baseItemId, "astral")]) {
+      trackMissingArt(unique.id, `base ${unique.baseItemId}`);
     }
     variants[unique.id] = {
       id: unique.id,

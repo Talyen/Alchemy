@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useBattlePlayback } from "@/app/screen-routes/use-battle-playback";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import { resetBattlePresentationAndRun } from "../features/alchemy/run-loop/battle/battle-test-reset";
-import { AUTO_END_TURN_DELAY } from "@/lib/game-constants";
+import { AUTO_END_TURN_DELAY_MS } from "@/lib/game-constants";
 import { makeTestBattleState } from "../fixtures/battle";
 import { makeEmptyHandBattle } from "../features/alchemy/run-loop/battle/open-battle-fixture";
 
@@ -59,7 +59,7 @@ describe("useBattlePlayback", () => {
 
     rerender({ isAutoplayEnabled: true });
     act(() => {
-      vi.advanceTimersByTime(AUTO_END_TURN_DELAY);
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS);
     });
 
     expect(handleEndTurn).toHaveBeenCalledOnce();
@@ -76,7 +76,7 @@ describe("useBattlePlayback", () => {
     });
 
     act(() => {
-      vi.advanceTimersByTime(AUTO_END_TURN_DELAY + 100);
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS + 100);
     });
     expect(handleEndTurn).not.toHaveBeenCalled();
 
@@ -84,7 +84,7 @@ describe("useBattlePlayback", () => {
       useSettingsStore.setState({ autoEndTurn: true });
     });
     act(() => {
-      vi.advanceTimersByTime(AUTO_END_TURN_DELAY);
+      vi.advanceTimersByTime(AUTO_END_TURN_DELAY_MS);
     });
 
     expect(handleEndTurn).toHaveBeenCalledOnce();

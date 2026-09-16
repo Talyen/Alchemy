@@ -105,12 +105,19 @@ describe("mysteryPool", () => {
   });
 
   it("gainTrinket effects reference valid trinket IDs", () => {
+    const trinketIds = new Set<string>(trinketLibrary.map((t) => t.id));
     for (const event of mysteryPool) {
       for (const choice of event.choices) {
         for (const effect of choice.effects) {
           if (effect.kind === "gainTrinket") {
             const trinket = trinketLibrary.find((t) => t.id === effect.trinketId);
             expect(trinket, `Event "${event.id}" references unknown trinket "${effect.trinketId}"`).toBeDefined();
+          }
+          if (effect.kind === "gainRandomTrinket") {
+            expect(effect.fromIds?.length, `Event "${event.id}" has an empty random trinket pool`).toBeGreaterThan(0);
+            for (const id of effect.fromIds ?? []) {
+              expect(trinketIds.has(id), `Event "${event.id}" references unknown trinket "${id}"`).toBe(true);
+            }
           }
         }
       }

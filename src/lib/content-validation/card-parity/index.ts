@@ -9,6 +9,27 @@ import {
   hasLifesteal,
   hasNonStandardDamageEffects,
 } from "./helpers";
+import {
+  isBlockLine,
+  isCleanseLine,
+  isCompanionActionLine,
+  isConvertManaBlockLine,
+  isDieRollLine,
+  isDoubleLine,
+  isDrawLine,
+  isGainMaxManaLine,
+  isGainStatusLine,
+  isGoldLine,
+  isHealLine,
+  isLoseHealthLine,
+  isLoseMaxManaLine,
+  isPerManaBlockLine,
+  isRandomDrawLine,
+  isRemoveEnemyArmorLine,
+  isRemoveHarmfulStatusLine,
+  isRestoreManaLine,
+  isWishLine,
+} from "./line-classifiers";
 import { validateCardNumericParity } from "./numeric-parity";
 
 interface CountParityRule {
@@ -17,116 +38,99 @@ interface CountParityRule {
   countEffects: (effects: BattleCardEffect[]) => number;
 }
 
-function countHealLines(lines: string[]): number {
-  return lines.filter(
-    (line) =>
-      line.startsWith("Heal ") ||
-      (line.startsWith("Restore ") && line.includes("Health")) ||
-      (line.startsWith("Gain ") && line.includes("Health")),
-  ).length;
+function statusParityRule(status: "armor" | "forge" | "thorns", name: string): CountParityRule {
+  return {
+    label: status,
+    countLines: (lines) => lines.filter((line) => isGainStatusLine(line, name)).length,
+    countEffects: (effects) =>
+      flattenChanceEffects(effects).filter((effect) => effect.kind === "player-status" && effect.status === status)
+        .length,
+  };
 }
 
 const COUNT_PARITY_RULES: CountParityRule[] = [
   {
     label: "heal",
-    countLines: (lines) => countHealLines(lines),
+    countLines: (lines) => lines.filter(isHealLine).length,
     countEffects: (effects) => countByKind(effects, "heal"),
   },
   {
     label: "restore-mana",
-    countLines: (lines) =>
-      lines.filter(
-        (line) =>
-          (line.includes("Restore ") || line.includes("Gain ")) &&
-          line.includes("Mana") &&
-          !line.includes("Health") &&
-          !line.includes("Mana Crystal") &&
-          !line.includes("Maximum Mana"),
-      ).length,
+    countLines: (lines) => lines.filter(isRestoreManaLine).length,
     countEffects: (effects) => countByKind(effects, "restore-mana"),
   },
   {
     label: "gain-gold",
-    countLines: (lines) => lines.filter((line) => /\b(?:gain|steal) \d+ Gold\b/i.test(line)).length,
+    countLines: (lines) => lines.filter(isGoldLine).length,
     countEffects: (effects) => countByKind(effects, "gain-gold"),
   },
   {
     label: "wish",
-    countLines: (lines) => countLinesStartingWith(lines, "Wish "),
+    countLines: (lines) => lines.filter(isWishLine).length,
     countEffects: (effects) => countByKind(effects, "wish"),
   },
   {
     label: "remove-harmful-status",
-    countLines: (lines) =>
-      lines.filter(
-        (line) => (line.startsWith("Remove ") || line.startsWith("Cleanse ")) && line.includes("harmful status"),
-      ).length,
+    countLines: (lines) => lines.filter(isRemoveHarmfulStatusLine).length,
     countEffects: (effects) => countByKind(effects, "remove-harmful-status"),
   },
   {
     label: "lose-max-mana",
-    countLines: (lines) => lines.filter((line) => line.startsWith("Lose ") && line.includes("Mana Crystal")).length,
+    countLines: (lines) => lines.filter(isLoseMaxManaLine).length,
     countEffects: (effects) => countByKind(effects, "lose-max-mana"),
   },
   {
     label: "gain-max-mana",
-    countLines: (lines) => lines.filter((line) => /^Gain \d+ (?:Maximum Mana|Mana Crystals?)(?:$| )/.test(line)).length,
+    countLines: (lines) => lines.filter(isGainMaxManaLine).length,
     countEffects: (effects) => countByKind(effects, "gain-max-mana"),
   },
   {
     label: "lose-health",
-    countLines: (lines) => lines.filter((line) => line.startsWith("Lose ") && line.includes("Health")).length,
+    countLines: (lines) => lines.filter(isLoseHealthLine).length,
     countEffects: (effects) => countByKind(effects, "lose-health"),
   },
   {
     label: "draw-cards",
-    countLines: (lines) => lines.filter((line) => line.startsWith("Draw ") && line !== "Draw that many cards").length,
+    countLines: (lines) => lines.filter(isDrawLine).length,
     countEffects: (effects) => countByKind(effects, "draw-cards"),
   },
+  // "Roll a six-sided die" and "Draw that many cards" co-occur with a single
+  // random-draw effect: both rules compare against the same effect count, so a
+  // card with only one of the two lines fails with a count mismatch.
   {
     label: "random-draw",
-    countLines: (lines) => lines.filter((line) => line === "Draw that many cards").length,
+    countLines: (lines) => lines.filter(isRandomDrawLine).length,
     countEffects: (effects) => countByKind(effects, "random-draw"),
   },
   {
     label: "random-draw die",
-    countLines: (lines) => lines.filter((line) => line === "Roll a six-sided die").length,
+    countLines: (lines) => lines.filter(isDieRollLine).length,
     countEffects: (effects) => countByKind(effects, "random-draw"),
   },
   {
     label: "companion-action",
-    countLines: (lines) => countLinesStartingWith(lines, "Your Companion acts "),
+    countLines: (lines) => lines.filter(isCompanionActionLine).length,
     countEffects: (effects) => countByKind(effects, "companion-action"),
   },
   {
     label: "remove-enemy-armor",
-    countLines: (lines) =>
-      lines.filter((line) => line.startsWith("Strip ") || (line.startsWith("Remove ") && line.includes("enemy Armor")))
-        .length,
+    countLines: (lines) => lines.filter(isRemoveEnemyArmorLine).length,
     countEffects: (effects) => countByKind(effects, "remove-enemy-armor"),
   },
   {
     label: "multiply-enemy-status",
-    countLines: (lines) => countLinesStartingWith(lines, "Double "),
+    countLines: (lines) => lines.filter(isDoubleLine).length,
     countEffects: (effects) => countByKind(effects, "multiply-enemy-status"),
   },
   {
     label: "remove-player-status",
-    countLines: (lines) =>
-      lines.filter((line) => line.startsWith("Cleanse ") && !line.includes("harmful status")).length,
+    countLines: (lines) => lines.filter(isCleanseLine).length,
     countEffects: (effects) =>
       countByKind(effects, "remove-player-status") + countByKind(effects, "cleanse-player-status-to-damage"),
   },
   {
     label: "block",
-    countLines: (lines) =>
-      lines.filter(
-        (line) =>
-          (line.startsWith("Gain ") || / or gain /i.test(line)) &&
-          line.includes(" Block") &&
-          !line.includes("per Mana Crystal") &&
-          !line.endsWith("each turn"),
-      ).length,
+    countLines: (lines) => lines.filter(isBlockLine).length,
     countEffects: (effects) =>
       flattenChanceEffects(effects).filter(
         (effect) =>
@@ -138,7 +142,7 @@ const COUNT_PARITY_RULES: CountParityRule[] = [
   },
   {
     label: "convert-mana block",
-    countLines: (lines) => lines.filter((line) => line.includes("Convert each of your Mana into")).length,
+    countLines: (lines) => lines.filter(isConvertManaBlockLine).length,
     countEffects: (effects) =>
       flattenChanceEffects(effects).filter(
         (effect) =>
@@ -147,7 +151,7 @@ const COUNT_PARITY_RULES: CountParityRule[] = [
   },
   {
     label: "per-mana block",
-    countLines: (lines) => lines.filter((line) => line.includes("per Mana Crystal")).length,
+    countLines: (lines) => lines.filter(isPerManaBlockLine).length,
     countEffects: (effects) =>
       flattenChanceEffects(effects).filter(
         (effect) => effect.kind === "player-status" && effect.status === "block" && effect.perManaCrystal !== undefined,
@@ -157,16 +161,6 @@ const COUNT_PARITY_RULES: CountParityRule[] = [
   statusParityRule("forge", "Forge"),
   statusParityRule("thorns", "Thorns"),
 ];
-
-function statusParityRule(status: "armor" | "forge" | "thorns", name: string): CountParityRule {
-  return {
-    label: status,
-    countLines: (lines) => lines.filter((line) => line.startsWith("Gain ") && line.includes(` ${name}`)).length,
-    countEffects: (effects) =>
-      flattenChanceEffects(effects).filter((effect) => effect.kind === "player-status" && effect.status === status)
-        .length,
-  };
-}
 
 export { validateEnemyTraitDescriptionParity, TRAIT_REQUIRED_PATTERNS } from "./enemy-trait-parity";
 export { validateTrinketDescriptionParity } from "./trinket-parity";

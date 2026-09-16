@@ -12,7 +12,7 @@ Every Unique has exactly one exclusive fixed signature and three fixed standard 
 
 Generation, inventory normalization, tooltips, and battle manifests use the same canonical affixes. Tooltip templates replace every occurrence of an affix value, including Saintfall's damage and healing. Existing owned items receive the corrected standard rolls without changing identity, ownership, or Collection discovery. A saved battle retains its captured manifest until normal live meta rebinding or a new battle.
 
-Unique signature descriptions may use sentence punctuation for readability; standard affixes retain the existing period-free typography rule. The concise-description policy and its covered signatures are enforced by the [catalog tests](../tests/lib/gear/unique-catalog.test.ts); this reference does not maintain a second wording table.
+Unique signature descriptions may use sentence punctuation for readability; standard affixes retain the existing period-free typography rule. The concise-description policy and its covered signatures are enforced by the [catalog tests](../tests/lib/gear/unique-catalog.test.ts) and the [typography validator](../src/lib/content-validation/validators-typography.ts) (unique-rarity gear descriptions allow periods; unique-only affix templates skip the period check); this reference does not maintain a second wording table.
 
 ## Combat semantics
 
@@ -59,5 +59,10 @@ exclusive signatures, fixed rolls, inventory repair, and independent generated
 instances. [Unique-effect tests](../tests/lib/battle/unique-effects.test.ts) and
 [collection interaction tests](../tests/lib/battle/unique-collection.test.ts)
 cover triggers, costs, damage repeats, delayed effects, resource preservation,
-Dodge, saves, and interactions. Missing battle-local fields follow the
+Dodge, saves, and interactions. [Content audit](../src/lib/content-validation/validators-gear.ts)
+enforces the same catalog invariants outside vitest (one Unique per base,
+exclusive `uniqueOnly` signatures, three supporting affixes at unique-max),
+mirrored by the [architecture guards](../tests/architecture/). The combat-tuning
+prose test in the catalog tests keeps `UNIQUE_GEAR_COMBAT` magnitudes in sync
+with signature descriptions. Missing battle-local fields follow the
 [save default contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#defaults-and-resume-normalization).

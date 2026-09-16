@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { assertSupportedTargets, targetToBuilderFlag } from "./lib/desktop-artifact.mjs";
-import { resolveBuilderBin } from "./lib/builder-bin.mjs";
+import { resolveBuilderBin } from "./lib/command-invocation.mjs";
 import { resolveSentryRelease } from "./lib/sentry-release.mjs";
 import { validateDesktopBuildConfig } from "./lib/desktop-build-config.mjs";
 

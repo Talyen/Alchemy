@@ -14,7 +14,7 @@ import { getBattleRng, rollPercent } from "@/lib/rng";
 import {
   BLEED_STATUS_MULTIPLIER,
   BATTLE_CONFIG,
-  BURN_BLEED_MIRROR_CHANCE,
+  BURN_BLEED_MIRROR_CHANCE_PERCENT,
   FREEZE_THRESHOLD_FRACTION,
   MIN_CC_THRESHOLD_FRACTION,
 } from "../game-constants";
@@ -32,7 +32,7 @@ function applyGearBurnBleedMirrorLeech(
 ): BattleState {
   if (state.gearEffects.burnBleedMirrorAndLeech <= 0 || actualDamage <= 0) return state;
   let nextState = state;
-  if (rollPercent(BURN_BLEED_MIRROR_CHANCE, getBattleRng(nextState))) {
+  if (rollPercent(BURN_BLEED_MIRROR_CHANCE_PERCENT, getBattleRng(nextState))) {
     nextState = addEnemyStatus(nextState, mirrorTarget, actualDamage);
   }
   const healAmount = Math.max(1, halveRounded(actualDamage));

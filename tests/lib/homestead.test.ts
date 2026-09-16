@@ -8,6 +8,7 @@ import {
   applyEndOfRunHomesteadBonuses,
   applyMaterialFindBonus,
   enemyLootTableIds,
+  enemyLootTables,
   getEnemyMaterialLoot,
 } from "@/lib/homestead/loot";
 import { enemyBestiary } from "@/lib/game-data/compendium/enemies";
@@ -349,14 +350,32 @@ describe("enemy loot parity", () => {
     const lootIds = [...enemyLootTableIds].sort();
     expect(lootIds).toEqual(bestiaryIds);
   });
+
+  it("keeps material bonus entries well-shaped", () => {
+    for (const [enemyId, table] of Object.entries(enemyLootTables)) {
+      for (const bonus of table.bonuses) {
+        expect(bonus.min, `${enemyId}.${bonus.material} min`).toBeGreaterThanOrEqual(0);
+        expect(bonus.min, `${enemyId}.${bonus.material} range`).toBeLessThanOrEqual(bonus.max);
+        expect(bonus.weight, `${enemyId}.${bonus.material} weight`).toBeGreaterThanOrEqual(0);
+        expect(bonus.weight, `${enemyId}.${bonus.material} weight`).toBeLessThanOrEqual(1);
+      }
+    }
+  });
 });
 
 describe("getEnemyMaterialLoot with elite multiplier", () => {
   it("applies 1.3x material multiplier for elite enemies", () => {
     const normal = getEnemyMaterialLoot("goblin", "normal", stableRngZero());
     const elite = getEnemyMaterialLoot("goblin", "elite", stableRngZero());
-    expect(elite.wood).toBe(Math.floor(normal.wood * 1.3));
-    expect(elite.food).toBe(Math.floor(normal.food * 1.3));
+    expect(elite.wood).toBe(Math.round(normal.wood * 1.3));
+    expect(elite.food).toBe(Math.round(normal.food * 1.3));
+  });
+
+  it("rounds elite multipliers instead of flooring singleton drops away", () => {
+    const normal = getEnemyMaterialLoot("necromancer", "normal", stableRngZero());
+    expect(normal.herbs).toBe(2);
+    const elite = getEnemyMaterialLoot("necromancer", "elite", stableRngZero());
+    expect(elite.herbs).toBe(3);
   });
 
   it("triples loot for boss enemies", () => {
@@ -402,6 +421,14 @@ describe("applyMaterialFindBonus", () => {
   it("returns the same reward when no herbs are present", () => {
     const materials = { wood: 1, iron: 0, herbs: 0, food: 2, gems: 0, stone: 0, hide: 0 };
     expect(applyMaterialFindBonus(materials, { herbFindBonus: 0.3 })).toBe(materials);
+  });
+
+  it("rounds fractional herb bonuses instead of flooring them away", () => {
+    const result = applyMaterialFindBonus(
+      { wood: 0, iron: 0, herbs: 1, food: 0, gems: 0, stone: 0, hide: 0 },
+      { herbFindBonus: 0.5 },
+    );
+    expect(result.herbs).toBe(2);
   });
 });
 

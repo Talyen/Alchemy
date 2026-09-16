@@ -1,9 +1,9 @@
-export const GLOBAL_CRIT_CHANCE = 5;
+export const GLOBAL_CRIT_CHANCE_PERCENT = 5;
 
-export const PLAYER_DODGE_CHANCE = 5;
-export const MAX_PLAYER_DODGE_CHANCE = 75;
+export const PLAYER_DODGE_CHANCE_PERCENT = 5;
+export const MAX_PLAYER_DODGE_CHANCE_PERCENT = 75;
 
-export const ENEMY_DODGE_CHANCE = 5;
+export const ENEMY_DODGE_CHANCE_PERCENT = 5;
 export const CRIT_MULTIPLIER = 2;
 export const BLEED_STATUS_MULTIPLIER = 1;
 export const STUN_THRESHOLD_FRACTION = 0.5;
@@ -25,7 +25,9 @@ export const ENEMY_BOSS_REGENERATION = 1;
 export const FREE_CARD_SENTINEL = 99;
 
 export const LOW_HEALTH_THRESHOLD_PERCENT = 30;
-export const ARCHERY_HIGH_HEALTH_THRESHOLD_PERCENT = 100;
+// Full-health gate for Longshot (archery doubled vs unwounded): triggers only
+// at 100% HP, unlike the 30% "low health" gates elsewhere.
+export const ARCHERY_FULL_HEALTH_THRESHOLD_PERCENT = 100;
 export const ARCHERY_LOW_HEALTH_THRESHOLD_PERCENT = 20;
 export const PERCENT_DENOMINATOR = 100;
 export const HALF_DIVISOR = 2;
@@ -75,8 +77,8 @@ export const CAMPFIRE_HEAL_FRACTION = 0.3;
 export const WISH_GEMS_GOLD_PERCENT = 50;
 export const WISH_TRINKET_FORK_PERCENT = 50;
 
-export const BRASS_CENSER_SPLIT_CHANCE = 50;
-export const SEPTIC_SPLIT_CHANCE = 50;
+export const BRASS_CENSER_SPLIT_CHANCE_PERCENT = 50;
+export const SEPTIC_SPLIT_CHANCE_PERCENT = 50;
 export const TALENT_CONVERSION_DEFAULT_FRACTION = 0.5;
 export const TALENT_CONVERSION_BLEED_FRACTION = 0.25;
 
@@ -89,7 +91,7 @@ export const BATTLE_CONFIG = {
 
 export const POISON_DECAY_PERCENT = 20;
 export const POISON_GAIN_AMOUNT = 1;
-export const BURN_BLEED_MIRROR_CHANCE = 20;
+export const BURN_BLEED_MIRROR_CHANCE_PERCENT = 20;
 export const STATUS_DECAY_THRESHOLD = 1;
 export const MIN_ARMOR_AMOUNT = 0;
 

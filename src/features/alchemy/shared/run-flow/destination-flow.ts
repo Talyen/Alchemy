@@ -1,5 +1,4 @@
 import {
-  CORRUPTION_DESTINATION_WEIGHT,
   DEFAULT_DESTINATION_WEIGHT,
   DESTINATION_CHOICES,
   DESTINATION_PITY_WEIGHT_CAP,
@@ -91,8 +90,7 @@ export function lastOfferedIncludesCombat(lastOfferedDestinations: Destination[]
 }
 
 export function computeDestinationWeight(destination: Destination, context: DestinationOfferState): number {
-  const baseWeight =
-    destination === DESTINATIONS.CORRUPTION ? CORRUPTION_DESTINATION_WEIGHT : DEFAULT_DESTINATION_WEIGHT;
+  const baseWeight = DEFAULT_DESTINATION_WEIGHT;
   const pityRounds = context.roundsSinceOffered[destination] ?? 0;
   const pity = Math.min(pityRounds * DESTINATION_PITY_WEIGHT_PER_ROUND, DESTINATION_PITY_WEIGHT_CAP);
   const wasLastOffered = context.lastOfferedDestinations.includes(destination);

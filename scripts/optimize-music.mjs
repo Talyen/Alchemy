@@ -8,8 +8,8 @@ import {
   MUSIC_COPY_CONCURRENCY,
   MUSIC_SETTINGS,
 } from "./lib/asset-constants.mjs";
-import { discoverAudioFiles, runPipelineScript } from "./lib/audio-optimizer.mjs";
-import { failedOptimizeResult, targetErrorHandler } from "./lib/process-helpers.mjs";
+import { discoverAudioFiles } from "./lib/audio-optimizer.mjs";
+import { failedOptimizeResult, runPipelineScript, targetErrorHandler } from "./lib/process-helpers.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { resolveRootDir } from "./lib/sync-generated-helpers.mjs";
 

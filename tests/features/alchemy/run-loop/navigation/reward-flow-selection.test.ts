@@ -83,6 +83,20 @@ describe("progressive reward selection", () => {
     }
   });
 
+  it("excludes active trinket effects from combat Boon offerings", () => {
+    const excludedBoonIds = ["bone-charm", "lucky-clover"];
+    let seenBoon = false;
+    for (let seed = 1; seed <= 200; seed += 1) {
+      const result = createCombatRewardState({ ...input, rng: createSeededRng(seed), excludedBoonIds });
+      if (result.rewardType !== "boon") continue;
+      seenBoon = true;
+      const ids = result.choices.map((choice) => choice.id);
+      expect(ids).not.toContain("bone-charm");
+      expect(ids).not.toContain("lucky-clover");
+    }
+    expect(seenBoon).toBe(true);
+  });
+
   it("excludes collected items before sampling and fills a screen when the last Unique is consumed", () => {
     const ownedUniqueIds = new Set(uniqueItemList.slice(1).map((unique) => unique.id));
     const ownedTrinketIds = trinketLibrary.map((entry) => entry.id);

@@ -12,7 +12,7 @@ import {
   rollAffixCount,
 } from "@/lib/gear";
 import { affixMatchesAffinity } from "@/lib/gear/affixes";
-import { buildEligibleAffixPool } from "@/lib/gear/generation";
+import { buildEligibleAffixPool } from "@/lib/gear/affix-pool";
 import { gearAffixCatalog } from "@/lib/gear/affix-catalog";
 import { createSeededRng } from "@/lib/utils";
 
@@ -68,6 +68,15 @@ describe("gear generation", () => {
     expect(instance.affixes.length).toBeGreaterThanOrEqual(range.min);
     expect(instance.affixes.length).toBeLessThanOrEqual(range.max);
     expect(new Set(instance.affixes.map((roll) => roll.id)).size).toBe(instance.affixes.length);
+  });
+
+  it("never throws from dev random generation across rarity rolls", () => {
+    for (let seed = 1; seed <= 50; seed += 1) {
+      const instance = generateDevRandomGearInstance(createSeededRng(seed));
+      const definition = gearDefinitions[instance.definitionId];
+      expect(definition, `seed ${seed}`).toBeDefined();
+      expect(definition?.rarity, `seed ${seed}`).toMatch(/^(basic|astral|unique)$/);
+    }
   });
 
   it("weights Astral affix counts 80% toward three affixes", () => {

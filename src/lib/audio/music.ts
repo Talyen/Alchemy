@@ -1,9 +1,9 @@
 import { isNonPlayerAudioHost } from "./host";
 import { audioUrl } from "./url";
 import {
-  FADE_IN_DELAY,
-  FADE_IN_DURATION,
-  FADE_OUT_DURATION,
+  FADE_IN_DELAY_MS,
+  FADE_IN_DURATION_MS,
+  FADE_OUT_DURATION_MS,
   MUSIC_BASE_PATH,
   MUSIC_BOSS_VOLUME_BOOST,
   MUSIC_FADE_TICK_MS,
@@ -193,8 +193,8 @@ function startTrack(key: string, transitionToken: number) {
 
   rampVolume({
     transitionToken,
-    delayMs: FADE_IN_DELAY,
-    durationMs: FADE_IN_DURATION,
+    delayMs: FADE_IN_DELAY_MS,
+    durationMs: FADE_IN_DURATION_MS,
     apply: (t) => {
       if (audioState.currentMusic === el) {
         applyMusicVolume(el, key, t);
@@ -216,7 +216,7 @@ function fadeOutAndStartTrack(oldTrack: HTMLAudioElement, newKey: string, transi
 
   rampVolume({
     transitionToken,
-    durationMs: FADE_OUT_DURATION,
+    durationMs: FADE_OUT_DURATION_MS,
     apply: (t) => {
       applyMusicVolume(oldTrack, oldKey, startFadeGain * (1 - t));
     },

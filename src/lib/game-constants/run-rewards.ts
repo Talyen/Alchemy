@@ -64,14 +64,13 @@ export const GOLD_REWARD_MAX = 30;
 export const ELITE_GOLD_BONUS_FRACTION = 0.3;
 export const BOSS_GOLD_BONUS_FRACTION = 0.5;
 export const REWARD_CARD_CHOICES = 3;
-export const REWARD_RANDOM_CHANCE = 0.5;
+export const REWARD_RANDOM_CHANCE_FRACTION = 0.5;
 export const DESTINATION_CHOICES = 3;
 export const DEFAULT_DESTINATION_WEIGHT = 10;
 export const LAST_OFFERED_DESTINATION_WEIGHT = 3;
 export const DESTINATION_PITY_WEIGHT_PER_ROUND = 3;
 export const DESTINATION_PITY_WEIGHT_CAP = 30;
 
-export const CORRUPTION_DESTINATION_WEIGHT = DEFAULT_DESTINATION_WEIGHT;
 export const DESTINATIONS_PER_ACT = 8;
 export const ACTS_PER_RUN = 3;
 export const DEFAULT_CAMPAIGN_DIFFICULTY_ID = "difficulty-1";
@@ -82,15 +81,12 @@ export const SHOP_CARDS_OFFERED = 3;
 export const SHOP_REFRESHES = 1;
 export const ALCHEMIST_POTIONS_OFFERED = 3;
 export const ALCHEMIST_REFRESHES = 1;
-export { BOSS_HEALTH_MULTIPLIER } from "./combat-rules";
 
-export const GEAR_AFFIX_COUNT = {
-  basic: { min: 1, max: 2 },
-  astral: { min: 3, max: 4 },
-  unique: { min: 4, max: 4 },
-} as const;
+export const COMPANION_GOLD_FIND_CHANCE_FRACTION = 0.5;
+export const COMPANION_GOLD_MULTIPLIER = 1.2;
 
-export const GEAR_AFFIX_COUNT_MIN_WEIGHT = 0.8;
+// GEAR_AFFIX_COUNT and GEAR_AFFIX_COUNT_MIN_WEIGHT live in ./gear.ts
+// alongside the rest of gear tuning.
 export const MYSTERY_CARD_CHOICES = 3;
 export const MIXED_POTION_CARD_ID = "mixed-potion";
 export const POTION_CARD_ID_SUFFIX = "-potion";

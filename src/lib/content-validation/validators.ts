@@ -12,8 +12,11 @@ import {
   ENEMY_STATUS_DISPLAY_ORDER,
   talentPool,
   getTalentTreeKeywordIds,
+  ENEMY_TYPE_VALUES,
   type BattleCard,
+  type TrinketEntry,
 } from "@/lib/game-data";
+import { ENEMY_STATUS_IDS_LIST } from "@/lib/validation";
 import { collectUncoveredDifficultyModifierKinds, collectUncoveredEnemyTraitIds } from "@/lib/battle";
 import {
   COMBAT_ENCOUNTER_TRAIT_IDS,
@@ -32,14 +35,10 @@ import {
   CompanionContentSchema,
   TrinketContentSchema,
   EncounterTraitContentSchema,
-  enemyTypes,
-  enemyStatusIds,
 } from "./schemas";
 import { addDuplicateIssues, collectSchemaIssues, validateArt } from "./utils";
-import type { createCollector } from "./utils";
+import type { Collector } from "./utils";
 import type { ContentValidationArea } from "./types";
-
-type Collector = ReturnType<typeof createCollector>;
 
 interface LibraryBasicsOptions<T extends { id: string }> {
   area: ContentValidationArea;
@@ -123,7 +122,7 @@ export function validateEnemies(collector: Collector): void {
     idLabel: "enemy id",
   });
 
-  for (const enemyType of enemyTypes) {
+  for (const enemyType of ENEMY_TYPE_VALUES) {
     if (!enemyBestiary.some((enemy) => enemy.enemyType === enemyType)) {
       collector.error("enemies", enemyType, `Enemy pool is missing type: ${enemyType}`);
     }
@@ -164,18 +163,18 @@ export function validateCompanions(collector: Collector): void {
   }
 }
 
-export function validateTrinkets(collector: Collector): void {
+export function validateTrinkets(collector: Collector, entries: readonly TrinketEntry[] = trinketLibrary): void {
   validateLibraryBasics(collector, {
     area: "trinkets",
-    items: trinketLibrary,
+    items: entries,
     schema: TrinketContentSchema,
     titleOf: (trinket) => trinket.title,
     artOf: (trinket) => trinket.art,
     idLabel: "trinket id",
   });
-  for (const trinket of trinketLibrary) {
+  for (const trinket of entries) {
     for (const issue of validateTrinketDescriptionParity(trinket)) {
-      collector.error(issue.area, issue.id, issue.message);
+      collector.issues.push(issue);
     }
   }
 }
@@ -223,7 +222,7 @@ export function validateKeywordsAndStatuses(collector: Collector): void {
   // Harmful player statuses are shared combat effects, so each one must also
   // exist as an enemy status id.
   for (const status of harmfulPlayerStatusIds) {
-    if (!enemyStatusIds.includes(status))
+    if (!ENEMY_STATUS_IDS_LIST.includes(status))
       collector.error("statuses", status, "Harmful player status is not a known harmful status id");
   }
   checkDuplicateDisplayOrder(collector);
@@ -262,5 +261,3 @@ export function validateEncounterTraits(collector: Collector): void {
       collector.error("encounter-traits", id, "Encounter trait definition is missing from id lists");
   }
 }
-
-export { validateGear } from "./validators-gear";

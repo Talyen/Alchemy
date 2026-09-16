@@ -5,7 +5,7 @@ import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { pathToFileURL } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { commandInvocation } from "../../scripts/lib/command-invocation.mjs";
+import { commandInvocation, resolveBuilderBin, resolveViteBin } from "../../scripts/lib/command-invocation.mjs";
 import { runCommand, runCommandAsync } from "../../scripts/lib/run-command.mjs";
 import { resolvePushPaths, resolveSelectedPaths } from "../../scripts/lib/changed-paths.mjs";
 import { expandRepositoryPaths, listRepositoryFiles } from "../../scripts/lib/repository-paths.mjs";
@@ -69,6 +69,8 @@ describe("script execution reliability", () => {
       expect(args.slice(1)).toEqual(["--version"]);
     }
     expect(() => commandInvocation("npx", ["not-installed"])).toThrow("Unsupported local CLI");
+    expect(fs.existsSync(resolveBuilderBin())).toBe(true);
+    expect(fs.existsSync(resolveViteBin())).toBe(true);
     const result = runCommand("npm", ["--version"]);
     expect(result.status, result.output).toBe(0);
     expect(result.output.trim()).toMatch(/^\d+\.\d+\.\d+$/);

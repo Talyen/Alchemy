@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { defaultBattleState } from "@/lib/battle";
+import type { TrinketManifest } from "@/lib/battle/types";
+import { computeTrinketManifest } from "@/lib/trinkets";
 import { GEAR_EFFECT_KEYS } from "@/lib/gear";
 import { enemyById } from "@/lib/game-data";
 import { MANABURN_DAMAGE_PERCENT } from "@/lib/game-constants";
@@ -178,22 +180,24 @@ describe("repairPersistedTrinketManifest (owned by normalize-persisted-battle-st
     expect(repaired.trinketEffects.boneCharmHealOnKill).toBe(9);
   });
 
-  it("preserves legacy active-battle trinket fields", () => {
+  it("drops retired trinket fields when recomputing from runBoons", () => {
     const defaults = defaultBattleState();
-    const battleState = {
-      ...defaults,
-      trinketEffects: {
-        ...defaults.trinketEffects,
-        blockToArmorThreshold: 6,
-        blockToArmorAmount: 1,
-        mortarPestleFreeFirstPotion: true,
-        grovesFavorStartHeal: 2,
-      },
+    // Simulates a save written before retired fields were removed from the manifest.
+    const legacyEffects: TrinketManifest & Record<string, unknown> = {
+      ...defaults.trinketEffects,
+      blockToArmorThreshold: 6,
+      blockToArmorAmount: 1,
+      mortarPestleFreeFirstPotion: true,
+      grovesFavorStartHeal: 2,
     };
+    const battleState = { ...defaults, trinketEffects: legacyEffects };
 
     const repaired = repairPersistedTrinketManifest(battleState, ["ironwood-buckler", "mortar-and-pestle"]);
 
-    expect(repaired.trinketEffects).toEqual(battleState.trinketEffects);
+    expect(repaired.trinketEffects).toEqual(computeTrinketManifest(["ironwood-buckler", "mortar-and-pestle"]));
+    expect(repaired.trinketEffects).not.toHaveProperty("blockToArmorThreshold");
+    expect(repaired.trinketEffects).not.toHaveProperty("mortarPestleFreeFirstPotion");
+    expect(repaired.trinketEffects).not.toHaveProperty("grovesFavorStartHeal");
   });
 
   it("no-ops when runBoons is empty", () => {

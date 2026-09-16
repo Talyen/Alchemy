@@ -62,6 +62,13 @@ describe("resolveScreenBackHandler", () => {
     expect(goToScreen).toHaveBeenCalledWith("game-mode-select");
   });
 
+  it("steps back to character-select from difficulty-select", () => {
+    const { handler, goToScreen } = setup({ renderedScreen: "difficulty-select" });
+    expect(handler).toBeDefined();
+    handler?.();
+    expect(goToScreen).toHaveBeenCalledWith("character-select");
+  });
+
   it.each(["menu", "battle", "shop", "destination", "draft-deck"] as const)("has no back handler on %s", (screen) => {
     const { handler } = setup({ renderedScreen: screen, returnToRunTarget: "battle" });
     expect(handler).toBeUndefined();

@@ -99,4 +99,11 @@ describe("bundle budget sync", () => {
     expect(checkBundleBudget(directory)).toBe(true);
     expect(warn).toHaveBeenCalledWith(expect.stringContaining("WARN"));
   });
+
+  it("evaluates multiple asset directories when passed as an array", () => {
+    vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const dirA = createAssetDirectory({ "index-AbC_1.js": 100 });
+    const dirB = createAssetDirectory({ "index-XyZ_2.js": 200 });
+    expect(checkBundleBudget([dirA, dirB])).toBe(true);
+  });
 });

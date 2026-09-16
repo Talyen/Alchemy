@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
-import { useHeldWhile } from "@/features/alchemy/shared/ui/use-fade";
+import { useFadePresence, useHeldWhile } from "@/features/alchemy/shared/ui/use-fade";
 import { cardById, trinketById } from "@/features/alchemy/shared/config/game-data-catalog";
 import { MysteryScreen, MysteryScreenShell } from "@/features/alchemy/run-loop/screens";
 import { useMysteryScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
@@ -10,6 +10,7 @@ const findTrinket = (id: string) => trinketById[id];
 
 function useHeldMysteryVisit(r: ReturnType<typeof useMysteryScreenData>) {
   const isMysteryActive = Boolean(r.mysteryEvent);
+  const { mounted } = useFadePresence(isMysteryActive);
   const liveVisit = useMemo(
     () =>
       isMysteryActive
@@ -34,7 +35,8 @@ function useHeldMysteryVisit(r: ReturnType<typeof useMysteryScreenData>) {
       r.mysteryPendingRemoval,
     ],
   );
-  return useHeldWhile(isMysteryActive, liveVisit);
+  const held = useHeldWhile(isMysteryActive, liveVisit);
+  return mounted ? held : null;
 }
 
 export function MysteryScreenRoute({ commands }: { commands: RunLoopCommands["mystery"] }) {

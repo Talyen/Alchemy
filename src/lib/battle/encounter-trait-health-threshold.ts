@@ -1,4 +1,4 @@
-import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
+import { HALF_DIVISOR, LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { applyEnemyHealingWithCombatText } from "./enemy-healing";
 import { mergeCombatText } from "./combat-text-events";
@@ -21,7 +21,7 @@ export function processEncounterTraitHealthThreshold(
   state: BattleState,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  const halfHealth = state.enemyMaxHealth / 2;
+  const halfHealth = state.enemyMaxHealth / HALF_DIVISOR;
   const crossedHalfHealth =
     previousHealth >= halfHealth && state.enemyHealth <= halfHealth && previousHealth > state.enemyHealth;
   if (

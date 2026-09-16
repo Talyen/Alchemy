@@ -1,6 +1,6 @@
 import { isMixedPotionCard, type BattleCard } from "@/lib/game-data";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
-import { CORRUPTION_TRANSFORM_CHANCE } from "@/lib/game-constants";
+import { CORRUPTION_TRANSFORM_CHANCE_FRACTION } from "@/lib/game-constants";
 import { pickRandom } from "@/lib/utils";
 import { getCorruptionMutationGroups, type CorruptionMutationGroup } from "./mutations";
 
@@ -47,7 +47,7 @@ export function corruptCard(
   const candidates = library.filter(
     (card) => card.id !== selectedCard.id && !card.corrupted && !isSpecialCorruptionCard(card),
   );
-  if (groups.length === 0 || (!pure && candidates.length > 0 && rng() < CORRUPTION_TRANSFORM_CHANCE)) {
+  if (groups.length === 0 || (!pure && candidates.length > 0 && rng() < CORRUPTION_TRANSFORM_CHANCE_FRACTION)) {
     const options = candidates
       .map((card) => getCorruptionMutationGroups(card, singleModifiers))
       .filter((entries) => entries.length > 0);

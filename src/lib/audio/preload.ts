@@ -6,8 +6,9 @@ import {
   uiSounds,
 } from "./sound-registry";
 import { batchedPreload, scheduleIdle } from "../preload";
-import { audioUrl } from "./url";
-import { SOUNDS_BASE_PATH } from "../game-constants";
+import { getSoundUrl, resetSoundUrlCache } from "./url";
+
+export { getSoundUrl } from "./url";
 
 const SOUND_PRELOAD_CONFIG = {
   IDLE_CALLBACK_TIMEOUT_MS: 5000,
@@ -16,40 +17,19 @@ const SOUND_PRELOAD_CONFIG = {
 } as const;
 
 const htmlPreloadStarted = new Set<string>();
-const htmlPreloadElements = new Set<HTMLAudioElement>();
-let cachedOggSupport: boolean | null = null;
+const htmlPreloadTimers = new Map<HTMLAudioElement, ReturnType<typeof setTimeout>>();
+let preloadAllSoundsStarted = false;
 
-function playableSoundFileName(name: string): string {
-  if (!name.endsWith(".ogg") || browserCanPlayOggVorbis()) return name;
-  return `${name.slice(0, -4)}.mp3`;
-}
-
-function browserCanPlayOggVorbis(): boolean {
-  if (cachedOggSupport !== null) return cachedOggSupport;
-  if (typeof Audio === "undefined") {
-    cachedOggSupport = true;
-    return cachedOggSupport;
+function clearStallTimer(el: HTMLAudioElement): void {
+  const timer = htmlPreloadTimers.get(el);
+  if (timer !== undefined) {
+    clearTimeout(timer);
+    htmlPreloadTimers.delete(el);
   }
-  try {
-    cachedOggSupport = new Audio().canPlayType('audio/ogg; codecs="vorbis"') !== "";
-  } catch {
-    cachedOggSupport = true;
-  }
-  return cachedOggSupport;
-}
-
-export function getSoundUrl(name: string): string {
-  return audioUrl(`${SOUNDS_BASE_PATH}${playableSoundFileName(name)}`);
-}
-
-export function resetSoundPreloadCache() {
-  for (const el of htmlPreloadElements) abortPreloadElement(el);
-  htmlPreloadStarted.clear();
-  htmlPreloadElements.clear();
-  cachedOggSupport = null;
 }
 
 function abortPreloadElement(el: HTMLAudioElement) {
+  clearStallTimer(el);
   try {
     el.oncanplaythrough = null;
     el.onerror = null;
@@ -60,24 +40,35 @@ function abortPreloadElement(el: HTMLAudioElement) {
 
 function dropFailedPreloadElement(el: HTMLAudioElement) {
   abortPreloadElement(el);
-  htmlPreloadElements.delete(el);
 }
 
-export function preloadSounds(names: string[]) {
+export function resetSoundPreloadCache() {
+  for (const el of Array.from(htmlPreloadTimers.keys())) {
+    abortPreloadElement(el);
+  }
+  htmlPreloadStarted.clear();
+  htmlPreloadTimers.clear();
+  preloadAllSoundsStarted = false;
+  resetSoundUrlCache();
+}
+
+export function preloadSound(name: string): void {
+  preloadSounds([name]);
+}
+
+export function preloadSounds(names: readonly string[] | string[]) {
   if (typeof Audio === "undefined") return;
   for (const name of names) {
     if (htmlPreloadStarted.has(name)) continue;
     htmlPreloadStarted.add(name);
     const el = new Audio();
     el.preload = "auto";
-    htmlPreloadElements.add(el);
     const stallTimer = setTimeout(() => dropFailedPreloadElement(el), SOUND_PRELOAD_CONFIG.STALLED_PRELOAD_TIMEOUT_MS);
+    htmlPreloadTimers.set(el, stallTimer);
     el.oncanplaythrough = () => {
-      clearTimeout(stallTimer);
-      htmlPreloadElements.delete(el);
+      clearStallTimer(el);
     };
     el.onerror = () => {
-      clearTimeout(stallTimer);
       dropFailedPreloadElement(el);
     };
     el.src = getSoundUrl(name);
@@ -101,10 +92,17 @@ export function preloadBattleSounds(cardIds: readonly string[], enemyId: string)
 }
 
 export function preloadAllSounds() {
-  const names = allRegisteredSoundFiles();
-  preloadSounds([...Object.values(uiSounds), battleEventSounds.drawTransfer]);
+  if (preloadAllSoundsStarted) return;
+  preloadAllSoundsStarted = true;
+
+  const urgentSounds = [...Object.values(uiSounds), battleEventSounds.drawTransfer];
+  preloadSounds(urgentSounds);
+
+  const pendingNames = allRegisteredSoundFiles().filter((name) => !htmlPreloadStarted.has(name));
+  if (pendingNames.length === 0) return;
+
   scheduleIdle(() => {
-    void batchedPreload(names, (name) => preloadSounds([name]), {
+    void batchedPreload(pendingNames, (name) => preloadSound(name), {
       batchSize: SOUND_PRELOAD_CONFIG.PRELOAD_BATCH_SIZE,
       yieldBetweenBatches: () =>
         new Promise<void>((resolve) => {

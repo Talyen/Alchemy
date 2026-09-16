@@ -2,7 +2,7 @@ import { useUiStore, isBattleInspectionOpen } from "../../shared/stores/ui-store
 import { useCallback, useEffect, useRef, type RefObject } from "react";
 
 import { type BattleSnapshot } from "@/lib/battle";
-import { AUTO_END_TURN_DELAY } from "@/lib/game-constants";
+import { AUTO_END_TURN_DELAY_MS } from "@/lib/game-constants";
 import { resolveGameDelay } from "@/lib/animation/game-timer";
 
 import { useLatestRef } from "../../shared/ui/use-latest-ref";
@@ -72,7 +72,7 @@ export function useBattleAutoEndTurn({
       autoEndTimerRef.current = setTimeout(() => {
         autoEndTimerRef.current = null;
         if (canAutoEndTurn(battleStateRef.current)) onEndTurnRef.current();
-      }, resolveGameDelay(AUTO_END_TURN_DELAY));
+      }, resolveGameDelay(AUTO_END_TURN_DELAY_MS));
     },
     [battleStateRef, canAutoEndTurn, clearAutoEndTurn, onEndTurnRef],
   );

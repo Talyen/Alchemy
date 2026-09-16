@@ -17,18 +17,11 @@ function flattenInternal(effects: BattleCardEffect[], unwrapRepeatOverTurns: boo
   });
 }
 
-// Flattening is memoized per input array: count parity runs ~17 rules plus
-// numeric parity cursors over the same card, so without caching each rule
-// re-walks the effect tree.
-const flattenCache = new WeakMap<BattleCardEffect[], BattleCardEffect[]>();
-const flattenChanceCache = new WeakMap<BattleCardEffect[], BattleCardEffect[]>();
-
+// Flattening is a pure walk over shallow effect trees (a few hundred cards at
+// most). No memoization: the cost is negligible and caching keyed by array
+// identity never hits for freshly constructed literals in tests.
 export function flattenEffects(effects: BattleCardEffect[]): BattleCardEffect[] {
-  const cached = flattenCache.get(effects);
-  if (cached) return cached;
-  const flat = flattenInternal(effects, true);
-  flattenCache.set(effects, flat);
-  return flat;
+  return flattenInternal(effects, true);
 }
 
 export function countByKind(effects: BattleCardEffect[], kind: string): number {
@@ -40,11 +33,7 @@ export function countByKind(effects: BattleCardEffect[], kind: string): number {
 // turn" wording that the block rule excludes explicitly; numeric parity cursors
 // use the full flattening above. The two counts can legitimately differ.
 export function flattenChanceEffects(effects: BattleCardEffect[]): BattleCardEffect[] {
-  const cached = flattenChanceCache.get(effects);
-  if (cached) return cached;
-  const flat = flattenInternal(effects, false);
-  flattenChanceCache.set(effects, flat);
-  return flat;
+  return flattenInternal(effects, false);
 }
 
 export function hasKind(effects: BattleCardEffect[], kind: string): boolean {

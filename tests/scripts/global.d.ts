@@ -936,4 +936,6 @@ declare module "*/run-performance.mjs" {
 
 declare module "*/lib/command-invocation.mjs" {
   export function commandInvocation(command: string, args?: string[]): [string, string[]];
+  export function resolveBuilderBin(): string;
+  export function resolveViteBin(): string;
 }

@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CampfireScreen } from "@/features/alchemy/run-loop/screens/campfire-screen";
-import { CAMPFIRE_ANIMATION_MS, CAMPFIRE_CONTINUE_DELAY } from "@/lib/game-constants";
+import { CAMPFIRE_ANIMATION_MS, CAMPFIRE_CONTINUE_DELAY_MS } from "@/lib/game-constants";
 import { installRafStub } from "../../../../helpers/animation-test";
 
 describe("CampfireScreen", () => {
@@ -41,7 +41,7 @@ describe("CampfireScreen", () => {
     expect(screen.getByText(`${restoredHealth} / 100`)).toBeTruthy();
     expect(screen.getByRole("progressbar").firstElementChild).toHaveProperty("style.width", `${restoredHealth}%`);
 
-    act(() => vi.advanceTimersByTime(CAMPFIRE_CONTINUE_DELAY - 1));
+    act(() => vi.advanceTimersByTime(CAMPFIRE_CONTINUE_DELAY_MS - 1));
     expect(onContinue).not.toHaveBeenCalled();
     act(() => vi.advanceTimersByTime(1));
     expect(onContinue).toHaveBeenCalledOnce();
@@ -49,7 +49,7 @@ describe("CampfireScreen", () => {
     rerender(<CampfireScreen {...props} playerHealth={restoredHealth} />);
     expect(screen.getByText(`${restoredHealth} / 100`)).toBeTruthy();
     expect(frames).toHaveLength(0);
-    act(() => vi.advanceTimersByTime(CAMPFIRE_ANIMATION_MS + CAMPFIRE_CONTINUE_DELAY));
+    act(() => vi.advanceTimersByTime(CAMPFIRE_ANIMATION_MS + CAMPFIRE_CONTINUE_DELAY_MS));
     expect(onContinue).toHaveBeenCalledOnce();
   });
 
@@ -62,7 +62,7 @@ describe("CampfireScreen", () => {
     fireEvent.click(screen.getByRole("button", { name: "Rest" }));
     act(() => frames.shift()?.(CAMPFIRE_ANIMATION_MS));
     unmount();
-    act(() => vi.advanceTimersByTime(CAMPFIRE_CONTINUE_DELAY));
+    act(() => vi.advanceTimersByTime(CAMPFIRE_CONTINUE_DELAY_MS));
     expect(onContinue).not.toHaveBeenCalled();
   });
 });

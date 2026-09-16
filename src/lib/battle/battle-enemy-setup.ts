@@ -17,7 +17,7 @@ import {
 
 function enemyProgressionDepth(roomMultiplier: number): number {
   if (roomMultiplier <= 1) return 0;
-  return Math.min(ENEMY_PROGRESSION_DEPTH_LIMIT, 1 + Math.round((roomMultiplier - 1) / ROOM_SCALING_INCREMENT));
+  return Math.min(ENEMY_PROGRESSION_DEPTH_LIMIT, Math.round((roomMultiplier - 1) / ROOM_SCALING_INCREMENT));
 }
 
 function evaluateEnemyCurve(curve: { base: number; linear: number; quadratic: number }, depth: number): number {

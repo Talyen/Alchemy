@@ -106,7 +106,13 @@ export function pruneOrphanGearLoadouts(inventory: GearInstance[], loadouts: Gea
     }
     const offHand = resolveEquippedDefinitionAt(inventory, next[characterId], "off-hand");
     const mainHand = resolveEquippedDefinitionAt(inventory, next[characterId], "main-hand");
-    if (offHand && isQuiver(offHand) && (!mainHand || !isRangedWeapon(mainHand))) {
+    // Mirror resolveHandConflicts so crafted/legacy saves cannot hold hand
+    // pairings the equip path would never produce.
+    if (mainHand && isTwoHanded(mainHand) && next[characterId]["off-hand"]) {
+      next[characterId]["off-hand"] = null;
+    } else if (offHand && isQuiver(offHand) && (!mainHand || !isRangedWeapon(mainHand))) {
+      next[characterId]["off-hand"] = null;
+    } else if (mainHand && isRangedWeapon(mainHand) && offHand && !isQuiver(offHand)) {
       next[characterId]["off-hand"] = null;
     }
   }

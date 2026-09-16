@@ -76,9 +76,13 @@ export function useAppAudioEffects({
 
   useEffect(() => {
     muteInBackgroundRef.current = muteInBackground;
+    setMuted(isNonPlayerAudioHost() || (muteInBackground && isAppInBackground()));
+  }, [muteInBackground]);
+
+  useEffect(() => {
     initAudioHost();
     function applyBackgroundMute(event?: Event) {
-      setMuted(isNonPlayerAudioHost() || (muteInBackground && isAppInBackground(event)));
+      setMuted(isNonPlayerAudioHost() || (muteInBackgroundRef.current && isAppInBackground(event)));
     }
 
     applyBackgroundMute();
@@ -93,7 +97,7 @@ export function useAppAudioEffects({
       window.removeEventListener("resize", applyBackgroundMute);
       setMuted(isNonPlayerAudioHost());
     };
-  }, [muteInBackground]);
+  }, []);
 
   const initialScreenRef = useRef(true);
 

@@ -8,7 +8,7 @@ The canonical kind list is [`BATTLE_CARD_EFFECT_KINDS`](./registry.ts). Template
 
 ## Adding a kind
 
-Add the union member in [`src/lib/game-data/types.ts`](../types.ts), a schema definition in the matching `<group>-schemas.ts`, the definition in `TEMPLATE_EFFECT_DEFINITIONS`, a handler in the matching `<group>-handlers.ts` plus its `EFFECT_APPLY_BY_KIND` row, a `FORMATTERS` row in [`effect-metadata.ts`](../effect-metadata.ts), and a numeric-parity check in [`numeric-parity.ts`](../../content-validation/card-parity/numeric-parity.ts) when the kind has an authored number line. Card previews show authored base amounts only — no handler math is mirrored into tooltips.
+Add the union member in [`src/lib/game-data/types.ts`](../types.ts), a schema definition in the matching `<group>-schemas.ts`, the definition in `TEMPLATE_EFFECT_DEFINITIONS`, a handler in the matching `<group>-handlers.ts` plus its `EFFECT_APPLY_BY_KIND` row, a `FORMATTERS` row in [`effect-metadata.ts`](../effect-metadata.ts), and a numeric-parity check in [`numeric-parity.ts`](../../content-validation/card-parity/numeric-parity.ts) when the kind has an authored number line. Add the line shape once to the shared classifiers in [`line-classifiers.ts`](../../content-validation/card-parity/line-classifiers.ts) so count parity and numeric parity stay in agreement. Card previews show authored base amounts only — no handler math is mirrored into tooltips.
 
 [`applyCardEffects`](../../battle/effect-handlers/registry.ts) is the single entry point exported from `@/lib/battle`. It walks each effect on a card, routes `chance` (via `rollChance` + `getBattleRng`) and `repeat-over-turns` (queue `pendingTurnStartEffects` with source card ID, Consume, and tags) before the registry, and otherwise delegates to `applyEffectByKind`.
 
@@ -48,3 +48,17 @@ retaining existing encounter exceptions. Selection and trait limits are owned by
 - [`tests/lib/battle/effect-handlers.test.ts`](../../../../tests/lib/battle/effect-handlers.test.ts) — handler contract (mismatched kind throws, every non-recursive kind has a handler), Death's Door, status/CC, cleanse/multiply, `convertCurrentMana` Block-per-Mana semantics, and `ifEnemyFrozen` branches.
 - [`tests/lib/game-data/effects-registry.test.ts`](../../../../tests/lib/game-data/effects-registry.test.ts) — every kind has a schema, refines reject contradictory flags, and conditional fields parse.
 - [`tests/lib/game-data/descriptions-match-effects.test.ts`](../../../../tests/lib/game-data/descriptions-match-effects.test.ts) — card `descriptionLines` reflect their `effects`.
+
+## Gear and trinket effects
+
+Equipment does not use the card-effect registry above. Gear affixes resolve to
+[`GEAR_EFFECT_KEYS`](../../gear/gear-effect-manifest.ts) via `gear/affixes.ts`
+(description formatting shared in `formatAffixDescription`), uniques contribute
+canonical rolls from `gear/unique-catalog.ts`, and `computeGearManifest`
+snapshots the equipped loadout into battle (`rebindLiveRunMeta`); see
+[ARMORY battle integration](../../../../docs/ARMORY.md#battle-integration).
+Trinket effects resolve to `TrinketManifest` via `computeTrinketManifest` in
+`lib/trinkets.ts`; every key has a documented consumer pinned by the manifest
+coverage test in `tests/lib/content-validation/trinket-validation.test.ts`.
+`battle/gear-effects.ts` holds only shared helpers, not a dispatch table —
+each battle consumer reads the manifests where its effect applies.

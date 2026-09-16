@@ -50,27 +50,34 @@ describe("resolveMysteryEventTrinkets", () => {
     expect(charm?.effects).toContainEqual({ kind: "gainTrinket", trinketId: "icy-heart" });
   });
 
-  it("replaces an owned specified trinket with a random unowned one", () => {
+  it("falls back to astral gear when the named trinket is already owned", () => {
     const event = findMysteryEvent("enchanted-spring");
     expect(event).not.toBeNull();
     const resolved = resolveMysteryEventTrinkets(event!, ["icy-heart"], () => 0);
     const charm = resolved.choices.find((choice) => choice.label === "Take the Charm");
-    const trinket = charm?.effects.find((effect) => effect.kind === "gainTrinket");
-    expect(trinket?.kind).toBe("gainTrinket");
-    if (trinket?.kind !== "gainTrinket") return;
-    expect(trinket.trinketId).not.toBe("icy-heart");
-    expect(trinketLibrary.some((entry) => entry.id === trinket.trinketId)).toBe(true);
+    const reward = charm?.effects.find(
+      (effect) => effect.kind === "gainTrinket" || effect.kind === "gainGeneratedGear",
+    );
+    // The narrative still names the charm, so no unrelated trinket is granted.
+    expect(reward?.kind).toBe("gainGeneratedGear");
+    if (reward?.kind !== "gainGeneratedGear") return;
+    expect(reward.astral).toBe(true);
+    expect(gearBaseItemList.some((item) => item.id === reward.baseItemId)).toBe(true);
+    // The other choice still grants its unowned named trinket.
+    const moss = resolved.choices.find((choice) => choice.label === "Gather the Moss");
+    expect(moss?.effects).toContainEqual({ kind: "gainTrinket", trinketId: "groves-favor" });
   });
 
-  it("does not assign the same fallback trinket to two owned choices", () => {
+  it("resolves each choice from the same pre-event collection", () => {
     const event = findMysteryEvent("fairy-ring");
     expect(event).not.toBeNull();
     const resolved = resolveMysteryEventTrinkets(event!, ["lucky-clover", "parasitic-bloom"], () => 0);
-    const ids = trinketIdsOn(resolved);
-    expect(ids).toHaveLength(2);
-    expect(ids[0]).not.toBe(ids[1]);
-    expect(ids).not.toContain("lucky-clover");
-    expect(ids).not.toContain("parasitic-bloom");
+    // Both named trinkets are owned, so each choice independently falls back
+    // to astral gear instead of stealing random trinkets from the other.
+    expect(trinketIdsOn(resolved)).toHaveLength(0);
+    for (const choice of resolved.choices) {
+      expect(choice.effects[0]).toMatchObject({ kind: "gainGeneratedGear", astral: true });
+    }
   });
 
   it("reserves a kept preferred trinket so a later random grant cannot reuse it", () => {
@@ -191,5 +198,17 @@ it("keeps the last unowned Boon available in mutually exclusive choices", () => 
   };
   const owned = trinketLibrary.filter((entry) => entry.id !== "bone-charm").map((entry) => entry.id);
   const resolved = resolveMysteryEventTrinkets(event, owned, () => 0);
+  expect(trinketIdsOn(resolved)).toEqual(["bone-charm", "bone-charm"]);
+});
+
+it("offers the same named trinket in every choice that names it", () => {
+  const event = {
+    ...eventWithTwoTrinkets,
+    choices: [
+      { label: "A", effects: [{ kind: "gainTrinket" as const, trinketId: "bone-charm" }] },
+      { label: "B", effects: [{ kind: "gainTrinket" as const, trinketId: "bone-charm" }] },
+    ],
+  };
+  const resolved = resolveMysteryEventTrinkets(event, [], () => 0);
   expect(trinketIdsOn(resolved)).toEqual(["bone-charm", "bone-charm"]);
 });

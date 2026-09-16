@@ -58,12 +58,12 @@ describe("initializeEnemyState", () => {
     const roomMul = 1 + 4 * ROOM_SCALING_INCREMENT;
     const result = initializeEnemyState(skeleton, 5, []);
     expect(result.roomScalingMultiplier).toBe(roomMul);
-    expect(result.enemyMaxHealth).toBe(88);
+    expect(result.enemyMaxHealth).toBe(83);
     const physical = scaleEnemyAbilityDamage(
       { currentEnemy: skeleton, roomScalingMultiplier: roomMul, difficultyModifiers: [] },
       { kind: "damage", damageType: "physical", amount: 6 },
     );
-    expect(physical.amount).toBe(10);
+    expect(physical.amount).toBe(9);
   });
 
   it("multiplies max health with enemy-health-multiplier", () => {

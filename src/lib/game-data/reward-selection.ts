@@ -1,4 +1,4 @@
-import { REWARD_SELECTION_CONFIG, REWARD_RANDOM_CHANCE } from "../game-constants";
+import { REWARD_SELECTION_CONFIG, REWARD_RANDOM_CHANCE_FRACTION } from "../game-constants";
 import { pickRandom, shuffle } from "@/lib/utils";
 import { getCardKeywords } from "./keywords";
 import type { BattleCard, KeywordId } from "./types";
@@ -47,7 +47,7 @@ function pickOneCard(
   selected: BattleCard[],
   rng: () => number,
 ): BattleCard | undefined {
-  if (rng() >= REWARD_RANDOM_CHANCE) {
+  if (rng() >= REWARD_RANDOM_CHANCE_FRACTION) {
     const availableAffinity = affinityPool.filter((card) => !selected.includes(card));
     if (availableAffinity.length > 0) return pickRandom(availableAffinity, rng);
   }

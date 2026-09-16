@@ -1,9 +1,9 @@
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import {
-  ENEMY_DODGE_CHANCE,
+  ENEMY_DODGE_CHANCE_PERCENT,
   HALF_DIVISOR,
-  PLAYER_DODGE_CHANCE,
-  MAX_PLAYER_DODGE_CHANCE,
+  PLAYER_DODGE_CHANCE_PERCENT,
+  MAX_PLAYER_DODGE_CHANCE_PERCENT,
   STATUS_CONFIG,
   UNIQUE_GEAR_COMBAT,
 } from "../game-constants";
@@ -27,16 +27,19 @@ function getPlayerDodgeChance(
   >,
 ): number {
   let chance =
-    PLAYER_DODGE_CHANCE + state.gearEffects.dodgeChance + state.talentEffects.dodgeChance + state.dodgeChanceFromDamage;
+    PLAYER_DODGE_CHANCE_PERCENT +
+    state.gearEffects.dodgeChance +
+    state.talentEffects.dodgeChance +
+    state.dodgeChanceFromDamage;
   if (state.enemyStatuses.burn > 0) chance += state.talentEffects.dodgeChanceWhileEnemyBurning;
-  if (hasEncounterBenefit(state, "elusive")) chance += LABYRINTH_MODIFIER_CONFIG.playerDodgeBonus;
+  if (hasEncounterBenefit(state, "elusive")) chance += LABYRINTH_MODIFIER_CONFIG.playerDodgeBonusPercent;
   if (state.gearEffects.archeryDodgeAndDraw > 0 && state.uniqueGear.wrenflightActive)
-    chance += UNIQUE_GEAR_COMBAT.wrenflightDodgeChance;
+    chance += UNIQUE_GEAR_COMBAT.wrenflightDodgeChancePercent;
   if (state.playerStatuses.block === 0) chance += state.talentEffects.dodgeChanceWithoutBlock;
   if (state.talentEffects.dodgeChanceBelowHalfHealth > 0 && state.playerHealth < state.playerMaxHealth / HALF_DIVISOR) {
     chance += state.talentEffects.dodgeChanceBelowHalfHealth;
   }
-  return clamp(chance, 0, MAX_PLAYER_DODGE_CHANCE);
+  return clamp(chance, 0, MAX_PLAYER_DODGE_CHANCE_PERCENT);
 }
 
 function tryDodgePacket(
@@ -79,7 +82,9 @@ function enemyCanDodge(state: BattleState): boolean {
 export function tryDodgePlayerAttackPacket(state: BattleState, combatTexts: CombatTextEvent[]): BattleState | null {
   return tryDodgePacket(state, combatTexts, {
     target: "enemy",
-    chance: ENEMY_DODGE_CHANCE + (hasEnemyTrait(state, "elusive-foe") ? LABYRINTH_MODIFIER_CONFIG.enemyDodgeBonus : 0),
+    chance:
+      ENEMY_DODGE_CHANCE_PERCENT +
+      (hasEnemyTrait(state, "elusive-foe") ? LABYRINTH_MODIFIER_CONFIG.enemyDodgeBonusPercent : 0),
     canDodge: enemyCanDodge(state),
   });
 }
