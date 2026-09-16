@@ -26,20 +26,22 @@ test("Escape cannot redirect a prepared navigation", async ({ page }) => {
 test("interrupting a tab reveal never jumps back to full opacity", critical, async ({ page }) => {
   await new MenuPage(page).gotoCollection();
   await expect(page.locator(".page-enter")).toHaveCSS("opacity", "1");
-  await page.getByRole("button", { name: "Cards", exact: true }).click();
   const samples = await page.evaluate(async () => {
     const pick = (name: string) =>
       [...document.querySelectorAll("button")].find((button) => button.textContent?.trim() === name);
-    // Under CI load a single 180ms fade can complete between rAF callbacks,
-    // so re-arm the Cards -> Heroes transition up to three times before giving up.
-    for (let attempt = 0; attempt < 3; attempt += 1) {
-      pick("Cards")?.click();
-      const settledDeadline = performance.now() + 2000;
-      while (performance.now() < settledDeadline) {
+    const waitSettled = async () => {
+      const deadline = performance.now() + 5000;
+      while (performance.now() < deadline) {
         await new Promise(requestAnimationFrame);
         const settled = document.querySelector(".screen-fade-in:not([data-artwork-pending])");
-        if (settled && Number(getComputedStyle(settled).opacity) === 1) break;
+        if (settled && Number(getComputedStyle(settled).opacity) === 1) return;
       }
+    };
+    // Collection opens on Heroes, and every attempt ends back on Heroes, so
+    // each Cards click starts a fresh transition (re-clicking the active tab
+    // is a no-op that would leave nothing to interrupt).
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      pick("Cards")?.click();
       const deadline = performance.now() + 5000;
       while (performance.now() < deadline) {
         await new Promise(requestAnimationFrame);
@@ -47,16 +49,18 @@ test("interrupting a tab reveal never jumps back to full opacity", critical, asy
         if (!slot) continue;
         const opacity = Number(getComputedStyle(slot).opacity);
         if (opacity < 0.03 || opacity > 0.85) continue;
+        // Hold the node across the interrupt: the FadeSlot div persists while
+        // its phase flips to exit, so re-querying .screen-fade-in would miss it.
         const captured = [opacity];
         pick("Heroes")?.click();
         for (let frame = 0; frame < 6 && captured.length < 4; frame += 1) {
           await new Promise(requestAnimationFrame);
-          const current = document.querySelector(".screen-fade-in:not([data-artwork-pending])");
-          if (current) captured.push(Number(getComputedStyle(current).opacity));
+          if (slot.isConnected) captured.push(Number(getComputedStyle(slot).opacity));
         }
-        if (captured.length < 4) continue;
+        if (captured.length < 4) break;
         return captured;
       }
+      await waitSettled();
     }
     throw new Error("No partially revealed tab observed");
   });
