@@ -59,10 +59,18 @@ describe("card corruption outcomes", () => {
     expect(next.effects).toEqual([{ kind: "player-status", status: "forge", amount: 0 }]);
   });
 
-  it("treats reducing Health loss as strengthening", () => {
+  it("treats reducing Health loss as strengthening and assigns a positive delta", () => {
     const next = outcome("faustian-bargain", "strengthen");
     expect(next.descriptionLines[0]).toBe("Lose 1 Health");
     expect(next.effects[0]).toEqual({ kind: "lose-health", amount: 1 });
+    const strengthenGroup = getCorruptionMutationGroups(cardById["faustian-bargain"]!).find(
+      (entry) => entry.kind === "strengthen",
+    )!;
+    expect(strengthenGroup.mutations[0]!.delta).toBe(1);
+    const weakenGroup = getCorruptionMutationGroups(cardById["faustian-bargain"]!).find(
+      (entry) => entry.kind === "weaken",
+    )!;
+    expect(weakenGroup.mutations[0]!.delta).toBe(-1);
   });
 
   it("adds one effect before trailing keywords and marks its number", () => {
@@ -318,6 +326,29 @@ describe("labyrinth corruption room modifiers", () => {
     expect(result?.corruptedCard.descriptionLines).toEqual(["One", "Two", "Three", "Gain 3 Block"]);
     expect(result?.corruptedCard.effects).toHaveLength(2);
     expect(result?.delta).toBe(1);
+  });
+
+  it("twin-offering does not pair reusable with consume", () => {
+    const potion = cardById["health-potion"]!;
+    // Roll reusable as the first mutation
+    const groups = getCorruptionMutationGroups(potion);
+    const reusableIndex = groups.findIndex((g) => g.kind === "reusable");
+    expect(reusableIndex).toBeGreaterThanOrEqual(0);
+    const total = groups.reduce((sum, g) => sum + g.weight, 0);
+    const reusableWeightBefore = groups.slice(0, reusableIndex).reduce((sum, g) => sum + g.weight, 0);
+    const roll = (reusableWeightBefore + 0.1) / total;
+    const result = corruptCard(potion, [potion], makeRng([roll, 0, 0, 0]), ["twin-offering"]);
+    expect(result).not.toBeNull();
+    // After removing consume via reusable, consume must not be re-added
+    expect(result?.corruptedCard.consume).toBe(false);
+  });
+
+  it("safely handles boundary roll without failing corruptCard", () => {
+    const slash = cardById.slash!;
+    // Roll 0.9999999999 on weight selection
+    const result = corruptCard(slash, [slash], makeRng([0.9999999999, 0]));
+    expect(result).not.toBeNull();
+    expect(result?.corruptedCard.corrupted).toBe(true);
   });
 });
 

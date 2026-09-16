@@ -117,15 +117,29 @@ export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget
   return targets;
 }
 
+function areEffectsEquivalent(a: BattleCardEffect, b: BattleCardEffect | undefined): boolean {
+  if (!b) return false;
+  if (a === b) return true;
+  if (a.kind !== b.kind) return false;
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+  if (aKeys.length !== bKeys.length) return false;
+  const aRecord = a as Record<string, unknown>;
+  const bRecord = b as Record<string, unknown>;
+  return aKeys.every((key) => aRecord[key] === bRecord[key]);
+}
+
 export function replaceNumberAt(line: string, matchIndex: number, nextValue: number): string {
   if (line.startsWith("Your Companion acts ") && matchIndex === 20) {
     return `Your Companion acts ${nextValue === 1 ? "once" : nextValue === 2 ? "twice" : `${nextValue} times`}`;
   }
+  // "Draw a card" has no leading digits at index 5 ("a card"), so handle word-to-digit conversion early.
   if (line === "Draw a card" && matchIndex === 5) return nextValue === 1 ? line : `Draw ${nextValue} cards`;
   if (matchIndex < 0 || matchIndex >= line.length) return line;
   const match = line.slice(matchIndex).match(CORRUPTION_TEXT_PATTERNS.leadingNumber);
   if (!match) return line;
   const replaced = `${line.slice(0, matchIndex)}${nextValue}${line.slice(matchIndex + match[0].length)}`;
+  // Handle digit-to-word revert when value becomes 1.
   if (/^Draw \d+ cards?$/i.test(replaced)) return nextValue === 1 ? "Draw a card" : `Draw ${nextValue} cards`;
   if (/^Gain \d+ Mana Crystals?$/.test(replaced)) return `Gain ${nextValue} Mana Crystal${nextValue === 1 ? "" : "s"}`;
   if (/^Cleanse \d+ harmful status effects?$/.test(replaced))
@@ -142,7 +156,12 @@ export function getCorruptionTargetEffect(card: BattleCard, target: CorruptionTa
   return effect;
 }
 
-export function updateCardNumericValue(card: BattleCard, target: CorruptionTarget, nextValue: number): BattleCard {
+export function updateCardNumericValue(
+  card: BattleCard,
+  target: CorruptionTarget,
+  nextValue: number,
+  authoredPaths?: ReadonlySet<string>,
+): BattleCard {
   const source = getCorruptionTargetEffect(card, target);
   const line = card.descriptionLines[target.lineIndex];
   if (!source || (source as Record<string, unknown>)[target.field] !== target.value || line === undefined) return card;
@@ -151,16 +170,16 @@ export function updateCardNumericValue(card: BattleCard, target: CorruptionTarge
   if (nextLine === line) return card;
   const pathKey = (root: number, path: number[]) => [root, ...path].join("/");
   const selected = pathKey(target.effectIndex, target.effectPath ?? []);
-  const authored = new Set(
-    getEditableCorruptionTargets(card).map((entry) => pathKey(entry.effectIndex, entry.effectPath ?? [])),
-  );
+  const authored =
+    authoredPaths ??
+    new Set(getEditableCorruptionTargets(card).map((entry) => pathKey(entry.effectIndex, entry.effectPath ?? [])));
   const sharedDamageLine = target.field === "amount" && sharesDamageAmount(line, source) ? line : null;
   function update(effect: BattleCardEffect, root: number, path: number[] = []): BattleCardEffect {
     const key = pathKey(root, path);
     if (
       key === selected ||
       (root === target.effectIndex && sharedDamageLine !== null && sharesDamageAmount(sharedDamageLine, effect)) ||
-      (path.length > 0 && !authored.has(key) && JSON.stringify(effect) === JSON.stringify(source))
+      (path.length > 0 && !authored.has(key) && areEffectsEquivalent(effect, source))
     ) {
       if (effect.kind === "random-damage" && target.field === "minAmount" && hasSharedRandomAmount(card, effect)) {
         return { ...effect, minAmount: nextValue, maxAmount: nextValue };
@@ -187,7 +206,12 @@ export function updateCardNumericValue(card: BattleCard, target: CorruptionTarge
   };
 }
 
-export function applyNumericCorruption(card: BattleCard, target: CorruptionTarget, delta: number): BattleCard {
+export function applyNumericCorruption(
+  card: BattleCard,
+  target: CorruptionTarget,
+  delta: number,
+  authoredPaths?: ReadonlySet<string>,
+): BattleCard {
   const currentLine = card.descriptionLines[target.lineIndex];
   if (currentLine === undefined) return card;
 
@@ -203,7 +227,7 @@ export function applyNumericCorruption(card: BattleCard, target: CorruptionTarge
   const nextLine = replaceNumberAt(currentLine, target.matchIndex, nextValue);
   if (nextLine === currentLine && target.value !== nextValue) return card;
 
-  const nextCard = updateCardNumericValue(card, target, nextValue);
+  const nextCard = updateCardNumericValue(card, target, nextValue, authoredPaths);
   if (nextCard === card) return card;
   nextCard.corrupted = true;
   const deltaLen = nextLine.length - currentLine.length;

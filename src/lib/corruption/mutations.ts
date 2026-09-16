@@ -80,6 +80,7 @@ function isPlainMagnitude(effect: BattleCardEffect): boolean {
 }
 
 function numericMutations(card: BattleCard, targets: CorruptionTarget[], strengthen: boolean): Mutation[] {
+  const authoredPaths = new Set(targets.map((entry) => [entry.effectIndex, ...(entry.effectPath ?? [])].join("/")));
   return targets.flatMap((target) => {
     const effect = getCorruptionTargetEffect(card, target);
     if (!effect) return [];
@@ -92,8 +93,8 @@ function numericMutations(card: BattleCard, targets: CorruptionTarget[], strengt
     const amount = scalable
       ? Math.max(1, Math.round(target.value * (strengthen ? CORRUPTION_STRENGTHEN_RATIO : CORRUPTION_WEAKEN_RATIO)))
       : 1;
-    const next = applyNumericCorruption(card, target, direction * amount);
-    return next === card ? [] : [{ card: next, delta: direction }];
+    const next = applyNumericCorruption(card, target, direction * amount, authoredPaths);
+    return next === card ? [] : [{ card: next, delta: strengthen ? 1 : -1 }];
   });
 }
 
@@ -118,16 +119,15 @@ function conversionMutations(card: BattleCard, target: CorruptionTarget | undefi
           (effect.amount * CORRUPTION_DAMAGE_BASELINES[damageType]) / CORRUPTION_DAMAGE_BASELINES[effect.damageType],
         ),
       );
-      const next = applyNumericCorruption(card, target, amount - target.value);
-      const descriptionLines = [...next.descriptionLines];
+      const descriptionLines = [...card.descriptionLines];
       descriptionLines[target.lineIndex] = `Deal ${amount} ${capitalizeWord(damageType)} damage`;
       return {
-        ...next,
+        ...card,
         corrupted: true,
         descriptionLines,
         effects: [{ ...effect, damageType, amount }],
         corruptedValuePositions: [
-          ...(next.corruptedValuePositions ?? []).filter(
+          ...(card.corruptedValuePositions ?? []).filter(
             (position) => position.lineIndex !== target.lineIndex || position.matchIndex !== target.matchIndex,
           ),
           { lineIndex: target.lineIndex, matchIndex: target.matchIndex },

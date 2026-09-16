@@ -101,4 +101,23 @@ describe("CorruptionScreen", () => {
     await user.click(continueBtn);
     expect(onExit).toHaveBeenCalledOnce();
   });
+
+  it("resets selection state when canceling and re-entering", async () => {
+    const user = userEvent.setup();
+    render(<CorruptionScreen runDeck={[testSlash, testStab]} result={null} onCorrupt={vi.fn()} onExit={vi.fn()} />);
+
+    await user.click(screen.getByRole("button", { name: /Corrupt a Card/i }));
+    await user.click(screen.getByRole("button", { name: /Select Stab/i }));
+
+    const corruptConfirmBtn = screen.getByRole("button", { name: "Corrupt" });
+    expect(corruptConfirmBtn).toHaveProperty("disabled", false);
+
+    await user.click(screen.getByRole("button", { name: /Cancel/i }));
+    expect(screen.getByText("Select a Card to Corrupt")).toBeTruthy();
+
+    // Re-entering picker should have selection cleared
+    await user.click(screen.getByRole("button", { name: /Corrupt a Card/i }));
+    const newCorruptBtn = screen.getByRole("button", { name: "Corrupt" });
+    expect(newCorruptBtn).toHaveProperty("disabled", true);
+  });
 });

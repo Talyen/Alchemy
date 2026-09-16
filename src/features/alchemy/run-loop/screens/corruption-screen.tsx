@@ -153,12 +153,19 @@ export function CorruptionScreen({
     onCorrupt(selectedIndex);
   }
 
+  function handleExit() {
+    setSelecting(false);
+    setSelectedIndex(null);
+    setPage(0);
+    onExit();
+  }
+
   return (
     <FadeSlot swapKey={result ? "result" : selecting ? "select" : "intro"} className="h-full w-full">
       <TitledScreenShell title="Altar of Corruption">
         <div className="mt-6 flex flex-col items-center gap-6 text-center">
           {result ? (
-            <CorruptionResultView result={result} onContinue={onExit} />
+            <CorruptionResultView result={result} onContinue={handleExit} />
           ) : selecting ? (
             <div className="flex flex-col items-center gap-5">
               <div>
@@ -202,7 +209,7 @@ export function CorruptionScreen({
                 setSelecting(true);
                 setPage(0);
               }}
-              onLeave={onExit}
+              onLeave={handleExit}
             />
           )}
         </div>

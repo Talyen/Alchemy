@@ -16,13 +16,14 @@ export interface CorruptionResult {
 export const isSpecialCorruptionCard = isMixedPotionCard;
 
 function pickMutation(groups: CorruptionMutationGroup[], rng: () => number) {
+  if (groups.length === 0) return undefined;
   const total = groups.reduce((sum, group) => sum + group.weight, 0);
   let roll = rng() * total;
   for (const group of groups) {
     roll -= group.weight;
     if (roll < 0) return pickRandom(group.mutations, rng);
   }
-  return undefined;
+  return pickRandom(groups[groups.length - 1]!.mutations, rng);
 }
 
 function preserveCardUid(card: BattleCard, uid: BattleCard["uid"]): BattleCard {
@@ -90,7 +91,13 @@ export function corruptCard(
 }
 
 function isOppositeAxis(first: CorruptionMutationGroup["kind"] | undefined, second: CorruptionMutationGroup["kind"]) {
-  return (first === "strengthen" && second === "weaken") || (first === "weaken" && second === "strengthen");
+  if (!first) return false;
+  return (
+    (first === "strengthen" && second === "weaken") ||
+    (first === "weaken" && second === "strengthen") ||
+    (first === "consume" && second === "reusable") ||
+    (first === "reusable" && second === "consume")
+  );
 }
 
 export function corruptDeckCard(
