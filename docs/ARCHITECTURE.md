@@ -130,7 +130,7 @@ Reward grants and bundle advancement follow [Activity and rewards](#activity-and
 
 Purse-to-battle synchronization updates both the current battle and any pending opening-draw or enemy-turn result. The pending result retains its unapplied Gold change relative to the current battle, so restoring a run preserves Gold earned or spent elsewhere. Hydration retains both saved Gold values until this synchronization runs; completing the transition applies the remaining change once through the battle-to-purse commit.
 
-- **Autosave scheduling:** `app/autosave-scheduler.ts` owns revision acknowledgement, cancellation generations, maximum wait, and retry decisions for one subscription lifetime. The React adapter supplies time, timers, lifecycle events, snapshots, and storage writes. Late completions from cancelled generations cannot acknowledge new progress.
+- **Autosave scheduling:** `app/autosave-scheduler.ts` owns revision acknowledgement, cancellation epochs, maximum wait, retry decisions, and the exit-once latch for one subscription lifetime. The React adapter supplies time, timers, lifecycle events, debounce selection, snapshots, completion gating, and storage writes. Late completions from cancelled epochs cannot acknowledge new progress. `SaveWriteQueue.storageEpoch` separately guards storage invalidation (clear/protection/reset) for all queue writers, including non-scheduler fast paths.
 
 ## Session capability ports
 

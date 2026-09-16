@@ -113,7 +113,6 @@ function AppKeywordPlasmaBackground({ renderedScreen, intensity }: { renderedScr
 }
 
 function AppMainContent({
-  saveBlockedByNewerVersion,
   vrStageRef,
   stagePixelRatio,
   stageStyle,
@@ -127,7 +126,6 @@ function AppMainContent({
   tooltipBlocked,
   gameMenu,
 }: {
-  saveBlockedByNewerVersion: boolean;
   vrStageRef: React.RefObject<HTMLDivElement | null>;
   stagePixelRatio: number;
   stageStyle: React.CSSProperties;
@@ -163,16 +161,7 @@ function AppMainContent({
     [homesteadBondedCompanions, homesteadEffects, talentEffects],
   );
 
-  const [deletingUnsupportedSave, setDeletingUnsupportedSave] = useState(false);
-  const handleDeleteUnsupportedSave = useCallback(() => {
-    if (deletingUnsupportedSave) return;
-    setDeletingUnsupportedSave(true);
-    void wipeUnsupportedSaveAndReload().catch(() => {
-      setDeletingUnsupportedSave(false);
-    });
-  }, [deletingUnsupportedSave]);
-
-  const showBattleCluster = renderedScreen === "battle" && !saveBlockedByNewerVersion;
+  const showBattleCluster = renderedScreen === "battle";
   const { isAutoplayEnabled, toggleAutoplayEnabled, boonInspectOpen, toggleBoonInspect, closeBoonInspect } =
     run.routeCommands.battle;
   const runBoons = useActiveRunBoons();
@@ -199,7 +188,7 @@ function AppMainContent({
     ...inspection
   } = useCardInspection({
     screen: renderedScreen,
-    screenInteractive: screenInteractive && !saveBlockedByNewerVersion,
+    screenInteractive,
     returnToRunScreen: nav.returnToRunScreen,
     isCardPlayInProgress: run.routeCommands.battle.isCardPlayInProgress,
     gameMenuOpen: gameMenu.gameMenuOpen,
@@ -223,9 +212,7 @@ function AppMainContent({
     event.preventDefault();
     event.stopPropagation();
   }
-  const content = saveBlockedByNewerVersion ? (
-    <UnsupportedSaveOverlay onDeleteSaveAndContinue={handleDeleteUnsupportedSave} deleting={deletingUnsupportedSave} />
-  ) : (
+  const content = (
     <div
       ref={artworkRef}
       data-artwork-pending={artworkPending}
@@ -307,7 +294,6 @@ function AppMainContent({
         />
       </div>
       <GameMenuOverlay
-        saveBlockedByNewerVersion={saveBlockedByNewerVersion}
         gameMenuOpen={gameMenu.gameMenuOpen}
         anchorRect={gameMenu.menuAnchorRect}
         currentScreen={renderedScreen}
@@ -319,13 +305,36 @@ function AppMainContent({
   );
 }
 
-function AppInner({
-  saveBlockedByNewerVersion,
-  displayLayout,
-}: {
-  saveBlockedByNewerVersion: boolean;
-  displayLayout: ReturnType<typeof useVirtualResolution>;
-}) {
+function BlockedSaveShell({ displayLayout }: { displayLayout: ReturnType<typeof useVirtualResolution> }) {
+  const { frameStyle, stageStyle } = displayLayout;
+  const [deletingUnsupportedSave, setDeletingUnsupportedSave] = useState(false);
+  const handleDeleteUnsupportedSave = useCallback(() => {
+    if (deletingUnsupportedSave) return;
+    setDeletingUnsupportedSave(true);
+    void wipeUnsupportedSaveAndReload().catch(() => {
+      setDeletingUnsupportedSave(false);
+    });
+  }, [deletingUnsupportedSave]);
+
+  return (
+    <div className="flex h-screen w-screen items-center justify-center overflow-hidden bg-background">
+      <div className="relative" style={frameStyle}>
+        <div
+          data-testid="vr-stage"
+          className="[container-type:size] absolute top-0 left-0 overflow-hidden bg-background"
+          style={stageStyle}
+        >
+          <UnsupportedSaveOverlay
+            onDeleteSaveAndContinue={handleDeleteUnsupportedSave}
+            deleting={deletingUnsupportedSave}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AppInner({ displayLayout }: { displayLayout: ReturnType<typeof useVirtualResolution> }) {
   const settings = useAppSettings();
   const vrStageRef = useRef<HTMLDivElement>(null);
   const { frameStyle, stageStyle, tooltipStyle, aspectMode, stagePixelRatio } = displayLayout;
@@ -356,7 +365,6 @@ function AppInner({
         <div className="relative" style={frameStyle}>
           <div ref={setModalRoot} className="contents" />
           <AppMainContent
-            saveBlockedByNewerVersion={saveBlockedByNewerVersion}
             vrStageRef={vrStageRef}
             stagePixelRatio={stagePixelRatio}
             stageStyle={stageStyle}
@@ -407,5 +415,9 @@ export default function App() {
     return <StartupLoadingScreen progress={startupProgress} />;
   }
 
-  return <AppInner saveBlockedByNewerVersion={saveBlockedByNewerVersion} displayLayout={displayLayout} />;
+  if (saveBlockedByNewerVersion) {
+    return <BlockedSaveShell displayLayout={displayLayout} />;
+  }
+
+  return <AppInner displayLayout={displayLayout} />;
 }

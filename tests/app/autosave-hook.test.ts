@@ -38,64 +38,38 @@ function installBackend() {
   return { write, writeSync };
 }
 
-const mockStorage: Record<string, string> = {};
-
-function setupLocalStorage() {
-  const storage = {
-    getItem: (key: string) => mockStorage[key] ?? null,
-    setItem: (key: string, value: string) => {
-      mockStorage[key] = value;
-    },
-    removeItem: (key: string) => {
-      delete mockStorage[key];
-    },
-    clear: () => {
-      Object.keys(mockStorage).forEach((key) => delete mockStorage[key]);
-    },
-    key: (index: number) => Object.keys(mockStorage)[index] ?? null,
-    get length() {
-      return Object.keys(mockStorage).length;
-    },
-  } as Storage;
-
-  Object.defineProperty(window, "localStorage", { value: storage, configurable: true });
-}
-
 describe("useAlchemyAutosaveFromStores", () => {
   beforeEach(async () => {
     await resetStorageIoForTests();
     resetAllTestStores();
     vi.spyOn(console, "error").mockImplementation(() => {});
     vi.useFakeTimers();
-    Object.keys(mockStorage).forEach((key) => delete mockStorage[key]);
-    setupLocalStorage();
+    window.localStorage.clear();
   });
 
   afterEach(async () => {
     cleanup();
     await resetStorageIoForTests();
+    window.localStorage.clear();
     vi.restoreAllMocks();
     vi.useRealTimers();
   });
 
   it("writes debounced saves through storage io with lastSavedAt", async () => {
+    const { write } = installBackend();
     renderHook(() => useAlchemyAutosaveFromStores(true));
 
-    act(() => {
-      dispatchRunSessionCommand((draft) => setGold(draft, 77));
-    });
+    changeGold(77);
+    await advance(600);
 
-    await act(async () => {
-      vi.advanceTimersByTime(600);
-    });
-
-    const keys = Object.keys(mockStorage);
-    expect(keys.length).toBeGreaterThan(0);
-    const written = JSON.parse(mockStorage[keys[0]!]);
+    expect(write).toHaveBeenCalledTimes(1);
+    const written = JSON.parse(write.mock.calls[0]![1]);
+    expect(written.gold).toBe(77);
     expect(written.lastSavedAt).toBeGreaterThan(0);
   });
 
   it("flushes the latest dirty snapshot on pagehide before the debounce expires", () => {
+    const { writeSync } = installBackend();
     renderHook(() => useAlchemyAutosaveFromStores(true));
 
     act(() => {
@@ -106,34 +80,37 @@ describe("useAlchemyAutosaveFromStores", () => {
       window.dispatchEvent(new PageTransitionEvent("pagehide"));
     });
 
-    const keys = Object.keys(mockStorage);
-    expect(keys).toHaveLength(1);
-    expect(JSON.parse(mockStorage[keys[0]!]!).gold).toBe(91);
+    expect(writeSync).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(writeSync.mock.calls[0]![1]).gold).toBe(91);
   });
 
-  it("flushes within the max wait even when commits keep resetting the debounce", async () => {
+  it("flushes on visibilitychange to hidden", () => {
+    const { writeSync } = installBackend();
+    renderHook(() => useAlchemyAutosaveFromStores(true));
+    changeGold(5);
+    vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+    act(() => {
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    expect(writeSync).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(writeSync.mock.calls[0]![1]).gold).toBe(5);
+  });
+
+  it("holds the debounce while commits keep arriving (max-wait window covered at scheduler level)", async () => {
+    const { write } = installBackend();
     renderHook(() => useAlchemyAutosaveFromStores(true));
 
-    act(() => {
-      dispatchRunSessionCommand((draft) => setGold(draft, 1));
-    });
-    let lastGold = 1;
-    for (let i = 0; i < 39; i++) {
-      await act(async () => {
-        vi.advanceTimersByTime(250);
-        lastGold = 2 + i;
-        dispatchRunSessionCommand((draft) => setGold(draft, lastGold));
-      });
+    changeGold(1);
+    for (let i = 0; i < 4; i++) {
+      await advance(250);
+      changeGold(2 + i);
     }
-    expect(Object.keys(mockStorage)).toHaveLength(0);
+    expect(write).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(1);
 
-    await act(async () => {
-      vi.advanceTimersByTime(250);
-      await Promise.resolve();
-    });
-    const keys = Object.keys(mockStorage);
-    expect(keys.length).toBeGreaterThan(0);
-    expect(JSON.parse(mockStorage[keys[0]!]!).gold).toBe(lastGold);
+    await advance(500);
+    expect(write).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(write.mock.calls[0]![1]).gold).toBe(5);
   });
   it.each(["reported", "thrown"])("retries a %s failure on exit without another change", async (failure) => {
     const { write, writeSync } = installBackend();
@@ -189,7 +166,7 @@ describe("useAlchemyAutosaveFromStores", () => {
     renderHook(() => useAlchemyAutosaveFromStores());
     changeGold(1);
     await advance(500);
-    mockStorage["alchemy-disable-animations"] = "true";
+    window.localStorage.setItem("alchemy-disable-animations", "true");
     for (let i = 0; i < 9; i++) {
       await advance(1000);
       changeGold(i + 2);
@@ -247,8 +224,8 @@ describe("useAlchemyAutosaveFromStores", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it("retains a failed synchronous exit for the next lifecycle attempt", async () => {
-    const { writeSync } = installBackend();
+  it("writes one exit snapshot across pagehide and beforeunload, retrying a failed sync exit on the timer", async () => {
+    const { write, writeSync } = installBackend();
     writeSync.mockReturnValueOnce({ ok: false, error: "disk" });
     renderHook(() => useAlchemyAutosaveFromStores());
     changeGold(7);
@@ -258,9 +235,12 @@ describe("useAlchemyAutosaveFromStores", () => {
     act(() => {
       window.dispatchEvent(new Event("beforeunload"));
     });
-    expect(writeSync).toHaveBeenCalledTimes(2);
+    expect(writeSync).toHaveBeenCalledTimes(1);
+    await advance(10_000);
+    expect(write).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(write.mock.calls[0]![1]).gold).toBe(7);
     await advance(20_000);
-    expect(vi.getTimerCount()).toBe(0);
+    expect(write).toHaveBeenCalledTimes(1);
   });
   it("ignores a pre-clear completion while saving new post-clear progress", async () => {
     const { write } = installBackend();

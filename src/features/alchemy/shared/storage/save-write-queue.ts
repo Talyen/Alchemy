@@ -5,7 +5,7 @@ export type SaveWriteOutcome = "saved" | "failed" | "skipped";
 
 interface PendingSave {
   data: UnstampedSaveData;
-  generation: number;
+  storageEpoch: number;
   completion: Promise<SaveWriteOutcome>;
   resolve: (outcome: SaveWriteOutcome) => void;
 }
@@ -14,8 +14,8 @@ export class SaveWriteQueue {
   // Async serialization chain: writes and clears run one at a time. The
   // coalesced slot holds the latest pending write; the runner drains it in a
   // loop so overlapping enqueues collapse to two physical writes at most.
-  // writeGeneration invalidates stale writes on clear/protection/reset; it is
-  // distinct from the autosave scheduler generation, which guards hook-lifetime
+  // storageEpoch invalidates stale writes on clear/protection/reset; it is
+  // distinct from the autosave schedulerEpoch, which guards hook-lifetime
   // revision counters (see autosave-scheduler.ts).
   private chain: Promise<void> = Promise.resolve();
   private coalesced: PendingSave | null = null;
@@ -24,7 +24,7 @@ export class SaveWriteQueue {
   private pendingClears = 0;
   private runnerActive = false;
   private writesDisabled = false;
-  private writeGeneration = 0;
+  private storageEpoch = 0;
   private cancellationListeners = new Set<() => void>();
 
   get isIdle(): boolean {
@@ -59,7 +59,7 @@ export class SaveWriteQueue {
       this.discardPending();
       return Promise.resolve("skipped");
     }
-    if (this.coalesced && this.coalesced.generation === this.writeGeneration) {
+    if (this.coalesced && this.coalesced.storageEpoch === this.storageEpoch) {
       this.coalesced.data = data;
       return this.coalesced.completion;
     }
@@ -68,7 +68,7 @@ export class SaveWriteQueue {
     const completion = new Promise<SaveWriteOutcome>((settle) => {
       resolve = settle;
     });
-    this.coalesced = { data, generation: this.writeGeneration, completion, resolve };
+    this.coalesced = { data, storageEpoch: this.storageEpoch, completion, resolve };
     if (!this.runnerActive) {
       this.runnerActive = true;
       this.chain = this.chain.then(async () => {
@@ -119,7 +119,7 @@ export class SaveWriteQueue {
     this.pendingClears = 0;
     this.runnerActive = false;
     this.writesDisabled = false;
-    this.writeGeneration++;
+    this.storageEpoch++;
     this.cancellationListeners.clear();
   }
 
@@ -127,10 +127,10 @@ export class SaveWriteQueue {
     pending: PendingSave,
     write: (data: UnstampedSaveData) => Promise<SaveWriteOutcome>,
   ): Promise<SaveWriteOutcome> {
-    if (this.writesDisabled || this.isClearPending || pending.generation !== this.writeGeneration) return "skipped";
+    if (this.writesDisabled || this.isClearPending || pending.storageEpoch !== this.storageEpoch) return "skipped";
     try {
       const outcome = await write(pending.data);
-      return pending.generation === this.writeGeneration ? outcome : "skipped";
+      return pending.storageEpoch === this.storageEpoch ? outcome : "skipped";
     } catch (error) {
       logStorageFailure("Save data could not be written", error);
       return "failed";
@@ -138,7 +138,7 @@ export class SaveWriteQueue {
   }
 
   private cancelPendingWrites(): void {
-    this.writeGeneration++;
+    this.storageEpoch++;
     this.discardPending();
     for (const listener of this.cancellationListeners) listener();
   }

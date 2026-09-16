@@ -130,4 +130,28 @@ describe("useAlchemyBootstrap", () => {
     expect(new URL(window.location.href).searchParams.has("wipeLocalSave")).toBe(false);
     expect(hook.current).toBe(result);
   });
+
+  it.each(["unsupported-newer-schema", "unsupported-newer-content"] as const)(
+    "leaves stores untouched for %s so the blocked shell renders from defaults",
+    async (kind) => {
+      const result: SaveLoadState = {
+        data: defaultSaveData,
+        status:
+          kind === "unsupported-newer-schema"
+            ? { kind, detectedSchemaVersion: 999 }
+            : { kind, detectedContentVersion: 999 },
+      };
+      vi.mocked(bootstrapAlchemySaveState).mockResolvedValue(result);
+
+      const { result: hook } = renderHook(() => useAlchemyBootstrap());
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      expect(hydrateAlchemyPersistenceFields).not.toHaveBeenCalled();
+      expect(restoreRun).not.toHaveBeenCalled();
+      expect(hook.current).toBe(result);
+    },
+  );
 });

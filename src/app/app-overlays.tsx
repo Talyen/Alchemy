@@ -52,7 +52,6 @@ export function UnsupportedSaveOverlay({
 }
 
 export function GameMenuOverlay({
-  saveBlockedByNewerVersion,
   gameMenuOpen,
   anchorRect,
   currentScreen,
@@ -60,7 +59,6 @@ export function GameMenuOverlay({
   nav,
   onEndRun,
 }: {
-  saveBlockedByNewerVersion: boolean;
   gameMenuOpen: boolean;
   anchorRect: DOMRect | null;
   currentScreen: Screen;
@@ -73,7 +71,7 @@ export function GameMenuOverlay({
   const isArmoryLocked = useIsArmoryLocked();
   return (
     <GameMenu
-      isOpen={saveBlockedByNewerVersion ? false : gameMenuOpen}
+      isOpen={gameMenuOpen}
       anchorRect={anchorRect}
       currentScreen={currentScreen}
       onClose={onClose}

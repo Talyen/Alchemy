@@ -19,10 +19,7 @@ export function StartupLoadingScreen({ progress }: Props) {
       aria-valuenow={Math.round(fill * 100)}
       aria-label="Loading Alchemy"
     >
-      <h1
-        className="alchemy-loading-logo-pulse relative font-sans text-4xl font-black tracking-[0.15em] uppercase"
-        aria-label="Alchemy"
-      >
+      <h1 className="relative font-sans text-4xl font-black tracking-[0.15em] uppercase" aria-label="Alchemy">
         <span aria-hidden className="text-stone-700">
           Alchemy
         </span>

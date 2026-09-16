@@ -39,9 +39,15 @@ export function useAlchemyBootstrap(): SaveLoadState | null {
         result = { data: createDefaultSaveData(), status: { kind: "corrupt" } };
       }
       if (cancelled) return;
-      hydrateAlchemyPersistenceFields(result.data);
-      if (!readRunInitialized()) {
-        restoreRun(result.data.activeRun, result.data.talentXP, result.data.unlockedTalents);
+      // Unsupported-newer saves stay untouched: the blocked shell renders from
+      // defaults without hydrating stores or restoring the newer run behind it.
+      const isUnsupportedNewer =
+        result.status.kind === "unsupported-newer-schema" || result.status.kind === "unsupported-newer-content";
+      if (!isUnsupportedNewer) {
+        hydrateAlchemyPersistenceFields(result.data);
+        if (!readRunInitialized()) {
+          restoreRun(result.data.activeRun, result.data.talentXP, result.data.unlockedTalents);
+        }
       }
       setBootstrapResult(result);
     })();

@@ -28,6 +28,12 @@ describe("computeAutosaveDelay", () => {
     ).toBe(10_000);
   });
 
+  it("ignores an expired retry in the past", () => {
+    expect(
+      computeAutosaveDelay({ debounceMs: 500, maxWaitMs: 10_000, now: 5_000, dirtySince: 1_000, retryAt: 2_000 }),
+    ).toBe(500);
+  });
+
   it("starts immediately when animations are disabled", () => {
     expect(computeAutosaveDelay({ debounceMs: 0, maxWaitMs: 10_000, now: 1_000, dirtySince: 1_000, retryAt: 0 })).toBe(
       0,
@@ -39,7 +45,6 @@ describe("shouldAttemptFlush", () => {
   it("blocks clean and already-submitted revisions", () => {
     expect(
       shouldAttemptFlush({
-        enabled: true,
         revision: 1,
         acknowledgedRevision: 1,
         submittedRevision: 1,
@@ -48,7 +53,6 @@ describe("shouldAttemptFlush", () => {
     ).toBe(false);
     expect(
       shouldAttemptFlush({
-        enabled: true,
         revision: 2,
         acknowledgedRevision: 1,
         submittedRevision: 2,
@@ -58,21 +62,15 @@ describe("shouldAttemptFlush", () => {
   });
 
   it("allows terminal flushes past the submitted revision", () => {
-    expect(
-      shouldAttemptFlush({ enabled: true, revision: 2, acknowledgedRevision: 1, submittedRevision: 2, terminal: true }),
-    ).toBe(true);
+    expect(shouldAttemptFlush({ revision: 2, acknowledgedRevision: 1, submittedRevision: 2, terminal: true })).toBe(
+      true,
+    );
   });
 
-  it("blocks disabled persistence", () => {
-    expect(
-      shouldAttemptFlush({
-        enabled: false,
-        revision: 2,
-        acknowledgedRevision: 1,
-        submittedRevision: 1,
-        terminal: true,
-      }),
-    ).toBe(false);
+  it("blocks terminal flushes with nothing new to acknowledge", () => {
+    expect(shouldAttemptFlush({ revision: 1, acknowledgedRevision: 1, submittedRevision: 1, terminal: true })).toBe(
+      false,
+    );
   });
 });
 
@@ -89,7 +87,7 @@ describe("applyAutosaveCompletion", () => {
         now: 2_000,
         maxWaitMs: 10_000,
       }),
-    ).toMatchObject({ acknowledgedRevision: 2, retryAt: 0, cancelTimer: true, schedule: false });
+    ).toMatchObject({ acknowledgedRevision: 2, retryAt: 0, action: "cancel" });
   });
 
   it("keeps newer revisions dirty after an older save lands", () => {
@@ -104,7 +102,7 @@ describe("applyAutosaveCompletion", () => {
         now: 2_000,
         maxWaitMs: 10_000,
       }),
-    ).toMatchObject({ acknowledgedRevision: 2, schedule: true, cancelTimer: false });
+    ).toMatchObject({ acknowledgedRevision: 2, action: "schedule" });
   });
 
   it("rewinds to the acknowledged revision and retries after failure", () => {
@@ -119,7 +117,7 @@ describe("applyAutosaveCompletion", () => {
         now: 2_000,
         maxWaitMs: 10_000,
       }),
-    ).toMatchObject({ submittedRevision: 1, retryAt: 12_000, schedule: true });
+    ).toMatchObject({ submittedRevision: 1, retryAt: 12_000, action: "schedule" });
   });
 
   it("ignores a stale failed completion for a superseded revision", () => {
@@ -134,7 +132,7 @@ describe("applyAutosaveCompletion", () => {
         now: 2_000,
         maxWaitMs: 10_000,
       }),
-    ).toMatchObject({ schedule: false, cancelTimer: false, retryAt: 0 });
+    ).toMatchObject({ action: "ignore", retryAt: 0 });
   });
 });
 
@@ -152,5 +150,23 @@ describe("autosave subscription lifecycle", () => {
     expect(scheduler.complete(next, "failed", 600)).toBe("ignore");
     expect(scheduler.nextDelay(600, 500)).toBe(500);
     expect(scheduler.submit(false)).not.toBeNull();
+  });
+
+  it("submits one exit write per revision across back-to-back exit events", () => {
+    const scheduler = createAutosaveScheduler(10_000);
+    scheduler.markDirty(100);
+    expect(scheduler.submit(true)).not.toBeNull();
+    expect(scheduler.submit(true)).toBeNull();
+    scheduler.markDirty(200);
+    expect(scheduler.submit(true)).not.toBeNull();
+  });
+
+  it("preserves the max-wait window across re-schedules without new dirt", () => {
+    const scheduler = createAutosaveScheduler(10_000);
+    scheduler.markDirty(1_000);
+    // Rapid re-schedules without markDirty keep dirtySince, so the cap shrinks.
+    expect(scheduler.nextDelay(1_000, 500)).toBe(500);
+    expect(scheduler.nextDelay(10_500, 500)).toBe(500);
+    expect(scheduler.nextDelay(10_900, 500)).toBe(100);
   });
 });

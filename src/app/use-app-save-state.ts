@@ -10,6 +10,7 @@ import { readHasActiveRun, readRunPhase } from "@/features/alchemy/shared/stores
 import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { useLatestRef } from "@/features/alchemy/shared/ui/use-latest-ref";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
+import { logStorageFailure } from "@/lib/storage-logging";
 import { AUTOSAVE_DEBOUNCE_MS, AUTOSAVE_MAX_WAIT_MS, BATTLE_AUTOSAVE_DEBOUNCE_MS } from "@/lib/game-constants";
 import { useEffect } from "react";
 import { createAutosaveScheduler } from "./autosave-scheduler";
@@ -54,15 +55,29 @@ export function useAlchemyAutosaveFromStores(enabled = true) {
         cancelPending();
         return;
       }
+      // Peek before building: exit events and cleanup fire with no new work,
+      // and a throwing snapshot must not advance the submitted revision.
+      if (!scheduler.canSubmit(terminal)) return;
+      // Build before submit: a throwing snapshot must not advance the submitted
+      // revision, or the scheduler would stall with no completion to recover it.
+      let save;
+      try {
+        const activeRun = resolveActiveRunForSave(readHasActiveRun());
+        save = buildAlchemySaveDataFromStores(activeRun);
+      } catch (error) {
+        logStorageFailure("Autosave snapshot could not be built", error);
+        schedule();
+        return;
+      }
       const submission = scheduler.submit(terminal);
       if (!submission) return;
       cancelTimer();
-      const activeRun = resolveActiveRunForSave(readHasActiveRun());
-      const save = buildAlchemySaveDataFromStores(activeRun);
       const complete = (outcome: SaveWriteOutcome) => {
         if (!mounted || !enabledRef.current) return;
         const action = scheduler.complete(submission, outcome, Date.now());
         if (action === "cancel") cancelTimer();
+        // After a partial save, keep a fresher timer set by newer changes;
+        // after a failed write the stored retryAt is stale, so always reschedule.
         else if (action === "schedule" && (outcome !== "saved" || timer === null)) schedule();
       };
       const outcome = terminal ? saveAlchemySaveDataForExit(save) : saveAlchemySaveData(save);
@@ -87,23 +102,27 @@ export function useAlchemyAutosaveFromStores(enabled = true) {
 
     // Both pagehide and beforeunload flush terminally: pagehide covers modern
     // browsers (including mobile Back-Forward Cache eviction), beforeunload covers
-    // older desktop browsers where pagehide alone can miss a reload. flush() is
-    // idempotent via revision gating so a double event is harmless.
+    // older desktop browsers where pagehide alone can miss a reload. The
+    // scheduler's exit-once latch makes a double event for the same revision a
+    // no-op, so only one exit snapshot is written.
     window.addEventListener("pagehide", handlePageExit);
     window.addEventListener("beforeunload", handlePageExit);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      unsubscribePersistence();
-      window.removeEventListener("pagehide", handlePageExit);
-      window.removeEventListener("beforeunload", handlePageExit);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      // Fire-and-forget terminal flush: complete() early-returns once mounted=false,
-      // so this only matters when the write backend can persist synchronously on exit.
-      flush(true);
-      mounted = false;
-      cancelTimer();
-      unsubscribeCancellation();
+      try {
+        unsubscribePersistence();
+        window.removeEventListener("pagehide", handlePageExit);
+        window.removeEventListener("beforeunload", handlePageExit);
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+        // Fire-and-forget terminal flush: complete() early-returns once mounted=false,
+        // so this only matters when the write backend can persist synchronously on exit.
+        flush(true);
+      } finally {
+        mounted = false;
+        cancelTimer();
+        unsubscribeCancellation();
+      }
     };
     // Each enabled state owns a subscription lifetime. The latest value prevents
     // the outgoing effect from writing after a render has disabled saving.

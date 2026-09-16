@@ -243,18 +243,10 @@
     will-change: width;
   }
 
-  .alchemy-loading-logo-pulse {
-    animation: loadingLogoPulse 2400ms ease-in-out infinite;
-    will-change: transform;
-  }
-
   @media (prefers-reduced-motion: reduce) {
     .alchemy-loading-logo-fill {
       animation: none;
       width: 100%;
-    }
-    .alchemy-loading-logo-pulse {
-      animation: none;
     }
   }
 }

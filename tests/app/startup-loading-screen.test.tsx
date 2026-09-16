@@ -31,7 +31,7 @@ describe("StartupLoadingScreen", () => {
 
     const heading = screen.getByRole("heading", { name: "Alchemy" });
     expect(heading.textContent).toBe("AlchemyAlchemy");
-    expect(heading.className).toContain("alchemy-loading-logo-pulse");
+    expect(heading.className).not.toContain("alchemy-loading-logo-pulse");
     const fillLayer = heading.querySelector<HTMLElement>(".alchemy-loading-logo-fill");
     expect(fillLayer?.style.animationDuration).toBe(`${INITIAL_LOAD_MIN_DURATION_MS}ms`);
     const fill = fillLayer?.querySelector("span");
