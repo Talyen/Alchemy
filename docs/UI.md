@@ -40,7 +40,7 @@ Use `ScreenShell`, `TitledScreenShell`, `ScreenHeader`, and `PageLayout` for pag
 
 Astral instance titles and borders derive their shine keywords from the rolled affix descriptions, using the same keyword recognition as tooltip text (`src/lib/keyword-text.ts`). Base affinity only prioritizes present keywords for the three-keyword title limit; it never adds absent keywords.
 
-Max-roll Astral and Unique affix names use the first three distinct keywords from their own description, including aliases such as Stunned, Frozen, and Consumed. Tooltip entries carry affix identity and normalized value together so description text and max-roll shine cannot diverge. Text uses each keyword’s primary color with a 55%-opacity stop; borders retain full palettes. Trinket titles use at most three described keywords in description order. Artwork palettes remain independent.
+Max-roll Astral and Unique affix names use the first three distinct keywords from their own description, including aliases such as Stunned, Frozen, and Consumed. Tooltip entries carry affix identity and normalized value together so description text and max-roll shine cannot diverge. Text uses each keyword’s primary color with a 55%-opacity stop. Single-keyword borders retain the keyword's full 3-stop pulse (`[light, dark, light]`), while multi-keyword borders normalize to each keyword’s primary accent color looped back to the first (`[k1, k2, k1]` or `[k1, k2, k3, k1]`) to maintain a consistent cadence and visual tempo across all items. Trinket titles use at most three described keywords in description order. Artwork palettes remain independent.
 
 Definition-only previews use base affinities, and Unique item titles and borders retain their gold palette. Gear hover backgrounds use only actual affix keywords, with neutral gray for no recognized keywords; Unique gear uses the same gold hex pair in inventory, equipped slots, and collection. CSS text fades must not feed the hex-only background renderer.
 
@@ -64,7 +64,7 @@ Game-specific button shape and layout tokens live in `src/features/alchemy/share
 
 Card and collection artwork, including gear and trinket tiles, reserves a 1px frame across available, selected, disabled, purchased, and shine states, so changing interaction state cannot resize its artwork or row or recenter the screen. The thicker hover and selection outline is an absolute overlay, preserving the thin default border. Hover-only shine uses `card-art-shine`; persistent shine uses `has-shine-border`. Armory item borders are hover-only, with keyboard focus matching hover; the active equipment slot keeps its shine as a selection marker. Both hide the frame color while preserving its space. Pass frame Shine through `Surface.overlay` so the artwork clipping layer cannot hide it.
 
-Battle's enabled End Turn button adds the standard 103.5% CSS hover scale over 200ms ease-out alongside its primary-button bloom. Battle pile artwork, individual mana crystals, the gold counter, and the main menu logo use the same hover scale. Pile transfer anchors remain unscaled; mana hover wrappers preserve the crystals' independent refresh animations.
+Battle pile artwork, individual mana crystals, the gold counter, and the main menu logo use the standard 103.5% CSS hover scale over 200ms ease-out. Pile transfer anchors remain unscaled; mana hover wrappers preserve the crystals' independent refresh animations. Battle's End Turn button uses standard secondary outline styling and background hover feedback without scaling or bloom.
 
 Artwork surfaces resolve their clipping radius from the same inline theme token and local content scale as the outer frame. The artwork radius subtracts the frame width so portrait and landscape corners meet in resting, hovered, and selected states.
 
@@ -215,7 +215,8 @@ use raw container-height units as the primary card size. Available-space caps
 are allowed: the battle hand caps card height, compresses its fan into the
 reserved center region, and reserves extra bottom space for larger hands.
 Draw and Discard artwork use 80% of the resting hand card width, sharing its
-responsive size from the bottom bar. Mana and End Turn sit above the aligned piles.
+responsive size from the bottom bar. Mana and End Turn sit above the aligned piles,
+with End Turn styled as a compact secondary action centered over the discard pile.
 The battle toolbar places live Gold before the inspection controls, with a brief
 highlight on increases. Dev-only Skip Combat uses a labeled skip-forward icon
 and tooltip immediately before Menu.
@@ -468,7 +469,17 @@ Currency artwork shares one 5rem size between the crafting strip, pointer attach
 
 Selecting an item for salvage immediately ends targeting and clears its cursor and highlights. Confirm, Cancel, and Escape return to browsing. The dialog uses the heading “Salvage,” a wrapping shining item name in “Salvaging [item] will yield:”, a portrait, full-size currency rewards, and an equipped-character warning where applicable. Confirmations focus Cancel, contain keyboard focus, and disable actions during exit.
 
-Crafting consumes one currency per activation. Escape cancels targeting; invalid targets explain their restriction in tooltips and after selection. Success shows actual before/after affix descriptions in a dismissible panel pinned inside the viewport, a brief item pulse, and count feedback only when quantities change. Inventory movement uses a short position transition; reduced-motion preferences disable these animations.
+Crafting consumes one currency per activation. Escape cancels targeting; invalid targets explain their restriction in tooltips and after selection. Success shows actual before/after affix descriptions in a dismissible panel pinned inside the viewport, a brief item pulse, and count feedback only when quantities change.
+
+### Equipment movement animations
+
+When equipping, unequipping, or replacing gear and trinkets:
+
+- **Transfer animation**: Artwork flies between its inventory tile and equipment slot across an unclipped, portaled overlay (`ArmoryTransferOverlay`) over 220ms with an ease-out curve (`easeOut`).
+- **Artwork visibility**: During the in-flight transfer, destination artwork remains hidden (`opacity-0`) to prevent visual duplication until the animation completes and the transfer settles.
+- **Position reflow**: When an empty-slot equip, unequip, or hand displacement causes inventory items to shift, surrounding items animate smoothly to their new positions over 200ms using layout position transitions (`motion.div layout="position"`).
+- **Interruption safety**: Any navigation, category switch, slot change, window resize, scroll, or unmount immediately settles all active in-flight transfers, restoring artwork visibility and removing portaled overlays without lingering visual artifacts.
+- **Reduced motion**: When reduced motion is preferred (`prefers-reduced-motion: reduce`), transfers settle immediately with zero travel duration and no portaled flight overlay.
 
 ## Verification
 

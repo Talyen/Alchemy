@@ -347,11 +347,13 @@
   inset: calc(-1 * var(--surface-frame-border-width, 0px));
   overflow: visible;
   transition:
+    box-shadow 200ms ease-out,
     filter 200ms ease-out,
     opacity var(--tw-duration, 200ms) ease-out;
 }
 
 .shine-border[data-glow="true"] {
+  box-shadow: 0 0 16px 2px color-mix(in srgb, var(--shine-glow-color) 55%, transparent);
   filter: drop-shadow(0 0 16px color-mix(in srgb, var(--shine-glow-color) 45%, transparent));
 }
 
@@ -531,6 +533,7 @@
 
 @starting-style {
   .shine-border[data-glow="true"] {
+    box-shadow: none;
     filter: none;
   }
 }

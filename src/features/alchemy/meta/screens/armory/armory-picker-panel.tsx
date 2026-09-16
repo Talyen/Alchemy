@@ -1,5 +1,6 @@
 import { Dices } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { sectionTitleClass } from "@/features/alchemy/shared/config";
 import type { CharacterId, TrinketEntry } from "@/lib/game-data";
 import type { ArmorySlot, EquippedTrinkets, GearInstance, GearLoadout, GearLoadouts } from "@/lib/gear";
@@ -8,6 +9,7 @@ import { ItemPickerGrid } from "./item-picker-grid";
 import { SLOT_LABELS } from "./parts/slot-labels";
 import { TrinketPickerGrid } from "./trinket-picker-grid";
 import { FadeSlot } from "../../../shared/ui/use-fade";
+import type { ArmorySortOption } from "./armory-ordering";
 
 import type { GearCombatRestrictions } from "../../../shared/stores/gear-store";
 import type { ArmoryItemActions, ArmoryTargeting } from "./armory-screen-types";
@@ -25,6 +27,15 @@ interface ArmoryPickerPanelProps {
   targeting: ArmoryTargeting;
   actions: ArmoryItemActions;
   onSpawnDevGear: ((characterId: CharacterId) => void) | undefined;
+  onSort: (option: ArmorySortOption) => void;
+  page?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
+  fillerCount?: number;
+  pagedGear?: GearInstance[];
+  pagedTrinkets?: TrinketEntry[];
+  placeholderIndex?: number | null;
+  hiddenArtworkIds?: ReadonlySet<string>;
 }
 
 export function ArmoryPickerPanel({
@@ -40,6 +51,15 @@ export function ArmoryPickerPanel({
   targeting,
   actions,
   onSpawnDevGear,
+  onSort,
+  page,
+  totalPages,
+  onPageChange,
+  fillerCount,
+  pagedGear,
+  pagedTrinkets,
+  placeholderIndex,
+  hiddenArtworkIds,
 }: ArmoryPickerPanelProps) {
   const { editable, salvageMode, activeCurrencyId, craftingResult } = targeting;
   return (
@@ -49,6 +69,26 @@ export function ArmoryPickerPanel({
     >
       <FadeSlot swapKey={selectedSlot} className="flex min-h-0 min-w-0 flex-1 flex-col">
         <div className="relative flex min-h-10 w-full items-center justify-center">
+          <div className="absolute left-0">
+            <Select value="" onValueChange={(val) => onSort(val as ArmorySortOption)}>
+              <SelectTrigger
+                aria-label="Sort inventory"
+                className="h-8 w-auto min-w-[4.5rem] gap-1.5 border-border/80 bg-background/80 px-2.5 py-1 text-xs"
+              >
+                <span className="text-xs font-medium">Sort</span>
+              </SelectTrigger>
+              <SelectContent>
+                {selectedSlot === "trinket" ? (
+                  <SelectItem value="name">Name</SelectItem>
+                ) : (
+                  <>
+                    <SelectItem value="rarity">Rarity</SelectItem>
+                    <SelectItem value="name">Name</SelectItem>
+                  </>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
           <h2 className={cn("text-center font-sans", sectionTitleClass)}>{SLOT_LABELS[selectedSlot]}</h2>
           {onSpawnDevGear && editable && selectedSlot !== "trinket" ? (
             <div className="absolute right-0">
@@ -73,6 +113,13 @@ export function ArmoryPickerPanel({
             editable={editable}
             onEquip={actions.onEquipTrinket}
             onCombatLockedAttempt={actions.onCombatLockedAttempt}
+            page={page}
+            totalPages={totalPages}
+            onPageChange={onPageChange}
+            fillerCount={fillerCount}
+            pageItems={pagedTrinkets}
+            placeholderIndex={placeholderIndex}
+            hiddenArtworkIds={hiddenArtworkIds}
           />
         ) : (
           <ItemPickerGrid
@@ -91,6 +138,13 @@ export function ArmoryPickerPanel({
             onSalvage={actions.onSalvage}
             onApplyCurrency={actions.onApplyCurrency}
             onCombatLockedAttempt={actions.onCombatLockedAttempt}
+            page={page}
+            totalPages={totalPages}
+            onPageChange={onPageChange}
+            fillerCount={fillerCount}
+            pageItems={pagedGear}
+            placeholderIndex={placeholderIndex}
+            hiddenArtworkIds={hiddenArtworkIds}
           />
         )}
       </FadeSlot>

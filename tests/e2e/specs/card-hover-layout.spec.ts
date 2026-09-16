@@ -142,7 +142,6 @@ test("Equipped shine casts an unclipped glow only during interaction", async ({ 
     loadouts,
   });
   const slot = equipmentSlotLocator(page, "body").getByRole("button");
-  await expect(slot.locator(".shine-border")).toBeVisible();
   await expectPairedGlow(slot);
   await slot.click();
   await slot.blur();

@@ -47,6 +47,7 @@ export interface TrinketTileProps {
 
   className?: string | undefined;
 
+  imageClassName?: string | undefined;
   shine?: boolean | undefined;
   hoverKeywordShine?: boolean | undefined;
   temporary?: boolean | undefined;
@@ -69,6 +70,7 @@ export function TrinketTile({
   chip,
   footerChip,
   className,
+  imageClassName,
   shine = true,
   hoverKeywordShine = false,
   temporary = false,
@@ -83,7 +85,7 @@ export function TrinketTile({
       title={trinket.title}
       art={trinket.art}
       className={cn(trinketArtTileClass, className)}
-      imageClassName={cn(trinketArtFillClass, trinketArtImageClass)}
+      imageClassName={cn(trinketArtFillClass, trinketArtImageClass, imageClassName)}
       shineOnHover
       shineColor={
         shine

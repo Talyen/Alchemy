@@ -48,22 +48,21 @@ describe("getCardKeywordShineColors", () => {
     expect(getCardKeywordShineColors(makeTestCard())).toEqual([]);
   });
 
-  it("uses a keyword's shine palette without repeating identical stops", () => {
+  it("uses a keyword's 3-stop pulse for a single keyword", () => {
     const card = makeTestCard({
       effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
     });
-    expect(getCardKeywordShineColors(card)).toEqual([...new Set(keywordDefinitions.physical.shineColors)]);
+    expect(getCardKeywordShineColors(card)).toEqual([...keywordDefinitions.physical.shineColors]);
   });
 
-  it("mixes unique shine stops across multiple keywords", () => {
+  it("normalizes multiple keywords into a smooth loop using primary accent colors", () => {
     const fireArrow = cardLibrary.find((card) => card.id === "fire-arrow");
     expect(fireArrow).toBeDefined();
     expect(getCardKeywordShineColors(fireArrow!)).toEqual([
-      ...new Set([
-        ...keywordDefinitions.burn.shineColors,
-        ...keywordDefinitions.armor.shineColors,
-        ...keywordDefinitions.archery.shineColors,
-      ]),
+      keywordDefinitions.burn.shineColors[0],
+      keywordDefinitions.armor.shineColors[0],
+      keywordDefinitions.archery.shineColors[0],
+      keywordDefinitions.burn.shineColors[0],
     ]);
   });
 });
@@ -94,7 +93,7 @@ describe("Trinket text shine", () => {
 
   it("uses paired title colors without changing the artwork palette", () => {
     expect(getTrinketTextShineColors("meteorite")).toEqual(["#fb923c", "color-mix(in srgb, #fb923c 55%, transparent)"]);
-    expect(getTrinketShineColors("meteorite")).toEqual([...new Set(keywordDefinitions.burn.shineColors)]);
+    expect(getTrinketShineColors("meteorite")).toEqual([...keywordDefinitions.burn.shineColors]);
   });
 
   it("preserves the Boon fallback for titles without keywords", () => {

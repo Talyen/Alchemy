@@ -4,12 +4,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 import { ManaPanel, PilePanel } from "../../../shared/ui/battle/resources";
-import {
-  battleBottomBarClass,
-  battleBottomColumnClass,
-  BUTTON_WIDTH_DIALOG,
-  cardHoverScaleClass,
-} from "@/features/alchemy/shared/config";
+import { battleBottomBarClass, battleBottomColumnClass, BUTTON_WIDTH_DIALOG } from "@/features/alchemy/shared/config";
 import { BattleHand } from "./hand";
 import type { BattleActionsProps, BattleRefsProps, BattleScreenState, RequiredBattleViewProps } from "./types";
 import { useCardTransferInProgress } from "../../battle/presentation/use-hand-presentation";
@@ -65,12 +60,12 @@ function BattleControls({
   const cardTransferInProgress = useCardTransferInProgress();
 
   return (
-    <div className={battleBottomColumnClass}>
-      <div className="relative flex flex-col items-center gap-2">
+    <div className={cn(battleBottomColumnClass, BUTTON_WIDTH_DIALOG)}>
+      <div className="relative flex w-full flex-col items-center gap-2">
         <Button
-          variant="primary"
-          size="lg"
-          className={cn("font-bold", BUTTON_WIDTH_DIALOG, cardHoverScaleClass)}
+          variant="outline"
+          size="sm"
+          className="tracking-normal normal-case"
           onClick={onEndTurn}
           disabled={battleState.turnPhase !== "player" || cardTransferInProgress}
         >
@@ -78,7 +73,7 @@ function BattleControls({
         </Button>
       </div>
 
-      <div className="flex justify-center">
+      <div className="flex w-full justify-center">
         <PilePanel
           ref={discardPileRef}
           label="Discard Pile"

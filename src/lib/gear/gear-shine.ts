@@ -1,6 +1,7 @@
 import { buildSmoothShineBorderGradient } from "@/lib/animation/shine-gradient";
-import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
+import type { KeywordId } from "@/lib/game-data";
 import { extractKeywordIds } from "@/lib/keyword-text";
+import { getKeywordBorderShineColors } from "@/lib/keyword-border-shine";
 import { getKeywordTextShineColors, MAX_TEXT_SHINE_KEYWORDS } from "@/lib/keyword-text-shine";
 import { getGearInstanceAffixes } from "./affixes";
 import { gearAffixCatalog } from "./affix-catalog";
@@ -42,10 +43,7 @@ export function getGearInstanceKeywordIds(instance: GearInstance): KeywordId[] {
 }
 
 function collectShineColors(keywordIds: readonly KeywordId[], mode: "border" | "text"): readonly string[] {
-  const colors =
-    mode === "text"
-      ? getKeywordTextShineColors(keywordIds)
-      : keywordIds.flatMap((keywordId) => keywordDefinitions[keywordId].shineColors);
+  const colors = mode === "text" ? getKeywordTextShineColors(keywordIds) : getKeywordBorderShineColors(keywordIds);
   if (colors.length > 0) return colors;
   return mode === "border" ? [...ASTRAL_SHINE_FALLBACK] : ASTRAL_SHINE_FALLBACK.slice(0, 2);
 }

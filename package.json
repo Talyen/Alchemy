@@ -34,6 +34,7 @@
     "smoke:desktop": "node scripts/smoke-desktop.mjs",
     "smoke:preview": "node scripts/smoke-preview.mjs",
     "generate:patch-notes": "node scripts/generate-patch-notes.mjs",
+    "generate:icons": "node scripts/generate-icons.mjs",
     "content:audit": "node scripts/content-audit.mjs",
     "audit": "node scripts/audit.mjs",
     "audit:all": "node scripts/audit-all.mjs",
@@ -197,7 +198,8 @@
     "win": {
       "target": [
         "nsis"
-      ]
+      ],
+      "icon": "desktop/icons/icon.ico"
     }
   }
 }

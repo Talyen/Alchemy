@@ -9,10 +9,12 @@ import {
   type CompanionDefinition,
   type KeywordId,
 } from "@/features/alchemy/shared/config/game-data-catalog";
+import { getKeywordBorderShineColors } from "@/lib/keyword-border-shine";
 import { getKeywordTextShineColors } from "@/lib/keyword-text-shine";
 import { buildSmoothShineGradient } from "@/lib/animation/shine-gradient";
 
 export { buildSmoothShineBorderGradient, buildSmoothShineGradient } from "@/lib/animation/shine-gradient";
+export { getKeywordBorderShineColors } from "@/lib/keyword-border-shine";
 
 export const SHINE_PALETTES = {
   gold: ["#fcd34d", "#d97706", "#fcd34d"],
@@ -45,18 +47,7 @@ export function getKeywordShineColors(keywordId: KeywordId): readonly string[] {
 }
 
 export function getKeywordListShineColors(keywordIds: readonly KeywordId[]): readonly string[] {
-  const seen = new Set<string>();
-  const colors: string[] = [];
-
-  for (const keywordId of keywordIds) {
-    for (const color of getKeywordShineColors(keywordId)) {
-      if (seen.has(color)) continue;
-      seen.add(color);
-      colors.push(color);
-    }
-  }
-
-  return colors;
+  return getKeywordBorderShineColors(keywordIds);
 }
 
 export function getInspectionKeywordShineColors(keywordIds: readonly KeywordId[]): readonly string[] {

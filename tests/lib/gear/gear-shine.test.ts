@@ -127,6 +127,24 @@ describe("gear shine", () => {
     expect(getGearInstanceShineGradient(gear)).toBe(gradient);
   });
 
+  it("normalizes multi-affix astral border shine colors into a 3-4 stop loop", () => {
+    const gear = instance({
+      instanceId: "astral-multi",
+      definitionId: "longsword-astral",
+      affixes: [
+        { id: "flat-burn", value: 2 },
+        { id: "gold-on-kill", value: 1 },
+      ],
+    });
+
+    const colors = getGearInstanceShineColors(gear);
+    expect(colors).toEqual([
+      keywordDefinitions.burn.shineColors[0],
+      keywordDefinitions.gold.shineColors[0],
+      keywordDefinitions.burn.shineColors[0],
+    ]);
+  });
+
   it("returns astral shine colors only for astral definitions", () => {
     expect(
       getAstralShineColors(

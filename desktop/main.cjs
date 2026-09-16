@@ -288,6 +288,7 @@ function applySessionSecurity() {
 
 function createMainWindow() {
   mainWindow = new BrowserWindow({
+    icon: path.join(__dirname, "icons", "icon.png"),
     width: WINDOWED_SIZE.width,
     height: WINDOWED_SIZE.height,
     minWidth: 960,

@@ -45,6 +45,13 @@ export function ItemPickerGrid({
   onSalvage,
   onApplyCurrency,
   onCombatLockedAttempt,
+  page,
+  totalPages,
+  onPageChange,
+  fillerCount,
+  pageItems,
+  placeholderIndex,
+  hiddenArtworkIds,
 }: {
   reservedGear: Record<string, CharacterId>;
   slot: GearSlot;
@@ -61,6 +68,13 @@ export function ItemPickerGrid({
   onSalvage: (instance: GearInstance) => void;
   onApplyCurrency: (instance: GearInstance) => void;
   onCombatLockedAttempt: () => void;
+  page?: number | undefined;
+  totalPages?: number | undefined;
+  onPageChange?: ((page: number) => void) | undefined;
+  fillerCount?: number | undefined;
+  pageItems?: GearInstance[] | undefined;
+  placeholderIndex?: number | null | undefined;
+  hiddenArtworkIds?: ReadonlySet<string> | undefined;
 }) {
   const reducedMotion = useReducedMotion();
   const equippedBy = useMemo(() => {
@@ -76,6 +90,12 @@ export function ItemPickerGrid({
   return (
     <ArmoryPagedGrid
       items={items}
+      page={page}
+      totalPages={totalPages}
+      onPageChange={onPageChange}
+      fillerCount={fillerCount}
+      pageItems={pageItems}
+      placeholderIndex={placeholderIndex}
       selectedId={loadout[slot]}
       context={`${characterId}:${slot}`}
       testId="armory-item-picker"
@@ -83,6 +103,7 @@ export function ItemPickerGrid({
       fillerTestId="armory-inventory-filler"
       renderItem={(item) => {
         const reservedBy = reservedGear[item.instanceId];
+        const isArtHidden = hiddenArtworkIds?.has(item.instanceId) ?? false;
         const reservationReason = reservedReasonFor(reservedBy ?? null);
         const definition = gearDefinitions[item.definitionId];
         const title = getGearInstanceTitle(item);
@@ -114,6 +135,7 @@ export function ItemPickerGrid({
             <div
               data-testid="armory-inventory-item"
               data-gear-title={title}
+              data-instance-id={item.instanceId}
               data-salvageable={salvageable ? "true" : undefined}
               className={cn("relative", targetingRingClass(mode), disabled && "opacity-50")}
               title={disabled ? "Incompatible with the current loadout" : undefined}
@@ -128,7 +150,7 @@ export function ItemPickerGrid({
                 ariaLabel={reservationReason ? `${title}. ${reservationReason}` : ariaLabel}
                 ariaDisabled={target.ariaDisabled}
                 className={cn(cardSurfaceClass, collectionGridTileWidthClass, gearArtAspectClass)}
-                imageClassName={gearArtFillClass}
+                imageClassName={cn(gearArtFillClass, isArtHidden && "opacity-0")}
                 shineOnHover
                 shineColor={shineColor}
                 onClick={() =>

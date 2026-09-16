@@ -34,6 +34,7 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
   onSalvage,
   onApplyCurrency,
   onCombatLockedAttempt,
+  isArtHidden = false,
 }: {
   slot: GearSlot;
   instance: GearInstance | undefined;
@@ -47,6 +48,7 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
   onSalvage: (instance: GearInstance) => void;
   onApplyCurrency: (instance: GearInstance) => void;
   onCombatLockedAttempt: () => void;
+  isArtHidden?: boolean;
 }) {
   const definition = instance ? gearDefinitions[instance.definitionId] : undefined;
   const shineColors = instance ? getAstralShineColors(instance) : undefined;
@@ -127,7 +129,7 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
           })
         }
       >
-        <GearSlotArt definition={definition} slot={slot} />
+        <GearSlotArt definition={definition} slot={slot} isHidden={isArtHidden} />
       </Surface>
       {instance ? <CraftingFlash result={craftingResult} instanceId={instance.instanceId} /> : null}
     </div>

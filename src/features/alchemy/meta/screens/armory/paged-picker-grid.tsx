@@ -102,6 +102,12 @@ export function ArmoryPagedGrid<T>({
   swapKey,
   fillerTestId,
   renderItem,
+  page: controlledPage,
+  totalPages: controlledTotalPages,
+  onPageChange: controlledOnPageChange,
+  fillerCount: controlledFillerCount,
+  pageItems: controlledPageItems,
+  placeholderIndex,
 }: {
   items: T[];
   selectedId?: string | null;
@@ -110,6 +116,12 @@ export function ArmoryPagedGrid<T>({
   swapKey: string;
   fillerTestId?: string;
   renderItem: (item: T) => ReactNode;
+  page?: number | undefined;
+  totalPages?: number | undefined;
+  onPageChange?: ((page: number) => void) | undefined;
+  fillerCount?: number | undefined;
+  pageItems?: T[] | undefined;
+  placeholderIndex?: number | null | undefined;
 }) {
   const selectedIndex = selectedId
     ? items.findIndex(
@@ -118,24 +130,52 @@ export function ArmoryPagedGrid<T>({
           (item as { id?: unknown }).id === selectedId,
       )
     : -1;
-  const { pageItems, fillerCount, safePage, totalPages, onPageChange } = useArmoryPickerPage(
-    context,
-    items,
-    selectedIndex,
-  );
+  const fallback = useArmoryPickerPage(context, items, selectedIndex);
+
+  const safePage = controlledPage ?? fallback.safePage;
+  const totalPages = controlledTotalPages ?? fallback.totalPages;
+  const onPageChange = controlledOnPageChange ?? fallback.onPageChange;
+  const pageItems = controlledPageItems ?? fallback.pageItems;
+  const baseFillerCount = controlledFillerCount ?? fallback.fillerCount;
+
+  const hasPlaceholder = placeholderIndex !== null && placeholderIndex !== undefined;
+  const effectiveFillerCount = hasPlaceholder ? Math.max(0, baseFillerCount - 1) : baseFillerCount;
+
+  const renderedElements: ReactNode[] = [];
+  let itemIdx = 0;
+  const totalSlots = pageItems.length + (hasPlaceholder ? 1 : 0);
+  for (let i = 0; i < totalSlots; i++) {
+    if (hasPlaceholder && i === placeholderIndex) {
+      renderedElements.push(
+        <div
+          key={`${testId}-placeholder-${i}`}
+          data-testid={`${testId}-placeholder`}
+          className={cn(collectionGridTileWidthClass, gearArtAspectClass)}
+          aria-hidden="true"
+        />,
+      );
+    } else if (itemIdx < pageItems.length) {
+      const currentItem = pageItems[itemIdx];
+      if (currentItem !== undefined) {
+        renderedElements.push(renderItem(currentItem));
+      }
+      itemIdx++;
+    }
+  }
+
   return (
     <PagedPickerGrid
       testId={testId}
       swapKey={swapKey}
-      isEmpty={items.length === 0}
+      isEmpty={items.length === 0 && !hasPlaceholder}
       safePage={safePage}
       totalPages={totalPages}
       onPageChange={onPageChange}
-      fillerCount={fillerCount}
+      fillerCount={effectiveFillerCount}
       fillerClassName={cn(collectionGridTileWidthClass, gearArtAspectClass)}
       {...(fillerTestId ? { fillerTestId } : {})}
     >
-      {pageItems.map(renderItem)}
+      {renderedElements}
     </PagedPickerGrid>
   );
 }

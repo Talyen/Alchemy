@@ -32,7 +32,7 @@
   --text-lg--line-height: calc(1.75 / 1.25);
   --text-xl--line-height: calc(1.75 / 1.375);
 
-  --animate-shine: shine 14s linear infinite;
+  --animate-shine: shine var(--duration, 14s) linear infinite;
   --animate-shine-text-corruption: boss-title-shine 4.8s linear infinite;
 
   --animate-shake: shake 300ms linear 228ms;

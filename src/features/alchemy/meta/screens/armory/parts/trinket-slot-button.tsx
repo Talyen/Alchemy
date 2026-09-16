@@ -22,6 +22,7 @@ export const TrinketSlotButton = memo(function TrinketSlotButton({
   onSelect,
   onUnequip,
   onCombatLockedAttempt,
+  isArtHidden = false,
 }: {
   trinket: TrinketEntry | undefined;
   selected: boolean;
@@ -29,6 +30,7 @@ export const TrinketSlotButton = memo(function TrinketSlotButton({
   onSelect: () => void;
   onUnequip: () => void;
   onCombatLockedAttempt: () => void;
+  isArtHidden?: boolean;
 }) {
   const {
     isHovered,
@@ -96,7 +98,12 @@ export const TrinketSlotButton = memo(function TrinketSlotButton({
           <img
             src={trinket.art}
             alt=""
-            className={cn(trinketArtFillClass, trinketArtImageClass, "pointer-events-none absolute inset-0 z-10")}
+            className={cn(
+              trinketArtFillClass,
+              trinketArtImageClass,
+              "pointer-events-none absolute inset-0 z-10",
+              isArtHidden && "opacity-0",
+            )}
           />
         ) : null}
       </Surface>

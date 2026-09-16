@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { getKeywordListShineColors } from "@/features/alchemy/shared/config";
+import { getCompanionShineColors } from "@/features/alchemy/shared/config";
 import { CompanionPanel } from "@/features/alchemy/shared/ui/battle/companion-panel";
 import { companionLibrary } from "@/lib/game-data";
 
@@ -52,9 +52,9 @@ describe("CompanionPanel turn shine border", () => {
     expect(shine.className).toMatch(/\bopacity-0\b/);
   });
 
-  it("uses bleed keyword shine colors for wolf companion", () => {
+  it("uses companion keyword shine colors for wolf companion", () => {
     render(<CompanionPanel companion={companionLibrary.wolf} turnActive />);
-    const expectedColors = getKeywordListShineColors(["bleed"]);
+    const expectedColors = getCompanionShineColors(companionLibrary.wolf);
     expectShineContains("turn-badge-companion", expectedColors);
   });
 
