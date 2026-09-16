@@ -23,7 +23,7 @@ import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import type { EncounterCombatTraitId, EncounterRewardTraitId } from "@/lib/content-systems/types";
 import { useCallback, useMemo } from "react";
 import { createLabyrinthNodeRouting } from "./labyrinth-node-routing";
-import { getRunAvailableDestinations } from "./run-destination-wiring";
+import { clearRunCardHover, readRunAvailableDestinations } from "./run-destination-wiring";
 import { useBattleController } from "./use-battle-controller";
 import { createLabyrinthController } from "@/features/alchemy/run-loop/run/labyrinth-controller";
 import { useRunFlowEngine } from "./use-run-flow-engine";
@@ -46,17 +46,26 @@ export function useAlchemyRunController(): AlchemyRunCommands {
     store.setHoveredCardId(typeof id === "function" ? id(store.hoveredCardId) : id);
   }, []);
   const applyLabyrinthBattleModifiers = useCallback((modifiers: EncounterCombatTraitId[]) => {
-    dispatchRunSessionCommand((draft) => setActiveLabyrinthModifiers(draft, modifiers));
+    dispatchRunSessionCommand((draft) => {
+      // No-op commands preserve revision: skip the write only when already
+      // empty, but still clear stale traits with [] so the next node cannot
+      // inherit the previous node's combat modifiers.
+      if (modifiers.length === 0 && draft.session.activeLabyrinthModifiers.length === 0) return;
+      setActiveLabyrinthModifiers(draft, modifiers);
+    });
   }, []);
   const applyLabyrinthRewardModifiers = useCallback((modifiers: EncounterRewardTraitId[]) => {
-    dispatchRunSessionCommand((draft) => setActiveLabyrinthRewardModifiers(draft, modifiers));
+    dispatchRunSessionCommand((draft) => {
+      if (modifiers.length === 0 && draft.session.activeLabyrinthRewardModifiers.length === 0) return;
+      setActiveLabyrinthRewardModifiers(draft, modifiers);
+    });
   }, []);
 
   const outcomes = useMemo(
     () =>
       createRunOutcomes({
-        actions: { navigateTo, transition, clearCardHover: () => useUiStore.getState().clearCardHover() },
-        getAvailableDestinations: getRunAvailableDestinations,
+        actions: { navigateTo, transition, clearCardHover: clearRunCardHover },
+        getAvailableDestinations: readRunAvailableDestinations,
       }),
     [navigateTo, transition],
   );
@@ -151,7 +160,16 @@ export function useAlchemyRunController(): AlchemyRunCommands {
         unlockTalent: commandUnlockTalent,
         resetUnlockedTalents: commandResetUnlockedTalents,
       },
-      runSetup: nav,
+      runSetup: {
+        goToScreen: nav.goToScreen,
+        handleCharacterSelect: nav.handleCharacterSelect,
+        handleStandardDraftComplete: nav.handleStandardDraftComplete,
+        handleWildwoodDraftComplete: nav.handleWildwoodDraftComplete,
+        handleWildwoodDraftPick: nav.handleWildwoodDraftPick,
+        handleStarterDraftPick: nav.handleStarterDraftPick,
+        handleDifficultySelect: nav.handleDifficultySelect,
+        handleBackFromDifficultySelect: nav.handleBackFromDifficultySelect,
+      },
       runLoop: {
         labyrinth: {
           handleNodeSelect: labyrinth.selectNode,

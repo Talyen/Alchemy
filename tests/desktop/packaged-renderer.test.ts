@@ -10,7 +10,7 @@ afterEach(async () => {
   await Promise.all(directories.splice(0).map((directory) => rm(directory, { recursive: true, force: true })));
 });
 
-async function archive(files: Record<string, string>) {
+async function archive(files: Record<string, string>, musicFiles: Record<string, string> = {}) {
   const root = await mkdtemp(path.join(tmpdir(), "alchemy-package-test-"));
   directories.push(root);
   const source = path.join(root, "source");
@@ -18,6 +18,9 @@ async function archive(files: Record<string, string>) {
   await mkdir(source);
   await mkdir(music);
   await writeFile(path.join(music, "Menu 1.mp3"), "expected music bytes");
+  for (const [name, bytes] of Object.entries(musicFiles)) {
+    await writeFile(path.join(music, name), bytes);
+  }
   for (const [name, bytes] of Object.entries(files)) {
     const target = path.join(source, name);
     await mkdir(path.dirname(target), { recursive: true });
@@ -32,6 +35,18 @@ const renderer = { "dist/index.html": "<html></html>", "dist/Music/Menu 1.mp3": 
 
 it("accepts a complete renderer archive", async () => {
   const { output, music } = await archive(renderer);
+  expect(() => verifyPackagedRenderer(output, music)).not.toThrow();
+});
+
+it("accepts music filenames with spaces", async () => {
+  const { output, music } = await archive(
+    {
+      "dist/index.html": "<html></html>",
+      "dist/Music/Menu 1.mp3": "expected music bytes",
+      "dist/Music/Battle 1.mp3": "battle music bytes",
+    },
+    { "Battle 1.mp3": "battle music bytes" },
+  );
   expect(() => verifyPackagedRenderer(output, music)).not.toThrow();
 });
 

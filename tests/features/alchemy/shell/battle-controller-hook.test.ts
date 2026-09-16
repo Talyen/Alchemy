@@ -65,6 +65,33 @@ describe("useBattleController", () => {
     expect(useSettingsStore.getState().autoplayEnabled).toBe(true);
   });
 
+  it("toggles autoplay locally without a remembered preference", () => {
+    useSettingsStore.getState().setRememberAutoplayPreference(false);
+    const { result } = renderBattleController();
+
+    expect(result.current.isAutoplayEnabled).toBe(false);
+    act(() => {
+      result.current.toggleAutoplayEnabled();
+    });
+    expect(result.current.isAutoplayEnabled).toBe(true);
+    expect(useSettingsStore.getState().autoplayEnabled).toBe(false);
+    act(() => {
+      result.current.toggleAutoplayEnabled();
+    });
+    expect(result.current.isAutoplayEnabled).toBe(false);
+  });
+
+  it("toggles autoplay and persists when remember is on", () => {
+    useSettingsStore.getState().setRememberAutoplayPreference(true);
+    const { result } = renderBattleController();
+
+    act(() => {
+      result.current.toggleAutoplayEnabled();
+    });
+    expect(result.current.isAutoplayEnabled).toBe(true);
+    expect(useSettingsStore.getState().autoplayEnabled).toBe(true);
+  });
+
   it("keeps a session autoplay toggle when leaving the battle screen", () => {
     const { result, rerender } = renderBattleController();
 

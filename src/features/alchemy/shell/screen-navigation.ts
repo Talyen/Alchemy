@@ -20,6 +20,10 @@ export function createScreenNavigation({
   onPendingChange?: (pending: boolean) => void;
 }): ScreenNavigation {
   const timers = new TimerGroup();
+  // Revision protocol: cancelPending bumps revision and clears timers.
+  // transition snapshots it, runs prepare (which may redirect via a nested
+  // navigateTo and bump revision), then drops the stale outer request.
+  // Gameplay (prepareScreen) commits synchronously; only presentation waits.
   let revision = 0;
 
   function cancelPending() {
@@ -29,8 +33,10 @@ export function createScreenNavigation({
   }
 
   function transition(screen: Screen, options: ScreenTransitionOptions = {}) {
-    assertScreenTransitionAllowed(readScreen(), screen);
+    // Guard first (approved): a skipped move stays a silent no-op even on an
+    // unusual edge; only unskipped moves validate against the policy table.
     if (options.guard && !options.guard()) return;
+    assertScreenTransitionAllowed(readScreen(), screen);
     cancelPending();
     const requestedRevision = revision;
     options.prepare?.();

@@ -58,6 +58,7 @@ must never request it or call `enableFastMode`/`useFastBattle`.
 - Injected decks and draft choices must use live library ids as shells (for example `slash`): hydrate drops unknown ids via `filterLiveCards` and `hydrateCard` renders titles from the library while keeping the injected effects and cost, so play cards by the library title.
 - `enableFastMode` disables animations and is forbidden in animation-focused specs.
 - `BattlePage.endTurn` must work with animations both on and off; changing it requires the critical animation canary, which checks enemy damage and hand replenishment. Ordinary battle actions use actionable clicks without `force`.
+- After entering battle, await `battle.waitForOpeningHand()` instead of a single `handCount()` read: the opening deal briefly shows a zero-hand frame during animation/remount, so poll-then-read flakes in CI.
 - Prefer `winViaCombat`, `playCardNamed`, or `playFirstCard`; `playAllCards` is normally internal.
 - Do not use `skipCombatToVictory`, `skipCombatBtn`, or production-hidden Unlock All/Skip Combat strings. Legitimate in-game Skip actions remain valid.
 

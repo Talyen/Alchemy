@@ -1,10 +1,13 @@
 import "../../../helpers/mock-audio";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ROUTE_SCREENS } from "@/lib/routing";
+import { ROUTE_SCREENS, type Screen, type ScreenTransitionOptions } from "@/lib/routing";
 import { DRAFT_ROUNDS } from "@/lib/game-constants";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import { useRunFlowEngine } from "@/features/alchemy/shell/use-run-flow-engine";
+import { createRunOutcomes } from "@/features/alchemy/run-loop/run/run-flow";
+import { readRunAvailableDestinations } from "@/features/alchemy/shell/run-destination-wiring";
+import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readActiveRun, readBattle, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { setHasActiveBattle, setHasActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
@@ -14,7 +17,47 @@ beforeEach(() => {
   resetAllTestStores();
 });
 
+type TestNavigate = (screen: Screen, prepare?: () => void) => void;
+type TestTransition = (screen: Screen, options?: ScreenTransitionOptions) => void;
+
+function makeOutcomes(navigateTo: TestNavigate, transition: TestTransition) {
+  return createRunOutcomes({
+    actions: { navigateTo, transition, clearCardHover: () => {} },
+    getAvailableDestinations: readRunAvailableDestinations,
+  });
+}
+
 describe("useRunFlowEngine", () => {
+  it("clears card hover on every flow navigation", () => {
+    const navigateTo = vi.fn();
+    const transition = vi.fn();
+    const { result } = renderHook(() =>
+      useRunFlowEngine(
+        {
+          screen: ROUTE_SCREENS.MENU,
+          navigateTo,
+          transition,
+          cancelPending: vi.fn(),
+          battle: {
+            onStartBattle: vi.fn(),
+            onStartBossBattle: vi.fn(),
+            onStartBossById: vi.fn(),
+          },
+          initializeShop: vi.fn(),
+          labyrinthClearNode: vi.fn(),
+        },
+        makeOutcomes(navigateTo, transition),
+      ),
+    );
+
+    useUiStore.setState({ hoveredCardId: "card-1" });
+    act(() => {
+      result.current.beginCampaign();
+    });
+    expect(useUiStore.getState().hoveredCardId).toBeNull();
+    expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.CHARACTER_SELECT, undefined);
+  });
+
   it("resetRunState tears down run stores when navigating to menu", () => {
     dispatchRunSessionCommand((draft) => {
       setHasActiveRun(draft, true);
@@ -25,19 +68,22 @@ describe("useRunFlowEngine", () => {
     const cancelPending = vi.fn();
 
     const { result } = renderHook(() =>
-      useRunFlowEngine({
-        screen: ROUTE_SCREENS.BATTLE,
-        navigateTo,
-        transition,
-        cancelPending,
-        battle: {
-          onStartBattle: vi.fn(),
-          onStartBossBattle: vi.fn(),
-          onStartBossById: vi.fn(),
+      useRunFlowEngine(
+        {
+          screen: ROUTE_SCREENS.BATTLE,
+          navigateTo,
+          transition,
+          cancelPending,
+          battle: {
+            onStartBattle: vi.fn(),
+            onStartBossBattle: vi.fn(),
+            onStartBossById: vi.fn(),
+          },
+          initializeShop: vi.fn(),
+          labyrinthClearNode: vi.fn(),
         },
-        initializeShop: vi.fn(),
-        labyrinthClearNode: vi.fn(),
-      }),
+        makeOutcomes(navigateTo, transition),
+      ),
     );
 
     act(() => {
@@ -64,21 +110,25 @@ describe("useRunFlowEngine", () => {
     });
     const onStartBossById = vi.fn(() => true);
     const navigateTo = vi.fn();
+    const transition = vi.fn();
 
     const { result } = renderHook(() =>
-      useRunFlowEngine({
-        screen: ROUTE_SCREENS.DRAFT_DECK,
-        navigateTo,
-        transition: vi.fn(),
-        cancelPending: vi.fn(),
-        battle: {
-          onStartBattle: vi.fn(),
-          onStartBossBattle: vi.fn(),
-          onStartBossById,
+      useRunFlowEngine(
+        {
+          screen: ROUTE_SCREENS.DRAFT_DECK,
+          navigateTo,
+          transition,
+          cancelPending: vi.fn(),
+          battle: {
+            onStartBattle: vi.fn(),
+            onStartBossBattle: vi.fn(),
+            onStartBossById,
+          },
+          initializeShop: vi.fn(),
+          labyrinthClearNode: vi.fn(),
         },
-        initializeShop: vi.fn(),
-        labyrinthClearNode: vi.fn(),
-      }),
+        makeOutcomes(navigateTo, transition),
+      ),
     );
 
     act(() => {
@@ -104,21 +154,25 @@ describe("useRunFlowEngine", () => {
     });
     const onStartBossById = vi.fn(() => true);
     const navigateTo = vi.fn();
+    const transition = vi.fn();
 
     const { result } = renderHook(() =>
-      useRunFlowEngine({
-        screen: ROUTE_SCREENS.WILDWOOD_REMOVAL,
-        navigateTo,
-        transition: vi.fn(),
-        cancelPending: vi.fn(),
-        battle: {
-          onStartBattle: vi.fn(),
-          onStartBossBattle: vi.fn(),
-          onStartBossById,
+      useRunFlowEngine(
+        {
+          screen: ROUTE_SCREENS.WILDWOOD_REMOVAL,
+          navigateTo,
+          transition,
+          cancelPending: vi.fn(),
+          battle: {
+            onStartBattle: vi.fn(),
+            onStartBossBattle: vi.fn(),
+            onStartBossById,
+          },
+          initializeShop: vi.fn(),
+          labyrinthClearNode: vi.fn(),
         },
-        initializeShop: vi.fn(),
-        labyrinthClearNode: vi.fn(),
-      }),
+        makeOutcomes(navigateTo, transition),
+      ),
     );
 
     act(() => result.current.handleWildwoodRemoveCard(1));
@@ -145,21 +199,25 @@ describe("useRunFlowEngine", () => {
     });
     const onStartBossById = vi.fn(() => true);
     const navigateTo = vi.fn();
+    const transition = vi.fn();
 
     const { result } = renderHook(() =>
-      useRunFlowEngine({
-        screen: ROUTE_SCREENS.WILDWOOD_REMOVAL,
-        navigateTo,
-        transition: vi.fn(),
-        cancelPending: vi.fn(),
-        battle: {
-          onStartBattle: vi.fn(),
-          onStartBossBattle: vi.fn(),
-          onStartBossById,
+      useRunFlowEngine(
+        {
+          screen: ROUTE_SCREENS.WILDWOOD_REMOVAL,
+          navigateTo,
+          transition,
+          cancelPending: vi.fn(),
+          battle: {
+            onStartBattle: vi.fn(),
+            onStartBossBattle: vi.fn(),
+            onStartBossById,
+          },
+          initializeShop: vi.fn(),
+          labyrinthClearNode: vi.fn(),
         },
-        initializeShop: vi.fn(),
-        labyrinthClearNode: vi.fn(),
-      }),
+        makeOutcomes(navigateTo, transition),
+      ),
     );
 
     act(() => {
@@ -184,21 +242,26 @@ describe("useRunFlowEngine", () => {
       wildwoodDraft: createInitialWildwoodDraftState("knight", () => 0.5),
     });
     const onStartBossById = vi.fn(() => true);
+    const navigateTo = vi.fn();
+    const transition = vi.fn();
 
     const { result } = renderHook(() =>
-      useRunFlowEngine({
-        screen: ROUTE_SCREENS.DRAFT_DECK,
-        navigateTo: vi.fn(),
-        transition: vi.fn(),
-        cancelPending: vi.fn(),
-        battle: {
-          onStartBattle: vi.fn(),
-          onStartBossBattle: vi.fn(),
-          onStartBossById,
+      useRunFlowEngine(
+        {
+          screen: ROUTE_SCREENS.DRAFT_DECK,
+          navigateTo,
+          transition,
+          cancelPending: vi.fn(),
+          battle: {
+            onStartBattle: vi.fn(),
+            onStartBossBattle: vi.fn(),
+            onStartBossById,
+          },
+          initializeShop: vi.fn(),
+          labyrinthClearNode: vi.fn(),
         },
-        initializeShop: vi.fn(),
-        labyrinthClearNode: vi.fn(),
-      }),
+        makeOutcomes(navigateTo, transition),
+      ),
     );
 
     act(() => {
@@ -223,21 +286,25 @@ describe("useRunFlowEngine", () => {
     });
     const onStartBossById = vi.fn(() => true);
     const navigateTo = vi.fn();
+    const transition = vi.fn();
 
     const { result } = renderHook(() =>
-      useRunFlowEngine({
-        screen: ROUTE_SCREENS.DRAFT_DECK,
-        navigateTo,
-        transition: vi.fn(),
-        cancelPending: vi.fn(),
-        battle: {
-          onStartBattle: vi.fn(),
-          onStartBossBattle: vi.fn(),
-          onStartBossById,
+      useRunFlowEngine(
+        {
+          screen: ROUTE_SCREENS.DRAFT_DECK,
+          navigateTo,
+          transition,
+          cancelPending: vi.fn(),
+          battle: {
+            onStartBattle: vi.fn(),
+            onStartBossBattle: vi.fn(),
+            onStartBossById,
+          },
+          initializeShop: vi.fn(),
+          labyrinthClearNode: vi.fn(),
         },
-        initializeShop: vi.fn(),
-        labyrinthClearNode: vi.fn(),
-      }),
+        makeOutcomes(navigateTo, transition),
+      ),
     );
 
     act(() => {

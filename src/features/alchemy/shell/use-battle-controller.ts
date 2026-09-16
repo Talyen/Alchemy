@@ -49,21 +49,20 @@ export function useBattleController({
 
   const setAutoplayEnabled = useCallback((enabled: boolean) => {
     setIsAutoplayEnabledState(enabled);
-    const settings = useSettingsStore.getState();
-    if (settings.rememberAutoplayPreference) {
-      settings.setAutoplayEnabled(enabled);
+    if (useSettingsStore.getState().rememberAutoplayPreference) {
+      useSettingsStore.getState().setAutoplayEnabled(enabled);
     }
   }, []);
 
   const toggleAutoplayEnabled = useCallback(() => {
-    setIsAutoplayEnabledState((enabled) => {
-      const settings = useSettingsStore.getState();
-      if (settings.rememberAutoplayPreference) {
-        settings.setAutoplayEnabled(!enabled);
-      }
-      return !enabled;
-    });
-  }, []);
+    // Read-then-write outside the updater: settings writes are side effects
+    // and must not run inside a StrictMode-double-invoked updater.
+    const next = !isAutoplayEnabled;
+    setIsAutoplayEnabledState(next);
+    if (useSettingsStore.getState().rememberAutoplayPreference) {
+      useSettingsStore.getState().setAutoplayEnabled(next);
+    }
+  }, [isAutoplayEnabled]);
 
   const [boonInspectOpen, setBoonInspectOpen] = useState(false);
   const toggleBoonInspect = useCallback(() => {
@@ -137,6 +136,9 @@ export function useBattleController({
     playbackBindVersion,
   });
 
+  // Teardown pair: the first resets session data when no battle is active
+  // (skipping the victory grace window); the second clears presentation UI
+  // whenever we leave the battle screen. Both are idempotent by design.
   useEffect(() => {
     if (hasActiveBattle) return;
     const enemyHealth = readBattle().battleState.enemyHealth;

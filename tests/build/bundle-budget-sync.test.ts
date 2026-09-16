@@ -87,4 +87,16 @@ describe("bundle budget sync", () => {
 
     expect(checkBundleBudget(directory)).toBe(false);
   });
+
+  it("warns without failing once totals pass 95% of the budget", () => {
+    vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const directory = createAssetDirectory({
+      "index-AbC_1.js": BUDGETS.totalJsWarnBytes,
+      "vendor-a.js": 1,
+    });
+
+    expect(checkBundleBudget(directory)).toBe(true);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("WARN"));
+  });
 });

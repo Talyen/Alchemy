@@ -191,7 +191,8 @@ The total JavaScript ceiling lives in `scripts/lib/bundle-budget.mjs` and is
 checked by `npm run check:bundle`. Screen and art loading remain eager, so moving
 bytes between chunks does not reduce the eager payload. Individual chunk sizes
 and Vite's chunk warning remain diagnostic, not separate blocking budgets.
-Missing builds or missing entry chunks still fail.
+Missing builds or missing entry chunks still fail. Totals above 95% of the
+ceiling log a warning so growth is visible before the gate goes red.
 
 Past allowances and their measurements are retained in
 [bundle-budget history](../.agents/history/friction-2026-09.md#bundle-budget-decisions).

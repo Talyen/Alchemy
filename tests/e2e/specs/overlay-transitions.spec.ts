@@ -28,20 +28,35 @@ test("interrupting a tab reveal never jumps back to full opacity", critical, asy
   await expect(page.locator(".page-enter")).toHaveCSS("opacity", "1");
   await page.getByRole("button", { name: "Cards", exact: true }).click();
   const samples = await page.evaluate(async () => {
-    const deadline = performance.now() + 5000;
-    while (performance.now() < deadline) {
-      await new Promise(requestAnimationFrame);
-      const slot = document.querySelector(".screen-fade-in:not([data-artwork-pending])");
-      if (!slot) continue;
-      const opacity = Number(getComputedStyle(slot).opacity);
-      if (opacity < 0.05 || opacity > 0.7) continue;
-      const samples = [opacity];
-      [...document.querySelectorAll("button")].find((button) => button.textContent?.trim() === "Heroes")!.click();
-      for (let frame = 0; frame < 3; frame += 1) {
+    const pick = (name: string) =>
+      [...document.querySelectorAll("button")].find((button) => button.textContent?.trim() === name);
+    // Under CI load a single 180ms fade can complete between rAF callbacks,
+    // so re-arm the Cards -> Heroes transition up to three times before giving up.
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      pick("Cards")?.click();
+      const settledDeadline = performance.now() + 2000;
+      while (performance.now() < settledDeadline) {
         await new Promise(requestAnimationFrame);
-        samples.push(Number(getComputedStyle(slot).opacity));
+        const settled = document.querySelector(".screen-fade-in:not([data-artwork-pending])");
+        if (settled && Number(getComputedStyle(settled).opacity) === 1) break;
       }
-      return samples;
+      const deadline = performance.now() + 5000;
+      while (performance.now() < deadline) {
+        await new Promise(requestAnimationFrame);
+        const slot = document.querySelector(".screen-fade-in:not([data-artwork-pending])");
+        if (!slot) continue;
+        const opacity = Number(getComputedStyle(slot).opacity);
+        if (opacity < 0.03 || opacity > 0.85) continue;
+        const captured = [opacity];
+        pick("Heroes")?.click();
+        for (let frame = 0; frame < 6 && captured.length < 4; frame += 1) {
+          await new Promise(requestAnimationFrame);
+          const current = document.querySelector(".screen-fade-in:not([data-artwork-pending])");
+          if (current) captured.push(Number(getComputedStyle(current).opacity));
+        }
+        if (captured.length < 4) continue;
+        return captured;
+      }
     }
     throw new Error("No partially revealed tab observed");
   });

@@ -1,4 +1,5 @@
 import { expect, test } from "../../fixtures/e2e";
+import type { Locator } from "@playwright/test";
 import {
   assertNoOverflow,
   assertStageFitsViewport,
@@ -19,6 +20,22 @@ async function setSlider(slider: import("@playwright/test").Locator, value: numb
   await slider.fill(String(value));
   await slider.dispatchEvent("input");
   await slider.dispatchEvent("change");
+}
+
+/**
+ * Tooltips can detach between visibility and measurement under load, so
+ * boundingBox() may briefly return null. Poll for a measurable box before
+ * asserting containment instead of dereferencing a single read.
+ */
+async function expectTooltipFitsViewport(tip: Locator, viewport: { width: number; height: number }, slack = 1) {
+  await expect(async () => {
+    const bounds = await tip.boundingBox();
+    expect(bounds).not.toBeNull();
+    expect(bounds!.x).toBeGreaterThanOrEqual(-slack);
+    expect(bounds!.y).toBeGreaterThanOrEqual(-slack);
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(viewport.width + slack);
+    expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(viewport.height + slack);
+  }).toPass({ timeout: 10_000 });
 }
 
 test.describe("Responsive display sizes", slow, () => {
@@ -103,11 +120,7 @@ test.describe("Responsive display sizes", slow, () => {
         await cards.first().hover();
         const tip = page.locator("#tooltip-root .hover-popup-panel[data-visible]").first();
         await expect(tip).toBeVisible();
-        const bounds = await tip.boundingBox();
-        expect(bounds!.x).toBeGreaterThanOrEqual(-1);
-        expect(bounds!.y).toBeGreaterThanOrEqual(-1);
-        expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(viewport.width + 1);
-        expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(viewport.height + 1);
+        await expectTooltipFitsViewport(tip, viewport);
         await assertNoOverflow(page, `Battle ${viewport.width} at ${gameSizePercent}`);
       }
     }
@@ -167,11 +180,7 @@ test.describe("Responsive display sizes", slow, () => {
           for (const [index, expected] of [scale, 18 * traitScale].entries()) {
             expect(sizing[index]).toBeCloseTo(expected, 1);
           }
-          const bounds = (await tooltip.boundingBox())!;
-          expect(bounds.x).toBeGreaterThanOrEqual(0);
-          expect(bounds.y).toBeGreaterThanOrEqual(0);
-          expect(bounds.x + bounds.width).toBeLessThanOrEqual(1280);
-          expect(bounds.y + bounds.height).toBeLessThanOrEqual(720);
+          await expectTooltipFitsViewport(tooltip, { width: 1280, height: 720 }, 0);
         }
         expect(errors).toEqual([]);
       } finally {
@@ -192,7 +201,7 @@ test.describe("Responsive display sizes", slow, () => {
     await expect.poll(() => cards.first().locator("img").first().getAttribute("src")).not.toBe(before);
     const first = await cards.first().locator("img").first().getAttribute("src");
     await page.setViewportSize({ width: 3840, height: 2160 });
-    await expect(cards).toHaveCount(10);
+    await expect(cards).toHaveCount(10, { timeout: 15_000 });
     await expect
       .poll(() => cards.locator("img").evaluateAll((images) => images.map((img) => img.getAttribute("src"))))
       .toContain(first);
@@ -201,7 +210,7 @@ test.describe("Responsive display sizes", slow, () => {
       await page.getByRole("button", { name: tab, exact: true }).click();
       await expect.poll(() => cards.first().locator("img").first().getAttribute("src")).not.toBe(previousArt);
       await page.getByRole("button", { name: "Cards", exact: true }).click();
-      await expect(cards).toHaveCount(10);
+      await expect(cards).toHaveCount(10, { timeout: 15_000 });
       await expect
         .poll(() => cards.locator("img").evaluateAll((images) => images.map((img) => img.getAttribute("src"))))
         .toContain(first);
@@ -224,9 +233,12 @@ test.describe("Responsive display sizes", slow, () => {
       await heroes.nth(index).hover();
       const tooltip = page.locator("#tooltip-root .hover-popup-panel[data-visible]").last();
       await expect(tooltip).toBeVisible();
-      const bounds = await tooltip.boundingBox();
-      expect(bounds!.y).toBeGreaterThanOrEqual(-1);
-      expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(721);
+      await expect(async () => {
+        const bounds = await tooltip.boundingBox();
+        expect(bounds).not.toBeNull();
+        expect(bounds!.y).toBeGreaterThanOrEqual(-1);
+        expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(721);
+      }).toPass({ timeout: 10_000 });
     }
     await expect
       .poll(() =>

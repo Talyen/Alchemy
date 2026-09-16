@@ -19,6 +19,7 @@ declare module "*/check-bundle-budget.mjs" {
 declare module "*/bundle-budget.mjs" {
   export const BUDGETS: Readonly<{
     totalJsMaxBytes: number;
+    totalJsWarnBytes: number;
   }>;
   export const CHUNK_SIZE_WARNING_KB: number;
 }

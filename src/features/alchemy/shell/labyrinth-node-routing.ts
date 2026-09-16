@@ -1,8 +1,8 @@
 import type { ShopActions } from "@/features/alchemy/run-loop/shop/shop-action-types";
 import { type EncounterCombatTraitId, type EncounterRewardTraitId } from "@/lib/content-systems/types";
-import { type BattleCard, type DifficultyModifier } from "@/lib/game-data";
 import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
 import type { LabyrinthNodeHandlers } from "@/features/alchemy/run-loop/run/labyrinth-controller";
+import type { BattleLauncherDeps } from "./shell-types";
 
 interface LabyrinthNodeRoutingDeps {
   applyLabyrinthBattleModifiers: (modifiers: EncounterCombatTraitId[]) => void;
@@ -12,14 +12,8 @@ interface LabyrinthNodeRoutingDeps {
     enterSelectedNode: (handlers: LabyrinthNodeHandlers) => boolean;
   };
   battle: {
-    startBattle: (
-      deck?: BattleCard[],
-      gold?: number,
-      enemyType?: "normal" | "elite",
-      modifiers?: DifficultyModifier[],
-      enemyId?: string,
-    ) => void;
-    startBossBattle: (modifiers?: DifficultyModifier[], enemyId?: string) => void;
+    startBattle: BattleLauncherDeps["onStartBattle"];
+    startBossBattle: BattleLauncherDeps["onStartBossBattle"];
   };
   nav: { beginMysteryEvent: () => void };
   shop: Pick<ShopActions, "initialize">;
@@ -31,6 +25,9 @@ export function createLabyrinthNodeRouting(deps: LabyrinthNodeRoutingDeps) {
     battleModifiers: EncounterCombatTraitId[] = [],
     rewardModifiers: EncounterRewardTraitId[] = [],
   ) {
+    // Always forward, including [] clears: the store writers skip the write
+    // only when already empty (no revision bump), so stale traits from the
+    // previous node cannot leak into nodes without modifiers.
     deps.applyLabyrinthBattleModifiers(battleModifiers);
     deps.applyLabyrinthRewardModifiers(rewardModifiers);
   }
@@ -49,6 +46,8 @@ export function createLabyrinthNodeRouting(deps: LabyrinthNodeRoutingDeps) {
   function handleLabyrinthNodeEnter(): boolean {
     return deps.labyrinth.enterSelectedNode({
       onStartBattleWithModifiers: (enemyType, modifiers, rewardModifiers, enemyId) => {
+        // Combat traits travel via the run session (activeLabyrinthModifiers),
+        // not battle-starter args, so battles stay seeded from one source.
         enterLabyrinthNodeScreen(
           ROUTE_SCREENS.BATTLE,
           () => {

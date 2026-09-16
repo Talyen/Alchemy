@@ -49,6 +49,8 @@ Device display preferences (`alchemy-device-display-v1`) stay outside the versio
 
 `src/lib/platform-save-backend.ts#createPlatformSaveBackend` collects candidates in preference order (local → bak.1 → bak.2 → bak.3 → cloud); `uniqueCandidates` deduplicates identical Cloud mirrors. The freshest playable candidate that Zod-validates wins by `lastSavedAt`; corrupt candidates fall through to another recovery source. Evaluation is deterministic in `src/features/alchemy/shared/storage/save-candidates.ts#evaluateSaveCandidates`. Recovery diagnostics are logged at the I/O seam, and only the winning candidate is hydrated against the live catalog.
 
+Routine skips stay silent: missing, empty, non-object, and below-baseline candidates on fresh profiles never reach the error sink (`logStorageFailure`), because browser journeys assert zero runtime errors. Only genuinely corrupt JSON and schema-validation failures of otherwise versioned candidates are reported. Pinned by `save-version-protection.test.ts`.
+
 #### Future schema saves
 
 Saves with a schema newer than the current build are intentionally not migrated or overwritten. A recognizable future-versioned candidate protects the session only when it is fresher by `lastSavedAt` than every playable candidate. A stale newer-versioned mirror is skipped in favor of the freshest playable backup; timestamp ties also load the playable backup, and autosave can continue.

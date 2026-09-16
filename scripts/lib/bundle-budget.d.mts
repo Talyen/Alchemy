@@ -1,5 +1,6 @@
 export declare const BUDGETS: Readonly<{
   totalJsMaxBytes: number;
+  totalJsWarnBytes: number;
 }>;
 
 export declare const CHUNK_SIZE_WARNING_KB: number;

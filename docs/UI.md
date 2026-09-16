@@ -172,7 +172,8 @@ Screen and `FadeSlot` reveals wait for the mounted images to load and decode thr
 Opacity fades use reversible CSS transitions, so an interrupted reveal exits from
 its current opacity instead of restarting at full opacity. The first changed render
 already carries the exit phase. Screen input, including external battle chrome, stays
-blocked during pending navigation, the outgoing fade, and incoming artwork preparation.
+blocked during pending navigation (`navigationPending` from `useScreenTransitions`),
+the outgoing fade, and incoming artwork preparation.
 
 `FadeSlot` keeps outgoing and artwork-pending content inert. Identity-dependent
 headings, prompts, resources, and actions must travel with their content: Victory

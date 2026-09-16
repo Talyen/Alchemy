@@ -106,6 +106,8 @@ test.describe("Battle Autoplay", critical, () => {
       { autoEndTurn: false, autoplayEnabled: false },
     );
     const battle = new BattlePage(page);
+    await expect(battle.endTurnBtn).toBeVisible({ timeout: 10_000 });
+    await battle.waitForOpeningHand();
     await expect(battle.hand).toHaveCount(4);
     await expect(battle.autoplayToggle).toHaveAttribute("aria-pressed", "false");
 

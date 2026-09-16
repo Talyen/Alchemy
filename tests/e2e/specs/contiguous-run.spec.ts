@@ -33,7 +33,7 @@ test.describe("Contiguous Run Journey", critical, () => {
 
     const battle = new BattlePage(page);
     await expect(battle.endTurnBtn).toBeVisible({ timeout: 10_000 });
-    await expect.poll(() => battle.handCount(), { timeout: 30_000 }).toBeGreaterThan(0);
+    await battle.waitForOpeningHand();
 
     await battle.winViaCombat(10);
 
@@ -58,7 +58,7 @@ test.describe("Contiguous Run Journey", critical, () => {
       .toBe(true);
 
     await destination.enterAnyCombat();
+    await battle.waitForOpeningHand(15_000);
     await expect(battle.endTurnBtn).toBeEnabled();
-    await expect(battle.hand.first()).toBeVisible();
   });
 });

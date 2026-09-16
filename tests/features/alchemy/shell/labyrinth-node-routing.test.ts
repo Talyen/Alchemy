@@ -35,10 +35,22 @@ describe("createLabyrinthNodeRouting", () => {
 
     routing.handleLabyrinthNodeEnter();
 
+    // Empty sets still forward [] so stale traits from the previous node are
+    // cleared; the store writers skip the revision bump when already empty.
     expect(deps.applyLabyrinthBattleModifiers).toHaveBeenCalledWith([]);
     expect(deps.applyLabyrinthRewardModifiers).toHaveBeenCalledWith([]);
     expect(deps.nav.beginMysteryEvent).toHaveBeenCalledOnce();
     expect(deps.navigateTo).not.toHaveBeenCalledWith(ROUTE_SCREENS.MYSTERY, expect.anything());
+  });
+
+  it("starts mystery with reward modifiers applied first", () => {
+    const deps = makeRoutingDeps((handlers) => handlers.onStartMystery(["strong-spirits"]));
+    deps.nav.beginMysteryEvent.mockImplementation(() => {
+      expect(deps.applyLabyrinthRewardModifiers).toHaveBeenCalledWith(["strong-spirits"]);
+    });
+    createLabyrinthNodeRouting(deps).handleLabyrinthNodeEnter();
+    expect(deps.applyLabyrinthBattleModifiers).toHaveBeenCalledWith([]);
+    expect(deps.nav.beginMysteryEvent).toHaveBeenCalledOnce();
   });
 
   it("applies combat modifiers then starts battle, and initializes shops after empty modifiers", () => {
@@ -49,6 +61,7 @@ describe("createLabyrinthNodeRouting", () => {
 
     expect(combatDeps.applyLabyrinthBattleModifiers).toHaveBeenCalledWith(["tempered"]);
     expect(combatDeps.applyLabyrinthRewardModifiers).toHaveBeenCalledWith(["generous"]);
+    // Combat traits travel via session store, not battle-starter args.
     expect(combatDeps.battle.startBattle).toHaveBeenCalledWith(undefined, undefined, "elite", [], "goblin");
     expect(combatDeps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE);
 

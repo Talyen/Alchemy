@@ -15,26 +15,32 @@ import {
   setHasActiveBattle as setDraftHasActiveBattle,
   setRunDeck,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { ROUTE_SCREENS } from "@/lib/routing";
-import { createRunDestinationWiring } from "./run-destination-wiring";
-import type { RunNavigationDeps } from "./shell-types";
+import { createRunDestinationWiring, clearRunCardHover } from "./run-destination-wiring";
+import type { RunFlowEngineDeps } from "./shell-types";
 export function createRunFlowEngine(
   {
-    navigateTo,
+    navigateTo: rawNavigateTo,
     transition,
     cancelPending,
     battle,
     initializeShop,
     labyrinthClearNode,
-  }: Omit<RunNavigationDeps, "screen">,
+  }: RunFlowEngineDeps,
   outcomes: RunOutcomes,
 ) {
   const setHasActiveBattle = createRunSessionCommand(setDraftHasActiveBattle);
-  const clearCardHover = () => useUiStore.getState().clearCardHover();
+  const clearCardHover = clearRunCardHover;
+  // Universal hover rule (approved): every flow navigation clears card hover
+  // unless explicitly opted out. Factories receive the wrapped navigate so
+  // Wildwood resume, mystery, and content-system paths cannot leave tooltips.
+  const navigateTo: RunFlowEngineDeps["navigateTo"] = (nextScreen, prepareNavigation) => {
+    clearCardHover();
+    rawNavigateTo(nextScreen, prepareNavigation);
+  };
   const destinations = createRunDestinationWiring({
-    navigateTo,
+    navigateTo: rawNavigateTo,
     clearCardHover,
   });
   const wildwood = createWildwoodGauntletFlow({
@@ -92,7 +98,7 @@ export function createRunFlowEngine(
   function resetRunState() {
     cancelPending();
     clearBattlePresentationUi();
-    clearCardHover();
+    // navigateTo already clears card hover via the universal rule above.
     navigateTo(ROUTE_SCREENS.MENU, teardownRun);
   }
   return {
@@ -129,8 +135,10 @@ export function createRunFlowEngine(
     handleMysteryChoice: mystery.handleMysteryChoice,
     handleMysteryChooseCard: mystery.handleMysteryChooseCard,
     handleMysteryRemoveCard: mystery.handleMysteryRemoveCard,
+    // Intentional alias: continuing from a mystery returns to the run flow.
     handleMysteryContinue: flowHandlers.advanceToNextDestination,
     resetRunState,
+    // Intentional alias: leaving the run-end screen tears down to menu.
     continueFromRunEnd: resetRunState,
     handleBattleVictory: flowHandlers.handleBattleVictory,
     handleBattleDefeat: flowHandlers.handleBattleDefeat,

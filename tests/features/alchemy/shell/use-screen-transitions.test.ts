@@ -111,4 +111,11 @@ describe("screen navigation", () => {
     expect(() => nav.navigateTo("character-select")).toThrow("Disallowed screen transition");
     expect(nav.prepareScreen).not.toHaveBeenCalled();
   });
+
+  it("treats a guarded no-op as silent even on a disallowed edge", () => {
+    const nav = navigation();
+    expect(() => nav.transition("character-select", { guard: () => false })).not.toThrow();
+    expect(nav.prepareScreen).not.toHaveBeenCalled();
+    expect(nav.showScreen).not.toHaveBeenCalled();
+  });
 });

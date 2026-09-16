@@ -83,12 +83,12 @@ An interrupted bonus handoff resumes only the bonus choices: the primary reward 
 
 Destination eligibility uses health and maximum health after victory bonuses and the upcoming location’s loot depth. Combat and Wildwood exclude exhausted Boon and permanent-Trinket pools before sampling through the [shared loot policy](./ARMORY.md#loot-tuning). Pass progression from `resolveDraftLootProgress()` when generating new loot; loading pending rewards or shop offers must not reapply progression eligibility.
 
-| Step                           | File(s)                                                                                                                                                  |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Add route constant          | `src/lib/routing/reward-routes.ts` → `REWARD_ROUTES`, re-exported from `@/lib/routing`                                                                   |
-| 2. Compute route after rewards | `src/features/alchemy/run-loop/navigation/reward-flow.ts` (`finalizeRewardState` / related; import `@/features/alchemy/run-loop/navigation/reward-flow`) |
-| 3. Handle transition           | `run-loop/run/run-flow-rewards.ts` (`executeRewardRouteTransition`) and/or `shell/use-run-flow-engine.ts`                                                |
-| 4. Tests                       | `tests/features/alchemy/run-loop/navigation/reward-flow.test.ts`; victory-flow tests if end-of-run                                                       |
+| Step                           | File(s)                                                                                                                                                                           |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Add route constant          | `src/lib/routing/reward-routes.ts` → `REWARD_ROUTES`, re-exported from `@/lib/routing`                                                                                            |
+| 2. Compute route after rewards | `src/features/alchemy/run-loop/navigation/reward-flow.ts` (`finalizeRewardState` / related; import `@/features/alchemy/run-loop/navigation/reward-flow`)                          |
+| 3. Handle transition           | `run-loop/run/run-flow-rewards.ts` (`executeRewardRouteTransition`) for reward routing; `shell/run-flow-engine.ts` (`createRunFlowEngine`) for shell wiring of all flow factories |
+| 4. Tests                       | `tests/features/alchemy/run-loop/navigation/reward-flow.test.ts`; victory-flow tests if end-of-run                                                                                |
 
 ---
 
@@ -386,11 +386,11 @@ Live pool events are authored in `src/lib/mystery/pool.ts`; other `MysteryEffect
 
 Numeric corruption also updates matching delayed repeats of the changed effect, so the later turn agrees with the card description. A shared damage number, such as Stab's Physical-or-Bleed amount, updates both alternatives without consuming the numeric target for a separately described effect. Tithe's Gold percentage is editable and capped at 100%; Powerful Wish uses the same numeric mapping. Unrelated repeated effects retain their values.
 
-| Step                                               | File(s)                                                                                        |
-| -------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| 1. Card mutation rules                             | `src/lib/corruption/`                                                                          |
-| 2. Destination handlers (corrupt / exit / abandon) | `run-loop/navigation/corruption-flow.ts`                                                       |
-| 2b. Shell wiring                                   | `createCorruptionFlowHandlers()` in `shell/run-flow-engine.ts`                                 |
-| 3. Screen                                          | `run-loop/screens/corruption-screen.tsx`                                                       |
-| 4. Resume                                          | `session.corruptionResult` via `run-resume-codec.ts` (`encodeCorruptionResult`, screen-scoped) |
-| 5. Tests                                           | `tests/features/alchemy/run-loop/corruption.test.ts`, destination E2E Mystery/Corruption cases |
+| Step                                               | File(s)                                                                                                                            |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Card mutation rules                             | `src/lib/corruption/`                                                                                                              |
+| 2. Destination handlers (corrupt / exit / abandon) | `run-loop/navigation/corruption-flow.ts`                                                                                           |
+| 2b. Shell wiring                                   | `createCorruptionFlowHandlers()` wired in `shell/run-flow-engine.ts` (receives advance/return callbacks plus labyrinth-map return) |
+| 3. Screen                                          | `run-loop/screens/corruption-screen.tsx`                                                                                           |
+| 4. Resume                                          | `session.corruptionResult` via `run-resume-codec.ts` (`encodeCorruptionResult`, screen-scoped)                                     |
+| 5. Tests                                           | `tests/features/alchemy/run-loop/corruption.test.ts`, destination E2E Mystery/Corruption cases                                     |

@@ -101,6 +101,16 @@ export class BattlePage {
     return this.hand.count();
   }
 
+  /**
+   * Wait for the opening hand to deal and stabilize. Poll-then-read callers
+   * flaked in CI by catching a transient zero-hand frame during deal
+   * animation/remount, so await this instead of asserting a single read.
+   */
+  async waitForOpeningHand(timeoutMs = 30_000): Promise<void> {
+    await expect.poll(async () => this.handCount(), { timeout: timeoutMs }).toBeGreaterThan(0);
+    await expect(this.hand.first()).toBeVisible({ timeout: 5_000 });
+  }
+
   async playAllCards() {
     for (let i = 0; i < 8; i++) {
       const card = this.hand.filter({ visible: true }).first();

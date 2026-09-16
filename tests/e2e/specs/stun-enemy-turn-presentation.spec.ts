@@ -44,6 +44,6 @@ test.describe("Stunned enemy turn presentation", slow, () => {
 
     await expect(yourTurn).toHaveAttribute("data-active", "true", { timeout: 20_000 });
     await expect(battle.endTurnBtn).toBeEnabled({ timeout: 20_000 });
-    expect(await battle.handCount()).toBeGreaterThan(0);
+    await battle.waitForOpeningHand();
   });
 });

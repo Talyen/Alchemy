@@ -38,6 +38,11 @@ function checkSingleBudget(dir) {
     failed = true;
   } else {
     console.log(`[bundle-budget] pass ${dir} total js ${totalJs} <= ${BUDGETS.totalJsMaxBytes}`);
+    if (BUDGETS.totalJsWarnBytes && totalJs > BUDGETS.totalJsWarnBytes) {
+      console.warn(
+        `[bundle-budget] WARN ${dir} total js ${totalJs} exceeds 95% of budget (${BUDGETS.totalJsWarnBytes}); next growth needs a measured allowance update`,
+      );
+    }
   }
   // Chunk boundaries can move without changing the eager download. Report them
   // for diagnosis; only the total measures the budget we intend to enforce.

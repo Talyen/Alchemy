@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import { evaluateSaveCandidates } from "@/features/alchemy/shared/storage";
 import {
@@ -86,5 +86,25 @@ describe("save version protection", () => {
       kind: "unsupported-newer-schema",
       detectedSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
     });
+  });
+});
+
+describe("save candidate error-sink silence", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("keeps routine empty and below-baseline candidates silent so browser journeys see zero errors", () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const loaded = evaluateSaveCandidates([JSON.stringify({}), JSON.stringify({ activeRun: null })]);
+    expect(loaded.status.kind).toBe("corrupt");
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("still reports genuinely corrupt JSON through the error sink", () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const loaded = evaluateSaveCandidates(["not-valid-json{{{"]);
+    expect(loaded.status.kind).toBe("corrupt");
+    expect(spy).toHaveBeenCalled();
   });
 });
