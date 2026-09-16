@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isCombatTalent, META_ONLY_TALENT_FIELDS } from "@/lib/balance/combat-talent";
+import { isCombatTalent, META_ONLY_TALENT_FIELDS } from "@/lib/balance/talent-preset";
 import { talentPool } from "@/lib/game-data";
 
 describe("isCombatTalent", () => {

@@ -1,7 +1,7 @@
 import { ANOMALY_THRESHOLD_BY_PRESET } from "./anomalies";
 import { DEFAULT_FINDINGS_CAP } from "./report-options";
 import type { ReportEnemyType } from "./report-catalog";
-import type { TalentPreset } from "./types";
+import type { TalentPreset } from "./simulator-types";
 
 export type EnemyTypeBand = ReportEnemyType;
 export type FindingsTier = TalentPreset;

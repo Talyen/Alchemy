@@ -1,5 +1,5 @@
 import type { BattleState, CombatTextEvent } from "@/lib/battle";
-import type { TalentPreset } from "./types";
+import type { TalentPreset } from "./simulator-types";
 
 export interface BattleAnomalies {
   enemyHealing: number;

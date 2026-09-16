@@ -3,11 +3,11 @@ import { MAX_HEALTH_PER_TALENT_POINT } from "@/lib/game-constants";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { defaultGearEffects, type GearEffectManifest } from "@/lib/gear/gear-effect-manifest";
-import { createSeededRng } from "@/lib/utils";
+import { createSeededRng } from "@/lib/rng";
 import { buildTypicalGearEffects } from "./gear-preset";
 import { buildTypicalHomesteadEffects } from "./homestead-preset";
 import { countUnlockedCombatTalents } from "./talent-preset";
-import type { TalentPreset } from "./types";
+import type { TalentPreset } from "./simulator-types";
 
 export type BalanceLoadoutMode = "bare" | "typical";
 
@@ -48,6 +48,7 @@ export function resolveSimLoadout(options: {
   mode: BalanceLoadoutMode;
   startGold?: number;
   seed?: number;
+  skipGear?: boolean;
 }): SimLoadout {
   const gold = TIER_GOLD[options.preset] + (options.startGold ?? 0);
   const talentPointHealth = talentPointHealthForCharacter(options.characterId, options.preset);
@@ -68,11 +69,15 @@ export function resolveSimLoadout(options: {
   }
 
   const homesteadCombat = buildTypicalHomesteadEffects(options.preset);
-  const gearRng = createSeededRng((options.seed ?? 1) + TYPICAL_GEAR_RNG_SALT);
   const gearEffects =
-    options.preset === "early"
+    options.skipGear || options.preset === "early"
       ? { ...defaultGearEffects }
-      : buildTypicalGearEffects(options.characterId, options.preset, gearRng, homesteadCombat.gearAstralChanceBonus);
+      : buildTypicalGearEffects(
+          options.characterId,
+          options.preset,
+          createSeededRng((options.seed ?? 1) + TYPICAL_GEAR_RNG_SALT),
+          homesteadCombat.gearAstralChanceBonus,
+        );
 
   return {
     mode: "typical",

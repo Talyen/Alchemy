@@ -3,7 +3,7 @@ import type { DifficultyModifier } from "@/lib/game-data";
 import type { GearEffectManifest } from "@/lib/gear/gear-effect-manifest";
 import type { BattleAnomalies } from "./anomalies";
 import type { BalanceLoadoutMode } from "./loadout-preset";
-import type { TalentPreset } from "./types";
+export type TalentPreset = "early" | "mid" | "late";
 export type BalancePlayPolicy = "random-playable" | "greedy-damage" | "defensive-random" | "greedy-effective-damage";
 export type BattleSimulationOutcome = "win" | "loss" | "timeout";
 

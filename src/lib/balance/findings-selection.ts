@@ -36,13 +36,24 @@ function scoreFinding(finding: BalanceFinding): number {
   }
 }
 
+const SCORE_CACHE = new WeakMap<BalanceFinding, number>();
+
+function getScore(finding: BalanceFinding): number {
+  let score = SCORE_CACHE.get(finding);
+  if (score === undefined) {
+    score = scoreFinding(finding);
+    SCORE_CACHE.set(finding, score);
+  }
+  return score;
+}
+
 export function selectBalanceFindings(candidates: readonly BalanceFinding[], cap: number): BalanceFindingsReport {
   const byKey = new Map<string, BalanceFinding>();
   for (const finding of candidates) {
     const key = findingKey(finding);
     byKey.set(key, keepBetter(byKey.get(key), finding));
   }
-  const ranked = [...byKey.values()].sort((a, b) => scoreFinding(b) - scoreFinding(a) || a.id.localeCompare(b.id));
+  const ranked = [...byKey.values()].sort((a, b) => getScore(b) - getScore(a) || a.id.localeCompare(b.id));
   const collapsed = collapseMatchupClusters(ranked);
   const selected = selectDiverseFindings(collapsed, cap);
   const shownByBucket = emptyBucketCounts();
@@ -95,7 +106,7 @@ function collapseMatchupClusters(findings: readonly BalanceFinding[]): BalanceFi
     groups.set(key, list);
   }
   for (const group of groups.values()) {
-    const sorted = [...group].sort((a, b) => scoreFinding(b) - scoreFinding(a) || a.id.localeCompare(b.id));
+    const sorted = [...group].sort((a, b) => getScore(b) - getScore(a) || a.id.localeCompare(b.id));
     const best = sorted[0];
     if (!best) continue;
     if (sorted.length === 1) {
@@ -108,7 +119,7 @@ function collapseMatchupClusters(findings: readonly BalanceFinding[]): BalanceFi
       worstScenario: `${best.worstScenario} · worst of ${sorted.length} classes`,
     });
   }
-  return kept.sort((a, b) => scoreFinding(b) - scoreFinding(a) || a.id.localeCompare(b.id));
+  return kept.sort((a, b) => getScore(b) - getScore(a) || a.id.localeCompare(b.id));
 }
 
 function selectDiverseFindings(ranked: readonly BalanceFinding[], cap: number): BalanceFinding[] {
@@ -143,7 +154,6 @@ function orderFindingsForDisplay(findings: readonly BalanceFinding[]): BalanceFi
     number
   >;
   return [...findings].sort(
-    (a, b) =>
-      bucketRank[a.bucket] - bucketRank[b.bucket] || scoreFinding(b) - scoreFinding(a) || a.id.localeCompare(b.id),
+    (a, b) => bucketRank[a.bucket] - bucketRank[b.bucket] || getScore(b) - getScore(a) || a.id.localeCompare(b.id),
   );
 }

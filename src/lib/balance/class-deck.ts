@@ -9,8 +9,8 @@ import {
   type CompanionId,
   type KeywordId,
 } from "@/lib/game-data";
-import { createSeededRng, pickRandom, sampleItems, shuffle } from "@/lib/utils";
-import type { TalentPreset } from "./types";
+import { createSeededRng, pickRandom, sampleItems, shuffle } from "@/lib/rng";
+import type { TalentPreset } from "./simulator-types";
 
 const ALCHEMIST_MIXED_POTION_COUNT = 2;
 

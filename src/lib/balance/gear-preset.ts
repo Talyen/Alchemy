@@ -8,8 +8,8 @@ import {
   type GearSlot,
 } from "@/lib/gear";
 import { defaultGearEffects, mergeGearEffectManifests, type GearEffectManifest } from "@/lib/gear/gear-effect-manifest";
-import { pickRandom } from "@/lib/utils";
-import type { TalentPreset } from "./types";
+import { pickRandom } from "@/lib/rng";
+import type { TalentPreset } from "./simulator-types";
 
 const MID_GEAR_SLOTS: GearSlot[] = ["main-hand", "body"];
 const LATE_GEAR_SLOTS: GearSlot[] = ["main-hand", "off-hand", "body", "left-accessory", "right-accessory"];

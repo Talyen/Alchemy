@@ -3,7 +3,7 @@ import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
-import type { TalentPreset } from "./types";
+import type { TalentPreset } from "./simulator-types";
 
 const SIM_COMPANION_BOND_BY_PRESET: Record<TalentPreset, number> = {
   early: 1,

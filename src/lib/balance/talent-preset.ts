@@ -9,7 +9,33 @@ import {
   type TalentEffectManifest,
   type UnlockedTalents,
 } from "@/lib/game-data";
-import type { TalentPreset } from "./types";
+import type { TalentPreset } from "./simulator-types";
+
+export const META_ONLY_TALENT_FIELDS: ReadonlySet<keyof TalentEffectManifest> = new Set([
+  "shopCardDiscount",
+  "shopFreeRefresh",
+  "goldPerCombat",
+  "companionVictoryGold",
+  "potionDiscount",
+  "removeCardDiscount",
+  "enemyGoldDropBonus",
+  "eliteGoldDropBonus",
+  "mixPotionDiscount",
+  "campfireHealBonus",
+  "maxHealthPerCombat",
+  "wishGemsGold",
+]);
+
+export function isCombatTalent(talent: TalentDefinition): boolean {
+  if (isTalentPlaceholder(talent)) return false;
+  const effects = talent.effects ?? [];
+  if (effects.length === 0) return false;
+  return effects.some((effect) => !META_ONLY_TALENT_FIELDS.has(effect.field));
+}
+
+export function combatTalentsInPoolOrder(keywordId: TalentDefinition["keywordId"]): TalentDefinition[] {
+  return talentPool.filter((talent) => talent.keywordId === keywordId && isCombatTalent(talent));
+}
 
 export const LATE_AFFINITY_TALENT_CAP = 7;
 export const MID_AFFINITY_TALENT_COUNT = 5;

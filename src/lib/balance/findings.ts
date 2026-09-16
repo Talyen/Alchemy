@@ -42,40 +42,7 @@ const ENEMY_CAUSE_HINTS: Record<string, string> = {
 const REVIEW_SUFFIX = " Discuss before applying a change.";
 
 function enemyTypeOf(id: string): EnemyTypeBand | undefined {
-  if (!isEnemyId(id)) return undefined;
-  const entry = enemyById[id];
-  if (entry.enemyType === "normal" || entry.enemyType === "elite" || entry.enemyType === "boss") {
-    return entry.enemyType;
-  }
-  return undefined;
-}
-
-function titleEnemy(id: string): string {
-  return titleFor("enemy", id);
-}
-
-function titleClass(id: string): string {
-  return titleFor("character", id);
-}
-
-function titleCard(id: string): string {
-  return titleFor("card", id);
-}
-
-function titleBoon(id: string): string {
-  return titleFor("boon", id);
-}
-
-function titleCompanion(id: string): string {
-  return titleFor("companion", id);
-}
-
-function titleTalent(id: string): string {
-  return titleFor("talent", id);
-}
-
-function titleGear(id: string): string {
-  return titleFor("gear", id);
+  return isEnemyId(id) ? enemyById[id].enemyType : undefined;
 }
 
 function median(values: readonly number[]): number {
@@ -97,15 +64,16 @@ function collectBalanceFindings(model: BalanceReportModel): BalanceFinding[] {
   for (const enemy of model.enemies) {
     const enemyType = enemyTypeOf(enemy.id);
     for (const { preset: tier } of REPORT_TIERS) {
+      const title = titleFor("enemy", enemy.id);
       collectRateFindings({
         add,
         scope: "enemy",
         id: enemy.id,
-        title: titleEnemy(enemy.id),
+        title,
         tier,
         cell: enemy.rates[tier],
         enemyType,
-        worstScenario: `${titleEnemy(enemy.id)} (${tier})`,
+        worstScenario: `${title} (${tier})`,
         ...(ENEMY_CAUSE_HINTS[enemy.id] ? { causeHint: ENEMY_CAUSE_HINTS[enemy.id] } : {}),
       });
     }
@@ -114,16 +82,17 @@ function collectBalanceFindings(model: BalanceReportModel): BalanceFinding[] {
   collectEnemyTypeEquity(model.enemies, add);
 
   for (const row of model.classes) {
+    const classTitle = titleFor("character", row.id);
     for (const { preset: tier } of REPORT_TIERS) {
       collectRateFindings({
         add,
         scope: "class",
         id: row.id,
-        title: titleClass(row.id),
+        title: classTitle,
         tier,
         cell: row.rates[tier],
         enemyType: undefined,
-        worstScenario: `${titleClass(row.id)} overall (${tier})`,
+        worstScenario: `${classTitle} overall (${tier})`,
         ...(row.id === "wizard" || row.id === "warlock"
           ? { causeHint: "Burn (and Bleed for Warlock) can spike stacks quickly." }
           : {}),
@@ -138,11 +107,11 @@ function collectBalanceFindings(model: BalanceReportModel): BalanceFinding[] {
           add,
           scope: "class",
           id: `${row.id}:${enemyType}`,
-          title: `${titleClass(row.id)} vs ${enemyType}`,
+          title: `${classTitle} vs ${enemyType}`,
           tier,
           cell,
           enemyType,
-          worstScenario: `${titleClass(row.id)} vs ${enemyType} (${tier})`,
+          worstScenario: `${classTitle} vs ${enemyType} (${tier})`,
         });
       }
     }
@@ -150,14 +119,14 @@ function collectBalanceFindings(model: BalanceReportModel): BalanceFinding[] {
 
   collectClassEquity(model.classes, add);
   collectMatchupFindings(model, add);
-  collectPairedFindings(model.boons, "boon", titleBoon, add);
-  collectPairedFindings(model.cardsIsolatedSkeleton, "card", titleCard, add, "isolated vs Skeleton");
-  collectPairedFindings(model.cardsIsolatedElite, "card", titleCard, add, "isolated vs Mimic");
-  collectPairedFindings(model.cardsInClass, "card", titleCard, add, "in-class");
-  collectPairedFindings(model.talents, "talent", titleTalent, add);
-  collectPairedFindings(model.companions, "companion", titleCompanion, add);
-  collectPairedFindings(model.gear, "gear", titleGear, add);
-  collectPairedFindings(model.affixes, "affix", (id) => titleFor("affix", id), add);
+  collectPairedFindings(model.boons, "boon", add);
+  collectPairedFindings(model.cardsIsolatedSkeleton, "card", add, "isolated vs Skeleton");
+  collectPairedFindings(model.cardsIsolatedElite, "card", add, "isolated vs Mimic");
+  collectPairedFindings(model.cardsInClass, "card", add, "in-class");
+  collectPairedFindings(model.talents, "talent", add);
+  collectPairedFindings(model.companions, "companion", add);
+  collectPairedFindings(model.gear, "gear", add);
+  collectPairedFindings(model.affixes, "affix", add);
   collectAnomalies(model, add);
 
   return candidates;
@@ -282,17 +251,18 @@ function collectEnemyTypeEquity(enemies: readonly TierRateRow[], add: (finding: 
         if (row.rates[tier].n <= 0) continue;
         const spread = Math.abs(row.rates[tier].winRate - med);
         if (spread < EQUITY_SPREAD) continue;
+        const title = titleFor("enemy", row.id);
         add({
           severity: "serious",
           scope: "enemy",
           id: row.id,
-          title: titleEnemy(row.id),
+          title,
           tier,
           metric: "winRate",
           bucket: "equity",
           observed: row.rates[tier].winRate,
           band: `within ${EQUITY_SPREAD * 100}% of ${enemyType} median (${(med * 100).toFixed(1)}%)`,
-          worstScenario: `${titleEnemy(row.id)} (${tier})`,
+          worstScenario: `${title} (${tier})`,
           ...(ENEMY_CAUSE_HINTS[row.id] ? { causeHint: ENEMY_CAUSE_HINTS[row.id] } : {}),
           recommendation: `This ${enemyType} is 15pp+ from the type median (same power budget).${REVIEW_SUFFIX}`,
         });
@@ -309,17 +279,18 @@ function collectClassEquity(classes: BalanceReportModel["classes"], add: (findin
     for (const row of classes) {
       if (row.rates[tier].n <= 0) continue;
       if (Math.abs(row.rates[tier].winRate - med) < EQUITY_SPREAD) continue;
+      const title = titleFor("character", row.id);
       add({
         severity: "serious",
         scope: "class",
         id: row.id,
-        title: titleClass(row.id),
+        title,
         tier,
         metric: "winRate",
         bucket: "equity",
         observed: row.rates[tier].winRate,
         band: `within ${EQUITY_SPREAD * 100}% of class median (${(med * 100).toFixed(1)}%)`,
-        worstScenario: `${titleClass(row.id)} overall (${tier})`,
+        worstScenario: `${title} overall (${tier})`,
         recommendation: `This class is 15pp+ from the class median (same power budget).${REVIEW_SUFFIX}`,
       });
     }
@@ -350,30 +321,31 @@ function collectMatchupFindings(model: BalanceReportModel, add: (finding: Balanc
         const spread = Math.abs(cell.winRate - med);
         const turnSpread = Math.abs(cell.averageTurns - turnMed);
         const effectiveEnemyType = row.enemyType || enemyType;
+        const matchupTitle = `${titleFor("character", row.characterId)} vs ${titleFor("enemy", row.enemyId)}`;
 
         if (!clustered && spread >= EQUITY_SPREAD) {
           collectRateFindings({
             add,
             scope: "matchup",
             id: `${row.characterId}:${row.enemyId}`,
-            title: `${titleClass(row.characterId)} vs ${titleEnemy(row.enemyId)}`,
+            title: matchupTitle,
             tier,
             cell,
             enemyType: effectiveEnemyType,
-            worstScenario: `${titleClass(row.characterId)} vs ${titleEnemy(row.enemyId)} (${tier})`,
+            worstScenario: `${matchupTitle} (${tier})`,
             ...(ENEMY_CAUSE_HINTS[row.enemyId] ? { causeHint: ENEMY_CAUSE_HINTS[row.enemyId] } : {}),
           });
           add({
             severity: "serious",
             scope: "matchup",
             id: `${row.characterId}:${row.enemyId}`,
-            title: `${titleClass(row.characterId)} vs ${titleEnemy(row.enemyId)}`,
+            title: matchupTitle,
             tier,
             metric: "winRate",
             bucket: "equity",
             observed: cell.winRate,
             band: `within ${EQUITY_SPREAD * 100}% of this enemy's class median (${(med * 100).toFixed(1)}%)`,
-            worstScenario: `${titleClass(row.characterId)} vs ${titleEnemy(row.enemyId)} (${tier})`,
+            worstScenario: `${matchupTitle} (${tier})`,
             ...(ENEMY_CAUSE_HINTS[row.enemyId] ? { causeHint: ENEMY_CAUSE_HINTS[row.enemyId] } : {}),
             recommendation: `This matchup is 15pp+ from other classes vs the same enemy.${REVIEW_SUFFIX}`,
           });
@@ -386,11 +358,11 @@ function collectMatchupFindings(model: BalanceReportModel, add: (finding: Balanc
             add,
             scope: "matchup",
             id: `${row.characterId}:${row.enemyId}`,
-            title: `${titleClass(row.characterId)} vs ${titleEnemy(row.enemyId)}`,
+            title: matchupTitle,
             tier,
             cell,
             enemyType: effectiveEnemyType,
-            worstScenario: `${titleClass(row.characterId)} vs ${titleEnemy(row.enemyId)} (${tier})`,
+            worstScenario: `${matchupTitle} (${tier})`,
             ...(ENEMY_CAUSE_HINTS[row.enemyId] ? { causeHint: ENEMY_CAUSE_HINTS[row.enemyId] } : {}),
           });
         }
@@ -401,8 +373,7 @@ function collectMatchupFindings(model: BalanceReportModel, add: (finding: Balanc
 
 function collectPairedFindings(
   rows: readonly PairedTierRow[],
-  scope: FindingScope,
-  titleOf: (id: string) => string,
+  scope: Extract<FindingScope, "boon" | "card" | "talent" | "companion" | "gear" | "affix">,
   add: (finding: BalanceFinding) => void,
   context = "",
 ): void {
@@ -412,7 +383,8 @@ function collectPairedFindings(
     const med = median(usable.map((entry) => entry.delta.delta));
     const turnMed = median(usable.map((entry) => entry.delta.turnDelta));
     for (const { row, delta } of usable) {
-      const label = context ? `${titleOf(row.id)} (${context})` : titleOf(row.id);
+      const baseTitle = titleFor(scope, row.id);
+      const label = context ? `${baseTitle} (${context})` : baseTitle;
       if (!delta.noisy && Math.abs(delta.delta - med) >= PAIRED_DELTA_FROM_MEDIAN) {
         add({
           severity: "serious",

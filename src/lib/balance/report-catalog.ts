@@ -12,7 +12,7 @@ import {
 } from "@/lib/game-data";
 import { gearAffixList } from "@/lib/gear/affix-catalog";
 import { gearBaseItemList } from "@/lib/gear";
-import type { TalentPreset } from "./types";
+import type { TalentPreset } from "./simulator-types";
 
 export const REPORT_ENEMY_TYPES = ["normal", "elite", "boss"] as const;
 export type ReportEnemyType = (typeof REPORT_ENEMY_TYPES)[number];

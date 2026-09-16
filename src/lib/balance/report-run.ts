@@ -26,8 +26,7 @@ import {
   runTrinketSweep,
 } from "./report-sweeps";
 import { simulateBatch } from "./simulator-batch";
-import type { BalanceBatchResult } from "./simulator-types";
-import type { TalentPreset } from "./types";
+import type { BalanceBatchResult, TalentPreset } from "./simulator-types";
 
 export type { ReportRunOptions } from "./report-options";
 

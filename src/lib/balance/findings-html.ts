@@ -14,7 +14,7 @@ import {
   WIN_RATE_BAND_BY_TYPE,
 } from "./findings-bands";
 import type { BalanceReportModel } from "./report-model";
-import { escapeHtml, formatPercent } from "./report-format";
+import { escapeHtml, formatPercent } from "./report-html";
 
 function formatObserved(metric: FindingMetric, value: number): string {
   if (metric === "averageTurns") return value.toFixed(1);

@@ -161,4 +161,38 @@ describe("enemy interaction measurements", () => {
       expect(result.wonBeforeEnemyAttack).toBe(false);
     }
   });
+
+  it("supports greedy-effective-damage policy", () => {
+    const config = {
+      characterId: "knight" as const,
+      enemyId: "skeleton",
+      seed: 42,
+      maxTurns: 10,
+      policy: "greedy-effective-damage" as const,
+    };
+    const result = simulateBattle(config);
+    expect(["win", "loss", "timeout"]).toContain(result.outcome);
+    expect(result.turns).toBeGreaterThan(0);
+    expect(result.policy).toBe("greedy-effective-damage");
+  });
+
+  it("bypasses anomaly tracking when trackAnomalies is false", () => {
+    const config = {
+      characterId: "knight" as const,
+      enemyId: "skeleton",
+      seed: 42,
+      maxTurns: 10,
+      trackAnomalies: false,
+    };
+    const withTracking = simulateBattle({ ...config, trackAnomalies: true });
+    const withoutTracking = simulateBattle(config);
+
+    expect(withoutTracking.outcome).toBe(withTracking.outcome);
+    expect(withoutTracking.turns).toBe(withTracking.turns);
+    expect(withoutTracking.playerHealth).toBe(withTracking.playerHealth);
+    expect(withoutTracking.enemyHealth).toBe(withTracking.enemyHealth);
+    // When trackAnomalies is false, returned anomalies is the frozen empty sentinel
+    expect(withoutTracking.anomalies.maxSingleHitDamageToEnemy).toBe(0);
+    expect(withTracking.anomalies.maxSingleHitDamageToEnemy).toBeGreaterThan(0);
+  });
 });

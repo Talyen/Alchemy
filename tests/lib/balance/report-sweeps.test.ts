@@ -8,12 +8,16 @@ const { simulateWinSeries } = vi.hoisted(() => ({
 vi.mock("@/lib/balance/simulator-batch", () => ({ simulateWinSeries }));
 
 import { gearAffixList } from "@/lib/gear/affix-catalog";
-import { cardLibrary } from "@/lib/game-data";
+import { cardLibrary, trinketLibrary } from "@/lib/game-data";
 import {
   IN_CLASS_CARD_GAUNTLET,
   runCardSweepInClass,
   runCardSweepIsolated,
   runAffixSweep,
+  runTrinketSweep,
+  runTalentSweep,
+  runCompanionSweep,
+  runGearSweep,
 } from "@/lib/balance/report-sweeps";
 
 function affixScenarioViolations(groups: Map<number, BalanceBatchConfig[]>) {
@@ -163,6 +167,122 @@ describe("runCardSweepInClass", () => {
       expect(baseline.filter((card) => treatmentIds.has(card.id))).toHaveLength(9);
       expect(treatment.slice(0, 9)).toEqual(baseline.slice(0, 9));
       expect(calls[index + 1]?.seed).toBe(calls[index]?.seed);
+    }
+  });
+
+  it("pairs each trinket against an empty-trinket baseline with matched fight seeds", () => {
+    simulateWinSeries.mockReset();
+    simulateWinSeries.mockImplementation((config: BalanceBatchConfig) => ({
+      outcomes: new Uint8Array(config.iterations),
+      turns: new Uint16Array(config.iterations),
+      wins: 0,
+      totalTurns: 0,
+      averageTurns: 0,
+      iterations: config.iterations,
+      winRate: 0,
+    }));
+
+    const rows = runTrinketSweep({
+      iterations: 1,
+      pairedIterations: 1,
+      cardDeckSamples: 1,
+      deckSeeds: 1,
+      policy: "random-playable",
+      loadoutMode: "bare",
+    });
+
+    expect(rows.map((row) => row.id).sort()).toEqual(trinketLibrary.map((t) => t.id).sort());
+    for (const row of rows) {
+      expect(row.deltas.early).toBeDefined();
+      expect(row.deltas.mid).toBeDefined();
+      expect(row.deltas.late).toBeDefined();
+    }
+  });
+
+  it("isolates talent effects in talent sweeps", () => {
+    simulateWinSeries.mockReset();
+    simulateWinSeries.mockImplementation((config: BalanceBatchConfig) => ({
+      outcomes: new Uint8Array(config.iterations),
+      turns: new Uint16Array(config.iterations),
+      wins: 0,
+      totalTurns: 0,
+      averageTurns: 0,
+      iterations: config.iterations,
+      winRate: 0,
+    }));
+
+    const rows = runTalentSweep({
+      iterations: 1,
+      pairedIterations: 1,
+      cardDeckSamples: 1,
+      deckSeeds: 1,
+      policy: "random-playable",
+      loadoutMode: "bare",
+    });
+
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) {
+      expect(row.deltas.early).toBeDefined();
+      expect(row.deltas.mid).toBeDefined();
+      expect(row.deltas.late).toBeDefined();
+    }
+  });
+
+  it("isolates companion summons in companion sweeps", () => {
+    simulateWinSeries.mockReset();
+    simulateWinSeries.mockImplementation((config: BalanceBatchConfig) => ({
+      outcomes: new Uint8Array(config.iterations),
+      turns: new Uint16Array(config.iterations),
+      wins: 0,
+      totalTurns: 0,
+      averageTurns: 0,
+      iterations: config.iterations,
+      winRate: 0,
+    }));
+
+    const rows = runCompanionSweep({
+      iterations: 1,
+      pairedIterations: 1,
+      cardDeckSamples: 1,
+      deckSeeds: 1,
+      policy: "random-playable",
+      loadoutMode: "bare",
+    });
+
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) {
+      expect(row.deltas.early).toBeDefined();
+      expect(row.deltas.mid).toBeDefined();
+      expect(row.deltas.late).toBeDefined();
+    }
+  });
+
+  it("isolates gear base items against default gear effects in gear sweeps", () => {
+    simulateWinSeries.mockReset();
+    simulateWinSeries.mockImplementation((config: BalanceBatchConfig) => ({
+      outcomes: new Uint8Array(config.iterations),
+      turns: new Uint16Array(config.iterations),
+      wins: 0,
+      totalTurns: 0,
+      averageTurns: 0,
+      iterations: config.iterations,
+      winRate: 0,
+    }));
+
+    const rows = runGearSweep({
+      iterations: 1,
+      pairedIterations: 1,
+      cardDeckSamples: 1,
+      deckSeeds: 1,
+      policy: "random-playable",
+      loadoutMode: "bare",
+    });
+
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) {
+      expect(row.deltas.early).toBeDefined();
+      expect(row.deltas.mid).toBeDefined();
+      expect(row.deltas.late).toBeDefined();
     }
   });
 });

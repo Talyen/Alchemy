@@ -24,7 +24,6 @@ import {
   removeCardIdFromDeck,
   removeCompanionSummonFromDeck,
 } from "./class-deck";
-import { combatTalentsInPoolOrder } from "./combat-talent";
 import { companionIdsFromDeck } from "./homestead-preset";
 import {
   balanceScenarioSeed,
@@ -38,9 +37,8 @@ import type { PairedTierRow } from "./report-model";
 import type { ReportRunOptions } from "./report-options";
 import { combinePairedWinStats, makePairedDelta, pairedWinStats, type PairedWinStats } from "./report-rankings";
 import { simulateWinSeries, type WinSeries } from "./simulator-batch";
-import type { BalanceBatchConfig } from "./simulator-types";
-import { buildPresetUnlockedTalents, withTalent, withoutTalent } from "./talent-preset";
-import type { TalentPreset } from "./types";
+import type { BalanceBatchConfig, TalentPreset } from "./simulator-types";
+import { buildPresetUnlockedTalents, combatTalentsInPoolOrder, withTalent, withoutTalent } from "./talent-preset";
 
 interface BalanceScenarioConfig {
   characterId: CharacterId;
@@ -343,6 +341,10 @@ export function runCompanionSweep(options: ReportRunOptions): PairedTierRow[] {
 
 export function runGearSweep(options: ReportRunOptions): PairedTierRow[] {
   const collected: PairedStatsById = new Map();
+  const lootWeights = resolveLootWeights({
+    source: "mystery",
+    progress: { depth: 24, highestCompletedDifficulty: null },
+  });
   for (const tier of REPORT_TIERS) {
     for (const characterId of reportCharacterIds()) {
       const keywords = characters[characterId].keywords;
@@ -368,13 +370,7 @@ export function runGearSweep(options: ReportRunOptions): PairedTierRow[] {
             item.affinityKeywords.some((keyword) => keywords.includes(keyword));
           if (!matches) continue;
           const rng = createRunStreamRng(seed, "rewards");
-          const instance = generateLootGearChoices(
-            1,
-            rng,
-            resolveLootWeights({ source: "mystery", progress: { depth: 24, highestCompletedDifficulty: null } }),
-            new Set(),
-            [item.id],
-          )[0];
+          const instance = generateLootGearChoices(1, rng, lootWeights, new Set(), [item.id])[0];
           const treatmentGear = instance ? effectsForInstance(instance) : defaultGearEffects;
           recordComparison(options, collected, tier.preset, item.id, baseline, {
             ...shared,

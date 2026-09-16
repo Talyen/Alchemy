@@ -2,7 +2,6 @@ export type * from "./simulator-types";
 export * from "./simulator";
 export { simulateBatch } from "./simulator-batch";
 export * from "./class-deck";
-export * from "./combat-talent";
 export * from "./talent-preset";
 export * from "./loadout-preset";
 export * from "./gear-preset";

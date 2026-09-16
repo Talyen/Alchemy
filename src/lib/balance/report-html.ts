@@ -2,11 +2,20 @@ import { enemyById, isEnemyId } from "@/lib/game-data";
 import { ANOMALY_THRESHOLD_BY_PRESET } from "./anomalies";
 import { formatLengthBand, formatWinRateBand, isLengthOutsideBand, isWinRateOutsideTypeBand } from "./findings-bands";
 import { titleFor, type ReportEnemyType, type TitleLookupKind } from "./report-catalog";
-import { escapeHtml, formatPercent as percent } from "./report-format";
 import { reportMethodologyLines } from "./report-methodology";
 import type { BalanceReportModel, PairedTierRow } from "./report-model";
 import type { ReportRunOptions } from "./report-options";
 import type { PairedDelta, RateCell } from "./report-rankings";
+
+export function escapeHtml(value: string): string {
+  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
+}
+
+export function formatPercent(value: number): string {
+  return `${(value * 100).toFixed(1)}%`;
+}
+
+const percent = formatPercent;
 
 function rateCells(cell: RateCell, enemyType?: ReportEnemyType): string {
   const winTarget = enemyType ? `<div class="meta">Target ${formatWinRateBand(enemyType)}</div>` : "";
