@@ -425,8 +425,8 @@ export const contentAssets = [
     requiresTransparency: true,
   },
   {
-    source: "Homestead/Resources/crystal.png",
-    target: "resource-crystal.webp",
+    source: "Homestead/Resources/gems.png",
+    target: "resource-gems.webp",
     width: WIDTH.resource,
     quality: QUALITY.resource,
     requiresTransparency: true,

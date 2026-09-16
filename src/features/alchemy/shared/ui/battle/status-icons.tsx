@@ -15,7 +15,6 @@ import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
 import { augmentDefinitions } from "../../augment-definitions";
 import type { StatusChip } from "../../types";
 import { renderColoredKeywords } from "../card-description-ui";
-import { canonicalizeKeywordText } from "../../utils/string";
 import { KeywordTag } from "../keyword-tag";
 import { PortaledTooltip } from "../tooltips/portaled-tooltip";
 import { TooltipBody, TooltipHeader } from "../tooltips/tooltip-panel";
@@ -149,7 +148,7 @@ function AugmentStatusIcon({
           value={chip.value}
           hideValue={chip.hideValue}
           valueColorClass={augment.colorClass}
-          description={canonicalizeKeywordText(augment.description)}
+          description={renderColoredKeywords(augment.description)}
         />
       }
       plasmaColorPair={plasmaColorPair}

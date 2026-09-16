@@ -1,9 +1,10 @@
+import { Fragment } from "react";
 import type { KeywordId } from "@/lib/game-data";
 import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import { cn } from "@/lib/utils";
 
 import { getPlasmaColorPair, keywordIcons, tooltipHeaderClass } from "../config";
-import { canonicalizeKeywordText } from "../utils/string";
+import { tokenizeDescription } from "../utils/string";
 import { PortaledTooltip } from "./tooltips/portaled-tooltip";
 import { TooltipBody } from "./tooltips/tooltip-panel";
 import { useHoverVisible } from "./use-hover-visible";
@@ -62,7 +63,17 @@ export function KeywordTag({
         <span className={cn("flex items-center gap-2", tooltipHeaderClass)}>
           <KeywordTag keywordId={keywordId} className="text-sm sm:text-base" showIcon />
         </span>
-        <TooltipBody>{canonicalizeKeywordText(def.description)}</TooltipBody>
+        <TooltipBody>
+          {tokenizeDescription(def.description).map((part, index) =>
+            part.keywordId ? (
+              <span key={index} className={cn(keywordDefinitions[part.keywordId]?.colorClass, "font-semibold")}>
+                {part.text}
+              </span>
+            ) : (
+              <Fragment key={index}>{part.text}</Fragment>
+            ),
+          )}
+        </TooltipBody>
       </PortaledTooltip>
     </span>
   );

@@ -3,7 +3,7 @@ import { BookOpen, Cog, Shield, Swords, TreePine, WandSparkles } from "lucide-re
 import { Button } from "@/components/ui/button";
 import { ShineBorder } from "@/components/ui/shine-border";
 import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
-import { BUTTON_WIDTH_MENU, cardHoverScaleClass } from "@/features/alchemy/shared/config";
+import { BUTTON_WIDTH_MENU, cardHoverScaleClass, SHINE_PALETTES } from "@/features/alchemy/shared/config";
 import { Surface } from "../../shared/ui/surface";
 import { usePlasmaInteraction } from "../../shared/ui/use-plasma-source";
 import { cn } from "@/lib/utils";
@@ -131,7 +131,7 @@ export function MenuScreen({
               Homestead
             </LockedMenuItem>
             {hasAffordableHomestead && !isHomesteadLocked && (
-              <ShineBorder shineColor="var(--color-primary)" borderWidth={1} duration={8} className="rounded-xl" />
+              <ShineBorder glow shineColor={SHINE_PALETTES.gold} borderWidth={2} duration={8} className="rounded-xl" />
             )}
           </MenuPlasmaHover>
         </div>
@@ -168,7 +168,7 @@ export function MenuScreen({
               Talents
             </LockedMenuItem>
             {hasUnspentTalents && !isTalentsLocked && (
-              <ShineBorder shineColor="var(--color-primary)" borderWidth={1} duration={8} className="rounded-xl" />
+              <ShineBorder glow shineColor={SHINE_PALETTES.gold} borderWidth={2} duration={8} className="rounded-xl" />
             )}
           </MenuPlasmaHover>
         </div>

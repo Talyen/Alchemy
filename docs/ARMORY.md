@@ -104,7 +104,7 @@ After a Gear change, `rebindLiveRunMeta` synchronizes health when a run is activ
 
 ### Salvage materials
 
-Base item construction owns homestead salvage materials; rarity increases quantities rather than introducing affinity-based Herbs. Metal equipment yields Iron, wooden equipment yields Wood, magical staves and wands combine Wood and Crystal, and jewelry and spellbooks yield Crystal. Leather Armor and Quivers yield Hide, and the Leather Buckler yields Wood and Hide for its backing. Herbs remain available from enemy loot, Herb Garden progression, and run-end Homestead bonuses; removing gear Herbs reduces an optional supply, not access to progression. Currency rarity distributions remain unchanged.
+Base item construction owns homestead salvage materials; rarity increases quantities rather than introducing affinity-based Herbs. Metal equipment yields Iron, wooden equipment yields Wood, magical staves and wands combine Wood and Gems, and jewelry and spellbooks yield Gems. Leather Armor and Quivers yield Hide, and the Leather Buckler yields Wood and Hide for its backing. Herbs remain available from enemy loot, Herb Garden progression, and run-end Homestead bonuses; removing gear Herbs reduces an optional supply, not access to progression. Currency rarity distributions remain unchanged.
 
 ### `useArmoryController` facade
 

@@ -15,12 +15,18 @@ function showTexts(texts: CombatTextEvent[], presentation: BattlePresentationPor
   playCombatTextSounds(texts);
 }
 
+export interface PlayTurnFramesOptions {
+  onHandDrawn?: () => void;
+  isCardPlayInProgress?: () => boolean;
+}
+
 /** Playback consumes resolved frames and has no gameplay write capability. */
 export async function playTurnFrames(
   frames: BattleTurnFrame[],
   sessionNum: number,
   deps: HandDrawSequenceDeps,
   presentation: BattlePresentationPort,
+  options?: PlayTurnFramesOptions,
 ): Promise<void> {
   for (const { before, turn, companion } of frames) {
     if (!deps.isSessionActive(sessionNum)) return;
@@ -60,10 +66,13 @@ export async function playTurnFrames(
       deps,
     );
     if (!deps.isSessionActive(sessionNum)) return;
+    options?.onHandDrawn?.();
     if (companion) {
       await delay(COMPANION_ATTACK_DELAY);
       if (!deps.isSessionActive(sessionNum)) return;
-      presentation.setDisplayedBattle(companion.state);
+      if (!options?.isCardPlayInProgress?.()) {
+        presentation.setDisplayedBattle(companion.state);
+      }
       playCompanionSound(companion.id);
       presentation.shakeCompanion();
       presentation.telegraphAttack("companion");

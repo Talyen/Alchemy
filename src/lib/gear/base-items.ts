@@ -31,7 +31,7 @@ const ironMedium = salvageBy({ iron: 6 }, { iron: 9 });
 const ironHeavy = salvageBy({ iron: 9 }, { iron: 12 });
 const woodLight = salvageBy({ wood: 3 }, { wood: 6 });
 const woodMedium = salvageBy({ wood: 6 }, { wood: 9 });
-const crystalLight = salvageBy({ crystal: 3 }, { crystal: 6 });
+const gemsLight = salvageBy({ gems: 3 }, { gems: 6 });
 const hideLight = salvageBy({ hide: 3 }, { hide: 6 });
 const woodHideLight = salvageBy({ wood: 3, hide: 3 }, { wood: 6, hide: 6 });
 
@@ -47,10 +47,10 @@ const JEWELRY_GEMS: Array<{
   keywords: KeywordId[];
   salvage: Record<GearRarity, MaterialInventory>;
 }> = [
-  { slug: "ruby", label: "Ruby", keywords: ["burn", "bleed", "leech"], salvage: crystalLight },
-  { slug: "sapphire", label: "Sapphire", keywords: ["freeze", "mana", "block"], salvage: crystalLight },
-  { slug: "emerald", label: "Emerald", keywords: ["nature", "poison", "archery", "dodge"], salvage: crystalLight },
-  { slug: "topaz", label: "Topaz", keywords: ["holy", "gold", "forge", "stun"], salvage: crystalLight },
+  { slug: "ruby", label: "Ruby", keywords: ["burn", "bleed", "leech"], salvage: gemsLight },
+  { slug: "sapphire", label: "Sapphire", keywords: ["freeze", "mana", "block"], salvage: gemsLight },
+  { slug: "emerald", label: "Emerald", keywords: ["nature", "poison", "archery", "dodge"], salvage: gemsLight },
+  { slug: "topaz", label: "Topaz", keywords: ["holy", "gold", "forge", "stun"], salvage: gemsLight },
 ];
 
 function jewelryBaseItems(): Record<JewelryBaseItemId, Omit<GearBaseItemDefinition, "id">> {
@@ -167,14 +167,14 @@ const gearBaseItemCatalog = {
     compatibleSlots: ["main-hand"],
     slotRule: "two-handed",
     affinityKeywords: ["burn", "freeze", "mana"],
-    salvageByRarity: salvageBy({ wood: 3, crystal: 3 }, { wood: 6, crystal: 3 }),
+    salvageByRarity: salvageBy({ wood: 3, gems: 3 }, { wood: 6, gems: 3 }),
   },
   wand: {
     displayName: "Wand",
     compatibleSlots: ["main-hand", "off-hand"],
     slotRule: "standard",
     affinityKeywords: ["burn", "freeze", "mana"],
-    salvageByRarity: salvageBy({ wood: 3 }, { wood: 3, crystal: 3 }),
+    salvageByRarity: salvageBy({ wood: 3 }, { wood: 3, gems: 3 }),
   },
   "leather-buckler": {
     displayName: "Leather Buckler",
@@ -202,7 +202,7 @@ const gearBaseItemCatalog = {
     compatibleSlots: ["off-hand"],
     slotRule: "standard",
     affinityKeywords: ["burn", "freeze", "holy"],
-    salvageByRarity: salvageBy({ crystal: 6 }, { crystal: 9 }),
+    salvageByRarity: salvageBy({ gems: 6 }, { gems: 9 }),
   },
   "leather-armor": {
     displayName: "Leather Armor",

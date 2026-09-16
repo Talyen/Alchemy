@@ -136,7 +136,7 @@ test("enemy Trait boxes stay unified and adapt to inspection width", async ({ pa
   await page.screenshot({ path: testInfo.outputPath("traits-hover.png") });
   const tooltipBox = (await tooltip.boundingBox())!;
   expect(tooltipBox.width).toBeGreaterThan(280);
-  expect(tooltipBox.width).toBeLessThanOrEqual(448);
+  expect(tooltipBox.width).toBeLessThanOrEqual(512);
   expect(tooltipBox.x).toBeGreaterThanOrEqual(0);
   expect(tooltipBox.y).toBeGreaterThanOrEqual(0);
   expect(tooltipBox.x + tooltipBox.width).toBeLessThanOrEqual(page.viewportSize()!.width);

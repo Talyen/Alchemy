@@ -47,8 +47,8 @@ describe("homestead-actions", () => {
 
     it("sets materials on profile directly", () => {
       const profile = createInitialPermanentFields();
-      setMaterials(profile, { ...emptyInventory(), crystal: 99 });
-      expect(profile.materialInventory.crystal).toBe(99);
+      setMaterials(profile, { ...emptyInventory(), gems: 99 });
+      expect(profile.materialInventory.gems).toBe(99);
       expect(profile.materialInventory.wood).toBe(0);
     });
   });
@@ -100,7 +100,7 @@ describe("homestead-actions", () => {
 
     it("completes research and updates computed effects", () => {
       const profile = createInitialPermanentFields();
-      profile.materialInventory = { ...emptyInventory(), crystal: 100 };
+      profile.materialInventory = { ...emptyInventory(), gems: 100 };
 
       const success = completeResearch(profile, "leyline-energy");
       expect(success).toBe(true);

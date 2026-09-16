@@ -42,7 +42,8 @@ export const TrinketSlotButton = memo(function TrinketSlotButton({
   } = useArmorySlotHover("trinket");
 
   const shineColors = trinket ? getTrinketShineColors(trinket.id) : [];
-  const showShine = shineColors.length > 0;
+  // Shine borders appear on hover/focus; the active slot keeps its shine as a selection marker.
+  const showShine = shineColors.length > 0 && (isHovered || selected);
 
   return (
     <div
@@ -75,7 +76,7 @@ export const TrinketSlotButton = memo(function TrinketSlotButton({
         shimmerToken={shimmerToken}
         onFocus={handleHoverStart}
         onBlur={handleBlur}
-        className={armorySlotSurfaceClass(editable, showShine)}
+        className={armorySlotSurfaceClass(editable, showShine, selected)}
         onClick={() => {
           if (!editable) {
             if (selected && trinket) {

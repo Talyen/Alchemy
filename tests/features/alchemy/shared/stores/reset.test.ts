@@ -44,7 +44,7 @@ beforeEach(() => {
 describe("clearAllPersistentGameData", () => {
   it("wipes app, run permanent data, and homestead after a successful disk clear", async () => {
     dispatchRunSessionCommand((draft) => {
-      addMaterialsToStockpile(draft, { wood: 10, iron: 0, herbs: 0, food: 0, crystal: 0, stone: 0, hide: 0 });
+      addMaterialsToStockpile(draft, { wood: 10, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 });
       setDiscoveredCardIds(draft, ["card-a"]);
     });
     setRunProgress({ unlockedTalents: { physical: ["test-talent"] } });
@@ -76,7 +76,7 @@ describe("clearAllPersistentGameData", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     mockedClearSave.mockResolvedValue(false);
     dispatchRunSessionCommand((draft) => {
-      addMaterialsToStockpile(draft, { wood: 10, iron: 0, herbs: 0, food: 0, crystal: 0, stone: 0, hide: 0 });
+      addMaterialsToStockpile(draft, { wood: 10, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 });
       setDiscoveredCardIds(draft, ["card-a"]);
     });
     setRunProgress({ unlockedTalents: { physical: ["test-talent"] } });

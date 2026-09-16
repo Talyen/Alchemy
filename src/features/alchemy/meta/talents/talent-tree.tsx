@@ -25,6 +25,7 @@ export interface TalentTreeProps {
   onUnlock?: ((talentId: string) => void) | undefined;
   onUnlockBegin?: ((talentId: string) => void) | undefined;
   onHoverTalent?: ((talent: TalentDefinition | null) => void) | undefined;
+  className?: string | undefined;
 }
 
 const TalentCard = memo(function TalentCard({
@@ -96,11 +97,16 @@ const TalentCard = memo(function TalentCard({
             : isPlaceholder
               ? "talent-card-placeholder border-dashed border-border/30 bg-stone-950"
               : interactive
-                ? "border-transparent bg-stone-900 shadow-[0_4px_14px_rgba(0,0,0,0.4)]"
+                ? "border-transparent bg-stone-950 shadow-[0_4px_14px_rgba(0,0,0,0.4)]"
                 : "border-border/30 bg-stone-950",
         )}
       >
-        <div className={cn("flex flex-col items-center justify-center gap-1.5", isLockedLook && "opacity-50")}>
+        <div
+          className={cn(
+            "flex flex-col items-center justify-center gap-1.5",
+            isLockedLook ? "opacity-50" : interactive ? "opacity-80" : undefined,
+          )}
+        >
           <div className="flex items-center justify-center gap-2">
             <span className={cn(isPlaceholder ? "text-muted-foreground" : def?.colorClass)}>
               {isPlaceholder
@@ -144,6 +150,7 @@ export function TalentTree({
   onUnlock,
   onUnlockBegin,
   onHoverTalent,
+  className,
 }: TalentTreeProps) {
   const [unlockingTalentId, setUnlockingTalentId] = useState<string | null>(null);
   const unlockTimerRef = useRef<number | null>(null);
@@ -189,7 +196,7 @@ export function TalentTree({
   }
 
   return (
-    <div className="mx-auto flex w-full flex-col items-center gap-3.5 sm:gap-4">
+    <div className={cn("mx-auto flex w-full flex-col items-center gap-3.5 sm:gap-4", className)}>
       {rows.map((row, rowIndex) => (
         <div key={rowIndex} className="flex items-center justify-center gap-3.5 sm:gap-4">
           {row.map((talent) => {

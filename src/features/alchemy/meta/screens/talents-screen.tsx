@@ -25,7 +25,8 @@ import { FadeSlot } from "../../shared/ui/use-fade";
 import { playUISound } from "@/lib/audio";
 import { TalentTree } from "../talents/talent-tree";
 
-const TALENT_PANE_CLASS = "flex min-h-[calc(50*var(--content-rem,1rem))] w-full flex-col items-center";
+const TALENT_PANE_CLASS = "flex min-h-[calc(52*var(--content-rem,1rem))] w-full flex-col items-center";
+const TALENT_PANE_TOP_PAD_CLASS = "pt-6 sm:pt-8";
 
 export function TalentsScreen({
   talentXP,
@@ -115,6 +116,7 @@ export function TalentsScreen({
   }
 
   const title = selectedKeywordDef ? selectedKeywordDef.label : "Talents";
+  const unspentPoints = progress?.unspentPoints ?? 0;
 
   const handleBack = () => {
     if (selectedKeyword !== null) {
@@ -144,7 +146,7 @@ export function TalentsScreen({
     >
       <FadeSlot swapKey={selectedKeyword ?? "overview"} className="mt-4 flex w-full flex-1 flex-col justify-center">
         {selectedKeyword === null ? (
-          <div className={TALENT_PANE_CLASS}>
+          <div className={cn(TALENT_PANE_CLASS, TALENT_PANE_TOP_PAD_CLASS)}>
             <TalentOverviewGrid
               keywordIds={keywordIds}
               unspentByKeyword={unspentByKeyword}
@@ -156,26 +158,36 @@ export function TalentsScreen({
             />
           </div>
         ) : (
-          <div className={cn(TALENT_PANE_CLASS, "gap-4")}>
+          <div className={cn(TALENT_PANE_CLASS, TALENT_PANE_TOP_PAD_CLASS)}>
             <TalentTree
               key={selectedKeyword}
               allTalents={allTalentsForKeyword}
               unlockedIds={unlockedIds}
               allocatableIds={allocatableIds}
-              hasUnspentPoints={(progress?.unspentPoints ?? 0) > 0}
+              hasUnspentPoints={unspentPoints > 0}
               onUnlock={handleUnlockTalent}
               onUnlockBegin={handleUnlockTalentBegin}
               onHoverTalent={setHoveredTalent}
             />
+            <div className="mt-6 flex min-h-7 items-start justify-center">
+              {unspentPoints > 0 ? (
+                <p
+                  aria-live="polite"
+                  className="text-center font-sans text-xl font-normal tracking-normal text-balance text-muted-foreground/60"
+                >
+                  {unspentPoints} {unspentPoints === 1 ? "Talent Point" : "Talent Points"} Remaining
+                </p>
+              ) : null}
+            </div>
           </div>
         )}
       </FadeSlot>
 
       <ConfirmationDialog
         open={showResetConfirm}
-        title="Reset Talents?"
-        description="This will refund all your talent points so you can choose again."
-        confirmLabel="Reset Talents"
+        title="Reset Talents"
+        description="This will refund all your talent points."
+        confirmLabel="Reset"
         tone="default"
         dimBackground={false}
         onConfirm={handleReset}

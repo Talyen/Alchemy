@@ -83,4 +83,39 @@ describe("TalentTree sequential unlocks", () => {
     expect(onUnlock).toHaveBeenCalledWith(third.id);
     expect(onUnlock).toHaveBeenCalledTimes(2);
   });
+
+  it("keeps allocated nodes bright while allocatable nodes rest dark and muted", () => {
+    render(
+      <TalentTree
+        allTalents={burnTalents}
+        unlockedIds={[first.id]}
+        allocatableIds={new Set([second.id])}
+        hasUnspentPoints
+        onUnlock={() => {}}
+      />,
+    );
+
+    const faceFor = (name: string) => {
+      const node = screen.getByText(name, { exact: true }).closest(".talent-node");
+      expect(node).not.toBeNull();
+      const face = node!.querySelector(".talent-card-face");
+      expect(face).not.toBeNull();
+      return { node: node!, face: face! };
+    };
+
+    const allocated = faceFor(first.name!);
+    expect(allocated.face.classList.contains("talent-card-unlocked")).toBe(true);
+    expect(allocated.face.classList.contains("bg-stone-900")).toBe(true);
+
+    const allocatable = faceFor(second.name!);
+    expect(allocatable.node.classList.contains("talent-card-available")).toBe(true);
+    expect(allocatable.face.classList.contains("talent-card-unlocked")).toBe(false);
+    expect(allocatable.face.classList.contains("bg-stone-950")).toBe(true);
+    expect(allocatable.face.querySelector(".opacity-80")).not.toBeNull();
+
+    const locked = faceFor(third.name!);
+    expect(locked.face.classList.contains("talent-card-unlocked")).toBe(false);
+    expect(locked.face.classList.contains("bg-stone-950")).toBe(true);
+    expect(locked.face.querySelector(".opacity-50")).not.toBeNull();
+  });
 });

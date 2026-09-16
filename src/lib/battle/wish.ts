@@ -19,11 +19,11 @@ import { getEditableCorruptionTargets, updateCardNumericValue } from "@/lib/corr
 import {
   PERCENT_DENOMINATOR,
   WISH_CHOICE_COUNT,
-  WISH_CRYSTAL_GOLD_PERCENT,
+  WISH_GEMS_GOLD_PERCENT,
   WISH_TRINKET_FORK_PERCENT,
   MAX_HAND_SIZE,
 } from "../game-constants";
-import { shouldConvertCrystalWishToGold } from "@/lib/content-systems/battle-content";
+import { shouldConvertGemsWishToGold } from "@/lib/content-systems/battle-content";
 import { dealEnemyScaledDamage } from "./scaled-damage";
 import { gearFrozenDamageMultiplier } from "./gear-effects";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
@@ -82,19 +82,19 @@ function applyWishGoldTriggers(state: BattleState, combatTexts: CombatTextEvent[
   return nextState;
 }
 
-function applyWishCrystalGoldTrigger(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
-  const amount = state.talentEffects.wishCrystalGold;
+function applyWishGemsGoldTrigger(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+  const amount = state.talentEffects.wishGemsGold;
   if (amount <= 0) return state;
-  if (rollPercent(WISH_CRYSTAL_GOLD_PERCENT, getBattleRng(state))) {
+  if (rollPercent(WISH_GEMS_GOLD_PERCENT, getBattleRng(state))) {
     return addGoldWithCombatText(state, amount, combatTexts);
   }
-  if (shouldConvertCrystalWishToGold(state.contentSystemType)) {
+  if (shouldConvertGemsWishToGold(state.contentSystemType)) {
     return addGoldWithCombatText(state, amount, combatTexts);
   }
-  mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "crystal", amount });
+  mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gems", amount });
   return {
     ...state,
-    pendingMaterials: { ...state.pendingMaterials, crystal: state.pendingMaterials.crystal + amount },
+    pendingMaterials: { ...state.pendingMaterials, gems: state.pendingMaterials.gems + amount },
   };
 }
 
@@ -139,7 +139,7 @@ export function applyWishEffect(state: BattleState, card: BattleCard, amount: nu
 
   for (let i = 0; i < wishCount; i += 1) {
     nextState = applyWishGoldTriggers(nextState, combatTexts);
-    nextState = applyWishCrystalGoldTrigger(nextState, combatTexts);
+    nextState = applyWishGemsGoldTrigger(nextState, combatTexts);
     nextState = applyWishHealthAndStatusTriggers(nextState, combatTexts);
     nextState = applyWishDrawTriggers(nextState);
     nextState = applyWishBurnTrigger(nextState, combatTexts);

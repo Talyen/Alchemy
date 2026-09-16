@@ -293,15 +293,28 @@ describe("ability trait boundaries", () => {
       playerStatuses: defaultPlayerStatusValues({ thorns: 3, armor: 4 }),
       difficultyModifiers: [{ kind: "enemy-attacks-gain-leech" }],
     });
+    const texts: CombatTextEvent[] = [];
     const result = useAbility(
       { ...initial, gearEffects: { ...initial.gearEffects, damageReductionPerMana: 10 } },
       "slash",
+      texts,
     );
     expect(result.playerHealth).toBe(100);
-    expect(result.enemyHealth).toBe(47);
     expect(result.playerStatuses.thorns).toBe(0);
-    if (enemy === "bandit") expect(result.flags.enemyFirstHitDoubleUsed).toBe(true);
-    else expect(result.playerStatuses.armor).toBe(0);
+    if (enemy === "bandit") {
+      expect(result.flags.enemyFirstHitDoubleUsed).toBe(true);
+      expect(result.enemyHealth).toBe(47);
+      return;
+    }
+    const purgeNotice = texts.find((text) => text.kind === "notice" && text.text === "Purged");
+    expect(purgeNotice?.stat === "armor" || purgeNotice?.stat === "thorns").toBe(true);
+    if (purgeNotice?.stat === "armor") {
+      expect(result.playerStatuses.armor).toBe(0);
+      expect(result.enemyHealth).toBe(47);
+    } else {
+      expect(result.playerStatuses.armor).toBe(4);
+      expect(result.enemyHealth).toBe(50);
+    }
   });
 
   it("triggers landed-hit reactions when resistance prevents all Health damage", () => {
@@ -333,13 +346,15 @@ describe("ability trait boundaries", () => {
     expect(result.enemyHealth).toBe(47);
   });
 
-  it("lets Banshee Purge Armor that completely absorbed its hit", () => {
+  it("lets Banshee Purge one beneficial effect that completely absorbed its hit", () => {
     const result = useAbility(
       enemyState("banshee", { playerStatuses: defaultPlayerStatusValues({ armor: 20, forge: 2 }) }),
       "bash",
     );
     expect(result.playerHealth).toBe(100);
-    expect(result.playerStatuses).toMatchObject({ armor: 0, forge: 2, stun: 0 });
+    expect(result.playerStatuses.stun).toBe(0);
+    const purgedCount = (["armor", "forge"] as const).filter((stat) => result.playerStatuses[stat] === 0);
+    expect(purgedCount).toHaveLength(1);
   });
 
   it("keeps Bandit and Brawler bonuses through defensive actions", () => {

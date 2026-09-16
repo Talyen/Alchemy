@@ -50,7 +50,6 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
 }) {
   const definition = instance ? gearDefinitions[instance.definitionId] : undefined;
   const shineColors = instance ? getAstralShineColors(instance) : undefined;
-  const showShine = Boolean(shineColors);
   const target = getArmoryItemInteraction({
     instance,
     salvageMode,
@@ -70,6 +69,8 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
     handleMouseLeave,
     handleBlur,
   } = useArmorySlotHover(slot);
+  // Shine borders appear on hover/focus; the active slot keeps its shine as a selection marker.
+  const showShine = Boolean(shineColors && (isHovered || selected));
 
   return (
     <div
@@ -97,7 +98,7 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
         ariaLabel={ariaLabel}
         ariaPressed={selected}
         overlay={
-          shineColors ? (
+          showShine && shineColors ? (
             <ShineBorder
               glow={isHovered}
               shineColor={shineColors}
@@ -111,7 +112,7 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
         shimmerToken={shimmerToken}
         onFocus={handleHoverStart}
         onBlur={handleBlur}
-        className={armorySlotSurfaceClass(editable, showShine)}
+        className={armorySlotSurfaceClass(editable, showShine, selected)}
         onClick={() =>
           performArmoryItemAction(target.action, {
             "combat-locked": onCombatLockedAttempt,

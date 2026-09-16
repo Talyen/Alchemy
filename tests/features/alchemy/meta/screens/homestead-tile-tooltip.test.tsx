@@ -101,7 +101,7 @@ describe("HomesteadUpgradeNode hover tooltip", () => {
       <HomesteadUpgradeNode
         item={leylineItem}
         currentLevel={1}
-        materialInventory={{ ...emptyInventory(), crystal: 100 }}
+        materialInventory={{ ...emptyInventory(), gems: 100 }}
         onAction={() => {}}
       />,
     );
@@ -114,7 +114,7 @@ describe("HomesteadUpgradeNode hover tooltip", () => {
     });
 
     const text = panelText();
-    const occurrences = (text.match(/Gain Crystal after each run/g) || []).length;
+    const occurrences = (text.match(/Gain Gems after each run/g) || []).length;
     expect(occurrences).toBe(1);
   });
 });

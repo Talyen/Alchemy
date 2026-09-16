@@ -213,6 +213,15 @@ export interface KeywordDefinition {
 
 export const harmfulPlayerStatusIds: PlayerStatusId[] = ["burn", "poison", "bleed", "freeze", "stun"];
 
+export const beneficialPlayerStatusIds: PlayerStatusId[] = [
+  "block",
+  "armor",
+  "thorns",
+  "forge",
+  "haste",
+  "phoenixFeather",
+];
+
 export const PLAYER_STATUS_DISPLAY_ORDER: readonly PlayerStatusId[] = [
   "block",
   "armor",

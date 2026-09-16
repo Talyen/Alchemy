@@ -29,19 +29,19 @@ describe("emptyInventory", () => {
 
 describe("addInventory", () => {
   it("adds two inventories", () => {
-    const a = { wood: 2, iron: 3, herbs: 0, food: 1, crystal: 0, stone: 0, hide: 0 };
-    const b = { wood: 1, iron: 0, herbs: 4, food: 0, crystal: 2, stone: 0, hide: 0 };
+    const a = { wood: 2, iron: 3, herbs: 0, food: 1, gems: 0, stone: 0, hide: 0 };
+    const b = { wood: 1, iron: 0, herbs: 4, food: 0, gems: 2, stone: 0, hide: 0 };
     const result = addInventory(a, b);
     expect(result.wood).toBe(3);
     expect(result.iron).toBe(3);
     expect(result.herbs).toBe(4);
     expect(result.food).toBe(1);
-    expect(result.crystal).toBe(2);
+    expect(result.gems).toBe(2);
   });
 
   it("does not mutate inputs", () => {
-    const a = { wood: 1, iron: 0, herbs: 0, food: 0, crystal: 0, stone: 0, hide: 0 };
-    const b = { wood: 1, iron: 0, herbs: 0, food: 0, crystal: 0, stone: 0, hide: 0 };
+    const a = { wood: 1, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 };
+    const b = { wood: 1, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 };
     addInventory(a, b);
     expect(a.wood).toBe(1);
   });
@@ -56,19 +56,19 @@ describe("addInventory", () => {
 
 describe("canAfford", () => {
   it("returns true when inventory meets cost", () => {
-    const inv = { wood: 5, iron: 5, herbs: 5, food: 5, crystal: 5, stone: 0, hide: 0 };
-    const cost = { wood: 3, iron: 2, herbs: 0, food: 1, crystal: 0, stone: 0, hide: 0 };
+    const inv = { wood: 5, iron: 5, herbs: 5, food: 5, gems: 5, stone: 0, hide: 0 };
+    const cost = { wood: 3, iron: 2, herbs: 0, food: 1, gems: 0, stone: 0, hide: 0 };
     expect(canAfford(inv, cost)).toBe(true);
   });
 
   it("returns false when inventory is short", () => {
-    const inv = { wood: 1, iron: 0, herbs: 0, food: 0, crystal: 0, stone: 0, hide: 0 };
-    const cost = { wood: 5, iron: 0, herbs: 0, food: 0, crystal: 0, stone: 0, hide: 0 };
+    const inv = { wood: 1, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 };
+    const cost = { wood: 5, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 };
     expect(canAfford(inv, cost)).toBe(false);
   });
 
   it("handles missing cost keys as 0", () => {
-    const inv = { wood: 3, iron: 0, herbs: 0, food: 0, crystal: 0, stone: 0, hide: 0 };
+    const inv = { wood: 3, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 };
     const cost = { wood: 3 } as ReturnType<typeof emptyInventory>;
     expect(canAfford(inv, cost)).toBe(true);
   });
@@ -76,8 +76,8 @@ describe("canAfford", () => {
 
 describe("subtractInventory", () => {
   it("subtracts cost from inventory", () => {
-    const inv = { wood: 5, iron: 5, herbs: 5, food: 5, crystal: 5, stone: 0, hide: 0 };
-    const cost = { wood: 2, iron: 1, herbs: 0, food: 3, crystal: 0, stone: 0, hide: 0 };
+    const inv = { wood: 5, iron: 5, herbs: 5, food: 5, gems: 5, stone: 0, hide: 0 };
+    const cost = { wood: 2, iron: 1, herbs: 0, food: 3, gems: 0, stone: 0, hide: 0 };
     const result = subtractInventory(inv, cost);
     expect(result.wood).toBe(3);
     expect(result.iron).toBe(4);
@@ -85,14 +85,14 @@ describe("subtractInventory", () => {
   });
 
   it("clamps to 0 (no negative materials)", () => {
-    const inv = { wood: 1, iron: 0, herbs: 0, food: 0, crystal: 0, stone: 0, hide: 0 };
-    const cost = { wood: 5, iron: 0, herbs: 0, food: 0, crystal: 0, stone: 0, hide: 0 };
+    const inv = { wood: 1, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 };
+    const cost = { wood: 5, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 };
     const result = subtractInventory(inv, cost);
     expect(result.wood).toBe(0);
   });
 
   it("does not mutate inputs", () => {
-    const inv = { wood: 3, iron: 0, herbs: 0, food: 0, crystal: 0, stone: 0, hide: 0 };
+    const inv = { wood: 3, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 };
     subtractInventory(inv, { wood: 1 } as ReturnType<typeof emptyInventory>);
     expect(inv.wood).toBe(3);
   });
@@ -200,10 +200,10 @@ describe("computeHomesteadEffects", () => {
     expect(effects.natureDamageReduction).toBe(2);
   });
 
-  it("leyline energy tiers 2-3 add endRunCrystalPerRoom", () => {
+  it("leyline energy tiers 2-3 add endRunGemsPerRoom", () => {
     const effects = computeHomesteadEffects({}, {}, { "leyline-energy": 3 });
     expect(effects.startMana).toBe(4);
-    expect(effects.endRunCrystalPerRoom).toBe(2);
+    expect(effects.endRunGemsPerRoom).toBe(2);
   });
 
   it("companion-sanctuary adds companionDamage", () => {
@@ -211,9 +211,9 @@ describe("computeHomesteadEffects", () => {
     expect(effects.companionDamage).toBe(3);
   });
 
-  it("wishing-well adds wishCrystalGold", () => {
+  it("wishing-well adds wishGemsGold", () => {
     const effects = computeHomesteadEffects({ "wishing-well": 2 }, {}, {});
-    expect(effects.wishCrystalGold).toBe(2);
+    expect(effects.wishGemsGold).toBe(2);
   });
 
   it("detect magic stacks gear astral chance bonus across tiers", () => {
@@ -270,7 +270,7 @@ describe("mergeIntoManifest", () => {
     expect(merged.healMultiplier).toBe(1);
     expect(merged.flatFreezeDamage).toBe(0);
     expect(merged.flatNatureDamage).toBe(0);
-    expect(merged.wishCrystalGold).toBe(0);
+    expect(merged.wishGemsGold).toBe(0);
   });
 
   it("preserves non-merged talent fields", () => {
@@ -328,12 +328,12 @@ describe("getEnemyMaterialLoot", () => {
     {
       name: "skeleton has no guaranteed materials",
       enemyId: "skeleton",
-      expected: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0, stone: 0, hide: 0 },
+      expected: { wood: 0, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 },
     },
     {
-      name: "necromancer drops guaranteed herbs and crystal",
+      name: "necromancer drops guaranteed herbs and gems",
       enemyId: "necromancer",
-      expected: { herbs: 2, crystal: 1, stone: 0, hide: 0 },
+      expected: { herbs: 2, gems: 1, stone: 0, hide: 0 },
     },
   ])("$name", ({ enemyId, expected }) => {
     const loot = getEnemyMaterialLoot(enemyId, "normal", stableRngZero());
@@ -377,21 +377,21 @@ describe("getEnemyMaterialLoot with bonus rolls", () => {
       .mockReturnValueOnce(0.1);
     const loot = getEnemyMaterialLoot("mimic", "normal", rng);
     expect(loot.iron).toBeGreaterThanOrEqual(2);
-    expect(loot.crystal).toBeGreaterThanOrEqual(0);
+    expect(loot.gems).toBeGreaterThanOrEqual(0);
   });
 
   it("skips bonuses when random rolls fail", () => {
     const rng = vi.fn(() => 0.9);
     const loot = getEnemyMaterialLoot("mimic", "normal", rng);
     expect(loot.iron).toBe(2);
-    expect(loot.crystal).toBe(0);
+    expect(loot.gems).toBe(0);
   });
 });
 
 describe("applyMaterialFindBonus", () => {
   it("multiplies herb rewards and leaves other materials unchanged", () => {
     const result = applyMaterialFindBonus(
-      { wood: 1, iron: 0, herbs: 10, food: 2, crystal: 0, stone: 0, hide: 0 },
+      { wood: 1, iron: 0, herbs: 10, food: 2, gems: 0, stone: 0, hide: 0 },
       { herbFindBonus: 0.3 },
     );
     expect(result.herbs).toBe(13);
@@ -400,31 +400,31 @@ describe("applyMaterialFindBonus", () => {
   });
 
   it("returns the same reward when no herbs are present", () => {
-    const materials = { wood: 1, iron: 0, herbs: 0, food: 2, crystal: 0, stone: 0, hide: 0 };
+    const materials = { wood: 1, iron: 0, herbs: 0, food: 2, gems: 0, stone: 0, hide: 0 };
     expect(applyMaterialFindBonus(materials, { herbFindBonus: 0.3 })).toBe(materials);
   });
 });
 
 describe("applyEndOfRunHomesteadBonuses", () => {
   it("applies flat end-of-run yields separately from herb find multiplier", () => {
-    const base = { wood: 4, iron: 0, herbs: 10, food: 3, crystal: 1, stone: 0, hide: 0 };
+    const base = { wood: 4, iron: 0, herbs: 10, food: 3, gems: 1, stone: 0, hide: 0 };
     const effects = {
       endRunFoodPerRoom: 2,
       endRunHerbsPerRoom: 1,
       endRunHidePerRoom: 2,
-      endRunCrystalPerRoom: 1,
+      endRunGemsPerRoom: 1,
       herbFindBonus: 0.1,
     };
     const result = applyEndOfRunHomesteadBonuses(base, effects, 4);
     expect(result.food).toBe(3 + 8);
     expect(result.hide).toBe(0 + 8);
-    expect(result.crystal).toBe(1 + 4);
+    expect(result.gems).toBe(1 + 4);
     expect(result.herbs).toBe(Math.floor((10 + 4) * 1.1));
     expect(result.wood).toBe(4);
   });
 
   it("does not add flat herbs when only herbFindBonus is set", () => {
-    const base = { wood: 0, iron: 0, herbs: 10, food: 0, crystal: 0, stone: 0, hide: 0 };
+    const base = { wood: 0, iron: 0, herbs: 10, food: 0, gems: 0, stone: 0, hide: 0 };
     const result = applyEndOfRunHomesteadBonuses(base, { ...defaultHomesteadEffects, herbFindBonus: 0.1 }, 5);
     expect(result.herbs).toBe(11);
   });
@@ -449,14 +449,14 @@ describe("homestead content integrity", () => {
         expect(
           (tier.effects?.endRunFoodPerRoom ?? 0) +
             (tier.effects?.endRunHerbsPerRoom ?? 0) +
-            (tier.effects?.endRunCrystalPerRoom ?? 0),
+            (tier.effects?.endRunGemsPerRoom ?? 0),
         ).toBeGreaterThan(0);
       }
     }
     for (const research of researchUpgrades) {
       for (const tier of research.tiers) {
         if (!tier.nonCombatBenefitDescription) continue;
-        expect(tier.effects?.endRunCrystalPerRoom).toBeGreaterThan(0);
+        expect(tier.effects?.endRunGemsPerRoom).toBeGreaterThan(0);
       }
     }
   });
@@ -464,14 +464,14 @@ describe("homestead content integrity", () => {
   it("keeps combat and non-combat benefit descriptions separate for leyline-energy and crystal-garden", () => {
     const leyline = researchUpgrades.find((r) => r.id === "leyline-energy")!;
     expect(leyline.tiers[1]?.benefitDescription).toBe("Increases starting Mana by 2");
-    expect(leyline.tiers[1]?.nonCombatBenefitDescription).toBe("Gain Crystal after each run");
+    expect(leyline.tiers[1]?.nonCombatBenefitDescription).toBe("Gain Gems after each run");
     expect(leyline.tiers[2]?.benefitDescription).toBe("Increases starting Mana by 4");
-    expect(leyline.tiers[2]?.nonCombatBenefitDescription).toBe("Gain Crystal after each run");
+    expect(leyline.tiers[2]?.nonCombatBenefitDescription).toBe("Gain Gems after each run");
 
     const crystalGarden = farmPlots.find((f) => f.id === "crystal-garden")!;
     for (const tier of crystalGarden.tiers) {
-      expect(tier.nonCombatBenefitDescription).toBe("Gain Crystal after each run");
-      expect(tier.benefitDescription).not.toContain("Gain Crystal after each run");
+      expect(tier.nonCombatBenefitDescription).toBe("Gain Gems after each run");
+      expect(tier.benefitDescription).not.toContain("Gain Gems after each run");
     }
   });
 });

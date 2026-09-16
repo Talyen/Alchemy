@@ -8,7 +8,7 @@ test.describe("Homestead Flow", critical, () => {
   test.describe("with custom materials", () => {
     test.beforeEach(async ({ page }) => {
       await new HomesteadPage(page).goto({
-        materialInventory: { wood: 100, iron: 50, herbs: 25, food: 10, crystal: 5 },
+        materialInventory: { wood: 100, iron: 50, herbs: 25, food: 10, gems: 5 },
       });
     });
 
@@ -19,7 +19,7 @@ test.describe("Homestead Flow", critical, () => {
         homestead.materialPill("Iron", 50),
         homestead.materialPill("Herbs", 25),
         homestead.materialPill("Food", 10),
-        homestead.materialPill("Crystal", 5),
+        homestead.materialPill("Gems", 5),
       ];
       for (const pill of pills) {
         await expect(pill).toBeVisible({ timeout: 3000 });
@@ -57,21 +57,21 @@ test.describe("Homestead Flow", critical, () => {
       const homestead = new HomesteadPage(page);
 
       await homestead.goto({
-        materialInventory: { wood: 100, iron: 50, herbs: 25, food: 10, crystal: 5 },
+        materialInventory: { wood: 100, iron: 50, herbs: 25, food: 10, gems: 5 },
         constructedBuildings: { "blacksmiths-forge": 1 },
       });
       await expect(homestead.buildingsTab).toBeVisible();
       await expect(homestead.materialPill("Wood", 100)).toBeVisible({ timeout: 3000 });
 
       await homestead.goto({
-        materialInventory: { wood: 100, iron: 50, herbs: 25, food: 10, crystal: 5 },
+        materialInventory: { wood: 100, iron: 50, herbs: 25, food: 10, gems: 5 },
         plantedFarms: { "herb-garden": 1 },
       });
       await homestead.switchTab("Farm");
       await expect(page.getByRole("button", { name: /Herb Garden/ })).toBeVisible({ timeout: 3000 });
 
       await homestead.goto({
-        materialInventory: { wood: 100, iron: 50, herbs: 25, food: 10, crystal: 5 },
+        materialInventory: { wood: 100, iron: 50, herbs: 25, food: 10, gems: 5 },
         completedResearch: { "botanical-distillation": 1 },
       });
       await homestead.switchTab("Research");

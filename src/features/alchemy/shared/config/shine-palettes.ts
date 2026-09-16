@@ -15,6 +15,7 @@ import { buildSmoothShineGradient } from "@/lib/animation/shine-gradient";
 export { buildSmoothShineBorderGradient, buildSmoothShineGradient } from "@/lib/animation/shine-gradient";
 
 export const SHINE_PALETTES = {
+  gold: ["#fcd34d", "#d97706", "#fcd34d"],
   talentDefault: ["#fcd34d", "#d97706", "#fcd34d"],
   wildcard: ["#fbbf24", "#000000", "#fcd34d", "#111827"],
   bossVictoryFallback: ["#cbd5e1", "#64748b", "#cbd5e1"],

@@ -258,7 +258,7 @@ describe("imported enemy attack reactions", () => {
     expect(result.playerCC.freezeSkipTurns).toBeGreaterThan(0);
   });
 
-  it("purges Banshee buffs after a fully Blocked attack", () => {
+  it("purges one Banshee buff after a fully Blocked attack", () => {
     const texts: Parameters<typeof applyEnemyAbility>[2] = [];
     const result = applyEnemyAbility(
       stateForEnemy("banshee", {
@@ -268,9 +268,9 @@ describe("imported enemy attack reactions", () => {
       texts,
     );
     expect(result.playerHealth).toBe(100);
-    expect(result.playerStatuses.block).toBe(0);
-    expect(result.playerStatuses.haste).toBe(2);
-    expect(texts).toContainEqual({ target: "player", kind: "notice", stat: "block", text: "Purged" });
+    const purgedCount = (["block", "haste"] as const).filter((stat) => result.playerStatuses[stat] === 0);
+    expect(purgedCount).toHaveLength(1);
+    expect(texts).toContainEqual({ target: "player", kind: "notice", stat: purgedCount[0], text: "Purged" });
   });
 
   it("damages Blood Countess only when the hero restores Health and pays kill rewards", () => {

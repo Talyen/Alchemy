@@ -1,16 +1,17 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import {
   MysteryEffectBadge,
   MysteryEffectList,
 } from "@/features/alchemy/run-loop/screens/mystery/mystery-effect-badge";
 import { MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
+import { keywordDefinitions } from "@/lib/game-data";
 
 describe("MysteryEffectBadge", () => {
   afterEach(() => {
     cleanup();
   });
-  it("shows XP amount in tooltip mode", () => {
+  it("shows XP amount in tooltip mode", async () => {
     render(
       <MysteryEffectBadge
         effect={{ kind: "gainXP", keyword: "mana", amount: 8 }}
@@ -20,11 +21,35 @@ describe("MysteryEffectBadge", () => {
       />,
     );
     expect(screen.getByText(/8/)).toBeTruthy();
-    expect(screen.getByText(/Mana/)).toBeTruthy();
+    const token = screen.getByText("Mana");
+    expect(token.className).toContain(keywordDefinitions.mana.colorClass);
+    fireEvent.mouseEnter(token.closest("span.relative.inline-flex.items-center") ?? token);
+    await waitFor(() => {
+      expect(document.querySelector(".hover-popup-panel[data-visible]")).toBeTruthy();
+    });
+    expect(document.body.textContent).toContain("Mana is used to play cards");
   });
 
-  it("includes keyword tag in chooseCard tooltip text", () => {
+  it("colors Health with an interactive glossary in heal badges", async () => {
     render(
+      <MysteryEffectBadge
+        effect={{ kind: "healHealth", amount: 5 }}
+        findCard={undefined}
+        findTrinket={undefined}
+        tooltip
+      />,
+    );
+    const token = screen.getByText("Health");
+    expect(token.className).toContain(keywordDefinitions.health.colorClass);
+    fireEvent.mouseEnter(token.closest("span.relative.inline-flex.items-center") ?? token);
+    await waitFor(() => {
+      expect(document.querySelector(".hover-popup-panel[data-visible]")).toBeTruthy();
+    });
+    expect(document.body.textContent).toContain("Health keeps you alive");
+  });
+
+  it("colors the keyword tag with an interactive glossary in chooseCard tooltip text", async () => {
+    const { container } = render(
       <MysteryEffectBadge
         effect={{ kind: "chooseCard", tag: "archery" }}
         findCard={undefined}
@@ -32,7 +57,14 @@ describe("MysteryEffectBadge", () => {
         tooltip
       />,
     );
-    expect(screen.getByText(new RegExp(`Choose 1 of ${MYSTERY_CARD_CHOICES} Archery cards`))).toBeTruthy();
+    expect(container.textContent).toContain(`Choose 1 of ${MYSTERY_CARD_CHOICES} Archery cards to add to your deck`);
+    const token = screen.getByText("Archery");
+    expect(token.className).toContain(keywordDefinitions.archery.colorClass);
+    fireEvent.mouseEnter(token.closest("span.relative.inline-flex.items-center") ?? token);
+    await waitFor(() => {
+      expect(document.querySelector(".hover-popup-panel[data-visible]")).toBeTruthy();
+    });
+    expect(document.body.textContent).toContain("ranged attacks");
   });
 
   it("names the generated Astral item", () => {

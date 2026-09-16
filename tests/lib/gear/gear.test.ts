@@ -196,7 +196,7 @@ describe("gear domain", () => {
     expect(result?.inventory).toEqual([]);
     expect(result?.loadouts.knight["left-accessory"]).toBeNull();
     expect(result?.yieldedCurrencies).toEqual(computeSalvageYield(ring).currencies);
-    expect(result?.yieldedMaterials).toEqual({ ...emptyInventory(), crystal: 3 });
+    expect(result?.yieldedMaterials).toEqual({ ...emptyInventory(), gems: 3 });
   });
 
   it("reports equipped gear as salvage eligible", () => {

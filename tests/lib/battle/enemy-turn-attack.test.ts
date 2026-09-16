@@ -511,37 +511,84 @@ describe("applyEnemyAbility", () => {
     expect(result.playerHealth).toBeLessThan(30);
   });
 
-  it("banshee purges one defensive status in priority order block→armor→forge→haste", () => {
+  it("banshee purges a single random beneficial status", () => {
     const banshee = enemyBestiary.find((e) => e.id === "banshee")!;
-    const base = patchBattleState({
-      currentEnemy: banshee,
-      playerHealth: 30,
-      playerStatuses: { block: 10, armor: 2, forge: 1, haste: 1 },
-      rng: () => 0.99,
-    });
-    const texts = makeTexts();
-    const purgedBlock = applyEnemyAbility(
-      base,
-      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "stun", amount: 4 }] }),
-      texts,
-    );
-    expect(purgedBlock.playerStatuses.block).toBe(0);
-    expect(purgedBlock.playerStatuses.armor).toBe(2);
-    expect(texts).toContainEqual({ target: "player", kind: "notice", stat: "block", text: "Purged" });
+    const stunHit = () => makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "stun", amount: 4 }] });
 
-    const noBlock = patchBattleState({
+    const onlyBlock = patchBattleState({
       currentEnemy: banshee,
       playerHealth: 30,
-      playerStatuses: { block: 0, armor: 2, forge: 1, haste: 1 },
+      playerStatuses: { block: 10 },
       rng: () => 0.99,
     });
-    const purgedArmor = applyEnemyAbility(
-      noBlock,
+    const blockTexts = makeTexts();
+    const purgedBlock = applyEnemyAbility(onlyBlock, stunHit(), blockTexts);
+    expect(purgedBlock.playerStatuses.block).toBe(0);
+    expect(blockTexts).toContainEqual({ target: "player", kind: "notice", stat: "block", text: "Purged" });
+
+    const crowded = patchBattleState({
+      currentEnemy: banshee,
+      playerHealth: 30,
+      playerStatuses: { block: 10, armor: 2, thorns: 2, forge: 1, haste: 1, phoenixFeather: 1 },
+      rng: () => 0.99,
+    });
+    const crowdedTexts = makeTexts();
+    const purgedOne = applyEnemyAbility(crowded, stunHit(), crowdedTexts);
+    const purgeNotices = crowdedTexts.filter((text) => text.kind === "notice" && text.text === "Purged");
+    expect(purgeNotices).toHaveLength(1);
+    const purgedStat = purgeNotices[0]!.stat;
+    expect(["block", "armor", "thorns", "forge", "haste", "phoenixFeather"]).toContain(purgedStat);
+    expect(purgedOne.playerStatuses[purgedStat as "block"]).toBe(0);
+    // Thorns always ends at zero: purged, or consumed by retaliation.
+    expect(purgedOne.playerStatuses.thorns).toBe(0);
+    if (purgedStat === "block") {
+      expect(purgedOne.playerStatuses.block).toBe(0);
+    } else {
+      // Unpurged Block still absorbs the hit.
+      expect(purgedOne.playerStatuses.block).toBeGreaterThan(0);
+      expect(purgedOne.playerStatuses.block).toBeLessThan(10);
+    }
+    for (const stat of ["armor", "forge", "haste", "phoenixFeather"] as const) {
+      if (stat !== purgedStat) expect(purgedOne.playerStatuses[stat]).toBe(crowded.playerStatuses[stat]);
+    }
+  });
+
+  it("banshee purges thorns without retaliation and purges phoenix feather", () => {
+    const banshee = enemyBestiary.find((e) => e.id === "banshee")!;
+    const physicalHit = () => makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });
+
+    const thorny = patchBattleState({
+      currentEnemy: banshee,
+      playerHealth: 30,
+      enemyHealth: 30,
+      playerStatuses: { block: 0, armor: 0, thorns: 3 },
+      rng: () => 0.99,
+    });
+    const thornTexts = makeTexts();
+    const purgedThorns = applyEnemyAbility(thorny, physicalHit(), thornTexts);
+    expect(purgedThorns.playerStatuses.thorns).toBe(0);
+    expect(purgedThorns.enemyHealth).toBe(30);
+    expect(thornTexts).toContainEqual({ target: "player", kind: "notice", stat: "thorns", text: "Purged" });
+
+    const feathered = patchBattleState({
+      currentEnemy: banshee,
+      playerHealth: 30,
+      playerStatuses: { block: 0, armor: 0, phoenixFeather: 1 },
+      rng: () => 0.99,
+    });
+    const featherTexts = makeTexts();
+    const purgedFeather = applyEnemyAbility(
+      feathered,
       makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "stun", amount: 4 }] }),
-      [],
+      featherTexts,
     );
-    expect(purgedArmor.playerStatuses.armor).toBe(0);
-    expect(purgedArmor.playerStatuses.forge).toBe(1);
+    expect(purgedFeather.playerStatuses.phoenixFeather).toBe(0);
+    expect(featherTexts).toContainEqual({
+      target: "player",
+      kind: "notice",
+      stat: "phoenixFeather",
+      text: "Purged",
+    });
   });
 
   it("blood-countess damages itself only on actual hero healing", async () => {

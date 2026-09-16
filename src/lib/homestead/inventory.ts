@@ -5,7 +5,7 @@ export function materialAmount(inventory: Partial<MaterialInventory> | undefined
 }
 
 export function emptyInventory(): MaterialInventory {
-  return { wood: 0, stone: 0, iron: 0, food: 0, herbs: 0, hide: 0, crystal: 0 };
+  return { wood: 0, stone: 0, iron: 0, food: 0, herbs: 0, hide: 0, gems: 0 };
 }
 
 export function addInventory(a: MaterialInventory, b: MaterialInventory): MaterialInventory {

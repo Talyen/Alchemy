@@ -32,6 +32,18 @@ test.describe("Menu", critical, () => {
     await expect(page.getByRole("button", { name: /Wildwood Draft/ })).toBeVisible();
   });
 
+  test("unspent talents and affordable homestead cast gold glow on main menu", async ({ page }) => {
+    const menu = new MenuPage(page);
+    await menu.gotoWithUnlockedMeta({
+      talentXP: { dodge: 550 },
+      unlockedTalents: {},
+      materialInventory: { wood: 50, stone: 50, iron: 50, food: 50 },
+    });
+    await menu.expectMainMenu();
+    const shineBorders = page.locator('.shine-border[data-glow="true"]');
+    await expect(shineBorders).toHaveCount(2);
+  });
+
   test("Continue is the only play action until End Run clears the current adventure", async ({ page }) => {
     await injectActiveBattle(page, makeGoblinBattleState());
     await new BattlePage(page).menuBtn.click();

@@ -1,7 +1,8 @@
+import { useLayoutEffect, useRef, useState } from "react";
 import { cn, formatLargeAmount } from "@/lib/utils";
 import { MATERIAL_IDS, materialLabels, type MaterialId, type MaterialInventory } from "@/lib/homestead/types";
 import {
-  resourceCrystal,
+  resourceGems,
   resourceFood,
   resourceGold,
   resourceHerbs,
@@ -20,7 +21,7 @@ const RESOURCE_ART_MAP: Record<HomesteadResource, string> = {
   food: resourceFood,
   herbs: resourceHerbs,
   hide: resourceHide,
-  crystal: resourceCrystal,
+  gems: resourceGems,
   gold: resourceGold,
 };
 
@@ -36,7 +37,7 @@ export const matTextColor: Record<MaterialId, string> = {
   food: "text-[#FF9F0A]",
   herbs: "text-[#30D158]",
   hide: "text-[#D94F30]",
-  crystal: "text-[#0A84FF]",
+  gems: "text-[#0A84FF]",
 };
 
 export const matPillStyle: Record<MaterialId, string> = {
@@ -46,7 +47,7 @@ export const matPillStyle: Record<MaterialId, string> = {
   food: "bg-[#FF9F0A]/15 border-[#FF9F0A]/30",
   herbs: "bg-[#30D158]/15 border-[#30D158]/30",
   hide: "bg-[#D94F30]/15 border-[#D94F30]/30",
-  crystal: "bg-[#0A84FF]/15 border-[#0A84FF]/30",
+  gems: "bg-[#0A84FF]/15 border-[#0A84FF]/30",
 };
 
 export const goldTextColor = "text-[#D6B85A]";
@@ -88,6 +89,88 @@ export function HomesteadResourceArtwork({
   );
 }
 
+// Largest-first label sizes. The hook below drops to the next step only while the
+// text overflows its box, so short names keep full size and only long names like
+// Herbs shrink. Ellipsis truncation remains as the last resort when nothing fits.
+const LABEL_STEPS = ["text-xs tracking-wide sm:text-sm", "text-xs tracking-wide", "text-[11px] tracking-normal"];
+const LABEL_STEPS_LARGE = ["text-base tracking-wide", "text-sm tracking-wide", "text-xs tracking-normal"];
+
+const SHRINK_EPSILON_PX = 1;
+
+function useShrinkToFit(text: string, maxStep: number) {
+  const [element, onElement] = useState<HTMLSpanElement | null>(null);
+  const [step, setStep] = useState(0);
+  const [remeasure, setRemeasure] = useState(0);
+  const lastWidthRef = useRef(0);
+  const lastTextRef = useRef(text);
+
+  // Re-fit when the box resizes (viewport, Game Size) or webfonts arrive. The
+  // shrink loop below only ever steps down, and resets only on growth, so a
+  // resize caused by our own shrink cannot ping-pong.
+  useLayoutEffect(() => {
+    if (!element || typeof ResizeObserver === "undefined") return;
+    let frame: number | null = null;
+    const observer = new ResizeObserver(() => {
+      if (frame !== null) cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        frame = null;
+        setRemeasure((tick) => tick + 1);
+      });
+    });
+    observer.observe(element);
+    return () => {
+      observer.disconnect();
+      if (frame !== null) cancelAnimationFrame(frame);
+    };
+  }, [element]);
+
+  useLayoutEffect(() => {
+    if (typeof document === "undefined" || typeof document.fonts?.ready?.then !== "function") return;
+    let cancelled = false;
+    document.fonts.ready.then(
+      () => {
+        if (!cancelled) setRemeasure((tick) => tick + 1);
+      },
+      () => undefined,
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Re-validates whenever the box, text, step, or a resize/font tick changes.
+  // Resets to full size only on growth or new text; shrink steps only move down,
+  // so a resize caused by our own shrink cannot ping-pong. Unmeasurable
+  // environments (SSR, jsdom) keep full size.
+  useLayoutEffect(() => {
+    let nextStep: number | null = null;
+    if (!element) {
+      lastWidthRef.current = 0;
+      lastTextRef.current = text;
+      if (step !== 0) nextStep = 0;
+    } else if (lastTextRef.current !== text) {
+      lastTextRef.current = text;
+      lastWidthRef.current = element.clientWidth;
+      if (step !== 0) nextStep = 0;
+    } else {
+      const width = element.clientWidth;
+      if (width <= 0) {
+        lastWidthRef.current = 0;
+        if (step !== 0) nextStep = 0;
+      } else if (width > lastWidthRef.current + SHRINK_EPSILON_PX && step !== 0) {
+        lastWidthRef.current = width;
+        nextStep = 0;
+      } else {
+        lastWidthRef.current = width;
+        if (element.scrollWidth > width + SHRINK_EPSILON_PX && step < maxStep) nextStep = step + 1;
+      }
+    }
+    if (nextStep !== null) setStep(nextStep);
+  }, [element, text, step, remeasure, maxStep]);
+
+  return [onElement, step] as const;
+}
+
 function TrinketWalletResourcePill({
   resource,
   title,
@@ -109,11 +192,13 @@ function TrinketWalletResourcePill({
   const formattedAmount = formatLargeAmount(amount);
   const displayedValue = showsIncreasePrefix ? `+${formattedAmount}` : formattedAmount;
   const large = size === "lg";
+  const labelSteps = large ? LABEL_STEPS_LARGE : LABEL_STEPS;
+  const [onLabel, labelStep] = useShrinkToFit(displayTitle, labelSteps.length - 1);
 
   return (
     <div
       className={cn(
-        "flex items-center rounded-xl border border-border/60 bg-card/65 shadow-sm backdrop-blur-sm transition-colors",
+        "flex min-w-0 items-center overflow-hidden rounded-xl border border-border/60 bg-card/65 shadow-sm backdrop-blur-sm transition-colors",
         large
           ? "min-h-[calc(64px*var(--content-scale,1))] gap-3.5 px-5 py-3"
           : "min-h-[calc(52px*var(--content-scale,1))] gap-2.5 px-3 py-2.5 sm:gap-3 sm:px-3.5",
@@ -122,16 +207,21 @@ function TrinketWalletResourcePill({
       )}
     >
       <HomesteadResourceArtwork resource={resource} size={large ? "xl" : "lg"} className="drop-shadow-sm" />
-      <div className="flex min-w-0 flex-col text-left leading-tight">
+      <div className="flex min-w-0 flex-1 flex-col text-left leading-tight">
         <span
+          ref={onLabel}
+          title={displayTitle}
           className={cn(
-            "font-medium tracking-wide whitespace-nowrap text-muted-foreground uppercase",
-            large ? "text-base" : "text-xs sm:text-sm",
+            "truncate font-medium whitespace-nowrap text-muted-foreground uppercase",
+            labelSteps[labelStep] ?? labelSteps[0],
           )}
         >
           {displayTitle}
         </span>
-        <span className={cn("truncate font-bold text-foreground tabular-nums", large ? "text-xl" : "text-lg")}>
+        <span
+          title={displayedValue}
+          className={cn("truncate font-bold text-foreground tabular-nums", large ? "text-xl" : "text-lg")}
+        >
           {displayedValue}
         </span>
       </div>
@@ -149,13 +239,16 @@ export function HomesteadResourceWallet({
   className?: string | undefined;
 }) {
   return (
-    <div className={cn("mx-auto w-full max-w-4xl", className)}>
-      <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-8">
-        <TrinketWalletResourcePill resource="gold" amount={gold} />
-        {MATERIAL_IDS.map((mat) => (
-          <TrinketWalletResourcePill key={mat} resource={mat} amount={materialInventory[mat] ?? 0} />
-        ))}
-      </div>
+    <div
+      className={cn(
+        "mx-auto grid w-full max-w-fit grid-cols-2 justify-center gap-2 sm:grid-cols-4 xl:grid-cols-8",
+        className,
+      )}
+    >
+      <TrinketWalletResourcePill resource="gold" amount={gold} />
+      {MATERIAL_IDS.map((mat) => (
+        <TrinketWalletResourcePill key={mat} resource={mat} amount={materialInventory[mat] ?? 0} />
+      ))}
     </div>
   );
 }

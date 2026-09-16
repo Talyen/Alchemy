@@ -17,6 +17,7 @@ import {
   matTextColor,
 } from "../../../shared/ui/material-icons";
 import { ShineText } from "../../../shared/ui/shine-text";
+import { KeywordToken, renderTokenizedDescription } from "../../../shared/ui/card-description-ui";
 import { TooltipChip, TooltipHeader } from "../../../shared/ui/tooltips/tooltip-panel";
 import { sortMysteryEffectsByDisplayOrder } from "@/lib/mystery";
 import type { MysteryEffect } from "@/lib/mystery";
@@ -42,6 +43,15 @@ const chipPillClass = (ctx: BadgeCtx) =>
 
 const mysteryShineTextProps = { className: "font-bold", fallbackClassName: "text-foreground" } as const;
 
+function renderInteractiveKeywords(text: string) {
+  return renderTokenizedDescription(text, {
+    renderKeyword: (partText, keywordId, key) => (
+      <KeywordToken key={key} keywordId={keywordId} matchedText={partText} />
+    ),
+    renderPlain: (partText, key) => <span key={key}>{partText}</span>,
+  });
+}
+
 const renderGoldBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainGold" | "loseGold" }>> = (effect, ctx) => (
   <span className={cn(chipPillClass(ctx), goldPillStyle, goldTextColor)}>
     <HomesteadResourceArtwork resource="gold" size={ctx.tooltip ? "xs" : "sm"} />
@@ -60,13 +70,9 @@ const renderMaterialBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainMat
 };
 
 const renderHealBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "healHealth" }>> = (effect) => {
-  const healthDef = keywordDefinitions.health;
-  return (
-    <span>
-      Restore {effect.amount} <span className={cn("font-semibold", healthDef?.colorClass)}>Health</span>
-      {effect.chance !== undefined ? ` (${Math.round(effect.chance * PERCENTAGE_MULTIPLIER)}% chance)` : ""}
-    </span>
-  );
+  const chanceSuffix =
+    effect.chance !== undefined ? ` (${Math.round(effect.chance * PERCENTAGE_MULTIPLIER)}% chance)` : "";
+  return <span>{renderInteractiveKeywords(`Restore ${effect.amount} Health${chanceSuffix}`)}</span>;
 };
 
 const renderDamageBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "damageHealth" }>> = (effect, ctx) => (
@@ -74,13 +80,8 @@ const renderDamageBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "damageHea
 );
 
 const renderXpBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainXP" }>> = (effect) => {
-  const def = keywordDefinitions[effect.keyword];
-  return (
-    <span>
-      Gain {effect.amount} <span className={cn("font-semibold", def?.colorClass)}>{def?.label ?? effect.keyword}</span>{" "}
-      XP
-    </span>
-  );
+  const label = keywordDefinitions[effect.keyword]?.label ?? effect.keyword;
+  return <span>{renderInteractiveKeywords(`Gain ${effect.amount} ${label} XP`)}</span>;
 };
 
 const renderAddCardBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "addCard" }>> = (effect, ctx) => {
@@ -107,9 +108,11 @@ const renderChooseCardBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "choos
     ? `Choose 1 of ${MYSTERY_CARD_CHOICES} ${tagLabel} cards`
     : `Choose 1 of ${MYSTERY_CARD_CHOICES} cards`;
   return ctx.tooltip ? (
-    <span className="text-sm text-muted-foreground">{chooseLabel} to add to your deck</span>
+    <span className="text-sm text-muted-foreground">
+      {renderInteractiveKeywords(`${chooseLabel} to add to your deck`)}
+    </span>
   ) : (
-    <span className="text-sm text-pretty text-muted-foreground">{chooseLabel}</span>
+    <span className="text-sm text-pretty text-muted-foreground">{renderInteractiveKeywords(chooseLabel)}</span>
   );
 };
 

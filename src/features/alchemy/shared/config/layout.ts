@@ -98,7 +98,7 @@ export const staticCardTransform = "translate3d(0px, 0px, 0px)";
 export const tooltipChromeClass = "z-50 rounded-shell-tooltip border border-border bg-card px-3 py-3 text-left";
 export const popupBaseClassName = `absolute left-1/2 ${tooltipChromeClass}`;
 
-export const tooltipWidthClass = "w-fit max-w-72";
+export const tooltipWidthClass = "w-fit max-w-80";
 
 export const surfaceSelectedRingClass = "card-interactive-selected";
 

@@ -202,7 +202,7 @@ export const DEFAULT_TALENT_EFFECTS = {
   wishBlockBelowHealthPct: 0,
   wishBlockAmount: 0,
   wishCardsUpgraded: false,
-  wishCrystalGold: 0,
+  wishGemsGold: 0,
   startMana: 0,
   wellspringKeepMana: 0,
   manaBulwarkActive: false,

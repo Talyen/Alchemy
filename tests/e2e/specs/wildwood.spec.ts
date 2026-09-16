@@ -57,7 +57,7 @@ function wildwoodRewardFlow(overrides: Record<string, unknown> = {}) {
         companionChoiceIds: [],
         selectedId: null,
         gold: 0,
-        materials: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
+        materials: { wood: 0, iron: 0, herbs: 0, food: 0, gems: 0 },
         destinations: [],
         selectedBossId: null,
         lastVictoryEnemyType: "boss",

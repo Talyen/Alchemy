@@ -1,16 +1,8 @@
 import type { TalentEffectManifest } from "@/lib/game-data";
 
-export type MaterialId = "wood" | "stone" | "iron" | "food" | "herbs" | "hide" | "crystal";
+export type MaterialId = "wood" | "stone" | "iron" | "food" | "herbs" | "hide" | "gems";
 
-export const MATERIAL_IDS: [MaterialId, ...MaterialId[]] = [
-  "wood",
-  "stone",
-  "iron",
-  "food",
-  "herbs",
-  "hide",
-  "crystal",
-];
+export const MATERIAL_IDS: [MaterialId, ...MaterialId[]] = ["wood", "stone", "iron", "food", "herbs", "hide", "gems"];
 
 export const materialLabels: Record<MaterialId, string> = {
   wood: "Wood",
@@ -19,7 +11,7 @@ export const materialLabels: Record<MaterialId, string> = {
   food: "Food",
   herbs: "Herbs",
   hide: "Hide",
-  crystal: "Crystal",
+  gems: "Gems",
 };
 
 export type MaterialInventory = Record<MaterialId, number>;
@@ -80,7 +72,7 @@ export const HOMESTEAD_BATTLE_NUMERIC_KEYS = [
   "flatArrowDamage",
   "flatFreezeDamage",
   "flatNatureDamage",
-  "wishCrystalGold",
+  "wishGemsGold",
   "startMana",
   "consumeHealMultiplier",
   "potionMixPotency",
@@ -111,7 +103,7 @@ interface HomesteadMetaEffects {
   endRunFoodPerRoom: number;
   endRunHerbsPerRoom: number;
   endRunHidePerRoom: number;
-  endRunCrystalPerRoom: number;
+  endRunGemsPerRoom: number;
   gearAstralChanceBonus: number;
 }
 

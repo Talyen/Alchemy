@@ -10,6 +10,7 @@ import type { createBattleTransferDeps } from "./battle-transfer-deps";
 import type { BattleControllerContext } from "./battle-context";
 import { commitEndTurn, resumePendingBattleTransition } from "./turn-orchestration";
 import { playTurnFrames } from "./enemy-phase";
+import { getPendingDrawCount } from "./draw-sequence";
 
 export function createBattleEndTurnUi(
   ctx: BattleControllerContext,
@@ -72,6 +73,14 @@ export function createBattleEndTurnUi(
             isSessionActive: (id) => ctx.screen === "battle" && session.isCurrentBattleSession(id),
           },
           presentation,
+          {
+            onHandDrawn: () => {
+              session.runIfSessionActive(sessionNum, () => {
+                ctx.cardPlayInProgressRef.current = false;
+              });
+            },
+            isCardPlayInProgress: () => ctx.cardPlayInProgressRef.current,
+          },
         );
       } catch (error) {
         logBattleError("play resolved turn", error);
@@ -79,8 +88,10 @@ export function createBattleEndTurnUi(
         session.runIfSessionActive(sessionNum, () => {
           presentation.setDisplayedBattle(null);
           presentation.resetHandTransferUi();
-          ctx.cardPlayInProgressRef.current = false;
-          ctx.scheduleAutoEndTurnRef.current?.(readBattle().battleState);
+          if (getPendingDrawCount(sessionNum) === 0) {
+            ctx.cardPlayInProgressRef.current = false;
+            ctx.scheduleAutoEndTurnRef.current?.(readBattle().battleState);
+          }
         });
       }
     })();

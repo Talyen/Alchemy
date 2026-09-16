@@ -23,7 +23,7 @@ export function EnemyTooltip({
     <PortaledTooltip
       triggerRef={triggerRef}
       visible={visible}
-      width="w-fit max-w-112"
+      width="w-fit max-w-128"
       className="rounded-shell-tooltip"
       plasmaColorPair={discovered ? getPlasmaColorPairForEnemy(entry) : null}
     >

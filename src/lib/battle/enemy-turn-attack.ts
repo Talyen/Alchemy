@@ -1,5 +1,6 @@
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import {
+  beneficialPlayerStatusIds,
   enemyAbilityDealsDamage,
   getEnemyAbilityCard,
   isEnemyAbilityCard,
@@ -252,9 +253,8 @@ function applyAbilityFollowups(
   }
   if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
   if (context.landed && hasEnemyTrait(nextState, "banshee", context.traitSet)) {
-    const purgeTarget = (["block", "armor", "forge", "haste"] as const).find(
-      (stat) => nextState.playerStatuses[stat] > 0,
-    );
+    const purgeCandidates = beneficialPlayerStatusIds.filter((stat) => nextState.playerStatuses[stat] > 0);
+    const purgeTarget = pickRandom(purgeCandidates, getBattleRng(nextState));
     if (purgeTarget) {
       nextState = recordEnemyAbilityActivation(nextState, "banshee");
       nextState =
@@ -269,6 +269,7 @@ function applyAbilityFollowups(
     nextState = dealPlayerTypedHit(setEnemyStatus(nextState, "onAttackBleed", 0), "bleed", amount, combatTexts);
   }
   if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
+  // Purged Thorns stay purged: the retaliation check below sees zero stacks, so no Nature damage fires.
   if (context.landed && nextState.playerStatuses.thorns > 0) {
     const amount = nextState.playerStatuses.thorns;
     nextState = dealPlayerTypedHit(setPlayerStatus(nextState, "thorns", 0), "nature", amount, combatTexts);

@@ -9,7 +9,7 @@ export const defaultHomesteadEffects: HomesteadEffectManifest = {
   flatArrowDamage: 0,
   flatFreezeDamage: 0,
   flatNatureDamage: 0,
-  wishCrystalGold: 0,
+  wishGemsGold: 0,
   startMana: 0,
   consumeHealMultiplier: 0,
   potionMixPotency: 0,
@@ -26,6 +26,6 @@ export const defaultHomesteadEffects: HomesteadEffectManifest = {
   endRunFoodPerRoom: 0,
   endRunHerbsPerRoom: 0,
   endRunHidePerRoom: 0,
-  endRunCrystalPerRoom: 0,
+  endRunGemsPerRoom: 0,
   gearAstralChanceBonus: 0,
 };

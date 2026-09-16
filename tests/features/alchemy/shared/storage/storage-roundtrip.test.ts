@@ -155,7 +155,7 @@ describe("save JSON round trips", () => {
       discoveredTrinketIds: ["bone-charm"],
       talentXP: { physical: 25, block: 10 },
       unlockedTalents: { physical: ["physical-dmg-1", "physical-dmg-2"] },
-      materialInventory: { wood: 12, iron: 5, herbs: 3, food: 0, crystal: 1 },
+      materialInventory: { wood: 12, iron: 5, herbs: 3, food: 0, gems: 1 },
       constructedBuildings: { "blacksmiths-forge": 1, "alchemists-laboratory": 1 },
       plantedFarms: { pasture: 1, "herb-garden": 1 },
       completedResearch: { "leyline-energy": 1, "detect-magic": 2 },
@@ -165,7 +165,7 @@ describe("save JSON round trips", () => {
     });
     const { reParsed } = roundTrip(original);
     expect(reParsed).toEqual(original);
-    expect(reParsed.materialInventory).toEqual({ ...emptyInventory(), wood: 12, iron: 5, herbs: 3, crystal: 1 });
+    expect(reParsed.materialInventory).toEqual({ ...emptyInventory(), wood: 12, iron: 5, herbs: 3, gems: 1 });
 
     expect(reParsed.bondedCompanions).toMatchObject({ wolf: 3, "lizard-scout": 1 });
   });

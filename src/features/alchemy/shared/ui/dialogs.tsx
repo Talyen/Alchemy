@@ -2,7 +2,7 @@ import { useId, type ComponentType, type ReactNode, type RefObject } from "react
 import { AlertTriangle } from "lucide-react";
 import { ESCAPE_PRIORITY } from "@/app/escape-stack";
 import { Button } from "@/components/ui/button";
-import { bodyTextClass, sectionTitleClass } from "@/features/alchemy/shared/config";
+import { bodyTextClass } from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
 import { ConfirmationDialogPanel } from "./confirmation-dialog-panel";
 import { ModalOverlayShell } from "./modal-overlay-shell";
@@ -61,7 +61,7 @@ export function ConfirmationDialog({
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/15 text-amber-200">
           <Icon className="h-6 w-6" />
         </div>
-        <h2 id={titleId} className={cn("mt-4 font-sans", sectionTitleClass)}>
+        <h2 id={titleId} className={cn("mt-4 font-sans text-2xl font-bold text-balance text-amber-100/75")}>
           {title}
         </h2>
         {description && (

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildWishOptions, applyWishEffect, chooseWishCard } from "@/lib/battle/wish";
-import { shouldConvertCrystalWishToGold } from "@/lib/content-systems/battle-content";
+import { shouldConvertGemsWishToGold } from "@/lib/content-systems/battle-content";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { patchBattleState } from "../../fixtures/battle";
@@ -340,42 +340,42 @@ describe("new wish talents", () => {
     });
   });
 
-  it("wishCrystalGold grants gold on success roll", () => {
+  it("wishGemsGold grants gold on success roll", () => {
     const card = makeTestCard({ id: "strike", title: "Strike" });
     const state = patchBattleState({
-      talentEffects: { wishCrystalGold: 5 },
+      talentEffects: { wishGemsGold: 5 },
       rng: () => 0.01,
     });
     const result = applyWishEffect(state, card, 1, []);
     expect(result.gold).toBe(5);
   });
 
-  it("wishCrystalGold grants crystal on failed roll", () => {
+  it("wishGemsGold grants gems on failed roll", () => {
     const card = makeTestCard({ id: "strike", title: "Strike" });
     const state = patchBattleState({
-      talentEffects: { wishCrystalGold: 5 },
+      talentEffects: { wishGemsGold: 5 },
       rng: () => 0.99,
     });
     const result = applyWishEffect(state, card, 1, []);
-    expect(result.pendingMaterials.crystal).toBe(5);
+    expect(result.pendingMaterials.gems).toBe(5);
   });
 
-  it("wishCrystalGold grants gold instead of crystal in wildwood (no silent drop)", () => {
+  it("wishGemsGold grants gold instead of gems in wildwood (no silent drop)", () => {
     const card = makeTestCard({ id: "strike", title: "Strike" });
     const state = patchBattleState({
-      talentEffects: { wishCrystalGold: 5 },
+      talentEffects: { wishGemsGold: 5 },
       rng: () => 0.99,
       contentSystemType: "wildwood",
     });
     const result = applyWishEffect(state, card, 1, []);
-    expect(result.pendingMaterials.crystal).toBe(0);
+    expect(result.pendingMaterials.gems).toBe(0);
     expect(result.gold).toBe(5);
   });
 
-  it("wishCrystalGold gold text matches the scaled run-gold delta in wildwood", () => {
+  it("wishGemsGold gold text matches the scaled run-gold delta in wildwood", () => {
     const card = makeTestCard({ id: "strike", title: "Strike" });
     const state = patchBattleState({
-      talentEffects: { wishCrystalGold: 5 },
+      talentEffects: { wishGemsGold: 5 },
       gearEffects: { goldGainPercent: 50 },
       rng: () => 0.99,
       contentSystemType: "wildwood",
@@ -433,9 +433,9 @@ describe("new wish talents", () => {
 });
 
 describe("battle content helpers", () => {
-  it("converts crystal wish to gold exclusively in Wildwood", () => {
-    expect(shouldConvertCrystalWishToGold(CONTENT_SYSTEMS.WILDWOOD)).toBe(true);
-    expect(shouldConvertCrystalWishToGold(CONTENT_SYSTEMS.CAMPAIGN)).toBe(false);
-    expect(shouldConvertCrystalWishToGold(CONTENT_SYSTEMS.LABYRINTH)).toBe(false);
+  it("converts gems wish to gold exclusively in Wildwood", () => {
+    expect(shouldConvertGemsWishToGold(CONTENT_SYSTEMS.WILDWOOD)).toBe(true);
+    expect(shouldConvertGemsWishToGold(CONTENT_SYSTEMS.CAMPAIGN)).toBe(false);
+    expect(shouldConvertGemsWishToGold(CONTENT_SYSTEMS.LABYRINTH)).toBe(false);
   });
 });

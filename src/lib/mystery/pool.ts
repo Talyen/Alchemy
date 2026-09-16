@@ -35,7 +35,7 @@ export const mysteryPool: MysteryEvent[] = [
     "You stumble upon a lush field of glowing Mana Berries. Crystal has formed along the stems, and a sapphire ring lies half-buried in the tangle, pulsing with the same blue light.",
     [
       ["Harvest Berries", [xp("mana"), gear("sapphire-ring"), mat("herbs")]],
-      ["Gather Crystals", [xp("mana"), card("mana-berries"), mat("crystal", 3)]],
+      ["Gather Crystals", [xp("mana"), card("mana-berries"), mat("gems", 3)]],
     ],
   ),
   ev(
@@ -44,7 +44,7 @@ export const mysteryPool: MysteryEvent[] = [
     "A pool of iridescent water steams gently in the cool air. Moss carpets the bank, and a charm of icy crystal rests just below the surface.",
     [
       ["Gather the Moss", [xp("nature"), trinket("groves-favor"), mat("herbs")]],
-      ["Take the Charm", [xp("nature"), trinket("icy-heart"), mat("crystal")]],
+      ["Take the Charm", [xp("nature"), trinket("icy-heart"), mat("gems")]],
     ],
   ),
   ev(
@@ -53,7 +53,7 @@ export const mysteryPool: MysteryEvent[] = [
     "Bioluminescent mushrooms pulse in the dark, their spores hanging thick in the air. Crystals glitter on the cave walls, and an emerald ring sits among the caps.",
     [
       ["Harvest Mushrooms", [xp("nature"), trinket("plague-doctors-mask"), mat("herbs")]],
-      ["Collect Crystals", [xp("mana"), trinket("frozen-pocketwatch"), mat("crystal", 3)]],
+      ["Collect Crystals", [xp("mana"), trinket("frozen-pocketwatch"), mat("gems", 3)]],
     ],
   ),
   ev(
@@ -80,7 +80,7 @@ export const mysteryPool: MysteryEvent[] = [
     "A weathered stone altar stands beneath a shaft of light piercing the canopy. Gold fills a rusted offering bowl, and a topaz relic set with crystal rests beside it.",
     [
       ["Take the Offering", [xp("holy"), gear("topaz-ring"), gold(20)]],
-      ["Claim the Relic", [xp("holy"), gear("topaz-amulet"), mat("crystal")]],
+      ["Claim the Relic", [xp("holy"), gear("topaz-amulet"), mat("gems")]],
     ],
   ),
   ev(
@@ -124,7 +124,7 @@ export const mysteryPool: MysteryEvent[] = [
     "Crystal Geode",
     "A massive amethyst geode splits the cave floor, crystal crowding its hollow. A sapphire ring has formed among the crystal, and the stone shell has broken open beside it.",
     [
-      ["Collect Crystal", [xp("mana"), gear("sapphire-ring"), mat("crystal")]],
+      ["Collect Crystal", [xp("mana"), gear("sapphire-ring"), mat("gems")]],
       ["Take the Shell", [xp("mana"), gear("sapphire-amulet"), mat("stone", 3)]],
     ],
   ),
@@ -179,7 +179,7 @@ export const mysteryPool: MysteryEvent[] = [
     "A robed figure tends a circle of crystal salts and bone. Without looking up, they extend a staff in a skeletal hand, offering a forbidden rite.",
     [
       ["Accept the Rite", [xp("bleed"), card("skeleton-companion")]],
-      ["Take the Salts", [trinket("bone-charm"), mat("crystal", 3)]],
+      ["Take the Salts", [trinket("bone-charm"), mat("gems", 3)]],
     ],
   ),
   ev(
@@ -196,7 +196,7 @@ export const mysteryPool: MysteryEvent[] = [
     "Crystal Garden",
     "Faceted crystalline blooms catch stray light, and chimes hang among the shards. A sapphire amulet rests in the bed, each shard thrumming with latent power.",
     [
-      ["Harvest Shards", [gear("sapphire-amulet"), mat("crystal")]],
+      ["Harvest Shards", [gear("sapphire-amulet"), mat("gems")]],
       ["Take the Chimes", [xp("mana"), trinket("resonant-chimes")]],
     ],
   ),

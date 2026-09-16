@@ -36,7 +36,6 @@
   .talent-card-available {
     box-shadow: 0 0 12px color-mix(in srgb, var(--talent-accent) 35%, transparent);
     animation: talentAllocatableIdle 3.4s ease-in-out infinite;
-    transform-origin: center center;
   }
 
   .talent-card-available:hover {
@@ -46,7 +45,9 @@
   .talent-card-unlocked {
     border-color: var(--talent-accent);
     box-shadow:
+      inset 0 0 0 999px color-mix(in srgb, var(--talent-accent) 14%, transparent),
       inset 0 1px 0 0 color-mix(in srgb, var(--talent-accent) 22%, transparent),
+      0 0 10px color-mix(in srgb, var(--talent-accent) 25%, transparent),
       0 4px 16px rgba(0, 0, 0, 0.5);
   }
 

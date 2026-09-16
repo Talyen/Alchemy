@@ -349,7 +349,7 @@ export const enemyBestiary = [
     art: assetRefs.banshee,
     enemyType: "normal",
     traits: [
-      trait("banshee", "Dread Wail", "Attacks Purge one beneficial effect (Block, Armor, Forge, or Haste)"),
+      trait("banshee", "Dread Wail", "Attacks Purge a random beneficial effect"),
       trait("holy-vulnerability", "Holy Vulnerability", "Receives double Holy damage"),
     ],
     abilityIds: ["bash", "frostbolt", "cold-snap"],

@@ -129,6 +129,7 @@ export function ItemPickerGrid({
                 ariaDisabled={target.ariaDisabled}
                 className={cn(cardSurfaceClass, collectionGridTileWidthClass, gearArtAspectClass)}
                 imageClassName={gearArtFillClass}
+                shineOnHover
                 shineColor={shineColor}
                 onClick={() =>
                   performArmoryItemAction(target.action, {

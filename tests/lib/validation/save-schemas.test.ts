@@ -88,7 +88,7 @@ describe("MaterialInventorySchema", () => {
       expect(result.data.iron).toBe(0);
       expect(result.data.herbs).toBe(0);
       expect(result.data.food).toBe(0);
-      expect(result.data.crystal).toBe(0);
+      expect(result.data.gems).toBe(0);
     }
   });
 

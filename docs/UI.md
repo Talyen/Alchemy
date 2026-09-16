@@ -62,7 +62,7 @@ Game-specific button shape and layout tokens live in `src/features/alchemy/share
 | Chrome icons   | [ChromeIconButton](../src/features/alchemy/shared/ui/chrome-icon-button.tsx) owns header and battle-corner icon buttons, including shared hover, active, and toggle feedback.                            |
 | Hover / press  | Primary buttons use CSS bloom without scaling; secondary buttons use background feedback. Preserve surface-specific CSS scaling and shared `active:` feedback; do not add parallel Motion hover scaling. |
 
-Card and collection artwork, including gear and trinket tiles, reserves a 1px frame across available, selected, disabled, purchased, and shine states, so changing interaction state cannot resize its artwork or row or recenter the screen. The thicker hover and selection outline is an absolute overlay, preserving the thin default border. Hover-only shine uses `card-art-shine`; persistent shine uses `has-shine-border`. Both hide the frame color while preserving its space. Pass frame Shine through `Surface.overlay` so the artwork clipping layer cannot hide it.
+Card and collection artwork, including gear and trinket tiles, reserves a 1px frame across available, selected, disabled, purchased, and shine states, so changing interaction state cannot resize its artwork or row or recenter the screen. The thicker hover and selection outline is an absolute overlay, preserving the thin default border. Hover-only shine uses `card-art-shine`; persistent shine uses `has-shine-border`. Armory item borders are hover-only, with keyboard focus matching hover; the active equipment slot keeps its shine as a selection marker. Both hide the frame color while preserving its space. Pass frame Shine through `Surface.overlay` so the artwork clipping layer cannot hide it.
 
 Battle's enabled End Turn button adds the standard 103.5% CSS hover scale over 200ms ease-out alongside its primary-button bloom. Battle pile artwork, individual mana crystals, the gold counter, and the main menu logo use the same hover scale. Pile transfer anchors remain unscaled; mana hover wrappers preserve the crystals' independent refresh animations.
 
@@ -81,8 +81,8 @@ an independent CSS-pixel scale and avoid clipped ancestors. Tooltip Size
 together. Enemy tooltip headers, outer padding, and preferred width remain
 independent of Game Size. Only the nested Trait list uses the game content scale
 as its baseline, matching Labyrinth and inspection Trait text, icons, and spacing;
-Tooltip Size also multiplies that baseline. Enemy tooltips prefer 28rem of width
-at the independent tooltip scale to give boxed Trait descriptions room to wrap. Placement recomputes width bounds when the stage or tooltip changes
+Tooltip Size also multiplies that baseline. Standard tooltips cap at 20rem of width;
+enemy tooltips prefer 32rem of width at the independent tooltip scale to give boxed Trait descriptions room to wrap. Placement recomputes width bounds when the stage or tooltip changes
 size; position-only updates preserve the resolved width to avoid forced layout. Long
 descriptions can use available width to fit; tooltips never scroll or truncate.
 

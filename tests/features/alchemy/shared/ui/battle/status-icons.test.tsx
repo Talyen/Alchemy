@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, describe, expect, it } from "vitest";
 
 import { StatusIcon } from "@/features/alchemy/shared/ui/battle/status-icons";
+import { keywordDefinitions } from "@/lib/game-data";
 
 describe("StatusIcon", () => {
   afterEach(cleanup);
@@ -38,5 +39,30 @@ describe("StatusIcon", () => {
 
     expect(screen.getByText("Predator's Focus")).toBeTruthy();
     expect(screen.queryByText("1")).toBeNull();
+  });
+
+  it("colors the Poison keyword in the Poison Dagger status tooltip", async () => {
+    render(<StatusIcon chip={{ id: "nextHitPoison", value: 1, hideValue: true }} />);
+
+    fireEvent.mouseEnter(screen.getByRole("button", { name: "Poison Dagger" }));
+
+    await waitFor(() => {
+      expect(document.querySelector(".hover-popup-panel[data-visible]")).toBeTruthy();
+    });
+    const tooltip = document.querySelector<HTMLElement>(".hover-popup-panel[data-visible]");
+    expect(tooltip?.textContent).toContain("Your next attack is converted to Poison damage.");
+    expect(screen.getByText("Poison").className).toContain(keywordDefinitions.poison.colorClass);
+  });
+
+  it("colors Stun and Freeze in the Control Immunity status tooltip", async () => {
+    render(<StatusIcon chip={{ id: "ccImmunity", value: 2, hideValue: true }} />);
+
+    fireEvent.mouseEnter(screen.getByRole("button", { name: "Control Immunity" }));
+
+    await waitFor(() => {
+      expect(document.querySelector(".hover-popup-panel[data-visible]")).toBeTruthy();
+    });
+    expect(screen.getByText("Stun").className).toContain(keywordDefinitions.stun.colorClass);
+    expect(screen.getByText("Freeze").className).toContain(keywordDefinitions.freeze.colorClass);
   });
 });

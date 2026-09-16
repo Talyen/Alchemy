@@ -32,13 +32,15 @@ export function useArmorySlotHover(key: string) {
   };
 }
 
-export function armorySlotSurfaceClass(editable: boolean, showShine: boolean) {
+export function armorySlotSurfaceClass(editable: boolean, showShine: boolean, selected = false) {
   return cn(
     cardSurfaceClass,
     collectionGridTileWidthClass,
     gearArtAspectClass,
     "group shadow-md",
-    showShine && cardShineFrameClass,
+    // Hover-only shine uses card-art-shine; the active slot keeps persistent shine as its selection marker.
+    showShine && selected && cardShineFrameClass,
+    showShine && !selected && "card-art-shine",
     !showShine && "border border-border/80",
     cardInteractiveGlowClass,
     editable ? "cursor-pointer" : "cursor-default",

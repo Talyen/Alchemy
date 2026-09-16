@@ -118,6 +118,7 @@ export function createBattleCardPlay(
   ): boolean {
     // A stale autoplay preview must never linger past the play it teased (manual takeover included).
     useUiStore.getState().setAutoplayPreviewCardId(null);
+    getPresentation().setDisplayedBattle(null);
     const currentState = getBattle().battleState;
     if (card.uid !== undefined) {
       index = currentState.hand.findIndex((candidate) => candidate.uid === card.uid && candidate.id === card.id);

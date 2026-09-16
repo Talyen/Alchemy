@@ -13,7 +13,7 @@ export const META_ONLY_TALENT_FIELDS: ReadonlySet<keyof TalentEffectManifest> = 
   "mixPotionDiscount",
   "campfireHealBonus",
   "maxHealthPerCombat",
-  "wishCrystalGold",
+  "wishGemsGold",
 ]);
 
 function operationField(effect: TalentEffectOperation): keyof TalentEffectManifest {

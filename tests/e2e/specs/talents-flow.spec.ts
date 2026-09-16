@@ -39,7 +39,8 @@ test.describe("Talents Flow", () => {
 
     await expect(resetBtn).toBeEnabled();
     await resetBtn.click();
-    await expect(page.getByText("Reset Talents?")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Reset Talents" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Reset", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Cancel" })).toBeVisible();
   });
 
@@ -65,6 +66,55 @@ test.describe("Talents Flow", () => {
           .locator(".talent-card-unlocked"),
       ).toBeVisible();
     }
+  });
+
+  test("talent header stays put between overview and tree", slow, async ({ page }) => {
+    const menu = new MenuPage(page);
+    await menu.gotoWithUnlockedMeta();
+    await menu.openTalents();
+
+    const heading = page.getByRole("heading", { level: 1 });
+    await expect(heading).toHaveText("Talents");
+    const overviewY = await heading.evaluate((element) => element.getBoundingClientRect().y);
+
+    await page.getByRole("button", { name: "Select Physical Talents" }).click();
+    await expect(page.locator(".talent-node").first()).toBeVisible();
+    await expect(heading).toHaveText("Physical");
+    expect(await heading.evaluate((element) => element.getBoundingClientRect().y)).toBe(overviewY);
+  });
+
+  test("spending the last talent point preserves node geometry", slow, async ({ page }) => {
+    const menu = new MenuPage(page);
+    await menu.gotoWithUnlockedMeta({ talentXP: { physical: 10 }, unlockedTalents: {} });
+    await menu.openTalents();
+
+    await page.getByRole("button", { name: "Select Physical Talents" }).click();
+    const nodes = page.locator(".talent-node");
+    await expect(nodes.first()).toBeVisible();
+
+    const geometry = () =>
+      nodes.evaluateAll((elements) =>
+        elements.map((element) => {
+          const rect = element.getBoundingClientRect();
+          return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+        }),
+      );
+    const scales = () => nodes.evaluateAll((elements) => elements.map((element) => getComputedStyle(element).scale));
+    // Park the mouse away from the tree so hover scale never colors the measurement.
+    await page.mouse.move(0, 0);
+    await expect.poll(async () => (await scales()).every((scale) => scale === "none")).toBe(true);
+    const before = await geometry();
+    expect(before.length).toBeGreaterThan(0);
+
+    await page.getByRole("button", { name: /Expert Blacksmith/ }).click();
+    await expect(page.getByText("1 Talent Point Remaining")).toBeHidden();
+    await expect(
+      nodes.filter({ has: page.getByText("Expert Blacksmith", { exact: true }) }).locator(".talent-card-unlocked"),
+    ).toBeVisible();
+    await page.mouse.move(0, 0);
+    await expect.poll(scales).toEqual(before.map(() => "none"));
+
+    expect(await geometry()).toEqual(before);
   });
 
   test("long talent descriptions fit on a small viewport", slow, async ({ page }) => {

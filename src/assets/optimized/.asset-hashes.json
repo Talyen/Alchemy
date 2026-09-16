@@ -983,13 +983,13 @@
     "hash": "b572ec7911e21c2ce66b8d9891883473",
     "outputHash": "1c27013c6d552683f945a83220ce17fb"
   },
-  "resource-crystal.webp": {
-    "hash": "d7d2d5b0853506ef73184b764039ab89",
-    "outputHash": "9f849807e0c2ce6888275f8000ba81ca"
-  },
   "resource-food.webp": {
     "hash": "2b30e4e45f9d6f99421e2d9a52a2e796",
     "outputHash": "8ed80f307beab258f3af013f782debbb"
+  },
+  "resource-gems.webp": {
+    "hash": "d7d2d5b0853506ef73184b764039ab89",
+    "outputHash": "9f849807e0c2ce6888275f8000ba81ca"
   },
   "resource-gold.webp": {
     "hash": "f7384b3f85fb174b7f1d9ede37879f2f",

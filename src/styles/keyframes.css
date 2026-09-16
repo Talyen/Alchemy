@@ -188,10 +188,10 @@
 @keyframes talentAllocatableIdle {
   0%,
   100% {
-    transform: scale(1);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--talent-accent) 25%, transparent);
   }
   50% {
-    transform: scale(1.025);
+    box-shadow: 0 0 18px color-mix(in srgb, var(--talent-accent) 50%, transparent);
   }
 }
 

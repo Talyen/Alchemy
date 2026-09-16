@@ -13,9 +13,9 @@ function mats(partial: Partial<MaterialInventory>): MaterialInventory {
 const GOLDEN_SALVAGE: Partial<Record<GearBaseItemId, Record<GearRarity, MaterialInventory>>> = {
   "double-axe": { basic: mats({ iron: 9 }), astral: mats({ iron: 12 }), unique: mats({ iron: 12 }) },
   staff: {
-    basic: mats({ wood: 3, crystal: 3 }),
-    astral: mats({ wood: 6, crystal: 3 }),
-    unique: mats({ wood: 6, crystal: 3 }),
+    basic: mats({ wood: 3, gems: 3 }),
+    astral: mats({ wood: 6, gems: 3 }),
+    unique: mats({ wood: 6, gems: 3 }),
   },
   quiver: { basic: mats({ hide: 3 }), astral: mats({ hide: 6 }), unique: mats({ hide: 6 }) },
   "leather-armor": { basic: mats({ hide: 3 }), astral: mats({ hide: 6 }), unique: mats({ hide: 6 }) },
