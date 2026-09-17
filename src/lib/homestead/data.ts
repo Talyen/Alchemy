@@ -83,6 +83,54 @@ export const buildings = [
       (tier) => `Gain ${tier} Gems or Gold when you Wish`,
     ),
   ),
+  defineBuilding(
+    "transmutation-crucible",
+    "Transmutation Crucible",
+    stackingTiers(
+      dualMaterialCosts("stone", "iron"),
+      { flatBurnDamage: 1, endRunIronPerRoom: 1 },
+      (tier) => `Increases Burn damage by ${tier}`,
+      "Gain Iron after each run",
+    ),
+  ),
+  defineBuilding(
+    "mycology-cellar",
+    "Mycology Cellar",
+    stackingTiers(
+      dualMaterialCosts("stone", "herbs"),
+      { poisonDamageReduction: 1, endRunHerbsPerRoom: 1 },
+      (tier) => `Reduces Poison damage taken by ${tier}`,
+      "Gain Herbs after each run",
+    ),
+  ),
+  defineBuilding(
+    "sparring-grounds",
+    "Sparring Grounds",
+    stackingTiers(
+      dualMaterialCosts("wood", "stone"),
+      { startBlock: 2 },
+      (tier) => `Start combat with ${2 * tier} Block`,
+    ),
+  ),
+  defineBuilding(
+    "archery-range",
+    "Archery Range",
+    stackingTiers(
+      dualMaterialCosts("wood", "hide"),
+      { flatArrowDamage: 1, endRunWoodPerRoom: 1 },
+      (tier) => `Increases Archery damage by ${tier}`,
+      "Gain Wood after each run",
+    ),
+  ),
+  defineBuilding(
+    "library",
+    "Library",
+    stackingTiers(
+      dualMaterialCosts("wood", "gems"),
+      { cardLeechBonusPercent: 5 },
+      (tier) => `Health restored from Leech increased by ${tier * 5}%`,
+    ),
+  ),
 ];
 
 export const farmPlots = [

@@ -233,6 +233,36 @@ export const contentAssets = [
     quality: QUALITY.homestead,
   },
   {
+    source: "Homestead/Transmutation Crucible.jpeg",
+    target: "transmutation-crucible.webp",
+    width: WIDTH.homestead,
+    quality: QUALITY.homestead,
+  },
+  {
+    source: "Homestead/Mycology Cellar.jpeg",
+    target: "mycology-cellar.webp",
+    width: WIDTH.homestead,
+    quality: QUALITY.homestead,
+  },
+  {
+    source: "Homestead/Sparring Grounds.jpeg",
+    target: "sparring-grounds.webp",
+    width: WIDTH.homestead,
+    quality: QUALITY.homestead,
+  },
+  {
+    source: "Homestead/Archery Range.jpeg",
+    target: "archery-range.webp",
+    width: WIDTH.homestead,
+    quality: QUALITY.homestead,
+  },
+  {
+    source: "Homestead/Library.jpeg",
+    target: "library.webp",
+    width: WIDTH.homestead,
+    quality: QUALITY.homestead,
+  },
+  {
     source: "Mystery Events/Abandoned Study.jpeg",
     target: "mystery-abandoned-study.webp",
     width: WIDTH.mystery,

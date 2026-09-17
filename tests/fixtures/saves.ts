@@ -109,6 +109,11 @@ export const baseHomesteadSave: HomesteadSaveFixture = {
     "runesmiths-workshop": 0,
     "companion-sanctuary": 0,
     "wishing-well": 0,
+    "transmutation-crucible": 0,
+    "mycology-cellar": 0,
+    "sparring-grounds": 0,
+    "archery-range": 0,
+    library: 0,
   },
   plantedFarms: {
     "wheat-field": 0,

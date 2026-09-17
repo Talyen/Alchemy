@@ -19,7 +19,13 @@ export const coreAssets = [
     quality: QUALITY.boon,
     requiresTransparency: true,
   },
-  { source: "Misc/Card Back.png", target: "card-back.webp", width: WIDTH.card, quality: QUALITY.boon },
+  {
+    source: "Misc/Card Back.png",
+    target: "card-back.webp",
+    width: WIDTH.card,
+    quality: QUALITY.boon,
+    requiresTransparency: true,
+  },
   {
     source: "Misc/Mana Crystal.png",
     target: "battle-mana-crystal.webp",

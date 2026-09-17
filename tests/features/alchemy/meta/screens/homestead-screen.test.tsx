@@ -165,4 +165,24 @@ describe("HomesteadScreen", () => {
       expect(filler.className).toContain("aspect-[3/4]");
     }
   });
+
+  it("paginates buildings across two pages with six on the first page", async () => {
+    render(<HomesteadScreen {...defaultProps} />);
+
+    // Page 1: 6 buildings
+    expect(screen.getByRole("button", { name: /Blacksmith/i })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Wishing Well/i })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Library/i })).toBeNull();
+
+    // Navigate to Page 2
+    fireEvent.click(screen.getByRole("button", { name: "Next page" }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Library/i })).toBeTruthy();
+    });
+    expect(screen.getByRole("button", { name: /Transmutation Crucible/i })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Mycology Cellar/i })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Sparring Grounds/i })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Archery Range/i })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Blacksmith/i })).toBeNull();
+  });
 });

@@ -22,7 +22,12 @@ export type BuildingId =
   | "alchemy-lab"
   | "runesmiths-workshop"
   | "companion-sanctuary"
-  | "wishing-well";
+  | "wishing-well"
+  | "transmutation-crucible"
+  | "mycology-cellar"
+  | "sparring-grounds"
+  | "archery-range"
+  | "library";
 
 export type FarmId = "wheat-field" | "herb-garden" | "chicken-coop" | "pasture" | "orchard" | "crystal-garden";
 
@@ -74,6 +79,8 @@ export const HOMESTEAD_BATTLE_NUMERIC_KEYS = [
   "flatNatureDamage",
   "wishGemsGold",
   "startMana",
+  "startBlock",
+  "cardLeechBonusPercent",
   "consumeHealMultiplier",
   "potionMixPotency",
   "burnDamageReduction",
@@ -104,6 +111,8 @@ interface HomesteadMetaEffects {
   endRunHerbsPerRoom: number;
   endRunHidePerRoom: number;
   endRunGemsPerRoom: number;
+  endRunIronPerRoom: number;
+  endRunWoodPerRoom: number;
   gearAstralChanceBonus: number;
 }
 

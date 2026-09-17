@@ -14,16 +14,17 @@ state when each study was made, including historical “pending approval” text
 The [approval record](./art/approved-art/approval.txt) records the final selections
 and their installation into `Raw Assets/`.
 
-| Material                                    | Location                                                                                                      |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Approved archival copies and decisions      | [Approval record](./art/approved-art/approval.txt)                                                            |
-| First resource icons and card back          | [Art trial 1](./art/art-trial-v1/preview.html)                                                                |
-| Detailed card backs and crafting currencies | [Art trial 2](./art/art-trial-v2/preview.html)                                                                |
-| Simplified Astral Wheel variants            | [Art trial 3](./art/art-trial-v3/preview.html)                                                                |
-| Illustrated card back studies               | [Art trial 4](./art/art-trial-v4/preview.html)                                                                |
-| Dark card backs with inset gemstones        | [Art trial 5](./art/art-trial-v5/preview.html)                                                                |
-| Remaining resource and crafting icons       | [Icon review](./art/remaining-icons-v1/preview.html)                                                          |
-| Deck and Discard Pile composition           | [Pile review](./art/card-piles-v1/preview.html), [production notes](./art/card-piles-v1/production-notes.txt) |
+| Material                                    | Location                                                                                                             |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Approved archival copies and decisions      | [Approval record](./art/approved-art/approval.txt)                                                                   |
+| First resource icons and card back          | [Art trial 1](./art/art-trial-v1/preview.html)                                                                       |
+| Detailed card backs and crafting currencies | [Art trial 2](./art/art-trial-v2/preview.html)                                                                       |
+| Simplified Astral Wheel variants            | [Art trial 3](./art/art-trial-v3/preview.html)                                                                       |
+| Illustrated card back studies               | [Art trial 4](./art/art-trial-v4/preview.html)                                                                       |
+| Dark card backs with inset gemstones        | [Art trial 5](./art/art-trial-v5/preview.html)                                                                       |
+| Remaining resource and crafting icons       | [Icon review](./art/remaining-icons-v1/preview.html)                                                                 |
+| Deck and Discard Pile composition           | [Pile review](./art/card-piles-v1/preview.html), [production notes](./art/card-piles-v1/production-notes.txt)        |
+| Traveler's Compass card redesign and piles  | [Compass review](./art/card-compass-v1/preview.html), [production notes](./art/card-compass-v1/production-notes.txt) |
 
 Open the HTML previews directly in a browser. Each art study keeps its local
 images and generation prompts or production notes together. The optional

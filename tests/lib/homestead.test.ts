@@ -226,6 +226,34 @@ describe("computeHomesteadEffects", () => {
     expect(computeHomesteadEffects({}, {}, { "detect-magic": 3 }).gearAstralChanceBonus).toBeCloseTo(0.1);
   });
 
+  it("transmutation-crucible adds flatBurnDamage and endRunIronPerRoom", () => {
+    const effects = computeHomesteadEffects({ "transmutation-crucible": 2 }, {}, {});
+    expect(effects.flatBurnDamage).toBe(2);
+    expect(effects.endRunIronPerRoom).toBe(2);
+  });
+
+  it("mycology-cellar adds poisonDamageReduction and endRunHerbsPerRoom", () => {
+    const effects = computeHomesteadEffects({ "mycology-cellar": 3 }, {}, {});
+    expect(effects.poisonDamageReduction).toBe(3);
+    expect(effects.endRunHerbsPerRoom).toBe(3);
+  });
+
+  it("sparring-grounds adds startBlock", () => {
+    const effects = computeHomesteadEffects({ "sparring-grounds": 2 }, {}, {});
+    expect(effects.startBlock).toBe(4);
+  });
+
+  it("archery-range adds flatArrowDamage and endRunWoodPerRoom", () => {
+    const effects = computeHomesteadEffects({ "archery-range": 3 }, {}, {});
+    expect(effects.flatArrowDamage).toBe(3);
+    expect(effects.endRunWoodPerRoom).toBe(3);
+  });
+
+  it("library adds cardLeechBonusPercent", () => {
+    const effects = computeHomesteadEffects({ library: 3 }, {}, {});
+    expect(effects.cardLeechBonusPercent).toBe(15);
+  });
+
   it("ignores unknown building IDs", () => {
     const effects = computeHomesteadEffects({ "nonexistent-building": 1 }, {}, {});
     expect(effects).toEqual(defaultHomesteadEffects);
@@ -519,6 +547,8 @@ describe("applyEndOfRunHomesteadBonuses", () => {
       endRunHerbsPerRoom: 1,
       endRunHidePerRoom: 2,
       endRunGemsPerRoom: 1,
+      endRunIronPerRoom: 1,
+      endRunWoodPerRoom: 2,
       herbFindBonus: 0.1,
     };
     const result = applyEndOfRunHomesteadBonuses(base, effects, 4);
@@ -526,7 +556,8 @@ describe("applyEndOfRunHomesteadBonuses", () => {
     expect(result.hide).toBe(0 + 8);
     expect(result.gems).toBe(1 + 4);
     expect(result.herbs).toBe(Math.floor((10 + 4) * 1.1));
-    expect(result.wood).toBe(4);
+    expect(result.iron).toBe(0 + 4);
+    expect(result.wood).toBe(4 + 8);
   });
 
   it("does not add flat herbs when only herbFindBonus is set", () => {
@@ -546,7 +577,13 @@ describe("homestead content integrity", () => {
     for (const building of buildings) {
       for (const tier of building.tiers) {
         if (!tier.nonCombatBenefitDescription) continue;
-        expect((tier.effects?.endRunFoodPerRoom ?? 0) + (tier.effects?.endRunHidePerRoom ?? 0)).toBeGreaterThan(0);
+        expect(
+          (tier.effects?.endRunFoodPerRoom ?? 0) +
+            (tier.effects?.endRunHidePerRoom ?? 0) +
+            (tier.effects?.endRunIronPerRoom ?? 0) +
+            (tier.effects?.endRunWoodPerRoom ?? 0) +
+            (tier.effects?.endRunHerbsPerRoom ?? 0),
+        ).toBeGreaterThan(0);
       }
     }
     for (const farm of farmPlots) {

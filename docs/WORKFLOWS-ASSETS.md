@@ -53,8 +53,9 @@ Set `requiresTransparency: true` in the owning art manifest when an image must h
 Also inspect approved artwork against light and dark backgrounds. The pixel check rejects opaque checkerboards and empty images but cannot prove that every background pixel is correct. If reference-based image generation repeatedly paints a checkerboard into the image, regenerate without image references using the approved visual description, then repeat pixel and visual checks. Current approved masters remain the authoring sources.
 
 `Raw Assets/Misc/Card Back.png` is the single card used in transfer animations.
-`Draw Pile.png` and `Discard Pile.png` are the approved stack and its horizontal
-mirror; both retain transparent margins and a 3:4 canvas. Keep pile artwork
+`Draw Pile.png` (active compass stack, leaning left) and `Discard Pile.png`
+(spent/dormant compass stack, leaning right) are distinct compositions, not
+mirrors; both retain transparent margins and a 3:4 canvas. Keep pile artwork
 separate from the single-card master so animations never show a stack.
 `Misc/Mana Crystal.png` generates `battle-mana-crystal.webp` for the Mana display;
 it is distinct from the playable Mana Crystals card artwork. Available crystals

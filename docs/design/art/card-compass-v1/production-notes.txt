@@ -1,0 +1,14 @@
+Traveler's Compass card and pile masters
+
+Approved by user on 2026-09-17.
+Source: Gemini image generation with master action-anime art style prompt and keyword color pips.
+Theme: Cozy fantasy, rich chestnut tooled leather, curved brass corner brackets, central 8-pointed compass rose, and 8 keyword enamel pips (Burn, Freeze, Mana/Block, Nature, Bleed, Holy, Consume, Physical).
+The discard state was generated as a paired dormant/spent variant with dimmed smoky quartz pips and dusk-patina metal.
+
+Card piles created through local Sharp composition:
+- deck-pile.png: 6-layer stack leaning left (for bottom-left HUD) with active gold brackets and vibrant pips.
+- discard-pile.png: 6-layer stack leaning right (for bottom-right HUD) using spent layers and matte dusk brackets.
+- card-back.png: single card master, 1086x1448 with genuine alpha transparency on outer corner margins.
+
+All three masters: 1086x1448, 3:4 portrait aspect ratio, genuine alpha transparency verified.
+build.mjs reproduces the stacks and HUD comparison image.

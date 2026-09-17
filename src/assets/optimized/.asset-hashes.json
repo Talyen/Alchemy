@@ -31,6 +31,10 @@
     "hash": "561d4bbbc1e96a6e5da1314e9fedcc01",
     "outputHash": "3440d700faba72670014d0cec05e2153"
   },
+  "archery-range.webp": {
+    "hash": "c0ef6143fc3f71d7c8ecb717ac70de0a",
+    "outputHash": "6148f0a2d64b488e0d3179fd7546b1d8"
+  },
   "astral-arrow.webp": {
     "hash": "c6b14fb453c6a857a482f38ab8ecccd7",
     "outputHash": "1f5c82bad426eba9392aba13251f8787"
@@ -128,8 +132,8 @@
     "outputHash": "01aa25c63a0fcc622484eaaa4877bece"
   },
   "card-back.webp": {
-    "hash": "1f9732c21f0b8cde37afc96763e53b01",
-    "outputHash": "eb97da05d239e20b50edcf718f80ade9"
+    "hash": "5276bac489860588bd6c7c5045658471",
+    "outputHash": "08373185233625b13ecee642c5c9c72d"
   },
   "caustic-jab.webp": {
     "hash": "22d7cad5190feffd0aaf57d7e2f1a01b",
@@ -244,12 +248,12 @@
     "outputHash": "d3dd1e2b7b88425a7e2521ecee113436"
   },
   "discard-pile.webp": {
-    "hash": "0bf28b1ab9b582a00c67f6706ca4cac4",
-    "outputHash": "9068c26a9d97cfce3bbef9e5c803786e"
+    "hash": "1435887cede6b4de988aeedf201760c3",
+    "outputHash": "96404f02f506b3ce26e4b200667a77d4"
   },
   "draw-pile.webp": {
-    "hash": "db0a94e31d1c31cf0a817888dcb37f31",
-    "outputHash": "826683940bb8010a7849da819dc10a91"
+    "hash": "10d86b2666a2b6479aa49cc28ce821da",
+    "outputHash": "9bea82c589a7c1e44331ae4244c77213"
   },
   "druid.webp": {
     "hash": "fd7fd12f3c166e3c149c7ebe1e0b3b9c",
@@ -679,6 +683,10 @@
     "hash": "386ad8207c925d586a5210a93d8156a6",
     "outputHash": "234eb4aa55e37677ef0c55fa2ac2f4ab"
   },
+  "library.webp": {
+    "hash": "4307bb9cd82ae95dd334edf4f97fa330",
+    "outputHash": "8bcdd5d8d4894c006101f21dbeb7f7bc"
+  },
   "lightning-arrow.webp": {
     "hash": "81dbd36930209cb7468ad9fc08240be2",
     "outputHash": "d584e0088f0f057cec603da5ff406ef0"
@@ -762,6 +770,10 @@
   "mud-elemental.webp": {
     "hash": "da354271b97a893a5de479cef4bde49e",
     "outputHash": "87a9bfc47fdc04be5c25d5c670d42225"
+  },
+  "mycology-cellar.webp": {
+    "hash": "442841e157623aac21dbe83f73b96333",
+    "outputHash": "e18243934449f79fdf24dbe8f26d6d42"
   },
   "mystery-abandoned-study.webp": {
     "hash": "3362a82c3b5373a7eb641cf284025972",
@@ -1095,6 +1107,10 @@
     "hash": "9e09cf9262d830477bda0375ac03f291",
     "outputHash": "f692c68e006556eebf840b46ebabc793"
   },
+  "sparring-grounds.webp": {
+    "hash": "59fc356559500d7cce758a5d617d276f",
+    "outputHash": "c61a0bf16e9d4f78c9a0b220b3b856d0"
+  },
   "spiked-shield.webp": {
     "hash": "7cdcf51e5c112582584aa8d71b966786",
     "outputHash": "d7dcd4bd17fa924f8869fb78ccd875e7"
@@ -1258,6 +1274,10 @@
   "tithe.webp": {
     "hash": "8dff00bba12ff8b40ea6b51e41f745aa",
     "outputHash": "7413bd3780be4a197d87a120ae8011fd"
+  },
+  "transmutation-crucible.webp": {
+    "hash": "60e93876d1d190f7449de4f37017c10a",
+    "outputHash": "fe93ece0c830c895c4c6fe9d76b399e1"
   },
   "vampire.webp": {
     "hash": "b09c3ff059a34d06db6439e74879855b",

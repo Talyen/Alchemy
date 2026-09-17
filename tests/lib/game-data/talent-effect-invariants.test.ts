@@ -76,7 +76,6 @@ const LEGACY_SNAPSHOT_FIELDS: ReadonlyArray<keyof TalentEffectManifest> = [
 
 const UNUSED_MANIFEST_ALLOWLIST: ReadonlySet<keyof TalentEffectManifest> = new Set([
   ...LEGACY_SNAPSHOT_FIELDS,
-  "startBlock",
   "damageReduction",
   "damageReductionWithCompanion",
   "poisonReducesEnemyDamage",
