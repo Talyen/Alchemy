@@ -12,10 +12,6 @@ import {
   type TrinketRewardState,
 } from "./reward-types";
 
-export function lookupTrinketEntries(ids: string[]): TrinketEntry[] {
-  return ids.map((id) => trinketById[id]).filter((trinket): trinket is TrinketEntry => Boolean(trinket));
-}
-
 function nonEmptyChoicesOrNull<T>(choices: T[]): T[] | null {
   return choices.length === 0 ? null : choices;
 }
@@ -25,22 +21,14 @@ interface ResolvedChoices<T> {
   droppedIds: string[];
 }
 
-function resolveCardChoicesWithDropped(choiceIds: string[]): ResolvedChoices<BattleCard> {
-  const valid: BattleCard[] = [];
+function resolveCatalogChoicesWithDropped<T>(
+  choiceIds: string[],
+  catalog: Record<string, T | undefined>,
+): ResolvedChoices<T> {
+  const valid: T[] = [];
   const droppedIds: string[] = [];
   for (const id of choiceIds) {
-    const entry = cardById[id];
-    if (entry) valid.push(entry);
-    else droppedIds.push(id);
-  }
-  return { valid, droppedIds };
-}
-
-function resolveTrinketChoicesWithDropped(choiceIds: string[]): ResolvedChoices<TrinketEntry> {
-  const valid: TrinketEntry[] = [];
-  const droppedIds: string[] = [];
-  for (const id of choiceIds) {
-    const entry = trinketById[id];
+    const entry = Object.hasOwn(catalog, id) ? catalog[id] : undefined;
     if (entry) valid.push(entry);
     else droppedIds.push(id);
   }
@@ -48,7 +36,7 @@ function resolveTrinketChoicesWithDropped(choiceIds: string[]): ResolvedChoices<
 }
 
 function resolveCardChoices(choiceIds: string[]): BattleCard[] | null {
-  const { valid, droppedIds } = resolveCardChoicesWithDropped(choiceIds);
+  const { valid, droppedIds } = resolveCatalogChoicesWithDropped(choiceIds, cardById);
   if (droppedIds.length > 0 && choiceIds.length > 0) {
     logError("Dropped invalid pending companion choices", "storage", { droppedIds });
   }
@@ -149,7 +137,7 @@ export function restorePendingReward(persisted: PersistedPendingReward): RewardS
         ? ({ ...shared, rewardType: "card", choices: [] } satisfies CardRewardState)
         : null;
     }
-    const { valid, droppedIds } = resolveCardChoicesWithDropped(persisted.choiceIds);
+    const { valid, droppedIds } = resolveCatalogChoicesWithDropped(persisted.choiceIds, cardById);
     if (droppedIds.length > 0) {
       logError("Dropped invalid pending card choices", "storage", { droppedIds });
     }
@@ -162,26 +150,23 @@ export function restorePendingReward(persisted: PersistedPendingReward): RewardS
     return { ...shared, rewardType: "card", choices: valid } satisfies CardRewardState;
   }
 
+  const rewardType = persisted.rewardType;
+  const toTrinketState = (choices: TrinketEntry[]) =>
+    rewardType === "boon"
+      ? ({ ...shared, rewardType: "boon", choices } satisfies BoonRewardState)
+      : ({ ...shared, rewardType: "trinket", choices } satisfies TrinketRewardState);
+
   if (persisted.choiceIds.length === 0) {
-    if (!hasSharedRewardValue(shared)) return null;
-    return persisted.rewardType === "boon"
-      ? ({ ...shared, rewardType: "boon", choices: [] } satisfies BoonRewardState)
-      : ({ ...shared, rewardType: "trinket", choices: [] } satisfies TrinketRewardState);
+    return hasSharedRewardValue(shared) ? toTrinketState([]) : null;
   }
-  const { valid, droppedIds } = resolveTrinketChoicesWithDropped(persisted.choiceIds);
+  const { valid, droppedIds } = resolveCatalogChoicesWithDropped(persisted.choiceIds, trinketById);
   if (droppedIds.length > 0) {
     logError("Dropped invalid pending trinket/boon choices", "storage", { droppedIds });
   }
   if (valid.length === 0) {
-    return hasSharedRewardValue(shared)
-      ? persisted.rewardType === "boon"
-        ? ({ ...shared, rewardType: "boon", choices: [] } satisfies BoonRewardState)
-        : ({ ...shared, rewardType: "trinket", choices: [] } satisfies TrinketRewardState)
-      : null;
+    return hasSharedRewardValue(shared) ? toTrinketState([]) : null;
   }
-  return persisted.rewardType === "boon"
-    ? ({ ...shared, rewardType: "boon", choices: valid } satisfies BoonRewardState)
-    : ({ ...shared, rewardType: "trinket", choices: valid } satisfies TrinketRewardState);
+  return toTrinketState(valid);
 }
 
 export interface RestoredPendingReward {

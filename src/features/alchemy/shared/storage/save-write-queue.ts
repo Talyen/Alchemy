@@ -55,15 +55,27 @@ export class SaveWriteQueue {
     data: UnstampedSaveData,
     write: (data: UnstampedSaveData) => Promise<SaveWriteOutcome>,
   ): Promise<SaveWriteOutcome> {
-    // Note: the queue retains `data` by reference until the runner drains it
-    // (coalescing swaps in the latest object). Callers must not mutate the
-    // snapshot after enqueue; spread before passing when reusing an object.
     if (this.writesDisabled || this.isClearPending) {
       this.discardPending();
       return Promise.resolve("skipped");
     }
-    if (this.coalesced && this.coalesced.storageEpoch === this.storageEpoch) {
-      this.coalesced.data = data;
+    // The queue owns its snapshot: clone on entry so a caller mutating after
+    // enqueue cannot corrupt the pending write (coalescing swaps in the
+    // latest clone). Payloads are JSON-serializable by construction; a
+    // type-violating payload degrades to "failed" instead of throwing into
+    // terminal-flush callers that do not expect a synchronous throw.
+    let owned: UnstampedSaveData;
+    try {
+      owned = structuredClone(data);
+    } catch (error) {
+      logStorageFailure("Save snapshot could not be cloned", error);
+      return Promise.resolve("failed");
+    }
+    // A non-null coalesced slot always carries the current epoch:
+    // cancelPendingWrites bumps the epoch and clears the slot together, so no
+    // stale-epoch branch is needed here (staleness is still checked at drain).
+    if (this.coalesced) {
+      this.coalesced.data = owned;
       return this.coalesced.completion;
     }
     this.discardPending();
@@ -71,7 +83,7 @@ export class SaveWriteQueue {
     const completion = new Promise<SaveWriteOutcome>((settle) => {
       resolve = settle;
     });
-    this.coalesced = { data, storageEpoch: this.storageEpoch, completion, resolve };
+    this.coalesced = { data: owned, storageEpoch: this.storageEpoch, completion, resolve };
     if (!this.runnerActive) {
       this.runnerActive = true;
       this.chain = this.chain.then(async () => {

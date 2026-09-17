@@ -170,4 +170,22 @@ describe("pending reward persistence", () => {
       expect(restored.choices[0]?.title).toBe(excludedCard!.title);
     }
   });
+
+  it("safely ignores Object prototype property names in choiceIds", () => {
+    const plain = cardLibrary.find((card) => card.id === "slash")!;
+    const rewardState = {
+      ...createEmptyRewardState(),
+      rewardType: "card" as const,
+      choices: [plain],
+    };
+    const persisted = serializePendingReward(rewardState)!;
+    if (persisted.rewardType === "card") {
+      persisted.choiceIds = ["toString", "constructor", "valueOf", plain.id];
+    }
+    const restored = restorePendingReward(persisted);
+    expect(restored?.rewardType).toBe("card");
+    if (restored?.rewardType === "card") {
+      expect(restored.choices).toEqual([plain]);
+    }
+  });
 });

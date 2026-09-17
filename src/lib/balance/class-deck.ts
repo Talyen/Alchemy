@@ -2,6 +2,7 @@ import { createMixedPotion } from "@/lib/alchemist";
 import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import {
   characters,
+  cloneBattleCard,
   getCardKeywords,
   getStartingDeck,
   type BattleCard,
@@ -47,22 +48,41 @@ function buildAlchemistMixedPotions(seed: number): BattleCard[] {
   return mixed;
 }
 
+interface ClassDeckTemplate {
+  startingDeck: readonly BattleCard[];
+  candidates: readonly BattleCard[];
+}
+
+const CLASS_DECK_TEMPLATES = new Map<CharacterId, ClassDeckTemplate>();
+
+function getClassDeckTemplate(characterId: CharacterId): ClassDeckTemplate {
+  let template = CLASS_DECK_TEMPLATES.get(characterId);
+  if (!template) {
+    const startingDeck = getStartingDeck(characterId);
+    const startingIds = new Set(startingDeck.map((card) => card.id));
+    const affinityKeywords = characters[characterId].keywords;
+    const candidates = getOfferableCardPool().filter(
+      (card) => !startingIds.has(card.id) && cardMatchesAffinity(card, affinityKeywords),
+    );
+    template = { startingDeck, candidates };
+    CLASS_DECK_TEMPLATES.set(characterId, template);
+  }
+  return template;
+}
+
 export function buildClassSimDeck(characterId: CharacterId, preset: TalentPreset, seed: number): BattleCard[] {
   const rng = createSeededRng(seed);
 
   if (characterId === "wildcard") {
     const pool = shuffle([...getOfferableCardPool()], rng);
-    return pool.slice(0, WILDCARD_SIM_DECK_SIZE[preset]);
+    return pool.slice(0, WILDCARD_SIM_DECK_SIZE[preset]).map(cloneBattleCard);
   }
 
-  const startingDeck = getStartingDeck(characterId);
-  const startingIds = new Set(startingDeck.map((card) => card.id));
-  const affinityKeywords = characters[characterId].keywords;
-  const candidates = getOfferableCardPool().filter(
-    (card) => !startingIds.has(card.id) && cardMatchesAffinity(card, affinityKeywords),
-  );
+  const { startingDeck, candidates } = getClassDeckTemplate(characterId);
   const picked = sampleItems(candidates, CLASS_SIM_AFFINITY_EXTRAS[preset], rng);
-  const deck = [...startingDeck, ...picked];
+  // Templates hold shared catalog objects: clone on return so battle
+  // mutations cannot leak across sims (see cloneBattleCard contract).
+  const deck = [...startingDeck, ...picked].map(cloneBattleCard);
 
   if (characterId === "alchemist") {
     return [...deck, ...buildAlchemistMixedPotions(seed)];

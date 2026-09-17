@@ -22,10 +22,12 @@ export interface BattleSimulationConfig {
   maxTurns?: number;
   policy?: BalancePlayPolicy;
   playerHealth?: number;
+  /** Base max health before talent-point, run-bonus, and gear bonuses (which always apply). */
   playerMaxHealth?: number;
   gold?: number;
   appliesFightPacing?: boolean;
   trackAnomalies?: boolean;
+  trackMetrics?: boolean;
 }
 
 export interface BattleSimulationResult {

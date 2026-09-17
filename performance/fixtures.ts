@@ -27,6 +27,7 @@ import {
   type ScenarioRunResult,
 } from "./report";
 import { PERF_VIEWPORT } from "./viewport";
+import { MIN_PAINT_PX } from "./battle-art-diagnostics";
 import { STARTUP_READY_MARK } from "../src/lib/performance/startup-marks";
 import { requirePositiveFiniteObservation } from "./scenario-contracts";
 
@@ -129,10 +130,10 @@ async function assertBattleCardArtIfPresent(page: Page): Promise<void> {
   await expect
     .poll(
       async () => {
-        return img.evaluate((el) => {
+        return img.evaluate((el, minPx) => {
           const rect = (el as HTMLImageElement).getBoundingClientRect();
-          return (el as HTMLImageElement).naturalWidth > 0 && rect.width >= 40 && rect.height >= 40 ? 1 : 0;
-        });
+          return (el as HTMLImageElement).naturalWidth > 0 && rect.width >= minPx && rect.height >= minPx ? 1 : 0;
+        }, MIN_PAINT_PX);
       },
       { timeout: 15_000 },
     )
@@ -162,7 +163,7 @@ export const test = base.extend<PerfFixtures>({
         collectObservations,
         captureElectronLaunchTiming = false,
       }) => {
-        testInfo.setTimeout(isTrace ? 180_000 : 300_000);
+        testInfo.setTimeout(300_000);
         ensureOutputDirs();
 
         const measuredSamples: FrameSampleRaw[] = [];

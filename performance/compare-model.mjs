@@ -51,6 +51,13 @@ export function checkEnvironmentCompatibility(beforeEnv, afterEnv) {
   if (beforeEnv.browser !== undefined && afterEnv.browser !== undefined && beforeEnv.browser !== afterEnv.browser) {
     errors.push(`Incompatible browser: "${beforeEnv.browser}" vs "${afterEnv.browser}".`);
   }
+  if (
+    beforeEnv.runsPerScenario !== undefined &&
+    afterEnv.runsPerScenario !== undefined &&
+    beforeEnv.runsPerScenario !== afterEnv.runsPerScenario
+  ) {
+    errors.push(`Incompatible runs per scenario: ${beforeEnv.runsPerScenario} vs ${afterEnv.runsPerScenario}.`);
+  }
 
   return { compatible: errors.length === 0, errors };
 }
@@ -97,6 +104,22 @@ export function deriveComparisonMetrics(metrics) {
     stallsOver100ms: ratePer30s(metrics.stallsOver100ms),
     longTasksOver50ms: ratePer30s(metrics.longTasksOver50ms),
   };
+}
+
+export function formatCompareNumber(n, digits = 2) {
+  return Number.isFinite(n) ? n.toFixed(digits) : "n/a";
+}
+
+export function renderComparisonTable(deltas) {
+  const lines = ["| Metric | Before | After | Δ | % |", "| --- | ---: | ---: | ---: | ---: |"];
+  for (const d of deltas) {
+    const pct = d.percentChange === null ? "n/a" : `${formatCompareNumber(d.percentChange, 1)}%`;
+    const mark = d.improved === true ? " improved" : d.improved === false ? " regressed" : "";
+    lines.push(
+      `| ${d.label} | ${formatCompareNumber(d.before)} | ${formatCompareNumber(d.after)} | ${formatCompareNumber(d.delta)}${mark} | ${pct} |`,
+    );
+  }
+  return lines;
 }
 
 export function compareMetrics(beforeMetrics, afterMetrics) {

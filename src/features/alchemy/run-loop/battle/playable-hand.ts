@@ -1,5 +1,11 @@
-import { canPlayCard, type BattleSnapshot, type CardPlayOptions } from "@/lib/battle";
-import { getEffectiveDamageScore, getImmediateDefense, pickHighestScoring } from "@/lib/balance/play-policy";
+import {
+  canPlayCard,
+  getEffectiveDamageScore,
+  getImmediateDefense,
+  pickHighestScoring,
+  type BattleSnapshot,
+  type CardPlayOptions,
+} from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 import { HALF_DIVISOR } from "@/lib/game-constants";
 

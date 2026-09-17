@@ -12,7 +12,12 @@ import {
 } from "@/lib/game-constants";
 import { CURRENT_SAVE_SCHEMA_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_CONTENT_VERSION } from "../metadata";
 import { SETTINGS_RANGES, resolveAutoplayEnabled } from "@/lib/settings-values";
-import { deduplicatedSetArraySchema, deduplicatedStringArraySchema, isUsableLiveCombatGold } from "./validation-utils";
+import {
+  deduplicatedSetArraySchema,
+  deduplicatedStringArraySchema,
+  isUsableLiveCombatGold,
+  toFiniteNonNegativeInt,
+} from "./validation-utils";
 import {
   CHARACTER_IDS,
   CharacterIdSchema,
@@ -132,7 +137,13 @@ export const SaveDataSchema = z
     bondedCompanions: createTierRecordSchema(companionTierItems).catch(() => createEmptyTierRecord(companionTierItems)),
     completedDifficulties: CompletedDifficultiesSchema.catch(EMPTY_COMPLETED_DIFFICULTIES),
     finishedRunCharacters: deduplicatedSetArraySchema(CHARACTER_IDS, CharacterIdSchema),
-    lastSavedAt: z.number().int().nonnegative().catch(0),
+    // Single normalizer shared with getRawLastSavedAt (migration/index.ts):
+    // fractional timestamps floor instead of resetting to 0, so candidate
+    // freshness ordering agrees between the raw future check and this schema.
+    lastSavedAt: z.preprocess(
+      (value) => toFiniteNonNegativeInt(value) ?? value,
+      z.number().int().nonnegative().catch(0),
+    ),
   })
   .transform((save) => {
     const flatInventory = flattenGearInventories(save.gearInventories);

@@ -107,7 +107,7 @@ export const useSettingsStore = create<SettingsStore>()((set) => ({
     set({ ...withDerivedAutoplay(createDefaultSettingsSaveFields()), showClearSaveConfirm: false }),
 }));
 
-function selectSettingsSaveFields(state: Pick<SettingsStore, keyof SettingsSaveFields>): SettingsSaveFields {
+export function selectSettingsSaveFields(state: Pick<SettingsStore, keyof SettingsSaveFields>): SettingsSaveFields {
   return {
     selectedAspectRatio: state.selectedAspectRatio,
     displayMode: state.displayMode,
@@ -126,7 +126,10 @@ function selectSettingsSaveFields(state: Pick<SettingsStore, keyof SettingsSaveF
 
 export const settingsPersistenceCodec: StandalonePersistenceCodec<SettingsSaveFields> = {
   createDefault: createDefaultSettingsSaveFields,
-  encode: () => withDerivedAutoplay(selectSettingsSaveFields(useSettingsStore.getState())),
+  // Pure selection: the live invariant is owned by the setters above (which
+  // derive on every write), load repair by SaveDataSchema, and direct-hydrate
+  // safety by hydrate below. Encode adds no further derivation.
+  encode: () => selectSettingsSaveFields(useSettingsStore.getState()),
   hydrate: (fields) => {
     useSettingsStore.setState(withDerivedAutoplay(selectSettingsSaveFields(fields)));
   },

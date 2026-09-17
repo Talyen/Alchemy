@@ -31,6 +31,16 @@ describe("SaveWriteQueue", () => {
     expect(queue.isIdle).toBe(true);
   });
 
+  it("owns its snapshot so caller mutations after enqueue cannot corrupt the write", async () => {
+    const queue = new SaveWriteQueue();
+    const write = vi.fn().mockResolvedValue("saved");
+    const data = snapshot(1);
+    const outcome = queue.enqueue(data, write);
+    data.gold = 999;
+    expect(await outcome).toBe("saved");
+    expect(write).toHaveBeenCalledExactlyOnceWith(snapshot(1));
+  });
+
   it("coalesces requests before the runner starts", async () => {
     const queue = new SaveWriteQueue();
     const write = vi.fn().mockResolvedValue("saved");
@@ -116,5 +126,15 @@ describe("SaveWriteQueue", () => {
     expect(queue.areWritesDisabled()).toBe(false);
     expect(await queue.enqueue(snapshot(1), async () => "saved")).toBe("saved");
     expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns skipped for uncloneable payloads while writes are disabled", async () => {
+    const queue = new SaveWriteQueue();
+    queue.setWritesDisabled(true);
+    const write = vi.fn().mockResolvedValue("saved" as const);
+    const circular: Record<string, unknown> = {};
+    circular.self = circular;
+    expect(await queue.enqueue(circular as unknown as ReturnType<typeof snapshot>, write)).toBe("skipped");
+    expect(write).not.toHaveBeenCalled();
   });
 });

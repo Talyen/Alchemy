@@ -2,18 +2,11 @@ import { enemyById, isEnemyId } from "@/lib/game-data";
 import { ANOMALY_THRESHOLD_BY_PRESET } from "./anomalies";
 import { formatLengthBand, formatWinRateBand, isLengthOutsideBand, isWinRateOutsideTypeBand } from "./findings-bands";
 import { titleFor, type ReportEnemyType, type TitleLookupKind } from "./report-catalog";
+import { escapeHtml, formatPercent, renderReportPage } from "./report-layout";
 import { reportMethodologyLines } from "./report-methodology";
 import type { BalanceReportModel, PairedTierRow } from "./report-model";
 import type { ReportRunOptions } from "./report-options";
 import type { PairedDelta, RateCell } from "./report-rankings";
-
-export function escapeHtml(value: string): string {
-  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
-}
-
-export function formatPercent(value: number): string {
-  return `${(value * 100).toFixed(1)}%`;
-}
 
 const percent = formatPercent;
 
@@ -97,30 +90,9 @@ export function renderBalanceReportHtml(model: BalanceReportModel, options: Repo
   const rateHeaderTier = (label: string) =>
     `<th>Win ${label}</th><th>Wins / Defeats / Timeouts ${label}</th><th>Timeout ${label}</th><th>Turns ${label}</th><th>HP ${label}</th><th>Enemy attacks ${label}</th><th>Ability uses ${label}</th><th>Trait activations ${label}</th><th>Wins before attack ${label}</th>`;
 
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Balance Report</title>
-<style>
-  body { font-family: -apple-system, system-ui, sans-serif; background: #0f0f12; color: #d4d4d8; padding: 2rem; }
-  h1 { color: #e4e4e7; border-bottom: 1px solid #27272a; padding-bottom: 0.5rem; }
-  h2 { color: #a1a1aa; margin-top: 2rem; }
-  table { border-collapse: collapse; width: 100%; margin-bottom: 1.5rem; font-size: 0.875rem; }
-  th { background: #18181b; color: #a1a1aa; text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid #27272a; font-weight: 600; }
-  td { padding: 0.4rem 0.75rem; border-bottom: 1px solid #1f1f23; vertical-align: top; }
-  tr:hover td { background: #1a1a1e; }
-  .pos { color: #4ade80; }
-  .neg { color: #f87171; }
-  .noisy { color: #71717a; }
-  .meta { color: #71717a; font-size: 0.8rem; margin-bottom: 1rem; }
-  .scroll { overflow-x: auto; }
-  a { color: #93c5fd; }
-</style>
-</head>
-<body>
-<h1>Balance Report</h1>
+  return renderReportPage({
+    title: "Balance Report",
+    body: `<h1>Balance Report</h1>
 <p class="meta"><a href="../balance-findings.html">Findings summary</a> (preferred). This page is the full matrix — do not use it as the default read.</p>
 <p class="meta">policy=${escapeHtml(meta.policy)} | loadout=${escapeHtml(meta.loadoutMode)} | iterations=${meta.iterations} | pairedIterations=${meta.pairedIterations} | cardDeckSamples=${meta.cardDeckSamples} | deckSeeds=${meta.deckSeeds}</p>
 
@@ -203,7 +175,6 @@ ${anomalyRows}
 <h2>All Anomaly Metrics</h2>
 <div class="scroll"><table><thead><tr><th>Field</th><th>Early</th><th>Mid</th><th>Late</th></tr></thead><tbody>
 ${metricRows}
-</tbody></table></div>
-</body>
-</html>`;
+</tbody></table></div>`,
+  });
 }

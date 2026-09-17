@@ -2,7 +2,7 @@ import { expect, type Page } from "@playwright/test";
 import type { LabyrinthMap } from "@/lib/content-systems/types";
 import type { BattleCard } from "@/lib/game-data/types";
 import { SAVE_KEY } from "@/lib/game-constants";
-import { baseHomesteadSave, ALL_PLAYABLE_CHARACTERS, DEFAULT_DISCOVERED_CARD_IDS } from "../fixtures/saves";
+import { baseHomesteadSave, BASE_ROSTER_CHARACTERS, DEFAULT_DISCOVERED_CARD_IDS } from "../fixtures/saves";
 import type { InjectedBattleState } from "../fixtures/battle-state";
 import { gridLabyrinthMapFixture } from "../fixtures/labyrinth-map";
 import { makeHighDamageCard } from "./cards";
@@ -160,7 +160,7 @@ function buildActiveRunSave(overrides: Record<string, unknown>) {
       runBoons: [],
       ...activeRunData,
     },
-    finishedRunCharacters: [...ALL_PLAYABLE_CHARACTERS],
+    finishedRunCharacters: [...BASE_ROSTER_CHARACTERS],
     discoveredCardIds: Array.isArray(discoveredCardIds) ? discoveredCardIds : [...DEFAULT_DISCOVERED_CARD_IDS],
   };
   if (Array.isArray(encounteredEnemyIds)) save.encounteredEnemyIds = encounteredEnemyIds;
@@ -278,7 +278,7 @@ export async function injectLabyrinthRun(
     contentSystemType: "labyrinth",
     labyrinthMap: map,
     discoveredCardIds: options.discoveredCardIds ?? ["slash"],
-    finishedRunCharacters: [...ALL_PLAYABLE_CHARACTERS],
+    finishedRunCharacters: [...BASE_ROSTER_CHARACTERS],
     ...options.runOverrides,
   });
   if (!desktop) await page.goto("/");

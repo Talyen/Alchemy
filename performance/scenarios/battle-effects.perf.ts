@@ -25,7 +25,6 @@ test.describe("battle-effects", () => {
       interact: async (page, phase) => {
         const battle = new BattlePage(page);
         const deadline = Date.now() + MEASURE_MS;
-        let turnIndex = 0;
         while (Date.now() < deadline) {
           if (await battle.isBattleOver()) break;
 
@@ -42,8 +41,7 @@ test.describe("battle-effects", () => {
 
           if (await battle.isBattleOver()) break;
 
-          await runMeasuredEndTurn(page, battle, phase, turnIndex);
-          turnIndex += 1;
+          await runMeasuredEndTurn(page, battle, phase);
           await delay(200);
         }
       },

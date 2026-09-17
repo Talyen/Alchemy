@@ -19,10 +19,7 @@ export function checkScenarioCompatibility(
   afterScenario?: any,
 ): { compatible: boolean; errors: string[] };
 
-export function assertScenarioCompatibility(
-  beforeScenario?: any,
-  afterScenario?: any,
-): void;
+export function assertScenarioCompatibility(beforeScenario?: any, afterScenario?: any): void;
 
 export function deriveComparisonMetrics<T>(metrics: T): T;
 
@@ -34,3 +31,7 @@ export function meetsOptimizationRule(deltas: any[]): {
 };
 
 export function compareReports(beforeReport: any, afterReport: any): any;
+
+export function formatCompareNumber(n: any, digits?: number): string;
+
+export function renderComparisonTable(deltas: any[]): string[];

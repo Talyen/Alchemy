@@ -5,7 +5,10 @@ import {
 } from "@/lib/validation/metadata";
 import type { SaveData } from "@/features/alchemy/shared/storage/types";
 
-export const ALL_PLAYABLE_CHARACTERS = ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"];
+// Every hero except wildcard: finishing as druid unlocks wildcard (the final
+// unlock-chain entry), so using this as finishedRunCharacters starts injected
+// saves with the full roster available.
+export const BASE_ROSTER_CHARACTERS = ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"];
 
 export const DEFAULT_DISCOVERED_CARD_IDS = [
   "slash",
@@ -97,7 +100,7 @@ export const baseHomesteadSave: HomesteadSaveFixture = {
   ...saveEnvelopeFixture(),
   rememberAutoplayPreference: false,
   autoplayEnabled: false,
-  finishedRunCharacters: [...ALL_PLAYABLE_CHARACTERS],
+  finishedRunCharacters: [...BASE_ROSTER_CHARACTERS],
   materialInventory: { wood: 999, stone: 999, iron: 999, food: 999, herbs: 999, hide: 999, gems: 999 },
   constructedBuildings: {
     "blacksmiths-forge": 0,

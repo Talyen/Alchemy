@@ -11,7 +11,7 @@ export default defineConfig({
   ...baseConfig,
   test: {
     ...(baseTest as object),
-    include: ["tests/balance/**/*.test.ts"],
+    include: ["tests/balance/**/*.test.ts", "tests/lib/balance/**/*.test.ts"],
     exclude: baseExclude,
     environment: "node",
   },

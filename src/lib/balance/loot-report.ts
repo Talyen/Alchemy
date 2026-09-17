@@ -130,6 +130,7 @@ function measureCell(
 
 export function buildLootBalanceReport(samples = 1000) {
   if (!Number.isInteger(samples) || samples < 1) throw new Error("Loot report samples must be a positive integer");
+  if (samples > 10_000) throw new Error("Loot report samples capped at 10,000 per cell to bound runtime");
   const depths = [
     ...new Set([
       1,

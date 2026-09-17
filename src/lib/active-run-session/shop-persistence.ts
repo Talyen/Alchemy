@@ -11,9 +11,15 @@ import {
   type ShopState,
   type TrinketShopState,
 } from "./shop-session-types";
+import { trinketById, type TrinketEntry } from "@/lib/game-data";
 import { gearDefinitions } from "@/lib/gear/definitions";
-import { lookupTrinketEntries } from "./pending-reward-persistence";
 import { repairShopOfferings, shopItemSlotKey } from "./shop-offering-repair";
+
+export function lookupTrinketEntries(ids: readonly string[]): TrinketEntry[] {
+  return ids
+    .map((id) => (Object.hasOwn(trinketById, id) ? trinketById[id] : undefined))
+    .filter((trinket): trinket is TrinketEntry => Boolean(trinket));
+}
 
 function hydrateRefreshableFields(data: RefreshableShopFields): RefreshableShopFields {
   return {
@@ -71,11 +77,10 @@ export function serializeTrinketShopState(state: TrinketShopState): PersistedTri
 }
 
 export function hydrateTrinketShopState(data: PersistedTrinketShopState): TrinketShopState {
-  const knownIds = new Set(lookupTrinketEntries(data.trinketIds).map((entry) => entry.id));
   const repaired = repairShopOfferings(
     data.trinketIds,
     data.purchasedSlotKeys ?? [],
-    (id) => knownIds.has(id),
+    (id) => Object.hasOwn(trinketById, id),
     shopItemSlotKey,
   );
   return {

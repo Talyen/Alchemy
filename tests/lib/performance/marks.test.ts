@@ -6,6 +6,7 @@ import {
   markBattleStage,
   markStartupReady,
 } from "@/lib/performance/marks";
+import { STARTUP_READY_MARK as STARTUP_SHIM_MARK } from "@/lib/performance/startup-marks";
 
 afterEach(() => {
   performance.clearMarks(STARTUP_READY_MARK);
@@ -27,6 +28,7 @@ afterEach(() => {
 describe("performance marks", () => {
   it("exposes startup and battle mark contracts from one module", () => {
     expect(STARTUP_READY_MARK).toBe("alchemy:startup:ready");
+    expect(STARTUP_SHIM_MARK).toBe(STARTUP_READY_MARK);
     expect(BATTLE_STAGE_MARK_PREFIX).toBe("alchemy:battle:");
     expect(battleStageMarkName("draw-end")).toBe("alchemy:battle:draw-end");
   });
@@ -42,5 +44,12 @@ describe("performance marks", () => {
     });
     expect(() => markStartupReady()).not.toThrow();
     expect(() => markBattleStage("draw-start")).not.toThrow();
+  });
+
+  it("swallows User Timing read failures", () => {
+    vi.spyOn(performance, "getEntriesByName").mockImplementation(() => {
+      throw new Error("unavailable");
+    });
+    expect(() => markStartupReady()).not.toThrow();
   });
 });

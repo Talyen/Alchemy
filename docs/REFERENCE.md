@@ -154,7 +154,7 @@ ALCHEMY_BALANCE_PACING=off npm run balance:sim
 npm run test:balance
 ```
 
-`play-policy.ts` names the skill-floor scoring weights; changing them changes simulation policy, not game balance. `findings.ts` collects candidates, while `findings-selection.ts` owns deduplication, ranking, matchup clustering, and bucket selection. `report-methodology.ts` supplies shared HTML/JSON methodology without importing the simulation runner.
+Live autoplay scoring lives in `src/lib/battle/autoplay-policy.ts` and is game-design owned; changing those weights changes autoplay and Wish picks in real runs. `src/lib/balance/play-policy.ts` re-exports that policy so reports match the skill floor — fork sim-local scoring there instead of retuning live. `findings.ts` collects candidates, while `findings-selection.ts` owns deduplication, ranking, matchup clustering, and bucket selection. `report-methodology.ts` supplies shared HTML/JSON methodology without importing the simulation runner. Shared HTML shell, escaping, and JSON stringification live in `report-layout.ts`; gauntlet depths and typical gear-roll depth live in `report-catalog.ts` / `gear-preset.ts`.
 
 Exact presets, finding bands, report grouping, pairing methodology, and measurement semantics are owned by `src/lib/balance/` and the generated report; use findings as review input rather than applying tunings automatically. The summary opens `reports/balance-findings.html` and writes a JSON companion.
 

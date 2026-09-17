@@ -14,6 +14,12 @@ import type { TalentPreset } from "./simulator-types";
 const MID_GEAR_SLOTS: GearSlot[] = ["main-hand", "body"];
 const LATE_GEAR_SLOTS: GearSlot[] = ["main-hand", "off-hand", "body", "left-accessory", "right-accessory"];
 
+// Late-campaign probe roll for typical sim gear. Both the typical loadout and
+// the gear-ablation sweep use this so gear deltas stay comparable. Tier depth
+// is intentionally not used here: mid/late sims probe the same loot curve.
+export const SIM_GEAR_ROLL_DEPTH = 24;
+export const SIM_GEAR_ROLL_SOURCE = "mystery" as const;
+
 function slotsForPreset(preset: TalentPreset): GearSlot[] {
   if (preset === "early") return [];
   if (preset === "mid") return MID_GEAR_SLOTS;
@@ -76,8 +82,8 @@ export function buildTypicalGearEffects(
       1,
       rng,
       resolveLootWeights({
-        source: "mystery",
-        progress: { depth: 24, highestCompletedDifficulty: null },
+        source: SIM_GEAR_ROLL_SOURCE,
+        progress: { depth: SIM_GEAR_ROLL_DEPTH, highestCompletedDifficulty: null },
         astralChanceBonus,
       }),
       new Set(),

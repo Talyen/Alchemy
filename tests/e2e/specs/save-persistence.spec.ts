@@ -33,10 +33,8 @@ function getSavedBattleTurn(page: import("@playwright/test").Page): Promise<numb
   }, SAVE_KEY);
 }
 
-function persistedPurseGold(save: { gold?: unknown; activeRun?: { runGold?: unknown } | null }): number {
-  const runGold = typeof save.activeRun?.runGold === "number" ? save.activeRun.runGold : 0;
-  const gold = typeof save.gold === "number" ? save.gold : 0;
-  return runGold > 0 ? runGold : gold;
+function persistedPurseGold(save: { gold?: unknown }): number {
+  return typeof save.gold === "number" ? save.gold : 0;
 }
 
 test.describe("Save Persistence & Resume", () => {

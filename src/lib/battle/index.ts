@@ -1,4 +1,11 @@
 export * from "./battle-setup";
+export {
+  AUTOPLAY_EFFECT_SCORE,
+  getEffectiveDamageScore,
+  getImmediateDamage,
+  getImmediateDefense,
+  pickHighestScoring,
+} from "./autoplay-policy";
 export { isAttackCard } from "./card-classification";
 export { canPlayCard, playBattleCardResolved, type CardPlayOptions } from "./card-play";
 export { getBattleCardPlayTarget } from "./card-play-target";

@@ -16,7 +16,7 @@ Increment the schema version for structural or meaning changes that require a su
 2. Change version metadata only as required; never advance the supported floor casually.
 3. For a supported transformation, (re)introduce an ordered migration table covering every increment and apply it before current-shape validation. Update schema and hydration defaults together.
 4. Change the save shape, its codec, its fixtures, and `RUN_PROFILE_SAVE_KEYS` together: the run-profile key list is an explicit tuple with a compile-time completeness check, so adding a `PermanentProgressFields` member fails the build until the save contract is updated deliberately.
-5. Add previous-version fixtures to `tests/fixtures/current-saves.ts` when supported versions diverge. Preserve playable state and progression, not just field presence. The migration contract test pins the floor while no migrations are pending.
+5. Add previous-version fixtures to `tests/fixtures/current-saves.ts` when supported versions diverge. Preserve playable state and progression, not just field presence. The migration contract test pins the floor while no migrations are pending. While the floor equals the current schema there is no history to keep; `current-saves.ts` holds only the current-shape fixture (gear/currency coverage lives in the `gear-save` / `save-data-schema` suites).
 6. Run the changed-path gate, which selects the full save/persistence suite.
 
 ## Test expectations
@@ -35,7 +35,7 @@ Preserve complete saved card effects, descriptions, and explicit Consume overrid
 
 ## Defaults and resume normalization
 
-`createDefaultSaveData()` (`storage/defaults.ts`) is the top-level defaults owner and delegates to `SaveDataSchema.parse({})`, so top-level keys and values cannot drift (pinned by the migration contract test). Domain codec defaults must still be updated together: `createDefaultSettingsSaveFields` (`shared/stores/settings-store.ts`), `createDefaultProfileSaveFields` (`shared/stores/profile-store-types.ts`), `createInitialGearState` (`shared/stores/gear-actions.ts`), and `createInitialPermanentFields` (`shared/stores/run-state-init.ts`), plus both fixture builders (`tests/fixtures/saves.ts` campaign-full, `tests/helpers/save-candidate-fixtures.ts` candidate-minimal). Validation supplies safe current-field defaults. Normalization repairs current-run choices and catalog references; hydration restores runtime cards and manifests. Repair happens in two layers with distinct owners: schema load-repair (`SaveDataSchema` transform in `save-data.ts`: live-combat gold override, autoplay derive, orphan gear-loadout prune) runs first, then codec hydrate-repair (`hydrateAlchemyPersistenceFields` in `storage/persistence.ts` plus run-profile codec: unknown-companion prune, homestead effects, unique ownership union). Preserve valid saved card modifications, Health, defenses, flags, pending choices, and RNG. Never reapply starting grants or resolve an action during normalization. Keep material defaults and current field names; retired crystal/recovery and historical Talent conversions are no longer accepted as aliases. Live combat gold intentionally overrides the purse when finite and non-negative; that override is not a repair warning.
+`createDefaultSaveData()` (`storage/defaults.ts`) is the top-level defaults owner: the Zod schema is parsed once into a frozen singleton and every caller receives a fresh clone, so top-level keys and values cannot drift (pinned by the migration contract test). Domain codec defaults must still be updated together: `createDefaultSettingsSaveFields` (`shared/stores/settings-store.ts`), `createDefaultProfileSaveFields` (`shared/stores/profile-store-types.ts`), `createInitialGearState` (`shared/stores/gear-actions.ts`), and `createInitialPermanentFields` (`shared/stores/run-state-init.ts`), plus both fixture builders (`tests/fixtures/saves.ts` campaign-full, `tests/helpers/save-candidate-fixtures.ts` candidate-minimal). Validation supplies safe current-field defaults. Normalization repairs current-run choices and catalog references; hydration restores runtime cards and manifests. Repair happens in two layers with distinct owners: schema load-repair (`SaveDataSchema` transform in `save-data.ts`: live-combat gold override, autoplay derive, orphan gear-loadout prune) runs first, then codec hydrate-repair (`hydrateAlchemyPersistenceFields` in `storage/persistence.ts` plus run-profile codec: unknown-companion prune, homestead effects, unique ownership union). Preserve valid saved card modifications, Health, defenses, flags, pending choices, and RNG. Never reapply starting grants or resolve an action during normalization. Keep material defaults and current field names; retired crystal/recovery and historical Talent conversions are no longer accepted as aliases. Live combat gold intentionally overrides the purse when finite and non-negative; that override is not a repair warning.
 
 ## Public save contract
 
@@ -43,7 +43,7 @@ Preserve complete saved card effects, descriptions, and explicit Consume overrid
 
 Steam Cloud is a one-way mirror. Writes go local-first (atomic, with backup-ring rotation in `desktop/main.cjs` — `save.json` + `bak.1-3` + `tmp`) and then mirror to Steam Cloud.
 
-Device display preferences (`alchemy-device-display-v1`) stay outside the versioned save: they survive save wipes, are never cloud-mirrored, and never gate loads.
+Device display preferences (`alchemy-device-display-v1`) stay outside the versioned save: they survive save wipes, are never cloud-mirrored, and never gate loads. A version mismatch resets them to defaults silently (no error-sink entry); only unreadable storage or corrupt JSON is logged.
 
 #### Load selection
 
@@ -56,6 +56,8 @@ Routine skips stay silent: missing, empty, and below-baseline candidates on fres
 Saves with a schema newer than the current build are intentionally not migrated or overwritten. A recognizable future-versioned candidate protects the session only when it is fresher by `lastSavedAt` than every playable candidate. A stale newer-versioned mirror is skipped in favor of the freshest playable backup; timestamp ties also load the playable backup, and autosave can continue.
 
 When protection applies, the load path returns session defaults and disables autosave writes so an older build cannot destroy newer progress. The Save Protected screen offers update guidance and an explicit “Delete local save and continue” escape hatch under the [deletion policy](#deletion).
+
+Tie rules: a future-vs-playable timestamp tie loads the playable backup (protection needs a strictly fresher future candidate), while a playable-vs-playable tie keeps the first candidate in read order — on desktop that prefers `save.json` over its `bak` ring. Fractional `lastSavedAt` values floor before comparison so raw future-protection ordering and parsed playable ordering agree.
 
 #### Write acknowledgement
 

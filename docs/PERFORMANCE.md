@@ -132,7 +132,23 @@ Classification bands only — never CI gates. Compare only on the same machine, 
 | ≥100 ms stalls    |         0 |
 | ≥50 ms long tasks | ≤1 / 30 s |
 
-Scenario mapping: `battle-effects` is continuous-motion (sustained FX); `battle-end-turn` is transition-heavy (card bursts / end-turn).
+Scenario mapping: `battle-effects`, `options-brightness`, and `talents-effects` are continuous-motion; `battle-end-turn`, `collection-tabs`, `labyrinth-interactions`, `armory-homestead`, and `shop-interactions` are transition-heavy. `startup-first-use` measures cold-start observations, not frame targets. `memory-soak` and `battle-art-diag` are diagnostics excluded from `--all`.
+
+| Scenario                 | Default measure  | Default min frames | Profile    |
+| ------------------------ | ---------------- | ------------------ | ---------- |
+| `battle-effects`         | 30 s             | 300                | continuous |
+| `battle-end-turn`        | 30 s             | 200                | transition |
+| `talents-effects`        | 15 s             | 250                | continuous |
+| `collection-tabs`        | 15 s             | 250                | transition |
+| `options-brightness`     | 12 s             | 250                | continuous |
+| `labyrinth-interactions` | 15 s             | 250                | transition |
+| `armory-homestead`       | 15 s             | 250                | transition |
+| `shop-interactions`      | 15 s             | 250                | transition |
+| `startup-first-use`      | menu nav         | 180                | transition |
+| `memory-soak`            | 60 s             | 500                | transition |
+| `battle-art-diag`        | screenshots only | n/a                | n/a        |
+
+Override per-scenario defaults with `PERF_MEASURE_MS` / `PERF_MIN_FRAMES` for harness iteration only (not for baselines). Keep the default one measured run plus one unmeasured warm-up; use `--electron --cold` to measure first use. Each run writes `runs/<scenario>-<run>.json`, `runs/<scenario>-<run>-sample.json`, `aggregates/<scenario>.json`, plus `traces/` in trace mode, `display-env.json`, and `environment.json`.
 
 Optimization rule of thumb: improve the targeted p99/hitch by ≥10% or eliminate a reproducible hitch; do not regress another scenario’s p95/p99 by >5%.
 
@@ -142,7 +158,7 @@ Optimization rule of thumb: improve the targeted p99/hitch by ≥10% or eliminat
 Measure → identify failing scenario/phase → perf:trace that scenario → optimize → perf:compare before/after
 ```
 
-`perf:compare` derives duration-normalized rates for hitches, stalls, and long tasks (per 30 s) so runs of unequal duration are compared fairly. Material environment differences (runtime, trace mode, cold mode, platform, viewport, DPR, refresh rate, browser, target profile) are rejected with clear compatibility errors.
+`perf:compare` derives duration-normalized rates for hitches, stalls, and long tasks (per 30 s) so runs of unequal duration are compared fairly. Material environment differences (runtime, trace mode, cold mode, platform, viewport, DPR, refresh rate, browser, target profile, runs per scenario) are rejected with clear compatibility errors.
 
 ### Finding the work behind a slow frame
 
@@ -174,12 +190,21 @@ trace events fail capture. Screenshots are omitted to reduce trace overhead.
 
 ## Layout
 
-| Path                                | Role                                                     |
-| ----------------------------------- | -------------------------------------------------------- |
-| `playwright.performance.config.ts`  | Performance test runtime configuration                   |
-| `performance/`                      | Sampler, metrics, comparison model, reports, scenarios   |
-| `scripts/run-performance.mjs`       | CLI entry (`npm run perf`, `npm run perf:compare`)       |
-| `tests/performance/metrics.test.ts` | Metrics, compare, observer, and report unit tests (Node) |
+| Path                                                | Role                                               |
+| --------------------------------------------------- | -------------------------------------------------- |
+| `playwright.performance.config.ts`                  | Performance test runtime configuration             |
+| `performance/frame-sampler.ts`                      | In-page rAF / longtask / event collector           |
+| `performance/metrics.ts`                            | Pure aggregation, targets, and classification      |
+| `performance/report.ts`                             | Filesystem output and summary markdown             |
+| `performance/fixtures.ts`                           | Playwright fixtures: warm-up, runs, aggregates     |
+| `performance/compare-model.mjs` + `compare.ts`      | Before/after diff and compatibility gates          |
+| `performance/cdp-trace.ts` + `trace-insights.ts`    | Deep-trace capture and slow-frame evidence         |
+| `performance/battle-setup.ts` + `battle-helpers.ts` | Deterministic battle bootstrap and interactions    |
+| `performance/battle-art-diagnostics.ts`             | Art failure diagnostics (`MIN_PAINT_PX`)           |
+| `performance/scenario-data.ts`                      | Decks and inventories for scenarios                |
+| `performance/catalog.json`                          | Scenario and metric registry                       |
+| `scripts/run-performance.mjs`                       | CLI entry (`npm run perf`, `npm run perf:compare`) |
+| `tests/performance/`                                | Metrics, compare, and report unit tests (Node)     |
 
 Metric and comparison unit tests in `tests/performance/` run in the ordinary Node Vitest suite (`npm test`).
 
@@ -187,14 +212,4 @@ Related: [PerformanceAudit.md](./Audits/PerformanceAudit.md) (when to change cod
 
 ## Eager bundle size
 
-The total JavaScript ceiling lives in `scripts/lib/bundle-budget.mjs` and is
-checked by `npm run check:bundle`. Screen and art loading remain eager, so moving
-bytes between chunks does not reduce the eager payload. Individual chunk sizes
-and Vite's chunk warning remain diagnostic, not separate blocking budgets.
-Missing builds or missing entry chunks still fail. Totals above 95% of the
-ceiling log a warning so growth is visible before the gate goes red.
-
-Past allowances and their measurements are retained in
-[bundle-budget history](../.agents/history/friction-2026-09.md#bundle-budget-decisions).
-Use the current budget owner for ceilings; historical measurements are not new
-limits or permission to increase them.
+Bundle ceilings live with the bundle-budget owner (`scripts/lib/bundle-budget.mjs`, `npm run check:bundle`), not this FPS harness. See that owner for ceilings, chunk policy, and history.

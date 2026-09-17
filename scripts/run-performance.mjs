@@ -17,7 +17,7 @@ import { fileURLToPath } from "node:url";
 import { writeCurrentRun } from "./lib/current-run.mjs";
 import { PERF_PREVIEW_PORT } from "./lib/dev-port.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
-import { checkEnvironmentCompatibility, compareReports } from "../performance/compare-model.mjs";
+import { checkEnvironmentCompatibility, compareReports, renderComparisonTable } from "../performance/compare-model.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PERFORMANCE_CATALOG = JSON.parse(fs.readFileSync(path.join(root, "performance/catalog.json"), "utf8"));
@@ -98,11 +98,16 @@ Options:
   --skip-build      Reuse existing dist/ (must already exist)
   --compare a b     Diff two prior report directories
   --help            Show this help
+
+Env (harness iteration only, not for baselines):
+  PERF_MEASURE_MS   Per-scenario measure window override
+  PERF_MIN_FRAMES   Minimum frames override (per scenario)
+  PERF_RUNS         Alias for --runs (CLI flag wins when both pass)
 `);
 }
 
-function buildDist({ onlyIfMissing = false } = {}) {
-  if (onlyIfMissing && fs.existsSync(path.join(root, "dist", "index.html"))) return;
+function buildDist({ skipIfPresent = false } = {}) {
+  if (skipIfPresent && fs.existsSync(path.join(root, "dist", "index.html"))) return;
   console.log("Building production renderer for performance profiling…");
   const result = spawnSync(...commandInvocation("npm", ["run", "build"]), {
     // Streams intentionally: builds and profiling runs are minutes long and
@@ -122,10 +127,6 @@ function stampOutputDir(runtime = "chromium") {
   fs.mkdirSync(path.join(dir, "runs"), { recursive: true });
   fs.mkdirSync(path.join(dir, "traces"), { recursive: true });
   return dir;
-}
-
-function fmt(n, digits = 2) {
-  return Number.isFinite(n) ? n.toFixed(digits) : "n/a";
 }
 
 function runCompare(beforeDir, afterDir) {
@@ -177,13 +178,7 @@ function runCompare(beforeDir, afterDir) {
       continue;
     }
     lines.push(`## ${s.scenario}`, "");
-    lines.push("| Metric | Before | After | Δ | % |");
-    lines.push("| --- | ---: | ---: | ---: | ---: |");
-    for (const d of s.deltas) {
-      const pct = d.percentChange === null ? "n/a" : `${fmt(d.percentChange, 1)}%`;
-      const mark = d.improved === true ? " improved" : d.improved === false ? " regressed" : "";
-      lines.push(`| ${d.label} | ${fmt(d.before)} | ${fmt(d.after)} | ${fmt(d.delta)}${mark} | ${pct} |`);
-    }
+    lines.push(...renderComparisonTable(s.deltas));
     lines.push("");
     for (const note of s.notes) lines.push(`- ${note}`);
     lines.push("");
@@ -252,7 +247,7 @@ function main() {
     if (ensure.status !== 0) process.exit(ensure.status ?? 1);
   }
 
-  buildDist({ onlyIfMissing: args.skipBuild });
+  buildDist({ skipIfPresent: args.skipBuild });
 
   const outDir = stampOutputDir(args.electron ? "electron" : "chromium");
   const perfPort = process.env.PLAYWRIGHT_PERF_PORT ?? String(PERF_PREVIEW_PORT);
@@ -263,7 +258,7 @@ function main() {
     PLAYWRIGHT_PERF_TRACE: args.trace ? "1" : "",
     PLAYWRIGHT_PERF_ELECTRON: args.electron ? "1" : "",
     PLAYWRIGHT_PERF_COLD: args.cold ? "1" : "",
-    PERF_RUNS: String(args.runs ?? 1),
+    PERF_RUNS: String(args.runs ?? process.env.PERF_RUNS ?? 1),
     PERF_SCENARIO: scenario ?? "",
     ...(process.env.PERF_MEASURE_MS ? { PERF_MEASURE_MS: process.env.PERF_MEASURE_MS } : {}),
     ...(process.env.PERF_MIN_FRAMES ? { PERF_MIN_FRAMES: process.env.PERF_MIN_FRAMES } : {}),
@@ -271,7 +266,15 @@ function main() {
   };
 
   // --all runs metric scenarios only; battle-art-diag is opt-in via --scenario.
-  const grepArgs = args.all ? ["--grep", `/${METRIC_SCENARIOS.join("|")}/`] : scenario ? ["--grep", scenario] : [];
+  // Token-boundary grep mirrors performance/reporter.ts: `-` is part of the
+  // token, so `\b` would still match `battle-effects-extra`. Use an explicit
+  // non-token char class instead.
+  const tokenBoundary = "[^a-zA-Z0-9-]";
+  const grepArgs = args.all
+    ? ["--grep", `/(${tokenBoundary}|^)(${METRIC_SCENARIOS.join("|")})(${tokenBoundary}|$)/`]
+    : scenario
+      ? ["--grep", `/(${tokenBoundary}|^)${scenario}(${tokenBoundary}|$)/`]
+      : [];
   console.log(`\nProfiling → ${outDir}`);
   console.log(
     `Runtime: ${args.electron ? "electron" : "chromium"} | Cold: ${args.cold ? "yes" : "no"} | Trace: ${args.trace ? "yes" : "no"} | Scenario: ${args.all ? METRIC_SCENARIOS.join(",") : (scenario ?? "all")} | Runs: ${env.PERF_RUNS}`,

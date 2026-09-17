@@ -3,7 +3,7 @@ import path from "node:path";
 import { execSync } from "node:child_process";
 import type { FrameMetrics, InputEventSample, TargetCheck, TargetProfile } from "./metrics";
 import type { TraceInsight } from "./trace-insights";
-import type { MetricDelta } from "./compare";
+import { renderComparisonTable, type MetricDelta } from "./compare";
 
 export interface ScenarioRunResult {
   scenario: string;
@@ -298,13 +298,7 @@ export function renderSummaryMarkdown(options: {
     for (const cmp of comparisons) {
       lines.push(`### ${cmp.scenario}`);
       lines.push("");
-      lines.push("| Metric | Before | After | Δ | % |");
-      lines.push("| --- | ---: | ---: | ---: | ---: |");
-      for (const d of cmp.deltas) {
-        const pct = d.percentChange === null ? "n/a" : `${fmt(d.percentChange, 1)}%`;
-        const mark = d.improved === true ? " improved" : d.improved === false ? " regressed" : "";
-        lines.push(`| ${d.label} | ${fmt(d.before)} | ${fmt(d.after)} | ${fmt(d.delta)}${mark} | ${pct} |`);
-      }
+      lines.push(...renderComparisonTable(cmp.deltas));
       for (const note of cmp.notes) {
         lines.push(`- ${note}`);
       }

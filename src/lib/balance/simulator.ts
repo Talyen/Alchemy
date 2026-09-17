@@ -35,7 +35,7 @@ import type {
 } from "./simulator-types";
 import { buildPresetManifest } from "./talent-preset";
 
-const DEFAULT_MAX_TURNS = 30;
+export const DEFAULT_MAX_TURNS = 30;
 const DEFAULT_POLICY: BalancePlayPolicy = "random-playable";
 const DEFAULT_LOADOUT: BalanceLoadoutMode = "typical";
 export const DEFAULT_SEED = 1;
@@ -70,10 +70,14 @@ function choosePendingWishCards(state: BattleState): BattleState {
   return nextState;
 }
 
+const SCRATCH_COMBAT_TEXTS: CombatTextEvent[] = [];
+// Reused across non-tracking turns only: never retained by handlers and sims
+// run synchronously, so clearing + reusing is safe. Do not retain or re-enter.
+
 function playAutomatedTurn(
   state: BattleState,
   policy: BalancePlayPolicy,
-  cardsPlayed: Record<string, number>,
+  cardsPlayed: Record<string, number> | null,
   anomalies: BattleAnomalies | null,
 ): BattleState {
   let nextState = choosePendingWishCards(state);
@@ -85,12 +89,18 @@ function playAutomatedTurn(
     const result = playBattleCardResolved(nextState, selection.card.id, selection.index);
     if (result.state === nextState) break;
 
-    cardsPlayed[selection.card.id] = (cardsPlayed[selection.card.id] ?? 0) + 1;
+    if (cardsPlayed) {
+      cardsPlayed[selection.card.id] = (cardsPlayed[selection.card.id] ?? 0) + 1;
+    }
     if (anomalies) sampleAnomalies(result.state, result.combatTexts, anomalies, selection.card.id);
     nextState = choosePendingWishCards(result.state);
   }
 
   return nextState;
+}
+
+function deckHasCompanions(deck: readonly BattleCard[]): boolean {
+  return deck.some((card) => card.effects.some((effect) => effect.kind === "summon-companion"));
 }
 
 function resolveTalentEffects(
@@ -102,10 +112,17 @@ function resolveTalentEffects(
   const base =
     config.talentEffects ??
     (preset ? buildPresetManifest(characters[config.characterId].keywords, preset) : defaultTalentEffects);
+  const isBare = config.loadoutMode === "bare";
+  const hasCompanions = deckHasCompanions(playerDeck);
+  if (isBare && !hasCompanions) {
+    return base;
+  }
   const homestead = {
     ...defaultHomesteadEffects,
     ...homesteadCombat,
-    companionBondLevels: buildSimCompanionBondLevels(playerDeck, preset ?? "early"),
+    companionBondLevels: hasCompanions
+      ? buildSimCompanionBondLevels(playerDeck, preset ?? "early")
+      : defaultHomesteadEffects.companionBondLevels,
   };
   return mergeIntoManifest(base, homestead);
 }
@@ -113,10 +130,16 @@ function resolveTalentEffects(
 function runSimTurn(
   state: BattleState,
   policy: BalancePlayPolicy,
-  cardsPlayed: Record<string, number>,
+  cardsPlayed: Record<string, number> | null,
   anomalies: BattleAnomalies | null,
 ): BattleState {
-  const turnCombatTexts: CombatTextEvent[] = [];
+  let turnCombatTexts: CombatTextEvent[];
+  if (anomalies) {
+    turnCombatTexts = [];
+  } else {
+    SCRATCH_COMBAT_TEXTS.length = 0;
+    turnCombatTexts = SCRATCH_COMBAT_TEXTS;
+  }
   state = processCompanionTurnStart(state, turnCombatTexts);
   if (anomalies) sampleAnomalies(state, turnCombatTexts, anomalies);
   if (state.enemyHealth <= 0 || isPlayerDefeated(state)) return state;
@@ -150,9 +173,7 @@ function buildSimBattleConfig(config: BattleSimulationConfig, rng: () => number,
   const trinketIds = config.trinketIds ?? loadout.coreTrinketIds;
   const baseMaxHealth = config.playerMaxHealth ?? MAX_PLAYER_HEALTH;
   const playerMaxHealth =
-    config.playerMaxHealth === undefined
-      ? baseMaxHealth + loadout.talentPointHealth + talentEffects.runMaxHealthBonus + gearEffects.maxHealth
-      : baseMaxHealth;
+    baseMaxHealth + loadout.talentPointHealth + talentEffects.runMaxHealthBonus + gearEffects.maxHealth;
 
   return {
     state: createBattleState({
@@ -176,6 +197,9 @@ function buildSimBattleConfig(config: BattleSimulationConfig, rng: () => number,
 }
 
 const EMPTY_ANOMALIES_SENTINEL: BattleAnomalies = Object.freeze(createEmptyAnomalies());
+// Shared frozen fallbacks for trackMetrics/trackAnomalies:false — read-only,
+// do not mutate. Callers needing a mutable map must copy first.
+const EMPTY_CARDS_RECORD: Readonly<Record<string, number>> = Object.freeze({});
 
 export function simulateBattle(config: BattleSimulationConfig): BattleSimulationResult {
   const seed = config.seed ?? DEFAULT_SEED;
@@ -186,7 +210,8 @@ export function simulateBattle(config: BattleSimulationConfig): BattleSimulation
 
   const { state: initialState, playerMaxHealth, trinketIds } = buildSimBattleConfig(config, rng, enemy, seed);
   const maxTurns = config.maxTurns ?? DEFAULT_MAX_TURNS;
-  const cardsPlayed: Record<string, number> = {};
+  const trackMetrics = config.trackMetrics !== false;
+  const cardsPlayed: Record<string, number> | null = trackMetrics ? {} : null;
   const trackAnomalies = config.trackAnomalies !== false;
   const anomalies = trackAnomalies ? createEmptyAnomalies() : null;
 
@@ -216,9 +241,9 @@ export function simulateBattle(config: BattleSimulationConfig): BattleSimulation
     enemyAbilityActivations: battleMetrics.enemyAbilityActivations,
     enemyAbilityUses: battleMetrics.enemyAbilityUses ?? {},
     wonBeforeEnemyAttack: outcome === "win" && battleMetrics.enemyAttackActions === 0,
-    cardsPlayed,
-    totalCardsPlayed: Object.values(cardsPlayed).reduce((total, count) => total + count, 0),
-    combatGoldEarned: state.gold - initialState.gold,
+    cardsPlayed: cardsPlayed ?? EMPTY_CARDS_RECORD,
+    totalCardsPlayed: cardsPlayed ? Object.values(cardsPlayed).reduce((total, count) => total + count, 0) : 0,
+    combatGoldEarned: trackMetrics ? state.gold - initialState.gold : 0,
     trinketIds,
     policy,
     seed,

@@ -92,7 +92,7 @@ export function simulateWinSeries(config: BalanceBatchConfig): WinSeries {
   let wins = 0;
   let totalTurns = 0;
   let index = 0;
-  forEachSimulation({ ...config, trackAnomalies: false }, (result) => {
+  forEachSimulation({ ...config, trackAnomalies: false, trackMetrics: false }, (result) => {
     turns[index] = result.turns;
     totalTurns += result.turns;
     if (result.outcome === "win") {

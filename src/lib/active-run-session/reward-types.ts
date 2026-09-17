@@ -42,17 +42,23 @@ export function resolveRewardChoice(
   id = rewardState.selectedId,
 ): ResolvedRewardChoice | null {
   if (!id) return null;
-  const choice = rewardState.choices.find((item) => getRewardChoiceId(item) === id);
-  if (!choice) return null;
   switch (rewardState.rewardType) {
-    case "card":
-      return { rewardType: "card", choice: choice as BattleCard };
-    case "boon":
-      return { rewardType: "boon", choice: choice as TrinketEntry };
-    case "trinket":
-      return { rewardType: "trinket", choice: choice as TrinketEntry };
-    case "gear":
-      return { rewardType: "gear", choice: choice as GearInstance };
+    case "card": {
+      const choice = rewardState.choices.find((card) => card.id === id);
+      return choice ? { rewardType: "card", choice } : null;
+    }
+    case "boon": {
+      const choice = rewardState.choices.find((boon) => boon.id === id);
+      return choice ? { rewardType: "boon", choice } : null;
+    }
+    case "trinket": {
+      const choice = rewardState.choices.find((trinket) => trinket.id === id);
+      return choice ? { rewardType: "trinket", choice } : null;
+    }
+    case "gear": {
+      const choice = rewardState.choices.find((gear) => gear.instanceId === id);
+      return choice ? { rewardType: "gear", choice } : null;
+    }
   }
 }
 

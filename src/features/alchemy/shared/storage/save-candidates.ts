@@ -160,6 +160,12 @@ export function evaluateSaveCandidates(candidates: string[]): SaveLoadState {
     // Stays silent: empty or missing candidates on fresh profiles are routine,
     // and logStorageFailure feeds the error sink asserted empty by E2E journeys.
     if (getRawSaveSchemaVersion(parsed) < LAUNCH_SAVE_SCHEMA_VERSION) continue;
+    // Cheap pre-filter: the shared timestamp normalizer guarantees a
+    // successful parse yields exactly this value, so a candidate that cannot
+    // beat the current best (or tie-break it) skips the full Zod parse.
+    // The first valid candidate and any potential winner are always parsed,
+    // so validation diagnostics for the loaded save are preserved.
+    if (bestData && (getRawLastSavedAt(parsed) ?? 0) <= playableSavedAt) continue;
     const result = safeParseWithErrors(SaveDataSchema, parsed);
     if (!result.success) {
       logStorageFailure("Save candidate failed validation, trying next candidate", result.error);

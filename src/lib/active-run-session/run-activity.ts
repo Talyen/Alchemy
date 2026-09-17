@@ -30,15 +30,30 @@ type ProgressActivityKind =
   | "difficulty-select";
 export type RunActivity = { kind: "inactive" | "idle" | ProgressActivityKind } | VisitActivity;
 
-const EMPTY_VISITS: RunActivityData = {
+function deepFreeze<T>(obj: T): T {
+  if (obj === null || typeof obj !== "object") return obj;
+  Object.freeze(obj);
+  for (const value of Object.values(obj)) {
+    if (value !== null && typeof value === "object" && !Object.isFrozen(value)) {
+      deepFreeze(value);
+    }
+  }
+  return obj;
+}
+
+const EMPTY_VISITS: Readonly<RunActivityData> = deepFreeze({
   shop: emptyShopState(),
   alchemist: emptyAlchemistState(),
   "trinket-shop": emptyTrinketShopState(),
   "equipment-shop": emptyEquipmentShopState(),
   mystery: emptyHydratedMysteryVisit(),
   corruption: null,
-};
+});
 
+/**
+ * Reads visit data for `kind`. The matching branch returns live mutable state;
+ * the fallback is a shared deep-frozen empty visit — read-only, do not mutate.
+ */
 export function readActivityData<K extends keyof RunActivityData>(activity: RunActivity, kind: K): RunActivityData[K] {
   return activity.kind === kind && "data" in activity ? (activity.data as RunActivityData[K]) : EMPTY_VISITS[kind];
 }

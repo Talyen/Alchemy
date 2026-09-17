@@ -99,20 +99,6 @@ export function countUnlockedCombatTalents(keywords: readonly KeywordId[], prese
   return Object.values(unlocked).reduce((total, ids) => total + (ids?.length ?? 0), 0);
 }
 
-const AFFINITY_POINT_FALLBACK: Record<TalentPreset, number> = {
-  early: 0,
-  mid: MID_AFFINITY_TALENT_COUNT * 3,
-  late: LATE_AFFINITY_TALENT_CAP * 3,
-};
-
-export function countAffinityCombatTalents(keywords: readonly KeywordId[], preset: TalentPreset): number {
-  if (keywords.length === 0) {
-    return AFFINITY_POINT_FALLBACK[preset];
-  }
-  const unlocked = buildPresetUnlockedTalents(keywords, preset);
-  return keywords.reduce((total, keywordId) => total + (unlocked[keywordId]?.length ?? 0), 0);
-}
-
 const PRESET_MANIFEST_CACHE = new Map<string, TalentEffectManifest>();
 
 export function buildPresetManifest(keywords: readonly KeywordId[], preset: TalentPreset): TalentEffectManifest {

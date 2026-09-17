@@ -23,7 +23,9 @@ export function getRawContentVersion(parsed: unknown): number {
 export function getRawLastSavedAt(parsed: unknown): number | null {
   // Timestamps have their own reader: like versions they must be finite and
   // non-negative, but fractional values floor instead of rejecting so a
-  // hand-written float still orders sanely. Never reuse the combat-gold
+  // hand-written float still orders sanely. SaveDataSchema.lastSavedAt shares
+  // this normalizer via preprocess, so raw future-protection ordering and
+  // parsed playable ordering agree. Never reuse the combat-gold
   // predicate here; the domains only coincide by accident.
   const value = readRawField(parsed, "lastSavedAt");
   return toFiniteNonNegativeInt(value);

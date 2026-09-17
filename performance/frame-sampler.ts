@@ -73,6 +73,8 @@ export async function startFrameSampler(page: Page): Promise<void> {
     perf.lastTs = 0;
     perf.phaseMarks.push({ time: 0, phase: perf.phase });
 
+    // Mirrors phaseAtTime in metrics.ts. Duplicated because page.evaluate
+    // closures cannot import TS modules; keep both in sync.
     const phaseAt = (marks: Array<{ time: number; phase: string }>, timeMs: number): string => {
       let phase = marks[0]?.phase ?? "idle";
       for (const mark of marks) {
@@ -168,6 +170,7 @@ export async function stopFrameSampler(page: Page): Promise<FrameSampleRaw> {
       perf.rafId = null;
     }
 
+    // Mirrors phaseAtTime in metrics.ts (see note in startFrameSampler).
     const phaseAt = (marks: Array<{ time: number; phase: string }>, timeMs: number): string => {
       let phase = marks[0]?.phase ?? "idle";
       for (const mark of marks) {

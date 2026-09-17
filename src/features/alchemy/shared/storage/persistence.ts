@@ -1,15 +1,12 @@
-import { settingsPersistenceCodec, useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
+import { settingsPersistenceCodec } from "@/features/alchemy/shared/stores/settings-store";
 import { discoverUniqueIds, profilePersistenceCodec } from "@/features/alchemy/shared/stores/profile-store";
 import { gearPersistenceCodec } from "@/features/alchemy/shared/stores/gear-store";
 import { runProfilePersistenceCodec } from "@/features/alchemy/shared/stores/run-profile-codec";
+import { subscribePersistenceCommits } from "@/features/alchemy/shared/stores/persistence-commit-filter";
 import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import type { ActiveRunData } from "@/lib/active-run-session";
 import type { AlchemyPersistenceFields, UnstampedSaveData } from "./types";
-import {
-  subscribeRunSessionCommits,
-  dispatchRunSessionCommand,
-  type GameplayDraft,
-} from "@/features/alchemy/shared/stores/run-session-command";
+import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { getOwnedUniqueDefinitionIds } from "@/lib/gear";
 
 export type { AlchemyPersistenceFields } from "./types";
@@ -40,10 +37,7 @@ export function hydrateAlchemyPersistenceFields(fields: AlchemyPersistenceFields
 }
 
 export function subscribeAlchemyPersistence(listener: () => void): () => void {
-  const unsubscribers = [useSettingsStore.subscribe(listener), subscribeRunSessionCommits(() => listener())];
-  return () => {
-    for (const unsubscribe of unsubscribers) unsubscribe();
-  };
+  return subscribePersistenceCommits(listener);
 }
 
 export function buildAlchemySaveDataFromStores(activeRun: ActiveRunData | null): UnstampedSaveData {

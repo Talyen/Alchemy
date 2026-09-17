@@ -9,6 +9,8 @@ import {
   compareMetrics as jsCompareMetrics,
   meetsOptimizationRule as jsMeetsOptimizationRule,
   compareReports as jsCompareReports,
+  formatCompareNumber as jsFormatCompareNumber,
+  renderComparisonTable as jsRenderComparisonTable,
   COMPARE_KEYS as jsCompareKeys,
 } from "./compare-model.mjs";
 
@@ -111,4 +113,12 @@ export function compareReports(
   afterReport: { environment: EnvironmentInfo; scenarios: ScenarioAggregate[] },
 ): ReportComparisonResult {
   return jsCompareReports(beforeReport, afterReport);
+}
+
+export function formatCompareNumber(n: number, digits = 2): string {
+  return jsFormatCompareNumber(n, digits);
+}
+
+export function renderComparisonTable(deltas: MetricDelta[]): string[] {
+  return jsRenderComparisonTable(deltas);
 }

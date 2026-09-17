@@ -5,10 +5,15 @@ const NPM = process.platform === "win32" ? "npm.cmd" : "npm";
 
 // Core save/persistence suites; the two save-migration architecture tests live
 // under tests/architecture, so the ship gate picks them up via tooling below.
+// The scheduler math and autosave-allowed selector suites are listed
+// explicitly: vitest "related" selection would usually find them, but the save
+// gate must not depend on import-graph luck for its timing core.
 const SAVE_CORE_SUITES = Object.freeze([
   "tests/features/alchemy/shared/storage",
   "tests/app/autosave-hook.test.ts",
   "tests/app/autosave-active-run.test.ts",
+  "tests/app/autosave-scheduler.test.ts",
+  "tests/features/alchemy/shared/stores/select-autosave-allowed.test.ts",
   "tests/lib/validation",
   "tests/lib/active-run-session",
 ]);

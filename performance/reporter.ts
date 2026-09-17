@@ -10,7 +10,8 @@ class PerformanceReporter implements Reporter {
   onBegin(_config: FullConfig, suite: Suite) {
     for (const test of suite.allTests()) {
       for (const id of SCENARIO_IDS) {
-        if (test.title.includes(id) || test.location.file.includes(id)) {
+        const haystack = `${test.title} ${test.location.file}`;
+        if (haystack.split(/[^a-z0-9-]+/i).includes(id)) {
           this.scenarios.add(id);
         }
       }

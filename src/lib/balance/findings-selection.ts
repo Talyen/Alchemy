@@ -106,17 +106,16 @@ function collapseMatchupClusters(findings: readonly BalanceFinding[]): BalanceFi
     groups.set(key, list);
   }
   for (const group of groups.values()) {
-    const sorted = [...group].sort((a, b) => getScore(b) - getScore(a) || a.id.localeCompare(b.id));
-    const best = sorted[0];
+    const best = [...group].sort((a, b) => getScore(b) - getScore(a) || a.id.localeCompare(b.id))[0];
     if (!best) continue;
-    if (sorted.length === 1) {
+    if (group.length === 1) {
       kept.push(best);
       continue;
     }
     kept.push({
       ...best,
-      clusterSize: sorted.length,
-      worstScenario: `${best.worstScenario} · worst of ${sorted.length} classes`,
+      clusterSize: group.length,
+      worstScenario: `${best.worstScenario} · worst of ${group.length} classes`,
     });
   }
   return kept.sort((a, b) => getScore(b) - getScore(a) || a.id.localeCompare(b.id));

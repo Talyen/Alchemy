@@ -6,6 +6,7 @@ import {
   MATERIAL_TIMEOUT_RATE,
   WIN_RATE_BAND_BY_TYPE,
 } from "./findings-bands";
+import { stringifyReportJson } from "./report-layout";
 import type { BalanceReportModel } from "./report-model";
 import type { ReportRunOptions } from "./report-options";
 
@@ -14,29 +15,25 @@ export function renderBalanceFindingsJson(
   model: BalanceReportModel,
   options: ReportRunOptions,
 ): string {
-  return `${JSON.stringify(
-    {
-      agentNotice: "Read this findings file only. The full matrix is reports/balance-full/ and is drill-down only.",
-      meta: model.meta,
-      options,
-      bands: {
-        lengthByType: LENGTH_BAND_BY_TYPE,
-        winRateByType: WIN_RATE_BAND_BY_TYPE,
-        equitySpread: EQUITY_SPREAD,
-        materialTimeoutRate: MATERIAL_TIMEOUT_RATE,
-        anomalyThresholds: ANOMALY_FINDING_THRESHOLDS,
-        cap: findings.cap,
-      },
-      selection: {
-        method: "collapse matchups to worst class per enemy/tier/metric/bucket, then round-robin buckets",
-        omitted: findings.omitted,
-        totalBeforeCap: findings.totalBeforeCap,
-        shownByBucket: findings.shownByBucket,
-        omittedByBucket: findings.omittedByBucket,
-      },
-      findings: findings.findings,
+  return stringifyReportJson({
+    agentNotice: "Read this findings file only. The full matrix is reports/balance-full/ and is drill-down only.",
+    meta: model.meta,
+    options,
+    bands: {
+      lengthByType: LENGTH_BAND_BY_TYPE,
+      winRateByType: WIN_RATE_BAND_BY_TYPE,
+      equitySpread: EQUITY_SPREAD,
+      materialTimeoutRate: MATERIAL_TIMEOUT_RATE,
+      anomalyThresholds: ANOMALY_FINDING_THRESHOLDS,
+      cap: findings.cap,
     },
-    null,
-    2,
-  )}\n`;
+    selection: {
+      method: "collapse matchups to worst class per enemy/tier/metric/bucket, then round-robin buckets",
+      omitted: findings.omitted,
+      totalBeforeCap: findings.totalBeforeCap,
+      shownByBucket: findings.shownByBucket,
+      omittedByBucket: findings.omittedByBucket,
+    },
+    findings: findings.findings,
+  });
 }

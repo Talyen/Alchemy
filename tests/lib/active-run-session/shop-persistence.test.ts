@@ -14,6 +14,7 @@ import {
   type ShopState,
   type TrinketShopState,
 } from "@/lib/active-run-session";
+import { lookupTrinketEntries } from "@/lib/active-run-session/shop-persistence";
 import { cardLibrary, trinketLibrary } from "@/lib/game-data";
 import { createGearInstance } from "@/lib/gear";
 import { gearDefinitions } from "@/lib/gear/definitions";
@@ -23,6 +24,17 @@ describe("shop-persistence", () => {
   const cardB = cardLibrary[1]!;
   const trinketA = trinketLibrary[0]!;
   const trinketB = trinketLibrary[1]!;
+
+  describe("lookupTrinketEntries", () => {
+    it("looks up valid entries and drops missing IDs", () => {
+      const results = lookupTrinketEntries([trinketA.id, "missing-trinket", trinketB.id]);
+      expect(results).toEqual([trinketA, trinketB]);
+    });
+
+    it("drops prototype-chain IDs instead of returning inherited values", () => {
+      expect(lookupTrinketEntries(["toString", "constructor"])).toEqual([]);
+    });
+  });
 
   describe("ShopState", () => {
     it("round-trips standard card shop state", () => {
@@ -117,6 +129,18 @@ describe("shop-persistence", () => {
       const hydrated = hydrateTrinketShopState(persisted);
       expect(hydrated.trinkets).toEqual([trinketB]);
       expect(hydrated.purchasedSlotKeys).toEqual([shopItemSlotKey(trinketB.id, 0)]);
+    });
+
+    it("drops prototype-chain IDs during hydrate", () => {
+      const persisted = {
+        trinketIds: ["toString", trinketA.id],
+        refreshesLeft: 1,
+        firstPurchaseUsed: false,
+        purchasedSlotKeys: [],
+      };
+
+      const hydrated = hydrateTrinketShopState(persisted);
+      expect(hydrated.trinkets).toEqual([trinketA]);
     });
   });
 

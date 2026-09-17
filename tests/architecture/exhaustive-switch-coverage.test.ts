@@ -26,8 +26,8 @@ describe("exhaustive switch coverage", () => {
     assertContainsCases("src/lib/game-data/cards/companion-turn-description.ts", BATTLE_CARD_EFFECT_KINDS);
   });
 
-  it("play-policy scoreEffect covers every BattleCardEffect kind", () => {
-    assertContainsCases("src/lib/balance/play-policy.ts", BATTLE_CARD_EFFECT_KINDS);
+  it("autoplay scoreEffect covers every BattleCardEffect kind", () => {
+    assertContainsCases("src/lib/battle/autoplay-policy.ts", BATTLE_CARD_EFFECT_KINDS);
   });
 
   it("damage-status-riders covers every DamageType", () => {

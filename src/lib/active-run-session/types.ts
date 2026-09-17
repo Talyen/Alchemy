@@ -15,29 +15,21 @@ import type { GearInstance } from "@/lib/gear";
 import type { InterruptedFlow, PersistedPendingReward } from "@/lib/validation";
 import type { RunRngState } from "@/lib/rng";
 
-import type { RefreshableShopFields } from "./shop-session-types";
+import type { AlchemistState, EquipmentShopState, RefreshableShopFields, ShopState } from "./shop-session-types";
 
 export type { InterruptedFlow, PersistedPendingReward };
 
 export type RunObtainedItem = { kind: "gear"; instance: GearInstance } | { kind: "trinket"; trinketId: string };
 
-export interface PersistedShopState extends RefreshableShopFields {
-  cards: BattleCard[];
-  removeUsed: boolean;
-}
+export type PersistedShopState = ShopState;
 
-export interface PersistedAlchemistState extends RefreshableShopFields {
-  potions: BattleCard[];
-  mixUsed: boolean;
-}
+export type PersistedAlchemistState = AlchemistState;
 
 export interface PersistedTrinketShopState extends RefreshableShopFields {
   trinketIds: string[];
 }
 
-export interface PersistedEquipmentShopState extends RefreshableShopFields {
-  gear: GearInstance[];
-}
+export type PersistedEquipmentShopState = EquipmentShopState;
 
 export interface PersistedMysteryVisit {
   eventId: string;

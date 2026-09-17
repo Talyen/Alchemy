@@ -20,7 +20,6 @@ test.describe("battle-end-turn", () => {
       interact: async (page, phase) => {
         const battle = new BattlePage(page);
         const deadline = Date.now() + MEASURE_MS;
-        let turnIndex = 0;
         while (Date.now() < deadline) {
           if (await battle.isBattleOver()) break;
 
@@ -31,8 +30,7 @@ test.describe("battle-end-turn", () => {
             await waitForCardPlayFx(page, { lingerMs: 500 });
           }
 
-          await runMeasuredEndTurn(page, battle, phase, turnIndex);
-          turnIndex += 1;
+          await runMeasuredEndTurn(page, battle, phase);
         }
       },
     });

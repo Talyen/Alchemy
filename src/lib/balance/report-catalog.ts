@@ -107,6 +107,20 @@ export const BOON_GAUNTLET = [
   { enemyId: "iron-bear", depthDelta: 7 },
 ] as const;
 
+export const IN_CLASS_CARD_GAUNTLET = [
+  { enemyId: "skeleton", depthDelta: 1 },
+  { enemyId: "mimic", depthDelta: 5 },
+  { enemyId: "forge-golem", depthDelta: 7 },
+] as const;
+
+/** Canonical depth offset for gauntlet enemies. Isolated single-enemy sweeps use this so card deltas stay comparable across sweeps. */
+export function gauntletDepthDeltaFor(enemyId: string): number {
+  for (const scenario of [...BOON_GAUNTLET, ...IN_CLASS_CARD_GAUNTLET]) {
+    if (scenario.enemyId === enemyId) return scenario.depthDelta;
+  }
+  return 2;
+}
+
 const TITLE_LOOKUPS = {
   enemy: Object.fromEntries(enemyBestiary.map((entry) => [entry.id, entry.title])),
   character: Object.fromEntries(Object.values(characters).map((entry) => [entry.id, entry.name])),

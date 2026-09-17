@@ -140,7 +140,6 @@ export async function runMeasuredEndTurn(
   page: Page,
   battle: BattlePage,
   phase: (name: string) => Promise<void>,
-  _turnIndex?: number,
 ): Promise<void> {
   const endTurn = battle.endTurnBtn;
 

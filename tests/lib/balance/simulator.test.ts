@@ -1,5 +1,6 @@
 import { makeTestCard } from "../../fixtures/battle";
 import { describe, expect, it } from "vitest";
+import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { createRunStreamRng } from "@/lib/rng";
 import { simulateBatch, simulateBattle } from "@/lib/balance";
 
@@ -194,5 +195,27 @@ describe("enemy interaction measurements", () => {
     // When trackAnomalies is false, returned anomalies is the frozen empty sentinel
     expect(withoutTracking.anomalies.maxSingleHitDamageToEnemy).toBe(0);
     expect(withTracking.anomalies.maxSingleHitDamageToEnemy).toBeGreaterThan(0);
+  });
+
+  it("adds talent and gear bonuses on top of an explicit playerMaxHealth base", () => {
+    const base = simulateBattle({
+      characterId: "knight",
+      enemyId: "skeleton",
+      seed: 7,
+      maxTurns: 1,
+      loadoutMode: "typical",
+      talentPreset: "late",
+    });
+    const explicit = simulateBattle({
+      characterId: "knight",
+      enemyId: "skeleton",
+      seed: 7,
+      maxTurns: 1,
+      loadoutMode: "typical",
+      talentPreset: "late",
+      playerMaxHealth: 40,
+    });
+    expect(explicit.playerMaxHealth).toBeGreaterThan(40);
+    expect(explicit.playerMaxHealth - 40).toBe(base.playerMaxHealth - MAX_PLAYER_HEALTH);
   });
 });

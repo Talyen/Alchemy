@@ -13,6 +13,7 @@ import {
 } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { effectsForInstance, generateLootGearChoices, gearBaseItemList, type GearEffectManifest } from "@/lib/gear";
+import { SIM_GEAR_ROLL_DEPTH, SIM_GEAR_ROLL_SOURCE } from "./gear-preset";
 import { gearAffixList } from "@/lib/gear/affix-catalog";
 import { effectsForAffixRolls } from "@/lib/gear/affixes";
 import { defaultGearEffects } from "@/lib/gear/gear-effect-manifest";
@@ -28,15 +29,20 @@ import { companionIdsFromDeck } from "./homestead-preset";
 import {
   balanceScenarioSeed,
   BOON_GAUNTLET,
+  gauntletDepthDeltaFor,
+  IN_CLASS_CARD_GAUNTLET,
   reportCharacterIds,
   reportTierForPreset,
   reportTierRecord,
   REPORT_TIERS,
 } from "./report-catalog";
+
+export { IN_CLASS_CARD_GAUNTLET };
 import type { PairedTierRow } from "./report-model";
 import type { ReportRunOptions } from "./report-options";
 import { combinePairedWinStats, makePairedDelta, pairedWinStats, type PairedWinStats } from "./report-rankings";
 import { simulateWinSeries, type WinSeries } from "./simulator-batch";
+import { DEFAULT_MAX_TURNS } from "./simulator";
 import type { BalanceBatchConfig, TalentPreset } from "./simulator-types";
 import { buildPresetUnlockedTalents, combatTalentsInPoolOrder, withTalent, withoutTalent } from "./talent-preset";
 
@@ -63,7 +69,7 @@ export function buildBalanceBatchConfig(options: ReportRunOptions, config: Balan
     loadoutMode: options.loadoutMode,
     iterations: config.iterations ?? options.iterations,
     seed: config.seed,
-    maxTurns: 30,
+    maxTurns: DEFAULT_MAX_TURNS,
     policy: options.policy,
     ...(options.appliesFightPacing === undefined ? {} : { appliesFightPacing: options.appliesFightPacing }),
     ...(config.deck ? { deck: config.deck } : {}),
@@ -170,6 +176,7 @@ export function runTrinketSweep(options: ReportRunOptions): PairedTierRow[] {
 export function runCardSweepIsolated(options: ReportRunOptions, enemyId: string): PairedTierRow[] {
   const collected: PairedStatsById = new Map();
   const ids = reportCharacterIds();
+  const depthDelta = gauntletDepthDeltaFor(enemyId);
   const iterations = Math.max(1, Math.min(options.pairedIterations, Math.floor(options.iterations / 10) || 1));
   for (const tier of REPORT_TIERS) {
     for (let index = 0; index < options.cardDeckSamples; index += 1) {
@@ -180,7 +187,7 @@ export function runCardSweepIsolated(options: ReportRunOptions, enemyId: string)
       const shared = {
         characterId,
         enemyId,
-        depth: tier.depthOffset + 2,
+        depth: tier.depthOffset + depthDelta,
         preset: tier.preset,
         seed,
         trinketIds: [],
@@ -201,12 +208,6 @@ export function runCardSweepIsolated(options: ReportRunOptions, enemyId: string)
   }
   return mergeComparisons(collected);
 }
-
-export const IN_CLASS_CARD_GAUNTLET = [
-  { enemyId: "skeleton", depthDelta: 1 },
-  { enemyId: "mimic", depthDelta: 5 },
-  { enemyId: "forge-golem", depthDelta: 7 },
-] as const;
 
 export function runCardSweepInClass(options: ReportRunOptions): PairedTierRow[] {
   const collected: PairedStatsById = new Map();
@@ -257,28 +258,33 @@ export function runTalentSweep(options: ReportRunOptions): PairedTierRow[] {
       const unlocked = buildPresetUnlockedTalents(keywords, tier.preset);
       const talents = keywords.flatMap((keyword) => combatTalentsInPoolOrder(keyword));
       const deck = buildClassSimDeck(characterId, tier.preset, deckSeed);
-      for (const talent of talents) {
+
+      const talentSpecs = talents.map((talent) => {
+        const isUnlocked = (unlocked[talent.keywordId] ?? []).includes(talent.id);
         const baselineEffects = computeTalentEffects(withoutTalent(unlocked, talent));
         const treatmentEffects = computeTalentEffects(withTalent(unlocked, talent));
-        for (const scenario of BOON_GAUNTLET) {
-          const depth = tier.depthOffset + scenario.depthDelta;
-          const shared = {
-            characterId,
-            enemyId: scenario.enemyId,
-            depth,
-            preset: tier.preset,
-            seed: balanceScenarioSeed("talent-fight", tier.preset, characterId, scenario.enemyId, depth),
-            deck,
-            iterations: options.pairedIterations,
-          };
-          runComparison(
-            options,
-            collected,
-            tier.preset,
-            talent.id,
-            { ...shared, talentEffects: baselineEffects },
-            { ...shared, talentEffects: treatmentEffects },
-          );
+        return { talent, isUnlocked, baselineEffects, treatmentEffects };
+      });
+      const baseEffects = computeTalentEffects(unlocked);
+
+      for (const scenario of BOON_GAUNTLET) {
+        const depth = tier.depthOffset + scenario.depthDelta;
+        const shared = {
+          characterId,
+          enemyId: scenario.enemyId,
+          depth,
+          preset: tier.preset,
+          seed: balanceScenarioSeed("talent-fight", tier.preset, characterId, scenario.enemyId, depth),
+          deck,
+          iterations: options.pairedIterations,
+        };
+        const baseSeries = runSeries(options, { ...shared, talentEffects: baseEffects });
+        for (const { talent, isUnlocked, baselineEffects, treatmentEffects } of talentSpecs) {
+          const baseline = isUnlocked ? runSeries(options, { ...shared, talentEffects: baselineEffects }) : baseSeries;
+          const treatment = isUnlocked
+            ? baseSeries
+            : runSeries(options, { ...shared, talentEffects: treatmentEffects });
+          pushComparison(collected, tier.preset, talent.id, baseline, treatment);
         }
       }
     }
@@ -307,31 +313,33 @@ export function runCompanionSweep(options: ReportRunOptions): PairedTierRow[] {
           cardMatchesAffinity(card, classKeywords)
         );
       });
-      for (const card of relevant) {
+      const specs = relevant.flatMap((card) => {
         const effect = card.effects.find((candidate) => candidate.kind === "summon-companion");
-        if (!effect || effect.kind !== "summon-companion") continue;
+        if (!effect || effect.kind !== "summon-companion") return [];
         const companionId: CompanionId = effect.companionId;
-        if (!(companionId in companionLibrary)) continue;
-        const baselineDeck = removeCompanionSummonFromDeck(insertCardIntoDeck(deck, card), companionId);
+        if (!(companionId in companionLibrary)) return [];
+        const baselineDeck = removeCompanionSummonFromDeck(deck, companionId);
         const treatmentDeck = insertCardIntoDeck(baselineDeck, card);
-        for (const scenario of BOON_GAUNTLET) {
-          const depth = tier.depthOffset + scenario.depthDelta;
-          const shared = {
-            characterId,
-            enemyId: scenario.enemyId,
-            depth,
-            preset: tier.preset,
-            seed: balanceScenarioSeed("companion-fight", tier.preset, characterId, scenario.enemyId, depth),
-            iterations: options.pairedIterations,
-          };
-          runComparison(
-            options,
-            collected,
-            tier.preset,
-            companionId,
-            { ...shared, deck: baselineDeck },
-            { ...shared, deck: treatmentDeck },
-          );
+        const alreadyInDeck = deck.some((c) =>
+          c.effects.some((e) => e.kind === "summon-companion" && e.companionId === companionId),
+        );
+        return [{ companionId, baselineDeck, treatmentDeck, alreadyInDeck }];
+      });
+      for (const scenario of BOON_GAUNTLET) {
+        const depth = tier.depthOffset + scenario.depthDelta;
+        const shared = {
+          characterId,
+          enemyId: scenario.enemyId,
+          depth,
+          preset: tier.preset,
+          seed: balanceScenarioSeed("companion-fight", tier.preset, characterId, scenario.enemyId, depth),
+          iterations: options.pairedIterations,
+        };
+        const baseSeries = runSeries(options, { ...shared, deck });
+        for (const { companionId, baselineDeck, treatmentDeck, alreadyInDeck } of specs) {
+          const baseline = alreadyInDeck ? runSeries(options, { ...shared, deck: baselineDeck }) : baseSeries;
+          const treatment = runSeries(options, { ...shared, deck: treatmentDeck });
+          pushComparison(collected, tier.preset, companionId, baseline, treatment);
         }
       }
     }
@@ -342,8 +350,8 @@ export function runCompanionSweep(options: ReportRunOptions): PairedTierRow[] {
 export function runGearSweep(options: ReportRunOptions): PairedTierRow[] {
   const collected: PairedStatsById = new Map();
   const lootWeights = resolveLootWeights({
-    source: "mystery",
-    progress: { depth: 24, highestCompletedDifficulty: null },
+    source: SIM_GEAR_ROLL_SOURCE,
+    progress: { depth: SIM_GEAR_ROLL_DEPTH, highestCompletedDifficulty: null },
   });
   for (const tier of REPORT_TIERS) {
     for (const characterId of reportCharacterIds()) {

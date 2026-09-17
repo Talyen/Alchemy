@@ -15,6 +15,8 @@ import {
   setGold,
   setHasActiveRun,
   setMaterials as setRunProfileMaterials,
+  setScreen,
+  setSelectedLabyrinthNodeId,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { addGearCurrencies } from "@/features/alchemy/shared/stores/gear-actions";
 import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
@@ -94,6 +96,22 @@ describe("persistence coordinator", () => {
     unsubscribe();
     useSettingsStore.getState().setMusicVolume(43);
     expect(listener).toHaveBeenCalledTimes(4);
+  });
+
+  it("stays silent for transient-only commits that cannot change a snapshot", () => {
+    const listener = vi.fn();
+    const unsubscribe = subscribeAlchemyPersistence(listener);
+
+    useSettingsStore.getState().setShowClearSaveConfirm(true);
+    dispatchRunSessionCommand((draft) => handleCollectionTabChange(draft, "bestiary"));
+    dispatchRunSessionCommand((draft) => setScreen(draft, "collection"));
+    dispatchRunSessionCommand((draft) => setSelectedLabyrinthNodeId(draft, "node-1"));
+
+    expect(listener).not.toHaveBeenCalled();
+
+    dispatchRunSessionCommand((draft) => setDiscoveredCardIds(draft, ["slash"]));
+    expect(listener).toHaveBeenCalledOnce();
+    unsubscribe();
   });
 
   it("coalesces every gameplay persistence owner into one session signal", () => {
