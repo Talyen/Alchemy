@@ -14,6 +14,9 @@ function cloneEffect(effect: BattleCard["effects"][number]): BattleCard["effects
   if (effect.kind === "repeat-over-turns") {
     return { ...effect, effects: effect.effects.map(cloneEffect) };
   }
+  if (effect.kind === "damage" && effect.damageTypePool) {
+    return { ...effect, damageTypePool: [...effect.damageTypePool] };
+  }
   return { ...effect };
 }
 

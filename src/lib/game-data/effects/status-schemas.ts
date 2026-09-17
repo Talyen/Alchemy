@@ -34,11 +34,16 @@ export const enemyStatusEffectDefinition = {
 
 export const removeHarmfulStatusEffectDefinition = {
   kind: "remove-harmful-status",
-  schema: z.object({
-    kind: z.literal("remove-harmful-status"),
-    amount: PositiveAmountSchema,
-    removeAll: z.boolean().optional(),
-  }),
+  schema: z
+    .object({
+      kind: z.literal("remove-harmful-status"),
+      // Omitted when removeAll is set; old saves may still carry an ignored amount.
+      amount: PositiveAmountSchema.optional(),
+      removeAll: z.boolean().optional(),
+    })
+    .refine((data) => data.removeAll === true || data.amount !== undefined, {
+      message: "remove-harmful-status requires amount unless removeAll is set",
+    }),
 } satisfies EffectKindDefinition<"remove-harmful-status">;
 
 export const removePlayerStatusEffectDefinition = {

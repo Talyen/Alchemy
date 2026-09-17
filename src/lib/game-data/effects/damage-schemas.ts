@@ -58,9 +58,14 @@ export const randomDamageEffectDefinition = defineRangedEffect(
 
 export const removeEnemyArmorEffectDefinition = {
   kind: "remove-enemy-armor",
-  schema: z.object({
-    kind: z.literal("remove-enemy-armor"),
-    amount: PositiveAmountSchema,
-    removeAll: z.boolean().optional(),
-  }),
+  schema: z
+    .object({
+      kind: z.literal("remove-enemy-armor"),
+      // Omitted when removeAll is set; old saves may still carry an ignored amount.
+      amount: PositiveAmountSchema.optional(),
+      removeAll: z.boolean().optional(),
+    })
+    .refine((data) => data.removeAll === true || data.amount !== undefined, {
+      message: "remove-enemy-armor requires amount unless removeAll is set",
+    }),
 } satisfies EffectKindDefinition<"remove-enemy-armor">;

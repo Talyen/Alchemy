@@ -1,6 +1,6 @@
 import { CONSUME_DESCRIPTION_LINE } from "@/lib/game-constants";
 import { capitalizeWord } from "@/lib/utils";
-import type { BattleCard, BattleCardEffect, DamageType, EnemyStatusDamageId, KeywordId } from "../types";
+import type { BattleCard, BattleCardEffect, DamageType, KeywordId } from "../types";
 import { companionLibrary } from "../companions";
 import { getCompanionDescriptionLines } from "./companion-turn-description";
 
@@ -31,10 +31,12 @@ function effectDescriptionLine(effect: BattleCardEffect): string {
       return `Gain ${effect.amount} Mana`;
     case "gain-max-mana":
       return `Gain ${effect.amount} Mana Crystal${effect.amount === 1 ? "" : "s"}`;
-    case "remove-harmful-status":
-      return effect.removeAll
-        ? "Cleanse all harmful status effects"
-        : `Cleanse ${effect.amount} harmful status effect${effect.amount === 1 ? "" : "s"}`;
+    case "remove-harmful-status": {
+      if (effect.removeAll) return "Cleanse all harmful status effects";
+      if (effect.amount === undefined)
+        throw new Error("effectDescriptionLine: remove-harmful-status needs amount without removeAll");
+      return `Cleanse ${effect.amount} harmful status effect${effect.amount === 1 ? "" : "s"}`;
+    }
     case "player-status":
       if (
         effect.status === "block" ||
@@ -53,10 +55,26 @@ function effectDescriptionLine(effect: BattleCardEffect): string {
       return `Deal ${effect.amount} ${capitalizeWord(effect.damageType)} damage`;
     case "gain-gold":
       return `Gain ${effect.amount} Gold`;
+    case "draw-cards":
+      return effect.amount === 1 ? "Draw a card" : `Draw ${effect.amount} cards`;
+    case "lose-health":
+      return `Lose ${effect.amount} Health`;
+    case "lose-mana":
+      return `Lose ${effect.amount} Mana`;
+    case "lose-max-mana":
+      return `Lose ${effect.amount} Mana Crystal${effect.amount === 1 ? "" : "s"}`;
+    case "self-damage":
+      return `Take ${effect.amount} ${capitalizeWord(effect.damageType)} damage`;
+    case "random-damage":
+      return `Deal ${effect.minAmount}–${effect.maxAmount} Random damage`;
     case "wish":
       return `Wish ${effect.amount}`;
-    case "remove-enemy-armor":
-      return effect.removeAll ? "Remove all enemy Armor" : `Remove ${effect.amount} enemy Armor`;
+    case "remove-enemy-armor": {
+      if (effect.removeAll) return "Remove all enemy Armor";
+      if (effect.amount === undefined)
+        throw new Error("effectDescriptionLine: remove-enemy-armor needs amount without removeAll");
+      return `Remove ${effect.amount} enemy Armor`;
+    }
     case "next-hit-crit":
       return "Your next damaging card is a critical strike";
     case "next-hit-leech":
@@ -68,35 +86,30 @@ function effectDescriptionLine(effect: BattleCardEffect): string {
     case "next-archery-free":
       return "Your next Archery card is free";
     case "enemy-status":
-    case "lose-mana":
-    case "lose-max-mana":
     case "summon-companion":
     case "remove-player-status":
-    case "self-damage":
     case "buff-companion":
     case "companion-action":
     case "random-draw":
-    case "lose-health":
-    case "draw-cards":
     case "multiply-enemy-status":
     case "cleanse-player-status-to-damage":
-    case "random-damage":
     case "chance":
     case "repeat-over-turns":
       throw new Error(`effectDescriptionLine: unsupported effect kind ${(effect as BattleCardEffect).kind}`);
   }
 }
 
-type ArcheryDamageCardInput = CardBaseInput & { damageType: DamageType; amount: number };
+type ArcheryDamageCardInput = CardBaseInput & { damageType: DamageType; amount: number; lifesteal?: boolean };
 export function archeryDamageCard({
   id,
   title,
   art,
   damageType,
   amount,
+  lifesteal = false,
   cost = 1,
 }: ArcheryDamageCardInput): BattleCard {
-  const card = damageCard({ id, art, damageType, amount, cost, ...(title !== undefined ? { title } : {}) });
+  const card = damageCard({ id, art, damageType, amount, lifesteal, cost, ...(title !== undefined ? { title } : {}) });
   return {
     ...card,
     descriptionLines: [...card.descriptionLines, "Archery"],
@@ -129,20 +142,34 @@ export function damageCard({
 interface DamageHit {
   damageType: DamageType;
   amount: number;
+  lifesteal?: boolean;
 }
 type DualDamageCardInput = CardBaseInput & { hits: [DamageHit, DamageHit] };
 export function dualDamageCard({ id, title, art, hits, cost = 1 }: DualDamageCardInput): BattleCard {
   const [first, second] = hits;
-  return effectsCard({
+  const card = effectsCard({
     id,
     ...(title !== undefined ? { title } : {}),
     art,
     cost,
     effects: [
-      { kind: "damage", damageType: first.damageType, amount: first.amount },
-      { kind: "damage", damageType: second.damageType, amount: second.amount },
+      {
+        kind: "damage",
+        damageType: first.damageType,
+        amount: first.amount,
+        ...(first.lifesteal ? { lifesteal: true } : {}),
+      },
+      {
+        kind: "damage",
+        damageType: second.damageType,
+        amount: second.amount,
+        ...(second.lifesteal ? { lifesteal: true } : {}),
+      },
     ],
   });
+  // One shared Leech line no matter how many hits drain.
+  if ((first.lifesteal ?? false) || (second.lifesteal ?? false)) card.descriptionLines.push("Leech");
+  return card;
 }
 
 type PlayerStatusCardInput = CardBaseInput & { status: "block" | "armor" | "thorns" | "forge"; amount: number };
@@ -176,16 +203,33 @@ export function singleEffectCard({
   };
 }
 
-type ConsumableCardInput = CardBaseInput & { effect: BattleCardEffect };
-export function consumableCard({ id, title, art, effect, cost = 1 }: ConsumableCardInput): BattleCard {
+type ConsumableCardInput = CardBaseInput & {
+  effect?: BattleCardEffect;
+  effects?: BattleCardEffect[];
+  descriptionLines?: string[];
+};
+export function consumableCard({
+  id,
+  title,
+  art,
+  effect,
+  effects,
+  descriptionLines,
+  cost = 1,
+}: ConsumableCardInput): BattleCard {
+  const resolved = effects ?? (effect ? [effect] : []);
+  if (resolved.length === 0) throw new Error(`consumableCard ${id} needs effect or effects`);
   return {
     id,
     title: deriveTitle(id, title),
-    descriptionLines: [effectDescriptionLine(effect), CONSUME_DESCRIPTION_LINE],
+    descriptionLines: [
+      ...(descriptionLines ?? resolved.map((item) => effectDescriptionLine(item))),
+      CONSUME_DESCRIPTION_LINE,
+    ],
     art,
     cost,
     consume: true,
-    effects: [effect],
+    effects: resolved,
   };
 }
 
@@ -274,7 +318,15 @@ export function healThenDamageCard({
   };
 }
 
-type EffectsCardInput = CardBaseInput & { effects: BattleCardEffect[]; tags?: KeywordId[]; consume?: boolean };
+type EffectsCardInput = CardBaseInput & {
+  effects: BattleCardEffect[];
+  tags?: KeywordId[];
+  consume?: boolean;
+  // Escape hatch for effects with no canonical line (chance,
+  // repeat-over-turns, conditional or combined phrasing): replaces the
+  // generated per-effect lines. Tags and Consume are still appended.
+  descriptionLines?: string[];
+};
 export function effectsCard({
   id,
   title,
@@ -282,9 +334,10 @@ export function effectsCard({
   effects,
   tags,
   consume = false,
+  descriptionLines,
   cost = 1,
 }: EffectsCardInput): BattleCard {
-  const lines = effects.map((effect) => effectDescriptionLine(effect));
+  const lines = [...(descriptionLines ?? effects.map((effect) => effectDescriptionLine(effect)))];
   if (tags) lines.push(...tags.map((tag) => capitalizeWord(tag)));
   if (consume) lines.push(CONSUME_DESCRIPTION_LINE);
   return {
@@ -334,55 +387,22 @@ export function playerStatThenScaledDamageCard({
   return { id, title: deriveTitle(id, title), descriptionLines, art, cost, effects };
 }
 
-type DamageThenMultiplyEnemyStatusCardInput = CardBaseInput & {
-  damageType: DamageType;
-  damageAmount: number;
-  status: EnemyStatusDamageId;
-  factor: number;
-  multiplyLine: string;
-  consume?: boolean;
-};
-export function damageThenMultiplyEnemyStatusCard({
-  id,
-  title,
-  art,
-  damageType,
-  damageAmount,
-  status,
-  factor,
-  multiplyLine,
-  consume = false,
-  cost = 1,
-}: DamageThenMultiplyEnemyStatusCardInput): BattleCard {
-  const descriptionLines = [
-    `Deal ${damageAmount} ${capitalizeWord(damageType)} damage`,
-    multiplyLine,
-    ...(consume ? [CONSUME_DESCRIPTION_LINE] : []),
-  ];
-  return {
-    id,
-    title: deriveTitle(id, title),
-    descriptionLines,
-    art,
-    cost,
-    ...(consume ? { consume: true } : {}),
-    effects: [
-      { kind: "damage", damageType, amount: damageAmount },
-      { kind: "multiply-enemy-status", status, factor },
-    ],
-  };
-}
-
 type SummonCompanionCardInput = CardBaseInput & { companionId: import("../types").CompanionId };
 export function summonCompanionCard({ id, title, art, companionId, cost = 1 }: SummonCompanionCardInput): BattleCard {
-  const turnEffects = companionLibrary[companionId].turnStartEffects;
+  const companion = companionLibrary[companionId];
+  const turnEffects = companion.turnStartEffects;
   if (turnEffects.length === 0)
     throw new Error(`Companion ${companionId} must have at least one turn-start effect for summon card ${id}`);
-  const descriptionLines = getCompanionDescriptionLines(companionLibrary[companionId]);
+  const descriptionLines = getCompanionDescriptionLines(companion);
   descriptionLines.push("Companion");
+  // Companion names (including "Risen Skeleton" and "Will-o'-Wisp") come from
+  // the companion definition — never from capitalizing the card id.
+  const companionTitle = companion.title.endsWith(" Companion")
+    ? companion.title.slice(0, -" Companion".length)
+    : undefined;
   return {
     id,
-    title: deriveTitle(id, title),
+    title: title ?? companionTitle ?? deriveTitle(id),
     descriptionLines,
     art,
     cost,

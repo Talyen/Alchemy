@@ -44,6 +44,7 @@ describe("card classification", () => {
   it.each<BattleCardEffect[]>([
     [],
     [{ kind: "heal", amount: 1 }],
+    [{ kind: "player-status", status: "block", amount: 5 }],
     [{ kind: "self-damage", damageType: "burn", amount: 1 }],
     [{ kind: "enemy-status", status: "poison", amount: 1 }],
     [{ kind: "repeat-over-turns", remainingTurns: 2, effects: [{ kind: "heal", amount: 1 }] }],

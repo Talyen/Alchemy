@@ -27,14 +27,18 @@ export interface PlaybackBlockedSource {
  * are always read live, so tight loops observe toggles without waiting for a
  * re-render.
  */
-export function usePlaybackBlocked(source: PlaybackBlockedSource): (battleState?: BattleSnapshot) => boolean {
+function usePlaybackBlockedWithMode(
+  source: PlaybackBlockedSource,
+  wishMode: "excluded" | "required",
+): (battleState?: BattleSnapshot) => boolean {
   const screenRef = useLatestRef(source.screen);
   const battleStateRef = useLatestRef(source.battleState);
   const hasActiveBattleRef = useLatestRef(source.hasActiveBattle);
   const gameMenuOpenRef = useLatestRef(source.gameMenuOpen ?? false);
   const isCardPlayInProgressRef = useLatestRef(source.isCardPlayInProgress);
+  const predicate = wishMode === "excluded" ? isBattlePlaybackBlocked : isWishPlaybackBlocked;
   const isBlockedRef = useLatestRef((override?: BattleSnapshot) =>
-    isBattlePlaybackBlocked({
+    predicate({
       screen: screenRef.current,
       battleState: override ?? battleStateRef.current,
       hasActiveBattle: hasActiveBattleRef.current,
@@ -48,28 +52,15 @@ export function usePlaybackBlocked(source: PlaybackBlockedSource): (battleState?
   return useCallback((override?: BattleSnapshot) => isBlockedRef.current(override), [isBlockedRef]);
 }
 
+export function usePlaybackBlocked(source: PlaybackBlockedSource): (battleState?: BattleSnapshot) => boolean {
+  return usePlaybackBlockedWithMode(source, "excluded");
+}
+
 /**
  * Wish-pick variant of the shared gate: same inputs, but Wish options must be
  * present (instead of absent) for autoplay to proceed. Lets the autoplay loop
  * resolve Wishes while the card gate and auto-end-turn timer stay parked.
  */
 export function useWishPlaybackBlocked(source: PlaybackBlockedSource): (battleState?: BattleSnapshot) => boolean {
-  const screenRef = useLatestRef(source.screen);
-  const battleStateRef = useLatestRef(source.battleState);
-  const hasActiveBattleRef = useLatestRef(source.hasActiveBattle);
-  const gameMenuOpenRef = useLatestRef(source.gameMenuOpen ?? false);
-  const isCardPlayInProgressRef = useLatestRef(source.isCardPlayInProgress);
-  const isBlockedRef = useLatestRef((override?: BattleSnapshot) =>
-    isWishPlaybackBlocked({
-      screen: screenRef.current,
-      battleState: override ?? battleStateRef.current,
-      hasActiveBattle: hasActiveBattleRef.current,
-      cardTransferInProgress: source.presentationGateRef.current.cardTransferInProgress,
-      hiddenHandCardKeys: source.presentationGateRef.current.hiddenHandCardKeys,
-      cardPlayInProgress: Boolean(isCardPlayInProgressRef.current?.()),
-      gameMenuOpen: gameMenuOpenRef.current,
-      inspectionOpen: isBattleInspectionOpen(useUiStore.getState()),
-    }),
-  );
-  return useCallback((override?: BattleSnapshot) => isBlockedRef.current(override), [isBlockedRef]);
+  return usePlaybackBlockedWithMode(source, "required");
 }

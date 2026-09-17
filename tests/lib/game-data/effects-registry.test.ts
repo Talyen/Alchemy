@@ -6,24 +6,12 @@ import {
   ENEMY_STATUS_IDS,
   EnemyStatusDamageIdSchema,
   EnemyStatusIdSchema,
-  RECURSIVE_BATTLE_CARD_EFFECT_KINDS,
   TEMPLATE_EFFECT_DEFINITIONS,
 } from "@/lib/game-data";
 
 describe("effect dispatch registry", () => {
-  it("template definitions cover all non-recursive kinds", () => {
-    const recursive = new Set<string>(RECURSIVE_BATTLE_CARD_EFFECT_KINDS);
-    expect(TEMPLATE_EFFECT_DEFINITIONS).toHaveLength(BATTLE_CARD_EFFECT_KINDS.length - recursive.size);
-    const templateKinds = new Set<string>(TEMPLATE_EFFECT_DEFINITIONS.map((def) => def.kind));
-    for (const kind of BATTLE_CARD_EFFECT_KINDS) {
-      if (recursive.has(kind)) {
-        expect(templateKinds.has(kind)).toBe(false);
-      } else {
-        expect(templateKinds.has(kind)).toBe(true);
-      }
-    }
-  });
-
+  // Template/handler/keyword coverage for every kind lives in
+  // effect-kind-coverage.test.ts; this file pins schema refinements.
   it("has no duplicate kinds", () => {
     expect(new Set(BATTLE_CARD_EFFECT_KINDS).size).toBe(BATTLE_CARD_EFFECT_KINDS.length);
   });

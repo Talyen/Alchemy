@@ -113,7 +113,8 @@ export type BattleCardEffect =
   | { kind: "gain-gold"; amount: number; ifEnemyStunned?: boolean }
   | { kind: "wish"; amount: number }
   | { kind: "summon-companion"; companionId: CompanionId }
-  | { kind: "remove-harmful-status"; amount: number; removeAll?: boolean }
+  // amount is omitted when removeAll is set — there is no number to author.
+  | { kind: "remove-harmful-status"; amount?: number; removeAll?: boolean }
   | { kind: "remove-player-status"; status: EnemyStatusDamageId }
   | { kind: "self-damage"; damageType: EnemyStatusDamageId; amount: number }
   | { kind: "buff-companion"; amount: number }
@@ -121,7 +122,8 @@ export type BattleCardEffect =
   | { kind: "lose-health"; amount: number }
   | { kind: "draw-cards"; amount: number }
   | { kind: "random-draw"; minAmount: number; maxAmount: number }
-  | { kind: "remove-enemy-armor"; amount: number; removeAll?: boolean }
+  // amount is omitted when removeAll is set — there is no number to author.
+  | { kind: "remove-enemy-armor"; amount?: number; removeAll?: boolean }
   | { kind: "multiply-enemy-status"; status: EnemyStatusDamageId; factor: number }
   | {
       kind: "cleanse-player-status-to-damage";

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dealDamage, makeTestCard, patchBattleState } from "../../fixtures/battle";
+import { dealDamage, makeTestCard, patchBattleState, regressionBattle } from "../../fixtures/battle";
 import { getEnemyDamageMultiplier } from "@/lib/battle/status-helpers";
 import { buildWishOptions } from "@/lib/battle/wish";
 import { computeCardPayment } from "@/lib/battle/card-cost-rules";
@@ -30,8 +30,7 @@ describe("player-facing combat regressions", () => {
   });
 
   it.each(["stun", "freeze"] as const)("keeps %s vulnerability talents against resistant enemies", (status) => {
-    const state = patchBattleState({
-      rng: () => 0.99,
+    const state = regressionBattle({
       currentEnemy: { traits: [{ id: "burn-resistance", title: "Resistant", description: "" }] },
       enemyCC: { stunSkipTurns: status === "stun" ? 1 : 0, freezeSkipTurns: status === "freeze" ? 1 : 0 },
       talentEffects: { stunDoubleDamage: true, freezeDoubleDamage: true },
@@ -84,8 +83,7 @@ describe("player-facing combat regressions", () => {
   });
 
   it("keeps ordinary companion Forge rules without Bonded and leaves hero Burn unchanged", () => {
-    const state = patchBattleState({
-      rng: () => 0.99,
+    const state = regressionBattle({
       activeCompanion: companionLibrary.wolf,
       playerStatuses: { forge: 4 },
     });
@@ -115,8 +113,7 @@ describe("player-facing combat regressions", () => {
   });
 
   it.each(["bear", "wolf", "phoenix"] as const)("Bonded adds Forge exactly once to %s", (id) => {
-    const state = patchBattleState({
-      rng: () => 0.99,
+    const state = regressionBattle({
       activeCompanion: companionLibrary[id],
       playerStatuses: { forge: 4 },
       gearEffects: { companionBenefitsFromForge: 1 },

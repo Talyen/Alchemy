@@ -18,9 +18,7 @@ import { applyDrawResult, drawFromState, drawKeywordCard } from "@/lib/battle/dr
 import { computeEffectiveCost } from "@/lib/battle/card-cost-rules";
 import { battleSnapshot, type BattleState } from "@/lib/battle/types";
 import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
-import { makeTestCard, patchBattleState, type BattleStatePatch } from "../../fixtures/battle";
-
-const battle = (patch: BattleStatePatch = {}) => patchBattleState({ rng: () => 0.99, ...patch });
+import { makeTestCard, regressionBattle as battle } from "../../fixtures/battle";
 
 describe("card and turn reaction ordering", () => {
   it("the Mask preserves a reserved critical hit and stops regeneration after its kill", () => {

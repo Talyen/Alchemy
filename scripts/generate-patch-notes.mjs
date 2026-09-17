@@ -1,12 +1,12 @@
 // Generates player-facing patch notes from git history since the previous v* tag.
 // Day-to-day CHANGELOG.md is not the source; conventional types, paths, and
 // User-Facing trailers decide what players see.
-import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { assertValidSemver, getCommitsSinceTag, resolvePatchNoteRange } from "./lib/git-release.mjs";
-import { isMainModule } from "./lib/is-main-module.mjs";
 import { buildPatchNotesMarkdown } from "./lib/patch-notes-core.mjs";
+import { defineScript } from "./lib/script-run.mjs";
+import { writeTextIfChanged } from "./lib/write-text-if-changed.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -39,7 +39,7 @@ export function generatePatchNotesMarkdown(rootDir, options = {}) {
   };
 }
 
-function generatePatchNotes(options = {}) {
+async function generatePatchNotes(options = {}) {
   const rootDir = options.root ?? root;
   const parsed = parseGeneratePatchNotesArgs(options.argv ?? process.argv.slice(2), options.env ?? process.env);
   const result = generatePatchNotesMarkdown(rootDir, parsed);
@@ -49,19 +49,13 @@ function generatePatchNotes(options = {}) {
     return result;
   }
 
+  const { mkdirSync } = await import("node:fs");
   const outDir = join(rootDir, "release-notes");
   mkdirSync(outDir, { recursive: true });
   const outPath = join(outDir, `${result.outputName}.md`);
-  writeFileSync(outPath, result.markdown, "utf8");
+  await writeTextIfChanged(outPath, result.markdown);
   console.log(`Wrote ${outPath} (${result.commits.length} git commits)`);
   return result;
 }
 
-if (isMainModule(import.meta.url)) {
-  try {
-    generatePatchNotes();
-  } catch (error) {
-    console.error(error instanceof Error ? error.message : error);
-    process.exitCode = 1;
-  }
-}
+defineScript(import.meta.url, () => generatePatchNotes());

@@ -132,4 +132,23 @@ describe("saved card content restoration", () => {
       consume: false,
     });
   });
+
+  it("does not share damage type pools between saved and restored cards", () => {
+    const arrow = cardById["astral-arrow"]!;
+    const saved: BattleCard = {
+      ...arrow,
+      effects: [{ kind: "damage", damageType: "holy", damageTypePool: ["freeze", "burn", "holy"], amount: 4 }],
+      descriptionLines: [...arrow.descriptionLines],
+    };
+    const restored = hydrateCard(saved);
+    const effect = restored.effects[0];
+    if (effect?.kind !== "damage" || !effect.damageTypePool) throw new Error("Expected pooled damage effect");
+    effect.damageTypePool.push("nature");
+    expect(saved.effects[0]).toEqual({
+      kind: "damage",
+      damageType: "holy",
+      damageTypePool: ["freeze", "burn", "holy"],
+      amount: 4,
+    });
+  });
 });

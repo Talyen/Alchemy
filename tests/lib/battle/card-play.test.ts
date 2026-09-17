@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { canPlayCard, playBattleCardResolved } from "@/lib/battle/card-play";
-import { cardHasDamageType, hasDamageEffect, isAttackCard } from "@/lib/battle/card-classification";
 import { defaultBattleState } from "@/lib/battle";
 import { cardById, companionLibrary } from "@/lib/game-data";
 import { makeState as makeSharedState, makeTestCard, slashDeck } from "../../fixtures/battle";
@@ -9,14 +8,6 @@ import { defaultTrinketManifest } from "../../fixtures/default-battle-state";
 function makeState(overrides: Parameters<typeof makeSharedState>[0] = {}) {
   return makeSharedState({ mana: 5, maxMana: 5, ...overrides });
 }
-
-describe("cardHasDamageType", () => {
-  it("returns true when the card has a matching damage effect", () => {
-    const card = makeTestCard({ effects: [{ kind: "damage", damageType: "holy", amount: 3 }] });
-    expect(cardHasDamageType(card, "holy")).toBe(true);
-    expect(cardHasDamageType(card, "physical")).toBe(false);
-  });
-});
 
 describe("playBattleCardResolved", () => {
   it("deducts mana and removes card from hand", () => {
@@ -448,31 +439,6 @@ describe("canPlayCard", () => {
     });
     const state = makeState({ mana: 4, playerHealth: 20, hand: [card] });
     expect(canPlayCard(state, card, 0)).toBe(true);
-  });
-});
-
-describe("isAttackCard / hasDamageEffect", () => {
-  it("treats recursive damage as an attack", () => {
-    const card = makeTestCard({
-      effects: [
-        {
-          kind: "chance",
-          probability: 0.5,
-          successEffects: [{ kind: "damage", damageType: "physical", amount: 3 }],
-          failureEffects: [{ kind: "heal", amount: 2 }],
-        },
-      ],
-    });
-    expect(hasDamageEffect(card.effects)).toBe(true);
-    expect(isAttackCard(card)).toBe(true);
-  });
-
-  it("treats status-only cards as casts", () => {
-    const card = makeTestCard({
-      effects: [{ kind: "player-status", status: "block", amount: 5 }],
-    });
-    expect(hasDamageEffect(card.effects)).toBe(false);
-    expect(isAttackCard(card)).toBe(false);
   });
 });
 

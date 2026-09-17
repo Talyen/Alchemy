@@ -104,7 +104,10 @@ function createChanceEffectSchema(getEffectSchema: () => z.ZodType<BattleCardEff
     kind: z.literal("chance"),
     probability: z.number().min(0).max(1),
     successEffects: z.array(z.lazy(getEffectSchema)).min(1),
-    failureEffects: z.array(z.lazy(getEffectSchema)).min(1),
+    // Empty failureEffects means "no effect on failure" — the sanctioned shape
+    // for a bonus-trigger chance (bonded Mana Moth / Library Owl synthesize it
+    // at runtime). Authored cards keep non-empty branches via content validation.
+    failureEffects: z.array(z.lazy(getEffectSchema)),
   });
 }
 

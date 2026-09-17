@@ -60,7 +60,7 @@ export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget
     for (const field of CORRUPTIBLE_NUMERIC_FIELDS) {
       if (
         field === "amount" &&
-        ((effect.kind === "remove-enemy-armor" && effect.removeAll) ||
+        (((effect.kind === "remove-enemy-armor" || effect.kind === "remove-harmful-status") && effect.removeAll) ||
           (effect.kind === "damage" && effect.equalToForge))
       )
         continue;

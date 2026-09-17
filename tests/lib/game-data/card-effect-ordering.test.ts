@@ -8,6 +8,18 @@ const orderingInvariants: Array<{ cardId: string; firstKind: string; secondKind:
     secondKind: "self-damage",
     reason: "self-damage Burn must not be cleansed by the preceding status removal",
   },
+  {
+    cardId: "acid-potion",
+    firstKind: "remove-enemy-armor",
+    secondKind: "damage",
+    reason: "armor removal must land before the Poison hit so the hit is unmitigated",
+  },
+  {
+    cardId: "burning-blade",
+    firstKind: "damage",
+    secondKind: "damage",
+    reason: "the Forge-scaled Burn hit resolves before the Physical hit",
+  },
 ];
 
 describe("card effect ordering invariants", () => {
@@ -18,9 +30,11 @@ describe("card effect ordering invariants", () => {
       expect(card, `cardLibrary missing ${cardId} — invariant cannot be checked`).toBeDefined();
       if (!card) return;
       const firstIdx = card.effects.findIndex((e) => e.kind === firstKind);
-      const secondIdx = card.effects.findIndex((e) => e.kind === secondKind);
+      // Search after the first hit so same-kind pairs (Burning Blade's two
+      // damage hits) are ordered, not just co-present.
+      const secondIdx = card.effects.findIndex((e, i) => i > firstIdx && e.kind === secondKind);
       expect(firstIdx, `expected ${firstKind} at index < ${secondIdx}`).toBeGreaterThanOrEqual(0);
-      expect(secondIdx, `expected ${secondKind} at index > ${firstIdx}`).toBeGreaterThan(firstIdx);
+      expect(secondIdx, `expected ${secondKind} after ${firstKind} at index ${firstIdx}`).toBeGreaterThan(firstIdx);
     },
   );
 });

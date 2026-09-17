@@ -6,13 +6,12 @@ import { companionLibrary } from "@/lib/game-data";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { checkHealthThresholds } from "@/lib/battle/status-player";
 import { applyWishEffect } from "@/lib/battle/wish";
-import { dealDamage, makeTestCard, patchBattleState } from "../../fixtures/battle";
+import { dealDamage, makeTestCard, patchBattleState, regressionBattle } from "../../fixtures/battle";
 
 describe("gameplay regressions", () => {
   it.each([19, 20, 21])("Kill Shot respects the strict 20 percent boundary at %i Health", (health) => {
     const card = makeTestCard({ tags: ["archery"], effects: [{ kind: "damage", damageType: "physical", amount: 4 }] });
-    const state = patchBattleState({
-      rng: () => 0.99,
+    const state = regressionBattle({
       enemyHealth: health,
       enemyMaxHealth: 100,
       talentEffects: { archeryDoubledVsLowHealth: true },
@@ -79,8 +78,7 @@ describe("gameplay regressions", () => {
         { kind: "damage", damageType: "nature", amount: 1 },
       ],
     });
-    const state = patchBattleState({
-      rng: () => 0.99,
+    const state = regressionBattle({
       mana: 0,
       hand: [card],
       gearEffects: { manaOnNatureDamageChance: 100 },
@@ -99,8 +97,7 @@ describe("gameplay regressions", () => {
         },
       ],
     });
-    const state = patchBattleState({
-      rng: () => 0.99,
+    const state = regressionBattle({
       mana: 0,
       hand: [card],
       gearEffects: { manaOnNatureDamageChance: 100 },
@@ -109,8 +106,7 @@ describe("gameplay regressions", () => {
   });
 
   it("Bloomwoven rewards Companion Nature damage", () => {
-    const state = patchBattleState({
-      rng: () => 0.99,
+    const state = regressionBattle({
       mana: 0,
       activeCompanion: {
         ...companionLibrary.wolf,
@@ -123,8 +119,7 @@ describe("gameplay regressions", () => {
   it.each(["second-wind", "divine-aegis"] as const)(
     "Thunderstone respects %s when multiplied buildup Stuns",
     (trait) => {
-      const state = patchBattleState({
-        rng: () => 0.99,
+      const state = regressionBattle({
         enemyHealth: 60,
         enemyMaxHealth: 100,
         currentEnemy: { traits: [{ id: trait, title: trait, description: "" }] },

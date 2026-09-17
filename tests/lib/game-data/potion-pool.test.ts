@@ -8,9 +8,30 @@ describe("getStandardPotionPool", () => {
     expect(pool.length).toBeGreaterThan(0);
     for (const card of pool) {
       expect(isStandardPotionCard(card)).toBe(true);
-      expect(card.id).toMatch(/-potion$/);
       expect(card.id).not.toBe("mixed-potion");
     }
+  });
+
+  it("contains exactly the Distillation-eligible standard potions", () => {
+    const poolIds = new Set(getStandardPotionPool().map((card) => card.id));
+    expect(poolIds).toEqual(
+      new Set([
+        "health-potion",
+        "mana-potion",
+        "panacea-potion",
+        "stoneskin-potion",
+        "acid-potion",
+        "luck-potion",
+        "wishing-potion",
+      ]),
+    );
+  });
+
+  it("returns a copy so callers cannot corrupt the cached pool", () => {
+    const first = getStandardPotionPool();
+    first.pop();
+    first.splice(0, first.length);
+    expect(getStandardPotionPool().length).toBe(7);
   });
 
   it("excludes mixed potion cards from the library", () => {
@@ -45,5 +66,31 @@ describe("isPotionCard", () => {
   it("includes composite mixed ids and excludes non-potions", () => {
     expect(isPotionCard({ id: "mixed-potion-health-potion-a1-mana-potion-b2" })).toBe(true);
     expect(isPotionCard({ id: "slash" })).toBe(false);
+  });
+
+  it("includes every standard potion", () => {
+    for (const id of [
+      "health-potion",
+      "mana-potion",
+      "panacea-potion",
+      "stoneskin-potion",
+      "acid-potion",
+      "luck-potion",
+      "wishing-potion",
+    ]) {
+      expect(isPotionCard({ id })).toBe(true);
+    }
+  });
+
+  it("excludes similar one-use cards that are not Potions", () => {
+    for (const id of ["mana-berries", "mana-crystals", "apple", "bread"]) {
+      expect(isPotionCard({ id })).toBe(false);
+      expect(isStandardPotionCard({ id })).toBe(false);
+    }
+  });
+
+  it("does not admit future -potion ids by suffix alone", () => {
+    expect(isPotionCard({ id: "brand-new-potion" })).toBe(false);
+    expect(isStandardPotionCard({ id: "brand-new-potion" })).toBe(false);
   });
 });

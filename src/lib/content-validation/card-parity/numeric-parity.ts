@@ -13,7 +13,7 @@ import {
 function checkSimpleValueLine(
   line: string,
   prefix: string,
-  nextEffect: () => { amount: number } | undefined,
+  nextEffect: () => { amount?: number } | undefined,
   issues: ContentValidationIssue[],
   cardId: string,
 ): boolean {
@@ -24,14 +24,16 @@ function checkSimpleValueLine(
     return true;
   }
   const parsed = line === "Draw a card" ? 1 : parseLeadingNumber(line, prefix);
-  if (parsed !== effect.amount) pushValueMismatch(issues, cardId, line, effect.amount);
+  // Callers with removeAll shapes intercept those lines before reaching here,
+  // so amount is always present; the fallback only satisfies the type.
+  if (parsed !== effect.amount) pushValueMismatch(issues, cardId, line, effect.amount ?? 0);
   return true;
 }
 
 function checkRestoreLine(
   line: string,
   resource: "Mana" | "Health",
-  nextEffect: () => { amount: number } | undefined,
+  nextEffect: () => { amount?: number } | undefined,
   issues: ContentValidationIssue[],
   cardId: string,
 ): boolean {
@@ -50,7 +52,7 @@ function checkRestoreLine(
 
 type NextDamageFn = () => (BattleCardEffect & { kind: "damage" }) | undefined;
 type NextPlayerStatusFn = () => (BattleCardEffect & { kind: "player-status" }) | undefined;
-type NextSimpleFn<T extends { amount: number }> = () => T | undefined;
+type NextSimpleFn<T extends { amount?: number }> = () => T | undefined;
 
 function checkDealLine(
   line: string,
@@ -140,7 +142,7 @@ function checkStatusLine(
 
 function checkRemoveHarmfulLine(
   line: string,
-  nextRemoveHarmful: NextSimpleFn<{ amount: number; removeAll?: boolean }>,
+  nextRemoveHarmful: NextSimpleFn<{ amount?: number; removeAll?: boolean }>,
   issues: ContentValidationIssue[],
   cardId: string,
 ): boolean {
@@ -151,8 +153,13 @@ function checkRemoveHarmfulLine(
     pushMissingEffect(issues, cardId, line);
     return true;
   }
-  if (effect.removeAll || line.includes("all harmful")) return true;
-  if (parseLeadingNumber(line, prefix) !== effect.amount) pushValueMismatch(issues, cardId, line, effect.amount);
+  if (line.includes("all harmful")) {
+    if (!effect.removeAll) pushMissingEffect(issues, cardId, line);
+    return true;
+  }
+  // A full cleanse carries no amount — a numeric line against it falls through
+  // to the mismatch below (parsed vs 0), mirroring remove-enemy-armor.
+  if (parseLeadingNumber(line, prefix) !== effect.amount) pushValueMismatch(issues, cardId, line, effect.amount ?? 0);
   return true;
 }
 

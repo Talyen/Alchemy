@@ -14,6 +14,7 @@ import {
   getTalentTreeKeywordIds,
   ENEMY_TYPE_VALUES,
   type BattleCard,
+  type BattleCardEffect,
   type TrinketEntry,
 } from "@/lib/game-data";
 import { ENEMY_STATUS_IDS_LIST } from "@/lib/validation";
@@ -79,6 +80,19 @@ const encounterTraitIdList: readonly string[] = [...COMBAT_ENCOUNTER_TRAIT_IDS, 
 const combatEncounterTraitIdSet = new Set<string>(COMBAT_ENCOUNTER_TRAIT_IDS);
 const rewardEncounterTraitIdSet = new Set<string>(REWARD_ENCOUNTER_TRAIT_IDS);
 
+// Branch nodes are unwrapped by flattenEffects, so authored chance shapes need
+// their own walk. Empty failureEffects is reserved for runtime-synthesized
+// bonus-trigger chances (bonded Mana Moth / Library Owl), never authored cards.
+function eachChanceEffect(effects: BattleCardEffect[]): Array<Extract<BattleCardEffect, { kind: "chance" }>> {
+  return effects.flatMap((effect) => {
+    if (effect.kind === "chance") {
+      return [effect, ...eachChanceEffect(effect.successEffects), ...eachChanceEffect(effect.failureEffects)];
+    }
+    if (effect.kind === "repeat-over-turns") return eachChanceEffect(effect.effects);
+    return [];
+  });
+}
+
 function validateCardOffers(card: BattleCard, offerableIds: Set<string>, collector: Collector): void {
   if (card.excludeFromOfferPool && offerableIds.has(card.id))
     collector.error("rewards", card.id, "Card is excluded from offer pool but was found in offerable card pool");
@@ -103,6 +117,11 @@ export function validateCards(collector: Collector): void {
     for (const effect of flattenEffects(card.effects)) {
       if (effect.kind === "summon-companion" && !companionIds.has(effect.companionId)) {
         collector.error("cards", card.id, `References unknown companion: ${effect.companionId}`);
+      }
+    }
+    for (const effect of eachChanceEffect(card.effects)) {
+      if (effect.failureEffects.length === 0) {
+        collector.error("cards", card.id, "Authored chance effect has an empty failure branch");
       }
     }
     validateCardOffers(card, offerableIds, collector);

@@ -89,7 +89,6 @@ export const COMPANION_GOLD_MULTIPLIER = 1.2;
 // alongside the rest of gear tuning.
 export const MYSTERY_CARD_CHOICES = 3;
 export const MIXED_POTION_CARD_ID = "mixed-potion";
-export const POTION_CARD_ID_SUFFIX = "-potion";
 export const MIXED_POTION_TITLE = "Mixed Potion";
 export const MIXED_POTION_COST = 1;
 export const CONSUME_DESCRIPTION_LINE = "Consume";

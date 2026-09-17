@@ -63,7 +63,10 @@ describe("alchemist shop actions", () => {
     it("deducts gold, replaces two cards with mixed potion, marks mixUsed", () => {
       setRunProgress({
         gold: 999,
-        runDeck: [makeCard({ id: "a-potion", title: "Potion A" }), makeCard({ id: "b-potion", title: "Potion B" })],
+        runDeck: [
+          makeCard({ id: "health-potion", title: "Potion A" }),
+          makeCard({ id: "mana-potion", title: "Potion B" }),
+        ],
       });
       setAlchemistState(createInitialAlchemistState());
       const actions = buildActions();
@@ -81,8 +84,8 @@ describe("alchemist shop actions", () => {
       setRunProgress({
         gold: 999,
         runDeck: [
-          makeCard({ id: "a-potion", title: "Potion A", effects: [makeEffect("holy", 5)] }),
-          makeCard({ id: "b-potion", title: "Potion B", effects: [makeEffect("holy", 5)] }),
+          makeCard({ id: "health-potion", title: "Potion A", effects: [makeEffect("holy", 5)] }),
+          makeCard({ id: "mana-potion", title: "Potion B", effects: [makeEffect("holy", 5)] }),
         ],
       });
       setAlchemistState(createInitialAlchemistState());
@@ -113,7 +116,7 @@ describe("alchemist shop actions", () => {
         gold: 999,
         runDeck: [
           makeCard({ id: MIXED_POTION_CARD_ID, title: "Mixed" }),
-          makeCard({ id: "b-potion", title: "Potion" }),
+          makeCard({ id: "mana-potion", title: "Potion" }),
         ],
       });
       setAlchemistState(createInitialAlchemistState());
@@ -128,7 +131,10 @@ describe("alchemist shop actions", () => {
     it("prevents a second mix attempt after first succeeds", () => {
       setRunProgress({
         gold: 999,
-        runDeck: [makeCard({ id: "a-potion", title: "Potion A" }), makeCard({ id: "b-potion", title: "Potion B" })],
+        runDeck: [
+          makeCard({ id: "health-potion", title: "Potion A" }),
+          makeCard({ id: "mana-potion", title: "Potion B" }),
+        ],
       });
       setAlchemistState(createInitialAlchemistState());
       const firstActions = buildActions({ talentEffects: { potionMixPotency: 0 } });
@@ -146,10 +152,10 @@ describe("alchemist shop actions", () => {
       setRunProgress({
         gold: 999,
         runDeck: [
-          makeCard({ id: "a-potion", title: "Potion A" }),
-          makeCard({ id: "b-potion", title: "Potion B" }),
-          makeCard({ id: "c-potion", title: "Potion C" }),
-          makeCard({ id: "d-potion", title: "Potion D" }),
+          makeCard({ id: "health-potion", title: "Potion A" }),
+          makeCard({ id: "mana-potion", title: "Potion B" }),
+          makeCard({ id: "panacea-potion", title: "Potion C" }),
+          makeCard({ id: "stoneskin-potion", title: "Potion D" }),
         ],
       });
       setAlchemistState(createInitialAlchemistState());

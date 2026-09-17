@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { BattleCard } from "@/lib/game-data";
-import { validateCardDescriptionParity } from "@/lib/content-validation/card-parity";
+import { validateCardDescriptionParity, TRAIT_REQUIRED_PATTERNS } from "@/lib/content-validation/card-parity";
 import { validateEnemyTraitDescriptionParity } from "@/lib/content-validation/card-parity/enemy-trait-parity";
 import { enemyBestiary } from "@/lib/game-data";
 
@@ -111,6 +111,22 @@ describe("card parity failure paths", () => {
     expect(companion.map((issue) => issue.severity)).toEqual(["warning"]);
   });
 
+  it("rejects a repeated damage line when the second hit has a different amount", () => {
+    const issues = validateCardDescriptionParity(
+      makeCard({
+        id: "mismatched-repeat",
+        descriptionLines: ["Deal 1 Freeze damage, twice"],
+        effects: [
+          { kind: "damage", damageType: "freeze", amount: 1 },
+          { kind: "damage", damageType: "freeze", amount: 2 },
+        ],
+      }),
+    );
+    expect(issues.map((issue) => issue.message)).toContain(
+      '"Deal 1 Freeze damage, twice" does not match authored amount 2',
+    );
+  });
+
   it("accepts a fully described card with no issues", () => {
     const issues = validateCardDescriptionParity(
       makeCard({
@@ -151,6 +167,24 @@ describe("enemy trait parity failure paths", () => {
       ...enemy,
       traits: [{ id: "unregistered-trait", title: "Mystery", description: "Does something" }],
     });
+    expect(issues).toEqual([]);
+  });
+});
+
+describe("enemy trait parity", () => {
+  it("registers every bestiary trait in TRAIT_REQUIRED_PATTERNS with valid text", () => {
+    for (const enemy of enemyBestiary) {
+      for (const trait of enemy.traits) {
+        expect(trait.id.length).toBeGreaterThan(0);
+        expect(trait.title.length).toBeGreaterThan(0);
+        expect(trait.description.length).toBeGreaterThan(0);
+        expect(TRAIT_REQUIRED_PATTERNS[trait.id]).toBeDefined();
+      }
+    }
+  });
+
+  it("matches every bestiary trait description against parity", () => {
+    const issues = enemyBestiary.flatMap((enemy) => validateEnemyTraitDescriptionParity(enemy));
     expect(issues).toEqual([]);
   });
 });

@@ -329,9 +329,9 @@ describe("new wish talents", () => {
       const original = patchBattleState().deck.find((d) => d.id === o.id);
       if (original) {
         o.effects.forEach((eff, idx) => {
-          if ("amount" in eff) {
+          if ("amount" in eff && eff.amount !== undefined) {
             const origEff = original.effects[idx];
-            if (origEff && "amount" in origEff) {
+            if (origEff && "amount" in origEff && origEff.amount !== undefined) {
               expect(eff.amount).toBe(origEff.amount + 1);
             }
           }

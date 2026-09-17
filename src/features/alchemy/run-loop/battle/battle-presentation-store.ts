@@ -76,6 +76,34 @@ const shakeTimers = new TimerGroup();
 type ShakeTarget = "enemy" | "player" | "companion";
 const shakeTimerCancels = new Map<ShakeTarget, () => void>();
 
+function triggerShake(set: (partial: Partial<BattlePresentationStore>) => void, target: ShakeTarget): void {
+  if (target === "enemy") {
+    set({ enemyShaking: true });
+    scheduleShakeReset(target, () => set({ enemyShaking: false }));
+  } else if (target === "player") {
+    set({ playerShaking: true });
+    scheduleShakeReset(target, () => set({ playerShaking: false }));
+  } else {
+    set({ companionShaking: true });
+    scheduleShakeReset(target, () => set({ companionShaking: false }));
+  }
+}
+
+type TelegraphKind = "Attack" | "Cast";
+
+function triggerTelegraph(
+  set: (fn: (s: BattlePresentationStore) => Partial<BattlePresentationStore>) => void,
+  kind: TelegraphKind,
+  side: ShakeTarget,
+): void {
+  const ally = side === "player" || side === "companion";
+  if (kind === "Attack") {
+    if (ally) set((s) => ({ playerAttackToken: s.playerAttackToken + 1 }));
+    else set((s) => ({ enemyAttackToken: s.enemyAttackToken + 1 }));
+  } else if (ally) set((s) => ({ playerCastToken: s.playerCastToken + 1 }));
+  else set((s) => ({ enemyCastToken: s.enemyCastToken + 1 }));
+}
+
 function scheduleShakeReset(target: ShakeTarget, reset: () => void) {
   shakeTimerCancels.get(target)?.();
   shakeTimerCancels.set(
@@ -163,34 +191,13 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()(
 
     clearCardGhosts: () => set({ cardGhosts: [] }),
 
-    shakeEnemy: () => {
-      set({ enemyShaking: true });
-      scheduleShakeReset("enemy", () => set({ enemyShaking: false }));
-    },
-    shakePlayer: () => {
-      set({ playerShaking: true });
-      scheduleShakeReset("player", () => set({ playerShaking: false }));
-    },
-    shakeCompanion: () => {
-      set({ companionShaking: true });
-      scheduleShakeReset("companion", () => set({ companionShaking: false }));
-    },
+    shakeEnemy: () => triggerShake(set, "enemy"),
+    shakePlayer: () => triggerShake(set, "player"),
+    shakeCompanion: () => triggerShake(set, "companion"),
 
-    telegraphAttack: (side) => {
-      if (side === "player" || side === "companion") {
-        set((s) => ({ playerAttackToken: s.playerAttackToken + 1 }));
-      } else {
-        set((s) => ({ enemyAttackToken: s.enemyAttackToken + 1 }));
-      }
-    },
+    telegraphAttack: (side) => triggerTelegraph(set, "Attack", side),
 
-    telegraphCast: (side) => {
-      if (side === "player" || side === "companion") {
-        set((s) => ({ playerCastToken: s.playerCastToken + 1 }));
-      } else {
-        set((s) => ({ enemyCastToken: s.enemyCastToken + 1 }));
-      }
-    },
+    telegraphCast: (side) => triggerTelegraph(set, "Cast", side),
 
     showCombatTexts: (events) => {
       const sequence = combatTextSequence;

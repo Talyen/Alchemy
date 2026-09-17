@@ -31,28 +31,24 @@ export const defenseCards: BattleCard[] = [
     amount: 1,
     effect: { kind: "gain-gold", amount: 2 },
   }),
-  {
+  cardBuilders.singleEffectCard({
     id: "crystal-bulwark",
-    title: "Crystal Bulwark",
-    descriptionLines: ["Gain 1 Block per Mana Crystal"],
     art: assetRefs.crystalBulwark,
-    cost: 1,
-    effects: [{ kind: "player-status", status: "block", amount: 0, perManaCrystal: 1 }],
-  },
+    effect: { kind: "player-status", status: "block", amount: 0, perManaCrystal: 1 },
+    descriptionLine: "Gain 1 Block per Mana Crystal",
+  }),
   cardBuilders.effectsCard({
     id: "shadowstep",
     art: assetRefs.shadowstep,
     consume: true,
     effects: [{ kind: "play-next-card-twice" }],
   }),
-  {
+  cardBuilders.singleEffectCard({
     id: "mana-shield",
-    title: "Mana Shield",
-    descriptionLines: ["Convert each of your Mana into 3 Block"],
     art: assetRefs.manaShield,
-    cost: 1,
-    effects: [{ kind: "player-status", status: "block", amount: 0, convertCurrentMana: 3 }],
-  },
+    effect: { kind: "player-status", status: "block", amount: 0, convertCurrentMana: 3 },
+    descriptionLine: "Convert each of your Mana into 3 Block",
+  }),
   cardBuilders.effectsCard({
     id: "prayer",
     art: assetRefs.prayer,
@@ -68,14 +64,14 @@ export const defenseCards: BattleCard[] = [
     effect: { kind: "remove-player-status", status: "stun" },
     descriptionLine: "Cleanse Stun buildup",
   }),
-  cardBuilders.damageThenMultiplyEnemyStatusCard({
+  cardBuilders.effectsCard({
     id: "cold-snap",
     art: assetRefs.coldSnap,
-    damageType: "freeze",
-    damageAmount: 1,
-    status: "freeze",
-    factor: 2,
-    multiplyLine: "Double enemy's Freeze buildup",
+    effects: [
+      { kind: "damage", damageType: "freeze", amount: 1 },
+      { kind: "multiply-enemy-status", status: "freeze", factor: 2 },
+    ],
+    descriptionLines: ["Deal 1 Freeze damage", "Double enemy's Freeze buildup"],
   }),
   cardBuilders.effectsCard({
     id: "sunder",

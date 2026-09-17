@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dealDamage, makeTestCard, patchBattleState } from "../../fixtures/battle";
+import { dealDamage, makeTestCard, patchBattleState, regressionBattle } from "../../fixtures/battle";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
@@ -33,8 +33,7 @@ describe("combat reward sources", () => {
   });
 
   it("direct Leech grants each Mana reward once even at full Health", () => {
-    const state = patchBattleState({
-      rng: () => 0.99,
+    const state = regressionBattle({
       mana: 0,
       maxMana: 5,
       talentEffects: { manaOnLeechChance: 100 },
@@ -45,8 +44,7 @@ describe("combat reward sources", () => {
   });
 
   it("Golden Crucible Forge triggers Overheat without scaling the Gold conversion", () => {
-    const state = patchBattleState({
-      rng: () => 0.99,
+    const state = regressionBattle({
       playerStatuses: { forge: 3 },
       talentEffects: { forgeBurnThreshold: 5, forgeBurnDamage: 2 },
       gearEffects: { goldGrantsForgeAndHoly: 1 },
@@ -58,8 +56,7 @@ describe("combat reward sources", () => {
   });
 
   it("Second Wind cannot cancel rewards for Companion damage", () => {
-    const state = patchBattleState({
-      rng: () => 0.99,
+    const state = regressionBattle({
       enemyHealth: 51,
       enemyMaxHealth: 100,
       currentEnemy: { traits: [{ id: "second-wind", title: "Second Wind", description: "" }] },
@@ -99,8 +96,7 @@ describe("combat healing regressions", () => {
   });
 
   it("gear-repeated explicit card Leech triggers Clean Slate", () => {
-    const state = patchBattleState({
-      rng: () => 0.99,
+    const state = regressionBattle({
       playerHealth: 29,
       playerMaxHealth: 30,
       playerStatuses: { poison: 3 },

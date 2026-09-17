@@ -43,6 +43,16 @@ describe("getEffectiveCardDescriptionLines", () => {
     ).toEqual(["Deals 7 Bleed damage and gains 1 Block each turn", "Companion"]);
   });
 
+  it("keeps the Companion tag for malformed single-line summon descriptions", () => {
+    const card = makeTestCard({
+      descriptionLines: ["Deals 1 Bleed damage each turn"],
+      effects: [{ kind: "summon-companion", companionId: "wolf" }],
+    });
+    const lines = getEffectiveCardDescriptionLines(card);
+    expect(lines.at(-1)).toBe("Companion");
+    expect(lines.filter((line) => line === "Companion")).toHaveLength(1);
+  });
+
   it("leaves scaled and conditional lines exactly as authored", () => {
     const card = makeTestCard({
       descriptionLines: [

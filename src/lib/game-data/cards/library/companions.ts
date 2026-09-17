@@ -27,7 +27,6 @@ export const companionCards: BattleCard[] = [
   }),
   cardBuilders.summonCompanionCard({
     id: "skeleton-companion",
-    title: "Risen Skeleton",
     art: assetRefs.risenSkeletonCompanion,
     companionId: "skeleton",
   }),
@@ -39,7 +38,6 @@ export const companionCards: BattleCard[] = [
   }),
   cardBuilders.summonCompanionCard({
     id: "will-o-wisp-companion",
-    title: "Will-o'-Wisp",
     art: assetRefs.willOWispCompanion,
     companionId: "will-o-wisp",
   }),

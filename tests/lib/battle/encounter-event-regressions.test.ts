@@ -6,16 +6,15 @@ import { resolveEnemyAttackHit } from "@/lib/battle/enemy-attack-hit";
 import { buildWishOptions } from "@/lib/battle/wish";
 import { BattleCardEffectSchema } from "@/lib/game-data";
 import { applyNumericCorruption, getEditableCorruptionTargets } from "@/lib/corruption/numeric";
-import { patchBattleState } from "../../fixtures/battle";
+import { regressionBattle } from "../../fixtures/battle";
 
 function battle(trait: string) {
-  return patchBattleState({
+  return regressionBattle({
     currentEnemy: { traits: [{ id: trait, title: trait, description: "" }] },
     enemyHealth: 100,
     enemyMaxHealth: 100,
     playerHealth: 10,
     playerMaxHealth: 40,
-    rng: () => 0.99,
   });
 }
 

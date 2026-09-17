@@ -162,3 +162,12 @@ export function statusDeck(
     }),
   );
 }
+
+/**
+ * Shared deterministic battle preset for regression tests.
+ * Failing rolls (`rng: () => 0.99`) keep chance branches stable; callers
+ * override per-case via `overrides` (an explicit `rng` in overrides wins).
+ */
+export function regressionBattle(overrides: BattleStatePatch = {}): BattleState {
+  return patchBattleState({ rng: () => 0.99, ...overrides });
+}

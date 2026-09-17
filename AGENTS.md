@@ -42,7 +42,7 @@ For large unfamiliar modules, `npm run context -- --outline <file>` and `--symbo
 - **Run state:** outside `shared/stores/` use capability ports; writes via `dispatchRunSessionCommand()` + `run-session-write-port.ts` ([ARCHITECTURE#run-state](./docs/ARCHITECTURE.md#run-state)).
 - **Controllers:** run/battle bindings travel through route/shell props, not context. Allowed providers are `AppScreenChromeProvider` and `CardDescriptionProvider`; presentation-only state may use `ui-store`.
 - **Battle:** `BattleState` immutable, seeded `world` RNG, combat magnitudes use `Math.round`; shared combat tuning lives in `src/lib/game-constants/`, while content-owned magnitudes stay with their definitions ([GAME_RULES](./docs/GAME_RULES.md#battle-implementation-rules)).
-- **Content:** `descriptionLines` matches effects; run materials via `awardMaterialsDuringRun()` (lint-enforced).
+- **Content:** `descriptionLines` matches effects; run materials via `awardMaterialsDuringRun()` (lint- + award-guard-test-enforced).
 - **Persistence:** change schemas/defaults/hydration/fixtures together ([MIGRATIONS](./src/features/alchemy/shared/storage/MIGRATIONS.md)).
 - **Routes/assets:** screens statically imported; art eager; generated barrels are outputs — edit manifest, regenerate.
 - **Imports/purity:** `eslint.config.js` + `eslint/boundaries.js` (+ `eslint/fragments.js`, double-checked by `dependency-cruiser.config.mjs`) own boundaries; keep I/O/clocks/RNG at seam.

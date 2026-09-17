@@ -5,8 +5,8 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { getCommitsSinceTag, latestVersionTag } from "./lib/git-release.mjs";
-import { isMainModule } from "./lib/is-main-module.mjs";
 import { buildChangelogUnreleased, replaceChangelogUnreleased } from "./lib/patch-notes-core.mjs";
+import { defineScript } from "./lib/script-run.mjs";
 import { writeTextIfChanged } from "./lib/write-text-if-changed.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -58,7 +58,7 @@ export async function syncChangelog(options = {}) {
   return synced;
 }
 
-if (isMainModule(import.meta.url)) {
+defineScript(import.meta.url, () => {
   const isCheck = process.argv.includes("--check");
-  await syncChangelog({ check: isCheck });
-}
+  return syncChangelog({ check: isCheck });
+});

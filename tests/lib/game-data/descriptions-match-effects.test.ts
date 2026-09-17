@@ -1,17 +1,10 @@
 import { describe, expect, it } from "vitest";
-import {
-  cardLibrary,
-  companionLibrary,
-  enemyBestiary,
-  getCompanionDescriptionLines,
-  type BattleCardEffect,
-} from "@/lib/game-data";
-import {
-  validateCardDescriptionParity,
-  validateEnemyTraitDescriptionParity,
-  TRAIT_REQUIRED_PATTERNS,
-} from "@/lib/content-validation/card-parity";
+import { cardLibrary, companionLibrary, getCompanionDescriptionLines, type BattleCardEffect } from "@/lib/game-data";
 
+// Catalog-wide text↔effects parity is pinned clean by
+// tests/lib/content-validation/content-validation.test.ts; failure paths live
+// in tests/lib/content-validation/parity-negative.test.ts. This file keeps the
+// card-specific invariants that are not parity rules.
 describe("card descriptions vs effects", () => {
   it("keeps every playable catalog card at one Mana", () => {
     for (const card of cardLibrary) expect(card.cost, card.id).toBe(1);
@@ -19,34 +12,6 @@ describe("card descriptions vs effects", () => {
   it("keeps Gambler's Shot range punctuation readable", () => {
     const card = cardLibrary.find((candidate) => candidate.id === "gamblers-shot");
     expect(card?.descriptionLines).toContain("Deal 1–6 Random damage");
-  });
-
-  it("rejects a repeated damage line when the second hit has a different amount", () => {
-    const issues = validateCardDescriptionParity({
-      id: "mismatched-repeat",
-      title: "Mismatched Repeat",
-      descriptionLines: ["Deal 1 Freeze damage, twice"],
-      art: "",
-      cost: 1,
-      effects: [
-        { kind: "damage", damageType: "freeze", amount: 1 },
-        { kind: "damage", damageType: "freeze", amount: 2 },
-      ],
-    });
-
-    expect(issues.map((issue) => issue.message)).toContain(
-      '"Deal 1 Freeze damage, twice" does not match authored amount 2',
-    );
-  });
-
-  it("collects card description parity violations with bounded examples", () => {
-    const violations = cardLibrary.flatMap((card) =>
-      validateCardDescriptionParity(card).map((issue) => `${card.id}: ${issue.message}`),
-    );
-    expect(
-      violations.length === 0 ? [] : [...violations.slice(0, 10), `… ${violations.length} total`],
-      `${violations.length} parity violations`,
-    ).toEqual([]);
   });
 
   it("summon cards advertise companion turn damage from companionLibrary", () => {
@@ -87,23 +52,5 @@ describe("card descriptions vs effects", () => {
         }
       }
     }
-  });
-});
-
-describe("enemy trait descriptions", () => {
-  it("every enemy trait is registered in TRAIT_REQUIRED_PATTERNS with valid text", () => {
-    for (const enemy of enemyBestiary) {
-      for (const trait of enemy.traits) {
-        expect(trait.id.length).toBeGreaterThan(0);
-        expect(trait.title.length).toBeGreaterThan(0);
-        expect(trait.description.length).toBeGreaterThan(0);
-        expect(TRAIT_REQUIRED_PATTERNS[trait.id]).toBeDefined();
-      }
-    }
-  });
-
-  it("trait descriptions match content-validation parity", () => {
-    const issues = enemyBestiary.flatMap((enemy) => validateEnemyTraitDescriptionParity(enemy));
-    expect(issues).toEqual([]);
   });
 });

@@ -10,7 +10,7 @@ const FORMATTERS: { [K in BattleCardEffect["kind"]]: KeywordFormatter<K> } = {
       effect.damageTypePool?.length ? effect.damageTypePool : [effect.damageType],
       effect.lifesteal ? ["leech"] : [],
     ),
-  "cleanse-player-status-to-damage": (effect) => ["health", effect.damageType],
+  "cleanse-player-status-to-damage": (effect) => [effect.status, effect.damageType],
   "random-damage": () => ["physical"],
   chance: (effect) => collectKeywordsFromChance(effect),
   "player-status": (effect) => (effect.status !== "haste" ? [effect.status] : []),

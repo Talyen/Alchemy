@@ -5,14 +5,12 @@ import * as cardBuilders from "../card-builders";
 
 export const coreCards: BattleCard[] = [
   cardBuilders.damageCard({ id: "slash", art: assetRefs.slash, damageType: "physical", amount: 6 }),
-  {
+  cardBuilders.effectsCard({
     id: "stab",
-    title: "Stab",
-    descriptionLines: ["Deal 4 Physical damage, ignoring Armor"],
     art: assetRefs.stab,
-    cost: 1,
     effects: [{ kind: "damage", damageType: "physical", amount: 4, ignoreArmor: true }],
-  },
+    descriptionLines: ["Deal 4 Physical damage, ignoring Armor"],
+  }),
   cardBuilders.singleEffectCard({
     id: "cleanse",
     art: assetRefs.cleanse,
@@ -20,32 +18,27 @@ export const coreCards: BattleCard[] = [
     descriptionLine: "Cleanse 1 harmful status effect (Burn, Poison, Bleed, Freeze, or Stun)",
   }),
   cardBuilders.singleEffectCard({ id: "heal", art: assetRefs.heal, effect: { kind: "heal", amount: 4 } }),
-  {
+  cardBuilders.effectsCard({
     id: "haste",
-    title: "Haste",
-    descriptionLines: ["Take an extra turn after this one", CONSUME_DESCRIPTION_LINE],
     art: assetRefs.haste,
-    cost: 1,
-    consume: true,
     effects: [{ kind: "player-status", status: "haste", amount: 1 }],
-  },
+    descriptionLines: ["Take an extra turn after this one"],
+    consume: true,
+  }),
   cardBuilders.effectsCard({
     id: "poison-dagger",
     art: assetRefs.poisonDagger,
     effects: [{ kind: "damage", damageType: "poison", amount: 2 }, { kind: "next-hit-poison" }],
   }),
   cardBuilders.damageCard({ id: "fireball", art: assetRefs.fireball, damageType: "burn", amount: 2 }),
-  {
+  cardBuilders.dualDamageCard({
     id: "fangs",
-    title: "Fangs",
-    descriptionLines: ["Deal 2 Bleed damage", "Deal 1 Physical damage", "Leech"],
     art: assetRefs.fangs,
-    cost: 1,
-    effects: [
-      { kind: "damage", damageType: "bleed", amount: 2, lifesteal: true },
-      { kind: "damage", damageType: "physical", amount: 1, lifesteal: true },
+    hits: [
+      { damageType: "bleed", amount: 2, lifesteal: true },
+      { damageType: "physical", amount: 1, lifesteal: true },
     ],
-  },
+  }),
   cardBuilders.damageCard({ id: "frostbolt", art: assetRefs.frostbolt, damageType: "freeze", amount: 3 }),
   cardBuilders.playerStatusCard({ id: "anvil", art: assetRefs.anvil, status: "forge", amount: 2 }),
   cardBuilders.damageCard({ id: "bash", art: assetRefs.bash, damageType: "stun", amount: 3 }),
@@ -57,18 +50,15 @@ export const coreCards: BattleCard[] = [
     scaleFrom: "block",
   }),
   cardBuilders.singleEffectCard({ id: "wish", art: assetRefs.wish, effect: { kind: "wish", amount: 1 } }),
-  {
+  cardBuilders.effectsCard({
     id: "meteor",
-    title: "Meteor",
-    descriptionLines: ["Deal 7 Burn damage", "Lose 1 Mana Crystal", CONSUME_DESCRIPTION_LINE],
     art: assetRefs.meteor,
-    cost: 1,
     consume: true,
     effects: [
       { kind: "damage", damageType: "burn", amount: 7 },
       { kind: "lose-max-mana", amount: 1 },
     ],
-  },
+  }),
   {
     id: "mixed-potion",
     title: "Mixed Potion",
@@ -79,12 +69,10 @@ export const coreCards: BattleCard[] = [
     effects: [],
     excludeFromOfferPool: true,
   },
-  {
+  cardBuilders.effectsCard({
     id: "ray-of-frost",
     title: "Ray of Frost",
-    descriptionLines: ["Deal 1 Freeze damage now and 3 at the start of your next turn"],
     art: assetRefs.rayOfFrost,
-    cost: 1,
     effects: [
       { kind: "damage", damageType: "freeze", amount: 1 },
       {
@@ -93,48 +81,39 @@ export const coreCards: BattleCard[] = [
         effects: [{ kind: "damage", damageType: "freeze", amount: 3 }],
       },
     ],
-  },
-  {
+    descriptionLines: ["Deal 1 Freeze damage now and 3 at the start of your next turn"],
+  }),
+  cardBuilders.effectsCard({
     id: "tithe",
-    title: "Tithe",
-    descriptionLines: ["Deal Holy damage equal to 10% of your Gold"],
     art: assetRefs.tithe,
-    cost: 1,
     effects: [{ kind: "damage", damageType: "holy", amount: 0, equalToGoldPercent: 10 }],
-  },
-  {
+    descriptionLines: ["Deal Holy damage equal to 10% of your Gold"],
+  }),
+  cardBuilders.effectsCard({
     id: "exorcism",
-    title: "Exorcism",
-    descriptionLines: ["Cleanse all Burn on yourself", "Deal Holy damage equal to Burn removed"],
     art: assetRefs.exorcism,
-    cost: 1,
     effects: [{ kind: "cleanse-player-status-to-damage", status: "burn", damageType: "holy" }],
-  },
-  {
+    descriptionLines: ["Cleanse all Burn on yourself", "Deal Holy damage equal to Burn removed"],
+  }),
+  cardBuilders.effectsCard({
     id: "kindling",
-    title: "Kindling",
-    descriptionLines: ["Deal 2 Burn damage", "Tripled if the enemy was not already Burning", "Consume"],
     art: assetRefs.kindling,
-    cost: 1,
     consume: true,
     effects: [{ kind: "damage", damageType: "burn", amount: 2, tripleIfEnemyNotBurning: true }],
-  },
-  {
+    descriptionLines: ["Deal 2 Burn damage", "Tripled if the enemy was not already Burning"],
+  }),
+  cardBuilders.effectsCard({
     id: "roll-the-dice",
     title: "Roll the Dice",
-    descriptionLines: ["Roll a six-sided die", "Draw that many cards", CONSUME_DESCRIPTION_LINE],
     art: assetRefs.rollTheDice,
-    cost: 1,
     consume: true,
     effects: [{ kind: "random-draw", minAmount: 1, maxAmount: 6 }],
-  },
+    descriptionLines: ["Roll a six-sided die", "Draw that many cards"],
+  }),
   cardBuilders.damageCard({ id: "lightning-bolt", art: assetRefs.lightningBolt, damageType: "nature", amount: 4 }),
-  {
+  cardBuilders.effectsCard({
     id: "wishing-well",
-    title: "Wishing Well",
-    descriptionLines: ["Wish 1 or gain 1 Gold"],
     art: assetRefs.wishingWell,
-    cost: 1,
     effects: [
       {
         kind: "chance",
@@ -143,30 +122,27 @@ export const coreCards: BattleCard[] = [
         failureEffects: [{ kind: "gain-gold", amount: 1 }],
       },
     ],
-  },
-  {
+    descriptionLines: ["Wish 1 or gain 1 Gold"],
+  }),
+  cardBuilders.effectsCard({
     id: "hemorrhage",
-    title: "Hemorrhage",
-    descriptionLines: ["Deal 1 Bleed damage", "The next time the enemy attacks, they take 2 Bleed damage"],
     art: assetRefs.hemorrhage,
-    cost: 1,
     effects: [
       { kind: "damage", damageType: "bleed", amount: 1 },
       { kind: "enemy-status", status: "onAttackBleed", amount: 2 },
     ],
-  },
-  {
+    descriptionLines: ["Deal 1 Bleed damage", "The next time the enemy attacks, they take 2 Bleed damage"],
+  }),
+  cardBuilders.effectsCard({
     id: "phoenix-feather",
-    title: "Phoenix Feather",
-    descriptionLines: ["Deal 1 Burn damage", "If you would die, instead restore 30% Health", CONSUME_DESCRIPTION_LINE],
     art: assetRefs.phoenixFeather,
-    cost: 1,
     consume: true,
     effects: [
       { kind: "damage", damageType: "burn", amount: 1 },
       { kind: "player-status", status: "phoenixFeather", amount: 1 },
     ],
-  },
+    descriptionLines: ["Deal 1 Burn damage", "If you would die, instead restore 30% Health"],
+  }),
   cardBuilders.playerStatusCard({ id: "plate-mail", art: assetRefs.plateMail, status: "armor", amount: 2 }),
   cardBuilders.playerStatThenScaledDamageCard({
     id: "sanctified-plate",
@@ -183,47 +159,33 @@ export const coreCards: BattleCard[] = [
       { kind: "player-status", status: "block", amount: 2 },
     ],
   }),
-  {
-    id: "steal",
-    title: "Steal",
-    descriptionLines: ["Gain 4 Gold"],
-    art: assetRefs.steal,
-    cost: 1,
-    effects: [{ kind: "gain-gold", amount: 4 }],
-  },
-  {
+  cardBuilders.singleEffectCard({ id: "steal", art: assetRefs.steal, effect: { kind: "gain-gold", amount: 4 } }),
+  cardBuilders.effectsCard({
     id: "burning-blade",
-    title: "Burning Blade",
     art: assetRefs.burningBlade,
-    cost: 1,
-    descriptionLines: ["Deal Burn damage equal to your Forge", "Deal 2 Physical damage"],
     effects: [
       { kind: "damage", damageType: "burn", amount: 0, equalToForge: true },
       { kind: "damage", damageType: "physical", amount: 2 },
     ],
-  },
-  {
+    descriptionLines: ["Deal Burn damage equal to your Forge", "Deal 2 Physical damage"],
+  }),
+  cardBuilders.effectsCard({
     id: "cauterize",
-    title: "Cauterize",
-    descriptionLines: ["Cleanse 2 harmful status effects", "Take 1 Burn damage"],
     art: assetRefs.cauterize,
-    cost: 1,
     effects: [
       { kind: "remove-harmful-status", amount: 2 },
       { kind: "self-damage", damageType: "burn", amount: 1 },
     ],
-  },
-  {
+  }),
+  cardBuilders.effectsCard({
     id: "blackjack",
-    title: "Blackjack",
-    descriptionLines: ["Deal 2 Stun damage", "Gain 2 Gold if the enemy is Stunned"],
     art: assetRefs.blackjack,
-    cost: 1,
     effects: [
       { kind: "damage", damageType: "stun", amount: 2 },
       { kind: "gain-gold", amount: 2, ifEnemyStunned: true },
     ],
-  },
+    descriptionLines: ["Deal 2 Stun damage", "Gain 2 Gold if the enemy is Stunned"],
+  }),
   cardBuilders.healThenDamageCard({
     id: "sunburst",
     art: assetRefs.sunburst,
@@ -268,36 +230,28 @@ export const coreCards: BattleCard[] = [
       { damageType: "stun", amount: 2 },
     ],
   }),
-  {
+  cardBuilders.effectsCard({
     id: "briar-shield",
-    title: "Briar Shield",
-    descriptionLines: ["Gain 1 Block", "Gain 3 Thorns"],
     art: assetRefs.briarShield,
-    cost: 1,
     effects: [
       { kind: "player-status", status: "block", amount: 1 },
       { kind: "player-status", status: "thorns", amount: 3 },
     ],
-  },
-  {
+  }),
+  cardBuilders.effectsCard({
     id: "thorn-mail",
-    title: "Thorn Mail",
-    descriptionLines: ["Gain 1 Armor", "Gain 2 Thorns"],
     art: assetRefs.thornMail,
-    cost: 1,
     effects: [
       { kind: "player-status", status: "armor", amount: 1 },
       { kind: "player-status", status: "thorns", amount: 2 },
     ],
-  },
-  {
+  }),
+  cardBuilders.singleEffectCard({
     id: "pack-tactics",
-    title: "Pack Tactics",
-    descriptionLines: ["Your Companion acts twice"],
     art: assetRefs.packTactics,
-    cost: 1,
-    effects: [{ kind: "companion-action", amount: 2 }],
-  },
+    effect: { kind: "companion-action", amount: 2 },
+    descriptionLine: "Your Companion acts twice",
+  }),
   cardBuilders.dualDamageCard({
     id: "serrated-edge",
     art: assetRefs.serratedEdge,
@@ -314,14 +268,12 @@ export const coreCards: BattleCard[] = [
       { kind: "damage", damageType: "poison", amount: 2 },
     ],
   }),
-  {
+  cardBuilders.effectsCard({
     id: "rend",
-    title: "Rend",
-    descriptionLines: ["Deal 2 Bleed damage", "Doubled if the enemy was already Bleeding"],
     art: assetRefs.rend,
-    cost: 1,
     effects: [{ kind: "damage", damageType: "bleed", amount: 2, doubleIfEnemyBleeding: true }],
-  },
+    descriptionLines: ["Deal 2 Bleed damage", "Doubled if the enemy was already Bleeding"],
+  }),
   cardBuilders.dualDamageCard({
     id: "pounce",
     art: assetRefs.pounce,
@@ -330,12 +282,9 @@ export const coreCards: BattleCard[] = [
       { damageType: "stun", amount: 2 },
     ],
   }),
-  {
+  cardBuilders.effectsCard({
     id: "earthquake",
-    title: "Earthquake",
-    descriptionLines: ["Deal 2 Stun damage now and at the start of your next turn"],
     art: assetRefs.earthquake,
-    cost: 1,
     effects: [
       { kind: "damage", damageType: "stun", amount: 2 },
       {
@@ -344,18 +293,17 @@ export const coreCards: BattleCard[] = [
         effects: [{ kind: "damage", damageType: "stun", amount: 2 }],
       },
     ],
-  },
-  {
+    descriptionLines: ["Deal 2 Stun damage now and at the start of your next turn"],
+  }),
+  cardBuilders.effectsCard({
     id: "stargaze",
-    title: "Stargaze",
     art: assetRefs.stargaze,
-    cost: 1,
-    descriptionLines: ["Deal 2 Freeze damage", "Wish 1 at the start of your next turn"],
     effects: [
       { kind: "damage", damageType: "freeze", amount: 2 },
       { kind: "repeat-over-turns", remainingTurns: 1, effects: [{ kind: "wish", amount: 1 }] },
     ],
-  },
+    descriptionLines: ["Deal 2 Freeze damage", "Wish 1 at the start of your next turn"],
+  }),
   cardBuilders.effectsCard({
     id: "pixie-dust",
     art: assetRefs.pixieDust,
@@ -364,12 +312,9 @@ export const coreCards: BattleCard[] = [
       { kind: "restore-mana", amount: 1 },
     ],
   }),
-  {
+  cardBuilders.effectsCard({
     id: "maul",
-    title: "Maul",
-    descriptionLines: ["Deal 3 Stun or Bleed damage at random"],
     art: assetRefs.maul,
-    cost: 1,
     effects: [
       {
         kind: "chance",
@@ -378,30 +323,24 @@ export const coreCards: BattleCard[] = [
         failureEffects: [{ kind: "damage", damageType: "bleed", amount: 3 }],
       },
     ],
-  },
-  {
+    descriptionLines: ["Deal 3 Stun or Bleed damage at random"],
+  }),
+  cardBuilders.effectsCard({
     id: "sniff-out",
-    title: "Sniff Out",
-    descriptionLines: ["Draw a card", "Your next Archery card is free", CONSUME_DESCRIPTION_LINE],
     art: assetRefs.sniffOut,
-    cost: 1,
     consume: true,
     effects: [{ kind: "draw-cards", amount: 1 }, { kind: "next-archery-free" }],
-  },
-  {
+  }),
+  cardBuilders.effectsCard({
     id: "predators-focus",
     title: "Predator's Focus",
-    descriptionLines: ["Your next damaging card is a critical strike and has Leech"],
     art: assetRefs.predatorsFocus,
-    cost: 1,
     effects: [{ kind: "next-hit-crit" }, { kind: "next-hit-leech" }],
-  },
-  {
+    descriptionLines: ["Your next damaging card is a critical strike and has Leech"],
+  }),
+  cardBuilders.effectsCard({
     id: "blizzard",
-    title: "Blizzard",
-    descriptionLines: ["Deal 2 Freeze damage this turn and next turn"],
     art: assetRefs.blizzard,
-    cost: 1,
     effects: [
       { kind: "damage", damageType: "freeze", amount: 2 },
       {
@@ -410,13 +349,11 @@ export const coreCards: BattleCard[] = [
         effects: [{ kind: "damage", damageType: "freeze", amount: 2 }],
       },
     ],
-  },
-  {
+    descriptionLines: ["Deal 2 Freeze damage this turn and next turn"],
+  }),
+  cardBuilders.effectsCard({
     id: "avatar",
-    title: "Avatar",
-    descriptionLines: ["Gain 4 Block", "Deal 4 Holy damage", "Repeat next turn", CONSUME_DESCRIPTION_LINE],
     art: assetRefs.avatar,
-    cost: 1,
     consume: true,
     effects: [
       { kind: "player-status", status: "block", amount: 4 },
@@ -430,13 +367,12 @@ export const coreCards: BattleCard[] = [
         ],
       },
     ],
-  },
-  {
+    descriptionLines: ["Gain 4 Block", "Deal 4 Holy damage", "Repeat next turn"],
+  }),
+  cardBuilders.effectsCard({
     id: "combustion",
-    title: "Combustion",
-    descriptionLines: ["Deal 1 Burn damage", "If the enemy was already Burning, detonate all its Burn"],
     art: assetRefs.combustion,
-    cost: 1,
     effects: [{ kind: "damage", damageType: "burn", amount: 1, detonateIfEnemyBurning: true }],
-  },
+    descriptionLines: ["Deal 1 Burn damage", "If the enemy was already Burning, detonate all its Burn"],
+  }),
 ];

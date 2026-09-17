@@ -184,7 +184,7 @@ function applyEnemyEffect(
     case "remove-enemy-armor": {
       const amount = effect.removeAll
         ? state.playerStatuses.armor
-        : Math.min(state.playerStatuses.armor, scaleByRoomMultiplier(state, effect.amount));
+        : Math.min(state.playerStatuses.armor, scaleByRoomMultiplier(state, effect.amount ?? 0));
       if (amount <= 0) return state;
       mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "armor", amount });
       return removePlayerArmor(state, amount, combatTexts);

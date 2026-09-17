@@ -15,7 +15,9 @@ function companionTurnLine(effect: BattleCardEffect, amountOverride?: number): s
         ? `Grants ${effect.amount} extra Mana each turn`
         : `Grants ${effect.amount} Mana each turn`;
     case "remove-harmful-status": {
-      return `Cleanses ${effect.amount} harmful status effect${effect.amount === 1 ? "" : "s"} each turn`;
+      if (effect.removeAll) return "Cleanses all harmful status effects each turn";
+      const amount = effect.amount ?? 0;
+      return `Cleanses ${amount} harmful status effect${amount === 1 ? "" : "s"} each turn`;
     }
     case "gain-gold":
       return `Grants ${effect.amount} Gold each turn`;

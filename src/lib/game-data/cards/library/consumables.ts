@@ -1,5 +1,4 @@
 import type { BattleCard } from "../../types";
-import { CONSUME_DESCRIPTION_LINE } from "@/lib/game-constants";
 import * as assetRefs from "../../assets";
 import * as cardBuilders from "../card-builders";
 
@@ -9,18 +8,14 @@ export const consumableCards: BattleCard[] = [
     art: assetRefs.healthPotion,
     effect: { kind: "heal", amount: 8 },
   }),
-  {
+  cardBuilders.consumableCard({
     id: "mana-berries",
-    title: "Mana Berries",
     art: assetRefs.manaBerries,
-    cost: 1,
-    descriptionLines: ["Gain 1 Mana", "Draw a card", "Consume"],
-    consume: true,
     effects: [
       { kind: "restore-mana", amount: 1 },
       { kind: "draw-cards", amount: 1 },
     ],
-  },
+  }),
   cardBuilders.consumableCard({
     id: "mana-crystals",
     art: assetRefs.manaCrystal,
@@ -34,56 +29,41 @@ export const consumableCards: BattleCard[] = [
   cardBuilders.consumableCard({
     id: "panacea-potion",
     art: assetRefs.panaceaPotion,
-    effect: { kind: "remove-harmful-status", amount: 5, removeAll: true },
+    effect: { kind: "remove-harmful-status", removeAll: true },
   }),
   cardBuilders.consumableCard({
     id: "stoneskin-potion",
     art: assetRefs.stoneskinPotion,
     effect: { kind: "player-status", status: "armor", amount: 4 },
   }),
-  {
+  cardBuilders.consumableCard({
     id: "acid-potion",
-    title: "Acid Potion",
     art: assetRefs.acidPotion,
-    cost: 1,
-    consume: true,
-    descriptionLines: ["Remove all enemy Armor", "Deal 1 Poison damage", CONSUME_DESCRIPTION_LINE],
     effects: [
-      { kind: "remove-enemy-armor", amount: 1, removeAll: true },
+      { kind: "remove-enemy-armor", removeAll: true },
       { kind: "damage", damageType: "poison", amount: 1 },
     ],
-  },
-  {
+  }),
+  cardBuilders.consumableCard({
     id: "apple",
-    title: "Apple",
     art: assetRefs.apple,
-    cost: 1,
-    descriptionLines: ["Restore 4 Health", "Cleanse 1 harmful status effect", "Consume"],
-    consume: true,
     effects: [
       { kind: "heal", amount: 4 },
       { kind: "remove-harmful-status", amount: 1 },
     ],
-  },
-  {
+  }),
+  cardBuilders.consumableCard({
     id: "bread",
-    title: "Bread",
     art: assetRefs.bread,
-    cost: 1,
-    descriptionLines: ["Restore 4 Health", "Restore 4 Health at the start of each of your next 2 turns", "Consume"],
-    consume: true,
     effects: [
       { kind: "heal", amount: 4 },
       { kind: "repeat-over-turns", remainingTurns: 2, effects: [{ kind: "heal", amount: 4 }] },
     ],
-  },
-  {
+    descriptionLines: ["Restore 4 Health", "Restore 4 Health at the start of each of your next 2 turns"],
+  }),
+  cardBuilders.consumableCard({
     id: "luck-potion",
-    title: "Luck Potion",
-    descriptionLines: ["Gain 4 Mana or gain 4 Gold or gain 4 Block", CONSUME_DESCRIPTION_LINE],
     art: assetRefs.luckPotion,
-    cost: 1,
-    consume: true,
     effects: [
       {
         kind: "chance",
@@ -99,7 +79,8 @@ export const consumableCards: BattleCard[] = [
         ],
       },
     ],
-  },
+    descriptionLines: ["Gain 4 Mana or gain 4 Gold or gain 4 Block"],
+  }),
   cardBuilders.consumableCard({
     id: "wishing-potion",
     art: assetRefs.wishingPotion,

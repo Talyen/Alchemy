@@ -63,6 +63,12 @@ describe("variable damage keywords", () => {
     ]);
   });
 
+  it("groups Exorcism as Burn + Holy, not Health", () => {
+    expect(
+      collectKeywordsFromBattleEffect({ kind: "cleanse-player-status-to-damage", status: "burn", damageType: "holy" }),
+    ).toEqual(["burn", "holy"]);
+  });
+
   it("uses every possible damage type instead of the placeholder type", () => {
     expect(
       collectKeywordsFromBattleEffect({

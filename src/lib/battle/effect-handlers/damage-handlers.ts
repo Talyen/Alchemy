@@ -54,5 +54,5 @@ export const applyRandomDamageEffect = defineHandler(
 );
 
 export const applyRemoveEnemyArmorEffect = defineHandler("remove-enemy-armor", (state, _card, effect) => {
-  return reduceEnemyArmor(state, effect.removeAll ? state.enemyMitigation.armor : effect.amount);
+  return reduceEnemyArmor(state, effect.removeAll ? state.enemyMitigation.armor : (effect.amount ?? 0));
 });

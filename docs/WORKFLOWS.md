@@ -63,7 +63,7 @@ Policy (when to bump, stamp-only floor, migrate steps, public save contract): [`
 Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-session-write-port.ts`) so homestead inventory and `activeRun.runMaterialsEarned` stay aligned for the run-end summary.
 
 1. Apply the Homestead find bonus when appropriate with `applyMaterialFindBonus()` from `@/lib/homestead/loot`; existing mystery and combat grants already do this.
-2. Call `awardMaterialsDuringRun(draft, materials)` inside the owning command: `gainMysteryMaterial` / `mysteryApplyHandlers` in `run-loop/navigation/mystery-flow.ts`, `commitVictoryRewards` in `run-loop/run/victory-commands.ts`, or `claimRunReward` in `run-loop/run/reward-commands.ts`.
+2. Call `awardMaterialsDuringRun(draft, materials)` inside the owning command: `gainMysteryMaterial` / `mysteryApplyHandlers` in `run-loop/navigation/mystery-flow.ts`, `commitVictoryRewards` in `run-loop/run/victory-commands.ts`, `claimRunReward` in `run-loop/run/reward-commands.ts`, or Armory salvage in `shared/stores/gear-session-command.ts`. New grant paths must extend `AWARD_CALL_SITES` in `tests/architecture/run-materials-award-guard.test.ts`.
 3. Reuse the run-end display: `awardRunEndMaterials` in `run-loop/run/run-materials.ts`, used by both defeat and victory flows, merges `runMaterialsEarned` and `applyEndOfRunHomesteadBonuses` into `session.runEndMaterials`.
 4. Check `tests/features/alchemy/run-loop/run/run-victory-handlers.test.ts` and the affected mystery/reward-flow tests when adding a new source.
 
@@ -152,13 +152,18 @@ Persisted status changes follow the [save contract](../src/features/alchemy/shar
 2. Add effects (discriminated union on `kind`) — same card entry, `effects: [...]`
 3. Add art reference — `src/lib/game-data/assets.ts` (or `placeholderCard` while WIP)
 4. (Optional) Register card sound — `src/lib/audio/sound-registry.ts` (`cardSounds` record)
-5. Update `descriptionLines` to match effects; context-aware text — same entry; pure text `src/lib/game-data/card-description.ts`, UI tokens `shared/ui/card-description-ui.tsx`, homestead/talent context `shared/context/card-description-context.tsx` (wired in `App.tsx`)
+5. Build the entry with `card-builders.ts` (`effectsCard` generates `descriptionLines` from effects; pass explicit `descriptionLines` for chance / repeat-over-turns / conditional / combined phrasing; `consumableCard` takes multiple effects; summon cards derive their title from the companion). Raw literals are reserved for genuinely special cards (`mixed-potion`)
+6. Context-aware text — pure text `src/lib/game-data/card-description.ts` (only summon lines are recomputed with Bond/damage bonuses; `flatPhysicalDamage`/`potionPotency` are accepted but ignored), UI tokens `shared/ui/card-description-ui.tsx`, homestead/talent context `shared/context/card-description-context.tsx` (wired in `App.tsx`)
 
 Card IDs are stable strings on `BattleCard`, not a separate union. The assembled
 `cardLibrary` rejects duplicate IDs; preserve save compatibility when removing
 or renaming one through the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md).
+On load, `hydrateCard` takes title/art from the catalog and preserves complete
+saved effects+lines (including upgrades/corruption); saves therefore survive
+rebalances, but new `consume: true` flags do not retroactively apply to
+complete old saves.
 
-Cards in `cardLibrary` are automatically included in card shop, combat rewards, mysteries, wish, and draft via `getOfferableCardPool()` — no separate pool registration. Exclude a card with `excludeFromOfferPool: true` (`mixed-potion` is the current example).
+Cards in `cardLibrary` are automatically included in card shop, combat rewards, mysteries, wish, and draft via `getOfferableCardPool()` — no separate pool registration. Exclude a card with `excludeFromOfferPool: true` (`mixed-potion` is the current example). Distillation-eligible Potions are the explicit `POTION_CARD_IDS` list in `cards/card-pools.ts` — a new brew must be added there deliberately; Mana Berries, Mana Crystals, Apple, and Bread are intentionally excluded.
 
 Run `npm run content:audit` before handing off: card text must match effects (count + numeric parity in `src/lib/content-validation/card-parity/`, with shared line shapes in `line-classifiers.ts`) and prose must pass the typography rules (no em dashes; description lines stay period-free).
 

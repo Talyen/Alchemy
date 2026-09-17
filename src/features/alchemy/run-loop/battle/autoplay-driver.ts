@@ -17,7 +17,7 @@ export function isBattlePlayInputBusy(options: {
   return options.cardPlayInProgress || options.cardTransferInProgress;
 }
 
-export function isBattlePlaybackBlocked(options: {
+interface PlaybackBlockedOptions {
   screen: Screen;
   battleState: BattleSnapshot;
   hasActiveBattle: boolean;
@@ -26,15 +26,21 @@ export function isBattlePlaybackBlocked(options: {
   cardPlayInProgress: boolean;
   gameMenuOpen?: boolean;
   inspectionOpen?: boolean;
-}): boolean {
+}
+
+function isPlaybackBlockedCore(options: PlaybackBlockedOptions, wishMode: "excluded" | "required"): boolean {
   if (options.gameMenuOpen || options.inspectionOpen) return true;
   if (!options.hasActiveBattle || options.screen !== "battle") return true;
   if (isBattlePlayInputBusy(options)) return true;
   if (handHasHiddenCard(options.battleState, options.hiddenHandCardKeys)) return true;
   if (options.battleState.turnPhase !== "player") return true;
-  if (options.battleState.wishOptions) return true;
+  if (wishMode === "excluded" ? options.battleState.wishOptions : !options.battleState.wishOptions) return true;
   if (isAutoplayBattleOver(options.battleState)) return true;
   return false;
+}
+
+export function isBattlePlaybackBlocked(options: PlaybackBlockedOptions): boolean {
+  return isPlaybackBlockedCore(options, "excluded");
 }
 
 export interface DriveAutoplayDeps {
@@ -57,24 +63,8 @@ export interface DriveAutoplayDeps {
  * must be present (instead of absent) for the branch to proceed. Hand
  * transfers, menus, inspection, phase, and battle-over still block.
  */
-export function isWishPlaybackBlocked(options: {
-  screen: Screen;
-  battleState: BattleSnapshot;
-  hasActiveBattle: boolean;
-  cardTransferInProgress: boolean;
-  hiddenHandCardKeys: HiddenHandCardKeys;
-  cardPlayInProgress: boolean;
-  gameMenuOpen?: boolean;
-  inspectionOpen?: boolean;
-}): boolean {
-  if (options.gameMenuOpen || options.inspectionOpen) return true;
-  if (!options.hasActiveBattle || options.screen !== "battle") return true;
-  if (isBattlePlayInputBusy(options)) return true;
-  if (handHasHiddenCard(options.battleState, options.hiddenHandCardKeys)) return true;
-  if (options.battleState.turnPhase !== "player") return true;
-  if (!options.battleState.wishOptions) return true;
-  if (isAutoplayBattleOver(options.battleState)) return true;
-  return false;
+export function isWishPlaybackBlocked(options: PlaybackBlockedOptions): boolean {
+  return isPlaybackBlockedCore(options, "required");
 }
 
 async function waitForAutoplayRetry(

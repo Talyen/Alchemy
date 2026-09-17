@@ -1,5 +1,5 @@
 import type { BattleSnapshot } from "@/lib/battle";
-import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
+import { harmfulPlayerStatusIds, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 
 const DOT_STATUSES = new Set(["burn", "poison", "bleed"]);
 const CONTROL_STATUSES = new Set(["stun", "freeze"]);
@@ -39,8 +39,15 @@ function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot): number {
       return 0;
     case "heal":
       return state.playerHealth < state.playerMaxHealth ? effect.amount : 0;
-    case "remove-harmful-status":
-      return effect.amount * EFFECT_SCORE.cleanse;
+    case "remove-harmful-status": {
+      // A full cleanse is worth the harmful effects actually present; a
+      // fixed cleanse is worth its amount. Panacea Potion carries no amount.
+      if (effect.removeAll) {
+        const removable = harmfulPlayerStatusIds.filter((status) => state.playerStatuses[status] > 0).length;
+        return removable * EFFECT_SCORE.cleanse;
+      }
+      return (effect.amount ?? 0) * EFFECT_SCORE.cleanse;
+    }
     case "chance":
       return (
         effect.probability * scoreEffects(effect.successEffects, state) +
@@ -65,7 +72,7 @@ function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot): number {
       return current > 0 ? (effect.factor - 1) * current : 0;
     }
     case "remove-enemy-armor":
-      return effect.removeAll ? state.enemyMitigation.armor : Math.min(effect.amount, state.enemyMitigation.armor);
+      return effect.removeAll ? state.enemyMitigation.armor : Math.min(effect.amount ?? 0, state.enemyMitigation.armor);
     case "next-hit-crit":
       return EFFECT_SCORE.criticalHit;
     case "next-hit-leech":
@@ -101,7 +108,9 @@ export function getImmediateDefense(card: BattleCard): number {
     if (effect.kind === "player-status" && (effect.status === "block" || effect.status === "armor")) {
       return total + effect.amount;
     }
-    if (effect.kind === "remove-harmful-status") return total + effect.amount * EFFECT_SCORE.cleanse;
+    if (effect.kind === "remove-harmful-status")
+      // Stateless heuristic: a full cleanse counts nominally; fixed counts its amount.
+      return total + (effect.amount ?? 1) * EFFECT_SCORE.cleanse;
     return total;
   }, 0);
 }

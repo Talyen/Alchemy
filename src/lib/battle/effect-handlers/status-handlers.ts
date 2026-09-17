@@ -53,7 +53,7 @@ export const applyRemoveHarmfulStatusEffect = defineHandler(
   (state, _card, effect, potionMult, combatTexts) => {
     const adjustedRemove = effect.removeAll
       ? Number.POSITIVE_INFINITY
-      : applyPotionMultiplier(effect.amount, potionMult);
+      : applyPotionMultiplier(effect.amount ?? 0, potionMult);
     return removeHarmfulPlayerStatuses(state, adjustedRemove, combatTexts);
   },
 );
