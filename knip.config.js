@@ -65,6 +65,8 @@ export default {
   },
   ignore: ["tests/environment.d.ts", "tests/scripts/global.d.ts", "tests/electron/electron-environment.d.ts"],
   ignoreDependencies: [
+    // Imported via CSS `@import "tailwindcss"` in src/index.css; knip cannot trace it.
+    "tailwindcss",
     // Loaded via node_modules path string in scripts/lib/builder-bin.mjs; knip cannot trace it.
     "electron-builder",
     // Invoked via npx in scripts/lib/release-runner.mjs; knip cannot trace it.
