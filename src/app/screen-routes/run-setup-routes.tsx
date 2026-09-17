@@ -39,6 +39,9 @@ function DifficultySelectScreenRoute({
 
   return (
     <DifficultySelectScreen
+      // Remount per hero so the local draft selection never goes stale when
+      // the store character changes underneath (e.g. back-navigation).
+      key={characterId}
       characterId={characterId}
       selectedDifficulty={selectedDifficulty}
       completedDifficulties={completedDifficulties}

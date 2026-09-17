@@ -1,7 +1,10 @@
 #!/usr/bin/env node
+import path from "node:path";
 import { commandInvocation } from "./lib/command-invocation.mjs";
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
+
+const ROOT = path.resolve(import.meta.dirname, "..");
 
 export const E2E_ROUTES = Object.freeze({
   audio: Object.freeze({
@@ -146,7 +149,9 @@ if (invokedAsCli) {
   }
 
   const extra = process.argv.slice(3);
-  const missingSpecs = resolved.args.filter((arg) => arg.endsWith(".spec.ts") && !existsSync(arg));
+  const missingSpecs = resolved.args.filter(
+    (arg) => arg.endsWith(".spec.ts") && !existsSync(path.isAbsolute(arg) ? arg : path.join(ROOT, arg)),
+  );
   if (missingSpecs.length > 0) {
     console.error(
       `The ${route} E2E route matches no spec files for:\n${missingSpecs.map((m) => `  - ${m}`).join("\n")}`,
@@ -154,6 +159,8 @@ if (invokedAsCli) {
     process.exit(1);
   }
   const result = spawnSync(...commandInvocation("npx", [...resolved.args, ...extra]), {
+    // Streams intentionally so browser progress is visible; see run-ship-unit.
+    cwd: ROOT,
     stdio: "inherit",
   });
   process.exit(result.status ?? 1);

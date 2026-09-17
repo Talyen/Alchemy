@@ -8,11 +8,11 @@ import { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/vali
 import {
   bootstrapAlchemySaveState,
   clearAlchemySaveData,
-  configureSaveBackend,
   loadAlchemySaveState,
   saveAlchemySaveData,
   saveAlchemySaveDataForExit,
 } from "@/features/alchemy/shared/storage";
+import { configureSaveBackend, serializeSaveSnapshot } from "@/features/alchemy/shared/storage/io";
 import {
   setupMockWindowBrowser,
   setupMockWindowDesktop,
@@ -250,6 +250,12 @@ describe("storage io", () => {
     const written = JSON.parse(mockStorage[SAVE_KEY]) as SaveData;
     expect(written.selectedAspectRatio).toBe("16:9");
     expect(written.lastSavedAt).toBeGreaterThan(0);
+  });
+
+  it("stamps one lastSavedAt per physical write so exit divergence is pinnable", () => {
+    const { lastSavedAt: _dropped, ...snapshot } = defaultSaveData;
+    expect(JSON.parse(serializeSaveSnapshot(snapshot, 1000)).lastSavedAt).toBe(1000);
+    expect(JSON.parse(serializeSaveSnapshot(snapshot, 2000)).lastSavedAt).toBe(2000);
   });
 
   it.each(["reported", "thrown"])("returns failed for a %s backend write failure", async (failure) => {
@@ -500,6 +506,21 @@ describe("storage io", () => {
   });
 
   describe("desktop cloud merge", () => {
+    it("falls back to cloud when local save is missing", async () => {
+      const cloudSave = playableSaveCandidate(0, { discoveredCardIds: ["slash", "block"] });
+
+      const desktop = setupMockWindowDesktop({
+        saveCandidates: [],
+        steamName: null,
+      });
+      desktop.steamCloudRead.mockResolvedValue(cloudSave);
+
+      const loaded = await loadAlchemySaveState();
+
+      expect(loaded.data.discoveredCardIds).toEqual(["slash", "block"]);
+      expect(loaded.status.kind).toBe("ok");
+    });
+
     it("prefers local save over cloud on desktop cold boot", async () => {
       const localSave = playableSaveCandidate(0);
       const cloudSave = playableSaveCandidate(0, { discoveredCardIds: ["slash", "block"] });
@@ -529,21 +550,6 @@ describe("storage io", () => {
 
       expect(loaded.data.discoveredCardIds).toEqual(["slash", "block"]);
       expect(loaded.data.lastSavedAt).toBe(2000);
-    });
-
-    it("falls back to cloud when local save is missing", async () => {
-      const cloudSave = playableSaveCandidate(0, { discoveredCardIds: ["slash", "block"] });
-
-      const desktop = setupMockWindowDesktop({
-        saveCandidates: [],
-        steamName: null,
-      });
-      desktop.steamCloudRead.mockResolvedValue(cloudSave);
-
-      const loaded = await loadAlchemySaveState();
-
-      expect(loaded.data.discoveredCardIds).toEqual(["slash", "block"]);
-      expect(loaded.status.kind).toBe("ok");
     });
 
     it("ignores a corrupt cloud candidate when the local save is valid", async () => {

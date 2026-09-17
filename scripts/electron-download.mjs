@@ -30,43 +30,35 @@ async function clearPartialInstall() {
   await fs.promises.rm(path.join(electronRoot, "path.txt"), { force: true });
 }
 
-async function listDistEntries(distPath) {
-  const entries = [];
-  const stack = [distPath];
-
-  while (stack.length > 0) {
-    const current = stack.pop();
+/** Single directory walker for the extracted Electron tree. */
+async function walkDistEntries(distPath, visit) {
+  const queue = [distPath];
+  while (queue.length > 0) {
+    const current = queue.shift();
     for (const entry of await fs.promises.readdir(current, { withFileTypes: true })) {
-      const relative = path.relative(distPath, path.join(current, entry.name));
-      entries.push(relative);
-      if (entry.isDirectory()) {
-        stack.push(path.join(current, entry.name));
-      }
+      const fullPath = path.join(current, entry.name);
+      if (entry.isDirectory()) queue.push(fullPath);
+      else if (entry.isFile()) await visit(fullPath);
     }
   }
+}
 
+async function listDistEntries(distPath) {
+  const entries = [];
+  await walkDistEntries(distPath, async (fullPath) => {
+    entries.push(path.relative(distPath, fullPath));
+  });
   return entries;
 }
 
 async function locateRelativeExecutable(distPath) {
   const expectedName = path.basename(platformPath());
   const candidates = [];
-  const queue = [distPath];
-
-  while (queue.length > 0) {
-    const current = queue.shift();
-    for (const entry of await fs.promises.readdir(current, { withFileTypes: true })) {
-      const fullPath = path.join(current, entry.name);
-      if (entry.isFile() && entry.name === expectedName) {
-        const stat = await fs.promises.stat(fullPath);
-        if (stat.size > MIN_BINARY_BYTES) {
-          candidates.push({ fullPath, size: stat.size });
-        }
-      } else if (entry.isDirectory()) {
-        queue.push(fullPath);
-      }
-    }
-  }
+  await walkDistEntries(distPath, async (fullPath) => {
+    if (path.basename(fullPath) !== expectedName) return;
+    const stat = await fs.promises.stat(fullPath);
+    if (stat.size > MIN_BINARY_BYTES) candidates.push({ fullPath, size: stat.size });
+  });
 
   if (candidates.length > 0) {
     candidates.sort((a, b) => b.size - a.size);
@@ -135,26 +127,18 @@ async function downloadElectronOnce() {
 
 async function downloadElectronWithRetry() {
   const maxAttempts = 2;
-  const keepAlive = setInterval(() => {}, 60_000);
-
-  try {
-    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-      try {
-        await clearPartialInstall();
-        console.log(`Downloading Electron ${version} (attempt ${attempt}/${maxAttempts})...`);
-        await downloadElectronOnce();
-        return;
-      } catch (error) {
-        console.error(error);
-        if (attempt === maxAttempts) {
-          throw error;
-        }
-        console.log("Retrying Electron download in 5s...");
-        await sleep(5_000);
-      }
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      await clearPartialInstall();
+      console.log(`Downloading Electron ${version} (attempt ${attempt}/${maxAttempts})...`);
+      await downloadElectronOnce();
+      return;
+    } catch (error) {
+      console.error(error);
+      if (attempt === maxAttempts) throw error;
+      console.log("Retrying Electron download in 5s...");
+      await sleep(5_000);
     }
-  } finally {
-    clearInterval(keepAlive);
   }
 }
 

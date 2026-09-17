@@ -131,11 +131,27 @@ describe("useAlchemyBootstrap", () => {
       await Promise.resolve();
     });
 
-    expect(clearAlchemySaveData).toHaveBeenCalledOnce();
+    expect(clearAlchemySaveData).toHaveBeenCalledExactlyOnceWith("localWipe");
     expect(new URL(window.location.href).searchParams.has("wipeLocalSave")).toBe(false);
     expect(hook.current).toBe(result);
   });
 
+  it("ignores non-1 wipeLocalSave values so stray flags never clear progress", async () => {
+    vi.mocked(isAlchemyDevBuild).mockReturnValue(true);
+    window.history.replaceState({}, "", "/?wipeLocalSave=0");
+    const result: SaveLoadState = { data: defaultSaveData, status: { kind: "ok" } };
+    vi.mocked(bootstrapAlchemySaveState).mockResolvedValue(result);
+
+    const { result: hook } = renderHook(() => useAlchemyBootstrap());
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(clearAlchemySaveData).not.toHaveBeenCalled();
+    expect(new URL(window.location.href).searchParams.get("wipeLocalSave")).toBe("0");
+    expect(hook.current).toBe(result);
+  });
   it.each(["unsupported-newer-schema", "unsupported-newer-content"] as const)(
     "leaves stores untouched for %s so the blocked shell renders from defaults",
     async (kind) => {

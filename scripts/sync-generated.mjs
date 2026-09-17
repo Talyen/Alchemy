@@ -2,8 +2,6 @@ import { isMainModule } from "./lib/is-main-module.mjs";
 import { syncArtBarrels, syncAssets, syncGearArt } from "./sync-art-barrels.mjs";
 import { syncVersionMetadata } from "./sync-version-metadata.mjs";
 
-export { syncAssets, syncGearArt, syncArtBarrels };
-
 export async function syncGenerated({ check = false, artOnly = false, gearOnly = false, versionOnly = false } = {}) {
   if (artOnly) {
     await syncAssets({ check });

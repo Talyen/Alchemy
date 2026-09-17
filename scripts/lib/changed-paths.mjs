@@ -1,10 +1,8 @@
-import { spawnSync } from "node:child_process";
-import path from "node:path";
-import { expandRepositoryPaths, UNCACHED_GIT_OPTIONS } from "./repository-paths.mjs";
+import { expandRepositoryPaths, runGit } from "./repository-paths.mjs";
 import { readFileSync } from "node:fs";
 
 import { changedGitPaths } from "./current-run.mjs";
-import { resolveRoutes, SHARED_BUILD_PATTERNS } from "./change-routes.mjs";
+import { isDocumentationPath, resolveRoutes, SHARED_BUILD_PATTERNS } from "./change-routes.mjs";
 import { globToRegExp } from "./glob-pattern.mjs";
 
 export function parseChangedPathsArgs(argv, { usage } = {}) {
@@ -35,18 +33,34 @@ export function parseChangedPathsArgs(argv, { usage } = {}) {
   return { flags, paths };
 }
 
-export function resolveSelectedPaths(rootDir, { paths }) {
-  let selected = paths.length > 0 ? paths : changedGitPaths(rootDir);
-  if (!selected) throw new Error("git status failed");
+/**
+ * Tracked changes against HEAD (staged and unstaged) plus untracked files, so
+ * new sources stay covered while committed history is ignored. Renames are
+ * listed as delete + add so both paths keep their risk selection.
+ */
+function diffHeadPaths(rootDir) {
+  const tracked = runGit(rootDir, ["diff", "HEAD", "--no-renames", "--name-only", "-z", "--"]);
+  const untracked = runGit(rootDir, ["ls-files", "--others", "--exclude-standard", "-z"]);
+  if (tracked.status !== 0 || untracked.status !== 0) return null;
+  return [...new Set([...tracked.stdout.split("\0"), ...untracked.stdout.split("\0")].filter(Boolean))];
+}
+
+export function resolveSelectedPaths(rootDir, { flags, paths }) {
+  const useDiff = flags?.has("diff") ?? false;
+  let selected = paths.length > 0 ? paths : useDiff ? diffHeadPaths(rootDir) : changedGitPaths(rootDir);
+  if (!selected) throw new Error(useDiff ? "git diff failed" : "git status failed");
   if (paths.length === 0 && selected.length === 0) {
-    const committed = spawnSync(
-      "git",
-      ["diff-tree", "--root", "-m", "--no-renames", "--no-commit-id", "--name-only", "-z", "-r", "HEAD"],
-      {
-        cwd: rootDir,
-        encoding: "utf8",
-      },
-    );
+    const committed = runGit(rootDir, [
+      "diff-tree",
+      "--root",
+      "-m",
+      "--no-renames",
+      "--no-commit-id",
+      "--name-only",
+      "-z",
+      "-r",
+      "HEAD",
+    ]);
     if (committed.status !== 0) throw new Error("Could not inspect HEAD changes");
     selected = [...new Set(committed.stdout.split("\0").filter(Boolean))];
   }
@@ -56,7 +70,7 @@ export function resolveSelectedPaths(rootDir, { paths }) {
 /** Select the actual updates supplied by Git's pre-push hook, including deletions/renames. */
 export function resolvePushPaths(rootDir, input) {
   const git = (args) => {
-    const result = spawnSync("git", args, { cwd: rootDir, encoding: "utf8", maxBuffer: 16 * 1024 * 1024 });
+    const result = runGit(rootDir, args);
     if (result.status !== 0)
       throw new Error(`Could not inspect push revisions: ${result.error?.message ?? result.stderr}`);
     return result.stdout;
@@ -79,22 +93,13 @@ export function resolvePushPaths(rootDir, input) {
       : git(["diff", "--no-renames", "--name-only", "-z", remoteOid, commit, "--"]);
     for (const file of output.split("\0").filter(Boolean)) paths.add(file);
   }
-  if (
-    paths.size > 0 &&
-    git([...UNCACHED_GIT_OPTIONS, "status", "--porcelain", "--untracked-files=all", "-z"]).length > 0
-  )
+  if (paths.size > 0 && git(["status", "--porcelain", "--untracked-files=all", "-z"]).length > 0)
     throw new Error("Pre-push verification requires a clean checkout. Commit or stash changes before pushing.");
   return [...paths].sort();
 }
 
-function isDocumentationPath(filePath) {
-  return filePath.endsWith(".md") || /^(docs|\.agents|\.cursor)\//u.test(filePath);
-}
-
-export function classifyCheckPaths(paths) {
-  paths = expandRepositoryPaths(path.resolve(import.meta.dirname, "../.."), paths).filter(
-    (filePath) => !isDocumentationPath(filePath),
-  );
+export function classifyCheckPaths(rootDir, paths) {
+  paths = expandRepositoryPaths(rootDir, paths).filter((filePath) => !isDocumentationPath(filePath));
   const routes = resolveRoutes(paths);
   const ids = new Set(routes.map((route) => route.id));
   const needsCodeChecks = paths.length > 0;
@@ -112,5 +117,5 @@ export function classifyCheckPaths(paths) {
         filePath,
       ),
     );
-  return { needsCodeChecks, executable: needsCodeChecks, lockfile, desktop, web, routeIds: [...ids] };
+  return { needsCodeChecks, lockfile, desktop, web, routeIds: [...ids] };
 }

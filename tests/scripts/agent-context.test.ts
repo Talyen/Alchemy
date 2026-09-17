@@ -17,7 +17,7 @@ import {
 } from "../../scripts/agent-context.mjs";
 
 import { resolveRoutePlan } from "../../scripts/lib/change-routes.mjs";
-import { readDocumentSection } from "../../scripts/lib/document-sections.mjs";
+import { headingSlugs, readDocumentSection, stripFencedBlocks } from "../../scripts/lib/markdown-sections.mjs";
 
 describe("agent discovery", () => {
   it("discovers tooling owners for a directory with either path spelling", () => {
@@ -255,6 +255,38 @@ describe("agent discovery", () => {
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }
+  });
+
+  it("tracks fences by character and length across every markdown helper", () => {
+    // A ~~~ block is never closed by ```, and a ```` block survives an inner ``` pair.
+    const source = [
+      "## Visible",
+      "~~~md",
+      "## Hidden-tilde",
+      "```",
+      "## Still-hidden",
+      "~~~",
+      "## Also-visible",
+      "````md",
+      "```",
+      "## Hidden-nested",
+      "```",
+      "still hidden",
+      "````",
+      "## Final",
+    ].join("\n");
+    const slugs = headingSlugs(source);
+    expect(slugs.has("visible")).toBe(true);
+    expect(slugs.has("also-visible")).toBe(true);
+    expect(slugs.has("final")).toBe(true);
+    expect(slugs.has("hidden-tilde")).toBe(false);
+    expect(slugs.has("still-hidden")).toBe(false);
+    expect(slugs.has("hidden-nested")).toBe(false);
+    const stripped = stripFencedBlocks(source);
+    expect(stripped).toContain("## Visible");
+    expect(stripped).toContain("## Also-visible");
+    expect(stripped).not.toContain("Hidden-tilde");
+    expect(stripped).not.toContain("Hidden-nested");
   });
 
   it("rejects ambiguous or incomplete command arguments", () => {

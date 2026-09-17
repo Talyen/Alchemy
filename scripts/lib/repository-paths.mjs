@@ -4,26 +4,50 @@ import path from "node:path";
 
 // Verification must see new files even when Git's filesystem caches are stale.
 // Command-local overrides leave the user's persistent Git configuration intact.
-export const UNCACHED_GIT_OPTIONS = ["-c", "core.fsmonitor=false", "-c", "core.untrackedCache=false"];
+const UNCACHED_GIT_OPTIONS = ["-c", "core.fsmonitor=false", "-c", "core.untrackedCache=false"];
+
+/**
+ * Single git-spawn owner for script tooling: every call runs above the
+ * checkout with stale-cache overrides unless opted out, so file inventories
+ * cannot disagree between helpers. Returns the raw spawn result; callers keep
+ * their own status handling. (git-safety-guard.mjs cannot use this — it must
+ * exec the real git binary past its own shim, with the caller's cwd/options.)
+ */
+export function runGit(rootDir, args, { uncached = true, stdio } = {}) {
+  return spawnSync("git", [...(uncached ? UNCACHED_GIT_OPTIONS : []), ...args], {
+    cwd: rootDir,
+    encoding: "utf8",
+    // Keep stderr piped: listRepositoryFiles + resolvePushPaths surface it in
+    // their throw messages, and callers rely on result.stderr being a string.
+    stdio: stdio ?? ["ignore", "pipe", "pipe"],
+    maxBuffer: 16 * 1024 * 1024,
+  });
+}
+
+/**
+ * Single repo-relative path owner. Resolves `file` against `rootDir` with
+ * forward slashes; the root itself maps to `"."`. Outside paths throw unless
+ * `onOutside` is `"keep-relative"` (pass through for membership tests) or
+ * `"basename"` (diagnostics that must always render something short).
+ */
+export function toRepoRelative(rootDir, file, { onOutside = "throw" } = {}) {
+  const relative = path
+    .relative(rootDir, path.resolve(rootDir, String(file).replaceAll("\\", "/")))
+    .replaceAll(path.sep, "/");
+  const outside = relative === ".." || relative.startsWith("../") || path.isAbsolute(relative);
+  if (!outside) return relative || ".";
+  if (onOutside === "keep-relative") return relative;
+  if (onOutside === "basename") return path.basename(String(file));
+  throw new Error(`Path is outside repository: ${file}`);
+}
 
 function normalizeRepositoryPath(rootDir, file) {
-  const relative = path.relative(rootDir, path.resolve(rootDir, file.replaceAll("\\", "/"))).replaceAll(path.sep, "/");
-  if (relative === ".." || relative.startsWith("../") || path.isAbsolute(relative))
-    throw new Error(`Path is outside repository: ${file}`);
-  return relative || ".";
+  return toRepoRelative(rootDir, file);
 }
 
 /** List tracked + untracked repository files via Git's inventory. Throws on Git failure. */
 export function listRepositoryFiles(rootDir) {
-  const result = spawnSync(
-    "git",
-    [...UNCACHED_GIT_OPTIONS, "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
-    {
-      cwd: rootDir,
-      encoding: "utf8",
-      maxBuffer: 16 * 1024 * 1024,
-    },
-  );
+  const result = runGit(rootDir, ["ls-files", "--cached", "--others", "--exclude-standard", "-z"]);
   if (result.status !== 0)
     throw new Error(`Could not list repository files: ${result.error?.message ?? result.stderr}`);
   return [...new Set(result.stdout.split("\0").filter(Boolean))].sort();

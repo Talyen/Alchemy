@@ -8,6 +8,7 @@ import type { BattleState, CombatTextEvent } from "../types";
 import { getBattleRng, rollChance } from "@/lib/rng";
 import { logError } from "../../error-logger";
 import type { CardEffectResolutionContext, EffectHandler } from "./handler-types";
+import { defineHandler } from "./handler-types";
 import {
   applyDamageEffect,
   applySelfDamageEffect,
@@ -33,19 +34,30 @@ import {
 import {
   applySummonCompanionEffect,
   applyBuffCompanionEffect,
-  createCompanionActionHandler,
+  FLAG_HANDLERS,
   applyRandomDrawEffect,
   applyGainGoldEffect,
   applyWishEffectHandler,
   applyDrawCardsEffect,
-  applyNextHitCritEffect,
-  applyNextHitLeechEffect,
-  applyPlayNextCardTwiceEffect,
-  applyNextHitPoisonEffect,
-  applyNextArcheryFreeEffect,
 } from "./simple-handlers";
 
 type RegisteredEffectKind = Exclude<BattleCardEffectKind, "chance" | "repeat-over-turns">;
+
+// Defined here (not in simple-handlers) so companion-effects stays free of an
+// import back into this registry: this file already imports
+// resolveCompanionTurnStart, so the handler can close over applyCardEffects
+// lazily without creating a module cycle. See companion.ts binder for the
+// non-card entry path.
+export const applyCompanionActionEffect = defineHandler(
+  "companion-action",
+  (state, _card, effect, _potionMult, combatTexts) => {
+    let nextState = state;
+    for (let action = 0; action < effect.amount; action += 1) {
+      nextState = resolveCompanionTurnStart(nextState, combatTexts, applyCardEffects);
+    }
+    return nextState;
+  },
+);
 
 export const EFFECT_APPLY_BY_KIND = {
   damage: applyDamageEffect,
@@ -63,7 +75,7 @@ export const EFFECT_APPLY_BY_KIND = {
   "remove-player-status": applyRemovePlayerStatusEffect,
   "self-damage": applySelfDamageEffect,
   "buff-companion": applyBuffCompanionEffect,
-  "companion-action": createCompanionActionHandler(applyCardEffects),
+  "companion-action": applyCompanionActionEffect,
   "random-draw": applyRandomDrawEffect,
   "lose-health": applyLoseHealthEffect,
   "draw-cards": applyDrawCardsEffect,
@@ -71,11 +83,7 @@ export const EFFECT_APPLY_BY_KIND = {
   "multiply-enemy-status": applyMultiplyEnemyStatusEffect,
   "cleanse-player-status-to-damage": applyCleansePlayerStatusToDamageEffect,
   "random-damage": applyRandomDamageEffect,
-  "next-hit-crit": applyNextHitCritEffect,
-  "next-hit-leech": applyNextHitLeechEffect,
-  "play-next-card-twice": applyPlayNextCardTwiceEffect,
-  "next-hit-poison": applyNextHitPoisonEffect,
-  "next-archery-free": applyNextArcheryFreeEffect,
+  ...FLAG_HANDLERS,
 } satisfies Record<RegisteredEffectKind, EffectHandler>;
 
 function hasEffectApplyHandler(kind: BattleCardEffectKind): kind is RegisteredEffectKind {
@@ -98,6 +106,8 @@ export function applyEffectByKind(
   }
   let nextState = EFFECT_APPLY_BY_KIND[kind](state, card, effect, potionMult, combatTexts, context);
   if (kind === "summon-companion" && hasEncounterBenefit(state, "eager-pack")) {
+    // Eager Pack is two immediate Companion actions on summon by design
+    // ("Your Companions act twice when summoned"), not one.
     nextState = resolveCompanionTurnStart(nextState, combatTexts, applyCardEffects);
     nextState = resolveCompanionTurnStart(nextState, combatTexts, applyCardEffects);
   }

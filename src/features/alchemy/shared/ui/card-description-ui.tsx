@@ -38,6 +38,20 @@ export function renderColoredKeywords(description: string) {
   return renderTokenizedDescription(description);
 }
 
+export function renderMultilineTokenizedDescription(text: string): ReactNode[] {
+  return text.split("\n").map((line, i) => (
+    <Fragment key={i}>
+      {i > 0 && <br />}
+      {renderTokenizedDescription(line, {
+        renderKeyword: (partText, keywordId, key) => (
+          <KeywordToken key={key} keywordId={keywordId} matchedText={partText} />
+        ),
+        renderPlain: (partText, key) => <span key={key}>{partText}</span>,
+      })}
+    </Fragment>
+  ));
+}
+
 export function KeywordToken({ keywordId, matchedText }: { keywordId: KeywordId; matchedText: string }) {
   const definition = keywordDefinitions[keywordId];
   const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } =

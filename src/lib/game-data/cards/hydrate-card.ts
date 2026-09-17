@@ -1,5 +1,5 @@
 import type { BattleCard } from "../types";
-import { cardById } from "../cards";
+import { cardById } from "./library/cards";
 
 export type SavedCard = BattleCard;
 
@@ -23,6 +23,21 @@ function cloneEffect(effect: BattleCard["effects"][number]): BattleCard["effects
 function hydrateCost(saved: SavedCard, libraryCard: BattleCard): number {
   if (typeof saved.cost === "number" && Number.isFinite(saved.cost) && saved.cost >= 0) return Math.round(saved.cost);
   return libraryCard.cost;
+}
+
+/**
+ * Deep-enough copy of a card definition for run decks. Pool selections
+ * return shared catalog objects (including nested chance/repeat effects),
+ * so drafts must clone before appending or later mutations leak across runs.
+ */
+export function cloneBattleCard(card: BattleCard): BattleCard {
+  return {
+    ...card,
+    descriptionLines: [...card.descriptionLines],
+    effects: card.effects.map(cloneEffect),
+    ...(card.tags ? { tags: [...card.tags] } : {}),
+    ...(card.corruptedValuePositions ? { corruptedValuePositions: [...card.corruptedValuePositions] } : {}),
+  };
 }
 
 export function hydrateCard(savedCard: SavedCard): BattleCard {

@@ -102,7 +102,7 @@ export const applyHealEffect = defineHandler("heal", (state, card, effect, potio
     ? state.talentEffects.consumeHealMultiplier + state.gearEffects.consumeHealBonusPercent / PERCENT_DENOMINATOR
     : 0;
   const cardSpecificBonus = state.talentEffects.cardHealBonus[card.id] ?? 0;
-  const healAmount = Math.round(adjustedHeal * (1 + consumeBonus)) + cardSpecificBonus;
+  const healAmount = Math.round(adjustedHeal * (1 + consumeBonus) + cardSpecificBonus);
   return context?.cardHealing
     ? applyCardHealing(state, healAmount, combatTexts)
     : applyHealingWithCombatText(state, healAmount, combatTexts);

@@ -2,7 +2,7 @@ import { toActiveRunData } from "@/lib/active-run-session";
 import {
   SaveDataSchema,
   LAUNCH_SAVE_SCHEMA_VERSION,
-  isUsableLiveCombatGold,
+  isCombatGoldOverride,
   safeParseWithErrors,
   getRawContentVersion,
   getRawLastSavedAt,
@@ -60,41 +60,53 @@ function collectSaveRepairWarnings(raw: Partial<SaveData>, normalized: ParsedSav
   // resolvePersistedGold); that override is not a repair.
   const rawCombatGold = (raw as { activeRun?: { activeCombat?: { battleState?: { gold?: unknown } } } }).activeRun
     ?.activeCombat?.battleState?.gold;
-  const combatOverrideApplies = isUsableLiveCombatGold(rawCombatGold) && Math.floor(rawCombatGold) === normalized.gold;
-  if (rawGold !== undefined && rawGold !== normalized.gold && !combatOverrideApplies) {
+  if (rawGold !== undefined && rawGold !== normalized.gold && !isCombatGoldOverride(rawCombatGold, normalized.gold)) {
     warnings.push(`Field "gold" was repaired (raw ${JSON.stringify(rawGold)} -> ${normalized.gold})`);
   }
   // Zod `.catch()` silently resets corrupt sections to empty defaults, so a
-  // damaged gear block would otherwise look like intentional loss. Warn only
-  // when the raw payload held something beyond harmless defaults; absent or
-  // already-empty fields stay silent so fresh saves do not warn.
-  const rawGear = (raw as { gearInventories?: unknown }).gearInventories;
-  if (rawGear !== undefined && !isEmptyGearLike(rawGear) && isEmptyGearInventories(normalized.gearInventories)) {
-    warnings.push("gear collection could not be fully restored");
-  }
-  const rawTrinkets = (raw as { ownedTrinketIds?: unknown }).ownedTrinketIds;
-  if (
-    rawTrinkets !== undefined &&
-    !(Array.isArray(rawTrinkets) && rawTrinkets.length === 0) &&
-    normalized.ownedTrinketIds.length === 0
-  ) {
-    warnings.push("owned trinkets could not be fully restored");
-  }
-  const rawCurrencies = (raw as { craftingCurrencies?: unknown }).craftingCurrencies;
-  if (
-    rawCurrencies !== undefined &&
-    sumInventoryValues(normalized.craftingCurrencies) === 0 &&
-    (sumInventoryValues(rawCurrencies) > 0 || !isPlainObject(rawCurrencies))
-  ) {
-    warnings.push("crafting currencies could not be fully restored");
-  }
-  const rawMaterials = (raw as { materialInventory?: unknown }).materialInventory;
-  if (
-    rawMaterials !== undefined &&
-    sumInventoryValues(normalized.materialInventory) === 0 &&
-    (sumInventoryValues(rawMaterials) > 0 || !isPlainObject(rawMaterials))
-  ) {
-    warnings.push("homestead materials could not be fully restored");
+  // damaged block would otherwise look like intentional loss. Warn only when
+  // the raw payload held something beyond harmless defaults; absent or
+  // already-empty fields stay silent so fresh saves do not warn. New
+  // inventories add one row here, not a new branch plus helper.
+  const rawInventories = raw as {
+    gearInventories?: unknown;
+    ownedTrinketIds?: unknown;
+    craftingCurrencies?: unknown;
+    materialInventory?: unknown;
+  };
+  const inventoryChecks: Array<{ damaged: boolean; message: string }> = [
+    {
+      message: "gear collection could not be fully restored",
+      damaged:
+        rawInventories.gearInventories !== undefined &&
+        !isEmptyGearLike(rawInventories.gearInventories) &&
+        isEmptyGearInventories(normalized.gearInventories),
+    },
+    {
+      message: "owned trinkets could not be fully restored",
+      damaged:
+        rawInventories.ownedTrinketIds !== undefined &&
+        !(Array.isArray(rawInventories.ownedTrinketIds) && rawInventories.ownedTrinketIds.length === 0) &&
+        normalized.ownedTrinketIds.length === 0,
+    },
+    {
+      message: "crafting currencies could not be fully restored",
+      damaged:
+        rawInventories.craftingCurrencies !== undefined &&
+        sumInventoryValues(normalized.craftingCurrencies) === 0 &&
+        (sumInventoryValues(rawInventories.craftingCurrencies) > 0 ||
+          !isPlainObject(rawInventories.craftingCurrencies)),
+    },
+    {
+      message: "homestead materials could not be fully restored",
+      damaged:
+        rawInventories.materialInventory !== undefined &&
+        sumInventoryValues(normalized.materialInventory) === 0 &&
+        (sumInventoryValues(rawInventories.materialInventory) > 0 || !isPlainObject(rawInventories.materialInventory)),
+    },
+  ];
+  for (const check of inventoryChecks) {
+    if (check.damaged) warnings.push(check.message);
   }
   return warnings;
 }

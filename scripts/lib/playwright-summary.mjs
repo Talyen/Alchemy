@@ -3,9 +3,13 @@ import path from "node:path";
 import { ensureRunId } from "./current-run.mjs";
 import { diagnosticIdentity, failureDigestRelativePath } from "./playwright-diagnostics.mjs";
 import { formatRouteHintLine, routeHintForPath } from "./route-hints.mjs";
-
-const MAX_FAILURES = 5;
-const MESSAGE_CHARS = 240;
+import {
+  MAX_SUMMARY_FAILURES,
+  firstSummaryLine,
+  formatSummaryMarkdown,
+  missingReportMarkdown,
+  readJsonReport,
+} from "./report-summary.mjs";
 
 /**
  * @typedef {{ file: string, line: number, title: string, message: string, status: string, digestPath: string|null, routeHint: string }} PlaywrightFailure
@@ -38,8 +42,7 @@ function firstResultMessage(results) {
     for (const err of errors) {
       if (!err || typeof err !== "object") continue;
       const message = /** @type {Record<string, unknown>} */ (err).message;
-      if (typeof message === "string" && message.length > 0)
-        return (message.split("\n")[0] ?? "").slice(0, MESSAGE_CHARS);
+      if (typeof message === "string" && message.length > 0) return firstSummaryLine(message);
     }
   }
   return "";
@@ -89,7 +92,7 @@ export function collectPlaywrightTests(report) {
 }
 
 export function summarizePlaywrightReport(report, options = {}) {
-  const maxFailures = options.maxFailures ?? MAX_FAILURES;
+  const maxFailures = options.maxFailures ?? MAX_SUMMARY_FAILURES;
   const rootDir = options.rootDir ?? process.cwd();
   const runId = options.runId ?? ensureRunId("playwright");
   const root = report && typeof report === "object" ? /** @type {Record<string, unknown>} */ (report) : {};
@@ -133,7 +136,7 @@ export function summarizePlaywrightReport(report, options = {}) {
 
   const hasStats = Boolean(root.stats && typeof root.stats === "object");
   const runnerErrors = (Array.isArray(root.errors) ? root.errors : []).map((error) =>
-    String(error?.message ?? error?.value ?? error).slice(0, MESSAGE_CHARS),
+    firstSummaryLine(String(error?.message ?? error?.value ?? error)),
   );
   if (!Array.isArray(root.suites)) runnerErrors.push("Invalid Playwright report: missing suites array");
   return {
@@ -154,42 +157,34 @@ export function summarizePlaywrightReport(report, options = {}) {
 }
 
 export function formatPlaywrightSummaryMarkdown(summary) {
-  const lines = [
-    "## Playwright",
-    "",
-    `- Total: ${summary.total}`,
-    `- Passed: ${summary.expected}`,
-    `- Failed: ${summary.unexpected}`,
-    `- Flaky: ${summary.flaky}`,
-    `- Skipped: ${summary.skipped}`,
-    ...(summary.runnerErrors?.length
-      ? ["", "### Runner errors", "", ...summary.runnerErrors.map((message) => `- ${message}`)]
-      : []),
-  ];
-  if (summary.failures.length === 0) {
-    lines.push(
-      "",
+  return formatSummaryMarkdown({
+    heading: "## Playwright",
+    totals: [
+      `- Total: ${summary.total}`,
+      `- Passed: ${summary.expected}`,
+      `- Failed: ${summary.unexpected}`,
+      `- Flaky: ${summary.flaky}`,
+      `- Skipped: ${summary.skipped}`,
+    ],
+    runnerErrors: summary.runnerErrors,
+    failures: summary.failures,
+    renderFailure: (failure) => {
+      const rel = failure.file.replaceAll("\\", "/");
+      const tag = failure.status === "flaky" ? "flaky" : "failed";
+      const rendered = [`- \`${rel}:${failure.line}\` — **${failure.title}** (${tag})`];
+      if (failure.routeHint) rendered.push(`  - ${failure.routeHint}`);
+      if (failure.message) rendered.push(`  - ${failure.message}`);
+      if (failure.digestPath) rendered.push(`  - Diagnostic: \`${failure.digestPath}\``);
+      return rendered;
+    },
+    overflowCount: Math.max(0, summary.unexpected + summary.flaky - summary.failures.length),
+    emptyNote:
       summary.unexpected > 0 || summary.flaky > 0 ? "_Failures present but not listed in JSON._" : "_No failed tests._",
-    );
-    return `${lines.join("\n")}\n`;
-  }
-  lines.push("", "### Failures", "");
-  for (const failure of summary.failures) {
-    const rel = failure.file.replaceAll("\\", "/");
-    const tag = failure.status === "flaky" ? "flaky" : "failed";
-    lines.push(`- \`${rel}:${failure.line}\` — **${failure.title}** (${tag})`);
-    if (failure.routeHint) lines.push(`  - ${failure.routeHint}`);
-    if (failure.message) lines.push(`  - ${failure.message}`);
-    if (failure.digestPath) lines.push(`  - Diagnostic: \`${failure.digestPath}\``);
-  }
-  const totalBad = summary.unexpected + summary.flaky;
-  if (totalBad > summary.failures.length) lines.push("", `_…and ${totalBad - summary.failures.length} more._`);
-  return `${lines.join("\n")}\n`;
+  });
 }
 
 export function summarizePlaywrightFile(reportPath, options = {}) {
-  if (!fs.existsSync(reportPath)) return `## Playwright\n\n_No report at \`${reportPath}\`._\n`;
-  return formatPlaywrightSummaryMarkdown(
-    summarizePlaywrightReport(JSON.parse(fs.readFileSync(reportPath, "utf8")), options),
-  );
+  const read = readJsonReport(reportPath);
+  if (!read) return missingReportMarkdown("## Playwright", reportPath);
+  return formatPlaywrightSummaryMarkdown(summarizePlaywrightReport(read.data, options));
 }

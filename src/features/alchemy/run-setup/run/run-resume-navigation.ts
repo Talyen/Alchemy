@@ -54,7 +54,7 @@ export function createRunResumeNavigation(deps: ContentSystemNavigationDeps) {
     });
     const screen = snapshotRun().currentScreen;
     if (!screen) return;
-    deps.clearCardHover();
+    // Card hover clears universally on navigation (see run-flow-engine).
     if (screen === ROUTE_SCREENS.DESTINATION && mode === CONTENT_SYSTEMS.CAMPAIGN) {
       deps.navigateTo(screen, () => {
         dispatchRunSessionCommand((draft) => {

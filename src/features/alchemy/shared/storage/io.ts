@@ -52,7 +52,7 @@ export async function resetStorageIoForTests(): Promise<void> {
   saveBackend = createPlatformSaveBackend();
 }
 
-function trySerializeSaveSnapshot(data: UnstampedSaveData, context: string): string | null {
+function trySerializeSaveSnapshot(data: UnstampedSaveData, context: "" | " during page exit"): string | null {
   try {
     return serializeSaveSnapshot(data);
   } catch (error) {
@@ -78,7 +78,10 @@ async function writeSerializedSnapshot(serialized: string): Promise<SaveWriteOut
   return "failed";
 }
 
-function serializeSaveSnapshot(data: UnstampedSaveData, now: number = Date.now()): string {
+// Exported for tests: each physical write stamps its own `lastSavedAt`, so
+// the sync exit write and a trailing queued write for the same snapshot can
+// carry different timestamps by design. Pass an explicit `now` to pin that.
+export function serializeSaveSnapshot(data: UnstampedSaveData, now: number = Date.now()): string {
   const payload: SaveData = { ...data, lastSavedAt: now };
   return JSON.stringify(payload);
 }

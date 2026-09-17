@@ -50,9 +50,12 @@ export async function syncChangelog(options = {}) {
     } else {
       console.log("CHANGELOG.md is already in sync");
     }
-  } catch {
-    console.error("CHANGELOG.md ## [Unreleased] is out of sync with git log. Run: npm run sync:changelog");
-    process.exit(1);
+  } catch (error) {
+    // Throw instead of exiting so tests observe the failure; defineScript
+    // still maps this to exit 1 for the CLI.
+    throw new Error("CHANGELOG.md ## [Unreleased] is out of sync with git log. Run: npm run sync:changelog", {
+      cause: error,
+    });
   }
 
   return synced;

@@ -6,6 +6,7 @@ import { dealDamageToEnemy } from "../damage";
 import { dealSelfDamage } from "../status-helpers";
 import { addPlayerStatus, reduceEnemyArmor } from "../types";
 import { defineHandler } from "./handler-types";
+import { rangeBoundsError } from "./simple-handlers";
 
 export const applyDamageEffect = defineHandler("damage", (state, card, effect, potionMult, combatTexts, context) => {
   let damageType = effect.damageType;
@@ -35,9 +36,7 @@ export const applyRandomDamageEffect = defineHandler(
   "random-damage",
   (state, card, effect, potionMult, combatTexts, context) => {
     if (effect.maxAmount < effect.minAmount) {
-      throw new Error(
-        `[Battle] random-damage maxAmount ${effect.maxAmount} is less than minAmount ${effect.minAmount}`,
-      );
+      throw rangeBoundsError("random-damage");
     }
     const rng = getBattleRng(state);
     const damageType =

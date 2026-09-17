@@ -54,7 +54,6 @@ export function createRunFlowEngine(
     onStartBattle: battle.onStartBattle,
     getAvailableDestinations: destinations.getAvailableDestinations,
     onResumeWildwood: wildwood.resumeWildwoodRun,
-    clearCardHover,
   });
   const mystery = createMysteryEventNavigation({
     navigateTo,

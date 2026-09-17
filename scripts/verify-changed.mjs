@@ -6,6 +6,7 @@ import fs from "node:fs";
 import { summarizeAndReportFailure, summarizeStepResult } from "./lib/run-step.mjs";
 import { resolveRoutePlan } from "./lib/change-routes.mjs";
 import { parseChangedPathsArgs, resolveSelectedPaths } from "./lib/changed-paths.mjs";
+import { DOCS_CHECK_KEY } from "./lib/test-commands.mjs";
 import { ensureRunId, writeCurrentRun } from "./lib/current-run.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { runCommand } from "./lib/run-command.mjs";
@@ -29,7 +30,7 @@ export function parseVerifyArgs(argv) {
 
 export function filterPlanCommands(plan, flags) {
   if (flags.has("skip-docs-check")) {
-    return { ...plan, commands: plan.commands.filter((command) => command.key !== "docs-check") };
+    return { ...plan, commands: plan.commands.filter((command) => command.key !== DOCS_CHECK_KEY) };
   }
   return plan;
 }

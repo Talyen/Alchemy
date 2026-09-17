@@ -6,7 +6,7 @@ const require = createRequire(import.meta.url);
 
 import { expandRepositoryPaths } from "./repository-paths.mjs";
 import { resolveRoutePlan } from "./change-routes.mjs";
-import { readDocumentSection } from "./document-sections.mjs";
+import { readDocumentSection } from "./markdown-sections.mjs";
 
 const owner = (path, heading) => ({ path, heading });
 const workflow = (heading) => owner("docs/WORKFLOWS.md", heading);
@@ -172,7 +172,7 @@ export const CONTEXT_TASKS = {
   },
   "assets-sound": {
     matches:
-      /^(?:Raw Assets\/Sound Effects\/|public\/sounds\/|scripts\/(?:assets\/sound-assets|optimize-sounds|lib\/audio-optimizer)\.mjs|src\/lib\/audio\/sound-registry\.ts)/u,
+      /^(?:Raw Assets\/Sound Effects\/|public\/sounds\/|scripts\/(?:assets\/sound-assets|optimize-sounds)\.mjs|src\/lib\/audio\/sound-registry\.ts)/u,
     docs: [...assetCommon, asset("Add or replace sound")],
     entrypoints: ["scripts/assets/sound-assets.mjs"],
   },
@@ -183,7 +183,7 @@ export const CONTEXT_TASKS = {
   },
   "assets-pipeline": {
     matches:
-      /^scripts\/(?:assets|prepare-assets|optimize-assets|optimize-pipelines|check-prepared-assets|sync-generated|sync-art-barrels|lib\/asset-[^/]+|lib\/registry-validation|lib\/audio-optimizer)\.mjs$/u,
+      /^scripts\/(?:assets|prepare-assets|optimize-assets|optimize-pipelines|check-prepared-assets|sync-generated|sync-art-barrels|lib\/asset-[^/]+|lib\/registry-validation)\.mjs$/u,
     docs: [
       ...assetCommon,
       asset("Pipeline overview"),

@@ -31,8 +31,8 @@ export function optimizationFailures(results) {
   });
 }
 
-export async function runAllOptimizePipelines() {
-  const results = await runAllOptimizePipelinesSettled();
+export async function runAllOptimizePipelines(options) {
+  const results = await runAllOptimizePipelinesSettled(options);
   const failures = optimizationFailures(results);
   if (failures.length > 0) {
     throw new AggregateError(

@@ -1,4 +1,11 @@
-import { getStartingDeck, type BattleCard, type CharacterId, type DifficultyId, type TalentXP } from "@/lib/game-data";
+import {
+  cloneBattleCard,
+  getStartingDeck,
+  type BattleCard,
+  type CharacterId,
+  type DifficultyId,
+  type TalentXP,
+} from "@/lib/game-data";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { Destination } from "@/lib/routing";
 import { computeRunMaxHealth } from "./run-max-health";
@@ -45,7 +52,7 @@ export function createRunStartSnapshot({
   return {
     characterId,
     contentSystemType,
-    freshDeck: draftedDeck ?? getStartingDeck(characterId),
+    freshDeck: (draftedDeck ?? getStartingDeck(characterId)).map(cloneBattleCard),
     selectedDifficulty: contentSystemType === "campaign" ? difficultyId : null,
     startGoldGrant: talentStartGold,
     runPlayerHealth: runMaxHealth,

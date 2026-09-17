@@ -27,8 +27,8 @@ import {
   VORBIS_QUALITY,
   soundTransformSettings,
 } from "./lib/asset-constants.mjs";
-import { failedOptimizeResult, runPipelineScript, targetErrorHandler } from "./lib/process-helpers.mjs";
-import { isMainModule } from "./lib/is-main-module.mjs";
+import { failedOptimizeResult, targetErrorHandler } from "./lib/process-helpers.mjs";
+import { runPipelineScript } from "./lib/script-run.mjs";
 import { mapPool } from "./lib/map-pool.mjs";
 import { resolveRootDir } from "./lib/sync-generated-helpers.mjs";
 
@@ -187,6 +187,4 @@ async function ensureMp3Fallbacks(previousManifest, managedOggs, check) {
   return { mp3Entries, curatedOggEntries, mp3Failures };
 }
 
-if (isMainModule(import.meta.url)) {
-  runPipelineScript("Sound optimization", optimizeSounds);
-}
+runPipelineScript(import.meta.url, "Sound optimization", optimizeSounds);

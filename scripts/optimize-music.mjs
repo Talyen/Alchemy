@@ -1,4 +1,4 @@
-import { mkdir, copyFile } from "node:fs/promises";
+import { mkdir, copyFile, readdir } from "node:fs/promises";
 import path from "node:path";
 
 import { commitManifest, processFreshEntry, processManifestEntries } from "./lib/asset-manifest-cache.mjs";
@@ -8,10 +8,19 @@ import {
   MUSIC_COPY_CONCURRENCY,
   MUSIC_SETTINGS,
 } from "./lib/asset-constants.mjs";
-import { discoverAudioFiles } from "./lib/audio-optimizer.mjs";
-import { failedOptimizeResult, runPipelineScript, targetErrorHandler } from "./lib/process-helpers.mjs";
-import { isMainModule } from "./lib/is-main-module.mjs";
+import { failedOptimizeResult, targetErrorHandler } from "./lib/process-helpers.mjs";
+import { runPipelineScript } from "./lib/script-run.mjs";
 import { resolveRootDir } from "./lib/sync-generated-helpers.mjs";
+
+const MUSIC_FILE_EXTENSIONS = new Set([".mp3", ".ogg", ".wav"]);
+
+async function discoverAudioFiles(dir) {
+  const entries = await readdir(dir, { withFileTypes: true });
+  return entries
+    .filter((entry) => entry.isFile() && MUSIC_FILE_EXTENSIONS.has(path.extname(entry.name).toLowerCase()))
+    .map((entry) => entry.name)
+    .sort();
+}
 
 const rootDir = resolveRootDir(import.meta.url);
 const sourceDir = path.join(rootDir, "Raw Assets", "Music");
@@ -67,6 +76,4 @@ export async function optimizeMusic({ check = false } = {}) {
   return { ok: true };
 }
 
-if (isMainModule(import.meta.url)) {
-  runPipelineScript("Music optimization", optimizeMusic);
-}
+runPipelineScript(import.meta.url, "Music optimization", optimizeMusic);

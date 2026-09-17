@@ -23,6 +23,7 @@ export {
   MaterialInventorySchema,
   SaveDataSchema,
   UnlockedTalentsSchema,
+  isCombatGoldOverride,
   isUsableLiveCombatGold,
   safeParseWithErrors,
   type ParsedActiveRunData,

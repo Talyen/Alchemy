@@ -17,14 +17,12 @@ import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { getStartingDeck } from "@/lib/game-data";
 import { makeTestBattleState } from "../../../../fixtures/battle";
 import { canEnterLabyrinthNode } from "@/lib/content-systems/labyrinth/map-state";
+import { logError } from "@/lib/error-logger";
 
-vi.mock("@/features/alchemy/shared/run-flow/campaign-start", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/alchemy/shared/run-flow/campaign-start")>();
-  return {
-    ...actual,
-    afterCampaignCharacterResolved: vi.fn((_id, _deps, onContinue) => onContinue()),
-  };
-});
+vi.mock("@/lib/error-logger", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/error-logger")>()),
+  logError: vi.fn(),
+}));
 
 beforeEach(() => {
   resetAllTestStores();
@@ -38,7 +36,6 @@ function makeDeps(overrides: Partial<Parameters<typeof createContentSystemNaviga
     onStartBattle,
     getAvailableDestinations: () => [DESTINATIONS.NORMAL_COMBAT],
     onResumeWildwood: vi.fn(),
-    clearCardHover: vi.fn(),
     ...overrides,
   };
 }
@@ -50,6 +47,30 @@ describe("createContentSystemNavigation", () => {
     nav.beginCampaign();
     expect(readRunSession().pendingContentSystemType).toBe(CONTENT_SYSTEMS.CAMPAIGN);
     expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.CHARACTER_SELECT);
+  });
+
+  it("auto-starts the default battle for a hero new to the campaign", () => {
+    setRunSession({ pendingContentSystemType: CONTENT_SYSTEMS.CAMPAIGN });
+    const deps = makeDeps();
+    const nav = createContentSystemNavigation(deps);
+    nav.handleCharacterSelect("knight");
+    expect(deps.onStartBattle).toHaveBeenCalledOnce();
+    expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE, expect.any(Function));
+    expect(readActiveRun().contentSystemType).toBe(CONTENT_SYSTEMS.CAMPAIGN);
+    expect(readActiveRun().characterId).toBe("knight");
+  });
+
+  it("sends a veteran hero to difficulty select", () => {
+    setRunSession({ pendingContentSystemType: CONTENT_SYSTEMS.CAMPAIGN });
+    dispatchRunSessionCommand((draft) => {
+      draft.profile.completedDifficulties.knight = [DEFAULT_CAMPAIGN_DIFFICULTY_ID];
+    });
+    const deps = makeDeps();
+    const nav = createContentSystemNavigation(deps);
+    nav.handleCharacterSelect("knight");
+    expect(deps.onStartBattle).not.toHaveBeenCalled();
+    expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.DIFFICULTY_SELECT);
+    expect(readRunSession().pendingCharacterId).toBe("knight");
   });
 
   it("initializeLabyrinthRun creates enterable chambers before navigating to the map", () => {
@@ -210,6 +231,15 @@ describe("createContentSystemNavigation", () => {
     nav.handleCharacterSelect("wildcard");
     nav.handleStarterDraftPick("not-offered");
     expect(readActiveRun().runDeck).toEqual([]);
+    expect(logError).toHaveBeenCalledWith(expect.stringContaining("handleStarterDraftPick"), expect.anything());
+  });
+
+  it("logs and returns when completing a draft without an active run", () => {
+    const deps = makeDeps();
+    const nav = createContentSystemNavigation(deps);
+    nav.handleStandardDraftComplete();
+    expect(deps.navigateTo).not.toHaveBeenCalled();
+    expect(logError).toHaveBeenCalledWith(expect.stringContaining("handleStandardDraftComplete"), expect.anything());
   });
 
   it("keeps an empty starter-draft offer after the final pick so labyrinth can resume to draft confirm", () => {
@@ -274,6 +304,10 @@ describe("createContentSystemNavigation", () => {
     const draftedCards = Array.from({ length: DRAFT_ROUNDS }, (_, index) =>
       makeTestCard({ id: `campaign-draft-${index}` }),
     );
+    // A veteran wildcard skips the novice auto-start and continues to difficulty select.
+    dispatchRunSessionCommand((draft) => {
+      draft.profile.completedDifficulties.wildcard = [DEFAULT_CAMPAIGN_DIFFICULTY_ID];
+    });
     setRunProgress({
       characterId: "wildcard",
       contentSystemType: CONTENT_SYSTEMS.CAMPAIGN,

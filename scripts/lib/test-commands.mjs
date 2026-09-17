@@ -107,3 +107,7 @@ export const COMMANDS = Object.freeze({
     args: ["run", "docs:check"],
   },
 });
+
+// Keyed separately so plan filtering never depends on a string literal that can
+// drift from the COMMANDS table above.
+export const DOCS_CHECK_KEY = "docs-check";

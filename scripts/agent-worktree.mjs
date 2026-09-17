@@ -42,9 +42,12 @@ function slugify(s) {
 const [cmd, ...rest] = process.argv.slice(2);
 
 function getArg(name) {
-  const idx = rest.indexOf(name);
-  if (idx === -1) return null;
-  return rest[idx + 1] ?? null;
+  const prefix = `${name}=`;
+  for (let index = 0; index < rest.length; index++) {
+    if (rest[index] === name) return rest[index + 1] ?? null;
+    if (rest[index].startsWith(prefix)) return rest[index].slice(prefix.length) || null;
+  }
+  return null;
 }
 
 function hasFlag(name) {
@@ -82,6 +85,20 @@ if (cmd === "create") {
   const base = getArg("--base") ?? "main";
   const worktreePath = path.join(WORKTREE_ROOT, task);
   const branch = `agent/${task}`;
+
+  // Branch names and worktree directories live on disk: `Task` and `task`
+  // would collide on case-insensitive filesystems, so reject the second
+  // spelling explicitly instead of corrupting the first checkout. This runs
+  // before the exact-exists check so the collision reports on every platform.
+  if (fs.existsSync(WORKTREE_ROOT)) {
+    const clash = fs
+      .readdirSync(WORKTREE_ROOT)
+      .find((entry) => entry !== task && entry.toLowerCase() === task.toLowerCase());
+    if (clash) {
+      console.error(`worktree slug ${task} collides with existing ${clash}; choose another --task`);
+      process.exit(1);
+    }
+  }
 
   if (fs.existsSync(worktreePath)) {
     console.error(`worktree already exists: ${worktreePath}`);

@@ -110,7 +110,9 @@ export function buildContextHotspotReport(rootDir, options = {}) {
   };
 }
 
-function formatBytes(value) {
+// Exact byte counts ("5,000 B"), not the human units from
+// lib/clean-dev-artifacts.mjs: hotspot budgets compare precise thresholds.
+function formatExactBytes(value) {
   return `${Number(value).toLocaleString()} B`;
 }
 
@@ -118,15 +120,15 @@ export function formatContextHotspotReport(report) {
   const lines = ["Route context hotspots:"];
   for (const row of report.routes) {
     lines.push(
-      `  ${row.routes.join("+")}: ${formatBytes(row.totalContextBytes)} ` +
-        `(preread ${formatBytes(row.selectedBytes)}; fixture ${formatBytes(row.changedFileBytes)})`,
+      `  ${row.routes.join("+")}: ${formatExactBytes(row.totalContextBytes)} ` +
+        `(preread ${formatExactBytes(row.selectedBytes)}; fixture ${formatExactBytes(row.changedFileBytes)})`,
     );
   }
   lines.push("", "Discovery context hotspots (owner-section bytes; emitted output includes navigation):");
   for (const row of report.discovery) {
     lines.push(
       `  ${row.paths.length ? row.paths.join(", ") : `--task ${row.task}`}: ` +
-        `${formatBytes(row.selectedBytes)} selected / ${formatBytes(row.emittedSectionBytes)} emitted sections / ${formatBytes(row.emittedBytes)} output`,
+        `${formatExactBytes(row.selectedBytes)} selected / ${formatExactBytes(row.emittedSectionBytes)} emitted sections / ${formatExactBytes(row.emittedBytes)} output`,
     );
     for (const section of row.deferred)
       lines.push(`    Deferred: ${section.path} § ${section.heading ?? "whole document"}`);
@@ -135,8 +137,8 @@ export function formatContextHotspotReport(report) {
   if (report.commands.length === 0) lines.push("  No recorded commands met the byte threshold.");
   for (const row of report.commands) {
     lines.push(
-      `  ${row.label}: ${formatBytes(row.exposedBytes)} exposed / ${formatBytes(row.rawBytes)} raw ` +
-        `(${row.avoidedPercent}% avoided; ${row.occurrences} runs; max raw ${formatBytes(row.maxRawBytes)}` +
+      `  ${row.label}: ${formatExactBytes(row.exposedBytes)} exposed / ${formatExactBytes(row.rawBytes)} raw ` +
+        `(${row.avoidedPercent}% avoided; ${row.occurrences} runs; max raw ${formatExactBytes(row.maxRawBytes)}` +
         `${row.overBudgetOccurrences > 0 ? `; ${row.overBudgetOccurrences} over budget` : ""})`,
     );
   }

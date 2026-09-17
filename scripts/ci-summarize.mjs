@@ -4,7 +4,8 @@ import path from "node:path";
 import { writeFailureIndex } from "./lib/playwright-diagnostics.mjs";
 import { writeCurrentRun } from "./lib/current-run.mjs";
 import { formatPlaywrightSummaryMarkdown, summarizePlaywrightReport } from "./lib/playwright-summary.mjs";
-import { formatVitestSummaryMarkdown, summarizeVitestReport, summarizeVitestFile } from "./lib/vitest-summary.mjs";
+import { formatVitestSummaryMarkdown, summarizeVitestReport } from "./lib/vitest-summary.mjs";
+import { missingReportMarkdown, readJsonReport } from "./lib/report-summary.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 const DEFAULT_VITEST_REPORT = "reports/vitest-timings.json";
@@ -19,15 +20,15 @@ function publishCiSummary({ rootDir = process.cwd(), markdown, status, command, 
 }
 
 function publishVitest(reportPath) {
-  const resolved = path.resolve(reportPath);
-  const summary = fs.existsSync(resolved) ? summarizeVitestReport(JSON.parse(fs.readFileSync(resolved, "utf8"))) : null;
-  const markdown = summary ? formatVitestSummaryMarkdown(summary) : `## Vitest\n\n_No report at \`${reportPath}\`._\n`;
+  const read = readJsonReport(reportPath);
+  const summary = read ? summarizeVitestReport(read.data) : null;
+  const markdown = summary ? formatVitestSummaryMarkdown(summary) : missingReportMarkdown("## Vitest", reportPath);
   publishCiSummary({
     rootDir: process.cwd(),
     markdown,
     status: summary ? (summary.failed ? "failed" : "passed") : "missing-report",
     command: process.env.GITHUB_JOB ? `vitest (${process.env.GITHUB_JOB})` : "vitest",
-    artifacts: [path.relative(process.cwd(), resolved)],
+    artifacts: [path.relative(process.cwd(), read?.resolved ?? path.resolve(reportPath))],
     summary: summary ? `Vitest: ${summary.numPassedTests}/${summary.numTotalTests} passed.` : "Vitest report missing.",
     counts: summary
       ? { passed: summary.numPassedTests, failed: summary.numFailedTests, skipped: summary.numPendingTests }
@@ -36,13 +37,12 @@ function publishVitest(reportPath) {
 }
 
 function publishPlaywright(reportPath) {
-  const resolved = path.resolve(reportPath);
-  const summary = fs.existsSync(resolved)
-    ? summarizePlaywrightReport(JSON.parse(fs.readFileSync(resolved, "utf8")))
-    : null;
+  const read = readJsonReport(reportPath);
+  const resolved = read?.resolved ?? path.resolve(reportPath);
+  const summary = read ? summarizePlaywrightReport(read.data) : null;
   const markdown = summary
     ? formatPlaywrightSummaryMarkdown(summary)
-    : `## Playwright\n\n_No report at \`${reportPath}\`._\n`;
+    : missingReportMarkdown("## Playwright", reportPath);
   if (process.env.GITHUB_OUTPUT) {
     fs.appendFileSync(
       process.env.GITHUB_OUTPUT,
@@ -158,13 +158,3 @@ function main() {
 }
 
 if (isMainModule(import.meta.url)) main();
-
-export {
-  publishVitest,
-  publishPlaywright,
-  summarizeVitestReport,
-  formatVitestSummaryMarkdown,
-  summarizeVitestFile,
-  DEFAULT_VITEST_REPORT,
-  DEFAULT_PLAYWRIGHT_REPORT,
-};

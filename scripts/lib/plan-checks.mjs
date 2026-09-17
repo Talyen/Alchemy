@@ -1,4 +1,4 @@
-/** Shared execution-plan checks under docs/Plans/ (used by check-plans and archive-plans CLIs). */
+/** Shared execution-plan checks under docs/Plans/ (used by check-docs and archive-plans CLIs). */
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -38,7 +38,7 @@ export function parsePlanMetadata(source) {
   return { metadata, errors, updated };
 }
 
-export function planFiles() {
+function planFiles() {
   if (!fs.existsSync(PLANS_DIR)) return [];
   return fs
     .readdirSync(PLANS_DIR, { withFileTypes: true })
@@ -47,7 +47,7 @@ export function planFiles() {
     .sort();
 }
 
-export function checkPlans({ final = false, today = new Date() } = {}) {
+function checkPlans({ final = false, today = new Date() } = {}) {
   const failures = [];
   const warnings = [];
   const plans = planFiles();

@@ -1,5 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { CombatTextEvent } from "@/lib/battle/types";
+import { applyCardEffects, applyEffectByKind } from "@/lib/battle/effect-handlers/registry";
+import { companionLibrary } from "@/lib/game-data";
 import { applySummonCompanionEffect, applyBuffCompanionEffect } from "@/lib/battle/effect-handlers/simple-handlers";
 import {
   applySelfDamageEffect,
@@ -28,7 +30,13 @@ import {
   applyWishEffectHandler,
   applyDrawCardsEffect,
   applyNextArcheryFreeEffect,
+  applyNextHitCritEffect,
+  applyNextHitLeechEffect,
+  applyPlayNextCardTwiceEffect,
+  applyNextHitPoisonEffect,
+  applyRandomDrawEffect,
 } from "@/lib/battle/effect-handlers/simple-handlers";
+import { applyCompanionActionEffect } from "@/lib/battle/effect-handlers/registry";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 type EffectHandler = (
@@ -62,6 +70,13 @@ describe("effect handlers reject mismatched kinds", () => {
     { name: "applyGainGoldEffect", apply: applyGainGoldEffect },
     { name: "applyWishEffectHandler", apply: applyWishEffectHandler },
     { name: "applyDrawCardsEffect", apply: applyDrawCardsEffect },
+    { name: "applyCompanionActionEffect", apply: applyCompanionActionEffect },
+    { name: "applyRandomDrawEffect", apply: applyRandomDrawEffect },
+    { name: "applyNextHitCritEffect", apply: applyNextHitCritEffect },
+    { name: "applyNextHitLeechEffect", apply: applyNextHitLeechEffect },
+    { name: "applyPlayNextCardTwiceEffect", apply: applyPlayNextCardTwiceEffect },
+    { name: "applyNextHitPoisonEffect", apply: applyNextHitPoisonEffect },
+    { name: "applyNextArcheryFreeEffect", apply: applyNextArcheryFreeEffect },
   ] as const)("$name throws for a mismatched kind", ({ apply }) => {
     const state = patchBattleState();
     expect(() => (apply as EffectHandler)(state, {} as never, { kind: "__never__" } as never, 1, [])).toThrow();
@@ -348,6 +363,108 @@ describe("applyNextArcheryFreeEffect", () => {
     expect(state.flags.nextArcheryCardFree).toBe(false);
     const result = applyNextArcheryFreeEffect(state, {} as never, { kind: "next-archery-free" } as never, 1, []);
     expect(result.flags.nextArcheryCardFree).toBe(true);
+  });
+});
+
+describe("applyEffectByKind unknown kind", () => {
+  it("warns and returns state unchanged", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const state = patchBattleState();
+      const unknown = applyEffectByKind("nope" as never, state, makeTestCard(), { kind: "nope" } as never, 1, []);
+      expect(unknown).toBe(state);
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining("Missing handler"));
+    } finally {
+      warn.mockRestore();
+    }
+  });
+});
+
+describe("applyCompanionActionEffect", () => {
+  it("no-ops without an active companion", () => {
+    const state = patchBattleState({ activeCompanion: null });
+    const result = applyCompanionActionEffect(
+      state,
+      makeTestCard(),
+      { kind: "companion-action", amount: 2 } as never,
+      1,
+      [],
+    );
+    expect(result).toBe(state);
+  });
+
+  it("acts once per amount with an active companion", () => {
+    const base = patchBattleState({ activeCompanion: companionLibrary.wolf, enemyHealth: 100 });
+    const once = applyCompanionActionEffect(
+      base,
+      makeTestCard(),
+      { kind: "companion-action", amount: 1 } as never,
+      1,
+      [],
+    );
+    const twice = applyCompanionActionEffect(
+      base,
+      makeTestCard(),
+      { kind: "companion-action", amount: 2 } as never,
+      1,
+      [],
+    );
+    expect(once.enemyHealth).toBeLessThan(100);
+    expect(twice.enemyHealth).toBeLessThan(once.enemyHealth);
+  });
+});
+
+describe("range bounds errors share one message", () => {
+  it("random-draw and random-damage throw the same bounds message", () => {
+    const state = patchBattleState();
+    for (const effect of [
+      { kind: "random-draw", minAmount: 6, maxAmount: 1 },
+      { kind: "random-damage", minAmount: 6, maxAmount: 1 },
+    ] as const) {
+      expect(() => applyCardEffects(state, makeTestCard({ effects: [effect] } as never), [])).toThrow(
+        "maxAmount must be >= minAmount",
+      );
+    }
+  });
+});
+
+describe("recursive effects", () => {
+  it("queues repeat-over-turns with source card id", () => {
+    const state = patchBattleState();
+    const card = makeTestCard({
+      id: "bread",
+      effects: [{ kind: "repeat-over-turns", remainingTurns: 2, effects: [{ kind: "heal", amount: 4 }] }],
+    });
+    const result = applyCardEffects(state, card, []);
+    expect(result.pendingTurnStartEffects).toHaveLength(state.pendingTurnStartEffects.length + 1);
+    expect(result.pendingTurnStartEffects.at(-1)).toMatchObject({
+      remainingTurns: 2,
+      sourceCard: { id: "bread" },
+    });
+  });
+
+  it("runs the empty failure branch as a no-op", () => {
+    const state = patchBattleState({ rng: () => 0.99 });
+    const card = makeTestCard({
+      effects: [{ kind: "chance", probability: 0, successEffects: [{ kind: "heal", amount: 5 }], failureEffects: [] }],
+    });
+    const result = applyCardEffects(state, card, []);
+    expect(result.playerHealth).toBe(state.playerHealth);
+  });
+});
+
+describe("uniqueRepeatActive suppresses potion scaling", () => {
+  it("ignores potionPotency during unique repeats", () => {
+    const card = makeTestCard({ id: "health-potion", effects: [{ kind: "heal", amount: 4 }] });
+    const base = patchBattleState({
+      playerHealth: 10,
+      playerMaxHealth: 30,
+      talentEffects: { potionPotency: 2 },
+    });
+    const scaled = applyCardEffects(base, card, []);
+    const suppressed = applyCardEffects({ ...base, flags: { ...base.flags, uniqueRepeatActive: true } }, card, []);
+    expect(scaled.playerHealth).toBe(18);
+    expect(suppressed.playerHealth).toBe(14);
   });
 });
 

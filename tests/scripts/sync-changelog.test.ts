@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { computeSyncedChangelog } from "../../scripts/sync-changelog.mjs";
+import { computeSyncedChangelog, syncChangelog } from "../../scripts/sync-changelog.mjs";
 
 const tempDirs: string[] = [];
 
@@ -84,5 +84,13 @@ describe("sync-changelog", () => {
     tempDirs.push(root);
 
     expect(() => computeSyncedChangelog("# Changelog\n", root)).toThrow(/git log failed/);
+  });
+
+  it("rejects check mode on drift instead of exiting the process", async () => {
+    const root = gitRepoWithCommit("feat: drift the changelog");
+    writeFileSync(join(root, "CHANGELOG.md"), "# Changelog\n\n## [Unreleased]\n\n_Stale._\n", "utf8");
+
+    await expect(syncChangelog({ root, check: true })).rejects.toThrow(/out of sync with git log/);
+    expect(readFileSync(join(root, "CHANGELOG.md"), "utf8")).toContain("_Stale._");
   });
 });

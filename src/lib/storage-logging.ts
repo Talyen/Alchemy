@@ -16,6 +16,11 @@ function toLoggableStorageDetail(error: object): string {
 }
 
 export function logStorageFailure(message: string, error?: unknown) {
+  // Call without `error` only for observed failures that carry no exception
+  // (e.g. a backend returning { ok: false } or a non-object save root).
+  // Routine skips — missing, empty, or below-baseline candidates on fresh
+  // profiles — stay silent instead: never call this for them, because browser
+  // journeys assert zero runtime errors (see MIGRATIONS.md load selection).
   if (error instanceof Error) {
     logError(message, "storage", undefined, error.stack, undefined, error);
     return;

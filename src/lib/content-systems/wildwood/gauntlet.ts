@@ -1,5 +1,12 @@
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
-import { characters, selectRewardCards, type BattleCard, type BestiaryEntry, type CharacterId } from "@/lib/game-data";
+import {
+  characters,
+  cloneBattleCard,
+  selectRewardCards,
+  type BattleCard,
+  type BestiaryEntry,
+  type CharacterId,
+} from "@/lib/game-data";
 import { DRAFT_CHOICES, DRAFT_ROUNDS } from "@/lib/game-constants";
 import { isValidDeckIndex, shuffle } from "@/lib/utils";
 import { WILDWOOD_BOSS_IDS, type WildwoodBossId } from "./bosses";
@@ -71,9 +78,10 @@ export function pickWildwoodDraftCard(
 ): { card: BattleCard; state: WildwoodDraftState } | null {
   const card = offeredWildwoodDraftCard(state, runDeck, requestedCardId);
   if (!card) return null;
-  const nextDeck = [...runDeck, card];
+  const picked = cloneBattleCard(card);
+  const nextDeck = [...runDeck, picked];
   return {
-    card,
+    card: picked,
     state: {
       ...state,
       draftChoices: nextDeck.length >= DRAFT_ROUNDS ? [] : createWildwoodDraftChoices(characterId, nextDeck, rng),

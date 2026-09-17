@@ -1,5 +1,5 @@
 import { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "../metadata";
-import { isUsableLiveCombatGold } from "../save-schemas/validation-utils";
+import { toFiniteNonNegativeInt } from "../save-schemas/validation-utils";
 
 // Raw version readers for load gating. Sole consumer is
 // storage/save-candidates.ts#getFutureSaveStatus, which applies schema-first
@@ -21,8 +21,12 @@ export function getRawContentVersion(parsed: unknown): number {
   return getRawVersion(parsed, "contentVersion");
 }
 export function getRawLastSavedAt(parsed: unknown): number | null {
+  // Timestamps have their own reader: like versions they must be finite and
+  // non-negative, but fractional values floor instead of rejecting so a
+  // hand-written float still orders sanely. Never reuse the combat-gold
+  // predicate here; the domains only coincide by accident.
   const value = readRawField(parsed, "lastSavedAt");
-  return isUsableLiveCombatGold(value) ? value : null;
+  return toFiniteNonNegativeInt(value);
 }
 
 export function isUnsupportedFutureSaveData(parsed: unknown): boolean {

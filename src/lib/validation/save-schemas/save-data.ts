@@ -84,6 +84,13 @@ function resolvePersistedGold(purseGold: number, liveCombatGold: unknown): numbe
   return purseGold;
 }
 
+// Single owner for the live-combat-gold rule: the mid-fight purse override is
+// intentional, not damage. save-candidates.ts uses this to suppress the gold
+// repair warning instead of re-implementing the floor comparison.
+export function isCombatGoldOverride(liveCombatGold: unknown, persistedGold: number): boolean {
+  return isUsableLiveCombatGold(liveCombatGold) && Math.floor(liveCombatGold) === persistedGold;
+}
+
 export const SaveDataSchema = z
   .object({
     saveSchemaVersion: z.literal(CURRENT_SAVE_SCHEMA_VERSION).catch(CURRENT_SAVE_SCHEMA_VERSION),

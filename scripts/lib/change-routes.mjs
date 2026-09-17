@@ -4,7 +4,7 @@ import path from "node:path";
 import { globToRegExp } from "./glob-pattern.mjs";
 import { expandRepositoryPaths } from "./repository-paths.mjs";
 import { COMMANDS } from "./test-commands.mjs";
-import { readDocumentSection } from "./document-sections.mjs";
+import { readDocumentSection } from "./markdown-sections.mjs";
 
 const ROOT_DIR = path.resolve(import.meta.dirname, "../..");
 
@@ -31,6 +31,14 @@ export const SHARED_BUILD_PATTERNS = Object.freeze([
   "scripts/lib/sentry-release.mjs",
   "scripts/lib/desktop-build-config.mjs",
 ]);
+
+// Gate-level "documentation-only" definition: every Markdown file plus the
+// docs/, .agents/, and .cursor/ trees. Deliberately broader than the
+// documentation route's contract patterns above — non-Markdown files under
+// docs/ (images, archived plans) still skip code builds in check classification.
+export function isDocumentationPath(filePath) {
+  return filePath.endsWith(".md") || /^(docs|\.agents|\.cursor)\//u.test(filePath);
+}
 
 export const ROUTES = Object.freeze([
   route(
@@ -69,7 +77,6 @@ export const ROUTES = Object.freeze([
       "scripts/sync-*.mjs",
       "scripts/check-generated*.mjs",
       "scripts/lib/process-helpers.mjs",
-      "scripts/lib/audio-optimizer.mjs",
       "scripts/lib/registry-validation.mjs",
       "src/assets/optimized/**",
       "public/sounds/**",

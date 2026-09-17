@@ -3,6 +3,7 @@ import {
   CURRENT_GAME_BUILD_VERSION,
   CURRENT_SAVE_SCHEMA_VERSION,
 } from "@/lib/validation/metadata";
+import type { SaveData } from "@/features/alchemy/shared/storage/types";
 
 export const ALL_PLAYABLE_CHARACTERS = ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"];
 
@@ -24,6 +25,16 @@ export interface HomesteadSaveFixture {
   selectedAspectRatio: string;
   displayMode: string;
   brightness: number;
+  // Optional: present on real saves, omitted here so the load-tolerant
+  // `.catch` path stays exercised. Typed from SaveData so access is checked.
+  backgroundParticlesIntensity?: SaveData["backgroundParticlesIntensity"];
+  backgroundGlowIntensity?: SaveData["backgroundGlowIntensity"];
+  gearInventories?: SaveData["gearInventories"];
+  gearLoadouts?: SaveData["gearLoadouts"];
+  ownedTrinketIds?: SaveData["ownedTrinketIds"];
+  equippedTrinkets?: SaveData["equippedTrinkets"];
+  gold?: SaveData["gold"];
+  craftingCurrencies?: SaveData["craftingCurrencies"];
   musicVolume: number;
   sfxVolume: number;
   masterVolume: number;
@@ -49,6 +60,11 @@ export interface HomesteadSaveFixture {
 }
 
 export function saveEnvelopeFixture(overrides: Record<string, unknown> = {}) {
+  // Campaign-full builder: near-complete saves for load/round-trip tests.
+  // Contrast tests/helpers/save-candidate-fixtures.ts (candidate-minimal:
+  // just version + timestamp + a card list for load-path precedence tests).
+  // `wildcard` below is a real roster member (see GEAR_CHARACTER_IDS and the
+  // CompletedDifficultiesSchema test), not dead data.
   return {
     saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
     gameBuildVersion: CURRENT_GAME_BUILD_VERSION,

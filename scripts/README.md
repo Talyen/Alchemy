@@ -20,14 +20,14 @@ skip mode; keep that validation at each entry point.
 | Read-only prepared-output freshness        | `check-prepared-assets.mjs`                                                                   |
 
 Shared: `lib/asset-constants.mjs` (tuning), `lib/asset-manifest-cache.mjs` (freshness),
-`lib/process-helpers.mjs` (generic `formatProcessError`, `runPipelineScript`), `lib/audio-optimizer.mjs` (audio discovery).
+`lib/process-helpers.mjs` (generic `targetErrorHandler`, `failedOptimizeResult`).
 
 ## Agent discovery and evaluation
 
 | Concern                                                             | Implementation owner        |
 | ------------------------------------------------------------------- | --------------------------- |
 | Owner sections and source entry points                              | `lib/agent-context.mjs`     |
-| Markdown section extraction                                         | `lib/document-sections.mjs` |
+| Markdown fences, headings, and section extraction                   | `lib/markdown-sections.mjs` |
 | Bounded search, related-file hints, and disposable context sessions | `lib/agent-discovery.mjs`   |
 | Preread measurement                                                 | `measure-agent-context.mjs` |
 | Evaluation records and comparison                                   | `agent-eval.mjs`            |
@@ -43,22 +43,25 @@ tracked files and files removed during a search, while other read errors fail.
 Gate composition, CI tiers, and reuse policy live in
 [CONTRIBUTING](../CONTRIBUTING.md#static-build-and-ci-policy).
 
-| Concern                                   | Implementation owner                                                                                                                                                                                                                   |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Completion orchestration                  | `check.mjs`                                                                                                                                                                                                                            |
-| Related tests and risk escalations        | `verify-changed.mjs`                                                                                                                                                                                                                   |
-| Finished-step exposure/digest reporting   | `lib/run-step.mjs` (shared by `check` + `verify`)                                                                                                                                                                                      |
-| Path parsing and classification           | `lib/changed-paths.mjs` + `lib/change-routes.mjs`                                                                                                                                                                                      |
-| Documentation contracts and plan metadata | `check-docs.mjs` (also serves `plans:check` via `--plans-only` and `docs:check:final` via `--final`), `check-documentation-contract.mjs`, `check-plans.mjs` (thin CLI over `lib/plan-checks.mjs`; `archive-plans.mjs` shares that lib) |
-| Passing unit receipts                     | `lib/verification-cache.mjs`                                                                                                                                                                                                           |
-| Bundle budgets                            | `lib/bundle-budget.mjs`                                                                                                                                                                                                                |
-| Full and staged formatting                | `prettier-paths.mjs` + `.prettierignore`                                                                                                                                                                                               |
-| Plan creation and archiving               | `new-plan.mjs` + `archive-plans.mjs`; [plan lifecycle](../docs/Plans/README.md#task-handoff)                                                                                                                                           |
+| Concern                                   | Implementation owner                                                                                                                                                                                  |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Completion orchestration                  | `check.mjs`                                                                                                                                                                                           |
+| Related tests and risk escalations        | `verify-changed.mjs`                                                                                                                                                                                  |
+| Finished-step exposure/digest reporting   | `lib/run-step.mjs` (shared by `check` + `verify`)                                                                                                                                                     |
+| Path parsing and classification           | `lib/changed-paths.mjs` + `lib/change-routes.mjs`                                                                                                                                                     |
+| Documentation contracts and plan metadata | `check-docs.mjs` (also serves `plans:check` via `--plans-only` and `docs:check:final` via `--final`), `check-documentation-contract.mjs`, `lib/plan-checks.mjs` (`archive-plans.mjs` shares that lib) |
+| Passing unit receipts                     | `lib/verification-cache.mjs`                                                                                                                                                                          |
+| Bundle budgets                            | `lib/bundle-budget.mjs`                                                                                                                                                                               |
+| Full and staged formatting                | `prettier-paths.mjs` + `.prettierignore`                                                                                                                                                              |
+| Plan creation and archiving               | `new-plan.mjs` + `archive-plans.mjs`; [plan lifecycle](../docs/Plans/README.md#task-handoff)                                                                                                          |
 
 `lib/repository-paths.mjs` normalizes selections for checks and discovery. Relative
 and absolute paths inside the checkout are equivalent. Directory selections use
 tracked and untracked nonignored Git paths, including deleted tracked files;
-empty directory selections fail explicitly.
+empty directory selections fail explicitly. It also owns `toRepoRelative` (the
+single repo-relative spelling) and `runGit` (the single git spawn with
+stale-cache overrides); `git-safety-guard.mjs` is the deliberate exception
+because it must exec the real binary past its own shim.
 
 CI path filters (`.github/workflows/ci.yml` `changes` job) stay owned by the
 workflows; `tests/scripts/ci-path-filters.test.ts` pins the intended
@@ -146,11 +149,22 @@ Every `E2E_ROUTES` entry has a matching `test:e2e:<name>` alias
 `shop-screen` and `homestead-screen` remain accepted as aliases.
 `ci-summarize.mjs --vitest/--playwright/--all` is the single CI summary entry;
 workflows call it directly with the matching flag. Report parsing lives in
-`lib/vitest-summary.mjs` and `lib/playwright-summary.mjs`; malformed reports
-must fail rather than appear to be successful zero-test runs.
+`lib/vitest-summary.mjs` and `lib/playwright-summary.mjs`; both share the
+`lib/report-summary.mjs` skeleton (budgets, first-line truncation, runner-error
+and overflow sections, missing-report wording). `summarize*Report` headers are
+stats-authoritative while `collectPlaywrightTests` is the walked audit model
+for slowest-tables — on inconsistent reports the header and the tables can
+differ by design. Malformed reports must fail rather than appear to be
+successful zero-test runs.
 
 `run-performance.mjs` owns profiling options and validates them before builds
 or downloads. Measurements and interpretation follow [PERFORMANCE](../docs/PERFORMANCE.md).
+
+Balance and loot reports share the middleware-mode Vite bootstrap in
+`lib/vite-report-server.mjs`; both are import-safe `defineScript` entries and
+both leave a run receipt. Long-running suite/build/profiling CLIs
+(`run-ship-unit`, `run-e2e-route`, `run-performance`) stream output
+intentionally instead of using bounded `runCommand` capture.
 
 ## Development
 
@@ -187,6 +201,11 @@ inspection never stashes the working tree. Creation instructions return to the
 original checkout before worktree removal.
 
 ## Command execution and argument handling
+
+`lib/script-run.mjs` owns CLI lifecycles: simple entries use `defineScript`,
+asset transform pipelines use `runPipelineScript` (same gating plus the
+`{ ok, error }` result convention). Entries with custom usage/exit-code flows
+(path selection, plan metadata) stay hand-rolled on `isMainModule`.
 
 `lib/run-command.mjs` owns captured subprocess execution. Use `logPath` for
 complete file-backed output from checks, verification, audits, and E2E analysis;

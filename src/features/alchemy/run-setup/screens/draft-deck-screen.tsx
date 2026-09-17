@@ -100,7 +100,7 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
             <div className="flex flex-wrap items-start justify-center gap-6">
               {draftChoices.map((card, index) => (
                 <SelectableCard
-                  key={`draft-choice-${String(index)}-${card.id}`}
+                  key={`draft-choice-${card.id}-${String(card.uid ?? index)}`}
                   card={card}
                   isSelected={false}
                   onSelect={() => onPick(card.id)}

@@ -4,6 +4,7 @@ import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { readExposure } from "./agent-events.mjs";
 import { globToRegExp } from "./glob-pattern.mjs";
+import { runGit, toRepoRelative } from "./repository-paths.mjs";
 
 const require = createRequire(import.meta.url);
 const EXCLUSIONS = [
@@ -31,18 +32,10 @@ function isExcluded(file) {
   );
 }
 
-function normalizeSearchPath(root, file) {
-  const absolute = path.resolve(root, file);
-  const relative = path.relative(root, absolute).replaceAll(path.sep, "/");
-  if (relative.startsWith("../") || path.isAbsolute(relative))
-    throw new Error(`Search path is outside repository: ${file}`);
-  return relative || ".";
-}
-
 function collectFilesFromFilesystem(root, paths, includeExcluded) {
   const files = [];
   const visit = (absolute) => {
-    const relative = path.relative(root, absolute).replaceAll(path.sep, "/") || ".";
+    const relative = toRepoRelative(root, absolute);
     if (!includeExcluded && relative !== "." && isExcluded(relative)) return;
     const entry = fs.lstatSync(absolute);
     if (entry.isDirectory()) {
@@ -50,7 +43,7 @@ function collectFilesFromFilesystem(root, paths, includeExcluded) {
     } else if (entry.isFile()) files.push(relative);
   };
   for (const file of paths) {
-    const relative = normalizeSearchPath(root, file);
+    const relative = toRepoRelative(root, file);
     const absolute = path.join(root, relative);
     if (!fs.existsSync(absolute)) throw new Error(`Search path does not exist: ${file}`);
     visit(absolute);
@@ -59,19 +52,15 @@ function collectFilesFromFilesystem(root, paths, includeExcluded) {
 }
 
 function collectFilesFromGit(root, paths) {
-  const result = spawnSync(
-    "git",
-    [
-      "ls-files",
-      "--cached",
-      "--others",
-      "--exclude-standard",
-      "-z",
-      "--",
-      ...paths.map((file) => normalizeSearchPath(root, file)),
-    ],
-    { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
-  );
+  const result = runGit(root, [
+    "ls-files",
+    "--cached",
+    "--others",
+    "--exclude-standard",
+    "-z",
+    "--",
+    ...paths.map((file) => toRepoRelative(root, file)),
+  ]);
   if (result.error || result.status !== 0) return null;
   return result.stdout
     .split("\0")
@@ -81,7 +70,7 @@ function collectFilesFromGit(root, paths) {
 }
 
 function searchWithoutRipgrep(root, options) {
-  const normalizedPaths = options.paths.map((file) => normalizeSearchPath(root, file));
+  const normalizedPaths = options.paths.map((file) => toRepoRelative(root, file));
   const files = options.includeExcluded
     ? collectFilesFromFilesystem(root, normalizedPaths, true)
     : (collectFilesFromGit(root, normalizedPaths) ?? collectFilesFromFilesystem(root, normalizedPaths, false));
@@ -187,15 +176,15 @@ export function relatedLocations(root, selectedPaths, limit = 6) {
     const imports = ts.preProcessFile(fs.readFileSync(fullPath, "utf8"), true, true).importedFiles;
     const resolved = imports.flatMap(({ fileName }) => {
       const target = ts.resolveModuleName(fileName, fullPath, { ...options, allowJs: true }, ts.sys).resolvedModule;
-      const relative = target && path.relative(root, target.resolvedFileName).replaceAll(path.sep, "/");
+      const relative = target && toRepoRelative(root, target.resolvedFileName, { onOutside: "keep-relative" });
       return relative && known.has(relative) ? [relative] : [];
     });
     dependencies.set(file, resolved);
     for (const target of resolved) consumers.set(target, [...(consumers.get(target) ?? []), file]);
   }
-  const selected = selectedPaths.map((file) => path.relative(root, path.resolve(root, file)).replaceAll(path.sep, "/"));
+  const selected = selectedPaths.map((file) => toRepoRelative(root, file));
   const seeds = new Set(
-    files.filter((file) => selected.some((entry) => file === entry || file.startsWith(`${entry}/`))),
+    files.filter((file) => selected.some((entry) => entry === "." || file === entry || file.startsWith(`${entry}/`))),
   );
   const distances = new Map();
   let frontier = [...seeds];

@@ -29,7 +29,6 @@ function createNavigation() {
     onStartBattle: vi.fn(),
     getAvailableDestinations: () => ["Normal Combat"],
     onResumeWildwood: vi.fn(),
-    clearCardHover: vi.fn(),
   });
 }
 

@@ -12,5 +12,4 @@ export interface ContentSystemNavigationDeps {
   ) => void;
   getAvailableDestinations: (options?: DestinationOptionsInput) => Destination[];
   onResumeWildwood: () => void;
-  clearCardHover: () => void;
 }

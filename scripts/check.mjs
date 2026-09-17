@@ -3,7 +3,6 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
 
 import { changedGitPaths, ensureRunId, writeCurrentRun } from "./lib/current-run.mjs";
 import { summarizeAndReportFailure, summarizeStepResult } from "./lib/run-step.mjs";
@@ -14,12 +13,13 @@ import {
   resolvePushPaths,
 } from "./lib/changed-paths.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
+import { runGit } from "./lib/repository-paths.mjs";
 import { runCommand } from "./lib/run-command.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
 function gitOutput(args) {
-  const result = spawnSync("git", args, { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+  const result = runGit(ROOT, args);
   return result.status === 0 ? result.stdout : "";
 }
 
@@ -60,7 +60,7 @@ export function parseCheckArgs(argv) {
 }
 
 function classify(paths) {
-  const { needsCodeChecks, lockfile, desktop, web } = classifyCheckPaths(paths);
+  const { needsCodeChecks, lockfile, desktop, web } = classifyCheckPaths(ROOT, paths);
   return { needsCodeChecks, lockfile, desktop, web };
 }
 
@@ -70,10 +70,6 @@ function defaultRunner(label, command, args, env) {
     env,
     logPath: path.join(ROOT, "reports/runs", env.ALCHEMY_RUN_ID, "check", `${label.replaceAll(" ", "-")}.log`),
   });
-}
-
-function stepDefinition(key, label, command, args, enabled, reason) {
-  return { key, label, command, args, enabled, reason };
 }
 
 export async function runCheck(argv = process.argv.slice(2), options = {}) {
@@ -106,77 +102,77 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
   const webEnabled = selection.web && !skipBuilds;
   const desktopEnabled = selection.desktop && !skipBuilds;
   const definitions = [
-    stepDefinition(
-      "verification",
-      "changed-path verification",
-      "node",
-      ["scripts/verify-changed.mjs", ...verifyArgs],
-      true,
-    ),
-    stepDefinition(
-      "documentation-format",
-      "documentation format",
-      "npm",
-      ["run", "format:check"],
-      !selection.needsCodeChecks,
-      "included in static checks",
-    ),
-    stepDefinition(
-      "ci-static",
-      "CI static checks",
-      "npm",
-      ["run", "lint:ci"],
-      selection.needsCodeChecks,
-      "documentation-only change",
-    ),
-    stepDefinition(
-      "lockfile",
-      "lockfile consistency",
-      "npm",
-      ["ci", "--dry-run", "--ignore-scripts"],
-      selection.lockfile,
-      "package manifests unchanged",
-    ),
-    stepDefinition(
-      "web-build",
-      "web build",
-      "npm",
-      ["run", "build"],
-      webEnabled,
-      buildReason ?? "web runtime inputs unchanged",
-    ),
-    stepDefinition(
-      "web-bundle-budget",
-      "web bundle budget",
-      "npm",
-      ["run", "check:bundle"],
-      webEnabled,
-      buildReason ?? "web build not required",
-    ),
-    stepDefinition(
-      "preview-smoke",
-      "preview smoke",
-      "npm",
-      ["run", "smoke:preview"],
-      webEnabled,
-      buildReason ?? "web build not required",
-    ),
-    stepDefinition(
-      "desktop-build",
-      "desktop build",
-      "npm",
-      ["run", "build:desktop"],
-      desktopEnabled,
-      buildReason ?? "desktop inputs unchanged",
-    ),
-    stepDefinition(
-      "desktop-bundle-budget",
-      "desktop bundle budget",
-      "npm",
-      ["run", "check:bundle"],
-      desktopEnabled,
-      buildReason ?? "desktop build not required",
-    ),
+    {
+      key: "verification",
+      label: "changed-path verification",
+      command: "node",
+      args: ["scripts/verify-changed.mjs", ...verifyArgs],
+      enabled: true,
+    },
+    {
+      key: "documentation-format",
+      label: "documentation format",
+      command: "npm",
+      args: ["run", "format:check"],
+      enabled: !selection.needsCodeChecks,
+      reason: "included in static checks",
+    },
+    {
+      key: "ci-static",
+      label: "CI static checks",
+      command: "npm",
+      args: ["run", "lint:ci"],
+      enabled: selection.needsCodeChecks,
+      reason: "documentation-only change",
+    },
+    {
+      key: "lockfile",
+      label: "lockfile consistency",
+      command: "npm",
+      args: ["ci", "--dry-run", "--ignore-scripts"],
+      enabled: selection.lockfile,
+      reason: "package manifests unchanged",
+    },
+    {
+      key: "web-build",
+      label: "web build",
+      command: "npm",
+      args: ["run", "build"],
+      enabled: webEnabled,
+      reason: buildReason ?? "web runtime inputs unchanged",
+    },
+    {
+      key: "web-bundle-budget",
+      label: "web bundle budget",
+      command: "npm",
+      args: ["run", "check:bundle"],
+      enabled: webEnabled,
+      reason: buildReason ?? "web build not required",
+    },
+    {
+      key: "preview-smoke",
+      label: "preview smoke",
+      command: "npm",
+      args: ["run", "smoke:preview"],
+      enabled: webEnabled,
+      reason: buildReason ?? "web build not required",
+    },
+    {
+      key: "desktop-build",
+      label: "desktop build",
+      command: "npm",
+      args: ["run", "build:desktop"],
+      enabled: desktopEnabled,
+      reason: buildReason ?? "desktop inputs unchanged",
+    },
+    {
+      key: "desktop-bundle-budget",
+      label: "desktop bundle budget",
+      command: "npm",
+      args: ["run", "check:bundle"],
+      enabled: desktopEnabled,
+      reason: buildReason ?? "desktop build not required",
+    },
   ];
   const steps = [];
   const artifacts = [];

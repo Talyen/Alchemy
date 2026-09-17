@@ -74,6 +74,28 @@ describe("enemy repertoire", () => {
     expect(enemyAbilityDealsDamage(cardById.block)).toBe(false);
   });
 
+  it("triages hero damage fields for enemies and names the offender", () => {
+    const supported = makeTestCard({
+      effects: [{ kind: "damage", damageType: "physical", amount: 3, lifesteal: true } as never],
+    });
+    expect(isEnemyAbilityCard(supported as never)).toBe(true);
+    for (const extra of [
+      { equalToBlock: true },
+      { equalToArmor: true },
+      { equalToGoldPercent: 10 },
+      { doubleIfEnemyBurning: true },
+      { tripleIfEnemyNotBurning: true },
+      { detonateIfEnemyBurning: true },
+      { damageTypePool: ["physical"] },
+    ]) {
+      const card = makeTestCard({
+        effects: [{ kind: "damage", damageType: "physical", amount: 3, ...extra } as never],
+      });
+      expect(isEnemyAbilityCard(card as never)).toBe(false);
+    }
+    expect(() => getEnemyAbilityCard("wish")).toThrow(/Unsupported enemy ability.*wish/);
+  });
+
   it("selects reproducibly without consecutive repeats and never rolls during inspection", () => {
     function sequence() {
       let state = enemyState("skeleton", { rng: seededRng(1234), playerHealth: 1000, playerMaxHealth: 1000 });

@@ -122,6 +122,7 @@ declare module "*/steam-vdf.mjs" {
 
 declare module "*/sync-changelog.mjs" {
   export function computeSyncedChangelog(existingContent: string, rootDir?: string): string;
+  export function syncChangelog(options?: { root?: string; check?: boolean }): Promise<string>;
 }
 
 declare module "*/prettier-paths.mjs" {
@@ -299,6 +300,22 @@ interface PlaywrightSummary {
   failures: PlaywrightFailure[];
 }
 
+declare module "*/lib/report-summary.mjs" {
+  export const MAX_SUMMARY_FAILURES: number;
+  export function firstSummaryLine(message: unknown): string;
+  export function formatSummaryMarkdown(options: {
+    heading: string;
+    totals: string[];
+    runnerErrors?: string[];
+    failures?: Array<Record<string, unknown>>;
+    renderFailure: (failure: never) => string[];
+    overflowCount?: number;
+    emptyNote: string;
+  }): string;
+  export function readJsonReport(reportPath: string): { resolved: string; data: unknown } | null;
+  export function missingReportMarkdown(heading: string, reportPath: string): string;
+}
+
 declare module "*/playwright-summary.mjs" {
   export function collectPlaywrightTests(report: unknown): {
     allTests: Array<Record<string, unknown>>;
@@ -431,13 +448,8 @@ declare module "*/playwright-run-reporter.mjs" {
   }
 }
 
-declare module "*/check-plans.mjs" {
+declare module "*/lib/plan-checks.mjs" {
   export function parsePlanMetadata(source: string): PlanMetadataResult;
-  export function checkPlans(options?: { final?: boolean; today?: Date }): {
-    failures: string[];
-    warnings: string[];
-    activePlans: number;
-  };
 }
 
 declare module "*/check-documentation-contract.mjs" {
@@ -485,6 +497,7 @@ declare module "*/test-commands.mjs" {
     shipUnit: readonly string[];
   };
   export function validateTestSuitePaths(rootDir: string, suites?: readonly string[]): string[];
+  export const DOCS_CHECK_KEY: string;
 }
 
 declare module "*/test-suites.mjs" {
@@ -815,6 +828,7 @@ declare module "*/agent-eval.mjs" {
     before: Evaluation,
     after: Evaluation,
   ): { comparableCorrectness: boolean; deltaAfterMinusBefore: Record<string, number | null> };
+  export function loadEvaluation(filename: string): Evaluation;
 }
 
 declare module "*/lib/agent-events.mjs" {
@@ -827,12 +841,16 @@ declare module "*/lib/agent-events.mjs" {
   export function recordAgentEvent(root: string, event: Record<string, unknown>, env?: Record<string, string>): void;
 }
 
-declare module "*/lib/document-sections.mjs" {
+declare module "*/lib/markdown-sections.mjs" {
   export function readDocumentSection(
     root: string,
     filename: string,
     heading?: string,
   ): { start: number; end: number; text: string };
+  export function headingSlugs(source: string): Set<string>;
+  export function stripFencedBlocks(source: string): string;
+  export function mapUnfencedLines(content: string, fn: (line: string) => string): string;
+  export function extractMarkdownLinkTargets(source: string): Array<{ target: string; index: number }>;
 }
 
 declare module "*/lib/agent-discovery.mjs" {
@@ -887,7 +905,13 @@ declare module "*/sync-generated.mjs" {
 }
 
 declare module "*/optimize-pipelines.mjs" {
-  export function runAllOptimizePipelines(): Promise<Array<{ ok: boolean; error?: string } | undefined>>;
+  export function runAllOptimizePipelines(options?: {
+    check?: boolean;
+  }): Promise<Array<{ ok: boolean; error?: string } | undefined>>;
+}
+
+declare module "*/assets.mjs" {
+  export function parseAssetArgs(argv: string[]): { help: boolean; check: boolean; mode: string };
 }
 
 declare module "*/sync-art-barrels.mjs" {
@@ -915,9 +939,30 @@ declare module "*/lib/run-command.mjs" {
 }
 declare module "*/lib/changed-paths.mjs" {
   export function resolvePushPaths(root: string, input: string): string[];
-  export function resolveSelectedPaths(root: string, selection: { paths: string[] }): string[];
+  export function resolveSelectedPaths(root: string, selection: { flags?: Set<string>; paths: string[] }): string[];
+  export function classifyCheckPaths(
+    root: string,
+    paths: string[],
+  ): { needsCodeChecks: boolean; lockfile: boolean; desktop: boolean; web: boolean; routeIds: string[] };
+  export function parseChangedPathsArgs(
+    argv: string[],
+    options?: { usage?: string },
+  ): {
+    flags: Set<string>;
+    paths: string[];
+  };
 }
 declare module "*/lib/repository-paths.mjs" {
+  export function runGit(
+    root: string,
+    args: string[],
+    options?: { uncached?: boolean; stdio?: unknown },
+  ): { status: number | null; stdout: string; stderr: string; error?: Error };
+  export function toRepoRelative(
+    root: string,
+    file: string,
+    options?: { onOutside?: "throw" | "keep-relative" | "basename" },
+  ): string;
   export function listRepositoryFiles(root: string): string[];
   export function expandRepositoryPaths(root: string, paths: string[]): string[];
 }

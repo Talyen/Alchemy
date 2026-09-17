@@ -27,4 +27,25 @@ describe("worktree removal", () => {
       rmSync(root, { recursive: true, force: true });
     }
   });
+
+  it("accepts --task=value and rejects case-variant collisions on create", () => {
+    const root = mkdtempSync(join(tmpdir(), "alchemy-worktree-"));
+    try {
+      const script = join(root, "scripts", "agent-worktree.mjs");
+      mkdirSync(join(root, "scripts"));
+      copyFileSync(join(process.cwd(), "scripts", "agent-worktree.mjs"), script);
+      expect(spawnSync("git", ["init", "-q"], { cwd: root }).status).toBe(0);
+
+      const equalsForm = spawnSync(process.execPath, [script, "remove", "--task=missing"], { encoding: "utf8" });
+      expect(equalsForm.status).toBe(0);
+      expect(equalsForm.stdout).toContain("no worktree at");
+
+      mkdirSync(join(root, ".worktrees", "Kept"), { recursive: true });
+      const clash = spawnSync(process.execPath, [script, "create", "--task", "kept"], { encoding: "utf8" });
+      expect(clash.status).toBe(1);
+      expect(clash.stderr).toContain("collides with existing Kept");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
 });

@@ -178,7 +178,12 @@ export function compareEvaluations(before, after) {
 
 export function loadEvaluation(filename) {
   const record = JSON.parse(fs.readFileSync(filename, "utf8"));
-  const eventsFile = path.resolve(path.dirname(filename), record.eventsFile ?? "events.jsonl");
+  const directory = path.dirname(path.resolve(filename));
+  const eventsFile = path.resolve(directory, record.eventsFile ?? "events.jsonl");
+  // Records are local files, but a crafted eventsFile (`../..`) must not turn
+  // evaluation loading into an arbitrary filesystem read.
+  if (eventsFile !== directory && !eventsFile.startsWith(`${directory}${path.sep}`))
+    throw new Error(`Evaluation events file escapes its directory: ${record.eventsFile ?? "events.jsonl"}`);
   const events = fs
     .readFileSync(eventsFile, "utf8")
     .split(/\r?\n/u)

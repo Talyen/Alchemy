@@ -1,5 +1,5 @@
-import path from "node:path";
 import { resolveRoutes } from "./change-routes.mjs";
+import { toRepoRelative } from "./repository-paths.mjs";
 
 /**
  * @param {string} filePath
@@ -7,7 +7,10 @@ import { resolveRoutes } from "./change-routes.mjs";
  * @returns {string}
  */
 function repoRelativePath(filePath, rootDir = process.cwd()) {
-  const relative = path.relative(rootDir, path.resolve(rootDir, filePath)).replaceAll(path.sep, "/");
+  // The repository root itself maps to "" (not "."): expanding "." would
+  // select the entire tree, while "" matches no route and stays "unknown".
+  // Outside paths pass through so cross-checkout reports keep readable hints.
+  const relative = toRepoRelative(rootDir, filePath, { onOutside: "keep-relative" });
   return relative === "." ? "" : relative;
 }
 

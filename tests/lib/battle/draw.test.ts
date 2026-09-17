@@ -4,7 +4,7 @@ import { drawCards } from "@/lib/battle/draw";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { shuffle } from "@/lib/utils";
 import { CARDS_PER_TURN, MAX_HAND_SIZE } from "@/lib/game-constants";
-import { makeTestBattleState, makeTestCardWithId } from "../../fixtures/battle";
+import { makeTestBattleState, makeTestCardWithId, seededRng } from "../../fixtures/battle";
 import { makeTestCard } from "../../fixtures/cards";
 
 const makeCard = makeTestCardWithId;
@@ -84,7 +84,7 @@ describe("defaultBattleState", () => {
 describe("shuffle", () => {
   it("returns a new array (not the same reference)", () => {
     const cards = [makeTestCard({ id: "a", title: "A" })];
-    const shuffled = shuffle(cards, Math.random);
+    const shuffled = shuffle(cards, seededRng(1));
     expect(shuffled).not.toBe(cards);
   });
 
@@ -97,7 +97,7 @@ describe("shuffle", () => {
       }),
     ];
     const original = [...cards];
-    shuffle(cards, Math.random);
+    shuffle(cards, seededRng(1));
     expect(cards).toEqual(original);
   });
 
@@ -107,18 +107,18 @@ describe("shuffle", () => {
       makeTestCard({ id: "b", title: "B", uid: 2 }),
       makeTestCard({ id: "c", title: "C", uid: 3 }),
     ];
-    const shuffled = shuffle(cards, Math.random);
+    const shuffled = shuffle(cards, seededRng(1));
     expect(shuffled).toHaveLength(3);
     expect(shuffled.map((c) => c.id).sort()).toEqual(["a", "b", "c"]);
   });
 
   it("handles empty array", () => {
-    expect(shuffle([], Math.random)).toEqual([]);
+    expect(shuffle([], seededRng(1))).toEqual([]);
   });
 
   it("handles single-card array", () => {
     const card = makeTestCard({ id: "a", title: "A" });
-    expect(shuffle([card], Math.random)).toEqual([card]);
+    expect(shuffle([card], seededRng(1))).toEqual([card]);
   });
 });
 
@@ -126,7 +126,7 @@ describe("drawCards — edge cases", () => {
   it("mid-draw reshuffles discard when deck runs out", () => {
     const deck = [makeTestCardWithId("d1")];
     const discard = [makeTestCardWithId("d2"), makeTestCardWithId("d3"), makeTestCardWithId("d4")];
-    const result = drawCards(deck, discard, [], 4, 0, Math.random);
+    const result = drawCards(deck, discard, [], 4, 0, seededRng(1));
     expect(result.hand).toHaveLength(4);
     expect(result.deck).toHaveLength(0);
     expect(result.discard).toHaveLength(0);
@@ -135,7 +135,7 @@ describe("drawCards — edge cases", () => {
   });
 
   it("both piles empty returns empty hand unchanged", () => {
-    const result = drawCards([], [], [], 4, 0, Math.random);
+    const result = drawCards([], [], [], 4, 0, seededRng(1));
     expect(result.hand).toHaveLength(0);
     expect(result.deck).toHaveLength(0);
     expect(result.discard).toHaveLength(0);
@@ -143,14 +143,14 @@ describe("drawCards — edge cases", () => {
 
   it("both piles empty with existing hand leaves hand unchanged", () => {
     const hand = [makeTestCardWithId("h1")];
-    const result = drawCards([], [], hand, 4, 0, Math.random);
+    const result = drawCards([], [], hand, 4, 0, seededRng(1));
     expect(result.hand).toHaveLength(1);
     expect(result.hand[0].id).toBe("h1");
   });
 
   it("draws single card from single-card deck with empty discard", () => {
     const deck = [makeTestCardWithId("d1")];
-    const result = drawCards(deck, [], [], 1, 0, Math.random);
+    const result = drawCards(deck, [], [], 1, 0, seededRng(1));
     expect(result.hand).toHaveLength(1);
     expect(result.hand[0].id).toBe("d1");
     expect(result.deck).toHaveLength(0);
@@ -159,7 +159,7 @@ describe("drawCards — edge cases", () => {
   it("drawing with near-full hand respects MAX_HAND_SIZE", () => {
     const hand = Array.from({ length: 6 }, (_, i) => makeTestCardWithId(`h${i}`));
     const deck = [makeTestCardWithId("d1"), makeTestCardWithId("d2"), makeTestCardWithId("d3")];
-    const result = drawCards(deck, [], hand, 4, 0, Math.random);
+    const result = drawCards(deck, [], hand, 4, 0, seededRng(1));
     expect(result.hand).toHaveLength(7);
     expect(result.deck).toHaveLength(2);
   });
@@ -167,7 +167,7 @@ describe("drawCards — edge cases", () => {
   it("silently skips draws when hand is already at MAX_HAND_SIZE", () => {
     const hand = Array.from({ length: MAX_HAND_SIZE }, (_, i) => makeTestCardWithId(`h${i}`));
     const deck = [makeTestCardWithId("d1"), makeTestCardWithId("d2"), makeTestCardWithId("d3")];
-    const result = drawCards(deck, [], hand, 4, 0, Math.random);
+    const result = drawCards(deck, [], hand, 4, 0, seededRng(1));
     expect(result.hand).toHaveLength(MAX_HAND_SIZE);
     expect(result.deck.map((card) => card.id)).toEqual(["d1", "d2", "d3"]);
   });
@@ -175,14 +175,14 @@ describe("drawCards — edge cases", () => {
   it("drawing 0 cards does nothing", () => {
     const deck = [makeCard("d1")];
     const hand = [makeCard("h1")];
-    const result = drawCards(deck, [], hand, 0, 0, Math.random);
+    const result = drawCards(deck, [], hand, 0, 0, seededRng(1));
     expect(result.hand).toHaveLength(1);
     expect(result.deck).toHaveLength(1);
   });
 
   it("all drawn cards get unique uids", () => {
     const deck = [makeCard("d1"), makeCard("d2"), makeCard("d3")];
-    const result = drawCards(deck, [], [], 3, 100, Math.random);
+    const result = drawCards(deck, [], [], 3, 100, seededRng(1));
     const uids = result.hand.map((c) => c.uid!);
     expect(new Set(uids).size).toBe(3);
     expect(uids).toEqual([100, 101, 102]);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cardById, type BattleCard } from "@/lib/game-data";
-import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
+import { cloneBattleCard, hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import { BattleCardSchema } from "@/lib/validation/save-schemas/battle-card-schemas";
 
 const libraryCard = cardById["molten-bulwark"]!;
@@ -150,5 +150,34 @@ describe("saved card content restoration", () => {
       damageTypePool: ["freeze", "burn", "holy"],
       amount: 4,
     });
+  });
+});
+
+describe("cloneBattleCard", () => {
+  it("isolates nested effects and tags from the shared source card", () => {
+    const source: BattleCard = {
+      ...cardById["slash"]!,
+      tags: ["poison"],
+      effects: [
+        {
+          kind: "chance",
+          probability: 0.5,
+          successEffects: [{ kind: "damage", damageType: "physical", amount: 4 }],
+          failureEffects: [{ kind: "gain-gold", amount: 3 }],
+        },
+      ],
+    };
+    const clone = cloneBattleCard(source);
+    expect(clone).toEqual(source);
+    expect(clone).not.toBe(source);
+    expect(clone.effects).not.toBe(source.effects);
+    expect(clone.tags).not.toBe(source.tags);
+    const cloneChance = clone.effects[0];
+    const sourceChance = source.effects[0];
+    if (cloneChance?.kind !== "chance" || sourceChance?.kind !== "chance") {
+      throw new Error("Expected chance effects");
+    }
+    expect(cloneChance.successEffects).not.toBe(sourceChance.successEffects);
+    expect(cloneChance.failureEffects).not.toBe(sourceChance.failureEffects);
   });
 });

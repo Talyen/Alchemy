@@ -43,8 +43,8 @@ catalog-external tests are named inline. Named suites are verification entry poi
 Policy (when to bump, stamp-only floor, migrate steps, public save contract): [`MIGRATIONS.md`](../src/features/alchemy/shared/storage/MIGRATIONS.md).
 
 1. Decide bump vs safe additive default using that contract — do not add a `migrateVNToVNPlus1` step for stamp-only or defaulted additive fields.
-2. Follow the Required pattern in `MIGRATIONS.md` (version stamp, transform step only when needed, Zod/defaults/fixtures, CI guards). `createDefaultSaveData()` delegates to `SaveDataSchema.parse({})` — update the schema, not parallel defaults. Clear-save changes use an explicit mode (`"default"` | `"localWipe"` | `"wipeForReload"`).
-3. Use the [task-scoped gate](../CONTRIBUTING.md#what-to-run-when-you-change), which selects the complete save/persistence unit suite, including the migration guards. Canonical matrices: `save-version-protection.test.ts` (unit) + `storage-io.test.ts` (integration, incl. desktop cloud merge); shared builders live in `tests/helpers/save-candidate-fixtures.ts`.
+2. Follow the Required pattern in `MIGRATIONS.md` (version stamp, transform step only when needed, Zod/defaults/fixtures, CI guards). `createDefaultSaveData()` delegates to `SaveDataSchema.parse({})` for top-level keys — still update the domain codec defaults together (`createDefaultSettingsSaveFields`, `createDefaultProfileSaveFields`, `createInitialGearState`, `createInitialPermanentFields`). Clear-save changes use an explicit mode (`"default"` | `"localWipe"` | `"wipeForReload"`).
+3. Use the [task-scoped gate](../CONTRIBUTING.md#what-to-run-when-you-change), which selects the complete save/persistence unit suite, including the migration guards. Canonical matrices: `save-version-protection.test.ts` (unit) + `storage-io.test.ts` (integration, incl. desktop cloud merge); shared builders live in `tests/helpers/save-candidate-fixtures.ts`. The floor/current coincidence and defaults alignment are pinned by `tests/architecture/save-migration-contract.test.ts` + `save-migration-guard.test.ts`.
 
 ---
 

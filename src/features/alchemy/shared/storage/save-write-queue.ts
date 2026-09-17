@@ -55,6 +55,9 @@ export class SaveWriteQueue {
     data: UnstampedSaveData,
     write: (data: UnstampedSaveData) => Promise<SaveWriteOutcome>,
   ): Promise<SaveWriteOutcome> {
+    // Note: the queue retains `data` by reference until the runner drains it
+    // (coalescing swaps in the latest object). Callers must not mutate the
+    // snapshot after enqueue; spread before passing when reusing an object.
     if (this.writesDisabled || this.isClearPending) {
       this.discardPending();
       return Promise.resolve("skipped");

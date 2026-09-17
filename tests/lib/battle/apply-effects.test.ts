@@ -8,6 +8,7 @@ import { blockDeck, makeState, makeTestCard, statusDeck } from "../../fixtures/b
 import { defaultPlayerStatusValues, defaultEnemyStatusValues } from "../../fixtures/default-battle-state";
 
 describe("applyCardEffects", () => {
+  const baseFlags = makeState().flags;
   it("applies player block status", () => {
     const state = makeState();
     const card = blockDeck(1)[0];
@@ -60,7 +61,7 @@ describe("applyCardEffects", () => {
     const state = makeState({
       enemyHealth: 30,
       hand: [card],
-      flags: { ...makeState().flags, playNextCardTwice: true },
+      flags: { ...baseFlags, playNextCardTwice: true },
     });
     const result = playBattleCardResolved(state, "slash", 0);
     expect(result.state.enemyHealth).toBe(20);
@@ -75,7 +76,7 @@ describe("applyCardEffects", () => {
     const state = makeState({
       enemyHealth: 30,
       hand: [card],
-      flags: { ...makeState().flags, nextHitCrit: true },
+      flags: { ...baseFlags, nextHitCrit: true },
     });
     const result = playBattleCardResolved(state, "slash", 0);
     expect(result.state.enemyHealth).toBe(20);
@@ -91,7 +92,7 @@ describe("applyCardEffects", () => {
       enemyHealth: 30,
       hand: [card],
       playerStatuses: defaultPlayerStatusValues({ burn: 4 }),
-      flags: { ...makeState().flags, nextHitCrit: true },
+      flags: { ...baseFlags, nextHitCrit: true },
     });
     const result = playBattleCardResolved(state, "exorcism", 0);
     expect(result.state.enemyHealth).toBe(22);

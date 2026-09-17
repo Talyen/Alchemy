@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { ensureRunId, normalizeRunId } from "./current-run.mjs";
+import { toRepoRelative } from "./repository-paths.mjs";
 
 export const MAX_DIAGNOSTIC_BYTES = 16 * 1024;
 const MAX_LOG_ENTRIES = 40;
@@ -22,8 +23,7 @@ function truncateUtf8(value, maxBytes) {
 }
 
 function normalizedFile(rootDir, file) {
-  const relative = path.relative(rootDir, path.resolve(rootDir, file)).replaceAll(path.sep, "/");
-  return relative.startsWith("../") ? path.basename(file) : relative;
+  return toRepoRelative(rootDir, file, { onOutside: "basename" });
 }
 
 export function diagnosticIdentity({ rootDir = process.cwd(), file, line = 0, project = "unknown", title }) {

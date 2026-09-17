@@ -105,6 +105,8 @@ function buildDist({ onlyIfMissing = false } = {}) {
   if (onlyIfMissing && fs.existsSync(path.join(root, "dist", "index.html"))) return;
   console.log("Building production renderer for performance profiling…");
   const result = spawnSync(...commandInvocation("npm", ["run", "build"]), {
+    // Streams intentionally: builds and profiling runs are minutes long and
+    // operators need live progress (see run-ship-unit.mjs).
     cwd: root,
     stdio: "inherit",
   });
@@ -244,6 +246,7 @@ function main() {
     console.log("Ensuring Electron binary…");
     const ensure = spawnSync(...commandInvocation("npm", ["run", "ensure:electron"]), {
       cwd: root,
+      // Streams intentionally; see buildDist above.
       stdio: "inherit",
     });
     if (ensure.status !== 0) process.exit(ensure.status ?? 1);
@@ -278,6 +281,7 @@ function main() {
     ...commandInvocation("npx", ["playwright", "test", "--config", "playwright.performance.config.ts", ...grepArgs]),
     {
       cwd: root,
+      // Streams intentionally; see buildDist above.
       stdio: "inherit",
       env,
     },

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   decayHalvedStatus,
   decayPoisonStacks,
@@ -135,24 +135,20 @@ describe("getEnemyDamageMultiplier", () => {
 
 describe("rollPercent", () => {
   it("returns true when random value is below chance threshold", () => {
-    vi.spyOn(Math, "random").mockReturnValueOnce(0.49 / PERCENT_DENOMINATOR);
-    expect(rollPercent(50, Math.random)).toBe(true);
+    expect(rollPercent(50, () => 0.49 / PERCENT_DENOMINATOR)).toBe(true);
   });
 
   it("returns false when random value is above chance threshold", () => {
-    vi.spyOn(Math, "random").mockReturnValueOnce(0.99);
-    expect(rollPercent(50, Math.random)).toBe(false);
+    expect(rollPercent(50, () => 0.99)).toBe(false);
   });
 
   it("returns false for 0 chance", () => {
-    expect(rollPercent(0, Math.random)).toBe(false);
+    expect(rollPercent(0, () => 0.5)).toBe(false);
   });
 
   it("triggers at exact boundary values", () => {
-    vi.spyOn(Math, "random").mockReturnValueOnce(49 / PERCENT_DENOMINATOR);
-    expect(rollPercent(50, Math.random)).toBe(true);
-    vi.spyOn(Math, "random").mockReturnValueOnce(50 / PERCENT_DENOMINATOR);
-    expect(rollPercent(50, Math.random)).toBe(false);
+    expect(rollPercent(50, () => 49 / PERCENT_DENOMINATOR)).toBe(true);
+    expect(rollPercent(50, () => 50 / PERCENT_DENOMINATOR)).toBe(false);
   });
 });
 

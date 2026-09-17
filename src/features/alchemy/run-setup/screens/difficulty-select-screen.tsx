@@ -1,4 +1,4 @@
-import { Fragment, memo, useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { Swords } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -14,7 +14,7 @@ import {
 } from "@/features/alchemy/shared/config/game-data-catalog";
 
 import { Button } from "@/components/ui/button";
-import { KeywordToken, renderTokenizedDescription } from "../../shared/ui/card-description-ui";
+import { renderMultilineTokenizedDescription } from "../../shared/ui/card-description-ui";
 import { KeywordTag } from "../../shared/ui/keyword-tag";
 import { TitledScreenShell } from "../../shared/ui/layout-components";
 import { Surface } from "../../shared/ui/surface";
@@ -34,28 +34,13 @@ import {
 import { PortaledTooltip } from "../../shared/ui/tooltips/portaled-tooltip";
 import { TooltipBody } from "../../shared/ui/tooltips/tooltip-panel";
 import { renderUnlockMessage } from "../../shared/ui/unlock-text";
-import { useHoverVisible } from "../../shared/ui/use-hover-visible";
+import { useChooserHover } from "../../shared/ui/use-chooser-hover";
 import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
 
 function getDifficultyBonusLabel(difficultyId: DifficultyId): string {
   const multiplier = getDifficultyXPMultiplier(difficultyId);
   if (multiplier <= 1) return "";
   return `${String(Math.round((multiplier - 1) * 100))}% Bonus XP`;
-}
-
-function renderDescription(text: string) {
-  const lines = text.split("\n");
-  return lines.map((line, i) => (
-    <Fragment key={i}>
-      {i > 0 && <br />}
-      {renderTokenizedDescription(line, {
-        renderKeyword: (partText, keywordId, key) => (
-          <KeywordToken key={key} keywordId={keywordId} matchedText={partText} />
-        ),
-        renderPlain: (partText, key) => <span key={key}>{partText}</span>,
-      })}
-    </Fragment>
-  ));
 }
 
 const DifficultyCard = memo(function DifficultyCard({
@@ -77,24 +62,20 @@ const DifficultyCard = memo(function DifficultyCard({
 }) {
   const bonusLine = getDifficultyBonusLabel(difficultyId);
   const fullDescription = bonusLine ? `${description}\n${bonusLine}` : description;
-  const renderedDescription = useMemo(() => renderDescription(fullDescription), [fullDescription]);
+  const renderedDescription = useMemo(() => renderMultilineTokenizedDescription(fullDescription), [fullDescription]);
   const showUnlockedArt = !locked;
   const diffArt = difficultyArt[difficultyId] ?? difficultyArt["difficulty-3"] ?? "";
-  const { triggerRef, visible, onMouseEnter, onMouseLeave } = useHoverVisible();
-  const { shimmerActive, shimmerToken, onHoverStart } = useInteractiveCard("difficulty-select", difficultyId);
-
-  function handleEnter() {
-    if (!locked) {
-      onHoverStart();
-    }
-    onMouseEnter();
-  }
+  const { triggerRef, visible, onMouseEnter, onMouseLeave, shimmerActive, shimmerToken } = useChooserHover(
+    "difficulty-select",
+    difficultyId,
+    locked,
+  );
 
   return (
     <div
       ref={triggerRef}
       className={cn(chooserHeroPaddedTileClass, "flex flex-col items-center")}
-      onMouseEnter={handleEnter}
+      onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
       <button

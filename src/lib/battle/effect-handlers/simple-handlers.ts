@@ -1,26 +1,22 @@
 import type { BattleCardEffect } from "@/lib/game-data";
 import type { BattleState } from "../types";
+import type { EffectHandler } from "./handler-types";
 import { companionLibrary } from "@/lib/game-data";
 import { applyPotionMultiplier } from "../amount-helpers";
 import { addGoldWithCombatText } from "../combat-text";
 import { applyWishEffect } from "../wish";
 import { drawFromState, applyDrawResult } from "../draw";
 import { defineHandler } from "./handler-types";
-import { resolveCompanionTurnStart } from "../companion-effects";
 import { getBattleRng, rngInt } from "@/lib/rng";
 
-export function createCompanionActionHandler(applyEffects: Parameters<typeof resolveCompanionTurnStart>[2]) {
-  return defineHandler("companion-action", (state, _card, effect, _potionMult, combatTexts) => {
-    let nextState = state;
-    for (let action = 0; action < effect.amount; action += 1) {
-      nextState = resolveCompanionTurnStart(nextState, combatTexts, applyEffects);
-    }
-    return nextState;
-  });
+const RANGE_BOUNDS_MESSAGE = "maxAmount must be >= minAmount";
+
+export function rangeBoundsError(kind: string): Error {
+  return new Error(`[Battle] ${kind} ${RANGE_BOUNDS_MESSAGE}`);
 }
 
 export const applyRandomDrawEffect = defineHandler("random-draw", (state, _card, effect, potionMult) => {
-  if (effect.maxAmount < effect.minAmount) throw new Error("random-draw maxAmount must be >= minAmount");
+  if (effect.maxAmount < effect.minAmount) throw rangeBoundsError("random-draw");
   const amount = effect.minAmount + rngInt(getBattleRng(state), effect.maxAmount - effect.minAmount + 1);
   return applyDrawResult(state, drawFromState(state, applyPotionMultiplier(amount, potionMult)));
 });
@@ -64,15 +60,26 @@ const FLAG_EFFECTS = {
   keyof BattleState["flags"]
 >;
 
-function makeFlagHandler<K extends keyof typeof FLAG_EFFECTS>(kind: K): ReturnType<typeof defineHandler<K>> {
+export type FlagEffectKind = keyof typeof FLAG_EFFECTS;
+
+function makeFlagHandler<K extends FlagEffectKind>(kind: K): ReturnType<typeof defineHandler<K>> {
   const flag = FLAG_EFFECTS[kind];
   return defineHandler(kind, (state) => {
     return { ...state, flags: { ...state.flags, [flag]: true } };
   });
 }
 
-export const applyNextHitCritEffect = makeFlagHandler("next-hit-crit");
-export const applyNextHitLeechEffect = makeFlagHandler("next-hit-leech");
-export const applyPlayNextCardTwiceEffect = makeFlagHandler("play-next-card-twice");
-export const applyNextHitPoisonEffect = makeFlagHandler("next-hit-poison");
-export const applyNextArcheryFreeEffect = makeFlagHandler("next-archery-free");
+export const FLAG_HANDLERS: Record<FlagEffectKind, EffectHandler> = {
+  "next-hit-crit": makeFlagHandler("next-hit-crit"),
+  "next-hit-leech": makeFlagHandler("next-hit-leech"),
+  "play-next-card-twice": makeFlagHandler("play-next-card-twice"),
+  "next-hit-poison": makeFlagHandler("next-hit-poison"),
+  "next-archery-free": makeFlagHandler("next-archery-free"),
+};
+
+// Named aliases kept for direct unit tests; new code should use FLAG_HANDLERS.
+export const applyNextHitCritEffect = FLAG_HANDLERS["next-hit-crit"];
+export const applyNextHitLeechEffect = FLAG_HANDLERS["next-hit-leech"];
+export const applyPlayNextCardTwiceEffect = FLAG_HANDLERS["play-next-card-twice"];
+export const applyNextHitPoisonEffect = FLAG_HANDLERS["next-hit-poison"];
+export const applyNextArcheryFreeEffect = FLAG_HANDLERS["next-archery-free"];

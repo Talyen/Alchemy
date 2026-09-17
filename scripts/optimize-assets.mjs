@@ -14,9 +14,9 @@ import {
   SHARP_DEFAULTS,
   artPreset,
 } from "./lib/asset-constants.mjs";
-import { failedOptimizeResult, runPipelineScript, targetErrorHandler } from "./lib/process-helpers.mjs";
+import { failedOptimizeResult, targetErrorHandler } from "./lib/process-helpers.mjs";
+import { runPipelineScript } from "./lib/script-run.mjs";
 import { getOptimizedManifestPath, resolveRootDir } from "./lib/sync-generated-helpers.mjs";
-import { isMainModule } from "./lib/is-main-module.mjs";
 
 const rootDir = resolveRootDir(import.meta.url);
 const sourceDir = path.join(rootDir, "Raw Assets");
@@ -167,8 +167,10 @@ async function optimizeAsset(asset, storedEntry, check) {
   const sourcePath = path.join(sourceDir, asset.source);
   const outputPath = path.join(outputDir, asset.target);
   const settings = artTransformSettings(asset);
+  // Source validation stays ahead of the freshness gate: an invalid source
+  // must fail with its specific reason even in check mode, where a stale
+  // output would otherwise report a generic staleness error first.
   if (asset.requiresTransparency) await validateTransparency(sourcePath, `Source ${asset.source}`);
-
   const { fresh, entry } = await processFreshEntry(
     sourcePath,
     outputPath,
@@ -225,6 +227,4 @@ export async function optimizeAssets({ check = false } = {}) {
   return { ok: true };
 }
 
-if (isMainModule(import.meta.url)) {
-  runPipelineScript("Asset optimization", optimizeAssets);
-}
+runPipelineScript(import.meta.url, "Asset optimization", optimizeAssets);

@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { compareEvaluations, summarizeEvaluation } from "../../scripts/agent-eval.mjs";
+import { compareEvaluations, loadEvaluation, summarizeEvaluation } from "../../scripts/agent-eval.mjs";
 import { readExposure, recordAgentEvent } from "../../scripts/lib/agent-events.mjs";
 
 const record = {
@@ -112,4 +112,22 @@ it("invalidates overlap on legacy reads without iterating unobserved line ranges
     overlappingReadBytes: 0,
     observedLineBytes: 6,
   });
+});
+
+it("refuses evaluation records whose events file escapes its directory", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "agent-eval-traversal-"));
+  try {
+    const outside = path.join(root, "secret.jsonl");
+    fs.writeFileSync(outside, "{}\n");
+    const nested = path.join(root, "nested");
+    fs.mkdirSync(nested);
+    fs.writeFileSync(
+      path.join(nested, "evaluation.json"),
+      JSON.stringify({ task: "x", eventsFile: "../secret.jsonl" }),
+    );
+    expect(() => loadEvaluation(path.join(nested, "evaluation.json"))).toThrow("escapes its directory");
+    expect(() => loadEvaluation(path.join(nested, "evaluation.json"))).not.toThrow("ENOENT");
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
 });

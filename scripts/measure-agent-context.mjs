@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { ROUTES, resolveRoutePlan } from "./lib/change-routes.mjs";
-import { readDocumentSection } from "./lib/document-sections.mjs";
+import { readDocumentSection } from "./lib/markdown-sections.mjs";
 import { CONTEXT_TASKS, selectContext, contextSections } from "./lib/agent-context.mjs";
 import { renderContext } from "./agent-context.mjs";
 import { ROUTE_CONTEXT_BUDGETS } from "./lib/route-context-budgets.mjs";

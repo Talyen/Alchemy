@@ -4,12 +4,8 @@ import { useAlchemyAutosaveFromStores } from "@/app/use-app-save-state";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { setGold, setHasActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
 
-import {
-  configureSaveBackend,
-  clearAlchemySaveData,
-  resetStorageIoForTests,
-  setWritesDisabled,
-} from "@/features/alchemy/shared/storage";
+import { clearAlchemySaveData, setWritesDisabled } from "@/features/alchemy/shared/storage";
+import { configureSaveBackend, resetStorageIoForTests } from "@/features/alchemy/shared/storage/io";
 import { resetAllTestStores } from "../helpers/run-domain-store-test";
 import { deferred } from "../helpers/deferred";
 import type { SaveBackend } from "@/lib/platform-save-backend";

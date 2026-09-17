@@ -38,6 +38,8 @@ if (missing.length > 0) {
 }
 
 const result = spawnSync(...commandInvocation("npx", ["vitest", "run", "--maxWorkers=4", ...SUITES]), {
+  // Streams intentionally: ship suites run for minutes and operators need live
+  // progress. runCommand's bounded capture is for gates that digest output.
   stdio: "inherit",
 });
 process.exit(result.status ?? 1);

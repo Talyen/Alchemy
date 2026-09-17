@@ -137,7 +137,7 @@ export function main(argv = process.argv.slice(2)) {
       );
       return 0;
     }
-    const paths = options.diff ? resolveSelectedPaths(ROOT, { paths: [] }) : options.paths;
+    const paths = options.diff ? resolveSelectedPaths(ROOT, { flags: new Set(["diff"]), paths: [] }) : options.paths;
     const selection = selectContext(paths, options.task);
     if (options.related) selection.related = relatedLocations(ROOT, paths.length ? paths : selection.entrypoints);
     const allSections = contextSections(ROOT, selection);

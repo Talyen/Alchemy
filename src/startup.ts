@@ -1,6 +1,8 @@
+import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
+
 export function applyInitialAnimationPreference(): void {
   try {
-    if (localStorage.getItem("alchemy-disable-animations") === "true") {
+    if (isAnimationDisabled()) {
       document.documentElement.classList.add("alchemy-disable-animations");
     }
   } catch (error) {

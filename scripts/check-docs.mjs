@@ -3,7 +3,7 @@
  * The documentation route in verify-changed reuses this via test-commands docs-check —
  * do not also run docs:check separately in the same gate to avoid double-running. */
 import { reportDocumentationContracts } from "./check-documentation-contract.mjs";
-import { reportPlanChecks } from "./check-plans.mjs";
+import { reportPlanChecks } from "./lib/plan-checks.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 function main(argv = process.argv.slice(2)) {

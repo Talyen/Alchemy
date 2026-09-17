@@ -134,6 +134,8 @@ const keyed = { "two": { value: 3 }, three: { value: 4 } };`,
       tests: ["tests/owner.test.ts"],
       fixtures: ["tests/fixture.ts"],
     });
+    // A repository-root selection seeds every file instead of matching none.
+    expect(relatedLocations(root, ["."]).tests).toContain("tests/owner.test.ts");
   });
 
   it("preserves failures in the middle of noisy logs, with exact full-log line references", () => {

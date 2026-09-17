@@ -1,6 +1,6 @@
 import type { SaveData } from "./types";
 import { SaveDataSchema } from "@/lib/validation";
-import { deepFreezeInDev } from "../stores/store-utils";
+import { deepFreeze } from "../stores/store-utils";
 
 // Single defaults owner: the Zod schema is the oracle so codec defaults,
 // schema .catch defaults, and fixtures cannot drift. The contract test in
@@ -11,6 +11,6 @@ export function createDefaultSaveData(): SaveData {
   return { ...parsed, activeRun: null };
 }
 
-export const defaultSaveData: SaveData = createDefaultSaveData();
-
-deepFreezeInDev(defaultSaveData);
+// Frozen in all builds: this singleton is spread into new sessions, so a prod
+// mutation would leak into every later new game in the session.
+export const defaultSaveData: SaveData = deepFreeze(createDefaultSaveData());

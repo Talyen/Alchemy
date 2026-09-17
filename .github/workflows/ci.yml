@@ -131,7 +131,6 @@ jobs:
               - "scripts/lib/*asset*.mjs"
               - "scripts/lib/registry-validation.mjs"
               - "scripts/lib/process-helpers.mjs"
-              - "scripts/lib/audio-optimizer.mjs"
               - "src/assets/optimized/**"
               - "public/sounds/**"
               - "public/Music/**"

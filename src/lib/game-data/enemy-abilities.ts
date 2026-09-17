@@ -107,8 +107,30 @@ export function findEnemyAbilityCard(id: string): EnemyAbilityCard | undefined {
 
 export function getEnemyAbilityCard(id: string): EnemyAbilityCard {
   const card = findEnemyAbilityCard(id);
-  if (!card) throw new Error(`Unsupported enemy ability: ${id}`);
+  if (!card) {
+    const raw = Object.hasOwn(cardById, id) ? cardById[id] : undefined;
+    throw new Error(`Unsupported enemy ability: ${id} (${describeEnemyAbilityProblem(raw)})`);
+  }
   return card;
+}
+
+function describeUnsupportedEffect(effect: BattleCardEffect): string | undefined {
+  if (supportsEnemyEffect(effect)) return undefined;
+  if (effect.kind === "chance") {
+    const bad =
+      effect.successEffects.map(describeUnsupportedEffect).find(Boolean) ??
+      effect.failureEffects.map(describeUnsupportedEffect).find(Boolean);
+    return bad ?? `chance with unsupported branch in ${JSON.stringify(Object.keys(effect))}`;
+  }
+  return `${effect.kind} with fields [${Object.keys(effect).sort().join(",")}]`;
+}
+
+function describeEnemyAbilityProblem(card: BattleCard | undefined): string {
+  if (!card || typeof card !== "object" || !Array.isArray(card.effects)) return "unknown card id";
+  if (card.consume) return "consume cards cannot be enemy abilities";
+  if (card.effects.length === 0) return "no effects";
+  const bad = card.effects.map(describeUnsupportedEffect).find(Boolean);
+  return bad ? `unsupported effect ${bad}` : "failed validation for unknown reason";
 }
 
 export function getEnemyAbilities(enemy: Pick<BestiaryEntry, "abilityIds">): EnemyAbilityCard[] {

@@ -1,4 +1,5 @@
 import {
+  cloneBattleCard,
   getStartingDeck,
   type BattleCard,
   type CharacterId,
@@ -147,7 +148,7 @@ export function generateRunSeed(): number {
 function createFreshActiveRunFields(characterId: CharacterId): ActiveRunProgressFields {
   return {
     characterId,
-    runDeck: getStartingDeck(characterId).map((c) => ({ ...c })),
+    runDeck: getStartingDeck(characterId).map(cloneBattleCard),
     runPlayerHealth: MAX_PLAYER_HEALTH,
     runMaxHealth: MAX_PLAYER_HEALTH,
     runMetaMaxHealth: MAX_PLAYER_HEALTH,

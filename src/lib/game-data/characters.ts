@@ -1,5 +1,6 @@
 import type { BattleCard } from "./types";
 import { cardById } from "./cards";
+import { cloneBattleCard } from "./cards/hydrate-card";
 import type { KeywordId } from "./types";
 
 export type CharacterId = "knight" | "ranger" | "rogue" | "wizard" | "alchemist" | "warlock" | "druid" | "wildcard";
@@ -133,7 +134,9 @@ export const characters: Record<CharacterId, CharacterDefinition> = {
 };
 
 export function getStartingDeck(characterId: CharacterId): BattleCard[] {
-  return [...characters[characterId].startingDeck];
+  // Clone: startingDeck holds shared catalog objects (with nested effects),
+  // so each run needs its own copies or mutations leak across runs.
+  return characters[characterId].startingDeck.map(cloneBattleCard);
 }
 
 export const allStartingDeckCardIds = Array.from(

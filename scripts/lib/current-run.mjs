@@ -1,8 +1,7 @@
-import { spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { UNCACHED_GIT_OPTIONS } from "./repository-paths.mjs";
+import { runGit } from "./repository-paths.mjs";
 
 function runSlug(value) {
   return String(value ?? "")
@@ -45,11 +44,7 @@ export function ensureRunId(label = "run", env = process.env) {
 }
 
 function gitOutput(rootDir, args) {
-  const result = spawnSync("git", args, {
-    cwd: rootDir,
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "ignore"],
-  });
+  const result = runGit(rootDir, args);
   return result.status === 0 ? result.stdout : "";
 }
 
@@ -60,12 +55,7 @@ function gitOutput(rootDir, args) {
  * itself fails so callers can distinguish "clean tree" from "could not ask".
  */
 export function changedGitPaths(rootDir) {
-  const result = spawnSync("git", [...UNCACHED_GIT_OPTIONS, "status", "--short", "--untracked-files=all", "-z"], {
-    cwd: rootDir,
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "ignore"],
-    maxBuffer: 16 * 1024 * 1024,
-  });
+  const result = runGit(rootDir, ["status", "--short", "--untracked-files=all", "-z"]);
   if (result.status !== 0) return null;
   const fields = (result.stdout ?? "").split("\0");
   const paths = [];

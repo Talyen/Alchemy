@@ -9,8 +9,8 @@ import { createRunStartSnapshot, type RunStartSnapshot } from "@/features/alchem
 interface CreateRunStartSnapshotInput {
   characterId: CharacterId;
   contentSystemType: ContentSystemId;
-  difficultyId?: DifficultyId | null;
-  draftedDeck?: BattleCard[];
+  difficultyId?: DifficultyId | null | undefined;
+  draftedDeck?: BattleCard[] | undefined;
 }
 
 interface ApplyRunStartOptions {
@@ -35,7 +35,7 @@ export function createDraftRunStartSnapshot(
     difficultyId,
     talentStartGold,
     talentXP,
-    ...(draftedDeck === undefined ? {} : { draftedDeck }),
+    draftedDeck,
     gearMaxHealthBonus,
     homesteadMaxHealthBonus,
   });
@@ -46,22 +46,62 @@ export interface ApplyRunStartResult {
   startGoldGranted: number;
 }
 
+export interface RunReplaceInput {
+  isFreshStart: boolean;
+  activeCharacterId: CharacterId | null;
+  snapshotCharacterId: CharacterId;
+  activeContentSystemType: ContentSystemId | null;
+  snapshotContentSystemType: ContentSystemId;
+  hasActiveBattle: boolean;
+  activityKind: string;
+}
+
+/**
+ * Single owner of the "may a start snapshot replace the current run?" rule.
+ * Fresh starts always qualify; otherwise only completing this run's own
+ * Wildcard starter draft (at draft confirm or difficulty select, outside
+ * battle) may re-apply its snapshot.
+ */
+export function canReplaceRunForStart(input: RunReplaceInput): boolean {
+  if (input.isFreshStart) return true;
+  return (
+    input.activeCharacterId === "wildcard" &&
+    input.snapshotCharacterId === "wildcard" &&
+    input.activeContentSystemType === input.snapshotContentSystemType &&
+    !input.hasActiveBattle &&
+    (input.activityKind === "draft-deck" || input.activityKind === "difficulty-select")
+  );
+}
+
+/**
+ * Narrower companion to canReplaceRunForStart for the difficulty screen: only
+ * a Wildcard run already waiting at difficulty select (outside battle) may
+ * proceed. Anything else must resume instead of starting over.
+ */
+export function isDifficultySelectContinuation(input: {
+  characterId: CharacterId | null;
+  activityKind: string;
+  hasActiveBattle: boolean;
+}): boolean {
+  return input.characterId === "wildcard" && input.activityKind === "difficulty-select" && !input.hasActiveBattle;
+}
+
 export function applyRunStartToDraft(
   draft: GameplayDraft,
   snapshot: RunStartSnapshot,
   options: ApplyRunStartOptions = {},
 ): ApplyRunStartResult {
   const isFreshStart = draft.session.activity.kind === "inactive";
-  // Only completing this run's starter draft may re-apply its start snapshot.
   if (
-    !isFreshStart &&
-    !(
-      draft.run.activeRun.characterId === "wildcard" &&
-      snapshot.characterId === "wildcard" &&
-      draft.run.activeRun.contentSystemType === snapshot.contentSystemType &&
-      !draft.battle.hasActiveBattle &&
-      (draft.session.activity.kind === "draft-deck" || draft.session.activity.kind === "difficulty-select")
-    )
+    !canReplaceRunForStart({
+      isFreshStart,
+      activeCharacterId: isFreshStart ? null : draft.run.activeRun.characterId,
+      snapshotCharacterId: snapshot.characterId,
+      activeContentSystemType: isFreshStart ? null : draft.run.activeRun.contentSystemType,
+      snapshotContentSystemType: snapshot.contentSystemType,
+      hasActiveBattle: draft.battle.hasActiveBattle,
+      activityKind: draft.session.activity.kind,
+    })
   ) {
     throw new Error("Cannot replace an unfinished run");
   }

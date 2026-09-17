@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import { getStartingDeck, type BattleCard } from "@/lib/game-data";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { createRunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
+import {
+  canReplaceRunForStart,
+  isDifficultySelectContinuation,
+} from "@/features/alchemy/run-setup/run/run-start-command";
 
 describe("createRunStartSnapshot", () => {
   it("creates a campaign snapshot with difficulty, start gold, and route reset", () => {
@@ -139,5 +143,108 @@ describe("createRunStartSnapshot", () => {
 
     expect(result.freshDeck).toEqual(getStartingDeck("wildcard"));
     expect(result.freshDeck).toEqual([]);
+  });
+});
+
+describe("canReplaceRunForStart", () => {
+  it("allows fresh starts", () => {
+    expect(
+      canReplaceRunForStart({
+        isFreshStart: true,
+        activeCharacterId: null,
+        snapshotCharacterId: "knight",
+        activeContentSystemType: null,
+        snapshotContentSystemType: "campaign",
+        hasActiveBattle: false,
+        activityKind: "inactive",
+      }),
+    ).toBe(true);
+  });
+
+  it("allows a wildcard draft to re-apply its own snapshot at draft confirm or difficulty select", () => {
+    for (const activityKind of ["draft-deck", "difficulty-select"]) {
+      expect(
+        canReplaceRunForStart({
+          isFreshStart: false,
+          activeCharacterId: "wildcard",
+          snapshotCharacterId: "wildcard",
+          activeContentSystemType: "campaign",
+          snapshotContentSystemType: "campaign",
+          hasActiveBattle: false,
+          activityKind,
+        }),
+      ).toBe(true);
+    }
+  });
+
+  it("rejects replacing an unfinished non-wildcard run", () => {
+    expect(
+      canReplaceRunForStart({
+        isFreshStart: false,
+        activeCharacterId: "knight",
+        snapshotCharacterId: "knight",
+        activeContentSystemType: "campaign",
+        snapshotContentSystemType: "campaign",
+        hasActiveBattle: false,
+        activityKind: "difficulty-select",
+      }),
+    ).toBe(false);
+  });
+
+  it("rejects cross-system replacement and mid-battle replacement", () => {
+    expect(
+      canReplaceRunForStart({
+        isFreshStart: false,
+        activeCharacterId: "wildcard",
+        snapshotCharacterId: "wildcard",
+        activeContentSystemType: "campaign",
+        snapshotContentSystemType: "labyrinth",
+        hasActiveBattle: false,
+        activityKind: "draft-deck",
+      }),
+    ).toBe(false);
+    expect(
+      canReplaceRunForStart({
+        isFreshStart: false,
+        activeCharacterId: "wildcard",
+        snapshotCharacterId: "wildcard",
+        activeContentSystemType: "campaign",
+        snapshotContentSystemType: "campaign",
+        hasActiveBattle: true,
+        activityKind: "difficulty-select",
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("isDifficultySelectContinuation", () => {
+  it("proceeds only for a wildcard run waiting at difficulty select outside battle", () => {
+    expect(
+      isDifficultySelectContinuation({
+        characterId: "wildcard",
+        activityKind: "difficulty-select",
+        hasActiveBattle: false,
+      }),
+    ).toBe(true);
+    expect(
+      isDifficultySelectContinuation({ characterId: "wildcard", activityKind: "draft-deck", hasActiveBattle: false }),
+    ).toBe(false);
+    expect(
+      isDifficultySelectContinuation({
+        characterId: "knight",
+        activityKind: "difficulty-select",
+        hasActiveBattle: false,
+      }),
+    ).toBe(false);
+    expect(
+      isDifficultySelectContinuation({
+        characterId: "wildcard",
+        activityKind: "difficulty-select",
+        hasActiveBattle: true,
+      }),
+    ).toBe(false);
+    expect(
+      isDifficultySelectContinuation({ characterId: null, activityKind: "difficulty-select", hasActiveBattle: false }),
+    ).toBe(false);
   });
 });

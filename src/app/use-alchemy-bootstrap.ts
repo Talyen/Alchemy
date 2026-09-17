@@ -14,8 +14,10 @@ import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 async function maybeWipeLocalSaveFromQuery(): Promise<void> {
   if (!isAlchemyDevBuild() || typeof window === "undefined") return;
   const url = new URL(window.location.href);
-  if (!url.searchParams.has("wipeLocalSave")) return;
-  const cleared = await clearAlchemySaveData();
+  // Exact `=1` match: a bare flag or `=0` must not wipe. Local-first wipe so
+  // a Cloud hiccup cannot leave local progress behind on a dev reset.
+  if (url.searchParams.get("wipeLocalSave") !== "1") return;
+  const cleared = await clearAlchemySaveData("localWipe");
   if (!cleared) return;
   url.searchParams.delete("wipeLocalSave");
   const next = `${url.pathname}${url.search}${url.hash}`;

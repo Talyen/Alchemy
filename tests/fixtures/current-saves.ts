@@ -2,7 +2,9 @@ import { saveEnvelopeFixture } from "./saves";
 
 // Intentionally non-default values exercise round-trip recovery: every
 // override below is valid but differs from SaveDataSchema defaults, while
-// omitted fields rely on load-tolerant .catch defaults.
+// omitted fields rely on load-tolerant .catch defaults. Gear shelves,
+// trinket boxes, and currency round-trips are covered in gear-save.test.ts
+// and save-data-schema.test.ts instead of here.
 export function currentSchemaCampaignSave() {
   return saveEnvelopeFixture({
     selectedAspectRatio: "auto",

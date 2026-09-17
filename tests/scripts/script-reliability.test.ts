@@ -15,6 +15,7 @@ import { validateTestSuitePaths } from "../../scripts/lib/test-commands.mjs";
 import { runAudits } from "../../scripts/audit-all.mjs";
 import { parsePerformanceArgs } from "../../scripts/run-performance.mjs";
 import { parseSyncArgs } from "../../scripts/sync-generated.mjs";
+import { parseAssetArgs } from "../../scripts/assets.mjs";
 
 const ROOT = process.cwd();
 const temporary: string[] = [];
@@ -268,6 +269,27 @@ describe("script execution reliability", () => {
     expect(() => resolvePushPaths(root, "")).toThrow("Could not inspect push revisions");
   });
 
+  it("selects the working tree for --diff while ignoring committed history", () => {
+    const root = repository();
+    fs.writeFileSync(path.join(root, "history.ts"), "history");
+    commit(root);
+    fs.writeFileSync(path.join(root, "game.ts"), "modified");
+    fs.writeFileSync(path.join(root, "staged.ts"), "staged");
+    git(root, "add", "staged.ts");
+    fs.writeFileSync(path.join(root, "untracked.ts"), "untracked");
+    const diff = new Set(["diff"]);
+    expect(resolveSelectedPaths(root, { paths: [] }).sort()).toEqual(["game.ts", "staged.ts", "untracked.ts"].sort());
+    expect(resolveSelectedPaths(root, { flags: diff, paths: [] }).sort()).toEqual(
+      ["game.ts", "staged.ts", "untracked.ts"].sort(),
+    );
+    git(root, "add", ".");
+    commit(root);
+    // A clean tree falls back to the HEAD commit, never older history.
+    expect(resolveSelectedPaths(root, { flags: diff, paths: [] }).sort()).toEqual(
+      ["game.ts", "staged.ts", "untracked.ts"].sort(),
+    );
+  });
+
   it("keeps deleted paths for verification while fallback search reads only surviving files", () => {
     const root = repository();
     fs.unlinkSync(path.join(root, "game.ts"));
@@ -350,6 +372,12 @@ describe("script execution reliability", () => {
     expect(() => parseSyncArgs(["--chek"])).toThrow("Unknown sync option");
     expect(() => parseSyncArgs(["--gear-only", "--art-only"])).toThrow("Choose only one");
     expect(parseSyncArgs(["--check", "--gear-only"])).toMatchObject({ check: true, gearOnly: true });
+    expect(parseAssetArgs([])).toMatchObject({ check: false, mode: "--prepare" });
+    expect(parseAssetArgs(["--check"])).toMatchObject({ check: true, mode: "--prepare" });
+    expect(parseAssetArgs(["--optimize", "--check"])).toMatchObject({ check: true, mode: "--optimize" });
+    expect(parseAssetArgs(["--sync", "--check"])).toMatchObject({ check: true, mode: "--sync" });
+    expect(() => parseAssetArgs(["--bogus"])).toThrow("Unknown argument");
+    expect(() => parseAssetArgs(["--prepare", "--optimize"])).toThrow("Conflicting asset modes");
     for (const argv of [
       ["--scenaro", "battle"],
       ["--scenario"],
@@ -360,7 +388,7 @@ describe("script execution reliability", () => {
     ])
       expect(() => parsePerformanceArgs(argv)).toThrow();
     expect(parsePerformanceArgs(["--runs", "2"])).toMatchObject({ runs: 2 });
-    for (const args of [["prepare"], ["--prepare", "--optimize"], ["--optimize", "--check"]]) {
+    for (const args of [["prepare"], ["--prepare", "--optimize"]]) {
       const result = spawnSync(process.execPath, [path.join(ROOT, "scripts/assets.mjs"), ...args], {
         encoding: "utf8",
         env: { ...process.env, ALCHEMY_SKIP_ASSETS: "1" },

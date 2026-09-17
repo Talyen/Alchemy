@@ -12,8 +12,7 @@ import { CyclingShineBorder } from "../../shared/ui/cycling-shine-border";
 import { HeroTooltip } from "../../shared/ui/tooltips/hero-tooltip";
 import { TitledScreenShell } from "../../shared/ui/layout-components";
 import { Surface } from "../../shared/ui/surface";
-import { useHoverVisible } from "../../shared/ui/use-hover-visible";
-import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
+import { useChooserHover } from "../../shared/ui/use-chooser-hover";
 import {
   cardInteractiveGlowClass,
   cardSurfaceClass,
@@ -28,7 +27,17 @@ import {
 import { playUISound } from "@/lib/audio";
 
 const HERO_SHINE_CLASS = "z-20 opacity-0 transition-opacity duration-200 group-hover:opacity-100";
-const ALL_CHARACTER_IDS = Object.keys(characters) as CharacterId[];
+// Explicit order preserves the current hero row; add new heroes here.
+const CHARACTER_SELECT_ORDER: CharacterId[] = [
+  "knight",
+  "rogue",
+  "ranger",
+  "wizard",
+  "alchemist",
+  "warlock",
+  "druid",
+  "wildcard",
+];
 
 function HeroCardShine({ characterId, colors }: { characterId: CharacterId; colors: readonly string[] }) {
   if (colors.length === 0) return null;
@@ -57,30 +66,27 @@ const CharacterCard = memo(function CharacterCard({
   isLocked: boolean;
   unlockRequirementText: string;
 }) {
-  const { triggerRef, visible, onMouseEnter, onMouseLeave, onFocusCapture, onBlurCapture } = useHoverVisible();
-  const { shimmerActive, shimmerToken, onHoverStart } = useInteractiveCard("character-select", id);
+  const {
+    triggerRef,
+    visible,
+    onMouseEnter,
+    onMouseLeave,
+    onFocusCapture,
+    onBlurCapture,
+    shimmerActive,
+    shimmerToken,
+  } = useChooserHover("character-select", id, isLocked);
   const char = characters[id];
   const art = characterArt[char.id];
   const shineColors = isLocked ? [] : id === "wildcard" ? WILDCARD_KEYWORD_SHINE_COLORS : getCharacterShineColors(id);
-
-  function handleEnter() {
-    if (!isLocked) {
-      onHoverStart();
-    }
-    onMouseEnter();
-  }
-
-  function handleLeave() {
-    onMouseLeave();
-  }
 
   return (
     <div className="flex min-w-0 flex-col items-center gap-2">
       <div
         ref={triggerRef}
         className={cn("relative min-w-0", chooserHeroArtWidthClass)}
-        onMouseEnter={handleEnter}
-        onMouseLeave={handleLeave}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
         onFocusCapture={onFocusCapture}
         onBlurCapture={onBlurCapture}
       >
@@ -93,8 +99,8 @@ const CharacterCard = memo(function CharacterCard({
             !isLocked && cardInteractiveGlowClass,
             !isLocked && "hero-affinity-shine",
           )}
-          shimmerActive={isLocked ? false : shimmerActive}
-          shimmerToken={isLocked ? undefined : shimmerToken}
+          shimmerActive={shimmerActive}
+          shimmerToken={shimmerToken}
           shimmerRounded="rounded-shell-tooltip"
           overlay={<HeroCardShine characterId={id} colors={shineColors} />}
           onClick={() => {
@@ -151,7 +157,7 @@ export function CharacterSelectScreen({
       onMenu={onMenu}
     >
       <div className={cn("mt-6 grid w-full grid-cols-4 justify-items-center gap-y-6", chooserHeroRowGapClass)}>
-        {ALL_CHARACTER_IDS.map((id) => {
+        {CHARACTER_SELECT_ORDER.map((id) => {
           const isLocked = !isCharacterUnlocked(id, finishedRunCharacters);
           const unlockRequirementText = isLocked ? getCharacterUnlockMessage(id) : "";
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { prepareAssets } from "./prepare-assets.mjs";
+import { checkPreparedAssets } from "./check-prepared-assets.mjs";
 import { runAllOptimizePipelines } from "./optimize-pipelines.mjs";
 import { syncGenerated } from "./sync-generated.mjs";
 
@@ -9,42 +10,56 @@ function printHelp() {
   Canonical asset CLI (predev runs --prepare over the same pipeline).
   --prepare (default)  Run full asset prep (art+sounds+music+sync)
   --optimize           Run art/sound/music optimization only (skips barrel sync)
-  --sync               Run barrel sync only (art barrels + version metadata; add --check to verify)
-  --check              Verify generated barrels are up-to-date (implies --sync --check)
+  --sync               Run barrel sync only (art barrels + version metadata)
+  --check              Verify outputs are up-to-date (alone: full check; with
+                       --optimize/--sync: check that stage only)
   --help               Show this help
-  ALCHEMY_SKIP_ASSETS=1 skips all commands in this CLI.`);
+  ALCHEMY_SKIP_ASSETS=1 skips mutating commands in this CLI (--check still
+  verifies and therefore errors under the skip).`);
 }
 
 const KNOWN_FLAGS = new Set(["--prepare", "--optimize", "--sync", "--check", "--help", "-h"]);
 
+export function parseAssetArgs(argv) {
+  const unknown = argv.filter((arg) => !KNOWN_FLAGS.has(arg));
+  if (unknown.length > 0) throw new Error(`Unknown argument: ${unknown.join(", ")}`);
+  const modes = ["--prepare", "--optimize", "--sync"].filter((flag) => argv.includes(flag));
+  if (modes.length > 1) throw new Error("Conflicting asset modes.");
+  return {
+    help: argv.includes("--help") || argv.includes("-h"),
+    check: argv.includes("--check"),
+    mode: modes[0] ?? "--prepare",
+  };
+}
+
 async function main() {
-  const args = process.argv.slice(2);
-  const unknown = args.filter((arg) => !KNOWN_FLAGS.has(arg));
-  const modes = ["--prepare", "--optimize", "--sync"].filter((flag) => args.includes(flag));
-  const conflicting = modes.length > 1 || (args.includes("--check") && modes.some((mode) => mode !== "--sync"));
-  if (unknown.length > 0 || conflicting) {
-    console.error(unknown.length > 0 ? `Unknown argument: ${unknown.join(", ")}` : "Conflicting asset modes.");
+  let options;
+  try {
+    options = parseAssetArgs(process.argv.slice(2));
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
     printHelp();
     process.exitCode = 2;
     return;
   }
-  if (args.includes("--help") || args.includes("-h")) {
+  if (options.help) {
     printHelp();
     return;
   }
-  if (process.env.ALCHEMY_SKIP_ASSETS === "1") {
+  if (!options.check && process.env.ALCHEMY_SKIP_ASSETS === "1") {
     console.log("Skipping asset operation (ALCHEMY_SKIP_ASSETS=1).");
     return;
   }
-  const hasOptimize = args.includes("--optimize");
-  const hasSync = args.includes("--sync");
-  const check = args.includes("--check");
-  if (check || hasSync) {
-    await syncGenerated({ check });
+  if (options.mode === "--sync") {
+    await syncGenerated({ check: options.check });
     return;
   }
-  if (hasOptimize) {
-    await runAllOptimizePipelines();
+  if (options.mode === "--optimize") {
+    await runAllOptimizePipelines(options.check ? { check: true } : undefined);
+    return;
+  }
+  if (options.check) {
+    await checkPreparedAssets();
     return;
   }
   await prepareAssets();
@@ -56,5 +71,3 @@ if (isMainModule(import.meta.url)) {
     process.exitCode = 1;
   });
 }
-
-export { prepareAssets };
