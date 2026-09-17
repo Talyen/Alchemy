@@ -18,14 +18,14 @@ import {
   createdFakeAudio,
   installFakeAudio,
   lastFakeAudio,
-  resetSfxRuntime,
+  resetAudioForTests,
   soundedFakeAudio,
 } from "../../helpers/fake-audio";
 
 beforeEach(() => {
   audioState.sfxVolume = 0.35;
   audioState.masterVolume = 1;
-  resetSfxRuntime();
+  resetAudioForTests();
   installFakeAudio();
 });
 
@@ -226,6 +226,31 @@ describe("cooldown, delay, and stop tokens", () => {
     vi.advanceTimersByTime(1000);
     expect(soundedFakeAudio()).toHaveLength(0);
   });
+
+  it("releases the cooldown when a delayed play is cancelled", () => {
+    vi.useFakeTimers();
+    playBattleEvent("playerHit", { delay: 1 });
+    stopAllSfx();
+    vi.advanceTimersByTime(1000);
+    expect(soundedFakeAudio()).toHaveLength(0);
+
+    // Default cooldown applies: without the release this stays suppressed.
+    playBattleEvent("playerHit");
+    expect(soundedFakeAudio()).toHaveLength(1);
+  });
+
+  it("releases the cooldown when a delayed play is muted before firing", () => {
+    vi.useFakeTimers();
+    playBattleEvent("playerHit", { delay: 1 });
+    setMuted(true);
+    vi.advanceTimersByTime(1000);
+    expect(soundedFakeAudio()).toHaveLength(0);
+
+    setMuted(false);
+    // Default cooldown applies: without the release this stays suppressed.
+    playBattleEvent("playerHit");
+    expect(soundedFakeAudio()).toHaveLength(1);
+  });
 });
 
 describe("SFX lifetime", () => {
@@ -254,6 +279,30 @@ describe("SFX lifetime", () => {
     });
     stopAllSfx();
     expect(el.pause).not.toHaveBeenCalled();
+  });
+});
+
+describe("ambient SFX bound", () => {
+  it("caps fire-and-forget sounds when ended handlers never fire", () => {
+    vi.useFakeTimers();
+    // Fake-timer clocks start at zero, which the cooldown treats as "just
+    // played": step past it once so all 40 scheduled plays land.
+    vi.advanceTimersByTime(100);
+    for (let i = 0; i < 40; i += 1) {
+      playUISound("error");
+      vi.advanceTimersByTime(100);
+    }
+    expect(soundedFakeAudio()).toHaveLength(40);
+    // The oldest entry was paused out by the cap; the newest is still live.
+    // (Index via soundedFakeAudio: element 0 of createdFakeAudio is the
+    // src-less canPlayType probe, not a played sound.)
+    expect(soundedFakeAudio()[0]?.pause).toHaveBeenCalled();
+    const live = lastFakeAudio()!;
+    expect(live.pause).not.toHaveBeenCalled();
+    setMuted(true);
+    expect(live.muted).toBe(true);
+    stopAllSfx();
+    expect(live.pause).not.toHaveBeenCalled();
   });
 });
 

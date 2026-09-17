@@ -9,6 +9,7 @@ import {
 } from "@/lib/game-constants";
 import {
   getBossMusicKey,
+  hasVisibleWindowArea,
   initAudioHost,
   invalidateCacheForKey,
   isMusicPaused,
@@ -44,7 +45,7 @@ export function isAppInBackground(event?: Pick<Event, "type">): boolean {
   if (document.hidden) return true;
   if (event?.type === "blur") return true;
   if (event?.type === "focus") return false;
-  if (window.innerWidth < 2 || window.innerHeight < 2) return true;
+  if (!hasVisibleWindowArea()) return true;
   return !document.hasFocus();
 }
 

@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -9,6 +9,7 @@ import {
   generatedSoundAssets,
   validateSoundAssetRegistry,
 } from "../../../scripts/assets/sound-assets.mjs";
+import { validateMusicRegistry } from "../../../scripts/assets/music-assets.mjs";
 
 const rootDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const soundsDir = path.join(rootDir, "public/sounds");
@@ -28,6 +29,19 @@ describe("registered music assets", () => {
     const registered = new Set(allRegisteredMusicFiles());
     const onDisk = readdirSync(musicDir).filter((file) => !file.startsWith("."));
     expect(onDisk.filter((file) => !registered.has(file))).toEqual([]);
+  });
+
+  it("keeps the music filename registry valid (no duplicates or unsupported extensions)", async () => {
+    const onDisk = readdirSync(musicDir).filter((file) => !file.startsWith("."));
+    await expect(validateMusicRegistry(onDisk)).resolves.toEqual(onDisk);
+  });
+
+  it("owns every prepared music output as a registered track", () => {
+    const manifestPath = path.join(musicDir, ".asset-hashes.json");
+    if (!existsSync(manifestPath)) return;
+    const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+    const registered = new Set(allRegisteredMusicFiles());
+    expect(Object.keys(manifest).filter((file) => !registered.has(file))).toEqual([]);
   });
 });
 

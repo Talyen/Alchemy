@@ -1,5 +1,6 @@
 import { access } from "node:fs/promises";
 import path from "node:path";
+import { VALIDATION_CONCURRENCY } from "./asset-constants.mjs";
 import { toAssetExportName } from "./kebab-to-camel.mjs";
 import { mapPool } from "./map-pool.mjs";
 
@@ -50,7 +51,7 @@ export async function validateRegistryEntries(
   if (sourceDir) {
     const missing = await mapPool(
       entries.filter((entry) => entry.source),
-      16,
+      VALIDATION_CONCURRENCY,
       async (entry) => {
         try {
           await access(path.join(sourceDir, entry.source));

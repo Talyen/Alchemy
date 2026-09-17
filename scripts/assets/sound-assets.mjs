@@ -1,3 +1,4 @@
+import { SOUND_ENTRY_OWNERS } from "../lib/asset-constants.mjs";
 import { validateRegistryEntries } from "../lib/registry-validation.mjs";
 
 /** Raw sound sources transformed or copied into public/sounds. */
@@ -92,4 +93,14 @@ export async function validateSoundAssetRegistry({ sourceDir } = {}) {
   }
 
   if (errors.length > 0) throw new Error(`Sound asset registry validation failed:\n- ${errors.join("\n- ")}`);
+}
+
+/** Owner tag for a prepared OGG: generated transforms vs curated commits. MP3 fallbacks mirror their OGG source owner. */
+export function soundEntryOwner(target, generatedTargets = new Set(generatedSoundAssets.map(({ target }) => target))) {
+  return generatedTargets.has(target) ? SOUND_ENTRY_OWNERS.generated : SOUND_ENTRY_OWNERS.curated;
+}
+
+/** MP3 fallback sibling for a prepared OGG. */
+export function mp3FallbackName(ogg) {
+  return ogg.replace(/\.ogg$/i, ".mp3");
 }

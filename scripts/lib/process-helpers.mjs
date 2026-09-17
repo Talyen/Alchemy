@@ -9,13 +9,14 @@ export function targetErrorHandler(item, error) {
   return formatProcessError(label, error);
 }
 
-export function failedOptimizeResult(results, skipLabel) {
+export function failedMessagesResult(messages, skipLabel) {
   console.warn(`Skipping ${skipLabel} because optimization failed.`);
-  return {
-    ok: false,
-    error: results
-      .filter((result) => result.failed)
-      .map((result) => result.message)
-      .join(" "),
-  };
+  return { ok: false, error: messages.join("\n") };
+}
+
+export function failedOptimizeResult(results, skipLabel) {
+  return failedMessagesResult(
+    results.filter((result) => result.failed).map((result) => result.message),
+    skipLabel,
+  );
 }

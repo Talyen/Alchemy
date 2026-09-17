@@ -8,14 +8,13 @@ import {
   resetSoundPreloadCache,
 } from "@/lib/audio/preload";
 import { audioState } from "@/lib/audio/state";
-import { createdFakeAudio, installFakeAudio, soundedFakeAudio } from "../../helpers/fake-audio";
+import { createdFakeAudio, installFakeAudio, resetAudioForTests, soundedFakeAudio } from "../../helpers/fake-audio";
 
 beforeEach(() => {
-  audioState.muted = false;
+  resetAudioForTests();
   audioState.sfxVolume = 0.35;
   audioState.musicVolume = 0.0875;
   audioState.masterVolume = 1;
-  resetSoundPreloadCache();
   installFakeAudio();
 });
 
@@ -32,6 +31,8 @@ describe("getSoundUrl", () => {
   });
 
   it("falls back to MP3 when Vorbis is unsupported", () => {
+    installFakeAudio({ canPlayTypeResult: "" });
+    resetSoundPreloadCache();
     expect(getSoundUrl("sword-attack-1.ogg")).toContain("sounds/sword-attack-1.mp3");
   });
 
@@ -42,6 +43,8 @@ describe("getSoundUrl", () => {
   });
 
   it("joins a base URL without a trailing slash", () => {
+    installFakeAudio({ canPlayTypeResult: "" });
+    resetSoundPreloadCache();
     vi.stubEnv("BASE_URL", "/app");
     expect(getSoundUrl("sword-attack-1.ogg")).toBe("/app/sounds/sword-attack-1.mp3");
   });
@@ -103,10 +106,31 @@ describe("preloadBattleSounds", () => {
     expect(urls.some((url) => url.includes("ice-throw-1."))).toBe(true);
     expect(urls.some((url) => url.includes("swish-hit."))).toBe(true);
   });
+
+  it("warms enemy ability card sounds alongside the hand", () => {
+    preloadBattleSounds(["slash"], "skeleton", ["sunder"]);
+    const urls = createdFakeAudio.map((el) => el.src);
+    expect(urls.some((url) => url.includes("strong-punch."))).toBe(true);
+  });
+
+  it("warms the full battle event set including opening status cues", () => {
+    preloadBattleSounds(["slash"], "skeleton");
+    const urls = createdFakeAudio.map((el) => el.src);
+    for (const name of [
+      "sword-impact-hit-1.",
+      "punch-3.",
+      "power-down.",
+      "ice-freeze-1.",
+      "vibraphone-chime-quick.",
+      "toggle-off.",
+    ]) {
+      expect(urls.some((url) => url.includes(name))).toBe(true);
+    }
+  });
 });
 
 describe("preloadAllSounds", () => {
-  it("schedules sound preloading in batches across idle callbacks", async () => {
+  it("preloads urgent sounds synchronously and the rest in one idle callback", async () => {
     const AudioContextCtor = vi.fn();
     vi.stubGlobal("AudioContext", AudioContextCtor);
 
@@ -118,11 +142,13 @@ describe("preloadAllSounds", () => {
 
     preloadAllSounds();
     expect(AudioContextCtor).not.toHaveBeenCalled();
-    expect(createdFakeAudio.length).toBeGreaterThan(0);
+    const urgentCount = createdFakeAudio.length;
+    expect(urgentCount).toBeGreaterThan(0);
     expect(callbacks.length).toBe(1);
 
     callbacks[0]!({ didTimeout: false, timeRemaining: () => 50 });
-    await vi.waitFor(() => expect(callbacks.length).toBe(2));
+    await vi.waitFor(() => expect(createdFakeAudio.length).toBeGreaterThan(urgentCount));
+    expect(callbacks.length).toBe(1);
 
     expect(AudioContextCtor).not.toHaveBeenCalled();
   });

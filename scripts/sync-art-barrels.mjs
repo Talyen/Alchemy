@@ -1,7 +1,9 @@
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 import { toAssetExportName } from "./lib/kebab-to-camel.mjs";
 import { GENERATED_OUTPUTS } from "./lib/asset-constants.mjs";
+import { toDefinitionId } from "./lib/gear-filenames.mjs";
 import {
   getAssetFiles,
   getGearFiles,
@@ -26,10 +28,6 @@ function buildAssetsContent(manifest) {
   }
   lines.push("");
   return { files, content: `${lines.join("\n")}` };
-}
-
-function toDefinitionId(target) {
-  return target.replace(/^gear-/, "").replace(/\.webp$/, "");
 }
 
 function buildGearArtContent(manifest) {
@@ -70,8 +68,26 @@ export const ART_BARRELS = {
   },
 };
 
-async function syncBarrels(configs, { check = false } = {}) {
+async function syncBarrels(configs, { check = false, verify = [] } = {}) {
   const manifest = await readArtManifest(manifestPath);
+  // Verify-only configs are compared before anything is written: gear-art.ts
+  // imports assets.generated.ts, so a gear-only sync must refuse to run
+  // against a stale assets barrel instead of silently diverging from it.
+  for (const config of verify) {
+    const { content } = config.build(manifest);
+    let existing;
+    try {
+      existing = await readFile(config.outputFile, "utf8");
+    } catch {
+      existing = undefined;
+    }
+    if (existing !== content) {
+      throw new Error(
+        `Gear art sync requires a current ${path.relative(rootDir, ART_BARRELS.assets.outputFile)}; ` +
+          `run npm run sync:art (or sync:generated) first.`,
+      );
+    }
+  }
   const prepared = configs.map((config) => ({ ...config, result: config.build(manifest) }));
   for (const config of prepared) {
     await runSyncGenerated({ ...config, rootDir, check });
@@ -79,11 +95,14 @@ async function syncBarrels(configs, { check = false } = {}) {
 }
 
 export async function syncAssets(options) {
+  // Low-level primitive (kept for tests): prefer syncArtBarrels via
+  // `npm run sync:art`, since gear-art.ts imports assets.generated.ts and a
+  // solo assets sync can leave the pair diverged.
   await syncBarrels([ART_BARRELS.assets], options);
 }
 
 export async function syncGearArt(options) {
-  await syncBarrels([ART_BARRELS.gearArt], options);
+  await syncBarrels([ART_BARRELS.gearArt], { ...options, verify: [ART_BARRELS.assets] });
 }
 
 export async function syncArtBarrels(options) {

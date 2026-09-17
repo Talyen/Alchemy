@@ -2,11 +2,12 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { CollectionScreen } from "@/features/alchemy/meta/screens/collection-screen";
 import { MUSIC_KEYS } from "@/lib/game-constants";
-import { playMusic } from "@/lib/audio";
+import { endBossPreview, previewBossMusic } from "@/lib/audio";
 
 vi.mock("@/lib/audio", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/audio")>()),
-  playMusic: vi.fn(),
+  previewBossMusic: vi.fn(),
+  endBossPreview: vi.fn(),
 }));
 vi.mock("@/features/alchemy/meta/screens/collection/collection-ui", () => ({
   CollectionGrid: ({ onEnemyActivate }: { onEnemyActivate: (id: string) => void }) => (
@@ -38,7 +39,7 @@ const props = {
 beforeEach(() => vi.clearAllMocks());
 afterEach(cleanup);
 
-it("switches between registered boss tracks without restarting the same selection", () => {
+it("forwards every boss activation to the preview; the module dedupes repeats", () => {
   render(<CollectionScreen {...props} />);
   for (const [id, key] of [
     ["forge-golem", MUSIC_KEYS.BOSS_FORGE_GOLEM],
@@ -47,40 +48,51 @@ it("switches between registered boss tracks without restarting the same selectio
     ["iron-bear", MUSIC_KEYS.BOSS_IRON_BEAR],
   ]) {
     fireEvent.click(screen.getByRole("button", { name: id }));
-    expect(playMusic).toHaveBeenLastCalledWith(key);
+    expect(previewBossMusic).toHaveBeenLastCalledWith(key);
     fireEvent.click(screen.getByRole("button", { name: id }));
   }
-  expect(playMusic).toHaveBeenCalledTimes(4);
+  // Repeat clicks forward too; previewBossMusic() itself skips the restart
+  // (pinned in music.dom.test.ts).
+  expect(previewBossMusic).toHaveBeenCalledTimes(8);
   fireEvent.click(screen.getByRole("button", { name: "unknown-boss" }));
   fireEvent.click(screen.getByRole("button", { name: "goblin-scout" }));
-  expect(playMusic).toHaveBeenCalledTimes(4);
+  expect(previewBossMusic).toHaveBeenCalledTimes(8);
 });
 
-it("restores menu music on page and tab changes without restarting on return", () => {
+it("ends the preview on page and tab changes", () => {
   const { rerender } = render(<CollectionScreen {...props} />);
   fireEvent.click(screen.getByRole("button", { name: "forge-golem" }));
+  expect(previewBossMusic).toHaveBeenCalledTimes(1);
+
+  vi.mocked(endBossPreview).mockClear();
   rerender(<CollectionScreen {...props} collectionPages={{ ...props.collectionPages, bestiary: 1 }} />);
-  expect(playMusic).toHaveBeenLastCalledWith(MUSIC_KEYS.MENU);
-  rerender(<CollectionScreen {...props} />);
-  expect(playMusic).toHaveBeenCalledTimes(2);
+  expect(endBossPreview).toHaveBeenCalled();
+
   fireEvent.click(screen.getByRole("button", { name: "forge-golem" }));
+  expect(previewBossMusic).toHaveBeenCalledTimes(2);
+  vi.mocked(endBossPreview).mockClear();
   rerender(<CollectionScreen {...props} collectionTab="cards" />);
-  expect(playMusic).toHaveBeenLastCalledWith(MUSIC_KEYS.MENU);
-  rerender(<CollectionScreen {...props} />);
-  expect(playMusic).toHaveBeenCalledTimes(4);
+  expect(endBossPreview).toHaveBeenCalled();
 });
 
 it("leaves destination music selection to app navigation on unmount", () => {
   const { unmount } = render(<CollectionScreen {...props} />);
   fireEvent.click(screen.getByRole("button", { name: "forge-golem" }));
-  vi.mocked(playMusic).mockClear();
+  vi.mocked(previewBossMusic).mockClear();
+  vi.mocked(endBossPreview).mockClear();
   unmount();
-  expect(playMusic).not.toHaveBeenCalled();
+  expect(previewBossMusic).not.toHaveBeenCalled();
+  expect(endBossPreview).not.toHaveBeenCalled();
 });
 
-it("does not change music when browsing without a preview", () => {
+it("never previews unknown enemies; tab restore without a preview is a music no-op", () => {
   const { rerender } = render(<CollectionScreen {...props} />);
+  vi.clearAllMocks();
   fireEvent.click(screen.getByRole("button", { name: "unknown-boss" }));
+  expect(previewBossMusic).not.toHaveBeenCalled();
+  // The tab change still runs the restore path, but endBossPreview() no-ops
+  // internally without an active preview (pinned in music.dom.test.ts).
   rerender(<CollectionScreen {...props} collectionTab="cards" />);
-  expect(playMusic).not.toHaveBeenCalled();
+  expect(previewBossMusic).not.toHaveBeenCalled();
+  expect(endBossPreview).toHaveBeenCalledTimes(1);
 });

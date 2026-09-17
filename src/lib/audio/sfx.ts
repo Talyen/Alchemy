@@ -32,7 +32,15 @@ interface ActiveHtmlSfx {
   trackForCleanup: boolean;
 }
 
-const activeHtmlSfx = new Set<ActiveHtmlSfx>();
+const stoppableHtmlSfx = new Set<ActiveHtmlSfx>();
+/**
+ * Fire-and-forget sounds (UI clicks, stingers, slice deaths) survive screen
+ * changes by design, so they live apart from stoppable combat sounds. The set
+ * is bounded: entries leave on ended/error/rejected play, and the oldest is
+ * paused out if a burst ever exceeds the cap (e.g. a stuck ended handler).
+ */
+const ambientHtmlSfx = new Set<ActiveHtmlSfx>();
+const MAX_AMBIENT_SFX = 32;
 let sfxStopToken = 0;
 
 function htmlSfxVolume(volume: number): number {
@@ -44,25 +52,50 @@ function applyHtmlSfxPlayback(entry: ActiveHtmlSfx) {
   entry.el.volume = htmlSfxVolume(entry.volume);
 }
 
+function trackHtmlSfx(entry: ActiveHtmlSfx) {
+  if (entry.trackForCleanup) {
+    stoppableHtmlSfx.add(entry);
+    return;
+  }
+  if (ambientHtmlSfx.size >= MAX_AMBIENT_SFX) {
+    const oldest = ambientHtmlSfx.values().next().value;
+    if (oldest) {
+      try {
+        oldest.el.pause();
+      } catch {}
+      ambientHtmlSfx.delete(oldest);
+    }
+  }
+  ambientHtmlSfx.add(entry);
+}
+
+function untrackHtmlSfx(entry: ActiveHtmlSfx) {
+  stoppableHtmlSfx.delete(entry);
+  ambientHtmlSfx.delete(entry);
+}
+
 export function syncActiveHtmlSfxPlayback() {
-  for (const entry of activeHtmlSfx) {
+  for (const entry of stoppableHtmlSfx) {
+    applyHtmlSfxPlayback(entry);
+  }
+  for (const entry of ambientHtmlSfx) {
     applyHtmlSfxPlayback(entry);
   }
 }
 
 export function resetHtmlSfxRuntime() {
-  activeHtmlSfx.clear();
+  stoppableHtmlSfx.clear();
+  ambientHtmlSfx.clear();
 }
 
 export function stopAllSfx() {
   sfxStopToken += 1;
-  for (const entry of activeHtmlSfx) {
-    if (!entry.trackForCleanup) continue;
+  for (const entry of Array.from(stoppableHtmlSfx)) {
     entry.el.pause();
 
     entry.el.removeAttribute("src");
     entry.el.load();
-    activeHtmlSfx.delete(entry);
+    stoppableHtmlSfx.delete(entry);
   }
 }
 
@@ -71,15 +104,15 @@ function playHtmlSfx(name: string, volume: number, trackForCleanup: boolean) {
   const el = new Audio(getSoundUrl(name));
   const entry: ActiveHtmlSfx = { el, volume, trackForCleanup };
   applyHtmlSfxPlayback(entry);
-  activeHtmlSfx.add(entry);
+  trackHtmlSfx(entry);
   el.onended = () => {
-    activeHtmlSfx.delete(entry);
+    untrackHtmlSfx(entry);
   };
   el.onerror = () => {
-    activeHtmlSfx.delete(entry);
+    untrackHtmlSfx(entry);
   };
   void Promise.resolve(el.play()).catch(() => {
-    activeHtmlSfx.delete(entry);
+    untrackHtmlSfx(entry);
   });
 }
 
@@ -96,8 +129,12 @@ function playBuffer(
   audioState.lastPlayedAt.set(name, scheduledAt);
 
   const start = () => {
-    if (audioState.muted) return;
-    if (trackForCleanup && playToken !== sfxStopToken) return;
+    if (audioState.muted || (trackForCleanup && playToken !== sfxStopToken)) {
+      // A cancelled delayed play must not poison the cooldown for the next
+      // immediate retry. Only release the reservation this schedule made.
+      if (audioState.lastPlayedAt.get(name) === scheduledAt) audioState.lastPlayedAt.delete(name);
+      return;
+    }
     playHtmlSfx(name, volume, trackForCleanup);
   };
 

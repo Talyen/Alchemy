@@ -2,16 +2,14 @@ import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import { initAudioHost, setMuted, setSfxVolume, setMasterVolume, setMusicVolume } from "@/lib/audio/volume";
 import { audioState } from "@/lib/audio/state";
 import { MUSIC_KEYS, MUSIC_MASTER_GAIN } from "@/lib/game-constants";
-import { invalidateCacheForKey, playMusic, playMusicImmediate } from "@/lib/audio/music";
-import { installFakeAudio, resetMusicState } from "../../helpers/fake-audio";
+import { playMusic, playMusicImmediate } from "@/lib/audio/music";
+import { installFakeAudio, resetAudioForTests } from "../../helpers/fake-audio";
 
 beforeEach(() => {
-  audioState.muted = false;
-  audioState.hostForcesMute = false;
   audioState.sfxVolume = 0.35;
   audioState.masterVolume = 1;
   audioState.musicVolume = 0.0875;
-  resetMusicState();
+  resetAudioForTests();
   installFakeAudio();
 });
 
@@ -109,9 +107,6 @@ describe("setMasterVolume", () => {
     expect(outgoing?.volume).toBeCloseTo(fadedVolume * 0.5);
 
     playMusicImmediate(MUSIC_KEYS.MENU);
-    vi.advanceTimersByTime(31);
-    invalidateCacheForKey(MUSIC_KEYS.MENU);
-    invalidateCacheForKey(MUSIC_KEYS.BOSS_FORGE_GOLEM);
   });
 });
 
@@ -152,6 +147,5 @@ describe("setMusicVolume", () => {
     expect(incoming?.volume).toBeCloseTo(fadedVolume * 0.5);
 
     playMusicImmediate(MUSIC_KEYS.MENU);
-    invalidateCacheForKey(MUSIC_KEYS.MENU);
   });
 });

@@ -5,7 +5,12 @@ import { installDisabledAnimationsForTests } from "../../../../helpers/animation
 import { enemyBestiary } from "@/lib/game-data";
 import { getBossMusicKey } from "@/lib/audio";
 
-const audio = vi.hoisted(() => ({ playMusic: vi.fn(), playEnemyAttack: vi.fn() }));
+const audio = vi.hoisted(() => ({
+  playMusic: vi.fn(),
+  playEnemyAttack: vi.fn(),
+  previewBossMusic: vi.fn(),
+  endBossPreview: vi.fn(),
+}));
 vi.mock("@/lib/audio", async (importOriginal) => ({ ...(await importOriginal<Record<string, unknown>>()), ...audio }));
 
 describe("CollectionScreen", () => {
@@ -89,7 +94,7 @@ describe("CollectionScreen", () => {
     const portrait = screen.getByRole("button", { name: "Inspect The Forge Golem" });
     fireEvent.click(portrait);
     expect(audio.playEnemyAttack).toHaveBeenCalledWith(id);
-    expect(audio.playMusic).toHaveBeenCalledWith(getBossMusicKey(id));
+    expect(audio.previewBossMusic).toHaveBeenCalledWith(getBossMusicKey(id));
     const dialog = screen.getByRole("dialog", { name: "The Forge Golem" });
     expect(
       within(dialog)
@@ -97,10 +102,11 @@ describe("CollectionScreen", () => {
         .map((image) => image.getAttribute("alt")),
     ).toEqual(["Sunder", "Bash", "Molten Bulwark"]);
     fireEvent.click(within(dialog).getByRole("button", { name: "Close enemy inspection" }));
-    expect(audio.playMusic).toHaveBeenCalledOnce();
+    expect(audio.previewBossMusic).toHaveBeenCalledTimes(1);
     fireEvent.click(portrait);
     expect(screen.getByRole("dialog", { name: "The Forge Golem" })).toBeTruthy();
-    expect(audio.playMusic).toHaveBeenCalledOnce();
+    expect(audio.previewBossMusic).toHaveBeenCalledTimes(2);
+    expect(audio.previewBossMusic).toHaveBeenLastCalledWith(getBossMusicKey(id));
     expect(audio.playEnemyAttack).toHaveBeenCalledTimes(2);
   });
 

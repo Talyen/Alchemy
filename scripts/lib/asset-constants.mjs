@@ -29,13 +29,24 @@ export const SOUND_TRANSFORM_CONCURRENCY = resolveAssetConcurrency(4);
 
 export const MUSIC_COPY_CONCURRENCY = resolveAssetConcurrency(4);
 
-/** Single source of truth for art presets; WIDTH/QUALITY below derive from it. */
-const ART_PRESETS = Object.freeze({
+export const VALIDATION_CONCURRENCY = resolveAssetConcurrency(16);
+
+/**
+ * Single source of truth for art presets; WIDTH/QUALITY below are read-only
+ * views derived from it. Per-file tunings (cardHaste, placeholders) are full
+ * entries sharing their family width so no second override table can drift.
+ */
+export const ART_PRESETS = Object.freeze({
   card: Object.freeze({ width: 420, quality: 80 }),
+  cardHaste: Object.freeze({ width: 420, quality: 88 }),
+  cardManaCrystal: Object.freeze({ width: 420, quality: 88 }),
+  cardMixedPotion: Object.freeze({ width: 420, quality: 84 }),
+  cardPlaceholder: Object.freeze({ width: 420, quality: 60 }),
   talent: Object.freeze({ width: 420, quality: 82 }),
   boon: Object.freeze({ width: 420, quality: 82 }),
   hero: Object.freeze({ width: 720, quality: 82 }),
   enemy: Object.freeze({ width: 720, quality: 82 }),
+  enemyPlaceholder: Object.freeze({ width: 720, quality: 60 }),
   destination: Object.freeze({ width: 900, quality: 84 }),
   gameMode: Object.freeze({ width: 900, quality: 82 }),
   homestead: Object.freeze({ width: 900, quality: 82 }),
@@ -49,15 +60,6 @@ const ART_PRESETS = Object.freeze({
   gear: Object.freeze({ width: 420, quality: 82 }),
 });
 
-/** Per-file quality overrides that share the card width. */
-const CARD_QUALITY_OVERRIDES = Object.freeze({
-  cardHaste: 88,
-  cardManaCrystal: 88,
-  cardMixedPotion: 84,
-  cardPlaceholder: 60,
-  enemyPlaceholder: 60,
-});
-
 export function artPreset(kind) {
   return ART_PRESETS[kind];
 }
@@ -66,10 +68,9 @@ export const WIDTH = Object.freeze(
   Object.fromEntries(Object.entries(ART_PRESETS).map(([kind, preset]) => [kind, preset.width])),
 );
 
-export const QUALITY = Object.freeze({
-  ...Object.fromEntries(Object.entries(ART_PRESETS).map(([kind, preset]) => [kind, preset.quality])),
-  ...CARD_QUALITY_OVERRIDES,
-});
+export const QUALITY = Object.freeze(
+  Object.fromEntries(Object.entries(ART_PRESETS).map(([kind, preset]) => [kind, preset.quality])),
+);
 
 export const LOUDNORM_FILTER = "loudnorm=I=-16:TP=-1.5:LRA=11";
 export const VORBIS_QUALITY = "4";
@@ -92,6 +93,18 @@ export function soundTransformSettings(sourceExt) {
 
 export const MUSIC_SETTINGS = Object.freeze({ mode: "copy" });
 export const MANIFEST_BASENAME = ".asset-hashes.json";
+
+/**
+ * Explicit orphan-ownership table. Every optimizer output directory is fully
+ * managed: manifest keys are the complete inventory and anything else is swept
+ * as an orphan — except the listed curated exceptions (sounds only; music and
+ * art have none by design).
+ */
+export const MANAGED_DIRS = Object.freeze({
+  art: Object.freeze({ dir: "src/assets/optimized", curatedExceptions: Object.freeze([]) }),
+  sounds: Object.freeze({ dir: "public/sounds", curatedExceptions: Object.freeze(["curated"]) }),
+  music: Object.freeze({ dir: "public/Music", curatedExceptions: Object.freeze([]) }),
+});
 
 export const GENERATED_OUTPUTS = Object.freeze({
   assets: "src/lib/game-data/assets.generated.ts",

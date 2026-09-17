@@ -11,16 +11,17 @@ choice between fast generated checks and prepared-output verification.
 Asset and synchronization CLIs validate selectors before writing, including in
 skip mode; keep that validation at each entry point.
 
-| Concern                                    | Implementation owner                                                                          |
-| ------------------------------------------ | --------------------------------------------------------------------------------------------- |
-| Asset CLI and preparation                  | `assets.mjs` → `prepare-assets.mjs`                                                           |
-| Art, sound, and music optimization         | `optimize-pipelines.mjs` → `optimize-assets.mjs`, `optimize-sounds.mjs`, `optimize-music.mjs` |
-| Generated art barrels and version metadata | `sync-generated.mjs` → `sync-art-barrels.mjs`, `sync-version-metadata.mjs`                    |
-| Fast generated-output validation           | `sync-generated.mjs --check`                                                                  |
-| Read-only prepared-output freshness        | `check-prepared-assets.mjs`                                                                   |
+| Concern                                    | Implementation owner                                                                                                                                                  |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Asset CLI and preparation                  | `assets.mjs` → `prepare-assets.mjs` (canonical surface; direct `optimize-*.mjs` calls are internal)                                                                   |
+| Art, sound, and music optimization         | `optimize-pipelines.mjs` → `optimize-assets.mjs`, `optimize-sounds.mjs`, `optimize-music.mjs` via `lib/asset-pipeline-runner.mjs`                                     |
+| Generated art barrels and version metadata | `sync-generated.mjs` → `sync-art-barrels.mjs`, `sync-version-metadata.mjs` (`sync:art` syncs both barrels; `sync:gear-art` alone refuses stale `assets.generated.ts`) |
+| Fast generated-output validation           | `sync-generated.mjs --check`                                                                                                                                          |
+| Read-only prepared-output freshness        | `check-prepared-assets.mjs`                                                                                                                                           |
 
-Shared: `lib/asset-constants.mjs` (tuning), `lib/asset-manifest-cache.mjs` (freshness),
-`lib/process-helpers.mjs` (generic `targetErrorHandler`, `failedOptimizeResult`).
+Shared: `lib/asset-constants.mjs` (tuning, `MANAGED_DIRS` orphan ownership), `lib/asset-manifest-cache.mjs` (freshness),
+`lib/process-helpers.mjs` (generic `targetErrorHandler`, `failedOptimizeResult`),
+`lib/gear-filenames.mjs` (gear slugging/patterns), `assets/music-assets.mjs` (music filename registry).
 
 ## Agent discovery and evaluation
 

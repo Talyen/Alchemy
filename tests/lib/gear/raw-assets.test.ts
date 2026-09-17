@@ -5,19 +5,12 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { gearBaseItems } from "@/lib/gear/base-items";
 import { GEAR_RARITIES } from "@/lib/gear";
+import { GEAR_FILE_PATTERN, slugifyGearName } from "../../../scripts/lib/gear-filenames.mjs";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const gearDir = path.join(rootDir, "Raw Assets", "Gear");
 
 const rawGearPresent = existsSync(gearDir);
-
-function slugifyGearName(name: string): string {
-  return name
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
 
 describe.skipIf(!rawGearPresent)("raw gear assets", () => {
   it("matches catalog rarities for every named gear source file", async () => {
@@ -29,7 +22,7 @@ describe.skipIf(!rawGearPresent)("raw gear assets", () => {
     }
 
     const parsed = entries.flatMap((name) => {
-      const match = name.match(/^(.+?)\s-\s(Basic|Astral)\.(jpe?g|png)$/i);
+      const match = name.match(GEAR_FILE_PATTERN);
       return match ? [{ displayName: match[1]!, rarity: match[2]!.toLowerCase() as "basic" | "astral" }] : [];
     });
 
@@ -51,7 +44,7 @@ describe.skipIf(!rawGearPresent)("raw gear assets", () => {
 
     const assetsBySlug = new Map<string, Set<string>>();
     for (const name of entries) {
-      const match = name.match(/^(.+?)\s-\s(Basic|Astral)\.(jpe?g|png)$/i);
+      const match = name.match(GEAR_FILE_PATTERN);
       if (!match) continue;
       const slug = slugifyGearName(match[1]!);
       const rarity = match[2]!.toLowerCase();
@@ -78,12 +71,19 @@ describe.skipIf(!rawGearPresent)("raw gear assets", () => {
 
     const baseItemIds = new Set(Object.keys(gearBaseItems));
     const unmatched = entries.flatMap((name) => {
-      const match = name.match(/^(.+?)\s-\s(Basic|Astral)\.(jpe?g|png)$/i);
+      const match = name.match(GEAR_FILE_PATTERN);
       if (!match) return [];
       const baseItemId = slugifyGearName(match[1]!);
       return baseItemIds.has(baseItemId) ? [] : [name];
     });
 
     expect(unmatched, `unmapped raw gear art: ${unmatched.join(", ")}`).toEqual([]);
+  });
+});
+
+describe("gear filename conventions", () => {
+  it("strips apostrophes before slugging (Smith's -> smiths, not smith-s)", () => {
+    expect(slugifyGearName("Smith's Whetstone")).toBe("smiths-whetstone");
+    expect(slugifyGearName("Sin-Eater's Lantern")).toBe("sin-eaters-lantern");
   });
 });

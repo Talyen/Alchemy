@@ -9,6 +9,8 @@
 import { vi, type Mock } from "vitest";
 import { audioState } from "@/lib/audio/state";
 import { resetHtmlSfxRuntime } from "@/lib/audio/sfx";
+import { resetMusicRuntimeForTests } from "@/lib/audio/music";
+import { resetSoundPreloadCache } from "@/lib/audio/preload";
 
 export interface FakeAudioElement {
   src: string;
@@ -44,7 +46,9 @@ export function soundedFakeAudio(): FakeAudioElement[] {
 }
 
 export function installFakeAudio(options: FakeAudioOptions = {}): void {
-  const { canPlayTypeResult = "", rejectPlay = false, onCreate } = options;
+  // Default to Vorbis support like production Chrome; pass "" explicitly to
+  // exercise the Safari MP3 fallback.
+  const { canPlayTypeResult = "maybe", rejectPlay = false, onCreate } = options;
   createdFakeAudio.length = 0;
   vi.stubGlobal(
     "Audio",
@@ -78,14 +82,16 @@ export function installFakeAudio(options: FakeAudioOptions = {}): void {
   );
 }
 
-export function resetSfxRuntime(): void {
+/**
+ * Single reset for audio playback tests. Clears mute/host/cooldown state, SFX
+ * and music runtimes, and the preload + URL caches. Volumes are owned by the
+ * test: set them before or after calling this.
+ */
+export function resetAudioForTests(): void {
   audioState.muted = false;
   audioState.hostForcesMute = false;
   audioState.lastPlayedAt = new Map();
   resetHtmlSfxRuntime();
-}
-
-export function resetMusicState(): void {
-  audioState.currentMusic = null;
-  audioState.currentMusicKey = null;
+  resetMusicRuntimeForTests();
+  resetSoundPreloadCache();
 }

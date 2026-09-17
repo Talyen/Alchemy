@@ -26,7 +26,7 @@ export async function mapPool(items, concurrency, mapper) {
   const settled = await Promise.allSettled(workers);
   const failures = settled.filter((result) => result.status === "rejected").map((result) => result.reason);
   if (failures.length > 0) {
-    throw new AggregateError(failures, failures.map(String).join(" "));
+    throw new AggregateError(failures, failures.map(String).join("\n"));
   }
   return results;
 }

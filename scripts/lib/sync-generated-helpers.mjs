@@ -73,12 +73,18 @@ export async function readArtManifest(manifestPath) {
   if (missing.length > 0) {
     throw new Error(`Invalid art manifest "${manifestPath}": missing required targets: ${missing.join(", ")}.`);
   }
-  for (const target of Object.keys(manifest)) {
-    const outputPath = path.join(path.dirname(manifestPath), target);
-    if (!(await stat(outputPath)).isFile()) {
-      throw new Error(`Invalid art manifest "${manifestPath}": entry "${target}" is not a regular file: ${outputPath}`);
-    }
-  }
+  // Parallel stat: Promise.all (not mapPool) so filesystem errors keep their
+  // original code/path instead of being wrapped in an AggregateError.
+  await Promise.all(
+    Object.keys(manifest).map(async (target) => {
+      const outputPath = path.join(path.dirname(manifestPath), target);
+      if (!(await stat(outputPath)).isFile()) {
+        throw new Error(
+          `Invalid art manifest "${manifestPath}": entry "${target}" is not a regular file: ${outputPath}`,
+        );
+      }
+    }),
+  );
   return manifest;
 }
 

@@ -1,10 +1,12 @@
 import { isMainModule } from "./lib/is-main-module.mjs";
-import { syncArtBarrels, syncAssets, syncGearArt } from "./sync-art-barrels.mjs";
+import { syncArtBarrels, syncGearArt } from "./sync-art-barrels.mjs";
 import { syncVersionMetadata } from "./sync-version-metadata.mjs";
 
 export async function syncGenerated({ check = false, artOnly = false, gearOnly = false, versionOnly = false } = {}) {
   if (artOnly) {
-    await syncAssets({ check });
+    // Both art barrels: gear-art.ts imports assets.generated.ts, so syncing
+    // one without the other can only diverge them.
+    await syncArtBarrels({ check });
     return;
   }
   if (gearOnly) {
@@ -18,16 +20,16 @@ export async function syncGenerated({ check = false, artOnly = false, gearOnly =
   const results = await Promise.allSettled([syncArtBarrels({ check }), syncVersionMetadata({ check })]);
   const failures = results.filter((result) => result.status === "rejected").map((result) => result.reason);
   if (failures.length > 0) {
-    throw new AggregateError(failures, failures.map(String).join(" "));
+    throw new AggregateError(failures, failures.map(String).join("\n"));
   }
 }
 
 function printHelp() {
   console.log(`Usage: node scripts/sync-generated.mjs [--check] [--art-only|--gear-only|--version-only]
   Default syncs art barrels + version metadata.
-  Fine-grained syncs (npm run sync:art-barrels / sync:gear-art forward here):
-    --art-only      Sync assets.generated.ts only
-    --gear-only     Sync gear-art.ts only
+  Fine-grained syncs (npm run sync:art / sync:gear-art forward here):
+    --art-only      Sync both art barrels (assets.generated.ts + gear-art.ts)
+    --gear-only     Sync gear-art.ts only (refuses stale assets.generated.ts)
     --version-only  Sync metadata.generated.ts only`);
 }
 

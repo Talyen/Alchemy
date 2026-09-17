@@ -16,66 +16,100 @@ import { pickRandomUnsafe } from "../rng";
 
 const musicBase = audioUrl(MUSIC_BASE_PATH);
 
-const MUSIC_CONFIG = {
-  TRACKS: {
-    [MUSIC_KEYS.MENU]: ["Menu 1.mp3", "Menu 2.mp3", "Menu 3.mp3", "Menu 4.mp3"],
-    [MUSIC_KEYS.BATTLE]: ["Battle 1.mp3", "Battle 2.mp3", "Battle 3.mp3", "Battle 4.mp3", "Battle 5.mp3"],
-  },
-  VOLUME_MIN: 0,
-} as const;
-
-interface BossMusicRow {
-  bossId: string;
-  tracks: readonly string[];
+interface MusicCatalogEntry {
+  files: readonly string[];
+  bossId?: string;
   skipSeconds?: number;
+  isBoss: boolean;
 }
 
-const BOSS_MUSIC = {
-  [MUSIC_KEYS.BOSS_FORGE_GOLEM]: { bossId: "forge-golem", tracks: ["The Forge Golem.mp3"] },
-  [MUSIC_KEYS.BOSS_FROSTWARDEN]: { bossId: "frostwarden", tracks: ["The Frostwarden.mp3"] },
-  [MUSIC_KEYS.BOSS_BLIGHT_TREANT]: { bossId: "blight-treant", tracks: ["The Blight Treant.mp3"] },
-  [MUSIC_KEYS.BOSS_IRON_BEAR]: { bossId: "iron-bear", tracks: ["The Iron Bear.mp3"], skipSeconds: 6 },
-} satisfies Record<string, BossMusicRow>;
+/**
+ * Single catalog for every playable track. Menu/battle entries list rotation
+ * files; boss entries list one file each. `getBossMusicKey()` derives from the
+ * same table so boss id, files, and volume treatment cannot drift apart.
+ */
+const MUSIC_CATALOG: Record<string, MusicCatalogEntry> = {
+  [MUSIC_KEYS.MENU]: { files: ["Menu 1.mp3", "Menu 2.mp3", "Menu 3.mp3", "Menu 4.mp3"], isBoss: false },
+  [MUSIC_KEYS.BATTLE]: {
+    files: ["Battle 1.mp3", "Battle 2.mp3", "Battle 3.mp3", "Battle 4.mp3", "Battle 5.mp3"],
+    isBoss: false,
+  },
+  [MUSIC_KEYS.BOSS_FORGE_GOLEM]: { files: ["The Forge Golem.mp3"], bossId: "forge-golem", isBoss: true },
+  [MUSIC_KEYS.BOSS_FROSTWARDEN]: { files: ["The Frostwarden.mp3"], bossId: "frostwarden", isBoss: true },
+  [MUSIC_KEYS.BOSS_BLIGHT_TREANT]: { files: ["The Blight Treant.mp3"], bossId: "blight-treant", isBoss: true },
+  [MUSIC_KEYS.BOSS_IRON_BEAR]: {
+    files: ["The Iron Bear.mp3"],
+    bossId: "iron-bear",
+    skipSeconds: 6,
+    isBoss: true,
+  },
+};
 
-type BossMusicEntry = [key: string, boss: BossMusicRow];
-
-const BOSS_MUSIC_ENTRIES = Object.entries(BOSS_MUSIC) as BossMusicEntry[];
-
-const BOSS_MUSIC_KEYS: ReadonlySet<string> = new Set(BOSS_MUSIC_ENTRIES.map(([key]) => key));
+const BOSS_ID_TO_KEY: ReadonlyMap<string, string> = new Map(
+  Object.entries(MUSIC_CATALOG).flatMap(([key, entry]) => (entry.bossId ? [[entry.bossId, key] as const] : [])),
+);
 
 export function allRegisteredMusicFiles(): string[] {
-  return [...Object.values(MUSIC_CONFIG.TRACKS).flat(), ...BOSS_MUSIC_ENTRIES.flatMap(([, boss]) => boss.tracks)];
-}
-
-function bossMusic(key: string): BossMusicRow | undefined {
-  return BOSS_MUSIC[key as keyof typeof BOSS_MUSIC];
+  return Object.values(MUSIC_CATALOG).flatMap((entry) => entry.files);
 }
 
 export function getBossMusicKey(bossId: string): string | undefined {
-  return BOSS_MUSIC_ENTRIES.find(([, boss]) => boss.bossId === bossId)?.[0];
+  return BOSS_ID_TO_KEY.get(bossId);
 }
 
-const musicCache = new Map<string, HTMLAudioElement>();
-const musicElementKeys = new WeakMap<HTMLAudioElement, string>();
-const musicElementFadeGains = new WeakMap<HTMLAudioElement, number>();
+interface MusicTrackRecord {
+  element: HTMLAudioElement;
+  fadeGain: number;
+}
+
+/**
+ * Live elements by music key. This map is the only owner of element identity
+ * and fade progress; `audioState.currentMusic` points at one of these
+ * elements (or a foreign test double) but never duplicates the bookkeeping.
+ */
+const musicTracks = new Map<string, MusicTrackRecord>();
+
+function keyForElement(el: HTMLAudioElement): string | null {
+  for (const [key, record] of musicTracks) {
+    if (record.element === el) return key;
+  }
+  return audioState.currentMusic === el ? audioState.currentMusicKey : null;
+}
 
 export function invalidateCacheForKey(key: string): void {
-  const cached = musicCache.get(key);
-  if (cached) {
-    cached.pause();
-    cached.currentTime = 0;
-    musicElementKeys.delete(cached);
-    musicElementFadeGains.delete(cached);
+  const record = musicTracks.get(key);
+  if (record) {
+    record.element.pause();
+    record.element.currentTime = 0;
   }
-  musicCache.delete(key);
+  musicTracks.delete(key);
+  if (audioState.currentMusicKey === key) {
+    audioState.currentMusic = null;
+    audioState.currentMusicKey = null;
+  }
+}
+
+/** Test-only reset: drops cached elements, transitions, preview, and current pointers. Volumes and mute are owned by the test. */
+export function resetMusicRuntimeForTests(): void {
+  musicTransitionToken += 1;
+  cancelMusicTransition();
+  bossPreviewKey = null;
+  for (const record of musicTracks.values()) {
+    try {
+      record.element.pause();
+    } catch {}
+  }
+  musicTracks.clear();
+  audioState.currentMusic = null;
+  audioState.currentMusicKey = null;
 }
 
 export function pauseAllMusic() {
   musicTransitionToken += 1;
   cancelMusicTransition();
-  for (const el of musicCache.values()) {
-    el.muted = true;
-    el.pause();
+  for (const record of musicTracks.values()) {
+    record.element.muted = true;
+    record.element.pause();
   }
   if (audioState.currentMusic) {
     audioState.currentMusic.muted = true;
@@ -85,6 +119,10 @@ export function pauseAllMusic() {
 
 let musicTransitionToken = 0;
 let musicTransitionTimer: ReturnType<typeof setInterval> | null = null;
+// Active bestiary preview key. Cleared by any screen-driven playMusic call so
+// leaving the collection (which owns its music via useAppAudioEffects) cannot
+// leave a stale preview that later restores menu music without a preview.
+let bossPreviewKey: string | null = null;
 
 function cancelMusicTransition(): void {
   if (musicTransitionTimer === null) return;
@@ -139,15 +177,39 @@ function rampVolume({
   musicTransitionTimer = timer;
 }
 
-export function applyMusicVolume(
-  el: HTMLAudioElement,
-  key: string | null = musicElementKeys.get(el) ?? audioState.currentMusicKey,
-  fadeProgress?: number,
-) {
-  if (fadeProgress !== undefined) musicElementFadeGains.set(el, clamp01(fadeProgress));
-  const fadeGain = clamp01(fadeProgress ?? musicElementFadeGains.get(el) ?? 1);
-  const boost = key && BOSS_MUSIC_KEYS.has(key) ? MUSIC_BOSS_VOLUME_BOOST : 1;
-  el.volume = clamp01(audioState.musicVolume * audioState.masterVolume * MUSIC_MASTER_GAIN * fadeGain * boost);
+/**
+ * Pure volume curve. Boss tracks get the shared boost before the clamp, so at
+ * full volume both menu and boss saturate at 1.0 and the boost only separates
+ * them at lower settings. Kept as-is for compatibility; covered by tests.
+ */
+export function computeMusicVolume({
+  musicVolume,
+  masterVolume,
+  fadeGain = 1,
+  isBoss = false,
+}: {
+  musicVolume: number;
+  masterVolume: number;
+  fadeGain?: number;
+  isBoss?: boolean;
+}): number {
+  const boost = isBoss ? MUSIC_BOSS_VOLUME_BOOST : 1;
+  return clamp01(musicVolume * masterVolume * MUSIC_MASTER_GAIN * clamp01(fadeGain) * boost);
+}
+
+export function applyMusicVolume(el: HTMLAudioElement, key: string | null = keyForElement(el), fadeProgress?: number) {
+  const record = key !== null ? musicTracks.get(key) : undefined;
+  const owned = record?.element === el;
+  if (owned && fadeProgress !== undefined) {
+    record.fadeGain = clamp01(fadeProgress);
+  }
+  const fadeGain = fadeProgress !== undefined ? clamp01(fadeProgress) : owned ? record.fadeGain : 1;
+  el.volume = computeMusicVolume({
+    musicVolume: audioState.musicVolume,
+    masterVolume: audioState.masterVolume,
+    fadeGain,
+    isBoss: key !== null && (MUSIC_CATALOG[key]?.isBoss ?? false),
+  });
 }
 
 export function isMusicPaused(): boolean {
@@ -160,35 +222,34 @@ function replaceCurrentTrack(key: string, fadeProgress: number): HTMLAudioElemen
     audioState.currentMusic = null;
   }
 
-  const cached = musicCache.get(key);
+  const cached = musicTracks.get(key);
   if (cached) {
-    applyMusicVolume(cached, key, fadeProgress);
-    cached.muted = audioState.muted;
-    playElement(cached);
-    audioState.currentMusic = cached;
-    return cached;
+    applyMusicVolume(cached.element, key, fadeProgress);
+    cached.element.muted = audioState.muted;
+    playElement(cached.element);
+    audioState.currentMusic = cached.element;
+    return cached.element;
   }
 
-  const boss = bossMusic(key);
-  const track = pickRandomUnsafe(MUSIC_CONFIG.TRACKS[key as keyof typeof MUSIC_CONFIG.TRACKS] ?? boss?.tracks ?? []);
+  const catalog = MUSIC_CATALOG[key];
+  const track = pickRandomUnsafe(catalog?.files ?? []);
   if (!track) return undefined;
 
   const el = new Audio(musicBase + track);
-  musicElementKeys.set(el, key);
   el.loop = true;
+  musicTracks.set(key, { element: el, fadeGain: clamp01(fadeProgress) });
   applyMusicVolume(el, key, fadeProgress);
   el.muted = audioState.muted;
-  if (boss?.skipSeconds) {
-    el.currentTime = boss.skipSeconds;
+  if (catalog?.skipSeconds) {
+    el.currentTime = catalog.skipSeconds;
   }
   playElement(el);
-  musicCache.set(key, el);
   audioState.currentMusic = el;
   return el;
 }
 
 function startTrack(key: string, transitionToken: number) {
-  const el = replaceCurrentTrack(key, MUSIC_CONFIG.VOLUME_MIN);
+  const el = replaceCurrentTrack(key, 0);
   if (!el) return;
 
   rampVolume({
@@ -204,6 +265,7 @@ function startTrack(key: string, transitionToken: number) {
 }
 
 export function playMusicImmediate(key: string) {
+  bossPreviewKey = null;
   musicTransitionToken += 1;
   cancelMusicTransition();
   audioState.currentMusicKey = key;
@@ -211,8 +273,9 @@ export function playMusicImmediate(key: string) {
 }
 
 function fadeOutAndStartTrack(oldTrack: HTMLAudioElement, newKey: string, transitionToken: number) {
-  const oldKey = musicElementKeys.get(oldTrack) ?? audioState.currentMusicKey;
-  const startFadeGain = musicElementFadeGains.get(oldTrack) ?? 1;
+  const oldKey = keyForElement(oldTrack);
+  const oldRecord = oldKey !== null ? musicTracks.get(oldKey) : undefined;
+  const startFadeGain = oldRecord?.element === oldTrack ? oldRecord.fadeGain : 1;
 
   rampVolume({
     transitionToken,
@@ -231,6 +294,9 @@ function fadeOutAndStartTrack(oldTrack: HTMLAudioElement, newKey: string, transi
 }
 
 export function playMusic(key: string) {
+  // Screen-driven switches own the music; a preview only survives until the
+  // next explicit switch. previewBossMusic re-sets the key after calling.
+  bossPreviewKey = null;
   if (key === audioState.currentMusicKey) {
     if (audioState.currentMusic?.paused) {
       playElement(audioState.currentMusic);
@@ -248,4 +314,23 @@ export function playMusic(key: string) {
   } else {
     startTrack(key, transitionToken);
   }
+}
+
+/**
+ * Bestiary boss preview. CollectionScreen is the only preview caller; the
+ * screen-driven switch in `useAppAudioEffects` owns everything else. The
+ * module dedupes repeats and remembers whether a preview is active, so tab
+ * and page changes restore menu music exactly when a preview was playing.
+ * playMusic() clears the preview, so the key is set after the switch.
+ */
+export function previewBossMusic(key: string): void {
+  if (bossPreviewKey === key) return;
+  playMusic(key);
+  bossPreviewKey = key;
+}
+
+export function endBossPreview(): void {
+  if (bossPreviewKey === null) return;
+  bossPreviewKey = null;
+  playMusic(MUSIC_KEYS.MENU);
 }

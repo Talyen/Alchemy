@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getBossMusicKey, playMusic } from "@/lib/audio";
-import { MUSIC_KEYS } from "@/lib/game-constants";
+import { endBossPreview, getBossMusicKey, previewBossMusic } from "@/lib/audio";
 import { useControlledPagination } from "../../shared/ui/use-pagination";
 import { useAdaptiveGrid } from "../../shared/ui/adaptive-grid";
 import { GridMeasurement } from "../../shared/ui/grid-measurement";
@@ -54,12 +53,9 @@ export function CollectionScreen({
     maxColumns,
   );
   const returnFocusRef = useRef<HTMLElement | null>(null);
-  const previewMusicKey = useRef<string | undefined>(undefined);
 
   function restoreMenuMusic() {
-    if (!previewMusicKey.current) return;
-    previewMusicKey.current = undefined;
-    playMusic(MUSIC_KEYS.MENU);
+    endBossPreview();
   }
 
   function handlePageChange(page: number) {
@@ -94,9 +90,8 @@ export function CollectionScreen({
         setInspection({ key: inspectionKey, entry: enemy });
       }
       const musicKey = getBossMusicKey(enemyId);
-      if (!musicKey || musicKey === previewMusicKey.current) return;
-      previewMusicKey.current = musicKey;
-      playMusic(musicKey);
+      if (!musicKey) return;
+      previewBossMusic(musicKey);
     },
     [collectionTab, encounteredEnemyIds, inspectionKey],
   );

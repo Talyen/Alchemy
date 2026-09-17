@@ -170,13 +170,25 @@ describe("art barrel synchronization", () => {
     expect(await readFile(gearBarrel, "utf8")).toBe(gear);
   });
 
-  it.each([
-    { name: "assets", sync: syncAssets, changed: assetBarrel, untouched: gearBarrel, text: "existing gear" },
-    { name: "gear", sync: syncGearArt, changed: gearBarrel, untouched: assetBarrel, text: "existing assets" },
-  ])("writes only the selected $name barrel", async ({ sync, changed, untouched, text }) => {
-    await sync();
-    expect(vi.mocked(writeFile).mock.calls.map(([file]) => file)).toEqual([changed]);
-    expect(await readFile(untouched, "utf8")).toBe(text);
+  it("writes only the assets barrel for the assets entry point", async () => {
+    await syncAssets();
+    expect(vi.mocked(writeFile).mock.calls.map(([file]) => file)).toEqual([assetBarrel]);
+    expect(await readFile(gearBarrel, "utf8")).toBe("existing gear");
+  });
+
+  it("writes only the gear barrel once the assets barrel is current", async () => {
+    await syncAssets();
+    const currentAssets = await readFile(assetBarrel, "utf8");
+    vi.mocked(writeFile).mockClear();
+    await syncGearArt();
+    expect(vi.mocked(writeFile).mock.calls.map(([file]) => file)).toEqual([gearBarrel]);
+    expect(await readFile(assetBarrel, "utf8")).toBe(currentAssets);
+  });
+
+  it("refuses a gear-only sync against a stale assets barrel without writing", async () => {
+    const staleBarrel = path.join("src", "lib", "game-data", "assets.generated.ts");
+    await expect(syncGearArt()).rejects.toThrow(`Gear art sync requires a current ${staleBarrel};`);
+    await expectPreserved();
   });
 
   it.each([syncAssets, syncGearArt, syncArtBarrels])("validates all inputs for every entry point", async (sync) => {

@@ -7,12 +7,17 @@ import { promisify } from "node:util";
 // on system installation. We use it to normalize volume and convert WAVs to OGG.
 import ffmpegPath from "ffmpeg-static";
 
-import { curatedSoundFiles, generatedSoundAssets, validateSoundAssetRegistry } from "./assets/sound-assets.mjs";
+import {
+  curatedSoundFiles,
+  generatedSoundAssets,
+  mp3FallbackName,
+  soundEntryOwner,
+  validateSoundAssetRegistry,
+} from "./assets/sound-assets.mjs";
 import {
   commitManifest,
   isOutputFresh,
   processFreshEntry,
-  processManifestEntries,
   resolveSourceHash,
   withOutputHash,
 } from "./lib/asset-manifest-cache.mjs";
@@ -20,6 +25,7 @@ import {
   ASSET_SCHEMA_VERSION,
   CURATED_SOUND_SETTINGS,
   LOUDNORM_FILTER,
+  MANAGED_DIRS,
   MANIFEST_BASENAME,
   MP3_FALLBACK_SETTINGS,
   SOUND_ENTRY_OWNERS,
@@ -27,7 +33,8 @@ import {
   VORBIS_QUALITY,
   soundTransformSettings,
 } from "./lib/asset-constants.mjs";
-import { failedOptimizeResult, targetErrorHandler } from "./lib/process-helpers.mjs";
+import { runManifestPipeline } from "./lib/asset-pipeline-runner.mjs";
+import { failedMessagesResult } from "./lib/process-helpers.mjs";
 import { runPipelineScript } from "./lib/script-run.mjs";
 import { mapPool } from "./lib/map-pool.mjs";
 import { resolveRootDir } from "./lib/sync-generated-helpers.mjs";
@@ -36,7 +43,7 @@ const execFileAsync = promisify(execFile);
 
 const rootDir = resolveRootDir(import.meta.url);
 const sourceDir = path.join(rootDir, "Raw Assets", "Sound Effects");
-const outputDir = path.join(rootDir, "public", "sounds");
+const outputDir = path.join(rootDir, MANAGED_DIRS.sounds.dir);
 const manifestPath = path.join(outputDir, MANIFEST_BASENAME);
 
 const SCHEMA_VERSION = ASSET_SCHEMA_VERSION;
@@ -87,7 +94,9 @@ async function convertSound(sourcePath, outputPath, settings) {
 }
 
 export async function optimizeSounds({ check = false } = {}) {
-  if (!check && !ffmpegPath) {
+  if (!ffmpegPath) {
+    // Report a missing encoder distinctly in check mode too: without ffmpeg a
+    // stale MP3 would otherwise masquerade as content staleness.
     const msg = "ffmpeg-static binary not found. Run: npm install";
     console.error(msg);
     return { ok: false, error: msg };
@@ -96,18 +105,27 @@ export async function optimizeSounds({ check = false } = {}) {
   if (!check) await mkdir(outputDir, { recursive: true });
   await validateSoundAssetRegistry({ sourceDir });
 
-  const { previousManifest, nextManifest, results, failed } = await processManifestEntries({
+  const pipeline = await runManifestPipeline({
     entries: generatedSoundAssets,
     manifestPath,
+    outputDir,
+    manifestBasename: MANIFEST_BASENAME,
+    label: "sound file (ogg phase)",
     concurrency: TRANSFORM_CONCURRENCY,
     processEntry: (asset, storedEntry) => optimizeSound(asset, storedEntry, check),
-    handleError: targetErrorHandler,
+    check,
+    skipLabel: "sound fallbacks, manifest write, and orphan sweep",
+    commit: false,
   });
 
-  console.log(`Processed ${results.length} sounds.`);
-  if (failed) {
-    return failedOptimizeResult(results, "sound fallbacks, manifest write, and orphan sweep");
+  // Sounds publishes a complete manifest (OGGs + curated + MP3s) below, so
+  // hold publication here and reuse only the phase-1 freshness state.
+  if (!pipeline.ok) {
+    console.log(`Processed ${pipeline.results.length} sounds.`);
+    return pipeline;
   }
+  const { previousManifest, nextManifest, results } = pipeline;
+  console.log(`Processed ${results.length} sounds.`);
   // Owner tags the OGG source (generated transform vs curated commit). MP3s are
   // always generated artifacts; their owner mirrors their OGG source. MP3 hashes
   // derive from the committed OGG bytes (transitively the raw source).
@@ -117,8 +135,7 @@ export async function optimizeSounds({ check = false } = {}) {
   );
   const { mp3Entries, curatedOggEntries, mp3Failures } = await ensureMp3Fallbacks(previousManifest, managedOggs, check);
   if (mp3Failures.length > 0) {
-    console.warn("Skipping sound manifest write and orphan sweep because MP3 fallback conversion failed.");
-    return { ok: false, error: mp3Failures.join(" ") };
+    return failedMessagesResult(mp3Failures, "sound manifest write and orphan sweep");
   }
   const completeManifest = { ...generatedEntries, ...curatedOggEntries, ...mp3Entries };
   await commitManifest(manifestPath, completeManifest, {
@@ -141,12 +158,12 @@ async function ensureMp3Fallbacks(previousManifest, managedOggs, check) {
   await mapPool(oggs, TRANSFORM_CONCURRENCY, async (ogg) => {
     try {
       const oggPath = path.join(outputDir, ogg);
-      const mp3Name = ogg.replace(/\.ogg$/i, ".mp3");
+      const mp3Name = mp3FallbackName(ogg);
       const mp3Path = path.join(outputDir, mp3Name);
       const stored = previousManifest[mp3Name];
       if (!managedOggs.has(ogg) && !files.has(ogg)) throw new Error(`Missing curated sound: ${ogg}`);
       const sourceEntry = await resolveSourceHash(oggPath, MP3_FALLBACK_SETTINGS, SCHEMA_VERSION);
-      const owner = managedOggs.has(ogg) ? SOUND_ENTRY_OWNERS.generated : SOUND_ENTRY_OWNERS.curated;
+      const owner = soundEntryOwner(ogg, managedOggs);
       if (!managedOggs.has(ogg)) {
         const storedOgg = previousManifest[ogg];
         const oggEntry = await resolveSourceHash(oggPath, CURATED_SOUND_SETTINGS, SCHEMA_VERSION);
@@ -154,7 +171,7 @@ async function ensureMp3Fallbacks(previousManifest, managedOggs, check) {
         if (check && !oggFresh) throw new Error(`Stale curated sound: ${oggPath}`);
         curatedOggEntries[ogg] = {
           ...(oggFresh ? storedOgg : await withOutputHash(oggEntry, oggPath)),
-          owner: SOUND_ENTRY_OWNERS.curated,
+          owner,
         };
       }
 

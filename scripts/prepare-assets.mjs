@@ -35,7 +35,7 @@ export async function prepareAssets() {
   }
 
   if (failures.length > 0) {
-    throw new AggregateError(failures, failures.map((error) => error.message).join(" "));
+    throw new AggregateError(failures, failures.map((error) => error.message).join("\n"));
   }
 }
 

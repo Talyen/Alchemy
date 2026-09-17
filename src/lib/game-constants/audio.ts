@@ -26,7 +26,22 @@ export const SFX_COOLDOWN_MS = 80;
 export const MUSIC_BOSS_VOLUME_BOOST = 2;
 export const MUSIC_FADE_TICK_MS = 30;
 
+// Battle companion id -> summon card id for attack sounds. Covers every
+// companionLibrary id by the `${id}-companion` convention; the registry test
+// pins both sides so new companions get a conscious sound decision.
 export const COMPANION_SOUND_CARD_IDS: Record<string, string> = {
   wolf: "wolf-companion",
   "lizard-scout": "lizard-scout-companion",
+  "frost-whelp": "frost-whelp-companion",
+  bear: "bear-companion",
+  panther: "panther-companion",
+  phoenix: "phoenix-companion",
+  skeleton: "skeleton-companion",
+  pixie: "pixie-companion",
+  "mana-moth": "mana-moth-companion",
+  "will-o-wisp": "will-o-wisp-companion",
+  "golden-retriever": "golden-retriever-companion",
+  "shield-scarab": "shield-scarab-companion",
+  "library-owl": "library-owl-companion",
+  fox: "fox-companion",
 };

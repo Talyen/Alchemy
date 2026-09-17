@@ -37,7 +37,7 @@ export async function runAllOptimizePipelines(options) {
   if (failures.length > 0) {
     throw new AggregateError(
       failures,
-      `Asset optimization failed: ${failures.map((error) => error.message).join(" ")}`,
+      `Asset optimization failed: ${failures.map((error) => error.message).join("\n")}`,
     );
   }
   return results.map((result) => (result.status === "fulfilled" ? result.value : undefined));

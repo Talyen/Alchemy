@@ -3,12 +3,15 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { allGameArt, essentialGameArt } from "@/lib/game-data";
 import { gearArtByDefinitionId } from "@/lib/game-data/gear-art";
-import { QUALITY, WIDTH } from "../../scripts/lib/asset-constants.mjs";
+import { ART_PRESETS, GEAR_SLOT_IDS, QUALITY, WIDTH } from "../../scripts/lib/asset-constants.mjs";
 import { staticAssets } from "../../scripts/assets/asset-manifest.mjs";
 import { readText, repoRoot } from "./helpers";
 
 describe("asset manifest consistency", () => {
   it("uses only frozen WIDTH/QUALITY presets (no magic literals)", () => {
+    // WIDTH/QUALITY are pure views over the single ART_PRESETS table.
+    expect(new Set(Object.keys(WIDTH))).toEqual(new Set(Object.keys(ART_PRESETS)));
+    expect(new Set(Object.keys(QUALITY))).toEqual(new Set(Object.keys(ART_PRESETS)));
     const allowedWidths = new Set(Object.values(WIDTH));
     const allowedQualities = new Set(Object.values(QUALITY));
     for (const entry of staticAssets) {
@@ -43,6 +46,15 @@ describe("asset manifest consistency", () => {
   it("has no duplicate targets", () => {
     const targets = staticAssets.map((e) => e.target);
     expect(new Set(targets).size).toBe(targets.length);
+  });
+
+  it("keeps pipeline slot ids and runtime slot art in agreement", () => {
+    for (const slotId of GEAR_SLOT_IDS) {
+      expect(
+        gearArtByDefinitionId[`slot-${slotId}`],
+        `missing runtime art for pipeline slot "${slotId}" (add the slot background or update GEAR_SLOT_IDS)`,
+      ).toBeTruthy();
+    }
   });
 });
 

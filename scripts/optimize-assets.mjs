@@ -5,22 +5,24 @@ import path from "node:path";
 import sharp from "sharp";
 
 import { staticAssets, validateAssetRegistry } from "./assets/asset-manifest.mjs";
-import { commitManifest, processFreshEntry, processManifestEntries } from "./lib/asset-manifest-cache.mjs";
+import { processFreshEntry } from "./lib/asset-manifest-cache.mjs";
 import {
   ART_TRANSFORM_CONCURRENCY,
   ASSET_SCHEMA_VERSION,
   GEAR_SLOT_IDS,
+  MANAGED_DIRS,
   MANIFEST_BASENAME,
   SHARP_DEFAULTS,
   artPreset,
 } from "./lib/asset-constants.mjs";
-import { failedOptimizeResult, targetErrorHandler } from "./lib/process-helpers.mjs";
+import { runManifestPipeline } from "./lib/asset-pipeline-runner.mjs";
+import { GEAR_FILE_PATTERN, SLOT_BACKGROUND_PATTERN, toGearTarget } from "./lib/gear-filenames.mjs";
 import { runPipelineScript } from "./lib/script-run.mjs";
 import { getOptimizedManifestPath, resolveRootDir } from "./lib/sync-generated-helpers.mjs";
 
 const rootDir = resolveRootDir(import.meta.url);
 const sourceDir = path.join(rootDir, "Raw Assets");
-const outputDir = path.join(rootDir, "src", "assets", "optimized");
+const outputDir = path.join(rootDir, MANAGED_DIRS.art.dir);
 const manifestPath = getOptimizedManifestPath(rootDir);
 
 const SCHEMA_VERSION = ASSET_SCHEMA_VERSION;
@@ -32,14 +34,6 @@ const gearAssetQuality = gearPreset.quality;
 
 /** OS metadata files are never authoring sources. */
 const IGNORED_SOURCE_FILES = new Set(["thumbs.db", "desktop.ini", ".ds_store"]);
-
-function slugifyGearName(name) {
-  return name
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
 
 async function discoverFiles({ dir, pattern, validate }) {
   let entries;
@@ -79,7 +73,7 @@ async function discoverFiles({ dir, pattern, validate }) {
 async function discoverGearAssets() {
   return discoverFiles({
     dir: path.join(sourceDir, "Gear"),
-    pattern: /^(.+?)\s-\s(Basic|Astral)\.(jpe?g|png)$/i,
+    pattern: GEAR_FILE_PATTERN,
     validate: {
       skip: (name) => name.toLowerCase().includes("placeholder"),
       malformed: (name) => `[gear] Malformed gear file: ${name} (expected "{Name} - {Basic|Astral}.{jpeg|jpg|png}")`,
@@ -87,7 +81,7 @@ async function discoverGearAssets() {
         const [, displayName, rarity] = match;
         return {
           source: `Gear/${fileName}`,
-          target: `gear-${slugifyGearName(displayName)}-${rarity.toLowerCase()}.webp`,
+          target: toGearTarget(displayName, rarity),
           width: gearAssetWidth,
           quality: gearAssetQuality,
         };
@@ -100,7 +94,7 @@ async function discoverGearSlotBackgrounds() {
   const foundSlotIds = new Set();
   const discovered = await discoverFiles({
     dir: path.join(sourceDir, "Gear", "Gear Slot Backgrounds"),
-    pattern: /^(.+?)\sSlot\.(jpe?g|png)$/i,
+    pattern: SLOT_BACKGROUND_PATTERN,
     validate: {
       malformed: (name) =>
         `[gear-slot] Malformed slot background file: ${name} (expected "{Slot} Slot.{jpeg|jpg|png}")`,
@@ -147,6 +141,7 @@ function applyArtTransform(image, settings) {
 }
 
 async function validateTransparency(filename, label) {
+  // metadata() reads headers only (cheap); stats() is the single full decode.
   const image = sharp(filename);
   const { hasAlpha } = await image.metadata();
   if (hasAlpha) {
@@ -190,6 +185,10 @@ async function optimizeAsset(asset, storedEntry, check) {
     },
     { check },
   );
+  // Fresh-hit output re-validation is intentional tamper-evidence (pinned by
+  // art-transparency.test.ts): committed outputs are binary blobs reviewers
+  // cannot eyeball, so a corrupted output with a matching manifest hash must
+  // still fail rather than ship broken transparency silently.
   if (fresh && asset.requiresTransparency) await validateTransparency(outputPath, `Prepared ${asset.target}`);
   return { message: `${asset.target} ${fresh ? "already up to date" : "optimized"}`, entry };
 }
@@ -202,27 +201,21 @@ export async function optimizeAssets({ check = false } = {}) {
 
   if (!check) await mkdir(outputDir, { recursive: true });
 
-  const { results, nextManifest, failed } = await processManifestEntries({
+  const result = await runManifestPipeline({
     entries: allAssets,
     manifestPath,
-    concurrency: TRANSFORM_CONCURRENCY,
-    processEntry: (asset, storedEntry) => optimizeAsset(asset, storedEntry, check),
-    handleError: targetErrorHandler,
-  });
-
-  if (failed) {
-    return failedOptimizeResult(results, "art manifest write and orphan sweep");
-  }
-
-  await commitManifest(manifestPath, nextManifest, {
     outputDir,
-    check,
     manifestBasename: MANIFEST_BASENAME,
     label: "optimized asset",
+    concurrency: TRANSFORM_CONCURRENCY,
+    processEntry: (asset, storedEntry) => optimizeAsset(asset, storedEntry, check),
+    check,
+    skipLabel: "art manifest write and orphan sweep",
   });
+  if (!result.ok) return result;
 
   console.log(
-    `${check ? "Checked" : "Optimized"} ${results.length} art assets (${gearAssets.length} gear, ${gearSlotBackgrounds.length} gear slot backgrounds).`,
+    `${check ? "Checked" : "Optimized"} ${result.results.length} art assets (${gearAssets.length} gear, ${gearSlotBackgrounds.length} gear slot backgrounds).`,
   );
   return { ok: true };
 }

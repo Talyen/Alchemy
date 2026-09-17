@@ -5,14 +5,13 @@ import {
   enemyAttackSounds,
   uiSounds,
 } from "./sound-registry";
-import { batchedPreload, scheduleIdle } from "../preload";
+import { scheduleIdle } from "../preload";
 import { getSoundUrl, resetSoundUrlCache } from "./url";
 
 export { getSoundUrl } from "./url";
 
 const SOUND_PRELOAD_CONFIG = {
   IDLE_CALLBACK_TIMEOUT_MS: 5000,
-  PRELOAD_BATCH_SIZE: 4,
   STALLED_PRELOAD_TIMEOUT_MS: 30_000,
 } as const;
 
@@ -60,6 +59,8 @@ export function preloadSounds(names: readonly string[] | string[]) {
   if (typeof Audio === "undefined") return;
   for (const name of names) {
     if (htmlPreloadStarted.has(name)) continue;
+    // Marked before warming so a failed name never retry-storms; a missed
+    // warmup only costs a cold first play, never correctness.
     htmlPreloadStarted.add(name);
     const el = new Audio();
     el.preload = "auto";
@@ -75,16 +76,17 @@ export function preloadSounds(names: readonly string[] | string[]) {
   }
 }
 
-export function preloadBattleSounds(cardIds: readonly string[], enemyId: string) {
-  const names = new Set<string>([
-    battleEventSounds.drawTransfer,
-    battleEventSounds.enemyHit,
-    battleEventSounds.playerHit,
-    battleEventSounds.blockAbsorb,
-    battleEventSounds.critHit,
-    battleEventSounds.endTurn,
-  ]);
-  for (const cardId of cardIds) {
+export function preloadBattleSounds(
+  handCardIds: readonly string[],
+  enemyId: string,
+  abilityIds: readonly string[] = [],
+) {
+  // The full battle event set is small (~14 files) and opening combat text can
+  // trigger stun/freeze/heal cues, so warm everything rather than a subset.
+  // Enemy abilities play through playCardSound(ability.id), so their card
+  // sounds are warmed alongside the visible hand.
+  const names = new Set<string>(Object.values(battleEventSounds));
+  for (const cardId of [...handCardIds, ...abilityIds]) {
     for (const name of getCardSounds(cardId)) names.add(name);
   }
   for (const name of enemyAttackSounds[enemyId] ?? []) names.add(name);
@@ -101,13 +103,10 @@ export function preloadAllSounds() {
   const pendingNames = allRegisteredSoundFiles().filter((name) => !htmlPreloadStarted.has(name));
   if (pendingNames.length === 0) return;
 
+  // Warming only assigns element sources; the browser fetches asynchronously,
+  // so one idle callback with a plain loop replaces the previous fake-batched
+  // schedule (which awaited synchronous work and throttled nothing).
   scheduleIdle(() => {
-    void batchedPreload(pendingNames, (name) => preloadSound(name), {
-      batchSize: SOUND_PRELOAD_CONFIG.PRELOAD_BATCH_SIZE,
-      yieldBetweenBatches: () =>
-        new Promise<void>((resolve) => {
-          scheduleIdle(resolve, SOUND_PRELOAD_CONFIG.IDLE_CALLBACK_TIMEOUT_MS);
-        }),
-    });
+    preloadSounds(pendingNames);
   }, SOUND_PRELOAD_CONFIG.IDLE_CALLBACK_TIMEOUT_MS);
 }

@@ -6,7 +6,8 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const fixture = vi.hoisted(() => ({ root: "", convert: vi.fn<(args: string[]) => Promise<void>>() }));
 vi.mock("../../scripts/lib/sync-generated-helpers.mjs", () => ({ resolveRootDir: () => fixture.root }));
-vi.mock("../../scripts/assets/sound-assets.mjs", () => ({
+vi.mock("../../scripts/assets/sound-assets.mjs", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../scripts/assets/sound-assets.mjs")>()),
   generatedSoundAssets: [{ source: "raw.ogg", target: "generated.ogg" }],
   curatedSoundFiles: ["curated.ogg"],
   validateSoundAssetRegistry: vi.fn(),

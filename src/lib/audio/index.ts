@@ -1,6 +1,14 @@
 export { preloadAllSounds, preloadBattleSounds } from "./preload";
-export { isNonPlayerAudioHost } from "./host";
-export { getBossMusicKey, invalidateCacheForKey, isMusicPaused, playMusic, playMusicImmediate } from "./music";
+export { hasVisibleWindowArea, isNonPlayerAudioHost } from "./host";
+export {
+  endBossPreview,
+  getBossMusicKey,
+  invalidateCacheForKey,
+  isMusicPaused,
+  playMusic,
+  playMusicImmediate,
+  previewBossMusic,
+} from "./music";
 export {
   playBattleEvent,
   playCardSound,

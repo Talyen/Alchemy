@@ -201,6 +201,19 @@ declare module "*/assets/sound-assets.mjs" {
   export function validateSoundAssetRegistry(options?: { sourceDir?: string }): Promise<void>;
 }
 
+declare module "*/assets/music-assets.mjs" {
+  export const MUSIC_FILE_EXTENSIONS: ReadonlySet<string>;
+  export function validateMusicRegistry(files: string[]): Promise<string[]>;
+}
+
+declare module "*/lib/gear-filenames.mjs" {
+  export const GEAR_FILE_PATTERN: RegExp;
+  export const SLOT_BACKGROUND_PATTERN: RegExp;
+  export function slugifyGearName(name: string): string;
+  export function toGearTarget(displayName: string, rarity: string, extension?: string): string;
+  export function toDefinitionId(target: string): string;
+}
+
 declare module "*/map-pool.mjs" {
   export function mapPool<T, R>(
     items: readonly T[],

@@ -48,14 +48,14 @@ describe("asset pipeline orchestration", () => {
   it("skips synchronization after art failure while retaining other failures", async () => {
     vi.mocked(optimizeAssets).mockRejectedValue("missing art");
     vi.mocked(optimizeMusic).mockRejectedValue("missing music");
-    await expect(prepareAssets()).rejects.toThrow("art: missing art music: missing music");
+    await expect(prepareAssets()).rejects.toThrow("art: missing art\nmusic: missing music");
     expect(syncGenerated).not.toHaveBeenCalled();
   });
 
   it("uses the same named failure reporting for optimization alone", async () => {
     vi.mocked(optimizeSounds).mockRejectedValue(null);
     vi.mocked(optimizeMusic).mockResolvedValue({ ok: false });
-    await expect(runAllOptimizePipelines()).rejects.toThrow("sound: null music: failed");
+    await expect(runAllOptimizePipelines()).rejects.toThrow("sound: null\nmusic: failed");
     expect(syncGenerated).not.toHaveBeenCalled();
   });
 

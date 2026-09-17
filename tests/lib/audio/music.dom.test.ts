@@ -1,25 +1,26 @@
-import { expect, it, beforeEach, vi, afterEach } from "vitest";
+import { expect, it, beforeEach, vi, afterEach, describe } from "vitest";
 import {
   applyMusicVolume,
+  computeMusicVolume,
+  endBossPreview,
   getBossMusicKey,
   invalidateCacheForKey,
   isMusicPaused,
   pauseAllMusic,
   playMusic,
   playMusicImmediate,
+  previewBossMusic,
+  resetMusicRuntimeForTests,
 } from "@/lib/audio/music";
 import { audioState } from "@/lib/audio/state";
 import { MUSIC_KEYS, MUSIC_MASTER_GAIN } from "@/lib/game-constants";
-import { installFakeAudio, resetMusicState, type FakeAudioElement } from "../../helpers/fake-audio";
+import { installFakeAudio, resetAudioForTests, type FakeAudioElement } from "../../helpers/fake-audio";
 
 beforeEach(() => {
   audioState.musicVolume = 0.5;
   audioState.masterVolume = 1;
-  resetMusicState();
+  resetAudioForTests();
   installFakeAudio();
-  invalidateCacheForKey(MUSIC_KEYS.MENU);
-  invalidateCacheForKey(MUSIC_KEYS.BATTLE);
-  invalidateCacheForKey(MUSIC_KEYS.BOSS_FORGE_GOLEM);
 });
 
 afterEach(() => {
@@ -211,4 +212,114 @@ it("does not start playback in a non-player host", () => {
   expect(el?.play).not.toHaveBeenCalled();
   expect(audioState.currentMusic?.paused).toBe(true);
   expect(audioState.currentMusic?.muted).toBe(true);
+});
+
+describe("computeMusicVolume", () => {
+  it("matches the clamped curve including boss saturation at full volume", () => {
+    expect(computeMusicVolume({ musicVolume: 0.5, masterVolume: 1 })).toBe(0.5 * 1 * MUSIC_MASTER_GAIN);
+    expect(computeMusicVolume({ musicVolume: 1, masterVolume: 1, isBoss: true })).toBe(1);
+    expect(computeMusicVolume({ musicVolume: 0.5, masterVolume: 1, isBoss: true })).toBe(
+      0.5 * 1 * MUSIC_MASTER_GAIN * 2,
+    );
+    expect(computeMusicVolume({ musicVolume: 0.5, masterVolume: 1, fadeGain: 0.25, isBoss: true })).toBe(
+      0.5 * 1 * MUSIC_MASTER_GAIN * 0.25 * 2,
+    );
+    expect(computeMusicVolume({ musicVolume: 0, masterVolume: 1 })).toBe(0);
+  });
+});
+
+describe("invalidateCacheForKey current-pointer hygiene", () => {
+  it("clears current pointers when invalidating the playing key", () => {
+    playMusicImmediate(MUSIC_KEYS.BATTLE);
+    const el = audioState.currentMusic!;
+    el.currentTime = 30;
+
+    invalidateCacheForKey(MUSIC_KEYS.BATTLE);
+
+    expect(el.currentTime).toBe(0);
+    expect(el.paused).toBe(true);
+    expect(audioState.currentMusic).toBeNull();
+    expect(audioState.currentMusicKey).toBeNull();
+  });
+
+  it("leaves menu playback alone when invalidating an upcoming battle key", () => {
+    playMusicImmediate(MUSIC_KEYS.MENU);
+    const menu = audioState.currentMusic;
+
+    invalidateCacheForKey(MUSIC_KEYS.BATTLE);
+
+    expect(audioState.currentMusic).toBe(menu);
+    expect(audioState.currentMusicKey).toBe(MUSIC_KEYS.MENU);
+  });
+
+  it("forces a fresh track on the next play of an invalidated key", () => {
+    playMusicImmediate(MUSIC_KEYS.BATTLE);
+    const first = audioState.currentMusic;
+    invalidateCacheForKey(MUSIC_KEYS.BATTLE);
+
+    playMusicImmediate(MUSIC_KEYS.BATTLE);
+
+    expect(audioState.currentMusic).not.toBe(first);
+    expect(audioState.currentMusic?.src).toContain("Music/Battle");
+  });
+});
+
+describe("resetMusicRuntimeForTests", () => {
+  it("drops every cached key including boss tracks", () => {
+    playMusicImmediate(MUSIC_KEYS.BOSS_FROSTWARDEN);
+    const frostwarden = audioState.currentMusic;
+    playMusicImmediate(MUSIC_KEYS.MENU);
+
+    resetMusicRuntimeForTests();
+
+    expect(audioState.currentMusic).toBeNull();
+    expect(audioState.currentMusicKey).toBeNull();
+    playMusicImmediate(MUSIC_KEYS.BOSS_FROSTWARDEN);
+    expect(audioState.currentMusic).not.toBe(frostwarden);
+    expect(audioState.currentMusic?.src).toContain("The Frostwarden.mp3");
+  });
+});
+
+describe("boss preview", () => {
+  it("starts a preview switch and dedupes repeats of the same key", () => {
+    previewBossMusic(MUSIC_KEYS.BOSS_FORGE_GOLEM);
+    const el = audioState.currentMusic;
+    expect(el?.src).toContain("The Forge Golem.mp3");
+
+    previewBossMusic(MUSIC_KEYS.BOSS_FORGE_GOLEM);
+    expect(audioState.currentMusic).toBe(el);
+
+    resetMusicRuntimeForTests();
+  });
+
+  it("endBossPreview without a preview changes nothing", () => {
+    playMusicImmediate(MUSIC_KEYS.MENU);
+    const el = audioState.currentMusic;
+
+    endBossPreview();
+
+    expect(audioState.currentMusic).toBe(el);
+    expect(audioState.currentMusicKey).toBe(MUSIC_KEYS.MENU);
+  });
+
+  it("endBossPreview after a preview returns to menu", () => {
+    previewBossMusic(MUSIC_KEYS.BOSS_FORGE_GOLEM);
+
+    endBossPreview();
+
+    expect(audioState.currentMusicKey).toBe(MUSIC_KEYS.MENU);
+    resetMusicRuntimeForTests();
+  });
+
+  it("screen-driven playMusic clears a stale preview", () => {
+    previewBossMusic(MUSIC_KEYS.BOSS_FORGE_GOLEM);
+    playMusic(MUSIC_KEYS.MENU);
+    expect(audioState.currentMusicKey).toBe(MUSIC_KEYS.MENU);
+
+    // Leaving the collection owns its music via navigation; a later tab
+    // restore must not replay menu music without an active preview.
+    endBossPreview();
+    expect(audioState.currentMusicKey).toBe(MUSIC_KEYS.MENU);
+    resetMusicRuntimeForTests();
+  });
 });
