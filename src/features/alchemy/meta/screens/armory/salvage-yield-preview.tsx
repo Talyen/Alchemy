@@ -1,7 +1,7 @@
 import { CRAFTING_CURRENCY_LIST, type SalvageYield } from "@/lib/gear";
 import { MATERIAL_IDS } from "@/lib/homestead/types";
 import { MaterialPill } from "../../../shared/ui/material-icons";
-import { CurrencyChip } from "./parts/currency-chip";
+import { CurrencyChip } from "../../../shared/ui/currency-chip";
 
 export function SalvageYieldPreview({ salvageYield }: { salvageYield: SalvageYield }) {
   const materials = MATERIAL_IDS.filter((id) => salvageYield.materials[id] > 0);

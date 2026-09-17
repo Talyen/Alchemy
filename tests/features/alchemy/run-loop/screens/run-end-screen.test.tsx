@@ -4,10 +4,12 @@ import userEvent from "@testing-library/user-event";
 import { RunEndScreen } from "@/features/alchemy/run-loop/screens/run-end-screen";
 import { getTalentTreeKeywordIds, keywordDefinitions } from "@/lib/game-data";
 import type { RunObtainedItem } from "@/lib/active-run-session";
-import type { GearInstance } from "@/lib/gear";
+import type { CraftingCurrencyId, GearInstance } from "@/lib/gear";
+import { EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear";
 import { getGearInstanceTitle } from "@/lib/gear";
 
 const emptyMaterials = { wood: 0, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 };
+const emptyCurrencies: Record<CraftingCurrencyId, number> = { ...EMPTY_CRAFTING_CURRENCIES };
 
 function gearItem(
   instanceId: string,
@@ -21,11 +23,13 @@ function renderRunEnd({
   runEndTalentXP = {},
   talentXP = {},
   runEndMaterials = emptyMaterials,
+  runEndCurrencies = emptyCurrencies,
   runEndItems = [],
 }: {
   runEndTalentXP?: Record<string, number>;
   talentXP?: Record<string, number>;
   runEndMaterials?: typeof emptyMaterials;
+  runEndCurrencies?: Record<CraftingCurrencyId, number>;
   runEndItems?: RunObtainedItem[];
 } = {}) {
   return render(
@@ -37,6 +41,7 @@ function renderRunEnd({
       runEndTalentXP={runEndTalentXP}
       talentXP={talentXP}
       runEndMaterials={runEndMaterials}
+      runEndCurrencies={runEndCurrencies}
       runEndItems={runEndItems}
       onContinue={() => {}}
     />,
@@ -154,6 +159,19 @@ describe("RunEndScreen", () => {
   it("hides obtained items when the recap is empty", () => {
     renderRunEnd();
     expect(screen.queryByRole("img")).toBeNull();
+  });
+
+  it("shows salvaged crafting currencies earned during the run", () => {
+    renderRunEnd({ runEndCurrencies: { ...emptyCurrencies, "discordant-dice": 2 } });
+
+    const chips = screen.getAllByTestId("run-end-currency");
+    expect(chips).toHaveLength(1);
+    expect(chips[0]!.getAttribute("data-currency-id")).toBe("discordant-dice");
+  });
+
+  it("hides the currency row when nothing was salvaged", () => {
+    renderRunEnd();
+    expect(screen.queryByTestId("run-end-currency")).toBeNull();
   });
 
   it("shows four obtained item portraits without paging", () => {

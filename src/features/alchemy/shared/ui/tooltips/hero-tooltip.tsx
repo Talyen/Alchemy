@@ -2,7 +2,6 @@ import type { RefObject } from "react";
 import type { CharacterDefinition } from "@/features/alchemy/shared/config/game-data-catalog";
 import { getPlasmaColorPairForCharacter } from "@/features/alchemy/shared/config";
 
-import { renderColoredKeywords } from "../card-description-ui";
 import { KeywordTag } from "../keyword-tag";
 import { PortaledTooltip } from "./portaled-tooltip";
 import { TooltipBody, TooltipHeader, TooltipSubheader } from "./tooltip-panel";
@@ -35,10 +34,6 @@ export function HeroTooltip({
         </TooltipBody>
       ) : (
         <>
-          <TooltipBody>
-            <p>{renderColoredKeywords(character.description)}</p>
-          </TooltipBody>
-
           {character.startingDeck.length > 0 ? (
             <>
               <TooltipSubheader>Starting Deck</TooltipSubheader>
@@ -56,14 +51,14 @@ export function HeroTooltip({
           )}
 
           {character.keywords.length > 0 ? (
-            <div className="mt-2 flex flex-wrap gap-1.5">
+            <div className="mt-2 flex flex-wrap gap-1">
               {character.keywords.map((keyword) => (
                 <KeywordTag key={keyword} keywordId={keyword} pill />
               ))}
             </div>
           ) : (
             <div className="mt-2 flex">
-              <span className="character-keyword-pill-tint inline-flex items-center gap-1 rounded-full px-3.5 py-1.5 text-xs leading-none font-semibold text-amber-100/90">
+              <span className="character-keyword-pill-tint inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs leading-none font-semibold text-amber-100/90">
                 All Keywords
               </span>
             </div>

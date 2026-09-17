@@ -20,7 +20,7 @@ describe("getShineColorsForKeywords", () => {
     expect(colors).toEqual([
       keywordDefinitions.block.shineColors[0],
       keywordDefinitions.armor.shineColors[0],
-      keywordDefinitions.stun.shineColors[0],
+      keywordDefinitions.forge.shineColors[0],
     ]);
   });
 
@@ -34,7 +34,7 @@ describe("getCharacterShineColors", () => {
     expect(getCharacterShineColors("knight")).toEqual([
       keywordDefinitions.block.shineColors[0],
       keywordDefinitions.armor.shineColors[0],
-      keywordDefinitions.stun.shineColors[0],
+      keywordDefinitions.forge.shineColors[0],
     ]);
   });
 

@@ -1,5 +1,8 @@
+import { useState } from "react";
+
+import { cardHoverScaleClass } from "@/features/alchemy/shared/config";
 import { cn, formatLargeAmount } from "@/lib/utils";
-import { GoldPill, HomesteadResourceArtwork } from "./material-icons";
+import { HomesteadResourceArtwork } from "./material-icons";
 
 export function CurrencyAmount({
   amount,
@@ -23,18 +26,59 @@ export function CurrencyAmount({
   );
 }
 
-export function GoldCost({ amount }: { amount: number }) {
+export function GoldCost({
+  amount,
+  affordable = true,
+  className,
+}: {
+  amount: number;
+  affordable?: boolean;
+  className?: string;
+}) {
   return (
-    <span className="flex items-center gap-1 text-base text-yellow-300">
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 text-xl leading-none font-semibold tabular-nums",
+        affordable ? "text-amber-200" : "text-muted-foreground",
+        className,
+      )}
+    >
       <CurrencyAmount amount={amount} />
     </span>
   );
 }
 
-export function GoldDisplay({ gold }: { gold: number }) {
+export function GoldDisplay({
+  gold,
+  testId = "run-gold",
+  className,
+}: {
+  gold: number;
+  testId?: string;
+  className?: string;
+}) {
+  const [previousGold, setPreviousGold] = useState(gold);
+  const [increaseToken, setIncreaseToken] = useState(0);
+  if (gold !== previousGold) {
+    setPreviousGold(gold);
+    if (gold > previousGold) setIncreaseToken((token) => token + 1);
+  }
+
   return (
-    <div data-testid="run-gold">
-      <GoldPill amount={gold} />
+    <div
+      key={increaseToken}
+      className={cn(
+        "flex h-11 shrink-0 items-center gap-1.5 rounded-md px-2 text-xl font-semibold text-amber-200 tabular-nums",
+        cardHoverScaleClass,
+        increaseToken > 0 && "battle-gold-increase",
+        className,
+      )}
+      aria-label={`Gold: ${gold}`}
+      role="img"
+      data-testid={testId}
+    >
+      <HomesteadResourceArtwork resource="gold" size="md" alt="" />
+      <span>{formatLargeAmount(gold)}</span>
     </div>
   );
 }

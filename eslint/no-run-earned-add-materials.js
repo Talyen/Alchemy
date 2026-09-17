@@ -3,6 +3,9 @@ import { repoRelativePosix } from "./filename.js";
 const ALLOWED = new Set([
   // Keep in sync with tests/scripts/eslint-alchemy-plugin.test.ts, which pins
   // the allowed owner. Moving an allowed call site means updating both.
+  // This is the stockpile-grant allowlist; the separate run-earned award-site
+  // list lives in src/features/alchemy/run-loop/run/run-materials.ts
+  // (AWARD_MATERIALS_CALL_SITES, enforced by the run-materials award guard).
   "src/features/alchemy/shared/stores/run-session-write-port.ts",
   "src/features/alchemy/shared/stores/gear-session-command.ts",
   "src/features/alchemy/run-loop/run/run-materials.ts",

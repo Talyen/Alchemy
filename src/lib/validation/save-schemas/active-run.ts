@@ -11,6 +11,7 @@ import { deduplicatedStringArraySchema } from "./validation-utils";
 import {
   CharacterIdSchema,
   ContentSystemIdSchema,
+  CraftingCurrencyInventorySchema,
   EnemyTypeSchema,
   DifficultyIdSchema,
   DestinationArraySchema,
@@ -292,6 +293,7 @@ const ActiveRunDataObjectSchema = z.object({
 
   runTalentXP: TalentXPSchema,
   runMaterialsEarned: MaterialInventorySchema,
+  runCurrenciesEarned: CraftingCurrencyInventorySchema,
   runObtainedItems: RunObtainedItemArraySchema,
   currentScreen: z.enum(ROUTE_SCREEN_VALUES).nullable().catch(null),
   interruptedFlow: InterruptedFlowSchema,

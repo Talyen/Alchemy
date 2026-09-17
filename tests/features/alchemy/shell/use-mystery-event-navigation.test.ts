@@ -58,6 +58,23 @@ describe("createMysteryEventNavigation", () => {
     expect(playUISound).toHaveBeenCalledWith("musicBoxMystery");
   });
 
+  it("records zero materials for gated content systems without awarding", () => {
+    setRunProgress({ contentSystemType: "wildwood" });
+    const before = readRunProfile().materialInventory.wood;
+    const { result } = renderMysteryNav();
+    const choice = {
+      label: "Gather Wood",
+      effects: [{ kind: "gainMaterial" as const, material: "wood" as const, amount: 3 }],
+    };
+
+    act(() => result.current.handleMysteryChoice(choice));
+
+    expect(readRunProfile().materialInventory.wood).toBe(before);
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryChosenChoice?.effects).toEqual([
+      { kind: "gainMaterial", material: "wood", amount: 0 },
+    ]);
+  });
+
   it("plays gold sounds only after the choice commits", () => {
     setRunProgress({ gold: 20 });
     const { result } = renderMysteryNav();

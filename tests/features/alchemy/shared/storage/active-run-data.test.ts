@@ -95,6 +95,14 @@ describe("encodeRunResumeSnapshot", () => {
       wildwoodDraft: null,
       starterDraftChoices: null,
       runMaterialsEarned: { wood: 0, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 },
+      runCurrenciesEarned: {
+        "discordant-dice": 0,
+        "sprig-of-growth": 0,
+        voidstone: 0,
+        "ascension-seal": 0,
+        "severance-maw": 0,
+        "smiths-whetstone": 0,
+      },
       runObtainedItems: [],
     });
   });

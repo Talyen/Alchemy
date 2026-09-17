@@ -13,7 +13,6 @@ import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/share
 import {
   abandonLabyrinthCorruptionVisit,
   setHasActiveBattle as setDraftHasActiveBattle,
-  setRunDeck,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { ROUTE_SCREENS } from "@/lib/routing";
@@ -88,7 +87,6 @@ export function createRunFlowEngine(
     });
   }
   const corruption = createCorruptionFlowHandlers({
-    updateRunDeck: setRunDeck,
     advanceToNextDestination: flowHandlers.advanceToNextDestination,
     returnToCurrentDestination: flowHandlers.returnToCurrentDestination,
     returnToLabyrinthMap,
@@ -133,7 +131,6 @@ export function createRunFlowEngine(
     handleCorruptionExit: corruption.handleCorruptionExit,
     handleMysteryChoice: mystery.handleMysteryChoice,
     handleMysteryChooseCard: mystery.handleMysteryChooseCard,
-    handleMysteryRemoveCard: mystery.handleMysteryRemoveCard,
     // Intentional alias: continuing from a mystery returns to the run flow.
     handleMysteryContinue: flowHandlers.advanceToNextDestination,
     resetRunState,

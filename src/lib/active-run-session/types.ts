@@ -11,7 +11,7 @@ import type {
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { Screen } from "@/lib/routing";
-import type { GearInstance } from "@/lib/gear";
+import type { CraftingCurrencyId, GearInstance } from "@/lib/gear";
 import type { InterruptedFlow, PersistedPendingReward } from "@/lib/validation";
 import type { RunRngState } from "@/lib/rng";
 
@@ -97,6 +97,7 @@ export interface ActiveRunData {
   activeCombat: ActiveCombatData | null;
   runTalentXP: TalentXP;
   runMaterialsEarned: MaterialInventory;
+  runCurrenciesEarned: Record<CraftingCurrencyId, number>;
   runObtainedItems: RunObtainedItem[];
   currentScreen: Screen | null;
   interruptedFlow: InterruptedFlow;

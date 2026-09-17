@@ -12,8 +12,15 @@ const RUN_END_COPY = {
 } as const;
 
 function RunEndScreenRoute({ outcome, commands }: { outcome: keyof typeof RUN_END_COPY; commands: RunEndCommands }) {
-  const { characterId, runEndTalentXP, talentXP, runEndMaterials, runEndItems, runEndLabyrinthFloor } =
-    useRunEndScreenData();
+  const {
+    characterId,
+    runEndTalentXP,
+    talentXP,
+    runEndMaterials,
+    runEndCurrencies,
+    runEndItems,
+    runEndLabyrinthFloor,
+  } = useRunEndScreenData();
   const { title } = RUN_END_COPY[outcome];
   const subtitle =
     outcome === "defeat" && runEndLabyrinthFloor
@@ -28,6 +35,7 @@ function RunEndScreenRoute({ outcome, commands }: { outcome: keyof typeof RUN_EN
       runEndTalentXP={runEndTalentXP}
       talentXP={talentXP}
       runEndMaterials={runEndMaterials}
+      runEndCurrencies={runEndCurrencies}
       runEndItems={runEndItems}
       onContinue={commands.continueFromRunEnd}
     />

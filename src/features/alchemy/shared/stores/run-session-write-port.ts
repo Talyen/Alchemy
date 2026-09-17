@@ -11,7 +11,9 @@
 // - Materials: `runProfile.materialInventory` is the stockpile;
 //   `run.activeRun.runMaterialsEarned` tallies what the live run earned.
 //   `awardMaterialsDuringRun` writes both; `addMaterialsToStockpile` writes the
-//   stockpile only (homestead end-of-run bonuses, meta salvage).
+//   stockpile only (homestead end-of-run bonuses, meta salvage). Salvaged
+//   crafting currencies mirror this via `run.activeRun.runCurrenciesEarned`,
+//   tallied alongside the material grant in `dispatchGearSalvageWithMaterialGrant`.
 // - Talent XP: `run.activeRun.runTalentXP` accrues during the run;
 //   `finalizeRunXP` merges it into `runProfile.talentXP` once at run end.
 import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
@@ -43,6 +45,7 @@ import {
   type TalentEffectManifest,
 } from "@/lib/game-data";
 import { computeGearManifest, flattenGearInventories, type GearEffectManifest } from "@/lib/gear";
+import { addCraftingCurrencies, EMPTY_CRAFTING_CURRENCIES, type CraftingCurrencyId } from "@/lib/gear";
 import { combineTrinketEffectIds, computeTrinketManifest } from "@/lib/trinkets";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
 import { computeRunMaxHealth } from "../run-flow/run-max-health";
@@ -197,8 +200,19 @@ export function addRunMaterialsEarned(draft: GameplayDraft, materials: ProfileMa
   draft.run.activeRun.runMaterialsEarned = addInventory(draft.run.activeRun.runMaterialsEarned, materials);
 }
 
+export function addRunCurrenciesEarned(
+  draft: GameplayDraft,
+  currencies: Partial<Record<CraftingCurrencyId, number>>,
+): void {
+  draft.run.activeRun.runCurrenciesEarned = addCraftingCurrencies(draft.run.activeRun.runCurrenciesEarned, currencies);
+}
+
 export function clearRunMaterialsEarned(draft: GameplayDraft): void {
   draft.run.activeRun.runMaterialsEarned = emptyInventory();
+}
+
+export function clearRunCurrenciesEarned(draft: GameplayDraft): void {
+  draft.run.activeRun.runCurrenciesEarned = { ...EMPTY_CRAFTING_CURRENCIES };
 }
 
 export function cloneRunObtainedItem(item: RunObtainedItem): RunObtainedItem {
@@ -227,11 +241,12 @@ export function initializeFromResumeSnapshot(draft: GameplayDraft, activeRun: Ac
   draft.run.initialized = true;
 }
 
-export function hydrateFromSnapshot(draft: GameplayDraft, snapshot: RunStartSnapshot): void {
+function hydrateFromSnapshot(draft: GameplayDraft, snapshot: RunStartSnapshot): void {
   draft.session.activity = { kind: "idle" };
   Object.assign(draft.run.activeRun, runFieldsFromSnapshot(snapshot), {
     runTalentXP: {},
     runMaterialsEarned: emptyInventory(),
+    runCurrenciesEarned: { ...EMPTY_CRAFTING_CURRENCIES },
     runObtainedItems: [],
   });
 }
@@ -242,7 +257,7 @@ export function readDraftGold(draft: GameplayDraft): number {
   return draft.runProfile.gold;
 }
 
-export function syncBattleGoldFromPurse(draft: GameplayDraft): void {
+function syncBattleGoldFromPurse(draft: GameplayDraft): void {
   if (!draft.battle.hasActiveBattle) return;
   const pending = draft.battle.pendingBattleTransition;
   if (pending && "resultState" in pending) {
@@ -252,7 +267,7 @@ export function syncBattleGoldFromPurse(draft: GameplayDraft): void {
   draft.battle.battleState.gold = draft.runProfile.gold;
 }
 
-export function syncPurseFromBattleGold(draft: GameplayDraft): void {
+function syncPurseFromBattleGold(draft: GameplayDraft): void {
   if (!draft.battle.hasActiveBattle) return;
   draft.runProfile.gold = Math.max(0, draft.battle.battleState.gold);
 }
@@ -310,6 +325,11 @@ export function withDraftWorldBattleRng(draft: GameplayDraft, battleState: Battl
 // ── Battle ───────────────────────────────────────────────────────────────────
 
 function hydrateBattleState(battleState: BattleSnapshot): BattleSnapshot {
+  // Piles are re-hydrated against the card catalog so resumed battles pick up
+  // catalog fixes. `pendingTurnStartEffects` (queued card effects + sourceCard)
+  // is intentionally preserved as saved: those effects were already rolled and
+  // mid-flight when the save was written, so re-hydrating them to the current
+  // catalog would change the outcome of an in-flight turn.
   return {
     ...battleState,
     deck: battleState.deck.map(hydrateCard),
@@ -345,7 +365,9 @@ export function setBattleState(
   draft: GameplayDraft,
   action: BattleSnapshot | ((previous: BattleSnapshot) => BattleSnapshot),
 ): void {
-  setSyncedBattleState(draft, (previous) => battleSnapshot(typeof action === "function" ? action(previous) : action));
+  // setSyncedBattleState already strips runtime-only fields via battleSnapshot;
+  // do not snapshot twice.
+  setSyncedBattleState(draft, action);
   syncPurseFromBattleGold(draft);
 }
 
@@ -439,6 +461,8 @@ export function clearTransientSession(draft: GameplayDraft): void {
 
 export function applyRunStartSnapshot(draft: GameplayDraft, snapshot: RunStartSnapshot): void {
   hydrateFromSnapshot(draft, snapshot);
+  draft.session.runEndMaterials = emptyInventory();
+  draft.session.runEndCurrencies = { ...EMPTY_CRAFTING_CURRENCIES };
   draft.session.runEndTalentXP = {};
   draft.session.runEndItems = [];
   draft.session.runEndLabyrinthFloor = null;
@@ -469,6 +493,13 @@ export function setRunEndMaterials(
   action: FieldUpdate<RunSessionFields["runEndMaterials"]>,
 ): void {
   setSessionField(draft, "runEndMaterials", action);
+}
+
+export function setRunEndCurrencies(
+  draft: GameplayDraft,
+  action: FieldUpdate<RunSessionFields["runEndCurrencies"]>,
+): void {
+  setSessionField(draft, "runEndCurrencies", action);
 }
 
 export function setRunEndItems(draft: GameplayDraft, action: FieldUpdate<RunSessionFields["runEndItems"]>): void {
@@ -564,24 +595,29 @@ function readVisit<K extends keyof RunActivityData>(draft: GameplayDraft, kind: 
   return readActivityData(draft.session.activity, kind);
 }
 
+function setVisitState<K extends keyof RunActivityData>(
+  draft: GameplayDraft,
+  kind: K,
+  action: ActivityUpdate<K>,
+): void {
+  const data = typeof action === "function" ? action(readVisit(draft, kind)) : action;
+  draft.session.activity = { kind, data } as GameplayDraft["session"]["activity"];
+}
+
 export function setShopState(draft: GameplayDraft, action: ActivityUpdate<"shop">): void {
-  const data = typeof action === "function" ? action(readVisit(draft, "shop")) : action;
-  draft.session.activity = { kind: "shop", data };
+  setVisitState(draft, "shop", action);
 }
 
 export function setAlchemistState(draft: GameplayDraft, action: ActivityUpdate<"alchemist">): void {
-  const data = typeof action === "function" ? action(readVisit(draft, "alchemist")) : action;
-  draft.session.activity = { kind: "alchemist", data };
+  setVisitState(draft, "alchemist", action);
 }
 
 export function setTrinketShopState(draft: GameplayDraft, action: ActivityUpdate<"trinket-shop">): void {
-  const data = typeof action === "function" ? action(readVisit(draft, "trinket-shop")) : action;
-  draft.session.activity = { kind: "trinket-shop", data };
+  setVisitState(draft, "trinket-shop", action);
 }
 
 export function setEquipmentShopState(draft: GameplayDraft, action: ActivityUpdate<"equipment-shop">): void {
-  const data = typeof action === "function" ? action(readVisit(draft, "equipment-shop")) : action;
-  draft.session.activity = { kind: "equipment-shop", data };
+  setVisitState(draft, "equipment-shop", action);
 }
 
 export function clearShopOfferings(draft: GameplayDraft): void {
@@ -656,6 +692,7 @@ export function setMysteryPendingRemoval(
   draft: GameplayDraft,
   action: FieldUpdate<HydratedMysteryVisit["mysteryPendingRemoval"]>,
 ): void {
+  // Legacy: only stale-visit clearing and tests write this; no live navigation sets it.
   setMysteryVisitField(draft, "mysteryPendingRemoval", action);
 }
 

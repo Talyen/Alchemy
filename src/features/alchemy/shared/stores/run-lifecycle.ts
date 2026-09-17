@@ -110,7 +110,7 @@ function finalizeRunEndSessionState(
     return [...prev, activeChar];
   });
 
-  const materials = options.awardRunEndMaterials(draft);
+  const homesteadBonus = options.awardRunEndMaterials(draft);
   options.finalizeRunXP(draft);
   setRunEndItems(draft, draft.run.activeRun.runObtainedItems.map(cloneRunObtainedItem));
   if (draft.run.activeRun.contentSystemType === CONTENT_SYSTEMS.LABYRINTH) {
@@ -119,7 +119,7 @@ function finalizeRunEndSessionState(
   }
 
   setHasActiveRun(draft, false);
-  return materials;
+  return homesteadBonus;
 }
 
 export function finalizeRunEndSession(options: {

@@ -31,6 +31,17 @@ export interface ContentNavigationTalentPort {
   talentEffects: Pick<TalentEffectManifest, "startGold">;
 }
 
+export type ShopSessionStateKey = "shopState" | "alchemistState" | "trinketShopState" | "equipmentShopState";
+
+// Single source mapping the shop pricing context's state keys to their run
+// activity visits, so the two vocabularies cannot drift apart.
+const SHOP_VISIT_BY_STATE_KEY = {
+  shopState: "shop",
+  alchemistState: "alchemist",
+  trinketShopState: "trinket-shop",
+  equipmentShopState: "equipment-shop",
+} as const satisfies Record<ShopSessionStateKey, "shop" | "alchemist" | "trinket-shop" | "equipment-shop">;
+
 function selectContentNavigationFields(state: GameplayState): ContentNavigationRunPort {
   const r = state.run.activeRun;
   return {
@@ -66,16 +77,8 @@ export function readRunSession(): RunSessionReadView {
   const session = readGameplayState().session;
   return deepFreezeInDev({ ...session, hasActiveRun: hasActiveRunActivity(session.activity) });
 }
-export function readShopFirstPurchaseUsed(
-  shop: "shopState" | "alchemistState" | "trinketShopState" | "equipmentShopState",
-): boolean {
-  const kinds = {
-    shopState: "shop",
-    alchemistState: "alchemist",
-    trinketShopState: "trinket-shop",
-    equipmentShopState: "equipment-shop",
-  } as const;
-  return readActivityData(readGameplayState().session.activity, kinds[shop]).firstPurchaseUsed;
+export function readShopFirstPurchaseUsed(shop: ShopSessionStateKey): boolean {
+  return readActivityData(readGameplayState().session.activity, SHOP_VISIT_BY_STATE_KEY[shop]).firstPurchaseUsed;
 }
 export function readBattle(): BattleReadView {
   return deepFreezeInDev({ ...readGameplayState().battle });

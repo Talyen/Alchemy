@@ -2,7 +2,7 @@ import type { BattleCard, CharacterId, TalentXP } from "@/lib/game-data";
 import type { EncounterRewardTraitId, LabyrinthMap } from "@/lib/content-systems/types";
 import type { CorruptionResult } from "@/lib/corruption";
 import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
-import type { GearInstance } from "@/lib/gear";
+import type { CraftingCurrencyId, GearInstance } from "@/lib/gear";
 import type { RunObtainedItem } from "@/lib/active-run-session";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type {
@@ -62,8 +62,6 @@ interface MysteryScreenData {
   mysteryGrantedGearInstances: GearInstance[];
   mysteryChosenCardId: string | null;
   mysteryChosenChoice: MysteryChoice | null;
-  mysteryPendingRemoval: boolean;
-  runDeck: BattleCard[];
   runTalentXP: TalentXP;
   talentXP: TalentXP;
 }
@@ -78,6 +76,7 @@ interface RunEndScreenData {
   runEndTalentXP: TalentXP;
   talentXP: TalentXP;
   runEndMaterials: MaterialInventory;
+  runEndCurrencies: Record<CraftingCurrencyId, number>;
   runEndItems: RunObtainedItem[];
   runEndLabyrinthFloor: number | null;
 }

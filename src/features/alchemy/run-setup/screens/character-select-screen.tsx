@@ -19,14 +19,15 @@ import {
   chooserHeroArtWidthClass,
   chooserHeroRowGapClass,
   chooserHeroRowShellWidthClass,
-  chooserLockedSurfaceClass,
+  chooserLockedHoverSurfaceClass,
   getCharacterShineColors,
   WILDCARD_KEYWORD_SHINE_COLORS,
   WILDCARD_SHINE_CYCLE_MS,
 } from "@/features/alchemy/shared/config";
 import { playUISound } from "@/lib/audio";
 
-const HERO_SHINE_CLASS = "z-20 opacity-0 transition-opacity duration-200 group-hover:opacity-100";
+const HERO_SHINE_CLASS =
+  "z-20 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100";
 // Explicit order preserves the current hero row; add new heroes here.
 const CHARACTER_SELECT_ORDER: CharacterId[] = [
   "knight",
@@ -78,7 +79,7 @@ const CharacterCard = memo(function CharacterCard({
   } = useChooserHover("character-select", id, isLocked);
   const char = characters[id];
   const art = characterArt[char.id];
-  const shineColors = isLocked ? [] : id === "wildcard" ? WILDCARD_KEYWORD_SHINE_COLORS : getCharacterShineColors(id);
+  const shineColors = id === "wildcard" ? WILDCARD_KEYWORD_SHINE_COLORS : getCharacterShineColors(id);
 
   return (
     <div className="flex min-w-0 flex-col items-center gap-2">
@@ -96,8 +97,8 @@ const CharacterCard = memo(function CharacterCard({
           ariaDisabled={isLocked}
           className={cn(
             "group relative w-full rounded-shell-tooltip border border-border/80 shadow-md",
-            !isLocked && cardInteractiveGlowClass,
-            !isLocked && "hero-affinity-shine",
+            cardInteractiveGlowClass,
+            "hero-affinity-shine",
           )}
           shimmerActive={shimmerActive}
           shimmerToken={shimmerToken}
@@ -116,8 +117,8 @@ const CharacterCard = memo(function CharacterCard({
             alt={char.name}
             className={cn(
               cardSurfaceClass,
-              "aspect-[3/4] w-full rounded-shell-tooltip object-cover",
-              isLocked && chooserLockedSurfaceClass,
+              "aspect-[3/4] w-full rounded-shell-tooltip object-cover transition duration-300",
+              isLocked && chooserLockedHoverSurfaceClass,
             )}
           />
         </Surface>

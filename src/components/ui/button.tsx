@@ -22,11 +22,11 @@ const buttonVariants = cva(
           BUTTON_HOVER_PRIMARY,
         ),
         destructive: cn(
-          "bg-destructive text-destructive-foreground active:bg-destructive/90 active:brightness-100",
+          "bg-destructive text-destructive-foreground active:bg-destructive/80 active:brightness-95",
           BUTTON_HOVER_DESTRUCTIVE,
         ),
         outline: cn(
-          "border border-border/80 bg-background text-foreground active:bg-muted/90 active:brightness-100",
+          "border border-border/90 bg-background text-foreground/80 hover:border-border hover:text-foreground active:bg-muted/90 active:brightness-100",
           BUTTON_HOVER_SECONDARY,
         ),
         ghost: cn(

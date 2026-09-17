@@ -8,6 +8,7 @@ import { clearCombatState } from "@/features/alchemy/run-loop/run/run-flow-defea
 import { awardRunEndMaterials } from "@/features/alchemy/run-loop/run/run-materials";
 import { readActiveRun, readBattle, readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import {
+  addRunCurrenciesEarned,
   addRunMaterialsEarned,
   setHasActiveBattle,
   setSyncedBattleState,
@@ -89,6 +90,33 @@ describe("createRunFlow victory paths", () => {
     expect(readRunSession().runEndMaterials.wood).toBe(5);
     expect(readRunSession().runEndMaterials.herbs).toBe(2);
     expect(readActiveRun().runMaterialsEarned).toEqual(emptyInventory());
+  });
+
+  it("awardRunEndMaterials returns only the homestead bonus while the summary holds the run total", () => {
+    setRunProgress({ roomsEncountered: 2, currentAct: 1 });
+    dispatchRunSessionCommand((draft) => {
+      draft.runProfile.effects.endRunHerbsPerRoom = 1;
+      addRunMaterialsEarned(draft, { ...emptyInventory(), wood: 5 });
+    });
+
+    const bonus = dispatchRunSessionCommand(awardRunEndMaterials);
+
+    expect(bonus.wood).toBe(0);
+    expect(bonus.herbs).toBe(2);
+    expect(readRunSession().runEndMaterials.wood).toBe(5);
+    expect(readRunSession().runEndMaterials.herbs).toBe(2);
+  });
+
+  it("awardRunEndMaterials snapshots salvaged currencies into the recap and clears the tally", () => {
+    setRunProgress({ roomsEncountered: 2, currentAct: 1 });
+    dispatchRunSessionCommand((draft) => {
+      addRunCurrenciesEarned(draft, { "discordant-dice": 2 });
+    });
+
+    dispatchRunSessionCommand(awardRunEndMaterials);
+
+    expect(readRunSession().runEndCurrencies["discordant-dice"]).toBe(2);
+    expect(readActiveRun().runCurrenciesEarned["discordant-dice"]).toBe(0);
   });
 
   it("awardRunEndMaterials adds no homestead bonus with default effects", () => {

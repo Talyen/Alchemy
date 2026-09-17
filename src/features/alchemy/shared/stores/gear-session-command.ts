@@ -16,7 +16,7 @@ import {
 } from "./gear-actions";
 import { discoverUniqueIds } from "./profile-store";
 import { dispatchRunSessionCommand, type GameplayDraft, type SynchronousResult } from "./run-session-command";
-import { addMaterialsToStockpile, awardMaterialsDuringRun } from "./run-session-write-port";
+import { addMaterialsToStockpile, addRunCurrenciesEarned, awardMaterialsDuringRun } from "./run-session-write-port";
 import { rebindLiveRunMeta } from "./run-session-write-port";
 
 function gearCommandView(state: GameplayDraft, markMutated: () => void): GearStore {
@@ -139,6 +139,7 @@ export function dispatchGearSalvageWithMaterialGrant(
     if (!salvageResult) return null;
     if (draft.session.activity.kind !== "inactive") {
       awardMaterialsDuringRun(draft, salvageResult.yieldedMaterials);
+      addRunCurrenciesEarned(draft, salvageResult.yieldedCurrencies);
     } else {
       addMaterialsToStockpile(draft, salvageResult.yieldedMaterials);
     }

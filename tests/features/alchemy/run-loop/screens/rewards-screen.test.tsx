@@ -100,12 +100,13 @@ describe("RewardsScreen", () => {
     expect(screen.queryByRole("button", { name: /menu/i })).toBeNull();
   });
 
-  it("changes reward prompts with their content after the outgoing fade", async () => {
+  it("swaps reward choices with their content after the outgoing fade", async () => {
     const { rerender } = render(
       <RewardsScreen rewardState={readRunSession().rewardFlow.state} onSkip={vi.fn()} onClaimReward={vi.fn()} />,
     );
 
-    expect(screen.getByRole("heading", { name: "Add a Card to your Deck" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Choose a Reward" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /select slash/i })).toBeTruthy();
 
     rerender(
       <RewardsScreen
@@ -126,30 +127,10 @@ describe("RewardsScreen", () => {
         onClaimReward={vi.fn()}
       />,
     );
-    expect(screen.getByText("Add a Card to your Deck")).toBeTruthy();
-    expect(screen.queryByText("Choose a Trinket to add to your Armory")).toBeNull();
-    expect(await screen.findByRole("heading", { name: "Choose a Trinket to add to your Armory" })).toBeTruthy();
-
-    rerender(
-      <RewardsScreen
-        rewardState={{
-          ...createEmptyRewardState(),
-          rewardType: "boon",
-          choices: [
-            {
-              id: "lucky-coin",
-              title: "Lucky Coin",
-              descriptionLines: ["Gain 5 gold."],
-              art: "",
-              effects: {},
-            },
-          ],
-        }}
-        onSkip={vi.fn()}
-        onClaimReward={vi.fn()}
-      />,
-    );
-    expect(await screen.findByRole("heading", { name: "Choose a Boon for this Run" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /select slash/i })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /select lucky coin/i })).toBeNull();
+    expect(await screen.findByRole("button", { name: /select lucky coin/i })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Choose a Reward" })).toBeTruthy();
 
     rerender(
       <RewardsScreen
@@ -162,7 +143,8 @@ describe("RewardsScreen", () => {
         onClaimReward={vi.fn()}
       />,
     );
-    expect(await screen.findByRole("heading", { name: "Add Gear to your Armory" })).toBeTruthy();
+    expect(await screen.findByRole("button", { name: /select longsword/i })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Choose a Reward" })).toBeTruthy();
   });
 
   it("offers an immediate card choice without a confirmation button", () => {

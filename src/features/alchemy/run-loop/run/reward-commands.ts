@@ -40,6 +40,7 @@ export function applyRewardSelection({ reward, draft }: { reward: ResolvedReward
 
 export function applyAlchemistPotion({ draft, rng }: { draft: GameplayDraft; rng: () => number }) {
   const potion = getRandomPotionCard(rng);
+  if (!potion) return;
   appendCardToRunWithDiscovery(draft, potion);
 }
 

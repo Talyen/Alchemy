@@ -9,8 +9,7 @@ import {
   grantGearToRunWithRecord,
 } from "../../shared/stores/deck-mutations";
 import type { MaterialId } from "@/lib/homestead/types";
-import { emptyInventory } from "@/lib/homestead/inventory";
-import { applyMaterialFindBonus } from "@/lib/homestead/loot";
+import { computeMysteryMaterialReward } from "@/lib/homestead/loot";
 import {
   generateGearInstanceForBaseItem,
   generateLootGearChoices,
@@ -18,6 +17,7 @@ import {
   getOwnedUniqueDefinitionIds,
 } from "@/lib/gear";
 import { pickMysteryTrinketGrantId, type MysteryEffect } from "@/lib/mystery";
+import { awardsRunMaterialsFor } from "../run/run-materials";
 import { combineTrinketEffectIds } from "@/lib/trinkets";
 import { gearBaseItemList } from "@/lib/gear/base-items";
 import { pickRandom, rngInt } from "@/lib/rng";
@@ -85,9 +85,9 @@ function offerMysteryCardChoices(
   return { followUp: "choose-card" };
 }
 
-function healFromMystery(amount: number, chance: number | undefined, context: MysteryEffectContext) {
+function healFromMystery(amount: number, chance: number | undefined, maxHealth: number, context: MysteryEffectContext) {
   if (chance !== undefined && context.rng() >= chance) return { followUp: null };
-  setRunPlayerHealth(context.draft, (p) => Math.min(context.draft.run.activeRun.runMaxHealth, p + amount));
+  setRunPlayerHealth(context.draft, (p) => Math.min(maxHealth, p + amount));
   return { followUp: null };
 }
 
@@ -130,6 +130,8 @@ function gainRandomMysteryTrinket(
   const owned = new Set(combineTrinketEffectIds(run.runBoons, context.draft.gear.equippedTrinkets[run.characterId]));
   const trinketId = pickMysteryTrinketGrantId({ fromIds: effect.fromIds, owned, rng: context.rng });
   if (!trinketId) {
+    // Every candidate is owned: fall back to guaranteed-Astral gear, matching
+    // the pre-resolution fallback in resolve-trinkets.ts for named grants.
     const baseItem = pickRandom(gearBaseItemList, context.rng);
     if (!baseItem) return { followUp: null };
     return gainMysteryGeneratedGear(baseItem.id, context, true);
@@ -168,9 +170,15 @@ function gainMysteryGeneratedGear(baseItemId: string, context: MysteryEffectCont
 }
 
 function gainMysteryMaterial(material: MaterialId, amount: number, context: MysteryEffectContext) {
-  const matInv = emptyInventory();
-  matInv[material] = amount;
-  const awarded = applyMaterialFindBonus(matInv, context.draft.runProfile.effects);
+  // Wildwood runs its own economy: never award homestead materials there. Still
+  // report a zero award so navigation records the amount actually granted.
+  if (!awardsRunMaterialsFor(context.draft.run.activeRun.contentSystemType))
+    return { followUp: null, materialAward: { material, amount: 0 } };
+  const awarded = computeMysteryMaterialReward({
+    material,
+    amount,
+    effects: context.draft.runProfile.effects,
+  });
   awardMaterialsDuringRun(context.draft, awarded);
   return { followUp: null, materialAward: { material, amount: awarded[material] } };
 }
@@ -186,7 +194,7 @@ export function applyMysteryEffect(effect: MysteryEffect, context: MysteryEffect
     case "chooseCard":
       return offerMysteryCardChoices(effect, context);
     case "healHealth":
-      return healFromMystery(effect.amount, effect.chance, context);
+      return healFromMystery(effect.amount, effect.chance, context.draft.run.activeRun.runMaxHealth, context);
     case "damageHealth":
       return damageFromMystery(effect.amount, context);
     case "gainGold":

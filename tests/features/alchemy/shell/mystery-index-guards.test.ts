@@ -3,14 +3,10 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createMysteryEventNavigation } from "@/features/alchemy/run-loop/navigation/mystery-event-navigation";
 import { resetAllTestStores } from "../../../helpers/run-domain-store-test";
-import { setRunProgress } from "../../../helpers/run-domain-store-test";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import {
-  setMysteryCardChoices,
-  setMysteryPendingRemoval,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
-import { cardLibrary, type BattleCard } from "@/lib/game-data";
+import { setMysteryCardChoices } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { cardLibrary } from "@/lib/game-data";
 import type { Screen } from "@/lib/routing";
 import { readActivityData } from "@/lib/active-run-session";
 function renderMysteryNav() {
@@ -64,69 +60,5 @@ describe("mystery transactional guards", () => {
       second = hook.result.current.handleMysteryChooseCard(offeredId);
     });
     expect(second).toBe(false);
-  });
-
-  it("removeCard rejects fractional, NaN, out-of-range and keeps pendingRemoval", () => {
-    const { hook } = renderMysteryNav();
-    setRunProgress({ runDeck: [cardLibrary[0] as BattleCard, cardLibrary[1] as BattleCard] });
-    act(() => {
-      dispatchRunSessionCommand((draft) => {
-        setMysteryPendingRemoval(draft, true);
-      });
-    });
-    expect(readActivityData(readRunSession().activity, "mystery").mysteryPendingRemoval).toBe(true);
-    let result: boolean | undefined;
-    act(() => {
-      result = hook.result.current.handleMysteryRemoveCard(0.5 as unknown as number);
-    });
-    expect(result).toBe(false);
-    expect(readActivityData(readRunSession().activity, "mystery").mysteryPendingRemoval).toBe(true);
-    act(() => {
-      result = hook.result.current.handleMysteryRemoveCard(NaN);
-    });
-    expect(result).toBe(false);
-    act(() => {
-      result = hook.result.current.handleMysteryRemoveCard(10);
-    });
-    expect(result).toBe(false);
-    expect(readActiveRun().runDeck).toHaveLength(2);
-  });
-
-  it("removeCard succeeds for valid index and clears pending", () => {
-    const { hook } = renderMysteryNav();
-    const initialDeck = [cardLibrary[0] as BattleCard, cardLibrary[1] as BattleCard];
-    setRunProgress({ runDeck: initialDeck });
-    act(() => {
-      dispatchRunSessionCommand((draft) => {
-        setMysteryPendingRemoval(draft, true);
-      });
-    });
-    let result: boolean | undefined;
-    act(() => {
-      result = hook.result.current.handleMysteryRemoveCard(0);
-    });
-    expect(result).toBe(true);
-    expect(readActiveRun().runDeck).toHaveLength(1);
-    expect(readActivityData(readRunSession().activity, "mystery").mysteryPendingRemoval).toBe(false);
-
-    act(() => {
-      result = hook.result.current.handleMysteryRemoveCard(0);
-    });
-    expect(result).toBe(false);
-  });
-
-  it("removeCard is no-op when not pending", () => {
-    const { hook } = renderMysteryNav();
-    setRunProgress({ runDeck: [cardLibrary[0] as BattleCard] });
-    act(() => {
-      dispatchRunSessionCommand((draft) => {
-        setMysteryPendingRemoval(draft, false);
-      });
-    });
-    let result: boolean | undefined;
-    act(() => {
-      result = hook.result.current.handleMysteryRemoveCard(0);
-    });
-    expect(result).toBe(false);
   });
 });

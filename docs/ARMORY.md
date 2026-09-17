@@ -44,6 +44,10 @@ Presentation follows [UI item shine](./UI.md#item-shine). Pass affix identity an
 
 Edit the source weights and progression points in `run-rewards.ts`, then run `npm run balance:loot`. The seeded report in `reports/loot-progression/report.html` compares premium availability per screen and expected offered items along explicit routes for every account tier and fresh/nearly-complete collections. It counts offers, not acquisitions; three Gear choices can expose premium loot more often than a single item roll. The report records sampling uncertainty and holds ownership fixed along each comparison route.
 
+### Materials tuning
+
+Homestead material payouts are tuned separately from gear offers; every knob is inventoried in `src/lib/game-constants/materials-economy.ts`. Per-enemy amounts live in the `enemyLootTables` in `src/lib/homestead/loot.ts` (guaranteed loot plus chance-based bonuses that always pay at least their minimum when they hit). Combat victories run the `computeCombatMaterialReward` pipeline there (table, then elite/boss multiplier, then herb-find, then scavenger doubling, then herbalist bonus); mystery grants use `computeMysteryMaterialReward` (herb-find only). That file's policy table is the owner for which modifiers apply to which source. The seeded materials report in `reports/loot-progression/materials.html` (built by the same `npm run balance:loot` command) shows mean base payouts per enemy and enemy type; build-dependent modifiers (herb-find, scavenger, herbalist, end-of-run bonuses) apply afterwards and are not simulated.
+
 ## Inventory ordering and equipment movement
 
 Working inventory order and pagination are screen-local and transient while the Armory remains mounted. Remounting the Armory restores default sorting (Unique -> Astral -> Basic, Name A-Z, stable instance ID tie-breaker for Gear; Name A-Z, ID tie-breaker for Trinkets).

@@ -3,6 +3,7 @@ import { canEnterLabyrinthNode } from "@/lib/content-systems/labyrinth/map-state
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { getStartingDeck } from "@/lib/game-data";
 import type { ActiveRunData, PersistedMysteryVisit } from "@/lib/active-run-session";
+import { EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear";
 import { createRunRngState } from "@/lib/rng";
 import { createSeededRng } from "@/lib/utils";
 
@@ -43,6 +44,7 @@ export function makeActiveRunData(overrides: Partial<ActiveRunData> = {}): Activ
     activeCombat: null,
     runTalentXP: {},
     runMaterialsEarned: { wood: 0, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 },
+    runCurrenciesEarned: { ...EMPTY_CRAFTING_CURRENCIES },
     runObtainedItems: [],
     currentScreen: null,
     interruptedFlow: { kind: "none" },
@@ -103,6 +105,7 @@ export function createCompleteActiveRunData(): ActiveRunData {
     },
     runTalentXP: { armor: 11, burn: 7 },
     runMaterialsEarned: { wood: 2, iron: 3, herbs: 4, food: 5, gems: 6, stone: 0, hide: 0 },
+    runCurrenciesEarned: { ...EMPTY_CRAFTING_CURRENCIES, "discordant-dice": 2 },
     runObtainedItems: [
       { kind: "gear", instance: { instanceId: "resume-obtained-gear", definitionId: "ruby-ring-basic", affixes: [] } },
       { kind: "trinket", trinketId: "bone-charm" },

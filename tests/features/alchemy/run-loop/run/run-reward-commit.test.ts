@@ -70,4 +70,13 @@ describe("applyAlchemistPotion", () => {
     expect(deckUpdater([])).toEqual([potion]);
     expect(discoveryMocks.discoverCardIds).toHaveBeenCalledWith(draft, ["mana-potion"]);
   });
+
+  it("skips the grant when no potion is available", () => {
+    vi.spyOn(rewardGold, "getRandomPotionCard").mockReturnValue(null);
+
+    applyAlchemistPotion({ draft: {} as GameplayDraft, rng: () => 0.5 });
+
+    expect(discoveryMocks.setRunDeck).not.toHaveBeenCalled();
+    expect(discoveryMocks.discoverCardIds).not.toHaveBeenCalled();
+  });
 });

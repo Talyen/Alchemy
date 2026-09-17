@@ -13,6 +13,8 @@ import {
 import {
   createInitialActiveRunFields,
   createInitialPermanentFields,
+  setTestRunSeedOverride,
+  ACTIVE_RUN_PROGRESS_KEYS,
   type ActiveRunProgressFields,
   type PermanentProgressFields,
 } from "@/features/alchemy/shared/stores/run-state-init";
@@ -85,31 +87,12 @@ export function resetGearForTest(): void {
 
 export function resetAllTestStores(): void {
   vi.clearAllMocks();
+  // The run-seed override is module-global: clear it so a seed set in one
+  // test file cannot leak into another.
+  setTestRunSeedOverride(null);
   resetRunDomainStore();
   resetTransientRunUi();
 }
-
-const ACTIVE_RUN_PROGRESS_KEYS = [
-  "characterId",
-  "runDeck",
-  "runPlayerHealth",
-  "runMaxHealth",
-  "runMetaMaxHealth",
-  "roomsEncountered",
-  "currentAct",
-  "destinationIndexInAct",
-  "completedDestinations",
-  "lastOfferedDestinations",
-  "destinationRoundsSinceOffered",
-  "runBoons",
-  "encounteredRunEnemyIds",
-  "selectedDifficulty",
-  "contentSystemType",
-  "rng",
-  "runTalentXP",
-  "runMaterialsEarned",
-  "runObtainedItems",
-] as const satisfies ReadonlyArray<keyof ActiveRunProgressFields>;
 
 const PERMANENT_PROGRESS_KEYS = [
   "gold",
@@ -132,6 +115,7 @@ const SESSION_KEYS = [
   "selectedLabyrinthNodeId",
   "runEndLabyrinthFloor",
   "runEndMaterials",
+  "runEndCurrencies",
   "runEndTalentXP",
   "runEndItems",
   "pendingCharacterId",

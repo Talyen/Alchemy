@@ -5,9 +5,10 @@ import {
   abandonLabyrinthCorruptionVisit,
   setActiveLabyrinthPendingNode,
   setCorruptionResult,
+  setRunDeck,
   setSelectedLabyrinthNodeId,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
+import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { makeTestCard } from "../../../../fixtures/cards";
 import { readActivityData } from "@/lib/active-run-session";
@@ -20,7 +21,6 @@ describe("corruption destination exit", () => {
     const advanceToNextDestination = vi.fn();
     const returnToCurrentDestination = vi.fn();
     createCorruptionFlowHandlers({
-      updateRunDeck: () => {},
       advanceToNextDestination,
       returnToCurrentDestination,
     }).handleCorruptionExit();
@@ -43,7 +43,6 @@ describe("corruption destination exit", () => {
     const advanceToNextDestination = vi.fn();
     const returnToCurrentDestination = vi.fn();
     createCorruptionFlowHandlers({
-      updateRunDeck: () => {},
       advanceToNextDestination,
       returnToCurrentDestination,
     }).handleCorruptionExit();
@@ -54,23 +53,22 @@ describe("corruption destination exit", () => {
 
   it("handleCorruptCard ignores a second pick after a result is stored", () => {
     const original = makeTestCard({ id: "slash" });
-    dispatchRunSessionCommand((draft) =>
+    dispatchRunSessionCommand((draft) => {
+      setRunDeck(draft, [original]);
       setCorruptionResult(draft, {
         originalCard: original,
         corruptedCard: { ...original, corrupted: true },
         transformed: false,
         delta: -1,
-      }),
-    );
+      });
+    });
 
-    const updateRunDeck = vi.fn();
     createCorruptionFlowHandlers({
-      updateRunDeck,
       advanceToNextDestination: vi.fn(),
       returnToCurrentDestination: vi.fn(),
     }).handleCorruptCard(1);
 
-    expect(updateRunDeck).not.toHaveBeenCalled();
+    expect(readActiveRun().runDeck).toEqual([original]);
   });
 
   it("handleCorruptionExit returns to the maze when leaving a labyrinth altar untouched", () => {
@@ -78,7 +76,6 @@ describe("corruption destination exit", () => {
     const returnToCurrentDestination = vi.fn();
     const returnToLabyrinthMap = vi.fn();
     createCorruptionFlowHandlers({
-      updateRunDeck: () => {},
       advanceToNextDestination,
       returnToCurrentDestination,
       returnToLabyrinthMap,

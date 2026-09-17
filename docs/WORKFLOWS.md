@@ -62,8 +62,8 @@ Policy (when to bump, stamp-only floor, migrate steps, public save contract): [`
 
 Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-session-write-port.ts`) so homestead inventory and `activeRun.runMaterialsEarned` stay aligned for the run-end summary.
 
-1. Apply the Homestead find bonus when appropriate with `applyMaterialFindBonus()` from `@/lib/homestead/loot`; existing mystery and combat grants already do this.
-2. Call `awardMaterialsDuringRun(draft, materials)` inside the owning command: `gainMysteryMaterial` / `mysteryApplyHandlers` in `run-loop/navigation/mystery-flow.ts`, `commitVictoryRewards` in `run-loop/run/victory-commands.ts`, `claimRunReward` in `run-loop/run/reward-commands.ts`, or Armory salvage in `shared/stores/gear-session-command.ts`. New grant paths must extend `AWARD_CALL_SITES` in `tests/architecture/run-materials-award-guard.test.ts`.
+1. Route combat payouts through `computeCombatMaterialReward()` and mystery grants through `computeMysteryMaterialReward()` (both in `@/lib/homestead/loot`); they own herb-find, scavenger/herbalist, and elite/boss ordering per the policy table there. Do not reimplement the sequence at the call site.
+2. Call `awardMaterialsDuringRun(draft, materials)` inside the owning command (`run-loop/run/victory-commands.ts`, `run-loop/run/reward-commands.ts`, `run-loop/navigation/mystery-flow.ts`, or Armory salvage in `shared/stores/gear-session-command.ts`). The canonical site list is `AWARD_MATERIALS_CALL_SITES` in `run-loop/run/run-materials.ts`, enforced by `tests/architecture/run-materials-award-guard.test.ts`; new grant paths must extend it there.
 3. Reuse the run-end display: `awardRunEndMaterials` in `run-loop/run/run-materials.ts`, used by both defeat and victory flows, merges `runMaterialsEarned` and `applyEndOfRunHomesteadBonuses` into `session.runEndMaterials`.
 4. Check `tests/features/alchemy/run-loop/run/run-victory-handlers.test.ts` and the affected mystery/reward-flow tests when adding a new source.
 
@@ -180,11 +180,19 @@ effect ordering, and the focused schema/handler/description tests.
 
 ## Add a new character
 
-| Step                                                            | File(s)                           |
-| --------------------------------------------------------------- | --------------------------------- |
-| 1. Add character ID to `CharacterId` union                      | `src/lib/game-data/characters.ts` |
-| 2. Define character in `characters` record                      | `src/lib/game-data/characters.ts` |
-| 3. List card IDs in `startingDeck` (resolved via `resolveDeck`) | same file                         |
+| Step                                                                            | File(s)                           |
+| ------------------------------------------------------------------------------- | --------------------------------- |
+| 1. Add character ID to `CharacterId` union                                      | `src/lib/game-data/characters.ts` |
+| 2. Define character in `characters` record                                      | `src/lib/game-data/characters.ts` |
+| 3. List card IDs in `startingDeck` (resolved via `resolveDeck`)                 | same file                         |
+| 4. Set the hero's `keywords` badges (3 per hero; wildcard drafts and uses none) | same file                         |
+| 5. Keep every badge covered by the starting deck (see below)                    | same file + characters test       |
+
+`resolveDeck` throws on unknown card IDs so a typo fails loudly instead of
+shortening the deck. Every badge must appear in at least one starting-deck
+card (enforced by the hero badge coverage test in
+`tests/lib/game-data/characters.test.ts`). Tooltips on Choose Your Hero and
+Collection render the deck titles and badges live from this record.
 
 ---
 
@@ -378,14 +386,16 @@ Boot restore/hydration sets a validated saved screen directly and intentionally 
 
 Mystery Boon choices prefer distinct unowned Boons across alternatives, but an unchosen alternative cannot exhaust the pool: reuse an available Boon across mutually exclusive choices before falling back to Astral Gear. Multiple grants within one choice remain distinct.
 
-The committed `mysteryChosenChoice` records Material amounts actually awarded, including Homestead find bonuses, for the reward summary and save/resume. Keep the offered event's base amounts unchanged and apply bonuses only at the grant. `applyMysteryEffect` returns the actual Material award in `MysteryEffectResult`; navigation records that result without reconstructing it from inventory differences.
+The committed `mysteryChosenChoice` records Material amounts actually awarded, including Homestead find bonuses, for the reward summary and save/resume. Keep the offered event's base amounts unchanged and apply bonuses only at the grant. `applyMysteryEffect` returns the actual Material award in `MysteryEffectResult`; navigation records that result without reconstructing it from inventory differences. In content systems that award no run materials (Wildwood), the grant reports a zero award so the recorded choice still matches.
+
+`removeCard` removes a random deck card immediately with no picker. The old player-choice removal picker is retired: `handleMysteryRemoveCard` and the screen's remove phase are gone, and `mysteryPendingRemoval` persists only so old saves still parse.
 
 Live pool events are authored in `src/lib/mystery/pool.ts`; other `MysteryEffect` kinds stay on the union and handlers for authoring even when no live event uses them.
 
 | Step                                                          | File(s)                                                                                                                             |
 | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | 1. Add `kind` string to `MysteryEffect` union                 | `src/lib/mystery/types.ts`                                                                                                          |
-| 2. Add a `mysteryApplyHandlers` entry                         | `src/features/alchemy/run-loop/navigation/mystery-flow.ts`                                                                          |
+| 2. Add a case to `applyMysteryEffect`                         | `src/features/alchemy/run-loop/navigation/mystery-flow.ts`                                                                          |
 | 3. Add fields to `MysteryEffectContext` if needed             | `mystery-flow.ts`                                                                                                                   |
 | 4. Wire event commands if needed                              | `run-loop/navigation/mystery-event-navigation.ts`                                                                                   |
 | 5. Wire follow-up UI in mystery screen                        | `run-loop/screens/mystery/mystery-screen.tsx` (exported via screens barrel)                                                         |

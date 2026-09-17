@@ -38,7 +38,8 @@ export function RemoveCardPanel({
   const [page, setPage] = useState(0);
   const items = useMemo(() => runDeck.map((card, index) => ({ card, index })), [runDeck]);
   const hasCost = gold !== undefined && removePrice !== undefined;
-  const confirmDisabled = selectedIndex === null || (hasCost && gold < removePrice);
+  const canAfford = !hasCost || gold >= removePrice;
+  const confirmDisabled = selectedIndex === null || !canAfford;
 
   useCaptureEscapeCancel(escapeCancels ? onCancel : undefined);
 
@@ -73,9 +74,9 @@ export function RemoveCardPanel({
             {cancelLabel}
           </Button>
         ) : null}
-        <Button size="lg" variant="outline" disabled={confirmDisabled} onClick={handleConfirm}>
+        <Button size="lg" variant="primary" disabled={confirmDisabled} onClick={handleConfirm}>
           <Trash2 className="h-7 w-7" /> {fitHeight ? "Remove" : "Remove Card"}
-          {removePrice !== undefined && <GoldCost amount={removePrice} />}
+          {removePrice !== undefined && <GoldCost amount={removePrice} affordable={canAfford} />}
         </Button>
       </div>
     </div>

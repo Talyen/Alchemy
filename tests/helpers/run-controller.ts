@@ -64,7 +64,7 @@ export function createMockRouteCommands(): AlchemyRouteCommands {
           getRefreshPrice: fn(),
         },
       },
-      mystery: { handleChoice: fn(), handleChooseCard: fn(), handleRemoveCard: fn(), handleContinue: fn() },
+      mystery: { handleChoice: fn(), handleChooseCard: fn(), handleContinue: fn() },
       corruption: { handleCorruptCard: fn(), handleExit: fn() },
     },
     battle: {

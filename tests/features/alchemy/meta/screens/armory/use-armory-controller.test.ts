@@ -14,6 +14,7 @@ import { initializeActiveRun } from "@/features/alchemy/shared/stores/run-sessio
 import { readActiveRun, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import { readGearState } from "@/features/alchemy/shared/stores/gear-store";
 import { createEmptyGearInventories, type GearInstance } from "@/lib/gear";
+import { computeSalvageYield, EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { flushSaveAfterGearMutation } from "@/features/alchemy/shared/stores/run-lifecycle";
 
@@ -51,6 +52,7 @@ describe("useArmoryController", () => {
     expect(flushSaveAfterGearMutation).toHaveBeenCalledWith(null);
     expect(readRunProfile().materialInventory.iron).toBe(9);
     expect(readActiveRun().runMaterialsEarned.iron).toBe(0);
+    expect(readActiveRun().runCurrenciesEarned).toEqual(EMPTY_CRAFTING_CURRENCIES);
   });
 
   it("syncs health for the active-run character when editing another loadout", () => {
@@ -100,6 +102,7 @@ describe("useArmoryController", () => {
 
     expect(readRunProfile().materialInventory.iron).toBe(9);
     expect(readActiveRun().runMaterialsEarned.iron).toBe(9);
+    expect(readActiveRun().runCurrenciesEarned).toEqual(computeSalvageYield(armor).currencies);
 
     dispatchRunSessionCommand((draft) => setHasActiveRun(draft, false));
   });

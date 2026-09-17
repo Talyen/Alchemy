@@ -23,11 +23,8 @@ export function ShopBrowseShell({
   children: ReactNode;
 }) {
   return (
-    <TitledScreenShell title={title}>
-      <div className={cn("flex flex-col items-center gap-6 text-center", showGold && "mt-6")}>
-        {showGold ? <GoldDisplay gold={gold} /> : null}
-        {children}
-      </div>
+    <TitledScreenShell title={title} headerActions={showGold ? <GoldDisplay gold={gold} /> : null}>
+      <div className={cn("flex flex-col items-center gap-6 text-center", showGold && "mt-6")}>{children}</div>
     </TitledScreenShell>
   );
 }

@@ -14,6 +14,10 @@ function selectShopCardBase(state: GameplayState) {
   };
 }
 
+function selectGoldBase(state: GameplayState) {
+  return { gold: state.runProfile.gold };
+}
+
 function useRetainedScreenData<T>(active: boolean, data: T): T {
   const [shown, setShown] = useState(data);
   // Retain each outgoing screen's own data while its committed successor fades in.
@@ -26,111 +30,95 @@ function useActivityScreenData<S extends RunDataScreen>(screen: S, data: ScreenD
   return useRetainedScreenData(active, data);
 }
 
+// Shared shape for every visit-backed screen hook: select the screen slice,
+// then retain the outgoing screen's data while its successor fades in.
+// Each exported hook below passes static arguments, so hook order is stable.
+function useVisitScreenData<S extends RunDataScreen>(
+  screen: S,
+  selector: (state: GameplayState) => ScreenData<S>,
+): ScreenData<S> {
+  const data = useGameplayStateStore(useShallow(selector));
+  return useActivityScreenData(screen, data);
+}
+
 export function useShopScreenData(): ScreenData<"shop"> {
-  const data = useGameplayStateStore(
-    useShallow((state) => ({
-      ...selectShopCardBase(state),
-      shopState: readActivityData(state.session.activity, "shop"),
-    })),
-  );
-  return useActivityScreenData("shop", data);
+  return useVisitScreenData("shop", (state) => ({
+    ...selectShopCardBase(state),
+    shopState: readActivityData(state.session.activity, "shop"),
+  }));
 }
 
 export function useAlchemistScreenData(): ScreenData<"alchemist"> {
-  const data = useGameplayStateStore(
-    useShallow((state) => ({
-      ...selectShopCardBase(state),
-      alchemistState: readActivityData(state.session.activity, "alchemist"),
-    })),
-  );
-  return useActivityScreenData("alchemist", data);
+  return useVisitScreenData("alchemist", (state) => ({
+    ...selectShopCardBase(state),
+    alchemistState: readActivityData(state.session.activity, "alchemist"),
+  }));
 }
 
 export function useTrinketShopScreenData(): ScreenData<"trinket-shop"> {
-  const data = useGameplayStateStore(
-    useShallow((state) => ({
-      gold: state.runProfile.gold,
-      trinketShopState: readActivityData(state.session.activity, "trinket-shop"),
-    })),
-  );
-  return useActivityScreenData("trinket-shop", data);
+  return useVisitScreenData("trinket-shop", (state) => ({
+    ...selectGoldBase(state),
+    trinketShopState: readActivityData(state.session.activity, "trinket-shop"),
+  }));
 }
 
 export function useEquipmentShopScreenData(): ScreenData<"equipment-shop"> {
-  const data = useGameplayStateStore(
-    useShallow((state) => ({
-      gold: state.runProfile.gold,
-      equipmentShopState: readActivityData(state.session.activity, "equipment-shop"),
-    })),
-  );
-  return useActivityScreenData("equipment-shop", data);
+  return useVisitScreenData("equipment-shop", (state) => ({
+    ...selectGoldBase(state),
+    equipmentShopState: readActivityData(state.session.activity, "equipment-shop"),
+  }));
 }
 
 export function useCampfireScreenData(): ScreenData<"campfire"> {
-  const data = useGameplayStateStore(
-    useShallow((state) => ({
-      modifiers: activeLabyrinthBenefits(
-        state.run.activeRun.contentSystemType,
-        state.session.activeLabyrinthRewardModifiers,
-      ),
-      runPlayerHealth: state.run.activeRun.runPlayerHealth,
-      runMaxHealth: state.run.activeRun.runMaxHealth,
-    })),
-  );
-  return useActivityScreenData("campfire", data);
+  return useVisitScreenData("campfire", (state) => ({
+    modifiers: activeLabyrinthBenefits(
+      state.run.activeRun.contentSystemType,
+      state.session.activeLabyrinthRewardModifiers,
+    ),
+    runPlayerHealth: state.run.activeRun.runPlayerHealth,
+    runMaxHealth: state.run.activeRun.runMaxHealth,
+  }));
 }
 
 export function useLabyrinthMapScreenData(): ScreenData<"labyrinth-map"> {
-  const data = useGameplayStateStore(
-    useShallow((state) => ({
-      labyrinthMap: state.session.labyrinthMap,
-      selectedLabyrinthNodeId: state.session.selectedLabyrinthNodeId,
-    })),
-  );
-  return useActivityScreenData("labyrinth-map", data);
+  return useVisitScreenData("labyrinth-map", (state) => ({
+    labyrinthMap: state.session.labyrinthMap,
+    selectedLabyrinthNodeId: state.session.selectedLabyrinthNodeId,
+  }));
 }
 
 export function useRewardsScreenData(): ScreenData<"rewards"> {
-  const data = useGameplayStateStore(
-    useShallow((state) => ({
-      rewardState: state.session.rewardFlow.state,
-      rewardClaimInFlight: state.session.rewardFlow.claim.kind === "reward",
-    })),
-  );
-  return useActivityScreenData("rewards", data);
+  return useVisitScreenData("rewards", (state) => ({
+    rewardState: state.session.rewardFlow.state,
+    rewardClaimInFlight: state.session.rewardFlow.claim.kind === "reward",
+  }));
 }
 
 export function useDestinationScreenData(): ScreenData<"destination"> {
-  const data = useGameplayStateStore(useShallow((state) => ({ rewardState: state.session.rewardFlow.state })));
-  return useActivityScreenData("destination", data);
+  return useVisitScreenData("destination", (state) => ({ rewardState: state.session.rewardFlow.state }));
 }
 
 export function useMysteryScreenData(): ScreenData<"mystery"> {
-  const data = useGameplayStateStore(
-    useShallow((state) => ({
-      runDeck: state.run.activeRun.runDeck,
-      mysteryEvent: readActivityData(state.session.activity, "mystery").mysteryEvent,
-      mysteryCardChoices: readActivityData(state.session.activity, "mystery").mysteryCardChoices,
-      mysteryGrantedTrinketIds: readActivityData(state.session.activity, "mystery").mysteryGrantedTrinketIds,
-      mysteryGrantedGearInstances: readActivityData(state.session.activity, "mystery").mysteryGrantedGearInstances,
-      mysteryChosenCardId: readActivityData(state.session.activity, "mystery").mysteryChosenCardId,
-      mysteryChosenChoice: readActivityData(state.session.activity, "mystery").mysteryChosenChoice,
-      mysteryPendingRemoval: readActivityData(state.session.activity, "mystery").mysteryPendingRemoval,
+  return useVisitScreenData("mystery", (state) => {
+    const visit = readActivityData(state.session.activity, "mystery");
+    return {
+      mysteryEvent: visit.mysteryEvent,
+      mysteryCardChoices: visit.mysteryCardChoices,
+      mysteryGrantedTrinketIds: visit.mysteryGrantedTrinketIds,
+      mysteryGrantedGearInstances: visit.mysteryGrantedGearInstances,
+      mysteryChosenCardId: visit.mysteryChosenCardId,
+      mysteryChosenChoice: visit.mysteryChosenChoice,
       runTalentXP: state.run.activeRun.runTalentXP,
       talentXP: state.runProfile.talentXP,
-    })),
-  );
-  return useActivityScreenData("mystery", data);
+    };
+  });
 }
 
 export function useCorruptionScreenData(): ScreenData<"corruption"> {
-  const data = useGameplayStateStore(
-    useShallow((state) => ({
-      runDeck: state.run.activeRun.runDeck,
-      corruptionResult: readActivityData(state.session.activity, "corruption"),
-    })),
-  );
-  return useActivityScreenData("corruption", data);
+  return useVisitScreenData("corruption", (state) => ({
+    runDeck: state.run.activeRun.runDeck,
+    corruptionResult: readActivityData(state.session.activity, "corruption"),
+  }));
 }
 
 export function useRunEndScreenData(): ScreenData<"game-over"> {
@@ -141,6 +129,7 @@ export function useRunEndScreenData(): ScreenData<"game-over"> {
     useShallow((state) => ({
       characterId: state.run.activeRun.characterId,
       runEndMaterials: state.session.runEndMaterials,
+      runEndCurrencies: state.session.runEndCurrencies,
       runEndTalentXP: state.session.runEndTalentXP,
       runEndItems: state.session.runEndItems,
       runEndLabyrinthFloor: state.session.runEndLabyrinthFloor,
@@ -151,6 +140,5 @@ export function useRunEndScreenData(): ScreenData<"game-over"> {
 }
 
 export function useWildwoodRemovalScreenData(): ScreenData<"wildwood-removal"> {
-  const data = useGameplayStateStore(useShallow((state) => ({ runDeck: state.run.activeRun.runDeck })));
-  return useActivityScreenData("wildwood-removal", data);
+  return useVisitScreenData("wildwood-removal", (state) => ({ runDeck: state.run.activeRun.runDeck }));
 }

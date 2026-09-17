@@ -83,6 +83,11 @@ export const settingsPanelShellClass = "rounded-shell-panel border border-border
 
 export const chooserLockedSurfaceClass = "cursor-not-allowed opacity-45 grayscale";
 
+export const lockedHoverPreviewClass =
+  "opacity-45 grayscale group-focus-within:opacity-100 group-focus-within:grayscale-0 group-hover:opacity-100 group-hover:grayscale-0";
+
+export const chooserLockedHoverSurfaceClass = `cursor-not-allowed ${lockedHoverPreviewClass}`;
+
 export const cardShineFrameClass = "has-shine-border";
 
 export const cardArtImageClass = "rounded-shell-hero aspect-[3/4] object-cover";

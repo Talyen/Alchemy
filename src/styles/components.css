@@ -405,13 +405,6 @@
   backface-visibility: hidden;
 }
 
-.card-hover-scale.button-primary-bloom {
-  transition:
-    background-color 150ms,
-    box-shadow 150ms,
-    scale 200ms ease-out;
-}
-
 .card-hover-scale:hover:not(:disabled),
 .group:hover .card-hover-scale:not(:disabled),
 .card-hover-scale[data-hovered="true"]:not(:disabled) {

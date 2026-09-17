@@ -36,7 +36,7 @@ export function TabBar<T extends string>({
             size="lg"
             disabled={isDisabled}
             onClick={() => onSelectTab(tab.id)}
-            className={tab.id === activeTab ? activeClassName : "hover:border-border"}
+            className={tab.id === activeTab ? activeClassName : undefined}
             wrapperClassName="shrink-0"
             aria-label={isDisabled ? `${tab.label} (Locked)` : tab.label}
           >

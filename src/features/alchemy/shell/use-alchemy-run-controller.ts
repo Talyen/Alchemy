@@ -194,7 +194,6 @@ export function useAlchemyRunController(): AlchemyRunCommands {
         mystery: {
           handleChoice: nav.handleMysteryChoice,
           handleChooseCard: nav.handleMysteryChooseCard,
-          handleRemoveCard: nav.handleMysteryRemoveCard,
           handleContinue: nav.handleMysteryContinue,
         },
         corruption: {

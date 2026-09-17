@@ -1,13 +1,14 @@
 import { activeLabyrinthBenefits } from "@/lib/content-systems/labyrinth/room-rules";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { readActiveRun, readRunSession, readShopFirstPurchaseUsed } from "@/features/alchemy/shared/stores/run-reads";
+import type { ShopSessionStateKey } from "@/features/alchemy/shared/stores/run-reads";
 import { readEquippedTrinketId } from "@/features/alchemy/shared/stores/gear-store";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { combineTrinketEffectIds } from "@/lib/trinkets";
 import type { TalentEffectManifest } from "@/lib/game-data";
 import type { ShopBuyPriceContext } from "./shop-pricing";
 
-export type ShopSessionStateKey = "shopState" | "alchemistState" | "trinketShopState" | "equipmentShopState";
+export type { ShopSessionStateKey };
 
 export function resolveReadShopModifiers(): readonly EncounterRewardTraitId[] {
   const run = readActiveRun();

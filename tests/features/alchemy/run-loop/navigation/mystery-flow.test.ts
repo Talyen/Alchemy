@@ -5,7 +5,7 @@ import {
   type MysteryEffectContext,
   type MysteryEffectResult,
 } from "@/features/alchemy/run-loop/navigation/mystery-flow";
-import { cardLibrary, getCardKeywords } from "@/lib/game-data";
+import { cardLibrary, getCardKeywords, trinketLibrary } from "@/lib/game-data";
 import * as cardPools from "@/lib/game-data/cards/card-pools";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { resetAllTestStores, resetProfileForTest } from "../../../../helpers/run-domain-store-test";
@@ -111,6 +111,18 @@ describe("applyMysteryEffect", () => {
     const granted = readActivityData(readRunSession().activity, "mystery").mysteryGrantedTrinketIds;
     expect(granted).toHaveLength(1);
     expect(["bone-charm", "sin-eaters-lantern"]).not.toContain(granted[0]);
+  });
+
+  it("gainRandomTrinket falls back to guaranteed-Astral gear when every trinket is owned", () => {
+    setRunProgress({ characterId: "knight", runBoons: trinketLibrary.map((entry) => entry.id) });
+    dispatchRunSessionCommand((draft) => setHasActiveRun(draft, true));
+
+    const result = apply({ kind: "gainRandomTrinket", fromIds: ["bone-charm"] }, () => 0.5);
+    expect(result.followUp).toBeNull();
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryGrantedTrinketIds).toEqual([]);
+    const gear = readActivityData(readRunSession().activity, "mystery").mysteryGrantedGearInstances;
+    expect(gear).toHaveLength(1);
+    expect(gear[0]?.definitionId).toMatch(/-astral$/);
   });
 
   it("uses shared depth eligibility for random Gear while honoring an already-promised Astral", () => {

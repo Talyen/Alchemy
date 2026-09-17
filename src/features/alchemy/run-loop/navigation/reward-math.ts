@@ -1,7 +1,7 @@
 import { LABYRINTH_REWARD_CONFIG } from "@/lib/game-constants";
+import { applyScavengerHerbalistModifiers } from "@/lib/homestead/loot";
 import { computeTrinketManifest } from "@/lib/trinkets";
-import { emptyInventory } from "@/lib/homestead/inventory";
-import { MATERIAL_IDS, type MaterialInventory } from "@/lib/homestead/types";
+import { type MaterialInventory } from "@/lib/homestead/types";
 import type { BattleSnapshot } from "@/lib/battle";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
@@ -79,20 +79,11 @@ export function applyLabyrinthRewardMaterialModifiers(
   materials: MaterialInventory,
   modifiers: EncounterRewardTraitId[],
 ): MaterialInventory {
-  let next: MaterialInventory = { ...materials };
-  let mutated = false;
-  if (hasRewardModifier(modifiers, "scavenger")) {
-    mutated = true;
-    next = emptyInventory();
-    for (const material of MATERIAL_IDS) {
-      next[material] = Math.round((materials[material] ?? 0) * LABYRINTH_REWARD_CONFIG.scavengerMaterialMultiplier);
-    }
-  }
-  if (hasRewardModifier(modifiers, "herbalist")) {
-    mutated = true;
-    next.herbs = (next.herbs ?? 0) + LABYRINTH_REWARD_CONFIG.herbalistHerbBonus;
-  }
-  return mutated ? next : materials;
+  // Thin adapter over the single pipeline owner in homestead/loot.ts.
+  return applyScavengerHerbalistModifiers(materials, {
+    scavenger: hasRewardModifier(modifiers, "scavenger"),
+    herbalist: hasRewardModifier(modifiers, "herbalist"),
+  });
 }
 
 function getSmugglersMapGoldBonus(trinketIds: string[]): number {
@@ -136,11 +127,13 @@ export function computeVictoryGold({
   talentGoldPerCombat,
   goldMultiplier,
 }: VictoryGoldInput): VictoryGoldResult {
+  // Clamp: battle gold below the purse (e.g. spent mid-combat accounting) earns
+  // nothing instead of dragging the total negative — matching the Wildwood path.
+  const inCombatGold = Math.max(0, battleState.gold - purseGold);
   const earnedBeforeMultiplier =
-    battleState.gold +
+    inCombatGold +
     gold +
-    sumGoldBonuses(eliteBonus + bossBonus, generousBonus, wealthyBonus, talentGoldPerCombat, runBoons) -
-    purseGold;
+    sumGoldBonuses(eliteBonus + bossBonus, generousBonus, wealthyBonus, talentGoldPerCombat, runBoons);
   return {
     earnedBeforeMultiplier,
     persistedGold: purseGold + Math.round(earnedBeforeMultiplier * goldMultiplier),

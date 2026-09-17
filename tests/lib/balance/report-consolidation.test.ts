@@ -29,7 +29,8 @@ describe("balance report consolidation", () => {
   });
 
   it("caps loot samples to bound runtime", () => {
-    expect(() => buildLootBalanceReport(0)).toThrow();
+    // Invalid counts (0, non-integers) are pinned with their message in
+    // tests/lib/loot/report.test.ts; this owns only the upper cap.
     expect(() => buildLootBalanceReport(10_001)).toThrow();
   });
 

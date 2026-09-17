@@ -19,24 +19,21 @@ export function ShopPriceChip({
   return (
     <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 w-max -translate-x-1/2 select-none">
       {purchased ? (
-        <span className="inline-flex items-center justify-center rounded-full border border-border/50 bg-stone-950/85 px-4 py-1.5 text-base leading-none font-semibold text-muted-foreground shadow-md backdrop-blur-sm">
+        <span className="inline-flex items-center justify-center text-xl leading-none font-semibold text-muted-foreground drop-shadow-[0_0_2px_rgba(0,0,0,0.95)] drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]">
           Purchased
         </span>
       ) : (
         <DisabledTooltip show={!canAfford} message="Not Enough Gold">
           <div
             className={cn(
-              "pointer-events-auto inline-flex items-center justify-center gap-2 rounded-full px-4 py-1.5 text-base leading-none font-semibold shadow-lg backdrop-blur-md",
-              canAfford
-                ? "border border-yellow-400/60 bg-stone-950/85 text-yellow-200"
-                : "border border-border/50 bg-stone-950/85 text-muted-foreground",
+              "pointer-events-auto inline-flex items-center justify-center gap-1.5 text-xl leading-none font-semibold tabular-nums",
+              canAfford ? "text-amber-200" : "text-muted-foreground",
             )}
           >
             <CurrencyAmount
               amount={price}
-              suffix=" Gold"
-              iconClassName="h-6 w-6 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]"
-              className="whitespace-nowrap drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]"
+              iconClassName="drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] drop-shadow-[0_0_2px_rgba(0,0,0,0.95)]"
+              className="whitespace-nowrap drop-shadow-[0_0_2px_rgba(0,0,0,0.95)] drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)]"
             />
           </div>
         </DisabledTooltip>

@@ -86,4 +86,26 @@ describe("CharacterSelectScreen", () => {
     await user.click(screen.getByRole("button", { name: "Rogue (Locked)" }));
     expect(onSelect).not.toHaveBeenCalled();
   });
+
+  it("renders shine border with hero affinity colors and hover preview styles on locked heroes", () => {
+    const { rerender } = render(<CharacterSelectScreen onSelect={vi.fn()} finishedRunCharacters={[]} />);
+
+    const lockedRogueButton = screen.getByRole("button", { name: "Rogue (Locked)" });
+    const shineBorder = lockedRogueButton.querySelector(".shine-border");
+    expect(shineBorder).not.toBeNull();
+    const lockedShinePaint = lockedRogueButton.querySelector<HTMLElement>(".shine-border-paint")?.style.backgroundColor;
+    expect(lockedShinePaint).toBeTruthy();
+
+    const rogueImage = lockedRogueButton.querySelector("img");
+    expect(rogueImage?.className).toContain("opacity-45");
+    expect(rogueImage?.className).toContain("grayscale");
+    expect(rogueImage?.className).toContain("group-hover:opacity-100");
+    expect(rogueImage?.className).toContain("group-hover:grayscale-0");
+
+    rerender(<CharacterSelectScreen onSelect={vi.fn()} finishedRunCharacters={["knight"]} />);
+    const unlockedRogueButton = screen.getByRole("button", { name: "Select Rogue" });
+    const unlockedShinePaint =
+      unlockedRogueButton.querySelector<HTMLElement>(".shine-border-paint")?.style.backgroundColor;
+    expect(lockedShinePaint).toBe(unlockedShinePaint);
+  });
 });

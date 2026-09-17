@@ -44,6 +44,10 @@ function resolveCardChoices(choiceIds: string[]): BattleCard[] | null {
 }
 
 function hasSharedRewardValue(state: RewardState): boolean {
+  // selectedId is deliberately excluded: the store only sets it at claim time
+  // alongside its choices (see claimRunReward), so a selection always travels
+  // with resolvable choices. A lone selectedId with nothing else is stale, not
+  // resumable, and must not keep an empty reward alive.
   return (
     state.gold > 0 ||
     Object.values(state.materials).some((amount) => amount > 0) ||

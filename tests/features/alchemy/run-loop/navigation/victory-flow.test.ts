@@ -32,10 +32,25 @@ vi.mock("@/features/alchemy/shared/run-flow/destination-flow", async (importOrig
   };
 });
 
-vi.mock("@/lib/homestead/loot", () => ({
-  getEnemyMaterialLoot: vi.fn(() => ({ wood: 1, stone: 0, iron: 0, food: 0, herbs: 0, hide: 0, gems: 0 })),
-  applyMaterialFindBonus: vi.fn((mats: unknown) => mats),
-}));
+vi.mock("@/lib/homestead/loot", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/homestead/loot")>();
+  return {
+    ...actual,
+    getEnemyMaterialLoot: vi.fn(() => ({ wood: 1, stone: 0, iron: 0, food: 0, herbs: 0, hide: 0, gems: 0 })),
+    applyMaterialFindBonus: vi.fn((mats: unknown) => mats),
+    // Fixed-base stand-in for the real pipeline: isolates these tests from loot
+    // tables while preserving scavenger/herbalist semantics from live tuning.
+    computeCombatMaterialReward: vi.fn((input: { scavenger: boolean; herbalist: boolean }) => ({
+      wood: input.scavenger ? Math.round(1 * LABYRINTH_REWARD_CONFIG.scavengerMaterialMultiplier) : 1,
+      stone: 0,
+      iron: 0,
+      food: 0,
+      herbs: input.herbalist ? LABYRINTH_REWARD_CONFIG.herbalistHerbBonus : 0,
+      hide: 0,
+      gems: 0,
+    })),
+  };
+});
 
 function baseBattleState(overrides: Record<string, unknown> = {}) {
   return {

@@ -1,8 +1,9 @@
 import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
+import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   createDraftRunRandomSource,
   setCorruptionResult,
+  setRunDeck,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readActivityData } from "@/lib/active-run-session";
 import { playUISound } from "@/lib/audio";
@@ -11,7 +12,7 @@ import { corruptDeckCard } from "@/lib/corruption";
 import { cardLibrary, type BattleCard } from "@/lib/game-data";
 import { discoverCardIds } from "../../shared/stores/profile-store";
 
-function applyCorruptionToDeck(cardIndex: number, updateRunDeck: (draft: GameplayDraft, deck: BattleCard[]) => void) {
+function applyCorruptionToDeck(cardIndex: number) {
   dispatchRunSessionCommand(
     (nextDraft) => {
       const runDeck = nextDraft.run.activeRun.runDeck as BattleCard[];
@@ -23,11 +24,13 @@ function applyCorruptionToDeck(cardIndex: number, updateRunDeck: (draft: Gamepla
         runDeck,
         cardIndex,
         cardLibrary,
+        // Shared "events" stream with mystery: keep sharing so sequential draws
+        // stay deterministic for saves (see mystery-event-navigation).
         createDraftRunRandomSource(nextDraft, "events"),
         modifiers,
       );
       if (!result) return null;
-      updateRunDeck(nextDraft, deck);
+      setRunDeck(nextDraft, deck);
       setCorruptionResult(nextDraft, result);
       discoverCardIds(nextDraft, [result.corruptedCard.id]);
       return result;
@@ -41,7 +44,6 @@ function applyCorruptionToDeck(cardIndex: number, updateRunDeck: (draft: Gamepla
 }
 
 export interface CorruptionFlowDeps {
-  updateRunDeck: (draft: GameplayDraft, deck: BattleCard[]) => void;
   advanceToNextDestination: () => void;
   returnToCurrentDestination: () => void;
   returnToLabyrinthMap?: () => void;
@@ -50,9 +52,9 @@ export interface CorruptionFlowDeps {
 
 export function createCorruptionFlowHandlers(deps: CorruptionFlowDeps) {
   function handleCorruptCard(cardIndex: number) {
-    if (readRunSession().activity.kind !== "corruption" || readActivityData(readRunSession().activity, "corruption"))
-      return;
-    applyCorruptionToDeck(cardIndex, deps.updateRunDeck);
+    const activity = readRunSession().activity;
+    if (activity.kind !== "corruption" || readActivityData(activity, "corruption")) return;
+    applyCorruptionToDeck(cardIndex);
   }
 
   function handleCorruptionExit() {

@@ -7,6 +7,9 @@ import { computeHomesteadEffects, mergeIntoManifest } from "@/lib/homestead/effe
 import {
   applyEndOfRunHomesteadBonuses,
   applyMaterialFindBonus,
+  applyScavengerHerbalistModifiers,
+  computeCombatMaterialReward,
+  computeMysteryMaterialReward,
   enemyLootTableIds,
   enemyLootTables,
   getEnemyMaterialLoot,
@@ -322,19 +325,19 @@ describe("getEnemyMaterialLoot", () => {
     expected: Record<string, number>;
   }>([
     {
-      name: "goblin drops guaranteed wood and food for normal type",
+      name: "goblin drops guaranteed wood and food plus its triggered wood bonus for normal type",
       enemyId: "goblin",
-      expected: { wood: 1, food: 1 },
+      expected: { wood: 2, food: 1 },
     },
     {
-      name: "skeleton has no guaranteed materials",
+      name: "skeleton has no guaranteed materials but its triggered herb bonus pays",
       enemyId: "skeleton",
-      expected: { wood: 0, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 },
+      expected: { wood: 0, iron: 0, herbs: 1, food: 0, gems: 0, stone: 0, hide: 0 },
     },
     {
-      name: "necromancer drops guaranteed herbs and gems",
+      name: "necromancer drops guaranteed herbs and gems plus triggered bonuses",
       enemyId: "necromancer",
-      expected: { herbs: 2, gems: 1, stone: 0, hide: 0 },
+      expected: { herbs: 3, gems: 2, stone: 0, hide: 0 },
     },
   ])("$name", ({ enemyId, expected }) => {
     const loot = getEnemyMaterialLoot(enemyId, "normal", stableRngZero());
@@ -354,10 +357,11 @@ describe("enemy loot parity", () => {
   it("keeps material bonus entries well-shaped", () => {
     for (const [enemyId, table] of Object.entries(enemyLootTables)) {
       for (const bonus of table.bonuses) {
-        expect(bonus.min, `${enemyId}.${bonus.material} min`).toBeGreaterThanOrEqual(0);
+        // A triggered bonus always pays: min ≥ 1 keeps the chance honest.
+        expect(bonus.min, `${enemyId}.${bonus.material} min`).toBeGreaterThanOrEqual(1);
         expect(bonus.min, `${enemyId}.${bonus.material} range`).toBeLessThanOrEqual(bonus.max);
-        expect(bonus.weight, `${enemyId}.${bonus.material} weight`).toBeGreaterThanOrEqual(0);
-        expect(bonus.weight, `${enemyId}.${bonus.material} weight`).toBeLessThanOrEqual(1);
+        expect(bonus.chance, `${enemyId}.${bonus.material} chance`).toBeGreaterThan(0);
+        expect(bonus.chance, `${enemyId}.${bonus.material} chance`).toBeLessThanOrEqual(1);
       }
     }
   });
@@ -373,9 +377,9 @@ describe("getEnemyMaterialLoot with elite multiplier", () => {
 
   it("rounds elite multipliers instead of flooring singleton drops away", () => {
     const normal = getEnemyMaterialLoot("necromancer", "normal", stableRngZero());
-    expect(normal.herbs).toBe(2);
+    expect(normal.herbs).toBe(3);
     const elite = getEnemyMaterialLoot("necromancer", "elite", stableRngZero());
-    expect(elite.herbs).toBe(3);
+    expect(elite.herbs).toBe(4);
   });
 
   it("triples loot for boss enemies", () => {
@@ -395,8 +399,9 @@ describe("getEnemyMaterialLoot with bonus rolls", () => {
       .mockReturnValueOnce(0.3)
       .mockReturnValueOnce(0.1);
     const loot = getEnemyMaterialLoot("mimic", "normal", rng);
-    expect(loot.iron).toBeGreaterThanOrEqual(2);
-    expect(loot.gems).toBeGreaterThanOrEqual(0);
+    // Triggered bonuses always pay at least their minimum on top of guaranteed loot.
+    expect(loot.iron).toBe(3);
+    expect(loot.gems).toBe(1);
   });
 
   it("skips bonuses when random rolls fail", () => {
@@ -404,6 +409,80 @@ describe("getEnemyMaterialLoot with bonus rolls", () => {
     const loot = getEnemyMaterialLoot("mimic", "normal", rng);
     expect(loot.iron).toBe(2);
     expect(loot.gems).toBe(0);
+  });
+});
+
+describe("applyScavengerHerbalistModifiers", () => {
+  it("returns the same reward when no flags are set", () => {
+    const materials = { wood: 1, iron: 0, herbs: 2, food: 0, gems: 0, stone: 0, hide: 0 };
+    expect(applyScavengerHerbalistModifiers(materials, { scavenger: false, herbalist: false })).toBe(materials);
+  });
+
+  it("doubles every material for scavenger", () => {
+    const result = applyScavengerHerbalistModifiers(
+      { wood: 2, iron: 0, herbs: 1, food: 1, gems: 0, stone: 0, hide: 1 },
+      { scavenger: true, herbalist: false },
+    );
+    expect(result.wood).toBe(4);
+    expect(result.herbs).toBe(2);
+    expect(result.food).toBe(2);
+    expect(result.hide).toBe(2);
+  });
+});
+
+describe("computeCombatMaterialReward", () => {
+  it("applies table, herb-find, scavenger, then herbalist in order", () => {
+    // Bandit with every roll hitting: guaranteed 1 wood + 1 food, bonuses +1 wood +1 hide.
+    const result = computeCombatMaterialReward({
+      enemyId: "bandit",
+      enemyType: "normal",
+      effects: { herbFindBonus: 0 },
+      scavenger: true,
+      herbalist: true,
+      rng: stableRngZero(),
+    });
+    expect(result.wood).toBe(4);
+    expect(result.food).toBe(2);
+    expect(result.hide).toBe(2);
+    // Herbalist tops up already-doubled herbs instead of being doubled itself.
+    expect(result.herbs).toBe(3);
+  });
+
+  it("stacks herb-find before scavenger", () => {
+    const result = computeCombatMaterialReward({
+      enemyId: "skeleton",
+      enemyType: "normal",
+      effects: { herbFindBonus: 1 },
+      scavenger: true,
+      herbalist: false,
+      rng: stableRngZero(),
+    });
+    expect(result.herbs).toBe(4);
+  });
+
+  it("leaves non-herb loot untouched without flags", () => {
+    const result = computeCombatMaterialReward({
+      enemyId: "goblin",
+      enemyType: "normal",
+      effects: { herbFindBonus: 0 },
+      scavenger: false,
+      herbalist: false,
+      rng: stableRngZero(),
+    });
+    expect(result.wood).toBe(2);
+    expect(result.food).toBe(1);
+    expect(result.herbs).toBe(0);
+  });
+});
+
+describe("computeMysteryMaterialReward", () => {
+  it("applies only the herb-find bonus to a fixed grant", () => {
+    expect(computeMysteryMaterialReward({ material: "herbs", amount: 2, effects: { herbFindBonus: 0.5 } }).herbs).toBe(
+      3,
+    );
+    const iron = computeMysteryMaterialReward({ material: "iron", amount: 2, effects: { herbFindBonus: 0.5 } });
+    expect(iron.iron).toBe(2);
+    expect(iron.herbs).toBe(0);
   });
 });
 

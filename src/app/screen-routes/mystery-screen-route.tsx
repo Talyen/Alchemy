@@ -21,7 +21,6 @@ function useHeldMysteryVisit(r: ReturnType<typeof useMysteryScreenData>) {
             grantedGearInstances: r.mysteryGrantedGearInstances,
             chosenCardId: r.mysteryChosenCardId,
             chosenChoice: r.mysteryChosenChoice,
-            pendingRemoval: r.mysteryPendingRemoval,
           }
         : null,
     [
@@ -32,7 +31,6 @@ function useHeldMysteryVisit(r: ReturnType<typeof useMysteryScreenData>) {
       r.mysteryGrantedGearInstances,
       r.mysteryChosenCardId,
       r.mysteryChosenChoice,
-      r.mysteryPendingRemoval,
     ],
   );
   const held = useHeldWhile(isMysteryActive, liveVisit);
@@ -77,18 +75,15 @@ export function MysteryScreenRoute({ commands }: { commands: RunLoopCommands["my
   return (
     <MysteryScreen
       event={heldVisit.event}
-      runDeck={r.runDeck}
       mysteryCardChoices={heldVisit.cardChoices}
       mysteryGrantedTrinketIds={heldVisit.grantedTrinketIds}
       mysteryGrantedGearInstances={heldVisit.grantedGearInstances}
       mysteryChosenCardId={heldVisit.chosenCardId}
       mysteryChosenChoice={heldVisit.chosenChoice}
-      mysteryPendingRemoval={heldVisit.pendingRemoval}
       runTalentXP={r.runTalentXP}
       talentXP={r.talentXP}
       onChoose={commands.handleChoice}
       onChooseCard={commands.handleChooseCard}
-      onRemoveCard={commands.handleRemoveCard}
       onContinue={commands.handleContinue}
       findCard={findCard}
       findTrinket={findTrinket}

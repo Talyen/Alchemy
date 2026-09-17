@@ -20,6 +20,7 @@ import {
   getPlasmaColorPairForTrinket,
   getPlasmaColorPairForUnique,
   landscapeArtImageClass,
+  lockedHoverPreviewClass,
   trinketArtImageClass,
 } from "../../../shared/config";
 import { CardFlip } from "../../../shared/ui/card-flip";
@@ -223,9 +224,7 @@ function TileImage({ item, className }: { item: CollectionTileItem; className: s
       className={cn(
         "block w-full transition duration-300",
         className,
-        item.discovered
-          ? "opacity-100"
-          : "opacity-45 grayscale group-focus-within:opacity-100 group-focus-within:grayscale-0 group-hover:opacity-100 group-hover:grayscale-0",
+        item.discovered ? "opacity-100" : lockedHoverPreviewClass,
       )}
     />
   );

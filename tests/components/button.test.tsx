@@ -95,4 +95,29 @@ describe("Button", () => {
     expect(button.classList.contains("h-24")).toBe(false);
     expect(button.parentElement?.classList.contains("h-24")).toBe(true);
   });
+
+  it("applies outline variant styling with grounded border and hover illumination", () => {
+    render(<Button variant="outline">Secondary</Button>);
+    const button = screen.getByRole("button", { name: "Secondary" });
+    expect(button.classList.contains("border-border/90")).toBe(true);
+    expect(button.classList.contains("text-foreground/80")).toBe(true);
+    expect(button.classList.contains("hover:text-foreground")).toBe(true);
+    expect(button.classList.contains("hover:border-border")).toBe(true);
+  });
+
+  it("applies primary variant bloom glow without hover scaling", () => {
+    render(<Button variant="primary">Primary</Button>);
+    const button = screen.getByRole("button", { name: "Primary" });
+    expect(button.classList.contains("button-primary-bloom")).toBe(true);
+    expect(button.classList.contains("card-hover-scale")).toBe(false);
+  });
+
+  it("applies destructive variant styling with distinct active press feedback", () => {
+    render(<Button variant="destructive">Destructive</Button>);
+    const button = screen.getByRole("button", { name: "Destructive" });
+    expect(button.classList.contains("bg-destructive")).toBe(true);
+    expect(button.classList.contains("hover:bg-destructive/90")).toBe(true);
+    expect(button.classList.contains("active:bg-destructive/80")).toBe(true);
+    expect(button.classList.contains("active:brightness-95")).toBe(true);
+  });
 });

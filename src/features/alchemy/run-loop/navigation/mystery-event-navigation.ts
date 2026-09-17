@@ -9,8 +9,6 @@ import {
   setMysteryChosenCardId,
   setMysteryChosenChoice,
   setMysteryEvent,
-  setMysteryPendingRemoval,
-  setRunDeck,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readActivityData } from "@/lib/active-run-session";
 import { playGoldGain, playGoldSpend, playUISound } from "@/lib/audio";
@@ -23,7 +21,6 @@ import { cardById } from "@/lib/game-data";
 import { isMysteryLootEligible, pickResolvedMysteryEvent, type MysteryChoice } from "@/lib/mystery";
 import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
 import { combineTrinketEffectIds } from "@/lib/trinkets";
-import { isValidDeckIndex } from "@/lib/utils";
 export function createMysteryEventNavigation({
   navigateTo,
 }: {
@@ -33,6 +30,9 @@ export function createMysteryEventNavigation({
     dispatchRunSessionCommand(
       (draft) => {
         clearMysteryVisitState(draft);
+        // Shared "events" stream with corruption and run-restore mystery repair:
+        // sequential draws stay deterministic for saves, so keep sharing rather
+        // than splitting streams.
         const rng = createDraftRunRandomSource(draft, "events");
         const modifiers = activeLabyrinthBenefits(
           draft.run.activeRun.contentSystemType,
@@ -102,8 +102,8 @@ export function createMysteryEventNavigation({
       },
     );
   };
-  // Choose/remove report success because the deck-picker screens use the
-  // boolean to update selection UI; choice/begin stay void (feedback travels
+  // handleMysteryChooseCard reports success because the deck-picker screen uses
+  // the boolean to update selection UI; choice/begin stay void (feedback travels
   // via afterCommit sounds), matching the route-commands contract.
   const handleMysteryChooseCard = (cardId: string): boolean => {
     return dispatchRunSessionCommand((draft) => {
@@ -118,19 +118,9 @@ export function createMysteryEventNavigation({
       return true;
     });
   };
-  const handleMysteryRemoveCard = (index: number): boolean => {
-    return dispatchRunSessionCommand((draft) => {
-      if (!readActivityData(draft.session.activity, "mystery").mysteryPendingRemoval) return false;
-      if (!isValidDeckIndex(index, draft.run.activeRun.runDeck.length)) return false;
-      setRunDeck(draft, (deck) => deck.filter((_, cardIndex) => cardIndex !== index));
-      setMysteryPendingRemoval(draft, false);
-      return true;
-    });
-  };
   return {
     beginMysteryEvent,
     handleMysteryChoice,
     handleMysteryChooseCard,
-    handleMysteryRemoveCard,
   };
 }

@@ -62,7 +62,6 @@ export interface AlchemyRouteCommands {
     mystery: {
       handleChoice: (choice: MysteryChoice) => void;
       handleChooseCard: (cardId: string) => boolean;
-      handleRemoveCard: (index: number) => boolean;
       handleContinue: () => void;
     };
     corruption: {

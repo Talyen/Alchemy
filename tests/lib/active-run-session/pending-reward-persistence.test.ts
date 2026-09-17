@@ -44,6 +44,13 @@ describe("pending reward persistence", () => {
     expect(restored).toEqual(rewardState);
   });
 
+  it("drops a stale selection with no choices or shared value instead of reviving it", () => {
+    // selectedId is only ever set at claim time alongside its choices; a lone
+    // selection cannot resolve to anything, so it must not keep a reward alive.
+    const persisted = serializePendingReward({ ...createEmptyRewardState(), selectedId: "slash" });
+    expect(persisted).toBeNull();
+  });
+
   it("restores trinket rewardType from persisted saves", () => {
     const parsed = restorePendingReward({
       rewardType: "trinket",

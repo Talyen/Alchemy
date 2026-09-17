@@ -16,6 +16,8 @@ import type { PersistedMysteryVisit } from "./types";
 export interface HydratedMysteryVisit {
   mysteryEvent: MysteryEvent | null;
   mysteryChosenChoice: MysteryChoice | null;
+  // Legacy: no live flow sets player-choice removal anymore (removeCard resolves
+  // immediately). Kept so old saves and stale visits still parse and clear.
   mysteryPendingRemoval: boolean;
   mysteryCardChoices: BattleCard[] | null;
   mysteryGrantedTrinketIds: string[];

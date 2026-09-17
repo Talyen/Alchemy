@@ -71,7 +71,7 @@ describe("progressive reward selection", () => {
           gearAstralChanceBonus: 1,
         }),
         createBossRewardState({ ...input, lootProgress: progress, rng: createSeededRng(seed) }),
-        createWildwoodRewardState(input.runDeck, createSeededRng(seed), progress),
+        createWildwoodRewardState({ runDeck: input.runDeck, rng: createSeededRng(seed), lootProgress: progress }),
       ];
       for (const reward of rewards) {
         const offered = premiums(reward);
@@ -114,15 +114,14 @@ describe("progressive reward selection", () => {
 
   it("keeps Boons available early and removes exhausted Boon groups without empty rewards", () => {
     const early = { depth: 1, highestCompletedDifficulty: null };
-    const boon = createWildwoodRewardState(input.runDeck, () => 0.99, early);
+    const boon = createWildwoodRewardState({ runDeck: input.runDeck, rng: () => 0.99, lootProgress: early });
     expect(boon.rewardType).toBe("boon");
-    const exhausted = createWildwoodRewardState(
-      input.runDeck,
-      () => 0,
-      early,
-      0,
-      trinketLibrary.map((entry) => entry.id),
-    );
+    const exhausted = createWildwoodRewardState({
+      runDeck: input.runDeck,
+      rng: () => 0,
+      lootProgress: early,
+      excludedBoonIds: trinketLibrary.map((entry) => entry.id),
+    });
     expect(exhausted.rewardType).toBe("card");
     expect(exhausted.choices).toHaveLength(3);
   });

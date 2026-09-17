@@ -19,6 +19,7 @@ import { companionTierItems } from "@/lib/homestead/companions";
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import type { MaterialInventory, BuildingId, FarmId, ResearchId, HomesteadEffectManifest } from "@/lib/homestead/types";
 import { createRunRngState, type RunRngState } from "@/lib/rng";
+import { EMPTY_CRAFTING_CURRENCIES, type CraftingCurrencyId } from "@/lib/gear";
 import { filterValidDestinations, filterValidDestinationRounds } from "@/lib/routing";
 
 export interface ActiveRunProgressFields {
@@ -40,6 +41,7 @@ export interface ActiveRunProgressFields {
   rng: RunRngState;
   runTalentXP: TalentXP;
   runMaterialsEarned: MaterialInventory;
+  runCurrenciesEarned: Record<CraftingCurrencyId, number>;
   runObtainedItems: RunObtainedItem[];
 }
 
@@ -76,6 +78,7 @@ export const ACTIVE_RUN_PROGRESS_KEYS = [
   "rng",
   "runTalentXP",
   "runMaterialsEarned",
+  "runCurrenciesEarned",
   "runObtainedItems",
 ] as const satisfies ReadonlyArray<keyof ActiveRunProgressFields>;
 
@@ -107,6 +110,7 @@ function createEmptyActiveRunCollections(): Pick<
   | "encounteredRunEnemyIds"
   | "runTalentXP"
   | "runMaterialsEarned"
+  | "runCurrenciesEarned"
   | "runObtainedItems"
 > {
   return {
@@ -117,6 +121,7 @@ function createEmptyActiveRunCollections(): Pick<
     encounteredRunEnemyIds: [],
     runTalentXP: {},
     runMaterialsEarned: emptyInventory(),
+    runCurrenciesEarned: { ...EMPTY_CRAFTING_CURRENCIES },
     runObtainedItems: [],
   };
 }
@@ -182,6 +187,7 @@ function createResumeActiveRunFields(activeRun: ActiveRunData): ActiveRunProgres
     rng: activeRun.rng ?? createFreshRunRngState(),
     runTalentXP: activeRun.runTalentXP ?? empty.runTalentXP,
     runMaterialsEarned: activeRun.runMaterialsEarned ?? empty.runMaterialsEarned,
+    runCurrenciesEarned: activeRun.runCurrenciesEarned ?? empty.runCurrenciesEarned,
     runObtainedItems: [...(activeRun.runObtainedItems ?? empty.runObtainedItems)],
   };
 }

@@ -1,6 +1,6 @@
 import { useId, useMemo, useState, type ReactNode, type RefObject } from "react";
 import { X, type LucideIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ChromeIconButton } from "../chrome-icon-button";
 import { getCardKeywords, type BattleCard } from "../../config/game-data-catalog";
 import type { CardDescriptionContext } from "@/lib/game-data";
 import { viewCardWidthClass } from "../../config/layout";
@@ -132,16 +132,14 @@ function InspectionPanel({
         <h2 id={titleId} className="text-center font-sans text-3xl">
           {title}
         </h2>
-        <Button
-          variant="outline"
-          size="icon"
-          className="absolute top-0 right-0 h-11 w-11"
+        <ChromeIconButton
+          className="absolute top-0 right-0"
           aria-label={closeLabel}
           data-dialog-initial-focus
           onClick={onClose}
         >
           <X className="h-5 w-5" />
-        </Button>
+        </ChromeIconButton>
       </div>
       {children}
     </div>

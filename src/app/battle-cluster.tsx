@@ -1,41 +1,13 @@
 import { useRef, useState } from "react";
 import { Repeat, SkipForward } from "lucide-react";
-import { cn, formatLargeAmount } from "@/lib/utils";
 import { ChromeIconButton } from "@/features/alchemy/shared/ui/chrome-icon-button";
-import { cardHoverScaleClass } from "@/features/alchemy/shared/config";
-import { HomesteadResourceArtwork } from "@/features/alchemy/shared/ui/material-icons";
+import { GoldDisplay } from "@/features/alchemy/shared/ui/display-elements";
 import { PortaledTooltip } from "@/features/alchemy/shared/ui/tooltips/portaled-tooltip";
 import { BattleBoonInspectButton } from "@/features/alchemy/run-loop/screens/battle-screen/boon-inspect";
 import { DeckInspectButton, type DeckInspectButtonProps } from "@/features/alchemy/shared/ui/deck-inspect-button";
 import { HamburgerTrigger } from "@/features/alchemy/shared/ui/navigation";
 import { useBattleClusterState } from "@/features/alchemy/shared/stores/run-reads";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
-
-function BattleGoldCounter({ gold }: { gold: number }) {
-  const [previousGold, setPreviousGold] = useState(gold);
-  const [increaseToken, setIncreaseToken] = useState(0);
-  if (gold !== previousGold) {
-    setPreviousGold(gold);
-    if (gold > previousGold) setIncreaseToken((token) => token + 1);
-  }
-
-  return (
-    <div
-      key={increaseToken}
-      className={cn(
-        "flex h-11 items-center gap-1.5 rounded-md px-2 text-xl font-semibold text-amber-200 tabular-nums",
-        cardHoverScaleClass,
-        increaseToken > 0 && "battle-gold-increase",
-      )}
-      aria-label={`Gold: ${gold}`}
-      role="img"
-      data-testid="battle-gold"
-    >
-      <HomesteadResourceArtwork resource="gold" size="md" alt="" />
-      <span>{formatLargeAmount(gold)}</span>
-    </div>
-  );
-}
 
 function BattleAutoplayToggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) {
   return (
@@ -104,7 +76,7 @@ export function BattleCluster({
   const { gold, hasWishOptions } = useBattleClusterState();
   return (
     <div inert={inert} className="absolute top-4 right-4 z-[80] flex items-center gap-2">
-      <BattleGoldCounter gold={gold} />
+      <GoldDisplay gold={gold} testId="battle-gold" />
       {deckInspection ? <DeckInspectButton {...deckInspection} /> : null}
       <BattleAutoplayToggle enabled={isAutoplayEnabled} onToggle={toggleAutoplayEnabled} />
       {hasInspectBoons ? <BattleBoonInspectButton open={boonInspectOpen} onToggle={toggleBoonInspect} /> : null}

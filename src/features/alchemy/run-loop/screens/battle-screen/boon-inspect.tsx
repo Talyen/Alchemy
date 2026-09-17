@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import { Trophy, X } from "lucide-react";
 
 import { ChromeIconButton } from "../../../shared/ui/chrome-icon-button";
-import { Button } from "@/components/ui/button";
 import { battleTrinketInspectRowMaxWidthClass } from "@/features/alchemy/shared/config";
 import { TRINKET_PAGE_SIZE } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
@@ -66,16 +65,9 @@ export function BattleBoonInspectOverlay({
         <div className="grid w-full grid-cols-[calc(2.5*var(--content-rem,1rem))_1fr_calc(2.5*var(--content-rem,1rem))] items-start">
           <span />
           <ScreenHeader title="Boons" />
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-10 w-10 text-muted-foreground"
-            wrapperClassName="justify-self-end"
-            onClick={onClose}
-            aria-label="Close boons"
-          >
+          <ChromeIconButton className="h-10 w-10 justify-self-end" onClick={onClose} aria-label="Close boons">
             <X className="h-5 w-5" />
-          </Button>
+          </ChromeIconButton>
         </div>
 
         {trinkets.length === 0 ? (

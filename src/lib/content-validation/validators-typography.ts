@@ -119,7 +119,6 @@ function* collectTypographyEntries(): Generator<TypographyEntry> {
 
   for (const [id, character] of Object.entries(characters)) {
     yield { area: "keywords", id, label: "Character name", text: character.name, allowPeriod: true };
-    yield { area: "keywords", id, label: "Character description", text: character.description, allowPeriod: true };
     yield { area: "keywords", id, label: "Character role", text: character.role, allowPeriod: true };
   }
 

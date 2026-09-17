@@ -4,6 +4,7 @@ import { drawCards } from "@/lib/battle/draw";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { shuffle } from "@/lib/utils";
 import { CARDS_PER_TURN, MAX_HAND_SIZE } from "@/lib/game-constants";
+import { emptyInventory } from "@/lib/homestead/inventory";
 import { makeTestBattleState, makeTestCardWithId, seededRng } from "../../fixtures/battle";
 import { makeTestCard } from "../../fixtures/cards";
 
@@ -58,7 +59,7 @@ describe("defaultBattleState", () => {
       playerHealth: 30,
       enemyHealth: 30,
       currentEnemy: { id: "skeleton" },
-      pendingMaterials: { wood: 0, iron: 0, herbs: 0, food: 0, gems: 0 },
+      pendingMaterials: emptyInventory(),
       talentEffects: defaultTalentEffects,
       playerStatuses: {
         block: 0,

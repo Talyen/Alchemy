@@ -36,12 +36,15 @@ export function KeywordTag({
       className={cn(
         "inline-flex items-baseline gap-1 text-sm leading-none font-semibold",
         def.colorClass,
-        pill && "character-keyword-pill-tint rounded-full px-3 py-1 text-xs",
+        pill && "character-keyword-pill-tint items-center rounded-full px-2.5 py-1 text-xs",
         className,
       )}
     >
       {showIcon ? (
-        <Icon className={cn("relative top-[0.15em] h-[1em] w-[1em] shrink-0", pill && "top-0 h-3 w-3")} />
+        <Icon
+          strokeWidth={2.5}
+          className={cn("relative top-[0.15em] h-[1em] w-[1em] shrink-0", pill && "top-0 h-3 w-3")}
+        />
       ) : null}
       {def.label}
     </span>

@@ -22,4 +22,21 @@ describe("KeywordTag", () => {
     expect(screen.getByText("Consume").className).toContain(keywordDefinitions.consume.colorClass);
     expect(screen.getByText("Nature").className).toContain(keywordDefinitions.nature.colorClass);
   });
+
+  it("renders pill chip with centered alignment and bold stroke icon", () => {
+    const { container } = render(<KeywordTag keywordId="block" pill />);
+
+    const tag = container.querySelector("span");
+    expect(tag).toBeTruthy();
+    expect(tag?.className).toContain("items-center");
+    expect(tag?.className).toContain("rounded-full");
+    expect(tag?.className).toContain("character-keyword-pill-tint");
+
+    const svg = tag?.querySelector("svg");
+    expect(svg).toBeTruthy();
+    expect(svg?.getAttribute("stroke-width")).toBe("2.5");
+    expect(svg?.getAttribute("class")).toContain("top-0");
+    expect(svg?.getAttribute("class")).toContain("h-3");
+    expect(svg?.getAttribute("class")).toContain("w-3");
+  });
 });

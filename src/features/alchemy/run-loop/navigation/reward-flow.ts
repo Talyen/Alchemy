@@ -1,14 +1,7 @@
 import { resolveLootWeights, rollLootGroup, type LootProgress, type LootSource } from "@/lib/loot";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
-import {
-  ENEMY_TYPES,
-  cardLibrary,
-  getCardKeywords,
-  selectRewardCards,
-  trinketLibrary,
-  type BattleCard,
-} from "@/lib/game-data";
+import { ENEMY_TYPES, getCardKeywords, selectRewardCards, trinketLibrary, type BattleCard } from "@/lib/game-data";
 import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
 import { LABYRINTH_REWARD_CONFIG, REWARD_CARD_CHOICES } from "@/lib/game-constants";
 import { pickRandom, sampleItems } from "@/lib/rng";
@@ -88,10 +81,14 @@ export function createNextRewardState(rewardState: RewardState): CardRewardState
   };
 }
 
-export function getRandomPotionCard(rng: () => number): BattleCard {
+export function getRandomPotionCard(rng: () => number): BattleCard | null {
   const potion = pickRandom(getStandardPotionPool(), rng);
   if (!potion) {
-    throw new Error("[reward-flow] getRandomPotionCard: no potion cards found in getStandardPotionPool()");
+    // The pool is statically populated; a data error skips the grant instead of
+    // aborting the reward claim mid-command.
+    if (import.meta.env.DEV)
+      console.warn("[reward-flow] getRandomPotionCard: no potion cards in getStandardPotionPool()");
+    return null;
   }
   return potion;
 }
@@ -109,7 +106,7 @@ export function getCompanionCardChoices(
         : "companion";
   const companions =
     theme === "companion"
-      ? cardLibrary.filter((c) => c.effects?.some((e) => e.kind === "summon-companion"))
+      ? getOfferableCardPool().filter((c) => c.effects?.some((e) => e.kind === "summon-companion"))
       : getOfferableCardPool().filter((card) => getCardKeywords(card).includes(theme));
   return sampleItems(companions, LABYRINTH_REWARD_CONFIG.companionCardChoices, rng);
 }
@@ -212,32 +209,58 @@ function createLootRewardState({
   }
 }
 
+function computeSharedRewardGold(
+  input: {
+    gold: number;
+    generousBonus: number;
+    wealthyBonus: number;
+    talentGoldPerCombat: number;
+    trinketIds: string[];
+    goldMultiplier?: number;
+    inCombatGold?: number | undefined;
+  },
+  bonusGold: number,
+): number {
+  // Boss and combat rewards differ only in which encounter bonus feeds bonusGold.
+  return computeRewardGold({
+    baseGold: input.gold,
+    bonusGold,
+    generousBonus: input.generousBonus,
+    wealthyBonus: input.wealthyBonus,
+    talentGoldPerCombat: input.talentGoldPerCombat,
+    trinketIds: input.trinketIds,
+    goldMultiplier: input.goldMultiplier ?? 1,
+    inCombatGold: input.inCombatGold,
+  });
+}
+
 export function createBossRewardState(input: BossRewardInput): RewardState {
   return {
     ...createLootRewardState({ ...input, source: "boss" }),
-    gold: computeRewardGold({
-      baseGold: input.gold,
-      bonusGold: input.bossBonus,
-      generousBonus: input.generousBonus,
-      wealthyBonus: input.wealthyBonus,
-      talentGoldPerCombat: input.talentGoldPerCombat,
-      trinketIds: input.trinketIds,
-      goldMultiplier: input.goldMultiplier ?? 1,
-      inCombatGold: input.inCombatGold,
-    }),
+    gold: computeSharedRewardGold(input, input.bossBonus),
     materials: input.materials,
   };
 }
 
-export function createWildwoodRewardState(
-  runDeck: BattleCard[],
-  rng: () => number,
-  lootProgress: LootProgress,
+export interface WildwoodRewardInput {
+  runDeck: BattleCard[];
+  rng: () => number;
+  lootProgress: LootProgress;
+  gearAstralChanceBonus?: number;
+  excludedBoonIds?: readonly string[];
+  ownedTrinketIds?: readonly string[];
+  ownedUniqueIds?: ReadonlySet<string>;
+}
+
+export function createWildwoodRewardState({
+  runDeck,
+  rng,
+  lootProgress,
   gearAstralChanceBonus = 0,
-  excludedBoonIds: string[] = [],
-  ownedTrinketIds: string[] = [],
-  ownedUniqueIds: ReadonlySet<string> = new Set(),
-): RewardState {
+  excludedBoonIds = [],
+  ownedTrinketIds = [],
+  ownedUniqueIds = new Set(),
+}: WildwoodRewardInput): RewardState {
   return createLootRewardState({
     source: "wildwood",
     runDeck,
@@ -254,16 +277,7 @@ export function createCombatRewardState(input: CombatRewardInput): RewardState {
   const source = input.battleState.currentEnemy.enemyType === ENEMY_TYPES.ELITE ? "elite" : "normal";
   return {
     ...createLootRewardState({ ...input, source }),
-    gold: computeRewardGold({
-      baseGold: input.gold,
-      bonusGold: input.eliteBonus,
-      generousBonus: input.generousBonus,
-      wealthyBonus: input.wealthyBonus,
-      talentGoldPerCombat: input.talentGoldPerCombat,
-      trinketIds: input.trinketIds,
-      goldMultiplier: input.goldMultiplier ?? 1,
-      inCombatGold: input.inCombatGold,
-    }),
+    gold: computeSharedRewardGold(input, input.eliteBonus),
     materials: input.materials,
     destinations: input.destinations,
   };

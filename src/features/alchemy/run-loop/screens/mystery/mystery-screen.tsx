@@ -4,11 +4,10 @@ import type { BattleCard, KeywordId, TalentXP, TrinketEntry } from "@/lib/game-d
 import type { GearInstance } from "@/lib/gear";
 import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
 
-import { ScreenDescription, TitledScreenShell } from "../../../shared/ui/layout-components";
+import { TitledScreenShell } from "../../../shared/ui/layout-components";
 import { usePlasmaBaseline } from "../../../shared/ui/use-plasma-source";
 import { getPlasmaColorPair } from "@/features/alchemy/shared/config";
 import { FadeSlot } from "../../../shared/ui/use-fade";
-import { RemoveCardPanel } from "../../../shared/ui/remove-card-panel";
 
 import { CardChoicePicker } from "./mystery-deck-pickers";
 import { MysteryRewardSummary } from "./mystery-reward-summary";
@@ -22,35 +21,29 @@ import {
 
 export function MysteryScreen({
   event,
-  runDeck,
   mysteryCardChoices,
   mysteryGrantedTrinketIds,
   mysteryGrantedGearInstances,
   mysteryChosenCardId,
   mysteryChosenChoice,
-  mysteryPendingRemoval,
   runTalentXP = {},
   talentXP = {},
   onChoose,
   onChooseCard,
-  onRemoveCard,
   onContinue,
   findCard,
   findTrinket,
 }: {
   event: MysteryEvent;
-  runDeck: BattleCard[];
   mysteryCardChoices: BattleCard[] | null;
   mysteryGrantedTrinketIds: string[];
   mysteryGrantedGearInstances: GearInstance[];
   mysteryChosenCardId: string | null;
   mysteryChosenChoice: MysteryChoice | null;
-  mysteryPendingRemoval: boolean;
   runTalentXP?: TalentXP;
   talentXP?: TalentXP;
   onChoose: (choice: MysteryChoice) => void;
   onChooseCard: (cardId: string) => void;
-  onRemoveCard: (index: number) => void;
   onContinue: () => void;
   findCard: (id: string) => BattleCard | undefined;
   findTrinket: (id: string) => TrinketEntry | undefined;
@@ -75,24 +68,8 @@ export function MysteryScreen({
     handlePickerConfirm(() => onChooseCard(cardId));
   }
 
-  function handleRemoveConfirm(index: number) {
-    handlePickerConfirm(() => onRemoveCard(index));
-  }
-
-  const phase = mysteryCardChoices
-    ? "cards"
-    : mysteryPendingRemoval
-      ? "remove"
-      : mysteryChosenChoice
-        ? "summary"
-        : "intro";
-  const title = mysteryCardChoices
-    ? "Choose a Card"
-    : mysteryPendingRemoval
-      ? "Remove a Card"
-      : mysteryChosenChoice
-        ? "Reward"
-        : event.title;
+  const phase = mysteryCardChoices ? "cards" : mysteryChosenChoice ? "summary" : "intro";
+  const title = mysteryCardChoices ? "Choose a Card" : mysteryChosenChoice ? "Reward" : event.title;
 
   const plasmaKeywordIds = useMemo(() => {
     if (phase !== "summary" || !mysteryChosenChoice) return null;
@@ -118,12 +95,6 @@ export function MysteryScreen({
         <div className="mt-6 flex min-h-[56cqh] w-full flex-col">
           {mysteryCardChoices ? (
             <CardChoicePicker choices={mysteryCardChoices} onSelect={handleCardChoiceConfirm} />
-          ) : mysteryPendingRemoval ? (
-            <RemoveCardPanel
-              runDeck={runDeck}
-              intro={<ScreenDescription>Select a card to remove from your deck</ScreenDescription>}
-              onConfirm={handleRemoveConfirm}
-            />
           ) : mysteryChosenChoice ? (
             <MysteryRewardSummary
               choice={mysteryChosenChoice}

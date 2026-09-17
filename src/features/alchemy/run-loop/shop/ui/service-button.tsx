@@ -33,8 +33,8 @@ export function ServiceButton({
     <DisabledTooltip show={disabled} message={disabledMessage}>
       <Button size="lg" variant="outline" disabled={disabled} onClick={onClick}>
         <Icon className="h-7 w-7" />
-        <span className="font-normal">{label}</span>
-        <GoldCost amount={cost} />
+        <span>{label}</span>
+        <GoldCost amount={cost} affordable={!disabled} />
       </Button>
     </DisabledTooltip>
   );

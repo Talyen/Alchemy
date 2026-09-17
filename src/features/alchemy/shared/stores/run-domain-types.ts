@@ -20,6 +20,7 @@ import type {
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type { BattleCard, CharacterId, TalentXP } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
+import { EMPTY_CRAFTING_CURRENCIES, type CraftingCurrencyId } from "@/lib/gear";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { Destination, Screen } from "@/lib/routing";
 
@@ -49,6 +50,7 @@ export function createInitialSessionFields(): RunSessionFields {
     runEndLabyrinthFloor: null,
     rewardFlow: { state: createEmptyRewardState(), companionCards: null, claim: { kind: "idle" } },
     runEndMaterials: emptyInventory(),
+    runEndCurrencies: { ...EMPTY_CRAFTING_CURRENCIES },
     runEndTalentXP: {},
     runEndItems: [],
     pendingCharacterId: null,
@@ -87,6 +89,7 @@ export interface RunSessionFields {
   runEndLabyrinthFloor: number | null;
   rewardFlow: RunRewardFlow;
   runEndMaterials: MaterialInventory;
+  runEndCurrencies: Record<CraftingCurrencyId, number>;
   runEndTalentXP: TalentXP;
   runEndItems: RunObtainedItem[];
   pendingCharacterId: CharacterId | null;

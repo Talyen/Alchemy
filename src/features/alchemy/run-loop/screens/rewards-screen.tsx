@@ -119,19 +119,6 @@ function RewardsFound({
   return <FoundResourcesRow gold={rewardGold} materials={rewardMaterials} />;
 }
 
-function getRewardPrompt(rewardType: RewardState["rewardType"]): string {
-  switch (rewardType) {
-    case "gear":
-      return "Add Gear to your Armory";
-    case "trinket":
-      return "Choose a Trinket to add to your Armory";
-    case "boon":
-      return "Choose a Boon for this Run";
-    case "card":
-      return "Add a Card to your Deck";
-  }
-}
-
 function RewardPlasmaController({ rewardState }: { rewardState: RewardState }) {
   const hoveredCardId = useUiStore((s) => s.hoveredCardId);
   const hoveredReward = useMemo(() => {
@@ -156,7 +143,6 @@ export function RewardsScreen({
   const rewardChoices = rewardState.choices;
   const rewardGold = rewardState.gold;
   const rewardMaterials = rewardState.materials;
-  const choicePrompt = getRewardPrompt(rewardState.rewardType);
 
   const claimLocked = claimInFlight || rewardChoices.length === 0;
   const skipDisabled = claimInFlight;
@@ -169,7 +155,7 @@ export function RewardsScreen({
         swapKey={`${rewardState.rewardType}:${rewardChoices.map((item) => getRewardChoiceId(item)).join("-")}`}
         className="flex flex-col"
       >
-        <h2 className={cn("mt-3 text-center font-sans", sectionTitleClass)}>{choicePrompt}</h2>
+        <h2 className={cn("mt-3 text-center font-sans", sectionTitleClass)}>Choose a Reward</h2>
         <div className="mt-8 flex flex-col items-center gap-8">
           <div className="flex flex-wrap items-start justify-center gap-6">
             <RewardChoiceItems rewardState={rewardState} disabled={claimLocked} onClaimReward={onClaimReward} />

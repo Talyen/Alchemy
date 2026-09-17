@@ -46,8 +46,22 @@ const TRANSIENT_SESSION_KEYS: ReadonlySet<string> = new Set([
   "pendingContentSystemType",
   "runEndLabyrinthFloor",
   "runEndMaterials",
+  "runEndCurrencies",
   "runEndTalentXP",
   "runEndItems",
+]);
+
+// Mode-gated session fields are nulled by the resume codec when their mode is
+// inactive (see encodeActiveRunFromSession in run-resume-codec.ts): labyrinth
+// fields persist only for labyrinth runs, wildwoodDraft only for wildwood,
+// and starterDraftChoices for everything except wildwood. While both snapshots
+// sit in the same mode, changes to an inactive mode's fields cannot reach a
+// save, so they must not schedule snapshot builds either.
+const LABYRINTH_SESSION_KEYS: ReadonlySet<string> = new Set([
+  "labyrinthMap",
+  "activeLabyrinthModifiers",
+  "activeLabyrinthRewardModifiers",
+  "activeLabyrinthPendingNode",
 ]);
 
 // Run-domain keys that never reach a snapshot: the committed screen (resume
@@ -67,16 +81,32 @@ function recordsEqualExcept(
   return true;
 }
 
-function sessionPersistedInputsEqual(previous: GameplayState["session"], next: GameplayState["session"]): boolean {
+function sessionPersistedInputsEqual(
+  previous: GameplayState["session"],
+  next: GameplayState["session"],
+  previousMode: GameplayState["run"]["activeRun"]["contentSystemType"],
+  nextMode: GameplayState["run"]["activeRun"]["contentSystemType"],
+): boolean {
   if (previous === next) return true;
   // The reward claim gate is routing-only; the persisted reward payload is
   // state + companionCards (see encodeInterruptedFlow).
   if (!Object.is(previous.rewardFlow.state, next.rewardFlow.state)) return false;
   if (!Object.is(previous.rewardFlow.companionCards, next.rewardFlow.companionCards)) return false;
+  const skipped = new Set<string>([...TRANSIENT_SESSION_KEYS, "rewardFlow"]);
+  // Skip mode-gated fields only while both snapshots sit in the same mode, so
+  // a mode switch itself always dirties. Conservative by construction: the
+  // codec nulls exactly these fields for the inactive mode.
+  if (previousMode === nextMode) {
+    if (previousMode !== "labyrinth") {
+      for (const key of LABYRINTH_SESSION_KEYS) skipped.add(key);
+    }
+    if (previousMode !== "wildwood") skipped.add("wildwoodDraft");
+    else skipped.add("starterDraftChoices");
+  }
   return recordsEqualExcept(
     previous as unknown as Record<string, unknown>,
     next as unknown as Record<string, unknown>,
-    new Set([...TRANSIENT_SESSION_KEYS, "rewardFlow"]),
+    skipped,
   );
 }
 
@@ -97,5 +127,10 @@ function gameplayPersistedInputsEqual(previous: GameplayState, next: GameplaySta
   ) {
     return false;
   }
-  return sessionPersistedInputsEqual(previous.session, next.session);
+  return sessionPersistedInputsEqual(
+    previous.session,
+    next.session,
+    previous.run.activeRun.contentSystemType,
+    next.run.activeRun.contentSystemType,
+  );
 }

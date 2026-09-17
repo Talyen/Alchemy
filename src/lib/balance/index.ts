@@ -24,3 +24,4 @@ export * from "./findings-selection";
 export * from "./findings-html";
 export * from "./findings-json";
 export * from "./loot-report";
+export * from "./materials-report";

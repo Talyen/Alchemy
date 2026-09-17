@@ -28,7 +28,7 @@ import {
   type TalentEffectManifest,
   type UnlockedTalents,
 } from "@/lib/game-data";
-import { applyMaterialFindBonus, getEnemyMaterialLoot } from "@/lib/homestead/loot";
+import { computeCombatMaterialReward } from "@/lib/homestead/loot";
 import type { HomesteadEffectManifest, MaterialInventory } from "@/lib/homestead/types";
 import type { LootProgress } from "@/lib/loot";
 import type { Destination } from "@/lib/routing";
@@ -39,7 +39,6 @@ import {
   createWildwoodRewardState,
 } from "./reward-flow";
 import {
-  applyLabyrinthRewardMaterialModifiers,
   computeVictoryGold,
   getActiveRewardModifiersForContentSystem,
   getGenerousGoldBonus,
@@ -208,7 +207,9 @@ export function computeVictoryRewardState(
 
 // Gauntlet economy: Wildwood gold is purse-vs-battle plus companion bonus only,
 // deliberately ignoring the difficulty/talent/elite multipliers campaign and
-// labyrinth apply in computeVictoryGold below.
+// labyrinth apply in computeVictoryGold below. Modifiers still pass through
+// untouched so the companion second-stage in victory-commands keeps working;
+// every other modifier is intentionally ignored here.
 function computeWildwoodVictoryRewards(
   input: VictoryRewardsInput,
   talentEffects: TalentEffectManifest,
@@ -219,15 +220,15 @@ function computeWildwoodVictoryRewards(
   const companionGold = input.battleState.activeCompanion ? talentEffects.companionVictoryGold : 0;
   const goldEarned = Math.max(0, input.battleState.gold - input.purseGold) + companionGold;
   return {
-    rewardState: createWildwoodRewardState(
-      input.runDeck,
+    rewardState: createWildwoodRewardState({
+      runDeck: input.runDeck,
       rng,
-      input.lootProgress,
-      input.homesteadEffects.gearAstralChanceBonus,
-      activeTrinketEffectIds,
-      input.ownedTrinketIds ?? [],
-      input.ownedUniqueIds ?? new Set(),
-    ),
+      lootProgress: input.lootProgress,
+      gearAstralChanceBonus: input.homesteadEffects.gearAstralChanceBonus,
+      excludedBoonIds: activeTrinketEffectIds,
+      ownedTrinketIds: input.ownedTrinketIds ?? [],
+      ownedUniqueIds: input.ownedUniqueIds ?? new Set(),
+    }),
     labyrinthRewardModifiers,
     goldEarned,
     persistedGold: Math.max(input.purseGold, input.battleState.gold) + companionGold,
@@ -302,15 +303,14 @@ export function computeVictoryRewards(
       ? Math.min(effectiveMaxHealth, input.battleState.playerHealth + wellProvisionedHealing)
       : input.battleState.playerHealth;
 
-  const baseMaterials = getEnemyMaterialLoot(
-    input.battleState.currentEnemy.id,
-    input.battleState.currentEnemy.enemyType,
+  const materials = computeCombatMaterialReward({
+    enemyId: input.battleState.currentEnemy.id,
+    enemyType: input.battleState.currentEnemy.enemyType,
+    effects: input.homesteadEffects,
+    scavenger: labyrinthRewardModifiers.includes("scavenger"),
+    herbalist: labyrinthRewardModifiers.includes("herbalist"),
     rng,
-  );
-  const materials = applyLabyrinthRewardMaterialModifiers(
-    applyMaterialFindBonus(baseMaterials, input.homesteadEffects),
-    labyrinthRewardModifiers,
-  );
+  });
 
   const sampled = prepareVictoryDestinations(
     input,

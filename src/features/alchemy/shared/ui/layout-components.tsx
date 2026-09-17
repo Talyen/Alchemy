@@ -73,21 +73,19 @@ export function ScreenHeaderRow({
 
   return (
     <div className={cn("flex min-h-10 w-full items-center justify-center", className)}>
-      <div className="relative flex w-full max-w-2xl flex-col items-center px-12">
-        {eyebrow ? (
-          <p className="mb-1 text-sm font-semibold tracking-[0.22em] text-amber-100/60 uppercase">{eyebrow}</p>
-        ) : null}
-        <div className="relative flex w-full items-center justify-center">
-          {leadingContent || chrome?.deckInspection ? (
-            <div className={cn("absolute top-1/2 left-0 flex -translate-y-1/2 items-center gap-2", leadingClassName)}>
-              {leadingContent}
-              {chrome?.deckInspection ? <DeckInspectButton {...chrome.deckInspection} /> : null}
-            </div>
-          ) : null}
-          <h1 className={cn("text-center font-sans", screenTitleClass)}>{title}</h1>
-          {trailingContent ? (
-            <div className={cn("absolute top-1/2 right-0 -translate-y-1/2", trailingClassName)}>{trailingContent}</div>
-          ) : null}
+      <div className="flex w-full max-w-2xl flex-col items-center">
+        <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center px-3">
+          <div className={cn("flex items-center gap-2", leadingClassName)}>
+            {leadingContent}
+            {chrome?.deckInspection ? <DeckInspectButton {...chrome.deckInspection} /> : null}
+          </div>
+          <div className="flex min-w-0 flex-col items-center px-3 text-center">
+            {eyebrow ? (
+              <p className="mb-1 text-sm font-semibold tracking-[0.22em] text-amber-100/60 uppercase">{eyebrow}</p>
+            ) : null}
+            <h1 className={cn("text-center font-sans", screenTitleClass)}>{title}</h1>
+          </div>
+          <div className={cn("flex items-center justify-end gap-2", trailingClassName)}>{trailingContent}</div>
         </div>
         <div className="mt-2 h-px w-44 bg-gradient-to-r from-transparent via-amber-100/75 to-transparent" />
       </div>
