@@ -42,7 +42,7 @@ using shared incoming-damage, crowd-control, healing, and mitigation primitives.
 Hero-only resources and rewards never run for enemy self-benefits. Card-granted
 Thorns and queued Bleed Leech use the same status semantics as hero cards while
 retaining existing encounter exceptions. Selection and trait limits are owned by
-[GAME_RULES](../../../../docs/GAME_RULES.md#enemy-abilities-and-traits).
+[GAME_RULES](../../../../Docs/GAME_RULES.md#enemy-abilities-and-traits).
 
 ## Tests
 
@@ -60,7 +60,7 @@ Equipment does not use the card-effect registry above. Gear affixes resolve to
 (description formatting shared in `formatAffixDescription`), uniques contribute
 canonical rolls from `gear/unique-catalog.ts`, and `computeGearManifest`
 snapshots the equipped loadout into battle (`rebindLiveRunMeta`); see
-[ARMORY battle integration](../../../../docs/ARMORY.md#battle-integration).
+[ARMORY battle integration](../../../../Docs/ARMORY.md#battle-integration).
 Trinket effects resolve to `TrinketManifest` via `computeTrinketManifest` in
 `lib/trinkets.ts`; every key has a documented consumer pinned by the manifest
 coverage test in `tests/lib/content-validation/trinket-validation.test.ts`.

@@ -73,7 +73,7 @@ Raw CLI streams, scenario requests, candidate patches, normalized evaluation rec
 
 > Investigate all independent static-check failures in this isolated checkout. A host-run completion check has already passed the unit checks and reached the failing static aggregate. Start by reading reports/current-run.json and its linked failure digest. Use additional static-check commands if needed to identify every failing checker, the affected source, and the minimal fix. Do not rerun unit tests or repair files. Do not commit, launch other agents, or browse the web. Diagnostic commands may write normal cache/report artifacts.
 >
-> Evaluation setup: src/lib/math.ts, scripts/lib/is-main-module.mjs and docs/AUDIO.md contain intentional fault fixtures. Other existing changes to agent tooling or documentation are the installed workflow variant, not work to review. Preserve all setup. Investigate checker output rather than inspecting diffs or historical revisions to identify faults.
+> Evaluation setup: src/lib/math.ts, scripts/lib/is-main-module.mjs and Docs/AUDIO.md contain intentional fault fixtures. Other existing changes to agent tooling or documentation are the installed workflow variant, not work to review. Preserve all setup. Investigate checker output rather than inspecting diffs or historical revisions to identify faults.
 
 ## Subsequent small refinements
 

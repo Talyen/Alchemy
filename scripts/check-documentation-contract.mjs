@@ -21,7 +21,7 @@ const IGNORED_DIRECTORIES = new Set([
   "reports",
   "release-notes",
 ]);
-const REPO_PATH_PREFIX = /^(?:\.github\/|(?:src|tests|scripts|docs|desktop|public)\/)/u;
+const REPO_PATH_PREFIX = /^(?:\.github\/|(?:src|tests|scripts|Docs|desktop|public)\/)/u;
 const PATH_TEMPLATE_CHARS = /[*?{}$<>"'`]/u;
 
 const markdownSourceCache = new Map();
@@ -38,8 +38,8 @@ export function isHistoryOnlyDoc(relativePath) {
 export function isHistoricalDoc(relativePath) {
   return (
     isHistoryOnlyDoc(relativePath) ||
-    relativePath.startsWith("docs/Plans/") ||
-    relativePath === "docs/Audits/decisions.md" ||
+    relativePath.startsWith("Docs/Plans/") ||
+    relativePath === "Docs/Audits/decisions.md" ||
     relativePath === ".agents/knowledge/skill-impact.md"
   );
 }
@@ -47,7 +47,7 @@ export function isHistoricalDoc(relativePath) {
 /** Reachability exemption: archives and agent-local records need no inbound owner links. */
 export function isReachabilityExempt(relativePath) {
   return (
-    relativePath === "CHANGELOG.md" || relativePath.startsWith("docs/Plans/") || relativePath.startsWith(".agents/")
+    relativePath === "CHANGELOG.md" || relativePath.startsWith("Docs/Plans/") || relativePath.startsWith(".agents/")
   );
 }
 

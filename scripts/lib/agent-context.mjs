@@ -9,17 +9,17 @@ import { resolveRoutePlan } from "./change-routes.mjs";
 import { readDocumentSection } from "./markdown-sections.mjs";
 
 const owner = (path, heading) => ({ path, heading });
-const workflow = (heading) => owner("docs/WORKFLOWS.md", heading);
-const asset = (heading) => owner("docs/WORKFLOWS-ASSETS.md", heading);
+const workflow = (heading) => owner("Docs/WORKFLOWS.md", heading);
+const asset = (heading) => owner("Docs/WORKFLOWS-ASSETS.md", heading);
 const assetCommon = [asset("Shared asset requirements"), asset("Skip mode and verification")];
 
 export const CONTEXT_TASKS = {
   battle: {
     matches: /^(?:src\/lib\/(?:battle|game-constants)|tests\/lib\/battle)\//u,
     docs: [
-      owner("docs/ARCHITECTURE.md", "Battle path"),
-      owner("docs/GAME_RULES.md", "Engine invariants"),
-      owner("docs/GAME_RULES.md", "Turn order and resources"),
+      owner("Docs/ARCHITECTURE.md", "Battle path"),
+      owner("Docs/GAME_RULES.md", "Engine invariants"),
+      owner("Docs/GAME_RULES.md", "Turn order and resources"),
     ],
     entrypoints: ["src/lib/battle/card-play.ts", "src/lib/battle/effect-handlers"],
     fixture: "src/lib/battle/card-play.ts",
@@ -47,13 +47,13 @@ export const CONTEXT_TASKS = {
   },
   companion: {
     matches: /^src\/lib\/(?:game-data\/companions\.ts|battle\/companion[^/]*\.ts)$/u,
-    docs: [workflow("Add a new companion"), owner("docs/GAME_RULES.md", "Companion Bond")],
+    docs: [workflow("Add a new companion"), owner("Docs/GAME_RULES.md", "Companion Bond")],
     entrypoints: ["src/lib/game-data/companions.ts"],
     fixture: "src/lib/game-data/companions.ts",
   },
   enemy: {
     matches: /^src\/lib\/game-data\/compendium\/enemies\.ts$/u,
-    docs: [workflow("Add a new enemy"), owner("docs/GAME_RULES.md", "Enemy abilities and traits")],
+    docs: [workflow("Add a new enemy"), owner("Docs/GAME_RULES.md", "Enemy abilities and traits")],
     entrypoints: ["src/lib/game-data/compendium/enemies.ts"],
     fixture: "src/lib/game-data/compendium/enemies.ts",
   },
@@ -61,7 +61,7 @@ export const CONTEXT_TASKS = {
     matches: /^src\/lib\/(?:game-data\/enemy-abilities|battle\/enemy-turn-attack)\.ts$/u,
     docs: [
       owner("src/lib/game-data/effects/BATTLE_HANDLERS.md", "Enemy abilities"),
-      owner("docs/GAME_RULES.md", "Enemy abilities and traits"),
+      owner("Docs/GAME_RULES.md", "Enemy abilities and traits"),
     ],
     entrypoints: ["src/lib/game-data/enemy-abilities.ts", "src/lib/battle/enemy-turn-attack.ts"],
     fixture: "src/lib/game-data/enemy-abilities.ts",
@@ -69,36 +69,36 @@ export const CONTEXT_TASKS = {
   ui: {
     matches: /(?:\/(?:ui|screens)\/|^src\/styles\/)/u,
     docs: [
-      owner("docs/UI.md", "Placement and boundaries"),
-      owner("docs/UI.md", "Component conventions"),
-      owner("docs/UI.md", "Verification"),
+      owner("Docs/UI.md", "Placement and boundaries"),
+      owner("Docs/UI.md", "Component conventions"),
+      owner("Docs/UI.md", "Verification"),
     ],
     entrypoints: ["src/features/alchemy/shared/ui", "src/styles/components.css"],
   },
   overlay: {
     matches:
       /(?:overlay|dialog|modal|use-fade|screen-transition|screen-navigation|use-app-navigation|route-commands|game-menu)/u,
-    docs: [owner("docs/UI.md", "Overlay lifecycle")],
+    docs: [owner("Docs/UI.md", "Overlay lifecycle")],
     entrypoints: ["src/features/alchemy/shared/ui/modal-overlay-shell.tsx"],
   },
   audio: {
     matches: /^(?:src|tests)\/lib\/audio\//u,
-    docs: [owner("docs/AUDIO.md", null)],
+    docs: [owner("Docs/AUDIO.md", null)],
     entrypoints: ["src/lib/audio/index.ts", "src/lib/audio/sound-registry.ts"],
   },
   tooltip: {
     matches: /(?:tooltip|card-description|keyword-text)/u,
-    docs: [owner("docs/UI.md", "Hover tooltips")],
+    docs: [owner("Docs/UI.md", "Hover tooltips")],
     entrypoints: ["src/lib/keyword-text.ts", "src/features/alchemy/shared/ui/card-description-ui.tsx"],
   },
   gear: {
     matches: /(?:\/gear\/(?!affix)|\/armory\/|gear-store)/u,
-    docs: [owner("docs/ARMORY.md", "State flow"), owner("docs/ARMORY.md", "Tests")],
+    docs: [owner("Docs/ARMORY.md", "State flow"), owner("Docs/ARMORY.md", "Tests")],
     entrypoints: ["src/features/alchemy/meta/screens/armory/use-armory-controller.ts"],
   },
   affix: {
     matches: /\/gear\/affix/u,
-    docs: [owner("docs/ARMORY.md", "Data model")],
+    docs: [owner("Docs/ARMORY.md", "Data model")],
     entrypoints: ["src/lib/gear/affix-catalog.ts", "src/lib/gear/affix-pool.ts"],
     fixture: "src/lib/gear/affix-catalog.ts",
   },
@@ -109,7 +109,7 @@ export const CONTEXT_TASKS = {
   },
   shop: {
     matches: /\/shop\//u,
-    docs: [workflow("Change a shop"), owner("docs/ARCHITECTURE.md", "Shop commands")],
+    docs: [workflow("Change a shop"), owner("Docs/ARCHITECTURE.md", "Shop commands")],
     entrypoints: ["src/features/alchemy/run-loop/shop/shop-transactions.ts"],
   },
   save: {
@@ -122,7 +122,7 @@ export const CONTEXT_TASKS = {
   },
   "run-state": {
     matches: /(?:\/stores\/|run-session|run-state)/u,
-    docs: [owner("docs/ARCHITECTURE.md", "Run state"), workflow("Gameplay command boundary")],
+    docs: [owner("Docs/ARCHITECTURE.md", "Run state"), workflow("Gameplay command boundary")],
     entrypoints: [
       "src/features/alchemy/shared/stores/run-session-command.ts",
       "src/features/alchemy/shared/stores/run-session-write-port.ts",
@@ -131,22 +131,22 @@ export const CONTEXT_TASKS = {
   },
   "run-persistence": {
     matches: /(?:\/storage\/|\/save-schemas\/|run-resume|run-session-lifecycle|run-lifecycle)/u,
-    docs: [owner("docs/ARCHITECTURE.md", "Persistence API")],
+    docs: [owner("Docs/ARCHITECTURE.md", "Persistence API")],
     entrypoints: ["src/features/alchemy/shared/stores/run-lifecycle.ts"],
   },
   "run-ports": {
     matches: /(?:run-reads|run-session-write-port|route-commands)/u,
-    docs: [owner("docs/ARCHITECTURE.md", "Session capability ports")],
+    docs: [owner("Docs/ARCHITECTURE.md", "Session capability ports")],
     entrypoints: ["src/features/alchemy/shared/stores/run-reads.ts"],
   },
   "run-randomness": {
     matches: /(?:run-rng|run-random|draft-world|\/rng(?:\/|\.))/u,
-    docs: [owner("docs/ARCHITECTURE.md", "Run randomness")],
+    docs: [owner("Docs/ARCHITECTURE.md", "Run randomness")],
     entrypoints: ["src/lib/rng/index.ts"],
   },
   "run-setup": {
     matches: /(?:\/run-setup\/|run-start|starter-draft)/u,
-    docs: [owner("docs/ARCHITECTURE.md", "Run setup ownership")],
+    docs: [owner("Docs/ARCHITECTURE.md", "Run setup ownership")],
     entrypoints: ["src/features/alchemy/run-setup"],
   },
   assets: {
@@ -205,7 +205,7 @@ export const CONTEXT_TASKS = {
   },
   tooling: {
     matches: /^(?:scripts\/|tests\/scripts\/|\.agents\/)/u,
-    docs: [owner("docs/REFERENCE.md", "Tooling ownership")],
+    docs: [owner("Docs/REFERENCE.md", "Tooling ownership")],
     entrypoints: ["scripts/lib/change-routes.mjs", "scripts/README.md"],
   },
   verification: {
@@ -221,7 +221,7 @@ export const CONTEXT_TASKS = {
   discovery: {
     matches:
       /^(?:scripts\/(?:agent-(?:context|search|eval)|measure-agent-context|context-hotspots|lib\/agent-(?:context|discovery|events))\.mjs|tests\/scripts\/agent-(?:context|discovery|eval)\.test\.ts)$/u,
-    docs: [owner("docs/REFERENCE.md", "Agent discovery")],
+    docs: [owner("Docs/REFERENCE.md", "Agent discovery")],
     entrypoints: ["scripts/lib/agent-context.mjs"],
   },
 };

@@ -58,7 +58,7 @@ export function useArmoryController(options?: { rng?: () => number }): ArmoryCon
   const combatRestrictions = useGearCombatRestrictions();
   const finishedRunCharacters = useFinishedRunCharacters();
   const hasActiveRun = useHasActiveRun();
-  // Profile-lifetime randomness is intentional here (see docs/ARMORY.md): crafting
+  // Profile-lifetime randomness is intentional here (see Docs/ARMORY.md): crafting
   // and dev spawning must not consume a run RNG stream. Gear actions still require
   // an explicit rng so the source stays visible at the call site.
   const rng = options?.rng ?? Math.random;

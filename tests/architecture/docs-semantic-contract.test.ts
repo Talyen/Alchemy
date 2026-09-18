@@ -13,14 +13,14 @@ describe("docs semantic contract", () => {
   });
 
   it("keeps the Armory randomness exception next to the run-stream rule", () => {
-    const architecture = readText("docs/ARCHITECTURE.md");
+    const architecture = readText("Docs/ARCHITECTURE.md");
     expect(architecture).toContain("Armory crafting and dev spawning");
     expect(architecture).toContain("`Math.random`");
     expect(architecture).toContain("ARMORY.md#write-paths");
   });
 
   it("keeps the shop transaction atomicity rule", () => {
-    expect(readText("docs/ARCHITECTURE.md")).toContain("commit together");
+    expect(readText("Docs/ARCHITECTURE.md")).toContain("commit together");
   });
 
   it("keeps the chance branch-traversal order in the handler contract", () => {
@@ -30,7 +30,7 @@ describe("docs semantic contract", () => {
   });
 
   it("keeps a valid command example in the gameplay boundary workflow", () => {
-    const workflows = readText("docs/WORKFLOWS.md");
+    const workflows = readText("Docs/WORKFLOWS.md");
     for (const symbol of ["dispatchRunSessionCommand", "awardMaterialsDuringRun", "afterCommit"]) {
       expect(workflows, symbol).toContain(symbol);
     }

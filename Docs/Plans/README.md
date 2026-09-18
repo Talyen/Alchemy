@@ -5,7 +5,7 @@ changes do not need one. Keep active execution plans in this directory.
 
 Durable product, architecture,
 testing, and workflow rules belong in their canonical owner documents
-(`AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/WORKFLOWS.md`, `docs/REFERENCE.md`,
+(`AGENTS.md`, `Docs/ARCHITECTURE.md`, `Docs/WORKFLOWS.md`, `Docs/REFERENCE.md`,
 or a subsystem README) — never only in a plan.
 
 Plans require minimal front matter:

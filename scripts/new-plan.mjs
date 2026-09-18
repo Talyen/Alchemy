@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** Scaffold a short-lived execution plan under docs/Plans/. */
+/** Scaffold a short-lived execution plan under Docs/Plans/. */
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -47,7 +47,7 @@ function utcDate(offsetDays = 0) {
 export function createPlan(name, now = utcDate()) {
   const safeName = safePlanName(name);
   const target = path.join(PLANS_DIR, `${safeName}.md`);
-  if (fs.existsSync(target)) throw new Error(`Plan already exists: docs/Plans/${safeName}.md`);
+  if (fs.existsSync(target)) throw new Error(`Plan already exists: Docs/Plans/${safeName}.md`);
   fs.mkdirSync(PLANS_DIR, { recursive: true });
   fs.writeFileSync(target, planTemplate(safeName, now), "utf8");
   return path.relative(ROOT, target);

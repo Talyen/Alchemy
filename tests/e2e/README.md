@@ -3,7 +3,7 @@
 Canonical E2E helper, fixture, tag, and diagnostic contract. Changed-path and
 CI tier policy lives in [CONTRIBUTING.md](../../CONTRIBUTING.md).
 
-When a command or E2E test fails, use [failure-first triage](../../docs/REFERENCE.md#failure-first-triage) to locate evidence when the cause is unclear. Open relevant traces or reports directly for a specific hypothesis.
+When a command or E2E test fails, use [failure-first triage](../../Docs/REFERENCE.md#failure-first-triage) to locate evidence when the cause is unclear. Open relevant traces or reports directly for a specific hypothesis.
 
 Browser specs live in [`specs/`](./specs/). Electron specs and their launch/setup helpers live in [`tests/electron/`](../electron/). Shared fixtures and page objects also serve performance checks.
 

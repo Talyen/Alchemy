@@ -37,7 +37,7 @@ npm run check:ship          # Ship gate before tagging/desktop packaging
 npm run docs:check          # Validate documentation contracts and plan metadata
 npm run docs:check:final    # Repository-wide closure: requires every plan to be finished and archived
 npm run plans:check         # Validate active plan metadata only (alias for docs:check --plans-only)
-npm run new:plan -- <Name>  # Scaffold an execution plan under docs/Plans/
+npm run new:plan -- <Name>  # Scaffold an execution plan under Docs/Plans/
 npm run archive:plans -- PlanName.md  # Archive a task-owned complete/cancelled plan (--dry-run previews)
 npm run balance:sim         # Headless balance findings (opens reports/balance-findings.html)
 npm run balance:loot        # Seeded loot progression report (reports/loot-progression/report.html)

@@ -74,7 +74,7 @@ function countTestFiles(plan) {
 }
 
 export function measureContext(options = {}) {
-  const paths = options.paths?.length ? options.paths : ["docs/REFERENCE.md"];
+  const paths = options.paths?.length ? options.paths : ["Docs/REFERENCE.md"];
   const plan = resolveRoutePlan(paths);
   const routes = options.routes ?? plan.routes;
   const instructions = INSTRUCTION_FILES.map((filePath) =>

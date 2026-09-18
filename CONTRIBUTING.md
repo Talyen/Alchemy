@@ -19,7 +19,7 @@ The risk escalations are intentionally broad and few:
 - Save changes run the complete save/persistence unit suite.
 - Asset source or pipeline changes run the read-only prepared-output freshness check.
 - Desktop changes run the desktop boundary unit suite.
-- Balance changes run the report-construction check; performance changes run performance harness unit tests. FPS/hitch profiling remains opt-in under [PERFORMANCE](./docs/PERFORMANCE.md).
+- Balance changes run the report-construction check; performance changes run performance harness unit tests. FPS/hitch profiling remains opt-in under [PERFORMANCE](./Docs/PERFORMANCE.md).
 - Tooling and configuration changes run the complete tooling and architecture unit suite because those tests inspect repository files directly. When gameplay changes are included, their dependency-related tests still run.
 - Other implementation changes use Vitest dependency selection; changed test files execute directly.
 
@@ -71,7 +71,7 @@ Fixture, bootstrap, page-object, tag, and diagnostic instructions live in [tests
 
 `lefthook` pre-push invokes only `npm run check -- --pre-push`, forwarding Git’s ref/object-ID pairs through stdin. The gate selects the union of outgoing changes, including removed paths; a new remote ref selects its full tree. Deleted remote refs require no checks. Large selections travel through a JSON path file and use the complete unit suite rather than exceeding platform command limits. Outgoing commits must match the checked-out HEAD, and unavailable base revisions fail explicitly. When source checks are needed, pre-push requires a clean checkout (including nonignored untracked files) so tests cannot pass against an uncommitted fix. Ordinary task checks still support dirty work. Local `--diff` continues to select working-tree changes, retaining both sides of renames for risk selection and falling back to HEAD’s changes when clean. Pre-commit formats staged files selected by `scripts/prettier-paths.mjs`; commit-msg runs commitlint. Install hooks with `npm run prepare`.
 
-Execution plans under `docs/Plans/` are workflow artifacts, not product correctness gates. Follow the [plan lifecycle](./docs/Plans/README.md) to finish and archive only task-owned plans, then validate with `npm run docs:check` (also included in the handoff gate). `npm run docs:check:final` is an explicit repository-wide closure check; another task's active plan does not require cancellation or block ordinary handoff.
+Execution plans under `Docs/Plans/` are workflow artifacts, not product correctness gates. Follow the [plan lifecycle](./Docs/Plans/README.md) to finish and archive only task-owned plans, then validate with `npm run docs:check` (also included in the handoff gate). `npm run docs:check:final` is an explicit repository-wide closure check; another task's active plan does not require cancellation or block ordinary handoff.
 
 Use matched [agent evaluations](./.agents/evals/README.md) for uncertain workflow changes, consequential changes to safeguards, or claims of improved agent performance. Straightforward contradiction removal and procedural simplification can use source review and documentation checks. Compare correctness alongside observed reads, retries, and available host usage when running trials.
 
@@ -104,12 +104,12 @@ Every push to `main` runs the static aggregate, full Vitest, one web build plus 
 
 [Bugbot](./.cursor/BUGBOT.md) remains an optional post-push review aid for gameplay, save, and battle-rule changes; it is not a required status check.
 
-Release validation remains deliberately redundant because it protects published artifacts. See [RELEASE.md](./docs/RELEASE.md).
+Release validation remains deliberately redundant because it protects published artifacts. See [RELEASE.md](./Docs/RELEASE.md).
 
 ## Failure-first triage
 
-Follow [REFERENCE.md](./docs/REFERENCE.md#failure-first-triage). Start with the compact run record or failure digest when the cause is unclear. Open relevant logs or traces directly for a specific hypothesis; keep excerpts focused rather than pasting full reports into agent context.
+Follow [REFERENCE.md](./Docs/REFERENCE.md#failure-first-triage). Start with the compact run record or failure digest when the cause is unclear. Open relevant logs or traces directly for a specific hypothesis; keep excerpts focused rather than pasting full reports into agent context.
 
 ## Changelog and patch notes
 
-Changelog updates happen at release only. Player patch notes are generated from Conventional Commits, changed paths, and an optional `User-Facing: yes` or `User-Facing: no` trailer. Release-time details live in [RELEASE.md](./docs/RELEASE.md).
+Changelog updates happen at release only. Player patch notes are generated from Conventional Commits, changed paths, and an optional `User-Facing: yes` or `User-Facing: no` trailer. Release-time details live in [RELEASE.md](./Docs/RELEASE.md).

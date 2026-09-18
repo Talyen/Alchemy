@@ -6,7 +6,7 @@ export const PLAN_STATUSES = Object.freeze(["active", "blocked", "complete", "ca
 export const PLAN_STALE_DAYS = 14;
 export const PLANS_DIR = path.join(
   path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../.."),
-  "docs",
+  "Docs",
   "Plans",
 );
 

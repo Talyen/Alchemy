@@ -9,7 +9,7 @@ Read the relevant [architecture owner](../../../AGENTS.md#documentation-owners),
 
 - Reuse the current owner when it can express the requirement. Introduce a new boundary only for a concrete consumer or invariant.
 - Model valid states and operations in TypeScript before wiring handlers or React components. Check how each consumer will read, write, and handle failure; avoid speculative options and duplicate representations.
-- For persisted changes, follow [MIGRATIONS.md](../../../src/features/alchemy/shared/storage/MIGRATIONS.md) for compatibility. For run commands, follow [run-state ownership](../../../docs/ARCHITECTURE.md#run-state) for atomicity and side effects.
+- For persisted changes, follow [MIGRATIONS.md](../../../src/features/alchemy/shared/storage/MIGRATIONS.md) for compatibility. For run commands, follow [run-state ownership](../../../Docs/ARCHITECTURE.md#run-state) for atomicity and side effects.
 - Update consumers and the canonical owner together.
 
 Ordinary changes within an existing contract follow [AGENTS.md](../../../AGENTS.md#change-guards) without a separate design workflow.

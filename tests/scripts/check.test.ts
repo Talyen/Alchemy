@@ -28,7 +28,7 @@ describe("source-aware completion gate", () => {
   it("runs documentation checks without unit, build, or browser work", async () => {
     const calls: string[] = [];
     const code = await runCheck(
-      ["docs/REFERENCE.md", "scripts/README.md", "src/features/alchemy/shared/storage/MIGRATIONS.md"],
+      ["Docs/REFERENCE.md", "scripts/README.md", "src/features/alchemy/shared/storage/MIGRATIONS.md"],
       {
         runner: vi.fn((label: string) => {
           calls.push(label);
@@ -133,7 +133,7 @@ describe("source-aware completion gate", () => {
 
   it("lets static checks own docs:check on executable changes only", async () => {
     const executable: unknown[][] = [];
-    await runCheck(["src/App.tsx", "docs/guide.md"], {
+    await runCheck(["src/App.tsx", "Docs/guide.md"], {
       runner: vi.fn((...args: unknown[]) => {
         executable.push(args);
         return 0;
@@ -144,7 +144,7 @@ describe("source-aware completion gate", () => {
     expect(verify?.[2]).toContain("--skip-docs-check");
 
     const docsOnly: unknown[][] = [];
-    await runCheck(["docs/guide.md"], {
+    await runCheck(["Docs/guide.md"], {
       runner: vi.fn((...args: unknown[]) => {
         docsOnly.push(args);
         return 0;
@@ -156,7 +156,7 @@ describe("source-aware completion gate", () => {
 
   it("fails when source inputs drift", async () => {
     let reads = 0;
-    const code = await runCheck(["docs/REFERENCE.md"], {
+    const code = await runCheck(["Docs/REFERENCE.md"], {
       runner: vi.fn(() => 0),
       captureDigest: () => ({ head: "abc", hash: reads++ === 0 ? "before" : "after" }),
     });

@@ -76,7 +76,7 @@ export function archiveTerminalPlans({ plansDir = PLANS_DIR, names = [], dryRun 
       fs.unlinkSync(candidate.source);
     }
   }
-  return candidates.map((candidate) => path.join("docs", "Plans", "Archived", candidate.name));
+  return candidates.map((candidate) => path.join("Docs", "Plans", "Archived", candidate.name));
 }
 
 function main(argv = process.argv.slice(2)) {

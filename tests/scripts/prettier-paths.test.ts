@@ -11,7 +11,7 @@ describe("prettier-paths", () => {
   it("filters staged paths to Prettier-relevant files", () => {
     expect(
       filterPrettierPaths([
-        "docs/ARCHITECTURE.md",
+        "Docs/ARCHITECTURE.md",
         "eslint.config.js",
         "src/App.tsx",
         "Raw Assets/foo.png",
@@ -21,7 +21,7 @@ describe("prettier-paths", () => {
         "stryker.config.mjs",
       ]),
     ).toEqual([
-      "docs/ARCHITECTURE.md",
+      "Docs/ARCHITECTURE.md",
       "eslint.config.js",
       "src/App.tsx",
       ".github/workflows/ci.yml",

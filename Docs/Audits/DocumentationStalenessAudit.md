@@ -31,12 +31,12 @@ Verify edited claims, examples, links, and commands against their owners. Walk t
 
 ## Known signals
 
-- **Code snippet drift:** fenced `ts`/`tsx` blocks in `docs/`, `AGENTS.md`, `CONTRIBUTING.md`, READMEs whose type names and APIs no longer exist.
+- **Code snippet drift:** fenced `ts`/`tsx` blocks in `Docs/`, `AGENTS.md`, `CONTRIBUTING.md`, READMEs whose type names and APIs no longer exist.
 - **Script/link contract:** `npm run docs:check` continuously checks local Markdown targets, heading anchors, and documented `npm run` names through `scripts/check-documentation-contract.mjs`; inspect flags and factual meaning manually.
 - **Architecture & directory mismatches:** claims in `ARCHITECTURE.md` vs on-disk `src/lib`, `src/features/alchemy`, `desktop/`, `tests/`.
 - **Broken relative links & anchors:** markdown links and `#heading` anchors whose targets are missing.
 - **Version / engine staleness:** Node engine, Electron, Playwright, Vitest versions claimed in docs vs `package.json`.
-- **Audit tracker residue:** embedded run logs or dated status notes under `docs/Audits/`.
+- **Audit tracker residue:** embedded run logs or dated status notes under `Docs/Audits/`.
 - **Harmful omissions:** complete-looking workflow, architecture, migration, or command references omit a required step or invariant.
 - **Duplicated policy drift:** the same rule or command is copied across multiple docs and no longer agrees; consolidate under the existing source of truth and link consumers.
 - **Discoverability failure:** correct guidance exists but is not reachable from the documented entry point used for that task.

@@ -2,7 +2,7 @@
 
 Step-by-step checklists for adding or changing game content and wiring.
 
-For refactors and simplification passes on attached paths, use [docs/Audits](./Audits/README.md) when the user cites an audit.
+For refactors and simplification passes on attached paths, use [Docs/Audits](./Audits/README.md) when the user cites an audit.
 
 **Import paths:** only `@/*` → `src/*` in `tsconfig.json`. Use **on-disk** capability paths under `src/features/alchemy/` (for example `@/features/alchemy/shared/stores/run-reads`) — not legacy alias paths that skip `shared/`.
 

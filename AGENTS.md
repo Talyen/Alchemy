@@ -5,7 +5,7 @@ Alchemy is a fantasy roguelite deckbuilder. This file routes work and records un
 ## Working style
 
 - Inspect `git status --short` and relevant diffs before editing. Existing edits are user work: preserve their intent and make separable changes surgically. Re-read shared files before editing if another session may have changed them. Ask only when intent or a safe merge remains ambiguous.
-- Fix the complete cause of the requested problem and blockers to its outcome, including outside the initial paths. Small, clearly understood adjacent repairs are allowed; report substantial independent findings instead of automatically implementing them. Do not turn incidental fixes into broad cleanup or an uncited [audit](./docs/Audits/README.md). Make design and balance decisions within the user's requested scope; ask about consequential choices the request and evidence do not resolve.
+- Fix the complete cause of the requested problem and blockers to its outcome, including outside the initial paths. Small, clearly understood adjacent repairs are allowed; report substantial independent findings instead of automatically implementing them. Do not turn incidental fixes into broad cleanup or an uncited [audit](./Docs/Audits/README.md). Make design and balance decisions within the user's requested scope; ask about consequential choices the request and evidence do not resolve.
 - Choose the most maintainable complete solution for the demonstrated problem, even when larger than a workaround. Reuse existing owners and libraries before adding mechanisms; justify new dependencies or abstractions with concrete consumers. Preserve compatibility for saves, shipped behavior, and external contracts.
 - When a failure is unclear, start with its diagnostic summary; open the most relevant evidence directly when you have a specific hypothesis. Keep output bounded. Consult relevant [knowledge](./.agents/knowledge/index.md) when historical context would help. Reassess assumptions when an approach stops producing useful evidence; ask only if evidence cannot resolve the decision.
 - Record unresolved recurring friction and consequential lessons in [.agents/FRICTION_LOG.md](./.agents/FRICTION_LOG.md). Put reusable prevention in the canonical owner. Corrected typos, one-off environment issues, and self-explanatory fixes need no historical record.
@@ -22,13 +22,13 @@ Understand the relevant contracts and consumers before changing behavior, especi
 
 | Need                                                | Read                                                                                                                                                                                                                                                                                       |
 | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Run state, controllers, boundaries, boot            | [ARCHITECTURE](./docs/ARCHITECTURE.md)                                                                                                                                                                                                                                                     |
-| Saves, cards, screens, materials                    | [WORKFLOWS](./docs/WORKFLOWS.md)                                                                                                                                                                                                                                                           |
-| Raw art / sound / generated barrels                 | [WORKFLOWS-ASSETS](./docs/WORKFLOWS-ASSETS.md)                                                                                                                                                                                                                                             |
-| Commands, battle rules, glossary                    | [REFERENCE](./docs/REFERENCE.md) ([battle rules + glossary](./docs/GAME_RULES.md))                                                                                                                                                                                                         |
+| Run state, controllers, boundaries, boot            | [ARCHITECTURE](./Docs/ARCHITECTURE.md)                                                                                                                                                                                                                                                     |
+| Saves, cards, screens, materials                    | [WORKFLOWS](./Docs/WORKFLOWS.md)                                                                                                                                                                                                                                                           |
+| Raw art / sound / generated barrels                 | [WORKFLOWS-ASSETS](./Docs/WORKFLOWS-ASSETS.md)                                                                                                                                                                                                                                             |
+| Commands, battle rules, glossary                    | [REFERENCE](./Docs/REFERENCE.md) ([battle rules + glossary](./Docs/GAME_RULES.md))                                                                                                                                                                                                         |
 | Hooks, verification, E2E policy                     | [CONTRIBUTING](./CONTRIBUTING.md)                                                                                                                                                                                                                                                          |
 | Save compatibility                                  | [MIGRATIONS](./src/features/alchemy/shared/storage/MIGRATIONS.md)                                                                                                                                                                                                                          |
-| Armory / gear, card handlers, UI/audio/perf/release | [ARMORY](./docs/ARMORY.md), [UNIQUE_ITEMS](./docs/UNIQUE_ITEMS.md), [BATTLE_HANDLERS](./src/lib/game-data/effects/BATTLE_HANDLERS.md), [UI](./docs/UI.md), [AUDIO](./docs/AUDIO.md), [PERFORMANCE](./docs/PERFORMANCE.md), [RELEASE](./docs/RELEASE.md) ([setup](./docs/RELEASE_SETUP.md)) |
+| Armory / gear, card handlers, UI/audio/perf/release | [ARMORY](./Docs/ARMORY.md), [UNIQUE_ITEMS](./Docs/UNIQUE_ITEMS.md), [BATTLE_HANDLERS](./src/lib/game-data/effects/BATTLE_HANDLERS.md), [UI](./Docs/UI.md), [AUDIO](./Docs/AUDIO.md), [PERFORMANCE](./Docs/PERFORMANCE.md), [RELEASE](./Docs/RELEASE.md) ([setup](./Docs/RELEASE_SETUP.md)) |
 
 For large unfamiliar modules, `npm run context -- --outline <file>` and `--symbol <name>` help locate relevant declarations; use them when they save broader reading. Exclude `Raw Assets/`, `reports/`, `dist/`, `CHANGELOG.md`, and lockfiles from broad searches; inspect them when the task or diagnostics specifically require them.
 
@@ -39,9 +39,9 @@ For large unfamiliar modules, `npm run context -- --outline <file>` and `--symbo
 
 ## High-risk invariants
 
-- **Run state:** outside `shared/stores/` use capability ports; writes via `dispatchRunSessionCommand()` + `run-session-write-port.ts` ([ARCHITECTURE#run-state](./docs/ARCHITECTURE.md#run-state)).
+- **Run state:** outside `shared/stores/` use capability ports; writes via `dispatchRunSessionCommand()` + `run-session-write-port.ts` ([ARCHITECTURE#run-state](./Docs/ARCHITECTURE.md#run-state)).
 - **Controllers:** run/battle bindings travel through route/shell props, not context. Allowed providers are `AppScreenChromeProvider` and `CardDescriptionProvider`; presentation-only state may use `ui-store`.
-- **Battle:** `BattleState` immutable, seeded `world` RNG, combat magnitudes use `Math.round`; shared combat tuning lives in `src/lib/game-constants/`, while content-owned magnitudes stay with their definitions ([GAME_RULES](./docs/GAME_RULES.md#battle-implementation-rules)).
+- **Battle:** `BattleState` immutable, seeded `world` RNG, combat magnitudes use `Math.round`; shared combat tuning lives in `src/lib/game-constants/`, while content-owned magnitudes stay with their definitions ([GAME_RULES](./Docs/GAME_RULES.md#battle-implementation-rules)).
 - **Content:** `descriptionLines` matches effects; run materials via `awardMaterialsDuringRun()` (lint- + award-guard-test-enforced).
 - **Persistence:** change schemas/defaults/hydration/fixtures together ([MIGRATIONS](./src/features/alchemy/shared/storage/MIGRATIONS.md)).
 - **Routes/assets:** screens statically imported; art eager; generated barrels are outputs — edit manifest, regenerate.
@@ -54,17 +54,17 @@ For large unfamiliar modules, `npm run context -- --outline <file>` and `--symbo
 
 ## UI
 
-Plain function components with typed props (no `React.FC`), `cn()` for classes. Motion, tooltips, interaction, placement, and accessibility: [UI](./docs/UI.md). Cosmetic RNG uses `useState(() => ...)`, never `Math.random()` in render.
+Plain function components with typed props (no `React.FC`), `cn()` for classes. Motion, tooltips, interaction, placement, and accessibility: [UI](./Docs/UI.md). Cosmetic RNG uses `useState(() => ...)`, never `Math.random()` in render.
 
 ## Verification & environment
 
 After edits, use [verifier](./.agents/skills/verifier/SKILL.md) before handoff. [CONTRIBUTING](./CONTRIBUTING.md#what-to-run-when-you-change) owns gate tiers and the [test value policy](./CONTRIBUTING.md#test-value-and-coverage-strategy), including permission to consolidate or retire low-value tests during related work. Preserve meaningful protection and report material retirements.
 
-The command catalog is in [REFERENCE](./docs/REFERENCE.md#environment--commands); Node/npm versions are in `package.json`.
+The command catalog is in [REFERENCE](./Docs/REFERENCE.md#environment--commands); Node/npm versions are in `package.json`.
 
 ## Branch and commits
 
-Trunk-based: use the current checkout; default to `main` for commits. Commit, push, or create a branch/PR only when requested; do not switch away from an existing branch implicitly. Conventional Commits + `User-Facing` trailer (see [RELEASE.md](./docs/RELEASE.md#changelog-release-time-only)). Do not edit `CHANGELOG.md`.
+Trunk-based: use the current checkout; default to `main` for commits. Commit, push, or create a branch/PR only when requested; do not switch away from an existing branch implicitly. Conventional Commits + `User-Facing` trailer (see [RELEASE.md](./Docs/RELEASE.md#changelog-release-time-only)). Do not edit `CHANGELOG.md`.
 
 ## Handoff
 

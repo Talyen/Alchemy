@@ -69,7 +69,7 @@ const keyed = { "two": { value: 3 }, three: { value: 4 } };`,
   it("preserves unrecognized checker errors instead of selecting only their exit footers", () => {
     const output = [
       "[docs] Documentation contracts failed:",
-      "[docs] - missing owner heading: docs/UI.md#Overlay lifecycle",
+      "[docs] - missing owner heading: Docs/UI.md#Overlay lifecycle",
       "[docs] Plan checks passed (0 plan files).",
       "[docs] npm run docs:check exited with code 1",
       "[static] [boundaries] error no-circular: src/a.ts → src/b.ts → src/a.ts",
@@ -80,7 +80,7 @@ const keyed = { "two": { value: 3 }, three: { value: 4 } };`,
       "[static] npm run check:static exited with code 1",
     ].join("\n");
     const summary = failureSummary(output, 1_000);
-    expect(summary).toContain("L2: - missing owner heading: docs/UI.md#Overlay lifecycle");
+    expect(summary).toContain("L2: - missing owner heading: Docs/UI.md#Overlay lifecycle");
     expect(summary).toContain("L5: error no-circular: src/a.ts → src/b.ts → src/a.ts");
     expect(summary).toContain("1 dependency violations");
     expect(summary.match(/^Failed /gmu)).toHaveLength(2);
@@ -183,15 +183,15 @@ it("reports search truncation and long-line pointers instead of exposing large s
 
 it("keeps isolated worktree documentation out of repository reachability checks", () => {
   const root = fixture({
-    "README.md": "[Guide](./docs/guide.md)",
-    "docs/guide.md": "Reachable guide",
-    "docs/orphan.md": "Actual orphan",
-    "docs/Plans/Archived/Old.md": "Exempt archived plan",
+    "README.md": "[Guide](./Docs/guide.md)",
+    "Docs/guide.md": "Reachable guide",
+    "Docs/orphan.md": "Actual orphan",
+    "Docs/Plans/Archived/Old.md": "Exempt archived plan",
     ".agents/history/old.md": "Exempt agent history",
     ".worktrees/eval/README.md": "Isolated checkout",
-    ".worktrees/eval/docs/unlinked.md": "Not this repository's documentation",
+    ".worktrees/eval/Docs/unlinked.md": "Not this repository's documentation",
   });
-  expect(checkDurableDocumentReachability(root)).toEqual(["docs/orphan.md"]);
+  expect(checkDurableDocumentReachability(root)).toEqual(["Docs/orphan.md"]);
 });
 
 it("extracts the tail of large outputs within budget and preserves UTF-8 boundaries", () => {

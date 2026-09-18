@@ -31,7 +31,7 @@ const TECHNICAL_TERMS = [
 ];
 const INFRA_PREFIXES = [
   "scripts/",
-  "docs/",
+  "Docs/",
   ".github/",
   ".agents/",
   ".cursor/",

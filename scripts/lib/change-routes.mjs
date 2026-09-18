@@ -33,19 +33,19 @@ export const SHARED_BUILD_PATTERNS = Object.freeze([
 ]);
 
 // Gate-level "documentation-only" definition: every Markdown file plus the
-// docs/, .agents/, and .cursor/ trees. Mirrors the documentation route's
-// contract patterns below (including docs/** for non-Markdown files under
-// docs/) so check classification and verify routing agree — non-Markdown files
-// under docs/ (images, archived plans) still skip code builds in check
+// Docs/, .agents/, and .cursor/ trees. Mirrors the documentation route's
+// contract patterns below (including Docs/** for non-Markdown files under
+// Docs/) so check classification and verify routing agree — non-Markdown files
+// under Docs/ (images, archived plans) still skip code builds in check
 // classification.
 export function isDocumentationPath(filePath) {
-  return filePath.endsWith(".md") || /^(docs|\.agents|\.cursor)\//u.test(filePath);
+  return filePath.endsWith(".md") || /^(Docs|\.agents|\.cursor)\//u.test(filePath);
 }
 
 export const ROUTES = Object.freeze([
   route(
     "documentation",
-    ["*.md", "**/*.md", "docs/**", ".agents/**", ".cursor/**"],
+    ["*.md", "**/*.md", "Docs/**", ".agents/**", ".cursor/**"],
     ["docs-check"],
     [doc("CONTRIBUTING.md", "What to run when you change…", "verification policy")],
     "CONTRIBUTING.md",
@@ -64,7 +64,7 @@ export const ROUTES = Object.freeze([
     ],
     ["related", "unit-save"],
     [
-      doc("docs/WORKFLOWS.md", "Change persisted save data", "save workflow"),
+      doc("Docs/WORKFLOWS.md", "Change persisted save data", "save workflow"),
       doc("src/features/alchemy/shared/storage/MIGRATIONS.md", "Public save contract", "save compatibility"),
     ],
     "src/features/alchemy/shared/storage/io.ts",
@@ -87,7 +87,7 @@ export const ROUTES = Object.freeze([
       "src/lib/game-data/gear-art.ts",
     ],
     ["related", "assets-check"],
-    [doc("docs/WORKFLOWS-ASSETS.md", null, "asset workflow")],
+    [doc("Docs/WORKFLOWS-ASSETS.md", null, "asset workflow")],
     "scripts/assets/core-assets.mjs",
     // Release/desktop sync helpers share the sync-* prefix but reproduce no
     // committed asset output; they stay on the tooling route.
@@ -104,14 +104,14 @@ export const ROUTES = Object.freeze([
       "tests/desktop/**",
     ],
     ["related", "unit-desktop"],
-    [doc("docs/RELEASE.md", "Commands", "desktop packaging")],
+    [doc("Docs/RELEASE.md", "Commands", "desktop packaging")],
     "desktop/package-layout.cjs",
   ),
   route(
     "balance",
     ["src/lib/balance/**", "tests/balance/**", "tests/lib/balance/**", "vitest.balance.config.ts"],
     ["related", "report-balance"],
-    [doc("docs/REFERENCE.md", "Balance simulation", "balance verification")],
+    [doc("Docs/REFERENCE.md", "Balance simulation", "balance verification")],
     "src/lib/balance/report-run.ts",
   ),
   route(
@@ -124,7 +124,7 @@ export const ROUTES = Object.freeze([
       "playwright.performance.config.ts",
     ],
     ["related", "unit-performance"],
-    [doc("docs/PERFORMANCE.md", "Workflow", "performance profiling")],
+    [doc("Docs/PERFORMANCE.md", "Workflow", "performance profiling")],
     "performance/metrics.ts",
   ),
   route(
@@ -149,14 +149,14 @@ export const ROUTES = Object.freeze([
       "stryker.config.mjs",
     ],
     ["unit-tooling"],
-    [doc("docs/REFERENCE.md", "Tooling ownership", "tooling commands")],
+    [doc("Docs/REFERENCE.md", "Tooling ownership", "tooling commands")],
     "scripts/measure-agent-context.mjs",
   ),
   route(
     "runtime",
     ["src/**", "public/**", "index.html"],
     ["related"],
-    [doc("docs/ARCHITECTURE.md", "Directory layout (`src/features/alchemy/`)", "runtime architecture")],
+    [doc("Docs/ARCHITECTURE.md", "Directory layout (`src/features/alchemy/`)", "runtime architecture")],
     "src/App.tsx",
   ),
   route(

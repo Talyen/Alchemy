@@ -1,13 +1,13 @@
 /**
  * Run measurable audit probes (knip, madge, complexity, amplification, content).
- * as a periodic sweep. Agent audit guides: docs/Audits/README.md.
+ * as a periodic sweep. Agent audit guides: Docs/Audits/README.md.
  * Run: node scripts/audit-all.mjs
  *
  * Exits non-zero if any audit fails. Prints a summary at the end.
  * Gating probes (knip, depcruise, eslint, content-audit) fail the sweep;
  * trend probes (type-escapes, change-amplification) always exit 0 and are
- * advisory direction signals — see docs/Audits/TypeSafetyAudit.md.
- * Local / agent periodic sweep (docs/Audits); not CI nightly and not a
+ * advisory direction signals — see Docs/Audits/TypeSafetyAudit.md.
+ * Local / agent periodic sweep (Docs/Audits); not CI nightly and not a
  * pre-push gate (nightly runs `deadcode:entry-exports` only; use `npm run lint:ci`
  * for the static gate).
  */

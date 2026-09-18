@@ -1,4 +1,4 @@
-/** Shared execution-plan checks under docs/Plans/ (used by check-docs and archive-plans CLIs). */
+/** Shared execution-plan checks under Docs/Plans/ (used by check-docs and archive-plans CLIs). */
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -51,7 +51,7 @@ function checkPlans({ final = false, today = new Date() } = {}) {
   const failures = [];
   const warnings = [];
   const plans = planFiles();
-  if (!fs.existsSync(path.join(PLANS_DIR, "README.md"))) failures.push("docs/Plans/README.md is missing");
+  if (!fs.existsSync(path.join(PLANS_DIR, "README.md"))) failures.push("Docs/Plans/README.md is missing");
 
   for (const planPath of plans) {
     const relative = path.relative(ROOT, planPath);
@@ -63,7 +63,7 @@ function checkPlans({ final = false, today = new Date() } = {}) {
     const { metadata, updated } = result;
     if (metadata.status === "complete" || metadata.status === "cancelled") {
       failures.push(
-        `${relative}: ${metadata.status} plans belong in docs/Plans/Archived — run \`npm run archive:plans\``,
+        `${relative}: ${metadata.status} plans belong in Docs/Plans/Archived — run \`npm run archive:plans\``,
       );
       continue;
     }
@@ -72,7 +72,7 @@ function checkPlans({ final = false, today = new Date() } = {}) {
     }
     if (final) failures.push(`${relative}: plan remains active at final handoff; complete or cancel it first`);
   }
-  if (plans.length > 3) warnings.push(`docs/Plans/: ${plans.length} active plan files are present`);
+  if (plans.length > 3) warnings.push(`Docs/Plans/: ${plans.length} active plan files are present`);
   return { failures, warnings, activePlans: plans.length };
 }
 

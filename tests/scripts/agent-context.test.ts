@@ -50,7 +50,7 @@ describe("agent discovery", () => {
     }
     const run = selectContext([], "run-state");
     expect(renderContext(run, contextSections(process.cwd(), run)).text).toContain("--task run-ports");
-    expect(readDocumentSection(process.cwd(), "docs/ARCHITECTURE.md", "Run state").text).not.toContain(
+    expect(readDocumentSection(process.cwd(), "Docs/ARCHITECTURE.md", "Run state").text).not.toContain(
       "## Persistence API",
     );
     for (const heading of [
@@ -63,7 +63,7 @@ describe("agent discovery", () => {
       "Run phase",
       "Run setup ownership",
     ]) {
-      expect(readDocumentSection(process.cwd(), "docs/ARCHITECTURE.md", heading).text).toMatch(/^## /u);
+      expect(readDocumentSection(process.cwd(), "Docs/ARCHITECTURE.md", heading).text).toMatch(/^## /u);
     }
   });
 
@@ -226,8 +226,8 @@ describe("agent discovery", () => {
 
   it("retains asset instructions and runtime fallback when tooling paths are also selected", () => {
     const selected = selectContext(["scripts/optimize-sounds.mjs", "src/App.tsx"]);
-    expect(selected.docs).toContainEqual(expect.objectContaining({ path: "docs/WORKFLOWS-ASSETS.md" }));
-    expect(selected.docs).toContainEqual(expect.objectContaining({ path: "docs/ARCHITECTURE.md" }));
+    expect(selected.docs).toContainEqual(expect.objectContaining({ path: "Docs/WORKFLOWS-ASSETS.md" }));
+    expect(selected.docs).toContainEqual(expect.objectContaining({ path: "Docs/ARCHITECTURE.md" }));
   });
 
   it("bounds outlines and oversized declarations without exposing partial implementations", () => {

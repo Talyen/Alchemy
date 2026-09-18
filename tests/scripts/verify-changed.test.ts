@@ -136,7 +136,7 @@ describe("verification selection", () => {
 
   it("keeps documentation free of unit, build, and browser work", () => {
     const plan = resolveRoutePlan([
-      "docs/new-guide.md",
+      "Docs/new-guide.md",
       "scripts/README.md",
       "src/features/alchemy/shared/storage/MIGRATIONS.md",
       "tests/e2e/README.md",
@@ -177,7 +177,7 @@ describe("verification selection", () => {
   });
 
   it("skips documentation checks on request without losing other escalations", () => {
-    const plan = resolveRoutePlan(["scripts/check.mjs", "src/lib/battle/damage-calc.ts", "docs/guide.md"]);
+    const plan = resolveRoutePlan(["scripts/check.mjs", "src/lib/battle/damage-calc.ts", "Docs/guide.md"]);
     expect(plan.commands.map((command) => command.key)).toContain("docs-check");
     const filtered = filterPlanCommands(plan, new Set(["skip-docs-check"]));
     expect(filtered.commands.map((command) => command.key)).not.toContain("docs-check");

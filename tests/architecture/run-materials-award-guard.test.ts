@@ -11,7 +11,7 @@ import { listNonTestSourceFiles, matchingFiles } from "./helpers";
 const AWARD_CALL_SITES: readonly string[] = AWARD_MATERIALS_CALL_SITES;
 
 // The write seam is the run-session-write-port barrel plus its domain
-// implementations under write/ (see docs/ARCHITECTURE.md commands and writes).
+// implementations under write/ (see Docs/ARCHITECTURE.md commands and writes).
 const WRITE_SEAM_BARREL = "src/features/alchemy/shared/stores/run-session-write-port.ts";
 const WRITE_SEAM_DIR = "src/features/alchemy/shared/stores/write/";
 

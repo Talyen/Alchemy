@@ -62,44 +62,44 @@ checks against the development server, use `npm run test:e2e:dev`. Focused
 commands and fixture guidance live in the [E2E guide](./tests/e2e/README.md).
 
 Full command catalog (build, desktop, gates, balance sim, perf, clean):
-[`docs/REFERENCE.md`](./docs/REFERENCE.md#environment--commands). Path-specific
+[`Docs/REFERENCE.md`](./Docs/REFERENCE.md#environment--commands). Path-specific
 tests, local gates, and CI parity: [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 Headless balance simulation (`npm run balance:sim`):
-[`docs/REFERENCE.md` § Balance simulation](./docs/REFERENCE.md#balance-simulation).
+[`Docs/REFERENCE.md` § Balance simulation](./Docs/REFERENCE.md#balance-simulation).
 
 Web deploys through Vercel ([`vercel.json`](./vercel.json)). Desktop builds,
 installers, and Steam shipping:
-[`docs/RELEASE.md`](./docs/RELEASE.md) and the
-[command reference](./docs/REFERENCE.md#script-command-reference).
+[`Docs/RELEASE.md`](./Docs/RELEASE.md) and the
+[command reference](./Docs/REFERENCE.md#script-command-reference).
 
 ## Layout
 
 Feature layout and run-state ownership:
-[`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
+[`Docs/ARCHITECTURE.md`](./Docs/ARCHITECTURE.md).
 
 - `desktop/` — Electron main/preload
 - `src/app/` — boot, screen routes, save-state
-- `src/lib/` — React-free game logic (battle, game-data, gear, content-systems, homestead, … — see `docs/REFERENCE.md#navigation-hints`)
+- `src/lib/` — React-free game logic (battle, game-data, gear, content-systems, homestead, … — see `Docs/REFERENCE.md#navigation-hints`)
 - `src/features/alchemy/` — React UI (`meta`, `run-setup`, `run-loop`, `shell`, `shared`)
 - `tests/` — unit tests grouped by source owner; browser specs in `tests/e2e/specs/`, Electron checks in `tests/electron/`, and desktop unit tests in `tests/desktop/`; shared fixtures, page objects, and helpers support multiple suites
 - `performance/` — browser and desktop measurement scenarios and reporting tools; runtime instrumentation lives in `src/lib/performance/`
-- `Raw Assets/`, `src/assets/`, `public/` — authored inputs, bundled assets, and public assets; [asset workflows](./docs/WORKFLOWS-ASSETS.md) identify generated outputs
+- `Raw Assets/`, `src/assets/`, `public/` — authored inputs, bundled assets, and public assets; [asset workflows](./Docs/WORKFLOWS-ASSETS.md) identify generated outputs
 - `scripts/` — command entry points and shared tooling in `scripts/lib/`; see the [script implementation map](./scripts/README.md)
 - `eslint/` — custom lint rules and import-boundary definitions composed by `eslint.config.js`
-- `docs/`, `.agents/` — canonical project documentation, audit procedures, plans, and agent skills and lessons
-- `docs/design/` — retained art studies, approval records, and UI mockups; see the [design archive](./docs/design/README.md)
+- `Docs/`, `.agents/` — canonical project documentation, audit procedures, plans, and agent skills and lessons
+- `Docs/design/` — retained art studies, approval records, and UI mockups; see the [design archive](./Docs/design/README.md)
 - `steam/` — Steam packaging and upload configuration
 
 Root configuration files remain beside `package.json` for tool discovery. Local
 outputs such as `dist/`, `release-desktop/`, `reports/`, `playwright-report/`, and
 `test-results/` are ignored artifacts. `scratch/` and `output/` hold temporary local
-work; retained design materials belong in `docs/design/`. Existing `npm run clean` and
+work; retained design materials belong in `Docs/design/`. Existing `npm run clean` and
 `npm run prune:transient` commands manage disposable reports and caches.
 
 `npm run dev` prepares authored assets before starting Vite. Production builds
 only validate committed generated outputs and never rewrite tracked sources.
 Use the explicit authoring and `sync:*` commands in
-[`docs/WORKFLOWS-ASSETS.md`](./docs/WORKFLOWS-ASSETS.md) when intentionally
+[`Docs/WORKFLOWS-ASSETS.md`](./Docs/WORKFLOWS-ASSETS.md) when intentionally
 regenerating outputs.
 Do not hand-edit generated outputs.
 
@@ -109,12 +109,12 @@ Start with the document for your question:
 
 | Question                                | Document                                                                                      |
 | --------------------------------------- | --------------------------------------------------------------------------------------------- |
-| How do combat and progression work?     | [Battle rules and glossary](./docs/GAME_RULES.md), [Armory](./docs/ARMORY.md)                 |
-| Where does game state live?             | [Architecture](./docs/ARCHITECTURE.md)                                                        |
-| How do I add content or change a flow?  | [Implementation workflows](./docs/WORKFLOWS.md), [Asset workflow](./docs/WORKFLOWS-ASSETS.md) |
-| Which UI and audio conventions apply?   | [UI system](./docs/UI.md), [Audio workflow](./docs/AUDIO.md)                                  |
-| Which commands and checks should I run? | [Developer reference](./docs/REFERENCE.md), [Contributing](./CONTRIBUTING.md)                 |
-| How do I profile or ship the game?      | [Performance profiling](./docs/PERFORMANCE.md), [Release](./docs/RELEASE.md)                  |
+| How do combat and progression work?     | [Battle rules and glossary](./Docs/GAME_RULES.md), [Armory](./Docs/ARMORY.md)                 |
+| Where does game state live?             | [Architecture](./Docs/ARCHITECTURE.md)                                                        |
+| How do I add content or change a flow?  | [Implementation workflows](./Docs/WORKFLOWS.md), [Asset workflow](./Docs/WORKFLOWS-ASSETS.md) |
+| Which UI and audio conventions apply?   | [UI system](./Docs/UI.md), [Audio workflow](./Docs/AUDIO.md)                                  |
+| Which commands and checks should I run? | [Developer reference](./Docs/REFERENCE.md), [Contributing](./CONTRIBUTING.md)                 |
+| How do I profile or ship the game?      | [Performance profiling](./Docs/PERFORMANCE.md), [Release](./Docs/RELEASE.md)                  |
 
 [AGENTS.md](./AGENTS.md#documentation-owners) provides the full ownership map
 and agent working rules. Active plans and historical records are separate from

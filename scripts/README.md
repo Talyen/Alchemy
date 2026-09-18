@@ -1,12 +1,12 @@
 # Scripts implementation map
 
-Use [REFERENCE](../docs/REFERENCE.md#script-command-reference) to choose a command,
+Use [REFERENCE](../Docs/REFERENCE.md#script-command-reference) to choose a command,
 [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) to select checks,
 and this map to locate their implementation owners.
 
 ## Assets
 
-[WORKFLOWS-ASSETS](../docs/WORKFLOWS-ASSETS.md) owns authoring commands and the
+[WORKFLOWS-ASSETS](../Docs/WORKFLOWS-ASSETS.md) owns authoring commands and the
 choice between fast generated checks and prepared-output verification.
 Asset and synchronization CLIs validate selectors before writing, including in
 skip mode; keep that validation at each entry point.
@@ -36,7 +36,7 @@ Manifest paths derive from `MANAGED_DIRS` + `MANIFEST_BASENAME` via `getManagedM
 | Preread measurement                                                 | `measure-agent-context.mjs` |
 | Evaluation records and comparison                                   | `agent-eval.mjs`            |
 
-[Agent discovery](../docs/REFERENCE.md#agent-discovery) documents command options
+[Agent discovery](../Docs/REFERENCE.md#agent-discovery) documents command options
 and limitations; [evaluations](../.agents/evals/README.md) owns pinned setup and
 interpretation. Discovery metadata must reference canonical prose rather than
 copying it, and it does not own verification selection. The search fallback skips deleted
@@ -57,7 +57,7 @@ Gate composition, CI tiers, and reuse policy live in
 | Passing unit receipts                     | `lib/verification-cache.mjs`                                                                                                                                                                          |
 | Bundle budgets                            | `lib/bundle-budget.mjs`                                                                                                                                                                               |
 | Full and staged formatting                | `prettier-paths.mjs` + `.prettierignore`                                                                                                                                                              |
-| Plan creation and archiving               | `new-plan.mjs` + `archive-plans.mjs`; [plan lifecycle](../docs/Plans/README.md#task-handoff)                                                                                                          |
+| Plan creation and archiving               | `new-plan.mjs` + `archive-plans.mjs`; [plan lifecycle](../Docs/Plans/README.md#task-handoff)                                                                                                          |
 
 `lib/repository-paths.mjs` normalizes selections for checks and discovery. Relative
 and absolute paths inside the checkout are equivalent. Directory selections use
@@ -68,7 +68,7 @@ stale-cache overrides); `git-safety-guard.mjs` is the deliberate exception
 because it must exec the real binary past its own shim. Release writes keep
 logged inherit flows via `command-invocation.mjs`; release reads use `runGit`.
 Route glob matching precompiles `ROUTES` + shared build patterns once instead
-of per file. The `documentation` route covers `docs/**` so check classification
+of per file. The `documentation` route covers `Docs/**` so check classification
 (`isDocumentationPath`) and verify routing agree on docs images and archives.
 
 CI path filters (`.github/workflows/ci.yml` `changes` job) stay owned by the
@@ -123,7 +123,7 @@ Input identity covers tracked and untracked nonignored files, root environment f
 | Steam upload                                                 | `steam-upload.mjs`                                                                      |
 | Verified build                                               | `build-verified.mjs`                                                                    |
 
-[RELEASE](../docs/RELEASE.md#changelog-release-time-only) owns timing, note policy,
+[RELEASE](../Docs/RELEASE.md#changelog-release-time-only) owns timing, note policy,
 and the release decision flow.
 
 Desktop: `ensure-electron.mjs` (orchestrator) → `electron-download.mjs` + `electron-path.mjs`
@@ -133,7 +133,7 @@ verified desktop build and direct packaging. `desktop/after-pack.cjs` locates
 default V8 snapshots with one directory walker on all supported Node versions,
 then installs the browser-process copies before enabling their fuse. The build wrapper rejects conflicting mode selectors before validation or Vite, so `build:desktop` always builds desktop mode.
 Packaged Windows startup: `smoke-desktop.mjs` resolves the artifact and invokes
-`smoke-desktop.ps1` for native accessibility verification (see [RELEASE](../docs/RELEASE.md#packaged-windows-startup-check)).
+`smoke-desktop.ps1` for native accessibility verification (see [RELEASE](../Docs/RELEASE.md#packaged-windows-startup-check)).
 
 `platforms.json` owns the desktop target list; `package.json` build blocks own per-platform packaging configuration. Sentry release and desktop sourcemap mode are owned by `lib/sentry-release.mjs`; chunk splitting is owned by `lib/vite-chunks.mjs`. Vite uses only Rolldown chunk groups.
 
@@ -145,7 +145,7 @@ the npm separator (`npm run audit -- --types|--amplification|--content|--hotspot
 to dispatch one probe instead. Gating probes: knip, depcruise, eslint complexity,
 content-audit. Advisory trend probes (always exit 0):
 `audit-type-escapes.mjs`, `audit-change-amplification.mjs` — direction signals, see
-`docs/Audits/TypeSafetyAudit.md`. `context-hotspots` / `runs:show` are advisory process
+`Docs/Audits/TypeSafetyAudit.md`. `context-hotspots` / `runs:show` are advisory process
 evidence and never block handoff.
 
 ## Test / E2E
@@ -169,7 +169,7 @@ differ by design. Malformed reports must fail rather than appear to be
 successful zero-test runs.
 
 `run-performance.mjs` owns profiling options and validates them before builds
-or downloads. Measurements and interpretation follow [PERFORMANCE](../docs/PERFORMANCE.md).
+or downloads. Measurements and interpretation follow [PERFORMANCE](../Docs/PERFORMANCE.md).
 
 Balance and loot reports share the middleware-mode Vite bootstrap in
 `lib/vite-report-server.mjs` (also used by `content-audit.mjs`, which is now an
