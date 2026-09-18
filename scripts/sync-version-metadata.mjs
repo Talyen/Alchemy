@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { GENERATED_OUTPUTS } from "./lib/asset-constants.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { readRepoPackageJson } from "./lib/repo-package.mjs";
-import { resolveRootDir } from "./lib/sync-generated-helpers.mjs";
+import { resolveRootDir } from "./lib/asset-pipeline-runner.mjs";
 import { writeTextIfChanged } from "./lib/write-text-if-changed.mjs";
 
 export async function syncVersionMetadata({ check = false } = {}) {

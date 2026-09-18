@@ -1,31 +1,34 @@
-import { mkdir, copyFile, readdir } from "node:fs/promises";
+import { copyFile } from "node:fs/promises";
 import path from "node:path";
 
 import { processFreshEntry } from "./lib/asset-manifest-cache.mjs";
 import {
   ASSET_SCHEMA_VERSION,
-  MANAGED_DIRS,
   MANIFEST_BASENAME,
   MUSIC_COPY_CONCURRENCY,
   MUSIC_SETTINGS,
 } from "./lib/asset-constants.mjs";
 import { MUSIC_FILE_EXTENSIONS, validateMusicRegistry } from "./assets/music-assets.mjs";
-import { runManifestPipeline } from "./lib/asset-pipeline-runner.mjs";
+import {
+  ensureOutputDir,
+  readSourceDir,
+  resolvePipelinePaths,
+  runManifestPipeline,
+} from "./lib/asset-pipeline-runner.mjs";
 import { runPipelineScript } from "./lib/script-run.mjs";
-import { resolveRootDir } from "./lib/sync-generated-helpers.mjs";
 
 async function discoverAudioFiles(dir) {
-  const entries = await readdir(dir, { withFileTypes: true });
+  const entries = await readSourceDir(dir);
   return entries
     .filter((entry) => entry.isFile() && MUSIC_FILE_EXTENSIONS.has(path.extname(entry.name).toLowerCase()))
     .map((entry) => entry.name)
     .sort();
 }
 
-const rootDir = resolveRootDir(import.meta.url);
-const sourceDir = path.join(rootDir, "Raw Assets", "Music");
-const outputDir = path.join(rootDir, MANAGED_DIRS.music.dir);
-const manifestPath = path.join(outputDir, MANIFEST_BASENAME);
+const { sourceDir, outputDir, manifestPath } = resolvePipelinePaths(import.meta.url, {
+  sourceSubpath: ["Raw Assets", "Music"],
+  managedKey: "music",
+});
 
 const SCHEMA_VERSION = ASSET_SCHEMA_VERSION;
 
@@ -38,7 +41,7 @@ export async function optimizeMusic({ check = false } = {}) {
   }
   await validateMusicRegistry(files);
 
-  if (!check) await mkdir(outputDir, { recursive: true });
+  await ensureOutputDir(outputDir, { check });
 
   const result = await runManifestPipeline({
     entries: files,

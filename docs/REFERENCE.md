@@ -25,6 +25,7 @@ lists in subsystem docs. Script implementation owners are mapped in
 npm run dev                 # Vite dev server
 npm run build               # Non-mutating Vite build; validates generated outputs first (typecheck is a separate gate; Vercel runs vercel.json buildCommand)
 npm run assets:check        # Read-only authored-asset freshness validation; use npm run assets to regenerate
+npm run assets              # Full asset prep (art+sounds+music+barrels+version); assets:optimize[:art|:sounds|:music] slices optimization, sync:art / sync:gear-art / sync:version slice barrel sync (sync:generated / check:generated cover all)
 npm test                    # Vitest; `npm test -- <path>` for a single file
 npm run verify -- --diff    # Related tests plus broad risk escalations (--plan previews)
 npm run runs:show -- --last 10    # Recent run IDs, outcomes, counts, and evidence availability

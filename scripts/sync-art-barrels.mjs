@@ -3,15 +3,9 @@ import path from "node:path";
 
 import { toAssetExportName } from "./lib/kebab-to-camel.mjs";
 import { GENERATED_OUTPUTS } from "./lib/asset-constants.mjs";
-import { toDefinitionId } from "./lib/gear-filenames.mjs";
-import {
-  getAssetFiles,
-  getGearFiles,
-  getOptimizedManifestPath,
-  resolveRootDir,
-  readArtManifest,
-  runSyncGenerated,
-} from "./lib/sync-generated-helpers.mjs";
+import { getAssetFiles, getGearFiles, toDefinitionId } from "./lib/gear-filenames.mjs";
+import { resolveRootDir } from "./lib/asset-pipeline-runner.mjs";
+import { getOptimizedManifestPath, readArtManifest, runSyncGenerated } from "./lib/sync-generated-helpers.mjs";
 
 const rootDir = resolveRootDir(import.meta.url);
 const manifestPath = getOptimizedManifestPath(rootDir);
@@ -95,7 +89,7 @@ async function syncBarrels(configs, { check = false, verify = [] } = {}) {
 }
 
 export async function syncAssets(options) {
-  // Low-level primitive (kept for tests): prefer syncArtBarrels via
+  // Deprecated low-level primitive (kept for tests): prefer syncArtBarrels via
   // `npm run sync:art`, since gear-art.ts imports assets.generated.ts and a
   // solo assets sync can leave the pair diverged.
   await syncBarrels([ART_BARRELS.assets], options);

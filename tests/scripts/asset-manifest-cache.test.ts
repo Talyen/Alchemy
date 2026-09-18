@@ -27,7 +27,7 @@ import {
   getGearFiles,
   isGearAsset,
   isWebpAsset,
-} from "../../scripts/lib/sync-generated-helpers.mjs";
+} from "../../scripts/lib/gear-filenames.mjs";
 
 vi.mock("node:fs/promises", async (importOriginal) => {
   const original = await importOriginal<typeof import("node:fs/promises")>();

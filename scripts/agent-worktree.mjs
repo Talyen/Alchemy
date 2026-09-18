@@ -8,6 +8,18 @@ const currentFile = fileURLToPath(import.meta.url);
 const root = path.resolve(path.dirname(currentFile), "..");
 const WORKTREE_ROOT = path.join(root, ".worktrees");
 
+// Kept dependency-free (no scripts/lib imports) so worktree management works
+// from a copied single file in tests and minimal checkouts.
+function isMainEntry() {
+  const entry = process.argv[1];
+  if (!entry) return false;
+  try {
+    return fs.realpathSync(path.resolve(entry)) === fs.realpathSync(path.resolve(currentFile));
+  } catch {
+    return path.resolve(entry) === path.resolve(currentFile);
+  }
+}
+
 function runGit(args, opts = {}) {
   const result = spawnSync("git", args, {
     cwd: root,
@@ -30,7 +42,7 @@ Add --detached for verification-only detached HEAD.
 `);
 }
 
-function slugify(s) {
+export function slugify(s) {
   return s
     .trim()
     .toLowerCase()
@@ -39,159 +51,163 @@ function slugify(s) {
     .slice(0, 64);
 }
 
-const [cmd, ...rest] = process.argv.slice(2);
+export function main(argv = process.argv.slice(2)) {
+  const [cmd, ...rest] = argv;
 
-function getArg(name) {
-  const prefix = `${name}=`;
-  for (let index = 0; index < rest.length; index++) {
-    if (rest[index] === name) return rest[index + 1] ?? null;
-    if (rest[index].startsWith(prefix)) return rest[index].slice(prefix.length) || null;
-  }
-  return null;
-}
-
-function hasFlag(name) {
-  return rest.includes(name);
-}
-
-if (!cmd || cmd === "--help" || cmd === "-h") {
-  usage();
-  process.exit(0);
-}
-
-if (cmd === "list") {
-  const r = runGit(["worktree", "list"], { stdio: "inherit" });
-  process.exit(r.status ?? 0);
-}
-
-if (cmd === "prune") {
-  const r = runGit(["worktree", "prune", "-v"], { stdio: "inherit" });
-  process.exit(r.status ?? 0);
-}
-
-if (cmd === "create") {
-  const taskRaw = getArg("--task");
-  if (!taskRaw) {
-    console.error("missing --task <slug>");
-    usage();
-    process.exit(1);
-  }
-  const task = slugify(taskRaw);
-  if (!task) {
-    console.error("invalid --task slug");
-    process.exit(1);
-  }
-  const detached = hasFlag("--detached");
-  const base = getArg("--base") ?? "main";
-  const worktreePath = path.join(WORKTREE_ROOT, task);
-  const branch = `agent/${task}`;
-
-  // Branch names and worktree directories live on disk: `Task` and `task`
-  // would collide on case-insensitive filesystems, so reject the second
-  // spelling explicitly instead of corrupting the first checkout. This runs
-  // before the exact-exists check so the collision reports on every platform.
-  if (fs.existsSync(WORKTREE_ROOT)) {
-    const clash = fs
-      .readdirSync(WORKTREE_ROOT)
-      .find((entry) => entry !== task && entry.toLowerCase() === task.toLowerCase());
-    if (clash) {
-      console.error(`worktree slug ${task} collides with existing ${clash}; choose another --task`);
-      process.exit(1);
+  function getArg(name) {
+    const prefix = `${name}=`;
+    for (let index = 0; index < rest.length; index++) {
+      if (rest[index] === name) return rest[index + 1] ?? null;
+      if (rest[index].startsWith(prefix)) return rest[index].slice(prefix.length) || null;
     }
+    return null;
   }
 
-  if (fs.existsSync(worktreePath)) {
-    console.error(`worktree already exists: ${worktreePath}`);
-    console.error(`remove with: node scripts/agent-worktree.mjs remove --task ${task}`);
-    process.exit(1);
+  function hasFlag(name) {
+    return rest.includes(name);
   }
 
-  fs.mkdirSync(WORKTREE_ROOT, { recursive: true });
-
-  if (detached) {
-    const args = ["worktree", "add", "--detach", worktreePath, base];
-    console.log(`▸ git ${args.join(" ")}`);
-    const r = runGit(args, { stdio: "inherit" });
-    if (r.status !== 0) process.exit(r.status ?? 1);
-    console.log(`detached worktree ready: ${worktreePath} at ${base} (verification only)`);
-    console.log(`  cd "${worktreePath}"`);
-    console.log("  npm ci  # install dependencies before verification");
-    console.log(`  cd "${root}"  # return before cleanup`);
-    console.log(`  node scripts/agent-worktree.mjs remove --task ${task}  # after verification`);
+  if (!cmd || cmd === "--help" || cmd === "-h") {
+    usage();
     process.exit(0);
   }
 
-  const branchExists = runGit(["show-ref", "--verify", `refs/heads/${branch}`]);
-
-  const args =
-    branchExists.status === 0
-      ? ["worktree", "add", worktreePath, branch]
-      : ["worktree", "add", "-b", branch, worktreePath, base];
-
-  console.log(`▸ git ${args.join(" ")}`);
-  const r = runGit(args, { stdio: "inherit" });
-  if (r.status !== 0) process.exit(r.status ?? 1);
-  console.log(`worktree ready: ${worktreePath} on ${branch} (base ${base})`);
-  console.log(`  cd "${worktreePath}"  # work in isolation`);
-  console.log("  npm ci  # install dependencies before verification");
-  console.log(`  cd "${root}"  # return before cleanup`);
-  console.log(`  node scripts/agent-worktree.mjs remove --task ${task}  # after merging to main`);
-  process.exit(0);
-}
-
-if (cmd === "remove") {
-  const taskRaw = getArg("--task");
-  if (!taskRaw) {
-    console.error("missing --task <slug>");
-    usage();
-    process.exit(1);
+  if (cmd === "list") {
+    const r = runGit(["worktree", "list"], { stdio: "inherit" });
+    process.exit(r.status ?? 0);
   }
-  const task = slugify(taskRaw);
-  if (!task) {
-    console.error("invalid --task slug");
-    process.exit(1);
-  }
-  const worktreePath = path.join(WORKTREE_ROOT, task);
-  const branch = `agent/${task}`;
-  const force = hasFlag("--force");
 
-  const list = runGit(["worktree", "list", "--porcelain"]);
-  if (list.status !== 0) {
-    console.error("Could not inspect registered worktrees; nothing removed.");
-    process.exit(list.status ?? 1);
+  if (cmd === "prune") {
+    const r = runGit(["worktree", "prune", "-v"], { stdio: "inherit" });
+    process.exit(r.status ?? 0);
   }
-  const isRegistered = (list.stdout ?? "").split("\n").includes(`worktree ${worktreePath}`);
 
-  if (isRegistered) {
-    const args = ["worktree", "remove", worktreePath];
-    if (force) args.push("--force");
+  if (cmd === "create") {
+    const taskRaw = getArg("--task");
+    if (!taskRaw) {
+      console.error("missing --task <slug>");
+      usage();
+      process.exit(1);
+    }
+    const task = slugify(taskRaw);
+    if (!task) {
+      console.error("invalid --task slug");
+      process.exit(1);
+    }
+    const detached = hasFlag("--detached");
+    const base = getArg("--base") ?? "main";
+    const worktreePath = path.join(WORKTREE_ROOT, task);
+    const branch = `agent/${task}`;
+
+    // Branch names and worktree directories live on disk: `Task` and `task`
+    // would collide on case-insensitive filesystems, so reject the second
+    // spelling explicitly instead of corrupting the first checkout. This runs
+    // before the exact-exists check so the collision reports on every platform.
+    if (fs.existsSync(WORKTREE_ROOT)) {
+      const clash = fs
+        .readdirSync(WORKTREE_ROOT)
+        .find((entry) => entry !== task && entry.toLowerCase() === task.toLowerCase());
+      if (clash) {
+        console.error(`worktree slug ${task} collides with existing ${clash}; choose another --task`);
+        process.exit(1);
+      }
+    }
+
+    if (fs.existsSync(worktreePath)) {
+      console.error(`worktree already exists: ${worktreePath}`);
+      console.error(`remove with: node scripts/agent-worktree.mjs remove --task ${task}`);
+      process.exit(1);
+    }
+
+    fs.mkdirSync(WORKTREE_ROOT, { recursive: true });
+
+    if (detached) {
+      const args = ["worktree", "add", "--detach", worktreePath, base];
+      console.log(`▸ git ${args.join(" ")}`);
+      const r = runGit(args, { stdio: "inherit" });
+      if (r.status !== 0) process.exit(r.status ?? 1);
+      console.log(`detached worktree ready: ${worktreePath} at ${base} (verification only)`);
+      console.log(`  cd "${worktreePath}"`);
+      console.log("  npm ci  # install dependencies before verification");
+      console.log(`  cd "${root}"  # return before cleanup`);
+      console.log(`  node scripts/agent-worktree.mjs remove --task ${task}  # after verification`);
+      process.exit(0);
+    }
+
+    const branchExists = runGit(["show-ref", "--verify", `refs/heads/${branch}`]);
+
+    const args =
+      branchExists.status === 0
+        ? ["worktree", "add", worktreePath, branch]
+        : ["worktree", "add", "-b", branch, worktreePath, base];
+
     console.log(`▸ git ${args.join(" ")}`);
     const r = runGit(args, { stdio: "inherit" });
     if (r.status !== 0) process.exit(r.status ?? 1);
-  } else if (fs.existsSync(worktreePath)) {
-    if (!force) {
-      console.error(`Unregistered directory: ${worktreePath}. Inspect it before using --force to remove it.`);
+    console.log(`worktree ready: ${worktreePath} on ${branch} (base ${base})`);
+    console.log(`  cd "${worktreePath}"  # work in isolation`);
+    console.log("  npm ci  # install dependencies before verification");
+    console.log(`  cd "${root}"  # return before cleanup`);
+    console.log(`  node scripts/agent-worktree.mjs remove --task ${task}  # after merging to main`);
+    process.exit(0);
+  }
+
+  if (cmd === "remove") {
+    const taskRaw = getArg("--task");
+    if (!taskRaw) {
+      console.error("missing --task <slug>");
+      usage();
       process.exit(1);
     }
-    console.log(`worktree not registered, removing directory ${worktreePath}`);
-    fs.rmSync(worktreePath, { recursive: true, force: true });
-  } else {
-    console.log(`no worktree at ${worktreePath}`);
-  }
-
-  const branchExists = runGit(["show-ref", "--verify", `refs/heads/${branch}`]);
-  if (branchExists.status === 0) {
-    const del = runGit(["branch", force ? "-D" : "-d", branch], { stdio: "inherit" });
-    if (del.status !== 0 && !force) {
-      console.error(`branch ${branch} not fully merged; use --force to delete`);
-      process.exit(del.status ?? 1);
+    const task = slugify(taskRaw);
+    if (!task) {
+      console.error("invalid --task slug");
+      process.exit(1);
     }
+    const worktreePath = path.join(WORKTREE_ROOT, task);
+    const branch = `agent/${task}`;
+    const force = hasFlag("--force");
+
+    const list = runGit(["worktree", "list", "--porcelain"]);
+    if (list.status !== 0) {
+      console.error("Could not inspect registered worktrees; nothing removed.");
+      process.exit(list.status ?? 1);
+    }
+    const isRegistered = (list.stdout ?? "").split("\n").includes(`worktree ${worktreePath}`);
+
+    if (isRegistered) {
+      const args = ["worktree", "remove", worktreePath];
+      if (force) args.push("--force");
+      console.log(`▸ git ${args.join(" ")}`);
+      const r = runGit(args, { stdio: "inherit" });
+      if (r.status !== 0) process.exit(r.status ?? 1);
+    } else if (fs.existsSync(worktreePath)) {
+      if (!force) {
+        console.error(`Unregistered directory: ${worktreePath}. Inspect it before using --force to remove it.`);
+        process.exit(1);
+      }
+      console.log(`worktree not registered, removing directory ${worktreePath}`);
+      fs.rmSync(worktreePath, { recursive: true, force: true });
+    } else {
+      console.log(`no worktree at ${worktreePath}`);
+    }
+
+    const branchExists = runGit(["show-ref", "--verify", `refs/heads/${branch}`]);
+    if (branchExists.status === 0) {
+      const del = runGit(["branch", force ? "-D" : "-d", branch], { stdio: "inherit" });
+      if (del.status !== 0 && !force) {
+        console.error(`branch ${branch} not fully merged; use --force to delete`);
+        process.exit(del.status ?? 1);
+      }
+    }
+
+    const prune = runGit(["worktree", "prune"], { stdio: "inherit" });
+    process.exit(prune.status ?? 0);
   }
 
-  const prune = runGit(["worktree", "prune"], { stdio: "inherit" });
-  process.exit(prune.status ?? 0);
+  console.error(`unknown command: ${cmd}`);
+  usage();
+  process.exit(1);
 }
 
-console.error(`unknown command: ${cmd}`);
-usage();
-process.exit(1);
+if (isMainEntry()) main();

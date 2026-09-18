@@ -101,11 +101,14 @@ export function buildContextHotspotReport(rootDir, options = {}) {
   } else {
     runs = readRecentRuns(rootDir, { last: options.last ?? 20 });
   }
+  // Single-run inspection is about one command's exposure; skip the full-repo
+  // route/discovery measurement so --run-id stays fast.
+  const skipCatalog = Boolean(options.runId);
   return {
     generatedAt: new Date().toISOString(),
     inspectedRuns: runs.length,
-    routes: measureAllRoutes(),
-    discovery: measureDiscoveryContexts(),
+    routes: skipCatalog ? [] : measureAllRoutes(),
+    discovery: skipCatalog ? [] : measureDiscoveryContexts(),
     commands: aggregateCommandExposures(runs, options.minBytes ?? 4_000),
   };
 }

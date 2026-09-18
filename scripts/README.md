@@ -11,17 +11,20 @@ choice between fast generated checks and prepared-output verification.
 Asset and synchronization CLIs validate selectors before writing, including in
 skip mode; keep that validation at each entry point.
 
-| Concern                                    | Implementation owner                                                                                                                                                  |
-| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Asset CLI and preparation                  | `assets.mjs` → `prepare-assets.mjs` (canonical surface; direct `optimize-*.mjs` calls are internal)                                                                   |
-| Art, sound, and music optimization         | `optimize-pipelines.mjs` → `optimize-assets.mjs`, `optimize-sounds.mjs`, `optimize-music.mjs` via `lib/asset-pipeline-runner.mjs`                                     |
-| Generated art barrels and version metadata | `sync-generated.mjs` → `sync-art-barrels.mjs`, `sync-version-metadata.mjs` (`sync:art` syncs both barrels; `sync:gear-art` alone refuses stale `assets.generated.ts`) |
-| Fast generated-output validation           | `sync-generated.mjs --check`                                                                                                                                          |
-| Read-only prepared-output freshness        | `check-prepared-assets.mjs`                                                                                                                                           |
+| Concern                                    | Implementation owner                                                                                                                                                                                                                                                                                      |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Asset CLI and preparation                  | `assets.mjs` → `prepare-assets.mjs` (canonical surface; direct `optimize-*.mjs` calls are the supported iteration shortcut behind `assets:optimize[:art\|:sounds\|:music]`)                                                                                                                               |
+| Art, sound, and music optimization         | `optimize-pipelines.mjs` → `optimize-assets.mjs`, `optimize-sounds.mjs`, `optimize-music.mjs` via `lib/asset-pipeline-runner.mjs`                                                                                                                                                                         |
+| Generated art barrels and version metadata | `sync-generated.mjs` → `sync-art-barrels.mjs`, `sync-version-metadata.mjs` (`sync:art` syncs both barrels; `sync:gear-art` alone refuses stale `assets.generated.ts`; `sync:version` stamps the build version alone; `prepare`/`assets:check` sync art barrels and version metadata as independent steps) |
+| Fast generated-output validation           | `sync-generated.mjs --check`                                                                                                                                                                                                                                                                              |
+| Read-only prepared-output freshness        | `check-prepared-assets.mjs`                                                                                                                                                                                                                                                                               |
 
-Shared: `lib/asset-constants.mjs` (tuning, `MANAGED_DIRS` orphan ownership), `lib/asset-manifest-cache.mjs` (freshness),
-`lib/process-helpers.mjs` (generic `targetErrorHandler`, `failedOptimizeResult`),
-`lib/gear-filenames.mjs` (gear slugging/patterns), `assets/music-assets.mjs` (music filename registry).
+Shared: `lib/asset-constants.mjs` (tuning, `MANAGED_DIRS` managed outputs — the manifest is the complete inventory, no directory exceptions), `lib/asset-pipeline-runner.mjs` (pipeline paths, output-dir creation, source reads, freshness, failure normalization),
+`lib/asset-manifest-cache.mjs` (freshness,
+check-mode `ENOENT` maps to stale errors),
+`lib/process-helpers.mjs` (generic `targetErrorHandler`, `failedResult`),
+`lib/gear-filenames.mjs` (single owner for gear slugging/patterns, slot IDs, WebP/gear classification), `assets/music-assets.mjs` (music filename registry).
+Manifest paths derive from `MANAGED_DIRS` + `MANIFEST_BASENAME` via `getManagedManifestPath` (`getOptimizedManifestPath` is the art-specific alias used by barrel sync).
 
 ## Agent discovery and evaluation
 
@@ -60,9 +63,13 @@ Gate composition, CI tiers, and reuse policy live in
 and absolute paths inside the checkout are equivalent. Directory selections use
 tracked and untracked nonignored Git paths, including deleted tracked files;
 empty directory selections fail explicitly. It also owns `toRepoRelative` (the
-single repo-relative spelling) and `runGit` (the single git spawn with
+single repo-relative spelling, also used by route matching) and `runGit` (the single git spawn with
 stale-cache overrides); `git-safety-guard.mjs` is the deliberate exception
-because it must exec the real binary past its own shim.
+because it must exec the real binary past its own shim. Release writes keep
+logged inherit flows via `command-invocation.mjs`; release reads use `runGit`.
+Route glob matching precompiles `ROUTES` + shared build patterns once instead
+of per file. The `documentation` route covers `docs/**` so check classification
+(`isDocumentationPath`) and verify routing agree on docs images and archives.
 
 CI path filters (`.github/workflows/ci.yml` `changes` job) stay owned by the
 workflows; `tests/scripts/ci-path-filters.test.ts` pins the intended
@@ -149,12 +156,15 @@ Every `E2E_ROUTES` entry has a matching `test:e2e:<name>` alias
 (`tests/scripts/run-e2e-route.test.ts` pins the set); legacy screen names
 `shop-screen` and `homestead-screen` remain accepted as aliases.
 `ci-summarize.mjs --vitest/--playwright/--all` is the single CI summary entry;
-workflows call it directly with the matching flag. Report parsing lives in
+workflows call it directly with the matching flag. A lone positional path is
+inferred from its filename (playwright-containing paths summarize Playwright).
+Report parsing lives in
 `lib/vitest-summary.mjs` and `lib/playwright-summary.mjs`; both share the
 `lib/report-summary.mjs` skeleton (budgets, first-line truncation, runner-error
-and overflow sections, missing-report wording). `summarize*Report` headers are
+and overflow sections, missing-report wording) via one table-driven publisher.
+`summarize*Report` headers are
 stats-authoritative while `collectPlaywrightTests` is the walked audit model
-for slowest-tables — on inconsistent reports the header and the tables can
+for slowest-tables (`topSlowestTests` is shared with `analyze-e2e.mjs`) — on inconsistent reports the header and the tables can
 differ by design. Malformed reports must fail rather than appear to be
 successful zero-test runs.
 
@@ -162,8 +172,10 @@ successful zero-test runs.
 or downloads. Measurements and interpretation follow [PERFORMANCE](../docs/PERFORMANCE.md).
 
 Balance and loot reports share the middleware-mode Vite bootstrap in
-`lib/vite-report-server.mjs`; both are import-safe `defineScript` entries and
-both leave a run receipt. Long-running suite/build/profiling CLIs
+`lib/vite-report-server.mjs` (also used by `content-audit.mjs`, which is now an
+import-safe `defineScript` entry); both are import-safe `defineScript` entries and
+both leave a run receipt. Report paths resolve from the script root, not the
+invoking CWD. Long-running suite/build/profiling CLIs
 (`run-ship-unit`, `run-e2e-route`, `run-performance`) stream output
 intentionally instead of using bounded `runCommand` capture.
 
@@ -177,7 +189,8 @@ Steam App ID synchronization.
 
 `npm run clean` removes local reports and the Vite cache. `npm run clean:all`
 also removes build outputs and stops Alchemy-owned test-server processes; add
-`--include-dev-port` to include the development server. `npm run prune:transient`
+`--include-dev-port` with `--processes` to include the development server
+(passing it alone warns and does nothing). `npm run prune:transient`
 deletes stale local artifacts by age. Neither command removes shared Playwright
 browser caches.
 Age-based pruning skips symlinked transient roots as well as nested symlink traversal.

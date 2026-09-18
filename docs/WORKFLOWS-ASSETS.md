@@ -27,8 +27,7 @@ failure and freshness contracts below.
 
 `npm run sync:generated` updates both art barrels and version metadata.
 `npm run sync:art` updates both art barrels (`src/lib/game-data/assets.generated.ts`
-and `src/lib/game-data/gear-art.ts`); `npm run sync:art-barrels` is a legacy
-alias for the same command. `npm run sync:gear-art` updates only
+and `src/lib/game-data/gear-art.ts`). `npm run sync:gear-art` updates only
 `src/lib/game-data/gear-art.ts` and refuses to run against a stale
 `assets.generated.ts` — prefer the full art sync.
 Do not add exports to generated files by hand. The hash schema salt lives in
@@ -99,7 +98,9 @@ and then referenced by `src/lib/audio/sound-registry.ts` or the owning audio mod
   `mp3FallbackName()` helpers in the same manifest so the optimizer and its
   tests cannot drift.
 - Sound preparation includes generated OGGs, curated OGGs, and MP3 fallbacks in
-  its complete manifest. An unchanged run does not rewrite it. Failed OGG
+  its complete manifest. An unchanged run does not rewrite it. The OGG phase holds
+  manifest publication until MP3 fallbacks and curated entries are merged in, so a
+  mid-run failure never publishes a manifest missing its fallbacks. Failed OGG
   processing skips fallbacks; manifest publication and retry follow the shared
   [pipeline rules](#pipeline-overview).
 
@@ -145,6 +146,14 @@ exclude raw sources. Regenerate stale outputs explicitly with `npm run assets`:
 npm run assets:check
 ```
 
+Three scopes share the `--check` flag: bare `--check` (and `assets:check`) verifies
+everything — all three pipelines plus art barrels plus version metadata.
+`--optimize --check` verifies only pipeline outputs (no barrels), and
+`--sync --check` verifies only generated code (art barrels plus version metadata).
+Slice the generated check with `npm run sync:art -- --check` /
+`sync:gear-art` / `sync:version` (via `sync-generated.mjs`
+`--art-only` / `--gear-only` / `--version-only`).
+
 For manual inspection:
 
 ```sh
@@ -165,13 +174,14 @@ Commit the intended generated outputs with their authoring-source changes.
 | Sound effects | `Raw Assets/Sound Effects/` + sound manifest | `public/sounds/` OGG and MP3 fallbacks           | `src/lib/audio/sound-registry.ts`                     |
 | Music         | `Raw Assets/Music/`                          | `public/Music/`                                  | Audio owners under `src/lib/audio/`                   |
 
-Build version stamping (`src/lib/validation/metadata.generated.ts` via `npm run sync:version`) is owned by the release pipeline ([RELEASE_SETUP](./RELEASE_SETUP.md)); it is not an art authoring source.
+Build version stamping (`src/lib/validation/metadata.generated.ts` via `npm run sync:version`) is owned by the release pipeline ([RELEASE_SETUP](./RELEASE_SETUP.md)); it is not an art authoring source. Full preparation refreshes it as an independent step alongside the art barrels, so a failed art sync never blocks the version stamp and vice versa — failures from either are reported together.
 
 `scripts/prepare-assets.mjs` is the full pipeline (invoked via the canonical
 `node scripts/assets.mjs --prepare` CLI, which also powers `predev`). Art, sound, and music
 optimization run concurrently and report every failure (settled, not fail-fast)
 because their outputs are disjoint; generated
-art and Gear barrels update whenever art succeeds, even if sound or music fail —
+art and Gear barrels update whenever art succeeds, even if sound or music fail,
+and build version metadata syncs as a separate step in the same run —
 the run still throws, so partial success is never silent. Synchronization failures
 are reported together with optimization failures. Worker pools finish all started
 work before reporting failure, so no conversion continues after the preparation
@@ -189,7 +199,7 @@ path rather than being treated as empty asset collections.
 Three authoring shapes coexist by design:
 
 - **Static manifest** — `scripts/assets/{core,card,content,talent}-assets.mjs` declare `{source,target,width,quality}`. Used for cards, talents, boons, destinations, etc. where every target is explicitly registered and validated for duplicate `source`/`target`/`exportName`. Width/quality presets, Sharp defaults, schema version, and audio settings live in `scripts/lib/asset-constants.mjs`.
-- **Filesystem discovery** — `Raw Assets/Gear/` (`{Name} - {Basic|Astral}.jpeg`) and `Raw Assets/Music/` are discovered at optimization time. Gear filenames encode rarity; music needs no per-target quality. No hand-maintained manifest entry. Malformed gear filenames throw (strict, like slot backgrounds) instead of warn+skip. Gear slugging and filename patterns live in `scripts/lib/gear-filenames.mjs`, shared by the optimizer and its tests. Orphan ownership per output directory is explicit in `MANAGED_DIRS` (`scripts/lib/asset-constants.mjs`): only sounds accepts curated exceptions.
+- **Filesystem discovery** — `Raw Assets/Gear/` (`{Name} - {Basic|Astral}.jpeg`) and `Raw Assets/Music/` are discovered at optimization time. Gear filenames encode rarity; music needs no per-target quality. No hand-maintained manifest entry. Malformed gear filenames throw (strict, like slot backgrounds) instead of warn+skip. Gear slugging and filename patterns live in `scripts/lib/gear-filenames.mjs`, shared by the optimizer and its tests. Every output directory is fully managed: manifest keys are the complete inventory and anything else is swept as an orphan. Sounds is the only pipeline with committed files that have no raw source (curated OGGs), tracked as manifest entries with a `curated` owner rather than directory exceptions.
 - **Mixed manifest + curated** — `scripts/assets/sound-assets.mjs` lists `generatedSoundAssets` (WAV→OGG with loudnorm) plus `curatedSoundFiles` (committed OGG without source). The optimizer owns `public/sounds/` and tags each hash manifest entry with `owner: generated|curated`.
 
 ## Content freshness and filesystem failures

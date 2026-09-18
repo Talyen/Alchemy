@@ -9,10 +9,21 @@ const fixture = vi.hoisted(() => ({
   failedSource: "",
   transform: vi.fn<(source: string, target: string) => Promise<void>>(),
 }));
-vi.mock("../../scripts/lib/sync-generated-helpers.mjs", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../scripts/lib/sync-generated-helpers.mjs")>()),
-  resolveRootDir: () => fixture.root,
-}));
+vi.mock("../../scripts/lib/asset-pipeline-runner.mjs", async (importOriginal) => {
+  const original = await importOriginal<typeof import("../../scripts/lib/asset-pipeline-runner.mjs")>();
+  const { pathToFileURL } = await import("node:url");
+  return {
+    ...original,
+    resolveRootDir: () => fixture.root,
+    // resolvePipelinePaths closes over the real resolver internally, so route
+    // it through the fixture root explicitly.
+    resolvePipelinePaths: (
+      _url: string,
+      options: { sourceSubpath: string[]; managedKey: "art" | "sounds" | "music" },
+    ) =>
+      original.resolvePipelinePaths(pathToFileURL(path.join(fixture.root, "scripts", "mock-entry.mjs")).href, options),
+  };
+});
 vi.mock("../../scripts/assets/asset-manifest.mjs", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../scripts/assets/asset-manifest.mjs")>()),
   staticAssets: [

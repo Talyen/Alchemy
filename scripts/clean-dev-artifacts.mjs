@@ -120,6 +120,9 @@ async function main() {
     printHelp();
     return;
   }
+  if (options.includeDevPort && !options.processes) {
+    console.warn("--include-dev-port has no effect without --processes (or --all).");
+  }
   await runClean(options);
 }
 

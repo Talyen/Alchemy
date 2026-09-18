@@ -3,13 +3,28 @@ import fs from "node:fs";
 import path from "node:path";
 import { listRepositoryFiles } from "./repository-paths.mjs";
 
-const REUSABLE_COMMANDS = new Set(["related", "unit-changed", "unit-save", "unit-desktop", "unit-performance"]);
-// Only fast deterministic unit selections reuse receipts: docs-check,
+const REUSABLE_COMMANDS = new Set([
+  "related",
+  "unit-changed",
+  "unit-save",
+  "unit-desktop",
+  "unit-performance",
+  "unit-all",
+]);
+// Only deterministic unit selections reuse receipts: docs-check,
 // assets-check, and report-balance are excluded because they are slow,
 // environment-sensitive, or produce artifacts the receipt cannot vouch for.
+// unit-all is included: its args are stable (full suite), so the receipt key
+// is stable too — the largest selections benefit most from reuse.
 const MAX_AGE_MS = 60 * 60 * 1000;
+// Receipts expire from first write, not last reuse (finish skips writing on
+// reused outcomes): continuous reuse still ages out after MAX_AGE_MS so stale
+// environments cannot be trusted indefinitely. See verification-cache.test.ts.
 const VOLATILE_ENV =
   /^(?:ALCHEMY_RUN_ID|ALCHEMY_VERIFY_FRESH|npm_lifecycle_event|npm_lifecycle_script|npm_command|npm_package_json|INIT_CWD|SHLVL|_)$/u;
+// Note: gate skip flags (e.g. ALCHEMY_CHECK_SKIP_BUILD) are intentionally not
+// volatile: only unit selections reuse receipts, and those commands run the
+// same way regardless of build-skipping.
 
 function fileIdentity(filename, hash, rootDir) {
   try {

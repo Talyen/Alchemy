@@ -19,60 +19,78 @@ function publishCiSummary({ rootDir = process.cwd(), markdown, status, command, 
   else process.stdout.write(pointer);
 }
 
-function publishVitest(reportPath) {
+function publishReport(reportPath, { summarize, format, heading, command, toSummary, toCounts, extra }) {
   const read = readJsonReport(reportPath);
-  const summary = read ? summarizeVitestReport(read.data) : null;
-  const markdown = summary ? formatVitestSummaryMarkdown(summary) : missingReportMarkdown("## Vitest", reportPath);
-  publishCiSummary({
+  const summary = read ? summarize(read.data) : null;
+  const markdown = summary ? format(summary) : missingReportMarkdown(heading, reportPath);
+  const base = {
     rootDir: process.cwd(),
     markdown,
     status: summary ? (summary.failed ? "failed" : "passed") : "missing-report",
-    command: process.env.GITHUB_JOB ? `vitest (${process.env.GITHUB_JOB})` : "vitest",
+    command: process.env.GITHUB_JOB ? `${command} (${process.env.GITHUB_JOB})` : command,
+    summary: summary ? toSummary(summary) : `${heading.replace(/^##\s*/, "")} report missing.`,
+    counts: summary ? toCounts(summary) : undefined,
+  };
+  if (extra) return extra({ read, reportPath, summary, base });
+  publishCiSummary({
+    ...base,
     artifacts: [path.relative(process.cwd(), read?.resolved ?? path.resolve(reportPath))],
-    summary: summary ? `Vitest: ${summary.numPassedTests}/${summary.numTotalTests} passed.` : "Vitest report missing.",
-    counts: summary
-      ? { passed: summary.numPassedTests, failed: summary.numFailedTests, skipped: summary.numPendingTests }
-      : undefined,
+  });
+}
+
+function publishVitest(reportPath) {
+  publishReport(reportPath, {
+    summarize: summarizeVitestReport,
+    format: formatVitestSummaryMarkdown,
+    heading: "## Vitest",
+    command: "vitest",
+    toSummary: (summary) => `Vitest: ${summary.numPassedTests}/${summary.numTotalTests} passed.`,
+    toCounts: (summary) => ({
+      passed: summary.numPassedTests,
+      failed: summary.numFailedTests,
+      skipped: summary.numPendingTests,
+    }),
   });
 }
 
 function publishPlaywright(reportPath) {
-  const read = readJsonReport(reportPath);
-  const resolved = read?.resolved ?? path.resolve(reportPath);
-  const summary = read ? summarizePlaywrightReport(read.data) : null;
-  const markdown = summary
-    ? formatPlaywrightSummaryMarkdown(summary)
-    : missingReportMarkdown("## Playwright", reportPath);
-  if (process.env.GITHUB_OUTPUT) {
-    fs.appendFileSync(
-      process.env.GITHUB_OUTPUT,
-      `retain-diagnostics=${!summary || summary.failed || summary.flaky > 0}\n`,
-    );
-  }
-  const failureIndex = writeFailureIndex(process.cwd());
-  const exactDigests = (summary?.failures ?? [])
-    .map((failure) => failure.digestPath)
-    .filter((filePath) => typeof filePath === "string" && fs.existsSync(path.resolve(filePath)));
-  publishCiSummary({
-    rootDir: process.cwd(),
-    markdown,
-    status: summary ? (summary.failed ? "failed" : "passed") : "missing-report",
-    command: process.env.GITHUB_JOB ? `playwright (${process.env.GITHUB_JOB})` : "playwright",
-    artifacts: [
-      ...exactDigests.map((filePath) => ({ path: filePath, role: "primary" })),
-      ...(failureIndex.failures.length > 0
-        ? [{ path: path.relative(process.cwd(), failureIndex.indexPath), role: "primary" }]
-        : []),
-      { path: path.relative(process.cwd(), resolved), role: "secondary" },
-      { path: "playwright-report", role: "secondary" },
-      { path: "test-results", role: "secondary" },
-    ],
-    summary: summary
-      ? `Playwright: ${summary.expected} passed, ${summary.unexpected} failed.`
-      : "Playwright report missing.",
-    counts: summary
-      ? { passed: summary.expected, failed: summary.unexpected, skipped: summary.skipped, flaky: summary.flaky }
-      : undefined,
+  publishReport(reportPath, {
+    summarize: summarizePlaywrightReport,
+    format: formatPlaywrightSummaryMarkdown,
+    heading: "## Playwright",
+    command: "playwright",
+    toSummary: (summary) => `Playwright: ${summary.expected} passed, ${summary.unexpected} failed.`,
+    toCounts: (summary) => ({
+      passed: summary.expected,
+      failed: summary.unexpected,
+      skipped: summary.skipped,
+      flaky: summary.flaky,
+    }),
+    extra: ({ read, reportPath: inputPath, summary, base }) => {
+      const resolved = read?.resolved ?? path.resolve(inputPath);
+      if (process.env.GITHUB_OUTPUT) {
+        fs.appendFileSync(
+          process.env.GITHUB_OUTPUT,
+          `retain-diagnostics=${!summary || summary.failed || summary.flaky > 0}\n`,
+        );
+      }
+      const failureIndex = writeFailureIndex(process.cwd());
+      const exactDigests = (summary?.failures ?? [])
+        .map((failure) => failure.digestPath)
+        .filter((filePath) => typeof filePath === "string" && fs.existsSync(path.resolve(filePath)));
+      publishCiSummary({
+        ...base,
+        artifacts: [
+          ...exactDigests.map((filePath) => ({ path: filePath, role: "primary" })),
+          ...(failureIndex.failures.length > 0
+            ? [{ path: path.relative(process.cwd(), failureIndex.indexPath), role: "primary" }]
+            : []),
+          { path: path.relative(process.cwd(), resolved), role: "secondary" },
+          { path: "playwright-report", role: "secondary" },
+          { path: "test-results", role: "secondary" },
+        ],
+      });
+    },
   });
 }
 
@@ -94,7 +112,14 @@ function isReportPath(value) {
  * Parse the summary dispatcher without making the optional report path depend
  * on the order of flags. Positional paths after --all map to Vitest then
  * Playwright; explicit tool flags always win for their respective report.
+ * A lone positional path without a mode is inferred from its filename
+ * (playwright-containing paths summarize Playwright) for backward
+ * compatibility with single-report invocations.
  */
+function inferPositionalMode(reportPath) {
+  return reportPath.toLowerCase().includes("playwright") ? "playwright" : "vitest";
+}
+
 export function parseSummaryArgs(args) {
   const selected = { all: false, vitest: false, playwright: false };
   const paths = { vitest: undefined, playwright: undefined };
@@ -127,6 +152,10 @@ export function parseSummaryArgs(args) {
   if (selected.all) {
     selected.vitest = true;
     selected.playwright = true;
+  } else if (!selected.vitest && !selected.playwright && positionalPaths.length > 0) {
+    // Infer the tool from a lone positional path instead of misrouting a
+    // Playwright report through the Vitest summarizer.
+    selected[inferPositionalMode(positionalPaths[0])] = true;
   } else if (!selected.vitest && !selected.playwright) {
     selected.vitest = true;
   }

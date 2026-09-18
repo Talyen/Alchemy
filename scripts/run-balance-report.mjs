@@ -26,7 +26,7 @@ export async function runBalanceReport(env = process.env) {
       const options = parseBalanceReportOptions(env);
       const model = buildBalanceReport(options);
       const findings = evaluateBalanceFindings(model, options);
-      const reportDir = resolve(process.cwd(), "reports");
+      const reportDir = resolve(rootDir, "reports");
       const fullDir = resolve(reportDir, "balance-full");
       console.info(
         `Balance report complete: ${findings.findings.length}/${findings.totalBeforeCap} findings shown (${findings.omitted} omitted).`,

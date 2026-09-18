@@ -27,7 +27,8 @@ export function optimizationFailures(results) {
   return results.flatMap((result) => {
     if (result.status === "fulfilled" && result.value?.ok) return [];
     const reason = result.status === "rejected" ? result.reason : (result.value?.error ?? "failed");
-    return [new Error(`${result.key}: ${String(reason)}`, { cause: reason })];
+    const detail = reason instanceof Error ? reason.message : String(reason);
+    return [new Error(`${result.key}: ${detail}`, { cause: reason })];
   });
 }
 

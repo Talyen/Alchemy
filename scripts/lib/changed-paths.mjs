@@ -5,6 +5,8 @@ import { changedGitPaths } from "./current-run.mjs";
 import { isDocumentationPath, resolveRoutes, SHARED_BUILD_PATTERNS } from "./change-routes.mjs";
 import { globToRegExp } from "./glob-pattern.mjs";
 
+const COMPILED_SHARED_BUILD_PATTERNS = SHARED_BUILD_PATTERNS.map(globToRegExp);
+
 export function parseChangedPathsArgs(argv, { usage } = {}) {
   const flags = new Set();
   const paths = [];
@@ -95,24 +97,27 @@ export function resolvePushPaths(rootDir, input) {
   }
   if (paths.size > 0 && git(["status", "--porcelain", "--untracked-files=all", "-z"]).length > 0)
     throw new Error("Pre-push verification requires a clean checkout. Commit or stash changes before pushing.");
-  return [...paths].sort();
+  // Expand through the shared path owner like the non-push selection so both
+  // return normalized repo-relative paths (deleted paths are retained).
+  return expandRepositoryPaths(rootDir, [...paths].sort());
 }
 
 export function classifyCheckPaths(rootDir, paths) {
-  paths = expandRepositoryPaths(rootDir, paths).filter((filePath) => !isDocumentationPath(filePath));
-  const routes = resolveRoutes(paths);
+  const expanded = expandRepositoryPaths(rootDir, paths);
+  const codePaths = expanded.filter((filePath) => !isDocumentationPath(filePath));
+  const routes = resolveRoutes(codePaths.length > 0 ? codePaths : expanded);
   const ids = new Set(routes.map((route) => route.id));
-  const needsCodeChecks = paths.length > 0;
-  const lockfile = paths.some((filePath) => filePath === "package.json" || filePath === "package-lock.json");
-  const sharedBuild = paths.some((filePath) =>
-    SHARED_BUILD_PATTERNS.some((pattern) => globToRegExp(pattern).test(filePath)),
+  const needsCodeChecks = codePaths.length > 0;
+  const lockfile = codePaths.some((filePath) => filePath === "package.json" || filePath === "package-lock.json");
+  const sharedBuild = codePaths.some((filePath) =>
+    COMPILED_SHARED_BUILD_PATTERNS.some((expression) => expression.test(filePath)),
   );
   const desktop = ids.has("desktop") || sharedBuild;
   const web =
     sharedBuild ||
     ids.has("runtime") ||
     ids.has("assets") ||
-    paths.some((filePath) =>
+    codePaths.some((filePath) =>
       /^(src\/|public\/|index\.html$|vite\.config\.ts$|vercel\.json$|package\.json$|package-lock\.json$)/u.test(
         filePath,
       ),

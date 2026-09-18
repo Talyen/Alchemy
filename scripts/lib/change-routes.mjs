@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 
 import { globToRegExp } from "./glob-pattern.mjs";
-import { expandRepositoryPaths } from "./repository-paths.mjs";
+import { expandRepositoryPaths, toRepoRelative } from "./repository-paths.mjs";
 import { COMMANDS } from "./test-commands.mjs";
 import { readDocumentSection } from "./markdown-sections.mjs";
 
@@ -33,9 +33,11 @@ export const SHARED_BUILD_PATTERNS = Object.freeze([
 ]);
 
 // Gate-level "documentation-only" definition: every Markdown file plus the
-// docs/, .agents/, and .cursor/ trees. Deliberately broader than the
-// documentation route's contract patterns above — non-Markdown files under
-// docs/ (images, archived plans) still skip code builds in check classification.
+// docs/, .agents/, and .cursor/ trees. Mirrors the documentation route's
+// contract patterns below (including docs/** for non-Markdown files under
+// docs/) so check classification and verify routing agree — non-Markdown files
+// under docs/ (images, archived plans) still skip code builds in check
+// classification.
 export function isDocumentationPath(filePath) {
   return filePath.endsWith(".md") || /^(docs|\.agents|\.cursor)\//u.test(filePath);
 }
@@ -43,7 +45,7 @@ export function isDocumentationPath(filePath) {
 export const ROUTES = Object.freeze([
   route(
     "documentation",
-    ["*.md", "**/*.md", ".agents/**", ".cursor/**"],
+    ["*.md", "**/*.md", "docs/**", ".agents/**", ".cursor/**"],
     ["docs-check"],
     [doc("CONTRIBUTING.md", "What to run when you change…", "verification policy")],
     "CONTRIBUTING.md",
@@ -192,22 +194,39 @@ const UNKNOWN_ROUTE = Object.freeze({
 });
 
 function normalize(filePath) {
-  return filePath.replaceAll("\\", "/").replace(/^\.\//u, "");
+  if (filePath === "") return "";
+  // Single repo-relative spelling via the shared path owner; outside paths
+  // pass through so cross-checkout reports keep readable hints.
+  return toRepoRelative(ROOT_DIR, filePath, { onOutside: "keep-relative" });
 }
 
+const COMPILED_ROUTES = ROUTES.map((candidate) => ({
+  candidate,
+  patterns: candidate.patterns.map(globToRegExp),
+  exclude: (candidate.exclude ?? []).map(globToRegExp),
+}));
+
 function matches(route, filePath) {
-  if (filePath.endsWith(".md") && route.id !== "documentation") return false;
+  if (filePath.endsWith(".md") && route.candidate.id !== "documentation") return false;
   return (
-    route.patterns.some((pattern) => globToRegExp(pattern).test(filePath)) &&
-    !(route.exclude ?? []).some((pattern) => globToRegExp(pattern).test(filePath))
+    route.patterns.some((expression) => expression.test(filePath)) &&
+    !route.exclude.some((expression) => expression.test(filePath))
   );
+}
+
+function matchesCandidate(candidate, filePath) {
+  const compiled = COMPILED_ROUTES.find((entry) => entry.candidate === candidate);
+  return compiled ? matches(compiled, filePath) : false;
 }
 
 export function resolveRoutes(paths) {
   const normalized = paths.map(normalize);
-  const matched = ROUTES.filter((candidate) => normalized.some((filePath) => matches(candidate, filePath)));
+  const matched = COMPILED_ROUTES.filter((entry) => normalized.some((filePath) => matches(entry, filePath))).map(
+    (entry) => entry.candidate,
+  );
   const hasUnknown =
-    normalized.length === 0 || normalized.some((filePath) => !ROUTES.some((candidate) => matches(candidate, filePath)));
+    normalized.length === 0 ||
+    normalized.some((filePath) => !COMPILED_ROUTES.some((entry) => matches(entry, filePath)));
   return hasUnknown ? [...matched, UNKNOWN_ROUTE] : matched;
 }
 
@@ -235,7 +254,8 @@ export function resolveRoutePlan(paths) {
   );
   const tooling = routes.find((candidate) => candidate.id === "tooling");
   const relatedInputs = normalized.filter(
-    (filePath) => !isUnitTest(filePath) && isRelatedInput(filePath) && !(tooling && matches(tooling, filePath)),
+    (filePath) =>
+      !isUnitTest(filePath) && isRelatedInput(filePath) && !(tooling && matchesCandidate(tooling, filePath)),
   );
   if (changedTests.length === 0) keys.delete("unit-changed");
   if (relatedInputs.length === 0) keys.delete("related");

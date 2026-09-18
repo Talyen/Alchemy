@@ -9,10 +9,10 @@
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { isMainModule } from "./lib/is-main-module.mjs";
 
 const currentFile = fileURLToPath(import.meta.url);
 const ROOT = path.resolve(path.dirname(currentFile), "..");
-const SRC = path.join(ROOT, "src");
 
 const CATEGORIES = [
   { name: "any (annotations/casts)", regex: /(?::\s*any\b|\bas any\b|<any[,>]|\bany\[\])/g },
@@ -44,28 +44,34 @@ function* walk(dir) {
   }
 }
 
-const totals = new Map(CATEGORIES.map((c) => [c.name, { count: 0, files: new Map() }]));
-let fileCount = 0;
+export function runTypeEscapes({ rootDir = ROOT } = {}) {
+  const src = path.join(rootDir, "src");
+  const totals = new Map(CATEGORIES.map((c) => [c.name, { count: 0, files: new Map() }]));
+  let fileCount = 0;
 
-for (const file of walk(SRC)) {
-  fileCount++;
-  const text = readFileSync(file, "utf8");
-  const rel = path.relative(ROOT, file);
-  for (const category of CATEGORIES) {
-    const matches = text.match(category.regex);
-    if (!matches) continue;
-    const bucket = totals.get(category.name);
-    bucket.count += matches.length;
-    bucket.files.set(rel, matches.length);
+  for (const file of walk(src)) {
+    fileCount++;
+    const text = readFileSync(file, "utf8");
+    const rel = path.relative(rootDir, file);
+    for (const category of CATEGORIES) {
+      const matches = text.match(category.regex);
+      if (!matches) continue;
+      const bucket = totals.get(category.name);
+      bucket.count += matches.length;
+      bucket.files.set(rel, matches.length);
+    }
   }
+
+  console.log(`Type-escape trend counts (${fileCount} authored non-test files under src/):\n`);
+  for (const category of CATEGORIES) {
+    const { count, files } = totals.get(category.name);
+    console.log(`${category.name}: ${count}`);
+    const top = [...files.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+    for (const [rel, n] of top) console.log(`  ${n.toString().padStart(4)}  ${rel}`);
+    console.log("");
+  }
+  console.log("Directional only — compare against the previous run; not a gate.");
+  return { fileCount, totals };
 }
 
-console.log(`Type-escape trend counts (${fileCount} authored non-test files under src/):\n`);
-for (const category of CATEGORIES) {
-  const { count, files } = totals.get(category.name);
-  console.log(`${category.name}: ${count}`);
-  const top = [...files.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
-  for (const [rel, n] of top) console.log(`  ${n.toString().padStart(4)}  ${rel}`);
-  console.log("");
-}
-console.log("Directional only — compare against the previous run; not a gate.");
+if (isMainModule(import.meta.url)) runTypeEscapes();

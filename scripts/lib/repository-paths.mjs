@@ -11,7 +11,9 @@ const UNCACHED_GIT_OPTIONS = ["-c", "core.fsmonitor=false", "-c", "core.untracke
  * checkout with stale-cache overrides unless opted out, so file inventories
  * cannot disagree between helpers. Returns the raw spawn result; callers keep
  * their own status handling. (git-safety-guard.mjs cannot use this — it must
- * exec the real git binary past its own shim, with the caller's cwd/options.)
+ * exec the real git binary past its own shim, with the caller's cwd/options.
+ * release-runner.mjs keeps commandInvocation + execFileSync so its
+ * inherit/JSON flows stay mockable in unit tests.)
  */
 export function runGit(rootDir, args, { uncached = true, stdio } = {}) {
   return spawnSync("git", [...(uncached ? UNCACHED_GIT_OPTIONS : []), ...args], {

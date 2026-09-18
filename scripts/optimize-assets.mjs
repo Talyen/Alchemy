@@ -1,4 +1,4 @@
-import { mkdir, readdir, rename, rm } from "node:fs/promises";
+import { rename, rm } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
 
@@ -9,26 +9,28 @@ import { processFreshEntry } from "./lib/asset-manifest-cache.mjs";
 import {
   ART_TRANSFORM_CONCURRENCY,
   ASSET_SCHEMA_VERSION,
-  GEAR_SLOT_IDS,
-  MANAGED_DIRS,
+  ART_PRESETS,
   MANIFEST_BASENAME,
   SHARP_DEFAULTS,
-  artPreset,
 } from "./lib/asset-constants.mjs";
-import { runManifestPipeline } from "./lib/asset-pipeline-runner.mjs";
-import { GEAR_FILE_PATTERN, SLOT_BACKGROUND_PATTERN, toGearTarget } from "./lib/gear-filenames.mjs";
+import {
+  ensureOutputDir,
+  readSourceDir,
+  resolvePipelinePaths,
+  runManifestPipeline,
+} from "./lib/asset-pipeline-runner.mjs";
+import { GEAR_FILE_PATTERN, GEAR_SLOT_IDS, SLOT_BACKGROUND_PATTERN, toGearTarget } from "./lib/gear-filenames.mjs";
 import { runPipelineScript } from "./lib/script-run.mjs";
-import { getOptimizedManifestPath, resolveRootDir } from "./lib/sync-generated-helpers.mjs";
 
-const rootDir = resolveRootDir(import.meta.url);
-const sourceDir = path.join(rootDir, "Raw Assets");
-const outputDir = path.join(rootDir, MANAGED_DIRS.art.dir);
-const manifestPath = getOptimizedManifestPath(rootDir);
+const { sourceDir, outputDir, manifestPath } = resolvePipelinePaths(import.meta.url, {
+  sourceSubpath: ["Raw Assets"],
+  managedKey: "art",
+});
 
 const SCHEMA_VERSION = ASSET_SCHEMA_VERSION;
 const TRANSFORM_CONCURRENCY = ART_TRANSFORM_CONCURRENCY;
 
-const gearPreset = artPreset("gear");
+const gearPreset = ART_PRESETS.gear;
 const gearAssetWidth = gearPreset.width;
 const gearAssetQuality = gearPreset.quality;
 
@@ -36,21 +38,7 @@ const gearAssetQuality = gearPreset.quality;
 const IGNORED_SOURCE_FILES = new Set(["thumbs.db", "desktop.ini", ".ds_store"]);
 
 async function discoverFiles({ dir, pattern, validate }) {
-  let entries;
-  try {
-    entries = await readdir(dir, { withFileTypes: true });
-  } catch (error) {
-    if (error?.code === "ENOENT") {
-      const wrapped = new Error(
-        `Missing Raw Assets source "${dir}". This checkout may exclude raw sources; asset prep requires the full Raw Assets/ tree.`,
-        { cause: error },
-      );
-      wrapped.code = error.code;
-      wrapped.path = error.path ?? dir;
-      throw wrapped;
-    }
-    throw error;
-  }
+  const entries = await readSourceDir(dir);
 
   const discovered = [];
   for (const entry of entries) {
@@ -199,7 +187,7 @@ export async function optimizeAssets({ check = false } = {}) {
   const allAssets = [...staticAssets, ...gearAssets, ...gearSlotBackgrounds];
   await validateAssetRegistry(allAssets, { sourceDir });
 
-  if (!check) await mkdir(outputDir, { recursive: true });
+  await ensureOutputDir(outputDir, { check });
 
   const result = await runManifestPipeline({
     entries: allAssets,

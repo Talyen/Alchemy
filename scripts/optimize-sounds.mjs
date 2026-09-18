@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { mkdir, copyFile, readdir } from "node:fs/promises";
+import { copyFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 
@@ -25,7 +25,6 @@ import {
   ASSET_SCHEMA_VERSION,
   CURATED_SOUND_SETTINGS,
   LOUDNORM_FILTER,
-  MANAGED_DIRS,
   MANIFEST_BASENAME,
   MP3_FALLBACK_SETTINGS,
   SOUND_ENTRY_OWNERS,
@@ -33,18 +32,17 @@ import {
   VORBIS_QUALITY,
   soundTransformSettings,
 } from "./lib/asset-constants.mjs";
-import { runManifestPipeline } from "./lib/asset-pipeline-runner.mjs";
+import { ensureOutputDir, resolvePipelinePaths, runManifestPipeline } from "./lib/asset-pipeline-runner.mjs";
 import { failedMessagesResult } from "./lib/process-helpers.mjs";
 import { runPipelineScript } from "./lib/script-run.mjs";
 import { mapPool } from "./lib/map-pool.mjs";
-import { resolveRootDir } from "./lib/sync-generated-helpers.mjs";
 
 const execFileAsync = promisify(execFile);
 
-const rootDir = resolveRootDir(import.meta.url);
-const sourceDir = path.join(rootDir, "Raw Assets", "Sound Effects");
-const outputDir = path.join(rootDir, MANAGED_DIRS.sounds.dir);
-const manifestPath = path.join(outputDir, MANIFEST_BASENAME);
+const { sourceDir, outputDir, manifestPath } = resolvePipelinePaths(import.meta.url, {
+  sourceSubpath: ["Raw Assets", "Sound Effects"],
+  managedKey: "sounds",
+});
 
 const SCHEMA_VERSION = ASSET_SCHEMA_VERSION;
 const TRANSFORM_CONCURRENCY = SOUND_TRANSFORM_CONCURRENCY;
@@ -102,7 +100,7 @@ export async function optimizeSounds({ check = false } = {}) {
     return { ok: false, error: msg };
   }
 
-  if (!check) await mkdir(outputDir, { recursive: true });
+  await ensureOutputDir(outputDir, { check });
   await validateSoundAssetRegistry({ sourceDir });
 
   const pipeline = await runManifestPipeline({
@@ -148,7 +146,16 @@ export async function optimizeSounds({ check = false } = {}) {
 }
 
 async function ensureMp3Fallbacks(previousManifest, managedOggs, check) {
-  const files = new Set(await readdir(outputDir));
+  let files;
+  try {
+    files = new Set(await readdir(outputDir));
+  } catch (error) {
+    if (error?.code === "ENOENT") {
+      const stale = `Stale prepared asset output: ${outputDir}`;
+      return { mp3Entries: {}, curatedOggEntries: {}, mp3Failures: [stale] };
+    }
+    throw error;
+  }
   const oggs = [...managedOggs, ...curatedSoundFiles];
   /** @type {Record<string, import("./lib/asset-manifest-cache.mjs").ManifestEntry>} */
   const mp3Entries = {};

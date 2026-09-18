@@ -1,18 +1,23 @@
 import { optimizationFailures, runAllOptimizePipelinesSettled } from "./optimize-pipelines.mjs";
-import { syncGenerated } from "./sync-generated.mjs";
+import { syncArtBarrels } from "./sync-art-barrels.mjs";
+import { syncVersionMetadata } from "./sync-version-metadata.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 /**
  * Single in-process orchestrator for predev/prebuild asset prep.
  * The three transform pipelines (art, sounds, music) are independent — they write
  * to disjoint output directories — so they run concurrently via the shared
- * OPTIMIZE_PIPELINES table. Art must finish before syncGenerated because it
- * regenerates barrels from its manifest.
+ * OPTIMIZE_PIPELINES table. Art must finish before the art barrels sync because
+ * they regenerate from its manifest.
  *
  * Partial-failure rule: art barrels sync whenever art succeeds, even if sounds
  * or music fail (barrel output depends only on art). The aggregated error still
  * throws, so a failed run is never silent — but barrels may advance while sound
  * outputs stay stale until the next green run.
+ *
+ * Build version metadata syncs independently of art: it is owned by the release
+ * pipeline (which stamps it post-bump) and refreshed here opportunistically so
+ * branch switches don't leave a stale stamp behind.
  */
 export async function prepareAssets() {
   if (process.env.ALCHEMY_SKIP_ASSETS === "1") {
@@ -26,12 +31,18 @@ export async function prepareAssets() {
 
   if (artResult?.status === "fulfilled" && artResult.value.ok) {
     try {
-      await syncGenerated();
+      await syncArtBarrels();
     } catch (error) {
-      failures.push(new Error(`Generated asset synchronization failed: ${String(error)}`, { cause: error }));
+      failures.push(new Error(`Generated art synchronization failed: ${String(error)}`, { cause: error }));
     }
   } else {
     console.warn("Skipping generated art barrels because art optimization did not complete successfully.");
+  }
+
+  try {
+    await syncVersionMetadata();
+  } catch (error) {
+    failures.push(new Error(`Build version synchronization failed: ${String(error)}`, { cause: error }));
   }
 
   if (failures.length > 0) {

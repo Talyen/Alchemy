@@ -108,6 +108,34 @@ declare module "*/asset-constants.mjs" {
   }>;
 }
 
+declare module "*/lib/asset-pipeline-runner.mjs" {
+  export function resolveRootDir(importMetaUrl: string): string;
+  export function getManagedManifestPath(rootDir: string, managedKey: string): string;
+  export function resolvePipelinePaths(
+    importMetaUrl: string,
+    options: { sourceSubpath: string[]; managedKey: string },
+  ): { rootDir: string; sourceDir: string; outputDir: string; manifestPath: string };
+  export function ensureOutputDir(outputDir: string, options?: { check?: boolean }): Promise<void>;
+  export function readSourceDir(
+    dir: string,
+    context?: string,
+  ): Promise<Array<{ name: string } & Record<string, unknown>>>;
+  export function runManifestPipeline(options: Record<string, unknown>): Promise<Record<string, unknown>>;
+}
+
+declare module "*/lib/process-helpers.mjs" {
+  export function targetErrorHandler(item: unknown, error: unknown): { message: string; entry: null };
+  export function failedMessagesResult(messages: string[], skipLabel: string): { ok: boolean; error?: string };
+  export function failedResult(
+    failures: Array<{ failed: boolean; message: string }>,
+    skipLabel: string,
+  ): { ok: boolean; error?: string };
+}
+
+declare module "*/sync-version-metadata.mjs" {
+  export function syncVersionMetadata(options?: { check?: boolean }): Promise<unknown>;
+}
+
 declare module "*/desktop-artifact.mjs" {
   export function steamContentRoot(root: string): string;
 }
@@ -209,9 +237,16 @@ declare module "*/assets/music-assets.mjs" {
 declare module "*/lib/gear-filenames.mjs" {
   export const GEAR_FILE_PATTERN: RegExp;
   export const SLOT_BACKGROUND_PATTERN: RegExp;
+  export const GEAR_SLOT_IDS: readonly string[];
+  export const WEBP_SUFFIX: string;
+  export const GEAR_PREFIX: string;
   export function slugifyGearName(name: string): string;
   export function toGearTarget(displayName: string, rarity: string, extension?: string): string;
   export function toDefinitionId(target: string): string;
+  export function isWebpAsset(name: string): boolean;
+  export function isGearAsset(name: string): boolean;
+  export function getAssetFiles(manifest: Record<string, unknown>): string[];
+  export function getGearFiles(manifest: Record<string, unknown>): string[];
 }
 
 declare module "*/map-pool.mjs" {
@@ -252,15 +287,6 @@ declare module "*/run-step.mjs" {
     };
     failureOutput: string;
   };
-}
-
-declare module "*/sync-generated-helpers.mjs" {
-  export const WEBP_SUFFIX: string;
-  export const GEAR_PREFIX: string;
-  export function isWebpAsset(name: string): boolean;
-  export function isGearAsset(name: string): boolean;
-  export function getAssetFiles(manifest: Record<string, unknown>): string[];
-  export function getGearFiles(manifest: Record<string, unknown>): string[];
 }
 
 declare module "*/ci-summarize.mjs" {
@@ -338,6 +364,10 @@ declare module "*/playwright-summary.mjs" {
     failedTests: Array<Record<string, unknown>>;
     flakyTests: Array<Record<string, unknown>>;
   };
+  export function topSlowestTests(
+    allTests: Array<Record<string, unknown>>,
+    count?: number,
+  ): Array<Record<string, unknown>>;
   export function summarizePlaywrightReport(
     report: unknown,
     options?: { maxFailures?: number; rootDir?: string; runId?: string },
@@ -914,17 +944,24 @@ declare module "*/sync-generated.mjs" {
     artOnly: boolean;
     versionOnly: boolean;
   };
-  export function syncGenerated(options?: { check?: boolean }): Promise<void>;
+  export function syncGenerated(options?: {
+    check?: boolean;
+    artOnly?: boolean;
+    gearOnly?: boolean;
+    versionOnly?: boolean;
+  }): Promise<void>;
 }
 
 declare module "*/optimize-pipelines.mjs" {
   export function runAllOptimizePipelines(options?: {
     check?: boolean;
   }): Promise<Array<{ ok: boolean; error?: string } | undefined>>;
+  export function optimizationFailures(results: Array<Record<string, unknown>>): Error[];
 }
 
 declare module "*/assets.mjs" {
   export function parseAssetArgs(argv: string[]): { help: boolean; check: boolean; mode: string };
+  export function runAssetCommand(options: { help: boolean; check: boolean; mode: string }): Promise<void>;
 }
 
 declare module "*/sync-art-barrels.mjs" {

@@ -15,18 +15,10 @@ export async function validateMusicRegistry(files) {
       sourcePattern: /\.(mp3|ogg|wav)$/iu,
       targetPattern: /\.(mp3|ogg|wav)$/u,
       label: "Music asset registry",
+      // Filesystems disagree on case: "Theme.ogg" vs "theme.ogg" would collide
+      // on macOS/Windows checkouts, so duplicates compare case-insensitively.
+      caseInsensitiveDuplicates: true,
     },
   );
-  const seen = new Map();
-  const duplicates = [];
-  for (const file of files) {
-    const key = file.toLowerCase();
-    if (seen.has(key) && seen.get(key) !== file) duplicates.push(`Duplicate music file "${file}" (${seen.get(key)}).`);
-    else if (seen.has(key)) duplicates.push(`Duplicate music file "${file}".`);
-    else seen.set(key, file);
-  }
-  if (duplicates.length > 0) {
-    throw new Error(`Music asset registry validation failed:\n- ${duplicates.join("\n- ")}`);
-  }
   return files;
 }

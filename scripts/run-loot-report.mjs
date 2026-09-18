@@ -34,7 +34,7 @@ export async function runLootReport({ samples = parseLootSamples(process.env.ALC
     }) => {
       const report = buildLootBalanceReport(samples);
       const materials = buildMaterialsBalanceReport();
-      const directory = resolve("reports/loot-progression");
+      const directory = resolve(rootDir, "reports/loot-progression");
       console.info(`Loot report: ${resolve(directory, "report.html")}`);
       console.info(`Materials report: ${resolve(directory, "materials.html")}`);
       return {

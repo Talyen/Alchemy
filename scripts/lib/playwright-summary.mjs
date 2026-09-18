@@ -91,6 +91,14 @@ export function collectPlaywrightTests(report) {
   return { allTests, totalTests, passedTests, skippedTests, failedTests, flakyTests };
 }
 
+/** Slowest non-skipped tests first, capped for audit tables. */
+export function topSlowestTests(allTests, count = 10) {
+  return [...allTests]
+    .filter((t) => t.status !== "skipped")
+    .sort((a, b) => b.duration - a.duration)
+    .slice(0, count);
+}
+
 export function summarizePlaywrightReport(report, options = {}) {
   const maxFailures = options.maxFailures ?? MAX_SUMMARY_FAILURES;
   const rootDir = options.rootDir ?? process.cwd();

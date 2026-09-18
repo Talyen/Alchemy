@@ -168,6 +168,14 @@ export function relatedLocations(root, selectedPaths, limit = 6) {
   const config = configPath ? ts.readConfigFile(configPath, ts.sys.readFile).config : {};
   const options = ts.parseJsonConfigFileContent(config, ts.sys, root).options;
   const files = repositorySearch(root).filter((file) => /\.(?:[cm]?[jt]sx?)$/u.test(file));
+  // Full-repo import graph: no cache by design (always current). Selections
+  // are capped so a pathological checkout fails fast instead of hanging.
+  const RELATED_SCAN_MAX_FILES = 20_000;
+  if (files.length > RELATED_SCAN_MAX_FILES) {
+    throw new Error(
+      `Related-location scan covers ${files.length} files (limit ${RELATED_SCAN_MAX_FILES}); narrow the selection.`,
+    );
+  }
   const known = new Set(files);
   const dependencies = new Map();
   const consumers = new Map();

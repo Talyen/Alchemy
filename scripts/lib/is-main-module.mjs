@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -9,5 +10,10 @@ import { fileURLToPath } from "node:url";
 export function isMainModule(importMetaUrl) {
   const entry = process.argv[1];
   if (!entry) return false;
-  return path.resolve(entry) === path.resolve(fileURLToPath(importMetaUrl));
+  try {
+    // realpath so symlinked temp dirs (/var -> /private/var on macOS) still match.
+    return fs.realpathSync(path.resolve(entry)) === fs.realpathSync(path.resolve(fileURLToPath(importMetaUrl)));
+  } catch {
+    return path.resolve(entry) === path.resolve(fileURLToPath(importMetaUrl));
+  }
 }

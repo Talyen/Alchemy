@@ -6,26 +6,42 @@ import { mapPool } from "./map-pool.mjs";
 
 export async function validateRegistryEntries(
   entries,
-  { sourceDir, targetKey = "target", checkExport = false, sourcePattern, targetPattern, label = "Registry" } = {},
+  {
+    sourceDir,
+    targetKey = "target",
+    checkExport = false,
+    sourcePattern,
+    targetPattern,
+    label = "Registry",
+    caseInsensitiveDuplicates = false,
+    reservedTargets = [],
+    reservedMessage = (target) => `Target "${target}" is reserved.`,
+  } = {},
 ) {
   const errors = [];
   const sources = new Map();
   const targets = new Map();
   const exports = new Map();
+  const reserved = new Set(reservedTargets);
+
+  const dedupeKey = (value) => (caseInsensitiveDuplicates && typeof value === "string" ? value.toLowerCase() : value);
 
   for (const entry of entries) {
     const source = entry.source;
     const target = entry[targetKey];
-    if (source && sources.has(source)) {
-      const prev = sources.get(source);
+    if (source && sources.has(dedupeKey(source))) {
+      const prev = sources.get(dedupeKey(source));
       errors.push(`Duplicate asset source "${source}" (${prev} and ${target}).`);
     }
-    if (source) sources.set(source, target);
-    if (target && targets.has(target)) {
-      const prev = targets.get(target);
+    if (source) sources.set(dedupeKey(source), target);
+    if (target && targets.has(dedupeKey(target))) {
+      const prev = targets.get(dedupeKey(target));
       errors.push(`Duplicate asset target "${target}" (${prev} and ${source}).`);
     }
-    if (target) targets.set(target, source);
+    if (target) targets.set(dedupeKey(target), source);
+    if (target && reserved.has(target)) {
+      errors.push(reservedMessage(target));
+    }
 
     if (checkExport && target) {
       let exportName;

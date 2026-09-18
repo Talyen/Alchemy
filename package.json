@@ -59,7 +59,6 @@
     "sync:steam-appid": "node scripts/sync-steam-appid.mjs",
     "sync:gear-art": "node scripts/sync-generated.mjs --gear-only",
     "sync:art": "node scripts/sync-generated.mjs --art-only",
-    "sync:art-barrels": "node scripts/sync-generated.mjs --art-only",
     "sync:generated": "node scripts/sync-generated.mjs",
     "check:generated": "node scripts/sync-generated.mjs --check",
     "test:ship:unit": "node scripts/run-ship-unit.mjs",

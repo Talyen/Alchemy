@@ -8,11 +8,14 @@ import { syncGenerated } from "./sync-generated.mjs";
 function printHelp() {
   console.log(`Usage: node scripts/assets.mjs [command]
   Canonical asset CLI (predev runs --prepare over the same pipeline).
-  --prepare (default)  Run full asset prep (art+sounds+music+sync)
+  --prepare (default)  Run full asset prep (art+sounds+music+art barrels+version)
   --optimize           Run art/sound/music optimization only (skips barrel sync)
-  --sync               Run barrel sync only (art barrels + version metadata)
-  --check              Verify outputs are up-to-date (alone: full check; with
-                       --optimize/--sync: check that stage only)
+  --sync               Run barrel sync only (art barrels + version metadata;
+                       use --art-only/--gear-only/--version-only via sync:art,
+                       sync:gear-art, sync:version for finer slices)
+  --check              Verify outputs are up-to-date (alone: full check, same as
+                       npm run assets:check; with --optimize/--sync: check that
+                       stage only)
   --help               Show this help
   ALCHEMY_SKIP_ASSETS=1 skips mutating commands in this CLI (--check still
   verifies and therefore errors under the skip).`);
@@ -46,6 +49,11 @@ async function main() {
     printHelp();
     return;
   }
+  await runAssetCommand(options);
+}
+
+/** Dispatch a parsed CLI selection; exported for tests. */
+export async function runAssetCommand(options) {
   if (!options.check && process.env.ALCHEMY_SKIP_ASSETS === "1") {
     console.log("Skipping asset operation (ALCHEMY_SKIP_ASSETS=1).");
     return;

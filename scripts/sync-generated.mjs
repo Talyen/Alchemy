@@ -27,7 +27,7 @@ export async function syncGenerated({ check = false, artOnly = false, gearOnly =
 function printHelp() {
   console.log(`Usage: node scripts/sync-generated.mjs [--check] [--art-only|--gear-only|--version-only]
   Default syncs art barrels + version metadata.
-  Fine-grained syncs (npm run sync:art / sync:gear-art forward here):
+  Fine-grained syncs (npm run sync:art / sync:gear-art / sync:version forward here):
     --art-only      Sync both art barrels (assets.generated.ts + gear-art.ts)
     --gear-only     Sync gear-art.ts only (refuses stale assets.generated.ts)
     --version-only  Sync metadata.generated.ts only`);

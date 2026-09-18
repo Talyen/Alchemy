@@ -8,6 +8,7 @@ import {
   collectPlaywrightTests,
   formatPlaywrightSummaryMarkdown,
   summarizePlaywrightReport,
+  topSlowestTests,
 } from "./lib/playwright-summary.mjs";
 
 import { isMainModule } from "./lib/is-main-module.mjs";
@@ -101,10 +102,7 @@ function main(argv = process.argv.slice(2)) {
     const { allTests, totalTests, passedTests, skippedTests, failedTests, flakyTests } = collectPlaywrightTests(data);
 
     // Sort tests by duration (slowest first)
-    const slowestTests = [...allTests]
-      .filter((t) => t.status !== "skipped")
-      .sort((a, b) => b.duration - a.duration)
-      .slice(0, 10);
+    const slowestTests = topSlowestTests(allTests, 10);
 
     // Compile Markdown report
     const timestamp = new Date().toLocaleString();

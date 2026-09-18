@@ -4,6 +4,7 @@ import path from "node:path";
 import { createReadStream } from "node:fs";
 
 import { writeTextIfChanged } from "./write-text-if-changed.mjs";
+import { MANIFEST_BASENAME } from "./asset-constants.mjs";
 import { mapPool } from "./map-pool.mjs";
 
 /**
@@ -31,6 +32,8 @@ function canonicalize(value) {
 
 async function hashFile(filePath, hash = createHash("sha256")) {
   for await (const chunk of createReadStream(filePath)) hash.update(chunk);
+  // Truncated to 128 bits: ample against accidental collisions for a local
+  // freshness cache while keeping manifests compact.
   return hash.digest("hex").slice(0, 32);
 }
 
@@ -107,16 +110,28 @@ export async function processFreshEntry(
 export async function commitManifest(
   manifestPath,
   nextManifest,
-  { outputDir, manifestBasename = "", label = "asset", check = false },
+  { outputDir, manifestBasename = MANIFEST_BASENAME, label = "asset", check = false },
 ) {
   if (check) {
     const expected = `${JSON.stringify(sortManifest(nextManifest), null, 2)}\n`;
-    if ((await readFile(manifestPath, "utf8")) !== expected) {
+    let actual;
+    try {
+      actual = await readFile(manifestPath, "utf8");
+    } catch (error) {
+      if (error?.code === "ENOENT") throw new Error(`Stale prepared asset manifest: ${manifestPath}`, { cause: error });
+      throw error;
+    }
+    if (actual !== expected) {
       throw new Error(`Stale prepared asset manifest: ${manifestPath}`);
     }
-    const orphans = (await readdir(outputDir)).filter(
-      (name) => name !== manifestBasename && !Object.hasOwn(nextManifest, name),
-    );
+    let names;
+    try {
+      names = await readdir(outputDir);
+    } catch (error) {
+      if (error?.code === "ENOENT") throw new Error(`Stale prepared asset output: ${outputDir}`, { cause: error });
+      throw error;
+    }
+    const orphans = names.filter((name) => name !== manifestBasename && !Object.hasOwn(nextManifest, name));
     if (orphans.length > 0) throw new Error(`Orphan prepared assets in ${outputDir}: ${orphans.join(", ")}`);
     return 0;
   }
@@ -130,10 +145,12 @@ export async function commitManifest(
 }
 
 /**
+ * Single normalizer for manifest entries: legacy string hashes and object
+ * entries with filesystem metadata both collapse to {hash, outputHash?, owner?}.
  * @param {unknown} value
  * @returns {ManifestEntry | null}
  */
-function parseManifestEntry(value) {
+function normalizeManifestEntry(value) {
   if (typeof value === "string") {
     return { hash: value };
   }
@@ -146,6 +163,14 @@ function parseManifestEntry(value) {
     };
   }
   return null;
+}
+
+/**
+ * @param {unknown} value
+ * @returns {ManifestEntry | null}
+ */
+function parseManifestEntry(value) {
+  return normalizeManifestEntry(value);
 }
 
 /**
@@ -202,12 +227,8 @@ function sortManifest(entries) {
   /** @type {Record<string, ManifestEntry>} */
   const sorted = {};
   for (const key of Object.keys(entries).sort()) {
-    const entry = entries[key];
-    sorted[key] = {
-      hash: entry.hash,
-      ...(typeof entry.outputHash === "string" ? { outputHash: entry.outputHash } : {}),
-      ...(typeof entry.owner === "string" ? { owner: entry.owner } : {}),
-    };
+    const entry = normalizeManifestEntry(entries[key]);
+    if (entry) sorted[key] = entry;
   }
   return sorted;
 }
@@ -227,7 +248,8 @@ export async function writeManifestIfChanged(manifestPath, entries) {
 /**
  * Delete files in a fully-managed output directory that are not current targets.
  * Only intended for directories where every tracked file is a pipeline output;
- * do not use on directories that also hold manually-curated files.
+ * curated files with no raw source (e.g. committed sounds) must be tracked as
+ * manifest entries with a curated owner so the sweep keeps them.
  *
  * @param {string} outputDir
  * @param {Set<string>} keepNames
@@ -235,7 +257,7 @@ export async function writeManifestIfChanged(manifestPath, entries) {
  * @returns {Promise<number>} number of files removed
  */
 export async function removeOrphanOutputs(outputDir, keepNames, options = {}) {
-  const { manifestBasename = "", label = "asset" } = options;
+  const { manifestBasename = MANIFEST_BASENAME, label = "asset" } = options;
   let entries;
   try {
     entries = await readdir(outputDir);

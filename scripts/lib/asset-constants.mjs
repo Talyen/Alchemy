@@ -1,7 +1,6 @@
 import os from "node:os";
 
 export const ASSET_SCHEMA_VERSION = 4;
-export const GEAR_SLOT_IDS = ["body", "weapon", "accessory", "trinket"];
 
 export const SHARP_DEFAULTS = Object.freeze({
   alphaQuality: 90,
@@ -17,7 +16,7 @@ const ciCap = process.env.CI ? 4 : 6;
  * Single concurrency knob for every asset pipeline. ALCHEMY_ASSET_CONCURRENCY
  * overrides all three so a debug value of 1 actually serializes ffmpeg too.
  */
-function resolveAssetConcurrency(fallback) {
+export function resolveAssetConcurrency(fallback) {
   const override = Number(process.env.ALCHEMY_ASSET_CONCURRENCY ?? "");
   if (Number.isFinite(override) && override > 0) return Math.floor(override);
   return Math.min(ciCap, fallback);
@@ -32,9 +31,9 @@ export const MUSIC_COPY_CONCURRENCY = resolveAssetConcurrency(4);
 export const VALIDATION_CONCURRENCY = resolveAssetConcurrency(16);
 
 /**
- * Single source of truth for art presets; WIDTH/QUALITY below are read-only
- * views derived from it. Per-file tunings (cardHaste, placeholders) are full
- * entries sharing their family width so no second override table can drift.
+ * Single source of truth for art presets. Content manifests read dimensions
+ * through the WIDTH/QUALITY views below; the gear preset is read directly off
+ * this table so no second accessor can drift from it.
  */
 export const ART_PRESETS = Object.freeze({
   card: Object.freeze({ width: 420, quality: 80 }),
@@ -59,10 +58,6 @@ export const ART_PRESETS = Object.freeze({
   cursor: Object.freeze({ width: 26, quality: 90 }),
   gear: Object.freeze({ width: 420, quality: 82 }),
 });
-
-export function artPreset(kind) {
-  return ART_PRESETS[kind];
-}
 
 export const WIDTH = Object.freeze(
   Object.fromEntries(Object.entries(ART_PRESETS).map(([kind, preset]) => [kind, preset.width])),
@@ -95,15 +90,16 @@ export const MUSIC_SETTINGS = Object.freeze({ mode: "copy" });
 export const MANIFEST_BASENAME = ".asset-hashes.json";
 
 /**
- * Explicit orphan-ownership table. Every optimizer output directory is fully
- * managed: manifest keys are the complete inventory and anything else is swept
- * as an orphan — except the listed curated exceptions (sounds only; music and
- * art have none by design).
+ * Managed output directories. Each pipeline owns its directory outright: the
+ * published hash manifest is the complete inventory and anything else is swept
+ * as an orphan. Sounds is the only pipeline with committed files that have no
+ * raw source (curated OGGs), and those are tracked as manifest entries with a
+ * `curated` owner rather than as directory exceptions.
  */
 export const MANAGED_DIRS = Object.freeze({
-  art: Object.freeze({ dir: "src/assets/optimized", curatedExceptions: Object.freeze([]) }),
-  sounds: Object.freeze({ dir: "public/sounds", curatedExceptions: Object.freeze(["curated"]) }),
-  music: Object.freeze({ dir: "public/Music", curatedExceptions: Object.freeze([]) }),
+  art: Object.freeze({ dir: "src/assets/optimized" }),
+  sounds: Object.freeze({ dir: "public/sounds" }),
+  music: Object.freeze({ dir: "public/Music" }),
 });
 
 export const GENERATED_OUTPUTS = Object.freeze({

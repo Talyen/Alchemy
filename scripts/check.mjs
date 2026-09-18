@@ -145,6 +145,9 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
       key: "web-bundle-budget",
       label: "web bundle budget",
       command: "npm",
+      // Web and desktop renderer builds both write dist/ sequentially: each
+      // budget step checks dist/ immediately after its own build, so the same
+      // check:bundle command validates different outputs at different times.
       args: ["run", "check:bundle"],
       enabled: webEnabled,
       reason: buildReason ?? "web build not required",
@@ -169,6 +172,8 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
       key: "desktop-bundle-budget",
       label: "desktop bundle budget",
       command: "npm",
+      // Same dist/ path as web by design: runs after desktop-build, so it
+      // validates the desktop renderer output that just overwrote dist/.
       args: ["run", "check:bundle"],
       enabled: desktopEnabled,
       reason: buildReason ?? "desktop build not required",

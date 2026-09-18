@@ -10,10 +10,19 @@ const fixture = vi.hoisted(() => ({
   root: "",
   icon: { source: "icon.png", target: "icon.webp", width: 16, quality: 80, requiresTransparency: true },
 }));
-vi.mock("../../scripts/lib/sync-generated-helpers.mjs", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../scripts/lib/sync-generated-helpers.mjs")>()),
-  resolveRootDir: () => fixture.root,
-}));
+vi.mock("../../scripts/lib/asset-pipeline-runner.mjs", async (importOriginal) => {
+  const original = await importOriginal<typeof import("../../scripts/lib/asset-pipeline-runner.mjs")>();
+  const { pathToFileURL } = await import("node:url");
+  return {
+    ...original,
+    resolveRootDir: () => fixture.root,
+    resolvePipelinePaths: (
+      _url: string,
+      options: { sourceSubpath: string[]; managedKey: "art" | "sounds" | "music" },
+    ) =>
+      original.resolvePipelinePaths(pathToFileURL(path.join(fixture.root, "scripts", "mock-entry.mjs")).href, options),
+  };
+});
 vi.mock("../../scripts/assets/asset-manifest.mjs", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../scripts/assets/asset-manifest.mjs")>()),
   staticAssets: [fixture.icon],

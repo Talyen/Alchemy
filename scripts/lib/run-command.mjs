@@ -19,7 +19,7 @@ function openCapture(options) {
   if (!Number.isSafeInteger(maxBuffer) || maxBuffer < 1024)
     throw new Error("maxBuffer must be an integer of at least 1024 bytes");
   if (!options.logPath) return { maxBuffer, finish: () => ({}) };
-  const logPath = path.resolve(options.logPath);
+  const logPath = path.resolve(options.cwd ?? process.cwd(), options.logPath);
   fs.mkdirSync(path.dirname(logPath), { recursive: true });
   const fd = fs.openSync(logPath, "w+");
   return {

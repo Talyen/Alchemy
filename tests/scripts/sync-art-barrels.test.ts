@@ -5,8 +5,8 @@ import path from "node:path";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const fixture = vi.hoisted(() => ({ root: "" }));
-vi.mock("../../scripts/lib/sync-generated-helpers.mjs", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../scripts/lib/sync-generated-helpers.mjs")>()),
+vi.mock("../../scripts/lib/asset-pipeline-runner.mjs", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../scripts/lib/asset-pipeline-runner.mjs")>()),
   resolveRootDir: () => fixture.root,
 }));
 vi.mock("../../scripts/assets/asset-manifest.mjs", async (importOriginal) => ({

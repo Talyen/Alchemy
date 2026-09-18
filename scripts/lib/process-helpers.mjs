@@ -14,9 +14,7 @@ export function failedMessagesResult(messages, skipLabel) {
   return { ok: false, error: messages.join("\n") };
 }
 
-export function failedOptimizeResult(results, skipLabel) {
-  return failedMessagesResult(
-    results.filter((result) => result.failed).map((result) => result.message),
-    skipLabel,
-  );
+export function failedResult(failures, skipLabel) {
+  const messages = failures.filter((result) => result.failed).map((result) => result.message);
+  return failedMessagesResult(messages, skipLabel);
 }

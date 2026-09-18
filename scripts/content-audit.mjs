@@ -1,10 +1,9 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import process from "node:process";
 import { fileURLToPath } from "node:url";
-import { createServer } from "vite";
 import { writeCurrentRun } from "./lib/current-run.mjs";
-import { VITE_ALIAS_PATH } from "./lib/vite-aliases.mjs";
+import { defineScript } from "./lib/script-run.mjs";
+import { withReportServer } from "./lib/vite-report-server.mjs";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const reportsDir = path.join(rootDir, "reports");
@@ -36,42 +35,38 @@ function renderMarkdown(result) {
   return `${lines.join("\n").trimEnd()}\n`;
 }
 
-// Content validation is pure data/rules plus the `@` alias, so boot Vite with a
-// minimal config instead of the full app config (tailwind/react/sentry/visualizer).
-const server = await createServer({
-  configFile: false,
-  root: rootDir,
-  resolve: { alias: { [VITE_ALIAS_PATH]: path.join(rootDir, "src") } },
-  server: { middlewareMode: true },
-});
+// Content validation is pure data/rules plus the `@` alias, so it shares the
+// minimal middleware-mode SSR server in lib/vite-report-server.mjs instead of
+// the full app config (tailwind/react/sentry/visualizer).
+export async function runContentAudit() {
+  return withReportServer(async (server) => {
+    const mod = await server.ssrLoadModule("/src/lib/content-validation/index.ts");
+    const result = mod.runContentValidation();
+    await mkdir(reportsDir, { recursive: true });
+    await writeFile(jsonPath, `${JSON.stringify(result, null, 2)}\n`);
+    await writeFile(markdownPath, renderMarkdown(result));
 
-try {
-  const mod = await server.ssrLoadModule("/src/lib/content-validation/index.ts");
-  const result = mod.runContentValidation();
-  await mkdir(reportsDir, { recursive: true });
-  await writeFile(jsonPath, `${JSON.stringify(result, null, 2)}\n`);
-  await writeFile(markdownPath, renderMarkdown(result));
+    writeCurrentRun({
+      rootDir,
+      status: result.errors.length > 0 ? "failed" : "passed",
+      command: "npm run content:audit",
+      artifacts: [
+        { path: "reports/content-audit-report.md", role: "primary" },
+        { path: "reports/content-audit-report.json", role: "secondary" },
+      ],
+      summary: `Content audit: ${result.errors.length} error(s), ${result.warnings.length} warning(s).`,
+    });
 
-  writeCurrentRun({
-    rootDir,
-    status: result.errors.length > 0 ? "failed" : "passed",
-    command: "npm run content:audit",
-    artifacts: [
-      { path: "reports/content-audit-report.md", role: "primary" },
-      { path: "reports/content-audit-report.json", role: "secondary" },
-    ],
-    summary: `Content audit: ${result.errors.length} error(s), ${result.warnings.length} warning(s).`,
-  });
+    console.log(`Content audit: ${result.errors.length} error(s), ${result.warnings.length} warning(s)`);
+    console.log(`Wrote ${path.relative(rootDir, markdownPath)} and ${path.relative(rootDir, jsonPath)}`);
 
-  console.log(`Content audit: ${result.errors.length} error(s), ${result.warnings.length} warning(s)`);
-  console.log(`Wrote ${path.relative(rootDir, markdownPath)} and ${path.relative(rootDir, jsonPath)}`);
-
-  if (result.errors.length > 0) {
-    for (const issue of result.errors) {
-      console.error(`[${issue.area}] ${issue.id}: ${issue.message}`);
+    if (result.errors.length > 0) {
+      for (const issue of result.errors) {
+        console.error(`[${issue.area}] ${issue.id}: ${issue.message}`);
+      }
+      throw new Error(`Content audit failed with ${result.errors.length} error(s).`);
     }
-    process.exitCode = 1;
-  }
-} finally {
-  await server.close();
+  });
 }
+
+defineScript(import.meta.url, () => runContentAudit());

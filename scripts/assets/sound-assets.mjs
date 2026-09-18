@@ -76,6 +76,8 @@ export async function validateSoundAssetRegistry({ sourceDir } = {}) {
       sourcePattern: /\.(ogg|wav|mp3)$/iu,
       targetPattern: /\.ogg$/u,
       label: "Sound asset registry",
+      reservedTargets: curatedSoundFiles,
+      reservedMessage: (target) => `Sound target is both generated and curated: "${target}".`,
     });
   } catch (error) {
     const details = error instanceof Error ? error.cause?.details : undefined;
@@ -86,10 +88,8 @@ export async function validateSoundAssetRegistry({ sourceDir } = {}) {
     }
   }
 
-  const generatedTargets = new Set(generatedSoundAssets.map((e) => e.target));
   for (const file of curatedSoundFiles) {
     if (!file.endsWith(".ogg")) errors.push(`Curated sound must be OGG: "${file}".`);
-    if (generatedTargets.has(file)) errors.push(`Sound target is both generated and curated: "${file}".`);
   }
 
   if (errors.length > 0) throw new Error(`Sound asset registry validation failed:\n- ${errors.join("\n- ")}`);

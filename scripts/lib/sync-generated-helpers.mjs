@@ -1,36 +1,13 @@
 import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { staticAssets, validateAssetRegistry } from "../assets/asset-manifest.mjs";
-import { GEAR_SLOT_IDS } from "./asset-constants.mjs";
+import { GEAR_SLOT_IDS } from "./gear-filenames.mjs";
+import { getManagedManifestPath } from "./asset-pipeline-runner.mjs";
 import { writeTextIfChanged } from "./write-text-if-changed.mjs";
 
-export const WEBP_SUFFIX = ".webp";
-export const GEAR_PREFIX = "gear-";
-
-export function isWebpAsset(name) {
-  return name.endsWith(WEBP_SUFFIX);
-}
-
-export function isGearAsset(name) {
-  return name.startsWith(GEAR_PREFIX) && name.endsWith(WEBP_SUFFIX);
-}
-
-export function getAssetFiles(manifest) {
-  return Object.keys(manifest).filter(isWebpAsset).sort();
-}
-
-export function getGearFiles(manifest) {
-  return Object.keys(manifest).filter(isGearAsset).sort();
-}
-
 export function getOptimizedManifestPath(rootDir) {
-  return path.join(rootDir, "src", "assets", "optimized", ".asset-hashes.json");
-}
-
-export function resolveRootDir(importMetaUrl) {
-  return path.resolve(path.dirname(fileURLToPath(importMetaUrl)), "..");
+  return getManagedManifestPath(rootDir, "art");
 }
 
 /**
