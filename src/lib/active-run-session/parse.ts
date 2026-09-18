@@ -50,6 +50,10 @@ export function toActiveRunData(parsed: ParsedActiveRunData): ActiveRunData {
 }
 
 export function parseActiveRun(activeRun: unknown): ActiveRunData | null {
+  // Validation + hydration entry (used by tests and standalone parsing).
+  // The load path in storage/save-candidates.ts validates the full save
+  // envelope first and then calls toActiveRunData directly, so this stays as
+  // the single active-run parse owner rather than duplicating that path.
   if (!activeRun || typeof activeRun !== "object") {
     return null;
   }

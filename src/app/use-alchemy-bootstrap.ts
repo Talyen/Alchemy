@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import {
-  bootstrapAlchemySaveState,
+  configureAlchemySaveBackend,
   createDefaultSaveData,
   hydrateAlchemyPersistenceFields,
 } from "@/features/alchemy/shared/storage";
 import type { SaveLoadState } from "@/features/alchemy/shared/storage";
-import { clearAlchemySaveData } from "@/features/alchemy/shared/storage";
+import { clearAlchemySaveData, loadAlchemySaveState } from "@/features/alchemy/shared/storage";
 import { logStorageFailure } from "@/lib/storage-logging";
 import { restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readRunInitialized } from "@/features/alchemy/shared/stores/run-reads";
@@ -32,9 +32,14 @@ export function useAlchemyBootstrap(): SaveLoadState | null {
     void (async () => {
       let result: SaveLoadState;
       try {
+        // Configure the backend (Steam/cloud state) before the dev wipe so a
+        // desktop dev wipe honors cloudSyncEnabled and cannot leave a stale
+        // Cloud mirror eligible for reload.
+        await configureAlchemySaveBackend();
+        if (cancelled) return;
         await maybeWipeLocalSaveFromQuery();
         if (cancelled) return;
-        result = await bootstrapAlchemySaveState();
+        result = await loadAlchemySaveState();
       } catch (error) {
         if (cancelled) return;
         logStorageFailure("Save bootstrap failed, falling back to defaults", error);

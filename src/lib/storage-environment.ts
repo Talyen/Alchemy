@@ -16,13 +16,16 @@ function getBrowserStorage(): Storage | null {
   return null;
 }
 
+/** Sentinel message shared by unavailableResult and isStorageUnavailable so rewording one cannot desync the other. */
+const STORAGE_UNAVAILABLE_MESSAGE = "localStorage is unavailable in this context";
+
 function unavailableResult(): { ok: false; error: unknown } {
-  return { ok: false, error: new Error("localStorage is unavailable in this context") };
+  return { ok: false, error: new Error(STORAGE_UNAVAILABLE_MESSAGE) };
 }
 
-/** True when a browser storage object can currently be reached. Guards silent early-outs. */
-export function isLocalStorageAvailable(): boolean {
-  return getBrowserStorage() !== null;
+/** True for the sentinel unavailable error so callers can stay silent without a pre-check lookup. */
+export function isStorageUnavailable(error: unknown): boolean {
+  return error instanceof Error && error.message === STORAGE_UNAVAILABLE_MESSAGE;
 }
 
 /** Single guarded access path for browser localStorage. Never throws. */

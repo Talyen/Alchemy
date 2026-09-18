@@ -76,11 +76,19 @@ function flushSave(activeRun: ActiveRunData | null, message: string): void {
   // Immediate fast path: run-end and gear mutations need durability without
   // waiting for the autosave debounce. Shares sharedSaveQueue (and the
   // snapshot builder) with the debounced autosave, so overlapping writes
-  // coalesce; a failure here stays pending in the scheduler revision and the
-  // next autosave tick retries it.
-  void saveAlchemySaveData(buildAlchemySaveDataFromStores(activeRun)).catch((error: unknown) => {
-    logStorageFailure(message, error);
-  });
+  // coalesce. saveAlchemySaveData never rejects (failures resolve "failed"),
+  // so handle the outcome explicitly: the debounced scheduler write scheduled
+  // by the same store commit retries on failure. The rejection handler is
+  // defensive only, so an unexpected throw still reports instead of going
+  // unhandled.
+  void saveAlchemySaveData(buildAlchemySaveDataFromStores(activeRun)).then(
+    (outcome) => {
+      if (outcome === "failed") logStorageFailure(message);
+    },
+    (error: unknown) => {
+      logStorageFailure(message, error);
+    },
+  );
 }
 
 function flushSaveAfterRunEnd(): void {

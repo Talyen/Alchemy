@@ -128,7 +128,7 @@ function registerIpcHandlers() {
         if (isSavePayload(data)) candidates.push(data);
       } catch (error) {
         if (error?.code === "ENOENT") continue;
-        console.error(`Error reading save candidate ${filePath}:`, error);
+        console.error(`[save] Error reading save candidate ${filePath}:`, error);
       }
     }
     return candidates;
@@ -168,9 +168,9 @@ function registerIpcHandlers() {
         return true;
       } catch (error) {
         await fs.promises.unlink(SAVE_TMP_PATH).catch((cleanupError) => {
-          if (cleanupError?.code !== "ENOENT") console.error("Error cleaning up temp save file:", cleanupError);
+          if (cleanupError?.code !== "ENOENT") console.error("[save] Error cleaning up temp save file:", cleanupError);
         });
-        console.error("Error writing save file:", error);
+        console.error("[save] Error writing save file:", error);
         return false;
       }
     });
@@ -191,7 +191,7 @@ function registerIpcHandlers() {
       }
       return true;
     } catch (error) {
-      console.error("Error clearing save files:", error);
+      console.error("[save] Error clearing save files:", error);
       return false;
     }
   });
@@ -202,12 +202,12 @@ function registerIpcHandlers() {
       if (!steamClient.cloud.fileExists("save.json")) return null;
       const buffer = await steamClient.cloud.readFile("save.json");
       if (buffer && buffer.length > MAX_SAVE_PAYLOAD_BYTES) {
-        console.error(`Steam Cloud save exceeds ${MAX_SAVE_PAYLOAD_BYTES} bytes; ignoring.`);
+        console.error(`[save] Steam Cloud save exceeds ${MAX_SAVE_PAYLOAD_BYTES} bytes; ignoring.`);
         return null;
       }
       return buffer ? buffer.toString("utf8") : null;
     } catch (error) {
-      console.error("Error reading Steam Cloud save:", error);
+      console.error("[save] Error reading Steam Cloud save:", error);
       return null;
     }
   });
@@ -217,7 +217,7 @@ function registerIpcHandlers() {
     try {
       return steamClient.cloud.writeFile("save.json", data);
     } catch (error) {
-      console.error("Error writing Steam Cloud save:", error);
+      console.error("[save] Error writing Steam Cloud save:", error);
       return false;
     }
   });
@@ -227,7 +227,7 @@ function registerIpcHandlers() {
     try {
       return steamClient.cloud.fileExists("save.json") ? steamClient.cloud.deleteFile("save.json") : true;
     } catch (error) {
-      console.error("Error deleting Steam Cloud save:", error);
+      console.error("[save] Error deleting Steam Cloud save:", error);
       return false;
     }
   });

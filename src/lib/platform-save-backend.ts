@@ -20,41 +20,49 @@ interface SaveBackendClearOptions {
   forceLocalWipe?: boolean;
 }
 
-export function uniqueCandidates(candidates: string[]): string[] {
+// Local-first ordering invariant: local ring candidates precede the Cloud
+// mirror, so dedup must preserve first-seen order. Kept module-private next
+// to its sole caller to prevent reuse that would bypass that ordering.
+function uniqueCandidates(candidates: string[]): string[] {
   return Array.from(new Set(candidates));
 }
 
 type DesktopApi = NonNullable<ReturnType<typeof getDesktopApi>>;
 
-async function mirrorCloudWriteBestEffort(desktop: DesktopApi, value: string): Promise<void> {
+function desktopUnavailable(): { ok: false; error: unknown } {
+  return { ok: false, error: new Error("Desktop save API is unavailable") };
+}
+
+async function bestEffortCloudWrite(
+  operation: () => Promise<boolean | undefined>,
+  failureMessage: string,
+): Promise<void> {
   try {
-    const cloudWritten = (await desktop.steamCloudWrite?.(value)) ?? false;
-    if (!cloudWritten) logStorageFailure("Steam Cloud write failed, save may not sync");
+    const succeeded = (await operation()) ?? false;
+    if (!succeeded) logStorageFailure(failureMessage);
   } catch (error) {
-    logStorageFailure("Steam Cloud write failed, save may not sync", error);
+    logStorageFailure(failureMessage, error);
   }
 }
 
-async function deleteCloudBestEffortAfterLocalWipe(desktop: DesktopApi): Promise<void> {
-  try {
-    const cloudCleared = (await desktop.steamCloudDelete?.()) ?? false;
-    if (!cloudCleared)
-      logStorageFailure("Steam Cloud delete failed after local wipe; next save will overwrite the mirror");
-  } catch (error) {
-    logStorageFailure("Steam Cloud delete failed after local wipe; next save will overwrite the mirror", error);
+async function clearDesktop(
+  desktop: DesktopApi,
+  cloudSyncEnabled: boolean,
+  forceLocalWipe: boolean,
+): Promise<SaveBackendWriteResult> {
+  if (forceLocalWipe) {
+    const localCleared = await desktop.clearSave();
+    if (!localCleared) {
+      return { ok: false, error: new Error("Failed to clear desktop save file") };
+    }
+    if (cloudSyncEnabled) {
+      await bestEffortCloudWrite(
+        () => desktop.steamCloudDelete?.(),
+        "Steam Cloud delete failed after local wipe; next save will overwrite the mirror",
+      );
+    }
+    return { ok: true };
   }
-}
-
-async function clearDesktopForced(desktop: DesktopApi, cloudSyncEnabled: boolean): Promise<SaveBackendWriteResult> {
-  const localCleared = await desktop.clearSave();
-  if (!localCleared) {
-    return { ok: false, error: new Error("Failed to clear desktop save file") };
-  }
-  if (cloudSyncEnabled) await deleteCloudBestEffortAfterLocalWipe(desktop);
-  return { ok: true };
-}
-
-async function clearDesktopNormal(desktop: DesktopApi, cloudSyncEnabled: boolean): Promise<SaveBackendWriteResult> {
   if (cloudSyncEnabled) {
     const cloudCleared = (await desktop.steamCloudDelete?.()) ?? false;
     if (!cloudCleared) {
@@ -118,19 +126,24 @@ export function createDesktopSaveBackend({ cloudSyncEnabled = false }: PlatformS
   return {
     async readCandidates() {
       const desktop = getDesktopApi();
-      if (desktop?.isDesktop !== true) return { ok: false, error: new Error("Desktop save API is unavailable") };
+      if (desktop?.isDesktop !== true) return desktopUnavailable();
       return { ok: true, candidates: await readDesktopCandidates(desktop) };
     },
 
     async write(_key, value) {
       const desktop = getDesktopApi();
-      if (desktop?.isDesktop !== true) return { ok: false, error: new Error("Desktop save API is unavailable") };
+      if (desktop?.isDesktop !== true) return desktopUnavailable();
       try {
         const localWritten = await desktop.writeSave(value);
         if (!localWritten) {
           return { ok: false, error: new Error("Failed to write desktop save file") };
         }
-        if (cloudSyncEnabled) await mirrorCloudWriteBestEffort(desktop, value);
+        if (cloudSyncEnabled) {
+          await bestEffortCloudWrite(
+            () => desktop.steamCloudWrite?.(value),
+            "Steam Cloud write failed, save may not sync",
+          );
+        }
         return { ok: true };
       } catch (error) {
         return { ok: false, error };
@@ -144,10 +157,9 @@ export function createDesktopSaveBackend({ cloudSyncEnabled = false }: PlatformS
 
     async clear(_key, options?: SaveBackendClearOptions) {
       const desktop = getDesktopApi();
-      if (desktop?.isDesktop !== true) return { ok: false, error: new Error("Desktop save API is unavailable") };
+      if (desktop?.isDesktop !== true) return desktopUnavailable();
       try {
-        if (options?.forceLocalWipe) return await clearDesktopForced(desktop, cloudSyncEnabled);
-        return await clearDesktopNormal(desktop, cloudSyncEnabled);
+        return await clearDesktop(desktop, cloudSyncEnabled, options?.forceLocalWipe === true);
       } catch (error) {
         return { ok: false, error };
       }

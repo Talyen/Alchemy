@@ -4,8 +4,8 @@ import {
   LAUNCH_SAVE_SCHEMA_VERSION,
   isCombatGoldOverride,
   safeParseWithErrors,
+  getCandidateSavedAt,
   getRawContentVersion,
-  getRawLastSavedAt,
   getRawSaveSchemaVersion,
   isUnsupportedFutureContentData,
   isUnsupportedFutureSaveData,
@@ -111,11 +111,6 @@ function collectSaveRepairWarnings(raw: Partial<SaveData>, normalized: ParsedSav
   return warnings;
 }
 
-function hydrateActiveRunDeck(activeRun: ParsedSaveData["activeRun"]): SaveData["activeRun"] {
-  if (!activeRun) return null;
-  return toActiveRunData(activeRun);
-}
-
 function getFutureSaveStatus(parsed: unknown): SaveLoadStatus | null {
   if (isUnsupportedFutureSaveData(parsed)) {
     return { kind: "unsupported-newer-schema", detectedSchemaVersion: getRawSaveSchemaVersion(parsed) };
@@ -131,7 +126,7 @@ export function evaluateSaveCandidates(candidates: string[]): SaveLoadState {
   let newestFutureSavedAt = -1;
   let bestParsed: unknown = null;
   let bestData: ParsedSaveData | null = null;
-  let bestErrors: Array<{ path: string; message: string }> = [];
+  let nestedCardWarnings: Array<{ path: string; message: string }> = [];
   let playableSavedAt = 0;
   for (const candidate of candidates) {
     let parsed: unknown;
@@ -144,8 +139,11 @@ export function evaluateSaveCandidates(candidates: string[]): SaveLoadState {
 
     const candidateFutureStatus = getFutureSaveStatus(parsed);
     if (candidateFutureStatus) {
-      const savedAt = getRawLastSavedAt(parsed) ?? -1;
-      if (savedAt >= newestFutureSavedAt) {
+      const savedAt = getCandidateSavedAt(parsed, -1);
+      // First-wins on ties, matching the playable-vs-playable tie-break
+      // below: recency across future kinds (schema vs content) still decides,
+      // but equal timestamps keep the earlier candidate in read order.
+      if (futureStatus === null || savedAt > newestFutureSavedAt) {
         newestFutureSavedAt = savedAt;
         futureStatus = candidateFutureStatus;
       }
@@ -165,8 +163,12 @@ export function evaluateSaveCandidates(candidates: string[]): SaveLoadState {
     // beat the current best (or tie-break it) skips the full Zod parse.
     // The first valid candidate and any potential winner are always parsed,
     // so validation diagnostics for the loaded save are preserved.
-    if (bestData && (getRawLastSavedAt(parsed) ?? 0) <= playableSavedAt) continue;
+    if (bestData && getCandidateSavedAt(parsed, 0) <= playableSavedAt) continue;
     const result = safeParseWithErrors(SaveDataSchema, parsed);
+    // Defensive: nearly every SaveDataSchema field carries `.catch`, so any
+    // object passing the baseline above parses successfully and this branch
+    // is effectively unreachable. Kept so a future strict field cannot
+    // promote a corrupt candidate to playable.
     if (!result.success) {
       logStorageFailure("Save candidate failed validation, trying next candidate", result.error);
       continue;
@@ -175,7 +177,7 @@ export function evaluateSaveCandidates(candidates: string[]): SaveLoadState {
     if (!bestData || data.lastSavedAt > playableSavedAt) {
       bestParsed = parsed;
       bestData = data;
-      bestErrors = result.errors;
+      nestedCardWarnings = result.errors;
       playableSavedAt = data.lastSavedAt;
     }
   }
@@ -183,12 +185,15 @@ export function evaluateSaveCandidates(candidates: string[]): SaveLoadState {
   let playable: SaveLoadState | null = null;
   if (bestData) {
     const warnings = collectSaveRepairWarnings(bestParsed as Partial<SaveData>, bestData);
-    for (const ve of bestErrors) {
-      warnings.push(`Field "${ve.path}" was corrupt: ${ve.message}`);
+    // Nested card-content repair notes (e.g. dropped effects/descriptions),
+    // not corrupt top-level fields: safeParseWithErrors only returns these on
+    // success, so phrase them as repairs.
+    for (const note of nestedCardWarnings) {
+      warnings.push(`Card content "${note.path}" was repaired: ${note.message}`);
     }
     const hydrated: SaveData = {
       ...bestData,
-      activeRun: hydrateActiveRunDeck(bestData.activeRun),
+      activeRun: bestData.activeRun ? toActiveRunData(bestData.activeRun) : null,
     };
     playable = { data: hydrated, status: warnings.length > 0 ? { kind: "ok", warnings } : { kind: "ok" } };
   }

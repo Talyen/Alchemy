@@ -118,7 +118,7 @@ describe("storage io", () => {
     const loaded = await loadAlchemySaveState();
     expect(loaded.status.kind).toBe("ok");
     expect(loaded.status.kind === "ok" ? loaded.status.warnings : undefined).toEqual(
-      expect.arrayContaining([expect.stringMatching(/Field "effects\[0\]" was corrupt/)]),
+      expect.arrayContaining([expect.stringMatching(/Card content "effects\[0\]" was repaired/)]),
     );
     expect(loaded.data.activeRun?.runDeck[0]?.id).toBe("slash");
     expect(loaded.data.activeRun?.runDeck[0]?.effects.length).toBeGreaterThan(0);

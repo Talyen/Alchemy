@@ -99,6 +99,19 @@ describe("save version protection", () => {
       detectedSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
     });
   });
+
+  it("keeps the first future candidate on a timestamp tie", () => {
+    const first = futureSave(1000, { saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1 });
+    const second = futureSave(1000, { saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 2 });
+    expect(evaluateSaveCandidates([first, second]).status).toEqual({
+      kind: "unsupported-newer-schema",
+      detectedSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
+    });
+    expect(evaluateSaveCandidates([second, first]).status).toEqual({
+      kind: "unsupported-newer-schema",
+      detectedSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 2,
+    });
+  });
 });
 
 describe("save candidate error-sink silence", () => {

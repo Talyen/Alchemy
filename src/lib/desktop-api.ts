@@ -16,6 +16,7 @@ export interface AlchemyDesktopApi {
 }
 
 export function getDesktopApi(): AlchemyDesktopApi | undefined {
+  if (typeof window === "undefined") return undefined;
   return window.alchemyDesktop;
 }
 

@@ -5,6 +5,7 @@ export {
   LAUNCH_SAVE_SCHEMA_VERSION,
 } from "./metadata";
 export {
+  getCandidateSavedAt,
   getRawContentVersion,
   getRawLastSavedAt,
   getRawSaveSchemaVersion,

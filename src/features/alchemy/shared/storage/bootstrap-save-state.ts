@@ -3,8 +3,12 @@ import { createPlatformSaveBackend } from "@/lib/platform-save-backend";
 import { configureSaveBackend, loadAlchemySaveState } from "./io";
 import type { SaveLoadState } from "./save-candidates";
 
-export async function bootstrapAlchemySaveState(): Promise<SaveLoadState> {
+export async function configureAlchemySaveBackend(): Promise<void> {
   const steam = isDesktop() ? await initializeSteam() : { playerName: null, cloudSyncEnabled: false };
   configureSaveBackend(createPlatformSaveBackend({ cloudSyncEnabled: steam.cloudSyncEnabled }));
+}
+
+export async function bootstrapAlchemySaveState(): Promise<SaveLoadState> {
+  await configureAlchemySaveBackend();
   return loadAlchemySaveState();
 }

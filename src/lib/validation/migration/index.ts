@@ -31,6 +31,14 @@ export function getRawLastSavedAt(parsed: unknown): number | null {
   return toFiniteNonNegativeInt(value);
 }
 
+// Single missing-timestamp policy for candidate ordering: absent or
+// non-numeric timestamps fall back per domain (future: -1 so a timestamp-less
+// future loses to any timestamped playable; playable pre-filter: 0 matching
+// the schema catch default). Fractional values floor via getRawLastSavedAt.
+export function getCandidateSavedAt(parsed: unknown, fallback: number): number {
+  return getRawLastSavedAt(parsed) ?? fallback;
+}
+
 export function isUnsupportedFutureSaveData(parsed: unknown): boolean {
   return getRawSaveSchemaVersion(parsed) > CURRENT_SAVE_SCHEMA_VERSION;
 }

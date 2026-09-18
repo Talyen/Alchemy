@@ -16,7 +16,12 @@ export class SaveWriteQueue {
   // loop so overlapping enqueues collapse to two physical writes at most.
   // storageEpoch invalidates stale writes on clear/protection/reset; it is
   // distinct from the autosave schedulerEpoch, which guards hook-lifetime
-  // revision counters (see autosave-scheduler.ts).
+  // revision counters (see autosave-scheduler.ts). Both are required: the
+  // "skipped" completion repairs a scheduler that already submitted, but a
+  // clear with no pending write still needs the cancellation broadcast to
+  // drop a debounced-but-unsubmitted dirty revision before it resurrects a
+  // deleted save. A clear also restarts the scheduler's max-wait window by
+  // design (old dirt is gone); failure retries instead preserve it.
   private chain: Promise<void> = Promise.resolve();
   private coalesced: PendingSave | null = null;
   // Counter (not boolean): overlapping clears must each hold the write gate
@@ -59,9 +64,11 @@ export class SaveWriteQueue {
       this.discardPending();
       return Promise.resolve("skipped");
     }
-    // The queue owns its snapshot: clone on entry so a caller mutating after
-    // enqueue cannot corrupt the pending write (coalescing swaps in the
-    // latest clone). Payloads are JSON-serializable by construction; a
+    // The queue owns its snapshot: clone synchronously on entry so a caller
+    // mutating after enqueue cannot corrupt the pending write (the runner
+    // drains in a later microtask, so deferring the clone to dequeue would
+    // capture same-task caller mutations). Coalescing swaps in the latest
+    // clone. Payloads are JSON-serializable by construction; a
     // type-violating payload degrades to "failed" instead of throwing into
     // terminal-flush callers that do not expect a synchronous throw.
     let owned: UnstampedSaveData;
@@ -78,7 +85,6 @@ export class SaveWriteQueue {
       this.coalesced.data = owned;
       return this.coalesced.completion;
     }
-    this.discardPending();
     let resolve!: PendingSave["resolve"];
     const completion = new Promise<SaveWriteOutcome>((settle) => {
       resolve = settle;
@@ -147,7 +153,11 @@ export class SaveWriteQueue {
       const outcome = await write(pending.data);
       return pending.storageEpoch === this.storageEpoch ? outcome : "skipped";
     } catch (error) {
-      logStorageFailure("Save data could not be written", error);
+      // Only fires for injected/unexpected throws: the real write path
+      // (io.ts writeSaveSnapshot) catches internally and resolves "failed".
+      // Kept distinct from io.ts "Save data could not be written" so failure
+      // aggregation does not double-count one failed write.
+      logStorageFailure("Queued save write threw", error);
       return "failed";
     }
   }

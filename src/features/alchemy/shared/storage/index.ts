@@ -11,7 +11,7 @@ export {
   buildAlchemySaveDataFromStores,
   hydrateAlchemyPersistenceFields,
 } from "./persistence";
-export { bootstrapAlchemySaveState } from "./bootstrap-save-state";
+export { bootstrapAlchemySaveState, configureAlchemySaveBackend } from "./bootstrap-save-state";
 export {
   DEVICE_DISPLAY_STORAGE_KEY,
   readDeviceDisplayPreferences,

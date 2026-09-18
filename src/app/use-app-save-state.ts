@@ -11,7 +11,12 @@ import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-li
 import { useLatestRef } from "@/features/alchemy/shared/ui/use-latest-ref";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import { logStorageFailure } from "@/lib/storage-logging";
-import { AUTOSAVE_DEBOUNCE_MS, AUTOSAVE_MAX_WAIT_MS, BATTLE_AUTOSAVE_DEBOUNCE_MS } from "@/lib/game-constants";
+import {
+  AUTOSAVE_DEBOUNCE_MS,
+  AUTOSAVE_MAX_WAIT_MS,
+  AUTOSAVE_RETRY_COOLDOWN_MS,
+  BATTLE_AUTOSAVE_DEBOUNCE_MS,
+} from "@/lib/game-constants";
 import { useEffect } from "react";
 import { createAutosaveScheduler } from "./autosave-scheduler";
 
@@ -20,7 +25,7 @@ export function useAlchemyAutosaveFromStores(enabled = true) {
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
-    const scheduler = createAutosaveScheduler(AUTOSAVE_MAX_WAIT_MS);
+    const scheduler = createAutosaveScheduler(AUTOSAVE_MAX_WAIT_MS, AUTOSAVE_RETRY_COOLDOWN_MS);
     let mounted = true;
 
     const cancelTimer = () => {

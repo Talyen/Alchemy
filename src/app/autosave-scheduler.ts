@@ -40,6 +40,7 @@ export interface CompletionInput extends AutosaveProgress {
   outcome: Exclude<SaveWriteOutcome, "skipped">;
   now: number;
   maxWaitMs: number;
+  retryCooldownMs?: number | undefined;
 }
 
 export type AutosaveCompletionAction = "ignore" | "cancel" | "schedule";
@@ -66,7 +67,7 @@ export function applyAutosaveCompletion(input: CompletionInput): CompletionResul
       revision: input.revision,
       acknowledgedRevision: input.acknowledgedRevision,
       submittedRevision: input.acknowledgedRevision,
-      retryAt: input.now + input.maxWaitMs,
+      retryAt: input.now + (input.retryCooldownMs ?? input.maxWaitMs),
       action: "schedule",
     };
   }
@@ -90,8 +91,10 @@ interface SaveSubmission {
  * disable must ignore late completions). SaveWriteQueue.storageEpoch guards
  * storage invalidation (clear or write protection must skip stale writes).
  * Both are required: the queue cannot repair scheduler revision counters from
- * a "skipped" outcome alone once the scheduler has reset. */
-export function createAutosaveScheduler(maxWaitMs: number) {
+ * a "skipped" outcome alone once the scheduler has reset, and a clear with no
+ * pending write still needs the cancellation broadcast to drop a
+ * debounced-but-unsubmitted dirty revision (see save-write-queue.ts). */
+export function createAutosaveScheduler(maxWaitMs: number, retryCooldownMs: number = maxWaitMs) {
   let revision = 0;
   let acknowledgedRevision = 0;
   let submittedRevision = 0;
@@ -149,6 +152,7 @@ export function createAutosaveScheduler(maxWaitMs: number) {
         outcome,
         now,
         maxWaitMs,
+        retryCooldownMs,
       });
       acknowledgedRevision = next.acknowledgedRevision;
       submittedRevision = next.submittedRevision;
