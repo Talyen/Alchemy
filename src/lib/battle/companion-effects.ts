@@ -1,6 +1,6 @@
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
-import { damageOnlyEffects } from "./damage-effect-selection";
+import { damageOnlyEffects } from "./card-classification";
 import { getModifiedCompanionEffects, type BattleCard } from "@/lib/game-data";
 import { isPlayerDefeated, type BattleState, type CombatTextEvent, withPreservedFlags } from "./types";
 import { applyScaledLeechHealing, computeLeechHeal } from "./damage-rider-leech";

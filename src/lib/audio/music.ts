@@ -107,6 +107,9 @@ export function resetMusicRuntimeForTests(): void {
 export function pauseAllMusic() {
   musicTransitionToken += 1;
   cancelMusicTransition();
+  // A pause ends any bestiary preview so a later tab restore cannot replay
+  // menu music as if a preview were still active.
+  bossPreviewKey = null;
   for (const record of musicTracks.values()) {
     record.element.muted = true;
     record.element.pause();
@@ -128,6 +131,19 @@ function cancelMusicTransition(): void {
   if (musicTransitionTimer === null) return;
   clearInterval(musicTransitionTimer);
   musicTransitionTimer = null;
+}
+
+/**
+ * Screen-driven switch bookkeeping. Clears any bestiary preview, cancels the
+ * in-flight transition, and points the key at the incoming track. Callers
+ * resolve unknown keys before calling so a bad key never silences playback.
+ */
+function beginMusicTransition(key: string): number {
+  bossPreviewKey = null;
+  musicTransitionToken += 1;
+  cancelMusicTransition();
+  audioState.currentMusicKey = key;
+  return musicTransitionToken;
 }
 
 function playElement(el: HTMLAudioElement) {
@@ -216,36 +232,39 @@ export function isMusicPaused(): boolean {
   return !audioState.currentMusic || audioState.currentMusic.paused;
 }
 
+function activateTrackElement(el: HTMLAudioElement, key: string, fadeProgress: number): HTMLAudioElement {
+  applyMusicVolume(el, key, fadeProgress);
+  el.muted = audioState.muted;
+  playElement(el);
+  audioState.currentMusic = el;
+  return el;
+}
+
 function replaceCurrentTrack(key: string, fadeProgress: number): HTMLAudioElement | undefined {
+  const cached = musicTracks.get(key);
+  const catalog = MUSIC_CATALOG[key];
+  // Resolve before pausing so an unknown key never silences the current track.
+  const track = cached ? undefined : pickRandomUnsafe(catalog?.files ?? []);
+  if (!cached && (!track || !catalog)) return undefined;
+
   if (audioState.currentMusic) {
     audioState.currentMusic.pause();
     audioState.currentMusic = null;
   }
 
-  const cached = musicTracks.get(key);
   if (cached) {
-    applyMusicVolume(cached.element, key, fadeProgress);
-    cached.element.muted = audioState.muted;
-    playElement(cached.element);
-    audioState.currentMusic = cached.element;
-    return cached.element;
+    return activateTrackElement(cached.element, key, fadeProgress);
   }
 
-  const catalog = MUSIC_CATALOG[key];
-  const track = pickRandomUnsafe(catalog?.files ?? []);
-  if (!track) return undefined;
+  if (!track || !catalog) return undefined;
 
   const el = new Audio(musicBase + track);
   el.loop = true;
   musicTracks.set(key, { element: el, fadeGain: clamp01(fadeProgress) });
-  applyMusicVolume(el, key, fadeProgress);
-  el.muted = audioState.muted;
   if (catalog?.skipSeconds) {
     el.currentTime = catalog.skipSeconds;
   }
-  playElement(el);
-  audioState.currentMusic = el;
-  return el;
+  return activateTrackElement(el, key, fadeProgress);
 }
 
 function startTrack(key: string, transitionToken: number) {
@@ -265,10 +284,9 @@ function startTrack(key: string, transitionToken: number) {
 }
 
 export function playMusicImmediate(key: string) {
-  bossPreviewKey = null;
-  musicTransitionToken += 1;
-  cancelMusicTransition();
-  audioState.currentMusicKey = key;
+  // Unknown keys leave the current track and preview untouched.
+  if (!MUSIC_CATALOG[key]) return;
+  beginMusicTransition(key);
   replaceCurrentTrack(key, 1);
 }
 
@@ -294,8 +312,10 @@ function fadeOutAndStartTrack(oldTrack: HTMLAudioElement, newKey: string, transi
 }
 
 export function playMusic(key: string) {
-  // Screen-driven switches own the music; a preview only survives until the
-  // next explicit switch. previewBossMusic re-sets the key after calling.
+  // Unknown keys leave the current track and preview untouched.
+  if (!MUSIC_CATALOG[key]) return;
+  // A preview only survives until the next explicit switch, including a
+  // same-key resume. beginMusicTransition re-clears it below (no-op).
   bossPreviewKey = null;
   if (key === audioState.currentMusicKey) {
     if (audioState.currentMusic?.paused) {
@@ -304,10 +324,7 @@ export function playMusic(key: string) {
     return;
   }
 
-  const transitionToken = musicTransitionToken + 1;
-  musicTransitionToken = transitionToken;
-  cancelMusicTransition();
-  audioState.currentMusicKey = key;
+  const transitionToken = beginMusicTransition(key);
 
   if (audioState.currentMusic) {
     fadeOutAndStartTrack(audioState.currentMusic, key, transitionToken);
@@ -325,6 +342,7 @@ export function playMusic(key: string) {
  */
 export function previewBossMusic(key: string): void {
   if (bossPreviewKey === key) return;
+  if (!MUSIC_CATALOG[key]) return;
   playMusic(key);
   bossPreviewKey = key;
 }

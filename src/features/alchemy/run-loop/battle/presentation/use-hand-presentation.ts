@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, type RefObject } from "react";
 import type { BattleSnapshot } from "@/lib/battle";
-import { useBattlePresentationStore, type BattlePresentationPort } from "../battle-presentation-store";
+import { useBattlePresentationStore } from "../battle-presentation-store";
 import { getPlayableHandCardKeys, getPlayableHandCardKeysExcludingHidden } from "../playable-hand";
 
 export function useHiddenHandCardKeys() {
@@ -94,7 +94,7 @@ export function readCardAnimationInProgress() {
 }
 
 export type BattlePlaybackPresentationGate = Pick<
-  BattlePresentationPort,
+  ReturnType<typeof useBattlePresentationStore.getState>,
   "cardTransferInProgress" | "hiddenHandCardKeys"
 >;
 

@@ -1,5 +1,8 @@
 @theme {
-  /* Motion tokens: keep CSS vars in sync with TS constants in src/lib/game-constants/ui-motion.ts (MOTION_FADE_MS/PAGE_EXIT_MS) and components.css classes (screen-fade-in/out, page-enter/exit, hover-popup-panel). Single source for fade durations. */
+  /* Motion tokens: TS constants in src/lib/game-constants/ui-motion.ts own the
+     millisecond values (MOTION_FADE_MS, TOOLTIP_FADE_MS, LOADING_WORD_FADE_MS);
+     these CSS vars mirror them for stylesheets. Parity is enforced by
+     scripts/lint-architecture-smoke.mjs — update both sides together. */
   --color-background: hsl(30 10% 3%);
   --color-foreground: hsl(40 25% 88%);
   --color-card: hsl(30 8% 6%);
@@ -24,6 +27,8 @@
   --motion-fade-duration: 180ms;
   --tooltip-exit-duration: 120ms;
   --motion-fade-ease: ease-out;
+  /* Mirrors ANIMATION_DISABLED_DURATION in src/lib/animation/animation-prefs.ts (1): keep in sync. */
+  --animation-disabled-duration: 1ms;
 
   --font-sans: "Inter", sans-serif;
 
@@ -33,7 +38,6 @@
   --text-xl--line-height: calc(1.75 / 1.375);
 
   --animate-shine: shine var(--duration, 14s) linear infinite;
-  --animate-shine-text-corruption: boss-title-shine 4.8s linear infinite;
 
   --animate-shake: shake 300ms linear 228ms;
   --animate-attack-lunge: combatant-attack-lunge var(--attack-lunge-ms, 950ms) linear;

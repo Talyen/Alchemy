@@ -1,11 +1,88 @@
-import { clearBattleStageMarks } from "@/lib/performance/battle-stage-marks";
-import { isPlayerDefeated, type BattleSnapshot } from "@/lib/battle";
+import { current } from "immer";
+import { clearBattleStageMarks, markBattleStage } from "@/lib/performance/battle-stage-marks";
+import {
+  battleSnapshot,
+  isPlayerDefeated,
+  processCompanionTurnStart,
+  recoverLegacyEnemyPhase,
+  resolveBattleTurn,
+  type BattleSnapshot,
+  type ResolvedBattleTurn,
+} from "@/lib/battle";
+import type { Screen } from "@/lib/routing";
 import { stopAllSfx } from "@/lib/audio";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
-import { setBattleStartState } from "@/features/alchemy/shared/stores/run-session-write-port";
+import {
+  awardBattleDodgeXP,
+  commitBattleTransition,
+  createDraftRunRandomSource,
+  setBattleStartState,
+  setBattleState,
+  withDraftWorldBattleRng,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { clearPendingDraws } from "./draw-sequence";
 import type { BattleControllerContext } from "./battle-context";
+
+export function isVictoryGraceActive(screen: Screen, enemyHealth: number, victoryDefeatHandled: boolean): boolean {
+  return screen === "battle" && enemyHealth <= 0 && victoryDefeatHandled;
+}
+
+export function commitEndTurn(): ResolvedBattleTurn {
+  markBattleStage("resolve-start");
+  try {
+    return dispatchRunSessionCommand((draft) => {
+      const before = current(draft.battle.battleState);
+      const result = resolveBattleTurn(before, { rng: createDraftRunRandomSource(draft, "world") });
+      awardBattleDodgeXP(draft, before, result.state);
+      commitBattleTransition(draft, result.state, null);
+      return result;
+    });
+  } finally {
+    markBattleStage("resolve-end");
+  }
+}
+
+/** Older saves can contain a precomputed result. Consume it once without repeating its rolls or XP. */
+export function resumePendingBattleTransition(
+  sessionNum: number,
+  session: Pick<ReturnType<typeof createBattleSession>, "isCurrentBattleSession" | "checkBattleEnd">,
+): BattleSnapshot | null {
+  if (!session.isCurrentBattleSession(sessionNum) || !readBattle().pendingBattleTransition) return null;
+  const state = dispatchRunSessionCommand((draft) => {
+    const pending = draft.battle.pendingBattleTransition ? current(draft.battle.pendingBattleTransition) : null;
+    if (!pending) return current(draft.battle.battleState);
+    let state = "resultState" in pending ? pending.resultState : current(draft.battle.battleState);
+    if (pending.kind === "legacy-enemy-turn") {
+      state = battleSnapshot(recoverLegacyEnemyPhase(withDraftWorldBattleRng(draft, state)));
+    } else if (pending.kind === "continue-end-turn" || ("playerTurnSkipped" in pending && pending.playerTurnSkipped)) {
+      const result = resolveBattleTurn(state, { rng: createDraftRunRandomSource(draft, "world") });
+      awardBattleDodgeXP(draft, state, result.state);
+      state = result.state;
+    } else if (pending.kind === "enemy-turn" && state.enemyHealth > 0 && !isPlayerDefeated(state)) {
+      state = battleSnapshot(processCompanionTurnStart(withDraftWorldBattleRng(draft, state), []));
+    }
+    commitBattleTransition(draft, state, null);
+    return state;
+  });
+  session.checkBattleEnd(state, sessionNum);
+  return state;
+}
+
+export function createBattleDevOutcomes(ctx: BattleControllerContext, session: ReturnType<typeof createBattleSession>) {
+  function forceBattleOutcome(outcome: "victory" | "defeat", patch: (state: BattleSnapshot) => BattleSnapshot) {
+    session.resetBattleSession();
+    dispatchRunSessionCommand((draft) => setBattleState(draft, patch));
+    session.handleVictoryDefeat(outcome);
+  }
+
+  function skipCombatDevMode() {
+    if (!import.meta.env.DEV || ctx.screen !== "battle") return;
+    forceBattleOutcome("victory", (c) => ({ ...c, enemyHealth: 0, wishOptions: null, wishQueue: [] }));
+  }
+
+  return { skipCombatDevMode };
+}
 
 export function createBattleSession(ctx: BattleControllerContext) {
   const getStore = () => readBattle();

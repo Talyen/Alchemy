@@ -6,9 +6,8 @@ export {
   getImmediateDefense,
   pickHighestScoring,
 } from "./autoplay-policy";
-export { isAttackCard } from "./card-classification";
+export { damageOnlyEffects, getBattleCardPlayTarget, isAttackCard } from "./card-classification";
 export { canPlayCard, playBattleCardResolved, type CardPlayOptions } from "./card-play";
-export { getBattleCardPlayTarget } from "./card-play-target";
 export { mergeCombatText } from "./combat-text";
 export { processCompanionTurnStart } from "./companion";
 export { getBattleCompanionDamageModifiers } from "./companion-scaling";
@@ -52,4 +51,4 @@ export { chooseWishCard } from "./wish";
 
 export { createUniqueGearBattleState } from "./unique-gear-state";
 
-export { resolveBattleTurn, type BattleTurnFrame, type ResolvedBattleTurn } from "./turn-resolution";
+export { resolveBattleTurn, type BattleTurnFrame, type ResolvedBattleTurn } from "./enemy-turn";

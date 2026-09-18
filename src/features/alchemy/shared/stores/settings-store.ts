@@ -9,9 +9,13 @@ import {
   DEFAULT_MUSIC_VOLUME_PCT,
   DEFAULT_SFX_VOLUME_PCT,
 } from "@/lib/game-constants";
-import { clamp } from "@/lib/math";
 import type { StandalonePersistenceCodec } from "./persistence-codec";
-import { resolveAutoplayEnabled, SETTINGS_RANGES } from "@/lib/settings-values";
+import {
+  clampBrightnessPct,
+  clampSpecialEffectsPct,
+  clampVolumePct,
+  resolveAutoplayEnabled,
+} from "@/lib/settings-values";
 
 export interface SettingsSaveFields {
   selectedAspectRatio: AspectRatioOption;
@@ -29,8 +33,6 @@ export interface SettingsSaveFields {
 }
 
 export interface SettingsStore extends SettingsSaveFields {
-  showClearSaveConfirm: boolean;
-
   setSelectedAspectRatio: (value: AspectRatioOption) => void;
   setDisplayMode: (value: DisplayMode) => void;
   setBrightness: (value: number) => void;
@@ -43,11 +45,10 @@ export interface SettingsStore extends SettingsSaveFields {
   setAutoEndTurn: (value: boolean) => void;
   setRememberAutoplayPreference: (value: boolean) => void;
   setAutoplayEnabled: (value: boolean) => void;
-  setShowClearSaveConfirm: (value: boolean) => void;
   resetToDefaults: () => void;
 }
 
-function createDefaultSettingsSaveFields(): SettingsSaveFields {
+export function createDefaultSettingsSaveFields(): SettingsSaveFields {
   return {
     selectedAspectRatio: "auto",
     displayMode: "borderless-fullscreen",
@@ -71,38 +72,22 @@ export function preferredAutoplayEnabled(fields: {
   return resolveAutoplayEnabled(fields);
 }
 
-function withDerivedAutoplay<T extends { rememberAutoplayPreference: boolean; autoplayEnabled: boolean }>(
-  fields: T,
-): T {
-  return { ...fields, autoplayEnabled: resolveAutoplayEnabled(fields) };
-}
-
-// Live writes clamp to the same ranges the save schema enforces on load (see
-// clampedSettingSchema), so in-memory state can never hold an out-of-range
-// value that load would silently repair.
-function clampVolume(value: number): number {
-  return clamp(value, SETTINGS_RANGES.volume.min, SETTINGS_RANGES.volume.max);
-}
-
-function clampSpecialEffects(value: number): number {
-  return clamp(value, SETTINGS_RANGES.specialEffects.min, SETTINGS_RANGES.specialEffects.max);
-}
-
+// Live writes clamp through the shared settings-values helpers (the same
+// ranges the save schema enforces on load), so in-memory state can never hold
+// an out-of-range value that load would silently repair.
 export const useSettingsStore = create<SettingsStore>()((set) => ({
-  ...withDerivedAutoplay(createDefaultSettingsSaveFields()),
-  showClearSaveConfirm: false,
+  ...createDefaultSettingsSaveFields(),
 
   setSelectedAspectRatio: (selectedAspectRatio) => set({ selectedAspectRatio }),
   setDisplayMode: (displayMode) => set({ displayMode }),
-  setBrightness: (brightness) =>
-    set({ brightness: clamp(brightness, SETTINGS_RANGES.brightness.min, SETTINGS_RANGES.brightness.max) }),
+  setBrightness: (brightness) => set({ brightness: clampBrightnessPct(brightness) }),
   setBackgroundParticlesIntensity: (backgroundParticlesIntensity) =>
-    set({ backgroundParticlesIntensity: clampSpecialEffects(backgroundParticlesIntensity) }),
+    set({ backgroundParticlesIntensity: clampSpecialEffectsPct(backgroundParticlesIntensity) }),
   setBackgroundGlowIntensity: (backgroundGlowIntensity) =>
-    set({ backgroundGlowIntensity: clampSpecialEffects(backgroundGlowIntensity) }),
-  setMusicVolume: (musicVolume) => set({ musicVolume: clampVolume(musicVolume) }),
-  setSfxVolume: (sfxVolume) => set({ sfxVolume: clampVolume(sfxVolume) }),
-  setMasterVolume: (masterVolume) => set({ masterVolume: clampVolume(masterVolume) }),
+    set({ backgroundGlowIntensity: clampSpecialEffectsPct(backgroundGlowIntensity) }),
+  setMusicVolume: (musicVolume) => set({ musicVolume: clampVolumePct(musicVolume) }),
+  setSfxVolume: (sfxVolume) => set({ sfxVolume: clampVolumePct(sfxVolume) }),
+  setMasterVolume: (masterVolume) => set({ masterVolume: clampVolumePct(masterVolume) }),
   setMuteInBackground: (muteInBackground) => set({ muteInBackground }),
   setAutoEndTurn: (autoEndTurn) => set({ autoEndTurn }),
   setRememberAutoplayPreference: (rememberAutoplayPreference) =>
@@ -112,19 +97,11 @@ export const useSettingsStore = create<SettingsStore>()((set) => ({
       // (pinned by profile-settings-stores test), it does not pause it.
       autoplayEnabled: rememberAutoplayPreference ? state.autoplayEnabled : false,
     })),
-  setAutoplayEnabled: (autoplayEnabled) =>
-    set((state) =>
-      withDerivedAutoplay({
-        ...selectSettingsSaveFields(state),
-        autoplayEnabled,
-      }),
-    ),
-  setShowClearSaveConfirm: (showClearSaveConfirm) => set({ showClearSaveConfirm }),
-  resetToDefaults: () =>
-    set({ ...withDerivedAutoplay(createDefaultSettingsSaveFields()), showClearSaveConfirm: false }),
+  setAutoplayEnabled: (autoplayEnabled) => set({ autoplayEnabled }),
+  resetToDefaults: () => set({ ...createDefaultSettingsSaveFields() }),
 }));
 
-export function selectSettingsSaveFields(state: Pick<SettingsStore, keyof SettingsSaveFields>): SettingsSaveFields {
+function selectSettingsSaveFields(state: Pick<SettingsStore, keyof SettingsSaveFields>): SettingsSaveFields {
   return {
     selectedAspectRatio: state.selectedAspectRatio,
     displayMode: state.displayMode,
@@ -149,17 +126,19 @@ export const settingsPersistenceCodec: StandalonePersistenceCodec<SettingsSaveFi
   encode: () => selectSettingsSaveFields(useSettingsStore.getState()),
   hydrate: (fields) => {
     const selected = selectSettingsSaveFields(fields);
-    useSettingsStore.setState(
-      withDerivedAutoplay({
-        ...selected,
-        brightness: clamp(selected.brightness, SETTINGS_RANGES.brightness.min, SETTINGS_RANGES.brightness.max),
-        backgroundParticlesIntensity: clampSpecialEffects(selected.backgroundParticlesIntensity),
-        backgroundGlowIntensity: clampSpecialEffects(selected.backgroundGlowIntensity),
-        musicVolume: clampVolume(selected.musicVolume),
-        sfxVolume: clampVolume(selected.sfxVolume),
-        masterVolume: clampVolume(selected.masterVolume),
-      }),
-    );
+    useSettingsStore.setState({
+      ...selected,
+      brightness: clampBrightnessPct(selected.brightness),
+      backgroundParticlesIntensity: clampSpecialEffectsPct(selected.backgroundParticlesIntensity),
+      backgroundGlowIntensity: clampSpecialEffectsPct(selected.backgroundGlowIntensity),
+      musicVolume: clampVolumePct(selected.musicVolume),
+      sfxVolume: clampVolumePct(selected.sfxVolume),
+      masterVolume: clampVolumePct(selected.masterVolume),
+      // Load repair: a stored "on" with remember off hydrates to off, matching
+      // SaveDataSchema. Turning remember off at runtime clears the stored
+      // choice instead (see setRememberAutoplayPreference above).
+      autoplayEnabled: resolveAutoplayEnabled(selected),
+    });
   },
 };
 
@@ -177,7 +156,6 @@ export type SettingsActions = Pick<
   | "setAutoEndTurn"
   | "setRememberAutoplayPreference"
   | "setAutoplayEnabled"
-  | "setShowClearSaveConfirm"
   | "resetToDefaults"
 >;
 
@@ -195,7 +173,6 @@ function selectSettingsActions(state: SettingsStore): SettingsActions {
     setAutoEndTurn: state.setAutoEndTurn,
     setRememberAutoplayPreference: state.setRememberAutoplayPreference,
     setAutoplayEnabled: state.setAutoplayEnabled,
-    setShowClearSaveConfirm: state.setShowClearSaveConfirm,
     resetToDefaults: state.resetToDefaults,
   };
 }

@@ -1,5 +1,7 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { PRETTIER_GLOBS, filterPrettierPaths } from "../../scripts/prettier-paths.mjs";
+import { PRETTIER_GLOBS, PRETTIER_NEVER_FORMAT_RE, filterPrettierPaths } from "../../scripts/prettier-paths.mjs";
 
 describe("prettier-paths", () => {
   it("exports the shared format globs", () => {
@@ -41,5 +43,16 @@ describe("prettier-paths", () => {
         "src/App.tsx",
       ]),
     ).toEqual(["src/App.tsx"]);
+  });
+
+  it("keeps the staged-path skip subset in sync with .prettierignore", () => {
+    const ignore = readFileSync(join(process.cwd(), ".prettierignore"), "utf8");
+    for (const entry of ["package-lock.json", "CHANGELOG.md", "assets.generated.ts", "gear-art.ts"]) {
+      expect(ignore).toContain(entry);
+    }
+    // The regex is the staged-path subset, not a full mirror: build outputs
+    // stay in .prettierignore only.
+    expect(PRETTIER_NEVER_FORMAT_RE.test("package-lock.json")).toBe(true);
+    expect(PRETTIER_NEVER_FORMAT_RE.test("src/App.tsx")).toBe(false);
   });
 });

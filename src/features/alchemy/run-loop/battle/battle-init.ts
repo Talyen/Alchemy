@@ -1,4 +1,3 @@
-import { useBattlePresentationStore, type BattlePresentationPort } from "./battle-presentation-store";
 import {
   createBattleStartState,
   drawOpeningHand,
@@ -22,43 +21,10 @@ import { appendUnique } from "@/lib/utils";
 import { withWildwoodModifier, type WildwoodModifierId } from "@/lib/content-systems/wildwood/gauntlet";
 import { appendEncounterTraits } from "@/lib/content-systems/encounter-traits";
 import { preloadBattleSounds } from "@/lib/audio";
-import { applyCombatTextShakeFeedback } from "./battle-status";
-import { logBattleError, playCompanionSound, playCombatTextSounds } from "./controller-utils";
+import { logBattleError, playCompanionSound, presentCombatTexts } from "./controller-utils";
 import type { BattleControllerContext } from "./battle-context";
 import type { createBattleSession } from "./battle-session";
-import type { createBattleTransferDeps } from "./battle-transfer-deps";
-import { runBattleDraw } from "./draw-sequence";
 import { deriveCombatMeta } from "@/features/alchemy/shared/stores/run-session-write-port";
-
-export interface BattleOpeningDrawContext {
-  battleSessionRef: BattleControllerContext["battleSessionRef"];
-  scheduleAutoEndTurnRef: BattleControllerContext["scheduleAutoEndTurnRef"];
-  getPresentation?: () => Pick<BattlePresentationPort, "openingDrawPending" | "setOpeningDrawPending">;
-}
-
-export async function playBattleOpeningDraw(
-  ctx: BattleOpeningDrawContext,
-  transferDeps: Pick<ReturnType<typeof createBattleTransferDeps>, "getDrawSequenceDeps">,
-): Promise<boolean> {
-  const current = readBattle();
-  const presentation = ctx.getPresentation?.() ?? useBattlePresentationStore.getState();
-  if (!presentation.openingDrawPending) return false;
-  presentation.setOpeningDrawPending(false);
-  const sessionNum = ctx.battleSessionRef.current;
-
-  const completed = await runBattleDraw({
-    oldHand: [],
-    newState: current.battleState,
-    onReveal: () => {},
-    session: sessionNum,
-    deps: transferDeps.getDrawSequenceDeps(),
-    errorContext: "draw opening hand",
-  });
-  if (sessionNum === ctx.battleSessionRef.current) {
-    ctx.scheduleAutoEndTurnRef.current?.(readBattle().battleState);
-  }
-  return completed;
-}
 
 export function createBattleInit(ctx: BattleControllerContext, session: ReturnType<typeof createBattleSession>) {
   function createBattleForEnemy(
@@ -187,11 +153,7 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
       presentationStore.shakeCompanion();
       presentationStore.telegraphAttack("companion");
     }
-    if (startingTexts.length > 0) {
-      presentationStore.showCombatTexts(startingTexts);
-      applyCombatTextShakeFeedback(startingTexts, presentationStore);
-      playCombatTextSounds(startingTexts);
-    }
+    presentCombatTexts(presentationStore, startingTexts);
     if (outcome) session.handleVictoryDefeat?.(outcome);
   }
 

@@ -51,6 +51,8 @@ export function StartupLoadingScreen({ progress }: Props) {
       <p
         key={wordIndex}
         className="alchemy-loading-word -mt-3 text-[12px] font-medium tracking-[0.18em] text-muted-foreground uppercase"
+        // Inline duration wins over the .alchemy-loading-word shorthand; both
+        // mirror LOADING_WORD_FADE_MS (parity asserted in lint-architecture-smoke).
         style={{ animationDuration: `${LOADING_WORD_FADE_MS}ms` }}
       >
         {loadingWord}...

@@ -15,7 +15,7 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readActiveRun, readBattle, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import { snapshotRun, restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { resumePendingBattleTransition } from "@/features/alchemy/run-loop/battle/turn-orchestration";
+import { resumePendingBattleTransition } from "@/features/alchemy/run-loop/battle/battle-session";
 import { incomingPhysical } from "../../../../fixtures/battle";
 import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { makeBattleTurnSession } from "./turn-orchestration-fixture";

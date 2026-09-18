@@ -1,15 +1,10 @@
 import { memo } from "react";
 import { cn } from "@/lib/utils";
+import { useBattlePresentationStore } from "../battle-presentation-store";
 
 import type { CardGhost, GhostStyle } from "../../../shared/types";
 
-export const CardGhostOverlay = memo(function CardGhostOverlay({
-  ghost,
-  onDone,
-}: {
-  ghost: CardGhost;
-  onDone: () => void;
-}) {
+const CardGhostOverlay = memo(function CardGhostOverlay({ ghost, onDone }: { ghost: CardGhost; onDone: () => void }) {
   return (
     <img
       src={ghost.art}
@@ -33,3 +28,15 @@ export const CardGhostOverlay = memo(function CardGhostOverlay({
     />
   );
 });
+
+export function CardGhostLayer() {
+  const cardGhosts = useBattlePresentationStore((s) => s.cardGhosts);
+  const removeCardGhost = useBattlePresentationStore((s) => s.removeCardGhost);
+  return (
+    <>
+      {cardGhosts.map((ghost) => (
+        <CardGhostOverlay key={ghost.id} ghost={ghost} onDone={() => removeCardGhost(ghost.id)} />
+      ))}
+    </>
+  );
+}

@@ -6,8 +6,10 @@ import "./index.css";
 import { cursorArt } from "@/lib/game-data";
 import { initializeRendererCrashReporting } from "./lib/crash-reporting";
 import { initErrorLogStore } from "@/features/alchemy/shared/stores/error-log-store";
+import { initDeviceDisplayPreferences } from "@/features/alchemy/shared/stores/device-display-store";
 
 initErrorLogStore();
+initDeviceDisplayPreferences();
 initializeRendererCrashReporting();
 
 const cursorStyle = document.createElement("style");

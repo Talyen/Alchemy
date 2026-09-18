@@ -2,7 +2,7 @@ import "../../../../helpers/mock-audio";
 import { beforeEach, describe, expect, it } from "vitest";
 import { resolveBattleTurn } from "@/lib/battle";
 import { companionLibrary } from "@/lib/game-data";
-import { commitEndTurn, resumePendingBattleTransition } from "@/features/alchemy/run-loop/battle/turn-orchestration";
+import { commitEndTurn, resumePendingBattleTransition } from "@/features/alchemy/run-loop/battle/battle-session";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { initializeActiveBattle } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";

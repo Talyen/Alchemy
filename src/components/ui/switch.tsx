@@ -18,7 +18,7 @@ function Switch({ className, checked, onCheckedChange, disabled, ...props }: Swi
         aria-checked={checked}
         disabled={disabled}
         onChange={(event) => onCheckedChange(event.target.checked)}
-        className="peer absolute inset-0 h-full w-full cursor-pointer appearance-none rounded-full border-2 border-transparent transition-colors not-checked:bg-muted checked:bg-primary focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-1 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
+        className="peer absolute inset-0 h-full w-full cursor-pointer appearance-none rounded-full border-2 border-transparent transition-colors not-checked:bg-muted checked:bg-primary focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-1 focus-visible:ring-offset-background disabled:cursor-not-allowed"
         {...props}
       />
       <span

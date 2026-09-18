@@ -9,9 +9,9 @@ import {
 } from "@/lib/game-constants";
 import {
   getBossMusicKey,
-  hasVisibleWindowArea,
   initAudioHost,
   invalidateCacheForKey,
+  isAppInBackground,
   isMusicPaused,
   isNonPlayerAudioHost,
   playMusic,
@@ -39,14 +39,6 @@ interface AppAudioEffectsOptions {
   sfxVolume: number;
   muteInBackground: boolean;
   screen: Screen;
-}
-
-export function isAppInBackground(event?: Pick<Event, "type">): boolean {
-  if (document.hidden) return true;
-  if (event?.type === "blur") return true;
-  if (event?.type === "focus") return false;
-  if (!hasVisibleWindowArea()) return true;
-  return !document.hasFocus();
 }
 
 function pickMusicKey(screen: Screen): string {

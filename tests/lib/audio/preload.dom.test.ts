@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { getSoundUrl } from "@/lib/audio";
 import {
-  getSoundUrl,
   preloadSound,
   preloadSounds,
   preloadAllSounds,
@@ -8,43 +8,47 @@ import {
   resetSoundPreloadCache,
 } from "@/lib/audio/preload";
 import { audioState } from "@/lib/audio/state";
-import { createdFakeAudio, installFakeAudio, resetAudioForTests, soundedFakeAudio } from "../../helpers/fake-audio";
+import { createdFakeAudio, soundedFakeAudio } from "../../helpers/fake-audio";
+import { installCleanAudio } from "../../helpers/audio-fixture";
 
 beforeEach(() => {
-  resetAudioForTests();
+  installCleanAudio();
   audioState.sfxVolume = 0.35;
   audioState.musicVolume = 0.0875;
   audioState.masterVolume = 1;
-  installFakeAudio();
 });
 
+const originalRequestIdleCallback = typeof window !== "undefined" ? window.requestIdleCallback : undefined;
+
 afterEach(() => {
+  vi.useRealTimers();
+  if (typeof window !== "undefined") {
+    if (originalRequestIdleCallback === undefined)
+      delete (window as unknown as Record<string, unknown>).requestIdleCallback;
+    else window.requestIdleCallback = originalRequestIdleCallback;
+  }
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
 });
 
 describe("getSoundUrl", () => {
   it("serves OGG when the browser plays Vorbis", () => {
-    installFakeAudio({ canPlayTypeResult: "maybe" });
-    resetSoundPreloadCache();
+    installCleanAudio({ canPlayTypeResult: "maybe" });
     expect(getSoundUrl("sword-attack-1.ogg")).toContain("sounds/sword-attack-1.ogg");
   });
 
   it("falls back to MP3 when Vorbis is unsupported", () => {
-    installFakeAudio({ canPlayTypeResult: "" });
-    resetSoundPreloadCache();
+    installCleanAudio({ canPlayTypeResult: "" });
     expect(getSoundUrl("sword-attack-1.ogg")).toContain("sounds/sword-attack-1.mp3");
   });
 
   it("passes non-OGG names through unchanged", () => {
-    installFakeAudio({ canPlayTypeResult: "maybe" });
-    resetSoundPreloadCache();
+    installCleanAudio({ canPlayTypeResult: "maybe" });
     expect(getSoundUrl("theme.mp3")).toContain("sounds/theme.mp3");
   });
 
   it("joins a base URL without a trailing slash", () => {
-    installFakeAudio({ canPlayTypeResult: "" });
-    resetSoundPreloadCache();
+    installCleanAudio({ canPlayTypeResult: "" });
     vi.stubEnv("BASE_URL", "/app");
     expect(getSoundUrl("sword-attack-1.ogg")).toBe("/app/sounds/sword-attack-1.mp3");
   });

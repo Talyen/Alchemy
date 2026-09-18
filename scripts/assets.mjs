@@ -13,9 +13,10 @@ function printHelp() {
   --sync               Run barrel sync only (art barrels + version metadata;
                        use --art-only/--gear-only/--version-only via sync:art,
                        sync:gear-art, sync:version for finer slices)
-  --check              Verify outputs are up-to-date (alone: full check, same as
-                       npm run assets:check; with --optimize/--sync: check that
-                       stage only)
+  --check              Verify outputs are up-to-date. Alone with --prepare (the
+                       default mode) this is the full read-only check, same as
+                       npm run assets:check. With --optimize/--sync it checks
+                       only that stage (per-stage { check: true }).
   --help               Show this help
   ALCHEMY_SKIP_ASSETS=1 skips mutating commands in this CLI (--check still
   verifies and therefore errors under the skip).`);
@@ -75,7 +76,7 @@ export async function runAssetCommand(options) {
 
 if (isMainModule(import.meta.url)) {
   main().catch((error) => {
-    console.error(error);
+    console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;
   });
 }

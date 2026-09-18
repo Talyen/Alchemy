@@ -1,7 +1,7 @@
 import "../../../../helpers/mock-audio";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { battleSnapshot, endPlayerTurn } from "@/lib/battle";
-import { playTurnFrames } from "@/features/alchemy/run-loop/battle/enemy-phase";
+import { playTurnFrames } from "@/features/alchemy/run-loop/battle/end-turn-ui";
 import type { BattlePresentationPort } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { patchBattleState } from "../../../../fixtures/battle";
 import { makeDrawSequenceDeps } from "./turn-orchestration-fixture";
@@ -40,7 +40,12 @@ describe("playTurnFrames", () => {
 
     await playTurnFrames([frame], 3, deps, presentation);
 
-    expect(presentation.showCombatTexts).toHaveBeenCalledWith(frame.turn.combatTexts);
+    if (frame.turn.combatTexts.length === 0) {
+      // Unified feedback helper skips empty text batches (the store no-ops on them anyway).
+      expect(presentation.showCombatTexts).not.toHaveBeenCalled();
+    } else {
+      expect(presentation.showCombatTexts).toHaveBeenCalledWith(frame.turn.combatTexts);
+    }
     expect(presentation.setDisplayedBattle).toHaveBeenCalledWith(frame.turn.state);
     expect(presentation.telegraphAttack).not.toHaveBeenCalled();
     expect(presentation.telegraphCast).not.toHaveBeenCalled();

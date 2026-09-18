@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { commandInvocation } from "./lib/command-invocation.mjs";
+import { runStreamCommand } from "./lib/run-command.mjs";
 /**
  * On-demand FPS / hitch profiling runner.
  * Usage:
@@ -10,7 +10,6 @@ import { commandInvocation } from "./lib/command-invocation.mjs";
  *   node scripts/run-performance.mjs --compare reports/performance/a reports/performance/b
  *   node scripts/run-performance.mjs --electron --scenario collection-tabs
  */
-import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -109,12 +108,7 @@ Env (harness iteration only, not for baselines):
 function buildDist({ skipIfPresent = false } = {}) {
   if (skipIfPresent && fs.existsSync(path.join(root, "dist", "index.html"))) return;
   console.log("Building production renderer for performance profiling…");
-  const result = spawnSync(...commandInvocation("npm", ["run", "build"]), {
-    // Streams intentionally: builds and profiling runs are minutes long and
-    // operators need live progress (see run-ship-unit.mjs).
-    cwd: root,
-    stdio: "inherit",
-  });
+  const result = runStreamCommand("npm", ["run", "build"], { cwd: root });
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
@@ -239,11 +233,7 @@ function main() {
 
   if (args.electron) {
     console.log("Ensuring Electron binary…");
-    const ensure = spawnSync(...commandInvocation("npm", ["run", "ensure:electron"]), {
-      cwd: root,
-      // Streams intentionally; see buildDist above.
-      stdio: "inherit",
-    });
+    const ensure = runStreamCommand("npm", ["run", "ensure:electron"], { cwd: root });
     if (ensure.status !== 0) process.exit(ensure.status ?? 1);
   }
 
@@ -280,14 +270,10 @@ function main() {
     `Runtime: ${args.electron ? "electron" : "chromium"} | Cold: ${args.cold ? "yes" : "no"} | Trace: ${args.trace ? "yes" : "no"} | Scenario: ${args.all ? METRIC_SCENARIOS.join(",") : (scenario ?? "all")} | Runs: ${env.PERF_RUNS}`,
   );
 
-  const result = spawnSync(
-    ...commandInvocation("npx", ["playwright", "test", "--config", "playwright.performance.config.ts", ...grepArgs]),
-    {
-      cwd: root,
-      // Streams intentionally; see buildDist above.
-      stdio: "inherit",
-      env,
-    },
+  const result = runStreamCommand(
+    "npx",
+    ["playwright", "test", "--config", "playwright.performance.config.ts", ...grepArgs],
+    { cwd: root, env },
   );
 
   const summaryPath = path.join(outDir, "summary.md");

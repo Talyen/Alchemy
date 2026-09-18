@@ -79,13 +79,13 @@ Use matched [agent evaluations](./.agents/evals/README.md) for uncertain workflo
 
 ## Static, build, and CI policy
 
-| Command                           | Role                                                                                                  |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `npm run check:static`            | Generated outputs, formatting, source/test types, ESLint, import boundaries, and architecture smoke   |
-| `npm run lint:ci`                 | The canonical every-push static aggregate: `check:static`, docs, dead code, and Playwright collection |
-| `npm run build` / `build:desktop` | Pure generated-output-validating web or desktop build                                                 |
-| `npm run assets:check`            | Read-only authored-asset freshness check                                                              |
-| `npm run test:e2e:critical`       | Every-push representative player journeys                                                             |
+| Command                           | Role                                                                                                                                         |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run check:static`            | Generated outputs, formatting, source/test types, and ESLint (fast local static; no boundary subset double-run)                              |
+| `npm run lint:ci`                 | The canonical every-push static aggregate: `check:static`, docs, dead code, import boundaries, architecture smoke, and Playwright collection |
+| `npm run build` / `build:desktop` | Pure generated-output-validating web or desktop build                                                                                        |
+| `npm run assets:check`            | Read-only authored-asset freshness check                                                                                                     |
+| `npm run test:e2e:critical`       | Every-push representative player journeys                                                                                                    |
 
 Independent static checks finish even when a sibling fails, including the nested
 aggregate. The aggregate still fails if any checker fails; dependent build and

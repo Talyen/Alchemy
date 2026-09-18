@@ -17,7 +17,7 @@ describe("desktop build configuration", () => {
       cwd: new URL("../..", import.meta.url),
       encoding: "utf8",
     });
-    expect(result.status).toBe(1);
+    expect(result.status).toBe(2);
     expect(result.stderr).toContain("Conflicting build modes");
     expect(result.stdout).toBe("");
   });

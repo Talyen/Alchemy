@@ -62,19 +62,8 @@ export function findBestPlayableHandCard(
 export function findBestWishChoice(state: BattleSnapshot): BattleCard | null {
   const options = state.wishOptions;
   if (!options || options.length === 0) return null;
-  let best = options[0];
-  if (!best) return null;
-  let bestScore = getEffectiveDamageScore(best, state);
-  for (let i = 1; i < options.length; i++) {
-    const candidate = options[i];
-    if (!candidate) continue;
-    const score = getEffectiveDamageScore(candidate, state);
-    if (score > bestScore) {
-      best = candidate;
-      bestScore = score;
-    }
-  }
-  return best;
+  const pairs = options.flatMap((card, index) => (card ? [{ card, index }] : []));
+  return pickHighestScoring(pairs, (card) => getEffectiveDamageScore(card, state))?.card ?? null;
 }
 
 export function getHandCardKey(card: BattleCard, index?: number): string {

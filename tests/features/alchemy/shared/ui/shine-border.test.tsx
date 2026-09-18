@@ -34,4 +34,16 @@ describe("ShineBorder", () => {
     expect(shine.dataset.glow).toBeUndefined();
     expect(container.querySelector(".shine-border-paint")).not.toBeNull();
   });
+
+  it("hides decorative frames from assistive tech", () => {
+    const { container } = render(<ShineBorder shineColor={["#ff0000", "#00ff00"]} />);
+    expect(container.querySelector(".shine-border")?.getAttribute("aria-hidden")).toBe("true");
+  });
+
+  it("falls back to neutral shine instead of black for an empty palette", () => {
+    const { container } = render(<ShineBorder shineColor={[]} />);
+    const paint = container.querySelector<HTMLElement>(".shine-border-paint")!;
+    expect(paint.style.backgroundColor).toBe("rgb(203, 213, 225)");
+    expect(paint.style.backgroundImage).not.toContain("0, 0, 0");
+  });
 });

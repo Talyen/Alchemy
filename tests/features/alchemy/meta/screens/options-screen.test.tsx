@@ -28,9 +28,9 @@ const defaultProps = {
     masterVolume: 100,
     musicVolume: 100,
     sfxVolume: 100,
-    onMasterVolChange: vi.fn(),
-    onMusicVolChange: vi.fn(),
-    onSfxVolChange: vi.fn(),
+    onMasterVolumeChange: vi.fn(),
+    onMusicVolumeChange: vi.fn(),
+    onSfxVolumeChange: vi.fn(),
     muteInBackground: false,
     onMuteInBackgroundChange: vi.fn(),
   },
@@ -142,5 +142,14 @@ describe("OptionsScreen", () => {
     expect(devSection?.parentElement?.lastElementChild).toBe(devSection);
     expect(devSection?.textContent).toContain("Dev / QA Unlocks");
     expect(devSection?.textContent).toContain("Error Log");
+  });
+
+  it("shows display mode only when the platform supports it", () => {
+    render(<OptionsScreen {...defaultProps} />);
+    expect(screen.queryByText("Display Mode")).toBeNull();
+    cleanup();
+
+    render(<OptionsScreen {...defaultProps} display={{ ...defaultProps.display, showDisplayMode: true }} />);
+    expect(screen.getByText("Display Mode")).toBeTruthy();
   });
 });

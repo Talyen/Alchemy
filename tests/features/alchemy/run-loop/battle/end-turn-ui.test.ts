@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createBattleEndTurnUi } from "@/features/alchemy/run-loop/battle/end-turn-ui";
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import type { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
-import type { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/battle-transfer-deps";
+import type { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/draw-sequence";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { initializeActiveBattle } from "@/features/alchemy/shared/stores/run-session-write-port";

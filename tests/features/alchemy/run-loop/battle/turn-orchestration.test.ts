@@ -5,7 +5,7 @@ import { createRunRngState } from "@/lib/rng";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { initializeActiveBattle } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
-import { commitEndTurn, resumePendingBattleTransition } from "@/features/alchemy/run-loop/battle/turn-orchestration";
+import { commitEndTurn, resumePendingBattleTransition } from "@/features/alchemy/run-loop/battle/battle-session";
 import { makeTestBattleState } from "../../../../fixtures/battle";
 import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { makeBattleTurnSession } from "./turn-orchestration-fixture";

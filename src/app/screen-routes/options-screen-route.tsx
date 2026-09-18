@@ -4,6 +4,7 @@ import { useShallow } from "zustand/react/shallow";
 import { isDesktop } from "@/lib/platform";
 import { OptionsScreen } from "@/features/alchemy/meta/screens";
 import { useSettingsActions, useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
+import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import type { OptionsRouteCtx } from "./route-ctx";
 
 type OptionsScreenRouteProps = OptionsRouteCtx;
@@ -24,10 +25,11 @@ function OptionsScreenRoute({ onClearSaveData, onUnlockAllDevMode, onBack, onOpe
       muteInBackground: s.muteInBackground,
       autoEndTurn: s.autoEndTurn,
       rememberAutoplayPreference: s.rememberAutoplayPreference,
-      showClearSaveConfirm: s.showClearSaveConfirm,
     })),
   );
   const actions = useSettingsActions();
+  const showClearSaveConfirm = useUiStore((s) => s.showClearSaveConfirm);
+  const setShowClearSaveConfirm = useUiStore((s) => s.setShowClearSaveConfirm);
   const gameSizePercent = useDeviceDisplayStore((s) => s.gameSizePercent);
   const tooltipSizePercent = useDeviceDisplayStore((s) => s.tooltipSizePercent);
   const setGameSizePercent = useDeviceDisplayStore((s) => s.setGameSizePercent);
@@ -45,6 +47,8 @@ function OptionsScreenRoute({ onClearSaveData, onUnlockAllDevMode, onBack, onOpe
         onAspectRatioChange: actions.setSelectedAspectRatio,
         displayMode: settings.displayMode,
         onDisplayModeChange: actions.setDisplayMode,
+        // Desktop-only control: displayMode still persists on web (harmless —
+        // it applies if the save ever loads on desktop) but has no editor here.
         showDisplayMode: isDesktop(),
         brightness: settings.brightness,
         onBrightnessChange: actions.setBrightness,
@@ -63,9 +67,9 @@ function OptionsScreenRoute({ onClearSaveData, onUnlockAllDevMode, onBack, onOpe
         masterVolume: settings.masterVolume,
         musicVolume: settings.musicVolume,
         sfxVolume: settings.sfxVolume,
-        onMasterVolChange: actions.setMasterVolume,
-        onMusicVolChange: actions.setMusicVolume,
-        onSfxVolChange: actions.setSfxVolume,
+        onMasterVolumeChange: actions.setMasterVolume,
+        onMusicVolumeChange: actions.setMusicVolume,
+        onSfxVolumeChange: actions.setSfxVolume,
         muteInBackground: settings.muteInBackground,
         onMuteInBackgroundChange: actions.setMuteInBackground,
       }}
@@ -76,11 +80,14 @@ function OptionsScreenRoute({ onClearSaveData, onUnlockAllDevMode, onBack, onOpe
         onRememberAutoplayPreferenceChange: actions.setRememberAutoplayPreference,
       }}
       saveData={{
-        showClearSaveConfirm: settings.showClearSaveConfirm,
-        onOpenClearSaveConfirm: () => actions.setShowClearSaveConfirm(true),
-        onCloseClearSaveConfirm: () => actions.setShowClearSaveConfirm(false),
+        showClearSaveConfirm,
+        onOpenClearSaveConfirm: () => setShowClearSaveConfirm(true),
+        onCloseClearSaveConfirm: () => setShowClearSaveConfirm(false),
         onConfirmClearSave: onClearSaveData,
         onResetOptions: () => {
+          // Reset Options restores every tunable (settings + device sizes).
+          // Clear Save Data is the separate wipe path and intentionally leaves
+          // device sizes alone (see clearAllPersistentGameData).
           actions.resetToDefaults();
           resetSizes();
         },

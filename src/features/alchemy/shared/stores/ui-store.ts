@@ -24,6 +24,8 @@ interface UiStore {
   setEnemyInspectionOpen: (open: boolean) => void;
   cardInspection: CardInspectionView | null;
   setCardInspection: (view: CardInspectionView | null) => void;
+  showClearSaveConfirm: boolean;
+  setShowClearSaveConfirm: (open: boolean) => void;
   hoveredCardId: string | null;
   autoplayPreviewCardId: string | null;
   shimmerState: ShimmerState;
@@ -46,6 +48,8 @@ export const useUiStore = create<UiStore>()((set, get) => ({
   cardInspection: null,
   setCardInspection: (cardInspection) =>
     set({ cardInspection, ...(cardInspection ? { enemyInspectionOpen: false } : {}) }),
+  showClearSaveConfirm: false,
+  setShowClearSaveConfirm: (showClearSaveConfirm) => set({ showClearSaveConfirm }),
   hoveredCardId: null,
   autoplayPreviewCardId: null,
   shimmerState: null,

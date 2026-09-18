@@ -1,7 +1,8 @@
 import { keywordDefinitions, type BestiaryEntry } from "@/features/alchemy/shared/config/game-data-catalog";
 
 import { getPlasmaKeywordsForEnemy } from "./plasma-palettes";
-import { buildSmoothShineGradient, SHINE_PALETTES } from "./shine-palettes";
+import { SHINE_PALETTES } from "./shine-palettes";
+import { buildSmoothShineGradient } from "@/lib/animation/shine-gradient";
 
 export function getBossShineColors(boss: BestiaryEntry): readonly string[] {
   const matchedIds = getPlasmaKeywordsForEnemy(boss);

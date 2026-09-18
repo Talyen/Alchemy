@@ -1,5 +1,5 @@
 /**
- * Run measurable audit probes (knip, madge, complexity, amplification, content).
+ * Run measurable audit probes (knip, depcruise, complexity, amplification, content).
  * as a periodic sweep. Agent audit guides: Docs/Audits/README.md.
  * Run: node scripts/audit-all.mjs
  *

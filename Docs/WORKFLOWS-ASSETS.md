@@ -103,6 +103,11 @@ and then referenced by `src/lib/audio/sound-registry.ts` or the owning audio mod
   mid-run failure never publishes a manifest missing its fallbacks. Failed OGG
   processing skips fallbacks; manifest publication and retry follow the shared
   [pipeline rules](#pipeline-overview).
+- MP3 fallbacks stay committed alongside their OGG source on purpose: Safari
+  requests the `*.mp3` URL at runtime and offline/desktop packaging serves
+  committed `public/sounds/` bytes, so generating them only at build time
+  would break the committed-output validation contract. Revisit only with a
+  packaging change that guarantees the fallback bytes ship.
 
 Run `npm run assets:optimize:sounds` for sound-only iteration or the complete
 preparation command before handoff.

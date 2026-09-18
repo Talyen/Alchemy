@@ -7,13 +7,10 @@ import {
 } from "./sound-registry";
 import { scheduleIdle } from "../preload";
 import { getSoundUrl, resetSoundUrlCache } from "./url";
+import { releaseAudioElement } from "./element";
 
-export { getSoundUrl } from "./url";
-
-const SOUND_PRELOAD_CONFIG = {
-  IDLE_CALLBACK_TIMEOUT_MS: 5000,
-  STALLED_PRELOAD_TIMEOUT_MS: 30_000,
-} as const;
+const IDLE_PRELOAD_TIMEOUT_MS = 5000;
+const STALLED_PRELOAD_TIMEOUT_MS = 30_000;
 
 const htmlPreloadStarted = new Set<string>();
 const htmlPreloadTimers = new Map<HTMLAudioElement, ReturnType<typeof setTimeout>>();
@@ -29,16 +26,11 @@ function clearStallTimer(el: HTMLAudioElement): void {
 
 function abortPreloadElement(el: HTMLAudioElement) {
   clearStallTimer(el);
-  try {
-    el.oncanplaythrough = null;
-    el.onerror = null;
-    el.pause();
-    el.removeAttribute("src");
-  } catch {}
-}
-
-function dropFailedPreloadElement(el: HTMLAudioElement) {
-  abortPreloadElement(el);
+  el.oncanplaythrough = null;
+  el.onerror = null;
+  // Shared with `stopAllSfx`: releasing the source plus load() frees the
+  // element for collection instead of leaving a stalled fetch attached.
+  releaseAudioElement(el);
 }
 
 export function resetSoundPreloadCache() {
@@ -64,13 +56,13 @@ export function preloadSounds(names: readonly string[] | string[]) {
     htmlPreloadStarted.add(name);
     const el = new Audio();
     el.preload = "auto";
-    const stallTimer = setTimeout(() => dropFailedPreloadElement(el), SOUND_PRELOAD_CONFIG.STALLED_PRELOAD_TIMEOUT_MS);
+    const stallTimer = setTimeout(() => abortPreloadElement(el), STALLED_PRELOAD_TIMEOUT_MS);
     htmlPreloadTimers.set(el, stallTimer);
     el.oncanplaythrough = () => {
       clearStallTimer(el);
     };
     el.onerror = () => {
-      dropFailedPreloadElement(el);
+      abortPreloadElement(el);
     };
     el.src = getSoundUrl(name);
   }
@@ -108,5 +100,5 @@ export function preloadAllSounds() {
   // schedule (which awaited synchronous work and throttled nothing).
   scheduleIdle(() => {
     preloadSounds(pendingNames);
-  }, SOUND_PRELOAD_CONFIG.IDLE_CALLBACK_TIMEOUT_MS);
+  }, IDLE_PRELOAD_TIMEOUT_MS);
 }

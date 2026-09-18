@@ -63,23 +63,33 @@ describe("Button", () => {
     expect(onClick).not.toHaveBeenCalled();
   });
 
-  it.each([undefined, "button", "submit", "reset"] as const)(
-    "preserves native form behavior for type %s",
-    async (type) => {
-      const onSubmit = vi.fn((event: FormEvent<HTMLFormElement>) => event.preventDefault());
-      const onReset = vi.fn();
-      render(
-        <form onSubmit={onSubmit} onReset={onReset}>
-          <Button type={type}>Action</Button>
-        </form>,
-      );
-      const button = screen.getByRole("button", { name: "Action" });
-      expect(button.getAttribute("type")).toBe(type ?? null);
-      await userEvent.click(button);
-      expect(onSubmit).toHaveBeenCalledTimes(type === undefined || type === "submit" ? 1 : 0);
-      expect(onReset).toHaveBeenCalledTimes(type === "reset" ? 1 : 0);
-    },
-  );
+  it("defaults to type button to avoid accidental form submits", async () => {
+    const onSubmit = vi.fn((event: FormEvent<HTMLFormElement>) => event.preventDefault());
+    render(
+      <form onSubmit={onSubmit}>
+        <Button>Action</Button>
+      </form>,
+    );
+    const button = screen.getByRole("button", { name: "Action" });
+    expect(button.getAttribute("type")).toBe("button");
+    await userEvent.click(button);
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it.each(["submit", "reset"] as const)("preserves explicit native form behavior for type %s", async (type) => {
+    const onSubmit = vi.fn((event: FormEvent<HTMLFormElement>) => event.preventDefault());
+    const onReset = vi.fn();
+    render(
+      <form onSubmit={onSubmit} onReset={onReset}>
+        <Button type={type}>Action</Button>
+      </form>,
+    );
+    const button = screen.getByRole("button", { name: "Action" });
+    expect(button.getAttribute("type")).toBe(type);
+    await userEvent.click(button);
+    expect(onSubmit).toHaveBeenCalledTimes(type === "submit" ? 1 : 0);
+    expect(onReset).toHaveBeenCalledTimes(type === "reset" ? 1 : 0);
+  });
 
   it("applies caller overrides to the button independently of its wrapper", () => {
     render(

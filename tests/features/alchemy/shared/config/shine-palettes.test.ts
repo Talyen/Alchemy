@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  buildSmoothShineGradient,
   getCardKeywordShineColors,
   getCharacterShineColors,
   getShineColorsForKeywords,
@@ -10,6 +9,7 @@ import {
   SHINE_PALETTES,
   WILDCARD_KEYWORD_SHINE_COLORS,
 } from "@/features/alchemy/shared/config";
+import { buildSmoothShineGradient } from "@/lib/animation/shine-gradient";
 import { cardLibrary, characters, keywordDefinitions } from "@/lib/game-data";
 import { getKeywordTextShineColors } from "@/lib/keyword-text-shine";
 import { makeTestCard } from "../../../../fixtures/cards";

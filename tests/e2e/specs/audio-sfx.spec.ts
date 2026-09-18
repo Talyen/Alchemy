@@ -1,33 +1,12 @@
 import { expect, test } from "../../fixtures/e2e";
 import { MenuPage } from "../../pages/menu-page";
+import { activeMusic, readSfxPlays, resetSfxPlays, trackActiveMusic, trackSfxPlays } from "../../pages/audio-harness";
 import { critical } from "../../playwright-tags";
 import { FADE_OUT_DURATION_MS, MUSIC_FADE_TICK_MS, NAVIGATION_DELAY_MS, MOTION_FADE_MS } from "@/lib/game-constants";
 
 test.describe("SFX playback", critical, () => {
   test("menu interaction starts at least one SFX", async ({ page }) => {
-    await page.addInitScript(() => {
-      const headlessUserAgent = navigator.userAgent;
-      Object.defineProperty(navigator, "webdriver", { configurable: true, get: () => false });
-      Object.defineProperty(navigator, "userAgent", {
-        configurable: true,
-        get: () => headlessUserAgent.replace("HeadlessChrome", "Chrome"),
-      });
-      const runtime = window as Window & { __alchemySfxPlays?: number };
-      runtime.__alchemySfxPlays = 0;
-      const NativeAudio = window.Audio;
-      window.Audio = class extends NativeAudio {
-        constructor(src?: string) {
-          super(src);
-          const origPlay = this.play.bind(this);
-          this.play = () => {
-            if (this.src.includes("/sounds/")) {
-              runtime.__alchemySfxPlays = (runtime.__alchemySfxPlays ?? 0) + 1;
-            }
-            return origPlay();
-          };
-        }
-      };
-    });
+    await trackSfxPlays(page);
 
     const errorCue = await page.request.get("/sounds/denied-03.ogg");
     const errorCueMp3 = await page.request.get("/sounds/denied-03.mp3");
@@ -35,56 +14,18 @@ test.describe("SFX playback", critical, () => {
 
     const menu = new MenuPage(page);
     await menu.goToCharacterSelect();
-    await page.evaluate(() => {
-      (window as Window & { __alchemySfxPlays?: number }).__alchemySfxPlays = 0;
-    });
+    await resetSfxPlays(page);
     await page.getByRole("button", { name: "Wizard (Locked)" }).click({ force: true });
 
-    const plays = await page.evaluate(() => (window as Window & { __alchemySfxPlays?: number }).__alchemySfxPlays ?? 0);
-    expect(plays).toBeGreaterThan(0);
+    expect(await readSfxPlays(page)).toBeGreaterThan(0);
   });
 });
 
 test("Bestiary boss music follows portrait activation and browsing", critical, async ({ page }) => {
   test.setTimeout(60_000);
 
-  await page.addInitScript(() => {
-    const userAgent = navigator.userAgent;
-    Object.defineProperty(navigator, "webdriver", { configurable: true, get: () => false });
-    Object.defineProperty(navigator, "userAgent", {
-      configurable: true,
-      get: () => userAgent.replace("HeadlessChrome", "Chrome"),
-    });
-    const runtime = window as Window & {
-      __alchemyActiveMusic?: Set<HTMLAudioElement>;
-      __alchemyMusic?: HTMLAudioElement[];
-    };
-    runtime.__alchemyMusic = [];
-    runtime.__alchemyActiveMusic = new Set();
-    const NativeAudio = window.Audio;
-    window.Audio = class extends NativeAudio {
-      constructor(src?: string) {
-        super(src);
-        if (!src?.includes("/Music/")) return;
-        runtime.__alchemyMusic?.push(this);
-        const nativePause = this.pause.bind(this);
-        this.play = () => {
-          runtime.__alchemyActiveMusic?.add(this);
-          return Promise.resolve();
-        };
-        this.pause = () => {
-          runtime.__alchemyActiveMusic?.delete(this);
-          nativePause();
-        };
-      }
-    };
-  });
-  const activeMusic = () =>
-    page.evaluate(() =>
-      [...((window as Window & { __alchemyActiveMusic?: Set<HTMLAudioElement> }).__alchemyActiveMusic ?? [])].map(
-        (audio) => decodeURIComponent(audio.src),
-      ),
-    );
+  await trackActiveMusic(page);
+  const nowPlaying = () => activeMusic(page);
   const menu = new MenuPage(page);
   await menu.gotoCollection({ encounteredEnemyIds: ["forge-golem"] });
   await page.getByRole("button", { name: "Bestiary", exact: true }).click();
@@ -103,26 +44,26 @@ test("Bestiary boss music follows portrait activation and browsing", critical, a
   await expect(boss).toBeVisible();
   await boss.focus();
   await page.keyboard.press("Enter");
-  await expect.poll(activeMusic).toEqual([expect.stringContaining("The Forge Golem.mp3")]);
+  await expect.poll(nowPlaying).toEqual([expect.stringContaining("The Forge Golem.mp3")]);
   await page.keyboard.press("Escape");
   await expect(page.getByTestId("enemy-inspection-overlay")).toBeHidden();
   await page.getByRole("button", { name: "Previous page" }).click();
-  await expect.poll(activeMusic).toEqual([expect.stringMatching(/Menu \d\.mp3/)]);
+  await expect.poll(nowPlaying).toEqual([expect.stringMatching(/Menu \d\.mp3/)]);
   await page.getByRole("button", { name: "Next page" }).click();
   await boss.click();
-  await expect.poll(activeMusic).toEqual([expect.stringContaining("The Forge Golem.mp3")]);
+  await expect.poll(nowPlaying).toEqual([expect.stringContaining("The Forge Golem.mp3")]);
   await page.keyboard.press("Escape");
   await expect(page.getByTestId("enemy-inspection-overlay")).toBeHidden();
   await page.getByRole("button", { name: "Cards", exact: true }).click();
-  await expect.poll(activeMusic).toEqual([expect.stringMatching(/Menu \d\.mp3/)]);
+  await expect.poll(nowPlaying).toEqual([expect.stringMatching(/Menu \d\.mp3/)]);
   await page.getByRole("button", { name: "Bestiary", exact: true }).click();
   await boss.click();
-  await expect.poll(activeMusic).toEqual([expect.stringContaining("The Forge Golem.mp3")]);
+  await expect.poll(nowPlaying).toEqual([expect.stringContaining("The Forge Golem.mp3")]);
   await page.keyboard.press("Escape");
   await expect(page.getByTestId("enemy-inspection-overlay")).toBeHidden();
   await page.keyboard.press("Escape");
   await menu.expectMainMenu();
-  await expect.poll(activeMusic).toEqual([expect.stringMatching(/Menu \d\.mp3/)]);
+  await expect.poll(nowPlaying).toEqual([expect.stringMatching(/Menu \d\.mp3/)]);
   await page.getByRole("button", { name: "Collection", exact: true }).click();
   await expect(boss).toBeVisible();
   await boss.focus();
@@ -138,5 +79,5 @@ test("Bestiary boss music follows portrait activation and browsing", critical, a
   await page.clock.runFor(MOTION_FADE_MS + FADE_OUT_DURATION_MS + MUSIC_FADE_TICK_MS);
   await page.clock.resume();
   await menu.expectMainMenu();
-  await expect.poll(activeMusic).toEqual([expect.stringMatching(/Menu \d\.mp3/)]);
+  await expect.poll(nowPlaying).toEqual([expect.stringMatching(/Menu \d\.mp3/)]);
 });

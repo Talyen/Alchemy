@@ -15,6 +15,7 @@ import {
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { runGit } from "./lib/repository-paths.mjs";
 import { runCommand } from "./lib/run-command.mjs";
+import { INLINE_ARGS_BYTES } from "./lib/selection-budgets.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -65,10 +66,13 @@ function classify(paths) {
 }
 
 function defaultRunner(label, command, args, env) {
+  // Sanitize labels for log filenames: labels differ only by spaces today, but
+  // slashes or other separators would collide or escape the check/ directory.
+  const slug = label.replaceAll(/[^a-z0-9-_]+/giu, "-");
   return runCommand(command, args, {
     cwd: ROOT,
     env,
-    logPath: path.join(ROOT, "reports/runs", env.ALCHEMY_RUN_ID, "check", `${label.replaceAll(" ", "-")}.log`),
+    logPath: path.join(ROOT, "reports/runs", env.ALCHEMY_RUN_ID, "check", `${slug}.log`),
   });
 }
 
@@ -86,9 +90,9 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
   const before = digestFn();
   let verifyArgs = [...paths];
   // Byte budget for inline CLI args before spilling the selection to paths.json.
-  // Distinct from the related-test arg limit in change-routes.mjs.
-  const PATHS_INLINE_BYTES = 8_000;
-  if (Buffer.byteLength(JSON.stringify(paths)) > PATHS_INLINE_BYTES) {
+  // Distinct from the related-test arg limit in change-routes.mjs (see
+  // lib/selection-budgets.mjs: same value, different meaning).
+  if (Buffer.byteLength(JSON.stringify(paths)) > INLINE_ARGS_BYTES) {
     const selectionFile = path.join(ROOT, "reports/runs", runId, "paths.json");
     fs.mkdirSync(path.dirname(selectionFile), { recursive: true });
     fs.writeFileSync(selectionFile, JSON.stringify(paths));

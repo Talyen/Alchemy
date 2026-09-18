@@ -14,6 +14,22 @@ export const SETTINGS_RANGES = {
   specialEffects: { min: 0, max: 100 },
 } as const;
 
+// Single owner for in-memory clamping: the settings store setters and hydrate
+// both funnel through these, so a range change never needs a second edit.
+// Load-time repair stays with SaveDataSchema (clampedSettingSchema), which is
+// the boundary layer for untrusted payloads.
+export function clampBrightnessPct(value: number): number {
+  return clamp(value, SETTINGS_RANGES.brightness.min, SETTINGS_RANGES.brightness.max);
+}
+
+export function clampVolumePct(value: number): number {
+  return clamp(value, SETTINGS_RANGES.volume.min, SETTINGS_RANGES.volume.max);
+}
+
+export function clampSpecialEffectsPct(value: number): number {
+  return clamp(value, SETTINGS_RANGES.specialEffects.min, SETTINGS_RANGES.specialEffects.max);
+}
+
 export function resolveAutoplayEnabled(fields: {
   rememberAutoplayPreference: boolean;
   autoplayEnabled: boolean;

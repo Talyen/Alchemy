@@ -7,6 +7,7 @@ import {
 import { defaultSaveData } from "@/features/alchemy/shared/storage";
 import { SaveDataSchema } from "@/lib/validation";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
+import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { mutateGearForTest, resetRunDomainStore } from "../../../../helpers/run-domain-store-test";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
@@ -25,6 +26,7 @@ import { createEmptyGearInventories, generateUniqueGearInstance, getUniqueItemDe
 
 beforeEach(() => {
   useSettingsStore.setState(useSettingsStore.getInitialState(), true);
+  useUiStore.getState().setShowClearSaveConfirm(false);
   resetRunDomainStore();
 });
 
@@ -55,7 +57,7 @@ describe("persistence coordinator", () => {
       materialInventory: { wood: 4, iron: 3, herbs: 2, food: 1, gems: 0, stone: 0, hide: 0 },
     });
 
-    useSettingsStore.getState().setShowClearSaveConfirm(true);
+    useUiStore.getState().setShowClearSaveConfirm(true);
     dispatchRunSessionCommand((draft) => handleCollectionTabChange(draft, "bestiary"));
 
     const encoded = encodePersistenceFields();
@@ -102,7 +104,7 @@ describe("persistence coordinator", () => {
     const listener = vi.fn();
     const unsubscribe = subscribeAlchemyPersistence(listener);
 
-    useSettingsStore.getState().setShowClearSaveConfirm(true);
+    useUiStore.getState().setShowClearSaveConfirm(true);
     dispatchRunSessionCommand((draft) => handleCollectionTabChange(draft, "bestiary"));
     dispatchRunSessionCommand((draft) => setScreen(draft, "collection"));
     dispatchRunSessionCommand((draft) => setSelectedLabyrinthNodeId(draft, "node-1"));

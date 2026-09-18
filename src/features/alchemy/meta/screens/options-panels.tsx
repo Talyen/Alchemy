@@ -36,9 +36,9 @@ export interface AudioOptionsProps {
   masterVolume: number;
   musicVolume: number;
   sfxVolume: number;
-  onMasterVolChange: (value: number) => void;
-  onMusicVolChange: (value: number) => void;
-  onSfxVolChange: (value: number) => void;
+  onMasterVolumeChange: (value: number) => void;
+  onMusicVolumeChange: (value: number) => void;
+  onSfxVolumeChange: (value: number) => void;
   muteInBackground: boolean;
   onMuteInBackgroundChange: (checked: boolean) => void;
 }
@@ -59,7 +59,6 @@ export interface SaveDataOptionsProps {
 }
 
 export interface DevOptionsProps {
-  onClearSave?: () => void;
   onUnlockAll: () => void;
   onOpenErrorLog?: () => void;
 }
@@ -127,9 +126,27 @@ export function InterfaceOptionsPanel({ interfaceOptions }: { interfaceOptions: 
 export function AudioOptionsPanel({ audio }: { audio: AudioOptionsProps }) {
   return (
     <div className="space-y-4">
-      <SettingsSlider label="Master Volume" value={audio.masterVolume} onChange={audio.onMasterVolChange} />
-      <SettingsSlider label="Music Volume" value={audio.musicVolume} onChange={audio.onMusicVolChange} />
-      <SettingsSlider label="Sound Effects Volume" value={audio.sfxVolume} onChange={audio.onSfxVolChange} />
+      <SettingsSlider
+        label="Master Volume"
+        value={audio.masterVolume}
+        onChange={audio.onMasterVolumeChange}
+        min={SETTINGS_RANGES.volume.min}
+        max={SETTINGS_RANGES.volume.max}
+      />
+      <SettingsSlider
+        label="Music Volume"
+        value={audio.musicVolume}
+        onChange={audio.onMusicVolumeChange}
+        min={SETTINGS_RANGES.volume.min}
+        max={SETTINGS_RANGES.volume.max}
+      />
+      <SettingsSlider
+        label="Sound Effects Volume"
+        value={audio.sfxVolume}
+        onChange={audio.onSfxVolumeChange}
+        min={SETTINGS_RANGES.volume.min}
+        max={SETTINGS_RANGES.volume.max}
+      />
       <SettingsToggle
         label="Mute in Background"
         checked={audio.muteInBackground}

@@ -218,6 +218,9 @@
     will-change: transform, opacity;
   }
 
+  /* Talent entrance composes over the prop-driven 8s shine loop (see
+     talent-tree.tsx duration={8}): this adds the allocatable settle without
+     changing the loop both must share. */
   .talent-card-available > .shine-border {
     animation:
       shine 8s linear infinite,
@@ -338,7 +341,7 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: var(--animate-shine-text-corruption);
+  animation: var(--animate-boss-title-shine);
 }
 
 /* Absolute children use the padding box. Pull shine out onto the same

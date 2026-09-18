@@ -110,7 +110,7 @@ describe("settings store", () => {
     const settings = useSettingsStore.getState();
     expect(settings.selectedAspectRatio).toBe(defaultSaveData.selectedAspectRatio);
     expect(settings.displayMode).toBe(defaultSaveData.displayMode);
-    expect(settings.showClearSaveConfirm).toBe(false);
+    expect(settings).not.toHaveProperty("showClearSaveConfirm");
   });
 
   it("hydrates only settings fields from save data", () => {
@@ -140,12 +140,10 @@ describe("settings store", () => {
     const settings = useSettingsStore.getState();
     settings.setBrightness(120);
     settings.setMasterVolume(75);
-    settings.setShowClearSaveConfirm(true);
     settings.resetToDefaults();
 
     expect(useSettingsStore.getState().brightness).toBe(defaultSaveData.brightness);
     expect(useSettingsStore.getState().masterVolume).toBe(defaultSaveData.masterVolume);
-    expect(useSettingsStore.getState().showClearSaveConfirm).toBe(false);
     expect(readProfileStore().discoveredCardIds).toEqual(["card-a"]);
   });
 

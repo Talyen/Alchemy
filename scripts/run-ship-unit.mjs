@@ -7,8 +7,8 @@
 // Keep this list in sync with the suites that must pass before shipping a
 // save-affecting change: storage/persistence, autosave, validation, the
 // architecture invariants, and the bespoke scripts.
-import { commandInvocation } from "./lib/command-invocation.mjs";
-import { spawnSync } from "node:child_process";
+import { runStreamCommand } from "./lib/run-command.mjs";
+import { VITEST_MAX_WORKERS } from "./lib/test-concurrency.mjs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateRouteCatalog } from "./lib/change-routes.mjs";
@@ -37,9 +37,5 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
-const result = spawnSync(...commandInvocation("npx", ["vitest", "run", "--maxWorkers=4", ...SUITES]), {
-  // Streams intentionally: ship suites run for minutes and operators need live
-  // progress. runCommand's bounded capture is for gates that digest output.
-  stdio: "inherit",
-});
+const result = runStreamCommand("npx", ["vitest", "run", `--maxWorkers=${VITEST_MAX_WORKERS}`, ...SUITES]);
 process.exit(result.status ?? 1);

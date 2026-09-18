@@ -46,6 +46,15 @@ describe("deleted module guard", () => {
       "src/features/alchemy/shared/stores/run-session-lifecycle-port.ts",
       "src/features/alchemy/shared/stores/gear-store-initial-state.ts",
       "src/features/alchemy/shared/stores/run-meta-rebind.ts",
+      "src/features/alchemy/run-loop/battle/battle-status.ts",
+      "src/features/alchemy/run-loop/battle/turn-orchestration.ts",
+      "src/features/alchemy/run-loop/battle/use-battle-playback-blocked.ts",
+      "src/features/alchemy/run-loop/battle/presentation/presentation-layers.tsx",
+      "src/features/alchemy/run-loop/battle/battle-transfer-deps.ts",
+      "src/features/alchemy/run-loop/battle/enemy-phase.ts",
+      "src/lib/battle/card-play-target.ts",
+      "src/lib/battle/damage-effect-selection.ts",
+      "src/lib/battle/turn-resolution.ts",
     ];
     for (const path of deleted) {
       expect(existsSync(join(repoRoot, path)), path).toBe(false);

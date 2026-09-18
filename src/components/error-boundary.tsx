@@ -1,5 +1,4 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
-import { Button } from "@/components/ui/button";
 import { logError } from "@/lib/error-logger";
 
 interface FallbackProps {
@@ -39,6 +38,15 @@ export class ErrorBoundary extends Component<Props, State> {
     this.props.onError?.(error, info);
   }
 
+  override componentDidUpdate(prevProps: Props) {
+    // A stuck error screen must not survive navigation: the same boundary
+    // instance is reused across screens (label={screen}), so a screen change
+    // clears the latch and lets the new screen render.
+    if (this.state.hasError && prevProps.label !== this.props.label) {
+      this.handleReset();
+    }
+  }
+
   private handleReset = () => {
     this.setState({ hasError: false, error: undefined });
   };
@@ -58,16 +66,19 @@ export class ErrorBoundary extends Component<Props, State> {
             <p className="mb-6 text-balance text-muted-foreground">
               An unexpected error occurred. Please reload the page.
             </p>
-            <Button
+            {/* Intentionally a native button: the default fallback must render
+                even when the shared Button primitive (or its imports) is the
+                thrower. Keep styling close to Button size="lg". */}
+            <button
               type="button"
-              size="lg"
               onClick={() => {
                 this.handleReset();
                 window.location.reload();
               }}
+              className="inline-flex h-16 items-center justify-center gap-2 rounded-xl bg-primary px-7 text-xl font-semibold whitespace-nowrap text-primary-foreground disabled:pointer-events-none disabled:opacity-50"
             >
               Reload
-            </Button>
+            </button>
           </div>
         </div>
       );

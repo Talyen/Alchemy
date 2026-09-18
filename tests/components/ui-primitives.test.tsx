@@ -70,6 +70,19 @@ describe("Progress", () => {
     expect(progressbar?.getAttribute("aria-valuemin")).toBe("0");
     expect(progressbar?.getAttribute("aria-valuemax")).toBe("100");
   });
+
+  it("passes an accessible name through to the progressbar", () => {
+    render(<Progress value={40} aria-label="Health" />);
+    expect(screen.getByRole("progressbar", { name: "Health" })).toBeDefined();
+  });
+
+  it("never lets fillStyle override the value-driven width", () => {
+    // A JS caller bypassing types could still pass width; value must win.
+    const sneakyFill = { backgroundColor: "red", width: "99%" };
+    const { container } = render(<Progress value={30} fillStyle={sneakyFill as never} />);
+    expect(getFill(container).style.width).toBe("30%");
+    expect(getFill(container).style.backgroundColor).toBe("red");
+  });
 });
 
 class IntersectionObserverStub {
@@ -94,5 +107,40 @@ describe("TextAnimate", () => {
     expect(paragraph.textContent).toContain("Enter");
     expect(paragraph.textContent).toContain("the");
     expect(paragraph.textContent).toContain("labyrinth");
+  });
+
+  it("announces text once with word spans hidden from assistive tech", () => {
+    const { container } = render(<TextAnimate>Enter the labyrinth</TextAnimate>);
+    const paragraph = screen.getByLabelText("Enter the labyrinth");
+    const labelled = container.querySelectorAll("[aria-label]");
+    expect(labelled.length).toBe(1);
+    expect(labelled[0]).toBe(paragraph);
+    for (const word of paragraph.querySelectorAll(":scope > span")) {
+      expect(word.getAttribute("aria-hidden")).toBe("true");
+    }
+  });
+
+  it("preserves intentional spacing and line breaks instead of collapsing them", () => {
+    render(<TextAnimate>{"First  second\nthird"}</TextAnimate>);
+    // Testing Library collapses whitespace by default; match the raw string.
+    const paragraph = screen.getByLabelText("First  second\nthird", { normalizer: (text) => text });
+    expect(paragraph.textContent).toBe("First  second\nthird");
+  });
+
+  it("renders static text immediately when reduced motion is preferred", () => {
+    const original = window.matchMedia;
+    Object.defineProperty(window, "matchMedia", {
+      configurable: true,
+      value: vi.fn().mockReturnValue({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }),
+    });
+    try {
+      render(<TextAnimate>Quiet words</TextAnimate>);
+      const paragraph = screen.getByLabelText("Quiet words");
+      // Static path: a single text node, no animated word spans.
+      expect(paragraph.childElementCount).toBe(0);
+      expect(paragraph.textContent).toBe("Quiet words");
+    } finally {
+      Object.defineProperty(window, "matchMedia", { configurable: true, value: original });
+    }
   });
 });

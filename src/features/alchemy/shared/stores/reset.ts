@@ -4,7 +4,11 @@ import { clearAlchemySaveData } from "@/features/alchemy/shared/storage";
 import { dispatchRunSessionCommand } from "./run-session-command";
 import { clearActiveRunInDraft } from "./run-lifecycle";
 import { resetGear } from "./gear-actions";
-import { clearPermanentData, clearTransientSession, resetToDefaults } from "./run-session-write-port";
+import {
+  clearPermanentData,
+  clearTransientSession,
+  resetToDefaults as resetRunSessionToDefaults,
+} from "./run-session-write-port";
 import { logStorageFailure } from "@/lib/storage-logging";
 
 let persistentClearInFlight = false;
@@ -28,8 +32,12 @@ export async function clearAllPersistentGameData(): Promise<boolean> {
       return false;
     }
     useSettingsStore.getState().resetToDefaults();
+    // Device display sizes intentionally survive: they live outside the
+    // versioned save (see MIGRATIONS.md public save contract) and Reset
+    // Options — not this wipe — is their reset path.
+    useUiStore.getState().setShowClearSaveConfirm(false);
     dispatchRunSessionCommand((draft) => {
-      resetToDefaults(draft);
+      resetRunSessionToDefaults(draft);
       clearPermanentData(draft);
       resetGear(draft.gear);
       clearActiveRunInDraft(draft);

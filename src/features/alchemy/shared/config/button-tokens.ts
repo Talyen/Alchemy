@@ -1,3 +1,7 @@
+// Game-widget button geometry. The generic Button primitive owns its own
+// `rounded-xl` (src/components/ui/ cannot import @/features per boundaries);
+// BUTTON_SHAPE keeps feature-side wrappers (e.g. ShineAccentButton,
+// menu ShineBorders) on the same radius without reaching into the primitive.
 export const BUTTON_SHAPE = "rounded-xl";
 
 export const BUTTON_WIDTH_MENU = "w-[calc(19.2*var(--content-rem,1rem))]";

@@ -46,13 +46,15 @@ Definition-only previews use base affinities, and Unique item titles and borders
 
 ## Buttons and interactive surfaces
 
-Game-specific button shape and layout tokens live in `src/features/alchemy/shared/config/button-tokens.ts`. Primitive hover constants live in `src/lib/game-constants/ui-motion.ts` and are imported through the game-constants barrel.
+Game-specific button shape and layout tokens live in `src/features/alchemy/shared/config/button-tokens.ts`. Primitive hover constants live in `src/lib/game-constants/ui-layout.ts` and are imported through the game-constants barrel.
 
-`Button` always renders a native button. `wrapperClassName` optionally adds a layout span; `className`, refs, event handlers, and native button attributes belong to the button itself. Omitted `type` retains native form behavior.
+`Button` always renders a native button defaulting to `type="button"`; pass an explicit `type` for the rare in-form submit/reset. `wrapperClassName` optionally adds a layout span; `className`, refs, event handlers, and native button attributes belong to the button itself.
+
+Which control to reach for: `Button` owns text/label actions (Play, Back, Confirm, pagination, dialogs, icon chrome via `ChromeIconButton`); `Surface as="button"` owns art frames and tiles (cards, chooser art, portrait tiles). Native `<button>` stays for compositions neither covers without changing the DOM: whole-card buttons whose frame wraps an inner art `Surface` plus text (difficulty cards), portrait buttons pairing an art `Surface` with a label row (talent overview), art chips with custom tooltip/stopPropagation wiring (currencies, status icons, salvage toggle), and underline text dismiss actions inside toasts. Keep those native buttons typed with accessible names; do not rebuild them as `Button` (wrong chrome) or `Surface` (adds surface frame, clip wrapper, and transform variables that change the painted result).
 
 | Concern        | Standard                                                                                                                                                                                                                                                                                                           |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Shape          | Rounded rectangles through `BUTTON_SHAPE`                                                                                                                                                                                                                                                                          |
+| Shape          | Rounded rectangles: the `Button` primitive owns its own `rounded-xl` (it cannot import `@/features`); feature-side wrappers share `BUTTON_SHAPE`                                                                                                                                                                   |
 | Primary        | `Button variant="primary"` for Play, Continue, and Confirm                                                                                                                                                                                                                                                         |
 | Secondary      | `Button variant="outline"` for Back, Cancel, Skip, and alternate navigation                                                                                                                                                                                                                                        |
 | Accent         | `ShineAccentButton` only for accent-intent forward actions                                                                                                                                                                                                                                                         |
@@ -194,7 +196,7 @@ Motion tokens live in `src/lib/game-constants/ui-motion.ts` (`MOTION_FADE_MS`, `
 Campfire snapshots the starting and restored Health when Rest is pressed. Its number
 and bar share an eased refill, then hold the exact result before continuing. Keep
 that snapshot through the outgoing screen fade so applying the heal cannot restart
-the visible refill. Use `CAMPFIRE_ANIMATION_MS` and `CAMPFIRE_CONTINUE_DELAY` from
+the visible refill. Use `CAMPFIRE_ANIMATION_MS` and `CAMPFIRE_CONTINUE_DELAY_MS` from
 [battle timing](../src/lib/game-constants/battle-timing.ts).
 
 ## Display sizing
@@ -253,8 +255,10 @@ Divine Intervention readiness uses an armed player status chip, not another floa
 ## Battle motion
 
 This guide owns visible battle feedback; [the playback workflow](./WORKFLOWS.md#change-battle-playback)
-owns wiring and lifecycle. Battle VFX live in `run-loop/battle` and its
-`presentation/` leaves.
+owns wiring and lifecycle. Battle VFX live in `run-loop/battle` (visual state in
+`battle-presentation-store.ts`, overlays in `presentation/` leaves); every fight
+action presents numbers + shake + sound through `presentCombatTexts` in
+`battle/controller-utils.ts`.
 
 Player lunges occur only for cards with a damage effect and move the portrait,
 not the Health/status column. Feedback and the single portrait impact flash appear
@@ -384,6 +388,12 @@ Wildcard glow follows its cycling color. The outer layer casts the glow around t
 artwork clips. Paired glow replaces the ordinary gold hover glow without changing
 scale or press feedback. Selection alone retains its existing treatment. Purely
 persistent decoration, turn indicators, and Death’s Door borders do not opt in.
+`ShineBorder` is decorative (`aria-hidden`) and positioned `absolute` with
+`rounded-[inherit]`, so its parent must be `relative` with a rounded corner.
+An empty palette falls back to neutral shine rather than rendering black.
+`Progress` renders a bare progressbar: every call site must pass an accessible
+name (`aria-label`/`aria-labelledby`), and `value` owns the fill width —
+`fillStyle` carries only extra styling such as transitions.
 
 ## Card-removal browsing
 

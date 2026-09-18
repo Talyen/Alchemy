@@ -1,8 +1,9 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { isAppInBackground, useAppAudioEffects } from "@/app/use-app-effects";
+import { useAppAudioEffects } from "@/app/use-app-effects";
 import {
   invalidateCacheForKey,
+  isAppInBackground,
   isMusicPaused,
   isNonPlayerAudioHost,
   playMusic,

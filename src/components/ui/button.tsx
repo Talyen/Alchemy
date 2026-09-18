@@ -52,9 +52,9 @@ interface ButtonProps extends ComponentProps<"button">, VariantProps<typeof butt
   wrapperClassName?: string;
 }
 
-function Button({ className, wrapperClassName, variant, size, ref, ...props }: ButtonProps) {
+function Button({ className, wrapperClassName, variant, size, type = "button", ref, ...props }: ButtonProps) {
   const classes = cn(buttonVariants({ variant, size }), className);
-  const button = <button className={classes} ref={ref} {...props} />;
+  const button = <button type={type} className={classes} ref={ref} {...props} />;
   return wrapperClassName ? <span className={cn("inline-flex", wrapperClassName)}>{button}</span> : button;
 }
 

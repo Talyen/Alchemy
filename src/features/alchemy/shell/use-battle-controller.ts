@@ -3,8 +3,8 @@ import type { BattlePlaybackBind } from "@/features/alchemy/run-loop/battle/batt
 import { useBattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import { createBattleInit } from "@/features/alchemy/run-loop/battle/battle-init";
 import { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
-import { createBattleDevOutcomes, isVictoryGraceActive } from "@/features/alchemy/run-loop/battle/battle-status";
-import { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/battle-transfer-deps";
+import { createBattleDevOutcomes, isVictoryGraceActive } from "@/features/alchemy/run-loop/battle/battle-session";
+import { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/draw-sequence";
 import {
   defaultMeasureElementRect,
   defaultMeasureVisualCardRect,

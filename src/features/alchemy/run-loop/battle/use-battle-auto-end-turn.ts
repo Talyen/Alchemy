@@ -7,7 +7,7 @@ import { resolveGameDelay } from "@/lib/animation/game-timer";
 
 import { useLatestRef } from "../../shared/ui/use-latest-ref";
 import type { Screen } from "@/lib/routing";
-import { usePlaybackBlocked } from "./use-battle-playback-blocked";
+import { usePlaybackBlocked } from "./autoplay-driver";
 import { handHasPlayableCard } from "./playable-hand";
 import type { BattlePlaybackPresentationGate } from "./presentation/use-hand-presentation";
 

@@ -9,7 +9,7 @@ import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import type { BattleCardEffect } from "@/lib/game-data";
 import type { CombatTextEvent } from "@/lib/battle/types";
-import { damageOnlyEffects } from "@/lib/battle/damage-effect-selection";
+import { damageOnlyEffects } from "@/lib/battle/card-classification";
 import { defaultGearEffects } from "@/lib/gear";
 import { prepareUniqueCardPlay, processArcheryEchoes, returnHarvestCard } from "@/lib/battle/unique-card-effects";
 import { MAX_HAND_SIZE } from "@/lib/game-constants";

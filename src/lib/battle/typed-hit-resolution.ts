@@ -1,7 +1,6 @@
 import type { DamageType } from "@/lib/game-data";
-import { mergeCombatText, payKillPayouts } from "./combat-text";
+import { applyHitEpilogue, mergeCombatText } from "./combat-text";
 import { applyDamageStatuses } from "./damage-status-riders";
-import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 import { decayArmorAfterDamage } from "./status-helpers";
 import { damageEnemyHealth, type BattleState, type CombatTextEvent, type EnemyHitHealth } from "./types";
 
@@ -18,7 +17,7 @@ export function resolveTypedEnemyHit(
   if (resolvedDamage > 0) {
     mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: effect.damageType, amount: resolvedDamage });
   }
-  next = processEncounterTraitHealthThreshold(hit.previousHealth, next, combatTexts);
-  next = payKillPayouts(next, hit.enemyWasAlive, combatTexts);
+  // Shared closer: thresholds then kill payouts (same as other hit paths).
+  next = applyHitEpilogue(next, hit.previousHealth, hit.enemyWasAlive, combatTexts);
   return { ...hit, state: next };
 }

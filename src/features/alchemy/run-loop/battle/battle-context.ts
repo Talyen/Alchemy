@@ -50,10 +50,6 @@ export interface BattleControllerContext extends Omit<BattleControllerContextPro
   getPresentation: () => BattlePresentationPort;
 }
 
-function resolveBattlePresentation(ctx: { getPresentation?: () => BattlePresentationPort }): BattlePresentationPort {
-  return ctx.getPresentation?.() ?? useBattlePresentationStore.getState();
-}
-
 export function useBattleControllerContext(props: BattleControllerContextProps): BattleControllerContext {
   const handCardRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const drawPileRef = useRef<HTMLDivElement | null>(null);
@@ -119,7 +115,7 @@ export function useBattleControllerContext(props: BattleControllerContextProps):
         return propsRef.current.onBattleSessionPreparedRef;
       },
       getPresentation() {
-        return resolveBattlePresentation(propsRef.current);
+        return propsRef.current.getPresentation?.() ?? useBattlePresentationStore.getState();
       },
     };
   }, []);

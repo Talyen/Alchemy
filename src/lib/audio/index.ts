@@ -1,5 +1,6 @@
 export { preloadAllSounds, preloadBattleSounds } from "./preload";
-export { hasVisibleWindowArea, isNonPlayerAudioHost } from "./host";
+export { getSoundUrl } from "./url";
+export { isNonPlayerAudioHost, isAppInBackground } from "./host";
 export {
   endBossPreview,
   getBossMusicKey,
@@ -22,3 +23,4 @@ export {
   stopAllSfx,
 } from "./sfx";
 export { initAudioHost, setMasterVolume, setMusicVolume, setMuted, setSfxVolume } from "./volume";
+export { resetAudioRuntimeForTests } from "./reset";

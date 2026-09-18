@@ -45,7 +45,7 @@ export function AspectRatioSelect({
 }) {
   return (
     <SettingsSelect
-      id="resolution"
+      id="aspect-ratio"
       label="Aspect Ratio"
       value={selectedAspectRatio}
       options={aspectRatioOptions}

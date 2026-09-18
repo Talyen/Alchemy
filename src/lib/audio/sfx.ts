@@ -8,6 +8,7 @@ import {
 } from "./sound-registry";
 import { audioState } from "./state";
 import { getSoundUrl } from "./url";
+import { releaseAudioElement } from "./element";
 import { clamp01 } from "../math";
 import { pickRandomUnsafe } from "../rng";
 import {
@@ -32,14 +33,14 @@ interface ActiveHtmlSfx {
   trackForCleanup: boolean;
 }
 
-const stoppableHtmlSfx = new Set<ActiveHtmlSfx>();
 /**
- * Fire-and-forget sounds (UI clicks, stingers, slice deaths) survive screen
- * changes by design, so they live apart from stoppable combat sounds. The set
- * is bounded: entries leave on ended/error/rejected play, and the oldest is
- * paused out if a burst ever exceeds the cap (e.g. a stuck ended handler).
+ * Live SFX elements. `trackForCleanup` sounds (combat) are stopped on screen
+ * changes; fire-and-forget sounds (UI clicks, stingers, slice deaths) survive
+ * by design. The set is bounded for fire-and-forget entries: entries leave on
+ * ended/error/rejected play, and the oldest is paused out if a burst ever
+ * exceeds the cap (e.g. a stuck ended handler).
  */
-const ambientHtmlSfx = new Set<ActiveHtmlSfx>();
+const activeHtmlSfx = new Set<ActiveHtmlSfx>();
 const MAX_AMBIENT_SFX = 32;
 let sfxStopToken = 0;
 
@@ -53,49 +54,45 @@ function applyHtmlSfxPlayback(entry: ActiveHtmlSfx) {
 }
 
 function trackHtmlSfx(entry: ActiveHtmlSfx) {
-  if (entry.trackForCleanup) {
-    stoppableHtmlSfx.add(entry);
-    return;
-  }
-  if (ambientHtmlSfx.size >= MAX_AMBIENT_SFX) {
-    const oldest = ambientHtmlSfx.values().next().value;
-    if (oldest) {
-      try {
-        oldest.el.pause();
-      } catch {}
-      ambientHtmlSfx.delete(oldest);
+  if (!entry.trackForCleanup) {
+    let ambientCount = 0;
+    let oldestAmbient: ActiveHtmlSfx | undefined;
+    for (const live of activeHtmlSfx) {
+      if (live.trackForCleanup) continue;
+      ambientCount += 1;
+      oldestAmbient ??= live;
+    }
+    if (ambientCount >= MAX_AMBIENT_SFX && oldestAmbient) {
+      releaseAudioElement(oldestAmbient.el);
+      activeHtmlSfx.delete(oldestAmbient);
     }
   }
-  ambientHtmlSfx.add(entry);
+  activeHtmlSfx.add(entry);
 }
 
 function untrackHtmlSfx(entry: ActiveHtmlSfx) {
-  stoppableHtmlSfx.delete(entry);
-  ambientHtmlSfx.delete(entry);
+  activeHtmlSfx.delete(entry);
 }
 
 export function syncActiveHtmlSfxPlayback() {
-  for (const entry of stoppableHtmlSfx) {
-    applyHtmlSfxPlayback(entry);
-  }
-  for (const entry of ambientHtmlSfx) {
+  for (const entry of activeHtmlSfx) {
     applyHtmlSfxPlayback(entry);
   }
 }
 
 export function resetHtmlSfxRuntime() {
-  stoppableHtmlSfx.clear();
-  ambientHtmlSfx.clear();
+  // Bump the stop token so delayed plays scheduled before the reset cannot
+  // fire afterwards. Production never calls this; tests rely on it.
+  sfxStopToken += 1;
+  activeHtmlSfx.clear();
 }
 
 export function stopAllSfx() {
   sfxStopToken += 1;
-  for (const entry of Array.from(stoppableHtmlSfx)) {
-    entry.el.pause();
-
-    entry.el.removeAttribute("src");
-    entry.el.load();
-    stoppableHtmlSfx.delete(entry);
+  for (const entry of Array.from(activeHtmlSfx)) {
+    if (!entry.trackForCleanup) continue;
+    releaseAudioElement(entry.el);
+    activeHtmlSfx.delete(entry);
   }
 }
 
@@ -124,7 +121,10 @@ function playBuffer(
 
   const playToken = sfxStopToken;
   const scheduledAt = performance.now() + delay * 1000;
-  const last = audioState.lastPlayedAt.get(name) ?? 0;
+  // Default to -Infinity (not 0) so the first play always passes: a zero
+  // clock (page load, fake timers) would otherwise read as "just played"
+  // and swallow the first sound inside the cooldown window.
+  const last = audioState.lastPlayedAt.get(name) ?? Number.NEGATIVE_INFINITY;
   if (scheduledAt - last < cooldownMs) return;
   audioState.lastPlayedAt.set(name, scheduledAt);
 

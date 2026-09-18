@@ -13,11 +13,11 @@ skip mode; keep that validation at each entry point.
 
 | Concern                                    | Implementation owner                                                                                                                                                                                                                                                                                      |
 | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Asset CLI and preparation                  | `assets.mjs` → `prepare-assets.mjs` (canonical surface; direct `optimize-*.mjs` calls are the supported iteration shortcut behind `assets:optimize[:art\|:sounds\|:music]`)                                                                                                                               |
+| Asset CLI and preparation                  | `assets.mjs` → `prepare-assets.mjs` (canonical surface; `npm run assets:check` is `assets.mjs --check`; direct `optimize-*.mjs` calls are the supported iteration shortcut behind `assets:optimize[:art\|:sounds\|:music]`)                                                                               |
 | Art, sound, and music optimization         | `optimize-pipelines.mjs` → `optimize-assets.mjs`, `optimize-sounds.mjs`, `optimize-music.mjs` via `lib/asset-pipeline-runner.mjs`                                                                                                                                                                         |
 | Generated art barrels and version metadata | `sync-generated.mjs` → `sync-art-barrels.mjs`, `sync-version-metadata.mjs` (`sync:art` syncs both barrels; `sync:gear-art` alone refuses stale `assets.generated.ts`; `sync:version` stamps the build version alone; `prepare`/`assets:check` sync art barrels and version metadata as independent steps) |
 | Fast generated-output validation           | `sync-generated.mjs --check`                                                                                                                                                                                                                                                                              |
-| Read-only prepared-output freshness        | `check-prepared-assets.mjs`                                                                                                                                                                                                                                                                               |
+| Read-only prepared-output freshness        | `assets.mjs --check` → `check-prepared-assets.mjs` (partial-failure `prepare` advances barrels when art succeeds; `check` is all-or-nothing)                                                                                                                                                              |
 
 Shared: `lib/asset-constants.mjs` (tuning, `MANAGED_DIRS` managed outputs — the manifest is the complete inventory, no directory exceptions), `lib/asset-pipeline-runner.mjs` (pipeline paths, output-dir creation, source reads, freshness, failure normalization),
 `lib/asset-manifest-cache.mjs` (freshness,
@@ -56,8 +56,10 @@ Gate composition, CI tiers, and reuse policy live in
 | Documentation contracts and plan metadata | `check-docs.mjs` (also serves `plans:check` via `--plans-only` and `docs:check:final` via `--final`), `check-documentation-contract.mjs`, `lib/plan-checks.mjs` (`archive-plans.mjs` shares that lib) |
 | Passing unit receipts                     | `lib/verification-cache.mjs`                                                                                                                                                                          |
 | Bundle budgets                            | `lib/bundle-budget.mjs`                                                                                                                                                                               |
-| Full and staged formatting                | `prettier-paths.mjs` + `.prettierignore`                                                                                                                                                              |
+| Full and staged formatting                | `run-prettier.mjs` + `prettier-paths.mjs` + `.prettierignore` (`PRETTIER_NEVER_FORMAT_RE` is the staged-path subset; `.prettierignore` also covers build outputs)                                     |
 | Plan creation and archiving               | `new-plan.mjs` + `archive-plans.mjs`; [plan lifecycle](../Docs/Plans/README.md#task-handoff)                                                                                                          |
+| Selection byte budgets                    | `lib/selection-budgets.mjs` (`INLINE_ARGS_BYTES` for check paths.json spill vs `RELATED_SELECTION_BYTES` for verify unit-all fallback; same value, different meanings)                                |
+| Test concurrency                          | `lib/test-concurrency.mjs` (`VITEST_MAX_WORKERS` for ship suites; CI full runs keep Vitest defaults)                                                                                                  |
 
 `lib/repository-paths.mjs` normalizes selections for checks and discovery. Relative
 and absolute paths inside the checkout are equivalent. Directory selections use
@@ -76,6 +78,13 @@ workflows; `tests/scripts/ci-path-filters.test.ts` pins the intended
 route↔gate alignment so the two lists cannot drift silently. `docs:check` runs
 once per gate: verification skips its copy (`--skip-docs-check`) when `check`
 will run it through the static aggregate.
+`check:static` runs generated + format + typecheck + lint (fast local static);
+`lint:ci` adds docs + deadcode + boundaries + architecture-smoke + Playwright
+collection, so the boundary subset is not double-run on every local static
+invocation. Generated-output validation stays layered by design: fast
+`sync-generated --check` (barrels + version), full `assets:check` (prepared
+outputs), and the pre-build guard in `build-verified.mjs` share one
+`syncGenerated` implementation.
 
 Documentation and ESLint inventories exclude isolated `.worktrees/` checkouts,
 reports, and installed dependencies. Documentation contract checks share one
@@ -140,9 +149,12 @@ Packaged Windows startup: `smoke-desktop.mjs` resolves the artifact and invokes
 ## Audits (periodic sweep, not a push gate)
 
 `npm run audit` runs `audit.mjs`, which dispatches to `audit-all.mjs` when no
-selector is supplied, including with `--verbose`. Pass a focused selector after
+selector is supplied, including with `--verbose`. `npm run audit:all` is the
+same sweep via `audit.mjs --all` (thin forward, not a separate entry).
+Pass a focused selector after
 the npm separator (`npm run audit -- --types|--amplification|--content|--hotspots`)
-to dispatch one probe instead. Gating probes: knip, depcruise, eslint complexity,
+to dispatch one probe instead. `--all` is the periodic sweep, not literally
+every audit — use `--hotspots` separately. Gating probes: knip, depcruise, eslint complexity,
 content-audit. Advisory trend probes (always exit 0):
 `audit-type-escapes.mjs`, `audit-change-amplification.mjs` — direction signals, see
 `Docs/Audits/TypeSafetyAudit.md`. `context-hotspots` / `runs:show` are advisory process
@@ -176,8 +188,10 @@ Balance and loot reports share the middleware-mode Vite bootstrap in
 import-safe `defineScript` entry); both are import-safe `defineScript` entries and
 both leave a run receipt. Report paths resolve from the script root, not the
 invoking CWD. Long-running suite/build/profiling CLIs
-(`run-ship-unit`, `run-e2e-route`, `run-performance`) stream output
-intentionally instead of using bounded `runCommand` capture.
+(`run-ship-unit`, `run-e2e-route`, `run-performance`, `build-verified`,
+`run-prettier`, `audit` dispatcher) stream output intentionally through the
+shared `runStreamCommand` runner instead of bounded `runCommand` capture or raw
+`spawnSync`.
 
 ## Development
 
@@ -220,13 +234,26 @@ original checkout before worktree removal.
 asset transform pipelines use `runPipelineScript` (same gating plus the
 `{ ok, error }` result convention). Entries with custom usage/exit-code flows
 (path selection, plan metadata) stay hand-rolled on `isMainModule`.
+Exit codes are 0 = pass, 1 = check failed, 2 = bad invocation (`UsageError`;
+`defineScript` maps it to 2, hand-rolled entries do the same).
 
-`lib/run-command.mjs` owns captured subprocess execution. Use `logPath` for
-complete file-backed output from checks, verification, audits, and E2E analysis;
-only bounded excerpts enter summaries. Failure digests retain the original log
-under normal transient retention. The async runner stops the entire command tree
-on deadlines or capture-limit failures; use it when tree-wide cancellation is
-required. Synchronous execution uses Node's native subprocess behavior.
+`lib/cli-args.mjs` owns simple flag parsing (`--flag`, `--key=value`,
+`--key value`, `-m value`, `--` passthrough) so new CLIs do not hand-roll
+another validator. Path selection stays on `lib/changed-paths.mjs`; complex
+CLIs (audit, performance) keep bespoke validators until migrated.
+
+`lib/run-command.mjs` owns subprocess execution: `runCommand`/`runCommandAsync`
+for captured bounded output with `logPath` (checks, verification, audits, E2E
+analysis; only bounded excerpts enter summaries), `runStreamCommand` for
+long-running CLIs that stream inherit output (builds, ship suites, browser
+runs, profiling, formatting). Do not use raw `spawnSync` in scripts — the
+documented long-running owners are `repository-paths.mjs:runGit` (single git spawn with
+stale-cache overrides; `git-safety-guard` must exec past its own shim and
+`release-runner` keeps mockable flows) and `agent-worktree.mjs` worktree git.
+Bounded-deadline desktop CLIs (`ensure-electron`, `dist-desktop`,
+`smoke-desktop`) still use raw `spawnSync` for timeout/inherit flows that
+`runStreamCommand` does not support yet; migrate them when the shared runner
+grows deadline support rather than adding new raw call sites.
 
 `lib/command-invocation.mjs` resolves installed Node tools and npm without a shell,
 keeping arguments literal and never downloading missing tools. Interrupted

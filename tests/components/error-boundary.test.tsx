@@ -87,4 +87,35 @@ describe("ErrorBoundary", () => {
     const tryAgainBtn = screen.getByRole("button", { name: "Try Again" });
     expect(tryAgainBtn).toBeDefined();
   });
+
+  it("clears a latched error when the screen label changes", () => {
+    vi.spyOn(errorLogger, "logError").mockImplementation(() => {});
+
+    const { rerender } = render(
+      <ErrorBoundary label="battle">
+        <ThrowingComponent shouldThrow={true} />
+      </ErrorBoundary>,
+    );
+    expect(screen.getByText("Something went wrong")).toBeDefined();
+
+    rerender(
+      <ErrorBoundary label="menu">
+        <ThrowingComponent shouldThrow={false} />
+      </ErrorBoundary>,
+    );
+    expect(screen.getByText("Healthy Child")).toBeDefined();
+  });
+
+  it("renders the default fallback without the shared Button primitive", () => {
+    vi.spyOn(errorLogger, "logError").mockImplementation(() => {});
+
+    const { container } = render(
+      <ErrorBoundary>
+        <ThrowingComponent shouldThrow={true} />
+      </ErrorBoundary>,
+    );
+    const reload = screen.getByRole("button", { name: "Reload" });
+    expect(reload.tagName).toBe("BUTTON");
+    expect(container.querySelector("[class*='button-primary-bloom']")).toBeNull();
+  });
 });

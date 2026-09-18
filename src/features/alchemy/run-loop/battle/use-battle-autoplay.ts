@@ -6,9 +6,8 @@ import type { BattleSnapshot } from "@/lib/battle";
 import type { Screen } from "@/lib/routing";
 
 import { useLatestRef } from "../../shared/ui/use-latest-ref";
-import { driveAutoplay } from "./autoplay-driver";
+import { driveAutoplay, usePlaybackBlocked, useWishPlaybackBlocked } from "./autoplay-driver";
 import { findBestPlayableHandCard, findBestWishChoice } from "./playable-hand";
-import { usePlaybackBlocked, useWishPlaybackBlocked } from "./use-battle-playback-blocked";
 import type { BattlePlaybackPresentationGate } from "./presentation/use-hand-presentation";
 
 interface UseBattleAutoplayOptions {

@@ -2,8 +2,8 @@ import { DEFAULT_DEVICE_DISPLAY, normalizeDisplayPercent, type DeviceDisplayPref
 import { isStorageUnavailable, tryLocalStorageGetItem, tryLocalStorageSetItem } from "@/lib/storage-environment";
 import { logStorageFailure } from "@/lib/storage-logging";
 
-export const DEVICE_DISPLAY_STORAGE_KEY = "alchemy-device-display-v1";
 const DEVICE_DISPLAY_STORAGE_VERSION = 1;
+export const DEVICE_DISPLAY_STORAGE_KEY = `alchemy-device-display-v${DEVICE_DISPLAY_STORAGE_VERSION}`;
 
 export function readDeviceDisplayPreferences(): DeviceDisplayPreferences {
   try {

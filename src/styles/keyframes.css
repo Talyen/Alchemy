@@ -310,18 +310,18 @@
   *,
   *::before,
   *::after {
-    animation-duration: 1ms !important;
+    animation-duration: var(--animation-disabled-duration) !important;
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
-    transition-duration: 1ms !important;
+    transition-duration: var(--animation-disabled-duration) !important;
   }
 }
 
 html.alchemy-disable-animations *,
 html.alchemy-disable-animations *::before,
 html.alchemy-disable-animations *::after {
-  animation-duration: 1ms !important;
+  animation-duration: var(--animation-disabled-duration) !important;
   animation-iteration-count: 1 !important;
   scroll-behavior: auto !important;
-  transition-duration: 1ms !important;
+  transition-duration: var(--animation-disabled-duration) !important;
 }

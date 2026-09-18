@@ -107,7 +107,7 @@ describe("transferCardIntervalSeconds", () => {
 });
 
 describe("defaultMeasureVisualCardRect", () => {
-  it("preserves fractional card dimensions for an exact transfer landing", () => {
+  it("uses border-box layout size so borders do not offset the transfer landing", () => {
     const scene = {
       offsetWidth: 1920,
       offsetHeight: 1080,
@@ -118,13 +118,32 @@ describe("defaultMeasureVisualCardRect", () => {
       offsetHeight: 214,
       getBoundingClientRect: () => ({ left: 300, top: 200, width: 100, height: 140 }),
     } as HTMLElement;
-    vi.stubGlobal("getComputedStyle", () => ({ width: "160.375px", height: "213.8125px" }));
 
     expect(defaultMeasureVisualCardRect(card, scene)).toEqual({
-      x: 419.8125,
-      y: 333.09375,
-      width: 160.375,
-      height: 213.8125,
+      x: 420,
+      y: 333,
+      width: 160,
+      height: 214,
     });
+  });
+});
+
+describe("presentCombatTexts", () => {
+  it("shows texts, shakes the damaged side, and plays sounds in one call", async () => {
+    const { presentCombatTexts } = await import("@/features/alchemy/run-loop/battle/controller-utils");
+    const presenter = { showCombatTexts: vi.fn(), shakeEnemy: vi.fn(), shakePlayer: vi.fn() };
+    presentCombatTexts(presenter, [{ target: "enemy", kind: "damage", stat: "physical", amount: 5 }]);
+    expect(presenter.showCombatTexts).toHaveBeenCalledOnce();
+    expect(presenter.shakeEnemy).toHaveBeenCalledOnce();
+    expect(presenter.shakePlayer).not.toHaveBeenCalled();
+  });
+
+  it("is a no-op for empty events", async () => {
+    const { presentCombatTexts } = await import("@/features/alchemy/run-loop/battle/controller-utils");
+    const presenter = { showCombatTexts: vi.fn(), shakeEnemy: vi.fn(), shakePlayer: vi.fn() };
+    presentCombatTexts(presenter, []);
+    expect(presenter.showCombatTexts).not.toHaveBeenCalled();
+    expect(presenter.shakeEnemy).not.toHaveBeenCalled();
+    expect(presenter.shakePlayer).not.toHaveBeenCalled();
   });
 });

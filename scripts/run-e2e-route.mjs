@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import path from "node:path";
-import { commandInvocation } from "./lib/command-invocation.mjs";
-import { spawnSync } from "node:child_process";
+import { runStreamCommand } from "./lib/run-command.mjs";
 import { existsSync } from "node:fs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
@@ -158,10 +157,6 @@ if (invokedAsCli) {
     );
     process.exit(1);
   }
-  const result = spawnSync(...commandInvocation("npx", [...resolved.args, ...extra]), {
-    // Streams intentionally so browser progress is visible; see run-ship-unit.
-    cwd: ROOT,
-    stdio: "inherit",
-  });
+  const result = runStreamCommand("npx", [...resolved.args, ...extra], { cwd: ROOT });
   process.exit(result.status ?? 1);
 }

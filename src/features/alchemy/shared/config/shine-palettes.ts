@@ -13,8 +13,9 @@ import { getKeywordBorderShineColors } from "@/lib/keyword-border-shine";
 import { getKeywordTextShineColors } from "@/lib/keyword-text-shine";
 import { buildSmoothShineGradient } from "@/lib/animation/shine-gradient";
 
-export { buildSmoothShineBorderGradient, buildSmoothShineGradient } from "@/lib/animation/shine-gradient";
-export { getKeywordBorderShineColors } from "@/lib/keyword-border-shine";
+// NOTE: gradient builders and keyword-shine helpers live in @/lib (single
+// import path). Import them from there directly; this module owns palettes
+// and palette selectors only and must not re-export lib helpers.
 
 export const SHINE_PALETTES = {
   gold: ["#fcd34d", "#d97706", "#fcd34d"],

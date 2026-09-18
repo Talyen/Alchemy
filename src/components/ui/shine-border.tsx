@@ -9,6 +9,11 @@ interface ShineBorderProps extends HTMLAttributes<HTMLDivElement> {
   shineColor: string | readonly string[];
 }
 
+// Decorative frame: parent must be `relative` with a rounded corner for
+// `absolute` + `rounded-[inherit]` to resolve. Renders nothing semantic, so
+// it is hidden from assistive tech.
+const NEUTRAL_SHINE_FALLBACK = ["#cbd5e1", "#64748b", "#cbd5e1"] as const;
+
 export function ShineBorder({
   glow = false,
   borderWidth = 1,
@@ -19,12 +24,15 @@ export function ShineBorder({
   ...props
 }: ShineBorderProps) {
   const colors: readonly string[] = Array.isArray(shineColor) ? shineColor : [shineColor];
-  const safeColors = colors.length > 0 ? colors : ["#000000"];
-  const firstColor = safeColors[0] ?? "#000000";
+  // Empty palettes fall back to the shared neutral shine instead of black so
+  // a missing keyword palette degrades to the resting border treatment.
+  const safeColors: readonly string[] = colors.length > 0 ? colors : NEUTRAL_SHINE_FALLBACK;
+  const firstColor = safeColors[0] ?? NEUTRAL_SHINE_FALLBACK[0];
   const gradientStops = safeColors.length === 1 ? `${safeColors[0]}, ${safeColors[0]}` : safeColors.join(",");
 
   return (
     <div
+      aria-hidden="true"
       style={
         {
           "--border-width": `${borderWidth}px`,
@@ -49,6 +57,8 @@ export function ShineBorder({
           maskComposite: "exclude",
           padding: "var(--border-width)",
           backgroundPosition: "inherit",
+          // Paint-layer transition for border-width changes; the outer
+          // .shine-border rule owns box-shadow/filter/opacity instead.
           transition: "padding 200ms ease-out",
         }}
       />

@@ -9,8 +9,15 @@ vi.mock("@/features/alchemy/shared/storage", async (importOriginal) => {
 });
 
 import { clearAlchemySaveData, defaultSaveData } from "@/features/alchemy/shared/storage";
+import { DEVICE_DISPLAY_STORAGE_KEY, readDeviceDisplayPreferences } from "@/features/alchemy/shared/storage";
 import { clearAllPersistentGameData, resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
+import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import {
+  flushDeviceDisplayPreferences,
+  initDeviceDisplayPreferences,
+  useDeviceDisplayStore,
+} from "@/features/alchemy/shared/stores/device-display-store";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import {
   readActiveRun,
@@ -39,6 +46,8 @@ beforeEach(() => {
   useSettingsStore.setState(useSettingsStore.getInitialState());
   resetRunDomainStore();
   resetTransientRunUi();
+  localStorage.removeItem(DEVICE_DISPLAY_STORAGE_KEY);
+  initDeviceDisplayPreferences();
 });
 
 describe("clearAllPersistentGameData", () => {
@@ -72,9 +81,25 @@ describe("clearAllPersistentGameData", () => {
     expect(readActiveRunScreen()).toBe(ROUTE_SCREENS.MENU);
   });
 
+  it("closes the clear-save dialog but preserves device display sizes on wipe", async () => {
+    useUiStore.getState().setShowClearSaveConfirm(true);
+    useDeviceDisplayStore.getState().setGameSizePercent(85);
+    useDeviceDisplayStore.getState().setTooltipSizePercent(120);
+    flushDeviceDisplayPreferences();
+
+    await expect(clearAllPersistentGameData()).resolves.toBe(true);
+
+    // The dialog is transient UI and closes with the wipe; device sizes live
+    // outside the versioned save and survive it (Reset Options is their reset).
+    expect(useUiStore.getState().showClearSaveConfirm).toBe(false);
+    expect(useDeviceDisplayStore.getState()).toMatchObject({ gameSizePercent: 85, tooltipSizePercent: 120 });
+    expect(readDeviceDisplayPreferences()).toMatchObject({ gameSizePercent: 85, tooltipSizePercent: 120 });
+  });
+
   it("leaves memory intact when the disk wipe fails", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     mockedClearSave.mockResolvedValue(false);
+    useUiStore.getState().setShowClearSaveConfirm(true);
     dispatchRunSessionCommand((draft) => {
       addMaterialsToStockpile(draft, { wood: 10, iron: 0, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 });
       setDiscoveredCardIds(draft, ["card-a"]);
@@ -86,5 +111,6 @@ describe("clearAllPersistentGameData", () => {
     expect(readRunProfile().materialInventory.wood).toBe(10);
     expect(readRunProfile().unlockedTalents).toEqual({ physical: ["test-talent"] });
     expect(readProfileStore().discoveredCardIds).toContain("card-a");
+    expect(useUiStore.getState().showClearSaveConfirm).toBe(true);
   });
 });

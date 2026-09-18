@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { playBattleOpeningDraw } from "@/features/alchemy/run-loop/battle/battle-init";
+import { playBattleOpeningDraw } from "@/features/alchemy/run-loop/battle/use-battle-opening-draw";
 import { defaultBattleState } from "@/lib/battle";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { makeTestCardWithId } from "../../../../fixtures/battle";

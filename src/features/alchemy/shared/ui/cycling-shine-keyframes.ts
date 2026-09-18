@@ -1,5 +1,8 @@
 const CYCLE_SHINE_VAR = "--cycle-shine";
 
+// Runtime-injects per-palette @keyframes for the wildcard cycle. This pairs
+// with the static `@property --cycle-shine` registration in components.css
+// (which enables color interpolation); neither replaces the other.
 const injectedKeyframes = new Set<string>();
 
 function hashColors(colors: readonly string[]): string {

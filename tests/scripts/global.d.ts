@@ -155,6 +155,7 @@ declare module "*/sync-changelog.mjs" {
 
 declare module "*/prettier-paths.mjs" {
   export const PRETTIER_GLOBS: readonly string[];
+  export const PRETTIER_NEVER_FORMAT_RE: RegExp;
   export function filterPrettierPaths(paths: readonly string[]): string[];
 }
 
@@ -981,6 +982,11 @@ interface ScriptCommandResult {
 }
 declare module "*/lib/run-command.mjs" {
   export function runCommand(command: string, args?: string[], options?: Record<string, unknown>): ScriptCommandResult;
+  export function runStreamCommand(
+    command: string,
+    args?: string[],
+    options?: { cwd?: string; env?: NodeJS.ProcessEnv },
+  ): ScriptCommandResult & { elapsedMs: number };
   export function runCommandAsync(
     command: string,
     args?: string[],
@@ -1033,4 +1039,32 @@ declare module "*/lib/command-invocation.mjs" {
   export function commandInvocation(command: string, args?: string[]): [string, string[]];
   export function resolveBuilderBin(): string;
   export function resolveViteBin(): string;
+}
+
+declare module "*/lib/selection-budgets.mjs" {
+  export const INLINE_ARGS_BYTES: number;
+  export const RELATED_SELECTION_BYTES: number;
+}
+
+declare module "*/lib/test-concurrency.mjs" {
+  export const VITEST_MAX_WORKERS: number;
+}
+
+declare module "*/lib/script-run.mjs" {
+  export class UsageError extends Error {}
+  export function defineScript(importMetaUrl: string, fn: () => unknown): void;
+  export function runPipelineScript(importMetaUrl: string, label: string, scriptFn: () => unknown): void;
+}
+
+declare module "*/lib/cli-args.mjs" {
+  export function parseKnownFlags(
+    argv: string[],
+    spec?: Record<string, { short?: string; takesValue?: boolean }>,
+    options?: { usage?: string },
+  ): { flags: Set<string>; values: Map<string, string[]>; rest: string[] };
+}
+
+declare module "*/run-prettier.mjs" {
+  export function resolvePrettierTargets(argv?: string[]): { mode: string; targets: string[] };
+  export function runPrettier(argv?: string[]): number;
 }

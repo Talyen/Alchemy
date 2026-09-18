@@ -11,7 +11,6 @@ import {
 } from "@/lib/game-constants";
 import { resolveGameDelay, TimerGroup } from "@/lib/animation/game-timer";
 import type { CardGhost, CardTransfer, CombatImpactCue, CombatTextBurst } from "../../shared/types";
-import type { CombatTextShakeFeedback } from "./battle-status";
 import { getCombatImpactVisual } from "../../shared/utils";
 import {
   canonicalizeHiddenHandCardKeys,
@@ -305,25 +304,4 @@ onRunTeardown(() => {
   useBattlePresentationStore.getState().resetPresentation();
 });
 
-export type BattlePresentationPort = Pick<
-  ReturnType<typeof useBattlePresentationStore.getState>,
-  | "openingDrawPending"
-  | "hiddenHandCardKeys"
-  | "cardTransferInProgress"
-  | "setDisplayedBattle"
-  | "setOpeningDrawPending"
-  | "spawnCardGhost"
-  | "showCombatTexts"
-  | "shakeCompanion"
-  | "telegraphAttack"
-  | "telegraphCast"
-  | "resetHandTransferUi"
-  | "resetCardTransfers"
-  | "clearCardGhosts"
-  | "clearFloatingCombatTexts"
-  | "setCardTransfers"
-  | "setHiddenHandCardKeys"
-  | "setCardTransferInProgress"
-  | "resetPresentation"
-> &
-  CombatTextShakeFeedback;
+export type BattlePresentationPort = ReturnType<typeof useBattlePresentationStore.getState>;

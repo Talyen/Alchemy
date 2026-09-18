@@ -1,6 +1,18 @@
 import { isMainModule } from "./is-main-module.mjs";
 
 /**
+ * Usage errors (exit 2) vs runtime failures (exit 1). Throw UsageError for
+ * bad flags/modes so hand-rolled entries and defineScript agree:
+ * 0 = pass, 1 = check failed, 2 = bad invocation.
+ */
+export class UsageError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "UsageError";
+  }
+}
+
+/**
  * Single CLI lifecycle owner for scripts.
  * Owns `isMainModule` gating plus top-level error reporting / exit codes
  * so entry files stay declarative. Supports sync and async entry functions.
@@ -15,17 +27,17 @@ import { isMainModule } from "./is-main-module.mjs";
  */
 export function defineScript(importMetaUrl, fn) {
   if (!isMainModule(importMetaUrl)) return;
+  const report = (error) => {
+    console.error(error instanceof Error ? error.message : error);
+    process.exitCode = error instanceof UsageError ? 2 : 1;
+  };
   try {
     const result = fn();
     if (result && typeof result.catch === "function") {
-      result.catch((error) => {
-        console.error(error instanceof Error ? error.message : error);
-        process.exitCode = 1;
-      });
+      result.catch(report);
     }
   } catch (error) {
-    console.error(error instanceof Error ? error.message : error);
-    process.exitCode = 1;
+    report(error);
   }
 }
 

@@ -35,7 +35,7 @@ Gameplay state has one authoritative nested Zustand aggregate in `shared/stores/
 | `profile`        | Collection discoveries, completed difficulties, and finished-run character unlocks; collection tab/page UI is transient in-memory, outside `ProfileSaveFields`                             | Profile lifetime                                                                                                          |
 | `gear`           | Permanent inventories, loadouts, and crafting currencies                                                                                                                                   | Profile lifetime                                                                                                          |
 
-Live reads and screen data expose `runProfile.gold` as `gold`; `startGold` grants once on a new run start. `profile` never owns gameplay currency. Homestead and talent mutations rebind live Health and battle manifests through the owning command. Battle VFX live separately in `run-loop/battle/battle-presentation-store.ts` and are not persisted.
+Live reads and screen data expose `runProfile.gold` as `gold`; `startGold` grants once on a new run start. `profile` never owns gameplay currency. Homestead and talent mutations rebind live Health and battle manifests through the owning command. Battle VFX live separately in `run-loop/battle/` (state in `battle-presentation-store.ts`, overlays in `presentation/` leaves) and are not persisted.
 
 ### Command atomicity
 
@@ -245,11 +245,18 @@ roll → `reward-math.ts` → `reward-flow.ts` reward states.
 
 Single owners to know: `run/run-materials.ts` owns the "Wildwood awards no
 materials" rule for both during-run and end-of-run awards;
-`battle/use-battle-playback-blocked.ts` owns the shared autoplay /
-auto-end-turn gate; `battle/draw-sequence.ts` owns both draw counters
-(initiated card-play draws for input gating, animated draws for transfer UI);
-`battle/battle-session.ts` owns the full presentation reset on session start,
-so battle start only arms the new battle's pending flags.
+`battle/autoplay-driver.ts` owns the shared autoplay / auto-end-turn gate
+(`isBattlePlaybackBlocked`, `usePlaybackBlocked`); `battle/draw-sequence.ts`
+owns the shared initiated-draw counter (self-managed by `runBattleDraw`) plus
+the per-deps animated-draw counts for transfer UI, while `battle-card-play.ts`
+tracks its own in-flight draws for rapid-play gating;
+`battle/battle-session.ts` owns session liveness, turn commit
+(`commitEndTurn`), legacy transition resume, DEV outcomes, and the full
+presentation reset on session start, so battle start only arms the new
+battle's pending flags. Fight feedback (floating numbers + shake + sound) is
+unified in `presentCombatTexts` in `battle/controller-utils.ts`; card overlay
+layers live beside their leaves (`card-ghost-overlay.tsx`,
+`card-transfer-overlay.tsx`).
 
 ## Shop commands
 
@@ -274,7 +281,7 @@ shelf assignment, and modifier ordering, follow
 - `lib/settings-values.ts` owns the shared value sets and numeric bounds consumed by save validation, Options, audio,
   and the desktop bridge; the settings codec still owns defaults, encoding, and hydration.
 
-Gameplay progression remains in the [aggregate regions](#run-state); persistence follows the [codec contract](#persistence-api). Run reward finalization uses the write module and `run-lifecycle.ts` (`finalizeRunXP`, `awardMaterialsDuringRun` — see [grant materials](./WORKFLOWS.md#grant-materials-during-a-run)), never the discovery-only profile region. `error-log-store.ts` is a standalone local-only error buffer (own storage key, debounced persist); `reset.ts` owns the Options wipe. Both sit outside the gameplay aggregate and its save codecs.
+Gameplay progression remains in the [aggregate regions](#run-state); persistence follows the [codec contract](#persistence-api). Run reward finalization uses the write module and `run-lifecycle.ts` (`finalizeRunXP`, `awardMaterialsDuringRun` — see [grant materials](./WORKFLOWS.md#grant-materials-during-a-run)), never the discovery-only profile region. `error-log-store.ts` is a standalone local-only error buffer (own storage key, debounced persist); `shared/stores/reset.ts` owns the Options wipe (distinct from the audio test reset in `src/lib/audio/reset.ts`). Both sit outside the gameplay aggregate and its save codecs.
 
 ## Permanent Gear (`gear-store`)
 

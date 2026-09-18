@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 
 import { cardBack } from "@/lib/game-data";
 import { cardSurfaceClass } from "@/features/alchemy/shared/config/layout";
+import { useBattlePresentationStore } from "../battle-presentation-store";
 import type { CardTransfer } from "../../../shared/types";
 
 const TRANSFER_EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
@@ -63,3 +64,14 @@ export const CardTransferOverlay = memo(function CardTransferOverlay({ transfer 
     </motion.div>
   );
 });
+
+export function CardTransferLayer() {
+  const cardTransfers = useBattlePresentationStore((s) => s.cardTransfers);
+  return (
+    <>
+      {cardTransfers.map((transfer) => (
+        <CardTransferOverlay key={transfer.id} transfer={transfer} />
+      ))}
+    </>
+  );
+}

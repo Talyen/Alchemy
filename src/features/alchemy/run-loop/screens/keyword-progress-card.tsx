@@ -35,6 +35,7 @@ export function KeywordProgressCard({
         <span className={cn(large ? "text-lg" : "text-base", "font-semibold", def?.colorClass)}>Lv{displayLevel}</span>
       </div>
       <Progress
+        aria-label={`${def?.label ?? kw} level ${displayLevel} progress`}
         size="sm"
         value={animate ? progressPercent : 0}
         className={cn("h-1.5", large ? "mt-2.5" : "mt-2")}

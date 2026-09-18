@@ -37,7 +37,7 @@ export function dealScaledBurnWithStacks(
   if (baseDamage <= 0 || state.enemyHealth <= 0) return state;
   const preHitHealth = state.enemyHealth;
   return dealEnemyScaledDamage(state, baseDamage, "burn", combatTexts, {
-    ...(options.multiplier === undefined ? {} : { multiplier: options.multiplier }),
+    ...options,
     riders: (damaged, finalDamage, texts) => {
       const burning = addEnemyStatus(damaged, "burn", finalDamage);
       const decayed = decayArmorAfterDamage(burning, finalDamage, "enemy", texts);

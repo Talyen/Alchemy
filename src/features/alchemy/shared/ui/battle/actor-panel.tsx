@@ -319,6 +319,7 @@ function ActorStatsPanel({
       <div className={cn(isDead && "opacity-0 transition-opacity duration-700")}>
         <ActorHealthHeader side={side} title={title} health={health} maxHealth={maxHealth} healthToken={healthToken} />
         <Progress
+          aria-label={`${title} health`}
           value={healthPercent}
           className={cn("mt-1.5 h-3 bg-background/80 [&>div]:bg-destructive", isDead && "[&>div]:bg-destructive/30")}
         />

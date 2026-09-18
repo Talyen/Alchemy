@@ -1,9 +1,9 @@
-import { ANIMATION_DISABLED_DURATION, isAnimationDisabled } from "@/lib/animation/animation-prefs";
+import { resolveGameDelay } from "@/lib/animation/game-timer";
 
 export function playHandSlotReflow(slot: HTMLElement, deltaX: number, durationMs: number): () => void {
   if (Math.abs(deltaX) < 0.5) return () => {};
 
-  const duration = isAnimationDisabled() ? ANIMATION_DISABLED_DURATION : durationMs;
+  const duration = resolveGameDelay(durationMs);
 
   slot.style.transition = "none";
   slot.style.transform = `translate3d(${deltaX}px, 0, 0)`;

@@ -1,4 +1,4 @@
-import { selectSettingsSaveFields, useSettingsStore, type SettingsSaveFields } from "./settings-store";
+import { createDefaultSettingsSaveFields, useSettingsStore, type SettingsSaveFields } from "./settings-store";
 import { createDefaultProfileSaveFields, type ProfileSaveFields } from "./profile-store-types";
 import {
   LABYRINTH_GATED_SESSION_KEYS,
@@ -28,17 +28,16 @@ export function subscribePersistenceCommits(listener: () => void): () => void {
   };
 }
 
-function settingsPersistedInputsEqual(
-  previous: Pick<SettingsSaveFields, keyof SettingsSaveFields>,
-  next: Pick<SettingsSaveFields, keyof SettingsSaveFields>,
-): boolean {
-  // Union of both key sets (never just one side), so a future field cannot
-  // slip through asymmetrically.
-  return recordsEqualExcept(
-    selectSettingsSaveFields(previous) as unknown as Record<string, unknown>,
-    selectSettingsSaveFields(next) as unknown as Record<string, unknown>,
-    NO_SKIPPED_KEYS,
-  );
+// Settings save keys derive from the defaults factory (same pattern as
+// PROFILE_SAVE_KEYS below), so a future persisted field is compared
+// automatically. Transient UI state lives outside this store entirely.
+const SETTINGS_SAVE_KEYS = Object.keys(createDefaultSettingsSaveFields()) as Array<keyof SettingsSaveFields>;
+
+function settingsPersistedInputsEqual(previous: SettingsSaveFields, next: SettingsSaveFields): boolean {
+  for (const key of SETTINGS_SAVE_KEYS) {
+    if (!Object.is(previous[key], next[key])) return false;
+  }
+  return true;
 }
 
 // Profile save keys derive from the defaults factory, so a future persisted
@@ -64,8 +63,6 @@ const LABYRINTH_SESSION_SKIP: ReadonlySet<string> = new Set(LABYRINTH_GATED_SESS
 // Run-domain keys that never reach a snapshot: the committed screen (resume
 // derives its screen from run activity) and the boot flag.
 const TRANSIENT_RUN_SKIP: ReadonlySet<string> = new Set(TRANSIENT_RUN_KEYS);
-
-const NO_SKIPPED_KEYS: ReadonlySet<string> = new Set();
 
 function recordsEqualExcept(
   previous: Record<string, unknown>,

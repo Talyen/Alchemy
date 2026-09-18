@@ -1,3 +1,9 @@
+/**
+ * Asset-tier test: couples the runtime registries to files on disk
+ * (`public/sounds`, `public/Music`) and to the `scripts/assets/*` validators.
+ * Heavier than the unit playback tests by design; run it when registries,
+ * audio files, or the asset pipeline change rather than on every edit.
+ */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";

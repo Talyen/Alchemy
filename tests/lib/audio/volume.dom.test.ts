@@ -3,14 +3,13 @@ import { initAudioHost, setMuted, setSfxVolume, setMasterVolume, setMusicVolume 
 import { audioState } from "@/lib/audio/state";
 import { MUSIC_KEYS, MUSIC_MASTER_GAIN } from "@/lib/game-constants";
 import { playMusic, playMusicImmediate } from "@/lib/audio/music";
-import { installFakeAudio, resetAudioForTests } from "../../helpers/fake-audio";
+import { installCleanAudio } from "../../helpers/audio-fixture";
 
 beforeEach(() => {
+  installCleanAudio();
   audioState.sfxVolume = 0.35;
   audioState.masterVolume = 1;
   audioState.musicVolume = 0.0875;
-  resetAudioForTests();
-  installFakeAudio();
 });
 
 afterEach(() => {
@@ -121,7 +120,6 @@ describe("setMusicVolume", () => {
     audioState.currentMusic = el as HTMLAudioElement;
     audioState.masterVolume = 0.5;
     audioState.musicVolume = 0.5;
-    audioState.currentMusic = el as HTMLAudioElement;
     setMusicVolume(0.5);
     expect(el.volume).toBe(0.5 * 0.5 * MUSIC_MASTER_GAIN);
   });

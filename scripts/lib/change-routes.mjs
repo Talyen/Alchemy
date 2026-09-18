@@ -4,6 +4,7 @@ import path from "node:path";
 import { globToRegExp } from "./glob-pattern.mjs";
 import { expandRepositoryPaths, toRepoRelative } from "./repository-paths.mjs";
 import { COMMANDS } from "./test-commands.mjs";
+import { RELATED_SELECTION_BYTES } from "./selection-budgets.mjs";
 import { readDocumentSection } from "./markdown-sections.mjs";
 
 const ROOT_DIR = path.resolve(import.meta.dirname, "../..");
@@ -261,8 +262,9 @@ export function resolveRoutePlan(paths) {
   if (relatedInputs.length === 0) keys.delete("related");
   // A first push can select the entire tree. Full unit coverage is cheaper and
   // safer than shell-sized batches of overlapping dependency-related commands.
-  // Budget is intentionally separate from the inline CLI-arg budget in check.mjs.
-  if (Buffer.byteLength(JSON.stringify([...relatedInputs, ...changedTests])) > 8_000) {
+  // Budget is intentionally separate from the inline CLI-arg budget in check.mjs
+  // (see lib/selection-budgets.mjs: same value, different meaning).
+  if (Buffer.byteLength(JSON.stringify([...relatedInputs, ...changedTests])) > RELATED_SELECTION_BYTES) {
     for (const key of keys) if (key === "related" || key.startsWith("unit-")) keys.delete(key);
     keys.add("unit-all");
   }

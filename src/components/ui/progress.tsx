@@ -7,10 +7,16 @@ interface ProgressProps extends HTMLAttributes<HTMLDivElement> {
   value?: number;
   size?: "sm" | "md";
   color?: string;
-  fillStyle?: CSSProperties;
+  /**
+   * Extra fill styling (e.g. transitions, backgroundColor). `width` is owned
+   * by `value` and cannot be overridden here.
+   */
+  fillStyle?: Omit<CSSProperties, "width">;
   ref?: Ref<HTMLDivElement>;
 }
 
+// Callers must provide an accessible name (aria-label/aria-labelledby):
+// a bare progressbar has no text content for assistive tech to announce.
 function Progress({ className, value, size = "md", color, fillStyle, ref, ...props }: ProgressProps) {
   const height = size === "sm" ? "h-1" : "h-4";
   const trackColor = size === "sm" ? "bg-muted" : "bg-secondary";
@@ -29,8 +35,8 @@ function Progress({ className, value, size = "md", color, fillStyle, ref, ...pro
       {...props}
     >
       <div
-        className={cn("h-full w-full flex-1 rounded-full transition-all duration-300 ease-out", fillColor)}
-        style={{ width: `${progressPercent}%`, ...fillStyle }}
+        className={cn("h-full rounded-full transition-all duration-300 ease-out", fillColor)}
+        style={{ ...fillStyle, width: `${progressPercent}%` }}
       />
     </div>
   );

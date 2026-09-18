@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cardLibrary, companionLibrary, enemyBestiary } from "@/lib/game-data";
-import { COMPANION_SOUND_CARD_IDS } from "@/lib/game-constants";
+import { COMPANION_SOUND_CARD_IDS, MUSIC_KEYS } from "@/lib/game-constants";
 import { cardSounds, enemyAttackSounds, battleEventSounds, uiSounds, stingerSounds } from "@/lib/audio/sound-registry";
 
 describe("cardSounds", () => {
@@ -13,11 +13,6 @@ describe("cardSounds", () => {
       }
     }
   });
-
-  it("card IDs are unique", () => {
-    const ids = Object.keys(cardSounds);
-    expect(new Set(ids).size).toBe(ids.length);
-  });
 });
 
 describe("enemyAttackSounds", () => {
@@ -29,11 +24,6 @@ describe("enemyAttackSounds", () => {
         expect(s).toMatch(/\.ogg$/);
       }
     }
-  });
-
-  it("enemy IDs are unique", () => {
-    const ids = Object.keys(enemyAttackSounds);
-    expect(new Set(ids).size).toBe(ids.length);
   });
 });
 
@@ -87,6 +77,30 @@ describe("cross-registry key consistency", () => {
     for (const enemyId of Object.keys(enemyAttackSounds)) {
       expect(enemyIds.has(enemyId)).toBe(true);
     }
+  });
+});
+
+describe("intentional cross-table sound sharing", () => {
+  // These cues are shared across tables on purpose (one file, two semantic
+  // entries). The registry defines them via shared constants; this pin keeps
+  // a rename on one side from silently forking the other.
+  it("reuses the same file for battle and UI equivalents", () => {
+    expect(battleEventSounds.gainGold).toBe(uiSounds.shopBuy);
+    expect(battleEventSounds.endTurn).toBe(uiSounds.toggleOff);
+    expect(battleEventSounds.consumeCard).toBe(uiSounds.shopRemove);
+    expect(cardSounds["will-o-wisp-companion"]).toContain(uiSounds.musicBoxMystery);
+  });
+
+  it("covers every music boss with an attack cue and pins attack-only bosses", () => {
+    const musicBossIds = Object.values(MUSIC_KEYS)
+      .filter((key) => key.startsWith("boss-"))
+      .map((key) => key.replace(/^boss-/, ""));
+    for (const id of musicBossIds) {
+      expect(enemyAttackSounds[id]).toBeDefined();
+    }
+    // living-armor hits with the shared boss cue but has no theme: adding a
+    // theme means adding a MUSIC_KEYS entry plus a catalog file.
+    expect(enemyAttackSounds["living-armor"]).toBeDefined();
   });
 });
 

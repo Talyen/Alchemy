@@ -88,6 +88,31 @@ export function runCommand(command, args = [], options = {}) {
 }
 
 /**
+ * Streaming sibling of runCommand for long-running CLIs (builds, ship suites,
+ * browser runs, profiling) where operators need live progress.
+ * Resolves the tool through commandInvocation (no shell, no npx download),
+ * streams stdio inherit, and returns the raw spawn result. Use this instead of
+ * raw spawnSync so CLI resolution stays in one owner; bounded capture stays in
+ * runCommand/runCommandAsync for gates that digest output.
+ */
+export function runStreamCommand(command, args = [], options = {}) {
+  const started = Date.now();
+  const invocation = commandInvocation(command, args);
+  const unsupported = ["timeout", "shell", "stdio", "logPath", "maxBuffer"].filter((key) => options[key] !== undefined);
+  if (unsupported.length > 0) {
+    throw new Error(`runStreamCommand does not support option(s): ${unsupported.join(", ")}`);
+  }
+  const result = spawnSync(...invocation, {
+    cwd: options.cwd,
+    env: options.env,
+    shell: false,
+    stdio: "inherit",
+    encoding: "utf8",
+  });
+  return { ...result, elapsedMs: Date.now() - started };
+}
+
+/**
  * Async sibling of runCommand for running several bounded commands concurrently
  * (e.g. audit sweeps). Output is captured, never interleaved on the terminal.
  */

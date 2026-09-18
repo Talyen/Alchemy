@@ -14,13 +14,13 @@ import {
 } from "@/lib/audio/music";
 import { audioState } from "@/lib/audio/state";
 import { MUSIC_KEYS, MUSIC_MASTER_GAIN } from "@/lib/game-constants";
-import { installFakeAudio, resetAudioForTests, type FakeAudioElement } from "../../helpers/fake-audio";
+import { type FakeAudioElement, installFakeAudio } from "../../helpers/fake-audio";
+import { installCleanAudio } from "../../helpers/audio-fixture";
 
 beforeEach(() => {
+  installCleanAudio();
   audioState.musicVolume = 0.5;
   audioState.masterVolume = 1;
-  resetAudioForTests();
-  installFakeAudio();
 });
 
 afterEach(() => {
@@ -320,6 +320,28 @@ describe("boss preview", () => {
     // restore must not replay menu music without an active preview.
     endBossPreview();
     expect(audioState.currentMusicKey).toBe(MUSIC_KEYS.MENU);
+    resetMusicRuntimeForTests();
+  });
+
+  it("ignores an unknown key without silencing the current track", () => {
+    playMusicImmediate(MUSIC_KEYS.MENU);
+    const el = audioState.currentMusic;
+
+    playMusic("unknown-key");
+    playMusicImmediate("unknown-key");
+
+    expect(audioState.currentMusic).toBe(el);
+    expect(audioState.currentMusicKey).toBe(MUSIC_KEYS.MENU);
+    expect(el?.paused).toBe(false);
+  });
+
+  it("ending a preview after a pause does not replay menu music", () => {
+    previewBossMusic(MUSIC_KEYS.BOSS_FORGE_GOLEM);
+    pauseAllMusic();
+
+    endBossPreview();
+
+    expect(audioState.currentMusicKey).toBe(MUSIC_KEYS.BOSS_FORGE_GOLEM);
     resetMusicRuntimeForTests();
   });
 });

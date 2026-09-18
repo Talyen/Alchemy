@@ -1,6 +1,5 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createBattleInit } from "@/features/alchemy/run-loop/battle/battle-init";
-import * as battleFeedback from "@/features/alchemy/run-loop/battle/battle-status";
 import * as controllerUtils from "@/features/alchemy/run-loop/battle/controller-utils";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { computeTalentEffects } from "@/lib/game-data";
@@ -138,8 +137,7 @@ describe("createBattleInit", () => {
   });
 
   it("plays combat-text sounds and portrait feedback for companion damage at battle start", () => {
-    const sounds = vi.spyOn(controllerUtils, "playCombatTextSounds");
-    const feedback = vi.spyOn(battleFeedback, "applyCombatTextShakeFeedback");
+    const feedback = vi.spyOn(controllerUtils, "presentCombatTexts");
     setRunProgress({
       roomsEncountered: 0,
       runPlayerHealth: 30,
@@ -148,9 +146,8 @@ describe("createBattleInit", () => {
     });
     makeInit().startBattle(readActiveRun().runDeck, 0, "normal", [{ kind: "start-companion" }]);
 
-    expect(sounds).toHaveBeenCalled();
     expect(feedback).toHaveBeenCalled();
-    const texts = sounds.mock.calls[0]?.[0] ?? [];
+    const texts = feedback.mock.calls[0]?.[1] ?? [];
     expect(texts.some((ct) => ct.kind === "damage" && ct.target === "enemy")).toBe(true);
   });
 });

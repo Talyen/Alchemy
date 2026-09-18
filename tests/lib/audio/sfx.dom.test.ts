@@ -14,19 +14,13 @@ import {
   playSliceDeath,
 } from "@/lib/audio/sfx";
 import { setMasterVolume, setMuted, setSfxVolume } from "@/lib/audio/volume";
-import {
-  createdFakeAudio,
-  installFakeAudio,
-  lastFakeAudio,
-  resetAudioForTests,
-  soundedFakeAudio,
-} from "../../helpers/fake-audio";
+import { createdFakeAudio, installFakeAudio, lastFakeAudio, soundedFakeAudio } from "../../helpers/fake-audio";
+import { installCleanAudio } from "../../helpers/audio-fixture";
 
 beforeEach(() => {
+  installCleanAudio();
   audioState.sfxVolume = 0.35;
   audioState.masterVolume = 1;
-  resetAudioForTests();
-  installFakeAudio();
 });
 
 afterEach(() => {
@@ -197,6 +191,12 @@ describe("cooldown, delay, and stop tokens", () => {
     expect(soundedFakeAudio()).toHaveLength(1);
   });
 
+  it("plays the first sound even when the clock starts at zero", () => {
+    vi.useFakeTimers();
+    playBattleEvent("playerHit");
+    expect(soundedFakeAudio()).toHaveLength(1);
+  });
+
   it("honors an explicit zero cooldown", () => {
     playBattleEvent("playerHit", { cooldownMs: 0 });
     playBattleEvent("playerHit", { cooldownMs: 0 });
@@ -285,18 +285,21 @@ describe("SFX lifetime", () => {
 describe("ambient SFX bound", () => {
   it("caps fire-and-forget sounds when ended handlers never fire", () => {
     vi.useFakeTimers();
-    // Fake-timer clocks start at zero, which the cooldown treats as "just
-    // played": step past it once so all 40 scheduled plays land.
-    vi.advanceTimersByTime(100);
-    for (let i = 0; i < 40; i += 1) {
+    // Cooldown is 80ms: step past it between plays so every play lands. The
+    // first play lands without a warmup step (a never-played sound has no
+    // cooldown). 34 plays (cap 32 + 2) prove eviction with fewer timer steps.
+    for (let i = 0; i < 34; i += 1) {
       playUISound("error");
       vi.advanceTimersByTime(100);
     }
-    expect(soundedFakeAudio()).toHaveLength(40);
+    expect(soundedFakeAudio()).toHaveLength(34);
     // The oldest entry was paused out by the cap; the newest is still live.
-    // (Index via soundedFakeAudio: element 0 of createdFakeAudio is the
-    // src-less canPlayType probe, not a played sound.)
+    // (soundedFakeAudio excludes the src-less canPlayType probe in
+    // createdFakeAudio, so index 0 here is the first played sound.)
     expect(soundedFakeAudio()[0]?.pause).toHaveBeenCalled();
+    // Eviction also releases the source so the stuck element cannot keep a
+    // fetch attached (same release path as stopAllSfx/preload abort).
+    expect(soundedFakeAudio()[0]?.removeAttribute).toHaveBeenCalledWith("src");
     const live = lastFakeAudio()!;
     expect(live.pause).not.toHaveBeenCalled();
     setMuted(true);

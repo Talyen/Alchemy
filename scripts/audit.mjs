@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { isMainModule } from "./lib/is-main-module.mjs";
-import { runCommand } from "./lib/run-command.mjs";
+import { runStreamCommand } from "./lib/run-command.mjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -98,7 +98,8 @@ async function main() {
   }
   const script = resolveAuditScript(parsed);
   const childArgs = [script, ...parsed.forwardedArgs];
-  const result = runCommand(process.execPath, childArgs, { cwd: ROOT, stdio: "inherit" });
+  // Streams intentionally: audit probes print their own sections.
+  const result = runStreamCommand(process.execPath, childArgs, { cwd: ROOT });
   if (result.status !== 0) process.exitCode = result.status ?? 1;
 }
 
