@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
-import { isBattleInspectionOpen, useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import { isBattleInspectionOpen, nextShimmerState, useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 
 beforeEach(() => {
   useUiStore.setState(useUiStore.getInitialState(), true);
@@ -52,6 +52,16 @@ describe("plasma registrations", () => {
     expect(useUiStore.getState().plasmaInteraction?.colorPair).toEqual(blue);
     store.clearPlasmaInteraction("tooltip");
     expect(useUiStore.getState().plasmaBaseline?.colorPair).toEqual(red);
+  });
+});
+
+describe("nextShimmerState", () => {
+  it("holds the same reference inside the cooldown without fake timers", () => {
+    const first = nextShimmerState(null, "card-a", 1000);
+    expect(first).toMatchObject({ cardId: "card-a", token: 1, triggeredAt: 1000 });
+    expect(nextShimmerState(first, "card-a", 1005)).toBe(first);
+    const second = nextShimmerState(first, "card-b", 1005);
+    expect(second).toMatchObject({ cardId: "card-b", token: 2 });
   });
 });
 

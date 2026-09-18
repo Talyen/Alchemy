@@ -9,6 +9,10 @@ import { logStorageFailure } from "@/lib/storage-logging";
 
 let persistentClearInFlight = false;
 
+// Test/boot helper only: resets the UI store and clears the transient session
+// without touching battle state. Not mid-battle safe (a live battle and its
+// pending transition survive under fresh UI) — use the lifecycle teardown
+// paths for in-run resets.
 export function resetTransientRunUi() {
   useUiStore.setState(useUiStore.getInitialState(), true);
   dispatchRunSessionCommand((draft) => clearTransientSession(draft));

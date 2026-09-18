@@ -13,7 +13,7 @@ import {
   enemyLootTableIds,
   enemyLootTables,
   getEnemyMaterialLoot,
-} from "@/lib/homestead/loot";
+} from "@/lib/homestead/material-rewards";
 import { enemyBestiary } from "@/lib/game-data/compendium/enemies";
 import { createEmptyTalentEffectManifest } from "@/lib/game-data";
 import { canUpgradeTierItem, getNextTierCost } from "@/lib/homestead/upgrades";

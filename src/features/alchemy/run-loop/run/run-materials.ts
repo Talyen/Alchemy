@@ -10,7 +10,7 @@ import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/typ
 import { EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear";
 import { addInventory, emptyInventory } from "@/lib/homestead/inventory";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import { applyEndOfRunHomesteadBonuses } from "@/lib/homestead/loot";
+import { applyEndOfRunHomesteadBonuses } from "@/lib/homestead/material-rewards";
 
 /**
  * Canonical list of run-earned material grant sites: every

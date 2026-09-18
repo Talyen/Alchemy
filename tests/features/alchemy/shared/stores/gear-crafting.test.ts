@@ -157,7 +157,9 @@ describe("gear-store crafting integration", () => {
 
     it("returns false when currency count is zero", () => {
       initStore([item], { voidstone: 0 });
-      expect(mutateGearForTest((gear) => gear.applyCurrency("voidstone", item.instanceId))).toBe(false);
+      expect(mutateGearForTest((gear) => gear.applyCurrency("voidstone", item.instanceId, { rng: () => 0 }))).toBe(
+        false,
+      );
       expect(readGearState().craftingCurrencies.voidstone).toBe(0);
       resetGearForTest();
     });
@@ -169,7 +171,9 @@ describe("gear-store crafting integration", () => {
         affixes: [],
       };
       initStore([bareItem], { voidstone: 1 });
-      expect(mutateGearForTest((gear) => gear.applyCurrency("voidstone", bareItem.instanceId))).toBe(false);
+      expect(mutateGearForTest((gear) => gear.applyCurrency("voidstone", bareItem.instanceId, { rng: () => 0 }))).toBe(
+        false,
+      );
       expect(readGearState().craftingCurrencies.voidstone).toBe(1);
       expect(readGearState().inventories.knight[0]?.affixes).toEqual([]);
       resetGearForTest();

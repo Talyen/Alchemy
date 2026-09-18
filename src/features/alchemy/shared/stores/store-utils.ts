@@ -8,6 +8,17 @@ export function deepFreeze<T>(value: T, seen: WeakSet<object> = new WeakSet()): 
   if (seen.has(value)) return value;
   seen.add(value);
   Object.freeze(value);
+  if (value instanceof Map) {
+    for (const [key, child] of value) {
+      deepFreeze(key, seen);
+      deepFreeze(child, seen);
+    }
+    return value;
+  }
+  if (value instanceof Set) {
+    for (const child of value) deepFreeze(child, seen);
+    return value;
+  }
   for (const child of Object.values(value as Record<string, unknown>)) {
     if (child !== null && typeof child === "object") deepFreeze(child, seen);
   }

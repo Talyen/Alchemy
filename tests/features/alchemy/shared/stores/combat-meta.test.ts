@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { deriveCombatMeta } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { deriveCombatMeta, type CombatMeta } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { computeGearManifest, flattenGearInventories } from "@/lib/gear";
 import { computeTalentEffects } from "@/lib/game-data";
@@ -10,7 +10,7 @@ beforeEach(() => resetAllTestStores());
 
 describe("deriveCombatMeta", () => {
   it("derives combat manifests and active trinkets from one command draft", () => {
-    const combatMeta = dispatchRunSessionCommand((draft) => {
+    const combatMeta: CombatMeta = dispatchRunSessionCommand((draft) => {
       draft.run.activeRun.runBoons = ["bone-charm"];
       draft.gear.equippedTrinkets[draft.run.activeRun.characterId] = "meteorite";
       draft.runProfile.effects.flatPhysicalDamage = 2;

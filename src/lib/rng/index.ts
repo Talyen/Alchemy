@@ -146,6 +146,21 @@ export function pickRandom<T>(items: readonly T[], rng: Rng): T | undefined {
   return items[rngInt(rng, items.length)];
 }
 
+/** Sample without replacement while skipping excluded keys (e.g. owned or currently shown items). */
+export function sampleItemsExcluding<T, K>(
+  items: readonly T[],
+  count: number,
+  rng: Rng,
+  exclude: ReadonlySet<K>,
+  keyOf: (item: T) => K,
+): T[] {
+  return sampleItems(
+    items.filter((item) => !exclude.has(keyOf(item))),
+    count,
+    rng,
+  );
+}
+
 export function takeRandomItem<T>(items: T[], rng: Rng): T | undefined {
   if (items.length === 0) return undefined;
   const index = rngInt(rng, items.length);

@@ -135,7 +135,7 @@ export const CONTEXT_TASKS = {
     entrypoints: ["src/features/alchemy/shared/stores/run-lifecycle.ts"],
   },
   "run-ports": {
-    matches: /(?:run-reads|run-session-(?:read|write)-port|route-commands)/u,
+    matches: /(?:run-reads|run-session-write-port|route-commands)/u,
     docs: [owner("docs/ARCHITECTURE.md", "Session capability ports")],
     entrypoints: ["src/features/alchemy/shared/stores/run-reads.ts"],
   },

@@ -1,6 +1,6 @@
 import { findGearEquippedCharacter, findGearInventoryOwner, gearDefinitions } from "@/lib/gear";
 import { deriveGearCombatRestrictions } from "./gear-combat-restrictions";
-import type { GearDraftView, GearStore } from "./gear-store-types";
+import type { GearDraftView } from "./gear-store-types";
 import {
   addGearCurrencies,
   addGearInstance,
@@ -19,11 +19,13 @@ import { dispatchRunSessionCommand, type GameplayDraft, type SynchronousResult }
 import { addMaterialsToStockpile, addRunCurrenciesEarned, awardMaterialsDuringRun } from "./run-session-write-port";
 import { rebindLiveRunMeta } from "./run-session-write-port";
 
-function gearCommandView(state: GameplayDraft, markMutated: () => void): GearStore {
+function gearCommandView(state: GameplayDraft, markMutated: () => void): GearDraftView {
   const gear = state.gear;
   const restrictions = deriveGearCombatRestrictions(state);
+  // Second tier of the lock policy (see deriveGearCombatRestrictions):
   // restrictions.gear only tracks equipped items of the locked hero; an
-  // unequipped item sitting in their inventory is locked too.
+  // unequipped item sitting in their inventory is locked too — for salvage and
+  // currency application, but NOT for equipping elsewhere.
   const isInstanceLocked = (instanceId: string): boolean => {
     if (restrictions.gear[instanceId]) return true;
     const owner = findGearInventoryOwner(gear.inventories, instanceId);
@@ -105,7 +107,7 @@ function gearCommandView(state: GameplayDraft, markMutated: () => void): GearSto
 }
 
 export function dispatchGearMutationWithRunHealthSync<T>(options: {
-  mutate: (gear: GearStore) => T & SynchronousResult<T>;
+  mutate: (gear: GearDraftView) => T & SynchronousResult<T>;
   syncRunHealth?: boolean;
 }): T {
   return dispatchRunSessionCommand<T>((draft) => mutateGearWithRunHealthSync<T>(draft, options));
@@ -114,7 +116,7 @@ export function dispatchGearMutationWithRunHealthSync<T>(options: {
 export function mutateGearWithRunHealthSync<T>(
   draft: GameplayDraft,
   options: {
-    mutate: (gear: GearStore) => T & SynchronousResult<T>;
+    mutate: (gear: GearDraftView) => T & SynchronousResult<T>;
     syncRunHealth?: boolean | undefined;
   },
 ): T & SynchronousResult<T> {
@@ -131,7 +133,7 @@ export function mutateGearWithRunHealthSync<T>(
 }
 
 export function dispatchGearSalvageWithMaterialGrant(
-  mutate: (gear: GearStore) => ReturnType<GearDraftView["salvage"]>,
+  mutate: (gear: GearDraftView) => ReturnType<GearDraftView["salvage"]>,
   options?: { syncRunHealth?: boolean | undefined },
 ): ReturnType<GearDraftView["salvage"]> {
   return dispatchRunSessionCommand((draft) => {

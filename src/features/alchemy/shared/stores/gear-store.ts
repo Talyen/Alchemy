@@ -111,6 +111,8 @@ export function readHasAnyOwnedGear(): boolean {
 }
 
 export function readGearState(): GearStateFields {
+  // Live references (see readProfileStore): the codec clones on encode. Never
+  // mutate the result outside a dispatchRunSessionCommand draft.
   const gear = readGameplayState().gear;
   return {
     inventories: gear.inventories,

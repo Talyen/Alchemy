@@ -32,6 +32,7 @@ import type { BattleCard } from "@/lib/game-data";
 import { type Screen } from "@/lib/routing";
 import { decodeInterruptedFlow, encodeInterruptedFlow, inferActiveRunScreen } from "./encode-interrupted-flow";
 import type { RunSession } from "./run-reads";
+import type { RunSessionFields } from "./run-domain-types";
 import { ACTIVE_RUN_PROGRESS_KEYS, createInitialActiveRunFields, type ActiveRunProgressFields } from "./run-state-init";
 
 export interface DecodedRunResumeSession {
@@ -119,11 +120,41 @@ export function encodePersistedShops(session: RunSession["session"]): PersistedS
 
 function pickActiveRunProgress(run: RunSession["run"]): ActiveRunProgressFields {
   const progress = {} as ActiveRunProgressFields;
+  // Single container cast for union-key mechanics: every key comes from
+  // ACTIVE_RUN_PROGRESS_KEYS, whose exhaustiveness over
+  // ActiveRunProgressFields is compile-guarded (see the key guards in
+  // run-domain-store-test), so each read really is its field's type.
+  const writable = progress as Record<(typeof ACTIVE_RUN_PROGRESS_KEYS)[number], unknown>;
   for (const key of ACTIVE_RUN_PROGRESS_KEYS) {
-    progress[key] = run[key] as never;
+    writable[key] = run[key];
   }
   return progress;
 }
+
+// Session persistence contract (see encodeActiveRunFromSession below): the
+// transient fields never reach a snapshot, and the gated ones persist only for
+// matching content systems. persistence-commit-filter derives its
+// dirty-tracking skip sets from these, so the two cannot drift apart.
+export const TRANSIENT_SESSION_KEYS = [
+  "selectedLabyrinthNodeId",
+  "pendingCharacterId",
+  "pendingContentSystemType",
+  "runEndLabyrinthFloor",
+  "runEndMaterials",
+  "runEndCurrencies",
+  "runEndTalentXP",
+  "runEndItems",
+] as const satisfies ReadonlyArray<keyof RunSessionFields>;
+
+export const LABYRINTH_GATED_SESSION_KEYS = [
+  "labyrinthMap",
+  "activeLabyrinthModifiers",
+  "activeLabyrinthRewardModifiers",
+  "activeLabyrinthPendingNode",
+] as const satisfies ReadonlyArray<keyof RunSessionFields>;
+
+export const WILDWOOD_GATED_SESSION_KEY = "wildwoodDraft" as const satisfies keyof RunSessionFields;
+export const NON_WILDWOOD_GATED_SESSION_KEY = "starterDraftChoices" as const satisfies keyof RunSessionFields;
 
 interface EncodeResumeFields {
   currentScreen: Screen | null;
@@ -168,15 +199,23 @@ function encodeActiveRunFromSession(source: RunSession, resume: EncodeResumeFiel
   const { run, session, battle } = source;
   const progress = pickActiveRunProgress(run);
   const isLabyrinth = progress.contentSystemType === "labyrinth";
-  const activeCombat =
-    battle.hasActiveBattle && battle.battleState.enemyHealth > 0 && !isPlayerDefeated(battle.battleState)
-      ? {
-          battleState: battleSnapshot(battle.battleState),
-          pendingBattleTransition: battle.pendingBattleTransition ?? null,
-          activeLabyrinthModifiers: isLabyrinth ? session.activeLabyrinthModifiers : [],
-          activeLabyrinthRewardModifiers: isLabyrinth ? session.activeLabyrinthRewardModifiers : [],
-        }
-      : null;
+  // A pending battle transition lives inside activeCombat. A save written after
+  // the enemy fell (or the player fell) but before the transition commits must
+  // keep the combat shell, or the continuation is lost with it. Screen
+  // inference already skips "battle" for a dead enemy, and restore re-installs
+  // the pending transition, so the battle controller resumes it on return.
+  const keepCombat =
+    battle.hasActiveBattle &&
+    (battle.pendingBattleTransition != null ||
+      (battle.battleState.enemyHealth > 0 && !isPlayerDefeated(battle.battleState)));
+  const activeCombat = keepCombat
+    ? {
+        battleState: battleSnapshot(battle.battleState),
+        pendingBattleTransition: battle.pendingBattleTransition ?? null,
+        activeLabyrinthModifiers: isLabyrinth ? session.activeLabyrinthModifiers : [],
+        activeLabyrinthRewardModifiers: isLabyrinth ? session.activeLabyrinthRewardModifiers : [],
+      }
+    : null;
 
   return {
     ...progress,

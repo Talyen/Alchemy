@@ -7,11 +7,20 @@ import {
   setScreen,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import {
+  useAlchemistScreenData,
+  useCampfireScreenData,
+  useCorruptionScreenData,
+  useDestinationScreenData,
+  useEquipmentShopScreenData,
+  useMysteryScreenData,
   useRewardsScreenData,
   useShopScreenData,
   useRunEndScreenData,
   useLabyrinthMapScreenData,
+  useTrinketShopScreenData,
+  useWildwoodRemovalScreenData,
 } from "@/features/alchemy/shared/stores/use-run-screen-data";
+import type { RunDataScreen } from "@/features/alchemy/shared/stores/run-screen-data";
 import { teardownRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { emptyShopState, readActivityData } from "@/lib/active-run-session";
 import { act, renderHook } from "@testing-library/react";
@@ -21,6 +30,33 @@ import { setRunProgress, setRunSession } from "../../../../helpers/run-domain-st
 
 beforeEach(() => {
   resetAllTestStores();
+});
+
+// Every RunScreenDataByScreen key must resolve to a data hook: adding a screen
+// without extending this registry is a compile error (Record<RunDataScreen>).
+const SCREEN_HOOKS: Record<RunDataScreen, () => unknown> = {
+  campfire: useCampfireScreenData,
+  shop: useShopScreenData,
+  alchemist: useAlchemistScreenData,
+  "trinket-shop": useTrinketShopScreenData,
+  "equipment-shop": useEquipmentShopScreenData,
+  "labyrinth-map": useLabyrinthMapScreenData,
+  rewards: useRewardsScreenData,
+  destination: useDestinationScreenData,
+  mystery: useMysteryScreenData,
+  corruption: useCorruptionScreenData,
+  "game-over": useRunEndScreenData,
+  "run-victory": useRunEndScreenData,
+  "wildwood-removal": useWildwoodRemovalScreenData,
+};
+
+describe("screen hook coverage", () => {
+  it("resolves every screen to a data hook", () => {
+    for (const hook of Object.values(SCREEN_HOOKS)) {
+      const { result } = renderHook(() => hook());
+      expect(result.current).toBeDefined();
+    }
+  });
 });
 
 describe("screen-specific run data hooks", () => {

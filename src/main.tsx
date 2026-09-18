@@ -5,8 +5,9 @@ import App from "./App";
 import "./index.css";
 import { cursorArt } from "@/lib/game-data";
 import { initializeRendererCrashReporting } from "./lib/crash-reporting";
-import "@/features/alchemy/shared/stores/error-log-store";
+import { initErrorLogStore } from "@/features/alchemy/shared/stores/error-log-store";
 
+initErrorLogStore();
 initializeRendererCrashReporting();
 
 const cursorStyle = document.createElement("style");

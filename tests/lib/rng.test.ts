@@ -10,6 +10,7 @@ import {
   rollChance,
   rollPercent,
   sampleItems,
+  sampleItemsExcluding,
   shuffle,
   takeRandomItem,
 } from "@/lib/rng";
@@ -84,6 +85,21 @@ describe("sampleItems", () => {
   it("caps sample count at array length and handles empty input", () => {
     expect(sampleItems([10, 20], 5, () => 0.5)).toHaveLength(2);
     expect(sampleItems([], 3, () => 0.5)).toEqual([]);
+  });
+});
+
+describe("sampleItemsExcluding", () => {
+  const entries = [{ id: "a" }, { id: "b" }, { id: "c" }, { id: "d" }] as const;
+  const keyOf = (entry: { id: string }) => entry.id;
+
+  it("skips excluded keys without replacement", () => {
+    const sampled = sampleItemsExcluding(entries, 3, () => 0.5, new Set(["b"]), keyOf);
+    expect(sampled).toHaveLength(3);
+    expect(sampled.map((entry) => entry.id)).not.toContain("b");
+  });
+
+  it("returns [] when everything is excluded", () => {
+    expect(sampleItemsExcluding(entries, 2, () => 0.5, new Set(["a", "b", "c", "d"]), keyOf)).toEqual([]);
   });
 });
 

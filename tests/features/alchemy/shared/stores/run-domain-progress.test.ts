@@ -34,6 +34,11 @@ import {
 import { awardRunEndMaterials } from "@/features/alchemy/run-loop/run/run-materials";
 import { createCompleteActiveRunData, makeActiveRunData } from "./active-run-data-fixture";
 import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
+import {
+  ACTIVE_RUN_PROGRESS_KEYS,
+  EMPTY_ACTIVE_RUN_COLLECTION_KEYS,
+  RUN_SNAPSHOT_FIELD_KEYS,
+} from "@/features/alchemy/shared/stores/run-state-init";
 
 const syncGearRunHealth = createRunSessionCommand(rebindLiveRunMeta);
 const applyRunStartSnapshot = createRunSessionCommand(mutateRunStartSnapshot);
@@ -80,6 +85,16 @@ describe("run-domain progress: initial state", () => {
 });
 
 describe("initialize", () => {
+  it("keeps the progress key contracts in sync", () => {
+    // The collection defaults and snapshot fields are subsets of the persisted
+    // progress keys (compile-guarded via satisfies); this pins the same
+    // contract at runtime for the key registries themselves.
+    const progressKeys = new Set<string>(ACTIVE_RUN_PROGRESS_KEYS);
+    for (const key of [...EMPTY_ACTIVE_RUN_COLLECTION_KEYS, ...RUN_SNAPSHOT_FIELD_KEYS]) {
+      expect(progressKeys.has(key)).toBe(true);
+    }
+  });
+
   it("restores active run data", () => {
     const activeRun = makeActiveRunData({
       characterId: "rogue",
@@ -168,7 +183,11 @@ describe("initialize", () => {
       runMaterialsEarned: activeRun.runMaterialsEarned,
       runObtainedItems: activeRun.runObtainedItems,
       currentScreen: "battle",
-      interruptedFlow: { kind: "none" },
+      // The fixture carries unclaimed destinations while mid-battle: the
+      // encoder preserves them as a primary-reward interruption (dropping them
+      // was the old data-loss behavior), and decode keeps the live battle
+      // screen while retaining the reward in state.
+      interruptedFlow: { kind: "primary-reward" },
       shopState: null,
       alchemistState: null,
       trinketShopState: null,
@@ -177,6 +196,10 @@ describe("initialize", () => {
       corruptionResult: activeRun.corruptionResult,
     });
     expect(snapshot.rng).toEqual(activeRun.rng);
+    if (snapshot.interruptedFlow.kind !== "primary-reward") {
+      throw new Error("Expected unclaimed destinations to survive as a primary-reward interruption");
+    }
+    expect(snapshot.interruptedFlow.pending.destinations).toEqual(["Mystery", "Card Shop"]);
     expect(snapshot.activeCombat).toMatchObject({
       battleState: {
         turn: activeRun.activeCombat?.battleState.turn,

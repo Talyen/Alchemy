@@ -4,6 +4,7 @@ import { createSeededRng } from "@/lib/rng";
 import {
   highestCompletedLootDifficulty,
   isLootEligible,
+  LOOT_KINDS,
   lootAccountMultiplier,
   lootDepthMultiplier,
   resolveLootWeights,
@@ -118,10 +119,15 @@ describe("shared loot policy", () => {
     expect(sample()).toEqual(sample());
   });
 
+  it("leaves Boss rewards unchanged by Astral bonuses, which transfer Basic weight only", () => {
+    const plain = resolveLootWeights({ source: "boss", progress });
+    const boosted = resolveLootWeights({ source: "boss", progress, astralChanceBonus: 1 });
+    expect(boosted).toEqual(plain);
+  });
+
   it("keeps the loot weight table and depth curves well-shaped", () => {
-    const kinds = ["card", "basic", "boon", "astral", "trinket", "unique"];
     for (const [source, weights] of Object.entries(LOOT_SOURCE_WEIGHTS)) {
-      expect(Object.keys(weights).sort(), source).toEqual([...kinds].sort());
+      expect(Object.keys(weights).sort(), source).toEqual([...LOOT_KINDS].sort());
       for (const [kind, weight] of Object.entries(weights)) {
         expect(Number.isFinite(weight), `${source}.${kind}`).toBe(true);
         expect(weight, `${source}.${kind}`).toBeGreaterThanOrEqual(0);

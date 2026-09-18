@@ -23,7 +23,7 @@ export async function runLootReport({ samples = parseLootSamples(process.env.ALC
       { path: "reports/loot-progression/materials.html", role: "secondary" },
       { path: "reports/loot-progression/materials.json", role: "secondary" },
     ],
-    summary: (report) =>
+    summary: ({ report }) =>
       `Loot report: ${report.routes.length} routes × ${report.samplesPerCell} samples per cell (±${(98 / Math.sqrt(report.samplesPerCell)).toFixed(1)} pp sampling error at 95% confidence), plus materials means.`,
     run: async ({
       buildLootBalanceReport,

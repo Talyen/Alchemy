@@ -39,6 +39,14 @@ export interface RunDomainDataState {
   navigation: { screen: Screen };
 }
 
+// Run-domain keys that never reach a snapshot: the committed screen (resume
+// derives its screen from run activity) and the boot flag. Tied to the
+// interface so a new run-domain region dirties persistence by default.
+// persistence-commit-filter derives its skip set from this.
+export const TRANSIENT_RUN_KEYS = ["initialized", "navigation"] as const satisfies ReadonlyArray<
+  keyof RunDomainDataState
+>;
+
 export function createInitialSessionFields(): RunSessionFields {
   return {
     activity: { kind: "inactive" },

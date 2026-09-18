@@ -2,11 +2,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { logError } from "@/lib/error-logger";
 import {
   flushPersistedErrorLog,
+  initErrorLogStore,
   parsePersistedErrorLog,
   useErrorLogStore,
 } from "@/features/alchemy/shared/stores/error-log-store";
 
 const STORAGE_KEY = "alchemy-error-log";
+
+initErrorLogStore();
 
 describe("useErrorLogStore", () => {
   beforeEach(() => {
@@ -87,6 +90,18 @@ describe("useErrorLogStore", () => {
     logError("sink-wired", "other");
     expect(useErrorLogStore.getState().errors.at(-1)?.message).toBe("sink-wired");
     consoleSpy.mockRestore();
+  });
+
+  it("persists the batch when one entry carries an unserializable context", () => {
+    const circular: Record<string, unknown> = { message: "circular" };
+    circular.self = circular;
+    useErrorLogStore.getState().pushError({ message: "poisoned", source: "storage", context: circular });
+    useErrorLogStore.getState().pushError({ message: "healthy", source: "storage" });
+    flushPersistedErrorLog();
+
+    const parsed = parsePersistedErrorLog(localStorage.getItem(STORAGE_KEY));
+    expect(parsed.map((entry) => entry.message)).toEqual(["poisoned", "healthy"]);
+    expect(parsed[0]?.context).toBeUndefined();
   });
 
   it("normalizes optional fields and caps restored entries", () => {

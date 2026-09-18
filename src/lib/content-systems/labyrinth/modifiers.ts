@@ -1,5 +1,5 @@
 import { isLootEligible } from "@/lib/loot";
-import { pickRandom, shuffle } from "@/lib/utils";
+import { pickRandom, shuffle } from "@/lib/rng";
 import type { LabyrinthNodeType } from "../types";
 import {
   eligibleEncounterTraitIds,

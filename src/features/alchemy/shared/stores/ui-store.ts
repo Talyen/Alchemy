@@ -6,6 +6,14 @@ import type { CardInspectionView } from "../types";
 
 type ShimmerState = { cardId: string; token: number; triggeredAt: number } | null;
 
+// Pure cooldown core: monotonic token (change signal) plus a timestamp, so
+// unit tests can drive timing with an injected `now` (the store seam still
+// reads Date.now()).
+export function nextShimmerState(previous: ShimmerState, cardId: string, now: number): ShimmerState {
+  if (previous && previous.cardId === cardId && now - previous.triggeredAt < SHIMMER_COOLDOWN_MS) return previous;
+  return { cardId, token: (previous?.token ?? 0) + 1, triggeredAt: now };
+}
+
 interface PlasmaRegistration {
   ownerId: string;
   colorPair: PlasmaColorPair;
@@ -48,17 +56,10 @@ export const useUiStore = create<UiStore>()((set, get) => ({
   setAutoplayPreviewCardId: (autoplayPreviewCardId) => set({ autoplayPreviewCardId }),
   clearCardHover: () => set({ hoveredCardId: null, autoplayPreviewCardId: null }),
   maybeTriggerShimmer: (cardId) => {
-    const state = get();
-    // Monotonic token (change signal) plus a Date.now cooldown timestamp, so
-    // tests can drive timing with fake timers instead of performance.now().
-    const now = Date.now();
-    if (
-      state.shimmerState &&
-      state.shimmerState.cardId === cardId &&
-      now - state.shimmerState.triggeredAt < SHIMMER_COOLDOWN_MS
-    )
-      return;
-    set({ shimmerState: { cardId, token: (state.shimmerState?.token ?? 0) + 1, triggeredAt: now } });
+    const previous = get().shimmerState;
+    const next = nextShimmerState(previous, cardId, Date.now());
+    if (next === previous) return;
+    set({ shimmerState: next });
   },
   setPlasmaBaseline: (registration) => set({ plasmaBaseline: registration }),
   clearPlasmaBaseline: (ownerId) =>

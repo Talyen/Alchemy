@@ -9,7 +9,7 @@ import {
   grantGearToRunWithRecord,
 } from "../../shared/stores/deck-mutations";
 import type { MaterialId } from "@/lib/homestead/types";
-import { computeMysteryMaterialReward } from "@/lib/homestead/loot";
+import { computeMysteryMaterialReward } from "@/lib/homestead/material-rewards";
 import {
   generateGearInstanceForBaseItem,
   generateLootGearChoices,
@@ -163,7 +163,13 @@ function gainMysteryGeneratedGear(baseItemId: string, context: MysteryEffectCont
         ownedUniqueIds,
         [baseItemId],
       )[0];
-  if (!instance) return { followUp: null };
+  if (!instance) {
+    // The base item has no definition for the rolled rarity; granting nothing
+    // rather than a mistiered item. Loud in DEV so content errors surface.
+    if (import.meta.env.DEV)
+      console.warn(`[Mystery] gainGeneratedGear "${baseItemId}" matched no gear definition; granting nothing`);
+    return { followUp: null };
+  }
   grantGearToRunWithRecord(context.draft, instance);
   setMysteryGrantedGearInstances(context.draft, (previous) => [...previous, instance]);
   return { followUp: null };

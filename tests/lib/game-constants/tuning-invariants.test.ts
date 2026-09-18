@@ -22,7 +22,8 @@ describe("tuning invariants", () => {
   it("keeps enemy pressure curves finite and non-decreasing through the depth cap", () => {
     for (const enemyType of ["normal", "elite", "boss"] as const) {
       let previous = -Infinity;
-      for (let depth = 0; depth <= 24; depth += 1) {
+      // Loot depth caps at 25 (three 8-destination Acts plus the final boss).
+      for (let depth = 0; depth <= 25; depth += 1) {
         const value = pressureAt(enemyType, depth);
         expect(Number.isFinite(value)).toBe(true);
         expect(value).toBeGreaterThanOrEqual(previous);
@@ -69,8 +70,11 @@ describe("tuning invariants", () => {
   it("keeps loot depth curves monotonic", () => {
     for (const [kind, points] of Object.entries(LOOT_DEPTH_CURVES)) {
       for (let index = 1; index < points.length; index += 1) {
+        // Strictly increasing depths: a duplicate depth would divide by zero
+        // in the loot depth interpolation.
         expect(points[index]!.depth, kind).toBeGreaterThan(points[index - 1]!.depth);
         expect(points[index]!.weight, kind).toBeGreaterThanOrEqual(points[index - 1]!.weight);
+        expect(Number.isFinite(points[index]!.weight), kind).toBe(true);
       }
     }
   });

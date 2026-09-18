@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { campaignLootDepth, labyrinthLootDepth } from "@/lib/loot";
+import { campaignLootDepth, createLootProgress, labyrinthLootDepth } from "@/lib/loot";
 import { gridLabyrinthMapFixture, twoFloorLabyrinthMapFixture } from "../../fixtures/labyrinth-map";
 
 describe("loot depth", () => {
@@ -8,6 +8,7 @@ describe("loot depth", () => {
     expect(campaignLootDepth(1, 1)).toBe(2);
     expect(campaignLootDepth(1, 8)).toBe(9);
     expect(campaignLootDepth(2, 1)).toBe(10);
+    // Destination index 8 is the Act boss, so the run caps at 3 * 8 + 1.
     expect(campaignLootDepth(3, 8)).toBe(25);
   });
 
@@ -32,5 +33,24 @@ describe("loot depth", () => {
     expect(labyrinthLootDepth(map)).toBe(completed.length + 1);
     completed[0].cleared = false;
     expect(labyrinthLootDepth(map)).toBe(completed.length);
+  });
+
+  it("treats a missing pending room as the next room and stays stable across the clear transition", () => {
+    const map = gridLabyrinthMapFixture();
+    const pending = Object.values(map.nodes).find((node) => node.type !== "entrance")!;
+    // Nothing cleared yet: approaching the first room and standing between
+    // rooms both read depth 1.
+    expect(labyrinthLootDepth(map, pending.id)).toBe(1);
+    expect(labyrinthLootDepth(map)).toBe(1);
+    pending.cleared = true;
+    // Clearing the pending room holds depth steady; the advance lands when a
+    // new pending room is set (equivalently, the null-pending "next room").
+    expect(labyrinthLootDepth(map, pending.id)).toBe(1);
+    expect(labyrinthLootDepth(map)).toBe(2);
+  });
+
+  it("clamps loot progress depth to at least 1", () => {
+    expect(createLootProgress(0, {}).depth).toBe(1);
+    expect(createLootProgress(-4, {}).depth).toBe(1);
   });
 });

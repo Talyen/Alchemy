@@ -1,5 +1,12 @@
 import { selectSettingsSaveFields, useSettingsStore, type SettingsSaveFields } from "./settings-store";
 import { createDefaultProfileSaveFields, type ProfileSaveFields } from "./profile-store-types";
+import {
+  LABYRINTH_GATED_SESSION_KEYS,
+  NON_WILDWOOD_GATED_SESSION_KEY,
+  TRANSIENT_SESSION_KEYS,
+  WILDWOOD_GATED_SESSION_KEY,
+} from "./run-resume-codec";
+import { TRANSIENT_RUN_KEYS, type RunSessionFields } from "./run-domain-types";
 import { useGameplayStateStore, type GameplayState } from "./gameplay-state-store";
 
 // Dirty-tracking for persistence: fires only for persisted inputs. Collection
@@ -25,12 +32,13 @@ function settingsPersistedInputsEqual(
   previous: Pick<SettingsSaveFields, keyof SettingsSaveFields>,
   next: Pick<SettingsSaveFields, keyof SettingsSaveFields>,
 ): boolean {
-  const a = selectSettingsSaveFields(previous);
-  const b = selectSettingsSaveFields(next);
-  for (const key of Object.keys(a) as Array<keyof SettingsSaveFields>) {
-    if (!Object.is(a[key], b[key])) return false;
-  }
-  return true;
+  // Union of both key sets (never just one side), so a future field cannot
+  // slip through asymmetrically.
+  return recordsEqualExcept(
+    selectSettingsSaveFields(previous) as unknown as Record<string, unknown>,
+    selectSettingsSaveFields(next) as unknown as Record<string, unknown>,
+    NO_SKIPPED_KEYS,
+  );
 }
 
 // Profile save keys derive from the defaults factory, so a future persisted
@@ -40,16 +48,10 @@ const PROFILE_SAVE_KEYS = Object.keys(createDefaultProfileSaveFields()) as Array
 
 // Session fields that never reach a snapshot: node/character selections,
 // run-end award staging, and the reward claim gate (routing only).
-const TRANSIENT_SESSION_KEYS: ReadonlySet<string> = new Set([
-  "selectedLabyrinthNodeId",
-  "pendingCharacterId",
-  "pendingContentSystemType",
-  "runEndLabyrinthFloor",
-  "runEndMaterials",
-  "runEndCurrencies",
-  "runEndTalentXP",
-  "runEndItems",
-]);
+// Single-sourced from the resume codec's persistence contract (see
+// TRANSIENT_SESSION_KEYS in run-resume-codec.ts); the claim gate is
+// routing-only while its payload (state + companionCards) is compared above.
+const TRANSIENT_SESSION_SKIP: ReadonlySet<keyof RunSessionFields> = new Set([...TRANSIENT_SESSION_KEYS, "rewardFlow"]);
 
 // Mode-gated session fields are nulled by the resume codec when their mode is
 // inactive (see encodeActiveRunFromSession in run-resume-codec.ts): labyrinth
@@ -57,16 +59,13 @@ const TRANSIENT_SESSION_KEYS: ReadonlySet<string> = new Set([
 // and starterDraftChoices for everything except wildwood. While both snapshots
 // sit in the same mode, changes to an inactive mode's fields cannot reach a
 // save, so they must not schedule snapshot builds either.
-const LABYRINTH_SESSION_KEYS: ReadonlySet<string> = new Set([
-  "labyrinthMap",
-  "activeLabyrinthModifiers",
-  "activeLabyrinthRewardModifiers",
-  "activeLabyrinthPendingNode",
-]);
+const LABYRINTH_SESSION_SKIP: ReadonlySet<string> = new Set(LABYRINTH_GATED_SESSION_KEYS);
 
 // Run-domain keys that never reach a snapshot: the committed screen (resume
 // derives its screen from run activity) and the boot flag.
-const TRANSIENT_RUN_KEYS: ReadonlySet<string> = new Set(["initialized", "navigation"]);
+const TRANSIENT_RUN_SKIP: ReadonlySet<string> = new Set(TRANSIENT_RUN_KEYS);
+
+const NO_SKIPPED_KEYS: ReadonlySet<string> = new Set();
 
 function recordsEqualExcept(
   previous: Record<string, unknown>,
@@ -92,16 +91,16 @@ function sessionPersistedInputsEqual(
   // state + companionCards (see encodeInterruptedFlow).
   if (!Object.is(previous.rewardFlow.state, next.rewardFlow.state)) return false;
   if (!Object.is(previous.rewardFlow.companionCards, next.rewardFlow.companionCards)) return false;
-  const skipped = new Set<string>([...TRANSIENT_SESSION_KEYS, "rewardFlow"]);
+  const skipped = new Set<string>(TRANSIENT_SESSION_SKIP);
   // Skip mode-gated fields only while both snapshots sit in the same mode, so
   // a mode switch itself always dirties. Conservative by construction: the
   // codec nulls exactly these fields for the inactive mode.
   if (previousMode === nextMode) {
     if (previousMode !== "labyrinth") {
-      for (const key of LABYRINTH_SESSION_KEYS) skipped.add(key);
+      for (const key of LABYRINTH_SESSION_SKIP) skipped.add(key);
     }
-    if (previousMode !== "wildwood") skipped.add("wildwoodDraft");
-    else skipped.add("starterDraftChoices");
+    if (previousMode !== "wildwood") skipped.add(WILDWOOD_GATED_SESSION_KEY);
+    else skipped.add(NON_WILDWOOD_GATED_SESSION_KEY);
   }
   return recordsEqualExcept(
     previous as unknown as Record<string, unknown>,
@@ -122,7 +121,7 @@ function gameplayPersistedInputsEqual(previous: GameplayState, next: GameplaySta
     !recordsEqualExcept(
       previous.run as unknown as Record<string, unknown>,
       next.run as unknown as Record<string, unknown>,
-      TRANSIENT_RUN_KEYS,
+      TRANSIENT_RUN_SKIP,
     )
   ) {
     return false;

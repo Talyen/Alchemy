@@ -108,6 +108,8 @@ export function useMysteryScreenData(): ScreenData<"mystery"> {
       mysteryGrantedGearInstances: visit.mysteryGrantedGearInstances,
       mysteryChosenCardId: visit.mysteryChosenCardId,
       mysteryChosenChoice: visit.mysteryChosenChoice,
+      // runTalentXP accrues during this run; talentXP is the permanent profile
+      // total. Screens sum both for display (see mystery-reward-summary).
       runTalentXP: state.run.activeRun.runTalentXP,
       talentXP: state.runProfile.talentXP,
     };
@@ -122,6 +124,10 @@ export function useCorruptionScreenData(): ScreenData<"corruption"> {
 }
 
 export function useRunEndScreenData(): ScreenData<"game-over"> {
+  // Deliberately keyed on navigation.screen, not session.activity like every
+  // hook above: run end clears the activity to inactive (there are no
+  // game-over/run-victory activity kinds), so activity-keyed retention would
+  // never activate. Do not "unify" this with useVisitScreenData.
   const active = useGameplayStateStore(
     (state) => state.run.navigation.screen === "game-over" || state.run.navigation.screen === "run-victory",
   );

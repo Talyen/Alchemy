@@ -19,7 +19,7 @@ import {
   type PermanentProgressFields,
 } from "@/features/alchemy/shared/stores/run-state-init";
 import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
-import type { GearStore } from "@/features/alchemy/shared/stores/gear-store-types";
+import type { GearDraftView } from "@/features/alchemy/shared/stores/gear-store-types";
 import { createInitialGearState } from "@/features/alchemy/shared/stores/gear-actions";
 import { createInitialProfileState } from "@/features/alchemy/shared/stores/profile-store-types";
 import {
@@ -75,7 +75,7 @@ export function resetProfileForTest(): void {
 }
 
 export function mutateGearForTest<T>(
-  mutate: (gear: GearStore) => T & SynchronousResult<T>,
+  mutate: (gear: GearDraftView) => T & SynchronousResult<T>,
   syncRunHealth?: boolean,
 ): T {
   return dispatchGearMutationWithRunHealthSync<T>(syncRunHealth === undefined ? { mutate } : { mutate, syncRunHealth });

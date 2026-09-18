@@ -29,7 +29,7 @@ import {
   type GearInstance,
 } from "@/lib/gear";
 import { trinketLibrary } from "@/lib/game-data";
-import { sampleItems } from "@/lib/utils";
+import { sampleItemsExcluding } from "@/lib/rng";
 
 export type { AlchemistState, EquipmentShopState, ShopState, TrinketShopState };
 
@@ -62,20 +62,16 @@ function sampleTrinketShopOfferings(
   currentIds: readonly string[] = [],
 ): TrinketEntry[] {
   const owned = new Set(ownedIds);
-  const current = new Set(currentIds);
   const available = trinketLibrary.filter((entry) => !owned.has(entry.id));
-  const novel = sampleItems(
-    available.filter((entry) => !current.has(entry.id)),
-    TRINKET_SHOP_OFFERED,
-    rng,
-  );
+  const novel = sampleItemsExcluding(available, TRINKET_SHOP_OFFERED, rng, new Set(currentIds), (entry) => entry.id);
   if (novel.length >= TRINKET_SHOP_OFFERED) return novel;
 
-  const selected = new Set(novel.map((entry) => entry.id));
-  const fallback = sampleItems(
-    available.filter((entry) => !selected.has(entry.id)),
+  const fallback = sampleItemsExcluding(
+    available,
     TRINKET_SHOP_OFFERED - novel.length,
     rng,
+    new Set(novel.map((entry) => entry.id)),
+    (entry) => entry.id,
   );
   return [...novel, ...fallback];
 }

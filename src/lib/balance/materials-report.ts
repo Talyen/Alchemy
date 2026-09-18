@@ -1,5 +1,5 @@
 import { createRunStreamRng, hashStringToUint32 } from "@/lib/rng";
-import { enemyLootTables, getEnemyMaterialLoot } from "@/lib/homestead/loot";
+import { enemyLootTables, getEnemyMaterialLoot } from "@/lib/homestead/material-rewards";
 import { MATERIAL_IDS, type MaterialInventory } from "@/lib/homestead/types";
 import { escapeHtml, renderReportPage } from "./report-layout";
 
@@ -58,6 +58,6 @@ export function renderMaterialsBalanceReport(report: MaterialsBalanceReport): st
     .map((row) => `<tr><td>${escapeHtml(row.enemyId)}</td><td>${row.enemyType}</td>${materialCells(row.mean)}</tr>`)
     .join("\n");
   const header = MATERIAL_IDS.map((material) => `<th>${material}</th>`).join("");
-  const body = `<h1>Alchemy materials progression</h1><p>Mean materials paid per victory from ${report.samplesPerCell.toLocaleString()} seeded rolls per enemy and enemy type through the live enemy loot tables, including elite and boss multipliers with battle-standard rounding. These are base payouts before build-dependent modifiers: homestead herb-find, scavenger doubling, herbalist bonus, and end-of-run per-room yields all apply afterwards (see the reward policy table in <code>src/lib/homestead/loot.ts</code>).</p><table><thead><tr><th>Enemy</th><th>Type</th>${header}</tr></thead><tbody>${rows}</tbody></table>`;
+  const body = `<h1>Alchemy materials progression</h1><p>Mean materials paid per victory from ${report.samplesPerCell.toLocaleString()} seeded rolls per enemy and enemy type through the live enemy loot tables, including elite and boss multipliers with battle-standard rounding. These are base payouts before build-dependent modifiers: homestead herb-find, scavenger doubling, herbalist bonus, and end-of-run per-room yields all apply afterwards (see the reward policy table in <code>src/lib/homestead/material-rewards.ts</code>).</p><table><thead><tr><th>Enemy</th><th>Type</th>${header}</tr></thead><tbody>${rows}</tbody></table>`;
   return renderReportPage({ title: "Alchemy materials progression", body });
 }

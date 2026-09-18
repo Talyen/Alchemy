@@ -22,16 +22,16 @@ import {
   type GearCombatRestrictions,
 } from "@/features/alchemy/shared/stores/gear-store";
 import type { SynchronousResult } from "@/features/alchemy/shared/stores/run-session-command";
-import type { GearStore } from "@/features/alchemy/shared/stores/gear-store-types";
+import type { GearDraftView } from "@/features/alchemy/shared/stores/gear-store-types";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 
-function mutateGearWithFlush<T>(flush: () => void, mutate: (state: GearStore) => T & SynchronousResult<T>): T {
+function mutateGearWithFlush<T>(flush: () => void, mutate: (state: GearDraftView) => T & SynchronousResult<T>): T {
   const result = dispatchGearMutationWithRunHealthSync<T>({ mutate });
   if (result) flush();
   return result;
 }
 
-function mutateGearWithFlushAlways(flush: () => void, mutate: (state: GearStore) => void): void {
+function mutateGearWithFlushAlways(flush: () => void, mutate: (state: GearDraftView) => void): void {
   dispatchGearMutationWithRunHealthSync<void>({ mutate });
   flush();
 }

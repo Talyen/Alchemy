@@ -148,6 +148,16 @@ export const WRITE_PORT_PATTERNS = [
     message:
       "That store module was consolidated: import gameplay writes from @/features/alchemy/shared/stores/run-session-write-port and lifecycle from @/features/alchemy/shared/stores/run-lifecycle.",
   },
+  {
+    group: [
+      "**/shared/stores/write",
+      "**/shared/stores/write/*",
+      "@/features/alchemy/shared/stores/write",
+      "@/features/alchemy/shared/stores/write/*",
+    ],
+    message:
+      "Import gameplay writes from @/features/alchemy/shared/stores/run-session-write-port, never from ./write/* directly.",
+  },
 ];
 
 /** @type {ImportPattern[]} */

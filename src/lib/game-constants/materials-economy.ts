@@ -7,11 +7,11 @@
 //   Salvage chances (gear.ts): SALVAGE_*_CHANCE_FRACTION crafting-currency rolls.
 //   End-of-run per-room yields (homestead/data.ts): endRun*PerRoom building,
 //     farm, and research effects.
-//   Per-enemy amounts (homestead/loot.ts): enemyLootTables guaranteed + bonus
+//   Per-enemy amounts (homestead/material-rewards.ts): enemyLootTables guaranteed + bonus
 //     entries. These are content, not tuning: a Skeleton pays Herbs and a
 //     Forge Golem pays Iron by design.
 //   Reward pipeline order and the which-modifiers-apply-to-which-source policy
-//     table (homestead/loot.ts): computeCombatMaterialReward and
+//     table (homestead/material-rewards.ts): computeCombatMaterialReward and
 //     computeMysteryMaterialReward. The Wildwood exclusion lives separately in
 //     run/run-materials.ts (awardsRunMaterialsFor).
 

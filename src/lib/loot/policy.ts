@@ -3,7 +3,15 @@ import type { DifficultyId } from "@/lib/game-data";
 import { clamp, lerp } from "@/lib/math";
 
 export type LootSource = keyof typeof LOOT_SOURCE_WEIGHTS;
-type LootKind = keyof (typeof LOOT_SOURCE_WEIGHTS)[LootSource];
+/** Every loot kind in the source-weight tables. Tests assert each source carries exactly these keys. */
+export const LOOT_KINDS = ["card", "basic", "boon", "astral", "trinket", "unique"] as const;
+type LootKind = (typeof LOOT_KINDS)[number];
+/**
+ * Fallback preference when scaling and pool filtering empty every weight.
+ * Basic first so premium-only sources (e.g. an early boss) still offer Basic
+ * Gear; cards are the terminal combat fallback when no Gear is available.
+ */
+const LOOT_FALLBACK_ORDER: readonly LootKind[] = ["basic", "card", "astral", "unique", "boon", "trinket"];
 export type PremiumLootKind = keyof typeof LOOT_DEPTH_CURVES;
 export type LootWeights = Record<LootKind, number>;
 export type LootAvailability = Partial<Record<LootKind, boolean>>;
@@ -44,8 +52,7 @@ function normalizeLootWeights(weights: LootWeights, available: LootAvailability 
   }
   let total = Object.values(filtered).reduce((sum, weight) => sum + weight, 0);
   if (total === 0) {
-    const fallbackCandidates: LootKind[] = ["basic", "card", "astral", "unique", "boon", "trinket"];
-    const fallback = fallbackCandidates.find((kind) => available[kind] !== false);
+    const fallback = LOOT_FALLBACK_ORDER.find((kind) => available[kind] !== false);
     if (fallback) filtered[fallback] = 1;
     total = Object.values(filtered).reduce((sum, weight) => sum + weight, 0);
   }
@@ -67,6 +74,8 @@ export function resolveLootWeights({
   available?: LootAvailability;
 }): LootWeights {
   const weights: LootWeights = { ...LOOT_SOURCE_WEIGHTS[source] };
+  // Astral bonuses transfer Basic weight before depth scaling. Sources with no
+  // Basic weight (notably boss) are unaffected by the bonus by definition.
   const transfer = clamp(astralChanceBonus, 0, weights.basic);
   weights.basic -= transfer;
   weights.astral += transfer;
@@ -84,6 +93,8 @@ function pickWeighted<T extends string>(weights: Record<T, number>, rng: () => n
   if (!(draw >= 0 && draw < 1)) throw new Error("Rng draw out of range");
   let remaining = draw * total;
   let last: T | undefined;
+  // Half-open buckets: a draw landing exactly on a boundary falls through to
+  // the next kind, and float rounding falls back to the last positive kind.
   for (const kind of Object.keys(weights) as T[]) {
     if (weights[kind] <= 0) continue;
     last = kind;

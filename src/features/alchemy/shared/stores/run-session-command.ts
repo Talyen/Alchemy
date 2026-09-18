@@ -49,8 +49,9 @@ export function dispatchRunSessionCommand<T>(
 
 export function createRunSessionCommand<Args extends unknown[], Ret>(
   mutate: (draft: GameplayDraft, ...args: Args) => Ret & SynchronousResult<Ret>,
+  options?: { afterCommit?: (result: Ret) => void },
 ): (...args: Args) => Ret {
-  return (...args) => dispatchRunSessionCommand<Ret>((draft) => mutate(draft, ...args));
+  return (...args) => dispatchRunSessionCommand<Ret>((draft) => mutate(draft, ...args), options);
 }
 
 export function subscribeRunSessionCommits(listener: (revision: number) => void): () => void {

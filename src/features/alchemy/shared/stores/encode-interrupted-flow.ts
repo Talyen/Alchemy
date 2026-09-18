@@ -56,7 +56,11 @@ export function encodeInterruptedFlow(
   }
 
   const pending = serializePendingReward(session.rewardFlow.state, session.rewardFlow.companionCards);
-  if (pending && (session.rewardFlow.companionCards?.length || session.rewardFlow.state.choices.length > 0)) {
+  // serializePendingReward already returns null when there is nothing of value
+  // (no choices, no companion cards, no victory markers, no destinations, no
+  // gold/materials), so any non-null pending must survive — including
+  // gold/materials-only rewards with no card choices.
+  if (pending) {
     return { kind: "primary-reward", pending };
   }
 
@@ -90,6 +94,9 @@ export function inferActiveRunScreen(activeRun: ActiveRunData): Screen {
 
 function restoreCompanionHandoff(pending: PersistedPendingReward): DecodedClaimSurface {
   const { companionRewardCards } = restorePendingRewardBundle(pending);
+  // Intentional asymmetry with restorePrimaryPendingReward below: the companion
+  // handoff consumes its cards into rewardState.choices, so there is no
+  // separate companion pile left to carry.
   return {
     rewardState: {
       ...createEmptyRewardState(filterValidDestinations(pending.destinations)),
@@ -104,6 +111,7 @@ function restoreCompanionHandoff(pending: PersistedPendingReward): DecodedClaimS
 }
 
 function restorePrimaryPendingReward(
+  activeRun: ActiveRunData,
   currentScreen: Screen | null,
   pending: PersistedPendingReward,
 ): DecodedClaimSurface {
@@ -120,6 +128,23 @@ function restorePrimaryPendingReward(
       lastVictoryEnemyType: pending.lastVictoryEnemyType,
       lastVictoryContentSystem: pending.lastVictoryContentSystem,
     };
+    screen = "rewards";
+  } else if (
+    screen !== "rewards" &&
+    screen !== "battle" &&
+    !activeRun.shopState &&
+    !activeRun.alchemistState &&
+    !activeRun.trinketShopState &&
+    !activeRun.equipmentShopState &&
+    !activeRun.mysteryVisit &&
+    !activeRun.corruptionResult
+  ) {
+    // A pending reward can only be claimed from the rewards screen (see
+    // claimRunReward). When the save was written after the screen moved on —
+    // e.g. a gold/materials-only reward with no card choices — resume where it
+    // can be claimed instead of stranding it behind a stateless screen. A live
+    // battle owns the resume, and a persisted shop/mystery/corruption visit
+    // wins over the stranded reward.
     screen = "rewards";
   }
   return { rewardState, companionRewardCards, screen };
@@ -155,7 +180,7 @@ export function decodeInterruptedFlow(activeRun: ActiveRunData): DecodedClaimSur
     case "companion-reward":
       return restoreCompanionHandoff(flow.pending);
     case "primary-reward":
-      return restorePrimaryPendingReward(activeRun.currentScreen, flow.pending);
+      return restorePrimaryPendingReward(activeRun, activeRun.currentScreen, flow.pending);
     case "destination":
       return restoreDestinationFlow(activeRun, flow);
     case "none":

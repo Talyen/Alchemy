@@ -126,6 +126,9 @@ export function salvageGearInstance(
   yieldedCurrencies: Record<CraftingCurrencyId, number>;
   yieldedMaterials: MaterialInventory;
 } | null {
+  // Materials routing lives OUTSIDE this helper: only
+  // dispatchGearSalvageWithMaterialGrant grants yieldedMaterials (during a run)
+  // or stockpiles them (meta). Calling this directly never grants materials.
   const owner = findGearInventoryOwner(gear.inventories, instanceId);
   if (!owner) return null;
   // Yield is always recomputed authoritatively: the preview shown in the
@@ -150,14 +153,14 @@ export function applyGearCurrency(
   gear: Draft<GearStateFields>,
   currencyId: CraftingCurrencyId,
   instanceId: string,
-  options?: { rng?: () => number },
+  options: { rng: () => number },
 ): boolean {
+  if (!options?.rng) throw new Error("applyCurrency requires an explicit rng");
   const owner = findGearInventoryOwner(gear.inventories, instanceId);
   if (!owner) return false;
   const item = gear.inventories[owner].find((entry) => entry.instanceId === instanceId);
   if (!item || (gear.craftingCurrencies[currencyId] ?? 0) < 1 || !canApplyCraftingCurrency(currencyId, item))
     return false;
-  if (!options?.rng) throw new Error("applyCurrency requires an explicit rng");
   const updatedItem = applyCraftingCurrency(currencyId, item, options.rng);
   if (updatedItem === item) return false;
   gear.inventories = {

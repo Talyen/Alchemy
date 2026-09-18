@@ -8,6 +8,13 @@ export interface GearCombatRestrictions {
   trinkets: Record<string, CharacterId>;
 }
 
+// Two-tier lock policy (deliberate — see gear-combat-restrictions tests):
+// equipped items and locked heroes are fully frozen, but an UNEQUIPPED item
+// sitting in a locked hero's inventory may still be equipped elsewhere or
+// acquired. It may NOT be salvaged or modified (see isInstanceLocked in
+// gear-session-command, which extends this with the inventory-owner check).
+// Do not "unify" the equip path onto isInstanceLocked: shared spares are
+// intentionally equippable mid-battle without touching the live manifest.
 export function deriveGearCombatRestrictions(state: {
   run: { activeRun: Pick<GameplayState["run"]["activeRun"], "characterId" | "contentSystemType"> };
   session: { activity: Pick<GameplayState["session"]["activity"], "kind"> };

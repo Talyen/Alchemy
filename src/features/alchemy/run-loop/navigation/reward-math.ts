@@ -1,5 +1,5 @@
 import { LABYRINTH_REWARD_CONFIG } from "@/lib/game-constants";
-import { applyScavengerHerbalistModifiers } from "@/lib/homestead/loot";
+import { applyScavengerHerbalistModifiers } from "@/lib/homestead/material-rewards";
 import { computeTrinketManifest } from "@/lib/trinkets";
 import { type MaterialInventory } from "@/lib/homestead/types";
 import type { BattleSnapshot } from "@/lib/battle";
@@ -79,7 +79,7 @@ export function applyLabyrinthRewardMaterialModifiers(
   materials: MaterialInventory,
   modifiers: EncounterRewardTraitId[],
 ): MaterialInventory {
-  // Thin adapter over the single pipeline owner in homestead/loot.ts.
+  // Thin adapter over the single pipeline owner in homestead/material-rewards.ts.
   return applyScavengerHerbalistModifiers(materials, {
     scavenger: hasRewardModifier(modifiers, "scavenger"),
     herbalist: hasRewardModifier(modifiers, "herbalist"),

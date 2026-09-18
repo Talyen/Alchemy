@@ -6,7 +6,7 @@ import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/car
 import { LABYRINTH_REWARD_CONFIG, REWARD_CARD_CHOICES } from "@/lib/game-constants";
 import { pickRandom, sampleItems } from "@/lib/rng";
 import { REWARD_ROUTES, type Destination, type RewardRoute } from "@/lib/routing";
-import { generateLootGearChoices, getGearLootAvailability } from "@/lib/gear";
+import { generateLootGearChoices, getRewardLootAvailability } from "@/lib/gear";
 import {
   createEmptyRewardState,
   resolveRewardChoice,
@@ -181,12 +181,11 @@ function createLootRewardState({
     source,
     progress: lootProgress,
     astralChanceBonus: gearAstralChanceBonus,
-    available: {
-      ...getGearLootAvailability(ownedUniqueIds),
-      card: cards.length > 0,
-      boon: boons.length > 0,
-      trinket: trinkets.length > 0,
-    },
+    available: getRewardLootAvailability(ownedUniqueIds, {
+      cards: cards.length > 0,
+      boons: boons.length > 0,
+      trinkets: trinkets.length > 0,
+    }),
   });
   const category = rollLootGroup(weights, rng);
   switch (category) {

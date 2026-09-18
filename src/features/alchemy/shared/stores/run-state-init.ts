@@ -101,17 +101,24 @@ function hydrateDestinations(initialActiveRun: ActiveRunData): {
   };
 }
 
+// Collection fields with fresh empty defaults, shared by the fresh-run and
+// resume constructors. Tied to ACTIVE_RUN_PROGRESS_KEYS so a new collection
+// field cannot be added to the interface without deciding its default here.
+export const EMPTY_ACTIVE_RUN_COLLECTION_KEYS = [
+  "completedDestinations",
+  "lastOfferedDestinations",
+  "destinationRoundsSinceOffered",
+  "runBoons",
+  "encounteredRunEnemyIds",
+  "runTalentXP",
+  "runMaterialsEarned",
+  "runCurrenciesEarned",
+  "runObtainedItems",
+] as const satisfies ReadonlyArray<keyof ActiveRunProgressFields>;
+
 function createEmptyActiveRunCollections(): Pick<
   ActiveRunProgressFields,
-  | "completedDestinations"
-  | "lastOfferedDestinations"
-  | "destinationRoundsSinceOffered"
-  | "runBoons"
-  | "encounteredRunEnemyIds"
-  | "runTalentXP"
-  | "runMaterialsEarned"
-  | "runCurrenciesEarned"
-  | "runObtainedItems"
+  (typeof EMPTY_ACTIVE_RUN_COLLECTION_KEYS)[number]
 > {
   return {
     completedDestinations: [],
@@ -218,26 +225,30 @@ export function createInitialPermanentFields(): PermanentProgressFields {
   };
 }
 
+// Fields a fresh-run snapshot provides. Everything else (rng, talent/material
+// tallies, obtained items) starts empty via hydrateFromSnapshot. Tied to
+// ACTIVE_RUN_PROGRESS_KEYS like the collections above.
+export const RUN_SNAPSHOT_FIELD_KEYS = [
+  "characterId",
+  "contentSystemType",
+  "runDeck",
+  "selectedDifficulty",
+  "runPlayerHealth",
+  "runMaxHealth",
+  "runMetaMaxHealth",
+  "roomsEncountered",
+  "currentAct",
+  "destinationIndexInAct",
+  "completedDestinations",
+  "lastOfferedDestinations",
+  "destinationRoundsSinceOffered",
+  "runBoons",
+  "encounteredRunEnemyIds",
+] as const satisfies ReadonlyArray<keyof ActiveRunProgressFields>;
+
 export function runFieldsFromSnapshot(
   snapshot: RunStartSnapshot,
-): Pick<
-  ActiveRunProgressFields,
-  | "characterId"
-  | "contentSystemType"
-  | "runDeck"
-  | "selectedDifficulty"
-  | "runPlayerHealth"
-  | "runMaxHealth"
-  | "runMetaMaxHealth"
-  | "roomsEncountered"
-  | "currentAct"
-  | "destinationIndexInAct"
-  | "completedDestinations"
-  | "lastOfferedDestinations"
-  | "destinationRoundsSinceOffered"
-  | "runBoons"
-  | "encounteredRunEnemyIds"
-> {
+): Pick<ActiveRunProgressFields, (typeof RUN_SNAPSHOT_FIELD_KEYS)[number]> {
   return {
     characterId: snapshot.characterId,
     contentSystemType: snapshot.contentSystemType,

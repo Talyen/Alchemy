@@ -9,8 +9,9 @@ import {
   DEFAULT_MUSIC_VOLUME_PCT,
   DEFAULT_SFX_VOLUME_PCT,
 } from "@/lib/game-constants";
+import { clamp } from "@/lib/math";
 import type { StandalonePersistenceCodec } from "./persistence-codec";
-import { resolveAutoplayEnabled } from "@/lib/settings-values";
+import { resolveAutoplayEnabled, SETTINGS_RANGES } from "@/lib/settings-values";
 
 export interface SettingsSaveFields {
   selectedAspectRatio: AspectRatioOption;
@@ -76,23 +77,39 @@ function withDerivedAutoplay<T extends { rememberAutoplayPreference: boolean; au
   return { ...fields, autoplayEnabled: resolveAutoplayEnabled(fields) };
 }
 
+// Live writes clamp to the same ranges the save schema enforces on load (see
+// clampedSettingSchema), so in-memory state can never hold an out-of-range
+// value that load would silently repair.
+function clampVolume(value: number): number {
+  return clamp(value, SETTINGS_RANGES.volume.min, SETTINGS_RANGES.volume.max);
+}
+
+function clampSpecialEffects(value: number): number {
+  return clamp(value, SETTINGS_RANGES.specialEffects.min, SETTINGS_RANGES.specialEffects.max);
+}
+
 export const useSettingsStore = create<SettingsStore>()((set) => ({
   ...withDerivedAutoplay(createDefaultSettingsSaveFields()),
   showClearSaveConfirm: false,
 
   setSelectedAspectRatio: (selectedAspectRatio) => set({ selectedAspectRatio }),
   setDisplayMode: (displayMode) => set({ displayMode }),
-  setBrightness: (brightness) => set({ brightness }),
-  setBackgroundParticlesIntensity: (backgroundParticlesIntensity) => set({ backgroundParticlesIntensity }),
-  setBackgroundGlowIntensity: (backgroundGlowIntensity) => set({ backgroundGlowIntensity }),
-  setMusicVolume: (musicVolume) => set({ musicVolume }),
-  setSfxVolume: (sfxVolume) => set({ sfxVolume }),
-  setMasterVolume: (masterVolume) => set({ masterVolume }),
+  setBrightness: (brightness) =>
+    set({ brightness: clamp(brightness, SETTINGS_RANGES.brightness.min, SETTINGS_RANGES.brightness.max) }),
+  setBackgroundParticlesIntensity: (backgroundParticlesIntensity) =>
+    set({ backgroundParticlesIntensity: clampSpecialEffects(backgroundParticlesIntensity) }),
+  setBackgroundGlowIntensity: (backgroundGlowIntensity) =>
+    set({ backgroundGlowIntensity: clampSpecialEffects(backgroundGlowIntensity) }),
+  setMusicVolume: (musicVolume) => set({ musicVolume: clampVolume(musicVolume) }),
+  setSfxVolume: (sfxVolume) => set({ sfxVolume: clampVolume(sfxVolume) }),
+  setMasterVolume: (masterVolume) => set({ masterVolume: clampVolume(masterVolume) }),
   setMuteInBackground: (muteInBackground) => set({ muteInBackground }),
   setAutoEndTurn: (autoEndTurn) => set({ autoEndTurn }),
   setRememberAutoplayPreference: (rememberAutoplayPreference) =>
     set((state) => ({
       rememberAutoplayPreference,
+      // Intentional: turning remember off clears the stored autoplay choice
+      // (pinned by profile-settings-stores test), it does not pause it.
       autoplayEnabled: rememberAutoplayPreference ? state.autoplayEnabled : false,
     })),
   setAutoplayEnabled: (autoplayEnabled) =>
@@ -127,11 +144,22 @@ export function selectSettingsSaveFields(state: Pick<SettingsStore, keyof Settin
 export const settingsPersistenceCodec: StandalonePersistenceCodec<SettingsSaveFields> = {
   createDefault: createDefaultSettingsSaveFields,
   // Pure selection: the live invariant is owned by the setters above (which
-  // derive on every write), load repair by SaveDataSchema, and direct-hydrate
+  // clamp on every write), load repair by SaveDataSchema, and direct-hydrate
   // safety by hydrate below. Encode adds no further derivation.
   encode: () => selectSettingsSaveFields(useSettingsStore.getState()),
   hydrate: (fields) => {
-    useSettingsStore.setState(withDerivedAutoplay(selectSettingsSaveFields(fields)));
+    const selected = selectSettingsSaveFields(fields);
+    useSettingsStore.setState(
+      withDerivedAutoplay({
+        ...selected,
+        brightness: clamp(selected.brightness, SETTINGS_RANGES.brightness.min, SETTINGS_RANGES.brightness.max),
+        backgroundParticlesIntensity: clampSpecialEffects(selected.backgroundParticlesIntensity),
+        backgroundGlowIntensity: clampSpecialEffects(selected.backgroundGlowIntensity),
+        musicVolume: clampVolume(selected.musicVolume),
+        sfxVolume: clampVolume(selected.sfxVolume),
+        masterVolume: clampVolume(selected.masterVolume),
+      }),
+    );
   },
 };
 

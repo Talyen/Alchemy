@@ -28,7 +28,7 @@ import {
   type TalentEffectManifest,
   type UnlockedTalents,
 } from "@/lib/game-data";
-import { computeCombatMaterialReward } from "@/lib/homestead/loot";
+import { computeCombatMaterialReward } from "@/lib/homestead/material-rewards";
 import type { HomesteadEffectManifest, MaterialInventory } from "@/lib/homestead/types";
 import type { LootProgress } from "@/lib/loot";
 import type { Destination } from "@/lib/routing";

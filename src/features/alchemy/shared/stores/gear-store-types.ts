@@ -49,10 +49,7 @@ export interface GearDraftView {
     yieldedCurrencies: Record<CraftingCurrencyId, number>;
     yieldedMaterials: MaterialInventory;
   } | null;
-  applyCurrency: (currencyId: CraftingCurrencyId, instanceId: string, options?: { rng?: () => number }) => boolean;
+  applyCurrency: (currencyId: CraftingCurrencyId, instanceId: string, options: { rng: () => number }) => boolean;
   addCurrencies: (currencies: Partial<Record<CraftingCurrencyId, number>>) => void;
   reset: () => void;
 }
-
-// Back-compat alias for external controllers: prefer GearDraftView for new code.
-export type GearStore = GearDraftView;

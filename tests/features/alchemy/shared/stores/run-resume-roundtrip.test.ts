@@ -16,6 +16,7 @@ import { runProfilePersistenceCodec } from "@/features/alchemy/shared/stores/run
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import {
+  initializeActiveBattle,
   setCompanionRewardCards,
   setEquipmentShopState,
   setRewardState,
@@ -315,5 +316,49 @@ describe("wildwood starter drafts", () => {
 
     const snap = snapshotRun(ROUTE_SCREENS.DESTINATION);
     expect(snap.starterDraftChoices).toBeNull();
+  });
+});
+
+describe("victory-handoff persistence", () => {
+  it("keeps the pending battle transition when the save is written after the enemy fell", () => {
+    setRunProgress({ characterId: "knight", contentSystemType: "campaign" });
+    setRunSession({ hasActiveRun: true });
+    const transition = { kind: "legacy-enemy-turn" } as const;
+    dispatchRunSessionCommand((draft) => {
+      initializeActiveBattle(draft, { ...defaultBattleState(), enemyHealth: 0 }, transition);
+    });
+
+    const snap = snapshotRun();
+    // Without the combat shell the continuation would be lost with it.
+    expect(snap.activeCombat?.pendingBattleTransition).toEqual(transition);
+
+    const decoded = decodeRunResumeSnapshot(snap);
+    expect(decoded.pendingBattleTransition).toEqual(transition);
+
+    resetRunDomainStore();
+    restoreRun(snap, {}, {});
+    expect(readGameplayState().battle.pendingBattleTransition).toEqual(transition);
+  });
+});
+
+describe("gold-only interrupted rewards", () => {
+  it("encodes a gold/materials-only pending reward when the current screen is not rewards", () => {
+    setRunProgress({ characterId: "knight", contentSystemType: "campaign" });
+    setRunSession({
+      hasActiveRun: true,
+      activity: { kind: "campfire" },
+      rewardState: { ...createEmptyRewardState(), gold: 12, materials: { ...emptyInventory(), wood: 2 } },
+      companionRewardCards: null,
+    });
+
+    const snap = snapshotRun(ROUTE_SCREENS.CAMPFIRE);
+    expect(snap.interruptedFlow.kind).toBe("primary-reward");
+
+    resetRunDomainStore();
+    restoreRun(snap, {}, {});
+    expect(readGameplayState().run.navigation.screen).toBe(ROUTE_SCREENS.REWARDS);
+    const restored = readRunSession().rewardFlow.state;
+    expect(restored.gold).toBe(12);
+    expect(restored.materials).toEqual({ ...emptyInventory(), wood: 2 });
   });
 });

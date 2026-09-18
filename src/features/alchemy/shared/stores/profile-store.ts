@@ -48,6 +48,9 @@ export type ProfileReadView = Pick<
 >;
 
 export function readProfileStore(): ProfileReadView {
+  // Live references: arrays/objects below alias the committed aggregate (the
+  // codec clones on encode). Never mutate the result outside a
+  // dispatchRunSessionCommand draft.
   const profile = readGameplayState().profile;
   return {
     collectionTab: profile.collectionTab,
@@ -90,11 +93,11 @@ export function useProfileCollectionSlice() {
 }
 
 export function useFinishedRunCharacters() {
-  return useGameplayStateStore((state) => state.profile.finishedRunCharacters);
+  return useGameplayStateStore(useShallow((state) => state.profile.finishedRunCharacters));
 }
 
 export function useCompletedDifficulties() {
-  return useGameplayStateStore((state) => state.profile.completedDifficulties);
+  return useGameplayStateStore(useShallow((state) => state.profile.completedDifficulties));
 }
 
 export function discoverCardIds(draft: GameplayDraft, ids: readonly string[]): void {

@@ -30,6 +30,10 @@ interface ErrorLogActions {
 
 export type ErrorLogStore = ErrorLogFields & ErrorLogActions;
 
+function capErrors(errors: LoggedError[]): LoggedError[] {
+  return errors.slice(-MAX_ERRORS);
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
@@ -64,10 +68,7 @@ export function parsePersistedErrorLog(raw: string | null): LoggedError[] {
     return [];
   }
   if (!Array.isArray(parsed)) return [];
-  return parsed
-    .map(normalizePersistedError)
-    .filter((entry): entry is LoggedError => entry !== null)
-    .slice(-MAX_ERRORS);
+  return capErrors(parsed.map(normalizePersistedError).filter((entry): entry is LoggedError => entry !== null));
 }
 
 function loadPersisted(): LoggedError[] {
@@ -85,11 +86,25 @@ function loadPersisted(): LoggedError[] {
 function persist(errors: LoggedError[]): void {
   if (typeof window === "undefined" || typeof localStorage === "undefined") return;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(errors));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(toPersistableErrors(errors)));
   } catch {
     // Avoid logError here: this store is itself an error sink, so reporting would recurse.
     console.warn("[error-log] Failed to persist errors");
   }
+}
+
+// One poisoned context (circular, BigInt) must not drop the whole batch:
+// entries whose context is not JSON-serializable persist without it.
+function toPersistableErrors(errors: LoggedError[]): LoggedError[] {
+  return errors.map((entry) => {
+    if (entry.context === undefined) return entry;
+    try {
+      JSON.stringify(entry.context);
+      return entry;
+    } catch {
+      return { ...entry, context: undefined };
+    }
+  });
 }
 
 function createLoggedErrorId(): string {
@@ -112,7 +127,7 @@ export const useErrorLogStore = create<ErrorLogStore>()((set) => ({
         context: entry.context,
         reviewed: false,
       };
-      return { errors: [...s.errors.slice(-(MAX_ERRORS - 1)), logged] };
+      return { errors: capErrors([...s.errors, logged]) };
     });
   },
 
@@ -162,14 +177,23 @@ export function flushPersistedErrorLog(): void {
   flushErrorLogPersist();
 }
 
-useErrorLogStore.subscribe((state) => {
-  scheduleErrorLogPersist(state.errors);
-});
+// Explicit boot wiring (called from main.tsx): the store module itself stays
+// side-effect free so tests cannot double-register the sink, subscription,
+// or pagehide flush.
+let errorLogStoreInitialized = false;
 
-if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
-  window.addEventListener("pagehide", flushErrorLogPersist);
+export function initErrorLogStore(): void {
+  if (errorLogStoreInitialized) return;
+  errorLogStoreInitialized = true;
+  useErrorLogStore.subscribe((state) => {
+    scheduleErrorLogPersist(state.errors);
+  });
+
+  if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+    window.addEventListener("pagehide", flushErrorLogPersist);
+  }
+
+  registerErrorSink((entry) => {
+    useErrorLogStore.getState().pushError(entry);
+  });
 }
-
-registerErrorSink((entry) => {
-  useErrorLogStore.getState().pushError(entry);
-});

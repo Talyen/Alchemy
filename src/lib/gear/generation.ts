@@ -86,6 +86,28 @@ export function getGearLootAvailability(
   };
 }
 
+/**
+ * Full reward availability: gear rarity gates plus the card/boon/trinket pool
+ * flags. Reward, shop, and report call sites share this so pool-exclusion
+ * logic cannot drift between screens.
+ */
+export function getRewardLootAvailability(
+  ownedUniqueIds: ReadonlySet<string> = new Set(),
+  pools: {
+    baseItemIds?: readonly string[];
+    cards?: boolean;
+    boons?: boolean;
+    trinkets?: boolean;
+  } = {},
+): LootAvailability {
+  return {
+    ...getGearLootAvailability(ownedUniqueIds, pools.baseItemIds),
+    card: pools.cards ?? true,
+    boon: pools.boons ?? true,
+    trinket: pools.trinkets ?? true,
+  };
+}
+
 interface GenerateGearOfferingsOptions {
   count: number;
   rng: () => number;

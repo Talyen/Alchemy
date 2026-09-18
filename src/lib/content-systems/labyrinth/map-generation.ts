@@ -1,5 +1,5 @@
 import { isLootEligible } from "@/lib/loot";
-import { pickRandom, shuffle } from "@/lib/utils";
+import { pickRandom, shuffle } from "@/lib/rng";
 import { enemiesByType, enemyById, type EnemyType } from "@/lib/game-data";
 
 import type { LabyrinthFloor, LabyrinthGridPosition, LabyrinthMap, LabyrinthNode, LabyrinthNodeType } from "../types";

@@ -149,6 +149,17 @@ describe("settings store", () => {
     expect(readProfileStore().discoveredCardIds).toEqual(["card-a"]);
   });
 
+  it("clamps numeric preferences to the save-schema ranges on write", () => {
+    const settings = useSettingsStore.getState();
+    settings.setBrightness(1000);
+    settings.setMasterVolume(-20);
+    settings.setBackgroundGlowIntensity(1000);
+
+    expect(useSettingsStore.getState().brightness).toBe(150);
+    expect(useSettingsStore.getState().masterVolume).toBe(0);
+    expect(useSettingsStore.getState().backgroundGlowIntensity).toBe(100);
+  });
+
   it("clears stored autoplay when remember is turned off", () => {
     const settings = useSettingsStore.getState();
     settings.setRememberAutoplayPreference(true);

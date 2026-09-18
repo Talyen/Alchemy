@@ -7,6 +7,7 @@ const ALLOWED = new Set([
   // list lives in src/features/alchemy/run-loop/run/run-materials.ts
   // (AWARD_MATERIALS_CALL_SITES, enforced by the run-materials award guard).
   "src/features/alchemy/shared/stores/run-session-write-port.ts",
+  "src/features/alchemy/shared/stores/write/run-homestead.ts",
   "src/features/alchemy/shared/stores/gear-session-command.ts",
   "src/features/alchemy/run-loop/run/run-materials.ts",
 ]);
