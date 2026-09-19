@@ -16,7 +16,6 @@ import {
   getPlasmaKeywordsForGear,
   getPlasmaColorPair,
   getInspectionKeywordShineColors,
-  BUTTON_WIDTH_ACTION,
   sectionTitleClass,
 } from "@/features/alchemy/shared/config";
 import { getTrinketKeywords } from "@/features/alchemy/shared/config/game-data-catalog";
@@ -164,13 +163,7 @@ export function RewardsScreen({
         </div>
         {showSkip ? (
           <div className="mt-5 flex justify-center">
-            <Button
-              variant="outline"
-              size="lg"
-              className={BUTTON_WIDTH_ACTION}
-              disabled={skipDisabled}
-              onClick={onSkip}
-            >
+            <Button variant="outline" size="lg" className="min-w-56" disabled={skipDisabled} onClick={onSkip}>
               Skip
             </Button>
           </div>

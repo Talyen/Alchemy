@@ -1,4 +1,4 @@
-import { buildSmoothShineBorderGradient } from "@/lib/animation/shine-gradient";
+import { NEUTRAL_SHINE_FALLBACK } from "@/lib/animation/shine-gradient";
 import type { KeywordId } from "@/lib/game-data";
 import { extractKeywordIds } from "@/lib/keyword-text";
 import { getKeywordBorderShineColors } from "@/lib/keyword-border-shine";
@@ -8,7 +8,6 @@ import { gearAffixCatalog } from "./affix-catalog";
 import { gearDefinitions, type GearDefinition } from "./definitions";
 import type { GearInstance } from "./types";
 
-const ASTRAL_SHINE_FALLBACK = ["#cbd5e1", "#64748b", "#cbd5e1"] as const;
 const UNIQUE_SHINE_COLORS = ["#fbbf24", "#f59e0b", "#d97706", "#fef3c7", "#fbbf24"] as const;
 const UNIQUE_TEXT_SHINE_COLORS = ["#fbbf24", "color-mix(in srgb, #fbbf24 55%, transparent)"] as const;
 
@@ -45,7 +44,7 @@ export function getGearInstanceKeywordIds(instance: GearInstance): KeywordId[] {
 function collectShineColors(keywordIds: readonly KeywordId[], mode: "border" | "text"): readonly string[] {
   const colors = mode === "text" ? getKeywordTextShineColors(keywordIds) : getKeywordBorderShineColors(keywordIds);
   if (colors.length > 0) return colors;
-  return mode === "border" ? [...ASTRAL_SHINE_FALLBACK] : ASTRAL_SHINE_FALLBACK.slice(0, 2);
+  return mode === "border" ? [...NEUTRAL_SHINE_FALLBACK] : NEUTRAL_SHINE_FALLBACK.slice(0, 2);
 }
 
 export function getUniqueGearShineColors(): readonly string[] {
@@ -95,15 +94,6 @@ export const GEAR_ASTRAL_SHINE_BORDER_WIDTH = 2;
 export function getAstralShineColors(instance: GearInstance): readonly string[] | undefined {
   const colors = getGearInstanceShineColors(instance);
   return colors.length > 0 ? colors : undefined;
-}
-
-export function getGearInstanceShineGradient(instance: GearInstance): string | null {
-  const colors = getGearInstanceShineColors(instance);
-  return buildSmoothShineBorderGradient(colors);
-}
-
-export function getGearDefinitionShineGradient(definition: GearDefinition): string | null {
-  return buildSmoothShineBorderGradient(getGearDefinitionShineColors(definition));
 }
 
 export function getGearAffixTextShineColors(affix: { descriptionTemplate: string }): readonly string[] {

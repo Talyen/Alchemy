@@ -1,6 +1,6 @@
 import { CRAFTING_CURRENCY_LIST, type SalvageYield } from "@/lib/gear";
 import { MATERIAL_IDS } from "@/lib/homestead/types";
-import { MaterialPill } from "../../../shared/ui/material-icons";
+import { ResourcePill } from "../../../shared/ui/material-icons";
 import { CurrencyChip } from "../../../shared/ui/currency-chip";
 
 export function SalvageYieldPreview({ salvageYield }: { salvageYield: SalvageYield }) {
@@ -13,7 +13,12 @@ export function SalvageYieldPreview({ salvageYield }: { salvageYield: SalvageYie
       {materials.length > 0 ? (
         <div className="flex flex-wrap items-center justify-center gap-2">
           {materials.map((material) => (
-            <MaterialPill key={material} material={material} amount={salvageYield.materials[material]} />
+            <ResourcePill
+              key={material}
+              resource={material}
+              amount={salvageYield.materials[material]}
+              fillsAvailableWidth={false}
+            />
           ))}
         </div>
       ) : null}

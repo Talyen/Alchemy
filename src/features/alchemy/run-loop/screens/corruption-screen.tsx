@@ -4,12 +4,7 @@ import { Dices, MoveRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { corruptionAltar, type BattleCard } from "@/lib/game-data";
 import type { CorruptionResult } from "@/lib/corruption";
-import {
-  SHINE_PALETTES,
-  viewCardWidthClass,
-  BUTTON_WIDTH_ACTION,
-  controlLabelClass,
-} from "@/features/alchemy/shared/config";
+import { SHINE_PALETTES, viewCardWidthClass, controlLabelClass } from "@/features/alchemy/shared/config";
 import { CardSelectionGrid } from "../../shared/ui/card-selection-grid";
 import { BattleCardButton } from "../../shared/ui/card-button";
 import { CardTitle, getCardDisplayTitle } from "../../shared/ui/card-description-ui";
@@ -73,7 +68,7 @@ function CorruptionIntro({ onBegin, onLeave }: { onBegin: () => void; onLeave: (
         />
       </div>
       <div className="flex flex-wrap justify-center gap-3">
-        <Button size="lg" variant="outline" className={BUTTON_WIDTH_ACTION} onClick={onLeave}>
+        <Button size="lg" variant="outline" className="min-w-56" onClick={onLeave}>
           Leave
         </Button>
         <ShineAccentButton
@@ -125,7 +120,7 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
         </div>
       </div>
       <div>
-        <Button size="lg" variant="primary" className={BUTTON_WIDTH_ACTION} onClick={onContinue}>
+        <Button size="lg" variant="primary" className="min-w-56" onClick={onContinue}>
           Continue
         </Button>
       </div>

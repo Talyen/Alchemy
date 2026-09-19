@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 
 import { FoundResourcesRow } from "../../../shared/ui/found-resources-row";
 import {
-  BUTTON_WIDTH_ACTION,
   bodyTextClass,
   cardInteractiveGlowClass,
   controlLabelClass,
@@ -213,7 +212,7 @@ export function MysteryRewardSummary({
       ) : null}
 
       <div>
-        <Button size="lg" className={BUTTON_WIDTH_ACTION} onClick={onContinue}>
+        <Button size="lg" className="min-w-56" onClick={onContinue}>
           Continue
         </Button>
       </div>

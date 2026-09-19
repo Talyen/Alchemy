@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   DEATHS_DOOR_PLASMA_PAIR,
+  getBossShineColors,
+  getBossTextShineColors,
   getPlasmaColorPair,
   getPlasmaColorPairFromColors,
   getPlasmaColorPairForCard,
@@ -19,11 +21,8 @@ import {
   lerpPlasmaColor,
 } from "@/features/alchemy/shared/config/plasma-palettes";
 import { parsePlasmaHexColor } from "@/lib/animation/plasma-colors";
-import {
-  getKeywordListShineColors,
-  SHINE_PALETTES,
-  WILDCARD_KEYWORD_SHINE_COLORS,
-} from "@/features/alchemy/shared/config";
+import { SHINE_PALETTES, WILDCARD_KEYWORD_SHINE_COLORS, getBossById } from "@/features/alchemy/shared/config";
+import { getKeywordBorderShineColors } from "@/lib/keyword-border-shine";
 import {
   cardById,
   characters,
@@ -179,7 +178,7 @@ describe("getPlasmaKeywordsForEnemy", () => {
       abilityIds: ["frostbolt"],
     };
 
-    expect(getEnemyKeywordShineColors(entry)).toEqual(getKeywordListShineColors(["poison", "freeze"]));
+    expect(getEnemyKeywordShineColors(entry)).toEqual(getKeywordBorderShineColors(["poison", "freeze"]));
   });
 
   it("maps enemy keywords to a plasma pair with wildcard fallback", () => {
@@ -198,6 +197,42 @@ describe("DEATHS_DOOR_PLASMA_PAIR", () => {
       primary: SHINE_PALETTES.deathsDoorArt[1],
       secondary: SHINE_PALETTES.deathsDoorArt[0],
     });
+  });
+});
+
+describe("getBossShineColors", () => {
+  function makeBoss(overrides: Partial<BestiaryEntry> = {}): BestiaryEntry {
+    return {
+      id: "test-boss",
+      title: "Test Boss",
+      subtitle: "",
+      descriptionLines: [],
+      art: "",
+      enemyType: "boss",
+      traits: [],
+      abilityIds: [],
+      ...overrides,
+    };
+  }
+
+  it("collects keyword shine colors from boss traits and ability cards", () => {
+    const frostwarden = getBossById("frostwarden");
+    expect(frostwarden).toBeDefined();
+
+    const colors = getBossShineColors(frostwarden!);
+
+    expect(colors).toContain(keywordDefinitions.freeze.shineColors[0]);
+    expect(colors).toContain(keywordDefinitions.burn.shineColors[0]);
+    expect(colors).toContain(keywordDefinitions.block.shineColors[0]);
+  });
+
+  it("falls back when no combat keywords match", () => {
+    const colors = getBossShineColors(makeBoss());
+    expect(colors).toEqual([...SHINE_PALETTES.bossVictoryFallback]);
+  });
+
+  it("removes repeated palette stops for broader text bands", () => {
+    expect(getBossTextShineColors(makeBoss())).toEqual(["#cbd5e1", "#64748b"]);
   });
 });
 

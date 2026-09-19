@@ -3,12 +3,7 @@ import { getCardKeywords, type BattleCard } from "@/lib/game-data";
 import { DRAFT_ROUNDS } from "@/lib/game-constants";
 
 import { Button } from "@/components/ui/button";
-import {
-  BUTTON_WIDTH_ACTION,
-  bodyTextClass,
-  collectionTileWidthClass,
-  getPlasmaColorPair,
-} from "@/features/alchemy/shared/config";
+import { bodyTextClass, collectionTileWidthClass, getPlasmaColorPair } from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
 import { BattleCardButton } from "../../shared/ui/card-button";
 import { getCardDisplayTitle } from "../../shared/ui/card-description-ui";
@@ -114,7 +109,7 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
 
         {isComplete ? (
           <div className="mt-8 flex justify-center">
-            <Button size="lg" variant="primary" className={BUTTON_WIDTH_ACTION} onClick={() => onComplete()}>
+            <Button size="lg" variant="primary" className="min-w-56" onClick={() => onComplete()}>
               Continue
             </Button>
           </div>

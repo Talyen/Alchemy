@@ -1,13 +1,15 @@
 import { type ComponentProps } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 
-import {
-  BUTTON_HOVER_DESTRUCTIVE,
-  BUTTON_HOVER_PRIMARY,
-  BUTTON_HOVER_SECONDARY,
-  BUTTON_HOVER_TRANSITION,
-} from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
+
+// Hover layers live with the primitive that owns them. Previously these
+// strings were split across game-constants/ui-layout.ts and re-imported
+// here for a single consumer.
+const BUTTON_HOVER_TRANSITION = "transition-[color,background-color,border-color,box-shadow] duration-150";
+const BUTTON_HOVER_PRIMARY = "button-primary-bloom";
+const BUTTON_HOVER_DESTRUCTIVE = "hover:bg-destructive/90";
+const BUTTON_HOVER_SECONDARY = "hover:bg-muted/80";
 
 const buttonVariants = cva(
   cn(

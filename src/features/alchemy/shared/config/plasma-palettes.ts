@@ -15,9 +15,9 @@ import {
 } from "@/features/alchemy/shared/config/game-data-catalog";
 import { gearDefinitions, getGearInstanceKeywordIds, getUniqueGearShineColors, type GearInstance } from "@/lib/gear";
 import { keywordAliasMap, keywordPattern } from "./keywords";
+import { getKeywordBorderShineColors } from "@/lib/keyword-border-shine";
 import {
   getCompanionShineColors,
-  getKeywordListShineColors,
   getKeywordShineColors,
   SHINE_PALETTES,
   WILDCARD_KEYWORD_SHINE_COLORS,
@@ -131,7 +131,22 @@ export function getPlasmaKeywordsForEnemy(entry: BestiaryEntry): KeywordId[] {
 }
 
 export function getEnemyKeywordShineColors(entry: BestiaryEntry): readonly string[] {
-  return getKeywordListShineColors(getPlasmaKeywordsForEnemy(entry));
+  return getKeywordBorderShineColors(getPlasmaKeywordsForEnemy(entry));
+}
+
+export function getBossShineColors(boss: BestiaryEntry): readonly string[] {
+  const matchedIds = getPlasmaKeywordsForEnemy(boss);
+
+  const colors: string[] = [];
+  for (const id of matchedIds) {
+    const def = keywordDefinitions[id];
+    if (def?.shineColors) colors.push(...def.shineColors);
+  }
+  return colors.length > 0 ? colors : [...SHINE_PALETTES.bossVictoryFallback];
+}
+
+export function getBossTextShineColors(boss: BestiaryEntry): readonly string[] {
+  return [...new Set(getBossShineColors(boss))];
 }
 
 export function getPlasmaColorPairForEnemy(entry: BestiaryEntry): PlasmaColorPair | null {

@@ -4,8 +4,39 @@ import { ESCAPE_PRIORITY } from "@/app/escape-stack";
 import { Button } from "@/components/ui/button";
 import { bodyTextClass } from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
-import { ConfirmationDialogPanel } from "./confirmation-dialog-panel";
+import { useDialogFocus } from "./use-dialog-focus";
 import { ModalOverlayShell } from "./modal-overlay-shell";
+
+function ConfirmationDialogPanel({
+  children,
+  labelledBy,
+  describedBy,
+  returnFocusRef,
+}: {
+  children: ReactNode;
+  labelledBy: string;
+  describedBy: string | undefined;
+  returnFocusRef?: RefObject<HTMLElement | null> | undefined;
+}) {
+  const { panelRef, handleKeyDown } = useDialogFocus(returnFocusRef);
+  return (
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Modal contains keyboard focus and stops clicks from reaching its backdrop
+    <div
+      ref={panelRef}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={labelledBy}
+      aria-describedby={describedBy}
+      tabIndex={-1}
+      data-testid="confirmation-dialog"
+      className="alchemy-shell max-h-[90dvh] w-fit max-w-[calc(33.6015*var(--content-rem,1rem))] overflow-y-auto rounded-shell-dialog border border-border/80 px-7 py-7 text-center"
+      onKeyDown={handleKeyDown}
+      onClick={(event) => event.stopPropagation()}
+    >
+      {children}
+    </div>
+  );
+}
 
 export function ConfirmationDialog({
   open = true,

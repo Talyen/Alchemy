@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 import { ManaPanel, PilePanel } from "../../../shared/ui/battle/resources";
-import { battleBottomBarClass, battleBottomColumnClass, BUTTON_WIDTH_DIALOG } from "@/features/alchemy/shared/config";
+import { battleBottomBarClass, battleBottomColumnClass } from "@/features/alchemy/shared/config";
 import { BattleHand } from "./hand";
 import type { BattleActionsProps, BattleRefsProps, BattleScreenState, RequiredBattleViewProps } from "./types";
 import { useCardTransferInProgress } from "../../battle/presentation/use-hand-presentation";
@@ -60,7 +60,7 @@ function BattleControls({
   const cardTransferInProgress = useCardTransferInProgress();
 
   return (
-    <div className={cn(battleBottomColumnClass, BUTTON_WIDTH_DIALOG)}>
+    <div className={cn(battleBottomColumnClass, "w-56")}>
       <div className="relative flex w-full flex-col items-center gap-2">
         <Button
           variant="outline"

@@ -3,7 +3,7 @@ import { BookOpen, Cog, Shield, Swords, TreePine, WandSparkles } from "lucide-re
 import { Button } from "@/components/ui/button";
 import { ShineBorder } from "@/components/ui/shine-border";
 import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
-import { BUTTON_SHAPE, BUTTON_WIDTH_MENU, cardHoverScaleClass, SHINE_PALETTES } from "@/features/alchemy/shared/config";
+import { cardHoverScaleClass, SHINE_PALETTES } from "@/features/alchemy/shared/config";
 import { Surface } from "../../shared/ui/surface";
 import { usePlasmaInteraction } from "../../shared/ui/use-plasma-source";
 import { cn } from "@/lib/utils";
@@ -14,8 +14,8 @@ import {
   type CharacterId,
 } from "../../shared/config/game-data-catalog";
 
-const MENU_NAV_BUTTON_CLASS = cn("h-16 justify-center gap-2 text-2xl", BUTTON_WIDTH_MENU);
-const MENU_NAV_BUTTON_WRAPPER_CLASS = BUTTON_WIDTH_MENU;
+const MENU_NAV_BUTTON_CLASS = cn("h-16 justify-center gap-2 text-2xl", "w-[calc(19.2*var(--content-rem,1rem))]");
+const MENU_NAV_BUTTON_WRAPPER_CLASS = "w-[calc(19.2*var(--content-rem,1rem))]";
 
 const PLAY_PLASMA_PAIR: PlasmaColorPair = { primary: "#cd9b51", secondary: "#251e18" };
 const COLLECTION_PLASMA_PAIR: PlasmaColorPair = { primary: "#fcd34d", secondary: "#78350f" };
@@ -131,13 +131,7 @@ export function MenuScreen({
               Homestead
             </LockedMenuItem>
             {hasAffordableHomestead && !isHomesteadLocked && (
-              <ShineBorder
-                glow
-                shineColor={SHINE_PALETTES.gold}
-                borderWidth={2}
-                duration={8}
-                className={BUTTON_SHAPE}
-              />
+              <ShineBorder glow shineColor={SHINE_PALETTES.gold} borderWidth={2} duration={8} className="rounded-xl" />
             )}
           </MenuPlasmaHover>
         </div>
@@ -174,13 +168,7 @@ export function MenuScreen({
               Talents
             </LockedMenuItem>
             {hasUnspentTalents && !isTalentsLocked && (
-              <ShineBorder
-                glow
-                shineColor={SHINE_PALETTES.gold}
-                borderWidth={2}
-                duration={8}
-                className={BUTTON_SHAPE}
-              />
+              <ShineBorder glow shineColor={SHINE_PALETTES.gold} borderWidth={2} duration={8} className="rounded-xl" />
             )}
           </MenuPlasmaHover>
         </div>

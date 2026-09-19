@@ -46,7 +46,7 @@ Definition-only previews use base affinities, and Unique item titles and borders
 
 ## Buttons and interactive surfaces
 
-Game-specific button shape and layout tokens live in `src/features/alchemy/shared/config/button-tokens.ts`. Primitive hover constants live in `src/lib/game-constants/ui-layout.ts` and are imported through the game-constants barrel.
+`Button` (`src/components/ui/button.tsx`) owns its shape (`rounded-xl`), hover layers, and size variants. Width classes (`min-w-56`, `w-56`, menu width) are plain Tailwind literals at the call sites; `ShineAccentButton` keeps its own small width map for its `width` prop.
 
 `Button` always renders a native button defaulting to `type="button"`; pass an explicit `type` for the rare in-form submit/reset. `wrapperClassName` optionally adds a layout span; `className`, refs, event handlers, and native button attributes belong to the button itself.
 
@@ -54,11 +54,11 @@ Which control to reach for: `Button` owns text/label actions (Play, Back, Confir
 
 | Concern        | Standard                                                                                                                                                                                                                                                                                                           |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Shape          | Rounded rectangles: the `Button` primitive owns its own `rounded-xl` (it cannot import `@/features`); feature-side wrappers share `BUTTON_SHAPE`                                                                                                                                                                   |
+| Shape          | Rounded rectangles: the `Button` primitive owns `rounded-xl` (it cannot import `@/features`); feature-side wrappers repeat the same literal                                                                                                                                                                        |
 | Primary        | `Button variant="primary"` for Play, Continue, and Confirm                                                                                                                                                                                                                                                         |
 | Secondary      | `Button variant="outline"` for Back, Cancel, Skip, and alternate navigation                                                                                                                                                                                                                                        |
 | Accent         | `ShineAccentButton` only for accent-intent forward actions                                                                                                                                                                                                                                                         |
-| Paired actions | Secondary left and primary right; shared button width tokens                                                                                                                                                                                                                                                       |
+| Paired actions | Secondary left and primary right; inline width classes (`min-w-56`, `w-56`)                                                                                                                                                                                                                                        |
 | Equal choices  | `DestinationChoices` and `Surface`, with an accessible tile name                                                                                                                                                                                                                                                   |
 | Tabs           | `TabBar`                                                                                                                                                                                                                                                                                                           |
 | Chrome icons   | [ChromeIconButton](../src/features/alchemy/shared/ui/chrome-icon-button.tsx) owns header and battle-corner icon buttons, including shared hover, active, and toggle feedback.                                                                                                                                      |
@@ -384,7 +384,7 @@ Hover-only Shine Borders and persistent Shine Borders that strengthen on hover p
 with the shared keyword glow, including their existing focus activation. `ShineBorder`
 owns the optional `glow` treatment, tinted with the palette's first color;
 [component styles](../src/styles/components.css) own its blur, opacity, and transition.
-Wildcard glow follows its cycling color. The outer layer casts the glow around the masked inner border; keep it outside
+Wildcard uses the same static `ShineBorder` as every other hero. The outer layer casts the glow around the masked inner border; keep it outside
 artwork clips. Paired glow replaces the ordinary gold hover glow without changing
 scale or press feedback. Selection alone retains its existing treatment. Purely
 persistent decoration, turn indicators, and Death’s Door borders do not opt in.

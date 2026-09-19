@@ -8,7 +8,6 @@ import {
   isCharacterUnlocked,
   type CharacterId,
 } from "@/features/alchemy/shared/config/game-data-catalog";
-import { CyclingShineBorder } from "../../shared/ui/cycling-shine-border";
 import { HeroTooltip } from "../../shared/ui/tooltips/hero-tooltip";
 import { TitledScreenShell } from "../../shared/ui/layout-components";
 import { Surface } from "../../shared/ui/surface";
@@ -22,7 +21,6 @@ import {
   chooserLockedHoverSurfaceClass,
   getCharacterShineColors,
   WILDCARD_KEYWORD_SHINE_COLORS,
-  WILDCARD_SHINE_CYCLE_MS,
 } from "@/features/alchemy/shared/config";
 import { playUISound } from "@/lib/audio";
 
@@ -40,19 +38,8 @@ const CHARACTER_SELECT_ORDER: CharacterId[] = [
   "wildcard",
 ];
 
-function HeroCardShine({ characterId, colors }: { characterId: CharacterId; colors: readonly string[] }) {
+function HeroCardShine({ colors }: { colors: readonly string[] }) {
   if (colors.length === 0) return null;
-  if (characterId === "wildcard") {
-    return (
-      <CyclingShineBorder
-        colors={colors}
-        glow
-        borderWidth={3}
-        intervalMs={WILDCARD_SHINE_CYCLE_MS}
-        className={HERO_SHINE_CLASS}
-      />
-    );
-  }
   return <ShineBorder glow shineColor={colors} borderWidth={3} className={HERO_SHINE_CLASS} />;
 }
 
@@ -103,7 +90,7 @@ const CharacterCard = memo(function CharacterCard({
           shimmerActive={shimmerActive}
           shimmerToken={shimmerToken}
           shimmerRounded="rounded-shell-tooltip"
-          overlay={<HeroCardShine characterId={id} colors={shineColors} />}
+          overlay={<HeroCardShine colors={shineColors} />}
           onClick={() => {
             if (isLocked) {
               playUISound("error");

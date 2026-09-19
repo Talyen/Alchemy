@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import { RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { BUTTON_WIDTH_ACTION } from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
 
 import { GoldDisplay } from "../../shared/ui/display-elements";
@@ -48,7 +47,7 @@ export function ShopBrowseOfferings({
         {children}
       </FadeSlot>
       {services ? <div className={cn("flex flex-wrap justify-center gap-3", serviceClassName)}>{services}</div> : null}
-      <Button size="lg" variant="primary" wrapperClassName="mt-2" className={BUTTON_WIDTH_ACTION} onClick={onLeave}>
+      <Button size="lg" variant="primary" wrapperClassName="mt-2" className="min-w-56" onClick={onLeave}>
         Leave
       </Button>
     </div>

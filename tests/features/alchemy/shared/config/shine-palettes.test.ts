@@ -9,7 +9,6 @@ import {
   SHINE_PALETTES,
   WILDCARD_KEYWORD_SHINE_COLORS,
 } from "@/features/alchemy/shared/config";
-import { buildSmoothShineGradient } from "@/lib/animation/shine-gradient";
 import { cardLibrary, characters, keywordDefinitions } from "@/lib/game-data";
 import { getKeywordTextShineColors } from "@/lib/keyword-text-shine";
 import { makeTestCard } from "../../../../fixtures/cards";
@@ -102,22 +101,8 @@ describe("Trinket text shine", () => {
   });
 });
 
-describe("buildSmoothShineGradient", () => {
-  it.each([
-    [["#111111", "#222222"], 2],
-    [["#111111"], 2],
-  ] as const)("repeats palettes with traveling highlights", (colors, expectedHighlights) => {
-    const gradient = buildSmoothShineGradient(colors);
-    expect(gradient).not.toBeNull();
-    if (gradient === null) return;
-    expect(gradient).toMatch(/^linear-gradient\(in oklab/);
-    expect(gradient.match(/#ffffff/g)).toHaveLength(expectedHighlights);
-    expect(gradient).toContain(colors[0]);
-  });
-});
-
 describe("WILDCARD_KEYWORD_SHINE_COLORS", () => {
-  it("lists one stop per visible keyword for the hero-select cycle", () => {
+  it("lists one stop per visible keyword for the hero-select shine", () => {
     expect(WILDCARD_KEYWORD_SHINE_COLORS.length).toBeGreaterThan(3);
     expect(WILDCARD_KEYWORD_SHINE_COLORS).toContain(keywordDefinitions.burn.shineColors[0]);
     expect(WILDCARD_KEYWORD_SHINE_COLORS).toContain(keywordDefinitions.freeze.shineColors[0]);

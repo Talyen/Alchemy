@@ -534,13 +534,6 @@
   }
 }
 
-/* Lets Wildcard shine interpolate from one keyword color to the next. */
-@property --cycle-shine {
-  syntax: "<color>";
-  inherits: true;
-  initial-value: #fbbf24;
-}
-
 .labyrinth-floor-swap.screen-fade-in {
   transform: translateY(0);
   transition:

@@ -19,7 +19,6 @@ import { KeywordTag } from "../../shared/ui/keyword-tag";
 import { TitledScreenShell } from "../../shared/ui/layout-components";
 import { Surface } from "../../shared/ui/surface";
 import {
-  BUTTON_WIDTH_ACTION,
   cardInteractiveGlowClass,
   cardSurfaceClass,
   bodyTextClass,
@@ -224,7 +223,7 @@ export function DifficultySelectScreen({
       </div>
 
       <div className="mt-6 flex justify-center">
-        <Button size="lg" variant="primary" className={BUTTON_WIDTH_ACTION} disabled={!canPlay} onClick={handlePlay}>
+        <Button size="lg" variant="primary" className="min-w-56" disabled={!canPlay} onClick={handlePlay}>
           <Swords className="h-4 w-4" />
           Play
         </Button>

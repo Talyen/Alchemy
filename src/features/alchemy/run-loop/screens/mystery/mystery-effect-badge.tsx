@@ -1,10 +1,7 @@
 import type { BattleCard } from "@/lib/game-data";
 import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
-import {
-  getKeywordListShineColors,
-  getTrinketTextShineColors,
-  SHINE_PALETTES,
-} from "@/features/alchemy/shared/config/shine-palettes";
+import { getTrinketTextShineColors, SHINE_PALETTES } from "@/features/alchemy/shared/config/shine-palettes";
+import { getKeywordBorderShineColors } from "@/lib/keyword-border-shine";
 import { tooltipChipClass } from "@/features/alchemy/shared/config";
 import { MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
@@ -172,7 +169,11 @@ const renderGeneratedGearBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "ga
       : "Gear";
 
   const keywords = baseItem?.affinityKeywords ?? [];
-  const colors = uniqueItem ? getUniqueGearTextShineColors() : effect.astral ? getKeywordListShineColors(keywords) : [];
+  const colors = uniqueItem
+    ? getUniqueGearTextShineColors()
+    : effect.astral
+      ? getKeywordBorderShineColors(keywords)
+      : [];
 
   if (ctx.tooltip) {
     const titleNode =

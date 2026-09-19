@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { ScreenDescription, TitledScreenShell } from "../../shared/ui/layout-components";
 import { Button } from "@/components/ui/button";
 import { campfire } from "@/features/alchemy/shared/config/game-data-catalog";
-import { BUTTON_WIDTH_ACTION } from "@/features/alchemy/shared/config";
 import { getCampfireRestHealth } from "@/lib/campfire-heal";
 import { CAMPFIRE_CONTINUE_DELAY_MS } from "@/lib/game-constants";
 import { HealthRestoreMeter } from "../../shared/ui/health-restore-meter";
@@ -48,7 +47,7 @@ export function CampfireScreen({
           <img src={campfire} alt="Campfire" className="w-full rounded-shell-panel object-contain" loading="eager" />
           <div className="flex min-h-[calc(4.75*var(--content-rem,1rem))] w-full items-center justify-center">
             {!resting ? (
-              <Button size="lg" className={BUTTON_WIDTH_ACTION} onClick={handleRest}>
+              <Button size="lg" className="min-w-56" onClick={handleRest}>
                 Rest
               </Button>
             ) : (

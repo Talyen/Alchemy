@@ -9,7 +9,8 @@ import {
   type KeywordId,
   keywordDefinitions,
 } from "@/lib/game-data";
-import { combatTextIconClasses } from "../config/combat-text-icons";
+import type { LucideIcon } from "lucide-react";
+import { Skull, Sparkles } from "lucide-react";
 import { keywordIcons } from "../config/metadata";
 import { augmentDefinitions } from "../augment-definitions";
 import type { CombatImpactCue, StatusChip } from "../types";
@@ -41,6 +42,11 @@ export function getCombatImpactVisual(event: CombatTextEvent): Omit<CombatImpact
     healthLost: event.stat !== "block",
   };
 }
+
+const combatTextIconClasses: Record<string, LucideIcon> = {
+  haste: Sparkles,
+  deathsDoor: Skull,
+};
 
 export function getCombatTextIcon(event: CombatTextEvent) {
   if (event.kind === "heal") return keywordIcons.health;

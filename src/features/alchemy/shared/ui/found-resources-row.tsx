@@ -1,7 +1,7 @@
 import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
 import { cn } from "@/lib/utils";
 
-import { GoldPill, MaterialPill } from "./material-icons";
+import { ResourcePill } from "./material-icons";
 
 export function FoundResourcesRow({
   gold = 0,
@@ -19,9 +19,18 @@ export function FoundResourcesRow({
 
   return (
     <div className={cn("flex flex-wrap items-center justify-center gap-3", className)}>
-      {gold > 0 ? <GoldPill amount={gold} showsIncreasePrefix size={size} /> : null}
+      {gold > 0 ? (
+        <ResourcePill resource="gold" amount={gold} showsIncreasePrefix fillsAvailableWidth={false} size={size} />
+      ) : null}
       {earnedMaterials.map((mat) => (
-        <MaterialPill key={mat} material={mat} amount={materials?.[mat] ?? 0} showsIncreasePrefix size={size} />
+        <ResourcePill
+          key={mat}
+          resource={mat}
+          amount={materials?.[mat] ?? 0}
+          showsIncreasePrefix
+          fillsAvailableWidth={false}
+          size={size}
+        />
       ))}
     </div>
   );

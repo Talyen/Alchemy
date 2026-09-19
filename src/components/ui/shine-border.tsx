@@ -1,5 +1,6 @@
 import type { CSSProperties, HTMLAttributes } from "react";
 
+import { NEUTRAL_SHINE_FALLBACK } from "@/lib/animation/shine-gradient";
 import { cn } from "@/lib/utils";
 
 interface ShineBorderProps extends HTMLAttributes<HTMLDivElement> {
@@ -12,8 +13,6 @@ interface ShineBorderProps extends HTMLAttributes<HTMLDivElement> {
 // Decorative frame: parent must be `relative` with a rounded corner for
 // `absolute` + `rounded-[inherit]` to resolve. Renders nothing semantic, so
 // it is hidden from assistive tech.
-const NEUTRAL_SHINE_FALLBACK = ["#cbd5e1", "#64748b", "#cbd5e1"] as const;
-
 export function ShineBorder({
   glow = false,
   borderWidth = 1,

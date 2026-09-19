@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  BUTTON_WIDTH_ACTION,
   bodyTextClass,
   DEATHS_DOOR_PLASMA_PAIR,
   getPlasmaColorPair,
@@ -79,7 +78,7 @@ export function RunEndScreen({
           </div>
         ) : null}
 
-        <Button size="lg" variant="primary" className={BUTTON_WIDTH_ACTION} onClick={onContinue}>
+        <Button size="lg" variant="primary" className="min-w-56" onClick={onContinue}>
           Continue
         </Button>
       </div>

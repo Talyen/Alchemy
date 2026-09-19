@@ -4,7 +4,7 @@ import { FlaskConical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { isStandardPotionCard, type BattleCard } from "@/lib/game-data";
 import { MIXED_POTION_TITLE } from "@/lib/game-constants";
-import { collectionTileWidthClass, BUTTON_WIDTH_ACTION } from "@/features/alchemy/shared/config";
+import { collectionTileWidthClass } from "@/features/alchemy/shared/config";
 
 import { BattleCardButton } from "../../shared/ui/card-button";
 import { PurchasableCardItem } from "../shop/ui/purchasable-shop-item";
@@ -114,7 +114,7 @@ export function AlchemistShopScreen({
             <div>
               <Button
                 size="lg"
-                className={BUTTON_WIDTH_ACTION}
+                className="min-w-56"
                 onClick={() => {
                   setMixedCard(null);
                   resetSelections();

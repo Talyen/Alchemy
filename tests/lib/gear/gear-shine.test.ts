@@ -6,11 +6,9 @@ import {
   getAstralShineColors,
   getGearAffixTextShineColors,
   getGearDefinitionShineColors,
-  getGearDefinitionShineGradient,
   getGearDefinitionTextShineColors,
   getGearInstanceKeywordIds,
   getGearInstanceShineColors,
-  getGearInstanceShineGradient,
   getGearInstanceTextShineColors,
   getUniqueGearTextShineColors,
   selectTextShineKeywordIds,
@@ -98,33 +96,6 @@ describe("gear shine", () => {
         }),
       ),
     ).toEqual([]);
-    expect(
-      getGearInstanceShineGradient(
-        instance({
-          instanceId: "basic-1",
-          definitionId: "longsword-basic",
-          affixes: [{ id: "flat-burn", value: 2 }],
-        }),
-      ),
-    ).toBeNull();
-  });
-
-  it("builds a stable astral gradient from all affix keywords", () => {
-    const gear = instance({
-      instanceId: "astral-1",
-      definitionId: "longsword-astral",
-      affixes: [
-        { id: "flat-burn", value: 2 },
-        { id: "gold-on-kill", value: 1 },
-      ],
-    });
-
-    const gradient = getGearInstanceShineGradient(gear);
-    expect(gradient).toMatch(/^linear-gradient\(in oklab/);
-    expect(gradient).not.toContain("var(--color-foreground)");
-    expect(gradient).toContain(keywordDefinitions.burn.shineColors[0]!);
-    expect(gradient).toContain(keywordDefinitions.gold.shineColors[0]!);
-    expect(getGearInstanceShineGradient(gear)).toBe(gradient);
   });
 
   it("normalizes multi-affix astral border shine colors into a 3-4 stop loop", () => {
@@ -182,14 +153,6 @@ describe("gear shine", () => {
       "color-mix(in srgb, #fbbf24 55%, transparent)",
     ]);
     expect(getUniqueGearTextShineColors()).toEqual(["#fbbf24", "color-mix(in srgb, #fbbf24 55%, transparent)"]);
-  });
-
-  it("shines definition-only astral titles from affinity keywords and leaves basic plain", () => {
-    expect(getGearDefinitionShineGradient(gearDefinitions["longsword-basic"]!)).toBeNull();
-    const astral = getGearDefinitionShineGradient(gearDefinitions["longsword-astral"]!);
-    expect(astral).toMatch(/^linear-gradient\(in oklab/);
-    expect(astral).toContain(keywordDefinitions.physical.shineColors[0]!);
-    expect(astral).toContain(keywordDefinitions.forge.shineColors[0]!);
   });
 
   it("prefers base affinity keywords when selecting text shine keywords", () => {
