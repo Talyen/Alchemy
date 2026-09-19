@@ -51,14 +51,14 @@ This is the curated agent subset. The full catalog is `package.json` (exhaustive
 
 ### Build commands decision tree
 
-| Intent                                                | Command                                         |
-| ----------------------------------------------------- | ----------------------------------------------- |
-| Local web/dev                                         | `npm run dev` / `npm run build`                 |
-| Vercel web                                            | `vercel.json` buildCommand: typecheck + `build` |
-| Packaged Windows startup check                        | `npm run smoke:desktop`                         |
-| Desktop renderer                                      | `npm run build:desktop`                         |
-| Unpacked Windows app (local iterate)                  | `npm run package:win`                           |
-| Installers for configured targets (currently Windows) | `npm run dist:desktop`                          |
+| Intent                                                | Command                                                                                                                             |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Local web/dev                                         | `npm run dev` / `npm run build`                                                                                                     |
+| Vercel web                                            | `vercel.json` buildCommand: typecheck + `build`; Git auto-deploys disabled, deploy deliberately (dashboard Redeploy or Deploy Hook) |
+| Packaged Windows startup check                        | `npm run smoke:desktop`                                                                                                             |
+| Desktop renderer                                      | `npm run build:desktop`                                                                                                             |
+| Unpacked Windows app (local iterate)                  | `npm run package:win`                                                                                                               |
+| Installers for configured targets (currently Windows) | `npm run dist:desktop`                                                                                                              |
 
 **Skip flags:**
 

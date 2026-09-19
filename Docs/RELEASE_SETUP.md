@@ -57,15 +57,16 @@ Windows release job.
 
 ## GitHub secrets (one-time setup)
 
-| Secret                              | Purpose                        |
-| ----------------------------------- | ------------------------------ |
-| `STEAM_APP_ID`                      | Production Steam App ID        |
-| `STEAM_DEPOT_ID`                    | Primary content depot          |
-| `STEAM_USERNAME` / `STEAM_PASSWORD` | `steamcmd` upload              |
-| `SENTRY_DSN`                        | Public packaged crash endpoint |
-| `SENTRY_AUTH_TOKEN`                 | Source-map upload only         |
-| `SENTRY_ORG` / `SENTRY_PROJECT`     | Source-map destination         |
-| `AZURE_*` values above              | Optional Azure Trusted Signing |
+| Secret                              | Purpose                                                                                     |
+| ----------------------------------- | ------------------------------------------------------------------------------------------- |
+| `STEAM_APP_ID`                      | Production Steam App ID                                                                     |
+| `STEAM_DEPOT_ID`                    | Primary content depot                                                                       |
+| `STEAM_USERNAME` / `STEAM_PASSWORD` | `steamcmd` upload                                                                           |
+| `SENTRY_DSN`                        | Public packaged crash endpoint                                                              |
+| `SENTRY_AUTH_TOKEN`                 | Source-map upload only                                                                      |
+| `SENTRY_ORG` / `SENTRY_PROJECT`     | Source-map destination                                                                      |
+| `AZURE_*` values above              | Optional Azure Trusted Signing                                                              |
+| `VERCEL_DEPLOY_HOOK_URL`            | Release web QA deploy trigger (Vercel project Settings → Git → Deploy Hooks, `main` branch) |
 
 ## Steam Input default mapping (controller Playable)
 

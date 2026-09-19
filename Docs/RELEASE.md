@@ -135,6 +135,9 @@ Account setup, signing, and secrets live in [RELEASE_SETUP.md](./RELEASE_SETUP.m
 
 The current release workflow, job names, path filters, and artifact ownership
 are defined in [`.github/workflows/release.yml`](../.github/workflows/release.yml)
-and [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). Keep this page
+and [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). Git auto-deploys
+on Vercel are disabled (`vercel.json`); each release tag also triggers the
+existing Vercel Deploy Hook for the web QA build via the `vercel-qa` job,
+which runs alongside Steam publishing and never blocks it. Keep this page
 focused on release decisions; update the workflow files when CI topology
 changes.

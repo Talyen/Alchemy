@@ -234,6 +234,24 @@ jobs:
           compression-level: 0
           if-no-files-found: error
 
+  vercel-qa:
+    # Deliberate web QA deploy: Vercel Git auto-deploys are disabled in
+    # vercel.json, so release tags trigger the project's Deploy Hook instead.
+    # Runs alongside Steam publishing; a Vercel outage never blocks shipping.
+    needs: package
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Trigger Vercel QA deploy hook
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$VERCEL_DEPLOY_HOOK_URL" ]; then
+            echo "::warning::VERCEL_DEPLOY_HOOK_URL secret is not set; skipping Vercel QA deploy."
+            exit 0
+          fi
+          curl --fail --show-error -X POST "$VERCEL_DEPLOY_HOOK_URL"
+
   release:
     needs: package
     runs-on: windows-latest

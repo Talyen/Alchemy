@@ -67,7 +67,9 @@ tests, local gates, and CI parity: [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 Headless balance simulation (`npm run balance:sim`):
 [`Docs/REFERENCE.md` § Balance simulation](./Docs/REFERENCE.md#balance-simulation).
 
-Web deploys through Vercel ([`vercel.json`](./vercel.json)). Desktop builds,
+Web deploys through Vercel ([`vercel.json`](./vercel.json)). Git auto-deploys
+are disabled there, so web deployments are deliberate (dashboard Redeploy or
+a Deploy Hook) rather than per-push. Desktop builds,
 installers, and Steam shipping:
 [`Docs/RELEASE.md`](./Docs/RELEASE.md) and the
 [command reference](./Docs/REFERENCE.md#script-command-reference).
