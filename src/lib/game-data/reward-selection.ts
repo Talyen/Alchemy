@@ -41,6 +41,12 @@ function buildAffinityPool(
     .map((s) => s.card);
 }
 
+function dampenCompanionCandidates(candidates: BattleCard[], rng: () => number): BattleCard[] {
+  return candidates.filter(
+    (card) => !isCompanionCard(card) || rng() < REWARD_SELECTION_CONFIG.companionOwnedKeepFraction,
+  );
+}
+
 function pickOneCard(
   affinityPool: BattleCard[],
   randomPool: BattleCard[],
@@ -64,17 +70,22 @@ export function selectRewardCards(
   seedKeywords: KeywordId[] = [],
 ): BattleCard[] {
   const excludedIds = new Set(exclude.map((card) => card.id));
-  const candidates = allCards.filter((card) => !excludedIds.has(card.id));
-  const boostCompanions = !deckHasCompanionCard(deck);
+  const pool = allCards.filter((card) => !excludedIds.has(card.id));
+  const hasCompanion = deckHasCompanionCard(deck);
+  const candidates = hasCompanion ? dampenCompanionCandidates(pool, rng) : pool;
+  const effectiveCandidates = candidates.length > 0 ? candidates : pool;
+  const boostCompanions = !hasCompanion;
   const companionCopies = boostCompanions ? REWARD_SELECTION_CONFIG.companionlessRandomWeight : 1;
   const randomPool = shuffle(
-    companionCopies > 1 ? [...candidates, ...candidates.filter(isCompanionCard)] : candidates,
+    companionCopies > 1
+      ? [...effectiveCandidates, ...effectiveCandidates.filter(isCompanionCard)]
+      : effectiveCandidates,
     rng,
   );
   const selected: BattleCard[] = [];
   const freq = buildKeywordFrequency(deck, seedKeywords);
   const affinityPool = buildAffinityPool(
-    candidates,
+    effectiveCandidates,
     deck,
     freq,
     count,

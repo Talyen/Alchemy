@@ -107,4 +107,5 @@ export const REWARD_SELECTION_CONFIG = {
   affinityPoolMultiplier: 2,
   companionlessScoreBonus: 2,
   companionlessRandomWeight: 2,
+  companionOwnedKeepFraction: 0.5,
 } as const;

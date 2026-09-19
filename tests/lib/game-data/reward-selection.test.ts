@@ -135,7 +135,7 @@ describe("selectRewardCards", () => {
       seed: 42,
       count: 3,
       hasCompanion: true,
-      ids: ["wolf", "plain", "strike-2"],
+      ids: ["fox", "strike-0", "strike-3"],
       nextRandom: 0.003842951962724328,
     },
     {
@@ -273,7 +273,7 @@ describe("companionless boost", () => {
     expect(deckHasCompanionCard([card({ id: "stab" }), companionCard("wolf-companion")])).toBe(true);
   });
 
-  it("offers companions more often until the deck has one, then returns to normal", () => {
+  it("offers companions more often until the deck has one, then dampens them", () => {
     const pool: BattleCard[] = [
       companionCard("wolf-companion"),
       ...Array.from({ length: 6 }, (_, index) => physicalCard(`slash-${index}`)),
@@ -306,6 +306,47 @@ describe("companionless boost", () => {
     ];
     for (let i = 0; i < 200; i += 1) {
       const picked = selectRewardCards([], pool, 3, [], mulberry32(9000 + i));
+      expect(picked).toHaveLength(3);
+      expect(new Set(picked.map((entry) => entry.id)).size).toBe(3);
+    }
+  });
+});
+
+describe("owned companion dampening", () => {
+  it("offers companions about half as often once the deck has one", () => {
+    const pool: BattleCard[] = [
+      companionCard("wolf-companion"),
+      ...Array.from({ length: 12 }, (_, index) => physicalCard(`slash-${index}`)),
+    ];
+    const deck = [physicalCard("owned-stab"), companionCard("owned-wolf")];
+
+    function hitRate(trials: number): number {
+      let hits = 0;
+      for (let i = 0; i < trials; i += 1) {
+        const picked = selectRewardCards(deck, pool, 3, [], mulberry32(7000 + i));
+        if (picked.some((entry) => entry.id === "wolf-companion")) hits += 1;
+      }
+      return hits / trials;
+    }
+
+    const uniformBaseline = 3 / 13;
+    const rate = hitRate(3000);
+    expect(rate).toBeLessThan(uniformBaseline * 0.75);
+    expect(rate).toBeGreaterThan(uniformBaseline * 0.25);
+  });
+
+  it("never offers the same card twice with an owned companion", () => {
+    const pool: BattleCard[] = [
+      companionCard("wolf-companion"),
+      companionCard("fox-companion"),
+      companionCard("bear-companion"),
+      card({ id: "a" }),
+      card({ id: "b" }),
+      card({ id: "c" }),
+    ];
+    const deck = [companionCard("owned-wolf")];
+    for (let i = 0; i < 200; i += 1) {
+      const picked = selectRewardCards(deck, pool, 3, [], mulberry32(11000 + i));
       expect(picked).toHaveLength(3);
       expect(new Set(picked.map((entry) => entry.id)).size).toBe(3);
     }

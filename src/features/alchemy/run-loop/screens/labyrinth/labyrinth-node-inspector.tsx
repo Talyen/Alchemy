@@ -33,7 +33,7 @@ export function LabyrinthNodeInspector({ node, map, onEnter, onDescend }: Props)
           <img src={enemy?.art ?? meta.art} alt="" className="block h-auto w-full" draggable={false} />
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/70 to-transparent p-4 pt-12">
             {node.type === "entrance" || category !== title ? (
-              <p className="text-lg font-semibold tracking-widest text-stone-200 uppercase">
+              <p className="text-base font-semibold tracking-widest text-stone-200 uppercase">
                 {node.type === "entrance" ? `Floor ${node.floor}` : category}
               </p>
             ) : null}
