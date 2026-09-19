@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { getCompanionShineColors } from "@/features/alchemy/shared/config";
@@ -62,5 +62,14 @@ describe("CompanionPanel turn shine border", () => {
     const customColors = ["#123456", "#654321"];
     render(<CompanionPanel companion={companionLibrary.wolf} turnActive turnShineColors={customColors} />);
     expectShineContains("turn-badge-companion", customColors);
+  });
+
+  it("shows keyword hover shine on the companion art", () => {
+    render(<CompanionPanel companion={companionLibrary.wolf} />);
+    expect(screen.queryByTestId("keyword-shine-hover")).toBeNull();
+
+    fireEvent.mouseEnter(screen.getByTestId("active-companion"));
+
+    expectShineContains("keyword-shine-hover", getCompanionShineColors(companionLibrary.wolf));
   });
 });

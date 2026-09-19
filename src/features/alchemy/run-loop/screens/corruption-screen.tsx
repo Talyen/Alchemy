@@ -2,9 +2,14 @@ import { useMemo, useState } from "react";
 import { Dices, MoveRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { corruptionAltar, type BattleCard } from "@/lib/game-data";
+import { corruptionAltar, getCardKeywords, type BattleCard } from "@/lib/game-data";
 import type { CorruptionResult } from "@/lib/corruption";
-import { SHINE_PALETTES, viewCardWidthClass, controlLabelClass } from "@/features/alchemy/shared/config";
+import {
+  SHINE_PALETTES,
+  viewCardWidthClass,
+  controlLabelClass,
+  getInspectionKeywordShineColors,
+} from "@/features/alchemy/shared/config";
 import { CardSelectionGrid } from "../../shared/ui/card-selection-grid";
 import { BattleCardButton } from "../../shared/ui/card-button";
 import { CardTitle, getCardDisplayTitle } from "../../shared/ui/card-description-ui";
@@ -45,6 +50,7 @@ function CorruptionDeckPicker({
           card={card}
           chrome="corruption"
           isSelected={selectedIndex === index}
+          shineColor={getInspectionKeywordShineColors(getCardKeywords(card))}
           onSelect={() => onSelect(index)}
         />
       )}
@@ -97,6 +103,7 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
             ariaLabel={`Original: ${getCardDisplayTitle(result.originalCard)}`}
             shimmerActive={false}
             shimmerToken={undefined}
+            shineColor={getInspectionKeywordShineColors(getCardKeywords(result.originalCard))}
             className={viewCardWidthClass}
           />
         </div>
@@ -109,6 +116,7 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
             ariaLabel={`Result: ${getCardDisplayTitle(result.corruptedCard)}`}
             shimmerActive={false}
             shimmerToken={undefined}
+            shineColor={getInspectionKeywordShineColors(getCardKeywords(result.corruptedCard))}
             className={viewCardWidthClass}
           />
         </div>

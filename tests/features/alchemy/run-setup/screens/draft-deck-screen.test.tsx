@@ -99,6 +99,23 @@ describe("DraftDeckScreen", () => {
     expect(useUiStore.getState().hoveredCardId).toBe("drafted-strike-1-strike");
   });
 
+  it("shows keyword shine on hover for draft choices and completed cards", () => {
+    const card = makeTestCard({ id: "fireball", title: "Fireball", tags: ["burn"] });
+    const { rerender } = render(
+      <DraftDeckScreen onComplete={vi.fn()} draftedCards={[]} draftChoices={[card]} onPick={vi.fn()} />,
+    );
+
+    const choiceBtn = screen.getByRole("button", { name: /Fireball/i });
+    expect(choiceBtn.querySelector(".shine-border")).toBeNull();
+    fireEvent.mouseEnter(choiceBtn);
+    expect(choiceBtn.querySelector(".shine-border")).not.toBeNull();
+
+    rerender(<DraftDeckScreen onComplete={vi.fn()} draftedCards={[card]} draftChoices={[]} onPick={vi.fn()} />);
+    const draftedBtn = screen.getByRole("button", { name: /Fireball/i });
+    fireEvent.mouseEnter(draftedBtn);
+    expect(draftedBtn.querySelector(".shine-border")).not.toBeNull();
+  });
+
   it("holds the Continue action until the Draft Complete art grid swaps in", async () => {
     vi.useFakeTimers();
     const drafting = Array.from({ length: DRAFT_ROUNDS - 1 }, (_, index) =>

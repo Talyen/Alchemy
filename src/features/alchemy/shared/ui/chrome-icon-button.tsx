@@ -2,9 +2,9 @@ import type { ComponentProps } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const CHROME_ICON_BUTTON_CLASS = "h-11 w-11 text-muted-foreground/60 hover:bg-muted/40 hover:text-foreground";
+const CHROME_ICON_BUTTON_CLASS = "h-11 w-11 text-muted-foreground/60 hover:bg-muted hover:text-foreground";
 
-const CHROME_ICON_BUTTON_ACTIVE_CLASS = "bg-muted/40 text-foreground";
+const CHROME_ICON_BUTTON_ACTIVE_CLASS = "bg-muted text-foreground";
 
 export function ChromeIconButton({
   active = false,

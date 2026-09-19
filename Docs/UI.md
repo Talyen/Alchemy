@@ -42,13 +42,15 @@ Astral instance titles and borders derive their shine keywords from the rolled a
 
 Max-roll Astral and Unique affix names use the first three distinct keywords from their own description, including aliases such as Stunned, Frozen, and Consumed. Tooltip entries carry affix identity and normalized value together so description text and max-roll shine cannot diverge. Text uses each keyword’s primary color with a 55%-opacity stop. Single-keyword borders retain the keyword's full 3-stop pulse (`[light, dark, light]`), while multi-keyword borders normalize to each keyword’s primary accent color looped back to the first (`[k1, k2, k1]` or `[k1, k2, k3, k1]`) to maintain a consistent cadence and visual tempo across all items. Trinket titles use at most three described keywords in description order. Artwork palettes remain independent.
 
-Definition-only previews use base affinities, and Unique item titles and borders retain their gold palette. Gear hover backgrounds use only actual affix keywords, with neutral gray for no recognized keywords; Unique gear uses the same gold hex pair in inventory, equipped slots, and collection. CSS text fades must not feed the hex-only background renderer.
+Definition-only previews use base affinities. Unique item borders use the same keyword shine as Astral gear rather than a gold palette, while Unique item titles keep their gold palette. Gear hover backgrounds use only actual affix keywords, with neutral gray for no recognized keywords; Unique gear keeps the gold hex pair for its inventory, equipped-slot, and collection hover background. CSS text fades must not feed the hex-only background renderer.
 
 ## Buttons and interactive surfaces
 
 `Button` (`src/components/ui/button.tsx`) owns its shape (`rounded-xl`), hover layers, and size variants. Width classes (`min-w-56`, `w-56`, menu width) are plain Tailwind literals at the call sites; `ShineAccentButton` keeps its own small width map for its `width` prop.
 
 `Button` always renders a native button defaulting to `type="button"`; pass an explicit `type` for the rare in-form submit/reset. `wrapperClassName` optionally adds a layout span; `className`, refs, event handlers, and native button attributes belong to the button itself.
+
+Secondary (`outline`) and `ghost` buttons and `ChromeIconButton` use fully opaque fills: a solid base fill with solid hover and press feedback, never reduced alpha, so background plasma, particles, and screens cannot show through them. Art-tile controls where the artwork itself is the surface (`Surface as="button"`, card and portrait buttons) and badges or prices floating over artwork are not button fills and keep their existing transparency.
 
 Which control to reach for: `Button` owns text/label actions (Play, Back, Confirm, pagination, dialogs, icon chrome via `ChromeIconButton`); `Surface as="button"` owns art frames and tiles (cards, chooser art, portrait tiles). Native `<button>` stays for compositions neither covers without changing the DOM: whole-card buttons whose frame wraps an inner art `Surface` plus text (difficulty cards), portrait buttons pairing an art `Surface` with a label row (talent overview), art chips with custom tooltip/stopPropagation wiring (currencies, status icons, salvage toggle), and underline text dismiss actions inside toasts. Keep those native buttons typed with accessible names; do not rebuild them as `Button` (wrong chrome) or `Surface` (adds surface frame, clip wrapper, and transform variables that change the painted result).
 
@@ -415,6 +417,10 @@ not dismiss it. Each queued Wish accepts a fresh activation even when options re
 Reward cards and items are claimed immediately on activation. Only card rewards
 retain Skip; there are no reward confirmation buttons. Claim-in-flight disables
 choices and Skip until the next reward surface or destination is committed.
+Reward choice cells share one flex centering and reserve one tile row across
+card, gear, trinket, and boon, and the resource row and Skip footer reserve
+their heights (with a spacer when Skip is unavailable) so back-to-back rewards
+keep the same spacing.
 
 ## Options
 

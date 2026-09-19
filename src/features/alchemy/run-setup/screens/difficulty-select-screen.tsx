@@ -15,6 +15,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { renderMultilineTokenizedDescription } from "../../shared/ui/card-description-ui";
+import { HeroCardShine } from "../../shared/ui/hero-card-shine";
 import { KeywordTag } from "../../shared/ui/keyword-tag";
 import { TitledScreenShell } from "../../shared/ui/layout-components";
 import { Surface } from "../../shared/ui/surface";
@@ -27,6 +28,7 @@ import {
   chooserHeroPaddedTileClass,
   chooserLockedSurfaceClass,
   chooserRowGapClass,
+  getHeroCardShineColors,
   sectionTitleClass,
   surfaceSelectedRingClass,
 } from "@/features/alchemy/shared/config";
@@ -182,10 +184,11 @@ export function DifficultySelectScreen({
           )}
         >
           <Surface
-            className={cn("relative aspect-[3/4] overflow-hidden rounded-shell-panel", chooserHeroArtWidthClass)}
+            className={cn("group relative aspect-[3/4] rounded-shell-panel", chooserHeroArtWidthClass)}
             shimmerActive={characterShimmer.shimmerActive}
             shimmerToken={characterShimmer.shimmerToken}
             shimmerRounded="rounded-shell-panel"
+            overlay={<HeroCardShine colors={getHeroCardShineColors(characterId)} />}
             onMouseEnter={characterShimmer.onHoverStart}
           >
             <img

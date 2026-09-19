@@ -203,4 +203,65 @@ describe("RewardsScreen", () => {
     expect(unique.querySelector(".shine-border")).toBeNull();
     expect(screen.queryByRole("button", { name: "Skip" })).toBeNull();
   });
+
+  it("centers every reward kind in the same reserved choice row", () => {
+    const states = [
+      {
+        ...createEmptyRewardState(),
+        rewardType: "card" as const,
+        choices: [testCard],
+      },
+      {
+        ...createEmptyRewardState(),
+        rewardType: "gear" as const,
+        choices: [{ instanceId: "basic-sword", definitionId: "longsword-basic", affixes: [] }],
+      },
+      {
+        ...createEmptyRewardState(),
+        rewardType: "trinket" as const,
+        choices: [
+          {
+            id: "lucky-coin",
+            title: "Lucky Coin",
+            descriptionLines: ["Gain 5 gold."],
+            art: "",
+            effects: {},
+          },
+        ],
+      },
+    ];
+
+    for (const rewardState of states) {
+      const { container, unmount } = render(
+        <RewardsScreen rewardState={rewardState} onSkip={vi.fn()} onClaimReward={vi.fn()} />,
+      );
+      const choiceButton = screen.getByRole("button", { name: /select /i });
+      // Each tile sits in a shared centered cell inside a one-row reserved grid.
+      expect(choiceButton.closest("div.flex.justify-center")).not.toBeNull();
+      expect(container.querySelector('div[class*="23.05"]')).not.toBeNull();
+      unmount();
+      cleanup();
+    }
+  });
+
+  it("reserves Skip footer and resource row heights when both are empty", () => {
+    const { container } = render(
+      <RewardsScreen
+        rewardState={{
+          ...createEmptyRewardState(),
+          rewardType: "gear",
+          choices: [{ instanceId: "basic-sword", definitionId: "longsword-basic", affixes: [] }],
+        }}
+        onSkip={vi.fn()}
+        onClaimReward={vi.fn()}
+      />,
+    );
+
+    // No second Skip action, but the footer keeps card-reward spacing.
+    expect(screen.queryByRole("button", { name: "Skip" })).toBeNull();
+    expect(container.querySelector('div[class*="min-h-16"]')).not.toBeNull();
+    expect(container.querySelector('div.h-16[aria-hidden="true"]')).not.toBeNull();
+    // Empty gold/materials still reserves one pill-row height.
+    expect(container.querySelector('div[class*="52px"]')).not.toBeNull();
+  });
 });

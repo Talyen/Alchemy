@@ -98,7 +98,7 @@ function DestinationChoiceTile({
             shineColor={getBossShineColors(tooltipEntry)}
             borderWidth={3}
             duration={10}
-            className="z-20 rounded-shell-card"
+            className="z-20 rounded-shell-card opacity-0 transition-opacity duration-200 group-focus-within:opacity-100 group-hover:opacity-100"
           />
         ) : undefined
       }

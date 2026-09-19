@@ -60,7 +60,9 @@ function resolveShineColors(
   mode: "border" | "text",
   keywordIds: readonly KeywordId[],
 ): readonly string[] {
-  if (rarity === "unique") return mode === "text" ? [...UNIQUE_TEXT_SHINE_COLORS] : [...UNIQUE_SHINE_COLORS];
+  if (rarity === "unique") {
+    return mode === "text" ? [...UNIQUE_TEXT_SHINE_COLORS] : collectShineColors(keywordIds, "border");
+  }
   if (rarity !== "astral") return [];
   return collectShineColors(keywordIds, mode);
 }

@@ -2,10 +2,11 @@ import { useMemo, useState, type ReactNode } from "react";
 import { Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import type { BattleCard } from "@/lib/game-data";
+import { getCardKeywords, type BattleCard } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
 import { CardSelectionGrid } from "./card-selection-grid";
+import { getInspectionKeywordShineColors } from "../config";
 import { GoldCost } from "./display-elements";
 import { SelectableCard } from "./selectable-card";
 import { useCaptureEscapeCancel } from "./use-modal-escape-dismiss";
@@ -64,6 +65,7 @@ export function RemoveCardPanel({
             card={card}
             chrome="shop"
             isSelected={selectedIndex === index}
+            shineColor={getInspectionKeywordShineColors(getCardKeywords(card))}
             onSelect={() => setSelectedIndex(index)}
           />
         )}

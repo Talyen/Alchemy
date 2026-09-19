@@ -39,6 +39,7 @@ import {
   campfire,
   corruptionAltar,
   eliteEnemyBg,
+  keywordDefinitions,
   merchantShopBg,
   mysteryBg,
   normalEnemyBg,
@@ -52,12 +53,17 @@ import type { Destination } from "@/lib/routing";
 import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
 import type { CollectionTab } from "../types";
 
-export const collectionTabMeta: Array<{ id: CollectionTab; label: string; icon: LucideIcon }> = [
-  { id: "heroes", label: "Heroes", icon: User },
-  { id: "cards", label: "Cards", icon: BookOpen },
-  { id: "bestiary", label: "Bestiary", icon: ShieldAlert },
-  { id: "trinkets", label: "Trinkets", icon: Trophy },
-  { id: "uniques", label: "Uniques", icon: Gem },
+export const collectionTabMeta: Array<{
+  id: CollectionTab;
+  label: string;
+  icon: LucideIcon;
+  iconClassName: string;
+}> = [
+  { id: "heroes", label: "Heroes", icon: User, iconClassName: "text-emerald-400" },
+  { id: "cards", label: "Cards", icon: BookOpen, iconClassName: keywordDefinitions.mana.colorClass },
+  { id: "bestiary", label: "Bestiary", icon: ShieldAlert, iconClassName: keywordDefinitions.health.colorClass },
+  { id: "trinkets", label: "Trinkets", icon: Trophy, iconClassName: keywordDefinitions.gold.colorClass },
+  { id: "uniques", label: "Uniques", icon: Gem, iconClassName: keywordDefinitions.consume.colorClass },
 ];
 
 interface ThemedChooserMeta {

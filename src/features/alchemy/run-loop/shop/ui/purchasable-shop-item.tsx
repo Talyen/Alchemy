@@ -1,8 +1,8 @@
-import type { BattleCard, TrinketEntry } from "@/lib/game-data";
+import { getCardKeywords, type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
 import { getGearInstanceTitle } from "@/lib/gear";
 import { cn } from "@/lib/utils";
-import { cardInteractiveGlowClass, getTileWidthClass } from "../../../shared/config";
+import { cardInteractiveGlowClass, getTileWidthClass, getInspectionKeywordShineColors } from "../../../shared/config";
 import { BattleCardButton } from "../../../shared/ui/card-button";
 import { getCardDisplayTitle } from "../../../shared/ui/card-description-ui";
 import { GearTile, TrinketTile } from "../../../shared/ui/collection-art-tiles";
@@ -34,6 +34,7 @@ export function PurchasableCardItem({
       ariaLabel={getShopItemAriaLabel(getCardDisplayTitle(card), purchased)}
       shimmerActive={false}
       shimmerToken={undefined}
+      shineColor={getInspectionKeywordShineColors(getCardKeywords(card))}
       className={cn(widthClass, canPurchase && cardInteractiveGlowClass)}
     >
       <ShopPriceChip price={price} purchased={purchased} purchaseState={purchaseState} />

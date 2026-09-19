@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { keywordDefinitions } from "@/lib/game-data";
+import { getKeywordBorderShineColors } from "@/lib/keyword-border-shine";
 import { gearAffixCatalog } from "@/lib/gear/affix-catalog";
 import { gearDefinitions } from "@/lib/gear/definitions";
 import {
@@ -10,6 +11,7 @@ import {
   getGearInstanceKeywordIds,
   getGearInstanceShineColors,
   getGearInstanceTextShineColors,
+  getUniqueGearShineColors,
   getUniqueGearTextShineColors,
   selectTextShineKeywordIds,
 } from "@/lib/gear/gear-shine";
@@ -137,22 +139,34 @@ describe("gear shine", () => {
     ).toEqual(expect.arrayContaining(["#cbd5e1"]));
   });
 
-  it("uses the gold uniqueness palette for unique gear", () => {
+  it("uses effect keywords for unique gear borders instead of the gold palette", () => {
     const unique = instance({
       instanceId: "unique-1",
       definitionId: "wardbreaker",
       affixes: [{ id: "flat-stun", value: 4 }],
     });
-    const colors = ["#fbbf24", "#f59e0b", "#d97706", "#fef3c7", "#fbbf24"];
-    expect(getGearInstanceShineColors(unique)).toEqual(colors);
-    expect(getAstralShineColors(unique)).toEqual(colors);
-    expect(getGearDefinitionShineColors(gearDefinitions.wardbreaker!)).toEqual(colors);
+    const gold = ["#fbbf24", "#f59e0b", "#d97706", "#fef3c7", "#fbbf24"];
+    const keywordIds = getGearInstanceKeywordIds(unique);
+    const expectedBorder = getKeywordBorderShineColors(keywordIds);
+    expect(expectedBorder.length).toBeGreaterThan(0);
+    expect(getGearInstanceShineColors(unique)).toEqual(expectedBorder);
+    expect(getAstralShineColors(unique)).toEqual(expectedBorder);
+    expect(getGearInstanceShineColors(unique)).not.toEqual(gold);
+    expect(getGearDefinitionShineColors(gearDefinitions.wardbreaker!)).toEqual([
+      keywordDefinitions.physical.shineColors[0],
+      keywordDefinitions.stun.shineColors[0],
+      keywordDefinitions.physical.shineColors[0],
+    ]);
     expect(getGearInstanceTextShineColors(unique)).toEqual(["#fbbf24", "color-mix(in srgb, #fbbf24 55%, transparent)"]);
     expect(getGearDefinitionTextShineColors(gearDefinitions.wardbreaker!)).toEqual([
       "#fbbf24",
       "color-mix(in srgb, #fbbf24 55%, transparent)",
     ]);
+  });
+
+  it("keeps the gold palette for unique titles and hover backgrounds", () => {
     expect(getUniqueGearTextShineColors()).toEqual(["#fbbf24", "color-mix(in srgb, #fbbf24 55%, transparent)"]);
+    expect(getUniqueGearShineColors()).toEqual(["#fbbf24", "#f59e0b", "#d97706", "#fef3c7", "#fbbf24"]);
   });
 
   it("prefers base affinity keywords when selecting text shine keywords", () => {

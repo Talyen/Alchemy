@@ -63,6 +63,7 @@ interface ArtPanelProps {
   turnActive?: boolean;
   turnUrgentHide?: boolean;
   turnShineColors?: readonly string[];
+  hoverShineColors?: readonly string[];
   artCorner?: ReactNode;
   ccKeyword?: ActiveCcKeyword | null;
   attackToken?: number;
@@ -96,6 +97,7 @@ export function ArtPanel({
   turnActive = false,
   turnUrgentHide = false,
   turnShineColors,
+  hoverShineColors: hoverShineColorsProp,
   artCorner,
   ccKeyword = null,
   attackToken = 0,
@@ -114,7 +116,8 @@ export function ArtPanel({
   const resolvedCardWidthClass =
     cardWidthClass ?? (side === "enemy" ? battleEnemyCardWidthClass : battleCardWidthClass);
   const artWrapClass = cn("relative overflow-visible", isBoss && side === "player" && "origin-bottom scale-[1.3]");
-  const hoverShineColors = side === "enemy" && currentEnemy ? getEnemyKeywordShineColors(currentEnemy) : undefined;
+  const hoverShineColors =
+    hoverShineColorsProp ?? (side === "enemy" && currentEnemy ? getEnemyKeywordShineColors(currentEnemy) : undefined);
 
   return (
     <div className={cn("relative flex flex-col items-center gap-3", shaking && "animate-shake")}>
@@ -166,7 +169,7 @@ export function ArtPanel({
               turnActive={turnActive}
               turnUrgentHide={turnUrgentHide}
               ccKeyword={ccKeyword}
-              hoverShineActive={side === "enemy" && tooltipVisible}
+              hoverShineActive={tooltipVisible}
               hoverShineColors={hoverShineColors}
               turnShineColors={turnShineColors}
             />

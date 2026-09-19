@@ -35,12 +35,14 @@ function RewardChoiceItems({
   disabled: boolean;
   onClaimReward: (id: string) => void;
 }) {
+  // Each choice cell shares the same flex centering so card, gear, and
+  // trinket/boon tiles align identically; tile widths/aspects already match.
   switch (rewardState.rewardType) {
     case "gear":
       return rewardState.choices.map((instance) => {
         const choiceId = getRewardChoiceId(instance);
         return (
-          <div key={choiceId}>
+          <div key={choiceId} className="flex justify-center">
             <GearTile
               instance={instance}
               interactionKey="reward"
@@ -58,7 +60,7 @@ function RewardChoiceItems({
       return rewardState.choices.map((trinket) => {
         const choiceId = getRewardChoiceId(trinket);
         return (
-          <div key={choiceId}>
+          <div key={choiceId} className="flex justify-center">
             <TrinketTile
               trinket={trinket}
               interactionKey="reward"
@@ -76,7 +78,7 @@ function RewardChoiceItems({
       return rewardState.choices.map((card) => {
         const choiceId = getRewardChoiceId(card);
         return (
-          <div key={choiceId}>
+          <div key={choiceId} className="flex justify-center">
             <SelectableCard
               card={card}
               isSelected={false}
@@ -112,10 +114,18 @@ function RewardsFound({
   rewardMaterials: Partial<Record<MaterialId, number>>;
 }) {
   const hasRewards = rewardGold > 0 || MATERIAL_IDS.some((mat) => (rewardMaterials[mat] ?? 0) > 0);
+  // Reserve one pill-row height in both branches so gold/materials vs none
+  // cannot move the choices or Skip footer. Matches ResourcePill md min-h.
   if (!hasRewards) {
-    return <div className="min-h-[calc(2.5*var(--content-rem,1rem))]" />;
+    return (
+      <div aria-hidden="true" className="flex min-h-[calc(52px*var(--content-scale,1))] items-center justify-center" />
+    );
   }
-  return <FoundResourcesRow gold={rewardGold} materials={rewardMaterials} />;
+  return (
+    <div className="flex min-h-[calc(52px*var(--content-scale,1))] items-center justify-center">
+      <FoundResourcesRow gold={rewardGold} materials={rewardMaterials} />
+    </div>
+  );
 }
 
 function RewardPlasmaController({ rewardState }: { rewardState: RewardState }) {
@@ -156,18 +166,24 @@ export function RewardsScreen({
       >
         <h2 className={cn("mt-3 text-center font-sans", sectionTitleClass)}>Choose a Reward</h2>
         <div className="mt-8 flex flex-col items-center gap-8">
-          <div className="flex flex-wrap items-start justify-center gap-6">
+          {/* Reserve one tile row (collection width 17.2868rem at 3/4 aspect) so
+              1-2 choice, empty, and 3-choice states share the same height. */}
+          <div className="flex min-h-[calc(23.05*var(--content-rem,1rem))] flex-wrap items-start justify-center gap-6">
             <RewardChoiceItems rewardState={rewardState} disabled={claimLocked} onClaimReward={onClaimReward} />
           </div>
           <RewardsFound rewardGold={rewardGold} rewardMaterials={rewardMaterials} />
         </div>
-        {showSkip ? (
-          <div className="mt-5 flex justify-center">
+        {/* Always reserve Skip footer height; spacer keeps gear/trinket/boon
+            aligned with card rewards without adding a second Skip action. */}
+        <div className="mt-5 flex min-h-16 justify-center">
+          {showSkip ? (
             <Button variant="outline" size="lg" className="min-w-56" disabled={skipDisabled} onClick={onSkip}>
               Skip
             </Button>
-          </div>
-        ) : null}
+          ) : (
+            <div aria-hidden="true" className="h-16" />
+          )}
+        </div>
       </FadeSlot>
     </TitledScreenShell>
   );

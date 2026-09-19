@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { type BattleCard } from "@/lib/game-data";
+import { getCardKeywords, type BattleCard } from "@/lib/game-data";
 
 import { CardSelectionGrid } from "../../../shared/ui/card-selection-grid";
 import { SelectableCard } from "../../../shared/ui/selectable-card";
-import { bodyTextClass } from "@/features/alchemy/shared/config";
+import { bodyTextClass, getInspectionKeywordShineColors } from "@/features/alchemy/shared/config";
 
 export function CardChoicePicker({ choices, onSelect }: { choices: BattleCard[]; onSelect: (cardId: string) => void }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -27,6 +27,7 @@ export function CardChoicePicker({ choices, onSelect }: { choices: BattleCard[];
             isHovered={hoveredId === card.id}
             onHoverStart={() => setHoveredId(card.id)}
             onHoverEnd={() => setHoveredId(null)}
+            shineColor={getInspectionKeywordShineColors(getCardKeywords(card))}
             onSelect={() => setSelectedId(card.id)}
           />
         )}

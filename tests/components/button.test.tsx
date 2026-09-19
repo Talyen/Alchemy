@@ -106,13 +106,28 @@ describe("Button", () => {
     expect(button.parentElement?.classList.contains("h-24")).toBe(true);
   });
 
-  it("applies outline variant styling with grounded border and hover illumination", () => {
+  it("applies outline variant styling with grounded border, opaque fill, and hover illumination", () => {
     render(<Button variant="outline">Secondary</Button>);
     const button = screen.getByRole("button", { name: "Secondary" });
     expect(button.classList.contains("border-border/90")).toBe(true);
+    expect(button.classList.contains("bg-background")).toBe(true);
     expect(button.classList.contains("text-foreground/80")).toBe(true);
+    expect(button.classList.contains("hover:bg-muted")).toBe(true);
     expect(button.classList.contains("hover:text-foreground")).toBe(true);
     expect(button.classList.contains("hover:border-border")).toBe(true);
+    expect(button.classList.contains("bg-transparent")).toBe(false);
+    expect(button.classList.contains("hover:bg-muted/80")).toBe(false);
+    expect(button.classList.contains("active:bg-muted/90")).toBe(false);
+  });
+
+  it("applies ghost variant styling with a borderless opaque fill", () => {
+    render(<Button variant="ghost">Ghost</Button>);
+    const button = screen.getByRole("button", { name: "Ghost" });
+    expect(button.classList.contains("border-0")).toBe(true);
+    expect(button.classList.contains("bg-background")).toBe(true);
+    expect(button.classList.contains("bg-transparent")).toBe(false);
+    expect(button.classList.contains("hover:bg-muted")).toBe(true);
+    expect(button.classList.contains("hover:bg-muted/40")).toBe(false);
   });
 
   it("applies primary variant bloom glow without hover scaling", () => {

@@ -1,5 +1,4 @@
 import { memo } from "react";
-import { ShineBorder } from "@/components/ui/shine-border";
 import { cn } from "@/lib/utils";
 import {
   characterArt,
@@ -9,6 +8,7 @@ import {
   type CharacterId,
 } from "@/features/alchemy/shared/config/game-data-catalog";
 import { HeroTooltip } from "../../shared/ui/tooltips/hero-tooltip";
+import { HeroCardShine } from "../../shared/ui/hero-card-shine";
 import { TitledScreenShell } from "../../shared/ui/layout-components";
 import { Surface } from "../../shared/ui/surface";
 import { useChooserHover } from "../../shared/ui/use-chooser-hover";
@@ -19,13 +19,10 @@ import {
   chooserHeroRowGapClass,
   chooserHeroRowShellWidthClass,
   chooserLockedHoverSurfaceClass,
-  getCharacterShineColors,
-  WILDCARD_KEYWORD_SHINE_COLORS,
+  getHeroCardShineColors,
 } from "@/features/alchemy/shared/config";
 import { playUISound } from "@/lib/audio";
 
-const HERO_SHINE_CLASS =
-  "z-20 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100";
 // Explicit order preserves the current hero row; add new heroes here.
 const CHARACTER_SELECT_ORDER: CharacterId[] = [
   "knight",
@@ -37,11 +34,6 @@ const CHARACTER_SELECT_ORDER: CharacterId[] = [
   "druid",
   "wildcard",
 ];
-
-function HeroCardShine({ colors }: { colors: readonly string[] }) {
-  if (colors.length === 0) return null;
-  return <ShineBorder shineColor={colors} borderWidth={3} className={HERO_SHINE_CLASS} />;
-}
 
 const CharacterCard = memo(function CharacterCard({
   id,
@@ -66,7 +58,7 @@ const CharacterCard = memo(function CharacterCard({
   } = useChooserHover("character-select", id, isLocked);
   const char = characters[id];
   const art = characterArt[char.id];
-  const shineColors = id === "wildcard" ? WILDCARD_KEYWORD_SHINE_COLORS : getCharacterShineColors(id);
+  const shineColors = getHeroCardShineColors(id);
 
   return (
     <div className="flex min-w-0 flex-col items-center gap-2">

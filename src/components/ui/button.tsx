@@ -9,7 +9,11 @@ import { cn } from "@/lib/utils";
 const BUTTON_HOVER_TRANSITION = "transition-[color,background-color,border-color,box-shadow] duration-150";
 const BUTTON_HOVER_PRIMARY = "button-primary-bloom";
 const BUTTON_HOVER_DESTRUCTIVE = "hover:bg-destructive/90";
-const BUTTON_HOVER_SECONDARY = "hover:bg-muted/80";
+// Secondary and ghost fills stay fully opaque so background plasma and
+// particles never show through a button. Feedback uses solid fills, never
+// reduced alpha or filters (filters re-rasterize the scaled stage).
+const BUTTON_HOVER_SECONDARY = "hover:bg-muted";
+const BUTTON_PRESS_SECONDARY = "active:bg-accent";
 
 const buttonVariants = cva(
   cn(
@@ -28,13 +32,11 @@ const buttonVariants = cva(
           BUTTON_HOVER_DESTRUCTIVE,
         ),
         outline: cn(
-          "border border-border/90 bg-background text-foreground/80 hover:border-border hover:text-foreground active:bg-muted/90 active:brightness-100",
+          "border border-border/90 bg-background text-foreground/80 hover:border-border hover:text-foreground",
           BUTTON_HOVER_SECONDARY,
+          BUTTON_PRESS_SECONDARY,
         ),
-        ghost: cn(
-          "border-0 bg-transparent text-foreground active:bg-muted/90 active:brightness-100",
-          BUTTON_HOVER_SECONDARY,
-        ),
+        ghost: cn("border-0 bg-background text-foreground", BUTTON_HOVER_SECONDARY, BUTTON_PRESS_SECONDARY),
       },
       size: {
         default: "h-14 px-6",

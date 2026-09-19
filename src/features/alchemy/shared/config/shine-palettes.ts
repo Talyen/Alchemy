@@ -88,3 +88,7 @@ export function getShineColorsForKeywords(keywordIds: readonly KeywordId[]): rea
 export function getCharacterShineColors(characterId: CharacterId): readonly string[] {
   return getShineColorsForKeywords(characters[characterId].keywords);
 }
+
+export function getHeroCardShineColors(characterId: CharacterId): readonly string[] {
+  return characterId === "wildcard" ? WILDCARD_KEYWORD_SHINE_COLORS : getCharacterShineColors(characterId);
+}

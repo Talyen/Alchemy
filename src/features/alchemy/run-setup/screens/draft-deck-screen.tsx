@@ -3,7 +3,12 @@ import { getCardKeywords, type BattleCard } from "@/lib/game-data";
 import { DRAFT_ROUNDS } from "@/lib/game-constants";
 
 import { Button } from "@/components/ui/button";
-import { bodyTextClass, collectionTileWidthClass, getPlasmaColorPair } from "@/features/alchemy/shared/config";
+import {
+  bodyTextClass,
+  collectionTileWidthClass,
+  getInspectionKeywordShineColors,
+  getPlasmaColorPair,
+} from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
 import { BattleCardButton } from "../../shared/ui/card-button";
 import { getCardDisplayTitle } from "../../shared/ui/card-description-ui";
@@ -43,6 +48,7 @@ function DraftedCardItem({
       shimmerActive={shimmerActive}
       shimmerToken={shimmerToken}
       scaleOnHover={false}
+      shineColor={getInspectionKeywordShineColors(getCardKeywords(card))}
       className={collectionTileWidthClass}
       wrapperClassName="relative flex justify-center"
     />
@@ -98,6 +104,7 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
                   key={`draft-choice-${card.id}-${String(card.uid ?? index)}`}
                   card={card}
                   isSelected={false}
+                  shineColor={getInspectionKeywordShineColors(getCardKeywords(card))}
                   onSelect={() => onPick(card.id)}
                   interactionKey={`draft-choice-${String(index)}`}
                   onHoverChange={(hovered) => setHoveredCard(hovered ? card : null)}

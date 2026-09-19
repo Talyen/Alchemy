@@ -76,7 +76,28 @@ describe("ArtPanel hover motion", () => {
 
     fireEvent.mouseEnter(wrapper!);
 
-    expect(queryByTestId("keyword-shine-enemy")).toBeNull();
+    expect(queryByTestId("keyword-shine-hover")).toBeNull();
+  });
+
+  it("shows player keyword shine on hover when hoverShineColors are provided", () => {
+    const { getByTestId, queryByTestId } = render(<ArtPanel {...baseProps} hoverShineColors={["#fcd34d"]} />);
+    const wrapper = getByTestId("battle-player-art-panel").parentElement;
+    expect(wrapper).not.toBeNull();
+    expect(queryByTestId("keyword-shine-hover")).toBeNull();
+
+    fireEvent.mouseEnter(wrapper!);
+
+    expect(getByTestId("keyword-shine-hover")).toBeTruthy();
+  });
+
+  it("does not show player keyword shine when no hoverShineColors are provided", () => {
+    const { getByTestId, queryByTestId } = render(<ArtPanel {...baseProps} />);
+    const wrapper = getByTestId("battle-player-art-panel").parentElement;
+    expect(wrapper).not.toBeNull();
+
+    fireEvent.mouseEnter(wrapper!);
+
+    expect(queryByTestId("keyword-shine-hover")).toBeNull();
   });
 
   it("renders artCorner and health stats inside the combatant-attack-lunge wrapper", () => {
