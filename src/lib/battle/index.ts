@@ -6,47 +6,22 @@ export {
   getImmediateDefense,
   pickHighestScoring,
 } from "./autoplay-policy";
-export { damageOnlyEffects, getBattleCardPlayTarget, isAttackCard } from "./card-classification";
+export { getBattleCardPlayTarget, isAttackCard } from "./card-classification";
 export { canPlayCard, playBattleCardResolved, type CardPlayOptions } from "./card-play";
 export { mergeCombatText } from "./combat-text";
 export { processCompanionTurnStart } from "./companion";
 export { getBattleCompanionDamageModifiers } from "./companion-scaling";
-export { applyDrawResult, drawCards, drawFromState, drawKeywordCard, takeRandomCardFromDeck } from "./draw";
+export { drawCards } from "./draw";
 export { applyCardEffects } from "./effect-handlers";
 export { endPlayerTurn, recoverLegacyEnemyPhase } from "./enemy-turn";
 export { collectUncoveredDifficultyModifierKinds, collectUncoveredEnemyTraitIds } from "./enemy-turn-traits";
 export { getActiveCcKeyword, isCcControlled, type ActiveCcKeyword } from "./status-cc";
 export { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 export * from "./types/state-types";
-// Explicit staging surface: everything in state-helpers except the three
-// hit-pipeline internals (playerStatusDelta, scaleReceivedPlayerDamage,
-// mitigatePlayerCombatDamage), which battle leaves import relatively.
-export {
-  addEnemyMitigation,
-  addEnemyStatus,
-  addPlayerStatus,
-  applyGearDamageResistance,
-  applyPlayerCombatDamage,
-  applyPlayerHealing,
-  clampHealth,
-  damageEnemyHealth,
-  deathsDoorGraceTurns,
-  type EnemyHitHealth,
-  type EnemyTraitIgnoreMitigationOptions,
-  gainMana,
-  getEnemyTraitSet,
-  hasEncounterBenefit,
-  hasEnemyTrait,
-  isPlayerDefeated,
-  reduceEnemyArmor,
-  scaleGoldReward,
-  setEnemyStatus,
-  setFlag,
-  setPlayerStatus,
-  stripEnemyArmor,
-  stripEnemyBlock,
-  withPreservedFlags,
-} from "./types/state-helpers";
+// Barrel surface: only symbols consumed through the barrel live here.
+// Battle internals import state-helpers relatively; keep this list to what
+// barrel consumers actually use (knip entry-exports enforced).
+export { addEnemyStatus, addPlayerStatus, applyPlayerCombatDamage, isPlayerDefeated } from "./types/state-helpers";
 export { chooseWishCard } from "./wish";
 
 export { createUniqueGearBattleState } from "./unique-gear-state";

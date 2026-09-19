@@ -12,7 +12,7 @@ import {
 import { validateGear } from "./validators-gear";
 import { validateTypography } from "./validators-typography";
 
-export type { ContentValidationArea, ContentValidationIssue, ContentValidationResult } from "./types";
+export type { ContentValidationResult } from "./types";
 
 const SEVERITY_RANK: Record<ContentValidationIssue["severity"], number> = {
   error: 0,

@@ -20,7 +20,7 @@ export function getRawSaveSchemaVersion(parsed: unknown): number {
 export function getRawContentVersion(parsed: unknown): number {
   return getRawVersion(parsed, "contentVersion");
 }
-export function getRawLastSavedAt(parsed: unknown): number | null {
+function getRawLastSavedAt(parsed: unknown): number | null {
   // Timestamps have their own reader: like versions they must be finite and
   // non-negative, but fractional values floor instead of rejecting so a
   // hand-written float still orders sanely. SaveDataSchema.lastSavedAt shares

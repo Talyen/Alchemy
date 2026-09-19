@@ -7,7 +7,6 @@ export {
 export {
   getCandidateSavedAt,
   getRawContentVersion,
-  getRawLastSavedAt,
   getRawSaveSchemaVersion,
   isUnsupportedFutureContentData,
   isUnsupportedFutureSaveData,
@@ -25,7 +24,6 @@ export {
   SaveDataSchema,
   UnlockedTalentsSchema,
   isCombatGoldOverride,
-  isUsableLiveCombatGold,
   safeParseWithErrors,
   type ParsedActiveRunData,
   type ParsedSaveData,

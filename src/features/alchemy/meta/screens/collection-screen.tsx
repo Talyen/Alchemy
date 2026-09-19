@@ -49,7 +49,9 @@ export function CollectionScreen({
   const maxColumns = isBestiary ? COLLECTION_BESTIARY_MAX_COLUMNS : COLLECTION_CARD_MAX_COLUMNS;
   const { onContainer, onMeasure, pageSize, columns, gridStyle } = useAdaptiveGrid(
     referenceTileWidth,
-    maxColumns,
+    // Initial paint before measurement; the layout effect re-resolves
+    // immediately from the container width.
+    isBestiary ? 3 : 4,
     maxColumns,
   );
   const returnFocusRef = useRef<HTMLElement | null>(null);

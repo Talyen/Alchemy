@@ -26,8 +26,10 @@ export const collectionGridBestiaryWidthClass = "mx-auto w-full max-w-[calc(25.8
 
 export const COLLECTION_CARD_REFERENCE_WIDTH = 244.512;
 export const COLLECTION_BESTIARY_REFERENCE_WIDTH = 390;
-export const COLLECTION_CARD_MAX_COLUMNS = 4;
-export const COLLECTION_BESTIARY_MAX_COLUMNS = 3;
+// Growth caps: the grid resolves columns from measured width (two rows per
+// page), so large stages show more columns instead of stretching tiles.
+export const COLLECTION_CARD_MAX_COLUMNS = 8;
+export const COLLECTION_BESTIARY_MAX_COLUMNS = 6;
 
 export type TileWidthVariant = "collection" | "view" | "bestiary" | "collectionCard";
 
