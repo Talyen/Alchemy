@@ -158,48 +158,40 @@ export function computeVictoryRewardState(
   const gearAstralChanceBonus = input.gearAstralChanceBonus ?? 0;
   const activeTrinketEffectIds = combineTrinketEffectIds(input.runBoons, input.equippedTrinketId ?? null);
   const inCombatGold = input.purseGold !== undefined ? Math.max(0, input.battleState.gold - input.purseGold) : 0;
+  // Boss and combat rewards share every input except the encounter bonus and
+  // the combat-only deck/elite/destination fields.
+  const sharedFlowInput = {
+    lootProgress: input.lootProgress,
+    gold: input.gold,
+    generousBonus: input.generousBonus,
+    wealthyBonus: input.wealthyBonus,
+    talentGoldPerCombat: victoryGoldPerCombat(talentEffects, input.battleState),
+    materials: input.materials,
+    trinketIds: activeTrinketEffectIds,
+    goldMultiplier,
+    rng,
+    excludedBoonIds: activeTrinketEffectIds,
+    ownedTrinketIds: input.ownedTrinketIds ?? [],
+    ownedUniqueIds: input.ownedUniqueIds ?? new Set(),
+    gearAstralChanceBonus,
+    inCombatGold,
+  };
 
   if (input.battleState.currentEnemy.enemyType === ENEMY_TYPES.BOSS) {
     return createBossRewardStateFromFlow({
-      lootProgress: input.lootProgress,
-      gold: input.gold,
+      ...sharedFlowInput,
       bossBonus: input.bossBonus,
-      generousBonus: input.generousBonus,
-      wealthyBonus: input.wealthyBonus,
-      talentGoldPerCombat: victoryGoldPerCombat(talentEffects, input.battleState),
-      materials: input.materials,
-      trinketIds: activeTrinketEffectIds,
-      goldMultiplier,
-      rng,
-      excludedBoonIds: activeTrinketEffectIds,
-      gearAstralChanceBonus,
-      ownedTrinketIds: input.ownedTrinketIds ?? [],
-      ownedUniqueIds: input.ownedUniqueIds ?? new Set(),
-      inCombatGold,
     });
   }
 
   return withSelectedBossForDestinations(
     input.destinations,
     createCombatRewardStateFromFlow({
-      lootProgress: input.lootProgress,
+      ...sharedFlowInput,
       battleState: input.battleState,
       runDeck: input.runDeck,
-      gold: input.gold,
       eliteBonus: input.eliteBonus,
-      generousBonus: input.generousBonus,
-      wealthyBonus: input.wealthyBonus,
-      talentGoldPerCombat: victoryGoldPerCombat(talentEffects, input.battleState),
-      materials: input.materials,
       destinations: input.destinations,
-      trinketIds: activeTrinketEffectIds,
-      goldMultiplier,
-      rng,
-      excludedBoonIds: activeTrinketEffectIds,
-      ownedTrinketIds: input.ownedTrinketIds ?? [],
-      ownedUniqueIds: input.ownedUniqueIds ?? new Set(),
-      gearAstralChanceBonus,
-      inCombatGold,
     }),
     input.bossEnemyId,
   );

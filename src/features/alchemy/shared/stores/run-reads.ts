@@ -64,6 +64,11 @@ export function runPhaseFor(screen: Screen, hasActiveBattle: boolean): RunPhase 
   return getRunPhase(screen, hasActiveBattle);
 }
 
+function useRunPhase(screen: Screen | undefined, committedScreen: Screen, hasActiveBattle: boolean): RunPhase {
+  const resolvedScreen = screen ?? committedScreen;
+  return useMemo(() => runPhaseFor(resolvedScreen, hasActiveBattle), [resolvedScreen, hasActiveBattle]);
+}
+
 function useShallowRunSelector<T>(selector: (state: GameplayState) => T): T {
   return useGameplayStateStore(useShallow(selector));
 }
@@ -271,11 +276,8 @@ export function useRunSessionBattleContext(screen?: Screen): RunSessionBattleCon
   const battle = useRunSessionBattleSlice();
   const activeLabyrinthModifiers = useGameplayStateStore(useShallow((state) => state.session.activeLabyrinthModifiers));
   const committedScreen = useGameplayStateStore((state) => state.run.navigation.screen);
-  const resolvedScreen = screen ?? committedScreen;
-  return useMemo(
-    () => ({ phase: runPhaseFor(resolvedScreen, battle.hasActiveBattle), battle, activeLabyrinthModifiers }),
-    [resolvedScreen, battle, activeLabyrinthModifiers],
-  );
+  const phase = useRunPhase(screen, committedScreen, battle.hasActiveBattle);
+  return useMemo(() => ({ phase, battle, activeLabyrinthModifiers }), [phase, battle, activeLabyrinthModifiers]);
 }
 export function useRunSessionNavigationSlice(screen?: Screen): RunSessionNavigationSlice {
   const session = useShallowRunSelector((state) => ({
@@ -285,16 +287,16 @@ export function useRunSessionNavigationSlice(screen?: Screen): RunSessionNavigat
     pendingCharacterId: state.session.pendingCharacterId,
     pendingContentSystemType: state.session.pendingContentSystemType,
   }));
-  const resolvedScreen = screen ?? session.screen;
+  const phase = useRunPhase(screen, session.screen, session.hasActiveBattle);
   return useMemo(
     () => ({
-      phase: runPhaseFor(resolvedScreen, session.hasActiveBattle),
+      phase,
       hasActiveBattle: session.hasActiveBattle,
       hasActiveRun: session.hasActiveRun,
       pendingCharacterId: session.pendingCharacterId,
       pendingContentSystemType: session.pendingContentSystemType,
     }),
-    [resolvedScreen, session],
+    [phase, session],
   );
 }
 export function getRunSessionFromState(state: GameplayState, screen?: Screen): RunSession {

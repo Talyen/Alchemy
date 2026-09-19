@@ -109,6 +109,18 @@ export function useArmoryOrdering({
     return placeholderIndex % ARMORY_PAGE_SIZE;
   }, [placeholderIndex, safePage]);
 
+  // Single writer for the active category's working list: every sort and
+  // confirmed mutation funnels through here so the key shape cannot drift.
+  const commitIds = useCallback(
+    (nextIds: string[], page: number) => {
+      setWorkingState((prev) => ({
+        ...prev,
+        [activeKey]: { orderedIds: nextIds, page },
+      }));
+    },
+    [activeKey],
+  );
+
   // Page change
   const setPage = useCallback(
     (nextPage: number) => {
@@ -136,23 +148,17 @@ export function useArmoryOrdering({
           .slice()
           .sort(trinketCompare)
           .map((t) => t.id);
-        setWorkingState((prev) => ({
-          ...prev,
-          [activeKey]: { orderedIds: sorted, page: 0 },
-        }));
+        commitIds(sorted, 0);
       } else {
         const compareFn = option === "name" ? nameGearCompare : defaultGearCompare;
         const sorted = pickerItems
           .slice()
           .sort(compareFn)
           .map((i) => i.instanceId);
-        setWorkingState((prev) => ({
-          ...prev,
-          [activeKey]: { orderedIds: sorted, page: 0 },
-        }));
+        commitIds(sorted, 0);
       }
     },
-    [activeKey, isTrinket, ownedTrinkets, pickerItems],
+    [commitIds, isTrinket, ownedTrinkets, pickerItems],
   );
 
   // Confirmed equipment mutations
@@ -160,15 +166,9 @@ export function useArmoryOrdering({
     (incomingId: string, replacedId: string) => {
       setPlaceholderIndex(null);
       const nextIds = applyReplace(reconciledIds, incomingId, replacedId);
-      setWorkingState((prev) => ({
-        ...prev,
-        [activeKey]: {
-          orderedIds: nextIds,
-          page: clampPage(safePage, nextIds.length, ARMORY_PAGE_SIZE),
-        },
-      }));
+      commitIds(nextIds, clampPage(safePage, nextIds.length, ARMORY_PAGE_SIZE));
     },
-    [activeKey, reconciledIds, safePage],
+    [commitIds, reconciledIds, safePage],
   );
 
   const commitEmptySlotEquip = useCallback(
@@ -178,30 +178,18 @@ export function useArmoryOrdering({
         setPlaceholderIndex(incomingIndex);
       }
       const nextIds = applyEmptySlotEquip(reconciledIds, incomingId);
-      setWorkingState((prev) => ({
-        ...prev,
-        [activeKey]: {
-          orderedIds: nextIds,
-          page: clampPage(safePage, nextIds.length, ARMORY_PAGE_SIZE),
-        },
-      }));
+      commitIds(nextIds, clampPage(safePage, nextIds.length, ARMORY_PAGE_SIZE));
     },
-    [activeKey, reconciledIds, safePage],
+    [commitIds, reconciledIds, safePage],
   );
 
   const commitUnequip = useCallback(
     (unequippedId: string) => {
       setPlaceholderIndex(null);
       const nextIds = applyUnequip(reconciledIds, unequippedId, safePage, ARMORY_PAGE_SIZE);
-      setWorkingState((prev) => ({
-        ...prev,
-        [activeKey]: {
-          orderedIds: nextIds,
-          page: safePage,
-        },
-      }));
+      commitIds(nextIds, safePage);
     },
-    [activeKey, reconciledIds, safePage],
+    [commitIds, reconciledIds, safePage],
   );
 
   const commitHandConflicts = useCallback(
@@ -214,15 +202,9 @@ export function useArmoryOrdering({
         additionalDisplaced,
         selectedSlot,
       );
-      setWorkingState((prev) => ({
-        ...prev,
-        [activeKey]: {
-          orderedIds: nextIds,
-          page: clampPage(safePage, nextIds.length, ARMORY_PAGE_SIZE),
-        },
-      }));
+      commitIds(nextIds, clampPage(safePage, nextIds.length, ARMORY_PAGE_SIZE));
     },
-    [activeKey, reconciledIds, selectedSlot, safePage],
+    [commitIds, reconciledIds, selectedSlot, safePage],
   );
 
   const clearPlaceholder = useCallback(() => {

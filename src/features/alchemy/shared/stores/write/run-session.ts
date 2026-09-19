@@ -21,30 +21,19 @@ function setSessionField<K extends keyof RunSessionFields>(
   setField(draft.session, field, action);
 }
 
-export function setPendingCharacterId(
-  draft: GameplayDraft,
-  action: FieldUpdate<RunSessionFields["pendingCharacterId"]>,
-): void {
-  setSessionField(draft, "pendingCharacterId", action);
+function defineSessionSetter<K extends keyof RunSessionFields>(field: K) {
+  return (draft: GameplayDraft, action: FieldUpdate<RunSessionFields[K]>): void => {
+    setSessionField(draft, field, action);
+  };
 }
 
-export function setPendingContentSystemType(
-  draft: GameplayDraft,
-  action: FieldUpdate<RunSessionFields["pendingContentSystemType"]>,
-): void {
-  setSessionField(draft, "pendingContentSystemType", action);
-}
+export const setPendingCharacterId = defineSessionSetter("pendingCharacterId");
 
-export function setWildwoodDraft(draft: GameplayDraft, action: FieldUpdate<RunSessionFields["wildwoodDraft"]>): void {
-  setSessionField(draft, "wildwoodDraft", action);
-}
+export const setPendingContentSystemType = defineSessionSetter("pendingContentSystemType");
 
-export function setStarterDraftChoices(
-  draft: GameplayDraft,
-  action: FieldUpdate<RunSessionFields["starterDraftChoices"]>,
-): void {
-  setSessionField(draft, "starterDraftChoices", action);
-}
+export const setWildwoodDraft = defineSessionSetter("wildwoodDraft");
+
+export const setStarterDraftChoices = defineSessionSetter("starterDraftChoices");
 
 export function setHasActiveRun(draft: GameplayDraft, active: boolean): void {
   if (!active) draft.session.activity = { kind: "inactive" };
@@ -65,34 +54,21 @@ function setRewardFlowField<K extends keyof RunRewardFlow>(
   setField(draft.session.rewardFlow, field, action);
 }
 
-export function setRewardState(draft: GameplayDraft, action: FieldUpdate<RunRewardFlow["state"]>): void {
-  setRewardFlowField(draft, "state", action);
+function defineRewardFlowSetter<K extends keyof RunRewardFlow>(field: K) {
+  return (draft: GameplayDraft, action: FieldUpdate<RunRewardFlow[K]>): void => {
+    setRewardFlowField(draft, field, action);
+  };
 }
 
-export function setCompanionRewardCards(
-  draft: GameplayDraft,
-  action: FieldUpdate<RunRewardFlow["companionCards"]>,
-): void {
-  setRewardFlowField(draft, "companionCards", action);
-}
+export const setRewardState = defineRewardFlowSetter("state");
 
-export function setRunEndMaterials(
-  draft: GameplayDraft,
-  action: FieldUpdate<RunSessionFields["runEndMaterials"]>,
-): void {
-  setSessionField(draft, "runEndMaterials", action);
-}
+export const setCompanionRewardCards = defineRewardFlowSetter("companionCards");
 
-export function setRunEndCurrencies(
-  draft: GameplayDraft,
-  action: FieldUpdate<RunSessionFields["runEndCurrencies"]>,
-): void {
-  setSessionField(draft, "runEndCurrencies", action);
-}
+export const setRunEndMaterials = defineSessionSetter("runEndMaterials");
 
-export function setRunEndItems(draft: GameplayDraft, action: FieldUpdate<RunSessionFields["runEndItems"]>): void {
-  setSessionField(draft, "runEndItems", action);
-}
+export const setRunEndCurrencies = defineSessionSetter("runEndCurrencies");
+
+export const setRunEndItems = defineSessionSetter("runEndItems");
 
 export function setCorruptionResult(draft: GameplayDraft, result: RunActivityData["corruption"]): void {
   if (result === null && draft.session.activity.kind !== "corruption") return;
@@ -194,21 +170,19 @@ function setVisitState<K extends keyof RunActivityData>(
   draft.session.activity = { kind, data } as GameplayDraft["session"]["activity"];
 }
 
-export function setShopState(draft: GameplayDraft, action: ActivityUpdate<"shop">): void {
-  setVisitState(draft, "shop", action);
+function defineVisitSetter<K extends keyof RunActivityData>(kind: K) {
+  return (draft: GameplayDraft, action: ActivityUpdate<K>): void => {
+    setVisitState(draft, kind, action);
+  };
 }
 
-export function setAlchemistState(draft: GameplayDraft, action: ActivityUpdate<"alchemist">): void {
-  setVisitState(draft, "alchemist", action);
-}
+export const setShopState = defineVisitSetter("shop");
 
-export function setTrinketShopState(draft: GameplayDraft, action: ActivityUpdate<"trinket-shop">): void {
-  setVisitState(draft, "trinket-shop", action);
-}
+export const setAlchemistState = defineVisitSetter("alchemist");
 
-export function setEquipmentShopState(draft: GameplayDraft, action: ActivityUpdate<"equipment-shop">): void {
-  setVisitState(draft, "equipment-shop", action);
-}
+export const setTrinketShopState = defineVisitSetter("trinket-shop");
+
+export const setEquipmentShopState = defineVisitSetter("equipment-shop");
 
 export function clearShopOfferings(draft: GameplayDraft): void {
   if (["shop", "alchemist", "trinket-shop", "equipment-shop"].includes(draft.session.activity.kind)) {
@@ -218,44 +192,17 @@ export function clearShopOfferings(draft: GameplayDraft): void {
 
 // ── Labyrinth session ────────────────────────────────────────────────────────
 
-export function setActiveLabyrinthModifiers(
-  draft: GameplayDraft,
-  action: FieldUpdate<RunSessionFields["activeLabyrinthModifiers"]>,
-): void {
-  setSessionField(draft, "activeLabyrinthModifiers", action);
-}
+export const setActiveLabyrinthModifiers = defineSessionSetter("activeLabyrinthModifiers");
 
-export function setActiveLabyrinthRewardModifiers(
-  draft: GameplayDraft,
-  action: FieldUpdate<RunSessionFields["activeLabyrinthRewardModifiers"]>,
-): void {
-  setSessionField(draft, "activeLabyrinthRewardModifiers", action);
-}
+export const setActiveLabyrinthRewardModifiers = defineSessionSetter("activeLabyrinthRewardModifiers");
 
-export function setActiveLabyrinthPendingNode(
-  draft: GameplayDraft,
-  action: FieldUpdate<RunSessionFields["activeLabyrinthPendingNode"]>,
-): void {
-  setSessionField(draft, "activeLabyrinthPendingNode", action);
-}
+export const setActiveLabyrinthPendingNode = defineSessionSetter("activeLabyrinthPendingNode");
 
-export function setSelectedLabyrinthNodeId(
-  draft: GameplayDraft,
-  action: FieldUpdate<RunSessionFields["selectedLabyrinthNodeId"]>,
-): void {
-  setSessionField(draft, "selectedLabyrinthNodeId", action);
-}
+export const setSelectedLabyrinthNodeId = defineSessionSetter("selectedLabyrinthNodeId");
 
-export function setRunEndLabyrinthFloor(
-  draft: GameplayDraft,
-  action: FieldUpdate<RunSessionFields["runEndLabyrinthFloor"]>,
-): void {
-  setSessionField(draft, "runEndLabyrinthFloor", action);
-}
+export const setRunEndLabyrinthFloor = defineSessionSetter("runEndLabyrinthFloor");
 
-export function setLabyrinthMap(draft: GameplayDraft, action: FieldUpdate<RunSessionFields["labyrinthMap"]>): void {
-  setSessionField(draft, "labyrinthMap", action);
-}
+export const setLabyrinthMap = defineSessionSetter("labyrinthMap");
 
 // ── Mystery visit ────────────────────────────────────────────────────────────
 
@@ -271,52 +218,26 @@ function setMysteryVisitField<K extends keyof HydratedMysteryVisit>(
   visit[field] = typeof action === "function" ? action(visit[field]) : action;
 }
 
-export function setMysteryEvent(draft: GameplayDraft, action: FieldUpdate<HydratedMysteryVisit["mysteryEvent"]>): void {
-  setMysteryVisitField(draft, "mysteryEvent", action);
+function defineMysteryVisitSetter<K extends keyof HydratedMysteryVisit>(field: K) {
+  return (draft: GameplayDraft, action: FieldUpdate<HydratedMysteryVisit[K]>): void => {
+    setMysteryVisitField(draft, field, action);
+  };
 }
 
-export function setMysteryChosenChoice(
-  draft: GameplayDraft,
-  action: FieldUpdate<HydratedMysteryVisit["mysteryChosenChoice"]>,
-): void {
-  setMysteryVisitField(draft, "mysteryChosenChoice", action);
-}
+export const setMysteryEvent = defineMysteryVisitSetter("mysteryEvent");
 
-export function setMysteryPendingRemoval(
-  draft: GameplayDraft,
-  action: FieldUpdate<HydratedMysteryVisit["mysteryPendingRemoval"]>,
-): void {
-  // Legacy: only stale-visit clearing and tests write this; no live navigation sets it.
-  setMysteryVisitField(draft, "mysteryPendingRemoval", action);
-}
+export const setMysteryChosenChoice = defineMysteryVisitSetter("mysteryChosenChoice");
 
-export function setMysteryCardChoices(
-  draft: GameplayDraft,
-  action: FieldUpdate<HydratedMysteryVisit["mysteryCardChoices"]>,
-): void {
-  setMysteryVisitField(draft, "mysteryCardChoices", action);
-}
+// Legacy: only stale-visit clearing and tests write this; no live navigation sets it.
+export const setMysteryPendingRemoval = defineMysteryVisitSetter("mysteryPendingRemoval");
 
-export function setMysteryGrantedTrinketIds(
-  draft: GameplayDraft,
-  action: FieldUpdate<HydratedMysteryVisit["mysteryGrantedTrinketIds"]>,
-): void {
-  setMysteryVisitField(draft, "mysteryGrantedTrinketIds", action);
-}
+export const setMysteryCardChoices = defineMysteryVisitSetter("mysteryCardChoices");
 
-export function setMysteryGrantedGearInstances(
-  draft: GameplayDraft,
-  action: FieldUpdate<HydratedMysteryVisit["mysteryGrantedGearInstances"]>,
-): void {
-  setMysteryVisitField(draft, "mysteryGrantedGearInstances", action);
-}
+export const setMysteryGrantedTrinketIds = defineMysteryVisitSetter("mysteryGrantedTrinketIds");
 
-export function setMysteryChosenCardId(
-  draft: GameplayDraft,
-  action: FieldUpdate<HydratedMysteryVisit["mysteryChosenCardId"]>,
-): void {
-  setMysteryVisitField(draft, "mysteryChosenCardId", action);
-}
+export const setMysteryGrantedGearInstances = defineMysteryVisitSetter("mysteryGrantedGearInstances");
+
+export const setMysteryChosenCardId = defineMysteryVisitSetter("mysteryChosenCardId");
 
 export function clearMysteryVisitState(draft: GameplayDraft): void {
   if (draft.session.activity.kind === "mystery") draft.session.activity = { kind: "idle" };

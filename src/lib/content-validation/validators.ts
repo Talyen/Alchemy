@@ -257,26 +257,28 @@ function validateSingleEncounterTrait(
     collector.error("encounter-traits", id, `Encounter trait record key does not match id ${trait.id}`);
   if (trait.enemyTrait.id !== id)
     collector.error("encounter-traits", id, "Encounter trait enemyTrait id does not match definition id");
-  if (trait.category === "combat" && !combatEncounterTraitIdSet.has(trait.id))
-    collector.error("encounter-traits", id, "Combat encounter trait is missing from combat id list");
-  if (trait.category === "reward" && !rewardEncounterTraitIdSet.has(trait.id))
-    collector.error("encounter-traits", id, "Reward encounter trait is missing from reward id list");
+  const idSet = trait.category === "combat" ? combatEncounterTraitIdSet : rewardEncounterTraitIdSet;
+  if ((trait.category === "combat" || trait.category === "reward") && !idSet.has(trait.id))
+    collector.error(
+      "encounter-traits",
+      id,
+      `${trait.category === "combat" ? "Combat" : "Reward"} encounter trait is missing from ${trait.category} id list`,
+    );
   if (trait.category === "reward" && trait.modes.length === 0)
     collector.error("encounter-traits", id, "Reward encounter trait has no compatible modes");
 }
 
 export function validateEncounterTraits(collector: Collector): void {
-  const traitIds = Object.keys(ENCOUNTER_TRAITS);
   const definitions = ENCOUNTER_TRAITS as Record<string, unknown>;
+  const definitionIds = new Set(Object.keys(definitions));
+  const listedIds = new Set(encounterTraitIdList);
   addDuplicateIssues(encounterTraitIdList, "encounter-traits", "encounter trait id", collector.error);
-  for (const id of encounterTraitIdList) {
-    if (!definitions[id]) collector.error("encounter-traits", id, "Encounter trait id is missing a definition");
+  for (const id of listedIds) {
+    if (!definitionIds.has(id)) collector.error("encounter-traits", id, "Encounter trait id is missing a definition");
   }
   for (const [id, trait] of Object.entries(ENCOUNTER_TRAITS)) {
     validateSingleEncounterTrait(trait, id, collector);
-  }
-  for (const id of traitIds) {
-    if (!encounterTraitIdList.includes(id))
+    if (!listedIds.has(id))
       collector.error("encounter-traits", id, "Encounter trait definition is missing from id lists");
   }
 }

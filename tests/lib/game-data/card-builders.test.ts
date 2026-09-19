@@ -1,12 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  archeryDamageCard,
-  consumableCard,
-  damageCard,
-  dualDamageCard,
-  effectsCard,
-  singleEffectCard,
-} from "@/lib/game-data/cards/card-builders";
+import { damageCard, effectsCard } from "@/lib/game-data/cards/card-builders";
 
 describe("card builders", () => {
   it("builds a lifesteal damage card with a shared Leech line", () => {
@@ -17,24 +10,25 @@ describe("card builders", () => {
   });
 
   it("passes lifesteal through archery cards with the Archery tag", () => {
-    const card = archeryDamageCard({
+    const card = damageCard({
       id: "sap-arrow",
       art: "sap-arrow",
       damageType: "nature",
       amount: 2,
       lifesteal: true,
+      tags: ["archery"],
     });
     expect(card.descriptionLines).toEqual(["Deal 2 Nature damage", "Leech", "Archery"]);
     expect(card.tags).toEqual(["archery"]);
   });
 
   it("shares one Leech line across dual lifesteal hits", () => {
-    const card = dualDamageCard({
+    const card = effectsCard({
       id: "fangs",
       art: "fangs",
-      hits: [
-        { damageType: "bleed", amount: 2, lifesteal: true },
-        { damageType: "physical", amount: 1, lifesteal: true },
+      effects: [
+        { kind: "damage", damageType: "bleed", amount: 2, lifesteal: true },
+        { kind: "damage", damageType: "physical", amount: 1, lifesteal: true },
       ],
     });
     expect(card.descriptionLines).toEqual(["Deal 2 Bleed damage", "Deal 1 Physical damage", "Leech"]);
@@ -45,9 +39,10 @@ describe("card builders", () => {
   });
 
   it("builds multi-effect consumables with a single Consume line", () => {
-    const card = consumableCard({
+    const card = effectsCard({
       id: "mana-berries",
       art: "mana-berries",
+      consume: true,
       effects: [
         { kind: "restore-mana", amount: 1 },
         { kind: "draw-cards", amount: 1 },
@@ -87,11 +82,11 @@ describe("card builders", () => {
   });
 
   it("keeps custom single-effect lines for haste-style effects", () => {
-    const card = singleEffectCard({
+    const card = effectsCard({
       id: "haste",
       art: "haste",
-      effect: { kind: "player-status", status: "haste", amount: 1 },
-      descriptionLine: "Take an extra turn after this one",
+      effects: [{ kind: "player-status", status: "haste", amount: 1 }],
+      descriptionLines: ["Take an extra turn after this one"],
     });
     expect(card.descriptionLines).toEqual(["Take an extra turn after this one"]);
   });

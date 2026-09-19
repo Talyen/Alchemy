@@ -68,7 +68,7 @@ export function teardownRun(): void {
   dispatchRunSessionCommand((draft) => {
     clearActiveRunInDraft(draft);
   });
-  clearTransientUiOnTeardown();
+  clearBattleUiState();
   notifyRunTeardown();
 }
 
@@ -199,21 +199,31 @@ export function applyRunDefeatTeardown(options: {
 }
 
 type LifecycleListener = () => void;
-const teardownListeners = new Set<LifecycleListener>();
-const clearPresentationListeners = new Set<LifecycleListener>();
 
-export function onRunTeardown(listener: LifecycleListener): () => void {
-  teardownListeners.add(listener);
-  return () => {
-    teardownListeners.delete(listener);
+function createLifecycleChannel() {
+  const listeners = new Set<LifecycleListener>();
+  return {
+    on(listener: LifecycleListener): () => void {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    emit(): void {
+      listeners.forEach((listener) => listener());
+    },
   };
 }
 
+const runTeardownChannel = createLifecycleChannel();
+const clearPresentationChannel = createLifecycleChannel();
+
+export function onRunTeardown(listener: LifecycleListener): () => void {
+  return runTeardownChannel.on(listener);
+}
+
 export function onClearBattlePresentation(listener: LifecycleListener): () => void {
-  clearPresentationListeners.add(listener);
-  return () => {
-    clearPresentationListeners.delete(listener);
-  };
+  return clearPresentationChannel.on(listener);
 }
 
 export function clearBattleUi(): void {
@@ -229,13 +239,9 @@ function clearBattleUiState(): void {
 
 export function clearBattlePresentationUi(): void {
   clearBattleUiState();
-  clearPresentationListeners.forEach((listener) => listener());
+  clearPresentationChannel.emit();
 }
 
 function notifyRunTeardown(): void {
-  teardownListeners.forEach((listener) => listener());
-}
-
-function clearTransientUiOnTeardown(): void {
-  clearBattleUiState();
+  runTeardownChannel.emit();
 }

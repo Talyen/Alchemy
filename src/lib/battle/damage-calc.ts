@@ -434,19 +434,19 @@ function computeBurnMultiplier(effect: Extract<BattleCardEffect, { kind: "damage
   return getBurnBonusToBleedingMultiplier(state);
 }
 
+const ENCOUNTER_FIRST_HIT_BY_DAMAGE_TYPE = {
+  physical: { id: "heavy-hand", flag: "encounterPhysicalUsed" },
+  holy: { id: "consecrated", flag: "encounterHolyUsed" },
+  nature: { id: "wildheart", flag: "encounterNatureUsed" },
+} as const;
+
 function resolveEncounterFirstHit(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   playedCard: boolean,
 ): { state: BattleState; multiplier: number } {
   const firstAttack =
-    effect.damageType === "physical"
-      ? { id: "heavy-hand" as const, flag: "encounterPhysicalUsed" as const }
-      : effect.damageType === "holy"
-        ? { id: "consecrated" as const, flag: "encounterHolyUsed" as const }
-        : effect.damageType === "nature"
-          ? { id: "wildheart" as const, flag: "encounterNatureUsed" as const }
-          : null;
+    ENCOUNTER_FIRST_HIT_BY_DAMAGE_TYPE[effect.damageType as keyof typeof ENCOUNTER_FIRST_HIT_BY_DAMAGE_TYPE] ?? null;
   if (playedCard && firstAttack && hasEncounterBenefit(state, firstAttack.id) && !state.flags[firstAttack.flag]) {
     return { state: setFlag(state, firstAttack.flag, true), multiplier: LABYRINTH_MODIFIER_CONFIG.double };
   }

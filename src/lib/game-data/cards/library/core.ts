@@ -11,13 +11,13 @@ export const coreCards: BattleCard[] = [
     effects: [{ kind: "damage", damageType: "physical", amount: 4, ignoreArmor: true }],
     descriptionLines: ["Deal 4 Physical damage, ignoring Armor"],
   }),
-  cardBuilders.singleEffectCard({
+  cardBuilders.effectsCard({
     id: "cleanse",
     art: assetRefs.cleanse,
-    effect: { kind: "remove-harmful-status", amount: 1 },
-    descriptionLine: "Cleanse 1 harmful status effect (Burn, Poison, Bleed, Freeze, or Stun)",
+    effects: [{ kind: "remove-harmful-status", amount: 1 }],
+    descriptionLines: ["Cleanse 1 harmful status effect (Burn, Poison, Bleed, Freeze, or Stun)"],
   }),
-  cardBuilders.singleEffectCard({ id: "heal", art: assetRefs.heal, effect: { kind: "heal", amount: 4 } }),
+  cardBuilders.effectsCard({ id: "heal", art: assetRefs.heal, effects: [{ kind: "heal", amount: 4 }] }),
   cardBuilders.effectsCard({
     id: "haste",
     art: assetRefs.haste,
@@ -31,25 +31,25 @@ export const coreCards: BattleCard[] = [
     effects: [{ kind: "damage", damageType: "poison", amount: 2 }, { kind: "next-hit-poison" }],
   }),
   cardBuilders.damageCard({ id: "fireball", art: assetRefs.fireball, damageType: "burn", amount: 2 }),
-  cardBuilders.dualDamageCard({
+  cardBuilders.effectsCard({
     id: "fangs",
     art: assetRefs.fangs,
-    hits: [
-      { damageType: "bleed", amount: 2, lifesteal: true },
-      { damageType: "physical", amount: 1, lifesteal: true },
+    effects: [
+      { kind: "damage", damageType: "bleed", amount: 2, lifesteal: true },
+      { kind: "damage", damageType: "physical", amount: 1, lifesteal: true },
     ],
   }),
   cardBuilders.damageCard({ id: "frostbolt", art: assetRefs.frostbolt, damageType: "freeze", amount: 3 }),
   cardBuilders.playerStatusCard({ id: "anvil", art: assetRefs.anvil, status: "forge", amount: 2 }),
   cardBuilders.damageCard({ id: "bash", art: assetRefs.bash, damageType: "stun", amount: 3 }),
   cardBuilders.playerStatusCard({ id: "block", art: assetRefs.block, status: "block", amount: 5 }),
-  cardBuilders.playerStatThenScaledDamageCard({
+  cardBuilders.effectsCard({
     id: "blessed-aegis",
     art: assetRefs.blessedAegis,
-    damageType: "holy",
-    scaleFrom: "block",
+    effects: [{ kind: "damage", damageType: "holy", amount: 0, equalToBlock: true }],
+    descriptionLines: ["Deal Holy damage equal to your Block"],
   }),
-  cardBuilders.singleEffectCard({ id: "wish", art: assetRefs.wish, effect: { kind: "wish", amount: 1 } }),
+  cardBuilders.effectsCard({ id: "wish", art: assetRefs.wish, effects: [{ kind: "wish", amount: 1 }] }),
   cardBuilders.effectsCard({
     id: "meteor",
     art: assetRefs.meteor,
@@ -144,12 +144,14 @@ export const coreCards: BattleCard[] = [
     descriptionLines: ["Deal 1 Burn damage", "If you would die, instead restore 30% Health"],
   }),
   cardBuilders.playerStatusCard({ id: "plate-mail", art: assetRefs.plateMail, status: "armor", amount: 2 }),
-  cardBuilders.playerStatThenScaledDamageCard({
+  cardBuilders.effectsCard({
     id: "sanctified-plate",
     art: assetRefs.sanctifiedPlate,
-    damageType: "holy",
-    scaleFrom: "armor",
-    playerStat: { status: "armor", amount: 1 },
+    effects: [
+      { kind: "player-status", status: "armor", amount: 1 },
+      { kind: "damage", damageType: "holy", amount: 0, equalToArmor: true },
+    ],
+    descriptionLines: ["Gain 1 Armor", "Deal Holy damage equal to your Armor"],
   }),
   cardBuilders.effectsCard({
     id: "shield-bash",
@@ -159,7 +161,7 @@ export const coreCards: BattleCard[] = [
       { kind: "player-status", status: "block", amount: 2 },
     ],
   }),
-  cardBuilders.singleEffectCard({ id: "steal", art: assetRefs.steal, effect: { kind: "gain-gold", amount: 4 } }),
+  cardBuilders.effectsCard({ id: "steal", art: assetRefs.steal, effects: [{ kind: "gain-gold", amount: 4 }] }),
   cardBuilders.effectsCard({
     id: "burning-blade",
     art: assetRefs.burningBlade,
@@ -186,19 +188,21 @@ export const coreCards: BattleCard[] = [
     ],
     descriptionLines: ["Deal 2 Stun damage", "Gain 2 Gold if the enemy is Stunned"],
   }),
-  cardBuilders.healThenDamageCard({
+  cardBuilders.effectsCard({
     id: "sunburst",
     art: assetRefs.sunburst,
-    heal: 2,
-    damageType: "burn",
-    damage: 1,
+    effects: [
+      { kind: "heal", amount: 2 },
+      { kind: "damage", damageType: "burn", amount: 1 },
+    ],
   }),
-  cardBuilders.healThenDamageCard({
+  cardBuilders.effectsCard({
     id: "holy-radiance",
     art: assetRefs.holyRadiance,
-    heal: 2,
-    damageType: "holy",
-    damage: 2,
+    effects: [
+      { kind: "heal", amount: 2 },
+      { kind: "damage", damageType: "holy", amount: 2 },
+    ],
   }),
   cardBuilders.damageCard({
     id: "venom-fangs",
@@ -214,20 +218,20 @@ export const coreCards: BattleCard[] = [
     amount: 3,
     lifesteal: true,
   }),
-  cardBuilders.dualDamageCard({
+  cardBuilders.effectsCard({
     id: "cinderbloom",
     art: assetRefs.cinderbloom,
-    hits: [
-      { damageType: "nature", amount: 2 },
-      { damageType: "burn", amount: 1 },
+    effects: [
+      { kind: "damage", damageType: "nature", amount: 2 },
+      { kind: "damage", damageType: "burn", amount: 1 },
     ],
   }),
-  cardBuilders.dualDamageCard({
+  cardBuilders.effectsCard({
     id: "grasping-vines",
     art: assetRefs.graspingVines,
-    hits: [
-      { damageType: "nature", amount: 2 },
-      { damageType: "stun", amount: 2 },
+    effects: [
+      { kind: "damage", damageType: "nature", amount: 2 },
+      { kind: "damage", damageType: "stun", amount: 2 },
     ],
   }),
   cardBuilders.effectsCard({
@@ -246,18 +250,18 @@ export const coreCards: BattleCard[] = [
       { kind: "player-status", status: "thorns", amount: 2 },
     ],
   }),
-  cardBuilders.singleEffectCard({
+  cardBuilders.effectsCard({
     id: "pack-tactics",
     art: assetRefs.packTactics,
-    effect: { kind: "companion-action", amount: 2 },
-    descriptionLine: "Your Companion acts twice",
+    effects: [{ kind: "companion-action", amount: 2 }],
+    descriptionLines: ["Your Companion acts twice"],
   }),
-  cardBuilders.dualDamageCard({
+  cardBuilders.effectsCard({
     id: "serrated-edge",
     art: assetRefs.serratedEdge,
-    hits: [
-      { damageType: "bleed", amount: 1 },
-      { damageType: "physical", amount: 3 },
+    effects: [
+      { kind: "damage", damageType: "bleed", amount: 1 },
+      { kind: "damage", damageType: "physical", amount: 3 },
     ],
   }),
   cardBuilders.effectsCard({
@@ -274,12 +278,12 @@ export const coreCards: BattleCard[] = [
     effects: [{ kind: "damage", damageType: "bleed", amount: 2, doubleIfEnemyBleeding: true }],
     descriptionLines: ["Deal 2 Bleed damage", "Doubled if the enemy was already Bleeding"],
   }),
-  cardBuilders.dualDamageCard({
+  cardBuilders.effectsCard({
     id: "pounce",
     art: assetRefs.pounce,
-    hits: [
-      { damageType: "physical", amount: 2 },
-      { damageType: "stun", amount: 2 },
+    effects: [
+      { kind: "damage", damageType: "physical", amount: 2 },
+      { kind: "damage", damageType: "stun", amount: 2 },
     ],
   }),
   cardBuilders.effectsCard({

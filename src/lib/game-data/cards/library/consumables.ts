@@ -3,67 +3,77 @@ import * as assetRefs from "../../assets";
 import * as cardBuilders from "../card-builders";
 
 export const consumableCards: BattleCard[] = [
-  cardBuilders.consumableCard({
+  cardBuilders.effectsCard({
     id: "health-potion",
     art: assetRefs.healthPotion,
-    effect: { kind: "heal", amount: 8 },
+    consume: true,
+    effects: [{ kind: "heal", amount: 8 }],
   }),
-  cardBuilders.consumableCard({
+  cardBuilders.effectsCard({
     id: "mana-berries",
     art: assetRefs.manaBerries,
+    consume: true,
     effects: [
       { kind: "restore-mana", amount: 1 },
       { kind: "draw-cards", amount: 1 },
     ],
   }),
-  cardBuilders.consumableCard({
+  cardBuilders.effectsCard({
     id: "mana-crystals",
     art: assetRefs.manaCrystal,
-    effect: { kind: "gain-max-mana", amount: 1 },
+    consume: true,
+    effects: [{ kind: "gain-max-mana", amount: 1 }],
   }),
-  cardBuilders.consumableCard({
+  cardBuilders.effectsCard({
     id: "mana-potion",
     art: assetRefs.manaPotion,
-    effect: { kind: "restore-mana", amount: 2 },
+    consume: true,
+    effects: [{ kind: "restore-mana", amount: 2 }],
   }),
-  cardBuilders.consumableCard({
+  cardBuilders.effectsCard({
     id: "panacea-potion",
     art: assetRefs.panaceaPotion,
-    effect: { kind: "remove-harmful-status", removeAll: true },
+    consume: true,
+    effects: [{ kind: "remove-harmful-status", removeAll: true }],
   }),
-  cardBuilders.consumableCard({
+  cardBuilders.effectsCard({
     id: "stoneskin-potion",
     art: assetRefs.stoneskinPotion,
-    effect: { kind: "player-status", status: "armor", amount: 4 },
+    consume: true,
+    effects: [{ kind: "player-status", status: "armor", amount: 4 }],
   }),
-  cardBuilders.consumableCard({
+  cardBuilders.effectsCard({
     id: "acid-potion",
     art: assetRefs.acidPotion,
+    consume: true,
     effects: [
       { kind: "remove-enemy-armor", removeAll: true },
       { kind: "damage", damageType: "poison", amount: 1 },
     ],
   }),
-  cardBuilders.consumableCard({
+  cardBuilders.effectsCard({
     id: "apple",
     art: assetRefs.apple,
+    consume: true,
     effects: [
       { kind: "heal", amount: 4 },
       { kind: "remove-harmful-status", amount: 1 },
     ],
   }),
-  cardBuilders.consumableCard({
+  cardBuilders.effectsCard({
     id: "bread",
     art: assetRefs.bread,
+    consume: true,
     effects: [
       { kind: "heal", amount: 4 },
       { kind: "repeat-over-turns", remainingTurns: 2, effects: [{ kind: "heal", amount: 4 }] },
     ],
     descriptionLines: ["Restore 4 Health", "Restore 4 Health at the start of each of your next 2 turns"],
   }),
-  cardBuilders.consumableCard({
+  cardBuilders.effectsCard({
     id: "luck-potion",
     art: assetRefs.luckPotion,
+    consume: true,
     effects: [
       {
         kind: "chance",
@@ -81,24 +91,36 @@ export const consumableCards: BattleCard[] = [
     ],
     descriptionLines: ["Gain 4 Mana or gain 4 Gold or gain 4 Block"],
   }),
-  cardBuilders.consumableCard({
+  cardBuilders.effectsCard({
     id: "wishing-potion",
     art: assetRefs.wishingPotion,
-    effect: { kind: "wish", amount: 2 },
+    consume: true,
+    effects: [{ kind: "wish", amount: 2 }],
   }),
-  cardBuilders.loseHealthBenefitCard({ id: "blood-offering", art: assetRefs.bloodOffering, healthLoss: 1, draw: 2 }),
-  cardBuilders.loseHealthBenefitCard({
+  cardBuilders.effectsCard({
+    id: "blood-offering",
+    art: assetRefs.bloodOffering,
+    effects: [
+      { kind: "lose-health", amount: 1 },
+      { kind: "draw-cards", amount: 2 },
+    ],
+  }),
+  cardBuilders.effectsCard({
     id: "faustian-bargain",
     art: assetRefs.faustianBargain,
-    healthLoss: 2,
-    wish: 3,
     consume: true,
+    effects: [
+      { kind: "lose-health", amount: 2 },
+      { kind: "wish", amount: 3 },
+    ],
   }),
-  cardBuilders.loseHealthBenefitCard({
+  cardBuilders.effectsCard({
     id: "dark-pact",
     art: assetRefs.darkPact,
-    healthLoss: 1,
-    wish: 1,
-    draw: 1,
+    effects: [
+      { kind: "lose-health", amount: 1 },
+      { kind: "wish", amount: 1 },
+      { kind: "draw-cards", amount: 1 },
+    ],
   }),
 ];

@@ -3,39 +3,43 @@ import * as assetRefs from "../../assets";
 import * as cardBuilders from "../card-builders";
 
 export const defenseCards: BattleCard[] = [
-  cardBuilders.statusThenEffectCard({
+  cardBuilders.effectsCard({
     id: "molten-bulwark",
     art: assetRefs.moltenBulwark,
-    status: "block",
-    amount: 3,
-    effect: { kind: "damage", damageType: "burn", amount: 1 },
+    effects: [
+      { kind: "player-status", status: "block", amount: 3 },
+      { kind: "damage", damageType: "burn", amount: 1 },
+    ],
   }),
-  cardBuilders.statusThenEffectCard({
+  cardBuilders.effectsCard({
     id: "glacial-ward",
     art: assetRefs.glacialWard,
-    status: "block",
-    amount: 3,
-    effect: { kind: "damage", damageType: "freeze", amount: 1 },
+    effects: [
+      { kind: "player-status", status: "block", amount: 3 },
+      { kind: "damage", damageType: "freeze", amount: 1 },
+    ],
   }),
-  cardBuilders.statusThenEffectCard({
+  cardBuilders.effectsCard({
     id: "spiked-shield",
     art: assetRefs.spikedShield,
-    status: "block",
-    amount: 2,
-    effect: { kind: "player-status", status: "thorns", amount: 2 },
+    effects: [
+      { kind: "player-status", status: "block", amount: 2 },
+      { kind: "player-status", status: "thorns", amount: 2 },
+    ],
   }),
-  cardBuilders.statusThenEffectCard({
+  cardBuilders.effectsCard({
     id: "golden-plate",
     art: assetRefs.goldenPlate,
-    status: "armor",
-    amount: 1,
-    effect: { kind: "gain-gold", amount: 2 },
+    effects: [
+      { kind: "player-status", status: "armor", amount: 1 },
+      { kind: "gain-gold", amount: 2 },
+    ],
   }),
-  cardBuilders.singleEffectCard({
+  cardBuilders.effectsCard({
     id: "crystal-bulwark",
     art: assetRefs.crystalBulwark,
-    effect: { kind: "player-status", status: "block", amount: 0, perManaCrystal: 1 },
-    descriptionLine: "Gain 1 Block per Mana Crystal",
+    effects: [{ kind: "player-status", status: "block", amount: 0, perManaCrystal: 1 }],
+    descriptionLines: ["Gain 1 Block per Mana Crystal"],
   }),
   cardBuilders.effectsCard({
     id: "shadowstep",
@@ -43,11 +47,11 @@ export const defenseCards: BattleCard[] = [
     consume: true,
     effects: [{ kind: "play-next-card-twice" }],
   }),
-  cardBuilders.singleEffectCard({
+  cardBuilders.effectsCard({
     id: "mana-shield",
     art: assetRefs.manaShield,
-    effect: { kind: "player-status", status: "block", amount: 0, convertCurrentMana: 3 },
-    descriptionLine: "Convert each of your Mana into 3 Block",
+    effects: [{ kind: "player-status", status: "block", amount: 0, convertCurrentMana: 3 }],
+    descriptionLines: ["Convert each of your Mana into 3 Block"],
   }),
   cardBuilders.effectsCard({
     id: "prayer",
@@ -58,11 +62,11 @@ export const defenseCards: BattleCard[] = [
       { kind: "heal", amount: 3 },
     ],
   }),
-  cardBuilders.singleEffectCard({
+  cardBuilders.effectsCard({
     id: "smelling-salts",
     art: assetRefs.smellingSalts,
-    effect: { kind: "remove-player-status", status: "stun" },
-    descriptionLine: "Cleanse Stun buildup",
+    effects: [{ kind: "remove-player-status", status: "stun" }],
+    descriptionLines: ["Cleanse Stun buildup"],
   }),
   cardBuilders.effectsCard({
     id: "cold-snap",
@@ -81,20 +85,20 @@ export const defenseCards: BattleCard[] = [
       { kind: "damage", damageType: "physical", amount: 4 },
     ],
   }),
-  cardBuilders.dualDamageCard({
+  cardBuilders.effectsCard({
     id: "smite",
     art: assetRefs.smite,
-    hits: [
-      { damageType: "holy", amount: 2 },
-      { damageType: "burn", amount: 1 },
+    effects: [
+      { kind: "damage", damageType: "holy", amount: 2 },
+      { kind: "damage", damageType: "burn", amount: 1 },
     ],
   }),
-  cardBuilders.dualDamageCard({
+  cardBuilders.effectsCard({
     id: "judgment",
     art: assetRefs.judgment,
-    hits: [
-      { damageType: "holy", amount: 2 },
-      { damageType: "stun", amount: 1 },
+    effects: [
+      { kind: "damage", damageType: "holy", amount: 2 },
+      { kind: "damage", damageType: "stun", amount: 1 },
     ],
   }),
 ];

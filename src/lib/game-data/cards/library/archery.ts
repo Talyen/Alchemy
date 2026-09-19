@@ -27,11 +27,12 @@ export const archeryCards: BattleCard[] = [
       { kind: "damage", damageType: "physical", amount: 2 },
     ],
   }),
-  cardBuilders.archeryDamageCard({
+  cardBuilders.damageCard({
     id: "serrated-arrowhead",
     art: assetRefs.serratedArrowhead,
     damageType: "bleed",
     amount: 3,
+    tags: ["archery"],
   }),
   cardBuilders.effectsCard({
     id: "concussive-shot",
@@ -47,11 +48,12 @@ export const archeryCards: BattleCard[] = [
     ],
     descriptionLines: ["Deal 2 Stun damage", "Deal 2 Physical damage at the start of your next turn"],
   }),
-  cardBuilders.archeryDamageCard({
+  cardBuilders.damageCard({
     id: "lightning-arrow",
     art: assetRefs.lightningArrow,
     damageType: "nature",
     amount: 3,
+    tags: ["archery"],
   }),
   cardBuilders.effectsCard({
     id: "bounty-shot",
@@ -62,12 +64,13 @@ export const archeryCards: BattleCard[] = [
       { kind: "gain-gold", amount: 2 },
     ],
   }),
-  cardBuilders.archeryDamageCard({
+  cardBuilders.damageCard({
     id: "sap-arrow",
     art: assetRefs.sapArrow,
     damageType: "nature",
     amount: 2,
     lifesteal: true,
+    tags: ["archery"],
   }),
   cardBuilders.effectsCard({
     id: "gamblers-shot",

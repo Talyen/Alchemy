@@ -152,7 +152,7 @@ Persisted status changes follow the [save contract](../src/features/alchemy/shar
 2. Add effects (discriminated union on `kind`) — same card entry, `effects: [...]`
 3. Add art reference — `src/lib/game-data/assets.ts` (or `placeholderCard` while WIP)
 4. (Optional) Register card sound — `src/lib/audio/sound-registry.ts` (`cardSounds` record)
-5. Build the entry with `card-builders.ts` (`effectsCard` generates `descriptionLines` from effects; pass explicit `descriptionLines` for chance / repeat-over-turns / conditional / combined phrasing; `consumableCard` takes multiple effects; summon cards derive their title from the companion). Raw literals are reserved for genuinely special cards (`mixed-potion`)
+5. Build the entry with `card-builders.ts` (`effectsCard` generates `descriptionLines` from effects; pass explicit `descriptionLines` for chance / repeat-over-turns / conditional / combined phrasing; `effectsCard` with `consume: true` takes multiple effects; summon cards derive their title from the companion). Raw literals are reserved for genuinely special cards (`mixed-potion`)
 6. Context-aware text — pure text `src/lib/game-data/card-description.ts` (only summon lines are recomputed with Bond/damage bonuses; `flatPhysicalDamage`/`potionPotency` are accepted but ignored), UI tokens `shared/ui/card-description-ui.tsx`, homestead/talent context `shared/context/card-description-context.tsx` (wired in `App.tsx`)
 
 Card IDs are stable strings on `BattleCard`, not a separate union. The assembled

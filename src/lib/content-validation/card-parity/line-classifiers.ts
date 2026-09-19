@@ -109,3 +109,28 @@ export function isPerManaBlockLine(line: string): boolean {
 export function isGainStatusLine(line: string, name: string): boolean {
   return line.startsWith("Gain ") && line.includes(` ${name}`);
 }
+
+export interface DealLineShape {
+  twice: boolean;
+  delayedSecondAmount: number | null;
+  sharedDelayed: boolean;
+}
+
+// Single owner for "Deal ..." delayed/repeat phrasing, shared by count parity
+// (twice counts two hits) and numeric parity (delayed lines consume two damage
+// cursors, the second against the delayed amount). Returns null for non-Deal
+// lines. Lines with "equal to" or "random" are still Deal lines here; callers
+// exclude them from value/count checks via isNonStandardDealLine.
+export function parseDealLineShape(line: string): DealLineShape | null {
+  if (!line.startsWith("Deal ")) return null;
+  const delayed = / now and (\d+) at the start of your next turn$/.exec(line);
+  return {
+    twice: line.includes("twice"),
+    delayedSecondAmount: delayed ? Number(delayed[1]) : null,
+    sharedDelayed: line.endsWith(" now and at the start of your next turn"),
+  };
+}
+
+export function isNonStandardDealLine(line: string): boolean {
+  return line.includes("equal to") || line.toLowerCase().includes("random");
+}

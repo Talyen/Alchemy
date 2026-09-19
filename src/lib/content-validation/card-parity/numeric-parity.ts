@@ -4,10 +4,12 @@ import { flattenEffects, parseLeadingNumber, pushMissingEffect, pushValueMismatc
 import {
   isCompanionActionLine,
   isDieRollLine,
+  isNonStandardDealLine,
   isPerManaBlockLine,
   isRandomDrawLine,
   isRemoveEnemyArmorLine,
   isRemoveHarmfulStatusLine,
+  parseDealLineShape,
 } from "./line-classifiers";
 
 function checkSimpleValueLine(
@@ -54,17 +56,35 @@ type NextDamageFn = () => (BattleCardEffect & { kind: "damage" }) | undefined;
 type NextPlayerStatusFn = () => (BattleCardEffect & { kind: "player-status" }) | undefined;
 type NextSimpleFn<T extends { amount?: number }> = () => T | undefined;
 
+interface SimpleValueCheck {
+  matches: (line: string) => boolean;
+  prefix: string;
+  cursor: "wish" | "draw" | "remove-armor" | "lose-health" | "gain-max-mana";
+}
+
+const SIMPLE_VALUE_CHECKS: SimpleValueCheck[] = [
+  { matches: (line) => line.startsWith("Wish "), prefix: "Wish ", cursor: "wish" },
+  { matches: (line) => line.startsWith("Draw "), prefix: "Draw ", cursor: "draw" },
+  { matches: (line) => line.startsWith("Strip "), prefix: "Strip ", cursor: "remove-armor" },
+  { matches: (line) => line.startsWith("Lose ") && line.includes("Health"), prefix: "Lose ", cursor: "lose-health" },
+  {
+    matches: (line) => line.includes("Maximum Mana") || line.includes("Mana Crystal"),
+    prefix: "Gain ",
+    cursor: "gain-max-mana",
+  },
+];
+
 function checkDealLine(
   line: string,
   nextDamage: NextDamageFn,
   issues: ContentValidationIssue[],
   cardId: string,
 ): boolean {
-  if (!line.startsWith("Deal ")) return false;
+  const shape = parseDealLineShape(line);
+  if (!shape) return false;
   const describedAmount = parseLeadingNumber(line, "Deal ");
-  const delayedAmount = / now and (\d+) at the start of your next turn$/.exec(line);
-  const sharedDelayedAmount = line.endsWith(" now and at the start of your next turn");
-  const hitCount = line.includes("twice") || delayedAmount || sharedDelayedAmount ? 2 : 1;
+  const nonStandard = isNonStandardDealLine(line);
+  const hitCount = shape.twice || shape.delayedSecondAmount !== null || shape.sharedDelayed ? 2 : 1;
   for (let hit = 0; hit < hitCount; hit += 1) {
     const effect = nextDamage();
     if (
@@ -73,12 +93,11 @@ function checkDealLine(
       effect.equalToArmor ||
       effect.equalToForge ||
       effect.equalToGoldPercent ||
-      line.includes("equal to") ||
-      line.toLowerCase().includes("random")
+      nonStandard
     ) {
       continue;
     }
-    const expected = hit === 1 && delayedAmount ? Number(delayedAmount[1]) : describedAmount;
+    const expected = hit === 1 && shape.delayedSecondAmount !== null ? shape.delayedSecondAmount : describedAmount;
     if (expected !== effect.amount) pushValueMismatch(issues, cardId, line, effect.amount);
   }
   return true;
@@ -163,24 +182,20 @@ function checkRemoveHarmfulLine(
   return true;
 }
 
-function checkLoseHealthLine(
+function checkSimpleCursor(
   line: string,
-  nextLoseHealth: NextSimpleFn<{ amount: number }>,
+  cursors: Record<SimpleValueCheck["cursor"], NextSimpleFn<{ amount?: number }>>,
   issues: ContentValidationIssue[],
   cardId: string,
 ): boolean {
-  if (!line.includes("Health")) return false;
-  return checkSimpleValueLine(line, "Lose ", nextLoseHealth, issues, cardId);
-}
-
-function checkGainMaxManaLine(
-  line: string,
-  nextGainMaxMana: NextSimpleFn<{ amount: number }>,
-  issues: ContentValidationIssue[],
-  cardId: string,
-): boolean {
-  if (!line.includes("Maximum Mana") && !line.includes("Mana Crystal")) return false;
-  return checkSimpleValueLine(line, "Gain ", nextGainMaxMana, issues, cardId);
+  for (const check of SIMPLE_VALUE_CHECKS) {
+    if (!check.matches(line)) continue;
+    // Gain-max-mana lines always use the Gain prefix; lose-health lines always
+    // use Lose (callers already matched the shape above).
+    if (check.cursor === "gain-max-mana" && !line.startsWith("Gain ")) return false;
+    return checkSimpleValueLine(line, check.prefix, cursors[check.cursor], issues, cardId);
+  }
+  return false;
 }
 
 export function validateCardNumericParity(card: BattleCard): ContentValidationIssue[] {
@@ -241,11 +256,21 @@ export function validateCardNumericParity(card: BattleCard): ContentValidationIs
     if (checkStatusLine(line, nextPlayerStatus, issues, card.id)) continue;
     if (checkRestoreLine(line, "Mana", nextRestoreMana, issues, card.id)) continue;
     if (checkRestoreLine(line, "Health", nextHeal, issues, card.id)) continue;
-    if (checkSimpleValueLine(line, "Wish ", nextWish, issues, card.id)) continue;
-    if (checkSimpleValueLine(line, "Draw ", nextDraw, issues, card.id)) continue;
-    if (checkLoseHealthLine(line, nextLoseHealth, issues, card.id)) continue;
-    if (checkGainMaxManaLine(line, nextGainMaxMana, issues, card.id)) continue;
-    if (checkSimpleValueLine(line, "Strip ", nextRemoveArmor, issues, card.id)) continue;
+    if (
+      checkSimpleCursor(
+        line,
+        {
+          wish: nextWish,
+          draw: nextDraw,
+          "remove-armor": nextRemoveArmor,
+          "lose-health": nextLoseHealth,
+          "gain-max-mana": nextGainMaxMana,
+        },
+        issues,
+        card.id,
+      )
+    )
+      continue;
     if (isRemoveEnemyArmorLine(line) && checkSimpleValueLine(line, "Remove ", nextRemoveArmor, issues, card.id))
       continue;
     checkRemoveHarmfulLine(line, nextRemoveHarmful, issues, card.id);

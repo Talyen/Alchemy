@@ -20,48 +20,25 @@ function setRunProgressField<K extends keyof ActiveRunProgressFields>(
   setField(draft.run.activeRun, field, action);
 }
 
-export function setRunDeck(draft: GameplayDraft, action: FieldUpdate<ActiveRunProgressFields["runDeck"]>): void {
-  setRunProgressField(draft, "runDeck", action);
+function defineRunProgressSetter<K extends keyof ActiveRunProgressFields>(field: K) {
+  return (draft: GameplayDraft, action: FieldUpdate<ActiveRunProgressFields[K]>): void => {
+    setRunProgressField(draft, field, action);
+  };
 }
 
-export function setRunPlayerHealth(
-  draft: GameplayDraft,
-  action: FieldUpdate<ActiveRunProgressFields["runPlayerHealth"]>,
-): void {
-  setRunProgressField(draft, "runPlayerHealth", action);
-}
+export const setRunDeck = defineRunProgressSetter("runDeck");
 
-export function setRunMaxHealth(
-  draft: GameplayDraft,
-  action: FieldUpdate<ActiveRunProgressFields["runMaxHealth"]>,
-): void {
-  setRunProgressField(draft, "runMaxHealth", action);
-}
+export const setRunPlayerHealth = defineRunProgressSetter("runPlayerHealth");
 
-export function setRoomsEncountered(
-  draft: GameplayDraft,
-  action: FieldUpdate<ActiveRunProgressFields["roomsEncountered"]>,
-): void {
-  setRunProgressField(draft, "roomsEncountered", action);
-}
+export const setRunMaxHealth = defineRunProgressSetter("runMaxHealth");
 
-export function setCurrentAct(draft: GameplayDraft, action: FieldUpdate<ActiveRunProgressFields["currentAct"]>): void {
-  setRunProgressField(draft, "currentAct", action);
-}
+export const setRoomsEncountered = defineRunProgressSetter("roomsEncountered");
 
-export function setDestinationIndexInAct(
-  draft: GameplayDraft,
-  action: FieldUpdate<ActiveRunProgressFields["destinationIndexInAct"]>,
-): void {
-  setRunProgressField(draft, "destinationIndexInAct", action);
-}
+export const setCurrentAct = defineRunProgressSetter("currentAct");
 
-export function setCompletedDestinations(
-  draft: GameplayDraft,
-  action: FieldUpdate<ActiveRunProgressFields["completedDestinations"]>,
-): void {
-  setRunProgressField(draft, "completedDestinations", action);
-}
+export const setDestinationIndexInAct = defineRunProgressSetter("destinationIndexInAct");
+
+export const setCompletedDestinations = defineRunProgressSetter("completedDestinations");
 
 export function setDestinationOfferState(
   draft: GameplayDraft,
@@ -74,16 +51,9 @@ export function setDestinationOfferState(
   draft.run.activeRun.destinationRoundsSinceOffered = { ...offerState.roundsSinceOffered };
 }
 
-export function setRunBoons(draft: GameplayDraft, action: FieldUpdate<ActiveRunProgressFields["runBoons"]>): void {
-  setRunProgressField(draft, "runBoons", action);
-}
+export const setRunBoons = defineRunProgressSetter("runBoons");
 
-export function setEncounteredRunEnemyIds(
-  draft: GameplayDraft,
-  action: FieldUpdate<ActiveRunProgressFields["encounteredRunEnemyIds"]>,
-): void {
-  setRunProgressField(draft, "encounteredRunEnemyIds", action);
-}
+export const setEncounteredRunEnemyIds = defineRunProgressSetter("encounteredRunEnemyIds");
 
 // ── Talent XP awards ─────────────────────────────────────────────────────────
 

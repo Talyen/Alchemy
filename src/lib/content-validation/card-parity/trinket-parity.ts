@@ -125,24 +125,20 @@ export function validateTrinketDescriptionParity(trinket: TrinketEntry): Content
   }
 
   const expectedKeys = new Set<string>([...rule.numericEffects, ...(rule.requiredBooleanEffects ?? [])]);
-  for (const key of expectedKeys) {
-    if (!Object.hasOwn(trinket.effects, key)) addIssue(`Missing required effect: ${key}`);
-  }
-  for (const key of Object.keys(trinket.effects)) {
-    if (!expectedKeys.has(key)) addIssue(`Unexpected effect: ${key}`);
-  }
+  const actualKeys = new Set(Object.keys(trinket.effects));
+  for (const key of expectedKeys) if (!actualKeys.has(key)) addIssue(`Missing required effect: ${key}`);
+  for (const key of actualKeys) if (!expectedKeys.has(key)) addIssue(`Unexpected effect: ${key}`);
 
   const prose = trinket.descriptionLines.join(" ").toLowerCase().replace(/\s+/g, " ").trim();
   const match = rule.pattern.exec(prose);
   if (!match) {
     addIssue(`Trinket "${trinket.id}" description does not match its required trigger and outcome`);
   } else {
-    for (const [index, key] of rule.numericEffects.entries()) {
+    rule.numericEffects.forEach((key, index) => {
       const described = Number(match[index + 1]);
-      if (trinket.effects[key] !== described) {
+      if (trinket.effects[key] !== described)
         addIssue(`Effect ${key} value ${String(trinket.effects[key])} does not match described amount ${described}`);
-      }
-    }
+    });
   }
   for (const key of rule.requiredBooleanEffects ?? []) {
     if (trinket.effects[key] !== true) addIssue(`Effect ${key} must be true`);
