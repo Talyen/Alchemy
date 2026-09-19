@@ -87,14 +87,16 @@ test("Victory card hover and focus preserve layout", async ({ page }) => {
   await expectStableHoverLayout(page.getByRole("button", { name: /^Select / }).first());
 });
 
-async function expectBorderOnlyShine(surface: Locator) {
+async function expectBorderOnlyShine(surface: Locator, shineOverride?: Locator) {
   if (await surface.evaluate((element) => element.classList.contains("talent-card-available"))) {
     await expect(surface).toBeVisible();
     await surface.hover({ force: true });
   } else {
     await surface.hover();
   }
-  const shine = surface.locator(".shine-border");
+  // Battle panels mount both the turn badge and the hover shine; callers
+  // scope to the hover shine so the hidden turn badge cannot match.
+  const shine = shineOverride ?? surface.locator(".shine-border");
   await expect(shine).toBeVisible();
   await expect(shine).not.toHaveAttribute("data-glow", "true");
   await expect.poll(() => shine.evaluate((element) => getComputedStyle(element).filter)).toBe("none");
@@ -121,7 +123,7 @@ test("Battle hand and enemy hover shine leave turn borders unchanged", async ({ 
   const hand = [makeCard({ cost: 0 })];
   await injectActiveBattle(page, makeGoblinBattleState({ hand }), { runDeck: hand, autoEndTurn: false });
   await expectBorderOnlyShine(page.locator('[data-hand-card="true"] button').first());
-  await expectBorderOnlyShine(page.getByTestId("battle-enemy-art-panel"));
+  await expectBorderOnlyShine(page.getByTestId("battle-enemy-art-panel"), page.getByTestId("keyword-shine-hover"));
   await expect(page.getByTestId("turn-badge-player")).not.toHaveAttribute("data-glow", "true");
   await expect(page.getByTestId("turn-badge-enemy")).not.toHaveAttribute("data-glow", "true");
 });

@@ -428,6 +428,14 @@
   --card-interaction-frame-color: var(--color-primary);
   /* Drop-shadow follows rounded alpha; a live box-shadow on a transformed layer is rectangular. */
   box-shadow: none;
+}
+
+/* Shine borders replace the hover/selection glow: a surface carrying a shine
+   frame keeps scale and border feedback but renders no drop-shadow filter.
+   The :has guard (rather than specificity) holds even under .group ancestors. */
+.card-interactive-glow:hover:not(:disabled):not(:has(> .shine-border)),
+.group:hover .card-interactive-glow:not(:disabled):not(:has(> .shine-border)),
+.card-interactive-selected:not(:has(> .shine-border)) {
   filter: drop-shadow(0 0 16px color-mix(in srgb, var(--color-primary) 45%, transparent));
 }
 
