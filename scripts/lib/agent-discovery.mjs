@@ -26,17 +26,38 @@ function matchesSearchGlob(file, glob) {
   return globToRegExp(glob).test(file) || (glob.startsWith("**/") && globToRegExp(glob.slice(3)).test(file));
 }
 
-function isExcluded(file) {
-  return EXCLUSIONS.some(
+const DISCOVERY_NOISE = [
+  "Docs/Plans/Archived/**",
+  ".agents/history/**",
+  "**/*.generated.*",
+  "src/lib/game-data/gear-art.ts",
+  "**/.asset-hashes.json",
+];
+
+function searchExclusions(root, options) {
+  // File inventories feed the import graph too; filtering noise belongs to text discovery.
+  if (options.pattern === undefined) return EXCLUSIONS;
+  const explicit = options.paths.map((file) => toRepoRelative(root, file));
+  return [
+    ...EXCLUSIONS,
+    ...DISCOVERY_NOISE.filter(
+      (glob) =>
+        !explicit.some((file) => matchesSearchGlob(file, glob) || (glob.endsWith("/**") && file === glob.slice(0, -3))),
+    ),
+  ];
+}
+
+function isExcluded(file, exclusions = EXCLUSIONS) {
+  return exclusions.some(
     (glob) => matchesSearchGlob(file, glob) || (glob.endsWith("/**") && file === glob.slice(0, -3)),
   );
 }
 
-function collectFilesFromFilesystem(root, paths, includeExcluded) {
+function collectFilesFromFilesystem(root, paths, includeExcluded, exclusions) {
   const files = [];
   const visit = (absolute) => {
     const relative = toRepoRelative(root, absolute);
-    if (!includeExcluded && relative !== "." && isExcluded(relative)) return;
+    if (!includeExcluded && relative !== "." && isExcluded(relative, exclusions)) return;
     const entry = fs.lstatSync(absolute);
     if (entry.isDirectory()) {
       for (const child of fs.readdirSync(absolute)) visit(path.join(absolute, child));
@@ -51,7 +72,7 @@ function collectFilesFromFilesystem(root, paths, includeExcluded) {
   return files.sort();
 }
 
-function collectFilesFromGit(root, paths) {
+function collectFilesFromGit(root, paths, exclusions) {
   const result = runGit(root, [
     "ls-files",
     "--cached",
@@ -65,15 +86,20 @@ function collectFilesFromGit(root, paths) {
   return result.stdout
     .split("\0")
     .filter(Boolean)
-    .filter((file) => !isExcluded(file) && fs.lstatSync(path.join(root, file), { throwIfNoEntry: false })?.isFile())
+    .filter(
+      (file) =>
+        !isExcluded(file, exclusions) && fs.lstatSync(path.join(root, file), { throwIfNoEntry: false })?.isFile(),
+    )
     .sort();
 }
 
 function searchWithoutRipgrep(root, options) {
+  const exclusions = searchExclusions(root, options);
   const normalizedPaths = options.paths.map((file) => toRepoRelative(root, file));
   const files = options.includeExcluded
     ? collectFilesFromFilesystem(root, normalizedPaths, true)
-    : (collectFilesFromGit(root, normalizedPaths) ?? collectFilesFromFilesystem(root, normalizedPaths, false));
+    : (collectFilesFromGit(root, normalizedPaths, exclusions) ??
+      collectFilesFromFilesystem(root, normalizedPaths, false, exclusions));
   if (options.pattern === undefined) return files;
   const expression = options.regex ? new RegExp(options.pattern) : null;
   const results = [];
@@ -101,9 +127,29 @@ export function repositorySearch(
   root,
   { pattern, paths = ["."], excerpts = false, includeExcluded = false, regex = false } = {},
 ) {
+  if (!includeExcluded && pattern !== undefined && paths.length > 1) {
+    const isNoisePath = (file) => {
+      const relative = toRepoRelative(root, file);
+      return DISCOVERY_NOISE.some(
+        (glob) => matchesSearchGlob(relative, glob) || (glob.endsWith("/**") && relative === glob.slice(0, -3)),
+      );
+    };
+    const explicitNoise = paths.filter(isNoisePath);
+    const broad = paths.filter((file) => !isNoisePath(file));
+    if (explicitNoise.length && broad.length) {
+      // An explicit generated file must not lift the exclusion for a sibling broad search.
+      const results = [broad, explicitNoise].flatMap((selected) =>
+        repositorySearch(root, { pattern, paths: selected, excerpts, regex }),
+      );
+      if (!excerpts) return [...new Set(results)].sort();
+      return [...new Map(results.map((entry) => [JSON.stringify([entry.path, entry.start]), entry])).values()].sort(
+        (a, b) => a.path.localeCompare(b.path) || a.start - b.start,
+      );
+    }
+  }
   const args = ["--hidden", "--color", "never"];
   if (includeExcluded) args.push("--no-ignore");
-  else for (const glob of EXCLUSIONS) args.push("-g", `!${glob}`);
+  else for (const glob of searchExclusions(root, { paths, pattern })) args.push("-g", `!${glob}`);
   if (pattern === undefined) args.push("--files", "-0");
   else {
     args.push(...(excerpts ? ["--json"] : ["--files-with-matches", "-0"]));

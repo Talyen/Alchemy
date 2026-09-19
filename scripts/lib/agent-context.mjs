@@ -1,8 +1,5 @@
 import fs from "node:fs";
 import path from "node:path";
-import { createRequire } from "node:module";
-
-const require = createRequire(import.meta.url);
 
 import { expandRepositoryPaths } from "./repository-paths.mjs";
 import { resolveRoutePlan } from "./change-routes.mjs";
@@ -41,7 +38,7 @@ export const CONTEXT_TASKS = {
     docs: [workflow("Add a new talent")],
     entrypoints: [
       "src/lib/game-data/talents/talent-pool-definitions.ts",
-      "src/lib/game-data/talent-effect-manifest.ts",
+      "src/lib/game-data/talents/manifest-defaults.ts",
     ],
     fixture: "src/lib/game-data/talents/talent-pool-definitions.ts",
   },
@@ -119,6 +116,34 @@ export const CONTEXT_TASKS = {
       owner("src/features/alchemy/shared/storage/MIGRATIONS.md", "Public save contract"),
     ],
     entrypoints: ["src/features/alchemy/shared/storage/io.ts", "src/lib/validation/save-schemas"],
+  },
+  "save-load": {
+    matches: /(?:save-candidates|bootstrap-save|normalize-active-run|storage\/parse)/u,
+    docs: [
+      owner("src/features/alchemy/shared/storage/MIGRATIONS.md", "Load selection"),
+      owner("src/features/alchemy/shared/storage/MIGRATIONS.md", "Load order"),
+      owner("src/features/alchemy/shared/storage/MIGRATIONS.md", "Implementation rules"),
+    ],
+    entrypoints: ["src/features/alchemy/shared/storage/save-candidates.ts"],
+  },
+  "save-write": {
+    matches: /(?:autosave|save-write-queue|storage\/io\.ts)/u,
+    docs: [owner("src/features/alchemy/shared/storage/MIGRATIONS.md", "Write acknowledgement")],
+    entrypoints: ["src/features/alchemy/shared/storage/io.ts"],
+  },
+  "save-delete": {
+    matches: /(?:clear-save|save-protected)/u,
+    docs: [owner("src/features/alchemy/shared/storage/MIGRATIONS.md", "Deletion")],
+    entrypoints: ["src/features/alchemy/shared/storage/io.ts"],
+  },
+  "save-compatibility": {
+    matches: /(?:save-candidates|save-version|validation\/migration)/u,
+    docs: [
+      owner("src/features/alchemy/shared/storage/MIGRATIONS.md", "Supported baseline"),
+      owner("src/features/alchemy/shared/storage/MIGRATIONS.md", "When to increment"),
+      owner("src/features/alchemy/shared/storage/MIGRATIONS.md", "Future schema saves"),
+    ],
+    entrypoints: ["src/lib/validation/migration/index.ts"],
   },
   "run-state": {
     matches: /(?:\/stores\/|run-session|run-state)/u,
@@ -244,6 +269,7 @@ export function selectContext(paths, task) {
   );
   const plan = resolveRoutePlan(paths);
   const docs = selected.flatMap(([, entry]) => entry.docs);
+  if (selected.some(([id]) => id.startsWith("save-"))) docs.unshift(...CONTEXT_TASKS.save.docs);
   for (const route of plan.routes) {
     if (FALLBACK_DOC_ROUTES.has(route.id)) docs.push(...route.docs);
     if (route.id === "browser-test" && !selected.some(([id]) => id === "browser"))
@@ -260,11 +286,13 @@ export function selectContext(paths, task) {
   }
   const assetWork =
     selected.some(([id]) => id.startsWith("assets")) || plan.routes.some((route) => route.id === "assets");
+  const saveWork = selected.some(([id]) => id.startsWith("save")) || plan.routes.some((route) => route.id === "save");
   const runStateWork = selected.some(([id]) => id === "run-state");
   const pointers = Object.entries(CONTEXT_TASKS)
     .filter(
       ([id]) =>
         ((assetWork && id.startsWith("assets-")) ||
+          (saveWork && id.startsWith("save-")) ||
           (runStateWork && ["run-persistence", "run-ports", "run-randomness", "run-setup"].includes(id))) &&
         !selected.some(([selectedId]) => selectedId === id),
     )
@@ -301,53 +329,7 @@ export function contextSections(rootDir, selection) {
   );
 }
 
-export function sourceOutline(rootDir, relativePath, { entries = false } = {}) {
-  const ts = require("typescript");
-  const source = fs.readFileSync(path.join(rootDir, relativePath), "utf8");
-  const file = ts.createSourceFile(relativePath, source, ts.ScriptTarget.Latest, true);
-  const location = (node, name) => ({
-    name,
-    path: relativePath,
-    start: file.getLineAndCharacterOfPosition(node.getStart(file)).line + 1,
-    end: file.getLineAndCharacterOfPosition(node.end).line + 1,
-    text: node.getText(file),
-  });
-  if (entries) {
-    const found = [];
-    const literalName = (node) =>
-      node && (ts.isStringLiteral(node) || ts.isNumericLiteral(node) || ts.isIdentifier(node)) ? node.text : null;
-    const visit = (node) => {
-      if (ts.isObjectLiteralExpression(node)) {
-        const id = node.properties.find(
-          (property) => ts.isPropertyAssignment(property) && literalName(property.name) === "id",
-        );
-        if (id && (ts.isStringLiteral(id.initializer) || ts.isNumericLiteral(id.initializer)))
-          found.push(location(node, id.initializer.text));
-        else if (ts.isPropertyAssignment(node.parent)) {
-          const name = literalName(node.parent.name);
-          if (name) found.push(location(node.parent, name));
-        }
-      }
-      ts.forEachChild(node, visit);
-    };
-    visit(file);
-    return found;
-  }
-  return file.statements.flatMap((statement) => {
-    const names = ts.isVariableStatement(statement)
-      ? statement.declarationList.declarations.map((declaration) => declaration.name.getText(file))
-      : statement.name
-        ? [statement.name.getText(file)]
-        : [];
-    return names.map((name) => ({
-      name,
-      path: relativePath,
-      start: file.getLineAndCharacterOfPosition(statement.getStart(file)).line + 1,
-      end: file.getLineAndCharacterOfPosition(statement.end).line + 1,
-      text: statement.getText(file),
-    }));
-  });
-}
+export { sourceOutline } from "./source-outline.mjs";
 
 export function validateContextCatalog(rootDir) {
   const errors = [];

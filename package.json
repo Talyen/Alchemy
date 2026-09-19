@@ -42,6 +42,7 @@
     "verify": "node scripts/verify-changed.mjs",
     "check": "node scripts/check.mjs",
     "runs:show": "node scripts/show-runs.mjs",
+    "compact": "node scripts/run-compact.mjs",
     "context": "node scripts/agent-context.mjs",
     "search": "node scripts/agent-search.mjs",
     "eval:agent": "node scripts/agent-eval.mjs",

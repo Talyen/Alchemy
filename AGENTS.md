@@ -14,23 +14,21 @@ Alchemy is a fantasy roguelite deckbuilder. This file routes work and records un
 
 ## Communication
 
-Write for a product manager, designer, player, or user who knows Alchemy as a game, not its implementation. Use plain language and established player-facing names for features, screens, and behavior. Discuss code-level detail only when the user asks for it or when it is necessary to explain a decision, risk, or blocker.
+Write in plain language for someone who knows Alchemy as a game. Use established player-facing names; include code details when requested or needed to explain a decision, risk, or blocker.
 
 ## Documentation owners
 
-Understand the relevant contracts and consumers before changing behavior, especially stores, ports, saves, constants, or routing. Choose direct reads, scoped searches, or `npm run context -- <relevant paths>` (or `--task <category>`) to gather missing context. Batch related sections when useful and skip material already understood; no separate discovery pass is required when local context is sufficient. When docs, tests, and implementation disagree, investigate intent rather than treating any one as automatically correct. Update the canonical owner in the same change as its invariant.
+Understand affected contracts and consumers, especially stores, ports, saves, constants, and routing. Read or search directly, or use `npm run context -- <paths>` / `--task <category>` for missing context; skip already-understood material. Resolve disagreements among docs, tests, and code by investigating intent. Update the canonical owner when changing its invariant.
 
-| Need                                                | Read                                                                                                                                                                                                                                                                                       |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Run state, controllers, boundaries, boot            | [ARCHITECTURE](./Docs/ARCHITECTURE.md)                                                                                                                                                                                                                                                     |
-| Saves, cards, screens, materials                    | [WORKFLOWS](./Docs/WORKFLOWS.md)                                                                                                                                                                                                                                                           |
-| Raw art / sound / generated barrels                 | [WORKFLOWS-ASSETS](./Docs/WORKFLOWS-ASSETS.md)                                                                                                                                                                                                                                             |
-| Commands, battle rules, glossary                    | [REFERENCE](./Docs/REFERENCE.md) ([battle rules + glossary](./Docs/GAME_RULES.md))                                                                                                                                                                                                         |
-| Hooks, verification, E2E policy                     | [CONTRIBUTING](./CONTRIBUTING.md)                                                                                                                                                                                                                                                          |
-| Save compatibility                                  | [MIGRATIONS](./src/features/alchemy/shared/storage/MIGRATIONS.md)                                                                                                                                                                                                                          |
-| Armory / gear, card handlers, UI/audio/perf/release | [ARMORY](./Docs/ARMORY.md), [UNIQUE_ITEMS](./Docs/UNIQUE_ITEMS.md), [BATTLE_HANDLERS](./src/lib/game-data/effects/BATTLE_HANDLERS.md), [UI](./Docs/UI.md), [AUDIO](./Docs/AUDIO.md), [PERFORMANCE](./Docs/PERFORMANCE.md), [RELEASE](./Docs/RELEASE.md) ([setup](./Docs/RELEASE_SETUP.md)) |
+- Run state, controllers, boundaries, boot: [ARCHITECTURE](./Docs/ARCHITECTURE.md).
+- Saves, cards, screens, materials: [WORKFLOWS](./Docs/WORKFLOWS.md); save compatibility: [MIGRATIONS](./src/features/alchemy/shared/storage/MIGRATIONS.md).
+- Raw art, sound, generated barrels: [WORKFLOWS-ASSETS](./Docs/WORKFLOWS-ASSETS.md).
+- Commands: [REFERENCE](./Docs/REFERENCE.md); battle rules and glossary: [GAME_RULES](./Docs/GAME_RULES.md).
+- Verification, hooks, E2E and test policy: [CONTRIBUTING](./CONTRIBUTING.md).
+- Gear: [ARMORY](./Docs/ARMORY.md), [UNIQUE_ITEMS](./Docs/UNIQUE_ITEMS.md); card handlers: [BATTLE_HANDLERS](./src/lib/game-data/effects/BATTLE_HANDLERS.md).
+- Presentation: [UI](./Docs/UI.md), [AUDIO](./Docs/AUDIO.md), [PERFORMANCE](./Docs/PERFORMANCE.md); publishing: [RELEASE](./Docs/RELEASE.md) ([setup](./Docs/RELEASE_SETUP.md)).
 
-For large unfamiliar modules, `npm run context -- --outline <file>` and `--symbol <name>` help locate relevant declarations; use them when they save broader reading. Exclude `Raw Assets/`, `reports/`, `dist/`, `CHANGELOG.md`, and lockfiles from broad searches; inspect them when the task or diagnostics specifically require them.
+Use optional [discovery tools](./Docs/REFERENCE.md#agent-discovery) for bounded searches and source excerpts. Exclude raw assets, reports, builds, changelog, lockfiles, archives, and generated files from broad searches; inspect them directly when relevant.
 
 ## Skills & knowledge
 

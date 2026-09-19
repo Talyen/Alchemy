@@ -40,11 +40,9 @@ catalog-external tests are named inline. Named suites are verification entry poi
 
 ## Change persisted save data
 
-Policy (when to bump, stamp-only floor, migrate steps, public save contract): [`MIGRATIONS.md`](../src/features/alchemy/shared/storage/MIGRATIONS.md).
-
-1. Decide bump vs safe additive default using that contract — do not add a `migrateVNToVNPlus1` step for stamp-only or defaulted additive fields.
-2. Follow the Required pattern in `MIGRATIONS.md` (version stamp, transform step only when needed, Zod/defaults/fixtures, CI guards). `createDefaultSaveData()` clones a frozen singleton parsed once from `SaveDataSchema` — still update the domain codec defaults together (`createDefaultSettingsSaveFields`, `createDefaultProfileSaveFields`, `createInitialGearState`, `createInitialPermanentFields`). Clear-save changes use an explicit mode (`"default"` | `"localWipe"` | `"wipeForReload"`).
-3. Use the [task-scoped gate](../CONTRIBUTING.md#what-to-run-when-you-change), which selects the complete save/persistence unit suite, including the migration guards. Canonical matrices: `save-version-protection.test.ts` (unit) + `storage-io.test.ts` (integration, incl. desktop cloud merge) + `storage-roundtrip.test.ts` (shape preservation) + `persistence-coordinator.test.ts` / `save-write-queue.test.ts` (subscription filtering, queue ownership) + the autosave suites (`autosave-scheduler`, `autosave-hook`, `autosave-active-run`); shared builders live in `tests/helpers/save-candidate-fixtures.ts`. The floor/current coincidence and defaults alignment are pinned by `tests/architecture/save-migration-contract.test.ts` + `save-migration-guard.test.ts`.
+1. Decide whether the change needs a version bump or a safe additive default using the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#when-to-increment).
+2. Follow its [required pattern](../src/features/alchemy/shared/storage/MIGRATIONS.md#required-pattern-automated), updating the schema, domain defaults, codecs, and fixtures together. [Defaults and resume normalization](../src/features/alchemy/shared/storage/MIGRATIONS.md#defaults-and-resume-normalization) names the owners; [deletion](../src/features/alchemy/shared/storage/MIGRATIONS.md#deletion) owns clear-save modes.
+3. Verify the [save test expectations](../src/features/alchemy/shared/storage/MIGRATIONS.md#test-expectations) through the [task-scoped gate](../CONTRIBUTING.md#what-to-run-when-you-change), which selects the complete save/persistence suite. Reuse `tests/helpers/save-candidate-fixtures.ts` for candidate scenarios.
 
 ---
 
@@ -261,15 +259,13 @@ Run `npm run content:audit` before handing off (companion record checks, summon-
 
 ## Add a new talent
 
-Use `addEffect` for stackable numeric bonuses, including the same bonus written by two keywords. Use `setEffect` for flags, identity multipliers (defaults that are not zero, e.g. `healMultiplier`), and exclusive thresholds. Array fields (e.g. `healthThresholdArmor`) concatenate on `set`.
+Behavioral contracts: [Talent manifests and progression](./GAME_RULES.md#talent-manifests-and-progression). Read the applicable combat rule when adding a new mechanic.
 
-Homestead battle keys in `HOMESTEAD_BATTLE_*_KEYS` are **added** onto talent values at battle start (`mergeIntoManifest`). Keep identity defaults (`potionPotency: 1`, `healMultiplier: 1`) off those key lists; homestead defaults are zero-based bonuses. Shop, campfire, victory, and collection UI do **not** receive the battle merge — if they need homestead, pass both ports or merge at that consumer. Do not assume `useTalentEffects()` includes homestead.
+Use `addEffect` for stackable numeric bonuses, including the same bonus written by two keywords. Use `setEffect` for flags, identity multipliers (defaults that are not zero, e.g. `healMultiplier`), and exclusive thresholds. Array fields (e.g. `healthThresholdArmor`) concatenate on `set`.
 
 Put talent-owned magnitudes on the talent ops (not only in `game-constants`) so descriptions and combat stay in lockstep. Talent and keyword descriptions omit periods, as enforced by content typography validation.
 
-Incoming `receiveHalf*` resist talents use `scaleReceivedPlayerDamage` in `src/lib/battle/types/state-helpers.ts`. Enemy attacks scale once in `computeMitigatedDamage`; player DoTs scale once in `status-ticks.ts`. Do not also scale in `applyPlayerCombatDamage`.
-
-1. Add effect field if the talent needs a new battle bonus — `src/lib/game-data/talent-effect-manifest.ts` + default in `talents/manifest-defaults.ts`
+1. If the talent needs a new battle bonus, add its default in `src/lib/game-data/talents/manifest-defaults.ts`; `TalentEffectManifest` derives from those defaults and `talent-effect-manifest.ts` re-exports it.
 2. Define the talent (`id`, `keywordId`, name, description, effects, and Lucide `icon` name) in `src/lib/game-data/talents/talent-pool-definitions.ts`; its keyword-grouped table builds `talentPool`, with `pool/index.ts` re-exporting for compatibility. Register the icon in `src/features/alchemy/shared/config/talent-icons.ts`.
 3. Keyword portrait art (new keyword or replacement art) — [Asset workflow § Add or replace game art](./WORKFLOWS-ASSETS.md#add-or-replace-game-art) (`scripts/assets/talent-assets.mjs` + `talentArt` in `src/lib/game-data/assets.ts`)
 4. XP is keyword-based — `src/lib/game-data/talents/progression.ts` — no per-talent XP hook unless the keyword is new
@@ -277,8 +273,6 @@ Incoming `receiveHalf*` resist talents use `scaleReceivedPlayerDamage` in `src/l
 Talent trees accept any count ≥ 1 in rows of 1/2/3/4, with overflow in its own row.
 
 `talent-effect-invariants` must stay green: every manifest field is written by a talent or homestead key (or an explicit unused allowlist), every talent-written field is read in battle/meta code, and non-boolean `set` fields have a single writer unless they are arrays. Reader discovery uses typed property access, destructuring, and typed key registrations rather than receiver names. It checks wiring presence, not reachability or correct combat behavior; meaningful behavior tests remain necessary. Talent descriptions are free text with no numeric parity lint (typography lint still applies — run `npm run content:audit`) — keep them in lockstep with effects by hand.
-
-Run-end keyword cards intentionally show level + XP bar only; the Talents screens own the unspent-point indicator. Dodge earns 1 XP per successful hero Dodge through `awardBattleDodgeXP`, using the battle counter delta in the same command that persists the resolved enemy turn. Ordinary card keyword XP and run-end multipliers still apply. Random damage grants the Physical keyword; a damage-type pool grants every possible type rather than its placeholder type. Never count combat text or award XP again while resuming a pending transition.
 
 Add a `talentArt` entry when art is ready; missing-art and keyboard behavior follow [UI component conventions](./UI.md#component-conventions).
 

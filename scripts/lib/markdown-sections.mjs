@@ -119,3 +119,60 @@ export function readDocumentSection(rootDir, relativePath, heading = null) {
   }
   return { path: relativePath, heading, start: start + 1, end, text: lines.slice(start, end).join("\n") };
 }
+
+/** Remove table alignment padding only; retain line numbers, fences and cell content. */
+export function compactMarkdownTables(source) {
+  return mapUnfencedLines(source, (line) => {
+    if (!/^\s*\|.*\|\s*$/u.test(line)) return line;
+    const boundaries = [];
+    let codeFence = "";
+    for (let index = 0; index < line.length; index++) {
+      if (line[index] === "\\") {
+        index++;
+        continue;
+      }
+      if (line[index] === "`") {
+        const run = /^`+/u.exec(line.slice(index))[0];
+        if (!codeFence) codeFence = run;
+        else if (codeFence === run) codeFence = "";
+        index += run.length - 1;
+      } else if (line[index] === "|" && !codeFence) boundaries.push(index);
+    }
+    if (boundaries.length < 2) return line;
+    const cells = boundaries.slice(1).map((end, index) => line.slice(boundaries[index] + 1, end));
+    const separator = cells.every((cell) => /^\s*:?-{3,}:?\s*$/u.test(cell));
+    const compact = cells.map((cell) =>
+      separator ? cell.replace(/^(\s*:?)-+(:?\s*)$/u, "$1---$2").trim() : cell.trim(),
+    );
+    return (
+      line.slice(0, boundaries[0] + 1) +
+      compact.map((cell) => ` ${cell} |`).join("") +
+      line.slice(boundaries.at(-1) + 1)
+    );
+  });
+}
+
+/** Overview and child locations for an oversized section, without pretending it was fully read. */
+export function sectionPreview(section) {
+  const lines = section.text.split("\n");
+  const headings = [];
+  mapUnfencedLines(section.text, (line) => {
+    if (/^#{1,6}\s/u.test(line)) headings.push(line);
+    return line;
+  });
+  const children = new Set(headings.slice(1));
+  const firstChild = lines.findIndex((line) => children.has(line));
+  const intro = lines
+    .slice(1, firstChild < 0 ? lines.length : firstChild)
+    .join("\n")
+    .trim()
+    .split(/\n\s*\n/u)[0];
+  const overview = intro && Buffer.byteLength(intro) <= 800 ? `Overview: ${compactMarkdownTables(intro)}` : "";
+  let fence = null;
+  const pointers = lines.flatMap((line, index) => {
+    fence = trackFenceLine(line, fence);
+    if (fence || FENCE_MARKER_RE.test(line) || !children.has(line)) return [];
+    return [`  ${section.path}:${section.start + index}: ${line.replace(/^#+\s/u, "")}`];
+  });
+  return [overview, ...pointers].filter(Boolean);
+}

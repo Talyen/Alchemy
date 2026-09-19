@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { ROUTES, resolveRoutePlan } from "./lib/change-routes.mjs";
-import { readDocumentSection } from "./lib/markdown-sections.mjs";
+import { compactMarkdownTables, readDocumentSection } from "./lib/markdown-sections.mjs";
 import { CONTEXT_TASKS, selectContext, contextSections } from "./lib/agent-context.mjs";
 import { renderContext } from "./agent-context.mjs";
 import { ROUTE_CONTEXT_BUDGETS } from "./lib/route-context-budgets.mjs";
@@ -124,7 +124,10 @@ export function measureDiscoveryContexts() {
       task,
       paths,
       selectedBytes: sections.reduce((total, section) => total + Buffer.byteLength(section.text), 0),
-      emittedSectionBytes: rendered.included.reduce((total, section) => total + Buffer.byteLength(section.text), 0),
+      emittedSectionBytes: rendered.included.reduce(
+        (total, section) => total + Buffer.byteLength(compactMarkdownTables(section.text)),
+        0,
+      ),
       emittedBytes: Buffer.byteLength(rendered.text),
       deferred: sections
         .filter((section) => !rendered.included.includes(section))

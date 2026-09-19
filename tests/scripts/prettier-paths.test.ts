@@ -6,7 +6,7 @@ import { PRETTIER_GLOBS, PRETTIER_NEVER_FORMAT_RE, filterPrettierPaths } from ".
 describe("prettier-paths", () => {
   it("exports the shared format globs", () => {
     expect(PRETTIER_GLOBS).toEqual(
-      expect.arrayContaining(["**/*.{ts,tsx,css,mjs,cjs,js,json,md,yml,yaml}", ".prettierrc"]),
+      expect.arrayContaining(["**/*.{ts,tsx,mts,css,mjs,cjs,js,json,md,yml,yaml}", ".prettierrc"]),
     );
   });
 
@@ -21,6 +21,7 @@ describe("prettier-paths", () => {
         ".agents/skills/verifier/SKILL.md",
         "performance/catalog.json",
         "stryker.config.mjs",
+        "scripts/agent-context.d.mts",
       ]),
     ).toEqual([
       "Docs/ARCHITECTURE.md",
@@ -30,6 +31,7 @@ describe("prettier-paths", () => {
       ".agents/skills/verifier/SKILL.md",
       "performance/catalog.json",
       "stryker.config.mjs",
+      "scripts/agent-context.d.mts",
     ]);
   });
 

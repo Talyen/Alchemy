@@ -76,3 +76,11 @@ Decision: permit sufficient local context for obvious small edits while retainin
 Evidence: [Eight matched coding trials](../evals/results/instruction-guidance-2026-09-12.md) passed task-owned completion gates and existing-work preservation; all four save trials also passed independent compatibility acceptance. Small-edit total input plus output increased 5.1%; save-task usage decreased 29.8%. One save baseline’s formatting retry is included; an invalid sandbox setup is excluded. These are limited task-level observations, not reliable universal savings.
 
 Reason: retain the clearer task boundaries and canonical policy routing with demonstrated correct completion. Skipping a discovery command is not itself an efficiency result; continue judging future changes by complete tasks and preserved behavior.
+
+## 2026-09-19 — Keep targeted retrieval optional and preserve complete evidence
+
+Decision: compact Markdown tables before budgeting discovery output; route save topics independently; recognize the current talent/affix builders; add optional test-case excerpts with inherited setup pointers. Keep the earlier test-navigation rejection above as contrary evidence, not a requirement to repeat an evaluation. The user explicitly requested implementation without definitive savings proof. Broad search omits archived/generated noise but preserves explicit access and complete import inventories. One-shot compact commands retain full logs and exit codes. Script declarations now live beside their owners.
+
+Evidence: focused parser, search, and command-runner regression checks plus the repository completion gate; no new matched agent trials or whole-task token-savings claim. Ports guidance now fits the existing output limit rather than being deferred in full. A passing gate establishes compatibility, not improved agent efficiency.
+
+Reason: remove demonstrated retrieval failures and central editing friction without mandatory discovery steps, reduced verification, or gameplay refactoring. Earlier whole-task evidence still cautions against treating smaller excerpts as guaranteed savings.

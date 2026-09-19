@@ -1,7 +1,7 @@
 // Shared Prettier path globs for format / format:check / pre-commit.
 // Keep this list as the single source of truth — do not duplicate in package.json or lefthook.
 
-const EXTENSIONS = ["ts", "tsx", "css", "mjs", "cjs", "js", "json", "md", "yml", "yaml"];
+const EXTENSIONS = ["ts", "tsx", "mts", "css", "mjs", "cjs", "js", "json", "md", "yml", "yaml"];
 
 /** @type {readonly string[]} */
 export const PRETTIER_GLOBS = Object.freeze([`**/*.{${EXTENSIONS.join(",")}}`, ".prettierrc"]);

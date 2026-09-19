@@ -39,19 +39,29 @@ Preserve complete saved card effects, descriptions, and explicit Consume overrid
 
 ## Public save contract
 
-### Policy: local is authoritative
+Local storage is authoritative; Cloud is a mirror. Choose candidates by compatibility and freshness before validation, and never overwrite a protecting future save. A save succeeds only when a local write acknowledges the snapshot or a newer replacement. Deletion has explicit modes; pending writes must not resurrect deleted data.
+
+Read the applicable contract before changing its behavior:
+
+- [Loading and candidate selection](#load-selection), including [load order](#load-order).
+- [Compatibility and future protection](#future-schema-saves), plus [when to increment](#when-to-increment).
+- [Write acknowledgement and autosave](#write-acknowledgement).
+- [Deletion modes](#deletion).
+- [Local/Cloud policy](#policy-local-is-authoritative) and [content repair rules](#implementation-rules).
+
+## Policy: local is authoritative
 
 Steam Cloud is a one-way mirror. Writes go local-first (atomic, with backup-ring rotation in `desktop/main.cjs` — `save.json` + `bak.1-3` + `tmp`) and then mirror to Steam Cloud.
 
 Device display preferences (versioned `alchemy-device-display-v<n>` key, currently v1) stay outside the versioned save: they survive save wipes, are never cloud-mirrored, and never gate loads. A version mismatch resets them to defaults silently (no error-sink entry); only unreadable storage or corrupt JSON is logged.
 
-#### Load selection
+## Load selection
 
 `readDesktopCandidates` in `src/lib/platform-save-backend.ts` collects candidates in preference order (local ring → cloud); the local ring read order itself (`save.json` + `bak.1-3`) lives in `desktop/main.cjs`, which appends nothing — the backend appends the Cloud mirror last and deduplicates identical mirrors while preserving first-seen order. The freshest playable candidate that Zod-validates wins by `lastSavedAt`; corrupt candidates fall through to another recovery source. Evaluation is deterministic in `src/features/alchemy/shared/storage/save-candidates.ts#evaluateSaveCandidates`. Recovery diagnostics are logged at the I/O seam, and only the winning candidate is hydrated against the live catalog.
 
 Routine skips stay silent: missing, empty, and below-baseline candidates on fresh profiles never reach the error sink (`logStorageFailure`), because browser journeys assert zero runtime errors. Non-object roots and genuinely corrupt JSON do report. Only genuinely corrupt JSON and schema-validation failures of otherwise versioned candidates are reported. Pinned by `save-version-protection.test.ts`.
 
-#### Future schema saves
+## Future schema saves
 
 Saves with a schema newer than the current build are intentionally not migrated or overwritten. A recognizable future-versioned candidate protects the session only when it is fresher by `lastSavedAt` than every playable candidate. A stale newer-versioned mirror is skipped in favor of the freshest playable backup; timestamp ties also load the playable backup, and autosave can continue.
 
@@ -59,7 +69,7 @@ When protection applies, the load path returns session defaults and disables aut
 
 Tie rules: a future-vs-playable timestamp tie loads the playable backup (protection needs a strictly fresher future candidate), while a playable-vs-playable tie keeps the first candidate in read order — on desktop that prefers `save.json` over its `bak` ring. Future-vs-future ties likewise keep the first candidate in read order; recency across future kinds (schema vs content) still decides, so the newest future candidate of either kind is the one compared against the playable best. Fractional `lastSavedAt` values floor before comparison so raw future-protection ordering and parsed playable ordering agree; missing timestamps fall back per domain (`-1` for future, `0` for the playable pre-filter matching the schema default) via `getCandidateSavedAt`.
 
-#### Write acknowledgement
+## Write acknowledgement
 
 Normal saves and explicit flushes return `saved`, `failed`, or `skipped`. `saved` means local storage accepted that snapshot or a newer coalesced replacement; a cloud-mirror failure remains non-fatal. Serialization and backend failures are logged at the I/O seam and returned to the caller.
 
@@ -67,7 +77,7 @@ Autosave retains unacknowledged changes until a covering write succeeds. In-memo
 
 Browser lifecycle exits (`visibilitychange`, `pagehide`, and `beforeunload`) synchronously flush the latest unacknowledged snapshot to `localStorage` via `writeSync`. A successful synchronous flush returns `saved` immediately when the queue is idle. If an older write may still land, the latest snapshot also replaces pending queue work and completion waits for that final write. No await sits between the sync write and the idle check, so check-and-enqueue is atomic on the event loop (see `storage/io.ts#flushSerializedExitSave`, the single owner of this detail). Each physical write stamps its own `lastSavedAt` at serialization time. Desktop IPC uses the same serialized coalescing queue and returns a promise for the actual write outcome. A failed synchronous exit remains retryable through the scheduler retry while mounted. Desktop shutdown remains best effort, so earlier visibility/pagehide signals give IPC time to finish before the window closes. Terminal saves supersede queued snapshots that have not started writing.
 
-#### Deletion
+## Deletion
 
 Deletion mode is explicit (`"default"` | `"localWipe"` | `"wipeForReload"`), not inferred from the visible screen or write protection:
 
@@ -88,11 +98,11 @@ Browser deletion removes local storage only.
 
 Dev builds also accept `?wipeLocalSave=1` (exact value) to clear local candidates via the `localWipe` path. The backend is configured (Steam/cloud state) before the wipe runs, so a desktop dev wipe honors cloud sync instead of leaving a stale Cloud mirror eligible for reload. Device display preferences survive either deletion path.
 
-### Load order
+## Load order
 
 Candidate compatibility/freshness checks → current-shape validation → normalization → hydration → restore. If supported versions ever diverge, migration steps execute after compatibility checks and before validation. `SaveDataSchema` is a load-tolerant shape validator; raw-version acceptance belongs to candidate evaluation and must occur first. Test-only direct parsing is not the compatibility gate. Repair happens in two layers with distinct owners: schema load-repair (`SaveDataSchema` transform) runs inside candidate evaluation, then codec hydrate-repair (`hydrateAlchemyPersistenceFields` in `storage/persistence.ts` plus the run-profile codec) runs at restore; candidate evaluation only hydrates the active-run deck via `toActiveRunData`.
 
-### Implementation rules
+## Implementation rules
 
 - Card IDs that disappear from the live catalog are stripped against the live catalog at load in `normalize-active-run-data.ts`. Record deliberate removals in `TOMBSTONED_CARD_IDS` in `src/lib/validation/migration/tombstoned-content-ids.ts` so fixtures stay explicit. The guard test in `save-migration-guard.test.ts` checks `discoveredCardIds` for catalog or tombstone membership; deck, shop, battle, mystery, and corruption piles rely on silent live-catalog stripping without a tombstone requirement.
 - Saved active-run decks are eagerly hydrated at load time: card IDs are resolved against the live library, and any card whose ID no longer exists is silently dropped from the deck. The run always has a valid, drawable set of cards. No player-facing diagnostics.

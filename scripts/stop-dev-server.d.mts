@@ -1,4 +1,8 @@
-export function isProjectOwnedCommandLine(commandLine: string, projectRoot: string, platform?: NodeJS.Platform): boolean;
+export function isProjectOwnedCommandLine(
+  commandLine: string,
+  projectRoot: string,
+  platform?: NodeJS.Platform,
+): boolean;
 
 export function stopOwnedListeners(options: {
   port: number;

@@ -17,9 +17,58 @@ import {
 } from "../../scripts/agent-context.mjs";
 
 import { resolveRoutePlan } from "../../scripts/lib/change-routes.mjs";
-import { headingSlugs, readDocumentSection, stripFencedBlocks } from "../../scripts/lib/markdown-sections.mjs";
+import {
+  compactMarkdownTables,
+  headingSlugs,
+  readDocumentSection,
+  stripFencedBlocks,
+} from "../../scripts/lib/markdown-sections.mjs";
 
 describe("agent discovery", () => {
+  it("fits ports and save guidance without losing source coordinates", () => {
+    for (const task of ["run-ports", "save", "save-load", "save-write", "save-delete", "save-compatibility"]) {
+      const selection = selectContext([], task);
+      const sections = contextSections(process.cwd(), selection);
+      const rendered = renderContext(selection, sections);
+      expect(rendered.included).toEqual(sections);
+      expect(rendered.text).not.toContain("Deferred section:");
+      expect(Buffer.byteLength(rendered.text)).toBeLessThanOrEqual(CONTEXT_OUTPUT_BYTES);
+    }
+    const source = "| A       | B      |\n| ------- | ------ |\n```\n| keep    | spaces |\n```";
+    const compact = compactMarkdownTables(source);
+    expect(compact).toContain("| A | B |\n| --- | --- |");
+    expect(compact).toContain("| keep    | spaces |");
+    expect(compactMarkdownTables("| Code | Escaped |\n| `a  | b`   | a  \\| b   |")).toContain(
+      "| `a  | b` | a  \\| b |",
+    );
+    expect(compact.split("\n")).toHaveLength(source.split("\n").length);
+  });
+
+  it("previews oversized sections without remembering their unseen children", () => {
+    const section = {
+      path: "guide.md",
+      heading: "Contract",
+      start: 20,
+      end: 27,
+      text: "## Contract\nBrief overview.\n### Loading\n" + "x".repeat(15000) + "\n### Writes\nOther rules.",
+    };
+    const rendered = renderContext({ tasks: [], docs: [], entrypoints: [], plan: { commands: [] } }, [section]);
+    expect(rendered.included).toEqual([]);
+    expect(rendered.text).toContain("Overview: Brief overview.");
+    expect(rendered.text).toContain("guide.md:22: Loading");
+    expect(rendered.text).toContain("guide.md:24: Writes");
+    expect(rendered.text).not.toContain("x".repeat(100));
+  });
+
+  it("keeps test navigation optional and rejects incompatible modes", () => {
+    expect(parseContextArgs(["--outline", "test.ts", "--tests"])).toMatchObject({ tests: true });
+    expect(parseContextArgs(["--outline", "test.ts", "--test", "suite > case"])).toMatchObject({
+      test: "suite > case",
+    });
+    expect(() => parseContextArgs(["--tests"])).toThrow("--outline");
+    expect(() => parseContextArgs(["--outline", "test.ts", "--tests", "--entry", "one"])).toThrow("Choose");
+  });
+
   it("discovers tooling owners for a directory with either path spelling", () => {
     const selected = selectContext(["scripts"]);
     expect(selected.tasks).toContain("tooling");
@@ -73,7 +122,7 @@ describe("agent discovery", () => {
         "src/lib/game-data/talents/talent-pool-definitions.ts",
         "talent",
         "Add a new talent",
-        "src/lib/game-data/talent-effect-manifest.ts",
+        "src/lib/game-data/talents/manifest-defaults.ts",
       ],
       ["src/lib/game-data/companions.ts", "companion", "Companion Bond", "src/lib/game-data/companions.ts"],
       [

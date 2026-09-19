@@ -30,11 +30,13 @@ Manifest paths derive from `MANAGED_DIRS` + `MANIFEST_BASENAME` via `getManagedM
 
 | Concern                                                             | Implementation owner        |
 | ------------------------------------------------------------------- | --------------------------- |
-| Owner sections and source entry points                              | `lib/agent-context.mjs`     |
+| Owner sections and implementation entry points                      | `lib/agent-context.mjs`     |
 | Markdown fences, headings, and section extraction                   | `lib/markdown-sections.mjs` |
 | Bounded search, related-file hints, and disposable context sessions | `lib/agent-discovery.mjs`   |
 | Preread measurement                                                 | `measure-agent-context.mjs` |
 | Evaluation records and comparison                                   | `agent-eval.mjs`            |
+
+Source declarations, authored entries, and optional test navigation are parsed in `lib/source-outline.mjs`; `agent-context.mjs` owns bounded rendering. `run-compact.mjs` reuses `lib/run-command.mjs` and `lib/compact-output.mjs` for one-shot command logs and summaries.
 
 [Agent discovery](../Docs/REFERENCE.md#agent-discovery) documents command options
 and limitations; [evaluations](../.agents/evals/README.md) owns pinned setup and
@@ -97,9 +99,7 @@ history is advisory and does not require an entry for each skill or knowledge ed
 Repository-relative matching uses forward slashes on every platform, including
 history and archived-plan exemptions.
 
-Ambient script-test declarations belong in
-`tests/scripts/global.d.ts`; standalone unreferenced declarations fail dead-code
-checks. Shared build inputs select both renderer builds through the existing
+Script interface ownership is described in [Script declarations](#script-declarations). Shared build inputs select both renderer builds through the existing
 change routes. Test selection preserves deleted paths for classification and risk escalations, but executes only surviving changed unit files. When consolidating tests, include the surviving files in the task selection; update stale suite references rather than disabling their validation. [Test value](../CONTRIBUTING.md#test-value-and-coverage-strategy) owns coverage decisions.
 
 `check:bundle` enforces total JavaScript size, reports individual chunk sizes, and checks the current `dist/assets/` and fails when the build is missing
@@ -259,3 +259,7 @@ grows deadline support rather than adding new raw call sites.
 keeping arguments literal and never downloading missing tools. Interrupted
 commands fail even without a numeric exit status. Output formatters bound display
 without changing command success; exposure metrics remain advisory.
+
+## Script declarations
+
+Keep TypeScript declarations beside the JavaScript module (the .d.mts extension beside .mjs), following the module's actual exports. Tests import those modules normally. Shared interface types belong to their implementation owner and are imported by other declarations; do not recreate wildcard ambient declarations in tests. Update the adjacent declaration when changing a script's public interface, and run source/test type checks.

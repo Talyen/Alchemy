@@ -20,6 +20,7 @@ function fixture(files: Record<string, string>) {
 }
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
   for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
 });
 
@@ -33,6 +34,65 @@ const keyed = { "two": { value: 3 }, three: { value: 4 } };`,
     expect(entries.map((entry) => entry.name)).toEqual(["one", "one", "two", "three"]);
     expect(entries[0]?.text).toBe('{ id: "one", effects: [run()] }');
     expect(entries[2]?.text).toBe('"two": { value: 3 }');
+  });
+
+  it("retains stable IDs inside grouped and wrapped catalogs", () => {
+    const root = fixture({
+      "pool.ts":
+        'const grouped = { group: { one: {id: "one", roll: {basic: {min: 1}}}, two: [{id: "two"}] }, leaf: ({value: 3} as Entry) };',
+    });
+    expect(sourceOutline(root, "pool.ts", { entries: true }).map((entry) => entry.name)).toEqual([
+      "one",
+      "two",
+      "leaf",
+    ]);
+  });
+
+  it("indexes authored talent and affix calls while hiding nested configuration", () => {
+    const root = fixture({
+      "src/lib/game-data/talents/talent-pool-definitions.ts":
+        'const pool = [talent("dodge-one", "dodge", boom()), talent(dynamicId, "dodge")];',
+      "src/lib/gear/affix-catalog.ts":
+        'const rows = [uniqueAffix("unique-one", boom()), resistAffix("resist-one", boom()), {id: "plain", roll: {basic: {min: 1}}}];',
+      "unrelated.ts": 'talent("not-content", boom());',
+    });
+    expect(
+      sourceOutline(root, "src/lib/game-data/talents/talent-pool-definitions.ts", { entries: true }).map(
+        (entry) => entry.name,
+      ),
+    ).toEqual(["dodge-one"]);
+    expect(
+      sourceOutline(root, path.join(root, "src/lib/gear/affix-catalog.ts"), { entries: true }).map(
+        (entry) => entry.name,
+      ),
+    ).toEqual(["unique-one", "resist-one", "plain"]);
+    expect(sourceOutline(root, "unrelated.ts", { entries: true })).toEqual([]);
+  });
+
+  it("locates suite-qualified tests and inherited setup without executing parameter tables", () => {
+    const root = fixture({
+      "owner.test.ts": `import { test } from "vitest";
+const cases = explode();
+beforeEach(() => setup());
+describe.each(cases)("outer %s", () => {
+  beforeAll(() => prepare());
+  describe("inner", () => {
+    afterEach(() => cleanup());
+    it.each(cases)("works %s", () => check());
+    test.skip("skipped", () => fail());
+    test.todo("later");
+  });
+});`,
+    });
+    const entries = sourceOutline(root, "owner.test.ts", { tests: true });
+    expect(entries.map((entry) => entry.name)).toEqual([
+      "outer %s > inner > works %s",
+      "outer %s > inner > skipped",
+      "outer %s > inner > later",
+    ]);
+    expect(entries[0]).toMatchObject({ start: 8, end: 8, text: 'it.each(cases)("works %s", () => check())' });
+    expect(entries[0]?.setup?.join("\n")).toContain("owner.test.ts:2-2: const cases = explode()");
+    for (const hook of ["beforeEach", "beforeAll", "afterEach"]) expect(entries[0]?.setup?.join("\n")).toContain(hook);
   });
 
   it("shares diagnostic space across failed checkers despite a noisy first failure", () => {
@@ -118,6 +178,46 @@ const keyed = { "two": { value: 3 }, three: { value: 4 } };`,
     expect(repositorySearch(root, { pattern: "$(touch surprise)" })).toEqual([]);
     expect(fs.existsSync(path.join(root, "surprise"))).toBe(false);
     expect(() => repositorySearch(root, { pattern: "[", regex: true })).toThrow();
+  });
+
+  it("omits discovery noise while preserving explicit access and import inventories", () => {
+    const files = {
+      "Docs/Plans/current.md": "needle",
+      "Docs/Plans/Archived/old.md": "needle",
+      ".agents/history/old.md": "needle",
+      "src/catalog.generated.ts": "needle",
+      "src/assets/.asset-hashes.json": "needle",
+      "src/current.ts": "needle",
+    };
+    const root = fixture(files);
+    expect(repositorySearch(root, { pattern: "needle" })).toEqual(["Docs/Plans/current.md", "src/current.ts"]);
+    for (const file of Object.keys(files))
+      expect(repositorySearch(root, { pattern: "needle", paths: [file] })).toEqual([file]);
+    expect(repositorySearch(root, { pattern: "needle", paths: ["Docs/Plans/Archived"] })).toEqual([
+      "Docs/Plans/Archived/old.md",
+    ]);
+    expect(repositorySearch(root, { pattern: "needle", paths: ["src"], includeExcluded: true })).toContain(
+      "src/catalog.generated.ts",
+    );
+    expect(repositorySearch(root)).toContain("src/catalog.generated.ts");
+  });
+
+  it("keeps exclusions scoped in mixed searches, including the no-ripgrep fallback", () => {
+    const root = fixture({
+      "src/current.ts": "needle",
+      "src/one.generated.ts": "needle",
+      "src/two.generated.ts": "needle",
+    });
+    for (const fallback of [false, true]) {
+      if (fallback) vi.stubEnv("PATH", "");
+      expect(repositorySearch(root, { pattern: "needle", paths: [".", "src/one.generated.ts"] })).toEqual([
+        "src/current.ts",
+        "src/one.generated.ts",
+      ]);
+      expect(
+        repositorySearch(root, { pattern: "needle", paths: [".", "src/one.generated.ts"], excerpts: true }),
+      ).toHaveLength(2);
+    }
   });
 
   it("derives consumers, tests and fixture imports through aliases and reexports", () => {
