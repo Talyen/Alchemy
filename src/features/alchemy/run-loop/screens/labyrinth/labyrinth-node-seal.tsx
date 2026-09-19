@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo } from "react";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { SHINE_PALETTES } from "@/features/alchemy/shared/config/shine-palettes";
 import { Surface } from "@/features/alchemy/shared/ui/surface";
@@ -38,8 +38,6 @@ export const LabyrinthNodeSeal = memo(function LabyrinthNodeSeal({
   onHover,
   onFocus,
 }: Props) {
-  const [hovered, setHovered] = useState(false);
-  const [focused, setFocused] = useState(false);
   const visual = labyrinthNodeVisualState(map, node.id);
   const discovered = visual !== "undiscovered";
   const current = node.id === map.currentNodeId;
@@ -80,22 +78,18 @@ export const LabyrinthNodeSeal = memo(function LabyrinthNodeSeal({
         }}
         onMouseEnter={() => {
           onHoverStart();
-          setHovered(true);
           onHover(node.id);
         }}
         onMouseLeave={() => {
           onHoverEnd();
-          setHovered(false);
           onHover(null);
         }}
         onFocus={() => {
           onHoverStart();
-          setFocused(true);
           onFocus(node.id);
         }}
         onBlur={() => {
           onHoverEnd();
-          setFocused(false);
           onFocus(null);
         }}
         shimmerActive={shimmerActive}
@@ -104,7 +98,6 @@ export const LabyrinthNodeSeal = memo(function LabyrinthNodeSeal({
         overlay={
           emphasized ? (
             <ShineBorder
-              glow={hovered || focused}
               shineColor={colors}
               borderWidth={2.5}
               duration={3}

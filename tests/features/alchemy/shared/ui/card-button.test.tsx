@@ -34,7 +34,7 @@ describe("BattleCardButton", () => {
     expect(screen.getByRole("button", { name: "Test Card" }).classList.contains("card-hover-scale")).toBe(false);
   });
 
-  it("pairs keyword shine and glow only while eligible for hover", () => {
+  it("pairs keyword shine without glow only while eligible for hover", () => {
     const props = {
       ariaLabel: "Test Card",
       shimmerActive: false,
@@ -46,7 +46,8 @@ describe("BattleCardButton", () => {
       scaleOnHover: false,
     };
     const { container, rerender } = render(<BattleCardButton {...props} hovered />);
-    expect(container.querySelector('.shine-border[data-glow="true"]')).not.toBeNull();
+    expect(container.querySelector(".shine-border")).not.toBeNull();
+    expect(container.querySelector(".shine-border")?.hasAttribute("data-glow")).toBe(false);
     for (const state of [{ hovered: false }, { hovered: true, disabled: true }, { hovered: true, dragging: true }]) {
       rerender(<BattleCardButton {...props} {...state} />);
       expect(container.querySelector(".shine-border")).toBeNull();

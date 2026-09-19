@@ -40,10 +40,11 @@ async function expectStableHoverLayout(card: Locator) {
     });
   const resting = await geometry();
   await card.hover();
-  await expect(card.locator('.shine-border[data-glow="true"]')).toBeVisible();
+  await expect(card.locator(".shine-border")).toBeVisible();
+  await expect(card.locator(".shine-border")).not.toHaveAttribute("data-glow", "true");
   await expect
     .poll(() => card.locator(".shine-border").evaluate((shine) => getComputedStyle(shine).filter))
-    .toContain("drop-shadow");
+    .toBe("none");
   await expect.poll(() => card.evaluate((element) => getComputedStyle(element).filter)).toBe("none");
   expect(
     await card.locator(".shine-border").evaluate((shine) => {
@@ -61,10 +62,11 @@ async function expectStableHoverLayout(card: Locator) {
   await expect(card.locator(".shine-border")).toHaveCount(0);
   expect(await geometry()).toEqual(resting);
   await card.focus();
-  await expect(card.locator('.shine-border[data-glow="true"]')).toBeVisible();
+  await expect(card.locator(".shine-border")).toBeVisible();
+  await expect(card.locator(".shine-border")).not.toHaveAttribute("data-glow", "true");
   await expect
     .poll(() => card.locator(".shine-border").evaluate((shine) => getComputedStyle(shine).filter))
-    .toContain("drop-shadow");
+    .toBe("none");
   await expect.poll(() => card.evaluate((element) => getComputedStyle(element).filter)).toBe("none");
   expect(await geometry()).toEqual(resting);
   await card.blur();
@@ -85,16 +87,17 @@ test("Victory card hover and focus preserve layout", async ({ page }) => {
   await expectStableHoverLayout(page.getByRole("button", { name: /^Select / }).first());
 });
 
-async function expectPairedGlow(surface: Locator) {
+async function expectBorderOnlyShine(surface: Locator) {
   if (await surface.evaluate((element) => element.classList.contains("talent-card-available"))) {
     await expect(surface).toBeVisible();
     await surface.hover({ force: true });
   } else {
     await surface.hover();
   }
-  const shine = surface.locator('.shine-border[data-glow="true"]');
+  const shine = surface.locator(".shine-border");
   await expect(shine).toBeVisible();
-  await expect.poll(() => shine.evaluate((element) => getComputedStyle(element).filter)).toContain("drop-shadow");
+  await expect(shine).not.toHaveAttribute("data-glow", "true");
+  await expect.poll(() => shine.evaluate((element) => getComputedStyle(element).filter)).toBe("none");
   await expect.poll(() => surface.evaluate((element) => getComputedStyle(element).filter)).toBe("none");
   expect(await shine.evaluate((element) => getComputedStyle(element).overflow)).toBe("visible");
   expect(
@@ -108,25 +111,25 @@ async function expectPairedGlow(surface: Locator) {
   ).toBe(true);
 }
 
-test("Homestead hover pairs glow without changing affordability", async ({ page }) => {
+test("Homestead hover shows shine border without changing affordability", async ({ page }) => {
   const homestead = new HomesteadPage(page);
   await homestead.goto();
   await expectStableHoverLayout(await homestead.constructButton());
 });
 
-test("Battle hand and enemy hover glow leave turn borders unchanged", async ({ page }) => {
+test("Battle hand and enemy hover shine leave turn borders unchanged", async ({ page }) => {
   const hand = [makeCard({ cost: 0 })];
   await injectActiveBattle(page, makeGoblinBattleState({ hand }), { runDeck: hand, autoEndTurn: false });
-  await expectPairedGlow(page.locator('[data-hand-card="true"] button').first());
-  await expectPairedGlow(page.getByTestId("battle-enemy-art-panel"));
+  await expectBorderOnlyShine(page.locator('[data-hand-card="true"] button').first());
+  await expectBorderOnlyShine(page.getByTestId("battle-enemy-art-panel"));
   await expect(page.getByTestId("turn-badge-player")).not.toHaveAttribute("data-glow", "true");
   await expect(page.getByTestId("turn-badge-enemy")).not.toHaveAttribute("data-glow", "true");
 });
 
-test("Labyrinth selected border stays unlit after hover and focus end", async ({ page }) => {
+test("Labyrinth selected border stays glow-free after hover and focus end", async ({ page }) => {
   await injectLabyrinthRun(page, { labyrinthMap: gridLabyrinthMapFixture() });
   const room = page.getByRole("button", { name: /^Entrance chamber/ });
-  await expectPairedGlow(room);
+  await expectBorderOnlyShine(room);
   await room.click();
   await room.blur();
   await page.mouse.move(0, 0);
@@ -134,7 +137,7 @@ test("Labyrinth selected border stays unlit after hover and focus end", async ({
   await expect(room.locator(".shine-border")).not.toHaveAttribute("data-glow", "true");
 });
 
-test("Equipped shine casts an unclipped glow only during interaction", async ({ page }) => {
+test("Equipped shine stays glow-free and unclipped during interaction", async ({ page }) => {
   const loadouts = createEmptyGearLoadouts();
   loadouts.knight.body = "glow-armor";
   await openArmory(page, {
@@ -142,7 +145,7 @@ test("Equipped shine casts an unclipped glow only during interaction", async ({ 
     loadouts,
   });
   const slot = equipmentSlotLocator(page, "body").getByRole("button");
-  await expectPairedGlow(slot);
+  await expectBorderOnlyShine(slot);
   await slot.click();
   await slot.blur();
   await page.mouse.move(0, 0);
@@ -150,5 +153,6 @@ test("Equipped shine casts an unclipped glow only during interaction", async ({ 
   await expect(slot.locator(".shine-border")).toBeVisible();
   await expect(slot.locator(".shine-border")).not.toHaveAttribute("data-glow", "true");
   await slot.focus();
-  await expect(slot.locator(".shine-border")).toHaveAttribute("data-glow", "true");
+  await expect(slot.locator(".shine-border")).toBeVisible();
+  await expect(slot.locator(".shine-border")).not.toHaveAttribute("data-glow", "true");
 });

@@ -206,7 +206,7 @@ describe("createRunFlow victory paths", () => {
   });
 
   it.each(["campaign", "labyrinth", "wildwood"] as const)(
-    "manual End Run clears %s once and returns directly to Menu",
+    "manual End Run clears %s once and always shows the End Run screen",
     (contentSystemType) => {
       setRunProgress({ contentSystemType, runTalentXP: { physical: 10 }, gold: 42 });
       const transition = vi.fn();
@@ -215,11 +215,14 @@ describe("createRunFlow victory paths", () => {
       expect(readRunSession().hasActiveRun).toBe(false);
       expect(readBattle().hasActiveBattle).toBe(false);
       expect(readRunProfile().gold).toBe(42);
+      expect(readRunSession().runEndTalentXP.physical).toBeGreaterThan(0);
       const profile = structuredClone(readRunProfile());
+      const transitionsAfterFirst = transition.mock.calls.length;
       handlers.handleAbandonRun();
       expect(readRunProfile()).toEqual(profile);
-      expect(transition).toHaveBeenCalledWith(ROUTE_SCREENS.MENU, { immediate: true });
-      expect(transition).not.toHaveBeenCalledWith(ROUTE_SCREENS.GAME_OVER, expect.anything());
+      expect(transition).toHaveBeenCalledWith(ROUTE_SCREENS.GAME_OVER, { immediate: true });
+      expect(transition).not.toHaveBeenCalledWith(ROUTE_SCREENS.MENU, expect.anything());
+      expect(transition.mock.calls.length).toBe(transitionsAfterFirst);
     },
   );
 

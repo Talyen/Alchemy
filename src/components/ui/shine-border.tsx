@@ -4,7 +4,6 @@ import { NEUTRAL_SHINE_FALLBACK } from "@/lib/animation/shine-gradient";
 import { cn } from "@/lib/utils";
 
 interface ShineBorderProps extends HTMLAttributes<HTMLDivElement> {
-  glow?: boolean;
   borderWidth?: number;
   duration?: number;
   shineColor: string | readonly string[];
@@ -14,7 +13,6 @@ interface ShineBorderProps extends HTMLAttributes<HTMLDivElement> {
 // `absolute` + `rounded-[inherit]` to resolve. Renders nothing semantic, so
 // it is hidden from assistive tech.
 export function ShineBorder({
-  glow = false,
   borderWidth = 1,
   duration = 14,
   shineColor,
@@ -36,11 +34,9 @@ export function ShineBorder({
         {
           "--border-width": `${borderWidth}px`,
           "--duration": `${duration}s`,
-          "--shine-glow-color": firstColor,
           ...style,
         } as CSSProperties
       }
-      data-glow={glow ? "true" : undefined}
       className={cn("shine-border pointer-events-none absolute animate-shine rounded-[inherit]", className)}
       {...props}
     >
@@ -57,7 +53,7 @@ export function ShineBorder({
           padding: "var(--border-width)",
           backgroundPosition: "inherit",
           // Paint-layer transition for border-width changes; the outer
-          // .shine-border rule owns box-shadow/filter/opacity instead.
+          // .shine-border rule owns opacity instead.
           transition: "padding 200ms ease-out",
         }}
       />

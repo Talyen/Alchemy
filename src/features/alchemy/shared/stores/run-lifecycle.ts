@@ -19,8 +19,10 @@ import {
   setFinishedRunCharacters,
   setHasActiveBattle,
   setHasActiveRun,
+  setRunEndCurrencies,
   setRunEndItems,
   setRunEndLabyrinthFloor,
+  setRunEndMaterials,
   setRunPlayerHealth,
 } from "./run-session-write-port";
 import { applyRestoreRunToDraft } from "./run-restore";
@@ -145,14 +147,28 @@ export function finalizeRunEndSession(options: {
 export function abandonRun(options: {
   awardRunEndMaterials: (draft: GameplayDraft) => MaterialInventory;
   finalizeRunXP: (draft: GameplayDraft) => void;
-}): void {
-  dispatchRunSessionCommand(
+}): boolean {
+  return dispatchRunSessionCommand(
     (draft) => {
       if (draft.session.activity.kind === "inactive") return false;
       finalizeRunEndSessionState(options, draft);
       // The outgoing battle still renders until the route transition completes.
       // Retain its last snapshot, but remove all resumable activity and continuations.
+      // clearTransientSession resets the whole session, so preserve the recap
+      // snapshot: manual End Run always shows the End Run screen. Copy the
+      // values first so the recap never holds revoked draft proxies.
+      const runEndMaterials = { ...draft.session.runEndMaterials };
+      const runEndCurrencies = { ...draft.session.runEndCurrencies };
+      const runEndTalentXP = { ...draft.session.runEndTalentXP };
+      const runEndItems = draft.session.runEndItems.map(cloneRunObtainedItem);
+      const runEndLabyrinthFloor = draft.session.runEndLabyrinthFloor;
       clearTransientSession(draft);
+      setRunEndMaterials(draft, runEndMaterials);
+      setRunEndCurrencies(draft, runEndCurrencies);
+      // No write-port setter: finalizeRunXP owns runEndTalentXP.
+      draft.session.runEndTalentXP = runEndTalentXP;
+      setRunEndItems(draft, runEndItems);
+      setRunEndLabyrinthFloor(draft, runEndLabyrinthFloor);
       setHasActiveBattle(draft, false);
       draft.battle.pendingBattleTransition = null;
       draft.battle.pendingTransitionResumeRequired = false;

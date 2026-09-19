@@ -32,7 +32,7 @@ test.describe("Menu", critical, () => {
     await expect(page.getByRole("button", { name: /Wildwood Draft/ })).toBeVisible();
   });
 
-  test("unspent talents and affordable homestead cast gold glow on main menu", async ({ page }) => {
+  test("unspent talents and affordable homestead show gold shine borders on main menu", async ({ page }) => {
     const menu = new MenuPage(page);
     await menu.gotoWithUnlockedMeta({
       talentXP: { dodge: 550 },
@@ -40,8 +40,9 @@ test.describe("Menu", critical, () => {
       materialInventory: { wood: 50, stone: 50, iron: 50, food: 50 },
     });
     await menu.expectMainMenu();
-    const shineBorders = page.locator('.shine-border[data-glow="true"]');
+    const shineBorders = page.locator(".shine-border");
     await expect(shineBorders).toHaveCount(2);
+    await expect(shineBorders.first()).not.toHaveAttribute("data-glow", "true");
   });
 
   test("Continue is the only play action until End Run clears the current adventure", async ({ page }) => {
@@ -54,8 +55,10 @@ test.describe("Menu", critical, () => {
     await expectRunPhase(page, "battle");
     await new BattlePage(page).menuBtn.click();
     await page.getByRole("button", { name: "End Run", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Defeat" })).toBeVisible();
     await expect(page.getByRole("dialog")).toHaveCount(0);
+    await page.getByRole("button", { name: "Continue" }).click();
+    await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible();
     await expect
       .poll(() => page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? "{}").activeRun, SAVE_KEY))
       .toBeNull();

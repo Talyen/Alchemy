@@ -40,7 +40,7 @@ const CHARACTER_SELECT_ORDER: CharacterId[] = [
 
 function HeroCardShine({ colors }: { colors: readonly string[] }) {
   if (colors.length === 0) return null;
-  return <ShineBorder glow shineColor={colors} borderWidth={3} className={HERO_SHINE_CLASS} />;
+  return <ShineBorder shineColor={colors} borderWidth={3} className={HERO_SHINE_CLASS} />;
 }
 
 const CharacterCard = memo(function CharacterCard({

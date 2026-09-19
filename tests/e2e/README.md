@@ -48,7 +48,7 @@ must never request it or call `enableFastMode`/`useFastBattle`.
 - `startBattleWithDeck` and `startAtDestination` bootstrap battle.
 - `injectActiveBattle` injects a mid-battle snapshot and boots straight into the battle screen.
 - `winBattleAndClaimReward` wins via combat and claims the first reward card.
-- `assertEndRunReturnsToMenu` ends a run immediately without confirmation and asserts the main menu.
+- `assertEndRunShowsRecap` ends a run immediately without confirmation, asserts the End Run screen, then continues to the main menu.
 - `injectMidCombatSave`, `injectDestinationAtIndex`, and `injectMysterySummaryVisit` inject exact persisted states.
 - `failOnRuntimeErrors` collects errors on extra pages created by a test or on Electron pages; assert the collected errors before closing those pages. The browser fixture covers its own `page` automatically.
 

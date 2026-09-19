@@ -60,7 +60,7 @@ describe("MenuScreen logo", () => {
     expect(useUiStore.getState().plasmaInteraction).toBeNull();
   });
 
-  it("shows thicker gold glow shine border when homestead unlocks or talents are available", () => {
+  it("shows thicker gold shine border when homestead unlocks or talents are available", () => {
     const { rerender } = render(
       <MenuScreen
         hasActiveRun={false}
@@ -91,14 +91,12 @@ describe("MenuScreen logo", () => {
     const talentsShine = talentsBtn.closest(".menu-nav-button")!.querySelector(".shine-border") as HTMLElement;
 
     expect(homesteadShine).not.toBeNull();
-    expect(homesteadShine.getAttribute("data-glow")).toBe("true");
+    expect(homesteadShine.hasAttribute("data-glow")).toBe(false);
     expect(homesteadShine.style.getPropertyValue("--border-width")).toBe("2px");
-    expect(homesteadShine.style.getPropertyValue("--shine-glow-color")).toBe("#fcd34d");
 
     expect(talentsShine).not.toBeNull();
-    expect(talentsShine.getAttribute("data-glow")).toBe("true");
+    expect(talentsShine.hasAttribute("data-glow")).toBe(false);
     expect(talentsShine.style.getPropertyValue("--border-width")).toBe("2px");
-    expect(talentsShine.style.getPropertyValue("--shine-glow-color")).toBe("#fcd34d");
   });
 
   it("does not show shine borders when features are locked even if available flags are true", () => {

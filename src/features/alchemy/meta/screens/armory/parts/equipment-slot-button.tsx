@@ -101,12 +101,7 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
         ariaPressed={selected}
         overlay={
           showShine && shineColors ? (
-            <ShineBorder
-              glow={isHovered}
-              shineColor={shineColors}
-              borderWidth={GEAR_ASTRAL_SHINE_BORDER_WIDTH}
-              className="z-20"
-            />
+            <ShineBorder shineColor={shineColors} borderWidth={GEAR_ASTRAL_SHINE_BORDER_WIDTH} className="z-20" />
           ) : null
         }
         selected={selected}

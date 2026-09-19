@@ -7,12 +7,15 @@ import { defaultBattleState } from "@/lib/battle";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { createEmptyRewardState, readActivityData } from "@/lib/active-run-session";
 import {
+  abandonRun,
   applyRunDefeatTeardown,
   finalizeRunEndSession,
   syncBattleToRun as mutateBattleToRun,
   syncRunToBattleStart as mutateRunToBattleStart,
   teardownRun,
 } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { awardRunEndMaterials } from "@/features/alchemy/run-loop/run/run-materials";
+import { finalizeRunXP as mutateFinalizeRunXP } from "@/features/alchemy/shared/stores/run-session-write-port";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import { subscribeGameplayCommits } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import {
@@ -164,6 +167,26 @@ describe("run transitions", () => {
     finalizeRunEndSession({ awardRunEndMaterials, finalizeRunXP: vi.fn() });
     finalizeRunEndSession({ awardRunEndMaterials, finalizeRunXP: vi.fn() });
     expect(awardRunEndMaterials).toHaveBeenCalledOnce();
+  });
+
+  it("abandonRun preserves the run-end snapshot for the End Run screen", () => {
+    setHasActiveRun(true);
+    setHasActiveBattle(true);
+    setRunProgress({
+      runTalentXP: { physical: 10 },
+      runMaterialsEarned: { ...emptyInventory(), wood: 5 },
+    });
+
+    const ended = abandonRun({ awardRunEndMaterials, finalizeRunXP: mutateFinalizeRunXP });
+
+    expect(ended).toBe(true);
+    expect(readRunSession().hasActiveRun).toBe(false);
+    expect(readBattle().hasActiveBattle).toBe(false);
+    expect(readRunSession().runEndTalentXP.physical).toBeGreaterThan(0);
+    expect(readRunSession().runEndMaterials.wood).toBe(5);
+    expect(readBattle().pendingBattleTransition).toBeNull();
+
+    expect(abandonRun({ awardRunEndMaterials, finalizeRunXP: mutateFinalizeRunXP })).toBe(false);
   });
 
   it("applyRunDefeatTeardown commits run and combat teardown together", async () => {

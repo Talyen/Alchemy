@@ -78,9 +78,7 @@ export const CollectionTile = memo(function CollectionTile({
         shimmerActive={shimmerActive}
         shimmerToken={shimmerToken}
         overlay={
-          showShine && shineColors ? (
-            <ShineBorder glow shineColor={shineColors} borderWidth={2} className="z-20" />
-          ) : null
+          showShine && shineColors ? <ShineBorder shineColor={shineColors} borderWidth={2} className="z-20" /> : null
         }
         className={cn(
           "group card-art-frame border border-border/80 shadow-md",

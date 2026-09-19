@@ -57,11 +57,14 @@ export async function startBattleWithDeck(page: Page, deck: BattleCard[], overri
   await destination.enterCombat("Combat");
 }
 
-export async function assertEndRunReturnsToMenu(page: Page) {
+export async function assertEndRunShowsRecap(page: Page) {
   await new BattlePage(page).menuBtn.click();
   await page.getByRole("button", { name: "End Run" }).click();
-  await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole("heading", { name: "Defeat" })).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole("button", { name: "Continue" })).toBeVisible();
   await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible({ timeout: 10000 });
 }
 
 export async function winBattleAndClaimReward(page: Page, maxTurns = 6) {

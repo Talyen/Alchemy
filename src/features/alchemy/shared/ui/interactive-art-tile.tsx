@@ -147,14 +147,7 @@ export function InteractiveArtTile({
         shimmerActive={visual.activeShimmer}
         shimmerToken={visual.activeShimmerToken}
         overlay={
-          visual.showShine ? (
-            <ShineBorder
-              glow={interactive && isHovered}
-              shineColor={visual.shineColors}
-              borderWidth={2}
-              className="z-20"
-            />
-          ) : null
+          visual.showShine ? <ShineBorder shineColor={visual.shineColors} borderWidth={2} className="z-20" /> : null
         }
         selected={visual.surfaceSelected}
         disabled={disabled}

@@ -70,9 +70,7 @@ export const TrinketSlotButton = memo(function TrinketSlotButton({
         as="button"
         ariaLabel={SLOT_ARIA_LABELS.trinket}
         ariaPressed={selected}
-        overlay={
-          showShine ? <ShineBorder glow={isHovered} shineColor={shineColors} borderWidth={2} className="z-20" /> : null
-        }
+        overlay={showShine ? <ShineBorder shineColor={shineColors} borderWidth={2} className="z-20" /> : null}
         selected={selected}
         shimmerActive={shimmerActive}
         shimmerToken={shimmerToken}

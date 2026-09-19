@@ -22,16 +22,14 @@ describe("ShineBorder", () => {
     expect(shine.querySelector<HTMLElement>(".shine-border-paint")!.style.backgroundImage).not.toContain("color-mix");
     expect(shine.querySelector<HTMLElement>(".shine-border-paint")!.style.backgroundImage).not.toContain("transparent");
   });
-  it("keeps persistent shine unlit until glow is requested", () => {
+  it("renders a border-only shine with no outer glow", () => {
     const { container, rerender } = render(<ShineBorder shineColor={["#cbd5e1", "#64748b"]} />);
     const shine = container.querySelector<HTMLElement>(".shine-border")!;
-    expect(shine.dataset.glow).toBeUndefined();
-    rerender(<ShineBorder shineColor={["#cbd5e1", "#64748b"]} glow />);
-    expect(shine.dataset.glow).toBe("true");
-    expect(shine.style.getPropertyValue("--shine-glow-color")).toBe("#cbd5e1");
+    expect(shine.hasAttribute("data-glow")).toBe(false);
+    expect(shine.style.getPropertyValue("--shine-glow-color")).toBe("");
     expect(shine.style.mask).toBe("");
     rerender(<ShineBorder shineColor={["#cbd5e1", "#64748b"]} />);
-    expect(shine.dataset.glow).toBeUndefined();
+    expect(shine.hasAttribute("data-glow")).toBe(false);
     expect(container.querySelector(".shine-border-paint")).not.toBeNull();
   });
 

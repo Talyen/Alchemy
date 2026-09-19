@@ -188,7 +188,7 @@ Wildwood post-entry progression belongs to
 between Campaign, Labyrinth, and Wildwood are covered by the [content-system
 workflow](./WORKFLOWS.md#content-system-behavior).
 
-The main menu offers Continue when a run is unfinished, otherwise Play. Continue delegates to `content-system-navigation.resumeRun` through route props. A requested mode cannot replace an active run. End Run in the existing red menu action cancels pending battle/navigation work, finalizes earned progression once, clears the current run, and returns immediately to the menu without confirmation. Ordinary defeat and victory retain their outcome screens. Drafting belongs to the active run; finishing its starter draft is the only supported re-application of a start snapshot. Menu/meta visits do not replace the activity's resume location. There are no parked slots or recency fields.
+The main menu offers Continue when a run is unfinished, otherwise Play. Continue delegates to `content-system-navigation.resumeRun` through route props. A requested mode cannot replace an active run. End Run in the existing red menu action cancels pending battle/navigation work, finalizes earned progression once, clears the current run, and always shows the End Run screen without confirmation; Continue on that recap returns to the menu. Ordinary defeat and victory retain their outcome screens. Drafting belongs to the active run; finishing its starter draft is the only supported re-application of a start snapshot. Menu/meta visits do not replace the activity's resume location. There are no parked slots or recency fields.
 
 Destination offer construction is pure in `shared/run-flow/destination-flow.ts`.
 Callers supply offer history, boss ID, and command-bound RNG; destination

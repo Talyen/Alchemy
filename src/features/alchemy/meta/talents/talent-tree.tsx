@@ -45,8 +45,6 @@ const TalentCard = memo(function TalentCard({
   onUnlock: ((talentId: string) => void) | undefined;
   onHoverTalent?: ((talent: TalentDefinition | null) => void) | undefined;
 }) {
-  const [hovered, setHovered] = useState(false);
-  const [focused, setFocused] = useState(false);
   const def = keywordDefinitions[talent.keywordId];
   const shineColors = getKeywordShineColors(talent.keywordId);
   const accentColor = shineColors[0];
@@ -63,19 +61,15 @@ const TalentCard = memo(function TalentCard({
       type={interactive ? "button" : undefined}
       onClick={interactive ? () => onUnlock?.(talent.id) : undefined}
       onMouseEnter={() => {
-        setHovered(true);
         onHoverTalent?.(talent);
       }}
       onMouseLeave={() => {
-        setHovered(false);
         onHoverTalent?.(null);
       }}
       onFocus={() => {
-        setFocused(true);
         onHoverTalent?.(talent);
       }}
       onBlur={() => {
-        setFocused(false);
         onHoverTalent?.(null);
       }}
       className={cn(
@@ -130,13 +124,7 @@ const TalentCard = memo(function TalentCard({
         </div>
       </div>
       {showShine ? (
-        <ShineBorder
-          glow={hovered || focused}
-          shineColor={shineColors}
-          borderWidth={2}
-          duration={8}
-          className="z-10 rounded-lg"
-        />
+        <ShineBorder shineColor={shineColors} borderWidth={2} duration={8} className="z-10 rounded-lg" />
       ) : null}
     </Element>
   );

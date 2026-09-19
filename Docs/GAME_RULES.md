@@ -206,9 +206,9 @@ Players keep one unfinished run. The main menu offers Continue when it exists,
 otherwise Play opens the existing mode/hero setup. Continue restores the exact
 activity, including pending battle results, rewards, events, shops, and drafts.
 Menu and meta visits preserve that location. The existing red End Run menu action
-ends the run immediately without confirmation and returns to the main menu;
-earned progression is kept and unclaimed choices are not granted. Normal defeat
-and victory retain their outcome screens. Drafting is part of the run, not setup
+ends the run immediately without confirmation and always shows the End Run screen;
+Continue on that recap returns to the main menu. Earned progression is kept and
+unclaimed choices are not granted. Normal defeat and victory retain their outcome screens. Drafting is part of the run, not setup
 for a second run. Gold, Talents, Homestead progress, and equipment remain permanent
 profile data. A current battle still protects its equipped items during meta visits.
 

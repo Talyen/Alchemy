@@ -131,27 +131,11 @@ export function MenuScreen({
               Homestead
             </LockedMenuItem>
             {hasAffordableHomestead && !isHomesteadLocked && (
-              <ShineBorder glow shineColor={SHINE_PALETTES.gold} borderWidth={2} duration={8} className="rounded-xl" />
+              <ShineBorder shineColor={SHINE_PALETTES.gold} borderWidth={2} duration={8} className="rounded-xl" />
             )}
           </MenuPlasmaHover>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <MenuPlasmaHover colorPair={ARMORY_PLASMA_PAIR}>
-            <LockedMenuItem
-              title="Armory"
-              message="Find Gear to unlock"
-              locked={isArmoryLocked}
-              onSelect={onArmory}
-              icon={<Shield className="h-7 w-7 text-sky-300" />}
-              wrapperClassName={MENU_NAV_BUTTON_WRAPPER_CLASS}
-              className={MENU_NAV_BUTTON_CLASS}
-              size="lg"
-              variant="outline"
-              tooltipPlacement="side-start"
-            >
-              Armory
-            </LockedMenuItem>
-          </MenuPlasmaHover>
           <MenuPlasmaHover colorPair={TALENTS_PLASMA_PAIR}>
             <LockedMenuItem
               title="Talents"
@@ -163,13 +147,29 @@ export function MenuScreen({
               className={MENU_NAV_BUTTON_CLASS}
               size="lg"
               variant="outline"
-              tooltipPlacement="side-end"
+              tooltipPlacement="side-start"
             >
               Talents
             </LockedMenuItem>
             {hasUnspentTalents && !isTalentsLocked && (
-              <ShineBorder glow shineColor={SHINE_PALETTES.gold} borderWidth={2} duration={8} className="rounded-xl" />
+              <ShineBorder shineColor={SHINE_PALETTES.gold} borderWidth={2} duration={8} className="rounded-xl" />
             )}
+          </MenuPlasmaHover>
+          <MenuPlasmaHover colorPair={ARMORY_PLASMA_PAIR}>
+            <LockedMenuItem
+              title="Armory"
+              message="Find Gear to unlock"
+              locked={isArmoryLocked}
+              onSelect={onArmory}
+              icon={<Shield className="h-7 w-7 text-sky-300" />}
+              wrapperClassName={MENU_NAV_BUTTON_WRAPPER_CLASS}
+              className={MENU_NAV_BUTTON_CLASS}
+              size="lg"
+              variant="outline"
+              tooltipPlacement="side-end"
+            >
+              Armory
+            </LockedMenuItem>
           </MenuPlasmaHover>
         </div>
         <MenuPlasmaHover colorPair={OPTIONS_PLASMA_PAIR}>

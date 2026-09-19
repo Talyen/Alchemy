@@ -94,7 +94,6 @@ export function ArtHoverKeywordBorder({
 
   return (
     <ShineBorder
-      glow
       data-testid="keyword-shine-enemy"
       borderWidth={ACTOR_PANEL_CONFIG.turnActiveArtBorderWidth}
       shineColor={[...shineColor]}

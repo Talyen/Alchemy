@@ -54,8 +54,9 @@ export function createDefeatHandlers(deps: RunOutcomeDeps) {
   }
 
   function handleAbandonRun() {
-    abandonRun({ awardRunEndMaterials, finalizeRunXP });
-    deps.actions.transition(ROUTE_SCREENS.MENU, { immediate: true });
+    const ended = abandonRun({ awardRunEndMaterials, finalizeRunXP });
+    if (!ended) return;
+    deps.actions.transition(ROUTE_SCREENS.GAME_OVER, { immediate: true });
   }
 
   return {
