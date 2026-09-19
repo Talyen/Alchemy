@@ -26,10 +26,13 @@ test.describe("Contiguous Run Journey", critical, () => {
     const noviceBtn = page.getByRole("button", { name: "Novice" });
     if (await noviceBtn.isVisible()) {
       await noviceBtn.click();
+      // Exact match: a loose "Play" also matches the battle autoplay toggle.
+      const playBtn = page.getByRole("button", { name: "Play", exact: true }).first();
+      await expect(playBtn).toBeEnabled({ timeout: 5000 });
+      await playBtn.click();
     }
-    const playBtn = page.getByRole("button", { name: "Play" }).first();
-    await expect(playBtn).toBeEnabled({ timeout: 5000 });
-    await playBtn.click();
+    // Fresh characters skip difficulty select and start the battle directly,
+    // so there is no Play button to press in that case.
 
     const battle = new BattlePage(page);
     await expect(battle.endTurnBtn).toBeVisible({ timeout: 10_000 });

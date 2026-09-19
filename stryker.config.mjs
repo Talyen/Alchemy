@@ -20,6 +20,9 @@ export default {
   jsonReporter: { fileName: "reports/mutation/mutation.json" },
   thresholds: { high: 80, low: 50, break: 50 },
   timeoutMS: 20_000,
+  // Cold CI runners need several minutes for the initial full-suite run;
+  // the 5-minute default timed out there while local runs take ~2 minutes.
+  dryRunTimeoutMinutes: 15,
   concurrency: 4,
   disableTypeChecks: true,
   ignoreStatic: true,
