@@ -27,34 +27,44 @@ import {
   PERCENT_DENOMINATOR,
 } from "../game-constants";
 
+function forgeDamagePercent(
+  damageType: DamageType,
+  talents: TalentEffectManifest,
+  gear?: BattleState["gearEffects"],
+  companionAttack = false,
+): number {
+  if (companionAttack && (gear?.companionBenefitsFromForge ?? 0) > 0) return PERCENT_DENOMINATOR;
+  // Full-strength Homestead/Gear grants and legacy snapshot flags take precedence;
+  // overlapping permissions do not award Forge twice.
+  const burn = talents.forgeToBurn ? PERCENT_DENOMINATOR : talents.forgeBurnDamagePercent;
+  const bleed = talents.forgeToBleed ? PERCENT_DENOMINATOR : talents.forgeBleedDamagePercent;
+  const shared = (gear?.sharedBurnBleedBonuses ?? 0) > 0;
+  switch (damageType) {
+    case "physical":
+    case "stun":
+      return PERCENT_DENOMINATOR;
+    case "holy":
+      return talents.forgeToHoly || (gear?.holyPreservesForge ?? 0) > 0 || (gear?.goldGrantsForgeAndHoly ?? 0) > 0
+        ? PERCENT_DENOMINATOR
+        : talents.forgeHolyDamagePercent;
+    case "burn":
+      return shared ? Math.max(burn, bleed) : burn;
+    case "bleed":
+      return shared ? Math.max(burn, bleed) : bleed;
+    case "poison":
+    case "freeze":
+    case "nature":
+      return 0;
+  }
+}
+
 export function forgeAppliesToDamageType(
   damageType: DamageType,
   talentEffects: TalentEffectManifest,
   gearEffects?: BattleState["gearEffects"],
   companionAttack = false,
 ): boolean {
-  if (companionAttack && (gearEffects?.companionBenefitsFromForge ?? 0) > 0) return true;
-
-  const shared = (gearEffects?.sharedBurnBleedBonuses ?? 0) > 0;
-  switch (damageType) {
-    case "physical":
-    case "stun":
-      return true;
-    case "holy":
-      return (
-        talentEffects.forgeToHoly ||
-        (gearEffects?.holyPreservesForge ?? 0) > 0 ||
-        (gearEffects?.goldGrantsForgeAndHoly ?? 0) > 0
-      );
-    case "burn":
-      return talentEffects.forgeToBurn || (shared && talentEffects.forgeToBleed);
-    case "bleed":
-      return talentEffects.forgeToBleed || (shared && talentEffects.forgeToBurn);
-    case "poison":
-    case "freeze":
-    case "nature":
-      return false;
-  }
+  return forgeDamagePercent(damageType, talentEffects, gearEffects, companionAttack) > 0;
 }
 
 export function emptyBattleCard(id: string): BattleCard {
@@ -89,7 +99,7 @@ function getForgeBonusForDamage(state: BattleState, damageType: DamageType, comp
   if (damageType === "physical" && state.talentEffects.forgeToPhysicalDamageMultiplier > 0) {
     return forge * state.talentEffects.forgeToPhysicalDamageMultiplier;
   }
-  return forge;
+  return scalePercent(forge, forgeDamagePercent(damageType, state.talentEffects, state.gearEffects, companionAttack));
 }
 
 function computeBaseRawAmount(
@@ -124,6 +134,8 @@ function applyPhysicalScaling(state: BattleState, rawAmount: number): number {
   let nextAmount = rawAmount + flatDamageBonus(state, "physical");
   if (state.talentEffects.armorToPhysicalDamage) {
     nextAmount += state.playerStatuses.armor;
+  } else {
+    nextAmount += scalePercent(state.playerStatuses.armor, state.talentEffects.armorPhysicalDamagePercent);
   }
 
   if (state.talentEffects.blockToPhysicalDamageMultiplier > 0) {
@@ -158,6 +170,8 @@ function applyHolyDamageModifiers(state: BattleState, rawAmount: number): number
   nextAmount += scalePercent(state.gold, state.gearEffects.holyDamageFromGoldPercent, PERCENT_DENOMINATOR);
   if (state.talentEffects.blockToHolyDamage) {
     nextAmount += blockScaledDamage(state, BLOCK_SCALED_DAMAGE_PERCENT);
+  } else {
+    nextAmount += blockScaledDamage(state, state.talentEffects.blockHolyDamagePercent);
   }
   return nextAmount;
 }
@@ -170,6 +184,8 @@ function applyStunDamageModifiers(state: BattleState, rawAmount: number): number
   let nextAmount = rawAmount + flatDamageBonus(state, "stun");
   if (state.talentEffects.blockToStunDamage) {
     nextAmount += blockScaledDamage(state, BLOCK_SCALED_DAMAGE_PERCENT);
+  } else {
+    nextAmount += blockScaledDamage(state, state.talentEffects.blockStunDamagePercent);
   }
   return nextAmount;
 }
@@ -197,6 +213,8 @@ function applyNatureDamageModifiers(state: BattleState, rawAmount: number): numb
   let nextAmount = rawAmount + flatDamageBonus(state, "nature");
   if (state.talentEffects.armorToNatureDamage) {
     nextAmount += state.playerStatuses.armor;
+  } else {
+    nextAmount += scalePercent(state.playerStatuses.armor, state.talentEffects.armorNatureDamagePercent);
   }
   if (state.enemyStatuses.poison > 0) {
     nextAmount += state.talentEffects.natureBonusVsPoisoned;
@@ -266,7 +284,11 @@ function computeTypeSpecificDamageBonus(
   if (effect.damageType === "physical") {
     if (doublingActive(state.talentEffects.physicalDoubledVsStunned, state.enemyCC.stunSkipTurns)) bonus += 1;
     if (doublingActive(state.talentEffects.physicalDoubledVsFrozen, state.enemyCC.freezeSkipTurns)) bonus += 1;
-    if (isBelowHalfHealth(state) && state.talentEffects.physicalDoubledBelowHalfHealth) bonus += 1;
+    if (isBelowHalfHealth(state)) {
+      bonus += state.talentEffects.physicalDoubledBelowHalfHealth
+        ? 1
+        : state.talentEffects.physicalLowHealthDamageBonusPercent / PERCENT_DENOMINATOR;
+    }
   }
   if (effect.damageType === "holy" && state.enemyStatuses.burn > 0 && state.talentEffects.holyVsBurnMultiplier > 0) {
     bonus += state.talentEffects.holyVsBurnMultiplier / PERCENT_DENOMINATOR;

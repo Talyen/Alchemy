@@ -10,10 +10,7 @@ import {
   type EquippedTrinkets,
 } from "@/lib/gear";
 import { resolveActiveRunForSave, flushSaveAfterGearMutation } from "@/features/alchemy/shared/stores/run-lifecycle";
-import {
-  dispatchGearMutationWithRunHealthSync,
-  dispatchGearSalvageWithMaterialGrant,
-} from "@/features/alchemy/shared/stores/gear-session-command";
+import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
 import { useHasActiveRun } from "@/features/alchemy/shared/stores/run-reads";
 import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profile-store";
 import {
@@ -21,15 +18,9 @@ import {
   useGearCombatRestrictions,
   type GearCombatRestrictions,
 } from "@/features/alchemy/shared/stores/gear-store";
-import type { SynchronousResult } from "@/features/alchemy/shared/stores/run-session-command";
+import { mutateGearWithFlush, salvageGearWithFlush } from "./armory-commands";
 import type { GearDraftView } from "@/features/alchemy/shared/stores/gear-store-types";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
-
-function mutateGearWithFlush<T>(flush: () => void, mutate: (state: GearDraftView) => T & SynchronousResult<T>): T {
-  const result = dispatchGearMutationWithRunHealthSync<T>({ mutate });
-  if (result) flush();
-  return result;
-}
 
 function mutateGearWithFlushAlways(flush: () => void, mutate: (state: GearDraftView) => void): void {
   dispatchGearMutationWithRunHealthSync<void>({ mutate });
@@ -97,9 +88,7 @@ export function useArmoryController(options?: { rng?: () => number }): ArmoryCon
     (instanceId) => {
       // Yield is recomputed authoritatively in the store; the preview shown in
       // the confirm dialog is deterministic, so the payout always matches it.
-      const result = dispatchGearSalvageWithMaterialGrant((state) => state.salvage(instanceId));
-      if (result) flush();
-      return Boolean(result);
+      return salvageGearWithFlush(flush, instanceId);
     },
     [flush],
   );

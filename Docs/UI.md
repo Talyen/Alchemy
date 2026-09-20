@@ -33,7 +33,7 @@ Use `ScreenShell`, `TitledScreenShell`, `ScreenHeader`, and `PageLayout` for pag
 - `Surface` is the shared interactive card/tile owner (`onClick` works for both `button` and `div` renderings; prefer `as="button"` for actions). `PortaledTooltip` with `TooltipPanel` owns tooltip chrome. `ShineText` with `GearItemTitle`/`TrinketItemTitle` (both in `gear-item-title.tsx`) own keyword/item shine typography.
 - Item title and affix palettes follow [item shine](#item-shine).
 - Shop prices (over card art and inside buttons) use unboxed icon and amount standardized on `text-xl font-semibold text-amber-200 tabular-nums` with a 24px (`h-6 w-6`) coin icon. Over card art, prices float directly on the illustration using multi-layered black contour drop-shadows (`drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] drop-shadow-[0_0_2px_rgba(0,0,0,0.95)]`) without background containers or art fades; inside buttons, prices flow naturally as inline text matching the button's typography. Unaffordable prices transition to `text-muted-foreground`.
-- `TraitBox` owns Trait containers, colored icons, keyword descriptions, and title shine across Labyrinth map details and enemy hover/inspection. Encounter icon themes live in shared configuration and also drive map effects. Enemy Traits and encounter modifiers form one deduplicated list; inspection uses two equal columns at 40rem of available content width, with a single-column fallback and full-width sole Traits. Hover and map Traits stay stacked. Apply inline-size containment only to the inspection layout: shrink-to-fit tooltips need their contents to contribute intrinsic width.
+- `TraitBox` owns unboxed Trait rows, colored icons, keyword descriptions, and title shine across Labyrinth map details and enemy hover/inspection. Traits have no individual border, background, or box padding. Encounter icon themes live in shared configuration and also drive map effects. Enemy Traits and encounter modifiers form one deduplicated list; inspection uses two equal columns at 40rem of available content width, with a single-column fallback and full-width sole Traits. Hover and map Traits stay stacked. Apply inline-size containment only to the inspection layout: shrink-to-fit tooltips need their contents to contribute intrinsic width.
 - Modal interaction and dismissal follow [Overlay lifecycle](#overlay-lifecycle).
 
 ### Item shine
@@ -68,7 +68,7 @@ Which control to reach for: `Button` owns text/label actions (Play, Back, Confir
 
 Card and collection artwork, including gear and trinket tiles, reserves a 1px frame across available, selected, disabled, purchased, and shine states, so changing interaction state cannot resize its artwork or row or recenter the screen. The thicker hover and selection outline is an absolute overlay, preserving the thin default border. Hover-only shine uses `card-art-shine`; persistent shine uses `has-shine-border`. Armory item borders are hover-only, with keyboard focus matching hover; the active equipment slot keeps its shine as a selection marker. Both hide the frame color while preserving its space. Pass frame Shine through `Surface.overlay` so the artwork clipping layer cannot hide it.
 
-Battle pile artwork, individual mana crystals, the gold counter, and the main menu logo use the standard 103.5% CSS hover scale over 200ms ease-out. Pile transfer anchors remain unscaled; mana hover wrappers preserve the crystals' independent refresh animations. Battle's End Turn button uses standard secondary outline styling, grounded border, and hover illumination without scaling or bloom.
+Battle pile artwork, the gold counter, and the main menu logo use the standard 103.5% CSS hover scale over 200ms ease-out. Pile transfer anchors remain unscaled. Individual mana crystals stay at their resting size on hover and play a brief glint masked to their artwork, preserving their independent refresh animations and dim spent appearance. Reduced motion replaces the glint sweep with a static highlight. Battle's End Turn button uses standard secondary outline styling, grounded border, and hover illumination without scaling or bloom.
 
 Artwork surfaces resolve their clipping radius from the same inline theme token and local content scale as the outer frame. The artwork radius subtracts the frame width so portrait and landscape corners meet in resting, hovered, and selected states.
 
@@ -469,7 +469,7 @@ Outside clicks dismiss it, another inspectable node switches inspection, and
 Escape dismisses and restores focus. Floor changes dismiss old selection.
 
 The inspector retains natural-aspect artwork, the category/name overlay, shared
-Trait containers, and a pinned action footer while details scroll. Inaccessible
+unboxed Trait rows, and a pinned action footer while details scroll. Inaccessible
 rooms omit the action footer and adjacency instructions. A completed boss offers
 Descend regardless of the last completed location, reporting rooms left behind.
 Combat, services, and rewards retain their existing actions.

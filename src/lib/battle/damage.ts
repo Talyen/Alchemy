@@ -1,3 +1,4 @@
+import { scalePercent } from "./amount-helpers";
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 import { UNIQUE_GEAR_COMBAT } from "../game-constants";
 import { addGoldWithCombatText } from "./combat-text";
@@ -67,7 +68,11 @@ function applyAttackPacketFollowUps(
     result = dealPlayerTypedHit(result, "bleed", venomDamage, combatTexts);
   }
   if (applyPartingCut && modifiedDamage > 0 && result.enemyHealth > 0) {
-    result = dealTalentTypedHit(result, "bleed", modifiedDamage, combatTexts, true);
+    const copiedDamage =
+      result.talentEffects.partingCutDamagePercent > 0
+        ? scalePercent(modifiedDamage, result.talentEffects.partingCutDamagePercent)
+        : modifiedDamage;
+    result = dealTalentTypedHit(result, "bleed", copiedDamage, combatTexts, true);
   }
   if (modifiedDamage > 0 && result.enemyHealth > 0) {
     if (damageType !== "physical" && bonuses.physical > 0) {

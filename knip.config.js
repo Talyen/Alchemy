@@ -23,6 +23,8 @@
 export default {
   entry: [
     "src/App.tsx",
+    // Loaded by the isolated Node worker through Vite SSR.
+    "src/app/playthrough/{career,fixtures,report}.ts",
     "src/lib/game-data/index.ts",
     "src/lib/game-constants/index.ts",
     "src/lib/gear/index.ts",

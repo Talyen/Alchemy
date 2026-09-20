@@ -61,13 +61,13 @@ describe("one-Mana card tradeoffs", () => {
     expect(played.flags.pendingWishMana).toBe(0);
     const next = advanceToPlayerTurn(resume(played));
     expect(next.wishOptions).toHaveLength(3);
-    expect(next.gold).toBe(3);
-    expect(next.playerHealth).toBe(7);
+    expect(next.gold).toBe(1);
+    expect(next.playerHealth).toBe(6);
     expect(next.flags.pendingWishMana).toBe(1);
     expect(next.cardsPlayedThisTurn).toBe(0);
     expect(next.pendingTurnStartEffects).toHaveLength(0);
     const chosen = chooseWishCard(next, next.wishOptions![0]!.id);
-    expect(chosen.gold).toBe(3);
+    expect(chosen.gold).toBe(1);
     expect(chosen.flags.pendingWishMana).toBe(1);
   });
 

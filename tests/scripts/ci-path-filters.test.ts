@@ -54,6 +54,7 @@ const PATH_CASES: Array<[string, string[], string[]]> = [
   ["src/lib/content-validation/validators.ts", ["runtime", "save"], ["save"]],
   ["src/lib/active-run-session/session.ts", ["runtime", "save"], ["save"]],
   ["src/app/use-app-save-state.ts", ["runtime", "save"], ["save", "desktop_renderer"]],
+  ["src/app/autosave-lifecycle.ts", ["runtime", "save"], ["save", "desktop_renderer"]],
   // Save specs intentionally run nothing locally (browser-test has no commands;
   // local handoff does not rerun browser journeys) while CI runs the save gate.
   ["tests/e2e/specs/save-persistence.spec.ts", ["browser-test"], ["save"]],

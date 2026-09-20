@@ -88,6 +88,9 @@ export function readShopFirstPurchaseUsed(shop: ShopSessionStateKey): boolean {
 export function readBattle(): BattleReadView {
   return deepFreezeInDev({ ...readGameplayState().battle });
 }
+export function readRunRevision(): number {
+  return readGameplayState().revision;
+}
 export function readRunInitialized(): boolean {
   return readGameplayState().run.initialized;
 }

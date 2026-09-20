@@ -15,13 +15,10 @@ export function TraitBox({ trait }: { trait: EnemyTrait }) {
   const primary = thematic[0] ?? keywords[0];
   const Icon = encounter?.Icon ?? getEnemyTraitIcon(trait);
   return (
-    <div
-      data-trait={trait.id}
-      className="flex min-w-0 items-start gap-3 rounded-shell-compact border border-white/10 bg-white/[0.03] p-3"
-    >
+    <div data-trait={trait.id} className="flex min-w-0 items-center gap-3">
       {createElement(Icon, {
         "aria-hidden": true,
-        className: cn("mt-0.5 size-8 shrink-0", primary ? keywordDefinitions[primary].colorClass : "text-stone-400"),
+        className: cn("size-9 shrink-0", primary ? keywordDefinitions[primary].colorClass : "text-stone-400"),
       })}
       <div className="min-w-0">
         <h3 className="text-lg font-semibold">

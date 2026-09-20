@@ -1,4 +1,4 @@
-import type { BattleState, CombatTextEvent } from "@/lib/battle";
+import type { BattleSnapshot, CombatTextEvent } from "@/lib/battle";
 import type { TalentPreset } from "./simulator-types";
 
 export interface BattleAnomalies {
@@ -39,7 +39,7 @@ type NumericAnomalyKey = {
 interface StatusAnomalyMetric {
   key: NumericAnomalyKey;
   label: string;
-  read: (state: BattleState) => number;
+  read: (state: BattleSnapshot) => number;
 }
 
 const STATUS_ANOMALY_METRICS: StatusAnomalyMetric[] = [
@@ -115,7 +115,7 @@ export function createEmptyAnomalies(): BattleAnomalies {
 }
 
 export function sampleAnomalies(
-  state: BattleState,
+  state: BattleSnapshot,
   combatTexts: CombatTextEvent[],
   anomalies: BattleAnomalies,
   sourceCardId?: string,

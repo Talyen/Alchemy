@@ -1,9 +1,13 @@
 export { clearAlchemySaveData, loadAlchemySaveState, saveAlchemySaveData, saveAlchemySaveDataForExit } from "./io";
-// configureSaveBackend + resetStorageIoForTests stay out of the public barrel:
-// backend wiring is owned by bootstrap-save-state.ts and the test seam by
-// tests/helpers/storage-io-test-setup.ts; both import from "./io" directly.
+// Bootstrap and headless careers explicitly install their storage transport.
+export { configureSaveBackend } from "./io";
 export { evaluateSaveCandidates, type SaveLoadState } from "./save-candidates";
-export { setWritesDisabled, subscribeSaveCancellation, type SaveWriteOutcome } from "./save-write-queue";
+export {
+  setWritesDisabled,
+  subscribeSaveCancellation,
+  waitForPendingSaveWrites,
+  type SaveWriteOutcome,
+} from "./save-write-queue";
 export type * from "./types";
 export * from "./defaults";
 export {

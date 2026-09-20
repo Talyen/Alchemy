@@ -15,6 +15,7 @@ import { BLEED_STATUS_MULTIPLIER, FIRST_EFFECT_MULTIPLIER, HALF_DIVISOR, PERCENT
 import { paceCombatMagnitude } from "./fight-pacing";
 import { dealScaledBurnWithStacks } from "./scaled-damage";
 import { getEnemyDamageMultiplier } from "./status-helpers";
+import { applyPercentBonus, scalePercent } from "./amount-helpers";
 import { clamp } from "@/lib/math";
 
 export function applyCardHealing(
@@ -140,11 +141,10 @@ function applyHealthThresholdStatBonus(
 function scaleArmorAmount(state: BattleState, amount: number): { state: BattleState; amount: number } {
   let nextAmount = amount;
   let nextState = state;
-  if (
-    nextState.talentEffects.armorDoubledBelowHalfHealth &&
-    nextState.playerHealth < nextState.playerMaxHealth / HALF_DIVISOR
-  ) {
-    nextAmount *= FIRST_EFFECT_MULTIPLIER;
+  if (nextState.playerHealth < nextState.playerMaxHealth / HALF_DIVISOR) {
+    nextAmount = nextState.talentEffects.armorDoubledBelowHalfHealth
+      ? nextAmount * FIRST_EFFECT_MULTIPLIER
+      : applyPercentBonus(nextAmount, nextState.talentEffects.armorLowHealthBonusPercent);
   }
   if (nextState.talentEffects.firstArmorCardDoubled && !nextState.flags.firstArmorCardDoubledUsed) {
     nextAmount *= FIRST_EFFECT_MULTIPLIER;
@@ -229,9 +229,7 @@ function applyForgeBlockBurst(
     state.talentEffects.forgeBlockThreshold,
     (s) => {
       let amount = s.talentEffects.forgeBlockAmount;
-      if (s.talentEffects.forgeToBlock) {
-        amount += newForge;
-      }
+      amount += s.talentEffects.forgeToBlock ? newForge : scalePercent(newForge, s.talentEffects.forgeBlockPercent);
       amount = paceCombatMagnitude(s, amount, "player");
       return addPlayerStatusWithCombatText(s, "block", amount, combatTexts, { skipFightPacing: true });
     },
@@ -241,8 +239,10 @@ function applyForgeBlockBurst(
 
 export function addForgeToPlayer(state: BattleState, baseAmount: number, combatTexts?: CombatTextEvent[]): BattleState {
   let amount = baseAmount + state.talentEffects.flatForgeGained;
-  if (state.talentEffects.forgeDoubledBelowHalfHealth && state.playerHealth < state.playerMaxHealth / HALF_DIVISOR) {
-    amount *= 2;
+  if (state.playerHealth < state.playerMaxHealth / HALF_DIVISOR) {
+    amount = state.talentEffects.forgeDoubledBelowHalfHealth
+      ? amount * 2
+      : applyPercentBonus(amount, state.talentEffects.forgeLowHealthBonusPercent);
   }
   amount = paceCombatMagnitude(state, amount, "player");
   if (amount <= 0) return state;
@@ -305,8 +305,10 @@ export function applyPlayerStatusEffect(
     state = checked.state;
     amount = checked.amount;
   }
-  if (effect.status === "block" && state.talentEffects.forgeToBlock) {
-    amount += state.playerStatuses.forge;
+  if (effect.status === "block") {
+    amount += state.talentEffects.forgeToBlock
+      ? state.playerStatuses.forge
+      : scalePercent(state.playerStatuses.forge, state.talentEffects.forgeBlockPercent);
   }
   if (effect.status === "block") {
     amount = paceCombatMagnitude(state, amount, "player");

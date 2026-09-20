@@ -137,6 +137,15 @@
   }
 }
 
+@keyframes manaGemGlint {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0% 0;
+  }
+}
+
 @keyframes manaGemSettle {
   0% {
     transform: translate3d(0, 2px, 0) scale3d(0.82, 0.82, 1);

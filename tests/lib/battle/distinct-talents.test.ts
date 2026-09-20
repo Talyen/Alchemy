@@ -76,9 +76,9 @@ describe("distinct talent conditions", () => {
       flags: { playNextCardTwice: true },
     });
     const first = play(initial, cardById["stoneskin-potion"]!);
-    expect(first.playerStatuses).toMatchObject({ armor: 9, block: 2 });
+    expect(first.playerStatuses).toMatchObject({ armor: 9, block: 1 });
     const second = play(first, cardById["plate-mail"]!);
-    expect(second.playerStatuses).toMatchObject({ armor: 11, block: 4 });
+    expect(second.playerStatuses).toMatchObject({ armor: 11, block: 2 });
     const unmatched = play(battle({ talentEffects: initial.talentEffects }), cardById["heal"]!);
     expect(unmatched.playerStatuses).toMatchObject({ armor: 0, block: 0 });
   });
@@ -141,12 +141,12 @@ describe("distinct talent conditions", () => {
   it("First Blood boosts only a hit starting without Bleed and can activate again after Bleed ends", () => {
     const initial = battle({ talentEffects: talents("First Blood") });
     const effect = { kind: "damage" as const, damageType: "bleed" as const, amount: 4 };
-    expect(computeCardDamageToEnemy(initial, effect).modifiedDamage).toBe(6);
+    expect(computeCardDamageToEnemy(initial, effect).modifiedDamage).toBe(5);
     expect(
       computeCardDamageToEnemy({ ...initial, enemyStatuses: { ...initial.enemyStatuses, bleed: 1 } }, effect)
         .modifiedDamage,
     ).toBe(4);
-    expect(computeCardDamageToEnemy(initial, effect).modifiedDamage).toBe(6);
+    expect(computeCardDamageToEnemy(initial, effect).modifiedDamage).toBe(5);
   });
 
   it("Finish Him gives a Physical hit Leech only against a previously Stunned enemy", () => {
@@ -206,10 +206,10 @@ describe("distinct talent conditions", () => {
 
   it("Desperate Siphon uses actual healing and the Health condition before healing", () => {
     const effects = talents("Desperate Siphon");
-    expect(applyLeechHealing(battle({ talentEffects: effects, playerHealth: 19 }), 8, []).playerStatuses.block).toBe(4);
+    expect(applyLeechHealing(battle({ talentEffects: effects, playerHealth: 19 }), 8, []).playerStatuses.block).toBe(2);
     expect(applyLeechHealing(battle({ talentEffects: effects, playerHealth: 20 }), 8, []).playerStatuses.block).toBe(0);
     expect(applyLeechHealing(battle({ talentEffects: effects, playerHealth: 5 }), 100, []).playerStatuses.block).toBe(
-      18,
+      9,
     );
     expect(applyLeechHealing(battle({ talentEffects: effects }), 0, []).playerStatuses.block).toBe(0);
   });

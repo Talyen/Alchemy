@@ -37,7 +37,7 @@ const leechTalents = computeTalentEffects({ leech: ["leech-first-double"] });
 
 const burn = makeTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 2 }] });
 const holy = makeTestCard({ effects: [{ kind: "damage", damageType: "holy", amount: 2 }] });
-const leech = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8, lifesteal: true }] });
+const leech = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10, lifesteal: true }] });
 const wish = makeTestCard({ effects: [{ kind: "wish", amount: 1 }] });
 
 function resume(state: ReturnType<typeof battle>) {
@@ -53,7 +53,7 @@ describe("Mana from Heaven", () => {
     expect(wished.flags.pendingWishMana).toBe(3);
     const next = advanceToPlayerTurn(resume(wished));
     expect(next.mana).toBe(6);
-    expect(next.playerHealth).toBe(12);
+    expect(next.playerHealth).toBe(11);
     expect(next.flags.pendingWishMana).toBe(0);
     expect(advanceToPlayerTurn(next).mana).toBe(3);
   });
@@ -67,8 +67,8 @@ describe("Mana from Heaven", () => {
     });
     const next = play(initial, cardById["dark-pact"]!);
     expect(next.mana).toBe(2);
-    expect(next.playerHealth).toBe(11);
-    expect(next.gold).toBe(3);
+    expect(next.playerHealth).toBe(10);
+    expect(next.gold).toBe(1);
     expect(next.flags.pendingWishMana).toBe(1);
     expect(chooseWishCard(next, next.wishOptions![0]!.id).flags.pendingWishMana).toBe(1);
   });
@@ -81,7 +81,7 @@ describe("Mana from Heaven", () => {
       [],
     );
     expect(next.mana).toBe(1);
-    expect(next.playerHealth).toBe(12);
+    expect(next.playerHealth).toBe(11);
     expect(next.flags.pendingWishMana).toBe(1);
   });
 
@@ -107,10 +107,13 @@ describe("Mana from Heaven", () => {
 describe("card play rewards", () => {
   it("Faith Barrier supplies Block that Sacred Shield uses on the same card", () => {
     const next = play(
-      battle({ talentEffects: computeTalentEffects({ holy: ["holy-block-scaling"], block: ["block-to-holy"] }) }),
+      battle({
+        playerStatuses: { block: 4 },
+        talentEffects: computeTalentEffects({ holy: ["holy-block-scaling"], block: ["block-to-holy"] }),
+      }),
       holy,
     );
-    expect(next.playerStatuses.block).toBe(2);
+    expect(next.playerStatuses.block).toBe(5);
     expect(next.enemyHealth).toBe(197);
   });
 
@@ -122,7 +125,7 @@ describe("card play rewards", () => {
       }),
       holy,
     );
-    expect(next.playerStatuses.block).toBe(2);
+    expect(next.playerStatuses.block).toBe(1);
     expect(next.enemyHealth).toBe(196);
   });
 
@@ -135,6 +138,7 @@ describe("card play rewards", () => {
   it("Thermal Vent uses Intensify, Desperate Forge, and Overheat without a feedback loop", () => {
     const next = play(
       battle({
+        playerStatuses: { forge: 1 },
         talentEffects: computeTalentEffects({
           burn: ["burn-dmg-2"],
           forge: ["forge-strength-4", "forge-strength-5", "forge-burn-burst"],
@@ -143,7 +147,7 @@ describe("card play rewards", () => {
       burn,
     );
     expect(next.playerStatuses.forge).toBe(4);
-    expect(next.enemyHealth).toBe(190);
+    expect(next.enemyHealth).toBe(194);
   });
 
   it("multiple Burn packets and repeated effects grant Forge for only the card play", () => {
@@ -297,7 +301,7 @@ describe("Sun-Struck Shield reflection", () => {
 describe("Deep Siphon", () => {
   it("boosts every explicit card Leech, including repeated effects", () => {
     const next = play(battle({ talentEffects: leechTalents, flags: { playNextCardTwice: true } }), leech);
-    expect(next.playerHealth).toBe(20);
+    expect(next.playerHealth).toBe(22);
     expect(next.flags.firstLeechCardDoubledUsed).toBe(false);
   });
 
@@ -305,7 +309,7 @@ describe("Deep Siphon", () => {
     const initial = battle({ talentEffects: leechTalents });
     const passive = applyLifestealAndPlayerHitTriggers(initial, 8, []);
     expect(passive.playerHealth).toBe(14);
-    expect(play(passive, leech).playerHealth).toBe(19);
+    expect(play(passive, leech).playerHealth).toBe(20);
   });
 
   it("boosts explicit Leech in scheduled card effects", () => {
@@ -315,7 +319,7 @@ describe("Deep Siphon", () => {
         pendingTurnStartEffects: [{ remainingTurns: 1, effects: leech.effects }],
       }),
     );
-    expect(next.playerHealth).toBe(15);
+    expect(next.playerHealth).toBe(16);
   });
 });
 

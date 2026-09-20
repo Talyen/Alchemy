@@ -209,6 +209,29 @@
     animation: manaGemSettle 260ms ease-out both;
   }
 
+  .mana-gem-glint {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    mask-size: contain;
+    mask-position: center;
+    mask-repeat: no-repeat;
+    background: linear-gradient(115deg, transparent 42%, rgb(220 245 255 / 85%) 50%, transparent 58%);
+    background-size: 300% 100%;
+    background-position: 100% 0;
+  }
+
+  .mana-gem:hover .mana-gem-glint {
+    animation: manaGemGlint 650ms ease-out both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mana-gem:hover .mana-gem-glint {
+      animation: none;
+      background: rgb(220 245 255 / 20%);
+    }
+  }
+
   .status-chip-pop {
     animation: statusChipPop 220ms var(--ease-out-expo) both;
   }

@@ -9,9 +9,11 @@ import { logStorageFailure } from "@/lib/storage-logging";
 import { isClientContext } from "@/lib/storage-environment";
 
 let saveBackend: SaveBackend = createPlatformSaveBackend();
+let backendConfigured = false;
 
 export function configureSaveBackend(backend: SaveBackend): void {
   saveBackend = backend;
+  backendConfigured = true;
 }
 
 async function collectSaveCandidates(): Promise<string[]> {
@@ -28,7 +30,7 @@ function applySaveWritePolicy(result: SaveLoadState): SaveLoadState {
 }
 
 export async function loadAlchemySaveState(): Promise<SaveLoadState> {
-  if (!isClientContext()) {
+  if (!backendConfigured && !isClientContext()) {
     return applySaveWritePolicy({ data: createDefaultSaveData(), status: { kind: "ok" } });
   }
 
@@ -50,6 +52,7 @@ export async function loadAlchemySaveState(): Promise<SaveLoadState> {
 export async function resetStorageIoForTests(): Promise<void> {
   await sharedSaveQueue.reset();
   saveBackend = createPlatformSaveBackend();
+  backendConfigured = false;
 }
 
 function trySerializeSaveSnapshot(data: UnstampedSaveData, context: "" | " during page exit"): string | null {
@@ -87,7 +90,7 @@ export function serializeSaveSnapshot(data: UnstampedSaveData, now: number = Dat
 }
 
 export async function saveAlchemySaveData(data: UnstampedSaveData): Promise<SaveWriteOutcome> {
-  if (!isClientContext()) return "skipped";
+  if (!backendConfigured && !isClientContext()) return "skipped";
   return await sharedSaveQueue.enqueue(data, writeSaveSnapshot);
 }
 
@@ -117,7 +120,11 @@ async function flushSerializedExitSave(data: UnstampedSaveData, serialized: stri
 }
 
 export async function saveAlchemySaveDataForExit(data: UnstampedSaveData): Promise<SaveWriteOutcome> {
-  if (!isClientContext() || sharedSaveQueue.areWritesDisabled() || sharedSaveQueue.isClearPending) {
+  if (
+    (!backendConfigured && !isClientContext()) ||
+    sharedSaveQueue.areWritesDisabled() ||
+    sharedSaveQueue.isClearPending
+  ) {
     return "skipped";
   }
   const serialized = trySerializeSaveSnapshot(data, " during page exit");
@@ -128,7 +135,7 @@ export async function saveAlchemySaveDataForExit(data: UnstampedSaveData): Promi
 export async function clearAlchemySaveData(
   mode: "default" | "localWipe" | "wipeForReload" = "default",
 ): Promise<boolean> {
-  if (!isClientContext()) return true;
+  if (!backendConfigured && !isClientContext()) return true;
   const forceLocalWipe = mode !== "default";
   const keepWritesDisabled = mode === "wipeForReload";
   return await sharedSaveQueue.enqueueClear(() => saveBackend.clear(SAVE_KEY, { forceLocalWipe }), {

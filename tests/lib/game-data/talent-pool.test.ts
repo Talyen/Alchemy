@@ -220,15 +220,15 @@ describe("computeTalentEffects", () => {
       armor: ["armor-mitigate-stun"],
     });
 
-    expect(effects.blockToPhysicalDamageMultiplier).toBeCloseTo(0.3);
+    expect(effects.blockToPhysicalDamageMultiplier).toBeCloseTo(0.1);
     expect(effects.physicalStripArmorWhileBlocked).toBe(true);
     expect(effects.natureLeechChance).toBe(10);
-    expect(effects.afflictionLeechBonusPercent).toBe(50);
-    expect(effects.goldOnWish).toBe(3);
+    expect(effects.afflictionLeechBonusPercent).toBe(10);
+    expect(effects.goldOnWish).toBe(1);
     expect(effects.blockPerDeclinedWishCard).toBe(1);
     expect(effects.cleanseBelowHealthPercent).toBe(25);
     expect(effects.healthThresholdArmor).toHaveLength(1);
-    expect(effects.healthThresholdArmor).toEqual(expect.arrayContaining([{ threshold: 50, amount: 5 }]));
+    expect(effects.healthThresholdArmor).toEqual(expect.arrayContaining([{ threshold: 50, amount: 3 }]));
   });
 });
 

@@ -2,9 +2,7 @@ import { useUiStore, isBattleInspectionOpen } from "../../shared/stores/ui-store
 import type { MouseEvent } from "react";
 import {
   canPlayCard as canPlayCardInBattle,
-  chooseWishCard,
   isAttackCard,
-  playBattleCardResolved,
   type BattleSnapshot,
   type CombatTextEvent,
 } from "@/lib/battle";
@@ -21,15 +19,8 @@ import { runBattleDraw } from "./draw-sequence";
 import { type createBattleSession } from "./battle-session";
 import type { createBattleTransferDeps } from "./draw-sequence";
 import type { AutoplayCardControl, BattleControllerContext } from "./battle-context";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import {
-  awardCardXP,
-  setBattleState,
-  withDraftWorldBattleRng,
-  snapshotBattleState,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
-import { discoverCardIds } from "../../shared/stores/profile-store";
+import { commitCardPlay, commitBattleWish } from "./battle-action-commands";
 
 export function createBattleCardPlay(
   ctx: BattleControllerContext,
@@ -153,14 +144,7 @@ export function createBattleCardPlay(
       return false;
     }
     const sessionNum = ctx.battleSessionRef.current;
-    const played = dispatchRunSessionCommand((draft) => {
-      const bound = withDraftWorldBattleRng(draft, currentState);
-      if (!canPlayCard(card, index, bound)) return null;
-      const resolution = playBattleCardResolved(bound, card.id, index, PLAYABLE_HAND_OPTIONS);
-      setBattleState(draft, resolution.state);
-      awardCardXP(draft, card);
-      return { ...resolution, state: snapshotBattleState(resolution.state) };
-    });
+    const played = commitCardPlay(index, card.id);
     if (!played) {
       if (!options?.silentReject) playUISound("error");
       return false;
@@ -234,14 +218,7 @@ export function createBattleCardPlay(
   function commitWishChoice(card: BattleCard, errorContext: string): boolean {
     const currentState = getBattle().battleState;
     if (!currentState.wishOptions?.some((option) => option.id === card.id)) return false;
-    const newState = dispatchRunSessionCommand((draft) => {
-      const bound = withDraftWorldBattleRng(draft, currentState);
-      if (!bound.wishOptions?.some((option) => option.id === card.id)) return null;
-      const next = chooseWishCard(bound, card.id);
-      setBattleState(draft, next);
-      discoverCardIds(draft, [card.id]);
-      return snapshotBattleState(next);
-    });
+    const newState = commitBattleWish(card.id);
     if (!newState) return false;
     const sessionNum = ctx.battleSessionRef.current;
     session.checkBattleEnd(newState, sessionNum);

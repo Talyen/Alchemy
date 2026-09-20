@@ -172,6 +172,53 @@ describe("session facade API", () => {
     expect(readBattle().battleState.turnPhase).toBe("enemy");
   });
 
+  it("rebinds old talent tuning on resume without replaying opening rewards or clearing prepared bonuses", () => {
+    const battle = defaultBattleState();
+    battle.playerHealth = 10;
+    battle.playerStatuses = { ...battle.playerStatuses, block: 7, armor: 3, forge: 2 };
+    battle.enemyHealth = 17;
+    battle.enemyStatuses.freeze = 2;
+    battle.flags.nextPhysicalDealsBleed = true;
+    battle.flags.nextHitPhysicalBonus = 4;
+    battle.flags.pendingWishMana = 2;
+    battle.talentEffects = {
+      ...battle.talentEffects,
+      forgeToBurn: true,
+      armorToPhysicalDamage: true,
+      nextAttackPhysicalOnDodge: 4,
+    };
+    initializeActiveBattle(battle, null);
+    setScreen(ROUTE_SCREENS.BATTLE);
+    const saved = snapshotRun(ROUTE_SCREENS.BATTLE);
+    restoreRun(
+      saved,
+      {},
+      {
+        forge: ["forge-to-burn"],
+        physical: ["physical-armored-fists"],
+        dodge: ["dodge-open-flank"],
+        bleed: ["bleed-physical-bonus"],
+        health: ["health-start"],
+        freeze: ["freeze-start-amount"],
+      },
+    );
+    const restored = readBattle().battleState;
+    expect(restored.talentEffects).toMatchObject({
+      forgeToBurn: false,
+      forgeBurnDamagePercent: 50,
+      armorToPhysicalDamage: false,
+      armorPhysicalDamagePercent: 25,
+      nextAttackPhysicalOnDodge: 2,
+      partingCutDamagePercent: 50,
+    });
+    expect(restored.playerHealth).toBe(10);
+    expect(restored.playerStatuses).toEqual(battle.playerStatuses);
+    expect(restored.enemyHealth).toBe(17);
+    expect(restored.enemyStatuses.freeze).toBe(2);
+    expect(restored.flags).toMatchObject({ nextPhysicalDealsBleed: true, nextHitPhysicalBonus: 4, pendingWishMana: 2 });
+    expect(snapshotRun(ROUTE_SCREENS.BATTLE).rng).toEqual(saved.rng);
+  });
+
   it("snapshots and restores pending gear rewards on the rewards screen", () => {
     const instance = { instanceId: "gear-1", definitionId: "ruby-ring-basic" as const, affixes: [] };
     setRewardState({

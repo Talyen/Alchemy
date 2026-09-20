@@ -5,6 +5,22 @@ interface HealthThresholdBonus {
 }
 
 export const DEFAULT_TALENT_EFFECTS = {
+  // Numeric tuning for current talents; earlier boolean fields remain readable in saved snapshots.
+  armorLowHealthBonusPercent: 0,
+  partingCutDamagePercent: 0,
+  blockHolyDamagePercent: 0,
+  blockStunDamagePercent: 0,
+  dodgeBlockPercent: 0,
+  forgeBurnDamagePercent: 0,
+  forgeHolyDamagePercent: 0,
+  forgeBlockPercent: 0,
+  forgeBleedDamagePercent: 0,
+  forgeLowHealthBonusPercent: 0,
+  armorNatureDamagePercent: 0,
+  armorPhysicalDamagePercent: 0,
+  dodgePhysicalDamagePercent: 0,
+  physicalLowHealthDamageBonusPercent: 0,
+
   cleanseCcOnDodge: false,
   burnOnDodgeBurning: 0,
   consumeDetonatesBurn: false,

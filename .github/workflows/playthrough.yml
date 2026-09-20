@@ -1,0 +1,30 @@
+name: Headless playthroughs
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  correctness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+      - run: npm run test:playthrough
+      - run: npm run balance:playthrough -- --seeds 1,2 --runs 2
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: headless-playthroughs
+          path: reports/playthrough/
+          if-no-files-found: ignore

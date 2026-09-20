@@ -133,6 +133,11 @@ export class SaveWriteQueue {
     return run;
   }
 
+  /** Await already-enqueued writes without creating a final save (deliberate checkpoints). */
+  async waitForIdle(): Promise<void> {
+    while (!this.isIdle) await this.chain;
+  }
+
   async reset(): Promise<void> {
     await this.chain;
     this.chain = Promise.resolve();
@@ -182,4 +187,8 @@ export function subscribeSaveCancellation(listener: () => void): () => void {
 
 export function setWritesDisabled(disabled: boolean): void {
   sharedSaveQueue.setWritesDisabled(disabled);
+}
+
+export function waitForPendingSaveWrites(): Promise<void> {
+  return sharedSaveQueue.waitForIdle();
 }

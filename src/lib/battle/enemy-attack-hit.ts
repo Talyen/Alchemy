@@ -7,7 +7,7 @@ import {
   applyHealingWithCombatText,
 } from "./combat-text";
 import { processCompanionTurnStart } from "./companion";
-import { halveRounded } from "./amount-helpers";
+import { halveRounded, scalePercent } from "./amount-helpers";
 import { takeRandomCardFromDeck, drawKeywordCard } from "./draw";
 import { tryDodgeEnemyAttackPacket } from "./dodge";
 import { applyDodgeTalentStatuses } from "./dodge-talent-rewards";
@@ -54,8 +54,11 @@ function applyDodgeDefensiveReactions(
   if (nextState.gearEffects.blockOnDodge > 0) {
     nextState = addPlayerStatusWithCombatText(nextState, "block", nextState.gearEffects.blockOnDodge, combatTexts);
   }
-  if (nextState.talentEffects.blockOnDodgeEqualToAttack && dodgedAmount > 0) {
-    nextState = addPlayerStatusWithCombatText(nextState, "block", dodgedAmount, combatTexts, { skipFightPacing: true });
+  const dodgeBlock = nextState.talentEffects.blockOnDodgeEqualToAttack
+    ? dodgedAmount
+    : scalePercent(dodgedAmount, nextState.talentEffects.dodgeBlockPercent);
+  if (dodgeBlock > 0) {
+    nextState = addPlayerStatusWithCombatText(nextState, "block", dodgeBlock, combatTexts, { skipFightPacing: true });
   }
   const armor = nextState.gearEffects.armorOnDodge + nextState.talentEffects.armorOnDodge;
   if (armor > 0) nextState = applyArmorReward(nextState, armor, combatTexts);
@@ -73,8 +76,11 @@ function applyDodgeCounterAttacks(
   if (nextState.gearEffects.physicalOnDodge > 0 && nextState.enemyHealth > 0) {
     nextState = dealPlayerTypedHit(nextState, "physical", nextState.gearEffects.physicalOnDodge, combatTexts);
   }
-  if (nextState.talentEffects.physicalOnDodgeEqualToAttack && dodgedAmount > 0 && nextState.enemyHealth > 0) {
-    nextState = dealTalentTypedHit(nextState, "physical", dodgedAmount, combatTexts, true);
+  const riposteDamage = nextState.talentEffects.physicalOnDodgeEqualToAttack
+    ? dodgedAmount
+    : scalePercent(dodgedAmount, nextState.talentEffects.dodgePhysicalDamagePercent);
+  if (riposteDamage > 0 && nextState.enemyHealth > 0) {
+    nextState = dealTalentTypedHit(nextState, "physical", riposteDamage, combatTexts, true);
   }
   if (nextState.gearEffects.bleedOnDodge > 0 && nextState.enemyHealth > 0) {
     nextState = dealPlayerTypedHit(nextState, "bleed", nextState.gearEffects.bleedOnDodge, combatTexts);
@@ -104,7 +110,7 @@ function applyDodgeOffensiveBuffs(state: BattleState): BattleState {
       flags: { ...nextState.flags, nextHitCrit: true },
     };
   }
-  if (nextState.talentEffects.partingCutOnDodge) {
+  if (nextState.talentEffects.partingCutOnDodge || nextState.talentEffects.partingCutDamagePercent > 0) {
     nextState = { ...nextState, flags: { ...nextState.flags, nextPhysicalDealsBleed: true } };
   }
   if (nextState.talentEffects.nextArcheryCardFreeOnDodge) {

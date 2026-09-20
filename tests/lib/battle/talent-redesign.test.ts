@@ -143,11 +143,11 @@ describe("repeatable talent replacements", () => {
         talentEffects: talents("leech", "leech-nature-chance"),
         enemyStatuses: { [status]: 2 },
       });
-      expect(applyLeechHealing(state, 4, []).playerHealth).toBe(16);
+      expect(applyLeechHealing(state, 10, []).playerHealth).toBe(21);
       expect(
-        applyLeechHealing({ ...state, enemyStatuses: { ...state.enemyStatuses, poison: 2, bleed: 2 } }, 4, [])
+        applyLeechHealing({ ...state, enemyStatuses: { ...state.enemyStatuses, poison: 2, bleed: 2 } }, 10, [])
           .playerHealth,
-      ).toBe(16);
+      ).toBe(21);
     },
   );
 
@@ -212,10 +212,10 @@ describe("repeatable talent replacements", () => {
   it("refreshes Sanguine Overflow without stacking or triggering at full Health", () => {
     const state = battle({ playerHealth: 28, talentEffects: talents("leech", "leech-block-enemy") });
     const healed = applyLeechHealing(state, 2, []);
-    expect(healed.flags.sanguinePhysicalBonus).toBe(3);
-    expect(applyLeechHealing({ ...healed, playerHealth: 29 }, 1, []).flags.sanguinePhysicalBonus).toBe(3);
+    expect(healed.flags.sanguinePhysicalBonus).toBe(2);
+    expect(applyLeechHealing({ ...healed, playerHealth: 29 }, 1, []).flags.sanguinePhysicalBonus).toBe(2);
     const hit = play(healed, attack("multi", "physical", 2));
-    expect(healed.enemyHealth - hit.enemyHealth).toBe(5);
+    expect(healed.enemyHealth - hit.enemyHealth).toBe(4);
     expect(hit.flags.sanguinePhysicalBonus).toBe(0);
     expect(applyLeechHealing(hit, 4, []).flags.sanguinePhysicalBonus).toBe(0);
   });
@@ -271,8 +271,8 @@ describe("repeatable talent replacements", () => {
     const second = play(first, arrow);
     const third = play(second, arrow);
     expect(state.enemyHealth - first.enemyHealth).toBe(4);
-    expect(first.enemyHealth - second.enemyHealth).toBe(6);
-    expect(second.enemyHealth - third.enemyHealth).toBe(6);
+    expect(first.enemyHealth - second.enemyHealth).toBe(5);
+    expect(second.enemyHealth - third.enemyHealth).toBe(5);
     const nextTurn = advanceToPlayerTurn(third);
     expect(nextTurn.enemyHealth - play(nextTurn, arrow).enemyHealth).toBe(4);
   });
@@ -318,7 +318,7 @@ describe("repeatable talent replacements", () => {
     const once = addGoldWithCombatText(state, 2, []);
     const twice = addGoldWithCombatText(once, 2, []);
     expect(twice.gold - state.gold).toBe(8);
-    expect(twice.playerStatuses.block).toBe(4);
+    expect(twice.playerStatuses.block).toBe(2);
     expect(addGoldWithCombatText(twice, 0)).toBe(twice);
   });
 
@@ -517,9 +517,9 @@ describe("repeatable talent replacements", () => {
       expect(next.wishOptions).toHaveLength(4);
       next = chooseWishCard(next, next.wishOptions![0]!.id);
     }
-    expect(next.gold).toBe(9);
+    expect(next.gold).toBe(3);
     expect(next.mana).toBe(state.mana - 3);
-    expect(next.playerStatuses.block).toBe(15);
+    expect(next.playerStatuses.block).toBe(9);
   });
 
   it("card Leech can trigger Clean Slate and Sanguine Overflow without recursive healing", () => {
@@ -538,7 +538,7 @@ describe("repeatable talent replacements", () => {
     });
     const after = play(state, leech);
     expect(after.playerHealth).toBe(30);
-    expect(after.flags.sanguinePhysicalBonus).toBe(3);
+    expect(after.flags.sanguinePhysicalBonus).toBe(2);
     expect([after.playerStatuses.poison, after.playerStatuses.bleed].filter((value) => value === 0)).toHaveLength(1);
   });
 

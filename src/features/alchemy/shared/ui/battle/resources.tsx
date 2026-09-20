@@ -65,7 +65,7 @@ export function ManaPanel({ mana, maxMana }: { mana: number; maxMana: number }) 
           const isFilled = index < mana;
           const isOverflow = index >= maxMana;
           return (
-            <span key={`mana-${index}`} className={cn("inline-flex", cardHoverScaleClass)}>
+            <span key={`mana-${index}`} className="mana-gem relative inline-flex">
               <img
                 key={`mana-${manaToken}-${isFilled}`}
                 src={battleManaCrystal}
@@ -77,6 +77,11 @@ export function ManaPanel({ mana, maxMana }: { mana: number; maxMana: number }) 
                   isFilled && isOverflow && "brightness-125 drop-shadow-mana-overflow-glow",
                   !isFilled && "opacity-20",
                 )}
+              />
+              <span
+                aria-hidden="true"
+                className={cn("mana-gem-glint", !isFilled && "opacity-20")}
+                style={{ maskImage: `url(${battleManaCrystal})` }}
               />
             </span>
           );

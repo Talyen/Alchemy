@@ -1,6 +1,6 @@
 ---
-status: active
-updated: 2026-09-18
+status: complete
+updated: 2026-09-19
 ---
 
 # Headless Playthrough Progression Simulation
@@ -9,7 +9,7 @@ updated: 2026-09-18
 
 Build an automated, headless playthrough simulation framework that exercises player-like decisions while progressing through Alchemy from a fresh save file across all heroes, abilities, talents, game modes, equipment, and homestead systems.
 
-The simulator runs directly against the game engine and synchronous store command pipeline ([`dispatchRunSessionCommand`](../../src/features/alchemy/shared/stores/run-session-command.ts)) without mounting React, rendering DOM, compiling styles, or playing audio (presentation `afterCommit` effects stay stubbed). This targets high-speed execution to discover progression blockers, non-battle balance anomalies, economic deadlocks, illegal state transitions, and save corruption across diverse RNG seeds. Phase 0 measures feasibility and major costs; the first complete career provides the end-to-end throughput needed to set reliable sweep budgets.
+The simulator runs directly against the game engine and synchronous store command pipeline ([`dispatchRunSessionCommand`](../../../src/features/alchemy/shared/stores/run-session-command.ts)) without mounting React, rendering DOM, compiling styles, or playing audio (presentation `afterCommit` effects stay stubbed). This targets high-speed execution to discover progression blockers, non-battle balance anomalies, economic deadlocks, illegal state transitions, and save corruption across diverse RNG seeds. Phase 0 measures feasibility and major costs; the first complete career provides the end-to-end throughput needed to set reliable sweep budgets.
 
 ---
 
@@ -76,7 +76,7 @@ These defaults guide implementation; example counts and thresholds remain provis
 
 - **Decision**: Use an ephemeral in-memory storage adapter beneath the production save/load pipeline. Exercise the complete save, including permanent profile progression and the active run; `encodeRunResumeSnapshot` / `decodeRunResumeSnapshot` alone cover only the run. Preserve production save triggers, serialization, candidate selection, repair diagnostics, and hydration at the supported save points described below. A pure in-memory draft that skips encode/decode would hide the persistence bugs this framework exists to catch. Use the actual shipping storage adapter in a separate integration check where practical. A scratch-file adapter tests only its own I/O behavior and must not be treated as coverage of a different shipping storage backend.
 
-Autosave currently starts in the React effect in [`use-app-save-state.ts`](../../src/app/use-app-save-state.ts), using [`autosave-scheduler.ts`](../../src/app/autosave-scheduler.ts). Importing stores and installing storage alone will not start it. Phase 0 must identify the shared production lifecycle needed to subscribe, schedule, acknowledge writes, and dispose without mounting React; extract that orchestration if necessary rather than copying it into the harness. Use controlled timers and await relevant write acknowledgements for deliberate save/resume checks. Crash scenarios instead interrupt at the declared boundary without draining pending work. A command commit and a completed storage write are distinct events.
+Autosave currently starts in the React effect in [`use-app-save-state.ts`](../../../src/app/use-app-save-state.ts), using [`autosave-scheduler.ts`](../../../src/app/autosave-scheduler.ts). Importing stores and installing storage alone will not start it. Phase 0 must identify the shared production lifecycle needed to subscribe, schedule, acknowledge writes, and dispose without mounting React; extract that orchestration if necessary rather than copying it into the harness. Use controlled timers and await relevant write acknowledgements for deliberate save/resume checks. Crash scenarios instead interrupt at the declared boundary without draining pending work. A command commit and a completed storage write are distinct events.
 
 ### 6. Simulated time
 
@@ -108,7 +108,7 @@ Track reached choices, transitions, unlocks, and resume points, not just seed co
 
 ### 3. In-run encounters and flow
 
-- **Combat Resolution**: Integrates existing battle simulator policies (`greedy-damage`, `greedy-effective-damage`, `random-playable`, `defensive-random`) with full handling of wish cards, companion actions, status effects, and elite/boss modifiers. Combat tuning stays owned by game-design in `src/lib/battle/autoplay-policy.ts` (see `src/lib/balance/play-policy.ts`); the sim reuses those weights. If a distinct test strategy needs different tuning, prefer an explicit policy configuration or a separate decision policy that still uses production rules; avoid copying the existing implementation. Assign each archetype an explicit `combatPolicy`; current wish resolution is random and needs an explicit archetype-aware or fuzz policy decision during implementation. The existing isolated simulator in [`simulator.ts`](../../src/lib/balance/simulator.ts) consumes battle RNG for random card and Wish selections. Reuse its scoring helpers, but supply a separate recorded policy RNG for playthrough decisions; do not reuse its automated-turn loop unchanged or advance combat RNG while ranking choices.
+- **Combat Resolution**: Integrates existing battle simulator policies (`greedy-damage`, `greedy-effective-damage`, `random-playable`, `defensive-random`) with full handling of wish cards, companion actions, status effects, and elite/boss modifiers. Combat tuning stays owned by game-design in `src/lib/battle/autoplay-policy.ts` (see `src/lib/balance/play-policy.ts`); the sim reuses those weights. If a distinct test strategy needs different tuning, prefer an explicit policy configuration or a separate decision policy that still uses production rules; avoid copying the existing implementation. Assign each archetype an explicit `combatPolicy`; current wish resolution is random and needs an explicit archetype-aware or fuzz policy decision during implementation. The existing isolated simulator in [`simulator.ts`](../../../src/lib/balance/simulator.ts) consumes battle RNG for random card and Wish selections. Reuse its scoring helpers, but supply a separate recorded policy RNG for playthrough decisions; do not reuse its automated-turn loop unchanged or advance combat RNG while ranking choices.
 - **Reward Flow**: Card draft picks, gold accumulation, material awards, item/relic claims, skip actions, and proper advancement of multi-part reward bundles.
 - **Node Navigation**: Dynamic path selection across standard combat, elites, campfires, card shops, trinket shops, equipment shops, alchemist shops, mystery rooms, and corruption nodes.
 - **Shop Economy**: Purchasing cards, relics, materials, and gear; purchasing card removals; handling insufficient gold and empty slots gracefully.
@@ -266,9 +266,9 @@ The framework continuously monitors and reports across both non-battle progressi
 
 - **Deadlock Detection**: Unresolvable screens where no valid command can be dispatched; orphaned reward claim locks; unsolvable mystery choices; or unnavigable map states. Explicitly exercise claim/abandon/cancel paths (`begin/commitDestinationClaim`, reward claim locks, `interruptedFlow` resume, labyrinth pending nodes/modifiers, corruption/mystery abandon, Wildwood phase change with its double-complete guard), not just the happy path.
 - **Rejected and Repeated Actions**: Legal-choice careers cannot test command rejection. Add a small targeted suite for stale choices, repeated claims, and purchases that are no longer affordable. Assert the production rejection contract and absence of unintended rewards, charges, or progression changes. Keep deliberately invalid requests out of player-like balance samples.
-- **Post-Commit Failures**: Follow the [production command contract](../ARCHITECTURE.md#post-commit-behavior): an `afterCommit` exception can leave gameplay already committed. Record the attempted action, before/after revision, resulting state where readable, and failure stage; stop and preserve evidence rather than automatically retrying and risking a duplicate action. Prove this recorder behavior with a controlled post-commit failure alongside an execution failure that rolls back.
+- **Post-Commit Failures**: Follow the [production command contract](../../ARCHITECTURE.md#post-commit-behavior): an `afterCommit` exception can leave gameplay already committed. Record the attempted action, before/after revision, resulting state where readable, and failure stage; stop and preserve evidence rather than automatically retrying and risking a duplicate action. Prove this recorder behavior with a controlled post-commit failure alongside an execution failure that rolls back.
 - **Bounded Execution**: Bound actions per decision, battle turns, and career steps; use an external wall-clock watchdog for synchronous hangs, even while careers execute sequentially. Persist a bounded action journal and checkpoints as execution proceeds so a killed runner leaves useful evidence. Record each attempted action before invoking it. Retain a restorable checkpoint and every action since that checkpoint; never truncate that suffix merely to meet the journal limit. If checkpointing is unavailable mid-flow, retain history back to the previous supported checkpoint. Start with a career-start snapshot and the journal; add intermediate checkpoints only when replay cost justifies them. If evidence reaches its storage budget before a safe checkpoint, stop as incomplete rather than deleting required replay history. Record budget exhaustion separately from defeat or a confirmed softlock. Distinguish a missing harness handler or a policy repeatedly choosing no-ops from a game state with no legal way forward.
-- **Continuous Save Validation**: `SaveDataSchema` is load-tolerant (nearly every field has `.catch()` repair), so a passing `safeParse()` alone cannot prove hygiene. Check the production loader’s repair diagnostics: `safeParseWithErrors` collects nested card warnings, while [`evaluateSaveCandidates`](../../src/features/alchemy/shared/storage/save-candidates.ts) also detects top-level repairs. Newly produced saves must load without unexpected repairs. Compare saved and restored gameplay fields, allowing only documented load normalization (such as the live-combat gold override), and check revision / claim-lock behavior. Round-trip stability is an additional check, not proof of lossless persistence: repaired or dropped data can be stable on subsequent passes. Keep intentional corrupt-save recovery fixtures separate and assert their expected repairs. In the small correctness suite, validate every supported save point exercised by the scenario. Broader sweeps may sample expensive checks at a recorded interval, plus run/career boundaries and failures where possible; retain cheap invariants after each action. Performance budgets should reduce sweep size before weakening the correctness suite.
+- **Continuous Save Validation**: `SaveDataSchema` is load-tolerant (nearly every field has `.catch()` repair), so a passing `safeParse()` alone cannot prove hygiene. Check the production loader’s repair diagnostics: `safeParseWithErrors` collects nested card warnings, while [`evaluateSaveCandidates`](../../../src/features/alchemy/shared/storage/save-candidates.ts) also detects top-level repairs. Newly produced saves must load without unexpected repairs. Compare saved and restored gameplay fields, allowing only documented load normalization (such as the live-combat gold override), and check revision / claim-lock behavior. Round-trip stability is an additional check, not proof of lossless persistence: repaired or dropped data can be stable on subsequent passes. Keep intentional corrupt-save recovery fixtures separate and assert their expected repairs. In the small correctness suite, validate every supported save point exercised by the scenario. Broader sweeps may sample expensive checks at a recorded interval, plus run/career boundaries and failures where possible; retain cheap invariants after each action. Performance budgets should reduce sweep size before weakening the correctness suite.
 - **Resume Behavior**: Where the save contract promises exact continuation, compare uninterrupted play with save → fresh runtime/reset → production load → continued play under the same recorded decisions and controlled randomness. Compare meaningful gameplay state and rewards; exclude only documented transient fields. Where loading intentionally cancels or normalizes an interrupted flow, assert that recovery behavior and continue from the recovered choices instead of requiring the old action journal to remain valid. Cover interrupted flows and run-end rewards for lost or duplicated progress. Codec stability alone can miss consistently dropped state.
 - **Crash Recovery**: Keep this separate from deliberate save/resume. At selected persistence boundaries, restart from the last bytes actually written through production persistence, without forcing a final save. Assert the documented recovery guarantee, including no duplicate grants; do not demand preservation of progress the game has not committed. An in-memory adapter can test write sequencing, but physical storage failure and durability require the shipping backend's integration checks.
 - **Numerical Bounds**: Player/enemy health, gold, currencies, and item counts asserting `Number.isFinite()` and staying within legal bounds (`health >= 0`, `gold >= 0`).
@@ -292,7 +292,7 @@ Unlike the standalone battle balance simulator (which evaluates synthetic, isola
 - **Severe Attrition Spikes** (provisional shape; confirm against baseline variance before gating):
   - Standard hallway encounters dealing a large share of player max health in observed damage. Investigate across policies before calling the damage unavoidable or the transition unwinnable.
 - **Compounded Status & Damage Anomalies**:
-  - Reusing the anomaly tracking engine from [`anomalies.ts`](../../src/lib/balance/anomalies.ts) across playthrough battles to detect runaway compounding effects:
+  - Reusing the anomaly tracking engine from [`anomalies.ts`](../../../src/lib/balance/anomalies.ts) across playthrough battles to detect runaway compounding effects:
     - Unbounded status stacks (e.g. 5,000+ Poison, Burn, or Bleed).
     - Infinite Block / Armor accumulation.
     - Extreme single-hit damage spikes resulting from unintended multiplicative interactions between gear, talents, and boons.
@@ -336,7 +336,7 @@ Produce one structured result for terminal summaries, JSON comparisons, and a la
 
 ### Tier 2: Interactive HTML progression report (`reports/playthrough.html`)
 
-Leverages Alchemy's existing report layout utilities ([`report-layout.ts`](../../src/lib/balance/report-layout.ts)) and, where possible, the existing `report-model` / `report-rankings` / `findings` infrastructure instead of a from-scratch renderer, to render a shareable visual dashboard:
+Leverages Alchemy's existing report layout utilities ([`report-layout.ts`](../../../src/lib/balance/report-layout.ts)) and, where possible, the existing `report-model` / `report-rankings` / `findings` infrastructure instead of a from-scratch renderer, to render a shareable visual dashboard:
 
 1. **Executive Red Flag Box**: Highlights top 3 balance or softlock concerns (e.g., _"Act 2 Boss kills 84% of Poison Rogues"_, _"Herb drops bottleneck Tier 2 Garden construction"_).
 2. **Run Mortality Funnel**: Step-by-step survival drop-offs by floor and act, visualizing where player runs die.
@@ -358,28 +358,28 @@ Leverages Alchemy's existing report layout utilities ([`report-layout.ts`](../..
 
 ## Phased implementation steps
 
-- [ ] **Phase 0: Headless spike + benchmark (required before committing to budgets)**
+- [x] **Phase 0: Headless spike + benchmark (required before committing to budgets)**
   - Prove one complete battle action and settlement, one shop purchase, one mystery choice, and one homestead action run in plain Node/vitest with clocks/RNG injected. Prove that a production-triggered save is acknowledged and can be loaded by a fresh runtime without React starting the autosave lifecycle. Stub only presentation effects; preserve any deferred work required for gameplay or persistence, even if it shares an `afterCommit` boundary.
   - Choose the simplest reliable career isolation boundary. Try explicit reset against the global Zustand aggregate; run scenario A alone and after scenario B and require the same result. Reset must cover storage contents, subscriptions, pending work, and injected clocks/RNG/IDs, while preserving progression within each career. If complete reset needs invasive lifecycle changes or remains unreliable, use a fresh child process per career. Process isolation is a correctness option, independent of parallel execution; keep careers sequential initially and measure startup cost before optimizing.
   - Measure action execution and persistence-validation costs to estimate feasibility. Finalize sweep budgets only after Phase 1 measures a complete career.
   - Resolve the runner location through the `architect` skill: the proposed src/lib/simulation/playthrough/ path cannot drive feature commands as written (`src/lib` must stay React-free and must not import from `features/` per `LIB_NO_FEATURES`; only `shared/stores` may import the gameplay aggregate). Place the harness where feature-command imports are legal.
-- [ ] **Phase 1: Core In-Run Flow & Invariant Harness**
+- [x] **Phase 1: Core In-Run Flow & Invariant Harness**
   - Scaffold the playthrough simulation runner at the architect-approved location (not `src/lib` if it imports feature commands).
   - Implement one complete vertical slice: fresh save -> character select -> battle -> rewards -> map navigation -> campfires -> victory/defeat -> run-end settlement -> next run. Start with one hero in Campaign and a simple policy; expand breadth after this lifecycle works. Handle every mandatory choice reachable in that slice through production actions, including basic shop/event handling if encountered. Later phases add breadth and richer policies. Phase 1 must complete without bypassing encounters, directly mutating game state, or silently discarding inconvenient seeds.
   - Ship minimal CLI, action journal, replay bundle, bounded execution, and stdout/JSON outcomes with this first loop. Acceptance: reproduce a captured failure (a controlled test failure is sufficient) in a fresh process, retain victory and defeat settlement scenarios, and verify one save/resume continuation against uninterrupted play. Measure complete-career throughput and add the bounded correctness smoke to CI once these checks pass.
   - Assert save validity at the frequency defined in Anomaly §1 plus reward/destination claim-lock and `interruptedFlow` hygiene with reset between independent careers.
   - Retain focused rejection and duplicate-claim scenarios alongside the legal-choice career. Check recovery from the last persisted save at one run-settlement boundary; extend interruption coverage as additional flows are supported.
-- [ ] **Phase 2: Earned Progression & Between-Run Decisions**
+- [x] **Phase 2: Earned Progression & Between-Run Decisions**
   - Extend the Phase 1 run-end coverage across material harvesting, XP/talent progression, and character/difficulty unlocking.
   - Build meta-agent heuristics: spending talent points, upgrading homestead structures, and equipping armory gear.
   - Acceptance: retain a fresh-save scenario that earns an affordable upgrade, purchases or equips it through production actions, saves/resumes, and verifies that its intended effect carries into the next run. Use targeted fixtures for later unlocks rather than requiring long careers to cover every branch.
   - Expand the basic career loop to longer careers on a single persistent save, checking unlock and spending milestones.
-- [ ] **Phase 3: Comprehensive In-Run Encounters (Shops, Mystery, All Modes)**
+- [x] **Phase 3: Comprehensive In-Run Encounters (Shops, Mystery, All Modes)**
   - Implement decision policies for all 4 shop types and card removal.
   - Implement both mystery policies: blind fuzz picks for crash-finding and keyword-driven archetype picks for balance.
   - Extend Campaign coverage with Wildwood drafting/phase transitions and Labyrinth navigation. Declare a finite observation horizon for endless modes. Reaching that planned horizon is a completed observation, not victory or an unexpected execution-budget failure; record any production End Run action separately from defeat and verify that it keeps earned progress without granting unclaimed choices.
   - Start with a small archetype subset (e.g. Block Knight, Poison Rogue, Burn Wizard, Companion Ranger plus Minimalist + Gambler fuzz) and add profiles only when they exercise a distinct mechanic or decision pattern. The full catalog is optional; avoid a Cartesian product of heroes, profiles, modes, and difficulties. Expand hero support to all 8 characters (including Wildcard starter draft) once the harness is stable.
-- [ ] **Phase 4: Three-Tier Reporting, Anomaly Diagnostics, & CI Tooling**
+- [x] **Phase 4: Three-Tier Reporting, Anomaly Diagnostics, & CI Tooling**
   - Extend the Phase 1 failure recorder and replay bundles with richer anomaly diagnostics; preserve the reproduction contract above.
   - Build `progress-telemetry.ts`: aggregates mortality curves, economy pacing, card utility, and archetype performance. Calibrate alert thresholds from a baseline run; do not gate CI on the example numbers in this plan.
   - Build stdout + JSON reporting first; build the visual dashboard (`reports/playthrough.html`) last, reusing `report-model` / `report-rankings` / `findings` where possible.
@@ -390,4 +390,52 @@ Leverages Alchemy's existing report layout utilities ([`report-layout.ts`](../..
 
 ## Notes & Verification
 
-Keep durable rules in their canonical owner. For test selection and task-owned handoff, follow [CONTRIBUTING](../../CONTRIBUTING.md#what-to-run-when-you-change) and [the plan lifecycle](./README.md#task-handoff).
+Keep durable rules in their canonical owner. For test selection and task-owned handoff, follow [CONTRIBUTING](../../../CONTRIBUTING.md#what-to-run-when-you-change) and [the plan lifecycle](../README.md#task-handoff).
+
+## Implementation record — 2026-09-19
+
+Implemented the operational framework and retained correctness suite. The canonical
+usage and scope owner is now [Headless playthrough testing](../../PLAYTHROUGH_SIMULATION.md).
+The runner lives under `src/app/playthrough/`; shared production battle and autosave
+operations are consumed by both the UI and the harness. No shipping save schema
+changes were needed.
+
+Implementation decisions made under the task's authorization to revise this plan:
+
+- Use sequential isolated child processes immediately. Startup is inexpensive
+  relative to the correctness benefit; no global-reset protocol is added to the
+  game. The fixed suite proves fresh-process replay and combat checkpoint resume.
+- Keep the archetype catalog data-driven from each hero's production keywords,
+  with random and minimalist alternatives and all four existing combat policies.
+  The illustrative named profile catalog is not implemented as a duplicate content
+  catalog. All eight heroes, all three modes, and all three difficulties have
+  retained targeted scenarios.
+- Compare saved report manifests rather than automatically checking out Git
+  revisions. Report paired career metrics and uncertainty within cohorts; no
+  balance thresholds gate CI without calibration and explicit design goals.
+- HTML uses the shared report shell with expandable cohort/career details,
+  mortality meters, boss reach denominators, economy tables, card opportunities,
+  combat maxima, and reached/unreached progression milestones.
+- Count card observation/playability opportunities accurately. Defer exact draw
+  and passive-item-trigger attribution until production supplies a suitable event
+  stream; snapshot differencing can miscount redraws and automatic plays. Reports
+  explicitly disclose this measurement limit. This is a telemetry expansion,
+  not a blocker to automated playthrough correctness testing.
+- Freeze wall time because current covered progression uses actions and resources,
+  not elapsed-time completion. No pacing claim is made without a recorded cadence.
+- The in-memory transport exercises shipping persistence orchestration. Existing
+  browser/desktop backend checks remain the storage integration owners; the
+  headless suite does not claim physical durability or UI coverage.
+
+Measured two-run fresh Knight careers for seeds 1 and 2 completed in approximately
+2.1 and 1.8 seconds inside the worker, including per-action loader validation,
+acknowledged writes at supported save points, policy decisions, telemetry, and
+journal writes. The retained suite takes about 40 seconds including isolated
+process startup. Budgets remain configurable; incomplete scenarios fail CI.
+
+Retained evidence includes earned equipment/talent spending, targeted homestead
+upgrades, Campaign victory and defeat, Wildcard drafts, finite endless horizons,
+execution rollback and post-commit failure replay, stale/duplicate/rejected
+choices, interrupted persistence, and duplicate-settlement protection. Runtime
+and coverage vary with policy/content; the fixed seeds are correctness evidence,
+not calibrated player win-rate estimates.
