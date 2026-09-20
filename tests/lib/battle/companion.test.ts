@@ -277,7 +277,7 @@ describe("processCompanionTurnStart", () => {
     expect(result.playerHealth).toBe(14);
   });
 
-  it("healOnCompanionAttack combat text uses actual health gained near max HP", () => {
+  it("healOnCompanionAttack does not heal above half Health", () => {
     const texts = makeTexts();
     const state = patchBattleState({
       activeCompanion: companionLibrary.phoenix,
@@ -288,13 +288,8 @@ describe("processCompanionTurnStart", () => {
       },
     });
     const result = processCompanionTurnStart(state, texts);
-    expect(result.playerHealth).toBe(30);
-    expect(texts.find((t) => t.kind === "heal")).toEqual({
-      target: "player",
-      kind: "heal",
-      stat: "health",
-      amount: 1,
-    });
+    expect(result.playerHealth).toBe(29);
+    expect(texts.find((t) => t.kind === "heal")).toBeUndefined();
   });
 
   it("healOnCompanionAttack no-ops when companion has no damage effect", () => {

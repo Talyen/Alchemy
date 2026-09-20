@@ -248,10 +248,10 @@ describe("resolveStunTrigger", () => {
       enemyHealth: 30,
       enemyMaxHealth: 30,
       enemyCC: defaultCcState({ stunSkipTurns: 0 }),
-      playerStatuses: defaultPlayerStatusValues({ forge: 3 }),
+      playerStatuses: defaultPlayerStatusValues({ forge: 0 }),
       enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
       talentEffects: {
-        forgeOnStun: 2,
+        forgeOnStun: 5,
         forgeBurnThreshold: 4,
         forgeBurnDamage: 8,
       },
@@ -269,7 +269,7 @@ describe("resolveStunTrigger", () => {
       enemyHealth: 30,
       enemyMaxHealth: 30,
       enemyCC: defaultCcState({ stunSkipTurns: 0 }),
-      playerStatuses: defaultPlayerStatusValues({ forge: 1 }),
+      playerStatuses: defaultPlayerStatusValues({ forge: 0 }),
       enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
       talentEffects: {
         forgeOnStun: 2,
@@ -278,7 +278,7 @@ describe("resolveStunTrigger", () => {
       },
     });
     const result = resolveStunTrigger(state);
-    expect(result.playerStatuses.forge).toBe(3);
+    expect(result.playerStatuses.forge).toBe(2);
     expect(result.enemyStatuses.burn).toBe(0);
   });
 
@@ -312,14 +312,14 @@ describe("resolveStunTrigger", () => {
     const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      mana: 2,
+      mana: 0,
       enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
       talentEffects: { manaOnStun: 1 },
     });
     const texts = makeTexts();
     const result = resolveStunTrigger(state, texts);
-    expect(result.mana).toBe(3);
+    expect(result.mana).toBe(1);
     expect(texts).toContainEqual({ target: "player", kind: "status", stat: "mana", amount: 1 });
   });
 
@@ -381,7 +381,7 @@ describe("resolveStunTrigger", () => {
     const state = patchBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      mana: 3,
+      mana: 0,
       maxMana: 4,
       enemyCC: defaultCcState({ stunSkipTurns: 0 }),
       enemyStatuses: defaultEnemyStatusValues({ stun: 20 }),
@@ -390,8 +390,8 @@ describe("resolveStunTrigger", () => {
     const texts = makeTexts();
     const result = resolveStunTrigger(state, texts);
 
-    expect(result.mana).toBe(4);
-    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "mana", amount: 1 });
+    expect(result.mana).toBe(2);
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "mana", amount: 2 });
   });
 });
 

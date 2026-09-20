@@ -77,18 +77,18 @@ describe("gear-effects", () => {
     expect(texts.some((t) => t.stat === "gold" && (t as { amount: number }).amount === 6)).toBe(true);
   });
 
-  it("burn-on-consume: applies Burn when a card is Consumed", () => {
-    const card = makeTestCard({ id: "card-consume", consume: true });
+  it("Consuming increases the original Burn packet of a consumed card", () => {
+    const card = makeTestCard({ id: "card-consume", consume: true, effects: [cardDamage("burn", 1)] });
     const state = makeState({
       hand: [card],
       gearEffects: { ...makeState().gearEffects, burnOnConsume: 5 },
     });
     const result = playBattleCardResolved(state, card.id, 0);
-    expect(result.state.enemyStatuses.burn).toBe(5);
-    expect(result.state.enemyHealth).toBe(state.enemyHealth - 5);
+    expect(result.state.enemyStatuses.burn).toBe(6);
+    expect(result.state.enemyHealth).toBe(state.enemyHealth - 6);
   });
 
-  it("pays a Consuming kill once and preserves the next card's critical hit", () => {
+  it("Consuming does not turn utility consumption into a hit or spend a critical hit", () => {
     const consumed = makeTestCard({ consume: true, effects: [] });
     const state = patchBattleState({
       enemyHealth: 3,
@@ -97,11 +97,11 @@ describe("gear-effects", () => {
       flags: { nextHitCrit: true },
     });
     const result = handlePostPlayCardDestination(state, consumed);
-    expect(result.enemyHealth).toBe(0);
-    expect(result.gold).toBe(4);
-    expect(result.enemyStatuses.burn).toBe(3);
+    expect(result.enemyHealth).toBe(3);
+    expect(result.gold).toBe(0);
+    expect(result.enemyStatuses.burn).toBe(0);
     expect(result.flags.nextHitCrit).toBe(true);
-    expect(handlePostPlayCardDestination(result, consumed).gold).toBe(4);
+    expect(handlePostPlayCardDestination(result, consumed).gold).toBe(0);
   });
 
   it("applies consume rewards identically without collecting combat text", () => {
@@ -111,7 +111,7 @@ describe("gear-effects", () => {
     });
     const withText = handlePostPlayCardDestination(state, card, true, []);
     const withoutText = handlePostPlayCardDestination(state, card);
-    expect(withoutText.enemyStatuses.burn).toBe(5);
+    expect(withoutText.enemyStatuses.burn).toBe(0);
     expect(withoutText).toEqual(withText);
     expect(state.enemyStatuses.burn).toBe(0);
   });
@@ -262,7 +262,7 @@ describe("gear-effects", () => {
 
   it("companion-leech: heals player when companion attacks", () => {
     const state = makeState({
-      playerHealth: 5,
+      playerHealth: 4,
       playerMaxHealth: 10,
       activeCompanion: {
         id: "wolf",
@@ -274,7 +274,7 @@ describe("gear-effects", () => {
     });
     const texts: CombatTextEvent[] = [];
     const nextState = processCompanionTurnStart(state, texts);
-    expect(nextState.playerHealth).toBe(8);
+    expect(nextState.playerHealth).toBe(7);
   });
 
   it("armor-on-cc: grants armor when player is stunned or frozen", () => {

@@ -248,10 +248,11 @@ function applyBlockedAttackRetaliation(
   state: BattleState,
   blockLost: number,
   combatTexts: CombatTextEvent[],
+  blockDepleted: boolean,
 ): BattleState {
   if (state.enemyHealth <= 0 || state.playerHealth <= 0) return state;
   if (state.talentEffects.holyReflectionBlockLostPercent > 0) {
-    return reflectBlockedAttackAsHoly(state, blockLost, combatTexts);
+    return blockDepleted ? reflectBlockedAttackAsHoly(state, blockLost, combatTexts) : state;
   }
   const amount = state.talentEffects.holyOnAttackBlocked;
   if (amount <= 0 || state.enemyHealth <= 0 || state.playerHealth <= 0) return state;
@@ -429,7 +430,12 @@ function resolveEnemyDamageEffectCore(
   nextState = applyEnemyHitLeech(nextState, effect, facts, combatTexts);
 
   if (mitigation.blockAbsorb > 0 && options.triggerBlockRetaliation) {
-    nextState = applyBlockedAttackRetaliation(nextState, blockLost, combatTexts);
+    nextState = applyBlockedAttackRetaliation(
+      nextState,
+      blockLost,
+      combatTexts,
+      blockLost > 0 && blockLost >= state.playerStatuses.block,
+    );
   }
 
   if (nextState.enemyHealth <= 0 || nextState.playerHealth <= 0) return { state: nextState, ...outcome };

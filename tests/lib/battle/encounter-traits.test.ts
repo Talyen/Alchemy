@@ -553,7 +553,7 @@ describe("Cinder Skin Health damage reactions", () => {
     }
   });
 
-  it("retaliates after Consume damage from a non-damaging card", () => {
+  it("does not retaliate when Consuming cannot add damage to a utility card", () => {
     const played = card({ consume: true, effects: [{ kind: "player-status", status: "forge", amount: 1 }] });
     const state = makeState();
     const result = playBattleCardResolved(
@@ -561,9 +561,9 @@ describe("Cinder Skin Health damage reactions", () => {
       played.id,
       0,
     ).state;
-    expect(result.playerHealth).toBe(29);
+    expect(result.playerHealth).toBe(30);
     expect(result.flags.pendingCinderSkinReaction).toBe(false);
-    expect(result.flags.cinderSkinUsedThisTurn).toBe(true);
+    expect(result.flags.cinderSkinUsedThisTurn).toBe(false);
   });
 
   it("retains the first damage trigger even if Second Wind restores the lost Health", () => {

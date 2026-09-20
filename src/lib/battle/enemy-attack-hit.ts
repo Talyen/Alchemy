@@ -1,3 +1,5 @@
+import { HALF_DIVISOR, REACTIVE_REWARD_CHANCES } from "../game-constants";
+import { rollTalentChance } from "./status-helpers";
 import type { EnemyAttackEffect } from "@/lib/game-data";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import {
@@ -27,6 +29,7 @@ function applyDodgeDrawAndPlay(state: BattleState, combatTexts: CombatTextEvent[
   if (state.gearEffects.dodgeDrawAndPlay <= 0) return state;
   if (state.enemyHealth <= 0 || state.playerHealth <= 0) return state;
 
+  if (!rollTalentChance(REACTIVE_REWARD_CHANCES.bladedance, state)) return state;
   const drawn = takeRandomCardFromDeck(state);
   if (!drawn) return state;
 
@@ -49,9 +52,10 @@ function applyDodgeDefensiveReactions(
   state: BattleState,
   combatTexts: CombatTextEvent[],
   dodgedAmount: number,
+  eligibility: BattleState,
 ): BattleState {
   let nextState = state;
-  if (nextState.gearEffects.blockOnDodge > 0) {
+  if (eligibility.playerStatuses.block === 0 && nextState.gearEffects.blockOnDodge > 0) {
     nextState = addPlayerStatusWithCombatText(nextState, "block", nextState.gearEffects.blockOnDodge, combatTexts);
   }
   const dodgeBlock = nextState.talentEffects.blockOnDodgeEqualToAttack
@@ -61,8 +65,10 @@ function applyDodgeDefensiveReactions(
     nextState = addPlayerStatusWithCombatText(nextState, "block", dodgeBlock, combatTexts, { skipFightPacing: true });
   }
   const armor = nextState.gearEffects.armorOnDodge + nextState.talentEffects.armorOnDodge;
-  if (armor > 0) nextState = applyArmorReward(nextState, armor, combatTexts);
-  const healing = nextState.gearEffects.healOnDodge + nextState.talentEffects.healOnDodge;
+  if (eligibility.playerStatuses.armor === 0 && armor > 0) nextState = applyArmorReward(nextState, armor, combatTexts);
+  const healing =
+    (eligibility.playerHealth < eligibility.playerMaxHealth / HALF_DIVISOR ? state.gearEffects.healOnDodge : 0) +
+    state.talentEffects.healOnDodge;
   if (healing > 0) nextState = applyHealingWithCombatText(nextState, healing, combatTexts);
   return applyDodgeTalentStatuses(nextState, combatTexts);
 }
@@ -71,9 +77,14 @@ function applyDodgeCounterAttacks(
   state: BattleState,
   combatTexts: CombatTextEvent[],
   dodgedAmount: number,
+  eligibility: BattleState,
 ): BattleState {
   let nextState = state;
-  if (nextState.gearEffects.physicalOnDodge > 0 && nextState.enemyHealth > 0) {
+  if (
+    nextState.gearEffects.physicalOnDodge > 0 &&
+    nextState.enemyHealth > 0 &&
+    rollTalentChance(REACTIVE_REWARD_CHANCES.riposting, nextState)
+  ) {
     nextState = dealPlayerTypedHit(nextState, "physical", nextState.gearEffects.physicalOnDodge, combatTexts);
   }
   const riposteDamage = nextState.talentEffects.physicalOnDodgeEqualToAttack
@@ -82,10 +93,10 @@ function applyDodgeCounterAttacks(
   if (riposteDamage > 0 && nextState.enemyHealth > 0) {
     nextState = dealTalentTypedHit(nextState, "physical", riposteDamage, combatTexts, true);
   }
-  if (nextState.gearEffects.bleedOnDodge > 0 && nextState.enemyHealth > 0) {
+  if (nextState.gearEffects.bleedOnDodge > 0 && nextState.enemyHealth > 0 && eligibility.enemyStatuses.bleed > 0) {
     nextState = dealPlayerTypedHit(nextState, "bleed", nextState.gearEffects.bleedOnDodge, combatTexts);
   }
-  if (nextState.talentEffects.goldOnDodge > 0) {
+  if (nextState.talentEffects.goldOnDodge > 0 && rollTalentChance(REACTIVE_REWARD_CHANCES.luckyFoot, nextState)) {
     nextState = addGoldWithCombatText(nextState, nextState.talentEffects.goldOnDodge, combatTexts);
   }
   return nextState;
@@ -138,10 +149,15 @@ function applyOnPlayerDodge(state: BattleState, combatTexts: CombatTextEvent[], 
     nextState = dealPlayerTypedHit(nextState, "physical", spent, combatTexts);
   }
   if (state.gearEffects.archeryDodgeAndDraw > 0) nextState = drawKeywordCard(nextState, "archery");
-  nextState = applyDodgeDefensiveReactions(nextState, combatTexts, dodgedAmount);
-  nextState = applyDodgeCounterAttacks(nextState, combatTexts, dodgedAmount);
+  nextState = applyDodgeDefensiveReactions(nextState, combatTexts, dodgedAmount, state);
+  nextState = applyDodgeCounterAttacks(nextState, combatTexts, dodgedAmount, state);
   nextState = applyDodgeOffensiveBuffs(nextState);
-  if (nextState.talentEffects.companionAttacksOnDodge) {
+  if (
+    nextState.talentEffects.companionAttacksOnDodge &&
+    nextState.activeCompanion &&
+    nextState.enemyHealth > 0 &&
+    rollTalentChance(REACTIVE_REWARD_CHANCES.packWeave, nextState)
+  ) {
     nextState = processCompanionTurnStart(nextState, combatTexts);
   }
   return applyDodgeDrawAndPlay(nextState, combatTexts);

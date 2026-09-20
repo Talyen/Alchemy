@@ -1,3 +1,4 @@
+import { DESTINATIONS, type Destination } from "@/lib/routing";
 import { current } from "immer";
 import { canEnterLabyrinthNode, expandBeyondBoss } from "@/lib/content-systems/labyrinth/map-generation";
 import {
@@ -18,6 +19,9 @@ import {
   setActiveLabyrinthPendingNode,
   setLabyrinthMap,
   setSelectedLabyrinthNodeId,
+  recordRunRoom,
+  cancelRunRoomEntry,
+  completeRunRoom,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 export interface LabyrinthController {
   selectNode: (nodeId: string) => void;
@@ -46,6 +50,18 @@ export interface LabyrinthNodeHandlers {
   onStartTrinketShop: (modifiers?: EncounterRewardTraitId[]) => void;
   onStartEquipmentShop: (modifiers?: EncounterRewardTraitId[]) => void;
 }
+const ROOM_DESTINATIONS: Record<Exclude<LabyrinthNodeType, "entrance">, Destination> = {
+  combat: DESTINATIONS.NORMAL_COMBAT,
+  elite: DESTINATIONS.ELITE_COMBAT,
+  boss: DESTINATIONS.BOSS_COMBAT,
+  rest: DESTINATIONS.CAMPFIRE,
+  mystery: DESTINATIONS.MYSTERY,
+  corruption: DESTINATIONS.CORRUPTION,
+  shop: DESTINATIONS.CARD_SHOP,
+  alchemist: DESTINATIONS.ALCHEMIST_SHOP,
+  "trinket-shop": DESTINATIONS.TRINKET_SHOP,
+  "equipment-shop": DESTINATIONS.GEAR_SHOP,
+};
 type NodeAction = (node: LabyrinthNode, handlers: LabyrinthNodeHandlers) => void;
 const NODE_ACTIONS: Record<LabyrinthNodeType, NodeAction> = {
   combat: (node, handlers) =>
@@ -76,7 +92,7 @@ export function createLabyrinthController(): LabyrinthController {
     dispatchRunSessionCommand((draft) => setSelectedLabyrinthNodeId(draft, null));
   };
   const enterSelectedNode = (handlers: LabyrinthNodeHandlers): boolean => {
-    const node = dispatchRunSessionCommand((draft) => {
+    const entry = dispatchRunSessionCommand((draft) => {
       const session = draft.session;
       if (session.activeLabyrinthPendingNode) return null;
       const nodeId = session.selectedLabyrinthNodeId;
@@ -86,13 +102,18 @@ export function createLabyrinthController(): LabyrinthController {
       const node = map.nodes[nodeId];
       if (!node || !canEnterLabyrinthNode(map, nodeId)) return null;
       setActiveLabyrinthPendingNode(draft, nodeId);
-      return current(node);
+      const visitId = `labyrinth:${map.currentFloor}:${nodeId}`;
+      const recorded = node.type !== "entrance" && recordRunRoom(draft, ROOM_DESTINATIONS[node.type], visitId);
+      return { node: current(node), visitId, recorded };
     });
-    if (!node) return false;
+    if (!entry) return false;
     try {
-      routeNodeInteraction(node, handlers);
+      routeNodeInteraction(entry.node, handlers);
     } catch (error) {
-      dispatchRunSessionCommand((draft) => setActiveLabyrinthPendingNode(draft, null));
+      dispatchRunSessionCommand((draft) => {
+        setActiveLabyrinthPendingNode(draft, null);
+        if (entry.recorded) cancelRunRoomEntry(draft, entry.visitId);
+      });
       throw error;
     }
     return true;
@@ -100,6 +121,7 @@ export function createLabyrinthController(): LabyrinthController {
   const onNodeCleared = () => {
     const pending = dispatchRunSessionCommand((draft) => {
       const pendingNode = draft.session.activeLabyrinthPendingNode;
+      if (pendingNode) completeRunRoom(draft);
       setActiveLabyrinthPendingNode(draft, null);
       setSelectedLabyrinthNodeId(draft, null);
       if (pendingNode) {

@@ -144,6 +144,7 @@ export const TRANSIENT_SESSION_KEYS = [
   "runEndCurrencies",
   "runEndTalentXP",
   "runEndItems",
+  "runRecap",
 ] as const satisfies ReadonlyArray<keyof RunSessionFields>;
 
 export const LABYRINTH_GATED_SESSION_KEYS = [

@@ -45,11 +45,11 @@ describe("combat reward sources", () => {
 
   it("Golden Crucible Forge triggers Overheat without scaling the Gold conversion", () => {
     const state = regressionBattle({
-      playerStatuses: { forge: 3 },
+      playerStatuses: { forge: 0 },
       talentEffects: { forgeBurnThreshold: 5, forgeBurnDamage: 2 },
       gearEffects: { goldGrantsForgeAndHoly: 1 },
     });
-    const result = applyCardEffects(state, makeTestCard({ effects: [{ kind: "gain-gold", amount: 2 }] }), []);
+    const result = applyCardEffects(state, makeTestCard({ effects: [{ kind: "gain-gold", amount: 5 }] }), []);
     expect(result.playerStatuses.forge).toBe(5);
     expect(result.enemyHealth).toBe(state.enemyHealth - 2);
     expect(result.enemyStatuses.burn).toBe(2);

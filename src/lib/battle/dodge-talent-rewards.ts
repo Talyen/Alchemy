@@ -1,3 +1,5 @@
+import { REACTIVE_REWARD_CHANCES } from "../game-constants";
+import { rollTalentChance } from "./status-helpers";
 import { applyDrawResult, drawFromState } from "./draw";
 import { addPlayerStatusWithCombatText } from "./combat-text";
 import { addForgeToPlayer, applyCleanseHeals } from "./status-player";
@@ -9,7 +11,7 @@ export function applyDodgeTalentStatuses(state: BattleState, combatTexts: Combat
   if (state.talentEffects.drawOnDodge > 0) {
     nextState = applyDrawResult(nextState, drawFromState(nextState, state.talentEffects.drawOnDodge));
   }
-  if (state.talentEffects.forgeOnDodge > 0) {
+  if (state.talentEffects.forgeOnDodge > 0 && rollTalentChance(REACTIVE_REWARD_CHANCES.feint, nextState)) {
     nextState = addForgeToPlayer(nextState, state.talentEffects.forgeOnDodge, combatTexts);
   }
   if (state.talentEffects.thornsOnDodge > 0) {

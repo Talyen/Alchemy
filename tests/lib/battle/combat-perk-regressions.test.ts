@@ -129,6 +129,7 @@ describe("combat perk regressions", () => {
       rng: () => 0.99,
       playerHealth: 10,
       playerMaxHealth: 100,
+      enemyStatuses: { burn: 1, bleed: 1 },
       gearEffects: { leechHealBonusPercent: 50, burnBleedMirrorAndLeech: 1 },
     });
     expect(playBattleCardResolved(state, card.id, 0).state.playerHealth).toBe(16);

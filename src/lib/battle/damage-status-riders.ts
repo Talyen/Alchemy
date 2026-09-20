@@ -29,12 +29,14 @@ function applyGearBurnBleedMirrorLeech(
   actualDamage: number,
   mirrorTarget: "bleed" | "burn",
   combatTexts: CombatTextEvent[],
+  alreadyBurningAndBleeding: boolean,
 ): BattleState {
   if (state.gearEffects.burnBleedMirrorAndLeech <= 0 || actualDamage <= 0) return state;
   let nextState = state;
   if (rollPercent(BURN_BLEED_MIRROR_CHANCE_PERCENT, getBattleRng(nextState))) {
     nextState = addEnemyStatus(nextState, mirrorTarget, actualDamage);
   }
+  if (!alreadyBurningAndBleeding) return nextState;
   const healAmount = Math.max(1, halveRounded(actualDamage));
   return applyScaledLeechHealing(nextState, healAmount, combatTexts);
 }
@@ -44,7 +46,13 @@ function applyBurnStatusRider(state: BattleState, actualDamage: number, combatTe
   if (nextState.talentEffects.burnRemovesEnemyArmor) {
     nextState = reduceEnemyArmor(nextState, actualDamage);
   }
-  return applyGearBurnBleedMirrorLeech(nextState, actualDamage, "bleed", combatTexts);
+  return applyGearBurnBleedMirrorLeech(
+    nextState,
+    actualDamage,
+    "bleed",
+    combatTexts,
+    state.enemyStatuses.burn > 0 && state.enemyStatuses.bleed > 0,
+  );
 }
 
 function applyPoisonStatusRider(
@@ -136,7 +144,13 @@ function applyBleedStatusRider(
   }
   nextState = queueBleedLeech(nextState, effect, bleedAmount);
   nextState = procBleedPoison(nextState, actualDamage, bleedAmount);
-  nextState = applyGearBurnBleedMirrorLeech(nextState, actualDamage, "burn", combatTexts);
+  nextState = applyGearBurnBleedMirrorLeech(
+    nextState,
+    actualDamage,
+    "burn",
+    combatTexts,
+    state.enemyStatuses.burn > 0 && state.enemyStatuses.bleed > 0,
+  );
   return awardCutpurseGold(nextState, bleedAmount, combatTexts);
 }
 
@@ -191,7 +205,10 @@ export function tryTriggerEnemyFreeze(
 
   if (triggered.kind === "immune") return triggered.state;
 
-  let result = triggered.state;
+  let result =
+    preHitState.talentEffects.archeryHolyDamageVsFrozen > 0
+      ? setFlag(triggered.state, "hawkEyeReady", true)
+      : triggered.state;
   result = applyFrozenHeartDamage(result, combatTexts);
   result = applyGearFreezeDamage(preHitState, result, combatTexts);
   result = applyCrowdControlTriggerBonuses(
@@ -203,7 +220,7 @@ export function tryTriggerEnemyFreeze(
     },
     combatTexts,
   );
-  if (result.gearEffects.freezeGrantsBlockAndMana > 0) {
+  if (result.gearEffects.freezeGrantsBlockAndMana > 0 && preHitState.mana === 0) {
     const manaGain = halveRounded(result.playerStatuses.block);
     result = gainManaWithCombatText(result, manaGain, combatTexts, { skipFightPacing: true });
   }
@@ -217,7 +234,7 @@ function applyFreezeStatusRider(
   preHitHealth: number,
 ): BattleState {
   let nextState = addEnemyStatus(state, "freeze", actualDamage);
-  if (nextState.gearEffects.freezeGrantsBlockAndMana > 0 && actualDamage > 0) {
+  if (nextState.gearEffects.freezeGrantsBlockAndMana > 0 && actualDamage > 0 && state.playerStatuses.block === 0) {
     nextState = addPlayerStatusWithCombatText(nextState, "block", actualDamage, combatTexts, {
       skipFightPacing: true,
     });

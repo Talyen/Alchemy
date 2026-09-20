@@ -22,12 +22,15 @@ export function applyCardHealing(
   state: BattleState,
   amount: number,
   combatTexts: CombatTextEvent[],
-  options?: { skipFightPacing?: boolean },
+  options?: { skipFightPacing?: boolean; allowOverhealBlock?: boolean },
 ): BattleState {
   const paced = options?.skipFightPacing ? amount : paceCombatMagnitude(state, amount, "player");
   const overheals =
     Math.round(paced * state.talentEffects.healMultiplier) > Math.max(0, state.playerMaxHealth - state.playerHealth);
-  const healed = applyHealingWithCombatText(state, paced, combatTexts, { skipFightPacing: true });
+  const healed = applyHealingWithCombatText(state, paced, combatTexts, {
+    skipFightPacing: true,
+    allowOverhealBlock: options?.allowOverhealBlock ?? true,
+  });
   return overheals && state.talentEffects.cleanseOnCardOverheal
     ? removeHarmfulPlayerStatuses(healed, 1, combatTexts)
     : healed;

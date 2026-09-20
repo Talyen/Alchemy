@@ -118,6 +118,7 @@ const SESSION_KEYS = [
   "runEndCurrencies",
   "runEndTalentXP",
   "runEndItems",
+  "runRecap",
   "pendingCharacterId",
   "pendingContentSystemType",
   "labyrinthMap",

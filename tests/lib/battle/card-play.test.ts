@@ -232,6 +232,7 @@ describe("playBattleCardResolved", () => {
     };
     const potionState = makeState({
       hand: [potion],
+      rng: () => 0.1,
       playerHealth: 10,
       playerMaxHealth: 30,
       gold: 0,
@@ -240,7 +241,7 @@ describe("playBattleCardResolved", () => {
     });
     const potionResult = playBattleCardResolved(potionState, potion.id, 0);
     expect(potionResult.state.gold).toBe(1);
-    expect(potionResult.state.playerStatuses.block).toBe(2);
+    expect(potionResult.state.playerStatuses.block).toBe(0);
     expect(potionResult.state.enemyStatuses.poison).toBe(1);
     expect(potionResult.state.hand.some((c) => c.id === "drawn")).toBe(true);
     expect(potionResult.state.flags.consumeDrawUsedThisTurn).toBe(true);

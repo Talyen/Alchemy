@@ -53,7 +53,7 @@ describe("Mana from Heaven", () => {
     expect(wished.flags.pendingWishMana).toBe(3);
     const next = advanceToPlayerTurn(resume(wished));
     expect(next.mana).toBe(6);
-    expect(next.playerHealth).toBe(11);
+    expect(next.playerHealth).toBe(10);
     expect(next.flags.pendingWishMana).toBe(0);
     expect(advanceToPlayerTurn(next).mana).toBe(3);
   });
@@ -81,7 +81,7 @@ describe("Mana from Heaven", () => {
       [],
     );
     expect(next.mana).toBe(1);
-    expect(next.playerHealth).toBe(11);
+    expect(next.playerHealth).toBe(12);
     expect(next.flags.pendingWishMana).toBe(1);
   });
 
@@ -191,13 +191,13 @@ describe("Sun-Struck Shield reflection", () => {
       battle({
         talentEffects: { ...shieldTalents, blockOnHolyCard: 2 },
         gearEffects: { holyStunBuildupGold: 1 },
-        playerStatuses: { block: 20 },
+        playerStatuses: { block: 10 },
       }),
       makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10 }] }),
       [],
     );
     expect(next.enemyStatuses.stun).toBe(3);
-    expect(next.playerStatuses.block).toBe(10);
+    expect(next.playerStatuses.block).toBe(0);
   });
 
   it.each([false, true])("does not pace reflected damage twice (pacing %s)", (appliesFightPacing) => {
@@ -206,7 +206,7 @@ describe("Sun-Struck Shield reflection", () => {
         appliesFightPacing,
         turn: 100,
         talentEffects: shieldTalents,
-        playerStatuses: { block: 100 },
+        playerStatuses: { block: 10 },
       }),
       { kind: "damage", damageType: "physical", amount: 10 },
       [],
@@ -216,7 +216,7 @@ describe("Sun-Struck Shield reflection", () => {
       },
     );
     expect(next.enemyHealth).toBe(197);
-    expect(next.playerStatuses.block).toBe(90);
+    expect(next.playerStatuses.block).toBe(0);
   });
 
   it("applies enemy Holy weakness without multiplying reflection through Shatter", () => {
@@ -225,7 +225,7 @@ describe("Sun-Struck Shield reflection", () => {
         talentEffects: { ...shieldTalents, freezeDoubleDamage: true },
         currentEnemy: { traits: [{ id: "holy-vulnerability", title: "", description: "" }] },
         enemyCC: { freezeSkipTurns: 1 },
-        playerStatuses: { block: 20 },
+        playerStatuses: { block: 10 },
       }),
       { kind: "damage", damageType: "physical", amount: 10 },
       [],
@@ -241,7 +241,7 @@ describe("Sun-Struck Shield reflection", () => {
       battle({
         playerHealth: 40,
         gold: 1000,
-        playerStatuses: { block: 100, forge: 20 },
+        playerStatuses: { block: 3, forge: 20 },
         talentEffects: { ...shieldTalents, forgeToHoly: true, holyGoldPercent: 3, holyBlockPercentFromDamage: 15 },
         gearEffects: { flatHolyDamage: 50 },
         flags: { nextHitCrit: true },
@@ -250,7 +250,7 @@ describe("Sun-Struck Shield reflection", () => {
       [],
     );
     expect(next.enemyHealth).toBe(199);
-    expect(next.playerStatuses.block).toBe(97);
+    expect(next.playerStatuses.block).toBe(0);
     expect(next.playerStatuses.forge).toBe(20);
     expect(next.flags.nextHitCrit).toBe(true);
   });
@@ -259,12 +259,12 @@ describe("Sun-Struck Shield reflection", () => {
     const next = applyEnemyAbility(
       battle({
         talentEffects: { ...shieldTalents, blockAbsorbPhysicalBonus: 20 },
-        playerStatuses: { block: 100 },
+        playerStatuses: { block: 8 },
       }),
       makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 9 }] }),
       [],
     );
-    expect(next.playerStatuses.block).toBe(92);
+    expect(next.playerStatuses.block).toBe(0);
     expect(next.enemyHealth).toBe(198);
   });
 
@@ -272,7 +272,7 @@ describe("Sun-Struck Shield reflection", () => {
     const next = applyEnemyAbility(
       battle({
         talentEffects: { ...shieldTalents, holyBlockPercentFromDamage: 100 },
-        playerStatuses: { block: 20 },
+        playerStatuses: { block: 10 },
         enemyMitigation: { block: 3 },
       }),
       makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10 }] }),
@@ -280,20 +280,20 @@ describe("Sun-Struck Shield reflection", () => {
     );
     expect(next.enemyHealth).toBe(200);
     expect(next.enemyMitigation.block).toBe(0);
-    expect(next.playerStatuses.block).toBe(10);
+    expect(next.playerStatuses.block).toBe(0);
   });
 
-  it("retains Holy healing and Block rewards on reflected damage", () => {
+  it("retains low-Health Holy healing without also granting Radiant Guard Block", () => {
     const next = applyEnemyAbility(
       battle({
         talentEffects: { ...shieldTalents, holyLifestealPercent: 10, holyBlockPercentFromDamage: 15 },
-        playerStatuses: { block: 100 },
+        playerStatuses: { block: 57 },
       }),
       makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 60 }] }),
       [],
     );
     expect(next.enemyHealth).toBe(183);
-    expect(next.playerStatuses.block).toBe(46);
+    expect(next.playerStatuses.block).toBe(0);
     expect(next.playerHealth).toBe(12);
   });
 });

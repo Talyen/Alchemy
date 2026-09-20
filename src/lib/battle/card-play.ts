@@ -25,15 +25,14 @@ import { detonateEnemyStatuses } from "./dot-resolve";
 import { addForgeToPlayer, countRemovableHarmfulStatuses } from "./status-player";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { getBattleRng, rollPercent } from "@/lib/rng";
-import { dealTalentTypedHit, dealPlayerTypedHit } from "./player-typed-hit";
-import { dealScaledBurnWithStacks } from "./scaled-damage";
-import { getEnemyDamageMultiplier } from "./status-helpers";
+import { dealPlayerTypedHit } from "./player-typed-hit";
+import { rollTalentChance } from "./status-helpers";
 
 import { prepareUniqueCardPlay, finishUniqueCardDamage, returnHarvestCard } from "./unique-card-effects";
 import { computeCardPayment } from "./card-cost-rules";
 import { cardHasKeyword, isNatureCard } from "./card-classification";
 import { isCcControlled } from "./status-cc";
-import { MAX_HAND_SIZE, WISH_TRINKET_FORK_PERCENT } from "../game-constants";
+import { MAX_HAND_SIZE, REACTIVE_REWARD_CHANCES, WISH_TRINKET_FORK_PERCENT } from "../game-constants";
 
 function consumeCardDiscounts(state: BattleState, payment: ReturnType<typeof computeCardPayment>): BattleState {
   const { consumedFlags, disarmedFlags, spentArmedDiscount, uniqueDiscounts } = payment;
@@ -268,7 +267,12 @@ function cardIsSummonCompanion(card: BattleCard): boolean {
   return card.effects.some((effect) => effect.kind === "summon-companion");
 }
 
-function applyConsumeTalentRiders(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]): BattleState {
+function applyConsumeTalentRiders(
+  state: BattleState,
+  card: BattleCard,
+  combatTexts: CombatTextEvent[],
+  lastCardInHand: boolean,
+): BattleState {
   if (cardIsSummonCompanion(card)) return state;
   const talents = state.talentEffects;
   let nextState = state;
@@ -276,13 +280,13 @@ function applyConsumeTalentRiders(state: BattleState, card: BattleCard, combatTe
   if (talents.uncappedDrawOnConsume > 0) {
     nextState = applyDrawResult(nextState, drawFromState(nextState, talents.uncappedDrawOnConsume));
   }
-  if (talents.forgeOnConsume > 0) nextState = addForgeToPlayer(nextState, talents.forgeOnConsume, combatTexts);
+  if (lastCardInHand && talents.forgeOnConsume > 0)
+    nextState = addForgeToPlayer(nextState, talents.forgeOnConsume, combatTexts);
   if (talents.consumeDetonatesBurn) nextState = detonateEnemyStatuses(nextState, ["burn"], combatTexts);
-  nextState = dealTalentTypedHit(nextState, "poison", talents.poisonDamageOnConsume, combatTexts);
   if (talents.healOnConsume > 0) {
     nextState = applyHealingWithCombatText(nextState, talents.healOnConsume, combatTexts);
   }
-  if (talents.goldOnConsume > 0) {
+  if (talents.goldOnConsume > 0 && rollTalentChance(REACTIVE_REWARD_CHANCES.leftovers, nextState)) {
     nextState = addGoldWithCombatText(nextState, talents.goldOnConsume, combatTexts);
   }
   if (talents.drawOnConsume > 0 && !nextState.flags.consumeDrawUsedThisTurn) {
@@ -303,17 +307,7 @@ function applyConsumeTalentRiders(state: BattleState, card: BattleCard, combatTe
       });
     }
   }
-  if (talents.blockOnConsume > 0) {
-    nextState = addPlayerStatusWithCombatText(nextState, "block", talents.blockOnConsume, combatTexts);
-  }
   return nextState;
-}
-
-function applyConsumeBurn(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
-  if (state.enemyHealth <= 0 || state.gearEffects.burnOnConsume <= 0) return state;
-  return dealScaledBurnWithStacks(state, state.gearEffects.burnOnConsume, combatTexts, {
-    multiplier: getEnemyDamageMultiplier(state, "burn"),
-  });
 }
 
 export function handlePostPlayCardDestination(
@@ -321,6 +315,7 @@ export function handlePostPlayCardDestination(
   card: BattleCard,
   triggerConsumeRiders = true,
   combatTexts: CombatTextEvent[] = [],
+  lastCardInHand = false,
 ): BattleState {
   if (card.consume) {
     let nextState = { ...state, exhausted: [...state.exhausted, card] };
@@ -332,8 +327,7 @@ export function handlePostPlayCardDestination(
           flags: { ...nextState.flags, runicQuillUsedThisTurn: true },
         };
       }
-      nextState = applyConsumeBurn(nextState, combatTexts);
-      nextState = applyConsumeTalentRiders(nextState, card, combatTexts);
+      nextState = applyConsumeTalentRiders(nextState, card, combatTexts, lastCardInHand);
     }
     return nextState;
   }
@@ -390,7 +384,7 @@ export function playBattleCardResolved(
   if (playerAlive && enemyWasAlive) {
     nextState = applyResonantChimeTrinket(nextState, combatTexts);
   }
-  nextState = handlePostPlayCardDestination(nextState, card, playerAlive, combatTexts);
+  nextState = handlePostPlayCardDestination(nextState, card, playerAlive, combatTexts, state.hand.length === 1);
   if (prepared.harvest) nextState = returnHarvestCard(nextState, card);
 
   return { state: resolvePendingBattleReactions(nextState, combatTexts), combatTexts };

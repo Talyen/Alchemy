@@ -78,7 +78,7 @@ describe("removeHarmfulPlayerStatuses", () => {
     expect(result.playerHealth).toBe(20);
   });
 
-  it("heals and emits overheal block text when status cleanse heals above max health", () => {
+  it("cleanse healing cannot grant Overflow Block", () => {
     const state = patchBattleState({
       playerHealth: 28,
       playerMaxHealth: 30,
@@ -93,9 +93,9 @@ describe("removeHarmfulPlayerStatuses", () => {
 
     const result = removeHarmfulPlayerStatuses(state, 1, texts);
     expect(result.playerHealth).toBe(30);
-    expect(result.playerStatuses.block).toBe(6);
+    expect(result.playerStatuses.block).toBe(2);
     expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 2 });
-    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "block", amount: 4 });
+    expect(texts).not.toContainEqual(expect.objectContaining({ stat: "block" }));
   });
 });
 

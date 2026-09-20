@@ -24,7 +24,7 @@ describe("Dodge gear affixes", () => {
   it("gains Block, Armor, and Health on Dodge", () => {
     const texts = makeCombatTexts();
     const state = incomingPhysical({
-      playerStatuses: defaultPlayerStatusValues({ block: 1, armor: 1 }),
+      playerStatuses: defaultPlayerStatusValues({ block: 0, armor: 0 }),
       gearEffects: { ...defaultGearEffects, blockOnDodge: 4, armorOnDodge: 2, healOnDodge: 5 },
       playerHealth: 20,
     });
@@ -34,8 +34,8 @@ describe("Dodge gear affixes", () => {
       texts,
     );
     expect(result.playerHealth).toBe(25);
-    expect(result.playerStatuses.block).toBe(5);
-    expect(result.playerStatuses.armor).toBe(3);
+    expect(result.playerStatuses.block).toBe(4);
+    expect(result.playerStatuses.armor).toBe(2);
     expect(texts.some((event) => event.kind === "notice" && event.stat === "dodge")).toBe(true);
   });
 
@@ -43,7 +43,7 @@ describe("Dodge gear affixes", () => {
     const state = incomingPhysical({
       appliesFightPacing: true,
       turn: 100,
-      playerStatuses: defaultPlayerStatusValues({ armor: 1 }),
+      playerStatuses: defaultPlayerStatusValues({ armor: 0 }),
       gearEffects: { ...defaultGearEffects, armorOnDodge: 2 },
       talentEffects: { ...patchBattleState().talentEffects, armorOnDodge: 3 },
     });
@@ -53,12 +53,17 @@ describe("Dodge gear affixes", () => {
       makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] }),
       texts,
     );
-    expect(result.playerStatuses.armor).toBe(6);
+    expect(result.playerStatuses.armor).toBe(5);
     expect(texts).toContainEqual({ target: "player", kind: "status", stat: "armor", amount: 5 });
   });
 
   it("deals Physical and Bleed damage on Dodge", () => {
     const state = incomingPhysical({
+      rng: (() => {
+        let calls = 0;
+        return () => (++calls <= 2 ? 0.01 : 0.99);
+      })(),
+      enemyStatuses: { bleed: 1 },
       gearEffects: { ...defaultGearEffects, physicalOnDodge: 5, bleedOnDodge: 4 },
     });
     const result = applyEnemyAbility(
@@ -205,6 +210,10 @@ describe("Dodge talent rewrites", () => {
   it("Pack Weave makes the Companion attack when you Dodge", () => {
     const result = applyEnemyAbility(
       incomingPhysical({
+        rng: (() => {
+          let calls = 0;
+          return () => (++calls <= 2 ? 0.01 : 0.99);
+        })(),
         activeCompanion: companionLibrary.wolf,
         talentEffects: { ...defaultTalentEffects, companionAttacksOnDodge: true },
       }),
@@ -260,6 +269,10 @@ describe("Dodge talent rewrites", () => {
   it("Lucky Foot grants Gold when you Dodge", () => {
     const result = applyEnemyAbility(
       incomingPhysical({
+        rng: (() => {
+          let calls = 0;
+          return () => (++calls <= 2 ? 0.01 : 0.99);
+        })(),
         gold: 10,
         talentEffects: { ...defaultTalentEffects, goldOnDodge: 1 },
       }),

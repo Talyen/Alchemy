@@ -13,7 +13,7 @@ import {
 } from "../../fixtures/default-battle-state";
 
 describe("applyDamageStatuses", () => {
-  it.each([3, 4, 6])("freeze restores only missing mana when starting with %i mana", (mana) => {
+  it.each([0, 3, 4, 6])("freeze restores mana only from zero when starting with %i mana", (mana) => {
     const state = patchBattleState({
       mana,
       maxMana: 4,
@@ -23,9 +23,9 @@ describe("applyDamageStatuses", () => {
     const texts = makeTexts();
     const result = applyDamageStatuses(state, { kind: "damage", damageType: "freeze", amount: 20 }, 20, texts);
     expect(result.enemyCC.freezeSkipTurns).toBeGreaterThan(0);
-    expect(result.mana).toBe(Math.max(mana, 4));
+    expect(result.mana).toBe(mana === 0 ? 4 : mana);
     expect(texts.filter((text) => text.stat === "mana")).toEqual(
-      mana < 4 ? [{ target: "player", kind: "status", stat: "mana", amount: 4 - mana }] : [],
+      mana === 0 ? [{ target: "player", kind: "status", stat: "mana", amount: 4 - mana }] : [],
     );
   });
 

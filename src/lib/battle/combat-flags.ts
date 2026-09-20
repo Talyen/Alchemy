@@ -1,4 +1,6 @@
 export const FLAG_DEFINITIONS = {
+  hawkEyeReady: { default: false as const, preserveAs: null },
+  verdictGoldPaid: { default: false as const, preserveAs: null },
   killRewardsPaid: { default: false as const, preserveAs: null },
   nextHolyCardFree: { default: false as const, preserveAs: null },
   nextWishExtraChoice: { default: false as const, preserveAs: null },

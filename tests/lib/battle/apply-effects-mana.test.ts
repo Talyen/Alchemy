@@ -38,7 +38,7 @@ describe("applyEffectByKind (mana effects)", () => {
 
   it("heals on mana gain when healOnManaGain talent is active", () => {
     const state = patchBattleState({
-      mana: 2,
+      mana: 0,
       maxMana: 4,
       playerHealth: 20,
       talentEffects: { healOnManaGain: 3 },

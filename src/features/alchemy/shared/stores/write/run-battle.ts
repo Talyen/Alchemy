@@ -1,3 +1,4 @@
+import { addRunGoldEarned } from "./run-recap";
 import type { PersistedBattleTransition } from "@/lib/active-run-session";
 import { battleSnapshot, type BattleSnapshot, type BattleState } from "@/lib/battle";
 import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
@@ -12,7 +13,9 @@ import { prepareRunNavigation } from "./run-navigation";
 
 function syncPurseFromBattleGold(draft: GameplayDraft): void {
   if (!draft.battle.hasActiveBattle) return;
-  draft.runProfile.gold = Math.max(0, draft.battle.battleState.gold);
+  const gold = Math.max(0, draft.battle.battleState.gold);
+  addRunGoldEarned(draft, Math.max(0, gold - draft.runProfile.gold));
+  draft.runProfile.gold = gold;
 }
 
 function hydrateBattleState(battleState: BattleSnapshot): BattleSnapshot {

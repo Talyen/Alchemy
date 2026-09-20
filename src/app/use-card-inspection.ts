@@ -20,7 +20,7 @@ export function isDeckInspectionVisible(
   hasActiveRun: boolean,
   returnToRunScreen: Screen | null,
 ): boolean {
-  if (screen === "draft-deck") return true;
+  if (screen === "draft-deck" || screen === "game-over" || screen === "run-victory") return true;
   if (!hasActiveRun) return false;
   return (
     isRunLoopScreen(screen) ||

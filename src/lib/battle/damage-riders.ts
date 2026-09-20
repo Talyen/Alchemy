@@ -89,9 +89,10 @@ function applyHolyDamageRiders(
   damage: number,
   combatTexts: CombatTextEvent[],
   enemyHealthBeforeHit: number,
+  eligibility = state,
 ) {
-  let nextState = applyHolyLifesteal(state, damage, combatTexts);
-  nextState = applyDamageBlock(nextState, damage, combatTexts);
+  let nextState = applyHolyLifesteal(state, damage, combatTexts, eligibility);
+  nextState = applyDamageBlock(nextState, damage, combatTexts, eligibility);
   nextState = applyHolyTithe(nextState, damage, combatTexts);
 
   nextState = applyTalentHitConversions(nextState, "holy", damage, combatTexts);
@@ -128,7 +129,7 @@ export function reflectBlockedAttackAsHoly(
     combatTexts,
     hit.previousHealth,
   );
-  nextState = applyHolyDamageRiders(nextState, card, remainingDamage, combatTexts, hit.previousHealth);
+  nextState = applyHolyDamageRiders(nextState, card, remainingDamage, combatTexts, hit.previousHealth, state);
   return applyHitEpilogue(nextState, hit.previousHealth, hit.enemyWasAlive, combatTexts, preDamageStatuses);
 }
 
@@ -194,6 +195,7 @@ interface CardHitFacts {
   readonly enemyWasBurningBefore: boolean;
   readonly enemyWasStunned: boolean;
   readonly enemyWasFrozen: boolean;
+  readonly hawkEyeReady: boolean;
   readonly forgeBeforeHit: number;
   readonly talentEffects: BattleState["talentEffects"];
   readonly previousHealth: number;
@@ -234,7 +236,6 @@ function applyCardStatusReactions(
 
 function applyCardLeechAndFrozenReactions(
   nextState: BattleState,
-  card: BattleCard,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   modifiedDamage: number,
   combatTexts: CombatTextEvent[],
@@ -265,8 +266,9 @@ function applyCardLeechAndFrozenReactions(
         facts.talentEffects.companionFreezeDamageVsFrozen,
         combatTexts,
       );
-    if (card.tags?.includes("archery"))
-      nextState = dealTalentTypedHit(nextState, "holy", facts.talentEffects.archeryHolyDamageVsFrozen, combatTexts);
+  }
+  if (modifiedDamage > 0 && facts.hawkEyeReady) {
+    nextState = dealTalentTypedHit(nextState, "holy", facts.talentEffects.archeryHolyDamageVsFrozen, combatTexts);
   }
   return nextState;
 }
@@ -321,6 +323,10 @@ export function applyDamageRiders(
   const enemyWasBurningBefore = state.enemyStatuses.burn > 0;
   const enemyWasStunned = state.enemyCC.stunSkipTurns > 0;
   const enemyWasFrozen = state.enemyCC.freezeSkipTurns > 0;
+  const eligibility = state;
+  const hawkEyeReady =
+    modifiedDamage > 0 && !companionAttack && !!card.tags?.includes("archery") && state.flags.hawkEyeReady;
+  if (hawkEyeReady) state = { ...state, flags: { ...state.flags, hawkEyeReady: false } };
   // Capture target conditions before purge and secondary hits can change them.
   const prePurgeState = isExtraHit ? state : applyAttackPurgeRider(state, combatTexts);
   if (prePurgeState.enemyHealth <= 0) return prePurgeState;
@@ -330,6 +336,7 @@ export function applyDamageRiders(
     enemyWasBurningBefore,
     enemyWasStunned,
     enemyWasFrozen,
+    hawkEyeReady,
     forgeBeforeHit: state.playerStatuses.forge,
     talentEffects: state.talentEffects,
     previousHealth,
@@ -342,10 +349,10 @@ export function applyDamageRiders(
 
   // Reactions stay depth-first: Archery's extra hit finishes before the outer hit's payout.
   nextState = applyCardStatusReactions(nextState, effect, modifiedDamage, combatTexts, facts);
-  nextState = applyCardLeechAndFrozenReactions(nextState, card, effect, modifiedDamage, combatTexts, facts, options);
+  nextState = applyCardLeechAndFrozenReactions(nextState, effect, modifiedDamage, combatTexts, facts, options);
   nextState = applyCardArcheryReactions(nextState, card, effect, modifiedDamage, combatTexts, facts, options);
   if (effect.damageType === "holy") {
-    nextState = applyHolyDamageRiders(nextState, card, modifiedDamage, combatTexts, previousHealth);
+    nextState = applyHolyDamageRiders(nextState, card, modifiedDamage, combatTexts, previousHealth, eligibility);
   }
 
   if (effect.damageType === "nature") {

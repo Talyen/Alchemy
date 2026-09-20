@@ -3,7 +3,7 @@ import type { EncounterRewardTraitId, LabyrinthMap } from "@/lib/content-systems
 import type { CorruptionResult } from "@/lib/corruption";
 import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
 import type { CraftingCurrencyId, GearInstance } from "@/lib/gear";
-import type { RunObtainedItem } from "@/lib/active-run-session";
+import type { RunObtainedItem, RunRecap } from "@/lib/active-run-session";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type {
   AlchemistState,
@@ -72,6 +72,7 @@ interface CorruptionScreenData {
 }
 
 interface RunEndScreenData {
+  runRecap: RunRecap | null;
   characterId: CharacterId;
   runEndTalentXP: TalentXP;
   talentXP: TalentXP;

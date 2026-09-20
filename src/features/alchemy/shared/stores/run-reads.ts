@@ -319,11 +319,12 @@ export function getRunSession(screen?: Screen): RunSession {
 }
 
 function selectCardInspectionData(state: GameplayState) {
+  const isRecap = state.run.navigation.screen === "game-over" || state.run.navigation.screen === "run-victory";
   const run = state.run.activeRun;
   const battle = state.battle.battleState;
   const companionModifiers = getBattleCompanionDamageModifiers(battle);
   return {
-    runDeck: run.runDeck,
+    runDeck: isRecap && state.session.runRecap ? state.session.runRecap.deck : run.runDeck,
     runSeed: run.rng.seed,
     characterId: run.characterId,
     mode: run.contentSystemType,

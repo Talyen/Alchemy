@@ -9,6 +9,7 @@ import {
   type RewardState,
   type RunActivity,
   type RunObtainedItem,
+  type RunRecap,
 } from "@/lib/active-run-session";
 import { battleSnapshot, defaultBattleState, type BattleSnapshot } from "@/lib/battle";
 import type {
@@ -61,6 +62,7 @@ export function createInitialSessionFields(): RunSessionFields {
     runEndCurrencies: { ...EMPTY_CRAFTING_CURRENCIES },
     runEndTalentXP: {},
     runEndItems: [],
+    runRecap: null,
     pendingCharacterId: null,
     pendingContentSystemType: "campaign",
     labyrinthMap: null,
@@ -100,6 +102,7 @@ export interface RunSessionFields {
   runEndCurrencies: Record<CraftingCurrencyId, number>;
   runEndTalentXP: TalentXP;
   runEndItems: RunObtainedItem[];
+  runRecap: RunRecap | null;
   pendingCharacterId: CharacterId | null;
   pendingContentSystemType: ContentSystemId;
   labyrinthMap: LabyrinthMap | null;

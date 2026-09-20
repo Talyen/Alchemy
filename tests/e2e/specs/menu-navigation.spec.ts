@@ -55,9 +55,9 @@ test.describe("Menu", critical, () => {
     await expectRunPhase(page, "battle");
     await new BattlePage(page).menuBtn.click();
     await page.getByRole("button", { name: "End Run", exact: true }).click();
-    await expect(page.getByRole("heading", { name: "Defeat" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Run Ended" })).toBeVisible();
     await expect(page.getByRole("dialog")).toHaveCount(0);
-    await page.getByRole("button", { name: "Continue" }).click();
+    await page.getByRole("button", { name: "Main Menu" }).click();
     await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible();
     await expect
       .poll(() => page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? "{}").activeRun, SAVE_KEY))

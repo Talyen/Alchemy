@@ -1,3 +1,4 @@
+import { recordRunRoom } from "./run-recap";
 import {
   emptyHydratedMysteryVisit,
   readActivityData,
@@ -114,6 +115,8 @@ export function commitDestinationClaim(draft: GameplayDraft, destination: Destin
   cancelDestinationClaim(draft);
   setCompletedDestinations(draft, (previous) => [...previous, destination]);
   setDestinationIndexInAct(draft, (previous) => previous + 1);
+  const run = draft.run.activeRun;
+  recordRunRoom(draft, destination, `campaign:${run.currentAct}:${run.destinationIndexInAct}:${destination}`);
   return true;
 }
 

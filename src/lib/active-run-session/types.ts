@@ -1,3 +1,4 @@
+import type { Destination } from "@/lib/routing";
 import type { BattleSnapshot } from "@/lib/battle";
 import type { CorruptionResult } from "@/lib/corruption";
 import type { BattleCard, CharacterId, DifficultyId, TalentXP } from "@/lib/game-data";
@@ -69,7 +70,29 @@ interface ActiveCombatData {
   activeLabyrinthRewardModifiers: EncounterRewardTraitId[];
 }
 
+export interface RunRoomVisit {
+  id: string;
+  destination: Destination;
+  act: number;
+  floor: number | null;
+  completed: boolean;
+}
+
+export interface RunRecap {
+  mode: ContentSystemId;
+  rooms: RunRoomVisit[];
+  partial: boolean;
+  ending: "death" | "abandoned" | "victory";
+  endingRoomId: string | null;
+  deck: BattleCard[];
+  boons: string[];
+  gold: number | null;
+}
+
 export interface ActiveRunData {
+  runHistory: RunRoomVisit[];
+  runHistoryPartial: boolean;
+  runGoldEarned: number | null;
   characterId: CharacterId;
   runDeck: BattleCard[];
   runPlayerHealth: number;

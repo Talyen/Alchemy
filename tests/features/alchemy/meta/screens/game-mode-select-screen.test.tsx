@@ -20,7 +20,7 @@ describe("GameModeSelectScreen", () => {
   it("renders the game mode chooser title and modes", () => {
     render(<GameModeSelectScreen {...defaultProps} />);
 
-    expect(screen.getByRole("heading", { name: "Choose a Path" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Start a Run" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "The Campaign" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "The Labyrinth" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Wildwood Draft" })).toBeTruthy();

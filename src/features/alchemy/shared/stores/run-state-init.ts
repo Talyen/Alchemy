@@ -8,7 +8,7 @@ import {
 } from "@/lib/game-data";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { type Destination } from "@/lib/routing";
-import type { ActiveRunData, RunObtainedItem } from "@/lib/active-run-session";
+import type { ActiveRunData, RunObtainedItem, RunRoomVisit } from "@/lib/active-run-session";
 import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { DifficultyId, TalentXP } from "@/lib/game-data";
@@ -23,6 +23,9 @@ import { EMPTY_CRAFTING_CURRENCIES, type CraftingCurrencyId } from "@/lib/gear";
 import { filterValidDestinations, filterValidDestinationRounds } from "@/lib/routing";
 
 export interface ActiveRunProgressFields {
+  runHistory: RunRoomVisit[];
+  runHistoryPartial: boolean;
+  runGoldEarned: number | null;
   characterId: CharacterId;
   runDeck: BattleCard[];
   runPlayerHealth: number;
@@ -60,6 +63,8 @@ export interface PermanentProgressFields {
 export type ActiveRunReadView = ActiveRunProgressFields & { initialized: boolean };
 
 export const ACTIVE_RUN_PROGRESS_KEYS = [
+  "runHistoryPartial",
+  "runGoldEarned",
   "characterId",
   "runDeck",
   "runPlayerHealth",
@@ -80,6 +85,7 @@ export const ACTIVE_RUN_PROGRESS_KEYS = [
   "runMaterialsEarned",
   "runCurrenciesEarned",
   "runObtainedItems",
+  "runHistory",
 ] as const satisfies ReadonlyArray<keyof ActiveRunProgressFields>;
 
 export function pickActiveRunView(run: {
@@ -114,6 +120,7 @@ export const EMPTY_ACTIVE_RUN_COLLECTION_KEYS = [
   "runMaterialsEarned",
   "runCurrenciesEarned",
   "runObtainedItems",
+  "runHistory",
 ] as const satisfies ReadonlyArray<keyof ActiveRunProgressFields>;
 
 function createEmptyActiveRunCollections(): Pick<
@@ -130,6 +137,7 @@ function createEmptyActiveRunCollections(): Pick<
     runMaterialsEarned: emptyInventory(),
     runCurrenciesEarned: { ...EMPTY_CRAFTING_CURRENCIES },
     runObtainedItems: [],
+    runHistory: [],
   };
 }
 
@@ -165,6 +173,8 @@ function createFreshActiveRunFields(characterId: CharacterId): ActiveRunProgress
     runMaxHealth: MAX_PLAYER_HEALTH,
     runMetaMaxHealth: MAX_PLAYER_HEALTH,
     roomsEncountered: 0,
+    runHistoryPartial: false,
+    runGoldEarned: 0,
     currentAct: 1,
     destinationIndexInAct: 0,
     ...createEmptyActiveRunCollections(),
@@ -177,6 +187,9 @@ function createFreshActiveRunFields(characterId: CharacterId): ActiveRunProgress
 function createResumeActiveRunFields(activeRun: ActiveRunData): ActiveRunProgressFields {
   const empty = createEmptyActiveRunCollections();
   return {
+    runHistory: (activeRun.runHistory ?? []).map((room) => ({ ...room })),
+    runHistoryPartial: activeRun.runHistoryPartial ?? true,
+    runGoldEarned: activeRun.runGoldEarned ?? null,
     characterId: activeRun.characterId,
     runDeck: [...activeRun.runDeck],
     runPlayerHealth: activeRun.runPlayerHealth,

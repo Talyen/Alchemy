@@ -12,7 +12,13 @@ import {
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { gearFrozenDamageMultiplier } from "./gear-effects";
 import { scalePercent, scalePerMana } from "./amount-helpers";
-import { type BattleCard, type BattleCardEffect, type DamageType, type TalentEffectManifest } from "@/lib/game-data";
+import {
+  isPotionCard,
+  type BattleCard,
+  type BattleCardEffect,
+  type DamageType,
+  type TalentEffectManifest,
+} from "@/lib/game-data";
 import { reduceEnemyArmor, setFlag, type BattleState } from "./types";
 import { paceCombatDamage } from "./fight-pacing";
 import {
@@ -246,7 +252,15 @@ function computeBaseDamage(
   bonus = 0,
   companionAttack = false,
 ) {
-  const rawAmount = computeBaseRawAmount(state, effect, card, companionAttack) + bonus;
+  // These bonuses enlarge the original packet; they do not create follow-up hits.
+  const poisonPotionBonus =
+    card && !companionAttack && isPotionCard(card) && effect.damageType === "poison"
+      ? state.talentEffects.poisonDamageOnConsume
+      : 0;
+  const consumeBurnBonus =
+    card?.consume && !companionAttack && effect.damageType === "burn" ? state.gearEffects.burnOnConsume : 0;
+  const rawAmount =
+    computeBaseRawAmount(state, effect, card, companionAttack) + bonus + poisonPotionBonus + consumeBurnBonus;
   const hasBlock = effect.equalToBlock === true;
   const hasArmor = effect.equalToArmor === true;
   const hasGold = effect.equalToGoldPercent !== undefined;

@@ -10,6 +10,10 @@ describe("card reward interactions", () => {
     const summon = makeTestCard({ effects: [{ kind: "summon-companion", companionId: "mana-moth" }] });
     const result = applyEnemyAbility(
       incomingPhysical({
+        rng: (() => {
+          let calls = 0;
+          return () => (++calls <= 2 ? 0.01 : 0.99);
+        })(),
         deck: [summon],
         mana: 3,
         maxMana: 3,
@@ -27,6 +31,10 @@ describe("card reward interactions", () => {
     const nature = makeTestCard({ effects: [{ kind: "damage", damageType: "nature", amount: 2 }] });
     const result = applyEnemyAbility(
       incomingPhysical({
+        rng: (() => {
+          let calls = 0;
+          return () => (++calls <= 2 ? 0.01 : 0.99);
+        })(),
         deck: [nature],
         playerHealth: 50,
         gearEffects: { dodgeDrawAndPlay: 1 },
@@ -42,6 +50,10 @@ describe("card reward interactions", () => {
   it("Mortar and Pestle deals Poison for an automatically used Potion", () => {
     const result = applyEnemyAbility(
       incomingPhysical({
+        rng: (() => {
+          let calls = 0;
+          return () => (++calls <= 2 ? 0.01 : 0.99);
+        })(),
         deck: [cardById["health-potion"]!],
         gearEffects: { dodgeDrawAndPlay: 1 },
         trinketEffects: { mortarPestlePoisonOnPotionUse: 1 },

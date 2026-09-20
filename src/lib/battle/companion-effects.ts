@@ -1,3 +1,4 @@
+import { HALF_DIVISOR } from "../game-constants";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import { damageOnlyEffects } from "./card-classification";
@@ -60,11 +61,15 @@ export function resolveCompanionTurnStart(
     );
 
     afterEffects = { ...afterEffects, flags: { ...afterEffects.flags, companionNextAttackBonus: attackBonuses.flat } };
-    if (damageDealt > 0 && state.gearEffects.healOnCompanionAttack > 0) {
+    if (
+      damageDealt > 0 &&
+      state.gearEffects.healOnCompanionAttack > 0 &&
+      state.playerHealth < state.playerMaxHealth / HALF_DIVISOR
+    ) {
       afterEffects = applyHealingWithCombatText(afterEffects, state.gearEffects.healOnCompanionAttack, combatTexts);
     }
 
-    if (damageDealt > 0 && state.talentEffects.blockOnCompanionDamage > 0) {
+    if (damageDealt > 0 && state.talentEffects.blockOnCompanionDamage > 0 && state.playerStatuses.block === 0) {
       afterEffects = addPlayerStatusWithCombatText(
         afterEffects,
         "block",

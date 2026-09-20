@@ -22,10 +22,10 @@ function applyStunTriggerBonuses(state: BattleState, combatTexts?: CombatTextEve
     {
       draw: talents.drawOnStun,
       nextCardFree: talents.nextCardFreeOnStun,
-      block: talents.blockOnStun + gear.blockOnStun,
-      forge: talents.forgeOnStun + gear.forgeOnStun,
+      block: state.playerStatuses.block === 0 ? talents.blockOnStun + gear.blockOnStun : 0,
+      forge: state.playerStatuses.forge === 0 ? talents.forgeOnStun + gear.forgeOnStun : 0,
       stripArmor: talents.stunStripArmor,
-      mana: talents.manaOnStun + gear.manaOnStun,
+      mana: state.mana === 0 ? talents.manaOnStun + gear.manaOnStun : 0,
     },
     combatTexts,
   );
@@ -65,8 +65,12 @@ function applyStunTrinketEffects(state: BattleState, combatTexts?: CombatTextEve
 
 function applyStunUniqueGearEffects(state: BattleState, combatTexts: CombatTextEvent[] | undefined): BattleState {
   let nextState = state;
-  if (nextState.gearEffects.holyStunBuildupGold > 0) {
-    nextState = addGoldWithCombatText(nextState, nextState.gearEffects.holyStunBuildupGold, combatTexts ?? []);
+  if (nextState.gearEffects.holyStunBuildupGold > 0 && !nextState.flags.verdictGoldPaid) {
+    nextState = addGoldWithCombatText(
+      setFlag(nextState, "verdictGoldPaid", true),
+      nextState.gearEffects.holyStunBuildupGold,
+      combatTexts ?? [],
+    );
   }
   return nextState;
 }

@@ -14,8 +14,10 @@ import {
   setEncounteredEnemyIds,
   setEncounteredRunEnemyIds,
   setRoomsEncountered,
+  recordRunRoom,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { syncRunToBattleStart } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { DESTINATIONS } from "@/lib/routing";
 import { appendUnique } from "@/lib/utils";
 import { withWildwoodModifier, type WildwoodModifierId } from "@/lib/content-systems/wildwood/gauntlet";
 import { appendEncounterTraits } from "@/lib/content-systems/encounter-traits";
@@ -107,6 +109,15 @@ export function createBattleStartCommands(onStarted: (result: BattleStarted) => 
     }
     const openingDrawState = drawOpeningHand(nextBattleState);
     initializeActiveBattle(draft, openingDrawState, null);
+    if (run.contentSystemType !== "labyrinth" && draft.session.rewardFlow.claim.kind !== "destination") {
+      const destination =
+        enemy.enemyType === "boss"
+          ? DESTINATIONS.BOSS_COMBAT
+          : enemy.enemyType === "elite"
+            ? DESTINATIONS.ELITE_COMBAT
+            : DESTINATIONS.NORMAL_COMBAT;
+      recordRunRoom(draft, destination, `${run.contentSystemType}:battle:${nextRoomsEncountered}`);
+    }
     setEncounteredRunEnemyIds(draft, (current) => appendUnique(current, enemy.id));
     setEncounteredEnemyIds(draft, (current) => appendUnique(current, enemy.id));
 

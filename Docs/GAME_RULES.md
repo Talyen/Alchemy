@@ -125,9 +125,9 @@ Run-end keyword cards intentionally show level + XP bar only; the Talents screen
 - **Automatic card rewards and discounts** — Dance of Blades grants Whistle's Companion action after summoning or buffing, Photosynthesis healing after a Nature card, and Mortar and Pestle damage after a Potion. These use the ordinary play reward paths. Mortar and Pestle also triggers for each duplicated Potion use. First-card allowances retain their established priority. After those allowances, Unique free-card effects and flat encounter/returned-card discounts apply before spending armed next-card discounts; a card already reduced to zero preserves Divine Favor and other armed next-card discounts.
 - **Play rewards** — Iron Guard and Apothecary’s Guard grant Block/Armor once per matching card play. Eagle Eye requires an already Stunned enemy. Ecosystem requires Poison before the Nature card plays. Armor Siphon steals only Armor remaining when its reward resolves, including after earlier play rewards deplete Armor. Wildfire removes one player Poison stack and deals Poison damage only if a stack was removed; fully cleansing Poison also awards cleanse rewards. Quickdraw and Venom Strike prepare additional Physical damage using the conditions before card effects resolve and the existing first-attempted-packet bonus rules.
 - **Card sequences** — Follow-through checks whether the previous card this turn was Archery; Briar Patch checks Nature before a Physical card. Ordinary and automatically played cards advance the sequence; Companion actions, scheduled pulses, and damage echoes do not. Repeated effects from one card do not repeat its play rewards. The next player turn clears the sequence.
-- **Repeatable rewards** — Last Supper, Second Helping, Rotgut, and Combustible reward each consumed card, excluding summon cards, without a turn cap. A repeated card still Consumes only once. Divine Favor readies the next Holy card after a real harmful-status cleanse, including Companion and scheduled cleansing; it survives turns and only actual Holy-card payment spends it. The armed benefit appears as a Divine Favor status indicator. Last Resort cleanses on a surviving downward crossing below 25% Health, including hostile ticks and Health costs. The triggering hit applies its harmful buildup before Last Resort cleanses, so that buildup is removed too. It can trigger again after healing above its threshold.
+- **Repeatable rewards** — Second Helping and Combustible reward each consumed card, excluding summon cards, without a turn cap. Last Supper grants 3 Forge only when the consumed card was the last card in hand before its effects and draws; automatically drawn-and-played cards never qualify. Leftovers independently rolls a 25% chance for 4 Gold on each Consume. A repeated card still Consumes only once. Divine Favor readies the next Holy card after a real harmful-status cleanse, including Companion and scheduled cleansing; it survives turns and only actual Holy-card payment spends it. The armed benefit appears as a Divine Favor status indicator. Last Resort cleanses on a surviving downward crossing below 25% Health, including hostile ticks and Health costs. The triggering hit applies its harmful buildup before Last Resort cleanses, so that buildup is removed too. It can trigger again after healing above its threshold.
 - **Free Follow-up** — Stun from any source, including Companions and delayed effects, readies the next card discount. It survives turn changes and is spent only when it reduces a card payment.
-- **Consume reactions** — resolving a card twice still Consumes one card and grants Insatiable one bonus. Consuming Gear deals immediate triggered Burn damage, with resistance, pacing, Burn buildup, Armor decay, and kill rewards; it preserves bonuses reserved for the next card.
+- **Consume reactions** — resolving a card twice still Consumes one card and grants Insatiable one bonus. Consuming Gear adds its rolled amount to existing Burn damage packets on cards with Consume. Rotgut adds 2 to Poison damage packets on Potions. Neither adds a separate hit or grants damage to a utility card. Both use normal card damage scaling and defenses. Feast grants 4 Block when a Potion’s own healing effect moves the player from injured to full Health; non-Potion healing, passive healing, and Leech do not qualify.
 - **Talent progression** — Row eligibility requires every talent in prior rows. Purchased talents retain their IDs and progress when rows are reordered; see [save baseline](../src/features/alchemy/shared/storage/MIGRATIONS.md#supported-baseline).
 
 #### Attack bonuses
@@ -135,12 +135,20 @@ Run-end keyword cards intentionally show level + XP bar only; the Talents screen
 - **Cull the Weak** — damage effects of Leech-keyword cards gain an additive 25% damage bonus when enemy Health immediately before that effect is strictly below half maximum. Recheck each hit; use normal scaling, rounding, mitigation, and Leech healing. Companion attacks, unrelated talent hits, and status ticks do not receive this card bonus.
 - **Attack bonuses** — Coordinated Strike accumulates for the Companion's next attempted damage packet; utility actions retain it. Sanguine Overflow requires actual Leech healing from below full to full Health and readies one bonus, refreshed rather than stacked. Card damage bonuses are consumed on the first attempted damage packet, including Dodge; Sanguine Overflow remains ready if a chance branch or scheduled effect attempts no attack. Additional damage types resolve only if that packet deals positive damage. Equal-to-resource attacks also receive their bonus, including Opening and other Dodge-earned Physical bonuses.
 - **Opening / Open Flank** — the armed Physical bonus applies to the next undodged attack of any damage type. Physical attacks include it in their main hit; other damaging attacks add a separate Physical hit through normal modifiers and defenses. Enemy Dodge preserves this bonus, and Companion actions do not spend it.
-- **Hit rewards** — First Blood checks for no Bleed before the hit. Finish Him requires an already Stunned enemy. Hawk Eye and Snow Pack add separate Holy/Freeze hits against already Frozen enemies; Freeze immunity can prevent the latter’s buildup without preventing its damage. Icebreaker grants Forge after the triggering Physical hit spends Forge. Desperate Siphon checks player Health before healing and grants Block from actual Health restored, excluding overheal.
+- **Hit rewards** — First Blood checks for no Bleed before the hit. Finish Him requires an already Stunned enemy. Hawk Eye readies one additional 4-Holy hit on a successful Freeze; the next positive Archery hit spends it, even after Freeze ends. Further Freezes refresh rather than stack the allowance; Dodge and fully blocked hits retain it. Companion hits cannot spend it. Snow Pack adds a separate Freeze hit against already Frozen enemies; Freeze immunity can prevent its buildup without preventing damage. Icebreaker grants Forge after the triggering Physical hit spends Forge. Desperate Siphon checks player Health before healing and grants Block from actual Health restored, excluding overheal.
 - **Trophy Shot** — an Archery attack grants its kill Gold once after its complete damage packet, including secondary hits, Parting Cut, and detonations. Repeated hits cannot pay again for an already defeated enemy.
 - **Pyric Gear** — adds its advertised percentage per Mana Crystal to the additive Burn damage multiplier, before rounding, pacing, critical hits, and defenses. It is not a flat fraction of the crystal count. Bloodember Pendant shares this bonus with Bleed.
 - **Nature damage gear** — Bloomwoven rolls for each positive Nature damage packet that lands, including Companion attacks; Dodge, fully mitigated hits, and unselected chance branches cannot restore Mana.
 
 ### Talent event rules
+
+#### Selective feedback rewards
+
+- **Eligibility and feedback** — evaluate resource and Health conditions before the triggering event's reward chain, with matching Talent/Gear amounts added together. An earlier reward cannot disable its matching counterpart or enable a different conditional reward in that event. Do not hide earned combat text; matching target/kind/stat events still merge normally. Each independent proc uses seeded world RNG, only when its source and basic target requirements exist.
+- **Dodge payouts** — Feint has a 25% chance for 2 Forge; Lucky Foot a separate 25% chance for 4 Gold. Pack Weave has a 50% chance to activate the Companion; Bladedance has a 25% chance to draw and play a random card. Perfect Timing and Wardplate require no Armor, Nimble requires no Block, and Winded requires below half Health. Riposting has a 50% chance for its Physical hit; Fleeting requires the attacker to be Bleeding before Dodge rewards. Catch Breath, Footwork, and other unrelated Dodge rewards retain their existing behavior.
+- **Stun payouts** — Riled Up/Forged, Guarded Counter/Steadfast, and Stun Surge/Arcane require respectively zero Forge, Block, and Mana. Matching Talent and Gear rewards add together against that single eligibility check.
+- **Holy and healing payouts** — Blessed Leech requires below half Health; Radiant Guard requires full Health before the Holy hit's rewards. Sun-Struck Shield reflects only attacks that deplete positive Block, using Block lost before defensive rewards refill it. Arcane Mending heals only for a positive Mana gain from zero, including Mana Crystal gains. Overflow converts only direct card healing's excess to Block, excluding Leech and incidental healing; Clean Slate retains its separate Leech eligibility.
+- **Other payouts** — Coinmail requires no Block before a combat Gold gain. Watchdog requires no Block and Kinbound below half Health before the Companion action. Wishborn requires below half Health and Wishwoven zero Mana at the start of each Wish; Wishfire requires an enemy already Burning before that Wish's rewards. Wishful independently rolls 50% for its Gold; Wishful Trinket rolls 50% to grant a reward, then uses its existing Forge/Armor selection. Talent-only Wish rewards retain their other conditions.
 
 #### Triggered and copied damage
 
@@ -221,10 +229,24 @@ otherwise Play opens the existing mode/hero setup. Continue restores the exact
 activity, including pending battle results, rewards, events, shops, and drafts.
 Menu and meta visits preserve that location. The existing red End Run menu action
 ends the run immediately without confirmation and always shows the End Run screen;
-Continue on that recap returns to the main menu. Earned progression is kept and
+Main Menu on that recap returns to the main menu. Earned progression is kept and
 unclaimed choices are not granted. Normal defeat and victory retain their outcome screens. Drafting is part of the run, not setup
 for a second run. Gold, Talents, Homestead progress, and equipment remain permanent
 profile data. A current battle still protects its equipped items during meta visits.
+
+### Run recap
+
+Mode selection is titled **Start a Run**. Death and voluntary endings show **Run Ended**;
+victory keeps its own title. The ending recap preserves the run deck and Boons for
+ordinary read-only inspection. Its resource row includes Gold earned during the run,
+including committed combat and encounter rewards after multipliers, excluding starting
+Gold and prior savings. Spending does not subtract from this earned total.
+
+Run Ended shows a non-interactive chronological room strip with Act/floor markers,
+a skull at the death location, and a neutral endpoint for voluntary endings. Offered
+rooms, drafts, menus, and reward screens are not visits. History spans acts and floors;
+re-entering an unresolved room does not create a duplicate. Existing menu upgrade
+highlights continue to guide between-run progression.
 
 ### Labyrinth exploration
 

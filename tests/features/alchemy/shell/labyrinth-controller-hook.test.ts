@@ -6,8 +6,12 @@ import {
   type LabyrinthNodeHandlers,
 } from "@/features/alchemy/run-loop/run/labyrinth-controller";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { setLabyrinthMap } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
+import {
+  completeRunRoom,
+  setHasActiveRun,
+  setLabyrinthMap,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 
 function stubNodeHandlers(overrides: Partial<LabyrinthNodeHandlers> = {}): LabyrinthNodeHandlers {
@@ -141,6 +145,10 @@ describe("Labyrinth commands", () => {
   });
 
   it("does not move or clear a room when its destination fails to open", () => {
+    dispatchRunSessionCommand((draft) => {
+      setHasActiveRun(draft, true);
+      draft.run.activeRun.runHistory = [];
+    });
     const controller = createLabyrinthController();
     const target = firstReachableId();
     act(() => controller.selectNode(target));
@@ -158,6 +166,25 @@ describe("Labyrinth commands", () => {
     expect(readRunSession().activeLabyrinthPendingNode).toBeNull();
     expect(readRunSession().labyrinthMap!.currentNodeId).toBe("labyrinth-floor-1-entrance");
     expect(readRunSession().labyrinthMap!.nodes[target]!.cleared).toBe(false);
+    expect(readActiveRun().runHistory).toEqual([]);
+  });
+
+  it("records the room before an opening attack can complete it", () => {
+    dispatchRunSessionCommand((draft) => {
+      setHasActiveRun(draft, true);
+      draft.run.activeRun.contentSystemType = "labyrinth";
+      draft.run.activeRun.runHistory = [];
+    });
+    const controller = createLabyrinthController();
+    controller.selectNode(firstReachableId());
+    controller.enterSelectedNode(
+      stubNodeHandlers({
+        onStartBattleWithModifiers: () => dispatchRunSessionCommand((draft) => completeRunRoom(draft)),
+      }),
+    );
+    expect(readActiveRun().runHistory).toEqual([
+      expect.objectContaining({ id: `labyrinth:1:${firstReachableId()}`, completed: true }),
+    ]);
   });
 
   it("routes corruption chambers to onStartCorruption with room modifiers", () => {

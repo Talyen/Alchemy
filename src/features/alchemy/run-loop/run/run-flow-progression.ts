@@ -17,6 +17,7 @@ import {
   setHasActiveBattle,
   setRewardState,
   setRoomsEncountered,
+  completeRunRoom,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { ACTS_PER_RUN } from "@/lib/game-constants";
@@ -25,6 +26,7 @@ import type { CompleteRunVictory, RunFlowHandlerDeps } from "./run-flow";
 
 export function createProgressionHandlers(deps: RunFlowHandlerDeps, completeRunVictory: CompleteRunVictory) {
   function clearCompletedDestinationState(draft: GameplayDraft) {
+    completeRunRoom(draft);
     setRoomsEncountered(draft, (p) => p + 1);
     clearMysteryVisitState(draft);
     clearShopOfferings(draft);

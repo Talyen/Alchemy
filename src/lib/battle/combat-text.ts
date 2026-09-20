@@ -63,12 +63,12 @@ export function applyHealingWithCombatText(
   state: BattleState,
   amount: number,
   combatTexts?: CombatTextEvent[],
-  options?: { skipFightPacing?: boolean },
+  options?: { skipFightPacing?: boolean; allowOverhealBlock?: boolean },
 ): BattleState {
   if (amount <= 0) return state;
   const healAmount = options?.skipFightPacing ? amount : paceCombatMagnitude(state, amount, "player");
   const prevState = state;
-  const nextState = applyPlayerHealing(state, healAmount);
+  const nextState = applyPlayerHealing(state, healAmount, options?.allowOverhealBlock);
   const actualHeal = nextState.playerHealth - prevState.playerHealth;
   if (combatTexts) {
     if (actualHeal > 0) {
@@ -84,8 +84,9 @@ export function applyHealOnManaGain(
   state: BattleState,
   gainAmount: number,
   combatTexts: CombatTextEvent[],
+  manaBeforeGain: number,
 ): BattleState {
-  if (state.talentEffects.healOnManaGain <= 0 || gainAmount <= 0) return state;
+  if (state.talentEffects.healOnManaGain <= 0 || gainAmount <= 0 || manaBeforeGain !== 0) return state;
   return applyHealingWithCombatText(state, state.talentEffects.healOnManaGain, combatTexts);
 }
 
@@ -102,7 +103,7 @@ export function gainManaWithCombatText(
   if (gained > 0 && combatTexts) {
     mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: gained });
   }
-  return applyHealOnManaGain(nextState, gained, combatTexts ?? []);
+  return applyHealOnManaGain(nextState, gained, combatTexts ?? [], state.mana);
 }
 
 export function addPlayerStatusWithCombatText(
@@ -139,7 +140,7 @@ export function addGoldWithCombatText(
 
   const scaledGold = scaleGoldReward(amount, state.gearEffects);
   let nextState = { ...state, gold: state.gold + scaledGold };
-  if (state.talentEffects.blockPerGold > 0 && scaledGold > 0) {
+  if (state.playerStatuses.block === 0 && state.talentEffects.blockPerGold > 0 && scaledGold > 0) {
     nextState = addPlayerStatusWithCombatText(
       nextState,
       "block",
@@ -156,7 +157,8 @@ export function addGoldWithCombatText(
       amount: scaledGold,
     });
   }
-  if (state.gearEffects.goldGrantsForgeAndHoly <= 0 || scaledGold <= 0) return nextState;
+  if (state.gearEffects.goldGrantsForgeAndHoly <= 0 || scaledGold <= 0 || state.playerStatuses.forge > 0)
+    return nextState;
   const previousForge = nextState.playerStatuses.forge;
   nextState = addPlayerStatusWithCombatText(nextState, "forge", scaledGold, combatTexts, { skipFightPacing: true });
   const nextForge = nextState.playerStatuses.forge;

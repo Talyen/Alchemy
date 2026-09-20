@@ -360,9 +360,9 @@ describe("Unique Dodge and Block rewards", () => {
     const result = dodge(
       battle({ playerStatuses: { block: 20 }, gearEffects: { dodgeSpendsPreservedBlock: 1, blockOnDodge: 5 } }),
     );
-    expect(result.playerStatuses.block).toBe(15);
+    expect(result.playerStatuses.block).toBe(10);
     expect(result.enemyHealth).toBe(990);
-    expect(advanceToPlayerTurn(result).playerStatuses.block).toBe(15);
+    expect(advanceToPlayerTurn(result).playerStatuses.block).toBe(10);
   });
 
   it("Knight's Answer requires absorbed damage, grants one free Physical card, and does not protect Armor", () => {
@@ -412,7 +412,7 @@ describe("Unique combat saves", () => {
       card,
     );
     expect(result.enemyHealth).toBe(70);
-    expect(result.playerStatuses.block).toBe(30);
+    expect(result.playerStatuses.block).toBe(15);
     expect(result.mana).toBe(8);
     expect(result.uniqueGear.finalSparkUsed).toBe(true);
   });

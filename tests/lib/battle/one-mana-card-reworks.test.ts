@@ -43,7 +43,7 @@ describe("one-Mana card tradeoffs", () => {
     expect(next.mana).toBe(2);
     expect(next.playerHealth).toBe(11);
     expect(next.exhausted.filter((card) => card.id === "prayer")).toHaveLength(1);
-    expect(next.playerStatuses.forge).toBe(1);
+    expect(next.playerStatuses.forge).toBe(3);
     expect(next.hand).toHaveLength(1);
     expect(next.wishOptions).not.toBeNull();
     expect(next.wishQueue).toHaveLength(1);
@@ -82,9 +82,14 @@ describe("one-Mana card tradeoffs", () => {
     expect(burned.enemyStatuses.burn).toBe(2);
     expect(burned.enemyMitigation.armor).toBe(2);
     expect(burned.flags.nextHitCrit).toBe(true);
-    const gear = applyWishEffect(battle({ gearEffects: { burnOnWish: 2 } }), cardById.wish!, 1, []);
+    const gear = applyWishEffect(
+      battle({ gearEffects: { burnOnWish: 2 }, enemyStatuses: { burn: 1 } }),
+      cardById.wish!,
+      1,
+      [],
+    );
     expect(gear.enemyHealth).toBe(198);
-    expect(gear.enemyStatuses.burn).toBe(0);
+    expect(gear.enemyStatuses.burn).toBe(1);
   });
 
   it("two Stargazes queue two Wishes without duplicating the pending effects on resume", () => {

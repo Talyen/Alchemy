@@ -60,7 +60,7 @@ test("screen reveals wait for mounted artwork on arrival and return", async ({ p
   await menu.playBtn.click();
   await waitForHeldArtwork();
   await held.evaluateAll((images) => images.forEach((image) => image.dispatchEvent(new Event("release-decode"))));
-  await expect(page.getByRole("heading", { name: "Choose a Path" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Start a Run" })).toBeVisible();
   await page.getByRole("button", { name: "The Campaign", exact: true }).click();
   await waitForHeldArtwork();
   await expect(pendingScreen).toHaveCSS("visibility", "hidden");

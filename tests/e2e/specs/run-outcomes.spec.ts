@@ -1,6 +1,5 @@
-import { expect } from "@playwright/test";
 import type { BattleCard } from "@/lib/game-data";
-import { test } from "../../fixtures/e2e";
+import { test, expect } from "../../fixtures/e2e";
 import {
   injectBossState,
   injectActiveBattle,
@@ -50,7 +49,7 @@ test.describe("Run Outcomes", critical, () => {
       await winBattleAndClaimReward(page);
 
       await expect(page.getByRole("heading", { name: /Victory|Triumph|Run Complete/i })).toBeVisible({ timeout: 5000 });
-      await expect(page.getByRole("button", { name: "Continue" })).toBeVisible({ timeout: 5000 });
+      await expect(page.getByRole("button", { name: "Main Menu" })).toBeVisible({ timeout: 5000 });
     });
   });
 
@@ -60,8 +59,8 @@ test.describe("Run Outcomes", critical, () => {
       await page.keyboard.press("Escape");
       await expect(page.getByRole("button", { name: "End Run" })).toBeVisible({ timeout: 3000 });
       await page.getByRole("button", { name: "End Run" }).click();
-      await expect(page.getByRole("heading", { name: "Defeat" })).toBeVisible({ timeout: 5000 });
-      await page.getByRole("button", { name: "Continue" }).click();
+      await expect(page.getByRole("heading", { name: "Run Ended" })).toBeVisible({ timeout: 5000 });
+      await page.getByRole("button", { name: "Main Menu" }).click();
       await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible({ timeout: 5000 });
     });
 
@@ -81,44 +80,60 @@ test.describe("Run Outcomes", critical, () => {
       expect(activeRun).toBeNull();
     });
 
-    test("after defeat by lethal damage, Continue returns to menu", critical, async ({ page, fastBattle }) => {
-      void fastBattle;
+    test(
+      "after defeat, the recap shows the journey and build before returning to menu",
+      critical,
+      async ({ page, fastBattle }) => {
+        void fastBattle;
 
-      const battleState = makeGoblinBattleState({
-        hand: [],
-        mana: 0,
-        turn: 1,
-        playerHealth: 1,
+        const battleState = makeGoblinBattleState({
+          hand: [],
+          mana: 0,
+          turn: 1,
+          playerHealth: 1,
 
-        deathsDoorUsed: true,
-        deathsDoorActive: false,
+          deathsDoorUsed: true,
+          deathsDoorActive: false,
+          playerStatuses: { poison: 50 },
 
-        gearEffects: { dodgeChance: 0 },
-        talentEffects: { dodgeChanceBelowHalfHealth: 0 },
-      });
+          gearEffects: { dodgeChance: 0 },
+          talentEffects: { dodgeChanceBelowHalfHealth: 0 },
+        });
 
-      battleState.currentEnemy = { ...battleState.currentEnemy, abilityIds: ["slash", "sunder", "burning-blade"] };
+        battleState.currentEnemy = { ...battleState.currentEnemy, abilityIds: ["slash", "sunder", "burning-blade"] };
 
-      await injectActiveBattle(page, battleState, {
-        runPlayerHealth: 1,
-        runMaxHealth: 30,
-      });
+        await injectActiveBattle(page, battleState, {
+          runPlayerHealth: 1,
+          runMaxHealth: 30,
+          runGoldEarned: 42,
+          runHistoryPartial: false,
+          runHistory: [{ id: "first", destination: "Normal Combat", act: 1, floor: null, completed: false }],
+          runBoons: ["bone-charm"],
+        });
 
-      const battle = new BattlePage(page);
-      await expect(battle.endTurnBtn).toBeEnabled({ timeout: 15000 });
+        const battle = new BattlePage(page);
+        await expect(battle.endTurnBtn).toBeEnabled({ timeout: 15000 });
 
-      await battle.endTurn();
-      await expect(page.getByRole("heading", { name: "Defeat" })).toBeVisible({ timeout: 15000 });
+        await battle.endTurn();
+        await expect(page.getByRole("heading", { name: "Run Ended" })).toBeVisible({ timeout: 15000 });
+        await expect(page.getByRole("region", { name: "Run journey" })).toContainText("defeated here");
+        await expect(page.getByText("+42", { exact: true })).toBeVisible();
+        await page.getByRole("button", { name: /View Deck/ }).click();
+        await expect(page.getByRole("heading", { name: "Deck", exact: true })).toBeVisible();
+        await page.getByRole("button", { name: "Close card inspection" }).click();
+        await page.getByRole("button", { name: "Inspect Boons" }).click();
+        await expect(page.getByRole("heading", { name: "Boons", exact: true })).toBeVisible();
+        await page.getByRole("button", { name: "Close boons", exact: true }).click();
+        await page.getByRole("button", { name: "Main Menu" }).click();
+        await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible({ timeout: 15000 });
 
-      await page.getByRole("button", { name: "Continue" }).click();
-      await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible({ timeout: 15000 });
-
-      const activeRun = await page.evaluate((saveKey) => {
-        const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-        return save.activeRun ?? null;
-      }, SAVE_KEY);
-      expect(activeRun).toBeNull();
-    });
+        const activeRun = await page.evaluate((saveKey) => {
+          const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
+          return save.activeRun ?? null;
+        }, SAVE_KEY);
+        expect(activeRun).toBeNull();
+      },
+    );
   });
 });
 
@@ -168,7 +183,7 @@ test.describe("Death's Door", critical, () => {
 
     await expect(battle.endTurnBtn).toBeEnabled({ timeout: 10000 });
     await battle.endTurn();
-    await expect(page.getByRole("heading", { name: "Defeat" })).toBeVisible({ timeout: 10000 });
-    await expect(page.getByRole("button", { name: "Continue" })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("heading", { name: "Run Ended" })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("button", { name: "Main Menu" })).toBeVisible({ timeout: 5000 });
   });
 });

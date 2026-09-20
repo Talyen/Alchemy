@@ -182,7 +182,7 @@ describe("applyPlayerHealing", () => {
       talentEffects: { overhealToBlockRatio: 0.5 },
     });
 
-    const next = applyPlayerHealing(state, 15);
+    const next = applyPlayerHealing(state, 15, true);
     expect(next.playerHealth).toBe(30);
     expect(next.playerStatuses.block).toBe(7);
   });

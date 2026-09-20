@@ -62,6 +62,9 @@ describe("encodeRunResumeSnapshot", () => {
     const result = encodeState("menu");
 
     expect(result).toEqual({
+      runHistory: [],
+      runHistoryPartial: false,
+      runGoldEarned: 0,
       characterId: "knight",
       runDeck,
       runPlayerHealth: 18,

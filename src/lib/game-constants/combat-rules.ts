@@ -101,3 +101,15 @@ export const STATUS_CONFIG = {
   CC_NOTICE_FREEZE: "Frozen",
   DODGE_NOTICE: "Dodge",
 } as const;
+
+// Separate knobs keep similarly paced rewards independently tunable.
+export const REACTIVE_REWARD_CHANCES = {
+  luckyFoot: 25,
+  feint: 25,
+  leftovers: 25,
+  packWeave: 50,
+  wishfulTrinket: 50,
+  wishfulAffix: 50,
+  riposting: 50,
+  bladedance: 25,
+} as const;

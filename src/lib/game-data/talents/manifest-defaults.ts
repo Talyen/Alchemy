@@ -27,6 +27,7 @@ export const DEFAULT_TALENT_EFFECTS = {
   poisonOnNatureCardVsPoisoned: 0,
   companionFreezeDamageVsFrozen: 0,
   drawOnArcheryVsStunned: 0,
+  // Saved manifest keys remain stable; Hawk Eye now arms this amount on Freeze.
   archeryHolyDamageVsFrozen: 0,
   physicalLeechVsStunned: false,
   forgeOnPhysicalVsFrozen: 0,
@@ -45,6 +46,7 @@ export const DEFAULT_TALENT_EFFECTS = {
   nextHolyFreeOnCleanse: false,
   poisonCardPhysicalVsPoisoned: 0,
   goldOnPoisonedKill: 0,
+  // Rotgut now adds this amount to Potion Poison packets, not Consume follow-ups.
   poisonDamageOnConsume: 0,
   bleedPoisonDamageChance: 0,
   naturePoisonDamageChance: 0,
@@ -180,6 +182,7 @@ export const DEFAULT_TALENT_EFFECTS = {
   goldOnConsume: 0,
   drawOnConsume: 0,
   poisonOnConsume: 0,
+  // Feast now rewards a Potion healing the player from injured to full.
   blockOnConsume: 0,
 
   shopCardDiscount: 0,

@@ -124,6 +124,8 @@ export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): B
   // Only these transient signals require an exact boolean; every other saved
   // flag keeps its persisted value via the manifest merge above.
   for (const key of [
+    "hawkEyeReady",
+    "verdictGoldPaid",
     "pendingCinderSkinReaction",
     "nextWishExtraChoice",
     "previousCardWasArchery",

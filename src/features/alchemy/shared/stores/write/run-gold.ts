@@ -1,3 +1,4 @@
+import { addRunGoldEarned } from "./run-recap";
 import { getGoldMultiplier } from "@/lib/game-data";
 import type { GameplayDraft } from "../run-session-command";
 
@@ -28,7 +29,9 @@ export function setGold(draft: GameplayDraft, action: number | ((previous: numbe
 
 export function addGold(draft: GameplayDraft, amount: number): void {
   const multiplier = getGoldMultiplier(draft.run.activeRun.characterId, draft.run.activeRun.selectedDifficulty);
-  setGold(draft, (gold) => gold + Math.round(amount * multiplier));
+  const earned = Math.round(amount * multiplier);
+  addRunGoldEarned(draft, earned);
+  setGold(draft, (gold) => gold + earned);
 }
 
 export function grantStartGold(draft: GameplayDraft, amount: number): void {

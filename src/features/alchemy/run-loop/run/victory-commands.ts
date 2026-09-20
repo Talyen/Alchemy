@@ -4,6 +4,8 @@ import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchem
 import { syncBattleToRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import {
   awardMaterialsDuringRun,
+  addRunGoldEarned,
+  completeRunRoom,
   createDraftRunRandomSource,
   enterWildwoodVictory,
   prepareRunNavigation,
@@ -48,6 +50,8 @@ export function commitVictoryRewards(
   }
   draft.battle.battleState.pendingMaterials = { ...emptyInventory() };
 
+  completeRunRoom(draft);
+  addRunGoldEarned(draft, Math.max(0, result.persistedGold - draft.runProfile.gold));
   setGold(draft, result.persistedGold);
   if (result.maxHealthDelta > 0) {
     setRunMaxHealth(draft, (prev) => prev + result.maxHealthDelta);

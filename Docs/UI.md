@@ -514,3 +514,13 @@ animated Canvas backend. Zero intensity hides both layers, and motion-disabled
 preferences keep their existing unanimated appearance without color-animation
 frames. Availability belongs to the renderer lifecycle; failures are logged,
 not shown in a player-facing dialog.
+
+## Run journey recap
+
+Run Ended places a thin, non-interactive room trail below its header. Existing room
+icons remain fixed-size, with horizontal scrolling for long runs and the endpoint
+initially in view. Visible rooms trace once in under two seconds; rewards and controls
+are immediately usable. Inspection does not replay the trace. Reduced motion and
+disabled animations show the finished trail without a delay. Room icons have no hover
+or select details; semantic sequence text and keyboard scrolling accompany the strip.
+Deck and Boon inspection retain their normal labels and shared overlay behavior.

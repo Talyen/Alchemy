@@ -3,6 +3,7 @@ import { buildWishOptions, applyWishEffect, chooseWishCard } from "@/lib/battle/
 import { shouldConvertGemsWishToGold } from "@/lib/content-systems/battle-content";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import type { CombatTextEvent } from "@/lib/battle/types";
+import { seededRng } from "../../fixtures/rng";
 import { patchBattleState } from "../../fixtures/battle";
 import { makeTestCard } from "../../fixtures/cards";
 import { MAX_HAND_SIZE } from "@/lib/game-constants";
@@ -274,26 +275,17 @@ describe("chooseWishCard", () => {
 });
 
 describe("new wish talents", () => {
-  it("wishTrinketChoice grants 1 forge or 1 armor depending on RNG", () => {
-    const card = makeTestCard({ id: "strike", title: "Strike" });
-    const stateForge = patchBattleState({
-      playerStatuses: { forge: 0, armor: 0 },
-      talentEffects: { wishTrinketChoice: true },
-      rng: () => 0.1,
-    });
-    const stateArmor = patchBattleState({
-      playerStatuses: { forge: 0, armor: 0 },
-      talentEffects: { wishTrinketChoice: true },
-      rng: () => 0.6,
-    });
-
-    const resultForge = applyWishEffect(stateForge, card, 1, []);
-    expect(resultForge.playerStatuses.forge).toBe(1);
-    expect(resultForge.playerStatuses.armor).toBe(0);
-
-    const resultArmor = applyWishEffect(stateArmor, card, 1, []);
-    expect(resultArmor.playerStatuses.armor).toBe(1);
-    expect(resultArmor.playerStatuses.forge).toBe(0);
+  it("wishTrinketChoice can fail or grant either Forge or Armor", () => {
+    const outcomes = new Set<string>();
+    for (let seed = 1; seed <= 40; seed++) {
+      const state = patchBattleState({
+        talentEffects: { wishTrinketChoice: true },
+        rng: seededRng(seed),
+      });
+      const result = applyWishEffect(state, makeTestCard(), 1, []);
+      outcomes.add(`${result.playerStatuses.forge}:${result.playerStatuses.armor}`);
+    }
+    expect(outcomes).toEqual(new Set(["0:0", "1:0", "0:1"]));
   });
 
   it("wishBlockBelowHealthPct grants 6 block below 30% health threshold", () => {
@@ -397,9 +389,9 @@ describe("new wish talents", () => {
     expect(result.mana).toBe(4);
   });
 
-  it("Mana from Wishes triggers Arcane Mending only while Mana can be gained", () => {
+  it("Mana from Wishes triggers Arcane Mending only when gaining Mana from zero", () => {
     const state = patchBattleState({
-      mana: 2,
+      mana: 0,
       maxMana: 4,
       playerHealth: 10,
       talentEffects: { manaOnWish: 2, healOnManaGain: 2 },

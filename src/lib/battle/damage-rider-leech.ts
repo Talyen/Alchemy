@@ -47,7 +47,7 @@ export function applyLeechHealing(
   const bonus = afflicted ? state.talentEffects.afflictionLeechBonusPercent : 0;
   const healing = applyPercentBonus(amount, bonus, PERCENT_DENOMINATOR);
   let restored = options.cardHealing
-    ? applyCardHealing(state, healing, combatTexts, { skipFightPacing: true })
+    ? applyCardHealing(state, healing, combatTexts, { skipFightPacing: true, allowOverhealBlock: false })
     : applyHealingWithCombatText(state, healing, combatTexts, { skipFightPacing: true });
   const actualHealing = Math.max(0, restored.playerHealth - state.playerHealth);
   if (
@@ -182,15 +182,35 @@ export function applyLeechHitHealing(
   return executePlayerHealing(state, healAmount, combatTexts, cardHealing);
 }
 
-export function applyHolyLifesteal(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
-  if (damage <= 0 || state.talentEffects.holyLifestealPercent <= 0) return state;
+export function applyHolyLifesteal(
+  state: BattleState,
+  damage: number,
+  combatTexts: CombatTextEvent[],
+  eligibility = state,
+) {
+  if (
+    damage <= 0 ||
+    state.talentEffects.holyLifestealPercent <= 0 ||
+    eligibility.playerHealth >= eligibility.playerMaxHealth / HALF_DIVISOR
+  )
+    return state;
   const healAmount = scalePercent(damage, state.talentEffects.holyLifestealPercent);
   if (healAmount <= 0) return state;
   return applyScaledLeechHealing(state, healAmount, combatTexts);
 }
 
-export function applyDamageBlock(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
-  if (damage <= 0 || state.talentEffects.holyBlockPercentFromDamage <= 0) return state;
+export function applyDamageBlock(
+  state: BattleState,
+  damage: number,
+  combatTexts: CombatTextEvent[],
+  eligibility = state,
+) {
+  if (
+    damage <= 0 ||
+    state.talentEffects.holyBlockPercentFromDamage <= 0 ||
+    eligibility.playerHealth !== eligibility.playerMaxHealth
+  )
+    return state;
   const blockAmount = scalePercent(damage, state.talentEffects.holyBlockPercentFromDamage);
   if (blockAmount <= 0) return state;
   return addPlayerStatusWithCombatText(state, "block", blockAmount, combatTexts, { skipFightPacing: true });

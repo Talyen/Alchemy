@@ -313,12 +313,12 @@ describe("repeatable talent replacements", () => {
     expect(exact.playerStatuses).toEqual(state.playerStatuses);
   });
 
-  it("Coinmail grants Block from actual Gold earned and can repeat", () => {
+  it("Coinmail grants Block from actual Gold earned only while empty", () => {
     const state = battle({ talentEffects: talents("gold", "gold-elite-drop"), gearEffects: { goldGainPercent: 100 } });
     const once = addGoldWithCombatText(state, 2, []);
     const twice = addGoldWithCombatText(once, 2, []);
     expect(twice.gold - state.gold).toBe(8);
-    expect(twice.playerStatuses.block).toBe(2);
+    expect(twice.playerStatuses.block).toBe(1);
     expect(addGoldWithCombatText(twice, 0)).toBe(twice);
   });
 
@@ -362,10 +362,10 @@ describe("repeatable talent replacements", () => {
     ).toBe(100);
   });
 
-  it("Sun-Struck Shield reacts to blocked attacks but not reflected damage", () => {
+  it("Sun-Struck Shield reacts to attacks depleting Block but not reflected damage", () => {
     const state = battle({
       talentEffects: talents("block", "block-reduce-burn"),
-      playerStatuses: { block: 10 },
+      playerStatuses: { block: 4 },
     });
     expect(
       applyEnemyAbility(
@@ -378,7 +378,7 @@ describe("repeatable talent replacements", () => {
         }),
         [],
       ).enemyHealth,
-    ).toBe(98);
+    ).toBe(99);
     expect(
       processEnemyDamageEffect(state, { kind: "damage", damageType: "physical", amount: 2 }, [], {
         skipTraitReactions: true,
@@ -459,7 +459,7 @@ describe("repeatable talent replacements", () => {
     expect(PersistedBattleStateSchema.parse(saved).flags).toEqual(battle().flags);
   });
 
-  it("Tailwind and Pack Weave both trigger on each Dodge without playing drawn cards", () => {
+  it("Tailwind and Pack Weave can both trigger on Dodge without playing drawn cards", () => {
     const state = battle({
       talentEffects: {
         ...computeTalentEffects({
@@ -471,7 +471,7 @@ describe("repeatable talent replacements", () => {
       activeCompanion: companionLibrary.wolf,
       deck: [attack("draw1"), attack("draw2")],
       flags: { companionNextAttackBonus: 2 },
-      rng: () => 0.5,
+      rng: () => 0.1,
     });
     const after = applyEnemyAbility(
       state,
@@ -491,7 +491,9 @@ describe("repeatable talent replacements", () => {
 
   it("Sun-Struck Shield can grant Holy Block without creating another enemy attack", () => {
     const state = battle({
-      playerStatuses: { block: 20 },
+      playerHealth: 40,
+      playerMaxHealth: 40,
+      playerStatuses: { block: 2 },
       talentEffects: { ...talents("block", "block-reduce-burn"), holyBlockPercentFromDamage: 100 },
     });
     const after = applyEnemyAbility(
@@ -499,7 +501,7 @@ describe("repeatable talent replacements", () => {
       makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 2 }] }),
       [],
     );
-    expect(after.playerStatuses.block).toBe(19);
+    expect(after.playerStatuses.block).toBe(1);
     expect(after.enemyHealth).toBe(99);
   });
 

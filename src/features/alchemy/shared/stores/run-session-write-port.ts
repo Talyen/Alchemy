@@ -130,3 +130,11 @@ export {
   unlockAllTalents,
   unlockTalent,
 } from "./write/run-meta";
+
+export {
+  recordRunRoom,
+  cancelRunRoomEntry,
+  completeRunRoom,
+  addRunGoldEarned,
+  captureRunRecap,
+} from "./write/run-recap";

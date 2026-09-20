@@ -3,7 +3,7 @@ import { act, cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { RunEndScreen } from "@/features/alchemy/run-loop/screens/run-end-screen";
 import { getTalentTreeKeywordIds, keywordDefinitions } from "@/lib/game-data";
-import type { RunObtainedItem } from "@/lib/active-run-session";
+import type { RunObtainedItem, RunRecap } from "@/lib/active-run-session";
 import type { CraftingCurrencyId, GearInstance } from "@/lib/gear";
 import { EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear";
 import { getGearInstanceTitle } from "@/lib/gear";
@@ -25,17 +25,20 @@ function renderRunEnd({
   runEndMaterials = emptyMaterials,
   runEndCurrencies = emptyCurrencies,
   runEndItems = [],
+  runRecap = null,
 }: {
   runEndTalentXP?: Record<string, number>;
   talentXP?: Record<string, number>;
   runEndMaterials?: typeof emptyMaterials;
   runEndCurrencies?: Record<CraftingCurrencyId, number>;
   runEndItems?: RunObtainedItem[];
+  runRecap?: RunRecap | null;
 } = {}) {
   return render(
     <RunEndScreen
-      title="Defeat"
-      subtitle="Your run has ended."
+      runRecap={runRecap}
+      title="Run Ended"
+      subtitle=""
       outcome="defeat"
       characterId="knight"
       runEndTalentXP={runEndTalentXP}
@@ -88,7 +91,7 @@ describe("RunEndScreen", () => {
     expect(screen.queryByText("+12")).toBeNull();
     expect(screen.queryByText("Physical")).toBeNull();
     expect(screen.queryByText(/^Lv\d+$/)).toBeNull();
-    expect(screen.getByRole("button", { name: /continue/i }).isConnected).toBe(true);
+    expect(screen.getByRole("button", { name: /main menu/i }).isConnected).toBe(true);
   });
 
   it.each([
@@ -230,4 +233,34 @@ describe("RunEndScreen", () => {
     await user.hover(screen.getByRole("img", { name: "Bone Charm" }));
     expect(await screen.findByText("Bone Charm")).toBeTruthy();
   });
+});
+
+it("shows Gold and a non-interactive journey, with ordinary Boon inspection", async () => {
+  const user = userEvent.setup();
+  renderRunEnd({
+    runRecap: {
+      rooms: [
+        { id: "first", destination: "Normal Combat", act: 1, floor: null, completed: false },
+        { id: "later", destination: "Campfire", act: 1, floor: null, completed: true },
+      ],
+      mode: "campaign",
+      partial: false,
+      ending: "death",
+      endingRoomId: "first",
+      deck: [],
+      boons: ["bone-charm"],
+      gold: 42,
+    },
+  });
+  const journey = screen.getByRole("region", { name: "Run journey" });
+  expect(journey.textContent).toContain("defeated here");
+  const rooms = journey.querySelectorAll("li");
+  expect(rooms[0]?.textContent).toContain("defeated here");
+  expect(rooms[1]?.textContent).not.toContain("defeated here");
+  expect(journey.querySelectorAll("button")).toHaveLength(0);
+  expect(screen.getByText("+42")).toBeTruthy();
+  await user.click(screen.getByRole("button", { name: "Inspect Boons" }));
+  expect(screen.getByRole("heading", { name: "Boons" })).toBeTruthy();
+  expect(screen.queryByText("Final Boons")).toBeNull();
+  cleanup();
 });

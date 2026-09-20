@@ -71,7 +71,7 @@ describe("Dodge chance", () => {
 });
 
 describe("Dodge tree rewards", () => {
-  it("combines recovery and Armor with gear and grants Forge and Thorns once per packet", () => {
+  it("combines recovery and Armor with gear and grants Forge and Thorns under their respective conditions", () => {
     const state = incomingPhysical({
       playerHealth: 50,
       talentEffects: fullTree,
@@ -89,8 +89,8 @@ describe("Dodge tree rewards", () => {
       [],
     );
     expect(result.playerDodgeCount).toBe(2);
-    expect(result.playerHealth).toBe(56);
-    expect(result.playerStatuses).toMatchObject({ armor: 8, forge: 2, thorns: 2 });
+    expect(result.playerHealth).toBe(52);
+    expect(result.playerStatuses).toMatchObject({ armor: 5, forge: 4, thorns: 2 });
     expect(state.playerStatuses).toMatchObject({ armor: 0, forge: 0, thorns: 0 });
   });
 
@@ -150,7 +150,7 @@ describe("Dodge tree rewards", () => {
       [],
     );
     expect(result.playerStatuses.block).toBe(8);
-    expect(result.playerStatuses.armor).toBe(1);
+    expect(result.playerStatuses.armor).toBe(2);
     expect(result.enemyHealth).toBeLessThan(100);
     expect(result.playerDodgeCount).toBe(1);
   });

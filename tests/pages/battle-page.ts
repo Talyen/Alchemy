@@ -25,7 +25,7 @@ export class BattlePage {
     this.enemyHealthPanel = this.page.getByTestId("enemy-health");
     this.endTurnBtn = this.page.getByRole("button", { name: "End Turn" });
     this.victoryHeading = this.page.getByRole("heading", { name: /^Victory/ });
-    this.defeatHeading = this.page.getByRole("heading", { name: "Defeat" });
+    this.defeatHeading = this.page.getByRole("heading", { name: "Run Ended" });
     this.blockChip = this.page.getByRole("button", { name: /^Block \d+$/ }).first();
     this.menuBtn = this.page.getByRole("button", { name: "Menu" });
     this.autoplayToggle = this.page.getByTestId("autoplay-toggle");

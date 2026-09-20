@@ -85,8 +85,8 @@ export function dealTalentTypedHit(
   const hit = resolveTypedEnemyHit(blocked, { kind: "damage", damageType, amount }, resolved, combatTexts);
   let nextState = hit.state;
   if (damageType === "holy") {
-    nextState = applyHolyLifesteal(nextState, resolved, combatTexts);
-    nextState = applyDamageBlock(nextState, resolved, combatTexts);
+    nextState = applyHolyLifesteal(nextState, resolved, combatTexts, state);
+    nextState = applyDamageBlock(nextState, resolved, combatTexts, state);
     nextState = applyHolyTithe(nextState, resolved, combatTexts);
   }
   if (damageType === "nature") {

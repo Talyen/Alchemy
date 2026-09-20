@@ -1,5 +1,6 @@
 import { playDefeat, stopAllSfx } from "@/lib/audio";
-import type { ActiveRunData } from "@/lib/active-run-session";
+import { current, isDraft } from "immer";
+import type { ActiveRunData, RunRecap } from "@/lib/active-run-session";
 import type { Screen } from "@/lib/routing";
 import type { TalentXP, UnlockedTalents } from "@/lib/game-data";
 import { buildAlchemySaveDataFromStores, saveAlchemySaveData } from "@/features/alchemy/shared/storage";
@@ -11,6 +12,7 @@ import { encodeRunResumeSnapshot } from "./run-resume-codec";
 import { dispatchRunSessionCommand, type GameplayDraft } from "./run-session-command";
 import {
   applyTalentState,
+  captureRunRecap,
   clearTransientSession,
   cloneRunObtainedItem,
   initializeActiveBattle,
@@ -107,6 +109,7 @@ function finalizeRunEndSessionState(
     finalizeRunXP: (draft: GameplayDraft) => void;
   },
   draft: GameplayDraft,
+  ending: RunRecap["ending"],
 ): MaterialInventory {
   const session = draft.session;
 
@@ -114,6 +117,7 @@ function finalizeRunEndSessionState(
     return emptyInventory();
   }
 
+  captureRunRecap(draft, ending);
   const activeChar = draft.run.activeRun.characterId;
   setFinishedRunCharacters(draft, (prev) => {
     if (prev.includes(activeChar)) return prev;
@@ -136,7 +140,7 @@ export function finalizeRunEndSession(options: {
   awardRunEndMaterials: (draft: GameplayDraft) => MaterialInventory;
   finalizeRunXP: (draft: GameplayDraft) => void;
 }): MaterialInventory {
-  return dispatchRunSessionCommand((draft) => finalizeRunEndSessionState(options, draft), {
+  return dispatchRunSessionCommand((draft) => finalizeRunEndSessionState(options, draft, "victory"), {
     afterCommit: () => {
       flushSaveAfterRunEnd();
     },
@@ -151,18 +155,20 @@ export function abandonRun(options: {
   return dispatchRunSessionCommand(
     (draft) => {
       if (draft.session.activity.kind === "inactive") return false;
-      finalizeRunEndSessionState(options, draft);
+      finalizeRunEndSessionState(options, draft, "abandoned");
       // The outgoing battle still renders until the route transition completes.
       // Retain its last snapshot, but remove all resumable activity and continuations.
       // clearTransientSession resets the whole session, so preserve the recap
       // snapshot: manual End Run always shows the End Run screen. Copy the
       // values first so the recap never holds revoked draft proxies.
+      const runRecap = isDraft(draft.session.runRecap) ? current(draft.session.runRecap) : draft.session.runRecap;
       const runEndMaterials = { ...draft.session.runEndMaterials };
       const runEndCurrencies = { ...draft.session.runEndCurrencies };
       const runEndTalentXP = { ...draft.session.runEndTalentXP };
       const runEndItems = draft.session.runEndItems.map(cloneRunObtainedItem);
       const runEndLabyrinthFloor = draft.session.runEndLabyrinthFloor;
       clearTransientSession(draft);
+      draft.session.runRecap = runRecap;
       setRunEndMaterials(draft, runEndMaterials);
       setRunEndCurrencies(draft, runEndCurrencies);
       // No write-port setter: finalizeRunXP owns runEndTalentXP.
@@ -200,6 +206,7 @@ export function applyRunDefeatTeardown(options: {
           finalizeRunXP: options.finalizeRunXP,
         },
         draft,
+        "death",
       );
       options.clearCombatState(draft);
     },

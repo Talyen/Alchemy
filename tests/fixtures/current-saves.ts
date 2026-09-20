@@ -23,6 +23,11 @@ export function currentSchemaCampaignSave() {
     gold: 42,
     activeRun: {
       characterId: "knight",
+      runHistory: [
+        { id: "campaign:1:1:Normal Combat", destination: "Normal Combat", act: 1, floor: null, completed: true },
+      ],
+      runHistoryPartial: false,
+      runGoldEarned: 35,
       currentScreen: "destination",
       runDeck: [
         {

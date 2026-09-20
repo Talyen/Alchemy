@@ -1,7 +1,9 @@
+import { isPotionCard } from "@/lib/game-data";
 import { applyCardHealing, checkHealthThresholds } from "../status-player";
 import { applyPotionMultiplier } from "../amount-helpers";
 import { MIN_MAX_MANA_FLOOR, PERCENT_DENOMINATOR } from "../../game-constants";
 import {
+  addPlayerStatusWithCombatText,
   applyHealOnManaGain,
   gainManaWithCombatText,
   mergeCombatText,
@@ -40,7 +42,7 @@ function gainMaxMana(state: BattleState, amount: number, combatTexts: CombatText
     maxMana: state.maxMana + amount,
     mana: state.mana + amount,
   };
-  nextState = applyHealOnManaGain(nextState, amount, combatTexts);
+  nextState = applyHealOnManaGain(nextState, amount, combatTexts, state.mana);
   return nextState;
 }
 
@@ -103,9 +105,19 @@ export const applyHealEffect = defineHandler("heal", (state, card, effect, potio
     : 0;
   const cardSpecificBonus = state.talentEffects.cardHealBonus[card.id] ?? 0;
   const healAmount = Math.round(adjustedHeal * (1 + consumeBonus) + cardSpecificBonus);
-  return context?.cardHealing
+  const healed = context?.cardHealing
     ? applyCardHealing(state, healAmount, combatTexts)
     : applyHealingWithCombatText(state, healAmount, combatTexts);
+  if (
+    context?.cardHealing &&
+    isPotionCard(card) &&
+    state.talentEffects.blockOnConsume > 0 &&
+    state.playerHealth < state.playerMaxHealth &&
+    healed.playerHealth === healed.playerMaxHealth
+  ) {
+    return addPlayerStatusWithCombatText(healed, "block", state.talentEffects.blockOnConsume, combatTexts);
+  }
+  return healed;
 });
 
 export const applyLoseHealthEffect = defineHandler("lose-health", (state, _card, effect, _potionMult, combatTexts) => {

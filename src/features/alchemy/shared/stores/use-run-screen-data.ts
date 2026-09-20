@@ -138,6 +138,7 @@ export function useRunEndScreenData(): ScreenData<"game-over"> {
       runEndCurrencies: state.session.runEndCurrencies,
       runEndTalentXP: state.session.runEndTalentXP,
       runEndItems: state.session.runEndItems,
+      runRecap: state.session.runRecap,
       runEndLabyrinthFloor: state.session.runEndLabyrinthFloor,
       talentXP: state.runProfile.talentXP,
     })),

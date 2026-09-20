@@ -21,7 +21,8 @@ export type ArmedFlagChipId =
   | "nextArcheryCardFree"
   | "nextNatureCardFree"
   | "nextHolyCardFree"
-  | "nextWishExtraChoice";
+  | "nextWishExtraChoice"
+  | "hawkEyeReady";
 
 export type PendingPulseChipId = `pending-${DamageType}`;
 
@@ -50,6 +51,13 @@ const pendingPulseDefinitions = Object.fromEntries(
 );
 
 export const augmentDefinitions: Record<AugmentId, AugmentDefinition> = {
+  hawkEyeReady: {
+    id: "hawkEyeReady",
+    label: "Hawk Eye",
+    description: "Your next Archery hit deals additional Holy damage. Does not stack. Lasts until used or combat ends.",
+    icon: keywordIcons.archery,
+    colorClass: keywordDefinitions.holy.colorClass,
+  },
   nextWishExtraChoice: {
     id: "nextWishExtraChoice",
     label: "Divine Intervention",

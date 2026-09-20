@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ROUTE_SCREEN_VALUES } from "@/lib/routing";
+import { DESTINATIONS, ROUTE_SCREEN_VALUES } from "@/lib/routing";
 import { ACTS_PER_RUN, MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { sanitizeWildwoodBossId, sanitizeWildwoodBossIds } from "@/lib/content-systems/wildwood/bosses";
 import { normalizeActiveRunData } from "../normalize-active-run-data";
@@ -265,6 +265,19 @@ const InterruptedFlowSchema = z
 export type InterruptedFlow = z.infer<typeof InterruptedFlowSchema>;
 
 const ActiveRunDataObjectSchema = z.object({
+  runHistory: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        destination: z.enum(Object.values(DESTINATIONS)),
+        act: z.number().int().positive(),
+        floor: z.number().int().positive().nullable(),
+        completed: z.boolean(),
+      }),
+    )
+    .catch([]),
+  runHistoryPartial: z.boolean().catch(true),
+  runGoldEarned: z.number().int().nonnegative().nullable().catch(null),
   characterId: CharacterIdSchema,
   runDeck: z.array(BattleCardSchema),
   runPlayerHealth: z.number().int().nonnegative().catch(0),

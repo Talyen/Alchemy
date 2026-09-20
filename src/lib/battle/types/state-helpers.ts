@@ -295,7 +295,7 @@ export function applyPlayerCombatDamage(
   return { ...state, playerHealth: 0, deathsDoorActive: false, dodgeChanceFromDamage: 0 };
 }
 
-export function applyPlayerHealing(state: BattleState, amount: number): BattleState {
+export function applyPlayerHealing(state: BattleState, amount: number, allowOverhealBlock = false): BattleState {
   if (isPlayerDefeated(state)) return state;
   amount = Math.round(amount * state.talentEffects.healMultiplier);
   const playerHealth = clampHealth(state.playerHealth, amount, state.playerMaxHealth);
@@ -314,7 +314,7 @@ export function applyPlayerHealing(state: BattleState, amount: number): BattleSt
       },
     };
   }
-  if (overheal > 0 && nextState.talentEffects.overhealToBlockRatio > 0) {
+  if (allowOverhealBlock && overheal > 0 && nextState.talentEffects.overhealToBlockRatio > 0) {
     const blockGain = Math.round(overheal * nextState.talentEffects.overhealToBlockRatio);
     nextState = addPlayerStatus(nextState, "block", blockGain);
   }

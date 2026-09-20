@@ -62,7 +62,7 @@ describe("run card inspection", () => {
     expect(isDeckInspectionVisible("armory", true, "run-victory")).toBe(false);
     expect(isDeckInspectionVisible("menu", true, "battle")).toBe(false);
     expect(isDeckInspectionVisible("character-select", true, "battle")).toBe(false);
-    expect(isDeckInspectionVisible("run-victory", true, null)).toBe(false);
+    expect(isDeckInspectionVisible("run-victory", true, null)).toBe(true);
   });
 
   it("inspects independent run and battle collections without changing gameplay", () => {

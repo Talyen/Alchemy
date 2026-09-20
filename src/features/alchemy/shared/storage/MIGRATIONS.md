@@ -33,7 +33,18 @@ Choose the intended new-player default. Safe additive fields retain that default
 
 Preserve complete saved card effects, descriptions, and explicit Consume overrides together. Incomplete card content recovers from the live catalog. Gear/loadout ownership cleanup, native enemy Trait refresh, current catalog filtering, and safe manifest defaults remain current-data repair, not historical migrations. Stored Unique affix rolls are dropped at normalization in favor of the canonical catalog affixes; pre-release material renames (gems to crystal, then crystal to gems) and additions (stone, hide) resolve through schema defaults, not aliases or migrations. Persisted battle scalars and collections repair field-by-field to battle defaults; a battle block without any card piles is a fragment, not a fight, and drops the combat session instead of fabricating one. Battle telemetry is runtime-only and is never persisted.
 
-Talent balance tuning adds zero-default numeric scaling fields without deleting the prior boolean snapshot fields. Existing run restoration rebinds derived manifests from current talent IDs and Homestead effects, so supported saves receive current tuning without replaying combat-start grants or resetting prepared bonuses. No schema/content version bump is needed for this additive tuning.
+Talent balance tuning adds zero-default numeric scaling fields without deleting the prior boolean snapshot fields. Existing run restoration rebinds derived manifests from current talent IDs and Homestead effects, so supported saves receive current tuning without replaying combat-start grants or resetting prepared bonuses. No schema/content version bump is needed for this additive tuning. Selective feedback rewards retain existing manifest keys and content IDs. The additive `hawkEyeReady` and `verdictGoldPaid` battle flags default to false and accept only saved booleans. They persist across turns and resume; normalization never arms Hawk Eye from existing Freeze or replays a Verdict payout. Both reset with a new battle.
+
+## Run recap tracking
+
+Active runs add `runHistory`, `runHistoryPartial`, and nullable `runGoldEarned` with
+safe additive defaults; no schema bump is required. New runs start with empty complete
+history and zero earned Gold. Older runs default to empty partial history and unknown
+Gold (`null`): subsequent visits are recorded with an omitted-history marker, while
+Gold remains unknown until a fresh run. Never infer missing earnings from the purse.
+History and earnings round-trip with the active run; loading never records visits or
+replays earnings. The detached `runRecap` ending snapshot is session-only and does not
+resurrect a saved run after death, abandonment, or victory.
 
 ## Defaults and resume normalization
 

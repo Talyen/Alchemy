@@ -27,7 +27,12 @@ export interface AutosaveClock {
 
 export function createAlchemyAutosaveLifecycle(
   enabled: () => boolean = () => true,
-  clock: AutosaveClock = { now: Date.now, setTimeout, clearTimeout },
+  clock: AutosaveClock = {
+    now: Date.now,
+    // Native browser timers must not receive the injected clock as their receiver.
+    setTimeout: (callback, delay) => globalThis.setTimeout(callback, delay),
+    clearTimeout: (timer) => globalThis.clearTimeout(timer),
+  },
 ) {
   let pendingWrite: Promise<void> = Promise.resolve();
   let timer: ReturnType<AutosaveClock["setTimeout"]> | null = null;

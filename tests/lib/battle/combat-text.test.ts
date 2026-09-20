@@ -120,7 +120,7 @@ describe("applyHealingWithCombatText", () => {
     expect(texts).not.toContainEqual(expect.objectContaining({ stat: "thorns" }));
   });
 
-  it("does not grant Grove's Favor Thorns for overheal converted to Block", () => {
+  it("does not grant Grove's Favor Thorns or Overflow Block for passive overhealing", () => {
     const base = patchBattleState();
     const state = patchBattleState({
       trinketEffects: defaultTrinketManifest({ grovesFavorThornsOnHealthRestore: 1 }),
@@ -131,7 +131,7 @@ describe("applyHealingWithCombatText", () => {
     const result = applyHealingWithCombatText(state, 5, texts);
 
     expect(result.playerHealth).toBe(result.playerMaxHealth);
-    expect(result.playerStatuses.block).toBe(5);
+    expect(result.playerStatuses.block).toBe(0);
     expect(result.playerStatuses.thorns).toBe(0);
     expect(texts).not.toContainEqual(expect.objectContaining({ stat: "thorns" }));
   });

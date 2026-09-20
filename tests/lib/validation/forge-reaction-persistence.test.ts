@@ -7,11 +7,11 @@ import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persis
 describe("queued Golden Crucible rewards", () => {
   it("resumes a pending Forge threshold reward once without granting Forge again", () => {
     const state = patchBattleState({
-      playerStatuses: { forge: 3 },
+      playerStatuses: { forge: 0 },
       talentEffects: { forgeBurnThreshold: 4, forgeBurnDamage: 8 },
       gearEffects: { goldGrantsForgeAndHoly: 1 },
     });
-    const queued = addGoldWithCombatText(state, 1, []);
+    const queued = addGoldWithCombatText(state, 4, []);
     const saved = PersistedBattleStateSchema.parse(JSON.parse(JSON.stringify(queued)));
     const result = resolvePendingBattleReactions({ ...saved, rng: state.rng }, []);
     expect(result.playerStatuses.forge).toBe(4);

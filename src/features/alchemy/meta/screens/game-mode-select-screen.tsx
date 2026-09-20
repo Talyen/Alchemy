@@ -99,7 +99,7 @@ export function GameModeSelectScreen({
 
   return (
     <TitledScreenShell
-      title="Choose a Path"
+      title="Start a Run"
       minHeightClass="min-h-[50cqh]"
       maxWidthClass={gameModeRowShellWidthClass}
       onBack={onBack}

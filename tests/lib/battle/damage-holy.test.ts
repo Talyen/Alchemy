@@ -50,12 +50,12 @@ describe("computeBaseDamage — holy damage", () => {
 describe("applyHolyDamageRiders", () => {
   it("heals player with holy lifesteal", () => {
     const state = patchBattleState({
-      playerHealth: 20,
+      playerHealth: 10,
       talentEffects: { ...defaultTalentEffects, holyLifestealPercent: 50 },
     });
     const card = makeTestCard({ effects: [makeEffect("holy", 10)] });
     const result = dealDamage(state, card);
-    expect(result.playerHealth).toBeGreaterThan(20);
+    expect(result.playerHealth).toBeGreaterThan(10);
   });
 
   it("grants block from holy damage with holyBlockPercentFromDamage", () => {

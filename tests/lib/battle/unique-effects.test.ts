@@ -18,7 +18,7 @@ function dodgeThenMissRng() {
   let calls = 0;
   return () => {
     calls += 1;
-    return calls === 1 ? 0.01 : 0.99;
+    return calls <= 2 ? 0.01 : 0.99;
   };
 }
 
@@ -125,7 +125,9 @@ describe("unique item battle effects", () => {
     expect(afterBurn.enemyStatuses.burn).toBe(20);
     expect(afterBurn.enemyStatuses.bleed).toBe(20);
 
-    expect(afterBurn.playerHealth).toBe(60);
+    expect(afterBurn.playerHealth).toBe(50);
+    const second = applyDamageStatuses(afterBurn, burnEffect, 20, []);
+    expect(second.playerHealth).toBe(60);
   });
 
   it("Rimeheart Locket grants block on freeze damage and mana on freeze CC only when player has block", () => {

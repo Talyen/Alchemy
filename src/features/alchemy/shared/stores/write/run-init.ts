@@ -38,6 +38,9 @@ function hydrateFromSnapshot(draft: GameplayDraft, snapshot: RunStartSnapshot): 
     runMaterialsEarned: emptyInventory(),
     runCurrenciesEarned: { ...EMPTY_CRAFTING_CURRENCIES },
     runObtainedItems: [],
+    runHistory: [],
+    runHistoryPartial: false,
+    runGoldEarned: 0,
   });
 }
 
@@ -47,6 +50,7 @@ export function applyRunStartSnapshot(draft: GameplayDraft, snapshot: RunStartSn
   draft.session.runEndCurrencies = { ...EMPTY_CRAFTING_CURRENCIES };
   draft.session.runEndTalentXP = {};
   draft.session.runEndItems = [];
+  draft.session.runRecap = null;
   draft.session.runEndLabyrinthFloor = null;
   setHasActiveRun(draft, snapshot.hasActiveRun);
 }

@@ -289,7 +289,7 @@ describe("enemy card effects", () => {
     const state = {
       ...base,
       enemyHealth: 1,
-      playerStatuses: { ...base.playerStatuses, block: 10 },
+      playerStatuses: { ...base.playerStatuses, block: 2 },
       talentEffects: { ...base.talentEffects, holyReflectionBlockLostPercent: 100 },
     };
     const card = makeTestCard({
@@ -303,7 +303,7 @@ describe("enemy card effects", () => {
     expect(result.enemyHealth).toBe(0);
     expect(result.enemyMitigation.block).toBe(0);
     expect(result.playerHealth).toBe(100);
-    expect(result.playerStatuses.block).toBe(8);
+    expect(result.playerStatuses.block).toBe(0);
   });
 });
 
