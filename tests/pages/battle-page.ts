@@ -31,7 +31,7 @@ export class BattlePage {
     this.autoplayToggle = this.page.getByTestId("autoplay-toggle");
     this.enemyArt = this.page.getByTestId("battle-enemy-art-panel");
     this.companionPanel = this.page.getByTestId("active-companion");
-    this.deathsDoorIcon = this.page.getByLabel("Death's Door");
+    this.deathsDoorIcon = this.page.getByRole("button", { name: "Death's Door" });
     this.statusChip = (name: string) =>
       this.page.getByTestId("enemy-statuses").getByRole("button", { name: new RegExp(`^${name} \\d+$`) });
   }
