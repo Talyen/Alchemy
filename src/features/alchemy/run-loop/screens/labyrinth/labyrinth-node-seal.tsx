@@ -8,7 +8,8 @@ import { NODE_TYPE_LABELS } from "@/lib/content-systems/labyrinth/data";
 import { labyrinthNodeVisualState } from "@/lib/content-systems/labyrinth/map-state";
 import type { LabyrinthMap, LabyrinthNode } from "@/lib/content-systems/types";
 import { LABYRINTH_NODE_META } from "@/features/alchemy/shared/config/labyrinth-map";
-import { enemyById, isEnemyId } from "@/features/alchemy/shared/config/game-data-catalog";
+import { enemyById, isEnemyId, labyrinthShroudedArt } from "@/features/alchemy/shared/config/game-data-catalog";
+import { hashStringToUint32 } from "@/lib/rng";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -46,7 +47,8 @@ export const LabyrinthNodeSeal = memo(function LabyrinthNodeSeal({
     ? node.enemyId && isEnemyId(node.enemyId)
       ? enemyById[node.enemyId].art
       : LABYRINTH_NODE_META[node.type].art
-    : null;
+    : // Node identity keeps fog stable across rerenders and saves without using gameplay RNG or encounter data.
+      labyrinthShroudedArt[hashStringToUint32(node.id) % labyrinthShroudedArt.length]!;
   const { onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard("labyrinth", node.id);
   const status = current
     ? "you are here"
@@ -112,22 +114,17 @@ export const LabyrinthNodeSeal = memo(function LabyrinthNodeSeal({
           node.type === "boss" && "labyrinth-boss",
         )}
       >
-        {art ? (
-          <img
-            src={art}
-            alt=""
-            draggable={false}
-            className={cn(
-              "labyrinth-discovery",
-              visual === "cleared" && "opacity-60 grayscale",
-              visual === "locked" && "opacity-80",
-            )}
-          />
-        ) : (
-          <span aria-hidden className="labyrinth-unknown" style={{ fontSize: height * 0.3 }}>
-            ?
-          </span>
-        )}
+        <img
+          key={art}
+          src={art}
+          alt=""
+          draggable={false}
+          className={cn(
+            "labyrinth-discovery",
+            visual === "cleared" && "opacity-60 grayscale",
+            visual === "locked" && "opacity-80",
+          )}
+        />
       </Surface>
     </div>
   );

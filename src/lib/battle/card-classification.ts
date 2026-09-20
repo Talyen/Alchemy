@@ -18,6 +18,10 @@ function forEachNestedEffect(effects: readonly BattleCardEffect[], visit: (effec
 
 function collectDamageTypes(effects: readonly BattleCardEffect[], set: Set<string>): void {
   forEachNestedEffect(effects, (effect) => {
+    if (effect.kind === "damage") {
+      if (effect.damageTypeIfTargetHasBlock) set.add(effect.damageTypeIfTargetHasBlock);
+      if (effect.damageTypeIfTargetFrozen) set.add(effect.damageTypeIfTargetFrozen);
+    }
     if (effect.kind === "damage" && effect.damageTypePool?.length) {
       for (const type of effect.damageTypePool) set.add(type);
     } else if (effect.kind === "damage" || effect.kind === "cleanse-player-status-to-damage") {

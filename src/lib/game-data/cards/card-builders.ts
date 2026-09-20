@@ -1,3 +1,4 @@
+import { conditionalDamageDescription } from "./conditional-damage-description";
 import { CONSUME_DESCRIPTION_LINE } from "@/lib/game-constants";
 import { capitalizeWord } from "@/lib/utils";
 import type { BattleCard, BattleCardEffect, DamageType, KeywordId } from "../types";
@@ -47,6 +48,7 @@ function effectDescriptionLine(effect: BattleCardEffect): string {
         return playerStatusDescriptionLine(effect.status, effect.amount);
       throw new Error(`effectDescriptionLine: unsupported player-status ${effect.status}`);
     case "damage":
+      if (conditionalDamageDescription(effect)) return conditionalDamageDescription(effect)!;
       if (effect.damageTypePool && effect.damageTypePool.length > 0) {
         const types = [...effect.damageTypePool].map(capitalizeWord);
         const last = types.pop();

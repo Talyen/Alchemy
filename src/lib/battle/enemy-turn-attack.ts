@@ -1,3 +1,4 @@
+import { resolveConditionalCardDamage } from "./conditional-card-damage";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import {
   beneficialPlayerStatusIds,
@@ -92,6 +93,25 @@ function applyAbilityDamage(
   context: EnemyAbilityContext,
   combatTexts: CombatTextEvent[],
 ): BattleState {
+  const selected = resolveConditionalCardDamage(effect, {
+    actorBlock: state.enemyMitigation.block,
+    targetBlock: state.playerStatuses.block,
+    targetFrozen: state.playerCC.freezeSkipTurns > 0,
+  });
+  effect = selected.effect;
+  if (selected.blockSpent > 0) {
+    state = {
+      ...state,
+      enemyMitigation: { ...state.enemyMitigation, block: state.enemyMitigation.block - selected.blockSpent },
+    };
+    mergeCombatText(combatTexts, {
+      target: "enemy",
+      kind: "damage",
+      stat: "block",
+      amount: selected.blockSpent,
+      impact: false,
+    });
+  }
   let nextState = state;
   let amountMultiplier = context.brawlerPenalty ? BRAWLER_PENALTY_MULTIPLIER : 1;
   let flatBonus = 0;
@@ -261,7 +281,7 @@ function applyAbilityFollowups(
         purgeTarget === "armor"
           ? removePlayerArmor(nextState, nextState.playerStatuses.armor, combatTexts)
           : setPlayerStatus(nextState, purgeTarget, 0);
-      combatTexts.push({ target: "player", kind: "notice", stat: purgeTarget, text: "Purged" });
+      combatTexts.push({ target: "player", kind: "notice", stat: purgeTarget, text: "Purged", signal: "purge" });
     }
   }
   if (nextState.enemyStatuses.onAttackBleed > 0) {

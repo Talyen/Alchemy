@@ -74,14 +74,14 @@ export function resolveLootWeights({
   available?: LootAvailability;
 }): LootWeights {
   const weights: LootWeights = { ...LOOT_SOURCE_WEIGHTS[source] };
-  // Astral bonuses transfer Basic weight before depth scaling. Sources with no
-  // Basic weight (notably boss) are unaffected by the bonus by definition.
-  const transfer = clamp(astralChanceBonus, 0, weights.basic);
-  weights.basic -= transfer;
-  weights.astral += transfer;
   const accountMultiplier = lootAccountMultiplier(progress.highestCompletedDifficulty);
   for (const kind of Object.keys(LOOT_DEPTH_CURVES) as PremiumLootKind[]) {
     weights[kind] *= lootDepthMultiplier(kind, progress.depth) * accountMultiplier;
+  }
+  if (isLootEligible("astral", progress.depth) && available.astral !== false && available.basic !== false) {
+    const transfer = weights.basic * clamp(astralChanceBonus, 0, 1);
+    weights.basic -= transfer;
+    weights.astral += transfer;
   }
   return normalizeLootWeights(weights, available);
 }

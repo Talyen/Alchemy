@@ -9,7 +9,7 @@ export type ShopRefreshModifiers = readonly EncounterRewardTraitId[];
 
 export interface CreateShopActionsDeps {
   talentEffects: TalentEffectManifest;
-  homesteadEffects: Pick<HomesteadEffectManifest, "gearAstralChanceBonus" | "potionMixPotency">;
+  homesteadEffects: Pick<HomesteadEffectManifest, "gearAstralChanceBonus" | "mixPotionDiscount" | "removeCardDiscount">;
 }
 
 export interface MerchantShopCommands {

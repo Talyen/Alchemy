@@ -281,12 +281,23 @@ New keywords still follow [Add a new keyword](#add-a-new-keyword) first.
 ## Add a homestead upgrade
 
 1. Add `BuildingId` / `FarmId` / `ResearchId` — `src/lib/homestead/types.ts`
-2. Define the item with `defineBuilding` / `defineFarm` / `defineResearch` — `src/lib/homestead/data.ts` (costs via `data-builders.ts`; stacking helpers `stackingTiers` + `single/dualMaterialCosts`)
+2. Define the item with `defineBuilding` / `defineFarm` / `defineResearch` — `src/lib/homestead/data.ts` (four explicit authored tier costs; `stackingTiers` adds each tier’s incremental effects)
 3. Add effect keys only when existing keys cannot express the upgrade — `HomesteadEffectManifest` + `HOMESTEAD_BATTLE_*_KEYS` in `types.ts`; defaults in `defaults.ts`
 4. Companion bond tiers (if companion) — `src/lib/homestead/companions.ts` (`COMPANION_BOND_TIERS` + `companionTierItems`) + `src/lib/game-data/companions.ts`
 5. Art & palette — Add `helpers.tsx:itemArt` entry in `src/features/alchemy/meta/screens/homestead/helpers.tsx` + art via the [asset workflow](./WORKFLOWS-ASSETS.md#add-or-replace-game-art)
 6. Change layout constants only for an intended layout change — `HOMESTEAD_CONFIG` in `helpers.tsx` (companion page size, aspect ratios)
 7. Check affected rules or interactions; saved-shape changes follow the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md).
+
+Every building/farm/research node has four tiers. All numeric effects and each
+room-production quantity strictly increase in cumulative tier totals. Companion
+Bonds remain a separate three-tier progression. Recipes use fixed material costs;
+production support affects authoring, not prices at runtime. Crystal Garden
+produces Gems and Stone. Library, Agility Training, and Sanctuary intentionally
+have no material production. Resource labels use “per Room”; settlement remains
+at run end. Wishing Well alternates Gold/Gems by room (odd rooms Gold), with all
+of its output paid as Gold in Wildwood. Tailoring also produces Gold. Other
+material production remains excluded in Wildwood. Capture the recap after these
+payouts so the Gold total includes them.
 
 Homestead screens (like all screen directories) are excluded from `vitest` coverage thresholds — see the coverage `exclude` list in `vitest.config.ts` — and are covered by E2E `tests/e2e/specs/homestead-flow.spec.ts` plus the unit `homestead/*.test.tsx` suites. Use `npm run test -- tests/lib/homestead` for the lib contract and `npm run test:e2e:route -- homestead` when the change needs browser verification.
 

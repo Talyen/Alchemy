@@ -186,7 +186,7 @@ describe("enemy card effects", () => {
     const result = useAbility(state, "shield-bash");
     expect(result.playerHealth).toBe(98);
     expect(result.playerStatuses.stun).toBe(2);
-    expect(result.enemyMitigation.block).toBe(2);
+    expect(result.enemyMitigation.block).toBe(0);
     expect(result.playerStatuses.block).toBe(0);
     expect(result.mana).toBe(state.mana);
     expect(result.gold).toBe(state.gold);
@@ -212,12 +212,13 @@ describe("enemy card effects", () => {
   });
 
   it("resolves both Maul branches and preserves their native damage types", () => {
-    for (const [roll, status] of [
-      [0.1, "stun"],
-      [0.9, "bleed"],
+    for (const [block, status] of [
+      [1, "stun"],
+      [0, "bleed"],
     ] as const) {
-      const result = useAbility(enemyState("skeleton", { rng: () => roll }), "maul");
-      expect(result.playerHealth).toBe(97);
+      const base = enemyState("skeleton");
+      const result = useAbility({ ...base, playerStatuses: { ...base.playerStatuses, block } }, "maul");
+      expect(result.playerHealth).toBe(97 + block);
       expect(result.playerStatuses[status]).toBeGreaterThan(0);
     }
   });

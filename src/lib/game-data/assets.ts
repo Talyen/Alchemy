@@ -15,6 +15,15 @@ export const menuLogo = assetRefs.alchemyLogo;
 export const pileDrawArt = assetRefs.drawPile;
 export const pileDiscardArt = assetRefs.discardPile;
 
+export const labyrinthShroudedArt = [
+  assetRefs.labyrinthShroudedVeiledArch,
+  assetRefs.labyrinthShroudedDescendingSteps,
+  assetRefs.labyrinthShroudedShroudedPassage,
+  assetRefs.labyrinthShroudedForgottenPillars,
+  assetRefs.labyrinthShroudedVanishingBridge,
+  assetRefs.labyrinthShroudedHiddenChamber,
+] as const;
+
 export const characterArt = {
   knight: assetRefs.knight,
   ranger: assetRefs.ranger,

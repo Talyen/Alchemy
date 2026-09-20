@@ -90,6 +90,12 @@ export type BattleCardEffect =
       equalToArmor?: boolean;
       equalToForge?: boolean;
       ignoreArmor?: boolean;
+      blockCost?: number;
+      blockDamageBonus?: number;
+      damageTypeIfTargetHasBlock?: DamageType;
+      damageTypeIfTargetFrozen?: DamageType;
+      amountIfTargetFrozen?: number;
+
       equalToGoldPercent?: number;
       doubleIfEnemyBurning?: boolean;
       doubleIfEnemyBleeding?: boolean;

@@ -94,7 +94,7 @@ describe("removeHarmfulPlayerStatuses", () => {
     const result = removeHarmfulPlayerStatuses(state, 1, texts);
     expect(result.playerHealth).toBe(30);
     expect(result.playerStatuses.block).toBe(2);
-    expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 2 });
+    expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 10 });
     expect(texts).not.toContainEqual(expect.objectContaining({ stat: "block" }));
   });
 });

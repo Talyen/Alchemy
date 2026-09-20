@@ -76,7 +76,6 @@ const LEGACY_SNAPSHOT_FIELDS: ReadonlyArray<keyof TalentEffectManifest> = [
   "campfireHealBonus",
   "blockToBurnDamage",
   "eliteGoldDropBonus",
-  "wishExtraChoiceChance",
   "companionGoldFindActive",
   "freezeBlocksRegen",
   "freezePreventsEnemyScaling",

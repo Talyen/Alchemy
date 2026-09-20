@@ -295,9 +295,19 @@ export function applyPlayerCombatDamage(
   return { ...state, playerHealth: 0, deathsDoorActive: false, dodgeChanceFromDamage: 0 };
 }
 
+export function effectivePlayerHealingAmount(state: BattleState, amount: number): number {
+  return Math.round(
+    (amount + (amount > 0 ? (state.talentEffects.homesteadHealing ?? 0) : 0)) * state.talentEffects.healMultiplier,
+  );
+}
+
 export function applyPlayerHealing(state: BattleState, amount: number, allowOverhealBlock = false): BattleState {
-  if (isPlayerDefeated(state)) return state;
-  amount = Math.round(amount * state.talentEffects.healMultiplier);
+  return resolvePlayerHealing(state, amount, allowOverhealBlock).state;
+}
+
+export function resolvePlayerHealing(state: BattleState, amount: number, allowOverhealBlock = false) {
+  if (isPlayerDefeated(state)) return { state, effective: 0, restored: 0, overflow: 0 };
+  amount = effectivePlayerHealingAmount(state, amount);
   const playerHealth = clampHealth(state.playerHealth, amount, state.playerMaxHealth);
   const actualHeal = playerHealth - state.playerHealth;
   const overheal = state.playerHealth + amount - playerHealth;
@@ -318,7 +328,7 @@ export function applyPlayerHealing(state: BattleState, amount: number, allowOver
     const blockGain = Math.round(overheal * nextState.talentEffects.overhealToBlockRatio);
     nextState = addPlayerStatus(nextState, "block", blockGain);
   }
-  return nextState;
+  return { state: nextState, effective: amount, restored: actualHeal, overflow: overheal };
 }
 
 export function applyGearDamageResistance(

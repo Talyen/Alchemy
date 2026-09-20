@@ -36,7 +36,7 @@ import {
   useTrinketShopScreenData,
   useWildwoodRemovalScreenData,
 } from "@/features/alchemy/shared/stores/use-run-screen-data";
-import { useTalentEffects } from "@/features/alchemy/shared/stores/run-reads";
+import { useHomesteadEffects, useTalentEffects } from "@/features/alchemy/shared/stores/run-reads";
 import { getCampfireHealFraction } from "@/lib/campfire-heal";
 import type { BattleCommands, BattleRouteCtx, RunLoopCommands, RunLoopRouteCtx } from "./route-ctx";
 
@@ -161,6 +161,7 @@ function DestinationScreenRoute({ commands }: { commands: RunLoopCommands["desti
 
 function CampfireScreenRoute({ commands }: { commands: RunLoopCommands["destinations"] }) {
   const r = useCampfireScreenData();
+  const healingBonus = useHomesteadEffects().homesteadHealing;
   const talentEffects = useTalentEffects();
   const healFraction = labyrinthCampfireHealing(getCampfireHealFraction(talentEffects.campfireHealBonus), r.modifiers);
   return (
@@ -168,6 +169,7 @@ function CampfireScreenRoute({ commands }: { commands: RunLoopCommands["destinat
       playerHealth={r.runPlayerHealth}
       maxHealth={r.runMaxHealth}
       healFraction={healFraction}
+      healingBonus={healingBonus}
       onContinue={commands.continueCampfire}
     />
   );

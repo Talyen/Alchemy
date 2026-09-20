@@ -30,6 +30,7 @@ export {
   isGameModeUnlocked,
   isProgressionFeatureUnlocked,
   keywordDefinitions,
+  labyrinthShroudedArt,
   merchantShopBg,
   mysteryBg,
   normalEnemyBg,

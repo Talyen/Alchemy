@@ -7,6 +7,10 @@ import {
   constructBuilding,
   setHasActiveRun,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { SaveDataSchema } from "@/lib/validation/save-schemas/save-data";
+import { awardRunEndMaterials } from "@/features/alchemy/run-loop/run/run-materials";
+import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
+import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
 
@@ -38,5 +42,57 @@ describe("homestead write commands", () => {
 
     expect(readRunProfile().materialInventory).toEqual(emptyInventory());
     expect(readActiveRun().runMaxHealth).toBe(healthBefore);
+  });
+});
+
+describe("four-tier Homestead persistence and settlement", () => {
+  it("preserves levels three and four without extending Companion Bonds", () => {
+    const source = {
+      constructedBuildings: { "blacksmiths-forge": 3, "runesmiths-workshop": 4 },
+      plantedFarms: { "crystal-garden": 4 },
+      completedResearch: { "leyline-energy": 4 },
+      bondedCompanions: { wolf: 3 },
+    };
+    const loaded = SaveDataSchema.parse(JSON.parse(JSON.stringify(source)));
+    expect(loaded.constructedBuildings["blacksmiths-forge"]).toBe(3);
+    expect(loaded.constructedBuildings["runesmiths-workshop"]).toBe(4);
+    expect(loaded.plantedFarms["crystal-garden"]).toBe(4);
+    expect(loaded.completedResearch["leyline-energy"]).toBe(4);
+  });
+
+  it("settles Stone and alternating Wish currency through the proper wallets", () => {
+    dispatchRunSessionCommand((draft) => {
+      draft.run.activeRun.contentSystemType = CONTENT_SYSTEMS.LABYRINTH;
+      draft.run.activeRun.roomsEncountered = 3;
+      draft.runProfile.effects = {
+        ...defaultHomesteadEffects,
+        endRunStonePerRoom: 4,
+        endRunGemsPerRoom: 8,
+        endRunGoldPerRoom: 4,
+        endRunWishPerRoom: 4,
+      };
+      const before = draft.runProfile.gold;
+      const granted = awardRunEndMaterials(draft);
+      expect(granted.stone).toBe(12);
+      expect(granted.gems).toBe(28);
+      expect(draft.runProfile.gold - before).toBe(20);
+      expect(draft.session.runEndMaterials.stone).toBe(12);
+    });
+  });
+
+  it("keeps Wildwood material-free while paying eligible Gold production", () => {
+    dispatchRunSessionCommand((draft) => {
+      draft.run.activeRun.contentSystemType = CONTENT_SYSTEMS.WILDWOOD;
+      draft.run.activeRun.roomsEncountered = 3;
+      draft.runProfile.effects = {
+        ...defaultHomesteadEffects,
+        endRunStonePerRoom: 4,
+        endRunGoldPerRoom: 4,
+        endRunWishPerRoom: 4,
+      };
+      const before = draft.runProfile.gold;
+      expect(awardRunEndMaterials(draft)).toEqual(emptyInventory());
+      expect(draft.runProfile.gold - before).toBe(24);
+    });
   });
 });

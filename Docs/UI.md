@@ -235,7 +235,29 @@ fill the frame.
 
 ## Battle feedback
 
-Each resolved action shows a compact burst over each affected combatant. Preserve separate typed icons, colors, and signed values for damage and positive effects; merge only matching target/kind/type within that action. Notices come first, damage/loss next, healing/gains last, with stable order within each group. Up to three numeric entries use one centered column; larger bursts use two columns, with notices spanning both. Death’s Door retains its skull-only notice.
+Resolved actions show compact bursts over each affected combatant. Floating
+feedback uses icons and numbers; notices have descriptive accessible labels but
+no visible words. Purge and Cleanse pair their icons with the affected status;
+preparations pair a preparation icon with their existing armed-status icon.
+Death’s Door retains its skull. Draws, summons, and scheduled effects acknowledge
+their actual outcome; a valid ineffective action can show its effect icon with 0.
+Nonzero results suppress redundant zero entries in the same action.
+
+Matching additive entries can sum across effects, cards, and actions during the
+first 250 ms of the original burst. Match recipient, effect kind, resource/type,
+and gain/loss direction; keep preparation refreshes and non-additive values out
+of numeric sums. Identical notices deduplicate. Updates retain their original ID,
+start time, animation, and expiry: merging never renews the window or lifetime.
+Reserve tabular numeric width for the initial digits plus one extra digit and
+its sign. Sums exceeding that width become separate entries. Partial matches
+create a new burst only for unmatched entries. Expired/evicted entries cannot
+return. The same window applies to reduced/disabled motion.
+
+Notices come first, damage/loss next, healing/gains last, with stable order within
+each group. Up to three numeric entries use one centered column; larger bursts
+use two columns, with notices spanning both. Impact and audio cues follow each
+incoming action's actual events, never accumulated display totals. Resource
+payments and removals do not invent damage impacts.
 
 Each action appears immediately above card flights, anchored to its moving portrait.
 Measured layout moves earlier bursts upward without changing their values or
@@ -445,8 +467,10 @@ dimensions, with narrow gutters and room for 106% hover enlargement. Positions
 stay fixed during discovery, selection, and destination return. There is no
 scrolling, zoom toolbar, legend, corridor, visible room label, or location dot.
 
-Undiscovered rooms contain only a neutral `?`; no hidden art, category, Trait,
-accessible name, or hover theme is exposed. Actual Mystery encounters reveal
+Undiscovered rooms use six generic fog-of-war illustrations, selected by a stable
+hash of node identity independently of encounter type and gameplay RNG. No hidden
+encounter art, category, Trait, accessible name, or hover theme is exposed. Discovery
+replaces the fog with the actual artwork and plays the reveal. Actual Mystery encounters reveal
 their existing art. The boss is always visible and inspectable, with the shared
 display label Boss and a persistent red glow independent of hover/selection.
 All rooms rest with the standard dim `border-border/80` frame, except the current

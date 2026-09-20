@@ -3,6 +3,8 @@ export {
   getCombatTextColorClass,
   getCombatImpactVisual,
   getCombatTextIcon,
+  getCombatTextLeadingIcon,
+  getCombatTextAccessibleLabel,
   getPlayerStatusChips,
   getEnemyStatusChips,
 } from "./battle";

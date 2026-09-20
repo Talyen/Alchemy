@@ -123,13 +123,26 @@ export type CombatTextStat =
   | "gold"
   | "gems"
   | "dodge"
-  | "deathsDoor";
+  | "deathsDoor"
+  | "nextHitCrit"
+  | "nextHitLeech"
+  | "nextHitPoison"
+  | "playNextCardTwice"
+  | "nextArcheryCardFree"
+  | "draw"
+  | "companion"
+  | "wish"
+  | "cleanse"
+  | "scheduled"
+  | "effect";
 
 export interface NumericCombatTextEvent {
   target: CombatTextTarget;
   kind: Exclude<CombatTextKind, "notice">;
   stat: CombatTextStat;
   amount: number;
+  impact?: boolean;
+  additive?: boolean;
 }
 
 interface NoticeCombatTextEvent {
@@ -137,6 +150,7 @@ interface NoticeCombatTextEvent {
   kind: "notice";
   stat: CombatTextStat;
   text: string;
+  signal?: "prepared" | "cleanse" | "purge";
 }
 
 export type CombatTextEvent = NumericCombatTextEvent | NoticeCombatTextEvent;

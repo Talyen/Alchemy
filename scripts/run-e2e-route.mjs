@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import path from "node:path";
-import { runStreamCommand } from "./lib/run-command.mjs";
+import { runTaskCommand } from "./lib/run-command.mjs";
 import { existsSync } from "node:fs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
@@ -148,6 +148,8 @@ if (invokedAsCli) {
   }
 
   const extra = process.argv.slice(3);
+  const live = extra.includes("--live") || extra.includes("--verbose");
+  const playwrightArgs = extra.filter((arg) => arg !== "--live" && arg !== "--verbose");
   const missingSpecs = resolved.args.filter(
     (arg) => arg.endsWith(".spec.ts") && !existsSync(path.isAbsolute(arg) ? arg : path.join(ROOT, arg)),
   );
@@ -157,6 +159,10 @@ if (invokedAsCli) {
     );
     process.exit(1);
   }
-  const result = runStreamCommand("npx", [...resolved.args, ...extra], { cwd: ROOT });
+  const result = await runTaskCommand("npx", [...resolved.args, ...playwrightArgs], {
+    cwd: ROOT,
+    label: resolved.label,
+    live,
+  });
   process.exit(result.status ?? 1);
 }

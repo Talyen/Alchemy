@@ -1,8 +1,11 @@
+import { conditionalDamageDescription } from "@/lib/game-data";
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 import { CORRUPTION_MIN_VALUE, CORRUPTION_TEXT_PATTERNS, PERCENT_DENOMINATOR } from "@/lib/game-constants";
 
 const CORRUPTIBLE_NUMERIC_FIELDS = [
   "amount",
+  "blockDamageBonus",
+  "amountIfTargetFrozen",
   "minAmount",
   "maxAmount",
   "perManaCrystal",
@@ -53,7 +56,35 @@ export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget
   const targets: CorruptionTarget[] = [];
   const valueQueue = new Map<number, Array<Pick<CorruptionTarget, "effectIndex" | "effectPath" | "field">>>();
   const sharedDamageLines = new Set<string>();
+  const conditionalLines = new Set<number>();
   function collect(effect: BattleCardEffect, effectIndex: number, effectPath: number[] = []) {
+    const conditional = conditionalDamageDescription(effect);
+    if (conditional && effect.kind === "damage") {
+      const lineIndex = card.descriptionLines.findIndex(
+        (line, index) => line === conditional && !conditionalLines.has(index),
+      );
+      if (lineIndex < 0) return;
+      conditionalLines.add(lineIndex);
+      const fields: Array<CorruptibleNumericField | null> =
+        effect.blockCost !== undefined
+          ? ["amount", null, "blockDamageBonus"]
+          : effect.damageTypeIfTargetFrozen
+            ? ["amount", "amountIfTargetFrozen"]
+            : ["amount", null];
+      [...conditional.matchAll(CORRUPTION_TEXT_PATTERNS.authoredNumber)].forEach((match, index) => {
+        const field = fields[index];
+        if (field && match.index !== undefined)
+          targets.push({
+            lineIndex,
+            matchIndex: match.index,
+            value: Number(match[0]),
+            effectIndex,
+            ...(effectPath.length ? { effectPath } : {}),
+            field,
+          });
+      });
+      return;
+    }
     // The die's faces are fixed rules, not editable card magnitudes.
     if (effect.kind === "random-draw") return;
     const record = effect as Record<string, unknown>;
@@ -89,6 +120,7 @@ export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget
   const queueCursor = new Map<number, number>();
 
   card.descriptionLines.forEach((line, lineIndex) => {
+    if (conditionalLines.has(lineIndex)) return;
     // The summon summary describes the Companion's actions, not this card's effects.
     if (lineIndex === 0 && card.effects.some((effect) => effect.kind === "summon-companion")) return;
     const matches =
@@ -114,7 +146,7 @@ export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget
     }
   });
 
-  return targets;
+  return targets.sort((a, b) => a.lineIndex - b.lineIndex || a.matchIndex - b.matchIndex);
 }
 
 function areEffectsEquivalent(a: BattleCardEffect, b: BattleCardEffect | undefined): boolean {
@@ -199,10 +231,15 @@ export function updateCardNumericValue(
       ? { ...effect, effects: effect.effects.map((child, index) => update(child, root, [...path, index])) }
       : effect;
   }
+  const effects = card.effects.map((effect, index) => update(effect, index));
+  const conditionalLine = conditionalDamageDescription(source);
+  const changed = getCorruptionTargetEffect({ ...card, effects }, target);
+  const resolvedLine =
+    conditionalLine === line && changed ? (conditionalDamageDescription(changed) ?? nextLine) : nextLine;
   return {
     ...card,
-    descriptionLines: card.descriptionLines.map((entry, index) => (index === target.lineIndex ? nextLine : entry)),
-    effects: card.effects.map((effect, index) => update(effect, index)),
+    descriptionLines: card.descriptionLines.map((entry, index) => (index === target.lineIndex ? resolvedLine : entry)),
+    effects,
   };
 }
 
@@ -230,7 +267,7 @@ export function applyNumericCorruption(
   const nextCard = updateCardNumericValue(card, target, nextValue, authoredPaths);
   if (nextCard === card) return card;
   nextCard.corrupted = true;
-  const deltaLen = nextLine.length - currentLine.length;
+  const deltaLen = nextCard.descriptionLines[target.lineIndex]!.length - currentLine.length;
   const shiftedExisting =
     deltaLen !== 0
       ? (card.corruptedValuePositions ?? []).map((pos) =>

@@ -53,10 +53,12 @@ export interface BattleRefs {
 export type FloatingCombatText = CombatTextEvent & {
   id: string;
   displayText: string;
+  reservedDigits?: number;
 };
 
 export interface CombatTextBurst {
   id: string;
+  firstShownAt: number;
   target: CombatTextEvent["target"];
   entries: FloatingCombatText[];
   lifetimeMs: number;

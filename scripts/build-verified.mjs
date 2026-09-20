@@ -3,14 +3,19 @@
 import { syncGenerated } from "./sync-generated.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { resolveViteBin } from "./lib/command-invocation.mjs";
-import { runStreamCommand } from "./lib/run-command.mjs";
+import { runTaskCommand } from "./lib/run-command.mjs";
 import { UsageError } from "./lib/script-run.mjs";
 import { validateDesktopBuildConfig } from "./lib/desktop-build-config.mjs";
 
 async function main(argv = process.argv.slice(2)) {
   const modes = [];
+  let live = false;
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
+    if (arg === "--live" || arg === "--verbose") {
+      live = true;
+      continue;
+    }
     if (arg === "--mode" || arg === "-m") {
       const mode = argv[++index];
       if (!mode || mode.startsWith("-")) throw new UsageError("Build mode requires a value.");
@@ -47,10 +52,11 @@ async function main(argv = process.argv.slice(2)) {
     viteArgs.push(...viteForward);
   }
 
-  // Streams intentionally: builds run for minutes and operators need live
-  // progress. Resolved through the shared streaming runner so CLI resolution
-  // stays in command-invocation.mjs instead of raw spawnSync.
-  const result = runStreamCommand(process.execPath, viteArgs, { env: { ...process.env } });
+  const result = await runTaskCommand(process.execPath, viteArgs, {
+    env: { ...process.env },
+    label: isDesktop ? "desktop build" : "web build",
+    live,
+  });
   if (result.error) {
     console.error(`Failed to run ${["node", ...viteArgs].join(" ")}:`, result.error.message);
   }

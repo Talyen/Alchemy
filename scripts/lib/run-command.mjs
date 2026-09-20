@@ -2,6 +2,8 @@ import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { commandInvocation } from "./command-invocation.mjs";
+import { createRunId } from "./current-run.mjs";
+import { completionCounts, failureSummary } from "./compact-output.mjs";
 
 const DEFAULT_MAX_BUFFER = 16 * 1024 * 1024;
 const activeCommands = new Set();
@@ -110,6 +112,30 @@ export function runStreamCommand(command, args = [], options = {}) {
     encoding: "utf8",
   });
   return { ...result, elapsedMs: Date.now() - started };
+}
+
+/**
+ * Run a one-shot command without allowing routine output to flood the caller.
+ * The complete stream is retained in a log; callers receive a small status
+ * summary and actionable failure excerpt. Pass live=true for interactive use.
+ */
+export async function runTaskCommand(command, args = [], options = {}) {
+  const {
+    cwd = process.cwd(),
+    label = command,
+    live = false,
+    logPath = path.join(cwd, "reports", "compact", createRunId("command"), "output.log"),
+    ...runnerOptions
+  } = options;
+  if (live) return runStreamCommand(command, args, { cwd, ...runnerOptions });
+  const result = await runCommandAsync(command, args, { cwd, ...runnerOptions, logPath });
+  const status = result.status ?? 1;
+  const counts = completionCounts(result.output);
+  if (counts) console.log(counts);
+  if (status !== 0) console.error(failureSummary(result.output));
+  console.log(`${status === 0 ? "PASS" : "FAIL"} ${label} (exit ${status}, ${(result.elapsedMs / 1000).toFixed(1)}s)`);
+  console.log(`Full log: ${path.relative(cwd, logPath)}`);
+  return result;
 }
 
 /**

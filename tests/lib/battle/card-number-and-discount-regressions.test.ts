@@ -40,10 +40,13 @@ describe("card number and discount regressions", () => {
     const changed = applyNumericCorruption(original, target, 1);
     expect(changed.descriptionLines[0]).toContain("Deal 4 ");
     expect(changed.effects[0]).toMatchObject({
-      successEffects: [{ amount: 4 }],
-      failureEffects: [{ amount: 4 }],
+      kind: "damage",
+      amount: 4,
+      damageType: "bleed",
+      damageTypeIfTargetHasBlock: "stun",
     });
-    expect(original.effects[0]).toMatchObject({ successEffects: [{ amount: 3 }], failureEffects: [{ amount: 3 }] });
+    expect(original.effects[0]).toMatchObject({ amount: 3 });
+    expect(changed.descriptionLines[0]).toContain("or 4 Stun");
   });
 
   it("Powerful Wish upgrades Tithe's percentage and keeps capped percentages valid", () => {
@@ -66,7 +69,7 @@ describe("card number and discount regressions", () => {
     expect(played.enemyHealth).toBe(89);
   });
 
-  it("keeps a shared chance number separate from an equal-valued added effect", () => {
+  it("keeps a shared conditional number separate from an equal-valued added effect", () => {
     const original = cardById.maul!;
     const card = {
       ...original,

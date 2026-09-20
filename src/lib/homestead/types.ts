@@ -70,6 +70,17 @@ type RecordTalentKey = {
 
 export const HOMESTEAD_BATTLE_NUMERIC_KEYS = [
   "flatPhysicalDamage",
+  "flatHolyDamage",
+  "physicalDamageReduction",
+  "homesteadCriticalDamage",
+  "homesteadHealing",
+  "homesteadLeechHealing",
+  "homesteadPotionBonus",
+  "homesteadFreeManaChance",
+  "homesteadForgeBurnPercent",
+  "dodgeChance",
+  "wishExtraChoiceChance",
+
   "companionDamage",
 
   "potionPotency",
@@ -106,6 +117,12 @@ type HomesteadBattleKey =
 type HomesteadBattleEffects = Pick<TalentEffectManifest, HomesteadBattleKey>;
 
 interface HomesteadMetaEffects {
+  endRunStonePerRoom: number;
+  endRunGoldPerRoom: number;
+  endRunWishPerRoom: number;
+  removeCardDiscount: number;
+  mixPotionDiscount: number;
+
   herbFindBonus: number;
   endRunFoodPerRoom: number;
   endRunHerbsPerRoom: number;

@@ -156,10 +156,7 @@ export const coreCards: BattleCard[] = [
   cardBuilders.effectsCard({
     id: "shield-bash",
     art: assetRefs.shieldBash,
-    effects: [
-      { kind: "damage", damageType: "stun", amount: 2 },
-      { kind: "player-status", status: "block", amount: 2 },
-    ],
+    effects: [{ kind: "damage", damageType: "stun", amount: 2, blockCost: 2, blockDamageBonus: 3 }],
   }),
   cardBuilders.effectsCard({ id: "steal", art: assetRefs.steal, effects: [{ kind: "gain-gold", amount: 4 }] }),
   cardBuilders.effectsCard({
@@ -319,15 +316,7 @@ export const coreCards: BattleCard[] = [
   cardBuilders.effectsCard({
     id: "maul",
     art: assetRefs.maul,
-    effects: [
-      {
-        kind: "chance",
-        probability: 0.5,
-        successEffects: [{ kind: "damage", damageType: "stun", amount: 3 }],
-        failureEffects: [{ kind: "damage", damageType: "bleed", amount: 3 }],
-      },
-    ],
-    descriptionLines: ["Deal 3 Stun or Bleed damage at random"],
+    effects: [{ kind: "damage", damageType: "bleed", amount: 3, damageTypeIfTargetHasBlock: "stun" }],
   }),
   cardBuilders.effectsCard({
     id: "sniff-out",

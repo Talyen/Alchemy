@@ -38,7 +38,7 @@ describe("HomesteadUpgradeNode hover tooltip", () => {
       expect(panel).toBeTruthy();
       expect(panelText()).toContain("Blacksmith");
       expect(panelText()).toContain("Build");
-      expect(panelText()).toContain("20");
+      expect(panelText()).toContain("22");
 
       const header = panel?.querySelector("p.font-bold");
       expect(header?.textContent).toBe("Blacksmith");
@@ -114,7 +114,7 @@ describe("HomesteadUpgradeNode hover tooltip", () => {
     });
 
     const text = panelText();
-    const occurrences = (text.match(/Gain Gems after each run/g) || []).length;
+    const occurrences = (text.match(/per Room/g) || []).length;
     expect(occurrences).toBe(1);
   });
 });

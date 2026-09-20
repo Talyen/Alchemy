@@ -67,6 +67,8 @@ describe("agent discovery", () => {
     });
     expect(() => parseContextArgs(["--tests"])).toThrow("--outline");
     expect(() => parseContextArgs(["--outline", "test.ts", "--tests", "--entry", "one"])).toThrow("Choose");
+    expect(parseContextArgs(["--json", "--full", "src/App.tsx"])).toMatchObject({ json: true, full: true });
+    expect(() => parseContextArgs(["--full", "src/App.tsx"])).toThrow("--full requires --json");
   });
 
   it("discovers tooling owners for a directory with either path spelling", () => {

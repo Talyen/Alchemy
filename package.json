@@ -104,7 +104,7 @@
     "typecheck:watch": "tsc --noEmit --watch",
     "typecheck:all": "concurrently \"tsc --noEmit\" \"tsc -p tsconfig.test.json --noEmit\"",
     "check:bundle": "node scripts/check-bundle-budget.mjs",
-    "lint:ci": "concurrently --max-process 3 --names static,docs,knip,boundaries,arch-smoke,e2e-list \"npm run check:static\" \"npm run docs:check\" \"npm run deadcode\" \"npm run lint:boundaries\" \"npm run lint:architecture-smoke\" \"npx playwright test --list --project=chromium\"",
+    "lint:ci": "node scripts/lint-ci.mjs",
     "format": "node scripts/run-prettier.mjs --write",
     "ensure:electron": "node scripts/ensure-electron.mjs",
     "deadcode": "knip --treat-config-hints-as-errors",

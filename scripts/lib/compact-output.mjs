@@ -7,6 +7,19 @@ const ANSI_PATTERN = new RegExp(String.raw`\u001B(?:[@-_][0-?]*[ -/]*[@-~]|\][^\
 const NON_PRINTABLE_PATTERN = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/gu;
 export const ROUTINE_EXPOSURE_BUDGET_BYTES = 4_096;
 
+/** Recognize runner totals without exposing every passing test line. */
+export function completionCounts(output) {
+  const lines = sanitizeOutput(String(output ?? ""))
+    .split(/\r?\n/u)
+    .map((line) => line.trim());
+  const totals = lines.filter(
+    (line) =>
+      /^(?:Test Files|Tests)\s+\d/u.test(line) ||
+      /^\d+ (?:passed|failed|skipped|flaky|did not run|interrupted)(?:\s|$)/u.test(line),
+  );
+  return tailOutput([...new Set(totals)].slice(-8).join("\n"), 600);
+}
+
 export function sanitizeOutput(output) {
   return output.replace(ANSI_PATTERN, "").replace(NON_PRINTABLE_PATTERN, "");
 }

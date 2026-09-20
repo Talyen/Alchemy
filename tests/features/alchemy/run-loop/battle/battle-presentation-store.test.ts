@@ -220,10 +220,116 @@ describe("battle-presentation-store", () => {
       ["gold", "+5"],
     ]);
     expect(bursts[1]!.entries.map(({ displayText, stat }) => [stat, displayText])).toEqual([
-      ["stun", "Stunned"],
+      ["stun", ""],
       ["physical", "-12"],
       ["burn", "-2"],
     ]);
+  });
+
+  it.each([0, 100, 249, 250, 300])("merges only during the original 250 ms window (%i)", async (elapsed) => {
+    const show = activateBattle();
+    const input: CombatTextEvent[] = [{ target: "enemy", kind: "damage", stat: "physical", amount: 3 }];
+    Object.freeze(input[0]);
+    show(input);
+    const original = useBattlePresentationStore.getState().floatingCombatBursts[0]!;
+    const cue = useBattlePresentationStore.getState().enemyImpactCue!.sequence;
+    await vi.advanceTimersByTimeAsync(elapsed);
+    show([{ target: "enemy", kind: "damage", stat: "physical", amount: 4 }]);
+    const bursts = useBattlePresentationStore.getState().floatingCombatBursts;
+    expect(bursts).toHaveLength(elapsed < 250 ? 1 : 2);
+    expect(bursts[0]!.id).toBe(original.id);
+    expect(bursts[0]!.firstShownAt).toBe(original.firstShownAt);
+    expect(bursts[0]!.entries[0]!.displayText).toBe(elapsed < 250 ? "-7" : "-3");
+    expect(input[0]).toMatchObject({ amount: 3 });
+    expect(original.entries[0]).toMatchObject({ amount: 3 });
+    expect(useBattlePresentationStore.getState().enemyImpactCue!.sequence).toBeGreaterThan(cue);
+    await vi.advanceTimersByTimeAsync(COMBAT_TEXT_LIFETIME_MS - elapsed);
+    expect(useBattlePresentationStore.getState().floatingCombatBursts.some((burst) => burst.id === original.id)).toBe(
+      false,
+    );
+  });
+
+  it("merges partial actions without mixing types, recipients, or resource directions", async () => {
+    const show = activateBattle();
+    show([{ target: "enemy", kind: "damage", stat: "physical", amount: 3 }]);
+    await vi.advanceTimersByTimeAsync(100);
+    show([
+      { target: "enemy", kind: "damage", stat: "physical", amount: 4 },
+      { target: "enemy", kind: "damage", stat: "burn", amount: 2 },
+      { target: "player", kind: "damage", stat: "physical", amount: 1 },
+      { target: "player", kind: "damage", stat: "block", amount: 2 },
+      { target: "player", kind: "status", stat: "block", amount: 3 },
+    ]);
+    const bursts = useBattlePresentationStore.getState().floatingCombatBursts;
+    expect(bursts).toHaveLength(3);
+    expect(bursts[0]!.entries[0]!.displayText).toBe("-7");
+    expect(bursts.flatMap((burst) => burst.entries.map((entry) => entry.displayText))).toEqual([
+      "-7",
+      "-1",
+      "-2",
+      "+3",
+      "-2",
+    ]);
+  });
+
+  it("does not sum preparations or overflow reserved digit width", async () => {
+    const show = activateBattle();
+    const ready: CombatTextEvent = {
+      target: "player",
+      kind: "notice",
+      stat: "nextHitCrit",
+      text: "",
+      signal: "prepared",
+    };
+    show([ready, { target: "enemy", kind: "damage", stat: "physical", amount: 9 }]);
+    await vi.advanceTimersByTimeAsync(100);
+    show([ready, { target: "enemy", kind: "damage", stat: "physical", amount: 90 }]);
+    let bursts = useBattlePresentationStore.getState().floatingCombatBursts;
+    expect(bursts.filter((burst) => burst.target === "player")).toHaveLength(1);
+    expect(bursts.find((burst) => burst.target === "enemy")!.entries[0]!.displayText).toBe("-99");
+    await vi.advanceTimersByTimeAsync(100);
+    show([{ target: "enemy", kind: "damage", stat: "physical", amount: 1 }]);
+    bursts = useBattlePresentationStore.getState().floatingCombatBursts;
+    expect(bursts.filter((burst) => burst.target === "enemy").map((burst) => burst.entries[0]!.displayText)).toEqual([
+      "-99",
+      "-1",
+    ]);
+  });
+
+  it("keeps every incoming type when a partial merge would evict its recipient", () => {
+    const show = activateBattle();
+    for (const stat of ["physical", "burn", "poison"] as const) {
+      show([{ target: "enemy", kind: "damage", stat, amount: 3 }]);
+    }
+    const original = useBattlePresentationStore.getState().floatingCombatBursts[0]!.id;
+    show([
+      { target: "enemy", kind: "damage", stat: "physical", amount: 4 },
+      { target: "enemy", kind: "damage", stat: "holy", amount: 2 },
+    ]);
+    const bursts = useBattlePresentationStore.getState().floatingCombatBursts;
+    expect(bursts).toHaveLength(3);
+    expect(bursts.some((burst) => burst.id === original)).toBe(false);
+    expect(bursts.at(-1)!.entries.map((entry) => [entry.stat, entry.displayText])).toEqual([
+      ["physical", "-4"],
+      ["holy", "-2"],
+    ]);
+  });
+
+  it("does not resurrect an evicted entry or merge after the original window closes", async () => {
+    const show = activateBattle();
+    show([{ target: "enemy", kind: "damage", stat: "physical", amount: 1 }]);
+    const first = useBattlePresentationStore.getState().floatingCombatBursts[0]!.id;
+    for (const stat of ["burn", "poison", "holy"] as const)
+      show([{ target: "enemy", kind: "damage", stat, amount: 1 }]);
+    expect(useBattlePresentationStore.getState().floatingCombatBursts.some((burst) => burst.id === first)).toBe(false);
+    show([{ target: "enemy", kind: "damage", stat: "physical", amount: 2 }]);
+    const newest = useBattlePresentationStore.getState().floatingCombatBursts.at(-1)!;
+    expect(newest.entries[0]!.displayText).toBe("-2");
+    await vi.advanceTimersByTimeAsync(200);
+    show([{ target: "enemy", kind: "damage", stat: "physical", amount: 3 }]);
+    await vi.advanceTimersByTimeAsync(51);
+    show([{ target: "enemy", kind: "damage", stat: "physical", amount: 4 }]);
+    expect(useBattlePresentationStore.getState().floatingCombatBursts.at(-1)!.entries[0]!.displayText).toBe("-4");
   });
 
   it("starts consecutive actions immediately without merging or renewing older numbers", async () => {
@@ -245,10 +351,13 @@ describe("battle-presentation-store", () => {
     expect(useBattlePresentationStore.getState().floatingCombatBursts).toEqual([]);
   });
 
-  it("caps bursts per target without dropping types from a dense new action", () => {
+  it("caps bursts per target without dropping types from a dense new action", async () => {
     const show = activateBattle();
     show([{ target: "player", kind: "heal", stat: "health", amount: 2 }]);
-    for (const amount of [1, 2, 3]) show([{ target: "enemy", kind: "damage", stat: "physical", amount }]);
+    for (const amount of [1, 2, 3]) {
+      show([{ target: "enemy", kind: "damage", stat: "physical", amount }]);
+      await vi.advanceTimersByTimeAsync(250);
+    }
     show([
       { target: "enemy", kind: "damage", stat: "physical", amount: 4 },
       { target: "enemy", kind: "damage", stat: "burn", amount: 3 },

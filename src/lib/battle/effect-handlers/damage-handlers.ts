@@ -1,3 +1,6 @@
+import { resolveConditionalCardDamage } from "../conditional-card-damage";
+import { mergeCombatText } from "../combat-text";
+import { setPlayerStatus } from "../types";
 import { checkHealthThresholds } from "../status-player";
 import { DAMAGE_TYPES } from "@/lib/game-data";
 import { getBattleRng, pickRandom, rngInt } from "@/lib/rng";
@@ -9,6 +12,22 @@ import { defineHandler } from "./handler-types";
 import { rangeBoundsError } from "./simple-handlers";
 
 export const applyDamageEffect = defineHandler("damage", (state, card, effect, potionMult, combatTexts, context) => {
+  const selected = resolveConditionalCardDamage(effect, {
+    actorBlock: state.playerStatuses.block,
+    targetBlock: state.enemyMitigation.block,
+    targetFrozen: state.enemyCC.freezeSkipTurns > 0,
+  });
+  effect = selected.effect;
+  if (selected.blockSpent > 0) {
+    state = setPlayerStatus(state, "block", state.playerStatuses.block - selected.blockSpent);
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "damage",
+      stat: "block",
+      amount: selected.blockSpent,
+      impact: false,
+    });
+  }
   let damageType = effect.damageType;
   if (effect.damageTypePool && effect.damageTypePool.length > 0) {
     const picked = pickRandom(effect.damageTypePool, getBattleRng(state));
@@ -52,6 +71,13 @@ export const applyRandomDamageEffect = defineHandler(
   },
 );
 
-export const applyRemoveEnemyArmorEffect = defineHandler("remove-enemy-armor", (state, _card, effect) => {
-  return reduceEnemyArmor(state, effect.removeAll ? state.enemyMitigation.armor : (effect.amount ?? 0));
-});
+export const applyRemoveEnemyArmorEffect = defineHandler(
+  "remove-enemy-armor",
+  (state, _card, effect, _potionMult, combatTexts) => {
+    const next = reduceEnemyArmor(state, effect.removeAll ? state.enemyMitigation.armor : (effect.amount ?? 0));
+    const removed = state.enemyMitigation.armor - next.enemyMitigation.armor;
+    if (removed > 0)
+      mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "armor", amount: removed, impact: false });
+    return next;
+  },
+);

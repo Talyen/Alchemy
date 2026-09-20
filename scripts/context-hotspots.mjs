@@ -124,7 +124,8 @@ export function formatContextHotspotReport(report) {
   for (const row of report.routes) {
     lines.push(
       `  ${row.routes.join("+")}: ${formatExactBytes(row.totalContextBytes)} ` +
-        `(preread ${formatExactBytes(row.selectedBytes)}; fixture ${formatExactBytes(row.changedFileBytes)})`,
+        `(emitted preread ${formatExactBytes(row.emittedPrereadBytes)}; ` +
+        `selected ${formatExactBytes(row.selectedBytes)}; fixture ${formatExactBytes(row.changedFileBytes)})`,
     );
   }
   lines.push("", "Discovery context hotspots (owner-section bytes; emitted output includes navigation):");
@@ -154,10 +155,11 @@ export function checkRouteBudgets(routes = measureAllRoutes()) {
     const id = row.routes.length === 1 ? row.routes[0] : null;
     const budget = id ? ROUTE_CONTEXT_BUDGETS[id] : null;
     if (!budget) continue;
-    if (row.selectedBytes > budget.preread || row.totalContextBytes > budget.total) {
+    if (row.emittedPrereadBytes > budget.preread || row.totalContextBytes > budget.total) {
       over.push({
         routes: row.routes,
         selectedBytes: row.selectedBytes,
+        emittedPrereadBytes: row.emittedPrereadBytes,
         totalContextBytes: row.totalContextBytes,
         budget,
       });
@@ -175,7 +177,7 @@ export function main(argv = process.argv.slice(2), rootDir = ROOT) {
       console.log("Routes over preread/total budget:");
       for (const row of overBudgetRoutes) {
         console.log(
-          `  ${row.routes.join("+")}: preread ${row.selectedBytes.toLocaleString()} B (budget ${row.budget.preread.toLocaleString()}); ` +
+          `  ${row.routes.join("+")}: emitted preread ${row.emittedPrereadBytes.toLocaleString()} B (budget ${row.budget.preread.toLocaleString()}); ` +
             `total ${row.totalContextBytes.toLocaleString()} B (budget ${row.budget.total.toLocaleString()})`,
         );
       }

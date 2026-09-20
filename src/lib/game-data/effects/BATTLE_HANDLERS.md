@@ -66,3 +66,23 @@ Trinket effects resolve to `TrinketManifest` via `computeTrinketManifest` in
 coverage test in `tests/lib/content-validation/trinket-validation.test.ts`.
 `battle/gear-effects.ts` holds only shared helpers, not a dispatch table —
 each battle consumer reads the manifests where its effect applies.
+
+## Conditional damage and feedback
+
+Damage supports paired `blockCost`/`blockDamageBonus`, an alternative
+`damageTypeIfTargetHasBlock`, or paired `damageTypeIfTargetFrozen`/
+`amountIfTargetFrozen`. Only one selector may be authored on an effect; selectors
+cannot combine with random-type pools or equal-resource damage. Hero and enemy
+handlers share selection, then resolve their own payment and ordinary typed hit.
+Resolved repeat packets omit selector/payment fields so they cannot pay twice.
+
+Conditional descriptions share one formatter with numeric editing and parity
+validation. Block cost is a fixed rule; base damage, Block damage bonus, and Frozen
+alternative damage are editable. Maul's repeated displayed amount edits one field.
+Complete saved chance-based Maul and free-Archery Ice Shot effects remain supported.
+
+Boolean preparations, draw/summon/Wish, cleansing, and scheduling emit meaningful
+combat events. Unsupported effects still warn without inventing a successful
+result. Numeric zero fallback is restricted to valid ineffective actions.
+Cross-action consolidation belongs exclusively to presentation; source events
+and battle snapshots remain immutable. See the canonical UI feedback policy.

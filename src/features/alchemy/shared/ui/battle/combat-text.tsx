@@ -5,7 +5,12 @@ import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
 import { clamp01, cn } from "@/lib/utils";
 
 import type { CombatTextBurst, FloatingCombatText } from "../../types";
-import { getCombatTextColorClass, getCombatTextIcon } from "../../utils";
+import {
+  getCombatTextColorClass,
+  getCombatTextIcon,
+  getCombatTextLeadingIcon,
+  getCombatTextAccessibleLabel,
+} from "../../utils";
 
 const FCT_BASE_SIZE_CQH = 3.5;
 const FCT_POP_SCALE = 2.0;
@@ -118,6 +123,7 @@ export function CombatTextRail({ bursts }: { bursts: CombatTextBurst[] }) {
               layout={staticMotion ? false : "position"}
               data-testid="combat-text-burst"
               data-burst-id={burst.id}
+              data-first-shown-at={burst.firstShownAt}
               data-target={burst.target}
               className="relative w-max max-w-full shrink-0"
               initial={false}
@@ -149,9 +155,11 @@ export function CombatTextRail({ bursts }: { bursts: CombatTextBurst[] }) {
 
 function CombatTextEntry({ entry }: { entry: FloatingCombatText }) {
   const icon = getCombatTextIcon(entry);
+  const leading = getCombatTextLeadingIcon(entry);
   return (
     <div
       data-testid="combat-text"
+      aria-label={getCombatTextAccessibleLabel(entry)}
       data-kind={entry.kind}
       data-stat={entry.stat}
       className={cn(
@@ -160,6 +168,13 @@ function CombatTextEntry({ entry }: { entry: FloatingCombatText }) {
         getCombatTextColorClass(entry),
       )}
     >
+      {leading
+        ? createElement(leading, {
+            "aria-hidden": true,
+            style: { width: "0.94em", height: "0.94em" },
+            strokeWidth: 3,
+          })
+        : null}
       {icon
         ? createElement(icon, {
             style: {
@@ -170,7 +185,18 @@ function CombatTextEntry({ entry }: { entry: FloatingCombatText }) {
           })
         : null}
       {entry.displayText ? (
-        <span style={{ WebkitTextStroke: "1.5px rgba(0, 0, 0, 0.95)", paintOrder: "stroke fill" }}>
+        <span
+          style={{
+            WebkitTextStroke: "1.5px rgba(0, 0, 0, 0.95)",
+            paintOrder: "stroke fill",
+            fontVariantNumeric: "tabular-nums",
+            textAlign: "center",
+            width:
+              entry.reservedDigits === undefined
+                ? undefined
+                : `${entry.reservedDigits + (/^[+-]/.test(entry.displayText) ? 1 : 0)}ch`,
+          }}
+        >
           {entry.displayText}
         </span>
       ) : null}

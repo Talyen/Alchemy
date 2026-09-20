@@ -93,7 +93,12 @@ export function createDestinationScreenHandlers(
         if (modifiers.includes("herbal-hearth"))
           applyAlchemistPotion({ draft, rng: createDraftRunRandomSource(draft, "rewards") });
         setRunPlayerHealth(draft, (prev) =>
-          getCampfireRestHealth(prev, draft.run.activeRun.runMaxHealth, healFraction),
+          getCampfireRestHealth(
+            prev,
+            draft.run.activeRun.runMaxHealth,
+            healFraction,
+            draft.runProfile.effects.homesteadHealing,
+          ),
         );
         return true;
       },

@@ -3,7 +3,18 @@ import type { BattleCard, BattleCardEffect, BestiaryEntry } from "./types";
 
 export type EnemyAbilityDamageEffect = Pick<
   Extract<BattleCardEffect, { kind: "damage" }>,
-  "kind" | "damageType" | "amount" | "lifesteal" | "doubleIfEnemyBleeding" | "equalToForge" | "ignoreArmor"
+  | "kind"
+  | "damageType"
+  | "amount"
+  | "lifesteal"
+  | "doubleIfEnemyBleeding"
+  | "equalToForge"
+  | "ignoreArmor"
+  | "blockCost"
+  | "blockDamageBonus"
+  | "damageTypeIfTargetHasBlock"
+  | "damageTypeIfTargetFrozen"
+  | "amountIfTargetFrozen"
 >;
 
 export type EnemyAbilityEffect =
@@ -35,6 +46,11 @@ function supportsEnemyEffect(effect: BattleCardEffect): effect is EnemyAbilityEf
         "doubleIfEnemyBleeding",
         "equalToForge",
         "ignoreArmor",
+        "blockCost",
+        "blockDamageBonus",
+        "damageTypeIfTargetHasBlock",
+        "damageTypeIfTargetFrozen",
+        "amountIfTargetFrozen",
       ]);
     case "player-status":
       return (

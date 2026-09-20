@@ -173,6 +173,16 @@ for (const { width, height, size, reducedMotion } of [
       await expect(enemyBursts.first().locator('[data-stat="physical"]')).toHaveCount(1);
       await expect(enemyBursts.first().getByTestId("combat-text")).toHaveCount(4);
       await expect(playerBursts.first().getByTestId("combat-text")).toHaveCount(4);
+      // Once the first window closes, the next action owns a separate burst.
+      await expect
+        .poll(
+          async () => {
+            const started = Number(await enemyBursts.last().getAttribute("data-first-shown-at"));
+            return page.evaluate((at) => Date.now() - at, started);
+          },
+          { intervals: [16] },
+        )
+        .toBeGreaterThanOrEqual(250);
       // Keyboard activation intentionally plays during hand reflow, without waiting for pointer stability.
       await battle.hand.first().press("Enter");
       await expect(enemyBursts).toHaveCount(2);
@@ -181,6 +191,15 @@ for (const { width, height, size, reducedMotion } of [
       expect(ids[0]).toBe(originalId);
       expect(ids[1]).not.toBe(originalId);
       await expect(enemyBursts.first().getByTestId("combat-text")).toHaveText(originalTexts);
+      await expect
+        .poll(
+          async () => {
+            const started = Number(await enemyBursts.last().getAttribute("data-first-shown-at"));
+            return page.evaluate((at) => Date.now() - at, started);
+          },
+          { intervals: [16] },
+        )
+        .toBeGreaterThanOrEqual(250);
       await battle.hand.first().press("Enter");
       await expect(enemyBursts).toHaveCount(3);
       await expect(playerBursts).toHaveCount(3);
@@ -202,6 +221,55 @@ for (const { width, height, size, reducedMotion } of [
         );
       }
       await expect(page.getByTestId("combat-text-burst")).toHaveCount(0, { timeout: 3000 });
+    },
+  );
+}
+
+for (const reducedMotion of [false, true]) {
+  test(
+    `rapid cards consolidate without resizing or restarting feedback (reduced motion=${reducedMotion})`,
+    slow,
+    async ({ page }, testInfo) => {
+      await page.emulateMedia({ reducedMotion: reducedMotion ? "reduce" : "no-preference" });
+      const hand = Array.from({ length: 3 }, () =>
+        makeCard({
+          cost: 0,
+          effects: [
+            { kind: "damage", damageType: "physical", amount: 3 },
+            { kind: "player-status", status: "block", amount: 2 },
+          ],
+        }),
+      );
+      await injectActiveBattle(
+        page,
+        makeGoblinBattleState({ hand, enemyHealth: 1000, enemyMaxHealth: 1000, appliesFightPacing: false }),
+        { runDeck: hand, autoEndTurn: false },
+      );
+      const battle = new BattlePage(page);
+      await expect(battle.hand).toHaveCount(3);
+      await battle.waitForOpeningHand();
+      await battle.playFirstCard();
+      const player = page.locator('[data-testid="combat-text-burst"][data-target="player"]');
+      const block = player.locator('[data-stat="block"]');
+      await expect(block).toHaveText("+2");
+      const id = await player.getAttribute("data-burst-id");
+      const started = Number(await player.getAttribute("data-first-shown-at"));
+      // Freeze Date only: leave animation frames and interaction clocks running normally.
+      await page.clock.setFixedTime(started + 100);
+      const width = await block.locator("span").evaluate((node) => getComputedStyle(node).width);
+      await battle.hand.first().press("Enter");
+      await expect(player).toHaveCount(1);
+      await expect(player).toHaveAttribute("data-burst-id", id!);
+      await expect(block).toHaveText("+4");
+      expect(await block.locator("span").evaluate((node) => getComputedStyle(node).width)).toBe(width);
+      await expect(page.locator('[data-testid="combat-text-burst"][data-target="enemy"]')).toHaveCount(1);
+      const labels = await page.getByTestId("combat-text").allTextContents();
+      expect(labels.every((text) => /^[+−-]?\d+$/.test(text.trim()))).toBe(true);
+      await testInfo.attach("consolidated-feedback", { body: await page.screenshot(), contentType: "image/png" });
+      await page.clock.setFixedTime(started + 250);
+      await battle.hand.first().press("Enter");
+      await expect(player).toHaveCount(2);
+      await expect(page.locator(`[data-burst-id="${id}"]`)).toHaveCount(0, { timeout: 3000 });
     },
   );
 }

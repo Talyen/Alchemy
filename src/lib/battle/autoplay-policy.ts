@@ -1,3 +1,4 @@
+import { resolveConditionalCardDamage } from "./conditional-card-damage";
 import type { BattleSnapshot } from "./types/state-types";
 import { harmfulPlayerStatusIds, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 
@@ -30,7 +31,13 @@ function scoreEffects(effects: readonly BattleCardEffect[], state: BattleSnapsho
 function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot): number {
   switch (effect.kind) {
     case "damage":
-      return effect.equalToForge ? state.playerStatuses.forge : effect.amount;
+      return effect.equalToForge
+        ? state.playerStatuses.forge
+        : resolveConditionalCardDamage(effect, {
+            actorBlock: state.playerStatuses.block,
+            targetBlock: state.enemyMitigation.block,
+            targetFrozen: state.enemyCC.freezeSkipTurns > 0,
+          }).effect.amount;
     case "random-damage":
       return (effect.minAmount + effect.maxAmount) / 2;
     case "enemy-status":

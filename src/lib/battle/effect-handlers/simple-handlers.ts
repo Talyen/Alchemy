@@ -3,7 +3,7 @@ import type { BattleState } from "../types";
 import type { EffectHandler } from "./handler-types";
 import { companionLibrary } from "@/lib/game-data";
 import { applyPotionMultiplier } from "../amount-helpers";
-import { addGoldWithCombatText } from "../combat-text";
+import { mergeCombatText, addGoldWithCombatText } from "../combat-text";
 import { applyWishEffect } from "../wish";
 import { drawFromState, applyDrawResult } from "../draw";
 import { defineHandler } from "./handler-types";
@@ -15,22 +15,34 @@ export function rangeBoundsError(kind: string): Error {
   return new Error(`[Battle] ${kind} ${RANGE_BOUNDS_MESSAGE}`);
 }
 
-export const applyRandomDrawEffect = defineHandler("random-draw", (state, _card, effect, potionMult) => {
+export const applyRandomDrawEffect = defineHandler("random-draw", (state, _card, effect, potionMult, combatTexts) => {
   if (effect.maxAmount < effect.minAmount) throw rangeBoundsError("random-draw");
   const amount = effect.minAmount + rngInt(getBattleRng(state), effect.maxAmount - effect.minAmount + 1);
-  return applyDrawResult(state, drawFromState(state, applyPotionMultiplier(amount, potionMult)));
+  const next = applyDrawResult(state, drawFromState(state, applyPotionMultiplier(amount, potionMult)));
+  mergeCombatText(combatTexts, {
+    target: "player",
+    kind: "status",
+    stat: "draw",
+    amount: next.hand.length - state.hand.length,
+  });
+  return next;
 });
 
 export const applySummonCompanionEffect = defineHandler(
   "summon-companion",
-  (state, _card, effect, _potionMult, _combatTexts) => {
+  (state, _card, effect, _potionMult, combatTexts) => {
+    mergeCombatText(combatTexts, { target: "player", kind: "notice", stat: "companion", text: "" });
     return { ...state, activeCompanion: companionLibrary[effect.companionId] };
   },
 );
 
-export const applyBuffCompanionEffect = defineHandler("buff-companion", (state, _card, effect) => {
-  return { ...state, companionDamageBuff: state.companionDamageBuff + effect.amount };
-});
+export const applyBuffCompanionEffect = defineHandler(
+  "buff-companion",
+  (state, _card, effect, _potionMult, combatTexts) => {
+    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "companion", amount: effect.amount });
+    return { ...state, companionDamageBuff: state.companionDamageBuff + effect.amount };
+  },
+);
 
 export const applyGainGoldEffect = defineHandler("gain-gold", (state, _card, effect, potionMult, combatTexts) => {
   if (effect.ifEnemyStunned && state.enemyCC.stunSkipTurns <= 0) {
@@ -42,11 +54,19 @@ export const applyGainGoldEffect = defineHandler("gain-gold", (state, _card, eff
 
 export const applyWishEffectHandler = defineHandler("wish", (state, card, effect, potionMult, combatTexts) => {
   const adjustedWish = applyPotionMultiplier(effect.amount, potionMult);
+  if (adjustedWish > 0) mergeCombatText(combatTexts, { target: "player", kind: "notice", stat: "wish", text: "" });
   return applyWishEffect(state, card, adjustedWish, combatTexts);
 });
 
-export const applyDrawCardsEffect = defineHandler("draw-cards", (state, _card, effect, potionMult) => {
-  return applyDrawResult(state, drawFromState(state, applyPotionMultiplier(effect.amount, potionMult)));
+export const applyDrawCardsEffect = defineHandler("draw-cards", (state, _card, effect, potionMult, combatTexts) => {
+  const next = applyDrawResult(state, drawFromState(state, applyPotionMultiplier(effect.amount, potionMult)));
+  mergeCombatText(combatTexts, {
+    target: "player",
+    kind: "status",
+    stat: "draw",
+    amount: next.hand.length - state.hand.length,
+  });
+  return next;
 });
 
 const FLAG_EFFECTS = {
@@ -64,7 +84,8 @@ export type FlagEffectKind = keyof typeof FLAG_EFFECTS;
 
 function makeFlagHandler<K extends FlagEffectKind>(kind: K): ReturnType<typeof defineHandler<K>> {
   const flag = FLAG_EFFECTS[kind];
-  return defineHandler(kind, (state) => {
+  return defineHandler(kind, (state, _card, _effect, _potionMult, combatTexts) => {
+    mergeCombatText(combatTexts, { target: "player", kind: "notice", stat: flag, signal: "prepared", text: "" });
     return { ...state, flags: { ...state.flags, [flag]: true } };
   });
 }

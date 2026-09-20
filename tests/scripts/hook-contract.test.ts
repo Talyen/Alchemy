@@ -1,9 +1,9 @@
 import { mkdtempSync, readFileSync, writeFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { spawnSync } from "node:child_process";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { ROUTES } from "../../scripts/lib/change-routes.mjs";
+import { runCiLint } from "../../scripts/lint-ci.mjs";
 
 const ROOT = join(import.meta.dirname, "../..");
 
@@ -46,70 +46,52 @@ describe("canonical verification commands", () => {
     const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as { scripts: Record<string, string> };
     const workflow = readFileSync(join(ROOT, ".github/workflows/ci.yml"), "utf8");
     const check = readFileSync(join(ROOT, "scripts/check.mjs"), "utf8");
-    expect(pkg.scripts["lint:ci"]).toContain("npm run check:static");
+    const lintCi = readFileSync(join(ROOT, "scripts/lint-ci.mjs"), "utf8");
+    expect(pkg.scripts["lint:ci"]).toBe("node scripts/lint-ci.mjs");
+    expect(lintCi).toContain('"check:static"');
     expect(check).toContain('["run", "lint:ci"]');
     expect(workflow).toContain("run: npm run lint:ci");
     expect(workflow).not.toContain("check:test-owners");
     expect(workflow).not.toContain("ci:verify-plan");
   });
 
-  it("finishes independent nested static checks after failures and still returns failure", () => {
-    const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as { scripts: Record<string, string> };
+  it("finishes independent static checks after failures and still returns failure", async () => {
     const root = mkdtempSync(join(tmpdir(), "alchemy-static-settled-"));
     try {
-      const scripts: Record<string, string> = {};
-      for (const name of ["check:static", "lint:ci", "typecheck:all"]) {
-        scripts[name] = (pkg.scripts[name] ?? "").replace(
-          /\bconcurrently\b/gu,
-          `node "${join(ROOT, "node_modules/concurrently/dist/bin/concurrently.js")}"`,
-        );
-      }
-      const leaves = [
-        "check:generated",
-        "format:check",
-        "lint",
-        "lint:boundaries",
-        "lint:architecture-smoke",
-        "docs:check",
-        "deadcode",
-      ];
-      for (const name of leaves)
-        scripts[name] = `node checker.cjs ${name} ${name === "format:check" || name === "deadcode" ? 1 : 0}`;
-      scripts["typecheck:all"] =
-        scripts["typecheck:all"]?.replace(
-          /tsc(?: -p tsconfig.test.json)? --noEmit/gu,
-          (command) => `node checker.cjs ${command.includes("tsconfig.test") ? "types-test" : "types-source"} 0`,
-        ) ?? "";
-      scripts["lint:ci"] =
-        scripts["lint:ci"]?.replace("npx playwright test --list --project=chromium", "node checker.cjs collection 0") ??
-        "";
-      writeFileSync(join(root, "package.json"), JSON.stringify({ private: true, scripts }));
-      writeFileSync(
-        join(root, "checker.cjs"),
-        `const fs = require("node:fs");
-const [name, code] = process.argv.slice(2);
-setTimeout(() => { fs.writeFileSync(name.replaceAll(":", "-") + ".done", "done"); process.exit(Number(code)); }, code === "1" ? 0 : 250);`,
-      );
-      const result = spawnSync(process.platform === "win32" ? "npm.cmd" : "npm", ["run", "lint:ci"], {
-        cwd: root,
-        encoding: "utf8",
-        timeout: 20_000,
+      const runner = async (_command: string, _args: string[], options: Record<string, unknown>) => {
+        const name = basename(String(options.logPath), ".log");
+        const status = name === "dead-code" ? 1 : 0;
+        await new Promise((resolve) => {
+          setTimeout(resolve, status === 1 ? 0 : 250);
+        });
+        writeFileSync(join(root, `${name}.done`), "done");
+        return { status, elapsedMs: 1, output: status === 0 ? "passed" : "failed", logPath: String(options.logPath) };
+      };
+      const result = await runCiLint({
+        rootDir: root,
+        runner,
       });
-      expect(result.status, result.stdout + result.stderr).toBe(1);
+      expect(result).toBe(1);
       expect(
         readdirSync(root)
           .filter((name) => name.endsWith(".done"))
           .sort(),
       ).toEqual(
-        [...leaves.map((name) => name.replaceAll(":", "-")), "types-source", "types-test", "collection"]
+        [
+          "static-checks",
+          "documentation-checks",
+          "dead-code",
+          "dependency-boundaries",
+          "architecture-smoke",
+          "Playwright-collection",
+        ]
           .map((name) => `${name}.done`)
           .sort(),
       );
-      expect(result.stdout + result.stderr).not.toContain("SIGTERM");
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
-  }, 25_000);
+  });
 
   it("keeps the complete save browser gate aligned with canonical save paths and explicit CI triggers", () => {
     const workflow = readFileSync(join(ROOT, ".github/workflows/ci.yml"), "utf8");

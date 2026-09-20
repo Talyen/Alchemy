@@ -81,12 +81,19 @@ export function measureContext(options = {}) {
     measureDocument({ path: filePath, reason: "always-loaded repository instructions" }, "instruction"),
   );
   const explicitDocs = options.docs?.length ? options.docs.map((filePath) => ({ path: filePath })) : null;
-  const selectedDocs = contextSections(ROOT, selectContext(paths));
+  const contextSelection = selectContext(paths);
+  const selectedDocs = contextSections(ROOT, contextSelection);
+  const rendered = renderContext(contextSelection, selectedDocs);
   const ownerDocs = (explicitDocs ?? selectedDocs).map((entry) => measureDocument(entry, "owner"));
   const artifacts = (options.artifacts ?? []).map((filePath) => ({ path: filePath, bytes: fileBytes(filePath) }));
   const outputs = (options.outputFiles ?? []).map((filePath) => ({ path: filePath, bytes: fileBytes(filePath) }));
   const instructionBytes = instructions.reduce((total, entry) => total + entry.bytes, 0);
   const ownerDocBytes = ownerDocs.reduce((total, entry) => total + entry.bytes, 0);
+  const emittedSectionBytes = rendered.included.reduce(
+    (total, section) => total + Buffer.byteLength(compactMarkdownTables(section.text), "utf8"),
+    0,
+  );
+  const emittedBytes = Buffer.byteLength(rendered.text, "utf8");
   const changedFileBytes = paths.reduce((total, filePath) => total + fileBytes(filePath), 0);
   return {
     changedPaths: paths,
@@ -97,8 +104,10 @@ export function measureContext(options = {}) {
     instructionBytes,
     ownerDocBytes,
     selectedBytes: instructionBytes + ownerDocBytes,
+    emittedPrereadBytes: instructionBytes + emittedSectionBytes,
+    emittedBytes,
     changedFileBytes,
-    totalContextBytes: instructionBytes + ownerDocBytes + changedFileBytes,
+    totalContextBytes: instructionBytes + emittedBytes + changedFileBytes,
     verificationCommands: plan.commands.length,
     deduplicatedTestPaths: countTestFiles(plan),
     artifacts,
@@ -172,7 +181,8 @@ function main(argv = process.argv.slice(2)) {
       for (const row of result) {
         console.log(
           `${row.routes.join("+")}: ${row.totalContextBytes.toLocaleString()} bytes ` +
-            `(preread ${row.selectedBytes.toLocaleString()}; fixture ${row.changedFileBytes.toLocaleString()})`,
+            `(emitted preread ${row.emittedPrereadBytes.toLocaleString()}; selected ${row.selectedBytes.toLocaleString()}; ` +
+            `fixture ${row.changedFileBytes.toLocaleString()})`,
         );
       }
     } else console.log(formatMeasurement(result));

@@ -348,8 +348,13 @@ export function playBattleCardResolved(
   const payment = validateCardPlay(state, card, index, options);
   if (!payment) return { state, combatTexts };
 
-  const { effectiveCost, blockCost } = payment;
-  const costState = consumeCardDiscounts(state, payment);
+  const freeMana =
+    payment.effectiveCost > 0 &&
+    (state.talentEffects.homesteadFreeManaChance ?? 0) > 0 &&
+    rollPercent(state.talentEffects.homesteadFreeManaChance, getBattleRng(state));
+  const effectiveCost = freeMana ? 0 : payment.effectiveCost;
+  const { blockCost } = payment;
+  const costState = freeMana ? state : consumeCardDiscounts(state, payment);
 
   const playTwice = costState.flags.playNextCardTwice;
   const prepared = prepareUniqueCardPlay(costState, card, effectiveCost);

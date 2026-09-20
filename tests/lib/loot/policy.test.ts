@@ -70,7 +70,7 @@ describe("shared loot policy", () => {
     expect(weights.boon / weights.card).toBeCloseTo(0.1 / 0.55);
   });
 
-  it("transfers Basic weight to Astral before scaling, clamps bonuses, and filters exhausted pools", () => {
+  it("converts only the requested fraction of Basic equipment and filters exhausted pools", () => {
     const weights = resolveLootWeights({
       source: "normal",
       progress,
@@ -78,11 +78,16 @@ describe("shared loot policy", () => {
       available: { unique: false, trinket: false },
     });
     expect(weights.unique + weights.trinket).toBe(0);
-    expect(weights.astral / weights.basic).toBeCloseTo(1);
+    expect(weights.astral / weights.basic).toBeCloseTo((0.07 + 0.17 * 0.05) / (0.17 * 0.95));
     expect(resolveLootWeights({ source: "normal", progress, astralChanceBonus: -1 })).toEqual(
       resolveLootWeights({ source: "normal", progress }),
     );
     expect(resolveLootWeights({ source: "equipment", progress, astralChanceBonus: 10 }).basic).toBe(0);
+  });
+
+  it("cannot convert Basic equipment when the Basic pool is unavailable", () => {
+    const input = { source: "normal" as const, progress, available: { basic: false } };
+    expect(resolveLootWeights({ ...input, astralChanceBonus: 1 })).toEqual(resolveLootWeights(input));
   });
 
   it("uses Basic Gear for an empty premium source and cards if no Gear is available", () => {

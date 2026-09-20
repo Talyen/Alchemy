@@ -80,7 +80,7 @@ describe("alchemist shop actions", () => {
       expect(playUISound).toHaveBeenCalledWith("alchemistMix");
     });
 
-    it("adds homestead potionMixPotency onto talent mix potency", () => {
+    it("discounts mixing without changing the talent potion-strength bonus", () => {
       setRunProgress({
         gold: 999,
         runDeck: [
@@ -91,13 +91,15 @@ describe("alchemist shop actions", () => {
       setAlchemistState(createInitialAlchemistState());
       const actions = buildActions({
         talentEffects: { potionMixPotency: 1 },
-        homesteadEffects: { potionMixPotency: 1 },
+        homesteadEffects: { mixPotionDiscount: 8 },
       });
 
+      expect(actions.alchemist.getMixPrice()).toBe(ALCHEMIST_MIX_PRICE - 8);
       const result = actions.alchemist.mixPotions(0, 1);
+      expect(readRunProfile().gold).toBe(999 - (ALCHEMIST_MIX_PRICE - 8));
       expect(result?.effects).toEqual([
-        expect.objectContaining({ kind: "damage", damageType: "holy", amount: 7 }),
-        expect.objectContaining({ kind: "damage", damageType: "holy", amount: 7 }),
+        expect.objectContaining({ kind: "damage", damageType: "holy", amount: 6 }),
+        expect.objectContaining({ kind: "damage", damageType: "holy", amount: 6 }),
       ]);
     });
 

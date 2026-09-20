@@ -9,6 +9,9 @@ const FORMATTERS: { [K in BattleCardEffect["kind"]]: KeywordFormatter<K> } = {
     dedupeKeywords(
       effect.damageTypePool?.length ? effect.damageTypePool : [effect.damageType],
       effect.lifesteal ? ["leech"] : [],
+      effect.damageTypeIfTargetHasBlock ? [effect.damageTypeIfTargetHasBlock] : [],
+      effect.damageTypeIfTargetFrozen ? [effect.damageTypeIfTargetFrozen] : [],
+      effect.blockCost !== undefined ? ["block"] : [],
     ),
   "cleanse-player-status-to-damage": (effect) => [effect.status, effect.damageType],
   "random-damage": () => ["physical"],

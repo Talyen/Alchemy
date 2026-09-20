@@ -10,10 +10,10 @@ import {
   keywordDefinitions,
 } from "@/lib/game-data";
 import type { LucideIcon } from "lucide-react";
-import { Skull, Sparkles } from "lucide-react";
+import { Skull, Sparkles, Layers, Eraser, ShieldMinus, Clock } from "lucide-react";
 import { keywordIcons } from "../config/metadata";
 import { augmentDefinitions } from "../augment-definitions";
-import type { CombatImpactCue, StatusChip } from "../types";
+import type { CombatImpactCue, StatusChip, FloatingCombatText } from "../types";
 
 const ENEMY_MITIGATION_DISPLAY_ORDER: ReadonlyArray<keyof BattleSnapshot["enemyMitigation"]> = [
   "block",
@@ -33,7 +33,7 @@ export function getCombatTextColorClass(event: CombatTextEvent): string {
 }
 
 export function getCombatImpactVisual(event: CombatTextEvent): Omit<CombatImpactCue, "sequence"> | null {
-  if (event.kind !== "damage") return null;
+  if (event.kind !== "damage" || event.impact === false || event.amount <= 0) return null;
   const isDamageType = DAMAGE_TYPES.includes(event.stat as DamageType);
   if (event.stat !== "health" && event.stat !== "block" && !isDamageType) return null;
   const keyword = keywordDefinitions[event.stat as KeywordId] ?? keywordDefinitions.health;
@@ -45,6 +45,10 @@ export function getCombatImpactVisual(event: CombatTextEvent): Omit<CombatImpact
 
 const combatTextIconClasses: Record<string, LucideIcon> = {
   haste: Sparkles,
+  draw: Layers,
+  cleanse: Eraser,
+  scheduled: Clock,
+  effect: Sparkles,
   deathsDoor: Skull,
 };
 
@@ -55,6 +59,27 @@ export function getCombatTextIcon(event: CombatTextEvent) {
   const kw = keywordIcons[event.stat as KeywordId];
   if (kw) return kw;
   return combatTextIconClasses[event.stat];
+}
+
+export function getCombatTextLeadingIcon(event: CombatTextEvent) {
+  if (event.kind !== "notice") return undefined;
+  if (event.signal === "purge" || event.text === "Purged") return ShieldMinus;
+  if (event.signal === "cleanse") return Eraser;
+  if (event.signal === "prepared") return Sparkles;
+  return undefined;
+}
+
+export function getCombatTextAccessibleLabel(event: FloatingCombatText): string {
+  const augment = augmentDefinitions[event.stat as keyof typeof augmentDefinitions];
+  const keyword = keywordDefinitions[event.stat as KeywordId];
+  const label = augment?.label ?? keyword?.label ?? event.stat;
+  if (event.kind === "notice") {
+    if (event.signal === "purge" || event.text === "Purged") return `Purged ${label}`;
+    if (event.signal === "cleanse") return `Cleansed ${label}`;
+    if (event.signal === "prepared") return `${label} prepared`;
+    return event.text || (event.stat === "deathsDoor" ? "Death's Door" : label);
+  }
+  return `${label}: ${event.displayText}`;
 }
 
 function buildStatusChips(

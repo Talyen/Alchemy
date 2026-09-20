@@ -83,12 +83,12 @@ describe("emitOverhealBlockText", () => {
 });
 
 describe("applyHealingWithCombatText", () => {
-  it("emits only actual health gained on overheal", () => {
+  it("includes overflow in the visible healing amount", () => {
     const state = patchBattleState({ playerHealth: 29, playerMaxHealth: 30 });
     const texts = makeTexts();
     applyHealingWithCombatText(state, 10, texts);
     const healText = texts.find((t) => t.kind === "heal");
-    expect(healText).toEqual({ target: "player", kind: "heal", stat: "health", amount: 1 });
+    expect(healText).toEqual({ target: "player", kind: "heal", stat: "health", amount: 10 });
   });
 
   it("grants Grove's Favor Thorns when Health is actually restored", () => {

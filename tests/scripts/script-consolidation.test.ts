@@ -1,13 +1,15 @@
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { tmpdir } from "node:os";
+import { describe, expect, it, vi } from "vitest";
 
 import { INLINE_ARGS_BYTES, RELATED_SELECTION_BYTES } from "../../scripts/lib/selection-budgets.mjs";
 import { VITEST_MAX_WORKERS } from "../../scripts/lib/test-concurrency.mjs";
 import { parseKnownFlags } from "../../scripts/lib/cli-args.mjs";
 import { UsageError } from "../../scripts/lib/script-run.mjs";
-import { runStreamCommand } from "../../scripts/lib/run-command.mjs";
+import { runStreamCommand, runTaskCommand } from "../../scripts/lib/run-command.mjs";
 import { resolvePrettierTargets } from "../../scripts/run-prettier.mjs";
+import { runCiLint } from "../../scripts/lint-ci.mjs";
 
 const ROOT = process.cwd();
 
@@ -58,9 +60,10 @@ describe("script consolidation", () => {
     const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as { scripts: Record<string, string> };
     expect(pkg.scripts["check:static"]).not.toContain("lint:boundaries");
     expect(pkg.scripts["check:static"]).not.toContain("lint:architecture-smoke");
-    expect(pkg.scripts["lint:ci"]).toContain("npm run check:static");
-    expect(pkg.scripts["lint:ci"]).toContain("npm run lint:boundaries");
-    expect(pkg.scripts["lint:ci"]).toContain("npm run lint:architecture-smoke");
+    expect(pkg.scripts["lint:ci"]).toBe("node scripts/lint-ci.mjs");
+    expect(readFileSync(join(ROOT, "scripts/lint-ci.mjs"), "utf8")).toContain("check:static");
+    expect(readFileSync(join(ROOT, "scripts/lint-ci.mjs"), "utf8")).toContain("lint:boundaries");
+    expect(readFileSync(join(ROOT, "scripts/lint-ci.mjs"), "utf8")).toContain("lint:architecture-smoke");
   });
 
   it("streams long-running commands through the shared runner", () => {
@@ -69,5 +72,39 @@ describe("script consolidation", () => {
     expect(passed.elapsedMs).toBeGreaterThanOrEqual(0);
     const failed = runStreamCommand(process.execPath, ["-e", "process.exit(3)"]);
     expect(failed.status).toBe(3);
+  });
+
+  it("captures one-shot task output and exposes only a compact result", async () => {
+    const root = mkdtempSync(join(tmpdir(), "task-command-"));
+    try {
+      const logPath = join(root, "task.log");
+      const result = await runTaskCommand(
+        process.execPath,
+        ["-e", 'console.log("noise".repeat(5000)); process.exit(0)'],
+        { cwd: root, label: "bounded task", logPath },
+      );
+      expect(result.status).toBe(0);
+      expect(statSync(logPath).size).toBeGreaterThan(20_000);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it("compacts the aggregate CI static gate while retaining step logs", async () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-ci-"));
+    try {
+      const log = vi.spyOn(console, "log").mockImplementation(() => {});
+      const runner = vi.fn(async (_command: string, _args: string[], options: Record<string, unknown>) => ({
+        status: 0,
+        elapsedMs: 1,
+        output: "Tests  3 passed (3)",
+        logPath: String(options.logPath),
+      }));
+      expect(await runCiLint({ rootDir: root, runner })).toBe(0);
+      expect(runner).toHaveBeenCalledTimes(6);
+      expect(log.mock.calls.flat().join("\n")).toContain("CI static checks: 6/6 passed");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });

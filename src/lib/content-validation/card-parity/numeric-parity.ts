@@ -1,3 +1,4 @@
+import { conditionalDamageDescription } from "@/lib/game-data";
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 import type { ContentValidationIssue } from "../types";
 import { flattenEffects, parseLeadingNumber, pushMissingEffect, pushValueMismatch } from "./helpers";
@@ -87,6 +88,10 @@ function checkDealLine(
   const hitCount = shape.twice || shape.delayedSecondAmount !== null || shape.sharedDelayed ? 2 : 1;
   for (let hit = 0; hit < hitCount; hit += 1) {
     const effect = nextDamage();
+    if (effect && conditionalDamageDescription(effect)) {
+      if (line !== conditionalDamageDescription(effect)) pushValueMismatch(issues, cardId, line, effect.amount);
+      continue;
+    }
     if (
       !effect ||
       effect.equalToBlock ||

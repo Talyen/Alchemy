@@ -1,6 +1,7 @@
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   addMaterialsToStockpile,
+  addGold,
   clearRunCurrenciesEarned,
   clearRunMaterialsEarned,
   setRunEndCurrencies,
@@ -46,6 +47,11 @@ export function awardsRunMaterialsFor(contentSystemType: ContentSystemId): boole
 export function awardRunEndMaterials(draft: GameplayDraft): MaterialInventory {
   const runState = draft.run.activeRun;
   const runProfile = draft.runProfile;
+  const rooms = Math.max(0, runState.roomsEncountered);
+  const wishGoldRooms = awardsRunMaterialsFor(runState.contentSystemType) ? Math.ceil(rooms / 2) : rooms;
+  const gold =
+    (runProfile.effects.endRunGoldPerRoom ?? 0) * rooms + (runProfile.effects.endRunWishPerRoom ?? 0) * wishGoldRooms;
+  if (gold > 0) addGold(draft, gold);
   if (!awardsRunMaterialsFor(runState.contentSystemType)) {
     clearRunMaterialsEarned(draft);
     clearRunCurrenciesEarned(draft);

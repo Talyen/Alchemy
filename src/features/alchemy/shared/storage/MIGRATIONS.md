@@ -122,3 +122,24 @@ Candidate compatibility/freshness checks → current-shape validation → normal
 - Card validation and hydration treat saved effects and descriptions as one content unit. `BattleCardSchema` returns an empty effect list if any effect fails validation, including nested effects; missing or malformed lists likewise become empty. `hydrateCard` preserves both saved lists only when both are usable, without comparing their lengths against the current catalog. Otherwise it restores both from the library and clears saved `corrupted`, `baseTitle`, and `corruptedValuePositions`. Valid saved cost, UID, and explicit Consume overrides survive; title, art, and catalog metadata refresh from the library. The empty-list recovery signal survives normalization and JSON round trips without extra saved fields.
 - The same card validator covers active-run card locations and saved battle deck, hand, discard, exhausted, Wish options, and Wish queue, including pending battle result states. Battle card hydration occurs when `initializeActiveBattle` restores the session; other card locations hydrate through `toActiveRunData`. Complete valid saved modifications survive even when their effect count differs from current content. Incomplete content recovery may reset card modifications, but requires no schema bump because the persisted shape and valid values retain their meanings.
 - The `SaveLoadStatus` shape has four variants: `ok`, `unsupported-newer-schema`, `unsupported-newer-content`, and `corrupt`. No diagnostic fields surface to the player. The `ok` variant may carry developer-facing `warnings` (repair notes such as dropped card content); these never gate loads and are not shown to players.
+
+## Four-tier Homestead
+
+Building, farm, and research level bounds come from the current four-tier catalog;
+existing levels retain their values and level four survives reload. Companion
+Bonds keep three tiers. New numeric Homestead combat fields default to zero in
+the talent manifest and rebind from purchased levels during run restoration.
+Do not replay opening grants or production while rebinding. Existing Potion
+mixtures retain their stored effects; new mixing discounts alter purchase prices,
+not saved Potion contents. Stone uses the existing material inventory entry;
+Gold production uses the purse owner. No material IDs or saved building IDs change.
+
+## Strategic card revisions
+
+The optional scalar conditional-damage fields preserve existing effect meanings
+when absent. Keep complete saved effects and descriptions together: old Shield
+Bash still grants Block, old Maul retains its chance branches, and old Ice Shot
+retains its free-Archery preparation. New acquisitions use the current catalog.
+Existing prepared flags survive load unchanged. No schema/content version bump
+or wholesale card replacement is needed. Merge clocks, width reservations, and
+floating sums are presentation-only and never enter saves.

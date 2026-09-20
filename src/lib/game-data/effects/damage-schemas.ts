@@ -20,6 +20,11 @@ export const damageEffectDefinition = {
       equalToArmor: z.boolean().optional(),
       equalToForge: z.boolean().optional(),
       ignoreArmor: z.boolean().optional(),
+      blockCost: PositiveAmountSchema.optional(),
+      blockDamageBonus: AmountSchema.optional(),
+      damageTypeIfTargetHasBlock: DamageTypeSchema.optional(),
+      damageTypeIfTargetFrozen: DamageTypeSchema.optional(),
+      amountIfTargetFrozen: AmountSchema.optional(),
       equalToGoldPercent: z.number().int().min(0).max(100).optional(),
       doubleIfEnemyBurning: z.boolean().optional(),
       doubleIfEnemyBleeding: z.boolean().optional(),
@@ -27,6 +32,33 @@ export const damageEffectDefinition = {
       detonateIfEnemyBurning: z.boolean().optional(),
       damageTypePool: z.array(DamageTypeSchema).min(2).optional(),
     })
+    .refine((data) => (data.blockCost === undefined) === (data.blockDamageBonus === undefined), {
+      message: "Block payment requires both cost and damage bonus",
+    })
+    .refine((data) => (data.damageTypeIfTargetFrozen === undefined) === (data.amountIfTargetFrozen === undefined), {
+      message: "Frozen alternative requires both damage type and amount",
+    })
+    .refine(
+      (data) => {
+        const conditions = [
+          data.blockCost !== undefined,
+          !!data.damageTypeIfTargetHasBlock,
+          !!data.damageTypeIfTargetFrozen,
+        ];
+        return (
+          conditions.filter(Boolean).length <= 1 &&
+          (!conditions.some(Boolean) ||
+            !(
+              data.damageTypePool !== undefined ||
+              data.equalToBlock === true ||
+              data.equalToArmor === true ||
+              data.equalToForge === true ||
+              data.equalToGoldPercent !== undefined
+            ))
+        );
+      },
+      { message: "Conditional damage cannot combine with another damage selector" },
+    )
     .refine((data) => !(data.equalToBlock && data.equalToArmor), {
       message: "damage effect cannot have both equalToBlock and equalToArmor",
     })

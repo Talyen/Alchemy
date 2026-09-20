@@ -7,6 +7,7 @@ const protectedHit: CombatTextBurst = {
   id: "protected-hit",
   target: "player",
   lifetimeMs: 1100,
+  firstShownAt: 0,
   entries: [{ id: "notice", target: "player", kind: "notice", stat: "deathsDoor", text: "", displayText: "" }],
 };
 
@@ -18,11 +19,33 @@ describe("CombatTextRail", () => {
     expect(container.textContent).toBe("");
   });
 
+  it.each([
+    { stat: "freeze", text: "Frozen", signal: undefined, icons: 1, label: "Frozen" },
+    { stat: "armor", text: "Purged", signal: "purge", icons: 2, label: "Purged Armor" },
+    { stat: "nextHitCrit", text: "", signal: "prepared", icons: 2, label: "Predator's Focus prepared" },
+  ] as const)(
+    "renders $stat notices as icons with readable accessible labels",
+    ({ stat, text, signal, icons, label }) => {
+      const burst: CombatTextBurst = {
+        id: "notice",
+        target: "player",
+        firstShownAt: 0,
+        lifetimeMs: 1100,
+        entries: [{ id: "notice-entry", target: "player", kind: "notice", stat, text, signal, displayText: "" }],
+      };
+      const { container } = render(<CombatTextRail bursts={[burst]} />);
+      expect(container.textContent).toBe("");
+      expect(container.querySelectorAll("svg")).toHaveLength(icons);
+      expect(container.querySelector('[data-testid="combat-text"]')?.getAttribute("aria-label")).toBe(label);
+    },
+  );
+
   it("keeps existing action nodes and typed numbers when a new action appears", () => {
     const damage: CombatTextBurst = {
       id: "first",
       target: "enemy",
       lifetimeMs: 1100,
+      firstShownAt: 0,
       entries: [
         { id: "first-damage", target: "enemy", kind: "damage", stat: "physical", amount: 5, displayText: "-5" },
       ],

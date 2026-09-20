@@ -44,11 +44,11 @@ export function shouldPlayCardGoldGain(previousState: BattleSnapshot, nextState:
 }
 
 export function shouldShakeEnemyFromCombatTexts(combatTexts: CombatTextEvent[]) {
-  return combatTexts.some((ct) => ct.kind === "damage" && ct.target === "enemy");
+  return combatTexts.some((ct) => ct.kind === "damage" && ct.impact !== false && ct.target === "enemy");
 }
 
 export function shouldShakePlayerFromCombatTexts(combatTexts: CombatTextEvent[]) {
-  return combatTexts.some((ct) => ct.kind === "damage" && ct.target === "player");
+  return combatTexts.some((ct) => ct.kind === "damage" && ct.impact !== false && ct.target === "player");
 }
 
 export interface CombatTextShakeFeedback {
@@ -77,15 +77,16 @@ export function playCombatTextSounds(combatTexts: CombatTextEvent[]) {
   const sounds = new Set<Parameters<typeof playBattleEvent>[0]>();
   for (const ct of combatTexts) {
     if (ct.kind === "notice") {
+      if (ct.signal || ct.text === "Purged") continue;
       if (ct.stat === "stun") sounds.add("stunProc");
       else if (ct.stat === "freeze") sounds.add("freezeProc");
       continue;
     }
-    if (ct.kind === "damage" && ct.target === "enemy") {
+    if (ct.kind === "damage" && ct.impact !== false && ct.target === "enemy") {
       sounds.add("enemyHit");
-    } else if (ct.kind === "damage" && ct.target === "player" && ct.stat === "block") {
+    } else if (ct.kind === "damage" && ct.impact !== false && ct.target === "player" && ct.stat === "block") {
       sounds.add("blockAbsorb");
-    } else if (ct.kind === "damage" && ct.target === "player") {
+    } else if (ct.kind === "damage" && ct.impact !== false && ct.target === "player") {
       sounds.add("playerHit");
     } else if (ct.kind === "heal" && ct.target === "player") {
       sounds.add("playerHeal");

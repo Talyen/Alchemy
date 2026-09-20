@@ -102,6 +102,21 @@ Current scaling talents use numeric percentage fields; legacy boolean snapshot f
 
 Armor contributes a quarter to Armored Fists/Thornskin; Block contributes 10% to Weighted Guard/Sacred Shield/Impact Guard. Ignite, Sanctify, Rust, and Tempered Guard use half Forge; full-strength Homestead or Gear permissions take precedence without adding Forge twice. Burn/Bleed sharing takes the stronger applicable Forge permission. Last Stand/Desperate Forge increase gains by 25% below half Health; Unrelenting grants 50% more Physical damage in that window. Round fractional combat magnitudes normally, including zero results.
 
+Homestead has four increasing tiers. Crystal Garden adds flat damage to existing
+critical hits; it grants no Mana capacity. Leyline has a 5/10/15/20% chance to
+waive Mana payment on an otherwise affordable play. It rolls only on a committed
+positive-Mana-cost play, preserves unused cost discounts on success, and never
+refunds Mana or previews a random free cost. Unaffordable attempts cannot roll.
+Culinary adds flat healing to existing positive healing, including campfire rest;
+Mycology adds flat Leech healing without granting Leech. Alchemy Lab adds flat
+Potion damage/healing, without increasing draw counts or Mana restoration.
+Blacksmith’s Burn contribution uses the strongest Forge percentage across
+Homestead, talents, and full-strength permissions, never their sum. Shop removal
+and Potion mixing apply Homestead discounts in both the price and transaction.
+Detect Magic converts 3/6/10/15% of eligible Basic equipment outcomes to Astral
+after ordinary progression weighting; it preserves total equipment probability,
+Unique outcomes, and Astral eligibility. Existing generated items are unchanged.
+
 Homestead battle keys in `HOMESTEAD_BATTLE_*_KEYS` are **added** onto talent values at battle start (`mergeIntoManifest`). Keep identity defaults (`potionPotency: 1`, `healMultiplier: 1`) off those key lists; homestead defaults are zero-based bonuses. Shop, campfire, victory, and collection UI do **not** receive the battle merge — if they need homestead, pass both ports or merge at that consumer. Do not assume `useTalentEffects()` includes homestead.
 
 Incoming `receiveHalf*` resist talents use `scaleReceivedPlayerDamage` in `src/lib/battle/types/state-helpers.ts`. Enemy attacks scale once in `computeMitigatedDamage`; player DoTs scale once in `status-ticks.ts`. Do not also scale in `applyPlayerCombatDamage`.
@@ -185,6 +200,28 @@ Run-end keyword cards intentionally show level + XP bar only; the Talents screen
 - **Roll the Dice** — Consumes and draws the result of one fair six-sided die, subject to the ordinary hand limit and reshuffle rules; its fixed die faces do not change through numerical upgrades.
 - **Potion draw** — Distillation scales Potion card-draw effects with normal nearest-integer rounding and the hand limit. Mixing and Strong Spirits update implicit “Draw a card” descriptions to match the scaled draw amount, including effects added by Corruption.
 - **Terminology** — use “Deal N [type] damage”, “Gain N Mana”, “Gain/Lose N Mana Crystals”, “Restore N Health”, “Cleanse”, “buildup”, and “Draw a card”. Distinguish hits, natural ticks, detonations, damage bonuses, and separate typed hits. Health loss remains distinct from typed self-damage. New content uses the revised wording; valid saved effects and descriptions remain paired.
+
+### Strategic card conditions
+
+Shield Bash deals 2 Stun damage and automatically spends exactly 2 available
+Block for +3 base damage instead of granting Block. Mana payment and its reactions
+finish first; the optional Block payment precedes the hit, including Dodge and
+reactive damage. Rejected plays spend neither resource. Maul deals 3 Stun against
+positive target Block, otherwise 3 Bleed, selecting before the hit consumes Block.
+Ice Shot deals 2 Freeze, or 5 Physical against an already Frozen target; it preserves
+Frozen and its Archery tag but no longer grants free Archery. Existing free-Archery
+and Hawk Eye preparations retain their normal consumption.
+
+Conditions are deterministic and actor-relative for both player and enemy cards.
+Forge, mitigation, buildup, and hit reactions use the selected type. Recorded
+repeat packets retain the resolved amount/type and cannot spend Block again;
+replaying the card's effects evaluates conditions and payment again. Other card
+mechanics and enemy repertoires are unchanged.
+
+Healing feedback shows the effective pre-cap amount, including overflow, after
+all applicable modifiers and rounding. Actual restoration and overflow remain
+separate for healing rewards and conversions; Clean Slate uses that same modified
+healing calculation. Full-Health healing never fabricates actual restoration.
 
 ### Labyrinth exceptions
 

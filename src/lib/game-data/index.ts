@@ -16,3 +16,4 @@ export * from "./talents";
 export * from "./difficulties";
 export * from "./reward-selection";
 export * from "./enemy-abilities";
+export { conditionalDamageDescription } from "./cards/conditional-damage-description";

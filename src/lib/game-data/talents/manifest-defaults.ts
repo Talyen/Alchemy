@@ -92,6 +92,15 @@ export const DEFAULT_TALENT_EFFECTS = {
   armorOnDodge: 0,
 
   flatPhysicalDamage: 0,
+  flatHolyDamage: 0,
+  physicalDamageReduction: 0,
+  homesteadCriticalDamage: 0,
+  homesteadHealing: 0,
+  homesteadLeechHealing: 0,
+  homesteadPotionBonus: 0,
+  homesteadFreeManaChance: 0,
+  homesteadForgeBurnPercent: 0,
+
   armorToPhysicalDamage: false,
   physicalStunChance: 0,
   physicalBleedChance: 0,

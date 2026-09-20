@@ -43,7 +43,12 @@ export const applyEnemyStatusEffect = defineHandler("enemy-status", (state, _car
   }
   const nextState = addEnemyStatus(state, effect.status, amount);
   const appliedAmount = nextState.enemyStatuses[effect.status] - state.enemyStatuses[effect.status];
-  mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: effect.status, amount: appliedAmount });
+  mergeCombatText(combatTexts, {
+    target: "enemy",
+    kind: effect.status === "burn" || effect.status === "poison" || effect.status === "bleed" ? "multiply" : "status",
+    stat: effect.status,
+    amount: appliedAmount,
+  });
 
   return nextState;
 });
@@ -62,6 +67,13 @@ export const applyRemovePlayerStatusEffect = defineHandler(
   "remove-player-status",
   (state, _card, effect, _potionMult, combatTexts) => {
     if (state.playerStatuses[effect.status] <= 0) return state;
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "notice",
+      stat: effect.status,
+      signal: "cleanse",
+      text: "",
+    });
     return applyCleanseHeals(setPlayerStatus(state, effect.status, 0), combatTexts);
   },
 );

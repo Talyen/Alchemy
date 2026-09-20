@@ -270,7 +270,13 @@ describe("imported enemy attack reactions", () => {
     expect(result.playerHealth).toBe(100);
     const purgedCount = (["block", "haste"] as const).filter((stat) => result.playerStatuses[stat] === 0);
     expect(purgedCount).toHaveLength(1);
-    expect(texts).toContainEqual({ target: "player", kind: "notice", stat: purgedCount[0], text: "Purged" });
+    expect(texts).toContainEqual({
+      target: "player",
+      kind: "notice",
+      stat: purgedCount[0],
+      text: "Purged",
+      signal: "purge",
+    });
   });
 
   it("damages Blood Countess only when the hero restores Health and pays kill rewards", () => {

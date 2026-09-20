@@ -45,7 +45,9 @@ export function applyLeechHealing(
 ): BattleState {
   const afflicted = options.afflicted ?? (state.enemyStatuses.poison > 0 || state.enemyStatuses.bleed > 0);
   const bonus = afflicted ? state.talentEffects.afflictionLeechBonusPercent : 0;
-  const healing = applyPercentBonus(amount, bonus, PERCENT_DENOMINATOR);
+  const healing =
+    applyPercentBonus(amount, bonus, PERCENT_DENOMINATOR) +
+    (amount > 0 ? (state.talentEffects.homesteadLeechHealing ?? 0) : 0);
   let restored = options.cardHealing
     ? applyCardHealing(state, healing, combatTexts, { skipFightPacing: true, allowOverhealBlock: false })
     : applyHealingWithCombatText(state, healing, combatTexts, { skipFightPacing: true });

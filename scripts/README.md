@@ -36,7 +36,7 @@ Manifest paths derive from `MANAGED_DIRS` + `MANIFEST_BASENAME` via `getManagedM
 | Preread measurement                                                 | `measure-agent-context.mjs` |
 | Evaluation records and comparison                                   | `agent-eval.mjs`            |
 
-Source declarations, authored entries, and optional test navigation are parsed in `lib/source-outline.mjs`; `agent-context.mjs` owns bounded rendering. `run-compact.mjs` reuses `lib/run-command.mjs` and `lib/compact-output.mjs` for one-shot command logs and summaries.
+Source declarations, authored entries, and optional test navigation are parsed in `lib/source-outline.mjs`; `agent-context.mjs` owns bounded rendering. `run-compact.mjs`, `lib/run-command.mjs`, and `lib/compact-output.mjs` provide the shared one-shot command policy: compact summaries by default, complete logs on disk, and explicit live output for interactive work. `lint-ci.mjs` applies that policy to the aggregate static gate so direct CI checks do not dump every collected browser test.
 
 [Agent discovery](../Docs/REFERENCE.md#agent-discovery) documents command options
 and limitations; [evaluations](../.agents/evals/README.md) owns pinned setup and

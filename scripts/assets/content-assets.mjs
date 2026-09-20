@@ -114,6 +114,43 @@ export const contentAssets = [
     width: WIDTH.destination,
     quality: QUALITY.destination,
   },
+  // Generic fog-of-war variants, independent of encounter type.
+  {
+    source: "Labyrinth/Shrouded Veiled Arch.png",
+    target: "labyrinth-shrouded-veiled-arch.webp",
+    width: WIDTH.destination,
+    quality: QUALITY.destination,
+  },
+  {
+    source: "Labyrinth/Shrouded Descending Steps.png",
+    target: "labyrinth-shrouded-descending-steps.webp",
+    width: WIDTH.destination,
+    quality: QUALITY.destination,
+  },
+  {
+    source: "Labyrinth/Shrouded Shrouded Passage.png",
+    target: "labyrinth-shrouded-shrouded-passage.webp",
+    width: WIDTH.destination,
+    quality: QUALITY.destination,
+  },
+  {
+    source: "Labyrinth/Shrouded Forgotten Pillars.png",
+    target: "labyrinth-shrouded-forgotten-pillars.webp",
+    width: WIDTH.destination,
+    quality: QUALITY.destination,
+  },
+  {
+    source: "Labyrinth/Shrouded Vanishing Bridge.png",
+    target: "labyrinth-shrouded-vanishing-bridge.webp",
+    width: WIDTH.destination,
+    quality: QUALITY.destination,
+  },
+  {
+    source: "Labyrinth/Shrouded Hidden Chamber.png",
+    target: "labyrinth-shrouded-hidden-chamber.webp",
+    width: WIDTH.destination,
+    quality: QUALITY.destination,
+  },
   // Game Modes
   {
     source: "Game Modes/The Campaign.jpeg",

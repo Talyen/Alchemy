@@ -22,7 +22,8 @@ export function mergeCombatText(combatTexts: CombatTextEvent[], nextEvent: Comba
         isNoticeCombatText(event) &&
         event.target === nextEvent.target &&
         event.stat === nextEvent.stat &&
-        event.text === nextEvent.text,
+        event.text === nextEvent.text &&
+        event.signal === nextEvent.signal,
     );
     if (!existingNotice) combatTexts.push(nextEvent);
     return;
@@ -33,7 +34,11 @@ export function mergeCombatText(combatTexts: CombatTextEvent[], nextEvent: Comba
       isNumericCombatText(event) &&
       event.target === nextEvent.target &&
       event.kind === nextEvent.kind &&
-      event.stat === nextEvent.stat,
+      event.stat === nextEvent.stat &&
+      event.impact === nextEvent.impact &&
+      event.additive !== false &&
+      nextEvent.additive !== false &&
+      Math.sign(event.amount) === Math.sign(nextEvent.amount),
   );
   if (existingEvent) {
     existingEvent.amount += nextEvent.amount;

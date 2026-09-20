@@ -113,7 +113,7 @@ describe("advanceToPlayerTurn", () => {
     expect(texts.some((t) => t.kind === "heal" && t.amount === 4)).toBe(true);
   });
 
-  it("healthPerTurn combat text uses actual health gained near max HP", () => {
+  it("healthPerTurn combat text uses full healing potency near max HP", () => {
     const state = patchBattleState({
       turnPhase: "enemy",
       playerHealth: 29,
@@ -130,7 +130,7 @@ describe("advanceToPlayerTurn", () => {
       target: "player",
       kind: "heal",
       stat: "health",
-      amount: 1,
+      amount: 4,
     });
   });
 });

@@ -26,6 +26,7 @@ export function parseContextArgs(argv) {
     related: false,
     session: null,
     refresh: false,
+    full: false,
   };
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index];
@@ -39,6 +40,7 @@ export function parseContextArgs(argv) {
     else if (arg === "--entries") options.entries = true;
     else if (arg === "--related") options.related = true;
     else if (arg === "--refresh") options.refresh = true;
+    else if (arg === "--full") options.full = true;
     else if (arg.startsWith("--")) throw new Error(`Unknown option: ${arg}`);
     else options.paths.push(arg);
   }
@@ -57,6 +59,7 @@ export function parseContextArgs(argv) {
     (options.session || options.related || options.json || options.paths.length || options.task || options.diff)
   )
     throw new Error("Outline mode cannot be combined with documentation discovery options");
+  if (options.full && !options.json) throw new Error("--full requires --json");
   return options;
 }
 
@@ -93,7 +96,7 @@ export function renderContext(selection, sections, budget = CONTEXT_OUTPUT_BYTES
       }
     }
   }
-  if (omitted) lines.push(`${omitted} more section locations omitted; --json returns the complete selection.`);
+  if (omitted) lines.push(`${omitted} more section locations omitted; use --json --full for the complete selection.`);
   return { text: lines.join("\n"), included };
 }
 
@@ -177,7 +180,7 @@ export function main(argv = process.argv.slice(2)) {
       ? `Context session ${options.session}: ${incremental.omitted} unchanged sections omitted. Use --refresh after context loss or a new session ID for a fresh agent.`
       : "";
     const rendered = renderContext(selection, sections, CONTEXT_OUTPUT_BYTES - Buffer.byteLength(notice) - 1);
-    const included = options.json ? sections : rendered.included;
+    const included = options.json && options.full ? sections : rendered.included;
     for (const section of included)
       recordAgentEvent(
         ROOT,
@@ -191,7 +194,19 @@ export function main(argv = process.argv.slice(2)) {
     });
     console.log(
       options.json
-        ? JSON.stringify({ ...selection, sections, omittedUnchanged: incremental?.omitted ?? 0 }, null, 2)
+        ? JSON.stringify(
+            {
+              ...selection,
+              sections: included,
+              deferredSections: sections
+                .filter((section) => !included.includes(section))
+                .map(({ path, heading, start, end }) => ({ path, heading, start, end })),
+              omittedUnchanged: incremental?.omitted ?? 0,
+              complete: Boolean(options.full),
+            },
+            null,
+            2,
+          )
         : [notice, rendered.text].filter(Boolean).join("\n"),
     );
     incremental?.remember(included);

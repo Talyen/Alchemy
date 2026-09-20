@@ -16,7 +16,15 @@ export const archeryCards: BattleCard[] = [
     id: "ice-shot",
     art: assetRefs.iceShot,
     tags: ["archery"],
-    effects: [{ kind: "damage", damageType: "freeze", amount: 1 }, { kind: "next-archery-free" }],
+    effects: [
+      {
+        kind: "damage",
+        damageType: "freeze",
+        amount: 2,
+        damageTypeIfTargetFrozen: "physical",
+        amountIfTargetFrozen: 5,
+      },
+    ],
   }),
   cardBuilders.effectsCard({
     id: "venom-arrow",

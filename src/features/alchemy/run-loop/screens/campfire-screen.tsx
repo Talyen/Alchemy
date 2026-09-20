@@ -12,11 +12,13 @@ export function CampfireScreen({
   playerHealth,
   maxHealth,
   healFraction,
+  healingBonus = 0,
   onContinue,
 }: {
   playerHealth: number;
   maxHealth: number;
   healFraction: number;
+  healingBonus?: number;
   onContinue: () => void;
 }) {
   const [rest, setRest] = useState<{ from: number; to: number; maxHealth: number } | null>(null);
@@ -36,13 +38,17 @@ export function CampfireScreen({
   }, [done, onContinue]);
 
   function handleRest() {
-    setRest({ from: playerHealth, to: getCampfireRestHealth(playerHealth, maxHealth, healFraction), maxHealth });
+    setRest({
+      from: playerHealth,
+      to: getCampfireRestHealth(playerHealth, maxHealth, healFraction, healingBonus),
+      maxHealth,
+    });
   }
 
   return (
     <TitledScreenShell title="Campfire" minHeightClass="min-h-[62cqh]">
       <div className="mt-6 flex flex-col items-center gap-8 text-center">
-        <ScreenDescription>{`Rest to Restore ${Math.round(healFraction * 100)}% Health`}</ScreenDescription>
+        <ScreenDescription>{`Rest to Restore ${Math.round(maxHealth * healFraction) + healingBonus} Health`}</ScreenDescription>
         <div className="flex w-full max-w-[calc(30.0038*var(--content-rem,1rem))] flex-col items-center gap-8">
           <img src={campfire} alt="Campfire" className="w-full rounded-shell-panel object-contain" loading="eager" />
           <div className="flex min-h-[calc(4.75*var(--content-rem,1rem))] w-full items-center justify-center">

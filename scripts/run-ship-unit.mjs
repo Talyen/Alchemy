@@ -7,7 +7,7 @@
 // Keep this list in sync with the suites that must pass before shipping a
 // save-affecting change: storage/persistence, autosave, validation, the
 // architecture invariants, and the bespoke scripts.
-import { runStreamCommand } from "./lib/run-command.mjs";
+import { runTaskCommand } from "./lib/run-command.mjs";
 import { VITEST_MAX_WORKERS } from "./lib/test-concurrency.mjs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -37,5 +37,9 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
-const result = runStreamCommand("npx", ["vitest", "run", `--maxWorkers=${VITEST_MAX_WORKERS}`, ...SUITES]);
+const live = process.argv.includes("--live") || process.argv.includes("--verbose");
+const result = await runTaskCommand("npx", ["vitest", "run", `--maxWorkers=${VITEST_MAX_WORKERS}`, ...SUITES], {
+  label: "ship unit suite",
+  live,
+});
 process.exit(result.status ?? 1);

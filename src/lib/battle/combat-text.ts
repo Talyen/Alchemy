@@ -7,7 +7,7 @@ import type { PlayerStatusId } from "@/lib/game-data";
 import {
   damageEnemyHealth,
   addPlayerStatus,
-  applyPlayerHealing,
+  resolvePlayerHealing,
   gainMana,
   scaleGoldReward,
   hasEnemyTrait,
@@ -68,11 +68,12 @@ export function applyHealingWithCombatText(
   if (amount <= 0) return state;
   const healAmount = options?.skipFightPacing ? amount : paceCombatMagnitude(state, amount, "player");
   const prevState = state;
-  const nextState = applyPlayerHealing(state, healAmount, options?.allowOverhealBlock);
-  const actualHeal = nextState.playerHealth - prevState.playerHealth;
+  const healing = resolvePlayerHealing(state, healAmount, options?.allowOverhealBlock);
+  const nextState = healing.state;
+  const actualHeal = healing.restored;
   if (combatTexts) {
-    if (actualHeal > 0) {
-      mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: actualHeal });
+    if (healing.effective > 0) {
+      mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healing.effective });
     }
     emitOverhealBlockText(prevState, nextState, combatTexts);
     emitReactiveThornsText(prevState, nextState, combatTexts);
@@ -175,10 +176,10 @@ export function addGoldWithCombatText(
 function applyKillRewardHealing(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
   if (amount <= 0) return state;
   const previousState = state;
-  const nextState = applyPlayerHealing(state, paceCombatMagnitude(state, amount, "player"));
-  const actualHeal = nextState.playerHealth - previousState.playerHealth;
-  if (actualHeal > 0) {
-    mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: actualHeal });
+  const healing = resolvePlayerHealing(state, paceCombatMagnitude(state, amount, "player"));
+  const nextState = healing.state;
+  if (healing.effective > 0) {
+    mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healing.effective });
   }
   emitOverhealBlockText(previousState, nextState, combatTexts);
   emitReactiveThornsText(previousState, nextState, combatTexts);

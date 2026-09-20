@@ -22,8 +22,13 @@ test.describe("Labyrinth exploration", critical, () => {
     );
     const hidden = page.getByRole("button", { name: /^Undiscovered chamber/ });
     expect(await hidden.count()).toBeGreaterThanOrEqual(15);
-    await expect(hidden.first().locator("img")).toHaveCount(0);
-    await expect(hidden.first()).toHaveText("?");
+    await expect(hidden.first().locator("img")).toHaveAttribute("src", /labyrinth-shrouded-/);
+    await expect(hidden.first()).toHaveText("");
+    const fogSources = await hidden
+      .locator("img")
+      .evaluateAll((images) => images.map((image) => image.getAttribute("src")));
+    expect(new Set(fogSources).size).toBeGreaterThan(1);
+    await expect(hidden.first().locator("img")).toHaveJSProperty("naturalWidth", 900);
     await hidden.first().hover();
     await hidden.first().focus();
     await hidden.first().press("Enter");
@@ -48,12 +53,13 @@ test.describe("Labyrinth exploration", critical, () => {
       .locator("[data-labyrinth-node]")
       .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("style")));
     await expect(diagonal).toHaveAttribute("data-state", "undiscovered");
+    await expect(diagonal.locator("img")).toHaveAttribute("src", /labyrinth-shrouded-/);
     await room.click();
     await page.getByRole("button", { name: "Rest", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Campfire", exact: true, level: 1 })).toBeVisible();
     await page.getByRole("button", { name: "Rest", exact: true }).click();
     await expect(room).toHaveAttribute("aria-current", "location");
-    await expect(diagonal.locator("img")).toHaveCount(1);
+    await expect(diagonal.locator("img")).not.toHaveAttribute("src", /labyrinth-shrouded-/);
     const entrance = page.getByRole("button", { name: /^Entrance chamber/ });
     await entrance.click();
     await expect(page.getByText("Floor 1", { exact: true })).toBeVisible();

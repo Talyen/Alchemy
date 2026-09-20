@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { isMainModule } from "./lib/is-main-module.mjs";
-import { runStreamCommand } from "./lib/run-command.mjs";
+import { runTaskCommand } from "./lib/run-command.mjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -98,8 +98,11 @@ async function main() {
   }
   const script = resolveAuditScript(parsed);
   const childArgs = [script, ...parsed.forwardedArgs];
-  // Streams intentionally: audit probes print their own sections.
-  const result = runStreamCommand(process.execPath, childArgs, { cwd: ROOT });
+  const result = await runTaskCommand(process.execPath, childArgs, {
+    cwd: ROOT,
+    label: `audit (${script.replace(/^scripts\//u, "")})`,
+    live: parsed.forwardedArgs.includes("--verbose"),
+  });
   if (result.status !== 0) process.exitCode = result.status ?? 1;
 }
 

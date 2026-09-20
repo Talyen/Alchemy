@@ -189,6 +189,6 @@ describe("applyCardEffects — enemy-status (fixture)", () => {
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
     expect(result.enemyStatuses.poison).toBe(4);
-    expect(texts).toEqual([]);
+    expect(texts).toEqual([{ target: "enemy", kind: "multiply", stat: "poison", amount: 4 }]);
   });
 });

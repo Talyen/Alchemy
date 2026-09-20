@@ -42,7 +42,10 @@ function forgeDamagePercent(
   if (companionAttack && (gear?.companionBenefitsFromForge ?? 0) > 0) return PERCENT_DENOMINATOR;
   // Full-strength Homestead/Gear grants and legacy snapshot flags take precedence;
   // overlapping permissions do not award Forge twice.
-  const burn = talents.forgeToBurn ? PERCENT_DENOMINATOR : talents.forgeBurnDamagePercent;
+  const burn = Math.max(
+    talents.forgeToBurn ? PERCENT_DENOMINATOR : talents.forgeBurnDamagePercent,
+    talents.homesteadForgeBurnPercent ?? 0,
+  );
   const bleed = talents.forgeToBleed ? PERCENT_DENOMINATOR : talents.forgeBleedDamagePercent;
   const shared = (gear?.sharedBurnBleedBonuses ?? 0) > 0;
   switch (damageType) {
@@ -259,8 +262,14 @@ function computeBaseDamage(
       : 0;
   const consumeBurnBonus =
     card?.consume && !companionAttack && effect.damageType === "burn" ? state.gearEffects.burnOnConsume : 0;
+  const potionBonus =
+    card && !companionAttack && isPotionCard(card) ? (state.talentEffects.homesteadPotionBonus ?? 0) : 0;
   const rawAmount =
-    computeBaseRawAmount(state, effect, card, companionAttack) + bonus + poisonPotionBonus + consumeBurnBonus;
+    computeBaseRawAmount(state, effect, card, companionAttack) +
+    bonus +
+    poisonPotionBonus +
+    consumeBurnBonus +
+    potionBonus;
   const hasBlock = effect.equalToBlock === true;
   const hasArmor = effect.equalToArmor === true;
   const hasGold = effect.equalToGoldPercent !== undefined;
@@ -389,8 +398,10 @@ function computeAdditiveDamageBonus(
 }
 
 function applyCrit(damage: number, state: BattleState) {
-  if (state.flags.nextHitCrit) return damage * CRIT_MULTIPLIER;
-  return rollPercent(GLOBAL_CRIT_CHANCE_PERCENT, getBattleRng(state)) ? damage * CRIT_MULTIPLIER : damage;
+  const critical = state.flags.nextHitCrit || rollPercent(GLOBAL_CRIT_CHANCE_PERCENT, getBattleRng(state));
+  return critical && damage > 0
+    ? damage * CRIT_MULTIPLIER + (state.talentEffects.homesteadCriticalDamage ?? 0)
+    : damage;
 }
 
 function applyFirstDamageBonus(
@@ -556,7 +567,8 @@ export function computeCardDamageToEnemy(
   const pacedDamage = paceCombatDamage(stateAfterFirst, scaledDamage, "player");
   const repeatedDamage = Math.round(pacedDamage * (context?.damageMultiplier ?? 1));
   const criticalDamage = context?.guaranteedCrit
-    ? repeatedDamage * CRIT_MULTIPLIER
+    ? repeatedDamage * CRIT_MULTIPLIER +
+      (repeatedDamage > 0 ? (stateAfterFirst.talentEffects.homesteadCriticalDamage ?? 0) : 0)
     : applyCrit(repeatedDamage, stateAfterFirst);
   const kingbreaker = effect.damageType === "stun" && state.gearEffects.armorIncreasesStun > 0;
   const finalDamage = criticalDamage + (kingbreaker ? state.enemyMitigation.armor : 0);

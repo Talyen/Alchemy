@@ -3,6 +3,22 @@ import type { HomesteadEffectManifest } from "./types";
 
 export const defaultHomesteadEffects: HomesteadEffectManifest = {
   flatPhysicalDamage: 0,
+  flatHolyDamage: 0,
+  physicalDamageReduction: 0,
+  homesteadCriticalDamage: 0,
+  homesteadHealing: 0,
+  homesteadLeechHealing: 0,
+  homesteadPotionBonus: 0,
+  homesteadFreeManaChance: 0,
+  homesteadForgeBurnPercent: 0,
+  endRunStonePerRoom: 0,
+  endRunGoldPerRoom: 0,
+  endRunWishPerRoom: 0,
+  removeCardDiscount: 0,
+  mixPotionDiscount: 0,
+  dodgeChance: 0,
+  wishExtraChoiceChance: 0,
+
   companionDamage: 0,
   potionPotency: 0,
   flatBurnDamage: 0,

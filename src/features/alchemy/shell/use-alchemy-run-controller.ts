@@ -77,10 +77,15 @@ export function useAlchemyRunController(): AlchemyRunCommands {
   });
 
   const gearAstralChanceBonus = homesteadEffects.gearAstralChanceBonus;
-  const potionMixPotency = homesteadEffects.potionMixPotency;
+  const mixPotionDiscount = homesteadEffects.mixPotionDiscount;
+  const removeCardDiscount = homesteadEffects.removeCardDiscount;
   const shop = useMemo(
-    () => createShopActions({ talentEffects, homesteadEffects: { gearAstralChanceBonus, potionMixPotency } }),
-    [talentEffects, gearAstralChanceBonus, potionMixPotency],
+    () =>
+      createShopActions({
+        talentEffects,
+        homesteadEffects: { gearAstralChanceBonus, mixPotionDiscount, removeCardDiscount },
+      }),
+    [talentEffects, gearAstralChanceBonus, mixPotionDiscount, removeCardDiscount],
   );
 
   const labyrinth = useMemo(() => createLabyrinthController(), []);

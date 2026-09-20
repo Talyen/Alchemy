@@ -56,7 +56,7 @@ describe("HomesteadScreen", () => {
     await waitFor(() => {
       const panel = document.querySelector(".hover-popup-panel");
       expect(panel?.textContent).toContain("Build");
-      expect(panel?.textContent).toContain("20");
+      expect(panel?.textContent).toContain("22");
     });
   });
 

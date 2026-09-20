@@ -643,15 +643,6 @@
   animation: labyrinth-discover 180ms ease-out both;
 }
 
-.labyrinth-unknown {
-  display: flex;
-  height: 100%;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  color: var(--color-stone-600);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .labyrinth-node {
     transition: none;

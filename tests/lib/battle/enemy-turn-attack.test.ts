@@ -418,7 +418,7 @@ describe("applyEnemyAbility", () => {
     expect(result.playerHealth).toBe(15);
   });
 
-  it("emits actual health gained when block-depleted heal overheals", () => {
+  it("emits full healing potency when block-depleted heal overheals", () => {
     const texts = makeTexts();
     const state = patchBattleState({
       playerHealth: 29,
@@ -436,7 +436,7 @@ describe("applyEnemyAbility", () => {
       target: "player",
       kind: "heal",
       stat: "health",
-      amount: 1,
+      amount: 4,
     });
   });
 
@@ -524,7 +524,13 @@ describe("applyEnemyAbility", () => {
     const blockTexts = makeTexts();
     const purgedBlock = applyEnemyAbility(onlyBlock, stunHit(), blockTexts);
     expect(purgedBlock.playerStatuses.block).toBe(0);
-    expect(blockTexts).toContainEqual({ target: "player", kind: "notice", stat: "block", text: "Purged" });
+    expect(blockTexts).toContainEqual({
+      target: "player",
+      kind: "notice",
+      stat: "block",
+      text: "Purged",
+      signal: "purge",
+    });
 
     const crowded = patchBattleState({
       currentEnemy: banshee,
@@ -568,7 +574,13 @@ describe("applyEnemyAbility", () => {
     const purgedThorns = applyEnemyAbility(thorny, physicalHit(), thornTexts);
     expect(purgedThorns.playerStatuses.thorns).toBe(0);
     expect(purgedThorns.enemyHealth).toBe(30);
-    expect(thornTexts).toContainEqual({ target: "player", kind: "notice", stat: "thorns", text: "Purged" });
+    expect(thornTexts).toContainEqual({
+      target: "player",
+      kind: "notice",
+      stat: "thorns",
+      text: "Purged",
+      signal: "purge",
+    });
 
     const feathered = patchBattleState({
       currentEnemy: banshee,
@@ -588,6 +600,7 @@ describe("applyEnemyAbility", () => {
       kind: "notice",
       stat: "phoenixFeather",
       text: "Purged",
+      signal: "purge",
     });
   });
 

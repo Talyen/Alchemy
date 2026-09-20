@@ -170,15 +170,17 @@ export function getShopRefreshPrice(
 export function computeRemoveCardPrice(
   talentEffects: TalentEffectManifest,
   modifiers: readonly EncounterRewardTraitId[] = [],
+  homesteadDiscount = 0,
 ): number {
   if (modifiers.includes("clean-slate")) return 0;
-  return computeShopServicePrice(SHOP_REMOVE_PRICE, talentEffects.removeCardDiscount);
+  return computeShopServicePrice(SHOP_REMOVE_PRICE, talentEffects.removeCardDiscount + homesteadDiscount);
 }
 
 export function computeMixPotionPrice(
   talentEffects: TalentEffectManifest,
   modifiers: readonly EncounterRewardTraitId[] = [],
+  homesteadDiscount = 0,
 ): number {
   if (modifiers.includes("open-kitchen")) return 0;
-  return computeShopServicePrice(ALCHEMIST_MIX_PRICE, talentEffects.mixPotionDiscount);
+  return computeShopServicePrice(ALCHEMIST_MIX_PRICE, talentEffects.mixPotionDiscount + homesteadDiscount);
 }

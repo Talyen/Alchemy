@@ -96,6 +96,7 @@ describe("script execution reliability", () => {
       import { syncBuiltinESMExports } from 'node:module';
       cp.spawnSync = () => ({status:null,signal:'SIGTERM'});
       syncBuiltinESMExports();
+      process.argv.push('--live');
       await import('./scripts/run-ship-unit.mjs');`;
     const result = spawnSync(process.execPath, ["--input-type=module", "-e", source], { cwd: ROOT, encoding: "utf8" });
     expect(result.status, result.stderr).toBe(1);

@@ -169,6 +169,12 @@ export { default as ironwoodBuckler } from "@/assets/optimized/ironwood-buckler.
 export { default as judgment } from "@/assets/optimized/judgment.webp";
 export { default as kindling } from "@/assets/optimized/kindling.webp";
 export { default as knight } from "@/assets/optimized/knight.webp";
+export { default as labyrinthShroudedDescendingSteps } from "@/assets/optimized/labyrinth-shrouded-descending-steps.webp";
+export { default as labyrinthShroudedForgottenPillars } from "@/assets/optimized/labyrinth-shrouded-forgotten-pillars.webp";
+export { default as labyrinthShroudedHiddenChamber } from "@/assets/optimized/labyrinth-shrouded-hidden-chamber.webp";
+export { default as labyrinthShroudedShroudedPassage } from "@/assets/optimized/labyrinth-shrouded-shrouded-passage.webp";
+export { default as labyrinthShroudedVanishingBridge } from "@/assets/optimized/labyrinth-shrouded-vanishing-bridge.webp";
+export { default as labyrinthShroudedVeiledArch } from "@/assets/optimized/labyrinth-shrouded-veiled-arch.webp";
 export { default as leylineEnergy } from "@/assets/optimized/leyline-energy.webp";
 export { default as libraryOwlCompanion } from "@/assets/optimized/library-owl-companion.webp";
 export { default as library } from "@/assets/optimized/library.webp";

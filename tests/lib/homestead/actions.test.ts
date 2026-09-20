@@ -69,20 +69,20 @@ describe("homestead-actions", () => {
       const success = constructBuilding(profile, "blacksmiths-forge");
       expect(success).toBe(true);
       expect(profile.constructedBuildings["blacksmiths-forge"]).toBe(1);
-      expect(profile.materialInventory.iron).toBe(30);
-      expect(profile.materialInventory.stone).toBe(40);
+      expect(profile.materialInventory.iron).toBe(28);
+      expect(profile.materialInventory.stone).toBe(42);
       expect(profile.effects.flatPhysicalDamage).toBe(1);
-      expect(profile.effects.forgeToBurn).toBe(true);
+      expect(profile.effects.homesteadForgeBurnPercent).toBe(25);
     });
 
     it("fails when attempting to upgrade past max tier", () => {
       const profile = createInitialPermanentFields();
-      profile.constructedBuildings["blacksmiths-forge"] = 3;
-      profile.materialInventory = { ...emptyInventory(), iron: 1000 };
+      profile.constructedBuildings["blacksmiths-forge"] = 4;
+      profile.materialInventory = { ...emptyInventory(), iron: 1000, stone: 1000 };
 
       const success = constructBuilding(profile, "blacksmiths-forge");
       expect(success).toBe(false);
-      expect(profile.constructedBuildings["blacksmiths-forge"]).toBe(3);
+      expect(profile.constructedBuildings["blacksmiths-forge"]).toBe(4);
     });
   });
 
@@ -105,7 +105,7 @@ describe("homestead-actions", () => {
       const success = completeResearch(profile, "leyline-energy");
       expect(success).toBe(true);
       expect(profile.completedResearch["leyline-energy"]).toBe(1);
-      expect(profile.effects.startMana).toBe(1);
+      expect(profile.effects.homesteadFreeManaChance).toBe(5);
     });
   });
 

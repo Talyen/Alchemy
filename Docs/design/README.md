@@ -8,6 +8,9 @@ root. This archive is versioned and is not a disposable build output.
 
 ## Artwork
 
+The [Labyrinth fog-of-war studies](./art/labyrinth-fog-v1/README.md) contain six
+generic unexplored-node variants and their complete generation prompts.
+
 The September 2026 art studies are grouped under `art/`. Their original version
 names and relative links are preserved. Preview pages and prompts reflect the
 state when each study was made, including historical “pending approval” text.

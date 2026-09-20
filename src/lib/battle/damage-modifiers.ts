@@ -14,9 +14,19 @@ interface DamageModifierSources {
 
 /** Source manifests retain their save shape; common damage modifiers share one typed vocabulary. */
 const DAMAGE_MODIFIER_SOURCES: Record<DamageType, DamageModifierSources> = {
-  physical: { talentBonus: "flatPhysicalDamage", gearBonus: "flatPhysicalDamage", gearResistance: "resistPhysical" },
+  physical: {
+    talentReduction: "physicalDamageReduction",
+    talentBonus: "flatPhysicalDamage",
+    gearBonus: "flatPhysicalDamage",
+    gearResistance: "resistPhysical",
+  },
   stun: { talentBonus: "flatStunDamage", gearBonus: "flatStunDamage", gearResistance: "resistStun" },
-  holy: { gearBonus: "flatHolyDamage", gearResistance: "resistHoly", talentHalfDamage: "receiveHalfHolyDamage" },
+  holy: {
+    talentBonus: "flatHolyDamage",
+    gearBonus: "flatHolyDamage",
+    gearResistance: "resistHoly",
+    talentHalfDamage: "receiveHalfHolyDamage",
+  },
   bleed: { gearBonus: "flatBleedDamage", gearResistance: "resistBleed", talentHalfDamage: "receiveHalfBleedDamage" },
   burn: {
     talentBonus: "flatBurnDamage",
@@ -58,12 +68,14 @@ export function flatDamageBonus(
   type: DamageType,
 ): number {
   const source = DAMAGE_MODIFIER_SOURCES[type];
-  return state.gearEffects[source.gearBonus] + (source.talentBonus ? state.talentEffects[source.talentBonus] : 0);
+  return (
+    state.gearEffects[source.gearBonus] + (source.talentBonus ? (state.talentEffects[source.talentBonus] ?? 0) : 0)
+  );
 }
 
 export function flatDamageReduction(talents: TalentEffectManifest, type: string | undefined): number {
   const key = sources(type)?.talentReduction;
-  return key ? talents[key] : 0;
+  return key ? (talents[key] ?? 0) : 0;
 }
 
 export function receivesHalfDamage(talents: TalentEffectManifest, type: string | undefined): boolean {

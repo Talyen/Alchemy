@@ -99,7 +99,8 @@ export const applyLoseMaxManaEffect = defineHandler(
 );
 
 export const applyHealEffect = defineHandler("heal", (state, card, effect, potionMult, combatTexts, context) => {
-  const adjustedHeal = applyPotionMultiplier(effect.amount, potionMult);
+  const potionBonus = isPotionCard(card) && effect.amount > 0 ? (state.talentEffects.homesteadPotionBonus ?? 0) : 0;
+  const adjustedHeal = applyPotionMultiplier(effect.amount, potionMult) + potionBonus;
   const consumeBonus = card.consume
     ? state.talentEffects.consumeHealMultiplier + state.gearEffects.consumeHealBonusPercent / PERCENT_DENOMINATOR
     : 0;

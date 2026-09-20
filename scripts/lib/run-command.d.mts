@@ -16,6 +16,12 @@ export function runStreamCommand(
   options?: { cwd?: string; env?: NodeJS.ProcessEnv },
 ): ScriptCommandResult & { elapsedMs: number };
 
+export function runTaskCommand(
+  command: string,
+  args?: string[],
+  options?: Record<string, unknown>,
+): Promise<ScriptCommandResult>;
+
 export function runCommandAsync(
   command: string,
   args?: string[],

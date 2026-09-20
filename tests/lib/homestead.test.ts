@@ -153,122 +153,74 @@ describe.each([
 });
 
 describe("computeHomesteadEffects", () => {
-  it("returns defaults for empty inputs", () => {
-    const effects = computeHomesteadEffects({}, {}, {});
-    expect(effects).toEqual(defaultHomesteadEffects);
+  it("returns defaults and ignores unknown IDs", () => {
+    expect(computeHomesteadEffects({ unknown: 4 }, {}, { unknown: 4 })).toEqual(defaultHomesteadEffects);
   });
 
-  it("blacksmiths-forge adds flatPhysicalDamage and forgeToBurn", () => {
-    const effects = computeHomesteadEffects({ "blacksmiths-forge": 1 }, {}, {});
-    expect(effects.flatPhysicalDamage).toBe(1);
-    expect(effects.forgeToBurn).toBe(true);
-  });
-
-  it("combines multiple tiered upgrades", () => {
+  it("combines the four-tier specialties without the retired duplicate bonuses", () => {
     const effects = computeHomesteadEffects(
-      { "blacksmiths-forge": 2, "companion-sanctuary": 1, "alchemy-lab": 3 },
-      {},
-      {},
+      { "blacksmiths-forge": 4, "runesmiths-workshop": 4, "hunters-lodge": 4, library: 4 },
+      { "crystal-garden": 4, "herb-garden": 4 },
+      { "leyline-energy": 4, "agility-training": 4, "detect-magic": 4 },
     );
-    expect(effects.flatPhysicalDamage).toBe(2);
-    expect(effects.forgeToBurn).toBe(true);
-    expect(effects.companionDamage).toBe(1);
-    expect(effects.potionPotency).toBeCloseTo(0.5);
+    expect(effects).toMatchObject({
+      flatPhysicalDamage: 4,
+      homesteadForgeBurnPercent: 100,
+      forgeToBurn: false,
+      flatFreezeDamage: 4,
+      flatHolyDamage: 4,
+      flatNatureDamage: 4,
+      flatArrowDamage: 0,
+      homesteadCriticalDamage: 4,
+      runMaxManaBonus: 0,
+      startMana: 0,
+      homesteadFreeManaChance: 20,
+      dodgeChance: 8,
+      companionDamage: 0,
+      poisonDamageReduction: 4,
+      natureDamageReduction: 0,
+      removeCardDiscount: 8,
+      endRunStonePerRoom: 4,
+      gearAstralChanceBonus: 0.15,
+    });
   });
 
-  it("runesmiths-workshop adds flatBurnDamage, flatFreezeDamage, flatNatureDamage across tiers", () => {
-    const effects = computeHomesteadEffects({ "runesmiths-workshop": 3 }, {}, {});
-    expect(effects.flatBurnDamage).toBe(1);
-    expect(effects.flatFreezeDamage).toBe(1);
-    expect(effects.flatNatureDamage).toBe(1);
-  });
-
-  it("hunters-lodge adds flatArrowDamage, flatNatureDamage, endRunFoodPerRoom, and endRunHidePerRoom", () => {
-    const effects = computeHomesteadEffects({ "hunters-lodge": 3 }, {}, {});
-    expect(effects.flatArrowDamage).toBe(3);
-    expect(effects.flatNatureDamage).toBe(3);
-    expect(effects.endRunFoodPerRoom).toBe(3);
-    expect(effects.endRunHidePerRoom).toBe(3);
-
-    const huntersLodge = buildings.find((b) => b.id === "hunters-lodge");
-    expect(huntersLodge).toBeDefined();
-    for (const tier of huntersLodge!.tiers) {
-      expect(tier.benefitDescription).toContain("Archery");
-      expect(tier.benefitDescription).not.toContain("Arrow");
+  it("keeps every numeric bonus and production component increasing through four tiers", () => {
+    for (const [items, kind] of [
+      [buildings, "building"],
+      [farmPlots, "farm"],
+      [researchUpgrades, "research"],
+    ] as const) {
+      for (const item of items) {
+        expect(item.tiers).toHaveLength(4);
+        let previous = defaultHomesteadEffects;
+        for (let level = 1; level <= 4; level++) {
+          const record = { [item.id]: level };
+          const effects = computeHomesteadEffects(
+            kind === "building" ? record : {},
+            kind === "farm" ? record : {},
+            kind === "research" ? record : {},
+          );
+          for (const [key, value] of Object.entries(item.tiers[level - 1]!.effects!)) {
+            if (typeof value === "number") {
+              expect(value, `${item.id}: ${key}`).toBeGreaterThan(0);
+              expect(effects[key as keyof typeof effects]).toBeGreaterThan(
+                previous[key as keyof typeof previous] as number,
+              );
+            } else if (typeof value === "object") {
+              for (const amount of Object.values(value)) expect(amount).toBeGreaterThan(0);
+            }
+          }
+          previous = effects;
+        }
+      }
     }
   });
 
-  it("herb-garden adds poisonDamageReduction and natureDamageReduction", () => {
-    const effects = computeHomesteadEffects({}, { "herb-garden": 2 }, {});
-    expect(effects.poisonDamageReduction).toBe(2);
-    expect(effects.natureDamageReduction).toBe(2);
-  });
-
-  it("leyline energy tiers 2-3 add endRunGemsPerRoom", () => {
-    const effects = computeHomesteadEffects({}, {}, { "leyline-energy": 3 });
-    expect(effects.startMana).toBe(4);
-    expect(effects.endRunGemsPerRoom).toBe(2);
-  });
-
-  it("companion-sanctuary adds companionDamage", () => {
-    const effects = computeHomesteadEffects({ "companion-sanctuary": 3 }, {}, {});
-    expect(effects.companionDamage).toBe(3);
-  });
-
-  it("wishing-well adds wishGemsGold", () => {
-    const effects = computeHomesteadEffects({ "wishing-well": 2 }, {}, {});
-    expect(effects.wishGemsGold).toBe(2);
-  });
-
-  it("detect magic stacks gear astral chance bonus across tiers", () => {
-    expect(computeHomesteadEffects({}, {}, { "detect-magic": 1 }).gearAstralChanceBonus).toBeCloseTo(0.03);
-    expect(computeHomesteadEffects({}, {}, { "detect-magic": 2 }).gearAstralChanceBonus).toBeCloseTo(0.06);
-    expect(computeHomesteadEffects({}, {}, { "detect-magic": 3 }).gearAstralChanceBonus).toBeCloseTo(0.1);
-  });
-
-  it("transmutation-crucible adds flatBurnDamage and endRunIronPerRoom", () => {
-    const effects = computeHomesteadEffects({ "transmutation-crucible": 2 }, {}, {});
-    expect(effects.flatBurnDamage).toBe(2);
-    expect(effects.endRunIronPerRoom).toBe(2);
-  });
-
-  it("mycology-cellar adds poisonDamageReduction and endRunHerbsPerRoom", () => {
-    const effects = computeHomesteadEffects({ "mycology-cellar": 3 }, {}, {});
-    expect(effects.poisonDamageReduction).toBe(3);
-    expect(effects.endRunHerbsPerRoom).toBe(3);
-  });
-
-  it("sparring-grounds adds startBlock", () => {
-    const effects = computeHomesteadEffects({ "sparring-grounds": 2 }, {}, {});
-    expect(effects.startBlock).toBe(4);
-  });
-
-  it("archery-range adds flatArrowDamage and endRunWoodPerRoom", () => {
-    const effects = computeHomesteadEffects({ "archery-range": 3 }, {}, {});
-    expect(effects.flatArrowDamage).toBe(3);
-    expect(effects.endRunWoodPerRoom).toBe(3);
-  });
-
-  it("library adds cardLeechBonusPercent", () => {
-    const effects = computeHomesteadEffects({ library: 3 }, {}, {});
-    expect(effects.cardLeechBonusPercent).toBe(15);
-  });
-
-  it("ignores unknown building IDs", () => {
-    const effects = computeHomesteadEffects({ "nonexistent-building": 1 }, {}, {});
-    expect(effects).toEqual(defaultHomesteadEffects);
-  });
-
-  it("ignores unknown research IDs", () => {
-    const effects = computeHomesteadEffects({}, {}, { "nonexistent-research": 1 });
-    expect(effects).toEqual(defaultHomesteadEffects);
-  });
-
-  it("stores companion bond levels without adding global companion damage", () => {
-    const effects = computeHomesteadEffects({}, {}, {}, { wolf: 2, phoenix: 1 });
-    expect(effects.companionDamage).toBe(0);
+  it("stores Companion Bonds without adding global Companion damage", () => {
+    const effects = computeHomesteadEffects({}, {}, {}, { wolf: 2 });
     expect(effects.companionBondLevels.wolf).toBe(2);
-    expect(effects.companionBondLevels.phoenix).toBe(1);
+    expect(effects.companionDamage).toBe(0);
   });
 });
 
@@ -543,6 +495,7 @@ describe("applyEndOfRunHomesteadBonuses", () => {
   it("applies flat end-of-run yields separately from herb find multiplier", () => {
     const base = { wood: 4, iron: 0, herbs: 10, food: 3, gems: 1, stone: 0, hide: 0 };
     const effects = {
+      ...defaultHomesteadEffects,
       endRunFoodPerRoom: 2,
       endRunHerbsPerRoom: 1,
       endRunHidePerRoom: 2,
@@ -573,48 +526,16 @@ describe("homestead content integrity", () => {
     expect(farmPlots[0]?.id).toBe("wheat-field");
   });
 
-  it("maps nonCombatBenefitDescription to end-of-run effect fields", () => {
-    for (const building of buildings) {
-      for (const tier of building.tiers) {
+  it("separates bonuses from room production at every tier", () => {
+    for (const item of [...buildings, ...farmPlots, ...researchUpgrades]) {
+      for (const tier of item.tiers) {
+        expect(tier.benefitDescription).not.toContain("per Room");
         if (!tier.nonCombatBenefitDescription) continue;
-        expect(
-          (tier.effects?.endRunFoodPerRoom ?? 0) +
-            (tier.effects?.endRunHidePerRoom ?? 0) +
-            (tier.effects?.endRunIronPerRoom ?? 0) +
-            (tier.effects?.endRunWoodPerRoom ?? 0) +
-            (tier.effects?.endRunHerbsPerRoom ?? 0),
-        ).toBeGreaterThan(0);
+        expect(tier.nonCombatBenefitDescription).toContain("per Room");
+        const rates = Object.entries(tier.effects!).filter(([key]) => key.startsWith("endRun"));
+        expect(rates.length).toBeGreaterThan(0);
+        for (const [, value] of rates) expect(value).toBeGreaterThan(0);
       }
-    }
-    for (const farm of farmPlots) {
-      for (const tier of farm.tiers) {
-        if (!tier.nonCombatBenefitDescription) continue;
-        expect(
-          (tier.effects?.endRunFoodPerRoom ?? 0) +
-            (tier.effects?.endRunHerbsPerRoom ?? 0) +
-            (tier.effects?.endRunGemsPerRoom ?? 0),
-        ).toBeGreaterThan(0);
-      }
-    }
-    for (const research of researchUpgrades) {
-      for (const tier of research.tiers) {
-        if (!tier.nonCombatBenefitDescription) continue;
-        expect(tier.effects?.endRunGemsPerRoom).toBeGreaterThan(0);
-      }
-    }
-  });
-
-  it("keeps combat and non-combat benefit descriptions separate for leyline-energy and crystal-garden", () => {
-    const leyline = researchUpgrades.find((r) => r.id === "leyline-energy")!;
-    expect(leyline.tiers[1]?.benefitDescription).toBe("Increases starting Mana by 2");
-    expect(leyline.tiers[1]?.nonCombatBenefitDescription).toBe("Gain Gems after each run");
-    expect(leyline.tiers[2]?.benefitDescription).toBe("Increases starting Mana by 4");
-    expect(leyline.tiers[2]?.nonCombatBenefitDescription).toBe("Gain Gems after each run");
-
-    const crystalGarden = farmPlots.find((f) => f.id === "crystal-garden")!;
-    for (const tier of crystalGarden.tiers) {
-      expect(tier.nonCombatBenefitDescription).toBe("Gain Gems after each run");
-      expect(tier.benefitDescription).not.toContain("Gain Gems after each run");
     }
   });
 });

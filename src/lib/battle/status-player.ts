@@ -2,6 +2,7 @@ import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import type { BattleCardEffect, DamageType, EnemyAttackEffect, PlayerStatusId } from "@/lib/game-data";
 import {
   addPlayerStatus,
+  effectivePlayerHealingAmount,
   playerStatusDelta,
   setFlag,
   setPlayerStatus,
@@ -26,7 +27,7 @@ export function applyCardHealing(
 ): BattleState {
   const paced = options?.skipFightPacing ? amount : paceCombatMagnitude(state, amount, "player");
   const overheals =
-    Math.round(paced * state.talentEffects.healMultiplier) > Math.max(0, state.playerMaxHealth - state.playerHealth);
+    effectivePlayerHealingAmount(state, paced) > Math.max(0, state.playerMaxHealth - state.playerHealth);
   const healed = applyHealingWithCombatText(state, paced, combatTexts, {
     skipFightPacing: true,
     allowOverhealBlock: options?.allowOverhealBlock ?? true,
@@ -74,6 +75,11 @@ export function removeHarmfulPlayerStatuses(state: BattleState, amount: number, 
   const cleared = clearHarmfulStatuses(state, amount);
   let nextState = cleared.nextState;
   if (cleared.removed) {
+    for (const stat of harmfulPlayerStatusIds) {
+      if (state.playerStatuses[stat] > 0 && nextState.playerStatuses[stat] === 0 && combatTexts) {
+        mergeCombatText(combatTexts, { target: "player", kind: "notice", stat, signal: "cleanse", text: "" });
+      }
+    }
     nextState = applyCleanseHeals(nextState, combatTexts);
   }
   return nextState;

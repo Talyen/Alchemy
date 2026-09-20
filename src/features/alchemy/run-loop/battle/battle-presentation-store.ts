@@ -1,14 +1,10 @@
+import { combatTextDisplay, consolidateCombatBursts } from "./combat-feedback-merge";
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 import { readBattle, readRunPhase } from "@/features/alchemy/shared/stores/run-reads";
 import { onClearBattlePresentation, onRunTeardown } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { mergeCombatText, type BattleSnapshot, type CombatTextEvent } from "@/lib/battle";
-import {
-  COMBAT_TEXT_LIFETIME_MS,
-  COMBAT_TEXT_MIN_LIFETIME_MS,
-  COMBAT_TEXT_MAX_BURSTS_PER_RAIL,
-  SHAKE_DURATION_MS,
-} from "@/lib/game-constants";
+import { COMBAT_TEXT_LIFETIME_MS, COMBAT_TEXT_MIN_LIFETIME_MS, SHAKE_DURATION_MS } from "@/lib/game-constants";
 import { resolveGameDelay, TimerGroup } from "@/lib/animation/game-timer";
 import type { CardGhost, CardTransfer, CombatImpactCue, CombatTextBurst } from "../../shared/types";
 import { getCombatImpactVisual } from "../../shared/utils";
@@ -18,13 +14,6 @@ import {
   hiddenHandKeysEqual,
   type HiddenHandCardKeys,
 } from "./playable-hand";
-
-function getCombatTextDisplayText(event: CombatTextEvent): string {
-  if (event.kind === "notice") return event.text;
-  if (event.kind === "damage") return `-${event.amount}`;
-  const showPlus = event.kind === "heal" || event.kind === "status";
-  return `${showPlus ? "+" : ""}${event.amount}`;
-}
 
 interface BattlePresentationStore {
   openingDrawPending: boolean;
@@ -206,22 +195,27 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()(
       for (const event of events) mergeCombatText(consolidated, { ...event });
       const priority = (event: CombatTextEvent) => (event.kind === "notice" ? 0 : event.kind === "damage" ? 1 : 2);
       consolidated.sort((a, b) => priority(a) - priority(b));
+      const meaningful = consolidated.filter((event) => event.kind === "notice" || event.amount !== 0);
+      const visible = meaningful.length > 0 ? meaningful : consolidated.slice(0, 1);
+      const now = Date.now();
       const lifetimeMs = Math.max(COMBAT_TEXT_MIN_LIFETIME_MS, resolveGameDelay(COMBAT_TEXT_LIFETIME_MS));
       const actionId = ++combatTextId;
       const bursts: CombatTextBurst[] = [];
       const impacts: Partial<Record<"playerImpactCue" | "enemyImpactCue", CombatImpactCue>> = {};
       for (const target of ["player", "enemy"] as const) {
-        const entries = consolidated.filter((event) => event.target === target);
+        const entries = visible.filter((event) => event.target === target);
         if (entries.length === 0) continue;
         const id = `combat-burst-${actionId}-${target}`;
         bursts.push({
           id,
           target,
+          firstShownAt: now,
           lifetimeMs,
           entries: entries.map((event, index) => ({
             ...event,
             id: `${id}-${index}`,
-            displayText: getCombatTextDisplayText(event),
+            displayText: combatTextDisplay(event),
+            ...(event.kind !== "notice" ? { reservedDigits: String(Math.abs(event.amount)).length + 1 } : {}),
           })),
         });
         let strongest: { amount: number; visual: NonNullable<ReturnType<typeof getCombatImpactVisual>> } | undefined;
@@ -243,18 +237,14 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()(
           };
       }
       if (bursts.length === 0) return;
+      let added: CombatTextBurst[] = [];
       set((s) => {
-        const all = [...s.floatingCombatBursts, ...bursts];
-        return {
-          floatingCombatBursts: all.filter(
-            (burst, index) =>
-              all.slice(index + 1).filter((later) => later.target === burst.target).length <
-              COMBAT_TEXT_MAX_BURSTS_PER_RAIL,
-          ),
-          ...impacts,
-        };
+        const result = consolidateCombatBursts(s.floatingCombatBursts, bursts, now);
+        added = result.added;
+        return { floatingCombatBursts: result.bursts, ...impacts };
       });
-      const ids = new Set(bursts.map((burst) => burst.id));
+      if (added.length === 0) return;
+      const ids = new Set(added.map((burst) => burst.id));
       combatTextTimers.setTimeout(() => {
         if (sequence !== combatTextSequence) return;
         set((s) => ({ floatingCombatBursts: s.floatingCombatBursts.filter((burst) => !ids.has(burst.id)) }));

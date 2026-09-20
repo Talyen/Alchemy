@@ -1,26 +1,15 @@
 #!/usr/bin/env node
 import path from "node:path";
 import { createRunId } from "./lib/current-run.mjs";
-import { failureSummary, sanitizeOutput, tailOutput } from "./lib/compact-output.mjs";
+import { failureSummary, completionCounts } from "./lib/compact-output.mjs";
 import { runCommandAsync } from "./lib/run-command.mjs";
 import { defineScript, UsageError } from "./lib/script-run.mjs";
+
+export { completionCounts };
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const USAGE =
   "Usage: npm run compact -- <command> [args...] (one-shot commands only; use normal commands for watch/debug sessions)";
-
-/** Recognize runner totals, not individual passing test lines; never invent missing counts. */
-export function completionCounts(output) {
-  const lines = sanitizeOutput(output)
-    .split(/\r?\n/u)
-    .map((line) => line.trim());
-  const totals = lines.filter(
-    (line) =>
-      /^(?:Test Files|Tests)\s+\d/u.test(line) ||
-      /^\d+ (?:passed|failed|skipped|flaky|did not run|interrupted)(?:\s|$)/u.test(line),
-  );
-  return tailOutput([...new Set(totals)].slice(-8).join("\n"), 600);
-}
 
 export async function runCompact(argv, rootDir = ROOT) {
   if (argv[0] === "--") argv = argv.slice(1);

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { runStreamCommand } from "./lib/run-command.mjs";
+import { runTaskCommand } from "./lib/run-command.mjs";
 /**
  * On-demand FPS / hitch profiling runner.
  * Usage:
@@ -35,6 +35,7 @@ export function parsePerformanceArgs(argv) {
     cold: false,
     compare: null,
     skipBuild: false,
+    live: false,
     help: false,
   };
   const value = (index, flag) => {
@@ -49,6 +50,7 @@ export function parsePerformanceArgs(argv) {
     else if (a === "--electron") args.electron = true;
     else if (a === "--cold") args.cold = true;
     else if (a === "--skip-build") args.skipBuild = true;
+    else if (a === "--live" || a === "--verbose") args.live = true;
     else if (a === "--all") args.all = true;
     else if (a === "--scenario") args.scenario = value(++i, a);
     else if (a === "--runs") args.runs = Number(value(++i, a));
@@ -105,10 +107,10 @@ Env (harness iteration only, not for baselines):
 `);
 }
 
-function buildDist({ skipIfPresent = false } = {}) {
+async function buildDist({ skipIfPresent = false, live = false } = {}) {
   if (skipIfPresent && fs.existsSync(path.join(root, "dist", "index.html"))) return;
   console.log("Building production renderer for performance profiling…");
-  const result = runStreamCommand("npm", ["run", "build"], { cwd: root });
+  const result = await runTaskCommand("npm", ["run", "build"], { cwd: root, label: "performance build", live });
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
@@ -197,7 +199,7 @@ function runCompare(beforeDir, afterDir) {
   console.log(`Compare report written to ${summaryPath}`);
 }
 
-function main() {
+async function main() {
   const args = parsePerformanceArgs(process.argv.slice(2));
   if (args.help) {
     printHelp();
@@ -233,11 +235,15 @@ function main() {
 
   if (args.electron) {
     console.log("Ensuring Electron binary…");
-    const ensure = runStreamCommand("npm", ["run", "ensure:electron"], { cwd: root });
+    const ensure = await runTaskCommand("npm", ["run", "ensure:electron"], {
+      cwd: root,
+      label: "Electron setup",
+      live: args.live,
+    });
     if (ensure.status !== 0) process.exit(ensure.status ?? 1);
   }
 
-  buildDist({ skipIfPresent: args.skipBuild });
+  await buildDist({ skipIfPresent: args.skipBuild, live: args.live });
 
   const outDir = stampOutputDir(args.electron ? "electron" : "chromium");
   const perfPort = process.env.PLAYWRIGHT_PERF_PORT ?? String(PERF_PREVIEW_PORT);
@@ -270,10 +276,10 @@ function main() {
     `Runtime: ${args.electron ? "electron" : "chromium"} | Cold: ${args.cold ? "yes" : "no"} | Trace: ${args.trace ? "yes" : "no"} | Scenario: ${args.all ? METRIC_SCENARIOS.join(",") : (scenario ?? "all")} | Runs: ${env.PERF_RUNS}`,
   );
 
-  const result = runStreamCommand(
+  const result = await runTaskCommand(
     "npx",
     ["playwright", "test", "--config", "playwright.performance.config.ts", ...grepArgs],
-    { cwd: root, env },
+    { cwd: root, env, label: "performance scenarios", live: args.live, logPath: path.join(outDir, "runner.log") },
   );
 
   const summaryPath = path.join(outDir, "summary.md");
@@ -297,7 +303,7 @@ function main() {
 
 if (isMainModule(import.meta.url)) {
   try {
-    main();
+    await main();
   } catch (error) {
     console.error(error.message);
     process.exitCode = 2;

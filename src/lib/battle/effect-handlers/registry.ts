@@ -1,3 +1,4 @@
+import { mergeCombatText } from "../combat-text-events";
 import { resolvePendingBattleReactions } from "../enemy-attack-damage";
 import { resolveCompanionTurnStart } from "../companion-effects";
 import { hasEncounterBenefit, isPlayerDefeated } from "../types";
@@ -131,6 +132,7 @@ function applySingleEffect(
   }
 
   if (effect.kind === "repeat-over-turns") {
+    mergeCombatText(combatTexts, { target: "player", kind: "notice", stat: "scheduled", text: "" });
     return {
       ...state,
       pendingTurnStartEffects: [
@@ -161,8 +163,59 @@ export function applyCardEffects(
   },
 ): BattleState {
   const potionMult = isPotionCard(card) && !state.flags.uniqueRepeatActive ? state.talentEffects.potionPotency : 1;
-  return card.effects.reduce(
+  const result = card.effects.reduce(
     (currentState, effect) => applySingleEffect(currentState, card, effect, potionMult, combatTexts, context),
     state,
   );
+  if (
+    combatTexts.length === 0 &&
+    !isPlayerDefeated(state) &&
+    card.effects.length > 0 &&
+    (hasEffectApplyHandler(card.effects[0]!.kind) || isRecursiveBattleCardEffectKind(card.effects[0]!.kind))
+  ) {
+    const primary = card.effects[0]!;
+    const stat =
+      primary.kind === "damage"
+        ? primary.damageType
+        : primary.kind === "heal" || primary.kind === "lose-health"
+          ? "health"
+          : primary.kind === "restore-mana" ||
+              primary.kind === "lose-mana" ||
+              primary.kind === "lose-max-mana" ||
+              primary.kind === "gain-max-mana"
+            ? "mana"
+            : primary.kind === "remove-harmful-status" ||
+                primary.kind === "remove-player-status" ||
+                primary.kind === "cleanse-player-status-to-damage"
+              ? "cleanse"
+              : primary.kind === "remove-enemy-armor"
+                ? "armor"
+                : primary.kind === "companion-action"
+                  ? "companion"
+                  : primary.kind === "player-status" ||
+                      primary.kind === "enemy-status" ||
+                      primary.kind === "multiply-enemy-status"
+                    ? primary.status
+                    : "effect";
+    const target =
+      primary.kind === "damage" ||
+      primary.kind === "remove-enemy-armor" ||
+      primary.kind === "multiply-enemy-status" ||
+      primary.kind === "enemy-status"
+        ? "enemy"
+        : "player";
+    mergeCombatText(combatTexts, {
+      target,
+      kind:
+        primary.kind === "damage"
+          ? "damage"
+          : primary.kind === "multiply-enemy-status" || primary.kind === "enemy-status"
+            ? "multiply"
+            : "status",
+      stat,
+      amount: 0,
+      impact: false,
+    });
+  }
+  return result;
 }

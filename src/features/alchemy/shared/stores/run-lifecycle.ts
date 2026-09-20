@@ -117,7 +117,6 @@ function finalizeRunEndSessionState(
     return emptyInventory();
   }
 
-  captureRunRecap(draft, ending);
   const activeChar = draft.run.activeRun.characterId;
   setFinishedRunCharacters(draft, (prev) => {
     if (prev.includes(activeChar)) return prev;
@@ -125,6 +124,7 @@ function finalizeRunEndSessionState(
   });
 
   const homesteadBonus = options.awardRunEndMaterials(draft);
+  captureRunRecap(draft, ending);
   options.finalizeRunXP(draft);
   setRunEndItems(draft, draft.run.activeRun.runObtainedItems.map(cloneRunObtainedItem));
   if (draft.run.activeRun.contentSystemType === CONTENT_SYSTEMS.LABYRINTH) {

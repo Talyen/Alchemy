@@ -34,12 +34,13 @@ export function createAlchemistShopCommands({
   homesteadEffects,
 }: {
   talentEffects: TalentEffectManifest;
-  homesteadEffects: Pick<HomesteadEffectManifest, "potionMixPotency">;
+  homesteadEffects: Pick<HomesteadEffectManifest, "mixPotionDiscount">;
 }): AlchemistShopCommands {
   const getPotionBuyPrice = (card: BattleCard) => {
     return getShopBuyPrice("alchemistPotion", card, resolveReadShopPricingContext(talentEffects, "alchemistState"));
   };
-  const getMixPrice = () => computeMixPotionPrice(talentEffects, resolveReadShopModifiers());
+  const getMixPrice = () =>
+    computeMixPotionPrice(talentEffects, resolveReadShopModifiers(), homesteadEffects.mixPotionDiscount);
   const getRefreshPrice = createGetRefreshPrice("alchemist", talentEffects);
 
   const initialize = initializeShop(setAlchemistState, (draft) =>
@@ -76,12 +77,16 @@ export function createAlchemistShopCommands({
         (draft): ShopTransactionResult<BattleCard | null> => {
           const run = draft.run.activeRun;
           const state = readActivityData(draft.session.activity, "alchemist");
-          const price = computeMixPotionPrice(talentEffects, resolveDraftShopModifiers(draft));
+          const price = computeMixPotionPrice(
+            talentEffects,
+            resolveDraftShopModifiers(draft),
+            homesteadEffects.mixPotionDiscount,
+          );
           const cardA = run.runDeck[indexA];
           const cardB = run.runDeck[indexB];
           const mixed =
             cardA && cardB && isStandardPotionCard(cardA) && isStandardPotionCard(cardB)
-              ? tryCreateMixedPotion(cardA, cardB, talentEffects.potionMixPotency + homesteadEffects.potionMixPotency)
+              ? tryCreateMixedPotion(cardA, cardB, talentEffects.potionMixPotency)
               : null;
           return commitShopService({
             draft,

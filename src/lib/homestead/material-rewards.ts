@@ -222,6 +222,8 @@ export function applyMaterialFindBonus(
 
 type EndOfRunHomesteadEffects = Pick<
   HomesteadEffectManifest,
+  | "endRunStonePerRoom"
+  | "endRunWishPerRoom"
   | "endRunFoodPerRoom"
   | "endRunHerbsPerRoom"
   | "endRunHidePerRoom"
@@ -239,10 +241,14 @@ export function applyEndOfRunHomesteadBonuses(
   const roomCount = Math.max(0, roomsEncountered);
   const withFlatYields = {
     ...base,
+    stone: base.stone + (effects.endRunStonePerRoom ?? 0) * roomCount,
     herbs: base.herbs + (effects.endRunHerbsPerRoom ?? 0) * roomCount,
     food: base.food + (effects.endRunFoodPerRoom ?? 0) * roomCount,
     hide: base.hide + (effects.endRunHidePerRoom ?? 0) * roomCount,
-    gems: base.gems + (effects.endRunGemsPerRoom ?? 0) * roomCount,
+    gems:
+      base.gems +
+      (effects.endRunGemsPerRoom ?? 0) * roomCount +
+      (effects.endRunWishPerRoom ?? 0) * Math.floor(roomCount / 2),
     iron: base.iron + (effects.endRunIronPerRoom ?? 0) * roomCount,
     wood: base.wood + (effects.endRunWoodPerRoom ?? 0) * roomCount,
   };
