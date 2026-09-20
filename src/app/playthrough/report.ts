@@ -1,11 +1,23 @@
 import { careerCohort, summarizeProgress } from "./progress-telemetry";
+import type { AgentPlaythroughSummary } from "./agent-report";
 import { escapeHtml, renderReportPage } from "@/lib/balance/report-layout";
 import type { CareerResult } from "./types";
+
+function renderAgentBrief(summary: AgentPlaythroughSummary): string {
+  const findings = summary.findings
+    .map(
+      (finding) =>
+        `<details><summary>${escapeHtml(`[${finding.priority.toUpperCase()}] ${finding.title}`)}</summary><p><strong>Claim:</strong> ${escapeHtml(finding.claim)}</p><p><strong>Confidence:</strong> ${escapeHtml(finding.confidence)}</p><p><strong>Evidence:</strong> ${escapeHtml(JSON.stringify(finding.evidence))}</p><p><strong>Interpretation:</strong> ${escapeHtml(finding.interpretation)}</p><p><strong>Next step:</strong> ${escapeHtml(finding.nextStep)}</p>${finding.selector ? `<p><strong>Evidence selector:</strong> <code>${escapeHtml(JSON.stringify(finding.selector))}</code></p>` : ""}</details>`,
+    )
+    .join("");
+  return `<section><h2>Agent insight brief</h2><p>${summary.completed}/${summary.planned} careers completed; ${summary.incomplete} incomplete. Findings are observations and hypotheses, not calibrated pass/fail gates.</p>${findings || "<p>No findings were generated.</p>"}<h3>Recommended next experiments</h3><ul>${summary.recommendations.map((recommendation) => `<li>${escapeHtml(recommendation)}</li>`).join("")}</ul></section>`;
+}
 
 export function renderPlaythroughReport(
   results: CareerResult[],
   planned = results.length,
   workerFailures: string[] = [],
+  agentSummary?: AgentPlaythroughSummary,
 ): string {
   const completed = results.filter((result) => result.status === "completed").length;
   const rows = results
@@ -28,7 +40,7 @@ export function renderPlaythroughReport(
     .join("");
   return renderReportPage({
     title: "Headless playthroughs",
-    body: `<h1>Headless playthroughs</h1><p>${completed}/${planned} careers completed. Incomplete careers fail the correctness gate.</p><p>Targeted fixtures do not establish earned progression. Balance findings remain advisory; small samples cannot establish win rates or economic deadlocks. Unlisted choices and milestones were not reached.</p><ul>${workerFailures.map((error) => `<li class="neg">${escapeHtml(error)}</li>`).join("")}${results
+    body: `<h1>Headless playthroughs</h1><p>${completed}/${planned} careers completed. Incomplete careers fail the correctness gate.</p><p>Targeted fixtures do not establish earned progression. Balance findings remain advisory; small samples cannot establish win rates or economic deadlocks. Unlisted choices and milestones were not reached.</p>${agentSummary ? renderAgentBrief(agentSummary) : ""}<ul>${workerFailures.map((error) => `<li class="neg">${escapeHtml(error)}</li>`).join("")}${results
       .filter((result) => result.error)
       .slice(0, 3)
       .map((result) => `<li class="neg">${escapeHtml(result.error ?? "")}</li>`)

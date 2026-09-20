@@ -16,25 +16,23 @@ catalog-external tests are named inline. Named suites are verification entry poi
 
 ## Task index
 
-| Task                                          | Section                                                                                                                                                                                        |
-| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Raw asset / art                               | [Asset workflow](./WORKFLOWS-ASSETS.md)                                                                                                                                                        |
-| Save schema / migration                       | [Persisted save data](#change-persisted-save-data)                                                                                                                                             |
-| Mid-run resume                                | [Active run data](#change-mid-run-resume-activerundata)                                                                                                                                        |
-| Post-victory routing                          | [REWARD_ROUTES](#add-or-change-post-victory-routing-reward_routes)                                                                                                                             |
-| Run teardown / clear save                     | [Run teardown](#run-teardown)                                                                                                                                                                  |
-| Status effect                                 | [New status](#add-a-new-status-effect)                                                                                                                                                         |
-| Card / card effect kind                       | [New card](#add-a-new-card) · [New effect kind](#add-a-new-card-effect-kind)                                                                                                                   |
-| Character, enemy, trinket, companion, keyword | [Character](#add-a-new-character) · [Enemy](#add-a-new-enemy) · [Trinket](#add-a-new-trinket) · [Companion](#add-a-new-companion) · [Keyword](#add-a-new-keyword)                              |
-| Talent / homestead upgrade                    | [Talent](#add-a-new-talent) · [Homestead upgrade](#add-a-homestead-upgrade)                                                                                                                    |
-| Permanent gear                                | [Gear](#add-permanent-gear)                                                                                                                                                                    |
-| Shop                                          | [Change a shop](#change-a-shop)                                                                                                                                                                |
-| Content system / starter draft                | [Content system behavior](#content-system-behavior)                                                                                                                                            |
-| Battle playback                               | [Change battle playback](#change-battle-playback)                                                                                                                                              |
-| Screen, destination, mystery, corruption      | [New screen](#adding-a-new-screen) · [Destination](#adding-a-new-destination-map-node) · [Mystery effect](#adding-a-new-mystery-effect-kind) · [Corruption](#adding--changing-corruption-flow) |
-| In-run materials                              | [Grant materials during a run](#grant-materials-during-a-run)                                                                                                                                  |
-| UI placement, motion, buttons, tooltips       | [UI system](./UI.md)                                                                                                                                                                           |
-| Gameplay session mutation                     | [Gameplay command boundary](#gameplay-command-boundary)                                                                                                                                        |
+- **Raw asset / art** — [Asset workflow](./WORKFLOWS-ASSETS.md)
+- **Save schema / migration** — [Persisted save data](#change-persisted-save-data)
+- **Mid-run resume** — [Active run data](#change-mid-run-resume-activerundata)
+- **Post-victory routing** — [REWARD_ROUTES](#add-or-change-post-victory-routing-reward_routes)
+- **Run teardown / clear save** — [Run teardown](#run-teardown)
+- **Status effect** — [New status](#add-a-new-status-effect)
+- **Card / card effect kind** — [New card](#add-a-new-card) · [New effect kind](#add-a-new-card-effect-kind)
+- **Character, enemy, trinket, companion, keyword** — [Character](#add-a-new-character) · [Enemy](#add-a-new-enemy) · [Trinket](#add-a-new-trinket) · [Companion](#add-a-new-companion) · [Keyword](#add-a-new-keyword)
+- **Talent / homestead upgrade** — [Talent](#add-a-new-talent) · [Homestead upgrade](#add-a-homestead-upgrade)
+- **Permanent gear** — [Gear](#add-permanent-gear)
+- **Shop** — [Change a shop](#change-a-shop)
+- **Content system / starter draft** — [Content system behavior](#content-system-behavior)
+- **Battle playback** — [Change battle playback](#change-battle-playback)
+- **Screen, destination, mystery, corruption** — [New screen](#adding-a-new-screen) · [Destination](#adding-a-new-destination-map-node) · [Mystery effect](#adding-a-new-mystery-effect-kind) · [Corruption](#adding--changing-corruption-flow)
+- **In-run materials** — [Grant materials during a run](#grant-materials-during-a-run)
+- **UI placement, motion, buttons, tooltips** — [UI system](./UI.md)
+- **Gameplay session mutation** — [Gameplay command boundary](#gameplay-command-boundary)
 
 ---
 
@@ -81,12 +79,10 @@ An interrupted bonus handoff resumes only the bonus choices: the primary reward 
 
 Destination eligibility uses health and maximum health after victory bonuses and the upcoming location’s loot depth. Combat and Wildwood exclude exhausted Boon and permanent-Trinket pools before sampling through the [shared loot policy](./ARMORY.md#loot-tuning). Pass progression from `resolveDraftLootProgress()` when generating new loot; loading pending rewards or shop offers must not reapply progression eligibility.
 
-| Step                           | File(s)                                                                                                                                                                           |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Add route constant          | `src/lib/routing/reward-routes.ts` → `REWARD_ROUTES`, re-exported from `@/lib/routing`                                                                                            |
-| 2. Compute route after rewards | `src/features/alchemy/run-loop/navigation/reward-flow.ts` (`finalizeRewardState` / related; import `@/features/alchemy/run-loop/navigation/reward-flow`)                          |
-| 3. Handle transition           | `run-loop/run/run-flow-rewards.ts` (`executeRewardRouteTransition`) for reward routing; `shell/run-flow-engine.ts` (`createRunFlowEngine`) for shell wiring of all flow factories |
-| 4. Tests                       | `tests/features/alchemy/run-loop/navigation/reward-flow.test.ts`; victory-flow tests if end-of-run                                                                                |
+- **1. Add route constant** — `src/lib/routing/reward-routes.ts` → `REWARD_ROUTES`, re-exported from `@/lib/routing`
+- **2. Compute route after rewards** — `src/features/alchemy/run-loop/navigation/reward-flow.ts` (`finalizeRewardState` / related; import `@/features/alchemy/run-loop/navigation/reward-flow`)
+- **3. Handle transition** — `run-loop/run/run-flow-rewards.ts` (`executeRewardRouteTransition`) for reward routing; `shell/run-flow-engine.ts` (`createRunFlowEngine`) for shell wiring of all flow factories
+- **4. Tests** — `tests/features/alchemy/run-loop/navigation/reward-flow.test.ts`; victory-flow tests if end-of-run
 
 ---
 
@@ -178,13 +174,11 @@ effect ordering, and the focused schema/handler/description tests.
 
 ## Add a new character
 
-| Step                                                                            | File(s)                           |
-| ------------------------------------------------------------------------------- | --------------------------------- |
-| 1. Add character ID to `CharacterId` union                                      | `src/lib/game-data/characters.ts` |
-| 2. Define character in `characters` record                                      | `src/lib/game-data/characters.ts` |
-| 3. List card IDs in `startingDeck` (resolved via `resolveDeck`)                 | same file                         |
-| 4. Set the hero's `keywords` badges (3 per hero; wildcard drafts and uses none) | same file                         |
-| 5. Keep every badge covered by the starting deck (see below)                    | same file + characters test       |
+- **1. Add character ID to `CharacterId` union** — `src/lib/game-data/characters.ts`
+- **2. Define character in `characters` record** — `src/lib/game-data/characters.ts`
+- **3. List card IDs in `startingDeck` (resolved via `resolveDeck`)** — same file
+- **4. Set the hero's `keywords` badges (3 per hero; wildcard drafts and uses none)** — same file
+- **5. Keep every badge covered by the starting deck (see below)** — same file + characters test
 
 `resolveDeck` throws on unknown card IDs so a typo fails loudly instead of
 shortening the deck. Every badge must appear in at least one starting-deck
@@ -204,13 +198,11 @@ checks count and uniqueness. Enemy-trait descriptions must mention their
 mechanical term ([enemy-trait parity](../src/lib/content-validation/card-parity/enemy-trait-parity.ts)),
 and titles/descriptions must pass the typography rules. Run `npm run content:audit` before handing off.
 
-| Step                                                                   | File(s)                                                 |
-| ---------------------------------------------------------------------- | ------------------------------------------------------- |
-| 1. Define entry in `enemyBestiary` (`id` becomes `EnemyId`)            | `src/lib/game-data/compendium/enemies.ts`               |
-| 2. Set `enemyType` (`normal`/`elite`/`boss`)                           | same file                                               |
-| 3. Add traits as `{ id, title, description }` objects                  | same file (logic lives in battle system)                |
-| 4. (Optional) Register attack sound                                    | `src/lib/audio/sound-registry.ts` (`enemyAttackSounds`) |
-| 5. Wildwood gauntlet bosses must also be listed in `WILDWOOD_BOSS_IDS` | `src/lib/content-systems/wildwood/bosses.ts`            |
+- **1. Define entry in `enemyBestiary` (`id` becomes `EnemyId`)** — `src/lib/game-data/compendium/enemies.ts`
+- **2. Set `enemyType` (`normal`/`elite`/`boss`)** — same file
+- **3. Add traits as `{ id, title, description }` objects** — same file (logic lives in battle system)
+- **4. (Optional) Register attack sound** — `src/lib/audio/sound-registry.ts` (`enemyAttackSounds`)
+- **5. Wildwood gauntlet bosses must also be listed in `WILDWOOD_BOSS_IDS`** — `src/lib/content-systems/wildwood/bosses.ts`
 
 ---
 
@@ -230,7 +222,7 @@ Item model, generation, Uniques, and write paths: [ARMORY.md](./ARMORY.md) (data
 1. Add base item metadata in `src/lib/gear/base-items.ts` (slots, two-hand rule, affinity keywords, available rarities, thematic homestead `salvageByRarity`). Salvage consumes `salvageValue` on the generated definition.
 2. Register Gear art via the [asset workflow § Add or replace Gear art](./WORKFLOWS-ASSETS.md#add-or-replace-gear-art) (naming/slot violations throw during sync). A base without art still builds its definitions with fallback art so loot and saves keep working, but the gap fails `content:audit` and the definitions tests — never ship with `missingGearArtDefinitionIds` non-empty.
 3. Register the base item's Unique in `src/lib/gear/unique-catalog.ts`, with one exclusive fixed signature and three fixed standard supporting affixes. Every base item needs one Unique; ordinary variant generation does not create it. Follow [Unique affix and combat contracts](./UNIQUE_ITEMS.md) for signature implementation and interaction documentation.
-4. For new affixes, add definitions in `src/lib/gear/affix-catalog.ts` with stable IDs, `keywordId`, effect keys, value ranges, and eligible slots. Keep `keywordId` aligned with affinity weighting and `effectKey` aligned with `GEAR_EFFECT_KEYS`; wire new effects into the manifest and their consumers. Display/roll helpers live in `affixes.ts`, pool filtering in `affix-pool.ts`, and description formatting in `formatAffixDescription` (`affix-catalog.ts`), shared by tooltips and the unique catalog. Percent-based bonuses use `ROLL_PERCENT`, never the resist-only `ROLL_RESIST`.
+4. For new affixes, add definitions in `src/lib/gear/ordinary-affixes.ts` or `src/lib/gear/unique-affixes.ts` with stable IDs, `keywordId`, effect keys, value ranges, and eligible slots. Keep `keywordId` aligned with affinity weighting and `effectKey` aligned with `GEAR_EFFECT_KEYS`; wire new effects into the manifest and their consumers. Display/roll helpers live in `affixes.ts`, pool filtering in `affix-pool.ts`, and description formatting in `formatAffixDescription` (`affix-catalog.ts`), shared by tooltips and the unique catalog. Percent-based bonuses use `ROLL_PERCENT`, never the resist-only `ROLL_RESIST`.
 5. Update Gear save schemas/defaults and migration fixtures when instance or loadout shapes change. Unique instances store no affix rolls — only identity — with reads resolving `getUniqueAffixes()`.
 6. Run `npm run content:audit` (enforces the affix-catalog, pool, and Unique invariants in `validators-gear.ts`) and `npm run balance:loot` when loot weights or depth curves change. New affixes must also satisfy the `uniqueOnly` fixed-roll rule and the description typography rule.
 7. Check affected Gear behavior, including existing Unique catalog coverage and save compatibility for instance or loadout shape changes. HP-sync write paths: [ARMORY.md § Write paths](./ARMORY.md#write-paths). Rewards store the exact `GearInstance` and never re-roll on acceptance; never put definition objects or art URLs into saves.
@@ -243,15 +235,13 @@ Companion combat and descriptions share `getCompanionBondEffects()` in `src/lib/
 
 `defaultCompanionBondLevels` derives zero values from `companionLibrary`; talent and Homestead defaults both copy that map, so new Companions need no separate default registration. If Bond behavior differs from the shared scaling, update `getCompanionBondEffects()` and its descriptions together; change Homestead tiers or costs only when intended.
 
-| Step                                                                                                              | File(s)                                                                                                    |
-| ----------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| 1. Add companion ID to `CompanionId` union                                                                        | `src/lib/game-data/types.ts`                                                                               |
-| 2. Add art via the [asset workflow § Add or replace game art](./WORKFLOWS-ASSETS.md#add-or-replace-game-art)      | `src/lib/game-data/assets.ts`                                                                              |
-| 3. Define companion in `companionLibrary` record                                                                  | `src/lib/game-data/companions.ts`                                                                          |
-| 4. Add summon card via `summonCompanionCard()` in `cardLibrary` (`src/lib/game-data/cards/library/companions.ts`) | `src/lib/game-data/cards/card-builders.ts` — companion must have **at least one** `turnStartEffects` entry |
-| 5. Give the summon card a stable, unique string ID                                                                | `src/lib/game-data/cards/library/companions.ts`; the assembled `cardLibrary` checks uniqueness             |
-| 6. (Optional) Register card sound                                                                                 | `src/lib/audio/sound-registry.ts`                                                                          |
-| 7. Update description lines                                                                                       | `tests/lib/game-data/companions.test.ts` guards companion copy                                             |
+- **1. Add companion ID to `CompanionId` union** — `src/lib/game-data/types.ts`
+- **2. Add art via the [asset workflow § Add or replace game art](./WORKFLOWS-ASSETS.md#add-or-replace-game-art)** — `src/lib/game-data/assets.ts`
+- **3. Define companion in `companionLibrary` record** — `src/lib/game-data/companions.ts`
+- **4. Add summon card via `summonCompanionCard()` in `cardLibrary` (`src/lib/game-data/cards/library/companions.ts`)** — `src/lib/game-data/cards/card-builders.ts` — companion must have **at least one** `turnStartEffects` entry
+- **5. Give the summon card a stable, unique string ID** — `src/lib/game-data/cards/library/companions.ts`; the assembled `cardLibrary` checks uniqueness
+- **6. (Optional) Register card sound** — `src/lib/audio/sound-registry.ts`
+- **7. Update description lines** — `tests/lib/game-data/companions.test.ts` guards companion copy
 
 Run `npm run content:audit` before handing off (companion record checks, summon-card parity, typography).
 
@@ -266,7 +256,7 @@ Use `addEffect` for stackable numeric bonuses, including the same bonus written 
 Put talent-owned magnitudes on the talent ops (not only in `game-constants`) so descriptions and combat stay in lockstep. Talent and keyword descriptions omit periods, as enforced by content typography validation.
 
 1. If the talent needs a new battle bonus, add its default in `src/lib/game-data/talents/manifest-defaults.ts`; `TalentEffectManifest` derives from those defaults and `talent-effect-manifest.ts` re-exports it.
-2. Define the talent (`id`, `keywordId`, name, description, effects, and Lucide `icon` name) in `src/lib/game-data/talents/talent-pool-definitions.ts`; its keyword-grouped table builds `talentPool`, with `pool/index.ts` re-exporting for compatibility. Register the icon in `src/features/alchemy/shared/config/talent-icons.ts`.
+2. Define the talent (`id`, `keywordId`, name, description, effects, and Lucide `icon` name) in the matching keyword module under `src/lib/game-data/talents/pools/`; `talent-pool-definitions.ts` assembles `talentPool` in its historical order, with `pool/index.ts` re-exporting for compatibility. Register the icon in `src/features/alchemy/shared/config/talent-icons.ts`.
 3. Keyword portrait art (new keyword or replacement art) — [Asset workflow § Add or replace game art](./WORKFLOWS-ASSETS.md#add-or-replace-game-art) (`scripts/assets/talent-assets.mjs` + `talentArt` in `src/lib/game-data/assets.ts`)
 4. XP is keyword-based — `src/lib/game-data/talents/progression.ts` — no per-talent XP hook unless the keyword is new
 
@@ -303,11 +293,9 @@ Homestead screens (like all screen directories) are excluded from `vitest` cover
 
 ## Add a new keyword
 
-| Step                                                  | File(s)                                                             |
-| ----------------------------------------------------- | ------------------------------------------------------------------- |
-| 1. Define keyword config (label, description, colors) | `src/lib/game-data/keywords.ts`                                     |
-| 2. Add display config if needed                       | `src/features/alchemy/shared/config/keywords.ts`                    |
-| 3. Add talent XP trigger                              | `src/lib/game-data/talents/progression.ts` (keyword-based XP logic) |
+- **1. Define keyword config (label, description, colors)** — `src/lib/game-data/keywords.ts`
+- **2. Add display config if needed** — `src/features/alchemy/shared/config/keywords.ts`
+- **3. Add talent XP trigger** — `src/lib/game-data/talents/progression.ts` (keyword-based XP logic)
 
 Keyword labels and descriptions must pass the typography rules (no em dashes; descriptions stay period-free — see `src/lib/content-validation/validators-typography.ts`). Run `npm run content:audit` before handing off.
 
@@ -379,11 +367,9 @@ Boot restore/hydration sets a validated saved screen directly and intentionally 
 
 ## Adding a new destination (map node)
 
-| Step                                      | File(s)                                                                                                                            |
-| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Add to `DESTINATIONS` const            | `src/lib/routing/destinations.ts`                                                                                                  |
-| 2. Add to destination pool / availability | `src/lib/routing/destination-availability.ts`                                                                                      |
-| 3. Offer construction (pure)              | `shared/run-flow/destination-flow.ts` — campaign start and run-loop progression pass offer history, boss ID, and command-bound RNG |
+- **1. Add to `DESTINATIONS` const** — `src/lib/routing/destinations.ts`
+- **2. Add to destination pool / availability** — `src/lib/routing/destination-availability.ts`
+- **3. Offer construction (pure)** — `shared/run-flow/destination-flow.ts` — campaign start and run-loop progression pass offer history, boss ID, and command-bound RNG
 
 ---
 
@@ -397,16 +383,14 @@ The committed `mysteryChosenChoice` records Material amounts actually awarded, i
 
 Live pool events are authored in `src/lib/mystery/pool.ts`; other `MysteryEffect` kinds stay on the union and handlers for authoring even when no live event uses them.
 
-| Step                                                          | File(s)                                                                                                                             |
-| ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Add `kind` string to `MysteryEffect` union                 | `src/lib/mystery/types.ts`                                                                                                          |
-| 2. Add a case to `applyMysteryEffect`                         | `src/features/alchemy/run-loop/navigation/mystery-flow.ts`                                                                          |
-| 3. Add fields to `MysteryEffectContext` if needed             | `mystery-flow.ts`                                                                                                                   |
-| 4. Wire event commands if needed                              | `run-loop/navigation/mystery-event-navigation.ts`                                                                                   |
-| 5. Wire follow-up UI in mystery screen                        | `run-loop/screens/mystery/mystery-screen.tsx` (exported via screens barrel)                                                         |
-| 6. Route-held fade / empty-visit continue                     | `app/screen-routes/mystery-screen-route.tsx`                                                                                        |
-| 7. Persist new visit fields if the kind stores rolled results | Mystery visit schema in `src/lib/validation/save-schemas/active-run.ts` + `src/lib/active-run-session/mystery-visit-persistence.ts` |
-| 8. Author choice `effects` in display order                   | `src/lib/mystery/pool.ts`: XP → gold → materials → portrait reward per choice                                                       |
+- **1. Add `kind` string to `MysteryEffect` union** — `src/lib/mystery/types.ts`
+- **2. Add a case to `applyMysteryEffect`** — `src/features/alchemy/run-loop/navigation/mystery-flow.ts`
+- **3. Add fields to `MysteryEffectContext` if needed** — `mystery-flow.ts`
+- **4. Wire event commands if needed** — `run-loop/navigation/mystery-event-navigation.ts`
+- **5. Wire follow-up UI in mystery screen** — `run-loop/screens/mystery/mystery-screen.tsx` (exported via screens barrel)
+- **6. Route-held fade / empty-visit continue** — `app/screen-routes/mystery-screen-route.tsx`
+- **7. Persist new visit fields if the kind stores rolled results** — Mystery visit schema in `src/lib/validation/save-schemas/active-run.ts` + `src/lib/active-run-session/mystery-visit-persistence.ts`
+- **8. Author choice `effects` in display order** — `src/lib/mystery/pool.ts`: XP → gold → materials → portrait reward per choice
 
 ---
 
@@ -414,11 +398,9 @@ Live pool events are authored in `src/lib/mystery/pool.ts`; other `MysteryEffect
 
 Numeric corruption also updates matching delayed repeats of the changed effect, so the later turn agrees with the card description. A shared damage number, such as Stab's Physical-or-Bleed amount, updates both alternatives without consuming the numeric target for a separately described effect. Tithe's Gold percentage is editable and capped at 100%; Powerful Wish uses the same numeric mapping. Unrelated repeated effects retain their values.
 
-| Step                                               | File(s)                                                                                                                            |
-| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Card mutation rules                             | `src/lib/corruption/`                                                                                                              |
-| 2. Destination handlers (corrupt / exit / abandon) | `run-loop/navigation/corruption-flow.ts`                                                                                           |
-| 2b. Shell wiring                                   | `createCorruptionFlowHandlers()` wired in `shell/run-flow-engine.ts` (receives advance/return callbacks plus labyrinth-map return) |
-| 3. Screen                                          | `run-loop/screens/corruption-screen.tsx`                                                                                           |
-| 4. Resume                                          | `session.corruptionResult` via `run-resume-codec.ts` (`encodeCorruptionResult`, screen-scoped)                                     |
-| 5. Tests                                           | `tests/features/alchemy/run-loop/corruption.test.ts`, destination E2E Mystery/Corruption cases                                     |
+- **1. Card mutation rules** — `src/lib/corruption/`
+- **2. Destination handlers (corrupt / exit / abandon)** — `run-loop/navigation/corruption-flow.ts`
+- **2b. Shell wiring** — `createCorruptionFlowHandlers()` wired in `shell/run-flow-engine.ts` (receives advance/return callbacks plus labyrinth-map return)
+- **3. Screen** — `run-loop/screens/corruption-screen.tsx`
+- **4. Resume** — `session.corruptionResult` via `run-resume-codec.ts` (`encodeCorruptionResult`, screen-scoped)
+- **5. Tests** — `tests/features/alchemy/run-loop/corruption.test.ts`, destination E2E Mystery/Corruption cases

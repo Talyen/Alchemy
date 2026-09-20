@@ -24,7 +24,12 @@ export function sourceOutline(rootDir, relativePath, { entries = false, tests = 
   if (tests) return testOutline(ts, file, location);
   if (entries) {
     const found = [];
-    const builders = CONTENT_BUILDERS.get(path.relative(rootDir, absolute).replaceAll(path.sep, "/"));
+    const sourcePath = path.relative(rootDir, absolute).replaceAll(path.sep, "/");
+    const builders = /^src\/lib\/game-data\/talents\/pools\/[^/]+\.ts$/u.test(sourcePath)
+      ? new Set(["talent"])
+      : ["src/lib/gear/ordinary-affixes.ts", "src/lib/gear/unique-affixes.ts"].includes(sourcePath)
+        ? new Set(["uniqueAffix", "resistAffix"])
+        : CONTENT_BUILDERS.get(sourcePath);
     const literalName = (node) =>
       node && (ts.isStringLiteral(node) || ts.isNumericLiteral(node) || ts.isIdentifier(node)) ? node.text : null;
     const unwrap = (node) => {

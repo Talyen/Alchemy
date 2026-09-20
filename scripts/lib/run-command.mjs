@@ -63,7 +63,7 @@ function collectOutput(stdout, stderr, error) {
 function spawnOpts(options) {
   return {
     cwd: options.cwd,
-    env: options.env,
+    env: options.logPath ? { ...(options.env ?? process.env), ALCHEMY_OUTPUT_CAPTURED: "1" } : options.env,
     shell: options.shell ?? false,
     stdio: options.stdio ?? ["ignore", "pipe", "pipe"],
     timeout: options.timeout,

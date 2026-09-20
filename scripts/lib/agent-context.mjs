@@ -12,7 +12,8 @@ const assetCommon = [asset("Shared asset requirements"), asset("Skip mode and ve
 
 export const CONTEXT_TASKS = {
   battle: {
-    matches: /^(?:src\/lib\/(?:battle|game-constants)|tests\/lib\/battle)\//u,
+    matches:
+      /^(?:(?:src|tests)\/lib\/battle\/|src\/lib\/game-constants\/(?:combat-rules|enemy-traits|enemy-balance|labyrinth-modifiers)\.ts$)/u,
     docs: [
       owner("Docs/ARCHITECTURE.md", "Battle path"),
       owner("Docs/GAME_RULES.md", "Engine invariants"),
@@ -20,6 +21,12 @@ export const CONTEXT_TASKS = {
     ],
     entrypoints: ["src/lib/battle/card-play.ts", "src/lib/battle/effect-handlers"],
     fixture: "src/lib/battle/card-play.ts",
+  },
+  "battle-controller": {
+    matches:
+      /(?:run-loop\/battle\/|shell\/(?:use-battle-controller|use-alchemy-run-controller|use-run-flow-engine|run-flow-engine|route-commands)|screen-routes\/(?:battle-screen-route|use-battle-screen-route-data))/u,
+    docs: [owner("Docs/BATTLE_CONTROLLERS.md", "Battle path")],
+    entrypoints: ["src/features/alchemy/shell/use-battle-controller.ts"],
   },
   card: {
     matches: /^src\/lib\/game-data\/cards\//u,
@@ -36,10 +43,7 @@ export const CONTEXT_TASKS = {
   talent: {
     matches: /^src\/lib\/game-data\/(?:talents(?:\/|\.ts$)|talent-effect-manifest\.ts$)/u,
     docs: [workflow("Add a new talent")],
-    entrypoints: [
-      "src/lib/game-data/talents/talent-pool-definitions.ts",
-      "src/lib/game-data/talents/manifest-defaults.ts",
-    ],
+    entrypoints: ["src/lib/game-data/talents/pools", "src/lib/game-data/talents/manifest-defaults.ts"],
     fixture: "src/lib/game-data/talents/talent-pool-definitions.ts",
   },
   companion: {
@@ -64,7 +68,8 @@ export const CONTEXT_TASKS = {
     fixture: "src/lib/game-data/enemy-abilities.ts",
   },
   ui: {
-    matches: /(?:\/(?:ui|screens)\/|^src\/styles\/)/u,
+    matches:
+      /(?:\/(?:ui|screens)\/|^src\/styles\/|^src\/lib\/game-constants\/(?:ui-layout|ui-motion|battle-timing)\.ts$)/u,
     docs: [
       owner("Docs/UI.md", "Placement and boundaries"),
       owner("Docs/UI.md", "Component conventions"),
@@ -72,32 +77,67 @@ export const CONTEXT_TASKS = {
     ],
     entrypoints: ["src/features/alchemy/shared/ui", "src/styles/components.css"],
   },
+  "ui-layout": {
+    matches: /^src\/lib\/game-constants\/ui-layout\.ts$/u,
+    docs: [owner("Docs/UI.md", "Display sizing")],
+    entrypoints: ["src/lib/game-constants/ui-layout.ts"],
+  },
+  "ui-motion": {
+    matches: /^src\/lib\/game-constants\/(?:ui-motion|battle-timing)\.ts$/u,
+    docs: [owner("Docs/UI_MOTION.md", "Screen fade motion"), owner("Docs/UI_MOTION.md", "Battle motion")],
+    entrypoints: ["src/lib/game-constants/ui-motion.ts", "src/lib/game-constants/battle-timing.ts"],
+  },
   overlay: {
     matches:
       /(?:overlay|dialog|modal|use-fade|screen-transition|screen-navigation|use-app-navigation|route-commands|game-menu)/u,
-    docs: [owner("Docs/UI.md", "Overlay lifecycle")],
+    docs: [owner("Docs/UI_INTERACTION.md", "Overlay lifecycle")],
     entrypoints: ["src/features/alchemy/shared/ui/modal-overlay-shell.tsx"],
   },
   audio: {
-    matches: /^(?:src|tests)\/lib\/audio\//u,
+    matches: /^(?:(?:src|tests)\/lib\/audio\/|src\/lib\/game-constants\/audio\.ts$)/u,
     docs: [owner("Docs/AUDIO.md", null)],
     entrypoints: ["src/lib/audio/index.ts", "src/lib/audio/sound-registry.ts"],
   },
   tooltip: {
     matches: /(?:tooltip|card-description|keyword-text)/u,
-    docs: [owner("Docs/UI.md", "Hover tooltips")],
+    docs: [owner("Docs/UI_INTERACTION.md", "Hover tooltips")],
     entrypoints: ["src/lib/keyword-text.ts", "src/features/alchemy/shared/ui/card-description-ui.tsx"],
   },
   gear: {
-    matches: /(?:\/gear\/(?!affix)|\/armory\/|gear-store)/u,
+    matches: /(?:\/gear\/(?!affix|(?:ordinary|unique)-affixes)|\/armory\/|gear-store)/u,
     docs: [owner("Docs/ARMORY.md", "State flow"), owner("Docs/ARMORY.md", "Tests")],
     entrypoints: ["src/features/alchemy/meta/screens/armory/use-armory-controller.ts"],
   },
   affix: {
-    matches: /\/gear\/affix/u,
+    matches: /\/gear\/(?:affix|(?:ordinary|unique)-affixes)/u,
     docs: [owner("Docs/ARMORY.md", "Data model")],
-    entrypoints: ["src/lib/gear/affix-catalog.ts", "src/lib/gear/affix-pool.ts"],
+    entrypoints: ["src/lib/gear/ordinary-affixes.ts", "src/lib/gear/unique-affixes.ts", "src/lib/gear/affix-pool.ts"],
     fixture: "src/lib/gear/affix-catalog.ts",
+  },
+  loot: {
+    matches: /^src\/lib\/(?:loot\/|game-constants\/(?:gear|run-rewards)\.ts$)/u,
+    docs: [owner("Docs/ARMORY.md", "Loot tuning")],
+    entrypoints: ["src/lib/loot/policy.ts", "src/lib/game-constants/run-rewards.ts"],
+  },
+  materials: {
+    matches: /^src\/lib\/(?:game-constants\/materials-economy|homestead\/material-rewards)\.ts$/u,
+    docs: [owner("Docs/ARMORY.md", "Materials tuning"), workflow("Grant materials during a run")],
+    entrypoints: ["src/lib/homestead/material-rewards.ts"],
+  },
+  progression: {
+    matches: /^src\/lib\/game-constants\/progression\.ts$/u,
+    docs: [owner("Docs/TALENT_RULES.md", "Talent manifests and progression")],
+    entrypoints: ["src/lib/game-constants/progression.ts"],
+  },
+  settings: {
+    matches: /^src\/lib\/game-constants\/settings\.ts$/u,
+    docs: [owner("Docs/ARCHITECTURE.md", "Settings and meta profile"), owner("Docs/UI_BROWSING.md", "Options")],
+    entrypoints: ["src/lib/game-constants/settings.ts"],
+  },
+  corruption: {
+    matches: /^src\/lib\/(?:corruption\/|game-constants\/corruption\.ts$)/u,
+    docs: [workflow("Adding / changing corruption flow")],
+    entrypoints: ["src/lib/corruption/index.ts"],
   },
   rewards: {
     matches: /(?:victory|reward|run-materials)/u,
@@ -110,7 +150,7 @@ export const CONTEXT_TASKS = {
     entrypoints: ["src/features/alchemy/run-loop/shop/shop-transactions.ts"],
   },
   save: {
-    matches: /(?:\/storage\/|\/save-schemas\/|run-resume)/u,
+    matches: /(?:\/storage\/|\/save-schemas\/|run-resume|^src\/lib\/game-constants\/storage\.ts$)/u,
     docs: [
       workflow("Change persisted save data"),
       owner("src/features/alchemy/shared/storage/MIGRATIONS.md", "Public save contract"),
@@ -246,7 +286,7 @@ export const CONTEXT_TASKS = {
   discovery: {
     matches:
       /^(?:scripts\/(?:agent-(?:context|search|eval)|measure-agent-context|context-hotspots|lib\/agent-(?:context|discovery|events))\.mjs|tests\/scripts\/agent-(?:context|discovery|eval)\.test\.ts)$/u,
-    docs: [owner("Docs/REFERENCE.md", "Agent discovery")],
+    docs: [owner("Docs/AGENT_DISCOVERY.md", "Agent discovery")],
     entrypoints: ["scripts/lib/agent-context.mjs"],
   },
 };

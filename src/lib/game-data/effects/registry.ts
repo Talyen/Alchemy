@@ -1,41 +1,9 @@
 import { z } from "zod";
 import type { BattleCardEffect } from "../types";
-import {
-  damageEffectDefinition,
-  selfDamageEffectDefinition,
-  randomDamageEffectDefinition,
-  removeEnemyArmorEffectDefinition,
-} from "./damage-schemas";
-import {
-  playerStatusEffectDefinition,
-  enemyStatusEffectDefinition,
-  removeHarmfulStatusEffectDefinition,
-  removePlayerStatusEffectDefinition,
-  multiplyEnemyStatusEffectDefinition,
-  cleansePlayerStatusToDamageEffectDefinition,
-} from "./status-schemas";
-import {
-  restoreManaEffectDefinition,
-  loseManaEffectDefinition,
-  gainMaxManaEffectDefinition,
-  loseMaxManaEffectDefinition,
-  healEffectDefinition,
-  loseHealthEffectDefinition,
-} from "./mana-health-schemas";
-import {
-  summonCompanionEffectDefinition,
-  buffCompanionEffectDefinition,
-  companionActionEffectDefinition,
-  randomDrawEffectDefinition,
-  gainGoldEffectDefinition,
-  wishEffectDefinition,
-  drawCardsEffectDefinition,
-  nextHitCritEffectDefinition,
-  nextHitLeechEffectDefinition,
-  playNextCardTwiceEffectDefinition,
-  nextHitPoisonEffectDefinition,
-  nextArcheryFreeEffectDefinition,
-} from "./simple-schemas";
+import { DAMAGE_EFFECT_DEFINITIONS } from "./damage-schemas";
+import { STATUS_EFFECT_DEFINITIONS } from "./status-schemas";
+import { MANA_HEALTH_EFFECT_DEFINITIONS } from "./mana-health-schemas";
+import { SIMPLE_EFFECT_DEFINITIONS } from "./simple-schemas";
 
 export interface EffectKindDefinition<K extends BattleCardEffect["kind"] = BattleCardEffect["kind"]> {
   kind: K;
@@ -43,35 +11,17 @@ export interface EffectKindDefinition<K extends BattleCardEffect["kind"] = Battl
 }
 
 export const TEMPLATE_EFFECT_DEFINITIONS = [
-  damageEffectDefinition,
-  playerStatusEffectDefinition,
-  enemyStatusEffectDefinition,
-  healEffectDefinition,
-  restoreManaEffectDefinition,
-  loseManaEffectDefinition,
-  loseMaxManaEffectDefinition,
-  gainMaxManaEffectDefinition,
-  gainGoldEffectDefinition,
-  wishEffectDefinition,
-  summonCompanionEffectDefinition,
-  removeHarmfulStatusEffectDefinition,
-  removePlayerStatusEffectDefinition,
-  selfDamageEffectDefinition,
-  buffCompanionEffectDefinition,
-  companionActionEffectDefinition,
-  randomDrawEffectDefinition,
-  loseHealthEffectDefinition,
-  drawCardsEffectDefinition,
-  removeEnemyArmorEffectDefinition,
-  multiplyEnemyStatusEffectDefinition,
-  cleansePlayerStatusToDamageEffectDefinition,
-  randomDamageEffectDefinition,
-  nextHitCritEffectDefinition,
-  nextHitLeechEffectDefinition,
-  playNextCardTwiceEffectDefinition,
-  nextHitPoisonEffectDefinition,
-  nextArcheryFreeEffectDefinition,
+  ...DAMAGE_EFFECT_DEFINITIONS,
+  ...STATUS_EFFECT_DEFINITIONS,
+  ...MANA_HEALTH_EFFECT_DEFINITIONS,
+  ...SIMPLE_EFFECT_DEFINITIONS,
 ] as const;
+
+if (
+  new Set(TEMPLATE_EFFECT_DEFINITIONS.map((definition) => definition.kind)).size !== TEMPLATE_EFFECT_DEFINITIONS.length
+) {
+  throw new Error("Duplicate card effect schema kind");
+}
 
 export const RECURSIVE_BATTLE_CARD_EFFECT_KINDS = ["chance", "repeat-over-turns"] as const;
 

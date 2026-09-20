@@ -1,0 +1,72 @@
+import { talent } from "../talent-builder";
+import { addEffect, setEffect } from "../types";
+
+export const wishTalents = [
+  talent(
+    "wish-trinket",
+    "wish",
+    "Wishful Trinket",
+    "When you Wish, sometimes gain 1 Forge or Armor (50% chance)",
+    "Gem",
+    setEffect("wishTrinketChoice", true),
+  ),
+  talent(
+    "wish-undiscovered",
+    "wish",
+    "Discovery",
+    "Wish always includes an undiscovered card when one is available",
+    "Compass",
+    setEffect("wishUndiscoveredCards", true),
+  ),
+  talent("wish-health", "wish", "Vital Wish", "Restore 1 Health when you Wish", "Heart", setEffect("healthOnWish", 1)),
+  talent(
+    "wish-cleanse",
+    "wish",
+    "Purifying Wish",
+    "Cleanse 1 harmful status effect when you Wish",
+    "Sparkle",
+    setEffect("removeHarmfulStatusOnWish", true),
+  ),
+  talent(
+    "wish-extra-choice",
+    "wish",
+    "Generous Wish",
+    "Wish offers 1 additional card choice",
+    "Gift",
+    setEffect("wishExtraChoices", 1),
+  ),
+  talent("wish-draw", "wish", "Insight", "Wish also draws a card", "Eye", setEffect("wishDrawsCard", true)),
+  talent(
+    "wish-powerful",
+    "wish",
+    "Powerful Wish",
+    "Wish card numeric values are increased by 1",
+    "Bolt",
+    setEffect("wishCardsUpgraded", true),
+  ),
+  talent(
+    "wish-mana",
+    "wish",
+    "Mana from Heaven",
+    "When you Wish, gain 1 additional Mana at the start of your next turn",
+    "CloudRain",
+    addEffect("manaNextTurnOnWish", 1),
+  ),
+  talent(
+    "wish-gold",
+    "wish",
+    "Roads Not Taken",
+    "When you choose a Wish card, gain 1 Block for each other card offered",
+    "Coins",
+    setEffect("blockPerDeclinedWishCard", 1),
+  ),
+  talent(
+    "wish-desperate",
+    "wish",
+    "Desperate Wish",
+    "When you Wish below half Health, gain 2 Block",
+    "HeartCrack",
+    setEffect("wishBlockBelowHealthPct", 50),
+    setEffect("wishBlockAmount", 2),
+  ),
+];

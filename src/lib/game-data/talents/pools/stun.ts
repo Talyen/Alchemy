@@ -1,0 +1,71 @@
+import { talent } from "../talent-builder";
+import { addEffect, setEffect } from "../types";
+
+export const stunTalents = [
+  talent(
+    "stun-forge-grant",
+    "stun",
+    "Riled Up",
+    "If you have no Forge, Stunning an enemy grants 2 Forge",
+    "Flame",
+    setEffect("forgeOnStun", 2),
+  ),
+  talent(
+    "stun-double-damage",
+    "stun",
+    "Exploit Weakness",
+    "Stunned enemies take double damage",
+    "TrendingUp",
+    setEffect("stunDoubleDamage", true),
+  ),
+  talent(
+    "stun-block-grant",
+    "stun",
+    "Guarded Counter",
+    "If you have no Block, Stunning an enemy grants 4 Block",
+    "Shield",
+    setEffect("blockOnStun", 4),
+  ),
+  talent(
+    "stun-duration-1",
+    "stun",
+    "Extended Stun",
+    "Stun effects last 1 turn longer",
+    "Clock",
+    setEffect("stunDurationExtension", 1),
+  ),
+  talent(
+    "stun-strip-armor",
+    "stun",
+    "Shatter Guard",
+    "When you Stun an enemy, remove all its Armor",
+    "ShieldOff",
+    setEffect("stunStripArmor", true),
+  ),
+  talent("stun-damage-1", "stun", "Jarring Blow", "Increase Stun damage by 1", "Bolt", addEffect("flatStunDamage", 1)),
+  talent(
+    "stun-next-free",
+    "stun",
+    "Free Follow-up",
+    "When you Stun an enemy, your next card is free",
+    "Gift",
+    setEffect("nextCardFreeOnStun", true),
+  ),
+  talent(
+    "stun-threshold",
+    "stun",
+    "Concussive Force",
+    "Stun threshold reduced by 10%",
+    "Waves",
+    setEffect("stunThresholdReduction", 0.1),
+  ),
+  talent("stun-draw", "stun", "Stun Insight", "When you Stun an enemy, draw a card", "Eye", setEffect("drawOnStun", 1)),
+  talent(
+    "stun-mana-grant",
+    "stun",
+    "Stun Surge",
+    "If you have no Mana, Stunning an enemy grants 1 Mana",
+    "PlugZap",
+    setEffect("manaOnStun", 1),
+  ),
+];

@@ -25,6 +25,7 @@ import {
 import { setTestRunSeedOverride } from "@/features/alchemy/shared/stores/run-state-init";
 import { createSeededRng } from "@/lib/rng";
 import { createAlchemyAutosaveLifecycle } from "../autosave-lifecycle";
+import { snapshotBattle, snapshotRunProgress } from "./telemetry";
 
 export function snapshotCareer() {
   return buildAlchemySaveDataFromStores(resolveActiveRunForSave(readHasActiveRun()));
@@ -125,15 +126,36 @@ export async function runCareer(
     timings: { observationMs: 0, actionMs: 0, validationMs: 0, persistenceMs: 0 },
     saveChecks: 0,
     resumeChecks: 0,
-    telemetry: { anomalies, cards: {}, economy: [], battles: [], milestones: {} },
+    telemetry: {
+      anomalies,
+      cards: {},
+      economy: [],
+      runSnapshots: [],
+      battleSnapshots: [],
+      battles: [],
+      milestones: {},
+    },
   };
   let completed = 0;
   let policyDraws = 0;
+  const observedBattleKeys = new Set<string>();
   try {
     for (let step = 0; step < config.maxSteps; step++) {
       setTestRunSeedOverride((config.seed + completed) >>> 0);
       const observationStarted = performance.now();
       const before = stateDigest();
+      const activeBattle = readBattle();
+      if (activeBattle.hasActiveBattle) {
+        const activeRun = readActiveRun();
+        const state = activeBattle.battleState;
+        const battleKey = `${completed}:${activeRun.roomsEncountered}:${state.currentEnemy.id}`;
+        if (!observedBattleKeys.has(battleKey)) {
+          observedBattleKeys.add(battleKey);
+          result.telemetry.battleSnapshots.push(
+            snapshotBattle(step, completed, activeRun.roomsEncountered, "start", state),
+          );
+        }
+      }
       const options = actor.observe();
       if (stateDigest() !== before) throw new Error("Invariant: observation mutated gameplay or RNG");
       if (readBattle().hasActiveBattle) {
@@ -157,6 +179,9 @@ export async function runCareer(
       if (choice.kind === "play") result.telemetry.cards[choice.id]!.chosen++;
       if (choice.kind === "settle") {
         const state = readBattle().battleState;
+        result.telemetry.battleSnapshots.push(
+          snapshotBattle(step, completed, readActiveRun().roomsEncountered, "settle", state),
+        );
         result.telemetry.battles.push({
           enemy: state.currentEnemy.id,
           boss: state.currentEnemy.enemyType === "boss",
@@ -223,6 +248,17 @@ export async function runCareer(
       if (session.rewardFlow.claim.kind !== "idle") throw new Error("Invariant: orphaned reward/destination claim");
       if (readBattle().hasActiveBattle && readBattle().battleState.turn > config.maxTurns)
         throw new Error("Incomplete: battle turn budget exhausted");
+      if (!["play", "wish", "end-turn"].includes(choice.kind))
+        result.telemetry.runSnapshots.push(
+          snapshotRunProgress(
+            step,
+            completed,
+            run,
+            profile.gold,
+            Object.values(profile.materialInventory).reduce((a, b) => a + b, 0),
+            Object.values(profile.unlockedTalents).reduce((sum, ids) => sum + ids.length, 0),
+          ),
+        );
       if (!["play", "wish", "end-turn"].includes(choice.kind))
         result.telemetry.economy.push({
           step,

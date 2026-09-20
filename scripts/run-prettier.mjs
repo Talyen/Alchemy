@@ -4,7 +4,7 @@ import { createRequire } from "node:module";
 import { PRETTIER_GLOBS, filterPrettierPaths } from "./prettier-paths.mjs";
 import { parseKnownFlags } from "./lib/cli-args.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
-import { runStreamCommand } from "./lib/run-command.mjs";
+import { runTaskCommand } from "./lib/run-command.mjs";
 import { UsageError } from "./lib/script-run.mjs";
 
 const require = createRequire(import.meta.url);
@@ -22,17 +22,19 @@ export function resolvePrettierTargets(argv = process.argv.slice(2)) {
   return { mode, targets };
 }
 
-export function runPrettier(argv = process.argv.slice(2)) {
+export async function runPrettier(argv = process.argv.slice(2)) {
   const { mode, targets } = resolvePrettierTargets(argv);
   if (targets.length === 0) return 0;
-  // Streams intentionally: formatting output is the user-facing result.
-  const result = runStreamCommand(process.execPath, [prettierCli, mode, ...targets]);
+  const result = await runTaskCommand(process.execPath, [prettierCli, mode, ...targets], {
+    label: `Prettier ${mode}`,
+    live: process.env.ALCHEMY_OUTPUT_CAPTURED === "1",
+  });
   return result.status ?? 1;
 }
 
 if (isMainModule(import.meta.url)) {
   try {
-    process.exitCode = runPrettier();
+    process.exitCode = await runPrettier();
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = error instanceof UsageError ? 2 : 1;

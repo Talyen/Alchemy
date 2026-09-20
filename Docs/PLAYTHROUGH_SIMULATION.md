@@ -17,9 +17,14 @@ npm run balance:playthrough:compare -- --manifest reports/baseline/playthrough.j
 npm run test:playthrough
 ```
 
-`--out` defaults to `reports/playthrough`. The directory contains the JSON report,
-interactive HTML details, individual career bundles, initial checkpoints, and
-append-only attempted/completed action journals. `--save` accepts a shipping save;
+`--out` defaults to `reports/playthrough`. The directory contains the agent-facing
+`reports/playthrough/agent-summary.json` and `reports/playthrough/agent-summary.md`, the detailed JSON report, interactive
+HTML details, individual career bundles, initial checkpoints, and append-only
+attempted/completed action journals. Agents should read the summary first: it
+contains actionable observations, supporting aggregate evidence, confidence and
+limitations, recommended next experiments, and bounded selectors for retrieving
+raw evidence. The journals and full career JSON remain forensic artifacts rather
+than routine report output. `--save` accepts a shipping save;
 `--manifest` reruns the exact configuration list in a prior report. Comparison
 accepts a previously generated report, rather than checking out a Git revision.
 Run that baseline in the desired checkout first. This keeps checkout management
@@ -44,6 +49,10 @@ battle scoring owners. Combat policy remains explicit even with a random
 non-combat policy. Policy randomness and injected crafting randomness have
 separate seeded streams. Scoring cannot advance gameplay RNG. Wish selection
 uses visible offered cards and keyword/effective-damage preferences.
+The archetype policy combines hero keyword affinity with current-deck keyword
+cohesion and lightweight immediate utility. Heroes with no fixed keywords, such
+as Wildcard, use the deck-conditioned fallback without receiving an authored
+starting deck or keyword catalog.
 
 ## Evidence and limits
 
@@ -76,7 +85,11 @@ than discarding reproduction history. Save snapshots and journals contain game
 state; use the bundle matching the source revision for exact reproduction.
 
 JSON and HTML share career outcomes, reached choice counts, economy samples,
-combat records and maxima, and first reached spending milestones. Observed-card
+combat records and maxima, bounded run/deck keyword snapshots, battle-start and
+pre-settlement state snapshots, and first reached spending milestones. The
+agent-facing summary also reports first-victory timing, run-by-run victory rates,
+hero variance when multiple cohorts are supplied, and deck/archetype cohesion.
+Observed-card
 and playable-card counters count **decision opportunities**, not distinct draws.
 Exact draw and passive-item-trigger telemetry are intentionally not claimed:
 those require an engine-owned event stream before they can be measured reliably.

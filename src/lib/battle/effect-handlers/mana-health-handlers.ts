@@ -1,3 +1,4 @@
+import type { EffectHandler } from "./handler-types";
 import { isPotionCard } from "@/lib/game-data";
 import { applyCardHealing, checkHealthThresholds } from "../status-player";
 import { applyPotionMultiplier } from "../amount-helpers";
@@ -125,3 +126,12 @@ export const applyLoseHealthEffect = defineHandler("lose-health", (state, _card,
   const damaged = dealSelfDamage(state, effect.amount, "health", combatTexts).state;
   return checkHealthThresholds(state.playerHealth, damaged.playerHealth, damaged, combatTexts);
 });
+
+export const MANA_HEALTH_HANDLERS = {
+  heal: applyHealEffect,
+  "restore-mana": applyRestoreManaEffect,
+  "lose-mana": applyLoseManaEffect,
+  "lose-max-mana": applyLoseMaxManaEffect,
+  "gain-max-mana": applyGainMaxManaEffect,
+  "lose-health": applyLoseHealthEffect,
+} satisfies Partial<Record<import("@/lib/game-data").BattleCardEffectKind, EffectHandler>>;

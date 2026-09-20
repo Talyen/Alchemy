@@ -162,7 +162,7 @@ describe("Trinket description parity", () => {
 const TRINKET_EFFECT_CONSUMERS: Record<keyof TrinketManifest, string> = {
   extraDrawPerBattle: "battle-setup.ts (cards per turn)",
   brassCenserProcChance: "player-typed-hit.ts",
-  firstBurnDoubled: "damage-calc.ts",
+  firstBurnDoubled: "player-damage-bonuses.ts",
   boneCharmHealOnKill: "combat-text.ts (kill rewards)",
   forgeStunThreshold: "damage-riders.ts",
   forgeStunAmount: "damage-riders.ts",
@@ -170,7 +170,7 @@ const TRINKET_EFFECT_CONSUMERS: Record<keyof TrinketManifest, string> = {
   ironwoodBucklerThornsOnBlock: "types/state-helpers.ts (block gain)",
   runicQuillDrawOnConsume: "card-play.ts",
   sinEaterHealOnHarmfulStatusRemove: "status-player.ts",
-  vanguardCrestForgeOnBlockAbsorb: "enemy-attack-damage.ts",
+  vanguardCrestForgeOnBlockAbsorb: "player-defensive-reactions.ts",
   parasiticBloomLeechChance: "damage-status-riders.ts",
   cutpurseGoldOnBleed: "damage-status-riders.ts",
   wishingWellGoldOnWish: "wish.ts",

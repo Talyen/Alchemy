@@ -168,6 +168,39 @@ describe("agent discovery", () => {
     expect(unknown.docs.some((doc) => doc.heading?.startsWith("Directory layout"))).toBe(true);
   });
 
+  it("routes constants by concern and retains fallback and mixed save guidance", () => {
+    for (const [file, task, heading] of [
+      ["audio", "audio", null],
+      ["ui-layout", "ui-layout", "Display sizing"],
+      ["ui-motion", "ui-motion", "Screen fade motion"],
+      ["battle-timing", "ui-motion", "Battle motion"],
+      ["storage", "save", "Public save contract"],
+      ["run-rewards", "loot", "Loot tuning"],
+      ["materials-economy", "materials", "Materials tuning"],
+      ["combat-rules", "battle", "Engine invariants"],
+    ] as const) {
+      const paths = [`src/lib/game-constants/${file}.ts`];
+      const selected = selectContext(paths);
+      expect(selected.tasks).toContain(task);
+      expect(selected.docs.some((doc) => doc.heading === heading)).toBe(true);
+      if (task !== "battle") expect(selected.tasks).not.toContain("battle");
+      expect(selected.plan).toEqual(resolveRoutePlan(paths));
+    }
+    const unknown = selectContext(["src/lib/game-constants/future-setting.ts"]);
+    expect(unknown.docs.some((doc) => doc.heading?.startsWith("Directory layout"))).toBe(true);
+    const mixed = selectContext(["src/lib/game-constants/ui-layout.ts", "src/features/alchemy/shared/storage/io.ts"]);
+    expect(mixed.docs.some((doc) => doc.heading === "Public save contract")).toBe(true);
+    expect(mixed.plan.commands.map((command) => command.key)).toContain("unit-save");
+    const battle = selectContext(["src/lib/battle/damage-calc.ts"]);
+    const text = renderContext(battle, contextSections(process.cwd(), battle)).text;
+    expect(text).not.toContain("Screen transition:");
+    expect(text).toContain("BATTLE_CONTROLLERS.md");
+    const controller = selectContext(["src/features/alchemy/shell/use-battle-controller.ts"]);
+    expect(controller.tasks).toContain("battle-controller");
+    const affix = selectContext(["src/lib/gear/ordinary-affixes.ts"]);
+    expect(renderContext(affix, contextSections(process.cwd(), affix)).text).not.toContain("Depth counts locations");
+  });
+
   it("routes battle and save work without suppressing safety owners", () => {
     const selection = selectContext(["src/features/alchemy/shared/storage/io.ts"], "battle");
     expect(selection.tasks).toEqual(expect.arrayContaining(["battle", "save"]));

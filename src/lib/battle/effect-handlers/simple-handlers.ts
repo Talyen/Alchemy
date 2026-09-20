@@ -80,7 +80,7 @@ const FLAG_EFFECTS = {
   keyof BattleState["flags"]
 >;
 
-export type FlagEffectKind = keyof typeof FLAG_EFFECTS;
+type FlagEffectKind = keyof typeof FLAG_EFFECTS;
 
 function makeFlagHandler<K extends FlagEffectKind>(kind: K): ReturnType<typeof defineHandler<K>> {
   const flag = FLAG_EFFECTS[kind];
@@ -90,7 +90,7 @@ function makeFlagHandler<K extends FlagEffectKind>(kind: K): ReturnType<typeof d
   });
 }
 
-export const FLAG_HANDLERS: Record<FlagEffectKind, EffectHandler> = {
+const FLAG_HANDLERS: Record<FlagEffectKind, EffectHandler> = {
   "next-hit-crit": makeFlagHandler("next-hit-crit"),
   "next-hit-leech": makeFlagHandler("next-hit-leech"),
   "play-next-card-twice": makeFlagHandler("play-next-card-twice"),
@@ -104,3 +104,13 @@ export const applyNextHitLeechEffect = FLAG_HANDLERS["next-hit-leech"];
 export const applyPlayNextCardTwiceEffect = FLAG_HANDLERS["play-next-card-twice"];
 export const applyNextHitPoisonEffect = FLAG_HANDLERS["next-hit-poison"];
 export const applyNextArcheryFreeEffect = FLAG_HANDLERS["next-archery-free"];
+
+export const SIMPLE_HANDLERS = {
+  "gain-gold": applyGainGoldEffect,
+  wish: applyWishEffectHandler,
+  "summon-companion": applySummonCompanionEffect,
+  "buff-companion": applyBuffCompanionEffect,
+  "random-draw": applyRandomDrawEffect,
+  "draw-cards": applyDrawCardsEffect,
+  ...FLAG_HANDLERS,
+} satisfies Partial<Record<import("@/lib/game-data").BattleCardEffectKind, EffectHandler>>;

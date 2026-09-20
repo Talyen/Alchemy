@@ -1,12 +1,14 @@
+import { addGoldWithCombatText } from "@/lib/battle/combat-text";
+import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { describe, expect, it } from "vitest";
-import { patchBattleState } from "../../fixtures/battle";
+import { dealDamage, makeEffect, makeTestCard, patchBattleState } from "../../fixtures/battle";
 import {
-  defaultPlayerStatusValues,
   defaultEnemyStatusValues,
+  defaultPlayerStatusValues,
   defaultTalentEffects,
   defaultTrinketManifest,
 } from "../../fixtures/default-battle-state";
-import { dealDamage, makeEffect, makeTestCard } from "../../fixtures/battle";
+import * as uniqueGearBattle from "../../fixtures/unique-gear-battle";
 
 describe("computeBaseDamage — forge bonus", () => {
   it("adds forge bonus to physical damage", () => {
@@ -119,5 +121,74 @@ describe("consumeForgeAfterDamage", () => {
     const card = makeTestCard({ effects: [makeEffect("holy", 5)] });
     const result = dealDamage(state, card);
     expect(result.playerStatuses.forge).toBe(3);
+  });
+});
+
+describe("Unique Gear damage forge", () => {
+  const { battle, attack, play } = uniqueGearBattle;
+
+  it("Oathkeeper strengthens Holy damage without spending Forge", () => {
+    const result = play(
+      battle({ gearEffects: { holyPreservesForge: 1 }, playerStatuses: { forge: 5 } }),
+      attack("holy"),
+    );
+    expect(result.enemyHealth).toBe(985);
+    expect(result.playerStatuses.forge).toBe(5);
+  });
+
+  it("Patient Edge restores only Forge spent on attacks, once per turn", () => {
+    const state = play(
+      battle({ gearEffects: { recoverSpentForge: 1 }, playerStatuses: { forge: 5 } }),
+      attack("physical"),
+    );
+    expect(state.playerStatuses.forge).toBe(4);
+    expect(state.uniqueGear.spentForge).toBe(1);
+    const restored = advanceToPlayerTurn(state);
+    expect(restored.playerStatuses.forge).toBe(5);
+    expect(restored.uniqueGear.spentForge).toBe(0);
+    expect(advanceToPlayerTurn(restored).playerStatuses.forge).toBe(5);
+  });
+
+  it("Patient Edge recovery triggers crossed Forge thresholds without multiplying the recovered amount", () => {
+    const initial = battle({
+      gearEffects: { recoverSpentForge: 1 },
+      playerStatuses: { forge: 5 },
+      enemyMitigation: { armor: 4 },
+      uniqueGear: { spentForge: 1 },
+      talentEffects: { flatForgeGained: 3, forgeStripArmorThreshold: 6, forgeBlockThreshold: 6, forgeBlockAmount: 10 },
+    });
+    const restored = advanceToPlayerTurn(initial);
+    expect(restored.playerStatuses.forge).toBe(6);
+    expect(restored.enemyMitigation.armor).toBe(0);
+    expect(restored.playerStatuses.block).toBe(10);
+    expect(restored.uniqueGear.spentForge).toBe(0);
+    expect(advanceToPlayerTurn(restored).playerStatuses.block).toBe(5);
+  });
+
+  it("Golden Crucible grants actual Gold as Forge, spends no Gold, and strengthens Holy", () => {
+    const earned = addGoldWithCombatText(
+      battle({ gold: 50, gearEffects: { goldGrantsForgeAndHoly: 1, goldGainPercent: 20 } }),
+      5,
+    );
+    expect(earned.gold).toBe(56);
+    expect(earned.playerStatuses.forge).toBe(6);
+    const result = play(earned, attack("holy"));
+    expect(result.enemyHealth).toBe(984);
+    expect(result.playerStatuses.forge).toBe(5);
+    expect(result.gold).toBe(56);
+  });
+
+  it("Golden Verdict feeds Golden Crucible while Oathkeeper preserves the resulting Forge", () => {
+    const result = play(
+      battle({
+        gold: 25,
+        enemyStatuses: { stun: 495 },
+        gearEffects: { holyStunBuildupGold: 1, goldGrantsForgeAndHoly: 1, holyPreservesForge: 1 },
+      }),
+      attack("holy"),
+    );
+    expect(result.gold).toBe(26);
+    expect(result.playerStatuses.forge).toBe(1);
+    expect(result.enemyCC.stunSkipTurns).toBeGreaterThan(0);
   });
 });

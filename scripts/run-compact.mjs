@@ -2,7 +2,7 @@
 import path from "node:path";
 import { createRunId } from "./lib/current-run.mjs";
 import { failureSummary, completionCounts } from "./lib/compact-output.mjs";
-import { runCommandAsync } from "./lib/run-command.mjs";
+import { runCommandAsync, runStreamCommand } from "./lib/run-command.mjs";
 import { defineScript, UsageError } from "./lib/script-run.mjs";
 
 export { completionCounts };
@@ -19,6 +19,14 @@ export async function runCompact(argv, rootDir = ROOT) {
   }
   const [command, ...args] = argv;
   if (!command || command.startsWith("--")) throw new UsageError(USAGE);
+  // The outer gate already owns full logs and diagnostics. Interactive flags
+  // retain their normal terminal behavior even through a one-shot npm entry.
+  if (
+    process.env.ALCHEMY_OUTPUT_CAPTURED === "1" ||
+    args.some((arg) => ["--watch", "-w", "--ui", "--debug"].includes(arg))
+  ) {
+    return runStreamCommand(command, args, { cwd: rootDir }).status ?? 1;
+  }
   const logPath = path.join(rootDir, "reports", "compact", createRunId("compact"), "output.log");
   console.log(`Running ${path.basename(command)}; full log: ${path.relative(rootDir, logPath)}`);
   const result = await runCommandAsync(command, args, { cwd: rootDir, logPath });

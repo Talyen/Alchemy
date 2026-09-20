@@ -1,3 +1,4 @@
+import type { EffectHandler } from "./handler-types";
 import { applyPotionMultiplier } from "../amount-helpers";
 import { addEnemyStatus, setPlayerStatus, type BattleState, type CombatTextEvent } from "../types";
 import { mergeCombatText } from "../combat-text";
@@ -114,3 +115,12 @@ export const applyCleansePlayerStatusToDamageEffect = defineHandler(
     );
   },
 );
+
+export const STATUS_HANDLERS = {
+  "player-status": applyPlayerStatusEffectHandler,
+  "enemy-status": applyEnemyStatusEffect,
+  "remove-harmful-status": applyRemoveHarmfulStatusEffect,
+  "remove-player-status": applyRemovePlayerStatusEffect,
+  "multiply-enemy-status": applyMultiplyEnemyStatusEffect,
+  "cleanse-player-status-to-damage": applyCleansePlayerStatusToDamageEffect,
+} satisfies Partial<Record<import("@/lib/game-data").BattleCardEffectKind, EffectHandler>>;

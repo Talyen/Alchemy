@@ -57,7 +57,10 @@ Opportunities last until used or battle end unless the item says otherwise. Cost
 [Catalog tests](../tests/lib/gear/unique-catalog.test.ts) cover base-item coverage,
 exclusive signatures, fixed rolls, inventory repair, and independent generated
 instances. [Unique-effect tests](../tests/lib/battle/unique-effects.test.ts) and
-[collection interaction tests](../tests/lib/battle/unique-collection.test.ts)
+[damage bonus tests](../tests/lib/battle/unique-damage-bonuses.test.ts),
+[card repeat tests](../tests/lib/battle/unique-card-repeats.test.ts),
+[card opportunity tests](../tests/lib/battle/unique-card-opportunities.test.ts),
+and [combat persistence tests](../tests/lib/battle/battle-effect-persistence.test.ts)
 cover triggers, costs, damage repeats, delayed effects, resource preservation,
 Dodge, saves, and interactions. [Content audit](../src/lib/content-validation/validators-gear.ts)
 enforces the same catalog invariants outside vitest (one Unique per base,

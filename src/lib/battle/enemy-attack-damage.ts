@@ -1,22 +1,13 @@
 import type { EnemyAttackEffect } from "@/lib/game-data";
-import { BATTLE_CONFIG, HALF_DIVISOR, LABYRINTH_MODIFIER_CONFIG, PERCENT_DENOMINATOR } from "../game-constants";
+import { HALF_DIVISOR, LABYRINTH_MODIFIER_CONFIG, PERCENT_DENOMINATOR } from "../game-constants";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
-import { applyEnemyHealingWithCombatText, applyHealingWithCombatText, mergeCombatText } from "./combat-text";
-import { computeCardDamageToEnemy, REFLECTED_HOLY_CARD } from "./damage-calc";
+import { applyEnemyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { computeLeechHeal } from "./damage-rider-leech";
-import { applyDamageRiders, reflectBlockedAttackAsHoly } from "./damage-riders";
 import { isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-traits";
 import { paceCombatDamage } from "./fight-pacing";
-import { dealPlayerTypedHit } from "./player-typed-hit";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
-import { armorMitigatesElementalDamage, decayArmorAfterDamage } from "./status-helpers";
-import {
-  addForgeToPlayer,
-  applyForgeThresholdRewards,
-  applyPlayerDamageStatuses,
-  checkHealthThresholds,
-  shouldBlockPreventStatusBuildup,
-} from "./status-player";
+import { armorMitigatesElementalDamage } from "./status-helpers";
+import { applyForgeThresholdRewards } from "./status-player";
 import {
   applyPlayerCombatDamage,
   isPlayerDefeated,
@@ -24,9 +15,10 @@ import {
   scaleReceivedPlayerDamage,
   type BattleState,
   type CombatTextEvent,
-  type CombatTextStat,
 } from "./types";
 import { getEnemyTraitSet, hasEnemyTrait } from "./types/state-helpers";
+
+import { applyBlockedAttackRetaliation, applyPlayerDefensiveReactions } from "./player-defensive-reactions";
 
 function applyPhysicalForgeBonus(state: BattleState, effect: EnemyAttackEffect & { kind: "damage" }) {
   if (effect.damageType !== "physical") return effect.amount;
@@ -154,46 +146,6 @@ function calculateBlockAndArmorMitigation(
   return { remainingDamage, blockAbsorb, blockSpent, totalExtraBlock, actualDamage };
 }
 
-function applyVanguardCrestAfterBlock(
-  state: BattleState,
-  blockAbsorb: number,
-  remainingDamage: number,
-  combatTexts: CombatTextEvent[],
-): BattleState {
-  if (state.trinketEffects.vanguardCrestForgeOnBlockAbsorb <= 0 || blockAbsorb <= 0 || remainingDamage !== 0) {
-    return state;
-  }
-  return addForgeToPlayer(state, state.trinketEffects.vanguardCrestForgeOnBlockAbsorb, combatTexts);
-}
-
-function applyEnemyForgeDecayOnHit(state: BattleState, actualDamage: number, damageType: string): BattleState {
-  if (hasEnemyTrait(state, "whitehot")) return state;
-  if (actualDamage <= 0 || damageType !== "physical" || state.enemyMitigation.forge <= 0) return state;
-  return {
-    ...state,
-    enemyMitigation: {
-      ...state.enemyMitigation,
-      forge: Math.max(0, state.enemyMitigation.forge - BATTLE_CONFIG.FORGE_DECAY_AMOUNT),
-    },
-  };
-}
-
-function resolvePostDamageThresholds(
-  state: BattleState,
-  prevHealth: number,
-  blockAbsorb: number,
-  remainingDamage: number,
-  actualDamage: number,
-  damageType: string,
-  combatTexts: CombatTextEvent[],
-): BattleState {
-  let nextState = applyVanguardCrestAfterBlock(state, blockAbsorb, remainingDamage, combatTexts);
-  nextState = checkHealthThresholds(prevHealth, nextState.playerHealth, nextState, combatTexts);
-  nextState = decayArmorAfterDamage(nextState, actualDamage, "player", combatTexts);
-  nextState = applyEnemyForgeDecayOnHit(nextState, actualDamage, damageType);
-  return nextState;
-}
-
 export function applyEnemyLeechHealing(
   state: BattleState,
   actualDamage: number,
@@ -204,62 +156,6 @@ export function applyEnemyLeechHealing(
   const healAmount = computeLeechHeal(actualDamage);
   if (healAmount <= 0) return state;
   return applyEnemyHealingWithCombatText(state, healAmount, combatTexts, { skipFightPacing: true });
-}
-
-function recordPlayerHealthLost(
-  prevHealth: number,
-  nextState: BattleState,
-  damageType: CombatTextStat,
-  combatTexts: CombatTextEvent[],
-) {
-  const healthLost = prevHealth - nextState.playerHealth;
-  if (healthLost > 0) {
-    const stat = damageType === "physical" ? "health" : damageType;
-    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat, amount: healthLost });
-  }
-}
-
-function applyBlockDepletedHeal(
-  prevState: BattleState,
-  nextState: BattleState,
-  combatTexts: CombatTextEvent[],
-  isBlockDepleted: boolean,
-): BattleState {
-  let finalState = nextState;
-  const healAmount = prevState.talentEffects.blockDepletedHeal + prevState.gearEffects.blockDepletedHeal;
-
-  if (isBlockDepleted && healAmount > 0) {
-    finalState = applyHealingWithCombatText(finalState, healAmount, combatTexts);
-  }
-
-  if (isBlockDepleted && prevState.gearEffects.stunOnBlockDepleted > 0 && finalState.enemyHealth > 0) {
-    finalState = dealPlayerTypedHit(finalState, "stun", prevState.gearEffects.stunOnBlockDepleted, combatTexts);
-  }
-
-  if (isBlockDepleted && prevState.gearEffects.saintfallRetribution > 0 && finalState.enemyHealth > 0) {
-    finalState = dealPlayerTypedHit(finalState, "holy", prevState.gearEffects.saintfallRetribution, combatTexts);
-    finalState = applyHealingWithCombatText(finalState, prevState.gearEffects.saintfallRetribution, combatTexts);
-  }
-
-  return finalState;
-}
-
-function applyBlockedAttackRetaliation(
-  state: BattleState,
-  blockLost: number,
-  combatTexts: CombatTextEvent[],
-  blockDepleted: boolean,
-): BattleState {
-  if (state.enemyHealth <= 0 || state.playerHealth <= 0) return state;
-  if (state.talentEffects.holyReflectionBlockLostPercent > 0) {
-    return blockDepleted ? reflectBlockedAttackAsHoly(state, blockLost, combatTexts) : state;
-  }
-  const amount = state.talentEffects.holyOnAttackBlocked;
-  if (amount <= 0 || state.enemyHealth <= 0 || state.playerHealth <= 0) return state;
-  const card = REFLECTED_HOLY_CARD;
-  const effect = { kind: "damage" as const, damageType: "holy" as const, amount };
-  const { nextState, modifiedDamage } = computeCardDamageToEnemy(state, effect, card);
-  return applyDamageRiders(nextState, card, effect, modifiedDamage, combatTexts);
 }
 
 export interface EnemyDamageResult {
@@ -325,50 +221,6 @@ function applyEnemyHealthHit(
   };
 
   return { state: nextState, facts: { before: state, mitigation, blockLost, outcome } };
-}
-
-function applyPlayerDefensiveReactions(
-  nextState: BattleState,
-  effect: EnemyAttackEffect & { kind: "damage" },
-  facts: EnemyHitFacts,
-  combatTexts: CombatTextEvent[],
-): BattleState {
-  const {
-    before: state,
-    mitigation: { blockAbsorb, remainingDamage, actualDamage },
-    blockLost,
-  } = facts;
-  const prevHealth = state.playerHealth;
-  if (blockAbsorb > 0 && state.gearEffects.blockReadiesFreePhysical > 0) {
-    nextState = { ...nextState, uniqueGear: { ...nextState.uniqueGear, knightsAnswerReady: true } };
-  }
-  recordPlayerHealthLost(prevHealth, nextState, effect.damageType, combatTexts);
-
-  if (
-    nextState.enemyHealth > 0 &&
-    nextState.playerHealth > 0 &&
-    !shouldBlockPreventStatusBuildup(state, effect.damageType)
-  ) {
-    nextState = applyPlayerDamageStatuses(nextState, effect, actualDamage);
-  }
-
-  nextState = resolvePostDamageThresholds(
-    nextState,
-    prevHealth,
-    blockAbsorb,
-    remainingDamage,
-    actualDamage,
-    effect.damageType,
-    combatTexts,
-  );
-  nextState = applyBlockDepletedHeal(
-    state,
-    nextState,
-    combatTexts,
-    blockLost > 0 && blockLost === state.playerStatuses.block,
-  );
-
-  return nextState;
 }
 
 function applyEnemyHitLeech(

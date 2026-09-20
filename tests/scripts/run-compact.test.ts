@@ -1,12 +1,15 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { runCommand } from "../../scripts/lib/run-command.mjs";
 import { completionCounts, runCompact } from "../../scripts/run-compact.mjs";
 
 const roots: string[] = [];
+beforeEach(() => vi.stubEnv("ALCHEMY_OUTPUT_CAPTURED", undefined));
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
   for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
 });
 
@@ -47,4 +50,32 @@ it("prints known counts and handles successful, missing and invalid commands", a
   expect(await runCompact([process.execPath, "-e", 'console.log("Tests  2 passed (2)")'], root)).toBe(0);
   expect(await runCompact([path.join(root, "missing-command")], root)).toBe(1);
   await expect(runCompact([], root)).rejects.toThrow("Usage");
+});
+
+it("lets an outer capture retain raw diagnostics without nesting compact logs", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "compact-nested-"));
+  roots.push(root);
+  vi.stubEnv("ALCHEMY_COMPACT_PARENT_ONLY", "parent");
+  const env = { ...process.env };
+  delete env.ALCHEMY_COMPACT_PARENT_ONLY;
+  const runner = path.resolve("scripts/run-compact.mjs");
+  const output = runCommand(
+    process.execPath,
+    [
+      runner,
+      process.execPath,
+      "-e",
+      'console.error("raw diagnostic"); console.log(process.env.ALCHEMY_COMPACT_PARENT_ONLY ?? "isolated"); process.exit(7)',
+    ],
+    {
+      cwd: root,
+      logPath: path.join(root, "outer.log"),
+      env,
+    },
+  );
+  expect(output.status).toBe(7);
+  expect(output.output).toContain("raw diagnostic");
+  expect(output.output).toContain("isolated");
+  expect(output.output).not.toContain("Full log:");
+  expect(fs.existsSync(path.join(root, "reports"))).toBe(false);
 });

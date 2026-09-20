@@ -206,16 +206,29 @@ defineScript(import.meta.url, async () => {
     const { renderPlaythroughReport, comparePlaythroughReports } = await server.ssrLoadModule(
       "/src/app/playthrough/report.ts",
     );
+    const { buildAgentPlaythroughSummary, renderAgentPlaythroughSummaryMarkdown } = await server.ssrLoadModule(
+      "/src/app/playthrough/agent-report.ts",
+    );
     const { summarizeProgress } = await server.ssrLoadModule("/src/app/playthrough/progress-telemetry.ts");
     const fullResults = results.filter((result) => result.telemetry !== undefined);
     report.progress = summarizeProgress(fullResults);
+    const agentSummary = buildAgentPlaythroughSummary(results, {
+      planned: report.planned,
+      codeIdentity,
+      workerFailures: results
+        .filter((result) => !result.telemetry)
+        .map((result) => result.error ?? "Unknown worker failure"),
+    });
     writeFileSync(resolve(reportDir, "playthrough.json"), JSON.stringify(report, null, 2));
+    writeFileSync(resolve(reportDir, "agent-summary.json"), JSON.stringify(agentSummary, null, 2));
+    writeFileSync(resolve(reportDir, "agent-summary.md"), renderAgentPlaythroughSummaryMarkdown(agentSummary));
     writeFileSync(
       resolve(reportDir, "playthrough.html"),
       renderPlaythroughReport(
         fullResults,
         report.planned,
         results.filter((result) => !result.telemetry).map((result) => result.error),
+        agentSummary,
       ),
     );
     if (arg("baseline", null)) {
@@ -226,7 +239,9 @@ defineScript(import.meta.url, async () => {
       );
     }
   });
-  console.info(`Careers: ${report.completed}/${report.planned} completed. Report: ${reportDir}`);
+  console.info(
+    `Careers: ${report.completed}/${report.planned} completed. Agent summary: ${resolve(reportDir, "agent-summary.md")}. Report: ${reportDir}`,
+  );
   if (results.some((result) => (bundle ? !result.replay?.matched : result.status !== "completed"))) {
     console.error(
       results

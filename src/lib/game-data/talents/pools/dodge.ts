@@ -1,0 +1,78 @@
+import { talent } from "../talent-builder";
+import { addEffect, setEffect } from "../types";
+
+export const dodgeTalents = [
+  talent("dodge-lightfoot", "dodge", "Lightfoot", "+5% Dodge chance", "Feather", addEffect("dodgeChance", 5)),
+  talent(
+    "dodge-catch-breath",
+    "dodge",
+    "Catch Breath",
+    "Restore 1 Health when you Dodge",
+    "HeartPulse",
+    addEffect("healOnDodge", 1),
+  ),
+  talent(
+    "dodge-feint",
+    "dodge",
+    "Feint",
+    "When you Dodge, you have a 25% chance to gain 2 Forge",
+    "Anvil",
+    addEffect("forgeOnDodge", 2),
+  ),
+  talent(
+    "dodge-thornstep",
+    "dodge",
+    "Thornstep",
+    "Gain 1 Thorns when you Dodge",
+    "Leaf",
+    addEffect("thornsOnDodge", 1),
+  ),
+  talent(
+    "dodge-clean-getaway",
+    "dodge",
+    "Clean Getaway",
+    "When you Dodge, remove 1 stack each of Burn, Poison, and Bleed from yourself",
+    "Eraser",
+    addEffect("cleanseStacksOnDodge", 1),
+  ),
+  talent(
+    "dodge-open-flank",
+    "dodge",
+    "Open Flank",
+    "When you Dodge, your next attack deals 2 additional Physical damage",
+    "Swords",
+    addEffect("nextAttackPhysicalOnDodge", 2),
+  ),
+  talent(
+    "dodge-unburdened",
+    "dodge",
+    "Unburdened",
+    "When you Dodge, cleanse your Stun and Freeze buildup",
+    "ShieldOff",
+    setEffect("cleanseCcOnDodge", true),
+  ),
+  talent(
+    "dodge-rolling-recovery",
+    "dodge",
+    "Tailwind",
+    "When you Dodge, draw a card",
+    "ShieldHalf",
+    setEffect("drawOnDodge", 1),
+  ),
+  talent(
+    "dodge-finding-rhythm",
+    "dodge",
+    "Finding Rhythm",
+    "Taking damage increases your Dodge chance by 5%, resetting when you Dodge",
+    "Activity",
+    addEffect("dodgeChanceOnHostileDamage", 5),
+  ),
+  talent(
+    "dodge-perfect-timing",
+    "dodge",
+    "Perfect Timing",
+    "When you Dodge without Armor, gain 2 Armor",
+    "Shield",
+    addEffect("armorOnDodge", 2),
+  ),
+];

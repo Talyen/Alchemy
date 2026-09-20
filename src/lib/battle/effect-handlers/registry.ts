@@ -10,37 +10,10 @@ import { getBattleRng, rollChance } from "@/lib/rng";
 import { logError } from "../../error-logger";
 import type { CardEffectResolutionContext, EffectHandler } from "./handler-types";
 import { defineHandler } from "./handler-types";
-import {
-  applyDamageEffect,
-  applySelfDamageEffect,
-  applyRandomDamageEffect,
-  applyRemoveEnemyArmorEffect,
-} from "./damage-handlers";
-import {
-  applyPlayerStatusEffectHandler,
-  applyEnemyStatusEffect,
-  applyRemoveHarmfulStatusEffect,
-  applyRemovePlayerStatusEffect,
-  applyMultiplyEnemyStatusEffect,
-  applyCleansePlayerStatusToDamageEffect,
-} from "./status-handlers";
-import {
-  applyRestoreManaEffect,
-  applyLoseManaEffect,
-  applyGainMaxManaEffect,
-  applyLoseMaxManaEffect,
-  applyHealEffect,
-  applyLoseHealthEffect,
-} from "./mana-health-handlers";
-import {
-  applySummonCompanionEffect,
-  applyBuffCompanionEffect,
-  FLAG_HANDLERS,
-  applyRandomDrawEffect,
-  applyGainGoldEffect,
-  applyWishEffectHandler,
-  applyDrawCardsEffect,
-} from "./simple-handlers";
+import { DAMAGE_HANDLERS } from "./damage-handlers";
+import { STATUS_HANDLERS } from "./status-handlers";
+import { MANA_HEALTH_HANDLERS } from "./mana-health-handlers";
+import { SIMPLE_HANDLERS } from "./simple-handlers";
 
 type RegisteredEffectKind = Exclude<BattleCardEffectKind, "chance" | "repeat-over-turns">;
 
@@ -60,31 +33,24 @@ export const applyCompanionActionEffect = defineHandler(
   },
 );
 
+const handlerGroups = [
+  DAMAGE_HANDLERS,
+  STATUS_HANDLERS,
+  MANA_HEALTH_HANDLERS,
+  SIMPLE_HANDLERS,
+  { "companion-action": applyCompanionActionEffect },
+] as const;
+const registeredKinds = handlerGroups.flatMap((group) => Object.keys(group));
+if (new Set(registeredKinds).size !== registeredKinds.length) {
+  throw new Error("Duplicate card effect handler kind");
+}
+
 export const EFFECT_APPLY_BY_KIND = {
-  damage: applyDamageEffect,
-  "player-status": applyPlayerStatusEffectHandler,
-  "enemy-status": applyEnemyStatusEffect,
-  heal: applyHealEffect,
-  "restore-mana": applyRestoreManaEffect,
-  "lose-mana": applyLoseManaEffect,
-  "lose-max-mana": applyLoseMaxManaEffect,
-  "gain-max-mana": applyGainMaxManaEffect,
-  "gain-gold": applyGainGoldEffect,
-  wish: applyWishEffectHandler,
-  "summon-companion": applySummonCompanionEffect,
-  "remove-harmful-status": applyRemoveHarmfulStatusEffect,
-  "remove-player-status": applyRemovePlayerStatusEffect,
-  "self-damage": applySelfDamageEffect,
-  "buff-companion": applyBuffCompanionEffect,
+  ...DAMAGE_HANDLERS,
+  ...STATUS_HANDLERS,
+  ...MANA_HEALTH_HANDLERS,
+  ...SIMPLE_HANDLERS,
   "companion-action": applyCompanionActionEffect,
-  "random-draw": applyRandomDrawEffect,
-  "lose-health": applyLoseHealthEffect,
-  "draw-cards": applyDrawCardsEffect,
-  "remove-enemy-armor": applyRemoveEnemyArmorEffect,
-  "multiply-enemy-status": applyMultiplyEnemyStatusEffect,
-  "cleanse-player-status-to-damage": applyCleansePlayerStatusToDamageEffect,
-  "random-damage": applyRandomDamageEffect,
-  ...FLAG_HANDLERS,
 } satisfies Record<RegisteredEffectKind, EffectHandler>;
 
 function hasEffectApplyHandler(kind: BattleCardEffectKind): kind is RegisteredEffectKind {

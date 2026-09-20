@@ -11,6 +11,7 @@ Start from these owners:
 
 - `use-armory-controller.ts` — read facade and mutation/HP-sync/save-flush boundary consumed by the route.
 - `armory-screen.tsx` (sibling of `armory/`) — screen composition and interaction wiring.
+- `armory/armory-equipment-panel.tsx` and `armory/armory-picker-panel.tsx` — equipment and inventory presentation, receiving targeting state and callbacks from the screen.
 - `armory/` — picker grids (`ArmoryPagedGrid` owner in `paged-picker-grid.tsx`, slot-filtered via `itemsMatchingSlot` in `armory-screen-actions.ts`), targeting state (`use-armory-targeting-state.ts`, `armory-item-state.ts`), panels, parts, and overlays — presentation only; they receive domain state and commands through props.
 
 Targeting interaction contract: `use-armory-targeting-events.ts` derives its click/context-menu regions from one `ARMORY_TARGETING_SELECTORS` map. Adding an Armory interactive element requires updating that map and keeping the targeting-events matrix test in sync.
@@ -32,19 +33,20 @@ contract and controller seams.
 - Gear slots are `main-hand`, `off-hand`, `body`, `left-accessory`, and `right-accessory`. Both Accessory slots accept Rings or Amulets. The Armory lays these out over `left-accessory | trinket | right-accessory`; the dedicated Trinket slot accepts only permanent Trinkets.
 - **Unique** is a third Gear rarity (alongside basic and astral). Each base item has exactly one named Unique with one exclusive signature and three fixed standard supporting affixes. Supporting rolls always use the standard Unique/Astral maximum from the affix catalog; the signature has its own fixed magnitude. Generation, tooltips, manifests, and saved-item normalization share these canonical affixes, and saved Unique instances store no rolls at all — older saves carrying stored rolls converge on the catalog at load without changing identity, ownership, or Collection discovery. Crafting currencies cannot modify uniques. Unique salvage follows the crafting and homestead salvage definitions. Collection tracks discovered unique definition IDs independently of current inventory, so salvage does not hide an already-found unique.
 - Uniqueness is inventory-scoped: a unique definition is excluded from shops and rewards while any character still holds an instance. Salvaging it returns that definition to the drop pool. Reward and shop screens never offer the same unique twice, and never pair a unique with another item of the same base item.
+
+Presentation follows [UI item shine](./UI.md#item-shine). Pass affix identity and normalized values together so tooltip text and max-roll shine use the same item data.
+
+## Loot tuning
+
 - Random loot uses `src/lib/loot/`: source weights, depth curves, and account multipliers live together in `src/lib/game-constants/run-rewards.ts`, while gear affix-count tuning lives in `src/lib/game-constants/gear.ts` alongside the salvage chances. Combat, Wildwood, equipment shops, and random mystery Gear resolve these weights before choosing rewards. Boons, crafting, and explicitly promised items are separate from permanent-Trinket eligibility.
 - Depth counts locations equally. Campaign includes its opening battle, then destinations across Acts (first boss: depth 9; run cap: depth 25). A pending destination claim counts during initial shop/event generation, keeping depth unchanged when navigation commits that visit. Labyrinth counts cleared non-entrance rooms across floors plus the current pending room — a missing pending node still counts one for the next room — including side rooms and excluding revisits. Wildwood uses its encounter ordinal. `shared/stores/loot-progress.ts` adapts the existing saved state; rewards, follow-ups, and shop refreshes never advance depth.
 - Run depth gates premium items; the highest Campaign difficulty cleared by any hero multiplies eligible premium weights account-wide without stacking heroes or bypassing gates. Astral bonuses transfer Basic weight before depth scaling, account bonuses, available-pool filtering, and normalization. Sources with no Basic weight (notably Boss) are unaffected by the bonus. Source profiles retain their full-depth, no-meta baseline distributions.
 - Reward screens roll one group from summed eligible weights, then roll each Gear choice independently from those same weights. Cards, Trinkets, and Boons stay grouped. Unavailable pools are excluded before sampling and eligibility is recomputed after every Gear choice. An empty premium/Gear-only source uses Basic Gear; cards are the terminal combat fallback when Gear is unavailable. Bosses can therefore award Basic Gear before premium eligibility. Narrow equipment-shop pools may repeat ordinary bases to fill shelves, but never repeat Uniques or pair a Unique with another offering of its base.
 - Newly offered Trinket shops and Astral-guaranteeing events/modifiers respect the same eligibility gates. Labyrinth generation substitutes an equipment shop for an ineligible Trinket shop and uses the minimum reachable room ordinal when assigning Masterwork. Existing maps, saved offers, and explicitly promised Astrals retain their contents; hydration never rerolls or reapplies eligibility. Entering an already-promised Trinket shop initializes its shelf even on an older shallow map; saved shelves remain purchasable, but refreshing is blocked until Trinkets are eligible. Trinket shops draw uniformly from unowned trinkets once eligible: depth gates access but does not weight the shelf, unlike equipment shops. Uniform shelves are the current intent; weight them by depth as a design task if progression demands it.
 
-Presentation follows [UI item shine](./UI.md#item-shine). Pass affix identity and normalized values together so tooltip text and max-roll shine use the same item data.
-
-### Loot tuning
-
 Edit the source weights and progression points in `run-rewards.ts`, then run `npm run balance:loot`. The seeded report in `reports/loot-progression/report.html` compares premium availability per screen and expected offered items along explicit routes for every account tier and fresh/nearly-complete collections. It counts offers, not acquisitions; three Gear choices can expose premium loot more often than a single item roll. Gear offer rates are estimated by rolling rarities directly rather than generating full instances. The report records sampling uncertainty and holds ownership fixed along each comparison route.
 
-### Materials tuning
+## Materials tuning
 
 Homestead material payouts are tuned separately from gear offers; every knob is inventoried in `src/lib/game-constants/materials-economy.ts`. Per-enemy amounts live in the `enemyLootTables` in `src/lib/homestead/material-rewards.ts` (guaranteed loot plus chance-based bonuses that always pay at least their minimum when they hit). Combat victories run the `computeCombatMaterialReward` pipeline there (table, then elite/boss multiplier, then herb-find, then scavenger doubling, then herbalist bonus); mystery grants use `computeMysteryMaterialReward` (herb-find only). That file's policy table is the owner for which modifiers apply to which source. The seeded materials report in `reports/loot-progression/materials.html` (built by the same `npm run balance:loot` command) shows mean base payouts per enemy and enemy type; build-dependent modifiers (herb-find, scavenger, herbalist, end-of-run bonuses) apply afterwards and are not simulated.
 
@@ -84,13 +86,11 @@ Homestead mutation timing remains unchanged.
 
 ## State flow
 
-| Layer       | Owner                                                                                                                                            |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Pure rules  | `src/lib/gear/` — types, definitions, affixes, crafting, generation                                                                              |
-| Aggregate   | `gameplay-state-store` gear region via `gear-store.ts` (selectors + persistence codec) and `gear-session-command.ts` (HP-sync wrapper)           |
-| Screen      | Armory route → `use-armory-controller.ts` → `armory-screen.tsx`                                                                                  |
-| Battle      | `computeGearManifest` → `BattleState.gearEffects`; rebound on live meta mutation                                                                 |
-| Persistence | `subscribeAlchemyPersistence` / `buildAlchemySaveDataFromStores` + immediate `flushSaveAfterGearMutation` (fire-and-forget; autosave owns retry) |
+- **Pure rules** — `src/lib/gear/` — types, definitions, affixes, crafting, generation
+- **Aggregate** — `gameplay-state-store` gear region via `gear-store.ts` (selectors + persistence codec) and `gear-session-command.ts` (HP-sync wrapper)
+- **Screen** — Armory route → `use-armory-controller.ts` → `armory-screen.tsx`
+- **Battle** — `computeGearManifest` → `BattleState.gearEffects`; rebound on live meta mutation
+- **Persistence** — `subscribeAlchemyPersistence` / `buildAlchemySaveDataFromStores` + immediate `flushSaveAfterGearMutation` (fire-and-forget; autosave owns retry)
 
 ### Read paths
 
@@ -105,10 +105,8 @@ Homestead mutation timing remains unchanged.
 
 There is no external `useGearStore` hook. Gear mutations run against a `GearDraftView` of the aggregate state and commit through session commands. Which wrapper to use:
 
-| Situation                                               | Call                                                                |
-| ------------------------------------------------------- | ------------------------------------------------------------------- |
-| Outside a run command (Armory screen, dev spawn)        | `dispatchGearMutationWithRunHealthSync({ mutate, syncRunHealth? })` |
-| Inside an existing command (shop buy, rewards, mystery) | `mutateGearWithRunHealthSync(draft, { mutate, syncRunHealth? })`    |
+- **Outside a run command (Armory screen, dev spawn)** — `dispatchGearMutationWithRunHealthSync({ mutate, syncRunHealth? })`
+- **Inside an existing command (shop buy, rewards, mystery)** — `mutateGearWithRunHealthSync(draft, { mutate, syncRunHealth? })`
 
 After a Gear change, `rebindLiveRunMeta` synchronizes health when a run is active, unless the caller explicitly overrides `syncRunHealth`. Unchanged or rejected mutations do not rebind. `mutate` receives a `GearDraftView` handle and may edit any character's loadout (for example Armory browsing another hero while a run is in progress): `(state) => state.equip(loadoutCharacterId, slot, instance)`.
 
@@ -144,13 +142,11 @@ Effect keys are listed in `GEAR_EFFECT_KEYS` (`src/lib/gear/gear-effect-manifest
 
 Saves are written/read via `buildAlchemySaveDataFromStores` (`src/features/alchemy/shared/storage/persistence.ts`), which assembles the full save snapshot (settings + profile + gear + run-profile fields, plus versions and the active run). Five of those fields are Gear-owned:
 
-| Field                | Notes                                                              |
-| -------------------- | ------------------------------------------------------------------ |
-| `gearInventories`    | `Record<CharacterId, GearInstance[]>` — per-character inventories. |
-| `gearLoadouts`       | `Record<CharacterId, GearLoadout>` — pruned of orphan references.  |
-| `ownedTrinketIds`    | Unique permanent Trinket definition IDs.                           |
-| `equippedTrinkets`   | Per-character equipped Trinket ID, normalized for exclusivity.     |
-| `craftingCurrencies` | `Record<CraftingCurrencyId, number>`.                              |
+- **`gearInventories`** — `Record<CharacterId, GearInstance[]>` — per-character inventories.
+- **`gearLoadouts`** — `Record<CharacterId, GearLoadout>` — pruned of orphan references.
+- **`ownedTrinketIds`** — Unique permanent Trinket definition IDs.
+- **`equippedTrinkets`** — Per-character equipped Trinket ID, normalized for exclusivity.
+- **`craftingCurrencies`** — `Record<CraftingCurrencyId, number>`.
 
 Do not duplicate the current schema number here. [`MIGRATIONS.md`](../src/features/alchemy/shared/storage/MIGRATIONS.md) and `src/lib/validation/metadata.ts` own the supported floor and current version. Gear shape changes follow that migration contract: safe additive fields may use schema defaults, while transforms require a versioned migration.
 
@@ -172,7 +168,9 @@ in `tests/features/alchemy/meta/screens/armory-screen*.test.tsx` and
 `tests/features/alchemy/meta/screens/armory/*.test.ts`; architecture guards in
 `tests/architecture/affix-catalog-guard.test.ts` and
 `gear-affix-pool-guard.test.ts`; Unique battle behavior in
-`tests/lib/battle/unique-effects.test.ts` and `unique-collection.test.ts`.
+`tests/lib/battle/unique-effects.test.ts`, `unique-damage-bonuses.test.ts`,
+`unique-card-repeats.test.ts`, `unique-card-opportunities.test.ts`,
+`enemy-attack-damage.test.ts`, `damage-forge.test.ts`, and `battle-effect-persistence.test.ts`.
 `src/lib/content-validation/validators-gear.ts` mirrors the catalog guards so
 `npm run content:audit` enforces the same invariants outside vitest. Use
 CONTRIBUTING's [changed-path gate](../CONTRIBUTING.md#what-to-run-when-you-change) and

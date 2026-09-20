@@ -1,3 +1,4 @@
+import type { EffectHandler } from "./handler-types";
 import { resolveConditionalCardDamage } from "../conditional-card-damage";
 import { mergeCombatText } from "../combat-text";
 import { setPlayerStatus } from "../types";
@@ -81,3 +82,10 @@ export const applyRemoveEnemyArmorEffect = defineHandler(
     return next;
   },
 );
+
+export const DAMAGE_HANDLERS = {
+  damage: applyDamageEffect,
+  "self-damage": applySelfDamageEffect,
+  "remove-enemy-armor": applyRemoveEnemyArmorEffect,
+  "random-damage": applyRandomDamageEffect,
+} satisfies Partial<Record<import("@/lib/game-data").BattleCardEffectKind, EffectHandler>>;

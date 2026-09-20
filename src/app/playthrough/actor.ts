@@ -30,7 +30,6 @@ import {
 import { getRewardChoiceId } from "@/lib/active-run-session";
 import {
   characters,
-  getCardKeywords,
   talentPool,
   canUnlockTalent,
   isProgressionFeatureUnlocked,
@@ -60,6 +59,7 @@ import {
 import { createSeededRng } from "@/lib/rng";
 import type { CareerConfig, PlayerChoice } from "./types";
 import { createPlaythroughController } from "./controller";
+import { scoreArchetypeRemoval, scoreStrategyCard, scoreStrategyKeyword } from "./archetype-policy";
 
 export function createCareerActor(
   config: CareerConfig,
@@ -88,8 +88,9 @@ export function createCareerActor(
         return getEffectiveDamageScore(card, state);
     }
   };
-  const affinity = (card: BattleCard) =>
-    getCardKeywords(card).filter((keyword) => characters[config.hero].keywords.includes(keyword)).length;
+  const affinity = (card: BattleCard) => scoreStrategyCard(config.policy, config.hero, card, readActiveRun().runDeck);
+  const keywordAffinity = (keyword: Parameters<typeof scoreStrategyKeyword>[2]) =>
+    scoreStrategyKeyword(config.policy, config.hero, keyword, readActiveRun().runDeck);
   function observe(): PlayerChoice[] {
     choices = [];
     commands.clear();
@@ -128,7 +129,7 @@ export function createCareerActor(
       if (isProgressionFeatureUnlocked("talents", finished)) {
         for (const talent of talentPool)
           if (canUnlockTalent(talent.keywordId, talent.id, profile.talentXP, profile.unlockedTalents).ok)
-            offer("talent", talent.id, 3 + Number(characters[config.hero].keywords.includes(talent.keywordId)), () =>
+            offer("talent", talent.id, 3 + keywordAffinity(talent.keywordId), () =>
               createRunSessionCommand(unlockTalent)(talent.keywordId, talent.id),
             );
       }
@@ -343,7 +344,15 @@ export function createCareerActor(
         });
         if (!activity.data.removeUsed && run.runDeck.length > 10 && actions.getRemoveCardPrice() <= profile.gold)
           run.runDeck.forEach((card, index) =>
-            offer("remove-card", card.id, 2 - affinity(card), () => actions.removeCard(index), index),
+            offer(
+              "remove-card",
+              card.id,
+              config.policy === "archetype"
+                ? scoreArchetypeRemoval(config.hero, card, run.runDeck)
+                : 2 - affinity(card),
+              () => actions.removeCard(index),
+              index,
+            ),
           );
         offer("shop-continue", "continue", 0, flow.advanceToNextDestination);
         break;

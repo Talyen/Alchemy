@@ -1,4 +1,5 @@
-import { collectionGridGapXClass, screenShellPaddingClass, sectionTitleClass } from "@/features/alchemy/shared/config";
+import { ArmoryEquipmentPanel } from "./armory/armory-equipment-panel";
+import { screenShellPaddingClass } from "@/features/alchemy/shared/config";
 import {
   characters,
   getRequiredPreviousCharacter,
@@ -25,10 +26,8 @@ import {
 } from "@/lib/gear";
 import { useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
-import { Lock } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PageLayout, ScreenHeaderRow } from "../../shared/ui/layout-components";
-import { renderUnlockMessage } from "../../shared/ui/unlock-text";
 import { FadeSlot } from "../../shared/ui/use-fade";
 import { ArmoryCharacterTabs, ArmoryOverlays, type ArmoryScreenProps } from "./armory";
 import { ArmoryFeedback } from "./armory/armory-feedback";
@@ -41,10 +40,6 @@ import type { ArmorySortOption, DisplacedGearItem } from "./armory/armory-orderi
 import { ARMORY_GEAR_SLOT_TESTID, ARMORY_TRINKET_SLOT_TESTID } from "./armory/parts/armory-slot-shell";
 import "./armory/armory-screen.css";
 import type { CraftingResult } from "./armory/crafting-result";
-import { CraftingStrip } from "./armory/parts/crafting-strip";
-import { EquipmentSlotButton } from "./armory/parts/equipment-slot-button";
-import { EQUIP_SLOTS } from "./armory/parts/slot-labels";
-import { TrinketSlotButton } from "./armory/parts/trinket-slot-button";
 import { useArmoryTargetingState } from "./armory/use-armory-targeting-state";
 
 export function ArmoryScreen({
@@ -525,79 +520,30 @@ export function ArmoryScreen({
         >
           <FadeSlot swapKey={characterId} className="flex min-h-0 min-w-0 flex-1 flex-col">
             <div className="armory-workspace-grid">
-              <section
-                data-testid="armory-left-panel"
-                className="alchemy-shell relative flex min-w-0 flex-col items-center rounded-shell-dialog border border-border/80 p-4"
-              >
-                <div className="relative flex min-h-10 w-full items-center justify-center">
-                  <h2 className={cn("text-center font-sans", sectionTitleClass)}>Equipment</h2>
-                </div>
-                <div
-                  data-testid="armory-equipment-board"
-                  className={cn("mt-2 grid w-full grid-cols-3", collectionGridGapXClass, "gap-y-6")}
-                >
-                  {EQUIP_SLOTS.map((slot) => {
-                    if (slot === "trinket") {
-                      return (
-                        <TrinketSlotButton
-                          key={slot}
-                          trinket={equippedTrinket}
-                          selected={selectedSlot === slot}
-                          editable={editable}
-                          isArtHidden={Boolean(hiddenArtworkSlots.trinket)}
-                          onSelect={() => handleSlotSelect(slot)}
-                          onUnequip={handleUnequipTrinket}
-                          onCombatLockedAttempt={handleCombatLockedAttempt}
-                        />
-                      );
-                    }
-                    const instanceId = loadout[slot];
-                    const instance = instanceId ? inventoryById.get(instanceId) : undefined;
-                    return (
-                      <EquipmentSlotButton
-                        key={slot}
-                        slot={slot}
-                        instance={instance}
-                        selected={selectedSlot === slot}
-                        editable={editable}
-                        salvageMode={salvageMode}
-                        activeCurrencyId={activeCurrencyId}
-                        isArtHidden={Boolean(hiddenArtworkSlots[slot])}
-                        onSelect={handleSlotSelect}
-                        onUnequip={handleSlotUnequip}
-                        craftingResult={craftingResult}
-                        onSalvage={beginSalvage}
-                        onApplyCurrency={handleApplyCurrency}
-                        onCombatLockedAttempt={handleCombatLockedAttempt}
-                      />
-                    );
-                  })}
-                </div>
-                <CraftingStrip
-                  salvageButtonRef={salvageButtonRef}
-                  craftingCurrencies={craftingCurrencies}
-                  activeCurrencyId={activeCurrencyId}
-                  salvageMode={salvageMode}
-                  editable={editable}
-                  hasSalvageableGear={sharedInventory.some((item) => !combatRestrictions.gear[item.instanceId])}
-                  onSelectCurrency={handleSelectCurrency}
-                  onToggleSalvageMode={() => {
-                    setNotice("");
-                    setCraftingResult(null);
-                    toggleSalvage();
-                  }}
-                />
-                {locked && requiredCharacterId ? (
-                  <div className="absolute inset-0 z-40 flex items-center justify-center rounded-shell-dialog bg-black/70 p-5">
-                    <div className="max-w-xs text-center">
-                      <Lock className="mx-auto h-8 w-8" />
-                      <p className="mt-2 font-semibold">
-                        {renderUnlockMessage(`Finish a Run as the ${characters[requiredCharacterId].name} to unlock`)}
-                      </p>
-                    </div>
-                  </div>
-                ) : null}
-              </section>
+              <ArmoryEquipmentPanel
+                loadout={loadout}
+                inventoryById={inventoryById}
+                equippedTrinket={equippedTrinket}
+                selectedSlot={selectedSlot}
+                targeting={{ editable, salvageMode, activeCurrencyId, craftingResult }}
+                hiddenArtworkSlots={hiddenArtworkSlots}
+                salvageButtonRef={salvageButtonRef}
+                craftingCurrencies={craftingCurrencies}
+                hasSalvageableGear={sharedInventory.some((item) => !combatRestrictions.gear[item.instanceId])}
+                lockedCharacterName={locked && requiredCharacterId ? characters[requiredCharacterId].name : null}
+                onSelectSlot={handleSlotSelect}
+                onUnequipSlot={handleSlotUnequip}
+                onUnequipTrinket={handleUnequipTrinket}
+                onSalvage={beginSalvage}
+                onApplyCurrency={handleApplyCurrency}
+                onCombatLockedAttempt={handleCombatLockedAttempt}
+                onSelectCurrency={handleSelectCurrency}
+                onToggleSalvageMode={() => {
+                  setNotice("");
+                  setCraftingResult(null);
+                  toggleSalvage();
+                }}
+              />
               <ArmoryPickerPanel
                 combatRestrictions={combatRestrictions}
                 selectedSlot={selectedSlot}

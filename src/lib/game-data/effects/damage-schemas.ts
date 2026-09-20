@@ -8,7 +8,7 @@ import {
   EnemyStatusDamageIdSchema,
 } from "./shared-schemas";
 
-export const damageEffectDefinition = {
+const damageEffectDefinition = {
   kind: "damage",
   schema: z
     .object({
@@ -75,7 +75,7 @@ export const damageEffectDefinition = {
     }),
 } satisfies EffectKindDefinition<"damage">;
 
-export const selfDamageEffectDefinition = {
+const selfDamageEffectDefinition = {
   kind: "self-damage",
   schema: z.object({
     kind: z.literal("self-damage"),
@@ -84,11 +84,11 @@ export const selfDamageEffectDefinition = {
   }),
 } satisfies EffectKindDefinition<"self-damage">;
 
-export const randomDamageEffectDefinition = defineRangedEffect(
+const randomDamageEffectDefinition = defineRangedEffect(
   "random-damage",
 ) satisfies EffectKindDefinition<"random-damage">;
 
-export const removeEnemyArmorEffectDefinition = {
+const removeEnemyArmorEffectDefinition = {
   kind: "remove-enemy-armor",
   schema: z
     .object({
@@ -101,3 +101,10 @@ export const removeEnemyArmorEffectDefinition = {
       message: "remove-enemy-armor requires amount unless removeAll is set",
     }),
 } satisfies EffectKindDefinition<"remove-enemy-armor">;
+
+export const DAMAGE_EFFECT_DEFINITIONS = [
+  damageEffectDefinition,
+  selfDamageEffectDefinition,
+  randomDamageEffectDefinition,
+  removeEnemyArmorEffectDefinition,
+] as const;

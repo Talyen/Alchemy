@@ -1,3 +1,4 @@
+import { tailOutput } from "./lib/compact-output.mjs";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -35,6 +36,19 @@ function renderMarkdown(result) {
   return `${lines.join("\n").trimEnd()}\n`;
 }
 
+export function formatContentAuditErrors(errors) {
+  const groups = new Map();
+  for (const issue of errors) {
+    const group = groups.get(issue.area) ?? { count: 0, example: issue };
+    group.count += 1;
+    groups.set(issue.area, group);
+  }
+  const diagnostics = [...groups].map(
+    ([area, { count, example }]) => `[${area}] ${count} error(s); example ${example.id}: ${example.message}`,
+  );
+  return tailOutput(diagnostics.join("\n"), 2_800);
+}
+
 // Content validation is pure data/rules plus the `@` alias, so it shares the
 // minimal middleware-mode SSR server in lib/vite-report-server.mjs instead of
 // the full app config (tailwind/react/sentry/visualizer).
@@ -61,9 +75,7 @@ export async function runContentAudit() {
     console.log(`Wrote ${path.relative(rootDir, markdownPath)} and ${path.relative(rootDir, jsonPath)}`);
 
     if (result.errors.length > 0) {
-      for (const issue of result.errors) {
-        console.error(`[${issue.area}] ${issue.id}: ${issue.message}`);
-      }
+      console.error(formatContentAuditErrors(result.errors));
       throw new Error(`Content audit failed with ${result.errors.length} error(s).`);
     }
   });

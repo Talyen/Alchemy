@@ -1,0 +1,71 @@
+import { talent } from "../talent-builder";
+import { addEffect, setEffect } from "../types";
+
+export const goldTalents = [
+  talent(
+    "gold-shop-discount",
+    "gold",
+    "Haggle",
+    "Shop purchases cost 5 less Gold",
+    "Tag",
+    setEffect("shopCardDiscount", 5),
+  ),
+  talent(
+    "gold-shop-refresh",
+    "gold",
+    "Restock",
+    "Shop refreshes cost 0 Gold",
+    "RefreshCw",
+    setEffect("shopFreeRefresh", true),
+  ),
+  talent("gold-start", "gold", "Seed Money", "Start each run with 20 Gold", "Sprout", setEffect("startGold", 20)),
+  talent(
+    "gold-per-combat",
+    "gold",
+    "Lucky Foot",
+    "When you Dodge, you have a 25% chance to gain 4 Gold",
+    "CircleDollarSign",
+    setEffect("goldOnDodge", 4),
+  ),
+  talent(
+    "gold-potion-discount",
+    "gold",
+    "Apothecary’s Guard",
+    "When you play a Potion, gain 1 Armor",
+    "Beaker",
+    setEffect("armorOnPotionCard", 1),
+  ),
+  talent(
+    "gold-remove-discount",
+    "gold",
+    "Buyout",
+    "Card removal costs 10 less Gold",
+    "ShoppingCart",
+    setEffect("removeCardDiscount", 10),
+  ),
+  talent(
+    "gold-enemy-drop",
+    "gold",
+    "Plunder",
+    "Enemies drop 10% more Gold",
+    "HandCoins",
+    setEffect("enemyGoldDropBonus", 0.1),
+  ),
+  talent("gold-on-wish", "gold", "Golden Wish", "Gain 1 Gold when you Wish", "Sparkles", addEffect("goldOnWish", 1)),
+  talent(
+    "gold-mix-discount",
+    "gold",
+    "Alchemy Discount",
+    "Mixing Potions costs 10 less Gold",
+    "FlaskConical",
+    setEffect("mixPotionDiscount", 10),
+  ),
+  talent(
+    "gold-elite-drop",
+    "gold",
+    "Coinmail",
+    "Without Block, gain Block equal to 25% of combat Gold gained",
+    "Trophy",
+    setEffect("blockPerGold", 0.25),
+  ),
+];

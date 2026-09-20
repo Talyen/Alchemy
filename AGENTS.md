@@ -30,6 +30,8 @@ Understand affected contracts and consumers, especially stores, ports, saves, co
 
 Use optional [discovery tools](./Docs/REFERENCE.md#agent-discovery) for bounded searches and source excerpts. Exclude raw assets, reports, builds, changelog, lockfiles, archives, and generated files from broad searches; inspect them directly when relevant.
 
+For unfamiliar code, `npm run search -- forge src/lib/battle` lists bounded matching filenames; follow with `npm run search -- --excerpts forge src/lib/battle/damage-calc.ts` or `npm run context -- --outline <file> --symbol <name>`. Avoid repository-wide text dumps and whole-file reads for small changes; read surrounding code when needed to understand behavior. These tools are optional, not mandatory navigation steps.
+
 ## Skills & knowledge
 
 [Skill routing](./.agents/skills/README.md) identifies specialized workflows; ordinary edits need no skill.

@@ -1,7 +1,7 @@
 /**
  * Battle mutation policy
  * ----------------------
- * Scope is the damage-calculation core module (the nightly step's stated
+ * Scope is the damage-calculation core and its extracted bonus module (the nightly step's stated
  * purpose), scored against the break threshold below. Mutating all of
  * src/lib/battle yields ~8.5k mutants, which cannot complete inside the
  * nightly cap; the vitest runner keeps per-mutant cost proportional via
@@ -14,7 +14,7 @@ export default {
   packageManager: "npm",
   testRunner: "vitest",
   coverageAnalysis: "perTest",
-  mutate: ["src/lib/battle/damage-calc.ts"],
+  mutate: ["src/lib/battle/damage-calc.ts", "src/lib/battle/player-damage-bonuses.ts"],
   reporters: ["html", "clear-text", "json"],
   htmlReporter: { fileName: "reports/mutation/index.html" },
   jsonReporter: { fileName: "reports/mutation/mutation.json" },

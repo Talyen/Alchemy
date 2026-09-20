@@ -50,19 +50,17 @@ const keyed = { "two": { value: 3 }, three: { value: 4 } };`,
 
   it("indexes authored talent and affix calls while hiding nested configuration", () => {
     const root = fixture({
-      "src/lib/game-data/talents/talent-pool-definitions.ts":
+      "src/lib/game-data/talents/pools/dodge.ts":
         'const pool = [talent("dodge-one", "dodge", boom()), talent(dynamicId, "dodge")];',
-      "src/lib/gear/affix-catalog.ts":
+      "src/lib/gear/unique-affixes.ts":
         'const rows = [uniqueAffix("unique-one", boom()), resistAffix("resist-one", boom()), {id: "plain", roll: {basic: {min: 1}}}];',
       "unrelated.ts": 'talent("not-content", boom());',
     });
     expect(
-      sourceOutline(root, "src/lib/game-data/talents/talent-pool-definitions.ts", { entries: true }).map(
-        (entry) => entry.name,
-      ),
+      sourceOutline(root, "src/lib/game-data/talents/pools/dodge.ts", { entries: true }).map((entry) => entry.name),
     ).toEqual(["dodge-one"]);
     expect(
-      sourceOutline(root, path.join(root, "src/lib/gear/affix-catalog.ts"), { entries: true }).map(
+      sourceOutline(root, path.join(root, "src/lib/gear/unique-affixes.ts"), { entries: true }).map(
         (entry) => entry.name,
       ),
     ).toEqual(["unique-one", "resist-one", "plain"]);

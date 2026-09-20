@@ -8,7 +8,7 @@ import {
   PositiveAmountSchema,
 } from "./shared-schemas";
 
-export const playerStatusEffectDefinition = {
+const playerStatusEffectDefinition = {
   kind: "player-status",
   schema: z
     .object({
@@ -23,7 +23,7 @@ export const playerStatusEffectDefinition = {
     }),
 } satisfies EffectKindDefinition<"player-status">;
 
-export const enemyStatusEffectDefinition = {
+const enemyStatusEffectDefinition = {
   kind: "enemy-status",
   schema: z.object({
     kind: z.literal("enemy-status"),
@@ -32,7 +32,7 @@ export const enemyStatusEffectDefinition = {
   }),
 } satisfies EffectKindDefinition<"enemy-status">;
 
-export const removeHarmfulStatusEffectDefinition = {
+const removeHarmfulStatusEffectDefinition = {
   kind: "remove-harmful-status",
   schema: z
     .object({
@@ -46,7 +46,7 @@ export const removeHarmfulStatusEffectDefinition = {
     }),
 } satisfies EffectKindDefinition<"remove-harmful-status">;
 
-export const removePlayerStatusEffectDefinition = {
+const removePlayerStatusEffectDefinition = {
   kind: "remove-player-status",
   schema: z.object({
     kind: z.literal("remove-player-status"),
@@ -54,7 +54,7 @@ export const removePlayerStatusEffectDefinition = {
   }),
 } satisfies EffectKindDefinition<"remove-player-status">;
 
-export const multiplyEnemyStatusEffectDefinition = {
+const multiplyEnemyStatusEffectDefinition = {
   kind: "multiply-enemy-status",
   schema: z.object({
     kind: z.literal("multiply-enemy-status"),
@@ -63,7 +63,7 @@ export const multiplyEnemyStatusEffectDefinition = {
   }),
 } satisfies EffectKindDefinition<"multiply-enemy-status">;
 
-export const cleansePlayerStatusToDamageEffectDefinition = {
+const cleansePlayerStatusToDamageEffectDefinition = {
   kind: "cleanse-player-status-to-damage",
   schema: z.object({
     kind: z.literal("cleanse-player-status-to-damage"),
@@ -71,3 +71,12 @@ export const cleansePlayerStatusToDamageEffectDefinition = {
     damageType: DamageTypeSchema,
   }),
 } satisfies EffectKindDefinition<"cleanse-player-status-to-damage">;
+
+export const STATUS_EFFECT_DEFINITIONS = [
+  playerStatusEffectDefinition,
+  enemyStatusEffectDefinition,
+  removeHarmfulStatusEffectDefinition,
+  removePlayerStatusEffectDefinition,
+  multiplyEnemyStatusEffectDefinition,
+  cleansePlayerStatusToDamageEffectDefinition,
+] as const;
