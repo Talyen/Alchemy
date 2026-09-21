@@ -1,0 +1,62 @@
+/* Scanlines adapted from Afterglow CRT (MIT), Copyright (c) 2026 HauntedCrusader.
+ * https://github.com/HauntedCrusader/afterglow-crt
+ * Full notice ships in public/licenses/afterglow-crt.txt.
+ */
+.screen-effect {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  pointer-events: none;
+}
+
+.screen-effect-layer {
+  position: absolute;
+  inset: 0;
+}
+
+.screen-effect-scanlines {
+  background: repeating-linear-gradient(
+    to bottom,
+    rgb(0 0 0 / 32%) 0,
+    rgb(0 0 0 / 32%) var(--scanline-size),
+    rgb(0 0 0 / 4%) var(--scanline-size),
+    rgb(0 0 0 / 4%) calc(var(--scanline-size) * 2)
+  );
+}
+
+.screen-effect-edges {
+  background: radial-gradient(ellipse at center, transparent 40%, rgb(0 0 0 / 30%) 90%, rgb(0 0 0 / 55%) 100%);
+}
+
+.screen-effect-tint-green {
+  background: rgb(40 180 65 / 12%);
+}
+.screen-effect-tint-amber {
+  background: rgb(255 176 0 / 14%);
+}
+.screen-effect-tint-cool {
+  background: linear-gradient(160deg, rgb(76 65 145 / 16%), transparent 55%, rgb(29 66 110 / 18%));
+}
+
+.screen-effect-grain {
+  background: url("./parchment-grain.svg") repeat;
+}
+
+/* Static fallback if WebGL is unavailable; no alpha-noise masks over particles. */
+.screen-effect-lights {
+  overflow: hidden;
+}
+.screen-effect-lights-fallback::before,
+.screen-effect-lights-fallback::after {
+  content: "";
+  position: absolute;
+  inset: -20%;
+}
+.screen-effect-lights-fallback::before {
+  background:
+    radial-gradient(ellipse at 38% 42%, rgb(109 210 189 / 19%), transparent 48%),
+    radial-gradient(ellipse at 65% 60%, rgb(255 226 154 / 12%), transparent 45%);
+}
+.screen-effect-lights-fallback::after {
+  background: radial-gradient(ellipse at 58% 46%, rgb(173 124 240 / 19%), transparent 52%);
+}

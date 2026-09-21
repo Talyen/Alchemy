@@ -419,14 +419,19 @@
 }
 
 .card-hover-scale {
+  scale: var(--card-rest-scale, 1);
   transition: scale 200ms ease-out;
   backface-visibility: hidden;
+}
+
+.combatant-turn-active {
+  --card-rest-scale: 1.035;
 }
 
 .card-hover-scale:hover:not(:disabled),
 .group:hover .card-hover-scale:not(:disabled),
 .card-hover-scale[data-hovered="true"]:not(:disabled) {
-  scale: 1.035;
+  scale: calc(var(--card-rest-scale, 1) * 1.035);
 }
 
 .surface.hand-card-motion {
@@ -655,7 +660,7 @@
 
 @keyframes battle-gold-increase {
   from {
-    background-color: rgb(251 191 36 / 25%);
+    background-color: color-mix(in srgb, var(--color-gold-light) 25%, transparent);
   }
   to {
     background-color: transparent;
@@ -670,42 +675,4 @@
   .battle-gold-increase {
     animation: none;
   }
-}
-
-/* Run recap traces only the visible tail, once, without delaying rewards. */
-.run-journey-room[data-animate="true"] .run-journey-line {
-  transform-origin: left;
-  animation: run-journey-trace 200ms ease-out both;
-  animation-delay: var(--journey-delay, 0ms);
-}
-.run-journey-room[data-animate="true"] .run-journey-icon {
-  animation: run-journey-reveal 200ms ease-out both;
-  animation-delay: var(--journey-delay, 0ms);
-}
-@keyframes run-journey-trace {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
-}
-@keyframes run-journey-reveal {
-  from {
-    opacity: 0.35;
-  }
-  to {
-    opacity: 1;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .run-journey-room[data-animate="true"] .run-journey-line,
-  .run-journey-room[data-animate="true"] .run-journey-icon {
-    animation: none;
-  }
-}
-
-html.alchemy-disable-animations .run-journey-room[data-animate="true"] .run-journey-line,
-html.alchemy-disable-animations .run-journey-room[data-animate="true"] .run-journey-icon {
-  animation: none;
 }

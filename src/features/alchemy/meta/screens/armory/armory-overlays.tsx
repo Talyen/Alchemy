@@ -52,7 +52,7 @@ export function ArmoryOverlays({
                 className="mx-auto h-24 w-24 rounded-xl object-contain"
               />
               {heldCharacterName ? (
-                <p className="text-sm text-amber-200">
+                <p className="text-sm text-warning">
                   Equipped by {heldCharacterName}. Salvaging will unequip this item.
                 </p>
               ) : null}

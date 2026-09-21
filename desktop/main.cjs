@@ -90,6 +90,18 @@ function setRendererFullscreen(window, enabled) {
 }
 
 function applyDisplayMode(window, mode) {
+  if (process.platform === "darwin") {
+    // Native macOS/HTML fullscreen reserves the notch strip. Simple fullscreen
+    // uses the entire display and stays on the current desktop instead.
+    window.setSimpleFullScreen(mode !== "windowed");
+    if (mode === "windowed") {
+      window.setResizable(true);
+      window.setMinimizable(true);
+      window.setSize(WINDOWED_SIZE.width, WINDOWED_SIZE.height);
+      window.center();
+    }
+    return;
+  }
   if (mode === "windowed") {
     setRendererFullscreen(window, false);
     window.setFullScreen(false);
@@ -293,7 +305,9 @@ function createMainWindow() {
     height: WINDOWED_SIZE.height,
     minWidth: 960,
     minHeight: 540,
-    fullscreen: true,
+    fullscreen: process.platform !== "darwin",
+    fullscreenable: true,
+    simpleFullscreen: process.platform === "darwin",
     backgroundColor: "#120d0a",
     show: false,
     webPreferences: {
@@ -309,6 +323,8 @@ function createMainWindow() {
       webviewTag: false,
     },
   });
+
+  if (process.platform === "darwin") mainWindow.setSimpleFullScreen(true);
 
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
   mainWindow.webContents.on("will-navigate", (event, url) => {

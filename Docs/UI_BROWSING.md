@@ -108,10 +108,6 @@ See [Equipment movement animations](./UI_MOTION.md#equipment-movement-animations
 
 ## Run journey recap
 
-Run Ended places a thin, non-interactive room trail below its header. Existing room
-icons remain fixed-size, with horizontal scrolling for long runs and the endpoint
-initially in view. Visible rooms trace once in under two seconds; rewards and controls
-are immediately usable. Inspection does not replay the trace. Reduced motion and
-disabled animations show the finished trail without a delay. Room icons have no hover
-or select details; semantic sequence text and keyboard scrolling accompany the strip.
-Deck and Boon inspection retain their normal labels and shared overlay behavior.
+Journey’s End focuses on earned rewards and progression, without a room trail or
+Act/node summary. Deck and Boon inspection retain their normal labels and shared
+overlay behavior. Victory keeps its own title.

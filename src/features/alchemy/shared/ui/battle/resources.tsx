@@ -59,7 +59,11 @@ export function ManaPanel({ mana, maxMana }: { mana: number; maxMana: number }) 
   const manaToken = useChangeToken(`${mana}-${maxMana}`);
 
   return (
-    <div className="flex h-16 items-center justify-center" data-testid="mana-panel" data-mana={mana}>
+    <div
+      className={cn("flex h-16 items-center justify-center", cardHoverScaleClass)}
+      data-testid="mana-panel"
+      data-mana={mana}
+    >
       <div className="flex items-center justify-center gap-1.5" role="img" aria-label={`Mana: ${mana} / ${maxMana}`}>
         {Array.from({ length: displayCount }).map((_, index) => {
           const isFilled = index < mana;

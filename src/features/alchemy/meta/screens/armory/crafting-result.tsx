@@ -46,7 +46,7 @@ export function CraftingResultPreview({
         <GearItemTitle instance={after} className="whitespace-normal" />:{" "}
         {getCraftingCurrencyDefinition(result.currencyId).displayName} applied.
       </p>
-      {upgraded ? <p className="mt-2 text-amber-200">Basic → Astral</p> : null}
+      {upgraded ? <p className="mt-2 text-gold-pale">Basic → Astral</p> : null}
       <ul className="mt-2 max-h-[35dvh] space-y-2 overflow-y-auto">
         {changes.map((change) => (
           <li key={change.id} className="armory-affix-feedback rounded-lg bg-emerald-300/10 px-2 py-1">

@@ -29,19 +29,28 @@ function CombatTextTarget({
 
   useLayoutEffect(() => {
     if (!active) return;
-    const anchor = anchorRef.current;
-    const scene = sceneRef.current;
-    const layer = layerRef.current;
-    if (!anchor || !scene || !layer) return;
     let previous: CardRect | null = null;
-    let frame: number;
+    let positioned = false;
+    let frame: number | null = null;
     // ResizeObserver cannot follow ancestor transforms (lunge, shake, Companion shifts).
     // Update only the overlay geometry, without rerendering or restarting its bursts.
     // Position via transform (compositor-only) rather than left/top to avoid layout work per frame.
     const measure = () => {
-      const next = defaultMeasureElementRect(anchor, scene);
+      const anchor = anchorRef.current;
+      const scene = sceneRef.current;
+      const layer = layerRef.current;
+      if (layer && !positioned) layer.style.visibility = "hidden";
+
+      const next = anchor?.isConnected && scene?.isConnected ? defaultMeasureElementRect(anchor, scene) : null;
       if (
         next &&
+        next.width > 0 &&
+        next.height > 0 &&
+        Number.isFinite(next.x) &&
+        Number.isFinite(next.y) &&
+        Number.isFinite(next.width) &&
+        Number.isFinite(next.height) &&
+        layer &&
         (!previous ||
           next.x !== previous.x ||
           next.y !== previous.y ||
@@ -51,12 +60,16 @@ function CombatTextTarget({
         layer.style.transform = `translate3d(${next.x}px, ${next.y}px, 0)`;
         layer.style.width = `${next.width}px`;
         layer.style.height = `${next.height}px`;
+        layer.style.visibility = "visible";
+        positioned = true;
         previous = next;
       }
       frame = requestAnimationFrame(measure);
     };
     measure();
-    return () => cancelAnimationFrame(frame);
+    return () => {
+      if (frame !== null) cancelAnimationFrame(frame);
+    };
   }, [anchorRef, sceneRef, active]);
 
   if (!active) return null;

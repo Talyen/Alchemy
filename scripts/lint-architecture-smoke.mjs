@@ -212,6 +212,13 @@ export async function main() {
   assert.ok(ruleIsError(alchemyRule(libConfig, "no-lib-fetch")), "src/lib must ban fetch");
 
   const themeCss = readFileSync(path.join(process.cwd(), "src/styles/theme.css"), "utf8");
+  const uiColors = readFileSync(path.join(process.cwd(), "src/lib/game-constants/ui-colors.ts"), "utf8");
+  for (const shade of ["base", "light", "deep", "pale"]) {
+    const hex = uiColors.match(new RegExp(shade + ': "(#[a-f0-9]{6})"'))?.[1];
+    assert.ok(hex, "UI_GOLD must define " + shade);
+    assert.ok(themeCss.includes("--color-gold-" + shade + ": " + hex + ";"), "CSS gold must match UI_GOLD." + shade);
+  }
+  assert.ok(themeCss.includes("--color-primary: var(--color-gold-base)"), "Primary must use the shared gold");
   const cssFadeMatch = themeCss.match(/--motion-fade-duration:\s*(\d+)ms/);
   assert.ok(cssFadeMatch, "theme.css must define --motion-fade-duration");
   const cssFadeMs = Number(cssFadeMatch[1]);

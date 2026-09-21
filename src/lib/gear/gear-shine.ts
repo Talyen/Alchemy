@@ -1,3 +1,4 @@
+import { UI_GOLD } from "@/lib/game-constants/ui-colors";
 import { NEUTRAL_SHINE_FALLBACK } from "@/lib/animation/shine-gradient";
 import type { KeywordId } from "@/lib/game-data";
 import { extractKeywordIds } from "@/lib/keyword-text";
@@ -8,8 +9,8 @@ import { gearAffixCatalog } from "./affix-catalog";
 import { gearDefinitions, type GearDefinition } from "./definitions";
 import type { GearInstance } from "./types";
 
-const UNIQUE_SHINE_COLORS = ["#fbbf24", "#f59e0b", "#d97706", "#fef3c7", "#fbbf24"] as const;
-const UNIQUE_TEXT_SHINE_COLORS = ["#fbbf24", "color-mix(in srgb, #fbbf24 55%, transparent)"] as const;
+const UNIQUE_SHINE_COLORS = [UI_GOLD.light, UI_GOLD.base, UI_GOLD.deep, UI_GOLD.pale, UI_GOLD.light] as const;
+const UNIQUE_TEXT_SHINE_COLORS = [UI_GOLD.pale, `color-mix(in srgb, ${UI_GOLD.pale} 55%, transparent)`] as const;
 
 export function selectTextShineKeywordIds(
   instanceKeywordIds: readonly KeywordId[],

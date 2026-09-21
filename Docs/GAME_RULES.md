@@ -19,7 +19,7 @@ Operational rules for `src/lib/battle/` that deviate from typical CCG assumption
 - **Turn order** — Player (companion attacks → play cards) → Enemy (enemy DoTs → ability → player DoTs → regen) → reset (draw 4, restore mana, halve player block). Enemy block halves when the next enemy phase begins.
 - **Mana** — resets to `maxMana` each turn; unspent mana is lost (Wellspring talent excepted).
 - **Companions** — invulnerable; act at player turn start; persist indefinitely.
-- **Draw / deck** — battle initialization commits the opening 4 plus battle-start bonus draws before their animation; later turns draw 4. Max hand 7 (overflow skipped); the previous hand is discarded at player turn end, while cards drawn during the enemy phase remain alongside the next four draws; discard reshuffles when the draw pile empties; Consumed cards are removed for the remainder of the battle.
+- **Draw / deck** — battle initialization commits the opening 4 plus battle-start bonus draws before their animation; later turns draw 4. Max hand 7 (overflow skipped); the previous hand is discarded at player turn end, while cards drawn during the enemy phase remain alongside the next four draws; discard reshuffles when the draw pile empties; Consumed cards are removed for the remainder of the battle. If a player-turn draw finds the hand, draw pile, and discard empty, an Emergency Wish opens the normal Wish choices and the selected card enters the hand; this can recur whenever the piles are empty.
 - **Block** — absorbs incoming damage first; halved (not cleared) at the start of the owner's next turn, after the opposing side had a chance to attack into it.
 - **Haste** — extra turns skip the enemy phase; both blocks hold until a real attack window resolves, then halve once each.
 
@@ -215,17 +215,14 @@ profile data. A current battle still protects its equipped items during meta vis
 
 ### Run recap
 
-Mode selection is titled **Start a Run**. Death and voluntary endings show **Run Ended**;
+Mode selection is titled **Start a Run**. Death and voluntary endings show **Journey’s End**;
 victory keeps its own title. The ending recap preserves the run deck and Boons for
 ordinary read-only inspection. Its resource row includes Gold earned during the run,
 including committed combat and encounter rewards after multipliers, excluding starting
 Gold and prior savings. Spending does not subtract from this earned total.
 
-Run Ended shows a non-interactive chronological room strip with Act/floor markers,
-a skull at the death location, and a neutral endpoint for voluntary endings. Offered
-rooms, drafts, menus, and reward screens are not visits. History spans acts and floors;
-re-entering an unresolved room does not create a duplicate. Existing menu upgrade
-highlights continue to guide between-run progression.
+The recap omits the room progression trail. Existing menu upgrade highlights
+continue to guide between-run progression.
 
 ### Labyrinth exploration
 

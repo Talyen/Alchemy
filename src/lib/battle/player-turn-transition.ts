@@ -10,6 +10,7 @@ import { halveRounded } from "./amount-helpers";
 import { dealPlayerTypedHit } from "./player-typed-hit";
 import { applyCleanseHeals, restoreSpentPlayerForge } from "./status-player";
 import { drawCards, applyDrawResult, drawFromState } from "./draw";
+import { applyEmergencyWish } from "./wish";
 import { applyCardEffects } from "./effect-handlers";
 import { finalizeCcSkipTurnDecrement, isCcControlled } from "./status-cc";
 import { decayHalvedStatus } from "./status-helpers";
@@ -214,6 +215,13 @@ export function advanceToPlayerTurn(
   nextState = performDrawAndResetPhase(nextState, deathsDoorNeedsRecoveryTurn, options);
   nextState = resolvePendingBattleReactions(restoreSpentPlayerForge(nextState, combatTexts), combatTexts);
   if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
+  if (
+    nextState.exhausted.length > 0 &&
+    nextState.hand.length === 0 &&
+    nextState.deck.length === 0 &&
+    nextState.discard.length === 0
+  )
+    nextState = applyEmergencyWish(nextState, combatTexts);
   const reset = nextState;
   const wished =
     state.flags.pendingWishMana > 0

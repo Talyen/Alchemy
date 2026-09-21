@@ -92,7 +92,7 @@ export const EquipmentSlotButton = memo(function EquipmentSlotButton({
           plasmaColorPair={getPlasmaColorPairForGear(instance)}
         >
           <GearTooltipContent definition={definition} instance={instance} />
-          {blockedReason ? <p className="mt-3 text-sm text-amber-200">{blockedReason}</p> : null}
+          {blockedReason ? <p className="mt-3 text-sm text-warning">{blockedReason}</p> : null}
         </PortaledTooltip>
       ) : null}
       <Surface

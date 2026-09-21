@@ -60,6 +60,43 @@ test.describe("Combat feedback animations", slow, () => {
     await expect(burst).toHaveCount(0);
   });
 
+  test("combat text follows the portrait when stun presentation mounts during a burst", async ({ page }) => {
+    const hand = [
+      makeCard({ cost: 0, effects: [{ kind: "damage", damageType: "physical", amount: 1 }] }),
+      makeCard({ cost: 0, effects: [{ kind: "damage", damageType: "stun", amount: 20 }] }),
+    ];
+    await injectActiveBattle(page, makeGoblinBattleState({ hand, enemyHealth: 40, enemyMaxHealth: 40 }), {
+      runDeck: hand,
+      autoEndTurn: false,
+    });
+    const battle = new BattlePage(page);
+    await battle.playFirstCard();
+
+    const burst = page.locator('[data-testid="combat-text-burst"][data-target="enemy"]').first();
+    await expect(burst).toBeVisible();
+    await battle.hand.first().press("Enter");
+    await expect(page.getByTestId("combatant-status-effect")).toBeVisible();
+
+    await expect
+      .poll(
+        async () =>
+          burst.evaluate((node) => {
+            const layer = node.closest('[data-testid="combat-text-layer"]')!;
+            const portrait = document.querySelector('[data-testid="battle-enemy-art-panel"]')!;
+            const anchor = portrait.getBoundingClientRect();
+            const overlay = layer.getBoundingClientRect();
+            return Math.max(
+              Math.abs(anchor.x - overlay.x),
+              Math.abs(anchor.y - overlay.y),
+              Math.abs(anchor.width - overlay.width),
+              Math.abs(anchor.height - overlay.height),
+            );
+          }),
+        { intervals: [16], timeout: 2000 },
+      )
+      .toBeLessThan(2);
+  });
+
   for (const side of ["player", "enemy"] as const) {
     test(`${side} feedback appears during the wind-up`, async ({ page }, testInfo) => {
       const hand = [makeCard({ cost: 0 })];

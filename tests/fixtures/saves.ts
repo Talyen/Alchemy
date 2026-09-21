@@ -31,6 +31,8 @@ export interface HomesteadSaveFixture {
   // Optional: present on real saves, omitted here so the load-tolerant
   // `.catch` path stays exercised. Typed from SaveData so access is checked.
   backgroundParticlesIntensity?: SaveData["backgroundParticlesIntensity"];
+  backgroundLights?: SaveData["backgroundLights"];
+  screenEffects?: SaveData["screenEffects"];
   backgroundGlowIntensity?: SaveData["backgroundGlowIntensity"];
   gearInventories?: SaveData["gearInventories"];
   gearLoadouts?: SaveData["gearLoadouts"];

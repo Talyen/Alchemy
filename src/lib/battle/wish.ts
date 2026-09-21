@@ -30,6 +30,7 @@ import { dealEnemyScaledDamage } from "./scaled-damage";
 import { gearFrozenDamageMultiplier } from "./gear-effects";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { scaleByRoomMultiplier } from "./enemy-turn-traits";
+import { emptyBattleCard } from "./damage-calc";
 
 function processEncounterTraitWish(state: BattleState): BattleState {
   if (!hasEnemyTrait(state, "jealous")) return state;
@@ -162,6 +163,15 @@ export function applyWishEffect(state: BattleState, card: BattleCard, amount: nu
   }
 
   return nextState;
+}
+
+/**
+ * Empty draw piles are a player-facing emergency, not a new card source.
+ * Reuse the normal Wish pipeline so existing rewards and random offer rules
+ * apply consistently; the synthetic source only avoids excluding a real card.
+ */
+export function applyEmergencyWish(state: BattleState, combatTexts: CombatTextEvent[] = []) {
+  return applyWishEffect(state, emptyBattleCard("emergency-wish"), 1, combatTexts);
 }
 
 function applyWishBurnTrigger(

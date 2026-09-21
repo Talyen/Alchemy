@@ -1,3 +1,4 @@
+import { UI_GOLD } from "@/lib/game-constants/ui-colors";
 import { useState, type ReactNode } from "react";
 import { BookOpen, Cog, Shield, Swords, TreePine, WandSparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,8 +18,8 @@ import {
 const MENU_NAV_BUTTON_CLASS = cn("h-16 justify-center gap-2 text-2xl", "w-[calc(19.2*var(--content-rem,1rem))]");
 const MENU_NAV_BUTTON_WRAPPER_CLASS = "w-[calc(19.2*var(--content-rem,1rem))]";
 
-const PLAY_PLASMA_PAIR: PlasmaColorPair = { primary: "#cd9b51", secondary: "#251e18" };
-const COLLECTION_PLASMA_PAIR: PlasmaColorPair = { primary: "#fcd34d", secondary: "#78350f" };
+const PLAY_PLASMA_PAIR: PlasmaColorPair = { primary: UI_GOLD.base, secondary: "#251e18" };
+const COLLECTION_PLASMA_PAIR: PlasmaColorPair = { primary: UI_GOLD.light, secondary: UI_GOLD.deep };
 const HOMESTEAD_PLASMA_PAIR: PlasmaColorPair = { primary: "#34d399", secondary: "#064e3b" };
 const ARMORY_PLASMA_PAIR: PlasmaColorPair = { primary: "#7dd3fc", secondary: "#0c4a6e" };
 const TALENTS_PLASMA_PAIR: PlasmaColorPair = { primary: "#a78bfa", secondary: "#4c1d95" };
@@ -111,7 +112,7 @@ export function MenuScreen({
               className={MENU_NAV_BUTTON_CLASS}
               onClick={onCollection}
             >
-              <BookOpen className="h-7 w-7 text-amber-300" />
+              <BookOpen className="h-7 w-7 text-gold-light" />
               Collection
             </Button>
           </MenuPlasmaHover>

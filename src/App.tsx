@@ -1,3 +1,6 @@
+import { DriftingLights } from "@/features/alchemy/shared/ui/drifting-lights";
+import type { BackgroundLightsSettings } from "@/lib/screen-effect-settings";
+import { ScreenEffect } from "@/features/alchemy/shared/ui/screen-effect";
 import {
   AppBackgroundParticles,
   AppScreenChromeProvider,
@@ -76,6 +79,7 @@ function AppMainContent({
   brightness,
   backgroundParticlesIntensity,
   backgroundGlowIntensity,
+  backgroundLights,
   run,
   renderedScreen,
   pagePhase,
@@ -89,12 +93,14 @@ function AppMainContent({
   brightness: number;
   backgroundParticlesIntensity: number;
   backgroundGlowIntensity: number;
+  backgroundLights: BackgroundLightsSettings;
   run: AlchemyRunCommands;
   renderedScreen: Screen;
   pagePhase: "enter" | "exit";
   tooltipBlocked: boolean;
   gameMenu: GameMenuState;
 }) {
+  const showBackgroundLights = backgroundLights.enabled && backgroundLights.strength > 0;
   const { screen: controllerScreen } = run;
   const { phase: runPhase } = useRunSessionNavigationSlice(controllerScreen);
   const autosaveEnabled = useAutosaveAllowed(controllerScreen);
@@ -176,7 +182,7 @@ function AppMainContent({
       inert={!screenInteractive || inspection.open}
       onClickCapture={!screenInteractive ? blockOutgoingScreenInteraction : undefined}
       onKeyDownCapture={!screenInteractive ? blockOutgoingScreenInteraction : undefined}
-      className={cn(pagePhaseClass, "h-full w-full overflow-hidden")}
+      className={cn(pagePhaseClass, "relative z-10 h-full w-full overflow-hidden")}
     >
       <CardDescriptionProvider cardDescriptionContext={cardDescriptionContext}>
         <AppScreenChromeProvider
@@ -205,13 +211,17 @@ function AppMainContent({
 
   return (
     <>
+      {showBackgroundLights ? (
+        <DriftingLights strength={backgroundLights.strength} motion={backgroundLights.motion} />
+      ) : null}
       <div
         ref={vrStageRef}
         data-testid="vr-stage"
         data-run-phase={runPhase}
         data-stage-pixel-ratio={stagePixelRatio}
         className={cn(
-          "[container-type:size] absolute top-0 left-0 overflow-hidden bg-background",
+          "[container-type:size] absolute top-0 left-0 overflow-hidden",
+          !showBackgroundLights && "bg-background",
           tooltipBlocked && "tooltips-disabled",
         )}
         style={stageStyle}
@@ -328,6 +338,7 @@ function AppInner({ displayLayout }: { displayLayout: ReturnType<typeof useVirtu
             brightness={settings.brightness}
             backgroundParticlesIntensity={settings.backgroundParticlesIntensity}
             backgroundGlowIntensity={settings.backgroundGlowIntensity}
+            backgroundLights={settings.backgroundLights}
             run={run}
             renderedScreen={renderedScreen}
             pagePhase={pagePhase}
@@ -341,6 +352,7 @@ function AppInner({ displayLayout }: { displayLayout: ReturnType<typeof useVirtu
             className={cn("pointer-events-none fixed inset-0 z-[130]", tooltipBlocked && "tooltips-disabled")}
           />
         </div>
+        <ScreenEffect settings={settings.screenEffects} />
       </div>
     </ErrorBoundary>
   );

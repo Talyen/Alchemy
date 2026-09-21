@@ -1,3 +1,6 @@
+import { BackgroundLightsOptions } from "./background-lights-options";
+import type { ScreenEffectsSettings, BackgroundLightsSettings } from "@/lib/screen-effect-settings";
+import { ScreenEffectsOptions } from "./screen-effects-options";
 import { Button } from "@/components/ui/button";
 import {
   aspectRatioOptions,
@@ -17,6 +20,10 @@ export interface DisplayOptionsProps {
   displayMode: DisplayMode;
   onDisplayModeChange: (mode: DisplayMode) => void;
   showDisplayMode: boolean;
+  screenEffects: ScreenEffectsSettings;
+  backgroundLights: BackgroundLightsSettings;
+  onBackgroundLightsChange: (patch: Partial<BackgroundLightsSettings>) => void;
+  onScreenEffectsChange: (patch: Partial<ScreenEffectsSettings>) => void;
   brightness: number;
   onBrightnessChange: (value: number) => void;
   backgroundParticlesIntensity: number;
@@ -66,11 +73,7 @@ export interface DevOptionsProps {
 export function DisplayOptionsPanel({ display }: { display: DisplayOptionsProps }) {
   return (
     <div className="space-y-4">
-      <AspectRatioSelect
-        selectedAspectRatio={display.selectedAspectRatio}
-        aspectRatioOptions={aspectRatioOptions}
-        onChange={display.onAspectRatioChange}
-      />
+      <h2 className={controlLabelClass}>Display Setup</h2>
       {display.showDisplayMode ? (
         <DisplayModeSelect
           displayMode={display.displayMode}
@@ -78,6 +81,11 @@ export function DisplayOptionsPanel({ display }: { display: DisplayOptionsProps 
           onChange={display.onDisplayModeChange}
         />
       ) : null}
+      <AspectRatioSelect
+        selectedAspectRatio={display.selectedAspectRatio}
+        aspectRatioOptions={aspectRatioOptions}
+        onChange={display.onAspectRatioChange}
+      />
       <SettingsSlider
         label="Brightness"
         value={display.brightness}
@@ -85,21 +93,22 @@ export function DisplayOptionsPanel({ display }: { display: DisplayOptionsProps 
         min={SETTINGS_RANGES.brightness.min}
         max={SETTINGS_RANGES.brightness.max}
       />
-      <p className={controlLabelClass}>Special Effects</p>
-      <SettingsSlider
-        label="Background Particles"
-        value={display.backgroundParticlesIntensity}
-        onChange={display.onBackgroundParticlesIntensityChange}
-        min={SETTINGS_RANGES.specialEffects.min}
-        max={SETTINGS_RANGES.specialEffects.max}
-      />
+      <h2 className={cn(controlLabelClass, "pt-4")}>Background Atmosphere</h2>
       <SettingsSlider
         label="Background Glow"
         value={display.backgroundGlowIntensity}
         onChange={display.onBackgroundGlowIntensityChange}
-        min={SETTINGS_RANGES.specialEffects.min}
-        max={SETTINGS_RANGES.specialEffects.max}
+        {...SETTINGS_RANGES.specialEffects}
       />
+      <SettingsSlider
+        label="Background Particles"
+        value={display.backgroundParticlesIntensity}
+        onChange={display.onBackgroundParticlesIntensityChange}
+        {...SETTINGS_RANGES.specialEffects}
+      />
+      <BackgroundLightsOptions settings={display.backgroundLights} onChange={display.onBackgroundLightsChange} />
+      <h2 className={cn(controlLabelClass, "pt-4")}>Screen Effects</h2>
+      <ScreenEffectsOptions settings={display.screenEffects} onChange={display.onScreenEffectsChange} />
     </div>
   );
 }

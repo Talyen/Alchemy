@@ -20,7 +20,6 @@ import { RunEndObtainedItems } from "./run-end-obtained-items";
 
 import { BattleBoonInspectButton, BattleBoonInspectOverlay } from "./battle-screen/boon-inspect";
 import { hasInspectableBoons } from "./battle-screen/unique-run-boons";
-import { RunJourneyStrip } from "./run-journey-strip";
 
 export function RunEndScreen({
   runRecap,
@@ -75,7 +74,6 @@ export function RunEndScreen({
       }
     >
       <div className="mt-6 flex flex-col items-center gap-8 text-center">
-        {outcome === "defeat" && runRecap ? <RunJourneyStrip recap={runRecap} /> : null}
         {subtitle ? <p className={cn(bodyTextClass, "text-xl")}>{subtitle}</p> : null}
 
         {entries.length > 0 ? <KeywordProgressGrid entries={entries} size="lg" /> : null}

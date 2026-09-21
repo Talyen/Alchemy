@@ -1,3 +1,4 @@
+import { createWebGLProgram } from "./webgl-program";
 import { parsePlasmaHexColor } from "@/lib/animation/plasma-colors";
 import { createPlasmaLifecycle } from "./keyword-plasma-lifecycle";
 import type { PlasmaRendererOptions } from "./keyword-plasma-types";
@@ -60,46 +61,6 @@ void main() {
 }
 `;
 
-function compileShader(gl: WebGLRenderingContext, type: number, source: string): WebGLShader | null {
-  const shader = gl.createShader(type);
-  if (!shader) return null;
-  gl.shaderSource(shader, source);
-  gl.compileShader(shader);
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    gl.deleteShader(shader);
-    return null;
-  }
-  return shader;
-}
-
-function createProgram(gl: WebGLRenderingContext): WebGLProgram | null {
-  const vertex = compileShader(gl, gl.VERTEX_SHADER, VERTEX_SHADER);
-  const fragment = compileShader(gl, gl.FRAGMENT_SHADER, FRAGMENT_SHADER);
-  if (!vertex || !fragment) {
-    if (vertex) gl.deleteShader(vertex);
-    if (fragment) gl.deleteShader(fragment);
-    return null;
-  }
-
-  const program = gl.createProgram();
-  if (!program) {
-    gl.deleteShader(vertex);
-    gl.deleteShader(fragment);
-    return null;
-  }
-  gl.attachShader(program, vertex);
-  gl.attachShader(program, fragment);
-  gl.linkProgram(program);
-  gl.deleteShader(vertex);
-  gl.deleteShader(fragment);
-
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    gl.deleteProgram(program);
-    return null;
-  }
-  return program;
-}
-
 function tryGetWebGLContext(canvas: HTMLCanvasElement): WebGLRenderingContext | null {
   try {
     return canvas.getContext("webgl", { alpha: true, premultipliedAlpha: true, antialias: false });
@@ -113,7 +74,7 @@ export function startWebGLKeywordPlasma(options: PlasmaRendererOptions): (() => 
   const gl = tryGetWebGLContext(canvas);
   if (!gl) return null;
 
-  const program = createProgram(gl);
+  const program = createWebGLProgram(gl, VERTEX_SHADER, FRAGMENT_SHADER);
   if (!program) return null;
 
   const positionLoc = gl.getAttribLocation(program, "aPosition");

@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+import { useReducedMotionPreference } from "@/components/ui/use-reduced-motion-preference";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { controlLabelClass, settingsPanelShellClass } from "@/features/alchemy/shared/config";
@@ -12,7 +14,7 @@ interface SettingsSelectProps<T extends string> {
   onChange: (value: T) => void;
 }
 
-function SettingsSelect<T extends string>({ id, label, value, options, onChange }: SettingsSelectProps<T>) {
+export function SettingsSelect<T extends string>({ id, label, value, options, onChange }: SettingsSelectProps<T>) {
   return (
     <div className={cn(settingsPanelShellClass, "text-left")}>
       <label htmlFor={id} className={cn("block", controlLabelClass)}>
@@ -123,6 +125,28 @@ export function SettingsToggle({
       <div className="flex items-center justify-between gap-4">
         <p className={controlLabelClass}>{label}</p>
         <Switch aria-label={label} checked={checked} onCheckedChange={onChange} />
+      </div>
+    </div>
+  );
+}
+
+/** Reversible height transition keeps surrounding options in normal document flow. */
+export function SettingsReveal({ open, children }: { open: boolean; children: ReactNode }) {
+  const reducedMotion = useReducedMotionPreference();
+  return (
+    <div
+      className="grid transition-[grid-template-rows,opacity] duration-[var(--motion-fade-duration)] ease-in-out"
+      style={{
+        gridTemplateRows: open ? "1fr" : "0fr",
+        opacity: open ? 1 : 0,
+        transitionDuration: reducedMotion ? "0ms" : undefined,
+      }}
+      inert={!open}
+      aria-hidden={!open}
+      data-settings-reveal={open ? "open" : "closed"}
+    >
+      <div className="min-h-0 overflow-hidden">
+        <div className="space-y-4 pt-4">{children}</div>
       </div>
     </div>
   );

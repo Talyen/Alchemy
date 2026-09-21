@@ -145,7 +145,7 @@ describe("gear shine", () => {
       definitionId: "wardbreaker",
       affixes: [{ id: "flat-stun", value: 4 }],
     });
-    const gold = ["#fbbf24", "#f59e0b", "#d97706", "#fef3c7", "#fbbf24"];
+    const gold = ["#e6c58e", "#cd9b51", "#986b32", "#f3e4ca", "#e6c58e"];
     const keywordIds = getGearInstanceKeywordIds(unique);
     const expectedBorder = getKeywordBorderShineColors(keywordIds);
     expect(expectedBorder.length).toBeGreaterThan(0);
@@ -157,16 +157,16 @@ describe("gear shine", () => {
       keywordDefinitions.stun.shineColors[0],
       keywordDefinitions.physical.shineColors[0],
     ]);
-    expect(getGearInstanceTextShineColors(unique)).toEqual(["#fbbf24", "color-mix(in srgb, #fbbf24 55%, transparent)"]);
+    expect(getGearInstanceTextShineColors(unique)).toEqual(["#f3e4ca", "color-mix(in srgb, #f3e4ca 55%, transparent)"]);
     expect(getGearDefinitionTextShineColors(gearDefinitions.wardbreaker!)).toEqual([
-      "#fbbf24",
-      "color-mix(in srgb, #fbbf24 55%, transparent)",
+      "#f3e4ca",
+      "color-mix(in srgb, #f3e4ca 55%, transparent)",
     ]);
   });
 
   it("keeps the gold palette for unique titles and hover backgrounds", () => {
-    expect(getUniqueGearTextShineColors()).toEqual(["#fbbf24", "color-mix(in srgb, #fbbf24 55%, transparent)"]);
-    expect(getUniqueGearShineColors()).toEqual(["#fbbf24", "#f59e0b", "#d97706", "#fef3c7", "#fbbf24"]);
+    expect(getUniqueGearTextShineColors()).toEqual(["#f3e4ca", "color-mix(in srgb, #f3e4ca 55%, transparent)"]);
+    expect(getUniqueGearShineColors()).toEqual(["#e6c58e", "#cd9b51", "#986b32", "#f3e4ca", "#e6c58e"]);
   });
 
   it("prefers base affinity keywords when selecting text shine keywords", () => {

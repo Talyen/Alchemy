@@ -19,10 +19,10 @@ export function ScreenHeader({
   return (
     <div className={cn("flex flex-col items-center text-center", className)}>
       {eyebrow ? (
-        <p className="mb-1 text-sm font-semibold tracking-[0.22em] text-amber-100/60 uppercase">{eyebrow}</p>
+        <p className="mb-1 text-sm font-semibold tracking-[0.22em] text-gold-pale/60 uppercase">{eyebrow}</p>
       ) : null}
       <h1 className={cn("font-sans", screenTitleClass)}>{title}</h1>
-      <div className="mt-2 h-px w-44 bg-gradient-to-r from-transparent via-amber-100/75 to-transparent" />
+      <div className="mt-2 h-px w-44 bg-gradient-to-r from-transparent via-gold-pale/75 to-transparent" />
     </div>
   );
 }
@@ -81,13 +81,13 @@ export function ScreenHeaderRow({
           </div>
           <div className="flex min-w-0 flex-col items-center px-3 text-center">
             {eyebrow ? (
-              <p className="mb-1 text-sm font-semibold tracking-[0.22em] text-amber-100/60 uppercase">{eyebrow}</p>
+              <p className="mb-1 text-sm font-semibold tracking-[0.22em] text-gold-pale/60 uppercase">{eyebrow}</p>
             ) : null}
             <h1 className={cn("text-center font-sans", screenTitleClass)}>{title}</h1>
           </div>
           <div className={cn("flex items-center justify-end gap-2", trailingClassName)}>{trailingContent}</div>
         </div>
-        <div className="mt-2 h-px w-44 bg-gradient-to-r from-transparent via-amber-100/75 to-transparent" />
+        <div className="mt-2 h-px w-44 bg-gradient-to-r from-transparent via-gold-pale/75 to-transparent" />
       </div>
     </div>
   );

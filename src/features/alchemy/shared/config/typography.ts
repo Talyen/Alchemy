@@ -1,9 +1,9 @@
 export const screenTitleClass =
-  "text-2xl font-black tracking-[0.15em] text-amber-100/75 uppercase text-balance sm:text-3xl";
+  "text-2xl font-black tracking-[0.15em] text-gold-pale/75 uppercase text-balance sm:text-3xl";
 
 export const screenDescriptionClass = "text-lg leading-relaxed text-balance";
 
-export const sectionTitleClass = "text-xl font-bold text-amber-100/75 text-balance";
+export const sectionTitleClass = "text-xl font-bold text-gold-pale/75 text-balance";
 
 export const bodyTextClass = "text-lg leading-relaxed text-muted-foreground text-balance";
 
@@ -13,7 +13,7 @@ export const controlDescriptionClass = "mt-1 text-lg text-muted-foreground text-
 
 export const tooltipHeaderClass = "mb-1 font-sans text-sm font-bold text-foreground sm:text-base";
 
-export const tooltipSubheaderClass = "mt-2.5 mb-1 text-xs font-semibold tracking-widest text-amber-100/80 uppercase";
+export const tooltipSubheaderClass = "mt-2.5 mb-1 text-xs font-semibold tracking-widest text-gold-pale/80 uppercase";
 
 export const tooltipBodyClass = "mt-1 space-y-1 text-sm leading-relaxed text-muted-foreground";
 

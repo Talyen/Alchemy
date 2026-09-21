@@ -25,7 +25,7 @@ describe("gear affix shine rendering", () => {
         ],
       }),
     );
-    expect(screen.getByText("Dance of Blades").style.backgroundImage).toContain("rgb(251, 191, 36)");
+    expect(screen.getByText("Dance of Blades").style.backgroundImage).toContain("rgb(243, 228, 202)");
     const stalwart = screen.getByText("Stalwart").style.backgroundImage;
     expect(stalwart).toContain("rgb(156, 163, 175)");
     expect(stalwart).toContain("rgb(252, 211, 77)");
@@ -34,7 +34,7 @@ describe("gear affix shine rendering", () => {
     expect(screen.getByText("Ironbound").style.backgroundImage).toContain("rgb(203, 213, 225)");
     for (const name of ["Stalwart", "Bladedance", "Ironbound"]) {
       const gradient = screen.getByText(name).style.backgroundImage;
-      expect(gradient).not.toContain("rgb(251, 191, 36)");
+      expect(gradient).not.toContain("rgb(243, 228, 202)");
       expect(gradient).not.toContain("rgb(217, 119, 6)");
     }
   });

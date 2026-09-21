@@ -89,10 +89,10 @@ export function ConfirmationDialog({
         describedBy={description ? descriptionId : undefined}
         returnFocusRef={returnFocusRef}
       >
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/15 text-amber-200">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-warning-surface/15 text-warning">
           <Icon className="h-6 w-6" />
         </div>
-        <h2 id={titleId} className={cn("mt-4 font-sans text-2xl font-bold text-balance text-amber-100/75")}>
+        <h2 id={titleId} className={cn("mt-4 font-sans text-2xl font-bold text-balance text-gold-pale/75")}>
           {title}
         </h2>
         {description && (

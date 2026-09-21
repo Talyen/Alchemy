@@ -8,7 +8,14 @@
   --color-card: hsl(30 8% 6%);
   --color-popover: hsl(30 8% 6%);
   --color-popover-foreground: hsl(40 25% 88%);
-  --color-primary: hsl(36 55% 56%);
+  /* Mirrors UI_GOLD in ui-colors.ts; architecture smoke checks parity. */
+  --color-gold-base: #cd9b51;
+  --color-gold-light: #e6c58e;
+  --color-gold-deep: #986b32;
+  --color-gold-pale: #f3e4ca;
+  --color-primary: var(--color-gold-base);
+  --color-warning: #fde68a;
+  --color-warning-surface: #f59e0b;
   --color-primary-foreground: hsl(28 22% 12%);
   --color-muted: hsl(30 6% 8%);
   --color-muted-foreground: hsl(35 12% 62%);
@@ -47,7 +54,7 @@
   --animate-boss-title-shine: boss-title-shine 4.8s linear infinite;
 
   --shadow-deaths-door-glow: 0 0 30px rgba(127, 29, 29, 0.45);
-  --shadow-labyrinth-current-glow: 0 0 10px rgba(251, 191, 36, 0.5);
+  --shadow-labyrinth-current-glow: 0 0 10px color-mix(in srgb, var(--color-gold-light) 50%, transparent);
   --drop-shadow-mana-overflow-glow: 0 0 3px rgba(125, 211, 252, 0.6);
 }
 

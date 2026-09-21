@@ -12,6 +12,29 @@ import { makeMinimalActiveRunInput } from "../../fixtures/active-run";
 import { ASPECT_RATIO_VALUES, DISPLAY_MODE_VALUES, SETTINGS_RANGES } from "@/lib/settings-values";
 
 describe("SaveDataSchema", () => {
+  it("defaults screen effects off and repairs each control independently", () => {
+    const defaults = SaveDataSchema.parse({}).screenEffects;
+    expect(defaults.enabled).toBe(false);
+    for (const effect of [defaults.scanlines, defaults.tint, defaults.edges, defaults.grain]) {
+      expect(effect).toMatchObject({ enabled: false, strength: 50 });
+    }
+    const effects = SaveDataSchema.parse({
+      screenEffects: {
+        enabled: true,
+        scanlines: { enabled: true, strength: -10, spacing: "wide" },
+        grain: { enabled: "yes", strength: 200 },
+        tint: { color: "bad", strength: "bad" },
+      },
+    }).screenEffects;
+    expect(effects.scanlines).toEqual({ enabled: true, strength: 0, spacing: "wide" });
+    expect(effects.grain).toEqual({ enabled: false, strength: 100 });
+    expect(effects.tint).toEqual({ enabled: false, strength: 50, color: "amber" });
+    expect(
+      SaveDataSchema.parse({ backgroundLights: { enabled: true, motion: "still", strength: 35 } }).backgroundLights,
+    ).toEqual({ enabled: true, strength: 35, motion: "still" });
+    expect(SaveDataSchema.parse({}).backgroundLights).toEqual({ enabled: false, strength: 50, motion: "flowing" });
+  });
+
   it("parses a full homestead save fixture", () => {
     const result = SaveDataSchema.safeParse(baseHomesteadSave);
     expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);

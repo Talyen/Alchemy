@@ -1,3 +1,4 @@
+import { UI_GOLD } from "@/lib/game-constants/ui-colors";
 import {
   characters,
   getCardKeywords,
@@ -17,7 +18,7 @@ import { NEUTRAL_SHINE_FALLBACK } from "@/lib/animation/shine-gradient";
 // import path). Import them from there directly; this module owns palettes
 // and palette selectors only and must not re-export lib helpers.
 
-const GOLD_SHINE = ["#fcd34d", "#d97706", "#fcd34d"] as const;
+const GOLD_SHINE = [UI_GOLD.light, UI_GOLD.deep, UI_GOLD.light] as const;
 const CORRUPTION_SHINE = ["#450a0a", "#dc2626", "#f87171", "#7f1d1d"] as const;
 
 export const SHINE_PALETTES = {

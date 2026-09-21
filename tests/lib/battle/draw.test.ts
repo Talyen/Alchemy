@@ -215,4 +215,19 @@ describe("player turn transition", () => {
     expect(result.mana).toBe(4);
     expect(result.turnPhase).toBe("player");
   });
+
+  it("triggers an Emergency Wish when every draw pile is empty", () => {
+    const state = makeTestBattleState({
+      turnPhase: "enemy",
+      deck: [],
+      discard: [],
+      hand: [],
+      exhausted: [makeTestCardWithId("spent")],
+      wishOptions: null,
+      wishQueue: [],
+    });
+    const result = advanceToPlayerTurn(state);
+    expect(result.wishOptions).toHaveLength(3);
+    expect(result.turnPhase).toBe("player");
+  });
 });

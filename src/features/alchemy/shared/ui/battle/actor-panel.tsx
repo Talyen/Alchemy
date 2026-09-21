@@ -254,6 +254,7 @@ function ActorArtFrame({
           "relative",
           cardSurfaceClass,
           !isDead && cardHoverScaleClass,
+          turnActive && !isDead && "combatant-turn-active",
           cardWidthClass ?? battleCardWidthClass,
           "border",
           isDead ? "border-transparent" : "border-border/80",
@@ -345,7 +346,7 @@ function ActorHealthHeader({
       <p
         key={healthToken}
         data-testid={`${side}-health`}
-        className={cn("text-lg font-semibold text-amber-100/75", healthToken > 0 && "hp-number-pop")}
+        className={cn("text-lg font-semibold text-gold-pale/75", healthToken > 0 && "hp-number-pop")}
       >
         {health}/{maxHealth}
       </p>

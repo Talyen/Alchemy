@@ -4,7 +4,7 @@ import { useRunEndScreenData } from "@/features/alchemy/shared/stores/use-run-sc
 import type { RunEndCommands, RunEndRouteCtx } from "./route-ctx";
 
 const RUN_END_COPY = {
-  defeat: { title: "Run Ended", subtitle: "" },
+  defeat: { title: "Journey’s End", subtitle: "" },
   victory: {
     title: "Victory",
     subtitle: "The primordial evils have been vanquished. Alchemy is saved.",

@@ -39,7 +39,7 @@ export function GoldCost({
     <span
       className={cn(
         "inline-flex items-center gap-1.5 text-xl leading-none font-semibold tabular-nums",
-        affordable ? "text-amber-200" : "text-muted-foreground",
+        affordable ? "text-gold-pale" : "text-muted-foreground",
         className,
       )}
     >
@@ -68,7 +68,7 @@ export function GoldDisplay({
     <div
       key={increaseToken}
       className={cn(
-        "flex h-11 shrink-0 items-center gap-1.5 rounded-md px-2 text-xl font-semibold text-amber-200 tabular-nums",
+        "flex h-11 shrink-0 items-center gap-1.5 rounded-md px-2 text-xl font-semibold text-gold-pale tabular-nums",
         cardHoverScaleClass,
         increaseToken > 0 && "battle-gold-increase",
         className,

@@ -109,7 +109,7 @@ export function TooltipChip({ children, className }: { children: ReactNode; clas
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full bg-amber-100/10 px-1.5 py-px tracking-wider text-amber-100/80 uppercase",
+        "inline-flex items-center rounded-full bg-gold-pale/10 px-1.5 py-px tracking-wider text-gold-pale/80 uppercase",
         tooltipFooterChipClass,
         className,
       )}

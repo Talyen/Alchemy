@@ -37,7 +37,7 @@ function renderRunEnd({
   return render(
     <RunEndScreen
       runRecap={runRecap}
-      title="Run Ended"
+      title="Journey’s End"
       subtitle=""
       outcome="defeat"
       characterId="knight"
@@ -235,7 +235,7 @@ describe("RunEndScreen", () => {
   });
 });
 
-it("shows Gold and a non-interactive journey, with ordinary Boon inspection", async () => {
+it("shows Gold and ordinary Boon inspection without a room trail", async () => {
   const user = userEvent.setup();
   renderRunEnd({
     runRecap: {
@@ -252,12 +252,7 @@ it("shows Gold and a non-interactive journey, with ordinary Boon inspection", as
       gold: 42,
     },
   });
-  const journey = screen.getByRole("region", { name: "Run journey" });
-  expect(journey.textContent).toContain("defeated here");
-  const rooms = journey.querySelectorAll("li");
-  expect(rooms[0]?.textContent).toContain("defeated here");
-  expect(rooms[1]?.textContent).not.toContain("defeated here");
-  expect(journey.querySelectorAll("button")).toHaveLength(0);
+  expect(screen.queryByRole("region", { name: "Run journey" })).toBeNull();
   expect(screen.getByText("+42")).toBeTruthy();
   await user.click(screen.getByRole("button", { name: "Inspect Boons" }));
   expect(screen.getByRole("heading", { name: "Boons" })).toBeTruthy();

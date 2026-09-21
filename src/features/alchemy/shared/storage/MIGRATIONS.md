@@ -143,3 +143,16 @@ retains its free-Archery preparation. New acquisitions use the current catalog.
 Existing prepared flags survive load unchanged. No schema/content version bump
 or wholesale card replacement is needed. Merge clocks, width reservations, and
 floating sums are presentation-only and never enter saves.
+
+## Screen-effect settings
+
+`screenEffects` owns the master enable flag and independent `scanlines`, `tint`,
+`edges` and `grain` records. `backgroundLights` independently owns its own enabled,
+strength, and motion fields alongside the other background preferences. Each record has enabled and strength fields,
+with spacing, color, or motion only where relevant. Defaults and field-level
+normalization live in `lib/screen-effect-settings.ts` and are shared by save
+validation and the settings codec. Missing or malformed values default safely;
+finite strengths clamp to 0–100. The master and every effect default off.
+
+The experimental preset model was removed before any saves required compatibility;
+there is deliberately no conversion or legacy preset data in the saved settings.

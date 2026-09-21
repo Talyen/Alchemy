@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildWishOptions, applyWishEffect, chooseWishCard } from "@/lib/battle/wish";
+import { applyEmergencyWish, buildWishOptions, applyWishEffect, chooseWishCard } from "@/lib/battle/wish";
 import { shouldConvertGemsWishToGold } from "@/lib/content-systems/battle-content";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import type { CombatTextEvent } from "@/lib/battle/types";
@@ -215,6 +215,41 @@ describe("applyWishEffect", () => {
     const result = applyWishEffect(state, card, 3, texts);
     expect(result.playerHealth).toBe(29);
     expect(result.gold).toBe(6);
+  });
+});
+
+describe("applyEmergencyWish", () => {
+  it("opens the normal Wish choices and applies normal Wish rewards", () => {
+    const state = patchBattleState({
+      deck: [],
+      hand: [],
+      discard: [],
+      talentEffects: { goldOnWish: 4 },
+    });
+    const result = applyEmergencyWish(state, []);
+
+    expect(result.wishOptions).toHaveLength(3);
+    expect(result.gold).toBe(4);
+  });
+
+  it("can trigger again after the chosen emergency card is exhausted", () => {
+    const initial = applyEmergencyWish(
+      patchBattleState({ deck: [], hand: [], discard: [], wishOptions: null, wishQueue: [] }),
+    );
+    const chosen = initial.wishOptions?.[0];
+    expect(chosen).toBeDefined();
+    const afterChoice = chooseWishCard(initial, chosen!.id);
+    const exhausted = {
+      ...afterChoice,
+      deck: [],
+      hand: [],
+      discard: [],
+      exhausted: [...afterChoice.exhausted, chosen!],
+      wishOptions: null,
+      wishQueue: [],
+    };
+
+    expect(applyEmergencyWish(exhausted).wishOptions).toHaveLength(3);
   });
 });
 

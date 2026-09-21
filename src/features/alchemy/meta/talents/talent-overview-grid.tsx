@@ -81,7 +81,7 @@ const TalentPortraitCard = memo(function TalentPortraitCard({
         </Surface>
 
         <div className="mt-1.5 flex max-w-full items-center justify-center gap-2.5">
-          <span className="truncate text-center font-sans text-base font-bold tracking-wide text-foreground/90 transition-colors group-hover:text-amber-300 sm:text-lg">
+          <span className="truncate text-center font-sans text-base font-bold tracking-wide text-foreground/90 transition-colors group-hover:text-gold-light sm:text-lg">
             {definition.label}
           </span>
           {hasUnspent ? (

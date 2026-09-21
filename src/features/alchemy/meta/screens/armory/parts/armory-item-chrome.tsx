@@ -2,7 +2,7 @@ import { Lock } from "lucide-react";
 import type { CraftingResult } from "../crafting-result";
 
 export function ReservedLock() {
-  return <Lock aria-hidden="true" className="absolute bottom-3 left-3 z-10 h-6 w-6 text-amber-200" />;
+  return <Lock aria-hidden="true" className="absolute bottom-3 left-3 z-10 h-6 w-6 text-gold-pale" />;
 }
 
 export function CraftingFlash({ result, instanceId }: { result: CraftingResult | null; instanceId: string }) {

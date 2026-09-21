@@ -30,7 +30,7 @@ export function GearDetailPopup({
       {...(padding !== undefined ? { padding } : {})}
     >
       <GearTooltipContent definition={definition} instance={instance} />
-      {notice ? <p className="mt-3 text-sm text-amber-200">{notice}</p> : null}
+      {notice ? <p className="mt-3 text-sm text-warning">{notice}</p> : null}
     </PortaledTooltip>
   );
 }

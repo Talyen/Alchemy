@@ -111,7 +111,7 @@ const CharacterCard = memo(function CharacterCard({
           />
         ) : null}
       </div>
-      <p className={cn("font-sans text-2xl font-bold text-amber-100/90", isLocked && "text-muted-foreground/60")}>
+      <p className={cn("font-sans text-2xl font-bold text-gold-pale/90", isLocked && "text-muted-foreground/60")}>
         {char.name}
       </p>
     </div>

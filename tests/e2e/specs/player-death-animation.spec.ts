@@ -25,7 +25,7 @@ test("player death finishes its particle burst before defeat", critical, async (
   const burst = portrait.locator("canvas");
   await expect(burst).toBeVisible();
   await expect(portrait.locator('img[style*="clip-path"]')).toHaveCount(2);
-  await expect(page.getByRole("heading", { name: "Run Ended" })).toBeHidden();
+  await expect(page.getByRole("heading", { name: "Journey’s End" })).toBeHidden();
   await expect
     .poll(async () =>
       Number(
@@ -37,6 +37,6 @@ test("player death finishes its particle burst before defeat", critical, async (
     )
     .toBeLessThan(0.9);
   await expect(burst).toBeHidden();
-  await expect(page.getByRole("heading", { name: "Run Ended" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Journey’s End" })).toBeVisible();
   expect(await page.evaluate((key) => JSON.parse(localStorage.getItem(key) || "{}").activeRun, SAVE_KEY)).toBeNull();
 });

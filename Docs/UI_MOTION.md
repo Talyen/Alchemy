@@ -42,6 +42,10 @@ the visible refill. Use `CAMPFIRE_ANIMATION_MS` and `CAMPFIRE_CONTINUE_DELAY_MS`
 
 ## Battle motion
 
+Living combatant artwork, including companions, scales to 103.5% during its active
+turn alongside the shine border. Standard hover scaling multiplies that size by
+1.035 again (about 107.1% total), with the shared 200ms ease-out transition.
+
 This guide owns visible battle feedback; [the playback workflow](./WORKFLOWS.md#change-battle-playback)
 owns wiring and lifecycle. Battle VFX live in `run-loop/battle` (visual state in
 `battle-presentation-store.ts`, overlays in `presentation/` leaves); every fight
@@ -71,3 +75,12 @@ When equipping, unequipping, or replacing gear and trinkets:
 - **Position reflow**: When an empty-slot equip, unequip, or hand displacement causes inventory items to shift, surrounding items animate smoothly to their new positions over 200ms using layout position transitions (`motion.div layout="position"`).
 - **Interruption safety**: Any navigation, category switch, slot change, window resize, scroll, or unmount immediately settles all active in-flight transfers, restoring artwork visibility and removing portaled overlays without lingering visual artifacts.
 - **Reduced motion**: When reduced motion is preferred (`prefers-reduced-motion: reduce`), transfers settle immediately with zero travel duration and no portaled flight overlay.
+
+## Conditional options
+
+Options uses `SettingsReveal` for toggle-dependent controls. A reversible grid-row
+and opacity transition expands/collapses their actual layout height, including
+spacing, so the centered shell and following controls move continuously. Closing
+makes descendants inert and accessibility-hidden immediately. Reduced motion and
+the shared animation-disable flag settle immediately. Hidden controls stay mounted
+to support interrupted transitions and retain their selected values.

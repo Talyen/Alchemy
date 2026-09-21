@@ -15,6 +15,14 @@ the authoritative notices for those distributions. Packaged desktop builds
 must preserve notices required by Electron, Chromium, Node.js, Steamworks, and
 other bundled dependencies.
 
+## Afterglow CRT
+
+The CRT screen overlays adapt the scanline and glass styling and preset values
+from [Afterglow CRT](https://github.com/HauntedCrusader/afterglow-crt),
+Copyright (c) 2026 HauntedCrusader, under the MIT license. The full notice is
+preserved in [public/licenses/afterglow-crt.txt](./public/licenses/afterglow-crt.txt)
+and copied into web and desktop builds.
+
 ## Asset provenance register
 
 Every third-party art, audio, music, or font source must be recorded before a

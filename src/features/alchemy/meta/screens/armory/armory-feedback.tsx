@@ -36,7 +36,7 @@ export function ArmoryFeedback({
         <>
           <p
             role={held.error ? "alert" : "status"}
-            className={cn("text-sm", held.error ? "text-red-100" : "text-amber-100")}
+            className={cn("text-sm", held.error ? "text-red-100" : "text-gold-pale")}
           >
             {held.notice}
           </p>

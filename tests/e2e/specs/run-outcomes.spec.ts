@@ -59,7 +59,7 @@ test.describe("Run Outcomes", critical, () => {
       await page.keyboard.press("Escape");
       await expect(page.getByRole("button", { name: "End Run" })).toBeVisible({ timeout: 3000 });
       await page.getByRole("button", { name: "End Run" }).click();
-      await expect(page.getByRole("heading", { name: "Run Ended" })).toBeVisible({ timeout: 5000 });
+      await expect(page.getByRole("heading", { name: "Journey’s End" })).toBeVisible({ timeout: 5000 });
       await page.getByRole("button", { name: "Main Menu" }).click();
       await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible({ timeout: 5000 });
     });
@@ -81,7 +81,7 @@ test.describe("Run Outcomes", critical, () => {
     });
 
     test(
-      "after defeat, the recap shows the journey and build before returning to menu",
+      "after defeat, the recap shows rewards and build before returning to menu",
       critical,
       async ({ page, fastBattle }) => {
         void fastBattle;
@@ -115,8 +115,8 @@ test.describe("Run Outcomes", critical, () => {
         await expect(battle.endTurnBtn).toBeEnabled({ timeout: 15000 });
 
         await battle.endTurn();
-        await expect(page.getByRole("heading", { name: "Run Ended" })).toBeVisible({ timeout: 15000 });
-        await expect(page.getByRole("region", { name: "Run journey" })).toContainText("defeated here");
+        await expect(page.getByRole("heading", { name: "Journey’s End" })).toBeVisible({ timeout: 15000 });
+        await expect(page.getByRole("region", { name: "Run journey" })).toHaveCount(0);
         await expect(page.getByText("+42", { exact: true })).toBeVisible();
         await page.getByRole("button", { name: /View Deck/ }).click();
         await expect(page.getByRole("heading", { name: "Deck", exact: true })).toBeVisible();
@@ -183,7 +183,7 @@ test.describe("Death's Door", critical, () => {
 
     await expect(battle.endTurnBtn).toBeEnabled({ timeout: 10000 });
     await battle.endTurn();
-    await expect(page.getByRole("heading", { name: "Run Ended" })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("heading", { name: "Journey’s End" })).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole("button", { name: "Main Menu" })).toBeVisible({ timeout: 5000 });
   });
 });

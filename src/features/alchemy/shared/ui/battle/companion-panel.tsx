@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 
 import {
   battleCompanionWidthClass,
+  cardHoverScaleClass,
   cardSurfaceClass,
   getCompanionShineColors,
   getPlasmaColorPairForCompanion,
@@ -53,6 +54,8 @@ export function CompanionPanel({
           className={cn(
             "relative",
             cardSurfaceClass,
+            cardHoverScaleClass,
+            turnActive && "combatant-turn-active",
             compact ? "w-[calc(11.1105*var(--content-rem,1rem))]" : battleCompanionWidthClass,
             "border border-border/80",
             shaking && "animate-shake",

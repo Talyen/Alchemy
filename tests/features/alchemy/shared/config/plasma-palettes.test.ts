@@ -109,7 +109,7 @@ describe("getPlasmaKeywordsForGear", () => {
 
   it("shares a valid gold hex pair between owned Unique gear and the collection", () => {
     const pair = getPlasmaColorPairForUnique();
-    expect(pair).toEqual({ primary: "#fbbf24", secondary: "#f59e0b" });
+    expect(pair).toEqual({ primary: "#e6c58e", secondary: "#cd9b51" });
     expect(
       getPlasmaColorPairForGear({
         instanceId: "dance",

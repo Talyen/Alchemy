@@ -87,7 +87,7 @@ function buildMenuItems({
       key: "collection",
       label: "Collection",
       Icon: BookOpen,
-      iconClassName: "text-amber-300",
+      iconClassName: "text-gold-light",
       show: currentScreen !== "collection",
       handler: closeAfter(onCollection),
     },

@@ -7,7 +7,7 @@ export function StarRating({ current, max, className }: { current: number; max: 
       {Array.from({ length: max }, (_, i) => (
         <Star
           key={i}
-          className={cn("h-3 w-3", i < current ? "text-amber-400" : "text-muted-foreground", className)}
+          className={cn("h-3 w-3", i < current ? "text-gold-light" : "text-muted-foreground", className)}
           fill={i < current ? "currentColor" : "none"}
         />
       ))}

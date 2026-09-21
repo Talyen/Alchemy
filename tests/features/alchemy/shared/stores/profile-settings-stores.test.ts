@@ -158,6 +158,24 @@ describe("settings store", () => {
     expect(useSettingsStore.getState().backgroundGlowIntensity).toBe(100);
   });
 
+  it("keeps screen effects independent, preserves choices while off, and resets them", () => {
+    const settings = useSettingsStore.getState();
+    settings.setScreenEffects({ enabled: true, grain: { enabled: true, strength: 25 } });
+    settings.setBackgroundLights({ enabled: true, strength: 250, motion: "still" });
+    settings.setScreenEffects({ enabled: false });
+    const saved = settingsPersistenceCodec.encode();
+    settings.resetToDefaults();
+    expect(useSettingsStore.getState().screenEffects.grain).toEqual({ enabled: false, strength: 50 });
+    expect(useSettingsStore.getState().backgroundLights.enabled).toBe(false);
+    settingsPersistenceCodec.hydrate(saved);
+    expect(useSettingsStore.getState().screenEffects).toMatchObject({
+      enabled: false,
+      grain: { enabled: true, strength: 25 },
+      scanlines: { enabled: false, strength: 50 },
+    });
+    expect(useSettingsStore.getState().backgroundLights).toEqual({ enabled: true, strength: 100, motion: "still" });
+  });
+
   it("clears stored autoplay when remember is turned off", () => {
     const settings = useSettingsStore.getState();
     settings.setRememberAutoplayPreference(true);

@@ -58,7 +58,7 @@ export function HeroTooltip({
             </div>
           ) : (
             <div className="mt-2 flex">
-              <span className="character-keyword-pill-tint inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs leading-none font-semibold text-amber-100/90">
+              <span className="character-keyword-pill-tint inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs leading-none font-semibold text-gold-pale/90">
                 All Keywords
               </span>
             </div>

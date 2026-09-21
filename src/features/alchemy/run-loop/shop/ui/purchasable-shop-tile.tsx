@@ -27,7 +27,7 @@ export function ShopPriceChip({
           <div
             className={cn(
               "pointer-events-auto inline-flex items-center justify-center gap-1.5 text-xl leading-none font-semibold tabular-nums",
-              canAfford ? "text-amber-200" : "text-muted-foreground",
+              canAfford ? "text-gold-pale" : "text-muted-foreground",
             )}
           >
             <CurrencyAmount

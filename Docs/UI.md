@@ -36,7 +36,7 @@ Use `ScreenShell`, `TitledScreenShell`, `ScreenHeader`, and `PageLayout` for pag
 - Generic interactive primitives preserve standard ARIA roles, names, values, keyboard behavior, and disabled states. Eligible talent nodes use native buttons for Enter and Space; keyword trees without portrait art remain selectable using a blank portrait and the keyword icon.
 - `Surface` is the shared interactive card/tile owner (`onClick` works for both `button` and `div` renderings; prefer `as="button"` for actions). `PortaledTooltip` with `TooltipPanel` owns tooltip chrome. `ShineText` with `GearItemTitle`/`TrinketItemTitle` (both in `gear-item-title.tsx`) own keyword/item shine typography.
 - Item title and affix palettes follow [item shine](#item-shine).
-- Shop prices (over card art and inside buttons) use unboxed icon and amount standardized on `text-xl font-semibold text-amber-200 tabular-nums` with a 24px (`h-6 w-6`) coin icon. Over card art, prices float directly on the illustration using multi-layered black contour drop-shadows (`drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] drop-shadow-[0_0_2px_rgba(0,0,0,0.95)]`) without background containers or art fades; inside buttons, prices flow naturally as inline text matching the button's typography. Unaffordable prices transition to `text-muted-foreground`.
+- Shop prices (over card art and inside buttons) use unboxed icon and amount standardized on `text-xl font-semibold text-gold-pale tabular-nums` with a 24px (`h-6 w-6`) coin icon. Over card art, prices float directly on the illustration using multi-layered black contour drop-shadows (`drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] drop-shadow-[0_0_2px_rgba(0,0,0,0.95)]`) without background containers or art fades; inside buttons, prices flow naturally as inline text matching the button's typography. Unaffordable prices transition to `text-muted-foreground`.
 - `TraitBox` owns unboxed Trait rows, colored icons, keyword descriptions, and title shine across Labyrinth map details and enemy hover/inspection. Traits have no individual border, background, or box padding. Encounter icon themes live in shared configuration and also drive map effects. Enemy Traits and encounter modifiers form one deduplicated list; inspection uses two equal columns at 40rem of available content width, with a single-column fallback and full-width sole Traits. Hover and map Traits stay stacked. Apply inline-size containment only to the inspection layout: shrink-to-fit tooltips need their contents to contribute intrinsic width.
 - Modal interaction and dismissal follow [Overlay lifecycle](#overlay-lifecycle).
 
@@ -47,6 +47,21 @@ Astral instance titles and borders derive their shine keywords from the rolled a
 Max-roll Astral and Unique affix names use the first three distinct keywords from their own description, including aliases such as Stunned, Frozen, and Consumed. Tooltip entries carry affix identity and normalized value together so description text and max-roll shine cannot diverge. Text uses each keyword’s primary color with a 55%-opacity stop. Single-keyword borders retain the keyword's full 3-stop pulse (`[light, dark, light]`), while multi-keyword borders normalize to each keyword’s primary accent color looped back to the first (`[k1, k2, k1]` or `[k1, k2, k3, k1]`) to maintain a consistent cadence and visual tempo across all items. Trinket titles use at most three described keywords in description order. Artwork palettes remain independent.
 
 Definition-only previews use base affinities. Unique item borders use the same keyword shine as Astral gear rather than a gold palette, while Unique item titles keep their gold palette. Gear hover backgrounds use only actual affix keywords, with neutral gray for no recognized keywords; Unique gear keeps the gold hex pair for its inventory, equipped-slot, and collection hover background. CSS text fades must not feed the hex-only background renderer.
+
+## UI gold palette
+
+General interface gold uses one warm family: base `#cd9b51`, light `#e6c58e`,
+deep `#986b32`, and pale `#f3e4ca`. `UI_GOLD` in
+`src/lib/game-constants/ui-colors.ts` owns the hex values needed by plasma;
+`src/styles/theme.css` mirrors them as `gold-base/light/deep/pale` utilities.
+Architecture smoke enforces parity. Primary controls use base gold, availability
+borders pulse light → deep → light, and prices and warm headings use pale gold.
+Collection and rating accents use light gold. Unique titles use pale gold with
+their existing opacity pulse; Unique hover effects use the same gold family.
+
+Use `warning` and `warning-surface` for caution notices and confirmation icons.
+Keyword, material, character, and encounter palettes remain content-owned, even
+when they contain amber. Do not replace those colors as decorative UI gold.
 
 ## Buttons and interactive surfaces
 
@@ -110,6 +125,8 @@ See [Overlay lifecycle](./UI_INTERACTION.md#overlay-lifecycle).
 See [Screen fade motion](./UI_MOTION.md#screen-fade-motion).
 
 ## Display sizing
+
+On macOS, both desktop fullscreen modes fill the entire display, including the area beside the camera notch, using Electron simple fullscreen. They stay on the current desktop rather than opening a native fullscreen Space. Windowed mode restores the standard movable, resizable window. Do not request native or HTML fullscreen on macOS: it reserves a black strip at the notch.
 
 Talents on the end-run screen and Mystery rewards keep fixed-width boxes in centered, balanced rows. Use the fewest rows that fit (up to five boxes per row), distribute counts with at most one box of difference, and place larger rows first. Recalculate when available width or Game Size changes.
 
@@ -209,3 +226,49 @@ not shown in a player-facing dialog.
 ## Run journey recap
 
 See [Run journey recap](./UI_BROWSING.md#run-journey-recap).
+
+## Display options and screen effects
+
+Display is grouped in rendering order:
+
+1. Display Setup: Display Mode (desktop only), Aspect Ratio, Brightness.
+2. Background Atmosphere: Background Glow, Background Particles, Drifting Lights. These remain
+   independent of the screen-effects master switch.
+3. Screen Effects: master toggle, then independent Scanlines, Color Tint,
+   Darkened Edges and Paper Grain toggles.
+
+Each enabled effect reveals only its controls using `SettingsReveal`. Scanlines
+has strength and Fine/Normal/Wide spacing; Color Tint has Green/Amber/Cool Blue
+and strength; Darkened Edges and Paper Grain each have strength. Background
+Drifting Lights has its own toggle, intensity, and Still/Slow/Flowing motion. All strengths range from 0–100%.
+The master and individual switches default off, with strengths prepared at 50%,
+Normal spacing, Amber tint, and Flowing motion. Toggling off preserves configuration;
+Reset Screen Effects restores just this group, while Reset to Default restores
+all options. There is no preset selector or per-preset customization.
+
+The pointer-transparent, accessibility-hidden overlay covers the viewport above
+menus and tooltips, outside virtual-resolution scaling. Only enabled, nonzero
+layers mount; the master switch removes the entire overlay. Layers composite in
+this order: tint, grain, scanlines, then one shared edge-shading layer.
+There is no central white sheen. Paper Grain uses a static seeded brown SVG
+texture without adding a pale haze; tint and edge shading are separate choices.
+
+Drifting Lights renders in the unscaled frame before the virtual-resolution stage,
+behind particles, plasma, artwork, and interface. Its active state makes the stage
+background transparent so the lights show through; the outer backdrop retains
+the base background color. Keeping its canvas outside stage scaling preserves
+pixel-scale dithering. It uses its own transparent WebGL canvas to draw teal/gold and violet
+lights in one pass. Slow uses roughly 24/31-second cycles; Flowing doubles speed.
+Stationary screen-space stochastic rounding dithers premultiplied RGBA by less
+than one 8-bit step, after applying intensity. There is no moving noise mask and
+no capture, blur, or sampling of the particle/plasma canvases or game artwork.
+The shared canvas lifecycle pauses animation when hidden/unfocused and releases
+resources on unmount. Still and reduced motion draw a static dithered frame;
+resizes and intensity changes redraw it. Backing resolution follows DPR up to 2x
+and a 4K pixel budget; supersized displays may soften pixel-scale dithering.
+Context loss or unavailable WebGL uses static CSS lights, which can still band.
+Context restoration rebuilds the renderer without polling.
+
+Avoid moving alpha-noise masks: a previous foreground-light implementation made
+particles look mottled. Check changes with both particles and plasma enabled,
+not only isolated light gradients. Background lights do not tint artwork or text.

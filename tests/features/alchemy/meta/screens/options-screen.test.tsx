@@ -1,3 +1,4 @@
+import { createDefaultScreenEffects, createDefaultBackgroundLights } from "@/lib/screen-effect-settings";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { OptionsScreen } from "@/features/alchemy/meta/screens/options-screen";
@@ -15,6 +16,10 @@ const defaultProps = {
     onBrightnessChange: vi.fn(),
     backgroundParticlesIntensity: 100,
     onBackgroundParticlesIntensityChange: vi.fn(),
+    screenEffects: createDefaultScreenEffects(),
+    backgroundLights: createDefaultBackgroundLights(),
+    onBackgroundLightsChange: vi.fn(),
+    onScreenEffectsChange: vi.fn(),
     backgroundGlowIntensity: 100,
     onBackgroundGlowIntensityChange: vi.fn(),
   },
@@ -86,7 +91,7 @@ describe("OptionsScreen", () => {
     });
   });
 
-  it("renders Special Effects sliders that report intensity changes", () => {
+  it("groups display options and reports background intensity changes", () => {
     const onBackgroundParticlesIntensityChange = vi.fn();
     const onBackgroundGlowIntensityChange = vi.fn();
     render(
@@ -100,7 +105,9 @@ describe("OptionsScreen", () => {
       />,
     );
 
-    expect(screen.getByText("Special Effects")).toBeTruthy();
+    for (const name of ["Display Setup", "Background Atmosphere", "Screen Effects"]) {
+      expect(screen.getByRole("heading", { name })).toBeTruthy();
+    }
     fireEvent.change(screen.getByRole("slider", { name: "Background Particles" }), {
       target: { value: "40" },
     });
