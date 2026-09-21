@@ -26,7 +26,7 @@ import { detonateEnemyStatuses } from "./dot-resolve";
 import { addForgeToPlayer, countRemovableHarmfulStatuses } from "./status-player";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { getBattleRng, rollPercent } from "@/lib/rng";
-import { dealPlayerTypedHit } from "./player-typed-hit";
+import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { rollTalentChance } from "./status-helpers";
 
 import { prepareUniqueCardPlay, finishUniqueCardDamage, returnHarvestCard } from "./unique-card-effects";
@@ -76,7 +76,11 @@ function applyMortarAndPestlePotionUse(state: BattleState, card: BattleCard, com
   if (isPlayerDefeated(state) || !isPotionCard(card) || state.trinketEffects.mortarPestlePoisonOnPotionUse <= 0)
     return state;
   return resolvePendingBattleReactions(
-    dealPlayerTypedHit(state, "poison", state.trinketEffects.mortarPestlePoisonOnPotionUse, combatTexts),
+    resolveFollowUpHit(
+      state,
+      { source: "player-follow-up", damageType: "poison", amount: state.trinketEffects.mortarPestlePoisonOnPotionUse },
+      combatTexts,
+    ),
     combatTexts,
   );
 }

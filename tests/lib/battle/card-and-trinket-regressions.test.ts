@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import { cardById, computeTalentEffects } from "@/lib/game-data";
 import { createMixedPotion, doublePotionPotency } from "@/lib/alchemist";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
-import { dealPlayerTypedHit } from "@/lib/battle/player-typed-hit";
+import { resolveFollowUpHit } from "@/lib/battle/follow-up-hit-resolution";
 import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { validateCardDescriptionParity } from "@/lib/content-validation/card-parity";
-import { reflectBlockedAttackAsHoly } from "@/lib/battle/damage-riders";
+import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
 import { returnHarvestCard } from "@/lib/battle/unique-card-effects";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
@@ -49,7 +49,7 @@ describe("player-facing card and trinket regressions", () => {
       trinketEffects: { luckyCloverGoldChance: 100 },
       rng: () => 0.99,
     });
-    expect(dealPlayerTypedHit(base, "nature", 4, []).gold).toBe(4);
+    expect(resolveFollowUpHit(base, { source: "player-follow-up", damageType: "nature", amount: 4 }, []).gold).toBe(4);
     const stunned = patchBattleState({
       ...base,
       enemyStatuses: { stun: 100 },
@@ -108,7 +108,7 @@ describe("player-facing card and trinket regressions", () => {
     });
     // Enemy has 6 HP out of 10. Reflected holy damage of 4 drops enemy to 2 HP (crosses half-health 5 HP).
     // Second wind triggers and heals the enemy. Enemy should not be considered killed, so healOnKill shouldn't fire prematurely.
-    const result = reflectBlockedAttackAsHoly(state, 4, []);
+    const result = resolvePlayerHit(state, { source: "reflected-holy", blockLost: 4 }, []);
     expect(result.flags.secondWindTriggered).toBe(true);
     expect(result.enemyHealth).toBeGreaterThan(2);
     expect(result.playerHealth).toBe(20);

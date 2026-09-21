@@ -3,8 +3,8 @@ import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
-import { applyAttackPurgeRider } from "@/lib/battle/damage-riders";
-import { applyBrassCenser, dealPlayerTypedHit } from "@/lib/battle/player-typed-hit";
+import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
+import { applyBrassCenser, resolveFollowUpHit } from "@/lib/battle/follow-up-hit-resolution";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { dealDamage, makeTestCard, patchBattleState } from "../../fixtures/battle";
@@ -243,7 +243,7 @@ describe("Brass Censer", () => {
       rng: rolls(0.99, 0.1, 0.1),
       trinketEffects: { brassCenserProcChance: 20 },
     });
-    const result = dealPlayerTypedHit(state, "holy", 6, []);
+    const result = resolveFollowUpHit(state, { source: "player-follow-up", damageType: "holy", amount: 6 }, []);
     expect(result.enemyHealth).toBe(state.enemyHealth - 12);
     expect(result.enemyStatuses.burn).toBe(6);
   });
@@ -255,7 +255,7 @@ describe("Brass Censer", () => {
       enemyMitigation: { armor: 3 },
       gearEffects: { attackPurgeDealHolyPerEffect: 4 },
     });
-    const result = applyAttackPurgeRider(state, []);
+    const result = resolvePlayerHit(state, { source: "attack-purge" }, []);
     expect(result.enemyHealth).toBe(state.enemyHealth - 8);
     expect(result.enemyStatuses.burn).toBe(4);
   });

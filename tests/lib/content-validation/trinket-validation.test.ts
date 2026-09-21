@@ -161,11 +161,11 @@ describe("Trinket description parity", () => {
 // without updating this map, so dead effects cannot silently accumulate.
 const TRINKET_EFFECT_CONSUMERS: Record<keyof TrinketManifest, string> = {
   extraDrawPerBattle: "battle-setup.ts (cards per turn)",
-  brassCenserProcChance: "player-typed-hit.ts",
+  brassCenserProcChance: "follow-up-hit-resolution.ts",
   firstBurnDoubled: "player-damage-bonuses.ts",
   boneCharmHealOnKill: "combat-text.ts (kill rewards)",
-  forgeStunThreshold: "damage-riders.ts",
-  forgeStunAmount: "damage-riders.ts",
+  forgeStunThreshold: "card-hit-reactions.ts",
+  forgeStunAmount: "card-hit-reactions.ts",
   frozenHeartDamage: "damage-status-riders.ts",
   ironwoodBucklerThornsOnBlock: "types/state-helpers.ts (block gain)",
   runicQuillDrawOnConsume: "card-play.ts",

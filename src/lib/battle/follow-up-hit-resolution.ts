@@ -1,4 +1,4 @@
-import type { BattleCard, DamageType, TalentEffectManifest } from "@/lib/game-data";
+import type { DamageType, TalentEffectManifest } from "@/lib/game-data";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import {
   BRASS_CENSER_SPLIT_CHANCE_PERCENT,
@@ -7,7 +7,7 @@ import {
   TALENT_CONVERSION_DEFAULT_FRACTION,
 } from "../game-constants";
 import { applyBurnForgePayout, applyLuckyCloverGold, applyNatureManaRefund } from "./bonus-effects";
-import { computeCardDamageToEnemy, computeTalentDamageToEnemy, emptyBattleCard } from "./damage-calc";
+import { computeCardDamageToEnemy, computeTalentDamageToEnemy } from "./damage-calc";
 import {
   applyDamageBlock,
   applyHolyLifesteal,
@@ -19,17 +19,24 @@ import { rollTalentChance } from "./status-helpers";
 import { resolveTypedEnemyHit } from "./typed-hit-resolution";
 import { type BattleState, type CombatTextEvent } from "./types";
 
-const FOLLOW_UP_CARD: BattleCard = emptyBattleCard("follow-up-typed-hit");
+import type { FollowUpHitRequest } from "./hit-request";
 
-// Rider depth by hit phase (deliberate, not drift):
-// - card hits run the full riders in damage-riders.ts (conversions, status
-//   rolls, lifesteal/block/tithe, wish, brass).
-// - player follow-up hits below run nature refunds and holy brass only.
-// - talent follow-up hits below run holy lifesteal/block/tithe and burn forge only.
-// Follow-ups stay shallow so conversion chains terminate instead of
-// re-entering themselves.
+/** Lower resolution tier: Wish and other reactions can emit shallow hits without importing card orchestration. */
+export function resolveFollowUpHit(
+  state: BattleState,
+  request: FollowUpHitRequest,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  switch (request.source) {
+    case "player-follow-up":
+      return resolvePlayerFollowUp(state, request.damageType, request.amount, combatTexts);
+    case "talent-fixed":
+    case "talent-derived":
+      return resolveTalentFollowUp(state, request, combatTexts);
+  }
+}
 
-export function dealPlayerTypedHit(
+function resolvePlayerFollowUp(
   state: BattleState,
   damageType: DamageType,
   amount: number,
@@ -37,9 +44,9 @@ export function dealPlayerTypedHit(
 ): BattleState {
   if (amount <= 0 || state.enemyHealth <= 0) return state;
   const effect = { kind: "damage" as const, damageType, amount };
-  const { nextState: afterMods, modifiedDamage } = computeCardDamageToEnemy(state, effect, FOLLOW_UP_CARD);
-  const hit = resolveTypedEnemyHit(afterMods, effect, modifiedDamage, combatTexts);
-  const preHitHealth = hit.previousHealth;
+  const { nextState: afterMods, modifiedDamage } = computeCardDamageToEnemy(state, effect);
+  const hit = resolveTypedEnemyHit(afterMods, effect, modifiedDamage, combatTexts, state);
+  const preHitHealth = hit.facts.previousHealth;
   let nextState = hit.state;
   if (damageType === "nature") {
     nextState = applyLuckyCloverGold(nextState, modifiedDamage, combatTexts);
@@ -51,7 +58,7 @@ export function dealPlayerTypedHit(
 export function tryPoisonStunProc(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
   if (damage <= 0) return state;
   if (!rollTalentChance(state.talentEffects.poisonStunChance, state)) return state;
-  return dealTalentTypedHit(state, "stun", damage, combatTexts, true);
+  return resolveFollowUpHit(state, { source: "talent-derived", damageType: "stun", amount: damage }, combatTexts);
 }
 
 export function applyBrassCenser(
@@ -62,31 +69,25 @@ export function applyBrassCenser(
 ): BattleState {
   if (damage <= 0 || !rollTalentChance(state.trinketEffects.brassCenserProcChance, state)) return state;
   if (rollPercent(BRASS_CENSER_SPLIT_CHANCE_PERCENT, getBattleRng(state))) {
-    return dealPlayerTypedHit(state, "burn", damage, combatTexts);
+    return resolveFollowUpHit(state, { source: "player-follow-up", damageType: "burn", amount: damage }, combatTexts);
   }
   return applyLifestealAndPlayerHitTriggers(state, damage, combatTexts, false, false, enemyHealthBeforeHit);
 }
 
-export function dealTalentTypedHit(
+function resolveTalentFollowUp(
   state: BattleState,
-  damageType: DamageType,
-  amount: number,
+  request: Extract<FollowUpHitRequest, { source: "talent-fixed" | "talent-derived" }>,
   combatTexts: CombatTextEvent[],
-  // Derived hits convert already-paced damage (fractions of a card hit, parting
-  // cut, stun procs): they round and use the trait-only multiplier so fight
-  // pacing is not applied twice. Standalone procs with fixed talent amounts
-  // (wish burn, dodge burn, consume poison, frozen bonus hits) omit it and go
-  // through pacing like any new damage.
-  derived = false,
 ): BattleState {
+  const { damageType, amount, source } = request;
   if (amount <= 0 || state.enemyHealth <= 0) return state;
-  const { state: blocked, remainingDamage: resolved } = computeTalentDamageToEnemy(state, damageType, amount, derived);
+  const { state: blocked, remainingDamage: resolved } = computeTalentDamageToEnemy(state, damageType, amount, source);
   if (resolved <= 0) return blocked;
-  const hit = resolveTypedEnemyHit(blocked, { kind: "damage", damageType, amount }, resolved, combatTexts);
+  const hit = resolveTypedEnemyHit(blocked, { kind: "damage", damageType, amount }, resolved, combatTexts, state);
   let nextState = hit.state;
   if (damageType === "holy") {
-    nextState = applyHolyLifesteal(nextState, resolved, combatTexts, state);
-    nextState = applyDamageBlock(nextState, resolved, combatTexts, state);
+    nextState = applyHolyLifesteal(nextState, resolved, combatTexts, hit.facts.eligibility);
+    nextState = applyDamageBlock(nextState, resolved, combatTexts, hit.facts.eligibility);
     nextState = applyHolyTithe(nextState, resolved, combatTexts);
   }
   if (damageType === "nature") {
@@ -107,12 +108,15 @@ export function tryTalentTypedHit(
   combatTexts: CombatTextEvent[],
 ): BattleState {
   if (sourceDamage <= 0 || state.enemyHealth <= 0 || !rollTalentChance(chance, state)) return state;
-  return dealTalentTypedHit(
+  return resolveFollowUpHit(
     state,
-    damageType,
-    sourceDamage * (damageType === "bleed" ? TALENT_CONVERSION_BLEED_FRACTION : TALENT_CONVERSION_DEFAULT_FRACTION),
+    {
+      source: "talent-derived",
+      damageType,
+      amount:
+        sourceDamage * (damageType === "bleed" ? TALENT_CONVERSION_BLEED_FRACTION : TALENT_CONVERSION_DEFAULT_FRACTION),
+    },
     combatTexts,
-    true,
   );
 }
 
@@ -128,7 +132,11 @@ export function applyLifestealAndPlayerHitTriggers(
   let nextState = applyLeechHitHealing(state, damage, combatTexts, cardHealing, cardLeech);
   nextState = applyTalentHitConversions(nextState, "leech", damage, combatTexts);
   if (enemyHealthBeforeHit < state.enemyMaxHealth / HALF_DIVISOR) {
-    nextState = dealTalentTypedHit(nextState, "holy", state.talentEffects.leechHolyDamageVsLowHealth, combatTexts);
+    nextState = resolveFollowUpHit(
+      nextState,
+      { source: "talent-fixed", damageType: "holy", amount: state.talentEffects.leechHolyDamageVsLowHealth },
+      combatTexts,
+    );
   }
   return applyLeechHitRewards(nextState, damage, combatTexts);
 }

@@ -13,7 +13,7 @@ import { defaultCcState } from "../../fixtures/default-battle-state";
 import { handlePostPlayCardDestination, playBattleCardResolved } from "@/lib/battle/card-play";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
-import { applyDamageRiders } from "@/lib/battle/damage-riders";
+import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
 import { applyDamageStatuses, applyPoisonTalentRiders } from "@/lib/battle/damage-status-riders";
 import { addEnemyStatus } from "@/lib/battle/types/state-helpers";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
@@ -172,7 +172,7 @@ describe("gear-effects", () => {
       rng: () => 0.1,
     });
     const texts: CombatTextEvent[] = [];
-    const nextState = applyDamageRiders(state, card, effect, 10, texts);
+    const nextState = resolvePlayerHit(state, { source: "card-attack", card, effect, resolvedDamage: 10 }, texts);
     expect(nextState.mana).toBe(2);
   });
 

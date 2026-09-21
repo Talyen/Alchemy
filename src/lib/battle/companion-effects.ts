@@ -9,7 +9,7 @@ import { applyScaledLeechHealing, computeLeechHeal } from "./damage-rider-leech"
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { addPlayerStatusWithCombatText, applyHealingWithCombatText } from "./combat-text";
 import { rollTalentChance } from "./status-helpers";
-import { dealTalentTypedHit } from "./player-typed-hit";
+import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { getBattleCompanionDamageModifiers } from "./companion-scaling";
 
 export function resolveCompanionTurnStart(
@@ -81,7 +81,11 @@ export function resolveCompanionTurnStart(
 
     if (damageDealt > 0 && state.talentEffects.companionStunChance > 0) {
       if (rollTalentChance(state.talentEffects.companionStunChance, state)) {
-        afterEffects = dealTalentTypedHit(afterEffects, "stun", damageDealt, combatTexts, true);
+        afterEffects = resolveFollowUpHit(
+          afterEffects,
+          { source: "talent-derived", damageType: "stun", amount: damageDealt },
+          combatTexts,
+        );
       }
     }
 

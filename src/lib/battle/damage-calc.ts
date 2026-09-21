@@ -14,12 +14,6 @@ import { getEnemyDamageMultiplier, getEnemyTraitDamageMultiplier } from "./statu
 import { hasEncounterBenefit, reduceEnemyArmor, setFlag, type BattleState } from "./types";
 export { forgeAppliesToDamageType } from "./player-damage-bonuses";
 
-export function emptyBattleCard(id: string): BattleCard {
-  return { id, title: "", descriptionLines: [], art: "", cost: 0, effects: [] };
-}
-
-export const REFLECTED_HOLY_CARD: BattleCard = emptyBattleCard("sun-struck-shield");
-
 function applyCrit(damage: number, state: BattleState) {
   const critical = readCombatFlag(state, "nextHitCrit") || rollPercent(GLOBAL_CRIT_CHANCE_PERCENT, getBattleRng(state));
   return critical && damage > 0
@@ -62,12 +56,13 @@ export function computeTalentDamageToEnemy(
   state: BattleState,
   damageType: DamageType,
   amount: number,
-  derived: boolean,
+  source: "talent-fixed" | "talent-derived",
 ) {
-  const base = derived ? Math.round(amount) : paceCombatDamage(state, amount, "player");
-  const multiplier = derived
-    ? getEnemyTraitDamageMultiplier(state, damageType)
-    : getEnemyDamageMultiplier(state, damageType);
+  const base = source === "talent-derived" ? Math.round(amount) : paceCombatDamage(state, amount, "player");
+  const multiplier =
+    source === "talent-derived"
+      ? getEnemyTraitDamageMultiplier(state, damageType)
+      : getEnemyDamageMultiplier(state, damageType);
   const damage = Math.max(0, Math.round(base * multiplier));
   const afterBlock = applyBlockAbsorption(state, damage);
   const armor = damageType === "physical" || damageType === "stun" ? state.enemyMitigation.armor : 0;
@@ -121,8 +116,7 @@ function resolveDamageAfterMitigation(
     ? setFlag(stateAfterBlock, "nextHitCrit", false)
     : stateAfterBlock;
   const isPhysicalOrStun = effect.damageType === "physical" || effect.damageType === "stun";
-  const serpent =
-    state.gearEffects.poisonedAttacksPierce > 0 && state.enemyStatuses.poison > 0 && !!card?.effects.length;
+  const serpent = state.gearEffects.poisonedAttacksPierce > 0 && state.enemyStatuses.poison > 0 && card !== undefined;
   const kingbreaker = effect.damageType === "stun" && state.gearEffects.armorIncreasesStun > 0;
   const nextState =
     serpent || kingbreaker

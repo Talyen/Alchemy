@@ -24,7 +24,7 @@ import {
   type EnemyDamageOptions,
   type EnemyDamageResult,
 } from "./enemy-attack-damage";
-import { dealPlayerTypedHit, dealTalentTypedHit } from "./player-typed-hit";
+import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { hasEnemyTrait, isPlayerDefeated, setPlayerStatus, type BattleState, type CombatTextEvent } from "./types";
 
 function applyDodgeDrawAndPlay(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
@@ -88,18 +88,30 @@ function applyDodgeCounterAttacks(
     rollTalentChance(REACTIVE_REWARD_CHANCES.riposting, nextState)
   ) {
     nextState = resolveSecondaryAction(nextState, "retaliation", (current) =>
-      dealPlayerTypedHit(current, "physical", current.gearEffects.physicalOnDodge, combatTexts),
+      resolveFollowUpHit(
+        current,
+        { source: "player-follow-up", damageType: "physical", amount: current.gearEffects.physicalOnDodge },
+        combatTexts,
+      ),
     );
   }
   const riposteDamage = nextState.talentEffects.physicalOnDodgeEqualToAttack
     ? dodgedAmount
     : scalePercent(dodgedAmount, nextState.talentEffects.dodgePhysicalDamagePercent);
   if (riposteDamage > 0 && nextState.enemyHealth > 0) {
-    nextState = dealTalentTypedHit(nextState, "physical", riposteDamage, combatTexts, true);
+    nextState = resolveFollowUpHit(
+      nextState,
+      { source: "talent-derived", damageType: "physical", amount: riposteDamage },
+      combatTexts,
+    );
   }
   if (nextState.gearEffects.bleedOnDodge > 0 && nextState.enemyHealth > 0 && eligibility.enemyStatuses.bleed > 0) {
     nextState = resolveSecondaryAction(nextState, "retaliation", (current) =>
-      dealPlayerTypedHit(current, "bleed", current.gearEffects.bleedOnDodge, combatTexts),
+      resolveFollowUpHit(
+        current,
+        { source: "player-follow-up", damageType: "bleed", amount: current.gearEffects.bleedOnDodge },
+        combatTexts,
+      ),
     );
   }
   if (nextState.talentEffects.goldOnDodge > 0 && rollTalentChance(REACTIVE_REWARD_CHANCES.luckyFoot, nextState)) {
@@ -153,7 +165,7 @@ function applyOnPlayerDodge(state: BattleState, combatTexts: CombatTextEvent[], 
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: spent });
     nextState = setPlayerStatus(nextState, "block", state.playerStatuses.block - spent);
     nextState = resolveSecondaryAction(nextState, "retaliation", (current) =>
-      dealPlayerTypedHit(current, "physical", spent, combatTexts),
+      resolveFollowUpHit(current, { source: "player-follow-up", damageType: "physical", amount: spent }, combatTexts),
     );
   }
   if (state.gearEffects.archeryDodgeAndDraw > 0) nextState = drawKeywordCard(nextState, "archery");

@@ -11,7 +11,7 @@ import {
 import { applyGearCcPhysicalDamage } from "@/lib/battle/gear-effects";
 import { computeEffectiveCost } from "@/lib/battle/card-cost-rules";
 import { addEnemyStatus } from "@/lib/battle/types";
-import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/player-typed-hit";
+import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/follow-up-hit-resolution";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { applyWishEffect, chooseWishCard } from "@/lib/battle/wish";
 import { detonateEnemyStatuses } from "@/lib/battle/dot-resolve";

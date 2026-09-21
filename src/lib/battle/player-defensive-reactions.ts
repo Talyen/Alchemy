@@ -1,9 +1,8 @@
 import type { EnemyAttackEffect } from "@/lib/game-data";
 import { BATTLE_CONFIG } from "../game-constants";
 import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
-import { computeCardDamageToEnemy, REFLECTED_HOLY_CARD } from "./damage-calc";
-import { applyDamageRiders, reflectBlockedAttackAsHoly } from "./damage-riders";
-import { dealPlayerTypedHit } from "./player-typed-hit";
+import { resolvePlayerHit } from "./hit-resolution";
+import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { decayArmorAfterDamage } from "./status-helpers";
 import {
   addForgeToPlayer,
@@ -81,11 +80,19 @@ function applyBlockDepletedHeal(
   }
 
   if (isBlockDepleted && prevState.gearEffects.stunOnBlockDepleted > 0 && finalState.enemyHealth > 0) {
-    finalState = dealPlayerTypedHit(finalState, "stun", prevState.gearEffects.stunOnBlockDepleted, combatTexts);
+    finalState = resolveFollowUpHit(
+      finalState,
+      { source: "player-follow-up", damageType: "stun", amount: prevState.gearEffects.stunOnBlockDepleted },
+      combatTexts,
+    );
   }
 
   if (isBlockDepleted && prevState.gearEffects.saintfallRetribution > 0 && finalState.enemyHealth > 0) {
-    finalState = dealPlayerTypedHit(finalState, "holy", prevState.gearEffects.saintfallRetribution, combatTexts);
+    finalState = resolveFollowUpHit(
+      finalState,
+      { source: "player-follow-up", damageType: "holy", amount: prevState.gearEffects.saintfallRetribution },
+      combatTexts,
+    );
     finalState = applyHealingWithCombatText(finalState, prevState.gearEffects.saintfallRetribution, combatTexts);
   }
 
@@ -100,14 +107,11 @@ export function applyBlockedAttackRetaliation(
 ): BattleState {
   if (state.enemyHealth <= 0 || state.playerHealth <= 0) return state;
   if (state.talentEffects.holyReflectionBlockLostPercent > 0) {
-    return blockDepleted ? reflectBlockedAttackAsHoly(state, blockLost, combatTexts) : state;
+    return blockDepleted ? resolvePlayerHit(state, { source: "reflected-holy", blockLost }, combatTexts) : state;
   }
   const amount = state.talentEffects.holyOnAttackBlocked;
   if (amount <= 0 || state.enemyHealth <= 0 || state.playerHealth <= 0) return state;
-  const card = REFLECTED_HOLY_CARD;
-  const effect = { kind: "damage" as const, damageType: "holy" as const, amount };
-  const { nextState, modifiedDamage } = computeCardDamageToEnemy(state, effect, card);
-  return applyDamageRiders(nextState, card, effect, modifiedDamage, combatTexts);
+  return resolvePlayerHit(state, { source: "blocked-attack", amount }, combatTexts);
 }
 
 export function applyPlayerDefensiveReactions(

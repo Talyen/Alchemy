@@ -1,16 +1,16 @@
-import { hasCardHealing, consumeAttackBonuses } from "./effect-handlers/handler-types";
+import { consumeAttackBonuses } from "./effect-handlers/handler-types";
 import { readCombatFlag } from "./action-context";
 import { scalePercent } from "./amount-helpers";
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 import { UNIQUE_GEAR_COMBAT } from "../game-constants";
 import { addGoldWithCombatText } from "./combat-text";
 import { computeCardDamageToEnemy } from "./damage-calc";
-import { applyDamageRiders } from "./damage-riders";
+import { resolvePlayerHit } from "./hit-resolution";
 import { tryDodgePlayerAttackPacket } from "./dodge";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import { applyEncounterThorns } from "./encounter-trait-events";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
-import { dealPlayerTypedHit, dealTalentTypedHit } from "./player-typed-hit";
+import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import type { BattleState, CombatTextEvent } from "./types";
 
 type DamageEffect = Extract<BattleCardEffect, { kind: "damage" }>;
@@ -66,22 +66,42 @@ function applyAttackPacketFollowUps(
 ): BattleState {
   if (viper && result.enemyHealth > 0) {
     const venomDamage = Math.round(modifiedDamage * UNIQUE_GEAR_COMBAT.viperDamageMultiplier);
-    result = dealPlayerTypedHit(result, "poison", venomDamage, combatTexts);
-    result = dealPlayerTypedHit(result, "bleed", venomDamage, combatTexts);
+    result = resolveFollowUpHit(
+      result,
+      { source: "player-follow-up", damageType: "poison", amount: venomDamage },
+      combatTexts,
+    );
+    result = resolveFollowUpHit(
+      result,
+      { source: "player-follow-up", damageType: "bleed", amount: venomDamage },
+      combatTexts,
+    );
   }
   if (applyPartingCut && modifiedDamage > 0 && result.enemyHealth > 0) {
     const copiedDamage =
       result.talentEffects.partingCutDamagePercent > 0
         ? scalePercent(modifiedDamage, result.talentEffects.partingCutDamagePercent)
         : modifiedDamage;
-    result = dealTalentTypedHit(result, "bleed", copiedDamage, combatTexts, true);
+    result = resolveFollowUpHit(
+      result,
+      { source: "talent-derived", damageType: "bleed", amount: copiedDamage },
+      combatTexts,
+    );
   }
   if (modifiedDamage > 0 && result.enemyHealth > 0) {
     if (damageType !== "physical" && bonuses.physical > 0) {
-      result = dealPlayerTypedHit(result, "physical", bonuses.physical, combatTexts);
+      result = resolveFollowUpHit(
+        result,
+        { source: "player-follow-up", damageType: "physical", amount: bonuses.physical },
+        combatTexts,
+      );
     }
     if (damageType !== "bleed" && bonuses.bleed > 0) {
-      result = dealPlayerTypedHit(result, "bleed", bonuses.bleed, combatTexts);
+      result = resolveFollowUpHit(
+        result,
+        { source: "player-follow-up", damageType: "bleed", amount: bonuses.bleed },
+        combatTexts,
+      );
     }
   }
   return result;
@@ -130,11 +150,18 @@ export function dealDamageToEnemy(
     damageState.gearEffects.dodgeReadiesVenomousHit > 0 &&
     damageState.uniqueGear.viperReady;
   const afterViper = viper ? { ...nextState, uniqueGear: { ...nextState.uniqueGear, viperReady: false } } : nextState;
-  let result = applyDamageRiders(afterViper, card, packet, modifiedDamage, combatTexts, {
-    cardHealing: hasCardHealing(context),
-    companionAttack: context?.origin === "companion",
-    onDamageDealt: context?.onDamageDealt,
-  });
+  let result = resolvePlayerHit(
+    afterViper,
+    {
+      source: "card-attack",
+      card,
+      effect: packet,
+      resolvedDamage: modifiedDamage,
+      origin: context?.origin,
+      onDamageDealt: context?.onDamageDealt,
+    },
+    combatTexts,
+  );
   result = applyAttackPacketFollowUps(
     result,
     packet.damageType,

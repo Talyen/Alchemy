@@ -1,5 +1,5 @@
 import { resolveBattleSequence, type ReactionBoundary } from "./battle-sequence";
-import { dealTalentTypedHit } from "./player-typed-hit";
+import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { hasEncounterBenefit, hasEnemyTrait } from "./types";
 import { selectRewardCards } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
@@ -31,7 +31,6 @@ import { dealEnemyScaledDamage } from "./scaled-damage";
 import { gearFrozenDamageMultiplier } from "./gear-effects";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { scaleByRoomMultiplier } from "./enemy-turn-traits";
-import { emptyBattleCard } from "./damage-calc";
 
 function processEncounterTraitWish(state: BattleState): BattleState {
   if (!hasEnemyTrait(state, "jealous")) return state;
@@ -48,7 +47,7 @@ function upgradeWishCard(card: BattleCard): BattleCard {
   return targets.reduce((next, target) => updateCardNumericValue(next, target, target.value + 1), card);
 }
 
-export function buildWishOptions(state: BattleState, card: BattleCard): BattleCard[] {
+export function buildWishOptions(state: BattleState, card: Pick<BattleCard, "id"> | undefined): BattleCard[] {
   const baseCount =
     WISH_CHOICE_COUNT +
     state.talentEffects.wishExtraChoices +
@@ -56,7 +55,7 @@ export function buildWishOptions(state: BattleState, card: BattleCard): BattleCa
     (hasEncounterBenefit(state, "wishful") && !state.flags.encounterWishUsed ? 1 : 0) +
     (rollTalentChance(state.talentEffects.wishExtraChoiceChance, state) ? 1 : 0);
 
-  const candidates = getOfferableCardPool().filter((candidate) => candidate.id !== card.id);
+  const candidates = getOfferableCardPool().filter((candidate) => candidate.id !== card?.id);
   const fullDeck = [...state.deck, ...state.hand, ...state.discard, ...state.exhausted];
   const undiscovered = state.talentEffects.wishUndiscoveredCards
     ? candidates.filter((candidate) => !state.discoveredCardIds.includes(candidate.id))
@@ -132,7 +131,7 @@ function applyWishDrawTriggers(state: BattleState): BattleState {
 
 export function applyWishEffect(
   state: BattleState,
-  card: BattleCard,
+  card: Pick<BattleCard, "id"> | undefined,
   amount: number,
   combatTexts: CombatTextEvent[],
   reactions: ReactionBoundary = { kind: "enclosing-action" },
@@ -179,10 +178,10 @@ export function applyWishEffect(
 /**
  * Empty draw piles are a player-facing emergency, not a new card source.
  * Reuse the normal Wish pipeline so existing rewards and random offer rules
- * apply consistently; the synthetic source only avoids excluding a real card.
+ * apply consistently; an absent source leaves every real card eligible.
  */
 export function applyEmergencyWish(state: BattleState, combatTexts: CombatTextEvent[] = []) {
-  return applyWishEffect(state, emptyBattleCard("emergency-wish"), 1, combatTexts, { kind: "enclosing-action" });
+  return applyWishEffect(state, undefined, 1, combatTexts, { kind: "enclosing-action" });
 }
 
 function applyWishBurnTrigger(
@@ -190,7 +189,11 @@ function applyWishBurnTrigger(
   combatTexts: CombatTextEvent[],
   eligibility: BattleState,
 ): BattleState {
-  state = dealTalentTypedHit(state, "burn", state.talentEffects.burnOnWish, combatTexts);
+  state = resolveFollowUpHit(
+    state,
+    { source: "talent-fixed", damageType: "burn", amount: state.talentEffects.burnOnWish },
+    combatTexts,
+  );
   const burnAmount = state.gearEffects.burnOnWish;
   if (burnAmount <= 0 || state.enemyHealth <= 0 || eligibility.enemyStatuses.burn <= 0) return state;
   const enemyWasAlive = state.enemyHealth > 0;

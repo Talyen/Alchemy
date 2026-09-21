@@ -15,6 +15,45 @@ Canonical owner for game rules, content-system behavior, and shared domain terms
 
 Operational rules for `src/lib/battle/` that deviate from typical CCG assumptions. Term definitions: [Domain Glossary](./GLOSSARY.md#domain-glossary). Tests: `tests/lib/battle/`.
 
+### Direct player hit resolution
+
+`hit-request.ts` names the source of each direct player-to-enemy hit. `hit-resolution.ts`
+owns card, reflection, and purge recipes; `follow-up-hit-resolution.ts` is its lower
+resolution tier, also used by Wish and defensive reactions. That dependency direction
+keeps shallow hits from importing their parent card/Wish orchestration. Card-specific
+reaction stages live in `card-hit-reactions.ts`; calculation and intrinsic statuses
+remain in their existing lower-level owners.
+
+The source differences below are intentional compatibility rules. “Intrinsic” means
+`applyDamageStatuses`, including its existing status-triggered reactions, not just
+adding a status stack. Thresholds and once-only kill rewards use `applyHitEpilogue`.
+
+| Source                            | Amount and mitigation                                                                                                                                        | Reactions and closing order                                                                                                                                                                                                                                      |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Card attack (including Companion) | Attack orchestration calculates bonuses, pacing, critical strikes, Block and Armor once before requesting the hit. Dodge precedes next-hit flag consumption. | Capture eligibility before purge; apply Health damage; spend Forge; decay Armor; intrinsic/conversion reactions; Leech/frozen reactions; depth-first Archery reactions; Holy/Nature rewards; damage text; thresholds/kill rewards; frozen Physical Forge payout. |
+| Archery extra hit                 | Copy half the parent's resolved amount, rounded; do not recalculate bonuses, critical strikes, pacing, or mitigation.                                        | Same card recipe and inherited origin, excluding purge and further Archery extra-hit/Broadhead/detonation rolls. It still spends Forge and runs other eligible card reactions.                                                                                   |
+| Player follow-up                  | Card-style numeric bonuses, pacing, critical strikes and mitigation, with no real card metadata.                                                             | Health; Armor decay; intrinsic statuses; damage text; thresholds/kill rewards; Nature Gold/mana refunds or Holy Brass Censer. No card conversion recipe or Forge spending.                                                                                       |
+| Fixed talent hit                  | Pace its fixed amount, apply enemy multiplier and round, then Block and Physical/Stun Armor. No offensive card bonuses or critical strike.                   | Stop if no damage remains; otherwise Health, Armor decay, intrinsic statuses, text, thresholds/kill rewards, then Holy Leech/Block/Tithe, Nature refunds, or Burn Forge payout.                                                                                  |
+| Derived talent hit                | Round its already-paced amount and apply only the enemy trait multiplier, then round and mitigate as above.                                                  | Same shallow talent recipe. Do not apply pacing or offensive bonuses again.                                                                                                                                                                                      |
+| Reflected Holy                    | Block lost × saved reflection percentage × Holy trait multiplier, rounded, then enemy Block.                                                                 | Health, Armor decay, damage text, intrinsic statuses, full Holy reactions including Wish, then thresholds/kill rewards using pre-damage statuses. No Forge spending.                                                                                             |
+| Legacy blocked attack             | Saved fixed Holy retaliation uses card-style calculation without a real card source.                                                                         | Full card recipe, including purge and Forge rules; preserve this separate legacy behavior.                                                                                                                                                                       |
+| Attack purge                      | Remove the first available Armor, Block, or Forge; round its Holy-multiplied amount, then pace it. Bypass further mitigation.                                | Damage text, Health, thresholds/kill rewards, then Brass Censer. No intrinsic status or full Holy recipe. A lethal purge prevents the parent Health hit.                                                                                                         |
+
+`HitFacts` keeps reaction eligibility, pre-hit Health, resolved damage, actual Health
+lost, and the lethal transition together. Eligibility may precede purge while the
+Health facts follow it. Status buildup and many rewards use resolved damage; Poison
+Leech caps against pre-hit Health, and the Companion damage callback uses actual
+Health lost before threshold healing. Never substitute the final Health difference
+for those facts.
+
+All chance checks retain their execution order in the seeded world stream. Card-style
+calculation can roll critical strikes (a reserved or guaranteed critical strike skips
+that draw). Talent/reflection/purge calculations do not. Intrinsic status reactions
+and source-specific rewards can draw RNG, and nested hits finish depth-first before
+the parent resumes. Do not eagerly roll disabled reactions or move rolls across
+zero-damage/death cutoffs. Non-card Holy Wishes have no source card to exclude;
+card-origin Wishes exclude the real originating card.
+
 ### Turn order and resources
 
 - **1-on-1 targeting** — one enemy per battle; attacks/debuffs go to the enemy, blocks/heals/buffs to player/companions; no target selectors.
@@ -134,7 +173,7 @@ Simulation-only instrumentation and measurement semantics live in [Balance simul
 - **Status ownership** — `addPlayerStatus` delegates assignment to `setPlayerStatus`, so both absolute updates and deltas cap pending enemy Bleed Leech when changing Bleed. Explicit Armor loss uses `removePlayerArmor` so Reactive Guard cannot be skipped. `spendPlayerForgeForAttack` records only attack spending; `restoreSpentPlayerForge` consumes that record once after the turn reset, bypasses gain bonuses, and owns recovery threshold rewards. Initialization and hydration retain raw state construction.
 - **Damage module ownership** — `player-damage-bonuses.ts` owns player base amounts and additive bonuses; `damage-calc.ts` retains critical rolls, mitigation, and final resolution. `player-defensive-reactions.ts` owns Block/Health-triggered defensive rewards; `enemy-attack-damage.ts` retains incoming-hit orchestration and reaction ordering.
 - **Card and enemy hit stages** — capture pre-hit conditions and preserve each source’s explicit reaction order, Health-loss facts, Talent manifests, depth-first Archery hits, RNG, and combat text. Details: [Non-card reaction eligibility](#non-card-reaction-eligibility).
-- **Typed hit resolution** — `typed-hit-resolution.ts` owns the shared Health → Armor decay → buildup → combat text → threshold → kill-payout order for player follow-up and talent hits. Card attack riders retain their distinct ordering, including recursive Archery hits and post-hit Forge consumption. `player-typed-hit.ts` declares recurring damage-conversion reactions in ordered data; changing that order changes RNG consumption. Talent manifest types derive from their defaults, retaining every existing saved field and value.
+- **Typed hit resolution** — `typed-hit-resolution.ts` owns the shared Health → Armor decay → buildup → combat text → threshold → kill-payout order for player follow-up and talent hits. Card attack riders retain their distinct ordering, including recursive Archery hits and post-hit Forge consumption. `follow-up-hit-resolution.ts` declares recurring damage-conversion reactions in ordered data; changing that order changes RNG consumption. Talent manifest types derive from their defaults, retaining every existing saved field and value.
 - **State and arithmetic** — treat `BattleState` as immutable. Combat magnitudes use nearest-integer `Math.round()`, never `Math.floor()`; the battle-engine lint boundary enforces this convention.
 - **Common damage modifiers** — `damage-modifiers.ts` owns the typed mapping from damage types to Talent and Gear flat bonuses, flat reductions, half-damage traits, and Gear resistances. Preserve their existing application stages and rounding; special conversion and reaction handlers keep their explicit order. Saved source manifests retain their existing fields.
 - **Turn presentation** — the accepted End Turn action resolves and commits before discard, enemy, draw, and Companion feedback plays. Companion turn-start effects resolve after the enemy and next-hand rules, before the next player action; delaying or cancelling their visual feedback cannot cancel their gameplay. Card and opening-hand results likewise commit before animation. Autoplay and automatic End Turn remain separate user preferences.
@@ -143,7 +182,7 @@ Simulation-only instrumentation and measurement semantics live in [Balance simul
 
 ### Non-card reaction eligibility
 
-- **Card and enemy hit stages** — `damage-riders.ts` captures pre-purge conditions and resolves status reactions, Leech/Frozen reactions, depth-first Archery hits, typed rewards, then feedback/thresholds/payout. `enemy-attack-damage.ts` captures Health loss and Block spending before defensive reactions, then resolves crowd control, Leech, retaliation, and trait follow-ups. Captured hit outcomes never include later healing. These paths deliberately retain distinct ordering; RNG draws and combat-text order are behavior.
+- **Card and enemy hit stages** — `hit-resolution.ts` captures pre-purge conditions and resolves status reactions, Leech/Frozen reactions, depth-first Archery hits, typed rewards, then feedback/thresholds/payout. `enemy-attack-damage.ts` captures Health loss and Block spending before defensive reactions, then resolves crowd control, Leech, retaliation, and trait follow-ups. Captured hit outcomes never include later healing. These paths deliberately retain distinct ordering; RNG draws and combat-text order are behavior.
 
 Resolution remains explicit and depth-first. Card and enemy hit handlers capture
 pre-hit facts separately from the changing battle snapshot; an Archery extra hit

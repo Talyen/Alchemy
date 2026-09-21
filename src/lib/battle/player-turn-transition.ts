@@ -4,12 +4,11 @@ import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { hasEncounterBenefit, hasEnemyTrait } from "./types";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import type { BattleCard } from "@/lib/game-data";
-import { emptyBattleCard } from "./damage-calc";
 import { processArcheryEchoes } from "./unique-card-effects";
 import { CARDS_PER_TURN, MAX_HAND_SIZE } from "../game-constants";
 import { applyHealingWithCombatText, gainManaWithCombatText } from "./combat-text";
 import { halveRounded } from "./amount-helpers";
-import { dealPlayerTypedHit } from "./player-typed-hit";
+import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { applyCleanseHeals, restoreSpentPlayerForge } from "./status-player";
 import { drawCards, applyDrawResult, drawFromState } from "./draw";
 import { applyEmergencyWish } from "./wish";
@@ -37,7 +36,11 @@ function applyPlagueDoctorMask(state: BattleState, combatTexts: CombatTextEvent[
   const cleansed = poison === 0 ? applyCleanseHeals(reduced, combatTexts) : reduced;
   return resolvePendingBattleReactions(
     resolveSecondaryAction(cleansed, "delayed-card", (current) =>
-      dealPlayerTypedHit(current, "poison", halveRounded(removed), combatTexts),
+      resolveFollowUpHit(
+        current,
+        { source: "player-follow-up", damageType: "poison", amount: halveRounded(removed) },
+        combatTexts,
+      ),
     ),
     combatTexts,
   );
@@ -60,7 +63,14 @@ function processPendingTurnStartEffects(state: BattleState, combatTexts: CombatT
     due.push(pulse);
     if (pulse.remainingTurns > 1) kept.push({ ...pulse, remainingTurns: pulse.remainingTurns - 1 });
   }
-  const pulseCard: BattleCard = emptyBattleCard("pending-turn-start");
+  const pulseCard: BattleCard = {
+    id: "pending-turn-start",
+    title: "",
+    descriptionLines: [],
+    art: "",
+    cost: 0,
+    effects: [],
+  };
   return resolveSecondaryAction({ ...state, pendingTurnStartEffects: kept }, "delayed-card", (nextState) =>
     due.reduce(
       (current, pulse) =>

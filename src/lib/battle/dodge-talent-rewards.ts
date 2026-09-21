@@ -3,7 +3,7 @@ import { rollTalentChance } from "./status-helpers";
 import { applyDrawResult, drawFromState } from "./draw";
 import { addPlayerStatusWithCombatText } from "./combat-text";
 import { addForgeToPlayer, applyCleanseHeals } from "./status-player";
-import { dealTalentTypedHit } from "./player-typed-hit";
+import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { setPlayerStatus, type BattleState, type CombatTextEvent } from "./types";
 
 export function applyDodgeTalentStatuses(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
@@ -18,7 +18,11 @@ export function applyDodgeTalentStatuses(state: BattleState, combatTexts: Combat
     nextState = addPlayerStatusWithCombatText(nextState, "thorns", state.talentEffects.thornsOnDodge, combatTexts);
   }
   if (state.enemyStatuses.burn > 0) {
-    nextState = dealTalentTypedHit(nextState, "burn", state.talentEffects.burnOnDodgeBurning, combatTexts);
+    nextState = resolveFollowUpHit(
+      nextState,
+      { source: "talent-fixed", damageType: "burn", amount: state.talentEffects.burnOnDodgeBurning },
+      combatTexts,
+    );
   }
   if (
     state.talentEffects.cleanseCcOnDodge &&

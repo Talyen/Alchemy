@@ -27,7 +27,7 @@ import { applyPoisonTalentRiders } from "./damage-status-riders";
 import { mergeCombatText } from "./combat-text";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
 import { applyEnemyLeechHealing, resolvePendingBattleReactions } from "./enemy-attack-damage";
-import { tryPoisonStunProc } from "./player-typed-hit";
+import { tryPoisonStunProc } from "./follow-up-hit-resolution";
 import { payPendingBleedLeech } from "./damage-rider-leech";
 import { dealEnemyDotTick } from "./dot-resolve";
 

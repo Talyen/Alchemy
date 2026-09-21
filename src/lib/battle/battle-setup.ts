@@ -18,7 +18,7 @@ import { applyDrawResult, drawCards } from "./draw";
 import { defaultBattleState, defaultTalentEffects } from "./battle-setup-defaults";
 import { initializeEnemyState } from "./battle-enemy-setup";
 import { placeholderRng, shuffle, getBattleRng } from "@/lib/rng";
-import { dealPlayerTypedHit } from "./player-typed-hit";
+import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 
 export { defaultBattleState, defaultTalentEffects } from "./battle-setup-defaults";
@@ -215,7 +215,10 @@ export function createBattleStartState(options: CreateBattleStateOptions): Battl
   );
   const startFreeze = battleTalents.startFreeze + battleGearEffects.startFreeze;
   if (startFreeze <= 0 || healedState.enemyHealth <= 0 || healedState.playerHealth <= 0) return healedState;
-  return resolvePendingBattleReactions(dealPlayerTypedHit(healedState, "freeze", startFreeze, []), []);
+  return resolvePendingBattleReactions(
+    resolveFollowUpHit(healedState, { source: "player-follow-up", damageType: "freeze", amount: startFreeze }, []),
+    [],
+  );
 }
 
 export function createBattleState(options: CreateBattleStateOptions): BattleState {

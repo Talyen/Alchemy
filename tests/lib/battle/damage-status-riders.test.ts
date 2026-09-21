@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { applyDamageStatuses, applyPoisonTalentRiders } from "@/lib/battle/damage-status-riders";
-import { applyDamageRiders } from "@/lib/battle/damage-riders";
+import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { makeCombatTexts as makeTexts, makeTestCard, patchBattleState, seededRng } from "../../fixtures/battle";
 import {
@@ -470,7 +470,7 @@ describe("applyDamageStatuses — physical riders", () => {
     });
     const effect = { kind: "damage" as const, damageType: "physical" as const, amount: 4 };
     const card = makeTestCard({ effects: [effect] });
-    const result = applyDamageRiders(state, card, effect, 4, []);
+    const result = resolvePlayerHit(state, { source: "card-attack", card, effect, resolvedDamage: 4 }, []);
     expect(result.enemyCC.stunSkipTurns).toBeGreaterThan(0);
   });
 });

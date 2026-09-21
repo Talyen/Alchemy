@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dealPlayerTypedHit } from "@/lib/battle/player-typed-hit";
+import { resolveFollowUpHit } from "@/lib/battle/follow-up-hit-resolution";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { companionLibrary } from "@/lib/game-data";
@@ -140,7 +140,7 @@ describe("gameplay regressions", () => {
   );
   it("Bloomwoven rewards Nature retaliation damage", () => {
     const state = patchBattleState({ mana: 0, gearEffects: { manaOnNatureDamageChance: 100 } });
-    expect(dealPlayerTypedHit(state, "nature", 5, []).mana).toBe(1);
+    expect(resolveFollowUpHit(state, { source: "player-follow-up", damageType: "nature", amount: 5 }, []).mana).toBe(1);
   });
 
   it("Bloomwoven rewards Thunderstone Nature damage", () => {

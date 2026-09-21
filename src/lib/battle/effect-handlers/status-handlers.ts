@@ -8,7 +8,7 @@ import { tryTriggerEnemyFreeze } from "../damage-status-riders";
 import { resolveStunTrigger } from "../status-stun-resolve";
 import { dealDamageToEnemy } from "../damage";
 import { type EnemyStatusId } from "@/lib/game-data";
-import { dealPlayerTypedHit } from "../player-typed-hit";
+import { resolveFollowUpHit } from "../follow-up-hit-resolution";
 import { getBattleRng, pickRandom } from "@/lib/rng";
 
 function resolveEnemyStatusCcTrigger(
@@ -44,7 +44,7 @@ export const applyPlayerStatusEffectHandler = defineHandler(
 export const applyEnemyStatusEffect = defineHandler("enemy-status", (state, _card, effect, potionMult, combatTexts) => {
   const amount = applyPotionMultiplier(effect.amount, potionMult);
   if (effect.status === "stun" || effect.status === "freeze") {
-    return dealPlayerTypedHit(state, effect.status, amount, combatTexts);
+    return resolveFollowUpHit(state, { source: "player-follow-up", damageType: effect.status, amount }, combatTexts);
   }
   const nextState = addEnemyStatus(state, effect.status, amount);
   const appliedAmount = nextState.enemyStatuses[effect.status] - state.enemyStatuses[effect.status];

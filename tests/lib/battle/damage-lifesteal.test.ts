@@ -3,7 +3,7 @@ import { patchBattleState } from "../../fixtures/battle";
 import { defaultTalentEffects } from "../../fixtures/default-battle-state";
 import { dealDamage, makeCombatTexts, makeEffect, makeTestCard } from "../../fixtures/battle";
 import { computeLeechHeal } from "@/lib/battle/damage-rider-leech";
-import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/player-typed-hit";
+import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/follow-up-hit-resolution";
 
 describe("computeLeechHeal rounding", () => {
   it("returns zero for non-positive damage", () => {

@@ -4,7 +4,7 @@ import { addForgeToPlayer, applyArmorReward, applyCleanseHeals, applyPlayerStatu
 import { isAttackCard } from "./card-classification";
 import { applyDrawResult, drawFromState } from "./draw";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
-import { dealTalentTypedHit } from "./player-typed-hit";
+import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { reduceEnemyArmor, type BattleState, type CombatTextEvent } from "./types";
 
 function computeTalentAttackBonuses(
@@ -75,10 +75,18 @@ function applyTalentStatusAndHitTriggers(
     const poison = Math.max(0, nextState.playerStatuses.poison - talents.cleansePoisonOnBurnCard);
     nextState = { ...nextState, playerStatuses: { ...nextState.playerStatuses, poison } };
     if (poison === 0) nextState = applyCleanseHeals(nextState, combatTexts);
-    nextState = dealTalentTypedHit(nextState, "poison", talents.cleansePoisonOnBurnCard, combatTexts);
+    nextState = resolveFollowUpHit(
+      nextState,
+      { source: "talent-fixed", damageType: "poison", amount: talents.cleansePoisonOnBurnCard },
+      combatTexts,
+    );
   }
   if (nature && state.enemyStatuses.poison > 0) {
-    nextState = dealTalentTypedHit(nextState, "poison", talents.poisonOnNatureCardVsPoisoned, combatTexts);
+    nextState = resolveFollowUpHit(
+      nextState,
+      { source: "talent-fixed", damageType: "poison", amount: talents.poisonOnNatureCardVsPoisoned },
+      combatTexts,
+    );
   }
   if (nature && talents.thornsOnNatureCard > 0) {
     nextState = addPlayerStatusWithCombatText(nextState, "thorns", talents.thornsOnNatureCard, combatTexts);

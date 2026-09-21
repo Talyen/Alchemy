@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { cardById, computeTalentEffects, type DamageType } from "@/lib/game-data";
-import { dealTalentTypedHit, tryTalentTypedHit } from "@/lib/battle/player-typed-hit";
-import { applyDamageRiders } from "@/lib/battle/damage-riders";
-import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/player-typed-hit";
+import { resolveFollowUpHit, tryTalentTypedHit } from "@/lib/battle/follow-up-hit-resolution";
+import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
+import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/follow-up-hit-resolution";
 import { payKillPayouts } from "@/lib/battle/combat-text";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
@@ -41,7 +41,16 @@ describe("talent damage conversions", () => {
     (source, target, damage, stacks) => {
       const state = battle({ talentEffects: converted });
       const card = makeTestCard({ effects: [{ kind: "damage", damageType: source, amount: 8 }] });
-      const next = applyDamageRiders(state, card, { kind: "damage", damageType: source, amount: 8 }, 8, []);
+      const next = resolvePlayerHit(
+        state,
+        {
+          source: "card-attack",
+          card,
+          effect: { kind: "damage", damageType: source, amount: 8 },
+          resolvedDamage: 8,
+        },
+        [],
+      );
       expect(next.enemyHealth).toBe(92 - damage);
       expect(next.enemyStatuses[target]).toBe(stacks);
       if (source === "physical") expect(next.enemyStatuses.poison).toBe(0);
@@ -49,11 +58,14 @@ describe("talent damage conversions", () => {
   );
 
   it("Broadhead deals a separate Bleed hit on an Archery hit", () => {
-    const next = applyDamageRiders(
+    const next = resolvePlayerHit(
       battle({ talentEffects: { archeryBleedDamageChance: 10 } }),
-      cardById["bounty-shot"]!,
-      { kind: "damage", damageType: "physical", amount: 8 },
-      8,
+      {
+        source: "card-attack",
+        card: cardById["bounty-shot"]!,
+        effect: { kind: "damage", damageType: "physical", amount: 8 },
+        resolvedDamage: 8,
+      },
       [],
     );
     expect(next.enemyHealth).toBe(90);
@@ -92,7 +104,7 @@ describe("talent damage conversions", () => {
       currentEnemy: { traits: [{ id: "burn-resistance", title: "", description: "" }] },
       enemyMitigation: { block: 1 },
     });
-    const next = dealTalentTypedHit(initial, "burn", 4, [], true);
+    const next = resolveFollowUpHit(initial, { source: "talent-derived", damageType: "burn", amount: 4 }, []);
     expect(next.enemyMitigation.block).toBe(0);
     expect(next.enemyHealth).toBe(99);
     expect(next.enemyStatuses.burn).toBe(1);
@@ -100,7 +112,7 @@ describe("talent damage conversions", () => {
 
   it.each(["physical", "stun"] as DamageType[])("%s follow-ups respect Armor as well as Block", (type) => {
     const initial = battle({ enemyMitigation: { block: 2, armor: 2 } });
-    const next = dealTalentTypedHit(initial, type, 4, [], true);
+    const next = resolveFollowUpHit(initial, { source: "talent-derived", damageType: type, amount: 4 }, []);
     expect(next.enemyHealth).toBe(100);
     expect(next.enemyMitigation.block).toBe(0);
     expect(next.enemyMitigation.armor).toBe(2);
@@ -108,14 +120,14 @@ describe("talent damage conversions", () => {
 
   it("crowd-control immunity prevents buildup without removing the damage", () => {
     const initial = battle({ enemyCC: { cooldown: 2 } });
-    const next = dealTalentTypedHit(initial, "freeze", 4, [], true);
+    const next = resolveFollowUpHit(initial, { source: "talent-derived", damageType: "freeze", amount: 4 }, []);
     expect(next.enemyHealth).toBe(96);
     expect(next.enemyStatuses.freeze).toBe(0);
   });
 
   it("fully absorbed hits create no statuses or damage rewards", () => {
     const initial = battle({ enemyMitigation: { block: 10 }, talentEffects: { forgeOnBurnDealt: 1 } });
-    const next = dealTalentTypedHit(initial, "burn", 4, [], true);
+    const next = resolveFollowUpHit(initial, { source: "talent-derived", damageType: "burn", amount: 4 }, []);
     expect(next.enemyHealth).toBe(100);
     expect(next.enemyStatuses.burn).toBe(0);
     expect(next.playerStatuses.forge).toBe(0);
@@ -123,7 +135,7 @@ describe("talent damage conversions", () => {
 
   it("fixed triggers preserve the next card’s critical strike and do not roll damage procs", () => {
     const initial = battle({ talentEffects: converted, flags: { nextHitCrit: true } });
-    const next = dealTalentTypedHit(initial, "bleed", 4, []);
+    const next = resolveFollowUpHit(initial, { source: "talent-fixed", damageType: "bleed", amount: 4 }, []);
     expect(next.enemyHealth).toBe(96);
     expect(next.enemyStatuses.bleed).toBe(4);
     expect(next.enemyStatuses.poison).toBe(0);
@@ -145,12 +157,21 @@ describe("Toxic Profit and saved damage rules", () => {
       });
       const next =
         source === "hit"
-          ? applyDamageRiders(initial, cardById["slash"]!, { kind: "damage", damageType: "physical", amount: 4 }, 4, [])
+          ? resolvePlayerHit(
+              initial,
+              {
+                source: "card-attack",
+                card: cardById["slash"]!,
+                effect: { kind: "damage", damageType: "physical", amount: 4 },
+                resolvedDamage: 4,
+              },
+              [],
+            )
           : source === "tick"
             ? tickEnemyStatuses(initial, [])
             : source === "detonation"
               ? detonateEnemyStatuses(initial, ["poison"], [])
-              : dealTalentTypedHit(initial, "burn", 4, []);
+              : resolveFollowUpHit(initial, { source: "talent-fixed", damageType: "burn", amount: 4 }, []);
       expect(next.gold).toBe(3);
       expect(next.playerHealth).toBe(12);
       expect(payKillPayouts(next, true, []).gold).toBe(3);
@@ -160,11 +181,14 @@ describe("Toxic Profit and saved damage rules", () => {
 
   it("also pays when the lethal Poison hit first inflicts Poison", () => {
     const initial = battle({ enemyHealth: 2, talentEffects: effects });
-    const next = applyDamageRiders(
+    const next = resolvePlayerHit(
       initial,
-      cardById["venom-fangs"]!,
-      { kind: "damage", damageType: "poison", amount: 4 },
-      4,
+      {
+        source: "card-attack",
+        card: cardById["venom-fangs"]!,
+        effect: { kind: "damage", damageType: "poison", amount: 4 },
+        resolvedDamage: 4,
+      },
       [],
     );
     expect(next.gold).toBe(3);
@@ -172,9 +196,9 @@ describe("Toxic Profit and saved damage rules", () => {
 
   it("does not pay for an unpoisoned kill or hit an already defeated enemy", () => {
     const initial = battle({ enemyHealth: 1, talentEffects: effects });
-    const killed = dealTalentTypedHit(initial, "burn", 4, []);
+    const killed = resolveFollowUpHit(initial, { source: "talent-fixed", damageType: "burn", amount: 4 }, []);
     expect(killed.gold).toBe(0);
-    expect(dealTalentTypedHit(killed, "poison", 4, [])).toBe(killed);
+    expect(resolveFollowUpHit(killed, { source: "talent-fixed", damageType: "poison", amount: 4 }, [])).toBe(killed);
   });
 
   it("new saved manifests retain converted procs and kill payout state", () => {
@@ -196,11 +220,14 @@ describe("Toxic Profit and saved damage rules", () => {
     const saved = { ...PersistedBattleStateSchema.parse(raw), rng: () => 0.09 };
     expect(saved.talentEffects.physicalBleedDamageChance).toBe(0);
     expect(saved.talentEffects.uncappedDrawOnConsume).toBe(0);
-    const hit = applyDamageRiders(
+    const hit = resolvePlayerHit(
       saved,
-      cardById["slash"]!,
-      { kind: "damage", damageType: "physical", amount: 8 },
-      8,
+      {
+        source: "card-attack",
+        card: cardById["slash"]!,
+        effect: { kind: "damage", damageType: "physical", amount: 8 },
+        resolvedDamage: 8,
+      },
       [],
     );
     expect(hit.enemyHealth).toBe(92);

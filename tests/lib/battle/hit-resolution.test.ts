@@ -1,7 +1,7 @@
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { describe, expect, it } from "vitest";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
-import { applyAttackPurgeRider, applyDamageRiders } from "@/lib/battle/damage-riders";
+import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
 import { paceCombatDamage } from "@/lib/battle/fight-pacing";
 import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
 import { defaultTalentEffects } from "@/lib/battle";
@@ -13,7 +13,7 @@ import {
   defaultTrinketManifest,
 } from "../../fixtures/default-battle-state";
 
-describe("applyDamageRiders", () => {
+describe("card hit resolution", () => {
   it("applies enemy damage and forge decay on physical hit", () => {
     const state = patchBattleState({
       enemyHealth: 50,
@@ -23,7 +23,7 @@ describe("applyDamageRiders", () => {
     const card = makeTestCard();
     const effect = { kind: "damage" as const, damageType: "physical" as const, amount: 5 };
     const texts: CombatTextEvent[] = [];
-    const result = applyDamageRiders(state, card, effect, 5, texts);
+    const result = resolvePlayerHit(state, { source: "card-attack", card, effect, resolvedDamage: 5 }, texts);
     expect(result.enemyHealth).toBe(45);
     expect(result.playerStatuses.forge).toBe(2);
     expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "physical", amount: 5 });
@@ -40,7 +40,7 @@ describe("applyDamageRiders", () => {
     const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });
     const effect = { kind: "damage" as const, damageType: "physical" as const, amount: 5 };
     const texts: CombatTextEvent[] = [];
-    const result = applyDamageRiders(state, card, effect, 5, texts);
+    const result = resolvePlayerHit(state, { source: "card-attack", card, effect, resolvedDamage: 5 }, texts);
     expect(result.playerStatuses.forge).toBe(7);
     expect(result.enemyStatuses.stun).toBeGreaterThanOrEqual(3);
   });
@@ -283,7 +283,7 @@ describe("damage rider regressions", () => {
       enemyMitigation: { armor: 1 },
       gearEffects: { attackPurgeDealHolyPerEffect: 1 },
     });
-    const result = applyAttackPurgeRider(state, []);
+    const result = resolvePlayerHit(state, { source: "attack-purge" }, []);
     expect(result.enemyHealth).toBe(5);
     expect(result.flags.divineAegisTriggered).toBe(true);
     expect(result.enemyMitigation).toMatchObject({ armor: 2, block: 4 });
@@ -301,7 +301,9 @@ describe("damage rider regressions", () => {
     });
     const expectedDamage = paceCombatDamage(state, 10, "player");
     expect(expectedDamage).toBeGreaterThan(10);
-    expect(applyAttackPurgeRider(state, []).enemyHealth).toBe(state.enemyHealth - expectedDamage);
+    expect(resolvePlayerHit(state, { source: "attack-purge" }, []).enemyHealth).toBe(
+      state.enemyHealth - expectedDamage,
+    );
   });
 
   it("does not trigger Obsidian Hammer when Block absorbs all Physical damage", () => {
@@ -331,7 +333,11 @@ describe("damage rider regressions", () => {
     });
     const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10, lifesteal: true }] });
     const texts = makeCombatTexts();
-    const result = applyDamageRiders(state, card, card.effects[0] as never, 10, texts);
+    const result = resolvePlayerHit(
+      state,
+      { source: "card-attack", card, effect: card.effects[0] as never, resolvedDamage: 10 },
+      texts,
+    );
     expect(result.enemyHealth).toBe(0);
     expect(result.playerHealth).toBe(20);
     expect(texts.some((entry) => entry.stat === "physical")).toBe(false);

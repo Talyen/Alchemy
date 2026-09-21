@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { patchBattleState, makeTestCard } from "../../fixtures/battle";
 import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
 import { applyDamageStatuses } from "@/lib/battle/damage-status-riders";
-import { applyAttackPurgeRider } from "@/lib/battle/damage-riders";
+import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
@@ -32,7 +32,7 @@ describe("unique item battle effects", () => {
     });
 
     const combatTexts: CombatTextEvent[] = [];
-    const afterPurge = applyAttackPurgeRider(baseState, combatTexts);
+    const afterPurge = resolvePlayerHit(baseState, { source: "attack-purge" }, combatTexts);
 
     expect(afterPurge.enemyMitigation.armor).toBe(0);
     expect(afterPurge.enemyMitigation.block).toBe(15);
@@ -49,7 +49,7 @@ describe("unique item battle effects", () => {
       gearEffects: { ...defaultGearEffects, attackPurgeDealHolyPerEffect: 1 },
     });
 
-    const afterPurge = applyAttackPurgeRider(baseState, []);
+    const afterPurge = resolvePlayerHit(baseState, { source: "attack-purge" }, []);
 
     expect(afterPurge.enemyMitigation.block).toBe(0);
     expect(afterPurge.enemyMitigation.forge).toBe(5);

@@ -55,6 +55,14 @@ The engine resolves gameplay before presentation; playback consumes committed re
 - **Card play:** UI → `useBattleController.playCard()` → `playBattleCardResolved()` → `applyCardEffects()` → new `BattleState` → store.
 - **Enemy turn:** `commitEndTurn()` → `resolveBattleTurn(snapshot, context)` → committed result and XP → `playTurnFrames()` for presentation only.
 
+Direct player hits use source-specific recipes in `lib/battle/hit-resolution.ts`
+and its lower `follow-up-hit-resolution.ts` tier. `hit-request.ts` carries source
+intent; `hit-facts.ts` captures eligibility and Health results before nested
+reactions. Attack orchestration keeps Dodge, reserved bonuses, numeric preparation,
+whole-packet follow-ups, and retaliation. Card reaction stages cannot call back into
+attack orchestration. The [hit-source matrix](./GAME_RULES.md#direct-player-hit-resolution)
+defines the intentional ordering and scaling differences, including legacy saves.
+
 Controller construction, route props, and playback bindings: [Battle controllers](./BATTLE_CONTROLLERS.md#battle-path).
 
 ## Controller entry points

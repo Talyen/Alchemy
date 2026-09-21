@@ -8,7 +8,7 @@ import { scaleEnemyAbilityDamage } from "@/lib/battle/battle-enemy-setup";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { companionLibrary } from "@/lib/game-data";
 import { applyDamageStatuses } from "@/lib/battle/damage-status-riders";
-import { dealPlayerTypedHit } from "@/lib/battle/player-typed-hit";
+import { resolveFollowUpHit } from "@/lib/battle/follow-up-hit-resolution";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import {
   dealDamage,
@@ -375,7 +375,11 @@ describe("enemy Dodge", () => {
       enemyHealth: 30,
       rng: () => 0.01,
     });
-    const result = dealPlayerTypedHit(state, "physical", 6, makeCombatTexts());
+    const result = resolveFollowUpHit(
+      state,
+      { source: "player-follow-up", damageType: "physical", amount: 6 },
+      makeCombatTexts(),
+    );
     expect(result.enemyHealth).toBeLessThan(30);
   });
 

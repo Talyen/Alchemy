@@ -13,8 +13,8 @@ import { prepareTalentCardPlay } from "@/lib/battle/talent-card-play";
 import { applyDodgeTalentStatuses } from "@/lib/battle/dodge-talent-rewards";
 import { applyHealthThresholdCleanse, removeHarmfulPlayerStatuses } from "@/lib/battle/status-player";
 import { applyLeechHealing } from "@/lib/battle/damage-rider-leech";
-import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/player-typed-hit";
-import { applyDamageRiders } from "@/lib/battle/damage-riders";
+import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/follow-up-hit-resolution";
+import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
 import { computeCardPayment } from "@/lib/battle/card-cost-rules";
 import { tickPlayerStatuses } from "@/lib/battle/status-ticks";
@@ -53,7 +53,11 @@ const drawCard = makeTestCard({ id: "drawn", effects: [{ kind: "heal", amount: 1
 const physical = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 4 }] });
 
 function hit(state: ReturnType<typeof battle>, damageType: "physical" | "poison", amount = 4) {
-  return applyDamageRiders(state, physical, { kind: "damage", damageType, amount }, amount, []);
+  return resolvePlayerHit(
+    state,
+    { source: "card-attack", card: physical, effect: { kind: "damage", damageType, amount }, resolvedDamage: amount },
+    [],
+  );
 }
 
 describe("distinct talent conditions", () => {
@@ -167,10 +171,16 @@ describe("distinct talent conditions", () => {
     const initial = battle({ talentEffects: talents("Hawk Eye"), flags: { hawkEyeReady: true } });
     const card = cardById["serrated-arrowhead"]!;
     const effect = { kind: "damage" as const, damageType: "bleed" as const, amount: 3 };
-    expect(applyDamageRiders(initial, card, effect, 3, []).enemyHealth).toBe(93);
-    expect(applyDamageRiders(battle({ talentEffects: initial.talentEffects }), card, effect, 3, []).enemyHealth).toBe(
-      97,
+    expect(resolvePlayerHit(initial, { source: "card-attack", card, effect, resolvedDamage: 3 }, []).enemyHealth).toBe(
+      93,
     );
+    expect(
+      resolvePlayerHit(
+        battle({ talentEffects: initial.talentEffects }),
+        { source: "card-attack", card, effect, resolvedDamage: 3 },
+        [],
+      ).enemyHealth,
+    ).toBe(97);
   });
 
   it("Snow Pack adds Freeze damage to a Companion hit rather than increasing its original type", () => {
@@ -224,8 +234,16 @@ describe("distinct talent conditions", () => {
         rng: () => 0.75,
       });
       const effect = { kind: "damage" as const, damageType: type, amount: 4, lifesteal: type === "physical" };
-      expect(applyDamageRiders(initial, physical, effect, 4, []).enemyHealth).toBe(49);
-      expect(applyDamageRiders({ ...initial, enemyHealth: 49 }, physical, effect, 4, []).enemyHealth).toBe(44);
+      expect(
+        resolvePlayerHit(initial, { source: "card-attack", card: physical, effect, resolvedDamage: 4 }, []).enemyHealth,
+      ).toBe(49);
+      expect(
+        resolvePlayerHit(
+          { ...initial, enemyHealth: 49 },
+          { source: "card-attack", card: physical, effect, resolvedDamage: 4 },
+          [],
+        ).enemyHealth,
+      ).toBe(44);
     },
   );
 

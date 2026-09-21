@@ -32,7 +32,7 @@ import { applyEnemyHealingWithCombatText, mergeCombatText } from "./combat-text"
 import { resolveEnemyAttackHit } from "./enemy-attack-hit";
 import { addEnemyMitigationWithCombatText } from "./encounter-trait-health-threshold";
 import { scaleByRoomMultiplier } from "./enemy-turn-traits";
-import { dealPlayerTypedHit } from "./player-typed-hit";
+import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { applyPlayerStatusFromAttack } from "./status-player";
 import { removePlayerArmor } from "./status-helpers";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
@@ -301,14 +301,18 @@ function applyAbilityFollowups(
   }
   if (nextState.enemyStatuses.onAttackBleed > 0) {
     const amount = nextState.enemyStatuses.onAttackBleed;
-    nextState = dealPlayerTypedHit(setEnemyStatus(nextState, "onAttackBleed", 0), "bleed", amount, combatTexts);
+    nextState = resolveFollowUpHit(
+      setEnemyStatus(nextState, "onAttackBleed", 0),
+      { source: "player-follow-up", damageType: "bleed", amount },
+      combatTexts,
+    );
   }
   if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
   // Purged Thorns stay purged: the retaliation check below sees zero stacks, so no Nature damage fires.
   if (context.landed && nextState.playerStatuses.thorns > 0) {
     const amount = nextState.playerStatuses.thorns;
     nextState = resolveSecondaryAction(setPlayerStatus(nextState, "thorns", 0), "retaliation", (current) =>
-      dealPlayerTypedHit(current, "nature", amount, combatTexts),
+      resolveFollowUpHit(current, { source: "player-follow-up", damageType: "nature", amount }, combatTexts),
     );
   }
   return nextState;

@@ -55,9 +55,9 @@ describe("enemy attack damage", () => {
       currentEnemy: { traits: [{ id: "second-wind", title: "Second Wind", description: "" }] },
     });
     const hit = resolveTypedEnemyHit(state, { kind: "damage", damageType: "nature", amount: 4 }, 4, []);
-    expect(hit.healthDamage).toBe(4);
-    expect(hit.resolvedDamage).toBe(4);
-    expect(hit.killed).toBe(false);
+    expect(hit.facts.healthDamage).toBe(4);
+    expect(hit.facts.resolvedDamage).toBe(4);
+    expect(hit.facts.killed).toBe(false);
     expect(hit.state.enemyHealth).toBeGreaterThan(2);
   });
 

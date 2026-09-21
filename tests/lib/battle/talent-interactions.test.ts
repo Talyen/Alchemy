@@ -6,8 +6,8 @@ import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { applyWishEffect, chooseWishCard } from "@/lib/battle/wish";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
-import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/player-typed-hit";
-import { dealPlayerTypedHit } from "@/lib/battle/player-typed-hit";
+import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/follow-up-hit-resolution";
+import { resolveFollowUpHit } from "@/lib/battle/follow-up-hit-resolution";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
 import { patchBattleState, type BattleStatePatch } from "../../fixtures/battle";
@@ -164,7 +164,9 @@ describe("card play rewards", () => {
       talentEffects: computeTalentEffects({ burn: ["burn-dmg-2"], holy: ["holy-block-scaling"] }),
       pendingTurnStartEffects: [{ remainingTurns: 1, effects: [...burn.effects, ...holy.effects] }],
     });
-    const next = advanceToPlayerTurn(dealPlayerTypedHit(initial, "burn", 2, []));
+    const next = advanceToPlayerTurn(
+      resolveFollowUpHit(initial, { source: "player-follow-up", damageType: "burn", amount: 2 }, []),
+    );
     expect(next.playerStatuses.forge).toBe(0);
     expect(next.playerStatuses.block).toBe(0);
   });

@@ -5,7 +5,7 @@ import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { applyWishEffect } from "@/lib/battle/wish";
-import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/player-typed-hit";
+import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/follow-up-hit-resolution";
 import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
 import { WISH_CHOICE_COUNT } from "@/lib/game-constants";
 import { patchBattleState, type BattleStatePatch } from "../../fixtures/battle";

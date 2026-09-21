@@ -10,7 +10,7 @@ import {
   shouldShowCombatText,
 } from "@/lib/battle/combat-text";
 import type { GearEffectManifest } from "@/lib/gear";
-import { dealPlayerTypedHit } from "@/lib/battle/player-typed-hit";
+import { resolveFollowUpHit } from "@/lib/battle/follow-up-hit-resolution";
 import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
 import { tryTriggerEnemyFreeze } from "@/lib/battle/damage-status-riders";
 import type { BattleState } from "@/lib/battle/types";
@@ -228,7 +228,11 @@ describe("lethality payouts — every kill path pays the same rewards", () => {
     const state = withGear(ccProcKillState(), { healOnKill: 3 });
     const trinketState = { ...state, trinketEffects: defaultTrinketManifest({ boneCharmHealOnKill: 2 }) };
     const texts = makeTexts();
-    const result = dealPlayerTypedHit(trinketState, "physical", 10, texts);
+    const result = resolveFollowUpHit(
+      trinketState,
+      { source: "player-follow-up", damageType: "physical", amount: 10 },
+      texts,
+    );
     expect(result.enemyHealth).toBe(0);
     expect(result.playerHealth).toBe(25);
   });
@@ -237,7 +241,11 @@ describe("lethality payouts — every kill path pays the same rewards", () => {
     const lethal = withGear({ ...ccProcKillState(), enemyHealth: 0 }, { goldOnKill: 4 });
     const texts = makeTexts();
 
-    const afterTypedHit = dealPlayerTypedHit(lethal, "physical", 10, texts);
+    const afterTypedHit = resolveFollowUpHit(
+      lethal,
+      { source: "player-follow-up", damageType: "physical", amount: 10 },
+      texts,
+    );
     expect(afterTypedHit.gold).toBe(0);
     expect(afterTypedHit.playerHealth).toBe(20);
   });
