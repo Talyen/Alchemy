@@ -1,6 +1,6 @@
 # Local skill routing
 
-Use a skill when its workflow applies. [AGENTS.md](../../AGENTS.md#documentation-owners) owns discovery requirements and [verification](../../AGENTS.md#verification--environment). Ordinary implementation needs no skill.
+Use a skill when its workflow applies. [AGENTS.md](../../AGENTS.md#find-the-owner) owns discovery requirements and [verification](../../AGENTS.md#review-and-handoff). Ordinary implementation needs no skill.
 
 | When                                                                                                                                                                      | Skill                                         |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
@@ -11,6 +11,6 @@ Use a skill when its workflow applies. [AGENTS.md](../../AGENTS.md#documentation
 
 Load order: for authoring/debugging browser tests use `playwright-e2e`; for gating edited work use `verifier`. `architect` designs the contract; `run-audits` proposes findings against it.
 
-[AGENTS.md](../../AGENTS.md#documentation-owners) routes implementation work to canonical owners. In particular, use [asset workflows](../../Docs/WORKFLOWS-ASSETS.md) for generated assets, [boot and loading](../../Docs/ARCHITECTURE.md#boot-and-loading) for route loading, and [Armory write paths](../../Docs/ARMORY.md#write-paths) for gear mutations.
+[AGENTS.md](../../AGENTS.md#find-the-owner) routes implementation work to canonical owners. In particular, use [asset workflows](../../Docs/WORKFLOWS-ASSETS.md) for generated assets, [boot and loading](../../Docs/ARCHITECTURE.md#boot-and-loading) for route loading, and [Armory write paths](../../Docs/ARMORY.md#write-paths) for gear mutations.
 
 [Knowledge](../knowledge/index.md) preserves failure explanations and rejected approaches; it is not an additional implementation checklist. Read it when the current task needs that context.

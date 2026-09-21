@@ -6,7 +6,7 @@ import { DetailPopup } from "../../../shared/ui/tooltips/card-popup";
 import { renderUnlockMessage } from "../../../shared/ui/unlock-text";
 import { InteractiveArtTile, type PopupContext } from "../../../shared/ui/interactive-art-tile";
 import { StarRating } from "../../../shared/ui/star-rating";
-import { type BattleCard, type CompanionId, getCardKeywords, getEffectiveCardDescriptionLines } from "@/lib/game-data";
+import { type BattleCard, type CompanionId, getEffectiveCardDescriptionLines } from "@/lib/game-data";
 import { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/lib/homestead/companions";
 import { cardSurfaceClass, collectionCardGridTileWidthClass, cardArtImageClass } from "../../../shared/config";
 import { HOMESTEAD_CONFIG, formatMaterialCostSummary } from "./helpers";
@@ -15,7 +15,7 @@ import {
   homesteadCompletedSurfaceClass,
   homesteadUndiscoveredDimClass,
 } from "./homestead-tile-node";
-import { getInspectionKeywordShineColors, getPlasmaColorPairForCard } from "@/features/alchemy/shared/config";
+import { getCardInspectionShineColors, getPlasmaColorPairForCard } from "@/features/alchemy/shared/config";
 
 function getCompanionTooltip(
   card: BattleCard,
@@ -115,7 +115,7 @@ export function CompanionCardNode({
       as={interactive ? "button" : "div"}
       showGlow
       shineOnHover
-      shineColor={getInspectionKeywordShineColors(getCardKeywords(card))}
+      shineColor={getCardInspectionShineColors(card)}
       {...(interactive ? { ariaDisabled: !bondAffordable } : {})}
       onClick={
         interactive && bondAffordable && companionId

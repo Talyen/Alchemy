@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { EffectKindDefinition } from "./registry";
+import type { EffectKindDefinition } from "./shared-schemas";
 import {
   AmountSchema,
   DamageTypeSchema,
@@ -15,6 +15,10 @@ const playerStatusEffectDefinition = {
       kind: z.literal("player-status"),
       status: z.enum(["block", "armor", "thorns", "forge", "haste", "phoenixFeather"]),
       amount: AmountSchema,
+      statusPool: z
+        .array(z.enum(["block", "armor", "thorns", "forge"]))
+        .min(2)
+        .optional(),
       perManaCrystal: AmountSchema.optional(),
       convertCurrentMana: z.number().int().min(0).max(100).optional(),
     })

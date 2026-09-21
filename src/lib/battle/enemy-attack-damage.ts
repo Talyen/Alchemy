@@ -38,6 +38,7 @@ export interface EnemyDamageOptions {
   flatBonus?: number;
   ignorePlayerMitigation?: boolean;
   ignoreArmor?: boolean;
+  ignoreBlock?: boolean;
   physicalBlockBreakMultiplier?: number;
   extraPoisonBlockStrip?: number;
   skipTraitReactions?: boolean;
@@ -111,7 +112,10 @@ function calculateBlockAndArmorMitigation(
 ) {
   let remainingDamage = incomingDamage;
   const blockMultiplier = blockAbsorptionMultiplier(state, effect);
-  const effectiveBlock = options.ignorePlayerMitigation ? 0 : Math.round(state.playerStatuses.block * blockMultiplier);
+  const effectiveBlock =
+    options.ignorePlayerMitigation || options.ignoreBlock
+      ? 0
+      : Math.round(state.playerStatuses.block * blockMultiplier);
   const blockAbsorb = Math.min(remainingDamage, effectiveBlock);
   const blockSpent =
     blockAbsorb <= 0
@@ -125,11 +129,11 @@ function calculateBlockAndArmorMitigation(
   }
   const remainingBlock = Math.max(0, state.playerStatuses.block - blockSpent);
   const extraPhysicalBlock =
-    effect.damageType === "physical" && (options.physicalBlockBreakMultiplier ?? 1) > 1
+    !options.ignoreBlock && effect.damageType === "physical" && (options.physicalBlockBreakMultiplier ?? 1) > 1
       ? Math.min(remainingBlock, Math.round(blockSpent * ((options.physicalBlockBreakMultiplier ?? 1) - 1)))
       : 0;
   const extraPoisonBlock =
-    effect.damageType === "poison" && !options.ignorePlayerMitigation
+    !options.ignoreBlock && effect.damageType === "poison" && !options.ignorePlayerMitigation
       ? Math.min(remainingBlock, options.extraPoisonBlockStrip ?? 0)
       : 0;
   const totalExtraBlock = Math.max(extraPhysicalBlock, extraPoisonBlock);

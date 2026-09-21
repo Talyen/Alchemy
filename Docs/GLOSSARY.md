@@ -36,7 +36,7 @@ Definitions of common terms used in the Alchemy codebase.
 - \***\*Potion\*\*** — Consumable with temporary effect from the Alchemist shop.
 - \***\*Regen / Regeneration\*\*** — Enemy trait: heal each turn at end of enemy phase.
 - \***\*Reward route\*\*** — Internal post-rewards destination (`REWARD_ROUTES`), not a `Screen` — see **Screen** above. Combat and content-system reward kinds are selected by the current reward rules in `src/lib/game-constants/run-rewards.ts`.
-- \***\*Run materials earned\*\*** — Materials collected during the current run and included in the run-end summary. See [WORKFLOWS § Grant materials](./WORKFLOWS.md#grant-materials-during-a-run).
+- \***\*Run materials earned\*\*** — Materials collected during the current run and included in the run-end summary. See [WORKFLOWS § Grant materials](./RUN_WORKFLOWS.md#grant-materials-during-a-run).
 - \***\*Status\*\*** — Temporary player/enemy effect with tick/expiry (Burn, Freeze, Poison, Stun, …).
 - \***\*Summon\*\*** — Brings a companion into battle.
 - \***\*Gear\*\*** — Permanent generated items stored in the Armory and equipped per character. Rarity is basic, astral, or unique. Unique items are named, fixed-affix definitions; uniqueness is inventory-scoped (salvage returns them to the drop pool). Collection discovery of a unique survives salvage. Gear effects are snapshotted when battle begins and refreshed by live meta mutations. See [ARMORY](./ARMORY.md).

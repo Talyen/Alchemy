@@ -73,7 +73,10 @@ function isPlainMagnitude(effect: BattleCardEffect): boolean {
     effect.equalToGoldPercent === undefined &&
     !effect.doubleIfEnemyBurning &&
     !effect.doubleIfEnemyBleeding &&
+    !effect.doubleIfEnemyNotBurning &&
     !effect.tripleIfEnemyNotBurning &&
+    !effect.detonateAllBurn &&
+    !effect.detonateAllBleed &&
     !effect.detonateIfEnemyBurning &&
     !effect.damageTypePool
   );

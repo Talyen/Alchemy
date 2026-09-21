@@ -25,7 +25,7 @@ Operational rules for `src/lib/battle/` that deviate from typical CCG assumption
 
 ### Companion Bond
 
-Bond 0 preserves the baseline. Damage, healing, Gold, and Scarab Block gain +1 per Bond level; Wolf Block stays 1. Mana Moth and Library Owl retain their guaranteed baseline and gain a 25%/50%/75% chance of one extra Mana/card at Bond I/II/III. Will-o’-Wisp keeps cleansing one status and additionally heals 1/2/3 Health. Both Fox outcomes scale. Summon cards, the active Companion panel, and battle card inspection share the combat owner’s Companion-specific scaling, including Bond, Gear, Mana Crystal, and conditional damage bonuses. Collection descriptions retain their noncombat context.
+Bond 0 preserves the baseline. Damage, healing, Gold, and Scarab Block gain +1 per Bond level. Wolf deals one randomly selected Bleed or Physical hit each turn, with its damage scaling by Bond. Fox deals one randomly selected Stun or Bleed hit each turn, with its damage scaling by Bond. Mana Moth and Library Owl retain their guaranteed baseline and gain a 25%/50%/75% chance of one extra Mana/card at Bond I/II/III. Will-o’-Wisp keeps cleansing one status and additionally heals 1/2/3 Health. Summon cards, the active Companion panel, and battle card inspection share the combat owner’s Companion-specific scaling, including Bond, Gear, Mana Crystal, and conditional damage bonuses. Collection descriptions retain their noncombat context.
 
 - **Companion damage rewards** — Predator's Instinct doubles damage only strictly below 30% enemy Health, comparing against the unrounded threshold. Companion damage rewards use Health lost to its damage packets before enemy healing reactions; Second Wind cannot cancel those rewards, and utility actions cannot earn them through unrelated damage reactions.
 - **Companion card perks** — Whistle and Hunter's Bond use the card's Companion keyword, including Pack Tactics. Whistle makes the active Companion act after all effects of the card finish, including a newly summoned Companion. Both rewards occur once per card play, including automatic plays, never again for repeated or scheduled effects. Both `getCardKeywords` and `cardHasKeyword` use the full content keywords, including utility effects.
@@ -44,7 +44,7 @@ Bond 0 preserves the baseline. Damage, healing, Gold, and Scarab Block gain +1 p
 
 #### Enemy reactions
 
-- **Resolved player actions** — Jealous reacts once when a Wish effect resolves, including Stargaze's delayed Wish and triggered Wishes; an effect offering multiple Wishes retains one reaction. Insatiable also reacts to cards consumed by Dance of Blades. Consume rewards require the hero to survive retaliation, including automatic plays; Death’s Door still counts as survival. The card remains consumed even if retaliation defeats the hero. Legacy Thorns and Holy Retribution check attempted damage in the resolved action, including chance branches and Exorcism; a utility-only chance outcome does not retaliate. Repeated effects track their attempts separately and retain existing reaction limits.
+- **Resolved player actions** — Jealous reacts once when a Wish effect resolves, including Stargaze's immediate Wish and triggered Wishes; an effect offering multiple Wishes retains one reaction. Insatiable also reacts to cards consumed by Dance of Blades. Consume rewards require the hero to survive retaliation, including automatic plays; Death’s Door still counts as survival. The card remains consumed even if retaliation defeats the hero. Legacy Thorns and Holy Retribution check attempted damage in the resolved action, including chance branches and Exorcism; a utility-only chance outcome does not retaliate. Repeated effects track their attempts separately and retain existing reaction limits.
 - **Rooted** — gains Block once per played Nature card, using the same full keywords shown on the card, including nested effects and tags. Repeated effects and Companion actions do not count as another card play.
 - **Attack traits** — an attack is a damaging ability. Positive incoming hits fully prevented by Block, Armor, flat damage reduction (including Aetherward), or resistance still land: they consume Bandit's Ambush, permit Banshee's Purge, and trigger remaining hero Thorns. Dodge prevents these landed-hit reactions. Absorbed damage does not grant Leech or rewards requiring Health damage. Brawler's penalty applies to all hits of its next damaging ability. Defensive abilities preserve these bonuses and do not trigger attack reactions.
 - **Once-per-ability rewards** — Zealot, Cleric, Paladin, Seraph, and Stone Titan reward matching damage to hero Health once per ability. Fire Imp, Giant Spider, and Winter Wolf apply their follow-up once after an ability damages hero Health. Banshee retains its landed-hit Purge, randomly selecting one active beneficial effect with world RNG; a purged Thorns stack does not retaliate that hit. Inquisitor doubles Holy hits against Burning heroes.
@@ -144,20 +144,21 @@ See [Distinct talent and card effects](./TALENT_RULES.md#distinct-talent-and-car
 
 ### Strategic card conditions
 
-Shield Bash deals 2 Stun damage and automatically spends exactly 2 available
-Block for +3 base damage instead of granting Block. Mana payment and its reactions
-finish first; the optional Block payment precedes the hit, including Dodge and
-reactive damage. Rejected plays spend neither resource. Maul deals 3 Stun against
-positive target Block, otherwise 3 Bleed, selecting before the hit consumes Block.
-Ice Shot deals 2 Freeze, or 5 Physical against an already Frozen target; it preserves
+Shield Bash gains 2 Block, then deals Stun damage equal to half its live Block,
+rounded to the nearest whole number; it does not spend Block. Mana payment and
+its reactions finish first, and the Block gain precedes the hit, including Dodge
+and reactive damage. Rejected plays spend neither resource. Maul deals one
+randomly chosen 3 Bleed or Stun damage hit.
+Ice Shot deals 2 Freeze, or 4 Freeze against an already Frozen target; it preserves
 Frozen and its Archery tag but no longer grants free Archery. Existing free-Archery
 and Hawk Eye preparations retain their normal consumption.
 
-Conditions are deterministic and actor-relative for both player and enemy cards.
-Forge, mitigation, buildup, and hit reactions use the selected type. Recorded
-repeat packets retain the resolved amount/type and cannot spend Block again;
-replaying the card's effects evaluates conditions and payment again. Other card
-mechanics and enemy repertoires are unchanged.
+Fox, Maul, Pounce, Serrated Edge, and Smite use the seeded battle RNG to choose
+their damage type before the hit; player, Companion, and enemy versions use the
+same pool semantics. Forge, mitigation, buildup, and hit reactions use the
+selected type. Recorded repeat packets retain the resolved amount/type and
+cannot spend Block again; replaying the card's effects evaluates the random
+choice again. Other card mechanics and enemy repertoires are unchanged.
 
 Healing feedback shows the effective pre-cap amount, including overflow, after
 all applicable modifiers and rounding. Actual restoration and overflow remain

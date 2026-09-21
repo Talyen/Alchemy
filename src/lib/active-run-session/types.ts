@@ -1,8 +1,4 @@
-import type { Destination } from "@/lib/routing";
 import type { BattleSnapshot } from "@/lib/battle";
-import type { CorruptionResult } from "@/lib/corruption";
-import type { BattleCard, CharacterId, DifficultyId, TalentXP } from "@/lib/game-data";
-import type { MysteryChoice } from "@/lib/mystery";
 import type {
   ContentSystemId,
   EncounterCombatTraitId,
@@ -10,11 +6,12 @@ import type {
   LabyrinthMap,
 } from "@/lib/content-systems/types";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
-import type { MaterialInventory } from "@/lib/homestead/types";
+import type { CorruptionResult } from "@/lib/corruption";
+import type { BattleCard } from "@/lib/game-data";
+import type { GearInstance } from "@/lib/gear";
+import type { MysteryChoice } from "@/lib/mystery";
 import type { Screen } from "@/lib/routing";
-import type { CraftingCurrencyId, GearInstance } from "@/lib/gear";
-import type { InterruptedFlow, PersistedPendingReward } from "@/lib/validation";
-import type { RunRngState } from "@/lib/rng";
+import type { InterruptedFlow, PersistedPendingReward, PersistedRunProgress } from "@/lib/validation";
 
 import type { AlchemistState, EquipmentShopState, RefreshableShopFields, ShopState } from "./shop-session-types";
 
@@ -70,17 +67,9 @@ interface ActiveCombatData {
   activeLabyrinthRewardModifiers: EncounterRewardTraitId[];
 }
 
-export interface RunRoomVisit {
-  id: string;
-  destination: Destination;
-  act: number;
-  floor: number | null;
-  completed: boolean;
-}
-
 export interface RunRecap {
   mode: ContentSystemId;
-  rooms: RunRoomVisit[];
+  rooms: PersistedRunProgress["runHistory"];
   partial: boolean;
   ending: "death" | "abandoned" | "victory";
   endingRoomId: string | null;
@@ -88,40 +77,14 @@ export interface RunRecap {
   boons: string[];
   gold: number | null;
 }
-
-export interface ActiveRunData {
-  runHistory: RunRoomVisit[];
-  runHistoryPartial: boolean;
-  runGoldEarned: number | null;
-  characterId: CharacterId;
-  runDeck: BattleCard[];
-  runPlayerHealth: number;
-  runMaxHealth: number;
-
-  runMetaMaxHealth: number;
-  roomsEncountered: number;
-  currentAct: number;
-  destinationIndexInAct: number;
-  completedDestinations: string[];
-  lastOfferedDestinations: string[];
-  destinationRoundsSinceOffered: Record<string, number>;
-  runBoons: string[];
-  encounteredRunEnemyIds: string[];
-  selectedDifficulty: DifficultyId | null;
-  contentSystemType: ContentSystemId;
-  rng: RunRngState;
+export interface ActiveRunData extends PersistedRunProgress {
   labyrinthMap: LabyrinthMap | null;
   labyrinthPendingNode: LabyrinthPendingNodeId | null;
   activeLabyrinthModifiers: EncounterCombatTraitId[];
   activeLabyrinthRewardModifiers: EncounterRewardTraitId[];
   wildwoodDraft: WildwoodDraftState | null;
-
   starterDraftChoices: BattleCard[] | null;
   activeCombat: ActiveCombatData | null;
-  runTalentXP: TalentXP;
-  runMaterialsEarned: MaterialInventory;
-  runCurrenciesEarned: Record<CraftingCurrencyId, number>;
-  runObtainedItems: RunObtainedItem[];
   currentScreen: Screen | null;
   interruptedFlow: InterruptedFlow;
   shopState: PersistedShopState | null;

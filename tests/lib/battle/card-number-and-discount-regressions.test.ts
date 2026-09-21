@@ -34,7 +34,7 @@ describe("card number and discount regressions", () => {
     },
   );
 
-  it.each(["maul"])("updates both damage alternatives on %s", (id) => {
+  it.each(["maul"])("updates the pooled damage amount on %s", (id) => {
     const original = cardById[id]!;
     const target = getEditableCorruptionTargets(original)[0]!;
     const changed = applyNumericCorruption(original, target, 1);
@@ -43,30 +43,31 @@ describe("card number and discount regressions", () => {
       kind: "damage",
       amount: 4,
       damageType: "bleed",
-      damageTypeIfTargetHasBlock: "stun",
+      damageTypePool: ["bleed", "stun"],
     });
     expect(original.effects[0]).toMatchObject({ amount: 3 });
-    expect(changed.descriptionLines[0]).toContain("or 4 Stun");
+    expect(changed.descriptionLines[0]).toBe("Deal 4 Bleed or Stun damage");
   });
 
-  it("Powerful Wish upgrades Tithe's percentage and keeps capped percentages valid", () => {
+  it("Powerful Wish upgrades Tithe's fixed damage and Gold values", () => {
     const state = patchBattleState({
       talentEffects: { wishCardsUpgraded: true, wishExtraChoices: cardLibrary.length },
       rng: () => 0.99,
     });
     const tithe = buildWishOptions(state, cardById.wish!).find((card) => card.id === "tithe")!;
-    expect(tithe.descriptionLines).toEqual(["Deal Holy damage equal to 11% of your Gold"]);
-    expect(tithe.effects[0]).toMatchObject({ equalToGoldPercent: 11, amount: 0 });
-    const target = getEditableCorruptionTargets(tithe)[0]!;
-    const capped = applyNumericCorruption(tithe, target, 100);
-    expect(capped.descriptionLines[0]).toContain("100%");
-    expect(BattleCardEffectSchema.safeParse(capped.effects[0]).success).toBe(true);
+    expect(tithe.descriptionLines).toEqual(["Deal 2 Holy damage", "Gain 2 Gold"]);
+    expect(tithe.effects).toEqual([
+      { kind: "damage", damageType: "holy", amount: 2 },
+      { kind: "gain-gold", amount: 2 },
+    ]);
+    expect(tithe.effects.every((effect) => BattleCardEffectSchema.safeParse(effect).success)).toBe(true);
     const played = playBattleCardResolved(
       patchBattleState({ hand: [tithe], gold: 100, enemyHealth: 100, enemyMaxHealth: 100, rng: () => 0.99 }),
       tithe.id,
       0,
     ).state;
-    expect(played.enemyHealth).toBe(89);
+    expect(played.enemyHealth).toBe(98);
+    expect(played.gold).toBe(102);
   });
 
   it("keeps a shared conditional number separate from an equal-valued added effect", () => {
@@ -95,8 +96,9 @@ describe("card number and discount regressions", () => {
       encounterBenefits: kind === "encounter" ? ["quickdraw"] : [],
     });
     const result = playBattleCardResolved(state, card.id, 0).state;
-    expect(result.exhausted.map((entry) => entry.id)).toContain(card.id);
+    expect(result.exhausted.map((entry) => entry.id)).not.toContain(card.id);
     expect(result.mana).toBe(0);
+    expect(result.enemyStatuses.bleed).toBe(1);
     expect(result.flags.nextArcheryCardFree).toBe(true);
     if (kind === "first") expect(result.flags.firstArcheryCardFreeUsed).toBe(true);
     if (kind === "encounter") expect(result.flags.encounterArcheryUsed).toBe(true);

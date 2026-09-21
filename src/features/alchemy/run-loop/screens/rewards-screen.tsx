@@ -15,7 +15,7 @@ import { FadeSlot } from "../../shared/ui/use-fade";
 import {
   getPlasmaKeywordsForGear,
   getPlasmaColorPair,
-  getInspectionKeywordShineColors,
+  getCardInspectionShineColors,
   sectionTitleClass,
 } from "@/features/alchemy/shared/config";
 import { getTrinketKeywords } from "@/features/alchemy/shared/config/game-data-catalog";
@@ -83,7 +83,7 @@ function RewardChoiceItems({
               card={card}
               isSelected={false}
               disabled={disabled}
-              shineColor={getInspectionKeywordShineColors(getCardKeywords(card))}
+              shineColor={getCardInspectionShineColors(card)}
               onSelect={() => onClaimReward(choiceId)}
               interactionKey="reward"
             />

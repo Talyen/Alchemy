@@ -3,18 +3,18 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  CONTEXT_OUTPUT_BYTES,
+  parseContextArgs,
+  renderContext,
+  renderSourceOutline,
+} from "../../scripts/agent-context.mjs";
+import {
   CONTEXT_TASKS,
   contextSections,
   selectContext,
   sourceOutline,
   validateContextCatalog,
 } from "../../scripts/lib/agent-context.mjs";
-import {
-  CONTEXT_OUTPUT_BYTES,
-  parseContextArgs,
-  renderContext,
-  renderSourceOutline,
-} from "../../scripts/agent-context.mjs";
 
 import { resolveRoutePlan } from "../../scripts/lib/change-routes.mjs";
 import {
@@ -101,7 +101,7 @@ describe("agent discovery", () => {
     }
     const run = selectContext([], "run-state");
     expect(renderContext(run, contextSections(process.cwd(), run)).text).toContain("--task run-ports");
-    expect(readDocumentSection(process.cwd(), "Docs/ARCHITECTURE.md", "Run state").text).not.toContain(
+    expect(readDocumentSection(process.cwd(), "Docs/RUN_STATE.md", "Run state").text).not.toContain(
       "## Persistence API",
     );
     for (const heading of [
@@ -114,7 +114,13 @@ describe("agent discovery", () => {
       "Run phase",
       "Run setup ownership",
     ]) {
-      expect(readDocumentSection(process.cwd(), "Docs/ARCHITECTURE.md", heading).text).toMatch(/^## /u);
+      expect(
+        readDocumentSection(
+          process.cwd(),
+          ["Run phase", "Run setup ownership"].includes(heading) ? "Docs/ARCHITECTURE.md" : "Docs/RUN_STATE.md",
+          heading,
+        ).text,
+      ).toMatch(/^## /u);
     }
   });
 
@@ -199,6 +205,15 @@ describe("agent discovery", () => {
     expect(controller.tasks).toContain("battle-controller");
     const affix = selectContext(["src/lib/gear/ordinary-affixes.ts"]);
     expect(renderContext(affix, contextSections(process.cwd(), affix)).text).not.toContain("Depth counts locations");
+  });
+
+  it("keeps routine enemy and verification reads separate from implementation guidance", () => {
+    const enemy = selectContext([], "enemy");
+    expect(enemy.docs.map((doc) => doc.heading)).toContain("Enemy repertoire requirements");
+    expect(enemy.docs.map((doc) => doc.heading)).not.toContain("Enemy abilities and traits");
+    const usage = selectContext([], "verification");
+    expect(usage.docs.some((doc) => doc.path === "scripts/VERIFICATION.md")).toBe(false);
+    expect(selectContext(["scripts/check.mjs"]).docs.some((doc) => doc.path === "scripts/VERIFICATION.md")).toBe(true);
   });
 
   it("routes battle and save work without suppressing safety owners", () => {

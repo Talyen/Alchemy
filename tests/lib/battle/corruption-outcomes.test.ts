@@ -25,9 +25,9 @@ function play(id: string, kind: string) {
 
 describe("corrupted effects in battle", () => {
   it("uses stronger damage and the added Block", () => {
-    expect(play("slash", "strengthen").enemyHealth).toBe(91);
+    expect(play("slash", "strengthen").enemyHealth).toBe(94);
     const next = play("slash", "secondary");
-    expect(next.enemyHealth).toBe(94);
+    expect(next.enemyHealth).toBe(96);
     expect(next.playerStatuses.block).toBe(2);
   });
 
@@ -45,12 +45,12 @@ describe("corrupted effects in battle", () => {
   });
 
   it("heals through added Leech", () => {
-    expect(play("slash", "leech").playerHealth).toBe(18);
+    expect(play("slash", "leech").playerHealth).toBe(17);
   });
 
   it("exhausts newly consumable cards and discards newly reusable ones", () => {
     const consumed = play("slash", "consume");
-    expect(consumed.enemyHealth).toBe(82);
+    expect(consumed.enemyHealth).toBe(88);
     expect(consumed.exhausted.map((card) => card.id)).toEqual(["slash"]);
     expect(consumed.discard).toEqual([]);
     const reusable = play("health-potion", "reusable");

@@ -71,6 +71,50 @@ describe("effect dispatch registry", () => {
     expect(BattleCardEffectSchema.parse({ kind: "next-archery-free" })).toMatchObject({
       kind: "next-archery-free",
     });
+    expect(
+      BattleCardEffectSchema.parse({
+        kind: "damage",
+        damageType: "burn",
+        amount: 1,
+        detonateAllBurn: true,
+      }),
+    ).toMatchObject({ detonateAllBurn: true });
+    expect(
+      BattleCardEffectSchema.parse({
+        kind: "damage",
+        damageType: "bleed",
+        amount: 1,
+        detonateAllBleed: true,
+        doubleIfEnemyNotBurning: true,
+      }),
+    ).toMatchObject({ detonateAllBleed: true, doubleIfEnemyNotBurning: true });
+    expect(
+      BattleCardEffectSchema.parse({
+        kind: "damage",
+        damageType: "holy",
+        amount: 0,
+        equalToBlock: true,
+        equalToBlockPercent: 50,
+      }),
+    ).toMatchObject({ equalToBlock: true, equalToBlockPercent: 50 });
+    expect(
+      BattleCardEffectSchema.parse({
+        kind: "damage",
+        damageType: "physical",
+        amount: 3,
+        ignoreArmor: true,
+        ignoreBlock: true,
+      }),
+    ).toMatchObject({ ignoreArmor: true, ignoreBlock: true });
+    expect(BattleCardEffectSchema.parse({ kind: "remove-enemy-armor", halve: true })).toMatchObject({ halve: true });
+    expect(
+      BattleCardEffectSchema.parse({
+        kind: "player-status",
+        status: "block",
+        statusPool: ["block", "forge", "armor"],
+        amount: 5,
+      }),
+    ).toMatchObject({ statusPool: ["block", "forge", "armor"] });
   });
 
   it("rejects mutually exclusive damage flags", () => {
@@ -83,6 +127,34 @@ describe("effect dispatch registry", () => {
         tripleIfEnemyNotBurning: true,
       }).success,
     ).toBe(false);
+    for (const flags of [
+      { doubleIfEnemyBurning: true, doubleIfEnemyNotBurning: true },
+      { doubleIfEnemyNotBurning: true, tripleIfEnemyNotBurning: true },
+    ]) {
+      expect(
+        BattleCardEffectSchema.safeParse({ kind: "damage", damageType: "burn", amount: 1, ...flags }).success,
+      ).toBe(false);
+    }
+    expect(
+      BattleCardEffectSchema.safeParse({
+        kind: "damage",
+        damageType: "burn",
+        amount: 1,
+        detonateAllBurn: true,
+        detonateIfEnemyBurning: true,
+      }).success,
+    ).toBe(false);
+    expect(
+      BattleCardEffectSchema.safeParse({
+        kind: "damage",
+        damageType: "holy",
+        amount: 0,
+        equalToBlockPercent: 50,
+      }).success,
+    ).toBe(false);
+    expect(BattleCardEffectSchema.safeParse({ kind: "remove-enemy-armor", amount: 2, halve: true }).success).toBe(
+      false,
+    );
     expect(
       BattleCardEffectSchema.safeParse({
         kind: "damage",

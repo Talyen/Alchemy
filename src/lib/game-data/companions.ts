@@ -21,10 +21,7 @@ export const companionLibrary: Record<CompanionDefinition["id"], CompanionDefini
     id: "wolf",
     title: "Wolf Companion",
     art: wolfCompanion,
-    turnStartEffects: [
-      { kind: "damage", damageType: "bleed", amount: 1 },
-      { kind: "player-status", status: "block", amount: 1 },
-    ],
+    turnStartEffects: [{ kind: "damage", damageType: "bleed", damageTypePool: ["bleed", "physical"], amount: 1 }],
   },
   "lizard-scout": {
     id: "lizard-scout",
@@ -48,7 +45,7 @@ export const companionLibrary: Record<CompanionDefinition["id"], CompanionDefini
     id: "panther",
     title: "Panther Companion",
     art: pantherCompanion,
-    turnStartEffects: [{ kind: "damage", damageType: "bleed", amount: 2 }],
+    turnStartEffects: [{ kind: "damage", damageType: "bleed", amount: 1 }],
   },
   phoenix: {
     id: "phoenix",
@@ -84,7 +81,7 @@ export const companionLibrary: Record<CompanionDefinition["id"], CompanionDefini
     id: "golden-retriever",
     title: "Golden Retriever Companion",
     art: goldenRetrieverCompanion,
-    turnStartEffects: [{ kind: "gain-gold", amount: 1 }],
+    turnStartEffects: [{ kind: "gain-gold", amount: 2 }],
   },
   "shield-scarab": {
     id: "shield-scarab",
@@ -102,14 +99,7 @@ export const companionLibrary: Record<CompanionDefinition["id"], CompanionDefini
     id: "fox",
     title: "Fox Companion",
     art: foxCompanion,
-    turnStartEffects: [
-      {
-        kind: "chance",
-        probability: 0.5,
-        successEffects: [{ kind: "damage", damageType: "bleed", amount: 1 }],
-        failureEffects: [{ kind: "gain-gold", amount: 1 }],
-      },
-    ],
+    turnStartEffects: [{ kind: "damage", damageType: "stun", damageTypePool: ["stun", "bleed"], amount: 1 }],
   },
 };
 
@@ -167,6 +157,25 @@ export function getModifiedCompanionEffects(
 ): BattleCardEffect[] {
   function scale(effect: BattleCardEffect): BattleCardEffect {
     if (effect.kind === "damage") {
+      const pool = effect.damageTypePool;
+      if (pool?.includes("bleed") && pool.length > 1 && modifiers.bleedDamageBonus !== 0) {
+        // Resolve type-specific amounts through ordinary chance effects so combat
+        // and inspection share the same magnitudes without boosting other types.
+        const { damageTypePool: _pool, ...hit } = effect;
+        const [damageType, ...remaining] = pool;
+        return {
+          kind: "chance",
+          probability: 1 / pool.length,
+          successEffects: [scale({ ...hit, damageType: damageType! })],
+          failureEffects: [
+            scale({
+              ...hit,
+              damageType: remaining[0]!,
+              ...(remaining.length > 1 ? { damageTypePool: remaining } : {}),
+            }),
+          ],
+        };
+      }
       const bonus = modifiers.damageBonus + (effect.damageType === "bleed" ? modifiers.bleedDamageBonus : 0);
       return { ...effect, amount: Math.round((effect.amount + bonus) * modifiers.damageMultiplier) };
     }

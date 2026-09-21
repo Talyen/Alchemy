@@ -213,8 +213,11 @@ function applyCardStatusReactions(
     nextState = applyTalentHitConversions(nextState, effect.damageType, modifiedDamage, combatTexts);
   }
   nextState = applyDamageStatuses(nextState, effect, modifiedDamage, combatTexts, previousHealth);
-  if (effect.detonateIfEnemyBurning && enemyWasBurningBefore) {
+  if (effect.detonateAllBurn || (effect.detonateIfEnemyBurning && enemyWasBurningBefore)) {
     nextState = detonateEnemyStatuses(nextState, ["burn"], combatTexts);
+  }
+  if (effect.detonateAllBleed) {
+    nextState = detonateEnemyStatuses(nextState, ["bleed"], combatTexts);
   }
   if (modifiedDamage > 0) nextState = applyForgeStunRider(nextState, effect, combatTexts, facts.forgeBeforeHit);
   if (effect.damageType === "physical" && modifiedDamage > 0) {

@@ -151,6 +151,56 @@ describe("saved card content restoration", () => {
       amount: 4,
     });
   });
+
+  it("retains the saved damage bypass fields", () => {
+    const stab = cardById.stab!;
+    const saved: BattleCard = {
+      ...stab,
+      effects: [{ kind: "damage", damageType: "physical", amount: 3, ignoreArmor: true, ignoreBlock: true }],
+      descriptionLines: ["Deal 3 Physical damage", "Ignores Armor and Block"],
+    };
+    const restored = hydrateCard(saved);
+    expect(restored.effects).toEqual(saved.effects);
+  });
+
+  it("does not share random damage type pools between saved and restored cards", () => {
+    const gambler = cardById["gamblers-shot"]!;
+    const saved: BattleCard = {
+      ...gambler,
+      effects: [{ kind: "random-damage", minAmount: 1, maxAmount: 4, damageTypePool: ["stun", "physical", "bleed"] }],
+      descriptionLines: [...gambler.descriptionLines],
+    };
+    const restored = hydrateCard(saved);
+    const effect = restored.effects[0];
+    if (effect?.kind !== "random-damage" || !effect.damageTypePool)
+      throw new Error("Expected pooled random damage effect");
+    effect.damageTypePool.push("nature");
+    expect(saved.effects[0]).toEqual({
+      kind: "random-damage",
+      minAmount: 1,
+      maxAmount: 4,
+      damageTypePool: ["stun", "physical", "bleed"],
+    });
+  });
+
+  it("does not share player status pools between saved and restored cards", () => {
+    const avatar = cardById.avatar!;
+    const saved: BattleCard = {
+      ...avatar,
+      effects: [{ kind: "player-status", status: "block", statusPool: ["block", "forge", "armor"], amount: 5 }],
+      descriptionLines: ["Gain 5 Block, Forge, or Armor", "Consume"],
+    };
+    const restored = hydrateCard(saved);
+    const effect = restored.effects[0];
+    if (effect?.kind !== "player-status" || !effect.statusPool) throw new Error("Expected pooled player status effect");
+    effect.statusPool.push("thorns");
+    expect(saved.effects[0]).toEqual({
+      kind: "player-status",
+      status: "block",
+      statusPool: ["block", "forge", "armor"],
+      amount: 5,
+    });
+  });
 });
 
 describe("cloneBattleCard", () => {

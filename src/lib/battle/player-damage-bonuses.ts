@@ -109,7 +109,7 @@ function computeBaseRawAmount(
   if (effect.equalToForge) return state.playerStatuses.forge;
 
   if (effect.equalToBlock) {
-    return state.playerStatuses.block + forgeBonus;
+    return scalePercent(state.playerStatuses.block, effect.equalToBlockPercent ?? PERCENT_DENOMINATOR) + forgeBonus;
   }
   if (effect.equalToArmor) {
     return state.playerStatuses.armor + forgeBonus;
@@ -278,6 +278,7 @@ function computeEffectBonusMultiplier(
   let bonus = 0;
   if (effect.doubleIfEnemyBurning && state.enemyStatuses.burn > 0) bonus += 1;
   if (effect.doubleIfEnemyBleeding && state.enemyStatuses.bleed > 0) bonus += 1;
+  if (effect.doubleIfEnemyNotBurning && state.enemyStatuses.burn === 0) bonus += 1;
   if (effect.tripleIfEnemyNotBurning && state.enemyStatuses.burn === 0) bonus += 2;
   return bonus;
 }

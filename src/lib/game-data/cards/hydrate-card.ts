@@ -1,23 +1,20 @@
+import { mapEffectChildren } from "../effect-tree";
 import type { BattleCard } from "../types";
 import { cardById } from "./library/cards";
 
 export type SavedCard = BattleCard;
 
 function cloneEffect(effect: BattleCard["effects"][number]): BattleCard["effects"][number] {
-  if (effect.kind === "chance") {
-    return {
-      ...effect,
-      successEffects: effect.successEffects.map(cloneEffect),
-      failureEffects: effect.failureEffects.map(cloneEffect),
-    };
-  }
-  if (effect.kind === "repeat-over-turns") {
-    return { ...effect, effects: effect.effects.map(cloneEffect) };
-  }
   if (effect.kind === "damage" && effect.damageTypePool) {
     return { ...effect, damageTypePool: [...effect.damageTypePool] };
   }
-  return { ...effect };
+  if (effect.kind === "random-damage" && effect.damageTypePool) {
+    return { ...effect, damageTypePool: [...effect.damageTypePool] };
+  }
+  if (effect.kind === "player-status" && effect.statusPool) {
+    return { ...effect, statusPool: [...effect.statusPool] };
+  }
+  return { ...mapEffectChildren(effect, cloneEffect) };
 }
 
 function hydrateCost(saved: SavedCard, libraryCard: BattleCard): number {

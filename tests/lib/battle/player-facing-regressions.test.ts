@@ -58,19 +58,19 @@ describe("player-facing combat regressions", () => {
     },
   );
 
-  it("upgrades both turns of Ray of Frost from Powerful Wish without mutating the library", () => {
+  it("upgrades both immediate hits of Ray of Frost from Powerful Wish without mutating the library", () => {
     const original = libraryCard("ray-of-frost");
     const state = patchBattleState({ talentEffects: { wishCardsUpgraded: true, wishExtraChoices: library.length } });
     const upgraded = buildWishOptions(state, makeTestCard({ id: "wish-source" })).find(
       (card) => card.id === original.id,
     );
-    expect(upgraded?.descriptionLines).toEqual(["Deal 2 Freeze damage now and 4 at the start of your next turn"]);
+    expect(upgraded?.descriptionLines).toEqual(["Deal 2 Freeze damage twice"]);
     expect(upgraded?.effects).toEqual([
       { kind: "damage", damageType: "freeze", amount: 2 },
-      { kind: "repeat-over-turns", remainingTurns: 1, effects: [{ kind: "damage", damageType: "freeze", amount: 4 }] },
+      { kind: "damage", damageType: "freeze", amount: 2 },
     ]);
     expect(original.effects[0]).toMatchObject({ amount: 1 });
-    expect(original.effects[1]).toMatchObject({ effects: [{ amount: 3 }] });
+    expect(original.effects[1]).toMatchObject({ amount: 1 });
   });
 
   it("allows Astral Arrow to use Winter's Block payment for its Freeze damage pool", () => {
@@ -83,9 +83,11 @@ describe("player-facing combat regressions", () => {
   });
 
   it("keeps ordinary companion Forge rules without Bonded and leaves hero Burn unchanged", () => {
+    let rngCalls = 0;
     const state = regressionBattle({
       activeCompanion: companionLibrary.wolf,
       playerStatuses: { forge: 4 },
+      rng: () => (rngCalls++ === 0 ? 0 : 0.99),
     });
     const companion = processCompanionTurnStart(state, []);
     expect(companion.enemyHealth).toBe(state.enemyHealth - 1);

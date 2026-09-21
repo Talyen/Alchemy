@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cardById, cardLibrary, type BattleCard } from "@/lib/game-data";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
-import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { resolveEnemyAttackHit } from "@/lib/battle/enemy-attack-hit";
 import { buildWishOptions } from "@/lib/battle/wish";
 import { BattleCardEffectSchema } from "@/lib/game-data";
@@ -19,13 +18,12 @@ function battle(trait: string) {
 }
 
 describe("encounter event regressions", () => {
-  it("Jealous reacts when Stargaze's delayed Wish resolves", () => {
+  it("Jealous reacts when Stargaze's immediate Wish resolves", () => {
     const card = cardById.stargaze!;
     const played = playBattleCardResolved({ ...battle("jealous"), hand: [card] }, card.id, 0).state;
-    expect(played.enemyPhysicalDamageBonus).toBe(0);
-    const next = advanceToPlayerTurn(played);
-    expect(next.wishOptions).not.toBeNull();
-    expect(next.enemyPhysicalDamageBonus).toBe(1);
+    expect(played.wishOptions).not.toBeNull();
+    expect(played.enemyPhysicalDamageBonus).toBe(1);
+    expect(played.pendingTurnStartEffects).toHaveLength(0);
   });
 
   it("Dance of Blades feeds Insatiable when it consumes a Potion", () => {
@@ -109,7 +107,7 @@ describe("encounter event regressions", () => {
       card.id,
       0,
     ).state;
-    expect(result.playerHealth).toBe(Math.min(40, health + 3));
+    expect(result.playerHealth).toBe(Math.min(40, health + 2));
     expect(result.playerStatuses.poison).toBe(2);
   });
 
@@ -123,7 +121,7 @@ describe("encounter event regressions", () => {
       cardById.wish!,
     );
     const potion = options.find((card) => card.id === "luck-potion")!;
-    expect(potion.descriptionLines[0]).toBe("Gain 5 Mana or gain 5 Gold or gain 5 Block");
+    expect(potion.descriptionLines[0]).toBe("Gain 5 Mana, Gold, or Block");
     expect(JSON.stringify(potion.effects)).not.toContain('"amount":4');
     const dice = options.find((card) => card.id === "roll-the-dice")!;
     expect(dice.descriptionLines).toEqual(cardById["roll-the-dice"]!.descriptionLines);
@@ -132,7 +130,18 @@ describe("encounter event regressions", () => {
     const original = cardById["luck-potion"]!;
     const target = getEditableCorruptionTargets(original).at(-1)!;
     const corrupted = applyNumericCorruption(original, target, 1);
-    expect(corrupted.descriptionLines[0]).toBe("Gain 4 Mana or gain 4 Gold or gain 5 Block");
-    expect(original.descriptionLines[0]).toBe("Gain 4 Mana or gain 4 Gold or gain 4 Block");
+    expect(corrupted.descriptionLines[0]).toBe("Gain 5 Mana, Gold, or Block");
+    expect(corrupted.effects).toEqual([
+      expect.objectContaining({
+        successEffects: [{ kind: "restore-mana", amount: 5 }],
+        failureEffects: [
+          expect.objectContaining({
+            successEffects: [{ kind: "gain-gold", amount: 5 }],
+            failureEffects: [{ kind: "player-status", status: "block", amount: 5 }],
+          }),
+        ],
+      }),
+    ]);
+    expect(original.descriptionLines[0]).toBe("Gain 4 Mana, Gold, or Block");
   });
 });

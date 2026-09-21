@@ -118,7 +118,7 @@ Start with the document for your question:
 | Which commands and checks should I run? | [Developer reference](./Docs/REFERENCE.md), [Contributing](./CONTRIBUTING.md)                 |
 | How do I profile or ship the game?      | [Performance profiling](./Docs/PERFORMANCE.md), [Release](./Docs/RELEASE.md)                  |
 
-[AGENTS.md](./AGENTS.md#documentation-owners) provides the full ownership map
+[AGENTS.md](./AGENTS.md#find-the-owner) provides the full ownership map
 and agent working rules. Active plans and historical records are separate from
 these current behavior and workflow owners.
 

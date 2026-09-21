@@ -147,7 +147,9 @@ export function repositorySearch(
       );
     }
   }
-  const args = ["--hidden", "--color", "never"];
+  // Own exclusions explicitly: .rgignore is for interactive discovery and must
+  // not hide generated modules from import graphs or explicit noise-path reads.
+  const args = ["--hidden", "--no-ignore-dot", "--color", "never"];
   if (includeExcluded) args.push("--no-ignore");
   else for (const glob of searchExclusions(root, { paths, pattern })) args.push("-g", `!${glob}`);
   if (pattern === undefined) args.push("--files", "-0");

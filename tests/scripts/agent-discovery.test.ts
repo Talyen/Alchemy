@@ -2,10 +2,10 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { incrementalContext, relatedLocations, repositorySearch } from "../../scripts/lib/agent-discovery.mjs";
-import { checkDurableDocumentReachability } from "../../scripts/check-documentation-contract.mjs";
 import { searchMain } from "../../scripts/agent-search.mjs";
+import { checkDurableDocumentReachability } from "../../scripts/check-documentation-contract.mjs";
 import { sourceOutline } from "../../scripts/lib/agent-context.mjs";
+import { incrementalContext, relatedLocations, repositorySearch } from "../../scripts/lib/agent-discovery.mjs";
 import { failureSummary, tailOutput } from "../../scripts/lib/compact-output.mjs";
 
 const roots: string[] = [];
@@ -187,7 +187,7 @@ describe.each(cases)("outer %s", () => {
       "src/assets/.asset-hashes.json": "needle",
       "src/current.ts": "needle",
     };
-    const root = fixture(files);
+    const root = fixture({ ...files, ".rgignore": "*.generated.*\nDocs/Plans/Archived/\n" });
     expect(repositorySearch(root, { pattern: "needle" })).toEqual(["Docs/Plans/current.md", "src/current.ts"]);
     for (const file of Object.keys(files))
       expect(repositorySearch(root, { pattern: "needle", paths: [file] })).toEqual([file]);

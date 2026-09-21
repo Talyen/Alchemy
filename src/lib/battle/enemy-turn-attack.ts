@@ -23,6 +23,7 @@ import {
   OGRE_BLOCK_BREAK_MULTIPLIER,
   VAMPIRE_BLOOD_SCENT_DAMAGE,
 } from "../game-constants";
+import { halveRounded, scalePercent } from "./amount-helpers";
 import { recordEnemyAbilityActivation, recordEnemyAbilityUse, recordEnemyAttackAction } from "./battle-metrics";
 import { scaleEnemyAbilityDamage } from "./battle-enemy-setup";
 import { applyEnemyHealingWithCombatText, mergeCombatText } from "./combat-text";
@@ -99,6 +100,9 @@ function applyAbilityDamage(
     targetFrozen: state.playerCC.freezeSkipTurns > 0,
   });
   effect = selected.effect;
+  if (effect.damageTypePool) {
+    effect = { ...effect, damageType: pickRandom(effect.damageTypePool, getBattleRng(state)) ?? effect.damageType };
+  }
   if (selected.blockSpent > 0) {
     state = {
       ...state,
@@ -148,6 +152,11 @@ function applyAbilityDamage(
   let damage = scaleEnemyAbilityDamage(state, effect);
   // Enemy Forge already contains its room scaling; read the live resource once.
   if (effect.equalToForge) damage = { ...damage, amount: state.enemyMitigation.forge };
+  if (effect.equalToBlock)
+    damage = {
+      ...damage,
+      amount: scalePercent(state.enemyMitigation.block, effect.equalToBlockPercent ?? 100),
+    };
   if (effect.doubleIfEnemyBleeding && state.playerStatuses.bleed > 0) damage = { ...damage, amount: damage.amount * 2 };
   if (trait("blood-cultist") && effect.damageType === "bleed" && state.playerStatuses.bleed > 0) {
     flatBonus += CONDITIONAL_FLAT_BONUS;
@@ -156,6 +165,7 @@ function applyAbilityDamage(
   const result = resolveEnemyAttackHit(nextState, damage, combatTexts, {
     canDodge: true,
     ignoreArmor: effect.ignoreArmor === true,
+    ignoreBlock: effect.ignoreBlock === true,
     amountMultiplier,
     flatBonus,
     traitSet: context.traitSet,
@@ -202,9 +212,12 @@ function applyEnemyEffect(
       return addEnemyStatus(state, "thorns", amount);
     }
     case "remove-enemy-armor": {
-      const amount = effect.removeAll
-        ? state.playerStatuses.armor
-        : Math.min(state.playerStatuses.armor, scaleByRoomMultiplier(state, effect.amount ?? 0));
+      const remainingArmor = effect.halve ? halveRounded(state.playerStatuses.armor) : 0;
+      const amount = effect.halve
+        ? state.playerStatuses.armor - remainingArmor
+        : effect.removeAll
+          ? state.playerStatuses.armor
+          : Math.min(state.playerStatuses.armor, scaleByRoomMultiplier(state, effect.amount ?? 0));
       if (amount <= 0) return state;
       mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "armor", amount });
       return removePlayerArmor(state, amount, combatTexts);

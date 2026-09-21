@@ -114,7 +114,7 @@ Lookup for modules not covered in [ARCHITECTURE.md](./ARCHITECTURE.md). Paths ar
 - **Feature config barrel** — `src/features/alchemy/shared/config/`
 - **Game-data types** — `src/lib/game-data/types.ts`
 - **Homestead data** — `src/lib/homestead/`
-- **In-run material grants** — [WORKFLOWS § Grant materials](./WORKFLOWS.md#grant-materials-during-a-run)
+- **In-run material grants** — [WORKFLOWS § Grant materials](./RUN_WORKFLOWS.md#grant-materials-during-a-run)
 - **UI placement, motion, and interaction** — [UI system](./UI.md)
 - **Image preload helper** — `src/lib/image-preload.ts`
 - **Potion mixing** — `src/lib/alchemist/potion-mixer.ts`

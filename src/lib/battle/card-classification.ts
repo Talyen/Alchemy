@@ -27,7 +27,7 @@ function collectDamageTypes(effects: readonly BattleCardEffect[], set: Set<strin
     } else if (effect.kind === "damage" || effect.kind === "cleanse-player-status-to-damage") {
       set.add(effect.damageType);
     } else if (effect.kind === "random-damage") {
-      set.add("physical");
+      for (const type of effect.damageTypePool?.length ? effect.damageTypePool : ["physical"]) set.add(type);
     }
   });
 }

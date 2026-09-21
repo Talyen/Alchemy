@@ -1,7 +1,7 @@
 import { memo, useState, type RefObject } from "react";
 
 import { playCardSound, playEnemyAttack } from "@/lib/audio";
-import { cardBack, getEffectiveCardDescriptionLines, getCardKeywords } from "@/lib/game-data";
+import { cardBack, getEffectiveCardDescriptionLines } from "@/lib/game-data";
 import { gearDefinitions } from "@/lib/gear";
 import { getTrinketKeywords, cardById } from "../../../shared/config/game-data-catalog";
 import { cn } from "@/lib/utils";
@@ -13,6 +13,7 @@ import {
   cardInteractiveGlowClass,
   cardSurfaceClass,
   getTileWidthClass,
+  getCardInspectionShineColors,
   getInspectionKeywordShineColors,
   getCharacterShineColors,
   getPlasmaKeywordsForEnemy,
@@ -105,10 +106,10 @@ export const CollectionTile = memo(function CollectionTile({
 });
 
 function collectionTileShineColors(item: CollectionTileItem): readonly string[] {
-  if (item.card) return getInspectionKeywordShineColors(getCardKeywords(item.card));
+  if (item.card) return getCardInspectionShineColors(item.card);
   if (item.frameType === "card") {
     const catalogCard = cardById[item.id];
-    if (catalogCard) return getInspectionKeywordShineColors(getCardKeywords(catalogCard));
+    if (catalogCard) return getCardInspectionShineColors(catalogCard);
   }
   if (item.character) return getCharacterShineColors(item.character.id);
   if (item.enemyEntry) return getInspectionKeywordShineColors(getPlasmaKeywordsForEnemy(item.enemyEntry));

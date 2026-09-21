@@ -16,9 +16,9 @@ const orderingInvariants: Array<{ cardId: string; firstKind: string; secondKind:
   },
   {
     cardId: "burning-blade",
-    firstKind: "damage",
+    firstKind: "player-status",
     secondKind: "damage",
-    reason: "the Forge-scaled Burn hit resolves before the Physical hit",
+    reason: "the Forge gain resolves before the Forge-scaled Burn hit",
   },
 ];
 
@@ -30,8 +30,8 @@ describe("card effect ordering invariants", () => {
       expect(card, `cardLibrary missing ${cardId} — invariant cannot be checked`).toBeDefined();
       if (!card) return;
       const firstIdx = card.effects.findIndex((e) => e.kind === firstKind);
-      // Search after the first hit so same-kind pairs (Burning Blade's two
-      // damage hits) are ordered, not just co-present.
+      // Search after the first hit so same-kind pairs remain ordered, not just
+      // co-present.
       const secondIdx = card.effects.findIndex((e, i) => i > firstIdx && e.kind === secondKind);
       expect(firstIdx, `expected ${firstKind} at index < ${secondIdx}`).toBeGreaterThanOrEqual(0);
       expect(secondIdx, `expected ${secondKind} after ${firstKind} at index ${firstIdx}`).toBeGreaterThan(firstIdx);

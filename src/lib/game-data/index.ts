@@ -1,19 +1,23 @@
-export * from "./types";
-export type { TalentEffectManifest } from "./talent-effect-manifest";
-export type { TrinketManifest } from "./trinket-manifest";
-export { defaultTrinketEffects } from "./trinket-manifest";
-export * from "./effects";
-export * from "./card-description";
 export * from "./assets";
+export * from "./card-description";
+export * from "./cards";
+export { conditionalDamageDescription } from "./cards/conditional-damage-description";
+export * from "./character-unlocks";
+export * from "./characters";
+export * from "./companions";
+export * from "./compendium";
+export * from "./difficulties";
+export * from "./effects";
+export * from "./enemy-abilities";
 export * from "./gear-art";
 export * from "./keywords";
-export * from "./compendium";
-export * from "./companions";
-export * from "./cards";
-export * from "./characters";
-export * from "./character-unlocks";
-export * from "./talents";
-export * from "./difficulties";
 export * from "./reward-selection";
-export * from "./enemy-abilities";
-export { conditionalDamageDescription } from "./cards/conditional-damage-description";
+export type { TalentEffectManifest } from "./talent-effect-manifest";
+export * from "./talents";
+export { defaultTrinketEffects } from "./trinket-manifest";
+export type { TrinketManifest } from "./trinket-manifest";
+export * from "./types";
+
+export { effectChildren, mapEffectChildren } from "./effect-tree";
+
+export { canonicalCardDescriptionMatches } from "./effect-metadata";

@@ -10,6 +10,16 @@ import type { BattleCardEffect } from "@/lib/game-data";
 import { makeTestCard } from "../../fixtures/cards";
 
 describe("card classification", () => {
+  it("recognizes every type in a pooled random-damage effect", () => {
+    const card = makeTestCard({
+      effects: [{ kind: "random-damage", minAmount: 1, maxAmount: 4, damageTypePool: ["stun", "physical", "bleed"] }],
+    });
+    expect(cardHasDamageType(card, "stun")).toBe(true);
+    expect(cardHasDamageType(card, "physical")).toBe(true);
+    expect(cardHasDamageType(card, "bleed")).toBe(true);
+    expect(cardHasDamageType(card, "freeze")).toBe(false);
+  });
+
   it.each<{ name: string; effect: BattleCardEffect; type: string }>([
     { name: "direct", effect: { kind: "damage", damageType: "holy", amount: 2 }, type: "holy" },
     { name: "random", effect: { kind: "random-damage", minAmount: 1, maxAmount: 3 }, type: "physical" },

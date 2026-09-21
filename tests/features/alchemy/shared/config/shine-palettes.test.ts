@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  getCardDisplayKeywords,
+  getCardInspectionShineColors,
   getCardKeywordShineColors,
   getCharacterShineColors,
   getShineColorsForKeywords,
@@ -49,6 +51,7 @@ describe("getCardKeywordShineColors", () => {
 
   it("uses a keyword's 3-stop pulse for a single keyword", () => {
     const card = makeTestCard({
+      descriptionLines: ["Deal 5 Physical damage"],
       effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
     });
     expect(getCardKeywordShineColors(card)).toEqual([...keywordDefinitions.physical.shineColors]);
@@ -59,10 +62,17 @@ describe("getCardKeywordShineColors", () => {
     expect(fireArrow).toBeDefined();
     expect(getCardKeywordShineColors(fireArrow!)).toEqual([
       keywordDefinitions.burn.shineColors[0],
-      keywordDefinitions.armor.shineColors[0],
       keywordDefinitions.archery.shineColors[0],
       keywordDefinitions.burn.shineColors[0],
     ]);
+  });
+
+  it("omits mechanical keywords that are not mentioned on the card", () => {
+    const companion = cardLibrary.find((card) => card.id === "wolf-companion");
+    expect(companion).toBeDefined();
+
+    expect(getCardDisplayKeywords(companion!)).toEqual(["companion"]);
+    expect(getCardInspectionShineColors(companion!)).not.toContain(keywordDefinitions.consume.shineColors[0]);
   });
 });
 

@@ -52,7 +52,6 @@ export type {
   PersistedShopState,
   PersistedTrinketShopState,
   RunObtainedItem,
-  RunRoomVisit,
   RunRecap,
 } from "./types";
 

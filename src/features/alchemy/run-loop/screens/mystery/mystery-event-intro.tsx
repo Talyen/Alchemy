@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { TextAnimate } from "@/components/ui/text-animate";
-import { getCardKeywords, type BattleCard, type TrinketEntry } from "@/lib/game-data";
+import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
 import {
   bodyTextClass,
   cardInteractiveGlowClass,
   cardSurfaceClass,
-  getInspectionKeywordShineColors,
+  getCardInspectionShineColors,
   landscapeArtImageClass,
   standaloneLandscapeArtWidthClass,
   viewCardWidthClass,
@@ -125,7 +125,7 @@ export function MysteryEventIntro({
             ariaLabel={featuredCard.title}
             shimmerActive={false}
             shimmerToken={undefined}
-            shineColor={getInspectionKeywordShineColors(getCardKeywords(featuredCard))}
+            shineColor={getCardInspectionShineColors(featuredCard)}
             className={viewCardWidthClass}
           />
         </div>

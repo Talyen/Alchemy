@@ -30,9 +30,10 @@ export const defenseCards: BattleCard[] = [
   cardBuilders.effectsCard({
     id: "golden-plate",
     art: assetRefs.goldenPlate,
+    consume: true,
     effects: [
-      { kind: "player-status", status: "armor", amount: 1 },
-      { kind: "gain-gold", amount: 2 },
+      { kind: "player-status", status: "armor", amount: 3 },
+      { kind: "gain-gold", amount: 3 },
     ],
   }),
   cardBuilders.effectsCard({
@@ -45,7 +46,8 @@ export const defenseCards: BattleCard[] = [
     id: "shadowstep",
     art: assetRefs.shadowstep,
     consume: true,
-    effects: [{ kind: "play-next-card-twice" }],
+    effects: [{ kind: "damage", damageType: "physical", amount: 1 }, { kind: "play-next-card-twice" }],
+    descriptionLines: ["Deal 1 Physical damage", "Your next card is played twice"],
   }),
   cardBuilders.effectsCard({
     id: "mana-shield",
@@ -65,8 +67,11 @@ export const defenseCards: BattleCard[] = [
   cardBuilders.effectsCard({
     id: "smelling-salts",
     art: assetRefs.smellingSalts,
-    effects: [{ kind: "remove-player-status", status: "stun" }],
-    descriptionLines: ["Cleanse Stun buildup"],
+    effects: [
+      { kind: "remove-player-status", status: "stun" },
+      { kind: "remove-player-status", status: "freeze" },
+    ],
+    descriptionLines: ["Cleanse Stun and Freeze build-up"],
   }),
   cardBuilders.effectsCard({
     id: "cold-snap",
@@ -75,30 +80,26 @@ export const defenseCards: BattleCard[] = [
       { kind: "damage", damageType: "freeze", amount: 1 },
       { kind: "multiply-enemy-status", status: "freeze", factor: 2 },
     ],
-    descriptionLines: ["Deal 1 Freeze damage", "Double enemy's Freeze buildup"],
+    descriptionLines: ["Deal 1 Freeze damage", "Double the enemy's Freeze build-up"],
   }),
   cardBuilders.effectsCard({
     id: "sunder",
     art: assetRefs.sunder,
     effects: [
-      { kind: "remove-enemy-armor", amount: 2 },
-      { kind: "damage", damageType: "physical", amount: 4 },
+      { kind: "remove-enemy-armor", halve: true },
+      { kind: "damage", damageType: "physical", amount: 3 },
     ],
   }),
   cardBuilders.effectsCard({
     id: "smite",
     art: assetRefs.smite,
-    effects: [
-      { kind: "damage", damageType: "holy", amount: 2 },
-      { kind: "damage", damageType: "burn", amount: 1 },
-    ],
+    effects: [{ kind: "damage", damageType: "holy", damageTypePool: ["holy", "burn"], amount: 2 }],
+    descriptionLines: ["Deal 2 Holy or Burn damage"],
   }),
   cardBuilders.effectsCard({
     id: "judgment",
     art: assetRefs.judgment,
-    effects: [
-      { kind: "damage", damageType: "holy", amount: 2 },
-      { kind: "damage", damageType: "stun", amount: 1 },
-    ],
+    effects: [{ kind: "damage", damageType: "holy", damageTypePool: ["holy", "stun"], amount: 3 }],
+    descriptionLines: ["Deal 3 Holy or Stun damage"],
   }),
 ];

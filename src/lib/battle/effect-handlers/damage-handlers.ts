@@ -5,7 +5,7 @@ import { setPlayerStatus } from "../types";
 import { checkHealthThresholds } from "../status-player";
 import { DAMAGE_TYPES } from "@/lib/game-data";
 import { getBattleRng, pickRandom, rngInt } from "@/lib/rng";
-import { applyPotionMultiplier } from "../amount-helpers";
+import { applyPotionMultiplier, halveRounded } from "../amount-helpers";
 import { dealDamageToEnemy } from "../damage";
 import { dealSelfDamage } from "../status-helpers";
 import { addPlayerStatus, reduceEnemyArmor } from "../types";
@@ -60,9 +60,9 @@ export const applyRandomDamageEffect = defineHandler(
     }
     const rng = getBattleRng(state);
     const damageType =
-      pickRandom(DAMAGE_TYPES, rng) ??
+      pickRandom(effect.damageTypePool?.length ? effect.damageTypePool : DAMAGE_TYPES, rng) ??
       (() => {
-        throw new Error("[Battle] DAMAGE_TYPES catalog is empty");
+        throw new Error("[Battle] random-damage type pool is empty");
       })();
 
     const span = effect.maxAmount - effect.minAmount + 1;
@@ -75,7 +75,13 @@ export const applyRandomDamageEffect = defineHandler(
 export const applyRemoveEnemyArmorEffect = defineHandler(
   "remove-enemy-armor",
   (state, _card, effect, _potionMult, combatTexts) => {
-    const next = reduceEnemyArmor(state, effect.removeAll ? state.enemyMitigation.armor : (effect.amount ?? 0));
+    const remainingArmor = effect.halve ? halveRounded(state.enemyMitigation.armor) : 0;
+    const amount = effect.halve
+      ? state.enemyMitigation.armor - remainingArmor
+      : effect.removeAll
+        ? state.enemyMitigation.armor
+        : (effect.amount ?? 0);
+    const next = reduceEnemyArmor(state, amount);
     const removed = state.enemyMitigation.armor - next.enemyMitigation.armor;
     if (removed > 0)
       mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "armor", amount: removed, impact: false });

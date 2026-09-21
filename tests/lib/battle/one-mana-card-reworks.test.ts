@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { cardById, cardLibrary, computeTalentEffects } from "@/lib/game-data";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
-import { applyWishEffect, buildWishOptions, chooseWishCard } from "@/lib/battle/wish";
+import { applyWishEffect, buildWishOptions } from "@/lib/battle/wish";
 import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
 import { BattleCardSchema } from "@/lib/validation/save-schemas/battle-card-schemas";
 import { validateCardDescriptionParity } from "@/lib/content-validation/card-parity";
@@ -49,26 +49,17 @@ describe("one-Mana card tradeoffs", () => {
     expect(next.wishQueue).toHaveLength(1);
   });
 
-  it("Stargaze schedules its Wish and rewards for the next turn, including after saving", () => {
+  it("Stargaze resolves its Wish immediately without scheduling a turn-start effect", () => {
     const initial = battle({
       talentEffects: computeTalentEffects({ wish: ["wish-mana", "wish-health"], gold: ["gold-on-wish"] }),
     });
     const played = play(initial, "stargaze");
     expect(played.mana).toBe(2);
-    expect(played.enemyHealth).toBe(198);
-    expect(played.wishOptions).toBeNull();
-    expect(played.gold).toBe(0);
-    expect(played.flags.pendingWishMana).toBe(0);
-    const next = advanceToPlayerTurn(resume(played));
-    expect(next.wishOptions).toHaveLength(3);
-    expect(next.gold).toBe(1);
-    expect(next.playerHealth).toBe(6);
-    expect(next.flags.pendingWishMana).toBe(1);
-    expect(next.cardsPlayedThisTurn).toBe(0);
-    expect(next.pendingTurnStartEffects).toHaveLength(0);
-    const chosen = chooseWishCard(next, next.wishOptions![0]!.id);
-    expect(chosen.gold).toBe(1);
-    expect(chosen.flags.pendingWishMana).toBe(1);
+    expect(played.enemyHealth).toBe(199);
+    expect(played.wishOptions).toHaveLength(3);
+    expect(played.gold).toBe(1);
+    expect(played.flags.pendingWishMana).toBe(1);
+    expect(played.pendingTurnStartEffects).toHaveLength(0);
   });
 
   it("Burning Wish creates normal Burn buildup without changing Gear-only Wish pulses", () => {
@@ -92,49 +83,47 @@ describe("one-Mana card tradeoffs", () => {
     expect(gear.enemyStatuses.burn).toBe(1);
   });
 
-  it("two Stargazes queue two Wishes without duplicating the pending effects on resume", () => {
-    const twice = play(play(battle(), "stargaze"), "stargaze");
-    const due = advanceToPlayerTurn(resume(twice));
-    expect(due.wishOptions).not.toBeNull();
-    expect(due.wishQueue).toHaveLength(1);
-    expect(due.pendingTurnStartEffects).toHaveLength(0);
-    const nextWish = chooseWishCard(due, due.wishOptions![0]!.id);
-    expect(nextWish.wishOptions).not.toBeNull();
-    expect(nextWish.wishQueue).toHaveLength(0);
+  it("Stargaze does not add a Wish to the pending queue", () => {
+    const played = play(battle(), "stargaze");
+    expect(played.pendingTurnStartEffects).toHaveLength(0);
+    expect(played.wishQueue).toHaveLength(0);
   });
 
-  it("does not resolve Stargaze’s Wish after the enemy is defeated", () => {
+  it("does not schedule Stargaze’s Wish after the enemy is defeated", () => {
     const killed = play(battle({ enemyHealth: 1 }), "stargaze");
     expect(killed.enemyHealth).toBe(0);
     const next = advanceToPlayerTurn(resume(killed));
-    expect(next.wishOptions).toBeNull();
-    expect(battle().pendingTurnStartEffects).toHaveLength(0);
+    expect(killed.pendingTurnStartEffects).toHaveLength(0);
+    expect(next.pendingTurnStartEffects).toHaveLength(0);
   });
 
-  it("Bread trades immediate healing for two future healing pulses", () => {
+  it("Bread restores Health immediately and does not queue future healing", () => {
     const eaten = play(battle(), "bread");
-    expect(eaten.playerHealth).toBe(9);
+    expect(eaten.playerHealth).toBe(11);
     expect(eaten.exhausted).toContainEqual(expect.objectContaining({ id: "bread" }));
     const first = advanceToPlayerTurn(resume(eaten));
-    expect(first.playerHealth).toBe(13);
-    expect(first.pendingTurnStartEffects).toHaveLength(1);
+    expect(first.playerHealth).toBe(11);
+    expect(first.pendingTurnStartEffects).toHaveLength(0);
     const second = advanceToPlayerTurn(first);
-    expect(second.playerHealth).toBe(17);
+    expect(second.playerHealth).toBe(11);
     expect(second.pendingTurnStartEffects).toHaveLength(0);
   });
 
-  it("Ray of Frost and Concussive Shot retain different immediate and delayed hits", () => {
+  it("Ray of Frost deals both Freeze hits immediately while Concussive Shot resolves one random-type hit", () => {
     const ray = play(battle(), "ray-of-frost");
-    expect(ray.enemyHealth).toBe(199);
-    expect(advanceToPlayerTurn(ray).enemyHealth).toBe(196);
+    expect(ray.enemyHealth).toBe(198);
+    expect(ray.enemyStatuses.freeze).toBe(2);
+    expect(ray.pendingTurnStartEffects).toHaveLength(0);
+    expect(advanceToPlayerTurn(ray).enemyHealth).toBe(198);
     const shot = play(battle(), "concussive-shot");
-    expect(shot.enemyStatuses.stun).toBe(2);
+    expect(shot.enemyHealth).toBe(198);
+    expect(shot.enemyStatuses.stun).toBe(0);
     const delayed = advanceToPlayerTurn(shot);
-    expect(delayed.enemyHealth).toBe(196);
-    expect(delayed.enemyStatuses.stun).toBe(2);
+    expect(delayed.enemyHealth).toBe(198);
+    expect(delayed.enemyStatuses.stun).toBe(0);
   });
 
-  it("Powerful Wish upgrades separately described delayed effects and implicit single-card draws", () => {
+  it("Powerful Wish upgrades repeated immediate effects and implicit single-card draws", () => {
     const options = buildWishOptions(
       battle({ talentEffects: { wishCardsUpgraded: true, wishExtraChoices: cardLibrary.length } }),
       cardById.wish!,
@@ -142,19 +131,20 @@ describe("one-Mana card tradeoffs", () => {
     const ray = options.find((card) => card.id === "ray-of-frost")!;
     expect(ray.effects).toEqual([
       { kind: "damage", damageType: "freeze", amount: 2 },
-      { kind: "repeat-over-turns", remainingTurns: 1, effects: [{ kind: "damage", damageType: "freeze", amount: 4 }] },
+      { kind: "damage", damageType: "freeze", amount: 2 },
     ]);
+    expect(ray.descriptionLines).toEqual(["Deal 2 Freeze damage twice"]);
     const bread = options.find((card) => card.id === "bread")!;
-    expect(bread.effects).toEqual([
-      { kind: "heal", amount: 5 },
-      { kind: "repeat-over-turns", remainingTurns: 2, effects: [{ kind: "heal", amount: 5 }] },
-    ]);
+    expect(bread.effects).toEqual([{ kind: "heal", amount: 7 }]);
     const stargaze = options.find((card) => card.id === "stargaze")!;
-    expect(stargaze.effects[1]).toMatchObject({ remainingTurns: 1, effects: [{ kind: "wish", amount: 2 }] });
+    expect(stargaze.effects).toEqual([
+      { kind: "damage", damageType: "freeze", amount: 2 },
+      { kind: "wish", amount: 2 },
+    ]);
     const berries = options.find((card) => card.id === "mana-berries")!;
     expect(berries.descriptionLines).toContain("Draw 2 cards");
     for (const card of [ray, bread, stargaze, berries]) expect(validateCardDescriptionParity(card)).toEqual([]);
-    expect(cardById.bread!.effects[0]).toMatchObject({ amount: 4 });
+    expect(cardById.bread!.effects[0]).toMatchObject({ amount: 6 });
   });
 
   it.each(["ray-of-frost", "bread", "stargaze", "mana-berries"])(
@@ -182,7 +172,7 @@ describe("one-Mana card tradeoffs", () => {
     expect(restored.uid).toBe(42);
     expect(restored.descriptionLines).toEqual(oldPrayer.descriptionLines);
     const card = cardById["ray-of-frost"]!;
-    const modified = applyNumericCorruption(card, getEditableCorruptionTargets(card)[1]!, 2);
+    const modified = applyNumericCorruption(card, getEditableCorruptionTargets(card)[0]!, 2);
     const saved = hydrateCard(BattleCardSchema.parse(JSON.parse(JSON.stringify(modified))));
     expect(saved.effects).toEqual(modified.effects);
     expect(saved.descriptionLines).toEqual(modified.descriptionLines);

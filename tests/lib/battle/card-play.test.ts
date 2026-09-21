@@ -457,37 +457,53 @@ describe("reworked cards", () => {
     expect(stunned.state.gold).toBe(2);
   });
 
-  it("sniff-out draws a card and makes the next archery card free", () => {
+  it("sniff-out deals Bleed and makes the next archery card free without Consuming", () => {
     const card = { ...cardById["sniff-out"] };
     const state = makeState({ hand: [card], deck: slashDeck(2) });
     const result = playBattleCardResolved(state, card.id, 0);
-    expect(result.state.hand).toHaveLength(1);
+    expect(result.state.enemyStatuses.bleed).toBe(1);
+    expect(result.state.hand).toHaveLength(0);
     expect(result.state.flags.nextArcheryCardFree).toBe(true);
-    expect(result.state.exhausted).toContainEqual(expect.objectContaining({ id: "sniff-out" }));
+    expect(result.state.exhausted).not.toContainEqual(expect.objectContaining({ id: "sniff-out" }));
   });
 
-  it("stargaze deals freeze damage and schedules its wish", () => {
+  it("stargaze deals Freeze damage and resolves its Wish immediately", () => {
     const card = { ...cardById["stargaze"] };
     const result = playBattleCardResolved(makeState({ hand: [card] }), card.id, 0);
-    expect(result.state.enemyStatuses.freeze).toBeGreaterThan(0);
-    expect(result.state.wishOptions).toBeNull();
-    expect(result.state.pendingTurnStartEffects).toEqual([
-      {
-        remainingTurns: 1,
-        effects: [{ kind: "wish", amount: 1 }],
-        sourceCard: { id: card.id, consume: card.consume, tags: card.tags },
-      },
-    ]);
+    expect(result.state.enemyStatuses.freeze).toBe(1);
+    expect(result.state.wishOptions).not.toBeNull();
+    expect(result.state.pendingTurnStartEffects).toHaveLength(0);
   });
 
-  it("ray-of-frost hits now and queues a freeze echo", () => {
+  it("smelling salts cleanses player Stun and Freeze buildup only", () => {
+    const card = { ...cardById["smelling-salts"] };
+    const base = makeState();
+    const result = playBattleCardResolved(
+      makeState({
+        hand: [card],
+        playerStatuses: { ...base.playerStatuses, stun: 4, freeze: 3, poison: 2 },
+      }),
+      card.id,
+      0,
+    );
+    expect(result.state.playerStatuses).toMatchObject({ stun: 0, freeze: 0, poison: 2 });
+  });
+
+  it("shadowstep deals damage, arms the next card twice, and Consumes", () => {
+    const card = { ...cardById.shadowstep };
+    const result = playBattleCardResolved(makeState({ hand: [card] }), card.id, 0);
+    expect(result.state.enemyHealth).toBe(29);
+    expect(result.state.flags.playNextCardTwice).toBe(true);
+    expect(result.state.exhausted).toContainEqual(expect.objectContaining({ id: "shadowstep" }));
+  });
+
+  it("ray-of-frost deals two immediate Freeze hits", () => {
     const card = { ...cardById["ray-of-frost"] };
     const result = playBattleCardResolved(makeState({ hand: [card] }), card.id, 0);
     expect(result.state.enemyStatuses.freeze).toBeGreaterThan(0);
-    expect(result.state.pendingTurnStartEffects).toHaveLength(1);
-    expect(result.state.pendingTurnStartEffects[0]?.effects).toEqual([
-      { kind: "damage", damageType: "freeze", amount: 3 },
-    ]);
+    expect(result.state.enemyHealth).toBe(28);
+    expect(result.state.enemyStatuses.freeze).toBe(2);
+    expect(result.state.pendingTurnStartEffects).toHaveLength(0);
   });
 
   it("briar-shield grants block and thorns", () => {

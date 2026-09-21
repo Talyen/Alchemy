@@ -53,3 +53,8 @@ export function defineRangedEffect<const K extends string>(kind: K) {
       }),
   };
 }
+
+export interface EffectKindDefinition<K extends string> {
+  kind: K;
+  schema: z.ZodType<{ kind: K }>;
+}

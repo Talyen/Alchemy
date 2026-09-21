@@ -47,8 +47,8 @@ export const consumableCards: BattleCard[] = [
     art: assetRefs.acidPotion,
     consume: true,
     effects: [
-      { kind: "remove-enemy-armor", removeAll: true },
-      { kind: "damage", damageType: "poison", amount: 1 },
+      { kind: "remove-enemy-armor", halve: true },
+      { kind: "damage", damageType: "poison", amount: 2 },
     ],
   }),
   cardBuilders.effectsCard({
@@ -64,11 +64,7 @@ export const consumableCards: BattleCard[] = [
     id: "bread",
     art: assetRefs.bread,
     consume: true,
-    effects: [
-      { kind: "heal", amount: 4 },
-      { kind: "repeat-over-turns", remainingTurns: 2, effects: [{ kind: "heal", amount: 4 }] },
-    ],
-    descriptionLines: ["Restore 4 Health", "Restore 4 Health at the start of each of your next 2 turns"],
+    effects: [{ kind: "heal", amount: 6 }],
   }),
   cardBuilders.effectsCard({
     id: "luck-potion",
@@ -89,13 +85,16 @@ export const consumableCards: BattleCard[] = [
         ],
       },
     ],
-    descriptionLines: ["Gain 4 Mana or gain 4 Gold or gain 4 Block"],
+    descriptionLines: ["Gain 4 Mana, Gold, or Block"],
   }),
   cardBuilders.effectsCard({
     id: "wishing-potion",
     art: assetRefs.wishingPotion,
     consume: true,
-    effects: [{ kind: "wish", amount: 2 }],
+    effects: [
+      { kind: "wish", amount: 1 },
+      { kind: "draw-cards", amount: 1 },
+    ],
   }),
   cardBuilders.effectsCard({
     id: "blood-offering",
@@ -110,17 +109,17 @@ export const consumableCards: BattleCard[] = [
     art: assetRefs.faustianBargain,
     consume: true,
     effects: [
-      { kind: "lose-health", amount: 2 },
-      { kind: "wish", amount: 3 },
+      { kind: "lose-health", amount: 1 },
+      { kind: "wish", amount: 2 },
     ],
   }),
   cardBuilders.effectsCard({
     id: "dark-pact",
     art: assetRefs.darkPact,
     effects: [
+      { kind: "damage", damageType: "burn", amount: 1 },
       { kind: "lose-health", amount: 1 },
       { kind: "wish", amount: 1 },
-      { kind: "draw-cards", amount: 1 },
     ],
   }),
 ];

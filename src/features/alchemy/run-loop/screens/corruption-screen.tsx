@@ -2,13 +2,13 @@ import { useMemo, useState } from "react";
 import { Dices, MoveRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { corruptionAltar, getCardKeywords, type BattleCard } from "@/lib/game-data";
+import { corruptionAltar, type BattleCard } from "@/lib/game-data";
 import type { CorruptionResult } from "@/lib/corruption";
 import {
   SHINE_PALETTES,
   viewCardWidthClass,
   controlLabelClass,
-  getInspectionKeywordShineColors,
+  getCardInspectionShineColors,
 } from "@/features/alchemy/shared/config";
 import { CardSelectionGrid } from "../../shared/ui/card-selection-grid";
 import { BattleCardButton } from "../../shared/ui/card-button";
@@ -50,7 +50,7 @@ function CorruptionDeckPicker({
           card={card}
           chrome="corruption"
           isSelected={selectedIndex === index}
-          shineColor={getInspectionKeywordShineColors(getCardKeywords(card))}
+          shineColor={getCardInspectionShineColors(card)}
           onSelect={() => onSelect(index)}
         />
       )}
@@ -103,7 +103,7 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
             ariaLabel={`Original: ${getCardDisplayTitle(result.originalCard)}`}
             shimmerActive={false}
             shimmerToken={undefined}
-            shineColor={getInspectionKeywordShineColors(getCardKeywords(result.originalCard))}
+            shineColor={getCardInspectionShineColors(result.originalCard)}
             className={viewCardWidthClass}
           />
         </div>
@@ -116,7 +116,7 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
             ariaLabel={`Result: ${getCardDisplayTitle(result.corruptedCard)}`}
             shimmerActive={false}
             shimmerToken={undefined}
-            shineColor={getInspectionKeywordShineColors(getCardKeywords(result.corruptedCard))}
+            shineColor={getCardInspectionShineColors(result.corruptedCard)}
             className={viewCardWidthClass}
           />
         </div>

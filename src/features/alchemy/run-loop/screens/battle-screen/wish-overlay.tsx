@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 
-import { getCardKeywords, type BattleCard, type CardDescriptionContext } from "@/lib/game-data";
+import { type BattleCard, type CardDescriptionContext } from "@/lib/game-data";
 
 import { BattleCardButton } from "../../../shared/ui/card-button";
 import { useHeldWhile } from "../../../shared/ui/use-fade";
@@ -9,7 +9,7 @@ import { ModalOverlayShell } from "../../../shared/ui/modal-overlay-shell";
 import { ScreenHeader } from "../../../shared/ui/layout-components";
 import {
   collectionTileWidthClass,
-  getInspectionKeywordShineColors,
+  getCardInspectionShineColors,
   bodyTextClass,
 } from "@/features/alchemy/shared/config";
 import { useLatestRef } from "@/features/alchemy/shared/ui/use-latest-ref";
@@ -51,7 +51,7 @@ function WishCardItem({
       className="w-full"
       wrapperClassName={cn("flex min-w-0 shrink justify-center", collectionTileWidthClass)}
       disabled={disabled}
-      shineColor={getInspectionKeywordShineColors(getCardKeywords(card))}
+      shineColor={getCardInspectionShineColors(card)}
     />
   );
 }

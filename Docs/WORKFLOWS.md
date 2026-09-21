@@ -38,182 +38,51 @@ catalog-external tests are named inline. Named suites are verification entry poi
 
 ## Change persisted save data
 
-1. Decide whether the change needs a version bump or a safe additive default using the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#when-to-increment).
-2. Follow its [required pattern](../src/features/alchemy/shared/storage/MIGRATIONS.md#required-pattern-automated), updating the schema, domain defaults, codecs, and fixtures together. [Defaults and resume normalization](../src/features/alchemy/shared/storage/MIGRATIONS.md#defaults-and-resume-normalization) names the owners; [deletion](../src/features/alchemy/shared/storage/MIGRATIONS.md#deletion) owns clear-save modes.
-3. Verify the [save test expectations](../src/features/alchemy/shared/storage/MIGRATIONS.md#test-expectations) through the [task-scoped gate](../CONTRIBUTING.md#what-to-run-when-you-change), which selects the complete save/persistence suite. Reuse `tests/helpers/save-candidate-fixtures.ts` for candidate scenarios.
-
----
+See [Change persisted save data](./RUN_WORKFLOWS.md#change-persisted-save-data).
 
 ## Change mid-run resume (`ActiveRunData`)
 
-1. Classify the field as active-run progression or transient resume state. Keep the aggregate shape and the wire shape owned by their existing modules; mid-combat fields still use `PersistedBattleStateSchema`.
-2. Update the active-run type/schema and, for progression fields, `ActiveRunProgressFields` / hydration in `run-state-init.ts`. Use defaults and normalization before adding a migration step; the save contract is in [`MIGRATIONS.md`](../src/features/alchemy/shared/storage/MIGRATIONS.md).
-3. Update `encodeRunResumeSnapshot()` / `decodeRunResumeSnapshot()` in `run-resume-codec.ts`. This codec is the sole `RunSession` ↔ `ActiveRunData` translation boundary; shops and interrupted flow keep their focused codec helpers.
-4. Keep `snapshotRun()` / `restoreRun()` as thin lifecycle wrappers and publish boot/resume through one `dispatchRunSessionCommand()`. Defer navigation, audio, and presentation work until after commit.
-5. Run the active-run snapshot/codec tests plus the storage/migration tests named by the save contract. Use the changed-path route for the final selection.
-
----
+See [Change mid-run resume (`ActiveRunData`)](./RUN_WORKFLOWS.md#change-mid-run-resume-activerundata).
 
 ## Grant materials during a run
 
-Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-session-write-port.ts`) so homestead inventory and `activeRun.runMaterialsEarned` stay aligned for the run-end summary.
-
-1. Route combat payouts through `computeCombatMaterialReward()` and mystery grants through `computeMysteryMaterialReward()` (both in `@/lib/homestead/material-rewards`); they own herb-find, scavenger/herbalist, and elite/boss ordering per the policy table there. Do not reimplement the sequence at the call site.
-2. Call `awardMaterialsDuringRun(draft, materials)` inside the owning command (`run-loop/run/victory-commands.ts`, `run-loop/run/reward-commands.ts`, `run-loop/navigation/mystery-flow.ts`, or Armory salvage in `shared/stores/gear-session-command.ts`). The canonical site list is `AWARD_MATERIALS_CALL_SITES` in `run-loop/run/run-materials.ts`, enforced by `tests/architecture/run-materials-award-guard.test.ts`; new grant paths must extend it there.
-3. Reuse the run-end display: `awardRunEndMaterials` in `run-loop/run/run-materials.ts`, used by both defeat and victory flows, merges `runMaterialsEarned` and `applyEndOfRunHomesteadBonuses` into `session.runEndMaterials`.
-4. Check `tests/features/alchemy/run-loop/run/run-victory-handlers.test.ts` and the affected mystery/reward-flow tests when adding a new source.
-
-**Do not** call `addMaterialsToStockpile()` on the run profile store directly from run-loop or mystery code for player loot.
-
-Permanent Gear and Armory Trinkets use `recordRunObtainedItem()` at each grant site (reward Gear/Trinket picks, equipment shop, trinket shop, mystery generated Gear). `finalizeRunEndSession` copies `activeRun.runObtainedItems` into `session.runEndItems` for the run-end recap. Do not record Boons or cards.
-
----
+See [Grant materials during a run](./RUN_WORKFLOWS.md#grant-materials-during-a-run).
 
 ## Add or change post-victory routing (`REWARD_ROUTES`)
 
-The Alchemist encounter bonus grants one Potion after the final reward choice or skip, including encounters with a follow-up bonus card choice.
-
-Follow-up choices include Companion cards, Archery cards from Fletched, Wish cards from Wishkeeper, and Nature cards from Kindred Spoils. The saved `companionChoiceIds` field carries all of these bonus choices. Primary and bonus choices restore against the full card catalog in their saved order, dropping only missing IDs; loading never rerolls choices or reapplies offer-pool or theme eligibility.
-
-An interrupted bonus handoff resumes only the bonus choices: the primary reward and its materials have already committed. Unclaimed rewards whose choices no longer resolve stay on Rewards with Skip available, retaining materials and routing metadata across repeated saves until finalized. Loading never awards materials.
-
-Destination eligibility uses health and maximum health after victory bonuses and the upcoming location’s loot depth. Combat and Wildwood exclude exhausted Boon and permanent-Trinket pools before sampling through the [shared loot policy](./ARMORY.md#loot-tuning). Pass progression from `resolveDraftLootProgress()` when generating new loot; loading pending rewards or shop offers must not reapply progression eligibility.
-
-- **1. Add route constant** — `src/lib/routing/reward-routes.ts` → `REWARD_ROUTES`, re-exported from `@/lib/routing`
-- **2. Compute route after rewards** — `src/features/alchemy/run-loop/navigation/reward-flow.ts` (`finalizeRewardState` / related; import `@/features/alchemy/run-loop/navigation/reward-flow`)
-- **3. Handle transition** — `run-loop/run/run-flow-rewards.ts` (`executeRewardRouteTransition`) for reward routing; `shell/run-flow-engine.ts` (`createRunFlowEngine`) for shell wiring of all flow factories
-- **4. Tests** — `tests/features/alchemy/run-loop/navigation/reward-flow.test.ts`; victory-flow tests if end-of-run
-
----
+See [Add or change post-victory routing (`REWARD_ROUTES`)](./RUN_WORKFLOWS.md#add-or-change-post-victory-routing-reward_routes).
 
 ## Run teardown
 
-Feature code uses [`run-lifecycle.ts`](../src/features/alchemy/shared/stores/run-lifecycle.ts):
-
-- `teardownRun()` — clear the active run session after victory, defeat, or abandon.
-- `finalizeRunEndSession()` — run-end bookkeeping plus persist (navigation calls this on run end).
-- `flushSaveAfterGearMutation()` — immediate persist after Armory gear mutations (fast path alongside the autosave debounce; both share the save queue).
-
-[`reset.ts`](../src/features/alchemy/shared/stores/reset.ts) owns test/teardown and Options wipe:
-
-- `resetTransientRunUi()` — UI hover/shimmer plus transient session fields.
-- `clearAllPersistentGameData()` — clears app options, permanent run/talent data, and homestead (Options “clear save”).
+See [Run teardown](./RUN_WORKFLOWS.md#run-teardown).
 
 ## Gameplay command boundary
 
-Ownership and anti-patterns: [ARCHITECTURE.md § Run state](./ARCHITECTURE.md#run-state). Keep the command synchronous; put audio, navigation, timers, and presentation cleanup in `afterCommit`. Pass the draft to every gameplay mutator. This outer-boundary example awards an already bonus-adjusted material amount and passes it to presentation feedback after commit:
-
-```ts
-import type { MaterialInventory } from "@/lib/homestead/types";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { awardMaterialsDuringRun } from "@/features/alchemy/shared/stores/run-session-write-port";
-
-export function awardMaterialReward(
-  materials: MaterialInventory,
-  onAwarded: (awarded: MaterialInventory) => void,
-): void {
-  dispatchRunSessionCommand(
-    (draft) => {
-      awardMaterialsDuringRun(draft, materials);
-      return materials;
-    },
-    { afterCommit: onAwarded },
-  );
-}
-```
-
-Inside an existing reward, shop, or mystery command, call the mutator with that command's draft instead of dispatching another command. Keep the existing claim guard and reward finalization in the owning flow.
-
-Resolve battle gameplay and commit its RNG/XP before starting presentation. Return detached frames for playback; never commit gameplay from a draw or animation callback. `activeCombat.pendingBattleTransition` is retained only for consuming older saves, not for authoring new animation flows.
-
----
+See [Gameplay command boundary](./RUN_WORKFLOWS.md#gameplay-command-boundary).
 
 ## Add a new status effect
 
-1. Define the status type in `src/lib/game-data/types.ts` — extend `PlayerStatusId` or `EnemyStatusId` string unions (discriminated union pattern).
-2. If the status ticks or expires during turn processing, add that behavior in `src/lib/battle/status-ticks.ts`.
-3. Add player-side application logic in `src/lib/battle/status-player.ts` when applicable; add riders in `src/lib/battle/damage-status-riders.ts` only when damage applies the status.
-4. If the status provides crowd control, add its threshold logic in `src/lib/battle/status-cc.ts`.
-5. If the status introduces a keyword, define it in `src/lib/game-data/keywords.ts`.
-
-Persisted status changes follow the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md).
-
----
+See [Add a new status effect](./CONTENT_AUTHORING.md#add-a-new-status-effect).
 
 ## Add a new card
 
-1. Define card in the matching topical library — `src/lib/game-data/cards/library/` (`core.ts`, `archery.ts`, `consumables.ts`, `companions.ts`, or `defense.ts`); `cards.ts` assembles these groups
-2. Add effects (discriminated union on `kind`) — same card entry, `effects: [...]`
-3. Add art reference — `src/lib/game-data/assets.ts` (or `placeholderCard` while WIP)
-4. (Optional) Register card sound — `src/lib/audio/sound-registry.ts` (`cardSounds` record)
-5. Build the entry with `card-builders.ts` (`effectsCard` generates `descriptionLines` from effects; pass explicit `descriptionLines` for chance / repeat-over-turns / conditional / combined phrasing; `effectsCard` with `consume: true` takes multiple effects; summon cards derive their title from the companion). Raw literals are reserved for genuinely special cards (`mixed-potion`)
-6. Context-aware text — pure text `src/lib/game-data/card-description.ts` (only summon lines are recomputed with Bond/damage bonuses; `flatPhysicalDamage`/`potionPotency` are accepted but ignored), UI tokens `shared/ui/card-description-ui.tsx`, homestead/talent context `shared/context/card-description-context.tsx` (wired in `App.tsx`)
-
-Card IDs are stable strings on `BattleCard`, not a separate union. The assembled
-`cardLibrary` rejects duplicate IDs; preserve save compatibility when removing
-or renaming one through the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md).
-On load, `hydrateCard` takes title/art from the catalog and preserves complete
-saved effects+lines (including upgrades/corruption); saves therefore survive
-rebalances, but new `consume: true` flags do not retroactively apply to
-complete old saves.
-
-Cards in `cardLibrary` are automatically included in card shop, combat rewards, mysteries, wish, and draft via `getOfferableCardPool()` — no separate pool registration. Exclude a card with `excludeFromOfferPool: true` (`mixed-potion` is the current example). Distillation-eligible Potions are the explicit `POTION_CARD_IDS` list in `cards/card-pools.ts` — a new brew must be added there deliberately; Mana Berries, Mana Crystals, Apple, and Bread are intentionally excluded.
-
-Run `npm run content:audit` before handing off: card text must match effects (count + numeric parity in `src/lib/content-validation/card-parity/`, with shared line shapes in `line-classifiers.ts`) and prose must pass the typography rules (no em dashes; description lines stay period-free).
-
----
+See [Add a new card](./CONTENT_AUTHORING.md#add-a-new-card).
 
 ## Add a new card effect `kind`
 
-Follow [Battle handlers § Adding a kind](../src/lib/game-data/effects/BATTLE_HANDLERS.md#adding-a-kind)
-for the union, grouped schema, registry, runtime handler, description metadata,
-and numeric-parity updates. That owner also documents recursive kinds,
-effect ordering, and the focused schema/handler/description tests.
-
----
+See [Add a new card effect `kind`](./CONTENT_AUTHORING.md#add-a-new-card-effect-kind).
 
 ## Add a new character
 
-- **1. Add character ID to `CharacterId` union** — `src/lib/game-data/characters.ts`
-- **2. Define character in `characters` record** — `src/lib/game-data/characters.ts`
-- **3. List card IDs in `startingDeck` (resolved via `resolveDeck`)** — same file
-- **4. Set the hero's `keywords` badges (3 per hero; wildcard drafts and uses none)** — same file
-- **5. Keep every badge covered by the starting deck (see below)** — same file + characters test
-
-`resolveDeck` throws on unknown card IDs so a typo fails loudly instead of
-shortening the deck. Every badge must appear in at least one starting-deck
-card (enforced by the hero badge coverage test in
-`tests/lib/game-data/characters.test.ts`). Tooltips on Choose Your Hero and
-Collection render the deck titles and badges live from this record.
-
----
+See [Add a new character](./CONTENT_AUTHORING.md#add-a-new-character).
 
 ## Add a new enemy
 
-Assign three distinct canonical card IDs in `abilityIds`. Each card must satisfy
-the supported enemy subset in [enemy abilities](./GAME_RULES.md#enemy-abilities-and-traits);
-[content validation](../src/lib/content-validation/validators.ts) checks the
-references and supported effects, and [the enemy schema](../src/lib/content-validation/schemas.ts)
-checks count and uniqueness. Enemy-trait descriptions must mention their
-mechanical term ([enemy-trait parity](../src/lib/content-validation/card-parity/enemy-trait-parity.ts)),
-and titles/descriptions must pass the typography rules. Run `npm run content:audit` before handing off.
-
-- **1. Define entry in `enemyBestiary` (`id` becomes `EnemyId`)** — `src/lib/game-data/compendium/enemies.ts`
-- **2. Set `enemyType` (`normal`/`elite`/`boss`)** — same file
-- **3. Add traits as `{ id, title, description }` objects** — same file (logic lives in battle system)
-- **4. (Optional) Register attack sound** — `src/lib/audio/sound-registry.ts` (`enemyAttackSounds`)
-- **5. Wildwood gauntlet bosses must also be listed in `WILDWOOD_BOSS_IDS`** — `src/lib/content-systems/wildwood/bosses.ts`
-
----
+See [Add a new enemy](./CONTENT_AUTHORING.md#add-a-new-enemy).
 
 ## Add a new trinket
 
-One definition powers a permanent Armory Trinket and a run-scoped **Boon**. Both reveal one Collection entry; Boons occupy no slot. `combineTrinketEffectIds` deduplicates matching forms.
-
-1. Add data/art in `game-data/compendium/trinkets.ts` and `game-data/assets.ts`.
-2. Reuse existing effects when they express the new Trinket. Only for a new effect, extend `TrinketManifest` and `defaultTrinketEffects` in `src/lib/game-data/trinket-manifest.ts` and wire its battle/run consumers; check Boon exclusions. Content validation derives effect field types from these defaults and requires at least one active effect.
-3. Add a rule in `src/lib/content-validation/card-parity/trinket-parity.ts` covering the complete trigger and outcome, numeric captures in effect-key order, and required boolean effects. Keep the rule and regression tests in `tests/lib/content-validation/trinket-validation.test.ts` aligned with wording changes; numeric expectations come from authored effects. Run `npm run content:audit` before handing off.
-4. Verify Gear-aggregate ownership/equip plus permanent and ephemeral UI/discovery.
+See [Add a new trinket](./CONTENT_AUTHORING.md#add-a-new-trinket).
 
 ## Add permanent Gear
 
@@ -231,75 +100,19 @@ Item model, generation, Uniques, and write paths: [ARMORY.md](./ARMORY.md) (data
 
 ## Add a new companion
 
-Companion combat and descriptions share `getCompanionBondEffects()` in `src/lib/game-data/companions.ts`. Follow [Companion Bond rules](./GAME_RULES.md#companion-bond) for progression and displayed effects; Bond levels and costs retain their existing save representation.
-
-`defaultCompanionBondLevels` derives zero values from `companionLibrary`; talent and Homestead defaults both copy that map, so new Companions need no separate default registration. If Bond behavior differs from the shared scaling, update `getCompanionBondEffects()` and its descriptions together; change Homestead tiers or costs only when intended.
-
-- **1. Add companion ID to `CompanionId` union** — `src/lib/game-data/types.ts`
-- **2. Add art via the [asset workflow § Add or replace game art](./WORKFLOWS-ASSETS.md#add-or-replace-game-art)** — `src/lib/game-data/assets.ts`
-- **3. Define companion in `companionLibrary` record** — `src/lib/game-data/companions.ts`
-- **4. Add summon card via `summonCompanionCard()` in `cardLibrary` (`src/lib/game-data/cards/library/companions.ts`)** — `src/lib/game-data/cards/card-builders.ts` — companion must have **at least one** `turnStartEffects` entry
-- **5. Give the summon card a stable, unique string ID** — `src/lib/game-data/cards/library/companions.ts`; the assembled `cardLibrary` checks uniqueness
-- **6. (Optional) Register card sound** — `src/lib/audio/sound-registry.ts`
-- **7. Update description lines** — `tests/lib/game-data/companions.test.ts` guards companion copy
-
-Run `npm run content:audit` before handing off (companion record checks, summon-card parity, typography).
-
----
+See [Add a new companion](./CONTENT_AUTHORING.md#add-a-new-companion).
 
 ## Add a new talent
 
-Behavioral contracts: [Talent manifests and progression](./GAME_RULES.md#talent-manifests-and-progression). Read the applicable combat rule when adding a new mechanic.
-
-Use `addEffect` for stackable numeric bonuses, including the same bonus written by two keywords. Use `setEffect` for flags, identity multipliers (defaults that are not zero, e.g. `healMultiplier`), and exclusive thresholds. Array fields (e.g. `healthThresholdArmor`) concatenate on `set`.
-
-Put talent-owned magnitudes on the talent ops (not only in `game-constants`) so descriptions and combat stay in lockstep. Talent and keyword descriptions omit periods, as enforced by content typography validation.
-
-1. If the talent needs a new battle bonus, add its default in `src/lib/game-data/talents/manifest-defaults.ts`; `TalentEffectManifest` derives from those defaults and `talent-effect-manifest.ts` re-exports it.
-2. Define the talent (`id`, `keywordId`, name, description, effects, and Lucide `icon` name) in the matching keyword module under `src/lib/game-data/talents/pools/`; `talent-pool-definitions.ts` assembles `talentPool` in its historical order, with `pool/index.ts` re-exporting for compatibility. Register the icon in `src/features/alchemy/shared/config/talent-icons.ts`.
-3. Keyword portrait art (new keyword or replacement art) — [Asset workflow § Add or replace game art](./WORKFLOWS-ASSETS.md#add-or-replace-game-art) (`scripts/assets/talent-assets.mjs` + `talentArt` in `src/lib/game-data/assets.ts`)
-4. XP is keyword-based — `src/lib/game-data/talents/progression.ts` — no per-talent XP hook unless the keyword is new
-
-Talent trees accept any count ≥ 1 in rows of 1/2/3/4, with overflow in its own row.
-
-`talent-effect-invariants` must stay green: every manifest field is written by a talent or homestead key (or an explicit unused allowlist), every talent-written field is read in battle/meta code, and non-boolean `set` fields have a single writer unless they are arrays. Reader discovery uses typed property access, destructuring, and typed key registrations rather than receiver names. It checks wiring presence, not reachability or correct combat behavior; meaningful behavior tests remain necessary. Talent descriptions are free text with no numeric parity lint (typography lint still applies — run `npm run content:audit`) — keep them in lockstep with effects by hand.
-
-Add a `talentArt` entry when art is ready; missing-art and keyboard behavior follow [UI component conventions](./UI.md#component-conventions).
-
-New keywords still follow [Add a new keyword](#add-a-new-keyword) first.
+See [Add a new talent](./CONTENT_AUTHORING.md#add-a-new-talent).
 
 ## Add a homestead upgrade
 
-1. Add `BuildingId` / `FarmId` / `ResearchId` — `src/lib/homestead/types.ts`
-2. Define the item with `defineBuilding` / `defineFarm` / `defineResearch` — `src/lib/homestead/data.ts` (four explicit authored tier costs; `stackingTiers` adds each tier’s incremental effects)
-3. Add effect keys only when existing keys cannot express the upgrade — `HomesteadEffectManifest` + `HOMESTEAD_BATTLE_*_KEYS` in `types.ts`; defaults in `defaults.ts`
-4. Companion bond tiers (if companion) — `src/lib/homestead/companions.ts` (`COMPANION_BOND_TIERS` + `companionTierItems`) + `src/lib/game-data/companions.ts`
-5. Art & palette — Add `helpers.tsx:itemArt` entry in `src/features/alchemy/meta/screens/homestead/helpers.tsx` + art via the [asset workflow](./WORKFLOWS-ASSETS.md#add-or-replace-game-art)
-6. Change layout constants only for an intended layout change — `HOMESTEAD_CONFIG` in `helpers.tsx` (companion page size, aspect ratios)
-7. Check affected rules or interactions; saved-shape changes follow the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md).
-
-Every building/farm/research node has four tiers. All numeric effects and each
-room-production quantity strictly increase in cumulative tier totals. Companion
-Bonds remain a separate three-tier progression. Recipes use fixed material costs;
-production support affects authoring, not prices at runtime. Crystal Garden
-produces Gems and Stone. Library, Agility Training, and Sanctuary intentionally
-have no material production. Resource labels use “per Room”; settlement remains
-at run end. Wishing Well alternates Gold/Gems by room (odd rooms Gold), with all
-of its output paid as Gold in Wildwood. Tailoring also produces Gold. Other
-material production remains excluded in Wildwood. Capture the recap after these
-payouts so the Gold total includes them.
-
-Homestead screens (like all screen directories) are excluded from `vitest` coverage thresholds — see the coverage `exclude` list in `vitest.config.ts` — and are covered by E2E `tests/e2e/specs/homestead-flow.spec.ts` plus the unit `homestead/*.test.tsx` suites. Use `npm run test -- tests/lib/homestead` for the lib contract and `npm run test:e2e:route -- homestead` when the change needs browser verification.
+See [Add a homestead upgrade](./CONTENT_AUTHORING.md#add-a-homestead-upgrade).
 
 ## Add a new keyword
 
-- **1. Define keyword config (label, description, colors)** — `src/lib/game-data/keywords.ts`
-- **2. Add display config if needed** — `src/features/alchemy/shared/config/keywords.ts`
-- **3. Add talent XP trigger** — `src/lib/game-data/talents/progression.ts` (keyword-based XP logic)
-
-Keyword labels and descriptions must pass the typography rules (no em dashes; descriptions stay period-free — see `src/lib/content-validation/validators-typography.ts`). Run `npm run content:audit` before handing off.
-
----
+See [Add a new keyword](./CONTENT_AUTHORING.md#add-a-new-keyword).
 
 ## Change a shop
 
@@ -396,7 +209,7 @@ Live pool events are authored in `src/lib/mystery/pool.ts`; other `MysteryEffect
 
 ## Adding / changing corruption flow
 
-Numeric corruption also updates matching delayed repeats of the changed effect, so the later turn agrees with the card description. A shared damage number, such as Stab's Physical-or-Bleed amount, updates both alternatives without consuming the numeric target for a separately described effect. Tithe's Gold percentage is editable and capped at 100%; Powerful Wish uses the same numeric mapping. Unrelated repeated effects retain their values.
+Numeric corruption also updates matching delayed repeats of the changed effect, so the later turn agrees with the card description. A shared damage number, such as Serrated Edge's Physical-or-Bleed amount, updates both alternatives without consuming the numeric target for a separately described effect. Wishing Well's visible Gold number maps to its Gold branch while its unnumbered Wish remains fixed; Powerful Wish uses the same numeric mapping. Unrelated repeated effects retain their values.
 
 - **1. Card mutation rules** — `src/lib/corruption/`
 - **2. Destination handlers (corrupt / exit / abandon)** — `run-loop/navigation/corruption-flow.ts`

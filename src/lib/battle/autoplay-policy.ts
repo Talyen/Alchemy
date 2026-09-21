@@ -1,6 +1,7 @@
 import { resolveConditionalCardDamage } from "./conditional-card-damage";
 import type { BattleSnapshot } from "./types/state-types";
 import { harmfulPlayerStatusIds, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
+import { halveRounded, scalePercent } from "./amount-helpers";
 
 const DOT_STATUSES = new Set(["burn", "poison", "bleed"]);
 const CONTROL_STATUSES = new Set(["stun", "freeze"]);
@@ -33,19 +34,26 @@ function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot): number {
     case "damage":
       return effect.equalToForge
         ? state.playerStatuses.forge
-        : resolveConditionalCardDamage(effect, {
-            actorBlock: state.playerStatuses.block,
-            targetBlock: state.enemyMitigation.block,
-            targetFrozen: state.enemyCC.freezeSkipTurns > 0,
-          }).effect.amount;
+        : effect.equalToBlock
+          ? scalePercent(state.playerStatuses.block, effect.equalToBlockPercent ?? 100)
+          : resolveConditionalCardDamage(effect, {
+              actorBlock: state.playerStatuses.block,
+              targetBlock: state.enemyMitigation.block,
+              targetFrozen: state.enemyCC.freezeSkipTurns > 0,
+            }).effect.amount;
     case "random-damage":
       return (effect.minAmount + effect.maxAmount) / 2;
     case "enemy-status":
       if (DOT_STATUSES.has(effect.status) || CONTROL_STATUSES.has(effect.status)) return effect.amount;
       return 0;
     case "player-status":
-      if (effect.status === "block" || effect.status === "armor") return effect.amount * AUTOPLAY_EFFECT_SCORE.defense;
-      return 0;
+      return (
+        (effect.statusPool ?? [effect.status]).reduce(
+          (total, status) =>
+            total + (status === "block" || status === "armor" ? effect.amount * AUTOPLAY_EFFECT_SCORE.defense : 0),
+          0,
+        ) / (effect.statusPool?.length ?? 1)
+      );
     case "heal":
       return state.playerHealth < state.playerMaxHealth ? effect.amount : 0;
     case "remove-harmful-status": {
@@ -81,7 +89,11 @@ function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot): number {
       return current > 0 ? (effect.factor - 1) * current : 0;
     }
     case "remove-enemy-armor":
-      return effect.removeAll ? state.enemyMitigation.armor : Math.min(effect.amount ?? 0, state.enemyMitigation.armor);
+      return effect.halve
+        ? state.enemyMitigation.armor - halveRounded(state.enemyMitigation.armor)
+        : effect.removeAll
+          ? state.enemyMitigation.armor
+          : Math.min(effect.amount ?? 0, state.enemyMitigation.armor);
     case "next-hit-crit":
       return AUTOPLAY_EFFECT_SCORE.criticalHit;
     case "next-hit-leech":

@@ -247,13 +247,13 @@ describe("repeatable card and Consume rewards", () => {
       cardById["wolf-companion"]!,
     );
     expect(first.enemyHealth).toBe(99);
-    expect(first.playerStatuses.block).toBe(1);
+    expect(first.playerStatuses.block).toBe(0);
     expect(first.playerStatuses.forge).toBe(0);
     expect(first.hand).toHaveLength(1);
     const second = play({ ...first, flags: { ...first.flags, playNextCardTwice: true } }, cardById["pack-tactics"]!);
     expect(second.companionDamageBuff).toBe(0);
     expect(second.enemyHealth).toBe(94);
-    expect(second.playerStatuses.block).toBe(6);
+    expect(second.playerStatuses.block).toBe(0);
     expect(second.hand).toHaveLength(2);
   });
 

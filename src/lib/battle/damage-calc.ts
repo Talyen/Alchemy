@@ -36,8 +36,12 @@ function applySunderingArmorPiercing(state: BattleState, isPhysicalOrStun: boole
   return reduceEnemyArmor(state, pierce);
 }
 
-function applyBlockAbsorption(state: BattleState, damage: number): { state: BattleState; remainingDamage: number } {
-  const effectiveBlock = state.enemyMitigation.block;
+function applyBlockAbsorption(
+  state: BattleState,
+  damage: number,
+  ignoreBlock = false,
+): { state: BattleState; remainingDamage: number } {
+  const effectiveBlock = ignoreBlock ? 0 : state.enemyMitigation.block;
   const blockAbsorbed = Math.min(damage, effectiveBlock);
   const remainingDamage = Math.max(0, damage - blockAbsorbed);
   let nextState = state;
@@ -102,7 +106,11 @@ function resolveDamageAfterMitigation(
   card: BattleCard | undefined,
   finalDamage: number,
 ): { nextState: BattleState; modifiedDamage: number } {
-  const { state: stateAfterBlock, remainingDamage: damageAfterBlock } = applyBlockAbsorption(state, finalDamage);
+  const { state: stateAfterBlock, remainingDamage: damageAfterBlock } = applyBlockAbsorption(
+    state,
+    finalDamage,
+    effect.ignoreBlock === true,
+  );
   const stateWithCritCleared = stateAfterBlock.flags.nextHitCrit
     ? setFlag(stateAfterBlock, "nextHitCrit", false)
     : stateAfterBlock;

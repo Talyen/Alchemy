@@ -5,11 +5,15 @@ export type EnemyAbilityDamageEffect = Pick<
   Extract<BattleCardEffect, { kind: "damage" }>,
   | "kind"
   | "damageType"
+  | "damageTypePool"
   | "amount"
   | "lifesteal"
   | "doubleIfEnemyBleeding"
+  | "equalToBlock"
+  | "equalToBlockPercent"
   | "equalToForge"
   | "ignoreArmor"
+  | "ignoreBlock"
   | "blockCost"
   | "blockDamageBonus"
   | "damageTypeIfTargetHasBlock"
@@ -41,11 +45,15 @@ function supportsEnemyEffect(effect: BattleCardEffect): effect is EnemyAbilityEf
       return hasOnlyFields(effect, [
         "kind",
         "damageType",
+        "damageTypePool",
         "amount",
         "lifesteal",
         "doubleIfEnemyBleeding",
+        "equalToBlock",
+        "equalToBlockPercent",
         "equalToForge",
         "ignoreArmor",
+        "ignoreBlock",
         "blockCost",
         "blockDamageBonus",
         "damageTypeIfTargetHasBlock",
@@ -60,7 +68,7 @@ function supportsEnemyEffect(effect: BattleCardEffect): effect is EnemyAbilityEf
     case "heal":
       return hasOnlyFields(effect, ["kind", "amount"]);
     case "remove-enemy-armor":
-      return hasOnlyFields(effect, ["kind", "amount", "removeAll"]);
+      return hasOnlyFields(effect, ["kind", "amount", "removeAll", "halve"]);
     case "multiply-enemy-status":
       return effect.status === "freeze" && hasOnlyFields(effect, ["kind", "status", "factor"]);
     case "chance":

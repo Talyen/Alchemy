@@ -1,7 +1,14 @@
 import { conditionalDamageDescription } from "@/lib/game-data";
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
+import { capitalizeWord } from "@/lib/utils";
 import type { ContentValidationIssue } from "../types";
-import { flattenEffects, parseLeadingNumber, pushMissingEffect, pushValueMismatch } from "./helpers";
+import {
+  effectParityDescriptionLines,
+  flattenEffects,
+  parseLeadingNumber,
+  pushMissingEffect,
+  pushValueMismatch,
+} from "./helpers";
 import {
   isCompanionActionLine,
   isDieRollLine,
@@ -83,12 +90,21 @@ function checkDealLine(
 ): boolean {
   const shape = parseDealLineShape(line);
   if (!shape) return false;
-  const describedAmount = parseLeadingNumber(line, "Deal ");
+  const describedAmount = line.startsWith("Deal and Receive ")
+    ? parseLeadingNumber(line, "Deal and Receive ")
+    : parseLeadingNumber(line, "Deal ");
   const nonStandard = isNonStandardDealLine(line);
   const hitCount = shape.twice || shape.delayedSecondAmount !== null || shape.sharedDelayed ? 2 : 1;
   for (let hit = 0; hit < hitCount; hit += 1) {
     const effect = nextDamage();
     if (effect && conditionalDamageDescription(effect)) {
+      if (
+        effect.kind === "damage" &&
+        effect.damageTypeIfTargetFrozen === effect.damageType &&
+        line === `Deal ${effect.amount} ${capitalizeWord(effect.damageType)} damage`
+      ) {
+        continue;
+      }
       if (line !== conditionalDamageDescription(effect)) pushValueMismatch(issues, cardId, line, effect.amount);
       continue;
     }
@@ -117,7 +133,13 @@ function checkGoldLine(
   // Intentionally narrower than the shared isGoldLine count predicate (which
   // matches looser phrasing): only Gain/Steal-prefixed lines consume the
   // gain-gold cursor here.
-  const prefix = line.startsWith("Gain ") ? "Gain " : line.startsWith("Steal ") ? "Steal " : null;
+  const prefix = line.startsWith("Gain ")
+    ? "Gain "
+    : line.startsWith("Steal ")
+      ? "Steal "
+      : line.startsWith("Steals ")
+        ? "Steals "
+        : null;
   if (!prefix || !line.includes(" Gold")) return false;
   return checkSimpleValueLine(line, prefix, nextGold, issues, cardId);
 }
@@ -181,6 +203,10 @@ function checkRemoveHarmfulLine(
     if (!effect.removeAll) pushMissingEffect(issues, cardId, line);
     return true;
   }
+  if (line === "Cleanse a harmful status effect") {
+    if (effect.amount !== 1) pushValueMismatch(issues, cardId, line, effect.amount ?? 0);
+    return true;
+  }
   // A full cleanse carries no amount — a numeric line against it falls through
   // to the mismatch below (parsed vs 0), mirroring remove-enemy-armor.
   if (parseLeadingNumber(line, prefix) !== effect.amount) pushValueMismatch(issues, cardId, line, effect.amount ?? 0);
@@ -205,7 +231,8 @@ function checkSimpleCursor(
 
 export function validateCardNumericParity(card: BattleCard): ContentValidationIssue[] {
   const issues: ContentValidationIssue[] = [];
-  const { effects, descriptionLines } = card;
+  const { effects } = card;
+  const descriptionLines = effectParityDescriptionLines(card);
 
   // Single flatten shared by all per-kind cursors below.
   const flat = flattenEffects(effects);
@@ -252,6 +279,11 @@ export function validateCardNumericParity(card: BattleCard): ContentValidationIs
     if (line === "Remove all enemy Armor") {
       const effect = nextRemoveArmor();
       if (!effect?.removeAll) pushMissingEffect(issues, card.id, line);
+      continue;
+    }
+    if (line === "Halve enemy Armor") {
+      const effect = nextRemoveArmor();
+      if (!effect?.halve) pushMissingEffect(issues, card.id, line);
       continue;
     }
     if (line.startsWith("Deals ")) continue;

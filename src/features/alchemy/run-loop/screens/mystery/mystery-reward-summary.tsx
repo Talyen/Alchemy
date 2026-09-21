@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { getCardKeywords, type BattleCard, type TalentXP, type TrinketEntry } from "@/lib/game-data";
+import { type BattleCard, type TalentXP, type TrinketEntry } from "@/lib/game-data";
 import { type MaterialId } from "@/lib/homestead/types";
 import { cn } from "@/lib/utils";
 
@@ -9,7 +9,7 @@ import {
   bodyTextClass,
   cardInteractiveGlowClass,
   controlLabelClass,
-  getInspectionKeywordShineColors,
+  getCardInspectionShineColors,
   viewCardWidthClass,
 } from "@/features/alchemy/shared/config";
 import type { MysteryChoice, MysteryEffect } from "@/lib/mystery";
@@ -53,7 +53,7 @@ function MysteryCardRewardItem({ card }: { card: BattleCard }) {
         ariaLabel={getCardDisplayTitle(card)}
         shimmerActive={shimmerActive}
         shimmerToken={shimmerToken}
-        shineColor={getInspectionKeywordShineColors(getCardKeywords(card))}
+        shineColor={getCardInspectionShineColors(card)}
         className={cn(viewCardWidthClass, cardInteractiveGlowClass)}
       />
       <p className={controlLabelClass}>

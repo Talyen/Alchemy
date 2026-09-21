@@ -1,17 +1,11 @@
-import type { BattleCardEffect } from "@/lib/game-data";
-import { isRecursiveBattleCardEffectKind } from "@/lib/game-data";
+import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
+import { effectChildren, isRecursiveBattleCardEffectKind } from "@/lib/game-data";
 import type { ContentValidationIssue } from "../types";
 
 function flattenInternal(effects: BattleCardEffect[], unwrapRepeatOverTurns: boolean): BattleCardEffect[] {
   return effects.flatMap((effect) => {
-    if (effect.kind === "chance") {
-      return [
-        ...flattenInternal(effect.successEffects, unwrapRepeatOverTurns),
-        ...flattenInternal(effect.failureEffects, unwrapRepeatOverTurns),
-      ];
-    }
-    if (unwrapRepeatOverTurns && effect.kind === "repeat-over-turns") {
-      return flattenInternal(effect.effects, unwrapRepeatOverTurns);
+    if (effect.kind === "chance" || (unwrapRepeatOverTurns && effect.kind === "repeat-over-turns")) {
+      return flattenInternal(effectChildren(effect), unwrapRepeatOverTurns);
     }
     return [effect];
   });
@@ -66,6 +60,12 @@ export function hasNonStandardDamageEffects(effects: BattleCardEffect[]): boolea
 
 export function countLinesStartingWith(lines: string[], prefix: string): number {
   return lines.filter((line) => line.startsWith(prefix)).length;
+}
+
+export function effectParityDescriptionLines(card: BattleCard): string[] {
+  return card.effects.length > 0 && card.effects.every((effect) => effect.kind === "summon-companion")
+    ? card.descriptionLines.slice(1)
+    : card.descriptionLines;
 }
 
 export function parseLeadingNumber(line: string, prefix: string): number | null {

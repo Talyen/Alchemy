@@ -2,8 +2,19 @@ import { describe, expect, it, vi } from "vitest";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { getBattleCompanionDamageModifiers } from "@/lib/battle/companion-scaling";
 import { defaultGearEffects } from "@/lib/gear/gear-effect-manifest";
-import { companionLibrary, type CompanionId } from "@/lib/game-data";
+import { companionLibrary, getCompanionDescriptionLines, type CompanionId } from "@/lib/game-data";
 import { makeCombatTexts as makeTexts, makeTestCard, patchBattleState } from "../../fixtures/battle";
+
+function wolfBleedRng() {
+  let first = true;
+  return () => {
+    if (first) {
+      first = false;
+      return 0;
+    }
+    return 0.99;
+  };
+}
 
 describe("processCompanionTurnStart", () => {
   it("returns state unchanged when no active companion", () => {
@@ -24,15 +35,30 @@ describe("processCompanionTurnStart", () => {
     expect(result).toBe(state);
   });
 
-  it("Wolf companion deals bleed damage and applies bleed status", () => {
+  it("Wolf companion deals Bleed damage and does not grant Block", () => {
     const state = patchBattleState({
       activeCompanion: companionLibrary.wolf,
+      rng: wolfBleedRng(),
     });
     const texts = makeTexts();
     const result = processCompanionTurnStart(state, texts);
 
     expect(result.enemyHealth).toBe(29);
     expect(result.enemyStatuses.bleed).toBe(1);
+    expect(result.playerStatuses.block).toBe(0);
+  });
+
+  it("Wolf companion can deal Physical damage", () => {
+    const state = patchBattleState({
+      activeCompanion: companionLibrary.wolf,
+      rng: () => 0.99,
+    });
+    const texts = makeTexts();
+    const result = processCompanionTurnStart(state, texts);
+
+    expect(result.enemyHealth).toBe(29);
+    expect(result.enemyStatuses.bleed).toBe(0);
+    expect(result.playerStatuses.block).toBe(0);
   });
 
   it("Lizard Scout companion deals poison damage", () => {
@@ -65,15 +91,15 @@ describe("processCompanionTurnStart", () => {
     expect(result.enemyStatuses.stun).toBe(1);
   });
 
-  it("Panther companion deals stronger Bleed than Wolf", () => {
+  it("Panther companion deals one Bleed damage", () => {
     const state = patchBattleState({
       activeCompanion: companionLibrary.panther,
     });
     const texts = makeTexts();
     const result = processCompanionTurnStart(state, texts);
 
-    expect(result.enemyHealth).toBe(28);
-    expect(result.enemyStatuses.bleed).toBe(2);
+    expect(result.enemyHealth).toBe(29);
+    expect(result.enemyStatuses.bleed).toBe(1);
   });
 
   it("Phoenix companion deals burn damage", () => {
@@ -90,6 +116,7 @@ describe("processCompanionTurnStart", () => {
     const state = patchBattleState({
       activeCompanion: companionLibrary.wolf,
       companionDamageBuff: 2,
+      rng: wolfBleedRng(),
     });
     const texts = makeTexts();
     const result = processCompanionTurnStart(state, texts);
@@ -131,6 +158,7 @@ describe("processCompanionTurnStart", () => {
     const state = patchBattleState({
       activeCompanion: companionLibrary.wolf,
       companionDamageBuff: 1,
+      rng: wolfBleedRng(),
       talentEffects: {
         companionDamage: 2,
         companionBondLevels: {
@@ -201,7 +229,31 @@ describe("processCompanionTurnStart", () => {
     });
     const result = processCompanionTurnStart(state, makeTexts());
 
-    expect(result.enemyStatuses.bleed).toBe(5);
+    expect(result.enemyStatuses.bleed).toBe(4);
+  });
+
+  it.each([
+    ["wolf", 0, 4],
+    ["wolf", 0.99, 1],
+    ["fox", 0, 1],
+    ["fox", 0.99, 4],
+  ] as const)("applies the Bleed bonus only to the selected %s damage type at roll %s", (id, roll, damage) => {
+    let first = true;
+    const state = patchBattleState({
+      activeCompanion: companionLibrary[id],
+      talentEffects: { companionBleedDamageBonus: 3 },
+      rng: () => {
+        if (!first) return 0.99;
+        first = false;
+        return roll;
+      },
+    });
+    expect(processCompanionTurnStart(state, []).enemyHealth).toBe(state.enemyHealth - damage);
+    expect(getCompanionDescriptionLines(companionLibrary[id], 0, getBattleCompanionDamageModifiers(state))).toEqual([
+      id === "wolf"
+        ? "Deals 4 Bleed damage or Deals 1 Physical damage each turn"
+        : "Deals 1 Stun damage or Deals 4 Bleed damage each turn",
+    ]);
   });
 
   it("companionVsFrozenBonus adds when enemy has freeze skip turns", () => {
@@ -387,7 +439,7 @@ describe("processCompanionTurnStart", () => {
     expect(result.flags.nextHitPhysicalBonus).toBe(4);
   });
 
-  it("healOnCompanionAttack heals Fox when the damage branch resolves", () => {
+  it("healOnCompanionAttack heals Fox while Fox deals Stun", () => {
     const state = patchBattleState({
       activeCompanion: companionLibrary.fox,
       playerHealth: 10,
@@ -399,10 +451,12 @@ describe("processCompanionTurnStart", () => {
     });
     const result = processCompanionTurnStart(state, makeTexts());
     expect(result.enemyHealth).toBe(29);
+    expect(result.enemyStatuses.stun).toBe(1);
+    expect(result.gold).toBe(0);
     expect(result.playerHealth).toBe(14);
   });
 
-  it("healOnCompanionAttack no-ops when Fox takes the gold branch", () => {
+  it("Fox can deal Bleed without granting Gold", () => {
     const state = patchBattleState({
       activeCompanion: companionLibrary.fox,
       playerHealth: 10,
@@ -414,9 +468,10 @@ describe("processCompanionTurnStart", () => {
       },
     });
     const result = processCompanionTurnStart(state, makeTexts());
-    expect(result.enemyHealth).toBe(30);
-    expect(result.gold).toBe(1);
-    expect(result.playerHealth).toBe(10);
+    expect(result.enemyHealth).toBe(29);
+    expect(result.enemyStatuses.bleed).toBe(1);
+    expect(result.gold).toBe(0);
+    expect(result.playerHealth).toBe(14);
   });
 
   it("Watchdog grants Block when the companion deals damage", () => {
@@ -427,7 +482,7 @@ describe("processCompanionTurnStart", () => {
       },
     });
     const result = processCompanionTurnStart(state, makeTexts());
-    expect(result.playerStatuses.block).toBe(3);
+    expect(result.playerStatuses.block).toBe(2);
   });
 
   it("Watchdog no-ops when the companion deals no damage", () => {
@@ -504,23 +559,23 @@ describe("Companion Bond progression", () => {
   it.each([0, 1, 2, 3])("applies all guaranteed effects at Bond %i", (level) => {
     for (const [id, baseline, status] of [
       ["wolf", 1, "bleed"],
-      ["panther", 2, "bleed"],
+      ["panther", 1, "bleed"],
       ["lizard-scout", 1, "poison"],
       ["frost-whelp", 1, "freeze"],
       ["bear", 1, "stun"],
       ["phoenix", 1, "burn"],
     ] as const) {
-      const state = bondedState(id, level);
+      const state = { ...bondedState(id, level), ...(id === "wolf" ? { rng: wolfBleedRng() } : {}) };
       const result = processCompanionTurnStart(state, []);
       expect(result.enemyHealth).toBe(state.enemyHealth - baseline - level);
       expect(result.enemyStatuses[status]).toBe(baseline + level);
-      expect(result.playerStatuses.block).toBe(id === "wolf" ? 1 : 0);
+      expect(result.playerStatuses.block).toBe(0);
       expect(state.enemyStatuses[status]).toBe(0);
     }
     const skeleton = bondedState("skeleton", level);
     expect(processCompanionTurnStart(skeleton, []).enemyHealth).toBe(skeleton.enemyHealth - 1 - level);
     expect(processCompanionTurnStart(bondedState("shield-scarab", level), []).playerStatuses.block).toBe(2 + level);
-    expect(processCompanionTurnStart(bondedState("golden-retriever", level), []).gold).toBe(1 + level);
+    expect(processCompanionTurnStart(bondedState("golden-retriever", level), []).gold).toBe(2 + level);
     const pixie = { ...bondedState("pixie", level), playerHealth: 10 };
     expect(processCompanionTurnStart(pixie, []).playerHealth).toBe(11 + level);
     const wisp = { ...bondedState("will-o-wisp", level), playerHealth: 10 };
@@ -529,8 +584,11 @@ describe("Companion Bond progression", () => {
     expect(healed.playerStatuses.poison).toBe(0);
     expect(healed.playerHealth).toBe(10 + level);
     const fox = bondedState("fox", level);
-    expect(processCompanionTurnStart({ ...fox, rng: () => 0.25 }, []).enemyStatuses.bleed).toBe(1 + level);
-    expect(processCompanionTurnStart({ ...fox, rng: () => 0.99 }, []).gold).toBe(1 + level);
+    const foxResult = processCompanionTurnStart({ ...fox, rng: () => 0.25 }, []);
+    expect(foxResult.enemyHealth).toBe(fox.enemyHealth - 1 - level);
+    expect(foxResult.gold).toBe(0);
+    expect(foxResult.enemyStatuses.stun).toBe(1 + level);
+    expect(foxResult.enemyStatuses.bleed).toBe(0);
   });
 
   it.each([0, 1, 2, 3])("keeps utility baselines and rolls the correct bonus at Bond %i", (level) => {

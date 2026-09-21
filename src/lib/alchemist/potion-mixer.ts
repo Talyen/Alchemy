@@ -1,12 +1,18 @@
-import type { BattleCard, BattleCardEffect } from "../game-data";
-import { isMixedPotionCard, mixedPotion } from "../game-data";
+import { isValidDeckIndex } from "@/lib/utils";
 import {
   CONSUME_DESCRIPTION_LINE,
   MIXED_POTION_CARD_ID,
   MIXED_POTION_COST,
   MIXED_POTION_TITLE,
 } from "../game-constants";
-import { isValidDeckIndex } from "@/lib/utils";
+import type { BattleCard, BattleCardEffect } from "../game-data";
+import {
+  effectChildren,
+  isMixedPotionCard,
+  isRecursiveBattleCardEffectKind,
+  mapEffectChildren,
+  mixedPotion,
+} from "../game-data";
 
 const MIXED_POTION_ERROR = "Cannot mix with an existing Mixed Potion";
 
@@ -46,8 +52,7 @@ function scaledAmount(amount: number, multiplier: number, potencyBonus: number):
 }
 
 function nestedPotionChildren(effect: BattleCardEffect): BattleCardEffect[] {
-  if (effect.kind === "chance") return [...effect.successEffects, ...effect.failureEffects];
-  if (effect.kind === "repeat-over-turns") return [...effect.effects];
+  if (isRecursiveBattleCardEffectKind(effect.kind)) return effectChildren(effect);
   // Generic fallback so future nesting kinds do not silently skip scaling/collection.
   const nested = effect as Partial<{
     successEffects: BattleCardEffect[];
@@ -79,20 +84,8 @@ function scaleNestedArrays(
 }
 
 function scalePotionEffect(effect: BattleCardEffect, multiplier: number, potencyBonus: number): BattleCardEffect {
-  // Branch shapes stay in sync with nestedPotionChildren above; scale
-  // reconstructs success/failure groupings while the collector flattens them.
-  if (effect.kind === "chance") {
-    return {
-      ...effect,
-      successEffects: effect.successEffects.map((child) => scalePotionEffect(child, multiplier, potencyBonus)),
-      failureEffects: effect.failureEffects.map((child) => scalePotionEffect(child, multiplier, potencyBonus)),
-    };
-  }
-  if (effect.kind === "repeat-over-turns") {
-    return {
-      ...effect,
-      effects: effect.effects.map((child) => scalePotionEffect(child, multiplier, potencyBonus)),
-    };
+  if (isRecursiveBattleCardEffectKind(effect.kind)) {
+    return mapEffectChildren(effect, (child) => scalePotionEffect(child, multiplier, potencyBonus));
   }
   const generic = scaleNestedArrays(effect, multiplier, potencyBonus);
   if (generic) return generic;

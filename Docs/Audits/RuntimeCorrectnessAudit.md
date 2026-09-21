@@ -21,7 +21,7 @@ Sibling routing: audio playback handling â†’ SideEffectSurface; typing escapes â
 - Do not relocate battle simulation into Workers unless architecture already requires it.
 - Do not run unrelated full-repo sweeps; do not rename/restyle or refactor unrelated code while hunting.
 - Do not expand into speculative backlog or touch manifests/assets/audio unless they directly cause the confirmed defect.
-- Use the current command, write, and lifecycle owners in [ARCHITECTURE.md](../ARCHITECTURE.md#run-state); do not bypass them with ad-hoc storage or state writes.
+- Use the current command, write, and lifecycle owners in [ARCHITECTURE.md](../RUN_STATE.md#run-state); do not bypass them with ad-hoc storage or state writes.
 
 ## Investigation and evidence
 

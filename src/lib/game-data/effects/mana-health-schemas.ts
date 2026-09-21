@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { EffectKindDefinition } from "./registry";
+import type { EffectKindDefinition } from "./shared-schemas";
 import { PositiveAmountSchema, defineAmountEffect } from "./shared-schemas";
 
 const restoreManaEffectDefinition = {

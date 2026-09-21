@@ -33,14 +33,14 @@ export function isRestoreManaLine(line: string): boolean {
   );
 }
 
-const GOLD_LINE_PATTERN = /\b(?:gain|steal) \d+ Gold\b/i;
+const GOLD_LINE_PATTERN = /\b(?:gain|steal)s? \d+(?:\s+[^,]+,)?\s+Gold\b/i;
 
 export function isGoldLine(line: string): boolean {
-  return GOLD_LINE_PATTERN.test(line);
+  return !line.startsWith("Deals ") && GOLD_LINE_PATTERN.test(line);
 }
 
 export function isWishLine(line: string): boolean {
-  return line.startsWith("Wish ");
+  return line.startsWith("Wish ") || line.endsWith(" or Wish");
 }
 
 export function isRemoveHarmfulStatusLine(line: string): boolean {
@@ -78,7 +78,11 @@ export function isCompanionActionLine(line: string): boolean {
 }
 
 export function isRemoveEnemyArmorLine(line: string): boolean {
-  return line.startsWith("Strip ") || (line.startsWith("Remove ") && line.includes("enemy Armor"));
+  return (
+    line.startsWith("Halve enemy Armor") ||
+    line.startsWith("Strip ") ||
+    (line.startsWith("Remove ") && line.includes("enemy Armor"))
+  );
 }
 
 export function isDoubleLine(line: string): boolean {
@@ -87,6 +91,10 @@ export function isDoubleLine(line: string): boolean {
 
 export function isCleanseLine(line: string): boolean {
   return line.startsWith("Cleanse ") && !line.includes("harmful status");
+}
+
+export function cleanseLineEffectCount(line: string): number {
+  return line === "Cleanse Stun and Freeze build-up" ? 2 : isCleanseLine(line) ? 1 : 0;
 }
 
 export function isBlockLine(line: string): boolean {

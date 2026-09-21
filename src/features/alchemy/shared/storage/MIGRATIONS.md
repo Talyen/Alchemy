@@ -156,3 +156,7 @@ finite strengths clamp to 0–100. The master and every effect default off.
 
 The experimental preset model was removed before any saves required compatibility;
 there is deliberately no conversion or legacy preset data in the saved settings.
+
+## Shared run-progress shape
+
+`lib/validation/save-schemas/run-progress.ts` owns progression schema fields and legacy recovery defaults. `PersistedRunProgress` and `ACTIVE_RUN_PROGRESS_KEYS` derive from it; `ActiveRunData` extends the shared wire fields and `ActiveRunProgressFields` narrows destination names for live state. Saved callers remain permissive about historical destination names until normalization. Fresh-run constructors still own starting decks, seeded RNG, fresh collection instances and zero earned totals. Legacy missing `runHistoryPartial`/`runGoldEarned` still recover as `true`/`null`; never replace those with fresh-run defaults. New progress fields require their schema and meaningful fresh/resume initialization, without a duplicate wire/live declaration or key-list edit.

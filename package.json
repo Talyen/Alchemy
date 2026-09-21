@@ -45,6 +45,7 @@
     "compact": "node scripts/run-compact.mjs",
     "context": "node scripts/agent-context.mjs",
     "search": "node scripts/agent-search.mjs",
+    "review:diff": "node scripts/agent-diff.mjs",
     "eval:agent": "node scripts/agent-eval.mjs",
     "measure:agent-context": "node scripts/measure-agent-context.mjs",
     "context:hotspots": "node scripts/context-hotspots.mjs",

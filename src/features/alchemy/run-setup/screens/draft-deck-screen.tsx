@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import {
   bodyTextClass,
   collectionTileWidthClass,
-  getInspectionKeywordShineColors,
+  getCardInspectionShineColors,
   getPlasmaColorPair,
 } from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
@@ -48,7 +48,7 @@ function DraftedCardItem({
       shimmerActive={shimmerActive}
       shimmerToken={shimmerToken}
       scaleOnHover={false}
-      shineColor={getInspectionKeywordShineColors(getCardKeywords(card))}
+      shineColor={getCardInspectionShineColors(card)}
       className={collectionTileWidthClass}
       wrapperClassName="relative flex justify-center"
     />
@@ -104,7 +104,7 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
                   key={`draft-choice-${card.id}-${String(card.uid ?? index)}`}
                   card={card}
                   isSelected={false}
-                  shineColor={getInspectionKeywordShineColors(getCardKeywords(card))}
+                  shineColor={getCardInspectionShineColors(card)}
                   onSelect={() => onPick(card.id)}
                   interactionKey={`draft-choice-${String(index)}`}
                   onHoverChange={(hovered) => setHoveredCard(hovered ? card : null)}

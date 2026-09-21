@@ -240,7 +240,7 @@ describe("Labyrinth player benefits", () => {
         playerHealth: 10,
       }),
     ).state;
-    expect(next.playerHealth).toBe(6);
+    expect(next.playerHealth).toBe(8);
     const dead = endPlayerTurn(
       state({ encounterBenefits: ["restorative"], playerHealth: 0, deathsDoorUsed: true }),
     ).state;

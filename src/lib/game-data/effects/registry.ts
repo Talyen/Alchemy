@@ -1,14 +1,9 @@
 import { z } from "zod";
 import type { BattleCardEffect } from "../types";
 import { DAMAGE_EFFECT_DEFINITIONS } from "./damage-schemas";
-import { STATUS_EFFECT_DEFINITIONS } from "./status-schemas";
 import { MANA_HEALTH_EFFECT_DEFINITIONS } from "./mana-health-schemas";
 import { SIMPLE_EFFECT_DEFINITIONS } from "./simple-schemas";
-
-export interface EffectKindDefinition<K extends BattleCardEffect["kind"] = BattleCardEffect["kind"]> {
-  kind: K;
-  schema: z.ZodType;
-}
+import { STATUS_EFFECT_DEFINITIONS } from "./status-schemas";
 
 export const TEMPLATE_EFFECT_DEFINITIONS = [
   ...DAMAGE_EFFECT_DEFINITIONS,
@@ -28,15 +23,6 @@ export const RECURSIVE_BATTLE_CARD_EFFECT_KINDS = ["chance", "repeat-over-turns"
 type TemplateKind = (typeof TEMPLATE_EFFECT_DEFINITIONS)[number]["kind"];
 type RecursiveKind = (typeof RECURSIVE_BATTLE_CARD_EFFECT_KINDS)[number];
 export type BattleCardEffectKind = TemplateKind | RecursiveKind;
-
-type _KindsMatchUnion =
-  Exclude<BattleCardEffect["kind"], BattleCardEffectKind> extends never
-    ? Exclude<BattleCardEffectKind, BattleCardEffect["kind"]> extends never
-      ? true
-      : never
-    : never;
-const _assertKindsMatchUnion: _KindsMatchUnion = true;
-void _assertKindsMatchUnion;
 
 const RECURSIVE_KIND_SET: ReadonlySet<string> = new Set(RECURSIVE_BATTLE_CARD_EFFECT_KINDS);
 

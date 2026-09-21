@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { collectKeywordsFromBattleEffect } from "@/lib/game-data/effect-metadata";
+import { collectKeywordsFromBattleEffect, effectDescriptionLine } from "@/lib/game-data/effect-metadata";
 import type { BattleCardEffect } from "@/lib/game-data";
 
 describe("collectKeywordsFromBattleEffect", () => {
@@ -26,6 +26,17 @@ describe("collectKeywordsFromBattleEffect", () => {
   it("returns thorns for player-status thorns", () => {
     const effect: BattleCardEffect = { kind: "player-status", status: "thorns", amount: 2 };
     expect(collectKeywordsFromBattleEffect(effect)).toEqual(["thorns"]);
+  });
+
+  it("includes every outcome keyword for a pooled player status", () => {
+    const effect: BattleCardEffect = {
+      kind: "player-status",
+      status: "block",
+      statusPool: ["block", "forge", "armor"],
+      amount: 5,
+    };
+    expect(collectKeywordsFromBattleEffect(effect)).toEqual(["block", "forge", "armor"]);
+    expect(effectDescriptionLine(effect)).toBe("Gain 5 Block, Forge, or Armor");
   });
 
   it("returns archery for next-archery-free", () => {
@@ -61,6 +72,17 @@ describe("variable damage keywords", () => {
     expect(collectKeywordsFromBattleEffect({ kind: "random-damage", minAmount: 1, maxAmount: 6 })).toEqual([
       "physical",
     ]);
+  });
+
+  it("classifies pooled random damage by every possible type", () => {
+    expect(
+      collectKeywordsFromBattleEffect({
+        kind: "random-damage",
+        minAmount: 1,
+        maxAmount: 4,
+        damageTypePool: ["stun", "physical", "bleed"],
+      }),
+    ).toEqual(["stun", "physical", "bleed"]);
   });
 
   it("groups Exorcism as Burn + Holy, not Health", () => {

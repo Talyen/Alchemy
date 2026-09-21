@@ -98,8 +98,8 @@ describe("selective feedback rewards", () => {
   it("Rotgut and Consuming strengthen existing packets without creating another hit", () => {
     const acid = cardById["acid-potion"]!;
     const result = play(battle({ talentEffects: computeTalentEffects({ consume: ["consume-rotgut"] }) }), acid);
-    expect(result.combatTexts).toEqual([{ target: "enemy", kind: "damage", stat: "poison", amount: 3 }]);
-    expect(result.state.enemyStatuses.poison).toBe(3);
+    expect(result.combatTexts).toEqual([{ target: "enemy", kind: "damage", stat: "poison", amount: 4 }]);
+    expect(result.state.enemyStatuses.poison).toBe(4);
     const burn = makeTestCard({ cost: 0, consume: true, effects: [{ kind: "damage", damageType: "burn", amount: 2 }] });
     const gear = battle({ gearEffects: { burnOnConsume: 3 } });
     expect(play(gear, burn).combatTexts).toEqual([{ target: "enemy", kind: "damage", stat: "burn", amount: 5 }]);

@@ -40,7 +40,7 @@ describe("getEffectiveCardDescriptionLines", () => {
         companionDamageBonus: 1,
         companionDamageBuff: 1,
       }),
-    ).toEqual(["Deals 7 Bleed damage and gains 1 Block each turn", "Companion"]);
+    ).toEqual(["Deals 7 Bleed or Physical damage each turn", "Companion"]);
   });
 
   it("keeps the Companion tag for malformed single-line summon descriptions", () => {

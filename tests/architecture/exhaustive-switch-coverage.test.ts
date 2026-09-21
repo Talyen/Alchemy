@@ -1,9 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { runActivityScreen, transitionRunActivity } from "@/lib/active-run-session";
 import { BATTLE_CARD_EFFECT_KINDS } from "@/lib/game-data/effects/registry";
 import { DAMAGE_TYPES } from "@/lib/game-data/types";
-import { ROUTE_SCREEN_VALUES, isRunResumeScreen } from "@/lib/routing";
-import { runActivityScreen, transitionRunActivity } from "@/lib/active-run-session";
 import { MYSTERY_EFFECT_KINDS } from "@/lib/mystery";
+import { ROUTE_SCREEN_VALUES, isRunResumeScreen } from "@/lib/routing";
+import { describe, expect, it } from "vitest";
 import { readText } from "./helpers";
 
 function assertContainsCases(filePath: string, kinds: readonly string[], options: { allowDefault?: boolean } = {}) {
@@ -18,9 +18,8 @@ function assertContainsCases(filePath: string, kinds: readonly string[], options
 }
 
 describe("exhaustive switch coverage", () => {
-  it("card-builders effectDescriptionLine covers every BattleCardEffect kind", () => {
-    assertContainsCases("src/lib/game-data/cards/card-builders.ts", BATTLE_CARD_EFFECT_KINDS);
-  });
+  // Card presentation is an exhaustive mapped type in effect-metadata.ts;
+  // effect-kind-coverage and card-builders tests exercise its entries and wording.
 
   it("companion-turn-description covers every BattleCardEffect kind", () => {
     assertContainsCases("src/lib/game-data/cards/companion-turn-description.ts", BATTLE_CARD_EFFECT_KINDS);

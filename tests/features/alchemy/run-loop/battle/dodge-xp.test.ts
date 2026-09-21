@@ -31,7 +31,7 @@ describe("Dodge XP commits", () => {
     const state = incomingPhysical({
       rng: () => 0,
       playerDodgeCount: 4,
-      currentEnemy: { abilityIds: ["fangs", "slash", "block"] },
+      currentEnemy: { abilityIds: ["ray-of-frost", "slash", "block"] },
     });
     dispatchRunSessionCommand((draft) => initializeActiveBattle(draft, state));
     const result = endPlayerTurn(state);
@@ -50,7 +50,7 @@ describe("Dodge XP commits", () => {
     expect(readActiveRun().runTalentXP.dodge).toBe(2);
     resumePendingBattleTransition(1, makeBattleTurnSession());
     expect(readBattle().battleState.playerDodgeCount).toBe(6);
-    expect(readBattle().battleState.lastEnemyAbilityId).toBe("fangs");
+    expect(readBattle().battleState.lastEnemyAbilityId).toBe("ray-of-frost");
     expect(readActiveRun().runTalentXP.dodge).toBe(2);
     resumePendingBattleTransition(1, makeBattleTurnSession());
     expect(readActiveRun().runTalentXP.dodge).toBe(2);

@@ -86,7 +86,10 @@ describe("applyCardEffects", () => {
   it("guarantees a crit on cleanse-player-status-to-damage and consumes the flag", () => {
     const card = makeTestCard({
       id: "exorcism",
-      effects: [{ kind: "cleanse-player-status-to-damage", status: "burn", damageType: "holy" }],
+      effects: [
+        { kind: "self-damage", damageType: "burn", amount: 1 },
+        { kind: "cleanse-player-status-to-damage", status: "burn", damageType: "holy" },
+      ],
     });
     const state = makeState({
       enemyHealth: 30,
@@ -95,7 +98,7 @@ describe("applyCardEffects", () => {
       flags: { ...baseFlags, nextHitCrit: true },
     });
     const result = playBattleCardResolved(state, "exorcism", 0);
-    expect(result.state.enemyHealth).toBe(22);
+    expect(result.state.enemyHealth).toBe(20);
     expect(result.state.flags.nextHitCrit).toBe(false);
     expect(result.state.playerStatuses.burn).toBe(0);
   });

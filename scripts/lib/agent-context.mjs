@@ -30,7 +30,7 @@ export const CONTEXT_TASKS = {
   },
   card: {
     matches: /^src\/lib\/game-data\/cards\//u,
-    docs: [workflow("Add a new card")],
+    docs: [owner("Docs/CONTENT_AUTHORING.md", "Add a new card")],
     entrypoints: ["src/lib/game-data/cards/library/cards.ts"],
     fixture: "src/lib/game-data/cards/library/archery.ts",
   },
@@ -42,19 +42,22 @@ export const CONTEXT_TASKS = {
   },
   talent: {
     matches: /^src\/lib\/game-data\/(?:talents(?:\/|\.ts$)|talent-effect-manifest\.ts$)/u,
-    docs: [workflow("Add a new talent")],
+    docs: [owner("Docs/CONTENT_AUTHORING.md", "Add a new talent")],
     entrypoints: ["src/lib/game-data/talents/pools", "src/lib/game-data/talents/manifest-defaults.ts"],
     fixture: "src/lib/game-data/talents/talent-pool-definitions.ts",
   },
   companion: {
     matches: /^src\/lib\/(?:game-data\/companions\.ts|battle\/companion[^/]*\.ts)$/u,
-    docs: [workflow("Add a new companion"), owner("Docs/GAME_RULES.md", "Companion Bond")],
+    docs: [owner("Docs/CONTENT_AUTHORING.md", "Add a new companion"), owner("Docs/GAME_RULES.md", "Companion Bond")],
     entrypoints: ["src/lib/game-data/companions.ts"],
     fixture: "src/lib/game-data/companions.ts",
   },
   enemy: {
     matches: /^src\/lib\/game-data\/compendium\/enemies\.ts$/u,
-    docs: [workflow("Add a new enemy"), owner("Docs/GAME_RULES.md", "Enemy abilities and traits")],
+    docs: [
+      owner("Docs/CONTENT_AUTHORING.md", "Add a new enemy"),
+      owner("Docs/CONTENT_AUTHORING.md", "Enemy repertoire requirements"),
+    ],
     entrypoints: ["src/lib/game-data/compendium/enemies.ts"],
     fixture: "src/lib/game-data/compendium/enemies.ts",
   },
@@ -121,7 +124,7 @@ export const CONTEXT_TASKS = {
   },
   materials: {
     matches: /^src\/lib\/(?:game-constants\/materials-economy|homestead\/material-rewards)\.ts$/u,
-    docs: [owner("Docs/ARMORY.md", "Materials tuning"), workflow("Grant materials during a run")],
+    docs: [owner("Docs/ARMORY.md", "Materials tuning"), owner("Docs/RUN_WORKFLOWS.md", "Grant materials during a run")],
     entrypoints: ["src/lib/homestead/material-rewards.ts"],
   },
   progression: {
@@ -141,7 +144,10 @@ export const CONTEXT_TASKS = {
   },
   rewards: {
     matches: /(?:victory|reward|run-materials)/u,
-    docs: [workflow("Grant materials during a run"), workflow("Add or change post-victory routing (`REWARD_ROUTES`)")],
+    docs: [
+      owner("Docs/RUN_WORKFLOWS.md", "Grant materials during a run"),
+      owner("Docs/RUN_WORKFLOWS.md", "Add or change post-victory routing (`REWARD_ROUTES`)"),
+    ],
     entrypoints: ["src/features/alchemy/run-loop/navigation/victory-flow.ts"],
   },
   shop: {
@@ -152,7 +158,7 @@ export const CONTEXT_TASKS = {
   save: {
     matches: /(?:\/storage\/|\/save-schemas\/|run-resume|^src\/lib\/game-constants\/storage\.ts$)/u,
     docs: [
-      workflow("Change persisted save data"),
+      owner("Docs/RUN_WORKFLOWS.md", "Change persisted save data"),
       owner("src/features/alchemy/shared/storage/MIGRATIONS.md", "Public save contract"),
     ],
     entrypoints: ["src/features/alchemy/shared/storage/io.ts", "src/lib/validation/save-schemas"],
@@ -187,7 +193,7 @@ export const CONTEXT_TASKS = {
   },
   "run-state": {
     matches: /(?:\/stores\/|run-session|run-state)/u,
-    docs: [owner("Docs/ARCHITECTURE.md", "Run state"), workflow("Gameplay command boundary")],
+    docs: [owner("Docs/RUN_STATE.md", "Run state"), owner("Docs/RUN_WORKFLOWS.md", "Gameplay command boundary")],
     entrypoints: [
       "src/features/alchemy/shared/stores/run-session-command.ts",
       "src/features/alchemy/shared/stores/run-session-write-port.ts",
@@ -196,17 +202,17 @@ export const CONTEXT_TASKS = {
   },
   "run-persistence": {
     matches: /(?:\/storage\/|\/save-schemas\/|run-resume|run-session-lifecycle|run-lifecycle)/u,
-    docs: [owner("Docs/ARCHITECTURE.md", "Persistence API")],
+    docs: [owner("Docs/RUN_STATE.md", "Persistence API")],
     entrypoints: ["src/features/alchemy/shared/stores/run-lifecycle.ts"],
   },
   "run-ports": {
     matches: /(?:run-reads|run-session-write-port|route-commands)/u,
-    docs: [owner("Docs/ARCHITECTURE.md", "Session capability ports")],
+    docs: [owner("Docs/RUN_STATE.md", "Session capability ports")],
     entrypoints: ["src/features/alchemy/shared/stores/run-reads.ts"],
   },
   "run-randomness": {
     matches: /(?:run-rng|run-random|draft-world|\/rng(?:\/|\.))/u,
-    docs: [owner("Docs/ARCHITECTURE.md", "Run randomness")],
+    docs: [owner("Docs/RUN_STATE.md", "Run randomness")],
     entrypoints: ["src/lib/rng/index.ts"],
   },
   "run-setup": {
@@ -276,12 +282,15 @@ export const CONTEXT_TASKS = {
   verification: {
     matches:
       /^(?:scripts\/(?:check|verify-changed|lib\/(?:change-routes|changed-paths|run-step|verification-cache|test-commands))\.mjs|tests\/scripts\/(?:check|verify-changed|verification-cache)\.test\.ts)$/u,
-    docs: [
-      owner("scripts/README.md", "Checks / verification (nesting order)"),
-      owner("CONTRIBUTING.md", "What to run when you change…"),
-    ],
+    docs: [owner("CONTRIBUTING.md", "What to run when you change…")],
     entrypoints: ["scripts/check.mjs", "scripts/verify-changed.mjs", "scripts/lib/change-routes.mjs"],
     fixture: "scripts/check.mjs",
+  },
+  "verification-tooling": {
+    matches:
+      /^scripts\/(?:check|verify-changed|lib\/(?:change-routes|changed-paths|run-step|verification-cache|test-commands))\.mjs$/u,
+    docs: [owner("scripts/VERIFICATION.md", "Checks / verification (nesting order)")],
+    entrypoints: ["scripts/check.mjs"],
   },
   discovery: {
     matches:

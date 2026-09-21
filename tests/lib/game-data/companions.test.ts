@@ -88,7 +88,7 @@ describe("companionLibrary data integrity", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("Panther has the highest baseline damage among damage-dealing companions", () => {
+  it("Panther remains tied for the highest baseline damage among damage-dealing companions", () => {
     const phoenix = companionLibrary.panther;
     const damageTotals = Object.values(companionLibrary)
       .filter((c) => c.turnStartEffects[0]?.kind === "damage")
@@ -98,10 +98,12 @@ describe("companionLibrary data integrity", () => {
   });
 
   describe("companion keywords and shine colors", () => {
-    it("derives bleed keyword for wolf and panther", () => {
-      expect(getCompanionKeywords(companionLibrary.wolf)).toEqual(["bleed", "block"]);
+    it("derives Bleed and Physical keywords for Wolf and Bleed for Panther", () => {
+      expect(getCompanionKeywords(companionLibrary.wolf)).toEqual(["bleed", "physical"]);
       expect(getCompanionKeywords(companionLibrary.panther)).toEqual(["bleed"]);
-      expect(getCompanionShineColors(companionLibrary.wolf)).toEqual(getKeywordBorderShineColors(["bleed", "block"]));
+      expect(getCompanionShineColors(companionLibrary.wolf)).toEqual(
+        getKeywordBorderShineColors(["bleed", "physical"]),
+      );
     });
 
     it("derives poison keyword for lizard-scout", () => {
@@ -155,9 +157,9 @@ describe("companionLibrary data integrity", () => {
       );
     });
 
-    it("derives bleed and gold keywords for fox", () => {
-      expect(getCompanionKeywords(companionLibrary.fox)).toEqual(["bleed", "gold"]);
-      expect(getCompanionShineColors(companionLibrary.fox)).toEqual(getKeywordBorderShineColors(["bleed", "gold"]));
+    it("derives stun and bleed keywords for fox", () => {
+      expect(getCompanionKeywords(companionLibrary.fox)).toEqual(["stun", "bleed"]);
+      expect(getCompanionShineColors(companionLibrary.fox)).toEqual(getKeywordBorderShineColors(["stun", "bleed"]));
     });
 
     it("falls back to companion keyword palette for non-keyword utility companions", () => {

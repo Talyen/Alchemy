@@ -17,7 +17,7 @@ Fix confirmed ownership or quality defects across the complete rule → controll
 
 Trace who creates an effect, owns its state and lifetime, handles failure, and can repeat or cancel it. This audit owns misplaced or hidden effects and inconsistent orchestration; RuntimeCorrectness owns the resulting behavioral failures. Keep a connected repair together under one primary finding.
 
-Use [ARCHITECTURE.md](../ARCHITECTURE.md#run-state), [GAME_RULES.md](../GAME_RULES.md), [AUDIO.md](../AUDIO.md), and the relevant storage/desktop owners to establish permitted seams. A folder name is neither proof of safety nor permission to perform every effect. Existing lint rules identify mechanical boundary violations; investigate the semantic assumptions they cannot enforce.
+Use [ARCHITECTURE.md](../RUN_STATE.md#run-state), [GAME_RULES.md](../GAME_RULES.md), [AUDIO.md](../AUDIO.md), and the relevant storage/desktop owners to establish permitted seams. A folder name is neither proof of safety nor permission to perform every effect. Existing lint rules identify mechanical boundary violations; investigate the semantic assumptions they cannot enforce.
 
 Confirm hidden dependencies, conflicting owners, an uncontrolled effect that prevents meaningful testing, or a violated lifetime/failure contract before proposing an adapter. Injection is useful when it gives a concrete consumer control; do not create a universal effect framework.
 

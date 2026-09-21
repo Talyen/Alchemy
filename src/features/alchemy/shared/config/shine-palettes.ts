@@ -12,6 +12,7 @@ import {
 } from "@/features/alchemy/shared/config/game-data-catalog";
 import { getKeywordBorderShineColors } from "@/lib/keyword-border-shine";
 import { getKeywordTextShineColors } from "@/lib/keyword-text-shine";
+import { extractKeywordIds } from "@/lib/keyword-text";
 import { NEUTRAL_SHINE_FALLBACK } from "@/lib/animation/shine-gradient";
 
 // NOTE: gradient builders and keyword-shine helpers live in @/lib (single
@@ -56,8 +57,22 @@ export function getInspectionKeywordShineColors(keywordIds: readonly KeywordId[]
   return colors.length > 0 ? colors : SHINE_PALETTES.bossVictoryFallback;
 }
 
+/**
+ * Presentation keywords keep mechanical-only card metadata out of artwork
+ * shine. A card can be Consume mechanically without displaying the Consume
+ * keyword, as companion summon cards currently do.
+ */
+export function getCardDisplayKeywords(card: BattleCard): KeywordId[] {
+  const describedKeywords = new Set(extractKeywordIds(card.descriptionLines.join(" ")));
+  return getCardKeywords(card).filter((keywordId) => describedKeywords.has(keywordId));
+}
+
 export function getCardKeywordShineColors(card: BattleCard): readonly string[] {
-  return getKeywordBorderShineColors(getCardKeywords(card));
+  return getKeywordBorderShineColors(getCardDisplayKeywords(card));
+}
+
+export function getCardInspectionShineColors(card: BattleCard): readonly string[] {
+  return getInspectionKeywordShineColors(getCardDisplayKeywords(card));
 }
 
 export function getCompanionShineColors(companion: CompanionDefinition): readonly string[] {

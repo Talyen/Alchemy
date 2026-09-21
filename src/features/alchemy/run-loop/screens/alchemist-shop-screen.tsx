@@ -2,9 +2,9 @@ import { useMemo, useState } from "react";
 import { FlaskConical } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { isStandardPotionCard, getCardKeywords, type BattleCard } from "@/lib/game-data";
+import { isStandardPotionCard, type BattleCard } from "@/lib/game-data";
 import { MIXED_POTION_TITLE } from "@/lib/game-constants";
-import { collectionTileWidthClass, getInspectionKeywordShineColors } from "@/features/alchemy/shared/config";
+import { collectionTileWidthClass, getCardInspectionShineColors } from "@/features/alchemy/shared/config";
 
 import { BattleCardButton } from "../../shared/ui/card-button";
 import { PurchasableCardItem } from "../shop/ui/purchasable-shop-item";
@@ -108,7 +108,7 @@ export function AlchemistShopScreen({
                 ariaLabel={MIXED_POTION_TITLE}
                 shimmerActive={false}
                 shimmerToken={undefined}
-                shineColor={getInspectionKeywordShineColors(getCardKeywords(mixedCard))}
+                shineColor={getCardInspectionShineColors(mixedCard)}
                 className={collectionTileWidthClass}
               />
             </div>
@@ -142,7 +142,7 @@ export function AlchemistShopScreen({
                   card={card}
                   chrome="shop"
                   isSelected={mix.a === index || mix.b === index}
-                  shineColor={getInspectionKeywordShineColors(getCardKeywords(card))}
+                  shineColor={getCardInspectionShineColors(card)}
                   onSelect={() => selectMixCard(index)}
                 />
               )}

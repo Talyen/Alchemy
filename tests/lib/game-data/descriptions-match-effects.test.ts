@@ -11,7 +11,7 @@ describe("card descriptions vs effects", () => {
   });
   it("keeps Gambler's Shot range punctuation readable", () => {
     const card = cardLibrary.find((candidate) => candidate.id === "gamblers-shot");
-    expect(card?.descriptionLines).toContain("Deal 1–6 Random damage");
+    expect(card?.descriptionLines).toContain("Deal 1–4 Stun, Physical, or Bleed damage");
   });
 
   it("summon cards advertise companion turn damage from companionLibrary", () => {
@@ -33,7 +33,8 @@ describe("card descriptions vs effects", () => {
           /^Cleanses \d+/.test(l) ||
           /^Steals \d+/.test(l) ||
           /^Gains? \d+ Block/.test(l) ||
-          /^Draws (?:\d+|a) /.test(l) ||
+          /^Gain \d+ Mana/.test(l) ||
+          /^Draw (?:\d+|a) /.test(l) ||
           / or /.test(l),
       );
       expect(companionLine, `${card.id} missing companion turn line`).toBeDefined();

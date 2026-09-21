@@ -1,6 +1,6 @@
 # Knowledge index
 
-Read on demand when a failure, surprising behavior, or proposed approach needs historical context. Implementation instructions belong in the canonical owners linked from [AGENTS.md](../../AGENTS.md#documentation-owners); these notes explain why those instructions exist.
+Read on demand when a failure, surprising behavior, or proposed approach needs historical context. Implementation instructions belong in the canonical owners linked from [AGENTS.md](../../AGENTS.md#find-the-owner); these notes explain why those instructions exist.
 
 | Lesson                                                                    | When useful                                                              |
 | ------------------------------------------------------------------------- | ------------------------------------------------------------------------ |

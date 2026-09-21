@@ -45,8 +45,8 @@ describe("createMixedPotion", () => {
         ],
       },
     ]);
-    expect(mixed.descriptionLines).toEqual(["Gain 10 Mana or gain 10 Gold or gain 10 Block", "Consume"]);
-    expect(luck.descriptionLines[0]).toBe("Gain 4 Mana or gain 4 Gold or gain 4 Block");
+    expect(mixed.descriptionLines).toEqual(["Gain 10 Mana, Gold, or Block", "Consume"]);
+    expect(luck.descriptionLines[0]).toBe("Gain 4 Mana, Gold, or Block");
   });
   it("combines two different potions by concatenating their effects", () => {
     const mixed = createMixedPotion(healPotion, firePotion);

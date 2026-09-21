@@ -1,3 +1,5 @@
+import type { output } from "zod";
+import type { TEMPLATE_EFFECT_DEFINITIONS } from "./effects/registry";
 import type { TrinketManifest } from "./trinket-manifest";
 
 export type KeywordId =
@@ -80,79 +82,14 @@ export interface EnemyTrait {
   description: string;
 }
 
+// Ordinary effect fields derive from validation; recursive edges remain explicit.
+// Preserve exact optional properties for authored effects (Zod permits undefined).
+type AuthoredEffect<T> = T extends unknown ? { [K in keyof T]: Exclude<T[K], undefined> } : never;
+type TemplateEffect = AuthoredEffect<output<(typeof TEMPLATE_EFFECT_DEFINITIONS)[number]["schema"]>>;
 export type BattleCardEffect =
-  | {
-      kind: "damage";
-      damageType: DamageType;
-      amount: number;
-      lifesteal?: boolean;
-      equalToBlock?: boolean;
-      equalToArmor?: boolean;
-      equalToForge?: boolean;
-      ignoreArmor?: boolean;
-      blockCost?: number;
-      blockDamageBonus?: number;
-      damageTypeIfTargetHasBlock?: DamageType;
-      damageTypeIfTargetFrozen?: DamageType;
-      amountIfTargetFrozen?: number;
-
-      equalToGoldPercent?: number;
-      doubleIfEnemyBurning?: boolean;
-      doubleIfEnemyBleeding?: boolean;
-      tripleIfEnemyNotBurning?: boolean;
-      detonateIfEnemyBurning?: boolean;
-      damageTypePool?: DamageType[];
-    }
-  | {
-      kind: "player-status";
-      status: Extract<PlayerStatusId, "block" | "armor" | "thorns" | "forge" | "haste" | "phoenixFeather">;
-      amount: number;
-      perManaCrystal?: number;
-      convertCurrentMana?: number;
-    }
-  | { kind: "enemy-status"; status: EnemyStatusId; amount: number }
-  | { kind: "heal"; amount: number }
-  | { kind: "restore-mana"; amount: number; ifEnemyFrozen?: boolean; allowOverflow?: boolean }
-  | { kind: "lose-mana"; amount: number }
-  | { kind: "lose-max-mana"; amount: number }
-  | { kind: "gain-max-mana"; amount: number }
-  | { kind: "gain-gold"; amount: number; ifEnemyStunned?: boolean }
-  | { kind: "wish"; amount: number }
-  | { kind: "summon-companion"; companionId: CompanionId }
-  // amount is omitted when removeAll is set — there is no number to author.
-  | { kind: "remove-harmful-status"; amount?: number; removeAll?: boolean }
-  | { kind: "remove-player-status"; status: EnemyStatusDamageId }
-  | { kind: "self-damage"; damageType: EnemyStatusDamageId; amount: number }
-  | { kind: "buff-companion"; amount: number }
-  | { kind: "companion-action"; amount: number }
-  | { kind: "lose-health"; amount: number }
-  | { kind: "draw-cards"; amount: number }
-  | { kind: "random-draw"; minAmount: number; maxAmount: number }
-  // amount is omitted when removeAll is set — there is no number to author.
-  | { kind: "remove-enemy-armor"; amount?: number; removeAll?: boolean }
-  | { kind: "multiply-enemy-status"; status: EnemyStatusDamageId; factor: number }
-  | {
-      kind: "cleanse-player-status-to-damage";
-      status: Extract<PlayerStatusId, "burn">;
-      damageType: DamageType;
-    }
-  | { kind: "random-damage"; minAmount: number; maxAmount: number }
-  | {
-      kind: "chance";
-      probability: number;
-      successEffects: BattleCardEffect[];
-      failureEffects: BattleCardEffect[];
-    }
-  | {
-      kind: "repeat-over-turns";
-      remainingTurns: number;
-      effects: BattleCardEffect[];
-    }
-  | { kind: "next-hit-crit" }
-  | { kind: "next-hit-leech" }
-  | { kind: "play-next-card-twice" }
-  | { kind: "next-hit-poison" }
-  | { kind: "next-archery-free" };
+  | TemplateEffect
+  | { kind: "chance"; probability: number; successEffects: BattleCardEffect[]; failureEffects: BattleCardEffect[] }
+  | { kind: "repeat-over-turns"; remainingTurns: number; effects: BattleCardEffect[] };
 
 export interface CompanionDefinition {
   id: CompanionId;

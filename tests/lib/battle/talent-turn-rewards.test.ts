@@ -41,7 +41,7 @@ describe("Talent talent turn rewards", () => {
 
   it("Tailwind draws for repeated Dodges and retains those cards into the next hand", () => {
     const state = battle({
-      currentEnemy: { abilityIds: ["slash", "fangs", "block"] },
+      currentEnemy: { abilityIds: ["slash", "ray-of-frost", "block"] },
       talentEffects: { ...talents("dodge", "dodge-rolling-recovery"), dodgeChance: 95 },
       rng: () => 0.5,
       deck: Array.from({ length: 10 }, (_, i) => attack(`draw-${i}`)),

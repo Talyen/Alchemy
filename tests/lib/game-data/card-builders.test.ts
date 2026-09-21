@@ -1,5 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { validateCardDescriptionParity } from "@/lib/content-validation/card-parity";
+import { canonicalCardDescriptionMatches } from "@/lib/game-data";
 import { damageCard, effectsCard } from "@/lib/game-data/cards/card-builders";
+import { describe, expect, it } from "vitest";
 
 describe("card builders", () => {
   it("builds a lifesteal damage card with a shared Leech line", () => {
@@ -100,4 +102,37 @@ describe("card builders", () => {
       }),
     ).toThrow("unsupported effect kind");
   });
+});
+
+it("validates exact canonical text and still rejects edited amounts and omitted effects", () => {
+  const card = effectsCard({
+    id: "canonical",
+    art: "",
+    consume: true,
+    effects: [
+      { kind: "heal", amount: 4 },
+      { kind: "draw-cards", amount: 1 },
+    ],
+  });
+  expect(card.descriptionLines).toEqual(["Restore 4 Health", "Draw a card", "Consume"]);
+  expect(canonicalCardDescriptionMatches(card)).toBe(true);
+  expect(validateCardDescriptionParity(card)).toEqual([]);
+  for (const descriptionLines of [
+    ["Restore 9 Health", "Draw a card", "Consume"],
+    ["Restore 4 Health", "Consume"],
+  ]) {
+    const changed = { ...card, descriptionLines };
+    expect(canonicalCardDescriptionMatches(changed)).toBe(false);
+    expect(validateCardDescriptionParity(changed).some((issue) => issue.severity === "error")).toBe(true);
+  }
+  expect(
+    canonicalCardDescriptionMatches(
+      effectsCard({
+        id: "conditional",
+        art: "",
+        effects: [{ kind: "restore-mana", amount: 2, ifEnemyFrozen: true }],
+        descriptionLines: ["If the enemy is Frozen, gain 2 Mana"],
+      }),
+    ),
+  ).toBe(false);
 });

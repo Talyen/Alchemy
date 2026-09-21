@@ -223,7 +223,7 @@ describe("imported enemy attack reactions", () => {
 
   it.each([
     ["fire-imp", "fireball", "burn", 3],
-    ["giant-spider", "venom-fangs", "poison", 3],
+    ["giant-spider", "venom-fangs", "poison", 2],
     ["winter-wolf", "fangs", "freeze", 1],
   ] as const)("applies %s's %s attack rider", (id, ability, status, expected) => {
     const result = applyEnemyAbility(stateForEnemy(id), cardById[ability], []);
@@ -231,8 +231,8 @@ describe("imported enemy attack reactions", () => {
   });
 
   it.each([
-    ["hellhound", "burning-blade", { burn: 1 }, 97],
-    ["dire-wolf", "fangs", { bleed: 1 }, 95],
+    ["hellhound", "burning-blade", { burn: 1 }, 99],
+    ["dire-wolf", "fangs", { bleed: 1 }, 97],
     ["banshee", "bash", { stun: 1 }, 97],
     ["ice-wraith", "frostbolt", undefined, 96],
   ] as const)("modifies %s damage from its player/enemy state", (id, ability, statuses, expectedHealth) => {

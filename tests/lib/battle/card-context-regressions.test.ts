@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cardById } from "@/lib/game-data";
+import { cardById, type BattleCard } from "@/lib/game-data";
 import { computeCardPayment } from "@/lib/battle/card-cost-rules";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
@@ -22,30 +22,23 @@ describe("card context regressions", () => {
     expect(played.uniqueGear.freeBurnUsed).toBe(true);
   });
 
-  it.each(["bread", "avatar", "concussive-shot"])(
-    "%s retains Consume and Archery bonuses in delayed effects after saving",
-    (id) => {
-      const card = cardById[id]!;
-      const state = patchBattleState({
-        rng: () => 0.99,
-        hand: [card],
-        playerHealth: 5,
-        playerMaxHealth: 100,
-        enemyHealth: 200,
-        enemyMaxHealth: 200,
-        talentEffects: { consumeHealMultiplier: 0.2, consumeDamageBonusPercent: 20, flatArrowDamage: 2 },
-      });
-      const played = playBattleCardResolved(state, card.id, 0).state;
-      const resumed = PersistedBattleStateSchema.parse(JSON.parse(JSON.stringify(played)));
-      const next = advanceToPlayerTurn({ ...resumed, currentEnemy: played.currentEnemy, rng: () => 0.99 });
-      if (id === "bread") {
-        expect(next.playerHealth - played.playerHealth).toBe(5);
-        expect(advanceToPlayerTurn(next).playerHealth - next.playerHealth).toBe(5);
-      } else {
-        expect(played.enemyHealth - next.enemyHealth).toBe(id === "avatar" ? 5 : 4);
-      }
-    },
-  );
+  it.each(["concussive-shot"])("%s retains its pooled Archery hit after saving", (id) => {
+    const card = cardById[id]!;
+    const state = patchBattleState({
+      rng: () => 0.99,
+      hand: [card],
+      playerHealth: 5,
+      playerMaxHealth: 100,
+      enemyHealth: 200,
+      enemyMaxHealth: 200,
+      talentEffects: { consumeHealMultiplier: 0.2, consumeDamageBonusPercent: 20, flatArrowDamage: 2 },
+    });
+    const played = playBattleCardResolved(state, card.id, 0).state;
+    const resumed = PersistedBattleStateSchema.parse(JSON.parse(JSON.stringify(played)));
+    const next = advanceToPlayerTurn({ ...resumed, currentEnemy: played.currentEnemy, rng: () => 0.99 });
+    expect(played.enemyHealth).toBe(196);
+    expect(next.enemyHealth).toBe(played.enemyHealth);
+  });
 
   it("resumes legacy delayed effects without inventing source-card bonuses", () => {
     const state = patchBattleState({
@@ -55,6 +48,39 @@ describe("card context regressions", () => {
     });
     const resumed = PersistedBattleStateSchema.parse(JSON.parse(JSON.stringify(state)));
     expect(advanceToPlayerTurn({ ...resumed, rng: () => 0.99 }).playerHealth).toBe(9);
+  });
+
+  it("retains source-card healing, Consume, and Archery bonuses on saved delayed effects", () => {
+    const card: BattleCard = {
+      ...cardById["concussive-shot"]!,
+      consume: true,
+      effects: [
+        {
+          kind: "repeat-over-turns",
+          remainingTurns: 1,
+          effects: [
+            { kind: "heal", amount: 4 },
+            { kind: "damage", damageType: "physical", amount: 2 },
+          ],
+        },
+      ],
+    };
+    const played = playBattleCardResolved(
+      patchBattleState({
+        hand: [card],
+        playerHealth: 5,
+        playerMaxHealth: 100,
+        enemyHealth: 200,
+        enemyMaxHealth: 200,
+        talentEffects: { consumeHealMultiplier: 0.2, consumeDamageBonusPercent: 20, flatArrowDamage: 2 },
+      }),
+      card.id,
+      0,
+    ).state;
+    const resumed = PersistedBattleStateSchema.parse(JSON.parse(JSON.stringify(played)));
+    const next = advanceToPlayerTurn({ ...resumed, currentEnemy: played.currentEnemy, rng: () => 0.99 });
+    expect(next.playerHealth - played.playerHealth).toBe(5);
+    expect(played.enemyHealth - next.enemyHealth).toBe(5);
   });
 
   it("Armor Siphon cannot steal Armor already depleted by Ecosystem", () => {

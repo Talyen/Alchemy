@@ -14,4 +14,4 @@ description: Select and run Alchemy verification after edits and before handoff,
 
 For test changes, apply the [test value policy](../../../CONTRIBUTING.md#test-value-and-coverage-strategy), including verification scope for surviving protection and deleted paths.
 
-Follow [AGENTS.md](../../../AGENTS.md#handoff) for completion review and reporting. Finalize task-owned plans using [workflow hygiene](../../../CONTRIBUTING.md#hooks-and-workflow-hygiene).
+Follow [AGENTS.md](../../../AGENTS.md#review-and-handoff) for completion review and reporting. Finalize task-owned plans using [workflow hygiene](../../../CONTRIBUTING.md#hooks-and-workflow-hygiene).

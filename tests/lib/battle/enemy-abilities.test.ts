@@ -55,7 +55,7 @@ describe("enemy repertoire", () => {
   });
 
   it("rejects unsupported cards and unsupported effects hidden inside a chance", () => {
-    for (const id of ["haste", "meteor", "steal", "wish", "poison-dagger", "crystal-bulwark", "ray-of-frost"]) {
+    for (const id of ["haste", "meteor", "steal", "wish", "poison-dagger", "crystal-bulwark"]) {
       expect(isEnemyAbilityCard(cardById[id])).toBe(false);
       expect(() => useAbility(enemyState(), id)).toThrow("Unsupported enemy ability");
     }
@@ -80,19 +80,37 @@ describe("enemy repertoire", () => {
     });
     expect(isEnemyAbilityCard(supported as never)).toBe(true);
     for (const extra of [
-      { equalToBlock: true },
       { equalToArmor: true },
       { equalToGoldPercent: 10 },
       { doubleIfEnemyBurning: true },
       { tripleIfEnemyNotBurning: true },
       { detonateIfEnemyBurning: true },
-      { damageTypePool: ["physical"] },
     ]) {
       const card = makeTestCard({
         effects: [{ kind: "damage", damageType: "physical", amount: 3, ...extra } as never],
       });
       expect(isEnemyAbilityCard(card as never)).toBe(false);
     }
+    expect(
+      isEnemyAbilityCard(
+        makeTestCard({
+          effects: [
+            {
+              kind: "damage",
+              damageType: "stun",
+              amount: 0,
+              equalToBlock: true,
+              equalToBlockPercent: 50,
+              ignoreBlock: true,
+            } as never,
+          ],
+        }) as never,
+      ),
+    ).toBe(true);
+    const pooled = makeTestCard({
+      effects: [{ kind: "damage", damageType: "burn", damageTypePool: ["burn", "nature"], amount: 2 } as never],
+    });
+    expect(isEnemyAbilityCard(pooled as never)).toBe(true);
     expect(() => getEnemyAbilityCard("wish")).toThrow(/Unsupported enemy ability.*wish/);
   });
 
@@ -184,9 +202,9 @@ describe("enemy card effects", () => {
     };
     const cardBefore = JSON.stringify(cardById["shield-bash"]);
     const result = useAbility(state, "shield-bash");
-    expect(result.playerHealth).toBe(98);
-    expect(result.playerStatuses.stun).toBe(2);
-    expect(result.enemyMitigation.block).toBe(0);
+    expect(result.playerHealth).toBe(99);
+    expect(result.playerStatuses.stun).toBe(1);
+    expect(result.enemyMitigation.block).toBe(2);
     expect(result.playerStatuses.block).toBe(0);
     expect(result.mana).toBe(state.mana);
     expect(result.gold).toBe(state.gold);
@@ -197,40 +215,54 @@ describe("enemy card effects", () => {
     expect(JSON.stringify(cardById["shield-bash"])).toBe(cardBefore);
   });
 
-  it("targets hero Armor, live Bleed, and Freeze buildup from the enemy perspective", () => {
+  it("halves hero Armor, then resolves damage and status effects from the enemy perspective", () => {
     const base = enemyState();
     const state = { ...base, playerStatuses: { ...base.playerStatuses, armor: 5, bleed: 1 } };
     const sunder = useAbility(state, "sunder");
-    expect(sunder.playerStatuses.armor).toBe(2);
-    expect(sunder.playerHealth).toBe(99);
+    expect(sunder.playerStatuses.armor).toBe(3);
+    expect(sunder.playerHealth).toBe(100);
     expect(sunder.enemyMitigation.armor).toBe(0);
-    expect(useAbility(state, "rend").playerHealth).toBe(96);
+    expect(useAbility(state, "rend").playerHealth).toBe(98);
     const frozen = useAbility({ ...base, playerStatuses: { ...base.playerStatuses, freeze: 25 } }, "cold-snap");
     expect(frozen.playerCC.freezeSkipTurns).toBe(1);
     expect(frozen.playerStatuses.freeze).toBe(0);
     expect(frozen.enemyStatuses.freeze).toBe(0);
   });
 
-  it("resolves both Maul branches and preserves their native damage types", () => {
-    for (const [block, status] of [
-      [1, "stun"],
+  it("resolves both random Maul damage types for enemy abilities", () => {
+    for (const [roll, status] of [
       [0, "bleed"],
+      [0.99, "stun"],
     ] as const) {
-      const base = enemyState("skeleton");
-      const result = useAbility({ ...base, playerStatuses: { ...base.playerStatuses, block } }, "maul");
-      expect(result.playerHealth).toBe(97 + block);
+      let calls = 0;
+      const base = enemyState("skeleton", { rng: () => (calls++ === 0 ? roll : 0.99) });
+      const result = useAbility({ ...base, playerStatuses: { ...base.playerStatuses, block: 1 } }, "maul");
+      expect(result.playerHealth).toBe(98);
       expect(result.playerStatuses[status]).toBeGreaterThan(0);
     }
   });
 
-  it("carries native Bleed Leech into its tick without leeching Vampire's bonus", () => {
+  it("resolves both random Pounce damage types for enemy abilities", () => {
+    for (const [roll, status] of [
+      [0, "physical"],
+      [0.99, "stun"],
+    ] as const) {
+      let calls = 0;
+      const base = enemyState("skeleton", { rng: () => (calls++ === 0 ? roll : 0.99) });
+      const result = useAbility({ ...base, playerStatuses: { ...base.playerStatuses, block: 0 } }, "pounce");
+      expect(result.playerHealth).toBe(98);
+      expect(result.playerStatuses.stun).toBe(status === "stun" ? 2 : 0);
+    }
+  });
+
+  it("resolves Fangs as one pooled hit without creating a Bleed leech tick", () => {
     const state = enemyState("vampire", { enemyHealth: 10, playerHealth: 49 });
     const hit = useAbility(state, "fangs");
-    expect(hit.pendingEnemyBleedLeechHealing).toBe(2);
-    expect(hit.playerStatuses.bleed).toBe(3);
-    expect(hit.enemyHealth).toBe(12);
+    expect(hit.pendingEnemyBleedLeechHealing).toBe(0);
+    expect(hit.playerStatuses.bleed).toBe(1);
+    expect(hit.enemyHealth).toBe(11);
     const tick = tickPlayerStatuses(hit, []);
-    expect(tick.enemyHealth).toBe(13);
+    expect(tick.enemyHealth).toBe(11);
     expect(tick.pendingEnemyBleedLeechHealing).toBe(0);
   });
 
@@ -384,23 +416,23 @@ describe("ability trait boundaries", () => {
     const blockedBandit = useAbility(enemyState("bandit"), "block");
     expect(blockedBandit.flags.enemyFirstHitDoubleUsed).toBe(false);
     const first = useAbility(blockedBandit, "serrated-edge");
-    expect(first.playerHealth).toBe(95);
+    expect(first.playerHealth).toBe(96);
     expect(first.flags.enemyFirstHitDoubleUsed).toBe(true);
     const base = enemyState("brawler");
     const stunned = resolveStunTrigger({ ...base, enemyStatuses: { ...base.enemyStatuses, stun: 60 } }, []);
     const defended = useAbility(stunned, "block");
     expect(defended.flags.enemyBrawlerDamagePenalty).toBe(true);
     const attacked = useAbility(defended, "pounce");
-    expect(attacked.playerHealth).toBe(98);
+    expect(attacked.playerHealth).toBe(99);
     expect(attacked.flags.enemyBrawlerDamagePenalty).toBe(false);
   });
 
   it("rewards established Bleed with Blood Frenzy while retaining only native Leech", () => {
     const state = enemyState("blood-cultist", { enemyHealth: 10 });
     expect(useAbility(state, "serrated-edge").enemyHealth).toBe(10);
-    expect(useAbility(state, "rend").playerHealth).toBe(98);
+    expect(useAbility(state, "rend").playerHealth).toBe(99);
     const bleeding = { ...state, playerStatuses: { ...state.playerStatuses, bleed: 1 } };
-    expect(useAbility(bleeding, "rend").playerHealth).toBe(95);
+    expect(useAbility(bleeding, "rend").playerHealth).toBe(97);
     expect(useAbility(bleeding, "rend").enemyHealth).toBe(10);
     expect(useAbility(state, "fangs").enemyHealth).toBe(
       useAbility(enemyState("skeleton", { enemyHealth: 10 }), "fangs").enemyHealth,
@@ -413,8 +445,8 @@ describe("ability trait boundaries", () => {
     const low = { ...normal, playerHealth: 49 };
     const normalResult = useAbility(normal, "fangs");
     const lowResult = useAbility(low, "fangs");
-    expect(normalResult.playerHealth).toBe(47);
-    expect(lowResult.playerHealth).toBe(45);
+    expect(normalResult.playerHealth).toBe(48);
+    expect(lowResult.playerHealth).toBe(46);
     expect(lowResult.enemyHealth).toBe(normalResult.enemyHealth);
     const block = useAbility(low, "block");
     expect(block.playerHealth).toBe(49);
@@ -455,6 +487,6 @@ describe("ability trait boundaries", () => {
       enemyState("inquisitor", { playerStatuses: defaultPlayerStatusValues({ burn: 1 }) }),
       "judgment",
     );
-    expect(holy.playerHealth).toBe(95);
+    expect(holy.playerHealth).toBe(97);
   });
 });

@@ -1,10 +1,10 @@
 import { useId, useMemo, useState, type ReactNode, type RefObject } from "react";
 import { X, type LucideIcon } from "lucide-react";
 import { ChromeIconButton } from "../chrome-icon-button";
-import { getCardKeywords, type BattleCard } from "../../config/game-data-catalog";
+import { type BattleCard } from "../../config/game-data-catalog";
 import type { CardDescriptionContext } from "@/lib/game-data";
 import { viewCardWidthClass } from "../../config/layout";
-import { getInspectionKeywordShineColors } from "../../config/shine-palettes";
+import { getCardInspectionShineColors } from "../../config/shine-palettes";
 import { BattleCardButton } from "../card-button";
 import { getCardDisplayTitle } from "../card-description-ui";
 import { CardSelectionGrid } from "../card-selection-grid";
@@ -43,7 +43,7 @@ export function InspectionCardGrid({
             shimmerToken={undefined}
             className={viewCardWidthClass}
             descriptionContext={descriptionContext}
-            shineColor={getInspectionKeywordShineColors(getCardKeywords(card))}
+            shineColor={getCardInspectionShineColors(card)}
           />
         </div>
       )}

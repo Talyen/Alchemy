@@ -81,16 +81,16 @@ describe("enemy inspection presentation", () => {
         .getAllByRole("img")
         .map((image) => image.getAttribute("alt")),
     ).toEqual(["Sunder", "Judgment", "Smite"]);
-    expect(dialog.textContent).not.toContain("Deal 4 Physical damage");
+    expect(dialog.textContent).not.toContain("Deal 3 Physical damage");
     expect(dialog.querySelector("hr, .border-t")).toBeNull();
     const ability = within(dialog).getByRole("button", { name: "Sunder" });
     fireEvent.mouseEnter(ability.parentElement!);
     await waitFor(() =>
       expect(document.querySelector(".hover-popup-panel[data-visible]")?.textContent).toContain(
-        "Deal 4 Physical damage",
+        "Deal 3 Physical damage",
       ),
     );
-    expect(document.querySelector(".hover-popup-panel[data-visible]")?.textContent).toContain("Remove 2 enemy Armor");
+    expect(document.querySelector(".hover-popup-panel[data-visible]")?.textContent).toContain("Halve enemy Armor");
     fireEvent.click(ability);
     expect(within(ability).getByRole("img").getAttribute("alt")).toBe("Sunder");
     expect(onClose).not.toHaveBeenCalled();

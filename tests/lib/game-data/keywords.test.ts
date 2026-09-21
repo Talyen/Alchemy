@@ -21,7 +21,7 @@ describe("keywordDefinitions", () => {
 });
 
 it.each([
-  ["gamblers-shot", ["physical", "archery"]],
+  ["gamblers-shot", ["stun", "physical", "bleed", "archery"]],
   ["roll-the-dice", ["consume"]],
   ["astral-arrow", ["freeze", "burn", "holy", "consume", "archery"]],
 ])("keeps %s eligible for all of its keyword rewards", (id, expected) => {

@@ -9,6 +9,7 @@ import { resolveStunTrigger } from "../status-stun-resolve";
 import { dealDamageToEnemy } from "../damage";
 import { type EnemyStatusId } from "@/lib/game-data";
 import { dealPlayerTypedHit } from "../player-typed-hit";
+import { getBattleRng, pickRandom } from "@/lib/rng";
 
 function resolveEnemyStatusCcTrigger(
   preHitState: BattleState,
@@ -33,7 +34,10 @@ export const applyPlayerStatusEffectHandler = defineHandler(
       adjustedAmount = effect.perManaCrystal * state.maxMana;
     }
     adjustedAmount = applyPotionMultiplier(adjustedAmount, potionMult);
-    return applyPlayerStatusEffect(nextState, { ...effect, amount: adjustedAmount }, combatTexts);
+    const status = effect.statusPool
+      ? (pickRandom(effect.statusPool, getBattleRng(nextState)) ?? effect.status)
+      : effect.status;
+    return applyPlayerStatusEffect(nextState, { ...effect, status, amount: adjustedAmount }, combatTexts);
   },
 );
 

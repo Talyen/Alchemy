@@ -249,14 +249,14 @@ describe("Companion descriptions match their own damage scaling", () => {
     });
     const modifiers = getBattleCompanionDamageModifiers(state);
     const description = getCompanionDescriptionLines(companion, 1, modifiers);
-    const expected = id === "phoenix" ? 20 : 26;
+    const expected = 20;
     expect(description[0]).toContain(`Deals ${expected} `);
     const texts: Parameters<typeof processCompanionTurnStart>[1] = [];
     processCompanionTurnStart(state, texts);
     expect(texts).toContainEqual({
       target: "enemy",
       kind: "damage",
-      stat: id === "phoenix" ? "burn" : "bleed",
+      stat: id === "phoenix" ? "burn" : id === "fox" ? "stun" : "physical",
       amount: expected,
     });
     const summon = makeTestCard({

@@ -1,8 +1,9 @@
-import { type BattleCard, type BattleCardEffect } from "@/lib/game-data";
+import { canonicalCardDescriptionMatches, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 import type { ContentValidationIssue } from "../types";
 import {
   countByKind,
   countLinesStartingWith,
+  effectParityDescriptionLines,
   flattenChanceEffects,
   flattenEffects,
   hasKind,
@@ -11,7 +12,7 @@ import {
 } from "./helpers";
 import {
   isBlockLine,
-  isCleanseLine,
+  cleanseLineEffectCount,
   isCompanionActionLine,
   isConvertManaBlockLine,
   isDieRollLine,
@@ -60,6 +61,15 @@ function kindCountRule(
   };
 }
 
+function cleanseStatusRule(): CountParityRule {
+  return {
+    label: "remove-player-status",
+    countLines: (lines) => lines.reduce((count, line) => count + cleanseLineEffectCount(line), 0),
+    countEffects: (flat) =>
+      countKind(flat, "remove-player-status") + countKind(flat, "cleanse-player-status-to-damage"),
+  };
+}
+
 function blockVariantRule(
   label: string,
   isLine: (line: string) => boolean,
@@ -76,6 +86,7 @@ function isPlainBlock(effect: BattleCardEffect): boolean {
   return (
     effect.kind === "player-status" &&
     effect.status === "block" &&
+    (effect.statusPool === undefined || effect.statusPool.includes("block")) &&
     effect.perManaCrystal === undefined &&
     effect.convertCurrentMana === undefined
   );
@@ -94,7 +105,10 @@ function statusParityRule(status: "armor" | "forge" | "thorns", name: string): C
     label: status,
     countLines: (lines) => lines.filter((line) => isGainStatusLine(line, name)).length,
     countEffects: (_flat, chanceFlat) =>
-      chanceFlat.filter((effect) => effect.kind === "player-status" && effect.status === status).length,
+      chanceFlat.filter(
+        (effect) =>
+          effect.kind === "player-status" && (effect.status === status || effect.statusPool?.includes(status) === true),
+      ).length,
   };
 }
 
@@ -116,7 +130,7 @@ const COUNT_PARITY_RULES: CountParityRule[] = [
   kindCountRule("companion-action", isCompanionActionLine, "companion-action"),
   kindCountRule("remove-enemy-armor", isRemoveEnemyArmorLine, "remove-enemy-armor"),
   kindCountRule("multiply-enemy-status", isDoubleLine, "multiply-enemy-status"),
-  kindCountRule("remove-player-status", isCleanseLine, "remove-player-status", "cleanse-player-status-to-damage"),
+  cleanseStatusRule(),
   blockVariantRule("block", isBlockLine, isPlainBlock),
   blockVariantRule("convert-mana block", isConvertManaBlockLine, isConvertBlock),
   blockVariantRule("per-mana block", isPerManaBlockLine, isPerManaBlock),
@@ -125,12 +139,13 @@ const COUNT_PARITY_RULES: CountParityRule[] = [
   statusParityRule("thorns", "Thorns"),
 ];
 
-export { validateEnemyTraitDescriptionParity, TRAIT_REQUIRED_PATTERNS } from "./enemy-trait-parity";
-export { validateTrinketDescriptionParity } from "./trinket-parity";
+export { TRAIT_REQUIRED_PATTERNS, validateEnemyTraitDescriptionParity } from "./enemy-trait-parity";
 export { flattenEffects } from "./helpers";
+export { validateTrinketDescriptionParity } from "./trinket-parity";
 
 function checkDamageParity(card: BattleCard): ContentValidationIssue | null {
-  const { effects, descriptionLines } = card;
+  const { effects } = card;
+  const descriptionLines = effectParityDescriptionLines(card);
   if (hasNonStandardDamageEffects(effects)) return null;
   if (hasKind(effects, "self-damage")) {
     if (!descriptionLines.some((line) => /self|Receive|Take/.test(line))) {
@@ -232,8 +247,9 @@ function checkRuleParity(card: BattleCard): ContentValidationIssue[] {
   const issues: ContentValidationIssue[] = [];
   const flat = flattenEffects(card.effects);
   const chanceFlat = flattenChanceEffects(card.effects);
+  const descriptionLines = effectParityDescriptionLines(card);
   for (const rule of COUNT_PARITY_RULES) {
-    const described = rule.countLines(card.descriptionLines);
+    const described = rule.countLines(descriptionLines);
     const actual = rule.countEffects(flat, chanceFlat);
     if (described !== actual) {
       issues.push(
@@ -249,6 +265,7 @@ function checkRuleParity(card: BattleCard): ContentValidationIssue[] {
 }
 
 export function validateCardDescriptionParity(card: BattleCard): ContentValidationIssue[] {
+  if (canonicalCardDescriptionMatches(card)) return checkTagWarnings(card);
   const issues: ContentValidationIssue[] = [];
 
   const check = checkDamageParity(card);

@@ -28,19 +28,23 @@ describe("card costs and turn-start effects", () => {
     });
     const result = playBattleCardResolved(state, card.id, 0).state;
     expect(result.playerHealth).toBe(10);
+    expect(result.enemyHealth).toBe(29);
+    expect(result.enemyStatuses.burn).toBe(1);
     expect(result.playerStatuses).toMatchObject({ poison: 0, burn: 0 });
   });
 
-  it("Bread's delayed overhealing triggers Clean Slate", () => {
+  it("Bread no longer queues a delayed healing pulse", () => {
     const card = cardById.bread!;
     const state = patchBattleState({ hand: [card], playerHealth: 10, playerMaxHealth: 14 });
     const eaten = playBattleCardResolved(state, card.id, 0).state;
+    expect(eaten.playerHealth).toBe(14);
+    expect(eaten.pendingTurnStartEffects).toHaveLength(0);
     const result = advanceToPlayerTurn({
       ...eaten,
       playerStatuses: { ...eaten.playerStatuses, poison: 3 },
       talentEffects: { ...eaten.talentEffects, cleanseOnCardOverheal: true },
     });
-    expect(result.playerStatuses.poison).toBe(0);
+    expect(result.playerStatuses.poison).toBe(3);
   });
 
   it.each(["scheduled damage", "Mask"])("cancels a queued Wish after a %s kill", (source) => {

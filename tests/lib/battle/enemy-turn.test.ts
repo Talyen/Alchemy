@@ -90,7 +90,7 @@ describe("endPlayerTurn - haste branch", () => {
     const second = endPlayerTurn(first.state);
     expect(second.enemyPerformedAbility).toBe(true);
     expect(second.state.enemyMitigation.block).toBe(4);
-    expect(second.state.playerStatuses.block).toBe(10);
+    expect(second.state.playerStatuses.block).toBe(11);
   });
 });
 
@@ -152,7 +152,7 @@ describe("endPlayerTurn - standard branch", () => {
     const state = battleState({ playerHealth: 30 });
     const result = endPlayerTurn(state);
     expect(result.enemyPerformedAbility).toBe(true);
-    expect(result.state.playerHealth).toBe(20);
+    expect(result.state.playerHealth).toBe(21);
   });
 
   it("applies player DoT after enemy attack", () => {
@@ -249,7 +249,7 @@ describe("endPlayerTurn — tick order", () => {
     if (result.kind === "haste") throw new Error("Expected an enemy-turn resolution");
     expect(result.enemyTurnStartState.enemyHealth).toBe(40);
     expect(result.enemyPerformedAbility).toBe(true);
-    expect(result.state.playerHealth).toBe(20);
+    expect(result.state.playerHealth).toBe(21);
   });
 
   it("skips attack when enemy dies to DoT before attacking", () => {
@@ -281,7 +281,7 @@ describe("endPlayerTurn — tick order", () => {
     const result = endPlayerTurn(state);
 
     expect(result.enemyPerformedAbility).toBe(true);
-    expect(result.state.playerHealth).toBe(20);
+    expect(result.state.playerHealth).toBe(21);
     expect(result.state.enemyHealth).toBe(0);
     expect(result.state.enemyStatuses.onAttackBleed).toBe(0);
   });
@@ -298,7 +298,7 @@ describe("endPlayerTurn — tick order", () => {
       ],
     });
     const result = endPlayerTurn(state);
-    expect(result.afterAbilityState?.playerHealth).toBe(20);
+    expect(result.afterAbilityState?.playerHealth).toBe(21);
     expect(result.state.playerHealth).toBeLessThan(20);
   });
 });

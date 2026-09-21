@@ -26,16 +26,13 @@ describe("card feedback coverage", () => {
     );
     expect(texts.filter(shouldShowCombatText).length).toBeGreaterThan(0);
   });
-  it("preparations acknowledge every cast without accumulating their flags", () => {
+  it("Predator's Focus acknowledges every cast without accumulating its Leech flag", () => {
     const texts: CombatTextEvent[] = [];
     let state = patchBattleState();
     for (let i = 0; i < 2; i += 1) state = applyCardEffects(state, cardById["predators-focus"]!, texts);
-    expect(state.flags.nextHitCrit).toBe(true);
+    expect(state.flags.nextHitCrit).toBe(false);
     expect(state.flags.nextHitLeech).toBe(true);
-    expect(texts.filter((event) => event.kind === "notice").map((event) => event.stat)).toEqual([
-      "nextHitCrit",
-      "nextHitLeech",
-    ]);
+    expect(texts.filter((event) => event.kind === "notice").map((event) => event.stat)).toEqual(["nextHitLeech"]);
   });
   it("uses the same modified healing amount for Clean Slate overflow", () => {
     const state = patchBattleState({

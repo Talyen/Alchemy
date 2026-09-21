@@ -6,14 +6,17 @@ function companionTurnLine(effect: BattleCardEffect, amountOverride?: number): s
   switch (effect.kind) {
     case "damage": {
       const amount = amountOverride ?? effect.amount;
-      return `Deals ${amount} ${capitalizeWord(effect.damageType)} damage each turn`;
+      const types = effect.damageTypePool?.length
+        ? effect.damageTypePool.map(capitalizeWord)
+        : [capitalizeWord(effect.damageType)];
+      const last = types.pop();
+      const damageLabel = types.length > 0 ? `${types.join(", ")} or ${last}` : last;
+      return `Deals ${amount} ${damageLabel} damage each turn`;
     }
     case "heal":
       return `Restores ${effect.amount} Health each turn`;
     case "restore-mana":
-      return effect.allowOverflow
-        ? `Grants ${effect.amount} extra Mana each turn`
-        : `Grants ${effect.amount} Mana each turn`;
+      return `Gain ${effect.amount} Mana each turn`;
     case "remove-harmful-status": {
       if (effect.removeAll) return "Cleanses all harmful status effects each turn";
       const amount = effect.amount ?? 0;
@@ -24,7 +27,7 @@ function companionTurnLine(effect: BattleCardEffect, amountOverride?: number): s
     case "player-status":
       return effect.status === "block" ? `Gains ${effect.amount} Block each turn` : null;
     case "draw-cards": {
-      return effect.amount === 1 ? "Draws a card each turn" : `Draws ${effect.amount} cards each turn`;
+      return effect.amount === 1 ? "Draw a Card each turn" : `Draw ${effect.amount} Cards each turn`;
     }
     case "chance": {
       const success = effect.successEffects[0] ? companionTurnLine(effect.successEffects[0]) : null;
@@ -97,7 +100,12 @@ export function getCompanionDescriptionLines(
   const modifiers =
     typeof damageBonus === "number" ? { damageBonus, bleedDamageBonus: 0, damageMultiplier: 1 } : damageBonus;
   const effects = getModifiedCompanionEffects(companion, bondLevel, modifiers);
-  const lines = effects.map((effect) => formatCompanionTurnStartLine(effect));
+  const lines = effects.map((effect) => {
+    const line = formatCompanionTurnStartLine(effect);
+    return (companion.id === "golden-retriever" || companion.id === "fox") && effect.kind === "gain-gold"
+      ? line?.replace(/^Grants /, "Steals ")
+      : line;
+  });
   const bonus = effects[1];
   if (bonus?.kind === "chance" && bonus.failureEffects.length === 0 && lines[0]) {
     const action = companion.id === "mana-moth" ? "grant" : "draw";

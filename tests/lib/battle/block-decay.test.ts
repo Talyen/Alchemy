@@ -30,7 +30,7 @@ describe("block decay timing", () => {
     const result = endPlayerTurn(state);
 
     expect(result.state.playerHealth).toBe(30);
-    expect(result.state.playerStatuses.block).toBe(3);
+    expect(result.state.playerStatuses.block).toBe(4);
   });
 
   it("block decays when no damage is taken", () => {
@@ -45,7 +45,7 @@ describe("block decay timing", () => {
     const state = makeState({ playerStatuses: { block: 3 } });
     const result = endPlayerTurn(state);
 
-    expect(result.state.playerHealth).toBe(29);
+    expect(result.state.playerHealth).toBe(30);
     expect(result.state.playerStatuses.block).toBe(0);
   });
 

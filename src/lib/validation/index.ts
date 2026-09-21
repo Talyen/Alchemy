@@ -28,3 +28,5 @@ export {
   type ParsedActiveRunData,
   type ParsedSaveData,
 } from "./save-schemas/index";
+
+export { ACTIVE_RUN_PROGRESS_KEYS, type PersistedRunProgress } from "./save-schemas/run-progress";

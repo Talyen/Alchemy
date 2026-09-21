@@ -28,9 +28,12 @@ export const BLOCK_CARD = makeTestCard({
 export const AEGIS_CARD = makeTestCard({
   id: "blessed-aegis",
   title: "Blessed Aegis",
-  descriptionLines: ["Deal Holy damage equal to your Block"],
+  descriptionLines: ["Gain 2 Block", "Deal Holy damage equal to half your Block"],
   art: "placeholder",
-  effects: [{ kind: "damage", damageType: "holy", amount: 0, equalToBlock: true }],
+  effects: [
+    { kind: "player-status", status: "block", amount: 2 },
+    { kind: "damage", damageType: "holy", amount: 0, equalToBlock: true, equalToBlockPercent: 50 },
+  ],
 });
 
 export const ANVIL_CARD = makeTestCard({
@@ -96,10 +99,10 @@ export function makeStartingDeck(): BattleCard[] {
     makeTestCard({
       id: "bread",
       title: "Bread",
-      descriptionLines: ["Gain 5 Health", "Consume"],
+      descriptionLines: ["Restore 6 Health", "Consume"],
       art: "placeholder",
       consume: true,
-      effects: [{ kind: "heal", amount: 5 }],
+      effects: [{ kind: "heal", amount: 6 }],
     }),
   ];
 }

@@ -1,52 +1,32 @@
+import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
+import type { ActiveRunData } from "@/lib/active-run-session";
+import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
+import type { TalentXP } from "@/lib/game-data";
 import {
   cloneBattleCard,
   getStartingDeck,
-  type BattleCard,
   type CharacterId,
-  type UnlockedTalents,
   type CompanionId,
+  type UnlockedTalents,
 } from "@/lib/game-data";
-import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
-import { type Destination } from "@/lib/routing";
-import type { ActiveRunData, RunObtainedItem, RunRoomVisit } from "@/lib/active-run-session";
-import type { RunStartSnapshot } from "@/features/alchemy/shared/run-flow/run-start";
-import type { ContentSystemId } from "@/lib/content-systems/types";
-import type { DifficultyId, TalentXP } from "@/lib/game-data";
+import { EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear";
+import { companionTierItems } from "@/lib/homestead/companions";
+import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
+import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { createEmptyTierRecord } from "@/lib/homestead/tiers";
-import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
-import { companionTierItems } from "@/lib/homestead/companions";
-import { computeHomesteadEffects } from "@/lib/homestead/effects";
-import type { MaterialInventory, BuildingId, FarmId, ResearchId, HomesteadEffectManifest } from "@/lib/homestead/types";
+import type { BuildingId, FarmId, HomesteadEffectManifest, MaterialInventory, ResearchId } from "@/lib/homestead/types";
 import { createRunRngState, type RunRngState } from "@/lib/rng";
-import { EMPTY_CRAFTING_CURRENCIES, type CraftingCurrencyId } from "@/lib/gear";
-import { filterValidDestinations, filterValidDestinationRounds } from "@/lib/routing";
-
-export interface ActiveRunProgressFields {
-  runHistory: RunRoomVisit[];
-  runHistoryPartial: boolean;
-  runGoldEarned: number | null;
-  characterId: CharacterId;
-  runDeck: BattleCard[];
-  runPlayerHealth: number;
-  runMaxHealth: number;
-  runMetaMaxHealth: number;
-  roomsEncountered: number;
-  currentAct: number;
-  destinationIndexInAct: number;
+import { filterValidDestinationRounds, filterValidDestinations, type Destination } from "@/lib/routing";
+import type { PersistedRunProgress } from "@/lib/validation";
+export type ActiveRunProgressFields = Omit<
+  PersistedRunProgress,
+  "completedDestinations" | "lastOfferedDestinations" | "destinationRoundsSinceOffered"
+> & {
   completedDestinations: Destination[];
   lastOfferedDestinations: Destination[];
   destinationRoundsSinceOffered: Partial<Record<Destination, number>>;
-  runBoons: string[];
-  encounteredRunEnemyIds: string[];
-  selectedDifficulty: DifficultyId | null;
-  contentSystemType: ContentSystemId;
-  rng: RunRngState;
-  runTalentXP: TalentXP;
-  runMaterialsEarned: MaterialInventory;
-  runCurrenciesEarned: Record<CraftingCurrencyId, number>;
-  runObtainedItems: RunObtainedItem[];
-}
+};
 
 export interface PermanentProgressFields {
   gold: number;
@@ -62,31 +42,7 @@ export interface PermanentProgressFields {
 
 export type ActiveRunReadView = ActiveRunProgressFields & { initialized: boolean };
 
-export const ACTIVE_RUN_PROGRESS_KEYS = [
-  "runHistoryPartial",
-  "runGoldEarned",
-  "characterId",
-  "runDeck",
-  "runPlayerHealth",
-  "runMaxHealth",
-  "runMetaMaxHealth",
-  "roomsEncountered",
-  "currentAct",
-  "destinationIndexInAct",
-  "completedDestinations",
-  "lastOfferedDestinations",
-  "destinationRoundsSinceOffered",
-  "runBoons",
-  "encounteredRunEnemyIds",
-  "selectedDifficulty",
-  "contentSystemType",
-  "rng",
-  "runTalentXP",
-  "runMaterialsEarned",
-  "runCurrenciesEarned",
-  "runObtainedItems",
-  "runHistory",
-] as const satisfies ReadonlyArray<keyof ActiveRunProgressFields>;
+export { ACTIVE_RUN_PROGRESS_KEYS } from "@/lib/validation";
 
 export function pickActiveRunView(run: {
   activeRun: ActiveRunProgressFields;

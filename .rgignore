@@ -1,0 +1,13 @@
+# Search defaults only; Git, builds and asset validation retain their full inventories.
+# Inspect excluded paths with rg --no-ignore-dot <pattern> <explicit-path>.
+Raw Assets/
+src/assets/optimized/
+public/sounds/
+public/Music/
+Docs/Plans/Archived/
+.agents/history/
+*.generated.*
+src/lib/game-data/gear-art.ts
+.asset-hashes.json
+CHANGELOG.md
+package-lock.json

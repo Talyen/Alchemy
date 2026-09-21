@@ -133,7 +133,7 @@ test.describe("Block and Status Invariants", () => {
 
     await battle.playCardNamed("Blessed Aegis");
     await expect.poll(async () => battle.enemyHealth(), { timeout: 10_000 }).toBeLessThan(enemyHealthBeforeAegis);
-    await expect.poll(async () => battle.block(), { timeout: 5000 }).toBe(blockBeforeAegis);
+    await expect.poll(async () => battle.block(), { timeout: 5000 }).toBe(blockBeforeAegis + 2);
   });
 
   test("forge status persists across end turn", async ({ page, fastBattle }) => {

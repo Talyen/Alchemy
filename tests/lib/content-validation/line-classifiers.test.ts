@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   DIE_ROLL_LINE,
   RANDOM_DRAW_LINE,
+  cleanseLineEffectCount,
   isBlockLine,
   isCleanseLine,
   isCompanionActionLine,
@@ -52,6 +53,9 @@ describe("card line classifiers", () => {
   it.each([
     ["Gain 10 Gold", true],
     ["Steal 5 Gold", true],
+    ["Steals 1 Gold", true],
+    ["Gain 4 Mana, Gold, or Block", true],
+    ["Deals 1 Physical damage and steals 1 Gold each turn", false],
     ["gain 10 gold", true],
     ["Gain Gold", false],
     ["Gain 10 Mana", false],
@@ -61,6 +65,7 @@ describe("card line classifiers", () => {
 
   it.each([
     ["Wish for power", true],
+    ["Gain 1 Gold or Wish", true],
     ["Gain 1 Mana", false],
   ])("isWishLine(%s) === %s", (line, expected) => {
     expect(isWishLine(line)).toBe(expected);
@@ -135,6 +140,14 @@ describe("card line classifiers", () => {
     ["Cleanse 1 harmful status effect", false],
   ])("isCleanseLine(%s) === %s", (line, expected) => {
     expect(isCleanseLine(line)).toBe(expected);
+  });
+
+  it.each([
+    ["Cleanse 2 Poison", 1],
+    ["Cleanse Stun and Freeze build-up", 2],
+    ["Gain 2 Block", 0],
+  ])("cleanseLineEffectCount(%s) === %i", (line, expected) => {
+    expect(cleanseLineEffectCount(line)).toBe(expected);
   });
 
   it.each([

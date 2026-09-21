@@ -15,46 +15,56 @@ function makeState(overrides: Parameters<typeof makeSharedState>[0] = {}) {
 }
 
 describe("applyCardEffects - cleanse-player-status-to-damage (Exorcism)", () => {
-  it("clears player burn and deals holy damage equal to stacks removed", () => {
+  it("receives Burn before cleansing it and deals Holy for all removed stacks", () => {
     const state = makeState({
       playerStatuses: defaultPlayerStatusValues({ burn: 4 }),
     });
     const card = makeTestCard({
       id: "exorcism",
-      effects: [{ kind: "cleanse-player-status-to-damage", status: "burn", damageType: "holy" }],
+      effects: [
+        { kind: "self-damage", damageType: "burn", amount: 1 },
+        { kind: "cleanse-player-status-to-damage", status: "burn", damageType: "holy" },
+      ],
     });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
 
     expect(result.playerStatuses.burn).toBe(0);
-    expect(result.enemyHealth).toBe(26);
+    expect(result.enemyHealth).toBe(25);
   });
 
-  it("does nothing when player has no burn", () => {
+  it("converts the Burn it receives even without pre-existing Burn", () => {
     const state = makeState();
     const card = makeTestCard({
       id: "exorcism",
-      effects: [{ kind: "cleanse-player-status-to-damage", status: "burn", damageType: "holy" }],
+      effects: [
+        { kind: "self-damage", damageType: "burn", amount: 1 },
+        { kind: "cleanse-player-status-to-damage", status: "burn", damageType: "holy" },
+      ],
     });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
 
     expect(result.playerStatuses.burn).toBe(0);
-    expect(result.enemyHealth).toBe(30);
+    expect(result.enemyHealth).toBe(29);
   });
 });
 
-describe("applyCardEffects - equalToGoldPercent (Tithe)", () => {
-  it("deals holy damage equal to 10% of battle gold", () => {
+describe("applyCardEffects - Tithe", () => {
+  it("deals one Holy damage and gains one Gold", () => {
     const state = makeState({ gold: 47 });
     const card = makeTestCard({
       id: "tithe",
-      effects: [{ kind: "damage", damageType: "holy", amount: 0, equalToGoldPercent: 10 }],
+      effects: [
+        { kind: "damage", damageType: "holy", amount: 1 },
+        { kind: "gain-gold", amount: 1 },
+      ],
     });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
 
-    expect(result.enemyHealth).toBe(25);
+    expect(result.enemyHealth).toBe(29);
+    expect(result.gold).toBe(48);
   });
 });
 
@@ -118,14 +128,15 @@ describe("applyCardEffects - random-damage (Gambler's Shot)", () => {
     const rng = seededRng(99);
     const firstRoll = rng();
     const secondRoll = rng();
-    const expectedType = DAMAGE_TYPES[Math.trunc(firstRoll * DAMAGE_TYPES.length)]!;
-    const span = 6;
+    const typePool = ["stun", "physical", "bleed"] as const;
+    const expectedType = typePool[Math.trunc(firstRoll * typePool.length)]!;
+    const span = 4;
     const expectedAmount = 1 + Math.trunc(secondRoll * span);
 
     const state = makeState({ rng: seededRng(99) });
     const card = makeTestCard({
       id: "gamblers-shot",
-      effects: [{ kind: "random-damage", minAmount: 1, maxAmount: 6 }],
+      effects: [{ kind: "random-damage", minAmount: 1, maxAmount: 4, damageTypePool: [...typePool] }],
     });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
