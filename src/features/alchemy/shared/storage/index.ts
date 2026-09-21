@@ -2,12 +2,8 @@ export { clearAlchemySaveData, loadAlchemySaveState, saveAlchemySaveData, saveAl
 // Bootstrap and headless careers explicitly install their storage transport.
 export { configureSaveBackend } from "./io";
 export { evaluateSaveCandidates, type SaveLoadState } from "./save-candidates";
-export {
-  setWritesDisabled,
-  subscribeSaveCancellation,
-  waitForPendingSaveWrites,
-  type SaveWriteOutcome,
-} from "./save-write-queue";
+export { setWritesDisabled, subscribeSaveCancellation, waitForPendingSaveWrites } from "./io";
+export type { SaveWriteOutcome } from "./save-write-queue";
 export type * from "./types";
 export * from "./defaults";
 export {

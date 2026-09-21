@@ -62,6 +62,19 @@ Working inventory order and pagination are screen-local and transient while the 
   - **Unequipping gear/trinket**: The unequipped item is inserted at the first position of the currently viewed page (or index 0), shifting subsequent items down.
 - **Hand conflicts**: Equipping a two-handed weapon in main-hand displaces the off-hand item: the main-hand replaced item takes the incoming slot's position; any displaced off-hand item compatible with the current category (such as a 1H weapon) is placed immediately following; incompatible displaced items (such as a shield) are removed from the active category view and return to their own category.
 
+Transfer orchestration lives in `armory/use-armory-transfers.ts`. After a successful
+Gear equip, ordering receives one `commitEquip` operation with the replacement
+and hand conflicts. Trinkets use the same placement operation. Inventory placement
+never depends on artwork, DOM measurements, or reduced motion. The existing
+`equipGear` rule describes displaced slots; the controller remains the mutation
+boundary.
+
+`armory-transfer-dom.ts` measures the pre-commit layout; the pure
+`armory-transfer-presentation.ts` builds optional flights for both Gear and
+Trinkets. Active flights are the single source of hidden artwork. Completion,
+scroll, resize, and screen selection changes settle flights and placeholders;
+operations without flights clear their placeholder immediately.
+
 ## Combat equipment restrictions
 
 `gear-combat-restrictions.ts` derives reservations from the current battle, including while visiting meta screens. The loadout stays reserved through pending transitions until the battle lifecycle ends; ending the run releases it. Restrictions are derived after reload and require no extra saved fields.

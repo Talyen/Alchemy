@@ -3,6 +3,7 @@ import { initAudioHost, setMuted, setSfxVolume, setMasterVolume, setMusicVolume 
 import { audioState } from "@/lib/audio/state";
 import { MUSIC_KEYS, MUSIC_MASTER_GAIN } from "@/lib/game-constants";
 import { playMusic, playMusicImmediate } from "@/lib/audio/music";
+import { lastFakeAudio } from "../../helpers/fake-audio";
 import { installCleanAudio } from "../../helpers/audio-fixture";
 
 beforeEach(() => {
@@ -24,16 +25,17 @@ describe("setMuted", () => {
   });
 
   it("mutes the current music element", () => {
-    const el = { muted: false } as Partial<HTMLAudioElement>;
-    audioState.currentMusic = el as HTMLAudioElement;
+    playMusicImmediate(MUSIC_KEYS.MENU);
+    const el = lastFakeAudio()!;
     setMuted(true);
     expect(el.muted).toBe(true);
   });
 
   it("unmutes the current music element on a player host", () => {
-    const el = { muted: true } as Partial<HTMLAudioElement>;
-    audioState.currentMusic = el as HTMLAudioElement;
-    audioState.muted = true;
+    playMusicImmediate(MUSIC_KEYS.MENU);
+    const el = lastFakeAudio()!;
+    setMuted(true);
+    expect(el.muted).toBe(true);
     setMuted(false);
     expect(audioState.muted).toBe(false);
     expect(el.muted).toBe(false);
@@ -41,8 +43,8 @@ describe("setMuted", () => {
 
   it("keeps a non-player host muted when unmute is requested", () => {
     vi.stubGlobal("navigator", { ...navigator, userAgent: "Mozilla/5.0 Electron/28.0.0" });
-    const el = { muted: false, pause: vi.fn() } as Partial<HTMLAudioElement>;
-    audioState.currentMusic = el as HTMLAudioElement;
+    playMusicImmediate(MUSIC_KEYS.MENU);
+    const el = lastFakeAudio()!;
     initAudioHost();
     expect(audioState.hostForcesMute).toBe(true);
     setMuted(false);
@@ -77,17 +79,16 @@ describe("setMasterVolume", () => {
   });
 
   it("updates current music volume", () => {
-    const el = { volume: 0 } as Partial<HTMLAudioElement>;
-    audioState.currentMusic = el as HTMLAudioElement;
+    playMusicImmediate(MUSIC_KEYS.MENU);
+    const el = lastFakeAudio()!;
     audioState.musicVolume = 0.5;
     setMasterVolume(0.5);
     expect(el.volume).toBe(0.5 * 0.5 * MUSIC_MASTER_GAIN);
   });
 
   it("preserves the boss volume boost", () => {
-    const el = { volume: 0 } as Partial<HTMLAudioElement>;
-    audioState.currentMusic = el as HTMLAudioElement;
-    audioState.currentMusicKey = MUSIC_KEYS.BOSS_FORGE_GOLEM;
+    playMusicImmediate(MUSIC_KEYS.BOSS_FORGE_GOLEM);
+    const el = lastFakeAudio()!;
     audioState.musicVolume = 0.5;
     setMasterVolume(0.5);
     expect(el.volume).toBe(0.5 * 0.5 * MUSIC_MASTER_GAIN * 2);
@@ -97,7 +98,7 @@ describe("setMasterVolume", () => {
     vi.useFakeTimers();
 
     playMusicImmediate(MUSIC_KEYS.MENU);
-    const outgoing = audioState.currentMusic;
+    const outgoing = lastFakeAudio();
     playMusic(MUSIC_KEYS.BOSS_FORGE_GOLEM);
     vi.advanceTimersByTime(150);
     const fadedVolume = outgoing?.volume ?? 0;
@@ -116,8 +117,8 @@ describe("setMusicVolume", () => {
   });
 
   it("updates current music element volume", () => {
-    const el = { volume: 0 } as Partial<HTMLAudioElement>;
-    audioState.currentMusic = el as HTMLAudioElement;
+    playMusicImmediate(MUSIC_KEYS.MENU);
+    const el = lastFakeAudio()!;
     audioState.masterVolume = 0.5;
     audioState.musicVolume = 0.5;
     setMusicVolume(0.5);
@@ -125,9 +126,8 @@ describe("setMusicVolume", () => {
   });
 
   it("preserves the boss volume boost", () => {
-    const el = { volume: 0 } as Partial<HTMLAudioElement>;
-    audioState.currentMusic = el as HTMLAudioElement;
-    audioState.currentMusicKey = MUSIC_KEYS.BOSS_FORGE_GOLEM;
+    playMusicImmediate(MUSIC_KEYS.BOSS_FORGE_GOLEM);
+    const el = lastFakeAudio()!;
     audioState.masterVolume = 0.5;
     setMusicVolume(0.5);
     expect(el.volume).toBe(0.5 * 0.5 * MUSIC_MASTER_GAIN * 2);
@@ -138,7 +138,7 @@ describe("setMusicVolume", () => {
 
     playMusic(MUSIC_KEYS.MENU);
     vi.advanceTimersByTime(900);
-    const incoming = audioState.currentMusic;
+    const incoming = lastFakeAudio();
     const fadedVolume = incoming?.volume ?? 0;
     setMusicVolume(audioState.musicVolume * 0.5);
 

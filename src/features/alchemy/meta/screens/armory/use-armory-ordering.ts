@@ -162,25 +162,20 @@ export function useArmoryOrdering({
   );
 
   // Confirmed equipment mutations
-  const commitReplacement = useCallback(
-    (incomingId: string, replacedId: string) => {
-      setPlaceholderIndex(null);
-      const nextIds = applyReplace(reconciledIds, incomingId, replacedId);
-      commitIds(nextIds, clampPage(safePage, nextIds.length, ARMORY_PAGE_SIZE));
-    },
-    [commitIds, reconciledIds, safePage],
-  );
-
-  const commitEmptySlotEquip = useCallback(
-    (incomingId: string) => {
+  const commitEquip = useCallback(
+    (incomingId: string, replacedId: string | null, displaced: readonly DisplacedGearItem[] = []) => {
+      // Inventory placement is independent of artwork and motion preferences.
+      const nextIds =
+        displaced.length > 0
+          ? applyHandConflicts(reconciledIds, incomingId, replacedId, displaced, selectedSlot)
+          : replacedId
+            ? applyReplace(reconciledIds, incomingId, replacedId)
+            : applyEmptySlotEquip(reconciledIds, incomingId);
       const incomingIndex = reconciledIds.indexOf(incomingId);
-      if (incomingIndex !== -1) {
-        setPlaceholderIndex(incomingIndex);
-      }
-      const nextIds = applyEmptySlotEquip(reconciledIds, incomingId);
+      setPlaceholderIndex(!replacedId && displaced.length === 0 && incomingIndex !== -1 ? incomingIndex : null);
       commitIds(nextIds, clampPage(safePage, nextIds.length, ARMORY_PAGE_SIZE));
     },
-    [commitIds, reconciledIds, safePage],
+    [commitIds, reconciledIds, safePage, selectedSlot],
   );
 
   const commitUnequip = useCallback(
@@ -190,21 +185,6 @@ export function useArmoryOrdering({
       commitIds(nextIds, safePage);
     },
     [commitIds, reconciledIds, safePage],
-  );
-
-  const commitHandConflicts = useCallback(
-    (incomingId: string, targetReplacedId: string | null, additionalDisplaced: readonly DisplacedGearItem[]) => {
-      setPlaceholderIndex(null);
-      const nextIds = applyHandConflicts(
-        reconciledIds,
-        incomingId,
-        targetReplacedId,
-        additionalDisplaced,
-        selectedSlot,
-      );
-      commitIds(nextIds, clampPage(safePage, nextIds.length, ARMORY_PAGE_SIZE));
-    },
-    [commitIds, reconciledIds, selectedSlot, safePage],
   );
 
   const clearPlaceholder = useCallback(() => {
@@ -223,9 +203,7 @@ export function useArmoryOrdering({
     pagedTrinkets,
     placeholderLocalIndex,
     clearPlaceholder,
-    commitReplacement,
-    commitEmptySlotEquip,
+    commitEquip,
     commitUnequip,
-    commitHandConflicts,
   };
 }

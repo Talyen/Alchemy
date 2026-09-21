@@ -78,7 +78,7 @@ export function teardownRun(): void {
 
 function flushSave(activeRun: ActiveRunData | null, message: string): void {
   // Immediate fast path: run-end and gear mutations need durability without
-  // waiting for the autosave debounce. Shares sharedSaveQueue (and the
+  // waiting for the autosave debounce. Shares the storage owner’s queue (and the
   // snapshot builder) with the debounced autosave, so overlapping writes
   // coalesce. saveAlchemySaveData never rejects (failures resolve "failed"),
   // so handle the outcome explicitly: the debounced scheduler write scheduled

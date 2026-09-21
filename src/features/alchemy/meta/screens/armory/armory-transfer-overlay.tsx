@@ -3,21 +3,7 @@ import { createPortal } from "react-dom";
 import { motion, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 
-interface TransferRect {
-  top: number;
-  left: number;
-  width: number;
-  height: number;
-}
-
-export interface FlyingItem {
-  id: string;
-  art: string;
-  sourceRect: TransferRect;
-  destRect?: TransferRect | null | undefined;
-  isFadingOut?: boolean | undefined;
-  isTrinket?: boolean | undefined;
-}
+import type { FlyingItem } from "./armory-transfer-presentation";
 
 export function ArmoryTransferOverlay({
   flyingItems,

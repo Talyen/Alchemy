@@ -1,13 +1,15 @@
-import { combatTextDisplay, consolidateCombatBursts } from "./combat-feedback-merge";
+import {
+  createCombatFeedback,
+  createCombatFeedbackState,
+  type CombatFeedbackState,
+  type CombatFeedbackActions,
+} from "./combat-feedback";
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 import { readBattle, readRunPhase } from "@/features/alchemy/shared/stores/run-reads";
 import { onClearBattlePresentation, onRunTeardown } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { mergeCombatText, type BattleSnapshot, type CombatTextEvent } from "@/lib/battle";
-import { COMBAT_TEXT_LIFETIME_MS, COMBAT_TEXT_MIN_LIFETIME_MS, SHAKE_DURATION_MS } from "@/lib/game-constants";
-import { resolveGameDelay, TimerGroup } from "@/lib/animation/game-timer";
-import type { CardGhost, CardTransfer, CombatImpactCue, CombatTextBurst } from "../../shared/types";
-import { getCombatImpactVisual } from "../../shared/utils";
+import type { BattleSnapshot } from "@/lib/battle";
+import type { CardGhost, CardTransfer } from "../../shared/types";
 import {
   canonicalizeHiddenHandCardKeys,
   EMPTY_HIDDEN_HAND_KEYS,
@@ -15,22 +17,12 @@ import {
   type HiddenHandCardKeys,
 } from "./playable-hand";
 
-interface BattlePresentationStore {
+interface BattlePresentationStore extends CombatFeedbackState, CombatFeedbackActions {
   openingDrawPending: boolean;
   setOpeningDrawPending: (pending: boolean) => void;
   displayedBattle: BattleSnapshot | null;
   setDisplayedBattle: (state: BattleSnapshot | null) => void;
   cardGhosts: CardGhost[];
-  floatingCombatBursts: CombatTextBurst[];
-  enemyShaking: boolean;
-  playerShaking: boolean;
-  companionShaking: boolean;
-  playerImpactCue: CombatImpactCue | null;
-  enemyImpactCue: CombatImpactCue | null;
-  playerAttackToken: number;
-  enemyAttackToken: number;
-  playerCastToken: number;
-  enemyCastToken: number;
   cardTransfers: CardTransfer[];
   hiddenHandCardKeys: HiddenHandCardKeys;
   cardTransferInProgress: boolean;
@@ -38,13 +30,6 @@ interface BattlePresentationStore {
   spawnCardGhost: (ghost: Omit<CardGhost, "id">) => void;
   removeCardGhost: (id: string) => void;
   clearCardGhosts: () => void;
-  shakeEnemy: () => void;
-  shakePlayer: () => void;
-  shakeCompanion: () => void;
-  telegraphAttack: (side: "player" | "enemy" | "companion") => void;
-  telegraphCast: (side: "player" | "enemy" | "companion") => void;
-  showCombatTexts: (events: CombatTextEvent[]) => void;
-  clearFloatingCombatTexts: () => void;
   setCardTransfers: (transfers: CardTransfer[] | ((prev: CardTransfer[]) => CardTransfer[])) => void;
   setHiddenHandCardKeys: (update: (prev: HiddenHandCardKeys) => Iterable<string>) => void;
   setCardTransferInProgress: (inProgress: boolean | ((prev: boolean) => boolean)) => void;
@@ -53,237 +38,82 @@ interface BattlePresentationStore {
   resetPresentation: () => void;
 }
 
-const shakeDuration = SHAKE_DURATION_MS;
-
 const MAX_CARD_GHOSTS = 6;
-
-let combatTextSequence = 0;
-let combatImpactSequence = 0;
-const combatTextTimers = new TimerGroup();
-const shakeTimers = new TimerGroup();
-type ShakeTarget = "enemy" | "player" | "companion";
-const shakeTimerCancels = new Map<ShakeTarget, () => void>();
-
-function triggerShake(set: (partial: Partial<BattlePresentationStore>) => void, target: ShakeTarget): void {
-  if (target === "enemy") {
-    set({ enemyShaking: true });
-    scheduleShakeReset(target, () => set({ enemyShaking: false }));
-  } else if (target === "player") {
-    set({ playerShaking: true });
-    scheduleShakeReset(target, () => set({ playerShaking: false }));
-  } else {
-    set({ companionShaking: true });
-    scheduleShakeReset(target, () => set({ companionShaking: false }));
-  }
-}
-
-type TelegraphKind = "Attack" | "Cast";
-
-function triggerTelegraph(
-  set: (fn: (s: BattlePresentationStore) => Partial<BattlePresentationStore>) => void,
-  kind: TelegraphKind,
-  side: ShakeTarget,
-): void {
-  const ally = side === "player" || side === "companion";
-  if (kind === "Attack") {
-    if (ally) set((s) => ({ playerAttackToken: s.playerAttackToken + 1 }));
-    else set((s) => ({ enemyAttackToken: s.enemyAttackToken + 1 }));
-  } else if (ally) set((s) => ({ playerCastToken: s.playerCastToken + 1 }));
-  else set((s) => ({ enemyCastToken: s.enemyCastToken + 1 }));
-}
-
-function scheduleShakeReset(target: ShakeTarget, reset: () => void) {
-  shakeTimerCancels.get(target)?.();
-  shakeTimerCancels.set(
-    target,
-    shakeTimers.setTimeout(() => {
-      shakeTimerCancels.delete(target);
-      reset();
-    }, shakeDuration),
-  );
-}
-
-function clearPresentationTimers() {
-  combatTextTimers.clearAll();
-  shakeTimers.clearAll();
-  shakeTimerCancels.clear();
-}
-
-function shouldShowFloatingCombatText(sequence: number): boolean {
-  if (sequence !== combatTextSequence) return false;
-  const battle = readBattle();
-  return battle.hasActiveBattle && readRunPhase() === "battle";
-}
-
-let combatTextId = 0;
-
-function invalidateCombatTextSequence() {
-  combatTextSequence += 1;
-}
-
-let ghostIdCounter = 0;
 
 type BattlePresentationState = Pick<
   BattlePresentationStore,
   | "openingDrawPending"
   | "displayedBattle"
   | "cardGhosts"
-  | "floatingCombatBursts"
-  | "enemyShaking"
-  | "playerShaking"
-  | "companionShaking"
-  | "playerImpactCue"
-  | "enemyImpactCue"
-  | "playerAttackToken"
-  | "enemyAttackToken"
-  | "playerCastToken"
-  | "enemyCastToken"
   | "cardTransfers"
   | "hiddenHandCardKeys"
   | "cardTransferInProgress"
 >;
 
-const INITIAL_BATTLE_PRESENTATION_STATE: BattlePresentationState = {
-  openingDrawPending: false,
-  displayedBattle: null,
-  cardGhosts: [],
-  floatingCombatBursts: [],
-  enemyShaking: false,
-  playerShaking: false,
-  companionShaking: false,
-  playerImpactCue: null,
-  enemyImpactCue: null,
-  playerAttackToken: 0,
-  enemyAttackToken: 0,
-  playerCastToken: 0,
-  enemyCastToken: 0,
-  cardTransfers: [],
-  hiddenHandCardKeys: EMPTY_HIDDEN_HAND_KEYS,
-  cardTransferInProgress: false,
-};
+function createInitialState(): BattlePresentationState & CombatFeedbackState {
+  return {
+    ...createCombatFeedbackState(),
+    openingDrawPending: false,
+    displayedBattle: null,
+    cardGhosts: [],
+    cardTransfers: [],
+    hiddenHandCardKeys: EMPTY_HIDDEN_HAND_KEYS,
+    cardTransferInProgress: false,
+  };
+}
 
 export const useBattlePresentationStore = create<BattlePresentationStore>()(
-  subscribeWithSelector((set) => ({
-    ...INITIAL_BATTLE_PRESENTATION_STATE,
-    setOpeningDrawPending: (openingDrawPending) => set({ openingDrawPending }),
-    setDisplayedBattle: (displayedBattle) => set({ displayedBattle }),
+  subscribeWithSelector((set) => {
+    let ghostIdCounter = 0;
+    const feedback = createCombatFeedback({
+      update: (reduce) => set(reduce),
+      isVisible: () => readBattle().hasActiveBattle && readRunPhase() === "battle",
+      now: () => Date.now(),
+    });
+    return {
+      ...createInitialState(),
+      ...feedback.actions,
+      setOpeningDrawPending: (openingDrawPending) => set({ openingDrawPending }),
+      setDisplayedBattle: (displayedBattle) => set({ displayedBattle }),
 
-    spawnCardGhost: (ghost) => {
-      const id = `ghost-${++ghostIdCounter}`;
-      // Departing cards finish independently; cap overlapping ghosts so rapid
-      // plays shed the oldest instead of stacking canvases (Trinket parity: 6).
-      set((s) => ({ cardGhosts: [...s.cardGhosts.slice(-(MAX_CARD_GHOSTS - 1)), { ...ghost, id }] }));
-    },
+      spawnCardGhost: (ghost) => {
+        const id = `ghost-${++ghostIdCounter}`;
+        // Departing cards finish independently; cap overlapping ghosts so rapid
+        // plays shed the oldest instead of stacking canvases (Trinket parity: 6).
+        set((s) => ({ cardGhosts: [...s.cardGhosts.slice(-(MAX_CARD_GHOSTS - 1)), { ...ghost, id }] }));
+      },
 
-    removeCardGhost: (id) => set((s) => ({ cardGhosts: s.cardGhosts.filter((g) => g.id !== id) })),
+      removeCardGhost: (id) => set((s) => ({ cardGhosts: s.cardGhosts.filter((g) => g.id !== id) })),
 
-    clearCardGhosts: () => set({ cardGhosts: [] }),
+      clearCardGhosts: () => set({ cardGhosts: [] }),
 
-    shakeEnemy: () => triggerShake(set, "enemy"),
-    shakePlayer: () => triggerShake(set, "player"),
-    shakeCompanion: () => triggerShake(set, "companion"),
+      setCardTransfers: (transfers) =>
+        set((s) => ({
+          cardTransfers: typeof transfers === "function" ? transfers(s.cardTransfers) : transfers,
+        })),
 
-    telegraphAttack: (side) => triggerTelegraph(set, "Attack", side),
+      setHiddenHandCardKeys: (update) =>
+        set((s) => {
+          const next = canonicalizeHiddenHandCardKeys(update(s.hiddenHandCardKeys));
+          if (hiddenHandKeysEqual(s.hiddenHandCardKeys, next)) return {};
+          return { hiddenHandCardKeys: next };
+        }),
 
-    telegraphCast: (side) => triggerTelegraph(set, "Cast", side),
+      setCardTransferInProgress: (inProgress) =>
+        set((s) => ({
+          cardTransferInProgress: typeof inProgress === "function" ? inProgress(s.cardTransferInProgress) : inProgress,
+        })),
 
-    showCombatTexts: (events) => {
-      const sequence = combatTextSequence;
-      if (events.length === 0 || !shouldShowFloatingCombatText(sequence)) return;
-      const consolidated: CombatTextEvent[] = [];
-      // Resolved frames can be saved and replayed; presentation must never mutate their events.
-      for (const event of events) mergeCombatText(consolidated, { ...event });
-      const priority = (event: CombatTextEvent) => (event.kind === "notice" ? 0 : event.kind === "damage" ? 1 : 2);
-      consolidated.sort((a, b) => priority(a) - priority(b));
-      const meaningful = consolidated.filter((event) => event.kind === "notice" || event.amount !== 0);
-      const visible = meaningful.length > 0 ? meaningful : consolidated.slice(0, 1);
-      const now = Date.now();
-      const lifetimeMs = Math.max(COMBAT_TEXT_MIN_LIFETIME_MS, resolveGameDelay(COMBAT_TEXT_LIFETIME_MS));
-      const actionId = ++combatTextId;
-      const bursts: CombatTextBurst[] = [];
-      const impacts: Partial<Record<"playerImpactCue" | "enemyImpactCue", CombatImpactCue>> = {};
-      for (const target of ["player", "enemy"] as const) {
-        const entries = visible.filter((event) => event.target === target);
-        if (entries.length === 0) continue;
-        const id = `combat-burst-${actionId}-${target}`;
-        bursts.push({
-          id,
-          target,
-          firstShownAt: now,
-          lifetimeMs,
-          entries: entries.map((event, index) => ({
-            ...event,
-            id: `${id}-${index}`,
-            displayText: combatTextDisplay(event),
-            ...(event.kind !== "notice" ? { reservedDigits: String(Math.abs(event.amount)).length + 1 } : {}),
-          })),
-        });
-        let strongest: { amount: number; visual: NonNullable<ReturnType<typeof getCombatImpactVisual>> } | undefined;
-        for (const entry of entries) {
-          const visual = getCombatImpactVisual(entry);
-          if (!visual || entry.kind !== "damage") continue;
-          if (
-            !strongest ||
-            (visual.healthLost && !strongest.visual.healthLost) ||
-            (visual.healthLost === strongest.visual.healthLost && entry.amount > strongest.amount)
-          ) {
-            strongest = { amount: entry.amount, visual };
-          }
-        }
-        if (strongest)
-          impacts[target === "player" ? "playerImpactCue" : "enemyImpactCue"] = {
-            ...strongest.visual,
-            sequence: ++combatImpactSequence,
-          };
-      }
-      if (bursts.length === 0) return;
-      let added: CombatTextBurst[] = [];
-      set((s) => {
-        const result = consolidateCombatBursts(s.floatingCombatBursts, bursts, now);
-        added = result.added;
-        return { floatingCombatBursts: result.bursts, ...impacts };
-      });
-      if (added.length === 0) return;
-      const ids = new Set(added.map((burst) => burst.id));
-      combatTextTimers.setTimeout(() => {
-        if (sequence !== combatTextSequence) return;
-        set((s) => ({ floatingCombatBursts: s.floatingCombatBursts.filter((burst) => !ids.has(burst.id)) }));
-      }, lifetimeMs);
-    },
+      resetHandTransferUi: () => set({ hiddenHandCardKeys: EMPTY_HIDDEN_HAND_KEYS, cardTransferInProgress: false }),
 
-    clearFloatingCombatTexts: () => {
-      invalidateCombatTextSequence();
-      combatTextTimers.clearAll();
-      set({ floatingCombatBursts: [], playerImpactCue: null, enemyImpactCue: null });
-    },
+      resetCardTransfers: () => set({ cardTransfers: [] }),
 
-    setCardTransfers: (transfers) =>
-      set((s) => ({
-        cardTransfers: typeof transfers === "function" ? transfers(s.cardTransfers) : transfers,
-      })),
-
-    setHiddenHandCardKeys: (update) =>
-      set((s) => {
-        const next = canonicalizeHiddenHandCardKeys(update(s.hiddenHandCardKeys));
-        if (hiddenHandKeysEqual(s.hiddenHandCardKeys, next)) return {};
-        return { hiddenHandCardKeys: next };
-      }),
-
-    setCardTransferInProgress: (inProgress) =>
-      set((s) => ({
-        cardTransferInProgress: typeof inProgress === "function" ? inProgress(s.cardTransferInProgress) : inProgress,
-      })),
-
-    resetHandTransferUi: () => set({ hiddenHandCardKeys: EMPTY_HIDDEN_HAND_KEYS, cardTransferInProgress: false }),
-
-    resetCardTransfers: () => set({ cardTransfers: [] }),
-
-    resetPresentation: () => {
-      invalidateCombatTextSequence();
-      clearPresentationTimers();
-      set(INITIAL_BATTLE_PRESENTATION_STATE);
-    },
-  })),
+      resetPresentation: () => {
+        feedback.cancel();
+        set(createInitialState());
+      },
+    };
+  }),
 );
 
 onClearBattlePresentation(() => {

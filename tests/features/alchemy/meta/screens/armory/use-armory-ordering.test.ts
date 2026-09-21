@@ -141,54 +141,49 @@ describe("useArmoryOrdering", () => {
     expect(result.current.safePage).toBe(0);
   });
 
-  it("handles commitReplacement preserving clicked inventory slot", () => {
-    const items = [swordBasic1, hatchetBasic, swordAstral];
-    const { result } = renderHook(() =>
-      useArmoryOrdering({
-        characterId: "knight",
-        selectedSlot: "main-hand",
-        pickerItems: items,
-        ownedTrinkets: [],
-      }),
+  it("places the replaced item at the incoming item's position after inventory refresh", () => {
+    const replacement = { ...swordBasic2, instanceId: "replacement" };
+    const { result, rerender } = renderHook(
+      ({ items }) =>
+        useArmoryOrdering({
+          characterId: "knight",
+          selectedSlot: "main-hand",
+          pickerItems: items,
+          ownedTrinkets: [],
+        }),
+      { initialProps: { items: [swordBasic1, hatchetBasic, swordAstral] } },
     );
-
-    // Initial order: Astral, Hatchet, Longsword
-    expect(result.current.orderedGear.map((i) => i.instanceId)).toEqual(["sword-astral", "hatchet-b1", "sword-b1"]);
-
-    act(() => {
-      result.current.commitReplacement("hatchet-b1", "replaced-shield");
-    });
-
-    // hatchet-b1 at index 1 is replaced by replaced-shield
-    // When pickerItems contains replaced-shield:
-    // next state should have replaced-shield at index 1
+    act(() => result.current.commitEquip(hatchetBasic.instanceId, replacement.instanceId));
+    rerender({ items: [replacement, swordBasic1, swordAstral] });
+    expect(result.current.orderedGear.map((item) => item.instanceId)).toEqual([
+      "sword-astral",
+      "replacement",
+      "sword-b1",
+    ]);
+    expect(result.current.placeholderLocalIndex).toBeNull();
   });
 
-  it("handles commitUnequip inserting at start of current page", () => {
-    const manyItems = Array.from({ length: 8 }, (_, i) => ({
+  it("inserts unequipped items at the start of the current page after inventory refresh", () => {
+    const items: GearInstance[] = Array.from({ length: 8 }, (_, i) => ({
       instanceId: `sword-${i}`,
       definitionId: "longsword-basic",
       affixes: [],
     }));
-
-    const { result } = renderHook(() =>
-      useArmoryOrdering({
-        characterId: "knight",
-        selectedSlot: "main-hand",
-        pickerItems: manyItems,
-        ownedTrinkets: [],
-      }),
+    const returned = { ...swordBasic1, instanceId: "returned" };
+    const { result, rerender } = renderHook(
+      ({ pool }) =>
+        useArmoryOrdering({
+          characterId: "knight",
+          selectedSlot: "main-hand",
+          pickerItems: pool,
+          ownedTrinkets: [],
+        }),
+      { initialProps: { pool: items } },
     );
-
-    act(() => {
-      result.current.setPage(1);
-    });
-
-    act(() => {
-      result.current.commitUnequip("unequipped-sword");
-    });
-
-    // Page is 1, page size 6 -> inserted at index 6
+    act(() => result.current.setPage(1));
+    act(() => result.current.commitUnequip(returned.instanceId));
+    rerender({ pool: [...items, returned] });
     expect(result.current.safePage).toBe(1);
+    expect(result.current.pagedGear.map((item) => item.instanceId)).toEqual(["returned", "sword-6", "sword-7"]);
   });
 });

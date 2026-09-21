@@ -18,6 +18,15 @@ optimization remain in [WORKFLOWS-ASSETS.md](./WORKFLOWS-ASSETS.md).
 | Playback test setup                  | `tests/helpers/audio-fixture.ts` (`installCleanAudio`) over `resetAudioRuntimeForTests()` in `src/lib/audio/reset.ts`; `tests/helpers/fake-audio.ts` only for mid-test stub swaps |
 | Asset/pipeline test                  | `tests/lib/audio/audio-assets.test.ts` (disk + `scripts/assets/*` validators; run on registry/asset/pipeline changes)                                                             |
 
+Music playback has one private owner in `music.ts`: cached records bind the track key,
+media element, and fade gain. Its playback state distinguishes idle, paused,
+playing, fading in, and fading out; only fading out carries a pending destination.
+Fade states own their timers, and cancellation invalidates their callbacks.
+`state.ts` contains shared preferences and SFX cooldowns, never music pointers.
+Volume controls call `syncMusicSettings()` so updates retain the actual playing
+track's boss boost and fade gain. Tests observe fake Audio elements rather than
+injecting media pointers into shared state.
+
 Playback modules live together in `src/lib/audio/`; callers use `@/lib/audio`, backed by `index.ts`. `getSoundUrl` is exported once from the facade (owner `url.ts`); `isAppInBackground` is exported once from the facade (owner `host.ts`). Tests mirror this folder in `tests/lib/audio/`, with `*.dom.test.ts` identifying tests that need browser APIs.
 
 ## Runtime contract
@@ -30,6 +39,8 @@ Playback modules live together in `src/lib/audio/`; callers use `@/lib/audio`, b
 - Crafted Mixed Potion IDs resolve to the base Potion sound for both playback and battle preloading.
 - Successful shop refreshes, card removals, and Potion mixes play their registered service sounds after the transaction commits, including free services. Rejected actions remain silent.
 - Starting a battle invalidates the upcoming enemy's battle music cache, even while the previous screen remains visible. It preserves menu playback until navigation selects the battle track. Invalidating the currently playing key forgets it entirely, so the next play builds a fresh track.
+- Invalidating either the playing track or the pending destination cancels the transition. Invalidating the playing track stops playback; invalidating only the destination restores the outgoing track to full gain. Unrelated cache invalidation leaves playback and its fade alone. A later explicit play can build the invalidated track afresh.
+- Pausing cancels the pending destination and fade. Resuming the paused track restores its configured volume and mute state; selecting another track starts a new transition.
 - Unknown music keys are ignored: the current track, its key, and any bestiary preview stay untouched. Pausing all music also ends any bestiary preview.
 - The first play of a sound has no cooldown; repeats inside `SFX_COOLDOWN_MS` are suppressed.
 - Every companion has a card sound and a battle companion mapping. Cards and enemies without a registered sound stay silent and are pinned in the exact `SILENT_*` lists in `tests/lib/audio/sound-registry.test.ts`: adding a sound (or content) must update those lists. Intentionally shared files across battle/UI tables (gold, end-turn, card-fan, mystery-box) are pinned in the same file, as is the music-boss vs attack-only (`living-armor`) roster.

@@ -57,142 +57,6 @@ export function getBossMusicKey(bossId: string): string | undefined {
   return BOSS_ID_TO_KEY.get(bossId);
 }
 
-interface MusicTrackRecord {
-  element: HTMLAudioElement;
-  fadeGain: number;
-}
-
-/**
- * Live elements by music key. This map is the only owner of element identity
- * and fade progress; `audioState.currentMusic` points at one of these
- * elements (or a foreign test double) but never duplicates the bookkeeping.
- */
-const musicTracks = new Map<string, MusicTrackRecord>();
-
-function keyForElement(el: HTMLAudioElement): string | null {
-  for (const [key, record] of musicTracks) {
-    if (record.element === el) return key;
-  }
-  return audioState.currentMusic === el ? audioState.currentMusicKey : null;
-}
-
-export function invalidateCacheForKey(key: string): void {
-  const record = musicTracks.get(key);
-  if (record) {
-    record.element.pause();
-    record.element.currentTime = 0;
-  }
-  musicTracks.delete(key);
-  if (audioState.currentMusicKey === key) {
-    audioState.currentMusic = null;
-    audioState.currentMusicKey = null;
-  }
-}
-
-/** Test-only reset: drops cached elements, transitions, preview, and current pointers. Volumes and mute are owned by the test. */
-export function resetMusicRuntimeForTests(): void {
-  musicTransitionToken += 1;
-  cancelMusicTransition();
-  bossPreviewKey = null;
-  for (const record of musicTracks.values()) {
-    try {
-      record.element.pause();
-    } catch {}
-  }
-  musicTracks.clear();
-  audioState.currentMusic = null;
-  audioState.currentMusicKey = null;
-}
-
-export function pauseAllMusic() {
-  musicTransitionToken += 1;
-  cancelMusicTransition();
-  // A pause ends any bestiary preview so a later tab restore cannot replay
-  // menu music as if a preview were still active.
-  bossPreviewKey = null;
-  for (const record of musicTracks.values()) {
-    record.element.muted = true;
-    record.element.pause();
-  }
-  if (audioState.currentMusic) {
-    audioState.currentMusic.muted = true;
-    audioState.currentMusic.pause();
-  }
-}
-
-let musicTransitionToken = 0;
-let musicTransitionTimer: ReturnType<typeof setInterval> | null = null;
-// Active bestiary preview key. Cleared by any screen-driven playMusic call so
-// leaving the collection (which owns its music via useAppAudioEffects) cannot
-// leave a stale preview that later restores menu music without a preview.
-let bossPreviewKey: string | null = null;
-
-function cancelMusicTransition(): void {
-  if (musicTransitionTimer === null) return;
-  clearInterval(musicTransitionTimer);
-  musicTransitionTimer = null;
-}
-
-/**
- * Screen-driven switch bookkeeping. Clears any bestiary preview, cancels the
- * in-flight transition, and points the key at the incoming track. Callers
- * resolve unknown keys before calling so a bad key never silences playback.
- */
-function beginMusicTransition(key: string): number {
-  bossPreviewKey = null;
-  musicTransitionToken += 1;
-  cancelMusicTransition();
-  audioState.currentMusicKey = key;
-  return musicTransitionToken;
-}
-
-function playElement(el: HTMLAudioElement) {
-  if (isNonPlayerAudioHost()) {
-    el.muted = true;
-    el.pause();
-    return;
-  }
-  el.play().catch(() => {
-    console.warn("Music playback blocked until user interaction");
-  });
-}
-
-function rampVolume({
-  transitionToken,
-  delayMs = 0,
-  durationMs,
-  apply,
-  onComplete,
-}: {
-  transitionToken: number;
-  durationMs: number;
-  delayMs?: number;
-  apply: (t: number) => void;
-  onComplete?: () => void;
-}): void {
-  cancelMusicTransition();
-  const startTime = performance.now();
-
-  const timer = setInterval(() => {
-    if (transitionToken !== musicTransitionToken) {
-      clearInterval(timer);
-      if (musicTransitionTimer === timer) musicTransitionTimer = null;
-      return;
-    }
-
-    const elapsed = performance.now() - startTime;
-    if (elapsed < delayMs) return;
-    const t = Math.min(1, (elapsed - delayMs) / durationMs);
-    apply(t);
-    if (t >= 1) {
-      clearInterval(timer);
-      if (musicTransitionTimer === timer) musicTransitionTimer = null;
-      onComplete?.();
-    }
-  }, MUSIC_FADE_TICK_MS);
-  musicTransitionTimer = timer;
-}
-
 /**
  * Pure volume curve. Boss tracks get the shared boost before the clamp, so at
  * full volume both menu and boss saturate at 1.0 and the boost only separates
@@ -213,124 +77,193 @@ export function computeMusicVolume({
   return clamp01(musicVolume * masterVolume * MUSIC_MASTER_GAIN * clamp01(fadeGain) * boost);
 }
 
-export function applyMusicVolume(el: HTMLAudioElement, key: string | null = keyForElement(el), fadeProgress?: number) {
-  const record = key !== null ? musicTracks.get(key) : undefined;
-  const owned = record?.element === el;
-  if (owned && fadeProgress !== undefined) {
-    record.fadeGain = clamp01(fadeProgress);
-  }
-  const fadeGain = fadeProgress !== undefined ? clamp01(fadeProgress) : owned ? record.fadeGain : 1;
-  el.volume = computeMusicVolume({
+interface MusicTrackRecord {
+  readonly key: string;
+  readonly element: HTMLAudioElement;
+  fadeGain: number;
+}
+
+type MusicPlayback =
+  | { phase: "idle" }
+  | { phase: "paused" | "playing"; track: MusicTrackRecord }
+  | { phase: "fading-in"; track: MusicTrackRecord; timer: ReturnType<typeof setInterval> | null }
+  | { phase: "fading-out"; track: MusicTrackRecord; destination: string; timer: ReturnType<typeof setInterval> | null };
+
+const musicTracks = new Map<string, MusicTrackRecord>();
+let playback: MusicPlayback = { phase: "idle" };
+let bossPreviewKey: string | null = null;
+
+function cancelTransition(): void {
+  if ("timer" in playback && playback.timer !== null) clearInterval(playback.timer);
+  // Replacing the state also invalidates already queued timer callbacks.
+  playback = playback.phase === "idle" ? { phase: "idle" } : { phase: "playing", track: playback.track };
+}
+
+function applyTrackVolume(track: MusicTrackRecord, fadeGain = track.fadeGain): void {
+  track.fadeGain = clamp01(fadeGain);
+  track.element.volume = computeMusicVolume({
     musicVolume: audioState.musicVolume,
     masterVolume: audioState.masterVolume,
-    fadeGain,
-    isBoss: key !== null && (MUSIC_CATALOG[key]?.isBoss ?? false),
+    fadeGain: track.fadeGain,
+    isBoss: MUSIC_CATALOG[track.key]?.isBoss ?? false,
   });
+}
+
+/** Settings may change during either half of a fade; retain the actual track's gain and identity. */
+export function syncMusicSettings(): void {
+  if (playback.phase === "idle") return;
+  applyTrackVolume(playback.track);
+  playback.track.element.muted = audioState.muted;
+}
+
+function playElement(el: HTMLAudioElement): void {
+  if (isNonPlayerAudioHost()) {
+    el.muted = true;
+    el.pause();
+    return;
+  }
+  el.play().catch(() => {
+    console.warn("Music playback blocked until user interaction");
+  });
+}
+
+function resolveTrack(key: string): MusicTrackRecord | undefined {
+  const cached = musicTracks.get(key);
+  if (cached) return cached;
+  const catalog = MUSIC_CATALOG[key];
+  const file = pickRandomUnsafe(catalog?.files ?? []);
+  if (!catalog || !file) return undefined;
+  const element = new Audio(musicBase + file);
+  element.loop = true;
+  if (catalog.skipSeconds) element.currentTime = catalog.skipSeconds;
+  const track = { key, element, fadeGain: 1 };
+  musicTracks.set(key, track);
+  return track;
+}
+
+function activateTrack(track: MusicTrackRecord, gain: number): void {
+  if (playback.phase !== "idle" && playback.track !== track) playback.track.element.pause();
+  playback = { phase: "playing", track };
+  applyTrackVolume(track, gain);
+  track.element.muted = audioState.muted;
+  playElement(track.element);
+}
+
+function rampVolume(
+  state: Extract<MusicPlayback, { phase: "fading-in" | "fading-out" }>,
+  durationMs: number,
+  delayMs: number,
+  apply: (progress: number) => void,
+  complete: () => void,
+): void {
+  playback = state;
+  const startTime = performance.now();
+  state.timer = setInterval(() => {
+    if (playback !== state) return;
+    const elapsed = performance.now() - startTime;
+    if (elapsed < delayMs) return;
+    const progress = Math.min(1, (elapsed - delayMs) / durationMs);
+    apply(progress);
+    if (progress >= 1) {
+      cancelTransition();
+      complete();
+    }
+  }, MUSIC_FADE_TICK_MS);
+}
+
+function fadeIn(track: MusicTrackRecord): void {
+  activateTrack(track, 0);
+  rampVolume(
+    { phase: "fading-in", track, timer: null },
+    FADE_IN_DURATION_MS,
+    FADE_IN_DELAY_MS,
+    (progress) => applyTrackVolume(track, progress),
+    () => {
+      playback = { phase: "playing", track };
+    },
+  );
 }
 
 export function isMusicPaused(): boolean {
-  return !audioState.currentMusic || audioState.currentMusic.paused;
+  return playback.phase === "idle" || playback.track.element.paused;
 }
 
-function activateTrackElement(el: HTMLAudioElement, key: string, fadeProgress: number): HTMLAudioElement {
-  applyMusicVolume(el, key, fadeProgress);
-  el.muted = audioState.muted;
-  playElement(el);
-  audioState.currentMusic = el;
-  return el;
-}
-
-function replaceCurrentTrack(key: string, fadeProgress: number): HTMLAudioElement | undefined {
-  const cached = musicTracks.get(key);
-  const catalog = MUSIC_CATALOG[key];
-  // Resolve before pausing so an unknown key never silences the current track.
-  const track = cached ? undefined : pickRandomUnsafe(catalog?.files ?? []);
-  if (!cached && (!track || !catalog)) return undefined;
-
-  if (audioState.currentMusic) {
-    audioState.currentMusic.pause();
-    audioState.currentMusic = null;
-  }
-
-  if (cached) {
-    return activateTrackElement(cached.element, key, fadeProgress);
-  }
-
-  if (!track || !catalog) return undefined;
-
-  const el = new Audio(musicBase + track);
-  el.loop = true;
-  musicTracks.set(key, { element: el, fadeGain: clamp01(fadeProgress) });
-  if (catalog?.skipSeconds) {
-    el.currentTime = catalog.skipSeconds;
-  }
-  return activateTrackElement(el, key, fadeProgress);
-}
-
-function startTrack(key: string, transitionToken: number) {
-  const el = replaceCurrentTrack(key, 0);
-  if (!el) return;
-
-  rampVolume({
-    transitionToken,
-    delayMs: FADE_IN_DELAY_MS,
-    durationMs: FADE_IN_DURATION_MS,
-    apply: (t) => {
-      if (audioState.currentMusic === el) {
-        applyMusicVolume(el, key, t);
-      }
-    },
-  });
-}
-
-export function playMusicImmediate(key: string) {
-  // Unknown keys leave the current track and preview untouched.
+export function playMusicImmediate(key: string): void {
   if (!MUSIC_CATALOG[key]) return;
-  beginMusicTransition(key);
-  replaceCurrentTrack(key, 1);
-}
-
-function fadeOutAndStartTrack(oldTrack: HTMLAudioElement, newKey: string, transitionToken: number) {
-  const oldKey = keyForElement(oldTrack);
-  const oldRecord = oldKey !== null ? musicTracks.get(oldKey) : undefined;
-  const startFadeGain = oldRecord?.element === oldTrack ? oldRecord.fadeGain : 1;
-
-  rampVolume({
-    transitionToken,
-    durationMs: FADE_OUT_DURATION_MS,
-    apply: (t) => {
-      applyMusicVolume(oldTrack, oldKey, startFadeGain * (1 - t));
-    },
-    onComplete: () => {
-      oldTrack.pause();
-      if (audioState.currentMusic === oldTrack) {
-        audioState.currentMusic = null;
-      }
-      startTrack(newKey, transitionToken);
-    },
-  });
-}
-
-export function playMusic(key: string) {
-  // Unknown keys leave the current track and preview untouched.
-  if (!MUSIC_CATALOG[key]) return;
-  // A preview only survives until the next explicit switch, including a
-  // same-key resume. beginMusicTransition re-clears it below (no-op).
+  const track = resolveTrack(key);
+  if (!track) return;
   bossPreviewKey = null;
-  if (key === audioState.currentMusicKey) {
-    if (audioState.currentMusic?.paused) {
-      playElement(audioState.currentMusic);
+  cancelTransition();
+  activateTrack(track, 1);
+}
+
+export function playMusic(key: string): void {
+  if (!MUSIC_CATALOG[key]) return;
+  bossPreviewKey = null;
+  if (playback.phase === "fading-out" && playback.destination === key) return;
+  if (playback.phase !== "idle" && playback.track.key === key && playback.phase !== "fading-out") {
+    if (playback.phase === "paused") {
+      cancelTransition();
+      activateTrack(playback.track, 1);
+    } else if (playback.track.element.paused) {
+      syncMusicSettings();
+      playElement(playback.track.element);
     }
     return;
   }
 
-  const transitionToken = beginMusicTransition(key);
-
-  if (audioState.currentMusic) {
-    fadeOutAndStartTrack(audioState.currentMusic, key, transitionToken);
-  } else {
-    startTrack(key, transitionToken);
+  cancelTransition();
+  if (playback.phase === "idle") {
+    const track = resolveTrack(key);
+    if (track) fadeIn(track);
+    return;
   }
+  const outgoing = playback.track;
+  const startGain = outgoing.fadeGain;
+  rampVolume(
+    { phase: "fading-out", track: outgoing, destination: key, timer: null },
+    FADE_OUT_DURATION_MS,
+    0,
+    (progress) => applyTrackVolume(outgoing, startGain * (1 - progress)),
+    () => {
+      const incoming = resolveTrack(key);
+      if (incoming) fadeIn(incoming);
+    },
+  );
+}
+
+export function pauseAllMusic(): void {
+  cancelTransition();
+  bossPreviewKey = null;
+  for (const { element } of musicTracks.values()) {
+    element.muted = true;
+    element.pause();
+  }
+  if (playback.phase !== "idle") playback = { phase: "paused", track: playback.track };
+}
+
+export function invalidateCacheForKey(key: string): void {
+  const active = playback.phase !== "idle" && playback.track.key === key;
+  const pending = playback.phase === "fading-out" && playback.destination === key;
+  if (active || pending) {
+    cancelTransition();
+    if (active) playback = { phase: "idle" };
+    else if (playback.phase !== "idle") applyTrackVolume(playback.track, 1);
+    bossPreviewKey = null;
+  }
+  const track = musicTracks.get(key);
+  if (track) {
+    track.element.pause();
+    track.element.currentTime = 0;
+    musicTracks.delete(key);
+  }
+}
+
+/** Test-only reset; volume preferences remain owned by the caller. */
+export function resetMusicRuntimeForTests(): void {
+  pauseAllMusic();
+  musicTracks.clear();
+  playback = { phase: "idle" };
 }
 
 /**

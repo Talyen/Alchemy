@@ -159,8 +159,8 @@ export class SaveWriteQueue {
       return pending.storageEpoch === this.storageEpoch ? outcome : "skipped";
     } catch (error) {
       // Only fires for injected/unexpected throws: the real write path
-      // (io.ts writeSaveSnapshot) catches internally and resolves "failed".
-      // Kept distinct from io.ts "Save data could not be written" so failure
+      // (save-storage.ts writeSaveSnapshot) catches internally and resolves "failed".
+      // Kept distinct from save-storage.ts "Save data could not be written" so failure
       // aggregation does not double-count one failed write.
       logStorageFailure("Queued save write threw", error);
       return "failed";
@@ -177,18 +177,4 @@ export class SaveWriteQueue {
     this.coalesced?.resolve("skipped");
     this.coalesced = null;
   }
-}
-
-export const sharedSaveQueue = new SaveWriteQueue();
-
-export function subscribeSaveCancellation(listener: () => void): () => void {
-  return sharedSaveQueue.subscribeCancellation(listener);
-}
-
-export function setWritesDisabled(disabled: boolean): void {
-  sharedSaveQueue.setWritesDisabled(disabled);
-}
-
-export function waitForPendingSaveWrites(): Promise<void> {
-  return sharedSaveQueue.waitForIdle();
 }
