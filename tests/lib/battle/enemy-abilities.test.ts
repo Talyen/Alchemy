@@ -147,7 +147,7 @@ describe("enemy repertoire", () => {
   });
 
   it("does not advance ability history or world randomness during crowd control or Haste", () => {
-    const base = enemyState("skeleton", { lastEnemyAbilityId: "slash" });
+    const base = enemyState("skeleton", { lastEnemyAbilityId: "slash", deck: [makeTestCard()] });
     for (const state of [
       { ...base, enemyCC: { ...base.enemyCC, stunSkipTurns: 1 } },
       { ...base, enemyCC: { ...base.enemyCC, freezeSkipTurns: 1 } },
@@ -456,9 +456,10 @@ describe("ability trait boundaries", () => {
   it("rewards matching Health damage once per ability and not for fully blocked hits", () => {
     const card = makeTestCard({
       effects: [
-        { kind: "damage", damageType: "holy", amount: 2 },
-        { kind: "damage", damageType: "holy", amount: 2 },
+        // Resolve Stun before Holy so it cannot spend the Forge reward under test.
         { kind: "damage", damageType: "stun", amount: 2 },
+        { kind: "damage", damageType: "holy", amount: 2 },
+        { kind: "damage", damageType: "holy", amount: 2 },
       ],
     });
     for (const [id, reward] of [

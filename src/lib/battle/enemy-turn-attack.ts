@@ -244,7 +244,7 @@ function applyAbilityFollowups(
   let nextState = state;
   if (context.vampireBonus) {
     nextState = recordEnemyAbilityActivation(nextState, "vampire");
-    nextState = resolveEnemyAttackHit(
+    const result = resolveEnemyAttackHit(
       nextState,
       { kind: "damage", damageType: "bleed", amount: VAMPIRE_BLOOD_SCENT_DAMAGE },
       combatTexts,
@@ -254,7 +254,10 @@ function applyAbilityFollowups(
         traitSet: context.traitSet,
         amountMultiplier: context.brawlerPenalty ? BRAWLER_PENALTY_MULTIPLIER : 1,
       },
-    ).state;
+    );
+    nextState = result.state;
+    context.landed ||= result.landed;
+    context.healthDamage += result.healthDamage;
   }
   for (const [traitId, status] of [
     ["fire-imp", "burn"],

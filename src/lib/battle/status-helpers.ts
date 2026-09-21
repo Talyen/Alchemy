@@ -82,7 +82,9 @@ export function dealSelfDamage(
     { ignoreMitigation: true },
     combatTexts,
   );
-  const healthLost = Math.max(0, state.playerHealth - postDamage.playerHealth);
+  // Phoenix heals after the lethal loss; Death's Door prevents that loss instead.
+  const phoenixTriggered = state.playerStatuses.phoenixFeather > 0 && postDamage.playerStatuses.phoenixFeather === 0;
+  const healthLost = phoenixTriggered ? state.playerHealth : Math.max(0, state.playerHealth - postDamage.playerHealth);
   if (healthLost > 0) {
     mergeCombatText(combatTexts, {
       target: "player",

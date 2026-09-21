@@ -13,7 +13,7 @@ import {
   gainManaWithCombatText,
   mergeCombatText,
 } from "./combat-text";
-import { removeHarmfulPlayerStatuses, applyPlayerStatusEffect } from "./status-player";
+import { removeHarmfulPlayerStatuses, applyPlayerStatusEffect, applyArmorReward } from "./status-player";
 import { getEnemyDamageMultiplier, rollTalentChance } from "./status-helpers";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { getEditableCorruptionTargets, updateCardNumericValue } from "@/lib/corruption";
@@ -209,7 +209,9 @@ function applyWishTrinketTrigger(state: BattleState, combatTexts: CombatTextEven
     return state;
   const isForge = rollPercent(WISH_TRINKET_FORK_PERCENT, getBattleRng(state));
   const status = isForge ? ("forge" as const) : ("armor" as const);
-  return applyPlayerStatusEffect(state, { kind: "player-status", status, amount: 1 }, combatTexts);
+  return status === "armor"
+    ? applyArmorReward(state, 1, combatTexts)
+    : applyPlayerStatusEffect(state, { kind: "player-status", status, amount: 1 }, combatTexts);
 }
 
 function applyWishDesperateTrigger(

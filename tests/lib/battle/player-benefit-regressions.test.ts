@@ -17,6 +17,7 @@ describe("player benefit regressions", () => {
     const card = makeTestCard({ cost: 1, effects: [] });
     const state = patchBattleState({
       rng: () => 0.99,
+      deck: [card],
       enemyHealth: 100,
       enemyMaxHealth: 100,
       enemyStatuses: { stun: 100 },

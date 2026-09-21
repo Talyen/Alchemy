@@ -203,7 +203,7 @@ export function advanceToPlayerTurn(
   nextState = resolvePendingBattleReactions(restoreSpentPlayerForge(nextState, combatTexts), combatTexts);
   if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
   if (
-    nextState.exhausted.length > 0 &&
+    !nextState.wishOptions &&
     nextState.hand.length === 0 &&
     nextState.deck.length === 0 &&
     nextState.discard.length === 0

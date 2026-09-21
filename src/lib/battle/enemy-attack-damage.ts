@@ -20,9 +20,10 @@ import { getEnemyTraitSet, hasEnemyTrait } from "./types/state-helpers";
 
 import { applyBlockedAttackRetaliation, applyPlayerDefensiveReactions } from "./player-defensive-reactions";
 
-function applyPhysicalForgeBonus(state: BattleState, effect: EnemyAttackEffect & { kind: "damage" }) {
-  if (effect.damageType !== "physical") return effect.amount;
-  return effect.amount + state.enemyMitigation.forge + state.enemyPhysicalDamageBonus;
+function applyEnemyAttackBonuses(state: BattleState, effect: EnemyAttackEffect & { kind: "damage" }) {
+  const forge = effect.damageType === "physical" || effect.damageType === "stun" ? state.enemyMitigation.forge : 0;
+  const physicalBonus = effect.damageType === "physical" ? state.enemyPhysicalDamageBonus : 0;
+  return effect.amount + forge + physicalBonus;
 }
 
 function blockAbsorptionMultiplier(state: BattleState, effect: EnemyAttackEffect & { kind: "damage" }) {
@@ -72,15 +73,7 @@ export function prepareEnemyDamage(
   effect: EnemyAttackEffect & { kind: "damage" },
   options: EnemyDamageOptions = {},
 ) {
-  const baseDamage = applyPhysicalForgeBonus(state, effect);
-  let remainingDamage = baseDamage;
-  if (!options.ignorePlayerMitigation && state.gearEffects.damageReductionPerMana > 0) {
-    const absorb = state.gearEffects.damageReductionPerMana * state.mana;
-    remainingDamage = Math.max(0, remainingDamage - absorb);
-  }
-  if (!options.ignorePlayerMitigation && state.enemyStatuses.poison > 0) {
-    remainingDamage = Math.max(0, remainingDamage - state.talentEffects.poisonReducesEnemyDamage);
-  }
+  const baseDamage = applyEnemyAttackBonuses(state, effect);
   const elementalBonus =
     effect.damageType === "burn"
       ? state.enemyStatuses.burnBonus
@@ -97,10 +90,12 @@ export function prepareEnemyDamage(
       damage *= LABYRINTH_MODIFIER_CONFIG.double;
     return Math.round(paceCombatDamage(state, damage, "enemy"));
   };
-  return {
-    attemptedDamage: scale(baseDamage + elementalBonus),
-    incomingDamage: scale(remainingDamage + elementalBonus),
-  };
+  const attemptedDamage = scale(baseDamage + elementalBonus);
+  const reduction = options.ignorePlayerMitigation
+    ? 0
+    : state.gearEffects.damageReductionPerMana * state.mana +
+      (state.enemyStatuses.poison > 0 ? state.talentEffects.poisonReducesEnemyDamage : 0);
+  return { attemptedDamage, incomingDamage: Math.max(0, attemptedDamage - reduction) };
 }
 
 function calculateBlockAndArmorMitigation(
@@ -208,8 +203,10 @@ function applyEnemyHealthHit(
     combatTexts,
   );
   const blockLost = Math.min(blockSpent + totalExtraBlock, damagedState.playerStatuses.block);
+  // Recovery does not cancel Health damage already dealt by the lethal hit.
+  const phoenixTriggered = state.playerStatuses.phoenixFeather > 0 && damagedState.playerStatuses.phoenixFeather === 0;
   const outcome = {
-    healthDamage: Math.max(0, prevHealth - damagedState.playerHealth),
+    healthDamage: phoenixTriggered ? prevHealth : Math.max(0, prevHealth - damagedState.playerHealth),
     attemptedDamage,
     resolvedDamage: actualDamage,
     landed: attemptedDamage > 0,
@@ -301,7 +298,7 @@ function resolveEnemyDamageEffectCore(
     if (
       hasEnemyTrait(nextState, "earth-elemental", traitSet) &&
       state.playerStatuses.block > 0 &&
-      nextState.playerStatuses.block <= 0 &&
+      blockLost >= state.playerStatuses.block &&
       nextState.playerHealth > 0
     ) {
       nextState = processEnemyDamageEffect(

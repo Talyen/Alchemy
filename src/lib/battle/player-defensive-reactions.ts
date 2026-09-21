@@ -27,7 +27,8 @@ function applyVanguardCrestAfterBlock(
 
 function applyEnemyForgeDecayOnHit(state: BattleState, actualDamage: number, damageType: string): BattleState {
   if (hasEnemyTrait(state, "whitehot")) return state;
-  if (actualDamage <= 0 || damageType !== "physical" || state.enemyMitigation.forge <= 0) return state;
+  if (actualDamage <= 0 || (damageType !== "physical" && damageType !== "stun") || state.enemyMitigation.forge <= 0)
+    return state;
   return {
     ...state,
     enemyMitigation: {

@@ -264,7 +264,7 @@ function applyPhysicalStatusRider(
   combatTexts: CombatTextEvent[],
 ): BattleState {
   let nextState = applyPhysicalBleedChance(state, actualDamage);
-  nextState = applyPhysicalBleedDetonate(nextState, combatTexts);
+  if (actualDamage > 0) nextState = applyPhysicalBleedDetonate(nextState, combatTexts);
   nextState = applyPhysicalShieldSlamArmorStrip(nextState);
   return nextState;
 }

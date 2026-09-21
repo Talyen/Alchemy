@@ -142,7 +142,10 @@ function applyHealthThresholdStatBonus(
   for (const config of bonuses) {
     const thresholdHp = (playerMaxHealth * config.threshold) / PERCENT_DENOMINATOR;
     if (prevHealth >= thresholdHp && nextHealth < thresholdHp) {
-      next = applyPlayerStatusEffect(next, { kind: "player-status", status: stat, amount: config.amount }, combatTexts);
+      next =
+        stat === "armor"
+          ? applyArmorReward(next, config.amount, combatTexts)
+          : applyPlayerStatusEffect(next, { kind: "player-status", status: stat, amount: config.amount }, combatTexts);
     }
   }
   return next;

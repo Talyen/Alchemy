@@ -12,7 +12,8 @@ import {
 import { BASE_PLAYER_MANA, CARDS_PER_TURN, MAX_PLAYER_HEALTH } from "../game-constants";
 import type { GearEffectManifest } from "@/lib/gear";
 import { defaultGearEffects } from "@/lib/gear";
-import { EMPTY_ENEMY_MITIGATION, type BattleState, type EnemyMitigation } from "./types";
+import { EMPTY_ENEMY_MITIGATION, isPlayerDefeated, type BattleState, type EnemyMitigation } from "./types";
+import { applyEmergencyWish } from "./wish";
 import { computeTrinketManifest } from "../trinkets";
 import { applyDrawResult, drawCards } from "./draw";
 import { defaultBattleState, defaultTalentEffects } from "./battle-setup-defaults";
@@ -57,7 +58,7 @@ function initializePlayerHealthAndBlock(
 }
 
 export function drawOpeningHand(state: BattleState): BattleState {
-  return applyDrawResult(
+  const drawn = applyDrawResult(
     state,
     drawCards(
       state.deck,
@@ -68,6 +69,14 @@ export function drawOpeningHand(state: BattleState): BattleState {
       getBattleRng(state),
     ),
   );
+  return drawn.enemyHealth > 0 &&
+    !isPlayerDefeated(drawn) &&
+    !drawn.wishOptions &&
+    drawn.hand.length === 0 &&
+    drawn.deck.length === 0 &&
+    drawn.discard.length === 0
+    ? resolvePendingBattleReactions(applyEmergencyWish(drawn), [])
+    : drawn;
 }
 
 function resolveStartingEnemyMitigation(

@@ -1,3 +1,4 @@
+import { resolveSecondaryAction } from "./action-context";
 import type { DamageType, TalentEffectManifest } from "@/lib/game-data";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import {
@@ -29,7 +30,9 @@ export function resolveFollowUpHit(
 ): BattleState {
   switch (request.source) {
     case "player-follow-up":
-      return resolvePlayerFollowUp(state, request.damageType, request.amount, combatTexts);
+      return resolveSecondaryAction(state, "reward", (current) =>
+        resolvePlayerFollowUp(current, request.damageType, request.amount, combatTexts),
+      );
     case "talent-fixed":
     case "talent-derived":
       return resolveTalentFollowUp(state, request, combatTexts);

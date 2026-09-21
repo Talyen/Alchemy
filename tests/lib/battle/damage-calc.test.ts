@@ -372,7 +372,7 @@ describe("dealDamageToEnemy — enemy armor", () => {
     });
     const result = dealDamage(state, card);
     expect(result.enemyHealth).toBe(22);
-    expect(result.enemyMitigation.armor).toBe(1);
+    expect(result.enemyMitigation.armor).toBe(2);
   });
 
   it("non-physical damage ignores enemy armor", () => {

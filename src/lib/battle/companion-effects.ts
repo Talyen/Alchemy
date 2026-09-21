@@ -62,6 +62,7 @@ export function resolveCompanionTurnStart(
     );
 
     afterEffects = { ...afterEffects, flags: { ...afterEffects.flags, companionNextAttackBonus: attackBonuses.flat } };
+    if (isPlayerDefeated(afterEffects)) return afterEffects;
     if (
       damageDealt > 0 &&
       state.gearEffects.healOnCompanionAttack > 0 &&

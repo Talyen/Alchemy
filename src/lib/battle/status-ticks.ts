@@ -175,7 +175,9 @@ function tickPlayerBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   const healthBeforeBleed = state.playerHealth;
   const pendingLeech = state.pendingEnemyBleedLeechHealing;
   return dealPlayerDotTick(state, finalDamage, "bleed", 0, combatTexts, (nextState) => {
-    const enemyLeechDamage = Math.min(pendingLeech, healthBeforeBleed - nextState.playerHealth);
+    const phoenixTriggered = state.playerStatuses.phoenixFeather > 0 && nextState.playerStatuses.phoenixFeather === 0;
+    const healthLost = phoenixTriggered ? healthBeforeBleed : Math.max(0, healthBeforeBleed - nextState.playerHealth);
+    const enemyLeechDamage = Math.min(pendingLeech, healthLost);
     let next = nextState;
     if (enemyLeechDamage > 0) {
       next = applyEnemyLeechHealing(next, enemyLeechDamage, combatTexts);
@@ -186,8 +188,8 @@ function tickPlayerBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
 }
 
 function resolvePlayerEndOfTickReactions(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
-  // A dead player (outside death's-door) gains no crowd control; reactions still drain.
-  if (state.playerHealth <= 0 && !state.deathsDoorActive) {
+  // Battle completion stops crowd control; already-earned reactions still drain.
+  if (state.enemyHealth <= 0 || isPlayerDefeated(state)) {
     return resolvePendingBattleReactions(state, combatTexts);
   }
   return resolvePendingBattleReactions(resolvePlayerCrowdControlTriggers(state, combatTexts), combatTexts);
@@ -202,11 +204,11 @@ export function tickPlayerStatuses(state: BattleState, combatTexts: CombatTextEv
     return resolvePlayerEndOfTickReactions(nextState, combatTexts);
   }
   let nextState = tickPlayerBurn(state, combatTexts);
-  if (nextState.playerHealth <= 0 && !nextState.deathsDoorActive) {
+  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) {
     return resolvePlayerEndOfTickReactions(nextState, combatTexts);
   }
   nextState = tickPlayerPoison(nextState, combatTexts);
-  if (nextState.playerHealth <= 0 && !nextState.deathsDoorActive) {
+  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) {
     return resolvePlayerEndOfTickReactions(nextState, combatTexts);
   }
   nextState = tickPlayerBleed(nextState, combatTexts);

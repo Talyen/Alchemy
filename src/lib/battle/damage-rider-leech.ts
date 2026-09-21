@@ -8,6 +8,7 @@ import {
   addPlayerStatus,
   setFlag,
   isPlayerDefeated,
+  resolvePlayerHealing,
   type BattleState,
   type CombatTextEvent,
   type EnemyMitigation,
@@ -49,10 +50,11 @@ export function applyLeechHealing(
   const healing =
     applyPercentBonus(amount, bonus, PERCENT_DENOMINATOR) +
     (amount > 0 ? (state.talentEffects.homesteadLeechHealing ?? 0) : 0);
+  // Capture Leech's own restoration before cleansing or kill rewards can heal again.
+  const actualHealing = resolvePlayerHealing(state, healing).restored;
   let restored = options.cardHealing
     ? applyCardHealing(state, healing, combatTexts, { skipFightPacing: true, allowOverhealBlock: false })
     : applyHealingWithCombatText(state, healing, combatTexts, { skipFightPacing: true });
-  const actualHealing = Math.max(0, restored.playerHealth - state.playerHealth);
   if (
     state.playerHealth < state.playerMaxHealth / HALF_DIVISOR &&
     state.talentEffects.leechBlockBelowHalfPercent > 0 &&
@@ -67,9 +69,8 @@ export function applyLeechHealing(
     );
   }
   restored =
-    healing > 0 &&
-    state.playerHealth < state.playerMaxHealth &&
-    restored.playerHealth >= restored.playerMaxHealth &&
+    actualHealing > 0 &&
+    state.playerHealth + actualHealing >= state.playerMaxHealth &&
     state.talentEffects.nextAttackPhysicalOnLeechToFull > 0
       ? setFlag(restored, "sanguinePhysicalBonus", state.talentEffects.nextAttackPhysicalOnLeechToFull)
       : restored;

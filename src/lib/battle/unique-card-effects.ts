@@ -95,7 +95,14 @@ export function returnHarvestCard(state: BattleState, card: BattleCard): BattleS
     hand: [...state.hand, returned],
     discard: state.discard.filter((_, i) => i !== index),
     nextCardUid: state.nextCardUid + 1,
-    uniqueGear: { ...state.uniqueGear, redHarvestUid: returned.uid },
+    uniqueGear: {
+      ...state.uniqueGear,
+      redHarvestUid: returned.uid,
+      lastArcheryUid:
+        card.uid !== undefined && state.uniqueGear.lastArcheryUid === card.uid
+          ? returned.uid
+          : state.uniqueGear.lastArcheryUid,
+    },
   };
 }
 

@@ -3,13 +3,20 @@ import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { isNatureCard } from "./card-classification";
 import type { BattleCard } from "@/lib/game-data";
 import { applyEnemyHealingWithCombatText, mergeCombatText } from "./combat-text";
-import { applyEnemyLeechHealing, processEnemyDamageEffect, resolvePendingBattleReactions } from "./enemy-attack-damage";
+import { processEnemyDamageEffect, resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { addEnemyMitigationWithCombatText } from "./encounter-trait-health-threshold";
 import { isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-traits";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { SEPTIC_SPLIT_CHANCE_PERCENT } from "../game-constants";
 import { removePlayerArmor } from "./status-helpers";
-import { hasEnemyTrait, setEnemyStatus, setFlag, type BattleState, type CombatTextEvent } from "./types";
+import {
+  hasEnemyTrait,
+  isPlayerDefeated,
+  setEnemyStatus,
+  setFlag,
+  type BattleState,
+  type CombatTextEvent,
+} from "./types";
 
 function addEnemyStatusText(
   state: BattleState,
@@ -68,6 +75,7 @@ function dealTraitDamage(
 
 export function processEncounterTraitActionDamage(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   let nextState = state;
+  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
   if (hasEnemyTrait(nextState, "septic")) {
     nextState = recordEnemyAbilityActivation(nextState, "septic");
     nextState = dealTraitDamage(
@@ -77,36 +85,38 @@ export function processEncounterTraitActionDamage(state: BattleState, combatText
       combatTexts,
     );
   }
+  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
   if (hasEnemyTrait(nextState, "caustic")) {
     nextState = recordEnemyAbilityActivation(nextState, "caustic");
     nextState = dealTraitDamage(nextState, "poison", 1, combatTexts);
+    if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
     nextState = removePlayerArmor(nextState, scaleByRoomMultiplier(nextState, 1), combatTexts);
   }
+  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
   if (hasEnemyTrait(nextState, "flesheater")) {
     nextState = recordEnemyAbilityActivation(nextState, "flesheater");
-    const beforeHealth = nextState.playerHealth;
-    const beforeBleed = nextState.playerStatuses.bleed;
-    nextState = dealTraitDamage(nextState, "bleed", 1, combatTexts);
-    const damage = beforeHealth - nextState.playerHealth;
-    if (damage > 0) {
-      nextState = applyEnemyLeechHealing(nextState, damage, combatTexts);
-      nextState = {
-        ...nextState,
-        pendingEnemyBleedLeechHealing:
-          nextState.pendingEnemyBleedLeechHealing + Math.max(0, nextState.playerStatuses.bleed - beforeBleed),
-      };
-    }
+    nextState = processEnemyDamageEffect(
+      nextState,
+      { kind: "damage", damageType: "bleed", amount: scaleByRoomMultiplier(nextState, 1), lifesteal: true },
+      combatTexts,
+    );
   }
+  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
   if (hasEnemyTrait(nextState, "toxic"))
     nextState = dealTraitDamage(recordEnemyAbilityActivation(nextState, "toxic"), "poison", 1, combatTexts);
+  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
   if (hasEnemyTrait(nextState, "bloodletter"))
     nextState = dealTraitDamage(recordEnemyAbilityActivation(nextState, "bloodletter"), "bleed", 1, combatTexts);
+  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
   if (hasEnemyTrait(nextState, "combustible"))
     nextState = dealTraitDamage(recordEnemyAbilityActivation(nextState, "combustible"), "burn", 1, combatTexts);
+  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
   if (hasEnemyTrait(nextState, "chilling"))
     nextState = dealTraitDamage(recordEnemyAbilityActivation(nextState, "chilling"), "freeze", 1, combatTexts);
+  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
   if (hasEnemyTrait(nextState, "zealot"))
     nextState = dealTraitDamage(recordEnemyAbilityActivation(nextState, "zealot"), "holy", 2, combatTexts);
+  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
   if (hasEnemyTrait(nextState, "concussive"))
     nextState = dealTraitDamage(recordEnemyAbilityActivation(nextState, "concussive"), "stun", 1, combatTexts);
   return nextState;

@@ -21,12 +21,9 @@ function applyCrit(damage: number, state: BattleState) {
     : damage;
 }
 
-function applySunderingArmorPiercing(state: BattleState, isPhysicalOrStun: boolean, card?: BattleCard): BattleState {
+function applySunderingArmorPiercing(state: BattleState, isPhysicalOrStun: boolean): BattleState {
   if (!isPhysicalOrStun) return state;
-  let pierce = state.trinketEffects.sunderingArmorPiercing + state.gearEffects.armorPiercing;
-  if (card?.tags?.includes("archery")) {
-    pierce += state.gearEffects.archeryArmorPiercing + state.talentEffects.archeryArmorPiercing;
-  }
+  const pierce = state.trinketEffects.sunderingArmorPiercing;
   if (pierce <= 0) return state;
   return reduceEnemyArmor(state, pierce);
 }
@@ -119,11 +116,17 @@ function resolveDamageAfterMitigation(
   const serpent = state.gearEffects.poisonedAttacksPierce > 0 && state.enemyStatuses.poison > 0 && card !== undefined;
   const kingbreaker = effect.damageType === "stun" && state.gearEffects.armorIncreasesStun > 0;
   const nextState =
-    serpent || kingbreaker
-      ? stateWithCritCleared
-      : applySunderingArmorPiercing(stateWithCritCleared, isPhysicalOrStun, card);
+    serpent || kingbreaker ? stateWithCritCleared : applySunderingArmorPiercing(stateWithCritCleared, isPhysicalOrStun);
+  // Ignoring Armor changes this hit's mitigation; only Sundering removes stacks.
+  const ignoredArmor =
+    state.gearEffects.armorPiercing +
+    (card?.tags?.includes("archery")
+      ? state.gearEffects.archeryArmorPiercing + state.talentEffects.archeryArmorPiercing
+      : 0);
   const effectiveArmor =
-    isPhysicalOrStun && !serpent && !kingbreaker && !effect.ignoreArmor ? nextState.enemyMitigation.armor : 0;
+    isPhysicalOrStun && !serpent && !kingbreaker && !effect.ignoreArmor
+      ? Math.max(0, nextState.enemyMitigation.armor - ignoredArmor)
+      : 0;
   return { nextState, modifiedDamage: Math.max(0, damageAfterBlock - effectiveArmor) };
 }
 

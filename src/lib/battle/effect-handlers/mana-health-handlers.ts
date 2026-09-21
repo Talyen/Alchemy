@@ -12,7 +12,8 @@ import {
   applyHealingWithCombatText,
 } from "../combat-text";
 import { dealSelfDamage, getEnemyDamageMultiplier } from "../status-helpers";
-import { type BattleState, type CombatTextEvent } from "../types";
+import { resolvePlayerHealing, type BattleState, type CombatTextEvent } from "../types";
+import { paceCombatMagnitude } from "../fight-pacing";
 import { ccDeepenedSinceStart, defineHandler } from "./handler-types";
 import { dealScaledBurnWithStacks } from "../scaled-damage";
 
@@ -108,6 +109,8 @@ export const applyHealEffect = defineHandler("heal", (state, card, effect, potio
     : 0;
   const cardSpecificBonus = state.talentEffects.cardHealBonus[card.id] ?? 0;
   const healAmount = Math.round(adjustedHeal * (1 + consumeBonus) + cardSpecificBonus);
+  // Feast belongs to the Potion's heal, excluding healing from its resulting reactions.
+  const potionHealing = resolvePlayerHealing(state, paceCombatMagnitude(state, healAmount, "player")).restored;
   const healed = hasCardHealing(context)
     ? applyCardHealing(state, healAmount, combatTexts)
     : applyHealingWithCombatText(state, healAmount, combatTexts);
@@ -115,8 +118,8 @@ export const applyHealEffect = defineHandler("heal", (state, card, effect, potio
     hasCardHealing(context) &&
     isPotionCard(card) &&
     state.talentEffects.blockOnConsume > 0 &&
-    state.playerHealth < state.playerMaxHealth &&
-    healed.playerHealth === healed.playerMaxHealth
+    potionHealing > 0 &&
+    state.playerHealth + potionHealing === state.playerMaxHealth
   ) {
     return addPlayerStatusWithCombatText(healed, "block", state.talentEffects.blockOnConsume, combatTexts);
   }

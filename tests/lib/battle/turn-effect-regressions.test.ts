@@ -49,6 +49,7 @@ describe("card costs and turn-start effects", () => {
 
   it.each(["scheduled damage", "Mask"])("cancels a queued Wish after a %s kill", (source) => {
     const state = patchBattleState({
+      deck: [makeTestCard()],
       rng: () => 0.99,
       enemyHealth: 1,
       playerStatuses: { poison: source === "Mask" ? 2 : 0 },

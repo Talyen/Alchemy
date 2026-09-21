@@ -8,7 +8,7 @@ import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 import { isPlayerDefeated, type BattleState, type BattleSnapshot, type CombatTextEvent } from "./types";
 import { processEnemyAbility } from "./enemy-turn-attack";
-import { processEnemyRegeneration, processEnemyTraits } from "./enemy-turn-traits";
+import { isFreezeActiveForAspect, processEnemyRegeneration, processEnemyTraits } from "./enemy-turn-traits";
 import { processEncounterTraitActionDamage, processEncounterTraitActionStart } from "./encounter-trait-events";
 import {
   advanceToPlayerTurn,
@@ -87,6 +87,8 @@ function resolveEnemyPostTickResolution(
 ): { state: BattleState; afterAbilityState?: BattleState } {
   let nextState = processEncounterTraitActionStart(state, texts);
   nextState = processEnemyTraits(nextState, texts);
+  // The last Frozen turn still suppresses regeneration before control expires.
+  const regenerationBlocked = isFreezeActiveForAspect(nextState, "regen");
   let afterAbilityState: BattleState | undefined;
   if (mode === "attack") {
     nextState = processEnemyAbility(nextState, texts);
@@ -95,13 +97,20 @@ function resolveEnemyPostTickResolution(
   } else {
     nextState = reduceSkipTurns(nextState);
   }
+  // This turn's Bleed Leech is also suppressed when the last Frozen turn expires.
+  if (regenerationBlocked && nextState.pendingEnemyBleedLeechHealing > 0) {
+    nextState = { ...nextState, pendingEnemyBleedLeechHealing: 0 };
+  }
   nextState = tickPlayerStatuses(nextState, texts);
+  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) {
+    return { state: nextState, ...(afterAbilityState ? { afterAbilityState } : {}) };
+  }
   if (mode === "attack" && !isPlayerDefeated(nextState)) {
     nextState = processEncounterTraitActionDamage(nextState, texts);
   }
   if (isPlayerDefeated(nextState)) return { state: nextState, ...(afterAbilityState ? { afterAbilityState } : {}) };
   nextState = resolveDeathsDoorGraceExpiry(nextState);
-  nextState = processEnemyRegeneration(nextState, texts);
+  if (!regenerationBlocked) nextState = processEnemyRegeneration(nextState, texts);
   if (afterAbilityState === undefined) return { state: nextState };
   return { state: nextState, afterAbilityState };
 }

@@ -131,7 +131,7 @@ describe("gear-effects", () => {
     });
     const result = computeCardDamageToEnemy(state, effect, card);
     expect(result.modifiedDamage).toBe(8);
-    expect(result.nextState.enemyMitigation.armor).toBe(2);
+    expect(result.nextState.enemyMitigation.armor).toBe(5);
   });
 
   it("absorb-per-mana: reduces incoming damage before block", () => {

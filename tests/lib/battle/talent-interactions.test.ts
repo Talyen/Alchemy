@@ -94,6 +94,7 @@ describe("Mana from Heaven", () => {
 
   it("banks Wishes created by scheduled effects for the following turn", () => {
     const initial = battle({
+      deck: [wish],
       talentEffects: wishTalents,
       pendingTurnStartEffects: [{ remainingTurns: 1, effects: [{ kind: "wish", amount: 1 }] }],
     });

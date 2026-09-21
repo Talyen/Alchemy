@@ -116,12 +116,9 @@ export function consumeForgeAfterDamage(
 ) {
   if (hasEncounterBenefit(state, "white-heat")) return state;
   if (effect.damageType === "holy" && state.gearEffects.holyPreservesForge > 0) return state;
-  const forgeWasApplied = forgeAppliesToDamageType(
-    effect.damageType,
-    state.talentEffects,
-    state.gearEffects,
-    companionAttack,
-  );
+  const forgeWasApplied =
+    effect.equalToForge === true ||
+    forgeAppliesToDamageType(effect.damageType, state.talentEffects, state.gearEffects, companionAttack);
 
   if (!forgeWasApplied || damage <= 0 || state.playerStatuses.forge <= 0) return state;
 
