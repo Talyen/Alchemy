@@ -1,3 +1,4 @@
+import { PlaybackLifetime } from "@/features/alchemy/run-loop/battle/playback-lifetime";
 import "../../../../helpers/mock-audio";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createBattleEndTurnUi } from "@/features/alchemy/run-loop/battle/end-turn-ui";
@@ -6,7 +7,7 @@ import type { createBattleSession } from "@/features/alchemy/run-loop/battle/bat
 import type { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/draw-sequence";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { initializeActiveBattle } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { initializeActiveBattle } from "@/features/alchemy/shared/stores/write/run-battle";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { patchBattleState, slashDeck } from "../../../../fixtures/battle";
@@ -36,13 +37,10 @@ function makeUi(rejectDraw = false) {
   });
   const ctx = {
     screen: "battle",
-    battleSessionRef: { current: 1 },
-    cardPlayInProgressRef: { current: false },
-    clearAutoEndTurnRef: { current: vi.fn() },
-    scheduleAutoEndTurnRef: { current: vi.fn() },
+    playback: new PlaybackLifetime(),
     getPresentation: () => useBattlePresentationStore.getState(),
   } as unknown as BattleControllerContext;
-  const active = (id: number) => id === ctx.battleSessionRef.current;
+  const active = (id: number) => id === ctx.playback.id;
   const session = {
     isCurrentBattleSession: active,
     runIfSessionActive: (id: number, action: () => unknown) => {
@@ -70,9 +68,9 @@ describe("End Turn execution and playback", () => {
     ui.handleEndTurn();
     const resolved = readGameplayState();
     expect(resolved.battle.battleState.turn).toBeGreaterThan(before.battle.battleState.turn);
-    expect(resolved.battle.pendingBattleTransition).toBeNull();
+    expect(resolved.battle).not.toHaveProperty("pendingBattleTransition");
     expect(resolved.revision).toBe(before.revision + 1);
-    expect(ctx.cardPlayInProgressRef.current).toBe(true);
+    expect(ctx.playback.cardPlayInProgress).toBe(true);
     expect(useBattlePresentationStore.getState().displayedBattle).toBe(before.battle.battleState);
     ui.handleEndTurn();
     expect(readGameplayState()).toBe(resolved);
@@ -89,7 +87,7 @@ describe("End Turn execution and playback", () => {
         releaseDiscard();
         await vi.runAllTimersAsync();
         expect(readGameplayState()).toBe(resolved);
-        expect(ctx.cardPlayInProgressRef.current).toBe(false);
+        expect(ctx.playback.cardPlayInProgress).toBe(false);
         expect(useBattlePresentationStore.getState().displayedBattle).toBeNull();
       } finally {
         vi.useRealTimers();
@@ -103,7 +101,7 @@ describe("End Turn execution and playback", () => {
     const resolved = readGameplayState();
     ctx.screen = "collection";
     releaseDiscard();
-    await vi.waitFor(() => expect(ctx.cardPlayInProgressRef.current).toBe(false));
+    await vi.waitFor(() => expect(ctx.playback.cardPlayInProgress).toBe(false));
     expect(readGameplayState()).toBe(resolved);
     expect(resolved.battle.battleState.turnPhase).toBe("player");
   });

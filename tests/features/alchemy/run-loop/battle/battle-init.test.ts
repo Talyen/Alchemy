@@ -1,3 +1,4 @@
+import { PlaybackLifetime } from "@/features/alchemy/run-loop/battle/playback-lifetime";
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createBattleInit } from "@/features/alchemy/run-loop/battle/battle-init";
 import * as controllerUtils from "@/features/alchemy/run-loop/battle/controller-utils";
@@ -24,6 +25,7 @@ describe("createBattleInit", () => {
 
   function makeInit() {
     const ctx = {
+      playback: new PlaybackLifetime(),
       getPresentation: () => useBattlePresentationStore.getState(),
     } as unknown as BattleControllerContext;
 
@@ -62,9 +64,9 @@ describe("createBattleInit", () => {
     const enemyId = readBattle().battleState.currentEnemy.id;
     expect(readActiveRun().roomsEncountered).toBe(3);
     expect(readBattle().hasActiveBattle).toBe(true);
-    expect(readBattle().pendingTransitionResumeRequired).toBe(false);
+    expect(readBattle()).not.toHaveProperty("pendingTransitionResumeRequired");
     expect(readBattle().battleState.hand.length).toBeGreaterThan(0);
-    expect(readBattle().pendingBattleTransition).toBeNull();
+    expect(readBattle()).not.toHaveProperty("pendingBattleTransition");
     expect(useBattlePresentationStore.getState().openingDrawPending).toBe(true);
     expect(useBattlePresentationStore.getState().cardTransferInProgress).toBe(true);
     expect(readActiveRun().encounteredRunEnemyIds).toContain(enemyId);

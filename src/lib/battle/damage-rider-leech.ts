@@ -1,3 +1,4 @@
+import { readCombatFlag } from "./action-context";
 import { applyArmorReward, applyCardHealing } from "./status-player";
 import { hasEncounterBenefit } from "./types";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
@@ -161,7 +162,7 @@ export function applyLeechHitHealing(
 
   let healAmount = computeLeechHeal(damage);
 
-  if (state.talentEffects.firstLeechCardDoubled && !state.flags.firstLeechCardDoubledUsed) {
+  if (state.talentEffects.firstLeechCardDoubled && !readCombatFlag(state, "firstLeechCardDoubledUsed")) {
     healAmount *= FIRST_EFFECT_MULTIPLIER;
     state = setFlag(state, "firstLeechCardDoubledUsed", true);
   }

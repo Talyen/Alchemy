@@ -11,8 +11,8 @@ import {
   addRunCurrenciesEarned,
   addRunMaterialsEarned,
   setHasActiveBattle,
-  setSyncedBattleState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setSyncedBattleState } from "@/features/alchemy/shared/stores/write/run-battle";
 import { resetAllTestStores } from "../../../../helpers/run-domain-store-test";
 import { setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
 import { emptyInventory } from "@/lib/homestead/inventory";

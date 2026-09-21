@@ -40,20 +40,17 @@ export const defenseCards: BattleCard[] = [
     id: "crystal-bulwark",
     art: assetRefs.crystalBulwark,
     effects: [{ kind: "player-status", status: "block", amount: 0, perManaCrystal: 1 }],
-    descriptionLines: ["Gain 1 Block per Mana Crystal"],
   }),
   cardBuilders.effectsCard({
     id: "shadowstep",
     art: assetRefs.shadowstep,
     consume: true,
     effects: [{ kind: "damage", damageType: "physical", amount: 1 }, { kind: "play-next-card-twice" }],
-    descriptionLines: ["Deal 1 Physical damage", "Your next card is played twice"],
   }),
   cardBuilders.effectsCard({
     id: "mana-shield",
     art: assetRefs.manaShield,
     effects: [{ kind: "player-status", status: "block", amount: 0, convertCurrentMana: 3 }],
-    descriptionLines: ["Convert each of your Mana into 3 Block"],
   }),
   cardBuilders.effectsCard({
     id: "prayer",
@@ -71,7 +68,6 @@ export const defenseCards: BattleCard[] = [
       { kind: "remove-player-status", status: "stun" },
       { kind: "remove-player-status", status: "freeze" },
     ],
-    descriptionLines: ["Cleanse Stun and Freeze build-up"],
   }),
   cardBuilders.effectsCard({
     id: "cold-snap",
@@ -80,7 +76,6 @@ export const defenseCards: BattleCard[] = [
       { kind: "damage", damageType: "freeze", amount: 1 },
       { kind: "multiply-enemy-status", status: "freeze", factor: 2 },
     ],
-    descriptionLines: ["Deal 1 Freeze damage", "Double the enemy's Freeze build-up"],
   }),
   cardBuilders.effectsCard({
     id: "sunder",
@@ -94,12 +89,10 @@ export const defenseCards: BattleCard[] = [
     id: "smite",
     art: assetRefs.smite,
     effects: [{ kind: "damage", damageType: "holy", damageTypePool: ["holy", "burn"], amount: 2 }],
-    descriptionLines: ["Deal 2 Holy or Burn damage"],
   }),
   cardBuilders.effectsCard({
     id: "judgment",
     art: assetRefs.judgment,
     effects: [{ kind: "damage", damageType: "holy", damageTypePool: ["holy", "stun"], amount: 3 }],
-    descriptionLines: ["Deal 3 Holy or Stun damage"],
   }),
 ];

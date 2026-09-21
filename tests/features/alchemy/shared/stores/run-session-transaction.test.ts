@@ -10,16 +10,16 @@ import { mutateGearForTest } from "../../../../helpers/run-domain-store-test";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { dispatchGearMutationWithRunHealthSync } from "@/features/alchemy/shared/stores/gear-session-command";
 import {
-  initializeActiveBattle,
-  commitBattleTransition,
   createDraftRunRandomSource,
-  setBattleState,
   setHasActiveBattle,
   setHasActiveRun,
   setGold,
+} from "@/features/alchemy/shared/stores/run-session-write-port";
+import {
+  setBattleState,
   withDraftWorldBattleRng,
   snapshotBattleState,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+} from "@/features/alchemy/shared/stores/write/run-battle";
 import {
   setDiscoveredCardIds,
   setMaterials as setRunProfileMaterials,
@@ -34,7 +34,6 @@ import {
   readHasActiveRun,
   readRunProfile,
 } from "@/features/alchemy/shared/stores/run-reads";
-import { defaultBattleState } from "@/lib/battle";
 import { createRunRngState } from "@/lib/rng";
 import { createEmptyGearInventories, createEmptyGearLoadouts, type GearInstance } from "@/lib/gear";
 
@@ -215,99 +214,6 @@ describe("run-session transaction coordinator", () => {
     expect(commits).toHaveLength(1);
     expect(commits[0]).toMatchObject({ gold: 125, hasActiveRun: true });
     expect(commits[0].revision).toBe(beforeRevision + 1);
-  });
-
-  it("persists a battle continuation with the intermediate state in one commit", () => {
-    const commits: number[] = [];
-    const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
-    const intermediate = { ...defaultBattleState(), turnPhase: "enemy" as const, hand: [] };
-    const resultState = { ...defaultBattleState(), turn: 2, playerHealth: 18 };
-
-    dispatchRunSessionCommand((draft) =>
-      commitBattleTransition(draft, intermediate, { kind: "enemy-turn", resultState, playerTurnSkipped: false }),
-    );
-
-    unsubscribe();
-
-    expect(commits).toHaveLength(1);
-    expect(readGameplayState().battle.battleState).toEqual({
-      ...snapshotBattleState(intermediate),
-    });
-    expect(readGameplayState().battle.pendingBattleTransition).toEqual({
-      kind: "enemy-turn",
-      resultState: snapshotBattleState(resultState),
-      playerTurnSkipped: false,
-    });
-    expect(readGameplayState().battle.pendingTransitionResumeRequired).toBe(false);
-  });
-
-  it("marks hydrated pending transitions for resume without live beginBattleTransition", () => {
-    const resultState = { ...defaultBattleState(), turn: 2, playerHealth: 18 };
-    const intermediate = { ...defaultBattleState(), turnPhase: "enemy" as const, hand: [] };
-
-    dispatchRunSessionCommand((draft) =>
-      initializeActiveBattle(draft, intermediate, {
-        kind: "enemy-turn",
-        resultState,
-        playerTurnSkipped: false,
-      }),
-    );
-
-    expect(readGameplayState().battle.pendingTransitionResumeRequired).toBe(true);
-    const pending = readGameplayState().battle.pendingBattleTransition;
-    expect(pending?.kind).toBe("enemy-turn");
-    if (pending?.kind === "enemy-turn") {
-      expect(pending.resultState.turn).toBe(2);
-      expect(pending.resultState.playerHealth).toBe(18);
-      expect(pending.playerTurnSkipped).toBe(false);
-      expect(pending.resultState).not.toHaveProperty("rng");
-    }
-
-    dispatchRunSessionCommand((draft) =>
-      commitBattleTransition(
-        draft,
-        pending?.kind === "enemy-turn" ? pending.resultState : readGameplayState().battle.battleState,
-        null,
-      ),
-    );
-
-    expect(readGameplayState().battle.pendingTransitionResumeRequired).toBe(false);
-    expect(readGameplayState().battle.pendingBattleTransition).toBeNull();
-  });
-
-  it("hydrates data-only battle snapshots and advances RNG only in commands", () => {
-    setRunProgress({ rng: createRunRngState(() => 42 / 0x1_0000_0000) });
-    const worldBefore = readGameplayState().run.activeRun.rng.counters.world;
-    const strippedBattle = JSON.parse(JSON.stringify({ ...defaultBattleState(), turn: 5, playerHealth: 20 }));
-    const strippedResult = JSON.parse(JSON.stringify({ ...defaultBattleState(), turn: 6, playerHealth: 19 }));
-
-    dispatchRunSessionCommand((draft) =>
-      initializeActiveBattle(draft, strippedBattle, {
-        kind: "enemy-turn",
-        resultState: strippedResult,
-        playerTurnSkipped: false,
-      }),
-    );
-
-    const battle = readGameplayState().battle;
-    expect(battle.battleState).not.toHaveProperty("rng");
-    expect(battle.battleState).not.toHaveProperty("rng");
-
-    dispatchRunSessionCommand((draft) => {
-      createDraftRunRandomSource(draft, "world")();
-    });
-    expect(readGameplayState().run.activeRun.rng.counters.world).toBe(worldBefore + 1);
-
-    const pending = battle.pendingBattleTransition;
-    expect(pending?.kind).toBe("enemy-turn");
-    if (pending?.kind === "enemy-turn") {
-      expect(pending.resultState).not.toHaveProperty("rng");
-      expect(pending.resultState).not.toHaveProperty("rng");
-      dispatchRunSessionCommand((draft) => {
-        createDraftRunRandomSource(draft, "world")();
-      });
-      expect(readGameplayState().run.activeRun.rng.counters.world).toBe(worldBefore + 2);
-    }
   });
 
   it("returns serializable battle snapshots from commands", () => {

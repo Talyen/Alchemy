@@ -202,11 +202,11 @@ describe("initialize", () => {
     expect(snapshot.interruptedFlow.pending.destinations).toEqual(["Mystery", "Card Shop"]);
     expect(snapshot.activeCombat).toMatchObject({
       battleState: {
-        turn: activeRun.activeCombat?.battleState.turn,
+        turn: (activeRun.activeCombat?.battleState.turn ?? 0) + 1,
         playerHealth: activeRun.activeCombat?.battleState.playerHealth,
-        turnPhase: activeRun.activeCombat?.battleState.turnPhase,
+        turnPhase: "player",
       },
-      pendingBattleTransition: activeRun.activeCombat?.pendingBattleTransition,
+      pendingBattleTransition: null,
       activeLabyrinthModifiers: activeRun.activeCombat?.activeLabyrinthModifiers,
       activeLabyrinthRewardModifiers: activeRun.activeCombat?.activeLabyrinthRewardModifiers,
     });

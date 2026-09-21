@@ -8,19 +8,13 @@ import {
   useTalentEffects,
 } from "@/features/alchemy/shared/stores/run-reads";
 import {
-  createRunSessionCommand,
-  dispatchRunSessionCommand,
-} from "@/features/alchemy/shared/stores/run-session-command";
-import {
-  resetUnlockedTalents,
-  setActiveLabyrinthModifiers,
-  setActiveLabyrinthRewardModifiers,
-  setCorruptionResult,
-  unlockAllTalents,
-  unlockTalent,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+  purchaseTalent,
+  resetTalentUnlocks,
+  unlockTalentsForDevelopment,
+  prepareLabyrinthRoomTraits,
+  resetCorruptionVisit,
+} from "@/features/alchemy/shared/stores/navigation-commands";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
-import type { EncounterCombatTraitId, EncounterRewardTraitId } from "@/lib/content-systems/types";
 import { useCallback, useMemo } from "react";
 import { createLabyrinthNodeRouting } from "./labyrinth-node-routing";
 import { clearRunCardHover, readRunAvailableDestinations } from "./run-destination-wiring";
@@ -29,10 +23,6 @@ import { createLabyrinthController } from "@/features/alchemy/run-loop/run/labyr
 import { useRunFlowEngine } from "./use-run-flow-engine";
 import { useScreenTransitions } from "./use-screen-transitions";
 import { useSteamRichPresence } from "./use-steam-rich-presence";
-
-const commandUnlockTalent = createRunSessionCommand(unlockTalent);
-const commandResetUnlockedTalents = createRunSessionCommand(resetUnlockedTalents);
-const commandUnlockAllTalents = createRunSessionCommand(unlockAllTalents);
 
 export function useAlchemyRunController(): AlchemyRunCommands {
   const homesteadEffects = useHomesteadEffects();
@@ -45,22 +35,6 @@ export function useAlchemyRunController(): AlchemyRunCommands {
     const store = useUiStore.getState();
     store.setHoveredCardId(typeof id === "function" ? id(store.hoveredCardId) : id);
   }, []);
-  const applyLabyrinthBattleModifiers = useCallback((modifiers: EncounterCombatTraitId[]) => {
-    dispatchRunSessionCommand((draft) => {
-      // No-op commands preserve revision: skip the write only when already
-      // empty, but still clear stale traits with [] so the next node cannot
-      // inherit the previous node's combat modifiers.
-      if (modifiers.length === 0 && draft.session.activeLabyrinthModifiers.length === 0) return;
-      setActiveLabyrinthModifiers(draft, modifiers);
-    });
-  }, []);
-  const applyLabyrinthRewardModifiers = useCallback((modifiers: EncounterRewardTraitId[]) => {
-    dispatchRunSessionCommand((draft) => {
-      if (modifiers.length === 0 && draft.session.activeLabyrinthRewardModifiers.length === 0) return;
-      setActiveLabyrinthRewardModifiers(draft, modifiers);
-    });
-  }, []);
-
   const outcomes = useMemo(
     () =>
       createRunOutcomes({
@@ -117,15 +91,10 @@ export function useAlchemyRunController(): AlchemyRunCommands {
   const cancelBattle = battle.cancelBattle;
   const handleAbandonRun = nav.handleAbandonRun;
 
-  const resetCorruptionResult = useCallback(() => {
-    dispatchRunSessionCommand((draft) => setCorruptionResult(draft, null));
-  }, []);
-
   const nodeRouting = useMemo(
     () =>
       createLabyrinthNodeRouting({
-        applyLabyrinthBattleModifiers,
-        applyLabyrinthRewardModifiers,
+        prepareRoomTraits: prepareLabyrinthRoomTraits,
         navigateTo,
         labyrinth,
         battle: {
@@ -134,19 +103,9 @@ export function useAlchemyRunController(): AlchemyRunCommands {
         },
         nav: { beginMysteryEvent: nav.beginMysteryEvent },
         shop,
-        corruption: { reset: resetCorruptionResult },
+        corruption: { reset: resetCorruptionVisit },
       }),
-    [
-      applyLabyrinthBattleModifiers,
-      applyLabyrinthRewardModifiers,
-      navigateTo,
-      labyrinth,
-      battle.startBattle,
-      battle.startBossBattle,
-      nav.beginMysteryEvent,
-      shop,
-      resetCorruptionResult,
-    ],
+    [navigateTo, labyrinth, battle.startBattle, battle.startBossBattle, nav.beginMysteryEvent, shop],
   );
 
   const handleEndRun = useCallback(() => {
@@ -162,8 +121,8 @@ export function useAlchemyRunController(): AlchemyRunCommands {
         beginCampaign: nav.beginCampaign,
         beginLabyrinth: nav.beginLabyrinth,
         beginWildwood: nav.beginWildwood,
-        unlockTalent: commandUnlockTalent,
-        resetUnlockedTalents: commandResetUnlockedTalents,
+        unlockTalent: purchaseTalent,
+        resetUnlockedTalents: resetTalentUnlocks,
       },
       runSetup: {
         goToScreen: nav.goToScreen,
@@ -219,7 +178,7 @@ export function useAlchemyRunController(): AlchemyRunCommands {
     navigationPending,
     homesteadEffects,
     routeCommands,
-    unlockAllTalents: commandUnlockAllTalents,
+    unlockAllTalents: unlockTalentsForDevelopment,
     returnToBattle: nav.returnToBattle,
     goToScreen: nav.goToScreen,
     handleEndRun,

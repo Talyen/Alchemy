@@ -219,26 +219,6 @@ export async function animateDrawnHand(
   }
 }
 
-export interface TransferCancelRegistry {
-  register: (callback: () => void) => () => void;
-  cancelAll: () => void;
-}
-
-export function createTransferCancelRegistry(): TransferCancelRegistry {
-  const callbacks = new Set<() => void>();
-  return {
-    register(callback) {
-      callbacks.add(callback);
-      return () => callbacks.delete(callback);
-    },
-    cancelAll() {
-      const pendingCallbacks = Array.from(callbacks);
-      callbacks.clear();
-      pendingCallbacks.forEach((callback) => callback());
-    },
-  };
-}
-
 export function animateCardActivation(
   card: BattleCard,
   rect: CardRect,

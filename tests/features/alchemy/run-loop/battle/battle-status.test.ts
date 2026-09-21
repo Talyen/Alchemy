@@ -4,7 +4,7 @@ import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle
 import type { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
-import { setSyncedBattleState } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setSyncedBattleState } from "@/features/alchemy/shared/stores/write/run-battle";
 import { defaultBattleState } from "@/lib/battle";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
 

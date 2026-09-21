@@ -66,11 +66,7 @@ function applyTalentStatusAndHitTriggers(
     );
   }
   if (isPotionCard(card) && talents.armorOnPotionCard > 0) {
-    nextState = applyPlayerStatusEffect(
-      nextState,
-      { kind: "player-status", status: "armor", amount: talents.armorOnPotionCard },
-      combatTexts,
-    );
+    nextState = applyArmorReward(nextState, talents.armorOnPotionCard, combatTexts);
   }
   if (keywords.includes("burn") && talents.forgeOnBurnCard > 0) {
     nextState = addForgeToPlayer(nextState, talents.forgeOnBurnCard, combatTexts);

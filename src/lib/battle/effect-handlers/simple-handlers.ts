@@ -1,3 +1,4 @@
+import { writeCombatFlag } from "../action-context";
 import type { BattleCardEffect } from "@/lib/game-data";
 import type { BattleState } from "../types";
 import type { EffectHandler } from "./handler-types";
@@ -5,6 +6,7 @@ import { companionLibrary } from "@/lib/game-data";
 import { applyPotionMultiplier } from "../amount-helpers";
 import { mergeCombatText, addGoldWithCombatText } from "../combat-text";
 import { applyWishEffect } from "../wish";
+import { resolvePendingBattleReactions } from "../enemy-attack-damage";
 import { drawFromState, applyDrawResult } from "../draw";
 import { defineHandler } from "./handler-types";
 import { getBattleRng, rngInt } from "@/lib/rng";
@@ -55,7 +57,10 @@ export const applyGainGoldEffect = defineHandler("gain-gold", (state, _card, eff
 export const applyWishEffectHandler = defineHandler("wish", (state, card, effect, potionMult, combatTexts) => {
   const adjustedWish = applyPotionMultiplier(effect.amount, potionMult);
   if (adjustedWish > 0) mergeCombatText(combatTexts, { target: "player", kind: "notice", stat: "wish", text: "" });
-  return applyWishEffect(state, card, adjustedWish, combatTexts);
+  return applyWishEffect(state, card, adjustedWish, combatTexts, {
+    kind: "each-step",
+    settle: resolvePendingBattleReactions,
+  });
 });
 
 export const applyDrawCardsEffect = defineHandler("draw-cards", (state, _card, effect, potionMult, combatTexts) => {
@@ -86,7 +91,7 @@ function makeFlagHandler<K extends FlagEffectKind>(kind: K): ReturnType<typeof d
   const flag = FLAG_EFFECTS[kind];
   return defineHandler(kind, (state, _card, _effect, _potionMult, combatTexts) => {
     mergeCombatText(combatTexts, { target: "player", kind: "notice", stat: flag, signal: "prepared", text: "" });
-    return { ...state, flags: { ...state.flags, [flag]: true } };
+    return writeCombatFlag(state, flag, true);
   });
 }
 

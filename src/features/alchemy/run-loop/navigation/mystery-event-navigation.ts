@@ -1,126 +1,23 @@
-import { applyMysteryEffect } from "@/features/alchemy/run-loop/navigation/mystery-flow";
-import { appendCardToRunWithDiscovery } from "@/features/alchemy/shared/stores/deck-mutations";
-import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/loot-progress";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import {
-  clearMysteryVisitState,
-  createDraftRunRandomSource,
-  setMysteryCardChoices,
-  setMysteryChosenCardId,
-  setMysteryChosenChoice,
-  setMysteryEvent,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
-import { readActivityData } from "@/lib/active-run-session";
 import { playGoldGain, playGoldSpend, playUISound } from "@/lib/audio";
-import {
-  activeLabyrinthBenefits,
-  applyLabyrinthMysteryModifiers,
-  isLabyrinthMysteryEligible,
-} from "@/lib/content-systems/labyrinth/room-rules";
-import { cardById } from "@/lib/game-data";
-import { isMysteryLootEligible, pickResolvedMysteryEvent, type MysteryChoice } from "@/lib/mystery";
+import { type MysteryChoice } from "@/lib/mystery";
 import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
-import { combineTrinketEffectIds } from "@/lib/trinkets";
+import { beginMysteryVisit, chooseMysteryOption, chooseMysteryCard } from "./mystery-commands";
+
 export function createMysteryEventNavigation({
   navigateTo,
 }: {
   navigateTo: (nextScreen: Screen, prepareNavigation?: () => void) => void;
 }) {
-  const beginMysteryEvent = (prepareNavigation?: () => void) => {
-    dispatchRunSessionCommand(
-      (draft) => {
-        clearMysteryVisitState(draft);
-        // Shared "events" stream with corruption and run-restore mystery repair:
-        // sequential draws stay deterministic for saves, so keep sharing rather
-        // than splitting streams.
-        const rng = createDraftRunRandomSource(draft, "events");
-        const modifiers = activeLabyrinthBenefits(
-          draft.run.activeRun.contentSystemType,
-          draft.session.activeLabyrinthRewardModifiers,
-        );
-        const ownedTrinkets = combineTrinketEffectIds(
-          draft.run.activeRun.runBoons,
-          draft.gear.equippedTrinkets[draft.run.activeRun.characterId],
-        );
-        const lootProgress = resolveDraftLootProgress(draft);
-        setMysteryEvent(
-          draft,
-          applyLabyrinthMysteryModifiers(
-            pickResolvedMysteryEvent(
-              rng,
-              ownedTrinkets,
-              (event) =>
-                isLabyrinthMysteryEligible(event, modifiers) &&
-                isMysteryLootEligible(event, lootProgress, ownedTrinkets),
-            ),
-            modifiers,
-            draft.run.activeRun.runMaxHealth,
-          ),
-        );
-      },
-      {
-        afterCommit: () => {
-          navigateTo(ROUTE_SCREENS.MYSTERY, prepareNavigation);
-          playUISound("musicBoxMystery");
-        },
-      },
-    );
-  };
-  const handleMysteryChoice = (choice: MysteryChoice) => {
-    dispatchRunSessionCommand(
-      (draft) => {
-        if (
-          draft.session.activity.kind !== "mystery" ||
-          readActivityData(draft.session.activity, "mystery").mysteryChosenChoice !== null
-        )
-          return [];
-        setMysteryChosenChoice(draft, choice);
-        const resolvedEffects = [...choice.effects];
-        const goldSounds: Array<"gain" | "spend"> = [];
-        const rng = createDraftRunRandomSource(draft, "events");
-        for (const [index, effect] of choice.effects.entries()) {
-          const result = applyMysteryEffect(effect, { draft, rng });
-          if (effect.kind === "gainMaterial" && result.materialAward) {
-            resolvedEffects[index] = {
-              ...effect,
-              amount: result.materialAward.amount,
-            };
-          }
-          if (result.goldSound) goldSounds.push(result.goldSound);
-          if (result.followUp) break;
-        }
-        setMysteryChosenChoice(draft, { ...choice, effects: resolvedEffects });
-        return goldSounds;
-      },
-      {
-        afterCommit: (goldSounds) => {
-          for (const sound of goldSounds) {
-            if (sound === "gain") playGoldGain();
-            else playGoldSpend();
-          }
-        },
-      },
-    );
-  };
-  // handleMysteryChooseCard reports success because the deck-picker screen uses
-  // the boolean to update selection UI; choice/begin stay void (feedback travels
-  // via afterCommit sounds), matching the route-commands contract.
-  const handleMysteryChooseCard = (cardId: string): boolean => {
-    return dispatchRunSessionCommand((draft) => {
-      if (readActivityData(draft.session.activity, "mystery").mysteryChosenCardId !== null) return false;
-      const choices = readActivityData(draft.session.activity, "mystery").mysteryCardChoices;
-      if (!choices || !choices.some((card) => card.id === cardId)) return false;
-      const card = cardById[cardId];
-      if (!card) return false;
-      appendCardToRunWithDiscovery(draft, card);
-      setMysteryChosenCardId(draft, cardId);
-      setMysteryCardChoices(draft, null);
-      return true;
-    });
-  };
-  return {
-    beginMysteryEvent,
-    handleMysteryChoice,
-    handleMysteryChooseCard,
-  };
+  function beginMysteryEvent(prepareNavigation?: () => void) {
+    beginMysteryVisit();
+    navigateTo(ROUTE_SCREENS.MYSTERY, prepareNavigation);
+    playUISound("musicBoxMystery");
+  }
+  function handleMysteryChoice(choice: MysteryChoice) {
+    for (const sound of chooseMysteryOption(choice)) {
+      if (sound === "gain") playGoldGain();
+      else playGoldSpend();
+    }
+  }
+  return { beginMysteryEvent, handleMysteryChoice, handleMysteryChooseCard: chooseMysteryCard };
 }

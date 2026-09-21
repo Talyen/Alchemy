@@ -1,3 +1,5 @@
+import { hasCardHealing, consumeAttackBonuses } from "./effect-handlers/handler-types";
+import { readCombatFlag } from "./action-context";
 import { scalePercent } from "./amount-helpers";
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 import { UNIQUE_GEAR_COMBAT } from "../game-constants";
@@ -24,29 +26,29 @@ interface AttackPacket {
 // early-return in dealDamageToEnemy, so a dodged attack preserves every
 // flag consumed here (matching the leech/poison comment below).
 function consumeAttackPacketFlags(state: BattleState, effect: DamageEffect): { state: BattleState } & AttackPacket {
-  const convertToPoison = state.flags.nextHitPoison;
+  const convertToPoison = readCombatFlag(state, "nextHitPoison");
   const poisonPacket = convertToPoison ? { ...effect, damageType: "poison" as const } : effect;
   let damageState = convertToPoison ? { ...state, flags: { ...state.flags, nextHitPoison: false } } : state;
 
   // Predator's Focus grants Leech on the next damaging card. Consume the flag
   // here so dodge preserves it (early return above) while companion and
-  // delayed pulses cannot observe it (withPreservedFlags forces it false).
-  const leechNext = damageState.flags.nextHitLeech;
+  // delayed pulses are ineligible through their action scope.
+  const leechNext = readCombatFlag(damageState, "nextHitLeech");
   const packet = leechNext ? { ...poisonPacket, lifesteal: true as const } : poisonPacket;
   if (leechNext) {
     damageState = { ...damageState, flags: { ...damageState.flags, nextHitLeech: false } };
   }
 
   let physicalBonus = 0;
-  if (damageState.flags.nextHitPhysicalBonus > 0) {
-    physicalBonus = damageState.flags.nextHitPhysicalBonus;
+  if (readCombatFlag(damageState, "nextHitPhysicalBonus") > 0) {
+    physicalBonus = readCombatFlag(damageState, "nextHitPhysicalBonus");
     damageState = {
       ...damageState,
       flags: { ...damageState.flags, nextHitPhysicalBonus: 0 },
     };
   }
 
-  const applyPartingCut = packet.damageType === "physical" && damageState.flags.nextPhysicalDealsBleed;
+  const applyPartingCut = packet.damageType === "physical" && readCombatFlag(damageState, "nextPhysicalDealsBleed");
   if (applyPartingCut) {
     damageState = { ...damageState, flags: { ...damageState.flags, nextPhysicalDealsBleed: false } };
   }
@@ -95,16 +97,11 @@ export function dealDamageToEnemy(
   if (state.enemyHealth <= 0 || state.playerHealth <= 0) return state;
   const { damageTypePool: _pool, ...resolvedEffect } = effect;
   context?.damageEffects?.push(resolvedEffect);
-  const bonuses = { flat: 0, physical: 0, bleed: 0, sanguine: 0, ...context?.attackBonuses };
+  // Attempt-scoped bonuses precede Dodge; next-hit bonuses are spent only on contact.
+  const bonuses = consumeAttackBonuses(context);
   bonuses.physical += bonuses.sanguine;
   if (bonuses.sanguine > 0) {
     state = { ...state, flags: { ...state.flags, sanguinePhysicalBonus: 0 } };
-  }
-  if (context?.attackBonuses) {
-    context.attackBonuses.flat = 0;
-    context.attackBonuses.physical = 0;
-    context.attackBonuses.bleed = 0;
-    context.attackBonuses.sanguine = 0;
   }
   const dodged = tryDodgePlayerAttackPacket(state, combatTexts);
   if (dodged) {
@@ -116,6 +113,7 @@ export function dealDamageToEnemy(
   const damageState = consumed.state;
   bonuses.physical += consumed.physicalBonus;
 
+  // Resolve magnitude and defenses before riders, follow-up hits, then reactions.
   const { nextState, modifiedDamage } = computeCardDamageToEnemy(damageState, packet, card, {
     manaAtStart: damageState.mana,
     enemyFreezeSkipTurnsAtStart: damageState.enemyCC.freezeSkipTurns,
@@ -126,15 +124,15 @@ export function dealDamageToEnemy(
       (packet.damageType === "bleed" ? bonuses.bleed : 0),
   });
   const viper =
-    context?.playedCard &&
+    context?.origin === "played-card" &&
     packet.damageType === "physical" &&
     modifiedDamage > 0 &&
     damageState.gearEffects.dodgeReadiesVenomousHit > 0 &&
     damageState.uniqueGear.viperReady;
   const afterViper = viper ? { ...nextState, uniqueGear: { ...nextState.uniqueGear, viperReady: false } } : nextState;
   let result = applyDamageRiders(afterViper, card, packet, modifiedDamage, combatTexts, {
-    cardHealing: context?.cardHealing,
-    companionAttack: context?.companionAttack,
+    cardHealing: hasCardHealing(context),
+    companionAttack: context?.origin === "companion",
     onDamageDealt: context?.onDamageDealt,
   });
   result = applyAttackPacketFollowUps(
@@ -142,7 +140,7 @@ export function dealDamageToEnemy(
     packet.damageType,
     modifiedDamage,
     bonuses,
-    Boolean(viper),
+    viper,
     applyPartingCut,
     combatTexts,
   );

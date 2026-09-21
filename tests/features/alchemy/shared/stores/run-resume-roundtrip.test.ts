@@ -16,12 +16,12 @@ import { runProfilePersistenceCodec } from "@/features/alchemy/shared/stores/run
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import {
-  initializeActiveBattle,
   setCompanionRewardCards,
   setEquipmentShopState,
   setRewardState,
   setShopState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { initializeActiveBattle } from "@/features/alchemy/shared/stores/write/run-battle";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../../helpers/run-domain-store-test";
@@ -320,24 +320,23 @@ describe("wildwood starter drafts", () => {
 });
 
 describe("victory-handoff persistence", () => {
-  it("keeps the pending battle transition when the save is written after the enemy fell", () => {
+  it("keeps the terminal battle until its outcome is settled", () => {
     setRunProgress({ characterId: "knight", contentSystemType: "campaign" });
     setRunSession({ hasActiveRun: true });
-    const transition = { kind: "legacy-enemy-turn" } as const;
     dispatchRunSessionCommand((draft) => {
-      initializeActiveBattle(draft, { ...defaultBattleState(), enemyHealth: 0 }, transition);
+      initializeActiveBattle(draft, { ...defaultBattleState(), enemyHealth: 0 });
     });
 
     const snap = snapshotRun();
     // Without the combat shell the continuation would be lost with it.
-    expect(snap.activeCombat?.pendingBattleTransition).toEqual(transition);
+    expect(snap.activeCombat?.pendingBattleTransition).toBeNull();
 
     const decoded = decodeRunResumeSnapshot(snap);
-    expect(decoded.pendingBattleTransition).toEqual(transition);
+    expect(decoded.pendingBattleTransition).toBeNull();
 
     resetRunDomainStore();
     restoreRun(snap, {}, {});
-    expect(readGameplayState().battle.pendingBattleTransition).toEqual(transition);
+    expect(readGameplayState().battle.battleState.enemyHealth).toBe(0);
   });
 });
 

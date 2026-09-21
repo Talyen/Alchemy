@@ -24,13 +24,13 @@ import { createInitialGearState } from "@/features/alchemy/shared/stores/gear-ac
 import { createInitialProfileState } from "@/features/alchemy/shared/stores/profile-store-types";
 import {
   clearTransientSession,
-  initializeActiveBattle,
   resetToDefaults,
   setScreen,
   setHasActiveRun,
   setRewardState,
   setCompanionRewardCards,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { initializeActiveBattle } from "@/features/alchemy/shared/stores/write/run-battle";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 type RunStateFields = ActiveRunProgressFields & PermanentProgressFields & { initialized: boolean };
 

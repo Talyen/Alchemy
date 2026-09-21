@@ -1,22 +1,14 @@
 import { createMysteryEventNavigation } from "@/features/alchemy/run-loop/navigation/mystery-event-navigation";
 import { createCorruptionFlowHandlers } from "@/features/alchemy/run-loop/navigation/corruption-flow";
 import type { RunFlowShellActions, RunOutcomes } from "@/features/alchemy/run-loop/run/run-flow";
-import { createRunFlow } from "@/features/alchemy/run-loop/run/run-flow";
 import { createWildwoodGauntletFlow } from "@/features/alchemy/run-loop/run/wildwood-gauntlet-flow";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
 import { readActiveRun } from "@/features/alchemy/shared/stores/run-reads";
-import {
-  createRunSessionCommand,
-  dispatchRunSessionCommand,
-} from "@/features/alchemy/shared/stores/run-session-command";
 import { clearBattlePresentationUi, teardownRun } from "@/features/alchemy/shared/stores/run-lifecycle";
-import {
-  abandonLabyrinthCorruptionVisit,
-  setHasActiveBattle as setDraftHasActiveBattle,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+import { leaveLabyrinthCorruption } from "@/features/alchemy/shared/stores/navigation-commands";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { ROUTE_SCREENS } from "@/lib/routing";
-import { createRunDestinationWiring, clearRunCardHover } from "./run-destination-wiring";
+import { clearRunCardHover } from "./run-destination-wiring";
 import type { RunFlowEngineDeps } from "./shell-types";
 export function createRunFlowEngine(
   {
@@ -29,7 +21,6 @@ export function createRunFlowEngine(
   }: RunFlowEngineDeps,
   outcomes: RunOutcomes,
 ) {
-  const setHasActiveBattle = createRunSessionCommand(setDraftHasActiveBattle);
   const clearCardHover = clearRunCardHover;
   // Universal hover rule (approved): every flow navigation clears card hover
   // unless explicitly opted out. Factories receive the wrapped navigate so
@@ -38,20 +29,15 @@ export function createRunFlowEngine(
     clearCardHover();
     rawNavigateTo(nextScreen, prepareNavigation);
   };
-  const destinations = createRunDestinationWiring({
-    navigateTo: rawNavigateTo,
-    clearCardHover,
-  });
   const wildwood = createWildwoodGauntletFlow({
     navigateTo,
     onStartBossById: battle.onStartBossById,
-    setHasActiveBattle,
     clearCardHover,
   });
   const contentNav = createContentSystemNavigation({
     navigateTo,
     onStartBattle: battle.onStartBattle,
-    getAvailableDestinations: destinations.getAvailableDestinations,
+    getAvailableDestinations: outcomes.getAvailableDestinations,
     onResumeWildwood: wildwood.resumeWildwoodRun,
   });
   const mystery = createMysteryEventNavigation({
@@ -72,19 +58,9 @@ export function createRunFlowEngine(
     wildwoodRewardComplete: wildwood.handleWildwoodRewardComplete,
     clearCardHover,
   };
-  const flowHandlers = createRunFlow(
-    {
-      actions,
-      getAvailableDestinations: destinations.getAvailableDestinations,
-    },
-    outcomes,
-  );
+  const flowHandlers = outcomes.connect(actions);
   function returnToLabyrinthMap() {
-    navigateTo(ROUTE_SCREENS.LABYRINTH_MAP, () => {
-      dispatchRunSessionCommand((draft) => {
-        abandonLabyrinthCorruptionVisit(draft);
-      });
-    });
+    navigateTo(ROUTE_SCREENS.LABYRINTH_MAP, leaveLabyrinthCorruption);
   }
   const corruption = createCorruptionFlowHandlers({
     advanceToNextDestination: flowHandlers.advanceToNextDestination,
@@ -99,7 +75,7 @@ export function createRunFlowEngine(
     navigateTo(ROUTE_SCREENS.MENU, teardownRun);
   }
   return {
-    getAvailableDestinations: destinations.getAvailableDestinations,
+    getAvailableDestinations: outcomes.getAvailableDestinations,
     advanceToNextDestination: flowHandlers.advanceToNextDestination,
     beginCampaign: contentNav.beginCampaign,
     beginLabyrinth: contentNav.beginLabyrinth,
@@ -118,7 +94,7 @@ export function createRunFlowEngine(
     handleDifficultySelect: contentNav.handleDifficultySelect,
     handleBackFromDifficultySelect: contentNav.handleBackFromDifficultySelect,
     returnToBattle: () => contentNav.resumeRun(),
-    goToScreen: destinations.goToScreen,
+    goToScreen: navigateTo,
     handleDestinationChoice: flowHandlers.handleDestinationChoice,
     handleActComplete: flowHandlers.handleActComplete,
     skipRewards: flowHandlers.skipRewards,

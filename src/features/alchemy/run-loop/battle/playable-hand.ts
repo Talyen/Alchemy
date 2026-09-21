@@ -9,7 +9,8 @@ import {
 import type { BattleCard } from "@/lib/game-data";
 import { HALF_DIVISOR } from "@/lib/game-constants";
 
-export const PLAYABLE_HAND_OPTIONS: CardPlayOptions = { allowAfterEnemyDefeat: true };
+import { PLAYABLE_HAND_OPTIONS } from "../../shared/config/battle-input";
+export { PLAYABLE_HAND_OPTIONS };
 
 export function findFirstPlayableHandCard(
   state: BattleSnapshot,

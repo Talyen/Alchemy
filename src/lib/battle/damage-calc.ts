@@ -1,3 +1,4 @@
+import { readCombatFlag } from "./action-context";
 import type { BattleCard, BattleCardEffect, DamageType } from "@/lib/game-data";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import {
@@ -20,7 +21,7 @@ export function emptyBattleCard(id: string): BattleCard {
 export const REFLECTED_HOLY_CARD: BattleCard = emptyBattleCard("sun-struck-shield");
 
 function applyCrit(damage: number, state: BattleState) {
-  const critical = state.flags.nextHitCrit || rollPercent(GLOBAL_CRIT_CHANCE_PERCENT, getBattleRng(state));
+  const critical = readCombatFlag(state, "nextHitCrit") || rollPercent(GLOBAL_CRIT_CHANCE_PERCENT, getBattleRng(state));
   return critical && damage > 0
     ? damage * CRIT_MULTIPLIER + (state.talentEffects.homesteadCriticalDamage ?? 0)
     : damage;
@@ -94,7 +95,12 @@ function resolveEncounterFirstHit(
 ): { state: BattleState; multiplier: number } {
   const firstAttack =
     ENCOUNTER_FIRST_HIT_BY_DAMAGE_TYPE[effect.damageType as keyof typeof ENCOUNTER_FIRST_HIT_BY_DAMAGE_TYPE] ?? null;
-  if (playedCard && firstAttack && hasEncounterBenefit(state, firstAttack.id) && !state.flags[firstAttack.flag]) {
+  if (
+    playedCard &&
+    firstAttack &&
+    hasEncounterBenefit(state, firstAttack.id) &&
+    !readCombatFlag(state, firstAttack.flag)
+  ) {
     return { state: setFlag(state, firstAttack.flag, true), multiplier: LABYRINTH_MODIFIER_CONFIG.double };
   }
   return { state, multiplier: 1 };
@@ -111,7 +117,7 @@ function resolveDamageAfterMitigation(
     finalDamage,
     effect.ignoreBlock === true,
   );
-  const stateWithCritCleared = stateAfterBlock.flags.nextHitCrit
+  const stateWithCritCleared = readCombatFlag(stateAfterBlock, "nextHitCrit")
     ? setFlag(stateAfterBlock, "nextHitCrit", false)
     : stateAfterBlock;
   const isPhysicalOrStun = effect.damageType === "physical" || effect.damageType === "stun";
@@ -133,16 +139,16 @@ export function computeCardDamageToEnemy(
   card?: BattleCard,
   context?: CardEffectResolutionContext,
 ) {
-  const encounter = resolveEncounterFirstHit(state, effect, Boolean(context?.playedCard));
+  const encounter = resolveEncounterFirstHit(state, effect, context?.origin === "played-card");
   state = encounter.state;
-  const baseDamage = computeBaseDamage(state, effect, card, context?.baseDamageBonus, context?.companionAttack);
+  const baseDamage = computeBaseDamage(state, effect, card, context?.baseDamageBonus, context?.origin === "companion");
   const { state: stateAfterFirst, firstBonus } = applyFirstDamageBonus(state, effect);
   const totalMultiplier = resolveDamageBonusMultiplier(
     stateAfterFirst,
     effect,
     card,
     firstBonus,
-    context?.companionAttack,
+    context?.origin === "companion",
   );
   const scaledDamage = Math.round(baseDamage * totalMultiplier * encounter.multiplier);
   const pacedDamage = paceCombatDamage(stateAfterFirst, scaledDamage, "player");

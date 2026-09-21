@@ -14,8 +14,8 @@ import {
   bondCompanion,
   unlockTalent,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { commitCardPlay, commitBattleWish } from "@/features/alchemy/run-loop/battle/battle-action-commands";
-import { commitEndTurn, resumePendingBattleTransition } from "@/features/alchemy/run-loop/battle/battle-session";
+import { commitCardPlay, commitBattleWish } from "@/features/alchemy/shared/stores/battle-commands";
+import { commitEndTurn } from "@/features/alchemy/run-loop/battle/battle-session";
 import { PLAYABLE_HAND_OPTIONS } from "@/features/alchemy/run-loop/battle/playable-hand";
 import { cardSlotKeyOf, gearSlotKeyOf } from "@/features/alchemy/run-loop/shop/shop-commands-core";
 import {
@@ -218,24 +218,7 @@ export function createCareerActor(
     switch (activity.kind) {
       case "battle": {
         const state = readBattle().battleState;
-        if (readBattle().pendingBattleTransition) {
-          offer("resume-battle", "pending-transition", 1, () =>
-            resumePendingBattleTransition(0, {
-              isCurrentBattleSession: () => readBattle().hasActiveBattle,
-              checkBattleEnd: (next) => {
-                if (isPlayerDefeated(next)) {
-                  flow.handleBattleDefeat();
-                  return true;
-                }
-                if (next.enemyHealth <= 0) {
-                  flow.handleBattleVictory();
-                  return true;
-                }
-                return false;
-              },
-            }),
-          );
-        } else if (isPlayerDefeated(state)) offer("settle", "defeat", 1, flow.handleBattleDefeat);
+        if (isPlayerDefeated(state)) offer("settle", "defeat", 1, flow.handleBattleDefeat);
         else if (state.enemyHealth <= 0) offer("settle", "victory", 1, flow.handleBattleVictory);
         else if (state.wishOptions?.length)
           state.wishOptions.forEach((card, index) =>

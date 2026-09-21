@@ -13,11 +13,6 @@ export function readDraftGold(draft: GameplayDraft): number {
 
 export function syncBattleGoldFromPurse(draft: GameplayDraft): void {
   if (!draft.battle.hasActiveBattle) return;
-  const pending = draft.battle.pendingBattleTransition;
-  if (pending && "resultState" in pending) {
-    const pendingGoldChange = pending.resultState.gold - draft.battle.battleState.gold;
-    pending.resultState.gold = draft.runProfile.gold + pendingGoldChange;
-  }
   draft.battle.battleState.gold = draft.runProfile.gold;
 }
 

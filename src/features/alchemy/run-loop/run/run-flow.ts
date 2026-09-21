@@ -45,15 +45,25 @@ export interface RunOutcomeDeps {
 }
 
 export function createRunOutcomes(deps: RunOutcomeDeps) {
-  return { victory: createVictoryHandlers(deps), defeat: createDefeatHandlers(deps) };
+  const victory = createVictoryHandlers(deps);
+  const defeat = createDefeatHandlers(deps);
+  return {
+    victory,
+    defeat,
+    getAvailableDestinations: deps.getAvailableDestinations,
+    connect(actions: RunFlowShellActions) {
+      return composeRunFlow({ actions, getAvailableDestinations: deps.getAvailableDestinations }, { victory, defeat });
+    },
+  };
 }
 
 export type RunOutcomes = ReturnType<typeof createRunOutcomes>;
 
-export function createRunFlow(deps: RunFlowHandlerDeps, outcomes = createRunOutcomes(deps)) {
-  // outcomes and deps must share one getAvailableDestinations: victory samples
-  // destinations through outcomes while progression samples through deps, and
-  // the two offer sets disagree if the functions ever diverge.
+export function createRunFlow(deps: RunFlowHandlerDeps) {
+  return createRunOutcomes(deps).connect(deps.actions);
+}
+
+function composeRunFlow(deps: RunFlowHandlerDeps, outcomes: Pick<RunOutcomes, "victory" | "defeat">) {
   const { victory, defeat } = outcomes;
   const progression = createProgressionHandlers(deps, victory.completeRunVictory);
   const destination = createDestinationScreenHandlers(deps, progression.advanceToNextDestination);

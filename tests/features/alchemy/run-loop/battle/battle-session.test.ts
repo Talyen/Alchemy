@@ -1,36 +1,24 @@
+import { PlaybackLifetime } from "@/features/alchemy/run-loop/battle/playback-lifetime";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
-import { createTransferCancelRegistry } from "@/features/alchemy/run-loop/battle/card-transfer-animations";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
 import { battleStageMarkName, markBattleStage } from "@/lib/performance/battle-stage-marks";
 import { defaultBattleState } from "@/lib/battle";
-import { TimerGroup } from "@/lib/animation/game-timer";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { setHasActiveBattle, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { setSyncedBattleState } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setSyncedBattleState } from "@/features/alchemy/shared/stores/write/run-battle";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 
 function makeSession() {
-  const battleSessionRef = { current: 1 };
-  const battleAbortControllerRef = { current: new AbortController() };
-  const battleTimerGroupRef = { current: new TimerGroup() };
-  const transferCancelRegistryRef = { current: createTransferCancelRegistry() };
-  const cardPlayInProgressRef = { current: false };
-  const victoryDefeatHandledRef = { current: false };
-  const onBattleSessionPreparedRef = { current: null };
+  const playback = new PlaybackLifetime();
+  playback.restart();
   const onBattleVictory = vi.fn();
   const onBattleDefeat = vi.fn();
 
   const session = createBattleSession({
-    battleSessionRef,
-    battleAbortControllerRef,
-    battleTimerGroupRef,
-    transferCancelRegistryRef,
-    cardPlayInProgressRef,
-    victoryDefeatHandledRef,
-    onBattleSessionPreparedRef,
+    playback,
     onBattleVictory,
     onBattleDefeat,
     getPresentation: () => useBattlePresentationStore.getState(),
@@ -38,14 +26,9 @@ function makeSession() {
 
   return {
     session,
-    battleSessionRef,
-    battleAbortControllerRef,
-    victoryDefeatHandledRef,
-    cardPlayInProgressRef,
+    playback,
     onBattleVictory,
     onBattleDefeat,
-    transferCancelRegistryRef,
-    battleTimerGroupRef,
   };
 }
 
@@ -76,16 +59,16 @@ describe("createBattleSession", () => {
   });
 
   it("ignores checkBattleEnd when session is stale", () => {
-    const { session, battleSessionRef, onBattleVictory } = makeSession();
-    battleSessionRef.current = 2;
+    const { session, playback, onBattleVictory } = makeSession();
+    playback.restart();
     const state = { ...defaultBattleState(), enemyHealth: 0 };
     expect(session.checkBattleEnd(state, 1)).toBe(false);
     expect(onBattleVictory).not.toHaveBeenCalled();
   });
 
   it("keeps the current session active during victory grace after the battle flag clears", () => {
-    const { session, victoryDefeatHandledRef } = makeSession();
-    victoryDefeatHandledRef.current = true;
+    const { session, playback } = makeSession();
+    playback.finish();
     dispatchRunSessionCommand((draft) => {
       setHasActiveBattle(draft, false);
       setSyncedBattleState(draft, { ...defaultBattleState(), enemyHealth: 0 });
@@ -94,8 +77,8 @@ describe("createBattleSession", () => {
   });
 
   it("rejects a stale session id even during victory grace", () => {
-    const { session, victoryDefeatHandledRef } = makeSession();
-    victoryDefeatHandledRef.current = true;
+    const { session, playback } = makeSession();
+    playback.finish();
     dispatchRunSessionCommand((draft) => {
       setHasActiveBattle(draft, false);
       setSyncedBattleState(draft, { ...defaultBattleState(), enemyHealth: 0 });
@@ -104,11 +87,11 @@ describe("createBattleSession", () => {
   });
 
   it("resetBattleSession bumps session id and cancels transfers", () => {
-    const { session, battleSessionRef, transferCancelRegistryRef } = makeSession();
+    const { session, playback } = makeSession();
     const cancel = vi.fn();
-    transferCancelRegistryRef.current.register(cancel);
+    playback.registerCancel(cancel);
     session.resetBattleSession();
-    expect(battleSessionRef.current).toBe(2);
+    expect(playback.id).toBe(2);
     expect(cancel).toHaveBeenCalled();
   });
 
@@ -156,8 +139,8 @@ describe("createBattleSession", () => {
   });
 
   it("runIfSessionActive succeeds during victory grace when hasActiveBattle is false", () => {
-    const { session, victoryDefeatHandledRef } = makeSession();
-    victoryDefeatHandledRef.current = true;
+    const { session, playback } = makeSession();
+    playback.finish();
     dispatchRunSessionCommand((draft) => {
       setHasActiveBattle(draft, false);
       setSyncedBattleState(draft, { ...defaultBattleState(), enemyHealth: 0 });
@@ -171,15 +154,49 @@ describe("createBattleSession", () => {
   });
 
   it("runIfSessionActive skips stale sessions without side effects", () => {
-    const { session, battleSessionRef, cardPlayInProgressRef } = makeSession();
-    cardPlayInProgressRef.current = true;
-    battleSessionRef.current = 2;
+    const { session, playback } = makeSession();
+    playback.restart();
+    playback.beginAction();
     const onComplete = vi.fn();
 
     const result = session.runIfSessionActive(1, onComplete, undefined);
 
     expect(result).toBeUndefined();
     expect(onComplete).not.toHaveBeenCalled();
-    expect(cardPlayInProgressRef.current).toBe(true);
+    expect(playback.cardPlayInProgress).toBe(true);
+  });
+  it("cancels playback on a menu visit and rejects late completions after returning", () => {
+    const { session, playback } = makeSession();
+    session.reconcile("battle", true);
+    const generation = playback.id;
+    const oldSignal = playback.signal;
+    const cancel = vi.fn();
+    playback.registerCancel(cancel);
+    playback.beginAction();
+    session.reconcile("menu", true);
+    expect(oldSignal.aborted).toBe(true);
+    expect(cancel).toHaveBeenCalledOnce();
+    expect(playback.canAcceptInput()).toBe(false);
+    session.reconcile("battle", true);
+    playback.beginAction();
+    playback.completeAction(generation);
+    expect(playback.cardPlayInProgress).toBe(true);
+    expect(playback.canAcceptInput()).toBe(false);
+    playback.completeAction(playback.id);
+    expect(playback.canAcceptInput()).toBe(true);
+  });
+
+  it("does not reopen end-turn input or auto-end-turn when a finishing animation settles", () => {
+    const { session, playback, onBattleVictory } = makeSession();
+    const scheduleAutoEndTurn = vi.fn();
+    playback.bind({ scheduleAutoEndTurn, clearAutoEndTurn: vi.fn() });
+    playback.beginAction();
+    session.handleVictoryDefeat("victory");
+    playback.completeAction(playback.id);
+    playback.scheduleAutoEndTurn(defaultBattleState());
+    session.handleVictoryDefeat("victory");
+    expect(onBattleVictory).toHaveBeenCalledOnce();
+    expect(playback.canAcceptInput()).toBe(false);
+    expect(scheduleAutoEndTurn).not.toHaveBeenCalled();
   });
 });

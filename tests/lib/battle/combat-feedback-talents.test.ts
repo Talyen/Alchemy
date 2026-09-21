@@ -112,7 +112,7 @@ describe("Cull the Weak", () => {
     expect(computeCardDamageToEnemy(initial, effect, card).modifiedDamage).toBe(8);
     expect(
       computeCardDamageToEnemy(initial, effect, card, {
-        companionAttack: true,
+        origin: "companion",
         manaAtStart: initial.mana,
         enemyFreezeSkipTurnsAtStart: 0,
       }).modifiedDamage,

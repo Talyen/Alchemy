@@ -46,7 +46,6 @@ describe("Wildwood reward selection", () => {
     const flow = createWildwoodGauntletFlow({
       navigateTo: vi.fn(),
       onStartBossById: startBoss,
-      setHasActiveBattle: vi.fn(),
       clearCardHover: vi.fn(),
     });
     flow.handleWildwoodRemoveCard(0);

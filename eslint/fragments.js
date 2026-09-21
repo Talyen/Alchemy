@@ -134,22 +134,6 @@ export const DOMAIN_STORE_PATTERNS = [
 export const WRITE_PORT_PATTERNS = [
   {
     group: [
-      "**/write-port-run",
-      "@/features/alchemy/shared/stores/write-port-run",
-      "**/write-port-session",
-      "@/features/alchemy/shared/stores/write-port-session",
-      "**/write-port-homestead",
-      "@/features/alchemy/shared/stores/write-port-homestead",
-      "**/write-port-meta",
-      "@/features/alchemy/shared/stores/write-port-meta",
-      "**/run-session-lifecycle-port",
-      "@/features/alchemy/shared/stores/run-session-lifecycle-port",
-    ],
-    message:
-      "That store module was consolidated: import gameplay writes from @/features/alchemy/shared/stores/run-session-write-port and lifecycle from @/features/alchemy/shared/stores/run-lifecycle.",
-  },
-  {
-    group: [
       "**/shared/stores/write",
       "**/shared/stores/write/*",
       "@/features/alchemy/shared/stores/write",

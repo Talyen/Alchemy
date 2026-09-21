@@ -1,3 +1,5 @@
+import { readCombatFlag } from "./action-context";
+import { resolveSecondaryAction } from "./action-context";
 import { HALF_DIVISOR, REACTIVE_REWARD_CHANCES } from "../game-constants";
 import { rollTalentChance } from "./status-helpers";
 import type { EnemyAttackEffect } from "@/lib/game-data";
@@ -85,7 +87,9 @@ function applyDodgeCounterAttacks(
     nextState.enemyHealth > 0 &&
     rollTalentChance(REACTIVE_REWARD_CHANCES.riposting, nextState)
   ) {
-    nextState = dealPlayerTypedHit(nextState, "physical", nextState.gearEffects.physicalOnDodge, combatTexts);
+    nextState = resolveSecondaryAction(nextState, "retaliation", (current) =>
+      dealPlayerTypedHit(current, "physical", current.gearEffects.physicalOnDodge, combatTexts),
+    );
   }
   const riposteDamage = nextState.talentEffects.physicalOnDodgeEqualToAttack
     ? dodgedAmount
@@ -94,7 +98,9 @@ function applyDodgeCounterAttacks(
     nextState = dealTalentTypedHit(nextState, "physical", riposteDamage, combatTexts, true);
   }
   if (nextState.gearEffects.bleedOnDodge > 0 && nextState.enemyHealth > 0 && eligibility.enemyStatuses.bleed > 0) {
-    nextState = dealPlayerTypedHit(nextState, "bleed", nextState.gearEffects.bleedOnDodge, combatTexts);
+    nextState = resolveSecondaryAction(nextState, "retaliation", (current) =>
+      dealPlayerTypedHit(current, "bleed", current.gearEffects.bleedOnDodge, combatTexts),
+    );
   }
   if (nextState.talentEffects.goldOnDodge > 0 && rollTalentChance(REACTIVE_REWARD_CHANCES.luckyFoot, nextState)) {
     nextState = addGoldWithCombatText(nextState, nextState.talentEffects.goldOnDodge, combatTexts);
@@ -111,7 +117,7 @@ function applyDodgeOffensiveBuffs(state: BattleState): BattleState {
       ...nextState,
       flags: {
         ...nextState.flags,
-        nextHitPhysicalBonus: nextState.flags.nextHitPhysicalBonus + nextAttackBonus,
+        nextHitPhysicalBonus: readCombatFlag(nextState, "nextHitPhysicalBonus") + nextAttackBonus,
       },
     };
   }
@@ -146,7 +152,9 @@ function applyOnPlayerDodge(state: BattleState, combatTexts: CombatTextEvent[], 
     const spent = halveRounded(state.playerStatuses.block);
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: spent });
     nextState = setPlayerStatus(nextState, "block", state.playerStatuses.block - spent);
-    nextState = dealPlayerTypedHit(nextState, "physical", spent, combatTexts);
+    nextState = resolveSecondaryAction(nextState, "retaliation", (current) =>
+      dealPlayerTypedHit(current, "physical", spent, combatTexts),
+    );
   }
   if (state.gearEffects.archeryDodgeAndDraw > 0) nextState = drawKeywordCard(nextState, "archery");
   nextState = applyDodgeDefensiveReactions(nextState, combatTexts, dodgedAmount, state);

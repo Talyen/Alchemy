@@ -1,10 +1,8 @@
-import { useRef, useMemo, useLayoutEffect, type RefObject } from "react";
+import { PlaybackLifetime } from "./playback-lifetime";
+import { useRef, useMemo, useLayoutEffect, useState } from "react";
 import type { BattleCard } from "@/lib/game-data";
-import type { BattleSnapshot } from "@/lib/battle";
 import type { BattleRefs, CardRect } from "@/features/alchemy/shared/types";
 import type { Screen } from "@/lib/routing";
-import { TimerGroup } from "@/lib/animation/game-timer";
-import { createTransferCancelRegistry, type TransferCancelRegistry } from "./card-transfer-animations";
 import type { BattlePresentationPort } from "./battle-presentation-store";
 import { useBattlePresentationStore } from "./battle-presentation-store";
 
@@ -21,10 +19,7 @@ export type AutoplayCardHandler = (
 
 export type AutoplayWishHandler = (card: BattleCard, control: AutoplayCardControl) => boolean | Promise<boolean>;
 
-export interface BattlePlaybackBind {
-  scheduleAutoEndTurn: (state?: BattleSnapshot) => void;
-  clearAutoEndTurn: () => void;
-}
+export type { BattlePlaybackBind } from "./playback-lifetime";
 
 export interface BattleControllerContextProps {
   screen: Screen;
@@ -33,20 +28,12 @@ export interface BattleControllerContextProps {
   onBattleDefeat?: (() => void) | undefined;
   measureElementRect: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
   measureVisualCardRect: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
-  scheduleAutoEndTurnRef: RefObject<((state?: BattleSnapshot) => void) | null>;
-  clearAutoEndTurnRef: RefObject<(() => void) | null>;
-  onBattleSessionPreparedRef: RefObject<(() => void) | null>;
+  onSessionPrepared?: (() => void) | undefined;
   getPresentation?: () => BattlePresentationPort;
 }
 
 export interface BattleControllerContext extends Omit<BattleControllerContextProps, "getPresentation">, BattleRefs {
-  cardPlayInProgressRef: RefObject<boolean>;
-  battleTimerGroupRef: RefObject<TimerGroup>;
-  battleSessionRef: RefObject<number>;
-  battleAbortControllerRef: RefObject<AbortController>;
-  victoryDefeatHandledRef: RefObject<boolean>;
-  transferCancelRegistryRef: RefObject<TransferCancelRegistry>;
-  transferIdCounterRef: RefObject<number>;
+  playback: PlaybackLifetime;
   getPresentation: () => BattlePresentationPort;
 }
 
@@ -58,67 +45,28 @@ export function useBattleControllerContext(props: BattleControllerContextProps):
   const playerPanelRef = useRef<HTMLDivElement | null>(null);
   const enemyPanelRef = useRef<HTMLDivElement | null>(null);
 
-  const cardPlayInProgressRef = useRef(false);
-  const battleTimerGroupRef = useRef(new TimerGroup());
-  const battleSessionRef = useRef(0);
-  const battleAbortControllerRef = useRef(new AbortController());
-  const victoryDefeatHandledRef = useRef(false);
-  const transferCancelRegistryRef = useRef(createTransferCancelRegistry());
-  const transferIdCounterRef = useRef(0);
-  const propsRef = useRef(props);
+  const [playback] = useState(() => new PlaybackLifetime());
   useLayoutEffect(() => {
-    propsRef.current = props;
-  });
-
-  const context = useMemo(() => {
-    return {
+    playback.activate();
+    return () => playback.cancel();
+  }, [playback]);
+  const context = useMemo<BattleControllerContext>(
+    () => ({
+      ...props,
+      playback,
       handCardRefs,
       drawPileRef,
       discardPileRef,
       battleSceneRef,
       playerPanelRef,
       enemyPanelRef,
-
-      cardPlayInProgressRef,
-      battleTimerGroupRef,
-      battleSessionRef,
-      battleAbortControllerRef,
-      victoryDefeatHandledRef,
-      transferCancelRegistryRef,
-      transferIdCounterRef,
-
-      get screen() {
-        return propsRef.current.screen;
-      },
-      get setHoveredCardId() {
-        return propsRef.current.setHoveredCardId;
-      },
-      get onBattleVictory() {
-        return propsRef.current.onBattleVictory;
-      },
-      get onBattleDefeat() {
-        return propsRef.current.onBattleDefeat;
-      },
-      get measureElementRect() {
-        return propsRef.current.measureElementRect;
-      },
-      get measureVisualCardRect() {
-        return propsRef.current.measureVisualCardRect;
-      },
-      get scheduleAutoEndTurnRef() {
-        return propsRef.current.scheduleAutoEndTurnRef;
-      },
-      get clearAutoEndTurnRef() {
-        return propsRef.current.clearAutoEndTurnRef;
-      },
-      get onBattleSessionPreparedRef() {
-        return propsRef.current.onBattleSessionPreparedRef;
-      },
-      getPresentation() {
-        return propsRef.current.getPresentation?.() ?? useBattlePresentationStore.getState();
-      },
-    };
-  }, []);
-
+      getPresentation: props.getPresentation ?? useBattlePresentationStore.getState,
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- One controller lifetime; committed props are synchronized below.
+    [playback],
+  );
+  useLayoutEffect(() => {
+    Object.assign(context, props, { getPresentation: props.getPresentation ?? useBattlePresentationStore.getState });
+  });
   return context;
 }

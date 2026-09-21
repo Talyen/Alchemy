@@ -1,3 +1,4 @@
+import { PlaybackLifetime } from "@/features/alchemy/run-loop/battle/playback-lifetime";
 import { act, renderHook } from "@testing-library/react";
 import { useBattleAutoplay } from "@/features/alchemy/run-loop/battle/use-battle-autoplay";
 import { battleSnapshot } from "@/lib/battle";
@@ -7,11 +8,11 @@ import { describe, expect, it, vi, beforeEach, type Mock } from "vitest";
 import type { MouseEvent } from "react";
 import { createBattleCardPlay } from "@/features/alchemy/run-loop/battle/battle-card-play";
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
-import type { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
+import { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 import type { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/draw-sequence";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
-import { setSyncedBattleState } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setSyncedBattleState } from "@/features/alchemy/shared/stores/write/run-battle";
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import { makeTestBattleState } from "../../../../fixtures/battle";
 import { makeTestCard } from "../../../../fixtures/battle";
@@ -64,20 +65,18 @@ import { awardCardXP } from "@/features/alchemy/shared/stores/run-session-write-
 const autoplayControl = { signal: new AbortController().signal, canCommit: () => true };
 
 function makeDeps(overrides: Partial<BattleControllerContext> = {}) {
-  const battleSessionRef = { current: 1 };
-  const cardPlayInProgressRef = { current: false };
-  const scheduleAutoEndTurnMock = vi.fn();
+  const playback = new PlaybackLifetime();
+  playback.restart();
+  const scheduleAutoEndTurnMock = vi.spyOn(playback, "scheduleAutoEndTurn");
   const ctx = {
     screen: "battle" as const,
-    battleSessionRef,
-    cardPlayInProgressRef,
+    playback,
     handCardRefs: { current: {} },
     playerPanelRef: { current: null },
     enemyPanelRef: { current: null },
     battleSceneRef: { current: null },
     setHoveredCardId: vi.fn(),
     talents: { talentEffects: {} },
-    scheduleAutoEndTurnRef: { current: scheduleAutoEndTurnMock },
     scheduleAutoEndTurn: scheduleAutoEndTurnMock,
     logBattleError: vi.fn(),
     getPresentation: () => useBattlePresentationStore.getState(),
@@ -155,7 +154,7 @@ describe("createBattleCardPlay", () => {
     expect(readBattle().battleState.hand.length).toBe(0);
     expect(readBattle().battleState.enemyHealth).toBeLessThan(30);
     await vi.waitFor(() => {
-      expect(ctx.scheduleAutoEndTurnRef.current).toHaveBeenCalled();
+      expect(ctx.playback.scheduleAutoEndTurn).toHaveBeenCalled();
     });
     expectAwardedCard(awardCardXP, "slash");
     expect(playBattleEvent).toHaveBeenCalledWith("enemyHit");
@@ -194,7 +193,7 @@ describe("createBattleCardPlay", () => {
     clickCard(handleCardClick, { ...expensive, uid: 2 }, 0);
 
     expect(readBattle().battleState).toEqual(battleSnapshot(state));
-    expect(ctx.scheduleAutoEndTurnRef.current).not.toHaveBeenCalled();
+    expect(ctx.playback.scheduleAutoEndTurn).not.toHaveBeenCalled();
     expect(awardCardXP).not.toHaveBeenCalled();
     expect(playUISound).toHaveBeenCalledWith("error");
     expect(useBattlePresentationStore.getState().playerAttackToken).toBe(0);
@@ -280,19 +279,25 @@ describe("createBattleCardPlay", () => {
     expect(readBattle().battleState.hand).toHaveLength(0);
     await expect(handleAutoplayCard(first, 0, autoplayControl)).resolves.toBe(false);
     settled[1]!();
-    expect(ctx.cardPlayInProgressRef.current).toBe(true);
+    expect(ctx.playback.cardPlayInProgress).toBe(true);
     expect(session.checkBattleEnd).toHaveBeenCalledTimes(2);
     settled[0]!();
-    expect(ctx.cardPlayInProgressRef.current).toBe(false);
+    expect(ctx.playback.cardPlayInProgress).toBe(false);
     expect(session.checkBattleEnd).toHaveBeenCalledWith(readBattle().battleState, 1);
-    expect(ctx.scheduleAutoEndTurnRef.current).toHaveBeenCalledWith(readBattle().battleState);
+    expect(ctx.playback.scheduleAutoEndTurn).toHaveBeenCalledWith(readBattle().battleState);
     expect(playUISound).not.toHaveBeenCalled();
   });
 
   it("keeps the hand closed once End Turn has started", async () => {
     const card = makeTestCard({ id: "slash", uid: 1, cost: 0 });
     dispatchRunSessionCommand((draft) => setSyncedBattleState(draft, makeTestBattleState({ hand: [card] })));
-    const { ctx, session, transferDeps } = makeDeps({ cardPlayInProgressRef: { current: true } });
+    const { ctx, session, transferDeps } = makeDeps({
+      playback: (() => {
+        const lifetime = new PlaybackLifetime();
+        lifetime.beginAction();
+        return lifetime;
+      })(),
+    });
     const actions = createBattleCardPlay(ctx, session, transferDeps);
     await expect(actions.handleAutoplayCard(card, 0, autoplayControl)).resolves.toBe(false);
     expect(readBattle().battleState.hand).toHaveLength(1);
@@ -335,7 +340,10 @@ describe("createBattleCardPlay", () => {
     });
     dispatchRunSessionCommand((draft) => setSyncedBattleState(draft, state));
 
-    const { ctx, session, transferDeps, awardCardXP } = makeDeps();
+    const onBattleVictory = vi.fn();
+    const { ctx, transferDeps, awardCardXP } = makeDeps({ onBattleVictory });
+    const session = createBattleSession(ctx);
+    session.handleVictoryDefeat("victory");
     const { handleCardClick } = createBattleCardPlay(ctx, session, transferDeps);
     clickCard(handleCardClick, { ...slash, uid: 4 }, 0);
 
@@ -343,6 +351,8 @@ describe("createBattleCardPlay", () => {
     expect(readBattle().battleState.discard).toHaveLength(1);
     expect(readBattle().battleState.mana).toBe(2);
     expectAwardedCard(awardCardXP, "slash");
+    expect(onBattleVictory).toHaveBeenCalledOnce();
+    expect(ctx.playback.canAcceptInput()).toBe(false);
     expect(logError).not.toHaveBeenCalled();
   });
 
@@ -523,7 +533,7 @@ describe("createBattleCardPlay", () => {
       const pending = handleAutoplayCard({ ...slash, uid: 7 }, 0, autoplayControl);
       expect(useUiStore.getState().autoplayPreviewCardId).toBe("hand-slash-7");
 
-      ctx.battleSessionRef.current = 2;
+      ctx.playback.restart();
       await vi.advanceTimersByTimeAsync(AUTOPLAY_PREVIEW_MS);
       await expect(pending).resolves.toBe(false);
       expect(useUiStore.getState().autoplayPreviewCardId).toBeNull();
@@ -554,7 +564,7 @@ describe("createBattleCardPlay", () => {
             screen: "battle",
             hasActiveBattle: true,
             battleState: readBattle().battleState,
-            isCardPlayInProgress: () => ctx.cardPlayInProgressRef.current,
+            isCardPlayInProgress: () => ctx.playback.cardPlayInProgress,
             playCard: actions.handleAutoplayCard,
             playWish: actions.handleAutoplayWish,
             presentationGateRef: gate,

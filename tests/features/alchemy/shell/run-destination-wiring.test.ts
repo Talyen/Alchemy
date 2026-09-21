@@ -1,10 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  clearRunCardHover,
-  createRunDestinationWiring,
-  readRunAvailableDestinations,
-} from "@/features/alchemy/shell/run-destination-wiring";
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import { beforeEach, describe, expect, it } from "vitest";
+import { readRunAvailableDestinations } from "@/features/alchemy/shell/run-destination-wiring";
 import { DESTINATIONS } from "@/lib/routing";
 import { resetAllTestStores, setRunProgress } from "../../../helpers/run-domain-store-test";
 
@@ -49,16 +44,5 @@ describe("readRunAvailableDestinations", () => {
       gold: 100,
     });
     expect(readRunAvailableDestinations({ destinationIndexInAct: 7 })).toEqual([DESTINATIONS.BOSS_COMBAT]);
-  });
-});
-
-describe("createRunDestinationWiring", () => {
-  it("clears card hover before navigating", () => {
-    useUiStore.setState({ hoveredCardId: "card-1" });
-    const navigateTo = vi.fn();
-    const { goToScreen } = createRunDestinationWiring({ navigateTo, clearCardHover: clearRunCardHover });
-    goToScreen("menu");
-    expect(useUiStore.getState().hoveredCardId).toBeNull();
-    expect(navigateTo).toHaveBeenCalledWith("menu");
   });
 });

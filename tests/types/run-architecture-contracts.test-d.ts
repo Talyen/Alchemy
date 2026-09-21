@@ -20,7 +20,7 @@ declare const draft: GameplayDraft;
 
 type WritePort = typeof import("@/features/alchemy/shared/stores/run-session-write-port");
 // Pure (non-mutating) helpers are exempt from the draft-first rule.
-type PureWriteHelper = "snapshotBattleState" | "cloneRunObtainedItem";
+type PureWriteHelper = "cloneRunObtainedItem";
 type NonDraftFirstWrite = Exclude<
   {
     [Key in keyof WritePort]: WritePort[Key] extends (...args: infer Args) => unknown
@@ -33,6 +33,19 @@ type NonDraftFirstWrite = Exclude<
 >;
 
 describe("run architecture type contracts", () => {
+  it("keeps raw battle replacement and RNG binding out of the feature write port", () => {
+    expectTypeOf<
+      Extract<
+        keyof WritePort,
+        | "setBattleState"
+        | "setSyncedBattleState"
+        | "commitBattleTransition"
+        | "withDraftWorldBattleRng"
+        | "initializeActiveBattle"
+      >
+    >().toEqualTypeOf<never>();
+  });
+
   it("rejects asynchronous results at every generic command entry point", () => {
     // @ts-expect-error -- commands cannot return Promises
     dispatchRunSessionCommand(asyncMutation);

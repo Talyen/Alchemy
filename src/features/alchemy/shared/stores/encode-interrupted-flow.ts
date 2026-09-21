@@ -72,7 +72,7 @@ function resolveDestinationExitScreen(activeRun: ActiveRunData): Screen {
 }
 
 export function inferActiveRunScreen(activeRun: ActiveRunData): Screen {
-  if (activeRun.activeCombat && activeRun.activeCombat.battleState.enemyHealth > 0) return "battle";
+  if (activeRun.activeCombat) return "battle";
   const starterResume = wildcardStarterResumeTarget({
     ...activeRun,
     runDeckLength: activeRun.runDeck.length,

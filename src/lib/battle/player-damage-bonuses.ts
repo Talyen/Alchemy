@@ -1,3 +1,4 @@
+import { readCombatFlag } from "./action-context";
 import {
   isPotionCard,
   type BattleCard,
@@ -392,11 +393,14 @@ export function applyFirstDamageBonus(
   let firstBonus = 0;
 
   if (isBurnLikeDamage(effect.damageType, state)) {
-    if (nextState.talentEffects.firstBurnCardBonusMultiplier > 1 && !nextState.flags.firstBurnCardDoubledUsed) {
+    if (
+      nextState.talentEffects.firstBurnCardBonusMultiplier > 1 &&
+      !readCombatFlag(nextState, "firstBurnCardDoubledUsed")
+    ) {
       firstBonus += nextState.talentEffects.firstBurnCardBonusMultiplier - 1;
       nextState = setFlag(nextState, "firstBurnCardDoubledUsed", true);
     }
-    if (nextState.trinketEffects.firstBurnDoubled && !nextState.flags.firstBurnTrinketDoubledUsed) {
+    if (nextState.trinketEffects.firstBurnDoubled && !readCombatFlag(nextState, "firstBurnTrinketDoubledUsed")) {
       firstBonus += 1;
       nextState = setFlag(nextState, "firstBurnTrinketDoubledUsed", true);
     }

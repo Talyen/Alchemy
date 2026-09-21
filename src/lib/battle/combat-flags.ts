@@ -1,81 +1,87 @@
 export const FLAG_DEFINITIONS = {
-  hawkEyeReady: { default: false as const, preserveAs: null },
-  verdictGoldPaid: { default: false as const, preserveAs: null },
-  killRewardsPaid: { default: false as const, preserveAs: null },
-  nextHolyCardFree: { default: false as const, preserveAs: null },
-  nextWishExtraChoice: { default: false as const, preserveAs: null },
-  pendingWishMana: { default: 0 as const, preserveAs: null },
-  previousCardWasArchery: { default: false as const, preserveAs: null },
-  previousCardWasNature: { default: false as const, preserveAs: null },
-  companionNextAttackBonus: { default: 0 as const, preserveAs: null },
-  sanguinePhysicalBonus: { default: 0 as const, preserveAs: null },
-  darkRecoveryMana: { default: 0 as const, preserveAs: null },
-  encounterPhysicalUsed: { default: false as const, preserveAs: true as const },
-  encounterHolyUsed: { default: false as const, preserveAs: true as const },
-  encounterNatureUsed: { default: false as const, preserveAs: true as const },
-  encounterWishUsed: { default: false as const, preserveAs: null },
-  encounterArcheryUsed: { default: false as const, preserveAs: true as const },
-  secondWindTriggered: { default: false as const, preserveAs: null },
-  uniqueRepeatActive: { default: false as const, preserveAs: null },
-  firstHolyCardFreeUsed: { default: false as const, preserveAs: true as const },
-  firstBurnCardDoubledUsed: { default: false as const, preserveAs: true as const },
-  firstArmorCardDoubledUsed: { default: false as const, preserveAs: true as const },
-  firstPoisonCardFreeUsed: { default: false as const, preserveAs: true as const },
-  firstBleedCardFreeUsed: { default: false as const, preserveAs: true as const },
-  firstBurnTrinketDoubledUsed: { default: false as const, preserveAs: true as const },
-  firstLeechCardDoubledUsed: { default: false as const, preserveAs: true as const },
-  firstConsumeCardFreeUsed: { default: false as const, preserveAs: true as const },
-  firstCompanionCardFreeUsed: { default: false as const, preserveAs: true as const },
-  firstArcheryCardFreeUsed: { default: false as const, preserveAs: true as const },
+  hawkEyeReady: { default: false as const, secondaryValue: null, lifetime: "until-consumed" },
+  verdictGoldPaid: { default: false as const, secondaryValue: null, lifetime: "combat" },
+  killRewardsPaid: { default: false as const, secondaryValue: null, lifetime: "combat" },
+  nextHolyCardFree: { default: false as const, secondaryValue: null, lifetime: "until-consumed" },
+  nextWishExtraChoice: { default: false as const, secondaryValue: null, lifetime: "until-consumed" },
+  pendingWishMana: { default: 0 as const, secondaryValue: null, lifetime: "player-turn" },
+  previousCardWasArchery: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
+  previousCardWasNature: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
+  companionNextAttackBonus: { default: 0 as const, secondaryValue: null, lifetime: "until-consumed" },
+  sanguinePhysicalBonus: { default: 0 as const, secondaryValue: null, lifetime: "until-consumed" },
+  darkRecoveryMana: { default: 0 as const, secondaryValue: null, lifetime: "player-turn" },
+  encounterPhysicalUsed: { default: false as const, secondaryValue: true as const, lifetime: "player-turn" },
+  encounterHolyUsed: { default: false as const, secondaryValue: true as const, lifetime: "player-turn" },
+  encounterNatureUsed: { default: false as const, secondaryValue: true as const, lifetime: "player-turn" },
+  encounterWishUsed: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
+  encounterArcheryUsed: { default: false as const, secondaryValue: true as const, lifetime: "player-turn" },
+  secondWindTriggered: { default: false as const, secondaryValue: null, lifetime: "combat" },
+  uniqueRepeatActive: { default: false as const, secondaryValue: null, lifetime: "combat" },
+  firstHolyCardFreeUsed: { default: false as const, secondaryValue: true as const, lifetime: "combat" },
+  firstBurnCardDoubledUsed: { default: false as const, secondaryValue: true as const, lifetime: "combat" },
+  firstArmorCardDoubledUsed: { default: false as const, secondaryValue: true as const, lifetime: "combat" },
+  firstPoisonCardFreeUsed: { default: false as const, secondaryValue: true as const, lifetime: "combat" },
+  firstBleedCardFreeUsed: { default: false as const, secondaryValue: true as const, lifetime: "combat" },
+  firstBurnTrinketDoubledUsed: { default: false as const, secondaryValue: true as const, lifetime: "combat" },
+  firstLeechCardDoubledUsed: { default: false as const, secondaryValue: true as const, lifetime: "combat" },
+  firstConsumeCardFreeUsed: { default: false as const, secondaryValue: true as const, lifetime: "combat" },
+  firstCompanionCardFreeUsed: { default: false as const, secondaryValue: true as const, lifetime: "combat" },
+  firstArcheryCardFreeUsed: { default: false as const, secondaryValue: true as const, lifetime: "combat" },
 
-  // Unlike every other preserved flag (restored verbatim), withPreservedFlags
-  // keeps Math.max(before, after) for this one so a discount granted inside a
-  // companion/repeat pulse is not lost when the pulse ends. See
-  // withPreservedFlags in types/state-helpers.ts.
-  nextCardCostReduction: { default: 0 as const, preserveAs: 0 as const },
+  // Secondary actions may grant, but never spend, this future-card discount.
+  nextCardCostReduction: { default: 0 as const, secondaryValue: 0 as const, lifetime: "until-consumed" },
 
-  goldOnFirstPoisonThisCombat: { default: false as const, preserveAs: null },
+  goldOnFirstPoisonThisCombat: { default: false as const, secondaryValue: null, lifetime: "combat" },
 
-  resonantChimeUsedThisTurn: { default: false as const, preserveAs: true as const },
-  runicQuillUsedThisTurn: { default: false as const, preserveAs: true as const },
-  emberforgedUsedThisTurn: { default: false as const, preserveAs: null },
-  consumeDrawUsedThisTurn: { default: false as const, preserveAs: true as const },
-  pendingCinderSkinReaction: { default: false as const, preserveAs: null },
-  cinderSkinUsedThisTurn: { default: false as const, preserveAs: null },
-  holyRetributionUsedThisTurn: { default: false as const, preserveAs: true as const },
+  resonantChimeUsedThisTurn: { default: false as const, secondaryValue: true as const, lifetime: "player-turn" },
+  runicQuillUsedThisTurn: { default: false as const, secondaryValue: true as const, lifetime: "player-turn" },
+  emberforgedUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
+  consumeDrawUsedThisTurn: { default: false as const, secondaryValue: true as const, lifetime: "player-turn" },
+  pendingCinderSkinReaction: { default: false as const, secondaryValue: null, lifetime: "combat" },
+  cinderSkinUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
+  holyRetributionUsedThisTurn: { default: false as const, secondaryValue: true as const, lifetime: "player-turn" },
 
-  divineAegisTriggered: { default: false as const, preserveAs: null },
+  divineAegisTriggered: { default: false as const, secondaryValue: null, lifetime: "combat" },
 
-  nextHitCrit: { default: false as const, preserveAs: false as const },
-  nextHitLeech: { default: false as const, preserveAs: false as const },
-  playNextCardTwice: { default: false as const, preserveAs: false as const },
-  nextHitPoison: { default: false as const, preserveAs: false as const },
-  nextHitPhysicalBonus: { default: 0 as const, preserveAs: 0 as const },
-  nextPhysicalDealsBleed: { default: false as const, preserveAs: false as const },
-  nextArcheryCardFree: { default: false as const, preserveAs: false as const },
-  nextNatureCardFree: { default: false as const, preserveAs: false as const },
+  nextHitCrit: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },
+  nextHitLeech: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },
+  playNextCardTwice: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },
+  nextHitPoison: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },
+  nextHitPhysicalBonus: { default: 0 as const, secondaryValue: 0 as const, lifetime: "until-consumed" },
+  nextPhysicalDealsBleed: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },
+  nextArcheryCardFree: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },
+  nextNatureCardFree: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },
 
-  enemyFirstHitDoubleUsed: { default: false as const, preserveAs: null },
-  legacyEnemyThornsReady: { default: false as const, preserveAs: null },
-  enemyBrawlerDamagePenalty: { default: false as const, preserveAs: null },
-} as const;
+  enemyFirstHitDoubleUsed: { default: false as const, secondaryValue: null, lifetime: "combat" },
+  legacyEnemyThornsReady: { default: false as const, secondaryValue: null, lifetime: "combat" },
+  enemyBrawlerDamagePenalty: { default: false as const, secondaryValue: null, lifetime: "combat" },
+} as const satisfies Record<
+  string,
+  {
+    default: boolean | number;
+    secondaryValue: boolean | number | null;
+    lifetime: "player-turn" | "combat" | "until-consumed";
+  }
+>;
 
-export type FlagId = keyof typeof FLAG_DEFINITIONS;
+type FlagId = keyof typeof FLAG_DEFINITIONS;
 export type CombatFlags = {
   [K in FlagId]: (typeof FLAG_DEFINITIONS)[K]["default"] extends boolean ? boolean : number;
 };
-
-export const PRESERVED_FLAG_VALUES = Object.fromEntries(
-  Object.entries(FLAG_DEFINITIONS)
-    .filter(([, def]) => (def as { preserveAs: unknown }).preserveAs !== null)
-    .map(([key, def]) => [key, (def as { preserveAs: unknown }).preserveAs]),
-) as { [K in FlagId as (typeof FLAG_DEFINITIONS)[K]["preserveAs"] extends null ? never : K]: CombatFlags[K] };
-
-export type PreservedFlagKey = keyof typeof PRESERVED_FLAG_VALUES;
-export const PRESERVED_FLAG_KEYS = Object.keys(PRESERVED_FLAG_VALUES) as PreservedFlagKey[];
 
 export function createInitialFlags(): CombatFlags {
   return Object.fromEntries(
     Object.entries(FLAG_DEFINITIONS).map(([k, def]) => [k, (def as { default: unknown }).default]),
   ) as CombatFlags;
 }
+
+/** Preserve combat-scoped and unspent next-action flags across turn boundaries. */
+export function resetTurnFlags(flags: CombatFlags): CombatFlags {
+  return { ...flags, ...TURN_FLAG_DEFAULTS };
+}
+
+const TURN_FLAG_DEFAULTS = Object.fromEntries(
+  Object.entries(FLAG_DEFINITIONS)
+    .filter(([, definition]) => definition.lifetime === "player-turn")
+    .map(([key, definition]) => [key, definition.default]),
+) as Partial<CombatFlags>;

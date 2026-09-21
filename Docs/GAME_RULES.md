@@ -73,6 +73,7 @@ Bond 0 preserves the baseline. Damage, healing, Gold, and Scarab Block gain +1 p
 - **Damage vulnerabilities** — Shatter and Exploit Weakness multiply the enemy's applicable resistance or weakness; a matching enemy trait never disables either talent. Trait matching retains its established first-match order.
 - **Enemy status** — stack changes go through `addEnemyStatus()` / `setEnemyStatus()` in `src/lib/battle/types/state-helpers.ts` (re-exported from `src/lib/battle/types.ts`); `braced` enemy trait halves incoming stun.
 - **Crowd-control thresholds** — baseline Stun and Freeze trigger when buildup reaches at least half Health. Enemies use Health before the hit; heroes use maximum Health. Threshold modifiers apply before the comparison.
+- **Skipped player turns** — the committed turn resolver advances through Stun and Freeze skips until the hero can act or combat ends; skipped turns do not trigger Companion actions.
 - **Crowd-control immunity** — neither side gains Stun or Freeze buildup while already Stunned, Frozen, or on the shared immunity cooldown. Typed damage still deals Health damage during immunity.
 
 #### Health thresholds and defeat
@@ -149,20 +150,28 @@ pre-hit facts separately from the changing battle snapshot; an Archery extra hit
 finishes before the outer hit pays its rewards. Do not replace this order with a
 queued reaction pipeline.
 
-| Origin                                                                  | Card-only benefits                                                                 | Other reactions                                               |
-| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| Played card                                                             | Eligible; consume first-use and next-card benefits normally                        | Resolve in the owning card/hit order                          |
-| Companion turn-start action                                             | Suppress and restore preserved first-use, next-hit and next-card flags             | Companion bonuses and ordinary damage reactions still resolve |
-| Repeated card effects                                                   | Suppress the same preserved flags; `uniqueRepeatActive` prevents recursive repeats | Keep the repeated effect's explicit source/context rules      |
-| Delayed turn-start effects and reactive hits using `withPreservedFlags` | Suppress the same preserved flags                                                  | Keep eligible status, healing and follow-up reactions         |
+| Origin                            | Card-only benefits                                                                       | Other reactions                                               |
+| --------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Played card                       | Eligible; consume first-use and next-card benefits normally                              | Resolve in the owning card/hit order                          |
+| Companion                         | Ineligible through `action.source = "companion"`                                         | Companion bonuses and ordinary damage reactions still resolve |
+| Unique repeat                     | Ineligible; `action.source = "repeat"` also disables potion scaling and repeat readiness | Keep the repeated effect's explicit source/context rules      |
+| Delayed card, retaliation, reward | Ineligible through the corresponding action source                                       | Keep eligible status, healing and follow-up reactions         |
 
-`combat-flags.ts` owns the exact preserved set. `withPreservedFlags` works on a
-local snapshot, not global state. Ordinary unpreserved flags survive. Cost
-reduction is special: keep the greater of the prior reduction and newly earned
-reduction, including nested effects. The scope remains intentional because
-replacing it with context checks throughout all flag consumers would spread the
-same eligibility policy rather than simplify it. No new persisted fields are
-needed for these resolution facts.
+`action-context.ts` owns execution scope. `readCombatFlag` consults the central
+eligibility policy in `combat-flags.ts`; `writeCombatFlag` prevents secondary
+actions from spending or replacing protected card bonuses. The underlying flags
+are never temporarily rewritten. A newly earned cost reduction keeps the greater
+of its prior and granted values. Nested scopes inherit repeat suppression and restore only execution metadata.
+`battleSnapshot` strips that metadata alongside RNG; saved flag names, including
+the legacy `uniqueRepeatActive` field, remain readable.
+
+`battle-sequence.ts` owns ordered step execution and defeat cutoffs for card
+sequences, enemy abilities, status ticks, and Wish rewards. An explicit reaction
+boundary selects settlement after each step or in the enclosing hit. Card Wishes
+settle between Wishes; triggered Holy Wishes settle with their enclosing hit.
+Pending Forge/Cinder Skin settlement remains in `enemy-attack-damage.ts`, using
+the existing damage path. Hit-specific preconditions and depth-first ordering
+remain unchanged.
 
 ---
 
@@ -254,3 +263,21 @@ resolution. Resume reconstructs the same offers without reapplying rewards.
 Corruption chambers reuse the Campaign altar rules and their green modifier
 changes the corruption roll. Leaving before corrupting returns to the maze with
 the chamber still reachable.
+
+### Effect origins and flag lifetimes
+
+`CardEffectResolutionContext.origin` distinguishes played cards, triggered cards,
+and Companions. Card healing applies to the two card origins; first-play bonuses
+apply only to played cards. The execution-only secondary action scope separately
+protects next-card bonuses during repeats, retaliation, and delayed effects.
+
+`combat-flags.ts` owns defaults, secondary-action eligibility, and lifetime for
+every flag. Player-turn flags reset through `resetTurnFlags`; combat and
+until-consumed flags survive that reset. Save field names and values are unchanged.
+
+Attack packet ordering remains attempt bonuses, Dodge, contact-only flag
+consumption, magnitude and mitigation, riders, follow-up hits, then settled
+reactions. `consumeAttackBonuses` owns the action-local pool shared by successive
+effects and play-twice; these attempt bonuses are spent even on a Dodge, while
+next-hit flags are preserved. This ordering is separate from the detailed
+hit-stage ordering above and must not reorder RNG or feedback.

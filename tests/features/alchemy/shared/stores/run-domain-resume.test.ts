@@ -1,3 +1,4 @@
+import { restoreActiveBattle } from "@/features/alchemy/shared/stores/battle-restore";
 import "../../../../helpers/mock-audio";
 import "../../../../helpers/mock-flush-save";
 import { beforeEach, describe, expect, it } from "vitest";
@@ -24,11 +25,10 @@ import {
   setCompanionRewardCards as mutateCompanionRewardCards,
   setHasActiveBattle as mutateHasActiveBattle,
   setHasActiveRun as mutateHasActiveRun,
-  initializeActiveBattle as mutateInitializeActiveBattle,
   setRewardState as mutateRewardState,
   setScreen as mutateSetScreen,
-  setSyncedBattleState as mutateSyncedBattleState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setSyncedBattleState as mutateSyncedBattleState } from "@/features/alchemy/shared/stores/write/run-battle";
 import { resetProgress as mutateResetProgress } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { resetRunDomainStore, setRunProgress } from "../../../../helpers/run-domain-store-test";
 const resetProgress = createRunSessionCommand(mutateResetProgress);
@@ -38,7 +38,7 @@ const setHasActiveBattle = createRunSessionCommand(mutateHasActiveBattle);
 const setRewardState = createRunSessionCommand(mutateRewardState);
 const beginRewardClaim = createRunSessionCommand(mutateBeginRewardClaim);
 const setCompanionRewardCards = createRunSessionCommand(mutateCompanionRewardCards);
-const initializeActiveBattle = createRunSessionCommand(mutateInitializeActiveBattle);
+const initializeActiveBattle = createRunSessionCommand(restoreActiveBattle);
 const setScreen = createRunSessionCommand(mutateSetScreen);
 
 beforeEach(() => {
@@ -168,8 +168,7 @@ describe("session facade API", () => {
     expect(snap.activeCombat?.pendingBattleTransition).toBeNull();
 
     restoreRun(snap, {}, {});
-    expect(readBattle().pendingBattleTransition).toEqual({ kind: "legacy-enemy-turn" });
-    expect(readBattle().battleState.turnPhase).toBe("enemy");
+    expect(readBattle().battleState.turnPhase).toBe("player");
   });
 
   it("rebinds old talent tuning on resume without replaying opening rewards or clearing prepared bonuses", () => {

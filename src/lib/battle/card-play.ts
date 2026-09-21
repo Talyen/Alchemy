@@ -1,3 +1,4 @@
+import { readCombatFlag } from "./action-context";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { prepareTalentCardPlay } from "./talent-card-play";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
@@ -135,11 +136,10 @@ export function resolveCardEffectChain(
   const damageEffects = options.damageEffects ?? [];
   let nextState = applyCardEffects(reacted, card, combatTexts, {
     attackBonuses: talentPlay.attackBonuses,
-    cardHealing: true,
+    origin: options.playedCard ? "played-card" : "triggered-card",
     damageEffects,
     manaAtStart: options.manaAtStart ?? reacted.mana,
     enemyFreezeSkipTurnsAtStart: options.enemyFreezeSkipTurnsAtStart ?? reacted.enemyCC.freezeSkipTurns,
-    ...(options.playedCard === undefined ? {} : { playedCard: options.playedCard }),
     ...(options.guaranteedCrit === undefined ? {} : { guaranteedCrit: options.guaranteedCrit }),
   });
   nextState = applyMortarAndPestlePotionUse(nextState, card, combatTexts);
@@ -183,8 +183,7 @@ function executeCardPlayState(
   if (playTwice) {
     nextState = applyCardEffects(nextState, card, combatTexts, {
       attackBonuses: chained.attackBonuses,
-      cardHealing: true,
-      playedCard: true,
+      origin: "played-card",
       damageEffects: repeatedDamageEffects,
       guaranteedCrit,
       manaAtStart: state.mana,
@@ -227,7 +226,7 @@ function applyResonantChimeTrinket(state: BattleState, combatTexts: CombatTextEv
   if (
     resonantChimeCardsRequired > 0 &&
     resonantChimeMana > 0 &&
-    !state.flags.resonantChimeUsedThisTurn &&
+    !readCombatFlag(state, "resonantChimeUsedThisTurn") &&
     state.cardsPlayedThisTurn >= resonantChimeCardsRequired
   ) {
     const afterMana = gainManaWithCombatText(state, resonantChimeMana, combatTexts);
@@ -283,13 +282,15 @@ function applyConsumeTalentRiders(
   if (lastCardInHand && talents.forgeOnConsume > 0)
     nextState = addForgeToPlayer(nextState, talents.forgeOnConsume, combatTexts);
   if (talents.consumeDetonatesBurn) nextState = detonateEnemyStatuses(nextState, ["burn"], combatTexts);
+  nextState = resolvePendingBattleReactions(nextState, combatTexts);
+  if (isPlayerDefeated(nextState)) return nextState;
   if (talents.healOnConsume > 0) {
     nextState = applyHealingWithCombatText(nextState, talents.healOnConsume, combatTexts);
   }
   if (talents.goldOnConsume > 0 && rollTalentChance(REACTIVE_REWARD_CHANCES.leftovers, nextState)) {
     nextState = addGoldWithCombatText(nextState, talents.goldOnConsume, combatTexts);
   }
-  if (talents.drawOnConsume > 0 && !nextState.flags.consumeDrawUsedThisTurn) {
+  if (talents.drawOnConsume > 0 && !readCombatFlag(nextState, "consumeDrawUsedThisTurn")) {
     const draw = drawFromState(nextState, talents.drawOnConsume);
     nextState = {
       ...applyDrawResult(nextState, draw),
@@ -320,12 +321,9 @@ export function handlePostPlayCardDestination(
   if (card.consume) {
     let nextState = { ...state, exhausted: [...state.exhausted, card] };
     if (triggerConsumeRiders) {
-      if (state.trinketEffects.runicQuillDrawOnConsume > 0 && !state.flags.runicQuillUsedThisTurn) {
+      if (state.trinketEffects.runicQuillDrawOnConsume > 0) {
         const draw = drawFromState(nextState, state.trinketEffects.runicQuillDrawOnConsume);
-        nextState = {
-          ...applyDrawResult(nextState, draw),
-          flags: { ...nextState.flags, runicQuillUsedThisTurn: true },
-        };
+        nextState = applyDrawResult(nextState, draw);
       }
       nextState = applyConsumeTalentRiders(nextState, card, combatTexts, lastCardInHand);
     }
@@ -353,10 +351,10 @@ export function playBattleCardResolved(
     (state.talentEffects.homesteadFreeManaChance ?? 0) > 0 &&
     rollPercent(state.talentEffects.homesteadFreeManaChance, getBattleRng(state));
   const effectiveCost = freeMana ? 0 : payment.effectiveCost;
-  const { blockCost } = payment;
+  const blockCost = freeMana ? 0 : payment.blockCost;
   const costState = freeMana ? state : consumeCardDiscounts(state, payment);
 
-  const playTwice = costState.flags.playNextCardTwice;
+  const playTwice = readCombatFlag(costState, "playNextCardTwice");
   const prepared = prepareUniqueCardPlay(costState, card, effectiveCost);
   const paymentState = {
     ...prepared.state,

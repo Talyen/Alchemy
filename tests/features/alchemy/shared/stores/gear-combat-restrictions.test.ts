@@ -72,7 +72,6 @@ describe("combat equipment protection", () => {
   it("keeps a pending lethal transition reserved until the battle lifecycle ends", () => {
     dispatchRunSessionCommand((draft) => {
       draft.battle.battleState.enemyHealth = 0;
-      draft.battle.pendingBattleTransition = { kind: "continue-end-turn" };
     });
     expect(deriveGearCombatRestrictions(readGameplayState()).characters.knight).toEqual(["campaign"]);
     dispatchRunSessionCommand((draft) => {

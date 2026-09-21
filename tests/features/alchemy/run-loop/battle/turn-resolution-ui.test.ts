@@ -2,13 +2,12 @@ import "../../../../helpers/mock-audio";
 import { beforeEach, describe, expect, it } from "vitest";
 import { resolveBattleTurn } from "@/lib/battle";
 import { companionLibrary } from "@/lib/game-data";
-import { commitEndTurn, resumePendingBattleTransition } from "@/features/alchemy/run-loop/battle/battle-session";
+import { commitEndTurn } from "@/features/alchemy/run-loop/battle/battle-session";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { initializeActiveBattle } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { initializeActiveBattle } from "@/features/alchemy/shared/stores/write/run-battle";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { resetRunDomainStore } from "../../../../helpers/run-domain-store-test";
 import { patchBattleState, slashDeck, seededRng } from "../../../../fixtures/battle";
-import { makeBattleTurnSession } from "./turn-orchestration-fixture";
 
 beforeEach(resetRunDomainStore);
 
@@ -53,37 +52,7 @@ describe("resolved turns", () => {
     );
     const result = commitEndTurn();
     expect(result.frames[0]?.turn.kind).toBe("haste");
-    expect(readGameplayState().battle.pendingBattleTransition).toBeNull();
+    expect(readGameplayState().battle).not.toHaveProperty("pendingBattleTransition");
     expect(readGameplayState().battle.battleState).toEqual(result.state);
-  });
-});
-
-describe("legacy continuation compatibility", () => {
-  it.each(["opening-draw", "enemy-turn"] as const)("consumes a saved %s result once without rerolling", (kind) => {
-    const initial = patchBattleState();
-    const resultState = patchBattleState({ turn: 4, playerHealth: 19, hand: slashDeck(3) });
-    dispatchRunSessionCommand((draft) =>
-      initializeActiveBattle(draft, initial, { kind, resultState, playerTurnSkipped: false }),
-    );
-    const counters = readGameplayState().run.activeRun.rng.counters;
-    resumePendingBattleTransition(1, makeBattleTurnSession());
-    const resolved = readGameplayState();
-    expect(resolved.battle.battleState).toMatchObject({ turn: 4, playerHealth: 19 });
-    expect(resolved.run.activeRun.rng.counters).toEqual(counters);
-    expect(resolved.battle.pendingBattleTransition).toBeNull();
-    resumePendingBattleTransition(1, makeBattleTurnSession());
-    expect(readGameplayState()).toBe(resolved);
-  });
-
-  it("ignores a stale playback session", () => {
-    dispatchRunSessionCommand((draft) =>
-      initializeActiveBattle(draft, patchBattleState(), {
-        kind: "opening-draw",
-        resultState: patchBattleState({ turn: 4 }),
-      }),
-    );
-    const before = readGameplayState();
-    resumePendingBattleTransition(1, makeBattleTurnSession({ isCurrentBattleSession: () => false }));
-    expect(readGameplayState()).toBe(before);
   });
 });

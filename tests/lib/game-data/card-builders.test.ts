@@ -66,9 +66,11 @@ describe("card builders", () => {
           failureEffects: [{ kind: "damage", damageType: "bleed", amount: 3 }],
         },
       ],
-      descriptionLines: ["Deal 3 Stun or Bleed damage at random"],
+      describe: ([effect]) => [
+        `Deal ${effect.successEffects[0]!.amount} Stun or ${effect.failureEffects[0]!.amount} Bleed damage at random`,
+      ],
     });
-    expect(card.descriptionLines).toEqual(["Deal 3 Stun or Bleed damage at random"]);
+    expect(card.descriptionLines).toEqual(["Deal 3 Stun or 3 Bleed damage at random"]);
   });
 
   it("generates canonical lines for the simple kinds", () => {
@@ -88,19 +90,18 @@ describe("card builders", () => {
       id: "haste",
       art: "haste",
       effects: [{ kind: "player-status", status: "haste", amount: 1 }],
-      descriptionLines: ["Take an extra turn after this one"],
     });
     expect(card.descriptionLines).toEqual(["Take an extra turn after this one"]);
   });
 
-  it("throws for effects with no canonical line when no explicit lines are given", () => {
+  it("rejects a chance effect without a success outcome", () => {
     expect(() =>
       effectsCard({
         id: "bad",
         art: "bad",
         effects: [{ kind: "chance", probability: 0.5, successEffects: [], failureEffects: [] }],
       }),
-    ).toThrow("unsupported effect kind");
+    ).toThrow("Chance effect needs a success outcome");
   });
 });
 
@@ -131,8 +132,7 @@ it("validates exact canonical text and still rejects edited amounts and omitted 
         id: "conditional",
         art: "",
         effects: [{ kind: "restore-mana", amount: 2, ifEnemyFrozen: true }],
-        descriptionLines: ["If the enemy is Frozen, gain 2 Mana"],
       }),
     ),
-  ).toBe(false);
+  ).toBe(true);
 });

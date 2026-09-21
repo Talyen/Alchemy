@@ -10,12 +10,12 @@ import { getBossById, getCurrentEnemy, getBossEnemy, enemyById, isEnemyId } from
 import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   createDraftRunRandomSource,
-  initializeActiveBattle,
   setEncounteredEnemyIds,
   setEncounteredRunEnemyIds,
   setRoomsEncountered,
   recordRunRoom,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { initializeActiveBattle } from "./write/run-battle";
 import { syncRunToBattleStart } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { DESTINATIONS } from "@/lib/routing";
 import { appendUnique } from "@/lib/utils";
@@ -23,7 +23,7 @@ import { withWildwoodModifier, type WildwoodModifierId } from "@/lib/content-sys
 import { appendEncounterTraits } from "@/lib/content-systems/encounter-traits";
 import { deriveCombatMeta } from "@/features/alchemy/shared/stores/run-session-write-port";
 
-import { logBattleError } from "./controller-utils";
+import { logError } from "@/lib/error-logger";
 
 export interface BattleStarted {
   startingTexts: CombatTextEvent[];
@@ -108,7 +108,7 @@ export function createBattleStartCommands(onStarted: (result: BattleStarted) => 
         nextBattleState = processCompanionTurnStart(nextBattleState, companionTexts);
     }
     const openingDrawState = drawOpeningHand(nextBattleState);
-    initializeActiveBattle(draft, openingDrawState, null);
+    initializeActiveBattle(draft, openingDrawState);
     if (run.contentSystemType !== "labyrinth" && draft.session.rewardFlow.claim.kind !== "destination") {
       const destination =
         enemy.enemyType === "boss"
@@ -187,7 +187,7 @@ export function createBattleStartCommands(onStarted: (result: BattleStarted) => 
   ): boolean {
     const boss = getBossById(bossId);
     if (!boss) {
-      logBattleError(`start boss "${bossId}" (unknown boss id)`, new Error(`boss "${bossId}" not found`));
+      logError(`Failed to start boss "${bossId}" (unknown boss id)`, "battle");
       return false;
     }
     beginBattle(

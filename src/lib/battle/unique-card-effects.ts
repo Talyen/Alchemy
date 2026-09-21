@@ -1,10 +1,11 @@
+import { resolveSecondaryAction } from "./action-context";
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 import { MAX_HAND_SIZE, UNIQUE_GEAR_COMBAT } from "../game-constants";
 import { damageOnlyEffects } from "./card-classification";
 import { applyCardEffects } from "./effect-handlers";
 import { cardHasDamageType, cardHasKeyword, isNatureCard } from "./card-classification";
 import { processCompanionTurnStart } from "./companion";
-import { type BattleState, type CombatTextEvent, isPlayerDefeated, withPreservedFlags } from "./types";
+import { type BattleState, type CombatTextEvent, isPlayerDefeated } from "./types";
 
 export function repeatUniqueCardDamage(
   state: BattleState,
@@ -13,15 +14,14 @@ export function repeatUniqueCardDamage(
   multiplier = 1,
 ): BattleState {
   if (state.enemyHealth <= 0 || isPlayerDefeated(state)) return state;
-  const repeated = withPreservedFlags({ ...state, flags: { ...state.flags, uniqueRepeatActive: true } }, (current) =>
+  return resolveSecondaryAction(state, "repeat", (current) =>
     applyCardEffects(current, { ...card, effects: damageOnlyEffects(card.effects) }, combatTexts, {
-      cardHealing: true,
+      origin: "triggered-card",
       manaAtStart: current.mana,
       enemyFreezeSkipTurnsAtStart: current.enemyCC.freezeSkipTurns,
       damageMultiplier: multiplier,
     }),
   );
-  return { ...repeated, flags: { ...repeated.flags, uniqueRepeatActive: state.flags.uniqueRepeatActive } };
 }
 
 export function prepareUniqueCardPlay(state: BattleState, card: BattleCard, manaCost: number) {

@@ -1,3 +1,4 @@
+import { resolveBattleSequence } from "../battle-sequence";
 import { mergeCombatText } from "../combat-text-events";
 import { resolvePendingBattleReactions } from "../enemy-attack-damage";
 import { resolveCompanionTurnStart } from "../companion-effects";
@@ -94,7 +95,13 @@ function applySingleEffect(
     const rng = getBattleRng(state);
     const branch = rollChance(effect.probability, rng) ? effect.successEffects : effect.failureEffects;
 
-    return branch.reduce((s, nested) => applySingleEffect(s, card, nested, potionMult, combatTexts, context), state);
+    return resolveBattleSequence(
+      state,
+      branch,
+      combatTexts,
+      (s, nested) => applySingleEffect(s, card, nested, potionMult, combatTexts, context),
+      { kind: "each-step", settle: resolvePendingBattleReactions },
+    );
   }
 
   if (effect.kind === "repeat-over-turns") {
@@ -128,10 +135,13 @@ export function applyCardEffects(
     enemyFreezeSkipTurnsAtStart: state.enemyCC.freezeSkipTurns,
   },
 ): BattleState {
-  const potionMult = isPotionCard(card) && !state.flags.uniqueRepeatActive ? state.talentEffects.potionPotency : 1;
-  const result = card.effects.reduce(
-    (currentState, effect) => applySingleEffect(currentState, card, effect, potionMult, combatTexts, context),
+  const potionMult = isPotionCard(card) && !state.action?.repeatActive ? state.talentEffects.potionPotency : 1;
+  const result = resolveBattleSequence(
     state,
+    card.effects,
+    combatTexts,
+    (currentState, effect) => applySingleEffect(currentState, card, effect, potionMult, combatTexts, context),
+    { kind: "each-step", settle: resolvePendingBattleReactions },
   );
   if (
     combatTexts.length === 0 &&

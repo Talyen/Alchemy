@@ -85,7 +85,6 @@ export const consumableCards: BattleCard[] = [
         ],
       },
     ],
-    descriptionLines: ["Gain 4 Mana, Gold, or Block"],
   }),
   cardBuilders.effectsCard({
     id: "wishing-potion",

@@ -12,8 +12,8 @@ import { isBattlePlaybackBlocked } from "./autoplay-driver";
 import { logBattleError, playCompanionSound, presentCombatTexts } from "./controller-utils";
 import type { createBattleTransferDeps } from "./draw-sequence";
 import type { BattleControllerContext } from "./battle-context";
-import { commitEndTurn, resumePendingBattleTransition } from "./battle-session";
-import { getPendingDrawCount, runHandDrawSequence, type HandDrawSequenceDeps } from "./draw-sequence";
+import { commitEndTurn } from "./battle-session";
+import { runHandDrawSequence, type HandDrawSequenceDeps } from "./draw-sequence";
 import type { BattlePresentationPort } from "./battle-presentation-store";
 
 export interface PlayTurnFramesOptions {
@@ -67,7 +67,7 @@ export async function playTurnFrames(
       deps,
     );
     if (!deps.isSessionActive(sessionNum)) return;
-    options?.onHandDrawn?.();
+    if (!turn.playerTurnSkipped) options?.onHandDrawn?.();
     if (companion) {
       await delay(COMPANION_ATTACK_DELAY_MS);
       if (!deps.isSessionActive(sessionNum)) return;
@@ -92,24 +92,25 @@ export function createBattleEndTurnUi(
     const currentState = battle.battleState;
     const presentation = ctx.getPresentation();
     if (
+      !ctx.playback.canAcceptInput() ||
       isBattlePlaybackBlocked({
         screen: ctx.screen,
         battleState: currentState,
         hasActiveBattle: battle.hasActiveBattle,
         cardTransferInProgress: presentation.cardTransferInProgress,
         hiddenHandCardKeys: presentation.hiddenHandCardKeys,
-        cardPlayInProgress: ctx.cardPlayInProgressRef.current,
+        cardPlayInProgress: ctx.playback.cardPlayInProgress,
         inspectionOpen: isBattleInspectionOpen(useUiStore.getState()),
       })
     )
       return;
 
     // Commit before starting any animation. Failed resolution leaves both gameplay and presentation untouched.
+    const sessionNum = ctx.playback.id;
     const result = commitEndTurn();
-    ctx.clearAutoEndTurnRef.current?.();
-    ctx.cardPlayInProgressRef.current = true;
+    ctx.playback.clearAutoEndTurn();
+    ctx.playback.beginAction();
     session.clearAllBattleTimeouts();
-    const sessionNum = ctx.battleSessionRef.current;
     if (result.state.enemyHealth <= 0 || isPlayerDefeated(result.state)) {
       for (const { turn, companion } of result.frames) {
         if (turn.kind === "haste") presentCombatTexts(presentation, turn.combatTexts);
@@ -121,7 +122,7 @@ export function createBattleEndTurnUi(
       }
       presentation.setDisplayedBattle(null);
       presentation.resetHandTransferUi();
-      ctx.cardPlayInProgressRef.current = false;
+      ctx.playback.completeAction(sessionNum);
       session.checkBattleEnd(result.state, sessionNum);
       return;
     }
@@ -150,10 +151,10 @@ export function createBattleEndTurnUi(
           {
             onHandDrawn: () => {
               session.runIfSessionActive(sessionNum, () => {
-                ctx.cardPlayInProgressRef.current = false;
+                ctx.playback.completeAction(sessionNum);
               });
             },
-            isCardPlayInProgress: () => ctx.cardPlayInProgressRef.current,
+            isCardPlayInProgress: () => ctx.playback.cardPlayInProgress,
           },
         );
       } catch (error) {
@@ -162,19 +163,14 @@ export function createBattleEndTurnUi(
         session.runIfSessionActive(sessionNum, () => {
           presentation.setDisplayedBattle(null);
           presentation.resetHandTransferUi();
-          if (getPendingDrawCount(sessionNum) === 0) {
-            ctx.cardPlayInProgressRef.current = false;
-            ctx.scheduleAutoEndTurnRef.current?.(readBattle().battleState);
+          if (ctx.playback.pendingDraws === 0) {
+            ctx.playback.completeAction(sessionNum);
+            ctx.playback.scheduleAutoEndTurn(readBattle().battleState);
           }
         });
       }
     })();
   }
 
-  function resumePendingBattleTransitionUi() {
-    const state = resumePendingBattleTransition(ctx.battleSessionRef.current, session);
-    if (state) ctx.scheduleAutoEndTurnRef.current?.(state);
-  }
-
-  return { handleEndTurn, resumePendingBattleTransition: resumePendingBattleTransitionUi };
+  return { handleEndTurn };
 }

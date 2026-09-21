@@ -133,9 +133,9 @@ export async function main() {
     "src/features/alchemy/run-loop/battle/battle-presentation-store.ts",
   );
   for (const restriction of [
-    "run-session-lifecycle-port",
+    "run-session-command",
     "gameplay-state-store",
-    "write-port-run",
+    "stores/write",
     "assets/optimized",
     "screens",
   ]) {
@@ -145,7 +145,7 @@ export async function main() {
   const metaScreenImports = await calculateImports("src/features/alchemy/meta/screens/menu-screen.tsx");
   for (const restriction of [
     "gameplay-state-store",
-    "write-port-run",
+    "stores/write",
     "assets/optimized",
     "run-loop",
     "@/lib/battle/*",
@@ -163,7 +163,7 @@ export async function main() {
   const sharedUiImports = await calculateImports("src/features/alchemy/shared/ui/game-menu.tsx");
   assertImportGroup(sharedUiImports, "run-session-write-port", "shared UI");
   assertImportGroup(sharedUiImports, "@/lib/battle/*", "shared UI");
-  assertImportGroup(sharedUiImports, "write-port-run", "shared UI");
+  assertImportGroup(sharedUiImports, "stores/write", "shared UI");
   assertImportGroup(sharedUiImports, "assets/optimized", "shared UI");
 
   const routeImports = await calculateImports("src/app/screen-routes/index.tsx");
@@ -172,7 +172,7 @@ export async function main() {
     "screen routes must restrict React.lazy",
   );
   assertImportGroup(routeImports, "gameplay-state-store", "screen routes");
-  assertImportGroup(routeImports, "write-port-run", "screen routes");
+  assertImportGroup(routeImports, "stores/write", "screen routes");
   assertImportGroup(routeImports, "assets/optimized", "screen routes");
 
   const runSetupImports = await calculateImports("src/features/alchemy/run-setup/run/content-system-navigation.ts");

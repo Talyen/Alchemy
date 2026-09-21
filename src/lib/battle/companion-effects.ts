@@ -1,9 +1,10 @@
+import { resolveSecondaryAction } from "./action-context";
 import { HALF_DIVISOR } from "../game-constants";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import { damageOnlyEffects } from "./card-classification";
 import { getModifiedCompanionEffects, type BattleCard } from "@/lib/game-data";
-import { isPlayerDefeated, type BattleState, type CombatTextEvent, withPreservedFlags } from "./types";
+import { isPlayerDefeated, type BattleState, type CombatTextEvent } from "./types";
 import { applyScaledLeechHealing, computeLeechHeal } from "./damage-rider-leech";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { addPlayerStatusWithCombatText, applyHealingWithCombatText } from "./combat-text";
@@ -39,7 +40,7 @@ export function resolveCompanionTurnStart(
 
   if (options?.damageOnly) companionCard.effects = damageOnlyEffects(companionCard.effects);
 
-  return withPreservedFlags(state, (s) => {
+  return resolveSecondaryAction(state, "companion", (s) => {
     const attackBonuses = { flat: s.flags.companionNextAttackBonus, physical: 0, bleed: 0 };
     const damageEffects: NonNullable<CardEffectResolutionContext["damageEffects"]> = [];
     let damageDealt = 0;
@@ -48,7 +49,7 @@ export function resolveCompanionTurnStart(
         manaAtStart: s.mana,
         enemyFreezeSkipTurnsAtStart: s.enemyCC.freezeSkipTurns,
         attackBonuses,
-        companionAttack: true,
+        origin: "companion",
         damageEffects,
         onDamageDealt: (amount) => {
           damageDealt += amount;

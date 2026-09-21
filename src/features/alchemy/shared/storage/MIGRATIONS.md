@@ -23,7 +23,7 @@ Increment the schema version for structural or meaning changes that require a su
 
 Current saves must round-trip valid profile progress, inventories/loadouts, current-run geography, deck modifications, choices, and captured battle results/RNG. Test malformed current fields, an invalid run alongside a valid profile, stale autosaves after run end, and future-candidate precedence. Historical below-baseline tests are retired; `save-migration-guard.test.ts` covers baseline rejection and current recovery.
 
-Run activity and resume codecs preserve a single `activeRun`. Opening draws and turns commit before animation. Pending battle result fields remain readable and are consumed once; do not reroll or duplicate awards. No parked-run or recency fields are saved. Keep run/profile/gear codecs explicit so a broad envelope cannot overwrite another owner's live fields.
+Run activity and resume codecs preserve a single `activeRun`. Opening draws and turns commit before animation. Pending battle result fields remain readable. `shared/stores/battle-restore.ts` consumes them inside hydration, including outstanding world-stream work and XP; live state contains only the resolved snapshot. New saves retain the wire field as null, so this requires no schema bump. Preserve terminal active battles until their outcome settles, and do not reroll or duplicate awards. No parked-run or recency fields are saved. Keep run/profile/gear codecs explicit so a broad envelope cannot overwrite another owner's live fields.
 
 ## Progression gate fields
 

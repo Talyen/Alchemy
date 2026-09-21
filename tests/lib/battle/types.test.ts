@@ -1,3 +1,5 @@
+import { battleSnapshot } from "@/lib/battle/types/state-types";
+import { resolveSecondaryAction, readCombatFlag, writeCombatFlag } from "@/lib/battle/action-context";
 import { describe, expect, it } from "vitest";
 import {
   addPlayerStatus,
@@ -7,7 +9,6 @@ import {
   clampHealth,
   applyPlayerHealing,
   isPlayerDefeated,
-  withPreservedFlags,
 } from "@/lib/battle/types";
 import type { PlayerStatusId, EnemyStatusId } from "@/lib/game-data";
 import { makeTestBattleState, patchBattleState } from "../../fixtures/battle";
@@ -210,22 +211,19 @@ describe("isPlayerDefeated", () => {
   });
 });
 
-describe("withPreservedFlags", () => {
-  it("restores cost/first-use flags mutated inside the callback", () => {
+describe("resolveSecondaryAction", () => {
+  it("prevents secondary actions from spending an existing discount", () => {
     const state = makeTestBattleState({
       flags: defaultCombatFlags({ nextCardCostReduction: 2 }),
     });
-    const result = withPreservedFlags(state, (s) => ({
-      ...s,
-      flags: { ...s.flags, nextCardCostReduction: 0 },
-    }));
+    const result = resolveSecondaryAction(state, "companion", (s) => writeCombatFlag(s, "nextCardCostReduction", 0));
     expect(result.flags.nextCardCostReduction).toBe(2);
   });
 
   it("keeps newly earned cost reduction and ordinary reaction flags across nested non-card effects", () => {
     const state = makeTestBattleState({ flags: defaultCombatFlags({ nextCardCostReduction: 2, nextHitCrit: true }) });
-    const result = withPreservedFlags(state, (outer) =>
-      withPreservedFlags(outer, (inner) => ({
+    const result = resolveSecondaryAction(state, "companion", (outer) =>
+      resolveSecondaryAction(outer, "reward", (inner) => ({
         ...inner,
         flags: { ...inner.flags, nextCardCostReduction: 3, pendingWishMana: 1 },
       })),
@@ -237,13 +235,13 @@ describe("withPreservedFlags", () => {
     expect(state.flags.pendingWishMana).toBe(0);
   });
 
-  it("forces non-card flags inactive during the callback so companions/pulses cannot consume them", () => {
+  it("makes card bonuses ineligible without changing the underlying flags", () => {
     const state = makeTestBattleState({
       flags: defaultCombatFlags({ nextHitCrit: true, playNextCardTwice: true }),
     });
     let observedInside: Record<string, unknown> = {};
-    const result = withPreservedFlags(state, (s) => {
-      observedInside = { crit: s.flags.nextHitCrit, twice: s.flags.playNextCardTwice };
+    const result = resolveSecondaryAction(state, "companion", (s) => {
+      observedInside = { crit: readCombatFlag(s, "nextHitCrit"), twice: readCombatFlag(s, "playNextCardTwice") };
       return s;
     });
     expect(observedInside).toEqual({ crit: false, twice: false });
@@ -252,14 +250,38 @@ describe("withPreservedFlags", () => {
     expect(result.flags.playNextCardTwice).toBe(true);
   });
 
-  it("forces first-time-per-combat flags to their used sentinels during the callback", () => {
+  it("marks first-card bonuses ineligible to secondary actions", () => {
     const state = makeTestBattleState();
     let observedInside = false;
-    withPreservedFlags(state, (s) => {
-      observedInside = s.flags.firstHolyCardFreeUsed;
+    resolveSecondaryAction(state, "companion", (s) => {
+      observedInside = readCombatFlag(s, "firstHolyCardFreeUsed");
       return s;
     });
     expect(observedInside).toBe(true);
     expect(state.flags.firstHolyCardFreeUsed).toBe(false);
   });
+});
+
+it("keeps secondary-action policy out of committed snapshots and restores nested scope", () => {
+  const state = makeTestBattleState({ flags: defaultCombatFlags({ nextHitCrit: true }) });
+  const result = resolveSecondaryAction(state, "companion", (companion) => {
+    expect(companion.flags.nextHitCrit).toBe(true);
+    expect(readCombatFlag(companion, "nextHitCrit")).toBe(false);
+    const repeated = resolveSecondaryAction(companion, "repeat", (repeat) => {
+      const reward = resolveSecondaryAction(repeat, "reward", (current) => {
+        expect(current.action?.repeatActive).toBe(true);
+        return current;
+      });
+      expect(reward.action?.source).toBe("repeat");
+      const snapshot = battleSnapshot(repeat);
+      expect(snapshot).not.toHaveProperty("action");
+      expect(snapshot).not.toHaveProperty("rng");
+      expect(snapshot.flags.nextHitCrit).toBe(true);
+      return repeat;
+    });
+    expect(repeated.action?.source).toBe("companion");
+    return repeated;
+  });
+  expect(result).not.toHaveProperty("action");
+  expect(result.flags.nextHitCrit).toBe(true);
 });

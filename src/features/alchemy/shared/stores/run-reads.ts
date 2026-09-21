@@ -1,4 +1,3 @@
-import type { PersistedBattleTransition } from "@/lib/active-run-session";
 import { isActiveRunActivity, readActivityData, runActivityScreen, type RunActivity } from "@/lib/active-run-session";
 import { isPlayerDefeated, getBattleCompanionDamageModifiers, type BattleSnapshot } from "@/lib/battle";
 import type { ContentSystemId, EncounterCombatTraitId } from "@/lib/content-systems/types";
@@ -152,13 +151,6 @@ export function selectAutosaveAllowed(
 export function useAutosaveAllowed(screen: Screen): boolean {
   return useGameplayStateStore((state) => selectAutosaveAllowed(state, screen));
 }
-export function useBattleLifetimeFields() {
-  return useShallowRunSelector((state) => ({
-    hasActiveBattle: state.battle.hasActiveBattle,
-    pendingBattleTransition: state.battle.pendingBattleTransition,
-    pendingTransitionResumeRequired: state.battle.pendingTransitionResumeRequired,
-  }));
-}
 export function useHasActiveBattle(): boolean {
   return useGameplayStateStore((state) => state.battle.hasActiveBattle);
 }
@@ -228,8 +220,6 @@ type RunSessionTransientSlice = RunSessionReadView;
 interface RunSessionBattleSlice {
   hasActiveBattle: boolean;
   battleState: BattleSnapshot;
-  pendingBattleTransition: PersistedBattleTransition | null;
-  pendingTransitionResumeRequired: boolean;
 }
 export interface RunSession {
   screen: Screen;
@@ -253,14 +243,10 @@ export interface RunSessionNavigationSlice {
 function pickRunSessionBattleSlice(battle: {
   hasActiveBattle: boolean;
   battleState: BattleSnapshot;
-  pendingBattleTransition: PersistedBattleTransition | null;
-  pendingTransitionResumeRequired: boolean;
 }): RunSessionBattleSlice {
   return {
     hasActiveBattle: battle.hasActiveBattle,
     battleState: battle.battleState,
-    pendingBattleTransition: battle.pendingBattleTransition,
-    pendingTransitionResumeRequired: battle.pendingTransitionResumeRequired,
   };
 }
 function useRunSessionBattleSlice(): RunSessionBattleSlice {
@@ -332,7 +318,6 @@ function selectCardInspectionData(state: GameplayState) {
     hasActiveBattle: state.battle.hasActiveBattle,
     battleReady:
       state.battle.hasActiveBattle &&
-      !state.battle.pendingBattleTransition &&
       battle.turnPhase === "player" &&
       !battle.wishOptions &&
       battle.enemyHealth > 0 &&

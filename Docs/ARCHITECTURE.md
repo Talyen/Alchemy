@@ -65,7 +65,7 @@ The [session capability reference](./RUN_STATE.md#session-capability-ports) list
 
 `run-loop/` splits each outcome into three layers: pure computation in
 `navigation/` (`reward-flow`, `victory-flow`, `mystery-flow`, `reward-math`),
-store commits in `run/` (`reward-commands`, `victory-commands`), and
+store commits in domain command modules (`reward-commands`, `victory-commands`, `destination-commands`, `progression-commands`, `wildwood-commands`, and `run-end-commands`), and
 navigation plus sound in `run-flow-*.ts` shells composed by `run/run-flow.ts`.
 `shell/run-flow-engine.ts` wires the factories to route actions. Reading order
 for a change: `run-flow.ts` → the `run-flow-*` file for the outcome → its
@@ -75,14 +75,12 @@ roll → `reward-math.ts` → `reward-flow.ts` reward states.
 Single owners to know: `run/run-materials.ts` owns the "Wildwood awards no
 materials" rule for both during-run and end-of-run awards;
 `battle/autoplay-driver.ts` owns the shared autoplay / auto-end-turn gate
-(`isBattlePlaybackBlocked`, `usePlaybackBlocked`); `battle/draw-sequence.ts`
-owns the shared initiated-draw counter (self-managed by `runBattleDraw`) plus
-the per-deps animated-draw counts for transfer UI, while `battle-card-play.ts`
-tracks its own in-flight draws for rapid-play gating;
-`battle/battle-session.ts` owns session liveness, turn commit
-(`commitEndTurn`), legacy transition resume, DEV outcomes, and the full
-presentation reset on session start, so battle start only arms the new
-battle's pending flags. Fight feedback (floating numbers + shake + sound) is
+(`isBattlePlaybackBlocked`, `usePlaybackBlocked`); `battle/playback-lifetime.ts`
+owns explicit playback phases, binding readiness, cancellation, timers, transfers, and draw counts.
+`battle/draw-sequence.ts` keeps only per-deps animated-draw counts for transfer UI.
+`battle/battle-session.ts` adapts that lifetime to presentation and delegates turn
+commit to `shared/stores/battle-commands.ts`; legacy recovery stays inside `shared/stores/battle-restore.ts`. Battle start
+uses `shared/stores/battle-start-commands.ts` and then arms presentation. Fight feedback (floating numbers + shake + sound) is
 unified in `presentCombatTexts` in `battle/controller-utils.ts`; card overlay
 layers live beside their leaves (`card-ghost-overlay.tsx`,
 `card-transfer-overlay.tsx`).
@@ -124,12 +122,12 @@ Initial progress and permanent fields, `ACTIVE_RUN_PROGRESS_KEYS`, `generateRunS
 
 ## Import boundaries
 
-Enforced in `eslint.config.js` (composition in `eslint/fragments.js` + `eslint/boundaries.js`) and double-checked by `npm run lint:boundaries` (dependency-cruiser, except barrel deep-import bans which are eslint-only). Phase bans and flat-config stacking order live in those files; `npm run lint:architecture-smoke` (`scripts/lint-architecture-smoke.mjs`) asserts stacked `no-restricted-imports` fragments on representative files. Summary:
+Enforced in `eslint.config.js` (composition in `eslint/fragments.js` + `eslint/boundaries.js`) and double-checked by `npm run lint:boundaries` (dependency-cruiser, except barrel deep-import bans which are eslint-only). Phase bans and flat-config stacking order live in those files; `npm run lint:architecture-smoke` (`scripts/lint-architecture-smoke.mjs`) asserts effective `no-restricted-imports` policies on representative files. Summary:
 
 - `src/lib/**` must not import `@/features/**`
 - Source modules must remain acyclic; reusable battle rules and reactions live below turn/card orchestrators
 - `gameplay-state-store.ts` is internal to `shared/stores/`; other layers use capability hooks, reads, writes, commands, and `run-lifecycle`
-- Feature code outside `shared/stores/` imports reads, `run-session-write-port`, `run-lifecycle`, and commands directly
+- Feature adapters import reads, lifecycle operations, and intent-level commands. Draft dispatch and `run-session-write-port` belong to command owners, not shell or playback wiring.
 - Screens must not import `run-loop/battle` or `run-loop/navigation` orchestration (screens may import `run-loop/battle/presentation/` leaves)
 - `run-setup` ↛ `run-loop` and `run-loop` ↛ `run-setup` (shared helpers in `shared/run-flow/`)
 - `meta` ↛ `run-loop` / `run-setup`
@@ -165,3 +163,8 @@ snapshot from saves, and the next run/battle initializes fresh state.
 ## Headless playthrough tooling
 
 The [playthrough runner](./PLAYTHROUGH_SIMULATION.md) lives in `src/app/playthrough/` and is loaded only by Node tooling. It composes feature read ports and production action flows, with isolated processes per career. Production battle start/card/Wish and autosave operations are shared with the UI; the harness owns policy, evidence, and assertions. It must not implement game rules or mutate the gameplay aggregate directly.
+
+Run outcomes and navigation share one construction owner: `createRunOutcomes`
+captures the destination sampler and exposes `connect(actions)`. Both UI and
+headless shells connect navigation to that owner; neither can supply a second
+sampler for progression. Hover-clearing navigation is wrapped once in the shell.

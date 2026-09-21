@@ -54,6 +54,20 @@ describe("useBattleController", () => {
     expect(result.current.isAutoplayEnabled).toBe(false);
   });
 
+  it("keeps a prepared opening draw while waiting for the battle screen", () => {
+    const { result, rerender } = renderBattleController(ROUTE_SCREENS.MENU);
+    act(() => {
+      result.current.startBattle();
+    });
+    expect(useBattlePresentationStore.getState().openingDrawPending).toBe(true);
+    expect(result.current.isCardPlayInProgress()).toBe(true);
+    act(() => {
+      rerender({ screen: ROUTE_SCREENS.BATTLE });
+    });
+    expect(useBattlePresentationStore.getState().openingDrawPending).toBe(true);
+    expect(result.current.isCardPlayInProgress()).toBe(true);
+  });
+
   it("persists autoplay when remember is on", () => {
     useSettingsStore.getState().setRememberAutoplayPreference(true);
     const { result } = renderBattleController();

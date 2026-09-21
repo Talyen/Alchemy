@@ -1,4 +1,5 @@
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
+import { isCcControlled } from "./status-cc";
 import { battleSnapshot, hasEncounterBenefit } from "./types";
 import type { BattleResolutionContext } from "./types";
 import { processCompanionTurnStart } from "./companion";
@@ -40,7 +41,7 @@ function finalizePlayerTurn(
     return { state, combatTexts, playerTurnSkipped: false };
   }
   const finalState = advanceToPlayerTurn(state, combatTexts, options);
-  return { state: finalState, combatTexts, playerTurnSkipped: finalState.turnPhase === "enemy" };
+  return { state: finalState, combatTexts, playerTurnSkipped: isCcControlled(finalState.playerCC) };
 }
 
 interface CombatTextResult {

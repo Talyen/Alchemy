@@ -34,7 +34,7 @@ describe("opening hand playback", () => {
           }),
       ),
     });
-    const ctx = { battleSessionRef: { current: 3 }, scheduleAutoEndTurnRef: { current: scheduleAutoEndTurn } };
+    const ctx = { playback: { id: 3, completeAction: vi.fn(), scheduleAutoEndTurn } };
     const transfers = { getDrawSequenceDeps: () => drawDeps };
     const playback = playBattleOpeningDraw(ctx, transfers);
     await vi.waitFor(() => expect(drawDeps.animateDrawnHand).toHaveBeenCalledOnce());
@@ -52,8 +52,7 @@ describe("opening hand playback", () => {
     const drawDeps = makeDrawSequenceDeps({ animateDrawnHand: vi.fn(async () => {}) });
     const setOpeningDrawPending = vi.fn();
     const ctx = {
-      battleSessionRef: { current: 3 },
-      scheduleAutoEndTurnRef: { current: scheduleAutoEndTurn },
+      playback: { id: 3, completeAction: vi.fn(), scheduleAutoEndTurn },
       getPresentation: () => ({ openingDrawPending: true, setOpeningDrawPending }),
     };
     const transfers = { getDrawSequenceDeps: () => drawDeps };

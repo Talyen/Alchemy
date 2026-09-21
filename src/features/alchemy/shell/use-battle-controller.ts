@@ -1,9 +1,8 @@
 import { createBattleCardPlay } from "@/features/alchemy/run-loop/battle/battle-card-play";
-import type { BattlePlaybackBind } from "@/features/alchemy/run-loop/battle/battle-context";
 import { useBattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import { createBattleInit } from "@/features/alchemy/run-loop/battle/battle-init";
 import { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
-import { createBattleDevOutcomes, isVictoryGraceActive } from "@/features/alchemy/run-loop/battle/battle-session";
+import { createBattleDevOutcomes } from "@/features/alchemy/run-loop/battle/battle-session";
 import { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/draw-sequence";
 import {
   defaultMeasureElementRect,
@@ -11,13 +10,11 @@ import {
 } from "@/features/alchemy/run-loop/battle/controller-utils";
 import { createBattleEndTurnUi } from "@/features/alchemy/run-loop/battle/end-turn-ui";
 import { useBattleOpeningDraw } from "@/features/alchemy/run-loop/battle/use-battle-opening-draw";
-import { readBattle, useBattleLifetimeFields } from "@/features/alchemy/shared/stores/run-reads";
-import { clearBattlePresentationUi } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { useHasActiveBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { preferredAutoplayEnabled, useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import type { CardRect } from "@/features/alchemy/shared/types";
-import type { BattleSnapshot } from "@/lib/battle";
 import type { Screen } from "@/lib/routing";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 
 interface UseBattleControllerProps {
   screen: Screen;
@@ -36,16 +33,11 @@ export function useBattleController({
   measureElementRect = defaultMeasureElementRect,
   measureVisualCardRect = defaultMeasureVisualCardRect,
 }: UseBattleControllerProps) {
-  const { hasActiveBattle, pendingTransitionResumeRequired } = useBattleLifetimeFields();
+  const hasActiveBattle = useHasActiveBattle();
 
-  const scheduleAutoEndTurnRef = useRef<((state?: BattleSnapshot) => void) | null>(null);
-  const clearAutoEndTurnRef = useRef<(() => void) | null>(null);
-  const onBattleSessionPreparedRef = useRef<(() => void) | null>(null);
-  const pendingTransitionResumeAttemptedRef = useRef(false);
   const [isAutoplayEnabled, setIsAutoplayEnabledState] = useState(() =>
     preferredAutoplayEnabled(useSettingsStore.getState()),
   );
-  const [playbackBindVersion, setPlaybackBindVersion] = useState(0);
 
   const setAutoplayEnabled = useCallback((enabled: boolean) => {
     setIsAutoplayEnabledState(enabled);
@@ -77,10 +69,6 @@ export function useBattleController({
     setBoonInspectOpen(false);
   }, []);
 
-  useLayoutEffect(() => {
-    onBattleSessionPreparedRef.current = applyPreferredAutoplay;
-  }, [applyPreferredAutoplay]);
-
   const ctx = useBattleControllerContext({
     screen,
     setHoveredCardId,
@@ -88,10 +76,11 @@ export function useBattleController({
     onBattleDefeat,
     measureElementRect,
     measureVisualCardRect,
-    scheduleAutoEndTurnRef,
-    clearAutoEndTurnRef,
-    onBattleSessionPreparedRef,
+    onSessionPrepared: applyPreferredAutoplay,
   });
+
+  const playbackBound = useSyncExternalStore(ctx.playback.subscribe, ctx.playback.isBound);
+  const bindPlayback = ctx.playback.bind;
 
   const actions = useMemo(() => {
     const session = createBattleSession(ctx);
@@ -112,54 +101,16 @@ export function useBattleController({
   }, [ctx]);
 
   useEffect(() => {
-    if (screen !== "battle") {
-      pendingTransitionResumeAttemptedRef.current = false;
-      return;
-    }
-    if (!hasActiveBattle) {
-      pendingTransitionResumeAttemptedRef.current = false;
-      return;
-    }
-    if (!pendingTransitionResumeRequired || pendingTransitionResumeAttemptedRef.current) {
-      return;
-    }
-    pendingTransitionResumeAttemptedRef.current = true;
-    actions.endTurnUi.resumePendingBattleTransition();
-  }, [actions.endTurnUi, hasActiveBattle, pendingTransitionResumeRequired, screen]);
+    actions.session.reconcile(screen, hasActiveBattle);
+  }, [screen, hasActiveBattle, actions.session]);
 
   useBattleOpeningDraw({
     ctx,
     transferDeps: actions.transferDeps,
     hasActiveBattle,
     screen,
-    pendingTransitionResumeRequired,
-    playbackBindVersion,
+    playbackBound,
   });
-
-  // Teardown pair: the first resets session data when no battle is active
-  // (skipping the victory grace window); the second clears presentation UI
-  // whenever we leave the battle screen. Both are idempotent by design.
-  useEffect(() => {
-    if (hasActiveBattle) return;
-    const enemyHealth = readBattle().battleState.enemyHealth;
-    if (isVictoryGraceActive(screen, enemyHealth, ctx.victoryDefeatHandledRef.current)) return;
-    actions.session.resetBattleSession();
-    queueMicrotask(() => {
-      clearBattlePresentationUi();
-    });
-  }, [hasActiveBattle, screen, actions.session, ctx]);
-
-  useEffect(() => {
-    if (screen !== "battle") {
-      clearBattlePresentationUi();
-    }
-  }, [screen]);
-
-  const bindPlayback = useCallback((bind: BattlePlaybackBind | null) => {
-    scheduleAutoEndTurnRef.current = bind?.scheduleAutoEndTurn ?? null;
-    clearAutoEndTurnRef.current = bind?.clearAutoEndTurn ?? null;
-    if (bind) setPlaybackBindVersion((version) => version + 1);
-  }, []);
 
   const refs = useMemo(
     () => ({
@@ -185,7 +136,7 @@ export function useBattleController({
       boonInspectOpen,
       toggleBoonInspect,
       closeBoonInspect,
-      isCardPlayInProgress: () => ctx.cardPlayInProgressRef.current,
+      isCardPlayInProgress: () => ctx.playback.cardPlayInProgress,
       startBattle: actions.init.startBattle,
       startBossBattle: actions.init.startBossBattle,
       startBossById: actions.init.startBossById,

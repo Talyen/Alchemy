@@ -1,22 +1,14 @@
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import {
-  addGold,
-  beginDestinationClaim,
-  cancelDestinationClaim,
-  commitDestinationClaim,
-  createDraftRunRandomSource,
-  setCorruptionResult,
-  setRunPlayerHealth,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
-import { getCampfireHealFraction, getCampfireRestHealth } from "@/lib/campfire-heal";
-import { activeLabyrinthBenefits, labyrinthCampfireHealing } from "@/lib/content-systems/labyrinth/room-rules";
-import { LABYRINTH_MODIFIER_CONFIG } from "@/lib/game-constants";
-import { computeTalentEffects } from "@/lib/game-data";
-import { DESTINATIONS, type Destination } from "@/lib/routing";
+import { resetCorruptionVisit } from "@/features/alchemy/shared/stores/navigation-commands";
+import { type Destination } from "@/lib/routing";
 import { logError } from "@/lib/error-logger";
 import { routeDestinationChoice } from "./run-destination-handlers";
-import { applyAlchemistPotion } from "./reward-commands";
 import type { AdvanceToNextDestination, RunFlowHandlerDeps } from "./run-flow";
+import {
+  claimDestination,
+  finishDestinationClaim,
+  cancelClaimedDestination,
+  restAtCampfire,
+} from "./destination-commands";
 
 export function createDestinationScreenHandlers(
   deps: RunFlowHandlerDeps,
@@ -24,7 +16,7 @@ export function createDestinationScreenHandlers(
 ) {
   function safeCancelDestinationClaim(where: string, destination: Destination) {
     try {
-      dispatchRunSessionCommand((draft) => cancelDestinationClaim(draft));
+      cancelClaimedDestination();
     } catch (rollbackError) {
       logError("cancelDestinationClaim failed", "other", {
         where,
@@ -37,12 +29,7 @@ export function createDestinationScreenHandlers(
 
   function handleDestinationChoice(destination: Destination) {
     try {
-      const choice = dispatchRunSessionCommand((draft) => {
-        if (!beginDestinationClaim(draft, destination)) return null;
-        const rewardState = draft.session.rewardFlow.state;
-        const selectedBossId = destination === DESTINATIONS.BOSS_COMBAT ? rewardState.selectedBossId : null;
-        return { selectedBossId };
-      });
+      const choice = claimDestination(destination);
       if (!choice) return;
       deps.actions.clearCardHover();
       // Prepare-then-commit: shop/battle/mystery setup runs before the
@@ -50,7 +37,7 @@ export function createDestinationScreenHandlers(
       // prepareNavigation. Setup must therefore not read claim state.
       const commitDestinationProgress = () => {
         try {
-          const committed = dispatchRunSessionCommand((draft) => commitDestinationClaim(draft, destination));
+          const committed = finishDestinationClaim(destination);
           if (!committed) throw new Error("commitDestinationProgress failed");
         } catch (error) {
           safeCancelDestinationClaim("commit", destination);
@@ -68,7 +55,7 @@ export function createDestinationScreenHandlers(
         initializeShop: deps.actions.initializeShop,
         startBattle: deps.actions.startBattle,
         startBoss: (opts) => deps.actions.startBoss({ ...opts, bossId: choice.selectedBossId }),
-        resetCorruption: () => dispatchRunSessionCommand((draft) => setCorruptionResult(draft, null)),
+        resetCorruption: resetCorruptionVisit,
       });
     } catch (error) {
       safeCancelDestinationClaim("choice", destination);
@@ -77,37 +64,7 @@ export function createDestinationScreenHandlers(
   }
 
   function handleCampfireContinue() {
-    dispatchRunSessionCommand(
-      (draft) => {
-        if (draft.session.activity.kind !== "campfire") return false;
-        const talentEffects = computeTalentEffects(draft.runProfile.unlockedTalents);
-        const modifiers = activeLabyrinthBenefits(
-          draft.run.activeRun.contentSystemType,
-          draft.session.activeLabyrinthRewardModifiers,
-        );
-        const healFraction = labyrinthCampfireHealing(
-          getCampfireHealFraction(talentEffects.campfireHealBonus),
-          modifiers,
-        );
-        if (modifiers.includes("hidden-purse")) addGold(draft, LABYRINTH_MODIFIER_CONFIG.hiddenPurseGold);
-        if (modifiers.includes("herbal-hearth"))
-          applyAlchemistPotion({ draft, rng: createDraftRunRandomSource(draft, "rewards") });
-        setRunPlayerHealth(draft, (prev) =>
-          getCampfireRestHealth(
-            prev,
-            draft.run.activeRun.runMaxHealth,
-            healFraction,
-            draft.runProfile.effects.homesteadHealing,
-          ),
-        );
-        return true;
-      },
-      {
-        afterCommit: (continued) => {
-          if (continued) advanceToNextDestination();
-        },
-      },
-    );
+    if (restAtCampfire()) advanceToNextDestination();
   }
 
   return {

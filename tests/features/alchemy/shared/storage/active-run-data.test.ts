@@ -2,12 +2,7 @@ import { battleSnapshot } from "@/lib/battle";
 import { beforeEach, describe, expect, it } from "vitest";
 import { defaultBattleState, type BattleState } from "@/lib/battle";
 import { getStartingDeck, trinketLibrary } from "@/lib/game-data";
-import {
-  emptyHydratedMysteryVisit,
-  readActivityData,
-  type ActiveRunData,
-  type PersistedBattleTransition,
-} from "@/lib/active-run-session";
+import { emptyHydratedMysteryVisit, readActivityData, type ActiveRunData } from "@/lib/active-run-session";
 import { decodeRunResumeSnapshot, encodeRunResumeSnapshot } from "@/features/alchemy/shared/stores/run-resume-codec";
 import { createInitialActiveRunFields } from "@/features/alchemy/shared/stores/run-state-init";
 import { getRunSession, readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
@@ -20,17 +15,10 @@ function encodeState(screen?: Screen): ActiveRunData {
   return encodeRunResumeSnapshot(getRunSession(screen), screen);
 }
 
-function writeBattle(partial: {
-  hasActiveBattle?: boolean;
-  battleState?: BattleState;
-  pendingBattleTransition?: PersistedBattleTransition | null;
-}) {
+function writeBattle(partial: { hasActiveBattle?: boolean; battleState?: BattleState }) {
   dispatchRunSessionCommand((draft) => {
     if (partial.hasActiveBattle !== undefined) draft.battle.hasActiveBattle = partial.hasActiveBattle;
     if (partial.battleState !== undefined) draft.battle.battleState = partial.battleState;
-    if (partial.pendingBattleTransition !== undefined) {
-      draft.battle.pendingBattleTransition = partial.pendingBattleTransition;
-    }
   });
 }
 
@@ -234,49 +222,6 @@ describe("encodeRunResumeSnapshot", () => {
     expect(result.activeCombat!.battleState.turnPhase).toBe("enemy");
   });
 
-  it("persists the computed enemy-turn continuation with the intermediate state", () => {
-    const resultState = { ...defaultBattleState(), turn: 3, playerHealth: 20, turnPhase: "player" as const };
-    const enemyPhaseState = { ...defaultBattleState(), turn: 2, turnPhase: "enemy" as const, hand: [] };
-    writeBattle({
-      hasActiveBattle: true,
-      battleState: enemyPhaseState,
-      pendingBattleTransition: {
-        kind: "enemy-turn",
-        resultState,
-        playerTurnSkipped: false,
-      },
-    });
-
-    const result = encodeState();
-
-    expect(result.activeCombat?.pendingBattleTransition).toEqual({
-      kind: "enemy-turn",
-      resultState,
-      playerTurnSkipped: false,
-    });
-  });
-
-  it("round-trips the empty opening hand and its resolved draw", () => {
-    const deck = getStartingDeck("knight");
-    const openingState = { ...defaultBattleState(), deck, hand: [] };
-    const resultState = { ...openingState, deck: deck.slice(4), hand: deck.slice(0, 4) };
-    writeBattle({
-      hasActiveBattle: true,
-      battleState: openingState,
-      pendingBattleTransition: { kind: "opening-draw", resultState },
-    });
-
-    const encoded = encodeState();
-    const decoded = decodeRunResumeSnapshot(encoded);
-
-    expect(encoded.activeCombat?.battleState.hand).toEqual([]);
-    expect(encoded.activeCombat?.pendingBattleTransition).toEqual({ kind: "opening-draw", resultState });
-    expect(decoded.pendingBattleTransition?.kind).toBe("opening-draw");
-    if (decoded.pendingBattleTransition?.kind === "opening-draw") {
-      expect(decoded.pendingBattleTransition.resultState.hand).toHaveLength(4);
-    }
-  });
-
   it("marks enemy-phase saves without a pending transition for boot recovery", () => {
     writeBattle({
       hasActiveBattle: true,
@@ -306,7 +251,7 @@ describe("encodeRunResumeSnapshot", () => {
     expect(result.activeCombat?.activeLabyrinthRewardModifiers).toEqual(["generous"]);
   });
 
-  it("skips active combat when enemy health is zero", () => {
+  it("preserves an active terminal battle until victory settles", () => {
     writeBattle({
       hasActiveBattle: true,
       battleState: { ...defaultBattleState(), turn: 5, enemyHealth: 0 },
@@ -314,10 +259,11 @@ describe("encodeRunResumeSnapshot", () => {
 
     const result = encodeState();
 
-    expect(result.activeCombat).toBeNull();
+    expect(result.activeCombat?.pendingBattleTransition).toBeNull();
+    expect(result.activeCombat?.battleState).toBeDefined();
   });
 
-  it("skips active combat when player is defeated", () => {
+  it("preserves an active terminal battle until defeat settles", () => {
     writeBattle({
       hasActiveBattle: true,
       battleState: {
@@ -331,7 +277,8 @@ describe("encodeRunResumeSnapshot", () => {
 
     const result = encodeState();
 
-    expect(result.activeCombat).toBeNull();
+    expect(result.activeCombat?.pendingBattleTransition).toBeNull();
+    expect(result.activeCombat?.battleState).toBeDefined();
   });
 
   it("persists runTalentXP", () => {

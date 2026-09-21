@@ -1,9 +1,7 @@
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { releaseRewardClaim as releaseRewardClaimState } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { playUISound } from "@/lib/audio";
 import { REWARD_ROUTES, ROUTE_SCREENS, type Screen } from "@/lib/routing";
 import type { FinalizeRewardResult } from "../navigation/reward-flow";
-import { claimRunReward } from "./reward-commands";
+import { claimRunReward, finishRewardClaim } from "./reward-commands";
 import type { CompleteRunVictory, HandleActComplete, RunFlowHandlerDeps } from "./run-flow";
 
 export interface RewardRouteDeps {
@@ -49,11 +47,7 @@ export function createRewardHandlers(
     if (!commit) return;
     const { result, isWildwood } = commit;
 
-    const releaseClaim = () => {
-      dispatchRunSessionCommand((draft) => {
-        releaseRewardClaimState(draft);
-      });
-    };
+    const releaseClaim = finishRewardClaim;
 
     if (result.selectedReward) playUISound("talentUnlock");
     deps.actions.clearCardHover();

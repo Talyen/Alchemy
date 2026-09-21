@@ -71,6 +71,19 @@ describe("playTurnFrames", () => {
     ).resolves.toBeUndefined();
   });
 
+  it("keeps card input locked while a skipped player turn is presented", async () => {
+    const frame = makeHasteFrame();
+    const skipped = { ...frame, turn: { ...frame.turn, playerTurnSkipped: true } };
+    const onHandDrawn = vi.fn();
+    const deps = makeDrawSequenceDeps({ isSessionActive: () => true });
+    const presentation = makePresentation();
+
+    await playTurnFrames([skipped], 3, deps, presentation, { onHandDrawn });
+    expect(onHandDrawn).not.toHaveBeenCalled();
+    await playTurnFrames([frame], 3, deps, presentation, { onHandDrawn });
+    expect(onHandDrawn).toHaveBeenCalledTimes(1);
+  });
+
   it("calls onHandDrawn to unblock card plays and delays companion attack by 0.5s", async () => {
     vi.useFakeTimers();
     try {

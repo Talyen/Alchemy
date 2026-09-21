@@ -15,7 +15,6 @@ import {
   captureRunRecap,
   clearTransientSession,
   cloneRunObtainedItem,
-  initializeActiveBattle,
   resetNavigation,
   resetProgress,
   setFinishedRunCharacters,
@@ -27,6 +26,7 @@ import {
   setRunEndMaterials,
   setRunPlayerHealth,
 } from "./run-session-write-port";
+import { initializeActiveBattle } from "./write/run-battle";
 import { applyRestoreRunToDraft } from "./run-restore";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { useUiStore } from "./ui-store";
@@ -176,8 +176,6 @@ export function abandonRun(options: {
       setRunEndItems(draft, runEndItems);
       setRunEndLabyrinthFloor(draft, runEndLabyrinthFloor);
       setHasActiveBattle(draft, false);
-      draft.battle.pendingBattleTransition = null;
-      draft.battle.pendingTransitionResumeRequired = false;
       return true;
     },
     {

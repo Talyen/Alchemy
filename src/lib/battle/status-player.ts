@@ -1,3 +1,5 @@
+import { readCombatFlag } from "./action-context";
+import { resolveSecondaryAction } from "./action-context";
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import type { BattleCardEffect, DamageType, EnemyAttackEffect, PlayerStatusId } from "@/lib/game-data";
 import {
@@ -7,7 +9,6 @@ import {
   setFlag,
   setPlayerStatus,
   stripEnemyArmor,
-  withPreservedFlags,
   type BattleState,
   type CombatTextEvent,
 } from "./types";
@@ -43,7 +44,7 @@ export function countRemovableHarmfulStatuses(playerStatuses: BattleState["playe
 
 export function applyArmorReward(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
   if (amount <= 0) return state;
-  return withPreservedFlags(state, (current) =>
+  return resolveSecondaryAction(state, "reward", (current) =>
     applyPlayerStatusEffect(current, { kind: "player-status", status: "armor", amount }, combatTexts),
   );
 }
@@ -155,7 +156,7 @@ function scaleArmorAmount(state: BattleState, amount: number): { state: BattleSt
       ? nextAmount * FIRST_EFFECT_MULTIPLIER
       : applyPercentBonus(nextAmount, nextState.talentEffects.armorLowHealthBonusPercent);
   }
-  if (nextState.talentEffects.firstArmorCardDoubled && !nextState.flags.firstArmorCardDoubledUsed) {
+  if (nextState.talentEffects.firstArmorCardDoubled && !readCombatFlag(nextState, "firstArmorCardDoubledUsed")) {
     nextAmount *= FIRST_EFFECT_MULTIPLIER;
     nextState = setFlag(nextState, "firstArmorCardDoubledUsed", true);
   }

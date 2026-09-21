@@ -1,3 +1,4 @@
+import { resolveBattleSequence, type ReactionBoundary } from "./battle-sequence";
 import { dealTalentTypedHit } from "./player-typed-hit";
 import { hasEncounterBenefit, hasEnemyTrait } from "./types";
 import { selectRewardCards } from "@/lib/game-data";
@@ -129,7 +130,13 @@ function applyWishDrawTriggers(state: BattleState): BattleState {
   return applyDrawResult(state, drawFromState(state, drawCount));
 }
 
-export function applyWishEffect(state: BattleState, card: BattleCard, amount: number, combatTexts: CombatTextEvent[]) {
+export function applyWishEffect(
+  state: BattleState,
+  card: BattleCard,
+  amount: number,
+  combatTexts: CombatTextEvent[],
+  reactions: ReactionBoundary = { kind: "enclosing-action" },
+) {
   const wishCount = Math.max(0, Math.round(amount));
   if (wishCount <= 0) return state;
 
@@ -150,19 +157,23 @@ export function applyWishEffect(state: BattleState, card: BattleCard, amount: nu
         };
   nextState = processEncounterTraitWish(nextState);
 
-  for (let i = 0; i < wishCount; i += 1) {
-    const eligibility = nextState;
-    nextState = applyWishGoldTriggers(nextState, combatTexts);
-    nextState = applyWishGemsGoldTrigger(nextState, combatTexts);
-    nextState = applyWishHealthAndStatusTriggers(nextState, combatTexts, eligibility);
-    nextState = applyWishDrawTriggers(nextState);
-    nextState = applyWishBurnTrigger(nextState, combatTexts, eligibility);
-    nextState = applyWishManaTrigger(nextState, combatTexts, eligibility);
-    nextState = applyWishTrinketTrigger(nextState, combatTexts);
-    nextState = applyWishDesperateTrigger(nextState, combatTexts);
-  }
-
-  return nextState;
+  return resolveBattleSequence(
+    nextState,
+    Array.from({ length: wishCount }),
+    combatTexts,
+    (current) => {
+      const eligibility = current;
+      let next = applyWishGoldTriggers(current, combatTexts);
+      next = applyWishGemsGoldTrigger(next, combatTexts);
+      next = applyWishHealthAndStatusTriggers(next, combatTexts, eligibility);
+      next = applyWishDrawTriggers(next);
+      next = applyWishBurnTrigger(next, combatTexts, eligibility);
+      next = applyWishManaTrigger(next, combatTexts, eligibility);
+      next = applyWishTrinketTrigger(next, combatTexts);
+      return applyWishDesperateTrigger(next, combatTexts, eligibility);
+    },
+    reactions,
+  );
 }
 
 /**
@@ -171,7 +182,7 @@ export function applyWishEffect(state: BattleState, card: BattleCard, amount: nu
  * apply consistently; the synthetic source only avoids excluding a real card.
  */
 export function applyEmergencyWish(state: BattleState, combatTexts: CombatTextEvent[] = []) {
-  return applyWishEffect(state, emptyBattleCard("emergency-wish"), 1, combatTexts);
+  return applyWishEffect(state, emptyBattleCard("emergency-wish"), 1, combatTexts, { kind: "enclosing-action" });
 }
 
 function applyWishBurnTrigger(
@@ -198,12 +209,16 @@ function applyWishTrinketTrigger(state: BattleState, combatTexts: CombatTextEven
   return applyPlayerStatusEffect(state, { kind: "player-status", status, amount: 1 }, combatTexts);
 }
 
-function applyWishDesperateTrigger(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+function applyWishDesperateTrigger(
+  state: BattleState,
+  combatTexts: CombatTextEvent[],
+  eligibility: BattleState,
+): BattleState {
   const thresholdPct = state.talentEffects.wishBlockBelowHealthPct;
   const blockAmount = state.talentEffects.wishBlockAmount;
   if (thresholdPct <= 0 || blockAmount <= 0) return state;
-  const thresholdHp = (state.playerMaxHealth * thresholdPct) / PERCENT_DENOMINATOR;
-  if (state.playerHealth < thresholdHp) {
+  const thresholdHp = (eligibility.playerMaxHealth * thresholdPct) / PERCENT_DENOMINATOR;
+  if (eligibility.playerHealth < thresholdHp) {
     return applyPlayerStatusEffect(
       state,
       { kind: "player-status", status: "block" as const, amount: blockAmount },

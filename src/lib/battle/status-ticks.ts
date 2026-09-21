@@ -1,3 +1,4 @@
+import { resolveBattleSequence } from "./battle-sequence";
 import { checkHealthThresholds } from "./status-player";
 import { drawKeywordCard } from "./draw";
 import { hasEncounterBenefit } from "./types";
@@ -107,12 +108,14 @@ export function tickEnemyStatuses(state: BattleState, combatTexts: CombatTextEve
     if (state.pendingBleedLeechHealing === 0) return state;
     return { ...state, pendingBleedLeechHealing: 0 };
   }
-  let nextState = resolvePendingBattleReactions(tickBurn(state, combatTexts), combatTexts);
-  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
-  nextState = resolvePendingBattleReactions(tickPoison(nextState, combatTexts), combatTexts);
-  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
-  nextState = resolvePendingBattleReactions(tickBleed(nextState, combatTexts), combatTexts);
-  return nextState;
+  return resolveBattleSequence(
+    state,
+    [tickBurn, tickPoison, tickBleed],
+    combatTexts,
+    (current, tick) => tick(current, combatTexts),
+    { kind: "each-step", settle: resolvePendingBattleReactions },
+    "either-defeated",
+  );
 }
 
 function dealPlayerDotTick(

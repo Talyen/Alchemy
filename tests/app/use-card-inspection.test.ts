@@ -87,26 +87,22 @@ describe("run card inspection", () => {
     expect(readGameplayState()).toBe(before);
   });
 
-  it.each(["enemy", "wish", "transition", "transfer", "dead", "card-play"])(
-    "rejects inspection during %s",
-    (reason) => {
-      dispatchRunSessionCommand((draft) => {
-        if (reason === "enemy") draft.battle.battleState.turnPhase = "enemy";
-        if (reason === "wish") draft.battle.battleState.wishOptions = [makeTestCard()];
-        if (reason === "transition") draft.battle.pendingBattleTransition = { kind: "continue-end-turn" };
-        if (reason === "dead") {
-          draft.battle.battleState.playerHealth = 0;
-          draft.battle.battleState.deathsDoorActive = false;
-        }
-      });
-      if (reason === "transfer") useBattlePresentationStore.setState({ cardTransferInProgress: true });
-      const { result } = renderHook(() =>
-        useCardInspection({ ...base, isCardPlayInProgress: () => reason === "card-play" }),
-      );
-      act(() => result.current.onOpen("deck"));
-      expect(result.current.open).toBe(false);
-    },
-  );
+  it.each(["enemy", "wish", "transfer", "dead", "card-play"])("rejects inspection during %s", (reason) => {
+    dispatchRunSessionCommand((draft) => {
+      if (reason === "enemy") draft.battle.battleState.turnPhase = "enemy";
+      if (reason === "wish") draft.battle.battleState.wishOptions = [makeTestCard()];
+      if (reason === "dead") {
+        draft.battle.battleState.playerHealth = 0;
+        draft.battle.battleState.deathsDoorActive = false;
+      }
+    });
+    if (reason === "transfer") useBattlePresentationStore.setState({ cardTransferInProgress: true });
+    const { result } = renderHook(() =>
+      useCardInspection({ ...base, isCardPlayInProgress: () => reason === "card-play" }),
+    );
+    act(() => result.current.onOpen("deck"));
+    expect(result.current.open).toBe(false);
+  });
 
   it("closes when navigating or when another overlay opens", () => {
     const { result, rerender } = renderHook((props) => useCardInspection(props), { initialProps: { ...base } });

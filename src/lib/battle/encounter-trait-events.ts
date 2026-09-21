@@ -1,3 +1,4 @@
+import { readCombatFlag } from "./action-context";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { isNatureCard } from "./card-classification";
 import type { BattleCard } from "@/lib/game-data";
@@ -138,7 +139,7 @@ export function processEncounterTraitCardAction(
       );
       nextState = dealTraitDamage(nextState, "physical", 1, combatTexts);
     }
-    if (hasEnemyTrait(nextState, "holy-retribution") && !nextState.flags.holyRetributionUsedThisTurn)
+    if (hasEnemyTrait(nextState, "holy-retribution") && !readCombatFlag(nextState, "holyRetributionUsedThisTurn"))
       nextState = dealTraitDamage(
         setFlag(recordEnemyAbilityActivation(nextState, "holy-retribution"), "holyRetributionUsedThisTurn", true),
         "holy",

@@ -61,7 +61,7 @@ describe("repeatability-based talent balance", () => {
         { ...initial, gearEffects: { ...initial.gearEffects, companionBenefitsFromForge: 1 } },
         { kind: "damage", damageType: "burn", amount: 4 },
         undefined,
-        { companionAttack: true, manaAtStart: initial.mana, enemyFreezeSkipTurnsAtStart: 0 },
+        { origin: "companion", manaAtStart: initial.mana, enemyFreezeSkipTurnsAtStart: 0 },
       ).modifiedDamage,
     ).toBe(12);
   });

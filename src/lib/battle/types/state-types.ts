@@ -1,3 +1,4 @@
+import type { BattleActionContext } from "../action-context";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type {
@@ -163,12 +164,13 @@ export interface BattleResolution {
 /** Execution-only dependency; never retained in a committed or saved snapshot. */
 export interface BattleResolutionContext {
   rng: () => number;
+  action?: BattleActionContext;
 }
 
 export interface BattleState extends BattleSnapshot, BattleResolutionContext {}
 
 export function battleSnapshot(state: BattleSnapshot & Partial<BattleResolutionContext>): BattleSnapshot {
   // eslint-disable-next-line no-restricted-syntax -- Serialization removes the execution dependency without drawing it.
-  const { rng: _rng, ...snapshot } = state;
+  const { rng: _rng, action: _action, ...snapshot } = state;
   return snapshot;
 }

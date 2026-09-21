@@ -31,14 +31,16 @@ describe("Plague Doctor's Mask", () => {
       playerHealth: 10,
       playerStatuses: { poison, burn: 3, bleed: 4 },
       trinketEffects: { plagueDoctorPoisonCleanse: 2, sinEaterHealOnHarmfulStatusRemove: 6 },
-      talentEffects: { healOnStatusCleanse: 2 },
+      talentEffects: { healOnStatusCleanse: 2, nextHolyFreeOnCleanse: true },
     });
     const texts: CombatTextEvent[] = [];
     const result = advanceToPlayerTurn(state, texts);
     expect(result.playerStatuses).toMatchObject({ poison: remaining, burn: 3, bleed: 4 });
     expect(result.enemyHealth).toBe(state.enemyHealth - damage);
     expect(result.enemyStatuses.poison).toBe(damage);
-    expect(result.playerHealth).toBe(poison > 0 ? 18 : 10);
+    const fullyCleansed = poison > 0 && remaining === 0;
+    expect(result.playerHealth).toBe(fullyCleansed ? 18 : 10);
+    expect(result.flags.nextHolyCardFree).toBe(fullyCleansed);
     expect(state.playerStatuses.poison).toBe(poison);
     if (damage > 0) expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "poison", amount: damage });
   });

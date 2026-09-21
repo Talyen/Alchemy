@@ -5,7 +5,6 @@ import {
 import {
   createEmptyRewardState,
   type LabyrinthPendingNodeId,
-  type PersistedBattleTransition,
   type RewardState,
   type RunActivity,
   type RunObtainedItem,
@@ -27,9 +26,7 @@ import type { Destination, Screen } from "@/lib/routing";
 
 export interface RunDomainBattleState {
   battleState: BattleSnapshot;
-  pendingBattleTransition: PersistedBattleTransition | null;
 
-  pendingTransitionResumeRequired: boolean;
   battleStartState: BattleSnapshot | null;
   hasActiveBattle: boolean;
 }
@@ -74,8 +71,6 @@ export function createInitialSessionFields(): RunSessionFields {
 export function createInitialBattleFields(): RunDomainBattleState {
   return {
     battleState: battleSnapshot(defaultBattleState()),
-    pendingBattleTransition: null,
-    pendingTransitionResumeRequired: false,
     battleStartState: null,
     hasActiveBattle: false,
   };

@@ -22,14 +22,12 @@ export const archeryCards: BattleCard[] = [
         amountIfTargetFrozen: 4,
       },
     ],
-    descriptionLines: ["Deal 2 Freeze damage", "Doubled against Frozen enemies"],
   }),
   cardBuilders.effectsCard({
     id: "venom-arrow",
     art: assetRefs.venomArrow,
     tags: ["archery"],
     effects: [{ kind: "damage", damageType: "poison", damageTypePool: ["poison", "physical"], amount: 1 }],
-    descriptionLines: ["Deal 1 Poison or Physical damage"],
   }),
   cardBuilders.damageCard({
     id: "serrated-arrowhead",
@@ -43,7 +41,6 @@ export const archeryCards: BattleCard[] = [
     art: assetRefs.concussiveShot,
     tags: ["archery"],
     effects: [{ kind: "damage", damageType: "stun", damageTypePool: ["stun", "physical"], amount: 2 }],
-    descriptionLines: ["Deal 2 Stun or Physical damage"],
   }),
   cardBuilders.damageCard({
     id: "lightning-arrow",

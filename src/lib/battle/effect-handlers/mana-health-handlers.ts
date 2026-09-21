@@ -1,3 +1,4 @@
+import { hasCardHealing } from "./handler-types";
 import type { EffectHandler } from "./handler-types";
 import { isPotionCard } from "@/lib/game-data";
 import { applyCardHealing, checkHealthThresholds } from "../status-player";
@@ -107,11 +108,11 @@ export const applyHealEffect = defineHandler("heal", (state, card, effect, potio
     : 0;
   const cardSpecificBonus = state.talentEffects.cardHealBonus[card.id] ?? 0;
   const healAmount = Math.round(adjustedHeal * (1 + consumeBonus) + cardSpecificBonus);
-  const healed = context?.cardHealing
+  const healed = hasCardHealing(context)
     ? applyCardHealing(state, healAmount, combatTexts)
     : applyHealingWithCombatText(state, healAmount, combatTexts);
   if (
-    context?.cardHealing &&
+    hasCardHealing(context) &&
     isPotionCard(card) &&
     state.talentEffects.blockOnConsume > 0 &&
     state.playerHealth < state.playerMaxHealth &&

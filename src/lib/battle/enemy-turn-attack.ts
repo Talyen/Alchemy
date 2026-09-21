@@ -1,3 +1,5 @@
+import { resolveBattleSequence } from "./battle-sequence";
+import { resolveSecondaryAction } from "./action-context";
 import { resolveConditionalCardDamage } from "./conditional-card-damage";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import {
@@ -305,7 +307,9 @@ function applyAbilityFollowups(
   // Purged Thorns stay purged: the retaliation check below sees zero stacks, so no Nature damage fires.
   if (context.landed && nextState.playerStatuses.thorns > 0) {
     const amount = nextState.playerStatuses.thorns;
-    nextState = dealPlayerTypedHit(setPlayerStatus(nextState, "thorns", 0), "nature", amount, combatTexts);
+    nextState = resolveSecondaryAction(setPlayerStatus(nextState, "thorns", 0), "retaliation", (current) =>
+      dealPlayerTypedHit(current, "nature", amount, combatTexts),
+    );
   }
   return nextState;
 }
@@ -326,9 +330,13 @@ export function applyEnemyAbility(state: BattleState, card: BattleCard, combatTe
   let nextState = recordEnemyAbilityUse({ ...state, lastEnemyAbilityId: card.id }, card.id);
   if (damaging) nextState = recordEnemyAttackAction(nextState);
   if (context.brawlerPenalty) nextState = setFlag(nextState, "enemyBrawlerDamagePenalty", false);
-  nextState = card.effects.reduce(
-    (next, effect) => resolvePendingBattleReactions(applyEnemyEffect(next, effect, context, combatTexts), combatTexts),
+  nextState = resolveBattleSequence(
     nextState,
+    card.effects,
+    combatTexts,
+    (next, effect) => applyEnemyEffect(next, effect, context, combatTexts),
+    { kind: "each-step", settle: resolvePendingBattleReactions },
+    "either-defeated",
   );
   if (!damaging || nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
   return resolvePendingBattleReactions(applyAbilityFollowups(nextState, context, combatTexts), combatTexts);

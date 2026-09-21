@@ -1,7 +1,8 @@
 // Canonical gameplay write seam: every GameplayDraft mutator lives here.
 //
-// This module is the public import surface (feature code imports from here,
-// never from `./write/*` directly). The implementations are split by domain
+// This module is the draft API for command authors (adapters call commands,
+// and domain command modules import here rather than `./write/*` directly).
+// The implementations are split by domain
 // under `./write/` so each file owns one dual-write invariant and reviews
 // stay small; the export list below is the complete API.
 //
@@ -62,17 +63,7 @@ export {
   setTrinketShopState,
   setWildwoodDraft,
 } from "./write/run-session";
-export {
-  clearPendingTransitionResumeRequired,
-  commitBattleTransition,
-  initializeActiveBattle,
-  setBattleStartState,
-  setBattleState,
-  setHasActiveBattle,
-  setSyncedBattleState,
-  snapshotBattleState,
-  withDraftWorldBattleRng,
-} from "./write/run-battle";
+export { setHasActiveBattle } from "./write/run-battle";
 export { prepareRunNavigation, resetNavigation, setScreen } from "./write/run-navigation";
 export {
   addRunCurrenciesEarned,

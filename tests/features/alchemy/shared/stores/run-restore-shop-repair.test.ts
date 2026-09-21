@@ -67,10 +67,8 @@ describe("saved battle card recovery", () => {
       if (!reloaded.data.activeRun) throw new Error("Expected restored active run");
       restoreRun(reloaded.data.activeRun, {}, {});
       const restored = readBattle();
-      const transition = restored.pendingBattleTransition;
-      if (!transition || !("resultState" in transition)) throw new Error("Expected pending battle result");
       const expected = [{ ...card, uid: 1 }, healthy];
-      for (const state of [restored.battleState, transition.resultState]) {
+      for (const state of [restored.battleState]) {
         expect(state.deck).toEqual(expected);
         expect(state.hand).toEqual(expected);
         expect(state.discard).toEqual(expected);

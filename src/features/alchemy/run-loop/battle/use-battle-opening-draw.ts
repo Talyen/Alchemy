@@ -6,8 +6,7 @@ import { useBattlePresentationStore, type BattlePresentationPort } from "./battl
 import { runBattleDraw, type createBattleTransferDeps } from "./draw-sequence";
 
 export interface BattleOpeningDrawContext {
-  battleSessionRef: BattleControllerContext["battleSessionRef"];
-  scheduleAutoEndTurnRef: BattleControllerContext["scheduleAutoEndTurnRef"];
+  playback: Pick<BattleControllerContext["playback"], "id" | "completeAction" | "scheduleAutoEndTurn">;
   getPresentation?: () => Pick<BattlePresentationPort, "openingDrawPending" | "setOpeningDrawPending">;
 }
 
@@ -19,7 +18,7 @@ export async function playBattleOpeningDraw(
   const presentation = ctx.getPresentation?.() ?? useBattlePresentationStore.getState();
   if (!presentation.openingDrawPending) return false;
   presentation.setOpeningDrawPending(false);
-  const sessionNum = ctx.battleSessionRef.current;
+  const sessionNum = ctx.playback.id;
 
   const completed = await runBattleDraw({
     oldHand: [],
@@ -29,8 +28,9 @@ export async function playBattleOpeningDraw(
     deps: transferDeps.getDrawSequenceDeps(),
     errorContext: "draw opening hand",
   });
-  if (sessionNum === ctx.battleSessionRef.current) {
-    ctx.scheduleAutoEndTurnRef.current?.(readBattle().battleState);
+  if (sessionNum === ctx.playback.id) {
+    ctx.playback.completeAction(sessionNum);
+    ctx.playback.scheduleAutoEndTurn(readBattle().battleState);
   }
   return completed;
 }
@@ -41,31 +41,17 @@ export function useBattleOpeningDraw({
   transferDeps,
   hasActiveBattle,
   screen,
-  pendingTransitionResumeRequired,
-  playbackBindVersion,
+  playbackBound,
 }: {
   ctx: BattleControllerContext;
   transferDeps: ReturnType<typeof createBattleTransferDeps>;
   hasActiveBattle: boolean;
   screen: Screen;
-  pendingTransitionResumeRequired: boolean;
-  playbackBindVersion: number;
+  playbackBound: boolean;
 }) {
   const openingDrawPending = useBattlePresentationStore((state) => state.openingDrawPending);
   const playOpeningDrawWhenReady = useCallback(() => {
-    let battle: ReturnType<typeof readBattle>;
-    try {
-      battle = readBattle();
-    } catch (error) {
-      if (import.meta.env.DEV) console.warn("[battle] unable to read opening-draw state", error);
-      return undefined;
-    }
-    if (
-      battle.pendingTransitionResumeRequired ||
-      !ctx.getPresentation().openingDrawPending ||
-      !ctx.battleSceneRef.current ||
-      !ctx.drawPileRef.current
-    ) {
+    if (!ctx.getPresentation().openingDrawPending || !ctx.battleSceneRef.current || !ctx.drawPileRef.current) {
       return undefined;
     }
     void playBattleOpeningDraw(ctx, transferDeps).catch((error: unknown) => {
@@ -74,16 +60,7 @@ export function useBattleOpeningDraw({
   }, [transferDeps, ctx]);
 
   useEffect(() => {
-    if (!hasActiveBattle || screen !== "battle" || pendingTransitionResumeRequired || !openingDrawPending) {
-      return;
-    }
+    if (!playbackBound || !hasActiveBattle || screen !== "battle" || !openingDrawPending) return;
     playOpeningDrawWhenReady();
-  }, [
-    hasActiveBattle,
-    openingDrawPending,
-    pendingTransitionResumeRequired,
-    playbackBindVersion,
-    playOpeningDrawWhenReady,
-    screen,
-  ]);
+  }, [hasActiveBattle, openingDrawPending, playbackBound, playOpeningDrawWhenReady, screen]);
 }

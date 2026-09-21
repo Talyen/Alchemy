@@ -1,4 +1,3 @@
-import { battleSnapshot } from "@/lib/battle";
 import "../../../../helpers/mock-audio";
 import "../../../../helpers/mock-flush-save";
 import { renderHook } from "@testing-library/react";
@@ -25,10 +24,12 @@ import {
 import {
   setHasActiveBattle as mutateHasActiveBattle,
   setHasActiveRun as mutateHasActiveRun,
-  initializeActiveBattle as mutateInitializeActiveBattle,
   setRewardState as mutateRewardState,
-  setSyncedBattleState as mutateSyncedBattleState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
+import {
+  initializeActiveBattle as mutateInitializeActiveBattle,
+  setSyncedBattleState as mutateSyncedBattleState,
+} from "@/features/alchemy/shared/stores/write/run-battle";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import {
   readActiveRun,
@@ -94,23 +95,9 @@ describe("battle slice", () => {
   it("hydrates and resets active battle", () => {
     initializeActiveBattle({ ...defaultBattleState(), turn: 4, playerHealth: 9 });
     expect(readBattle().hasActiveBattle).toBe(true);
-    expect(readBattle().pendingTransitionResumeRequired).toBe(false);
+    expect(readBattle()).not.toHaveProperty("pendingTransitionResumeRequired");
     initializeActiveBattle(null);
     expect(readBattle().hasActiveBattle).toBe(false);
-  });
-
-  it("requires resume only when hydrating with a pending transition", () => {
-    const resultState = { ...defaultBattleState(), turn: 2 };
-    initializeActiveBattle(
-      { ...defaultBattleState(), turnPhase: "enemy", hand: [] },
-      { kind: "enemy-turn", resultState, playerTurnSkipped: false },
-    );
-    expect(readBattle().pendingTransitionResumeRequired).toBe(true);
-    expect(readBattle().pendingBattleTransition).toEqual({
-      kind: "enemy-turn",
-      resultState: battleSnapshot(resultState),
-      playerTurnSkipped: false,
-    });
   });
 });
 
@@ -184,7 +171,7 @@ describe("run transitions", () => {
     expect(readBattle().hasActiveBattle).toBe(false);
     expect(readRunSession().runEndTalentXP.physical).toBeGreaterThan(0);
     expect(readRunSession().runEndMaterials.wood).toBe(5);
-    expect(readBattle().pendingBattleTransition).toBeNull();
+    expect(readBattle()).not.toHaveProperty("pendingBattleTransition");
 
     expect(abandonRun({ awardRunEndMaterials, finalizeRunXP: mutateFinalizeRunXP })).toBe(false);
   });

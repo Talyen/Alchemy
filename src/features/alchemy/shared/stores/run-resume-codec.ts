@@ -23,7 +23,7 @@ import {
   type RewardState,
   type RunActivity,
 } from "@/lib/active-run-session";
-import { battleSnapshot, isPlayerDefeated } from "@/lib/battle";
+import { battleSnapshot } from "@/lib/battle";
 import { activeLabyrinthBenefits } from "@/lib/content-systems/labyrinth/room-rules";
 import type { EncounterCombatTraitId, EncounterRewardTraitId, LabyrinthMap } from "@/lib/content-systems/types";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
@@ -200,19 +200,12 @@ function encodeActiveRunFromSession(source: RunSession, resume: EncodeResumeFiel
   const { run, session, battle } = source;
   const progress = pickActiveRunProgress(run);
   const isLabyrinth = progress.contentSystemType === "labyrinth";
-  // A pending battle transition lives inside activeCombat. A save written after
-  // the enemy fell (or the player fell) but before the transition commits must
-  // keep the combat shell, or the continuation is lost with it. Screen
-  // inference already skips "battle" for a dead enemy, and restore re-installs
-  // the pending transition, so the battle controller resumes it on return.
-  const keepCombat =
-    battle.hasActiveBattle &&
-    (battle.pendingBattleTransition != null ||
-      (battle.battleState.enemyHealth > 0 && !isPlayerDefeated(battle.battleState)));
+  // An active terminal snapshot still needs outcome settlement after restore.
+  const keepCombat = battle.hasActiveBattle;
   const activeCombat = keepCombat
     ? {
         battleState: battleSnapshot(battle.battleState),
-        pendingBattleTransition: battle.pendingBattleTransition ?? null,
+        pendingBattleTransition: null,
         activeLabyrinthModifiers: isLabyrinth ? session.activeLabyrinthModifiers : [],
         activeLabyrinthRewardModifiers: isLabyrinth ? session.activeLabyrinthRewardModifiers : [],
       }

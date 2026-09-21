@@ -5,8 +5,7 @@ import { ROUTE_SCREENS } from "@/lib/routing";
 
 function makeRoutingDeps(enterImpl: (handlers: LabyrinthNodeHandlers) => void) {
   return {
-    applyLabyrinthBattleModifiers: vi.fn(),
-    applyLabyrinthRewardModifiers: vi.fn(),
+    prepareRoomTraits: vi.fn(),
     navigateTo: vi.fn(),
     labyrinth: {
       enterSelectedNode: (handlers: LabyrinthNodeHandlers) => {
@@ -37,8 +36,8 @@ describe("createLabyrinthNodeRouting", () => {
 
     // Empty sets still forward [] so stale traits from the previous node are
     // cleared; the store writers skip the revision bump when already empty.
-    expect(deps.applyLabyrinthBattleModifiers).toHaveBeenCalledWith([]);
-    expect(deps.applyLabyrinthRewardModifiers).toHaveBeenCalledWith([]);
+    expect(deps.prepareRoomTraits).toHaveBeenCalledWith([], expect.any(Array));
+    expect(deps.prepareRoomTraits).toHaveBeenCalledWith(expect.any(Array), []);
     expect(deps.nav.beginMysteryEvent).toHaveBeenCalledOnce();
     expect(deps.navigateTo).not.toHaveBeenCalledWith(ROUTE_SCREENS.MYSTERY, expect.anything());
   });
@@ -46,10 +45,10 @@ describe("createLabyrinthNodeRouting", () => {
   it("starts mystery with reward modifiers applied first", () => {
     const deps = makeRoutingDeps((handlers) => handlers.onStartMystery(["strong-spirits"]));
     deps.nav.beginMysteryEvent.mockImplementation(() => {
-      expect(deps.applyLabyrinthRewardModifiers).toHaveBeenCalledWith(["strong-spirits"]);
+      expect(deps.prepareRoomTraits).toHaveBeenCalledWith(expect.any(Array), ["strong-spirits"]);
     });
     createLabyrinthNodeRouting(deps).handleLabyrinthNodeEnter();
-    expect(deps.applyLabyrinthBattleModifiers).toHaveBeenCalledWith([]);
+    expect(deps.prepareRoomTraits).toHaveBeenCalledWith([], expect.any(Array));
     expect(deps.nav.beginMysteryEvent).toHaveBeenCalledOnce();
   });
 
@@ -59,8 +58,8 @@ describe("createLabyrinthNodeRouting", () => {
     );
     createLabyrinthNodeRouting(combatDeps).handleLabyrinthNodeEnter();
 
-    expect(combatDeps.applyLabyrinthBattleModifiers).toHaveBeenCalledWith(["tempered"]);
-    expect(combatDeps.applyLabyrinthRewardModifiers).toHaveBeenCalledWith(["generous"]);
+    expect(combatDeps.prepareRoomTraits).toHaveBeenCalledWith(["tempered"], expect.any(Array));
+    expect(combatDeps.prepareRoomTraits).toHaveBeenCalledWith(expect.any(Array), ["generous"]);
     // Combat traits travel via session store, not battle-starter args.
     expect(combatDeps.battle.startBattle).toHaveBeenCalledWith(undefined, undefined, "elite", [], "goblin");
     expect(combatDeps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE);
@@ -68,8 +67,8 @@ describe("createLabyrinthNodeRouting", () => {
     const shopDeps = makeRoutingDeps((handlers) => handlers.onStartShop());
     createLabyrinthNodeRouting(shopDeps).handleLabyrinthNodeEnter();
 
-    expect(shopDeps.applyLabyrinthBattleModifiers).toHaveBeenCalledWith([]);
-    expect(shopDeps.applyLabyrinthRewardModifiers).toHaveBeenCalledWith([]);
+    expect(shopDeps.prepareRoomTraits).toHaveBeenCalledWith([], expect.any(Array));
+    expect(shopDeps.prepareRoomTraits).toHaveBeenCalledWith(expect.any(Array), []);
     expect(shopDeps.shop.initialize).toHaveBeenCalledWith("merchant");
     expect(shopDeps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.SHOP);
   });
@@ -78,10 +77,10 @@ describe("createLabyrinthNodeRouting", () => {
 it("passes support modifiers before initializing their destination", () => {
   const deps = makeRoutingDeps((handlers) => handlers.onStartAlchemist(["strong-spirits"]));
   deps.shop.initialize.mockImplementation(() => {
-    expect(deps.applyLabyrinthRewardModifiers).toHaveBeenCalledWith(["strong-spirits"]);
+    expect(deps.prepareRoomTraits).toHaveBeenCalledWith(expect.any(Array), ["strong-spirits"]);
   });
   createLabyrinthNodeRouting(deps).handleLabyrinthNodeEnter();
-  expect(deps.applyLabyrinthBattleModifiers).toHaveBeenCalledWith([]);
+  expect(deps.prepareRoomTraits).toHaveBeenCalledWith([], expect.any(Array));
   expect(deps.shop.initialize).toHaveBeenCalledWith("alchemist");
 });
 
@@ -89,8 +88,8 @@ it("routes corruption nodes to the altar with cleared results and room modifiers
   const deps = makeRoutingDeps((handlers) => handlers.onStartCorruption(["blood-rite"]));
   createLabyrinthNodeRouting(deps).handleLabyrinthNodeEnter();
 
-  expect(deps.applyLabyrinthBattleModifiers).toHaveBeenCalledWith([]);
-  expect(deps.applyLabyrinthRewardModifiers).toHaveBeenCalledWith(["blood-rite"]);
+  expect(deps.prepareRoomTraits).toHaveBeenCalledWith([], expect.any(Array));
+  expect(deps.prepareRoomTraits).toHaveBeenCalledWith(expect.any(Array), ["blood-rite"]);
   expect(deps.corruption.reset).toHaveBeenCalledOnce();
   expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.CORRUPTION);
 });

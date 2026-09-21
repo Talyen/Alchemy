@@ -1,7 +1,6 @@
 import type { BattleSnapshot } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
-import { delay } from "@/lib/animation/game-timer";
 import { CARD_TRANSFER_CONFIG } from "@/lib/game-constants";
 import { playBattleEvent } from "@/lib/audio";
 import { getHandCardKey } from "./playable-hand";
@@ -18,9 +17,8 @@ import type { CardRect, CardTransfer } from "../../shared/types";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import type { BattleControllerContext } from "./battle-context";
 
-import { onRunTeardown } from "@/features/alchemy/shared/stores/run-lifecycle";
-
 export interface HandDrawSequenceDeps {
+  beginDraw: (session: number) => () => void;
   isSessionActive: (session: number) => boolean;
   animateDrawnHand: (cards: BattleCard[], allHandCards: BattleCard[], session: number) => Promise<void>;
   setTransferInProgress: (active: boolean) => void;
@@ -30,37 +28,6 @@ export interface HandDrawSequenceDeps {
 export type DrawPresentationReveal = () => void;
 
 const activeDraws = new WeakMap<HandDrawSequenceDeps, Map<number, number>>();
-
-// Initiated draws per session, self-managed by `runBattleDraw` so input gating
-// and the animation pipeline share one counter without callers juggling
-// increments. Unlike `activeDraws` above (which only tracks non-empty animated
-// draws per deps object), this counts every draw started through
-// `runBattleDraw`, including ones that reveal no new cards, and is keyed by
-// session alone so all callers agree.
-const pendingDrawCounts = new Map<number, number>();
-
-export function getPendingDrawCount(session: number): number {
-  return pendingDrawCounts.get(session) ?? 0;
-}
-
-function trackInitiatedDraw(session: number): () => number {
-  pendingDrawCounts.set(session, (pendingDrawCounts.get(session) ?? 0) + 1);
-  return () => {
-    const remaining = (pendingDrawCounts.get(session) ?? 1) - 1;
-    if (remaining > 0) pendingDrawCounts.set(session, remaining);
-    else pendingDrawCounts.delete(session);
-    return remaining;
-  };
-}
-
-export function clearPendingDraws(session?: number): void {
-  if (session !== undefined) pendingDrawCounts.delete(session);
-  else pendingDrawCounts.clear();
-}
-
-onRunTeardown(() => {
-  clearPendingDraws();
-});
 
 function detectNewHandCards(oldHand: BattleCard[], newHand: BattleCard[]): BattleCard[] {
   const oldUidSet = new Set(oldHand.map((c) => c.uid).filter((uid): uid is number => uid !== undefined));
@@ -144,7 +111,7 @@ export interface BattleDrawRequest {
 }
 
 export async function runBattleDraw(request: BattleDrawRequest): Promise<boolean> {
-  const finishInitiatedDraw = trackInitiatedDraw(request.session);
+  const finishInitiatedDraw = request.deps.beginDraw(request.session);
   try {
     return await runHandDrawSequence(
       request.oldHand,
@@ -182,8 +149,7 @@ export function createBattleTransferDeps(
 
   function runCardTransfer(transfer: Omit<CardTransfer, "id">, onComplete?: () => void): Promise<void> {
     return new Promise((resolve) => {
-      ctx.transferIdCounterRef.current += 1;
-      const id = `transfer-${ctx.transferIdCounterRef.current}`;
+      const id = ctx.playback.nextTransferId();
       let completed = false;
       let unregisterCancel = () => {};
       const finish = (completeTransfer: boolean) => {
@@ -194,18 +160,19 @@ export function createBattleTransferDeps(
         if (completeTransfer) onComplete?.();
         resolve();
       };
-      unregisterCancel = ctx.transferCancelRegistryRef.current.register(() => finish(false));
+      unregisterCancel = ctx.playback.registerCancel(() => finish(false));
       getPresentation().setCardTransfers((current) => [...current, { ...transfer, id }]);
-      void delay(Math.round(transfer.duration * 1000) + CARD_TRANSFER_CONFIG.completionBufferMs).then(() =>
-        finish(true),
+      ctx.playback.timers.setGameTimeout(
+        () => finish(true),
+        Math.round(transfer.duration * 1000) + CARD_TRANSFER_CONFIG.completionBufferMs,
       );
     });
   }
 
   const stableHandCardDeps: StableHandCardRectDeps = {
     measureHandCard,
-    registerCancel: (callback) => ctx.transferCancelRegistryRef.current.register(callback),
-    scheduleTimeout: (fn, ms) => ctx.battleTimerGroupRef.current.setTimeout(fn, ms),
+    registerCancel: (callback) => ctx.playback.registerCancel(callback),
+    scheduleTimeout: (fn, ms) => ctx.playback.timers.setTimeout(fn, ms),
   };
 
   const cardTransferDeps: CardTransferAnimationDeps = {
@@ -221,6 +188,7 @@ export function createBattleTransferDeps(
   };
 
   const drawDeps: HandDrawSequenceDeps = {
+    beginDraw: (id) => ctx.playback.beginDraw(id),
     isSessionActive: isCurrentBattleSession,
     animateDrawnHand: (cards, allHandCards, session) =>
       animateDrawnHand(cards, allHandCards, session, cardTransferDeps),

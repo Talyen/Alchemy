@@ -13,7 +13,6 @@ import {
   clearMysteryVisitState,
   clearTransientSession,
   createDraftRunRandomSource,
-  initializeActiveBattle,
   initializeActiveRun,
   initializeFromResumeSnapshot,
   setActiveLabyrinthModifiers,
@@ -28,6 +27,7 @@ import {
   setStarterDraftChoices,
   setWildwoodDraft,
 } from "./run-session-write-port";
+import { restoreActiveBattle } from "./battle-restore";
 
 function repairRestoredTrinketShop(state: TrinketShopState, ownedIds: readonly string[]): TrinketShopState {
   const owned = new Set(ownedIds);
@@ -88,7 +88,7 @@ export function applyRestoreRunToDraft(draft: GameplayDraft, activeRun: ActiveRu
         )
       : null;
   const pending = decoded?.pendingBattleTransition ?? null;
-  initializeActiveBattle(draft, battleState, pending);
+  restoreActiveBattle(draft, battleState, pending);
 
   const resumeScreen = decoded?.screen ?? null;
   if (!activeRun) return;

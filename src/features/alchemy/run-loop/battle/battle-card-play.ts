@@ -20,7 +20,7 @@ import { type createBattleSession } from "./battle-session";
 import type { createBattleTransferDeps } from "./draw-sequence";
 import type { AutoplayCardControl, BattleControllerContext } from "./battle-context";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
-import { commitCardPlay, commitBattleWish } from "./battle-action-commands";
+import { commitCardPlay, commitBattleWish } from "@/features/alchemy/shared/stores/battle-commands";
 
 export function createBattleCardPlay(
   ctx: BattleControllerContext,
@@ -28,20 +28,15 @@ export function createBattleCardPlay(
   transferDeps: ReturnType<typeof createBattleTransferDeps>,
 ) {
   let autoplayPreviewSequence = 0;
-  // Card-play draws in flight, tracked here (not via the shared pending-draw
-  // counter) so rapid plays stay allowed while their draw animations settle,
-  // including when the draw pipeline itself is mocked in tests.
-  let drawsInFlight = 0;
   const getBattle = () => readBattle();
   const getPresentation = () => ctx.getPresentation();
 
   function finishDrawSequence(sessionNum: number) {
-    drawsInFlight = Math.max(0, drawsInFlight - 1);
-    if (drawsInFlight > 0) return;
+    if (ctx.playback.pendingCardDraws > 0) return;
     session.runIfSessionActive(sessionNum, () => {
-      ctx.cardPlayInProgressRef.current = false;
+      ctx.playback.completeAction(sessionNum);
       const state = getBattle().battleState;
-      ctx.scheduleAutoEndTurnRef.current?.(state);
+      ctx.playback.scheduleAutoEndTurn(state);
     });
   }
 
@@ -52,8 +47,8 @@ export function createBattleCardPlay(
     sessionNum: number,
     errorContext: string,
   ) {
-    drawsInFlight += 1;
-    ctx.cardPlayInProgressRef.current = true;
+    const finishDraw = ctx.playback.beginDraw(sessionNum, "card");
+    ctx.playback.beginAction();
     void runBattleDraw({
       oldHand,
       newState,
@@ -61,7 +56,10 @@ export function createBattleCardPlay(
       session: sessionNum,
       deps: transferDeps.getDrawSequenceDeps(),
       errorContext: `handle ${errorContext} draw sequence`,
-      onSettled: () => finishDrawSequence(sessionNum),
+      onSettled: () => {
+        finishDraw();
+        finishDrawSequence(sessionNum);
+      },
     });
   }
 
@@ -70,7 +68,7 @@ export function createBattleCardPlay(
     return (
       !isBattleInspectionOpen(useUiStore.getState()) &&
       ctx.screen === "battle" &&
-      (!ctx.cardPlayInProgressRef.current || drawsInFlight > 0) &&
+      ctx.playback.canAcceptInput(true) &&
       canPlayCardInBattle(state, card, index, PLAYABLE_HAND_OPTIONS) &&
       !presentation.hiddenHandCardKeys.includes(getHandCardKey(card, index))
     );
@@ -116,11 +114,11 @@ export function createBattleCardPlay(
     previewId: string,
     commit: () => boolean | Promise<boolean>,
   ): Promise<boolean> {
-    const sessionNum = ctx.battleSessionRef.current;
+    const sessionNum = ctx.playback.id;
     if (control.signal.aborted || !control.canCommit()) return false;
     const clearPreview = await previewAutoplayChoice(control, previewId);
     try {
-      if (sessionNum !== ctx.battleSessionRef.current || control.signal.aborted || !control.canCommit()) return false;
+      if (sessionNum !== ctx.playback.id || control.signal.aborted || !control.canCommit()) return false;
       return await commit();
     } finally {
       clearPreview();
@@ -143,14 +141,14 @@ export function createBattleCardPlay(
       if (!options?.silentReject) playUISound("error");
       return false;
     }
-    const sessionNum = ctx.battleSessionRef.current;
+    const sessionNum = ctx.playback.id;
     const played = commitCardPlay(index, card.id);
     if (!played) {
       if (!options?.silentReject) playUISound("error");
       return false;
     }
     session.checkBattleEnd(played.state, sessionNum);
-    ctx.cardPlayInProgressRef.current = true;
+    ctx.playback.beginAction();
     if (isAttackCard(card)) {
       getPresentation().telegraphAttack("player");
     } else {
@@ -220,7 +218,7 @@ export function createBattleCardPlay(
     if (!currentState.wishOptions?.some((option) => option.id === card.id)) return false;
     const newState = commitBattleWish(card.id);
     if (!newState) return false;
-    const sessionNum = ctx.battleSessionRef.current;
+    const sessionNum = ctx.playback.id;
     session.checkBattleEnd(newState, sessionNum);
     runDrawSequenceAndFinalize(currentState.hand, newState, () => {}, sessionNum, errorContext);
     return true;

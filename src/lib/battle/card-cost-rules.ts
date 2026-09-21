@@ -1,3 +1,4 @@
+import { readCombatFlag } from "./action-context";
 import { cardHasDamageType, cardHasKeyword, isNatureCard } from "./card-classification";
 import { hasEncounterBenefit } from "./types";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
@@ -9,7 +10,7 @@ type BooleanCombatFlag = {
   [K in keyof CombatFlags]: CombatFlags[K] extends boolean ? K : never;
 }[keyof CombatFlags];
 
-type CardCostState = Pick<
+type CardCostState = { action?: import("./action-context").BattleActionContext } & Pick<
   BattleSnapshot,
   "flags" | "talentEffects" | "gearEffects" | "uniqueGear" | "encounterBenefits"
 >;
@@ -67,7 +68,7 @@ function computeStandardCost(
   }
 
   for (const rule of FIRST_CARD_FREE_RULES) {
-    if (!state.flags[rule.flag] && rule.condition(state, card)) {
+    if (!readCombatFlag(state, rule.flag) && rule.condition(state, card)) {
       return {
         effectiveCost: 0,
         consumedFlags: consumedFlags.add(rule.flag),
@@ -81,7 +82,7 @@ function computeStandardCost(
     return { effectiveCost: 0, consumedFlags, disarmedFlags, spentArmedDiscount: false };
   }
 
-  const armedReduction = state.flags.nextCardCostReduction;
+  const armedReduction = readCombatFlag(state, "nextCardCostReduction");
   let effectiveCost = applyCostDiscount(discountedCost, armedReduction);
   const spentArmedDiscount = armedReduction > 0 && effectiveCost < discountedCost;
   if (effectiveCost === 0) return { effectiveCost, consumedFlags, disarmedFlags, spentArmedDiscount };
@@ -94,10 +95,10 @@ function computeStandardCost(
 
   // A dual-keyword card with both flags spends archery first; nature survives
   // for the next card. Priority is array order here, matching FIRST_CARD_FREE_RULES.
-  if (state.flags.nextArcheryCardFree && cardHasKeyword(card, "archery")) {
+  if (readCombatFlag(state, "nextArcheryCardFree") && cardHasKeyword(card, "archery")) {
     effectiveCost = 0;
     disarmedFlags.add("nextArcheryCardFree");
-  } else if (state.flags.nextNatureCardFree && isNatureCard(card)) {
+  } else if (readCombatFlag(state, "nextNatureCardFree") && isNatureCard(card)) {
     effectiveCost = 0;
     disarmedFlags.add("nextNatureCardFree");
   }
@@ -114,7 +115,7 @@ function getEncounterCostDiscount(
     card.cost > 0 &&
     cardHasKeyword(card, "archery") &&
     hasEncounterBenefit(state, "quickdraw") &&
-    !state.flags.encounterArcheryUsed;
+    !readCombatFlag(state, "encounterArcheryUsed");
   const discount =
     (fleeting ? LABYRINTH_MODIFIER_CONFIG.costReduction : 0) +
     (quickdraw ? LABYRINTH_MODIFIER_CONFIG.costReduction : 0);

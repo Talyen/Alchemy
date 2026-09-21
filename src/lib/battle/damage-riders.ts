@@ -101,7 +101,7 @@ function applyHolyDamageRiders(
   }
 
   if (rollTalentChance(nextState.talentEffects.holyWishChance, nextState)) {
-    nextState = applyWishEffect(nextState, card, 1, combatTexts);
+    nextState = applyWishEffect(nextState, card, 1, combatTexts, { kind: "enclosing-action" });
   }
 
   return applyBrassCenser(nextState, damage, combatTexts, enemyHealthBeforeHit);

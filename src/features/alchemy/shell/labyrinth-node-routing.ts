@@ -5,8 +5,7 @@ import type { LabyrinthNodeHandlers } from "@/features/alchemy/run-loop/run/laby
 import type { BattleLauncherDeps } from "./shell-types";
 
 interface LabyrinthNodeRoutingDeps {
-  applyLabyrinthBattleModifiers: (modifiers: EncounterCombatTraitId[]) => void;
-  applyLabyrinthRewardModifiers: (modifiers: EncounterRewardTraitId[]) => void;
+  prepareRoomTraits: (combat: EncounterCombatTraitId[], rewards: EncounterRewardTraitId[]) => void;
   navigateTo: (screen: Screen, prepareNavigation?: () => void) => void;
   labyrinth: {
     enterSelectedNode: (handlers: LabyrinthNodeHandlers) => boolean;
@@ -28,8 +27,7 @@ export function createLabyrinthNodeRouting(deps: LabyrinthNodeRoutingDeps) {
     // Always forward, including [] clears: the store writers skip the write
     // only when already empty (no revision bump), so stale traits from the
     // previous node cannot leak into nodes without modifiers.
-    deps.applyLabyrinthBattleModifiers(battleModifiers);
-    deps.applyLabyrinthRewardModifiers(rewardModifiers);
+    deps.prepareRoomTraits(battleModifiers, rewardModifiers);
   }
 
   function enterLabyrinthNodeScreen(

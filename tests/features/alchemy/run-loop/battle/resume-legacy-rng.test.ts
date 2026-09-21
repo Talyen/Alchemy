@@ -2,13 +2,11 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { defaultBattleState } from "@/lib/battle";
 import { createRunRngState } from "@/lib/rng";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { initializeActiveBattle } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { resumePendingBattleTransition } from "@/features/alchemy/run-loop/battle/battle-session";
+import { restoreActiveBattle as initializeActiveBattle } from "@/features/alchemy/shared/stores/battle-restore";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { makeTestCardWithId } from "../../../../fixtures/battle";
 import { resetRunDomainStore } from "../../../../helpers/run-domain-store-test";
 import { setRunProgress } from "../../../../helpers/run-domain-store-test";
-import { makeBattleTurnSession } from "./turn-orchestration-fixture";
 
 beforeEach(() => {
   resetRunDomainStore();
@@ -31,14 +29,10 @@ describe("legacy enemy-phase resume RNG", () => {
 
     expect(readGameplayState().battle.battleState).not.toHaveProperty("rng");
 
-    const battleSession = makeBattleTurnSession();
-    resumePendingBattleTransition(1, battleSession);
-
     const recovered = readGameplayState().battle.battleState;
     expect(recovered.turnPhase).toBe("player");
     expect(recovered.hand.length).toBeGreaterThan(0);
     expect(readGameplayState().run.activeRun.rng.counters.world).toBeGreaterThan(worldBefore);
-    expect(readGameplayState().battle.pendingBattleTransition).toBeNull();
-    expect(battleSession.checkBattleEnd).toHaveBeenCalledOnce();
+    expect(readGameplayState().battle).not.toHaveProperty("pendingBattleTransition");
   });
 });

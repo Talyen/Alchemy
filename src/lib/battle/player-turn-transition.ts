@@ -1,3 +1,5 @@
+import { resetTurnFlags } from "./combat-flags";
+import { resolveSecondaryAction } from "./action-context";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { hasEncounterBenefit, hasEnemyTrait } from "./types";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
@@ -16,14 +18,7 @@ import { finalizeCcSkipTurnDecrement, isCcControlled } from "./status-cc";
 import { decayHalvedStatus } from "./status-helpers";
 import { PER_TURN_UNIQUE_GEAR_RESET } from "./unique-gear-state";
 import { getBattleRng } from "@/lib/rng";
-import {
-  isPlayerDefeated,
-  deathsDoorGraceTurns,
-  type BattleState,
-  type CcState,
-  type CombatTextEvent,
-  withPreservedFlags,
-} from "./types";
+import { isPlayerDefeated, deathsDoorGraceTurns, type BattleState, type CcState, type CombatTextEvent } from "./types";
 
 function decrementCcSkipTurns(cc: CcState): CcState {
   return {
@@ -37,12 +32,11 @@ function applyPlagueDoctorMask(state: BattleState, combatTexts: CombatTextEvent[
   if (state.playerHealth <= 0 || state.enemyHealth <= 0) return state;
   const removed = Math.min(state.playerStatuses.poison, state.trinketEffects.plagueDoctorPoisonCleanse);
   if (removed <= 0) return state;
-  const cleansed = applyCleanseHeals(
-    { ...state, playerStatuses: { ...state.playerStatuses, poison: state.playerStatuses.poison - removed } },
-    combatTexts,
-  );
+  const poison = state.playerStatuses.poison - removed;
+  const reduced = { ...state, playerStatuses: { ...state.playerStatuses, poison } };
+  const cleansed = poison === 0 ? applyCleanseHeals(reduced, combatTexts) : reduced;
   return resolvePendingBattleReactions(
-    withPreservedFlags(cleansed, (current) =>
+    resolveSecondaryAction(cleansed, "delayed-card", (current) =>
       dealPlayerTypedHit(current, "poison", halveRounded(removed), combatTexts),
     ),
     combatTexts,
@@ -67,7 +61,7 @@ function processPendingTurnStartEffects(state: BattleState, combatTexts: CombatT
     if (pulse.remainingTurns > 1) kept.push({ ...pulse, remainingTurns: pulse.remainingTurns - 1 });
   }
   const pulseCard: BattleCard = emptyBattleCard("pending-turn-start");
-  return withPreservedFlags({ ...state, pendingTurnStartEffects: kept }, (nextState) =>
+  return resolveSecondaryAction({ ...state, pendingTurnStartEffects: kept }, "delayed-card", (nextState) =>
     due.reduce(
       (current, pulse) =>
         current.enemyHealth <= 0 || isPlayerDefeated(current)
@@ -75,7 +69,7 @@ function processPendingTurnStartEffects(state: BattleState, combatTexts: CombatT
           : applyCardEffects(current, { ...pulseCard, ...pulse.sourceCard, effects: pulse.effects }, combatTexts, {
               manaAtStart: current.mana,
               enemyFreezeSkipTurnsAtStart: current.enemyCC.freezeSkipTurns,
-              cardHealing: true,
+              origin: "triggered-card",
             }),
       nextState,
     ),
@@ -108,24 +102,7 @@ function resetPlayerTurnState(
       ...state.uniqueGear,
       ...PER_TURN_UNIQUE_GEAR_RESET,
     },
-    flags: {
-      ...state.flags,
-      previousCardWasArchery: false,
-      previousCardWasNature: false,
-      darkRecoveryMana: 0,
-      pendingWishMana: 0,
-      encounterPhysicalUsed: false,
-      encounterHolyUsed: false,
-      encounterNatureUsed: false,
-      encounterWishUsed: false,
-      encounterArcheryUsed: false,
-      resonantChimeUsedThisTurn: false,
-      runicQuillUsedThisTurn: false,
-      consumeDrawUsedThisTurn: false,
-      emberforgedUsedThisTurn: false,
-      cinderSkinUsedThisTurn: false,
-      holyRetributionUsedThisTurn: false,
-    },
+    flags: resetTurnFlags(state.flags),
   };
 }
 

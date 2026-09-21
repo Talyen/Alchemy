@@ -14,7 +14,6 @@ import {
   cancelDestinationClaim,
   clearRunMaterialsEarned,
   clearTransientSession,
-  initializeActiveBattle,
   recordRunObtainedItem,
   releaseRewardClaim,
   setCompanionRewardCards,
@@ -23,11 +22,9 @@ import {
   setRoomsEncountered,
   setScreen,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import {
-  clearPendingTransitionResumeRequired,
-  setHasActiveRun,
-  setSyncedBattleState,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
+import { initializeActiveBattle } from "@/features/alchemy/shared/stores/write/run-battle";
+import { setHasActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setSyncedBattleState } from "@/features/alchemy/shared/stores/write/run-battle";
 import { nextRunRandom, resetProgress } from "@/features/alchemy/shared/stores/run-session-write-port";
 import {
   readActiveRun,
@@ -51,33 +48,19 @@ describe("battle write-port", () => {
     expect(state.hasActiveBattle).toBe(true);
     expect(state.battleStartState?.turn).toBe(6);
     expect(state.battleStartState).toEqual(state.battleState);
-    expect(state.pendingTransitionResumeRequired).toBe(false);
-  });
-
-  it("marks hydrated transitions as requiring resume until cleared", () => {
-    dispatchRunSessionCommand((draft) =>
-      initializeActiveBattle(draft, { ...defaultBattleState(), turnPhase: "enemy" }, { kind: "continue-end-turn" }),
-    );
-    let state = readBattle();
-    expect(state.pendingTransitionResumeRequired).toBe(true);
-    expect(state.pendingBattleTransition).toEqual({ kind: "continue-end-turn" });
-
-    dispatchRunSessionCommand((draft) => clearPendingTransitionResumeRequired(draft));
-    state = readBattle();
-    expect(state.pendingTransitionResumeRequired).toBe(false);
-    expect(state.pendingBattleTransition).toEqual({ kind: "continue-end-turn" });
+    expect(state).not.toHaveProperty("pendingTransitionResumeRequired");
   });
 
   it("initializing with null clears every combat field", () => {
     dispatchRunSessionCommand((draft) => {
-      initializeActiveBattle(draft, { ...defaultBattleState(), turn: 2 }, { kind: "continue-end-turn" });
+      initializeActiveBattle(draft, { ...defaultBattleState(), turn: 2 });
       initializeActiveBattle(draft, null);
     });
     const state = readBattle();
     expect(state.hasActiveBattle).toBe(false);
     expect(state.battleStartState).toBeNull();
-    expect(state.pendingBattleTransition).toBeNull();
-    expect(state.pendingTransitionResumeRequired).toBe(false);
+    expect(state).not.toHaveProperty("pendingBattleTransition");
+    expect(state).not.toHaveProperty("pendingTransitionResumeRequired");
   });
 
   it("setSyncedBattleState replaces state and drops stale display overrides", () => {

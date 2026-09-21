@@ -1,3 +1,4 @@
+import { releaseRewardClaim } from "@/features/alchemy/shared/stores/run-session-write-port";
 import {
   appendBoonToRunWithDiscovery,
   appendCardToRunWithDiscovery,
@@ -96,4 +97,8 @@ export function claimRunReward(choiceId: string | null) {
     if (!isWildwood && result.route === REWARD_ROUTES.LABYRINTH_MAP) prepareRunNavigation(draft, "labyrinth-map");
     return { result, isWildwood };
   });
+}
+
+export function finishRewardClaim(): void {
+  dispatchRunSessionCommand((draft) => releaseRewardClaim(draft));
 }

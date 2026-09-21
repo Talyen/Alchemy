@@ -9,27 +9,7 @@ import { getBattleRng, rollPercent } from "@/lib/rng";
 import { applyPercentBonus, applyPercentReduction, halveRounded } from "../amount-helpers";
 import type { BattleState, CombatFlags, CombatTextEvent, EnemyMitigation } from "./state-types";
 import { isStunFreezeBuildupBlocked } from "./state-types";
-import { PRESERVED_FLAG_KEYS, PRESERVED_FLAG_VALUES, type PreservedFlagKey } from "../combat-flags";
-
-export function withPreservedFlags(state: BattleState, mutate: (s: BattleState) => BattleState): BattleState {
-  const saved: Partial<Pick<CombatFlags, PreservedFlagKey>> = {};
-  for (const key of PRESERVED_FLAG_KEYS) {
-    (saved as Record<string, unknown>)[key] = state.flags[key];
-  }
-  const blockedState: BattleState = {
-    ...state,
-    flags: { ...state.flags, ...PRESERVED_FLAG_VALUES },
-  };
-  const result = mutate(blockedState);
-  return {
-    ...result,
-    flags: {
-      ...result.flags,
-      ...saved,
-      nextCardCostReduction: Math.max(state.flags.nextCardCostReduction, result.flags.nextCardCostReduction),
-    },
-  };
-}
+import { writeCombatFlag } from "../action-context";
 
 export function playerStatusDelta(state: BattleState, status: PlayerStatusId, delta: number): number {
   if (status === "stun" && delta > 0) {
@@ -59,7 +39,7 @@ export function addPlayerStatus(state: BattleState, status: PlayerStatusId, delt
       status === "forge" &&
       effectiveDelta > 0 &&
       state.gearEffects.forgeReadiesPhysicalRepeat > 0 &&
-      !state.flags.uniqueRepeatActive
+      !state.action?.repeatActive
         ? { ...state.uniqueGear, everkeenReady: true }
         : state.uniqueGear,
   };
@@ -157,7 +137,7 @@ export function reduceEnemyArmor(state: BattleState, delta: number): BattleState
 }
 
 export function setFlag<K extends keyof CombatFlags>(state: BattleState, flag: K, value: CombatFlags[K]): BattleState {
-  return { ...state, flags: { ...state.flags, [flag]: value } };
+  return writeCombatFlag(state, flag, value);
 }
 
 export function clampHealth(current: number, delta: number, max: number): number {

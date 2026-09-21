@@ -3,7 +3,7 @@ import { preloadBattleSounds } from "@/lib/audio";
 import { playCompanionSound, presentCombatTexts } from "./controller-utils";
 import type { BattleControllerContext } from "./battle-context";
 import type { createBattleSession } from "./battle-session";
-import { createBattleStartCommands, type BattleStarted } from "./battle-start-commands";
+import { createBattleStartCommands, type BattleStarted } from "@/features/alchemy/shared/stores/battle-start-commands";
 
 export function createBattleInit(ctx: BattleControllerContext, session: ReturnType<typeof createBattleSession>) {
   function presentBattleStart({ startingTexts, companionId, outcome, openingCardIds }: BattleStarted) {
@@ -11,6 +11,7 @@ export function createBattleInit(ctx: BattleControllerContext, session: ReturnTy
     preloadBattleSounds(openingCardIds, battleState.currentEnemy.id, battleState.currentEnemy.abilityIds);
     session.prepareBattleSessionForStart();
     const presentationStore = ctx.getPresentation();
+    ctx.playback.beginOpening();
     presentationStore.setOpeningDrawPending(true);
     presentationStore.setCardTransferInProgress(true);
     if (companionId) {

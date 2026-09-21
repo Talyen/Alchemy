@@ -1,6 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
-  createTransferCancelRegistry,
   waitForStableHandCardRect,
   type StableHandCardRectDeps,
 } from "@/features/alchemy/run-loop/battle/card-transfer-animations";
@@ -91,21 +90,5 @@ describe("waitForStableHandCardRect", () => {
     const pending = waitForStableHandCardRect("slash-1", fallback, deps);
     deps.timeouts.forEach((fire) => fire());
     await expect(pending).resolves.toEqual(rectA);
-  });
-});
-
-describe("createTransferCancelRegistry", () => {
-  it("runs every callback once on cancelAll, then clears", () => {
-    const registry = createTransferCancelRegistry();
-    const first = vi.fn();
-    const second = vi.fn();
-    const unregisterFirst = registry.register(first);
-    registry.register(second);
-    unregisterFirst();
-    registry.cancelAll();
-    expect(first).not.toHaveBeenCalled();
-    expect(second).toHaveBeenCalledTimes(1);
-    registry.cancelAll();
-    expect(second).toHaveBeenCalledTimes(1);
   });
 });

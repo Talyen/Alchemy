@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import { defaultBattleState } from "@/lib/battle";
 import { parseActiveRun } from "@/lib/active-run-session";
-import { createBattleStartCommands } from "@/features/alchemy/run-loop/battle/battle-start-commands";
+import { createBattleStartCommands } from "@/features/alchemy/shared/stores/battle-start-commands";
 import { gridLabyrinthMapFixture } from "../../../../fixtures/labyrinth-map";
 import { getStartingDeck } from "@/lib/game-data";
 import { DESTINATIONS } from "@/lib/routing";
@@ -23,8 +23,6 @@ import {
   deductGold,
   setGold,
   setHasActiveRun,
-  initializeActiveBattle,
-  commitBattleTransition,
   recordRunRoom,
   completeRunRoom,
   finalizeRunXP,
@@ -41,6 +39,7 @@ import {
   abandonCorruptionDestinationVisit,
   abandonMysteryDestinationVisit,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { initializeActiveBattle, setBattleState } from "@/features/alchemy/shared/stores/write/run-battle";
 import { resetRunDomainStore } from "../../../../helpers/run-domain-store-test";
 
 const endOptions = { awardRunEndMaterials, finalizeRunXP };
@@ -57,8 +56,8 @@ describe("run recap", () => {
       addGold(draft, 20);
       deductGold(draft, 100);
       initializeActiveBattle(draft, { ...defaultBattleState(), gold: 450 });
-      commitBattleTransition(draft, { ...draft.battle.battleState, gold: 457 }, null);
-      commitBattleTransition(draft, { ...draft.battle.battleState }, null);
+      setBattleState(draft, { ...draft.battle.battleState, gold: 457 });
+      setBattleState(draft, { ...draft.battle.battleState });
     });
     expect(readActiveRun().runGoldEarned).toBe(27);
     const saved = parseActiveRun(snapshotRun())!;

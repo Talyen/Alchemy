@@ -23,22 +23,13 @@ import {
 
 const SOURCE_IMPORT_PATTERNS = [BARREL_PATTERNS, DOMAIN_STORE_PATTERNS, WRITE_PORT_PATTERNS, NO_DIRECT_ASSET_IMPORT];
 
-function boundaryBlock(files, ...extra) {
+// Each effective scope composes its full policy once. Flat-config rules replace,
+// rather than merge, so no scope relies on an earlier block's restrictions.
+function scope(files, patterns = SOURCE_IMPORT_PATTERNS, paths = [], ignores = []) {
   return {
     files,
-    rules: {
-      "no-restricted-imports": layerImports(...SOURCE_IMPORT_PATTERNS, ...extra),
-    },
-  };
-}
-
-function boundaryBlockWithIgnores(files, ignores, ...extra) {
-  return {
-    files,
-    ignores,
-    rules: {
-      "no-restricted-imports": layerImports(...SOURCE_IMPORT_PATTERNS, ...extra),
-    },
+    ...(ignores.length ? { ignores } : {}),
+    rules: { "no-restricted-imports": layerImportsWithPaths(paths, ...patterns) },
   };
 }
 
@@ -56,117 +47,82 @@ export function cruiserPathFromGroups(groups) {
 
 export { GAME_DATA_NO_BATTLE, LIB_NO_FEATURES, META_NO_RUN_LOOP, RUN_LOOP_NO_RUN_SETUP, RUN_SETUP_NO_RUN_LOOP };
 
-const BOUNDARY_TABLE = [
+const COMMAND_ONLY = [
   {
-    files: ["src/**/*.{ts,tsx}"],
-    ignores: ["src/features/alchemy/shared/stores/**", "src/lib/game-data/assets.generated.ts"],
-    extra: [],
+    group: ["**/run-session-write-port", "**/run-session-command", "**/stores/write/**"],
+    message: "Presentation and flow adapters call intent-level commands; draft mutation belongs to command owners.",
   },
-  { files: ["src/features/alchemy/shared/stores/**/*.{ts,tsx}"], onlyBarrel: true },
-  // Later blocks replace earlier ones in flat config, so this restates the
-  // barrel union and adds the presentation-only RNG ban for gameplay stores.
-  {
-    files: ["src/features/alchemy/shared/stores/**/*.{ts,tsx}"],
-    paths: GAMEPLAY_NO_UNSAFE_RANDOM_PICK,
-    patterns: [BARREL_PATTERNS],
-  },
-  {
-    files: ["src/lib/**/*.{ts,tsx}"],
-    paths: LIB_NO_FRAMEWORK_PATHS,
-    patterns: [
-      LIB_BARREL_PATTERNS,
-      LIB_NO_FEATURES,
-      DOMAIN_STORE_PATTERNS,
-      WRITE_PORT_PATTERNS,
-      NO_DIRECT_ASSET_IMPORT,
-    ],
-  },
-  {
-    files: ["src/lib/game-data/**/*.{ts,tsx}"],
-    paths: LIB_NO_FRAMEWORK_PATHS,
-    patterns: [
-      [{ group: ["@/lib/game-data/*"], message: "Import from @/lib/game-data (barrel) instead of deep paths." }],
-      GAME_DATA_NO_BATTLE,
-      LIB_NO_FEATURES,
-      DOMAIN_STORE_PATTERNS,
-      WRITE_PORT_PATTERNS,
-      NO_DIRECT_ASSET_IMPORT,
-    ],
-  },
-  {
-    files: ["src/lib/battle/**/*.{ts,tsx}"],
-    paths: BATTLE_NO_FRAMEWORK_PATHS,
-    patterns: [
+];
+const libPatterns = [
+  LIB_BARREL_PATTERNS,
+  LIB_NO_FEATURES,
+  DOMAIN_STORE_PATTERNS,
+  WRITE_PORT_PATTERNS,
+  NO_DIRECT_ASSET_IMPORT,
+];
+const catalogPatterns = [
+  [{ group: ["@/lib/game-data/*"], message: "Import from @/lib/game-data (barrel) instead of deep paths." }],
+  GAME_DATA_NO_BATTLE,
+  LIB_NO_FEATURES,
+  DOMAIN_STORE_PATTERNS,
+  WRITE_PORT_PATTERNS,
+];
+
+export const BOUNDARY_CONFIGS = [
+  scope(
+    ["src/**/*.{ts,tsx}"],
+    SOURCE_IMPORT_PATTERNS,
+    [],
+    ["src/features/alchemy/shared/stores/**", "src/lib/game-data/assets.generated.ts"],
+  ),
+  scope(["src/features/alchemy/shared/stores/**/*.{ts,tsx}"], [BARREL_PATTERNS], GAMEPLAY_NO_UNSAFE_RANDOM_PICK),
+  scope(["src/lib/**/*.{ts,tsx}"], libPatterns, LIB_NO_FRAMEWORK_PATHS),
+  scope(["src/lib/game-data/**/*.{ts,tsx}"], [...catalogPatterns, NO_DIRECT_ASSET_IMPORT], LIB_NO_FRAMEWORK_PATHS),
+  scope(
+    ["src/lib/battle/**/*.{ts,tsx}"],
+    [
       [{ group: ["@/lib/battle/*"], message: "Import from @/lib/battle (barrel) instead of deep paths." }],
       BATTLE_NO_FEATURES,
       DOMAIN_STORE_PATTERNS,
       WRITE_PORT_PATTERNS,
       NO_DIRECT_ASSET_IMPORT,
     ],
-  },
-  { files: ["src/features/alchemy/run-setup/**/*.{ts,tsx}"], extra: [RUN_SETUP_NO_RUN_LOOP] },
-  {
-    files: ["src/features/alchemy/run-setup/screens/**/*.{ts,tsx}"],
-    extra: [RUN_SETUP_NO_RUN_LOOP, SCREENS_NO_ORCHESTRATION, SCREENS_NO_APP_ORCHESTRATION],
-  },
-  { files: ["src/features/alchemy/run-loop/**/*.{ts,tsx}"], extra: [RUN_LOOP_NO_RUN_SETUP] },
-  {
-    files: ["src/features/alchemy/run-loop/screens/**/*.{ts,tsx}"],
-    extra: [RUN_LOOP_NO_RUN_SETUP, SCREENS_NO_ORCHESTRATION, SCREENS_NO_APP_ORCHESTRATION],
-  },
-  {
-    files: ["src/features/alchemy/run-loop/battle/**/*.{ts,tsx}"],
-    extra: [ORCHESTRATION_NO_SCREENS, RUN_LOOP_NO_RUN_SETUP],
-  },
-  {
-    files: ["src/features/alchemy/run-loop/navigation/**/*.{ts,tsx}"],
-    extra: [ORCHESTRATION_NO_SCREENS, RUN_LOOP_NO_RUN_SETUP],
-  },
-  { files: ["src/features/alchemy/meta/**/*.{ts,tsx}"], extra: [META_NO_RUN_LOOP] },
-  {
-    files: ["src/features/alchemy/meta/screens/**/*.{ts,tsx}"],
-    extra: [META_NO_RUN_LOOP, SCREENS_NO_ORCHESTRATION, SCREENS_NO_APP_ORCHESTRATION],
-  },
-  {
-    files: ["src/lib/game-data/assets.generated.ts"],
-    paths: LIB_NO_FRAMEWORK_PATHS,
-    patterns: [
-      [{ group: ["@/lib/game-data/*"], message: "Import from @/lib/game-data (barrel) instead of deep paths." }],
-      GAME_DATA_NO_BATTLE,
-      LIB_NO_FEATURES,
-      DOMAIN_STORE_PATTERNS,
-      WRITE_PORT_PATTERNS,
+    BATTLE_NO_FRAMEWORK_PATHS,
+  ),
+  scope(["src/features/alchemy/run-setup/**/*.{ts,tsx}"], [...SOURCE_IMPORT_PATTERNS, RUN_SETUP_NO_RUN_LOOP]),
+  scope(
+    ["src/features/alchemy/run-setup/screens/**/*.{ts,tsx}"],
+    [...SOURCE_IMPORT_PATTERNS, RUN_SETUP_NO_RUN_LOOP, SCREENS_NO_ORCHESTRATION, SCREENS_NO_APP_ORCHESTRATION],
+  ),
+  scope(["src/features/alchemy/run-loop/**/*.{ts,tsx}"], [...SOURCE_IMPORT_PATTERNS, RUN_LOOP_NO_RUN_SETUP]),
+  scope(
+    ["src/features/alchemy/run-loop/screens/**/*.{ts,tsx}"],
+    [...SOURCE_IMPORT_PATTERNS, RUN_LOOP_NO_RUN_SETUP, SCREENS_NO_ORCHESTRATION, SCREENS_NO_APP_ORCHESTRATION],
+  ),
+  scope(
+    ["src/features/alchemy/run-loop/battle/**/*.{ts,tsx}", "src/features/alchemy/run-loop/navigation/**/*.{ts,tsx}"],
+    [...SOURCE_IMPORT_PATTERNS, ORCHESTRATION_NO_SCREENS, RUN_LOOP_NO_RUN_SETUP],
+  ),
+  scope(["src/features/alchemy/meta/**/*.{ts,tsx}"], [...SOURCE_IMPORT_PATTERNS, META_NO_RUN_LOOP]),
+  scope(
+    ["src/features/alchemy/meta/screens/**/*.{ts,tsx}"],
+    [...SOURCE_IMPORT_PATTERNS, META_NO_RUN_LOOP, SCREENS_NO_ORCHESTRATION, SCREENS_NO_APP_ORCHESTRATION],
+  ),
+  scope(["src/lib/game-data/assets.generated.ts"], catalogPatterns, LIB_NO_FRAMEWORK_PATHS),
+  scope(
+    ["src/features/alchemy/shell/**/*.{ts,tsx}", "src/app/playthrough/controller.ts"],
+    [...SOURCE_IMPORT_PATTERNS, COMMAND_ONLY],
+  ),
+  scope(
+    [
+      "src/features/alchemy/run-loop/run/run-flow-*.ts",
+      "src/features/alchemy/run-loop/run/wildwood-gauntlet-flow.ts",
+      "src/features/alchemy/run-loop/navigation/mystery-event-navigation.ts",
+      "src/features/alchemy/run-loop/navigation/corruption-flow.ts",
+      "src/features/alchemy/run-loop/battle/**/*.{ts,tsx}",
     ],
-  },
-];
-
-function createBoundaryConfig(entry) {
-  if (entry.onlyBarrel) {
-    return {
-      files: entry.files,
-      rules: {
-        "no-restricted-imports": layerImports(BARREL_PATTERNS),
-      },
-    };
-  }
-  if (entry.paths) {
-    return {
-      files: entry.files,
-      ...(entry.ignores ? { ignores: entry.ignores } : {}),
-      rules: {
-        "no-restricted-imports": layerImportsWithPaths(entry.paths, ...entry.patterns),
-      },
-    };
-  }
-  return entry.ignores
-    ? boundaryBlockWithIgnores(entry.files, entry.ignores, ...entry.extra)
-    : boundaryBlock(entry.files, ...entry.extra);
-}
-
-const BOUNDARY_TABLE_CONFIGS = BOUNDARY_TABLE.map(createBoundaryConfig);
-
-export const BOUNDARY_CONFIGS = [
-  ...BOUNDARY_TABLE_CONFIGS,
+    [...SOURCE_IMPORT_PATTERNS, ORCHESTRATION_NO_SCREENS, RUN_LOOP_NO_RUN_SETUP, COMMAND_ONLY],
+  ),
   {
     files: ["src/components/ui/**/*.{ts,tsx}"],
     rules: {

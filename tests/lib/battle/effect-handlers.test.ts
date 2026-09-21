@@ -453,7 +453,7 @@ describe("recursive effects", () => {
   });
 });
 
-describe("uniqueRepeatActive suppresses potion scaling", () => {
+describe("repeat action scope suppresses potion scaling", () => {
   it("ignores potionPotency during unique repeats", () => {
     const card = makeTestCard({ id: "health-potion", effects: [{ kind: "heal", amount: 4 }] });
     const base = patchBattleState({
@@ -462,7 +462,11 @@ describe("uniqueRepeatActive suppresses potion scaling", () => {
       talentEffects: { potionPotency: 2 },
     });
     const scaled = applyCardEffects(base, card, []);
-    const suppressed = applyCardEffects({ ...base, flags: { ...base.flags, uniqueRepeatActive: true } }, card, []);
+    const suppressed = applyCardEffects(
+      { ...base, action: { source: "repeat", cardBonuses: "ineligible", repeatActive: true } },
+      card,
+      [],
+    );
     expect(scaled.playerHealth).toBe(18);
     expect(suppressed.playerHealth).toBe(14);
   });

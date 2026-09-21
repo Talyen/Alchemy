@@ -2,25 +2,10 @@ import { resolveAvailableDestinations, type DestinationOptionsInput } from "@/fe
 import { readHasAnyOwnedGear, readHasUnownedTrinkets } from "@/features/alchemy/shared/stores/gear-store";
 import { readActiveRun, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
-import type { Screen } from "@/lib/routing";
 
 /** Shared hover-clear used by every shell navigation path. */
 export function clearRunCardHover(): void {
   useUiStore.getState().clearCardHover();
-}
-
-export function createRunDestinationWiring({
-  navigateTo,
-  clearCardHover = clearRunCardHover,
-}: {
-  navigateTo: (nextScreen: Screen, prepareNavigation?: () => void) => void;
-  clearCardHover?: () => void;
-}) {
-  const goToScreen = (nextScreen: Screen) => {
-    clearCardHover();
-    navigateTo(nextScreen);
-  };
-  return { getAvailableDestinations: readRunAvailableDestinations, goToScreen };
 }
 
 /**
