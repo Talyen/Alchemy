@@ -5,21 +5,21 @@ import path from "node:path";
 import sharp from "sharp";
 
 import { staticAssets, validateAssetRegistry } from "./assets/asset-manifest.mjs";
-import { processFreshEntry } from "./lib/asset-manifest-cache.mjs";
+import { processFreshEntry } from "./assets/asset-manifest-cache.mjs";
 import {
   ART_TRANSFORM_CONCURRENCY,
   ASSET_SCHEMA_VERSION,
   ART_PRESETS,
   MANIFEST_BASENAME,
   SHARP_DEFAULTS,
-} from "./lib/asset-constants.mjs";
+} from "./assets/asset-constants.mjs";
 import {
   ensureOutputDir,
   readSourceDir,
   resolvePipelinePaths,
   runManifestPipeline,
-} from "./lib/asset-pipeline-runner.mjs";
-import { GEAR_FILE_PATTERN, GEAR_SLOT_IDS, SLOT_BACKGROUND_PATTERN, toGearTarget } from "./lib/gear-filenames.mjs";
+} from "./assets/asset-pipeline-runner.mjs";
+import { GEAR_FILE_PATTERN, GEAR_SLOT_IDS, SLOT_BACKGROUND_PATTERN, toGearTarget } from "./assets/gear-filenames.mjs";
 import { runPipelineScript } from "./lib/script-run.mjs";
 
 const { sourceDir, outputDir, manifestPath } = resolvePipelinePaths(import.meta.url, {
@@ -144,7 +144,7 @@ async function validateTransparency(filename, label) {
 
 /**
  * @param {{ source: string, target: string, width: number, quality: number, requiresTransparency?: boolean }} asset
- * @param {import("./lib/asset-manifest-cache.mjs").ManifestEntry | undefined} storedEntry
+ * @param {import("./assets/asset-manifest-cache.mjs").ManifestEntry | undefined} storedEntry
  */
 async function optimizeAsset(asset, storedEntry, check) {
   const sourcePath = path.join(sourceDir, asset.source);

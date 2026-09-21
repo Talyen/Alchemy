@@ -2,35 +2,106 @@
 
 Canonical detail linked from [REFERENCE.md](./REFERENCE.md).
 
-### Agent discovery
+## Agent discovery
 
-`npm run context -- <relevant paths>` is an optional way to locate owner sections and entry points. Direct reads and scoped searches are equally valid; batch related sections and skip material already understood. File and directory selections accept repository-relative or absolute paths inside the checkout. Use `--task battle`, `--task ui`, `--task gear`, `--task rewards`, `--task shop`, or another category listed by `npm run context` when paths are unknown. `--diff` is appropriate only when the entire diff belongs to the task. Singular/plural counterparts such as `--task saves` resolve to a canonical task when available; other unknown names still fail explicitly. Explicit task selection augments path matches; it does not suppress save or other applicable owners.
+Use direct reads and scoped `rg` when the owner is clear. The optional `context`
+command helps locate owner sections and entry points when it is not:
 
-The command reads canonical Markdown sections, deduplicates overlapping sections, and prints implementation entry points and verification categories. Default output is bounded to 12 KB after removing Markdown table padding; code fences, cell contents, and source line locations are preserved. Oversized sections offer a short overview when available and subsection locations, without marking the unread section as read. Deferred sections retain exact line locations. Read those only when the task needs them. `--json` follows the same bounded selection; use `--json --full` only when a tool genuinely needs every selected section. Unit and browser work surface the canonical test value policy to guide coverage decisions. This is discovery guidance, not a replacement for required skills or a test-coverage selector. Documentation selection is independent of broad verification fallbacks: asset operations select shared requirements plus art, Gear, sound, music, or pipeline sections; ambiguous asset work lists the other operations as pointers (`--task assets-art|assets-gear|assets-sound|assets-music|assets-pipeline`). Overlay lifecycle instructions are selected for overlay-related paths or `--task overlay`; the discovery manual is selected for discovery tooling or `--task discovery`. Battle discovery emits the engine entry points, engine invariants, and turn-order rules; controller wiring is selected separately for route/controller work or `--task battle-controller`. Constants select their audio, layout, motion, combat, storage, progression, settings, corruption, loot, or materials owner; unknown constants retain runtime fallback guidance. Affix discovery selects the data model without loot or material tuning. Screen-specific detail is linked from the UI guide index. Run-state discovery emits the aggregate/command contract; its persistence, capability-port, randomness, and setup details are independent sections selected by relevant paths or available through task pointers. Talent, companion, enemy, affix, card, effect, and verification tasks route directly to their existing owners. Mixed requests retain applicable safety owners. `scripts/lib/agent-context.mjs` owns discovery categories; `scripts/lib/change-routes.mjs` continues to own the broad verification categories.
+```sh
+npm run context -- src/lib/battle/card-play.ts
+npm run context -- --task save-write
+npm run context -- --diff
+```
 
-For a large unfamiliar source module, `npm run context -- --outline <file>` can locate declarations and `--outline <file> --symbol <name>` can read one declaration. Use them when they help; direct source reads need no outline prerequisite. Oversized declarations return a location instead of dumping the file. Use `--outline <file> --entries` to list literal content IDs and top-level keyed entries, or `--outline <file> --entry <id>` to read matches (including duplicate IDs). Talent and affix catalogs also recognize their established builder calls; nested roll tiers and entry configuration are omitted. The parser never executes content; computed IDs and dynamically constructed entries still need a scoped search. Use the existing `npm run audit -- --amplification` report for co-edit evidence and correlate its paths with evaluation read events. Split a file only when observed repeated reads or co-changes expose separable responsibilities; size alone is not a refactoring target.
+`--diff` is appropriate only when the whole diff belongs to the task. File and
+directory arguments accept relative or absolute paths inside the checkout.
+`npm run context` lists task names; singular/plural counterparts resolve when
+available, and unknown names fail. Explicit task selection augments path matches
+without suppressing applicable save or other owners.
 
-Game-art discovery also includes the resource and battle UI master constraints,
-including pile versus single-card artwork, transparency, and Mana imagery.
+The output includes deduplicated canonical sections, implementation entry points,
+and verification categories. Its default 12 KB budget removes Markdown table
+padding, preserving cells, fences and source locations. Oversized sections
+provide an overview and locations; deferred content has not been read. Follow
+those pointers when needed. `--json` has the same budget; `--json --full` is for
+tools that need all selected sections.
 
-Save discovery starts with the public contract; use `--task save-load`, `--task save-write`, `--task save-delete`, or `--task save-compatibility` for detailed owners. Relevant file paths also select those topics.
+Discovery is not a prerequisite, a replacement for required skills, or a test
+coverage selector. `scripts/lib/agent-context.mjs` owns its catalog;
+`scripts/lib/change-routes.mjs` separately owns verification selection. Keep
+catalog entries as references to canonical prose, not copies of that prose.
+Documentation checks validate those references, and `verify --plan` uses them.
 
-Optional discovery modes:
+### Select the operation
 
-- `--outline <file> --tests` lists suite-qualified test names and locations. `--outline <file> --test "suite > case"` reads matching cases with pointers to imports, shared setup, and enclosing hooks. `describe`, `it`, `test`, and parameterized `.each` declarations are parsed without execution; parameter placeholders remain unexpanded and dynamic names are labeled. This is optional: earlier [investigation trials](../.agents/evals/results/context-efficiency-2026-09-11.md) found that targeted excerpts could increase total reading. Read surrounding code whenever the pointers are insufficient.
+Use the narrow topic when a subsystem has several owners:
 
-- Add `--related` to a path or task request for ranked consumer, test and imported-fixture locations from current static imports, aliases and reexports. Results cover at most two consumer hops and six locations per kind; they are hints, not exhaustive coverage or verification selection. No graph cache or second ownership catalog is maintained.
-- Add `--session <unique-id>` to suppress documentation sections actually emitted unchanged earlier in that session. Use a separate ID for each agent. After context loss use `--refresh` with that ID, or start a fresh ID; a remembered read does not prove retained understanding. Changed sections and sections deferred by the output budget remain eligible. Without `--session`, output remains complete within the normal budget. Session state is disposable under `reports/agent-context/`.
-- `npm run search -- <literal> [paths...]` wraps `rg` and returns up to 40 matching filenames within 8 KB. Add `--excerpts` for matching source lines, `--regex` for deliberate regular expressions, or `--include-excluded` with an explicit path to inspect normally excluded artifacts. Default searches respect ignore files and exclude raw assets, reports, build output, changelog, dependency lockfiles, dependencies, Git data and worktrees. Broad text searches also omit archived plans, agent history, generated source, and asset hash manifests; explicit paths into those categories include them without the flag. Current plans, canonical docs, and authored manifests remain searchable. File inventories used for dependency hints remain complete. Truncation is explicit; narrow the path or pattern, or use direct scoped `rg` when more control is needed. Use `--` before positional arguments beginning with `--`.
+- Assets: `assets-art`, `assets-gear`, `assets-sound`, `assets-music`, or `assets-pipeline`.
+- Saves: `save-load`, `save-write`, `save-delete`, or `save-compatibility`.
+- Battle: `battle` for engine rules; `battle-controller` for route/controller wiring.
+- Verification: `verification` for running gates; `verification-tooling` for implementation.
+- Overlays: `overlay` for input, focus and lifetime; screen-specific guidance is in the [UI index](./UI.md#guide-index).
 
-These options are available on demand, not additional mandatory prereads. Update the discovery catalog when ownership or entry points change. Documentation checks and tooling tests validate every referenced section and entry point, and `verify --plan` displays pointers from the same catalog. Do not copy owner prose into the catalog. Reread sections when needed to restore understanding or check changed content, not merely because another guide links them.
+Paths also select relevant owners. Mixed requests retain applicable safety
+owners. Use the command's task listing for the complete current catalog rather
+than guessing names.
 
-### Verification reuse
+### Read a source declaration or content entry
+
+```sh
+npm run context -- --outline src/lib/battle/card-play.ts
+npm run context -- --outline src/lib/battle/card-play.ts --symbol playBattleCardResolved
+```
+
+An outline locates declarations; `--symbol <name>` reads one. Oversized symbols
+return locations instead of full dumps. `--entries` lists literal content IDs
+and top-level keyed entries; `--entry <id>` reads matches, including duplicate
+IDs. Talent and affix builders are recognized, but computed IDs and dynamic
+entries still need scoped search. Parsing never executes content.
+
+For tests, `--tests` lists suite-qualified names and `--test "suite > case"`
+reads matches with pointers to imports, shared setup and hooks. Parameterized
+names remain unexpanded; dynamic names are labeled. Read surrounding code when
+those pointers are insufficient. Earlier [investigation trials](../.agents/evals/results/context-efficiency-2026-09-11.md)
+found that targeted test excerpts could increase total reading; use this option
+only when it helps the investigation.
+
+### Optional context controls
+
+- `--related` adds ranked consumers, tests and imported fixtures from current
+  static imports, aliases and reexports. At most two consumer hops and six
+  locations per kind are shown. These are hints, not exhaustive coverage.
+- `--session <unique-id>` suppresses unchanged sections actually emitted earlier
+  in that session. Use a separate ID per agent. After context loss, use `--refresh`
+  with that ID or start a new one. Changed and budget-deferred sections remain
+  eligible; disposable session state lives under `reports/agent-context/`.
+
+Reread when needed to restore understanding or inspect changes, not merely
+because another guide links the same section. Split a large file only when
+repeated reads or co-changes demonstrate separable responsibilities; file size
+alone is not a refactoring target.
+
+### Bounded search
+
+`npm run search -- <literal> [paths...]` wraps `rg`, returning up to 40 filenames
+within 8 KB. Use `--excerpts` for matching lines and `--regex` for intentional
+regular expressions. Truncation is explicit; narrow the search or use scoped
+`rg` for more control. Use `--` before positional arguments beginning with `--`.
+
+Default searches respect ignore files and exclude raw assets, reports, build
+outputs, changelog, lockfiles, dependencies, Git data and worktrees. Explicit
+paths plus `--include-excluded` allow those artifacts. Broad searches also omit
+archived plans, agent history, generated source and asset hashes; an explicit
+path into those categories includes them without the flag. Current plans,
+canonical docs and authored manifests remain searchable. Dependency-hint
+inventories remain complete.
+
+## Verification reuse
 
 [CONTRIBUTING](../CONTRIBUTING.md#verification-reuse) owns eligible commands,
 input identity, receipt expiry, and the `ALCHEMY_VERIFY_FRESH=1` override.
 
-### Context-efficiency measurements
+## Context-efficiency measurements
 
 `npm run measure:agent-context -- --path <changed-path>` reports a stable preread byte proxy: always-loaded instructions, owner sections selected by the same discovery catalog as `context`, changed-file bytes, verification/test-path counts, and explicitly named artifact bytes. `--all-routes` compares one canonical fixture per verification route. These byte proxies do not measure reasoning, repeated reads or actual token usage.
 
@@ -40,7 +111,7 @@ Use the pinned [agent evaluations](../.agents/evals/README.md) for completed-tas
 
 Direct `lint`, `typecheck`, `typecheck:all`, and `deadcode` commands retain full logs and child exit codes through the compact wrapper. Their `:verbose` counterparts expose raw output; `typecheck:watch` remains interactive. Outer verification capture retains the raw diagnostics without nested summaries.
 
-### Terminal search and change review
+## Terminal search and change review
 
 `.rgignore` keeps raw media, generated catalogs, asset hashes, archived plans and lockfiles out of ordinary `rg` discovery. Use `rg --no-ignore-dot <pattern> <explicit-path>` to inspect them. Git inventories, asset validation and the custom discovery import graph remain complete; the wrapper owns its exclusions independently.
 

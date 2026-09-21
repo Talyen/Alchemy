@@ -72,7 +72,7 @@ are disabled there, so web deployments are deliberate (dashboard Redeploy or
 a Deploy Hook) rather than per-push. Desktop builds,
 installers, and Steam shipping:
 [`Docs/RELEASE.md`](./Docs/RELEASE.md) and the
-[command reference](./Docs/REFERENCE.md#script-command-reference).
+[command reference](./Docs/COMMANDS.md#script-command-reference).
 
 ## Layout
 
@@ -86,7 +86,7 @@ Feature layout and run-state ownership:
 - `tests/` — unit tests grouped by source owner; browser specs in `tests/e2e/specs/`, Electron checks in `tests/electron/`, and desktop unit tests in `tests/desktop/`; shared fixtures, page objects, and helpers support multiple suites
 - `performance/` — browser and desktop measurement scenarios and reporting tools; runtime instrumentation lives in `src/lib/performance/`
 - `Raw Assets/`, `src/assets/`, `public/` — authored inputs, bundled assets, and public assets; [asset workflows](./Docs/WORKFLOWS-ASSETS.md) identify generated outputs
-- `scripts/` — command entry points and shared tooling in `scripts/lib/`; see the [script implementation map](./scripts/README.md)
+- `scripts/` — command entry points, asset registries and pipeline helpers in `scripts/assets/`, and other shared tooling in `scripts/lib/`; see the [script implementation map](./scripts/README.md)
 - `eslint/` — custom lint rules and import-boundary definitions composed by `eslint.config.js`
 - `Docs/`, `.agents/` — canonical project documentation, audit procedures, plans, and agent skills and lessons
 - `Docs/design/` — retained art studies, approval records, and UI mockups; see the [design archive](./Docs/design/README.md)
@@ -109,18 +109,38 @@ Do not hand-edit generated outputs.
 
 Start with the document for your question:
 
-| Question                                | Document                                                                                      |
-| --------------------------------------- | --------------------------------------------------------------------------------------------- |
-| How do combat and progression work?     | [Battle rules and glossary](./Docs/GAME_RULES.md), [Armory](./Docs/ARMORY.md)                 |
-| Where does game state live?             | [Architecture](./Docs/ARCHITECTURE.md)                                                        |
-| How do I add content or change a flow?  | [Implementation workflows](./Docs/WORKFLOWS.md), [Asset workflow](./Docs/WORKFLOWS-ASSETS.md) |
-| Which UI and audio conventions apply?   | [UI system](./Docs/UI.md), [Audio workflow](./Docs/AUDIO.md)                                  |
-| Which commands and checks should I run? | [Developer reference](./Docs/REFERENCE.md), [Contributing](./CONTRIBUTING.md)                 |
-| How do I profile or ship the game?      | [Performance profiling](./Docs/PERFORMANCE.md), [Release](./Docs/RELEASE.md)                  |
+| Question                                     | Start here                                                                                                                                               |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| What does the terminology mean?              | [Glossary](./Docs/GLOSSARY.md)                                                                                                                           |
+| How do combat and progression work?          | [Game rules](./Docs/GAME_RULES.md), [Talents](./Docs/TALENT_RULES.md), [Armory](./Docs/ARMORY.md), [Unique items](./Docs/UNIQUE_ITEMS.md)                |
+| Where does state live, and how is it saved?  | [Architecture](./Docs/ARCHITECTURE.md), [Run state](./Docs/RUN_STATE.md), [Save compatibility](./src/features/alchemy/shared/storage/MIGRATIONS.md)      |
+| How do I add content or change a flow?       | [Workflow index](./Docs/WORKFLOWS.md), [Content authoring](./Docs/CONTENT_AUTHORING.md), [Assets](./Docs/WORKFLOWS-ASSETS.md)                            |
+| Which UI and audio conventions apply?        | [UI guide index](./Docs/UI.md#guide-index), [Audio](./Docs/AUDIO.md)                                                                                     |
+| Which commands and checks should I run?      | [Commands](./Docs/COMMANDS.md), [Contributing](./CONTRIBUTING.md), [Failure triage](./Docs/REFERENCE.md#failure-first-triage)                            |
+| How do I investigate balance or performance? | [Battle simulation](./Docs/REFERENCE.md#balance-simulation), [Full playthroughs](./Docs/PLAYTHROUGH_SIMULATION.md), [Performance](./Docs/PERFORMANCE.md) |
+| How do I ship?                               | [Release](./Docs/RELEASE.md), [Release setup](./Docs/RELEASE_SETUP.md)                                                                                   |
+| How do agents work here?                     | [AGENTS.md](./AGENTS.md), [Optional discovery tools](./Docs/AGENT_DISCOVERY.md), [Local skills](./.agents/skills/README.md)                              |
 
-[AGENTS.md](./AGENTS.md#find-the-owner) provides the full ownership map
-and agent working rules. Active plans and historical records are separate from
-these current behavior and workflow owners.
+[Audit guides](./Docs/Audits/README.md) are on-demand review procedures.
+[Plans](./Docs/Plans/README.md), [design studies](./Docs/design/README.md), and
+[agent history](./.agents/history/README.md) retain context; they do not override
+current behavior and workflow owners.
+
+### Keeping documentation useful
+
+Put each rule in one owner and link directly to it from indexes and workflows.
+Document intent, surprising behavior, compatibility, and decisions a reader
+cannot safely infer from names or types. Examples should show the supported
+path; catalogs, exact defaults, and command inventories belong in their code
+owners unless the prose needs them to explain behavior.
+
+When behavior changes, update its owner instead of appending a dated correction
+or another exception elsewhere. Remove obsolete guidance and redundant
+forwarding sections; preserve useful historical evidence as history. Keep
+checklists proportional to the task. `npm run docs:check` checks links, paths,
+commands, and discovery references; source review is still needed to establish
+that the instructions make sense. Documentation edits follow the same
+[handoff gate](./CONTRIBUTING.md#what-to-run-when-you-change) as other work.
 
 ## License
 

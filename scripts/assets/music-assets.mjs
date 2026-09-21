@@ -1,4 +1,4 @@
-import { validateRegistryEntries } from "../lib/registry-validation.mjs";
+import { validateRegistryEntries } from "./registry-validation.mjs";
 
 export const MUSIC_FILE_EXTENSIONS = new Set([".mp3", ".ogg", ".wav"]);
 

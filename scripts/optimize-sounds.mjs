@@ -20,7 +20,7 @@ import {
   processFreshEntry,
   resolveSourceHash,
   withOutputHash,
-} from "./lib/asset-manifest-cache.mjs";
+} from "./assets/asset-manifest-cache.mjs";
 import {
   ASSET_SCHEMA_VERSION,
   CURATED_SOUND_SETTINGS,
@@ -31,8 +31,8 @@ import {
   SOUND_TRANSFORM_CONCURRENCY,
   VORBIS_QUALITY,
   soundTransformSettings,
-} from "./lib/asset-constants.mjs";
-import { ensureOutputDir, resolvePipelinePaths, runManifestPipeline } from "./lib/asset-pipeline-runner.mjs";
+} from "./assets/asset-constants.mjs";
+import { ensureOutputDir, resolvePipelinePaths, runManifestPipeline } from "./assets/asset-pipeline-runner.mjs";
 import { failedMessagesResult } from "./lib/process-helpers.mjs";
 import { runPipelineScript } from "./lib/script-run.mjs";
 import { mapPool } from "./lib/map-pool.mjs";
@@ -157,7 +157,7 @@ async function ensureMp3Fallbacks(previousManifest, managedOggs, check) {
     throw error;
   }
   const oggs = [...managedOggs, ...curatedSoundFiles];
-  /** @type {Record<string, import("./lib/asset-manifest-cache.mjs").ManifestEntry>} */
+  /** @type {Record<string, import("./assets/asset-manifest-cache.mjs").ManifestEntry>} */
   const mp3Entries = {};
   const curatedOggEntries = {};
   const mp3Failures = [];

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
-import { ErrorLogViewer } from "./error-log-viewer";
+import { ErrorLogViewer } from "./options/error-log-viewer";
 
 import { FadeSlot } from "../../shared/ui/use-fade";
 import { ConfirmationDialog } from "../../shared/ui/dialogs";
@@ -19,7 +19,7 @@ import {
   type GameplayOptionsProps,
   type InterfaceOptionsProps,
   type SaveDataOptionsProps,
-} from "./options-panels";
+} from "./options/options-panels";
 
 import { Gamepad2, Monitor, PanelsTopLeft, Sliders, Volume2 } from "lucide-react";
 

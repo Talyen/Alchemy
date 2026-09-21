@@ -3,8 +3,8 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { allGameArt, essentialGameArt } from "@/lib/game-data";
 import { gearArtByDefinitionId } from "@/lib/game-data/gear-art";
-import { ART_PRESETS, QUALITY, WIDTH } from "../../scripts/lib/asset-constants.mjs";
-import { GEAR_SLOT_IDS } from "../../scripts/lib/gear-filenames.mjs";
+import { ART_PRESETS, QUALITY, WIDTH } from "../../scripts/assets/asset-constants.mjs";
+import { GEAR_SLOT_IDS } from "../../scripts/assets/gear-filenames.mjs";
 import { staticAssets } from "../../scripts/assets/asset-manifest.mjs";
 import { readText, repoRoot } from "./helpers";
 

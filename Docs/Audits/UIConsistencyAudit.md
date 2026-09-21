@@ -21,7 +21,7 @@ Structural screen twins → Simplification; Playwright rewrites → TestQuality;
 ## Hard stops
 
 - Do not rewrite battle battlefield/hand layout unsupervised in one pass; scope it as a migration phase.
-- Preserve the battle hand, immediate combat feedback, and [Armory click targeting](../UI.md#armory-crafting-and-salvage). Inspect targeting activation, pointer feedback, valid/invalid targets, confirmation, and cancellation against that contract; do not infer a drag-and-drop interaction model.
+- Preserve the battle hand, immediate combat feedback, and [Armory click targeting](../UI_BROWSING.md#armory-crafting-and-salvage). Inspect targeting activation, pointer feedback, valid/invalid targets, confirmation, and cancellation against that contract; do not infer a drag-and-drop interaction model.
 - Use the shared primitives in `src/components/ui` and the existing accessibility contract; audit signals do not authorize a new accessibility feature set.
 - Match coverage to the requested scope. A full pass inspects each major flow family (Armory, battle, shops/rewards, navigation/resume, and meta/setup) rather than silently limiting itself to one; a focused pass can stay within its requested family.
 

@@ -2,10 +2,10 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 import { toAssetExportName } from "./lib/kebab-to-camel.mjs";
-import { GENERATED_OUTPUTS } from "./lib/asset-constants.mjs";
-import { getAssetFiles, getGearFiles, toDefinitionId } from "./lib/gear-filenames.mjs";
-import { resolveRootDir } from "./lib/asset-pipeline-runner.mjs";
-import { getOptimizedManifestPath, readArtManifest, runSyncGenerated } from "./lib/sync-generated-helpers.mjs";
+import { GENERATED_OUTPUTS } from "./assets/asset-constants.mjs";
+import { getAssetFiles, getGearFiles, toDefinitionId } from "./assets/gear-filenames.mjs";
+import { resolveRootDir } from "./assets/asset-pipeline-runner.mjs";
+import { getOptimizedManifestPath, readArtManifest, runSyncGenerated } from "./assets/sync-generated-helpers.mjs";
 
 const rootDir = resolveRootDir(import.meta.url);
 const manifestPath = getOptimizedManifestPath(rootDir);

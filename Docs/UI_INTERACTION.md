@@ -1,4 +1,4 @@
-# Ui Interaction
+# UI interaction
 
 Canonical detail linked from [UI.md](./UI.md).
 
@@ -14,7 +14,7 @@ together. Enemy tooltip headers, outer padding, and preferred width remain
 independent of Game Size. Only the nested Trait list uses the game content scale
 as its baseline, matching Labyrinth and inspection Trait text, icons, and spacing;
 Tooltip Size also multiplies that baseline. Standard tooltips cap at 20rem of width;
-enemy tooltips prefer 32rem of width at the independent tooltip scale to give boxed Trait descriptions room to wrap. Placement recomputes width bounds when the stage or tooltip changes
+enemy tooltips prefer 32rem of width at the independent tooltip scale to give Trait descriptions room to wrap. Placement recomputes width bounds when the stage or tooltip changes
 size; position-only updates preserve the resolved width to avoid forced layout. Long
 descriptions can use available width to fit; tooltips never scroll or truncate.
 

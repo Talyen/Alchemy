@@ -1,10 +1,10 @@
 // Syncs package.json version into generated validation metadata consumed at build time.
 import { join } from "node:path";
 
-import { GENERATED_OUTPUTS } from "./lib/asset-constants.mjs";
+import { GENERATED_OUTPUTS } from "./assets/asset-constants.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { readRepoPackageJson } from "./lib/repo-package.mjs";
-import { resolveRootDir } from "./lib/asset-pipeline-runner.mjs";
+import { resolveRootDir } from "./assets/asset-pipeline-runner.mjs";
 import { writeTextIfChanged } from "./lib/write-text-if-changed.mjs";
 
 export async function syncVersionMetadata({ check = false } = {}) {

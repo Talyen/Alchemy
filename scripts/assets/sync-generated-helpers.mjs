@@ -1,10 +1,10 @@
 import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 
-import { staticAssets, validateAssetRegistry } from "../assets/asset-manifest.mjs";
+import { staticAssets, validateAssetRegistry } from "./asset-manifest.mjs";
 import { GEAR_SLOT_IDS } from "./gear-filenames.mjs";
 import { getManagedManifestPath } from "./asset-pipeline-runner.mjs";
-import { writeTextIfChanged } from "./write-text-if-changed.mjs";
+import { writeTextIfChanged } from "../lib/write-text-if-changed.mjs";
 
 export function getOptimizedManifestPath(rootDir) {
   return getManagedManifestPath(rootDir, "art");

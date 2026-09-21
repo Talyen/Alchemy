@@ -5,8 +5,8 @@ import path from "node:path";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const fixture = vi.hoisted(() => ({ root: "", convert: vi.fn<(args: string[]) => Promise<void>>() }));
-vi.mock("../../scripts/lib/asset-pipeline-runner.mjs", async (importOriginal) => {
-  const original = await importOriginal<typeof import("../../scripts/lib/asset-pipeline-runner.mjs")>();
+vi.mock("../../scripts/assets/asset-pipeline-runner.mjs", async (importOriginal) => {
+  const original = await importOriginal<typeof import("../../scripts/assets/asset-pipeline-runner.mjs")>();
   const { pathToFileURL } = await import("node:url");
   const nodePath = await import("node:path");
   return {

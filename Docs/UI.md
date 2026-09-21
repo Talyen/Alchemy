@@ -3,27 +3,25 @@
 Canonical owner for UI placement, primitives, interaction, motion, tooltips, and
 Alchemy's accessibility stance. Screen wiring checklists remain in
 [WORKFLOWS.md](./WORKFLOWS.md#adding-a-new-screen). Armory interaction lives
-[below](#armory-crafting-and-salvage); Gear data and mutation rules live in
+[in the browsing guide](./UI_BROWSING.md#armory-crafting-and-salvage); Gear data and mutation rules live in
 [ARMORY.md](./ARMORY.md).
 
 ## Guide index
 
-- [Battle feedback and inspection](./UI_BATTLE.md)
-- [Browsing, rewards, Options, and recap](./UI_BROWSING.md)
-- [Labyrinth map](./UI_LABYRINTH.md)
-
-- Shared primitives: [placement](#placement-and-boundaries), [components and item shine](#component-conventions), [buttons](#buttons-and-interactive-surfaces), [tooltips](#hover-tooltips), [accessibility](#accessibility-stance).
-- Motion: [overlays](#overlay-lifecycle), [screen fades](#screen-fade-motion), [battle feedback](#battle-feedback), [battle motion](#battle-motion).
-- Sizing and browsing: [display sizing](#display-sizing), [Collection and Armory](#collection-and-armory-browsing), [card removal](#card-removal-browsing).
-- Inspection: [Deck and piles](#deck-and-pile-inspection), [enemies](#enemy-inspection).
-- Screen behavior: [rewards and Wishes](#rewards-and-wishes), [Options](#options), [Labyrinth](#labyrinth-map), [Corrupted text](#corrupted-card-text), [Armory crafting and salvage](#armory-crafting-and-salvage).
-- [Verification](#verification).
+| Topic                                                          | Guide                              |
+| -------------------------------------------------------------- | ---------------------------------- |
+| Shared components, buttons, sizing, colors, accessibility      | This page                          |
+| Hover tooltips, modal input, focus and dismissal               | [Interaction](./UI_INTERACTION.md) |
+| Screen fades, battle and equipment motion, conditional options | [Motion](./UI_MOTION.md)           |
+| Combat feedback, deck and enemy inspection, Corrupted text     | [Battle UI](./UI_BATTLE.md)        |
+| Collection, Armory, rewards, Wishes, Options and recap         | [Browsing](./UI_BROWSING.md)       |
+| Discovery, map layout and room inspection                      | [Labyrinth](./UI_LABYRINTH.md)     |
 
 ## Placement and boundaries
 
 - `src/components/ui/` owns generic Tailwind/Radix primitives with no game-domain knowledge. These components receive domain data through props and do not import `@/features` or subscribe to gameplay stores.
 - `src/features/alchemy/shared/ui/` owns reusable game widgets such as cards, choice buttons, status icons, actor panels, and map nodes. They receive run, battle, and session data through props. Presentation-only `ui-store` state is allowed.
-- Screens and feature-local presentation stay with their owning feature until at least two feature domains need the same widget. Collection presentation belongs in `meta/screens/collection/`; shop purchase and service widgets belong in `run-loop/shop/ui/`. Mystery outcome badges belong in `run-loop/screens/mystery/`; Options controls belong beside the Options panels in `meta/screens/`. Import shared widgets directly from their owning modules.
+- Screens and feature-local presentation stay with their owning feature until at least two feature domains need the same widget. Collection presentation belongs in `meta/screens/collection/`; shop purchase and service widgets belong in `run-loop/shop/ui/`. Mystery outcome badges belong in `run-loop/screens/mystery/`; Options panels, controls, and the error-log viewer belong in `meta/screens/options/`. Import shared widgets directly from their owning modules.
 - Static catalogs used by shared game widgets come from `shared/config/game-data-catalog.ts`, not the token `config/` barrel.
 
 Use `ScreenShell`, `TitledScreenShell`, `ScreenHeader`, and `PageLayout` for page structure. Use shared chrome before recreating buttons, progress bars, switches, cards, or tooltips.
@@ -38,7 +36,7 @@ Use `ScreenShell`, `TitledScreenShell`, `ScreenHeader`, and `PageLayout` for pag
 - Item title and affix palettes follow [item shine](#item-shine).
 - Shop prices (over card art and inside buttons) use unboxed icon and amount standardized on `text-xl font-semibold text-gold-pale tabular-nums` with a 24px (`h-6 w-6`) coin icon. Over card art, prices float directly on the illustration using multi-layered black contour drop-shadows (`drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] drop-shadow-[0_0_2px_rgba(0,0,0,0.95)]`) without background containers or art fades; inside buttons, prices flow naturally as inline text matching the button's typography. Unaffordable prices transition to `text-muted-foreground`.
 - `TraitBox` owns unboxed Trait rows, colored icons, keyword descriptions, and title shine across Labyrinth map details and enemy hover/inspection. Traits have no individual border, background, or box padding. Encounter icon themes live in shared configuration and also drive map effects. Enemy Traits and encounter modifiers form one deduplicated list; inspection uses two equal columns at 40rem of available content width, with a single-column fallback and full-width sole Traits. Hover and map Traits stay stacked. Apply inline-size containment only to the inspection layout: shrink-to-fit tooltips need their contents to contribute intrinsic width.
-- Modal interaction and dismissal follow [Overlay lifecycle](#overlay-lifecycle).
+- Modal interaction and dismissal follow [Overlay lifecycle](./UI_INTERACTION.md#overlay-lifecycle).
 
 ### Item shine
 
@@ -91,11 +89,7 @@ Battle pile artwork, the gold counter, and the main menu logo use the standard 1
 
 Artwork surfaces resolve their clipping radius from the same inline theme token and local content scale as the outer frame. The artwork radius subtracts the frame width so portrait and landscape corners meet in resting, hovered, and selected states.
 
-Labyrinth's rectangular art nodes reuse `Surface`, shared shimmer, and Shine Border. Hover, keyboard focus, and selection enlarge only the emphasized tile to 106%; unknown tiles stay neutral. Completed art remains subdued. Reduced motion makes emphasis immediate and shine static. See [Labyrinth map](#labyrinth-map) for discovery and movement.
-
-## Hover tooltips
-
-See [Hover tooltips](./UI_INTERACTION.md#hover-tooltips).
+Labyrinth's rectangular art nodes reuse `Surface`, shared shimmer, and Shine Border. Hover, keyboard focus, and selection enlarge only the emphasized tile to 106%; unknown tiles stay neutral. Completed art remains subdued. Reduced motion makes emphasis immediate and shine static. See [Labyrinth map](./UI_LABYRINTH.md#labyrinth-map) for discovery and movement.
 
 ## Accessibility stance
 
@@ -104,10 +98,10 @@ feature set beyond semantic robustness. Preserve semantic buttons,
 programmatic names and states, keyboard behavior supplied by shared primitives,
 and `aria-hidden` on decorative art. Preserve and reuse shared dialog focus
 containment and restoration for confirmations, card inspection, and enemy
-inspection, following [overlay lifecycle](#overlay-lifecycle). New focus behavior
+inspection, following [overlay lifecycle](./UI_INTERACTION.md#overlay-lifecycle). New focus behavior
 outside that contract, screen-reader announcement systems, contrast tooling,
 and per-component reduced-motion variants require a product decision.
-Preserve the existing [Armory reduced-motion handling](#armory-crafting-and-salvage).
+Preserve the existing [Armory reduced-motion handling](./UI_BROWSING.md#armory-crafting-and-salvage).
 Shared motion accommodations live in
 `src/styles/keyframes.css` and `src/styles/components.css`; Armory also disables
 inventory movement and crafting feedback motion locally.
@@ -117,14 +111,6 @@ controls marked `aria-hidden`. Prefer native buttons with exposed state (for
 example, Error Log expansion uses `aria-expanded`). Backdrops and click shields
 may use line-scoped, explained exceptions: their keyboard behavior belongs to
 the existing Escape handler and child controls, not an extra action on the wrapper.
-
-## Overlay lifecycle
-
-See [Overlay lifecycle](./UI_INTERACTION.md#overlay-lifecycle).
-
-## Screen fade motion
-
-See [Screen fade motion](./UI_MOTION.md#screen-fade-motion).
 
 ## Display sizing
 
@@ -160,54 +146,6 @@ cannot receive pointer selection. Keyboard focus uses the native card buttons.
 Enlarged actors shift upward to keep health and battle controls clear. Backgrounds
 fill the frame.
 
-## Battle feedback
-
-See [Battle feedback](./UI_BATTLE.md#battle-feedback).
-
-## Battle motion
-
-See [Battle motion](./UI_MOTION.md#battle-motion).
-
-## Deck and pile inspection
-
-See [Deck and pile inspection](./UI_BATTLE.md#deck-and-pile-inspection).
-
-## Enemy inspection
-
-See [Enemy inspection](./UI_BATTLE.md#enemy-inspection).
-
-## Collection and Armory browsing
-
-See [Collection and Armory browsing](./UI_BROWSING.md#collection-and-armory-browsing).
-
-## Card-removal browsing
-
-See [Card-removal browsing](./UI_BROWSING.md#card-removal-browsing).
-
-## Rewards and Wishes
-
-See [Rewards and Wishes](./UI_BROWSING.md#rewards-and-wishes).
-
-## Options
-
-See [Options](./UI_BROWSING.md#options).
-
-## Labyrinth map
-
-See [Labyrinth map](./UI_LABYRINTH.md#labyrinth-map).
-
-## Corrupted card text
-
-See [Corrupted card text](./UI_BATTLE.md#corrupted-card-text).
-
-## Armory crafting and salvage
-
-See [Armory crafting and salvage](./UI_BROWSING.md#armory-crafting-and-salvage).
-
-### Equipment movement animations
-
-See [Equipment movement animations](./UI_MOTION.md#equipment-movement-animations).
-
 ## Verification
 
 Use the changed-path route and [test value policy](../CONTRIBUTING.md#test-value-and-coverage-strategy) in CONTRIBUTING. Cover shared interaction behavior and representative browser risks; do not multiply UI tests for every mechanic or cosmetic variant. Interaction
@@ -224,10 +162,6 @@ animated Canvas backend. Zero intensity hides both layers, and motion-disabled
 preferences keep their existing unanimated appearance without color-animation
 frames. Availability belongs to the renderer lifecycle; failures are logged,
 not shown in a player-facing dialog.
-
-## Run journey recap
-
-See [Run journey recap](./UI_BROWSING.md#run-journey-recap).
 
 ## Display options and screen effects
 

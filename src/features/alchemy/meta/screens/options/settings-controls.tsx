@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { controlLabelClass, settingsPanelShellClass } from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
-import type { AspectRatioOption, DisplayMode } from "../../shared/types";
+import type { AspectRatioOption, DisplayMode } from "../../../shared/types";
 
 interface SettingsSelectProps<T extends string> {
   id: string;

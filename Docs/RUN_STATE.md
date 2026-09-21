@@ -76,7 +76,7 @@ Finding Rhythm; Health costs do not award it.
 
 `reward-commands.ts` owns selection validation, grants, and advancement to the next reward bundle in one transaction. Its claim lock prevents re-entry until routing settles, but save encoding uses the already-advanced bundle rather than inferring which reward was awarded from the lock. Legacy `companion-reward` saves remain readable. `victory-commands.ts` owns victory rewards and the Wildwood phase change, rejects repeated completion, and enters the rewards activity atomically. The matching run-flow modules own navigation and feedback.
 
-Activity encoding follows the [persistence API](./RUN_STATE.md#persistence-api); [navigation data flow](./ARCHITECTURE.md#data-flow) defines when preparation commits.
+Activity encoding follows the [persistence API](./RUN_STATE.md#persistence-api); [navigation data flow](./BATTLE_CONTROLLERS.md#data-flow) defines when preparation commits.
 
 ## Anti-patterns
 

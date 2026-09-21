@@ -2,7 +2,7 @@
 
 Canonical detail linked from [GAME_RULES.md](./GAME_RULES.md).
 
-### Talent manifests and progression
+## Talent manifests and progression
 
 Talent tuning follows repeatability, not merely whether a condition exists. Frequent rewards stay small; once-per-combat opening grants and bounded opening/finishing windows can remain larger. Shatter and Exploit Weakness retain double damage: active Stun/Freeze blocks further crowd control, and recovery starts their shared three-turn immunity. Do not balance around simultaneous Stun and Freeze as an ordinarily reachable state. Resource and Health threshold rewards can retrigger after returning across their threshold; they are not once-per-combat rewards.
 
@@ -31,16 +31,16 @@ Incoming `receiveHalf*` resist talents use `scaleReceivedPlayerDamage` in `src/l
 
 Run-end keyword cards intentionally show level + XP bar only; the Talents screens own the unspent-point indicator. Dodge earns 1 XP per successful hero Dodge through `awardBattleDodgeXP`, using the battle counter delta in the same command that persists the resolved enemy turn. Ordinary card keyword XP and run-end multipliers still apply. Random damage grants the Physical keyword; a damage-type pool grants every possible type rather than its placeholder type. Never count combat text or award XP again while resuming a pending transition.
 
-### Talent action rewards
+## Talent action rewards
 
-#### Wishes and Mana
+### Wishes and Mana
 
 - **Divine Intervention** — playing a Holy card arms one additional choice for the next Wish offering, before the card’s effects resolve. Repeated Holy plays do not stack it. The readiness survives turn changes and save/resume, is spent when the first offering is generated (not when a card is chosen), and ends with combat. A Holy/Wish card can use it immediately; repeated effects do not re-arm it. Existing queued offerings remain unchanged. Add to Generous Wish and other choice bonuses using normal unique-card selection.
 - **Wish choices** — Discovery reserves one eligible undiscovered card when available and fills remaining unique choices normally. Generous Wish expands every offer. Powerful Wish upgrades both the immediate and matching scheduled effects when one description number covers multiple turns. Roads Not Taken pays Block only after a valid selection, based on the other cards in that offer, including queued Wishes and full hands.
-- **Mana restoration and rewards** — Wellspring checks Mana when the player ends their turn; enemy-phase gains or spending cannot change eligibility. Mana Moth then grants 1 extra Mana without increasing Mana Crystals. Ordinary restoration preserves existing overflow but cannot add beyond the cap. A Mana Crystal loss at the minimum of one crystal changes neither the cap nor current Mana; an actual crystal loss still clamps current Mana to the new cap. Arcane Mending heals once per positive Mana grant, including Wishes and combat bonuses; restoration at the cap grants no healing.
+- **Mana restoration and rewards** — Wellspring checks Mana when the player ends their turn; enemy-phase gains or spending cannot change eligibility. Mana Moth then grants 1 extra Mana without increasing Mana Crystals. Ordinary restoration preserves existing overflow but cannot add beyond the cap. A Mana Crystal loss at the minimum of one crystal changes neither the cap nor current Mana; an actual crystal loss still clamps current Mana to the new cap. Arcane Mending heals only when a positive Mana grant starts from zero, including Wishes and combat bonuses; restoration at the cap grants no healing.
 - **Mana from Heaven** — every Wish banks 1 Mana for the next player turn, including Wishes during enemy actions and scheduled effects. The bank pays after the normal Mana refill, permits overflow, triggers normal Mana-gain healing, and clears before new turn-start Wishes can add to it. Haste turns qualify. Existing Gear Wish Mana remains immediate.
 
-#### Card plays and costs
+### Card plays and costs
 
 - **Card base costs** — every playable catalog card costs 1 Mana. Effects may make a card free; valid saved cost overrides remain supported. Richer cards trade output, timing, conditions, or Consume rather than a higher base cost.
 - **Card payment** — `card-cost-rules.ts` calculates cost, affordability, Block payment, and all cost-only allowance changes (including Unique Gear) once against the original state. `card-play.ts` applies that payment result; Unique damage preparation must not independently consume cost-only allowances. Combined damage/free-card opportunities such as Wildheart remain damage-owned. A successful play consumes those flags, prepares unique effects, then pays resources before resolving effects. Preview checks are pure and never cache payment for a later play. Saved zero-cost cards do not spend first-card-free perks, Quickdraw, Threefold Grace, The Knight’s Answer, or an armed cost reduction; an armed reduction survives when a first-card-free perk pays the cost.
@@ -53,7 +53,7 @@ Run-end keyword cards intentionally show level + XP bar only; the Talents screen
 - **Consume reactions** — resolving a card twice still Consumes one card and grants Insatiable one bonus. Consuming Gear adds its rolled amount to existing Burn damage packets on cards with Consume. Rotgut adds 2 to Poison damage packets on Potions. Neither adds a separate hit or grants damage to a utility card. Both use normal card damage scaling and defenses. Feast grants 4 Block when a Potion’s own healing effect moves the player from injured to full Health; non-Potion healing, passive healing, and Leech do not qualify.
 - **Talent progression** — Row eligibility requires every talent in prior rows. Purchased talents retain their IDs and progress when rows are reordered; see [save baseline](../src/features/alchemy/shared/storage/MIGRATIONS.md#supported-baseline).
 
-#### Attack bonuses
+### Attack bonuses
 
 - **Cull the Weak** — damage effects of Leech-keyword cards gain an additive 25% damage bonus when enemy Health immediately before that effect is strictly below half maximum. Recheck each hit; use normal scaling, rounding, mitigation, and Leech healing. Companion attacks, unrelated talent hits, and status ticks do not receive this card bonus.
 - **Attack bonuses** — Coordinated Strike accumulates for the Companion's next attempted damage packet; utility actions retain it. Sanguine Overflow requires actual Leech healing from below full to full Health and readies one bonus, refreshed rather than stacked. Card damage bonuses are consumed on the first attempted damage packet, including Dodge; Sanguine Overflow remains ready if a chance branch or scheduled effect attempts no attack. Additional damage types resolve only if that packet deals positive damage. Equal-to-resource attacks also receive their bonus, including Opening and other Dodge-earned Physical bonuses.
@@ -63,9 +63,9 @@ Run-end keyword cards intentionally show level + XP bar only; the Talents screen
 - **Pyric Gear** — adds its advertised percentage per Mana Crystal to the additive Burn damage multiplier, before rounding, pacing, critical hits, and defenses. It is not a flat fraction of the crystal count. Bloodember Pendant shares this bonus with Bleed.
 - **Nature damage gear** — Bloomwoven rolls for each positive Nature damage packet that lands, including Companion attacks; Dodge, fully mitigated hits, and unselected chance branches cannot restore Mana.
 
-### Talent event rules
+## Talent event rules
 
-#### Selective feedback rewards
+### Selective feedback rewards
 
 - **Eligibility and feedback** — evaluate resource and Health conditions before the triggering event's reward chain, with matching Talent/Gear amounts added together. An earlier reward cannot disable its matching counterpart or enable a different conditional reward in that event. Do not hide earned combat text; matching target/kind/stat events still merge normally. Each independent proc uses seeded world RNG, only when its source and basic target requirements exist.
 - **Dodge payouts** — Feint has a 25% chance for 2 Forge; Lucky Foot a separate 25% chance for 4 Gold. Pack Weave has a 50% chance to activate the Companion; Bladedance has a 25% chance to draw and play a random card. Perfect Timing and Wardplate require no Armor, Nimble requires no Block, and Winded requires below half Health. Riposting has a 50% chance for its Physical hit; Fleeting requires the attacker to be Bleeding before Dodge rewards. Catch Breath, Footwork, and other unrelated Dodge rewards retain their existing behavior.
@@ -73,20 +73,20 @@ Run-end keyword cards intentionally show level + XP bar only; the Talents screen
 - **Holy and healing payouts** — Blessed Leech requires below half Health; Radiant Guard requires full Health before the Holy hit's rewards. Sun-Struck Shield reflects only attacks that deplete positive Block, using Block lost before defensive rewards refill it. Arcane Mending heals only for a positive Mana gain from zero, including Mana Crystal gains. Overflow converts only direct card healing's excess to Block, excluding Leech and incidental healing; Clean Slate retains its separate Leech eligibility.
 - **Other payouts** — Coinmail requires no Block before a combat Gold gain. Watchdog requires no Block and Kinbound below half Health before the Companion action. Wishborn requires below half Health and Wishwoven zero Mana at the start of each Wish; Wishfire requires an enemy already Burning before that Wish's rewards. Wishful independently rolls 50% for its Gold; Wishful Trinket rolls 50% to grant a reward, then uses its existing Forge/Armor selection. Talent-only Wish rewards retain their other conditions.
 
-#### Triggered and copied damage
+### Triggered and copied damage
 
 - **Typed talent procs** — Tainted Wound, Toxic Pollen, Scorching Light, and Virulent Leech have a 10% chance to deal half the triggering hit’s resolved damage as Poison/Burn damage. Broadhead, Lacerate, and Bloodletting have a 10% chance to deal one quarter as Bleed damage. Use the ordinary status multiplier (currently one stack per Bleed damage), without changing the global Bleed rule. Derived hits round their base amount, apply target resistance, Block, and applicable Armor once, and do not reuse offensive bonuses, pacing, critical strikes, or reserved card bonuses. Fixed talent hits use triggered-damage pacing and vulnerabilities. Secondary talent hits cannot roll the new damage-generating chance talents; intrinsic statuses, healing, resource rewards, and crowd-control consequences still resolve.
 - **Copied damage** — Parting Cut copies half the resolved Physical damage as Bleed; Riposte copies a quarter of the dodged attack as Physical damage. Damage-matching Stun procs from Physical/Burn/Nature/Poison hits or Companion damage still copy the full amount. These effects use the same derived-hit resolver. Their input damage has already been scaled; they cannot apply Forge, critical strikes, damage bonuses, or fight pacing a second time. Footwork grants half the dodged attack's already-scaled amount as Block without pacing it again. Viper’s Courtesy retains its separately documented typed-bonus behavior in [Unique items](./UNIQUE_ITEMS.md#combat-semantics).
 - **Triggered damage** — Burning Wish resolves its talent damage through the typed trigger path, including Burn buildup, mitigation, Armor decay, and kill rewards; Gear-only Wish pulses retain their existing behavior. Mana Flare adds Burn buildup and decays Armor from its resolved damage. Icy Heart checks enemy half-Health reactions before kill rewards. Scaled damage against an already defeated enemy does nothing, including its damage rewards and reaction callbacks.
 
-#### Healing and Leech
+### Healing and Leech
 
 - **Mending** — increases every battle Health grant once, including card healing, Leech, cleansing, Gear/Trinket healing, and the combined start-of-combat heal. Opening healing retains its unpaced amount, respects the Health cap, and triggers ordinary healing reactions. Apply its multiplier after source-specific healing bonuses; overheal rewards use the increased amount.
 - **Deep Siphon** — explicit card Leech restores 10% more Health on every effect, including repeated and scheduled card effects. Incidental talent, Gear, and Companion Leech does not receive the bonus or spend a first-card opportunity.
 - **Healing and reaction sources** — Blood Debt adds its missing-Health bonus to every player Leech source before Gear and encounter healing bonuses, including status ticks, detonations, Companion Leech, and Blessed Leech. Mana Siphon and Siphoning Gear each roll once per positive player Leech healing event, even at full Health; damage-only Leech-hit rewards remain limited to hits. Sanguine Gear increases Leech healing once for every source, including Blessed Leech, Companion Leech, Parasitic Bloom, and Bloodfire Signet. Affliction Siphon increases Leech healing against Poisoned or Bleeding enemies once, including normal Bleed ticks and detonations. Clean Slate reacts only to overhealing from card healing effects or a card's explicit Leech, including Gear damage repeats and echoes, never healing awarded by cleansing, gear, or talents.
 - **Enemy healing reduction** — Necrosis and Mortal Wound each halve every enemy Health grant while their matching status is present, including Leech, Regeneration, Overgrowth, and Second Wind. Apply each reduction once, before fight pacing, with nearest-integer rounding.
 
-#### Armor, Forge, and Gold
+### Armor, Forge, and Gold
 
 - **Armor rewards** — Armor earned during battle, including Dodge, Armor Siphon, and crowd-control Gear rewards, uses Reinforced, Last Stand, Armored Surge, and Purification. Armor remains unpaced; stealing removes only the stated amount from the enemy before applying hero gain bonuses.
 - **Reactive Guard** — a surviving hero gains its Block reward whenever positive Armor falls to zero, including normal decay, Sunder, Caustic, and Banshee's purge. Partial removal and removal from zero grant nothing; Ironclad prevents decay but not explicit removal.
@@ -96,11 +96,11 @@ Run-end keyword cards intentionally show level + XP bar only; the Talents screen
 - **Gold rewards** — Coinmail grants a quarter of actual combat Gold after Gold bonuses, rounded to nearest Block; victory payouts do not trigger it. Fetch adds its reward when a Companion is present at victory, including Wildwood.
 - **Lucky Clover** — rolls on positive Nature damage, including Thorns retaliation and triggered Nature hits. Physical damage from Stun or Freeze Gear cannot grant its Gold.
 
-#### Turn rewards
+### Turn rewards
 
 - **Turn rewards** — Dark Recovery records zero Mana at player turn end and grants its extra Mana at the next player turn, allowing overflow and normal Mana-gain healing. Enemy-phase Mana changes cannot alter that recorded reward. Bloodrush draws only from a damaging natural Bleed tick (Alchemy ticks enemy Bleed at enemy turn start), excluding applications and detonations. Thaw Dividend draws when surviving enemy Freeze naturally expires; immunity and enemy death grant nothing.
 
-### Distinct talent and card effects
+## Distinct talent and card effects
 
 - **Delayed cards** — Prayer costs 1 Mana and Consumes after Wish and healing. Stargaze deals 1 Freeze damage and resolves Wish 1 immediately; Bread restores Health immediately and does not queue a future pulse. Other delayed effects retain their source card ID, Consume property, and tags so card-specific, Consume, and Archery bonuses still apply. They remain battle-local, survive save/resume, and do not execute after battle completion.
 - **Delayed healing** — scheduled card healing retains card-healing reactions such as Clean Slate. Check that the battle remains active before each queued pulse and subsequent Gear regeneration, including after turn-start Trinket damage. Plague Doctor’s Mask damage preserves bonuses reserved for the next attack; its legitimate kill rewards still resolve.

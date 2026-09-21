@@ -24,7 +24,7 @@ Collection preserves per-tab memory and honors explicit parent page changes.
 Armory resets on context changes. Selected or first-visible items anchor resize;
 empty lists retain page zero and a usable capacity. Card pickers preserve filtered
 indices and offered-choice counts. No save shape or game rule changed. Durable
-behavior lives in [UI browsing](../../UI.md#collection-and-armory-browsing).
+behavior lives in [UI browsing](../../UI_BROWSING.md#collection-and-armory-browsing).
 
 ## Verification recorded at implementation
 

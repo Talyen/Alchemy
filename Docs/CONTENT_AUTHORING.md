@@ -66,13 +66,10 @@ Each enemy has three distinct canonical card IDs in `abilityIds` and 1–3 uniqu
 
 ## Add a new enemy
 
-Assign three distinct canonical card IDs in `abilityIds`. Each card must satisfy
-the supported enemy subset in [enemy abilities](./GAME_RULES.md#enemy-abilities-and-traits);
-[content validation](../src/lib/content-validation/validators.ts) checks the
-references and supported effects, and [the enemy schema](../src/lib/content-validation/schemas.ts)
-checks count and uniqueness. Enemy-trait descriptions must mention their
-mechanical term ([enemy-trait parity](../src/lib/content-validation/card-parity/enemy-trait-parity.ts)),
-and titles/descriptions must pass the typography rules. Run `npm run content:audit` before handing off.
+Follow the [repertoire requirements](#enemy-repertoire-requirements). Trait
+descriptions must mention their mechanical term; the [parity validator](../src/lib/content-validation/card-parity/enemy-trait-parity.ts)
+and typography checks enforce the copy contract. Run `npm run content:audit`
+before handing off.
 
 - **1. Define entry in `enemyBestiary` (`id` becomes `EnemyId`)** — `src/lib/game-data/compendium/enemies.ts`
 - **2. Set `enemyType` (`normal`/`elite`/`boss`)** — same file
@@ -111,7 +108,7 @@ Run `npm run content:audit` before handing off (companion record checks, summon-
 
 ## Add a new talent
 
-Behavioral contracts: [Talent manifests and progression](./GAME_RULES.md#talent-manifests-and-progression). Read the applicable combat rule when adding a new mechanic.
+Behavioral contracts: [Talent manifests and progression](./TALENT_RULES.md#talent-manifests-and-progression). Read the applicable combat rule when adding a new mechanic.
 
 Use `addEffect` for stackable numeric bonuses, including the same bonus written by two keywords. Use `setEffect` for flags, identity multipliers (defaults that are not zero, e.g. `healMultiplier`), and exclusive thresholds. Array fields (e.g. `healthThresholdArmor`) concatenate on `set`.
 

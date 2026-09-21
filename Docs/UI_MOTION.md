@@ -1,4 +1,4 @@
-# Ui Motion
+# UI motion
 
 Canonical detail linked from [UI.md](./UI.md).
 

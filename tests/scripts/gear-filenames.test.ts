@@ -10,7 +10,7 @@ import {
   slugifyGearName,
   toDefinitionId,
   toGearTarget,
-} from "../../scripts/lib/gear-filenames.mjs";
+} from "../../scripts/assets/gear-filenames.mjs";
 
 describe("gear filename conventions", () => {
   it("slugs display names without apostrophe fragments", () => {

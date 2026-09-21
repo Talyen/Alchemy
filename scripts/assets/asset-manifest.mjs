@@ -2,7 +2,7 @@ import { cardAssets } from "./card-assets.mjs";
 import { contentAssets } from "./content-assets.mjs";
 import { coreAssets } from "./core-assets.mjs";
 import { talentAssets } from "./talent-assets.mjs";
-import { validateRegistryEntries } from "../lib/registry-validation.mjs";
+import { validateRegistryEntries } from "./registry-validation.mjs";
 
 export const staticAssets = [...coreAssets, ...cardAssets, ...contentAssets, ...talentAssets];
 

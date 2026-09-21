@@ -13,7 +13,7 @@ Establish a material cost through runtime profiling, reproducible latency/jank, 
 
 - Preserve the [boot and loading contract](../ARCHITECTURE.md#boot-and-loading); asset weight at boot is not itself a finding.
 - Do not hand-add `useMemo` / `useCallback` / `React.memo` speculatively — the React Compiler owns memoization. Follow the `react-hooks` diagnostics configured in `eslint.config.js`; a compiler bailout on a hot component is a lead to investigate for measurable cost.
-- Preserve [battle feedback and motion](../UI.md#battle-feedback) and [Armory targeting feedback](../UI.md#armory-crafting-and-salvage). A measured cost alone does not authorize reducing the intended presentation.
+- Preserve [battle feedback and motion](../UI_BATTLE.md#battle-feedback) and [Armory targeting feedback](../UI_BROWSING.md#armory-crafting-and-salvage). A measured cost alone does not authorize reducing the intended presentation.
 - Do not move battle simulation into Workers unless Architecture already requires it (propose only).
 - Do not narrow a confirmed hot path to its React leaf when state selection, repeated computation, serialization, asset work, or upstream event frequency is the cause.
 

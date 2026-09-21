@@ -4,19 +4,22 @@ Shared conventions: [UI](./UI.md).
 
 ## Collection and Armory browsing
 
-Collection and Armory browsing measure their available grid width and scaled
-tile size. Page size is two rows times the resolved column count, capped at eight
-portrait or six landscape columns. Resize retains the selected or first visible
-item. Grid measurements retain available width and scale so switching between
-portrait and landscape tabs resolves capacity before page synchronization.
-Pagination shares its bounds and resize anchoring in `shared/ui/pagination.ts`;
-`use-pagination.ts` owns local and parent-synchronized page transitions. Clamping
-updates the retained page, so growing a list does not revive a removed page.
-Armory context changes reset to the first page; Collection keeps per-tab page
-memory. Parent page changes take precedence over resize anchoring. Collection
-and card pickers report automatic corrections through their existing callbacks
-after commit, once per correction, without notifying for acknowledged pages.
-Empty lists use page zero with one logical page and a minimum capacity of one.
+Collection measures available grid width and scaled tile size. Page size is two
+rows times the resolved column count, capped at eight portrait or six landscape
+columns. Resize retains the selected or first visible item; switching artwork
+orientation resolves capacity before page synchronization. Collection keeps
+per-tab page memory.
+
+Armory uses six-item pages and retains working order and page per hero and slot
+while mounted. Sorting resets that category to page zero; equipment movement
+preserves positions according to [Armory ordering](./ARMORY.md#inventory-ordering-and-equipment-movement).
+Do not apply Collection's adaptive page-size policy to this inventory.
+
+Shared pagination bounds live in `shared/ui/pagination.ts`; `use-pagination.ts`
+owns local and parent-synchronized transitions. Parent page changes take
+precedence over resize anchoring. Collection and card pickers report automatic
+corrections through their callbacks after commit, once per correction. Empty
+lists use page zero with one logical page and a minimum capacity of one.
 Offered choices remain content-owned, independent of browsing capacity.
 
 Activating a Bestiary portrait keeps its attack sound and plays its registered boss
@@ -101,10 +104,6 @@ Currency artwork shares one 5rem size between the crafting strip, pointer attach
 Selecting an item for salvage immediately ends targeting and clears its cursor and highlights. Confirm, Cancel, and Escape return to browsing. The dialog uses the heading “Salvage,” a wrapping shining item name in “Salvaging [item] will yield:”, a portrait, full-size currency rewards, and an equipped-character warning where applicable. Confirmations focus Cancel, contain keyboard focus, and disable actions during exit.
 
 Crafting consumes one currency per activation. Escape cancels targeting; invalid targets explain their restriction in tooltips and after selection. Success shows actual before/after affix descriptions in a dismissible panel pinned inside the viewport, a brief item pulse, and count feedback only when quantities change.
-
-### Equipment movement animations
-
-See [Equipment movement animations](./UI_MOTION.md#equipment-movement-animations).
 
 ## Run journey recap
 

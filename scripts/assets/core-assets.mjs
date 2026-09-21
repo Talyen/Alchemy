@@ -1,4 +1,4 @@
-import { QUALITY, WIDTH } from "../lib/asset-constants.mjs";
+import { QUALITY, WIDTH } from "./asset-constants.mjs";
 
 export const coreAssets = [
   // Logo

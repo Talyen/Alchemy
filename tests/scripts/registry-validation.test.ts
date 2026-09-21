@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- scripts are JS without declarations
 // @ts-ignore scripts are untyped JS helpers
-import { validateRegistryEntries } from "../../scripts/lib/registry-validation.mjs";
+import { validateRegistryEntries } from "../../scripts/assets/registry-validation.mjs";
 
 const tempDirs: string[] = [];
 

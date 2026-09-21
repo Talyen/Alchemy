@@ -23,7 +23,7 @@ consumer-specific safeguards such as Wish's selection latch.
 Confirmation focus containment pauses while content is inert and retains its
 existing return target. Escape ordering, required Wish selection, animation
 duration, and dismissal policies were preserved. The current and subsequently
-refined contract lives in [UI overlay lifecycle](../../UI.md#overlay-lifecycle).
+refined contract lives in [UI overlay lifecycle](../../UI_INTERACTION.md#overlay-lifecycle).
 
 ## Verification recorded at implementation
 

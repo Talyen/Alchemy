@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { CRAFTING_CURRENCY_LIST } from "@/lib/gear";
-import { slugifyGearName as slugify } from "../../../scripts/lib/gear-filenames.mjs";
+import { slugifyGearName as slugify } from "../../../scripts/assets/gear-filenames.mjs";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const optimizedDir = path.join(rootDir, "src", "assets", "optimized");

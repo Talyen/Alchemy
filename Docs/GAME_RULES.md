@@ -5,13 +5,15 @@ Canonical owner for game rules, content-system behavior, and shared domain terms
 ## Guide index
 
 - [Combat rules](#battle-implementation-rules) and [engine invariants](#engine-invariants).
+- [Talent rules](./TALENT_RULES.md): progression, action rewards, triggers, and card-specific interactions.
+- [Unique items](./UNIQUE_ITEMS.md): signature effects and combat exceptions.
 - [Corruption altars](#corruption-altars).
 - [Modes, saved runs, and Labyrinth exploration](#content-systems).
-- [Terminology](#domain-glossary).
+- [Terminology](./GLOSSARY.md#domain-glossary).
 
 ## Battle Implementation Rules
 
-Operational rules for `src/lib/battle/` that deviate from typical CCG assumptions. Term definitions: [Domain Glossary](#domain-glossary). Tests: `tests/lib/battle/`.
+Operational rules for `src/lib/battle/` that deviate from typical CCG assumptions. Term definitions: [Domain Glossary](./GLOSSARY.md#domain-glossary). Tests: `tests/lib/battle/`.
 
 ### Turn order and resources
 
@@ -75,7 +77,7 @@ Bond 0 preserves the baseline. Damage, healing, Gold, and Scarab Block gain +1 p
 
 #### Health thresholds and defeat
 
-- **Death's Door** — [Domain Glossary](#domain-glossary). Ordinary healing cannot revive a defeated hero. A lethal enemy attack or player status tick ends turn processing before regeneration, drawing, or companions; explicit death prevention remains available.
+- **Death's Door** — [Domain Glossary](./GLOSSARY.md#domain-glossary). Ordinary healing cannot revive a defeated hero. A lethal enemy attack or player status tick ends turn processing before regeneration, drawing, or companions; explicit death prevention remains available.
 - **Card Health costs and self-damage** — Health loss bypasses damage reduction and resistance while retaining death prevention. Typed self-damage respects matching damage reductions and resistance and causes ordinary Armor decay from its mitigated amount; fully resisted damage adds no buildup or decay. Health costs do not decay Armor.
 - **Talent Health cutoffs** — “below” is strict: Kill Shot requires less than 20% enemy Health and Desperate Wish less than half player Health. Defensive threshold talents trigger on a crossing from at or above their cutoff to below it, including a hit starting exactly at the cutoff. Desperate Guard and Armor threshold rewards also react to status ticks, typed self-damage, and Health costs; lethal damage grants no defensive reward. Evaluate the damage crossing after incoming buildup but before Block-break healing; that healing still triggers if threshold rewards immediately replace the broken Block.
 - **Half-Health bonuses** — talents described as active below 50% Health require strictly less than half of the relevant maximum Health, including Armor, Forge, Physical/Bleed damage, and Leech bonuses. Exactly half Health does not qualify.
@@ -93,54 +95,6 @@ Bond 0 preserves the baseline. Damage, healing, Gold, and Scarab Block gain +1 p
 
 [UNIQUE_ITEMS](./UNIQUE_ITEMS.md#combat-semantics) owns signatures, automatic-play
 limits, repeated damage, Blackfletch detonation, and saved battle-local opportunities.
-
-### Talent manifests and progression
-
-See [Talent manifests and progression](./TALENT_RULES.md#talent-manifests-and-progression).
-
-### Talent action rewards
-
-See [Talent action rewards](./TALENT_RULES.md#talent-action-rewards).
-
-#### Wishes and Mana
-
-See [Wishes and Mana](./TALENT_RULES.md#wishes-and-mana).
-
-#### Card plays and costs
-
-See [Card plays and costs](./TALENT_RULES.md#card-plays-and-costs).
-
-#### Attack bonuses
-
-See [Attack bonuses](./TALENT_RULES.md#attack-bonuses).
-
-### Talent event rules
-
-See [Talent event rules](./TALENT_RULES.md#talent-event-rules).
-
-#### Selective feedback rewards
-
-See [Selective feedback rewards](./TALENT_RULES.md#selective-feedback-rewards).
-
-#### Triggered and copied damage
-
-See [Triggered and copied damage](./TALENT_RULES.md#triggered-and-copied-damage).
-
-#### Healing and Leech
-
-See [Healing and Leech](./TALENT_RULES.md#healing-and-leech).
-
-#### Armor, Forge, and Gold
-
-See [Armor, Forge, and Gold](./TALENT_RULES.md#armor-forge-and-gold).
-
-#### Turn rewards
-
-See [Turn rewards](./TALENT_RULES.md#turn-rewards).
-
-### Distinct talent and card effects
-
-See [Distinct talent and card effects](./TALENT_RULES.md#distinct-talent-and-card-effects).
 
 ### Strategic card conditions
 
@@ -184,7 +138,31 @@ Simulation-only instrumentation and measurement semantics live in [Balance simul
 - **Common damage modifiers** — `damage-modifiers.ts` owns the typed mapping from damage types to Talent and Gear flat bonuses, flat reductions, half-damage traits, and Gear resistances. Preserve their existing application stages and rounding; special conversion and reaction handlers keep their explicit order. Saved source manifests retain their existing fields.
 - **Turn presentation** — the accepted End Turn action resolves and commits before discard, enemy, draw, and Companion feedback plays. Companion turn-start effects resolve after the enemy and next-hand rules, before the next player action; delaying or cancelling their visual feedback cannot cancel their gameplay. Card and opening-hand results likewise commit before animation. Autoplay and automatic End Turn remain separate user preferences.
 - **Battle RNG** — live combat draws the persisted `world` run stream (`withDraftWorldBattleRng` inside a command). Engine consumers use `getBattleRng(state)`, never direct `state.rng` access or `Math.random()`; RNG setup helpers own the execution-only callback seam; committed and saved `BattleSnapshot` values never contain it. Tests and the balance simulator use `createRunStreamRng` (same mixer as `nextRunRngValue`). `createBattleState` may pass explicit RNG in unit tests. All dice draw from `@/lib/rng` and stay in `[0, 1)`; out-of-range draws and empty ranges throw instead of biasing. Chance helpers share one probability core (`rollChance`; `rollPercent` is the 0–100 wrapper). Small math lives in `@/lib/math` (`clamp`, `clamp01`, `lerp`).
-- **Fight pacing** — hidden combat scaler, not a player-facing status. Paces damage, block, forge, mana, and healing magnitudes; armor and gold grants bypass it at every site (pinned by `tests/lib/battle/fight-pacing.test.ts`). After the existing type target (7/12/20 turns), attack and triggered damage on both sides additionally multiply by `1 + (overrun / span)²`, using a span of 4 turns for normal/elite enemies and 3 for bosses. Healing and defensive/resource grants do not receive this extra multiplier. Derived hits and status ticks retain their existing inherited-damage rules rather than applying pacing again. [Domain Glossary](#domain-glossary). Balance simulator: `ALCHEMY_BALANCE_PACING=off` disables both pacing components but retains enemy progression scaling.
+- **Fight pacing** — hidden combat scaler, not a player-facing status. Paces damage, block, forge, mana, and healing magnitudes; armor and gold grants bypass it at every site (pinned by `tests/lib/battle/fight-pacing.test.ts`). After the existing type target (7/12/20 turns), attack and triggered damage on both sides additionally multiply by `1 + (overrun / span)²`, using a span of 4 turns for normal/elite enemies and 3 for bosses. Healing and defensive/resource grants do not receive this extra multiplier. Derived hits and status ticks retain their existing inherited-damage rules rather than applying pacing again. [Domain Glossary](./GLOSSARY.md#domain-glossary). Balance simulator: `ALCHEMY_BALANCE_PACING=off` disables both pacing components but retains enemy progression scaling.
+
+### Non-card reaction eligibility
+
+- **Card and enemy hit stages** — `damage-riders.ts` captures pre-purge conditions and resolves status reactions, Leech/Frozen reactions, depth-first Archery hits, typed rewards, then feedback/thresholds/payout. `enemy-attack-damage.ts` captures Health loss and Block spending before defensive reactions, then resolves crowd control, Leech, retaliation, and trait follow-ups. Captured hit outcomes never include later healing. These paths deliberately retain distinct ordering; RNG draws and combat-text order are behavior.
+
+Resolution remains explicit and depth-first. Card and enemy hit handlers capture
+pre-hit facts separately from the changing battle snapshot; an Archery extra hit
+finishes before the outer hit pays its rewards. Do not replace this order with a
+queued reaction pipeline.
+
+| Origin                                                                  | Card-only benefits                                                                 | Other reactions                                               |
+| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Played card                                                             | Eligible; consume first-use and next-card benefits normally                        | Resolve in the owning card/hit order                          |
+| Companion turn-start action                                             | Suppress and restore preserved first-use, next-hit and next-card flags             | Companion bonuses and ordinary damage reactions still resolve |
+| Repeated card effects                                                   | Suppress the same preserved flags; `uniqueRepeatActive` prevents recursive repeats | Keep the repeated effect's explicit source/context rules      |
+| Delayed turn-start effects and reactive hits using `withPreservedFlags` | Suppress the same preserved flags                                                  | Keep eligible status, healing and follow-up reactions         |
+
+`combat-flags.ts` owns the exact preserved set. `withPreservedFlags` works on a
+local snapshot, not global state. Ordinary unpreserved flags survive. Cost
+reduction is special: keep the greater of the prior reduction and newly earned
+reduction, including nested effects. The scope remains intentional because
+replacing it with context checks throughout all flag consumers would spread the
+same eligibility policy rather than simplify it. No new persisted fields are
+needed for these resolution facts.
 
 ---
 
@@ -276,19 +254,3 @@ resolution. Resume reconstructs the same offers without reapplying rewards.
 Corruption chambers reuse the Campaign altar rules and their green modifier
 changes the corruption roll. Leaving before corrupting returns to the maze with
 the chamber still reachable.
-
-## Domain Glossary
-
-See [Domain Glossary](./GLOSSARY.md#domain-glossary).
-
-### Mode terminology
-
-See [Mode terminology](./GLOSSARY.md#mode-terminology).
-
-### Shared battle and progression terms
-
-See [Shared battle and progression terms](./GLOSSARY.md#shared-battle-and-progression-terms).
-
-### Non-card reaction eligibility
-
-See [Non-card reaction eligibility](./GLOSSARY.md#non-card-reaction-eligibility).

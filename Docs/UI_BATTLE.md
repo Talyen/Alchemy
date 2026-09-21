@@ -63,7 +63,7 @@ matching `CardSelectionGrid`’s reference width; larger Collection tiles do not
 that measurement. The viewer shows only a centered collection title, cards,
 and an upper-right close button, plus pagination controls when needed. It has no
 collection tabs, counts, instructional text, or labels below cards. Empty collections
-show the collection icon using the shared [overlay layout](./UI.md#overlay-lifecycle).
+show the collection icon using the shared [overlay layout](./UI_INTERACTION.md#overlay-lifecycle).
 Open each collection from its own opener. Pagination resets on reopening.
 Full Deck is the run deck, including cards Consumed in the current battle;
 battle-only generated cards appear in their current piles instead. Deck, Draw

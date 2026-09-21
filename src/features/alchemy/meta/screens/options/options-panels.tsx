@@ -12,7 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import { DEVICE_DISPLAY_RANGES, SETTINGS_RANGES } from "@/lib/settings-values";
 import { AspectRatioSelect, DisplayModeSelect, SettingsSlider, SettingsToggle } from "./settings-controls";
-import type { AspectRatioOption, DisplayMode } from "../../shared/types";
+import type { AspectRatioOption, DisplayMode } from "../../../shared/types";
 
 export interface DisplayOptionsProps {
   selectedAspectRatio: AspectRatioOption;

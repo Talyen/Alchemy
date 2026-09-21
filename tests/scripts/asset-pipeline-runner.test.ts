@@ -10,7 +10,7 @@ import {
   resolvePipelinePaths,
   resolveRootDir,
   runManifestPipeline,
-} from "../../scripts/lib/asset-pipeline-runner.mjs";
+} from "../../scripts/assets/asset-pipeline-runner.mjs";
 
 const tempDirs: string[] = [];
 afterEach(async () => {

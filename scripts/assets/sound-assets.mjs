@@ -1,5 +1,5 @@
-import { SOUND_ENTRY_OWNERS } from "../lib/asset-constants.mjs";
-import { validateRegistryEntries } from "../lib/registry-validation.mjs";
+import { SOUND_ENTRY_OWNERS } from "./asset-constants.mjs";
+import { validateRegistryEntries } from "./registry-validation.mjs";
 
 /** Raw sound sources transformed or copied into public/sounds. */
 export const generatedSoundAssets = [

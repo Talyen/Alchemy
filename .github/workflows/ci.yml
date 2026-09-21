@@ -128,8 +128,6 @@ jobs:
               - "scripts/sync-art-barrels.mjs"
               - "scripts/assets.mjs"
               - "scripts/optimize-pipelines.mjs"
-              - "scripts/lib/*asset*.mjs"
-              - "scripts/lib/registry-validation.mjs"
               - "scripts/lib/process-helpers.mjs"
               - "src/assets/optimized/**"
               - "public/sounds/**"

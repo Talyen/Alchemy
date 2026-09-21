@@ -22,7 +22,7 @@ Reason: Reduce competing instructions and paperwork while retaining compatibilit
 
 ```
 ## YYYY-MM-DD — Short title
-Pattern: <knowledge/patterns/...md or N/A>
+Pattern: <lesson or canonical owner, or N/A>
 Proposal: <what instruction/skill change was suggested>
 Result: accepted | rejected | superseded
 Evidence: <tests, lint, typecheck, eval task, commits>

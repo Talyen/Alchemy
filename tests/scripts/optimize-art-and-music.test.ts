@@ -9,8 +9,8 @@ const fixture = vi.hoisted(() => ({
   failedSource: "",
   transform: vi.fn<(source: string, target: string) => Promise<void>>(),
 }));
-vi.mock("../../scripts/lib/asset-pipeline-runner.mjs", async (importOriginal) => {
-  const original = await importOriginal<typeof import("../../scripts/lib/asset-pipeline-runner.mjs")>();
+vi.mock("../../scripts/assets/asset-pipeline-runner.mjs", async (importOriginal) => {
+  const original = await importOriginal<typeof import("../../scripts/assets/asset-pipeline-runner.mjs")>();
   const { pathToFileURL } = await import("node:url");
   return {
     ...original,

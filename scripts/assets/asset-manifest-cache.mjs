@@ -3,9 +3,9 @@ import { readFile, readdir, unlink } from "node:fs/promises";
 import path from "node:path";
 import { createReadStream } from "node:fs";
 
-import { writeTextIfChanged } from "./write-text-if-changed.mjs";
+import { writeTextIfChanged } from "../lib/write-text-if-changed.mjs";
 import { MANIFEST_BASENAME } from "./asset-constants.mjs";
-import { mapPool } from "./map-pool.mjs";
+import { mapPool } from "../lib/map-pool.mjs";
 
 /**
  * @typedef {{ hash: string, outputHash?: string, owner?: string }} ManifestEntry

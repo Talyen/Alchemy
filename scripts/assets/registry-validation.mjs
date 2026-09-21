@@ -1,8 +1,8 @@
 import { access } from "node:fs/promises";
 import path from "node:path";
 import { VALIDATION_CONCURRENCY } from "./asset-constants.mjs";
-import { toAssetExportName } from "./kebab-to-camel.mjs";
-import { mapPool } from "./map-pool.mjs";
+import { toAssetExportName } from "../lib/kebab-to-camel.mjs";
+import { mapPool } from "../lib/map-pool.mjs";
 
 export async function validateRegistryEntries(
   entries,

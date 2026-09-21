@@ -254,7 +254,7 @@ export const CONTEXT_TASKS = {
   },
   "assets-pipeline": {
     matches:
-      /^scripts\/(?:assets|prepare-assets|optimize-assets|optimize-pipelines|check-prepared-assets|sync-generated|sync-art-barrels|lib\/asset-[^/]+|lib\/registry-validation)\.mjs$/u,
+      /^scripts\/(?:assets|prepare-assets|optimize-assets|optimize-pipelines|check-prepared-assets|sync-generated|sync-art-barrels|assets\/(?:asset-[^/]+|registry-validation|gear-filenames|sync-generated-helpers))\.mjs$/u,
     docs: [
       ...assetCommon,
       asset("Pipeline overview"),

@@ -1,8 +1,15 @@
 # Scripts implementation map
 
-Use [REFERENCE](../Docs/REFERENCE.md#script-command-reference) to choose a command,
+Use [REFERENCE](../Docs/COMMANDS.md#script-command-reference) to choose a command,
 [CONTRIBUTING](../CONTRIBUTING.md#what-to-run-when-you-change) to select checks,
 and this map to locate their implementation owners.
+
+[Verification implementation](./VERIFICATION.md) covers gate nesting, changed-path
+selection, reports, build validation, and receipt caching.
+
+Keep command entry points directly in `scripts/`. Asset registries and pipeline
+helpers live together in `assets/`, with TypeScript declarations beside their
+modules. `lib/` holds the remaining shared tooling.
 
 ## Assets
 
@@ -14,16 +21,16 @@ skip mode; keep that validation at each entry point.
 | Concern                                    | Implementation owner                                                                                                                                                                                                                                                                                      |
 | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Asset CLI and preparation                  | `assets.mjs` → `prepare-assets.mjs` (canonical surface; `npm run assets:check` is `assets.mjs --check`; direct `optimize-*.mjs` calls are the supported iteration shortcut behind `assets:optimize[:art\|:sounds\|:music]`)                                                                               |
-| Art, sound, and music optimization         | `optimize-pipelines.mjs` → `optimize-assets.mjs`, `optimize-sounds.mjs`, `optimize-music.mjs` via `lib/asset-pipeline-runner.mjs`                                                                                                                                                                         |
+| Art, sound, and music optimization         | `optimize-pipelines.mjs` → `optimize-assets.mjs`, `optimize-sounds.mjs`, `optimize-music.mjs` via `assets/asset-pipeline-runner.mjs`                                                                                                                                                                      |
 | Generated art barrels and version metadata | `sync-generated.mjs` → `sync-art-barrels.mjs`, `sync-version-metadata.mjs` (`sync:art` syncs both barrels; `sync:gear-art` alone refuses stale `assets.generated.ts`; `sync:version` stamps the build version alone; `prepare`/`assets:check` sync art barrels and version metadata as independent steps) |
 | Fast generated-output validation           | `sync-generated.mjs --check`                                                                                                                                                                                                                                                                              |
 | Read-only prepared-output freshness        | `assets.mjs --check` → `check-prepared-assets.mjs` (partial-failure `prepare` advances barrels when art succeeds; `check` is all-or-nothing)                                                                                                                                                              |
 
-Shared: `lib/asset-constants.mjs` (tuning, `MANAGED_DIRS` managed outputs — the manifest is the complete inventory, no directory exceptions), `lib/asset-pipeline-runner.mjs` (pipeline paths, output-dir creation, source reads, freshness, failure normalization),
-`lib/asset-manifest-cache.mjs` (freshness,
+Shared: `assets/asset-constants.mjs` (tuning, `MANAGED_DIRS` managed outputs — the manifest is the complete inventory, no directory exceptions), `assets/asset-pipeline-runner.mjs` (pipeline paths, output-dir creation, source reads, freshness, failure normalization),
+`assets/asset-manifest-cache.mjs` (freshness,
 check-mode `ENOENT` maps to stale errors),
 `lib/process-helpers.mjs` (generic `targetErrorHandler`, `failedResult`),
-`lib/gear-filenames.mjs` (single owner for gear slugging/patterns, slot IDs, WebP/gear classification), `assets/music-assets.mjs` (music filename registry).
+`assets/gear-filenames.mjs` (single owner for gear slugging/patterns, slot IDs, WebP/gear classification), `assets/music-assets.mjs` (music filename registry).
 Manifest paths derive from `MANAGED_DIRS` + `MANIFEST_BASENAME` via `getManagedManifestPath` (`getOptimizedManifestPath` is the art-specific alias used by barrel sync).
 
 ## Agent discovery and evaluation
@@ -40,19 +47,11 @@ Manifest paths derive from `MANAGED_DIRS` + `MANIFEST_BASENAME` via `getManagedM
 
 Source declarations, authored entries, and optional test navigation are parsed in `lib/source-outline.mjs`; `agent-context.mjs` owns bounded rendering. `run-compact.mjs`, `lib/run-command.mjs`, and `lib/compact-output.mjs` provide the shared one-shot command policy: compact summaries by default, complete logs on disk, and explicit live output for interactive work. `lint-ci.mjs` applies that policy to the aggregate static gate so direct CI checks do not dump every collected browser test.
 
-[Agent discovery](../Docs/REFERENCE.md#agent-discovery) documents command options
+[Agent discovery](../Docs/AGENT_DISCOVERY.md#agent-discovery) documents command options
 and limitations; [evaluations](../.agents/evals/README.md) owns pinned setup and
 interpretation. Discovery metadata must reference canonical prose rather than
 copying it, and it does not own verification selection. The search fallback skips deleted
 tracked files and files removed during a search, while other read errors fail.
-
-## Checks / verification (nesting order)
-
-See [Checks / verification (nesting order)](./VERIFICATION.md#checks--verification-nesting-order).
-
-### Verification cache
-
-See [Verification cache](./VERIFICATION.md#verification-cache).
 
 ## Release / changelog (three stages, shared `lib/patch-notes-core.mjs` + `lib/git-release.mjs`)
 

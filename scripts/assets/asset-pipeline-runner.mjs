@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 import { commitManifest, processManifestEntries } from "./asset-manifest-cache.mjs";
 import { MANAGED_DIRS, MANIFEST_BASENAME } from "./asset-constants.mjs";
-import { failedResult, targetErrorHandler } from "./process-helpers.mjs";
+import { failedResult, targetErrorHandler } from "../lib/process-helpers.mjs";
 
 /**
  * Repository root for a script module URL. Lives here (not in the sync

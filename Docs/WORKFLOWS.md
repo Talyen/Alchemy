@@ -17,72 +17,24 @@ catalog-external tests are named inline. Named suites are verification entry poi
 ## Task index
 
 - **Raw asset / art** — [Asset workflow](./WORKFLOWS-ASSETS.md)
-- **Save schema / migration** — [Persisted save data](#change-persisted-save-data)
-- **Mid-run resume** — [Active run data](#change-mid-run-resume-activerundata)
-- **Post-victory routing** — [REWARD_ROUTES](#add-or-change-post-victory-routing-reward_routes)
-- **Run teardown / clear save** — [Run teardown](#run-teardown)
-- **Status effect** — [New status](#add-a-new-status-effect)
-- **Card / card effect kind** — [New card](#add-a-new-card) · [New effect kind](#add-a-new-card-effect-kind)
-- **Character, enemy, trinket, companion, keyword** — [Character](#add-a-new-character) · [Enemy](#add-a-new-enemy) · [Trinket](#add-a-new-trinket) · [Companion](#add-a-new-companion) · [Keyword](#add-a-new-keyword)
-- **Talent / homestead upgrade** — [Talent](#add-a-new-talent) · [Homestead upgrade](#add-a-homestead-upgrade)
+- **Save schema / migration** — [Persisted save data](./RUN_WORKFLOWS.md#change-persisted-save-data)
+- **Mid-run resume** — [Active run data](./RUN_WORKFLOWS.md#change-mid-run-resume-activerundata)
+- **Post-victory routing** — [REWARD_ROUTES](./RUN_WORKFLOWS.md#add-or-change-post-victory-routing-reward_routes)
+- **Run teardown / clear save** — [Run teardown](./RUN_WORKFLOWS.md#run-teardown)
+- **Status effect** — [New status](./CONTENT_AUTHORING.md#add-a-new-status-effect)
+- **Card / card effect kind** — [New card](./CONTENT_AUTHORING.md#add-a-new-card) · [New effect kind](./CONTENT_AUTHORING.md#add-a-new-card-effect-kind)
+- **Character, enemy, trinket, companion, keyword** — [Character](./CONTENT_AUTHORING.md#add-a-new-character) · [Enemy](./CONTENT_AUTHORING.md#add-a-new-enemy) · [Trinket](./CONTENT_AUTHORING.md#add-a-new-trinket) · [Companion](./CONTENT_AUTHORING.md#add-a-new-companion) · [Keyword](./CONTENT_AUTHORING.md#add-a-new-keyword)
+- **Talent / homestead upgrade** — [Talent](./CONTENT_AUTHORING.md#add-a-new-talent) · [Homestead upgrade](./CONTENT_AUTHORING.md#add-a-homestead-upgrade)
 - **Permanent gear** — [Gear](#add-permanent-gear)
 - **Shop** — [Change a shop](#change-a-shop)
 - **Content system / starter draft** — [Content system behavior](#content-system-behavior)
 - **Battle playback** — [Change battle playback](#change-battle-playback)
 - **Screen, destination, mystery, corruption** — [New screen](#adding-a-new-screen) · [Destination](#adding-a-new-destination-map-node) · [Mystery effect](#adding-a-new-mystery-effect-kind) · [Corruption](#adding--changing-corruption-flow)
-- **In-run materials** — [Grant materials during a run](#grant-materials-during-a-run)
+- **In-run materials** — [Grant materials during a run](./RUN_WORKFLOWS.md#grant-materials-during-a-run)
 - **UI placement, motion, buttons, tooltips** — [UI system](./UI.md)
-- **Gameplay session mutation** — [Gameplay command boundary](#gameplay-command-boundary)
+- **Gameplay session mutation** — [Gameplay command boundary](./RUN_WORKFLOWS.md#gameplay-command-boundary)
 
 ---
-
-## Change persisted save data
-
-See [Change persisted save data](./RUN_WORKFLOWS.md#change-persisted-save-data).
-
-## Change mid-run resume (`ActiveRunData`)
-
-See [Change mid-run resume (`ActiveRunData`)](./RUN_WORKFLOWS.md#change-mid-run-resume-activerundata).
-
-## Grant materials during a run
-
-See [Grant materials during a run](./RUN_WORKFLOWS.md#grant-materials-during-a-run).
-
-## Add or change post-victory routing (`REWARD_ROUTES`)
-
-See [Add or change post-victory routing (`REWARD_ROUTES`)](./RUN_WORKFLOWS.md#add-or-change-post-victory-routing-reward_routes).
-
-## Run teardown
-
-See [Run teardown](./RUN_WORKFLOWS.md#run-teardown).
-
-## Gameplay command boundary
-
-See [Gameplay command boundary](./RUN_WORKFLOWS.md#gameplay-command-boundary).
-
-## Add a new status effect
-
-See [Add a new status effect](./CONTENT_AUTHORING.md#add-a-new-status-effect).
-
-## Add a new card
-
-See [Add a new card](./CONTENT_AUTHORING.md#add-a-new-card).
-
-## Add a new card effect `kind`
-
-See [Add a new card effect `kind`](./CONTENT_AUTHORING.md#add-a-new-card-effect-kind).
-
-## Add a new character
-
-See [Add a new character](./CONTENT_AUTHORING.md#add-a-new-character).
-
-## Add a new enemy
-
-See [Add a new enemy](./CONTENT_AUTHORING.md#add-a-new-enemy).
-
-## Add a new trinket
-
-See [Add a new trinket](./CONTENT_AUTHORING.md#add-a-new-trinket).
 
 ## Add permanent Gear
 
@@ -97,22 +49,6 @@ Item model, generation, Uniques, and write paths: [ARMORY.md](./ARMORY.md) (data
 7. Check affected Gear behavior, including existing Unique catalog coverage and save compatibility for instance or loadout shape changes. HP-sync write paths: [ARMORY.md § Write paths](./ARMORY.md#write-paths). Rewards store the exact `GearInstance` and never re-roll on acceptance; never put definition objects or art URLs into saves.
 
 ---
-
-## Add a new companion
-
-See [Add a new companion](./CONTENT_AUTHORING.md#add-a-new-companion).
-
-## Add a new talent
-
-See [Add a new talent](./CONTENT_AUTHORING.md#add-a-new-talent).
-
-## Add a homestead upgrade
-
-See [Add a homestead upgrade](./CONTENT_AUTHORING.md#add-a-homestead-upgrade).
-
-## Add a new keyword
-
-See [Add a new keyword](./CONTENT_AUTHORING.md#add-a-new-keyword).
 
 ## Change a shop
 
@@ -152,13 +88,13 @@ navigation. Keep persisted drafts and resume paths in their existing owners.
 ## Change battle playback
 
 Wiring: [ARCHITECTURE.md § Battle path](./ARCHITECTURE.md#battle-path) (ticks stay on the battle route; session autoplay preferences stay in the controller).
-Visible behavior: [UI battle feedback](./UI.md#battle-feedback) and [battle motion](./UI.md#battle-motion) (burst contract, death/survival behavior, attacker lunge and timing owners).
+Visible behavior: [UI battle feedback](./UI_BATTLE.md#battle-feedback) and [battle motion](./UI_MOTION.md#battle-motion) (burst contract, death/survival behavior, attacker lunge and timing owners).
 
-- Autoplay picks greedily: highest `getEffectiveDamageScore` wins (ties go left), restricted to defensive cards at half health or below, and Wish options resolve with the same score plus a hover preview. Picks live in `battle/playable-hand.ts` (`findBestPlayableHandCard`, `findBestWishChoice`) and the loop in `battle/autoplay-driver.ts` (`driveAutoplay`). Score weights live in `src/lib/balance/play-policy.ts` and also drive balance reports — retuning them changes live autoplay.
+- Autoplay picks greedily: highest `getEffectiveDamageScore` wins (ties go left), restricted to defensive cards at half health or below, and Wish options resolve with the same score plus a hover preview. Picks live in `battle/playable-hand.ts` (`findBestPlayableHandCard`, `findBestWishChoice`) and the loop in `battle/autoplay-driver.ts` (`driveAutoplay`). Live scoring lives in `src/lib/battle/autoplay-policy.ts`; `src/lib/balance/play-policy.ts` re-exports it for reports. Retuning the live owner changes gameplay; independent simulation policies belong in the simulator.
 - Presentation updates may wake autoplay readiness/retry waits, but cannot shorten the post-play pause. Measure that pause from the start of the successful play, counting transfer time toward it; longer transfers add no extra pause. Teardown cancels either wait, and autoplay rechecks current playback gates before the next play.
 - Autoplay previews are uncommitted: the route forwards the driver’s abort signal and live playback eligibility check to the card handler. Disabling autoplay or unmounting cancels the preview; after its delay, recheck the session and all playback gates before committing. A cancelled preview must not clear a newer preview.
-- Manual card plays commit immediately and remain available during other card draws and hand reflow; only the incoming hidden cards and actual turn transitions are unavailable. Resolve clicked cards by hand identity so reflow cannot invalidate their old slot. Autoplay, auto-end-turn, and End Turn share one gate (`isBattlePlaybackBlocked` in `battle/autoplay-driver.ts`). Send each resolved action through `presentCombatTexts` in `battle/controller-utils.ts` under the [battle feedback contract](./UI.md#battle-feedback). Concurrent draws preserve each other’s hidden cards and transfers; settlement checks the current battle state. Schedule auto-end explicitly after draws/resume; do not rely on React battle-state ticks. Opening the game menu cancels the auto-end countdown; closing it starts a fresh normal countdown only when eligible. Recheck the latest playback gates and hand playability when the countdown expires.
-- Defer defeat teardown until the delayed screen transition commits; keep [battle timing](../src/lib/game-constants/battle-timing.ts) aligned with `combatant-attack-lunge` in [keyframes](../src/styles/keyframes.css) and the shake delay in [theme styles](../src/styles/theme.css). Death, survival, and lunge composition details live in [UI battle motion](./UI.md#battle-motion).
+- Manual card plays commit immediately and remain available during other card draws and hand reflow; only the incoming hidden cards and actual turn transitions are unavailable. Resolve clicked cards by hand identity so reflow cannot invalidate their old slot. Autoplay, auto-end-turn, and End Turn share one gate (`isBattlePlaybackBlocked` in `battle/autoplay-driver.ts`). Send each resolved action through `presentCombatTexts` in `battle/controller-utils.ts` under the [battle feedback contract](./UI_BATTLE.md#battle-feedback). Concurrent draws preserve each other’s hidden cards and transfers; settlement checks the current battle state. Schedule auto-end explicitly after draws/resume; do not rely on React battle-state ticks. Opening the game menu cancels the auto-end countdown; closing it starts a fresh normal countdown only when eligible. Recheck the latest playback gates and hand playability when the countdown expires.
+- Defer defeat teardown until the delayed screen transition commits; keep [battle timing](../src/lib/game-constants/battle-timing.ts) aligned with `combatant-attack-lunge` in [keyframes](../src/styles/keyframes.css) and the shake delay in [theme styles](../src/styles/theme.css). Death, survival, and lunge composition details live in [UI battle motion](./UI_MOTION.md#battle-motion).
 - Wish choices open after active card transfers finish. Cards with both Draw and Wish show their draws first; queued Wishes also wait for the previous chosen card to reach the hand. Use the existing transfer-in-progress presentation signal without delaying gameplay commits.
 - Preserve immutable hidden-hand keys, callback binding, post-death navigation timing, and the rule that mid-enemy-turn reload skips presentation replay.
 - Run the focused battle playback tests and the selection from `verify`; use the shared browser fixture with real timing for animation coverage, following [the E2E guide](../tests/e2e/README.md#test-import). Do not request `fastBattle` or enable fast mode when timing is under test.

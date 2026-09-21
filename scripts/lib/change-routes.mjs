@@ -65,7 +65,7 @@ export const ROUTES = Object.freeze([
     ],
     ["related", "unit-save"],
     [
-      doc("Docs/WORKFLOWS.md", "Change persisted save data", "save workflow"),
+      doc("Docs/RUN_WORKFLOWS.md", "Change persisted save data", "save workflow"),
       doc("src/features/alchemy/shared/storage/MIGRATIONS.md", "Public save contract", "save compatibility"),
     ],
     "src/features/alchemy/shared/storage/io.ts",
@@ -80,7 +80,6 @@ export const ROUTES = Object.freeze([
       "scripts/sync-*.mjs",
       "scripts/check-generated*.mjs",
       "scripts/lib/process-helpers.mjs",
-      "scripts/lib/registry-validation.mjs",
       "src/assets/optimized/**",
       "public/sounds/**",
       "public/Music/**",

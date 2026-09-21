@@ -65,7 +65,7 @@ Feature code uses [`run-lifecycle.ts`](../src/features/alchemy/shared/stores/run
 
 ## Gameplay command boundary
 
-Ownership and anti-patterns: [ARCHITECTURE.md § Run state](./ARCHITECTURE.md#run-state). Keep the command synchronous; put audio, navigation, timers, and presentation cleanup in `afterCommit`. Pass the draft to every gameplay mutator. This outer-boundary example awards an already bonus-adjusted material amount and passes it to presentation feedback after commit:
+Ownership and anti-patterns: [ARCHITECTURE.md § Run state](./RUN_STATE.md#run-state). Keep the command synchronous; put audio, navigation, timers, and presentation cleanup in `afterCommit`. Pass the draft to every gameplay mutator. This outer-boundary example awards an already bonus-adjusted material amount and passes it to presentation feedback after commit:
 
 ```ts
 import type { MaterialInventory } from "@/lib/homestead/types";

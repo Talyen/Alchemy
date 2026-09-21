@@ -238,7 +238,7 @@ describe("agent discovery", () => {
       ["Raw Assets/Gear/Sword - Basic.jpeg", "Add or replace Gear art"],
       ["scripts/assets/sound-assets.mjs", "Add or replace sound"],
       ["public/Music/theme.mp3", "Add or replace music"],
-      ["scripts/lib/asset-manifest-cache.mjs", "Content freshness and filesystem failures"],
+      ["scripts/assets/asset-manifest-cache.mjs", "Content freshness and filesystem failures"],
     ]) {
       const selection = selectContext([file ?? ""]);
       const sections = contextSections(process.cwd(), selection);

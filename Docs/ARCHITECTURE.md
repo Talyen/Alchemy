@@ -4,6 +4,12 @@ Canonical reference for run state, store layout, and boot policy. Coding rules: 
 
 `src/lib/` stays React-free. Feature UI lives under `src/features/alchemy/`.
 
+## Guide index
+
+- [Run state and persistence](./RUN_STATE.md): aggregate regions, command atomicity, RNG, save codecs, and capability ports.
+- [Battle controllers](./BATTLE_CONTROLLERS.md): command props, committed playback, and navigation timing.
+- Below: feature layout, run setup, shops, meta progression, import boundaries, and boot.
+
 ## Directory layout (`src/features/alchemy/`)
 
 - **`shared/`** — `stores/`, `storage/`, `ui/`, `config/`, `context/`, `utils/`, `run-flow/`, `types.ts`
@@ -12,53 +18,13 @@ Canonical reference for run state, store layout, and boot policy. Coding rules: 
 - **`run-loop/`** — Battle glue, navigation, shop, in-run screens
 - **`shell/`** — Screen routing + run/battle controller composition (see navigation vocabulary below)
 
-`shared/ui/tooltips/` owns tooltip placement, panels, and item popups; `shared/ui/inspection/` owns card and enemy inspection overlays and their grid/sorting helpers. General shared hooks stay directly in `shared/ui/`; battle-only playback visuals belong beside `run-loop/battle/presentation/`. Unit tests mirror these owners. Collection-only presentation lives in `meta/screens/collection/`; shop purchase and service widgets live in `run-loop/shop/ui/`. Mystery outcome badges live beside their screens in `run-loop/screens/mystery/`; Options controls live beside `meta/screens/options-panels.tsx`. Display scaling belongs to `shared/ui/use-virtual-resolution.ts`; the general latest-value ref hook belongs to `shared/ui/use-latest-ref.ts`. Import shared UI directly from its owning module rather than a catch-all barrel.
+`shared/ui/tooltips/` owns tooltip placement, panels, and item popups; `shared/ui/inspection/` owns card and enemy inspection overlays and their grid/sorting helpers. General shared hooks stay directly in `shared/ui/`; battle-only playback visuals belong beside `run-loop/battle/presentation/`. Unit tests mirror these owners. Collection-only presentation lives in `meta/screens/collection/`; shop purchase and service widgets live in `run-loop/shop/ui/`. Mystery outcome badges live beside their screens in `run-loop/screens/mystery/`; Options panels, controls, and the error-log viewer live in `meta/screens/options/`. Display scaling belongs to `shared/ui/use-virtual-resolution.ts`; the general latest-value ref hook belongs to `shared/ui/use-latest-ref.ts`. Import shared UI directly from its owning module rather than a catch-all barrel.
 
 Import lib catalogs through their eslint-enforced barrels (`@/lib/game-data`, `@/lib/battle`, `@/lib/validation`, `@/lib/content-validation`). Feature stores and screens use on-disk paths (for example `@/features/alchemy/shared/stores/run-reads`). Feature UI reads static catalogs through [`shared/config/game-data-catalog.ts`](../src/features/alchemy/shared/config/game-data-catalog.ts). Content parity helpers live under `@/lib/content-validation/card-parity` (the only sanctioned deep path: relative imports inside the package plus test deep imports, which sit outside boundary lint; every other `src/` import goes through the barrel). Naming rule for the three similarly-named lib areas: authored-content correctness (card text matches effects, catalogs are consistent) belongs in `content-validation`; persisted save shapes, normalization, and migrations belong in `validation`; mode logic (labyrinth/wildwood map generation, encounter-trait picking) belongs in `content-systems`. Tests sit outside boundary lint and may deep-import battle leaves (for example `@/lib/battle/encounter-trait-events`); `src/` must use the `@/lib/battle` barrel. The battle barrel exports the gameplay surface only — hit-pipeline staging helpers (`remapDrawnCardBenefits`, `playerStatusDelta`, `mitigatePlayerCombatDamage`, `scaleReceivedPlayerDamage`) and single-use tooling (`regrowEnemyThorns`) stay importable by relative path inside `src/lib/battle/` but are not barrel exports.
 
 > Token-barrel exception: keep `game-data-catalog.ts` off the token `config/` barrel so layout/token imports stay catalog-free.
 
 `shared/run-flow/` is the neutral seam for destination sampling and campaign-start helpers so `run-setup` and `run-loop` do not import each other (ESLint-enforced).
-
-## Run state
-
-See [Run state](./RUN_STATE.md#run-state).
-
-### Command atomicity
-
-See [Command atomicity](./RUN_STATE.md#command-atomicity).
-
-### Post-commit behavior
-
-See [Post-commit behavior](./RUN_STATE.md#post-commit-behavior).
-
-### Committed battle playback
-
-See [Committed battle playback](./RUN_STATE.md#committed-battle-playback).
-
-## Activity and rewards
-
-See [Activity and rewards](./RUN_STATE.md#activity-and-rewards).
-
-## Anti-patterns
-
-See [Anti-patterns](./RUN_STATE.md#anti-patterns).
-
-## Run randomness
-
-See [Run randomness](./RUN_STATE.md#run-randomness).
-
-## Persistence API
-
-See [Persistence API](./RUN_STATE.md#persistence-api).
-
-## Session capability ports
-
-See [Session capability ports](./RUN_STATE.md#session-capability-ports).
-
-## Card inspection and combat equipment reservations
-
-See [Card inspection and combat equipment reservations](./RUN_STATE.md#card-inspection-and-combat-equipment-reservations).
 
 ## Run phase
 
@@ -91,13 +57,9 @@ The engine resolves gameplay before presentation; playback consumes committed re
 
 Controller construction, route props, and playback bindings: [Battle controllers](./BATTLE_CONTROLLERS.md#battle-path).
 
-### Data flow
-
-See [Controller and presentation data flow](./BATTLE_CONTROLLERS.md#data-flow).
-
 ## Controller entry points
 
-The [session capability reference](#session-capability-ports) lists controller, route, and domain entry points together. Use the [battle path](#battle-path), [shop commands](#shop-commands), and [run setup ownership](#run-setup-ownership) sections for their distinct execution contracts.
+The [session capability reference](./RUN_STATE.md#session-capability-ports) lists controller, route, and domain entry points together. Use the [battle path](#battle-path), [shop commands](#shop-commands), and [run setup ownership](#run-setup-ownership) sections for their distinct execution contracts.
 
 ### Run loop overview
 
@@ -148,7 +110,7 @@ shelf assignment, and modifier ordering, follow
 - `lib/settings-values.ts` owns the shared value sets and numeric bounds consumed by save validation, Options, audio,
   and the desktop bridge; the settings codec still owns defaults, encoding, and hydration.
 
-Gameplay progression remains in the [aggregate regions](#run-state); persistence follows the [codec contract](#persistence-api). Run reward finalization uses the write module and `run-lifecycle.ts` (`finalizeRunXP`, `awardMaterialsDuringRun` — see [grant materials](./RUN_WORKFLOWS.md#grant-materials-during-a-run)), never the discovery-only profile region. `error-log-store.ts` is a standalone local-only error buffer (own storage key, debounced persist); `shared/stores/reset.ts` owns the Options wipe (distinct from the audio test reset in `src/lib/audio/reset.ts`). Both sit outside the gameplay aggregate and its save codecs.
+Gameplay progression remains in the [aggregate regions](./RUN_STATE.md#run-state); persistence follows the [codec contract](./RUN_STATE.md#persistence-api). Run reward finalization uses the write module and `run-lifecycle.ts` (`finalizeRunXP`, `awardMaterialsDuringRun` — see [grant materials](./RUN_WORKFLOWS.md#grant-materials-during-a-run)), never the discovery-only profile region. `error-log-store.ts` is a standalone local-only error buffer (own storage key, debounced persist); `shared/stores/reset.ts` owns the Options wipe (distinct from the audio test reset in `src/lib/audio/reset.ts`). Both sit outside the gameplay aggregate and its save codecs.
 
 ## Permanent Gear (`gear-store`)
 
@@ -156,7 +118,7 @@ Owned Gear and per-character loadouts live in `shared/stores/gear-store.ts`. Pur
 
 ## Types
 
-`GameplayState` in `gameplay-state-store.ts` defines the [aggregate regions](#run-state). Read, write, command, and screen contracts are listed in the [capability reference](#session-capability-ports); persistence types are in the [codec contract](#persistence-api).
+`GameplayState` in `gameplay-state-store.ts` defines the [aggregate regions](./RUN_STATE.md#run-state). Read, write, command, and screen contracts are listed in the [capability reference](./RUN_STATE.md#session-capability-ports); persistence types are in the [codec contract](./RUN_STATE.md#persistence-api).
 
 Initial progress and permanent fields, `ACTIVE_RUN_PROGRESS_KEYS`, `generateRunSeed`, and `pickActiveRunView` live in `run-state-init.ts`; `run-domain-types.ts` defines session, battle, and run-data fields. `profile-store-types.ts` owns its domain (completion buckets derived from the character registry); `gear-actions.ts` owns the initial gear state. Fresh-run snapshots live in `shared/run-flow/run-start.ts`. Shared numeric manifest defaults use `createNumericManifest` / `mergeNumericManifests` from `manifest-utils.ts`.
 
@@ -174,9 +136,9 @@ Enforced in `eslint.config.js` (composition in `eslint/fragments.js` + `eslint/b
 
 ## Boot and loading
 
-- **Shell preload / autosave:** App warms `essentialGameArt` before reveal and starts the remaining per-item Gear art as soon as that essential preload settles; autosave and chrome read needed fields through capability modules. Critical UI sounds load eagerly. Battle initialization then prioritizes the visible hand and current enemy sounds; the remaining manifest decodes one item at a time during input-idle work so background audio warming cannot compete with interaction frames.
+- **Shell preload / autosave:** App warms `essentialGameArt` before reveal and starts the remaining per-item Gear art as soon as that essential preload settles; autosave and chrome read needed fields through capability modules. Sound warming follows the [audio runtime contract](./AUDIO.md#runtime-contract); it does not gate startup on successful playback or decoding.
 
-One loading experience at cold start, then navigation through the shared fade — no per-route "Loading …" fallbacks. Route and in-screen reveals hold the fade until mounted artwork has decoded; see [UI](./UI.md#screen-fade-motion).
+One loading experience at cold start, then navigation through the shared fade — no per-route "Loading …" fallbacks. Route and in-screen reveals hold the fade until mounted artwork has decoded; see [UI](./UI_MOTION.md#screen-fade-motion).
 
 | Layer     | Where                                                                          | Policy                                                                                                                                  |
 | --------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |

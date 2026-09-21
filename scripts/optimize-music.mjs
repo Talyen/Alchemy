@@ -1,20 +1,20 @@
 import { copyFile } from "node:fs/promises";
 import path from "node:path";
 
-import { processFreshEntry } from "./lib/asset-manifest-cache.mjs";
+import { processFreshEntry } from "./assets/asset-manifest-cache.mjs";
 import {
   ASSET_SCHEMA_VERSION,
   MANIFEST_BASENAME,
   MUSIC_COPY_CONCURRENCY,
   MUSIC_SETTINGS,
-} from "./lib/asset-constants.mjs";
+} from "./assets/asset-constants.mjs";
 import { MUSIC_FILE_EXTENSIONS, validateMusicRegistry } from "./assets/music-assets.mjs";
 import {
   ensureOutputDir,
   readSourceDir,
   resolvePipelinePaths,
   runManifestPipeline,
-} from "./lib/asset-pipeline-runner.mjs";
+} from "./assets/asset-pipeline-runner.mjs";
 import { runPipelineScript } from "./lib/script-run.mjs";
 
 async function discoverAudioFiles(dir) {

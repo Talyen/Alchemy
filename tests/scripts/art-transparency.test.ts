@@ -4,14 +4,14 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import sharp from "sharp";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { computeOutputHash } from "../../scripts/lib/asset-manifest-cache.mjs";
+import { computeOutputHash } from "../../scripts/assets/asset-manifest-cache.mjs";
 
 const fixture = vi.hoisted(() => ({
   root: "",
   icon: { source: "icon.png", target: "icon.webp", width: 16, quality: 80, requiresTransparency: true },
 }));
-vi.mock("../../scripts/lib/asset-pipeline-runner.mjs", async (importOriginal) => {
-  const original = await importOriginal<typeof import("../../scripts/lib/asset-pipeline-runner.mjs")>();
+vi.mock("../../scripts/assets/asset-pipeline-runner.mjs", async (importOriginal) => {
+  const original = await importOriginal<typeof import("../../scripts/assets/asset-pipeline-runner.mjs")>();
   const { pathToFileURL } = await import("node:url");
   return {
     ...original,

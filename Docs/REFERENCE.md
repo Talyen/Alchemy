@@ -1,6 +1,9 @@
 # Alchemy — Developer Reference
 
-Reference for commands, triage, balance, and file lookup. Strict coding rules: **[AGENTS.md](../AGENTS.md)**. Run state: [ARCHITECTURE.md](./ARCHITECTURE.md). Battle rules + glossary: [GAME_RULES.md](./GAME_RULES.md). How-to checklists: [WORKFLOWS.md](./WORKFLOWS.md). Hooks and tests: [CONTRIBUTING.md](../CONTRIBUTING.md). Audits: [Audits/README.md](./Audits/README.md).
+Reference for environment setup, failure triage, simulation, and file lookup.
+Use [Commands](./COMMANDS.md) to choose a command and
+[Contributing](../CONTRIBUTING.md) to select verification gates.
+Optional lookup and measurement tools live in [Agent discovery](./AGENT_DISCOVERY.md).
 
 ## Environment & Commands
 
@@ -15,17 +18,9 @@ Reference for commands, triage, balance, and file lookup. Strict coding rules: *
 
 `package.json` owns script entry points. `scripts/lib/change-routes.mjs` owns
 changed-path selection, and [CONTRIBUTING.md](../CONTRIBUTING.md) owns gate
-tiers. Use the catalog below for discovery rather than duplicating command
-lists in subsystem docs. Script implementation owners are mapped in
+tiers. Use the [command catalog](./COMMANDS.md) for discovery rather than
+duplicating command lists in subsystem docs. Script implementation owners are mapped in
 [scripts/README.md](../scripts/README.md); `package.json` is the exhaustive command list.
-
-### Script Command Reference
-
-See [Script Command Reference](./COMMANDS.md#script-command-reference).
-
-### Build commands decision tree
-
-See [Build commands decision tree](./COMMANDS.md#build-commands-decision-tree).
 
 ## Failure-first triage
 
@@ -44,19 +39,7 @@ Outer test runners set `ALCHEMY_RUN_ID` once and pass it to child commands; CI d
 - Report pointer: `reports/current-run.md` and `.json` point to the latest run-specific record under `reports/runs/<run-id>/`. Use that pointer or `npm run runs:show -- --last 10` to locate an unknown run; known run artifacts can be opened directly.
 - Do not paste complete logs, traces, snapshots, generated bundles, or report directories into agent context when the digest identifies a narrower file or test.
 - Local transient artifacts are pruned automatically before dev preparation and remain available for test/performance investigation until explicitly pruned. Copy a failure artifact elsewhere only when an investigation genuinely needs to outlive the grace period; use `npm run prune:transient -- --dry-run` to inspect candidates.
-- CI retains failure-only diagnostic artifacts for seven days and retains no successful-run report history.
-
-### Agent discovery
-
-See [Agent discovery](./AGENT_DISCOVERY.md#agent-discovery).
-
-### Verification reuse
-
-See [Verification reuse](./AGENT_DISCOVERY.md#verification-reuse).
-
-### Context-efficiency measurements
-
-See [Context-efficiency measurements](./AGENT_DISCOVERY.md#context-efficiency-measurements).
+- Browser CI retains JSON results on every run and detailed diagnostics for failures or retries. Retention and other artifact policies are owned by the workflows; see the [E2E diagnostic contract](../tests/e2e/README.md#tags).
 
 ## Loot progression report
 
@@ -64,7 +47,11 @@ See [Context-efficiency measurements](./AGENT_DISCOVERY.md#context-efficiency-me
 
 ## Balance simulation
 
-Headless battle simulator for overpowered or underpowered cards, classes, enemies, talents, companions, trinkets, gear, and individual item affixes. It runs isolated fights through the real battle engine (no browser, no React) using simple play policies. It is a **skill-floor** tool (dump-hand, random wishes, no holds), not a full run/map/shop simulator. Skipped during normal `npm test` runs.
+For full careers through shops, rewards, progression, and save/resume, use
+[headless playthrough testing](./PLAYTHROUGH_SIMULATION.md). The battle simulator
+below answers isolated combat questions; neither runner verifies the rendered UI.
+
+Headless battle simulator for overpowered or underpowered cards, classes, enemies, talents, companions, trinkets, gear, and individual item affixes. It runs isolated fights through the real battle engine (no browser, no React) using simple play policies. Its results describe the selected automated play policy, not human skill or a full run/map/shop simulation. Skipped during normal `npm test` runs.
 
 ```sh
 npm run balance:sim

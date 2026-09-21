@@ -15,8 +15,8 @@ import {
   removeOrphanOutputs,
   withOutputHash,
   writeManifestIfChanged,
-} from "../../scripts/lib/asset-manifest-cache.mjs";
-import type { ManifestEntry } from "../../scripts/lib/asset-manifest-cache.mjs";
+} from "../../scripts/assets/asset-manifest-cache.mjs";
+import type { ManifestEntry } from "../../scripts/assets/asset-manifest-cache.mjs";
 import { mapPool } from "../../scripts/lib/map-pool.mjs";
 import { writeTextIfChanged } from "../../scripts/lib/write-text-if-changed.mjs";
 import { kebabToCamel } from "../../scripts/lib/kebab-to-camel.mjs";
@@ -27,7 +27,7 @@ import {
   getGearFiles,
   isGearAsset,
   isWebpAsset,
-} from "../../scripts/lib/gear-filenames.mjs";
+} from "../../scripts/assets/gear-filenames.mjs";
 
 vi.mock("node:fs/promises", async (importOriginal) => {
   const original = await importOriginal<typeof import("node:fs/promises")>();

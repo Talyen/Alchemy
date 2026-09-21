@@ -134,23 +134,12 @@ Classification bands only — never CI gates. Compare only on the same machine, 
 
 Scenario mapping: `battle-effects`, `options-brightness`, and `talents-effects` are continuous-motion; `battle-end-turn`, `collection-tabs`, `labyrinth-interactions`, `armory-homestead`, and `shop-interactions` are transition-heavy. `startup-first-use` measures cold-start observations, not frame targets. `memory-soak` and `battle-art-diag` are diagnostics excluded from `--all`.
 
-| Scenario                 | Default measure  | Default min frames | Profile    |
-| ------------------------ | ---------------- | ------------------ | ---------- |
-| `battle-effects`         | 30 s             | 300                | continuous |
-| `battle-end-turn`        | 30 s             | 200                | transition |
-| `talents-effects`        | 15 s             | 250                | continuous |
-| `collection-tabs`        | 15 s             | 250                | transition |
-| `options-brightness`     | 12 s             | 250                | continuous |
-| `labyrinth-interactions` | 15 s             | 250                | transition |
-| `armory-homestead`       | 15 s             | 250                | transition |
-| `shop-interactions`      | 15 s             | 250                | transition |
-| `startup-first-use`      | menu nav         | 180                | transition |
-| `memory-soak`            | 60 s             | 500                | transition |
-| `battle-art-diag`        | screenshots only | n/a                | n/a        |
+Use `npm run perf -- --help` and `performance/catalog.json` for current scenario
+durations and minimum samples rather than maintaining a second defaults table.
 
 Override per-scenario defaults with `PERF_MEASURE_MS` / `PERF_MIN_FRAMES` for harness iteration only (not for baselines). Keep the default one measured run plus one unmeasured warm-up; use `--electron --cold` to measure first use. Each run writes `runs/<scenario>-<run>.json`, `runs/<scenario>-<run>-sample.json`, `aggregates/<scenario>.json`, plus `traces/` in trace mode, `display-env.json`, and `environment.json`.
 
-Optimization rule of thumb: improve the targeted p99/hitch by ≥10% or eliminate a reproducible hitch; do not regress another scenario’s p95/p99 by >5%.
+Judge an optimization by a repeatable improvement in the targeted latency or hitch, compared with observed run-to-run variation. Check relevant neighboring scenarios for regressions; a fixed percentage alone cannot distinguish an improvement from noise.
 
 ## Workflow
 

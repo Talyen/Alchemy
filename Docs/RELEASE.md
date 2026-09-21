@@ -4,7 +4,7 @@ Automated gates validate builds and release artifacts. Public release readiness 
 
 ## Commands
 
-Build and installer selection: [REFERENCE.md § Build commands decision tree](./REFERENCE.md#build-commands-decision-tree). `package.json` owns the complete script list. `check:ship:full` adds save E2E on top of `check:ship`. Electron coverage runs in the path-filtered `electron-e2e` CI job and unconditionally each night; `npm run test:ship:desktop` is also available locally but is not part of the pre-tag gate. Gate composition and tiers are owned by [CONTRIBUTING.md](../CONTRIBUTING.md#static-build-and-ci-policy).
+Build and installer selection: [REFERENCE.md § Build commands decision tree](./COMMANDS.md#build-commands-decision-tree). `package.json` owns the complete script list. `check:ship:full` adds save E2E on top of `check:ship`. Electron coverage runs in the path-filtered `electron-e2e` CI job and unconditionally each night; `npm run test:ship:desktop` is also available locally but is not part of the pre-tag gate. Gate composition and tiers are owned by [CONTRIBUTING.md](../CONTRIBUTING.md#static-build-and-ci-policy).
 
 | Command                          | When it runs                                                                                                 |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------ |
