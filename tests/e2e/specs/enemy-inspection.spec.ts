@@ -74,8 +74,7 @@ test(
     for (const name of ["Slash", "Serrated Edge", "Block"])
       await expect(dialog.getByRole("img", { name, exact: true })).toBeVisible();
     await dialog.getByRole("button", { name: "Serrated Edge", exact: true }).focus();
-    await expect(tooltip).toContainText("Deal 1 Bleed damage");
-    await expect(tooltip).toContainText("Deal 3 Physical damage");
+    await expect(tooltip).toContainText("Deal 2 Physical or Bleed damage");
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);
     await expect(bandit).toBeFocused();
