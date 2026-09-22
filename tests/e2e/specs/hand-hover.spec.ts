@@ -1,3 +1,4 @@
+import { controllerInput } from "../controller-input";
 import { expect, test } from "../../fixtures/e2e";
 import type { Page } from "@playwright/test";
 import { injectActiveBattle, makeCard, makeGoblinBattleState } from "../../browser-helpers";
@@ -83,13 +84,18 @@ test("six and seven cards select in order and clicks follow the highlighted card
   await page.mouse.click(selected.x, selected.y + selected.height / 2);
   await expect(page.locator(`[data-hand-slot="${selected.key}"]`)).toHaveCount(0);
   await expect(page.locator("[data-hand-slot]")).toHaveCount(6);
+  expect(
+    await page.locator('[data-testid="battle-hand"]').evaluate((hand) => hand.contains(document.activeElement)),
+  ).toBe(false);
   await sweep(page);
   await page.mouse.move(0, 0);
   await expect(page.locator("[data-hand-slot][data-hovered='true']")).toHaveCount(0);
   const keyboardCard = page.locator("[data-hand-slot] button").nth(2);
-  await keyboardCard.focus();
+  await controllerInput(page).reach(keyboardCard);
+  await keyboardCard.hover();
+  await page.mouse.move(0, 0);
   await expect(page.locator("[data-hand-slot]").nth(2)).toHaveAttribute("data-hovered", "true");
-  await keyboardCard.press("Enter");
+  await controllerInput(page).press("confirm");
   await expect(page.locator("[data-hand-slot]")).toHaveCount(5);
 });
 

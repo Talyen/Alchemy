@@ -73,11 +73,11 @@ describe("CorruptionScreen", () => {
     expect(onCorrupt).toHaveBeenCalledWith(0);
   });
 
-  it("shows empty message if all cards are already corrupted", async () => {
-    const user = userEvent.setup();
+  it("explains why corruption is unavailable before opening an empty picker", () => {
     render(<CorruptionScreen runDeck={[testCorruptedCard]} result={null} onCorrupt={vi.fn()} onExit={vi.fn()} />);
 
-    await user.click(screen.getByRole("button", { name: /Corrupt a Card/i }));
+    expect(screen.getByRole("button", { name: /Corrupt a Card/i })).toHaveProperty("disabled", true);
+    expect(screen.getByRole("button", { name: "Leave" })).toHaveProperty("disabled", false);
     expect(screen.getByText("No uncorrupted cards remain.")).toBeTruthy();
   });
 
@@ -102,7 +102,7 @@ describe("CorruptionScreen", () => {
     expect(onExit).toHaveBeenCalledOnce();
   });
 
-  it("resets selection state when canceling and re-entering", async () => {
+  it.each(["button", "Escape"])("resets selection when canceling with %s and re-entering", async (method) => {
     const user = userEvent.setup();
     render(<CorruptionScreen runDeck={[testSlash, testStab]} result={null} onCorrupt={vi.fn()} onExit={vi.fn()} />);
 
@@ -112,8 +112,9 @@ describe("CorruptionScreen", () => {
     const corruptConfirmBtn = screen.getByRole("button", { name: "Corrupt" });
     expect(corruptConfirmBtn).toHaveProperty("disabled", false);
 
-    await user.click(screen.getByRole("button", { name: /Cancel/i }));
-    expect(screen.getByText("Select a Card to Corrupt")).toBeTruthy();
+    if (method === "Escape") await user.keyboard("{Escape}");
+    else await user.click(screen.getByRole("button", { name: /Cancel/i }));
+    expect(await screen.findByText("Select a Card to Corrupt")).toBeTruthy();
 
     // Re-entering picker should have selection cleared
     await user.click(screen.getByRole("button", { name: /Corrupt a Card/i }));

@@ -1,3 +1,4 @@
+import { exerciseControllerOptions } from "../e2e/controller-options";
 import fs from "node:fs";
 import path from "node:path";
 import { expect, test } from "@playwright/test";
@@ -27,6 +28,13 @@ test.describe("Electron desktop integration", { tag: [desktop.tag] }, () => {
     expect(isDesktop).toBe(true);
 
     await new MenuPage(window).expectMainMenuAfterColdStart();
+    expect(errors).toEqual([]);
+  });
+
+  test("mapped controller keys navigate desktop Options", async () => {
+    const errors = failOnRuntimeErrors(window);
+    await new MenuPage(window).expectMainMenuAfterColdStart();
+    await exerciseControllerOptions(window);
     expect(errors).toEqual([]);
   });
 
@@ -181,4 +189,18 @@ test.describe("Electron desktop integration", { tag: [desktop.tag] }, () => {
     expect(probe.cloud).toBe(cloudPayload);
     expect(errors).toEqual([]);
   });
+});
+
+test("mapped controller keys navigate the packaged desktop renderer", desktop, async () => {
+  const application = await launchElectronApp({ packagedRenderer: true });
+  try {
+    const page = await getElectronMainWindow(application);
+    const errors = failOnRuntimeErrors(page);
+    await new MenuPage(page).expectMainMenuAfterColdStart();
+    expect(page.url()).toMatch(/^alchemy:\/\//);
+    await exerciseControllerOptions(page);
+    expect(errors).toEqual([]);
+  } finally {
+    await application.close();
+  }
 });

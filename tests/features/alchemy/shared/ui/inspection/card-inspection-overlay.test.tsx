@@ -12,6 +12,11 @@ import { installReadyArtworkForTests, waitForArtwork } from "../../../../../help
 installDisabledAnimationsForTests();
 installReadyArtworkForTests();
 beforeEach(() => {
+  // jsdom has no geometry; focus eligibility still needs visible-control bounds.
+  vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue([
+    new DOMRect(0, 0, 100, 30),
+  ] as unknown as DOMRectList);
+  HTMLElement.prototype.scrollIntoView = vi.fn();
   vi.stubGlobal(
     "ResizeObserver",
     class {
@@ -24,6 +29,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
   resetEscapeStackForTests();
 });
 

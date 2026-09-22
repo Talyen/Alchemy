@@ -1,3 +1,4 @@
+import { controllerInput } from "../controller-input";
 import { expect, test } from "../../fixtures/e2e";
 import { gridLabyrinthMapFixture, twoFloorLabyrinthMapFixture } from "../../fixtures/labyrinth-map";
 import { critical } from "../../playwright-tags";
@@ -30,10 +31,10 @@ test.describe("Labyrinth exploration", critical, () => {
     expect(new Set(fogSources).size).toBeGreaterThan(1);
     await expect(hidden.first().locator("img")).toHaveJSProperty("naturalWidth", 900);
     await hidden.first().hover();
-    await hidden.first().focus();
-    await hidden.first().press("Enter");
+    await controllerInput(page).reach(hidden.first());
+    await controllerInput(page).press("confirm");
     await expect(page.getByRole("complementary", { name: chamberDetails })).toHaveCount(0);
-    await page.getByRole("button", { name: /^Boss chamber/ }).click();
+    await controllerInput(page).activate(page.getByRole("button", { name: /^Boss chamber/ }));
     await expect(page.getByRole("complementary", { name: chamberDetails })).toBeVisible();
     await expect(page.getByRole("button", { name: "Fight", exact: true })).toHaveCount(0);
     await expect(page.getByText("Move to an adjacent chamber to enter.")).toHaveCount(0);

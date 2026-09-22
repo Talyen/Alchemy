@@ -67,3 +67,34 @@ starts a fresh panel mount and artwork gate. Consumers retain action-specific gu
 such as Wish's single-selection latch and confirmation buttons' disabled state.
 Confirmation focus containment pauses while the panel is inert; focus returns
 to its existing target when the panel unmounts.
+
+## Keyboard and Steam Input navigation
+
+Steam Input uses the existing keyboard and pointer interfaces; there is no second
+controller UI. The [mapping specification](./RELEASE_SETUP.md#mapping-specification)
+is maintained with release setup. Bumpers traverse focus, Enter activates it,
+Escape dismisses the top eligible layer, and arrows operate sliders and selects.
+The controlled select state registers above dialogs in the Escape stack so it
+cannot accidentally navigate out of Options or Armory.
+
+[Screen focus](../src/app/use-screen-focus.ts) recovers after keyboard-driven screen
+readiness changes when the old focus is gone or unavailable. Pointer input cancels
+that behavior. Ready, visible controls are selected through
+[shared focus eligibility](../src/features/alchemy/shared/ui/focus-navigation.ts);
+inert, hidden, and natively disabled controls are excluded. Inspection-only
+aria-disabled controls can still be traversed and inspected. Recovery scrolls
+only as needed. Dialogs restore their opener or fall back to the active screen
+when it disappeared. Existing focus is respected when deferred recovery runs.
+
+Battle hand recovery is local to the hand and uses stable card identities. After a
+keyboard play, focus goes to the next playable card in the prior visual order,
+then a preceding playable card, then a newly drawn playable card, and finally End
+Turn. Recovery waits for card transfer, activation animations, and player-turn readiness; Tab, Escape, or
+pointer input cancels pending hand recovery. Pointer plays do not move focus.
+Card previews remain visible when the cursor leaves a keyboard-focused card.
+Cards expose current play availability through aria-disabled while retaining
+inspection. Existing battle commands remain the authority for accepting plays.
+
+Held Enter/Space repeat events are consumed at the app boundary to prevent a held
+confirm from activating successive cards or newly entered screens. Separate
+presses still work normally; sliders retain arrow-key repeat behavior.

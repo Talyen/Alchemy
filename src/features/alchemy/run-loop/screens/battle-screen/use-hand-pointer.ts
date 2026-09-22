@@ -82,7 +82,12 @@ export function useHandPointer(
 
   function onMouseLeave() {
     pointer.current = null;
-    selectCard(null);
+    const active = document.activeElement;
+    const slot =
+      active instanceof HTMLElement && ref.current?.contains(active)
+        ? active.closest<HTMLElement>("[data-hand-slot]")
+        : null;
+    selectCard(slot?.dataset.handHidden ? null : (slot?.dataset.handSlot ?? null));
   }
 
   function onClickCapture(event: MouseEvent<HTMLDivElement>) {
@@ -110,7 +115,11 @@ export function useHandPointer(
     onMouseLeave,
     onClickCapture,
     onFocusCapture,
-    onBlurCapture: onMouseLeave,
+    onBlurCapture: () => {
+      const container = ref.current;
+      const point = pointer.current;
+      selectCard(container && point ? resolveCard(container, point.x, point.y) : null);
+    },
     onMouseDownCapture,
   };
 }

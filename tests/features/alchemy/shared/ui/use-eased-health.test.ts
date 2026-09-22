@@ -57,6 +57,21 @@ describe("useEasedHealth", () => {
     expect(onFinished).toHaveBeenCalledOnce();
   });
 
+  it("settles the refill on the first frame when reduced motion is requested", () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
+    vi.spyOn(performance, "now").mockReturnValue(0);
+    const frames = installRafStub();
+    const onFinished = vi.fn();
+    const { result } = renderHook(() =>
+      useEasedHealth({ from: 10, to: 20, active: true, durationMs: 1000, onFinished }),
+    );
+    act(() => frames.shift()?.(0));
+    expect(result.current.displayHealth).toBe(20);
+    expect(result.current.progressHealth).toBe(20);
+    expect(onFinished).toHaveBeenCalledOnce();
+    expect(frames).toHaveLength(0);
+  });
+
   it("supports linear easing for constant-velocity meters", () => {
     vi.spyOn(performance, "now").mockReturnValue(0);
     const frames = installRafStub();

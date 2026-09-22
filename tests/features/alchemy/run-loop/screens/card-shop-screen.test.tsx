@@ -37,11 +37,11 @@ describe("CardShopScreen remove mode", () => {
     cleanup();
   });
 
-  function renderCardShop(onRemoveCard: (index: number) => boolean) {
+  function renderCardShop(onRemoveCard: (index: number) => boolean, runDeck = [deckCard]) {
     return render(
       <CardShopScreen
         gold={100}
-        runDeck={[deckCard]}
+        runDeck={runDeck}
         shopCards={[deckCard]}
         refreshesLeft={1}
         removeUsed={false}
@@ -56,6 +56,17 @@ describe("CardShopScreen remove mode", () => {
       />,
     );
   }
+
+  it("disables removal when the deck is empty", async () => {
+    const user = userEvent.setup();
+    const onRemoveCard = vi.fn(() => true);
+    renderCardShop(onRemoveCard, []);
+    const remove = screen.getByRole("button", { name: /Remove Card/i });
+    expect(remove).toHaveProperty("disabled", true);
+    await user.hover(remove.parentElement!);
+    expect(await screen.findByText("No Cards to Remove")).toBeTruthy();
+    expect(onRemoveCard).not.toHaveBeenCalled();
+  });
 
   it("stays in remove mode when removal fails", async () => {
     const user = userEvent.setup();

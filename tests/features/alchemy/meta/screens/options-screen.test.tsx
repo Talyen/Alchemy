@@ -72,6 +72,13 @@ describe("OptionsScreen", () => {
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
+  it("toggles Screen Effects by clicking its label", () => {
+    const onScreenEffectsChange = vi.fn();
+    render(<OptionsScreen {...defaultProps} display={{ ...defaultProps.display, onScreenEffectsChange }} />);
+    fireEvent.click(screen.getByText("Screen Effects", { selector: "label" }));
+    expect(onScreenEffectsChange).toHaveBeenCalledWith({ enabled: true });
+  });
+
   it("keeps interface sizing controls out of Display and removes the previews and reset button", async () => {
     render(<OptionsScreen {...defaultProps} />);
 

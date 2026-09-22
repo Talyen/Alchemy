@@ -140,14 +140,23 @@ test("enemy Trait boxes stay unified and adapt to inspection width", async ({ pa
   expect(tooltipBox.y).toBeGreaterThanOrEqual(0);
   expect(tooltipBox.x + tooltipBox.width).toBeLessThanOrEqual(page.viewportSize()!.width);
   expect(tooltipBox.y + tooltipBox.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await enemy.hover();
+  await expect(tooltip).toBeVisible();
+  await expect(tooltip).toBeInViewport({ ratio: 1 });
+  await page.screenshot({ path: "reports/controller-support/traits-hover-800.png" });
   await enemy.click();
   const dialog = page.getByRole("dialog", { name: "Vampire" });
   const traits = dialog.locator("[data-trait]");
   await expect(traits).toHaveCount(4);
   await expect(dialog).not.toContainText("Special Modifiers");
   const inspectTrait = dialog.locator('[data-trait="caustic"]');
-  const inspectSizing = await readTraitSizing(inspectTrait);
-  for (const [index, size] of inspectSizing.entries()) expect(size).toBeCloseTo(mapSizing[index]!, 1);
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await expect
+    .poll(async () =>
+      Math.max(...(await readTraitSizing(inspectTrait)).map((size, index) => Math.abs(size - mapSizing[index]!))),
+    )
+    .toBeLessThan(0.05);
   await page.setViewportSize({ width: 1920, height: 1080 });
   await expect
     .poll(async () => (await traits.nth(1).boundingBox())!.y - (await traits.nth(0).boundingBox())!.y)

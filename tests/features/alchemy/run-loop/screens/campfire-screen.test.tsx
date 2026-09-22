@@ -27,6 +27,7 @@ describe("CampfireScreen", () => {
     const onContinue = vi.fn();
     const props = { playerHealth, maxHealth: 100, healFraction: 0.3, onContinue };
     const { rerender } = render(<CampfireScreen {...props} />);
+    expect(screen.getByText(`Rest to Restore ${restoredHealth - playerHealth} Health`)).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Rest" }));
     expect(screen.getByText(`${playerHealth} / 100`)).toBeTruthy();
@@ -47,6 +48,7 @@ describe("CampfireScreen", () => {
     expect(onContinue).toHaveBeenCalledOnce();
 
     rerender(<CampfireScreen {...props} playerHealth={restoredHealth} />);
+    expect(screen.getByText(`Rest to Restore ${restoredHealth - playerHealth} Health`)).toBeTruthy();
     expect(screen.getByText(`${restoredHealth} / 100`)).toBeTruthy();
     expect(frames).toHaveLength(0);
     act(() => vi.advanceTimersByTime(CAMPFIRE_ANIMATION_MS + CAMPFIRE_CONTINUE_DELAY_MS));

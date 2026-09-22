@@ -1,3 +1,4 @@
+import { controllerInput } from "../controller-input";
 import { BattlePage } from "../../pages/battle-page";
 import { expect } from "@playwright/test";
 import type { GearInstance } from "@/lib/gear/types";
@@ -36,16 +37,22 @@ test.describe("Armory equip", () => {
   test("click-equips, unequips, and switches characters", critical, async ({ page }) => {
     await openArmory(page);
 
-    await selectArmorySlot(page, "body");
+    const input = controllerInput(page);
+    await input.activate(page.getByRole("combobox", { name: "Sort inventory" }));
+    await expect(page.getByRole("listbox")).toBeVisible();
+    await input.press("back");
+    await expect(page.getByRole("listbox")).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Armory", exact: true })).toBeVisible();
+    await input.activate(page.getByRole("button", { name: "Armor equipment slot", exact: true }));
     const bodyItem = gearItemLocator(page, "Leather Armor");
     const bodySlot = equipmentSlotLocator(page, "body");
     await expect(bodyItem).toBeVisible();
 
-    await bodyItem.click();
+    await controllerInput(page).activate(page.getByRole("button", { name: "Leather Armor", exact: true }));
     await expect(bodySlot.locator("img")).toHaveCount(2);
     await expect(bodyItem).toHaveCount(0);
 
-    await bodySlot.click();
+    await controllerInput(page).activate(page.getByRole("button", { name: "Armor equipment slot", exact: true }));
     await expect(bodySlot.getByTestId("armory-slot-background")).toBeVisible();
     await expect(bodySlot.locator("img")).toHaveCount(1);
     await expect(bodyItem).toBeVisible();

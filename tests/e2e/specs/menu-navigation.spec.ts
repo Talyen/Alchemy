@@ -1,3 +1,5 @@
+import { exerciseControllerOptions } from "../controller-options";
+import { controllerInput } from "../controller-input";
 import { expect, test } from "../../fixtures/e2e";
 import {
   injectLabyrinthRun,
@@ -107,6 +109,13 @@ test.describe("Navigation", critical, () => {
 
     await battle.menuBtn.click();
 
+    const triggerBounds = await battle.menuBtn.boundingBox();
+    const menuBounds = await page.getByTestId("game-menu").boundingBox();
+    expect(triggerBounds).not.toBeNull();
+    expect(menuBounds).not.toBeNull();
+    expect(Math.abs(menuBounds!.x + menuBounds!.width - triggerBounds!.x - triggerBounds!.width)).toBeLessThan(80);
+    expect(menuBounds!.y).toBeGreaterThanOrEqual(triggerBounds!.y + triggerBounds!.height - 8);
+
     await expect(page.getByRole("button", { name: "Main Menu" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Collection" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Options" })).toBeVisible();
@@ -179,7 +188,7 @@ test("closing the game menu prevents keyboard navigation during its fade", async
   await menu.openOptions();
   await page.getByRole("button", { name: "Open game menu" }).click();
   const panel = page.getByTestId("game-menu");
-  await panel.getByRole("button", { name: "Collection", exact: true }).focus();
+  await controllerInput(page).reach(panel.getByRole("button", { name: "Collection", exact: true }));
   await page.evaluate(() => {
     document.addEventListener(
       "keydown",
@@ -261,4 +270,9 @@ test.describe("Progression Locks", critical, () => {
     await expect(page.getByRole("button", { name: "The Labyrinth", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Wildwood Draft", exact: true })).toBeVisible();
   });
+});
+
+test("controller-equivalent options, select arrows and dialog focus", critical, async ({ page }) => {
+  await page.goto("/");
+  await exerciseControllerOptions(page);
 });

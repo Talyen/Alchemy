@@ -163,9 +163,11 @@ export function Surface(props: SurfaceProps) {
       {...(disabled ? { "aria-disabled": "true" } : {})}
       onClick={handleDivClick}
       onKeyDown={handleDivKeyDown(handleDivClick)}
-      tabIndex={handleDivClick && !disabled ? 0 : undefined}
-      role={handleDivClick ? "button" : undefined}
-      aria-label={handleDivClick ? ariaLabel : undefined}
+      tabIndex={(handleDivClick || onFocus) && !disabled ? 0 : undefined}
+      role={handleDivClick ? "button" : onFocus ? "group" : undefined}
+      aria-label={handleDivClick || onFocus ? ariaLabel : undefined}
+      onFocus={onFocus}
+      onBlur={onBlur}
       aria-current={ariaCurrent}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}

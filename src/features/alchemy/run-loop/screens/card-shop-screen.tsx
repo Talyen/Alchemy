@@ -76,8 +76,8 @@ export function CardShopScreen({
               icon={Trash2}
               label="Remove Card"
               cost={removePrice}
-              disabled={gold < removePrice}
-              disabledMessage="Not Enough Gold"
+              disabled={runDeck.length === 0 || gold < removePrice}
+              disabledMessage={runDeck.length === 0 ? "No Cards to Remove" : "Not Enough Gold"}
               used={removeUsed}
               soldOutText="Remove Card - Sold Out"
               onClick={() => {

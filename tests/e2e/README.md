@@ -89,3 +89,20 @@ runs, including tests that pass on retry. A retry remains permitted; flakes do
 not create an additional gate.
 
 The path-filtered `save-gate` intentionally reruns full save specs, including overlapping `@critical` tests, for save-touching pushes.
+
+## Controller-equivalent input
+
+Use [controllerInput](./controller-input.ts) for Steam Input's intended keyboard and
+mouse outputs. `reach` traverses with actual Tab/Shift+Tab and detects cycles;
+`activate` requires an enabled control before pressing Enter. For an inspectable
+aria-disabled control, use `reach` and assert its disabled behavior separately.
+Target the actual focusable button, not an art wrapper. Bootstrap fixtures may
+seed state before a journey; do not use `.focus()`, clicks, or handler calls to
+repair a keyboard-only segment. Direct focus remains appropriate in isolated
+preview/component tests.
+
+The [Options journey](./controller-options.ts) is shared with Electron. Keep the
+critical combat and real-timing canaries in the existing CI tier, and secondary
+viewport/cursor variants in the full suite. Deck-size screenshots are retained in
+ignored `reports/controller-support/`; rendered-font measurements are diagnostic
+CSS pixel estimates, not physical glyph measurements or Valve certification.

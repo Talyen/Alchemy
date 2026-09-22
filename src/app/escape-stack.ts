@@ -1,4 +1,5 @@
 export const ESCAPE_PRIORITY = {
+  SELECT: 110,
   DIALOG: 100,
   MODAL: 90,
   ARMORY_TRANSIENT: 80,

@@ -66,6 +66,7 @@ function BattleControls({
           variant="outline"
           size="sm"
           className="tracking-normal normal-case"
+          data-battle-end-turn
           onClick={onEndTurn}
           disabled={battleState.turnPhase !== "player" || cardTransferInProgress}
         >

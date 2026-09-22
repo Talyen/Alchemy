@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { CAMPFIRE_ANIMATION_MS } from "@/lib/game-constants";
+import { useReducedMotionPreference } from "@/components/ui/use-reduced-motion-preference";
 import { clamp01 } from "@/lib/math";
 
 export function useEasedHealth({
@@ -18,6 +19,8 @@ export function useEasedHealth({
   easing?: "cubic" | "linear";
   onFinished?: () => void;
 }) {
+  const reducedMotion = useReducedMotionPreference();
+  const animationDuration = reducedMotion ? 0 : durationMs;
   const [animatedHealth, setAnimatedHealth] = useState(from);
   const [syncedInput, setSyncedInput] = useState({ active, from });
   const frameRef = useRef<number | null>(null);
@@ -46,7 +49,7 @@ export function useEasedHealth({
 
     const startTime = performance.now();
     function animate(now: number) {
-      const progress = clamp01((now - startTime) / durationMs);
+      const progress = animationDuration <= 0 ? 1 : clamp01((now - startTime) / animationDuration);
       const eased = easing === "linear" ? progress : 1 - Math.pow(1 - progress, 3);
       setAnimatedHealth(from + (to - from) * eased);
       if (progress < 1) {
@@ -62,7 +65,7 @@ export function useEasedHealth({
     return () => {
       if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
     };
-  }, [active, durationMs, easing, from, to]);
+  }, [active, animationDuration, easing, from, to]);
 
   return { displayHealth: Math.round(shownHealth), progressHealth: shownHealth };
 }

@@ -1,3 +1,4 @@
+import { controllerInput } from "../controller-input";
 import { expect } from "@playwright/test";
 import { test } from "../../fixtures/e2e";
 import { ShopPage } from "../../pages/shop-page";
@@ -24,7 +25,7 @@ test.describe("Card Shop", critical, () => {
       await expectRunPhase(page, "runLoop");
       const goldBefore = await shop.gold();
 
-      await shop.buyCard();
+      await controllerInput(page).activate(shop.buyBtn.first());
       await shop.waitForPurchase();
 
       expect(await shop.gold()).toBeLessThan(goldBefore);

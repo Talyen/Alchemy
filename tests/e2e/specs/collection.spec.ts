@@ -1,3 +1,4 @@
+import { controllerInput } from "../controller-input";
 import { expect, type Locator } from "@playwright/test";
 import { test } from "../../fixtures/e2e";
 import { assertNoOverflow, assertHorizontalNeighborGap } from "../../browser-helpers";
@@ -12,7 +13,7 @@ async function expectHoverOnlyShine(entry: Locator) {
   await entry.page().getByRole("heading", { name: "Collection", exact: true }).hover();
   await expect(entry.locator(".shine-border")).toHaveCount(0);
   await expect(entry).toHaveCSS("border-top-color", idleColor);
-  await entry.focus();
+  await controllerInput(entry.page()).reach(entry, 50);
   await expect(entry.locator(".shine-border")).toHaveCount(1);
   await entry.blur();
   await expect(entry.locator(".shine-border")).toHaveCount(0);
@@ -30,7 +31,7 @@ test.describe("Collection", () => {
       await expect(page.getByRole("button", { name: "Uniques" })).toBeVisible();
       await expect(page.getByRole("button", { name: /Inspect/ }).first()).toBeVisible();
 
-      await page.getByRole("button", { name: "Cards" }).click();
+      await controllerInput(page).activate(page.getByRole("button", { name: "Cards" }));
       const inspectBtn = page.getByRole("button", { name: /Inspect Anvil/ });
       await expect(inspectBtn).toBeVisible({ timeout: 5000 });
       await expectHoverOnlyShine(inspectBtn);

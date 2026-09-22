@@ -1,3 +1,4 @@
+import { useSelectDismiss } from "../../../shared/ui/use-select-dismiss";
 import { Dices } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
@@ -61,6 +62,7 @@ export function ArmoryPickerPanel({
   placeholderIndex,
   hiddenArtworkIds,
 }: ArmoryPickerPanelProps) {
+  const selectDismiss = useSelectDismiss();
   const { editable, salvageMode, activeCurrencyId, craftingResult } = targeting;
   return (
     <section
@@ -70,7 +72,7 @@ export function ArmoryPickerPanel({
       <FadeSlot swapKey={selectedSlot} className="flex min-h-0 min-w-0 flex-1 flex-col">
         <div className="relative flex min-h-10 w-full items-center justify-center">
           <div className="absolute left-0">
-            <Select value="" onValueChange={(val) => onSort(val as ArmorySortOption)}>
+            <Select {...selectDismiss} value="" onValueChange={(val) => onSort(val as ArmorySortOption)}>
               <SelectTrigger
                 aria-label="Sort inventory"
                 className="h-8 w-auto min-w-[4.5rem] gap-1.5 border-border/80 bg-background/80 px-2.5 py-1 text-xs"

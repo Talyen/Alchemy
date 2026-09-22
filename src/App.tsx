@@ -18,6 +18,7 @@ import {
   useRenderedScreenTransition,
   useReturnToRunNavigation,
 } from "@/app/app-shell";
+import { useScreenFocus } from "@/app/use-screen-focus";
 import { BattleCluster } from "@/app/battle-cluster";
 import { renderAlchemyScreenRoute } from "@/app/screen-routes";
 import { useAlchemyBootstrap } from "@/app/use-alchemy-bootstrap";
@@ -170,6 +171,8 @@ function AppMainContent({
     [inspection.visible, inspection.count, inspection.canOpen, onOpenDeck],
   );
 
+  useScreenFocus(renderedScreen, screenInteractive && !inspection.open);
+
   function blockOutgoingScreenInteraction(event: SyntheticEvent) {
     event.preventDefault();
     event.stopPropagation();
@@ -177,6 +180,7 @@ function AppMainContent({
   const content = (
     <div
       ref={artworkRef}
+      data-screen-content={renderedScreen}
       data-artwork-pending={artworkPending}
       key={renderedScreen}
       inert={!screenInteractive || inspection.open}

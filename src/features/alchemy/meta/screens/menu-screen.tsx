@@ -27,15 +27,18 @@ const OPTIONS_PLASMA_PAIR: PlasmaColorPair = { primary: "#a1a1aa", secondary: "#
 
 function MenuPlasmaHover({ colorPair, children }: { colorPair: PlasmaColorPair; children: ReactNode }) {
   const [hovered, setHovered] = useState(false);
-  usePlasmaInteraction(colorPair, hovered);
+  const [focused, setFocused] = useState(false);
+  usePlasmaInteraction(colorPair, hovered || focused);
 
   return (
     <div
       className="menu-nav-button"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      onFocusCapture={() => setHovered(true)}
-      onBlurCapture={() => setHovered(false)}
+      onFocusCapture={() => setFocused(true)}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false);
+      }}
     >
       {children}
     </div>

@@ -1,3 +1,4 @@
+import { controllerInput } from "../controller-input";
 import { expect } from "@playwright/test";
 import { test } from "../../fixtures/e2e";
 import { injectDestinationAtIndex, injectMysterySummaryVisit, assertRowAlignment } from "../../browser-helpers";
@@ -93,9 +94,12 @@ test.describe("Corruption Full Flow", () => {
     const corruption = new CorruptionPage(page);
     await corruption.open();
 
-    await corruption.selectAndCorrupt();
+    const input = controllerInput(page);
+    await input.activate(corruption.corruptBtn);
+    await input.activate(corruption.cardGrid.getByRole("button", { name: /^Select / }).first());
+    await input.activate(corruption.confirmCorruptBtn);
 
-    await corruption.continueBtn.click();
+    await controllerInput(page).activate(corruption.continueBtn);
     await new DestinationPage(page).expectVisible();
   });
 

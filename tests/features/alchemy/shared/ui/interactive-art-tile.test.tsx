@@ -30,6 +30,26 @@ afterEach(() => {
 });
 
 describe("InteractiveArtTile hover popup", () => {
+  it("allows keyboard inspection of non-actionable reward and Boon tiles", () => {
+    render(
+      <InteractiveArtTile
+        id="ruby-ring"
+        interactionKey="reward"
+        title="Ruby Ring"
+        art={undefined}
+        className=""
+        imageClassName=""
+        popup={({ visible }) => <div data-testid="tile-popup">{visible ? "shown" : "hidden"}</div>}
+      />,
+    );
+    const tile = screen.getByRole("group", { name: "Ruby Ring" });
+    expect(tile.tabIndex).toBe(0);
+    act(() => tile.focus());
+    expect(screen.getByTestId("tile-popup").textContent).toBe("shown");
+    act(() => tile.blur());
+    expect(screen.getByTestId("tile-popup").textContent).toBe("hidden");
+  });
+
   it("keeps the popup visible when the pointer leaves a focused tile", () => {
     renderTile();
     const button = screen.getByRole("button", { name: "Ruby Ring" });

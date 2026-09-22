@@ -52,6 +52,9 @@ describe("MenuScreen logo", () => {
         secondary: "#251e18",
       }),
     );
+    fireEvent.mouseEnter(play.closest(".menu-nav-button")!);
+    fireEvent.mouseLeave(play.closest(".menu-nav-button")!);
+    expect(useUiStore.getState().plasmaInteraction).not.toBeNull();
     fireEvent.blur(play);
     await waitFor(() => expect(useUiStore.getState().plasmaInteraction).toBeNull());
 

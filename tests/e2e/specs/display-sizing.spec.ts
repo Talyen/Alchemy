@@ -1,3 +1,4 @@
+import { controllerInput } from "../controller-input";
 import { expect, test } from "../../fixtures/e2e";
 import type { Locator } from "@playwright/test";
 import {
@@ -12,6 +13,7 @@ import { slow } from "../../playwright-tags";
 
 const VIEWPORTS = [
   { width: 1280, height: 720 },
+  { width: 1280, height: 800 },
   { width: 1512, height: 982 },
   { width: 3440, height: 1440 },
 ];
@@ -114,14 +116,17 @@ test.describe("Responsive display sizes", slow, () => {
       await expect(cards.first()).toBeVisible();
       for (const viewport of [
         { width: 1280, height: 720 },
+        { width: 1280, height: 800 },
         { width: 3840, height: 2160 },
       ]) {
         await page.setViewportSize(viewport);
-        await cards.first().hover();
+        await controllerInput(page).reach(cards.first());
         const tip = page.locator("#tooltip-root .hover-popup-panel[data-visible]").first();
         await expect(tip).toBeVisible();
         await expectTooltipFitsViewport(tip, viewport);
         await assertNoOverflow(page, `Battle ${viewport.width} at ${gameSizePercent}`);
+        if (viewport.width === 1280)
+          await page.screenshot({ path: `reports/controller-support/hand-${viewport.height}-${gameSizePercent}.png` });
       }
     }
   });
@@ -250,3 +255,39 @@ test.describe("Responsive display sizes", slow, () => {
       .toBe("1");
   });
 });
+
+for (const height of [720, 800]) {
+  test(`keyboard Options and confirmation fit at 1280×${height}`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 1280, height });
+    await page.goto("/");
+    const input = controllerInput(page);
+    await input.activate(page.getByRole("button", { name: "Options", exact: true }));
+    await input.activate(page.getByRole("button", { name: "Sound", exact: true }));
+    const volume = page.getByRole("slider", { name: "Music Volume", exact: true });
+    await input.reach(volume);
+    await expect(volume).toBeInViewport();
+    await expectTooltipFitsViewport(volume, { width: 1280, height });
+    await page.screenshot({ path: `reports/controller-support/options-${height}.png` });
+    const renderedText = await page.getByText("Music Volume", { exact: true }).evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      const scale = rect.height / (element as HTMLElement).offsetHeight;
+      return parseFloat(getComputedStyle(element).fontSize) * scale;
+    });
+    await testInfo.attach("rendered-label-font-size", {
+      body: `${renderedText.toFixed(1)} CSS pixels after scaling; not a physical glyph-height measurement`,
+      contentType: "text/plain",
+    });
+    expect(renderedText).toBeGreaterThanOrEqual(12);
+    await input.activate(page.getByRole("button", { name: "Other", exact: true }));
+    await input.activate(page.getByRole("button", { name: "Clear Save Data", exact: true }));
+    const dialog = page.getByRole("dialog");
+    await expectTooltipFitsViewport(dialog, { width: 1280, height });
+    const cancel = dialog.getByRole("button", { name: "Cancel", exact: true });
+    await expect(cancel).toBeFocused();
+    await expect(cancel).toBeInViewport();
+    await expect(cancel).toBeVisible();
+    await page.screenshot({ path: `reports/controller-support/confirmation-${height}.png` });
+    await input.press("back");
+    await expect(dialog).toHaveCount(0);
+  });
+}

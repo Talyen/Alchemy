@@ -1,3 +1,4 @@
+import { controllerInput } from "../controller-input";
 import { expect } from "@playwright/test";
 import { test } from "../../fixtures/e2e";
 import { MenuPage } from "../../pages/menu-page";
@@ -49,16 +50,16 @@ test.describe("Talents Flow", () => {
     await menu.gotoWithUnlockedMeta({ talentXP: { dodge: 550 }, unlockedTalents: {} });
     await menu.openTalents();
     const portrait = page.getByRole("button", { name: "Select Dodge Talents" });
-    await portrait.focus();
-    await portrait.press("Enter");
+    const input = controllerInput(page);
+    await input.activate(portrait, 50);
 
     for (const [name, key] of [
       ["Lightfoot", "Enter"],
       ["Catch Breath", "Space"],
     ]) {
       const node = page.getByRole("button").filter({ has: page.getByText(name, { exact: true }) });
-      await node.focus();
-      await node.press(key);
+      await input.reach(node, 50);
+      await page.keyboard.press(key);
       await expect(
         page
           .locator(".talent-node")

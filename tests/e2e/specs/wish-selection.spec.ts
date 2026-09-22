@@ -1,3 +1,4 @@
+import { controllerInput } from "../controller-input";
 import { expect } from "@playwright/test";
 import { test } from "../../fixtures/e2e";
 import { injectActiveBattle, makeCard, makeGoblinBattleState, startBattleWithDeck } from "../../browser-helpers";
@@ -5,9 +6,13 @@ import { BattlePage } from "../../pages/battle-page";
 
 for (const viewport of [
   { width: 1280, height: 720 },
+  { width: 1280, height: 800 },
   { width: 1920, height: 1080 },
 ]) {
-  test(`Wish choices fit and consecutive wishes resolve at ${viewport.width}`, async ({ page, fastBattle }) => {
+  test(`Wish choices fit and consecutive wishes resolve at ${viewport.width}×${viewport.height}`, async ({
+    page,
+    fastBattle,
+  }) => {
     void fastBattle;
     await page.setViewportSize(viewport);
     await startBattleWithDeck(
@@ -21,6 +26,7 @@ for (const viewport of [
     await expect(panel.getByRole("button", { name: "Confirm", exact: true })).toHaveCount(0);
     await expect(panel.getByRole("button", { name: "Skip", exact: true })).toHaveCount(0);
     await expect(choices).toHaveCount(3);
+    await page.screenshot({ path: `reports/controller-support/wish-${viewport.width}-${viewport.height}.png` });
     for (const choice of await choices.all()) {
       const bounds = await choice.boundingBox();
       expect(bounds).not.toBeNull();
@@ -39,9 +45,10 @@ for (const viewport of [
 
 for (const viewport of [
   { width: 1280, height: 720 },
+  { width: 1280, height: 800 },
   { width: 1920, height: 1080 },
 ]) {
-  test(`Four Wish choices share one row at ${viewport.width}`, async ({ page, fastBattle }) => {
+  test(`Four Wish choices share one row at ${viewport.width}×${viewport.height}`, async ({ page, fastBattle }) => {
     void fastBattle;
     await page.setViewportSize(viewport);
     const wishOptions = ["slash", "block", "wish", "wishing-well"].map((id) => makeCard({ id }));
@@ -70,9 +77,13 @@ for (const viewport of [
     await expect(choice.locator(".shine-border")).toHaveCount(1);
     await panel.getByRole("heading", { name: "Wish", exact: true }).hover();
     await expect(choice.locator(".shine-border")).toHaveCount(0);
-    await choice.focus();
+    await controllerInput(page).reach(choice);
     await expect(choice.locator(".shine-border")).toHaveCount(1);
-    await choice.press("Enter");
+    await expect(page.locator(".hover-popup-panel[data-visible]")).toContainText("Slash");
+    await expect(page.locator(".hover-popup-panel[data-visible]")).toContainText("Physical damage");
+    await expect(page.locator(".hover-popup-panel[data-visible]")).toHaveCSS("opacity", "1");
+    await page.screenshot({ path: `reports/controller-support/wish-focus-${viewport.width}-${viewport.height}.png` });
+    await controllerInput(page).press("confirm");
     await expect(panel).toBeHidden();
     await expect(new BattlePage(page).hand).toHaveCount(1);
   });

@@ -70,42 +70,65 @@ Windows release job.
 
 ## Steam Input default mapping (controller Playable)
 
-Decision: Alchemy plays with mouse plus keyboard equivalents, with no native
-gamepad handling and no controller settings in Options. Steam Deck and Big
-Picture support comes from one official Steam Input mapping authored in the
-Steamworks dashboard, not from in-game changes.
+Alchemy consumes mouse and keyboard events. It has no native gamepad polling,
+controller settings, device glyphs, sensitivity settings, or rumble. Steam Input
+can translate controller inputs into those events. The game-side behavior is
+covered by automated controller-equivalent journeys; these do not test Steam's
+translation, device drivers, or configuration delivery.
 
-Author this default mapping once, publish it as the default, and keep it so
-players need no tweaks or in-game setting changes:
+### Mapping specification
 
-- Right trackpad or right stick: mouse
-- A: Enter to activate the focused control
-- Right trigger: left mouse click
-- B: back / dismiss (Escape)
-- D-pad up/down: previous/next focus (Shift+Tab / Tab)
-- D-pad left/right: arrow keys for sliders and select controls
-- Bumpers: previous/next focus (Shift+Tab / Tab); focus a tab or page button, then press A
-- Start: Escape to open the game menu or dismiss the current overlay
-- Select: Escape
-- Left stick up/down: mouse wheel scrolling
+Use the same conceptual layout for Xbox, PlayStation, Steam Controller, and Deck,
+with device-appropriate cursor controls. Physical button positions below avoid
+confusing Xbox A with PlayStation Cross.
 
-Tabs and pagination are ordinary buttons without dedicated switch-tab or
-switch-page keyboard shortcuts. Validate this proposed mapping in Steam Input
-before publishing it as the default. Interactive surfaces use native controls: actions are
-native buttons (or `role="button"` with Enter / Space), Options sliders are
-native ranges (arrow keys), selects use the existing Radix keyboard and Escape
-behavior, dialogs contain focus with Cancel first and dismiss on Escape, and
-keyboard focus shows the same card detail popups as hover.
+| Input                          | Output           | Purpose                                          |
+| ------------------------------ | ---------------- | ------------------------------------------------ |
+| Right stick / right trackpad   | Mouse movement   | Point and inspect                                |
+| Right trigger                  | Left mouse click | Activate the pointed control                     |
+| South face button              | Enter            | Activate the focused control                     |
+| East face button / Menu / View | Escape           | Close the top eligible layer, back, or game menu |
+| Left / right bumper            | Shift+Tab / Tab  | Previous / next focus                            |
+| D-pad                          | Arrow keys       | Sliders and dropdown options                     |
+| Left stick up/down             | Mouse wheel      | Scroll the pointed container                     |
 
-Store tagging: keep the listing below full controller support. The game is
-playable with the official mapping; it does not ship native button icons,
-remapping, sensitivity, or rumble settings.
+D-pad arrows do not implement spatial navigation across ordinary buttons. Tabs
+and pagination remain normal buttons. Pointer activation and focused activation
+are separate actions. Holding confirm does not repeatedly activate controls.
 
-Revalidate this mapping before changing the listing or promoting a public
-build when any of these appear: non-button interactions such as drag-only
-play, new text entry needing the on-screen keyboard, new screens or dialogs
-outside the shared button / dialog / tab / pagination primitives, or changes
-to Escape ordering.
+### Configuration and validation status
+
+The mappings above are a specification, not published Steam configurations.
+No exported configuration IDs or live default assignments have been verified in
+this checkout. With authenticated Steam access, author/export recommended layouts
+for the supported controller types, publish their default assignments, and record
+real identifiers and validation evidence here. Never invent identifiers or infer
+publication from passing browser tests. Consult
+[Valve's developer setup](https://partner.steamgames.com/doc/features/steam_controller/getting_started_for_devs).
+
+Until actual runtime/configuration evidence exists, do not claim full controller
+support, native PlayStation support, or a Steam Deck Playable/Verified rating from
+these tests. Valve's formal rating also evaluates runtime, display, and performance;
+see [compatibility review](https://partner.steamgames.com/doc/steamhardware/compat).
+The Windows build's behavior under Proton and Deck suspend/resume remain unverified.
+
+### Automated game-side coverage
+
+[Controller input helpers](../tests/e2e/controller-input.ts) send actual Playwright
+keyboard and mouse input. They never repair focus or invoke gameplay handlers.
+Representative journeys cover menu-to-battle, consecutive plays, End Turn,
+victory/rewards/destinations, dialogs, Options selects, secondary screens, and
+cursor scrolling. Focus traversal is bounded and reports cycles. Chromium and
+Electron share the Options journey. Existing display and inspection suites cover
+1280×720 and 1280×800; screenshots go to ignored `reports/controller-support/`.
+These checks need no controllers, Steam login, or virtual-device drivers.
+
+Use the existing critical, nightly/full, and desktop CI tiers described in
+[CONTRIBUTING](../CONTRIBUTING.md#e2e-policy). Revalidate the mapping specification
+when adding drag-only actions, text entry, new nonstandard interaction primitives,
+or changing Escape ordering. Changes to published mappings need separate Steam
+validation; physical-device comfort and Deck performance cannot be inferred from
+browser input or workstation FPS.
 
 ## Steam listing baseline (Windows)
 

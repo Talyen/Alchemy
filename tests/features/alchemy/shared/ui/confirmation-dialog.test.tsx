@@ -1,16 +1,24 @@
 import userEvent from "@testing-library/user-event";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createRef } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { resetEscapeStackForTests } from "@/app/escape-stack";
 import { ConfirmationDialog } from "@/features/alchemy/shared/ui/dialogs";
 import { MOTION_FADE_MS } from "@/lib/game-constants";
 
 describe("ConfirmationDialog", () => {
+  beforeEach(() => {
+    // jsdom has no layout; give rendered controls geometry for focus eligibility.
+    vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue([
+      new DOMRect(0, 0, 100, 30),
+    ] as unknown as DOMRectList);
+    HTMLElement.prototype.scrollIntoView = vi.fn();
+  });
   afterEach(() => {
     cleanup();
     resetEscapeStackForTests();
     vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   it("starts on Cancel and keeps keyboard navigation within the dialog", async () => {
@@ -32,6 +40,28 @@ describe("ConfirmationDialog", () => {
     expect(document.activeElement).toBe(confirm);
     screen.getByRole("button", { name: "Outside" }).focus();
     expect(document.activeElement).toBe(cancel);
+  });
+
+  it("recovers into the active screen when its opener has disappeared", async () => {
+    const { rerender } = render(
+      <>
+        <button type="button">Opener</button>
+      </>,
+    );
+    screen.getByRole("button", { name: "Opener" }).focus();
+    rerender(
+      <>
+        <button type="button">Opener</button>
+        <ConfirmationDialog title="Confirm" confirmLabel="Confirm" onConfirm={vi.fn()} onCancel={vi.fn()} />
+      </>,
+    );
+    await waitFor(() => expect(screen.getByRole("button", { name: "Cancel" })).toBe(document.activeElement));
+    rerender(
+      <div data-screen-content="destination">
+        <button type="button">Continue journey</button>
+      </div>,
+    );
+    await waitFor(() => expect(screen.getByRole("button", { name: "Continue journey" })).toBe(document.activeElement));
   });
 
   it("calls onCancel when Escape is pressed", () => {

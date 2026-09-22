@@ -1,7 +1,6 @@
 import { useEffect, useRef, type KeyboardEvent, type RefObject } from "react";
 
-const FOCUSABLE =
-  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex="0"]';
+import { focusableControls, focusControl, focusScreenStart } from "./focus-navigation";
 
 export function useDialogFocus(returnFocusRef?: RefObject<HTMLElement | null>) {
   const panelRef = useRef<HTMLDivElement>(null);
@@ -37,13 +36,20 @@ export function useDialogFocus(returnFocusRef?: RefObject<HTMLElement | null>) {
       observer.disconnect();
       cancelAnimationFrame(frame);
       document.removeEventListener("focusin", keepFocus);
-      if (returnTarget?.isConnected) returnTarget.focus();
+      if (focusControl(returnTarget)) return;
+      // A route change may remove the opener while its screen is still inert.
+      requestAnimationFrame(() => {
+        const active = document.activeElement;
+        if (active instanceof HTMLElement && active !== document.body && active.isConnected && !panel?.contains(active))
+          return;
+        focusScreenStart();
+      });
     };
   }, [returnFocusRef]);
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.key !== "Tab") return;
-    const elements = [...event.currentTarget.querySelectorAll<HTMLElement>(FOCUSABLE)];
+    const elements = focusableControls(event.currentTarget);
     const first = elements[0];
     const last = elements.at(-1);
     if (event.shiftKey && (document.activeElement === first || document.activeElement === event.currentTarget)) {

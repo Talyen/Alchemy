@@ -38,6 +38,7 @@ interface BattleCardButtonBaseProps {
   hoverLeaveDelayMs?: number | undefined;
   selected?: boolean;
   disabled?: boolean | undefined;
+  ariaDisabled?: boolean | undefined;
   dragging?: boolean | undefined;
   scaleOnHover?: boolean | undefined;
   descriptionContext?: CardDescriptionContext | undefined;
@@ -69,6 +70,8 @@ export function BattleCardButton(props: BattleCardButtonProps) {
   const descriptionContext = props.descriptionContext ?? inheritedDescriptionContext;
   const wrapperRef = useRef<HTMLDivElement>(null);
   const hoverEndTimerRef = useRef(0);
+  const pointerInsideRef = useRef(false);
+  const focusedRef = useRef(false);
   const [internalHovered, setInternalHovered] = useState(false);
 
   const isControlledHover = props.onHoverStart !== undefined || props.onHoverEnd !== undefined;
@@ -85,12 +88,14 @@ export function BattleCardButton(props: BattleCardButtonProps) {
   }
 
   function handleHoverEnd() {
+    if (pointerInsideRef.current || focusedRef.current) return;
     window.clearTimeout(hoverEndTimerRef.current);
     if (isControlledHover) props.onHoverEnd?.();
     else setInternalHovered(false);
   }
 
   function handleHoverLeave(event: MouseEvent<HTMLDivElement>) {
+    pointerInsideRef.current = false;
     const next = event.relatedTarget;
     if (wrapperDataCardKey && next instanceof Element && next.closest("[data-hand-card='true']")) {
       return;
@@ -110,7 +115,10 @@ export function BattleCardButton(props: BattleCardButtonProps) {
       data-hand-card={wrapperDataCardKey ? "true" : undefined}
       data-hand-card-id={wrapperDataCardKey}
       style={wrapperStyle}
-      onMouseEnter={handleHoverStart}
+      onMouseEnter={() => {
+        pointerInsideRef.current = true;
+        handleHoverStart();
+      }}
       onMouseLeave={handleHoverLeave}
     >
       <CardHoverPopup
@@ -120,7 +128,18 @@ export function BattleCardButton(props: BattleCardButtonProps) {
         descriptionContext={descriptionContext}
         padding={props.tooltipPadding}
       />
-      <CardButtonSurface {...props} hovered={hovered} onHoverStart={handleHoverStart} onHoverEnd={handleHoverEnd} />
+      <CardButtonSurface
+        {...props}
+        hovered={hovered}
+        onHoverStart={() => {
+          focusedRef.current = true;
+          handleHoverStart();
+        }}
+        onHoverEnd={() => {
+          focusedRef.current = false;
+          handleHoverEnd();
+        }}
+      />
     </div>
   );
 }
@@ -169,6 +188,7 @@ function CardButtonSurface({
   children,
   selected = false,
   disabled = false,
+  ariaDisabled,
   dragging = false,
   scaleOnHover = true,
   shineColor,
@@ -188,6 +208,7 @@ function CardButtonSurface({
       shimmerToken={shimmerToken}
       selected={selected}
       disabled={disabled}
+      {...(ariaDisabled !== undefined ? { ariaDisabled } : {})}
       dragging={dragging}
       baseTransform={baseTransform}
       hoverScaleActive={Boolean(scaleOnHover && hovered && !dragging)}

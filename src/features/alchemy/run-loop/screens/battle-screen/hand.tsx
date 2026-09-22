@@ -1,4 +1,4 @@
-import { type MouseEvent, type RefObject, memo, useLayoutEffect, useRef } from "react";
+import { type MouseEvent, type RefObject, memo, useEffect, useLayoutEffect, useRef } from "react";
 
 import {
   HAND_CARD_BASE_Z_INDEX,
@@ -31,11 +31,13 @@ import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
 import { getHandCardKey } from "../../battle/playable-hand";
 import { getElementCenterX, playHandSlotReflow } from "./hand-slot-reflow";
 import {
+  useCardAnimationInProgress,
   useHiddenHandCardKeys,
   useInteractiveHandCardKeys,
   usePlayableHandCardKeys,
 } from "../../battle/presentation/use-hand-presentation";
 import type { BattleSnapshot } from "@/lib/battle";
+import { focusControl } from "../../../shared/ui/focus-navigation";
 import { getActiveCcKeyword, type ActiveCcKeyword } from "../../../shared/utils/cc-presentation";
 
 const HandCardItem = memo(function HandCardItem({
@@ -120,6 +122,7 @@ const HandCardItem = memo(function HandCardItem({
             onHoverEnd={ignoreArtworkHover}
             onClick={(event) => onCardClick(card, index, event)}
             buttonRef={elementRef}
+            ariaDisabled={!isInteractionEnabled}
             ariaLabel={`Play ${getCardDisplayTitle(card)}`}
             descriptionContext={descriptionContext}
             shimmerActive={shimmerActive}
@@ -166,14 +169,77 @@ export function BattleHand({
   const hiddenHandCardKeys = useHiddenHandCardKeys();
   const visuallyPlayableHandCardKeys = usePlayableHandCardKeys(playabilityState);
   const interactiveHandCardKeys = useInteractiveHandCardKeys(playabilityState, visuallyPlayableHandCardKeys);
+  const animationInProgress = useCardAnimationInProgress();
+  const keyboardActivation = useRef(false);
+  const recovery = useRef<{ played: string; order: string[] } | null>(null);
   const pointer = useHandPointer(battleState.hand, hiddenHandCardKeys, handCardRefs);
   const handWidthClass = handCardWidthClass;
   const descriptionContext = useBattleDescriptionContext(battleState);
   const ccKeyword = getActiveCcKeyword(battleState.playerCC);
 
+  function playCard(card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) {
+    const key = getHandCardKey(card, index);
+    if (
+      keyboardActivation.current &&
+      interactiveHandCardKeys.has(key) &&
+      document.activeElement === event.currentTarget &&
+      event.detail === 0
+    ) {
+      const keys = battleState.hand.map(getHandCardKey);
+      recovery.current = { played: key, order: [...keys.slice(index + 1), ...keys.slice(0, index).reverse()] };
+    }
+    keyboardActivation.current = false;
+    onCardClick(card, index, event);
+  }
+
+  useEffect(() => {
+    const cancel = () => {
+      recovery.current = null;
+      keyboardActivation.current = false;
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (["Tab", "Escape"].includes(event.key)) cancel();
+    };
+    document.addEventListener("pointerdown", cancel, true);
+    window.addEventListener("keydown", onKey, true);
+    return () => {
+      document.removeEventListener("pointerdown", cancel, true);
+      window.removeEventListener("keydown", onKey, true);
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    const pending = recovery.current;
+    if (
+      !pending ||
+      animationInProgress ||
+      battleState.hand.some((card, index) => getHandCardKey(card, index) === pending.played)
+    )
+      return;
+    if (battleState.turnPhase !== "player" || battleState.wishOptions?.length) return;
+    const key = [...pending.order, ...battleState.hand.map(getHandCardKey)].find((candidate) =>
+      interactiveHandCardKeys.has(candidate),
+    );
+    const target = key
+      ? handCardRefs.current[key]
+      : pointer.ref.current?.parentElement?.querySelector<HTMLButtonElement>("[data-battle-end-turn]");
+    if (focusControl(target)) recovery.current = null;
+  }, [
+    battleState.hand,
+    battleState.turnPhase,
+    battleState.wishOptions,
+    animationInProgress,
+    interactiveHandCardKeys,
+    handCardRefs,
+    pointer.ref,
+  ]);
+
   return (
     <div
       {...pointer}
+      onKeyDownCapture={(event) => {
+        keyboardActivation.current = !event.repeat && (event.key === "Enter" || event.key === " ");
+      }}
       data-testid="battle-hand"
       className={battleHandContainerClass}
       style={{
@@ -195,7 +261,7 @@ export function BattleHand({
             isVisuallyPlayable={visuallyPlayableHandCardKeys.has(cardKey)}
             isHidden={hiddenHandCardKeys.includes(cardKey)}
             ccKeyword={ccKeyword}
-            onCardClick={onCardClick}
+            onCardClick={playCard}
             descriptionContext={descriptionContext}
           />
         );

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ErrorLogViewer } from "@/features/alchemy/meta/screens/options/error-log-viewer";
@@ -43,6 +43,7 @@ describe("ErrorLogViewer", () => {
     expect(entry.getAttribute("aria-expanded")).toBe("true");
     expect(screen.getByText("Stack:")).toBeTruthy();
     expect(screen.getByText("Error: at line 10")).toBeTruthy();
+    expect(within(entry.parentElement!).getAllByText("Network test failure")).toHaveLength(2);
     expect(document.activeElement).toBe(entry);
 
     await user.keyboard("{Enter}");
@@ -74,5 +75,32 @@ describe("ErrorLogViewer", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("invalidates copy feedback when a full log replaces its oldest entry", async () => {
+    const user = userEvent.setup();
+    for (let index = 0; index < 100; index++) {
+      useErrorLogStore.getState().pushError({ message: `Failure ${index}`, source: "global" });
+    }
+    render(<ErrorLogViewer onClose={vi.fn()} />);
+    await user.click(screen.getByRole("button", { name: "Copy All" }));
+    expect(screen.getByText("Copied. 100 errors")).toBeTruthy();
+    act(() => useErrorLogStore.getState().pushError({ message: "New failure", source: "global" }));
+    expect(screen.getByText("100 errors")).toBeTruthy();
+    expect(screen.queryByText(/Copied\./)).toBeNull();
+  });
+
+  it("keeps an unserializable error inspectable and reports copy failure", async () => {
+    const user = userEvent.setup();
+    const context: Record<string, unknown> = {};
+    context.self = context;
+    useErrorLogStore.getState().pushError({ message: "Circular context", source: "global", context });
+    render(<ErrorLogViewer onClose={vi.fn()} />);
+    await user.click(screen.getByRole("button", { name: "Copy All" }));
+    expect(screen.getByText("Copy failed. 1 error")).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: /Circular context/ }));
+    expect(screen.getByText("Context could not be displayed.")).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Clear" }));
+    expect(screen.getByText("No errors logged.")).toBeTruthy();
   });
 });

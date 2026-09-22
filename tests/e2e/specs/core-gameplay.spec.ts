@@ -1,3 +1,4 @@
+import { controllerInput } from "../controller-input";
 import { expect } from "@playwright/test";
 import { MAX_HAND_SIZE } from "@/lib/game-constants";
 import {
@@ -120,11 +121,11 @@ test.describe("Card Interactions", slow, () => {
     await startAtDestination(page, { runPlayerHealth: 10, runMaxHealth: 30 }, { forceDestination: "Campfire" });
 
     const destination = new DestinationPage(page);
-    await destination.pick("Campfire");
+    await controllerInput(page).activate(page.getByRole("button", { name: "Campfire", exact: true }));
     await expectRunPhase(page, "runLoop");
 
     await expect(page.getByRole("button", { name: "Rest" })).toBeVisible({ timeout: 3000 });
-    await page.getByRole("button", { name: "Rest" }).click();
+    await controllerInput(page).activate(page.getByRole("button", { name: "Rest", exact: true }));
     await destination.expectVisible();
     await destination.enterAnyCombat();
   });

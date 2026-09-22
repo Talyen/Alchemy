@@ -17,6 +17,7 @@ import { SelectableCard } from "../../shared/ui/selectable-card";
 import { ScreenDescription, TitledScreenShell } from "../../shared/ui/layout-components";
 import { ShineAccentButton } from "../../shared/ui/shine-accent-button";
 import { cn } from "@/lib/utils";
+import { useCaptureEscapeCancel } from "../../shared/ui/use-modal-escape-dismiss";
 import { FadeSlot } from "../../shared/ui/use-fade";
 
 function CorruptionDeckPicker({
@@ -58,11 +59,21 @@ function CorruptionDeckPicker({
   );
 }
 
-function CorruptionIntro({ onBegin, onLeave }: { onBegin: () => void; onLeave: () => void }) {
+function CorruptionIntro({
+  onBegin,
+  onLeave,
+  hasEligibleCards,
+}: {
+  onBegin: () => void;
+  onLeave: () => void;
+  hasEligibleCards: boolean;
+}) {
   return (
     <div className="flex flex-col items-center gap-5">
       <div>
-        <ScreenDescription tone="danger">Select a Card to Corrupt</ScreenDescription>
+        <ScreenDescription tone="danger">
+          {hasEligibleCards ? "Select a Card to Corrupt" : "No uncorrupted cards remain."}
+        </ScreenDescription>
       </div>
       <div>
         <img
@@ -82,6 +93,7 @@ function CorruptionIntro({ onBegin, onLeave }: { onBegin: () => void; onLeave: (
           accentClassName="text-red-400"
           shineColor={SHINE_PALETTES.corruption}
           onClick={onBegin}
+          disabled={!hasEligibleCards}
         >
           Corrupt a Card
         </ShineAccentButton>
@@ -151,15 +163,21 @@ export function CorruptionScreen({
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [page, setPage] = useState(0);
 
+  function cancelSelection() {
+    setSelecting(false);
+    setSelectedIndex(null);
+    setPage(0);
+  }
+
+  useCaptureEscapeCancel(selecting && !result ? cancelSelection : undefined);
+
   function handleConfirm() {
     if (selectedIndex === null) return;
     onCorrupt(selectedIndex);
   }
 
   function handleExit() {
-    setSelecting(false);
-    setSelectedIndex(null);
-    setPage(0);
+    cancelSelection();
     onExit();
   }
 
@@ -184,15 +202,7 @@ export function CorruptionScreen({
                 onPageChange={setPage}
               />
               <div className="flex justify-center gap-3">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  onClick={() => {
-                    setSelecting(false);
-                    setSelectedIndex(null);
-                    setPage(0);
-                  }}
-                >
+                <Button size="lg" variant="outline" onClick={cancelSelection}>
                   Cancel
                 </Button>
                 <ShineAccentButton
@@ -208,6 +218,7 @@ export function CorruptionScreen({
             </div>
           ) : (
             <CorruptionIntro
+              hasEligibleCards={runDeck.some((card) => !card.corrupted)}
               onBegin={() => {
                 setSelecting(true);
                 setPage(0);

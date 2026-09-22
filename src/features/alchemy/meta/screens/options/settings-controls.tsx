@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import { useSelectDismiss } from "../../../shared/ui/use-select-dismiss";
+import { useId, type ReactNode } from "react";
 import { useReducedMotionPreference } from "@/components/ui/use-reduced-motion-preference";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -15,12 +16,13 @@ interface SettingsSelectProps<T extends string> {
 }
 
 export function SettingsSelect<T extends string>({ id, label, value, options, onChange }: SettingsSelectProps<T>) {
+  const selectDismiss = useSelectDismiss();
   return (
     <div className={cn(settingsPanelShellClass, "text-left")}>
       <label htmlFor={id} className={cn("block", controlLabelClass)}>
         {label}
       </label>
-      <Select value={value} onValueChange={(nextValue) => onChange(nextValue as T)}>
+      <Select {...selectDismiss} value={value} onValueChange={(nextValue) => onChange(nextValue as T)}>
         <SelectTrigger id={id} className="mt-3">
           <SelectValue />
         </SelectTrigger>
@@ -120,11 +122,14 @@ export function SettingsToggle({
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
+  const id = useId();
   return (
     <div className={settingsPanelShellClass}>
       <div className="flex items-center justify-between gap-4">
-        <p className={controlLabelClass}>{label}</p>
-        <Switch aria-label={label} checked={checked} onCheckedChange={onChange} />
+        <label htmlFor={id} className={cn(controlLabelClass, "cursor-pointer")}>
+          {label}
+        </label>
+        <Switch id={id} checked={checked} onCheckedChange={onChange} />
       </div>
     </div>
   );

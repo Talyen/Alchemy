@@ -4,35 +4,44 @@ import { Button } from "@/components/ui/button";
 import { useErrorLogStore } from "@/features/alchemy/shared/stores/error-log-store";
 import { ScreenHeaderRow, ScreenShell } from "../../../shared/ui/layout-components";
 
+function displayContext(context: Record<string, unknown>): string | undefined {
+  try {
+    return JSON.stringify(context, null, 2);
+  } catch {
+    return "Context could not be displayed.";
+  }
+}
+
 export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
   const errors = useErrorLogStore((s) => s.errors);
   const clearErrors = useErrorLogStore((s) => s.clearErrors);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [copyFeedback, setCopyFeedback] = useState<{ status: "copied" | "failed"; errorCount: number } | null>(null);
+  const [copyFeedback, setCopyFeedback] = useState<{
+    status: "copied" | "failed";
+    entries: typeof errors;
+  } | null>(null);
 
   const reversedErrors = useMemo(() => [...errors].reverse(), [errors]);
-  // Feedback is shown only while it describes the current list; a new error or
-  // Clear invalidates it via the errorCount check below without an effect.
-  const visibleCopyFeedback = copyFeedback && copyFeedback.errorCount === errors.length ? copyFeedback : null;
+  // The capped log can replace entries without changing its length.
+  const visibleCopyFeedback = copyFeedback?.entries === errors ? copyFeedback : null;
 
   async function handleCopyAll() {
-    const errorCount = errors.length;
     setCopyFeedback(null);
-    const text = errors
-      .map(
-        (e) =>
-          `[${e.source}] ${e.message}\n  at ${new Date(e.timestamp).toISOString()}\n  stack: ${e.stack ?? "(none)"}\n  context: ${JSON.stringify(e.context)}\n`,
-      )
-      .join("\n---\n");
     try {
+      const text = errors
+        .map(
+          (e) =>
+            `[${e.source}] ${e.message}\n  at ${new Date(e.timestamp).toISOString()}\n  stack: ${e.stack ?? "(none)"}\n  context: ${JSON.stringify(e.context)}\n`,
+        )
+        .join("\n---\n");
       if (!navigator.clipboard?.writeText) {
-        setCopyFeedback({ status: "failed", errorCount });
+        setCopyFeedback({ status: "failed", entries: errors });
         return;
       }
       await navigator.clipboard.writeText(text);
-      setCopyFeedback({ status: "copied", errorCount });
+      setCopyFeedback({ status: "copied", entries: errors });
     } catch {
-      setCopyFeedback({ status: "failed", errorCount });
+      setCopyFeedback({ status: "failed", entries: errors });
     }
   }
 
@@ -100,6 +109,7 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
 
               {expandedId === e.id && (
                 <div className="mt-3 space-y-2 border-t border-border/40 pt-3">
+                  <p className="text-sm break-words whitespace-pre-wrap text-foreground">{e.message}</p>
                   {e.stack ? (
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground">Stack:</p>
@@ -120,7 +130,7 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground">Context:</p>
                       <pre className="mt-1 rounded-lg bg-black/30 p-2 text-xs break-all whitespace-pre-wrap text-foreground/80">
-                        {JSON.stringify(e.context, null, 2)}
+                        {displayContext(e.context)}
                       </pre>
                     </div>
                   ) : null}
