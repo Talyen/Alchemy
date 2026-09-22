@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
 import {
+  buildAlchemySaveDataFromStores,
   configureAlchemySaveBackend,
   createDefaultSaveData,
   hydrateAlchemyPersistenceFields,
+  saveAlchemySaveData,
 } from "@/features/alchemy/shared/storage";
 import type { SaveLoadState } from "@/features/alchemy/shared/storage";
 import { clearAlchemySaveData, loadAlchemySaveState } from "@/features/alchemy/shared/storage";
 import { logStorageFailure } from "@/lib/storage-logging";
-import { restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
-import { readRunInitialized } from "@/features/alchemy/shared/stores/run-reads";
+import { resolveActiveRunForSave, restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
+import { readHasActiveRun, readRunInitialized } from "@/features/alchemy/shared/stores/run-reads";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 
 async function maybeWipeLocalSaveFromQuery(): Promise<void> {
@@ -22,6 +24,13 @@ async function maybeWipeLocalSaveFromQuery(): Promise<void> {
   url.searchParams.delete("wipeLocalSave");
   const next = `${url.pathname}${url.search}${url.hash}`;
   window.history.replaceState({}, "", next);
+}
+
+function needsRestoredBattlePersistence(
+  activeRun: Awaited<ReturnType<typeof loadAlchemySaveState>>["data"]["activeRun"],
+): boolean {
+  const activeCombat = activeRun?.activeCombat;
+  return Boolean(activeCombat?.pendingBattleTransition ?? activeCombat?.battleState.turnPhase === "enemy");
 }
 
 export function useAlchemyBootstrap(): SaveLoadState | null {
@@ -54,6 +63,12 @@ export function useAlchemyBootstrap(): SaveLoadState | null {
         hydrateAlchemyPersistenceFields(result.data);
         if (!readRunInitialized()) {
           restoreRun(result.data.activeRun, result.data.talentXP, result.data.unlockedTalents);
+          if (needsRestoredBattlePersistence(result.data.activeRun)) {
+            const outcome = await saveAlchemySaveData(
+              buildAlchemySaveDataFromStores(resolveActiveRunForSave(readHasActiveRun())),
+            );
+            if (outcome === "failed") logStorageFailure("Restored battle transition could not be persisted");
+          }
         }
       }
       setBootstrapResult(result);

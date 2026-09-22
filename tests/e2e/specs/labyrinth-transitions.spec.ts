@@ -102,9 +102,11 @@ for (const type of ["combat", "mystery", "shop"] as const) {
 
       if (type === "combat") {
         await expect(page.getByTestId("battle-scene")).toBeVisible();
-        await expect(page.getByRole("button", { name: "Play Slash", exact: true }).first()).toBeVisible();
+        const battle = new BattlePage(page);
+        await battle.waitForOpeningHand();
+        await expect(battle.endTurnBtn).toBeEnabled();
         await pauseArtwork(page);
-        await new BattlePage(page).playCardNamed("Slash");
+        await battle.playCardNamed("Slash");
         await releasePendingScreen(page);
         await expect(page.getByRole("heading", { name: "Victory", exact: true })).toBeVisible();
         await pauseArtwork(page);
