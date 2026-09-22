@@ -16,8 +16,8 @@ import { DestinationPage } from "../../pages/destination-page";
 import { expectRunPhase } from "../../pages/game-stage";
 import { critical, slow } from "../../playwright-tags";
 
-test.describe("Battle Flow", critical, () => {
-  test("normal combat can be won by playing cards and ending turns", async ({ page, fastBattle }) => {
+test.describe("Battle Flow", () => {
+  test("normal combat can be won by playing cards and ending turns", critical, async ({ page, fastBattle }) => {
     void fastBattle;
     await startBattleWithDeck(
       page,

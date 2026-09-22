@@ -35,6 +35,18 @@ function clampNonNegative(value: number, fallback: number): number {
   return Number.isFinite(value) && value >= 0 ? value : fallback;
 }
 
+function normalizeNonNegativeRecord<T extends { [K in keyof T]: number }>(
+  defaults: T,
+  saved: Partial<T> | undefined,
+): T {
+  const merged = mergeRecord(defaults, saved);
+  for (const key of Object.keys(defaults) as Array<keyof T>) {
+    const value = merged[key];
+    if (typeof value !== "number" || !Number.isFinite(value) || value < 0) merged[key] = defaults[key];
+  }
+  return merged;
+}
+
 // Module-level catalog snapshot for trait restore; stale under HMR/catalog
 // swaps, which is acceptable for load-time repair (fresh import per load).
 const traitMetadata = new Map(
@@ -99,16 +111,16 @@ export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): B
     talentEffects: normalizeTalentEffects(defaults.talentEffects, saved.talentEffects),
     flags: mergeRecord(defaults.flags, saved.flags),
     uniqueGear: mergeRecord(defaults.uniqueGear, saved.uniqueGear),
-    playerStatuses: mergeRecord(defaults.playerStatuses, saved.playerStatuses),
-    enemyStatuses: mergeRecord(defaults.enemyStatuses, saved.enemyStatuses),
-    playerCC: mergeRecord(defaults.playerCC, saved.playerCC),
-    enemyCC: mergeRecord(defaults.enemyCC, saved.enemyCC),
-    enemyMitigation: mergeRecord(defaults.enemyMitigation, saved.enemyMitigation),
+    playerStatuses: normalizeNonNegativeRecord(defaults.playerStatuses, saved.playerStatuses),
+    enemyStatuses: normalizeNonNegativeRecord(defaults.enemyStatuses, saved.enemyStatuses),
+    playerCC: normalizeNonNegativeRecord(defaults.playerCC, saved.playerCC),
+    enemyCC: normalizeNonNegativeRecord(defaults.enemyCC, saved.enemyCC),
+    enemyMitigation: normalizeNonNegativeRecord(defaults.enemyMitigation, saved.enemyMitigation),
     pendingTurnStartEffects: saved.pendingTurnStartEffects ?? defaults.pendingTurnStartEffects,
+    pendingHandCards: saved.pendingHandCards ?? defaults.pendingHandCards,
     pendingForgeThresholds: saved.pendingForgeThresholds ?? defaults.pendingForgeThresholds,
     currentEnemy: {
-      ...defaults.currentEnemy,
-      ...saved.currentEnemy,
+      ...(catalogEnemy ?? defaults.currentEnemy),
       abilityIds,
       traits: restoreEnemyTraits(saved.currentEnemy?.traits, catalogEnemy),
     },
@@ -147,6 +159,10 @@ export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): B
   for (const key of ["playerDodgeCount", "dodgeChanceFromDamage"] as const) {
     merged[key] = clampNonNegative(merged[key], 0);
   }
+  merged.roomScalingMultiplier =
+    Number.isFinite(merged.roomScalingMultiplier) && merged.roomScalingMultiplier > 0
+      ? merged.roomScalingMultiplier
+      : defaults.roomScalingMultiplier;
   for (const key of ["playerHealth", "enemyHealth", "playerMaxHealth", "enemyMaxHealth", "gold"] as const) {
     merged[key] = clampNonNegative(merged[key], defaults[key]);
   }

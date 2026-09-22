@@ -14,7 +14,7 @@ import { BattlePage } from "../../pages/battle-page";
 import { DestinationPage } from "../../pages/destination-page";
 import { critical } from "../../playwright-tags";
 
-test.describe("Run Outcomes", critical, () => {
+test.describe("Run Outcomes", () => {
   test.describe("Victory Flow", () => {
     test(
       "beating Act I boss completes victory flow and displays Act II destination choices",
@@ -54,7 +54,7 @@ test.describe("Run Outcomes", critical, () => {
   });
 
   test.describe("Defeat and Run End Flow", () => {
-    test("ending a run from destination always shows the End Run screen", critical, async ({ page }) => {
+    test("ending a run from destination always shows the End Run screen", async ({ page }) => {
       await startAtDestination(page, {}, { forceDestination: "Normal Combat" });
       await page.keyboard.press("Escape");
       await expect(page.getByRole("button", { name: "End Run" })).toBeVisible({ timeout: 3000 });

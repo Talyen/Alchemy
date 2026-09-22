@@ -7,6 +7,7 @@ import {
   type CardPlayOptions,
 } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
+import type { BattleCardEffect } from "@/lib/game-data";
 import { HALF_DIVISOR } from "@/lib/game-constants";
 
 import { PLAYABLE_HAND_OPTIONS } from "../../shared/config/battle-input";
@@ -38,6 +39,24 @@ function getPlayableHandCards(
   return playable;
 }
 
+function immediateSelfDamage(effects: readonly BattleCardEffect[]): number {
+  return effects.reduce((total, effect) => {
+    if (effect.kind === "lose-health" || effect.kind === "self-damage") return total + effect.amount;
+    if (effect.kind === "chance")
+      return total + Math.max(immediateSelfDamage(effect.successEffects), immediateSelfDamage(effect.failureEffects));
+    return total;
+  }, 0);
+}
+
+function hasPotentialLethalSelfCost(card: BattleCard, state: BattleSnapshot): boolean {
+  return (
+    state.deathsDoorUsed &&
+    !state.deathsDoorActive &&
+    state.playerStatuses.phoenixFeather <= 0 &&
+    immediateSelfDamage(card.effects) >= state.playerHealth
+  );
+}
+
 /**
  * Greedy autoplay pick: highest effective-damage score wins, with ties going
  * to the leftmost card. At half health or below, the pick is restricted to
@@ -48,21 +67,12 @@ export function findBestPlayableHandCard(
   state: BattleSnapshot,
   options: CardPlayOptions = PLAYABLE_HAND_OPTIONS,
 ): { card: BattleCard; index: number } | null {
-  const playable = getPlayableHandCards(state, options).filter(({ card }) => {
-    const opening = card.effects[0];
-    // A Health payment resolves before the card's benefits. Leave guaranteed
-    // lethal payments to manual play rather than killing the hero for a draw.
-    return !(
-      opening?.kind === "lose-health" &&
-      opening.amount >= state.playerHealth &&
-      state.deathsDoorUsed &&
-      !state.deathsDoorActive &&
-      state.playerStatuses.phoenixFeather <= 0
-    );
-  });
+  // Leave potentially lethal card costs to manual play, including costs after
+  // an attack and self-damage that defenses might mitigate.
+  const playable = getPlayableHandCards(state, options).filter(({ card }) => !hasPotentialLethalSelfCost(card, state));
   if (playable.length === 0) return null;
   if (state.playerHealth <= state.playerMaxHealth / HALF_DIVISOR) {
-    const defensive = playable.filter(({ card }) => getImmediateDefense(card) > 0);
+    const defensive = playable.filter(({ card }) => getImmediateDefense(card, state) > 0);
     if (defensive.length > 0) {
       return pickHighestScoring(defensive, (card) => getEffectiveDamageScore(card, state));
     }
@@ -75,6 +85,9 @@ export function findBestWishChoice(state: BattleSnapshot): BattleCard | null {
   const options = state.wishOptions;
   if (!options || options.length === 0) return null;
   const pairs = options.flatMap((card, index) => (card ? [{ card, index }] : []));
+  const safePairs = pairs.filter(({ card }) => !hasPotentialLethalSelfCost(card, state));
+  if (safePairs.length > 0)
+    return pickHighestScoring(safePairs, (card) => getEffectiveDamageScore(card, state))?.card ?? null;
   return pickHighestScoring(pairs, (card) => getEffectiveDamageScore(card, state))?.card ?? null;
 }
 

@@ -33,7 +33,7 @@ test.describe("Destination Progression", () => {
     await expect(page.getByRole("button", { name: "End Turn" })).toBeVisible();
   });
 
-  test("completed destinations do not appear in subsequent choices", critical, async ({ page }) => {
+  test("completed destinations do not appear in subsequent choices", async ({ page }) => {
     await injectDestinationAtIndex(page, {
       destinations: ["Campfire", "Mystery", "Card Shop"],
       destinationIndexInAct: 1,
@@ -48,7 +48,7 @@ test.describe("Destination Progression", () => {
     await expect(page.getByRole("button", { name: "Combat", exact: true })).toHaveCount(0);
   });
 
-  test("boss destination appears at end of act when all choices are exhausted", critical, async ({ page }) => {
+  test("boss destination appears at end of act when all choices are exhausted", async ({ page }) => {
     await injectDestinationAtIndex(page, {
       destinations: ["Boss Combat"],
       destinationIndexInAct: 4,

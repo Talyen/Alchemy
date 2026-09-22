@@ -22,6 +22,7 @@ export function createAlchemyPlaywrightConfig(preset: AlchemyPlaywrightPreset) {
     return defineConfig({
       testDir: "./tests/electron",
       testMatch: "**/*.spec.ts",
+      ...(process.env.PLAYWRIGHT_ELECTRON_FULL === "1" ? {} : { grep: /@local-electron-smoke/ }),
       globalSetup: "./tests/electron/electron-global-setup.ts",
       fullyParallel: false,
       workers: 1,

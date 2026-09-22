@@ -23,7 +23,9 @@ describe("Talent talent turn rewards", () => {
     expect(after.hand).toHaveLength(MAX_HAND_SIZE);
     expect(after.discard).toContainEqual(returning);
     expect(after.uniqueGear.returningFlightUid).toBeNull();
-    expect(after.hand.length + after.deck.length + after.discard.length).toBe(count + 5);
+    expect(after.hand.length + after.pendingHandCards.length + after.deck.length + after.discard.length).toBe(
+      count + 5,
+    );
   });
 
   it("pays Dark Recovery next turn based on Mana at turn end, even if the enemy drains Mana", () => {

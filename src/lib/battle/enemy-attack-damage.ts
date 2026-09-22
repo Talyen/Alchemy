@@ -329,6 +329,7 @@ function resolvePendingCinderSkinReaction(state: BattleState, combatTexts: Comba
     ...state,
     flags: { ...state.flags, cinderSkinUsedThisTurn: true, pendingCinderSkinReaction: false },
   };
+  if (ready.enemyHealth <= 0) return ready;
   return resolveEnemyDamageEffectCore(
     recordEnemyAbilityActivation(ready, "cinder-skin"),
     { kind: "damage", damageType: "burn", amount: scaleByRoomMultiplier(ready, 1) },

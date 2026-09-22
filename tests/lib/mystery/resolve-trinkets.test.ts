@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { trinketLibrary } from "@/lib/game-data";
 import { gearBaseItemList } from "@/lib/gear/base-items";
-import { findMysteryEvent } from "@/lib/mystery";
+import { findMysteryEvent, isMysteryLootEligible } from "@/lib/mystery";
 import {
   applyResolvedMysteryTrinketIds,
   collectResolvedMysteryTrinketIds,
@@ -211,4 +211,53 @@ it("offers the same named trinket in every choice that names it", () => {
   };
   const resolved = resolveMysteryEventTrinkets(event, [], () => 0);
   expect(trinketIdsOn(resolved)).toEqual(["bone-charm", "bone-charm"]);
+});
+
+it("rejects repeated named Boons within a choice before Astral Gear unlocks", () => {
+  const event = {
+    ...eventWithTwoTrinkets,
+    choices: [
+      {
+        label: "A",
+        effects: [
+          { kind: "gainTrinket" as const, trinketId: "bone-charm" },
+          { kind: "gainTrinket" as const, trinketId: "bone-charm" },
+        ],
+      },
+    ],
+  };
+  const early = { depth: 1, highestCompletedDifficulty: null };
+
+  expect(isMysteryLootEligible(event, early, [])).toBe(false);
+  expect(isMysteryLootEligible(event, { ...early, depth: 4 }, [])).toBe(true);
+  expect(resolveMysteryEventTrinkets(event, [], () => 0).choices[0]?.effects[1]).toMatchObject({
+    kind: "gainGeneratedGear",
+    astral: true,
+  });
+});
+
+it("reserves a later named Boon before rolling an earlier random grant", () => {
+  const event = {
+    ...eventWithTwoTrinkets,
+    choices: [
+      {
+        label: "A",
+        effects: [
+          { kind: "gainRandomTrinket" as const, fromIds: ["bone-charm"] },
+          { kind: "gainTrinket" as const, trinketId: "bone-charm" },
+        ],
+      },
+    ],
+  };
+  const owned = trinketLibrary
+    .filter((entry) => entry.id !== "bone-charm" && entry.id !== "sin-eaters-lantern")
+    .map((entry) => entry.id);
+  const early = { depth: 1, highestCompletedDifficulty: null };
+
+  expect(isMysteryLootEligible(event, early, owned)).toBe(true);
+  expect(resolveMysteryEventTrinkets(event, owned, () => 0).choices[0]?.effects).toEqual([
+    { kind: "gainTrinket", trinketId: "sin-eaters-lantern" },
+    { kind: "gainTrinket", trinketId: "bone-charm" },
+  ]);
+  expect(isMysteryLootEligible(event, early, [...owned, "sin-eaters-lantern"])).toBe(false);
 });

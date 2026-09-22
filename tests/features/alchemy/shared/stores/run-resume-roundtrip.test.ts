@@ -69,6 +69,13 @@ describe("labyrinth modifier persistence", () => {
     expect(decoded.session.activeLabyrinthRewardModifiers).toEqual(["generous"]);
   });
 
+  it("returns to the map when a saved battle could not be restored", () => {
+    startLabyrinthRun();
+    const saved = snapshotRun(ROUTE_SCREENS.LABYRINTH_MAP);
+    const decoded = decodeRunResumeSnapshot({ ...saved, currentScreen: "battle", activeCombat: null });
+    expect(decoded.screen).toBe("labyrinth-map");
+  });
+
   it("backfills twists from legacy combat parcels", () => {
     startLabyrinthRun();
 

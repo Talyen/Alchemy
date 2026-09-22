@@ -61,15 +61,11 @@ test.describe("Damage-over-Time Status Effects", () => {
         await expect(battle.statusChip(title)).toBeVisible();
       }
     };
-    if (statusCase.damageType === "burn") {
-      test(statusCase.name, critical, body);
-    } else {
-      test(statusCase.name, slow, body);
-    }
+    test(statusCase.name, slow, body);
   }
 });
 
-test.describe("Companion Battle Behavior", critical, () => {
+test.describe("Companion Battle Behavior", () => {
   const COMPANION_DECK = Array.from({ length: 6 }, () => WOLF_COMPANION_CARD);
 
   test("summon companion card places companion in battle panel", async ({ page, fastBattle }) => {

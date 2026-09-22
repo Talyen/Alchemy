@@ -468,7 +468,8 @@ describe("thematic card effects", () => {
     }
     const result = applyCardEffects(battle({ deck, hand: deck.slice(0, 6) }), cardById["roll-the-dice"]!, []);
     expect(result.hand).toHaveLength(7);
-    expect(result.deck).toHaveLength(9);
+    expect(result.pendingHandCards).toHaveLength(5);
+    expect(result.deck).toHaveLength(4);
   });
 
   it("Pack Tactics repeats utility actions, does nothing without a Companion, and stops on victory", () => {

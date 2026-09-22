@@ -41,6 +41,24 @@ function refillDeck(
   return { deck: shuffle(discard, rng), discard: [] };
 }
 
+export function deliverPendingHandCards(state: BattleState): BattleState {
+  const slots = Math.max(0, MAX_HAND_SIZE - state.hand.length);
+  if (slots === 0 || state.pendingHandCards.length === 0) return state;
+  return {
+    ...state,
+    hand: [...state.hand, ...state.pendingHandCards.slice(0, slots)],
+    pendingHandCards: state.pendingHandCards.slice(slots),
+  };
+}
+
+export function addCardToHandOrQueue(state: BattleState, card: BattleCard): BattleState {
+  const ready = deliverPendingHandCards(state);
+  const received = { ...card, uid: ready.nextCardUid };
+  return ready.hand.length < MAX_HAND_SIZE
+    ? { ...ready, hand: [...ready.hand, received], nextCardUid: ready.nextCardUid + 1 }
+    : { ...ready, pendingHandCards: [...ready.pendingHandCards, received], nextCardUid: ready.nextCardUid + 1 };
+}
+
 export function drawCards(
   deck: BattleCard[],
   discard: BattleCard[],
@@ -48,14 +66,17 @@ export function drawCards(
   amount: number,
   nextCardUid: number,
   rng: () => number,
+  pendingHandCards: BattleCard[] = [],
 ) {
   let nextDeck = [...deck];
   let nextDiscard = [...discard];
-  const nextHand = [...hand];
+  const slots = Math.max(0, MAX_HAND_SIZE - hand.length);
+  const nextHand = [...hand, ...pendingHandCards.slice(0, slots)];
+  const nextPendingHandCards = pendingHandCards.slice(slots);
   let uid = nextCardUid;
   const uidChanges: CardUidChange[] = [];
 
-  for (let i = 0; i < amount && nextHand.length < MAX_HAND_SIZE; i++) {
+  for (let i = 0; i < amount; i++) {
     const refilled = refillDeck(nextDeck, nextDiscard, rng);
     if (!refilled) break;
     nextDeck = refilled.deck;
@@ -63,12 +84,21 @@ export function drawCards(
 
     const card = nextDeck.pop();
     if (!card) break;
-    nextHand.push({ ...card, uid });
+    const drawn = { ...card, uid };
+    if (nextHand.length < MAX_HAND_SIZE) nextHand.push(drawn);
+    else nextPendingHandCards.push(drawn);
     if (card.uid !== undefined) uidChanges.push({ previous: card.uid, next: uid });
     uid += 1;
   }
 
-  return { deck: nextDeck, discard: nextDiscard, hand: nextHand, nextCardUid: uid, uidChanges };
+  return {
+    deck: nextDeck,
+    discard: nextDiscard,
+    hand: nextHand,
+    pendingHandCards: nextPendingHandCards,
+    nextCardUid: uid,
+    uidChanges,
+  };
 }
 
 export function takeRandomCardFromDeck(state: BattleState): {
@@ -93,7 +123,15 @@ export function takeRandomCardFromDeck(state: BattleState): {
 }
 
 export function drawFromState(state: BattleState, amount: number) {
-  return drawCards(state.deck, state.discard, state.hand, amount, state.nextCardUid, getBattleRng(state));
+  return drawCards(
+    state.deck,
+    state.discard,
+    state.hand,
+    amount,
+    state.nextCardUid,
+    getBattleRng(state),
+    state.pendingHandCards,
+  );
 }
 
 export function applyDrawResult(state: BattleState, draw: ReturnType<typeof drawCards>): BattleState {
@@ -102,6 +140,7 @@ export function applyDrawResult(state: BattleState, draw: ReturnType<typeof draw
     deck: draw.deck,
     discard: draw.discard,
     hand: draw.hand,
+    pendingHandCards: draw.pendingHandCards,
     nextCardUid: draw.nextCardUid,
     uniqueGear: remapDrawnCardBenefits(state, draw.uidChanges),
   };
@@ -112,29 +151,30 @@ export function drawKeywordCard(
   keyword: string,
   options: { refillFromDiscard?: boolean } = {},
 ): BattleState {
-  if (state.hand.length >= MAX_HAND_SIZE) return state;
+  const ready = deliverPendingHandCards(state);
   // Twin-casting only tutors from the deck itself; ordinary draws reshuffle.
   const refilled =
     options.refillFromDiscard === false
-      ? state.deck.length > 0
-        ? { deck: state.deck, discard: state.discard }
+      ? ready.deck.length > 0
+        ? { deck: ready.deck, discard: ready.discard }
         : null
-      : refillDeck(state.deck, state.discard, getBattleRng(state));
-  if (!refilled) return state;
+      : refillDeck(ready.deck, ready.discard, getBattleRng(ready));
+  if (!refilled) return ready;
   const indices = refilled.deck.flatMap((card, index) => (cardHasKeyword(card, keyword) ? [index] : []));
-  if (indices.length === 0) return state;
-  const sampled = indices[rngInt(getBattleRng(state), indices.length)];
-  if (sampled === undefined) return state;
+  if (indices.length === 0) return ready;
+  const sampled = indices[rngInt(getBattleRng(ready), indices.length)];
+  if (sampled === undefined) return ready;
   const index = sampled;
   const deckCard = refilled.deck[index];
-  if (!deckCard) return state;
-  const card = { ...deckCard, uid: state.nextCardUid };
+  if (!deckCard) return ready;
+  const card = { ...deckCard, uid: ready.nextCardUid };
   return {
-    ...state,
+    ...ready,
     deck: refilled.deck.filter((_, i) => i !== index),
     discard: refilled.discard,
-    hand: [...state.hand, card],
-    nextCardUid: state.nextCardUid + 1,
-    uniqueGear: remapDrawnCardBenefits(state, [{ previous: deckCard.uid, next: card.uid }]),
+    hand: ready.hand.length < MAX_HAND_SIZE ? [...ready.hand, card] : ready.hand,
+    pendingHandCards: ready.hand.length < MAX_HAND_SIZE ? ready.pendingHandCards : [...ready.pendingHandCards, card],
+    nextCardUid: ready.nextCardUid + 1,
+    uniqueGear: remapDrawnCardBenefits(ready, [{ previous: deckCard.uid, next: card.uid }]),
   };
 }

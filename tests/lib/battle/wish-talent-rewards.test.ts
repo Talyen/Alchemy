@@ -38,7 +38,7 @@ describe("Talent wish talent rewards", () => {
     expect(chooseWishCard(state, "invalid")).toBe(state);
     const after = chooseWishCard(state, "1");
     expect(after.playerStatuses.block).toBe(0);
-    expect(after.discard.slice(-2).map((card) => card.id)).toEqual(["1", "2"]);
+    expect(after.pendingHandCards.slice(-2).map((card) => card.id)).toEqual(["1", "2"]);
     const final = chooseWishCard(after, "2");
     expect(final.playerStatuses.block).toBe(0);
     expect(chooseWishCard(final, "2")).toBe(final);

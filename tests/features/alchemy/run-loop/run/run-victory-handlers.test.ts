@@ -128,16 +128,21 @@ describe("createRunFlow victory paths", () => {
     expect(readRunSession().runEndMaterials).toEqual(emptyInventory());
   });
 
-  it("Wildwood Draft run end grants no materials", () => {
+  it("Wildwood run end includes collected Materials and Homestead bonuses", () => {
     setRunProgress({ contentSystemType: CONTENT_SYSTEMS.WILDWOOD, roomsEncountered: 12 });
     dispatchRunSessionCommand((draft) => {
       draft.runProfile.effects.endRunHerbsPerRoom = 2;
     });
-    dispatchRunSessionCommand((draft) => addRunMaterialsEarned(draft, { ...emptyInventory(), wood: 5 }));
+    dispatchRunSessionCommand((draft) => {
+      addRunMaterialsEarned(draft, { ...emptyInventory(), wood: 5 });
+      addRunCurrenciesEarned(draft, { "discordant-dice": 2 });
+    });
 
     const materials = dispatchRunSessionCommand(awardRunEndMaterials);
 
-    expect(materials).toEqual(emptyInventory());
+    expect(materials).toEqual({ ...emptyInventory(), herbs: 24 });
+    expect(readRunSession().runEndMaterials).toEqual({ ...emptyInventory(), herbs: 24, wood: 5 });
+    expect(readRunSession().runEndCurrencies["discordant-dice"]).toBe(2);
     expect(readActiveRun().runMaterialsEarned).toEqual(emptyInventory());
   });
 
@@ -255,7 +260,7 @@ describe("createRunFlow victory paths", () => {
       rewardState: {
         choices: [],
         gold: 0,
-        materials: emptyInventory(),
+        materials: { ...emptyInventory(), wood: 2 },
         selectedId: null,
         destinations: [],
         rewardType: "card",
@@ -276,11 +281,17 @@ describe("createRunFlow victory paths", () => {
     });
     const navigateTo = vi.fn();
     const onWildwoodRewardComplete = vi.fn();
+    const woodBefore = readRunProfile().materialInventory.wood;
 
-    createRunFlow(makeFlowHandlerDeps({ navigateTo, onWildwoodRewardComplete })).skipRewards();
+    const handlers = createRunFlow(makeFlowHandlerDeps({ navigateTo, onWildwoodRewardComplete }));
+    handlers.skipRewards();
 
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.REWARDS, expect.any(Function));
     expect(onWildwoodRewardComplete).not.toHaveBeenCalled();
+    expect(readRunProfile().materialInventory.wood).toBe(woodBefore + 2);
+    (navigateTo.mock.calls[0]![1] as () => void)();
+    handlers.skipRewards();
+    expect(readRunProfile().materialInventory.wood).toBe(woodBefore + 2);
   });
 
   it("commits Wildwood reward handoff in the victory command draft", () => {

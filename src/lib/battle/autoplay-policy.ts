@@ -2,6 +2,7 @@ import { resolveConditionalCardDamage } from "./conditional-card-damage";
 import type { BattleSnapshot } from "./types/state-types";
 import { harmfulPlayerStatusIds, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 import { halveRounded, scalePercent } from "./amount-helpers";
+import { computeCardPayment } from "./card-cost-rules";
 
 const DOT_STATUSES = new Set(["burn", "poison", "bleed"]);
 const CONTROL_STATUSES = new Set(["stun", "freeze"]);
@@ -21,15 +22,19 @@ export const AUTOPLAY_EFFECT_SCORE = {
   wish: 3,
 } as const;
 
-function scoreEffects(effects: readonly BattleCardEffect[], state: BattleSnapshot): number {
+interface ScoreCapacity {
+  manaRoom: number;
+}
+
+function scoreEffects(effects: readonly BattleCardEffect[], state: BattleSnapshot, capacity: ScoreCapacity): number {
   let total = 0;
   for (const effect of effects) {
-    total += scoreEffect(effect, state);
+    total += scoreEffect(effect, state, capacity);
   }
   return total;
 }
 
-function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot): number {
+function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot, capacity: ScoreCapacity): number {
   switch (effect.kind) {
     case "damage":
       return effect.equalToForge
@@ -66,7 +71,7 @@ function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot): number {
       );
     }
     case "heal":
-      return state.playerHealth < state.playerMaxHealth ? effect.amount : 0;
+      return Math.min(effect.amount, Math.max(0, state.playerMaxHealth - state.playerHealth));
     case "remove-harmful-status": {
       // A full cleanse is worth the harmful effects actually present; a
       // fixed cleanse is worth its amount. Panacea Potion carries no amount.
@@ -78,23 +83,30 @@ function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot): number {
     }
     case "chance":
       return (
-        effect.probability * scoreEffects(effect.successEffects, state) +
-        (1 - effect.probability) * scoreEffects(effect.failureEffects, state)
+        effect.probability * scoreEffects(effect.successEffects, state, capacity) +
+        (1 - effect.probability) * scoreEffects(effect.failureEffects, state, capacity)
       );
     case "repeat-over-turns":
-      return effect.remainingTurns * scoreEffects(effect.effects, state);
+      return effect.remainingTurns * scoreEffects(effect.effects, state, capacity);
     case "draw-cards":
-      return effect.amount * AUTOPLAY_EFFECT_SCORE.draw;
+      return Math.min(effect.amount, state.deck.length + state.discard.length) * AUTOPLAY_EFFECT_SCORE.draw;
     case "random-draw":
-      return ((effect.minAmount + effect.maxAmount) / 2) * AUTOPLAY_EFFECT_SCORE.draw;
+      return (
+        Math.min((effect.minAmount + effect.maxAmount) / 2, state.deck.length + state.discard.length) *
+        AUTOPLAY_EFFECT_SCORE.draw
+      );
     case "restore-mana":
-      return effect.amount * AUTOPLAY_EFFECT_SCORE.mana;
+      return (
+        Math.min(effect.amount, effect.allowOverflow ? effect.amount : capacity.manaRoom) * AUTOPLAY_EFFECT_SCORE.mana
+      );
     case "summon-companion":
       return AUTOPLAY_EFFECT_SCORE.summon;
     case "buff-companion":
       return effect.amount * AUTOPLAY_EFFECT_SCORE.companionBuff;
     case "companion-action":
-      return state.activeCompanion ? effect.amount * scoreEffects(state.activeCompanion.turnStartEffects, state) : 0;
+      return state.activeCompanion
+        ? effect.amount * scoreEffects(state.activeCompanion.turnStartEffects, state, capacity)
+        : 0;
     case "multiply-enemy-status": {
       const current = state.enemyStatuses[effect.status] ?? 0;
       return current > 0 ? (effect.factor - 1) * current : 0;
@@ -135,21 +147,30 @@ export function getImmediateDamage(card: BattleCard): number {
   }, 0);
 }
 
-export function getImmediateDefense(card: BattleCard): number {
+export function getImmediateDefense(card: BattleCard, state?: BattleSnapshot): number {
   return card.effects.reduce((total, effect) => {
-    if (effect.kind === "heal") return total + effect.amount;
+    if (effect.kind === "heal")
+      return (
+        total +
+        (state ? Math.min(effect.amount, Math.max(0, state.playerMaxHealth - state.playerHealth)) : effect.amount)
+      );
     if (effect.kind === "player-status" && (effect.status === "block" || effect.status === "armor")) {
       return total + (effect.convertCurrentMana ?? effect.perManaCrystal ?? effect.amount);
     }
-    if (effect.kind === "remove-harmful-status")
+    if (effect.kind === "remove-harmful-status") {
+      if (state && !harmfulPlayerStatusIds.some((status) => state.playerStatuses[status] > 0)) return total;
       // Stateless heuristic: a full cleanse counts nominally; fixed counts its amount.
       return total + (effect.amount ?? 1) * AUTOPLAY_EFFECT_SCORE.cleanse;
+    }
     return total;
   }, 0);
 }
 
 export function getEffectiveDamageScore(card: BattleCard, state: BattleSnapshot): number {
-  return scoreEffects(card.effects, state);
+  const cost = computeCardPayment(state, card).effectiveCost;
+  return scoreEffects(card.effects, state, {
+    manaRoom: Math.max(0, state.maxMana - Math.max(0, state.mana - cost)),
+  });
 }
 
 export function pickHighestScoring(

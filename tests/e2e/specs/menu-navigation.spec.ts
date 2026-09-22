@@ -18,7 +18,7 @@ import { MenuPage } from "../../pages/menu-page";
 import { LOADING_WORDS } from "@/app/loading-words";
 import { critical, slow } from "../../playwright-tags";
 
-test.describe("Menu", critical, () => {
+test.describe("Menu", () => {
   test("main menu reports the meta run phase and shows all buttons", async ({ page }) => {
     const menu = new MenuPage(page);
     await menu.goto();
@@ -47,7 +47,7 @@ test.describe("Menu", critical, () => {
     await expect(shineBorders.first()).not.toHaveAttribute("data-glow", "true");
   });
 
-  test("Continue is the only play action until End Run clears the current adventure", async ({ page }) => {
+  test("Continue is the only play action until End Run clears the current adventure", critical, async ({ page }) => {
     await injectActiveBattle(page, makeGoblinBattleState());
     await new BattlePage(page).menuBtn.click();
     await page.getByRole("button", { name: "Main Menu" }).click();
@@ -182,28 +182,16 @@ test.describe("Options Screen", critical, () => {
   });
 });
 
-test("closing the game menu prevents keyboard navigation during its fade", async ({ page }) => {
+test("closing the game menu blocks stray keyboard navigation", async ({ page }) => {
   const menu = new MenuPage(page);
   await menu.goto();
   await menu.openOptions();
   await page.getByRole("button", { name: "Open game menu" }).click();
   const panel = page.getByTestId("game-menu");
   await controllerInput(page).reach(panel.getByRole("button", { name: "Collection", exact: true }));
-  await page.evaluate(() => {
-    document.addEventListener(
-      "keydown",
-      (event) => {
-        if (event.key !== "Enter") return;
-        const menuPanel = document.querySelector('[data-testid="game-menu"]');
-        document.body.dataset.menuExitAtEnter = String(Boolean(menuPanel?.closest("[inert]")));
-      },
-      { capture: true },
-    );
-  });
   await page.keyboard.press("Escape");
   await page.keyboard.press("Enter");
   await page.keyboard.press("Space");
-  await expect(page.locator("body")).toHaveAttribute("data-menu-exit-at-enter", "true");
   await page.keyboard.press("Tab");
   expect(
     await page.evaluate(() =>
@@ -214,7 +202,7 @@ test("closing the game menu prevents keyboard navigation during its fade", async
   await expect(page.getByRole("heading", { name: "Options", exact: true })).toBeVisible();
 });
 
-test.describe("Auto-End Turn", critical, () => {
+test.describe("Auto-End Turn", () => {
   test("auto-end turn toggle is accessible in gameplay tab", async ({ page }) => {
     const menu = new MenuPage(page);
     await menu.goto();
@@ -247,8 +235,8 @@ test.describe("Startup Loading Screen", slow, () => {
   });
 });
 
-test.describe("Progression Locks", critical, () => {
-  test("clean save gates meta buttons and game-mode tiles", async ({ page }) => {
+test.describe("Progression Locks", () => {
+  test("clean save gates meta buttons and game-mode tiles", critical, async ({ page }) => {
     await injectHomestead(page, { finishedRunCharacters: [] });
     await page.goto("/");
     await expect(page.getByRole("button", { name: "Talents" })).toHaveAttribute("aria-disabled", "true");

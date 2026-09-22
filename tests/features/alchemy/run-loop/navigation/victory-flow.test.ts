@@ -181,17 +181,27 @@ describe("computeVictoryRewards", () => {
     }
   });
 
-  it("awards no gold or materials for Wildwood Draft victories", () => {
+  it("awards the normal victory Gold and Materials with Wildwood reward choices", () => {
     const result = computeVictoryRewards(baseInput({ contentSystemType: "wildwood", purseGold: 7 }), () => 0.25);
 
-    expect(result.goldEarned).toBe(0);
-    expect(result.persistedGold).toBe(7);
-    expect(result.rewardState.materials).toEqual(emptyInventory());
-    expect(result.rewardState.gold).toBe(0);
+    expect(result.goldEarned).toBe(15);
+    expect(result.persistedGold).toBe(22);
+    expect(result.rewardState.materials.wood).toBe(1);
+    expect(result.rewardState.gold).toBe(15);
     expect(result.rewardState.choices).toHaveLength(3);
   });
 
-  it("persists in-combat gold for Wildwood victories without a victory gold roll", () => {
+  it("uses the same boss Gold and Material payout in Wildwood and Campaign", () => {
+    const battleState = baseBattleState({ currentEnemy: { id: "mimic", enemyType: "boss" }, gold: 12 });
+    const campaign = computeVictoryRewards(baseInput({ battleState }), testRng);
+    const wildwood = computeVictoryRewards(baseInput({ contentSystemType: "wildwood", battleState }), testRng);
+    expect(wildwood.goldEarned).toBe(campaign.goldEarned);
+    expect(wildwood.persistedGold).toBe(campaign.persistedGold);
+    expect(wildwood.rewardState.gold).toBe(campaign.rewardState.gold);
+    expect(wildwood.rewardState.materials).toEqual(campaign.rewardState.materials);
+  });
+
+  it("adds in-combat Gold to Wildwood victory Gold", () => {
     const result = computeVictoryRewards(
       baseInput({
         contentSystemType: "wildwood",
@@ -201,9 +211,9 @@ describe("computeVictoryRewards", () => {
       () => 0.25,
     );
 
-    expect(result.goldEarned).toBe(5);
-    expect(result.persistedGold).toBe(15);
-    expect(result.rewardState.materials).toEqual(emptyInventory());
+    expect(result.goldEarned).toBe(20);
+    expect(result.persistedGold).toBe(30);
+    expect(result.rewardState.materials.wood).toBe(1);
   });
 
   it("does not shrink the purse when Wildwood combat gold is below the purse", () => {
@@ -216,8 +226,8 @@ describe("computeVictoryRewards", () => {
       () => 0.25,
     );
 
-    expect(result.goldEarned).toBe(0);
-    expect(result.persistedGold).toBe(10);
+    expect(result.goldEarned).toBe(15);
+    expect(result.persistedGold).toBe(25);
   });
 
   it("computes combat victory rewards for normal enemy", () => {
@@ -557,7 +567,7 @@ describe("commitVictoryRewards", () => {
     expect(readGameplayState().runProfile.materialInventory.gems).toBe(2);
   });
 
-  it("does not award pending gems materials for wildwood victories", () => {
+  it("awards pending Gems for Wildwood victories", () => {
     const materials = { ...emptyInventory(), gems: 2 };
     commit(
       victoryResult(),
@@ -567,7 +577,7 @@ describe("commitVictoryRewards", () => {
       }),
     );
 
-    expect(readGameplayState().runProfile.materialInventory.gems).toBe(0);
+    expect(readGameplayState().runProfile.materialInventory.gems).toBe(2);
   });
 
   it("persists in-combat gold into the purse for wildwood victories", () => {
@@ -578,7 +588,7 @@ describe("commitVictoryRewards", () => {
       testRng,
     );
     const goldGained = commit(result, commitDeps({ battleState, contentSystemType: "wildwood" }));
-    expect(readGameplayState().runProfile.gold).toBe(15);
+    expect(readGameplayState().runProfile.gold).toBe(30);
     expect(goldGained).toBe(true);
   });
 

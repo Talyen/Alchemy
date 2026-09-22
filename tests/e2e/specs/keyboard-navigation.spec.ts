@@ -11,8 +11,8 @@ import { DestinationPage } from "../../pages/destination-page";
 import { critical } from "../../playwright-tags";
 import { controllerInput } from "../controller-input";
 
-test.describe("Controller-equivalent keyboard navigation", critical, () => {
-  test("menu to first battle uses only mapped keys", async ({ page }) => {
+test.describe("Controller-equivalent keyboard navigation", () => {
+  test("menu to first battle uses only mapped keys", critical, async ({ page }) => {
     const input = controllerInput(page);
     await page.goto("/");
     await input.activate(page.getByRole("button", { name: "Play", exact: true }));
@@ -29,7 +29,7 @@ test.describe("Controller-equivalent keyboard navigation", critical, () => {
     await expect(battle.hand).toHaveCount(count - 1);
   });
 
-  test("playing consecutive cards recovers focus, then reaches End Turn", async ({ page, fastBattle }) => {
+  test("playing consecutive cards recovers focus, then reaches End Turn", critical, async ({ page, fastBattle }) => {
     void fastBattle;
     await startBattleWithDeck(
       page,

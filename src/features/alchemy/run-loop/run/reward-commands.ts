@@ -20,7 +20,6 @@ import { REWARD_ROUTES } from "@/lib/routing";
 import { current } from "immer";
 import { finalizeRewardState, getRandomPotionCard } from "../navigation/reward-flow";
 import { getActiveRewardModifiersForContentSystem, shouldGrantAlchemistReward } from "../navigation/reward-math";
-import { awardsRunMaterialsFor } from "./run-materials";
 
 export function applyRewardSelection({ reward, draft }: { reward: ResolvedRewardChoice; draft: GameplayDraft }) {
   switch (reward.rewardType) {
@@ -76,7 +75,7 @@ export function claimRunReward(choiceId: string | null) {
     });
 
     const isWildwood = contentSystemType === CONTENT_SYSTEMS.WILDWOOD;
-    if (awardsRunMaterialsFor(contentSystemType)) awardMaterialsDuringRun(draft, result.materials);
+    awardMaterialsDuringRun(draft, result.materials);
 
     if (result.selectedReward) {
       applyRewardSelection({

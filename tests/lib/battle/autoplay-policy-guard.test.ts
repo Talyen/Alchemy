@@ -32,4 +32,18 @@ describe("autoplay policy guard", () => {
     expect(simPolicy.getEffectiveDamageScore(slash, state)).toBe(getEffectiveDamageScore(slash, state));
     expect(simPolicy.EFFECT_SCORE).toBe(AUTOPLAY_EFFECT_SCORE);
   });
+
+  it("counts queued draws and Mana spent by the card before scoring its refill", () => {
+    const draw = makeTestCard({ id: "draw", cost: 1, effects: [{ kind: "draw-cards", amount: 3 }] });
+    const refill = makeTestCard({ id: "refill", cost: 1, effects: [{ kind: "restore-mana", amount: 2 }] });
+    const hand = [draw, refill, ...Array.from({ length: 5 }, (_, index) => makeTestCard({ id: `filler-${index}` }))];
+    const state = makeTestBattleState({
+      hand,
+      mana: 3,
+      maxMana: 3,
+      deck: Array.from({ length: 3 }, (_, index) => makeTestCard({ id: `next-${index}` })),
+    });
+    expect(getEffectiveDamageScore(draw, state)).toBe(3 * AUTOPLAY_EFFECT_SCORE.draw);
+    expect(getEffectiveDamageScore(refill, state)).toBe(AUTOPLAY_EFFECT_SCORE.mana);
+  });
 });

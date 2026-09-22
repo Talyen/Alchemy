@@ -186,7 +186,7 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   wish: {
     id: "wish",
     label: "Wish",
-    description: "Choose one of three cards to add to your hand",
+    description: "Choose one of three cards to add to your hand when there is room",
     colorClass: "text-fuchsia-300",
     borderClass: "border-fuchsia-300",
     shineColors: ["#f0abfc", "#c026d3", "#f0abfc"],

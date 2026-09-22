@@ -51,7 +51,7 @@ test.describe("Shop fade-out", () => {
   }
 });
 
-test.describe("Reward Flow", critical, () => {
+test.describe("Reward Flow", () => {
   test("card reward: clicking a card claims it immediately", critical, async ({ page, fastBattle }) => {
     void fastBattle;
     await enterPrimaryRewardScreen(page, { rewardType: "card", choiceIds: ["slash", "bash"] });
@@ -125,7 +125,7 @@ test.describe("Reward Flow", critical, () => {
       .toBe(true);
   });
 
-  test("unclaimed rewards survive reload and can be claimed immediately", async ({ page, fastBattle }) => {
+  test("unclaimed rewards survive reload and can be claimed immediately", critical, async ({ page, fastBattle }) => {
     void fastBattle;
     await enterPrimaryRewardScreen(page, {
       rewardType: "trinket",

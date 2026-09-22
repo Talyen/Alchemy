@@ -69,7 +69,7 @@ export async function applyCurrencyToGear(page: Page, gearTitle: string, currenc
   await page.getByRole("button", { name: `Apply ${currencyDisplayName} to ${gearTitle}` }).click();
 }
 
-export async function enterSalvageMode(page: Page) {
+async function enterSalvageMode(page: Page) {
   const toggle = page.getByTestId("armory-salvage-toggle");
   await expect(toggle).toBeEnabled();
   await toggle.click();

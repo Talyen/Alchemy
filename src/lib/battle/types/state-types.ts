@@ -63,6 +63,7 @@ export interface BattleSnapshot {
   };
   deck: BattleCard[];
   hand: BattleCard[];
+  pendingHandCards: BattleCard[];
   discard: BattleCard[];
   exhausted: BattleCard[];
   mana: number;

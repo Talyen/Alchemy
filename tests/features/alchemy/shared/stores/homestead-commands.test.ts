@@ -80,7 +80,7 @@ describe("four-tier Homestead persistence and settlement", () => {
     });
   });
 
-  it("keeps Wildwood material-free while paying eligible Gold production", () => {
+  it("pays Wildwood Materials and Gold with the usual Homestead rules", () => {
     dispatchRunSessionCommand((draft) => {
       draft.run.activeRun.contentSystemType = CONTENT_SYSTEMS.WILDWOOD;
       draft.run.activeRun.roomsEncountered = 3;
@@ -91,8 +91,8 @@ describe("four-tier Homestead persistence and settlement", () => {
         endRunWishPerRoom: 4,
       };
       const before = draft.runProfile.gold;
-      expect(awardRunEndMaterials(draft)).toEqual(emptyInventory());
-      expect(draft.runProfile.gold - before).toBe(24);
+      expect(awardRunEndMaterials(draft)).toEqual({ ...emptyInventory(), stone: 12, gems: 4 });
+      expect(draft.runProfile.gold - before).toBe(20);
     });
   });
 });

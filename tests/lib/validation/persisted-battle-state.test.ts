@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
+import { scaleByRoomMultiplier } from "@/lib/battle/enemy-turn-traits";
+import { cardById, enemyById } from "@/lib/game-data";
 
 describe("PersistedBattleStateSchema", () => {
   function validState(): Record<string, unknown> {
@@ -38,6 +40,13 @@ describe("PersistedBattleStateSchema", () => {
     expect(result.data.enemyStatuses.burn).toBe(0);
   });
 
+  it("restores a battle when queued cards are its only card pile", () => {
+    const { deck: _, hand: _hand, discard: _discard, exhausted: _exhausted, ...state } = validState();
+    const pendingHandCards = [{ ...cardById.slash!, uid: 42 }];
+    const restored = PersistedBattleStateSchema.parse({ ...state, pendingHandCards });
+    expect(restored.pendingHandCards).toEqual(pendingHandCards);
+  });
+
   it("rejects null", () => {
     expect(PersistedBattleStateSchema.safeParse(null).success).toBe(false);
   });
@@ -73,13 +82,17 @@ describe("PersistedBattleStateSchema", () => {
     expect(result.data.turnPhase).toBe("player");
   });
 
-  it("repairs a missing currentEnemy to the placeholder default", () => {
+  it("drops a battle with a missing or unknown enemy", () => {
     const { currentEnemy: _, ...state } = validState();
-    const result = PersistedBattleStateSchema.safeParse(state);
-    expect(result.success).toBe(true);
-    if (!result.success) return;
-    expect(result.data.currentEnemy.id).toBe("skeleton");
-    expect(result.data.currentEnemy.abilityIds).toEqual(["slash", "bash", "block"]);
+    expect(PersistedBattleStateSchema.safeParse(state).success).toBe(false);
+    expect(
+      PersistedBattleStateSchema.safeParse({ ...validState(), currentEnemy: { id: "missing-enemy" } }).success,
+    ).toBe(false);
+  });
+
+  it("restores a known enemy's catalog identity when saved display fields are missing", () => {
+    const result = PersistedBattleStateSchema.parse({ ...validState(), currentEnemy: { id: "iron-bear" } });
+    expect(result.currentEnemy).toEqual(enemyById["iron-bear"]);
   });
 
   it("repairs invalid last-ability history without discarding the battle", () => {
@@ -133,7 +146,7 @@ describe("PersistedBattleStateSchema", () => {
       gold: -5,
       turn: 0,
       turnPhase: "idle",
-      currentEnemy: null,
+      currentEnemy: { id: "skeleton" },
     });
     expect(result.success).toBe(true);
     if (!result.success) return;
@@ -142,7 +155,26 @@ describe("PersistedBattleStateSchema", () => {
     expect(result.data.gold).toBe(0);
     expect(result.data.turn).toBe(1);
     expect(result.data.turnPhase).toBe("player");
-    expect(result.data.currentEnemy.id).toBe("skeleton");
+    expect(result.data.currentEnemy).toEqual(enemyById.skeleton);
+  });
+
+  it("repairs malformed room scaling and numeric combat records before damage calculation", () => {
+    const result = PersistedBattleStateSchema.parse({
+      ...validState(),
+      roomScalingMultiplier: "broken",
+      playerStatuses: { block: "broken", armor: 7, poison: -4 },
+      enemyStatuses: { burn: Infinity, poison: 3 },
+      playerCC: { stunSkipTurns: "broken", cooldown: 2 },
+      enemyCC: { freezeSkipTurns: -1 },
+      enemyMitigation: { block: "broken", armor: 5 },
+    });
+    expect(result.roomScalingMultiplier).toBe(1);
+    expect(result.playerStatuses).toMatchObject({ block: 0, armor: 7, poison: 0 });
+    expect(result.enemyStatuses).toMatchObject({ burn: 0, poison: 3 });
+    expect(result.playerCC).toMatchObject({ stunSkipTurns: 0, cooldown: 2 });
+    expect(result.enemyCC.freezeSkipTurns).toBe(0);
+    expect(result.enemyMitigation).toMatchObject({ block: 0, armor: 5 });
+    expect(Number.isFinite(scaleByRoomMultiplier({ ...result, rng: () => 0 }, 3))).toBe(true);
   });
 
   it("accepts enemy turnPhase", () => {

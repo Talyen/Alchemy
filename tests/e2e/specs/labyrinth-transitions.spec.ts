@@ -75,7 +75,7 @@ async function releasePendingScreen(page: Page) {
 for (const type of ["combat", "mystery", "shop"] as const) {
   test(
     `${type} round-trip waits for artwork and never flashes completed map rooms in color`,
-    critical,
+    type === "combat" ? critical : {},
     async ({ page }) => {
       const map = gridLabyrinthMapFixture();
       const target = map.nodes["labyrinth-floor-1-n0"]!;

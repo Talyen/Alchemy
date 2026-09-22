@@ -268,7 +268,7 @@ describe("chooseWishCard", () => {
     expect(result.nextCardUid).toBe(43);
   });
 
-  it("assigns unique uid when card is added to discard due to full hand", () => {
+  it("reserves a chosen card with a unique uid when the hand is full", () => {
     const card = makeTestCard({ id: "chosen-card", title: "Chosen" });
     const fullHand = Array.from({ length: MAX_HAND_SIZE }, (_, i) =>
       makeTestCard({ id: `c-${i}`, title: `Card ${i}` }),
@@ -281,8 +281,9 @@ describe("chooseWishCard", () => {
       discard: [],
     });
     const result = chooseWishCard(state, "chosen-card");
-    expect(result.discard).toHaveLength(1);
-    expect(result.discard[0].uid).toBe(100);
+    expect(result.discard).toHaveLength(0);
+    expect(result.pendingHandCards).toHaveLength(1);
+    expect(result.pendingHandCards[0].uid).toBe(100);
     expect(result.nextCardUid).toBe(101);
   });
 

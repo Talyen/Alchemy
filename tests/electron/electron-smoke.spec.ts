@@ -21,7 +21,7 @@ test.describe("Electron desktop integration", { tag: [desktop.tag] }, () => {
     await electronApp?.close();
   });
 
-  test("desktop bridge is exposed and main menu renders", async () => {
+  test("desktop bridge is exposed and main menu renders", { tag: "@local-electron-smoke" }, async () => {
     const errors = failOnRuntimeErrors(window);
 
     const isDesktop = await window.evaluate(() => window.alchemyDesktop?.isDesktop === true);

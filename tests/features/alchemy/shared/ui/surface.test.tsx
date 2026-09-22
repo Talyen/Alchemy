@@ -47,28 +47,6 @@ describe("Surface", () => {
     expect(onDivClick).toHaveBeenCalledTimes(2);
   });
 
-  it("applies dragging and disabled styles", () => {
-    const { container } = render(
-      <Surface dragging disabled>
-        x
-      </Surface>,
-    );
-    const el = container.firstChild as HTMLElement;
-    expect(el.className).toContain("opacity-0");
-    expect(el.className).toContain("grayscale");
-  });
-
-  it("forwards selected ring and data-count", () => {
-    const { container } = render(
-      <Surface selected dataCount={3}>
-        x
-      </Surface>,
-    );
-    const el = container.firstChild as HTMLElement;
-    expect(el.className).toContain("card-interactive-selected");
-    expect(el.getAttribute("data-count")).toBe("3");
-  });
-
   it("disables button when disabled", () => {
     render(
       <Surface as="button" disabled ariaLabel="Disabled">

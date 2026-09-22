@@ -4,7 +4,7 @@ import { HomesteadPage } from "../../pages/homestead-page";
 import { assertRowAlignment } from "../../browser-helpers";
 import { critical } from "../../playwright-tags";
 
-test.describe("Homestead Flow", critical, () => {
+test.describe("Homestead Flow", () => {
   test.describe("with custom materials", () => {
     test.beforeEach(async ({ page }) => {
       await new HomesteadPage(page).goto({
@@ -53,7 +53,7 @@ test.describe("Homestead Flow", critical, () => {
   });
 
   test.describe("Homestead Actions", () => {
-    test("buildings, farms, and research show injected state", async ({ page }) => {
+    test("buildings, farms, and research show injected state", critical, async ({ page }) => {
       const homestead = new HomesteadPage(page);
 
       await homestead.goto({

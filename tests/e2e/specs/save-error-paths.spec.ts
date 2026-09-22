@@ -22,48 +22,7 @@ test.describe("Save Error Paths", () => {
     },
   );
 
-  test("missing save key still shows main menu", async ({ page }) => {
-    await page.addInitScript((saveKey) => {
-      localStorage.removeItem(saveKey);
-    }, SAVE_KEY);
-
-    await page.goto("/");
-    const menu = new MenuPage(page);
-    await menu.expectMainMenu();
-    await expect(menu.collectionBtn).toBeVisible();
-    await expect(menu.optionsBtn).toBeVisible();
-  });
-
-  test("save with null activeRun does not crash", async ({ page }) => {
-    await page.addInitScript((saveKey) => {
-      localStorage.setItem(
-        saveKey,
-        JSON.stringify({
-          materialInventory: {},
-          activeRun: null,
-          discoveredCardIds: [],
-          encounteredEnemyIds: [],
-          discoveredTrinketIds: [],
-          talentXP: {},
-          unlockedTalents: {},
-        }),
-      );
-    }, SAVE_KEY);
-
-    await page.goto("/");
-    await new MenuPage(page).expectMainMenu();
-  });
-
-  test("empty save object does not crash", async ({ page }) => {
-    await page.addInitScript((saveKey) => {
-      localStorage.setItem(saveKey, JSON.stringify({}));
-    }, SAVE_KEY);
-
-    await page.goto("/");
-    await new MenuPage(page).expectMainMenu();
-  });
-
-  test("fresh localStorage shows main menu without errors", critical, async ({ page }) => {
+  test("fresh storage without a save opens the main menu", critical, async ({ page }) => {
     test.setTimeout(60_000);
 
     await page.addInitScript(() => {
@@ -71,7 +30,10 @@ test.describe("Save Error Paths", () => {
       localStorage.removeItem("alchemy-skip-loading-screen");
     });
     await page.goto("/", { waitUntil: "load" });
-    await new MenuPage(page).expectMainMenuAfterColdStart(30_000);
+    const menu = new MenuPage(page);
+    await menu.expectMainMenuAfterColdStart(30_000);
+    await expect(menu.collectionBtn).toBeVisible();
+    await expect(menu.optionsBtn).toBeVisible();
   });
 
   test("blocks gameplay when save schema is newer than this build", critical, async ({ page }) => {

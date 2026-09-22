@@ -78,7 +78,8 @@ export function inferActiveRunScreen(activeRun: ActiveRunData): Screen {
     runDeckLength: activeRun.runDeck.length,
   });
   if (starterResume) return starterResume;
-  if (activeRun.currentScreen && isRunResumeScreen(activeRun.currentScreen)) return activeRun.currentScreen;
+  if (activeRun.currentScreen && activeRun.currentScreen !== "battle" && isRunResumeScreen(activeRun.currentScreen))
+    return activeRun.currentScreen;
   if (activeRun.interruptedFlow.kind === "primary-reward" || activeRun.interruptedFlow.kind === "companion-reward") {
     return "rewards";
   }

@@ -171,7 +171,10 @@ export function damageEnemyHealth(state: BattleState, damage: number): EnemyHitH
   const previousHealth = state.enemyHealth;
   const enemyHealth = clampHealth(previousHealth, -damage, state.enemyMaxHealth);
   const triggersCinderSkin =
-    enemyHealth < previousHealth && hasEnemyTrait(state, "cinder-skin") && !state.flags.cinderSkinUsedThisTurn;
+    enemyHealth > 0 &&
+    enemyHealth < previousHealth &&
+    hasEnemyTrait(state, "cinder-skin") &&
+    !state.flags.cinderSkinUsedThisTurn;
   return {
     state: {
       ...state,

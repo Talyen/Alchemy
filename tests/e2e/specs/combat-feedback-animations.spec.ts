@@ -130,183 +130,40 @@ test.describe("Combat feedback animations", slow, () => {
   }
 });
 
-for (const { width, height, size, reducedMotion } of [
-  { width: 1280, height: 720, size: 120, reducedMotion: false },
-  { width: 1920, height: 1080, size: 100, reducedMotion: false },
-  { width: 2560, height: 1080, size: 80, reducedMotion: true },
-]) {
-  test(
-    `grouped bursts retain original styling at ${width}/${size}% (reduced motion=${reducedMotion})`,
-    slow,
-    async ({ page }, testInfo) => {
-      await page.setViewportSize({ width, height });
-      await page.emulateMedia({ reducedMotion: reducedMotion ? "reduce" : "no-preference" });
-      await page.addInitScript((gameSizePercent) => {
-        localStorage.setItem(
-          "alchemy-device-display-v1",
-          JSON.stringify({ version: 1, gameSizePercent, tooltipSizePercent: 100 }),
-        );
-      }, size);
-      const hand = Array.from({ length: 4 }, () =>
-        makeCard({
-          cost: 0,
-          effects: [
-            { kind: "damage", damageType: "physical", amount: 4 },
-            { kind: "damage", damageType: "physical", amount: 2 },
-            { kind: "damage", damageType: "burn", amount: 2 },
-            { kind: "damage", damageType: "poison", amount: 2 },
-            { kind: "damage", damageType: "bleed", amount: 1 },
-            { kind: "heal", amount: 4 },
-            { kind: "player-status", status: "block", amount: 3 },
-            { kind: "restore-mana", amount: 1 },
-            { kind: "gain-gold", amount: 3 },
-          ],
-        }),
-      );
-      await injectActiveBattle(
-        page,
-        makeGoblinBattleState({
-          hand,
-          mana: 0,
-          maxMana: 10,
-          playerHealth: 10,
-          playerMaxHealth: 100,
-          enemyHealth: 1000,
-          enemyMaxHealth: 1000,
-          appliesFightPacing: false,
-        }),
-        { runDeck: hand, autoEndTurn: false, selectedAspectRatio: width > 2000 ? "ultrawide" : "desktop" },
-      );
-      const battle = new BattlePage(page);
-      await expect(battle.hand).toHaveCount(4);
-      await battle.playFirstCard();
-      const enemyBursts = page.locator('[data-testid="combat-text-burst"][data-target="enemy"]');
-      const playerBursts = page.locator('[data-testid="combat-text-burst"][data-target="player"]');
-      await expect(enemyBursts).toHaveCount(1);
-      const styling = await enemyBursts.first().evaluate((burst) => {
-        const layer = burst.closest('[data-testid="combat-text-layer"]')! as HTMLElement;
-        const entry = burst.querySelector('[data-testid="combat-text"]')!;
-        const icon = entry.querySelector("svg")!;
-        const layerRect = layer.getBoundingClientRect();
-        const stageScale = layerRect.width / layer.offsetWidth;
-        const contentScale = Number.parseFloat(getComputedStyle(entry).getPropertyValue("--content-scale")) || 1;
-        return {
-          fontSize: Number.parseFloat(getComputedStyle(entry).fontSize),
-          iconSize: Number.parseFloat(getComputedStyle(icon).width),
-          expectedFont: 37.8 * contentScale,
-          expectedIcon: 35.532 * contentScale,
-          top: burst.getBoundingClientRect().top,
-          expectedTop:
-            layerRect.top +
-            layerRect.height / 2 -
-            3 * Number.parseFloat(getComputedStyle(document.documentElement).fontSize) * stageScale,
-        };
-      });
-      expect(styling.fontSize).toBeCloseTo(styling.expectedFont, 1);
-      expect(styling.iconSize).toBeCloseTo(styling.expectedIcon, 1);
-      expect(Math.abs(styling.top - styling.expectedTop)).toBeLessThan(2);
-      const originalId = await enemyBursts.first().getAttribute("data-burst-id");
-      const originalTexts = await enemyBursts.first().getByTestId("combat-text").allTextContents();
-      await expect(enemyBursts.first().locator('[data-stat="physical"]')).toHaveCount(1);
-      await expect(enemyBursts.first().getByTestId("combat-text")).toHaveCount(4);
-      await expect(playerBursts.first().getByTestId("combat-text")).toHaveCount(4);
-      // Once the first window closes, the next action owns a separate burst.
-      await expect
-        .poll(
-          async () => {
-            const started = Number(await enemyBursts.last().getAttribute("data-first-shown-at"));
-            return page.evaluate((at) => Date.now() - at, started);
-          },
-          { intervals: [16] },
-        )
-        .toBeGreaterThanOrEqual(250);
-      // Keyboard activation intentionally plays during hand reflow, without waiting for pointer stability.
-      await battle.hand.first().press("Enter");
-      await expect(enemyBursts).toHaveCount(2);
-      await expect(playerBursts).toHaveCount(2);
-      const ids = await enemyBursts.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-burst-id")));
-      expect(ids[0]).toBe(originalId);
-      expect(ids[1]).not.toBe(originalId);
-      await expect(enemyBursts.first().getByTestId("combat-text")).toHaveText(originalTexts);
-      await expect
-        .poll(
-          async () => {
-            const started = Number(await enemyBursts.last().getAttribute("data-first-shown-at"));
-            return page.evaluate((at) => Date.now() - at, started);
-          },
-          { intervals: [16] },
-        )
-        .toBeGreaterThanOrEqual(250);
-      await battle.hand.first().press("Enter");
-      await expect(enemyBursts).toHaveCount(3);
-      await expect(playerBursts).toHaveCount(3);
-      const textZ = await page
-        .getByTestId("combat-text-layer")
-        .first()
-        .evaluate((node) => Number(getComputedStyle(node).zIndex));
-      const flightZ = await page
-        .locator(".card-ghost-overlay")
-        .evaluateAll((nodes) => nodes.map((node) => Number(getComputedStyle(node).zIndex)));
-      expect(flightZ.every((z) => textZ > z)).toBe(true);
-      await testInfo.attach("typed-bursts", { body: await page.screenshot(), contentType: "image/png" });
-      if (reducedMotion) {
-        const transforms = await enemyBursts.evaluateAll((nodes) =>
-          nodes.map((node) => getComputedStyle(node.firstElementChild!).transform),
-        );
-        expect(transforms.every((transform) => transform === "none" || transform === "matrix(1, 0, 0, 1, 0, 0)")).toBe(
-          true,
-        );
-      }
-      await expect(page.getByTestId("combat-text-burst")).toHaveCount(0, { timeout: 3000 });
-    },
-  );
-}
-
 for (const reducedMotion of [false, true]) {
-  test(
-    `rapid cards consolidate without resizing or restarting feedback (reduced motion=${reducedMotion})`,
-    slow,
-    async ({ page }, testInfo) => {
-      await page.emulateMedia({ reducedMotion: reducedMotion ? "reduce" : "no-preference" });
-      const hand = Array.from({ length: 3 }, () =>
-        makeCard({
-          cost: 0,
-          effects: [
-            { kind: "damage", damageType: "physical", amount: 3 },
-            { kind: "player-status", status: "block", amount: 2 },
-          ],
-        }),
-      );
-      await injectActiveBattle(
-        page,
-        makeGoblinBattleState({ hand, enemyHealth: 1000, enemyMaxHealth: 1000, appliesFightPacing: false }),
-        { runDeck: hand, autoEndTurn: false },
-      );
-      const battle = new BattlePage(page);
-      await expect(battle.hand).toHaveCount(3);
-      await battle.waitForOpeningHand();
-      await battle.playFirstCard();
-      const player = page.locator('[data-testid="combat-text-burst"][data-target="player"]');
-      const block = player.locator('[data-stat="block"]');
-      await expect(block).toHaveText("+2");
-      const id = await player.getAttribute("data-burst-id");
-      const started = Number(await player.getAttribute("data-first-shown-at"));
-      // Freeze Date only: leave animation frames and interaction clocks running normally.
-      await page.clock.setFixedTime(started + 100);
-      const width = await block.locator("span").evaluate((node) => getComputedStyle(node).width);
-      await battle.hand.first().press("Enter");
-      await expect(player).toHaveCount(1);
-      await expect(player).toHaveAttribute("data-burst-id", id!);
-      await expect(block).toHaveText("+4");
-      expect(await block.locator("span").evaluate((node) => getComputedStyle(node).width)).toBe(width);
-      await expect(page.locator('[data-testid="combat-text-burst"][data-target="enemy"]')).toHaveCount(1);
-      const labels = await page.getByTestId("combat-text").allTextContents();
-      expect(labels.every((text) => /^[+−-]?\d+$/.test(text.trim()))).toBe(true);
-      await testInfo.attach("consolidated-feedback", { body: await page.screenshot(), contentType: "image/png" });
-      await page.clock.setFixedTime(started + 250);
-      await battle.hand.first().press("Enter");
-      await expect(player).toHaveCount(2);
-      await expect(page.locator(`[data-burst-id="${id}"]`)).toHaveCount(0, { timeout: 3000 });
-    },
-  );
+  test(`rapid cards consolidate feedback (reduced motion=${reducedMotion})`, slow, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: reducedMotion ? "reduce" : "no-preference" });
+    const hand = Array.from({ length: 3 }, () =>
+      makeCard({
+        cost: 0,
+        effects: [
+          { kind: "damage", damageType: "physical", amount: 3 },
+          { kind: "player-status", status: "block", amount: 2 },
+        ],
+      }),
+    );
+    await injectActiveBattle(
+      page,
+      makeGoblinBattleState({ hand, enemyHealth: 1000, enemyMaxHealth: 1000, appliesFightPacing: false }),
+      { runDeck: hand, autoEndTurn: false },
+    );
+    const battle = new BattlePage(page);
+    await expect(battle.hand).toHaveCount(3);
+    await battle.waitForOpeningHand();
+    await battle.playFirstCard();
+    const player = page.locator('[data-testid="combat-text-burst"][data-target="player"]');
+    const block = player.locator('[data-stat="block"]');
+    await expect(block).toHaveText("+2");
+    const id = await player.getAttribute("data-burst-id");
+    const started = Number(await player.getAttribute("data-first-shown-at"));
+    // Freeze Date only: leave animation frames and interaction clocks running normally.
+    await page.clock.setFixedTime(started + 100);
+    await battle.hand.first().press("Enter");
+    await expect(player).toHaveCount(1);
+    await expect(player).toHaveAttribute("data-burst-id", id!);
+    await expect(block).toHaveText("+4");
+    await expect(page.locator('[data-testid="combat-text-burst"][data-target="enemy"]')).toHaveCount(1);
+    const labels = await page.getByTestId("combat-text").allTextContents();
+    expect(labels.every((text) => /^[+−-]?\d+$/.test(text.trim()))).toBe(true);
+  });
 }

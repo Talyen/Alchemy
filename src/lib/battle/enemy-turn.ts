@@ -3,6 +3,7 @@ import { isCcControlled } from "./status-cc";
 import { battleSnapshot, hasEncounterBenefit } from "./types";
 import type { BattleResolutionContext } from "./types";
 import { processCompanionTurnStart } from "./companion";
+import { deliverPendingHandCards } from "./draw";
 import { applyHealingWithCombatText } from "./combat-text";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
@@ -57,13 +58,13 @@ function processHasteEarlyTurn(state: BattleState): BattleState {
 }
 
 function beginEnemyPhase(state: BattleState): BattleState {
-  return {
+  return deliverPendingHandCards({
     ...state,
     turnPhase: "enemy",
     flags: { ...state.flags, darkRecoveryMana: state.mana === 0 ? state.talentEffects.manaAfterEmptyTurn : 0 },
     hand: [],
     discard: [...state.discard, ...state.hand],
-  };
+  });
 }
 
 function resolveHasteTurn(state: BattleState) {

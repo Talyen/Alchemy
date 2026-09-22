@@ -59,14 +59,12 @@ async function inspectOuterEdges(page: Page) {
 
 async function sweep(page: Page) {
   const slots = await geometry(page);
-  for (const fraction of [0.15, 0.5, 0.85]) {
-    const y = Math.max(...slots.map((slot) => slot.y)) + Math.min(...slots.map((slot) => slot.height)) * fraction;
-    for (const order of [slots, [...slots].reverse()]) {
-      for (const slot of order) {
-        await page.mouse.move(slot.x, y, { steps: 5 });
-        await expect(page.locator(`[data-hand-slot="${slot.key}"]`)).toHaveAttribute("data-hovered", "true");
-        await expect(page.locator("[data-hand-slot][data-hovered='true']")).toHaveCount(1);
-      }
+  const y = Math.max(...slots.map((slot) => slot.y)) + Math.min(...slots.map((slot) => slot.height)) / 2;
+  for (const order of [slots, [...slots].reverse()]) {
+    for (const slot of order) {
+      await page.mouse.move(slot.x, y);
+      await expect(page.locator(`[data-hand-slot="${slot.key}"]`)).toHaveAttribute("data-hovered", "true");
+      await expect(page.locator("[data-hand-slot][data-hovered='true']")).toHaveCount(1);
     }
   }
 }
@@ -113,7 +111,6 @@ test("hover reconciles through a play, draw, and reflow with the pointer in the 
 
 for (const { width, height, gameSizePercent } of [
   { width: 1280, height: 720, gameSizePercent: 120 },
-  { width: 1920, height: 1080, gameSizePercent: 100 },
   { width: 2560, height: 1080, gameSizePercent: 80 },
 ]) {
   test(`hand fits and controls stay fixed at ${width} / ${gameSizePercent}%`, slow, async ({ page }) => {

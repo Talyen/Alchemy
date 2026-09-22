@@ -27,6 +27,7 @@ beforeEach(() => {
     "PLAYWRIGHT_VITE_MODE",
     "PLAYWRIGHT_BROWSER_PREVIEW_PORT",
     "PLAYWRIGHT_ELECTRON_PREVIEW_PORT",
+    "PLAYWRIGHT_ELECTRON_FULL",
     "PLAYWRIGHT_PERF_PORT",
   ]) {
     vi.stubEnv(name, undefined);
@@ -70,6 +71,14 @@ describe("Playwright server configuration", () => {
   it("caps push-CI browser shards at two workers for animation headroom", () => {
     vi.stubEnv("CI", "true");
     expect(configFor().workers).toBe(2);
+  });
+
+  it("collects one local Electron smoke unless a CI job explicitly selects the full suite", () => {
+    expect(configFor("electron").grep?.toString()).toBe("/@local-electron-smoke/");
+    vi.stubEnv("CI", "true");
+    expect(configFor("electron").grep?.toString()).toBe("/@local-electron-smoke/");
+    vi.stubEnv("PLAYWRIGHT_ELECTRON_FULL", "1");
+    expect(configFor("electron").grep).toBeUndefined();
   });
 
   it("starts development mode on the overridden port", () => {

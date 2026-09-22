@@ -108,6 +108,7 @@ describe("ActiveRunDataSchema normalize", () => {
           ...defaultBattleState(),
           deck: [liveCard, tombstonedCard],
           hand: [tombstonedCard],
+          pendingHandCards: [liveCard, tombstonedCard],
           discard: [liveCard],
           exhausted: [tombstonedCard],
           wishOptions: [tombstonedCard],
@@ -126,6 +127,7 @@ describe("ActiveRunDataSchema normalize", () => {
     const state = result.activeCombat!.battleState;
     expect(state.deck.map((card) => card.id)).toEqual(["slash"]);
     expect(state.hand).toEqual([]);
+    expect(state.pendingHandCards.map((card) => card.id)).toEqual([liveCard.id]);
     expect(state.discard.map((card) => card.id)).toEqual(["slash"]);
     expect(state.exhausted).toEqual([]);
     expect(state.wishOptions).toEqual([]);

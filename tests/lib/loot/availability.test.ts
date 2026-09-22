@@ -34,6 +34,14 @@ describe("loot source availability", () => {
     expect(mysteryPool.filter((entry) => isMysteryLootEligible(entry, early, exhausted)).length).toBeGreaterThan(0);
   });
 
+  it("gates a named Boon's Astral fallback even while other Boons remain unowned", () => {
+    const event = mysteryPool.find((entry) => entry.id === "enchanted-spring")!;
+    const early = { depth: 1, highestCompletedDifficulty: null };
+
+    expect(isMysteryLootEligible(event, early, ["icy-heart"])).toBe(false);
+    expect(isMysteryLootEligible(event, { ...early, depth: 4 }, ["icy-heart"])).toBe(true);
+  });
+
   it("generates early Labyrinth alternatives and only promises Masterwork where enough rooms must have been traversed", () => {
     let lateTrinketShops = 0;
     for (let seed = 1; seed <= 20; seed += 1) {

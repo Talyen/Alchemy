@@ -28,7 +28,6 @@ import { shouldGrantCompanionReward } from "../navigation/reward-math";
 import type { VictoryRewardsResult } from "../navigation/victory-flow";
 import { computeVictoryRewards } from "../navigation/victory-flow";
 import type { RunOutcomeDeps } from "./run-flow";
-import { awardsRunMaterialsFor } from "./run-materials";
 
 export interface CommitVictoryRewardsDeps {
   battleState: BattleSnapshot;
@@ -45,7 +44,7 @@ export function commitVictoryRewards(
   deps: CommitVictoryRewardsDeps,
   rng: () => number,
 ): boolean {
-  if (awardsRunMaterialsFor(deps.contentSystemType) && hasAnyPendingMaterial(deps.battleState.pendingMaterials)) {
+  if (hasAnyPendingMaterial(deps.battleState.pendingMaterials)) {
     awardMaterialsDuringRun(draft, deps.battleState.pendingMaterials);
   }
   draft.battle.battleState.pendingMaterials = { ...emptyInventory() };

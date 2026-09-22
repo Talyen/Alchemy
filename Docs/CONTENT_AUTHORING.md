@@ -145,10 +145,9 @@ Bonds remain a separate three-tier progression. Recipes use fixed material costs
 production support affects authoring, not prices at runtime. Crystal Garden
 produces Gems and Stone. Library, Agility Training, and Sanctuary intentionally
 have no material production. Resource labels use “per Room”; settlement remains
-at run end. Wishing Well alternates Gold/Gems by room (odd rooms Gold), with all
-of its output paid as Gold in Wildwood. Tailoring also produces Gold. Other
-material production remains excluded in Wildwood. Capture the recap after these
-payouts so the Gold total includes them.
+at run end. Wishing Well alternates Gold/Gems by room (odd rooms Gold) in every
+mode. Tailoring also produces Gold. Capture the recap after these payouts so
+the Gold and Material totals include them.
 
 Homestead screens (like all screen directories) are excluded from `vitest` coverage thresholds — see the coverage `exclude` list in `vitest.config.ts` — and are covered by E2E `tests/e2e/specs/homestead-flow.spec.ts` plus the unit `homestead/*.test.tsx` suites. Use `npm run test -- tests/lib/homestead` for the lib contract and `npm run test:e2e:route -- homestead` when the change needs browser verification.
 

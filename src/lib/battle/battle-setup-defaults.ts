@@ -55,6 +55,7 @@ export function defaultBattleState(): BattleState {
   return {
     deck: [],
     hand: [],
+    pendingHandCards: [],
     discard: [],
     exhausted: [],
     mana: 0,

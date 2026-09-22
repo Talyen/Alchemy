@@ -2,7 +2,7 @@ import { expect, test } from "../../fixtures/e2e";
 import type { Page } from "@playwright/test";
 import { injectActiveBattle, makeGoblinBattleState } from "../../browser-helpers";
 import { BattlePage } from "../../pages/battle-page";
-import { critical } from "../../playwright-tags";
+import { slow } from "../../playwright-tags";
 
 function sampleTooltip(page: Page) {
   return page.evaluate(
@@ -73,7 +73,7 @@ async function readTooltipTransitionStyle(page: Page) {
   });
 }
 
-test("tooltips visibly fade and move on entry and exit", critical, async ({ page }) => {
+test("tooltips visibly fade and move on entry and exit", slow, async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await injectActiveBattle(page, makeGoblinBattleState());
   const battle = new BattlePage(page);

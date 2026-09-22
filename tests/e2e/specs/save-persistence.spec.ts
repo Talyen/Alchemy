@@ -236,7 +236,7 @@ test.describe("Autosave Cadence", () => {
     await expect.poll(() => getSavedLastSavedAt(page)).toBeGreaterThan(savedAtBefore);
   });
 
-  test("save is written after claiming a reward", critical, async ({ page }) => {
+  test("claimed card survives a fresh-page resume", critical, async ({ page }) => {
     await enterPrimaryRewardScreen(page, { rewardType: "card", choiceIds: ["slash", "bash"] });
 
     const savedAtBeforeReward = await getSavedLastSavedAt(page);
@@ -245,6 +245,30 @@ test.describe("Autosave Cadence", () => {
     await new DestinationPage(page).expectVisible();
 
     await expect.poll(() => getSavedLastSavedAt(page)).toBeGreaterThan(savedAtBeforeReward);
+    await expect
+      .poll(() =>
+        page.evaluate(
+          (saveKey) =>
+            JSON.parse(localStorage.getItem(saveKey) || "{}").activeRun?.runDeck?.filter(
+              (card: { id: string }) => card.id === "slash",
+            ).length,
+          SAVE_KEY,
+        ),
+      )
+      .toBe(1);
+
+    // The injected page would reset storage on reload; a new page reads the actual save.
+    const resumedPage = await page.context().newPage();
+    const errors = failOnRuntimeErrors(resumedPage);
+    try {
+      await resumedPage.goto("/");
+      await new DestinationPage(resumedPage).expectVisible();
+      await resumedPage.getByRole("button", { name: "View Deck · 7 cards" }).click();
+      await expect(resumedPage.getByRole("dialog").getByRole("img", { name: "Slash", exact: true })).toBeVisible();
+      expect(errors).toEqual([]);
+    } finally {
+      await resumedPage.close();
+    }
   });
 
   test("save persists across page navigation", critical, async ({ page }) => {

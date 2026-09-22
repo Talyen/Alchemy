@@ -518,6 +518,7 @@ jobs:
         run: xvfb-run --auto-servernum -- npm run test:ship:desktop
         env:
           CI: true
+          PLAYWRIGHT_ELECTRON_FULL: "1"
 
       - name: Summarize Electron e2e
         id: playwright-summary

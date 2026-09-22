@@ -52,6 +52,10 @@ describe("useBattleController", () => {
     });
 
     expect(result.current.isAutoplayEnabled).toBe(false);
+    act(() => {
+      result.current.toggleAutoplayEnabled();
+    });
+    expect(result.current.isAutoplayEnabled).toBe(true);
   });
 
   it("keeps a prepared opening draw while waiting for the battle screen", () => {
@@ -104,6 +108,32 @@ describe("useBattleController", () => {
     });
     expect(result.current.isAutoplayEnabled).toBe(true);
     expect(useSettingsStore.getState().autoplayEnabled).toBe(true);
+  });
+
+  it("applies each toggle before React renders again", () => {
+    useSettingsStore.getState().setRememberAutoplayPreference(true);
+    const { result } = renderBattleController();
+
+    act(() => {
+      result.current.toggleAutoplayEnabled();
+      result.current.toggleAutoplayEnabled();
+    });
+
+    expect(result.current.isAutoplayEnabled).toBe(false);
+    expect(useSettingsStore.getState().autoplayEnabled).toBe(false);
+  });
+
+  it("toggles from the latest explicit session value in the same batch", () => {
+    useSettingsStore.getState().setRememberAutoplayPreference(false);
+    const { result } = renderBattleController();
+
+    act(() => {
+      result.current.setAutoplayEnabled(true);
+      result.current.toggleAutoplayEnabled();
+    });
+
+    expect(result.current.isAutoplayEnabled).toBe(false);
+    expect(useSettingsStore.getState().autoplayEnabled).toBe(false);
   });
 
   it("keeps a session autoplay toggle when leaving the battle screen", () => {

@@ -139,7 +139,7 @@ export function processEncounterTraitCardAction(
     nextState = recordEnemyAbilityActivation(nextState, "rooted");
     nextState = addEnemyStatusText(nextState, "block", scale(1), combatTexts);
   }
-  if (attackAttempted) {
+  if (attackAttempted && nextState.enemyHealth > 0) {
     if (hasEnemyTrait(nextState, "thorns") && nextState.flags.legacyEnemyThornsReady) {
       nextState = recordEnemyAbilityActivation(nextState, "thorns");
       nextState = setEnemyStatus(

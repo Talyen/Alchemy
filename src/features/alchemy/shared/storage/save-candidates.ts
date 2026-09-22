@@ -55,6 +55,9 @@ function collectSaveRepairWarnings(raw: Partial<SaveData>, normalized: ParsedSav
   if (raw.activeRun && !normalized.activeRun) {
     warnings.push("active run could not be restored");
   }
+  if (raw.activeRun?.activeCombat != null && normalized.activeRun && !normalized.activeRun.activeCombat) {
+    warnings.push("battle could not be restored");
+  }
   const rawGold = (raw as { gold?: unknown }).gold;
   // Live combat gold intentionally overrides the purse (see SaveDataSchema
   // resolvePersistedGold); that override is not a repair.

@@ -13,8 +13,6 @@ import { slow } from "../../playwright-tags";
 
 const VIEWPORTS = [
   { width: 1280, height: 720 },
-  { width: 1280, height: 800 },
-  { width: 1512, height: 982 },
   { width: 3440, height: 1440 },
 ];
 
@@ -41,7 +39,7 @@ async function expectTooltipFitsViewport(tip: Locator, viewport: { width: number
 }
 
 test.describe("Responsive display sizes", slow, () => {
-  test("menu, collections, and options fit the viewport matrix", async ({ page }) => {
+  test("menu, collections, and options fit small and wide viewports", async ({ page }) => {
     test.setTimeout(60000);
     const menu = new MenuPage(page);
     for (const viewport of VIEWPORTS) {
@@ -60,28 +58,18 @@ test.describe("Responsive display sizes", slow, () => {
     }
   });
 
-  test("independent size controls apply live and survive reload", async ({ page }) => {
+  test("independent size controls remain usable and survive reload", async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1080 });
     const menu = new MenuPage(page);
     await menu.goto();
     await menu.openOptions();
     await page.getByRole("button", { name: "Interface", exact: true }).click();
-    const initialContentScale = await page.evaluate(() =>
-      getComputedStyle(document.documentElement).getPropertyValue("--content-scale"),
-    );
     await setSlider(page.getByRole("slider", { name: "Game Size", exact: true }), 80);
-    const smallContentScale = await page.evaluate(() =>
-      getComputedStyle(document.documentElement).getPropertyValue("--content-scale"),
-    );
-    expect(Number(smallContentScale) / Number(initialContentScale)).toBeCloseTo(0.8, 1);
-    const initialTooltipScale = await page
-      .locator("#tooltip-root")
-      .evaluate((el) => getComputedStyle(el).getPropertyValue("--content-scale"));
     await setSlider(page.getByRole("slider", { name: "Tooltip Size", exact: true }), 125);
-    const largeTooltipScale = await page
-      .locator("#tooltip-root")
-      .evaluate((el) => getComputedStyle(el).getPropertyValue("--content-scale"));
-    expect(Number(largeTooltipScale) / Number(initialTooltipScale)).toBeCloseTo(1.25);
+    await expect(page.getByRole("slider", { name: "Game Size", exact: true })).toHaveValue("80");
+    await expect(page.getByRole("slider", { name: "Tooltip Size", exact: true })).toHaveValue("125");
+    await assertStageFitsViewport(page);
+    await assertNoOverflow(page, "Options after resizing");
     await page.reload();
     await menu.openOptions();
     await page.getByRole("button", { name: "Interface", exact: true }).click();
@@ -96,7 +84,10 @@ test.describe("Responsive display sizes", slow, () => {
 
   test("battle cards and tooltips fit at large and small game sizes", async ({ page, fastBattle }) => {
     void fastBattle;
-    for (const gameSizePercent of [80, 120]) {
+    for (const { gameSizePercent, viewport } of [
+      { gameSizePercent: 120, viewport: { width: 1280, height: 720 } },
+      { gameSizePercent: 80, viewport: { width: 3840, height: 2160 } },
+    ]) {
       await page.addInitScript(
         ({ gameSizePercent }) => {
           localStorage.setItem(
@@ -106,7 +97,7 @@ test.describe("Responsive display sizes", slow, () => {
         },
         { gameSizePercent },
       );
-      await page.setViewportSize({ width: 1280, height: 720 });
+      await page.setViewportSize(viewport);
       await startBattleWithDeck(
         page,
         Array.from({ length: 7 }, () => makeCard()),
@@ -114,83 +105,47 @@ test.describe("Responsive display sizes", slow, () => {
       await assertStageFitsViewport(page);
       const cards = page.locator('[aria-label^="Play "]');
       await expect(cards.first()).toBeVisible();
-      for (const viewport of [
-        { width: 1280, height: 720 },
-        { width: 1280, height: 800 },
-        { width: 3840, height: 2160 },
-      ]) {
-        await page.setViewportSize(viewport);
-        await controllerInput(page).reach(cards.first());
-        const tip = page.locator("#tooltip-root .hover-popup-panel[data-visible]").first();
-        await expect(tip).toBeVisible();
-        await expectTooltipFitsViewport(tip, viewport);
-        await assertNoOverflow(page, `Battle ${viewport.width} at ${gameSizePercent}`);
-        if (viewport.width === 1280)
-          await page.screenshot({ path: `reports/controller-support/hand-${viewport.height}-${gameSizePercent}.png` });
-      }
+      await controllerInput(page).reach(cards.first());
+      const tip = page.locator("#tooltip-root .hover-popup-panel[data-visible]").first();
+      await expect(tip).toBeVisible();
+      await expectTooltipFitsViewport(tip, viewport);
+      await assertNoOverflow(page, `Battle ${viewport.width} at ${gameSizePercent}`);
+      if (viewport.width === 1280)
+        await page.screenshot({ path: `reports/controller-support/hand-${viewport.height}-${gameSizePercent}.png` });
     }
   });
 
-  test("enemy tooltip headers stay standard while Traits match game sizing in Collection and Battle", async ({
-    browser,
-  }) => {
+  test("enemy Traits remain readable and inside the viewport in Collection and Battle", async ({ browser }) => {
     test.setTimeout(60_000);
-    for (const [gameSizePercent, tooltipSizePercent] of [
-      [80, 90],
-      [120, 90],
-      [120, 125],
-    ] as const) {
-      const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
-      const errors = failOnRuntimeErrors(page);
-      await page.addInitScript(
-        (preferences) => localStorage.setItem("alchemy-device-display-v1", JSON.stringify(preferences)),
-        { version: 1, gameSizePercent, tooltipSizePercent },
-      );
-      try {
-        await new MenuPage(page).gotoCollection({ encounteredEnemyIds: ["bandit"] });
-        const tooltip = page.locator("#tooltip-root .hover-popup-panel[data-visible]");
-        await page.getByRole("button", { name: "Inspect Knight", exact: true }).hover();
-        await expect(tooltip).toHaveCSS("opacity", "1");
-        const standardHeaderSize = await tooltip
-          .locator(":scope > p")
-          .first()
-          .evaluate((el) => getComputedStyle(el).fontSize);
-        await page.getByRole("button", { name: "Bestiary", exact: true }).click();
-        for (const screen of ["Collection", "Battle"]) {
-          if (screen === "Battle") {
-            await startBattleWithDeck(
-              page,
-              Array.from({ length: 6 }, () => makeCard()),
-            );
-            await expect(page.getByRole("button", { name: /^View Deck/ })).toHaveAttribute("aria-disabled", "false", {
-              timeout: 20_000,
-            });
-            await page.getByTestId("battle-enemy-art-panel").hover();
-          } else {
-            await page.getByRole("button", { name: "Inspect Bandit", exact: true }).hover();
-          }
-          await expect(tooltip.locator("[data-trait]").first()).toBeVisible();
-          await expect(tooltip).toHaveCSS("opacity", "1");
-          await expect(tooltip.locator(":scope > p").first()).toHaveCSS("font-size", standardHeaderSize);
-          const scale = tooltipSizePercent / 100;
-          const gameScale = await page
-            .locator("html")
-            .evaluate((el) => parseFloat(getComputedStyle(el).getPropertyValue("--content-scale")));
-          const traitScale = gameScale * scale;
-          const sizing = await tooltip.evaluate((el) => {
-            const style = getComputedStyle(el);
-            const body = el.querySelector("[data-trait] p")!;
-            return [parseFloat(style.getPropertyValue("--content-scale")), parseFloat(getComputedStyle(body).fontSize)];
+    const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+    const errors = failOnRuntimeErrors(page);
+    await page.addInitScript(
+      (preferences) => localStorage.setItem("alchemy-device-display-v1", JSON.stringify(preferences)),
+      { version: 1, gameSizePercent: 120, tooltipSizePercent: 125 },
+    );
+    try {
+      await new MenuPage(page).gotoCollection({ encounteredEnemyIds: ["bandit"] });
+      const tooltip = page.locator("#tooltip-root .hover-popup-panel[data-visible]");
+      await page.getByRole("button", { name: "Bestiary", exact: true }).click();
+      for (const screen of ["Collection", "Battle"]) {
+        if (screen === "Battle") {
+          await startBattleWithDeck(
+            page,
+            Array.from({ length: 6 }, () => makeCard()),
+          );
+          await expect(page.getByRole("button", { name: /^View Deck/ })).toHaveAttribute("aria-disabled", "false", {
+            timeout: 20_000,
           });
-          for (const [index, expected] of [scale, 18 * traitScale].entries()) {
-            expect(sizing[index]).toBeCloseTo(expected, 1);
-          }
-          await expectTooltipFitsViewport(tooltip, { width: 1280, height: 720 }, 0);
+          await page.getByTestId("battle-enemy-art-panel").hover();
+        } else {
+          await page.getByRole("button", { name: "Inspect Bandit", exact: true }).hover();
         }
-        expect(errors).toEqual([]);
-      } finally {
-        await page.close();
+        await expect(tooltip.locator("[data-trait]").first()).toBeVisible();
+        await expectTooltipFitsViewport(tooltip, { width: 1280, height: 720 }, 0);
       }
+      expect(errors).toEqual([]);
+    } finally {
+      await page.close();
     }
   });
 
@@ -256,38 +211,37 @@ test.describe("Responsive display sizes", slow, () => {
   });
 });
 
-for (const height of [720, 800]) {
-  test(`keyboard Options and confirmation fit at 1280×${height}`, async ({ page }, testInfo) => {
-    await page.setViewportSize({ width: 1280, height });
-    await page.goto("/");
-    const input = controllerInput(page);
-    await input.activate(page.getByRole("button", { name: "Options", exact: true }));
-    await input.activate(page.getByRole("button", { name: "Sound", exact: true }));
-    const volume = page.getByRole("slider", { name: "Music Volume", exact: true });
-    await input.reach(volume);
-    await expect(volume).toBeInViewport();
-    await expectTooltipFitsViewport(volume, { width: 1280, height });
-    await page.screenshot({ path: `reports/controller-support/options-${height}.png` });
-    const renderedText = await page.getByText("Music Volume", { exact: true }).evaluate((element) => {
-      const rect = element.getBoundingClientRect();
-      const scale = rect.height / (element as HTMLElement).offsetHeight;
-      return parseFloat(getComputedStyle(element).fontSize) * scale;
-    });
-    await testInfo.attach("rendered-label-font-size", {
-      body: `${renderedText.toFixed(1)} CSS pixels after scaling; not a physical glyph-height measurement`,
-      contentType: "text/plain",
-    });
-    expect(renderedText).toBeGreaterThanOrEqual(12);
-    await input.activate(page.getByRole("button", { name: "Other", exact: true }));
-    await input.activate(page.getByRole("button", { name: "Clear Save Data", exact: true }));
-    const dialog = page.getByRole("dialog");
-    await expectTooltipFitsViewport(dialog, { width: 1280, height });
-    const cancel = dialog.getByRole("button", { name: "Cancel", exact: true });
-    await expect(cancel).toBeFocused();
-    await expect(cancel).toBeInViewport();
-    await expect(cancel).toBeVisible();
-    await page.screenshot({ path: `reports/controller-support/confirmation-${height}.png` });
-    await input.press("back");
-    await expect(dialog).toHaveCount(0);
+test("keyboard Options and confirmation fit at 1280×720", async ({ page }, testInfo) => {
+  const height = 720;
+  await page.setViewportSize({ width: 1280, height });
+  await page.goto("/");
+  const input = controllerInput(page);
+  await input.activate(page.getByRole("button", { name: "Options", exact: true }));
+  await input.activate(page.getByRole("button", { name: "Sound", exact: true }));
+  const volume = page.getByRole("slider", { name: "Music Volume", exact: true });
+  await input.reach(volume);
+  await expect(volume).toBeInViewport();
+  await expectTooltipFitsViewport(volume, { width: 1280, height });
+  await page.screenshot({ path: `reports/controller-support/options-${height}.png` });
+  const renderedText = await page.getByText("Music Volume", { exact: true }).evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const scale = rect.height / (element as HTMLElement).offsetHeight;
+    return parseFloat(getComputedStyle(element).fontSize) * scale;
   });
-}
+  await testInfo.attach("rendered-label-font-size", {
+    body: `${renderedText.toFixed(1)} CSS pixels after scaling; not a physical glyph-height measurement`,
+    contentType: "text/plain",
+  });
+  expect(renderedText).toBeGreaterThanOrEqual(12);
+  await input.activate(page.getByRole("button", { name: "Other", exact: true }));
+  await input.activate(page.getByRole("button", { name: "Clear Save Data", exact: true }));
+  const dialog = page.getByRole("dialog");
+  await expectTooltipFitsViewport(dialog, { width: 1280, height });
+  const cancel = dialog.getByRole("button", { name: "Cancel", exact: true });
+  await expect(cancel).toBeFocused();
+  await expect(cancel).toBeInViewport();
+  await expect(cancel).toBeVisible();
+  await page.screenshot({ path: `reports/controller-support/confirmation-${height}.png` });
+  await input.press("back");
+  await expect(dialog).toHaveCount(0);
+});

@@ -292,6 +292,52 @@ describe("findBestPlayableHandCard", () => {
     ).toBe(offering.id);
   });
 
+  it.each(["exorcism", "cauterize", "dark-pact"])(
+    "leaves %s to manual play when its self-damage could be lethal",
+    (id) => {
+      const state = greedyState([cardById[id]!, weakHit], {
+        playerHealth: 1,
+        deathsDoorUsed: true,
+      });
+      expect(findBestPlayableHandCard(state)?.card.id).toBe(weakHit.id);
+    },
+  );
+
+  it("does not mistake an unneeded cleanse for defense at low Health", () => {
+    const state = greedyState([cardById.cauterize!, strongHit], { playerHealth: 50 });
+    expect(findBestPlayableHandCard(state)?.card.id).toBe(strongHit.id);
+  });
+
+  it("does not spend a Mana Potion when Mana is full", () => {
+    const potion = makeTestCard({
+      id: "mana-potion",
+      cost: 0,
+      consume: true,
+      effects: [{ kind: "restore-mana", amount: 2 }],
+    });
+    const state = greedyState([potion, weakHit], { mana: 3, maxMana: 3 });
+    expect(findBestPlayableHandCard(state)?.card.id).toBe(weakHit.id);
+  });
+
+  it("does not spend a draw card when the hand is full", () => {
+    const draw = makeTestCard({
+      id: "draw",
+      cost: 0,
+      consume: true,
+      effects: [{ kind: "draw-cards", amount: 4 }],
+    });
+    const state = greedyState([draw, strongHit, weakHit, weakHit, weakHit, weakHit, weakHit], {
+      deck: [strongHit],
+    });
+    expect(findBestPlayableHandCard(state)?.card.id).toBe(strongHit.id);
+  });
+
+  it("values a heal by Health actually missing", () => {
+    const heal = makeTestCard({ id: "heal", effects: [{ kind: "heal", amount: 4 }] });
+    const state = greedyState([heal, weakHit], { playerHealth: 99 });
+    expect(findBestPlayableHandCard(state)?.card.id).toBe(weakHit.id);
+  });
+
   it("returns null when nothing is playable", () => {
     const state = greedyState([{ ...strongHit, uid: 1 }], { mana: 0 });
 
@@ -300,6 +346,16 @@ describe("findBestPlayableHandCard", () => {
 });
 
 describe("findBestWishChoice", () => {
+  it("chooses a safe Wish when another choice has a lethal Health cost", () => {
+    const safe = makeTestCard({ id: "safe", effects: [{ kind: "damage", damageType: "physical", amount: 2 }] });
+    const state = makeTestBattleState({
+      playerHealth: 1,
+      deathsDoorUsed: true,
+      wishOptions: [cardById["dark-pact"]!, safe],
+    });
+    expect(findBestWishChoice(state)?.id).toBe(safe.id);
+  });
+
   it("picks the highest-scoring wish option", () => {
     const slash = makeTestCard({
       id: "slash",

@@ -183,7 +183,7 @@ describe("encounter trait card events", () => {
     expect(result.state.playerHealth).toBe(9);
   });
 
-  it("retaliates once per multi-hit card and still retaliates after lethal damage", () => {
+  it("does not retaliate after a lethal multi-hit card", () => {
     const currentEnemy = enemyWith("thorns", "holy-retribution");
     const played = card({
       effects: [
@@ -204,8 +204,8 @@ describe("encounter trait card events", () => {
     });
     const result = playBattleCardResolved(state, played.id, 0);
     expect(result.state.enemyHealth).toBe(0);
-    expect(result.state.playerHealth).toBe(8);
-    expect(result.state.enemyStatuses.thorns).toBe(0);
+    expect(result.state.playerHealth).toBe(10);
+    expect(result.state.enemyStatuses.thorns).toBe(1);
   });
 
   it("only retaliates while holding thorns and regrows the stack each round", () => {
@@ -524,15 +524,15 @@ describe("Cinder Skin Health damage reactions", () => {
     expect(afterDot.playerStatuses.burn).toBe(1);
   });
 
-  it("triggers from damage over time, including a lethal tick", () => {
+  it("triggers from nonlethal damage over time but not a lethal tick", () => {
     for (const health of [1, 100]) {
       const state = makeState();
       const next = tickEnemyStatuses(
         { ...state, enemyHealth: health, enemyStatuses: { ...state.enemyStatuses, poison: 2 } },
         [],
       );
-      expect(next.playerHealth).toBe(29);
-      expect(next.flags.cinderSkinUsedThisTurn).toBe(true);
+      expect(next.playerHealth).toBe(health === 1 ? 30 : 29);
+      expect(next.flags.cinderSkinUsedThisTurn).toBe(health !== 1);
     }
   });
 
@@ -601,7 +601,7 @@ describe("Cinder Skin Health damage reactions", () => {
     expect(resolvePendingBattleReactions(resolved, [])).toBe(resolved);
   });
 
-  it("keeps room scaling and retaliates against a lethal card", () => {
+  it("does not retaliate against a lethal card", () => {
     const state = makeState();
     const result = playBattleCardResolved(
       { ...state, enemyHealth: 1, roomScalingMultiplier: 2 },
@@ -609,8 +609,8 @@ describe("Cinder Skin Health damage reactions", () => {
       0,
     ).state;
     expect(result.enemyHealth).toBe(0);
-    expect(result.playerHealth).toBe(28);
-    expect(result.flags.cinderSkinUsedThisTurn).toBe(true);
+    expect(result.playerHealth).toBe(30);
+    expect(result.flags.cinderSkinUsedThisTurn).toBe(false);
   });
 });
 

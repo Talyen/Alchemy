@@ -64,7 +64,7 @@ test.describe("Collection", () => {
   });
 
   test.describe("heroes tab", () => {
-    test("defaults to Heroes and shows the starting-deck tooltip for unlocked heroes", critical, async ({ page }) => {
+    test("defaults to Heroes and shows the starting-deck tooltip for unlocked heroes", async ({ page }) => {
       await new MenuPage(page).gotoCollection();
       await expect(page.getByRole("button", { name: "Inspect Knight" })).toBeVisible();
 
@@ -74,7 +74,7 @@ test.describe("Collection", () => {
       await expect(page.getByText(/Anvil/).first()).toBeVisible();
     });
 
-    test("locked heroes keep their name and unlock tooltip", critical, async ({ page }) => {
+    test("locked heroes keep their name and unlock tooltip", async ({ page }) => {
       await new MenuPage(page).gotoCollection({ finishedRunCharacters: [] });
       const rogue = page.getByRole("button", { name: "Inspect Rogue (Locked)" });
       await expect(rogue).toBeVisible();

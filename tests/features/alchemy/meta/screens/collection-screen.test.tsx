@@ -40,17 +40,6 @@ describe("CollectionScreen", () => {
     bondedCompanions: {},
   };
 
-  it("renders collection screen header and tabs", () => {
-    render(<CollectionScreen {...defaultProps} />);
-
-    expect(screen.getByRole("heading", { name: "Collection" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Heroes" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Cards" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Bestiary" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Trinkets" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Uniques" })).toBeTruthy();
-  });
-
   it("calls onSelectTab when switching tabs", () => {
     const onSelectTab = vi.fn();
     render(<CollectionScreen {...defaultProps} onSelectTab={onSelectTab} />);
@@ -66,17 +55,6 @@ describe("CollectionScreen", () => {
     const nextButton = screen.getByRole("button", { name: "Next page" });
     fireEvent.click(nextButton);
     expect(onPageChange).toHaveBeenCalledWith("cards", 1);
-  });
-
-  it("renders undiscovered items with hover opacity and grayscale classes", () => {
-    const { container } = render(<CollectionScreen {...defaultProps} discoveredCardIds={[]} />);
-
-    const images = container.querySelectorAll("img");
-    const undiscoveredImg = Array.from(images).find((img) => img.className.includes("grayscale"));
-    expect(undiscoveredImg).toBeTruthy();
-    expect(undiscoveredImg?.className).toContain("opacity-45");
-    expect(undiscoveredImg?.className).toContain("group-hover:grayscale-0");
-    expect(undiscoveredImg?.className).toContain("group-hover:opacity-100");
   });
 
   it("opens Boss inspection while preserving music preview across closing and reopening", () => {

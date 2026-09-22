@@ -17,7 +17,6 @@ import {
   getOwnedUniqueDefinitionIds,
 } from "@/lib/gear";
 import { pickMysteryTrinketGrantId, type MysteryEffect } from "@/lib/mystery";
-import { awardsRunMaterialsFor } from "../run/run-materials";
 import { combineTrinketEffectIds } from "@/lib/trinkets";
 import { gearBaseItemList } from "@/lib/gear/base-items";
 import { pickRandom, rngInt } from "@/lib/rng";
@@ -176,10 +175,6 @@ function gainMysteryGeneratedGear(baseItemId: string, context: MysteryEffectCont
 }
 
 function gainMysteryMaterial(material: MaterialId, amount: number, context: MysteryEffectContext) {
-  // Wildwood runs its own economy: never award homestead materials there. Still
-  // report a zero award so navigation records the amount actually granted.
-  if (!awardsRunMaterialsFor(context.draft.run.activeRun.contentSystemType))
-    return { followUp: null, materialAward: { material, amount: 0 } };
   const awarded = computeMysteryMaterialReward({
     material,
     amount,

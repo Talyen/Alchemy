@@ -25,8 +25,8 @@ async function unlockDifficulties(page: import("@playwright/test").Page, difficu
   );
 }
 
-test.describe("Character Select", critical, () => {
-  test("all characters are selectable and starting run is mapped to localStorage", async ({ page }) => {
+test.describe("Character Select", () => {
+  test("all characters are selectable and starting run is mapped to localStorage", critical, async ({ page }) => {
     const menu = new MenuPage(page);
     await menu.goToCharacterSelectUnlocked();
     await expect(page.getByRole("button", { name: "Select Knight" })).toBeVisible();
@@ -60,7 +60,7 @@ test.describe("Character Select", critical, () => {
   });
 });
 
-test.describe("Difficulty Select", critical, () => {
+test.describe("Difficulty Select", () => {
   test.beforeEach(async ({ page }) => {
     await unlockDifficulties(page, ["difficulty-1"]);
   });
@@ -101,7 +101,7 @@ test.describe("Difficulty Select", critical, () => {
   });
 });
 
-test.describe("Difficulty Skip (first-time player)", critical, () => {
+test.describe("Difficulty Skip (first-time player)", () => {
   test("selecting a character with no completed difficulties skips to battle", async ({ page }) => {
     await page.addInitScript((saveKey) => {
       localStorage.setItem(saveKey, JSON.stringify({ finishedRunCharacters: [] }));

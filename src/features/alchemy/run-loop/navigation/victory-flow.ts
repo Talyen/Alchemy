@@ -197,11 +197,6 @@ export function computeVictoryRewardState(
   );
 }
 
-// Gauntlet economy: Wildwood gold is purse-vs-battle plus companion bonus only,
-// deliberately ignoring the difficulty/talent/elite multipliers campaign and
-// labyrinth apply in computeVictoryGold below. Modifiers still pass through
-// untouched so the companion second-stage in victory-commands keeps working;
-// every other modifier is intentionally ignored here.
 function computeWildwoodVictoryRewards(
   input: VictoryRewardsInput,
   talentEffects: TalentEffectManifest,
@@ -209,8 +204,32 @@ function computeWildwoodVictoryRewards(
   labyrinthRewardModifiers: EncounterRewardTraitId[],
   rng: () => number,
 ): VictoryRewardsResult {
-  const companionGold = input.battleState.activeCompanion ? talentEffects.companionVictoryGold : 0;
-  const goldEarned = Math.max(0, input.battleState.gold - input.purseGold) + companionGold;
+  const { gold, eliteBonus, bossBonus, generousBonus, wealthyBonus } = rollVictoryGold(
+    input.battleState,
+    talentEffects,
+    labyrinthRewardModifiers,
+    rng,
+  );
+  const goldResult = computeVictoryGold({
+    battleState: input.battleState,
+    purseGold: input.purseGold,
+    runBoons: activeTrinketEffectIds,
+    gold,
+    eliteBonus,
+    generousBonus,
+    wealthyBonus,
+    bossBonus,
+    talentGoldPerCombat: victoryGoldPerCombat(talentEffects, input.battleState),
+    goldMultiplier: getGoldMultiplier(input.characterId, input.selectedDifficulty),
+  });
+  const materials = computeCombatMaterialReward({
+    enemyId: input.battleState.currentEnemy.id,
+    enemyType: input.battleState.currentEnemy.enemyType,
+    effects: input.homesteadEffects,
+    scavenger: labyrinthRewardModifiers.includes("scavenger"),
+    herbalist: labyrinthRewardModifiers.includes("herbalist"),
+    rng,
+  });
   const maxHealthDelta = Math.max(0, talentEffects.maxHealthPerCombat);
   const effectiveMaxHealth = input.runMaxHealth + maxHealthDelta;
   const playerHealth = Math.min(
@@ -218,18 +237,22 @@ function computeWildwoodVictoryRewards(
     input.battleState.playerHealth + Math.max(0, talentEffects.healthRestorePerCombat),
   );
   return {
-    rewardState: createWildwoodRewardState({
-      runDeck: input.runDeck,
-      rng,
-      lootProgress: input.lootProgress,
-      gearAstralChanceBonus: input.homesteadEffects.gearAstralChanceBonus,
-      excludedBoonIds: activeTrinketEffectIds,
-      ownedTrinketIds: input.ownedTrinketIds ?? [],
-      ownedUniqueIds: input.ownedUniqueIds ?? new Set(),
-    }),
+    rewardState: {
+      ...createWildwoodRewardState({
+        runDeck: input.runDeck,
+        rng,
+        lootProgress: input.lootProgress,
+        gearAstralChanceBonus: input.homesteadEffects.gearAstralChanceBonus,
+        excludedBoonIds: activeTrinketEffectIds,
+        ownedTrinketIds: input.ownedTrinketIds ?? [],
+        ownedUniqueIds: input.ownedUniqueIds ?? new Set(),
+      }),
+      gold: goldResult.persistedGold - input.purseGold,
+      materials,
+    },
     labyrinthRewardModifiers,
-    goldEarned,
-    persistedGold: Math.max(input.purseGold, input.battleState.gold) + companionGold,
+    goldEarned: goldResult.earnedBeforeMultiplier,
+    persistedGold: goldResult.persistedGold,
     playerHealth,
     maxHealthDelta,
     destinationOfferState: input.destinationOfferState,

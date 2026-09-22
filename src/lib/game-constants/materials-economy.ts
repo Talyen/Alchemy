@@ -12,8 +12,7 @@
 //     Forge Golem pays Iron by design.
 //   Reward pipeline order and the which-modifiers-apply-to-which-source policy
 //     table (homestead/material-rewards.ts): computeCombatMaterialReward and
-//     computeMysteryMaterialReward. The Wildwood exclusion lives separately in
-//     run/run-materials.ts (awardsRunMaterialsFor).
+//     computeMysteryMaterialReward.
 
 export const HOMESTEAD_LOOT_MULTIPLIERS = {
   normal: 1,

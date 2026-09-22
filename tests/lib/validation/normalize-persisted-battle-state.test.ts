@@ -11,7 +11,12 @@ describe("normalizePersistedBattleState", () => {
   it("retains a running battle's Health, defenses, and old roster across balance updates", () => {
     const saved = {
       ...defaultBattleState(),
-      currentEnemy: { ...enemyById["iron-bear"], abilityIds: ["maul", "burning-blade", "plate-mail"] },
+      currentEnemy: {
+        ...enemyById["iron-bear"],
+        title: "Stale name",
+        art: "stale-art.webp",
+        abilityIds: ["maul", "burning-blade", "plate-mail"],
+      },
       roomScalingMultiplier: 1.42,
       enemyMaxHealth: 119,
       enemyHealth: 63,
@@ -27,6 +32,8 @@ describe("normalizePersistedBattleState", () => {
       enemyMitigation: saved.enemyMitigation,
       currentEnemy: { abilityIds: saved.currentEnemy.abilityIds },
     });
+    expect(normalized.currentEnemy.title).toBe(enemyById["iron-bear"].title);
+    expect(normalized.currentEnemy.art).toBe(enemyById["iron-bear"].art);
     expect(enemyById["iron-bear"].abilityIds).toContain("pounce");
   });
   it.each(["goblin", "frostwarden", "skeleton", "ice-wraith", "pyromancer"] as const)(

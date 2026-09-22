@@ -30,6 +30,7 @@ function filterLiveBattleState(state: BattleSnapshot): BattleSnapshot {
     ...state,
     deck: filterLiveCards(state.deck),
     hand: filterLiveCards(state.hand),
+    pendingHandCards: filterLiveCards(state.pendingHandCards),
     discard: filterLiveCards(state.discard),
     exhausted: filterLiveCards(state.exhausted),
     wishOptions: Array.isArray(state.wishOptions) ? filterLiveCards(state.wishOptions) : state.wishOptions,

@@ -262,7 +262,6 @@ export function applyEndOfRunHomesteadBonuses(
 //   wish gems:      flat pendingMaterials append (no find bonus; gems aren't herbs)
 //   gear salvage:   fixed definition value + rolled currencies (no homestead modifiers)
 //   end of run:     flat per-room yields → herb-find (via applyEndOfRunHomesteadBonuses)
-// The Wildwood "no materials" gate lives separately in run/run-materials.ts.
 
 export interface ScavengerHerbalistFlags {
   scavenger: boolean;

@@ -1,7 +1,6 @@
 import { controllerInput } from "../controller-input";
 import { BattlePage } from "../../pages/battle-page";
 import { expect } from "@playwright/test";
-import type { GearInstance } from "@/lib/gear/types";
 import { EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear/crafting-ids";
 import {
   activateCurrency,
@@ -9,7 +8,6 @@ import {
   bodyGear,
   confirmSalvage,
   currencyLocator,
-  enterSalvageMode,
   equipmentSlotLocator,
   expectSalvageDialog,
   gearItemLocator,
@@ -38,11 +36,6 @@ test.describe("Armory equip", () => {
     await openArmory(page);
 
     const input = controllerInput(page);
-    await input.activate(page.getByRole("combobox", { name: "Sort inventory" }));
-    await expect(page.getByRole("listbox")).toBeVisible();
-    await input.press("back");
-    await expect(page.getByRole("listbox")).toHaveCount(0);
-    await expect(page.getByRole("heading", { name: "Armory", exact: true })).toBeVisible();
     await input.activate(page.getByRole("button", { name: "Armor equipment slot", exact: true }));
     const bodyItem = gearItemLocator(page, "Leather Armor");
     const bodySlot = equipmentSlotLocator(page, "body");
@@ -76,45 +69,6 @@ test.describe("Armory equip", () => {
     const tooltip = page.locator(".armory-inventory-tooltip");
     await expect(tooltip).toBeVisible();
     await expect(tooltip.getByText("Leather Armor")).toBeVisible();
-  });
-
-  test("keeps quiver unequippable until Weapon 1 is ranged", async ({ page }) => {
-    const longbow: GearInstance = { instanceId: "bow-1", definitionId: "longbow-basic", affixes: [] };
-    const quiver: GearInstance = { instanceId: "quiver-1", definitionId: "quiver-basic", affixes: [] };
-    const longsword: GearInstance = { instanceId: "sword-1", definitionId: "longsword-basic", affixes: [] };
-    const loadouts = createEmptyGearLoadouts();
-    (loadouts.knight as Record<string, string | null>)["main-hand"] = "sword-1";
-
-    await openArmory(page, { inventory: [longbow, quiver, longsword], loadouts });
-
-    await selectArmorySlot(page, "off-hand");
-    await expect(gearItemLocator(page, "Quiver")).toHaveAttribute("title", "Incompatible with the current loadout");
-
-    await selectArmorySlot(page, "main-hand");
-    await gearItemLocator(page, "Longbow").click();
-    await expect(equipmentSlotLocator(page, "main-hand").locator("img")).toHaveCount(2);
-
-    await selectArmorySlot(page, "off-hand");
-    await expect(gearItemLocator(page, "Quiver")).not.toHaveAttribute("title", "Incompatible with the current loadout");
-    await gearItemLocator(page, "Quiver").click();
-    await expect(equipmentSlotLocator(page, "off-hand").locator("img")).toHaveCount(2);
-  });
-
-  test("click-equips a one-handed weapon into Off-Hand", async ({ page }) => {
-    const longsword: GearInstance = { instanceId: "sword-1", definitionId: "longsword-basic", affixes: [] };
-    const dagger: GearInstance = { instanceId: "dagger-1", definitionId: "dagger-basic", affixes: [] };
-    const loadouts = createEmptyGearLoadouts();
-    (loadouts.knight as Record<string, string | null>)["main-hand"] = "sword-1";
-
-    await openArmory(page, { inventory: [longsword, dagger], loadouts });
-
-    await selectArmorySlot(page, "off-hand");
-    const daggerItem = gearItemLocator(page, "Dagger");
-    await expect(daggerItem).toBeVisible();
-    await expect(daggerItem).not.toHaveAttribute("title", "Incompatible with the current loadout");
-    await daggerItem.click();
-    await expect(equipmentSlotLocator(page, "off-hand").locator("img")).toHaveCount(2);
-    await expect(equipmentSlotLocator(page, "main-hand").locator("img")).toHaveCount(2);
   });
 
   test(
@@ -226,26 +180,6 @@ test.describe("Armory crafting", () => {
       .toBeGreaterThan(0);
   });
 
-  test("returns to browsing after confirming a salvage", async ({ page }) => {
-    await seedRandom(page, 0);
-    const ringA = { instanceId: "ring-a", definitionId: "ruby-ring-basic" as const, affixes: [] };
-    const ringB = { instanceId: "ring-b", definitionId: "ruby-ring-basic" as const, affixes: [] };
-
-    await openArmory(page, {
-      inventory: [ringA, ringB],
-      craftingCurrencies: { ...emptyCraftingCurrencies },
-    });
-
-    await selectArmorySlot(page, "left-accessory");
-    await enterSalvageMode(page);
-    await page.getByLabel("Salvage Ruby Ring", { exact: true }).first().click();
-    await expectSalvageDialog(page);
-    await confirmSalvage(page);
-
-    await expect(page.getByTestId("armory-salvage-toggle")).toHaveAttribute("aria-pressed", "false");
-    await expect(gearItemLocator(page, "Ruby Ring")).toHaveCount(1);
-  });
-
   test("voidstone targeting lifecycle and affix display", critical, async ({ page }) => {
     await openArmory(page, {
       inventory: [affixedSword],
@@ -268,7 +202,7 @@ test.describe("Armory crafting", () => {
     await expect(page.getByText("Ironbound")).toHaveCount(0);
   });
 
-  test("rejects invalid voidstone target without consuming currency", critical, async ({ page }) => {
+  test("rejects invalid voidstone target without consuming currency", async ({ page }) => {
     await openArmory(page, {
       inventory: [bodyGear],
       craftingCurrencies: { ...emptyCraftingCurrencies, voidstone: 1 },

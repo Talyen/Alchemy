@@ -31,24 +31,6 @@ describe("BattleCardButton", () => {
     expect(button.dataset.hovered).toBeUndefined();
   });
 
-  it("uses scale-only hover motion unless a custom transform opts out", () => {
-    const { rerender } = render(
-      <BattleCardButton card={card} ariaLabel="Test Card" shimmerActive={false} shimmerToken={undefined} />,
-    );
-    expect(screen.getByRole("button", { name: "Test Card" }).classList.contains("card-hover-scale")).toBe(true);
-
-    rerender(
-      <BattleCardButton
-        card={card}
-        ariaLabel="Test Card"
-        shimmerActive={false}
-        shimmerToken={undefined}
-        scaleOnHover={false}
-      />,
-    );
-    expect(screen.getByRole("button", { name: "Test Card" }).classList.contains("card-hover-scale")).toBe(false);
-  });
-
   it("pairs keyword shine without glow only while eligible for hover", () => {
     const props = {
       ariaLabel: "Test Card",

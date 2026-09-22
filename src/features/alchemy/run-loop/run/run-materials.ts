@@ -7,8 +7,6 @@ import {
   setRunEndCurrencies,
   setRunEndMaterials,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
-import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
-import { EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear";
 import { addInventory, emptyInventory } from "@/lib/homestead/inventory";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { applyEndOfRunHomesteadBonuses } from "@/lib/homestead/material-rewards";
@@ -28,17 +26,6 @@ export const AWARD_MATERIALS_CALL_SITES = [
 ] as const;
 
 /**
- * Single owner for the "Wildwood awards no materials" rule. The gauntlet has
- * its own economy, so both the during-run award gate and the end-of-run
- * settlement exclude it here. (The Wildwood-only reward/victory branches in
- * `navigation/reward-flow.ts` and `navigation/victory-flow.ts` are routing,
- * not award policy, and intentionally bypass materials altogether.)
- */
-export function awardsRunMaterialsFor(contentSystemType: ContentSystemId): boolean {
-  return contentSystemType !== CONTENT_SYSTEMS.WILDWOOD;
-}
-
-/**
  * Merges run-collected materials with homestead end-of-run bonuses into
  * `session.runEndMaterials`, snapshots the salvaged-currency tally into
  * `session.runEndCurrencies`, and clears both tallies. Returns ONLY the
@@ -48,18 +35,10 @@ export function awardRunEndMaterials(draft: GameplayDraft): MaterialInventory {
   const runState = draft.run.activeRun;
   const runProfile = draft.runProfile;
   const rooms = Math.max(0, runState.roomsEncountered);
-  const wishGoldRooms = awardsRunMaterialsFor(runState.contentSystemType) ? Math.ceil(rooms / 2) : rooms;
+  const wishGoldRooms = Math.ceil(rooms / 2);
   const gold =
     (runProfile.effects.endRunGoldPerRoom ?? 0) * rooms + (runProfile.effects.endRunWishPerRoom ?? 0) * wishGoldRooms;
   if (gold > 0) addGold(draft, gold);
-  if (!awardsRunMaterialsFor(runState.contentSystemType)) {
-    clearRunMaterialsEarned(draft);
-    clearRunCurrenciesEarned(draft);
-    const none = emptyInventory();
-    setRunEndMaterials(draft, none);
-    setRunEndCurrencies(draft, { ...EMPTY_CRAFTING_CURRENCIES });
-    return none;
-  }
   const runCollected = runState.runMaterialsEarned;
   const homesteadBonus = applyEndOfRunHomesteadBonuses(emptyInventory(), runProfile.effects, runState.roomsEncountered);
   addMaterialsToStockpile(draft, homesteadBonus);

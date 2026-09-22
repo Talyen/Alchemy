@@ -143,43 +143,13 @@ jobs:
 
       - run: npm run check:ship
 
-      - name: Run save journeys
-        run: npm run test:ship:e2e
-
-      # Preserve this run before Electron replaces Playwright's output directories.
-      - name: Summarize save journeys
-        id: save-summary
-        if: always()
-        run: node scripts/ci-summarize.mjs --playwright
-
-      - name: Upload save results
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: playwright-report-nightly-save-results
-          path: reports/playwright-results.json
-          retention-days: 7
-          if-no-files-found: ignore
-
-      - name: Upload save diagnostics
-        if: failure() || steps.save-summary.outputs.retain-diagnostics == 'true'
-        uses: actions/upload-artifact@v7
-        with:
-          name: playwright-report-nightly-save
-          path: |
-            playwright-report/
-            test-results/
-            reports/playwright-results.json
-            reports/current-run.*
-            reports/runs/
-          retention-days: 7
-
       - run: mkdir -p reports
 
       - name: Run Electron e2e
         run: xvfb-run --auto-servernum -- npm run test:ship:desktop
         env:
           CI: true
+          PLAYWRIGHT_ELECTRON_FULL: "1"
 
       - name: Summarize Electron e2e
         id: playwright-summary

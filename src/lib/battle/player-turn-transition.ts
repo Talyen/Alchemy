@@ -154,7 +154,15 @@ function performDrawAndResetPhase(
       : -1;
   const recovered = returningIndex >= 0 ? state.discard[returningIndex] : undefined;
   const discard = recovered ? state.discard.filter((_, i) => i !== returningIndex) : state.discard;
-  const nextDraw = drawCards(state.deck, discard, state.hand, CARDS_PER_TURN, state.nextCardUid, getBattleRng(state));
+  const nextDraw = drawCards(
+    state.deck,
+    discard,
+    state.hand,
+    CARDS_PER_TURN,
+    state.nextCardUid,
+    getBattleRng(state),
+    state.pendingHandCards,
+  );
   let returningFlightUid: number | null = null;
   if (recovered && nextDraw.hand.length < MAX_HAND_SIZE) {
     returningFlightUid = nextDraw.nextCardUid;

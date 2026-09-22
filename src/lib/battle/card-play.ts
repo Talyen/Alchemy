@@ -2,7 +2,7 @@ import { readCombatFlag } from "./action-context";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { prepareTalentCardPlay } from "./talent-card-play";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
-import { drawFromState, applyDrawResult, drawKeywordCard } from "./draw";
+import { drawFromState, applyDrawResult, drawKeywordCard, deliverPendingHandCards } from "./draw";
 import { applyCardEffects } from "./effect-handlers";
 import {
   addGoldWithCombatText,
@@ -32,7 +32,7 @@ import { prepareUniqueCardPlay, finishUniqueCardDamage, returnHarvestCard } from
 import { computeCardPayment } from "./card-cost-rules";
 import { cardHasKeyword, isNatureCard } from "./card-classification";
 import { isCcControlled } from "./status-cc";
-import { MAX_HAND_SIZE, REACTIVE_REWARD_CHANCES, WISH_TRINKET_FORK_PERCENT } from "../game-constants";
+import { REACTIVE_REWARD_CHANCES, WISH_TRINKET_FORK_PERCENT } from "../game-constants";
 
 function consumeCardDiscounts(state: BattleState, payment: ReturnType<typeof computeCardPayment>): BattleState {
   const { consumedFlags, disarmedFlags, spentArmedDiscount, uniqueDiscounts } = payment;
@@ -186,7 +186,7 @@ function executeCardPlayState(
     mana: Math.max(0, state.mana - effectiveCost),
   };
 
-  const chained = resolveCardEffectChain(stripped, card, combatTexts, {
+  const chained = resolveCardEffectChain(deliverPendingHandCards(stripped), card, combatTexts, {
     playedCard: true,
     guaranteedCrit,
     damageEffects,
@@ -223,7 +223,6 @@ function executeCardPlayState(
 
 function applyTwinCasting(state: BattleState, card: BattleCard): BattleState {
   if (isPlayerDefeated(state) || state.gearEffects.elementalTwinCasting <= 0) return state;
-  if (state.hand.length >= MAX_HAND_SIZE) return state;
 
   const hasBurn = cardHasKeyword(card, "burn");
   const hasFreeze = cardHasKeyword(card, "freeze");

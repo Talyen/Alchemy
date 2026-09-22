@@ -11,6 +11,10 @@ function mysteryTrinketFallbackEffect(seed: string): Extract<MysteryEffect, { ki
   return { kind: "gainGeneratedGear", baseItemId: baseItem.id, astral: true };
 }
 
+function namedTrinketIds(effects: readonly MysteryEffect[]): string[] {
+  return effects.flatMap((effect) => (effect.kind === "gainTrinket" ? [effect.trinketId] : []));
+}
+
 export function pickMysteryTrinketGrantId({
   preferredId,
   fromIds,
@@ -36,6 +40,7 @@ export function pickMysteryTrinketGrantId({
 function resolveMysteryTrinketEffect(
   effect: MysteryEffect,
   owned: Set<string>,
+  reservedNamedIds: ReadonlySet<string>,
   rng: () => number,
   fallbackSeed: string,
 ): MysteryEffect {
@@ -48,7 +53,7 @@ function resolveMysteryTrinketEffect(
   const id = pickMysteryTrinketGrantId(
     effect.kind === "gainTrinket"
       ? { preferredId: effect.trinketId, owned, rng }
-      : { fromIds: effect.fromIds, owned, rng },
+      : { fromIds: effect.fromIds, owned: new Set([...owned, ...reservedNamedIds]), rng },
   );
   if (!id) return mysteryTrinketFallbackEffect(fallbackSeed);
   owned.add(id);
@@ -68,11 +73,13 @@ export function resolveMysteryEventTrinkets(
     // sequential random grants in one choice distinct.
     choices: event.choices.map((choice, choiceIndex) => {
       const choiceOwned = new Set(ownedTrinketIds);
+      // A random grant cannot consume a Boon promised later in this choice.
+      const reservedNamedIds = new Set(namedTrinketIds(choice.effects));
       return {
         ...choice,
         effects: choice.effects.map((effect, effectIndex) => {
           const seed = `${event.id}:${choiceIndex}:${effectIndex}`;
-          return resolveMysteryTrinketEffect(effect, choiceOwned, rng, seed);
+          return resolveMysteryTrinketEffect(effect, choiceOwned, reservedNamedIds, rng, seed);
         }),
       };
     }),
@@ -139,12 +146,13 @@ export function isMysteryLootEligible(
   ownedTrinketIds: readonly string[],
 ): boolean {
   if (isLootEligible("astral", progress.depth)) return true;
-  const availableTrinkets = trinketLibrary.filter((entry) => !ownedTrinketIds.includes(entry.id)).length;
+  const owned = new Set(ownedTrinketIds);
+  const availableTrinkets = trinketLibrary.filter((entry) => !owned.has(entry.id)).length;
   return event.choices.every((choice) => {
     if (choice.effects.some((effect) => effect.kind === "gainGeneratedGear" && effect.astral)) return false;
-    return (
-      choice.effects.filter((effect) => effect.kind === "gainTrinket" || effect.kind === "gainRandomTrinket").length <=
-      availableTrinkets
-    );
+    const namedIds = namedTrinketIds(choice.effects);
+    if (namedIds.some((id) => owned.has(id)) || new Set(namedIds).size !== namedIds.length) return false;
+    const randomCount = choice.effects.filter((effect) => effect.kind === "gainRandomTrinket").length;
+    return namedIds.length + randomCount <= availableTrinkets;
   });
 }

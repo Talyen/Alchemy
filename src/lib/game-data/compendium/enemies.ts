@@ -112,7 +112,7 @@ export const enemyBestiary = [
     art: assetRefs.fireElemental,
     enemyType: "elite",
     traits: [
-      trait("cinder-skin", "Cinder Skin", "Deal 1 Burn damage when hit, once per turn"),
+      trait("cinder-skin", "Cinder Skin", "Deal 1 Burn damage when Health is damaged, once per turn, while alive"),
       trait("freeze-vulnerability", "Freeze Vulnerability", "Receives double Freeze damage"),
     ],
     abilityIds: ["fireball", "cinderbloom", "molten-bulwark"],

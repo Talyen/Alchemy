@@ -4,7 +4,7 @@ import { hasEncounterBenefit, hasEnemyTrait } from "./types";
 import { selectRewardCards } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import type { BattleCard } from "@/lib/game-data";
-import { applyDrawResult, drawFromState } from "./draw";
+import { addCardToHandOrQueue, applyDrawResult, drawFromState } from "./draw";
 import { type BattleState, type CombatTextEvent } from "./types";
 import {
   addGoldWithCombatText,
@@ -25,7 +25,6 @@ import {
   WISH_CHOICE_COUNT,
   WISH_GEMS_GOLD_PERCENT,
   WISH_TRINKET_FORK_PERCENT,
-  MAX_HAND_SIZE,
 } from "../game-constants";
 import { shouldConvertGemsWishToGold } from "@/lib/content-systems/battle-content";
 import { dealEnemyScaledDamage } from "./scaled-damage";
@@ -285,18 +284,10 @@ export function chooseWishCard(state: BattleState, cardId: string, combatTexts: 
     blockAmount > 0
       ? applyPlayerStatusEffect(state, { kind: "player-status", status: "block", amount: blockAmount }, combatTexts)
       : state;
-  const addWishCard = (current: BattleState, card: BattleCard): BattleState => {
-    const cardWithUid = { ...card, uid: current.nextCardUid };
-    const next = { ...current, nextCardUid: current.nextCardUid + 1 };
-    return current.hand.length < MAX_HAND_SIZE
-      ? { ...next, hand: [...current.hand, cardWithUid] }
-      : { ...next, discard: [...current.discard, cardWithUid] };
-  };
-
-  let nextState = addWishCard({ ...rewarded, wishOptions: nextWishOptions, wishQueue }, chosenCard);
+  let nextState = addCardToHandOrQueue({ ...rewarded, wishOptions: nextWishOptions, wishQueue }, chosenCard);
   if (declinedCards.length > 0 && rollTalentChance(nextState.talentEffects.declinedWishCardChance, nextState)) {
     const bonusCard = pickRandom(declinedCards, getBattleRng(nextState));
-    if (bonusCard) nextState = addWishCard(nextState, bonusCard);
+    if (bonusCard) nextState = addCardToHandOrQueue(nextState, bonusCard);
   }
   return nextState;
 }

@@ -2,6 +2,7 @@ import { loadAlchemySaveState, saveAlchemySaveData } from "@/features/alchemy/sh
 import { defaultSaveData } from "@/features/alchemy/shared/storage/defaults";
 import { configureSaveBackend } from "@/features/alchemy/shared/storage/io";
 import { SAVE_KEY } from "@/lib/game-constants";
+import { defaultBattleState } from "@/lib/battle";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -233,6 +234,32 @@ describe("storage io", () => {
     await saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["slash"] });
     expect(JSON.parse(mockStorage[SAVE_KEY]).discoveredCardIds).toEqual(["slash"]);
     expect(JSON.parse(mockStorage[SAVE_KEY]).activeRun).toBeNull();
+  });
+
+  it.each([
+    { label: "missing", enemy: undefined },
+    { label: "unknown", enemy: { id: "missing-enemy" } },
+  ])("keeps the run and warns when a battle has a $label enemy", async ({ enemy }) => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const campaign = currentSchemaCampaignSave();
+    const activeRun = (campaign as Record<string, unknown>).activeRun;
+    if (!activeRun || typeof activeRun !== "object" || Array.isArray(activeRun)) {
+      throw new Error("campaign fixture is missing activeRun");
+    }
+    mockStorage[SAVE_KEY] = JSON.stringify({
+      ...campaign,
+      activeRun: {
+        ...activeRun,
+        activeCombat: { battleState: { ...defaultBattleState(), currentEnemy: enemy } },
+      },
+    });
+
+    const loaded = await loadAlchemySaveState();
+
+    expect(loaded.status.kind).toBe("ok");
+    expect(loaded.data.activeRun).not.toBeNull();
+    expect(loaded.data.activeRun?.activeCombat).toBeNull();
+    expect(loaded.status.kind === "ok" ? loaded.status.warnings : []).toContain("battle could not be restored");
   });
 
   it.each(futureSaveCases)("does not overwrite a browser save with $label", async ({ payload, expectedStatus }) => {

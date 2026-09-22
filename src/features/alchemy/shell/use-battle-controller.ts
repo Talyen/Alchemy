@@ -14,7 +14,7 @@ import { useHasActiveBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { preferredAutoplayEnabled, useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import type { CardRect } from "@/features/alchemy/shared/types";
 import type { Screen } from "@/lib/routing";
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 interface UseBattleControllerProps {
   screen: Screen;
@@ -38,23 +38,24 @@ export function useBattleController({
   const [isAutoplayEnabled, setIsAutoplayEnabledState] = useState(() =>
     preferredAutoplayEnabled(useSettingsStore.getState()),
   );
+  const autoplayEnabledRef = useRef(isAutoplayEnabled);
 
-  const setAutoplayEnabled = useCallback((enabled: boolean) => {
+  const updateAutoplayEnabled = useCallback((enabled: boolean, persist: boolean) => {
+    autoplayEnabledRef.current = enabled;
     setIsAutoplayEnabledState(enabled);
-    if (useSettingsStore.getState().rememberAutoplayPreference) {
+    if (persist && useSettingsStore.getState().rememberAutoplayPreference) {
       useSettingsStore.getState().setAutoplayEnabled(enabled);
     }
   }, []);
 
+  const setAutoplayEnabled = useCallback(
+    (enabled: boolean) => updateAutoplayEnabled(enabled, true),
+    [updateAutoplayEnabled],
+  );
+
   const toggleAutoplayEnabled = useCallback(() => {
-    // Read-then-write outside the updater: settings writes are side effects
-    // and must not run inside a StrictMode-double-invoked updater.
-    const next = !isAutoplayEnabled;
-    setIsAutoplayEnabledState(next);
-    if (useSettingsStore.getState().rememberAutoplayPreference) {
-      useSettingsStore.getState().setAutoplayEnabled(next);
-    }
-  }, [isAutoplayEnabled]);
+    updateAutoplayEnabled(!autoplayEnabledRef.current, true);
+  }, [updateAutoplayEnabled]);
 
   const [boonInspectOpen, setBoonInspectOpen] = useState(false);
   const toggleBoonInspect = useCallback(() => {
@@ -65,9 +66,9 @@ export function useBattleController({
   }, []);
 
   const applyPreferredAutoplay = useCallback(() => {
-    setIsAutoplayEnabledState(preferredAutoplayEnabled(useSettingsStore.getState()));
+    updateAutoplayEnabled(preferredAutoplayEnabled(useSettingsStore.getState()), false);
     setBoonInspectOpen(false);
-  }, []);
+  }, [updateAutoplayEnabled]);
 
   const ctx = useBattleControllerContext({
     screen,

@@ -2,7 +2,7 @@ import { EncounterRewardTraitArraySchema } from "./labyrinth-schemas";
 import { z } from "zod";
 import { defaultBattleState, type BattleSnapshot } from "@/lib/battle";
 import { normalizePersistedBattleState } from "../normalize-persisted-battle-state";
-import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
+import { isEnemyId, keywordDefinitions, type KeywordId } from "@/lib/game-data";
 import { BattleCardEffectSchema, BattleCardSchema } from "./battle-card-schemas";
 import { UniqueGearBattleStateSchema } from "./unique-gear-state";
 
@@ -15,6 +15,7 @@ const battleFallbacks = defaultBattleState();
 const PersistedBattleStateWireSchema = z.looseObject({
   deck: z.array(BattleCardSchema).catch([]),
   hand: z.array(BattleCardSchema).catch([]),
+  pendingHandCards: z.array(BattleCardSchema).catch([]),
   discard: z.array(BattleCardSchema).catch([]),
   exhausted: z.array(BattleCardSchema).catch([]),
   wishOptions: z.array(BattleCardSchema).nullable().catch(null),
@@ -69,11 +70,20 @@ const PersistedBattleStateWireSchema = z.looseObject({
 function hasBattleCardPiles(value: unknown): boolean {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const record = value as Record<string, unknown>;
-  return ["deck", "hand", "discard", "exhausted"].some((key) => Array.isArray(record[key]));
+  return ["deck", "hand", "pendingHandCards", "discard", "exhausted"].some((key) => Array.isArray(record[key]));
+}
+
+function hasKnownEnemy(value: unknown): boolean {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const enemy = (value as Record<string, unknown>).currentEnemy;
+  if (!enemy || typeof enemy !== "object" || Array.isArray(enemy)) return false;
+  const id = (enemy as Record<string, unknown>).id;
+  return typeof id === "string" && isEnemyId(id);
 }
 
 export const PersistedBattleStateSchema = z
   .unknown()
   .refine(hasBattleCardPiles, { message: "Battle block has no card piles" })
+  .refine(hasKnownEnemy, { message: "Battle block has no known enemy" })
   .pipe(PersistedBattleStateWireSchema)
   .transform((data) => normalizePersistedBattleState(data as unknown as Partial<BattleSnapshot>));

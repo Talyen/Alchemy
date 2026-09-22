@@ -27,7 +27,7 @@ export class BattlePage {
     this.victoryHeading = this.page.getByRole("heading", { name: /^Victory/ });
     this.defeatHeading = this.page.getByRole("heading", { name: "Journey’s End" });
     this.blockChip = this.page.getByRole("button", { name: /^Block \d+$/ }).first();
-    this.menuBtn = this.page.getByRole("button", { name: "Menu" });
+    this.menuBtn = this.page.getByRole("button", { name: "Open game menu", exact: true });
     this.autoplayToggle = this.page.getByTestId("autoplay-toggle");
     this.enemyArt = this.page.getByTestId("battle-enemy-art-panel");
     this.companionPanel = this.page.getByTestId("active-companion");

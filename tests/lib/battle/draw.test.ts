@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { defaultBattleState, defaultTalentEffects } from "@/lib/battle";
-import { drawCards } from "@/lib/battle/draw";
+import { defaultBattleState, defaultTalentEffects, endPlayerTurn, playBattleCardResolved } from "@/lib/battle";
+import { drawCards, drawKeywordCard } from "@/lib/battle/draw";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { shuffle } from "@/lib/utils";
 import { CARDS_PER_TURN, MAX_HAND_SIZE } from "@/lib/game-constants";
@@ -157,20 +157,22 @@ describe("drawCards — edge cases", () => {
     expect(result.deck).toHaveLength(0);
   });
 
-  it("drawing with near-full hand respects MAX_HAND_SIZE", () => {
+  it("reserves excess draws with a near-full hand", () => {
     const hand = Array.from({ length: 6 }, (_, i) => makeTestCardWithId(`h${i}`));
     const deck = [makeTestCardWithId("d1"), makeTestCardWithId("d2"), makeTestCardWithId("d3")];
     const result = drawCards(deck, [], hand, 4, 0, seededRng(1));
     expect(result.hand).toHaveLength(7);
-    expect(result.deck).toHaveLength(2);
+    expect(result.deck).toHaveLength(0);
+    expect(result.pendingHandCards.map((card) => card.id)).toEqual(["d2", "d1"]);
   });
 
-  it("silently skips draws when hand is already at MAX_HAND_SIZE", () => {
+  it("reserves draws when hand is already at MAX_HAND_SIZE", () => {
     const hand = Array.from({ length: MAX_HAND_SIZE }, (_, i) => makeTestCardWithId(`h${i}`));
     const deck = [makeTestCardWithId("d1"), makeTestCardWithId("d2"), makeTestCardWithId("d3")];
     const result = drawCards(deck, [], hand, 4, 0, seededRng(1));
     expect(result.hand).toHaveLength(MAX_HAND_SIZE);
-    expect(result.deck.map((card) => card.id)).toEqual(["d1", "d2", "d3"]);
+    expect(result.deck).toHaveLength(0);
+    expect(result.pendingHandCards.map((card) => card.id)).toEqual(["d3", "d2", "d1"]);
   });
 
   it("drawing 0 cards does nothing", () => {
@@ -179,6 +181,21 @@ describe("drawCards — edge cases", () => {
     const result = drawCards(deck, [], hand, 0, 0, seededRng(1));
     expect(result.hand).toHaveLength(1);
     expect(result.deck).toHaveLength(1);
+  });
+
+  it("delivers older reserved cards before a new draw", () => {
+    const pending = [makeCard("older"), makeCard("newer")];
+    const result = drawCards(
+      [makeCard("fresh")],
+      [],
+      Array.from({ length: 5 }, (_, i) => makeCard(`h${i}`)),
+      1,
+      20,
+      seededRng(1),
+      pending,
+    );
+    expect(result.hand.slice(5).map((card) => card.id)).toEqual(["older", "newer"]);
+    expect(result.pendingHandCards.map((card) => card.id)).toEqual(["fresh"]);
   });
 
   it("all drawn cards get unique uids", () => {
@@ -197,6 +214,36 @@ describe("drawCards — edge cases", () => {
     const fromZero = drawCards(deck, discard, [], 4, 0, alwaysZero);
     const fromMax = drawCards(deck, discard, [], 4, 0, alwaysMax);
     expect(fromZero.hand.map((c: { id: string }) => c.id)).not.toEqual(fromMax.hand.map((c: { id: string }) => c.id));
+  });
+
+  it("reserves a keyword card and delivers it before a played card draws", () => {
+    const played = makeTestCardWithId("played", { uid: 1, effects: [{ kind: "draw-cards", amount: 1 }] });
+    const physical = makeTestCardWithId("physical", {
+      effects: [{ kind: "damage", damageType: "physical", amount: 2 }],
+    });
+    const hand = [played, ...Array.from({ length: 6 }, (_, i) => makeTestCardWithId(`h${i}`))];
+    const reserved = drawKeywordCard(makeTestBattleState({ hand, deck: [makeCard("later"), physical] }), "physical");
+    expect(reserved.pendingHandCards.map((card) => card.id)).toEqual(["physical"]);
+    expect(reserved.deck.map((card) => card.id)).toEqual(["later"]);
+
+    const afterPlay = playBattleCardResolved(reserved, played.id, 0).state;
+    expect(afterPlay.hand.at(-1)?.id).toBe("physical");
+    expect(afterPlay.pendingHandCards.map((card) => card.id)).toEqual(["later"]);
+  });
+
+  it("delivers waiting cards after end-turn discard before the next ordinary draw", () => {
+    const hand = Array.from({ length: MAX_HAND_SIZE }, (_, i) => makeCard(`h${i}`));
+    const state = makeTestBattleState({
+      hand,
+      pendingHandCards: [makeCard("waiting")],
+      deck: [makeCard("ordinary")],
+      enemyCC: { stunSkipTurns: 1, freezeSkipTurns: 0, cooldown: 0 },
+      rng: () => 0.99,
+    });
+    const next = endPlayerTurn(state).state;
+    expect(next.hand[0]?.id).toBe("waiting");
+    expect(next.hand.some((card) => card.id === "ordinary")).toBe(true);
+    expect(next.pendingHandCards).toEqual([]);
   });
 });
 
