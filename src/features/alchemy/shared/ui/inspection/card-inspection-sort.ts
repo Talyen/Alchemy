@@ -1,5 +1,5 @@
 import type { BattleCard } from "@/lib/game-data";
-import { getCardDisplayTitle } from "../card-description-ui";
+import { getCardDisplayTitle } from "../cards/card-description-ui";
 
 function inspectionSortKey(card: BattleCard): string {
   return JSON.stringify([card.id, card.cost, card.effects, card.descriptionLines, card.corrupted, card.uid]);

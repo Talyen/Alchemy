@@ -10,14 +10,14 @@ Gate composition, CI tiers, and reuse policy live in
 | Completion orchestration                  | `check.mjs`                                                                                                                                                                                           |
 | Related tests and risk escalations        | `verify-changed.mjs`                                                                                                                                                                                  |
 | Finished-step exposure/digest reporting   | `lib/run-step.mjs` (shared by `check` + `verify`)                                                                                                                                                     |
-| Path parsing and classification           | `lib/changed-paths.mjs` + `lib/change-routes.mjs`                                                                                                                                                     |
+| Path parsing and classification           | `lib/verification/changed-paths.mjs` + `lib/verification/change-routes.mjs`                                                                                                                           |
 | Documentation contracts and plan metadata | `check-docs.mjs` (also serves `plans:check` via `--plans-only` and `docs:check:final` via `--final`), `check-documentation-contract.mjs`, `lib/plan-checks.mjs` (`archive-plans.mjs` shares that lib) |
-| Passing unit receipts                     | `lib/verification-cache.mjs`                                                                                                                                                                          |
-| Bundle budgets                            | `lib/bundle-budget.mjs`                                                                                                                                                                               |
+| Passing unit receipts                     | `lib/verification/verification-cache.mjs`                                                                                                                                                             |
+| Bundle budgets                            | `lib/verification/bundle-budget.mjs`                                                                                                                                                                  |
 | Full and staged formatting                | `run-prettier.mjs` + `prettier-paths.mjs` + `.prettierignore` (`PRETTIER_NEVER_FORMAT_RE` is the staged-path subset; `.prettierignore` also covers build outputs)                                     |
 | Plan creation and archiving               | `new-plan.mjs` + `archive-plans.mjs`; [plan lifecycle](../Docs/Plans/README.md#task-handoff)                                                                                                          |
-| Selection byte budgets                    | `lib/selection-budgets.mjs` (`INLINE_ARGS_BYTES` for check paths.json spill vs `RELATED_SELECTION_BYTES` for verify unit-all fallback; same value, different meanings)                                |
-| Test concurrency                          | `lib/test-concurrency.mjs` (`VITEST_MAX_WORKERS` for ship suites; CI full runs keep Vitest defaults)                                                                                                  |
+| Selection byte budgets                    | `lib/agent/selection-budgets.mjs` (`INLINE_ARGS_BYTES` for check paths.json spill vs `RELATED_SELECTION_BYTES` for verify unit-all fallback; same value, different meanings)                          |
+| Test concurrency                          | `lib/verification/test-concurrency.mjs` (`VITEST_MAX_WORKERS` for ship suites; CI full runs keep Vitest defaults)                                                                                     |
 
 `lib/repository-paths.mjs` normalizes selections for checks and discovery. Relative
 and absolute paths inside the checkout are equivalent. Directory selections use
@@ -47,10 +47,10 @@ outputs), and the pre-build guard in `build-verified.mjs` share one
 Documentation and ESLint inventories exclude isolated `.worktrees/` checkouts,
 reports, and installed dependencies. Documentation contract checks share one
 per-file fact walk (`links`, backticked candidates, script names) plus one
-Markdown helper (`lib/markdown-sections.mjs`) and one exemption owner per scope
+Markdown helper (`lib/agent/markdown-sections.mjs`) and one exemption owner per scope
 (`isHistoryOnlyDoc` / `isHistoricalDoc` / `isReachabilityExempt` in
 `check-documentation-contract.mjs`); route context budgets live in
-`lib/route-context-budgets.mjs`. Current-file checks cover E2E paths as well as other source references. Instruction
+`lib/agent/route-context-budgets.mjs`. Current-file checks cover E2E paths as well as other source references. Instruction
 history is advisory and does not require an entry for each skill or knowledge edit.
 Repository-relative matching uses forward slashes on every platform, including
 history and archived-plan exemptions.
@@ -70,6 +70,6 @@ an occupied port fails before any HTTP validation. They require an application s
 
 ### Verification cache
 
-`lib/verification-cache.mjs` implements the [reuse policy](../CONTRIBUTING.md#verification-reuse). A command becomes eligible after an observed duration of at least five seconds, and reuse must save more than twice the measured input-scan cost. The first run records duration without scanning dependencies; a subsequent slow run establishes its receipt. The exact executable and ordered argument list identify coverage.
+`lib/verification/verification-cache.mjs` implements the [reuse policy](../CONTRIBUTING.md#verification-reuse). A command becomes eligible after an observed duration of at least five seconds, and reuse must save more than twice the measured input-scan cost. The first run records duration without scanning dependencies; a subsequent slow run establishes its receipt. The exact executable and ordered argument list identify coverage.
 
 Input identity covers tracked and untracked nonignored files, root environment files and npm configuration, installed dependency file identities, Node executable/version/platform, checkout location, and environment. File identities include mode, size, nanosecond modification/change times, and inode; this is local filesystem reuse, not a portable content-addressed build cache. Dependency caches are excluded. Linked source or external dependency symlinks, unreadable inputs, a missing npm install receipt, or changed inputs disable reuse. Fresh successes replace receipts atomically; failures invalidate them. Reuse preserves the original run ID and expiry. Each verifier writes a run-specific `verify/summary.json`, linked by the outer completion report.

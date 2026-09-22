@@ -1,4 +1,4 @@
-import { verifyDesktopPackage } from "./lib/release-checks.mjs";
+import { verifyDesktopPackage } from "./lib/release/release-checks.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 if (isMainModule(import.meta.url)) {

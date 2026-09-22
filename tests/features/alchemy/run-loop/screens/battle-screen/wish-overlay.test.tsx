@@ -3,14 +3,14 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resetEscapeStackForTests } from "@/app/escape-stack";
 import { WishOverlay } from "@/features/alchemy/run-loop/screens/battle-screen/wish-overlay";
-import { BattleCardButton } from "@/features/alchemy/shared/ui/card-button";
+import { BattleCardButton } from "@/features/alchemy/shared/ui/cards/card-button";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import type { BattleActionsProps } from "@/features/alchemy/run-loop/screens/battle-screen/types";
 import { waitForArtwork } from "../../../../../helpers/artwork-test";
 import type { BattleCard } from "@/lib/game-data";
 import { patchBattleState } from "../../../../../fixtures/battle";
 
-vi.mock("@/features/alchemy/shared/ui/card-button", () => ({
+vi.mock("@/features/alchemy/shared/ui/cards/card-button", () => ({
   BattleCardButton: vi.fn(({ ariaLabel, onClick }: { ariaLabel: string; onClick: () => void }) => (
     <button type="button" onClick={onClick}>
       {ariaLabel}

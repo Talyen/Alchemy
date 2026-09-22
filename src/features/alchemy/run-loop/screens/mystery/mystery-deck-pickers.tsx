@@ -2,8 +2,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { type BattleCard } from "@/lib/game-data";
 
-import { CardSelectionGrid } from "../../../shared/ui/card-selection-grid";
-import { SelectableCard } from "../../../shared/ui/selectable-card";
+import { CardSelectionGrid } from "../../../shared/ui/cards/card-selection-grid";
+import { SelectableCard } from "../../../shared/ui/cards/selectable-card";
 import { bodyTextClass, getCardInspectionShineColors } from "@/features/alchemy/shared/config";
 
 export function CardChoicePicker({ choices, onSelect }: { choices: BattleCard[]; onSelect: (cardId: string) => void }) {

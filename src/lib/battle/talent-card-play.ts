@@ -123,11 +123,6 @@ export function prepareTalentCardPlay(
   let nextState = applyTalentDrawTriggers(state, keywords, archery);
   nextState = applyTalentStatusAndHitTriggers(nextState, card, keywords, nature, combatTexts);
 
-  if (options.countsAsPlayedCard && attack && talents.archeryCritOnCrowdControl && state.flags.hawkEyeReady) {
-    nextState = setFlag(nextState, "hawkEyeReady", false);
-    nextState = setFlag(nextState, "nextHitCrit", true);
-  }
-
   if (options.countsAsPlayedCard) {
     const archeryCardsPlayed = state.flags.archeryCardsPlayedThisTurn;
     const secondArcheryCard = archery && archeryCardsPlayed === 1;

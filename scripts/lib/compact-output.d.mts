@@ -1,4 +1,4 @@
-import type { VerificationCommand } from "./change-routes.mjs";
+import type { VerificationCommand } from "./verification/change-routes.mjs";
 export const ROUTINE_EXPOSURE_BUDGET_BYTES: number;
 
 export function sanitizeOutput(output: string): string;

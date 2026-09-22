@@ -3,7 +3,7 @@ import { UsageError } from "./script-run.mjs";
 // Minimal shared flag parser for simple CLIs (no new dependency).
 // Supports `--flag`, `--key=value`, `--key value`, `-m value`, `-m=value`,
 // and `--` passthrough. Path-selection CLIs (verify/check) stay on
-// lib/changed-paths.mjs; complex CLIs (audit, performance) keep their bespoke
+// lib/verification/changed-paths.mjs; complex CLIs (audit, performance) keep their bespoke
 // validators until they migrate one flag at a time.
 //
 // `spec` maps flag names (without dashes) to `{ short?, takesValue? }`.

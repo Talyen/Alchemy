@@ -3,7 +3,7 @@ import type { RefObject } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-import { ManaPanel, PilePanel } from "../../../shared/ui/battle/resources";
+import { ManaPanel, PilePanel } from "../../battle/presentation/ui/resources";
 import { battleBottomBarClass, battleBottomColumnClass } from "@/features/alchemy/shared/config";
 import { BattleHand } from "./hand";
 import type { BattleActionsProps, BattleRefsProps, BattleScreenState, RequiredBattleViewProps } from "./types";

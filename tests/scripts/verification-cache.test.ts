@@ -3,7 +3,10 @@ import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { afterEach, describe, expect, it } from "vitest";
-import { captureVerificationInputs, createVerificationCache } from "../../scripts/lib/verification-cache.mjs";
+import {
+  captureVerificationInputs,
+  createVerificationCache,
+} from "../../scripts/lib/verification/verification-cache.mjs";
 
 const roots: string[] = [];
 const command = { key: "unit-changed", command: "npx", args: ["vitest", "run", "tests/example.test.ts"] };

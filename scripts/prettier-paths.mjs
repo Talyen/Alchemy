@@ -12,11 +12,10 @@ const PRETTIER_PATH_RE = new RegExp(`(?:^|/)(?:\\.prettierrc)$|\\.(?:${EXTENSION
 // Paths Prettier must skip even when staged explicitly.
 // Intentional subset of .prettierignore (not a full mirror): the CLI only sees
 // staged source paths, while .prettierignore also covers build outputs
-// (dist/, reports/, Raw Assets/, ...). Keep the four entries below in sync with
+// (dist/, reports/, Raw Assets/, ...). Keep the entries below in sync with
 // .prettierignore or filterPrettierPaths will format what `prettier --check`
 // ignores (or vice versa). See prettier-paths.test.ts parity assertion.
-export const PRETTIER_NEVER_FORMAT_RE =
-  /(?:^|\/)(?:package-lock\.json|CHANGELOG\.md)$|\.generated\.ts$|(?:^|\/)src\/lib\/game-data\/gear-art\.ts$/;
+export const PRETTIER_NEVER_FORMAT_RE = /(?:^|\/)(?:package-lock\.json|CHANGELOG\.md)$|\.generated\.ts$/;
 
 /**
  * @param {readonly string[]} paths

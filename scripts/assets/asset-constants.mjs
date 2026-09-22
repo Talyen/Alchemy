@@ -104,6 +104,6 @@ export const MANAGED_DIRS = Object.freeze({
 
 export const GENERATED_OUTPUTS = Object.freeze({
   assets: "src/lib/game-data/assets.generated.ts",
-  gearArt: "src/lib/game-data/gear-art.ts",
+  gearArt: "src/lib/game-data/gear-art.generated.ts",
   versionMetadata: "src/lib/validation/metadata.generated.ts",
 });

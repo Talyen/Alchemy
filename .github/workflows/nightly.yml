@@ -36,6 +36,18 @@ jobs:
           compression-level: 0
           retention-days: 1
 
+      - name: Retain build failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-diagnostics-nightly-prepare
+          path: |
+            reports/compact/
+            reports/current-run.*
+            reports/runs/
+          retention-days: 7
+          if-no-files-found: ignore
+
   e2e-web:
     name: Web E2E (${{ matrix.shard }}/4)
     needs: prepare
@@ -195,6 +207,18 @@ jobs:
             reports/current-run.*
             reports/runs/
           retention-days: 7
+
+      - name: Retain build failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-diagnostics-nightly-ship-gate-full
+          path: |
+            reports/compact/
+            reports/current-run.*
+            reports/runs/
+          retention-days: 7
+          if-no-files-found: ignore
 
   deadcode-entry-exports:
     name: Knip entry exports

@@ -16,7 +16,7 @@ import fs from "node:fs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { fileURLToPath } from "node:url";
 import { commandExposure, tailOutput, writeDiagnosticLog } from "./lib/compact-output.mjs";
-import { ensureRunId, writeCurrentRun } from "./lib/current-run.mjs";
+import { ensureRunId, writeCurrentRun } from "./lib/verification/current-run.mjs";
 import { runCommandAsync } from "./lib/run-command.mjs";
 
 const currentFile = fileURLToPath(import.meta.url);

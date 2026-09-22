@@ -17,6 +17,7 @@ import { removeHarmfulPlayerStatuses, applyPlayerStatusEffect, applyArmorReward 
 import { getEnemyDamageMultiplier, rollTalentChance } from "./status-helpers";
 import { getBattleRng, pickRandom, rollPercent } from "@/lib/rng";
 import { getEditableCorruptionTargets, updateCardNumericValue } from "@/lib/corruption";
+import { getCorruptionTargetEffect } from "@/lib/corruption/numeric";
 import {
   PERCENT_DENOMINATOR,
   HALF_DIVISOR,
@@ -44,7 +45,17 @@ function upgradeWishCard(card: BattleCard): BattleCard {
   const targets = getEditableCorruptionTargets(card).sort(
     (a, b) => b.lineIndex - a.lineIndex || b.matchIndex - a.matchIndex,
   );
-  return targets.reduce((next, target) => updateCardNumericValue(next, target, target.value + 1), card);
+  return targets.reduce((next, target) => {
+    const effect = getCorruptionTargetEffect(next, target);
+    // An upgrade must not raise a cost, including a shared Deal/Receive amount.
+    if (
+      !effect ||
+      ["lose-health", "self-damage", "lose-mana", "lose-max-mana"].includes(effect.kind) ||
+      next.descriptionLines[target.lineIndex]?.startsWith("Deal and Receive ")
+    )
+      return next;
+    return updateCardNumericValue(next, target, target.value + 1);
+  }, card);
 }
 
 export function buildWishOptions(state: BattleState, card: Pick<BattleCard, "id"> | undefined): BattleCard[] {
@@ -154,7 +165,7 @@ export function applyWishEffect(
     if (hasEncounterBenefit(state, "wishful")) state = { ...state, flags: { ...state.flags, encounterWishUsed: true } };
   }
   const queuedOptions = nextWishOptions.filter((options) => options.length > 0);
-  let nextState: BattleState =
+  const nextState: BattleState =
     state.wishOptions || queuedOptions.length === 0
       ? { ...state, wishQueue: [...state.wishQueue, ...queuedOptions] }
       : {
@@ -162,7 +173,6 @@ export function applyWishEffect(
           wishOptions: queuedOptions[0] ?? [],
           wishQueue: [...state.wishQueue, ...queuedOptions.slice(1)],
         };
-  nextState = processEncounterTraitWish(nextState);
 
   return resolveBattleSequence(
     nextState,
@@ -170,7 +180,7 @@ export function applyWishEffect(
     combatTexts,
     (current) => {
       const eligibility = current;
-      let next = applyWishGoldTriggers(current, combatTexts);
+      let next = applyWishGoldTriggers(processEncounterTraitWish(current), combatTexts);
       next = applyWishGemsGoldTrigger(next, combatTexts);
       next = applyWishHealthAndStatusTriggers(next, combatTexts, eligibility);
       next = applyWishDrawTriggers(next);

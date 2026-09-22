@@ -6,10 +6,10 @@ import { isStandardPotionCard, type BattleCard } from "@/lib/game-data";
 import { MIXED_POTION_TITLE } from "@/lib/game-constants";
 import { collectionTileWidthClass, getCardInspectionShineColors } from "@/features/alchemy/shared/config";
 
-import { BattleCardButton } from "../../shared/ui/card-button";
+import { BattleCardButton } from "../../shared/ui/cards/card-button";
 import { PurchasableCardItem } from "../shop/ui/purchasable-shop-item";
-import { SelectableCard } from "../../shared/ui/selectable-card";
-import { CardSelectionGrid } from "../../shared/ui/card-selection-grid";
+import { SelectableCard } from "../../shared/ui/cards/selectable-card";
+import { CardSelectionGrid } from "../../shared/ui/cards/card-selection-grid";
 import { ScreenDescription } from "../../shared/ui/layout-components";
 import { ServiceButton } from "../shop/ui/service-button";
 import { useCaptureEscapeCancel } from "../../shared/ui/use-modal-escape-dismiss";

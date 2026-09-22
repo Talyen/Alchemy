@@ -7,11 +7,11 @@ import { pathToFileURL } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { commandInvocation, resolveBuilderBin, resolveViteBin } from "../../scripts/lib/command-invocation.mjs";
 import { runCommand, runCommandAsync } from "../../scripts/lib/run-command.mjs";
-import { resolvePushPaths, resolveSelectedPaths } from "../../scripts/lib/changed-paths.mjs";
+import { resolvePushPaths, resolveSelectedPaths } from "../../scripts/lib/verification/changed-paths.mjs";
 import { expandRepositoryPaths, listRepositoryFiles } from "../../scripts/lib/repository-paths.mjs";
-import { changedGitPaths } from "../../scripts/lib/current-run.mjs";
-import { resolveRoutePlan, resolveRoutes } from "../../scripts/lib/change-routes.mjs";
-import { validateTestSuitePaths } from "../../scripts/lib/test-commands.mjs";
+import { changedGitPaths } from "../../scripts/lib/verification/current-run.mjs";
+import { resolveRoutePlan, resolveRoutes } from "../../scripts/lib/verification/change-routes.mjs";
+import { validateTestSuitePaths } from "../../scripts/lib/verification/test-commands.mjs";
 import { runAudits } from "../../scripts/audit-all.mjs";
 import { parsePerformanceArgs } from "../../scripts/run-performance.mjs";
 import { parseSyncArgs } from "../../scripts/sync-generated.mjs";
@@ -301,7 +301,7 @@ describe("script execution reliability", () => {
       cp.spawnSync = (command, ...args) => command === 'rg'
         ? {error: Object.assign(new Error('missing rg'), {code:'ENOENT'})} : spawn(command, ...args);
       syncBuiltinESMExports();
-      const {repositorySearch} = await import(${JSON.stringify(pathToFileURL(path.join(ROOT, "scripts/lib/agent-discovery.mjs")).href)});
+      const {repositorySearch} = await import(${JSON.stringify(pathToFileURL(path.join(ROOT, "scripts/lib/agent/agent-discovery.mjs")).href)});
       const {expandRepositoryPaths} = await import(${JSON.stringify(pathToFileURL(path.join(ROOT, "scripts/lib/repository-paths.mjs")).href)});
       const root = ${JSON.stringify(root)};
       console.log(JSON.stringify({selected: expandRepositoryPaths(root, ['.']), found: repositorySearch(root, {pattern: 'needle'})}));`;

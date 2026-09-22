@@ -4,15 +4,15 @@ import path from "node:path";
 import fs from "node:fs";
 
 import { summarizeAndReportFailure, summarizeStepResult } from "./lib/run-step.mjs";
-import { resolveRoutePlan } from "./lib/change-routes.mjs";
-import { parseChangedPathsArgs, resolveSelectedPaths } from "./lib/changed-paths.mjs";
-import { DOCS_CHECK_KEY } from "./lib/test-commands.mjs";
-import { ensureRunId, writeCurrentRun } from "./lib/current-run.mjs";
+import { resolveRoutePlan } from "./lib/verification/change-routes.mjs";
+import { parseChangedPathsArgs, resolveSelectedPaths } from "./lib/verification/changed-paths.mjs";
+import { DOCS_CHECK_KEY } from "./lib/verification/test-commands.mjs";
+import { ensureRunId, writeCurrentRun } from "./lib/verification/current-run.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { runCommand } from "./lib/run-command.mjs";
-import { recordAgentEvent } from "./lib/agent-events.mjs";
-import { captureVerificationInputs, createVerificationCache } from "./lib/verification-cache.mjs";
-import { selectContext } from "./lib/agent-context.mjs";
+import { recordAgentEvent } from "./lib/agent/agent-events.mjs";
+import { captureVerificationInputs, createVerificationCache } from "./lib/verification/verification-cache.mjs";
+import { selectContext } from "./lib/agent/agent-context.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 

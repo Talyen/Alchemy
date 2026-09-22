@@ -8,7 +8,7 @@ import {
   latestVersionTag,
   previousVersionTag,
   resolvePatchNoteRange,
-} from "../../scripts/lib/git-release.mjs";
+} from "../../scripts/lib/release/git-release.mjs";
 
 const tempDirs: string[] = [];
 

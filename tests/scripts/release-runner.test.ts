@@ -2,8 +2,8 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { runRelease } from "../../scripts/lib/release-runner.mjs";
-import { verifyReleaseVersionTag } from "../../scripts/lib/release-checks.mjs";
+import { runRelease } from "../../scripts/lib/release/release-runner.mjs";
+import { verifyReleaseVersionTag } from "../../scripts/lib/release/release-checks.mjs";
 
 const ROOT = join(import.meta.dirname, "../..");
 

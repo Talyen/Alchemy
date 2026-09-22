@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { parsePlanMetadata } from "./lib/plan-checks.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
-import { mapUnfencedLines } from "./lib/markdown-sections.mjs";
+import { mapUnfencedLines } from "./lib/agent/markdown-sections.mjs";
 import { PLANS_DIR } from "./lib/plan-contract.mjs";
 
 const TERMINAL_STATUSES = new Set(["complete", "cancelled"]);

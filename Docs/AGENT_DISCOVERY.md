@@ -27,8 +27,8 @@ those pointers when needed. `--json` has the same budget; `--json --full` is for
 tools that need all selected sections.
 
 Discovery is not a prerequisite, a replacement for required skills, or a test
-coverage selector. `scripts/lib/agent-context.mjs` owns its catalog;
-`scripts/lib/change-routes.mjs` separately owns verification selection. Keep
+coverage selector. `scripts/lib/agent/agent-context.mjs` owns its catalog;
+`scripts/lib/verification/change-routes.mjs` separately owns verification selection. Keep
 catalog entries as references to canonical prose, not copies of that prose.
 Documentation checks validate those references, and `verify --plan` uses them.
 

@@ -48,7 +48,18 @@ export function findBestPlayableHandCard(
   state: BattleSnapshot,
   options: CardPlayOptions = PLAYABLE_HAND_OPTIONS,
 ): { card: BattleCard; index: number } | null {
-  const playable = getPlayableHandCards(state, options);
+  const playable = getPlayableHandCards(state, options).filter(({ card }) => {
+    const opening = card.effects[0];
+    // A Health payment resolves before the card's benefits. Leave guaranteed
+    // lethal payments to manual play rather than killing the hero for a draw.
+    return !(
+      opening?.kind === "lose-health" &&
+      opening.amount >= state.playerHealth &&
+      state.deathsDoorUsed &&
+      !state.deathsDoorActive &&
+      state.playerStatuses.phoenixFeather <= 0
+    );
+  });
   if (playable.length === 0) return null;
   if (state.playerHealth <= state.playerMaxHealth / HALF_DIVISOR) {
     const defensive = playable.filter(({ card }) => getImmediateDefense(card) > 0);

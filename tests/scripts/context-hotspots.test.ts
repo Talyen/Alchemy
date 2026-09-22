@@ -8,8 +8,8 @@ import {
   formatContextHotspotReport,
   parseContextHotspotArgs,
 } from "../../scripts/context-hotspots.mjs";
-import { CONTEXT_TASKS } from "../../scripts/lib/agent-context.mjs";
-import { writeCurrentRun } from "../../scripts/lib/current-run.mjs";
+import { CONTEXT_TASKS } from "../../scripts/lib/agent/agent-context.mjs";
+import { writeCurrentRun } from "../../scripts/lib/verification/current-run.mjs";
 
 describe("context hotspot reporting", () => {
   it("parses bounded history and output thresholds", () => {

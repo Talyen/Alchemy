@@ -1,4 +1,4 @@
-import { parseReleaseArgs, runRelease } from "./lib/release-runner.mjs";
+import { parseReleaseArgs, runRelease } from "./lib/release/release-runner.mjs";
 
 async function main() {
   const argv = process.argv.slice(2);

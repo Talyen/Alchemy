@@ -18,9 +18,10 @@ import {
   getPoisonDamageMultiplierAgainstBleeding,
 } from "./status-helpers";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
-import { mergeCombatText, payKillPayouts } from "./combat-text";
+import { addGoldWithCombatText, mergeCombatText, payKillPayouts } from "./combat-text";
 import { payPendingBleedLeech } from "./damage-rider-leech";
 import { applyBleedDamageDraw } from "./bleed-reactions";
+import { gearFrozenDamageMultiplier } from "./gear-effects";
 
 export type EnemyDotStatus = "burn" | "poison" | "bleed";
 
@@ -28,6 +29,11 @@ export interface EnemyDotPulse {
   status: EnemyDotStatus;
   finalDamage: number;
   nextStacks: number;
+}
+
+function pulseHealthDamage(pulses: readonly EnemyDotPulse[], index: number, health: number): number {
+  const earlierDamage = pulses.slice(0, index).reduce((sum, pulse) => sum + pulse.finalDamage, 0);
+  return Math.min(pulses[index]?.finalDamage ?? 0, Math.max(0, health - earlierDamage));
 }
 
 export function applyEnemyDotDamage(
@@ -41,8 +47,10 @@ export function applyEnemyDotDamage(
   const previousHealth = hit.previousHealth;
   let nextState: BattleState = hit.state;
 
-  if (pulses.some((pulse) => pulse.status === "bleed" && pulse.finalDamage > 0)) {
-    nextState = applyBleedDamageDraw(nextState, hit.healthDamage);
+  const bleedIndex = pulses.findIndex((pulse) => pulse.status === "bleed");
+  if (bleedIndex >= 0 && pulseHealthDamage(pulses, bleedIndex, previousHealth) > 0) {
+    nextState = applyBleedDamageDraw(nextState, pulseHealthDamage(pulses, bleedIndex, previousHealth));
+    nextState = addGoldWithCombatText(nextState, state.trinketEffects.cutpurseGoldOnBleed, combatTexts);
   }
 
   for (const pulse of pulses) {
@@ -70,7 +78,12 @@ export function detonateEnemyStatuses(
   statuses: ReadonlyArray<"bleed" | "poison" | "burn">,
   combatTexts: CombatTextEvent[],
   mode: "next-tick" | "remaining-ticks" = "next-tick",
-  applyPoisonRiders?: (state: BattleState, damage: number, combatTexts: CombatTextEvent[]) => BattleState,
+  applyPoisonRiders?: (
+    state: BattleState,
+    damage: number,
+    combatTexts: CombatTextEvent[],
+    healthDamage: number,
+  ) => BattleState,
 ): BattleState {
   if (state.enemyHealth <= 0) return state;
   const pulses: EnemyDotPulse[] = [];
@@ -82,6 +95,7 @@ export function detonateEnemyStatuses(
     const bonus = status === "poison" ? getPoisonBonusAgainstBleeding(state) : 0;
     const multiplier =
       getEnemyDamageMultiplier(state, status) *
+      gearFrozenDamageMultiplier(state) *
       (status === "burn" || (status === "bleed" && state.gearEffects.sharedBurnBleedBonuses > 0)
         ? getBurnBonusToBleedingMultiplier(state)
         : 1);
@@ -120,7 +134,10 @@ export function detonateEnemyStatuses(
     const poisonPulse = pulses.find((pulse) => pulse.status === "poison");
     if (poisonPulse) {
       nextState = applyPoisonDamageArmorRider(nextState, poisonPulse.finalDamage);
-      if (applyPoisonRiders) nextState = applyPoisonRiders(nextState, poisonPulse.finalDamage, combatTexts);
+      // Attribute overkill in pulse order so Poison cannot Leech Health already lost to Bleed.
+      const healthDamage = pulseHealthDamage(pulses, pulses.indexOf(poisonPulse), previousHealth);
+      if (applyPoisonRiders)
+        nextState = applyPoisonRiders(nextState, poisonPulse.finalDamage, combatTexts, healthDamage);
     }
     const bleedPulse = pulses.find((pulse) => pulse.status === "bleed");
     if (!bleedPulse) return nextState;
@@ -132,6 +149,7 @@ export function detonateEnemyStatuses(
       },
       combatTexts,
       state.enemyStatuses.poison > 0 || state.enemyStatuses.bleed > 0,
+      pulseHealthDamage(pulses, pulses.indexOf(bleedPulse), previousHealth),
     );
   });
 }

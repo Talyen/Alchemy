@@ -134,11 +134,11 @@ function applyAbilityDamage(
     record("inquisitor");
   }
   if (trait("dire-wolf") && state.playerStatuses.bleed > 0) {
-    flatBonus += CONDITIONAL_FLAT_BONUS;
+    flatBonus += scaleByRoomMultiplier(state, CONDITIONAL_FLAT_BONUS);
     record("dire-wolf");
   }
   if (trait("stone-golem") && state.enemyMitigation.block > 0) {
-    flatBonus += CONDITIONAL_FLAT_BONUS;
+    flatBonus += scaleByRoomMultiplier(state, CONDITIONAL_FLAT_BONUS);
     record("stone-golem");
   }
   if (effect.damageType === "freeze" && (trait("frost-elemental") || trait("ice-wraith"))) {
@@ -151,17 +151,23 @@ function applyAbilityDamage(
   }
   const banditBonus = trait("bandit") && !state.flags.enemyFirstHitDoubleUsed;
   if (banditBonus) amountMultiplier *= BANDIT_FIRST_HIT_MULTIPLIER;
-  let damage = scaleEnemyAbilityDamage(state, effect);
-  // Enemy Forge already contains its room scaling; read the live resource once.
-  if (effect.equalToForge) damage = { ...damage, amount: state.enemyMitigation.forge };
+  // Resources already contain room scaling, but still receive ability pressure
+  // and difficulty bonuses like every other damaging ability.
+  let resourceEffect = effect;
+  if (effect.equalToForge) resourceEffect = { ...effect, amount: state.enemyMitigation.forge };
   if (effect.equalToBlock)
-    damage = {
-      ...damage,
+    resourceEffect = {
+      ...effect,
       amount: scalePercent(state.enemyMitigation.block, effect.equalToBlockPercent ?? 100),
     };
+  let damage = scaleEnemyAbilityDamage(
+    state,
+    resourceEffect,
+    effect.equalToForge === true || effect.equalToBlock === true,
+  );
   if (effect.doubleIfEnemyBleeding && state.playerStatuses.bleed > 0) damage = { ...damage, amount: damage.amount * 2 };
   if (trait("blood-cultist") && effect.damageType === "bleed" && state.playerStatuses.bleed > 0) {
-    flatBonus += CONDITIONAL_FLAT_BONUS;
+    flatBonus += scaleByRoomMultiplier(state, CONDITIONAL_FLAT_BONUS);
     record("blood-cultist");
   }
   const result = resolveEnemyAttackHit(nextState, damage, combatTexts, {

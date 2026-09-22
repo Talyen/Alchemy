@@ -3,11 +3,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { ROUTES, resolveRoutePlan } from "./lib/change-routes.mjs";
-import { compactMarkdownTables, readDocumentSection } from "./lib/markdown-sections.mjs";
-import { CONTEXT_TASKS, selectContext, contextSections } from "./lib/agent-context.mjs";
+import { ROUTES, resolveRoutePlan } from "./lib/verification/change-routes.mjs";
+import { compactMarkdownTables, readDocumentSection } from "./lib/agent/markdown-sections.mjs";
+import { CONTEXT_TASKS, selectContext, contextSections } from "./lib/agent/agent-context.mjs";
 import { renderContext } from "./agent-context.mjs";
-import { ROUTE_CONTEXT_BUDGETS } from "./lib/route-context-budgets.mjs";
+import { ROUTE_CONTEXT_BUDGETS } from "./lib/agent/route-context-budgets.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");

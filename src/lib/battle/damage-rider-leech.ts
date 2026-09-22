@@ -35,6 +35,12 @@ function addBloodDebtHealing(state: BattleState, amount: number): number {
   return amount + Math.round((state.playerMaxHealth - state.playerHealth) / state.talentEffects.leechMissingHealthStep);
 }
 
+function applyDesperateLeechBonus(state: BattleState, amount: number): number {
+  return state.playerHealth < state.playerMaxHealth / HALF_DIVISOR
+    ? applyPercentBonus(amount, state.talentEffects.leechDesperateMultiplier, PERCENT_DENOMINATOR)
+    : amount;
+}
+
 function scalePlayerLeechHeal(state: BattleState, amount: number): number {
   return amount * (hasEncounterBenefit(state, "blood-feast") ? LABYRINTH_MODIFIER_CONFIG.double : 1);
 }
@@ -104,7 +110,10 @@ export function applyScaledLeechHealing(
   if (rawAmount <= 0) return state;
   return applyLeechHealing(
     state,
-    scalePlayerLeechHeal(state, scaledGearLeechHeal(addBloodDebtHealing(state, rawAmount), state.gearEffects)),
+    scalePlayerLeechHeal(
+      state,
+      scaledGearLeechHeal(addBloodDebtHealing(state, applyDesperateLeechBonus(state, rawAmount)), state.gearEffects),
+    ),
     combatTexts,
     options,
   );
@@ -176,9 +185,7 @@ export function applyLeechHitHealing(
     state = setFlag(state, "firstLeechCardDoubledUsed", true);
   }
 
-  if (state.talentEffects.leechDesperateMultiplier > 0 && state.playerHealth < state.playerMaxHealth / HALF_DIVISOR) {
-    healAmount = applyPercentBonus(healAmount, state.talentEffects.leechDesperateMultiplier, PERCENT_DENOMINATOR);
-  }
+  healAmount = applyDesperateLeechBonus(state, healAmount);
 
   if (state.talentEffects.leechExecuteMultiplier > 0 && state.enemyHealth < state.enemyMaxHealth / HALF_DIVISOR) {
     healAmount = applyPercentBonus(healAmount, state.talentEffects.leechExecuteMultiplier, PERCENT_DENOMINATOR);
@@ -246,16 +253,16 @@ export function payPendingBleedLeech(
   state: BattleState,
   combatTexts: CombatTextEvent[],
   afflicted = state.enemyStatuses.poison > 0 || state.enemyStatuses.bleed > 0,
+  bleedHealthDamage = Math.max(0, preHitHealth - state.enemyHealth),
 ): BattleState {
   const leechAmount = state.pendingBleedLeechHealing;
   if (leechAmount <= 0) return state;
 
-  const healthLost = Math.max(0, preHitHealth - state.enemyHealth);
   let nextState: BattleState = {
     ...state,
     pendingBleedLeechHealing: 0,
   };
-  const leechPaid = Math.min(leechAmount, healthLost);
+  const leechPaid = Math.min(leechAmount, bleedHealthDamage);
   if (leechPaid > 0) {
     nextState = applyScaledLeechHealing(nextState, computeLeechHeal(leechPaid), combatTexts, { afflicted });
   }

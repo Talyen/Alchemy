@@ -42,8 +42,8 @@ export default {
     // Compatibility barrel for active-run persistence types + serializers.
     "src/lib/active-run-session/index.ts": ["exports", "types"],
     "src/lib/gear/types.ts": ["exports", "types"],
-    "scripts/lib/git-release.mjs": ["exports"],
-    "scripts/lib/patch-notes-core.mjs": ["exports"],
+    "scripts/lib/release/git-release.mjs": ["exports"],
+    "scripts/lib/release/patch-notes-core.mjs": ["exports"],
     "src/lib/routing/destinations.ts": ["exports"],
     "src/lib/routing/index.ts": ["exports"],
     // Unified persistence seam: single source in persistence.ts.
@@ -51,7 +51,7 @@ export default {
     // Content-navigation read ports: invariant-tested consumption seam for persisted run/talent fields.
     "src/features/alchemy/shared/stores/run-reads.ts": ["exports", "types"],
     // Compat barrel: talentPool is single source, per-keyword arrays are filtered views for legacy imports.
-    "src/lib/game-data/talents/pool/index.ts": ["exports"],
+    "src/lib/game-data/talents/talent-pool-selectors.ts": ["exports"],
     // run-resume-codec is the canonical resume boundary (shops/interrupted-flow included).
     "src/features/alchemy/shared/stores/run-resume-codec.ts": ["exports"],
     // Test-only / external seams: profile slice and talent catalog are external contracts.
@@ -71,7 +71,7 @@ export default {
   ignoreDependencies: [
     // Loaded via node_modules path string in scripts/lib/command-invocation.mjs; knip cannot trace it.
     "electron-builder",
-    // Invoked via npx in scripts/lib/release-runner.mjs; knip cannot trace it.
+    // Invoked via npx in scripts/lib/release/release-runner.mjs; knip cannot trace it.
     "commit-and-tag-version",
   ],
 };

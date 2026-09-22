@@ -3,9 +3,9 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { validateContextCatalog } from "./lib/agent-context.mjs";
+import { validateContextCatalog } from "./lib/agent/agent-context.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
-import { extractMarkdownLinkTargets, headingSlugs, stripFencedBlocks } from "./lib/markdown-sections.mjs";
+import { extractMarkdownLinkTargets, headingSlugs, stripFencedBlocks } from "./lib/agent/markdown-sections.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const IGNORED_DIRECTORIES = new Set([

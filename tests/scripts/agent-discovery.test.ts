@@ -4,8 +4,8 @@ import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { searchMain } from "../../scripts/agent-search.mjs";
 import { checkDurableDocumentReachability } from "../../scripts/check-documentation-contract.mjs";
-import { sourceOutline } from "../../scripts/lib/agent-context.mjs";
-import { incrementalContext, relatedLocations, repositorySearch } from "../../scripts/lib/agent-discovery.mjs";
+import { sourceOutline } from "../../scripts/lib/agent/agent-context.mjs";
+import { incrementalContext, relatedLocations, repositorySearch } from "../../scripts/lib/agent/agent-discovery.mjs";
 import { failureSummary, tailOutput } from "../../scripts/lib/compact-output.mjs";
 
 const roots: string[] = [];

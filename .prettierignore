@@ -15,7 +15,7 @@ CHANGELOG.md
 release-notes/
 src/lib/validation/metadata.generated.ts
 src/lib/game-data/assets.generated.ts
-src/lib/game-data/gear-art.ts
+src/lib/game-data/gear-art.generated.ts
 package-lock.json
 .worktrees/
 .git/

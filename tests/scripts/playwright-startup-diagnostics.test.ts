@@ -2,7 +2,10 @@ import { EventEmitter } from "node:events";
 import type { Page, Request } from "@playwright/test";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { collectStartupDiagnostics } from "../e2e/startup-diagnostics";
-import { buildFailureDiagnostic, MAX_DIAGNOSTIC_BYTES } from "../../scripts/lib/playwright-diagnostics.mjs";
+import {
+  buildFailureDiagnostic,
+  MAX_DIAGNOSTIC_BYTES,
+} from "../../scripts/lib/verification/playwright-diagnostics.mjs";
 
 function request(name: string, type = "script") {
   return {

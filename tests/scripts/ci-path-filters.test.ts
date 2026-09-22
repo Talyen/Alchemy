@@ -3,14 +3,14 @@ import path from "node:path";
 import { runInNewContext } from "node:vm";
 import { describe, expect, it } from "vitest";
 
-import { resolveRoutes, SHARED_BUILD_PATTERNS } from "../../scripts/lib/change-routes.mjs";
+import { resolveRoutes, SHARED_BUILD_PATTERNS } from "../../scripts/lib/verification/change-routes.mjs";
 import { globToRegExp } from "../../scripts/lib/glob-pattern.mjs";
 
 const repoRoot = path.resolve(import.meta.dirname, "../..");
 
 /**
  * CI topology is owned by .github/workflows/ while local selection is owned by
- * scripts/lib/change-routes.mjs (see CONTRIBUTING.md#static-build-and-ci-policy).
+ * scripts/lib/verification/change-routes.mjs (see CONTRIBUTING.md#static-build-and-ci-policy).
  * Neither generates the other, so this test pins their documented relationship:
  * every local route that implies a path-gated CI job must match that job's
  * paths-filter, and representative paths must land on both sides together.
@@ -66,7 +66,7 @@ const PATH_CASES: Array<[string, string[], string[]]> = [
   ["scripts/sync-changelog.mjs", ["tooling"], []],
   ["scripts/sync-steam-appid.mjs", ["tooling"], ["desktop"]],
   ["scripts/smoke-desktop.ps1", ["desktop", "tooling"], ["desktop", "desktop_renderer"]],
-  ["scripts/lib/release-checks.mjs", ["desktop", "tooling"], ["desktop", "desktop_renderer"]],
+  ["scripts/lib/release/release-checks.mjs", ["desktop", "tooling"], ["desktop", "desktop_renderer"]],
   ["desktop/main.cjs", ["desktop"], ["desktop", "desktop_renderer"]],
   ["src/lib/platform.ts", ["desktop", "runtime"], ["save", "desktop", "desktop_renderer"]],
   ["src/App.tsx", ["runtime"], ["desktop_renderer"]],
@@ -75,8 +75,8 @@ const PATH_CASES: Array<[string, string[], string[]]> = [
   ["vite.config.ts", ["tooling"], ["desktop", "desktop_renderer"]],
   ["scripts/build-verified.mjs", ["tooling"], ["desktop", "desktop_renderer"]],
   ["scripts/lib/vite-chunks.mjs", ["tooling"], ["desktop", "desktop_renderer"]],
-  ["scripts/lib/sentry-release.mjs", ["tooling"], ["desktop", "desktop_renderer"]],
-  ["scripts/lib/desktop-build-config.mjs", ["desktop", "tooling"], ["desktop", "desktop_renderer"]],
+  ["scripts/lib/release/sentry-release.mjs", ["tooling"], ["desktop", "desktop_renderer"]],
+  ["scripts/lib/release/desktop-build-config.mjs", ["desktop", "tooling"], ["desktop", "desktop_renderer"]],
   ["package.json", ["tooling"], ["save", "desktop", "desktop_renderer", "assets"]],
   ["Docs/REFERENCE.md", ["documentation"], []],
 ];
@@ -202,5 +202,43 @@ describe("desktop CI artifact flow", () => {
     const release = readFileSync(path.join(repoRoot, ".github/workflows/release.yml"), "utf8");
     expect(release).toContain("npm run smoke:desktop");
     expect(release.indexOf("npm run smoke:desktop")).toBeLessThan(release.indexOf("- name: Steam upload"));
+  });
+});
+
+describe("build failure visibility", () => {
+  it.each([
+    ["ci", "build"],
+    ["ci", "ship-gate"],
+    ["ci", "desktop-build"],
+    ["release", "build"],
+    ["release", "package"],
+    ["nightly", "prepare"],
+    ["nightly", "ship-gate-full"],
+  ])("retains full logs for %s/%s failures", (workflow, job) => {
+    const contents = readFileSync(path.join(repoRoot, `.github/workflows/${workflow}.yml`), "utf8");
+    const block = contents.split(`  ${job}:\n`)[1].split(/^ {2}[a-zA-Z][\w-]*:/mu)[0];
+    const upload = block.split("- name: Retain build failure diagnostics")[1];
+    expect(upload).toContain("if: failure()");
+    expect(upload).toContain(`name: build-diagnostics-${workflow}-${job}`);
+    for (const entry of [
+      "reports/compact/",
+      "reports/current-run.*",
+      "reports/runs/",
+      "retention-days: 7",
+      "if-no-files-found: ignore",
+    ]) {
+      expect(upload).toContain(entry);
+    }
+  });
+
+  it("rejects a mismatched tag before building the release web artifact", () => {
+    const contents = readFileSync(path.join(repoRoot, ".github/workflows/release.yml"), "utf8");
+    const build = contents.split("  build:\n")[1].split("  e2e-full:\n")[0];
+    const validation = build.indexOf("node scripts/verify-release.mjs --skip-package");
+    expect(validation).toBeGreaterThan(build.indexOf("uses: ./.github/actions/setup"));
+    expect(validation).toBeLessThan(build.indexOf("npm run build"));
+    expect(build).toContain("RELEASE_TAG: ${{ github.ref_name }}");
+    expect(contents.split("  e2e-full:\n")[1]).toContain("needs: build");
+    expect(contents.split("  package:\n")[1]).toContain("node scripts/verify-release.mjs --skip-package");
   });
 });

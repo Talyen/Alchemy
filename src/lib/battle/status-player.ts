@@ -25,7 +25,7 @@ import { BLEED_STATUS_MULTIPLIER, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../g
 import { paceCombatMagnitude } from "./fight-pacing";
 import { dealScaledBurnWithStacks } from "./scaled-damage";
 import { getEnemyDamageMultiplier, rollTalentChance } from "./status-helpers";
-import { applyPercentBonus, scalePercent } from "./amount-helpers";
+import { applyPercentBonus } from "./amount-helpers";
 import { clamp } from "@/lib/math";
 
 export function applyCardHealing(
@@ -220,12 +220,7 @@ function applyForgeBlockBurst(
     oldForge,
     newForge,
     state.talentEffects.forgeBlockThreshold,
-    (s) => {
-      let amount = s.talentEffects.forgeBlockAmount;
-      amount += s.talentEffects.forgeToBlock ? newForge : scalePercent(newForge, s.talentEffects.forgeBlockPercent);
-      amount = paceCombatMagnitude(s, amount, "player");
-      return applyBlockReward(s, amount, combatTexts ?? [], { skipFightPacing: true });
-    },
+    (s) => applyBlockReward(s, s.talentEffects.forgeBlockAmount, combatTexts ?? []),
     state,
   );
 }
@@ -297,21 +292,13 @@ export function applyPlayerStatusEffect(
   effect: Extract<BattleCardEffect, { kind: "player-status" }>,
   combatTexts: CombatTextEvent[],
 ) {
-  let amount = effect.amount;
+  const amount = effect.amount;
   if (effect.status === "armor") return applyArmorStatusEffect(state, amount, combatTexts);
-  if (effect.status === "block") {
-    amount += state.talentEffects.forgeToBlock
-      ? state.playerStatuses.forge
-      : scalePercent(state.playerStatuses.forge, state.talentEffects.forgeBlockPercent);
-  }
-  if (effect.status === "block") {
-    amount = paceCombatMagnitude(state, amount, "player");
-  }
   if (effect.status === "forge") {
     return addForgeToPlayer(state, amount, combatTexts);
   }
   if (effect.status === "block") {
-    return applyBlockReward(state, amount, combatTexts, { skipFightPacing: true });
+    return applyBlockReward(state, amount, combatTexts);
   }
   const effectiveAmount = playerStatusDelta(state, effect.status, amount);
   mergeCombatText(combatTexts, {

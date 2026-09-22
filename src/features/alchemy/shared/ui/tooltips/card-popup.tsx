@@ -3,7 +3,7 @@ import { type ReactNode, type RefObject } from "react";
 import type { BattleCard } from "@/lib/game-data";
 import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
 
-import { DescriptionLines } from "../card-description-ui";
+import { DescriptionLines } from "../cards/card-description-ui";
 import { PortaledTooltip } from "./portaled-tooltip";
 import { TooltipBody, TooltipChip, TooltipHeader, TooltipSubheader } from "./tooltip-panel";
 

@@ -15,7 +15,7 @@ import {
 } from "@/features/alchemy/shared/config";
 import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
 import { Surface } from "../../../shared/ui/surface";
-import { BattleCardButton } from "../../../shared/ui/card-button";
+import { BattleCardButton } from "../../../shared/ui/cards/card-button";
 import { MysteryEffectList } from "./mystery-effect-badge";
 import { FadeSlot } from "../../../shared/ui/use-fade";
 import { PortaledTooltip } from "../../../shared/ui/tooltips/portaled-tooltip";

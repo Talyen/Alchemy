@@ -11,7 +11,7 @@ import type {
 import { defaultBattleState } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 
-vi.mock("@/features/alchemy/shared/ui/card-button", () => ({
+vi.mock("@/features/alchemy/shared/ui/cards/card-button", () => ({
   BattleCardButton: ({
     ariaLabel,
     className,

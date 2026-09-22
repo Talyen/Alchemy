@@ -392,7 +392,8 @@ describe("thematic card effects", () => {
     expect(unheated.enemyHealth).toBe(99);
     const base = battle({ roomScalingMultiplier: 2, enemyMitigation: { forge: 4 } });
     const enemy = applyEnemyAbility(base, cardById["burning-blade"]!, []);
-    expect(enemy.playerStatuses.burn).toBe(6);
+    // Six live Forge receives ability pressure, without a second room multiplier.
+    expect(enemy.playerStatuses.burn).toBe(10);
   });
 
   it("Avatar deals Holy damage before its equal-odds resource gain", () => {

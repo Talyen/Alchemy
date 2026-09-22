@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 import path from "node:path";
 
-import { CONTEXT_TASKS, selectContext, contextSections, sourceOutline } from "./lib/agent-context.mjs";
-import { resolveSelectedPaths } from "./lib/changed-paths.mjs";
-import { recordAgentEvent, readExposure } from "./lib/agent-events.mjs";
-import { incrementalContext, relatedLocations } from "./lib/agent-discovery.mjs";
-import { compactMarkdownTables, sectionPreview } from "./lib/markdown-sections.mjs";
+import { CONTEXT_TASKS, selectContext, contextSections, sourceOutline } from "./lib/agent/agent-context.mjs";
+import { resolveSelectedPaths } from "./lib/verification/changed-paths.mjs";
+import { recordAgentEvent, readExposure } from "./lib/agent/agent-events.mjs";
+import { incrementalContext, relatedLocations } from "./lib/agent/agent-discovery.mjs";
+import { compactMarkdownTables, sectionPreview } from "./lib/agent/markdown-sections.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");

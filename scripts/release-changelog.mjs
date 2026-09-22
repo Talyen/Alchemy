@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { promoteUnreleasedSection } from "./lib/patch-notes-core.mjs";
+import { promoteUnreleasedSection } from "./lib/release/patch-notes-core.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { writeTextIfChanged } from "./lib/write-text-if-changed.mjs";
 

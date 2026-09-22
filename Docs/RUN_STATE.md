@@ -63,7 +63,9 @@ Playback consumes detached `BattleTurnFrame` values and updates only
 cannot roll back or advance gameplay. Create detached frames from
 `current(draft.battle.battleState)` so no revoked Immer proxy can escape the command.
 
-`activeCombat.pendingBattleTransition` remains a supported legacy save contract:
+`activeCombat.pendingBattleTransition` is a remaining compatibility reader, not
+a requirement to preserve obsolete gameplay under the
+[save baseline](../src/features/alchemy/shared/storage/MIGRATIONS.md#supported-baseline):
 `battle-restore.ts` consumes its precomputed result during hydration and resolves
 remaining logical work atomically with RNG and XP. No pending transition or resume
 flag enters live state. New saves write this legacy field as null. An active

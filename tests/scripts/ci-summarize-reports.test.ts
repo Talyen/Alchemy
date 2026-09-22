@@ -3,27 +3,27 @@ import {
   formatVitestSummaryMarkdown,
   summarizeVitestFile,
   summarizeVitestReport,
-} from "../../scripts/lib/vitest-summary.mjs";
+} from "../../scripts/lib/verification/vitest-summary.mjs";
 import { parseSummaryArgs } from "../../scripts/ci-summarize.mjs";
 import {
   collectPlaywrightTests,
   formatPlaywrightSummaryMarkdown,
   summarizePlaywrightFile,
   summarizePlaywrightReport,
-} from "../../scripts/lib/playwright-summary.mjs";
-import { createRunId, ensureRunId, writeCurrentRun } from "../../scripts/lib/current-run.mjs";
+} from "../../scripts/lib/verification/playwright-summary.mjs";
+import { createRunId, ensureRunId, writeCurrentRun } from "../../scripts/lib/verification/current-run.mjs";
 import {
   buildFailureDiagnostic,
   diagnosticIdentity,
   MAX_DIAGNOSTIC_BYTES,
   writeFailureDiagnostic,
-} from "../../scripts/lib/playwright-diagnostics.mjs";
+} from "../../scripts/lib/verification/playwright-diagnostics.mjs";
 import fs from "node:fs";
 import { execFileSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
 import { formatRecentRun, parseShowRunsArgs, readRecentRuns } from "../../scripts/show-runs.mjs";
-import PlaywrightRunReporter from "../../scripts/lib/playwright-run-reporter.mjs";
+import PlaywrightRunReporter from "../../scripts/lib/verification/playwright-run-reporter.mjs";
 
 describe("ci-summarize (vitest)", () => {
   it("rejects structurally invalid reports while allowing a valid empty run", () => {

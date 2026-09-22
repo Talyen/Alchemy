@@ -76,12 +76,10 @@ describe("Unique Gear unique card repeats", () => {
   });
 
   it("damage repeats do not apply Potion potency twice", () => {
-    // The card id is what flags Distillation/potency eligibility (explicit
-    // Potion list, not a name rule), so this synthetic attack borrows a real
-    // Potion id to exercise the potency path.
+    // Distillation requires a Potion from the explicit list and Consume.
     const result = play(
       battle({ mana: 2, gearEffects: { lastManaElementalRepeat: 1 }, talentEffects: { potionPotency: 2 } }),
-      attack("burn", { id: "acid-potion" }),
+      attack("burn", { id: "acid-potion", consume: true }),
     );
     expect(result.enemyHealth).toBe(960);
   });

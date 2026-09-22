@@ -1,5 +1,0 @@
-export function verifyPackagedRenderer(archivePath: string, musicDirectory?: string): void;
-
-export function verifyReleaseVersionTag(tag: string, version: string): string;
-
-export function verifyDesktopPackage(): Promise<void>;

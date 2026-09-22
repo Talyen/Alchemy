@@ -14,7 +14,7 @@ For custom phrasing, update `numeric-parity.ts` and shared `line-classifiers.ts`
 
 [`applyCardEffects`](../../battle/effect-handlers/registry.ts) is the single entry point exported from `@/lib/battle`. It walks each effect on a card, routes `chance` (via `rollChance` + `getBattleRng`) and `repeat-over-turns` (queue `pendingTurnStartEffects` with source card ID, Consume, and tags) before the registry, and otherwise delegates to `applyEffectByKind`. Dispatch details: `applySingleEffect` short-circuits when the hero is defeated; `applyEffectByKind` runs the handler, then (for `summon-companion` with Eager Pack) two immediate Companion pulses by design, then `resolvePendingBattleReactions` after every single effect. Companion turn-start and pending-turn-start pulses re-enter through synthetic cards under explicit `resolveSecondaryAction` scope (see `battle/companion-effects.ts`, `player-turn-transition.ts`); `play-next-card-twice` runs a second raw `applyCardEffects` outside `resolveCardEffectChain` (`battle/card-play.ts`); unique-card repeats run with `action.source === "repeat"` (which also suppresses potion scaling).
 
-Snapshot semantics: normal card play freezes `manaAtStart` pre-payment and `enemyFreezeSkipTurnsAtStart` pre-play (`card-play.ts`); companion pulses snapshot inside their action scope; pending-turn and unique-repeat pulses snapshot per-pulse. `convertCurrentMana` reads the frozen `manaAtStart`; `ifEnemyFrozen` (`restore-mana`) and `ifEnemyStunned` (`gain-gold`) compare live CC against the frozen start, so an earlier effect on the same card can enable them. Crowd control has three call sites (hero `enemy-status` stun/freeze, `multiply-enemy-status` freeze/stun triggers, enemy-side player CC) — see `status-handlers.ts` and `enemy-turn-attack.ts`. Card bonus eligibility is centralized in `action-context.ts` and `combat-flags.ts`; secondary actions never mask or restore gameplay flags. `battle-sequence.ts` owns step settlement and fatal cutoffs.
+Snapshot semantics: normal card play freezes `manaAtStart` pre-payment and `enemyFreezeSkipTurnsAtStart` pre-play (`card-play.ts`); companion pulses snapshot inside their action scope; pending-turn and unique-repeat pulses snapshot per-pulse. `convertCurrentMana` reads the frozen `manaAtStart`. Conditional Mana restoration and Gold use distinct checks documented under [Ordering and semantics](#ordering-and-semantics). Crowd control has three call sites (hero `enemy-status` stun/freeze, `multiply-enemy-status` freeze/stun triggers, enemy-side player CC) — see `status-handlers.ts` and `enemy-turn-attack.ts`. Card bonus eligibility is centralized in `action-context.ts` and `combat-flags.ts`; secondary actions never mask or restore gameplay flags. `battle-sequence.ts` owns step settlement and fatal cutoffs.
 
 ## Ordering and semantics
 
@@ -32,7 +32,7 @@ Snapshot semantics: normal card play freezes `manaAtStart` pre-payment and `enem
 - `random-damage` enforces `maxAmount >= minAmount` at schema level and throws loudly on inverted bounds at runtime. Corruption clamps either bound at the other bound, keeping the description and effect valid even after repeated mutations. An optional `damageTypePool` replaces the default all-type pool; amount and type each use the battle RNG. Direct random-damage cards trigger the same once-per-card enemy retaliation as direct damage cards.
 - `damage.detonateAllBurn` and `damage.detonateAllBleed` detonate all matching enemy DoT stacks after the hit, including stacks added by that hit. The legacy `detonateIfEnemyBurning` flag retains its pre-hit condition for complete saved cards.
 - `damage.doubleIfEnemyNotBurning` doubles the hit when the enemy has no Burn; it cannot be combined with either opposing Burn multiplier flag.
-- `gain-gold` with `ifEnemyStunned` fizzles unless the enemy is stunned at all.
+- `gain-gold` with `ifEnemyStunned` requires positive live `enemyCC.stunSkipTurns`; it does not compare against a pre-card snapshot. An enemy already Stunned before the card qualifies, as does one Stunned by an earlier effect on that card.
 
 - Numeric upgrades and corruption share `updateCardNumericValue` in `src/lib/corruption/numeric.ts`. Targets address nested scheduled effects and both chance branches. Chance paths index success effects followed by failure effects; probabilities and schedule durations are not editable magnitudes. A fixed Random damage amount displayed as one number updates both bounds together. A scheduled effect sharing one authored amount with an immediate effect changes with that amount; separately authored delayed amounts change independently. “Draw a card” represents one editable draw. Keep original catalog effects immutable.
 - Immediate and delayed damage may share a description line: “Deal 1 Freeze damage now and 3 at the start of your next turn” retains two independently editable magnitudes. “Deal 2 Stun damage now and at the start of your next turn” shares one magnitude across both hits.
@@ -91,8 +91,9 @@ Conditional descriptions share one formatter with numeric editing and parity
 validation. Block cost is a fixed rule; base damage, Block damage bonus, and Frozen
 alternative damage are editable. Damage pools and repeated immediate-hit lines
 share one displayed amount; “Deal N damage twice” updates both hit effects.
-Complete saved conditional/chance-based Maul and free-Archery Ice Shot effects
-remain supported.
+The loader currently preserves complete saved conditional/chance effects.
+Preserve valid current-run modifications as a unit; retirement of obsolete
+card mechanics follows the [save baseline](../../../features/alchemy/shared/storage/MIGRATIONS.md#supported-baseline).
 
 Boolean preparations, draw/summon/Wish, cleansing, and scheduling emit meaningful
 combat events. Unsupported effects still warn without inventing a successful

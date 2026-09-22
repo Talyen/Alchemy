@@ -27,8 +27,8 @@ failure and freshness contracts below.
 
 `npm run sync:generated` updates both art barrels and version metadata.
 `npm run sync:art` updates both art barrels (`src/lib/game-data/assets.generated.ts`
-and `src/lib/game-data/gear-art.ts`). `npm run sync:gear-art` updates only
-`src/lib/game-data/gear-art.ts` and refuses to run against a stale
+and `src/lib/game-data/gear-art.generated.ts`). `npm run sync:gear-art` updates only
+`src/lib/game-data/gear-art.generated.ts` and refuses to run against a stale
 `assets.generated.ts` — prefer the full art sync.
 Do not add exports to generated files by hand. The hash schema salt lives in
 `scripts/assets/asset-constants.mjs`; bump it when all asset caches must be invalidated.
@@ -72,7 +72,7 @@ their brighter glow.
 4. Run `npm run check:generated` and confirm every generated definition ID
    matches the intended Gear definition.
 
-`gear-art.ts` references exports from `assets.generated.ts`, so the two barrels
+`gear-art.generated.ts` references exports from `assets.generated.ts`, so the two barrels
 always sync together; `sync:gear-art` alone is only a shortcut that refuses to
 run when `assets.generated.ts` is stale. Full preparation runs the combined
 synchronization automatically.
@@ -125,11 +125,11 @@ Register playable tracks in `src/lib/audio/music.ts`. Its
 
 ## Importing art — barrel is the canonical surface
 
-Generated barrels are committed build products (`src/assets/optimized/` + `src/lib/game-data/assets.generated.ts` / `gear-art.ts`). Never import `@/assets/optimized/*.webp` directly outside the barrel — ESLint bans it. Always go through `src/lib/game-data/assets.ts` curated maps:
+Generated barrels are committed build products (`src/assets/optimized/` + `src/lib/game-data/assets.generated.ts` / `gear-art.generated.ts`). Never import `@/assets/optimized/*.webp` directly outside the barrel — ESLint bans it. Always go through `src/lib/game-data/assets.ts` curated maps:
 
 - `characterArt`, `mysteryEventArt`, `talentArt`, `gearSlotBackgroundArt`, `craftingArt`, `difficultyArt` — typed maps built from `assetRefs` in `assets.ts` (`gearSlotBackgroundArt` derives from `gearArtByDefinitionId`).
 - `allGameArt` is the full static manifest; `essentialGameArt` selects startup-critical art. Preserve the [boot and loading contract](./ARCHITECTURE.md#boot-and-loading) when changing these sets. Bundle limits live in [Performance](./PERFORMANCE.md#eager-bundle-size).
-- `gearArtByDefinitionId` — re-exports `assets.generated` via `gearArtAssets` in `gear-art.ts`.
+- `gearArtByDefinitionId` — re-exports `assets.generated` via `gearArtAssets` in `gear-art.generated.ts`.
 
 The static barrel provides explicit export names (`toAssetExportName`, wrapping `kebabToCamel`) and the Vite asset graph; do not use `import.meta.glob` for art.
 
@@ -165,19 +165,19 @@ For manual inspection:
 node scripts/assets.mjs --prepare
 npm run check:generated
 git diff -- src/assets/optimized public/sounds public/Music \
-  src/lib/game-data/assets.generated.ts src/lib/game-data/gear-art.ts
+  src/lib/game-data/assets.generated.ts src/lib/game-data/gear-art.generated.ts
 ```
 
 Commit the intended generated outputs with their authoring-source changes.
 
 ## Pipeline overview
 
-| Asset kind    | Authoring source                             | Generated output                                 | Registry / consumer                                   |
-| ------------- | -------------------------------------------- | ------------------------------------------------ | ----------------------------------------------------- |
-| Game art      | `Raw Assets/` + `scripts/assets/*.mjs`       | `src/assets/optimized/`                          | `assets.generated.ts` → `src/lib/game-data/assets.ts` |
-| Gear art      | `Raw Assets/Gear/`                           | Optimized WebP + `src/lib/game-data/gear-art.ts` | Gear definitions by stable definition ID              |
-| Sound effects | `Raw Assets/Sound Effects/` + sound manifest | `public/sounds/` OGG and MP3 fallbacks           | `src/lib/audio/sound-registry.ts`                     |
-| Music         | `Raw Assets/Music/`                          | `public/Music/`                                  | Audio owners under `src/lib/audio/`                   |
+| Asset kind    | Authoring source                             | Generated output                                           | Registry / consumer                                   |
+| ------------- | -------------------------------------------- | ---------------------------------------------------------- | ----------------------------------------------------- |
+| Game art      | `Raw Assets/` + `scripts/assets/*.mjs`       | `src/assets/optimized/`                                    | `assets.generated.ts` → `src/lib/game-data/assets.ts` |
+| Gear art      | `Raw Assets/Gear/`                           | Optimized WebP + `src/lib/game-data/gear-art.generated.ts` | Gear definitions by stable definition ID              |
+| Sound effects | `Raw Assets/Sound Effects/` + sound manifest | `public/sounds/` OGG and MP3 fallbacks                     | `src/lib/audio/sound-registry.ts`                     |
+| Music         | `Raw Assets/Music/`                          | `public/Music/`                                            | Audio owners under `src/lib/audio/`                   |
 
 Build version stamping (`src/lib/validation/metadata.generated.ts` via `npm run sync:version`) is owned by the release pipeline ([RELEASE_SETUP](./RELEASE_SETUP.md)); it is not an art authoring source. Full preparation refreshes it as an independent step alongside the art barrels, so a failed art sync never blocks the version stamp and vice versa — failures from either are reported together.
 
@@ -237,7 +237,7 @@ accepted; unrelated cache metadata does not affect generation.
 Combined art synchronization reads and validates one manifest snapshot, then
 builds both barrels before writing either. The gear-only command uses the same
 validation but refuses to run when `assets.generated.ts` is stale, since
-`gear-art.ts` imports it. Input-validation failures preserve both barrels;
+`gear-art.generated.ts` imports it. Input-validation failures preserve both barrels;
 filesystem write failures do not provide transactional rollback.
 
 The fast generated check requires every static target and all four Gear slot

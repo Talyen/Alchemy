@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import path from "node:path";
-import { repositorySearch } from "./lib/agent-discovery.mjs";
-import { readExposure, recordAgentEvent } from "./lib/agent-events.mjs";
+import { repositorySearch } from "./lib/agent/agent-discovery.mjs";
+import { readExposure, recordAgentEvent } from "./lib/agent/agent-events.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");

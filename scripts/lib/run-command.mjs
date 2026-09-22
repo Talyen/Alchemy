@@ -2,7 +2,7 @@ import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { commandInvocation } from "./command-invocation.mjs";
-import { createRunId } from "./current-run.mjs";
+import { createRunId } from "./verification/current-run.mjs";
 import { completionCounts, failureSummary } from "./compact-output.mjs";
 
 const DEFAULT_MAX_BUFFER = 16 * 1024 * 1024;

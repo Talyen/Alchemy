@@ -56,8 +56,8 @@ jobs:
             desktop:
               - "scripts/build-verified.mjs"
               - "scripts/lib/vite-*.mjs"
-              - "scripts/lib/sentry-release.mjs"
-              - "scripts/lib/desktop-build-config.mjs"
+              - "scripts/lib/release/sentry-release.mjs"
+              - "scripts/lib/release/desktop-build-config.mjs"
               - ".github/**"
               - "package.json"
               - "package-lock.json"
@@ -75,14 +75,14 @@ jobs:
               - "scripts/dist-desktop*"
               - "scripts/lib/desktop-artifact*"
               - "scripts/verify-desktop-package*"
-              - "scripts/lib/release-checks.mjs"
+              - "scripts/lib/release/release-checks.mjs"
               - "scripts/smoke-desktop*"
               - "scripts/sync-steam-appid*"
             desktop_renderer:
               - "scripts/build-verified.mjs"
               - "scripts/lib/vite-*.mjs"
-              - "scripts/lib/sentry-release.mjs"
-              - "scripts/lib/desktop-build-config.mjs"
+              - "scripts/lib/release/sentry-release.mjs"
+              - "scripts/lib/release/desktop-build-config.mjs"
               - ".github/**"
               - "package.json"
               - "package-lock.json"
@@ -111,7 +111,7 @@ jobs:
               - "scripts/ensure-electron*"
               - "scripts/electron-download*"
               - "scripts/verify-desktop-package*"
-              - "scripts/lib/release-checks.mjs"
+              - "scripts/lib/release/release-checks.mjs"
               - "scripts/smoke-desktop*"
             assets:
               - ".github/**"
@@ -133,7 +133,7 @@ jobs:
               - "public/sounds/**"
               - "public/Music/**"
               - "src/lib/game-data/assets.generated.ts"
-              - "src/lib/game-data/gear-art.ts"
+              - "src/lib/game-data/gear-art.generated.ts"
   lint:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -209,6 +209,18 @@ jobs:
           path: dist/
           compression-level: 0
           retention-days: 1
+
+      - name: Retain build failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-diagnostics-ci-build
+          path: |
+            reports/compact/
+            reports/current-run.*
+            reports/runs/
+          retention-days: 7
+          if-no-files-found: ignore
 
   e2e:
     needs: build
@@ -303,6 +315,18 @@ jobs:
           path: dist/
           compression-level: 0
           retention-days: 1
+
+      - name: Retain build failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-diagnostics-ci-ship-gate
+          path: |
+            reports/compact/
+            reports/current-run.*
+            reports/runs/
+          retention-days: 7
+          if-no-files-found: ignore
 
   assets:
     needs: changes
@@ -441,6 +465,18 @@ jobs:
           name: release-desktop-win
           path: release-desktop/
           retention-days: 3
+
+      - name: Retain build failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-diagnostics-ci-desktop-build
+          path: |
+            reports/compact/
+            reports/current-run.*
+            reports/runs/
+          retention-days: 7
+          if-no-files-found: ignore
 
   electron-e2e:
     needs: [changes, ship-gate]

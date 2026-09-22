@@ -2,7 +2,7 @@ import { readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { gearArtByDefinitionId } from "@/lib/game-data/gear-art";
+import { gearArtByDefinitionId } from "@/lib/game-data/gear-art.generated";
 import { gearBaseItems } from "@/lib/gear/base-items";
 import {
   gearDefinitions,

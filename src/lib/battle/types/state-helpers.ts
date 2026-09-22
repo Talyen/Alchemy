@@ -6,10 +6,18 @@ import type { EnemyStatusId, PlayerStatusId } from "@/lib/game-data";
 import { CAMPFIRE_HEAL_FRACTION, DEATHS_DOOR_GRACE_TURNS, PERCENT_DENOMINATOR } from "../../game-constants";
 import type { GearEffectManifest } from "@/lib/gear";
 import { getBattleRng, rollPercent } from "@/lib/rng";
-import { applyPercentBonus, applyPercentReduction, halveRounded } from "../amount-helpers";
+import { applyPercentBonus, applyPercentReduction, halveRounded, scalePercent } from "../amount-helpers";
 import type { BattleState, CombatFlags, CombatTextEvent, EnemyMitigation } from "./state-types";
 import { isStunFreezeBuildupBlocked } from "./state-types";
 import { writeCombatFlag } from "../action-context";
+
+export function blockAmountWithForge(state: BattleState, amount: number): number {
+  if (amount <= 0) return amount;
+  const forgeBonus = state.talentEffects.forgeToBlock
+    ? state.playerStatuses.forge
+    : scalePercent(state.playerStatuses.forge, state.talentEffects.forgeBlockPercent);
+  return amount + forgeBonus;
+}
 
 export function playerStatusDelta(state: BattleState, status: PlayerStatusId, delta: number): number {
   if (status === "stun" && delta > 0) {
@@ -313,7 +321,7 @@ export function resolvePlayerHealing(state: BattleState, amount: number, allowOv
   }
   if (allowOverhealBlock && overheal > 0 && nextState.talentEffects.overhealToBlockRatio > 0) {
     const blockGain = Math.round(overheal * nextState.talentEffects.overhealToBlockRatio);
-    nextState = addPlayerStatus(nextState, "block", blockGain);
+    nextState = addPlayerStatus(nextState, "block", blockAmountWithForge(nextState, blockGain));
   }
   return { state: nextState, effective: amount, restored: actualHeal, overflow: overheal };
 }

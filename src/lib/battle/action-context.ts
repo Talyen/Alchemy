@@ -28,9 +28,12 @@ export function writeCombatFlag<K extends keyof CombatFlags>(
   value: CombatFlags[K],
 ): BattleState {
   if (state.action?.cardBonuses === "ineligible" && FLAG_DEFINITIONS[key].secondaryValue !== null) {
-    // A reaction may earn a future discount, but cannot spend an existing one.
-    if (key !== "nextCardCostReduction") return state;
-    value = Math.max(state.flags.nextCardCostReduction, value as number) as CombatFlags[K];
+    // A reaction may earn a future discount or next-action bonus, but cannot spend an existing one.
+    if (typeof value === "boolean") {
+      if (!value) return state;
+    } else if (typeof value === "number") {
+      value = Math.max(state.flags[key] as number, value) as CombatFlags[K];
+    }
   }
   return { ...state, flags: { ...state.flags, [key]: value } };
 }

@@ -98,7 +98,7 @@ export default tseslint.config(
       ".eslintcache",
       // Generated barrels are outputs (edit the manifest, regenerate).
       "src/**/*.generated.ts",
-      "src/lib/game-data/gear-art.ts",
+      "src/lib/game-data/gear-art.generated.ts",
     ],
   },
   {
@@ -270,7 +270,7 @@ export default tseslint.config(
       "src/app/app-screen-chrome-context.tsx",
       "src/features/alchemy/shared/context/card-description-context.tsx",
       "src/features/alchemy/shared/ui/use-fade.tsx",
-      "src/features/alchemy/shared/ui/card-description-ui.tsx",
+      "src/features/alchemy/shared/ui/cards/card-description-ui.tsx",
       "src/features/alchemy/shared/ui/material-icons.tsx",
       "src/features/alchemy/shared/ui/collection-ui.tsx",
       "src/features/alchemy/meta/screens/homestead/helpers.tsx",

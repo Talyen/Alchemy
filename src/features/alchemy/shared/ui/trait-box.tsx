@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { getEncounterTraitPresentation } from "../config/encounter-trait-presentation";
 import { getEnemyTraitIcon } from "../config/enemy-trait-icons";
 import { keywordDefinitions, type EnemyTrait } from "../config/game-data-catalog";
-import { renderColoredKeywords } from "./card-description-ui";
+import { renderColoredKeywords } from "./cards/card-description-ui";
 import { ShineText } from "./shine-text";
 
 export function TraitBox({ trait }: { trait: EnemyTrait }) {

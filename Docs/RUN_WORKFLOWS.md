@@ -52,11 +52,15 @@ Destination eligibility uses health and maximum health after victory bonuses and
 
 ## Run teardown
 
-Feature code uses [`run-lifecycle.ts`](../src/features/alchemy/shared/stores/run-lifecycle.ts):
+Run outcome flows use [`run-end-commands.ts`](../src/features/alchemy/run-loop/run/run-end-commands.ts), which supplies the settlement callbacks to [`run-lifecycle.ts`](../src/features/alchemy/shared/stores/run-lifecycle.ts):
 
-- `teardownRun()` — clear the active run session after victory, defeat, or abandon.
-- `finalizeRunEndSession()` — run-end bookkeeping plus persist (navigation calls this on run end).
-- `flushSaveAfterGearMutation()` — immediate persist after Armory gear mutations (fast path alongside the autosave debounce; both share the save queue).
+- Victory: `completeRunVictory()` calls `finalizeRunEndSession()` to award earned progression, capture the victory recap, end resumable activity, and flush the save.
+- Defeat: `completeRunDefeat()` calls `applyRunDefeatTeardown()` to settle progression with a death recap, clear combat state, and perform defeat feedback and saving after commit.
+- Voluntary End Run: `abandonCurrentRun()` calls `abandonRun()` to settle progression with an abandoned recap and clear resumable activity immediately. It retains the outgoing battle snapshot for the screen fade; the flow navigates to the End Run screen.
+
+`teardownRun()` is a raw session reset with presentation cleanup. It does not award progression, capture a recap, or explicitly flush the save; do not substitute it for an outcome command.
+
+`flushSaveAfterGearMutation()` provides immediate persistence after Armory mutations (the fast path and autosave debounce share the save queue).
 
 [`reset.ts`](../src/features/alchemy/shared/stores/reset.ts) owns test/teardown and Options wipe:
 

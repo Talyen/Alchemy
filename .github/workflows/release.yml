@@ -29,7 +29,7 @@ jobs:
       - name: Commitlint since previous release tag
         shell: bash
         run: |
-          PREV_TAG="$(node --input-type=module -e 'import { previousVersionTag } from "./scripts/lib/git-release.mjs"; console.log(previousVersionTag(process.cwd(), process.env.GITHUB_REF_NAME) ?? "")')"
+          PREV_TAG="$(node --input-type=module -e 'import { previousVersionTag } from "./scripts/lib/release/git-release.mjs"; console.log(previousVersionTag(process.cwd(), process.env.GITHUB_REF_NAME) ?? "")')"
           if [ -n "$PREV_TAG" ]; then
             npx commitlint --from "$PREV_TAG" --to HEAD --verbose
           else
@@ -84,6 +84,11 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - uses: ./.github/actions/setup
+      - name: Verify release tag matches package.json
+        run: node scripts/verify-release.mjs --skip-package
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+
       - run: npm run build
 
       - run: npm run check:bundle
@@ -97,6 +102,18 @@ jobs:
           path: dist/
           compression-level: 0
           retention-days: 1
+
+      - name: Retain build failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-diagnostics-release-build
+          path: |
+            reports/compact/
+            reports/current-run.*
+            reports/runs/
+          retention-days: 7
+          if-no-files-found: ignore
 
   e2e-full:
     needs: build
@@ -233,6 +250,18 @@ jobs:
           retention-days: 7
           compression-level: 0
           if-no-files-found: error
+
+      - name: Retain build failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-diagnostics-release-package
+          path: |
+            reports/compact/
+            reports/current-run.*
+            reports/runs/
+          retention-days: 7
+          if-no-files-found: ignore
 
   vercel-qa:
     # Deliberate web QA deploy: Vercel Git auto-deploys are disabled in

@@ -17,17 +17,19 @@ Persisted status changes follow the [save contract](../src/features/alchemy/shar
 1. Define card in the matching topical library — `src/lib/game-data/cards/library/` (`core.ts`, `archery.ts`, `consumables.ts`, `companions.ts`, or `defense.ts`); `cards.ts` assembles these groups
 2. Add effects (discriminated union on `kind`) — same card entry, `effects: [...]`
 3. Add art reference — `src/lib/game-data/assets.ts` (or `placeholderCard` while WIP)
-4. (Optional) Register card sound — `src/lib/audio/sound-registry.ts` (`cardSounds` record)
+4. Register a card sound in `src/lib/audio/sound-registry.ts` (`cardSounds`), or record an intentionally silent card in `SILENT_CARD_IDS` in `tests/lib/audio/sound-registry.test.ts`; follow the [audio checklist](./AUDIO.md#change-checklist). Companion summon cards require sounds.
 5. Build the entry with `card-builders.ts` (`effectsCard` generates `descriptionLines` from effects; chance, delayed, conditional, and combined clauses are generated too; a bespoke `describe(effects)` template must take values from its typed effects; `effectsCard` with `consume: true` takes multiple effects; summon cards derive their title from the companion). Raw literals are reserved for genuinely special cards (`mixed-potion`)
-6. Context-aware text — pure text `src/lib/game-data/card-description.ts` (only summon lines are recomputed with Bond/damage bonuses; `flatPhysicalDamage`/`potionPotency` are accepted but ignored), UI tokens `shared/ui/card-description-ui.tsx`, homestead/talent context `shared/context/card-description-context.tsx` (wired in `App.tsx`)
+6. Context-aware text — pure text `src/lib/game-data/card-description.ts` (only summon lines are recomputed with Bond/damage bonuses; `flatPhysicalDamage`/`potionPotency` are accepted but ignored), UI tokens `shared/ui/cards/card-description-ui.tsx`, homestead/talent context `shared/context/card-description-context.tsx` (wired in `App.tsx`)
 
 Card IDs are stable strings on `BattleCard`, not a separate union. The assembled
-`cardLibrary` rejects duplicate IDs; preserve save compatibility when removing
-or renaming one through the [save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md).
-On load, `hydrateCard` takes title/art from the catalog and preserves complete
-saved effects+lines (including upgrades/corruption); saves therefore survive
-rebalances, but new `consume: true` flags do not retroactively apply to
-complete old saves.
+`cardLibrary` rejects duplicate IDs. Removing or renaming IDs follows the
+[save contract](../src/features/alchemy/shared/storage/MIGRATIONS.md#supported-baseline).
+Current-run upgrades, corruption, and Mixed Potions need their effects,
+descriptions, and explicit Consume overrides restored together. `hydrateCard`
+currently preserves complete saved content and refreshes title/art from the
+catalog, so a catalog rebalance alone does not replace saved effects. This is
+not a requirement to retain obsolete card mechanics; retire incompatible
+development snapshots through the save owner when current rules require it.
 
 Cards in `cardLibrary` are automatically included in card shop, combat rewards, mysteries, wish, and draft via `getOfferableCardPool()` — no separate pool registration. Exclude a card with `excludeFromOfferPool: true` (`mixed-potion` is the current example). Distillation-eligible Potions are the explicit `POTION_CARD_IDS` list in `cards/card-pools.ts` — a new brew must be added there deliberately; Mana Berries, Mana Crystals, Apple, and Bread are intentionally excluded.
 
@@ -74,7 +76,7 @@ before handing off.
 - **1. Define entry in `enemyBestiary` (`id` becomes `EnemyId`)** — `src/lib/game-data/compendium/enemies.ts`
 - **2. Set `enemyType` (`normal`/`elite`/`boss`)** — same file
 - **3. Add traits as `{ id, title, description }` objects** — same file (logic lives in battle system)
-- **4. (Optional) Register attack sound** — `src/lib/audio/sound-registry.ts` (`enemyAttackSounds`)
+- **4. Register an attack sound or intentional silence** — `src/lib/audio/sound-registry.ts` (`enemyAttackSounds`), or `SILENT_ENEMY_IDS` in `tests/lib/audio/sound-registry.test.ts`; follow the [audio checklist](./AUDIO.md#change-checklist).
 - **5. Wildwood gauntlet bosses must also be listed in `WILDWOOD_BOSS_IDS`** — `src/lib/content-systems/wildwood/bosses.ts`
 
 ---
@@ -99,7 +101,7 @@ Companion combat and descriptions share `getCompanionBondEffects()` in `src/lib/
 - **3. Define companion in `companionLibrary` record** — `src/lib/game-data/companions.ts`
 - **4. Add summon card via `summonCompanionCard()` in `cardLibrary` (`src/lib/game-data/cards/library/companions.ts`)** — `src/lib/game-data/cards/card-builders.ts` — companion must have **at least one** `turnStartEffects` entry
 - **5. Give the summon card a stable, unique string ID** — `src/lib/game-data/cards/library/companions.ts`; the assembled `cardLibrary` checks uniqueness
-- **6. (Optional) Register card sound** — `src/lib/audio/sound-registry.ts`
+- **6. Register the summon-card sound and verify the battle Companion mapping** — `src/lib/audio/sound-registry.ts` and `COMPANION_SOUND_CARD_IDS` in `src/lib/game-constants/audio.ts`; both are required by the [audio contract](./AUDIO.md#runtime-contract).
 - **7. Update description lines** — `tests/lib/game-data/companions.test.ts` guards companion copy
 
 Run `npm run content:audit` before handing off (companion record checks, summon-card parity, typography).
@@ -115,7 +117,7 @@ Use `addEffect` for stackable numeric bonuses, including the same bonus written 
 Put talent-owned magnitudes on the talent ops (not only in `game-constants`) so descriptions and combat stay in lockstep. Talent and keyword descriptions omit periods, as enforced by content typography validation.
 
 1. If the talent needs a new battle bonus, add its default in `src/lib/game-data/talents/manifest-defaults.ts`; `TalentEffectManifest` derives from those defaults and `talent-effect-manifest.ts` re-exports it.
-2. Define the talent (`id`, `keywordId`, name, description, effects, and Lucide `icon` name) in the matching keyword module under `src/lib/game-data/talents/pools/`; `talent-pool-definitions.ts` assembles `talentPool` in its historical order, with `pool/index.ts` re-exporting for compatibility. Register the icon in `src/features/alchemy/shared/config/talent-icons.ts`.
+2. Define the talent (`id`, `keywordId`, name, description, effects, and Lucide `icon` name) in the matching keyword module under `src/lib/game-data/talents/pools/`; `talent-pool-definitions.ts` assembles `talentPool` in its historical order, with `talent-pool-selectors.ts` exposing the assembled pool. Register the icon in `src/features/alchemy/shared/config/talent-icons.ts`.
 3. Keyword portrait art (new keyword or replacement art) — [Asset workflow § Add or replace game art](./WORKFLOWS-ASSETS.md#add-or-replace-game-art) (`scripts/assets/talent-assets.mjs` + `talentArt` in `src/lib/game-data/assets.ts`)
 4. XP is keyword-based — `src/lib/game-data/talents/progression.ts` — no per-talent XP hook unless the keyword is new
 

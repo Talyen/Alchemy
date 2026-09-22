@@ -2,7 +2,7 @@ import { tailOutput } from "./lib/compact-output.mjs";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { writeCurrentRun } from "./lib/current-run.mjs";
+import { writeCurrentRun } from "./lib/verification/current-run.mjs";
 import { defineScript } from "./lib/script-run.mjs";
 import { withReportServer } from "./lib/vite-report-server.mjs";
 

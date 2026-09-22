@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { writeCurrentRun } from "./current-run.mjs";
+import { writeCurrentRun } from "./verification/current-run.mjs";
 import { withReportServer } from "./vite-report-server.mjs";
 
 // Shared runner for balance-family reports: Vite SSR load + artifact writes +

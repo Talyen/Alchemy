@@ -19,6 +19,7 @@ import {
   shouldElementalTalentRepeat,
 } from "./card-play";
 import { applyCardEffects } from "./effect-handlers";
+import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import {
   prepareEnemyDamage,
   resolveEnemyDamageEffect,
@@ -48,9 +49,11 @@ function applyDodgeDrawAndPlay(state: BattleState, combatTexts: CombatTextEvent[
   const playTwice = shouldElementalTalentRepeat(nextState, drawn.card);
   const chained = resolveCardEffectChain(nextState, drawn.card, combatTexts, { skipTalentRewards: playTwice });
   nextState = chained.state;
+  const repeatedDamageEffects: NonNullable<CardEffectResolutionContext["damageEffects"]> = [];
   if (playTwice) {
     nextState = applyCardEffects(nextState, drawn.card, combatTexts, {
       attackBonuses: chained.attackBonuses,
+      damageEffects: repeatedDamageEffects,
       origin: "triggered-card",
       manaAtStart: nextState.mana,
       enemyFreezeSkipTurnsAtStart: nextState.enemyCC.freezeSkipTurns,
@@ -59,6 +62,15 @@ function applyDodgeDrawAndPlay(state: BattleState, combatTexts: CombatTextEvent[
     nextState = applyCardPlayTalentRewards(nextState, drawn.card, combatTexts);
   }
   nextState = processEncounterTraitCardAction(nextState, drawn.card, combatTexts, chained.attackAttempted);
+  if (playTwice) {
+    nextState = processEncounterTraitCardAction(
+      nextState,
+      { ...drawn.card, consume: false },
+      combatTexts,
+      repeatedDamageEffects.length > 0,
+      { cardPlayed: false },
+    );
+  }
   nextState = handlePostPlayCardDestination(nextState, drawn.card, !isPlayerDefeated(nextState), combatTexts);
   return nextState;
 }
@@ -70,17 +82,17 @@ function applyDodgeDefensiveReactions(
   eligibility: BattleState,
 ): BattleState {
   let nextState = state;
-  if (eligibility.playerStatuses.block === 0 && nextState.gearEffects.blockOnDodge > 0) {
-    nextState = applyBlockReward(nextState, nextState.gearEffects.blockOnDodge, combatTexts);
-  }
+  const gearBlock = eligibility.playerStatuses.block === 0 ? nextState.gearEffects.blockOnDodge : 0;
   const dodgeBlock =
     nextState.talentEffects.dodgeBlockAmount > 0
       ? nextState.talentEffects.dodgeBlockAmount
       : nextState.talentEffects.blockOnDodgeEqualToAttack
         ? dodgedAmount
         : scalePercent(dodgedAmount, nextState.talentEffects.dodgeBlockPercent);
-  if (dodgeBlock > 0) {
-    nextState = applyBlockReward(nextState, dodgeBlock, combatTexts, { skipFightPacing: true });
+  if (gearBlock + dodgeBlock > 0) {
+    nextState = applyBlockReward(nextState, gearBlock + dodgeBlock, combatTexts, {
+      skipFightPacing: dodgeBlock > 0 && nextState.talentEffects.dodgeBlockAmount <= 0,
+    });
   }
   const armor = nextState.gearEffects.armorOnDodge + nextState.talentEffects.armorOnDodge;
   if (eligibility.playerStatuses.armor === 0 && armor > 0) nextState = applyArmorReward(nextState, armor, combatTexts);
@@ -191,9 +203,19 @@ function applyOnPlayerDodge(state: BattleState, combatTexts: CombatTextEvent[], 
       resolveFollowUpHit(current, { source: "player-follow-up", damageType: "physical", amount: spent }, combatTexts),
     );
   }
+  nextState = resolvePendingBattleReactions(nextState, combatTexts);
+  if (isPlayerDefeated(nextState)) return nextState;
   if (state.gearEffects.archeryDodgeAndDraw > 0) nextState = drawKeywordCard(nextState, "archery");
-  nextState = applyDodgeDefensiveReactions(nextState, combatTexts, dodgedAmount, state);
-  nextState = applyDodgeCounterAttacks(nextState, combatTexts, dodgedAmount, state);
+  nextState = resolvePendingBattleReactions(
+    applyDodgeDefensiveReactions(nextState, combatTexts, dodgedAmount, state),
+    combatTexts,
+  );
+  if (isPlayerDefeated(nextState)) return nextState;
+  nextState = resolvePendingBattleReactions(
+    applyDodgeCounterAttacks(nextState, combatTexts, dodgedAmount, state),
+    combatTexts,
+  );
+  if (isPlayerDefeated(nextState)) return nextState;
   nextState = applyDodgeOffensiveBuffs(nextState);
   if (
     nextState.talentEffects.companionAttacksOnDodge &&
@@ -237,6 +259,8 @@ export function resolveEnemyAttackHit(
       attemptedDamage: preparedDamage.attemptedDamage,
       resolvedDamage: 0,
       healthDamage: 0,
+      blockLost: 0,
+      healthAfterHit: state.playerHealth,
       landed: false,
       dodged: true,
       killed: false,
@@ -246,11 +270,11 @@ export function resolveEnemyAttackHit(
     preparedDamage,
     triggerBlockRetaliation: canDodge,
   });
-  const blockDepleted = state.playerStatuses.block > 0 && result.state.playerStatuses.block === 0;
+  const blockDepleted = state.playerStatuses.block > 0 && result.blockLost === state.playerStatuses.block;
   if (
     blockDepleted &&
     result.state.talentEffects.companionAttackOnBlockDepletedBelowHalf &&
-    result.state.playerHealth < result.state.playerMaxHealth / HALF_DIVISOR &&
+    result.healthAfterHit < state.playerMaxHealth / HALF_DIVISOR &&
     result.state.activeCompanion &&
     result.state.enemyHealth > 0 &&
     !isPlayerDefeated(result.state)

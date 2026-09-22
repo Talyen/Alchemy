@@ -1,5 +1,5 @@
 import { useLayoutEffect, useMemo, useRef, type RefObject } from "react";
-import { CombatTextRail } from "@/features/alchemy/shared/ui/battle/combat-text";
+import { CombatTextRail } from "@/features/alchemy/run-loop/battle/presentation/ui/combat-text";
 import type { BattleRefs, CardRect } from "@/features/alchemy/shared/types";
 import { defaultMeasureElementRect } from "../controller-utils";
 import { useBattlePresentationStore } from "../battle-presentation-store";

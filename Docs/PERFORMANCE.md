@@ -201,4 +201,4 @@ Related: [PerformanceAudit.md](./Audits/PerformanceAudit.md) (when to change cod
 
 ## Eager bundle size
 
-Bundle ceilings live with the bundle-budget owner (`scripts/lib/bundle-budget.mjs`, `npm run check:bundle`), not this FPS harness. See that owner for ceilings, chunk policy, and history.
+Bundle ceilings live with the bundle-budget owner (`scripts/lib/verification/bundle-budget.mjs`, `npm run check:bundle`), not this FPS harness. See that owner for ceilings, chunk policy, and history.

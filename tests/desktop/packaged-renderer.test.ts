@@ -3,7 +3,10 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { createPackage } from "@electron/asar";
 import { afterEach, expect, it } from "vitest";
-import { verifyPackagedRenderer } from "../../scripts/lib/release-checks.mjs";
+import {
+  verifyPackagedRenderer,
+  verifyWindowsExecutableArchitecture,
+} from "../../scripts/lib/release/release-checks.mjs";
 
 const directories: string[] = [];
 afterEach(async () => {
@@ -58,4 +61,27 @@ it.each([
 ])("rejects incomplete or contaminated package contents", async (files, error) => {
   const { output, music } = await archive(files);
   expect(() => verifyPackagedRenderer(output, music)).toThrow(error);
+});
+
+it("validates executable architecture rather than trusting package folder names", async () => {
+  const root = await mkdtemp(path.join(tmpdir(), "alchemy-pe-test-"));
+  directories.push(root);
+  const executable = path.join(root, "Alchemy.exe");
+  const bytes = Buffer.alloc(152);
+  bytes.write("MZ");
+  bytes.writeUInt32LE(128, 0x3c);
+  bytes.writeUInt32LE(0x00004550, 128);
+  bytes.writeUInt16LE(0x8664, 132);
+  await writeFile(executable, bytes);
+  expect(() => verifyWindowsExecutableArchitecture(executable)).not.toThrow();
+  for (const machine of [0xaa64, 0x014c]) {
+    bytes.writeUInt16LE(machine, 132);
+    await writeFile(executable, bytes);
+    expect(() => verifyWindowsExecutableArchitecture(executable)).toThrow("must be x64 for Steamworks");
+  }
+  bytes.writeUInt32LE(0xffffffff, 0x3c);
+  await writeFile(executable, bytes);
+  expect(() => verifyWindowsExecutableArchitecture(executable)).toThrow("Invalid Windows PE header");
+  await writeFile(executable, bytes.subarray(0, 20));
+  expect(() => verifyWindowsExecutableArchitecture(executable)).toThrow("Invalid Windows PE executable");
 });

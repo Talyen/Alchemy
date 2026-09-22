@@ -11,9 +11,14 @@ import {
   tailOutput,
   writeFailureDigest,
 } from "../../scripts/lib/compact-output.mjs";
-import { resolveRoutePlan, resolveRoutes, ROUTES, validateRouteCatalog } from "../../scripts/lib/change-routes.mjs";
-import { TEST_SUITES, validateTestSuitePaths } from "../../scripts/lib/test-commands.mjs";
-import { formatRouteHintLine, routeHintForPath } from "../../scripts/lib/route-hints.mjs";
+import {
+  resolveRoutePlan,
+  resolveRoutes,
+  ROUTES,
+  validateRouteCatalog,
+} from "../../scripts/lib/verification/change-routes.mjs";
+import { TEST_SUITES, validateTestSuitePaths } from "../../scripts/lib/verification/test-commands.mjs";
+import { formatRouteHintLine, routeHintForPath } from "../../scripts/lib/agent/route-hints.mjs";
 import { formatPlan, filterPlanCommands, parseVerifyArgs } from "../../scripts/verify-changed.mjs";
 
 describe("verification selection", () => {

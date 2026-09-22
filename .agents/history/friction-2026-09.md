@@ -155,7 +155,7 @@ Labyrinth fresh-start regression (2026-09-04): resume-only browser coverage miss
 
 2026-09-06 — Encounter modifier descriptions follow the same no-period typography rule as talents, but the authoring guide only named talents and keywords. The Labyrinth modifier workflow now states the rule explicitly; content validation caught the new catalogue punctuation before handoff. Prevention lives in [WORKFLOWS](../../Docs/WORKFLOWS.md#content-system-behavior).
 
-- 2026-09-07 — Audio paths received only general architecture guidance from `context`, despite the dedicated audio owner. Added audio discovery in `scripts/lib/agent-context.mjs` alongside the move to `src/lib/audio/`. Removed a stale Vitest comment pointing at the nonexistent `tests/architecture/vitest-projects.test.ts`; audio browser requirements now use `.dom.test.ts` filenames.
+- 2026-09-07 — Audio paths received only general architecture guidance from `context`, despite the dedicated audio owner. Added audio discovery in `scripts/lib/agent/agent-context.mjs` alongside the move to `src/lib/audio/`. Removed a stale Vitest comment pointing at the nonexistent `tests/architecture/vitest-projects.test.ts`; audio browser requirements now use `.dom.test.ts` filenames.
 
 - 2026-09-07 — Local Playwright runs reused occupied ports without checking checkout or Vite mode, allowing development checks to target an existing preview server. The shared server configuration now rejects reuse, browser ports have a validated override, and an occupied-listener regression verifies startup rejection without terminating the listener. Prevention lives in the [focused browser workflow](../../tests/e2e/README.md#running-focused-checks).
 

@@ -1,4 +1,4 @@
-import type { VerificationCommand } from "./change-routes.mjs";
+import type { VerificationCommand } from "./verification/change-routes.mjs";
 export function summarizeStepResult(
   command: VerificationCommand,
   result: { output?: unknown; status?: number | null; elapsedMs?: number },

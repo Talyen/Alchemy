@@ -3,8 +3,8 @@ import { existsSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
-import { steamContentRoot } from "./lib/desktop-artifact.mjs";
-import { writeSteamBuildVdfs } from "./lib/steam-vdf.mjs";
+import { steamContentRoot } from "./lib/release/desktop-artifact.mjs";
+import { writeSteamBuildVdfs } from "./lib/release/steam-vdf.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const dryRun = process.env.STEAM_UPLOAD_DRY_RUN === "1";

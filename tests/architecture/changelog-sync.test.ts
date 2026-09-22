@@ -75,7 +75,7 @@ describe("changelog release-time ownership", () => {
   });
 
   it("previews player notes before tagging and supports --dry-run", () => {
-    const runner = readText("scripts/lib/release-runner.mjs");
+    const runner = readText("scripts/lib/release/release-runner.mjs");
     expect(runner).toContain("generate:patch-notes");
     expect(runner).toContain("--dry-run");
     expect(runner).toContain("previewPatchNotes");

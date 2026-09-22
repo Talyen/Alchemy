@@ -1,7 +1,10 @@
 import { test as base, expect, type ConsoleMessage } from "@playwright/test";
 export { expect } from "@playwright/test";
-import { ensureRunId } from "../../scripts/lib/current-run.mjs";
-import { buildFailureDiagnostic, writeFailureDiagnostic } from "../../scripts/lib/playwright-diagnostics.mjs";
+import { ensureRunId } from "../../scripts/lib/verification/current-run.mjs";
+import {
+  buildFailureDiagnostic,
+  writeFailureDiagnostic,
+} from "../../scripts/lib/verification/playwright-diagnostics.mjs";
 import { enableFastMode } from "../e2e/battle-setup";
 import { failOnRuntimeErrors } from "../e2e/errors";
 import { collectStartupDiagnostics } from "../e2e/startup-diagnostics";

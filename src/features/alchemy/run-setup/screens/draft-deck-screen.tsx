@@ -10,9 +10,9 @@ import {
   getPlasmaColorPair,
 } from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
-import { BattleCardButton } from "../../shared/ui/card-button";
-import { getCardDisplayTitle } from "../../shared/ui/card-description-ui";
-import { SelectableCard } from "../../shared/ui/selectable-card";
+import { BattleCardButton } from "../../shared/ui/cards/card-button";
+import { getCardDisplayTitle } from "../../shared/ui/cards/card-description-ui";
+import { SelectableCard } from "../../shared/ui/cards/selectable-card";
 import { FadeSlot } from "../../shared/ui/use-fade";
 import { TitledScreenShell } from "../../shared/ui/layout-components";
 import { usePlasmaInteraction } from "../../shared/ui/use-plasma-source";

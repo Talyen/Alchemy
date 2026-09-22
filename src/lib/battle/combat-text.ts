@@ -11,6 +11,7 @@ export { applyEnemyHealingWithCombatText } from "./enemy-healing";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import type { PlayerStatusId } from "@/lib/game-data";
 import {
+  blockAmountWithForge,
   damageEnemyHealth,
   setFlag,
   setPlayerStatus,
@@ -131,6 +132,7 @@ export function addPlayerStatusWithCombatText(
   options?: { skipFightPacing?: boolean },
 ): BattleState {
   if (amount <= 0) return state;
+  if (stat === "block") amount = blockAmountWithForge(state, amount);
   const before = state.playerStatuses[stat];
   const previousState = state;
   const nextState = addPlayerStatus(
@@ -325,7 +327,9 @@ export function removeHarmfulPlayerStatuses(state: BattleState, amount: number, 
         mergeCombatText(combatTexts, { target: "player", kind: "notice", stat, signal: "cleanse", text: "" });
       }
     }
-    nextState = applyCleanseHeals(nextState, combatTexts);
+    for (let index = 0; index < cleared.removed; index++) {
+      nextState = applyCleanseHeals(nextState, combatTexts);
+    }
   }
   return nextState;
 }

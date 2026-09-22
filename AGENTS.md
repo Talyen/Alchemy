@@ -6,7 +6,7 @@ Alchemy is a fantasy roguelite deckbuilder. Write in plain language using player
 
 - Inspect `git status --short` and relevant diffs before editing. Preserve existing work and re-read shared files before edits when another session may be active. Ask only when intent or a safe merge remains ambiguous.
 - Complete the requested behavior and its blockers. Fix small, understood adjacent issues; report substantial independent findings. Avoid broad cleanup or an uncited [audit](./Docs/Audits/README.md). Make routine design decisions within scope; ask about unresolved consequential choices.
-- Reuse existing owners and libraries. Justify new dependencies or abstractions with concrete consumers. Preserve saves, shipped behavior, and external contracts.
+- Reuse existing owners and libraries. Justify new dependencies or abstractions with concrete consumers. Preserve current behavior and external contracts. There are no historical player saves to support; do not retain obsolete mechanics solely for old saves or saved battles. Use current gameplay rules, restarting or exiting incompatible battles when needed.
 - Start unclear failures with the diagnostic summary; inspect focused evidence for a specific hypothesis. Reassess unproductive approaches. Use [knowledge](./.agents/knowledge/index.md) when historical context helps.
 - Record unresolved recurring friction and consequential lessons in [.agents/FRICTION_LOG.md](./.agents/FRICTION_LOG.md); reusable prevention belongs in its canonical owner. Routine fixes need no history entry.
 - Never use destructive Git commands to clear existing work. If a guard stashes and blocks a command, inspect and apply its backup, verify recovery, then drop the backup. The guard is not authorization.
@@ -31,7 +31,7 @@ Direct reads and scoped searches are sufficient. Optional `npm run context -- <p
 - Run/battle controllers travel through route/shell props. Only `AppScreenChromeProvider` and `CardDescriptionProvider` are allowed providers; presentation state may use `ui-store`.
 - `BattleState` is immutable; gameplay uses seeded `world` RNG and `Math.round` for combat magnitudes. Shared tuning belongs in `src/lib/game-constants/`; content-owned magnitudes stay with definitions.
 - `descriptionLines` matches effects. Grant run materials through `awardMaterialsDuringRun()`.
-- Change persistence schemas, defaults, hydration and fixtures together; preserve compatibility.
+- Change persistence schemas, defaults, hydration and fixtures together. Current-format resume must work; historical save compatibility is not required before a supported release.
 - Screens are statically imported and art eager. Generated barrels are outputs: edit the manifest and regenerate.
 - Import boundaries live in `eslint.config.js`, `eslint/boundaries.js`, `eslint/fragments.js`, and `dependency-cruiser.config.mjs`. Keep I/O, clocks and RNG at seams.
 - UI uses typed plain function components, `cn()`, and [UI conventions](./Docs/UI.md). Cosmetic RNG uses `useState(() => ...)`, never `Math.random()` in render.

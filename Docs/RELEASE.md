@@ -8,7 +8,7 @@ Build and installer selection: [REFERENCE.md § Build commands decision tree](./
 
 | Command                          | When it runs                                                                                                 |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `npm run verify:release-version` | `release.yml` — tag must match `package.json`                                                                |
+| `npm run verify:release-version` | `release.yml` — before web build and again before packaging, tag must match `package.json`                   |
 | `npm run sync:steam-appid`       | `dist:desktop` — writes `steam_appid.txt` from `STEAM_APP_ID` before packaging                               |
 | `npm run sync:changelog`         | Optional: rebuild `CHANGELOG.md` ## [Unreleased] from git (also runs automatically as release `prerelease`)  |
 | `npm run generate:patch-notes`   | Active dev → `release-notes/UNRELEASED.md`; tag CI → `release-notes/vX.Y.Z.md`. `--dry-run` prints to stdout |
@@ -79,6 +79,9 @@ packaging in Windows CI and before Steam upload in release CI. The packaged fuse
 ASAR, and renderer policy remain intact; no development server or debug interface
 is required. Run this check on Windows; renderer builds and unit tests on other
 hosts do not substitute for it.
+
+Windows packaging explicitly targets x64, matching the Steamworks native binding.
+Package verification reads the executable PE header and rejects other architectures.
 
 Desktop renderer artifacts used for packaging include music. The package verifier
 compares packaged MP3 bytes with `public/Music/` and rejects source maps inside

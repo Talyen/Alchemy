@@ -14,15 +14,15 @@ import {
   selectContext,
   sourceOutline,
   validateContextCatalog,
-} from "../../scripts/lib/agent-context.mjs";
+} from "../../scripts/lib/agent/agent-context.mjs";
 
-import { resolveRoutePlan } from "../../scripts/lib/change-routes.mjs";
+import { resolveRoutePlan } from "../../scripts/lib/verification/change-routes.mjs";
 import {
   compactMarkdownTables,
   headingSlugs,
   readDocumentSection,
   stripFencedBlocks,
-} from "../../scripts/lib/markdown-sections.mjs";
+} from "../../scripts/lib/agent/markdown-sections.mjs";
 
 describe("agent discovery", () => {
   it("fits ports and save guidance without losing source coordinates", () => {
@@ -288,7 +288,7 @@ describe("agent discovery", () => {
       "src/lib/battle/card-play.ts",
       "src/lib/game-data/effects/registry.ts",
       "src/features/alchemy/shared/stores/run-session-command.ts",
-      "src/features/alchemy/shared/ui/card-description-ui.tsx",
+      "src/features/alchemy/shared/ui/cards/card-description-ui.tsx",
       "src/features/alchemy/run-loop/shop/shop-transactions.ts",
       "src/features/alchemy/run-loop/navigation/victory-flow.ts",
       "scripts/check.mjs",

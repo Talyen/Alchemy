@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import path from "node:path";
-import { executablePath, resolveUnpackedDirectory } from "./lib/desktop-artifact.mjs";
+import { executablePath, resolveUnpackedDirectory } from "./lib/release/desktop-artifact.mjs";
 
 // The shipped fuses disable Node inspection. Use native accessibility instead
 // of weakening the package to accommodate Playwright's Electron launcher.

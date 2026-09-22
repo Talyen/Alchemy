@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { allGameArt, essentialGameArt } from "@/lib/game-data";
-import { gearArtByDefinitionId } from "@/lib/game-data/gear-art";
+import { gearArtByDefinitionId } from "@/lib/game-data/gear-art.generated";
 import { ART_PRESETS, QUALITY, WIDTH } from "../../scripts/assets/asset-constants.mjs";
 import { GEAR_SLOT_IDS } from "../../scripts/assets/gear-filenames.mjs";
 import { staticAssets } from "../../scripts/assets/asset-manifest.mjs";
@@ -62,7 +62,7 @@ describe("asset manifest consistency", () => {
 describe("committed asset outputs", () => {
   it("keeps generated registries and sample optimized media in the repo", () => {
     const assetsGenerated = join(repoRoot, "src/lib/game-data/assets.generated.ts");
-    const gearArt = join(repoRoot, "src/lib/game-data/gear-art.ts");
+    const gearArt = join(repoRoot, "src/lib/game-data/gear-art.generated.ts");
     const sampleWebp = join(repoRoot, "src/assets/optimized/alchemy-logo.webp");
     const sampleSound = join(repoRoot, "public/sounds/denied-03.ogg");
 

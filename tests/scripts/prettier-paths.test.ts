@@ -41,7 +41,7 @@ describe("prettier-paths", () => {
         "package-lock.json",
         "CHANGELOG.md",
         "src/lib/game-data/assets.generated.ts",
-        "src/lib/game-data/gear-art.ts",
+        "src/lib/game-data/gear-art.generated.ts",
         "src/App.tsx",
       ]),
     ).toEqual(["src/App.tsx"]);
@@ -49,7 +49,7 @@ describe("prettier-paths", () => {
 
   it("keeps the staged-path skip subset in sync with .prettierignore", () => {
     const ignore = readFileSync(join(process.cwd(), ".prettierignore"), "utf8");
-    for (const entry of ["package-lock.json", "CHANGELOG.md", "assets.generated.ts", "gear-art.ts"]) {
+    for (const entry of ["package-lock.json", "CHANGELOG.md", "assets.generated.ts", "gear-art.generated.ts"]) {
       expect(ignore).toContain(entry);
     }
     // The regex is the staged-path subset, not a full mirror: build outputs

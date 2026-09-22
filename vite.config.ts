@@ -8,10 +8,10 @@ import { defineConfig } from "vite";
 import checker from "vite-plugin-checker";
 import { visualizer } from "rollup-plugin-visualizer";
 import { resolveDevPort } from "./scripts/lib/dev-port.mjs";
-import { CHUNK_SIZE_WARNING_KB } from "./scripts/lib/bundle-budget.mjs";
+import { CHUNK_SIZE_WARNING_KB } from "./scripts/lib/verification/bundle-budget.mjs";
 import { VITE_ALIAS_PATH, VITE_ALIAS_TARGET } from "./scripts/lib/vite-aliases.mjs";
 import { rolldownCodeSplittingGroups } from "./scripts/lib/vite-chunks.mjs";
-import { resolveSentryRelease, resolveSourcemapMode } from "./scripts/lib/sentry-release.mjs";
+import { resolveSentryRelease, resolveSourcemapMode } from "./scripts/lib/release/sentry-release.mjs";
 import { TRANSIENT_ARTIFACT_DIRS } from "./scripts/lib/clean-dev-artifacts.mjs";
 
 // Single port contract shared with scripts/lib/dev-port.mjs consumers (polling/stop/cleanup).

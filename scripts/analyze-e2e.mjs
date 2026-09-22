@@ -1,15 +1,19 @@
 import fs from "node:fs";
 import path from "node:path";
-import { ensureRunId, writeCurrentRun } from "./lib/current-run.mjs";
+import { ensureRunId, writeCurrentRun } from "./lib/verification/current-run.mjs";
 import { commandExposure, tailOutput, writeDiagnosticLog } from "./lib/compact-output.mjs";
-import { diagnosticIdentity, failureDigestRelativePath, writeFailureIndex } from "./lib/playwright-diagnostics.mjs";
+import {
+  diagnosticIdentity,
+  failureDigestRelativePath,
+  writeFailureIndex,
+} from "./lib/verification/playwright-diagnostics.mjs";
 import { runCommand } from "./lib/run-command.mjs";
 import {
   collectPlaywrightTests,
   formatPlaywrightSummaryMarkdown,
   summarizePlaywrightReport,
   topSlowestTests,
-} from "./lib/playwright-summary.mjs";
+} from "./lib/verification/playwright-summary.mjs";
 
 import { isMainModule } from "./lib/is-main-module.mjs";
 

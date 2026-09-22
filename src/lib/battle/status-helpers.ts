@@ -71,6 +71,10 @@ export function getEnemyDamageMultiplier(
   return multiplier;
 }
 
+export function reduceDamageByMana(state: Pick<BattleState, "mana" | "gearEffects">, amount: number): number {
+  return Math.max(0, amount - state.gearEffects.damageReductionPerMana * state.mana);
+}
+
 export function dealSelfDamage(
   state: BattleState,
   amount: number,
@@ -78,7 +82,9 @@ export function dealSelfDamage(
   combatTexts: CombatTextEvent[],
 ): { state: BattleState; healthLost: number } {
   const healthCost = statLabel === "health";
-  const scaled = healthCost ? amount : scaleReceivedPlayerDamage(amount, state.talentEffects, statLabel);
+  const scaled = healthCost
+    ? amount
+    : scaleReceivedPlayerDamage(reduceDamageByMana(state, amount), state.talentEffects, statLabel);
   const damage = armorMitigatesElementalDamage(state, statLabel)
     ? Math.max(0, scaled - state.playerStatuses.armor)
     : scaled;

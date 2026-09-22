@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /** Release gate: tag matches package.json version + packaged desktop integrity. */
-import { verifyDesktopPackage, verifyReleaseVersionTag } from "./lib/release-checks.mjs";
+import { verifyDesktopPackage, verifyReleaseVersionTag } from "./lib/release/release-checks.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { readRepoPackageJson } from "./lib/repo-package.mjs";
 

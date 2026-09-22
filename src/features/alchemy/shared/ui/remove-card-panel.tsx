@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import { type BattleCard } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
-import { CardSelectionGrid } from "./card-selection-grid";
+import { CardSelectionGrid } from "./cards/card-selection-grid";
 import { getCardInspectionShineColors } from "../config";
 import { GoldCost } from "./display-elements";
-import { SelectableCard } from "./selectable-card";
+import { SelectableCard } from "./cards/selectable-card";
 import { useCaptureEscapeCancel } from "./use-modal-escape-dismiss";
 
 export function RemoveCardPanel({

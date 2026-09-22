@@ -9,7 +9,7 @@ selection, reports, build validation, and receipt caching.
 
 Keep command entry points directly in `scripts/`. Asset registries and pipeline
 helpers live together in `assets/`, with TypeScript declarations beside their
-modules. `lib/` holds the remaining shared tooling.
+modules. `lib/agent/`, `lib/release/`, and `lib/verification/` group task-specific helpers; general process and repository helpers remain directly in `lib/`.
 
 ## Assets
 
@@ -37,15 +37,15 @@ Manifest paths derive from `MANAGED_DIRS` + `MANIFEST_BASENAME` via `getManagedM
 
 `agent-diff.mjs` (`npm run review:diff`) retains complete status and bounds authored patches; generated/media details expand with `--full <path>`.
 
-| Concern                                                             | Implementation owner        |
-| ------------------------------------------------------------------- | --------------------------- |
-| Owner sections and implementation entry points                      | `lib/agent-context.mjs`     |
-| Markdown fences, headings, and section extraction                   | `lib/markdown-sections.mjs` |
-| Bounded search, related-file hints, and disposable context sessions | `lib/agent-discovery.mjs`   |
-| Preread measurement                                                 | `measure-agent-context.mjs` |
-| Evaluation records and comparison                                   | `agent-eval.mjs`            |
+| Concern                                                             | Implementation owner              |
+| ------------------------------------------------------------------- | --------------------------------- |
+| Owner sections and implementation entry points                      | `lib/agent/agent-context.mjs`     |
+| Markdown fences, headings, and section extraction                   | `lib/agent/markdown-sections.mjs` |
+| Bounded search, related-file hints, and disposable context sessions | `lib/agent/agent-discovery.mjs`   |
+| Preread measurement                                                 | `measure-agent-context.mjs`       |
+| Evaluation records and comparison                                   | `agent-eval.mjs`                  |
 
-Source declarations, authored entries, and optional test navigation are parsed in `lib/source-outline.mjs`; `agent-context.mjs` owns bounded rendering. `run-compact.mjs`, `lib/run-command.mjs`, and `lib/compact-output.mjs` provide the shared one-shot command policy: compact summaries by default, complete logs on disk, and explicit live output for interactive work. `lint-ci.mjs` applies that policy to the aggregate static gate so direct CI checks do not dump every collected browser test.
+Source declarations, authored entries, and optional test navigation are parsed in `lib/agent/source-outline.mjs`; `agent-context.mjs` owns bounded rendering. `run-compact.mjs`, `lib/run-command.mjs`, and `lib/compact-output.mjs` provide the shared one-shot command policy: compact summaries by default, complete logs on disk, and explicit live output for interactive work. `lint-ci.mjs` applies that policy to the aggregate static gate so direct CI checks do not dump every collected browser test.
 
 [Agent discovery](../Docs/AGENT_DISCOVERY.md#agent-discovery) documents command options
 and limitations; [evaluations](../.agents/evals/README.md) owns pinned setup and
@@ -53,16 +53,16 @@ interpretation. Discovery metadata must reference canonical prose rather than
 copying it, and it does not own verification selection. The search fallback skips deleted
 tracked files and files removed during a search, while other read errors fail.
 
-## Release / changelog (three stages, shared `lib/patch-notes-core.mjs` + `lib/git-release.mjs`)
+## Release / changelog (three stages, shared `lib/release/patch-notes-core.mjs` + `lib/release/git-release.mjs`)
 
 | Output or operation                                          | Implementation owner                                                                    |
 | ------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
 | Developer Unreleased history                                 | `sync-changelog.mjs`                                                                    |
 | Versioned changelog section                                  | `release-changelog.mjs`                                                                 |
 | Player notes from commits and trailers                       | `generate-patch-notes.mjs`                                                              |
-| Release orchestration (`release`, `release:hotfix --hotfix`) | `release.mjs` → `lib/release-runner.mjs`                                                |
+| Release orchestration (`release`, `release:hotfix --hotfix`) | `release.mjs` → `lib/release/release-runner.mjs`                                        |
 | Build version stamping                                       | `sync-version-metadata.mjs` (sequenced by `release-runner.mjs` post-bump)               |
-| Release artifact validation                                  | `verify-release.mjs` → `lib/release-checks.mjs`                                         |
+| Release artifact validation                                  | `verify-release.mjs` → `lib/release/release-checks.mjs`                                 |
 | Tag-vs-package check                                         | `verify-release.mjs --skip-package` (also run locally pre-push by `release-runner.mjs`) |
 | Steam upload                                                 | `steam-upload.mjs`                                                                      |
 | Verified build                                               | `build-verified.mjs`                                                                    |
@@ -72,14 +72,14 @@ and the release decision flow.
 
 Desktop: `ensure-electron.mjs` (orchestrator) → `electron-download.mjs` + `electron-path.mjs`
 (pure predicates); `dist-desktop.mjs` → `verify-desktop-package.mjs`.
-`lib/desktop-build-config.mjs` validates release configuration before both the
+`lib/release/desktop-build-config.mjs` validates release configuration before both the
 verified desktop build and direct packaging. `desktop/after-pack.cjs` locates
 default V8 snapshots with one directory walker on all supported Node versions,
 then installs the browser-process copies before enabling their fuse. The build wrapper rejects conflicting mode selectors before validation or Vite, so `build:desktop` always builds desktop mode.
 Packaged Windows startup: `smoke-desktop.mjs` resolves the artifact and invokes
 `smoke-desktop.ps1` for native accessibility verification (see [RELEASE](../Docs/RELEASE.md#packaged-windows-startup-check)).
 
-`platforms.json` owns the desktop target list; `package.json` build blocks own per-platform packaging configuration. Sentry release and desktop sourcemap mode are owned by `lib/sentry-release.mjs`; chunk splitting is owned by `lib/vite-chunks.mjs`. Vite uses only Rolldown chunk groups.
+`platforms.json` owns the desktop target list; `package.json` build blocks own per-platform packaging configuration. Sentry release and desktop sourcemap mode are owned by `lib/release/sentry-release.mjs`; chunk splitting is owned by `lib/vite-chunks.mjs`. Vite uses only Rolldown chunk groups.
 
 ## Audits (periodic sweep, not a push gate)
 
@@ -99,15 +99,16 @@ evidence and never block handoff.
 
 `npm run test:e2e:route -- <route> [-- extra playwright args]`;
 `test:ship:unit`, `test:e2e:audit` (full timings), `perf`, `balance:sim`, `ci:summarize`.
-Every `E2E_ROUTES` entry has a matching `test:e2e:<name>` alias
-(`tests/scripts/run-e2e-route.test.ts` pins the set); legacy screen names
-`shop-screen` and `homestead-screen` remain accepted as aliases.
+All `E2E_ROUTES` entries use the single `test:e2e:route` command; individual
+`test:e2e:<name>` scripts do not exist. `tests/scripts/run-e2e-route.test.ts`
+pins that interface. The route names `shop-screen` and `homestead-screen`
+remain accepted as aliases for `shop` and `homestead`.
 `ci-summarize.mjs --vitest/--playwright/--all` is the single CI summary entry;
 workflows call it directly with the matching flag. A lone positional path is
 inferred from its filename (playwright-containing paths summarize Playwright).
 Report parsing lives in
-`lib/vitest-summary.mjs` and `lib/playwright-summary.mjs`; both share the
-`lib/report-summary.mjs` skeleton (budgets, first-line truncation, runner-error
+`lib/verification/vitest-summary.mjs` and `lib/verification/playwright-summary.mjs`; both share the
+`lib/verification/report-summary.mjs` skeleton (budgets, first-line truncation, runner-error
 and overflow sections, missing-report wording) via one table-driven publisher.
 `summarize*Report` headers are
 stats-authoritative while `collectPlaywrightTests` is the walked audit model
@@ -130,9 +131,10 @@ shared `runStreamCommand` runner instead of bounded `runCommand` capture or raw
 
 ## Development
 
-`dev` and `dev:checked` share `predev` asset preparation and port cleanup;
-`dev:checked` also enables the live TypeScript checker. Desktop development adds
-Steam App ID synchronization.
+`npm run dev` runs asset preparation and port cleanup through `predev`.
+`npm run dev:checked` starts Vite with the live TypeScript checker directly;
+run `npm run predev` first when using that command. Desktop development runs
+the same preparation and adds Steam App ID synchronization.
 
 ## Cleanup (`clean` = explicit reset, `prune:transient` = age-based GC)
 
@@ -174,7 +176,7 @@ Exit codes are 0 = pass, 1 = check failed, 2 = bad invocation (`UsageError`;
 
 `lib/cli-args.mjs` owns simple flag parsing (`--flag`, `--key=value`,
 `--key value`, `-m value`, `--` passthrough) so new CLIs do not hand-roll
-another validator. Path selection stays on `lib/changed-paths.mjs`; complex
+another validator. Path selection stays on `lib/verification/changed-paths.mjs`; complex
 CLIs (audit, performance) keep bespoke validators until migrated.
 
 `lib/run-command.mjs` owns subprocess execution: `runCommand`/`runCommandAsync`

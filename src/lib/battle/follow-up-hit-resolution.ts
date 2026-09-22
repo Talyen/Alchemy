@@ -17,6 +17,7 @@ import { computeCardDamageToEnemy, computeTalentDamageToEnemy } from "./damage-c
 import {
   applyDamageBlock,
   applyHolyLifesteal,
+  applyHolyBlockChance,
   applyHolyTithe,
   applyLeechHitHealing,
   applyLeechHitRewards,
@@ -66,7 +67,11 @@ function resolvePlayerFollowUp(
     nextState = applyNatureGoldReward(nextState, hit.facts.healthDamage, combatTexts);
     nextState = applyNatureManaRefund(nextState, modifiedDamage, combatTexts);
   }
-  return damageType === "holy" ? applyBrassCenser(nextState, modifiedDamage, combatTexts, preHitHealth) : nextState;
+  if (damageType === "holy") {
+    nextState = applyHolyBlockChance(nextState, modifiedDamage, combatTexts);
+    nextState = applyBrassCenser(nextState, modifiedDamage, combatTexts, preHitHealth);
+  }
+  return nextState;
 }
 
 export function tryPoisonStunProc(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
@@ -106,6 +111,7 @@ function resolveTalentFollowUp(
   let nextState = hit.state;
   if (damageType === "holy") {
     nextState = applyHolyLifesteal(nextState, resolved, combatTexts, hit.facts.eligibility);
+    nextState = applyHolyBlockChance(nextState, resolved, combatTexts);
     nextState = applyDamageBlock(nextState, resolved, combatTexts, hit.facts.eligibility);
     nextState = applyHolyTithe(nextState, resolved, combatTexts);
   }

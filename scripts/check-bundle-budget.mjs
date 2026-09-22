@@ -4,7 +4,7 @@
 import { readdirSync, statSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
-import { BUDGETS } from "./lib/bundle-budget.mjs";
+import { BUDGETS } from "./lib/verification/bundle-budget.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 const DEFAULT_ASSETS_DIR = "dist/assets";

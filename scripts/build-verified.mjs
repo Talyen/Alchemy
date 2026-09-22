@@ -5,7 +5,7 @@ import { isMainModule } from "./lib/is-main-module.mjs";
 import { resolveViteBin } from "./lib/command-invocation.mjs";
 import { runTaskCommand } from "./lib/run-command.mjs";
 import { UsageError } from "./lib/script-run.mjs";
-import { validateDesktopBuildConfig } from "./lib/desktop-build-config.mjs";
+import { validateDesktopBuildConfig } from "./lib/release/desktop-build-config.mjs";
 
 async function main(argv = process.argv.slice(2)) {
   const modes = [];
@@ -34,7 +34,7 @@ async function main(argv = process.argv.slice(2)) {
   // (e.g. `npm run build -- vite build`). Filtering every occurrence would drop
   // legitimate user args such as `--mode build-preview`; the exact-match break
   // this guards against is a user `--mode build` value colliding with positionals.
-  const viteForward = argv.filter((a) => a !== "--desktop");
+  const viteForward = argv.filter((a) => !["--desktop", "--live", "--verbose"].includes(a));
   while (viteForward.length > 0 && (viteForward[0] === "vite" || viteForward[0] === "build")) {
     viteForward.shift();
   }

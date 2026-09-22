@@ -1,0 +1,280 @@
+import fs from "node:fs";
+import path from "node:path";
+import { spawnSync } from "node:child_process";
+import { createRequire } from "node:module";
+import { readExposure } from "./agent-events.mjs";
+import { globToRegExp } from "../glob-pattern.mjs";
+import { runGit, toRepoRelative } from "../repository-paths.mjs";
+
+const require = createRequire(import.meta.url);
+const EXCLUSIONS = [
+  "Raw Assets/**",
+  "reports/**",
+  "dist/**",
+  "CHANGELOG.md",
+  "**/package-lock.json",
+  "**/pnpm-lock.yaml",
+  "**/yarn.lock",
+  "**/bun.lock",
+  "**/bun.lockb",
+  "node_modules/**",
+  ".git/**",
+  ".worktrees/**",
+];
+
+function matchesSearchGlob(file, glob) {
+  return globToRegExp(glob).test(file) || (glob.startsWith("**/") && globToRegExp(glob.slice(3)).test(file));
+}
+
+const DISCOVERY_NOISE = [
+  "Docs/Plans/Archived/**",
+  ".agents/history/**",
+  "**/*.generated.*",
+  "src/lib/game-data/gear-art.generated.ts",
+  "**/.asset-hashes.json",
+];
+
+function searchExclusions(root, options) {
+  // File inventories feed the import graph too; filtering noise belongs to text discovery.
+  if (options.pattern === undefined) return EXCLUSIONS;
+  const explicit = options.paths.map((file) => toRepoRelative(root, file));
+  return [
+    ...EXCLUSIONS,
+    ...DISCOVERY_NOISE.filter(
+      (glob) =>
+        !explicit.some((file) => matchesSearchGlob(file, glob) || (glob.endsWith("/**") && file === glob.slice(0, -3))),
+    ),
+  ];
+}
+
+function isExcluded(file, exclusions = EXCLUSIONS) {
+  return exclusions.some(
+    (glob) => matchesSearchGlob(file, glob) || (glob.endsWith("/**") && file === glob.slice(0, -3)),
+  );
+}
+
+function collectFilesFromFilesystem(root, paths, includeExcluded, exclusions) {
+  const files = [];
+  const visit = (absolute) => {
+    const relative = toRepoRelative(root, absolute);
+    if (!includeExcluded && relative !== "." && isExcluded(relative, exclusions)) return;
+    const entry = fs.lstatSync(absolute);
+    if (entry.isDirectory()) {
+      for (const child of fs.readdirSync(absolute)) visit(path.join(absolute, child));
+    } else if (entry.isFile()) files.push(relative);
+  };
+  for (const file of paths) {
+    const relative = toRepoRelative(root, file);
+    const absolute = path.join(root, relative);
+    if (!fs.existsSync(absolute)) throw new Error(`Search path does not exist: ${file}`);
+    visit(absolute);
+  }
+  return files.sort();
+}
+
+function collectFilesFromGit(root, paths, exclusions) {
+  const result = runGit(root, [
+    "ls-files",
+    "--cached",
+    "--others",
+    "--exclude-standard",
+    "-z",
+    "--",
+    ...paths.map((file) => toRepoRelative(root, file)),
+  ]);
+  if (result.error || result.status !== 0) return null;
+  return result.stdout
+    .split("\0")
+    .filter(Boolean)
+    .filter(
+      (file) =>
+        !isExcluded(file, exclusions) && fs.lstatSync(path.join(root, file), { throwIfNoEntry: false })?.isFile(),
+    )
+    .sort();
+}
+
+function searchWithoutRipgrep(root, options) {
+  const exclusions = searchExclusions(root, options);
+  const normalizedPaths = options.paths.map((file) => toRepoRelative(root, file));
+  const files = options.includeExcluded
+    ? collectFilesFromFilesystem(root, normalizedPaths, true)
+    : (collectFilesFromGit(root, normalizedPaths, exclusions) ??
+      collectFilesFromFilesystem(root, normalizedPaths, false, exclusions));
+  if (options.pattern === undefined) return files;
+  const expression = options.regex ? new RegExp(options.pattern) : null;
+  const results = [];
+  for (const file of files) {
+    let source;
+    try {
+      source = fs.readFileSync(path.join(root, file));
+    } catch (error) {
+      if (error.code === "ENOENT") continue;
+      throw error;
+    }
+    if (source.includes(0)) continue;
+    const lines = source.toString("utf8").split(/\r?\n/u);
+    const matches = lines.flatMap((text, index) => {
+      const matched = expression ? expression.test(text) : text.includes(options.pattern);
+      return matched ? [{ path: file, start: index + 1, end: index + 1, text }] : [];
+    });
+    if (options.excerpts) results.push(...matches);
+    else if (matches.length) results.push(file);
+  }
+  return options.excerpts ? results : [...new Set(results)].sort();
+}
+
+export function repositorySearch(
+  root,
+  { pattern, paths = ["."], excerpts = false, includeExcluded = false, regex = false } = {},
+) {
+  if (!includeExcluded && pattern !== undefined && paths.length > 1) {
+    const isNoisePath = (file) => {
+      const relative = toRepoRelative(root, file);
+      return DISCOVERY_NOISE.some(
+        (glob) => matchesSearchGlob(relative, glob) || (glob.endsWith("/**") && relative === glob.slice(0, -3)),
+      );
+    };
+    const explicitNoise = paths.filter(isNoisePath);
+    const broad = paths.filter((file) => !isNoisePath(file));
+    if (explicitNoise.length && broad.length) {
+      // An explicit generated file must not lift the exclusion for a sibling broad search.
+      const results = [broad, explicitNoise].flatMap((selected) =>
+        repositorySearch(root, { pattern, paths: selected, excerpts, regex }),
+      );
+      if (!excerpts) return [...new Set(results)].sort();
+      return [...new Map(results.map((entry) => [JSON.stringify([entry.path, entry.start]), entry])).values()].sort(
+        (a, b) => a.path.localeCompare(b.path) || a.start - b.start,
+      );
+    }
+  }
+  // Own exclusions explicitly: .rgignore is for interactive discovery and must
+  // not hide generated modules from import graphs or explicit noise-path reads.
+  const args = ["--hidden", "--no-ignore-dot", "--color", "never"];
+  if (includeExcluded) args.push("--no-ignore");
+  else for (const glob of searchExclusions(root, { paths, pattern })) args.push("-g", `!${glob}`);
+  if (pattern === undefined) args.push("--files", "-0");
+  else {
+    args.push(...(excerpts ? ["--json"] : ["--files-with-matches", "-0"]));
+    if (!regex) args.push("--fixed-strings");
+    args.push("-e", pattern);
+  }
+  args.push("--", ...paths);
+  const result = spawnSync("rg", args, { cwd: root, encoding: "utf8", maxBuffer: 32 * 1024 * 1024 });
+  if (result.error?.code === "ENOENT")
+    return searchWithoutRipgrep(root, { pattern, paths, excerpts, includeExcluded, regex });
+  if (result.error || ![0, 1].includes(result.status))
+    throw new Error(result.error?.message ?? result.stderr.trim() ?? "Repository search failed");
+  if (!excerpts || pattern === undefined)
+    return [
+      ...new Set(
+        result.stdout
+          .split("\0")
+          .filter(Boolean)
+          .map((file) => file.replace(/^\.\//u, "")),
+      ),
+    ].sort();
+  return result.stdout
+    .split(/\r?\n/u)
+    .filter(Boolean)
+    .map((line) => JSON.parse(line))
+    .filter((event) => event.type === "match" && event.data.path.text && event.data.lines.text)
+    .map(({ data }) => ({
+      path: data.path.text.replace(/^\.\//u, ""),
+      start: data.line_number,
+      end: data.line_number,
+      text: data.lines.text.replace(/\r?\n$/u, ""),
+    }))
+    .sort((a, b) => a.path.localeCompare(b.path) || a.start - b.start);
+}
+
+export function incrementalContext(root, session, sections, { refresh = false } = {}) {
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$/u.test(session)) throw new Error("Invalid context session ID");
+  const filename = path.join(root, "reports/agent-context", `${session}.json`);
+  let seen = {};
+  if (!refresh) {
+    try {
+      const record = JSON.parse(fs.readFileSync(filename, "utf8"));
+      if (record.version === 1 && record.seen && typeof record.seen === "object") seen = record.seen;
+    } catch {}
+  }
+  const key = (section) => JSON.stringify([section.path, section.heading ?? null, section.start, section.end]);
+  const pending = sections.filter((section) => seen[key(section)] !== readExposure(section).contentHash);
+  return {
+    sections: pending,
+    omitted: sections.length - pending.length,
+    remember(included) {
+      for (const section of included) seen[key(section)] = readExposure(section).contentHash;
+      fs.mkdirSync(path.dirname(filename), { recursive: true });
+      fs.writeFileSync(filename, JSON.stringify({ version: 1, seen }) + "\n");
+    },
+  };
+}
+
+export function relatedLocations(root, selectedPaths, limit = 6) {
+  const ts = require("typescript");
+  const configPath = ts.findConfigFile(root, ts.sys.fileExists);
+  const config = configPath ? ts.readConfigFile(configPath, ts.sys.readFile).config : {};
+  const options = ts.parseJsonConfigFileContent(config, ts.sys, root).options;
+  const files = repositorySearch(root).filter((file) => /\.(?:[cm]?[jt]sx?)$/u.test(file));
+  // Full-repo import graph: no cache by design (always current). Selections
+  // are capped so a pathological checkout fails fast instead of hanging.
+  const RELATED_SCAN_MAX_FILES = 20_000;
+  if (files.length > RELATED_SCAN_MAX_FILES) {
+    throw new Error(
+      `Related-location scan covers ${files.length} files (limit ${RELATED_SCAN_MAX_FILES}); narrow the selection.`,
+    );
+  }
+  const known = new Set(files);
+  const dependencies = new Map();
+  const consumers = new Map();
+  for (const file of files) {
+    const fullPath = path.join(root, file);
+    const imports = ts.preProcessFile(fs.readFileSync(fullPath, "utf8"), true, true).importedFiles;
+    const resolved = imports.flatMap(({ fileName }) => {
+      const target = ts.resolveModuleName(fileName, fullPath, { ...options, allowJs: true }, ts.sys).resolvedModule;
+      const relative = target && toRepoRelative(root, target.resolvedFileName, { onOutside: "keep-relative" });
+      return relative && known.has(relative) ? [relative] : [];
+    });
+    dependencies.set(file, resolved);
+    for (const target of resolved) consumers.set(target, [...(consumers.get(target) ?? []), file]);
+  }
+  const selected = selectedPaths.map((file) => toRepoRelative(root, file));
+  const seeds = new Set(
+    files.filter((file) => selected.some((entry) => entry === "." || file === entry || file.startsWith(`${entry}/`))),
+  );
+  const distances = new Map();
+  let frontier = [...seeds];
+  for (let distance = 1; distance <= 2; distance++) {
+    const next = [];
+    for (const file of frontier)
+      for (const consumer of consumers.get(file) ?? []) {
+        if (seeds.has(consumer) || distances.has(consumer)) continue;
+        distances.set(consumer, distance);
+        next.push(consumer);
+      }
+    frontier = next;
+  }
+  const ranked = [...distances].sort(([a, da], [b, db]) => da - db || a.localeCompare(b));
+  const isTest = (file) => /\.(?:test|spec)\.[cm]?[jt]sx?$/u.test(file);
+  const tests = [...seeds]
+    .filter(isTest)
+    .concat(ranked.filter(([file]) => isTest(file)).map(([file]) => file))
+    .slice(0, limit);
+  const fixtures = [
+    ...new Set(
+      tests
+        .flatMap((file) => dependencies.get(file) ?? [])
+        .filter((file) => /(?:fixture|test-utils|test-helpers|testing|playwright-shared)/u.test(file)),
+    ),
+  ]
+    .sort()
+    .slice(0, limit);
+  return {
+    consumers: ranked
+      .filter(([file]) => !isTest(file))
+      .slice(0, limit)
+      .map(([file]) => file),
+    tests,
+    fixtures,
+  };
+}

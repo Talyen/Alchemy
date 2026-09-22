@@ -6,7 +6,7 @@ import { computeLeechHeal } from "./damage-rider-leech";
 import { isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-traits";
 import { paceCombatDamage } from "./fight-pacing";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
-import { armorMitigatesElementalDamage } from "./status-helpers";
+import { armorMitigatesElementalDamage, reduceDamageByMana } from "./status-helpers";
 import { applyForgeThresholdRewards, applyHealthLossTalentRewards } from "./status-player";
 import {
   applyPlayerCombatDamage,
@@ -93,9 +93,11 @@ export function prepareEnemyDamage(
   const attemptedDamage = scale(baseDamage + elementalBonus);
   const reduction = options.ignorePlayerMitigation
     ? 0
-    : state.gearEffects.damageReductionPerMana * state.mana +
-      (state.enemyStatuses.poison > 0 ? state.talentEffects.poisonReducesEnemyDamage : 0);
-  return { attemptedDamage, incomingDamage: Math.max(0, attemptedDamage - reduction) };
+    : state.enemyStatuses.poison > 0
+      ? state.talentEffects.poisonReducesEnemyDamage
+      : 0;
+  const manaMitigated = options.ignorePlayerMitigation ? attemptedDamage : reduceDamageByMana(state, attemptedDamage);
+  return { attemptedDamage, incomingDamage: Math.max(0, manaMitigated - reduction) };
 }
 
 function calculateBlockAndArmorMitigation(
@@ -164,6 +166,9 @@ export interface EnemyDamageResult {
   /** Damage after defenses, before Health clamping and death prevention. */
   resolvedDamage: number;
   healthDamage: number;
+  /** Hit outcomes before defensive rewards refill Block or restore Health. */
+  blockLost: number;
+  healthAfterHit: number;
   landed: boolean;
   dodged: boolean;
   killed: boolean;
@@ -206,6 +211,8 @@ function applyEnemyHealthHit(
   // Recovery does not cancel Health damage already dealt by the lethal hit.
   const phoenixTriggered = state.playerStatuses.phoenixFeather > 0 && damagedState.playerStatuses.phoenixFeather === 0;
   const outcome = {
+    blockLost,
+    healthAfterHit: damagedState.playerHealth,
     healthDamage: phoenixTriggered ? prevHealth : Math.max(0, prevHealth - damagedState.playerHealth),
     attemptedDamage,
     resolvedDamage: actualDamage,
@@ -262,6 +269,8 @@ function resolveEnemyDamageEffectCore(
       attemptedDamage: 0,
       resolvedDamage: 0,
       healthDamage: 0,
+      blockLost: 0,
+      healthAfterHit: state.playerHealth,
       landed: false,
       dodged: false,
       killed: false,

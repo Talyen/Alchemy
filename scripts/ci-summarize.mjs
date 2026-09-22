@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
-import { writeFailureIndex } from "./lib/playwright-diagnostics.mjs";
-import { writeCurrentRun } from "./lib/current-run.mjs";
-import { formatPlaywrightSummaryMarkdown, summarizePlaywrightReport } from "./lib/playwright-summary.mjs";
-import { formatVitestSummaryMarkdown, summarizeVitestReport } from "./lib/vitest-summary.mjs";
-import { missingReportMarkdown, readJsonReport } from "./lib/report-summary.mjs";
+import { writeFailureIndex } from "./lib/verification/playwright-diagnostics.mjs";
+import { writeCurrentRun } from "./lib/verification/current-run.mjs";
+import { formatPlaywrightSummaryMarkdown, summarizePlaywrightReport } from "./lib/verification/playwright-summary.mjs";
+import { formatVitestSummaryMarkdown, summarizeVitestReport } from "./lib/verification/vitest-summary.mjs";
+import { missingReportMarkdown, readJsonReport } from "./lib/verification/report-summary.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
 const DEFAULT_VITEST_REPORT = "reports/vitest-timings.json";

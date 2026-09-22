@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { compareEvaluations, loadEvaluation, summarizeEvaluation } from "../../scripts/agent-eval.mjs";
-import { readExposure, recordAgentEvent } from "../../scripts/lib/agent-events.mjs";
+import { readExposure, recordAgentEvent } from "../../scripts/lib/agent/agent-events.mjs";
 
 const record = {
   task: "ui-button-default",

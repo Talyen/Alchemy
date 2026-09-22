@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /** Compact aggregate static gate; complete child output stays in reports. */
 import path from "node:path";
-import { ensureRunId } from "./lib/current-run.mjs";
+import { ensureRunId } from "./lib/verification/current-run.mjs";
 import { completionCounts, failureSummary } from "./lib/compact-output.mjs";
 import { runCommandAsync } from "./lib/run-command.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";

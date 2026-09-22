@@ -455,7 +455,7 @@ describe("recursive effects", () => {
 
 describe("repeat action scope suppresses potion scaling", () => {
   it("ignores potionPotency during unique repeats", () => {
-    const card = makeTestCard({ id: "health-potion", effects: [{ kind: "heal", amount: 4 }] });
+    const card = makeTestCard({ id: "health-potion", consume: true, effects: [{ kind: "heal", amount: 4 }] });
     const base = patchBattleState({
       playerHealth: 10,
       playerMaxHealth: 30,

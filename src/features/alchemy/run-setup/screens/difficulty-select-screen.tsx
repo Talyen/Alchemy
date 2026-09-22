@@ -14,7 +14,7 @@ import {
 } from "@/features/alchemy/shared/config/game-data-catalog";
 
 import { Button } from "@/components/ui/button";
-import { renderMultilineTokenizedDescription } from "../../shared/ui/card-description-ui";
+import { renderMultilineTokenizedDescription } from "../../shared/ui/cards/card-description-ui";
 import { HeroCardShine } from "../../shared/ui/hero-card-shine";
 import { KeywordTag } from "../../shared/ui/keyword-tag";
 import { TitledScreenShell } from "../../shared/ui/layout-components";

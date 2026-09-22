@@ -1,4 +1,4 @@
-import { ensureRunId } from "../scripts/lib/current-run.mjs";
+import { ensureRunId } from "../scripts/lib/verification/current-run.mjs";
 import { resolvePort } from "../scripts/lib/dev-port.mjs";
 import type { ReporterDescription } from "@playwright/test";
 
@@ -36,13 +36,13 @@ export function playwrightCiSettings({ isCi, defaultJsonOut }: PlaywrightCiSetti
     forbidOnly: isCi,
     reporter: isCi
       ? [
-          ["./scripts/lib/playwright-run-reporter.mjs"],
+          ["./scripts/lib/verification/playwright-run-reporter.mjs"],
           ["github"],
           ["line"],
           ["html"],
           ["json", { outputFile: jsonOutputFile }],
         ]
-      : [["./scripts/lib/playwright-run-reporter.mjs"], ["line"], ["html", { open: "never" }]],
+      : [["./scripts/lib/verification/playwright-run-reporter.mjs"], ["line"], ["html", { open: "never" }]],
   };
 }
 

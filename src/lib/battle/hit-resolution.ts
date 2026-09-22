@@ -4,7 +4,7 @@ import { BLACKFLETCH_EXECUTE_HEALTH_PERCENT, PERCENT_DENOMINATOR } from "../game
 import { halveRounded } from "./amount-helpers";
 import { applyHitEpilogue, mergeCombatText } from "./combat-text";
 import { computeReflectedHolyDamageToEnemy, computeCardDamageToEnemy } from "./damage-calc";
-import { applyDamageStatuses } from "./damage-status-riders";
+import { applyDamageStatuses, applyPoisonTalentRiders } from "./damage-status-riders";
 import { detonateEnemyStatuses } from "./dot-resolve";
 import { paceCombatDamage } from "./fight-pacing";
 import { applyBrassCenser, resolveFollowUpHit, tryPoisonStunProc, tryTalentTypedHit } from "./follow-up-hit-resolution";
@@ -73,7 +73,18 @@ function applyArcheryDetonate(state: BattleState, combatTexts: CombatTextEvent[]
   if (state.gearEffects.archeryDetonateBleedPoison <= 0 || state.enemyHealth <= 0) return state;
   if (state.enemyHealth * PERCENT_DENOMINATOR >= state.enemyMaxHealth * BLACKFLETCH_EXECUTE_HEALTH_PERCENT)
     return state;
-  return detonateEnemyStatuses(state, ["bleed", "poison"], combatTexts, "remaining-ticks", tryPoisonStunProc);
+  return detonateEnemyStatuses(
+    state,
+    ["bleed", "poison"],
+    combatTexts,
+    "remaining-ticks",
+    (current, damage, texts, healthDamage) => {
+      const reacted = applyPoisonTalentRiders(current, healthDamage, texts, true, (next, amount, events) =>
+        resolveFollowUpHit(next, { source: "talent-derived", damageType: "bleed", amount }, events),
+      );
+      return tryPoisonStunProc(reacted, damage, texts);
+    },
+  );
 }
 
 function resolveAttackPurgeHit(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {

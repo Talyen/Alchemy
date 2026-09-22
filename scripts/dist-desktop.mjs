@@ -3,10 +3,10 @@ import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
-import { assertSupportedTargets, targetToBuilderFlag } from "./lib/desktop-artifact.mjs";
+import { assertSupportedTargets, targetToBuilderFlag } from "./lib/release/desktop-artifact.mjs";
 import { resolveBuilderBin } from "./lib/command-invocation.mjs";
-import { resolveSentryRelease } from "./lib/sentry-release.mjs";
-import { validateDesktopBuildConfig } from "./lib/desktop-build-config.mjs";
+import { resolveSentryRelease } from "./lib/release/sentry-release.mjs";
+import { validateDesktopBuildConfig } from "./lib/release/desktop-build-config.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const config = JSON.parse(readFileSync(join(root, "steam/platforms.json"), "utf8"));
@@ -38,6 +38,8 @@ for (const target of targets) {
 }
 if (packageDir) {
   builderArgs.push("--dir");
+  // electron-builder's --dir bypasses target.arch and otherwise uses the host CPU.
+  if (targets.includes("win")) builderArgs.push("--x64");
 }
 
 if (process.env.CI_RELEASE === "true" && sentryDsn) {

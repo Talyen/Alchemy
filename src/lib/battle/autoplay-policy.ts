@@ -36,24 +36,35 @@ function scoreEffect(effect: BattleCardEffect, state: BattleSnapshot): number {
         ? state.playerStatuses.forge
         : effect.equalToBlock
           ? scalePercent(state.playerStatuses.block, effect.equalToBlockPercent ?? 100)
-          : resolveConditionalCardDamage(effect, {
-              actorBlock: state.playerStatuses.block,
-              targetBlock: state.enemyMitigation.block,
-              targetFrozen: state.enemyCC.freezeSkipTurns > 0,
-            }).effect.amount;
+          : effect.equalToArmor
+            ? state.playerStatuses.armor
+            : effect.equalToGoldPercent !== undefined
+              ? scalePercent(state.gold, effect.equalToGoldPercent)
+              : resolveConditionalCardDamage(effect, {
+                  actorBlock: state.playerStatuses.block,
+                  targetBlock: state.enemyMitigation.block,
+                  targetFrozen: state.enemyCC.freezeSkipTurns > 0,
+                }).effect.amount;
     case "random-damage":
       return (effect.minAmount + effect.maxAmount) / 2;
     case "enemy-status":
       if (DOT_STATUSES.has(effect.status) || CONTROL_STATUSES.has(effect.status)) return effect.amount;
       return 0;
-    case "player-status":
+    case "player-status": {
+      const amount =
+        effect.convertCurrentMana !== undefined
+          ? state.mana * effect.convertCurrentMana
+          : effect.perManaCrystal !== undefined
+            ? state.maxMana * effect.perManaCrystal
+            : effect.amount;
       return (
         (effect.statusPool ?? [effect.status]).reduce(
           (total, status) =>
-            total + (status === "block" || status === "armor" ? effect.amount * AUTOPLAY_EFFECT_SCORE.defense : 0),
+            total + (status === "block" || status === "armor" ? amount * AUTOPLAY_EFFECT_SCORE.defense : 0),
           0,
         ) / (effect.statusPool?.length ?? 1)
       );
+    }
     case "heal":
       return state.playerHealth < state.playerMaxHealth ? effect.amount : 0;
     case "remove-harmful-status": {
@@ -128,7 +139,7 @@ export function getImmediateDefense(card: BattleCard): number {
   return card.effects.reduce((total, effect) => {
     if (effect.kind === "heal") return total + effect.amount;
     if (effect.kind === "player-status" && (effect.status === "block" || effect.status === "armor")) {
-      return total + effect.amount;
+      return total + (effect.convertCurrentMana ?? effect.perManaCrystal ?? effect.amount);
     }
     if (effect.kind === "remove-harmful-status")
       // Stateless heuristic: a full cleanse counts nominally; fixed counts its amount.

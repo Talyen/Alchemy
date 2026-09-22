@@ -36,7 +36,7 @@ import {
 } from "@/lib/homestead/types";
 import { MaterialInlineChip } from "../../../shared/ui/material-icons";
 import { TabBar } from "../../../shared/ui/tab-bar";
-import { renderTokenizedDescription } from "../../../shared/ui/card-description-ui";
+import { renderTokenizedDescription } from "../../../shared/ui/cards/card-description-ui";
 import { Hammer, Wheat, FlaskConical, PawPrint } from "lucide-react";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { extractKeywordIds } from "@/lib/keyword-text";

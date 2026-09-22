@@ -2,7 +2,7 @@ export const FLAG_DEFINITIONS = {
   hawkEyeReady: { default: false as const, secondaryValue: null, lifetime: "until-consumed" },
   verdictGoldPaid: { default: false as const, secondaryValue: null, lifetime: "combat" },
   killRewardsPaid: { default: false as const, secondaryValue: null, lifetime: "combat" },
-  nextHolyCardFree: { default: false as const, secondaryValue: null, lifetime: "until-consumed" },
+  nextHolyCardFree: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },
   nextWishExtraChoice: { default: false as const, secondaryValue: null, lifetime: "until-consumed" },
   pendingWishMana: { default: 0 as const, secondaryValue: null, lifetime: "player-turn" },
   previousCardWasArchery: { default: false as const, secondaryValue: null, lifetime: "player-turn" },

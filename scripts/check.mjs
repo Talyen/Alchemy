@@ -4,18 +4,18 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 
-import { changedGitPaths, ensureRunId, writeCurrentRun } from "./lib/current-run.mjs";
+import { changedGitPaths, ensureRunId, writeCurrentRun } from "./lib/verification/current-run.mjs";
 import { summarizeAndReportFailure, summarizeStepResult } from "./lib/run-step.mjs";
 import {
   classifyCheckPaths,
   parseChangedPathsArgs,
   resolveSelectedPaths,
   resolvePushPaths,
-} from "./lib/changed-paths.mjs";
+} from "./lib/verification/changed-paths.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { runGit } from "./lib/repository-paths.mjs";
 import { runCommand } from "./lib/run-command.mjs";
-import { INLINE_ARGS_BYTES } from "./lib/selection-budgets.mjs";
+import { INLINE_ARGS_BYTES } from "./lib/agent/selection-budgets.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -91,7 +91,7 @@ export async function runCheck(argv = process.argv.slice(2), options = {}) {
   let verifyArgs = [...paths];
   // Byte budget for inline CLI args before spilling the selection to paths.json.
   // Distinct from the related-test arg limit in change-routes.mjs (see
-  // lib/selection-budgets.mjs: same value, different meaning).
+  // lib/agent/selection-budgets.mjs: same value, different meaning).
   if (Buffer.byteLength(JSON.stringify(paths)) > INLINE_ARGS_BYTES) {
     const selectionFile = path.join(ROOT, "reports/runs", runId, "paths.json");
     fs.mkdirSync(path.dirname(selectionFile), { recursive: true });

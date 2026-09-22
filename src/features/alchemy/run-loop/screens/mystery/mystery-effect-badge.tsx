@@ -14,7 +14,7 @@ import {
   matTextColor,
 } from "../../../shared/ui/material-icons";
 import { ShineText } from "../../../shared/ui/shine-text";
-import { KeywordToken, renderTokenizedDescription } from "../../../shared/ui/card-description-ui";
+import { KeywordToken, renderTokenizedDescription } from "../../../shared/ui/cards/card-description-ui";
 import { TooltipChip, TooltipHeader } from "../../../shared/ui/tooltips/tooltip-panel";
 import { sortMysteryEffectsByDisplayOrder } from "@/lib/mystery";
 import type { MysteryEffect } from "@/lib/mystery";

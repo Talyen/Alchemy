@@ -1,6 +1,6 @@
 import type { KeywordId } from "./types";
 import * as assetRefs from "./assets.generated";
-import { gearArtByDefinitionId } from "./gear-art";
+import { gearArtByDefinitionId } from "./gear-art.generated";
 
 export * from "./assets.generated";
 

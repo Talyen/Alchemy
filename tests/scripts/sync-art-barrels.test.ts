@@ -29,7 +29,7 @@ const outputDir = path.join(fixture.root, "src/assets/optimized");
 const barrelDir = path.join(fixture.root, "src/lib/game-data");
 const manifestPath = path.join(outputDir, ".asset-hashes.json");
 const assetBarrel = path.join(barrelDir, "assets.generated.ts");
-const gearBarrel = path.join(barrelDir, "gear-art.ts");
+const gearBarrel = path.join(barrelDir, "gear-art.generated.ts");
 const validManifest = {
   "gear-sword-basic.webp": { hash: "sword", outputHash: "output", ignoredMetadata: true },
   "gear-slot-weapon.webp": "weapon",

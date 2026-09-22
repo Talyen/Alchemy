@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { checkBundleBudget } from "../../scripts/check-bundle-budget.mjs";
-import { BUDGETS, CHUNK_SIZE_WARNING_KB } from "../../scripts/lib/bundle-budget.mjs";
+import { BUDGETS, CHUNK_SIZE_WARNING_KB } from "../../scripts/lib/verification/bundle-budget.mjs";
 
 const tempDirs: string[] = [];
 

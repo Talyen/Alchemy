@@ -25,7 +25,8 @@ const FIRST_CARD_FREE_RULES: Array<{
   },
   {
     flag: "firstHolyCardFreeUsed",
-    condition: (state, card) => state.talentEffects.firstHolyCardFree && cardHasDamageType(card, "holy"),
+    condition: (state, card) =>
+      state.talentEffects.firstHolyCardFree && (cardHasKeyword(card, "holy") || cardHasDamageType(card, "holy")),
   },
   {
     flag: "firstPoisonCardFreeUsed",
@@ -91,7 +92,7 @@ function computeStandardCost(
   const spentArmedDiscount = armedReduction > 0 && effectiveCost < discountedCost;
   if (effectiveCost === 0) return { effectiveCost, consumedFlags, disarmedFlags, spentArmedDiscount };
 
-  if (state.flags.nextHolyCardFree && cardHasDamageType(card, "holy")) {
+  if (readCombatFlag(state, "nextHolyCardFree") && (cardHasKeyword(card, "holy") || cardHasDamageType(card, "holy"))) {
     effectiveCost = 0;
     disarmedFlags.add("nextHolyCardFree");
   }

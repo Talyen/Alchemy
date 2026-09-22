@@ -38,7 +38,7 @@ all lifetimes and tracking stops when no bursts remain or the layer unmounts.
 
 Preserve text and icon sizing, portrait-relative placement, and static dark outlines
 and shadows for contrast against artwork. Exact geometry, typography, and animation
-curves live in [combat text](../src/features/alchemy/shared/ui/battle/combat-text.tsx);
+curves live in [combat text](../src/features/alchemy/run-loop/battle/presentation/ui/combat-text.tsx);
 lifetimes and limits live in [motion constants](../src/lib/game-constants/ui-motion.ts).
 Do not duplicate outline elements or animate shadows. Implementation and playback
 ordering follow [the battle workflow](./WORKFLOWS.md#change-battle-playback).

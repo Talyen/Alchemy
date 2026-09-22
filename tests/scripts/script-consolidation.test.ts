@@ -3,8 +3,8 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { describe, expect, it, vi } from "vitest";
 
-import { INLINE_ARGS_BYTES, RELATED_SELECTION_BYTES } from "../../scripts/lib/selection-budgets.mjs";
-import { VITEST_MAX_WORKERS } from "../../scripts/lib/test-concurrency.mjs";
+import { INLINE_ARGS_BYTES, RELATED_SELECTION_BYTES } from "../../scripts/lib/agent/selection-budgets.mjs";
+import { VITEST_MAX_WORKERS } from "../../scripts/lib/verification/test-concurrency.mjs";
 import { parseKnownFlags } from "../../scripts/lib/cli-args.mjs";
 import { UsageError } from "../../scripts/lib/script-run.mjs";
 import { runStreamCommand, runTaskCommand } from "../../scripts/lib/run-command.mjs";
@@ -18,7 +18,9 @@ describe("script consolidation", () => {
     expect(INLINE_ARGS_BYTES).toBe(8_000);
     expect(RELATED_SELECTION_BYTES).toBe(8_000);
     expect(readFileSync(join(ROOT, "scripts/check.mjs"), "utf8")).toContain("INLINE_ARGS_BYTES");
-    expect(readFileSync(join(ROOT, "scripts/lib/change-routes.mjs"), "utf8")).toContain("RELATED_SELECTION_BYTES");
+    expect(readFileSync(join(ROOT, "scripts/lib/verification/change-routes.mjs"), "utf8")).toContain(
+      "RELATED_SELECTION_BYTES",
+    );
   });
 
   it("pins the ship-gate worker budget in one owner", () => {

@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { generatePatchNotesMarkdown, parseGeneratePatchNotesArgs } from "../../scripts/generate-patch-notes.mjs";
-import { parseReleaseArgs } from "../../scripts/lib/release-runner.mjs";
+import { parseReleaseArgs } from "../../scripts/lib/release/release-runner.mjs";
 import {
   buildChangelogUnreleased,
   buildPatchNotesMarkdown,
@@ -17,7 +17,7 @@ import {
   parseConventionalCommit,
   promoteUnreleasedSection,
   replaceChangelogUnreleased,
-} from "../../scripts/lib/patch-notes-core.mjs";
+} from "../../scripts/lib/release/patch-notes-core.mjs";
 
 describe("generate-patch-notes", () => {
   it("rejects misspelled options instead of writing during an intended preview", () => {

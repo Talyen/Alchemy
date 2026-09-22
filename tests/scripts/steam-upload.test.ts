@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { steamContentRoot } from "../../scripts/lib/desktop-artifact.mjs";
+import { steamContentRoot } from "../../scripts/lib/release/desktop-artifact.mjs";
 
 const ROOT = join(import.meta.dirname, "../..");
 const contentRoot = steamContentRoot(ROOT);

@@ -1,4 +1,4 @@
-import type { PatchNoteCommit } from "./lib/patch-notes-core.mjs";
+import type { PatchNoteCommit } from "./lib/release/patch-notes-core.mjs";
 export function parseGeneratePatchNotesArgs(
   argv: string[],
   env?: NodeJS.ProcessEnv,

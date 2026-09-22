@@ -3,8 +3,8 @@
 // User-Facing trailers decide what players see.
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { assertValidSemver, getCommitsSinceTag, resolvePatchNoteRange } from "./lib/git-release.mjs";
-import { buildPatchNotesMarkdown } from "./lib/patch-notes-core.mjs";
+import { assertValidSemver, getCommitsSinceTag, resolvePatchNoteRange } from "./lib/release/git-release.mjs";
+import { buildPatchNotesMarkdown } from "./lib/release/patch-notes-core.mjs";
 import { defineScript } from "./lib/script-run.mjs";
 import { writeTextIfChanged } from "./lib/write-text-if-changed.mjs";
 

@@ -2,8 +2,8 @@ import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { substituteSteamVdf, writeSteamBuildVdfs } from "../../scripts/lib/steam-vdf.mjs";
-import { steamContentRoot } from "../../scripts/lib/desktop-artifact.mjs";
+import { substituteSteamVdf, writeSteamBuildVdfs } from "../../scripts/lib/release/steam-vdf.mjs";
+import { steamContentRoot } from "../../scripts/lib/release/desktop-artifact.mjs";
 
 const sourceRoot = join(import.meta.dirname, "../..");
 const temporaryRoots: string[] = [];

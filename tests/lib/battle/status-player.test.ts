@@ -101,7 +101,7 @@ describe("removeHarmfulPlayerStatuses", () => {
     expect(result.playerHealth).toBe(20);
   });
 
-  it("heals with sinEater boon on remove", () => {
+  it("heals with sinEater for each removed status", () => {
     const state = patchBattleState({
       playerHealth: 20,
       playerStatuses: defaultPlayerStatusValues({ burn: 5, poison: 3 }),
@@ -110,8 +110,8 @@ describe("removeHarmfulPlayerStatuses", () => {
     const texts = makeTexts();
     const result = removeHarmfulPlayerStatuses(state, 2, texts);
 
-    expect(result.playerHealth).toBe(24);
-    expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 4 });
+    expect(result.playerHealth).toBe(28);
+    expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 8 });
   });
 
   it("does nothing when no statuses to remove", () => {

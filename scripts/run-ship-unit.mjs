@@ -8,11 +8,11 @@
 // save-affecting change: storage/persistence, autosave, validation, the
 // architecture invariants, and the bespoke scripts.
 import { runTaskCommand } from "./lib/run-command.mjs";
-import { VITEST_MAX_WORKERS } from "./lib/test-concurrency.mjs";
+import { VITEST_MAX_WORKERS } from "./lib/verification/test-concurrency.mjs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { validateRouteCatalog } from "./lib/change-routes.mjs";
-import { TEST_SUITES, validateTestSuitePaths } from "./lib/test-commands.mjs";
+import { validateRouteCatalog } from "./lib/verification/change-routes.mjs";
+import { TEST_SUITES, validateTestSuitePaths } from "./lib/verification/test-commands.mjs";
 
 const root = dirname(fileURLToPath(import.meta.url));
 /** Resolve a dir/file path against the repo root. */
@@ -32,7 +32,7 @@ if (missing.length > 0) {
   console.error(
     `The ship unit suite matches no test files for:\n${missing.map((m) => `  - ${m}`).join("\n")}\n` +
       "A path above is stale — vitest would silently run a narrower gate. Fix the path or remove " +
-      "it from TEST_SUITES in scripts/lib/test-commands.mjs.",
+      "it from TEST_SUITES in scripts/lib/verification/test-commands.mjs.",
   );
   process.exit(1);
 }

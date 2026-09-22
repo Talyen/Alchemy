@@ -2,6 +2,17 @@
 
 ## Supported baseline
 
+There are currently no historical player saves that must be preserved. Remove code
+that exists only to retain obsolete saved mechanics rather than maintaining parallel
+rulesets. Resumed battles must use current rules; restart or exit an incompatible
+battle instead of continuing legacy gameplay. Keep current-format save/resume correct.
+Freeze a supported baseline only when player progress is explicitly promised.
+Current-run modifications (Corrupted cards, upgrades, and Mixed Potions) remain
+valid save data and must round-trip together with their descriptions. Existing
+compatibility readers described below record implementation, not a promise to
+retain retired mechanics. Remove their consumers and fixtures together when
+retiring them, keeping current-format resume and future-save protection intact.
+
 `LAUNCH_SAVE_SCHEMA_VERSION` in `src/lib/validation/metadata.ts` is the minimum supported format. The single-run baseline is the current schema; development formats below it are disposable. `evaluateSaveCandidates` rejects those candidates before permissive field validation can stamp defaults. If no supported or protecting future candidate remains, load defaults through the normal save path without explicitly clearing backup or Cloud sources. Writes stay enabled for this `corrupt`-status fallback (unlike future-protection, which disables them), so the next autosave naturally overwrites the retired payload. Do not salvage old profiles or parked runs.
 
 Game build identity is distinct from schema and content versions. Ordinary compatible builds do not reset saves. Freeze the supported floor at the first distribution whose progress is promised to persist, including a playtest or Early Access release. Preserve subsequent supported formats. Version sources are split: the build version is generated from `package.json` by `scripts/sync-version-metadata.mjs`, while schema and content versions are hardcoded in `src/lib/validation/metadata.ts`.
@@ -31,9 +42,9 @@ Choose the intended new-player default. Safe additive fields retain that default
 
 ## Content changes without a save bump
 
-Preserve complete saved card effects, descriptions, and explicit Consume overrides together. Incomplete card content recovers from the live catalog. Gear/loadout ownership cleanup, native enemy Trait refresh, current catalog filtering, and safe manifest defaults remain current-data repair, not historical migrations. Stored Unique affix rolls are dropped at normalization in favor of the canonical catalog affixes; pre-release material renames (gems to crystal, then crystal to gems) and additions (stone, hide) resolve through schema defaults, not aliases or migrations. Persisted battle scalars and collections repair field-by-field to battle defaults; a battle block without any card piles is a fragment, not a fight, and drops the combat session instead of fabricating one. Battle telemetry is runtime-only and is never persisted.
+Preserve valid current-run card effects, descriptions, and explicit Consume overrides together under the [supported baseline](#supported-baseline). Incomplete card content recovers from the live catalog. Gear/loadout ownership cleanup, native enemy Trait refresh, current catalog filtering, and safe manifest defaults remain current-data repair, not historical migrations. Stored Unique affix rolls are dropped at normalization in favor of the canonical catalog affixes; pre-release material renames (gems to crystal, then crystal to gems) and additions (stone, hide) resolve through schema defaults, not aliases or migrations. Persisted battle scalars and collections repair field-by-field to battle defaults; a battle block without any card piles is a fragment, not a fight, and drops the combat session instead of fabricating one. Battle telemetry is runtime-only and is never persisted.
 
-Talent balance tuning adds zero-default manifest fields without deleting prior snapshot fields. Reworked Talents retain their IDs, while current run restoration rebinds derived manifests from purchased IDs and Homestead effects; old manifest keys remain loadable as legacy snapshot fields. No schema/content version bump is needed for these additive changes. Shop state adds `freeRefreshUsed` with a false default and field-by-field hydration for older saves. Restock rolls the shop RNG before affordability, but a successful free refresh still commits atomically and consumes one refresh slot. The additive `hawkEyeReady`, `archeryCardsPlayedThisTurn`, `archerySecondCardActive`, `firstBurnCardFreeUsed`, and `nextPhysicalCrit` battle flags default safely, normalize to their declared boolean/number types, and persist across turns and resume. Hawk Eye and Riposte readiness are never reconstructed from existing status or Dodge state, and new opening draws/rewards are never replayed during normalization. All new flags reset with a new battle.
+Reworked Talents may retain their IDs, while current run restoration rebinds derived manifests from purchased IDs and Homestead effects. Remove retired manifest keys and their gameplay branches instead of preserving legacy battle behavior. Use defaults for compatible additions and retire incompatible development snapshots when required. Shop state adds `freeRefreshUsed` with a false default and field-by-field hydration for older saves. Restock rolls the shop RNG before affordability, but a successful free refresh still commits atomically and consumes one refresh slot. The additive `hawkEyeReady`, `archeryCardsPlayedThisTurn`, `archerySecondCardActive`, `firstBurnCardFreeUsed`, and `nextPhysicalCrit` battle flags default safely, normalize to their declared boolean/number types, and persist across turns and resume. Hawk Eye and Riposte readiness are never reconstructed from existing status or Dodge state, and new opening draws/rewards are never replayed during normalization. All new flags reset with a new battle.
 
 ## Run recap tracking
 
@@ -88,7 +99,7 @@ Normal saves and explicit flushes return `saved`, `failed`, or `skipped`. `saved
 
 Autosave retains unacknowledged changes until a covering write succeeds. In-memory revisions prevent an older completion from clearing newer progress. Failed writes retry through the existing single timer no sooner than `AUTOSAVE_RETRY_COOLDOWN_MS` after failure (see `src/lib/game-constants/storage.ts`; kept equal to `AUTOSAVE_MAX_WAIT_MS` so the backoff survives shrunken debounces, split so UX timing and retry backoff can diverge later), including when animations are disabled or new changes arrive. Timing math lives in `src/app/autosave-scheduler.ts` with unit coverage; `src/app/autosave-lifecycle.ts` owns debounce selection, snapshot building, completion gating, and subscriptions for both React and headless callers; the React hook adds browser lifecycle listeners. Exit signals may bypass that cooldown, with an exit-once latch per revision so back-to-back exit events write one snapshot. Clear requests and write protection invalidate pending acknowledgements and cancel scheduled autosaves; disabled persistence and hook cleanup also stop retries. A late completion cannot restart cancelled work. No scheduling metadata is persisted.
 
-Browser lifecycle exits (`visibilitychange`, `pagehide`, and `beforeunload`) synchronously flush the latest unacknowledged snapshot to `localStorage` via `writeSync`. A successful synchronous flush returns `saved` immediately when the queue is idle. If an older write may still land, the latest snapshot also replaces pending queue work and completion waits for that final write. No await sits between the sync write and the idle check, so check-and-enqueue is atomic on the event loop (see `storage/io.ts#flushSerializedExitSave`, the single owner of this detail). Each physical write stamps its own `lastSavedAt` at serialization time. Desktop IPC uses the same serialized coalescing queue and returns a promise for the actual write outcome. A failed synchronous exit remains retryable through the scheduler retry while mounted. Desktop shutdown remains best effort, so earlier visibility/pagehide signals give IPC time to finish before the window closes. Terminal saves supersede queued snapshots that have not started writing.
+Browser lifecycle exits (`visibilitychange`, `pagehide`, and `beforeunload`) synchronously flush the latest unacknowledged snapshot to `localStorage` via `writeSync`. A successful synchronous flush returns `saved` immediately when the queue is idle. If an older write may still land, the latest snapshot also replaces pending queue work and completion waits for that final write. No await sits between the sync write and the idle check, so check-and-enqueue is atomic on the event loop (see `SaveStorage.flushSerializedExitSave` in [save-storage.ts](./save-storage.ts), the owner of this ordering; `io.ts` delegates exit saves to that storage instance). Each physical write stamps its own `lastSavedAt` at serialization time. Desktop IPC uses the same serialized coalescing queue and returns a promise for the actual write outcome. A failed synchronous exit remains retryable through the scheduler retry while mounted. Desktop shutdown remains best effort, so earlier visibility/pagehide signals give IPC time to finish before the window closes. Terminal saves supersede queued snapshots that have not started writing.
 
 ## Deletion
 
@@ -136,13 +147,14 @@ Gold production uses the purse owner. No material IDs or saved building IDs chan
 
 ## Strategic card revisions
 
-The optional scalar conditional-damage fields preserve existing effect meanings
-when absent. Keep complete saved effects and descriptions together: old Shield
-Bash still grants Block, old Maul retains its chance branches, and old Ice Shot
-retains its free-Archery preparation. New acquisitions use the current catalog.
-Existing prepared flags survive load unchanged. No schema/content version bump
-or wholesale card replacement is needed. Merge clocks, width reservations, and
-floating sums are presentation-only and never enter saves.
+Conditional-damage fields and card hydration currently accept complete saved
+effects and descriptions, so changing the catalog alone does not update a saved
+card. Preserve valid current-run modifications together, but do not retain old
+Shield Bash, Maul, or Ice Shot mechanics solely for development saves. Apply the
+[supported baseline](#supported-baseline) when a revision makes a snapshot
+incompatible, restarting or exiting its battle rather than continuing obsolete
+rules. Merge clocks, width reservations, and floating sums are presentation-only
+and never enter saves.
 
 ## Screen-effect settings
 

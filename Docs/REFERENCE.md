@@ -16,7 +16,7 @@ Optional lookup and measurement tools live in [Agent discovery](./AGENT_DISCOVER
 
 ### Tooling ownership
 
-`package.json` owns script entry points. `scripts/lib/change-routes.mjs` owns
+`package.json` owns script entry points. `scripts/lib/verification/change-routes.mjs` owns
 changed-path selection, and [CONTRIBUTING.md](../CONTRIBUTING.md) owns gate
 tiers. Use the [command catalog](./COMMANDS.md) for discovery rather than
 duplicating command lists in subsystem docs. Script implementation owners are mapped in

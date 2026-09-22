@@ -44,11 +44,13 @@ repository; ordinary task handoff uses `check`.
 - **Unpacked Windows app (local iterate)** — `npm run package:win`
 - **Installers for configured targets (currently Windows)** — `npm run dist:desktop`
 
+Builds accept `--live` or `--verbose` after `--` to stream Vite output; other Vite options remain available.
+
 **Local build and checker overrides:**
 
 - `ALCHEMY_SKIP_ASSETS=1` — only for direct asset-preparation invocation; semantics owned by
   [`WORKFLOWS-ASSETS.md`](./WORKFLOWS-ASSETS.md#skip-mode-and-verification).
-- `ALCHEMY_ENABLE_CHECKER=1` — opt-in to the in-Vite `vite-plugin-checker` typecheck (off by default so `npm run dev` stays snappy; use `npm run typecheck:watch`, `npm run dev:checked`, or this flag when you need live type errors). `ALCHEMY_SKIP_CHECKER=1` is a hard off used by the Playwright preview server.
+- `ALCHEMY_ENABLE_CHECKER=1` — opt-in to the in-Vite `vite-plugin-checker` typecheck (off by default so `npm run dev` stays snappy; use `npm run typecheck:watch`, `npm run dev:checked`, or this flag when you need live type errors). Run `npm run predev` before `npm run dev:checked`, which starts Vite directly without the preparation lifecycle. `ALCHEMY_SKIP_CHECKER=1` is a hard off used by the Playwright preview server.
 - `ALCHEMY_SKIP_SOURCEMAP=1` — opt-out of hidden sourcemaps for `mode=desktop` builds when fast local iterate is preferred; rejected for releases with Sentry reporting. `npm run clean -- --builds` removes existing build outputs and their maps.
 - `ALCHEMY_CHECK_SKIP_BUILD=1` — skip web/desktop builds, their bundle budgets, and preview smoke in `npm run check` for fast local iteration; CI and ship gates still build.
 

@@ -13,7 +13,7 @@ import { runTaskCommand } from "./lib/run-command.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { writeCurrentRun } from "./lib/current-run.mjs";
+import { writeCurrentRun } from "./lib/verification/current-run.mjs";
 import { PERF_PREVIEW_PORT } from "./lib/dev-port.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 import { checkEnvironmentCompatibility, compareReports, renderComparisonTable } from "../performance/compare-model.mjs";

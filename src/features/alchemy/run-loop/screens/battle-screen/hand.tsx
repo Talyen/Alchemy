@@ -14,11 +14,11 @@ import {
 import { cn } from "@/lib/utils";
 import type { BattleCard, CardDescriptionContext } from "@/lib/game-data";
 
-import { BattleCardButton } from "../../../shared/ui/card-button";
+import { BattleCardButton } from "../../../shared/ui/cards/card-button";
 import { useUiStore } from "../../../shared/stores/ui-store";
 import { getHoverId } from "../../../shared/utils";
-import { CombatantStatusEffectPresentation } from "../../../shared/ui/battle/combatant-status-effect-presentation";
-import { getCardDisplayTitle } from "../../../shared/ui/card-description-ui";
+import { CombatantStatusEffectPresentation } from "../../battle/presentation/ui/combatant-status-effect-presentation";
+import { getCardDisplayTitle } from "../../../shared/ui/cards/card-description-ui";
 import {
   battleHandContainerClass,
   getCardKeywordShineColors,

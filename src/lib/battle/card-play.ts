@@ -22,12 +22,7 @@ import {
 } from "./types";
 import { processCompanionTurnStart } from "./companion";
 import { detonateEnemyStatuses } from "./dot-resolve";
-import {
-  addForgeToPlayer,
-  applyBlockDepletionForgeReward,
-  applyBlockReward,
-  countRemovableHarmfulStatuses,
-} from "./status-player";
+import { addForgeToPlayer, applyBlockReward, countRemovableHarmfulStatuses } from "./status-player";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
@@ -210,8 +205,8 @@ function executeCardPlayState(
       origin: "played-card",
       damageEffects: repeatedDamageEffects,
       guaranteedCrit,
-      manaAtStart: state.mana,
-      enemyFreezeSkipTurnsAtStart: state.enemyCC.freezeSkipTurns,
+      manaAtStart: nextState.mana,
+      enemyFreezeSkipTurnsAtStart: nextState.enemyCC.freezeSkipTurns,
     });
     nextState = applyMortarAndPestlePotionUse(nextState, card, combatTexts);
     nextState = applyCardPlayTalentRewards(nextState, card, combatTexts);
@@ -385,11 +380,10 @@ export function playBattleCardResolved(
   const existingPlayTwice = readCombatFlag(costState, "playNextCardTwice");
   const playTwice = existingPlayTwice || shouldElementalTalentRepeat(costState, card, existingPlayTwice);
   const prepared = prepareUniqueCardPlay(costState, card, effectiveCost);
-  let paymentState = {
+  const paymentState = {
     ...prepared.state,
     playerStatuses: { ...prepared.state.playerStatuses, block: prepared.state.playerStatuses.block - blockCost },
   };
-  paymentState = applyBlockDepletionForgeReward(costState, paymentState, combatTexts);
   if (blockCost > 0)
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: blockCost });
   const played = executeCardPlayState(

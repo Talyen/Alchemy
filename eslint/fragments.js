@@ -396,7 +396,7 @@ export const ASSET_BARREL_NO_VALUE_IMPORT_REASONS = {
     "it re-exports crafting.ts which imports .webp assets esbuild can't parse. Use `import type` or a safe deep import.",
   "@/lib/game-data/assets": "it re-exports .webp assets esbuild can't parse. Use `import type` or a safe deep import.",
   "@/lib/game-data/assets.generated": "it contains .webp asset paths esbuild can't parse in test collection.",
-  "@/lib/game-data/gear-art": "it re-exports .webp assets esbuild can't parse. Use `import type` instead.",
+  "@/lib/game-data/gear-art.generated": "it re-exports .webp assets esbuild can't parse. Use `import type` instead.",
   "@/lib/gear/crafting":
     "it imports craftingArt (.webp) esbuild can't parse. Use `@/lib/gear/crafting-ids` for pure currency ids.",
   "@/lib/gear/definitions":

@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, writeFileSync, readdirSync, rmSync } from "n
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { ROUTES } from "../../scripts/lib/change-routes.mjs";
+import { ROUTES } from "../../scripts/lib/verification/change-routes.mjs";
 import { runCiLint } from "../../scripts/lint-ci.mjs";
 
 const ROOT = join(import.meta.dirname, "../..");

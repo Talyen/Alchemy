@@ -4,8 +4,8 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { getCommitsSinceTag, latestVersionTag } from "./lib/git-release.mjs";
-import { buildChangelogUnreleased, replaceChangelogUnreleased } from "./lib/patch-notes-core.mjs";
+import { getCommitsSinceTag, latestVersionTag } from "./lib/release/git-release.mjs";
+import { buildChangelogUnreleased, replaceChangelogUnreleased } from "./lib/release/patch-notes-core.mjs";
 import { defineScript } from "./lib/script-run.mjs";
 import { writeTextIfChanged } from "./lib/write-text-if-changed.mjs";
 

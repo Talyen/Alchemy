@@ -67,11 +67,12 @@ function buildScaledEnemy(enemy: BestiaryEntry, totalRoomsInRun = 0) {
 export function scaleEnemyAbilityDamage(
   state: Pick<BattleState, "roomScalingMultiplier" | "difficultyModifiers" | "currentEnemy">,
   effect: EnemyAbilityDamageEffect,
+  alreadyRoomScaled = false,
 ): EnemyAbilityDamageEffect {
   const modifiers = state.difficultyModifiers;
   const damageMultiplier = modifierAmount(modifiers, "enemy-damage-multiplier", 1);
   const pressure = getEnemyAbilityPressure(state);
-  let amount = Math.round(effect.amount * state.roomScalingMultiplier);
+  let amount = Math.round(effect.amount * (alreadyRoomScaled ? 1 : state.roomScalingMultiplier));
   amount = Math.round(amount * pressure * damageMultiplier);
   for (const modifier of modifiers) {
     if (

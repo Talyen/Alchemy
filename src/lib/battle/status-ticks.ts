@@ -23,7 +23,9 @@ import {
   getPoisonBonusAgainstBleeding,
   getPoisonDamageMultiplierAgainstBleeding,
   rollTalentChance,
+  reduceDamageByMana,
 } from "./status-helpers";
+import { gearFrozenDamageMultiplier } from "./gear-effects";
 import { POISON_GAIN_AMOUNT } from "../game-constants";
 import { applyPoisonTalentRiders } from "./damage-status-riders";
 import { mergeCombatText } from "./combat-text";
@@ -32,7 +34,6 @@ import { applyEnemyLeechHealing, resolvePendingBattleReactions } from "./enemy-a
 import { resolveFollowUpHit, tryPoisonStunProc } from "./follow-up-hit-resolution";
 import { payPendingBleedLeech } from "./damage-rider-leech";
 import { dealEnemyDotTick } from "./dot-resolve";
-import { halveRounded } from "./amount-helpers";
 
 function emitDotCombatText(
   combatTexts: CombatTextEvent[],
@@ -47,7 +48,10 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.enemyStatuses.burn;
   if (damage <= 0) return state;
 
-  const multiplier = getEnemyDamageMultiplier(state, "burn") * getBurnBonusToBleedingMultiplier(state);
+  const multiplier =
+    getEnemyDamageMultiplier(state, "burn") *
+    getBurnBonusToBleedingMultiplier(state) *
+    gearFrozenDamageMultiplier(state);
   const finalDamage = Math.round(damage * multiplier);
   emitDotCombatText(combatTexts, "enemy", "burn", finalDamage);
   let nextBurn = state.enemyStatuses.burn;
@@ -63,7 +67,7 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
 function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.enemyStatuses.poison;
   if (damage <= 0) return state;
-  const multiplier = getEnemyDamageMultiplier(state, "poison");
+  const multiplier = getEnemyDamageMultiplier(state, "poison") * gearFrozenDamageMultiplier(state);
   const finalDamage = Math.round(
     (damage + getPoisonBonusAgainstBleeding(state)) * multiplier * getPoisonDamageMultiplierAgainstBleeding(state),
   );
@@ -96,6 +100,7 @@ function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
 
   const multiplier =
     getEnemyDamageMultiplier(state, "bleed") *
+    gearFrozenDamageMultiplier(state) *
     (state.gearEffects.sharedBurnBleedBonuses > 0 ? getBurnBonusToBleedingMultiplier(state) : 1);
   const finalDamage = Math.round(damage * multiplier);
 
@@ -152,14 +157,7 @@ function dealPlayerDotTick(
 }
 
 function mitigatePlayerDot(state: BattleState, damage: number, status: "burn" | "poison" | "bleed"): number {
-  let scaled = scaleReceivedPlayerDamage(damage, state.talentEffects, status);
-  if (
-    state.playerStatuses.block > 0 &&
-    ((status === "bleed" && state.talentEffects.blockHalvesBleedDamage) ||
-      (status === "poison" && state.talentEffects.blockHalvesPoisonDamage))
-  ) {
-    scaled = halveRounded(scaled);
-  }
+  const scaled = scaleReceivedPlayerDamage(reduceDamageByMana(state, damage), state.talentEffects, status);
   const blockReduction = status === "burn" ? state.talentEffects.blockReduceBurnDamage : 0;
   const afterBlock =
     blockReduction > 0 && state.playerStatuses.block > 0 ? Math.max(0, scaled - blockReduction) : scaled;

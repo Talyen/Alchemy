@@ -107,6 +107,13 @@ export const applyCleansePlayerStatusToDamageEffect = defineHandler(
     const stacks = state.playerStatuses[effect.status];
     if (stacks <= 0) return state;
 
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "notice",
+      stat: effect.status,
+      signal: "cleanse",
+      text: "",
+    });
     const cleansed = applyCleanseHeals(setPlayerStatus(state, effect.status, 0), combatTexts);
     const amount = applyPotionMultiplier(stacks, potionMult);
 

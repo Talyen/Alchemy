@@ -116,7 +116,13 @@ export function dealDamageToEnemy(
 ) {
   if (state.enemyHealth <= 0 || state.playerHealth <= 0) return state;
   const { damageTypePool: _pool, ...resolvedEffect } = effect;
-  context?.damageEffects?.push(resolvedEffect);
+  // Echoes are secondary actions, so capture the turn's earned sequence bonus
+  // before their scope suppresses it. Other damage modifiers remain live.
+  const sequenceBonus =
+    card.tags?.includes("archery") && readCombatFlag(state, "archerySecondCardActive")
+      ? state.talentEffects.archerySecondCardDamage
+      : 0;
+  context?.damageEffects?.push({ ...resolvedEffect, amount: resolvedEffect.amount + sequenceBonus });
   // Attempt-scoped bonuses precede Dodge; next-hit bonuses are spent only on contact.
   const bonuses = consumeAttackBonuses(context);
   bonuses.physical += bonuses.sanguine;

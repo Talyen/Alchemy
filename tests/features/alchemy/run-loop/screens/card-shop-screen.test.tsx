@@ -14,8 +14,11 @@ vi.mock(
   "@/features/alchemy/run-loop/shop/ui/purchasable-shop-item",
   () => import("../../../../helpers/shop-screen-ui-mocks"),
 );
-vi.mock("@/features/alchemy/shared/ui/selectable-card", () => import("../../../../helpers/shop-screen-ui-mocks"));
-vi.mock("@/features/alchemy/shared/ui/card-selection-grid", () => import("../../../../helpers/shop-screen-ui-mocks"));
+vi.mock("@/features/alchemy/shared/ui/cards/selectable-card", () => import("../../../../helpers/shop-screen-ui-mocks"));
+vi.mock(
+  "@/features/alchemy/shared/ui/cards/card-selection-grid",
+  () => import("../../../../helpers/shop-screen-ui-mocks"),
+);
 vi.mock(
   "@/features/alchemy/run-loop/screens/shop-browse-shell",
   () => import("../../../../helpers/shop-screen-ui-mocks"),

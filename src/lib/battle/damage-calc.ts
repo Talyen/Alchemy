@@ -165,8 +165,14 @@ export function computeCardDamageToEnemy(
   const pacedDamage = paceCombatDamage(stateAfterFirst, scaledDamage, "player");
   const repeatedDamage = Math.round(pacedDamage * (context?.damageMultiplier ?? 1));
   const physicalCritReady = effect.damageType === "physical" && readCombatFlag(stateAfterFirst, "nextPhysicalCrit");
+  const hawkEyeCritReady =
+    card !== undefined &&
+    !state.action &&
+    context?.origin !== "companion" &&
+    state.talentEffects.archeryCritOnCrowdControl &&
+    state.flags.hawkEyeReady;
   const criticalResult =
-    context?.guaranteedCrit || physicalCritReady
+    context?.guaranteedCrit || physicalCritReady || hawkEyeCritReady
       ? {
           damage:
             repeatedDamage * CRIT_MULTIPLIER +
@@ -177,7 +183,7 @@ export function computeCardDamageToEnemy(
   const kingbreaker = effect.damageType === "stun" && state.gearEffects.armorIncreasesStun > 0;
   const finalDamage = criticalResult.damage + (kingbreaker ? state.enemyMitigation.armor : 0);
 
-  return resolveDamageAfterMitigation(
+  const result = resolveDamageAfterMitigation(
     stateAfterFirst,
     effect,
     card,
@@ -185,4 +191,7 @@ export function computeCardDamageToEnemy(
     criticalResult.critical,
     physicalCritReady,
   );
+  return hawkEyeCritReady && result.modifiedDamage > 0
+    ? { ...result, nextState: setFlag(result.nextState, "hawkEyeReady", false) }
+    : result;
 }

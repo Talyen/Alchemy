@@ -9,7 +9,7 @@ import {
 } from "@/lib/gear";
 import { GearItemTitle } from "../gear-item-title";
 import { ShineText } from "../shine-text";
-import { renderColoredKeywords } from "../card-description-ui";
+import { renderColoredKeywords } from "../cards/card-description-ui";
 import { TooltipBody, TooltipHeader, TooltipSubheader } from "./tooltip-panel";
 import { cn } from "@/lib/utils";
 import { tooltipBodyLineClass } from "@/features/alchemy/shared/config";

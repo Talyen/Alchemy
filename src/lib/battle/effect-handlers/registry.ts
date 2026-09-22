@@ -136,7 +136,7 @@ export function applyCardEffects(
   },
 ): BattleState {
   const potionMult =
-    isPotionCard(card) && !state.action?.repeatActive
+    isPotionCard(card) && card.consume && !state.action?.repeatActive
       ? state.talentEffects.potionPotency + (isMixedPotionCard(card) ? state.talentEffects.mixedPotionPotency : 0)
       : 1;
   const result = resolveBattleSequence(

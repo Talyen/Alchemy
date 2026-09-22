@@ -24,7 +24,7 @@ import {
   lockedHoverPreviewClass,
   trinketArtImageClass,
 } from "../../../shared/config";
-import { CardFlip } from "../../../shared/ui/card-flip";
+import { CardFlip } from "../../../shared/ui/cards/card-flip";
 import { DetailPopup } from "../../../shared/ui/tooltips/card-popup";
 import type { CollectionTileItem } from "./collection-items";
 import { EnemyTooltip } from "../../../shared/ui/tooltips/enemy-tooltip";

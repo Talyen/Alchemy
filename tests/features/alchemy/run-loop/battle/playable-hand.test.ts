@@ -9,7 +9,7 @@ import {
 } from "@/features/alchemy/run-loop/battle/playable-hand";
 import { makeTestBattleState } from "../../../../fixtures/battle";
 import { makeTestCard } from "../../../../fixtures/cards";
-import type { BattleCard } from "@/lib/game-data";
+import { cardById, type BattleCard } from "@/lib/game-data";
 
 const affordableCard: BattleCard = {
   id: "slash",
@@ -267,6 +267,29 @@ describe("findBestPlayableHandCard", () => {
     );
 
     expect(findBestPlayableHandCard(state)?.card.uid).toBe(2);
+  });
+
+  it.each(["mana-shield", "crystal-bulwark"])("recognizes %s as a resource-based defense", (id) => {
+    const resourceGuard = cardById[id]!;
+    const state = greedyState([strongHit, resourceGuard], { playerHealth: 10 });
+    expect(findBestPlayableHandCard(state)?.card.id).toBe(id);
+    const competingGuards = greedyState([guard, resourceGuard], { playerHealth: 10, mana: 4, maxMana: 8 });
+    expect(findBestPlayableHandCard(competingGuards)?.card.id).toBe(id);
+  });
+
+  it("does not autoplay a lethal opening Health cost after Death's Door is spent", () => {
+    const offering = cardById["blood-offering"]!;
+    const state = greedyState([offering, weakHit], { playerHealth: 1, deathsDoorUsed: true });
+    expect(findBestPlayableHandCard(state)?.card.id).toBe(weakHit.id);
+    expect(findBestPlayableHandCard({ ...state, hand: [offering] })).toBeNull();
+    expect(findBestPlayableHandCard({ ...state, hand: [offering], deathsDoorUsed: false })?.card.id).toBe(offering.id);
+    expect(
+      findBestPlayableHandCard({
+        ...state,
+        hand: [offering],
+        playerStatuses: { ...state.playerStatuses, phoenixFeather: 1 },
+      })?.card.id,
+    ).toBe(offering.id);
   });
 
   it("returns null when nothing is playable", () => {

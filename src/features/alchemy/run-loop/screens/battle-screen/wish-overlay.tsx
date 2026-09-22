@@ -2,9 +2,9 @@ import { useRef, useState } from "react";
 
 import { type BattleCard, type CardDescriptionContext } from "@/lib/game-data";
 
-import { BattleCardButton } from "../../../shared/ui/card-button";
+import { BattleCardButton } from "../../../shared/ui/cards/card-button";
 import { useHeldWhile } from "../../../shared/ui/use-fade";
-import { getCardDisplayTitle } from "../../../shared/ui/card-description-ui";
+import { getCardDisplayTitle } from "../../../shared/ui/cards/card-description-ui";
 import { ModalOverlayShell } from "../../../shared/ui/modal-overlay-shell";
 import { ScreenHeader } from "../../../shared/ui/layout-components";
 import {

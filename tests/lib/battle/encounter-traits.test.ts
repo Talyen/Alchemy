@@ -369,7 +369,7 @@ describe("encounter trait card events", () => {
     expect(result.enemyPhysicalDamageBonus).toBe(1);
   });
 
-  it("triggers Consume, Wish, and Nature reactions once per played card", () => {
+  it("triggers Consume and Nature once per card, and Jealous once per Wish", () => {
     const currentEnemy = enemyWith("insatiable", "jealous", "rooted");
     const played = card({
       consume: true,
@@ -380,7 +380,7 @@ describe("encounter trait card events", () => {
     });
     const state = makeTestBattleState({ currentEnemy, hand: [played], mana: 1, turnPhase: "player" });
     const result = playBattleCardResolved(state, played.id, 0);
-    expect(result.state.enemyPhysicalDamageBonus).toBe(2);
+    expect(result.state.enemyPhysicalDamageBonus).toBe(4);
     expect(result.state.enemyMitigation.block).toBe(1);
   });
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import path from "node:path";
-import { createRunId } from "./lib/current-run.mjs";
+import { createRunId } from "./lib/verification/current-run.mjs";
 import { failureSummary, completionCounts } from "./lib/compact-output.mjs";
 import { runCommandAsync, runStreamCommand } from "./lib/run-command.mjs";
 import { defineScript, UsageError } from "./lib/script-run.mjs";

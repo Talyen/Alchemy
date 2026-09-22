@@ -13,7 +13,7 @@ import { TALENT_UNLOCK_ANIMATION_MS } from "@/lib/game-constants";
 import { keywordDefinitions, isTalentPlaceholder, TALENT_ROW_SIZES, chunkIntoRows } from "@/lib/game-data";
 import type { TalentDefinition } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
-import { renderColoredKeywords } from "../../shared/ui/card-description-ui";
+import { renderColoredKeywords } from "../../shared/ui/cards/card-description-ui";
 import { TalentUnlockBurst } from "./talent-unlock-burst";
 
 export interface TalentTreeProps {

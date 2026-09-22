@@ -78,6 +78,9 @@ function isPlainMagnitude(effect: BattleCardEffect): boolean {
     !effect.detonateAllBurn &&
     !effect.detonateAllBleed &&
     !effect.detonateIfEnemyBurning &&
+    effect.blockCost === undefined &&
+    effect.damageTypeIfTargetHasBlock === undefined &&
+    effect.damageTypeIfTargetFrozen === undefined &&
     !effect.damageTypePool
   );
 }
