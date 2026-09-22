@@ -118,7 +118,7 @@ describe("applyDamageStatuses", () => {
     });
     const effect = { kind: "damage" as const, damageType: "bleed" as const, amount: 5 };
     const texts = makeTexts();
-    const result = applyDamageStatuses(state, effect, 5, texts);
+    const result = applyDamageStatuses(state, effect, 5, texts, state.enemyHealth, { critical: true });
     expect(result.gold).toBe(2);
     expect(texts).toContainEqual({ target: "player", kind: "status", stat: "gold", amount: 2 });
   });
@@ -130,7 +130,7 @@ describe("applyDamageStatuses", () => {
     });
     const effect = { kind: "damage" as const, damageType: "bleed" as const, amount: 5 };
     const texts = makeTexts();
-    const result = applyDamageStatuses(state, effect, 5, texts);
+    const result = applyDamageStatuses(state, effect, 5, texts, state.enemyHealth, { critical: true });
     expect(result.gold).toBe(3);
     expect(texts).toContainEqual({ target: "player", kind: "status", stat: "gold", amount: 3 });
   });
@@ -146,7 +146,7 @@ describe("applyDamageStatuses", () => {
     };
     const effect = { kind: "damage" as const, damageType: "stun" as const, amount: 5 };
     const texts = makeTexts();
-    const result = applyDamageStatuses(state, effect, 5, texts);
+    const result = applyDamageStatuses(state, effect, 5, texts, state.enemyHealth, { critical: true });
     expect(result.enemyStatuses.stun).toBe(0);
     expect(result.enemyCC.stunSkipTurns).toBe(1);
     expect(texts).toContainEqual({ target: "enemy", kind: "notice", stat: "stun", text: "Stunned" });
@@ -363,7 +363,7 @@ describe("applyDamageStatuses — physical riders", () => {
     });
     const effect = { kind: "damage" as const, damageType: "physical" as const, amount: 5 };
     const texts = makeTexts();
-    const result = applyDamageStatuses(state, effect, 5, texts);
+    const result = applyDamageStatuses(state, effect, 5, texts, state.enemyHealth, { critical: true });
     expect(result.enemyStatuses.bleed).toBe(0);
     expect(result.enemyHealth).toBe(22);
     expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "bleed", amount: 8 });
@@ -386,7 +386,7 @@ describe("applyDamageStatuses — physical riders", () => {
       rng: seededRng(42),
     });
     const effect = { kind: "damage" as const, damageType: "physical" as const, amount: 5 };
-    const result = applyDamageStatuses(state, effect, 5, makeTexts());
+    const result = applyDamageStatuses(state, effect, 5, makeTexts(), state.enemyHealth, { critical: true });
     expect(result.enemyHealth).toBe(0);
     expect(result.playerHealth).toBe(22);
     expect(result.gold).toBe(4);
@@ -408,7 +408,7 @@ describe("applyDamageStatuses — physical riders", () => {
       rng: seededRng(42),
     });
     const effect = { kind: "damage" as const, damageType: "physical" as const, amount: 5, lifesteal: true };
-    const result = applyDamageStatuses(state, effect, 5, []);
+    const result = applyDamageStatuses(state, effect, 5, [], state.enemyHealth, { critical: true });
     expect(result.enemyStatuses.bleed).toBe(0);
 
     expect(result.pendingBleedLeechHealing).toBe(0);
@@ -432,7 +432,7 @@ describe("applyDamageStatuses — physical riders", () => {
       rng: seededRng(42),
     });
     const effect = { kind: "damage" as const, damageType: "physical" as const, amount: 5 };
-    const result = applyDamageStatuses(state, effect, 5, []);
+    const result = applyDamageStatuses(state, effect, 5, [], state.enemyHealth, { critical: true });
     expect(result.enemyHealth).toBe(0);
 
     expect(result.playerHealth).toBe(22);
@@ -455,7 +455,7 @@ describe("applyDamageStatuses — physical riders", () => {
       rng: seededRng(42),
     });
     const effect = { kind: "damage" as const, damageType: "physical" as const, amount: 5 };
-    const result = applyDamageStatuses(state, effect, 5, []);
+    const result = applyDamageStatuses(state, effect, 5, [], state.enemyHealth, { critical: true });
 
     expect(result.playerHealth).toBe(23);
   });

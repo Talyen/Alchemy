@@ -14,6 +14,7 @@ import type { TalentPreset } from "./simulator-types";
 export const META_ONLY_TALENT_FIELDS: ReadonlySet<keyof TalentEffectManifest> = new Set([
   "shopCardDiscount",
   "shopFreeRefresh",
+  "shopFreeRefreshChance",
   "goldPerCombat",
   "companionVictoryGold",
   "potionDiscount",
@@ -23,6 +24,7 @@ export const META_ONLY_TALENT_FIELDS: ReadonlySet<keyof TalentEffectManifest> = 
   "mixPotionDiscount",
   "campfireHealBonus",
   "maxHealthPerCombat",
+  "healthRestorePerCombat",
   "wishGemsGold",
 ]);
 

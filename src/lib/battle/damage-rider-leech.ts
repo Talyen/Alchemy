@@ -1,5 +1,5 @@
 import { readCombatFlag } from "./action-context";
-import { applyArmorReward, applyCardHealing } from "./status-player";
+import { applyArmorReward, applyBlockReward, applyCardHealing } from "./status-player";
 import { hasEncounterBenefit } from "./types";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { type EnemyStatusId, type PlayerStatusId } from "@/lib/game-data";
@@ -60,13 +60,21 @@ export function applyLeechHealing(
     state.talentEffects.leechBlockBelowHalfPercent > 0 &&
     actualHealing > 0
   ) {
-    restored = addPlayerStatusWithCombatText(
+    restored = applyBlockReward(
       restored,
-      "block",
       Math.round((actualHealing * state.talentEffects.leechBlockBelowHalfPercent) / PERCENT_DENOMINATOR),
       combatTexts,
       { skipFightPacing: true },
     );
+  }
+  restored =
+    actualHealing > 0 &&
+    state.playerHealth + actualHealing >= state.playerMaxHealth &&
+    state.talentEffects.manaOnLeechToFull > 0
+      ? gainManaWithCombatText(restored, state.talentEffects.manaOnLeechToFull, combatTexts)
+      : restored;
+  if (actualHealing > 0 && rollTalentChance(state.talentEffects.leechGoldChance, state)) {
+    restored = addGoldWithCombatText(restored, actualHealing, combatTexts);
   }
   restored =
     actualHealing > 0 &&
@@ -217,7 +225,12 @@ export function applyDamageBlock(
     return state;
   const blockAmount = scalePercent(damage, state.talentEffects.holyBlockPercentFromDamage);
   if (blockAmount <= 0) return state;
-  return addPlayerStatusWithCombatText(state, "block", blockAmount, combatTexts, { skipFightPacing: true });
+  return applyBlockReward(state, blockAmount, combatTexts, { skipFightPacing: true });
+}
+
+export function applyHolyBlockChance(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
+  if (damage <= 0 || !rollTalentChance(state.talentEffects.holyBlockChance, state)) return state;
+  return applyBlockReward(state, damage, combatTexts, { skipFightPacing: true });
 }
 
 export function applyHolyTithe(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {

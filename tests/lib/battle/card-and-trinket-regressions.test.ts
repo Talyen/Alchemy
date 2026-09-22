@@ -90,7 +90,7 @@ describe("player-facing card and trinket regressions", () => {
       enemyHealth: 100,
       enemyMaxHealth: 100,
       deck: Array.from({ length: 6 }, (_, index) => makeTestCard({ id: `draw-${index}` })),
-      talentEffects: computeTalentEffects({ consume: ["consume-distillation"] }),
+      talentEffects: computeTalentEffects({ consume: ["consume-distillation", "consume-brewmaster"] }),
       rng: () => 0.99,
     });
     expect(playBattleCardResolved(state, potion.id, 0).state.hand).toHaveLength(4);

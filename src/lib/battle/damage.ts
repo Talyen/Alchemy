@@ -134,7 +134,7 @@ export function dealDamageToEnemy(
   bonuses.physical += consumed.physicalBonus;
 
   // Resolve magnitude and defenses before riders, follow-up hits, then reactions.
-  const { nextState, modifiedDamage } = computeCardDamageToEnemy(damageState, packet, card, {
+  const { nextState, modifiedDamage, critical } = computeCardDamageToEnemy(damageState, packet, card, {
     manaAtStart: damageState.mana,
     enemyFreezeSkipTurnsAtStart: damageState.enemyCC.freezeSkipTurns,
     ...context,
@@ -157,6 +157,7 @@ export function dealDamageToEnemy(
       card,
       effect: packet,
       resolvedDamage: modifiedDamage,
+      critical,
       origin: context?.origin,
       onDamageDealt: context?.onDamageDealt,
     },

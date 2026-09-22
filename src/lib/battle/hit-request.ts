@@ -13,6 +13,7 @@ type CardHitRequest = Readonly<{
   effect: DamageEffect;
   /** Already scaled and mitigated. Extra hits copy this amount without recalculating it. */
   resolvedDamage: number;
+  critical?: boolean;
   origin?: CardEffectResolutionContext["origin"];
   onDamageDealt?: ((amount: number) => void) | undefined;
 }>;
@@ -32,6 +33,7 @@ export type CardRecipeRequest =
       card?: undefined;
       effect: DamageEffect;
       resolvedDamage: number;
+      critical?: boolean;
       origin?: undefined;
       onDamageDealt?: undefined;
     }>;

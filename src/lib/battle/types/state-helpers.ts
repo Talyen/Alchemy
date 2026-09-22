@@ -223,6 +223,13 @@ export function mitigatePlayerCombatDamage(
     reducedDamage -= flatDamageReduction(state.talentEffects, damageType);
     reducedDamage = Math.max(0, reducedDamage);
     reducedDamage = applyGearDamageResistance(reducedDamage, damageType, state.gearEffects);
+    if (
+      state.playerStatuses.block > 0 &&
+      ((damageType === "bleed" && state.talentEffects.blockHalvesBleedDamage) ||
+        (damageType === "poison" && state.talentEffects.blockHalvesPoisonDamage))
+    ) {
+      reducedDamage = halveRounded(reducedDamage);
+    }
   }
   return reducedDamage;
 }

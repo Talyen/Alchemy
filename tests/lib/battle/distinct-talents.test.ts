@@ -3,16 +3,18 @@ import {
   cardById,
   companionLibrary,
   computeTalentEffects,
+  enemyBestiary,
   talentPool,
   type BattleCard,
   type KeywordId,
 } from "@/lib/game-data";
+import { createBattleStartState } from "@/lib/battle/battle-setup";
 import { playBattleCardResolved, handlePostPlayCardDestination } from "@/lib/battle/card-play";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { prepareTalentCardPlay } from "@/lib/battle/talent-card-play";
 import { applyDodgeTalentStatuses } from "@/lib/battle/dodge-talent-rewards";
 import { applyHealthThresholdCleanse, removeHarmfulPlayerStatuses } from "@/lib/battle/status-player";
-import { applyLeechHealing } from "@/lib/battle/damage-rider-leech";
+import { applyLeechHitHealing } from "@/lib/battle/damage-rider-leech";
 import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/follow-up-hit-resolution";
 import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
@@ -74,15 +76,17 @@ describe("distinct talent conditions", () => {
     expect(empty.flags.nextHolyCardFree).toBe(false);
   });
 
-  it("Iron Guard and Apothecary’s Guard reward each matching play, not repeated effects", () => {
+  it("Iron Guard rewards Physical damage while Apothecary Membership discounts Potions", () => {
     const initial = battle({
-      talentEffects: talents("Iron Guard", "Apothecary’s Guard"),
+      talentEffects: talents("Iron Guard", "Apothecary Membership"),
       flags: { playNextCardTwice: true },
+      rng: () => 0,
     });
     const first = play(initial, cardById["stoneskin-potion"]!);
-    expect(first.playerStatuses).toMatchObject({ armor: 9, block: 1 });
-    const second = play(first, cardById["plate-mail"]!);
-    expect(second.playerStatuses).toMatchObject({ armor: 11, block: 2 });
+    expect(first.playerStatuses.armor).toBe(8);
+    expect(initial.talentEffects.armorOnPhysicalDamageChance).toBe(10);
+    const second = hit(first, "physical", 2);
+    expect(second.playerStatuses.armor).toBe(10);
     const unmatched = play(battle({ talentEffects: initial.talentEffects }), cardById["heal"]!);
     expect(unmatched.playerStatuses).toMatchObject({ armor: 0, block: 0 });
   });
@@ -105,10 +109,10 @@ describe("distinct talent conditions", () => {
     ).toHaveLength(0);
   });
 
-  it("Quickdraw and Venom Strike prepare separate Physical damage under their own conditions", () => {
+  it("Quickdraw and Venom Strike use their current damage and repeat contracts", () => {
     const effects = talents("Quickdraw", "Venom Strike");
     const matching = battle({ talentEffects: effects, enemyStatuses: { poison: 1 } });
-    expect(prepareTalentCardPlay(matching, cardById["venom-arrow"]!, []).attackBonuses.physical).toBe(2);
+    expect(prepareTalentCardPlay(matching, cardById["venom-arrow"]!, []).attackBonuses.physical).toBe(0);
     expect(
       prepareTalentCardPlay(
         battle({ talentEffects: effects, playerStatuses: { block: 1 } }),
@@ -116,30 +120,31 @@ describe("distinct talent conditions", () => {
         [],
       ).attackBonuses.physical,
     ).toBe(0);
+    expect(effects.archeryDamageWithoutBlock).toBe(1);
+    expect(effects.poisonCardPlayTwiceChance).toBe(10);
   });
 
-  it("Wildfire only deals Poison damage when it removes Poison and readies Divine Favor on a full cleanse", () => {
-    const initial = battle({ talentEffects: talents("Wildfire", "Divine Favor"), playerStatuses: { poison: 2 } });
-    const first = prepareTalentCardPlay(initial, cardById["fireball"]!, []).state;
-    expect(first.playerStatuses.poison).toBe(1);
-    expect(first.enemyHealth).toBe(99);
-    expect(first.flags.nextHolyCardFree).toBe(false);
-    const second = prepareTalentCardPlay(first, cardById["fireball"]!, []).state;
-    expect(second.enemyHealth).toBe(98);
-    expect(second.playerStatuses.poison).toBe(0);
-    expect(second.flags.nextHolyCardFree).toBe(true);
-    expect(prepareTalentCardPlay(second, cardById["fireball"]!, []).state.enemyHealth).toBe(98);
+  it("Wildfire repeats the current Burn card without a second roll", () => {
+    let rolls = 0;
+    const initial = battle({
+      talentEffects: talents("Wildfire"),
+      rng: () => (rolls++ === 0 ? 0 : 0.99),
+    });
+    const result = play(initial, cardById["fireball"]!);
+    expect(result.enemyHealth).toBe(96);
   });
 
-  it("Ecosystem requires existing Poison and deals typed damage on each Nature play", () => {
+  it("Ecosystem tutors a Nature card before the opening hand", () => {
     const effects = talents("Ecosystem");
-    const initial = battle({ talentEffects: effects, enemyStatuses: { poison: 2 } });
-    const next = prepareTalentCardPlay(initial, cardById["lightning-bolt"]!, []).state;
-    expect(next.enemyHealth).toBe(99);
-    expect(next.enemyStatuses.poison).toBe(3);
-    expect(
-      prepareTalentCardPlay(battle({ talentEffects: effects }), cardById["lightning-bolt"]!, []).state.enemyHealth,
-    ).toBe(100);
+    const nature = makeTestCard({ id: "nature-drawn", tags: ["nature"] });
+    const ordinary = makeTestCard({ id: "ordinary" });
+    const next = createBattleStartState({
+      runDeck: [ordinary, nature],
+      currentEnemy: enemyBestiary[0]!,
+      talentEffects: effects,
+      rng: () => 0,
+    });
+    expect(next.hand.map((card) => card.id)).toEqual(["nature-drawn"]);
   });
 
   it("First Blood boosts only a hit starting without Bleed and can activate again after Bleed ends", () => {
@@ -153,10 +158,15 @@ describe("distinct talent conditions", () => {
     expect(computeCardDamageToEnemy(initial, effect).modifiedDamage).toBe(5);
   });
 
-  it("Finish Him gives a Physical hit Leech only against a previously Stunned enemy", () => {
-    const initial = battle({ talentEffects: talents("Finish Him"), enemyCC: { stunSkipTurns: 1 } });
-    expect(hit(initial, "physical").playerHealth).toBe(12);
-    expect(hit(battle({ talentEffects: initial.talentEffects }), "physical").playerHealth).toBe(10);
+  it("Finish Him doubles Physical damage below 25% enemy Health", () => {
+    const effect = { kind: "damage" as const, damageType: "physical" as const, amount: 4 };
+    const effects = talents("Finish Him");
+    expect(computeCardDamageToEnemy(battle({ talentEffects: effects, enemyHealth: 24 }), effect).modifiedDamage).toBe(
+      8,
+    );
+    expect(computeCardDamageToEnemy(battle({ talentEffects: effects, enemyHealth: 25 }), effect).modifiedDamage).toBe(
+      4,
+    );
   });
 
   it("Icebreaker gains Forge on each qualifying hit, after spending the previous Forge", () => {
@@ -167,23 +177,22 @@ describe("distinct talent conditions", () => {
     expect(hit(battle({ talentEffects: initial.talentEffects }), "physical").playerStatuses.forge).toBe(0);
   });
 
-  it("Hawk Eye spends a prepared Holy hit even after Freeze ends", () => {
+  it("Hawk Eye prepares a Crit for the next attack", () => {
     const initial = battle({ talentEffects: talents("Hawk Eye"), flags: { hawkEyeReady: true } });
     const card = cardById["serrated-arrowhead"]!;
-    const effect = { kind: "damage" as const, damageType: "bleed" as const, amount: 3 };
-    expect(resolvePlayerHit(initial, { source: "card-attack", card, effect, resolvedDamage: 3 }, []).enemyHealth).toBe(
-      93,
-    );
-    expect(
-      resolvePlayerHit(
-        battle({ talentEffects: initial.talentEffects }),
-        { source: "card-attack", card, effect, resolvedDamage: 3 },
-        [],
-      ).enemyHealth,
-    ).toBe(97);
+    const first = play(initial, card);
+    expect(first.enemyHealth).toBe(96);
+    expect(first.flags.hawkEyeReady).toBe(false);
+    expect(play(first, card).enemyHealth).toBe(94);
   });
 
-  it("Snow Pack adds Freeze damage to a Companion hit rather than increasing its original type", () => {
+  it("Shatter adds generic damage and Snow Pack does not add a separate Freeze hit", () => {
+    const shatter = play(
+      battle({ talentEffects: talents("Shatter"), enemyCC: { freezeSkipTurns: 1 } }),
+      makeTestCard({ cost: 0, effects: [{ kind: "damage", damageType: "physical", amount: 4 }] }),
+    );
+    expect(shatter.enemyHealth).toBe(95);
+
     const initial = battle({
       talentEffects: talents("Snow Pack"),
       activeCompanion: companionLibrary.skeleton,
@@ -198,6 +207,15 @@ describe("distinct talent conditions", () => {
         [],
       ).enemyHealth,
     ).toBe(99);
+  });
+
+  it("Winter's Grasp repeats a Freeze card through the full-card pipeline", () => {
+    let rolls = 0;
+    const state = battle({
+      talentEffects: talents("Winter's Grasp"),
+      rng: () => (rolls++ === 0 ? 0 : 0.99),
+    });
+    expect(play(state, cardById["frostbolt"]!).enemyHealth).toBe(94);
   });
 
   it("Last Resort responds to a downward crossing, including ticks and Health costs", () => {
@@ -216,12 +234,10 @@ describe("distinct talent conditions", () => {
 
   it("Desperate Siphon uses actual healing and the Health condition before healing", () => {
     const effects = talents("Desperate Siphon");
-    expect(applyLeechHealing(battle({ talentEffects: effects, playerHealth: 19 }), 8, []).playerStatuses.block).toBe(2);
-    expect(applyLeechHealing(battle({ talentEffects: effects, playerHealth: 20 }), 8, []).playerStatuses.block).toBe(0);
-    expect(applyLeechHealing(battle({ talentEffects: effects, playerHealth: 5 }), 100, []).playerStatuses.block).toBe(
-      9,
-    );
-    expect(applyLeechHealing(battle({ talentEffects: effects }), 0, []).playerStatuses.block).toBe(0);
+    expect(applyLeechHitHealing(battle({ talentEffects: effects, playerHealth: 19 }), 8, []).playerHealth).toBe(27);
+    expect(applyLeechHitHealing(battle({ talentEffects: effects, playerHealth: 20 }), 8, []).playerHealth).toBe(24);
+    expect(applyLeechHitHealing(battle({ talentEffects: effects, playerHealth: 5 }), 100, []).playerHealth).toBe(40);
+    expect(applyLeechHitHealing(battle({ talentEffects: effects }), 0, []).playerHealth).toBe(10);
   });
 
   it.each(["physical", "nature", "holy"] as const)(
@@ -280,6 +296,7 @@ describe("repeatable card and Consume rewards", () => {
       talentEffects: talents("Last Supper", "Second Helping", "Rotgut", "Combustible"),
       enemyStatuses: { burn: 3 },
       deck: [drawCard, drawCard, drawCard],
+      rng: () => 0,
     });
     const first = handlePostPlayCardDestination(initial, cardById["health-potion"]!, true, [], true);
     expect(first.enemyHealth).toBe(97);

@@ -6,7 +6,6 @@ import { addGoldWithCombatText, applyHealingWithCombatText, gainManaWithCombatTe
 import { applyDamageStatuses } from "@/lib/battle/damage-status-riders";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
-import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { applyWishEffect } from "@/lib/battle/wish";
 import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
 import { applyLeechHealing } from "@/lib/battle/damage-rider-leech";
@@ -44,28 +43,27 @@ const arrow = makeTestCard({ cost: 0, tags: ["archery"], effects: attack.effects
 const incoming = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] });
 
 describe("selective feedback rewards", () => {
-  it.each([0, 1, 10])("Arcane Mending checks Mana before a gain from %i", (mana) => {
+  it.each([0, 1, 10])("Arcane Mending restores Health for Mana actually gained from %i", (mana) => {
     const state = battle({ mana, talentEffects: computeTalentEffects({ mana: ["mana-arcane-mending"] }) });
     const texts: CombatTextEvent[] = [];
     const next = gainManaWithCombatText(state, 2, texts);
-    expect(next.playerHealth).toBe(mana === 0 ? 12 : 10);
-    expect(texts.some((text) => text.kind === "heal")).toBe(mana === 0);
+    expect(next.playerHealth).toBe(mana < 10 ? 12 : 10);
+    expect(texts.some((text) => text.kind === "heal")).toBe(mana < 10);
     const crystal = makeTestCard({ cost: 0, effects: [{ kind: "gain-max-mana", amount: 1 }] });
-    expect(play(state, crystal).state.playerHealth).toBe(mana === 0 ? 12 : 10);
+    expect(play(state, crystal).state.playerHealth).toBe(11);
   });
 
-  it.each([19, 20, 39, 40])("Holy healing and Block use distinct Health windows at %i", (health) => {
+  it.each([19, 20, 39, 40])("Blessed Leech uses the strict below-half window at %i", (health) => {
     const holy = makeTestCard({ cost: 0, effects: [{ kind: "damage", damageType: "holy", amount: 20 }] });
     const result = play(
       battle({
         playerHealth: health,
-        talentEffects: computeTalentEffects({ holy: ["holy-lifesteal", "holy-block-grant"] }),
+        rng: () => 0.05,
+        talentEffects: computeTalentEffects({ holy: ["holy-lifesteal"] }),
       }),
       holy,
     );
-    expect(result.state.playerHealth).toBe(health < 20 ? health + 3 : health);
-    expect(result.state.playerStatuses.block).toBe(health === 40 ? 3 : 0);
-    expect(result.combatTexts).toHaveLength(health < 20 || health === 40 ? 2 : 1);
+    expect(result.state.playerHealth).toBe(health === 19 ? 29 : health);
   });
 
   it("a healing Holy hit cannot enable Radiant Guard with its own healing", () => {
@@ -86,13 +84,10 @@ describe("selective feedback rewards", () => {
     expect(applyLeechHealing(state, 9, [], { cardHealing: true }).playerStatuses.block).toBe(0);
   });
 
-  it("Feast requires a Potion's own healing to move from injured to full", () => {
+  it("Feast doubles Apple and Bread healing without changing other effects", () => {
     const state = battle({ talentEffects: computeTalentEffects({ consume: ["consume-feast"] }) });
-    const potion = cardById["health-potion"]!;
-    expect(play({ ...state, playerHealth: 32 }, potion).state.playerStatuses.block).toBe(4);
-    expect(play({ ...state, playerHealth: 40 }, potion).state.playerStatuses.block).toBe(0);
-    expect(play({ ...state, playerHealth: 31 }, potion).state.playerStatuses.block).toBe(0);
-    expect(play({ ...state, playerHealth: 36 }, cardById.apple!).state.playerStatuses.block).toBe(0);
+    expect(play({ ...state, playerHealth: 10 }, cardById.apple!).state.playerHealth).toBe(18);
+    expect(play({ ...state, playerHealth: 10 }, cardById.bread!).state.playerHealth).toBe(22);
   });
 
   it("Rotgut and Consuming strengthen existing packets without creating another hit", () => {
@@ -243,19 +238,18 @@ describe("selective feedback rewards", () => {
     expect(second.mana).toBe(1);
   });
 
-  it("Watchdog and Kinbound use Companion-action starting conditions", () => {
+  it("Watchdog attacks when an enemy depletes Block below half Health", () => {
     const state = battle({
       activeCompanion: companionLibrary["lizard-scout"],
       playerHealth: 19,
-      talentEffects: { blockOnCompanionDamage: 1 },
+      playerStatuses: { block: 5 },
+      talentEffects: { companionAttackOnBlockDepletedBelowHalf: true },
       gearEffects: { healOnCompanionAttack: 3 },
     });
-    const first = processCompanionTurnStart(state, []);
-    expect(first.playerHealth).toBe(22);
-    expect(first.playerStatuses.block).toBe(1);
-    const second = processCompanionTurnStart(first, []);
-    expect(second.playerHealth).toBe(22);
-    expect(second.playerStatuses.block).toBe(1);
+    const first = applyEnemyAbility(state, incoming, []);
+    expect(first.playerHealth).toBe(19);
+    expect(first.playerStatuses.block).toBe(0);
+    expect(first.enemyHealth).toBeLessThan(200);
   });
 
   it("Sun-Struck Shield reflects only attack depletion, not partial losses or non-attack damage", () => {
@@ -292,25 +286,22 @@ describe("selective feedback rewards", () => {
 });
 
 describe("saved reaction allowances", () => {
-  it("Hawk Eye survives Freeze expiry and resume, spends on one landed Archery hit, and rearms", () => {
+  it("Hawk Eye survives Freeze expiry and resume, Crits the next attack, and rearms", () => {
     const state = battle({ talentEffects: computeTalentEffects({ archery: ["archery-hawk-eye"] }), enemyHealth: 80 });
     const freeze = { kind: "damage" as const, damageType: "freeze" as const, amount: 40 };
     const frozen = applyDamageStatuses(state, freeze, 40, []);
     expect(frozen.flags.hawkEyeReady).toBe(true);
     const thawed = resume({ ...frozen, enemyCC: state.enemyCC });
-    expect(play(thawed, attack).state.flags.hawkEyeReady).toBe(true);
-    expect(play({ ...thawed, rng: () => 0 }, arrow).state.flags.hawkEyeReady).toBe(true);
+    expect(play(thawed, cardById["mana-crystals"]!).state.flags.hawkEyeReady).toBe(true);
     const first = play(thawed, arrow);
-    expect(first.combatTexts).toEqual([
-      { target: "enemy", kind: "damage", stat: "holy", amount: 4 },
-      { target: "enemy", kind: "damage", stat: "physical", amount: 2 },
-    ]);
-    expect(first.state.enemyHealth).toBe(74);
+    expect(first.combatTexts).toContainEqual({ target: "enemy", kind: "damage", stat: "physical", amount: 4 });
+    expect(first.state.enemyHealth).toBe(76);
     expect(first.state.flags.hawkEyeReady).toBe(false);
-    expect(play(first.state, arrow).state.enemyHealth).toBe(72);
+    expect(play(first.state, arrow).state.enemyHealth).toBe(74);
     const rearmed = applyDamageStatuses(first.state, freeze, 40, []);
     expect(rearmed.flags.hawkEyeReady).toBe(true);
-    expect(play(resume(rearmed), arrow).state.enemyHealth).toBe(68);
+    const resumedRearmed = resume(rearmed);
+    expect(play(resumedRearmed, arrow).state.enemyHealth).toBe(72);
   });
 
   it("Verdict pays only once across renewed Stuns, turn boundaries, and save/resume", () => {

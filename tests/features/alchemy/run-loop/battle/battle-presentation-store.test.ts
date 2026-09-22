@@ -451,7 +451,11 @@ describe("battle-presentation-store", () => {
         expect(texts).toContainEqual(expect.objectContaining({ kind: "notice", stat: "dodge", target: "player" }));
       } else {
         const result = playBattleCardResolved(initial, card.id, 0);
-        expect(result.state.wishOptions).toBeNull();
+        if (build === "Holy/Leech") {
+          expect(result.state.wishOptions).not.toBeNull();
+        } else {
+          expect(result.state.wishOptions).toBeNull();
+        }
         texts.push(...result.combatTexts);
       }
       expect(texts.length).toBeGreaterThan(3);

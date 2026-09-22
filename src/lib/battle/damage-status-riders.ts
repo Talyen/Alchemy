@@ -9,7 +9,7 @@ import {
 import { applyCrowdControlTriggerBonuses } from "./bonus-effects";
 import { tryTriggerEnemyCc } from "./status-cc";
 import { resolveStunTrigger } from "./status-stun-resolve";
-import { getEnemyDamageMultiplier, rollTalentChance } from "./status-helpers";
+import { applyPoisonDamageArmorRider, getEnemyDamageMultiplier, rollTalentChance } from "./status-helpers";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import {
   BLEED_STATUS_MULTIPLIER,
@@ -60,8 +60,11 @@ function applyPoisonStatusRider(
   actualDamage: number,
   combatTexts: CombatTextEvent[],
   preHitHealth: number,
+  allowPoisonBleedConversion = true,
+  onPoisonBleedConversion?: (state: BattleState, damage: number, combatTexts: CombatTextEvent[]) => BattleState,
 ): BattleState {
   let nextState = addEnemyStatus(state, "poison", actualDamage);
+  nextState = applyPoisonDamageArmorRider(nextState, actualDamage);
   if (
     actualDamage > 0 &&
     nextState.talentEffects.goldOnFirstPoison > 0 &&
@@ -70,14 +73,23 @@ function applyPoisonStatusRider(
     const poisonGold = nextState.talentEffects.goldOnFirstPoison;
     nextState = setFlag(addGoldWithCombatText(nextState, poisonGold, combatTexts), "goldOnFirstPoisonThisCombat", true);
   }
-  nextState = applyPoisonTalentRiders(nextState, Math.min(actualDamage, preHitHealth), combatTexts);
+  nextState = applyPoisonTalentRiders(
+    nextState,
+    Math.min(actualDamage, preHitHealth),
+    combatTexts,
+    allowPoisonBleedConversion,
+    onPoisonBleedConversion,
+  );
   return nextState;
 }
 
+/** Apply Poison status-related Talent riders without changing the base packet. */
 export function applyPoisonTalentRiders(
   state: BattleState,
   damage: number,
   combatTexts: CombatTextEvent[],
+  allowPoisonBleedConversion = true,
+  onPoisonBleedConversion?: (state: BattleState, damage: number, combatTexts: CombatTextEvent[]) => BattleState,
 ): BattleState {
   let nextState = state;
   if (nextState.talentEffects.poisonStripArmor) {
@@ -91,6 +103,13 @@ export function applyPoisonTalentRiders(
     for (const chance of leechChances) {
       if (!rollTalentChance(chance, nextState)) continue;
       nextState = applyScaledLeechHealing(nextState, computeLeechHeal(damage), combatTexts, { afflicted: true });
+    }
+    if (
+      allowPoisonBleedConversion &&
+      onPoisonBleedConversion &&
+      rollTalentChance(nextState.talentEffects.poisonBleedDamageChance, nextState)
+    ) {
+      nextState = onPoisonBleedConversion(nextState, damage, combatTexts);
     }
   }
   return nextState;
@@ -206,7 +225,7 @@ export function tryTriggerEnemyFreeze(
   if (triggered.kind === "immune") return triggered.state;
 
   let result =
-    preHitState.talentEffects.archeryHolyDamageVsFrozen > 0
+    preHitState.talentEffects.archeryCritOnCrowdControl || preHitState.talentEffects.archeryHolyDamageVsFrozen > 0
       ? setFlag(triggered.state, "hawkEyeReady", true)
       : triggered.state;
   result = applyFrozenHeartDamage(result, combatTexts);
@@ -242,8 +261,13 @@ function applyFreezeStatusRider(
   return tryTriggerEnemyFreeze(state, nextState, combatTexts, preHitHealth);
 }
 
-function applyPhysicalBleedChance(state: BattleState, actualDamage: number): BattleState {
-  const bleedChance = state.talentEffects.physicalBleedChance + state.gearEffects.physicalBleedChance;
+function applyPhysicalBleedChance(
+  state: BattleState,
+  actualDamage: number,
+  allowTalentChanceProcs = true,
+): BattleState {
+  const bleedChance =
+    (allowTalentChanceProcs ? state.talentEffects.physicalBleedChance : 0) + state.gearEffects.physicalBleedChance;
   if (actualDamage <= 0 || !rollTalentChance(bleedChance, state)) return state;
   return addEnemyStatus(state, "bleed", actualDamage);
 }
@@ -253,19 +277,28 @@ function applyPhysicalBleedDetonate(state: BattleState, combatTexts: CombatTextE
   return detonateEnemyStatuses(state, ["bleed"], combatTexts);
 }
 
-function applyPhysicalShieldSlamArmorStrip(state: BattleState): BattleState {
-  if (!state.talentEffects.physicalStripArmorWhileBlocked || state.playerStatuses.block <= 0) return state;
-  return reduceEnemyArmor(state, 2);
+function applyPhysicalShieldSlamArmorStrip(state: BattleState, actualDamage: number, forge: number): BattleState {
+  let nextState = state;
+  if (actualDamage > 0 && state.talentEffects.physicalStripArmorByForge && forge > 0) {
+    nextState = reduceEnemyArmor(nextState, forge);
+  }
+  if (state.talentEffects.physicalStripArmorWhileBlocked && state.playerStatuses.block > 0) {
+    nextState = reduceEnemyArmor(nextState, 2);
+  }
+  return nextState;
 }
 
 function applyPhysicalStatusRider(
   state: BattleState,
   actualDamage: number,
   combatTexts: CombatTextEvent[],
+  critical = false,
+  allowTalentChanceProcs = true,
+  forgeBeforeHit = state.playerStatuses.forge,
 ): BattleState {
-  let nextState = applyPhysicalBleedChance(state, actualDamage);
-  if (actualDamage > 0) nextState = applyPhysicalBleedDetonate(nextState, combatTexts);
-  nextState = applyPhysicalShieldSlamArmorStrip(nextState);
+  let nextState = applyPhysicalBleedChance(state, actualDamage, allowTalentChanceProcs);
+  if (actualDamage > 0 && critical) nextState = applyPhysicalBleedDetonate(nextState, combatTexts);
+  nextState = applyPhysicalShieldSlamArmorStrip(nextState, actualDamage, forgeBeforeHit);
   return nextState;
 }
 
@@ -275,12 +308,26 @@ export function applyDamageStatuses(
   actualDamage: number,
   combatTexts: CombatTextEvent[],
   preHitHealth = state.enemyHealth,
+  options: {
+    allowPoisonBleedConversion?: boolean;
+    onPoisonBleedConversion?: (state: BattleState, damage: number, combatTexts: CombatTextEvent[]) => BattleState;
+    critical?: boolean;
+    forgeBeforeHit?: number;
+    allowTalentChanceProcs?: boolean;
+  } = {},
 ) {
   switch (effect.damageType) {
     case "burn":
       return applyBurnStatusRider(state, actualDamage, combatTexts);
     case "poison":
-      return applyPoisonStatusRider(state, actualDamage, combatTexts, preHitHealth);
+      return applyPoisonStatusRider(
+        state,
+        actualDamage,
+        combatTexts,
+        preHitHealth,
+        options.allowPoisonBleedConversion ?? true,
+        options.onPoisonBleedConversion,
+      );
     case "bleed":
       return applyBleedStatusRider(state, effect, actualDamage, combatTexts);
     case "stun":
@@ -288,7 +335,14 @@ export function applyDamageStatuses(
     case "freeze":
       return applyFreezeStatusRider(state, actualDamage, combatTexts, preHitHealth);
     case "physical":
-      return applyPhysicalStatusRider(state, actualDamage, combatTexts);
+      return applyPhysicalStatusRider(
+        state,
+        actualDamage,
+        combatTexts,
+        options.critical,
+        options.allowTalentChanceProcs,
+        options.forgeBeforeHit,
+      );
     case "holy":
       if (state.gearEffects.holyStunBuildupGold > 0 && actualDamage > 0) {
         return applyStunStatusRider(state, actualDamage, combatTexts, preHitHealth);

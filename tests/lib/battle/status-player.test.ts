@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   addForgeToPlayer,
+  applyCardHealing,
   applyPlayerDamageStatuses,
   applyPlayerStatusEffect,
   removeHarmfulPlayerStatuses,
 } from "@/lib/battle/status-player";
+import { removePlayerArmor } from "@/lib/battle/status-helpers";
+import { makeTestCard } from "../../fixtures/cards";
 import { makeCombatTexts as makeTexts, patchBattleState } from "../../fixtures/battle";
 import {
   defaultEnemyMitigation,
@@ -15,6 +18,48 @@ import {
 } from "../../fixtures/default-battle-state";
 
 describe("applyPlayerStatusEffect — armor talent thresholds", () => {
+  it.each(["armor break", "overheal"])("applies Block gain rewards once after %s", (source) => {
+    const holy = makeTestCard({ id: "holy-draw", tags: ["holy"] });
+    const state = patchBattleState({
+      playerHealth: 30,
+      playerMaxHealth: 30,
+      playerStatuses: { armor: 1 },
+      deck: [holy],
+      talentEffects: {
+        armorBreakBlock: 3,
+        overhealToBlockRatio: 1,
+        armorOnBlockChance: 100,
+        drawHolyOnBlockChance: 100,
+      },
+    });
+    const next = source === "armor break" ? removePlayerArmor(state, 1, []) : applyCardHealing(state, 3, []);
+    expect(next.playerStatuses.block).toBe(3);
+    expect(next.playerStatuses.armor).toBe(source === "armor break" ? 3 : 4);
+    expect(next.hand.map((card) => card.id)).toEqual([holy.id]);
+  });
+
+  it("Armored Surge can grant Armor from a Block gain", () => {
+    const state = patchBattleState({
+      rng: () => 0,
+      talentEffects: { ...defaultTalentEffects, armorOnBlockChance: 100 },
+    });
+    const result = applyPlayerStatusEffect(state, { kind: "player-status", status: "block", amount: 3 }, makeTexts());
+    expect(result.playerStatuses.block).toBe(3);
+    expect(result.playerStatuses.armor).toBe(3);
+  });
+
+  it("Reinforced doubles Armor and Purification cleanses one harmful status", () => {
+    const state = patchBattleState({
+      rng: () => 0,
+      playerStatuses: defaultPlayerStatusValues({ poison: 2, bleed: 2 }),
+      talentEffects: { ...defaultTalentEffects, armorDoubleChance: 100, armorCleanseChance: 100 },
+    });
+    const result = applyPlayerStatusEffect(state, { kind: "player-status", status: "armor", amount: 2 }, makeTexts());
+    expect(result.playerStatuses.armor).toBe(4);
+    expect(result.playerStatuses.poison).toBe(0);
+    expect(result.playerStatuses.bleed).toBe(2);
+  });
+
   it("cleanses harmful statuses when armor crosses armorCleanseThreshold", () => {
     const state = patchBattleState({
       playerStatuses: defaultPlayerStatusValues({ burn: 4, armor: 1 }),

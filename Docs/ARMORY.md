@@ -55,6 +55,8 @@ Homestead material payouts are tuned separately from gear offers; every knob is 
 Working inventory order and pagination are screen-local and transient while the Armory remains mounted. Remounting the Armory restores default sorting (Unique -> Astral -> Basic, Name A-Z, stable instance ID tie-breaker for Gear; Name A-Z, ID tie-breaker for Trinkets).
 
 - **Order lifetime**: Working order and current page are tracked per hero and equipment category/slot while the Armory remains mounted (`useArmoryOrdering`). Switching heroes or slots preserves the working order and current page for each slot.
+- **Inventory changes**: Each category records its default order on first visit. Crafting changes to an existing item keep its position. Missing items are removed; newly available items append in default-sorted batches without moving earlier arrivals. Inactive categories reconcile against current inventory when revisited.
+- **Page clamping**: If inventory shrinkage removes the current page, the category remembers the last valid page (page 0 when empty). Later inventory growth does not restore the old page.
 - **One-time sorting**: An explicit `Sort` control beside the inventory slot title provides deterministic one-time sorting (`Rarity` or `Name` for Gear, `Name` for Trinkets) and resets pagination to page 0 without altering the persistent save order or automatically maintaining sorted order after future actions.
 - **Equipment movement**:
   - **Replacing equipped gear/trinket**: The unequipped item takes the exact inventory position of the equipped item being replaced, without shifting other items or changing pagination.

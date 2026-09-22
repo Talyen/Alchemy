@@ -6,6 +6,7 @@ import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { decayArmorAfterDamage } from "./status-helpers";
 import {
   addForgeToPlayer,
+  applyBlockDepletionForgeReward,
   applyPlayerDamageStatuses,
   checkHealthThresholds,
   shouldBlockPreventStatusBuildup,
@@ -79,6 +80,8 @@ function applyBlockDepletedHeal(
   if (isBlockDepleted && healAmount > 0) {
     finalState = applyHealingWithCombatText(finalState, healAmount, combatTexts);
   }
+
+  if (isBlockDepleted) finalState = applyBlockDepletionForgeReward(prevState, finalState, combatTexts);
 
   if (isBlockDepleted && prevState.gearEffects.stunOnBlockDepleted > 0 && finalState.enemyHealth > 0) {
     finalState = resolveFollowUpHit(

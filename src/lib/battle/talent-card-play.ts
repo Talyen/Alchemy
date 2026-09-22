@@ -5,7 +5,8 @@ import { isAttackCard } from "./card-classification";
 import { applyDrawResult, drawFromState } from "./draw";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
-import { reduceEnemyArmor, type BattleState, type CombatTextEvent } from "./types";
+import { rollTalentChance } from "./status-helpers";
+import { reduceEnemyArmor, setFlag, type BattleState, type CombatTextEvent } from "./types";
 
 function computeTalentAttackBonuses(
   state: BattleState,
@@ -68,7 +69,11 @@ function applyTalentStatusAndHitTriggers(
   if (isPotionCard(card) && talents.armorOnPotionCard > 0) {
     nextState = applyArmorReward(nextState, talents.armorOnPotionCard, combatTexts);
   }
-  if (keywords.includes("burn") && talents.forgeOnBurnCard > 0) {
+  if (
+    keywords.includes("burn") &&
+    talents.forgeOnBurnCard > 0 &&
+    (talents.forgeOnBurnCardChance <= 0 || rollTalentChance(talents.forgeOnBurnCardChance, nextState))
+  ) {
     nextState = addForgeToPlayer(nextState, talents.forgeOnBurnCard, combatTexts);
   }
   if (keywords.includes("burn") && talents.cleansePoisonOnBurnCard > 0 && nextState.playerStatuses.poison > 0) {
@@ -101,7 +106,12 @@ function applyTalentStatusAndHitTriggers(
   return nextState;
 }
 
-export function prepareTalentCardPlay(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]) {
+export function prepareTalentCardPlay(
+  state: BattleState,
+  card: BattleCard,
+  combatTexts: CombatTextEvent[],
+  options: { countsAsPlayedCard?: boolean } = {},
+) {
   const keywords = getCardKeywords(card);
   const physical = keywords.includes("physical");
   const archery = keywords.includes("archery");
@@ -112,6 +122,18 @@ export function prepareTalentCardPlay(state: BattleState, card: BattleCard, comb
   const attackBonuses = computeTalentAttackBonuses(state, keywords, archery, physical, attack);
   let nextState = applyTalentDrawTriggers(state, keywords, archery);
   nextState = applyTalentStatusAndHitTriggers(nextState, card, keywords, nature, combatTexts);
+
+  if (options.countsAsPlayedCard && attack && talents.archeryCritOnCrowdControl && state.flags.hawkEyeReady) {
+    nextState = setFlag(nextState, "hawkEyeReady", false);
+    nextState = setFlag(nextState, "nextHitCrit", true);
+  }
+
+  if (options.countsAsPlayedCard) {
+    const archeryCardsPlayed = state.flags.archeryCardsPlayedThisTurn;
+    const secondArcheryCard = archery && archeryCardsPlayed === 1;
+    nextState = setFlag(nextState, "archeryCardsPlayedThisTurn", archery ? archeryCardsPlayed + 1 : archeryCardsPlayed);
+    nextState = setFlag(nextState, "archerySecondCardActive", secondArcheryCard);
+  }
 
   return {
     attackBonuses,

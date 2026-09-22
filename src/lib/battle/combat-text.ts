@@ -1,3 +1,9 @@
+import { readCombatFlag, resolveSecondaryAction } from "./action-context";
+import { harmfulPlayerStatusIds } from "@/lib/game-data";
+import { getBattleRng, rollPercent } from "@/lib/rng";
+import { drawKeywordCard } from "./draw";
+import { applyPercentBonus } from "./amount-helpers";
+import { FIRST_EFFECT_MULTIPLIER, HALF_DIVISOR } from "../game-constants";
 import { mergeCombatText } from "./combat-text-events";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 export { mergeCombatText, shouldShowCombatText } from "./combat-text-events";
@@ -6,6 +12,8 @@ import { recordEnemyAbilityActivation } from "./battle-metrics";
 import type { PlayerStatusId } from "@/lib/game-data";
 import {
   damageEnemyHealth,
+  setFlag,
+  setPlayerStatus,
   addPlayerStatus,
   resolvePlayerHealing,
   gainMana,
@@ -78,7 +86,11 @@ export function applyHealingWithCombatText(
     emitOverhealBlockText(prevState, nextState, combatTexts);
     emitReactiveThornsText(prevState, nextState, combatTexts);
   }
-  return applyBloodCountessHealingReaction(nextState, actualHeal, combatTexts);
+  return applyBlockGainRewards(
+    applyBloodCountessHealingReaction(nextState, actualHeal, combatTexts),
+    nextState.playerStatuses.block - prevState.playerStatuses.block,
+    combatTexts ?? [],
+  );
 }
 
 export function applyHealOnManaGain(
@@ -87,7 +99,11 @@ export function applyHealOnManaGain(
   combatTexts: CombatTextEvent[],
   manaBeforeGain: number,
 ): BattleState {
-  if (state.talentEffects.healOnManaGain <= 0 || gainAmount <= 0 || manaBeforeGain !== 0) return state;
+  if (gainAmount <= 0) return state;
+  if (state.talentEffects.healthPerMana > 0) {
+    return applyHealingWithCombatText(state, gainAmount * state.talentEffects.healthPerMana, combatTexts);
+  }
+  if (state.talentEffects.healOnManaGain <= 0 || manaBeforeGain !== 0) return state;
   return applyHealingWithCombatText(state, state.talentEffects.healOnManaGain, combatTexts);
 }
 
@@ -129,7 +145,7 @@ export function addPlayerStatusWithCombatText(
   if (stat === "block" && combatTexts) {
     emitReactiveThornsText(previousState, nextState, combatTexts);
   }
-  return nextState;
+  return stat === "block" ? applyBlockGainRewards(nextState, delta, combatTexts ?? []) : nextState;
 }
 
 export function addGoldWithCombatText(
@@ -245,4 +261,158 @@ export function applyHitEpilogue(
     combatTexts,
     enemyStatusesOverride,
   );
+}
+
+function rollRewardChance(chance: number, state: BattleState): boolean {
+  return chance > 0 && rollPercent(chance, getBattleRng(state));
+}
+
+export function applyArmorReward(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
+  if (amount <= 0) return state;
+  return resolveSecondaryAction(state, "reward", (current) => applyArmorStatusEffect(current, amount, combatTexts));
+}
+
+export function applyBlockReward(
+  state: BattleState,
+  amount: number,
+  combatTexts: CombatTextEvent[],
+  options?: { skipFightPacing?: boolean },
+): BattleState {
+  return addPlayerStatusWithCombatText(state, "block", amount, combatTexts, options);
+}
+
+function applyBlockGainRewards(state: BattleState, gained: number, combatTexts: CombatTextEvent[]): BattleState {
+  let nextState = state;
+  if (gained <= 0) return nextState;
+  if (rollRewardChance(nextState.talentEffects.armorOnBlockChance, nextState)) {
+    nextState = applyArmorReward(nextState, gained, combatTexts);
+  }
+  if (rollRewardChance(nextState.talentEffects.drawHolyOnBlockChance, nextState)) {
+    nextState = drawKeywordCard(nextState, "holy");
+  }
+  return nextState;
+}
+
+function clearHarmfulStatuses(state: BattleState, statusTypesToClear: number) {
+  let nextState = state;
+  let removed = 0;
+  const limit = Number.isFinite(statusTypesToClear) ? statusTypesToClear : harmfulPlayerStatusIds.length;
+  for (const statusId of harmfulPlayerStatusIds) {
+    if (removed >= limit) break;
+    if (nextState.playerStatuses[statusId] <= 0) continue;
+    nextState = setPlayerStatus(nextState, statusId, 0);
+    removed++;
+  }
+  return { nextState, removed };
+}
+
+export function applyCleanseHeals(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
+  const nextState = applyHealingWithCombatText(
+    state,
+    state.trinketEffects.sinEaterHealOnHarmfulStatusRemove,
+    combatTexts,
+  );
+  const healed = applyHealingWithCombatText(nextState, nextState.talentEffects.healOnStatusCleanse, combatTexts);
+  return healed.talentEffects.nextHolyFreeOnCleanse ? setFlag(healed, "nextHolyCardFree", true) : healed;
+}
+
+export function removeHarmfulPlayerStatuses(state: BattleState, amount: number, combatTexts?: CombatTextEvent[]) {
+  const cleared = clearHarmfulStatuses(state, amount);
+  let nextState = cleared.nextState;
+  if (cleared.removed) {
+    for (const stat of harmfulPlayerStatusIds) {
+      if (state.playerStatuses[stat] > 0 && nextState.playerStatuses[stat] === 0 && combatTexts) {
+        mergeCombatText(combatTexts, { target: "player", kind: "notice", stat, signal: "cleanse", text: "" });
+      }
+    }
+    nextState = applyCleanseHeals(nextState, combatTexts);
+  }
+  return nextState;
+}
+
+function scaleArmorAmount(state: BattleState, amount: number): { state: BattleState; amount: number } {
+  let nextAmount = amount;
+  let nextState = state;
+  if (nextState.playerHealth < nextState.playerMaxHealth / HALF_DIVISOR) {
+    nextAmount = nextState.talentEffects.armorDoubledBelowHalfHealth
+      ? nextAmount * FIRST_EFFECT_MULTIPLIER
+      : applyPercentBonus(nextAmount, nextState.talentEffects.armorLowHealthBonusPercent);
+  }
+  if (nextState.talentEffects.firstArmorCardDoubled && !readCombatFlag(nextState, "firstArmorCardDoubledUsed")) {
+    nextAmount *= FIRST_EFFECT_MULTIPLIER;
+    nextState = setFlag(nextState, "firstArmorCardDoubledUsed", true);
+  }
+  return { state: nextState, amount: nextAmount };
+}
+
+export function onFirstCrossThreshold(
+  prevValue: number,
+  nextValue: number,
+  threshold: number,
+  onCross: (s: BattleState) => BattleState,
+  state: BattleState,
+): BattleState {
+  if (threshold <= 0 || prevValue >= threshold || nextValue < threshold) return state;
+  return onCross(state);
+}
+
+function procArmorBlockThreshold(state: BattleState, newArmor: number, combatTexts: CombatTextEvent[]) {
+  return onFirstCrossThreshold(
+    state.playerStatuses.armor,
+    newArmor,
+    state.talentEffects.armorBlockThreshold,
+    (s) => applyBlockReward(s, s.talentEffects.armorBlockAmount, combatTexts),
+    state,
+  );
+}
+
+function procArmorCleanseThreshold(state: BattleState, newArmor: number, combatTexts: CombatTextEvent[]) {
+  return onFirstCrossThreshold(
+    state.playerStatuses.armor,
+    newArmor,
+    state.talentEffects.armorCleanseThreshold,
+    (s) => removeHarmfulPlayerStatuses(s, Number.POSITIVE_INFINITY, combatTexts),
+    state,
+  );
+}
+
+function applyArmorTalentChecks(state: BattleState, amount: number, combatTexts: CombatTextEvent[]) {
+  const scaled = scaleArmorAmount(state, amount);
+  const armorAmount = rollRewardChance(scaled.state.talentEffects.armorDoubleChance, scaled.state)
+    ? scaled.amount * 2
+    : scaled.amount;
+  const newArmor = scaled.state.playerStatuses.armor + armorAmount;
+  const withBlock = procArmorBlockThreshold(scaled.state, newArmor, combatTexts);
+  const withCleanse = procArmorCleanseThreshold(withBlock, newArmor, combatTexts);
+  return { state: withCleanse, amount: armorAmount };
+}
+
+export function applyArmorStatusEffect(
+  state: BattleState,
+  amount: number,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  const armorBefore = state.playerStatuses.armor;
+  const checked = applyArmorTalentChecks(state, amount + state.talentEffects.flatArmorAmount, combatTexts);
+  state = checked.state;
+  amount = checked.amount;
+  mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "armor", amount });
+  const nextState = addPlayerStatus(state, "armor", amount);
+  if (
+    nextState.playerStatuses.armor > armorBefore &&
+    rollRewardChance(nextState.talentEffects.armorCleanseChance, nextState)
+  ) {
+    const cleansed = removeHarmfulPlayerStatuses(nextState, 1, combatTexts);
+    return state.talentEffects.goldOnArmorGainChance > 0 &&
+      rollRewardChance(state.talentEffects.goldOnArmorGainChance, cleansed)
+      ? addGoldWithCombatText(cleansed, nextState.playerStatuses.armor - armorBefore, combatTexts)
+      : cleansed;
+  }
+  if (
+    nextState.playerStatuses.armor > armorBefore &&
+    rollRewardChance(nextState.talentEffects.goldOnArmorGainChance, nextState)
+  ) {
+    return addGoldWithCombatText(nextState, nextState.playerStatuses.armor - armorBefore, combatTexts);
+  }
+  return nextState;
 }

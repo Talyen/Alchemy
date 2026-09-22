@@ -21,6 +21,35 @@ import {
 import { defaultEnemyStatusValues, defaultPlayerStatusValues } from "../../fixtures/default-battle-state";
 
 describe("Dodge gear affixes", () => {
+  it("does not allow an actively Frozen or Stunned enemy to Dodge", () => {
+    const frozen = patchBattleState({
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      enemyCC: { freezeSkipTurns: 1 },
+      rng: () => 0.01,
+    });
+    expect(dealDamage(frozen, makeTestCard({ effects: [makeEffect("physical", 5)] })).enemyHealth).toBe(90);
+
+    const stunned = { ...frozen, enemyCC: { ...frozen.enemyCC, freezeSkipTurns: 0, stunSkipTurns: 1 } };
+    expect(dealDamage(stunned, makeTestCard({ effects: [makeEffect("physical", 5)] })).enemyHealth).toBe(90);
+  });
+
+  it("does not allow an actively Frozen or Stunned hero to Dodge", () => {
+    const frozen = incomingPhysical({
+      playerHealth: 30,
+      playerMaxHealth: 30,
+      playerCC: { freezeSkipTurns: 1 },
+      rng: () => 0.01,
+    });
+    expect(
+      applyEnemyAbility(
+        frozen,
+        makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] }),
+        [],
+      ).playerHealth,
+    ).toBeLessThan(30);
+  });
+
   it("gains Block, Armor, and Health on Dodge", () => {
     const texts = makeCombatTexts();
     const state = incomingPhysical({

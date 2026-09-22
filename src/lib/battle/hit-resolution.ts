@@ -7,7 +7,7 @@ import { computeReflectedHolyDamageToEnemy, computeCardDamageToEnemy } from "./d
 import { applyDamageStatuses } from "./damage-status-riders";
 import { detonateEnemyStatuses } from "./dot-resolve";
 import { paceCombatDamage } from "./fight-pacing";
-import { applyBrassCenser, resolveFollowUpHit, tryTalentTypedHit } from "./follow-up-hit-resolution";
+import { applyBrassCenser, resolveFollowUpHit, tryPoisonStunProc, tryTalentTypedHit } from "./follow-up-hit-resolution";
 import { decayArmorAfterDamage, getEnemyDamageMultiplier, rollTalentChance } from "./status-helpers";
 import { addForgeToPlayer } from "./status-player";
 import { addEnemyStatus, type BattleState, type CombatTextEvent } from "./types";
@@ -18,6 +18,8 @@ import {
   applyCardStatusReactions,
   applyCardLeechAndFrozenReactions,
 } from "./card-hit-reactions";
+import { applyIronGuardReward } from "./status-player";
+import { applyBleedDamageDraw } from "./bleed-reactions";
 
 /** Direct player hits have explicit recipes; shallow sources never re-enter card reactions. */
 export function resolvePlayerHit(state: BattleState, request: HitRequest, combatTexts: CombatTextEvent[]): BattleState {
@@ -71,7 +73,7 @@ function applyArcheryDetonate(state: BattleState, combatTexts: CombatTextEvent[]
   if (state.gearEffects.archeryDetonateBleedPoison <= 0 || state.enemyHealth <= 0) return state;
   if (state.enemyHealth * PERCENT_DENOMINATOR >= state.enemyMaxHealth * BLACKFLETCH_EXECUTE_HEALTH_PERCENT)
     return state;
-  return detonateEnemyStatuses(state, ["bleed", "poison"], combatTexts, "remaining-ticks");
+  return detonateEnemyStatuses(state, ["bleed", "poison"], combatTexts, "remaining-ticks", tryPoisonStunProc);
 }
 
 function resolveAttackPurgeHit(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
@@ -113,7 +115,7 @@ function applyCardArcheryReactions(
     if (secondHit > 0) {
       nextState = resolveCardHit(
         nextState,
-        { ...request, source: "archery-extra", resolvedDamage: secondHit },
+        { ...request, source: "archery-extra", resolvedDamage: secondHit, critical: false },
         combatTexts,
       );
     }
@@ -136,24 +138,41 @@ function resolveCardHit(state: BattleState, request: CardRecipeRequest, combatTe
   const { card, effect, resolvedDamage: modifiedDamage, onDamageDealt } = request;
   const companionAttack = request.origin === "companion";
   const eligibility = state;
-  const hawkEyeReady =
-    modifiedDamage > 0 && !companionAttack && !!card?.tags?.includes("archery") && state.flags.hawkEyeReady;
-  if (hawkEyeReady) state = { ...state, flags: { ...state.flags, hawkEyeReady: false } };
+  const legacyHawkEye =
+    modifiedDamage > 0 &&
+    !companionAttack &&
+    !!card?.tags?.includes("archery") &&
+    state.flags.hawkEyeReady &&
+    state.talentEffects.archeryHolyDamageVsFrozen > 0;
+  if (legacyHawkEye) state = { ...state, flags: { ...state.flags, hawkEyeReady: false } };
   // Eligibility precedes purge, but Health facts describe the target after purge.
   const prePurgeState = request.source === "archery-extra" ? state : resolveAttackPurgeHit(state, combatTexts);
   if (prePurgeState.enemyHealth <= 0) return prePurgeState;
-  const hit = applyHitHealth(prePurgeState, modifiedDamage, eligibility);
-  const facts: CardHitFacts = { ...hit.facts, hawkEyeReady };
+  const hit = applyHitHealth(prePurgeState, modifiedDamage, eligibility, request.critical ?? false);
+  const facts: CardHitFacts = { ...hit.facts };
   const { previousHealth } = facts;
   onDamageDealt?.(facts.healthDamage);
   // Spend the resource used by this packet before its rewards grant fresh Forge.
-  let nextState = consumeForgeAfterDamage(hit.state, effect, modifiedDamage, companionAttack);
+  let nextState = applyIronGuardReward(hit.state, effect.damageType, facts.healthDamage, combatTexts);
+  if (effect.damageType === "bleed") nextState = applyBleedDamageDraw(nextState, facts.healthDamage);
+  nextState = consumeForgeAfterDamage(nextState, effect, modifiedDamage, companionAttack);
 
   nextState = decayArmorAfterDamage(nextState, modifiedDamage, "enemy");
 
   // Reactions stay depth-first: Archery's extra hit finishes before the outer hit's payout.
   nextState = applyCardStatusReactions(nextState, request, facts, combatTexts);
   nextState = applyCardLeechAndFrozenReactions(nextState, request, facts, combatTexts);
+  if (legacyHawkEye) {
+    nextState = resolveFollowUpHit(
+      nextState,
+      {
+        source: "talent-fixed",
+        damageType: "holy",
+        amount: eligibility.talentEffects.archeryHolyDamageVsFrozen,
+      },
+      combatTexts,
+    );
+  }
   nextState = applyCardArcheryReactions(nextState, request, facts, combatTexts);
   if (effect.damageType === "holy") {
     nextState = applyHolyDamageRiders(nextState, card, facts, combatTexts);

@@ -14,6 +14,20 @@ import * as talentBattle from "../../fixtures/talent-battle";
 import * as uniqueGearBattle from "../../fixtures/unique-gear-battle";
 
 describe("enemy attack damage", () => {
+  it.each(["bleed", "poison"] as const)("halves incoming %s damage while Block is present", (damageType) => {
+    const state = patchBattleState({
+      playerHealth: 30,
+      playerMaxHealth: 30,
+      playerStatuses: { block: 2 },
+      talentEffects: {
+        ...(damageType === "bleed" ? { blockHalvesBleedDamage: true } : { blockHalvesPoisonDamage: true }),
+      },
+    });
+    const result = processEnemyDamageEffect(state, { kind: "damage", damageType, amount: 4 }, []);
+    expect(result.playerStatuses.block).toBe(0);
+    expect(result.playerHealth).toBe(29);
+  });
+
   it.each(["aetherward", "block", "armor", "resistance", "dodge", "overkill", "deaths-door", "zero"] as const)(
     "separates contact, resolved damage, and Health loss for %s",
     (prevention) => {

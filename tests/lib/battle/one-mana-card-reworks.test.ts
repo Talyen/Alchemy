@@ -54,11 +54,11 @@ describe("one-Mana card tradeoffs", () => {
       talentEffects: computeTalentEffects({ wish: ["wish-mana", "wish-health"], gold: ["gold-on-wish"] }),
     });
     const played = play(initial, "stargaze");
-    expect(played.mana).toBe(2);
+    expect(played.mana).toBe(3);
     expect(played.enemyHealth).toBe(199);
     expect(played.wishOptions).toHaveLength(3);
-    expect(played.gold).toBe(1);
-    expect(played.flags.pendingWishMana).toBe(1);
+    expect(played.gold).toBe(0);
+    expect(played.flags.pendingWishMana).toBe(0);
     expect(played.pendingTurnStartEffects).toHaveLength(0);
   });
 

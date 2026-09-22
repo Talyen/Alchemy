@@ -1,22 +1,23 @@
 import { talent } from "../talent-builder";
-import { addEffect, setEffect } from "../types";
+import { setEffect } from "../types";
 
 export const burnTalents = [
   talent(
     "burn-dmg-1",
     "burn",
     "Flashpoint",
-    "Increase Burn damage by 1",
+    "Your first Burn card each combat costs no mana",
     "Thermometer",
-    addEffect("flatBurnDamage", 1),
+    setEffect("firstBurnCardFree", true),
   ),
   talent(
     "burn-dmg-2",
     "burn",
     "Thermal Vent",
-    "When you play a Burn card, gain 1 Forge",
+    "Burn cards have a 10% chance to grant 3 Forge",
     "WavesArrowUp",
-    addEffect("forgeOnBurnCard", 1),
+    setEffect("forgeOnBurnCard", 3),
+    setEffect("forgeOnBurnCardChance", 10),
   ),
   talent(
     "burn-dmg-5",
@@ -30,17 +31,17 @@ export const burnTalents = [
     "burn-dmg-4",
     "burn",
     "Combustible",
-    "When you Consume a card, detonate the enemy’s Burn",
+    "10% chance when you Consume a card to detonate the enemy's Burn",
     "Bomb",
-    setEffect("consumeDetonatesBurn", true),
+    setEffect("consumeDetonatesBurnChance", 10),
   ),
   talent(
     "burn-first-double",
     "burn",
     "Wildfire",
-    "When you play a Burn card, remove 1 Poison from yourself; if you do, deal 1 Poison damage",
+    "Burn cards have a 10% chance to play twice",
     "TrendingUp",
-    setEffect("cleansePoisonOnBurnCard", 1),
+    setEffect("burnCardPlayTwiceChance", 10),
   ),
   talent(
     "burn-remove-armor",
@@ -54,7 +55,7 @@ export const burnTalents = [
     "burn-dmg-3",
     "burn",
     "Heat Exhaustion",
-    "Burn hits have a 10% chance to deal Stun damage equal to their damage",
+    "Burn hits have a 10% chance to also deal Stun damage",
     "TrendingDown",
     setEffect("burnStunChance", 10),
   ),
@@ -70,7 +71,7 @@ export const burnTalents = [
     "burn-double-chance",
     "burn",
     "Smoldering",
-    "Burn stacks have a 10% chance to not decay",
+    "Burn has a 10% chance to not decay",
     "Wind",
     setEffect("burnPreventDecayChance", 10),
   ),

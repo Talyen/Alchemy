@@ -7,6 +7,8 @@ export const FLAG_DEFINITIONS = {
   pendingWishMana: { default: 0 as const, secondaryValue: null, lifetime: "player-turn" },
   previousCardWasArchery: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
   previousCardWasNature: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
+  archeryCardsPlayedThisTurn: { default: 0 as const, secondaryValue: 0 as const, lifetime: "player-turn" },
+  archerySecondCardActive: { default: false as const, secondaryValue: false as const, lifetime: "player-turn" },
   companionNextAttackBonus: { default: 0 as const, secondaryValue: null, lifetime: "until-consumed" },
   sanguinePhysicalBonus: { default: 0 as const, secondaryValue: null, lifetime: "until-consumed" },
   darkRecoveryMana: { default: 0 as const, secondaryValue: null, lifetime: "player-turn" },
@@ -18,6 +20,7 @@ export const FLAG_DEFINITIONS = {
   secondWindTriggered: { default: false as const, secondaryValue: null, lifetime: "combat" },
   uniqueRepeatActive: { default: false as const, secondaryValue: null, lifetime: "combat" },
   firstHolyCardFreeUsed: { default: false as const, secondaryValue: true as const, lifetime: "combat" },
+  firstBurnCardFreeUsed: { default: false as const, secondaryValue: true as const, lifetime: "combat" },
   firstBurnCardDoubledUsed: { default: false as const, secondaryValue: true as const, lifetime: "combat" },
   firstArmorCardDoubledUsed: { default: false as const, secondaryValue: true as const, lifetime: "combat" },
   firstPoisonCardFreeUsed: { default: false as const, secondaryValue: true as const, lifetime: "combat" },
@@ -42,8 +45,10 @@ export const FLAG_DEFINITIONS = {
   holyRetributionUsedThisTurn: { default: false as const, secondaryValue: true as const, lifetime: "player-turn" },
 
   divineAegisTriggered: { default: false as const, secondaryValue: null, lifetime: "combat" },
+  desperateGuardUsed: { default: false as const, secondaryValue: null, lifetime: "combat" },
 
   nextHitCrit: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },
+  nextPhysicalCrit: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },
   nextHitLeech: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },
   playNextCardTwice: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },
   nextHitPoison: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },

@@ -1,5 +1,5 @@
 import { resolveBattleSequence } from "./battle-sequence";
-import { checkHealthThresholds } from "./status-player";
+import { applyHealthLossTalentRewards, checkHealthThresholds } from "./status-player";
 import { drawKeywordCard } from "./draw";
 import { hasEncounterBenefit } from "./types";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
@@ -13,6 +13,7 @@ import {
   type CombatTextEvent,
 } from "./types";
 import {
+  applyPoisonDamageArmorRider,
   armorMitigatesElementalDamage,
   decayArmorAfterDamage,
   decayHalvedStatus,
@@ -20,6 +21,7 @@ import {
   getBurnBonusToBleedingMultiplier,
   getEnemyDamageMultiplier,
   getPoisonBonusAgainstBleeding,
+  getPoisonDamageMultiplierAgainstBleeding,
   rollTalentChance,
 } from "./status-helpers";
 import { POISON_GAIN_AMOUNT } from "../game-constants";
@@ -27,9 +29,10 @@ import { applyPoisonTalentRiders } from "./damage-status-riders";
 import { mergeCombatText } from "./combat-text";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
 import { applyEnemyLeechHealing, resolvePendingBattleReactions } from "./enemy-attack-damage";
-import { tryPoisonStunProc } from "./follow-up-hit-resolution";
+import { resolveFollowUpHit, tryPoisonStunProc } from "./follow-up-hit-resolution";
 import { payPendingBleedLeech } from "./damage-rider-leech";
 import { dealEnemyDotTick } from "./dot-resolve";
+import { halveRounded } from "./amount-helpers";
 
 function emitDotCombatText(
   combatTexts: CombatTextEvent[],
@@ -61,7 +64,9 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.enemyStatuses.poison;
   if (damage <= 0) return state;
   const multiplier = getEnemyDamageMultiplier(state, "poison");
-  const finalDamage = Math.round((damage + getPoisonBonusAgainstBleeding(state)) * multiplier);
+  const finalDamage = Math.round(
+    (damage + getPoisonBonusAgainstBleeding(state)) * multiplier * getPoisonDamageMultiplierAgainstBleeding(state),
+  );
   emitDotCombatText(combatTexts, "enemy", "poison", finalDamage);
   const isFrozenPreserved = state.enemyCC.freezeSkipTurns > 0 && state.talentEffects.freezePreventsPoisonDecay;
   let nextPoison = state.enemyStatuses.poison;
@@ -74,7 +79,10 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
     );
   }
   return dealEnemyDotTick(state, "poison", finalDamage, nextPoison, combatTexts, (nextState, hit) => {
-    const afterRiders = applyPoisonTalentRiders(nextState, hit.healthDamage, combatTexts);
+    let afterRiders = applyPoisonDamageArmorRider(nextState, finalDamage);
+    afterRiders = applyPoisonTalentRiders(afterRiders, hit.healthDamage, combatTexts, true, (current, damage, texts) =>
+      resolveFollowUpHit(current, { source: "talent-derived", damageType: "bleed", amount: damage }, texts),
+    );
     return tryPoisonStunProc(afterRiders, finalDamage, combatTexts);
   });
 }
@@ -133,16 +141,25 @@ function dealPlayerDotTick(
     nextStacks,
   );
   if (applyRiders) nextState = applyRiders(nextState);
-  const healthLost = state.playerHealth - nextState.playerHealth;
+  const phoenixTriggered = state.playerStatuses.phoenixFeather > 0 && nextState.playerStatuses.phoenixFeather === 0;
+  const healthLost = phoenixTriggered ? state.playerHealth : Math.max(0, state.playerHealth - nextState.playerHealth);
   if (healthLost > 0) {
     emitDotCombatText(combatTexts, "player", status, healthLost);
   }
   nextState = checkHealthThresholds(state.playerHealth, nextState.playerHealth, nextState, combatTexts);
+  nextState = applyHealthLossTalentRewards(state, nextState, healthLost, combatTexts);
   return decayArmorAfterDamage(nextState, reducedDamage, "player", combatTexts);
 }
 
 function mitigatePlayerDot(state: BattleState, damage: number, status: "burn" | "poison" | "bleed"): number {
-  const scaled = scaleReceivedPlayerDamage(damage, state.talentEffects, status);
+  let scaled = scaleReceivedPlayerDamage(damage, state.talentEffects, status);
+  if (
+    state.playerStatuses.block > 0 &&
+    ((status === "bleed" && state.talentEffects.blockHalvesBleedDamage) ||
+      (status === "poison" && state.talentEffects.blockHalvesPoisonDamage))
+  ) {
+    scaled = halveRounded(scaled);
+  }
   const blockReduction = status === "burn" ? state.talentEffects.blockReduceBurnDamage : 0;
   const afterBlock =
     blockReduction > 0 && state.playerStatuses.block > 0 ? Math.max(0, scaled - blockReduction) : scaled;

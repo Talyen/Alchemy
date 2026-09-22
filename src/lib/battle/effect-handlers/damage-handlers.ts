@@ -2,7 +2,7 @@ import type { EffectHandler } from "./handler-types";
 import { resolveConditionalCardDamage } from "../conditional-card-damage";
 import { mergeCombatText } from "../combat-text";
 import { setPlayerStatus } from "../types";
-import { checkHealthThresholds } from "../status-player";
+import { applyBlockDepletionForgeReward, applyHealthLossTalentRewards, checkHealthThresholds } from "../status-player";
 import { DAMAGE_TYPES } from "@/lib/game-data";
 import { getBattleRng, pickRandom, rngInt } from "@/lib/rng";
 import { applyPotionMultiplier, halveRounded } from "../amount-helpers";
@@ -20,7 +20,9 @@ export const applyDamageEffect = defineHandler("damage", (state, card, effect, p
   });
   effect = selected.effect;
   if (selected.blockSpent > 0) {
+    const beforeBlockSpend = state;
     state = setPlayerStatus(state, "block", state.playerStatuses.block - selected.blockSpent);
+    state = applyBlockDepletionForgeReward(beforeBlockSpend, state, combatTexts);
     mergeCombatText(combatTexts, {
       target: "player",
       kind: "damage",
@@ -44,12 +46,13 @@ export const applyDamageEffect = defineHandler("damage", (state, card, effect, p
 
 export const applySelfDamageEffect = defineHandler("self-damage", (state, _card, effect, _potionMult, combatTexts) => {
   const { state: postDamage, healthLost } = dealSelfDamage(state, effect.amount, effect.damageType, combatTexts);
-  return checkHealthThresholds(
+  const thresholded = checkHealthThresholds(
     state.playerHealth,
     postDamage.playerHealth,
     addPlayerStatus(postDamage, effect.damageType, healthLost),
     combatTexts,
   );
+  return applyHealthLossTalentRewards(state, thresholded, healthLost, combatTexts);
 });
 
 export const applyRandomDamageEffect = defineHandler(

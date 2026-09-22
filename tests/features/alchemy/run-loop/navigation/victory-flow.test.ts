@@ -367,7 +367,7 @@ describe("computeVictoryRewards", () => {
     expect(result.playerHealth).toBe(20 + Math.round(100 * LABYRINTH_REWARD_CONFIG.wellProvisionedHealFraction));
   });
 
-  it("caps well-provisioned healing using max health plus talent delta", () => {
+  it("applies Vitality healing without changing maximum Health", () => {
     const result = computeVictoryRewards(
       baseInput({
         contentSystemType: "labyrinth",
@@ -378,8 +378,8 @@ describe("computeVictoryRewards", () => {
       }),
       testRng,
     );
-    expect(result.maxHealthDelta).toBe(1);
-    expect(result.playerHealth).toBe(31);
+    expect(result.maxHealthDelta).toBe(0);
+    expect(result.playerHealth).toBe(30);
   });
 
   it("awards boon rewards for elite combat victories", () => {
@@ -434,11 +434,11 @@ describe("computeVictoryRewards", () => {
     expect(withTalent.goldEarned).toBeGreaterThan(withoutTalent.goldEarned);
   });
 
-  it("offers a Campfire using the maximum health gained from victory", () => {
+  it("offers a Campfire using the post-combat Vitality Health", () => {
     const input = baseInput({
       unlockedTalents: { health: ["health-max-per-combat"] },
       runMaxHealth: 30,
-      battleState: baseBattleState({ playerHealth: 24 }),
+      battleState: baseBattleState({ playerHealth: 18 }),
       getAvailableDestinations: ({
         currentHealth,
         currentGold,
@@ -452,18 +452,20 @@ describe("computeVictoryRewards", () => {
 
     const result = computeVictoryRewards(input, testRng);
 
-    expect(result.maxHealthDelta).toBe(1);
+    expect(result.maxHealthDelta).toBe(0);
     expect(result.rewardState.destinations).toContain("Campfire");
   });
 
-  it("applies max health talent", () => {
+  it("applies Vitality after combat", () => {
     const result = computeVictoryRewards(
       baseInput({
         unlockedTalents: { health: ["health-max-per-combat"] },
+        battleState: baseBattleState({ playerHealth: 20 }),
       }),
       testRng,
     );
-    expect(result.maxHealthDelta).toBe(1);
+    expect(result.maxHealthDelta).toBe(0);
+    expect(result.playerHealth).toBe(24);
   });
 
   it("computes destinations via getAvailableDestinations", () => {

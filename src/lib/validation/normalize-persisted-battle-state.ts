@@ -130,6 +130,8 @@ export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): B
     "nextWishExtraChoice",
     "previousCardWasArchery",
     "previousCardWasNature",
+    "firstBurnCardFreeUsed",
+    "archerySecondCardActive",
   ] as const) {
     merged.flags[key] = savedFlags[key] === true;
   }
@@ -138,6 +140,7 @@ export function normalizePersistedBattleState(saved: Partial<BattleSnapshot>): B
     "sanguinePhysicalBonus",
     "darkRecoveryMana",
     "pendingWishMana",
+    "archeryCardsPlayedThisTurn",
   ] as const) {
     merged.flags[key] = clampNonNegative(merged.flags[key], 0);
   }

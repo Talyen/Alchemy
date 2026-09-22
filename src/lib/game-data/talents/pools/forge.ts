@@ -1,12 +1,12 @@
 import { talent } from "../talent-builder";
-import { addEffect, setEffect } from "../types";
+import { setEffect } from "../types";
 
 export const forgeTalents = [
   talent(
     "forge-to-burn",
     "forge",
     "Ignite",
-    "Half your Forge also increases Burn damage",
+    "Burn damage is increased by half your Forge",
     "Flame",
     setEffect("forgeBurnDamagePercent", 50),
   ),
@@ -14,7 +14,7 @@ export const forgeTalents = [
     "forge-to-holy",
     "forge",
     "Sanctify",
-    "Half your Forge also increases Holy damage",
+    "Holy damage is increased by half your Forge",
     "Sun",
     setEffect("forgeHolyDamagePercent", 50),
   ),
@@ -22,7 +22,7 @@ export const forgeTalents = [
     "forge-to-block",
     "forge",
     "Tempered Guard",
-    "Half your Forge also increases Block amount",
+    "Block gained is increased by half your Forge",
     "Shield",
     setEffect("forgeBlockPercent", 50),
   ),
@@ -30,10 +30,9 @@ export const forgeTalents = [
     "forge-burn-burst",
     "forge",
     "Overheat",
-    "Deal 4 Burn damage when your Forge reaches that amount",
+    "Gain twice as much Forge while you're Burning",
     "Thermometer",
-    setEffect("forgeBurnThreshold", 4),
-    setEffect("forgeBurnDamage", 4),
+    setEffect("forgeBurningBonusPercent", 100),
   ),
   talent(
     "forge-strength-1",
@@ -47,7 +46,7 @@ export const forgeTalents = [
     "forge-strength-2",
     "forge",
     "Rust",
-    "Half your Forge also increases Bleed damage",
+    "Bleed damage is increased by half your Forge",
     "Eraser",
     setEffect("forgeBleedDamagePercent", 50),
   ),
@@ -55,17 +54,17 @@ export const forgeTalents = [
     "forge-strength-3",
     "forge",
     "Sunder",
-    "When you reach 6 Forge, remove all enemy Armor",
+    "Physical attacks remove Armor equal to your Forge",
     "ShieldOff",
-    setEffect("forgeStripArmorThreshold", 6),
+    setEffect("physicalStripArmorByForge", true),
   ),
   talent(
     "forge-strength-4",
     "forge",
     "Intensify",
-    "Increase Forge gained by 1",
+    "10% chance to double Forge gained",
     "ChevronsUp",
-    addEffect("flatForgeGained", 1),
+    setEffect("forgeDoubleChance", 10),
   ),
   talent(
     "forge-strength-5",
@@ -79,9 +78,8 @@ export const forgeTalents = [
     "forge-strength-6",
     "forge",
     "Forged Bulwark",
-    "Gain 6 Block when your Forge reaches that amount",
+    "Gain 1 Forge when your Block is depleted",
     "Castle",
-    setEffect("forgeBlockThreshold", 6),
-    setEffect("forgeBlockAmount", 6),
+    setEffect("forgeOnBlockDepleted", 1),
   ),
 ];

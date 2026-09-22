@@ -8,9 +8,10 @@ export interface HitFacts {
   readonly killed: boolean;
   readonly resolvedDamage: number;
   readonly healthDamage: number;
+  readonly critical: boolean;
 }
 
-export function applyHitHealth(state: BattleState, resolvedDamage: number, eligibility = state) {
+export function applyHitHealth(state: BattleState, resolvedDamage: number, eligibility = state, critical = false) {
   const hit = damageEnemyHealth(state, resolvedDamage);
   const facts: HitFacts = {
     eligibility,
@@ -19,10 +20,9 @@ export function applyHitHealth(state: BattleState, resolvedDamage: number, eligi
     killed: hit.killed,
     resolvedDamage,
     healthDamage: hit.healthDamage,
+    critical,
   };
   return { state: hit.state, facts };
 }
 
-export interface CardHitFacts extends HitFacts {
-  readonly hawkEyeReady: boolean;
-}
+export type CardHitFacts = HitFacts;

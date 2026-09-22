@@ -1,6 +1,6 @@
 import { applyLeechHealing } from "@/lib/battle/damage-rider-leech";
+import { resolveFollowUpHit } from "@/lib/battle/follow-up-hit-resolution";
 import { detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
-import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { applyCleanseHeals } from "@/lib/battle/status-player";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { computeTalentEffects } from "@/lib/game-data";
@@ -50,28 +50,29 @@ describe("Talent talent status rewards", () => {
   );
 
   it("refreshes Sanguine Overflow without stacking or triggering at full Health", () => {
-    const state = battle({ playerHealth: 28, talentEffects: talents("leech", "leech-block-enemy") });
+    const state = battle({ playerHealth: 28, mana: 0, talentEffects: talents("leech", "leech-block-enemy") });
     const healed = applyLeechHealing(state, 2, []);
-    expect(healed.flags.sanguinePhysicalBonus).toBe(2);
-    expect(applyLeechHealing({ ...healed, playerHealth: 29 }, 1, []).flags.sanguinePhysicalBonus).toBe(2);
-    const hit = play(healed, attack("multi", "physical", 2));
-    expect(healed.enemyHealth - hit.enemyHealth).toBe(4);
-    expect(hit.flags.sanguinePhysicalBonus).toBe(0);
-    expect(applyLeechHealing(hit, 4, []).flags.sanguinePhysicalBonus).toBe(0);
+    expect(healed.mana).toBe(1);
+    const refreshed = applyLeechHealing({ ...healed, playerHealth: 29 }, 1, []);
+    expect(refreshed.mana).toBe(2);
+    expect(applyLeechHealing({ ...refreshed, playerHealth: 30 }, 4, []).mana).toBe(2);
   });
 
-  it("Bloodrush draws on a normal Bleed tick, never on application or detonation", () => {
+  it("Bloodrush draws on each positive Bleed damage event", () => {
     const state = battle({
       talentEffects: talents("bleed", "bleed-rip-and-tear"),
-      deck: [attack("drawn")],
+      deck: [attack("drawn-2"), attack("drawn")],
       enemyStatuses: { bleed: 2 },
+      rng: () => 0,
     });
     expect(tickEnemyStatuses(state, []).hand.map((card) => card.id)).toEqual(["drawn"]);
-    expect(detonateEnemyStatuses(state, ["bleed"], []).hand).toEqual([]);
-    expect(
-      play({ ...state, enemyStatuses: { ...state.enemyStatuses, bleed: 0 } }, attack("bleed", "bleed")).hand,
-    ).toEqual([]);
-    expect(endPlayerTurn(state).state.hand.map((card) => card.id)).toContain("drawn");
+    expect(detonateEnemyStatuses(state, ["bleed"], []).hand.map((card) => card.id)).toEqual(["drawn"]);
+    const direct = resolveFollowUpHit(
+      { ...state, enemyStatuses: { ...state.enemyStatuses, bleed: 0 } },
+      { source: "player-follow-up", damageType: "bleed", amount: 2 },
+      [],
+    );
+    expect(direct.hand.map((card) => card.id)).toEqual(["drawn"]);
   });
 
   it("Clean Slate cannot recursively cleanse through Cleansing Status healing", () => {
@@ -91,9 +92,10 @@ describe("Talent talent status rewards", () => {
     expect(exact.playerStatuses).toEqual(state.playerStatuses);
   });
 
-  it("card Leech can trigger Clean Slate and Sanguine Overflow without recursive healing", () => {
+  it("card Leech can trigger Clean Slate and Sanguine Overflow Mana without recursive healing", () => {
     const state = battle({
       playerHealth: 29,
+      mana: 1,
       playerStatuses: { poison: 3, bleed: 3 },
       talentEffects: computeTalentEffects({
         leech: ["leech-block-enemy"],
@@ -107,7 +109,7 @@ describe("Talent talent status rewards", () => {
     });
     const after = play(state, leech);
     expect(after.playerHealth).toBe(30);
-    expect(after.flags.sanguinePhysicalBonus).toBe(2);
+    expect(after.mana).toBe(1);
     expect([after.playerStatuses.poison, after.playerStatuses.bleed].filter((value) => value === 0)).toHaveLength(1);
   });
 });

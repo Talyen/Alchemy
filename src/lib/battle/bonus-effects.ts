@@ -1,9 +1,9 @@
 import { FREE_CARD_SENTINEL } from "../game-constants";
 import { rollTalentChance } from "./status-helpers";
 import { drawFromState, applyDrawResult } from "./draw";
-import { addGoldWithCombatText, gainManaWithCombatText, addPlayerStatusWithCombatText } from "./combat-text";
+import { addGoldWithCombatText, gainManaWithCombatText } from "./combat-text";
 import { setFlag, stripEnemyArmor, stripEnemyBlock, type BattleState, type CombatTextEvent } from "./types";
-import { addForgeToPlayer } from "./status-player";
+import { addForgeToPlayer, applyBlockReward } from "./status-player";
 
 export interface CrowdControlTriggerBonuses {
   block?: number;
@@ -30,7 +30,7 @@ export function applyCrowdControlTriggerBonuses(
   }
   const block = bonuses.block ?? 0;
   if (block > 0) {
-    nextState = addPlayerStatusWithCombatText(nextState, "block", block, combatTexts);
+    nextState = applyBlockReward(nextState, block, combatTexts ?? []);
   }
   const forge = bonuses.forge ?? 0;
   if (forge > 0) {
@@ -62,6 +62,11 @@ export function applyNatureManaRefund(state: BattleState, damage: number, combat
   return rollTalentChance(state.gearEffects.manaOnNatureDamageChance, state)
     ? gainManaWithCombatText(state, 1, combatTexts)
     : state;
+}
+
+export function applyNatureGoldReward(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
+  if (damage <= 0 || !rollTalentChance(state.talentEffects.goldOnNatureDamageChance, state)) return state;
+  return addGoldWithCombatText(state, damage, combatTexts);
 }
 
 // Shared burn-hit forge payout (card hits and talent follow-ups grant the

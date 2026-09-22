@@ -1,5 +1,5 @@
 import { talent } from "../talent-builder";
-import { addEffect, setEffect } from "../types";
+import { setEffect } from "../types";
 
 export const stunTalents = [
   talent(
@@ -42,7 +42,14 @@ export const stunTalents = [
     "ShieldOff",
     setEffect("stunStripArmor", true),
   ),
-  talent("stun-damage-1", "stun", "Jarring Blow", "Increase Stun damage by 1", "Bolt", addEffect("flatStunDamage", 1)),
+  talent(
+    "stun-damage-1",
+    "stun",
+    "Jarring Blow",
+    "Stun cards have a 10% chance to play twice",
+    "Bolt",
+    setEffect("stunCardPlayTwiceChance", 10),
+  ),
   talent(
     "stun-next-free",
     "stun",

@@ -99,6 +99,19 @@ describe("computeEffectiveCost", () => {
     expect(effectiveCost(state, bleedCard())).toBe(0);
   });
 
+  it("makes the first Burn card free when Flashpoint is active", () => {
+    const state = makeState({ firstBurnCardFreeUsed: false }, { firstBurnCardFree: true });
+    expect(effectiveCost(state, physicalCard({ effects: [{ kind: "damage", damageType: "burn", amount: 2 }] }))).toBe(
+      0,
+    );
+    expect(
+      effectiveCost(
+        { ...state, flags: { ...state.flags, firstBurnCardFreeUsed: true } },
+        physicalCard({ effects: [{ kind: "damage", damageType: "burn", amount: 2 }] }),
+      ),
+    ).toBe(2);
+  });
+
   it("makes first companion card free when talent is active", () => {
     const state = makeState({ firstCompanionCardFreeUsed: false }, { firstCompanionCardFree: true });
     const card = physicalCard({

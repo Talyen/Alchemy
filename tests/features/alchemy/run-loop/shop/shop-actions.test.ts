@@ -34,6 +34,33 @@ import { playUISound } from "@/lib/audio";
 import { readActivityData } from "@/lib/active-run-session";
 
 describe("alchemist shop actions", () => {
+  it("Restock can make one refresh free without allowing infinite refreshes", () => {
+    setRunProgress({ gold: 100 });
+    setShopState({ ...createInitialShopState(), refreshesLeft: 2 });
+    const actions = buildActions({ talentEffects: { shopFreeRefreshChance: 100 } });
+
+    expect(actions.merchant.refresh()).toBe(true);
+    expect(readRunProfile().gold).toBe(100);
+    expect(readActivityData(readRunSession().activity, "shop")).toMatchObject({
+      refreshesLeft: 1,
+      freeRefreshUsed: true,
+    });
+    expect(actions.merchant.refresh()).toBe(true);
+    expect(readRunProfile().gold).toBeLessThan(100);
+    expect(readActivityData(readRunSession().activity, "shop").refreshesLeft).toBe(0);
+  });
+
+  it("Restock failure keeps the normal affordability guard", () => {
+    setRunProgress({ gold: 0 });
+    setShopState({ ...createInitialShopState(), refreshesLeft: 1 });
+    const actions = buildActions({ talentEffects: { shopFreeRefreshChance: 100 } });
+    const before = readRunSession();
+
+    expect(actions.merchant.refresh()).toBe(false);
+    expect(readRunSession()).toEqual(before);
+    expect(readActivityData(readRunSession().activity, "shop").freeRefreshUsed).toBe(false);
+  });
+
   it("fills refresh slots from previous offerings when only one novel potion remains", () => {
     const pool = getStandardPotionPool();
     const novel = pool[0];

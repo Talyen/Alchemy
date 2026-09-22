@@ -4,19 +4,21 @@ import { HALF_DIVISOR, REACTIVE_REWARD_CHANCES } from "../game-constants";
 import { rollTalentChance } from "./status-helpers";
 import type { EnemyAttackEffect } from "@/lib/game-data";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
-import {
-  mergeCombatText,
-  addGoldWithCombatText,
-  addPlayerStatusWithCombatText,
-  applyHealingWithCombatText,
-} from "./combat-text";
+import { mergeCombatText, addGoldWithCombatText, applyHealingWithCombatText } from "./combat-text";
 import { processCompanionTurnStart } from "./companion";
 import { halveRounded, scalePercent } from "./amount-helpers";
 import { takeRandomCardFromDeck, drawKeywordCard } from "./draw";
 import { tryDodgeEnemyAttackPacket } from "./dodge";
 import { applyDodgeTalentStatuses } from "./dodge-talent-rewards";
-import { applyArmorReward } from "./status-player";
-import { handlePostPlayCardDestination, resolveCardEffectChain } from "./card-play";
+import { applyArmorReward, applyBlockDepletionForgeReward, applyBlockReward } from "./status-player";
+import {
+  applyCardPlayTalentRewards,
+  applyMortarAndPestlePotionUse,
+  handlePostPlayCardDestination,
+  resolveCardEffectChain,
+  shouldElementalTalentRepeat,
+} from "./card-play";
+import { applyCardEffects } from "./effect-handlers";
 import {
   prepareEnemyDamage,
   resolveEnemyDamageEffect,
@@ -43,8 +45,19 @@ function applyDodgeDrawAndPlay(state: BattleState, combatTexts: CombatTextEvent[
     uniqueGear: drawn.uniqueGear,
   };
 
-  const chained = resolveCardEffectChain(nextState, drawn.card, combatTexts);
+  const playTwice = shouldElementalTalentRepeat(nextState, drawn.card);
+  const chained = resolveCardEffectChain(nextState, drawn.card, combatTexts, { skipTalentRewards: playTwice });
   nextState = chained.state;
+  if (playTwice) {
+    nextState = applyCardEffects(nextState, drawn.card, combatTexts, {
+      attackBonuses: chained.attackBonuses,
+      origin: "triggered-card",
+      manaAtStart: nextState.mana,
+      enemyFreezeSkipTurnsAtStart: nextState.enemyCC.freezeSkipTurns,
+    });
+    nextState = applyMortarAndPestlePotionUse(nextState, drawn.card, combatTexts);
+    nextState = applyCardPlayTalentRewards(nextState, drawn.card, combatTexts);
+  }
   nextState = processEncounterTraitCardAction(nextState, drawn.card, combatTexts, chained.attackAttempted);
   nextState = handlePostPlayCardDestination(nextState, drawn.card, !isPlayerDefeated(nextState), combatTexts);
   return nextState;
@@ -58,13 +71,16 @@ function applyDodgeDefensiveReactions(
 ): BattleState {
   let nextState = state;
   if (eligibility.playerStatuses.block === 0 && nextState.gearEffects.blockOnDodge > 0) {
-    nextState = addPlayerStatusWithCombatText(nextState, "block", nextState.gearEffects.blockOnDodge, combatTexts);
+    nextState = applyBlockReward(nextState, nextState.gearEffects.blockOnDodge, combatTexts);
   }
-  const dodgeBlock = nextState.talentEffects.blockOnDodgeEqualToAttack
-    ? dodgedAmount
-    : scalePercent(dodgedAmount, nextState.talentEffects.dodgeBlockPercent);
+  const dodgeBlock =
+    nextState.talentEffects.dodgeBlockAmount > 0
+      ? nextState.talentEffects.dodgeBlockAmount
+      : nextState.talentEffects.blockOnDodgeEqualToAttack
+        ? dodgedAmount
+        : scalePercent(dodgedAmount, nextState.talentEffects.dodgeBlockPercent);
   if (dodgeBlock > 0) {
-    nextState = addPlayerStatusWithCombatText(nextState, "block", dodgeBlock, combatTexts, { skipFightPacing: true });
+    nextState = applyBlockReward(nextState, dodgeBlock, combatTexts, { skipFightPacing: true });
   }
   const armor = nextState.gearEffects.armorOnDodge + nextState.talentEffects.armorOnDodge;
   if (eligibility.playerStatuses.armor === 0 && armor > 0) nextState = applyArmorReward(nextState, armor, combatTexts);
@@ -139,6 +155,12 @@ function applyDodgeOffensiveBuffs(state: BattleState): BattleState {
       flags: { ...nextState.flags, nextHitCrit: true },
     };
   }
+  if (nextState.talentEffects.physicalCritOnDodge) {
+    nextState = {
+      ...nextState,
+      flags: { ...nextState.flags, nextPhysicalCrit: true },
+    };
+  }
   if (nextState.talentEffects.partingCutOnDodge || nextState.talentEffects.partingCutDamagePercent > 0) {
     nextState = { ...nextState, flags: { ...nextState.flags, nextPhysicalDealsBleed: true } };
   }
@@ -164,6 +186,7 @@ function applyOnPlayerDodge(state: BattleState, combatTexts: CombatTextEvent[], 
     const spent = halveRounded(state.playerStatuses.block);
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: spent });
     nextState = setPlayerStatus(nextState, "block", state.playerStatuses.block - spent);
+    nextState = applyBlockDepletionForgeReward(state, nextState, combatTexts);
     nextState = resolveSecondaryAction(nextState, "retaliation", (current) =>
       resolveFollowUpHit(current, { source: "player-follow-up", damageType: "physical", amount: spent }, combatTexts),
     );
@@ -218,9 +241,24 @@ export function resolveEnemyAttackHit(
       dodged: true,
       killed: false,
     };
-  return resolveEnemyDamageEffect(state, effect, combatTexts, {
+  const result = resolveEnemyDamageEffect(state, effect, combatTexts, {
     ...damageOptions,
     preparedDamage,
     triggerBlockRetaliation: canDodge,
   });
+  const blockDepleted = state.playerStatuses.block > 0 && result.state.playerStatuses.block === 0;
+  if (
+    blockDepleted &&
+    result.state.talentEffects.companionAttackOnBlockDepletedBelowHalf &&
+    result.state.playerHealth < result.state.playerMaxHealth / HALF_DIVISOR &&
+    result.state.activeCompanion &&
+    result.state.enemyHealth > 0 &&
+    !isPlayerDefeated(result.state)
+  ) {
+    return {
+      ...result,
+      state: processCompanionTurnStart(result.state, combatTexts),
+    };
+  }
+  return result;
 }

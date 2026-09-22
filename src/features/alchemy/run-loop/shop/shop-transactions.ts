@@ -91,14 +91,16 @@ interface RefreshShopOfferingsInput<T, TItem> {
   draft: GameplayDraft;
   price: number;
   refreshesLeft: number;
+  freeRefreshUsed: boolean;
   setState: DraftStateWriter<T>;
   mapState: (previous: T, newItems: TItem[]) => T;
   resample: () => TItem[];
 }
 
-export function refreshShopOfferings<T extends { refreshesLeft: number; purchasedSlotKeys: string[] }, TItem>(
-  input: RefreshShopOfferingsInput<T, TItem>,
-): ShopTransactionResult<TItem[] | null> {
+export function refreshShopOfferings<
+  T extends { refreshesLeft: number; freeRefreshUsed: boolean; purchasedSlotKeys: string[] },
+  TItem,
+>(input: RefreshShopOfferingsInput<T, TItem>): ShopTransactionResult<TItem[] | null> {
   if (input.refreshesLeft <= 0 || readDraftGold(input.draft) < input.price) {
     return { committed: false, price: input.price, value: null };
   }
@@ -108,6 +110,7 @@ export function refreshShopOfferings<T extends { refreshesLeft: number; purchase
   input.setState(input.draft, (previous) => ({
     ...input.mapState(previous, newItems),
     refreshesLeft: previous.refreshesLeft - 1,
+    freeRefreshUsed: input.freeRefreshUsed,
     purchasedSlotKeys: [],
   }));
   return { committed: true, price: input.price, value: newItems };

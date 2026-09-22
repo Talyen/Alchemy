@@ -206,7 +206,7 @@ describe("session facade API", () => {
       forgeToBurn: false,
       forgeBurnDamagePercent: 50,
       armorToPhysicalDamage: false,
-      armorPhysicalDamagePercent: 25,
+      armorPhysicalDamagePercent: 50,
       nextAttackPhysicalOnDodge: 2,
       partingCutDamagePercent: 50,
     });

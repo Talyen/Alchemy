@@ -4,7 +4,7 @@ import { resolvePendingBattleReactions } from "../enemy-attack-damage";
 import { resolveCompanionTurnStart } from "../companion-effects";
 import { hasEncounterBenefit, isPlayerDefeated } from "../types";
 import type { BattleCard, BattleCardEffect, BattleCardEffectKind } from "@/lib/game-data";
-import { isPotionCard } from "@/lib/game-data/cards/card-pools";
+import { isMixedPotionCard, isPotionCard } from "@/lib/game-data/cards/card-pools";
 import { isRecursiveBattleCardEffectKind } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "../types";
 import { getBattleRng, rollChance } from "@/lib/rng";
@@ -135,7 +135,10 @@ export function applyCardEffects(
     enemyFreezeSkipTurnsAtStart: state.enemyCC.freezeSkipTurns,
   },
 ): BattleState {
-  const potionMult = isPotionCard(card) && !state.action?.repeatActive ? state.talentEffects.potionPotency : 1;
+  const potionMult =
+    isPotionCard(card) && !state.action?.repeatActive
+      ? state.talentEffects.potionPotency + (isMixedPotionCard(card) ? state.talentEffects.mixedPotionPotency : 0)
+      : 1;
   const result = resolveBattleSequence(
     state,
     card.effects,

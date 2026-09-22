@@ -18,6 +18,7 @@ import {
 
 interface WorkingCategoryState {
   orderedIds: string[];
+  availableIds: string[];
   page: number;
 }
 
@@ -39,7 +40,7 @@ export function useArmoryOrdering({
   const isTrinket = selectedSlot === "trinket";
   const activeKey = categoryStorageKey(characterId, selectedSlot);
 
-  // Map of categoryKey -> { orderedIds, page }
+  // Each visited category keeps its working order until the screen unmounts.
   const [workingState, setWorkingState] = useState<Record<string, WorkingCategoryState>>({});
   const [placeholderIndex, setPlaceholderIndex] = useState<number | null>(null);
 
@@ -47,37 +48,34 @@ export function useArmoryOrdering({
   const gearById = useMemo(() => new Map(pickerItems.map((item) => [item.instanceId, item])), [pickerItems]);
   const trinketById = useMemo(() => new Map(ownedTrinkets.map((item) => [item.id, item])), [ownedTrinkets]);
 
-  // Compute reconciled ordered IDs for the active category
-  const activeState = workingState[activeKey];
+  const availableById = isTrinket ? trinketById : gearById;
+  let activeState = workingState[activeKey];
+  if (
+    !activeState ||
+    activeState.availableIds.length !== availableById.size ||
+    activeState.availableIds.some((id) => !availableById.has(id))
+  ) {
+    const currentIds = activeState?.orderedIds ?? [];
+    const orderedIds = isTrinket
+      ? reconcileWorkingList(currentIds, ownedTrinkets, trinketCompare)
+      : reconcileWorkingList(
+          currentIds,
+          pickerItems.map((instance) => ({ id: instance.instanceId, instance })),
+          (a, b) => defaultGearCompare(a.instance, b.instance),
+        );
+    activeState = {
+      orderedIds,
+      availableIds: [...availableById.keys()],
+      page: clampPage(activeState?.page ?? 0, orderedIds.length, ARMORY_PAGE_SIZE),
+    };
+    setWorkingState({ ...workingState, [activeKey]: activeState });
+  }
 
-  const reconciledIds = useMemo(() => {
-    if (isTrinket) {
-      const currentIds = activeState?.orderedIds ?? [];
-      const pool = ownedTrinkets;
-      if (!activeState) {
-        return pool
-          .slice()
-          .sort(trinketCompare)
-          .map((t) => t.id);
-      }
-      return reconcileWorkingList(currentIds, pool, trinketCompare);
-    } else {
-      const currentIds = activeState?.orderedIds ?? [];
-      const pool = pickerItems.map((i) => ({ id: i.instanceId, instance: i }));
-      if (!activeState) {
-        return pickerItems
-          .slice()
-          .sort(defaultGearCompare)
-          .map((i) => i.instanceId);
-      }
-      return reconcileWorkingList(currentIds, pool, (a, b) => defaultGearCompare(a.instance, b.instance));
-    }
-  }, [isTrinket, activeState, ownedTrinkets, pickerItems]);
-
-  // Compute total items and safe clamped page
+  // Reconcile only new inventory membership. A confirmed transfer can update the
+  // working order before refreshed props arrive; the old pool must not undo it.
+  const { availableIds, orderedIds: reconciledIds } = activeState;
   const totalItems = reconciledIds.length;
-  const rawPage = activeState?.page ?? 0;
-  const safePage = clampPage(rawPage, totalItems, ARMORY_PAGE_SIZE);
+  const safePage = activeState.page;
   const totalPages = Math.max(1, Math.ceil(totalItems / ARMORY_PAGE_SIZE));
 
   // Turn reconciled IDs into actual items
@@ -109,34 +107,24 @@ export function useArmoryOrdering({
     return placeholderIndex % ARMORY_PAGE_SIZE;
   }, [placeholderIndex, safePage]);
 
-  // Single writer for the active category's working list: every sort and
-  // confirmed mutation funnels through here so the key shape cannot drift.
+  // Sorting and confirmed transfers preserve the last observed inventory pool.
   const commitIds = useCallback(
     (nextIds: string[], page: number) => {
       setWorkingState((prev) => ({
         ...prev,
-        [activeKey]: { orderedIds: nextIds, page },
+        [activeKey]: { availableIds, orderedIds: nextIds, page },
       }));
     },
-    [activeKey],
+    [activeKey, availableIds],
   );
 
   // Page change
   const setPage = useCallback(
     (nextPage: number) => {
       setPlaceholderIndex(null);
-      setWorkingState((prev) => {
-        const current = prev[activeKey] ?? { orderedIds: reconciledIds, page: 0 };
-        return {
-          ...prev,
-          [activeKey]: {
-            ...current,
-            page: clampPage(nextPage, reconciledIds.length, ARMORY_PAGE_SIZE),
-          },
-        };
-      });
+      commitIds(reconciledIds, clampPage(nextPage, reconciledIds.length, ARMORY_PAGE_SIZE));
     },
-    [activeKey, reconciledIds],
+    [commitIds, reconciledIds],
   );
 
   // Explicit one-time sort

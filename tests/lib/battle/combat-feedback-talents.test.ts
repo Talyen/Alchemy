@@ -3,7 +3,6 @@ import { computeTalentEffects, type BattleCard } from "@/lib/game-data";
 import type { CombatTextEvent } from "@/lib/battle";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
-import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { applyWishEffect } from "@/lib/battle/wish";
 import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/follow-up-hit-resolution";
 import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
@@ -32,33 +31,34 @@ function resume(state: ReturnType<typeof battle>) {
 }
 const holy = makeTestCard({ effects: [{ kind: "damage", damageType: "holy", amount: 1 }] });
 const wish = makeTestCard({ effects: [{ kind: "wish", amount: 1 }] });
-const intervention = computeTalentEffects({ holy: ["holy-wish-chance"], wish: ["wish-extra-choice"] });
+const intervention = computeTalentEffects({ holy: ["holy-wish-chance"] });
 const cull = computeTalentEffects({ leech: ["leech-cull-weak"] });
 
 describe("Divine Intervention", () => {
-  it("arms without opening a Wish, does not stack, and survives a saved turn change", () => {
-    const first = play(battle({ talentEffects: intervention }), holy);
-    expect(first.state.wishOptions).toBeNull();
-    expect(first.state.flags.nextWishExtraChoice).toBe(true);
-    expect(first.combatTexts).not.toContainEqual(expect.objectContaining({ kind: "notice" }));
-    const second = play(first.state, holy).state;
-    const restored = advanceToPlayerTurn(resume(second));
-    expect(restored.flags.nextWishExtraChoice).toBe(true);
-    const wished = play(restored, wish).state;
-    expect(wished.wishOptions).toHaveLength(WISH_CHOICE_COUNT + 2);
-    expect(new Set(wished.wishOptions!.map((card) => card.id)).size).toBe(WISH_CHOICE_COUNT + 2);
-    expect(wished.flags.nextWishExtraChoice).toBe(false);
+  it("does not Wish when Block absorbs all Holy damage", () => {
+    const result = play(
+      battle({
+        talentEffects: { ...intervention, holyWishChance: 100 },
+        enemyMitigation: { block: 20 },
+      }),
+      holy,
+    );
+    expect(result.state.enemyHealth).toBe(100);
+    expect(result.state.wishOptions).toBeNull();
+    expect(result.state.wishQueue).toEqual([]);
   });
 
-  it("allows same-card Holy/Wish but spends the benefit only on the first offering", () => {
-    const card = makeTestCard({ effects: [...holy.effects, { kind: "wish", amount: 2 }] });
-    const next = play(battle({ talentEffects: intervention, flags: { playNextCardTwice: true } }), card).state;
-    expect(next.wishOptions).toHaveLength(WISH_CHOICE_COUNT + 2);
-    expect(next.wishQueue.map((options) => options.length)).toEqual([
-      WISH_CHOICE_COUNT + 1,
-      WISH_CHOICE_COUNT + 1,
-      WISH_CHOICE_COUNT + 1,
-    ]);
+  it("Wishes from positive Holy damage", () => {
+    const result = play(battle({ talentEffects: intervention, rng: () => 0.05 }), holy);
+    expect(result.state.wishOptions).toHaveLength(WISH_CHOICE_COUNT);
+    expect(result.state.flags.nextWishExtraChoice).toBe(false);
+  });
+
+  it("queues a separate Wish when the same card also contains a Wish", () => {
+    const card = makeTestCard({ effects: [...holy.effects, { kind: "wish", amount: 1 }] });
+    const next = play(battle({ talentEffects: intervention, rng: () => 0.05 }), card).state;
+    expect(next.wishOptions).toHaveLength(WISH_CHOICE_COUNT);
+    expect(next.wishQueue.map((options) => options.length)).toEqual([WISH_CHOICE_COUNT]);
     expect(next.flags.nextWishExtraChoice).toBe(false);
   });
 
@@ -67,7 +67,7 @@ describe("Divine Intervention", () => {
     const ready = { ...initial, flags: { ...initial.flags, nextWishExtraChoice: true } };
     const next = applyWishEffect(ready, wish, 2, []);
     expect(next.wishOptions).toBe(initial.wishOptions);
-    expect(next.wishQueue.map((options) => options.length)).toEqual([WISH_CHOICE_COUNT + 2, WISH_CHOICE_COUNT + 1]);
+    expect(next.wishQueue.map((options) => options.length)).toEqual([WISH_CHOICE_COUNT + 1, WISH_CHOICE_COUNT]);
     const restored = resume(next);
     expect(restored.wishOptions).toEqual(next.wishOptions);
     expect(restored.wishQueue).toEqual(next.wishQueue);
@@ -146,7 +146,7 @@ describe("feedback talent save compatibility", () => {
     expect(legacyTexts).toContainEqual(expect.objectContaining({ target: "enemy", stat: "holy", kind: "damage" }));
     const withoutLegacy = { ...restored, talentEffects: { ...restored.talentEffects, leechHolyDamageVsLowHealth: 0 } };
     expect(applyLifestealAndPlayerHitTriggers(withoutLegacy, 8, []).enemyHealth).toBe(restored.enemyHealth);
-    expect(intervention.holyWishChance).toBe(0);
+    expect(intervention.holyWishChance).toBe(10);
     expect(cull.leechHolyDamageVsLowHealth).toBe(0);
   });
 });

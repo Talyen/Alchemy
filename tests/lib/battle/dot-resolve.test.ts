@@ -85,6 +85,21 @@ describe("dealEnemyDotTick", () => {
 });
 
 describe("detonateEnemyStatuses", () => {
+  it("limits Septic Shock to Poison in a combined detonation", () => {
+    const state = patchBattleState({
+      enemyHealth: 100,
+      enemyMaxHealth: 100,
+      enemyStatuses: { burn: 10, bleed: 10, poison: 10 },
+      talentEffects: { bleedPoisonDamageTakenPercent: 10 },
+    });
+    const texts = makeTexts();
+    const next = detonateEnemyStatuses(state, ["burn", "bleed", "poison"], texts);
+    expect(next.enemyHealth).toBe(69);
+    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "poison", amount: 11 });
+    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "burn", amount: 10 });
+    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "bleed", amount: 10 });
+  });
+
   it("applies the Burn bonus against a bleeding enemy to Burn detonation", () => {
     const state = patchBattleState({
       enemyHealth: 30,

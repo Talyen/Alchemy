@@ -19,7 +19,7 @@ export interface MerchantShopCommands {
   refresh: () => boolean;
   getCardBuyPrice: (card: BattleCard) => number;
   getRemoveCardPrice: () => number;
-  getRefreshPrice: (refreshesLeft: number, modifiers?: ShopRefreshModifiers) => number;
+  getRefreshPrice: (refreshesLeft: number, modifiers?: ShopRefreshModifiers, freeRefreshUsed?: boolean) => number;
 }
 
 export interface AlchemistShopCommands {
@@ -29,7 +29,7 @@ export interface AlchemistShopCommands {
   refresh: () => boolean;
   getPotionBuyPrice: (card: BattleCard) => number;
   getMixPrice: () => number;
-  getRefreshPrice: (refreshesLeft: number, modifiers?: ShopRefreshModifiers) => number;
+  getRefreshPrice: (refreshesLeft: number, modifiers?: ShopRefreshModifiers, freeRefreshUsed?: boolean) => number;
 }
 
 export interface TrinketShopCommands {
@@ -37,7 +37,7 @@ export interface TrinketShopCommands {
   buy: (trinket: TrinketEntry, slotKey: string) => boolean;
   refresh: () => boolean;
   getBuyPrice: (_trinket: TrinketEntry) => number;
-  getRefreshPrice: (refreshesLeft: number, modifiers?: ShopRefreshModifiers) => number;
+  getRefreshPrice: (refreshesLeft: number, modifiers?: ShopRefreshModifiers, freeRefreshUsed?: boolean) => number;
 }
 
 export interface EquipmentShopCommands {
@@ -45,7 +45,7 @@ export interface EquipmentShopCommands {
   buy: (instance: GearInstance, slotKey: string) => boolean;
   refresh: () => boolean;
   getBuyPrice: (instance: GearInstance) => number;
-  getRefreshPrice: (refreshesLeft: number, modifiers?: ShopRefreshModifiers) => number;
+  getRefreshPrice: (refreshesLeft: number, modifiers?: ShopRefreshModifiers, freeRefreshUsed?: boolean) => number;
 }
 
 export interface ShopActions {

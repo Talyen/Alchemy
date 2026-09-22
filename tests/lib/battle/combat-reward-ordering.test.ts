@@ -5,6 +5,7 @@ import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
+import { applyArmorReward } from "@/lib/battle/status-player";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("combat reward ordering", () => {
@@ -79,6 +80,34 @@ describe("combat reward ordering", () => {
       expect(result.enemyHealth).toBe(50 - (mode === "tick" ? 4 : mode === "remaining" ? 5 : 3));
     },
   );
+
+  it("Septic Shock applies its new percentage bonus to Poison damage", () => {
+    const state = patchBattleState({
+      rng: () => 0.99,
+      enemyHealth: 50,
+      enemyMaxHealth: 50,
+      enemyStatuses: { poison: 6, bleed: 1 },
+      talentEffects: { bleedPoisonDamageTakenPercent: 10 },
+    });
+    expect(tickEnemyStatuses(state, []).enemyHealth).toBe(42);
+  });
+
+  it("Seed Money and Coinmail scale Gold from actual Nature damage and Armor gained", () => {
+    const nature = makeTestCard({ id: "nature-gold", effects: [{ kind: "damage", damageType: "nature", amount: 3 }] });
+    const natureState = patchBattleState({
+      hand: [nature],
+      rng: () => 0.99,
+      talentEffects: { goldOnNatureDamageChance: 100 },
+    });
+    const natureResult = playBattleCardResolved(natureState, nature.id, 0).state;
+    expect(natureResult.gold).toBe(3);
+
+    const armorState = patchBattleState({
+      rng: () => 0,
+      talentEffects: { goldOnArmorGainChance: 100 },
+    });
+    expect(applyArmorReward(armorState, 4, []).gold).toBe(4);
+  });
 
   it.each([
     { id: "ice-shot", enemyHealth: 3, gold: 2 },

@@ -62,9 +62,9 @@ export const companionTalents = [
     "companion-watchdog",
     "companion",
     "Watchdog",
-    "When your Companion deals damage while you lack Block, gain 1 Block",
+    "When your Block is depleted while you're below half Health, your Companion attacks",
     "ShieldAlert",
-    setEffect("blockOnCompanionDamage", 1),
+    setEffect("companionAttackOnBlockDepletedBelowHalf", true),
   ),
   talent(
     "companion-takedown",

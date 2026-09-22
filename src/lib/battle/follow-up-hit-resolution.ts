@@ -7,7 +7,12 @@ import {
   TALENT_CONVERSION_BLEED_FRACTION,
   TALENT_CONVERSION_DEFAULT_FRACTION,
 } from "../game-constants";
-import { applyBurnForgePayout, applyLuckyCloverGold, applyNatureManaRefund } from "./bonus-effects";
+import {
+  applyBurnForgePayout,
+  applyLuckyCloverGold,
+  applyNatureGoldReward,
+  applyNatureManaRefund,
+} from "./bonus-effects";
 import { computeCardDamageToEnemy, computeTalentDamageToEnemy } from "./damage-calc";
 import {
   applyDamageBlock,
@@ -47,12 +52,18 @@ function resolvePlayerFollowUp(
 ): BattleState {
   if (amount <= 0 || state.enemyHealth <= 0) return state;
   const effect = { kind: "damage" as const, damageType, amount };
-  const { nextState: afterMods, modifiedDamage } = computeCardDamageToEnemy(state, effect);
-  const hit = resolveTypedEnemyHit(afterMods, effect, modifiedDamage, combatTexts, state);
+  const { nextState: afterMods, modifiedDamage, critical } = computeCardDamageToEnemy(state, effect);
+  const hit = resolveTypedEnemyHit(afterMods, effect, modifiedDamage, combatTexts, state, {
+    critical,
+    onPoisonBleedConversion: (current, damage, texts) =>
+      resolveFollowUpHit(current, { source: "talent-derived", damageType: "bleed", amount: damage }, texts),
+    onPoisonDamage: tryPoisonStunProc,
+  });
   const preHitHealth = hit.facts.previousHealth;
   let nextState = hit.state;
   if (damageType === "nature") {
     nextState = applyLuckyCloverGold(nextState, modifiedDamage, combatTexts);
+    nextState = applyNatureGoldReward(nextState, hit.facts.healthDamage, combatTexts);
     nextState = applyNatureManaRefund(nextState, modifiedDamage, combatTexts);
   }
   return damageType === "holy" ? applyBrassCenser(nextState, modifiedDamage, combatTexts, preHitHealth) : nextState;
@@ -86,7 +97,12 @@ function resolveTalentFollowUp(
   if (amount <= 0 || state.enemyHealth <= 0) return state;
   const { state: blocked, remainingDamage: resolved } = computeTalentDamageToEnemy(state, damageType, amount, source);
   if (resolved <= 0) return blocked;
-  const hit = resolveTypedEnemyHit(blocked, { kind: "damage", damageType, amount }, resolved, combatTexts, state);
+  const hit = resolveTypedEnemyHit(blocked, { kind: "damage", damageType, amount }, resolved, combatTexts, state, {
+    allowPoisonBleedConversion: false,
+    allowTalentChanceProcs: false,
+    onPoisonBleedConversion: (current, damage, texts) =>
+      resolveFollowUpHit(current, { source: "talent-derived", damageType: "bleed", amount: damage }, texts),
+  });
   let nextState = hit.state;
   if (damageType === "holy") {
     nextState = applyHolyLifesteal(nextState, resolved, combatTexts, hit.facts.eligibility);
@@ -95,6 +111,7 @@ function resolveTalentFollowUp(
   }
   if (damageType === "nature") {
     nextState = applyLuckyCloverGold(nextState, resolved, combatTexts);
+    nextState = applyNatureGoldReward(nextState, hit.facts.healthDamage, combatTexts);
     nextState = applyNatureManaRefund(nextState, resolved, combatTexts);
   }
   if (damageType === "burn") {
@@ -109,6 +126,7 @@ export function tryTalentTypedHit(
   damageType: "burn" | "poison" | "bleed",
   sourceDamage: number,
   combatTexts: CombatTextEvent[],
+  fraction = damageType === "bleed" ? TALENT_CONVERSION_BLEED_FRACTION : TALENT_CONVERSION_DEFAULT_FRACTION,
 ): BattleState {
   if (sourceDamage <= 0 || state.enemyHealth <= 0 || !rollTalentChance(chance, state)) return state;
   return resolveFollowUpHit(
@@ -116,8 +134,7 @@ export function tryTalentTypedHit(
     {
       source: "talent-derived",
       damageType,
-      amount:
-        sourceDamage * (damageType === "bleed" ? TALENT_CONVERSION_BLEED_FRACTION : TALENT_CONVERSION_DEFAULT_FRACTION),
+      amount: sourceDamage * fraction,
     },
     combatTexts,
   );
@@ -163,13 +180,14 @@ type NumericTalentEffect = {
 interface HitConversion {
   chance: NumericTalentEffect;
   target: "burn" | "poison" | "bleed";
+  fraction?: number;
 }
 
 const TALENT_HIT_CONVERSIONS: Record<ConversionSource, readonly HitConversion[]> = {
   physical: [{ chance: "physicalBleedDamageChance", target: "bleed" }],
   bleed: [{ chance: "bleedPoisonDamageChance", target: "poison" }],
   nature: [{ chance: "naturePoisonDamageChance", target: "poison" }],
-  holy: [{ chance: "holyBurnDamageChance", target: "burn" }],
+  holy: [{ chance: "holyBurnDamageChance", target: "burn", fraction: 1 }],
   leech: [
     { chance: "leechBleedDamageChance", target: "bleed" },
     { chance: "leechPoisonDamageChance", target: "poison" },
@@ -185,7 +203,14 @@ export function applyTalentHitConversions(
   let next = state;
   // Array order is combat order: it also determines the persisted RNG stream's next draw.
   for (const reaction of TALENT_HIT_CONVERSIONS[source]) {
-    next = tryTalentTypedHit(next, state.talentEffects[reaction.chance], reaction.target, damage, combatTexts);
+    next = tryTalentTypedHit(
+      next,
+      state.talentEffects[reaction.chance],
+      reaction.target,
+      damage,
+      combatTexts,
+      reaction.fraction,
+    );
   }
   return next;
 }

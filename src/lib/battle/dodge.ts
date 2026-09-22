@@ -68,11 +68,12 @@ export function tryDodgeEnemyAttackPacket(
   return tryDodgePacket(state, combatTexts, {
     target: "player",
     chance: getPlayerDodgeChance(state),
-    canDodge,
+    canDodge: canDodge && state.playerCC.stunSkipTurns <= 0 && state.playerCC.freezeSkipTurns <= 0,
   });
 }
 
 function enemyCanDodge(state: BattleState): boolean {
+  if (state.enemyCC.stunSkipTurns > 0 || state.enemyCC.freezeSkipTurns > 0) return false;
   if (state.gearEffects.poisonedAttacksPierce > 0 && state.enemyStatuses.poison > 0) return false;
   if (state.talentEffects.poisonPreventsEnemyDodge && state.enemyStatuses.poison > 0) return false;
   if (state.talentEffects.freezePreventsEnemyDodge && state.enemyCC.freezeSkipTurns > 0) return false;

@@ -7,7 +7,7 @@ import { isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-tra
 import { paceCombatDamage } from "./fight-pacing";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
 import { armorMitigatesElementalDamage } from "./status-helpers";
-import { applyForgeThresholdRewards } from "./status-player";
+import { applyForgeThresholdRewards, applyHealthLossTalentRewards } from "./status-player";
 import {
   applyPlayerCombatDamage,
   isPlayerDefeated,
@@ -275,6 +275,7 @@ function resolveEnemyDamageEffectCore(
   const { blockLost, outcome } = facts;
   // Capture Health loss before threshold healing, then resolve retaliation only for survivors.
   let nextState = applyPlayerDefensiveReactions(hit.state, effect, facts, combatTexts);
+  nextState = applyHealthLossTalentRewards(state, nextState, outcome.healthDamage, combatTexts);
 
   if (nextState.enemyHealth <= 0 || nextState.playerHealth <= 0) return { state: nextState, ...outcome };
 

@@ -1,4 +1,3 @@
-import { MANABURN_DAMAGE_PERCENT } from "@/lib/game-constants";
 import { talent } from "../talent-builder";
 import { setEffect } from "../types";
 
@@ -32,17 +31,17 @@ export const manaTalents = [
     "mana-manaburn",
     "mana",
     "Manaburn",
-    `Burn damage is increased by ${MANABURN_DAMAGE_PERCENT}% of your Mana Crystals`,
+    "Burn damage is increased by 25% of your Mana",
     "Flame",
-    setEffect("burnDamagePerManaCrystal", MANABURN_DAMAGE_PERCENT),
+    setEffect("burnDamagePerMana", 25),
   ),
   talent(
     "mana-arcane-frost",
     "mana",
     "Arcane Frost",
-    "Freeze damage is increased by 25% of your Mana Crystals",
+    "Freeze damage is increased by 25% of your Mana",
     "Snowflake",
-    setEffect("freezeDamagePerManaCrystal", 0.5),
+    setEffect("freezeDamagePerMana", 25),
   ),
   talent(
     "mana-flare",
@@ -56,9 +55,9 @@ export const manaTalents = [
     "mana-familiar-bond",
     "mana",
     "Familiar Bond",
-    "Companion damage is increased by a quarter of your Mana Crystals",
+    "Companion damage has a 10% chance to gain 1 Mana",
     "PawPrint",
-    setEffect("companionDamagePerManaCrystal", 0.5),
+    setEffect("companionManaChance", 10),
   ),
   talent(
     "mana-shell",
@@ -72,8 +71,8 @@ export const manaTalents = [
     "mana-arcane-mending",
     "mana",
     "Arcane Mending",
-    "When you gain Mana from zero, restore 2 Health",
+    "Gaining Mana also restores Health",
     "Wand",
-    setEffect("healOnManaGain", 2),
+    setEffect("healthPerMana", 1),
   ),
 ];

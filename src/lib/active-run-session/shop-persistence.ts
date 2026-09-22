@@ -24,6 +24,7 @@ export function lookupTrinketEntries(ids: readonly string[]): TrinketEntry[] {
 function hydrateRefreshableFields(data: RefreshableShopFields): RefreshableShopFields {
   return {
     refreshesLeft: data.refreshesLeft,
+    freeRefreshUsed: data.freeRefreshUsed ?? false,
     firstPurchaseUsed: data.firstPurchaseUsed,
     purchasedSlotKeys: data.purchasedSlotKeys ?? [],
   };
@@ -32,6 +33,7 @@ function hydrateRefreshableFields(data: RefreshableShopFields): RefreshableShopF
 function serializeRefreshable(state: RefreshableShopFields): RefreshableShopFields {
   return {
     refreshesLeft: state.refreshesLeft,
+    freeRefreshUsed: state.freeRefreshUsed,
     firstPurchaseUsed: state.firstPurchaseUsed,
     purchasedSlotKeys: state.purchasedSlotKeys,
   };

@@ -458,6 +458,7 @@ describe("encounter trait card events", () => {
         enemyMaxHealth: 10,
         enemyStatuses: { ...base.enemyStatuses, bleed: 6 },
         talentEffects: { ...base.talentEffects, physicalDetonatesBleed: true },
+        flags: { ...base.flags, nextHitCrit: true },
         hand: [played],
         mana: 1,
         turnPhase: "player",

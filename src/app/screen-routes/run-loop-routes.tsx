@@ -193,7 +193,7 @@ function CardShopScreenRoute({
       purchasedSlotKeys={r.shopState.purchasedSlotKeys}
       getCardPrice={commands.getCardBuyPrice}
       removePrice={commands.getRemoveCardPrice()}
-      refreshPrice={commands.getRefreshPrice(r.shopState.refreshesLeft)}
+      refreshPrice={commands.getRefreshPrice(r.shopState.refreshesLeft, undefined, r.shopState.freeRefreshUsed)}
       onBuyCard={commands.buyCard}
       onRemoveCard={commands.removeCard}
       onRefresh={commands.refresh}
@@ -220,7 +220,11 @@ function AlchemistShopScreenRoute({
       purchasedSlotKeys={r.alchemistState.purchasedSlotKeys}
       getPotionPrice={commands.getPotionBuyPrice}
       mixPrice={commands.getMixPrice()}
-      refreshPrice={commands.getRefreshPrice(r.alchemistState.refreshesLeft)}
+      refreshPrice={commands.getRefreshPrice(
+        r.alchemistState.refreshesLeft,
+        undefined,
+        r.alchemistState.freeRefreshUsed,
+      )}
       onBuyCard={commands.buyPotion}
       onRefresh={commands.refresh}
       onMixPotions={commands.mixPotions}
@@ -244,7 +248,11 @@ function TrinketShopScreenRoute({
       refreshesLeft={r.trinketShopState.refreshesLeft}
       purchasedSlotKeys={r.trinketShopState.purchasedSlotKeys}
       getTrinketPrice={commands.getBuyPrice}
-      refreshPrice={commands.getRefreshPrice(r.trinketShopState.refreshesLeft)}
+      refreshPrice={commands.getRefreshPrice(
+        r.trinketShopState.refreshesLeft,
+        undefined,
+        r.trinketShopState.freeRefreshUsed,
+      )}
       onBuyTrinket={commands.buy}
       onRefresh={commands.refresh}
       onContinue={onContinue}
@@ -267,7 +275,11 @@ function EquipmentShopScreenRoute({
       refreshesLeft={r.equipmentShopState.refreshesLeft}
       purchasedSlotKeys={r.equipmentShopState.purchasedSlotKeys}
       getGearPrice={commands.getBuyPrice}
-      refreshPrice={commands.getRefreshPrice(r.equipmentShopState.refreshesLeft)}
+      refreshPrice={commands.getRefreshPrice(
+        r.equipmentShopState.refreshesLeft,
+        undefined,
+        r.equipmentShopState.freeRefreshUsed,
+      )}
       onBuyGear={commands.buy}
       onRefresh={commands.refresh}
       onContinue={onContinue}

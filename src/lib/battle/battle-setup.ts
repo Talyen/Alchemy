@@ -15,7 +15,7 @@ import { defaultGearEffects } from "@/lib/gear";
 import { EMPTY_ENEMY_MITIGATION, isPlayerDefeated, type BattleState, type EnemyMitigation } from "./types";
 import { applyEmergencyWish } from "./wish";
 import { computeTrinketManifest } from "../trinkets";
-import { applyDrawResult, drawCards } from "./draw";
+import { applyDrawResult, drawCards, drawKeywordCard } from "./draw";
 import { defaultBattleState, defaultTalentEffects } from "./battle-setup-defaults";
 import { initializeEnemyState } from "./battle-enemy-setup";
 import { placeholderRng, shuffle, getBattleRng } from "@/lib/rng";
@@ -223,11 +223,16 @@ export function createBattleStartState(options: CreateBattleStateOptions): Battl
     [],
   );
   const startFreeze = battleTalents.startFreeze + battleGearEffects.startFreeze;
-  if (startFreeze <= 0 || healedState.enemyHealth <= 0 || healedState.playerHealth <= 0) return healedState;
-  return resolvePendingBattleReactions(
-    resolveFollowUpHit(healedState, { source: "player-follow-up", damageType: "freeze", amount: startFreeze }, []),
-    [],
-  );
+  let started = healedState;
+  if (startFreeze > 0 && started.enemyHealth > 0 && started.playerHealth > 0) {
+    started = resolvePendingBattleReactions(
+      resolveFollowUpHit(started, { source: "player-follow-up", damageType: "freeze", amount: startFreeze }, []),
+      [],
+    );
+  }
+  if (started.enemyHealth <= 0 || started.playerHealth <= 0 || !battleTalents.drawNatureCardAtCombatStart)
+    return started;
+  return drawKeywordCard(started, "nature");
 }
 
 export function createBattleState(options: CreateBattleStateOptions): BattleState {

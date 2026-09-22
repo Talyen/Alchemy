@@ -39,7 +39,7 @@ describe("Talent talent card sequencing", () => {
     ).toBe(0);
   });
 
-  it("Follow-through rewards consecutive cards once per card and resets next turn", () => {
+  it("Follow-through boosts every damage effect on the second Archery card and resets next turn", () => {
     const arrow = {
       ...attack("arrow"),
       tags: ["archery" as const],
@@ -53,8 +53,8 @@ describe("Talent talent card sequencing", () => {
     const second = play(first, arrow);
     const third = play(second, arrow);
     expect(state.enemyHealth - first.enemyHealth).toBe(4);
-    expect(first.enemyHealth - second.enemyHealth).toBe(5);
-    expect(second.enemyHealth - third.enemyHealth).toBe(5);
+    expect(first.enemyHealth - second.enemyHealth).toBe(6);
+    expect(second.enemyHealth - third.enemyHealth).toBe(4);
     const nextTurn = advanceToPlayerTurn(third);
     expect(nextTurn.enemyHealth - play(nextTurn, arrow).enemyHealth).toBe(4);
   });
@@ -78,15 +78,17 @@ describe("Talent talent card sequencing", () => {
     );
   });
 
-  it("Bramblegrowth and Briar Patch reward repeated Nature–Physical sequences", () => {
-    const state = battle({ talentEffects: talents("nature", "nature-natural-armor", "nature-briar-patch") });
+  it("Bramblegrowth and Briar Patch no longer depend on card sequences", () => {
+    const state = battle({
+      rng: () => 0.99,
+      talentEffects: {
+        ...talents("nature", "nature-natural-armor", "nature-briar-patch"),
+        thornsOnNatureDamageChance: 100,
+        natureBleedChance: 100,
+      },
+    });
     const nature = play(state, attack("nature", "nature"));
-    expect(nature.playerStatuses.thorns).toBe(1);
-    const physical = play(nature, attack("physical"));
-    expect(physical.enemyStatuses.bleed).toBe(2);
-    const repeated = play(play(physical, attack("nature2", "nature")), attack("physical2"));
-    expect(repeated.playerStatuses.thorns).toBe(2);
-    expect(repeated.enemyStatuses.bleed).toBe(4);
-    expect(play(repeated, attack("physical3")).enemyStatuses.bleed).toBe(4);
+    expect(nature.playerStatuses.thorns).toBeGreaterThan(0);
+    expect(nature.enemyStatuses.bleed).toBeGreaterThan(0);
   });
 });

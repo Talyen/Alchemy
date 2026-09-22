@@ -211,6 +211,12 @@ function computeWildwoodVictoryRewards(
 ): VictoryRewardsResult {
   const companionGold = input.battleState.activeCompanion ? talentEffects.companionVictoryGold : 0;
   const goldEarned = Math.max(0, input.battleState.gold - input.purseGold) + companionGold;
+  const maxHealthDelta = Math.max(0, talentEffects.maxHealthPerCombat);
+  const effectiveMaxHealth = input.runMaxHealth + maxHealthDelta;
+  const playerHealth = Math.min(
+    effectiveMaxHealth,
+    input.battleState.playerHealth + Math.max(0, talentEffects.healthRestorePerCombat),
+  );
   return {
     rewardState: createWildwoodRewardState({
       runDeck: input.runDeck,
@@ -224,8 +230,8 @@ function computeWildwoodVictoryRewards(
     labyrinthRewardModifiers,
     goldEarned,
     persistedGold: Math.max(input.purseGold, input.battleState.gold) + companionGold,
-    playerHealth: input.battleState.playerHealth,
-    maxHealthDelta: Math.max(0, talentEffects.maxHealthPerCombat),
+    playerHealth,
+    maxHealthDelta,
     destinationOfferState: input.destinationOfferState,
   };
 }
@@ -290,9 +296,10 @@ export function computeVictoryRewards(
   const maxHealthDelta = Math.max(0, talentEffects.maxHealthPerCombat);
   const effectiveMaxHealth = input.runMaxHealth + maxHealthDelta;
   const wellProvisionedHealing = getWellProvisionedHealing(labyrinthRewardModifiers, effectiveMaxHealth);
+  const victoryHealing = wellProvisionedHealing + Math.max(0, talentEffects.healthRestorePerCombat);
   const playerHealth =
-    wellProvisionedHealing > 0
-      ? Math.min(effectiveMaxHealth, input.battleState.playerHealth + wellProvisionedHealing)
+    victoryHealing > 0
+      ? Math.min(effectiveMaxHealth, input.battleState.playerHealth + victoryHealing)
       : input.battleState.playerHealth;
 
   const materials = computeCombatMaterialReward({

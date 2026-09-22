@@ -9,6 +9,7 @@ import {
 
 export interface RefreshableShopFields {
   refreshesLeft: number;
+  freeRefreshUsed: boolean;
   firstPurchaseUsed: boolean;
   purchasedSlotKeys: string[];
 }
@@ -34,6 +35,7 @@ export type EquipmentShopState = RefreshableShopFields & {
 function emptyRefreshableFields(refreshesLeft: number): RefreshableShopFields {
   return {
     refreshesLeft,
+    freeRefreshUsed: false,
     firstPurchaseUsed: false,
     purchasedSlotKeys: [],
   };

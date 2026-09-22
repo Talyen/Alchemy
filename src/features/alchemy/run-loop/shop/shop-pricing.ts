@@ -55,8 +55,13 @@ export function computeShopServicePrice(basePrice: number, serviceDiscount = 0):
   return Math.max(0, basePrice - serviceDiscount);
 }
 
-function computeShopRefreshPrice(basePrice: number, shopFreeRefresh: boolean, refreshesLeft: number): number {
-  if (shopFreeRefresh && refreshesLeft > 0) return 0;
+function computeShopRefreshPrice(
+  basePrice: number,
+  shopFreeRefresh: boolean,
+  refreshesLeft: number,
+  freeRefreshUsed: boolean,
+): number {
+  if (shopFreeRefresh && !freeRefreshUsed && refreshesLeft > 0) return 0;
   return basePrice;
 }
 
@@ -161,10 +166,16 @@ export function getShopRefreshPrice(
   talentEffects: TalentEffectManifest,
   refreshesLeft: number,
   modifiers: readonly EncounterRewardTraitId[] = [],
+  freeRefreshUsed = false,
 ): number {
   const freeTrait = SHOP_REFRESH_FREE_TRAIT[kind];
   if (refreshesLeft > 0 && freeTrait !== null && modifiers.includes(freeTrait)) return 0;
-  return computeShopRefreshPrice(SHOP_REFRESH_BASE_PRICE[kind], talentEffects.shopFreeRefresh, refreshesLeft);
+  return computeShopRefreshPrice(
+    SHOP_REFRESH_BASE_PRICE[kind],
+    talentEffects.shopFreeRefresh,
+    refreshesLeft,
+    freeRefreshUsed,
+  );
 }
 
 export function computeRemoveCardPrice(

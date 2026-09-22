@@ -11,13 +11,16 @@ import {
   decayHalvedStatus,
   decayPoisonStacks,
   decayArmorAfterDamage,
+  applyPoisonDamageArmorRider,
   getEnemyDamageMultiplier,
   getBurnBonusToBleedingMultiplier,
   getPoisonBonusAgainstBleeding,
+  getPoisonDamageMultiplierAgainstBleeding,
 } from "./status-helpers";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
 import { mergeCombatText, payKillPayouts } from "./combat-text";
 import { payPendingBleedLeech } from "./damage-rider-leech";
+import { applyBleedDamageDraw } from "./bleed-reactions";
 
 export type EnemyDotStatus = "burn" | "poison" | "bleed";
 
@@ -37,6 +40,10 @@ export function applyEnemyDotDamage(
   const hit = damageEnemyHealth(state, finalDamage);
   const previousHealth = hit.previousHealth;
   let nextState: BattleState = hit.state;
+
+  if (pulses.some((pulse) => pulse.status === "bleed" && pulse.finalDamage > 0)) {
+    nextState = applyBleedDamageDraw(nextState, hit.healthDamage);
+  }
 
   for (const pulse of pulses) {
     nextState = setEnemyStatus(nextState, pulse.status, pulse.nextStacks);
@@ -63,6 +70,7 @@ export function detonateEnemyStatuses(
   statuses: ReadonlyArray<"bleed" | "poison" | "burn">,
   combatTexts: CombatTextEvent[],
   mode: "next-tick" | "remaining-ticks" = "next-tick",
+  applyPoisonRiders?: (state: BattleState, damage: number, combatTexts: CombatTextEvent[]) => BattleState,
 ): BattleState {
   if (state.enemyHealth <= 0) return state;
   const pulses: EnemyDotPulse[] = [];
@@ -78,7 +86,9 @@ export function detonateEnemyStatuses(
         ? getBurnBonusToBleedingMultiplier(state)
         : 1);
     while (stacks > 0) {
-      finalDamage += Math.round((stacks + bonus) * multiplier);
+      finalDamage += Math.round(
+        (stacks + bonus) * multiplier * (status === "poison" ? getPoisonDamageMultiplierAgainstBleeding(state) : 1),
+      );
       if (mode === "next-tick") break;
       stacks =
         status === "poison"
@@ -106,6 +116,11 @@ export function detonateEnemyStatuses(
           amount: pulse.finalDamage,
         });
       }
+    }
+    const poisonPulse = pulses.find((pulse) => pulse.status === "poison");
+    if (poisonPulse) {
+      nextState = applyPoisonDamageArmorRider(nextState, poisonPulse.finalDamage);
+      if (applyPoisonRiders) nextState = applyPoisonRiders(nextState, poisonPulse.finalDamage, combatTexts);
     }
     const bleedPulse = pulses.find((pulse) => pulse.status === "bleed");
     if (!bleedPulse) return nextState;

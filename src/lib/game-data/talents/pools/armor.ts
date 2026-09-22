@@ -1,5 +1,5 @@
 import { talent } from "../talent-builder";
-import { addEffect, setEffect } from "../types";
+import { setEffect } from "../types";
 
 export const armorTalents = [
   talent(
@@ -14,10 +14,9 @@ export const armorTalents = [
     "armor-block-burst",
     "armor",
     "Armored Surge",
-    "Gain 4 Block when your Armor reaches that amount",
+    "Gaining Block has a 10% chance to also grant that amount of Armor",
     "Shield",
-    setEffect("armorBlockThreshold", 4),
-    setEffect("armorBlockAmount", 4),
+    setEffect("armorOnBlockChance", 10),
   ),
   talent(
     "armor-burn-mitigate",
@@ -55,9 +54,9 @@ export const armorTalents = [
     "armor-first-double",
     "armor",
     "Iron Guard",
-    "When you play an Armor card, gain 1 Block",
+    "Dealing Physical damage has a 10% chance to also grant that amount of Armor",
     "Lock",
-    setEffect("blockOnArmorCard", 1),
+    setEffect("armorOnPhysicalDamageChance", 10),
   ),
   talent(
     "armor-mitigate-stun",
@@ -71,16 +70,16 @@ export const armorTalents = [
     "armor-cleanse-threshold",
     "armor",
     "Purification",
-    "When you reach 6 Armor, cleanse all harmful status effects",
+    "Gaining Armor has a 10% chance to Cleanse a harmful status effect",
     "Sparkles",
-    setEffect("armorCleanseThreshold", 6),
+    setEffect("armorCleanseChance", 10),
   ),
   talent(
     "armor-flat-bonus",
     "armor",
     "Reinforced",
-    "Increase Armor gained by 1",
+    "10% chance to double Armor gained",
     "Plus",
-    addEffect("flatArmorAmount", 1),
+    setEffect("armorDoubleChance", 10),
   ),
 ];

@@ -45,14 +45,14 @@ function resume(state: ReturnType<typeof battle>) {
 }
 
 describe("Mana from Heaven", () => {
-  it("banks every Wish without immediately refunding Mana or healing", () => {
+  it("grants every Wish immediately without creating pending Mana", () => {
     const initial = battle({ talentEffects: wishTalents });
     const wished = applyWishEffect(initial, wish, 3, []);
     expect(wished.mana).toBe(3);
     expect(wished.playerHealth).toBe(10);
-    expect(wished.flags.pendingWishMana).toBe(3);
+    expect(wished.flags.pendingWishMana).toBe(0);
     const next = advanceToPlayerTurn(resume(wished));
-    expect(next.mana).toBe(6);
+    expect(next.mana).toBe(3);
     expect(next.playerHealth).toBe(10);
     expect(next.flags.pendingWishMana).toBe(0);
     expect(advanceToPlayerTurn(next).mana).toBe(3);
@@ -64,35 +64,36 @@ describe("Mana from Heaven", () => {
         wish: ["wish-mana", "wish-health", "wish-draw"],
         gold: ["gold-on-wish"],
       }),
+      rng: () => 0,
     });
     const next = play(initial, cardById["dark-pact"]!);
-    expect(next.mana).toBe(2);
+    expect(next.mana).toBe(3);
     expect(next.playerHealth).toBe(10);
-    expect(next.gold).toBe(1);
-    expect(next.flags.pendingWishMana).toBe(1);
-    expect(chooseWishCard(next, next.wishOptions![0]!.id).flags.pendingWishMana).toBe(1);
+    expect(next.gold).toBe(7);
+    expect(next.flags.pendingWishMana).toBe(0);
+    expect(chooseWishCard(next, next.wishOptions![0]!.id).flags.pendingWishMana).toBe(0);
   });
 
-  it("keeps existing Gear Mana immediate while banking the talent reward", () => {
+  it("combines immediate Gear and Talent Mana", () => {
     const next = applyWishEffect(
       battle({ mana: 0, talentEffects: wishTalents, gearEffects: { manaOnWish: 1 } }),
       wish,
       1,
       [],
     );
-    expect(next.mana).toBe(1);
+    expect(next.mana).toBe(2);
     expect(next.playerHealth).toBe(12);
-    expect(next.flags.pendingWishMana).toBe(1);
-  });
-
-  it("pays banked Mana on a Haste turn without carrying it into another turn", () => {
-    const wished = applyWishEffect(battle({ talentEffects: wishTalents, playerStatuses: { haste: 1 } }), wish, 2, []);
-    const next = endPlayerTurn(wished).state;
-    expect(next.mana).toBe(5);
     expect(next.flags.pendingWishMana).toBe(0);
   });
 
-  it("banks Wishes created by scheduled effects for the following turn", () => {
+  it("does not create a delayed reward on a Haste turn", () => {
+    const wished = applyWishEffect(battle({ talentEffects: wishTalents, playerStatuses: { haste: 1 } }), wish, 2, []);
+    const next = endPlayerTurn(wished).state;
+    expect(next.mana).toBe(3);
+    expect(next.flags.pendingWishMana).toBe(0);
+  });
+
+  it("applies immediate Mana to Wishes created by scheduled effects", () => {
     const initial = battle({
       deck: [wish],
       talentEffects: wishTalents,
@@ -100,8 +101,8 @@ describe("Mana from Heaven", () => {
     });
     const next = advanceToPlayerTurn(initial);
     expect(next.mana).toBe(3);
-    expect(next.flags.pendingWishMana).toBe(1);
-    expect(advanceToPlayerTurn(next).mana).toBe(4);
+    expect(next.flags.pendingWishMana).toBe(0);
+    expect(advanceToPlayerTurn(next).mana).toBe(3);
   });
 });
 
@@ -111,11 +112,12 @@ describe("card play rewards", () => {
       battle({
         playerStatuses: { block: 4 },
         talentEffects: computeTalentEffects({ holy: ["holy-block-scaling"], block: ["block-to-holy"] }),
+        rng: () => 0.05,
       }),
       holy,
     );
-    expect(next.playerStatuses.block).toBe(5);
-    expect(next.enemyHealth).toBe(197);
+    expect(next.playerStatuses.block).toBe(6);
+    expect(next.enemyHealth).toBe(198);
   });
 
   it("repeating Holy effects does not repeat the play reward", () => {
@@ -123,22 +125,28 @@ describe("card play rewards", () => {
       battle({
         talentEffects: computeTalentEffects({ holy: ["holy-block-scaling"] }),
         flags: { playNextCardTwice: true },
+        rng: () => 0.05,
       }),
       holy,
     );
-    expect(next.playerStatuses.block).toBe(1);
+    expect(next.playerStatuses.block).toBe(4);
     expect(next.enemyHealth).toBe(196);
   });
 
   it("Thermal Vent supplies Forge that Ignite uses on the same card", () => {
-    const next = play(battle({ talentEffects: burnTalents }), burn);
-    expect(next.enemyHealth).toBe(197);
-    expect(next.playerStatuses.forge).toBe(0);
+    let rolls = 0;
+    const next = play(battle({ talentEffects: burnTalents, rng: () => (rolls++ === 0 ? 0 : 0.99) }), burn);
+    expect(next.enemyHealth).toBe(196);
+    expect(next.playerStatuses.forge).toBe(2);
   });
 
   it("Thermal Vent uses Intensify, Desperate Forge, and Overheat without a feedback loop", () => {
     const next = play(
       battle({
+        rng: (() => {
+          let rolls = 0;
+          return () => (rolls++ === 0 ? 0 : 0.99);
+        })(),
         playerStatuses: { forge: 1 },
         talentEffects: computeTalentEffects({
           burn: ["burn-dmg-2"],
@@ -147,16 +155,23 @@ describe("card play rewards", () => {
       }),
       burn,
     );
-    expect(next.playerStatuses.forge).toBe(4);
-    expect(next.enemyHealth).toBe(194);
+    expect(next.playerStatuses.forge).toBe(5);
+    expect(next.enemyHealth).toBe(198);
   });
 
   it("multiple Burn packets and repeated effects grant Forge for only the card play", () => {
     const next = play(
-      battle({ talentEffects: computeTalentEffects({ burn: ["burn-dmg-2"] }), flags: { playNextCardTwice: true } }),
+      battle({
+        rng: (() => {
+          let rolls = 0;
+          return () => (rolls++ === 0 ? 0 : 0.99);
+        })(),
+        talentEffects: computeTalentEffects({ burn: ["burn-dmg-2"] }),
+        flags: { playNextCardTwice: true },
+      }),
       { ...burn, effects: [...burn.effects, ...burn.effects] },
     );
-    expect(next.playerStatuses.forge).toBe(1);
+    expect(next.playerStatuses.forge).toBe(3);
     expect(next.enemyHealth).toBe(192);
   });
 
@@ -175,16 +190,16 @@ describe("card play rewards", () => {
   it("automatically played Burn cards receive the play reward", () => {
     const next = applyEnemyAbility(
       battle({
+        rng: () => 0,
         playerHealth: 40,
         deck: [burn],
         talentEffects: computeTalentEffects({ burn: ["burn-dmg-2"] }),
         gearEffects: { dodgeDrawAndPlay: 1 },
-        rng: () => 0,
       }),
       makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 1 }] }),
       [],
     );
-    expect(next.playerStatuses.forge).toBe(1);
+    expect(next.playerStatuses.forge).toBe(3);
   });
 });
 

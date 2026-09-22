@@ -32,8 +32,8 @@ function damage(state: ReturnType<typeof battle>, damageType: DamageType, amount
 
 describe("repeatability-based talent balance", () => {
   it.each([
-    ["physical", 13], // 4 base + 5 Forge + 2 Armor + 2 Block
-    ["nature", 6],
+    ["physical", 15], // 4 base + 5 Forge + 4 Armor + 2 Block
+    ["nature", 4],
     ["holy", 8],
     ["stun", 10],
     ["burn", 6],
@@ -86,7 +86,7 @@ describe("repeatability-based talent balance", () => {
       physical: ["physical-unrelenting"],
     });
     for (const [health, gain, hit] of [
-      [19, 5, 6],
+      [19, 5, 8],
       [20, 4, 4],
     ] as const) {
       const state = battle({ talentEffects: talents, playerHealth: health });
@@ -100,27 +100,27 @@ describe("repeatability-based talent balance", () => {
     expect(addForgeToPlayer(tiny, 1).playerStatuses.forge).toBe(1);
   });
 
-  it("uses fixed threshold rewards on overshoot and can reward another crossing", () => {
+  it("uses fixed Forge threshold rewards and Armored Surge on Block gains", () => {
     const talents = computeTalentEffects({
       forge: ["forge-burn-burst", "forge-strength-6", "forge-to-block"],
       armor: ["armor-block-burst"],
     });
     const first = addForgeToPlayer(battle({ talentEffects: talents, playerStatuses: { forge: 3 } }), 5);
-    expect(first.enemyHealth).toBe(96);
-    expect(first.playerStatuses.block).toBe(10); // fixed 6 + half of 8 Forge
+    expect(first.enemyHealth).toBe(100);
+    expect(first.playerStatuses.block).toBe(0);
     const recross = addForgeToPlayer({ ...first, playerStatuses: { ...first.playerStatuses, forge: 3 } }, 1);
-    expect(recross.enemyHealth).toBe(92);
+    expect(recross.enemyHealth).toBe(100);
     const armor = applyPlayerStatusEffect(
-      battle({ talentEffects: talents }),
-      { kind: "player-status", status: "armor", amount: 8 },
+      battle({ talentEffects: talents, rng: () => 0 }),
+      { kind: "player-status", status: "block", amount: 8 },
       [],
     );
-    expect(armor.playerStatuses.block).toBe(4);
+    expect(armor.playerStatuses.armor).toBe(8);
     const ordinaryBlock = applyPlayerStatusEffect(first, { kind: "player-status", status: "block", amount: 2 }, []);
-    expect(ordinaryBlock.playerStatuses.block).toBe(16);
+    expect(ordinaryBlock.playerStatuses.block).toBe(6);
   });
 
-  it("scales Dodge copies once and spends Parting Cut on the next Physical attack", () => {
+  it("guarantees the next Physical Crit and spends Parting Cut on the next attack", () => {
     const talents = computeTalentEffects({
       physical: ["physical-brute-force"],
       block: ["block-start"],
@@ -132,12 +132,12 @@ describe("repeatability-based talent balance", () => {
       [],
     );
     expect(dodged.playerHealth).toBe(10);
-    expect(dodged.playerStatuses.block).toBe(4);
-    expect(dodged.enemyHealth).toBe(98);
+    expect(dodged.playerStatuses.block).toBe(2);
+    expect(dodged.enemyHealth).toBe(100);
     const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 8 }] });
     const next = playBattleCardResolved({ ...dodged, rng: () => 0.99, hand: [card] }, card.id, 0).state;
-    expect(next.enemyHealth).toBe(86);
-    expect(next.enemyStatuses.bleed).toBe(4);
+    expect(next.enemyHealth).toBe(76);
+    expect(next.enemyStatuses.bleed).toBe(8);
     expect(next.flags.nextPhysicalDealsBleed).toBe(false);
   });
 

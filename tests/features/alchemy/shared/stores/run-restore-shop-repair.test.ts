@@ -95,6 +95,7 @@ describe("run restore shop offering repair", () => {
         trinketShopState: {
           trinketIds: [ownedTrinket.id, otherTrinket.id],
           refreshesLeft: 1,
+          freeRefreshUsed: false,
           firstPurchaseUsed: true,
           purchasedSlotKeys: [shopItemSlotKey(otherTrinket.id, 1)],
         },
@@ -121,6 +122,7 @@ describe("run restore shop offering repair", () => {
         trinketShopState: {
           trinketIds: [ownedTrinket.id, otherTrinket.id],
           refreshesLeft: 0,
+          freeRefreshUsed: false,
           firstPurchaseUsed: true,
           purchasedSlotKeys: [shopItemSlotKey(ownedTrinket.id, 0)],
         },
@@ -149,6 +151,7 @@ describe("run restore shop offering repair", () => {
         equipmentShopState: {
           gear: [shelfUnique, shelfBasic],
           refreshesLeft: 1,
+          freeRefreshUsed: false,
           firstPurchaseUsed: true,
           purchasedSlotKeys: ["shelf-basic", "shelf-wardbreaker"],
         },

@@ -42,6 +42,7 @@ describe("shop-persistence", () => {
         cards: [cardA, cardB],
         removeUsed: true,
         refreshesLeft: 2,
+        freeRefreshUsed: false,
         firstPurchaseUsed: true,
         purchasedSlotKeys: [shopItemSlotKey(cardA.id, 0)],
       };
@@ -51,6 +52,7 @@ describe("shop-persistence", () => {
         cards: [cardA, cardB],
         removeUsed: true,
         refreshesLeft: 2,
+        freeRefreshUsed: false,
         firstPurchaseUsed: true,
         purchasedSlotKeys: [shopItemSlotKey(cardA.id, 0)],
       });
@@ -78,6 +80,7 @@ describe("shop-persistence", () => {
         potions: [cardA],
         mixUsed: true,
         refreshesLeft: 1,
+        freeRefreshUsed: false,
         firstPurchaseUsed: false,
         purchasedSlotKeys: [],
       };
@@ -87,6 +90,7 @@ describe("shop-persistence", () => {
         potions: [cardA],
         mixUsed: true,
         refreshesLeft: 1,
+        freeRefreshUsed: false,
         firstPurchaseUsed: false,
         purchasedSlotKeys: [],
       });
@@ -101,6 +105,7 @@ describe("shop-persistence", () => {
       const state: TrinketShopState = {
         trinkets: [trinketA, trinketB],
         refreshesLeft: 2,
+        freeRefreshUsed: false,
         firstPurchaseUsed: true,
         purchasedSlotKeys: [shopItemSlotKey(trinketA.id, 0)],
       };
@@ -109,6 +114,7 @@ describe("shop-persistence", () => {
       expect(serialized).toEqual({
         trinketIds: [trinketA.id, trinketB.id],
         refreshesLeft: 2,
+        freeRefreshUsed: false,
         firstPurchaseUsed: true,
         purchasedSlotKeys: [shopItemSlotKey(trinketA.id, 0)],
       });
@@ -122,6 +128,7 @@ describe("shop-persistence", () => {
       const persisted = {
         trinketIds: ["non-existent-trinket-id", trinketB.id],
         refreshesLeft: 1,
+        freeRefreshUsed: false,
         firstPurchaseUsed: true,
         purchasedSlotKeys: [shopItemSlotKey(trinketB.id, 1)],
       };
@@ -135,6 +142,7 @@ describe("shop-persistence", () => {
       const persisted = {
         trinketIds: ["toString", trinketA.id],
         refreshesLeft: 1,
+        freeRefreshUsed: false,
         firstPurchaseUsed: false,
         purchasedSlotKeys: [],
       };
@@ -150,6 +158,7 @@ describe("shop-persistence", () => {
       const state: EquipmentShopState = {
         gear: [instance],
         refreshesLeft: 1,
+        freeRefreshUsed: false,
         firstPurchaseUsed: false,
         purchasedSlotKeys: [instance.instanceId],
       };
@@ -158,6 +167,7 @@ describe("shop-persistence", () => {
       expect(serialized).toEqual({
         gear: [instance],
         refreshesLeft: 1,
+        freeRefreshUsed: false,
         firstPurchaseUsed: false,
         purchasedSlotKeys: [instance.instanceId],
       });
@@ -173,6 +183,7 @@ describe("shop-persistence", () => {
       const persisted = {
         gear: [invalidInstance as unknown as ReturnType<typeof createGearInstance>, validInstance],
         refreshesLeft: 1,
+        freeRefreshUsed: false,
         firstPurchaseUsed: true,
         purchasedSlotKeys: [validInstance.instanceId],
       };

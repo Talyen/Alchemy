@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { createMixedPotion, tryCreateMixedPotion } from "@/lib/alchemist";
-import { cardById, isMixedPotionCard, isPotionCard, isStandardPotionCard } from "@/lib/game-data";
+import { cardById, computeTalentEffects, isMixedPotionCard, isPotionCard, isStandardPotionCard } from "@/lib/game-data";
 import { MIXED_POTION_CARD_ID } from "@/lib/game-constants";
 import { makeCombatTexts, makeState } from "../../fixtures/battle";
 import { defaultTalentEffects, defaultTrinketManifest } from "../../fixtures/default-battle-state";
@@ -46,6 +46,17 @@ describe("Mixed potion classification and combat mechanics", () => {
     const nextState = applyCardEffects(state, mixed, texts);
 
     expect(nextState.playerHealth).toBe(26);
+  });
+
+  it("stacks Distillation and Brewmaster potency additively for Mixed Potions", () => {
+    const mixed = createMixedPotion(healthPotion, manaPotion);
+    const state = makeState({
+      playerHealth: 10,
+      playerMaxHealth: 30,
+      talentEffects: computeTalentEffects({ consume: ["consume-distillation", "consume-brewmaster"] }),
+    });
+    const nextState = applyCardEffects(state, mixed, makeCombatTexts());
+    expect(nextState.playerHealth).toBe(20);
   });
 
   it("deals Poison for a standard Potion use", () => {

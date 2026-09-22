@@ -13,6 +13,7 @@ import {
   applyPlayerCombatDamage,
   isPlayerDefeated,
   mitigatePlayerCombatDamage,
+  reduceEnemyArmor,
   scaleReceivedPlayerDamage,
   setPlayerStatus,
   type BattleState,
@@ -40,6 +41,14 @@ export function getBurnBonusToBleedingMultiplier(state: Pick<BattleState, "enemy
 
 export function getPoisonBonusAgainstBleeding(state: Pick<BattleState, "enemyStatuses" | "talentEffects">): number {
   return state.enemyStatuses.bleed > 0 ? state.talentEffects.bleedPoisonDamageTakenBonus : 0;
+}
+
+export function getPoisonDamageMultiplierAgainstBleeding(
+  state: Pick<BattleState, "enemyStatuses" | "talentEffects">,
+): number {
+  return state.enemyStatuses.bleed > 0
+    ? 1 + state.talentEffects.bleedPoisonDamageTakenPercent / PERCENT_DENOMINATOR
+    : 1;
 }
 
 export function getEnemyTraitDamageMultiplier(state: Pick<BattleState, "currentEnemy">, damageType: string): number {
@@ -101,6 +110,11 @@ export function dealSelfDamage(
 
 export function rollTalentChance(chance: number, state: { rng?: () => number }): boolean {
   return chance > 0 && rollPercent(chance, getBattleRng(state));
+}
+
+export function applyPoisonDamageArmorRider(state: BattleState, damage: number): BattleState {
+  if (damage <= 0 || !state.talentEffects.poisonStripArmorByDamage) return state;
+  return reduceEnemyArmor(state, damage);
 }
 
 export type ArmorDecayTarget = "player" | "enemy";

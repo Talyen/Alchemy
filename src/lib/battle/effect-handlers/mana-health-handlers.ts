@@ -1,11 +1,15 @@
 import { hasCardHealing } from "./handler-types";
 import type { EffectHandler } from "./handler-types";
 import { isPotionCard } from "@/lib/game-data";
-import { applyCardHealing, checkHealthThresholds } from "../status-player";
+import {
+  applyCardHealing,
+  applyBlockReward,
+  applyHealthLossTalentRewards,
+  checkHealthThresholds,
+} from "../status-player";
 import { applyPotionMultiplier } from "../amount-helpers";
 import { MIN_MAX_MANA_FLOOR, PERCENT_DENOMINATOR } from "../../game-constants";
 import {
-  addPlayerStatusWithCombatText,
   applyHealOnManaGain,
   gainManaWithCombatText,
   mergeCombatText,
@@ -103,7 +107,8 @@ export const applyLoseMaxManaEffect = defineHandler(
 
 export const applyHealEffect = defineHandler("heal", (state, card, effect, potionMult, combatTexts, context) => {
   const potionBonus = isPotionCard(card) && effect.amount > 0 ? (state.talentEffects.homesteadPotionBonus ?? 0) : 0;
-  const adjustedHeal = applyPotionMultiplier(effect.amount, potionMult) + potionBonus;
+  const cardHealMultiplier = 1 + (state.talentEffects.cardHealMultipliers[card.id] ?? 0);
+  const adjustedHeal = Math.round(applyPotionMultiplier(effect.amount, potionMult) * cardHealMultiplier) + potionBonus;
   const consumeBonus = card.consume
     ? state.talentEffects.consumeHealMultiplier + state.gearEffects.consumeHealBonusPercent / PERCENT_DENOMINATOR
     : 0;
@@ -121,14 +126,15 @@ export const applyHealEffect = defineHandler("heal", (state, card, effect, potio
     potionHealing > 0 &&
     state.playerHealth + potionHealing === state.playerMaxHealth
   ) {
-    return addPlayerStatusWithCombatText(healed, "block", state.talentEffects.blockOnConsume, combatTexts);
+    return applyBlockReward(healed, state.talentEffects.blockOnConsume, combatTexts);
   }
   return healed;
 });
 
 export const applyLoseHealthEffect = defineHandler("lose-health", (state, _card, effect, _potionMult, combatTexts) => {
-  const damaged = dealSelfDamage(state, effect.amount, "health", combatTexts).state;
-  return checkHealthThresholds(state.playerHealth, damaged.playerHealth, damaged, combatTexts);
+  const { state: damaged, healthLost } = dealSelfDamage(state, effect.amount, "health", combatTexts);
+  const thresholded = checkHealthThresholds(state.playerHealth, damaged.playerHealth, damaged, combatTexts);
+  return applyHealthLossTalentRewards(state, thresholded, healthLost, combatTexts);
 });
 
 export const MANA_HEALTH_HANDLERS = {

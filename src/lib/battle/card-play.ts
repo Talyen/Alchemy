@@ -6,7 +6,6 @@ import { drawFromState, applyDrawResult, drawKeywordCard } from "./draw";
 import { applyCardEffects } from "./effect-handlers";
 import {
   addGoldWithCombatText,
-  addPlayerStatusWithCombatText,
   applyHealingWithCombatText,
   gainManaWithCombatText,
   mergeCombatText,
@@ -23,7 +22,12 @@ import {
 } from "./types";
 import { processCompanionTurnStart } from "./companion";
 import { detonateEnemyStatuses } from "./dot-resolve";
-import { addForgeToPlayer, countRemovableHarmfulStatuses } from "./status-player";
+import {
+  addForgeToPlayer,
+  applyBlockDepletionForgeReward,
+  applyBlockReward,
+  countRemovableHarmfulStatuses,
+} from "./status-player";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
@@ -72,7 +76,7 @@ function cardHasOnlyCleanseEffect(card: BattleCard, state: BattleSnapshot): bool
   return !hasUsefulEffect && countRemovableHarmfulStatuses(state.playerStatuses) === 0;
 }
 
-function applyMortarAndPestlePotionUse(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]) {
+export function applyMortarAndPestlePotionUse(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]) {
   if (isPlayerDefeated(state) || !isPotionCard(card) || state.trinketEffects.mortarPestlePoisonOnPotionUse <= 0)
     return state;
   return resolvePendingBattleReactions(
@@ -135,7 +139,9 @@ export function resolveCardEffectChain(
   attackAttempted: boolean;
   attackBonuses: NonNullable<CardEffectResolutionContext["attackBonuses"]>;
 } {
-  const talentPlay = prepareTalentCardPlay(state, card, combatTexts);
+  const talentPlay = prepareTalentCardPlay(state, card, combatTexts, {
+    countsAsPlayedCard: options.playedCard === true,
+  });
   const reacted = resolvePendingBattleReactions(talentPlay.state, combatTexts);
   const damageEffects = options.damageEffects ?? [];
   let nextState = applyCardEffects(reacted, card, combatTexts, {
@@ -151,6 +157,20 @@ export function resolveCardEffectChain(
     nextState = applyCardPlayTalentRewards(nextState, card, combatTexts);
   }
   return { state: nextState, attackAttempted: damageEffects.length > 0, attackBonuses: talentPlay.attackBonuses };
+}
+
+export function shouldElementalTalentRepeat(state: BattleState, card: BattleCard, alreadyRepeating = false): boolean {
+  if (alreadyRepeating) return false;
+
+  const chance =
+    (cardHasKeyword(card, "burn") ? state.talentEffects.burnCardPlayTwiceChance : 0) +
+    (cardHasKeyword(card, "freeze") ? state.talentEffects.freezeCardPlayTwiceChance : 0) +
+    (cardHasKeyword(card, "nature") ? state.talentEffects.natureCardPlayTwiceChance : 0) +
+    (cardHasKeyword(card, "poison") ? state.talentEffects.poisonCardPlayTwiceChance : 0) +
+    (cardHasKeyword(card, "stun") ? state.talentEffects.stunCardPlayTwiceChance : 0) +
+    (cardHasKeyword(card, "wish") ? state.talentEffects.wishCardPlayTwiceChance : 0);
+
+  return rollTalentChance(Math.min(100, chance), state);
 }
 
 function executeCardPlayState(
@@ -240,7 +260,11 @@ function applyResonantChimeTrinket(state: BattleState, combatTexts: CombatTextEv
   return state;
 }
 
-function applyCardPlayTalentRewards(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]): BattleState {
+export function applyCardPlayTalentRewards(
+  state: BattleState,
+  card: BattleCard,
+  combatTexts: CombatTextEvent[],
+): BattleState {
   if (isPlayerDefeated(state)) return state;
   let nextState = applyNatureCardPlayTalents(state, card, combatTexts);
   if (nextState.talentEffects.companionActsOnCard && cardHasKeyword(card, "companion")) {
@@ -253,12 +277,7 @@ function applyNatureCardPlayTalents(state: BattleState, card: BattleCard, combat
   if (!isNatureCard(card)) return state;
   let nextState = state;
   if (nextState.talentEffects.blockOnNatureCard > 0) {
-    nextState = addPlayerStatusWithCombatText(
-      nextState,
-      "block",
-      nextState.talentEffects.blockOnNatureCard,
-      combatTexts,
-    );
+    nextState = applyBlockReward(nextState, nextState.talentEffects.blockOnNatureCard, combatTexts);
   }
   if (nextState.talentEffects.healOnNatureCard > 0) {
     nextState = applyHealingWithCombatText(nextState, nextState.talentEffects.healOnNatureCard, combatTexts);
@@ -285,7 +304,12 @@ function applyConsumeTalentRiders(
   }
   if (lastCardInHand && talents.forgeOnConsume > 0)
     nextState = addForgeToPlayer(nextState, talents.forgeOnConsume, combatTexts);
-  if (talents.consumeDetonatesBurn) nextState = detonateEnemyStatuses(nextState, ["burn"], combatTexts);
+  if (
+    talents.consumeDetonatesBurn ||
+    (talents.consumeDetonatesBurnChance > 0 && rollTalentChance(talents.consumeDetonatesBurnChance, nextState))
+  ) {
+    nextState = detonateEnemyStatuses(nextState, ["burn"], combatTexts);
+  }
   nextState = resolvePendingBattleReactions(nextState, combatTexts);
   if (isPlayerDefeated(nextState)) return nextState;
   if (talents.healOnConsume > 0) {
@@ -358,12 +382,14 @@ export function playBattleCardResolved(
   const blockCost = freeMana ? 0 : payment.blockCost;
   const costState = freeMana ? state : consumeCardDiscounts(state, payment);
 
-  const playTwice = readCombatFlag(costState, "playNextCardTwice");
+  const existingPlayTwice = readCombatFlag(costState, "playNextCardTwice");
+  const playTwice = existingPlayTwice || shouldElementalTalentRepeat(costState, card, existingPlayTwice);
   const prepared = prepareUniqueCardPlay(costState, card, effectiveCost);
-  const paymentState = {
+  let paymentState = {
     ...prepared.state,
     playerStatuses: { ...prepared.state.playerStatuses, block: prepared.state.playerStatuses.block - blockCost },
   };
+  paymentState = applyBlockDepletionForgeReward(costState, paymentState, combatTexts);
   if (blockCost > 0)
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: blockCost });
   const played = executeCardPlayState(

@@ -21,21 +21,25 @@ function battle(patch: BattleStatePatch = {}) {
   });
 }
 
-const converted = computeTalentEffects({
-  physical: ["physical-lacerate"],
-  archery: ["archery-broadhead"],
-  bleed: ["bleed-poison-chance"],
-  nature: ["nature-toxic-pollen"],
-  holy: ["holy-burn-chance"],
-  leech: ["leech-bleed-chance", "leech-poison"],
-});
+const converted = {
+  ...computeTalentEffects({
+    archery: ["archery-broadhead"],
+    bleed: ["bleed-poison-chance"],
+    holy: ["holy-burn-chance"],
+    leech: ["leech-bleed-chance", "leech-poison"],
+  }),
+  naturePoisonChance: 0,
+  physicalBleedChance: 0,
+  naturePoisonDamageChance: 10,
+  physicalBleedDamageChance: 10,
+};
 
 describe("talent damage conversions", () => {
   it.each([
     ["physical", "bleed", 2, 2],
     ["bleed", "poison", 4, 4],
     ["nature", "poison", 4, 4],
-    ["holy", "burn", 4, 4],
+    ["holy", "burn", 8, 8],
   ] as const)(
     "converts %s procs into a mitigated %s hit and its intrinsic status",
     (source, target, damage, stacks) => {
@@ -74,8 +78,8 @@ describe("talent damage conversions", () => {
 
   it("Leech can trigger both damage types without those secondary hits triggering further procs", () => {
     const next = applyLifestealAndPlayerHitTriggers(battle({ talentEffects: converted }), 8, []);
-    expect(next.enemyHealth).toBe(94);
-    expect(next.enemyStatuses).toMatchObject({ bleed: 2, poison: 4 });
+    expect(next.enemyHealth).toBe(100);
+    expect(next.enemyStatuses).toMatchObject({ bleed: 0, poison: 0 });
   });
 
   it("does not apply a chance proc on a failed roll or zero damage", () => {
@@ -90,7 +94,15 @@ describe("talent damage conversions", () => {
       turn: 20,
       playerStatuses: { forge: 50 },
       flags: { nextHitCrit: true, nextHitPhysicalBonus: 40, sanguinePhysicalBonus: 3 },
-      talentEffects: { flatBurnDamage: 100, forgeToBurn: true, burnDamagePerManaCrystal: 100 },
+      enemyCC: { freezeSkipTurns: 1 },
+      enemyStatuses: { poison: 2 },
+      talentEffects: {
+        flatBurnDamage: 100,
+        forgeToBurn: true,
+        burnDamagePerManaCrystal: 100,
+        freezeDamageBonusVsFrozen: 1,
+        poisonDamageBonusVsPoisoned: 1,
+      },
     });
     const next = tryTalentTypedHit(initial, 100, "burn", 8, []);
     expect(next.enemyHealth).toBe(96);

@@ -103,6 +103,7 @@ function createShopObjectSchema<T extends z.ZodRawShape>(shape: T) {
   return z.object({
     ...shape,
     refreshesLeft: z.number().int().nonnegative().catch(0),
+    freeRefreshUsed: z.boolean().catch(false),
     firstPurchaseUsed: z.boolean().catch(false),
     purchasedSlotKeys: deduplicatedStringArraySchema(),
   });

@@ -204,6 +204,7 @@ describe("shop-state-init", () => {
     const restored = hydrateTrinketShopState({
       trinketIds: [liveA.id, "not-a-real-trinket", liveB.id],
       refreshesLeft: 1,
+      freeRefreshUsed: false,
       firstPurchaseUsed: true,
       purchasedSlotKeys: [shopItemSlotKey(liveB.id, 2)],
     });
@@ -228,6 +229,7 @@ describe("shop-state-init", () => {
     const restored = hydrateEquipmentShopState({
       gear: [{ instanceId: "gone", definitionId: "not-a-real-definition", affixes: [] }, live],
       refreshesLeft: 1,
+      freeRefreshUsed: false,
       firstPurchaseUsed: true,
       purchasedSlotKeys: ["gone", "shelf-basic", "orphan-slot"],
     });

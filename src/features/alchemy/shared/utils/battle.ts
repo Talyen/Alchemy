@@ -129,7 +129,7 @@ function isDamageEffect(effect: BattleCardEffect): effect is Extract<BattleCardE
 function buildArmedPlayerChips(state: BattleSnapshot): StatusChip[] {
   const chips: StatusChip[] = [];
   const { flags } = state;
-  if (flags.hawkEyeReady) chips.push({ id: "hawkEyeReady", value: state.talentEffects.archeryHolyDamageVsFrozen });
+  if (flags.hawkEyeReady) chips.push({ id: "hawkEyeReady", value: 1, hideValue: true });
   if (flags.playNextCardTwice) chips.push({ id: "playNextCardTwice", value: 1, hideValue: true });
   if (flags.nextHitCrit) chips.push({ id: "nextHitCrit", value: 1, hideValue: true });
   if (flags.nextHitLeech) chips.push({ id: "nextHitLeech", value: 1, hideValue: true });

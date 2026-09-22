@@ -474,22 +474,22 @@ describe("processCompanionTurnStart", () => {
     expect(result.playerHealth).toBe(14);
   });
 
-  it("Watchdog grants Block when the companion deals damage", () => {
+  it("Watchdog does not react directly to Companion damage", () => {
     const state = patchBattleState({
       activeCompanion: companionLibrary.wolf,
       talentEffects: {
-        blockOnCompanionDamage: 2,
+        companionAttackOnBlockDepletedBelowHalf: true,
       },
     });
     const result = processCompanionTurnStart(state, makeTexts());
-    expect(result.playerStatuses.block).toBe(2);
+    expect(result.playerStatuses.block).toBe(0);
   });
 
   it("Watchdog no-ops when the companion deals no damage", () => {
     const state = patchBattleState({
       activeCompanion: companionLibrary.pixie,
       talentEffects: {
-        blockOnCompanionDamage: 2,
+        companionAttackOnBlockDepletedBelowHalf: true,
       },
     });
     const result = processCompanionTurnStart(state, makeTexts());

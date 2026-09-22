@@ -120,7 +120,18 @@ export function applyHandConflicts(
   additionalDisplaced: readonly DisplacedGearItem[],
   currentSlot: ArmorySlot,
 ): string[] {
-  let list = currentIds.slice();
+  const compatibleAdditional = additionalDisplaced
+    .slice()
+    .sort((a, b) => GEAR_SLOTS.indexOf(a.slot) - GEAR_SLOTS.indexOf(b.slot))
+    .filter((d) => {
+      const def = gearDefinitions[d.instance.definitionId];
+      return currentSlot !== "trinket" && (def?.compatibleSlots.includes(currentSlot) ?? false);
+    });
+
+  const additionalIds = compatibleAdditional.map((d) => d.instance.instanceId);
+  // Displaced hand items may already be visible in this category. Remove them
+  // before locating the incoming item so their old positions cannot skew insertion.
+  let list = currentIds.filter((id) => !additionalIds.includes(id));
   const incomingIndex = list.indexOf(incomingId);
 
   // 1. Target slot replacement or removal
@@ -134,15 +145,6 @@ export function applyHandConflicts(
     list = list.filter((id) => id !== incomingId);
   }
 
-  // 2. Additional displaced items compatible with the current category inserted immediately after
-  const compatibleAdditional = additionalDisplaced
-    .slice()
-    .sort((a, b) => GEAR_SLOTS.indexOf(a.slot) - GEAR_SLOTS.indexOf(b.slot))
-    .filter((d) => {
-      const def = gearDefinitions[d.instance.definitionId];
-      return currentSlot !== "trinket" && (def?.compatibleSlots.includes(currentSlot) ?? false);
-    });
-
   if (compatibleAdditional.length > 0) {
     const anchorIndex = targetReplacedId ? list.indexOf(targetReplacedId) : incomingIndex;
     const insertPosition = targetReplacedId
@@ -152,9 +154,6 @@ export function applyHandConflicts(
       : anchorIndex !== -1
         ? Math.min(anchorIndex, list.length)
         : list.length;
-    const additionalIds = compatibleAdditional.map((d) => d.instance.instanceId);
-    // Ensure no duplicates
-    list = list.filter((id) => !additionalIds.includes(id));
     list.splice(insertPosition, 0, ...additionalIds);
   }
 

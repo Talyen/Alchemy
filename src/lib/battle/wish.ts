@@ -15,7 +15,7 @@ import {
 } from "./combat-text";
 import { removeHarmfulPlayerStatuses, applyPlayerStatusEffect, applyArmorReward } from "./status-player";
 import { getEnemyDamageMultiplier, rollTalentChance } from "./status-helpers";
-import { getBattleRng, rollPercent } from "@/lib/rng";
+import { getBattleRng, pickRandom, rollPercent } from "@/lib/rng";
 import { getEditableCorruptionTargets, updateCardNumericValue } from "@/lib/corruption";
 import {
   PERCENT_DENOMINATOR,
@@ -79,7 +79,13 @@ function applyWishGoldTriggers(state: BattleState, combatTexts: CombatTextEvent[
     state.gearEffects.goldOnWish > 0 && rollTalentChance(REACTIVE_REWARD_CHANCES.wishfulAffix, state)
       ? state.gearEffects.goldOnWish
       : 0;
-  const goldAmount = nextState.talentEffects.goldOnWish + gearGold;
+  const talentGold =
+    nextState.talentEffects.goldOnWish > 0 &&
+    (nextState.talentEffects.goldOnWishChance <= 0 ||
+      rollTalentChance(nextState.talentEffects.goldOnWishChance, nextState))
+      ? nextState.talentEffects.goldOnWish
+      : 0;
+  const goldAmount = talentGold + gearGold;
   if (goldAmount > 0) {
     nextState = addGoldWithCombatText(nextState, goldAmount, combatTexts);
   }
@@ -124,7 +130,9 @@ function applyWishHealthAndStatusTriggers(
 }
 
 function applyWishDrawTriggers(state: BattleState): BattleState {
-  const drawCount = (state.talentEffects.wishDrawsCard ? 1 : 0) + state.gearEffects.drawOnWish;
+  const talentDraw =
+    state.talentEffects.wishDrawsCard || rollTalentChance(state.talentEffects.wishDrawChance, state) ? 1 : 0;
+  const drawCount = talentDraw + state.gearEffects.drawOnWish;
   if (drawCount <= 0) return state;
   return applyDrawResult(state, drawFromState(state, drawCount));
 }
@@ -261,23 +269,24 @@ export function chooseWishCard(state: BattleState, cardId: string, combatTexts: 
   }
 
   const declined = Math.max(0, (state.wishOptions?.length ?? 0) - 1);
+  const declinedCards = (state.wishOptions ?? []).filter((card) => card.id !== chosenCard.id);
   const blockAmount = declined * state.talentEffects.blockPerDeclinedWishCard;
   const rewarded =
     blockAmount > 0
       ? applyPlayerStatusEffect(state, { kind: "player-status", status: "block", amount: blockAmount }, combatTexts)
       : state;
-  const cardWithUid = { ...chosenCard, uid: state.nextCardUid };
-  const nextCardUid = state.nextCardUid + 1;
-
-  if (state.hand.length < MAX_HAND_SIZE) {
-    return { ...rewarded, hand: [...state.hand, cardWithUid], nextCardUid, wishOptions: nextWishOptions, wishQueue };
-  }
-
-  return {
-    ...rewarded,
-    discard: [...state.discard, cardWithUid],
-    nextCardUid,
-    wishOptions: nextWishOptions,
-    wishQueue,
+  const addWishCard = (current: BattleState, card: BattleCard): BattleState => {
+    const cardWithUid = { ...card, uid: current.nextCardUid };
+    const next = { ...current, nextCardUid: current.nextCardUid + 1 };
+    return current.hand.length < MAX_HAND_SIZE
+      ? { ...next, hand: [...current.hand, cardWithUid] }
+      : { ...next, discard: [...current.discard, cardWithUid] };
   };
+
+  let nextState = addWishCard({ ...rewarded, wishOptions: nextWishOptions, wishQueue }, chosenCard);
+  if (declinedCards.length > 0 && rollTalentChance(nextState.talentEffects.declinedWishCardChance, nextState)) {
+    const bonusCard = pickRandom(declinedCards, getBattleRng(nextState));
+    if (bonusCard) nextState = addWishCard(nextState, bonusCard);
+  }
+  return nextState;
 }

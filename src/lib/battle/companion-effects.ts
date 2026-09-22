@@ -7,7 +7,7 @@ import { getModifiedCompanionEffects, type BattleCard } from "@/lib/game-data";
 import { isPlayerDefeated, type BattleState, type CombatTextEvent } from "./types";
 import { applyScaledLeechHealing, computeLeechHeal } from "./damage-rider-leech";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
-import { addPlayerStatusWithCombatText, applyHealingWithCombatText } from "./combat-text";
+import { applyBlockReward, applyHealingWithCombatText, gainManaWithCombatText } from "./combat-text";
 import { rollTalentChance } from "./status-helpers";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { getBattleCompanionDamageModifiers } from "./companion-scaling";
@@ -44,6 +44,7 @@ export function resolveCompanionTurnStart(
     const attackBonuses = { flat: s.flags.companionNextAttackBonus, physical: 0, bleed: 0 };
     const damageEffects: NonNullable<CardEffectResolutionContext["damageEffects"]> = [];
     let damageDealt = 0;
+    let damagePackets = 0;
     let afterEffects = processEncounterTraitCardAction(
       applyEffects(s, companionCard, combatTexts, {
         manaAtStart: s.mana,
@@ -53,6 +54,7 @@ export function resolveCompanionTurnStart(
         damageEffects,
         onDamageDealt: (amount) => {
           damageDealt += amount;
+          if (amount > 0) damagePackets += 1;
         },
       }),
       companionCard,
@@ -72,12 +74,7 @@ export function resolveCompanionTurnStart(
     }
 
     if (damageDealt > 0 && state.talentEffects.blockOnCompanionDamage > 0 && state.playerStatuses.block === 0) {
-      afterEffects = addPlayerStatusWithCombatText(
-        afterEffects,
-        "block",
-        state.talentEffects.blockOnCompanionDamage,
-        combatTexts,
-      );
+      afterEffects = applyBlockReward(afterEffects, state.talentEffects.blockOnCompanionDamage, combatTexts);
     }
 
     if (damageDealt > 0 && state.talentEffects.companionStunChance > 0) {
@@ -93,6 +90,12 @@ export function resolveCompanionTurnStart(
     if (damageDealt > 0 && state.talentEffects.companionLeechChance > 0) {
       if (rollTalentChance(state.talentEffects.companionLeechChance, state)) {
         afterEffects = applyScaledLeechHealing(afterEffects, computeLeechHeal(damageDealt), combatTexts);
+      }
+    }
+
+    for (let index = 0; index < damagePackets; index += 1) {
+      if (rollTalentChance(afterEffects.talentEffects.companionManaChance, afterEffects)) {
+        afterEffects = gainManaWithCombatText(afterEffects, 1, combatTexts);
       }
     }
 

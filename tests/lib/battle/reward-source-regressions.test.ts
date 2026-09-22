@@ -55,7 +55,7 @@ describe("combat reward sources", () => {
     expect(result.enemyStatuses.burn).toBe(2);
   });
 
-  it("Second Wind cannot cancel rewards for Companion damage", () => {
+  it("Second Wind cannot cancel legacy Companion damage rewards", () => {
     const state = regressionBattle({
       enemyHealth: 51,
       enemyMaxHealth: 100,

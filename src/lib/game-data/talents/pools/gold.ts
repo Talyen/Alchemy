@@ -1,5 +1,5 @@
 import { talent } from "../talent-builder";
-import { addEffect, setEffect } from "../types";
+import { setEffect } from "../types";
 
 export const goldTalents = [
   talent(
@@ -14,11 +14,18 @@ export const goldTalents = [
     "gold-shop-refresh",
     "gold",
     "Restock",
-    "Shop refreshes cost 0 Gold",
+    "Shop refreshes have a 10% chance to be free, once per shop",
     "RefreshCw",
-    setEffect("shopFreeRefresh", true),
+    setEffect("shopFreeRefreshChance", 10),
   ),
-  talent("gold-start", "gold", "Seed Money", "Start each run with 20 Gold", "Sprout", setEffect("startGold", 20)),
+  talent(
+    "gold-start",
+    "gold",
+    "Seed Money",
+    "Dealing Nature damage has a 10% chance to also grant Gold",
+    "Sprout",
+    setEffect("goldOnNatureDamageChance", 10),
+  ),
   talent(
     "gold-per-combat",
     "gold",
@@ -30,10 +37,10 @@ export const goldTalents = [
   talent(
     "gold-potion-discount",
     "gold",
-    "Apothecary’s Guard",
-    "When you play a Potion, gain 1 Armor",
+    "Apothecary Membership",
+    "Potion purchases cost 5 less Gold",
     "Beaker",
-    setEffect("armorOnPotionCard", 1),
+    setEffect("potionDiscount", 5),
   ),
   talent(
     "gold-remove-discount",
@@ -51,7 +58,15 @@ export const goldTalents = [
     "HandCoins",
     setEffect("enemyGoldDropBonus", 0.1),
   ),
-  talent("gold-on-wish", "gold", "Golden Wish", "Gain 1 Gold when you Wish", "Sparkles", addEffect("goldOnWish", 1)),
+  talent(
+    "gold-on-wish",
+    "gold",
+    "Golden Wish",
+    "10% chance to gain 7 Gold when you Wish",
+    "Sparkles",
+    setEffect("goldOnWish", 7),
+    setEffect("goldOnWishChance", 10),
+  ),
   talent(
     "gold-mix-discount",
     "gold",
@@ -64,8 +79,8 @@ export const goldTalents = [
     "gold-elite-drop",
     "gold",
     "Coinmail",
-    "Without Block, gain Block equal to 25% of combat Gold gained",
+    "Gaining Armor has a 10% chance to also grant Gold",
     "Trophy",
-    setEffect("blockPerGold", 0.25),
+    setEffect("goldOnArmorGainChance", 10),
   ),
 ];

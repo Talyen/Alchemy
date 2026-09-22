@@ -98,7 +98,9 @@ export function resolveStunTrigger(
 
   if (triggered.kind === "immune") return triggered.state;
 
-  let nextState = triggered.state;
+  let nextState = state.talentEffects.archeryCritOnCrowdControl
+    ? setFlag(triggered.state, "hawkEyeReady", true)
+    : triggered.state;
   if (state.gearEffects.retainStunBuildup > 0) {
     nextState = setEnemyStatus(
       nextState,

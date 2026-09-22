@@ -3,6 +3,7 @@ import type { BattleCard, TalentEffectManifest, TrinketEntry } from "@/lib/game-
 import type { ShopRefreshModifiers } from "./shop-action-types";
 import type { GearInstance } from "@/lib/gear";
 import type { GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
+import { createDraftRunRandomSource, readDraftGold } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { getShopBuyPrice, getShopRefreshPrice, type ShopBuyKind, type ShopRefreshKind } from "./shop-pricing";
 import {
   resolveDraftShopModifiers,
@@ -31,19 +32,29 @@ function readRefreshPrice(
   talentEffects: TalentEffectManifest,
   refreshesLeft: number,
   modifiers: ShopRefreshModifiers = resolveReadShopModifiers(),
+  freeRefreshUsed = false,
 ): number {
-  return getShopRefreshPrice(kind, talentEffects, refreshesLeft, modifiers);
+  return getShopRefreshPrice(kind, talentEffects, refreshesLeft, modifiers, freeRefreshUsed);
 }
 
 export function createGetRefreshPrice(
   kind: ShopRefreshKind,
   talentEffects: TalentEffectManifest,
-): (refreshesLeft: number, modifiers?: ShopRefreshModifiers) => number {
-  return (refreshesLeft: number, modifiers?: ShopRefreshModifiers) =>
-    readRefreshPrice(kind, talentEffects, refreshesLeft, modifiers ?? resolveReadShopModifiers());
+): (refreshesLeft: number, modifiers?: ShopRefreshModifiers, freeRefreshUsed?: boolean) => number {
+  return (refreshesLeft: number, modifiers?: ShopRefreshModifiers, freeRefreshUsed?: boolean) =>
+    readRefreshPrice(
+      kind,
+      talentEffects,
+      refreshesLeft,
+      modifiers ?? resolveReadShopModifiers(),
+      freeRefreshUsed ?? false,
+    );
 }
 
-export function createShopRefreshAction<TState extends { refreshesLeft: number; purchasedSlotKeys: string[] }, TItem>({
+export function createShopRefreshAction<
+  TState extends { refreshesLeft: number; freeRefreshUsed: boolean; purchasedSlotKeys: string[] },
+  TItem,
+>({
   activity,
   kind,
   talentEffects,
@@ -67,11 +78,28 @@ export function createShopRefreshAction<TState extends { refreshesLeft: number; 
         const state = readActivityData(draft.session.activity, activity) as unknown as TState;
         if (guard && !guard(draft, state)) return { committed: false, price: 0, value: null };
         const modifiers = resolveDraftShopModifiers(draft);
-        const price = getShopRefreshPrice(kind, talentEffects, state.refreshesLeft, modifiers);
+        const quotedPrice = getShopRefreshPrice(
+          kind,
+          talentEffects,
+          state.refreshesLeft,
+          modifiers,
+          state.freeRefreshUsed,
+        );
+        // Match the displayed affordability guard before consuming persisted RNG.
+        if (state.refreshesLeft <= 0 || readDraftGold(draft) < quotedPrice) {
+          return { committed: false, price: quotedPrice, value: null };
+        }
+        const restockRoll =
+          quotedPrice > 0 &&
+          !state.freeRefreshUsed &&
+          talentEffects.shopFreeRefreshChance > 0 &&
+          createDraftRunRandomSource(draft, "shops")() < talentEffects.shopFreeRefreshChance / 100;
+        const price = restockRoll ? 0 : quotedPrice;
         return refreshShopOfferings({
           draft,
           price,
           refreshesLeft: state.refreshesLeft,
+          freeRefreshUsed: state.freeRefreshUsed || restockRoll || (talentEffects.shopFreeRefresh && quotedPrice === 0),
           setState,
           mapState,
           resample: () => resample(draft, state, modifiers),

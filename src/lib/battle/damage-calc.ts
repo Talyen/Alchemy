@@ -16,9 +16,11 @@ export { forgeAppliesToDamageType } from "./player-damage-bonuses";
 
 function applyCrit(damage: number, state: BattleState) {
   const critical = readCombatFlag(state, "nextHitCrit") || rollPercent(GLOBAL_CRIT_CHANCE_PERCENT, getBattleRng(state));
-  return critical && damage > 0
-    ? damage * CRIT_MULTIPLIER + (state.talentEffects.homesteadCriticalDamage ?? 0)
-    : damage;
+  return {
+    damage:
+      critical && damage > 0 ? damage * CRIT_MULTIPLIER + (state.talentEffects.homesteadCriticalDamage ?? 0) : damage,
+    critical: critical && damage > 0,
+  };
 }
 
 function applySunderingArmorPiercing(state: BattleState, isPhysicalOrStun: boolean): BattleState {
@@ -55,7 +57,12 @@ export function computeTalentDamageToEnemy(
   amount: number,
   source: "talent-fixed" | "talent-derived",
 ) {
-  const base = source === "talent-derived" ? Math.round(amount) : paceCombatDamage(state, amount, "player");
+  const frozenBonus = state.enemyCC.freezeSkipTurns > 0 ? state.talentEffects.freezeDamageBonusVsFrozen : 0;
+  const poisonedBonus = state.enemyStatuses.poison > 0 ? state.talentEffects.poisonDamageBonusVsPoisoned : 0;
+  const base =
+    source === "talent-derived"
+      ? Math.round(amount)
+      : paceCombatDamage(state, amount + frozenBonus + poisonedBonus, "player");
   const multiplier =
     source === "talent-derived"
       ? getEnemyTraitDamageMultiplier(state, damageType)
@@ -103,20 +110,20 @@ function resolveDamageAfterMitigation(
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   card: BattleCard | undefined,
   finalDamage: number,
-): { nextState: BattleState; modifiedDamage: number } {
+  critical: boolean,
+  physicalCritReady: boolean,
+): { nextState: BattleState; modifiedDamage: number; critical: boolean } {
   const { state: stateAfterBlock, remainingDamage: damageAfterBlock } = applyBlockAbsorption(
     state,
     finalDamage,
     effect.ignoreBlock === true,
   );
-  const stateWithCritCleared = readCombatFlag(stateAfterBlock, "nextHitCrit")
-    ? setFlag(stateAfterBlock, "nextHitCrit", false)
-    : stateAfterBlock;
+  const critReady = readCombatFlag(stateAfterBlock, "nextHitCrit");
   const isPhysicalOrStun = effect.damageType === "physical" || effect.damageType === "stun";
   const serpent = state.gearEffects.poisonedAttacksPierce > 0 && state.enemyStatuses.poison > 0 && card !== undefined;
   const kingbreaker = effect.damageType === "stun" && state.gearEffects.armorIncreasesStun > 0;
-  const nextState =
-    serpent || kingbreaker ? stateWithCritCleared : applySunderingArmorPiercing(stateWithCritCleared, isPhysicalOrStun);
+  let nextState =
+    serpent || kingbreaker ? stateAfterBlock : applySunderingArmorPiercing(stateAfterBlock, isPhysicalOrStun);
   // Ignoring Armor changes this hit's mitigation; only Sundering removes stacks.
   const ignoredArmor =
     state.gearEffects.armorPiercing +
@@ -127,7 +134,14 @@ function resolveDamageAfterMitigation(
     isPhysicalOrStun && !serpent && !kingbreaker && !effect.ignoreArmor
       ? Math.max(0, nextState.enemyMitigation.armor - ignoredArmor)
       : 0;
-  return { nextState, modifiedDamage: Math.max(0, damageAfterBlock - effectiveArmor) };
+  const modifiedDamage = Math.max(0, damageAfterBlock - effectiveArmor);
+  if (critReady && modifiedDamage > 0) nextState = setFlag(nextState, "nextHitCrit", false);
+  if (physicalCritReady && modifiedDamage > 0) nextState = setFlag(nextState, "nextPhysicalCrit", false);
+  return {
+    nextState,
+    modifiedDamage,
+    critical,
+  };
 }
 
 export function computeCardDamageToEnemy(
@@ -150,12 +164,25 @@ export function computeCardDamageToEnemy(
   const scaledDamage = Math.round(baseDamage * totalMultiplier * encounter.multiplier);
   const pacedDamage = paceCombatDamage(stateAfterFirst, scaledDamage, "player");
   const repeatedDamage = Math.round(pacedDamage * (context?.damageMultiplier ?? 1));
-  const criticalDamage = context?.guaranteedCrit
-    ? repeatedDamage * CRIT_MULTIPLIER +
-      (repeatedDamage > 0 ? (stateAfterFirst.talentEffects.homesteadCriticalDamage ?? 0) : 0)
-    : applyCrit(repeatedDamage, stateAfterFirst);
+  const physicalCritReady = effect.damageType === "physical" && readCombatFlag(stateAfterFirst, "nextPhysicalCrit");
+  const criticalResult =
+    context?.guaranteedCrit || physicalCritReady
+      ? {
+          damage:
+            repeatedDamage * CRIT_MULTIPLIER +
+            (repeatedDamage > 0 ? (stateAfterFirst.talentEffects.homesteadCriticalDamage ?? 0) : 0),
+          critical: repeatedDamage > 0,
+        }
+      : applyCrit(repeatedDamage, stateAfterFirst);
   const kingbreaker = effect.damageType === "stun" && state.gearEffects.armorIncreasesStun > 0;
-  const finalDamage = criticalDamage + (kingbreaker ? state.enemyMitigation.armor : 0);
+  const finalDamage = criticalResult.damage + (kingbreaker ? state.enemyMitigation.armor : 0);
 
-  return resolveDamageAfterMitigation(stateAfterFirst, effect, card, finalDamage);
+  return resolveDamageAfterMitigation(
+    stateAfterFirst,
+    effect,
+    card,
+    finalDamage,
+    criticalResult.critical,
+    physicalCritReady,
+  );
 }

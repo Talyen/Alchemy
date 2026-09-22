@@ -20,6 +20,10 @@ const FIRST_CARD_FREE_RULES: Array<{
   condition: (state: CardCostState, card: BattleCard) => boolean;
 }> = [
   {
+    flag: "firstBurnCardFreeUsed",
+    condition: (state, card) => state.talentEffects.firstBurnCardFree && cardHasKeyword(card, "burn"),
+  },
+  {
     flag: "firstHolyCardFreeUsed",
     condition: (state, card) => state.talentEffects.firstHolyCardFree && cardHasDamageType(card, "holy"),
   },

@@ -23,6 +23,7 @@ import {
   getBurnBonusToBleedingMultiplier,
   getEnemyDamageMultiplier,
   getPoisonBonusAgainstBleeding,
+  getPoisonDamageMultiplierAgainstBleeding,
 } from "./status-helpers";
 import { setFlag, type BattleState } from "./types";
 
@@ -106,22 +107,27 @@ function computeBaseRawAmount(
 ): number {
   const forgeBonus = getForgeBonusForDamage(state, effect.damageType, companionAttack);
 
-  // Forge is already the entire base, including when a talent grants Forge to Burn.
-  if (effect.equalToForge) return state.playerStatuses.forge;
-
-  if (effect.equalToBlock) {
-    return scalePercent(state.playerStatuses.block, effect.equalToBlockPercent ?? PERCENT_DENOMINATOR) + forgeBonus;
+  // Forge replaces the base; the other resource attacks can also use Forge.
+  let amount: number;
+  if (effect.equalToForge) {
+    amount = state.playerStatuses.forge;
+  } else if (effect.equalToBlock) {
+    amount = scalePercent(state.playerStatuses.block, effect.equalToBlockPercent ?? PERCENT_DENOMINATOR) + forgeBonus;
+  } else if (effect.equalToArmor) {
+    amount = state.playerStatuses.armor + forgeBonus;
+  } else if (effect.equalToGoldPercent) {
+    amount = scalePercent(state.gold, effect.equalToGoldPercent, PERCENT_DENOMINATOR) + forgeBonus;
+  } else {
+    amount = effect.amount + forgeBonus;
   }
-  if (effect.equalToArmor) {
-    return state.playerStatuses.armor + forgeBonus;
-  }
-  if (effect.equalToGoldPercent) {
-    const goldDamage = scalePercent(state.gold, effect.equalToGoldPercent, PERCENT_DENOMINATOR);
-    return goldDamage + forgeBonus;
-  }
-  let amount = effect.amount + forgeBonus;
+  if (state.enemyCC.freezeSkipTurns > 0) amount += state.talentEffects.freezeDamageBonusVsFrozen;
+  if (state.enemyStatuses.poison > 0) amount += state.talentEffects.poisonDamageBonusVsPoisoned;
   if (card?.tags?.includes("archery")) {
     amount += state.talentEffects.flatArrowDamage + state.gearEffects.flatArrowDamage;
+    if (readCombatFlag(state, "archerySecondCardActive")) {
+      amount += state.talentEffects.archerySecondCardDamage;
+    }
+    if (state.playerStatuses.block === 0) amount += state.talentEffects.archeryDamageWithoutBlock;
   }
   return amount;
 }
@@ -188,7 +194,9 @@ function applyStunDamageModifiers(state: BattleState, rawAmount: number): number
 
 function applyBurnDamageModifiers(state: BattleState, rawAmount: number): number {
   let nextAmount = rawAmount + flatDamageBonus(state, "burn");
-  if (state.talentEffects.burnDamagePerManaCrystal > 0) {
+  if (state.talentEffects.burnDamagePerMana > 0) {
+    nextAmount += scalePerMana(state.mana, state.talentEffects.burnDamagePerMana, "percent");
+  } else if (state.talentEffects.burnDamagePerManaCrystal > 0) {
     nextAmount += scalePerMana(state.maxMana, state.talentEffects.burnDamagePerManaCrystal, "percent");
   }
   if (state.talentEffects.blockToBurnDamage) {
@@ -199,7 +207,9 @@ function applyBurnDamageModifiers(state: BattleState, rawAmount: number): number
 
 function applyFreezeDamageModifiers(state: BattleState, rawAmount: number): number {
   let nextAmount = rawAmount + flatDamageBonus(state, "freeze");
-  if (state.talentEffects.freezeDamagePerManaCrystal > 0) {
+  if (state.talentEffects.freezeDamagePerMana > 0) {
+    nextAmount += scalePerMana(state.mana, state.talentEffects.freezeDamagePerMana, "percent");
+  } else if (state.talentEffects.freezeDamagePerManaCrystal > 0) {
     nextAmount += scalePerMana(state.maxMana, state.talentEffects.freezeDamagePerManaCrystal, "half");
   }
   return nextAmount;
@@ -219,7 +229,10 @@ function applyNatureDamageModifiers(state: BattleState, rawAmount: number): numb
 }
 
 function applyPoisonDamageModifiers(state: BattleState, rawAmount: number): number {
-  return rawAmount + flatDamageBonus(state, "poison") + getPoisonBonusAgainstBleeding(state);
+  return Math.round(
+    (rawAmount + flatDamageBonus(state, "poison") + getPoisonBonusAgainstBleeding(state)) *
+      getPoisonDamageMultiplierAgainstBleeding(state),
+  );
 }
 
 type DamageTypeHandler = (state: BattleState, rawAmount: number, card?: BattleCard) => number;
@@ -299,6 +312,12 @@ function computeTypeSpecificDamageBonus(
       bonus += state.talentEffects.physicalDoubledBelowHalfHealth
         ? 1
         : state.talentEffects.physicalLowHealthDamageBonusPercent / PERCENT_DENOMINATOR;
+    }
+    if (
+      state.talentEffects.physicalDoubledBelowQuarterHealth &&
+      state.enemyHealth * PERCENT_DENOMINATOR < state.enemyMaxHealth * 25
+    ) {
+      bonus += 1;
     }
   }
   if (effect.damageType === "holy" && state.enemyStatuses.burn > 0 && state.talentEffects.holyVsBurnMultiplier > 0) {
