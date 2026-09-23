@@ -1,6 +1,19 @@
 {
-  "defaultScenario": "battle-effects",
+  "defaultScenario": "campaign-early",
   "metricScenarios": [
+    "campaign-early",
+    "campaign-developed",
+    "labyrinth-journey",
+    "wildwood-journey",
+    "reward-route",
+    "shop-journey",
+    "meta-journey",
+    "trinket-journey",
+    "resume-journey",
+    "startup-first-use"
+  ],
+  "seededScenarios": ["seeded-discovery"],
+  "syntheticScenarios": [
     "battle-effects",
     "battle-end-turn",
     "talents-effects",
@@ -8,8 +21,7 @@
     "options-brightness",
     "labyrinth-interactions",
     "armory-homestead",
-    "shop-interactions",
-    "startup-first-use"
+    "shop-interactions"
   ],
   "diagnosticScenarios": ["memory-soak", "battle-art-diag"],
   "metrics": [

@@ -1,9 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execSync } from "node:child_process";
-import type { FrameMetrics, InputEventSample, TargetCheck, TargetProfile } from "./metrics";
+import type { FrameMetrics, InputEventSample, LongAnimationFrameSample, TargetCheck, TargetProfile } from "./metrics";
 import type { TraceInsight } from "./trace-insights";
 import { renderComparisonTable, type MetricDelta } from "./compare";
+import type { JourneyAction } from "./journey-types";
+import type { SegmentResult } from "./journey-segments";
 
 export interface ScenarioRunResult {
   scenario: string;
@@ -19,7 +21,14 @@ export interface ScenarioRunResult {
   runtimeBefore?: RuntimeSnapshot;
   runtimeAfter?: RuntimeSnapshot;
   inputEvents?: InputEventSample[];
+  longAnimationFrames?: LongAnimationFrameSample[];
+  longAnimationFrameSupported?: boolean;
   observations?: Record<string, number>;
+  caseIdentity?: string;
+  exploratory?: boolean;
+  actions?: JourneyAction[];
+  segments?: SegmentResult[];
+  replayPath?: string;
 }
 
 export interface RuntimeSnapshot {
@@ -37,6 +46,17 @@ export interface ScenarioAggregate {
   aggregate: FrameMetrics;
   targets: TargetCheck[];
   runs: ScenarioRunResult[];
+  caseIdentity?: string;
+  exploratory?: boolean;
+  coverage?: Record<string, unknown>;
+  segments?: Array<{
+    name: string;
+    actions: number;
+    inputEvents: number;
+    maxInputDelayMs: number;
+    longAnimationFrames: number;
+    aggregate: FrameMetrics;
+  }>;
 }
 
 export interface EnvironmentInfo {
@@ -156,6 +176,11 @@ export function renderSummaryMarkdown(options: {
   for (const agg of aggregates) {
     lines.push(`## ${agg.scenario} (${agg.profile})`);
     lines.push("");
+    if (agg.caseIdentity) {
+      lines.push(`- Case: \`${agg.caseIdentity}\`${agg.exploratory ? " (exploratory)" : " (fixed)"}`);
+      lines.push(`- Coverage: \`${JSON.stringify(agg.coverage ?? {})}\``);
+      lines.push("");
+    }
     if (!agg.aggregate.valid) {
       lines.push(`**INVALID aggregate:** ${agg.aggregate.invalidReason ?? "unknown"}`);
       lines.push("");
@@ -183,6 +208,22 @@ export function renderSummaryMarkdown(options: {
     lines.push(`- Max frame gap: ${fmt(agg.aggregate.maxFrameGapMs)} ms`);
     lines.push(`- Worst gaps: ${agg.aggregate.worstFrameGaps.map((g) => fmt(g, 1)).join(", ") || "none"}`);
     lines.push("");
+    if (agg.segments?.length) {
+      lines.push("### Measured journey segments", "");
+      lines.push(
+        "| Segment | Actions | Frames | p95 (ms) | p99 (ms) | Hitches | Inputs | Max input delay (ms) | Long animation frames | Status |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+      );
+      for (const segment of agg.segments) {
+        const invalid = agg.runs
+          .flatMap((run) => run.segments ?? [])
+          .find((runSegment) => runSegment.name === segment.name && !runSegment.valid);
+        lines.push(
+          `| ${escapeCell(segment.name)} | ${segment.actions} | ${segment.aggregate.frameCount} | ${fmt(segment.aggregate.p95FrameTime)} | ${fmt(segment.aggregate.p99FrameTime)} | ${segment.aggregate.hitchesOver50ms} | ${segment.inputEvents} | ${fmt(segment.maxInputDelayMs, 1)} | ${segment.longAnimationFrames} | ${invalid ? `INVALID: ${escapeCell(invalid.invalidReason ?? "unknown")}` : "valid"} |`,
+        );
+      }
+      lines.push("");
+    }
 
     if (agg.aggregate.hitchEvents.length > 0) {
       lines.push("### Hitch events (≥50 ms frame gaps)");
@@ -255,14 +296,45 @@ export function renderSummaryMarkdown(options: {
         const worstDelay = Math.max(...run.inputEvents.map((event) => event.inputDelay));
         lines.push(`| | | Input max: ${fmt(worstInput, 1)} ms event / ${fmt(worstDelay, 1)} ms delay | | | | | |`);
       }
+      if (run.longAnimationFrameSupported === false) {
+        lines.push("| | | Long Animation Frames: unavailable in this runtime | | | | | |");
+      } else if (run.longAnimationFrameSupported) {
+        lines.push(`| | | Long Animation Frames ≥50 ms: ${run.longAnimationFrames?.length ?? 0} | | | | | |`);
+      }
     }
     lines.push("");
+    if (agg.runs.length > 1) {
+      const p95 = agg.runs.map((run) => run.metrics.p95FrameTime);
+      const p99 = agg.runs.map((run) => run.metrics.p99FrameTime);
+      lines.push(
+        `Run-to-run range: p95 ${fmt(Math.min(...p95))}–${fmt(Math.max(...p95))} ms; p99 ${fmt(Math.min(...p99))}–${fmt(Math.max(...p99))} ms.`,
+        "",
+      );
+    }
     for (const run of agg.runs.filter((r) => r.measured)) {
+      if (run.replayPath) lines.push(`Replay case and actions (run ${run.runIndex}): [bundle](${run.replayPath}).`, "");
       if (run.rawSamplePath)
         lines.push(
-          `Raw frame timeline, phases, long tasks and inputs (run ${run.runIndex}): [sample](${run.rawSamplePath}).`,
+          `Raw frame timeline, phases, long tasks, long animation frames and inputs (run ${run.runIndex}): [sample](${run.rawSamplePath}).`,
           "",
         );
+      if (run.longAnimationFrames && run.longAnimationFrames.length > 0) {
+        lines.push(`### Long Animation Frames — run ${run.runIndex}`, "");
+        lines.push(
+          "| Start (ms) | Duration (ms) | Blocking (ms) | Render tail (ms) | Style/layout tail (ms) | Phase | Top script |",
+        );
+        lines.push("| ---: | ---: | ---: | ---: | ---: | --- | --- |");
+        for (const frame of [...run.longAnimationFrames].sort((a, b) => b.duration - a.duration).slice(0, 10)) {
+          const script = frame.scripts[0];
+          const scriptLabel = script
+            ? `${script.sourceFunctionName || script.invoker || "script"} (${fmt(script.duration, 1)} ms; forced layout ${fmt(script.forcedStyleAndLayoutDuration, 1)} ms)${script.sourceURL ? ` — ${script.sourceURL}` : ""}`
+            : "No script attribution";
+          lines.push(
+            `| ${fmt(frame.startTime, 0)} | ${fmt(frame.duration, 1)} | ${fmt(frame.blockingDuration, 1)} | ${fmt(frame.renderTailMs, 1)} | ${fmt(frame.styleAndLayoutTailMs, 1)} | ${escapeCell(frame.phase)} | ${escapeCell(scriptLabel)} |`,
+          );
+        }
+        lines.push("");
+      }
       if (!run.traceInsight) continue;
       lines.push(`### Slow-frame evidence — run ${run.runIndex}`, "");
       if (run.traceInsight.status === "unavailable") {

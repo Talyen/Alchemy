@@ -27,6 +27,7 @@ import {
 import { renderSummaryMarkdown, type EnvironmentInfo, type ScenarioAggregate } from "../../performance/report";
 import performanceCatalog from "../../performance/catalog.json";
 import { SCENARIO_IDS } from "../../performance/fixtures";
+import { REALISTIC_SCENARIOS } from "../../performance/case-selection.mjs";
 import {
   battleProgressState,
   requirePositiveFiniteObservation,
@@ -62,8 +63,18 @@ describe("performance catalog", () => {
       .filter((file) => file.endsWith(".perf.ts"))
       .map((file) => file.replace(/\.perf\.ts$/u, ""))
       .sort();
-    const catalogScenarios = [...performanceCatalog.metricScenarios, ...performanceCatalog.diagnosticScenarios].sort();
-    expect(catalogScenarios).toEqual(scenarioFiles);
+    const catalogScenarios = [
+      ...performanceCatalog.metricScenarios,
+      ...performanceCatalog.syntheticScenarios,
+      ...performanceCatalog.seededScenarios,
+      ...performanceCatalog.diagnosticScenarios,
+    ].sort();
+    expect(
+      [
+        ...catalogScenarios.filter((id) => !REALISTIC_SCENARIOS.includes(id) && id !== "seeded-discovery"),
+        "realistic-journeys",
+      ].sort(),
+    ).toEqual(scenarioFiles);
     expect([...SCENARIO_IDS].sort()).toEqual(catalogScenarios);
     const baseline = computeMetrics(sample([16]), { minFrames: 1 });
     expect(compareMetrics(baseline, baseline).map(({ key }) => key)).toEqual(
@@ -441,6 +452,26 @@ describe("renderSummaryMarkdown", () => {
             targets: classifyTargets(metrics, "continuous"),
             observations: { rendererStartupReadyMs: 2400 },
             rawSamplePath: "/reports/battle-effects-1-sample.json",
+            longAnimationFrameSupported: true,
+            longAnimationFrames: [
+              {
+                startTime: 12,
+                duration: 80,
+                blockingDuration: 20,
+                renderTailMs: 35,
+                styleAndLayoutTailMs: 12,
+                phase: "play-card",
+                scripts: [
+                  {
+                    duration: 28,
+                    forcedStyleAndLayoutDuration: 4,
+                    sourceURL: "app.js",
+                    sourceFunctionName: "renderCard",
+                    invoker: "requestAnimationFrame",
+                  },
+                ],
+              },
+            ],
             traceInsight: {
               status: "available",
               slowFrames: [
@@ -467,5 +498,7 @@ describe("renderSummaryMarkdown", () => {
     expect(md).toContain("Slow-frame evidence — run 1");
     expect(md).toContain("play-card → damage-feedback");
     expect(md).toContain("Layout (style/layout): 60.0 ms — app.js");
+    expect(md).toContain("Long Animation Frames ≥50 ms: 1");
+    expect(md).toContain("renderCard (28.0 ms; forced layout 4.0 ms) — app.js");
   });
 });

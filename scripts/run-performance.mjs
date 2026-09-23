@@ -21,8 +21,14 @@ import { checkEnvironmentCompatibility, compareReports, renderComparisonTable } 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PERFORMANCE_CATALOG = JSON.parse(fs.readFileSync(path.join(root, "performance/catalog.json"), "utf8"));
 const METRIC_SCENARIOS = PERFORMANCE_CATALOG.metricScenarios;
+const SYNTHETIC_SCENARIOS = PERFORMANCE_CATALOG.syntheticScenarios;
+const SEEDED_SCENARIOS = PERFORMANCE_CATALOG.seededScenarios;
 const DIAG_SCENARIOS = PERFORMANCE_CATALOG.diagnosticScenarios;
-const SCENARIOS = [...METRIC_SCENARIOS, ...DIAG_SCENARIOS];
+const SCENARIOS = [...METRIC_SCENARIOS, ...SYNTHETIC_SCENARIOS, ...SEEDED_SCENARIOS, ...DIAG_SCENARIOS];
+const REALISTIC_CASE_IDS = new Set([
+  ...METRIC_SCENARIOS.filter((id) => id !== "startup-first-use"),
+  ...SEEDED_SCENARIOS,
+]);
 const DEFAULT_SCENARIO = PERFORMANCE_CATALOG.defaultScenario;
 
 export function parsePerformanceArgs(argv) {
@@ -30,6 +36,9 @@ export function parsePerformanceArgs(argv) {
     scenario: null,
     runs: null,
     all: false,
+    suite: "realistic",
+    seed: 42,
+    replay: null,
     trace: false,
     electron: false,
     cold: false,
@@ -52,6 +61,9 @@ export function parsePerformanceArgs(argv) {
     else if (a === "--skip-build") args.skipBuild = true;
     else if (a === "--live" || a === "--verbose") args.live = true;
     else if (a === "--all") args.all = true;
+    else if (a === "--suite") args.suite = value(++i, a);
+    else if (a === "--seed") args.seed = Number(value(++i, a));
+    else if (a === "--replay") args.replay = value(++i, a);
     else if (a === "--scenario") args.scenario = value(++i, a);
     else if (a === "--runs") args.runs = Number(value(++i, a));
     else if (a === "--compare") {
@@ -62,6 +74,10 @@ export function parsePerformanceArgs(argv) {
   }
   if (args.runs !== null && (!Number.isSafeInteger(args.runs) || args.runs < 1))
     throw new Error("--runs must be a positive integer");
+  if (!["realistic", "synthetic", "seeded"].includes(args.suite))
+    throw new Error("--suite must be realistic, synthetic, or seeded");
+  if (!Number.isSafeInteger(args.seed) || args.seed < 0 || args.seed > 0xffffffff)
+    throw new Error("--seed must be a uint32");
   if (args.scenario !== null && !SCENARIOS.includes(args.scenario))
     throw new Error(`Unknown scenario: ${args.scenario}`);
   if (
@@ -85,13 +101,19 @@ Usage:
   npm run perf
   npm run perf -- --scenario collection-tabs
   npm run perf -- --all
+  npm run perf -- --suite synthetic --all
+  npm run perf -- --suite seeded --seed 1234
+  npm run perf -- --replay reports/performance/<run>/replay/seeded-discovery.json
   npm run perf:trace -- --scenario battle-effects
   npm run perf:compare -- <beforeDir> <afterDir>
   npm run perf -- --electron --scenario battle-end-turn
 
 Options:
   --scenario <id>   One of: ${SCENARIOS.join(", ")} (default: ${DEFAULT_SCENARIO})
-  --all             Run metric scenarios (${METRIC_SCENARIOS.join(", ")}; excludes diagnostics)
+  --all             Run the selected suite (realistic by default)
+  --suite <name>    realistic (default), synthetic, or seeded
+  --seed <uint32>   Seed for one seeded discovery case (default 42)
+  --replay <file>   Reuse a saved case and action log
   --runs <n>        Measured repetitions (default 1; warm-up still runs)
   --trace           CDP deep-trace mode (targets not authoritative)
   --electron        Confirm on shipping Electron runtime (separate from Chromium)
@@ -176,6 +198,9 @@ function runCompare(beforeDir, afterDir) {
     lines.push(`## ${s.scenario}`, "");
     lines.push(...renderComparisonTable(s.deltas));
     lines.push("");
+    for (const segment of s.segmentDeltas ?? []) {
+      lines.push(`### ${segment.name}`, "", ...renderComparisonTable(segment.deltas), "");
+    }
     for (const note of s.notes) lines.push(`- ${note}`);
     lines.push("");
   }
@@ -221,6 +246,10 @@ async function main() {
     process.exit(1);
   }
 
+  if (args.replay && (args.all || args.scenario || args.suite !== "realistic")) {
+    throw new Error("--replay selects its scenario and cannot be combined with --all, --scenario, or --suite");
+  }
+
   if (args.cold && !args.electron) {
     console.error("--cold currently requires --electron so every run can use a fresh app process.");
     process.exit(1);
@@ -231,7 +260,10 @@ async function main() {
     process.exit(1);
   }
 
-  const scenario = args.all ? null : (args.scenario ?? DEFAULT_SCENARIO);
+  const selectedSuite =
+    args.suite === "synthetic" ? SYNTHETIC_SCENARIOS : args.suite === "seeded" ? SEEDED_SCENARIOS : METRIC_SCENARIOS;
+  const replay = args.replay ? JSON.parse(fs.readFileSync(path.resolve(args.replay), "utf8")) : null;
+  const scenario = replay?.scenario ?? (args.all ? null : (args.scenario ?? selectedSuite[0] ?? DEFAULT_SCENARIO));
 
   if (args.electron) {
     console.log("Ensuring Electron binary…");
@@ -246,6 +278,28 @@ async function main() {
   await buildDist({ skipIfPresent: args.skipBuild, live: args.live });
 
   const outDir = stampOutputDir(args.electron ? "electron" : "chromium");
+  const prepared = args.all
+    ? selectedSuite.filter((id) => REALISTIC_CASE_IDS.has(id))
+    : REALISTIC_CASE_IDS.has(scenario)
+      ? [scenario]
+      : [];
+  if (replay) {
+    if (replay.version !== 1 || !REALISTIC_CASE_IDS.has(replay.scenario)) throw new Error("Invalid replay bundle");
+    fs.writeFileSync(path.join(outDir, `${replay.scenario}.case.json`), JSON.stringify(replay, null, 2));
+  } else {
+    for (const id of prepared) {
+      const prepare = await runTaskCommand(
+        "node",
+        ["scripts/prepare-performance-cases.mjs", outDir, id, String(args.seed)],
+        {
+          cwd: root,
+          label: `prepare ${id}`,
+          live: args.live,
+        },
+      );
+      if (prepare.status !== 0) process.exit(prepare.status ?? 1);
+    }
+  }
   const perfPort = process.env.PLAYWRIGHT_PERF_PORT ?? String(PERF_PREVIEW_PORT);
   const env = {
     ...process.env,
@@ -256,6 +310,8 @@ async function main() {
     PLAYWRIGHT_PERF_COLD: args.cold ? "1" : "",
     PERF_RUNS: String(args.runs ?? process.env.PERF_RUNS ?? 1),
     PERF_SCENARIO: scenario ?? "",
+    PERF_CASE_DIR: outDir,
+    PERF_REPLAY: args.replay ? "1" : "",
     ...(process.env.PERF_MEASURE_MS ? { PERF_MEASURE_MS: process.env.PERF_MEASURE_MS } : {}),
     ...(process.env.PERF_MIN_FRAMES ? { PERF_MIN_FRAMES: process.env.PERF_MIN_FRAMES } : {}),
     ...(args.electron ? { PLAYWRIGHT_ELECTRON_PREVIEW_PORT: perfPort } : {}),
@@ -267,13 +323,13 @@ async function main() {
   // non-token char class instead.
   const tokenBoundary = "[^a-zA-Z0-9-]";
   const grepArgs = args.all
-    ? ["--grep", `/(${tokenBoundary}|^)(${METRIC_SCENARIOS.join("|")})(${tokenBoundary}|$)/`]
+    ? ["--grep", `/(${tokenBoundary}|^)(${selectedSuite.join("|")})(${tokenBoundary}|$)/`]
     : scenario
       ? ["--grep", `/(${tokenBoundary}|^)${scenario}(${tokenBoundary}|$)/`]
       : [];
   console.log(`\nProfiling → ${outDir}`);
   console.log(
-    `Runtime: ${args.electron ? "electron" : "chromium"} | Cold: ${args.cold ? "yes" : "no"} | Trace: ${args.trace ? "yes" : "no"} | Scenario: ${args.all ? METRIC_SCENARIOS.join(",") : (scenario ?? "all")} | Runs: ${env.PERF_RUNS}`,
+    `Runtime: ${args.electron ? "electron" : "chromium"} | Cold: ${args.cold ? "yes" : "no"} | Trace: ${args.trace ? "yes" : "no"} | Scenario: ${args.all ? selectedSuite.join(",") : (scenario ?? "all")} | Runs: ${env.PERF_RUNS}`,
   );
 
   const result = await runTaskCommand(

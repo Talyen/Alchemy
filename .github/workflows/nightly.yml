@@ -115,6 +115,66 @@ jobs:
             reports/runs/
           retention-days: 7
 
+  performance-discovery:
+    name: Seeded desktop performance discovery (${{ matrix.slot }})
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        slot: [0, 1, 2]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            /*
+            !Raw Assets
+          sparse-checkout-cone-mode: false
+
+      - uses: ./.github/actions/setup
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+
+      - name: Ensure Electron binary
+        run: npm run ensure:electron
+
+      - name: Setup Playwright Chromium
+        uses: ./.github/actions/setup-playwright
+
+      - name: Select rotating seed
+        id: seed
+        run: |
+          cohort=$(( 10#$(date -u +%V) % 2 ))
+          case "$cohort:${{ matrix.slot }}" in
+            0:0) seed=0 ;;
+            0:1) seed=9 ;;
+            0:2) seed=42 ;;
+            1:0) seed=25 ;;
+            1:1) seed=34 ;;
+            1:2) seed=16 ;;
+          esac
+          echo "value=$seed" >> "$GITHUB_OUTPUT"
+
+      - name: Run seeded journey
+        run: xvfb-run --auto-servernum -- npm run perf -- --suite seeded --seed ${{ steps.seed.outputs.value }} --electron --skip-build
+        env:
+          CI: true
+
+      - name: Upload replay and diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: performance-discovery-${{ steps.seed.outputs.value }}
+          path: |
+            reports/performance/
+            reports/current-run.*
+          retention-days: 7
+          if-no-files-found: ignore
+
   ship-gate-full:
     name: Ship gate (full)
     runs-on: ubuntu-latest

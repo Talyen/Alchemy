@@ -80,6 +80,28 @@ export function checkScenarioCompatibility(beforeScenario, afterScenario) {
       `Incompatible target profile for scenario "${beforeScenario.scenario}": "${beforeScenario.profile}" vs "${afterScenario.profile}".`,
     );
   }
+  if (beforeScenario.caseIdentity !== afterScenario.caseIdentity) {
+    errors.push(`Incompatible case checkpoint for scenario "${beforeScenario.scenario}".`);
+  }
+  const beforeSegments = (beforeScenario.segments ?? []).map((segment) => segment.name);
+  const afterSegments = (afterScenario.segments ?? []).map((segment) => segment.name);
+  if (JSON.stringify(beforeSegments) !== JSON.stringify(afterSegments)) {
+    errors.push(`Incompatible measured segments for scenario "${beforeScenario.scenario}".`);
+  }
+  for (const beforeSegment of beforeScenario.segments ?? []) {
+    const afterSegment = afterScenario.segments?.find((segment) => segment.name === beforeSegment.name);
+    if (afterSegment && beforeSegment.actions !== afterSegment.actions) {
+      errors.push(`Different action count in ${beforeScenario.scenario}/${beforeSegment.name}.`);
+    }
+  }
+  const actionShape = (scenario) =>
+    scenario.runs?.flatMap((run) => (run.actions ?? []).map(({ name, segment }) => [name, segment]));
+  if (
+    beforeScenario.caseIdentity &&
+    JSON.stringify(actionShape(beforeScenario)) !== JSON.stringify(actionShape(afterScenario))
+  ) {
+    errors.push(`Different action path for scenario "${beforeScenario.scenario}".`);
+  }
   return { compatible: errors.length === 0, errors };
 }
 
@@ -194,10 +216,15 @@ export function compareReports(beforeReport, afterReport) {
     assertScenarioCompatibility(b, a);
     const deltas = compareMetrics(b.aggregate, a.aggregate);
     const rule = meetsOptimizationRule(deltas);
+    const segmentDeltas = (b.segments ?? []).map((segment) => ({
+      name: segment.name,
+      deltas: compareMetrics(segment.aggregate, a.segments.find((item) => item.name === segment.name).aggregate),
+    }));
     results.push({
       scenario: b.scenario,
       profile: b.profile,
       deltas,
+      segmentDeltas,
       notes: rule.notes,
       rule,
     });

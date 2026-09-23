@@ -4,6 +4,7 @@ import {
   type FrameGapSample,
   type FrameSampleRaw,
   type InputEventSample,
+  type LongAnimationFrameSample,
   type LongTaskSample,
 } from "./metrics";
 
@@ -13,6 +14,8 @@ declare global {
       frameGaps: FrameGapSample[];
       frameTimes: number[];
       longTasks: LongTaskSample[];
+      longAnimationFrames: LongAnimationFrameSample[];
+      longAnimationFrameSupported: boolean;
       inputEvents: InputEventSample[];
       phaseMarks: Array<{ time: number; phase: string }>;
       phase: string;
@@ -20,6 +23,8 @@ declare global {
       startTs: number;
       rafId: number | null;
       observer: PerformanceObserver | null;
+      animationFrameObserver: PerformanceObserver | null;
+      recordLongAnimationFrame: ((entry: PerformanceEntry) => void) | null;
       eventObserver: PerformanceObserver | null;
       running: boolean;
     };
@@ -34,6 +39,8 @@ export async function installFrameSampler(page: Page): Promise<void> {
       frameGaps: [],
       frameTimes: [],
       longTasks: [],
+      longAnimationFrames: [],
+      longAnimationFrameSupported: false,
       inputEvents: [],
       phaseMarks: [],
       phase: "idle",
@@ -41,6 +48,8 @@ export async function installFrameSampler(page: Page): Promise<void> {
       startTs: 0,
       rafId: null,
       observer: null,
+      animationFrameObserver: null,
+      recordLongAnimationFrame: null,
       eventObserver: null,
       running: false,
     };
@@ -66,6 +75,10 @@ export async function startFrameSampler(page: Page): Promise<void> {
     perf.frameGaps = [];
     perf.frameTimes = [];
     perf.longTasks = [];
+    perf.longAnimationFrames = [];
+    perf.longAnimationFrameSupported =
+      typeof PerformanceObserver !== "undefined" &&
+      (PerformanceObserver.supportedEntryTypes?.includes("long-animation-frame") ?? false);
     perf.inputEvents = [];
     perf.phaseMarks = [];
     perf.running = true;
@@ -103,6 +116,53 @@ export async function startFrameSampler(page: Page): Promise<void> {
     } catch {
       // longtask may be unavailable in some Chromium builds
       perf.observer = null;
+    }
+
+    if (perf.longAnimationFrameSupported) {
+      perf.recordLongAnimationFrame = (rawEntry) => {
+        const entry = rawEntry as PerformanceEntry & {
+          blockingDuration?: number;
+          renderStart?: number;
+          styleAndLayoutStart?: number;
+          scripts?: Array<{
+            duration?: number;
+            forcedStyleAndLayoutDuration?: number;
+            sourceURL?: string;
+            sourceFunctionName?: string;
+            invoker?: string;
+          }>;
+        };
+        if (entry.startTime < perf.startTs) return;
+        const end = entry.startTime + entry.duration;
+        perf.longAnimationFrames.push({
+          startTime: entry.startTime - perf.startTs,
+          duration: entry.duration,
+          blockingDuration: entry.blockingDuration ?? 0,
+          renderTailMs: entry.renderStart ? Math.max(0, end - entry.renderStart) : 0,
+          styleAndLayoutTailMs: entry.styleAndLayoutStart ? Math.max(0, end - entry.styleAndLayoutStart) : 0,
+          phase: phaseAt(perf.phaseMarks, entry.startTime - perf.startTs),
+          scripts: (entry.scripts ?? [])
+            .map((script) => ({
+              duration: script.duration ?? 0,
+              forcedStyleAndLayoutDuration: script.forcedStyleAndLayoutDuration ?? 0,
+              sourceURL: script.sourceURL ?? "",
+              sourceFunctionName: script.sourceFunctionName ?? "",
+              invoker: script.invoker ?? "",
+            }))
+            .sort((a, b) => b.duration - a.duration)
+            .slice(0, 5),
+        });
+      };
+      try {
+        perf.animationFrameObserver = new PerformanceObserver((list) => {
+          for (const entry of list.getEntries()) perf.recordLongAnimationFrame?.(entry);
+        });
+        perf.animationFrameObserver.observe({ type: "long-animation-frame", buffered: false });
+      } catch {
+        perf.animationFrameObserver = null;
+        perf.recordLongAnimationFrame = null;
+        perf.longAnimationFrameSupported = false;
+      }
     }
 
     try {
@@ -158,6 +218,8 @@ export async function stopFrameSampler(page: Page): Promise<FrameSampleRaw> {
         frameGaps: [],
         frameTimes: [],
         longTasks: [],
+        longAnimationFrames: [],
+        longAnimationFrameSupported: false,
         inputEvents: [],
         durationMs: 0,
         phaseMarks: [],
@@ -200,6 +262,12 @@ export async function stopFrameSampler(page: Page): Promise<FrameSampleRaw> {
       }
       perf.observer = null;
     }
+    if (perf.animationFrameObserver) {
+      for (const entry of perf.animationFrameObserver.takeRecords()) perf.recordLongAnimationFrame?.(entry);
+      perf.animationFrameObserver.disconnect();
+      perf.animationFrameObserver = null;
+      perf.recordLongAnimationFrame = null;
+    }
     if (perf.eventObserver) {
       try {
         const records = perf.eventObserver.takeRecords();
@@ -231,6 +299,8 @@ export async function stopFrameSampler(page: Page): Promise<FrameSampleRaw> {
       frameGaps: [...perf.frameGaps],
       frameTimes: [...perf.frameTimes],
       longTasks: [...perf.longTasks],
+      longAnimationFrames: [...perf.longAnimationFrames],
+      longAnimationFrameSupported: perf.longAnimationFrameSupported,
       inputEvents: [...perf.inputEvents],
       durationMs,
       phaseMarks: [...perf.phaseMarks],

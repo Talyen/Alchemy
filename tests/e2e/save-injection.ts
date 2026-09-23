@@ -186,6 +186,15 @@ export async function injectSaveState(page: Page, overrides: Record<string, unkn
   await injectLocalStorage(page, save, true);
 }
 
+/** Load a production-format checkpoint without the test fixture's default hero or run fields. */
+export async function injectExactSave(page: Page, save: Record<string, unknown>): Promise<void> {
+  if (await isDesktopPage(page)) {
+    await writeDesktopSaveAndReload(page, save);
+    return;
+  }
+  await injectLocalStorage(page, save, false);
+}
+
 export async function injectActiveBattle(
   page: Page,
   battleState: InjectedBattleState,

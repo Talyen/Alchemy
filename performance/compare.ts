@@ -63,16 +63,24 @@ export function assertEnvironmentCompatibility(
   jsAssertEnvironmentCompatibility(beforeEnv, afterEnv);
 }
 
+export interface ScenarioCompatibilityInput {
+  scenario: string;
+  profile?: string;
+  caseIdentity?: string;
+  segments?: Array<{ name: string; actions: number }>;
+  runs?: Array<{ actions?: Array<{ name: string; segment: string }> }>;
+}
+
 export function checkScenarioCompatibility(
-  beforeScenario: { scenario: string; profile?: string },
-  afterScenario: { scenario: string; profile?: string },
+  beforeScenario: ScenarioCompatibilityInput,
+  afterScenario: ScenarioCompatibilityInput,
 ): { compatible: boolean; errors: string[] } {
   return jsCheckScenarioCompatibility(beforeScenario, afterScenario);
 }
 
 export function assertScenarioCompatibility(
-  beforeScenario: { scenario: string; profile?: string },
-  afterScenario: { scenario: string; profile?: string },
+  beforeScenario: ScenarioCompatibilityInput,
+  afterScenario: ScenarioCompatibilityInput,
 ): void {
   jsAssertScenarioCompatibility(beforeScenario, afterScenario);
 }
@@ -98,6 +106,7 @@ export interface ScenarioComparisonResult {
   profile?: string;
   missing?: boolean;
   deltas: MetricDelta[];
+  segmentDeltas?: Array<{ name: string; deltas: MetricDelta[] }>;
   notes: string[];
   rule: { ok: boolean; notes: string[] };
 }

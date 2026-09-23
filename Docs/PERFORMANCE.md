@@ -1,6 +1,6 @@
 # Performance profiling
 
-On-demand FPS / hitch profiling for Alchemy. **Not** part of CI, pre-push, or ordinary E2E discovery.
+FPS / hitch profiling for Alchemy. Fixed realistic journeys are for same-machine comparisons; a bounded seeded journey also runs nightly for discovery. Performance targets are advisory and are not push gates.
 
 For harness failures, the [failure-first triage guide](./REFERENCE.md#failure-first-triage) helps locate evidence; open a known relevant trace or per-run artifact directly when useful.
 
@@ -13,8 +13,11 @@ Use this when you are actively optimizing frame pacing and need repeatable numbe
 ```bash
 npm run perf
 npm run perf -- --all
+npm run perf -- --suite synthetic --all
+npm run perf -- --suite seeded --seed 9 --electron
+npm run perf -- --replay reports/performance/<run>/replay/seeded-discovery.json --electron
 npm run perf:trace -- --scenario battle-effects
-npm run perf -- --electron --scenario battle-end-turn
+npm run perf -- --electron --scenario campaign-developed
 npm run perf -- --electron --cold --scenario startup-first-use
 npm run perf:compare -- reports/performance/<before> reports/performance/<after>
 npm run perf -- --help
@@ -48,34 +51,36 @@ Short smoke / harness iteration (not for baselines):
 PERF_MEASURE_MS=8000 PERF_MIN_FRAMES=50 npm run perf -- --scenario battle-end-turn --skip-build
 ```
 
-Scenario IDs, defaults, and diagnostic-only modes are maintained by the
-performance CLI; use `npm run perf -- --help` instead of copying that list here.
-All scenarios keep real animations, exclude setup/navigation from the measured
-window, and use production card-library art rather than E2E placeholders.
+The default is the fixed, realistic Campaign opening battle. `--all` runs the fixed realistic suite; `--suite synthetic --all` runs the earlier isolated stress loops. `--suite seeded --seed <uint32>` generates one reachable case from the balance playthrough engine. Every generated case includes a current-format save checkpoint and a coverage inventory. The generator uses a labeled unlocked account when the selected hero or mode requires it. The developed Campaign and account journeys use a second career, after earning talents and other progression.
+
+The realistic journeys run normal animations and production cards with authored costs and effects. Each measured run records actions, named segments, and a replay bundle under `replay/`. `--replay <bundle>` loads the same checkpoint and requires the same action sequence; divergence invalidates the run. The setup wall time is reported separately. Screen transitions, draft, combat, reward claims, shop purchases, account navigation, and resume have their own frame segments. Segment rows require completed actions and frames, so a skipped or stalled journey fails rather than reporting an easy FPS value.
+
+Case IDs, defaults, and diagnostics are maintained by the CLI and `performance/catalog.json`; use `npm run perf -- --help` for the current list. Fixed case comparisons require the same checkpoint hash, action path, segment names and action counts, in addition to the environment checks below. Seeded sweeps are exploratory; replay an interesting case for a controlled before/after comparison.
 
 Battle stage User Timing marks (`alchemy:battle:*`) accumulate within the current battle session for animation diagnostics. The battle session owner clears these marks when preparing or resetting a session, after cancelling old transfers; stale draw and discard completions must not add terminal marks. Startup and performance sampler marks have separate lifetimes.
 
 ## Metrics
 
-Collected via `requestAnimationFrame` timestamps and `PerformanceObserver` long tasks:
+Collected via `requestAnimationFrame` timestamps and `PerformanceObserver` long tasks, Long Animation Frames (when supported), and input events:
 
-| Metric                             | Meaning                                            |
-| ---------------------------------- | -------------------------------------------------- |
-| Average FPS                        | Sampled gap rate (`frameCount / sampledDuration`)  |
-| p50 / p95 / p99 / p99.9 frame time | Cadence and tail stalls                            |
-| **1% low FPS**                     | `1000 / mean(slowest 1% frame times)`              |
-| **0.1% low FPS**                   | `1000 / mean(slowest 0.1% frame times)`            |
-| Frames >20 ms / >33.3 ms           | Clear single miss / double miss vs a 60 FPS budget |
-| ≥50 ms hitches / ≥100 ms stalls    | Perceptible stutters                               |
-| ≥50 ms long tasks                  | Main-thread blocking                               |
-| Max / worst frame gaps             | Largest individual stalls                          |
-| Event duration / input delay       | Browser Event Timing for sampled user interactions |
-| Before/after runtime snapshot      | Heap, DOM/media nodes, and Electron working set    |
-| Startup observations               | Renderer-ready and Electron launch-to-ready time   |
+| Metric                             | Meaning                                                                                  |
+| ---------------------------------- | ---------------------------------------------------------------------------------------- |
+| Average FPS                        | Sampled gap rate (`frameCount / sampledDuration`)                                        |
+| p50 / p95 / p99 / p99.9 frame time | Cadence and tail stalls                                                                  |
+| **1% low FPS**                     | `1000 / mean(slowest 1% frame times)`                                                    |
+| **0.1% low FPS**                   | `1000 / mean(slowest 0.1% frame times)`                                                  |
+| Frames >20 ms / >33.3 ms           | Clear single miss / double miss vs a 60 FPS budget                                       |
+| ≥50 ms hitches / ≥100 ms stalls    | Perceptible stutters                                                                     |
+| ≥50 ms long tasks                  | Main-thread blocking                                                                     |
+| ≥50 ms Long Animation Frames       | Diagnostic script and rendering timing for slow frames, even when no single task is long |
+| Max / worst frame gaps             | Largest individual stalls                                                                |
+| Event duration / input delay       | Browser Event Timing for sampled user interactions                                       |
+| Before/after runtime snapshot      | Heap, DOM/media nodes, and Electron working set                                          |
+| Startup observations               | Renderer-ready and Electron launch-to-ready time                                         |
 
 Phases (`play-card`, `damage-feedback`, `enemy-turn`, `draw-hand`) label hitches, long tasks, and input events based on their exact recorded start timestamps against the phase timeline. Observers drain pending records (`takeRecords()`) at shutdown before disconnection to preserve terminal events.
 
-The sampler waits for its first frame callback before scenario actions begin, so immediate interaction stalls have a baseline.
+The sampler waits for its first frame callback before scenario actions begin, so immediate interaction stalls have a baseline. Long Animation Frames are diagnostic only: the raw sample and summary retain their phase, blocking duration, rendering tail, and top scripts. They do not change advisory target classification. An unsupported runtime is reported as unavailable rather than as zero frames.
 
 Average FPS is computed strictly across sampled frame gaps, avoiding distortion from unsampled window edges, while total measured duration is retained for rate budgets.
 
@@ -132,7 +137,7 @@ Classification bands only — never CI gates. Compare only on the same machine, 
 | ≥100 ms stalls    |         0 |
 | ≥50 ms long tasks | ≤1 / 30 s |
 
-Scenario mapping: `battle-effects`, `options-brightness`, and `talents-effects` are continuous-motion; `battle-end-turn`, `collection-tabs`, `labyrinth-interactions`, `armory-homestead`, and `shop-interactions` are transition-heavy. `startup-first-use` measures cold-start observations, not frame targets. `memory-soak` and `battle-art-diag` are diagnostics excluded from `--all`.
+The fixed suite covers Campaign, Labyrinth, Wildwood, rewards, shops, account screens, a battle with an equipped trinket and owned Unique in Armory, resume, and startup. Nightly discovery alternates two validated three-seed cohorts, each spanning all three game modes; `--seed` accepts other unsigned 32-bit seeds locally. The older `battle-effects`, `battle-end-turn`, talents, collection, options, Labyrinth, Armory, and shop loops remain in the synthetic suite for isolated stress diagnosis. `startup-first-use` measures cold-start observations, not frame targets. `memory-soak` and `battle-art-diag` remain opt-in diagnostics.
 
 Use `npm run perf -- --help` and `performance/catalog.json` for current scenario
 durations and minimum samples rather than maintaining a second defaults table.
@@ -172,6 +177,7 @@ trace events fail capture. Screenshots are omitted to reduce trace overhead.
 
 - rAF sampling detects **main-thread cadence gaps**, not hardware GPU present timing.
 - Trace mode adds overhead — do not treat its FPS numbers as authoritative.
+- The nightly Xvfb Electron run validates seeded journeys and retains replay evidence, but its virtual display is not a GPU-enabled desktop baseline. Use a controlled local Electron machine for numeric comparisons.
 - Never compare Chromium and Electron results as if they were the same environment.
 - Local Electron profiling keeps the GPU enabled (`enableGpu`); CI Electron smoke still uses `--disable-gpu`. Never compare the two — same-machine, same-runtime comparisons only.
 - Runtime deltas are diagnostic signals, not automatic leak verdicts. Allow for garbage collection and confirm suspicious monotonic growth across repeated runs.

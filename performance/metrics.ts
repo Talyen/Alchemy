@@ -6,6 +6,23 @@ export interface LongTaskSample {
   phase: string;
 }
 
+/** Diagnostic detail from the Long Animation Frames API, when supported. */
+export interface LongAnimationFrameSample {
+  startTime: number;
+  duration: number;
+  blockingDuration: number;
+  renderTailMs: number;
+  styleAndLayoutTailMs: number;
+  phase: string;
+  scripts: Array<{
+    duration: number;
+    forcedStyleAndLayoutDuration: number;
+    sourceURL: string;
+    sourceFunctionName: string;
+    invoker: string;
+  }>;
+}
+
 /** rAF gap ≥50 ms correlated to the active perf-harness phase. */
 export interface HitchEvent {
   timeMs: number;
@@ -33,6 +50,8 @@ export interface FrameSampleRaw {
   /** Exact timed frame gap samples with start time and duration. */
   frameGaps?: FrameGapSample[];
   longTasks: LongTaskSample[];
+  longAnimationFrames?: LongAnimationFrameSample[];
+  longAnimationFrameSupported?: boolean;
   /** Wall-clock duration of the measured window in ms. */
   durationMs: number;
   /** Phase marks: { time, phase } relative to sampler start. */

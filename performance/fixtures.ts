@@ -30,11 +30,23 @@ import { PERF_VIEWPORT } from "./viewport";
 import { MIN_PAINT_PX } from "./battle-art-diagnostics";
 import { STARTUP_READY_MARK } from "../src/lib/performance/startup-marks";
 import { requirePositiveFiniteObservation } from "./scenario-contracts";
+import { extractSegmentSample, measureSegments } from "./journey-segments";
+import type { JourneyAction, JourneyCase, SegmentRequirement } from "./journey-types";
 
 // Literal tuple, not a JSON spread: a spread of catalog.json arrays widens
 // ScenarioId to string. Parity with catalog.json is asserted in
 // tests/performance/metrics.test.ts.
 export const SCENARIO_IDS = [
+  "campaign-early",
+  "campaign-developed",
+  "labyrinth-journey",
+  "wildwood-journey",
+  "reward-route",
+  "shop-journey",
+  "meta-journey",
+  "trinket-journey",
+  "resume-journey",
+  "seeded-discovery",
   "battle-effects",
   "battle-end-turn",
   "talents-effects",
@@ -60,8 +72,14 @@ interface PerfFixtures {
     scenario: ScenarioId;
     profile: TargetProfile;
     minFrames?: number;
+    journeyCase?: JourneyCase;
+    segments?: SegmentRequirement[];
     setup: (page: Page) => Promise<void>;
-    interact: (page: Page, phase: (name: string) => Promise<void>) => Promise<void>;
+    interact: (
+      page: Page,
+      phase: (name: string) => Promise<void>,
+      recordAction: (name: string) => Promise<void>,
+    ) => Promise<void>;
     collectObservations?: (page: Page) => Promise<Record<string, number>>;
     captureElectronLaunchTiming?: boolean;
   }) => Promise<void>;
@@ -158,6 +176,8 @@ export const test = base.extend<PerfFixtures>({
         scenario,
         profile,
         minFrames,
+        journeyCase,
+        segments,
         setup,
         interact,
         collectObservations,
@@ -168,6 +188,8 @@ export const test = base.extend<PerfFixtures>({
 
         const measuredSamples: FrameSampleRaw[] = [];
         const runResults: ScenarioRunResult[] = [];
+        const segmentSamples = new Map<string, FrameSampleRaw[]>();
+        let runFailure: Error | null = null;
         // Ordinary profiles include a warm-up. Cold mode intentionally measures first use.
         const totalLoops = runsPerScenario + (isCold ? 0 : 1);
         let activePage = perfPage;
@@ -184,7 +206,9 @@ export const test = base.extend<PerfFixtures>({
           }
 
           // Fresh navigation context per repetition via setup.
+          const setupStarted = performance.now();
           await setup(activePage);
+          const setupDurationMs = performance.now() - setupStarted;
           await assertBattleCardArtIfPresent(activePage);
           await installFrameSampler(activePage);
 
@@ -206,11 +230,27 @@ export const test = base.extend<PerfFixtures>({
             await startFrameSampler(activePage);
           }
 
+          let currentSegment = "idle";
+          const actions: JourneyAction[] = [];
           const phase = async (name: string) => {
+            currentSegment = name;
             if (measured) await setPerfPhase(activePage, name);
           };
 
-          await interact(activePage, phase);
+          const recordAction = async (name: string) => {
+            if (!measured) return;
+            const timeMs = await activePage.evaluate(
+              () => performance.now() - (window.__alchemyPerf?.startTs ?? performance.now()),
+            );
+            actions.push({ name, segment: currentSegment, timeMs });
+          };
+
+          let interactionError: unknown;
+          try {
+            await interact(activePage, phase, recordAction);
+          } catch (error) {
+            interactionError = error;
+          }
 
           let sample: FrameSampleRaw = {
             frameGaps: [],
@@ -235,6 +275,32 @@ export const test = base.extend<PerfFixtures>({
 
           if (measured) {
             const metrics = computeMetrics(sample, { minFrames });
+            const segmentResults = segments ? measureSegments(sample, actions, segments) : undefined;
+            if (segments) {
+              for (const segment of segments) {
+                const samples = segmentSamples.get(segment.name) ?? [];
+                samples.push(extractSegmentSample(sample, segment.name));
+                segmentSamples.set(segment.name, samples);
+              }
+            }
+            let replayPath: string | undefined;
+            if (journeyCase) {
+              const replayDir = path.join(ensureOutputDirs().root, "replay");
+              fs.mkdirSync(replayDir, { recursive: true });
+              replayPath = path.join(replayDir, `${scenario}.json`);
+              fs.writeFileSync(
+                replayPath,
+                JSON.stringify(
+                  {
+                    ...journeyCase,
+                    recordedActions: actions,
+                    recordingEnvironment: buildEnvironmentInfo([scenario]),
+                  },
+                  null,
+                  2,
+                ),
+              );
+            }
             const runtimeAfter = await collectRuntimeSnapshot(activePage);
             const targets = classifyTargets(metrics, profile);
             const observations = {
@@ -251,19 +317,45 @@ export const test = base.extend<PerfFixtures>({
               ...(tracePath ? { tracePath } : {}),
               ...(traceInsight ? { traceInsight } : {}),
               ...(rawSamplePath ? { rawSamplePath } : {}),
-              ...(metrics.valid ? {} : { notes: [metrics.invalidReason ?? "invalid"] }),
+              ...(!metrics.valid || interactionError
+                ? { notes: [metrics.invalidReason ?? String(interactionError)] }
+                : {}),
               ...(runtimeBefore ? { runtimeBefore } : {}),
               runtimeAfter,
               inputEvents: sample.inputEvents ?? [],
-              ...(Object.keys(observations).length > 0 ? { observations } : {}),
+              longAnimationFrames: sample.longAnimationFrames ?? [],
+              longAnimationFrameSupported: sample.longAnimationFrameSupported ?? false,
+              ...(journeyCase ? { caseIdentity: journeyCase.saveHash, exploratory: journeyCase.exploratory } : {}),
+              ...(segmentResults ? { segments: segmentResults, actions, replayPath } : {}),
+              observations: { setupDurationMs, ...observations },
             };
             writeRunResult(result);
             runResults.push(result);
 
-            if (!metrics.valid) {
-              throw new Error(`Invalid performance sample for ${scenario} run ${runIndex}: ${metrics.invalidReason}`);
+            if (journeyCase?.recordedActions) {
+              const expected = journeyCase.recordedActions.map(({ name, segment }) => ({ name, segment }));
+              const actual = actions.map(({ name, segment }) => ({ name, segment }));
+              if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+                runFailure = new Error(`Replay action path diverged for ${scenario} run ${runIndex}`);
+              }
+            }
+            if (interactionError)
+              runFailure = interactionError instanceof Error ? interactionError : new Error(String(interactionError));
+
+            if (!metrics.valid || segmentResults?.some((segment) => !segment.valid)) {
+              runFailure ??= new Error(
+                `Invalid performance sample for ${scenario} run ${runIndex}: ${
+                  metrics.invalidReason ??
+                  segmentResults
+                    ?.filter((segment) => !segment.valid)
+                    .map((segment) => `${segment.name}: ${segment.invalidReason}`)
+                    .join(", ")
+                }`,
+              );
             }
           }
+          if (interactionError && !measured) throw interactionError;
+          if (runFailure) break;
         }
 
         const aggregate = aggregateRawSamples(measuredSamples, { minFrames });
@@ -274,11 +366,48 @@ export const test = base.extend<PerfFixtures>({
           aggregate,
           targets,
           runs: runResults,
+          ...(journeyCase
+            ? {
+                caseIdentity: journeyCase.saveHash,
+                exploratory: journeyCase.exploratory,
+                coverage: journeyCase.coverage,
+              }
+            : {}),
+          ...(segments
+            ? {
+                segments: segments.map((segment) => ({
+                  name: segment.name,
+                  actions: runResults.reduce(
+                    (sum, run) => sum + (run.segments?.find((item) => item.name === segment.name)?.actions ?? 0),
+                    0,
+                  ),
+                  inputEvents: runResults.reduce(
+                    (sum, run) => sum + (run.segments?.find((item) => item.name === segment.name)?.inputEvents ?? 0),
+                    0,
+                  ),
+                  maxInputDelayMs: Math.max(
+                    0,
+                    ...runResults.map(
+                      (run) => run.segments?.find((item) => item.name === segment.name)?.maxInputDelayMs ?? 0,
+                    ),
+                  ),
+                  longAnimationFrames: runResults.reduce(
+                    (sum, run) =>
+                      sum + (run.segments?.find((item) => item.name === segment.name)?.longAnimationFrames ?? 0),
+                    0,
+                  ),
+                  aggregate: aggregateRawSamples(segmentSamples.get(segment.name) ?? [], {
+                    minFrames: segment.minFrames,
+                  }),
+                })),
+              }
+            : {}),
         };
 
         const aggregatesPath = path.join(ensureOutputDirs().root, "aggregates");
         fs.mkdirSync(aggregatesPath, { recursive: true });
         fs.writeFileSync(path.join(aggregatesPath, `${scenario}.json`), JSON.stringify(scenarioAggregate, null, 2));
+        if (runFailure) throw runFailure;
       },
     );
   },
