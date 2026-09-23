@@ -429,6 +429,24 @@ describe("numeric text alignment", () => {
     ]);
   });
 
+  it("binds equal values to their described effects when authored lines are reordered", () => {
+    const card = makeTestCard({
+      descriptionLines: ["Deal 3 Physical damage", "Restore 3 Health"],
+      effects: [
+        { kind: "heal", amount: 3 },
+        { kind: "damage", damageType: "physical", amount: 3 },
+      ],
+    });
+    const targets = getEditableCorruptionTargets(card);
+    expect(targets.map((target) => target.effectIndex)).toEqual([1, 0]);
+    const changed = updateCardNumericValue(card, targets[0]!, 4);
+    expect(changed.descriptionLines).toEqual(["Deal 4 Physical damage", "Restore 3 Health"]);
+    expect(changed.effects).toEqual([
+      { kind: "heal", amount: 3 },
+      { kind: "damage", damageType: "physical", amount: 4 },
+    ]);
+  });
+
   it("moves existing highlights when the number gains a digit", () => {
     const card = makeTestCard({
       descriptionLines: ["Deal 9 Physical and 2 Bleed damage"],

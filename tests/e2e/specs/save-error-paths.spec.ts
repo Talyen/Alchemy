@@ -1,7 +1,9 @@
 import { expect, test } from "../../fixtures/e2e";
 import { SAVE_KEY } from "../../browser-helpers";
 import { MenuPage } from "../../pages/menu-page";
+import { BattlePage } from "../../pages/battle-page";
 import { critical } from "../../playwright-tags";
+import { SAVE_RECOVERY_KEY } from "@/lib/game-constants";
 import { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation/metadata";
 
 test.describe("Save Error Paths", () => {
@@ -36,7 +38,7 @@ test.describe("Save Error Paths", () => {
     await expect(menu.optionsBtn).toBeVisible();
   });
 
-  test("blocks gameplay when save schema is newer than this build", critical, async ({ page }) => {
+  test("future schema save remains protected while new play stays available", critical, async ({ page }) => {
     await page.addInitScript(
       (data) => {
         localStorage.setItem(
@@ -57,7 +59,25 @@ test.describe("Save Error Paths", () => {
 
     await page.goto("/");
 
-    await expect(page.getByRole("heading", { name: "Newer Save Data Detected" })).toBeVisible({ timeout: 10000 });
-    await expect(page.getByRole("button", { name: "Play", exact: true })).toHaveCount(0);
+    const menu = new MenuPage(page);
+    await menu.expectMainMenu();
+    await menu.openGameModeSelect();
+    await page.getByRole("button", { name: "The Campaign", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
+    await menu.selectCharacterAndContinue("Knight");
+    await new BattlePage(page).waitForOpeningHand();
+    await expect
+      .poll(() =>
+        page.evaluate((saveKey) => JSON.parse(localStorage.getItem(saveKey) ?? "{}").saveSchemaVersion, SAVE_KEY),
+      )
+      .toBe(CURRENT_SAVE_SCHEMA_VERSION + 1);
+    await expect
+      .poll(() =>
+        page.evaluate(
+          (saveKey) => JSON.parse(localStorage.getItem(saveKey) ?? "{}").activeRun?.characterId,
+          SAVE_RECOVERY_KEY,
+        ),
+      )
+      .toBe("knight");
   });
 });

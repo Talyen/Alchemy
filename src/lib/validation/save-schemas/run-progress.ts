@@ -99,7 +99,18 @@ export const RunProgressSchema = z.object({
   destinationIndexInAct: z.number().int().nonnegative().catch(0),
   completedDestinations: DestinationArraySchema,
   lastOfferedDestinations: DestinationArraySchema,
-  destinationRoundsSinceOffered: z.record(z.string(), z.number().int().nonnegative()).catch({}),
+  destinationRoundsSinceOffered: z.preprocess(
+    (value) => {
+      if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+      return Object.fromEntries(
+        Object.entries(value).filter(
+          (entry): entry is [string, number] =>
+            typeof entry[1] === "number" && Number.isInteger(entry[1]) && entry[1] >= 0,
+        ),
+      );
+    },
+    z.record(z.string(), z.number().int().nonnegative()),
+  ),
   runBoons: z.array(z.string()).catch([]),
   encounteredRunEnemyIds: deduplicatedStringArraySchema(),
   selectedDifficulty: DifficultyIdSchema.nullable().catch(null),

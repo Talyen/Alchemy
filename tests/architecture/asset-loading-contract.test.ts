@@ -35,7 +35,7 @@ describe("asset loading contract", () => {
   it("references the whole art catalog only from boot preload and validation", () => {
     const allowed = new Set([
       "src/lib/game-data/assets.ts",
-      "src/app/use-app-effects.ts",
+      "src/app/use-initial-load-ready.ts",
       "src/lib/content-validation/utils.ts",
     ]);
     const referencing = matchingFiles(listNonTestSourceFiles("src"), /allGameArt/u);

@@ -40,8 +40,8 @@ import {
   createEmptyGearInventories,
   createEmptyGearLoadouts,
   createEmptyEquippedTrinkets,
+  GEAR_CHARACTER_IDS,
   flattenGearInventories,
-  normalizeExclusiveGearLoadouts,
   normalizeGearLoadout,
   type GearInventories,
   type GearLoadouts,
@@ -69,7 +69,18 @@ const GearInventorySchema = GearInstanceArraySchema;
 const GearInventoriesSchema = z
   .object(characterShape(() => GearInventorySchema.catch([])))
   .catch(createEmptyGearInventories)
-  .transform((inventories) => inventories as GearInventories);
+  .transform((inventories) => {
+    const seen = new Set<string>();
+    const unique = inventories as GearInventories;
+    for (const characterId of GEAR_CHARACTER_IDS) {
+      unique[characterId] = unique[characterId].filter((item) => {
+        if (seen.has(item.instanceId)) return false;
+        seen.add(item.instanceId);
+        return true;
+      });
+    }
+    return unique;
+  });
 const GearLoadoutSchema = z
   .record(z.string(), z.union([z.string(), z.null()]))
   .catch({})
@@ -77,7 +88,7 @@ const GearLoadoutSchema = z
 const emptyGearLoadouts = createEmptyGearLoadouts();
 const GearLoadoutsSchema = z
   .object(characterShape((id) => GearLoadoutSchema.catch(emptyGearLoadouts[id as keyof typeof emptyGearLoadouts])))
-  .transform((loadouts) => normalizeExclusiveGearLoadouts(loadouts as GearLoadouts));
+  .transform((loadouts) => loadouts as GearLoadouts);
 const EquippedTrinketsSchema = z
   .object(characterShape(() => z.string().nullable().catch(null)))
   .catch(createEmptyEquippedTrinkets)

@@ -197,28 +197,19 @@ export function computeVictoryRewardState(
   );
 }
 
-function computeWildwoodVictoryRewards(
+function computeVictorySettlement(
   input: VictoryRewardsInput,
   talentEffects: TalentEffectManifest,
   activeTrinketEffectIds: string[],
   labyrinthRewardModifiers: EncounterRewardTraitId[],
   rng: () => number,
-): VictoryRewardsResult {
-  const { gold, eliteBonus, bossBonus, generousBonus, wealthyBonus } = rollVictoryGold(
-    input.battleState,
-    talentEffects,
-    labyrinthRewardModifiers,
-    rng,
-  );
+) {
+  const goldRoll = rollVictoryGold(input.battleState, talentEffects, labyrinthRewardModifiers, rng);
   const goldResult = computeVictoryGold({
     battleState: input.battleState,
     purseGold: input.purseGold,
     runBoons: activeTrinketEffectIds,
-    gold,
-    eliteBonus,
-    generousBonus,
-    wealthyBonus,
-    bossBonus,
+    ...goldRoll,
     talentGoldPerCombat: victoryGoldPerCombat(talentEffects, input.battleState),
     goldMultiplier: getGoldMultiplier(input.characterId, input.selectedDifficulty),
   });
@@ -232,31 +223,17 @@ function computeWildwoodVictoryRewards(
   });
   const maxHealthDelta = Math.max(0, talentEffects.maxHealthPerCombat);
   const effectiveMaxHealth = input.runMaxHealth + maxHealthDelta;
-  const playerHealth = Math.min(
-    effectiveMaxHealth,
-    input.battleState.playerHealth + Math.max(0, talentEffects.healthRestorePerCombat),
-  );
-  return {
-    rewardState: {
-      ...createWildwoodRewardState({
-        runDeck: input.runDeck,
-        rng,
-        lootProgress: input.lootProgress,
-        gearAstralChanceBonus: input.homesteadEffects.gearAstralChanceBonus,
-        excludedBoonIds: activeTrinketEffectIds,
-        ownedTrinketIds: input.ownedTrinketIds ?? [],
-        ownedUniqueIds: input.ownedUniqueIds ?? new Set(),
-      }),
-      gold: goldResult.persistedGold - input.purseGold,
-      materials,
-    },
-    labyrinthRewardModifiers,
-    goldEarned: goldResult.earnedBeforeMultiplier,
-    persistedGold: goldResult.persistedGold,
-    playerHealth,
-    maxHealthDelta,
-    destinationOfferState: input.destinationOfferState,
-  };
+  const wellProvisionedHealing =
+    input.contentSystemType === CONTENT_SYSTEMS.WILDWOOD
+      ? 0
+      : getWellProvisionedHealing(labyrinthRewardModifiers, effectiveMaxHealth);
+  const victoryHealing = wellProvisionedHealing + Math.max(0, talentEffects.healthRestorePerCombat);
+  const playerHealth =
+    input.contentSystemType === CONTENT_SYSTEMS.WILDWOOD || victoryHealing > 0
+      ? Math.min(effectiveMaxHealth, input.battleState.playerHealth + victoryHealing)
+      : input.battleState.playerHealth;
+
+  return { goldRoll, goldResult, materials, playerHealth, maxHealthDelta, effectiveMaxHealth };
 }
 
 function prepareVictoryDestinations(
@@ -293,52 +270,45 @@ export function computeVictoryRewards(
   );
 
   const talentEffects = computeTalentEffects(input.unlockedTalents);
-  if (input.contentSystemType === CONTENT_SYSTEMS.WILDWOOD) {
-    return computeWildwoodVictoryRewards(input, talentEffects, activeTrinketEffectIds, labyrinthRewardModifiers, rng);
-  }
-  const { gold, eliteBonus, bossBonus, generousBonus, wealthyBonus } = rollVictoryGold(
-    input.battleState,
+  const settlement = computeVictorySettlement(
+    input,
     talentEffects,
+    activeTrinketEffectIds,
     labyrinthRewardModifiers,
     rng,
   );
-
-  const goldResult = computeVictoryGold({
-    battleState: input.battleState,
-    purseGold: input.purseGold,
-    runBoons: activeTrinketEffectIds,
-    gold,
-    eliteBonus,
-    generousBonus,
-    wealthyBonus,
-    bossBonus,
-    talentGoldPerCombat: victoryGoldPerCombat(talentEffects, input.battleState),
-    goldMultiplier: getGoldMultiplier(input.characterId, input.selectedDifficulty),
-  });
-
-  const maxHealthDelta = Math.max(0, talentEffects.maxHealthPerCombat);
-  const effectiveMaxHealth = input.runMaxHealth + maxHealthDelta;
-  const wellProvisionedHealing = getWellProvisionedHealing(labyrinthRewardModifiers, effectiveMaxHealth);
-  const victoryHealing = wellProvisionedHealing + Math.max(0, talentEffects.healthRestorePerCombat);
-  const playerHealth =
-    victoryHealing > 0
-      ? Math.min(effectiveMaxHealth, input.battleState.playerHealth + victoryHealing)
-      : input.battleState.playerHealth;
-
-  const materials = computeCombatMaterialReward({
-    enemyId: input.battleState.currentEnemy.id,
-    enemyType: input.battleState.currentEnemy.enemyType,
-    effects: input.homesteadEffects,
-    scavenger: labyrinthRewardModifiers.includes("scavenger"),
-    herbalist: labyrinthRewardModifiers.includes("herbalist"),
-    rng,
-  });
+  const commonResult = {
+    labyrinthRewardModifiers,
+    goldEarned: settlement.goldResult.earnedBeforeMultiplier,
+    persistedGold: settlement.goldResult.persistedGold,
+    playerHealth: settlement.playerHealth,
+    maxHealthDelta: settlement.maxHealthDelta,
+  };
+  if (input.contentSystemType === CONTENT_SYSTEMS.WILDWOOD) {
+    return {
+      ...commonResult,
+      rewardState: {
+        ...createWildwoodRewardState({
+          runDeck: input.runDeck,
+          rng,
+          lootProgress: input.lootProgress,
+          gearAstralChanceBonus: input.homesteadEffects.gearAstralChanceBonus,
+          excludedBoonIds: activeTrinketEffectIds,
+          ownedTrinketIds: input.ownedTrinketIds ?? [],
+          ownedUniqueIds: input.ownedUniqueIds ?? new Set(),
+        }),
+        gold: settlement.goldResult.persistedGold - input.purseGold,
+        materials: settlement.materials,
+      },
+      destinationOfferState: input.destinationOfferState,
+    };
+  }
 
   const sampled = prepareVictoryDestinations(
     input,
-    playerHealth,
-    goldResult.persistedGold,
-    effectiveMaxHealth,
+    settlement.playerHealth,
+    settlement.goldResult.persistedGold,
+    settlement.effectiveMaxHealth,
     destinationRng,
   );
   const destinations = sampled.choices;
@@ -356,12 +326,8 @@ export function computeVictoryRewards(
       ownedUniqueIds: input.ownedUniqueIds ?? new Set(),
       battleState: input.battleState,
       purseGold: input.purseGold,
-      gold,
-      eliteBonus,
-      generousBonus,
-      wealthyBonus,
-      bossBonus,
-      materials,
+      ...settlement.goldRoll,
+      materials: settlement.materials,
       destinations,
       talentEffects,
       rollBossEnemyId: input.rollBossEnemyId,
@@ -371,12 +337,8 @@ export function computeVictoryRewards(
   );
 
   return {
+    ...commonResult,
     rewardState,
-    labyrinthRewardModifiers,
-    goldEarned: goldResult.earnedBeforeMultiplier,
-    persistedGold: goldResult.persistedGold,
-    playerHealth,
-    maxHealthDelta,
     destinationOfferState: sampled.offerState,
   };
 }

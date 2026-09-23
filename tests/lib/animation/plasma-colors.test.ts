@@ -20,6 +20,8 @@ describe("plasma-colors", () => {
     it("falls back to default neutral color for invalid hex strings", () => {
       expect(parsePlasmaHexColor("invalid")).toEqual([0.8, 0.8, 0.8]);
       expect(parsePlasmaHexColor("")).toEqual([0.8, 0.8, 0.8]);
+      expect(parsePlasmaHexColor("#zz0")).toEqual([0.8, 0.8, 0.8]);
+      expect(parsePlasmaHexColor("#00gg00")).toEqual([0.8, 0.8, 0.8]);
     });
   });
 

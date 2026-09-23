@@ -8,6 +8,7 @@ describe("computeStartupLoadTarget", () => {
       computeStartupLoadTarget({
         imageLoaded: 0,
         imageTotal: 10,
+        imagesSettled: false,
         fontsReady: false,
         bootstrapReady: false,
       }),
@@ -17,6 +18,7 @@ describe("computeStartupLoadTarget", () => {
       computeStartupLoadTarget({
         imageLoaded: 5,
         imageTotal: 10,
+        imagesSettled: false,
         fontsReady: true,
         bootstrapReady: false,
       }),
@@ -28,6 +30,7 @@ describe("computeStartupLoadTarget", () => {
       computeStartupLoadTarget({
         imageLoaded: 0,
         imageTotal: 0,
+        imagesSettled: true,
         fontsReady: true,
         bootstrapReady: true,
       }),
@@ -38,6 +41,7 @@ describe("computeStartupLoadTarget", () => {
     const target = computeStartupLoadTarget({
       imageLoaded: 10,
       imageTotal: 10,
+      imagesSettled: true,
       fontsReady: true,
       bootstrapReady: false,
     });
@@ -50,10 +54,23 @@ describe("computeStartupLoadTarget", () => {
       computeStartupLoadTarget({
         imageLoaded: 10,
         imageTotal: 10,
+        imagesSettled: true,
         fontsReady: true,
         bootstrapReady: true,
       }),
     ).toBe(1);
+  });
+
+  it("holds below full while the image request is still settling", () => {
+    expect(
+      computeStartupLoadTarget({
+        imageLoaded: 10,
+        imageTotal: 10,
+        imagesSettled: false,
+        fontsReady: true,
+        bootstrapReady: true,
+      }),
+    ).toBeLessThanOrEqual(STARTUP_BAR_INCOMPLETE_CAP);
   });
 });
 

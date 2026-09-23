@@ -103,7 +103,7 @@ test.describe("Corruption Full Flow", () => {
     await new DestinationPage(page).expectVisible();
   });
 
-  test("corrupted card retains corruption flag in subsequent battle hand", async ({ page }) => {
+  test("corrupted card appears in the deck during the next battle", async ({ page }) => {
     const corruption = new CorruptionPage(page);
     await corruption.open();
 
@@ -113,8 +113,8 @@ test.describe("Corruption Full Flow", () => {
     const destination = new DestinationPage(page);
     await destination.enterAnyCombat();
 
-    const playableCards = new BattlePage(page).hand;
-    await expect(playableCards.first()).toBeVisible({ timeout: 5000 });
-    expect(await playableCards.count()).toBeGreaterThan(0);
+    await new BattlePage(page).waitForOpeningHand();
+    await page.getByRole("button", { name: /^View Deck/ }).click();
+    await expect(page.getByRole("dialog").getByRole("img", { name: /^Corrupted / })).toBeVisible();
   });
 });

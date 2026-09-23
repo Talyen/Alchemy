@@ -15,7 +15,7 @@ export function applyEnemyHealingWithCombatText(
   const healAmount = options?.skipFightPacing ? amount : paceCombatMagnitude(state, amount, "enemy");
   const nextHealth = clampHealth(state.enemyHealth, healAmount, state.enemyMaxHealth);
   const actualHeal = nextHealth - state.enemyHealth;
-  mergeCombatText(combatTexts, { target: "enemy", kind: "heal", stat: "health", amount: healAmount });
   if (actualHeal <= 0) return state;
+  mergeCombatText(combatTexts, { target: "enemy", kind: "heal", stat: "health", amount: actualHeal });
   return { ...state, enemyHealth: nextHealth };
 }

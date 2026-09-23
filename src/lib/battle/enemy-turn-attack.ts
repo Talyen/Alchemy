@@ -1,198 +1,32 @@
 import { resolveBattleSequence } from "./battle-sequence";
-import { resolveSecondaryAction } from "./action-context";
-import { resolveConditionalCardDamage } from "./conditional-card-damage";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import {
-  beneficialPlayerStatusIds,
   enemyAbilityDealsDamage,
   getEnemyAbilityCard,
   isEnemyAbilityCard,
   type BattleCard,
-  type DamageType,
-  type EnemyAbilityDamageEffect,
   type EnemyAbilityEffect,
 } from "@/lib/game-data";
 import { getBattleRng, pickRandom, rollChance } from "@/lib/rng";
-import {
-  BANDIT_FIRST_HIT_MULTIPLIER,
-  BRAWLER_PENALTY_MULTIPLIER,
-  CONDITIONAL_FLAT_BONUS,
-  ENEMY_ABILITY_TRAIT_REWARD,
-  GIANT_SNAKE_EXTRA_BLOCK_STRIP,
-  HALF_DIVISOR,
-  HELLHOUND_BURN_MULTIPLIER,
-  INQUISITOR_BURN_MULTIPLIER,
-  OGRE_BLOCK_BREAK_MULTIPLIER,
-  VAMPIRE_BLOOD_SCENT_DAMAGE,
-} from "../game-constants";
-import { halveRounded, scalePercent } from "./amount-helpers";
-import { recordEnemyAbilityActivation, recordEnemyAbilityUse, recordEnemyAttackAction } from "./battle-metrics";
-import { scaleEnemyAbilityDamage } from "./battle-enemy-setup";
+import { halveRounded } from "./amount-helpers";
+import { recordEnemyAbilityUse, recordEnemyAttackAction } from "./battle-metrics";
 import { applyEnemyHealingWithCombatText, mergeCombatText } from "./combat-text";
-import { resolveEnemyAttackHit } from "./enemy-attack-hit";
+import { createEnemyAbilityContext, type EnemyAbilityContext } from "./enemy-ability-context";
+import { applyAbilityDamage } from "./enemy-ability-damage";
+import { applyAbilityFollowups } from "./enemy-ability-followups";
 import { addEnemyMitigationWithCombatText } from "./encounter-trait-health-threshold";
 import { scaleByRoomMultiplier } from "./enemy-turn-traits";
-import { resolveFollowUpHit } from "./follow-up-hit-resolution";
-import { applyPlayerStatusFromAttack } from "./status-player";
 import { removePlayerArmor } from "./status-helpers";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
 import {
   addEnemyStatus,
-  getEnemyTraitSet,
-  hasEnemyTrait,
   isPlayerDefeated,
   isStunFreezeBuildupBlocked,
-  setEnemyStatus,
   setFlag,
   setPlayerStatus,
   type BattleState,
   type CombatTextEvent,
 } from "./types";
-
-interface EnemyAbilityContext {
-  traitSet: ReadonlySet<string>;
-  rewardedTraits: Set<string>;
-  brawlerPenalty: boolean;
-  vampireBonus: boolean;
-  landed: boolean;
-  healthDamage: number;
-}
-
-function applyHitRewards(
-  state: BattleState,
-  damageType: DamageType,
-  context: EnemyAbilityContext,
-  combatTexts: CombatTextEvent[],
-): BattleState {
-  let nextState = state;
-  const reward = (traitId: string, kind: "heal" | "block" | "armor" | "forge") => {
-    if (
-      !hasEnemyTrait(nextState, traitId, context.traitSet) ||
-      context.rewardedTraits.has(traitId) ||
-      nextState.enemyHealth <= 0 ||
-      isPlayerDefeated(nextState)
-    )
-      return;
-    context.rewardedTraits.add(traitId);
-    nextState = recordEnemyAbilityActivation(nextState, traitId);
-    nextState =
-      kind === "heal"
-        ? applyEnemyHealingWithCombatText(nextState, ENEMY_ABILITY_TRAIT_REWARD, combatTexts, { skipFightPacing: true })
-        : addEnemyMitigationWithCombatText(nextState, kind, ENEMY_ABILITY_TRAIT_REWARD, combatTexts);
-  };
-  if (damageType === "holy") {
-    reward("zealot-enemy", "forge");
-    reward("cleric", "heal");
-    reward("seraph", "heal");
-  }
-  if (damageType === "holy" || damageType === "stun") reward("paladin", "block");
-  if (damageType === "stun") reward("stone-titan", "armor");
-  return nextState;
-}
-
-function applyAbilityDamage(
-  state: BattleState,
-  effect: EnemyAbilityDamageEffect,
-  context: EnemyAbilityContext,
-  combatTexts: CombatTextEvent[],
-): BattleState {
-  const selected = resolveConditionalCardDamage(effect, {
-    actorBlock: state.enemyMitigation.block,
-    targetBlock: state.playerStatuses.block,
-    targetFrozen: state.playerCC.freezeSkipTurns > 0,
-  });
-  effect = selected.effect;
-  if (effect.damageTypePool) {
-    effect = { ...effect, damageType: pickRandom(effect.damageTypePool, getBattleRng(state)) ?? effect.damageType };
-  }
-  if (selected.blockSpent > 0) {
-    state = {
-      ...state,
-      enemyMitigation: { ...state.enemyMitigation, block: state.enemyMitigation.block - selected.blockSpent },
-    };
-    mergeCombatText(combatTexts, {
-      target: "enemy",
-      kind: "damage",
-      stat: "block",
-      amount: selected.blockSpent,
-      impact: false,
-    });
-  }
-  let nextState = state;
-  let amountMultiplier = context.brawlerPenalty ? BRAWLER_PENALTY_MULTIPLIER : 1;
-  let flatBonus = 0;
-  const trait = (id: string) => hasEnemyTrait(nextState, id, context.traitSet);
-  const record = (id: string) => {
-    nextState = recordEnemyAbilityActivation(nextState, id);
-  };
-  if (trait("hellhound") && state.playerStatuses.burn > 0) {
-    amountMultiplier *= HELLHOUND_BURN_MULTIPLIER;
-    record("hellhound");
-  }
-  if (trait("inquisitor") && effect.damageType === "holy" && state.playerStatuses.burn > 0) {
-    amountMultiplier *= INQUISITOR_BURN_MULTIPLIER;
-    record("inquisitor");
-  }
-  if (trait("dire-wolf") && state.playerStatuses.bleed > 0) {
-    flatBonus += scaleByRoomMultiplier(state, CONDITIONAL_FLAT_BONUS);
-    record("dire-wolf");
-  }
-  if (trait("stone-golem") && state.enemyMitigation.block > 0) {
-    flatBonus += scaleByRoomMultiplier(state, CONDITIONAL_FLAT_BONUS);
-    record("stone-golem");
-  }
-  if (effect.damageType === "freeze" && (trait("frost-elemental") || trait("ice-wraith"))) {
-    flatBonus += scaleByRoomMultiplier(state, CONDITIONAL_FLAT_BONUS);
-    record(trait("frost-elemental") ? "frost-elemental" : "ice-wraith");
-  }
-  if (effect.damageType === "burn" && trait("pyromancer")) {
-    flatBonus += scaleByRoomMultiplier(state, CONDITIONAL_FLAT_BONUS);
-    record("pyromancer");
-  }
-  const banditBonus = trait("bandit") && !state.flags.enemyFirstHitDoubleUsed;
-  if (banditBonus) amountMultiplier *= BANDIT_FIRST_HIT_MULTIPLIER;
-  // Resources already contain room scaling, but still receive ability pressure
-  // and difficulty bonuses like every other damaging ability.
-  let resourceEffect = effect;
-  if (effect.equalToForge) resourceEffect = { ...effect, amount: state.enemyMitigation.forge };
-  if (effect.equalToBlock)
-    resourceEffect = {
-      ...effect,
-      amount: scalePercent(state.enemyMitigation.block, effect.equalToBlockPercent ?? 100),
-    };
-  let damage = scaleEnemyAbilityDamage(
-    state,
-    resourceEffect,
-    effect.equalToForge === true || effect.equalToBlock === true,
-  );
-  if (effect.doubleIfEnemyBleeding && state.playerStatuses.bleed > 0) damage = { ...damage, amount: damage.amount * 2 };
-  if (trait("blood-cultist") && effect.damageType === "bleed" && state.playerStatuses.bleed > 0) {
-    flatBonus += scaleByRoomMultiplier(state, CONDITIONAL_FLAT_BONUS);
-    record("blood-cultist");
-  }
-  const result = resolveEnemyAttackHit(nextState, damage, combatTexts, {
-    canDodge: true,
-    ignoreArmor: effect.ignoreArmor === true,
-    ignoreBlock: effect.ignoreBlock === true,
-    amountMultiplier,
-    flatBonus,
-    traitSet: context.traitSet,
-    ...(trait("ogre") && effect.damageType === "physical"
-      ? { physicalBlockBreakMultiplier: OGRE_BLOCK_BREAK_MULTIPLIER }
-      : {}),
-    ...(trait("giant-snake") && effect.damageType === "poison"
-      ? { extraPoisonBlockStrip: GIANT_SNAKE_EXTRA_BLOCK_STRIP }
-      : {}),
-  });
-  nextState = result.state;
-  context.landed ||= result.landed;
-  context.healthDamage += result.healthDamage;
-  if (banditBonus && result.landed) {
-    nextState = recordEnemyAbilityActivation(setFlag(nextState, "enemyFirstHitDoubleUsed", true), "bandit");
-  }
-  if (result.healthDamage > 0) nextState = applyHitRewards(nextState, effect.damageType, context, combatTexts);
-  return nextState;
-}
 
 function applyEnemyEffect(
   state: BattleState,
@@ -242,104 +76,11 @@ function applyEnemyEffect(
   }
 }
 
-function applyAbilityFollowups(
-  state: BattleState,
-  context: EnemyAbilityContext,
-  combatTexts: CombatTextEvent[],
-): BattleState {
-  let nextState = state;
-  if (context.vampireBonus) {
-    nextState = recordEnemyAbilityActivation(nextState, "vampire");
-    const result = resolveEnemyAttackHit(
-      nextState,
-      { kind: "damage", damageType: "bleed", amount: VAMPIRE_BLOOD_SCENT_DAMAGE },
-      combatTexts,
-      {
-        canDodge: true,
-        skipTraitReactions: true,
-        traitSet: context.traitSet,
-        amountMultiplier: context.brawlerPenalty ? BRAWLER_PENALTY_MULTIPLIER : 1,
-      },
-    );
-    nextState = result.state;
-    context.landed ||= result.landed;
-    context.healthDamage += result.healthDamage;
-  }
-  for (const [traitId, status] of [
-    ["fire-imp", "burn"],
-    ["giant-spider", "poison"],
-  ] as const) {
-    if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
-    if (context.healthDamage > 0 && hasEnemyTrait(nextState, traitId, context.traitSet)) {
-      nextState = applyPlayerStatusFromAttack(
-        recordEnemyAbilityActivation(nextState, traitId),
-        {
-          kind: "player-status",
-          status,
-          amount: ENEMY_ABILITY_TRAIT_REWARD,
-        },
-        combatTexts,
-      );
-    }
-  }
-  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
-  if (context.healthDamage > 0 && hasEnemyTrait(nextState, "winter-wolf", context.traitSet)) {
-    nextState = resolveEnemyAttackHit(
-      recordEnemyAbilityActivation(nextState, "winter-wolf"),
-      {
-        kind: "damage",
-        damageType: "freeze",
-        amount: ENEMY_ABILITY_TRAIT_REWARD,
-      },
-      combatTexts,
-      { canDodge: false, traitSet: context.traitSet },
-    ).state;
-  }
-  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
-  if (context.landed && hasEnemyTrait(nextState, "banshee", context.traitSet)) {
-    const purgeCandidates = beneficialPlayerStatusIds.filter((stat) => nextState.playerStatuses[stat] > 0);
-    const purgeTarget = pickRandom(purgeCandidates, getBattleRng(nextState));
-    if (purgeTarget) {
-      nextState = recordEnemyAbilityActivation(nextState, "banshee");
-      nextState =
-        purgeTarget === "armor"
-          ? removePlayerArmor(nextState, nextState.playerStatuses.armor, combatTexts)
-          : setPlayerStatus(nextState, purgeTarget, 0);
-      combatTexts.push({ target: "player", kind: "notice", stat: purgeTarget, text: "Purged", signal: "purge" });
-    }
-  }
-  if (nextState.enemyStatuses.onAttackBleed > 0) {
-    const amount = nextState.enemyStatuses.onAttackBleed;
-    nextState = resolveFollowUpHit(
-      setEnemyStatus(nextState, "onAttackBleed", 0),
-      { source: "player-follow-up", damageType: "bleed", amount },
-      combatTexts,
-    );
-  }
-  if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
-  // Purged Thorns stay purged: the retaliation check below sees zero stacks, so no Nature damage fires.
-  if (context.landed && nextState.playerStatuses.thorns > 0) {
-    const amount = nextState.playerStatuses.thorns;
-    nextState = resolveSecondaryAction(setPlayerStatus(nextState, "thorns", 0), "retaliation", (current) =>
-      resolveFollowUpHit(current, { source: "player-follow-up", damageType: "nature", amount }, combatTexts),
-    );
-  }
-  return nextState;
-}
-
 export function applyEnemyAbility(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]): BattleState {
   if (!isEnemyAbilityCard(card)) throw new Error(`Unsupported enemy ability: ${card.id}`);
   if (state.enemyHealth <= 0 || isPlayerDefeated(state)) return state;
   const damaging = enemyAbilityDealsDamage(card);
-  const context: EnemyAbilityContext = {
-    traitSet: getEnemyTraitSet(state),
-    rewardedTraits: new Set(),
-    brawlerPenalty: damaging && state.flags.enemyBrawlerDamagePenalty,
-    vampireBonus:
-      damaging && hasEnemyTrait(state, "vampire") && state.playerHealth < state.playerMaxHealth / HALF_DIVISOR,
-    landed: false,
-    healthDamage: 0,
-  };
+  const context = createEnemyAbilityContext(state, damaging);
   let nextState = recordEnemyAbilityUse({ ...state, lastEnemyAbilityId: card.id }, card.id);
   if (damaging) nextState = recordEnemyAttackAction(nextState);
   if (context.brawlerPenalty) nextState = setFlag(nextState, "enemyBrawlerDamagePenalty", false);

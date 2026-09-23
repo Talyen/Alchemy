@@ -15,6 +15,7 @@ const STALLED_PRELOAD_TIMEOUT_MS = 30_000;
 const htmlPreloadStarted = new Set<string>();
 const htmlPreloadTimers = new Map<HTMLAudioElement, ReturnType<typeof setTimeout>>();
 let preloadAllSoundsStarted = false;
+let preloadGeneration = 0;
 
 function clearStallTimer(el: HTMLAudioElement): void {
   const timer = htmlPreloadTimers.get(el);
@@ -34,6 +35,7 @@ function abortPreloadElement(el: HTMLAudioElement) {
 }
 
 export function resetSoundPreloadCache() {
+  preloadGeneration += 1;
   for (const el of Array.from(htmlPreloadTimers.keys())) {
     abortPreloadElement(el);
   }
@@ -87,6 +89,7 @@ export function preloadBattleSounds(
 
 export function preloadAllSounds() {
   if (preloadAllSoundsStarted) return;
+  if (typeof Audio === "undefined") return;
   preloadAllSoundsStarted = true;
 
   const urgentSounds = [...Object.values(uiSounds), battleEventSounds.drawTransfer];
@@ -98,7 +101,8 @@ export function preloadAllSounds() {
   // Warming only assigns element sources; the browser fetches asynchronously,
   // so one idle callback with a plain loop replaces the previous fake-batched
   // schedule (which awaited synchronous work and throttled nothing).
+  const generation = preloadGeneration;
   scheduleIdle(() => {
-    preloadSounds(pendingNames);
+    if (generation === preloadGeneration) preloadSounds(pendingNames);
   }, IDLE_PRELOAD_TIMEOUT_MS);
 }

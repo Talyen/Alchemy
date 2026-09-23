@@ -1,10 +1,13 @@
 import { effectsForAffixRolls, getGearInstanceAffixes, normalizeAffixRolls } from "./affixes";
+import { gearAffixCatalog } from "./affix-catalog";
+import { GEAR_AFFIX_COUNT } from "@/lib/game-constants";
 import { computeSalvageYield, type SalvageYield } from "./crafting";
 import { gearDefinitions } from "./definitions";
 import { getUniqueAffixes } from "./unique-catalog";
 import { mergeGearEffectManifests } from "./gear-effect-manifest";
 import {
   createEmptyGearLoadouts,
+  normalizeExclusiveGearLoadouts,
   GEAR_CHARACTER_IDS,
   GEAR_SLOTS,
   defaultGearEffects,
@@ -96,13 +99,15 @@ function resolveHandConflicts(
 }
 
 export function pruneOrphanGearLoadouts(inventory: GearInstance[], loadouts: GearLoadouts): GearLoadouts {
-  const inventoryIds = new Set(inventory.map((item) => item.instanceId));
+  const inventoryById = new Map(inventory.map((item) => [item.instanceId, item]));
   const next = createEmptyGearLoadouts();
 
   for (const characterId of GEAR_CHARACTER_IDS) {
     for (const slot of GEAR_SLOTS) {
       const instanceId = loadouts[characterId][slot];
-      next[characterId][slot] = instanceId && inventoryIds.has(instanceId) ? instanceId : null;
+      const instance = instanceId ? inventoryById.get(instanceId) : undefined;
+      const definition = instance ? gearDefinitions[instance.definitionId] : undefined;
+      if (instanceId && definition && isGearCompatibleWithSlot(definition, slot)) next[characterId][slot] = instanceId;
     }
     const offHand = resolveEquippedDefinitionAt(inventory, next[characterId], "off-hand");
     const mainHand = resolveEquippedDefinitionAt(inventory, next[characterId], "main-hand");
@@ -117,7 +122,7 @@ export function pruneOrphanGearLoadouts(inventory: GearInstance[], loadouts: Gea
     }
   }
 
-  return next;
+  return normalizeExclusiveGearLoadouts(next);
 }
 
 export function equipGear(
@@ -220,10 +225,18 @@ export function normalizeGearInstance(raw: unknown): GearInstance | null {
     return { instanceId, definitionId, affixes: [] };
   }
 
+  const seen = new Set<string>();
+  const affixes = normalizeAffixRolls(rawAffixes, definition.rarity)
+    .filter((roll) => {
+      if (seen.has(roll.id) || gearAffixCatalog[roll.id].uniqueOnly) return false;
+      seen.add(roll.id);
+      return true;
+    })
+    .slice(0, GEAR_AFFIX_COUNT[definition.rarity ?? "basic"].max);
   return {
     instanceId,
     definitionId,
-    affixes: normalizeAffixRolls(rawAffixes, definition.rarity),
+    affixes,
   };
 }
 

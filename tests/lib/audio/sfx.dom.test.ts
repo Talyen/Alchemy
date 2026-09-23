@@ -212,6 +212,29 @@ describe("cooldown, delay, and cancellation", () => {
     expect(soundedFakeAudio()).toHaveLength(1);
   });
 
+  it("lets an immediate cue play before a future cue of the same sound", () => {
+    vi.useFakeTimers();
+    playBattleEvent("playerHit", { delay: 1 });
+    playBattleEvent("playerHit");
+    expect(soundedFakeAudio()).toHaveLength(1);
+    vi.advanceTimersByTime(1000);
+    expect(soundedFakeAudio()).toHaveLength(2);
+  });
+
+  it("recovers when play throws synchronously", () => {
+    installFakeAudio({
+      onCreate: (element) => {
+        element.play.mockImplementationOnce(() => {
+          throw new Error("play failed");
+        });
+      },
+    });
+    expect(() => playBattleEvent("playerHit")).not.toThrow();
+    installFakeAudio();
+    playBattleEvent("playerHit");
+    expect(soundedFakeAudio()).toHaveLength(1);
+  });
+
   it("cancels a delayed battle sound and its timer on stop", () => {
     vi.useFakeTimers();
     playBattleEvent("playerHit", { delay: 1, cooldownMs: 0 });
@@ -298,8 +321,10 @@ describe("SFX lifetime", () => {
     await new Promise((resolve) => {
       setTimeout(resolve, 0);
     });
+    const pauseCount = el.pause.mock.calls.length;
     stopAllSfx();
-    expect(el.pause).not.toHaveBeenCalled();
+    expect(el.pause).toHaveBeenCalledTimes(pauseCount);
+    expect(el.removeAttribute).toHaveBeenCalledWith("src");
   });
 });
 

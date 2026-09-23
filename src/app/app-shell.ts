@@ -2,12 +2,8 @@ export { AppBackgroundParticles, GameMenuOverlay } from "./app-overlays";
 export { AppScreenChromeProvider } from "./app-screen-chrome-context";
 export { StartupLoadingScreen } from "./startup-loading-screen";
 export { useAlchemyAutosaveFromStores } from "./use-app-save-state";
-export {
-  useAppAudioEffects,
-  useAppDisplayEffects,
-  useGlobalErrorHandlers,
-  useInitialLoadReady,
-} from "./use-app-effects";
+export { useAppAudioEffects, useAppDisplayEffects, useGlobalErrorHandlers } from "./use-app-effects";
+export { useInitialLoadReady } from "./use-initial-load-ready";
 export {
   useAppKeyboardShortcuts,
   useDevShortcuts,

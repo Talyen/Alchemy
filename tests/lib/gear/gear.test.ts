@@ -186,6 +186,46 @@ describe("gear domain", () => {
     expect(normalizeGearInstance({ instanceId: "gear-1", definitionId: "not-a-gear-id" })).toBeNull();
   });
 
+  it("does not apply the same saved affix twice", () => {
+    const normalized = normalizeGearInstance({
+      instanceId: "sword-1",
+      definitionId: "shortsword-basic",
+      affixes: [
+        { id: "flat-physical", value: 1 },
+        { id: "flat-physical", value: 2 },
+      ],
+    });
+
+    expect(normalized?.affixes).toEqual([{ id: "flat-physical", value: 1 }]);
+  });
+
+  it("caps a saved Basic item's affixes at the Basic slot limit", () => {
+    const normalized = normalizeGearInstance({
+      instanceId: "sword-1",
+      definitionId: "shortsword-basic",
+      affixes: [
+        { id: "flat-physical", value: 1 },
+        { id: "flat-stun", value: 1 },
+        { id: "flat-holy", value: 1 },
+      ],
+    });
+
+    expect(normalized?.affixes).toEqual([
+      { id: "flat-physical", value: 1 },
+      { id: "flat-stun", value: 1 },
+    ]);
+  });
+
+  it("drops a Unique signature from an ordinary saved item", () => {
+    const normalized = normalizeGearInstance({
+      instanceId: "sword-1",
+      definitionId: "shortsword-basic",
+      affixes: [{ id: "kingbreaker", value: 1 }],
+    });
+
+    expect(normalized?.affixes).toEqual([]);
+  });
+
   it("rejects equipping gear that is not in inventory", () => {
     const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "left-accessory", ring, []);
     expect(loadouts.knight["left-accessory"]).toBeNull();

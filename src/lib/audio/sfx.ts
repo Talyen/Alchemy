@@ -35,8 +35,6 @@ interface ActiveHtmlSfx {
 
 interface PendingHtmlSfx {
   timer: ReturnType<typeof setTimeout>;
-  name: string;
-  scheduledAt: number;
   trackForCleanup: boolean;
 }
 
@@ -51,15 +49,14 @@ const activeHtmlSfx = new Set<ActiveHtmlSfx>();
 const pendingHtmlSfx = new Set<PendingHtmlSfx>();
 const MAX_AMBIENT_SFX = 32;
 
-function releaseCooldownReservation(name: string, scheduledAt: number) {
-  if (audioState.lastPlayedAt.get(name) === scheduledAt) audioState.lastPlayedAt.delete(name);
+function releaseCooldownReservation(name: string, playedAt: number) {
+  if (audioState.lastPlayedAt.get(name) === playedAt) audioState.lastPlayedAt.delete(name);
 }
 
 function cancelPendingHtmlSfx(onlyTracked: boolean) {
   for (const pending of pendingHtmlSfx) {
     if (onlyTracked && !pending.trackForCleanup) continue;
     clearTimeout(pending.timer);
-    releaseCooldownReservation(pending.name, pending.scheduledAt);
     pendingHtmlSfx.delete(pending);
   }
 }
@@ -114,9 +111,14 @@ export function stopAllSfx() {
   }
 }
 
-function playHtmlSfx(name: string, volume: number, trackForCleanup: boolean) {
-  if (typeof Audio === "undefined") return;
-  const el = new Audio(getSoundUrl(name));
+function playHtmlSfx(name: string, volume: number, trackForCleanup: boolean, onFailure: () => void): boolean {
+  if (typeof Audio === "undefined") return false;
+  let el: HTMLAudioElement;
+  try {
+    el = new Audio(getSoundUrl(name));
+  } catch {
+    return false;
+  }
   const entry: ActiveHtmlSfx = { el, volume, trackForCleanup };
   applyHtmlSfxPlayback(entry);
   trackHtmlSfx(entry);
@@ -126,9 +128,18 @@ function playHtmlSfx(name: string, volume: number, trackForCleanup: boolean) {
   el.onerror = () => {
     untrackHtmlSfx(entry);
   };
-  void Promise.resolve(el.play()).catch(() => {
+  try {
+    void Promise.resolve(el.play()).catch(() => {
+      untrackHtmlSfx(entry);
+      releaseAudioElement(el);
+      onFailure();
+    });
+  } catch {
     untrackHtmlSfx(entry);
-  });
+    releaseAudioElement(el);
+    return false;
+  }
+  return true;
 }
 
 function playBuffer(
@@ -137,27 +148,23 @@ function playBuffer(
 ) {
   if (audioState.muted) return;
 
-  const scheduledAt = performance.now() + delay * 1000;
-  // Default to -Infinity (not 0) so the first play always passes: a zero
-  // clock (page load, fake timers) would otherwise read as "just played"
-  // and swallow the first sound inside the cooldown window.
-  const last = audioState.lastPlayedAt.get(name) ?? Number.NEGATIVE_INFINITY;
-  if (scheduledAt - last < cooldownMs) return;
-  audioState.lastPlayedAt.set(name, scheduledAt);
-
   let pending: PendingHtmlSfx | undefined;
   const start = () => {
     if (pending) pendingHtmlSfx.delete(pending);
-    if (audioState.muted) {
-      releaseCooldownReservation(name, scheduledAt);
-      return;
+    if (audioState.muted) return;
+    const playedAt = performance.now();
+    // Check when the sound starts: a future cue must not suppress a cue that
+    // plays now, and canceled cues must not consume a cooldown.
+    const last = audioState.lastPlayedAt.get(name) ?? Number.NEGATIVE_INFINITY;
+    if (playedAt - last < cooldownMs) return;
+    if (playHtmlSfx(name, volume, trackForCleanup, () => releaseCooldownReservation(name, playedAt))) {
+      audioState.lastPlayedAt.set(name, playedAt);
     }
-    playHtmlSfx(name, volume, trackForCleanup);
   };
 
   if (delay > 0) {
     const timer = globalThis.setTimeout(start, delay * 1000);
-    pending = { timer, name, scheduledAt, trackForCleanup };
+    pending = { timer, trackForCleanup };
     pendingHtmlSfx.add(pending);
     return;
   }

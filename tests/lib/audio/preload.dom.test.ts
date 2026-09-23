@@ -134,6 +134,35 @@ describe("preloadBattleSounds", () => {
 });
 
 describe("preloadAllSounds", () => {
+  it("does not permanently skip preload when Audio is unavailable at startup", () => {
+    const callbacks: IdleRequestCallback[] = [];
+    window.requestIdleCallback = vi.fn((cb: IdleRequestCallback) => {
+      callbacks.push(cb);
+      return callbacks.length;
+    });
+    vi.stubGlobal("Audio", undefined);
+    preloadAllSounds();
+    expect(callbacks).toHaveLength(0);
+
+    installCleanAudio();
+    preloadAllSounds();
+    expect(createdFakeAudio.length).toBeGreaterThan(0);
+    expect(callbacks).toHaveLength(1);
+  });
+
+  it("ignores an idle preload callback after the cache is reset", () => {
+    const callbacks: IdleRequestCallback[] = [];
+    window.requestIdleCallback = vi.fn((cb: IdleRequestCallback) => {
+      callbacks.push(cb);
+      return callbacks.length;
+    });
+    preloadAllSounds();
+    const started = createdFakeAudio.length;
+    resetSoundPreloadCache();
+    callbacks[0]!({ didTimeout: false, timeRemaining: () => 50 });
+    expect(createdFakeAudio).toHaveLength(started);
+  });
+
   it("preloads urgent sounds synchronously and the rest in one idle callback", async () => {
     const AudioContextCtor = vi.fn();
     vi.stubGlobal("AudioContext", AudioContextCtor);

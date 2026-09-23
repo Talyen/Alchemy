@@ -4,6 +4,7 @@ export function clamp(value: number, min: number, max: number) {
 }
 
 export function clamp01(value: number) {
+  if (Number.isNaN(value)) return 0;
   return Math.min(Math.max(value, 0), 1);
 }
 

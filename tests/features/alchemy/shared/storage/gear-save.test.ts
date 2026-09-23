@@ -85,6 +85,50 @@ describe("gear save normalization", () => {
     expect(save.gearLoadouts.knight["main-hand"]).toBeNull();
   });
 
+  it("keeps a saved Gear instance only once even when multiple inventories claim its ID", () => {
+    const inventories = createEmptyGearInventories();
+    const ring = { instanceId: "ring-1", definitionId: "ruby-ring-basic", affixes: [] };
+    inventories.knight = [ring, { ...ring }];
+    inventories.rogue = [{ ...ring }];
+
+    const save = normalizeSaveData({ saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION, gearInventories: inventories });
+
+    expect(save.gearInventories.knight).toEqual([ring]);
+    expect(save.gearInventories.rogue).toEqual([]);
+  });
+
+  it("removes a saved loadout reference when the item cannot occupy that slot", () => {
+    const inventories = knightInventories({ instanceId: "ring-1", definitionId: "ruby-ring-basic", affixes: [] });
+    const loadouts = createEmptyGearLoadouts();
+    loadouts.knight.body = "ring-1";
+
+    const save = normalizeSaveData({
+      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+      gearInventories: inventories,
+      gearLoadouts: loadouts,
+    });
+
+    expect(save.gearLoadouts.knight.body).toBeNull();
+  });
+
+  it("keeps a valid equipment owner when a conflicting earlier loadout is repaired", () => {
+    const staff = { instanceId: "staff-1", definitionId: "staff-basic", affixes: [] };
+    const shield = { instanceId: "shield-1", definitionId: "leather-buckler-basic", affixes: [] };
+    const loadouts = createEmptyGearLoadouts();
+    loadouts.knight["main-hand"] = staff.instanceId;
+    loadouts.knight["off-hand"] = shield.instanceId;
+    loadouts.rogue["off-hand"] = shield.instanceId;
+
+    const save = normalizeSaveData({
+      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+      gearInventories: knightInventories(staff, shield),
+      gearLoadouts: loadouts,
+    });
+
+    expect(save.gearLoadouts.knight["off-hand"]).toBeNull();
+    expect(save.gearLoadouts.rogue["off-hand"]).toBe(shield.instanceId);
+  });
+
   it("defaults crafting currencies to an empty record", () => {
     const save = normalizeSaveData({ saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION });
     expect(save.craftingCurrencies).toEqual({

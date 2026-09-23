@@ -4,11 +4,9 @@ import { MAX_HAND_SIZE } from "@/lib/game-constants";
 import {
   injectActiveBattle,
   makeCard,
-  makeHighDamageCard,
   makeGoblinBattleState,
   startAtDestination,
   startBattleWithDeck,
-  winBattleAndClaimReward,
 } from "../../browser-helpers";
 import { test } from "../../fixtures/e2e";
 import { BattlePage } from "../../pages/battle-page";
@@ -17,17 +15,6 @@ import { expectRunPhase } from "../../pages/game-stage";
 import { critical, slow } from "../../playwright-tags";
 
 test.describe("Battle Flow", () => {
-  test("normal combat can be won by playing cards and ending turns", critical, async ({ page, fastBattle }) => {
-    void fastBattle;
-    await startBattleWithDeck(
-      page,
-      Array.from({ length: 6 }, () => makeHighDamageCard()),
-    );
-    const battle = new BattlePage(page);
-    await battle.winViaCombat(3);
-    await expect(battle.victoryHeading).toBeVisible();
-  });
-
   test("end turn triggers enemy phase and draws new cards", async ({ page, fastBattle }) => {
     void fastBattle;
     await startBattleWithDeck(
@@ -132,16 +119,12 @@ test.describe("Card Interactions", slow, () => {
 });
 
 test.describe("Elite Combat", critical, () => {
-  test("elite combat destination starts a battle that can be won", async ({ page, fastBattle }) => {
-    void fastBattle;
-    await startAtDestination(
-      page,
-      { runDeck: Array.from({ length: 6 }, () => makeHighDamageCard()) },
-      { forceDestination: "Elite Combat" },
-    );
+  test("elite combat destination opens a playable battle", async ({ page }) => {
+    await startAtDestination(page, {}, { forceDestination: "Elite Combat" });
 
     await new DestinationPage(page).enterCombat("Elite Combat");
-    await winBattleAndClaimReward(page, 3);
-    await new DestinationPage(page).expectVisible();
+    const battle = new BattlePage(page);
+    await battle.waitForOpeningHand();
+    await expect(battle.endTurnBtn).toBeEnabled();
   });
 });

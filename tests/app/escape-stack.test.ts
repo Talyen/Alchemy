@@ -82,6 +82,26 @@ describe("escape-stack", () => {
     expect(menu).toHaveBeenCalledTimes(1);
   });
 
+  it("skips a lower handler removed while processing the same Escape key", () => {
+    const stale = vi.fn();
+    const menu = vi.fn();
+    const removeStale = pushEscapeHandler({ id: "stale", priority: ESCAPE_PRIORITY.MODAL, onEscape: stale });
+    pushEscapeHandler({ id: "menu", priority: ESCAPE_PRIORITY.APP_MENU, onEscape: menu });
+    pushEscapeHandler({
+      id: "top",
+      priority: ESCAPE_PRIORITY.DIALOG,
+      onEscape: () => {
+        removeStale();
+        return false;
+      },
+    });
+
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+
+    expect(stale).not.toHaveBeenCalled();
+    expect(menu).toHaveBeenCalledTimes(1);
+  });
+
   it("does not stopPropagation when every handler declines", () => {
     const menu = vi.fn(() => false);
     const documentHandler = vi.fn();

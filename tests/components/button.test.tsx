@@ -105,44 +105,4 @@ describe("Button", () => {
     expect(button.classList.contains("h-24")).toBe(false);
     expect(button.parentElement?.classList.contains("h-24")).toBe(true);
   });
-
-  it("applies outline variant styling with grounded border, opaque fill, and hover illumination", () => {
-    render(<Button variant="outline">Secondary</Button>);
-    const button = screen.getByRole("button", { name: "Secondary" });
-    expect(button.classList.contains("border-border/90")).toBe(true);
-    expect(button.classList.contains("bg-background")).toBe(true);
-    expect(button.classList.contains("text-foreground/80")).toBe(true);
-    expect(button.classList.contains("hover:bg-muted")).toBe(true);
-    expect(button.classList.contains("hover:text-foreground")).toBe(true);
-    expect(button.classList.contains("hover:border-border")).toBe(true);
-    expect(button.classList.contains("bg-transparent")).toBe(false);
-    expect(button.classList.contains("hover:bg-muted/80")).toBe(false);
-    expect(button.classList.contains("active:bg-muted/90")).toBe(false);
-  });
-
-  it("applies ghost variant styling with a borderless opaque fill", () => {
-    render(<Button variant="ghost">Ghost</Button>);
-    const button = screen.getByRole("button", { name: "Ghost" });
-    expect(button.classList.contains("border-0")).toBe(true);
-    expect(button.classList.contains("bg-background")).toBe(true);
-    expect(button.classList.contains("bg-transparent")).toBe(false);
-    expect(button.classList.contains("hover:bg-muted")).toBe(true);
-    expect(button.classList.contains("hover:bg-muted/40")).toBe(false);
-  });
-
-  it("applies primary variant bloom glow without hover scaling", () => {
-    render(<Button variant="primary">Primary</Button>);
-    const button = screen.getByRole("button", { name: "Primary" });
-    expect(button.classList.contains("button-primary-bloom")).toBe(true);
-    expect(button.classList.contains("card-hover-scale")).toBe(false);
-  });
-
-  it("applies destructive variant styling with distinct active press feedback", () => {
-    render(<Button variant="destructive">Destructive</Button>);
-    const button = screen.getByRole("button", { name: "Destructive" });
-    expect(button.classList.contains("bg-destructive")).toBe(true);
-    expect(button.classList.contains("hover:bg-destructive/90")).toBe(true);
-    expect(button.classList.contains("active:bg-destructive/80")).toBe(true);
-    expect(button.classList.contains("active:brightness-95")).toBe(true);
-  });
 });

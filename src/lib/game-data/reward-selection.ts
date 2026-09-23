@@ -50,14 +50,14 @@ function dampenCompanionCandidates(candidates: BattleCard[], rng: () => number):
 function pickOneCard(
   affinityPool: BattleCard[],
   randomPool: BattleCard[],
-  selected: BattleCard[],
+  selectedIds: ReadonlySet<string>,
   rng: () => number,
 ): BattleCard | undefined {
   if (rng() >= REWARD_RANDOM_CHANCE_FRACTION) {
-    const availableAffinity = affinityPool.filter((card) => !selected.includes(card));
+    const availableAffinity = affinityPool.filter((card) => !selectedIds.has(card.id));
     if (availableAffinity.length > 0) return pickRandom(availableAffinity, rng);
   }
-  const availableRandom = randomPool.filter((card) => !selected.includes(card));
+  const availableRandom = randomPool.filter((card) => !selectedIds.has(card.id));
   return availableRandom.length > 0 ? pickRandom(availableRandom, rng) : undefined;
 }
 
@@ -83,6 +83,7 @@ export function selectRewardCards(
     rng,
   );
   const selected: BattleCard[] = [];
+  const selectedIds = new Set<string>();
   const freq = buildKeywordFrequency(deck, seedKeywords);
   const affinityPool = buildAffinityPool(
     effectiveCandidates,
@@ -94,8 +95,11 @@ export function selectRewardCards(
   );
 
   for (let i = 0; i < count; i++) {
-    const chosenCard = pickOneCard(affinityPool, randomPool, selected, rng);
-    if (chosenCard) selected.push(chosenCard);
+    const chosenCard = pickOneCard(affinityPool, randomPool, selectedIds, rng);
+    if (chosenCard) {
+      selected.push(chosenCard);
+      selectedIds.add(chosenCard.id);
+    }
   }
 
   return selected;

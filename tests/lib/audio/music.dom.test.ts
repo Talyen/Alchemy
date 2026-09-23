@@ -110,6 +110,28 @@ it("replaces an interrupted destination without resetting the outgoing gain", ()
   expect(menu.paused).toBe(true);
 });
 
+it("restores the current track when a pending switch is reversed", () => {
+  playMusicImmediate(MUSIC_KEYS.MENU);
+  const menu = lastFakeAudio()!;
+  playMusic(MUSIC_KEYS.BATTLE);
+  vi.advanceTimersByTime(150);
+  playMusic(MUSIC_KEYS.MENU);
+
+  expect(menu).toMatchObject({ paused: false, volume: 0.5 * MUSIC_MASTER_GAIN });
+  expect(vi.getTimerCount()).toBe(0);
+  vi.advanceTimersByTime(3000);
+  expect(createdFakeAudio).toHaveLength(1);
+});
+
+it("starts a different track without waiting to fade out paused music", () => {
+  playMusicImmediate(MUSIC_KEYS.MENU);
+  pauseAllMusic();
+  playMusic(MUSIC_KEYS.BATTLE);
+
+  expect(lastFakeAudio()?.src).toContain("Music/Battle");
+  expect(lastFakeAudio()?.paused).toBe(false);
+});
+
 it("dedupes a pending destination and lets an immediate switch cancel it", () => {
   playMusicImmediate(MUSIC_KEYS.MENU);
   playMusic(MUSIC_KEYS.BATTLE);

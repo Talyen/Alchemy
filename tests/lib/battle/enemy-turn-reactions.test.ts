@@ -5,6 +5,28 @@ import { makeCombatTexts as makeTexts, patchBattleState } from "../../fixtures/b
 import { makeTestCard as makeEnemyTestCard } from "../../fixtures/cards";
 
 describe("applyEnemyAbility: reactions", () => {
+  it("applies the Fire Imp follow-up once after a multi-hit ability", () => {
+    const state = patchBattleState({
+      currentEnemy: enemyBestiary.find((enemy) => enemy.id === "fire-imp")!,
+      playerHealth: 30,
+      playerStatuses: { block: 0, armor: 0 },
+      rng: () => 0.99,
+    });
+    const result = applyEnemyAbility(
+      state,
+      makeEnemyTestCard({
+        effects: [
+          { kind: "damage", damageType: "physical", amount: 2 },
+          { kind: "damage", damageType: "physical", amount: 2 },
+        ],
+      }),
+      makeTexts(),
+    );
+
+    expect(result.playerHealth).toBeLessThan(state.playerHealth - 2);
+    expect(result.playerStatuses.burn).toBe(1);
+  });
+
   it("banshee purges a single random beneficial status", () => {
     const banshee = enemyBestiary.find((e) => e.id === "banshee")!;
     const stunHit = () => makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "stun", amount: 4 }] });

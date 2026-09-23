@@ -31,6 +31,7 @@ function refreshSortedCache(): void {
 function handleWindowKeyDown(event: KeyboardEvent) {
   if (event.key !== "Escape") return;
   for (const handler of cachedSorted) {
+    if (handlers.get(handler.id) !== handler) continue;
     let result: boolean | void;
     try {
       result = handler.onEscape(event);

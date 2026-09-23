@@ -5,13 +5,13 @@ export interface PlasmaColorPair {
 
 export function parsePlasmaHexColor(hex: string): [number, number, number] {
   const normalized = hex.trim().replace(/^#/, "");
-  if (normalized.length === 3) {
+  if (/^[0-9a-f]{3}$/i.test(normalized)) {
     const r = Number.parseInt(normalized.charAt(0) + normalized.charAt(0), 16) / 255;
     const g = Number.parseInt(normalized.charAt(1) + normalized.charAt(1), 16) / 255;
     const b = Number.parseInt(normalized.charAt(2) + normalized.charAt(2), 16) / 255;
     return [r, g, b];
   }
-  if (normalized.length === 6) {
+  if (/^[0-9a-f]{6}$/i.test(normalized)) {
     const r = Number.parseInt(normalized.slice(0, 2), 16) / 255;
     const g = Number.parseInt(normalized.slice(2, 4), 16) / 255;
     const b = Number.parseInt(normalized.slice(4, 6), 16) / 255;

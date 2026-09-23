@@ -115,6 +115,13 @@ offer builders. The choice catalog pairs each recorded choice with one command
 for the current observation and rejects duplicate identities. Replay keeps the
 same recorded choice shape.
 
+`career.ts` owns the ordered observation, choice, journal, execution, and replay
+loop. `career-evidence.ts` records battle, card, and run evidence and checks
+committed gameplay state. `career-persistence.ts` owns the ephemeral save
+transport, canonical state digest, save round trips, autosave acknowledgement,
+and optional resume. The journal attempt is emitted before execution; save
+validation follows a successful committed action.
+
 Shared operations remain with their production owners:
 
 - Battle start and card/Wish commands: `run-loop/battle/`.

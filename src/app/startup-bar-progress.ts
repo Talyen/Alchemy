@@ -14,22 +14,23 @@ const MAX_FRAME_SECONDS = 0.1;
 export function computeStartupLoadTarget({
   imageLoaded,
   imageTotal,
+  imagesSettled,
   fontsReady,
   bootstrapReady,
 }: {
   imageLoaded: number;
   imageTotal: number;
+  imagesSettled: boolean;
   fontsReady: boolean;
   bootstrapReady: boolean;
 }): number {
-  const imagesDone = imageTotal <= 0 || imageLoaded >= imageTotal;
   const imageFrac = imageTotal <= 0 ? 1 : clamp01(imageLoaded / imageTotal);
   const raw =
     STARTUP_LOAD_IMAGE_WEIGHT * imageFrac +
     STARTUP_LOAD_FONT_WEIGHT * (fontsReady ? 1 : 0) +
     STARTUP_LOAD_BOOTSTRAP_WEIGHT * (bootstrapReady ? 1 : 0);
 
-  if (imagesDone && fontsReady && bootstrapReady) return 1;
+  if (imagesSettled && fontsReady && bootstrapReady) return 1;
   return Math.min(STARTUP_BAR_INCOMPLETE_CAP, raw);
 }
 

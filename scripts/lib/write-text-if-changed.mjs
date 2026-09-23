@@ -12,8 +12,8 @@ export async function writeTextIfChanged(filePath, content, options = {}) {
   let existing;
   try {
     existing = await readFile(filePath, "utf8");
-  } catch {
-    // File missing — write below.
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
   }
 
   if (existing === content) return false;

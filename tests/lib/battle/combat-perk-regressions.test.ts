@@ -48,6 +48,18 @@ describe("combat perk regressions", () => {
     expect(processEncounterTraitActionStart(state, []).enemyHealth).toBe(expected);
   });
 
+  it("reports only Health actually restored to an enemy", () => {
+    const state = patchBattleState({ enemyHealth: 98, enemyMaxHealth: 100 });
+    const combatTexts: Parameters<typeof applyEnemyHealingWithCombatText>[2] = [];
+    const healed = applyEnemyHealingWithCombatText(state, 8, combatTexts, { skipFightPacing: true });
+    expect(healed.enemyHealth).toBe(100);
+    expect(combatTexts).toEqual([{ target: "enemy", kind: "heal", stat: "health", amount: 2 }]);
+
+    const fullHealthTexts: typeof combatTexts = [];
+    expect(applyEnemyHealingWithCombatText(healed, 8, fullHealthTexts)).toBe(healed);
+    expect(fullHealthTexts).toEqual([]);
+  });
+
   it("Vanguard's Crest applies Forge bonuses and threshold rewards", () => {
     const state = patchBattleState({
       playerStatuses: { block: 5, forge: 2 },

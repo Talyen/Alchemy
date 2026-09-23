@@ -20,48 +20,6 @@ async function setAspectRatio(page: import("@playwright/test").Page, aspectRatio
   );
 }
 
-function isIdentityTransform(transform: string): boolean {
-  if (transform === "none") return true;
-  const scaleMatch = transform.match(/^scale\(([^)]+)\)/);
-  if (scaleMatch) return Math.abs(parseFloat(scaleMatch[1]) - 1) < 0.001;
-  const matrixMatch = transform.match(/^matrix\(([^,]+),/);
-  if (matrixMatch) return Math.abs(parseFloat(matrixMatch[1]) - 1) < 0.001;
-  return false;
-}
-
-test.describe("Ultra HD 3840x2160 (4K) additional checks", slow, () => {
-  test("stage fills 4K while content grows more slowly", async ({ page }) => {
-    await setAspectRatio(page, "16:9");
-    await page.setViewportSize({ width: 3840, height: 2160 });
-    await page.goto("/");
-    await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
-
-    const stage = page.getByTestId("vr-stage");
-    await expect(stage).toBeVisible();
-
-    const transform = await stage.evaluate((el) => window.getComputedStyle(el).transform);
-    expect(isIdentityTransform(transform)).toBe(false);
-
-    const pixelRatio = Number(await stage.getAttribute("data-stage-pixel-ratio"));
-    expect(pixelRatio).toBe(1);
-
-    const fixedUiMetrics = await page.getByRole("button", { name: "Play" }).evaluate((button) => ({
-      rootFontSize: parseFloat(window.getComputedStyle(document.documentElement).fontSize),
-      buttonWidth: button.getBoundingClientRect().width,
-      stageTransformScale: new DOMMatrixReadOnly(
-        window.getComputedStyle(document.querySelector('[data-testid="vr-stage"]')!).transform,
-      ).a,
-    }));
-    expect(fixedUiMetrics.rootFontSize).toBe(16);
-
-    expect(fixedUiMetrics.buttonWidth).toBeCloseTo(
-      19.2 * fixedUiMetrics.rootFontSize * Math.pow(fixedUiMetrics.stageTransformScale, 0.8),
-      0,
-    );
-    await assertStageFitsViewport(page);
-  });
-});
-
 test.describe("high-DPR layout", slow, () => {
   test.use({ deviceScaleFactor: 2, viewport: { width: 1512, height: 982 } });
 

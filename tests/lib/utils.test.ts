@@ -43,6 +43,9 @@ describe("clamp", () => {
 });
 
 describe("clamp01", () => {
+  it("keeps nonnumeric slider values out of volume and opacity sinks", () => {
+    expect(clamp01(Number.NaN)).toBe(0);
+  });
   it("returns value when within [0, 1]", () => {
     expect(clamp01(0.5)).toBe(0.5);
     expect(clamp01(0)).toBe(0);

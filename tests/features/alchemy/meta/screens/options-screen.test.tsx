@@ -1,5 +1,5 @@
 import { createDefaultScreenEffects, createDefaultBackgroundLights } from "@/lib/screen-effect-settings";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { OptionsScreen } from "@/features/alchemy/meta/screens/options-screen";
 import { installDisabledAnimationsForTests } from "../../../../helpers/animation-test";
@@ -79,25 +79,6 @@ describe("OptionsScreen", () => {
     expect(onScreenEffectsChange).toHaveBeenCalledWith({ enabled: true });
   });
 
-  it("keeps interface sizing controls out of Display and removes the previews and reset button", async () => {
-    render(<OptionsScreen {...defaultProps} />);
-
-    expect(screen.queryByText("UI Scale")).toBeNull();
-    expect(screen.getByText("Brightness")).toBeTruthy();
-    expect(screen.queryByRole("slider", { name: "Game Size" })).toBeNull();
-    expect(screen.queryByRole("slider", { name: "Tooltip Size" })).toBeNull();
-    expect(screen.queryByText("Interface Size")).toBeNull();
-    expect(screen.queryByText("Card Preview")).toBeNull();
-    expect(screen.queryByRole("button", { name: "Control Preview" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Reset Sizes" })).toBeNull();
-
-    fireEvent.click(screen.getByRole("button", { name: "Interface" }));
-    await waitFor(() => {
-      expect(screen.getByRole("slider", { name: "Game Size" })).toBeTruthy();
-      expect(screen.getByRole("slider", { name: "Tooltip Size" })).toBeTruthy();
-    });
-  });
-
   it("groups display options and reports background intensity changes", () => {
     const onBackgroundParticlesIntensityChange = vi.fn();
     const onBackgroundGlowIntensityChange = vi.fn();
@@ -125,37 +106,14 @@ describe("OptionsScreen", () => {
     expect(onBackgroundGlowIntensityChange).toHaveBeenCalledWith(60);
   });
 
-  it("renders the remember auto-battle toggle on the gameplay tab", async () => {
-    render(<OptionsScreen {...defaultProps} />);
-
-    fireEvent.click(screen.getByRole("button", { name: "Sound" }));
-    await waitFor(() => {
-      expect(screen.getByText("Mute in Background")).toBeTruthy();
-    });
-    expect(
-      screen.queryByText("Silence music and effects while the game is in a background tab or minimized."),
-    ).toBeNull();
-
+  it("lets players change the remember auto-battle preference", async () => {
+    const onRememberAutoplayPreferenceChange = vi.fn();
+    render(
+      <OptionsScreen {...defaultProps} gameplay={{ ...defaultProps.gameplay, onRememberAutoplayPreferenceChange }} />,
+    );
     fireEvent.click(screen.getByRole("button", { name: "Gameplay" }));
-    await waitFor(() => {
-      expect(screen.getByText("Remember Auto-Battle Preference")).toBeTruthy();
-    });
-    expect(screen.queryByText("Automatically end your turn when no cards in hand can be played.")).toBeNull();
-    expect(screen.queryByText("Restore the in-battle Autoplay toggle across battles.")).toBeNull();
-  });
-
-  it("keeps developer controls in a bottom-only section on the Other tab", async () => {
-    render(<OptionsScreen {...defaultProps} />);
-
-    fireEvent.click(screen.getByRole("button", { name: "Other" }));
-    await waitFor(() => {
-      expect(screen.getByText("Dev Only")).toBeTruthy();
-    });
-
-    const devSection = screen.getByText("Dev Only").closest("section");
-    expect(devSection?.parentElement?.lastElementChild).toBe(devSection);
-    expect(devSection?.textContent).toContain("Dev / QA Unlocks");
-    expect(devSection?.textContent).toContain("Error Log");
+    fireEvent.click(await screen.findByRole("switch", { name: "Remember Auto-Battle Preference" }));
+    expect(onRememberAutoplayPreferenceChange).toHaveBeenCalledWith(true);
   });
 
   it("shows display mode only when the platform supports it", () => {

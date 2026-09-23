@@ -237,6 +237,11 @@ describe("selectRewardCards", () => {
     expect(ids).toContain("c");
   });
 
+  it("does not offer the same card ID twice when candidate objects differ", () => {
+    const result = selectRewardCards([], [card({ id: "a" }), card({ id: "a" }), card({ id: "b" })], 3, [], () => 0);
+    expect(result.map((entry) => entry.id).sort()).toEqual(["a", "b"]);
+  });
+
   it("handles all-affinity rolls correctly and prioritizes deck keywords", () => {
     const deck: BattleCard[] = [card({ id: "stab", effects: [{ kind: "damage", damageType: "physical", amount: 4 }] })];
     const allCards: BattleCard[] = [

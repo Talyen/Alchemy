@@ -1,12 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { advanceStartupBar, computeStartupLoadTarget } from "@/app/startup-bar-progress";
-import {
-  IMAGE_PRELOAD_BATCH_SIZE,
-  FONT_PRELOAD_TIMEOUT_MS,
-  INITIAL_LOAD_MIN_DURATION_MS,
-  MUSIC_KEYS,
-  STARTUP_BAR_REVEAL_THRESHOLD,
-} from "@/lib/game-constants";
+import { useEffect, useLayoutEffect, useRef } from "react";
+import { MUSIC_KEYS } from "@/lib/game-constants";
 import {
   getBossMusicKey,
   initAudioHost,
@@ -24,14 +17,10 @@ import {
 } from "@/lib/audio";
 import { logError } from "@/lib/error-logger";
 import { isDesktop, setDisplayMode as setPlatformDisplayMode } from "@/lib/platform";
-import { allGameArt, essentialGameArt } from "@/lib/game-data";
-import { preloadImagesInBatches } from "@/lib/image-preload";
 import type { DisplayMode } from "@/features/alchemy/shared/types";
 import type { Screen } from "@/lib/routing";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { useHasActiveBattle } from "@/features/alchemy/shared/stores/run-reads";
-import { shouldSkipStartupLoadingGate } from "@/features/alchemy/shared/utils";
-import { markStartupReady } from "@/lib/performance/startup-marks";
 
 interface AppAudioEffectsOptions {
   masterVolume: number;
@@ -207,128 +196,4 @@ export function useGlobalErrorHandlers(): void {
       window.removeEventListener("unhandledrejection", onUnhandledRejection);
     };
   }, []);
-}
-
-export function useInitialLoadReady({
-  minDurationMs = INITIAL_LOAD_MIN_DURATION_MS,
-  bootstrapReady = false,
-}: {
-  minDurationMs?: number;
-  bootstrapReady?: boolean;
-} = {}) {
-  const skipGate = shouldSkipStartupLoadingGate();
-  const bootstrapReadyRef = useRef(bootstrapReady);
-
-  const [ready, setReady] = useState(() => skipGate);
-  const [progress, setProgress] = useState(() => (skipGate ? 1 : 0));
-
-  useEffect(() => {
-    bootstrapReadyRef.current = bootstrapReady;
-  }, [bootstrapReady]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    function preloadDeferredGearArt() {
-      const essential = new Set(essentialGameArt);
-      const deferred = allGameArt.filter((src) => !essential.has(src));
-      if (deferred.length === 0) return;
-      void preloadImagesInBatches(deferred, IMAGE_PRELOAD_BATCH_SIZE);
-    }
-
-    if (skipGate) {
-      markStartupReady();
-      void preloadImagesInBatches(essentialGameArt, IMAGE_PRELOAD_BATCH_SIZE).then(preloadDeferredGearArt);
-      void waitForFonts();
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    let display = 0;
-    let imageLoaded = 0;
-    let imageTotal = essentialGameArt.filter(Boolean).length;
-    let fontsReady = false;
-    let minElapsed = false;
-    let imagesSettled = imageTotal === 0;
-    let rafId = 0;
-    let lastTs = 0;
-    let published = -1;
-
-    function workComplete() {
-      return imagesSettled && fontsReady && bootstrapReadyRef.current;
-    }
-
-    function tick(timestamp: number) {
-      if (cancelled) return;
-      if (lastTs === 0) lastTs = timestamp;
-      const dt = (timestamp - lastTs) / 1000;
-      lastTs = timestamp;
-      const complete = workComplete();
-      const target = computeStartupLoadTarget({
-        imageLoaded,
-        imageTotal,
-        fontsReady,
-        bootstrapReady: bootstrapReadyRef.current,
-      });
-      display = advanceStartupBar(display, dt, target, complete);
-      const quantized = Math.round(display * 192) / 192;
-      if (quantized !== published) {
-        published = quantized;
-        setProgress(quantized);
-      }
-      if (complete && minElapsed && display >= STARTUP_BAR_REVEAL_THRESHOLD) {
-        setProgress(1);
-        markStartupReady();
-        setReady(true);
-        return;
-      }
-      rafId = window.requestAnimationFrame(tick);
-    }
-
-    rafId = window.requestAnimationFrame(tick);
-    const timer = window.setTimeout(() => {
-      minElapsed = true;
-    }, minDurationMs);
-
-    void preloadImagesInBatches(essentialGameArt, IMAGE_PRELOAD_BATCH_SIZE, (loaded, total) => {
-      imageLoaded = loaded;
-      imageTotal = total;
-      if (total === 0 || loaded >= total) imagesSettled = true;
-    }).then(() => {
-      imagesSettled = true;
-      preloadDeferredGearArt();
-    });
-
-    void waitForFonts().then(() => {
-      fontsReady = true;
-    });
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-      window.cancelAnimationFrame(rafId);
-    };
-  }, [skipGate, minDurationMs]);
-
-  return { ready, progress };
-}
-
-function waitForFonts() {
-  if (!("fonts" in document)) return Promise.resolve();
-  return new Promise<void>((resolve) => {
-    let settled = false;
-    const finish = (warning?: string) => {
-      if (settled) return;
-      settled = true;
-      window.clearTimeout(timeout);
-      if (warning) console.warn(warning);
-      resolve();
-    };
-    const timeout = window.setTimeout(() => finish("Font loading timed out"), FONT_PRELOAD_TIMEOUT_MS);
-    void document.fonts.ready.then(
-      () => finish(),
-      () => finish("Font loading failed"),
-    );
-  });
 }

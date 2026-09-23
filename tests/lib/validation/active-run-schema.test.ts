@@ -17,6 +17,14 @@ describe("ActiveRunDataSchema persisted session payloads", () => {
     }
   });
 
+  it("preserves valid destination offer history when one saved counter is invalid", () => {
+    const result = ActiveRunDataSchema.safeParse(
+      run({ destinationRoundsSinceOffered: { Campfire: 3, Mystery: "broken" } }),
+    );
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.destinationRoundsSinceOffered).toEqual({ Campfire: 3 });
+  });
+
   it("keeps valid run cards when one saved card is malformed", () => {
     const result = ActiveRunDataSchema.safeParse(run({ runDeck: [{ id: "slash" }, { id: 42 }, { id: "block" }] }));
     expect(result.success).toBe(true);

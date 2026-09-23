@@ -20,4 +20,4 @@ export * from "./types";
 
 export { effectChildren, mapEffectChildren } from "./effect-tree";
 
-export { canonicalCardDescriptionMatches } from "./effect-metadata";
+export { canonicalCardDescriptionMatches, effectDescriptionLine } from "./effect-metadata";

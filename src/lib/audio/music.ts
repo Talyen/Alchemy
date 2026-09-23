@@ -201,6 +201,12 @@ export function playMusic(key: string): void {
   if (!MUSIC_CATALOG[key]) return;
   bossPreviewKey = null;
   if (playback.phase === "fading-out" && playback.destination === key) return;
+  if (playback.phase === "fading-out" && playback.track.key === key) {
+    const track = playback.track;
+    cancelTransition();
+    applyTrackVolume(track, 1);
+    return;
+  }
   if (playback.phase !== "idle" && playback.track.key === key && playback.phase !== "fading-out") {
     if (playback.phase === "paused") {
       cancelTransition();
@@ -212,7 +218,8 @@ export function playMusic(key: string): void {
     return;
   }
 
-  cancelTransition();
+  if (playback.phase === "paused") playback = { phase: "idle" };
+  else cancelTransition();
   if (playback.phase === "idle") {
     const track = resolveTrack(key);
     if (track) fadeIn(track);

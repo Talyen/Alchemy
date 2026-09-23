@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { preloadImagesInBatches } from "@/lib/image-preload";
 import { FONT_PRELOAD_TIMEOUT_MS, IMAGE_PRELOAD_BATCH_SIZE, STARTUP_BAR_INCOMPLETE_CAP } from "@/lib/game-constants";
 import { shouldSkipStartupLoadingGate } from "@/features/alchemy/shared/utils";
-import { useInitialLoadReady } from "@/app/use-app-effects";
+import { useInitialLoadReady } from "@/app/use-initial-load-ready";
 
 vi.mock("@/lib/game-data", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/game-data")>()),
@@ -39,6 +39,7 @@ async function advance(ms: number) {
 describe("useInitialLoadReady", () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    vi.mocked(preloadImagesInBatches).mockClear();
     vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
       return window.setTimeout(() => callback(performance.now()), 16) as unknown as number;
     });
@@ -157,6 +158,51 @@ describe("useInitialLoadReady", () => {
     expect(result.current.ready).toBe(true);
     expect(result.current.progress).toBe(1);
     expect(warn).toHaveBeenCalledWith("Font loading timed out");
+  });
+
+  it("finishes startup and warms remaining art when essential preloading rejects", async () => {
+    vi.mocked(preloadImagesInBatches).mockImplementation(async (srcs) => {
+      if (srcs.includes("first.webp")) throw new Error("decode failed");
+    });
+    Object.defineProperty(document, "fonts", {
+      configurable: true,
+      value: { ready: Promise.resolve() },
+    });
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const { result } = renderHook(() => useInitialLoadReady({ minDurationMs: 0, bootstrapReady: true }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await advance(2000);
+
+    expect(result.current.ready).toBe(true);
+    expect(result.current.progress).toBe(1);
+    expect(preloadImagesInBatches).toHaveBeenCalledWith(["gear.webp"], IMAGE_PRELOAD_BATCH_SIZE);
+    expect(error).toHaveBeenCalledWith(
+      "[other] Essential art preload failed",
+      { error: "Error: decode failed" },
+      "",
+      "",
+    );
+  });
+
+  it("does not launch deferred art after the loading hook unmounts", async () => {
+    const images = deferred();
+    vi.mocked(preloadImagesInBatches).mockImplementation(async () => images.promise);
+    Object.defineProperty(document, "fonts", {
+      configurable: true,
+      value: { ready: Promise.resolve() },
+    });
+
+    const { unmount } = renderHook(() => useInitialLoadReady({ bootstrapReady: true }));
+    unmount();
+    await act(async () => {
+      images.resolve();
+      await images.promise;
+    });
+
+    expect(preloadImagesInBatches).toHaveBeenCalledTimes(1);
   });
 
   it("starts deferred gear decode while the minimum display window is still running", async () => {

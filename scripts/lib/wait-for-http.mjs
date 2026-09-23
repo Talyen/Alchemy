@@ -15,12 +15,17 @@ export async function waitForHttp(url, options = {}) {
 
   while (Date.now() < deadline) {
     try {
-      const response = await fetch(url, { signal: AbortSignal.timeout(requestTimeoutMs) });
+      const remainingMs = deadline - Date.now();
+      const response = await fetch(url, {
+        signal: AbortSignal.timeout(Math.max(1, Math.min(requestTimeoutMs, remainingMs))),
+      });
       if (accept(response)) return response;
+      await response.body?.cancel();
     } catch (error) {
       lastError = error;
     }
-    await delay(pollMs);
+    const remainingMs = deadline - Date.now();
+    if (remainingMs > 0) await delay(Math.min(pollMs, remainingMs));
   }
 
   const detail = lastError instanceof Error ? `: ${lastError.message}` : "";

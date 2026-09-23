@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { FlankingPagination, HamburgerTrigger, PaginationControls } from "@/features/alchemy/shared/ui/navigation";
+import { FlankingPagination, PaginationControls } from "@/features/alchemy/shared/ui/navigation";
 
 describe("PaginationControls", () => {
   afterEach(cleanup);
@@ -78,20 +78,5 @@ describe("FlankingPagination", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Next page" }));
     expect(onPageChange).toHaveBeenCalledWith(2);
-  });
-});
-
-describe("HamburgerTrigger", () => {
-  afterEach(cleanup);
-
-  it("invokes onClick with bounding rect when clicked", () => {
-    const onClick = vi.fn();
-    render(<HamburgerTrigger onClick={onClick} label="Open game menu" />);
-
-    const button = screen.getByRole("button", { name: "Open game menu" });
-    fireEvent.click(button);
-
-    expect(onClick).toHaveBeenCalledTimes(1);
-    expect(onClick).toHaveBeenCalledWith(expect.any(Object));
   });
 });

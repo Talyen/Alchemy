@@ -19,9 +19,12 @@ export function normalizeGearInstanceArray(raw: unknown): Array<z.infer<typeof G
   // Run-obtained items reuse the single-item normalizer directly to preserve
   // order in a heterogeneous list; all other save paths go through this helper.
   if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
   return raw.flatMap((item) => {
     const normalized = normalizeGearInstance(item);
-    return normalized ? [normalized] : [];
+    if (!normalized || seen.has(normalized.instanceId)) return [];
+    seen.add(normalized.instanceId);
+    return [normalized];
   });
 }
 

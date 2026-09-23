@@ -334,6 +334,11 @@ describe("writeTextIfChanged", () => {
     await expect(writeTextIfChanged(filePath, "b\n", { check: true })).rejects.toThrow("Generated file is stale");
     expect(await readFile(filePath, "utf8")).toBe("a\n");
   });
+
+  it("reports read errors instead of treating them as a missing file", async () => {
+    const dir = await makeTempDir("alchemy-write-if-changed-read-error-");
+    await expect(writeTextIfChanged(dir, "new content", { check: true })).rejects.toMatchObject({ code: "EISDIR" });
+  });
 });
 
 describe("kebabToCamel", () => {
