@@ -3,7 +3,7 @@ import { normalizeGearInstance } from "@/lib/gear/operations";
 import { type RunRngState } from "@/lib/rng";
 import { DESTINATIONS } from "@/lib/routing";
 import { z } from "zod";
-import { BattleCardSchema } from "./battle-card-schemas";
+import { savedCardArraySchema } from "./battle-card-schemas";
 import { GearInstanceSchema } from "./gear-schemas";
 import {
   CharacterIdSchema,
@@ -88,7 +88,7 @@ export const RunProgressSchema = z.object({
   runHistoryPartial: z.boolean().catch(true),
   runGoldEarned: z.number().int().nonnegative().nullable().catch(null),
   characterId: CharacterIdSchema,
-  runDeck: z.array(BattleCardSchema),
+  runDeck: savedCardArraySchema("runDeck"),
   runPlayerHealth: z.number().int().nonnegative().catch(0),
   runMaxHealth: z.number().int().positive().catch(MAX_PLAYER_HEALTH),
   // A zero runMetaMaxHealth means "unset" and is rewritten to runMaxHealth in

@@ -110,33 +110,39 @@ describe("useAlchemyAutosaveFromStores", () => {
   });
   it.each(["reported", "thrown"])("retries a %s failure on exit without another change", async (failure) => {
     const { write, writeSync } = installBackend();
-    if (failure === "reported") write.mockResolvedValueOnce({ ok: false, error: "disk" });
-    else write.mockRejectedValueOnce(new Error("disk"));
+    if (failure === "reported") {
+      write.mockResolvedValueOnce({ ok: false, error: "disk" });
+      write.mockResolvedValueOnce({ ok: false, error: "recovery disk" });
+    } else {
+      write.mockRejectedValueOnce(new Error("disk"));
+      write.mockRejectedValueOnce(new Error("recovery disk"));
+    }
     renderHook(() => useAlchemyAutosaveFromStores());
     changeGold(91);
     await advance(500);
-    expect(write).toHaveBeenCalledTimes(1);
+    expect(write).toHaveBeenCalledTimes(2);
     act(() => {
       window.dispatchEvent(new PageTransitionEvent("pagehide"));
     });
     expect(JSON.parse(writeSync.mock.calls[0]![1]).gold).toBe(91);
     await advance(20_000);
-    expect(write).toHaveBeenCalledTimes(1);
+    expect(write).toHaveBeenCalledTimes(2);
   });
 
   it("retries automatically after storage recovers without another change", async () => {
     const { write } = installBackend();
     write.mockResolvedValueOnce({ ok: false, error: "disk" });
+    write.mockResolvedValueOnce({ ok: false, error: "recovery disk" });
     renderHook(() => useAlchemyAutosaveFromStores());
     changeGold(42);
     await advance(500);
     await advance(9999);
-    expect(write).toHaveBeenCalledTimes(1);
+    expect(write).toHaveBeenCalledTimes(2);
     await advance(1);
-    expect(write).toHaveBeenCalledTimes(2);
-    expect(JSON.parse(write.mock.calls[1]![1]).gold).toBe(42);
+    expect(write).toHaveBeenCalledTimes(3);
+    expect(JSON.parse(write.mock.calls[2]![1]).gold).toBe(42);
     await advance(20_000);
-    expect(write).toHaveBeenCalledTimes(2);
+    expect(write).toHaveBeenCalledTimes(3);
   });
 
   it("keeps newer changes dirty when an older write finishes", async () => {
@@ -167,14 +173,14 @@ describe("useAlchemyAutosaveFromStores", () => {
       await advance(1000);
       changeGold(i + 2);
     }
-    expect(write).toHaveBeenCalledTimes(1);
+    expect(write).toHaveBeenCalledTimes(2);
     await advance(1000);
-    expect(write).toHaveBeenCalledTimes(2);
-    expect(JSON.parse(write.mock.calls[1]![1]).gold).toBe(10);
+    expect(write).toHaveBeenCalledTimes(4);
+    expect(JSON.parse(write.mock.calls[2]![1]).gold).toBe(10);
     await advance(9999);
-    expect(write).toHaveBeenCalledTimes(2);
+    expect(write).toHaveBeenCalledTimes(4);
     await advance(1);
-    expect(write).toHaveBeenCalledTimes(3);
+    expect(write).toHaveBeenCalledTimes(6);
   });
 
   it.each(["clear", "protection", "disabled"])("cancels a scheduled retry on %s", async (action) => {
@@ -198,7 +204,7 @@ describe("useAlchemyAutosaveFromStores", () => {
     act(() => {
       window.dispatchEvent(new PageTransitionEvent("pagehide"));
     });
-    expect(write).toHaveBeenCalledTimes(1);
+    expect(write).toHaveBeenCalledTimes(2);
     expect(writeSync).not.toHaveBeenCalled();
   });
 
@@ -223,6 +229,7 @@ describe("useAlchemyAutosaveFromStores", () => {
   it("writes one exit snapshot across pagehide and beforeunload, retrying a failed sync exit on the timer", async () => {
     const { write, writeSync } = installBackend();
     writeSync.mockReturnValueOnce({ ok: false, error: "disk" });
+    writeSync.mockReturnValueOnce({ ok: false, error: "recovery disk" });
     renderHook(() => useAlchemyAutosaveFromStores());
     changeGold(7);
     act(() => {
@@ -231,7 +238,7 @@ describe("useAlchemyAutosaveFromStores", () => {
     act(() => {
       window.dispatchEvent(new Event("beforeunload"));
     });
-    expect(writeSync).toHaveBeenCalledTimes(1);
+    expect(writeSync).toHaveBeenCalledTimes(2);
     await advance(10_000);
     expect(write).toHaveBeenCalledTimes(1);
     expect(JSON.parse(write.mock.calls[0]![1]).gold).toBe(7);

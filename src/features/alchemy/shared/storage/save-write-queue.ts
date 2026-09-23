@@ -109,7 +109,7 @@ export class SaveWriteQueue {
 
   async enqueueClear(
     clear: () => Promise<{ ok: boolean; error?: unknown }>,
-    options?: { keepWritesDisabled?: boolean | undefined; onError?: (error: unknown) => void },
+    options?: { onError?: (error: unknown) => void },
   ): Promise<boolean> {
     this.pendingClears++;
     this.cancelPendingWrites();
@@ -120,7 +120,7 @@ export class SaveWriteQueue {
           options?.onError?.(result.error);
           return false;
         }
-        if (!options?.keepWritesDisabled) this.writesDisabled = false;
+        this.writesDisabled = false;
         return true;
       } catch (error) {
         options?.onError?.(error);

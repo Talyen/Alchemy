@@ -37,6 +37,13 @@ describe("animation-prefs", () => {
       localStorage.setItem("alchemy-disable-animations", "1");
       expect(isAnimationDisabled()).toBe(false);
     });
+
+    it("keeps animation setup usable when storage access throws", () => {
+      vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+        throw new Error("blocked");
+      });
+      expect(shouldReduceMotion()).toBe(false);
+    });
   });
 
   describe("prefersReducedMotion", () => {

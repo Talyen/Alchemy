@@ -7,7 +7,7 @@ import { readText } from "./helpers";
 describe("docs semantic contract", () => {
   it("pins the clear-save deletion modes in the save contract", () => {
     const migrations = readText("src/features/alchemy/shared/storage/MIGRATIONS.md");
-    for (const mode of ['"default"', '"localWipe"', '"wipeForReload"']) {
+    for (const mode of ['"default"', '"localWipe"']) {
       expect(migrations, mode).toContain(mode);
     }
   });

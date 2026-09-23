@@ -173,6 +173,8 @@ snapshot from saves, and the next run/battle initializes fresh state.
 
 The [playthrough runner](./PLAYTHROUGH_SIMULATION.md) lives in `src/app/playthrough/` and is loaded only by Node tooling. It composes feature read ports and production action flows, with isolated processes per career. Production battle start/card/Wish and autosave operations are shared with the UI; the harness owns policy, evidence, and assertions. It must not implement game rules or mutate the gameplay aggregate directly.
 
+`actor.ts` routes each observation to `meta-offers.ts` or `run-offers.ts` after constructing the production controller. `choice-catalog.ts` owns recorded choice identities and their executable commands for the current observation; duplicate identities fail instead of replacing a command. Offer builders score and register legal choices but do not commit gameplay until the selected choice executes.
+
 Run outcomes and navigation share one construction owner: `createRunOutcomes`
 captures the destination sampler and exposes `connect(actions)`. Both UI and
 headless shells connect navigation to that owner; neither can supply a second

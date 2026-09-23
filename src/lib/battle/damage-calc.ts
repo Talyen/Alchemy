@@ -9,10 +9,11 @@ import {
 } from "../game-constants";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import { paceCombatDamage } from "./fight-pacing";
-import { applyFirstDamageBonus, computeBaseDamage, resolveDamageBonusMultiplier } from "./player-damage-bonuses";
+import { computeBaseDamage } from "./player-damage-base";
+import { applyFirstDamageBonus, resolveDamageBonusMultiplier } from "./player-damage-multipliers";
 import { getEnemyDamageMultiplier, getEnemyTraitDamageMultiplier } from "./status-helpers";
 import { hasEncounterBenefit, reduceEnemyArmor, setFlag, type BattleState } from "./types";
-export { forgeAppliesToDamageType } from "./player-damage-bonuses";
+export { forgeAppliesToDamageType } from "./player-damage-base";
 
 function applyCrit(damage: number, state: BattleState) {
   const critical = readCombatFlag(state, "nextHitCrit") || rollPercent(GLOBAL_CRIT_CHANCE_PERCENT, getBattleRng(state));
@@ -152,15 +153,18 @@ export function computeCardDamageToEnemy(
 ) {
   const encounter = resolveEncounterFirstHit(state, effect, context?.origin === "played-card");
   state = encounter.state;
-  const baseDamage = computeBaseDamage(state, effect, card, context?.baseDamageBonus, context?.origin === "companion");
+  const companionAttack = context?.origin === "companion";
+  const baseDamage = computeBaseDamage(state, effect, {
+    card,
+    bonus: context?.baseDamageBonus,
+    companionAttack,
+  });
   const { state: stateAfterFirst, firstBonus } = applyFirstDamageBonus(state, effect);
-  const totalMultiplier = resolveDamageBonusMultiplier(
-    stateAfterFirst,
-    effect,
+  const totalMultiplier = resolveDamageBonusMultiplier(stateAfterFirst, effect, {
     card,
     firstBonus,
-    context?.origin === "companion",
-  );
+    companionAttack,
+  });
   const scaledDamage = Math.round(baseDamage * totalMultiplier * encounter.multiplier);
   const pacedDamage = paceCombatDamage(stateAfterFirst, scaledDamage, "player");
   const repeatedDamage = Math.round(pacedDamage * (context?.damageMultiplier ?? 1));

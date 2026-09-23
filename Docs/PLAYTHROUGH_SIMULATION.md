@@ -57,7 +57,7 @@ starting deck or keyword catalog.
 ## Evidence and limits
 
 Fresh saves must earn hero/mode unlocks. `unlocked-v1` grants access for targeted
-coverage; `economy-v1` supplies resources for homestead coverage; `victory-v1`
+coverage; `economy-v1` supplies resources, a discovered Companion, and a Knight weapon for homestead and Gear coverage; `victory-v1`
 starts at a defeated final boss to exercise complete victory settlement. Fixture
 results are labeled **targeted**, never evidence of earned fresh-save success.
 The fixed suite covers all eight heroes, all three modes and difficulties,
@@ -108,7 +108,14 @@ Add an explicit recorded clock cadence when a covered system requires it.
 
 The integration lives in `src/app/playthrough/`, where feature orchestration
 imports are legal. It is loaded only by Node tooling, never by the application
-entry point. Shared operations remain with their production owners:
+entry point.
+
+`actor.ts` owns observation lifecycle and routes to between-run and run-activity
+offer builders. The choice catalog pairs each recorded choice with one command
+for the current observation and rejects duplicate identities. Replay keeps the
+same recorded choice shape.
+
+Shared operations remain with their production owners:
 
 - Battle start and card/Wish commands: `run-loop/battle/`.
 - Turn completion and outcome settlement: existing battle/run-flow owners.

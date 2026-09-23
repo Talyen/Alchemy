@@ -1,4 +1,5 @@
 export const SAVE_KEY = "alchemy-save-v1";
+export const SAVE_RECOVERY_KEY = "alchemy-save-recovery-v1";
 
 export const AUTOSAVE_DEBOUNCE_MS = 500;
 export const BATTLE_AUTOSAVE_DEBOUNCE_MS = 2500;

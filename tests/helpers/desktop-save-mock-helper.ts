@@ -2,6 +2,7 @@ import { vi } from "vitest";
 
 export interface MockDesktopOptions {
   saveCandidates?: string[];
+  recoveryCandidates?: string[];
   steamName?: string | null;
   writeSaveSuccess?: boolean;
   cloudWriteSuccess?: boolean;
@@ -20,7 +21,15 @@ function createMockAlchemyDesktop(options: MockDesktopOptions = {}) {
     isDesktop: true,
     setDisplayMode: vi.fn(),
     quit: vi.fn(),
-    listSaveCandidates: vi.fn().mockResolvedValue(options.saveCandidates ?? []),
+    listSaveCandidates: vi
+      .fn()
+      .mockImplementation(async (slot?: "recovery") =>
+        slot === "recovery" ? (options.recoveryCandidates ?? []) : (options.saveCandidates ?? []),
+      ),
+    readSaveSlot: vi.fn().mockImplementation(async (slot?: "recovery") => ({
+      candidates: slot === "recovery" ? (options.recoveryCandidates ?? []) : (options.saveCandidates ?? []),
+      localReadFailed: false,
+    })),
     writeSave: vi.fn().mockResolvedValue(options.writeSaveSuccess ?? true),
     clearSave: vi.fn().mockResolvedValue(true),
     steamGetName: vi.fn().mockResolvedValue(options.steamName === undefined ? "Tester" : options.steamName),

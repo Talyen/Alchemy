@@ -17,6 +17,16 @@ describe("ActiveRunDataSchema persisted session payloads", () => {
     }
   });
 
+  it("keeps valid run cards when one saved card is malformed", () => {
+    const result = ActiveRunDataSchema.safeParse(run({ runDeck: [{ id: "slash" }, { id: 42 }, { id: "block" }] }));
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.runDeck.map((card) => card.id)).toEqual(["slash", "block"]);
+  });
+
+  it("still rejects a run without a deck array", () => {
+    expect(ActiveRunDataSchema.safeParse(run({ runDeck: "broken" })).success).toBe(false);
+  });
+
   it("parses destination resume fields", () => {
     const result = ActiveRunDataSchema.safeParse(
       run({
@@ -154,6 +164,26 @@ describe("ActiveRunDataSchema persisted session payloads", () => {
     expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
     if (!result.success) return;
     expect(result.data.activeCombat?.pendingBattleTransition?.kind).toBe("opening-draw");
+  });
+
+  it("retains a pending battle result when one saved card is malformed", () => {
+    const battleState = defaultBattleState();
+    const result = ActiveRunDataSchema.parse(
+      run({
+        activeCombat: {
+          battleState,
+          pendingBattleTransition: {
+            kind: "opening-draw",
+            resultState: { ...battleState, hand: [{ id: "slash" }, null, { id: "block" }] },
+          },
+        },
+      }),
+    );
+    const transition = result.activeCombat?.pendingBattleTransition;
+    expect(transition?.kind).toBe("opening-draw");
+    if (transition?.kind === "opening-draw") {
+      expect(transition.resultState.hand.map((card) => card.id)).toEqual(["slash", "block"]);
+    }
   });
 
   it("normalizes enemy-turn resultState manifests and Traits without replaying resolved outcomes", () => {

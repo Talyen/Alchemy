@@ -40,9 +40,17 @@ const USE_PACKAGED_RENDERER = app.isPackaged || process.env.ELECTRON_FORCE_PACKA
 const RENDERER_POLICY = { packaged: USE_PACKAGED_RENDERER, devServerUrl: DEV_SERVER_URL };
 const RENDERER_ROOT = path.join(__dirname, "..", "dist");
 const WINDOWED_SIZE = { width: 1280, height: 720 };
-const SAVE_FILE_PATH = path.join(app.getPath("userData"), "save.json");
-const SAVE_TMP_PATH = path.join(app.getPath("userData"), "save.json.tmp");
-const SAVE_BAK_PATHS = [1, 2, 3].map((i) => path.join(app.getPath("userData"), `save.json.bak.${i}`));
+const SAVE_SLOTS = Object.fromEntries(
+  ["save.json", "save-recovery.json"].map((name, index) => [
+    index === 0 ? "primary" : "recovery",
+    {
+      name,
+      file: path.join(app.getPath("userData"), name),
+      tmp: path.join(app.getPath("userData"), `${name}.tmp`),
+      backups: [1, 2, 3].map((i) => path.join(app.getPath("userData"), `${name}.bak.${i}`)),
+    },
+  ]),
+);
 let mainWindow = null;
 let steamClient = null;
 
@@ -126,60 +134,77 @@ function handleAuthorized(channel, handler) {
   });
 }
 
+function resolveSaveSlot(slot) {
+  if (slot === undefined) return SAVE_SLOTS.primary;
+  if (slot === "recovery") return SAVE_SLOTS.recovery;
+  throw new Error("Invalid save slot");
+}
+
+async function readSaveSlot(slot) {
+  const paths = resolveSaveSlot(slot);
+  const candidates = [];
+  let localReadFailed = false;
+  for (const filePath of [paths.file, ...paths.backups]) {
+    try {
+      const data = await fs.promises.readFile(filePath, "utf8");
+      if (isSavePayload(data)) candidates.push(data);
+    } catch (error) {
+      if (error?.code === "ENOENT") continue;
+      console.error(`[save] Error reading save candidate ${filePath}:`, error);
+      localReadFailed = true;
+    }
+  }
+  return { candidates, localReadFailed };
+}
+
 function registerIpcHandlers() {
   handleAuthorized("alchemy:quit", () => app.quit());
   handleAuthorized("alchemy:set-display-mode", (mode) => {
     if (isDisplayMode(mode) && mainWindow) applyDisplayMode(mainWindow, mode);
   });
 
-  handleAuthorized("alchemy:list-save-candidates", async () => {
-    const candidates = [];
-    for (const filePath of [SAVE_FILE_PATH, ...SAVE_BAK_PATHS]) {
-      try {
-        const data = await fs.promises.readFile(filePath, "utf8");
-        if (isSavePayload(data)) candidates.push(data);
-      } catch (error) {
-        if (error?.code === "ENOENT") continue;
-        console.error(`[save] Error reading save candidate ${filePath}:`, error);
-      }
-    }
-    return candidates;
+  handleAuthorized("alchemy:list-save-candidates", async (slot) => {
+    const result = await readSaveSlot(slot);
+    if (result.localReadFailed) throw new Error("Save candidates could not be read completely");
+    return result.candidates;
   });
+  handleAuthorized("alchemy:read-save-slot", readSaveSlot);
 
   let saveIpcQueue = Promise.resolve();
 
-  handleAuthorized("alchemy:write-save", (data) => {
+  handleAuthorized("alchemy:write-save", (data, slot) => {
     if (!isSavePayload(data)) return Promise.resolve(false);
+    const paths = resolveSaveSlot(slot);
     const writeTask = saveIpcQueue.then(async () => {
       try {
-        await fs.promises.mkdir(path.dirname(SAVE_FILE_PATH), { recursive: true });
-        const handle = await fs.promises.open(SAVE_TMP_PATH, "w");
+        await fs.promises.mkdir(path.dirname(paths.file), { recursive: true });
+        const handle = await fs.promises.open(paths.tmp, "w");
         try {
           await handle.writeFile(data, "utf8");
           await handle.datasync();
         } finally {
           await handle.close();
         }
-        for (let index = SAVE_BAK_PATHS.length - 1; index >= 0; index -= 1) {
-          const to = SAVE_BAK_PATHS[index];
-          const from = index === 0 ? SAVE_FILE_PATH : SAVE_BAK_PATHS[index - 1];
+        for (let index = paths.backups.length - 1; index >= 0; index -= 1) {
+          const to = paths.backups[index];
+          const from = index === 0 ? paths.file : paths.backups[index - 1];
           try {
             await fs.promises.access(from, fs.constants.F_OK);
           } catch (error) {
             if (error?.code === "ENOENT") continue;
             throw error;
           }
-          if (index === SAVE_BAK_PATHS.length - 1) {
+          if (index === paths.backups.length - 1) {
             await fs.promises.unlink(to).catch((error) => {
               if (error?.code !== "ENOENT") throw error;
             });
           }
           await fs.promises.rename(from, to);
         }
-        await fs.promises.rename(SAVE_TMP_PATH, SAVE_FILE_PATH);
+        await fs.promises.rename(paths.tmp, paths.file);
         return true;
       } catch (error) {
-        await fs.promises.unlink(SAVE_TMP_PATH).catch((cleanupError) => {
+        await fs.promises.unlink(paths.tmp).catch((cleanupError) => {
           if (cleanupError?.code !== "ENOENT") console.error("[save] Error cleaning up temp save file:", cleanupError);
         });
         console.error("[save] Error writing save file:", error);
@@ -191,14 +216,15 @@ function registerIpcHandlers() {
   });
 
   handleAuthorized("alchemy:clear-save", async () => {
-    // Wipe the full local candidate set (primary + bak ring + tmp). Bootstrap walks
-    // bak.1–3 after save.json; leaving them behind would re-block Save Protected.
+    // Wipe both rings so an older recovery snapshot cannot restore a cleared profile.
     try {
-      for (const filePath of [SAVE_FILE_PATH, SAVE_TMP_PATH, ...SAVE_BAK_PATHS]) {
-        try {
-          await fs.promises.unlink(filePath);
-        } catch (error) {
-          if (error?.code !== "ENOENT") throw error;
+      for (const paths of Object.values(SAVE_SLOTS)) {
+        for (const filePath of [paths.file, paths.tmp, ...paths.backups]) {
+          try {
+            await fs.promises.unlink(filePath);
+          } catch (error) {
+            if (error?.code !== "ENOENT") throw error;
+          }
         }
       }
       return true;
@@ -208,11 +234,12 @@ function registerIpcHandlers() {
     }
   });
 
-  handleAuthorized("alchemy:steam-cloud-read", async () => {
+  handleAuthorized("alchemy:steam-cloud-read", async (slot) => {
+    const { name } = resolveSaveSlot(slot);
     if (!steamClient) return null;
     try {
-      if (!steamClient.cloud.fileExists("save.json")) return null;
-      const buffer = await steamClient.cloud.readFile("save.json");
+      if (!steamClient.cloud.fileExists(name)) return null;
+      const buffer = await steamClient.cloud.readFile(name);
       if (buffer && buffer.length > MAX_SAVE_PAYLOAD_BYTES) {
         console.error(`[save] Steam Cloud save exceeds ${MAX_SAVE_PAYLOAD_BYTES} bytes; ignoring.`);
         return null;
@@ -224,20 +251,22 @@ function registerIpcHandlers() {
     }
   });
 
-  handleAuthorized("alchemy:steam-cloud-write", async (data) => {
+  handleAuthorized("alchemy:steam-cloud-write", async (data, slot) => {
+    const { name } = resolveSaveSlot(slot);
     if (!steamClient || !isSavePayload(data)) return false;
     try {
-      return steamClient.cloud.writeFile("save.json", data);
+      return steamClient.cloud.writeFile(name, data);
     } catch (error) {
       console.error("[save] Error writing Steam Cloud save:", error);
       return false;
     }
   });
 
-  handleAuthorized("alchemy:steam-cloud-delete", async () => {
+  handleAuthorized("alchemy:steam-cloud-delete", async (slot) => {
+    const { name } = resolveSaveSlot(slot);
     if (!steamClient) return false;
     try {
-      return steamClient.cloud.fileExists("save.json") ? steamClient.cloud.deleteFile("save.json") : true;
+      return steamClient.cloud.fileExists(name) ? steamClient.cloud.deleteFile(name) : true;
     } catch (error) {
       console.error("[save] Error deleting Steam Cloud save:", error);
       return false;

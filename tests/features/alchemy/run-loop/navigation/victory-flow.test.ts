@@ -12,6 +12,8 @@ import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { LABYRINTH_REWARD_CONFIG } from "@/lib/game-constants";
 import { trinketLibrary } from "@/lib/game-data";
 import { gearDefinitions, uniqueItemList } from "@/lib/gear";
+import { rollFreshBossId } from "@/features/alchemy/shared/config";
+import { createRunRngState, stepRunRng } from "@/lib/rng";
 import type { Destination } from "@/lib/routing";
 import { getAvailableDestinations } from "@/lib/routing/destination-availability";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
@@ -78,7 +80,7 @@ function baseInput(overrides: Record<string, unknown> = {}): VictoryRewardsInput
     destinationIndexInAct: 2,
     homesteadEffects: { ...defaultHomesteadEffects },
     getAvailableDestinations: vi.fn(() => ["Normal Combat", "Campfire", "Mystery"] as Destination[]),
-    bossEnemyId: "mimic",
+    rollBossEnemyId: () => "mimic",
     destinationOfferState: { lastOfferedDestinations: [], roundsSinceOffered: {} },
     ...overrides,
   };
@@ -162,6 +164,36 @@ describe("computeVictoryRewardState", () => {
 });
 
 describe("computeVictoryRewards", () => {
+  it.each(["campaign", "labyrinth", "wildwood"] as const)(
+    "does not draw a boss after an ordinary %s victory",
+    (contentSystemType) => {
+      const rngState = createRunRngState(42);
+      const result = computeVictoryRewards(
+        baseInput({
+          contentSystemType,
+          rollBossEnemyId: () => rollFreshBossId(() => stepRunRng(rngState, "world")),
+        }),
+        testRng,
+      );
+      expect(result.rewardState.selectedBossId).toBeNull();
+      expect(rngState.counters.world).toBe(0);
+    },
+  );
+
+  it("draws one boss when victory offers Boss Combat alone", () => {
+    const rngState = createRunRngState(42);
+    const result = computeVictoryRewards(
+      baseInput({
+        getAvailableDestinations: () => ["Boss Combat"],
+        rollBossEnemyId: () => rollFreshBossId(() => stepRunRng(rngState, "world")),
+      }),
+      testRng,
+    );
+    expect(result.rewardState.destinations).toEqual(["Boss Combat"]);
+    expect(result.rewardState.selectedBossId).toBeTruthy();
+    expect(rngState.counters.world).toBe(1);
+  });
+
   it("passes owned uniques through campaign boss victory rewards", () => {
     const ownedUniqueIds = new Set(uniqueItemList.map((unique) => unique.id));
     const result = computeVictoryRewards(

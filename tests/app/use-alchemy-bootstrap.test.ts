@@ -6,6 +6,7 @@ import {
   clearAlchemySaveData,
   hydrateAlchemyPersistenceFields,
   loadAlchemySaveState,
+  routeWritesToRecovery,
 } from "@/features/alchemy/shared/storage";
 import { restoreRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { readRunInitialized } from "@/features/alchemy/shared/stores/run-reads";
@@ -19,6 +20,7 @@ vi.mock("@/features/alchemy/shared/storage", async (importOriginal) => {
     hydrateAlchemyPersistenceFields: vi.fn(),
     configureAlchemySaveBackend: vi.fn().mockResolvedValue(undefined),
     loadAlchemySaveState: vi.fn(),
+    routeWritesToRecovery: vi.fn(),
     clearAlchemySaveData: vi.fn().mockResolvedValue(true),
   };
 });
@@ -104,7 +106,7 @@ describe("useAlchemyBootstrap", () => {
     expect(hook.current).toBe(result);
   });
 
-  it("publishes corrupt defaults instead of hanging when bootstrap fails", async () => {
+  it("starts play with defaults and recovery writes when bootstrap fails", async () => {
     vi.mocked(loadAlchemySaveState).mockRejectedValue(new Error("steam down"));
 
     const { result: hook } = renderHook(() => useAlchemyBootstrap());
@@ -115,9 +117,10 @@ describe("useAlchemyBootstrap", () => {
       await Promise.resolve();
     });
 
-    expect(hydrateAlchemyPersistenceFields).toHaveBeenCalledOnce();
+    expect(hydrateAlchemyPersistenceFields).toHaveBeenCalledWith(defaultSaveData);
     expect(restoreRun).toHaveBeenCalled();
-    expect(hook.current?.status).toEqual({ kind: "corrupt" });
+    expect(routeWritesToRecovery).toHaveBeenCalledOnce();
+    expect(hook.current?.status).toEqual({ kind: "unavailable" });
     expect(hook.current?.data.activeRun).toBeNull();
   });
 
@@ -162,15 +165,17 @@ describe("useAlchemyBootstrap", () => {
     expect(new URL(window.location.href).searchParams.get("wipeLocalSave")).toBe("0");
     expect(hook.current).toBe(result);
   });
-  it.each(["unsupported-newer-schema", "unsupported-newer-content"] as const)(
-    "leaves stores untouched for %s so the blocked shell renders from defaults",
+  it.each(["unsupported-newer-schema", "unsupported-newer-content", "unavailable"] as const)(
+    "starts play from available defaults for %s",
     async (kind) => {
       const result: SaveLoadState = {
         data: defaultSaveData,
         status:
-          kind === "unsupported-newer-schema"
-            ? { kind, detectedSchemaVersion: 999 }
-            : { kind, detectedContentVersion: 999 },
+          kind === "unavailable"
+            ? { kind }
+            : kind === "unsupported-newer-schema"
+              ? { kind, detectedSchemaVersion: 999 }
+              : { kind, detectedContentVersion: 999 },
       };
       vi.mocked(loadAlchemySaveState).mockResolvedValue(result);
 
@@ -180,8 +185,8 @@ describe("useAlchemyBootstrap", () => {
         await Promise.resolve();
       });
 
-      expect(hydrateAlchemyPersistenceFields).not.toHaveBeenCalled();
-      expect(restoreRun).not.toHaveBeenCalled();
+      expect(hydrateAlchemyPersistenceFields).toHaveBeenCalledWith(defaultSaveData);
+      expect(restoreRun).toHaveBeenCalled();
       expect(hook.current).toBe(result);
     },
   );

@@ -38,7 +38,6 @@ describe("headless production careers", () => {
     expect(result.status, result.error).toBe("completed");
     expect(result.cohort).toBe("fresh-save");
     expect(result.outcomes).toHaveLength(2);
-    expect(result.coverage.equip).toBeGreaterThan(0);
     expect(result.coverage.talent).toBeGreaterThan(0);
     expect(result.saveChecks).toBe(result.journal.length);
     const replay = career({}, undefined, result.journal);
@@ -141,6 +140,7 @@ describe("headless production careers", () => {
     expect(result.coverage.farm).toBeGreaterThan(0);
     expect(result.coverage.research).toBeGreaterThan(0);
     expect(result.coverage.bond).toBeGreaterThan(0);
+    expect(result.coverage.equip).toBeGreaterThan(0);
   }, 45000);
 
   it.each(["wildwood", "labyrinth"] as const)(

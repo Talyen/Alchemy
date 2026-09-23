@@ -3,7 +3,7 @@ import { z } from "zod";
 import { defaultBattleState, type BattleSnapshot } from "@/lib/battle";
 import { normalizePersistedBattleState } from "../normalize-persisted-battle-state";
 import { isEnemyId, keywordDefinitions, type KeywordId } from "@/lib/game-data";
-import { BattleCardEffectSchema, BattleCardSchema } from "./battle-card-schemas";
+import { BattleCardEffectSchema, parseSavedCardArray, savedCardArraySchema } from "./battle-card-schemas";
 import { UniqueGearBattleStateSchema } from "./unique-gear-state";
 
 // Load-tolerant fallbacks: one corrupt scalar or collection repairs to battle
@@ -13,16 +13,20 @@ import { UniqueGearBattleStateSchema } from "./unique-gear-state";
 const battleFallbacks = defaultBattleState();
 
 const PersistedBattleStateWireSchema = z.looseObject({
-  deck: z.array(BattleCardSchema).catch([]),
-  hand: z.array(BattleCardSchema).catch([]),
-  pendingHandCards: z.array(BattleCardSchema).catch([]),
-  discard: z.array(BattleCardSchema).catch([]),
-  exhausted: z.array(BattleCardSchema).catch([]),
-  wishOptions: z.array(BattleCardSchema).nullable().catch(null),
-  wishQueue: z.preprocess(
-    (value) => (Array.isArray(value) ? value.filter(Array.isArray) : []),
-    z.array(z.array(BattleCardSchema)),
-  ),
+  deck: savedCardArraySchema("deck").catch([]),
+  hand: savedCardArraySchema("hand").catch([]),
+  pendingHandCards: savedCardArraySchema("pendingHandCards").catch([]),
+  discard: savedCardArraySchema("discard").catch([]),
+  exhausted: savedCardArraySchema("exhausted").catch([]),
+  wishOptions: savedCardArraySchema("wishOptions").nullable().catch(null),
+  wishQueue: z
+    .array(z.unknown())
+    .transform((queues) =>
+      queues.flatMap((queue, index) =>
+        Array.isArray(queue) ? [parseSavedCardArray(queue, `wishQueue[${index}]`)] : [],
+      ),
+    )
+    .catch([]),
   pendingTurnStartEffects: z
     .array(
       z.object({

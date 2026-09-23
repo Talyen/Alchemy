@@ -6,6 +6,7 @@ import { createStarterDraftChoices } from "@/features/alchemy/shared/run-flow/st
 import { discoverCardIds, readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
 import {
   readActiveRun,
+  readActiveRunScreen,
   readHasActiveBattle,
   readHasActiveRun,
   readRunSession,
@@ -167,18 +168,26 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
       return;
     }
     const run = readActiveRun();
-    if (run.characterId !== "wildcard" || run.runDeck.length < DRAFT_ROUNDS) return;
-
-    dispatchRunSessionCommand((draft) => {
-      setStarterDraftChoices(draft, null);
-    });
+    const session = readRunSession();
+    if (
+      run.characterId !== "wildcard" ||
+      run.runDeck.length !== DRAFT_ROUNDS ||
+      session.starterDraftChoices?.length !== 0 ||
+      session.activity.kind !== "draft-deck" ||
+      readActiveRunScreen() !== ROUTE_SCREENS.DRAFT_DECK ||
+      readHasActiveBattle()
+    )
+      return;
 
     if (systemType === CONTENT_SYSTEMS.LABYRINTH) {
       initializeLabyrinthRun("wildcard");
       return;
     }
 
-    resolveNoviceCampaign("wildcard", () => deps.navigateTo(ROUTE_SCREENS.DIFFICULTY_SELECT));
+    resolveNoviceCampaign("wildcard", () => {
+      dispatchRunSessionCommand((draft) => setStarterDraftChoices(draft, null));
+      deps.navigateTo(ROUTE_SCREENS.DIFFICULTY_SELECT);
+    });
   }
 
   function handleDifficultySelect(difficultyId: DifficultyId) {

@@ -1,12 +1,12 @@
 /**
  * Battle mutation policy
  * ----------------------
- * Scope is the damage-calculation core and its extracted bonus module (the nightly step's stated
+ * Scope is the damage-calculation core and its base and multiplier stages (the nightly step's stated
  * purpose), scored against the break threshold below. Mutating all of
  * src/lib/battle yields ~8.5k mutants, which cannot complete inside the
  * nightly cap; the vitest runner keeps per-mutant cost proportional via
  * per-test coverage selection instead of re-running the whole battle suite
- * for every mutant. Measured: ~640 mutants, ~30 min locally. Expand the
+ * for every mutant. Expand the
  * scope only with throughput to stay inside the nightly timeout.
  */
 /** @type {import("@stryker-mutator/core").PartialStrykerOptions} */
@@ -14,7 +14,11 @@ export default {
   packageManager: "npm",
   testRunner: "vitest",
   coverageAnalysis: "perTest",
-  mutate: ["src/lib/battle/damage-calc.ts", "src/lib/battle/player-damage-bonuses.ts"],
+  mutate: [
+    "src/lib/battle/damage-calc.ts",
+    "src/lib/battle/player-damage-base.ts",
+    "src/lib/battle/player-damage-multipliers.ts",
+  ],
   reporters: ["html", "clear-text", "json"],
   htmlReporter: { fileName: "reports/mutation/index.html" },
   jsonReporter: { fileName: "reports/mutation/mutation.json" },

@@ -64,7 +64,7 @@ export interface VictoryRewardsInput {
   destinationIndexInAct: number;
   homesteadEffects: HomesteadEffectManifest;
   getAvailableDestinations: (options?: DestinationOptionsInput) => Destination[];
-  bossEnemyId?: string | null | undefined;
+  rollBossEnemyId: () => string;
   destinationOfferState: DestinationOfferState;
 }
 
@@ -138,7 +138,7 @@ export function computeVictoryRewardState(
     | "ownedTrinketIds"
     | "ownedUniqueIds"
     | "battleState"
-    | "bossEnemyId"
+    | "rollBossEnemyId"
   > & {
     gold: number;
     eliteBonus: number;
@@ -193,7 +193,7 @@ export function computeVictoryRewardState(
       eliteBonus: input.eliteBonus,
       destinations: input.destinations,
     }),
-    input.bossEnemyId,
+    input.rollBossEnemyId,
   );
 }
 
@@ -364,7 +364,7 @@ export function computeVictoryRewards(
       materials,
       destinations,
       talentEffects,
-      bossEnemyId: input.bossEnemyId,
+      rollBossEnemyId: input.rollBossEnemyId,
       gearAstralChanceBonus: input.homesteadEffects.gearAstralChanceBonus,
     },
     rng,

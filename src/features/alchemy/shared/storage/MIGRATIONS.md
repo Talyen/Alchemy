@@ -13,7 +13,7 @@ compatibility readers described below record implementation, not a promise to
 retain retired mechanics. Remove their consumers and fixtures together when
 retiring them, keeping current-format resume and future-save protection intact.
 
-`LAUNCH_SAVE_SCHEMA_VERSION` in `src/lib/validation/metadata.ts` is the minimum supported format. Version 19 is the single-run baseline; version 20 stores the resolved Mystery offer and migrates version 19 visits before validation. Development formats below the floor are disposable. `evaluateSaveCandidates` rejects those candidates before permissive field validation can stamp defaults. If no supported or protecting future candidate remains, load defaults through the normal save path without explicitly clearing backup or Cloud sources. Writes stay enabled for this `corrupt`-status fallback (unlike future-protection, which disables them), so the next autosave naturally overwrites the retired payload. Do not salvage old profiles or parked runs.
+`LAUNCH_SAVE_SCHEMA_VERSION` in `src/lib/validation/metadata.ts` is the minimum supported format. Version 19 is the single-run baseline; version 20 stores the resolved Mystery offer and migrates version 19 visits before validation. Development formats below the floor are disposable. `evaluateSaveCandidates` rejects those candidates before permissive field validation can stamp defaults. If no supported or protecting future candidate remains, load defaults without explicitly clearing backup or Cloud sources. A retired-format payload can be replaced by the next normal save; new progress is routed away from a newer-format payload when another slot is available. Do not salvage old profiles or parked runs.
 
 Game build identity is distinct from schema and content versions. Ordinary compatible builds do not reset saves. Freeze the supported floor at the first distribution whose progress is promised to persist, including a playtest or Early Access release. Preserve subsequent supported formats. Version sources are split: the build version is generated from `package.json` by `scripts/sync-version-metadata.mjs`, while schema and content versions are hardcoded in `src/lib/validation/metadata.ts`.
 
@@ -63,7 +63,7 @@ resurrect a saved run after death, abandonment, or victory.
 
 ## Public save contract
 
-Local storage is authoritative; Cloud is a mirror. Choose candidates by compatibility and freshness before validation, and never overwrite a protecting future save. A save succeeds only when a local write acknowledges the snapshot or a newer replacement. Deletion has explicit modes; pending writes must not resurrect deleted data.
+Local storage is authoritative; Cloud is a mirror. Choose playable candidates by freshness, and preserve unreadable or newer-format data in its existing slot while current play writes a safe slot. A save succeeds only when a local write acknowledges the snapshot or a newer replacement. Deletion has explicit modes; pending writes must not resurrect deleted data. Save problems do not block play or ask the player to make a recovery choice.
 
 Read the applicable contract before changing its behavior:
 
@@ -75,27 +75,29 @@ Read the applicable contract before changing its behavior:
 
 ## Policy: local is authoritative
 
-Steam Cloud is a one-way mirror. Writes go local-first (atomic, with backup-ring rotation in `desktop/main.cjs` — `save.json` + `bak.1-3` + `tmp`) and then mirror to Steam Cloud.
+Steam Cloud is a one-way mirror. Both the primary (`save.json`) and recovery (`save-recovery.json`) slots write local-first, atomically with their own `bak.1-3` ring and `tmp` in `desktop/main.cjs`, then mirror to the matching Cloud filename. Browser storage uses the primary `alchemy-save-v1` and recovery `alchemy-save-recovery-v1` keys.
 
 Device display preferences (versioned `alchemy-device-display-v<n>` key, currently v1) stay outside the versioned save: they survive save wipes, are never cloud-mirrored, and never gate loads. A version mismatch resets them to defaults silently (no error-sink entry); only unreadable storage or corrupt JSON is logged.
 
 ## Load selection
 
-`readDesktopCandidates` in `src/lib/platform-save-backend.ts` collects candidates in preference order (local ring → cloud); the local ring read order itself (`save.json` + `bak.1-3`) lives in `desktop/main.cjs`, which appends nothing — the backend appends the Cloud mirror last and deduplicates identical mirrors while preserving first-seen order. The freshest playable candidate that Zod-validates wins by `lastSavedAt`; corrupt candidates fall through to another recovery source. Evaluation is deterministic in `src/features/alchemy/shared/storage/save-candidates.ts#evaluateSaveCandidates`. Recovery diagnostics are logged at the I/O seam, and only the winning candidate is hydrated against the live catalog.
+`readDesktopCandidates` in `src/lib/platform-save-backend.ts` collects each slot in preference order (local ring → Cloud). The local ring read order lives in `desktop/main.cjs`; the backend appends the matching Cloud mirror and deduplicates identical payloads. The storage owner evaluates primary candidates before recovery candidates, and the freshest playable candidate that Zod-validates wins by `lastSavedAt`; corrupt candidates fall through to another source. Evaluation is deterministic in `src/features/alchemy/shared/storage/save-candidates.ts#evaluateSaveCandidates`. Recovery diagnostics are logged at the I/O seam, and only the winning candidate is hydrated against the live catalog.
 
-Routine skips stay silent: missing, empty, and below-baseline candidates on fresh profiles never reach the error sink (`logStorageFailure`), because browser journeys assert zero runtime errors. Non-object roots and genuinely corrupt JSON do report. Only genuinely corrupt JSON and schema-validation failures of otherwise versioned candidates are reported. Pinned by `save-version-protection.test.ts`.
+Routine skips stay silent: missing, empty, and below-baseline candidates on fresh profiles never reach the error sink (`logStorageFailure`), because browser journeys assert zero runtime errors. Non-object roots and genuinely corrupt JSON do report. Candidate validation reports genuinely corrupt JSON and schema failures of otherwise versioned candidates; storage I/O failures are logged separately. Pinned by `save-version-protection.test.ts`.
+
+A failed local candidate read is different from an empty or corrupt candidate set. Desktop still attempts the Cloud copy; the storage owner tries both slots and uses any compatible candidate it can read. If the primary is unreadable, new progress writes to the recovery slot, leaving the primary untouched. If neither slot can be read, play starts with defaults and writes still attempt the recovery slot. If a normal primary write fails, the same snapshot is attempted in recovery before autosave reports failure and retries. The player sees no save-problem screen. When all storage writes fail, progress remains in memory for that session and autosave keeps retrying; durability cannot be promised until some storage accepts a write.
 
 ## Future schema saves
 
-Saves with a schema newer than the current build are intentionally not migrated or overwritten. A recognizable future-versioned candidate protects the session only when it is fresher by `lastSavedAt` than every playable candidate. A stale newer-versioned mirror is skipped in favor of the freshest playable backup; timestamp ties also load the playable backup, and autosave can continue.
+Saves with a schema or content version newer than the current build are intentionally not migrated. Any playable candidate wins over a newer-format candidate, even when the newer copy has a later timestamp, so a compatible backup or recovery copy can still resume play. If no playable candidate exists, load defaults. The storage owner routes writes away from a slot holding newer-format data when another slot is available.
 
-When protection applies, the load path returns session defaults and disables autosave writes so an older build cannot destroy newer progress. The Save Protected screen offers update guidance and an explicit “Delete local save and continue” escape hatch under the [deletion policy](#deletion).
+When only one slot holds newer-format candidates, new saves use the other slot, leaving the newer data untouched. If both slots hold incompatible data, the recovery ring remains the best available write target; older recovery backups can eventually rotate out. A later build evaluates both slots again and selects the freshest playable candidate. No player-facing save decision is required.
 
-Tie rules: a future-vs-playable timestamp tie loads the playable backup (protection needs a strictly fresher future candidate), while a playable-vs-playable tie keeps the first candidate in read order — on desktop that prefers `save.json` over its `bak` ring. Future-vs-future ties likewise keep the first candidate in read order; recency across future kinds (schema vs content) still decides, so the newest future candidate of either kind is the one compared against the playable best. Fractional `lastSavedAt` values floor before comparison so raw future-protection ordering and parsed playable ordering agree; missing timestamps fall back per domain (`-1` for future, `0` for the playable pre-filter matching the schema default) via `getCandidateSavedAt`.
+Tie rules: playable-vs-playable ties keep the first candidate in read order — primary local ring, primary Cloud, recovery local ring, then recovery Cloud. Future-vs-future ties likewise keep the first candidate in read order for internal diagnostics. Fractional `lastSavedAt` values floor before comparison; missing timestamps fall back per domain (`-1` for future, `0` for the playable pre-filter matching the schema default) via `getCandidateSavedAt`.
 
 ## Write acknowledgement
 
-Normal saves and explicit flushes return `saved`, `failed`, or `skipped`. `saved` means local storage accepted that snapshot or a newer coalesced replacement; a cloud-mirror failure remains non-fatal. Serialization and backend failures are logged at the I/O seam and returned to the caller.
+Normal saves and explicit flushes return `saved`, `failed`, or `skipped`. `saved` means local storage accepted that snapshot or a newer coalesced replacement in the active slot; a Cloud-mirror failure remains non-fatal. A failed primary write tries the recovery slot with the same snapshot. Serialization and backend failures are logged at the I/O seam and returned to the caller.
 
 Autosave retains unacknowledged changes until a covering write succeeds. In-memory revisions prevent an older completion from clearing newer progress. Failed writes retry through the existing single timer no sooner than `AUTOSAVE_RETRY_COOLDOWN_MS` after failure (see `src/lib/game-constants/storage.ts`; kept equal to `AUTOSAVE_MAX_WAIT_MS` so the backoff survives shrunken debounces, split so UX timing and retry backoff can diverge later), including when animations are disabled or new changes arrive. Timing math lives in `src/app/autosave-scheduler.ts` with unit coverage; `src/app/autosave-lifecycle.ts` owns debounce selection, snapshot building, completion gating, and subscriptions for both React and headless callers; the React hook adds browser lifecycle listeners. Exit signals may bypass that cooldown, with an exit-once latch per revision so back-to-back exit events write one snapshot. Clear requests and write protection invalidate pending acknowledgements and cancel scheduled autosaves; disabled persistence and hook cleanup also stop retries. A late completion cannot restart cancelled work. No scheduling metadata is persisted.
 
@@ -103,22 +105,18 @@ Browser lifecycle exits (`visibilitychange`, `pagehide`, and `beforeunload`) syn
 
 ## Deletion
 
-Deletion mode is explicit (`"default"` | `"localWipe"` | `"wipeForReload"`), not inferred from the visible screen or write protection:
+Deletion mode is explicit (`"default"` | `"localWipe"`), not inferred from the visible screen:
 
-- **`default`:** delete the Cloud mirror first, then local data.
+- **`default`:** delete both Cloud mirrors first, then both local slots.
   Cloud deletion failure leaves local data untouched and reports failure,
   preventing a surviving mirror from silently restoring a deleted save.
-- **`localWipe`:** clear local candidates
-  (`save.json`, `bak.1–3`, and `tmp`) first, then attempt Cloud deletion
+- **`localWipe`:** clear both local candidate rings
+  (`save.json` and `save-recovery.json`, each with `bak.1–3` and `tmp`) first, then attempt Cloud deletion
   best-effort. Local failure reports failure without deleting Cloud data;
   Cloud failure after a successful local wipe is logged but does not prevent
   success. The next successful mirror write replaces any residual Cloud save.
   Options' clear-save action and deliberate resets use this path.
-- **`wipeForReload`:** same forced local wipe as `localWipe`, but keeps writes
-  disabled so a terminal flush cannot resurrect the save before reload. The
-  Save Protected escape hatch uses this path.
-
-Browser deletion removes local storage only.
+  Browser deletion removes both local storage keys only.
 
 Dev builds also accept `?wipeLocalSave=1` (exact value) to clear local candidates via the `localWipe` path. The backend is configured (Steam/cloud state) before the wipe runs, so a desktop dev wipe honors cloud sync instead of leaving a stale Cloud mirror eligible for reload. Device display preferences survive either deletion path.
 
@@ -132,7 +130,8 @@ Candidate compatibility/freshness checks → current-shape validation → normal
 - Saved active-run decks are eagerly hydrated at load time: card IDs are resolved against the live library, and any card whose ID no longer exists is silently dropped from the deck. Filtering can leave an empty deck; the battle engine handles empty piles through Emergency Wish. No player-facing diagnostics.
 - Card validation and hydration treat saved effects and descriptions as one content unit. `BattleCardSchema` returns an empty effect list if any effect fails validation, including nested effects; missing or malformed lists likewise become empty. `hydrateCard` preserves both saved lists only when both are usable, without comparing their lengths against the current catalog. Otherwise it restores both from the library and clears saved `corrupted`, `baseTitle`, and `corruptedValuePositions`. Valid saved cost, UID, and explicit Consume overrides survive; title, art, and catalog metadata refresh from the library. The empty-list recovery signal survives normalization and JSON round trips without extra saved fields.
 - The same card validator covers active-run card locations and saved battle deck, hand, discard, exhausted, Wish options, and Wish queue, including pending battle result states. Battle card hydration occurs when `initializeActiveBattle` restores the session; other card locations hydrate through `toActiveRunData`. Complete valid saved modifications survive even when their effect count differs from current content. Incomplete content recovery may reset card modifications, but requires no schema bump because the persisted shape and valid values retain their meanings.
-- The `SaveLoadStatus` shape has four variants: `ok`, `unsupported-newer-schema`, `unsupported-newer-content`, and `corrupt`. No diagnostic fields surface to the player. The `ok` variant may carry developer-facing `warnings` (repair notes such as dropped card content); these never gate loads and are not shown to players.
+- Card arrays keep valid entries when a sibling card is malformed, with a developer-facing repair warning for each dropped position. Missing or non-array run decks still invalidate the run. Shop and Alchemist purchase keys follow surviving cards to their new slots. A Wish prompt emptied by malformed or removed cards advances to the next nonempty queued choice, or closes when none remains, so resumed combat stays playable.
+- The `SaveLoadStatus` shape has five variants: `ok`, `unavailable`, `unsupported-newer-schema`, `unsupported-newer-content`, and `corrupt`. These are internal diagnostics; none blocks play or opens a save-problem screen. The `ok` variant may carry developer-facing `warnings` (repair notes such as dropped card content); these never gate loads and are not shown to players.
 
 ## Four-tier Homestead
 

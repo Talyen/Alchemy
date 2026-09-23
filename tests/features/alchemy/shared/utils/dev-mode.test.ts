@@ -32,6 +32,15 @@ describe("shouldSkipStartupLoadingGate", () => {
     expect(shouldSkipStartupLoadingGate()).toBe(false);
   });
 
+  it("does not crash startup when the skip flag cannot be read", () => {
+    vi.stubGlobal("localStorage", {
+      getItem: () => {
+        throw new Error("blocked");
+      },
+    });
+    expect(shouldSkipStartupLoadingGate()).toBe(false);
+  });
+
   it("does not skip loading for alchemy-dev-mode alone", () => {
     storage.set("alchemy-dev-mode", "true");
     expect(shouldSkipStartupLoadingGate()).toBe(false);

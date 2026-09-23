@@ -100,7 +100,7 @@ export function createVictoryCommand(getAvailableDestinations: RunOutcomeDeps["g
         destinationIndexInAct: runState.destinationIndexInAct,
         homesteadEffects: runProfile.effects,
         getAvailableDestinations: getAvailableDestinations,
-        bossEnemyId: rollFreshBossId(createDraftRunRandomSource(draft, "world")),
+        rollBossEnemyId: () => rollFreshBossId(createDraftRunRandomSource(draft, "world")),
         destinationOfferState: {
           lastOfferedDestinations: runState.lastOfferedDestinations,
           roundsSinceOffered: runState.destinationRoundsSinceOffered,

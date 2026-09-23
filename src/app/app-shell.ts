@@ -1,4 +1,4 @@
-export { AppBackgroundParticles, GameMenuOverlay, UnsupportedSaveOverlay } from "./app-overlays";
+export { AppBackgroundParticles, GameMenuOverlay } from "./app-overlays";
 export { AppScreenChromeProvider } from "./app-screen-chrome-context";
 export { StartupLoadingScreen } from "./startup-loading-screen";
 export { useAlchemyAutosaveFromStores } from "./use-app-save-state";

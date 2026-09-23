@@ -2,6 +2,7 @@ import { loadAlchemySaveState, saveAlchemySaveData } from "@/features/alchemy/sh
 import { defaultSaveData } from "@/features/alchemy/shared/storage/defaults";
 import { configureSaveBackend } from "@/features/alchemy/shared/storage/io";
 import { SAVE_KEY } from "@/lib/game-constants";
+import { SAVE_RECOVERY_KEY } from "@/lib/game-constants";
 import { defaultBattleState } from "@/lib/battle";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
@@ -71,23 +72,26 @@ describe("storage io", () => {
     expect(data.activeRun).toBeNull();
   });
 
-  it.each(["reported", "thrown"])("returns corrupt for a %s backend read failure", async (failure) => {
+  it.each(["reported", "thrown"])("protects the save after a %s backend read failure", async (failure) => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const error = new Error("Storage unavailable");
+    const write = vi.fn().mockResolvedValue({ ok: true });
     configureSaveBackend({
       readCandidates: async () => {
         if (failure === "thrown") throw error;
         return { ok: false, error };
       },
-      write: async () => ({ ok: true }),
+      write,
       writeSync: () => null,
       clear: async () => ({ ok: true }),
     });
 
     const loaded = await loadAlchemySaveState();
 
-    expect(loaded.status.kind).toBe("corrupt");
+    expect(loaded.status.kind).toBe("unavailable");
     expect(loaded.data).toEqual(defaultSaveData);
+    expect(await saveAlchemySaveData(defaultSaveData)).toBe("saved");
+    expect(write).toHaveBeenCalledWith(SAVE_RECOVERY_KEY, expect.any(String));
   });
 
   it("warns when a card effect is corrupt but the rest of the save loads", async () => {
@@ -262,7 +266,7 @@ describe("storage io", () => {
     expect(loaded.status.kind === "ok" ? loaded.status.warnings : []).toContain("battle could not be restored");
   });
 
-  it.each(futureSaveCases)("does not overwrite a browser save with $label", async ({ payload, expectedStatus }) => {
+  it.each(futureSaveCases)("saves new browser progress beside $label", async ({ payload, expectedStatus }) => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     mockStorage[SAVE_KEY] = payload;
 
@@ -272,23 +276,39 @@ describe("storage io", () => {
     expect(loaded.status).toEqual(expectedStatus);
     await saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["slash"] });
     expect(mockStorage[SAVE_KEY]).toBe(payload);
+    expect(JSON.parse(mockStorage[SAVE_RECOVERY_KEY]).discoveredCardIds).toEqual(["slash"]);
+  });
+
+  it("resumes a recovery save on the next load without changing the newer primary", async () => {
+    const newerPrimary = futureSaveCandidate(2000);
+    mockStorage[SAVE_KEY] = newerPrimary;
+
+    expect((await loadAlchemySaveState()).status.kind).toBe("unsupported-newer-schema");
+    expect(await saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["slash"] })).toBe("saved");
+
+    const resumed = await loadAlchemySaveState();
+    expect(resumed.status.kind).toBe("ok");
+    expect(resumed.data.discoveredCardIds).toEqual(["slash"]);
+    expect(mockStorage[SAVE_KEY]).toBe(newerPrimary);
   });
 
   it.each(futureSaveCases)(
-    "protects a desktop $label authoritative save instead of loading an older backup",
-    async ({ payload, expectedStatus }) => {
+    "loads a compatible backup and saves beside a desktop $label primary",
+    async ({ payload }) => {
       const compatibleBackup = playableSaveCandidate(1000);
       const { writeSave } = setupDesktopSaveCandidates([payload, compatibleBackup]);
 
       const loaded = await loadAlchemySaveState();
 
-      expect(loaded.status).toEqual(expectedStatus);
+      expect(loaded.status.kind).toBe("ok");
+      expect(loaded.data.lastSavedAt).toBe(1000);
       await saveAlchemySaveData(loaded.data);
-      expect(writeSave).not.toHaveBeenCalled();
+      expect(writeSave).toHaveBeenCalledWith(expect.any(String), "recovery");
+      expect(writeSave).not.toHaveBeenCalledWith(expect.any(String), undefined);
     },
   );
 
-  it("protects a future backup after a corrupt local candidate", async () => {
+  it("uses a compatible backup after a corrupt local candidate while retaining a future backup", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const futureBackup = futureSaveCandidate(2000);
     const compatibleOlderBackup = playableSaveCandidate(1000);
@@ -296,12 +316,10 @@ describe("storage io", () => {
 
     const loaded = await loadAlchemySaveState();
 
-    expect(loaded.status).toEqual({
-      kind: "unsupported-newer-schema",
-      detectedSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
-    });
+    expect(loaded.status.kind).toBe("ok");
+    expect(loaded.data.lastSavedAt).toBe(1000);
     await saveAlchemySaveData(loaded.data);
-    expect(writeSave).not.toHaveBeenCalled();
+    expect(writeSave).toHaveBeenCalledWith(expect.any(String), "recovery");
   });
 
   it("uses a compatible authoritative save without inspecting a future fallback", async () => {

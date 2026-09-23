@@ -86,3 +86,27 @@ export const BattleCardSchema = z
     recordNestedValidationWarnings([...described.errors, ...effects.errors]);
     return result;
   });
+
+export function parseSavedCardEntries(
+  values: unknown[],
+  path: string,
+): Array<{ card: PersistedBattleCard; index: number }> {
+  const cards: Array<{ card: PersistedBattleCard; index: number }> = [];
+  values.forEach((value, index) => {
+    const result = BattleCardSchema.safeParse(value);
+    if (result.success) {
+      cards.push({ card: result.data, index });
+    } else {
+      recordNestedValidationWarnings([{ path: `${path}[${index}]`, message: "malformed saved card was dropped" }]);
+    }
+  });
+  return cards;
+}
+
+export function parseSavedCardArray(values: unknown[], path: string): PersistedBattleCard[] {
+  return parseSavedCardEntries(values, path).map(({ card }) => card);
+}
+
+export function savedCardArraySchema(path: string) {
+  return z.array(z.unknown()).transform((values) => parseSavedCardArray(values, path));
+}

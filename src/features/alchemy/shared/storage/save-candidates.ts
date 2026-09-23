@@ -18,6 +18,7 @@ import type { SaveData } from "./types";
 
 type SaveLoadStatus =
   | { kind: "ok"; warnings?: string[] }
+  | { kind: "unavailable" }
   | { kind: "unsupported-newer-schema"; detectedSchemaVersion: number }
   | { kind: "unsupported-newer-content"; detectedContentVersion: number }
   | { kind: "corrupt" };
@@ -125,6 +126,16 @@ function getFutureSaveStatus(parsed: unknown): SaveLoadStatus | null {
   return null;
 }
 
+export function hasUnsupportedFutureCandidate(candidates: string[]): boolean {
+  return candidates.some((candidate) => {
+    try {
+      return getFutureSaveStatus(JSON.parse(candidate) as unknown) !== null;
+    } catch {
+      return false;
+    }
+  });
+}
+
 export function evaluateSaveCandidates(candidates: string[]): SaveLoadState {
   let futureStatus: SaveLoadStatus | null = null;
   let newestFutureSavedAt = -1;
@@ -203,7 +214,7 @@ export function evaluateSaveCandidates(candidates: string[]): SaveLoadState {
   }
   const future: SaveLoadState | null = futureStatus ? { data: createDefaultSaveData(), status: futureStatus } : null;
 
-  if (future && (!playable || newestFutureSavedAt > playableSavedAt)) return future;
   if (playable) return playable;
+  if (future) return future;
   return { data: createDefaultSaveData(), status: { kind: "corrupt" } };
 }

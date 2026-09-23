@@ -43,7 +43,7 @@ export interface InitialDestinationResult {
 interface CreateInitialDestinationResultInput {
   availableDestinations: Destination[];
   offerState: DestinationOfferState;
-  bossEnemyId: string;
+  rollBossEnemyId: () => string;
   rng: () => number;
 }
 
@@ -179,13 +179,13 @@ export function sampleDestinationChoices(
 export function createInitialDestinationResult({
   availableDestinations,
   offerState,
-  bossEnemyId,
+  rollBossEnemyId,
   rng,
 }: CreateInitialDestinationResultInput): InitialDestinationResult {
   const sampled = sampleDestinationChoices(availableDestinations, offerState, rng);
   return {
     offerState: sampled.offerState,
-    rewardState: createDestinationRewardState(sampled.choices, bossEnemyId),
+    rewardState: createDestinationRewardState(sampled.choices, rollBossEnemyId),
   };
 }
 
@@ -194,13 +194,13 @@ export function restoreOrCreateDestinationRewardState(
   options: {
     availableDestinations: Destination[];
     offerState: DestinationOfferState;
-    bossEnemyId: string;
+    rollBossEnemyId: () => string;
     rng: () => number;
     onSampled?: (result: SampleDestinationChoicesResult) => void;
   },
 ): RewardState {
   if (prev.destinations.length > 0) {
-    return withSelectedBossForDestinations(prev.destinations, { ...prev }, options.bossEnemyId);
+    return withSelectedBossForDestinations(prev.destinations, { ...prev }, options.rollBossEnemyId);
   }
 
   const sampled = sampleDestinationChoices(options.availableDestinations, options.offerState, options.rng);
@@ -208,21 +208,25 @@ export function restoreOrCreateDestinationRewardState(
   return withSelectedBossForDestinations(
     sampled.choices,
     { ...prev, destinations: sampled.choices },
-    options.bossEnemyId,
+    options.rollBossEnemyId,
   );
+}
+
+export function isBossOnlyDestinationOffer(destinations: readonly Destination[]): boolean {
+  return destinations.length === 1 && destinations[0] === DESTINATIONS.BOSS_COMBAT;
 }
 
 export function withSelectedBossForDestinations(
   destinations: Destination[],
   rewardState: RewardState,
-  bossEnemyId?: string | null,
+  rollBossEnemyId?: () => string,
 ): RewardState {
-  if (destinations.length === 1 && destinations[0] === DESTINATIONS.BOSS_COMBAT) {
-    return { ...rewardState, selectedBossId: rewardState.selectedBossId ?? bossEnemyId ?? null };
+  if (isBossOnlyDestinationOffer(destinations)) {
+    return { ...rewardState, selectedBossId: rewardState.selectedBossId ?? rollBossEnemyId?.() ?? null };
   }
   return { ...rewardState, selectedBossId: null };
 }
 
-export function createDestinationRewardState(destinations: Destination[], bossEnemyId?: string | null): RewardState {
-  return withSelectedBossForDestinations(destinations, createEmptyRewardState(destinations), bossEnemyId);
+export function createDestinationRewardState(destinations: Destination[], rollBossEnemyId?: () => string): RewardState {
+  return withSelectedBossForDestinations(destinations, createEmptyRewardState(destinations), rollBossEnemyId);
 }

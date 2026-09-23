@@ -58,7 +58,7 @@ test.describe("Electron desktop integration", { tag: [desktop.tag] }, () => {
     expect(errors).toEqual([]);
   });
 
-  test("clearSave removes primary save and bak ring candidates", async () => {
+  test("recovery saves stay separate and clearSave removes both rings", async () => {
     const errors = failOnRuntimeErrors(window);
 
     await window.evaluate(async () => {
@@ -70,16 +70,31 @@ test.describe("Electron desktop integration", { tag: [desktop.tag] }, () => {
         const ok = await desktop.writeSave(JSON.stringify({ marker: `bak-ring-${i}`, lastSavedAt: i }));
         if (!ok) throw new Error(`writeSave failed at ${i}`);
       }
+      const recovered = await desktop.writeSave(JSON.stringify({ marker: "recovery" }), "recovery");
+      if (!recovered) throw new Error("recovery write failed");
     });
 
     const beforeClear = await window.evaluate(async () => (await window.alchemyDesktop?.listSaveCandidates()) ?? []);
     expect(beforeClear.length).toBeGreaterThan(1);
+    const recoveryBeforeClear = await window.evaluate(
+      async () => (await window.alchemyDesktop?.listSaveCandidates("recovery")) ?? [],
+    );
+    expect(recoveryBeforeClear).toHaveLength(1);
+    expect(JSON.parse(recoveryBeforeClear[0] ?? "{}").marker).toBe("recovery");
+    const recoveryDetails = await window.evaluate(() => window.alchemyDesktop?.readSaveSlot("recovery"));
+    expect(recoveryDetails).toEqual({ candidates: recoveryBeforeClear, localReadFailed: false });
+    const profile = await electronApp!.evaluate(({ app }) => app.getPath("userData"));
+    expect(fs.readFileSync(path.join(profile, "save-recovery.json"), "utf8")).toBe(recoveryBeforeClear[0]);
 
     const cleared = await window.evaluate(async () => window.alchemyDesktop?.clearSave() ?? false);
     expect(cleared).toBe(true);
 
     const afterClear = await window.evaluate(async () => (await window.alchemyDesktop?.listSaveCandidates()) ?? []);
     expect(afterClear).toEqual([]);
+    const recoveryAfterClear = await window.evaluate(
+      async () => (await window.alchemyDesktop?.listSaveCandidates("recovery")) ?? [],
+    );
+    expect(recoveryAfterClear).toEqual([]);
     expect(errors).toEqual([]);
   });
 

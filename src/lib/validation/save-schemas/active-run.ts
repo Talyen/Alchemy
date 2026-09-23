@@ -1,9 +1,10 @@
 import { sanitizeWildwoodBossId, sanitizeWildwoodBossIds } from "@/lib/content-systems/wildwood/bosses";
+import { shopItemSlotKey } from "@/lib/active-run-session/shop-offering-repair";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { ROUTE_SCREEN_VALUES } from "@/lib/routing";
 import { z } from "zod";
 import { normalizeActiveRunData } from "../normalize-active-run-data";
-import { BattleCardSchema } from "./battle-card-schemas";
+import { BattleCardSchema, parseSavedCardEntries, savedCardArraySchema } from "./battle-card-schemas";
 import { GearInstanceArraySchema, GearInstanceSchema, normalizeGearInstanceArray } from "./gear-schemas";
 import {
   EncounterCombatTraitArraySchema,
@@ -55,7 +56,7 @@ const MysteryVisitObjectSchema = z.object({
   event: MysteryEventPersistSchema,
   chosenChoice: MysteryChoicePersistSchema.nullable().catch(null),
   pendingRemoval: z.boolean().catch(false),
-  cardChoices: z.array(BattleCardSchema).nullable().catch(null),
+  cardChoices: savedCardArraySchema("mysteryVisit.cardChoices").nullable().catch(null),
   grantedTrinketIds: z.array(z.string()).catch([]),
   grantedGear: GearInstanceArraySchema.catch([]),
   chosenCardId: z.string().nullable().catch(null),
@@ -116,16 +117,33 @@ function createShopObjectSchema<T extends z.ZodRawShape>(shape: T) {
   });
 }
 
+function repairSavedShopCards(cards: unknown[], purchasedSlotKeys: string[], path: string) {
+  const purchased = new Set(purchasedSlotKeys);
+  const entries = parseSavedCardEntries(cards, path);
+  return {
+    cards: entries.map(({ card }) => card),
+    purchasedSlotKeys: entries.flatMap(({ card, index }, nextIndex) =>
+      purchased.has(shopItemSlotKey(card.id, index)) ? [shopItemSlotKey(card.id, nextIndex)] : [],
+    ),
+  };
+}
+
 const ShopObjectSchema = createShopObjectSchema({
-  cards: z.array(BattleCardSchema),
+  cards: z.array(z.unknown()),
   removeUsed: z.boolean().catch(false),
-});
+}).transform((state) => ({
+  ...state,
+  ...repairSavedShopCards(state.cards, state.purchasedSlotKeys, "shopState.cards"),
+}));
 export type ShopState = z.output<typeof ShopObjectSchema>;
 const ShopPersistSchema = ShopObjectSchema.nullable().catch(null);
 
 const AlchemistObjectSchema = createShopObjectSchema({
-  potions: z.array(BattleCardSchema),
+  potions: z.array(z.unknown()),
   mixUsed: z.boolean().catch(false),
+}).transform((state) => {
+  const repaired = repairSavedShopCards(state.potions, state.purchasedSlotKeys, "alchemistState.potions");
+  return { ...state, potions: repaired.cards, purchasedSlotKeys: repaired.purchasedSlotKeys };
 });
 export type AlchemistState = z.output<typeof AlchemistObjectSchema>;
 const AlchemistPersistSchema = AlchemistObjectSchema.nullable().catch(null);
@@ -142,7 +160,7 @@ const EquipmentShopPersistSchema = EquipmentShopObjectSchema.nullable().catch(nu
 
 const WildwoodDraftObjectSchema = z.object({
   phase: z.enum(["draft", "battle", "reward", "removal"]),
-  draftChoices: z.array(BattleCardSchema),
+  draftChoices: savedCardArraySchema("wildwoodDraft.draftChoices"),
   remainingBossIds: WildwoodBossIdListSchema,
   previousBossId: OptionalWildwoodBossIdSchema,
   currentBossId: OptionalWildwoodBossIdSchema,
@@ -215,7 +233,7 @@ const ActiveRunDataObjectSchema = z.object({
   activeLabyrinthModifiers: EncounterCombatTraitArraySchema,
   activeLabyrinthRewardModifiers: EncounterRewardTraitArraySchema,
   wildwoodDraft: WildwoodDraftStateSchema,
-  starterDraftChoices: z.array(BattleCardSchema).nullable().catch(null),
+  starterDraftChoices: savedCardArraySchema("starterDraftChoices").nullable().catch(null),
   activeCombat: ActiveCombatDataSchema.catch(null),
   currentScreen: z.enum(ROUTE_SCREEN_VALUES).nullable().catch(null),
   interruptedFlow: InterruptedFlowSchema,

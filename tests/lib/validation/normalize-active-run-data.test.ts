@@ -138,8 +138,8 @@ describe("ActiveRunDataSchema normalize", () => {
     expect(state.pendingHandCards.map((card) => card.id)).toEqual([liveCard.id]);
     expect(state.discard.map((card) => card.id)).toEqual(["slash"]);
     expect(state.exhausted).toEqual([]);
-    expect(state.wishOptions).toEqual([]);
-    expect(state.wishQueue.map((queue) => queue.map((card) => card.id))).toEqual([[liveCard.id], [liveCard.id]]);
+    expect(state.wishOptions?.map((card) => card.id)).toEqual([liveCard.id]);
+    expect(state.wishQueue.map((queue) => queue.map((card) => card.id))).toEqual([[liveCard.id]]);
 
     expect(result.shopState?.cards.map((card) => card.id)).toEqual(["slash"]);
     expect(result.alchemistState?.potions).toEqual([]);
@@ -169,12 +169,32 @@ describe("ActiveRunDataSchema normalize", () => {
   it("drops malformed wishQueue entries instead of aborting the parse", () => {
     const result = parseActiveRunData({
       activeCombat: {
-        battleState: { ...defaultBattleState(), wishQueue: [[liveCard], "junk", 7] },
+        battleState: { ...defaultBattleState(), wishOptions: [null], wishQueue: [[liveCard], "junk", 7] },
       },
     });
-    expect(result.activeCombat?.battleState.wishQueue.map((queue) => queue.map((card) => card.id))).toEqual([
-      [liveCard.id],
-    ]);
+    expect(result.activeCombat?.battleState.wishOptions?.map((card) => card.id)).toEqual([liveCard.id]);
+    expect(result.activeCombat?.battleState.wishQueue).toEqual([]);
+  });
+
+  it("closes an emptied Wish prompt when no valid queued choice remains", () => {
+    const result = parseActiveRunData({
+      activeCombat: {
+        battleState: { ...defaultBattleState(), wishOptions: [null], wishQueue: [[{ id: 42 }]] },
+      },
+    });
+    expect(result.activeCombat?.battleState.wishOptions).toBeNull();
+    expect(result.activeCombat?.battleState.wishQueue).toEqual([]);
+  });
+
+  it("preserves purchased slots when a malformed shop card is removed", () => {
+    const result = parseActiveRunData({
+      shopState: { cards: [null, liveCard], purchasedSlotKeys: ["slash-1"] },
+      alchemistState: { potions: [{ id: 42 }, liveCard], purchasedSlotKeys: ["slash-1"] },
+    });
+    expect(result.shopState?.cards.map((card) => card.id)).toEqual(["slash"]);
+    expect(result.shopState?.purchasedSlotKeys).toEqual(["slash-0"]);
+    expect(result.alchemistState?.potions.map((card) => card.id)).toEqual(["slash"]);
+    expect(result.alchemistState?.purchasedSlotKeys).toEqual(["slash-0"]);
   });
 
   it("preserves activeCombat when battle scalars are corrupt", () => {

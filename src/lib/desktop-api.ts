@@ -5,14 +5,15 @@ export interface AlchemyDesktopApi {
   crashReportingEnabled?: boolean;
   setDisplayMode: (mode: DisplayMode) => Promise<void>;
   quit: () => Promise<void>;
-  listSaveCandidates: () => Promise<string[]>;
-  writeSave: (data: string) => Promise<boolean>;
+  listSaveCandidates: (slot?: "recovery") => Promise<string[]>;
+  readSaveSlot: (slot?: "recovery") => Promise<{ candidates: string[]; localReadFailed: boolean }>;
+  writeSave: (data: string, slot?: "recovery") => Promise<boolean>;
   clearSave: () => Promise<boolean>;
   steamGetName: () => Promise<string | null>;
   steamSetRichPresence: (key: string, value: string) => Promise<boolean>;
-  steamCloudRead: () => Promise<string | null>;
-  steamCloudWrite: (data: string) => Promise<boolean>;
-  steamCloudDelete: () => Promise<boolean>;
+  steamCloudRead: (slot?: "recovery") => Promise<string | null>;
+  steamCloudWrite: (data: string, slot?: "recovery") => Promise<boolean>;
+  steamCloudDelete: (slot?: "recovery") => Promise<boolean>;
 }
 
 export function getDesktopApi(): AlchemyDesktopApi | undefined {

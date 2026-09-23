@@ -38,7 +38,7 @@ function sampleAndApplyInitialCampaignDestinations(
       lastOfferedDestinations: run.lastOfferedDestinations,
       roundsSinceOffered: run.destinationRoundsSinceOffered,
     },
-    bossEnemyId: rollFreshBossId(createDraftRunRandomSource(draft, "world")),
+    rollBossEnemyId: () => rollFreshBossId(createDraftRunRandomSource(draft, "world")),
     rng: createDraftRunRandomSource(draft, "destinations"),
   });
   setDestinationOfferState(draft, initialDestinations.offerState);

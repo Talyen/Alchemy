@@ -8,12 +8,10 @@ import {
 } from "../../../../helpers/save-candidate-fixtures";
 
 describe("save version protection", () => {
-  it("protects the session when the newer-version copy arrives after the playable backup", () => {
+  it("uses a compatible backup while retaining a newer-format candidate", () => {
     const loaded = evaluateSaveCandidates([playableSave(1000), futureSave(2000)]);
-    expect(loaded.status).toEqual({
-      kind: "unsupported-newer-schema",
-      detectedSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
-    });
+    expect(loaded.status.kind).toBe("ok");
+    expect(loaded.data.lastSavedAt).toBe(1000);
   });
 
   it("loads a fresher playable backup listed before a stale newer-version copy", () => {

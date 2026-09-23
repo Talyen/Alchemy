@@ -9,7 +9,6 @@ import { defaultSaveData } from "@/features/alchemy/shared/storage/defaults";
 import { configureSaveBackend, serializeSaveSnapshot } from "@/features/alchemy/shared/storage/io";
 import type { SaveData } from "@/features/alchemy/shared/storage/types";
 import { SAVE_KEY } from "@/lib/game-constants";
-import { CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { currentSchemaCampaignSave } from "../../../../fixtures/current-saves";
 import {
@@ -205,7 +204,9 @@ describe("storage io", () => {
       } as unknown as Storage,
     };
 
-    expect((await loadAlchemySaveState()).data).toEqual(defaultSaveData);
+    const loaded = await loadAlchemySaveState();
+    expect(loaded.data).toEqual(defaultSaveData);
+    expect(loaded.status.kind).toBe("unavailable");
     await expect(saveAlchemySaveData(defaultSaveData)).resolves.toBe("failed");
     await expect(clearAlchemySaveData()).resolves.not.toThrow();
   });
@@ -277,48 +278,6 @@ describe("storage io", () => {
     await pendingClear;
 
     expect(clearSave).toHaveBeenCalledOnce();
-  });
-
-  it("keeps writes disabled after a wipe-for-reload clear so terminal flush cannot restore the save", async () => {
-    const futurePayload = JSON.stringify({
-      ...currentSchemaCampaignSave(),
-      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
-    });
-    mockStorage[SAVE_KEY] = futurePayload;
-
-    const loaded = await loadAlchemySaveState();
-    expect(loaded.status.kind).toBe("unsupported-newer-schema");
-
-    await expect(clearAlchemySaveData("wipeForReload")).resolves.toBe(true);
-    expect(mockStorage[SAVE_KEY]).toBeUndefined();
-
-    await expect(
-      saveAlchemySaveDataForExit({ ...defaultSaveData, discoveredCardIds: ["should-not-write"] }),
-    ).resolves.toBe("skipped");
-    expect(mockStorage[SAVE_KEY]).toBeUndefined();
-  });
-
-  it("clears local saves even when Steam Cloud delete fails", async () => {
-    // Save Protected escape hatch (App wipe-for-reload) explicitly requests a
-    // forced local wipe; plain default clears stay fail-closed (next test).
-    vi.spyOn(console, "log").mockImplementation(() => {});
-    vi.spyOn(console, "error").mockImplementation(() => {});
-    vi.spyOn(console, "warn").mockImplementation(() => {});
-
-    const futurePayload = JSON.stringify({
-      ...currentSchemaCampaignSave(),
-      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
-    });
-
-    const desktop = setupMockWindowDesktop({ saveCandidates: [futurePayload], steamName: "PlayerOne" });
-    desktop.steamCloudDelete.mockResolvedValue(false);
-
-    const loaded = await bootstrapAlchemySaveState();
-    expect(loaded.status.kind).toBe("unsupported-newer-schema");
-
-    await expect(clearAlchemySaveData("wipeForReload")).resolves.toBe(true);
-    expect(desktop.clearSave).toHaveBeenCalledOnce();
-    expect(desktop.steamCloudDelete).toHaveBeenCalledOnce();
   });
 
   it("fails closed without clearing local saves when Steam Cloud delete fails during normal play", async () => {

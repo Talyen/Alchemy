@@ -214,8 +214,9 @@ describe("createContentSystemNavigation", () => {
     }
 
     nav.handleStandardDraftComplete();
+    expect(() => nav.handleStandardDraftComplete()).not.toThrow();
 
-    expect(deps.onStartBattle).toHaveBeenCalledWith(
+    expect(deps.onStartBattle).toHaveBeenCalledExactlyOnceWith(
       expect.any(Array),
       expect.any(Number),
       "normal",
@@ -307,8 +308,12 @@ describe("createContentSystemNavigation", () => {
     dispatchRunSessionCommand((draft) => setScreen(draft, ROUTE_SCREENS.DRAFT_DECK));
     nav.handleStandardDraftComplete();
     expect(readRunSession().labyrinthMap).not.toBeNull();
+    const map = readRunSession().labyrinthMap;
+    expect(() => nav.handleStandardDraftComplete()).not.toThrow();
+    expect(readRunSession().labyrinthMap).toBe(map);
     expect(readActiveRun().runDeck).toEqual(drafted);
     expect(deps.navigateTo).toHaveBeenLastCalledWith(ROUTE_SCREENS.LABYRINTH_MAP);
+    expect(deps.navigateTo).toHaveBeenCalledTimes(1);
   });
 
   it("resumes and completes a labyrinth Wildcard draft even if session pendingContentSystemType defaulted to campaign", () => {
@@ -357,6 +362,9 @@ describe("createContentSystemNavigation", () => {
 
     dispatchRunSessionCommand((draft) => setScreen(draft, ROUTE_SCREENS.DRAFT_DECK));
     nav.handleStandardDraftComplete();
+    expect(readRunSession().starterDraftChoices).toBeNull();
+    expect(() => nav.handleStandardDraftComplete()).not.toThrow();
+    expect(deps.navigateTo).toHaveBeenCalledExactlyOnceWith(ROUTE_SCREENS.DIFFICULTY_SELECT);
     dispatchRunSessionCommand((draft) => setScreen(draft, ROUTE_SCREENS.DIFFICULTY_SELECT));
     nav.handleDifficultySelect(DEFAULT_CAMPAIGN_DIFFICULTY_ID);
 

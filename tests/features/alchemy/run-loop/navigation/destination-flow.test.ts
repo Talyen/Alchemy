@@ -4,6 +4,7 @@ import {
   computeDestinationWeight,
   createDestinationRewardState,
   createEmptyDestinationOfferState,
+  createInitialDestinationResult,
   getRunAvailableDestinations,
   lastOfferedIncludesCombat,
   restoreOrCreateDestinationRewardState,
@@ -17,6 +18,8 @@ import {
   LAST_OFFERED_DESTINATION_WEIGHT,
 } from "@/lib/game-constants";
 import { DESTINATIONS } from "@/lib/routing";
+import { rollFreshBossId } from "@/features/alchemy/shared/config";
+import { createRunRngState, stepRunRng } from "@/lib/rng";
 
 vi.mock("@/lib/routing", async () => {
   const actual = await vi.importActual<typeof import("@/lib/routing")>("@/lib/routing");
@@ -137,14 +140,16 @@ describe("advanceDestinationOfferState", () => {
 describe("restoreOrCreateDestinationRewardState", () => {
   it("keeps existing destinations on resume", () => {
     const prev = createEmptyRewardState([DESTINATIONS.CAMPFIRE, DESTINATIONS.MYSTERY]);
+    const rollBossEnemyId = vi.fn(() => "frostwarden");
     const result = restoreOrCreateDestinationRewardState(prev, {
       availableDestinations: [DESTINATIONS.NORMAL_COMBAT],
       offerState: createEmptyDestinationOfferState(),
-      bossEnemyId: "frostwarden",
+      rollBossEnemyId,
       rng: () => 0.5,
     });
     expect(result.destinations).toEqual([DESTINATIONS.CAMPFIRE, DESTINATIONS.MYSTERY]);
     expect(result.selectedBossId).toBeNull();
+    expect(rollBossEnemyId).not.toHaveBeenCalled();
   });
 
   it("samples destinations when none are stored", () => {
@@ -153,12 +158,48 @@ describe("restoreOrCreateDestinationRewardState", () => {
     const result = restoreOrCreateDestinationRewardState(prev, {
       availableDestinations: [DESTINATIONS.CARD_SHOP, DESTINATIONS.CAMPFIRE, DESTINATIONS.MYSTERY],
       offerState: createEmptyDestinationOfferState(),
-      bossEnemyId: "skeleton",
+      rollBossEnemyId: () => "skeleton",
       rng: () => 0.5,
       onSampled,
     });
     expect(result.destinations.length).toBeGreaterThan(0);
     expect(onSampled).toHaveBeenCalledOnce();
+  });
+
+  it("repairs a missing boss preview with one world draw and preserves a saved preview", () => {
+    const rngState = createRunRngState(42);
+    const rollBossEnemyId = () => rollFreshBossId(() => stepRunRng(rngState, "world"));
+    const options = {
+      availableDestinations: [DESTINATIONS.BOSS_COMBAT],
+      offerState: createEmptyDestinationOfferState(),
+      rollBossEnemyId,
+      rng: () => 0.5,
+    };
+    const repaired = restoreOrCreateDestinationRewardState(createEmptyRewardState([DESTINATIONS.BOSS_COMBAT]), options);
+    expect(repaired.selectedBossId).toBeTruthy();
+    expect(rngState.counters.world).toBe(1);
+
+    const saved = restoreOrCreateDestinationRewardState(repaired, options);
+    expect(saved.selectedBossId).toBe(repaired.selectedBossId);
+    expect(rngState.counters.world).toBe(1);
+  });
+});
+
+describe("createInitialDestinationResult", () => {
+  it.each([
+    { offer: DESTINATIONS.NORMAL_COMBAT, worldDraws: 0 },
+    { offer: DESTINATIONS.BOSS_COMBAT, worldDraws: 1 },
+  ])("draws a boss only for a boss-only $offer offer", ({ offer, worldDraws }) => {
+    const rngState = createRunRngState(42);
+    const result = createInitialDestinationResult({
+      availableDestinations: [offer],
+      offerState: createEmptyDestinationOfferState(),
+      rollBossEnemyId: () => rollFreshBossId(() => stepRunRng(rngState, "world")),
+      rng: () => 0.5,
+    });
+    expect(result.rewardState.destinations).toEqual([offer]);
+    expect(rngState.counters.world).toBe(worldDraws);
+    expect(Boolean(result.rewardState.selectedBossId)).toBe(worldDraws === 1);
   });
 });
 
@@ -287,7 +328,7 @@ describe("lastOfferedIncludesCombat", () => {
 describe("withSelectedBossForDestinations", () => {
   it("sets selectedBossId when only Boss Combat is available", () => {
     const reward = createEmptyRewardState(["Boss Combat"]);
-    const result = withSelectedBossForDestinations(["Boss Combat"], reward, "mimic");
+    const result = withSelectedBossForDestinations(["Boss Combat"], reward, () => "mimic");
     expect(result.selectedBossId).toBe("mimic");
   });
 
@@ -299,8 +340,10 @@ describe("withSelectedBossForDestinations", () => {
 
   it("preserves existing selectedBossId for single boss destination", () => {
     const reward = { ...createEmptyRewardState(["Boss Combat"]), selectedBossId: "dragon" };
-    const result = withSelectedBossForDestinations(["Boss Combat"], reward, "mimic");
+    const rollBossEnemyId = vi.fn(() => "mimic");
+    const result = withSelectedBossForDestinations(["Boss Combat"], reward, rollBossEnemyId);
     expect(result.selectedBossId).toBe("dragon");
+    expect(rollBossEnemyId).not.toHaveBeenCalled();
   });
 });
 
@@ -313,7 +356,7 @@ describe("createDestinationRewardState", () => {
   });
 
   it("sets selectedBossId for single boss destination", () => {
-    const result = createDestinationRewardState(["Boss Combat"], "mimic");
+    const result = createDestinationRewardState(["Boss Combat"], () => "mimic");
     expect(result.selectedBossId).toBe("mimic");
     expect(result.destinations).toEqual(["Boss Combat"]);
   });

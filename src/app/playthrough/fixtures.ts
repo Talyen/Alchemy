@@ -17,6 +17,12 @@ export function createPlaythroughFixture(name: "unlocked-v1" | "victory-v1" | "e
     save.gold = 2000;
     for (const material of Object.keys(save.materialInventory) as Array<keyof typeof save.materialInventory>)
       save.materialInventory[material] = 1000;
+    save.discoveredCardIds.push("wolf-companion");
+    save.gearInventories.knight.push({
+      instanceId: "fixture-knight-weapon",
+      definitionId: "longsword-basic",
+      affixes: [],
+    });
     return save;
   }
   if (name === "unlocked-v1") return save;

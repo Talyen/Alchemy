@@ -1,5 +1,8 @@
 import { getBossById, rollFreshBossId } from "@/features/alchemy/shared/config";
-import { createInitialDestinationResult } from "@/features/alchemy/shared/run-flow/destination-flow";
+import {
+  createInitialDestinationResult,
+  isBossOnlyDestinationOffer,
+} from "@/features/alchemy/shared/run-flow/destination-flow";
 import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { dispatchRunSessionCommand, type GameplayDraft } from "@/features/alchemy/shared/stores/run-session-command";
 import {
@@ -20,7 +23,6 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { ACTS_PER_RUN } from "@/lib/game-constants";
-import { DESTINATIONS } from "@/lib/routing";
 import type { RunFlowHandlerDeps } from "./run-flow";
 
 export function createProgressionCommands(getAvailableDestinations: RunFlowHandlerDeps["getAvailableDestinations"]) {
@@ -35,16 +37,13 @@ export function createProgressionCommands(getAvailableDestinations: RunFlowHandl
   function setNextDestinationState(draft: GameplayDraft, destinationIndexInAct?: number) {
     const run = draft.run.activeRun;
     const indexInAct = destinationIndexInAct ?? run.destinationIndexInAct;
-    // Boss offers are rolled in three places that must stay consistent (same
-    // "world" RNG stream and boss-only invariant): here, prepareDestinationScreen
-    // below, and computeVictoryResult in victory-commands.ts.
     const initialDestinations = createInitialDestinationResult({
       availableDestinations: getAvailableDestinations({ destinationIndexInAct: indexInAct }),
       offerState: {
         lastOfferedDestinations: run.lastOfferedDestinations,
         roundsSinceOffered: run.destinationRoundsSinceOffered,
       },
-      bossEnemyId: rollFreshBossId(createDraftRunRandomSource(draft, "world")),
+      rollBossEnemyId: () => rollFreshBossId(createDraftRunRandomSource(draft, "world")),
       rng: createDraftRunRandomSource(draft, "destinations"),
     });
     setDestinationOfferState(draft, initialDestinations.offerState);
@@ -53,7 +52,7 @@ export function createProgressionCommands(getAvailableDestinations: RunFlowHandl
 
   function prepareDestinationScreen() {
     const state = readRunSession().rewardFlow.state;
-    const bossOnly = state.destinations.length === 1 && state.destinations[0] === DESTINATIONS.BOSS_COMBAT;
+    const bossOnly = isBossOnlyDestinationOffer(state.destinations);
     if (!bossOnly) {
       if (state.selectedBossId) {
         dispatchRunSessionCommand((draft) => {

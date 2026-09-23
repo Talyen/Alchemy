@@ -1,8 +1,8 @@
+import { tryLocalStorageGetItem } from "@/lib/storage-environment";
+
 export function isAnimationDisabled(): boolean {
-  if (typeof localStorage !== "undefined") {
-    return localStorage.getItem("alchemy-disable-animations") === "true";
-  }
-  return false;
+  const result = tryLocalStorageGetItem("alchemy-disable-animations");
+  return result.ok && result.value === "true";
 }
 
 export function prefersReducedMotion(): boolean {

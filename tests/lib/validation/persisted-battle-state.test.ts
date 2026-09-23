@@ -67,6 +67,20 @@ describe("PersistedBattleStateSchema", () => {
     expect(result.data.mana).toBe(4);
   });
 
+  it("keeps valid cards around malformed battle pile and queued Wish entries", () => {
+    const restored = PersistedBattleStateSchema.parse({
+      ...validState(),
+      deck: [{ id: "slash" }, { id: 42 }, { id: "block" }],
+      hand: [null, { id: "slash" }],
+      wishOptions: [{ id: "slash" }, null],
+      wishQueue: [[{ id: "block" }, { id: 42 }], "junk", [null, { id: "slash" }]],
+    });
+    expect(restored.deck.map((card) => card.id)).toEqual(["slash", "block"]);
+    expect(restored.hand.map((card) => card.id)).toEqual(["slash"]);
+    expect(restored.wishOptions?.map((card) => card.id)).toEqual(["slash"]);
+    expect(restored.wishQueue.map((queue) => queue.map((card) => card.id))).toEqual([["block"], ["slash"]]);
+  });
+
   it("repairs a non-numeric mana to the battle default", () => {
     const result = PersistedBattleStateSchema.safeParse({ ...validState(), mana: "four" });
     expect(result.success).toBe(true);

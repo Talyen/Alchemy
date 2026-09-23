@@ -47,6 +47,18 @@ describe("wildcardStarterResumeTarget", () => {
     ).toBe("draft-deck");
   });
 
+  it("returns draft-deck for a finished campaign draft awaiting confirm", () => {
+    expect(
+      wildcardStarterResumeTarget({
+        characterId: "wildcard",
+        contentSystemType: "campaign",
+        selectedDifficulty: null,
+        runDeckLength: drafted.length,
+        starterDraftChoices: [],
+      }),
+    ).toBe("draft-deck");
+  });
+
   it("returns difficulty-select for a completed campaign wildcard draft awaiting difficulty choice", () => {
     expect(
       wildcardStarterResumeTarget({

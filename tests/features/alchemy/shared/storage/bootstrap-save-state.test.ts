@@ -24,7 +24,7 @@ describe("bootstrapAlchemySaveState", () => {
     await bootstrapAlchemySaveState();
 
     expect(desktop.steamGetName).toHaveBeenCalled();
-    expect(desktop.listSaveCandidates).toHaveBeenCalled();
+    expect(desktop.readSaveSlot).toHaveBeenCalled();
   });
 
   it("enables cloud mirroring only from successful Steam initialization", async () => {

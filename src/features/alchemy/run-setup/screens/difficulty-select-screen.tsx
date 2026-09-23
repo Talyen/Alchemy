@@ -1,4 +1,4 @@
-import { memo, useMemo, useState } from "react";
+import { memo, useId, useMemo, useState } from "react";
 import { Swords } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -44,6 +44,8 @@ function getDifficultyBonusLabel(difficultyId: DifficultyId): string {
   return `${String(Math.round((multiplier - 1) * 100))}% Bonus XP`;
 }
 
+const LOCKED_DIFFICULTY_MESSAGE = "Clear previous Difficulty to unlock";
+
 const DifficultyCard = memo(function DifficultyCard({
   difficultyId,
   name,
@@ -66,11 +68,17 @@ const DifficultyCard = memo(function DifficultyCard({
   const renderedDescription = useMemo(() => renderMultilineTokenizedDescription(fullDescription), [fullDescription]);
   const showUnlockedArt = !locked;
   const diffArt = difficultyArt[difficultyId] ?? difficultyArt["difficulty-3"] ?? "";
-  const { triggerRef, visible, onMouseEnter, onMouseLeave, shimmerActive, shimmerToken } = useChooserHover(
-    "difficulty-select",
-    difficultyId,
-    locked,
-  );
+  const unlockHintId = useId();
+  const {
+    triggerRef,
+    visible,
+    onMouseEnter,
+    onMouseLeave,
+    onFocusCapture,
+    onBlurCapture,
+    shimmerActive,
+    shimmerToken,
+  } = useChooserHover("difficulty-select", difficultyId, locked);
 
   return (
     <div
@@ -78,15 +86,20 @@ const DifficultyCard = memo(function DifficultyCard({
       className={cn(chooserHeroPaddedTileClass, "flex flex-col items-center")}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
+      onFocusCapture={onFocusCapture}
+      onBlurCapture={onBlurCapture}
     >
       <button
         type="button"
-        disabled={locked}
+        aria-disabled={locked}
+        aria-describedby={locked ? unlockHintId : undefined}
         aria-label={name}
         aria-pressed={isSelected}
-        onClick={() => onSelect(difficultyId)}
+        onClick={() => {
+          if (!locked) onSelect(difficultyId);
+        }}
         className={cn(
-          "group relative flex h-full w-full min-w-0 flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-4 pt-5 pb-6 text-center shadow-md transition-all disabled:cursor-default",
+          "group relative flex h-full w-full min-w-0 flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-4 pt-5 pb-6 text-center shadow-md transition-all",
           !locked && cardInteractiveGlowClass,
           locked && chooserLockedSurfaceClass,
           isSelected && surfaceSelectedRingClass,
@@ -125,11 +138,16 @@ const DifficultyCard = memo(function DifficultyCard({
       </button>
 
       {locked && (
-        <PortaledTooltip triggerRef={triggerRef} visible={visible}>
-          <TooltipBody>
-            <p>{renderUnlockMessage("Clear previous Difficulty to unlock")}</p>
-          </TooltipBody>
-        </PortaledTooltip>
+        <>
+          <span id={unlockHintId} className="sr-only">
+            {LOCKED_DIFFICULTY_MESSAGE}
+          </span>
+          <PortaledTooltip triggerRef={triggerRef} visible={visible}>
+            <TooltipBody>
+              <p>{renderUnlockMessage(LOCKED_DIFFICULTY_MESSAGE)}</p>
+            </TooltipBody>
+          </PortaledTooltip>
+        </>
       )}
     </div>
   );

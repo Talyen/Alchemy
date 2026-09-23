@@ -3,9 +3,7 @@ import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profi
 import { useHasActiveRun } from "@/features/alchemy/shared/stores/run-reads";
 import { GameMenu } from "@/features/alchemy/shared/ui/game-menu";
 import { BackgroundParticles } from "@/features/alchemy/shared/ui/background-particles";
-import { isDesktop, quitDesktopApp } from "@/lib/platform";
 import { type Screen } from "@/lib/routing";
-import { UnsupportedSaveVersionScreen } from "@/app/unsupported-save-version-screen";
 import type { useReturnToRunNavigation } from "@/app/use-app-navigation";
 import { isProgressionFeatureUnlocked } from "@/features/alchemy/shared/config/game-data-catalog";
 
@@ -30,23 +28,6 @@ export function AppBackgroundParticles({
       {...(particleColors ? { colors: particleColors } : {})}
       alphaMultiplier={effectiveAlphaMultiplier}
       {...(particleCount !== undefined ? { particleCount } : {})}
-    />
-  );
-}
-
-export function UnsupportedSaveOverlay({
-  onDeleteSaveAndContinue,
-  deleting = false,
-}: {
-  onDeleteSaveAndContinue: () => void;
-  deleting?: boolean;
-}) {
-  return (
-    <UnsupportedSaveVersionScreen
-      canQuit={isDesktop()}
-      onQuit={quitDesktopApp}
-      onDeleteSaveAndContinue={onDeleteSaveAndContinue}
-      deleting={deleting}
     />
   );
 }

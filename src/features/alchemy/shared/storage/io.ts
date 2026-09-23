@@ -24,6 +24,10 @@ export function setWritesDisabled(disabled: boolean): void {
   storage.setWritesDisabled(disabled);
 }
 
+export function routeWritesToRecovery(): void {
+  storage.routeWritesToRecovery();
+}
+
 export function subscribeSaveCancellation(listener: () => void): () => void {
   return storage.subscribeCancellation(listener);
 }
@@ -46,9 +50,7 @@ export async function saveAlchemySaveDataForExit(data: UnstampedSaveData): Promi
   return isStorageAvailable() ? storage.saveForExit(data) : "skipped";
 }
 
-export async function clearAlchemySaveData(
-  mode: "default" | "localWipe" | "wipeForReload" = "default",
-): Promise<boolean> {
+export async function clearAlchemySaveData(mode: "default" | "localWipe" = "default"): Promise<boolean> {
   return isStorageAvailable() ? storage.clear(mode) : true;
 }
 

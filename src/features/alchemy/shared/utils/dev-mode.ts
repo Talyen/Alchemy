@@ -1,8 +1,10 @@
+import { tryLocalStorageGetItem } from "@/lib/storage-environment";
+
 export function isAlchemyDevBuild(): boolean {
   return import.meta.env.DEV;
 }
 
 export function shouldSkipStartupLoadingGate(): boolean {
-  if (typeof localStorage === "undefined") return false;
-  return localStorage.getItem("alchemy-skip-loading-screen") === "true";
+  const result = tryLocalStorageGetItem("alchemy-skip-loading-screen");
+  return result.ok && result.value === "true";
 }

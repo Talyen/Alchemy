@@ -1,4 +1,4 @@
-import { readActivityData } from "@/lib/active-run-session";
+import { readActivityData, type RunActivityData } from "@/lib/active-run-session";
 import type { BattleCard, TalentEffectManifest, TrinketEntry } from "@/lib/game-data";
 import type { ShopRefreshModifiers } from "./shop-action-types";
 import type { GearInstance } from "@/lib/gear";
@@ -51,10 +51,15 @@ export function createGetRefreshPrice(
     );
 }
 
-export function createShopRefreshAction<
-  TState extends { refreshesLeft: number; freeRefreshUsed: boolean; purchasedSlotKeys: string[] },
-  TItem,
->({
+type ShopActivity = "shop" | "alchemist" | "trinket-shop" | "equipment-shop";
+interface RefreshKindByActivity {
+  shop: "merchant";
+  alchemist: "alchemist";
+  "trinket-shop": "trinket";
+  "equipment-shop": "equipment";
+}
+
+export function createShopRefreshAction<K extends ShopActivity, TItem>({
   activity,
   kind,
   talentEffects,
@@ -63,19 +68,19 @@ export function createShopRefreshAction<
   resample,
   guard,
 }: {
-  activity: "shop" | "alchemist" | "trinket-shop" | "equipment-shop";
-  kind: ShopRefreshKind;
+  activity: K;
+  kind: RefreshKindByActivity[K];
   talentEffects: TalentEffectManifest;
-  setState: DraftStateWriter<TState>;
-  mapState: (previous: TState, newItems: TItem[]) => TState;
-  resample: (draft: GameplayDraft, state: TState, modifiers: ShopRefreshModifiers) => TItem[];
-  guard?: (draft: GameplayDraft, state: TState) => boolean;
+  setState: DraftStateWriter<RunActivityData[K]>;
+  mapState: (previous: RunActivityData[K], newItems: TItem[]) => RunActivityData[K];
+  resample: (draft: GameplayDraft, state: RunActivityData[K], modifiers: ShopRefreshModifiers) => TItem[];
+  guard?: (draft: GameplayDraft, state: RunActivityData[K]) => boolean;
 }): () => boolean {
   return () =>
     runShopTransaction(
       activity,
       (draft) => {
-        const state = readActivityData(draft.session.activity, activity) as unknown as TState;
+        const state = readActivityData(draft.session.activity, activity);
         if (guard && !guard(draft, state)) return { committed: false, price: 0, value: null };
         const modifiers = resolveDraftShopModifiers(draft);
         const quotedPrice = getShopRefreshPrice(

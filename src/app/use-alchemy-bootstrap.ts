@@ -5,6 +5,7 @@ import {
   createDefaultSaveData,
   hydrateAlchemyPersistenceFields,
   saveAlchemySaveData,
+  routeWritesToRecovery,
 } from "@/features/alchemy/shared/storage";
 import type { SaveLoadState } from "@/features/alchemy/shared/storage";
 import { clearAlchemySaveData, loadAlchemySaveState } from "@/features/alchemy/shared/storage";
@@ -40,35 +41,37 @@ export function useAlchemyBootstrap(): SaveLoadState | null {
     let cancelled = false;
     void (async () => {
       let result: SaveLoadState;
+      // A Steam setup failure must not prevent local loading or normal play.
       try {
-        // Configure the backend (Steam/cloud state) before the dev wipe so a
-        // desktop dev wipe honors cloudSyncEnabled and cannot leave a stale
-        // Cloud mirror eligible for reload.
         await configureAlchemySaveBackend();
-        if (cancelled) return;
+      } catch (error) {
+        logStorageFailure("Save backend setup failed", error);
+      }
+      if (cancelled) return;
+      try {
+        // Configure before the dev wipe so desktop resets include Cloud.
         await maybeWipeLocalSaveFromQuery();
-        if (cancelled) return;
+      } catch (error) {
+        logStorageFailure("Development save wipe failed", error);
+      }
+      if (cancelled) return;
+      try {
         result = await loadAlchemySaveState();
       } catch (error) {
         if (cancelled) return;
-        logStorageFailure("Save bootstrap failed, falling back to defaults", error);
-        result = { data: createDefaultSaveData(), status: { kind: "corrupt" } };
+        logStorageFailure("Save bootstrap failed", error);
+        routeWritesToRecovery();
+        result = { data: createDefaultSaveData(), status: { kind: "unavailable" } };
       }
       if (cancelled) return;
-      // Unsupported-newer saves stay untouched: the blocked shell renders from
-      // defaults without hydrating stores or restoring the newer run behind it.
-      const isUnsupportedNewer =
-        result.status.kind === "unsupported-newer-schema" || result.status.kind === "unsupported-newer-content";
-      if (!isUnsupportedNewer) {
-        hydrateAlchemyPersistenceFields(result.data);
-        if (!readRunInitialized()) {
-          restoreRun(result.data.activeRun, result.data.talentXP, result.data.unlockedTalents);
-          if (needsRestoredBattlePersistence(result.data.activeRun)) {
-            const outcome = await saveAlchemySaveData(
-              buildAlchemySaveDataFromStores(resolveActiveRunForSave(readHasActiveRun())),
-            );
-            if (outcome === "failed") logStorageFailure("Restored battle transition could not be persisted");
-          }
+      hydrateAlchemyPersistenceFields(result.data);
+      if (!readRunInitialized()) {
+        restoreRun(result.data.activeRun, result.data.talentXP, result.data.unlockedTalents);
+        if (needsRestoredBattlePersistence(result.data.activeRun)) {
+          const outcome = await saveAlchemySaveData(
+            buildAlchemySaveDataFromStores(resolveActiveRunForSave(readHasActiveRun())),
+          );
+          if (outcome === "failed") logStorageFailure("Restored battle transition could not be persisted");
         }
       }
       setBootstrapResult(result);

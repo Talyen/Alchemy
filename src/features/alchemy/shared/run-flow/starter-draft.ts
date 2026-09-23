@@ -28,10 +28,7 @@ export function wildcardStarterResumeTarget(input: {
   if (input.characterId !== "wildcard") return null;
   if (input.contentSystemType === "wildwood") return null;
   if (isIncompleteStarterDraft(input.runDeckLength, input.starterDraftChoices)) return "draft-deck";
-  if (
-    input.contentSystemType === "labyrinth" &&
-    isAwaitingStarterDraftConfirm(input.runDeckLength, input.starterDraftChoices)
-  ) {
+  if (isAwaitingStarterDraftConfirm(input.runDeckLength, input.starterDraftChoices)) {
     return "draft-deck";
   }
   if (

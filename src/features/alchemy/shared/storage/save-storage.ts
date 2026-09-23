@@ -1,8 +1,8 @@
-import { SAVE_KEY } from "@/lib/game-constants";
+import { SAVE_KEY, SAVE_RECOVERY_KEY } from "@/lib/game-constants";
 import { type SaveBackend } from "@/lib/platform-save-backend";
 
 import type { SaveData, UnstampedSaveData } from "./types";
-import { evaluateSaveCandidates, type SaveLoadState } from "./save-candidates";
+import { evaluateSaveCandidates, hasUnsupportedFutureCandidate, type SaveLoadState } from "./save-candidates";
 import { createDefaultSaveData } from "./defaults";
 import { SaveWriteQueue, type SaveWriteOutcome } from "./save-write-queue";
 import { logStorageFailure } from "@/lib/storage-logging";
@@ -10,6 +10,7 @@ import { logStorageFailure } from "@/lib/storage-logging";
 export class SaveStorage {
   private readonly queue = new SaveWriteQueue();
   private pendingLoads = 0;
+  private writeKey = SAVE_KEY;
 
   constructor(private backend: SaveBackend) {}
 
@@ -18,10 +19,16 @@ export class SaveStorage {
       throw new Error("Cannot configure save storage while an operation is pending");
     }
     this.backend = backend;
+    this.writeKey = SAVE_KEY;
   }
 
   setWritesDisabled(disabled: boolean): void {
     this.queue.setWritesDisabled(disabled);
+  }
+
+  routeWritesToRecovery(): void {
+    this.writeKey = SAVE_RECOVERY_KEY;
+    this.setWritesDisabled(false);
   }
 
   subscribeCancellation(listener: () => void): () => void {
@@ -34,18 +41,35 @@ export class SaveStorage {
 
   async resetForTests(): Promise<void> {
     await this.queue.reset();
+    this.writeKey = SAVE_KEY;
   }
 
-  private async collectSaveCandidates(): Promise<string[]> {
-    const result = await this.backend.readCandidates(SAVE_KEY);
-    if (result.ok) return result.candidates;
-    throw result.error;
+  private async collectSaveCandidates(): Promise<{ candidates: string[]; useRecovery: boolean; readFailed: boolean }> {
+    const read = async (key: string) => {
+      try {
+        return await this.backend.readCandidates(key);
+      } catch (error) {
+        return { ok: false as const, error };
+      }
+    };
+    const [primary, recovery] = await Promise.all([read(SAVE_KEY), read(SAVE_RECOVERY_KEY)]);
+    if (!primary.ok) logStorageFailure("Main save candidates could not be read", primary.error);
+    if (!recovery.ok) logStorageFailure("Recovery save candidates could not be read", recovery.error);
+    const primaryIncomplete = !primary.ok || primary.localReadFailed === true;
+    const primaryCandidates = primary.ok ? primary.candidates : [];
+    const recoveryCandidates = recovery.ok ? recovery.candidates : [];
+    const primaryHasFuture = hasUnsupportedFutureCandidate(primaryCandidates);
+    const recoveryHasFuture = hasUnsupportedFutureCandidate(recoveryCandidates);
+    return {
+      candidates: [...primaryCandidates, ...recoveryCandidates],
+      useRecovery: primaryIncomplete || primaryHasFuture || (recoveryCandidates.length > 0 && !recoveryHasFuture),
+      readFailed: !primary.ok && !recovery.ok,
+    };
   }
 
-  private applySaveWritePolicy(result: SaveLoadState): SaveLoadState {
-    this.setWritesDisabled(
-      result.status.kind === "unsupported-newer-schema" || result.status.kind === "unsupported-newer-content",
-    );
+  private applySaveWritePolicy(result: SaveLoadState, useRecovery: boolean): SaveLoadState {
+    this.writeKey = useRecovery ? SAVE_RECOVERY_KEY : SAVE_KEY;
+    this.setWritesDisabled(false);
     return result;
   }
 
@@ -59,19 +83,16 @@ export class SaveStorage {
   }
 
   private async loadState(): Promise<SaveLoadState> {
-    let candidates: string[];
-    try {
-      candidates = await this.collectSaveCandidates();
-    } catch (error) {
-      logStorageFailure("Save candidates could not be read, falling back to defaults", error);
-      return this.applySaveWritePolicy({ data: createDefaultSaveData(), status: { kind: "corrupt" } });
-    }
+    const { candidates, useRecovery, readFailed } = await this.collectSaveCandidates();
 
     if (candidates.length === 0) {
-      return this.applySaveWritePolicy({ data: createDefaultSaveData(), status: { kind: "ok" } });
+      return this.applySaveWritePolicy(
+        { data: createDefaultSaveData(), status: { kind: readFailed ? "unavailable" : "ok" } },
+        useRecovery,
+      );
     }
 
-    return this.applySaveWritePolicy(evaluateSaveCandidates(candidates));
+    return this.applySaveWritePolicy(evaluateSaveCandidates(candidates), useRecovery);
   }
 
   private trySerializeSaveSnapshot(data: UnstampedSaveData, context: "" | " during page exit"): string | null {
@@ -91,11 +112,23 @@ export class SaveStorage {
 
   private async writeSerializedSnapshot(serialized: string): Promise<SaveWriteOutcome> {
     try {
-      const result = await this.backend.write(SAVE_KEY, serialized);
+      const result = await this.backend.write(this.writeKey, serialized);
       if (result.ok) return "saved";
       logStorageFailure("Save data could not be written", result.error);
     } catch (error) {
       logStorageFailure("Save data could not be written", error);
+    }
+    if (this.writeKey === SAVE_KEY) {
+      try {
+        const recovery = await this.backend.write(SAVE_RECOVERY_KEY, serialized);
+        if (recovery.ok) {
+          this.writeKey = SAVE_RECOVERY_KEY;
+          return "saved";
+        }
+        logStorageFailure("Recovery save could not be written", recovery.error);
+      } catch (error) {
+        logStorageFailure("Recovery save could not be written", error);
+      }
     }
     return "failed";
   }
@@ -113,17 +146,33 @@ export class SaveStorage {
    * in-flight async write cannot land after the exit snapshot.
    */
   private async flushSerializedExitSave(data: UnstampedSaveData, serialized: string): Promise<SaveWriteOutcome> {
-    let syncResult;
+    let syncResult: ReturnType<SaveBackend["writeSync"]>;
     try {
-      syncResult = this.backend.writeSync(SAVE_KEY, serialized);
+      syncResult = this.backend.writeSync(this.writeKey, serialized);
     } catch (error) {
-      logStorageFailure("Save data could not be written during page exit", error);
-      return "failed";
+      syncResult = { ok: false, error };
     }
     if (syncResult === null) return await this.queue.enqueue(data, (snapshot) => this.writeSaveSnapshot(snapshot));
     if (!syncResult.ok) {
       logStorageFailure("Save data could not be written during page exit", syncResult.error);
-      return "failed";
+      if (this.writeKey === SAVE_KEY) {
+        let recovery;
+        try {
+          recovery = this.backend.writeSync(SAVE_RECOVERY_KEY, serialized);
+        } catch (error) {
+          logStorageFailure("Recovery save could not be written during page exit", error);
+          return "failed";
+        }
+        if (recovery?.ok) {
+          this.writeKey = SAVE_RECOVERY_KEY;
+        } else if (recovery === null) {
+          this.writeKey = SAVE_RECOVERY_KEY;
+          return await this.queue.enqueue(data, (snapshot) => this.writeSaveSnapshot(snapshot));
+        } else {
+          if (recovery) logStorageFailure("Recovery save could not be written during page exit", recovery.error);
+          return "failed";
+        }
+      } else return "failed";
     }
     if (this.queue.isIdle) return "saved";
     return await this.queue.enqueue(data, (snapshot) => this.writeSaveSnapshot(snapshot));
@@ -138,13 +187,13 @@ export class SaveStorage {
     return this.flushSerializedExitSave(data, serialized);
   }
 
-  async clear(mode: "default" | "localWipe" | "wipeForReload" = "default"): Promise<boolean> {
+  async clear(mode: "default" | "localWipe" = "default"): Promise<boolean> {
     const forceLocalWipe = mode !== "default";
-    const keepWritesDisabled = mode === "wipeForReload";
-    return await this.queue.enqueueClear(() => this.backend.clear(SAVE_KEY, { forceLocalWipe }), {
-      keepWritesDisabled,
+    const cleared = await this.queue.enqueueClear(() => this.backend.clear(SAVE_KEY, { forceLocalWipe }), {
       onError: (error) => logStorageFailure("Save data could not be cleared", error),
     });
+    if (cleared) this.writeKey = SAVE_KEY;
+    return cleared;
   }
 }
 

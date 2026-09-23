@@ -6,7 +6,6 @@ import {
   AppScreenChromeProvider,
   GameMenuOverlay,
   StartupLoadingScreen,
-  UnsupportedSaveOverlay,
   useAlchemyAutosaveFromStores,
   useAppAudioEffects,
   useAppDisplayEffects,
@@ -27,7 +26,6 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import { hasInspectableBoons } from "@/features/alchemy/run-loop/screens/battle-screen/unique-run-boons";
 import { CardDescriptionProvider } from "@/features/alchemy/shared/context/card-description-context";
 import { useVirtualResolution } from "@/features/alchemy/shared/ui/use-virtual-resolution";
-import { clearAlchemySaveData } from "@/features/alchemy/shared/storage";
 import { useDeviceDisplayPreferences } from "@/features/alchemy/shared/stores/device-display-store";
 import {
   useActiveRunBoons,
@@ -48,19 +46,11 @@ import type { AlchemyRunCommands } from "@/features/alchemy/shell/route-commands
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import type { Screen } from "@/lib/routing";
 import { cn } from "@/lib/utils";
-import { useCallback, useLayoutEffect, useMemo, useRef, useState, type SyntheticEvent } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, type SyntheticEvent } from "react";
 
 const OPTIONS_PREVIEW_PLASMA_PAIR = { primary: "#fbbf24", secondary: "#78350f" };
 
 type GameMenuState = ReturnType<typeof useGameMenuState>;
-
-async function wipeUnsupportedSaveAndReload() {
-  const cleared = await clearAlchemySaveData("wipeForReload");
-  if (!cleared) {
-    throw new Error("Save data could not be cleared");
-  }
-  window.location.reload();
-}
 
 function AppKeywordPlasmaBackground({ renderedScreen, intensity }: { renderedScreen: Screen; intensity: number }) {
   const plasmaColorPair = useUiStore(
@@ -275,35 +265,6 @@ function AppMainContent({
   );
 }
 
-function BlockedSaveShell({ displayLayout }: { displayLayout: ReturnType<typeof useVirtualResolution> }) {
-  const { frameStyle, stageStyle } = displayLayout;
-  const [deletingUnsupportedSave, setDeletingUnsupportedSave] = useState(false);
-  const handleDeleteUnsupportedSave = useCallback(() => {
-    if (deletingUnsupportedSave) return;
-    setDeletingUnsupportedSave(true);
-    void wipeUnsupportedSaveAndReload().catch(() => {
-      setDeletingUnsupportedSave(false);
-    });
-  }, [deletingUnsupportedSave]);
-
-  return (
-    <div className="flex h-screen w-screen items-center justify-center overflow-hidden bg-background">
-      <div className="relative" style={frameStyle}>
-        <div
-          data-testid="vr-stage"
-          className="[container-type:size] absolute top-0 left-0 overflow-hidden bg-background"
-          style={stageStyle}
-        >
-          <UnsupportedSaveOverlay
-            onDeleteSaveAndContinue={handleDeleteUnsupportedSave}
-            deleting={deletingUnsupportedSave}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function AppInner({ displayLayout }: { displayLayout: ReturnType<typeof useVirtualResolution> }) {
   const settings = useAppSettings();
   const vrStageRef = useRef<HTMLDivElement>(null);
@@ -379,16 +340,8 @@ export default function App() {
     bootstrapReady: bootstrapResult != null,
   });
 
-  const saveBlockedByNewerVersion =
-    bootstrapResult?.status.kind === "unsupported-newer-schema" ||
-    bootstrapResult?.status.kind === "unsupported-newer-content";
-
-  if (!bootstrapResult || (!initialLoadReady && !saveBlockedByNewerVersion)) {
+  if (!bootstrapResult || !initialLoadReady) {
     return <StartupLoadingScreen progress={startupProgress} />;
-  }
-
-  if (saveBlockedByNewerVersion) {
-    return <BlockedSaveShell displayLayout={displayLayout} />;
   }
 
   return <AppInner displayLayout={displayLayout} />;

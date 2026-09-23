@@ -8,6 +8,7 @@ import {
   CURRENT_SAVE_SCHEMA_VERSION,
 } from "@/lib/validation";
 import { makeMinimalActiveRunInput } from "../../fixtures/active-run";
+import { evaluateSaveCandidates } from "@/features/alchemy/shared/storage";
 
 const badEffectCard = {
   id: "slash",
@@ -37,6 +38,33 @@ describe("safeParseWithErrors nested card warnings", () => {
     expect(result.success).toBe(true);
     if (!result.success) return;
     expect(result.errors.some((error) => error.path.startsWith("effects["))).toBe(true);
+  });
+
+  it("reports dropped card positions while retaining the active run", () => {
+    const result = safeParseWithErrors(SaveDataSchema, {
+      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+      contentVersion: CURRENT_CONTENT_VERSION,
+      activeRun: makeMinimalActiveRunInput({ runDeck: [{ id: "slash" }, null] }),
+    });
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.activeRun?.runDeck.map((card) => card.id)).toEqual(["slash"]);
+    expect(result.errors).toContainEqual({ path: "runDeck[1]", message: "malformed saved card was dropped" });
+  });
+
+  it("loads a damaged deck through the save candidate path with a repair warning", () => {
+    const loaded = evaluateSaveCandidates([
+      JSON.stringify({
+        saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+        contentVersion: CURRENT_CONTENT_VERSION,
+        activeRun: makeMinimalActiveRunInput({ runDeck: [{ id: "slash" }, { id: 42 }] }),
+      }),
+    ]);
+    expect(loaded.data.activeRun?.runDeck.map((card) => card.id)).toEqual(["slash"]);
+    expect(loaded.status).toMatchObject({
+      kind: "ok",
+      warnings: [expect.stringContaining("runDeck[1]")],
+    });
   });
 
   it("does not clobber errors across sequential parses", () => {
