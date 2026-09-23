@@ -29,7 +29,7 @@ export const enemiesByType = Object.fromEntries(
 
 export const bossEnemies = enemiesByType.boss;
 
-export const encounterEnemies = enemyBestiary.filter((enemy) => enemy.id !== "skeleton");
+export const encounterEnemies = enemyBestiary;
 
 export const trinketById = Object.fromEntries(trinketLibrary.map((trinket) => [trinket.id, trinket])) as TrinketById;
 

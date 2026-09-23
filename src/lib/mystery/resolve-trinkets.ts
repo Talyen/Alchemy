@@ -86,18 +86,6 @@ export function resolveMysteryEventTrinkets(
   };
 }
 
-export function collectResolvedMysteryTrinketIds(event: MysteryEvent): string[] {
-  const ids: string[] = [];
-  for (const choice of event.choices) {
-    for (const effect of choice.effects) {
-      if (effect.kind === "gainTrinket") ids.push(effect.trinketId);
-      else if (effect.kind === "gainRandomTrinket") ids.push("");
-      else if (effect.kind === "gainGeneratedGear" && effect.astral) ids.push("");
-    }
-  }
-  return ids;
-}
-
 export function eventHasUnresolvedRandomTrinket(event: MysteryEvent): boolean {
   return event.choices.some((choice) => choice.effects.some((effect) => effect.kind === "gainRandomTrinket"));
 }

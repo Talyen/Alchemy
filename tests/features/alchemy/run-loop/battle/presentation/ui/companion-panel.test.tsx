@@ -64,12 +64,14 @@ describe("CompanionPanel turn shine border", () => {
     expectShineContains("turn-badge-companion", customColors);
   });
 
-  it("shows keyword hover shine on the companion art", () => {
+  it("keeps only the turn border when hovering over the companion", () => {
     render(<CompanionPanel companion={companionLibrary.wolf} />);
-    expect(screen.queryByTestId("keyword-shine-hover")).toBeNull();
+    const art = screen.getByTestId("active-companion").querySelector(".combatant-art");
+    expect(art?.classList.contains("card-hover-scale")).toBe(true);
 
     fireEvent.mouseEnter(screen.getByTestId("active-companion"));
 
-    expectShineContains("keyword-shine-hover", getCompanionShineColors(companionLibrary.wolf));
+    expect(art?.querySelectorAll(".shine-border")).toHaveLength(1);
+    expect(screen.getByTestId("turn-badge-companion").getAttribute("data-active")).toBe("false");
   });
 });

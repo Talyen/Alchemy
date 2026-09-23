@@ -36,6 +36,7 @@ describe("useRunFlowEngine", () => {
         {
           screen: ROUTE_SCREENS.MENU,
           navigateTo,
+          resumeTo: vi.fn(),
           transition,
           cancelPending: vi.fn(),
           battle: {
@@ -72,6 +73,7 @@ describe("useRunFlowEngine", () => {
         {
           screen: ROUTE_SCREENS.BATTLE,
           navigateTo,
+          resumeTo: vi.fn(),
           transition,
           cancelPending,
           battle: {
@@ -117,6 +119,7 @@ describe("useRunFlowEngine", () => {
         {
           screen: ROUTE_SCREENS.DRAFT_DECK,
           navigateTo,
+          resumeTo: vi.fn(),
           transition,
           cancelPending: vi.fn(),
           battle: {
@@ -161,6 +164,7 @@ describe("useRunFlowEngine", () => {
         {
           screen: ROUTE_SCREENS.WILDWOOD_REMOVAL,
           navigateTo,
+          resumeTo: vi.fn(),
           transition,
           cancelPending: vi.fn(),
           battle: {
@@ -206,6 +210,7 @@ describe("useRunFlowEngine", () => {
         {
           screen: ROUTE_SCREENS.WILDWOOD_REMOVAL,
           navigateTo,
+          resumeTo: vi.fn(),
           transition,
           cancelPending: vi.fn(),
           battle: {
@@ -250,6 +255,7 @@ describe("useRunFlowEngine", () => {
         {
           screen: ROUTE_SCREENS.DRAFT_DECK,
           navigateTo,
+          resumeTo: vi.fn(),
           transition,
           cancelPending: vi.fn(),
           battle: {
@@ -293,6 +299,7 @@ describe("useRunFlowEngine", () => {
         {
           screen: ROUTE_SCREENS.DRAFT_DECK,
           navigateTo,
+          resumeTo: vi.fn(),
           transition,
           cancelPending: vi.fn(),
           battle: {

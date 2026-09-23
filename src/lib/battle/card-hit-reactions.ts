@@ -23,7 +23,7 @@ import { applyArmorReward, spendPlayerForgeForAttack } from "./status-player";
 import { addPlayerStatusWithCombatText, applyHealingWithCombatText } from "./combat-text";
 import { addEnemyStatus, hasEncounterBenefit, type BattleState, type CombatTextEvent } from "./types";
 import { applyWishEffect } from "./wish";
-import type { CardRecipeRequest } from "./hit-request";
+import type { CardHitRequest } from "./hit-request";
 import type { CardHitFacts, HitFacts } from "./hit-facts";
 
 function applyBurnDamageRiders(
@@ -145,7 +145,7 @@ export function consumeForgeAfterDamage(
 
 export function applyCardStatusReactions(
   nextState: BattleState,
-  request: CardRecipeRequest,
+  request: CardHitRequest,
   facts: CardHitFacts,
   combatTexts: CombatTextEvent[],
 ): BattleState {
@@ -192,7 +192,7 @@ export function applyCardStatusReactions(
 
 export function applyCardLeechAndFrozenReactions(
   nextState: BattleState,
-  request: CardRecipeRequest,
+  request: CardHitRequest,
   facts: CardHitFacts,
   combatTexts: CombatTextEvent[],
 ): BattleState {

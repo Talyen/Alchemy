@@ -117,13 +117,7 @@ export function CompanionCardNode({
       shineOnHover
       shineColor={getCardInspectionShineColors(card)}
       {...(interactive ? { ariaDisabled: !bondAffordable } : {})}
-      onClick={
-        interactive && bondAffordable && companionId
-          ? () => {
-              if (discovered && !isComplete) onBond(companionId);
-            }
-          : undefined
-      }
+      onClick={interactive && bondAffordable && companionId ? () => onBond(companionId) : undefined}
       ariaLabel={ariaLabel}
     />
   );

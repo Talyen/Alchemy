@@ -13,6 +13,7 @@ import type { RunFlowEngineDeps } from "./shell-types";
 export function createRunFlowEngine(
   {
     navigateTo: rawNavigateTo,
+    resumeTo: rawResumeTo,
     transition,
     cancelPending,
     battle,
@@ -29,13 +30,19 @@ export function createRunFlowEngine(
     clearCardHover();
     rawNavigateTo(nextScreen, prepareNavigation);
   };
+  const resumeTo: RunFlowEngineDeps["resumeTo"] = (nextScreen, prepareNavigation) => {
+    clearCardHover();
+    rawResumeTo(nextScreen, prepareNavigation);
+  };
   const wildwood = createWildwoodGauntletFlow({
     navigateTo,
+    resumeTo,
     onStartBossById: battle.onStartBossById,
     clearCardHover,
   });
   const contentNav = createContentSystemNavigation({
     navigateTo,
+    resumeTo,
     onStartBattle: battle.onStartBattle,
     getAvailableDestinations: outcomes.getAvailableDestinations,
     onResumeWildwood: wildwood.resumeWildwoodRun,

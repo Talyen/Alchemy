@@ -31,8 +31,6 @@ export const DEFAULT_TALENT_EFFECTS = {
   companionFreezeDamageVsFrozen: 0,
   drawOnArcheryVsStunned: 0,
   archeryCritOnCrowdControl: false,
-  // Retained for old battle snapshots; current Hawk Eye uses Crit readiness.
-  archeryHolyDamageVsFrozen: 0,
   physicalLeechVsStunned: false,
   forgeOnPhysicalVsFrozen: 0,
   cleanseBelowHealthPercent: 0,
@@ -103,7 +101,6 @@ export const DEFAULT_TALENT_EFFECTS = {
   thornsOnNatureDamageChance: 0,
   healOnNatureDamageChance: 0,
   dodgeChanceWhileEnemyBurning: 0,
-  holyOnAttackBlocked: 0,
   drawOnThaw: 0,
 
   dodgeChance: 0,

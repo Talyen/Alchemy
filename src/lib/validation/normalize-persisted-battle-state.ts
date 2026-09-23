@@ -23,7 +23,10 @@ function normalizeTalentEffects(
   defaults: TalentEffectManifest,
   saved: Partial<TalentEffectManifest> | undefined,
 ): TalentEffectManifest {
-  const merged = mergeRecord(defaults, saved);
+  const knownSaved = Object.fromEntries(
+    Object.entries(saved ?? {}).filter(([key]) => Object.hasOwn(defaults, key)),
+  ) as Partial<TalentEffectManifest>;
+  const merged = mergeRecord(defaults, knownSaved);
   if (!Array.isArray(merged.healthThresholdArmor)) merged.healthThresholdArmor = [];
   const savedRecord = saved ?? {};
   merged.wishExtraChoiceAfterHolyCard = savedRecord.wishExtraChoiceAfterHolyCard === true;

@@ -10,6 +10,7 @@ export {
   getRawSaveSchemaVersion,
   isUnsupportedFutureContentData,
   isUnsupportedFutureSaveData,
+  migrateSupportedSaveData,
 } from "./migration/index";
 export { normalizePersistedBattleState, repairPersistedTrinketManifest } from "./normalize-persisted-battle-state";
 export type { InterruptedFlow, PersistedPendingReward } from "./save-schemas/active-run";

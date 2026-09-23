@@ -1,14 +1,4 @@
-import { applyLabyrinthMysteryModifiers } from "@/lib/content-systems/labyrinth/room-rules";
-import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
-import {
-  applyResolvedMysteryTrinketIds,
-  collectResolvedMysteryTrinketIds,
-  findMysteryEvent,
-  repairUnresolvedMysteryTrinkets,
-  type MysteryChoice,
-  type MysteryEffect,
-  type MysteryEvent,
-} from "@/lib/mystery";
+import type { MysteryChoice, MysteryEffect, MysteryEvent } from "@/lib/mystery";
 import type { BattleCard } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
 import type { PersistedMysteryVisit } from "./types";
@@ -41,35 +31,20 @@ export function serializeMysteryVisit(visit: HydratedMysteryVisit): PersistedMys
   const event = visit.mysteryEvent;
   if (!event) return null;
   return {
-    eventId: event.id,
+    event,
     chosenChoice: visit.mysteryChosenChoice,
     ...(visit.mysteryPendingRemoval ? { pendingRemoval: true } : {}),
     cardChoices: visit.mysteryCardChoices,
     grantedTrinketIds: visit.mysteryGrantedTrinketIds,
     grantedGear: visit.mysteryGrantedGearInstances,
     chosenCardId: visit.mysteryChosenCardId,
-    resolvedTrinketIds: collectResolvedMysteryTrinketIds(event),
   };
 }
 
-export function hydrateMysteryVisit(
-  data: PersistedMysteryVisit | null,
-  options?: {
-    ownedTrinketIds?: readonly string[];
-    rng?: () => number;
-    modifiers?: readonly EncounterRewardTraitId[];
-    maxHealth?: number;
-  },
-): HydratedMysteryVisit {
+export function hydrateMysteryVisit(data: PersistedMysteryVisit | null): HydratedMysteryVisit {
   if (!data) return emptyHydratedMysteryVisit();
-  const mysteryEvent = findMysteryEvent(data.eventId);
-  if (!mysteryEvent) return emptyHydratedMysteryVisit();
-  let event = applyResolvedMysteryTrinketIds(mysteryEvent, data.resolvedTrinketIds ?? []);
-  if (options?.rng) {
-    event = repairUnresolvedMysteryTrinkets(event, options.ownedTrinketIds ?? [], options.rng);
-  }
   return {
-    mysteryEvent: applyLabyrinthMysteryModifiers(event, options?.modifiers ?? [], options?.maxHealth ?? 0),
+    mysteryEvent: data.event,
     mysteryChosenChoice: hydratePersistedMysteryChoice(data.chosenChoice),
     mysteryPendingRemoval: data.pendingRemoval === true,
     mysteryCardChoices: data.cardChoices,

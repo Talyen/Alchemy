@@ -41,43 +41,37 @@ it("finishes nested Archery hits before the parent payout without adding random 
   expect(rng()).toBe(0.3452291004359722);
 });
 
-it.each([0, 100])("preserves Holy retaliation reward timing for reflection percentage %s", (percentage) => {
-  const rng = seededRng(42);
+it("preserves Holy reflection reward timing and does not spend Forge", () => {
   const state = patchBattleState({
-    rng,
     enemyHealth: 5,
     enemyMaxHealth: 20,
     playerHealth: 4,
     playerMaxHealth: 20,
     playerStatuses: { forge: 2 },
-    talentEffects: {
-      holyReflectionBlockLostPercent: percentage,
-      holyOnAttackBlocked: 6,
-      holyBurnChance: 100,
-      forgeToHoly: true,
-    },
+    enemyStatuses: { burn: 1 },
+    talentEffects: { holyReflectionBlockLostPercent: 100 },
     gearEffects: { healOnBurnEnemyDefeated: 3 },
     trinketEffects: { boneCharmHealOnKill: 2 },
   });
   const texts: CombatTextEvent[] = [];
   const result = applyBlockedAttackRetaliation(state, 6, texts, true);
-  // Legacy retaliation sees the Burn it inflicts; reflection pays from pre-hit statuses.
-  const reflected = percentage > 0;
-  const damage = reflected ? 6 : 8;
-  const healing = reflected ? 2 : 5;
   expect(result).toEqual({
     ...state,
     enemyHealth: 0,
-    playerHealth: state.playerHealth + healing,
-    playerStatuses: { ...state.playerStatuses, forge: reflected ? 2 : 1 },
-    enemyStatuses: { ...state.enemyStatuses, burn: damage },
+    playerHealth: 9,
     flags: { ...state.flags, killRewardsPaid: true },
   });
   expect(texts).toEqual([
-    { target: "enemy", kind: "damage", stat: "holy", amount: damage },
-    { target: "player", kind: "heal", stat: "health", amount: healing },
+    { target: "enemy", kind: "damage", stat: "holy", amount: 6 },
+    { target: "player", kind: "heal", stat: "health", amount: 5 },
   ]);
-  expect(rng()).toBe(reflected ? 0.8677412511315197 : 0.25576734659262);
+});
+
+it("does not retaliate without Holy reflection", () => {
+  const state = patchBattleState({ playerStatuses: { block: 6 } });
+  const texts: CombatTextEvent[] = [];
+  expect(applyBlockedAttackRetaliation(state, 6, texts, true)).toBe(state);
+  expect(texts).toEqual([]);
 });
 
 it("limits poisoned-target Armor piercing to a real card source", () => {

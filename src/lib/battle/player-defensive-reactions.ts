@@ -115,9 +115,7 @@ export function applyBlockedAttackRetaliation(
   if (state.talentEffects.holyReflectionBlockLostPercent > 0) {
     return blockDepleted ? resolvePlayerHit(state, { source: "reflected-holy", blockLost }, combatTexts) : state;
   }
-  const amount = state.talentEffects.holyOnAttackBlocked;
-  if (amount <= 0 || state.enemyHealth <= 0 || state.playerHealth <= 0) return state;
-  return resolvePlayerHit(state, { source: "blocked-attack", amount }, combatTexts);
+  return state;
 }
 
 export function applyPlayerDefensiveReactions(

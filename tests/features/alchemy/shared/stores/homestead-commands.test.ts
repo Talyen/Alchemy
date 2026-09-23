@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import { readActiveRun, readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
+import { readActiveRun, readRunProfile, readRunRevision } from "@/features/alchemy/shared/stores/run-reads";
 import {
   addMaterialsToStockpile,
   awardMaterialsDuringRun,
+  bondCompanion,
   constructBuilding,
+  setDiscoveredCardIds,
   setHasActiveRun,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { SaveDataSchema } from "@/lib/validation/save-schemas/save-data";
@@ -42,6 +44,32 @@ describe("homestead write commands", () => {
 
     expect(readRunProfile().materialInventory).toEqual(emptyInventory());
     expect(readActiveRun().runMaxHealth).toBe(healthBefore);
+  });
+
+  it("rejects bonding an undiscovered companion without changing progression or food", () => {
+    dispatchRunSessionCommand((draft) => {
+      addMaterialsToStockpile(draft, { ...emptyInventory(), food: 50 });
+      setDiscoveredCardIds(draft, ["bear-companion"]);
+    });
+    const revision = readRunRevision();
+
+    expect(dispatchRunSessionCommand((draft) => bondCompanion(draft, "wolf"))).toBe(false);
+    expect(readRunRevision()).toBe(revision);
+    expect(readRunProfile().materialInventory.food).toBe(50);
+    expect(readRunProfile().bondedCompanions.wolf).toBe(0);
+    expect(readRunProfile().effects.companionBondLevels.wolf).toBe(0);
+  });
+
+  it("bonds a discovered companion through the command", () => {
+    dispatchRunSessionCommand((draft) => {
+      addMaterialsToStockpile(draft, { ...emptyInventory(), food: 50 });
+      setDiscoveredCardIds(draft, ["wolf-companion"]);
+    });
+
+    expect(dispatchRunSessionCommand((draft) => bondCompanion(draft, "wolf"))).toBe(true);
+    expect(readRunProfile().materialInventory.food).toBe(30);
+    expect(readRunProfile().bondedCompanions.wolf).toBe(1);
+    expect(readRunProfile().effects.companionBondLevels.wolf).toBe(1);
   });
 });
 

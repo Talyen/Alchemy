@@ -9,7 +9,7 @@ import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet
 import type { CorruptionResult } from "@/lib/corruption";
 import type { BattleCard } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
-import type { MysteryChoice } from "@/lib/mystery";
+import type { MysteryChoice, MysteryEvent } from "@/lib/mystery";
 import type { Screen } from "@/lib/routing";
 import type { InterruptedFlow, PersistedPendingReward, PersistedRunProgress } from "@/lib/validation";
 
@@ -30,7 +30,7 @@ export interface PersistedTrinketShopState extends RefreshableShopFields {
 export type PersistedEquipmentShopState = EquipmentShopState;
 
 export interface PersistedMysteryVisit {
-  eventId: string;
+  event: MysteryEvent;
   chosenChoice: MysteryChoice | null;
 
   pendingRemoval?: boolean;
@@ -38,7 +38,6 @@ export interface PersistedMysteryVisit {
   grantedTrinketIds: string[];
   grantedGear: GearInstance[];
   chosenCardId: string | null;
-  resolvedTrinketIds: string[];
 }
 
 export type LabyrinthPendingNodeId = string;

@@ -13,6 +13,7 @@ export interface NoviceCampaignStartDeps {
     gold: number,
     enemyType: typeof DEFAULT_BATTLE_ENEMY_TYPE,
     modifiers: DifficultyModifier[],
+    enemyId?: string,
   ) => void;
   navigateToBattle: () => void;
 }
@@ -23,7 +24,7 @@ export function tryStartNoviceCampaignBattle(characterId: CharacterId, deps: Nov
 
   const { freshDeck, totalStartGold } = deps.initializeRunForDifficulty(characterId, DEFAULT_CAMPAIGN_DIFFICULTY_ID);
   const modifiers = deps.getDifficultyModifiers(characterId, DEFAULT_CAMPAIGN_DIFFICULTY_ID);
-  deps.onStartBattle(freshDeck, totalStartGold, DEFAULT_BATTLE_ENEMY_TYPE, modifiers);
+  deps.onStartBattle(freshDeck, totalStartGold, DEFAULT_BATTLE_ENEMY_TYPE, modifiers, "skeleton");
   deps.navigateToBattle();
   return true;
 }

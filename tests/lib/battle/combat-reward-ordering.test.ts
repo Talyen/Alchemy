@@ -125,7 +125,7 @@ describe("combat reward ordering", () => {
         enemyMaxHealth: 40,
         enemyCC: { freezeSkipTurns: id === "ice-shot" ? 1 : 0 },
         flags: { hawkEyeReady: true, nextPhysicalDealsBleed: true, playNextCardTwice: true },
-        talentEffects: { archeryHolyDamageVsFrozen: 2, goldOnArcheryKill: 2 },
+        talentEffects: { goldOnArcheryKill: 2 },
       });
       const result = playBattleCardResolved(state, card.id, 0).state;
       expect(result.enemyHealth).toBe(0);

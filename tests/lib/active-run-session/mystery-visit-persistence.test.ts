@@ -8,6 +8,7 @@ import {
 } from "@/lib/active-run-session";
 import { getStartingDeck } from "@/lib/game-data";
 import { findMysteryEvent } from "@/lib/mystery";
+import { resolveMysteryEventTrinkets } from "@/lib/mystery/resolve-trinkets";
 
 import { ANCIENT_ALTAR_MYSTERY_VISIT } from "../../features/alchemy/shared/stores/active-run-data-fixture";
 
@@ -37,14 +38,13 @@ describe("serializeMysteryVisit", () => {
         mysteryChosenCardId: "slash",
       }),
     ).toEqual({
-      eventId: "ancient-altar",
+      event,
       chosenChoice: ANCIENT_ALTAR_MYSTERY_VISIT.chosenChoice,
       pendingRemoval: true,
       cardChoices: [slash],
       grantedTrinketIds: ["bone-charm"],
       grantedGear: [],
       chosenCardId: "slash",
-      resolvedTrinketIds: [],
     });
   });
 
@@ -79,10 +79,9 @@ describe("hydrateMysteryVisit", () => {
     expect(hydrateMysteryVisit(null)).toEqual(emptyHydratedMysteryVisit());
   });
 
-  it("returns empty fields for an unknown event id", () => {
-    expect(hydrateMysteryVisit({ ...ANCIENT_ALTAR_MYSTERY_VISIT, eventId: "gone" })).toEqual(
-      emptyHydratedMysteryVisit(),
-    );
+  it("keeps a saved offer after its event leaves the live pool", () => {
+    const event = { ...ANCIENT_ALTAR_MYSTERY_VISIT.event, id: "gone" };
+    expect(hydrateMysteryVisit({ ...ANCIENT_ALTAR_MYSTERY_VISIT, event }).mysteryEvent).toBe(event);
   });
 
   it("hydrates a known visit and normalizes chooseCard choices", () => {
@@ -101,32 +100,40 @@ describe("hydrateMysteryVisit", () => {
     expect(hydrated.mysteryPendingRemoval).toBe(true);
   });
 
-  it("applies persisted trinket substitutions onto the pool event", () => {
+  it("keeps the exact offered choices rather than rebuilding them from the pool", () => {
+    const base = findMysteryEvent("enchanted-spring")!;
+    const offered = {
+      ...base,
+      choices: base.choices.map((choice) => ({
+        ...choice,
+        effects: choice.effects.map((effect) =>
+          effect.kind === "gainTrinket" && effect.trinketId === "icy-heart"
+            ? { kind: "gainTrinket" as const, trinketId: "merchants-favor" }
+            : effect,
+        ),
+      })),
+    };
     const hydrated = hydrateMysteryVisit({
-      eventId: "enchanted-spring",
+      event: offered,
       chosenChoice: null,
       cardChoices: null,
       grantedTrinketIds: [],
       grantedGear: [],
       chosenCardId: null,
-      resolvedTrinketIds: ["groves-favor", "merchants-favor"],
     });
 
-    const moss = hydrated.mysteryEvent?.choices.find((choice) => choice.label === "Gather the Moss");
-    const charm = hydrated.mysteryEvent?.choices.find((choice) => choice.label === "Take the Charm");
-    expect(moss?.effects).toContainEqual({ kind: "gainTrinket", trinketId: "groves-favor" });
-    expect(charm?.effects).toContainEqual({ kind: "gainTrinket", trinketId: "merchants-favor" });
+    expect(hydrated.mysteryEvent).toBe(offered);
+    expect(serializeMysteryVisit(hydrated)?.event).toBe(offered);
   });
 
   it("keeps the revised random Gear reward when a visit is hydrated", () => {
     const hydrated = hydrateMysteryVisit({
-      eventId: "overgrown-temple",
+      event: findMysteryEvent("overgrown-temple")!,
       chosenChoice: null,
       cardChoices: null,
       grantedTrinketIds: [],
       grantedGear: [],
       chosenCardId: null,
-      resolvedTrinketIds: [],
     });
 
     const search = hydrated.mysteryEvent?.choices.find((choice) => choice.label === "Search the Crypt");
@@ -134,21 +141,20 @@ describe("hydrateMysteryVisit", () => {
     expect(search?.effects).toContainEqual({ kind: "gainMaterial", material: "iron", amount: 3 });
   });
 
-  it("applies astral fallback gear substitution when resolvedTrinketIds contains empty string", () => {
+  it("keeps the resolved Astral fallback Gear on resume", () => {
+    const event = resolveMysteryEventTrinkets(findMysteryEvent("enchanted-spring")!, ["groves-favor"], () => 0);
     const hydrated = hydrateMysteryVisit({
-      eventId: "enchanted-spring",
+      event,
       chosenChoice: null,
       cardChoices: null,
       grantedTrinketIds: [],
       grantedGear: [],
       chosenCardId: null,
-      resolvedTrinketIds: ["", "merchants-favor"],
     });
 
     const moss = hydrated.mysteryEvent?.choices.find((choice) => choice.label === "Gather the Moss");
-    const charm = hydrated.mysteryEvent?.choices.find((choice) => choice.label === "Take the Charm");
     expect(moss?.effects).toContainEqual(expect.objectContaining({ kind: "gainGeneratedGear", astral: true }));
-    expect(charm?.effects).toContainEqual({ kind: "gainTrinket", trinketId: "merchants-favor" });
+    expect(hydrated.mysteryEvent).toEqual(event);
   });
 });
 

@@ -95,9 +95,19 @@ describe("return-to-run navigation", () => {
     expect(rememberNonOptionsScreen("destination", "battle")).toBe("destination");
   });
 
-  it("returns to battle from Options only while combat is still active", () => {
-    expect(resolveOptionsBackTarget("battle", true)).toEqual({ kind: "returnToBattle" });
-    expect(resolveOptionsBackTarget("battle", false)).toEqual({ kind: "goToScreen", screen: "destination" });
-    expect(resolveOptionsBackTarget("shop", false)).toEqual({ kind: "goToScreen", screen: "shop" });
+  it("returns from Options through the saved run location", () => {
+    expect(resolveOptionsBackTarget("battle", true, true)).toEqual({ kind: "returnToRun" });
+    expect(resolveOptionsBackTarget("battle", false, true)).toEqual({ kind: "returnToRun" });
+    expect(resolveOptionsBackTarget("shop", false, true)).toEqual({ kind: "returnToRun" });
+  });
+
+  it("returns to a valid setup or meta screen without a run", () => {
+    expect(resolveOptionsBackTarget("battle", false, false)).toEqual({ kind: "goToScreen", screen: "menu" });
+    expect(resolveOptionsBackTarget("shop", false, false)).toEqual({ kind: "goToScreen", screen: "menu" });
+    expect(resolveOptionsBackTarget("difficulty-select", false, false)).toEqual({
+      kind: "goToScreen",
+      screen: "difficulty-select",
+    });
+    expect(resolveOptionsBackTarget("collection", false, false)).toEqual({ kind: "goToScreen", screen: "collection" });
   });
 });

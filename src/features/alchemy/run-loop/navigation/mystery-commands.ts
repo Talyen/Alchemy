@@ -2,6 +2,7 @@ import { applyMysteryEffect } from "@/features/alchemy/run-loop/navigation/myste
 import { appendCardToRunWithDiscovery } from "@/features/alchemy/shared/stores/deck-mutations";
 import { resolveDraftLootProgress } from "@/features/alchemy/shared/stores/loot-progress";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
+import { readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import {
   clearMysteryVisitState,
   createDraftRunRandomSource,
@@ -51,17 +52,21 @@ export function beginMysteryVisit(): void {
   });
 }
 export function chooseMysteryOption(choice: MysteryChoice) {
+  const activity = readRunSession().activity;
+  // The choice object belongs to one resolved visit. A retained screen from an
+  // earlier visit must not apply its effects to the current one.
+  const choiceIndex = activity.kind === "mystery" ? (activity.data.mysteryEvent?.choices.indexOf(choice) ?? -1) : -1;
+  if (choiceIndex < 0) return [];
+
   return dispatchRunSessionCommand((draft) => {
-    if (
-      draft.session.activity.kind !== "mystery" ||
-      readActivityData(draft.session.activity, "mystery").mysteryChosenChoice !== null
-    )
-      return [];
-    setMysteryChosenChoice(draft, choice);
-    const resolvedEffects = [...choice.effects];
+    const visit = draft.session.activity;
+    if (visit.kind !== "mystery" || visit.data.mysteryChosenChoice !== null) return [];
+    const offeredChoice = visit.data.mysteryEvent?.choices[choiceIndex];
+    if (!offeredChoice) return [];
+    const resolvedEffects = [...offeredChoice.effects];
     const goldSounds: Array<"gain" | "spend"> = [];
     const rng = createDraftRunRandomSource(draft, "events");
-    for (const [index, effect] of choice.effects.entries()) {
+    for (const [index, effect] of offeredChoice.effects.entries()) {
       const result = applyMysteryEffect(effect, { draft, rng });
       if (effect.kind === "gainMaterial" && result.materialAward) {
         resolvedEffects[index] = {
@@ -72,7 +77,7 @@ export function chooseMysteryOption(choice: MysteryChoice) {
       if (result.goldSound) goldSounds.push(result.goldSound);
       if (result.followUp) break;
     }
-    setMysteryChosenChoice(draft, { ...choice, effects: resolvedEffects });
+    setMysteryChosenChoice(draft, { ...offeredChoice, effects: resolvedEffects });
     return goldSounds;
   });
 }

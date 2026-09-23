@@ -146,10 +146,10 @@ describe("Labyrinth support rules", () => {
       mysteryEvent: event,
       mysteryChosenChoice: goldChoice,
     });
-    const restored = hydrateMysteryVisit(saved, { modifiers: ["golden-omen"], maxHealth: 30 });
+    const restored = hydrateMysteryVisit(saved);
     expect(restored.mysteryEvent).toEqual(event);
     expect(restored.mysteryChosenChoice).toEqual(goldChoice);
-    const again = hydrateMysteryVisit(serializeMysteryVisit(restored), { modifiers: ["golden-omen"], maxHealth: 30 });
+    const again = hydrateMysteryVisit(serializeMysteryVisit(restored));
     expect(again).toEqual(restored);
     expect(original.choices.flatMap((choice) => choice.effects)).toContainEqual({ kind: "gainGold", amount: 20 });
   });

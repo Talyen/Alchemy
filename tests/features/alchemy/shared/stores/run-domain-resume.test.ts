@@ -17,6 +17,7 @@ import {
   readRunSession,
 } from "@/features/alchemy/shared/stores/run-reads";
 import { cardLibrary, getStartingDeck } from "@/lib/game-data";
+import { findMysteryEvent } from "@/lib/mystery";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { ANCIENT_ALTAR_MYSTERY_VISIT } from "./active-run-data-fixture";
 import { createRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
@@ -407,13 +408,12 @@ describe("session facade API", () => {
       currentScreen: "mystery",
       interruptedFlow: { kind: "none" },
       mysteryVisit: {
-        eventId: "ancient-altar",
+        event: findMysteryEvent("ancient-altar")!,
         chosenChoice: { label: "Browse", effects: [{ kind: "chooseCard" }] },
         cardChoices: [slash],
         grantedTrinketIds: ["bone-charm"],
         grantedGear: [],
         chosenCardId: "slash",
-        resolvedTrinketIds: [],
       },
     };
 
@@ -433,14 +433,13 @@ describe("session facade API", () => {
       currentScreen: "mystery",
       interruptedFlow: { kind: "none" },
       mysteryVisit: {
-        eventId: "ancient-altar",
+        event: findMysteryEvent("ancient-altar")!,
         chosenChoice: { label: "Offer", effects: [{ kind: "removeCard" }] },
         pendingRemoval: true,
         cardChoices: null,
         grantedTrinketIds: [],
         grantedGear: [],
         chosenCardId: null,
-        resolvedTrinketIds: [],
       },
     };
 
@@ -450,11 +449,14 @@ describe("session facade API", () => {
     expect(snapshotRun().mysteryVisit?.pendingRemoval).toBe(true);
   });
 
-  it("returns a legacy mystery screen with no visit to the destination map", () => {
+  it("restores the destination offer when a saved Mystery visit is missing", () => {
     const activeRun: ActiveRunData = {
       ...snapshotRun(),
       currentScreen: "mystery",
       interruptedFlow: { kind: "none" },
+      lastOfferedDestinations: ["Mystery", "Campfire", "Normal Combat"],
+      completedDestinations: ["Mystery"],
+      destinationIndexInAct: 1,
       mysteryVisit: null,
     };
 
@@ -462,6 +464,9 @@ describe("session facade API", () => {
 
     expect(readActiveRunScreen()).toBe("destination");
     expect(readActivityData(readRunSession().activity, "mystery").mysteryEvent).toBeNull();
+    expect(readRunSession().rewardFlow.state.destinations).toEqual(["Mystery", "Campfire", "Normal Combat"]);
+    expect(readActiveRun().completedDestinations).toEqual([]);
+    expect(readActiveRun().destinationIndexInAct).toBe(0);
   });
 
   it("restores overgrown-temple random gear without introducing trinkets", () => {
@@ -470,13 +475,12 @@ describe("session facade API", () => {
       currentScreen: "mystery",
       interruptedFlow: { kind: "none" },
       mysteryVisit: {
-        eventId: "overgrown-temple",
+        event: findMysteryEvent("overgrown-temple")!,
         chosenChoice: null,
         cardChoices: null,
         grantedTrinketIds: [],
         grantedGear: [],
         chosenCardId: null,
-        resolvedTrinketIds: [],
       },
     };
 
@@ -489,7 +493,7 @@ describe("session facade API", () => {
     expect(search?.effects.some((effect) => effect.kind === "gainTrinket")).toBe(false);
   });
 
-  it("abandons a mystery visit with an unknown event id instead of re-rolling", () => {
+  it("resumes a saved Mystery offer after its event leaves the live pool", () => {
     const activeRun: ActiveRunData = {
       ...snapshotRun(),
       currentScreen: "mystery",
@@ -499,18 +503,17 @@ describe("session facade API", () => {
       destinationIndexInAct: 1,
       mysteryVisit: {
         ...ANCIENT_ALTAR_MYSTERY_VISIT,
-        eventId: "removed-mystery-event",
+        event: { ...ANCIENT_ALTAR_MYSTERY_VISIT.event, id: "removed-mystery-event" },
       },
     };
 
     restoreRun(activeRun, {}, {});
 
-    expect(readActiveRunScreen()).toBe("destination");
-    expect(readActivityData(readRunSession().activity, "mystery").mysteryEvent).toBeNull();
-    expect(readActivityData(readRunSession().activity, "mystery").mysteryChosenChoice).toBeNull();
-    expect(readRunSession().rewardFlow.state.destinations).toEqual(["Mystery", "Campfire", "Normal Combat"]);
-    expect(readActiveRun().completedDestinations).toEqual([]);
-    expect(readActiveRun().destinationIndexInAct).toBe(0);
+    expect(readActiveRunScreen()).toBe("mystery");
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryEvent?.id).toBe("removed-mystery-event");
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryChosenChoice?.label).toBe("Take the Offering");
+    expect(readActiveRun().completedDestinations).toEqual(["Mystery"]);
+    expect(readActiveRun().destinationIndexInAct).toBe(1);
   });
 
   it("infers battle screen when currentScreen is null and combat is active", () => {

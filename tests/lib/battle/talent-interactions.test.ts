@@ -341,30 +341,19 @@ describe("Deep Siphon", () => {
   });
 });
 
-describe("talent save compatibility", () => {
-  it("defaults new rewards without changing old combat manifests", () => {
+describe("talent save", () => {
+  it("restores current combat effects and defaults omitted fields", () => {
     const saved = JSON.parse(
       JSON.stringify(
         battle({
-          talentEffects: { manaOnWish: 1, firstLeechCardDoubled: true, forgeOnBurnDealt: 1, holyOnAttackBlocked: 1 },
+          talentEffects: { manaOnWish: 1, holyReflectionBlockLostPercent: 30 },
         }),
       ),
     );
-    delete saved.flags.pendingWishMana;
-    for (const key of [
-      "manaNextTurnOnWish",
-      "holyReflectionBlockLostPercent",
-      "blockOnHolyCard",
-      "forgeOnBurnCard",
-      "cardLeechBonusPercent",
-    ])
-      delete saved.talentEffects[key];
+    delete saved.talentEffects.archeryCritOnCrowdControl;
     const restored = PersistedBattleStateSchema.parse(saved);
-    expect(restored.flags.pendingWishMana).toBe(0);
-    expect(restored.talentEffects.manaNextTurnOnWish).toBe(0);
-    expect(restored.talentEffects.firstLeechCardDoubled).toBe(true);
-    expect(restored.talentEffects.holyOnAttackBlocked).toBe(1);
-    expect(restored.talentEffects.forgeOnBurnDealt).toBe(1);
+    expect(restored.talentEffects.holyReflectionBlockLostPercent).toBe(30);
+    expect(restored.talentEffects.archeryCritOnCrowdControl).toBe(false);
     expect(applyWishEffect({ ...restored, rng: () => 0.99, mana: 0 }, wish, 1, []).mana).toBe(1);
   });
 });

@@ -2,19 +2,19 @@ import { defaultBattleState } from "@/lib/battle";
 import { canEnterLabyrinthNode } from "@/lib/content-systems/labyrinth/map-state";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { getStartingDeck } from "@/lib/game-data";
+import { findMysteryEvent } from "@/lib/mystery";
 import type { ActiveRunData, PersistedMysteryVisit } from "@/lib/active-run-session";
 import { EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear";
 import { createRunRngState } from "@/lib/rng";
 import { createSeededRng } from "@/lib/utils";
 
 export const ANCIENT_ALTAR_MYSTERY_VISIT: PersistedMysteryVisit = {
-  eventId: "ancient-altar",
+  event: findMysteryEvent("ancient-altar")!,
   chosenChoice: { label: "Take the Offering", effects: [{ kind: "gainXP", keyword: "holy", amount: 8 }] },
   cardChoices: null,
   grantedTrinketIds: [],
   grantedGear: [],
   chosenCardId: null,
-  resolvedTrinketIds: [],
 };
 
 export function makeActiveRunData(overrides: Partial<ActiveRunData> = {}): ActiveRunData {

@@ -141,10 +141,10 @@ export function createBattleTransferDeps(
   const measureHandCard = (cardKey: string): CardRect | null =>
     ctx.measureVisualCardRect(ctx.handCardRefs.current[cardKey] ?? null, scene());
 
-  function playTransferSound(delayMs = 0) {
+  function playTransferSound(delaySeconds = 0) {
     const hasActiveBattle = readBattle().hasActiveBattle;
     if (!hasActiveBattle) return;
-    playBattleEvent("drawTransfer", { volume: CARD_TRANSFER_CONFIG.soundVolume, delay: delayMs });
+    playBattleEvent("drawTransfer", { volume: CARD_TRANSFER_CONFIG.soundVolume, delay: delaySeconds });
   }
 
   function runCardTransfer(transfer: Omit<CardTransfer, "id">, onComplete?: () => void): Promise<void> {

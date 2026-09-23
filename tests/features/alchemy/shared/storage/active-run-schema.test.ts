@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ActiveRunDataSchema } from "@/lib/validation";
 import { parseActiveRun } from "@/lib/active-run-session";
+import { findMysteryEvent } from "@/lib/mystery";
 import { createSeededRng } from "@/lib/utils";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { makeMinimalActiveRunInput } from "../../../../fixtures/active-run";
@@ -133,19 +134,18 @@ describe("active run field parsing and normalization", () => {
       makeMinimalActiveRunInput({
         currentScreen: "mystery",
         mysteryVisit: {
-          eventId: "ancient-altar",
+          event: findMysteryEvent("ancient-altar")!,
           chosenChoice: null,
           pendingRemoval: true,
           cardChoices: null,
           grantedTrinketIds: [],
           grantedGear: [],
           chosenCardId: null,
-          resolvedTrinketIds: [],
         },
       }),
     );
     expect(result?.mysteryVisit?.pendingRemoval).toBe(true);
-    expect(result?.mysteryVisit?.eventId).toBe("ancient-altar");
+    expect(result?.mysteryVisit?.event.id).toBe("ancient-altar");
   });
 
   it("preserves conditional card effects across active-run parsing", () => {

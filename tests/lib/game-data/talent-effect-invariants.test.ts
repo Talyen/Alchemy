@@ -65,7 +65,6 @@ const LEGACY_SNAPSHOT_FIELDS: ReadonlyArray<keyof TalentEffectManifest> = [
   "flatStunDamage",
 
   "manaNextTurnOnWish",
-  "holyOnAttackBlocked",
   "forgeOnBurnDealt",
   "firstLeechCardDoubled",
   "stunBuildupReductionPercent",
@@ -83,7 +82,6 @@ const LEGACY_SNAPSHOT_FIELDS: ReadonlyArray<keyof TalentEffectManifest> = [
   "blockEnemyLeech",
   "dodgeBlockPercent",
   "consumeDetonatesBurn",
-  "archeryHolyDamageVsFrozen",
   "archeryPhysicalWithoutBlock",
   "blockOnArmorCard",
   "cleansePoisonOnBurnCard",

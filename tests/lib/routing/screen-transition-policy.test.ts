@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   ALLOWED_SCREEN_TRANSITIONS,
   assertScreenTransitionAllowed,
+  isRunResumeTransitionAllowed,
   isRunLoopScreen,
   isScreenTransitionAllowed,
   ROUTE_SCREEN_VALUES,
@@ -51,7 +52,9 @@ const PRODUCTION_NAVIGATION_EDGES: ReadonlyArray<readonly [Screen, Screen]> = [
   [ROUTE_SCREENS.DIFFICULTY_SELECT, ROUTE_SCREENS.BATTLE],
   [ROUTE_SCREENS.DRAFT_DECK, ROUTE_SCREENS.BATTLE],
   [ROUTE_SCREENS.GAME_MODE_SELECT, ROUTE_SCREENS.CHARACTER_SELECT],
-  [ROUTE_SCREENS.COLLECTION, ROUTE_SCREENS.BATTLE],
+  [ROUTE_SCREENS.OPTIONS, ROUTE_SCREENS.GAME_MODE_SELECT],
+  [ROUTE_SCREENS.OPTIONS, ROUTE_SCREENS.CHARACTER_SELECT],
+  [ROUTE_SCREENS.OPTIONS, ROUTE_SCREENS.DESTINATION],
 ];
 
 describe("screen-transition-policy", () => {
@@ -85,11 +88,17 @@ describe("screen-transition-policy", () => {
     );
   });
 
-  it("allows saved gameplay and starter drafts to resume from menus and setup", () => {
+  it("keeps ordinary meta navigation separate from saved-run resume", () => {
     for (const from of ["menu", "game-mode-select", "character-select", "difficulty-select", "options"] as const) {
       for (const to of ["battle", "labyrinth-map", "shop", "rewards", "draft-deck", "difficulty-select"] as const) {
-        expect(isScreenTransitionAllowed(from, to), `${from} -> ${to}`).toBe(true);
+        expect(isRunResumeTransitionAllowed(from, to), `${from} -> ${to}`).toBe(true);
       }
     }
+    expect(isScreenTransitionAllowed(ROUTE_SCREENS.COLLECTION, ROUTE_SCREENS.REWARDS)).toBe(false);
+    expect(isScreenTransitionAllowed(ROUTE_SCREENS.MENU, ROUTE_SCREENS.SHOP)).toBe(false);
+    expect(isScreenTransitionAllowed(ROUTE_SCREENS.OPTIONS, ROUTE_SCREENS.BATTLE)).toBe(false);
+    expect(isRunResumeTransitionAllowed(ROUTE_SCREENS.COLLECTION, ROUTE_SCREENS.REWARDS)).toBe(true);
+    expect(isRunResumeTransitionAllowed(ROUTE_SCREENS.BATTLE, ROUTE_SCREENS.REWARDS)).toBe(false);
+    expect(isRunResumeTransitionAllowed(ROUTE_SCREENS.MENU, ROUTE_SCREENS.RUN_VICTORY)).toBe(false);
   });
 });

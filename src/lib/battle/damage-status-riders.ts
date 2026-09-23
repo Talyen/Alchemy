@@ -224,10 +224,9 @@ export function tryTriggerEnemyFreeze(
 
   if (triggered.kind === "immune") return triggered.state;
 
-  let result =
-    preHitState.talentEffects.archeryCritOnCrowdControl || preHitState.talentEffects.archeryHolyDamageVsFrozen > 0
-      ? setFlag(triggered.state, "hawkEyeReady", true)
-      : triggered.state;
+  let result = preHitState.talentEffects.archeryCritOnCrowdControl
+    ? setFlag(triggered.state, "hawkEyeReady", true)
+    : triggered.state;
   result = applyFrozenHeartDamage(result, combatTexts);
   result = applyGearFreezeDamage(preHitState, result, combatTexts);
   result = applyCrowdControlTriggerBonuses(

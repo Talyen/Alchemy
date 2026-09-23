@@ -83,25 +83,6 @@ export function ArtTurnActiveBorder({
   );
 }
 
-export function ArtHoverKeywordBorder({
-  active,
-  shineColor,
-}: {
-  active: boolean;
-  shineColor?: readonly string[] | undefined;
-}) {
-  if (!active || !shineColor || shineColor.length === 0) return null;
-
-  return (
-    <ShineBorder
-      data-testid="keyword-shine-hover"
-      borderWidth={ACTOR_PANEL_CONFIG.turnActiveArtBorderWidth}
-      shineColor={[...shineColor]}
-      className="z-20 rounded-shell-hero"
-    />
-  );
-}
-
 export function ArtDeathDoorBorder() {
   return (
     <ShineBorder

@@ -3,14 +3,21 @@ import { enemyBestiary } from "@/lib/game-data";
 import { getBossById, getBossEnemy, getCurrentEnemy, rollFreshBossId } from "@/features/alchemy/shared/config/enemies";
 
 describe("getCurrentEnemy", () => {
-  it("returns a non-skeleton enemy when no enemy type is specified", () => {
-    const enemy = getCurrentEnemy();
-    expect(enemy.id).not.toBe("skeleton");
+  it("can select Skeleton from the full encounter pool", () => {
+    const encountered = enemyBestiary.filter((enemy) => enemy.id !== "skeleton").map((enemy) => enemy.id);
+    expect(getCurrentEnemy(undefined, encountered).id).toBe("skeleton");
   });
 
   it("returns a normal enemy when enemy type is normal", () => {
     const enemy = getCurrentEnemy("normal");
     expect(enemy.enemyType).toBe("normal");
+  });
+
+  it("can select Skeleton from random normal encounters", () => {
+    const encountered = enemyBestiary
+      .filter((enemy) => enemy.enemyType === "normal" && enemy.id !== "skeleton")
+      .map((enemy) => enemy.id);
+    expect(getCurrentEnemy("normal", encountered).id).toBe("skeleton");
   });
 
   it("prefers normal enemies not encountered this run", () => {

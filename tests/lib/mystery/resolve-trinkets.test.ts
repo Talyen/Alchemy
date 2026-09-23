@@ -4,7 +4,6 @@ import { gearBaseItemList } from "@/lib/gear/base-items";
 import { findMysteryEvent, isMysteryLootEligible } from "@/lib/mystery";
 import {
   applyResolvedMysteryTrinketIds,
-  collectResolvedMysteryTrinketIds,
   repairUnresolvedMysteryTrinkets,
   resolveMysteryEventTrinkets,
 } from "@/lib/mystery/resolve-trinkets";
@@ -127,22 +126,19 @@ describe("resolveMysteryEventTrinkets", () => {
   });
 });
 
-describe("collect and apply resolved mystery trinket ids", () => {
-  it("round-trips substitutions onto the pool event", () => {
+describe("version 19 Mystery Boon decoding", () => {
+  it("applies saved substitutions onto the pool event", () => {
     const event = findMysteryEvent("enchanted-spring");
     expect(event).not.toBeNull();
     const resolved = resolveMysteryEventTrinkets(event!, ["icy-heart"], () => 0);
-    const ids = collectResolvedMysteryTrinketIds(resolved);
-    const hydrated = applyResolvedMysteryTrinketIds(event!, ids);
+    const hydrated = applyResolvedMysteryTrinketIds(event!, ["groves-favor", ""]);
     expect(hydrated.choices).toEqual(resolved.choices);
   });
 
-  it("round-trips astral-gear fallback slots through the positional id contract", () => {
+  it("decodes Astral fallback slots from the positional id contract", () => {
     const allOwned = trinketLibrary.map((entry) => entry.id);
     const resolved = resolveMysteryEventTrinkets(eventWithTwoTrinkets, allOwned, () => 0);
-    const ids = collectResolvedMysteryTrinketIds(resolved);
-    expect(ids).toEqual(["", ""]);
-    const hydrated = applyResolvedMysteryTrinketIds(eventWithTwoTrinkets, ids);
+    const hydrated = applyResolvedMysteryTrinketIds(eventWithTwoTrinkets, ["", ""]);
     expect(hydrated.choices).toEqual(resolved.choices);
   });
 
@@ -174,8 +170,7 @@ describe("collect and apply resolved mystery trinket ids", () => {
   it("can re-apply resolved ids to an already resolved event with fallback astral gear", () => {
     const allOwned = trinketLibrary.map((entry) => entry.id);
     const resolved = resolveMysteryEventTrinkets(eventWithTwoTrinkets, allOwned, () => 0);
-    const ids = collectResolvedMysteryTrinketIds(resolved);
-    const rehydrated = applyResolvedMysteryTrinketIds(resolved, ids);
+    const rehydrated = applyResolvedMysteryTrinketIds(resolved, ["", ""]);
     expect(rehydrated.choices).toEqual(resolved.choices);
   });
 

@@ -21,11 +21,13 @@ import { ANCIENT_ALTAR_MYSTERY_VISIT } from "../../shared/stores/active-run-data
 beforeEach(resetAllTestStores);
 
 function createNavigation() {
+  const navigateTo = (screen: Screen, onCommit?: () => void) => {
+    dispatchRunSessionCommand((draft) => setScreen(draft, screen));
+    onCommit?.();
+  };
   return createContentSystemNavigation({
-    navigateTo: (screen: Screen, onCommit?: () => void) => {
-      dispatchRunSessionCommand((draft) => setScreen(draft, screen));
-      onCommit?.();
-    },
+    navigateTo,
+    resumeTo: navigateTo,
     onStartBattle: vi.fn(),
     getAvailableDestinations: () => ["Normal Combat"],
     onResumeWildwood: vi.fn(),

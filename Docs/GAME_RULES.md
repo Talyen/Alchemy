@@ -24,10 +24,7 @@ keeps shallow hits from importing their parent card/Wish orchestration. Card-spe
 reaction stages live in `card-hit-reactions.ts`; calculation and intrinsic statuses
 remain in their existing lower-level owners.
 
-The table describes the current hit recipes, including a remaining legacy path.
-Historical gameplay is not a preservation requirement; apply the
-[save baseline](../src/features/alchemy/shared/storage/MIGRATIONS.md#supported-baseline)
-when retiring obsolete mechanics. “Intrinsic” means
+The table describes the current hit recipes. “Intrinsic” means
 `applyDamageStatuses`, including its existing status-triggered reactions, not just
 adding a status stack. Thresholds and once-only kill rewards use `applyHitEpilogue`.
 
@@ -39,7 +36,6 @@ adding a status stack. Thresholds and once-only kill rewards use `applyHitEpilog
 | Fixed talent hit                  | Pace its fixed amount, apply enemy multiplier and round, then Block and Physical/Stun Armor. No offensive card bonuses or critical strike.                   | Stop if no damage remains; otherwise Health, Armor decay, intrinsic statuses, text, thresholds/kill rewards, then Holy Leech/Faith Barrier/Block/Tithe, Nature refunds, or Burn Forge payout.                                                                    |
 | Derived talent hit                | Round its already-paced amount and apply only the enemy trait multiplier, then round and mitigate as above.                                                  | Same shallow talent recipe. Do not apply pacing or offensive bonuses again.                                                                                                                                                                                      |
 | Reflected Holy                    | Block lost × saved reflection percentage × Holy trait multiplier, rounded, then enemy Block.                                                                 | Health, Armor decay, damage text, intrinsic statuses, full Holy reactions including Wish, then thresholds/kill rewards using pre-damage statuses. No Forge spending.                                                                                             |
-| Legacy blocked attack             | Saved fixed Holy retaliation uses card-style calculation without a real card source.                                                                         | Existing full card recipe, including purge and Forge rules; obsolete compatibility behavior may be retired under the save baseline.                                                                                                                              |
 | Attack purge                      | Remove the first available Armor, Block, or Forge; round its Holy-multiplied amount, then pace it. Bypass further mitigation.                                | Damage text, Health, thresholds/kill rewards, then Brass Censer. No intrinsic status or full Holy recipe. A lethal purge prevents the parent Health hit.                                                                                                         |
 
 `HitFacts` keeps reaction eligibility, pre-hit Health, resolved damage, actual Health

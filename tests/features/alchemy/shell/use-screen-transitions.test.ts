@@ -112,6 +112,20 @@ describe("screen navigation", () => {
     expect(nav.prepareScreen).not.toHaveBeenCalled();
   });
 
+  it("resumes a saved run through the same delayed preparation and cancellation path", () => {
+    const prepareScreen = vi.fn();
+    const showScreen = vi.fn();
+    const nav = createScreenNavigation({ readScreen: () => "collection", prepareScreen, showScreen });
+    expect(() => nav.navigateTo("rewards")).toThrow("Disallowed screen transition");
+    nav.resumeTo("rewards");
+    expect(prepareScreen).toHaveBeenCalledExactlyOnceWith("rewards");
+    expect(showScreen).not.toHaveBeenCalled();
+    nav.cancelPending();
+    vi.runAllTimers();
+    expect(showScreen).not.toHaveBeenCalled();
+    expect(() => nav.resumeTo("run-victory")).toThrow("Disallowed run resume transition");
+  });
+
   it("treats a guarded no-op as silent even on a disallowed edge", () => {
     const nav = navigation();
     expect(() => nav.transition("character-select", { guard: () => false })).not.toThrow();

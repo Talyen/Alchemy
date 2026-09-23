@@ -139,7 +139,7 @@ const COUNT_PARITY_RULES: CountParityRule[] = [
   statusParityRule("thorns", "Thorns"),
 ];
 
-export { TRAIT_REQUIRED_PATTERNS, validateEnemyTraitDescriptionParity } from "./enemy-trait-parity";
+export { TRAIT_REQUIRED_TERMS, validateEnemyTraitDescriptionParity } from "./enemy-trait-parity";
 export { flattenEffects } from "./helpers";
 export { validateTrinketDescriptionParity } from "./trinket-parity";
 

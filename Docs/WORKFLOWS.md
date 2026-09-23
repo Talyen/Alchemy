@@ -103,6 +103,7 @@ Visible behavior: [UI battle feedback](./UI_BATTLE.md#battle-feedback) and [batt
 
 1. Add the screen to `Screen` and `ROUTE_SCREENS` in `src/lib/routing/screens.ts`.
 2. Classify it in `src/lib/routing/run-screen-router.ts` (`SCREEN_PHASE`) and add every legal interactive edge in `src/lib/routing/screen-transition-policy.ts`. Run-loop lists derive from `SCREEN_PHASE`; `use-screen-transitions.ts` owns delay/immediate/commit timing, not taxonomy.
+   Ordinary edges cover new-run setup and player actions. Returning to an existing run uses `resumeRun` and its validated saved screen through `resumeTo`; do not add every resumable screen as an ordinary edge from menus or meta screens.
 3. Create the component under `run-loop/screens/`, `run-setup/screens/`, or `meta/screens/`, and export it from that directory's `index.ts`.
 4. Use `TitledScreenShell` from `shared/ui/layout-components.tsx`; `ScreenShell` is transparent and layout-only. `TitledScreenShell` owns the full-stage overflow wrapper so plasma shows through, and the app stage owns the background. Reserve `alchemy-shell` for contained panels. Main Menu and Battle are exceptions; choosers use widths from `shared/config/layout.ts`. The global menu button lives in `App.tsx`, so screens wire no menu props.
 5. Wire the route in the matching phase table under `src/app/screen-routes/` (`meta-routes`, `run-setup-routes`, or `run-loop-routes`).
@@ -129,6 +130,10 @@ Mystery Boon choices prefer distinct unowned Boons across alternatives, but an u
 Before Astral Gear becomes eligible, Mystery selection excludes an entire event if any choice would need an Astral fallback: an owned or repeated named Boon, an authored Astral grant, or too few unowned Boons for its named and random grants. Random grants reserve the named Boons in their own choice, even when those named effects appear later. Already offered and saved visits keep their resolved rewards; this gate applies only when selecting a new event.
 
 The committed `mysteryChosenChoice` records Material amounts actually awarded, including Homestead find bonuses, for the reward summary and save/resume. Keep the offered event's base amounts unchanged and apply bonuses only at the grant. `applyMysteryEffect` returns the actual Material award in `MysteryEffectResult`; navigation records that result without reconstructing it from inventory differences.
+
+Save the complete resolved Mystery offer after Boon substitution and Labyrinth modifiers. Resume uses that offer directly, so an event-pool edit cannot change a choice the player already saw. The chosen choice remains a separate record of rewards actually granted.
+
+Mystery choice commands accept only a choice object from the current resolved visit. Retained callbacks from an earlier visit, even one with the same event, cannot apply effects to the new visit. Resolve effects from the stored offer so the displayed choice and awarded outcome stay together.
 
 `removeCard` removes a random deck card immediately with no picker. The old player-choice removal picker is retired: `handleMysteryRemoveCard` and the screen's remove phase are gone, and `mysteryPendingRemoval` persists only so old saves still parse.
 

@@ -73,9 +73,10 @@ describe("Compendium pool partitioning", () => {
     expect(boss.every((e) => e.enemyType === "boss")).toBe(true);
   });
 
-  it("excludes the tutorial skeleton from encounterEnemies pool", () => {
-    expect(encounterEnemies.some((e) => (e.id as string) === "skeleton")).toBe(false);
-    expect(encounterEnemies.length).toBe(enemyBestiary.length - 1);
+  it("keeps the full bestiary, including Skeleton, eligible for encounters", () => {
+    expect(encounterEnemies).toBe(enemyBestiary);
+    expect(encounterEnemies.some((enemy) => enemy.id === "skeleton")).toBe(true);
+    expect(enemiesByType.normal.some((enemy) => enemy.id === "skeleton")).toBe(true);
   });
 });
 

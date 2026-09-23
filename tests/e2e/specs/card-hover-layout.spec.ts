@@ -87,16 +87,14 @@ test("Victory card hover and focus preserve layout", async ({ page }) => {
   await expectStableHoverLayout(page.getByRole("button", { name: /^Select / }).first());
 });
 
-async function expectBorderOnlyShine(surface: Locator, shineOverride?: Locator) {
+async function expectBorderOnlyShine(surface: Locator) {
   if (await surface.evaluate((element) => element.classList.contains("talent-card-available"))) {
     await expect(surface).toBeVisible();
     await surface.hover({ force: true });
   } else {
     await surface.hover();
   }
-  // Battle panels mount both the turn badge and the hover shine; callers
-  // scope to the hover shine so the hidden turn badge cannot match.
-  const shine = shineOverride ?? surface.locator(".shine-border");
+  const shine = surface.locator(".shine-border");
   await expect(shine).toBeVisible();
   await expect(shine).not.toHaveAttribute("data-glow", "true");
   await expect.poll(() => shine.evaluate((element) => getComputedStyle(element).filter)).toBe("none");
@@ -119,11 +117,26 @@ test("Homestead hover shows shine border without changing affordability", async 
   await expectStableHoverLayout(await homestead.constructButton());
 });
 
-test("Battle hand and enemy hover shine leave turn borders unchanged", async ({ page }) => {
+test("Battle hand shine and combatant hover leave turn borders unchanged", async ({ page }) => {
   const hand = [makeCard({ cost: 0 })];
   await injectActiveBattle(page, makeGoblinBattleState({ hand }), { runDeck: hand, autoEndTurn: false });
   await expectBorderOnlyShine(page.locator('[data-hand-card="true"] button').first());
-  await expectBorderOnlyShine(page.getByTestId("battle-enemy-art-panel"), page.getByTestId("keyword-shine-hover"));
+  const player = page.getByTestId("battle-player-art-panel");
+  const enemy = page.getByTestId("battle-enemy-art-panel");
+  const bottomDifference = async () => {
+    const playerBottom = await player.evaluate((element) => element.getBoundingClientRect().bottom);
+    const enemyBottom = await enemy.evaluate((element) => element.getBoundingClientRect().bottom);
+    return Math.abs(playerBottom - enemyBottom);
+  };
+  await expect.poll(() => player.evaluate((element) => getComputedStyle(element).scale)).toBe("1.035");
+  await expect.poll(bottomDifference).toBeLessThan(2);
+  await enemy.hover();
+  await expect(enemy.locator(".shine-border")).toHaveCount(1);
+  await expect(player.locator(".shine-border")).toHaveCount(1);
+  await expect(page.getByTestId("turn-badge-player")).toHaveAttribute("data-active", "true");
+  await expect(page.getByTestId("turn-badge-enemy")).toHaveAttribute("data-active", "false");
+  await expect.poll(() => enemy.evaluate((element) => getComputedStyle(element).scale)).toBe("1.035");
+  await expect.poll(bottomDifference).toBeLessThan(2);
   await expect(page.getByTestId("turn-badge-player")).not.toHaveAttribute("data-glow", "true");
   await expect(page.getByTestId("turn-badge-enemy")).not.toHaveAttribute("data-glow", "true");
 });

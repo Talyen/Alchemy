@@ -116,13 +116,7 @@ export function applyRestoreRunToDraft(draft: GameplayDraft, activeRun: ActiveRu
     );
   }
   if (resumeScreen === "mystery" && !mysteryEvent) {
-    if (activeRun.mysteryVisit != null) {
-      abandonMysteryDestinationVisit(draft);
-      clearMysteryVisitState(draft);
-      setScreen(draft, ROUTE_SCREENS.DESTINATION);
-      rebindLiveRunMeta(draft);
-      return;
-    }
+    abandonMysteryDestinationVisit(draft);
     clearMysteryVisitState(draft);
     setScreen(draft, ROUTE_SCREENS.DESTINATION);
   }

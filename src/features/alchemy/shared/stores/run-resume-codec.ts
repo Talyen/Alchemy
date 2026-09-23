@@ -24,7 +24,6 @@ import {
   type RunActivity,
 } from "@/lib/active-run-session";
 import { battleSnapshot } from "@/lib/battle";
-import { activeLabyrinthBenefits } from "@/lib/content-systems/labyrinth/room-rules";
 import type { EncounterCombatTraitId, EncounterRewardTraitId, LabyrinthMap } from "@/lib/content-systems/types";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type { CorruptionResult } from "@/lib/corruption";
@@ -301,10 +300,7 @@ function decodeRunActivity(activeRun: ActiveRunData, screen: Screen): RunActivit
   if (screen === "mystery")
     return {
       kind: screen,
-      data: hydrateMysteryVisit(activeRun.mysteryVisit, {
-        modifiers: activeLabyrinthBenefits(activeRun.contentSystemType, activeRun.activeLabyrinthRewardModifiers ?? []),
-        maxHealth: activeRun.runMaxHealth,
-      }),
+      data: hydrateMysteryVisit(activeRun.mysteryVisit),
     };
   if (screen === "corruption") return { kind: screen, data: activeRun.corruptionResult };
   return transitionRunActivity({ kind: "idle" }, screen);

@@ -24,6 +24,7 @@ export function createPlaythroughController() {
   const transition: typeof navigation.transition = (screen, options) =>
     navigation.transition(screen, { ...options, immediate: true });
   const navigateTo: typeof navigation.navigateTo = (screen, prepare) => transition(screen, prepare ? { prepare } : {});
+  const resumeTo: typeof navigation.resumeTo = (screen, prepare) => navigation.resumeTo(screen, prepare, true);
   const outcomes = createRunOutcomes({
     actions: { navigateTo, transition, clearCardHover: () => {} },
     getAvailableDestinations: readRunAvailableDestinations,
@@ -42,6 +43,7 @@ export function createPlaythroughController() {
   const flow = createRunFlowEngine(
     {
       navigateTo,
+      resumeTo,
       transition,
       cancelPending: navigation.cancelPending,
       battle: {

@@ -5,15 +5,33 @@ import { createMysteryEventNavigation } from "@/features/alchemy/run-loop/naviga
 import { resetAllTestStores, resetProfileForTest } from "../../../helpers/run-domain-store-test";
 import { setRunProgress, setRunSession } from "../../../helpers/run-domain-store-test";
 import { subscribeRunSessionCommits } from "@/features/alchemy/shared/stores/run-session-command";
-import { readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
-import { type MysteryEffect } from "@/lib/mystery";
+import {
+  readActiveRun,
+  readRunProfile,
+  readRunRevision,
+  readRunSession,
+} from "@/features/alchemy/shared/stores/run-reads";
+import { findMysteryEvent, type MysteryChoice, type MysteryEffect } from "@/lib/mystery";
 import { playGoldGain, playGoldSpend, playUISound } from "@/lib/audio";
 import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
-import { emptyHydratedMysteryVisit, readActivityData } from "@/lib/active-run-session";
+import { emptyHydratedMysteryVisit, hydrateMysteryVisit, readActivityData } from "@/lib/active-run-session";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 function renderMysteryNav(navigateTo = vi.fn((_screen: Screen, onCommit?: () => void) => onCommit?.())) {
   const hook = renderHook(() => createMysteryEventNavigation({ navigateTo }));
   return { ...hook, navigateTo };
+}
+
+function offerChoices(choices: MysteryChoice[]): MysteryChoice[] {
+  setRunSession({
+    activity: {
+      kind: "mystery",
+      data: {
+        ...emptyHydratedMysteryVisit(),
+        mysteryEvent: { id: "test-mystery", title: "Test Mystery", art: "", narrative: "", choices },
+      },
+    },
+  });
+  return readActivityData(readRunSession().activity, "mystery").mysteryEvent!.choices;
 }
 
 beforeEach(() => {
@@ -27,10 +45,12 @@ describe("createMysteryEventNavigation", () => {
     setRunProgress({ effects: { ...defaultHomesteadEffects, herbFindBonus: 0.5 } });
     const before = readRunProfile().materialInventory.herbs;
     const { result } = renderMysteryNav();
-    const choice = {
-      label: "Gather Herbs",
-      effects: [{ kind: "gainMaterial" as const, material: "herbs" as const, amount: 3 }],
-    };
+    const choice = offerChoices([
+      {
+        label: "Gather Herbs",
+        effects: [{ kind: "gainMaterial" as const, material: "herbs" as const, amount: 3 }],
+      },
+    ])[0]!;
 
     act(() => result.current.handleMysteryChoice(choice));
 
@@ -38,7 +58,7 @@ describe("createMysteryEventNavigation", () => {
     expect(readActivityData(readRunSession().activity, "mystery").mysteryChosenChoice?.effects).toEqual([
       { kind: "gainMaterial", material: "herbs", amount: 5 },
     ]);
-    expect(choice.effects[0]?.amount).toBe(3);
+    expect(choice.effects[0]).toEqual({ kind: "gainMaterial", material: "herbs", amount: 3 });
   });
 
   it("beginMysteryEvent stores an event and navigates", () => {
@@ -62,10 +82,12 @@ describe("createMysteryEventNavigation", () => {
     setRunProgress({ contentSystemType: "wildwood" });
     const before = readRunProfile().materialInventory.wood;
     const { result } = renderMysteryNav();
-    const choice = {
-      label: "Gather Wood",
-      effects: [{ kind: "gainMaterial" as const, material: "wood" as const, amount: 3 }],
-    };
+    const choice = offerChoices([
+      {
+        label: "Gather Wood",
+        effects: [{ kind: "gainMaterial" as const, material: "wood" as const, amount: 3 }],
+      },
+    ])[0]!;
 
     act(() => result.current.handleMysteryChoice(choice));
 
@@ -79,7 +101,6 @@ describe("createMysteryEventNavigation", () => {
     setRunProgress({ gold: 20 });
     const { result } = renderMysteryNav();
     const commits: number[] = [];
-    const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
     vi.mocked(playGoldGain).mockImplementationOnce(() => {
       expect(readRunProfile().gold).toBe(25);
     });
@@ -87,14 +108,19 @@ describe("createMysteryEventNavigation", () => {
       expect(readRunProfile().gold).toBe(25);
     });
 
-    act(() => {
-      result.current.handleMysteryChoice({
+    const choice = offerChoices([
+      {
         label: "Trade",
         effects: [
           { kind: "gainGold", amount: 10 },
           { kind: "loseGold", amount: 5 },
         ],
-      });
+      },
+    ])[0]!;
+    const unsubscribe = subscribeRunSessionCommits((revision) => commits.push(revision));
+
+    act(() => {
+      result.current.handleMysteryChoice(choice);
     });
     unsubscribe();
 
@@ -106,20 +132,69 @@ describe("createMysteryEventNavigation", () => {
   it("handleMysteryChoice ignores a second call after the choice commits", () => {
     setRunProgress({ gold: 20 });
     const { result } = renderMysteryNav();
+    const [choice, otherChoice] = offerChoices([
+      { label: "Take", effects: [{ kind: "gainGold", amount: 10 }] },
+      { label: "Take again", effects: [{ kind: "gainGold", amount: 10 }] },
+    ]);
 
     act(() => {
-      result.current.handleMysteryChoice({
-        label: "Take",
-        effects: [{ kind: "gainGold", amount: 10 }],
-      });
-      result.current.handleMysteryChoice({
-        label: "Take again",
-        effects: [{ kind: "gainGold", amount: 10 }],
-      });
+      result.current.handleMysteryChoice(choice!);
+      result.current.handleMysteryChoice(otherChoice!);
     });
 
     expect(readRunProfile().gold).toBe(30);
     expect(readActivityData(readRunSession().activity, "mystery").mysteryChosenChoice?.label).toBe("Take");
+  });
+
+  it("rejects invented choices without a commit, reward, RNG draw, or sound", () => {
+    const { result } = renderMysteryNav();
+    const offered = offerChoices([{ label: "Take", effects: [{ kind: "gainGold", amount: 10 }] }])[0]!;
+    const beforeRevision = readRunRevision();
+    const beforeRng = readActiveRun().rng;
+    const beforeGold = readRunProfile().gold;
+
+    act(() => {
+      result.current.handleMysteryChoice({ ...offered, effects: [...offered.effects] });
+    });
+
+    expect(readRunRevision()).toBe(beforeRevision);
+    expect(readActiveRun().rng).toEqual(beforeRng);
+    expect(readRunProfile().gold).toBe(beforeGold);
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryChosenChoice).toBeNull();
+    expect(playGoldGain).not.toHaveBeenCalled();
+  });
+
+  it("rejects a choice held from an earlier visit even when the event id repeats", () => {
+    const { result } = renderMysteryNav();
+    const oldChoice = offerChoices([{ label: "Take", effects: [{ kind: "gainGold", amount: 10 }] }])[0]!;
+    const currentChoice = offerChoices([{ label: "Take", effects: [{ kind: "gainGold", amount: 10 }] }])[0]!;
+    const beforeRevision = readRunRevision();
+
+    act(() => result.current.handleMysteryChoice(oldChoice));
+    expect(readRunRevision()).toBe(beforeRevision);
+    expect(readRunProfile().gold).toBe(0);
+
+    act(() => result.current.handleMysteryChoice(currentChoice));
+    expect(readRunProfile().gold).toBe(10);
+  });
+
+  it("accepts the offered choice from a hydrated Mystery visit", () => {
+    const visit = hydrateMysteryVisit({
+      event: findMysteryEvent("fairy-ring")!,
+      chosenChoice: null,
+      cardChoices: null,
+      grantedTrinketIds: [],
+      grantedGear: [],
+      chosenCardId: null,
+    });
+    setRunSession({ activity: { kind: "mystery", data: visit } });
+    const choice = readActivityData(readRunSession().activity, "mystery").mysteryEvent!.choices[0]!;
+    const { result } = renderMysteryNav();
+
+    act(() => result.current.handleMysteryChoice(choice));
+
+    expect(readRunProfile().gold).toBe(20);
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryChosenChoice?.label).toBe("Take the Gold");
   });
 
   it("handleMysteryChooseCard ignores a second pick", async () => {
@@ -145,13 +220,16 @@ describe("createMysteryEventNavigation", () => {
   it("rolls back state and skips gold sounds when a later effect throws", () => {
     setRunProgress({ gold: 20 });
     const { result } = renderMysteryNav();
+    const choice = offerChoices([
+      {
+        label: "Broken",
+        effects: [{ kind: "gainGold", amount: 10 }, { kind: "unknown-kind" } as unknown as MysteryEffect],
+      },
+    ])[0]!;
 
     expect(() =>
       act(() => {
-        result.current.handleMysteryChoice({
-          label: "Broken",
-          effects: [{ kind: "gainGold", amount: 10 }, { kind: "unknown-kind" } as unknown as MysteryEffect],
-        });
+        result.current.handleMysteryChoice(choice);
       }),
     ).toThrow(/Unhandled mystery effect kind/);
 

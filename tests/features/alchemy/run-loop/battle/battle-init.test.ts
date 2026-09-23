@@ -73,6 +73,11 @@ describe("createBattleInit", () => {
     expect(prepareBattleSessionForStart).toHaveBeenCalled();
   });
 
+  it("honors an explicitly selected normal enemy", () => {
+    makeInit().startBattle(readActiveRun().runDeck, 0, "normal", [], "skeleton");
+    expect(readBattle().battleState.currentEnemy.id).toBe("skeleton");
+  });
+
   it("appendUnique avoids duplicate encountered enemy ids", () => {
     const skeleton = enemyBestiary.find((e) => e.id === "skeleton")!;
     setRunProgress({

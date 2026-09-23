@@ -3,6 +3,7 @@ import { parseActiveRun, toActiveRunData } from "@/lib/active-run-session";
 import { ActiveRunDataSchema } from "@/lib/validation";
 import { makeActiveRunData } from "../../features/alchemy/shared/stores/active-run-data-fixture";
 import { cardById, cardLibrary } from "@/lib/game-data";
+import { findMysteryEvent } from "@/lib/mystery";
 import { makeMinimalActiveRunInput, makeWildwoodDraft } from "../../fixtures/active-run";
 
 describe("parseActiveRun", () => {
@@ -38,7 +39,7 @@ describe("parseActiveRun", () => {
           purchasedSlotKeys: [],
         },
         mysteryVisit: {
-          eventId: "ancient-altar",
+          event: findMysteryEvent("ancient-altar")!,
           chosenChoice: null,
           cardChoices: [damaged],
           grantedTrinketIds: [],
@@ -134,13 +135,12 @@ describe("toActiveRunData", () => {
         currentRewardTraitIds: [],
       },
       mysteryVisit: {
-        eventId: "ancient-altar",
+        event: findMysteryEvent("ancient-altar")!,
         chosenChoice: null,
         cardChoices: [{ id: card.id } as unknown as typeof card],
         grantedTrinketIds: [],
         grantedGear: [],
         chosenCardId: null,
-        resolvedTrinketIds: [],
       },
     });
 

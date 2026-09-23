@@ -1,4 +1,5 @@
 import { saveEnvelopeFixture } from "./saves";
+import { gridLabyrinthMapFixture } from "./labyrinth-map";
 
 // Intentionally non-default values exercise round-trip recovery: every
 // override below is valid but differs from SaveDataSchema defaults, while
@@ -56,4 +57,30 @@ export function currentSchemaCampaignSave() {
     bondedCompanions: { wolf: 1 },
     completedDifficulties: { knight: ["difficulty-1"] },
   });
+}
+
+// The last supported shape before Mystery began storing its resolved offer.
+export function version19MysterySave() {
+  const priorRun = currentSchemaCampaignSave().activeRun as unknown as Record<string, unknown>;
+  return {
+    ...currentSchemaCampaignSave(),
+    saveSchemaVersion: 19,
+    activeRun: {
+      ...priorRun,
+      contentSystemType: "labyrinth",
+      labyrinthMap: gridLabyrinthMapFixture(),
+      currentScreen: "mystery",
+      runMaxHealth: 30,
+      activeLabyrinthRewardModifiers: ["golden-omen"],
+      mysteryVisit: {
+        eventId: "fairy-ring",
+        chosenChoice: null,
+        cardChoices: null,
+        grantedTrinketIds: [],
+        grantedGear: [],
+        chosenCardId: null,
+        resolvedTrinketIds: ["", "parasitic-bloom"],
+      },
+    },
+  };
 }

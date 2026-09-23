@@ -12,6 +12,14 @@ import {
 } from "../../fixtures/active-run";
 import { DRAFT_ROUNDS } from "@/lib/game-constants";
 
+const testMysteryEvent = {
+  id: "cardless-shrine",
+  title: "Cardless Shrine",
+  art: "",
+  narrative: "Test",
+  choices: [{ label: "Leave", effects: [] }],
+};
+
 describe("ActiveRunDataSchema normalize", () => {
   it("passes through an active campaign run and nulls foreign content fields", () => {
     const result = parseActiveRunData();
@@ -117,7 +125,7 @@ describe("ActiveRunDataSchema normalize", () => {
       },
       shopState: { cards: [liveCard, tombstonedCard] },
       alchemistState: { potions: [tombstonedCard] },
-      mysteryVisit: { eventId: "e", cardChoices: [tombstonedCard], chosenCardId: "slash" },
+      mysteryVisit: { event: testMysteryEvent, cardChoices: [tombstonedCard], chosenCardId: "slash" },
     });
 
     expect(result.runDeck.map((card) => card.id)).toEqual(Array(DRAFT_ROUNDS).fill("slash"));
@@ -184,7 +192,7 @@ describe("ActiveRunDataSchema normalize", () => {
   it("nulls mysteryVisit when currentScreen is not mystery", () => {
     const result = parseActiveRunData({
       currentScreen: "shop",
-      mysteryVisit: { eventId: "cardless-shrine", cardChoices: [liveCard] },
+      mysteryVisit: { event: testMysteryEvent, cardChoices: [liveCard] },
     });
     expect(result.mysteryVisit).toBeNull();
   });
@@ -192,17 +200,17 @@ describe("ActiveRunDataSchema normalize", () => {
   it("keeps mysteryVisit when currentScreen is mystery", () => {
     const result = parseActiveRunData({
       currentScreen: "mystery",
-      mysteryVisit: { eventId: "cardless-shrine", cardChoices: [liveCard] },
+      mysteryVisit: { event: testMysteryEvent, cardChoices: [liveCard] },
     });
-    expect(result.mysteryVisit).toMatchObject({ eventId: "cardless-shrine" });
+    expect(result.mysteryVisit?.event).toEqual(testMysteryEvent);
     expect(result.mysteryVisit?.cardChoices?.map((card) => card.id)).toEqual(["slash"]);
   });
 
   it("keeps mysteryVisit when currentScreen is unset so resume can infer mystery", () => {
     const result = parseActiveRunData({
-      mysteryVisit: { eventId: "cardless-shrine", cardChoices: [liveCard] },
+      mysteryVisit: { event: testMysteryEvent, cardChoices: [liveCard] },
     });
     expect(result.currentScreen).toBeNull();
-    expect(result.mysteryVisit).toMatchObject({ eventId: "cardless-shrine" });
+    expect(result.mysteryVisit?.event).toEqual(testMysteryEvent);
   });
 });

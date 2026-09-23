@@ -91,6 +91,25 @@ describe("normalizePersistedBattleState", () => {
     expect(normalized.flags.pendingCinderSkinReaction).toBe(false);
   });
 
+  it("keeps current talent effects while dropping unknown saved fields", () => {
+    const defaults = defaultBattleState();
+    const normalized = normalizePersistedBattleState({
+      talentEffects: {
+        ...defaults.talentEffects,
+        holyReflectionBlockLostPercent: 30,
+        holyOnAttackBlocked: 6,
+        archeryHolyDamageVsFrozen: 2,
+        unknownTalentEffect: 9,
+      } as typeof defaults.talentEffects,
+    });
+
+    expect(normalized.talentEffects.holyReflectionBlockLostPercent).toBe(30);
+    expect(normalized.talentEffects).not.toHaveProperty("holyOnAttackBlocked");
+    expect(normalized.talentEffects).not.toHaveProperty("archeryHolyDamageVsFrozen");
+    expect(normalized.talentEffects).not.toHaveProperty("unknownTalentEffect");
+    expect(normalizePersistedBattleState(normalized).talentEffects).toEqual(normalized.talentEffects);
+  });
+
   it("defaults additive enemy trait flags for older battle snapshots", () => {
     const defaults = defaultBattleState();
     const { enemyFirstHitDoubleUsed: _firstHit, enemyBrawlerDamagePenalty: _brawler, ...legacyFlags } = defaults.flags;

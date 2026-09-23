@@ -377,11 +377,12 @@ describe("encodeRunResumeSnapshot", () => {
       },
     });
 
+    const offered = readActivityData(readRunSession().activity, "mystery").mysteryEvent;
     const result = encodeState("mystery");
     const decoded = decodeRunResumeSnapshot(result);
 
-    expect(result.mysteryVisit).toEqual(ANCIENT_ALTAR_MYSTERY_VISIT);
-    expect(readActivityData(decoded.session.activity, "mystery").mysteryEvent?.id).toBe("ancient-altar");
+    expect(result.mysteryVisit?.event).toEqual(offered);
+    expect(readActivityData(decoded.session.activity, "mystery").mysteryEvent).toEqual(offered);
     expect(readActivityData(decoded.session.activity, "mystery").mysteryChosenChoice?.label).toBe("Take the Offering");
   });
 

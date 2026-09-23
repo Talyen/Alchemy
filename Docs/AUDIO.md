@@ -43,6 +43,7 @@ Playback modules live together in `src/lib/audio/`; callers use `@/lib/audio`, b
 - Pausing cancels the pending destination and fade. Resuming the paused track restores its configured volume and mute state; selecting another track starts a new transition.
 - Unknown music keys are ignored: the current track, its key, and any bestiary preview stay untouched. Pausing all music also ends any bestiary preview.
 - The first play of a sound has no cooldown; repeats inside `SFX_COOLDOWN_MS` are suppressed.
+- Delayed battle sounds reserve their cooldown when scheduled. Stopping battle SFX cancels their timers and releases those reservations immediately; UI sounds and stingers continue across battle transitions.
 - Every companion has a card sound and a battle companion mapping. Cards and enemies without a registered sound stay silent and are pinned in the exact `SILENT_*` lists in `tests/lib/audio/sound-registry.test.ts`: adding a sound (or content) must update those lists. Intentionally shared files across battle/UI tables (gold, end-turn, card-fan, mystery-box) are pinned in the same file, as is the music-boss vs attack-only (`living-armor`) roster.
 
 ## Change checklist

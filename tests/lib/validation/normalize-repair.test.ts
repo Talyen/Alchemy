@@ -7,6 +7,7 @@ import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { DRAFT_ROUNDS } from "@/lib/game-constants";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { createSeededRng } from "@/lib/utils";
+import { findMysteryEvent } from "@/lib/mystery";
 
 function makeRng() {
   return createRunRngState(() => 0.42);
@@ -109,13 +110,12 @@ describe("ActiveRunDataSchema empty-choice repair", () => {
       runDeck: [{ id: "slash", effects: [] }],
       rng,
       mysteryVisit: {
-        eventId: "ancient-altar",
+        event: findMysteryEvent("ancient-altar")!,
         chosenChoice: null,
         cardChoices: [tombstonedCard, tombstonedCard, tombstonedCard],
         grantedTrinketIds: [],
         grantedGear: [],
         chosenCardId: null,
-        resolvedTrinketIds: [],
       },
     });
     const visit = result.mysteryVisit!;
@@ -131,13 +131,12 @@ describe("ActiveRunDataSchema empty-choice repair", () => {
       runDeck: [{ id: "slash", effects: [] }],
       rng,
       mysteryVisit: {
-        eventId: "ancient-altar",
+        event: findMysteryEvent("ancient-altar")!,
         chosenChoice: null,
         cardChoices: [tombstonedCard, tombstonedCard, tombstonedCard],
         grantedTrinketIds: [],
         grantedGear: [],
         chosenCardId: "slash",
-        resolvedTrinketIds: [],
       },
     });
     expect(result.mysteryVisit?.cardChoices).toEqual([]);

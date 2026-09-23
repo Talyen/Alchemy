@@ -1,4 +1,4 @@
-import type { CompanionId } from "@/lib/game-data";
+import { cardLibrary, type CompanionId } from "@/lib/game-data";
 import type {
   BuildingId,
   FarmId,
@@ -58,5 +58,11 @@ export function completeResearch(draft: GameplayDraft, id: ResearchId): boolean 
 }
 
 export function bondCompanion(draft: GameplayDraft, id: CompanionId): boolean {
+  const discovered = cardLibrary.some(
+    (card) =>
+      draft.profile.discoveredCardIds.includes(card.id) &&
+      card.effects.some((effect) => effect.kind === "summon-companion" && effect.companionId === id),
+  );
+  if (!discovered) return false;
   return rebindOnSuccess(homestead.bondCompanion(draft.runProfile, id), draft);
 }

@@ -9,7 +9,7 @@ import { talentPool, canUnlockTalent } from "@/lib/game-data";
 import { resetAllTestStores } from "../helpers/run-domain-store-test";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readBattle, readRunSession, readRunProfile, readActiveRun } from "@/features/alchemy/shared/stores/run-reads";
-import { setGold, setMaterials, setRunDeck } from "@/features/alchemy/shared/stores/run-session-write-port";
+import { setGold, setMaterials, setRunDeck, setScreen } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { setBattleState } from "@/features/alchemy/shared/stores/write/run-battle";
 import { createPlaythroughController } from "@/app/playthrough/controller";
 import { commitCardPlay } from "@/features/alchemy/shared/stores/battle-commands";
@@ -88,8 +88,7 @@ describe("retained headless rejection and persistence contracts", () => {
   it("settles mystery once even with an empty deck and preserves homestead upgrades", () => {
     const { flow } = start();
     // Targeted setup, deliberately separate from earned-career sampling.
-    flow.goToScreen("menu");
-    flow.goToScreen("destination");
+    dispatchRunSessionCommand((draft) => setScreen(draft, "destination"));
     flow.beginMysteryEvent();
     dispatchRunSessionCommand((draft) => setRunDeck(draft, []));
     const visit = readRunSession().activity;

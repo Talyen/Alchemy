@@ -7,6 +7,7 @@ import { readActiveRun, readRunSession } from "@/features/alchemy/shared/stores/
 import { resetRunDomainStore, setRunProgress, setRunSession } from "../../../helpers/run-domain-store-test";
 import { makeFlowHandlerDeps } from "../../../helpers/run-flow-handler-deps";
 import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
+import { ROUTE_SCREENS } from "@/lib/routing";
 import { createWildwoodGauntletFlow } from "@/features/alchemy/run-loop/run/wildwood-gauntlet-flow";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
 import { cardById } from "@/lib/game-data";
@@ -45,6 +46,7 @@ describe("Wildwood reward selection", () => {
     const startBoss = vi.fn(() => true);
     const flow = createWildwoodGauntletFlow({
       navigateTo: vi.fn(),
+      resumeTo: vi.fn(),
       onStartBossById: startBoss,
       clearCardHover: vi.fn(),
     });
@@ -59,5 +61,27 @@ describe("Wildwood reward selection", () => {
     expect(readRunSession().wildwoodDraft).toEqual(snapshot.wildwoodDraft);
     expect(readRunSession().activity.kind).toBe("battle");
     expect(readActiveRun().runDeck).toEqual(snapshot.runDeck);
+  });
+
+  it("uses the resume route when recreating a pending Wildwood battle", () => {
+    setRunSession({
+      hasActiveRun: true,
+      wildwoodDraft: {
+        ...createInitialWildwoodDraftState("knight", () => 0.5),
+        phase: "battle",
+        currentBossId: "forge-golem",
+        currentCombatTraitIds: ["tempered"],
+      },
+    });
+    const navigateTo = vi.fn();
+    const resumeTo = vi.fn();
+    const onStartBossById = vi.fn(() => true);
+    const flow = createWildwoodGauntletFlow({ navigateTo, resumeTo, onStartBossById, clearCardHover: vi.fn() });
+
+    flow.resumeWildwoodRun();
+
+    expect(onStartBossById).toHaveBeenCalledWith("forge-golem", undefined, "tempered");
+    expect(resumeTo).toHaveBeenCalledExactlyOnceWith(ROUTE_SCREENS.BATTLE);
+    expect(navigateTo).not.toHaveBeenCalled();
   });
 });

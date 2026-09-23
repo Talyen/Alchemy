@@ -23,6 +23,7 @@ export interface RunNavigationDeps {
   /** Display-only current screen for React slices; never used for commands. */
   screen: Screen;
   navigateTo: (nextScreen: Screen, prepareNavigation?: () => void) => void;
+  resumeTo: (nextScreen: Screen, prepareNavigation?: () => void) => void;
   transition: (nextScreen: Screen, options?: ScreenTransitionOptions) => void;
   cancelPending: () => void;
   battle: BattleLauncherDeps;

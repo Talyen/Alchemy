@@ -1,34 +1,19 @@
 import type { BestiaryEntry } from "@/lib/game-data";
+import { TRAIT_DAMAGE_RULES } from "@/lib/game-constants";
 import type { ContentValidationIssue } from "../types";
 
-// Each trait lists the terms its description must mention; the matcher derives
-// the pattern from the same list so the two cannot drift apart.
-const TRAIT_REQUIRED_TERMS: Record<string, string[]> = {
-  "glacial-body": ["freeze", "burn"],
-  "minor-freeze-vulnerability": ["freeze"],
-  "cold-blooded": ["freeze"],
-  "minor-holy-vulnerability": ["holy"],
-  "tough-hide": ["physical"],
-  "vampiric-curse": ["holy", "burn"],
-  "frozen-apparition": ["physical", "burn", "holy"],
-  "winter-hide": ["freeze", "burn"],
-  "earthen-body": ["freeze", "burn"],
+// Damage types and magnitudes come from TRAIT_DAMAGE_RULES. These terms cover
+// the other effects described by native Traits; nested terms are alternatives.
+export const TRAIT_REQUIRED_TERMS: Record<string, ReadonlyArray<string | readonly string[]>> = {
   "frost-elemental": ["freeze"],
   "iron-hide": ["armor"],
   "rusting-carapace": ["forge"],
   "starting-block": ["block"],
   "glacial-shell": ["freeze"],
-  regeneration: ["health", "heal"],
-  "burn-vulnerability": ["burn"],
-  "brittle-bones": ["stun"],
-  "poison-resistance": ["poison"],
-  "holy-vulnerability": ["holy"],
-  "living-armor": ["bleed", "armor"],
+  regeneration: [["health", "heal"]],
+  "living-armor": ["armor"],
   "gold-trove": ["gold"],
-  "freeze-vulnerability": ["freeze"],
-  amorphous: ["physical", "poison"],
   "cinder-skin": ["burn"],
-  "will-o-wisp": ["physical", "freeze"],
   bandit: ["attack"],
   ogre: ["physical", "block"],
   "fire-imp": ["burn"],
@@ -39,11 +24,11 @@ const TRAIT_REQUIRED_TERMS: Record<string, string[]> = {
   "blood-cultist": ["bleed"],
   "dire-wolf": ["bleed"],
   vampire: ["bleed", "health"],
-  "blood-countess": ["holy", "bleed"],
+  "blood-countess": ["restores health"],
   "zealot-enemy": ["holy", "forge"],
   cleric: ["block", "holy", "health"],
   inquisitor: ["holy", "burn"],
-  paladin: ["block", "stun", "holy"],
+  paladin: ["block", "stun"],
   seraph: ["holy", "health"],
   "winter-wolf": ["freeze"],
   "ice-wraith": ["freeze"],
@@ -55,23 +40,38 @@ const TRAIT_REQUIRED_TERMS: Record<string, string[]> = {
   "stone-titan": ["stun"],
 };
 
-export const TRAIT_REQUIRED_PATTERNS: Record<string, { pattern: RegExp; term: string }> = Object.fromEntries(
-  Object.entries(TRAIT_REQUIRED_TERMS).map(([id, terms]) => [
-    id,
-    { pattern: new RegExp(terms.join("|")), term: terms.join(" or ") },
-  ]),
-);
+function damageMagnitudePhrase(multiplier: number): string {
+  if (multiplier === 0.5) return "half";
+  if (multiplier === 2) return "double";
+  const percent = Number((Math.abs(multiplier - 1) * 100).toFixed(2));
+  return `${percent}% ${multiplier < 1 ? "less" : "more"}`;
+}
 
 export function validateEnemyTraitDescriptionParity(enemy: BestiaryEntry): ContentValidationIssue[] {
   const issues: ContentValidationIssue[] = [];
   for (const trait of enemy.traits) {
-    const config = TRAIT_REQUIRED_PATTERNS[trait.id];
-    if (config && !config.pattern.test(trait.description.toLowerCase())) {
+    const description = trait.description.toLowerCase();
+    for (const requirement of TRAIT_REQUIRED_TERMS[trait.id] ?? []) {
+      const alternatives = typeof requirement === "string" ? [requirement] : requirement;
+      if (alternatives.some((term) => description.includes(term))) continue;
       issues.push({
         severity: "error",
         area: "enemies",
         id: enemy.id,
-        message: `Trait "${trait.id}" description does not mention ${config.term}`,
+        message: `Trait "${trait.id}" description does not mention ${alternatives.join(" or ")}`,
+      });
+    }
+
+    const lines = description.split("\n");
+    for (const rule of TRAIT_DAMAGE_RULES) {
+      if (rule.traitId !== trait.id) continue;
+      const magnitude = damageMagnitudePhrase(rule.multiplier);
+      if (lines.some((line) => line.includes(rule.damageType) && line.includes(magnitude))) continue;
+      issues.push({
+        severity: "error",
+        area: "enemies",
+        id: enemy.id,
+        message: `Trait "${trait.id}" description does not mention ${magnitude} ${rule.damageType} damage`,
       });
     }
   }

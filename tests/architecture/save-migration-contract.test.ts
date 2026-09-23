@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { CURRENT_SAVE_SCHEMA_VERSION, LAUNCH_SAVE_SCHEMA_VERSION, SaveDataSchema } from "@/lib/validation";
+import {
+  CURRENT_SAVE_SCHEMA_VERSION,
+  LAUNCH_SAVE_SCHEMA_VERSION,
+  SaveDataSchema,
+  migrateSupportedSaveData,
+} from "@/lib/validation";
 import { defaultSaveData } from "@/features/alchemy/shared/storage/defaults";
 import { readText } from "./helpers";
 
@@ -10,10 +15,12 @@ describe("save migration contract", () => {
     expect(CURRENT_SAVE_SCHEMA_VERSION).toBeGreaterThanOrEqual(LAUNCH_SAVE_SCHEMA_VERSION);
   });
 
-  it("has no pending supported migrations: floor and current coincide", () => {
-    // When they diverge, reintroduce an ordered migration table covering
-    // every increment (see MIGRATIONS.md required pattern).
-    expect(CURRENT_SAVE_SCHEMA_VERSION).toBe(LAUNCH_SAVE_SCHEMA_VERSION);
+  it("migrates every supported prior schema to the current version", () => {
+    for (let version = LAUNCH_SAVE_SCHEMA_VERSION; version < CURRENT_SAVE_SCHEMA_VERSION; version++) {
+      expect(migrateSupportedSaveData({ saveSchemaVersion: version })).toMatchObject({
+        saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+      });
+    }
   });
 
   it("keeps rename logic out of active-run schema transforms", () => {

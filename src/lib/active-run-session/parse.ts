@@ -29,14 +29,16 @@ export function toActiveRunData(parsed: ParsedActiveRunData): ActiveRunData {
       : null,
     mysteryVisit: parsed.mysteryVisit
       ? {
-          eventId: parsed.mysteryVisit.eventId,
+          event: {
+            ...parsed.mysteryVisit.event,
+            choices: parsed.mysteryVisit.event.choices.map((choice) => hydratePersistedMysteryChoice(choice)!),
+          },
           chosenChoice: hydratePersistedMysteryChoice(parsed.mysteryVisit.chosenChoice),
           ...(parsed.mysteryVisit.pendingRemoval ? { pendingRemoval: true } : {}),
           cardChoices: parsed.mysteryVisit.cardChoices?.map(hydrateCard) ?? null,
           grantedTrinketIds: parsed.mysteryVisit.grantedTrinketIds,
           grantedGear: parsed.mysteryVisit.grantedGear,
           chosenCardId: parsed.mysteryVisit.chosenCardId,
-          resolvedTrinketIds: parsed.mysteryVisit.resolvedTrinketIds ?? [],
         }
       : null,
     corruptionResult: parsed.corruptionResult

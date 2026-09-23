@@ -13,7 +13,7 @@ import { PortaledTooltip } from "../../../../shared/ui/tooltips/portaled-tooltip
 import { useHoverVisible } from "../../../../shared/ui/use-hover-visible";
 import { DescriptionLines } from "../../../../shared/ui/cards/card-description-ui";
 import { Surface } from "../../../../shared/ui/surface";
-import { ArtHoverKeywordBorder, ArtTurnActiveBorder } from "./actor-panel-helpers";
+import { ArtTurnActiveBorder } from "./actor-panel-helpers";
 import { CombatantStatusEffectPresentation } from "./combatant-status-effect-presentation";
 import type { ActiveCcKeyword } from "../../../../shared/utils/cc-presentation";
 
@@ -52,7 +52,7 @@ export function CompanionPanel({
         <Surface
           clipContents={false}
           className={cn(
-            "relative",
+            "combatant-art relative",
             cardSurfaceClass,
             cardHoverScaleClass,
             turnActive && "combatant-turn-active",
@@ -67,7 +67,6 @@ export function CompanionPanel({
             active={turnActive}
             shineColor={resolvedShineColors}
           />
-          <ArtHoverKeywordBorder active={visible} shineColor={getCompanionShineColors(companion)} />
           <img
             src={companion.art}
             alt={companion.title}

@@ -7,7 +7,7 @@ export type FollowUpHitRequest =
   | Readonly<{ source: "player-follow-up"; damageType: DamageType; amount: number }>
   | Readonly<{ source: "talent-fixed" | "talent-derived"; damageType: DamageType; amount: number }>;
 
-type CardHitRequest = Readonly<{
+export type CardHitRequest = Readonly<{
   source: "card-attack" | "archery-extra";
   card: BattleCard;
   effect: DamageEffect;
@@ -22,18 +22,4 @@ export type HitRequest =
   | CardHitRequest
   | FollowUpHitRequest
   | Readonly<{ source: "reflected-holy"; blockLost: number }>
-  | Readonly<{ source: "blocked-attack"; amount: number }>
   | Readonly<{ source: "attack-purge" }>;
-
-/** Internal prepared form for the legacy recipe; ordinary requests always carry a real card. */
-export type CardRecipeRequest =
-  | CardHitRequest
-  | Readonly<{
-      source: "blocked-attack";
-      card?: undefined;
-      effect: DamageEffect;
-      resolvedDamage: number;
-      critical?: boolean;
-      origin?: undefined;
-      onDamageDealt?: undefined;
-    }>;

@@ -20,7 +20,7 @@ import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { MOTION_FADE_MS } from "@/lib/game-constants";
 import { cardLibrary, enemyBestiary, trinketLibrary } from "@/lib/game-data";
 import { uniqueItemList } from "@/lib/gear";
-import type { Screen } from "@/lib/routing";
+import { isRunResumeScreen, type Screen } from "@/lib/routing";
 import { useCallback, useEffect, useState } from "react";
 
 export function useGameMenuState() {
@@ -84,12 +84,13 @@ export function rememberNonOptionsScreen(renderedScreen: Screen, previous: Scree
 export function resolveOptionsBackTarget(
   optionsReturnScreen: Screen,
   hasActiveBattle: boolean,
-): { kind: "returnToBattle" } | { kind: "goToScreen"; screen: Screen } {
-  if (optionsReturnScreen !== "battle") {
-    return { kind: "goToScreen", screen: optionsReturnScreen };
+  hasResumableRun: boolean,
+): { kind: "returnToRun" } | { kind: "goToScreen"; screen: Screen } {
+  if (isRunResumeScreen(optionsReturnScreen)) {
+    if (hasActiveBattle || hasResumableRun) return { kind: "returnToRun" };
+    if (optionsReturnScreen !== "difficulty-select") return { kind: "goToScreen", screen: "menu" };
   }
-  if (hasActiveBattle) return { kind: "returnToBattle" };
-  return { kind: "goToScreen", screen: "destination" };
+  return { kind: "goToScreen", screen: optionsReturnScreen };
 }
 
 export function useReturnToRunNavigation({
@@ -126,10 +127,10 @@ export function useReturnToRunNavigation({
   );
 
   const backFromOptions = useCallback(() => {
-    const target = resolveOptionsBackTarget(optionsReturnScreen, hasActiveBattle);
-    if (target.kind === "returnToBattle") run.returnToBattle();
+    const target = resolveOptionsBackTarget(optionsReturnScreen, hasActiveBattle, resumeKind != null);
+    if (target.kind === "returnToRun") run.returnToBattle();
     else run.goToScreen(target.screen);
-  }, [optionsReturnScreen, hasActiveBattle, run]);
+  }, [optionsReturnScreen, hasActiveBattle, resumeKind, run]);
 
   const returnToRun = useCallback(() => {
     if (!returnToRunTarget) return;

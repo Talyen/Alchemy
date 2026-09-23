@@ -47,13 +47,18 @@ export async function injectMysterySummaryVisit(page: Page) {
     interruptedFlow: { kind: "none" },
     lastOfferedDestinations: ["Mystery", "Campfire", "Normal Combat"],
     mysteryVisit: {
-      eventId: "ancient-altar",
+      event: {
+        id: "ancient-altar",
+        title: "Ancient Altar",
+        art: "",
+        narrative: "A weathered stone altar.",
+        choices: [{ label: "Take the Offering", effects: [{ kind: "gainXP", keyword: "holy", amount: 8 }] }],
+      },
       chosenChoice: { label: "Take the Offering", effects: [{ kind: "gainXP", keyword: "holy", amount: 8 }] },
       cardChoices: null,
       grantedTrinketIds: [],
       grantedGear: [],
       chosenCardId: null,
-      resolvedTrinketIds: [],
     },
   });
 }

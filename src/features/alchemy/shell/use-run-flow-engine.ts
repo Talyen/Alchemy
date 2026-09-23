@@ -5,17 +5,26 @@ import { createRunFlowEngine } from "./run-flow-engine";
 import type { RunNavigationDeps } from "./shell-types";
 
 export function useRunFlowEngine(
-  { screen, navigateTo, transition, cancelPending, battle, initializeShop, labyrinthClearNode }: RunNavigationDeps,
+  {
+    screen,
+    navigateTo,
+    resumeTo,
+    transition,
+    cancelPending,
+    battle,
+    initializeShop,
+    labyrinthClearNode,
+  }: RunNavigationDeps,
   outcomes: RunOutcomes,
 ) {
   const nav = useRunSessionNavigationSlice(screen);
   const commands = useMemo(
     () =>
       createRunFlowEngine(
-        { navigateTo, transition, cancelPending, battle, initializeShop, labyrinthClearNode },
+        { navigateTo, resumeTo, transition, cancelPending, battle, initializeShop, labyrinthClearNode },
         outcomes,
       ),
-    [navigateTo, transition, cancelPending, battle, initializeShop, labyrinthClearNode, outcomes],
+    [navigateTo, resumeTo, transition, cancelPending, battle, initializeShop, labyrinthClearNode, outcomes],
   );
 
   return useMemo(

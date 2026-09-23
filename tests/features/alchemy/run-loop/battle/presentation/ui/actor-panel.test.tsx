@@ -69,35 +69,18 @@ describe("ArtPanel hover motion", () => {
     });
   });
 
-  it("does not show the enemy keyword shine for dead enemies", () => {
-    const { getByTestId, queryByTestId } = render(<ArtPanel {...baseProps} side="enemy" currentEnemy={enemy} isDead />);
-    const wrapper = getByTestId("battle-enemy-art-panel").parentElement;
-    expect(wrapper).not.toBeNull();
+  it.each(["player", "enemy"] as const)("keeps the %s turn border without adding a hover border", (side) => {
+    const { getByTestId } = render(
+      <ArtPanel {...baseProps} side={side} currentEnemy={side === "enemy" ? enemy : undefined} turnActive />,
+    );
+    const art = getByTestId(`battle-${side}-art-panel`);
+    expect(art.classList.contains("combatant-art")).toBe(true);
+    expect(art.classList.contains("card-hover-scale")).toBe(true);
 
-    fireEvent.mouseEnter(wrapper!);
+    fireEvent.mouseEnter(art.parentElement!);
 
-    expect(queryByTestId("keyword-shine-hover")).toBeNull();
-  });
-
-  it("shows player keyword shine on hover when hoverShineColors are provided", () => {
-    const { getByTestId, queryByTestId } = render(<ArtPanel {...baseProps} hoverShineColors={["#fcd34d"]} />);
-    const wrapper = getByTestId("battle-player-art-panel").parentElement;
-    expect(wrapper).not.toBeNull();
-    expect(queryByTestId("keyword-shine-hover")).toBeNull();
-
-    fireEvent.mouseEnter(wrapper!);
-
-    expect(getByTestId("keyword-shine-hover")).toBeTruthy();
-  });
-
-  it("does not show player keyword shine when no hoverShineColors are provided", () => {
-    const { getByTestId, queryByTestId } = render(<ArtPanel {...baseProps} />);
-    const wrapper = getByTestId("battle-player-art-panel").parentElement;
-    expect(wrapper).not.toBeNull();
-
-    fireEvent.mouseEnter(wrapper!);
-
-    expect(queryByTestId("keyword-shine-hover")).toBeNull();
+    expect(getByTestId(`turn-badge-${side}`).getAttribute("data-active")).toBe("true");
+    expect(art.querySelectorAll(".shine-border")).toHaveLength(1);
   });
 
   it("renders artCorner and health stats inside the combatant-attack-lunge wrapper", () => {

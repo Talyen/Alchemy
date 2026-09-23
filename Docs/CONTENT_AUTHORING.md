@@ -68,9 +68,15 @@ Each enemy has three distinct canonical card IDs in `abilityIds` and 1–3 uniqu
 
 ## Add a new enemy
 
+All Bestiary enemies, including Skeleton, can appear in random encounters. The
+first novice Campaign battle chooses Skeleton explicitly in
+`shared/run-flow/campaign-start.ts`; later battles use the normal encounter pool.
+
 Follow the [repertoire requirements](#enemy-repertoire-requirements). Trait
-descriptions must mention their mechanical term; the [parity validator](../src/lib/content-validation/card-parity/enemy-trait-parity.ts)
-and typography checks enforce the copy contract. Run `npm run content:audit`
+descriptions must mention every distinct effect. For damage resistance and
+vulnerability, the [parity validator](../src/lib/content-validation/card-parity/enemy-trait-parity.ts)
+also checks each damage type and magnitude against the combat rules. Typography
+checks enforce the remaining copy conventions. Run `npm run content:audit`
 before handing off.
 
 - **1. Define entry in `enemyBestiary` (`id` becomes `EnemyId`)** — `src/lib/game-data/compendium/enemies.ts`
@@ -144,7 +150,9 @@ room-production quantity strictly increase in cumulative tier totals. Companion
 Bonds remain a separate three-tier progression. Recipes use fixed material costs;
 production support affects authoring, not prices at runtime. Crystal Garden
 produces Gems and Stone. Library, Agility Training, and Sanctuary intentionally
-have no material production. Resource labels use “per Room”; settlement remains
+have no material production. A Companion card must be discovered during a Run
+before its Bond can be purchased; the Homestead command checks this against the
+card's summon effect. Resource labels use “per Room”; settlement remains
 at run end. Wishing Well alternates Gold/Gems by room (odd rooms Gold) in every
 mode. Tailoring also produces Gold. Capture the recap after these payouts so
 the Gold and Material totals include them.

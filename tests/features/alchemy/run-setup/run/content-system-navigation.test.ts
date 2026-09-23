@@ -30,9 +30,11 @@ beforeEach(() => {
 
 function makeDeps(overrides: Partial<Parameters<typeof createContentSystemNavigation>[0]> = {}) {
   const navigateTo = vi.fn();
+  const resumeTo = vi.fn();
   const onStartBattle = vi.fn();
   return {
     navigateTo,
+    resumeTo,
     onStartBattle,
     getAvailableDestinations: () => [DESTINATIONS.NORMAL_COMBAT],
     onResumeWildwood: vi.fn(),
@@ -54,7 +56,13 @@ describe("createContentSystemNavigation", () => {
     const deps = makeDeps();
     const nav = createContentSystemNavigation(deps);
     nav.handleCharacterSelect("knight");
-    expect(deps.onStartBattle).toHaveBeenCalledOnce();
+    expect(deps.onStartBattle).toHaveBeenCalledExactlyOnceWith(
+      expect.any(Array),
+      expect.any(Number),
+      "normal",
+      expect.any(Array),
+      "skeleton",
+    );
     expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE, expect.any(Function));
     expect(readActiveRun().contentSystemType).toBe(CONTENT_SYSTEMS.CAMPAIGN);
     expect(readActiveRun().characterId).toBe("knight");
@@ -112,7 +120,7 @@ describe("createContentSystemNavigation", () => {
     const deps = makeDeps();
     const nav = createContentSystemNavigation(deps);
     nav.beginCampaign();
-    expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE);
+    expect(deps.resumeTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE);
   });
 
   it.each([CONTENT_SYSTEMS.CAMPAIGN, CONTENT_SYSTEMS.LABYRINTH, CONTENT_SYSTEMS.WILDWOOD])(
@@ -130,7 +138,7 @@ describe("createContentSystemNavigation", () => {
       const nav = createContentSystemNavigation(deps);
       const begin = { campaign: nav.beginCampaign, labyrinth: nav.beginLabyrinth, wildwood: nav.beginWildwood };
       begin[mode]();
-      expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE);
+      expect(deps.resumeTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE);
       expect(deps.onResumeWildwood).not.toHaveBeenCalled();
       expect(readBattle().battleState.turn).toBe(4);
     },
@@ -193,6 +201,30 @@ describe("createContentSystemNavigation", () => {
     expect(readRunSession().starterDraftChoices).toHaveLength(3);
   });
 
+  it("starts a novice Wildcard campaign against Skeleton after the draft", () => {
+    setRunSession({ pendingContentSystemType: CONTENT_SYSTEMS.CAMPAIGN });
+    const deps = makeDeps();
+    const nav = createContentSystemNavigation(deps);
+    nav.handleCharacterSelect("wildcard");
+    dispatchRunSessionCommand((draft) => setScreen(draft, ROUTE_SCREENS.DRAFT_DECK));
+    for (let round = 0; round < DRAFT_ROUNDS; round += 1) {
+      const choice = readRunSession().starterDraftChoices?.[0];
+      expect(choice).toBeDefined();
+      nav.handleStarterDraftPick(choice!.id);
+    }
+
+    nav.handleStandardDraftComplete();
+
+    expect(deps.onStartBattle).toHaveBeenCalledWith(
+      expect.any(Array),
+      expect.any(Number),
+      "normal",
+      expect.any(Array),
+      "skeleton",
+    );
+    expect(deps.navigateTo).toHaveBeenLastCalledWith(ROUTE_SCREENS.BATTLE, expect.any(Function));
+  });
+
   it("resumes an incomplete campaign Wildcard draft to the draft screen", () => {
     setRunProgress({ characterId: "wildcard", contentSystemType: CONTENT_SYSTEMS.CAMPAIGN, runDeck: [] });
     setRunSession({
@@ -207,7 +239,7 @@ describe("createContentSystemNavigation", () => {
     const deps = makeDeps();
     const nav = createContentSystemNavigation(deps);
     nav.beginCampaign();
-    expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.DRAFT_DECK);
+    expect(deps.resumeTo).toHaveBeenCalledWith(ROUTE_SCREENS.DRAFT_DECK);
   });
 
   it("appends a starter-draft pick and rolls the next seeded choices", () => {
@@ -271,7 +303,7 @@ describe("createContentSystemNavigation", () => {
     const deps = makeDeps();
     const nav = createContentSystemNavigation(deps);
     nav.beginLabyrinth();
-    expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.DRAFT_DECK);
+    expect(deps.resumeTo).toHaveBeenCalledWith(ROUTE_SCREENS.DRAFT_DECK);
     dispatchRunSessionCommand((draft) => setScreen(draft, ROUTE_SCREENS.DRAFT_DECK));
     nav.handleStandardDraftComplete();
     expect(readRunSession().labyrinthMap).not.toBeNull();
@@ -330,7 +362,12 @@ describe("createContentSystemNavigation", () => {
 
     expect(readActiveRun().contentSystemType).toBe(CONTENT_SYSTEMS.CAMPAIGN);
     expect(readActiveRun().runDeck).toEqual(draftedCards);
-    expect(deps.onStartBattle).toHaveBeenCalledOnce();
+    expect(deps.onStartBattle).toHaveBeenCalledExactlyOnceWith(
+      expect.any(Array),
+      expect.any(Number),
+      "normal",
+      expect.any(Array),
+    );
   });
   it("repairs missing Campaign destinations using the current run's progress without switching runs", () => {
     setRunProgress({
@@ -345,7 +382,7 @@ describe("createContentSystemNavigation", () => {
     const getAvailableDestinations = vi.fn(() => [DESTINATIONS.NORMAL_COMBAT]);
     const deps = makeDeps({ getAvailableDestinations });
     createContentSystemNavigation(deps).resumeRun();
-    const prepare = vi.mocked(deps.navigateTo).mock.calls[0]?.[1];
+    const prepare = vi.mocked(deps.resumeTo).mock.calls[0]?.[1];
     expect(prepare).toBeTypeOf("function");
     prepare?.();
     expect(getAvailableDestinations).toHaveBeenCalledWith({

@@ -43,15 +43,22 @@ const MysteryChoicePersistSchema = z.object({
   effects: z.array(MysteryEffectSchema),
 });
 
+const MysteryEventPersistSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  art: z.string(),
+  narrative: z.string(),
+  choices: z.array(MysteryChoicePersistSchema),
+});
+
 const MysteryVisitObjectSchema = z.object({
-  eventId: z.string(),
+  event: MysteryEventPersistSchema,
   chosenChoice: MysteryChoicePersistSchema.nullable().catch(null),
   pendingRemoval: z.boolean().catch(false),
   cardChoices: z.array(BattleCardSchema).nullable().catch(null),
   grantedTrinketIds: z.array(z.string()).catch([]),
   grantedGear: GearInstanceArraySchema.catch([]),
   chosenCardId: z.string().nullable().catch(null),
-  resolvedTrinketIds: z.array(z.string()).catch([]),
 });
 export type MysteryVisitState = z.output<typeof MysteryVisitObjectSchema>;
 const MysteryVisitPersistSchema = MysteryVisitObjectSchema.nullable().catch(null);

@@ -18,6 +18,7 @@ import {
 import { finishRewardClaim } from "./reward-commands";
 interface WildwoodGauntletFlowOptions {
   navigateTo: (nextScreen: Screen, prepareNavigation?: () => void) => void;
+  resumeTo: (nextScreen: Screen) => void;
   onStartBossById: (
     bossId: string,
     modifiers?: DifficultyModifier[],
@@ -27,6 +28,7 @@ interface WildwoodGauntletFlowOptions {
 }
 export function createWildwoodGauntletFlow({
   navigateTo,
+  resumeTo,
   onStartBossById,
   clearCardHover,
 }: WildwoodGauntletFlowOptions) {
@@ -53,7 +55,7 @@ export function createWildwoodGauntletFlow({
     }
     if (state.phase === "battle" && state.currentBossId && state.currentCombatTraitIds[0]) {
       if (onStartBossById(state.currentBossId, undefined, state.currentCombatTraitIds[0])) {
-        navigateTo(ROUTE_SCREENS.BATTLE);
+        resumeTo(ROUTE_SCREENS.BATTLE);
       } else {
         logError("[createWildwoodGauntletFlow] resumeWildwoodRun: failed to resume boss battle", "other");
         navigateTo(ROUTE_SCREENS.MENU, teardownRun);
@@ -64,7 +66,9 @@ export function createWildwoodGauntletFlow({
       navigateTo(ROUTE_SCREENS.MENU, teardownRun);
       return;
     }
-    navigateTo(wildwoodPhaseToScreen(state.phase) ?? ROUTE_SCREENS.MENU);
+    const screen = wildwoodPhaseToScreen(state.phase);
+    if (screen) resumeTo(screen);
+    else navigateTo(ROUTE_SCREENS.MENU);
   };
   const handleDraftPick = chooseWildwoodDraftCard;
   const handleWildwoodDraftComplete = () => {

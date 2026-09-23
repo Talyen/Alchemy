@@ -1,9 +1,9 @@
 import { applyHitHealth, type CardHitFacts } from "./hit-facts";
-import type { HitRequest, CardRecipeRequest } from "./hit-request";
+import type { HitRequest, CardHitRequest } from "./hit-request";
 import { BLACKFLETCH_EXECUTE_HEALTH_PERCENT, PERCENT_DENOMINATOR } from "../game-constants";
 import { halveRounded } from "./amount-helpers";
 import { applyHitEpilogue, mergeCombatText } from "./combat-text";
-import { computeReflectedHolyDamageToEnemy, computeCardDamageToEnemy } from "./damage-calc";
+import { computeReflectedHolyDamageToEnemy } from "./damage-calc";
 import { applyDamageStatuses, applyPoisonTalentRiders } from "./damage-status-riders";
 import { detonateEnemyStatuses } from "./dot-resolve";
 import { paceCombatDamage } from "./fight-pacing";
@@ -35,16 +35,6 @@ export function resolvePlayerHit(state: BattleState, request: HitRequest, combat
       return resolveReflectedHolyHit(state, request.blockLost, combatTexts);
     case "attack-purge":
       return resolveAttackPurgeHit(state, combatTexts);
-    case "blocked-attack": {
-      // Older saves retain full card-style retaliation, without a real card source.
-      const effect = { kind: "damage" as const, damageType: "holy" as const, amount: request.amount };
-      const hit = computeCardDamageToEnemy(state, effect);
-      return resolveCardHit(
-        hit.nextState,
-        { source: "blocked-attack", card: undefined, effect, resolvedDamage: hit.modifiedDamage },
-        combatTexts,
-      );
-    }
   }
 }
 
@@ -113,7 +103,7 @@ function resolveAttackPurgeHit(state: BattleState, combatTexts: CombatTextEvent[
 
 function applyCardArcheryReactions(
   nextState: BattleState,
-  request: CardRecipeRequest,
+  request: CardHitRequest,
   facts: CardHitFacts,
   combatTexts: CombatTextEvent[],
 ): BattleState {
@@ -145,17 +135,10 @@ function applyCardArcheryReactions(
   return nextState;
 }
 
-function resolveCardHit(state: BattleState, request: CardRecipeRequest, combatTexts: CombatTextEvent[]): BattleState {
+function resolveCardHit(state: BattleState, request: CardHitRequest, combatTexts: CombatTextEvent[]): BattleState {
   const { card, effect, resolvedDamage: modifiedDamage, onDamageDealt } = request;
   const companionAttack = request.origin === "companion";
   const eligibility = state;
-  const legacyHawkEye =
-    modifiedDamage > 0 &&
-    !companionAttack &&
-    !!card?.tags?.includes("archery") &&
-    state.flags.hawkEyeReady &&
-    state.talentEffects.archeryHolyDamageVsFrozen > 0;
-  if (legacyHawkEye) state = { ...state, flags: { ...state.flags, hawkEyeReady: false } };
   // Eligibility precedes purge, but Health facts describe the target after purge.
   const prePurgeState = request.source === "archery-extra" ? state : resolveAttackPurgeHit(state, combatTexts);
   if (prePurgeState.enemyHealth <= 0) return prePurgeState;
@@ -173,17 +156,6 @@ function resolveCardHit(state: BattleState, request: CardRecipeRequest, combatTe
   // Reactions stay depth-first: Archery's extra hit finishes before the outer hit's payout.
   nextState = applyCardStatusReactions(nextState, request, facts, combatTexts);
   nextState = applyCardLeechAndFrozenReactions(nextState, request, facts, combatTexts);
-  if (legacyHawkEye) {
-    nextState = resolveFollowUpHit(
-      nextState,
-      {
-        source: "talent-fixed",
-        damageType: "holy",
-        amount: eligibility.talentEffects.archeryHolyDamageVsFrozen,
-      },
-      combatTexts,
-    );
-  }
   nextState = applyCardArcheryReactions(nextState, request, facts, combatTexts);
   if (effect.damageType === "holy") {
     nextState = applyHolyDamageRiders(nextState, card, facts, combatTexts);

@@ -1,9 +1,15 @@
 import { TimerGroup } from "@/lib/animation/game-timer";
 import { NAVIGATION_DELAY_MS } from "@/lib/game-constants";
-import { assertScreenTransitionAllowed, type Screen, type ScreenTransitionOptions } from "@/lib/routing";
+import {
+  assertRunResumeTransitionAllowed,
+  assertScreenTransitionAllowed,
+  type Screen,
+  type ScreenTransitionOptions,
+} from "@/lib/routing";
 
 export interface ScreenNavigation {
   navigateTo: (screen: Screen, prepareNavigation?: () => void) => void;
+  resumeTo: (screen: Screen, prepareNavigation?: () => void, immediate?: boolean) => void;
   transition: (screen: Screen, options?: ScreenTransitionOptions) => void;
   cancelPending: () => void;
 }
@@ -32,11 +38,12 @@ export function createScreenNavigation({
     onPendingChange?.(false);
   }
 
-  function transition(screen: Screen, options: ScreenTransitionOptions = {}) {
+  function transitionTo(screen: Screen, options: ScreenTransitionOptions, resume: boolean) {
     // Guard first (approved): a skipped move stays a silent no-op even on an
     // unusual edge; only unskipped moves validate against the policy table.
     if (options.guard && !options.guard()) return;
-    assertScreenTransitionAllowed(readScreen(), screen);
+    if (resume) assertRunResumeTransitionAllowed(readScreen(), screen);
+    else assertScreenTransitionAllowed(readScreen(), screen);
     cancelPending();
     const requestedRevision = revision;
     options.prepare?.();
@@ -55,8 +62,14 @@ export function createScreenNavigation({
     else timers.setTimeout(show, options.delayMs ?? NAVIGATION_DELAY_MS);
   }
 
+  function transition(screen: Screen, options: ScreenTransitionOptions = {}) {
+    transitionTo(screen, options, false);
+  }
+
   return {
     navigateTo: (screen, prepare) => transition(screen, prepare ? { prepare } : {}),
+    resumeTo: (screen, prepare, immediate = false) =>
+      transitionTo(screen, prepare ? { prepare, immediate } : { immediate }, true),
     transition,
     cancelPending,
   };

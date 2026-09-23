@@ -9,6 +9,7 @@ import {
   getRawSaveSchemaVersion,
   isUnsupportedFutureContentData,
   isUnsupportedFutureSaveData,
+  migrateSupportedSaveData,
   type ParsedSaveData,
 } from "@/lib/validation";
 import { createDefaultSaveData } from "./defaults";
@@ -167,7 +168,7 @@ export function evaluateSaveCandidates(candidates: string[]): SaveLoadState {
     // The first valid candidate and any potential winner are always parsed,
     // so validation diagnostics for the loaded save are preserved.
     if (bestData && getCandidateSavedAt(parsed, 0) <= playableSavedAt) continue;
-    const result = safeParseWithErrors(SaveDataSchema, parsed);
+    const result = safeParseWithErrors(SaveDataSchema, migrateSupportedSaveData(parsed));
     // Defensive: nearly every SaveDataSchema field carries `.catch`, so any
     // object passing the baseline above parses successfully and this branch
     // is effectively unreachable. Kept so a future strict field cannot

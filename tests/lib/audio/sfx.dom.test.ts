@@ -14,6 +14,7 @@ import {
   playSliceDeath,
 } from "@/lib/audio/sfx";
 import { setMasterVolume, setMuted, setSfxVolume } from "@/lib/audio/volume";
+import { resetAudioRuntimeForTests } from "@/lib/audio/reset";
 import { createdFakeAudio, installFakeAudio, lastFakeAudio, soundedFakeAudio } from "../../helpers/fake-audio";
 import { installCleanAudio } from "../../helpers/audio-fixture";
 
@@ -184,7 +185,7 @@ describe("cold runtime playback", () => {
   });
 });
 
-describe("cooldown, delay, and stop tokens", () => {
+describe("cooldown, delay, and cancellation", () => {
   it("suppresses a repeat play inside the cooldown window", () => {
     playCardSound("slash");
     playCardSound("slash");
@@ -211,12 +212,23 @@ describe("cooldown, delay, and stop tokens", () => {
     expect(soundedFakeAudio()).toHaveLength(1);
   });
 
-  it("cancels a delayed play when the stop token moves", () => {
+  it("cancels a delayed battle sound and its timer on stop", () => {
     vi.useFakeTimers();
     playBattleEvent("playerHit", { delay: 1, cooldownMs: 0 });
+    expect(vi.getTimerCount()).toBe(1);
     stopAllSfx();
+    expect(vi.getTimerCount()).toBe(0);
     vi.advanceTimersByTime(1000);
     expect(soundedFakeAudio()).toHaveLength(0);
+  });
+
+  it("keeps delayed ambient sounds scheduled when battle sounds stop", () => {
+    vi.useFakeTimers();
+    playBattleEvent("playerHit", { delay: 1, cooldownMs: 0, trackForCleanup: false });
+    stopAllSfx();
+    expect(vi.getTimerCount()).toBe(1);
+    vi.advanceTimersByTime(1000);
+    expect(soundedFakeAudio()).toHaveLength(1);
   });
 
   it("skips a delayed play muted after scheduling", () => {
@@ -227,16 +239,25 @@ describe("cooldown, delay, and stop tokens", () => {
     expect(soundedFakeAudio()).toHaveLength(0);
   });
 
-  it("releases the cooldown when a delayed play is cancelled", () => {
+  it("releases the cooldown for a stopped batch of delayed draw sounds", () => {
+    vi.useFakeTimers();
+    playBattleEvent("drawTransfer", { delay: 0.5 });
+    playBattleEvent("drawTransfer", { delay: 1 });
+    stopAllSfx();
+    expect(vi.getTimerCount()).toBe(0);
+    playBattleEvent("drawTransfer");
+    expect(soundedFakeAudio()).toHaveLength(1);
+    vi.advanceTimersByTime(1000);
+    expect(soundedFakeAudio()).toHaveLength(1);
+  });
+
+  it("clears delayed sound timers on runtime reset", () => {
     vi.useFakeTimers();
     playBattleEvent("playerHit", { delay: 1 });
-    stopAllSfx();
+    resetAudioRuntimeForTests();
+    expect(vi.getTimerCount()).toBe(0);
     vi.advanceTimersByTime(1000);
     expect(soundedFakeAudio()).toHaveLength(0);
-
-    // Default cooldown applies: without the release this stays suppressed.
-    playBattleEvent("playerHit");
-    expect(soundedFakeAudio()).toHaveLength(1);
   });
 
   it("releases the cooldown when a delayed play is muted before firing", () => {

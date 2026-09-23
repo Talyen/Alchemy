@@ -424,6 +424,10 @@
   backface-visibility: hidden;
 }
 
+.combatant-art {
+  transform-origin: center bottom;
+}
+
 .combatant-turn-active {
   --card-rest-scale: 1.035;
 }

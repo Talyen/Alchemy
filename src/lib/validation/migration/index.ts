@@ -1,5 +1,67 @@
 import { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "../metadata";
 import { toFiniteNonNegativeInt } from "../save-schemas/validation-utils";
+import { applyLabyrinthMysteryModifiers } from "@/lib/content-systems/labyrinth/room-rules";
+import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
+import { findMysteryEvent } from "@/lib/mystery";
+import { applyResolvedMysteryTrinketIds } from "@/lib/mystery/resolve-trinkets";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function migrateVersion19(save: Record<string, unknown>): Record<string, unknown> {
+  const activeRun = save.activeRun;
+  if (!isRecord(activeRun) || !isRecord(activeRun.mysteryVisit)) return { ...save, saveSchemaVersion: 20 };
+  const visit = activeRun.mysteryVisit;
+  const poolEvent = typeof visit.eventId === "string" ? findMysteryEvent(visit.eventId) : null;
+  if (!poolEvent) {
+    return {
+      ...save,
+      saveSchemaVersion: 20,
+      activeRun: { ...activeRun, currentScreen: activeRun.currentScreen ?? "mystery", mysteryVisit: null },
+    };
+  }
+  const resolvedIds = Array.isArray(visit.resolvedTrinketIds)
+    ? visit.resolvedTrinketIds.filter((id): id is string => typeof id === "string")
+    : [];
+  const combat = isRecord(activeRun.activeCombat) ? activeRun.activeCombat : null;
+  const topLevelModifiers = activeRun.activeLabyrinthRewardModifiers;
+  const combatModifiers = combat?.activeLabyrinthRewardModifiers;
+  const savedModifiers =
+    Array.isArray(topLevelModifiers) && topLevelModifiers.length > 0 ? topLevelModifiers : combatModifiers;
+  const modifiers =
+    activeRun.contentSystemType === "labyrinth" && Array.isArray(savedModifiers)
+      ? savedModifiers.filter((id): id is EncounterRewardTraitId => typeof id === "string")
+      : [];
+  const maxHealth =
+    typeof activeRun.runMaxHealth === "number" && Number.isFinite(activeRun.runMaxHealth) ? activeRun.runMaxHealth : 0;
+  const event = applyLabyrinthMysteryModifiers(
+    applyResolvedMysteryTrinketIds(poolEvent, resolvedIds),
+    modifiers,
+    maxHealth,
+  );
+  const { eventId: _eventId, resolvedTrinketIds: _resolvedTrinketIds, ...remainingVisit } = visit;
+  return {
+    ...save,
+    saveSchemaVersion: 20,
+    activeRun: { ...activeRun, mysteryVisit: { ...remainingVisit, event } },
+  };
+}
+
+const saveMigrations: Record<number, (save: Record<string, unknown>) => Record<string, unknown>> = {
+  19: migrateVersion19,
+};
+
+export function migrateSupportedSaveData(raw: unknown): unknown {
+  if (!isRecord(raw)) return raw;
+  let save = raw;
+  for (let version = getRawSaveSchemaVersion(raw); version < CURRENT_SAVE_SCHEMA_VERSION; version++) {
+    const migrate = saveMigrations[version];
+    if (!migrate) throw new Error(`Missing save migration for schema ${version}`);
+    save = migrate(save);
+  }
+  return save;
+}
 
 // Raw version readers for load gating. Sole consumer is
 // storage/save-candidates.ts#getFutureSaveStatus, which applies schema-first

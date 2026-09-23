@@ -56,7 +56,7 @@ export function createRunResumeNavigation(deps: ContentSystemNavigationDeps) {
     if (!screen) return;
     // Card hover clears universally on navigation (see run-flow-engine).
     if (screen === ROUTE_SCREENS.DESTINATION && mode === CONTENT_SYSTEMS.CAMPAIGN) {
-      deps.navigateTo(screen, () => {
+      deps.resumeTo(screen, () => {
         dispatchRunSessionCommand((draft) => {
           restoreResumedCampaignDestinations(draft, deps.getAvailableDestinations);
         });
@@ -64,7 +64,7 @@ export function createRunResumeNavigation(deps: ContentSystemNavigationDeps) {
     } else if (screen === ROUTE_SCREENS.BATTLE && mode === CONTENT_SYSTEMS.WILDWOOD && !readHasActiveBattle()) {
       deps.onResumeWildwood();
     } else {
-      deps.navigateTo(screen);
+      deps.resumeTo(screen);
     }
   }
 

@@ -33,6 +33,13 @@ interface ActiveHtmlSfx {
   trackForCleanup: boolean;
 }
 
+interface PendingHtmlSfx {
+  timer: ReturnType<typeof setTimeout>;
+  name: string;
+  scheduledAt: number;
+  trackForCleanup: boolean;
+}
+
 /**
  * Live SFX elements. `trackForCleanup` sounds (combat) are stopped on screen
  * changes; fire-and-forget sounds (UI clicks, stingers, slice deaths) survive
@@ -41,8 +48,21 @@ interface ActiveHtmlSfx {
  * exceeds the cap (e.g. a stuck ended handler).
  */
 const activeHtmlSfx = new Set<ActiveHtmlSfx>();
+const pendingHtmlSfx = new Set<PendingHtmlSfx>();
 const MAX_AMBIENT_SFX = 32;
-let sfxStopToken = 0;
+
+function releaseCooldownReservation(name: string, scheduledAt: number) {
+  if (audioState.lastPlayedAt.get(name) === scheduledAt) audioState.lastPlayedAt.delete(name);
+}
+
+function cancelPendingHtmlSfx(onlyTracked: boolean) {
+  for (const pending of pendingHtmlSfx) {
+    if (onlyTracked && !pending.trackForCleanup) continue;
+    clearTimeout(pending.timer);
+    releaseCooldownReservation(pending.name, pending.scheduledAt);
+    pendingHtmlSfx.delete(pending);
+  }
+}
 
 function htmlSfxVolume(volume: number): number {
   return clamp01(volume * audioState.sfxVolume * audioState.masterVolume);
@@ -81,14 +101,12 @@ export function syncActiveHtmlSfxPlayback() {
 }
 
 export function resetHtmlSfxRuntime() {
-  // Bump the stop token so delayed plays scheduled before the reset cannot
-  // fire afterwards. Production never calls this; tests rely on it.
-  sfxStopToken += 1;
+  cancelPendingHtmlSfx(false);
   activeHtmlSfx.clear();
 }
 
 export function stopAllSfx() {
-  sfxStopToken += 1;
+  cancelPendingHtmlSfx(true);
   for (const entry of Array.from(activeHtmlSfx)) {
     if (!entry.trackForCleanup) continue;
     releaseAudioElement(entry.el);
@@ -119,7 +137,6 @@ function playBuffer(
 ) {
   if (audioState.muted) return;
 
-  const playToken = sfxStopToken;
   const scheduledAt = performance.now() + delay * 1000;
   // Default to -Infinity (not 0) so the first play always passes: a zero
   // clock (page load, fake timers) would otherwise read as "just played"
@@ -128,18 +145,20 @@ function playBuffer(
   if (scheduledAt - last < cooldownMs) return;
   audioState.lastPlayedAt.set(name, scheduledAt);
 
+  let pending: PendingHtmlSfx | undefined;
   const start = () => {
-    if (audioState.muted || (trackForCleanup && playToken !== sfxStopToken)) {
-      // A cancelled delayed play must not poison the cooldown for the next
-      // immediate retry. Only release the reservation this schedule made.
-      if (audioState.lastPlayedAt.get(name) === scheduledAt) audioState.lastPlayedAt.delete(name);
+    if (pending) pendingHtmlSfx.delete(pending);
+    if (audioState.muted) {
+      releaseCooldownReservation(name, scheduledAt);
       return;
     }
     playHtmlSfx(name, volume, trackForCleanup);
   };
 
   if (delay > 0) {
-    globalThis.setTimeout(start, delay * 1000);
+    const timer = globalThis.setTimeout(start, delay * 1000);
+    pending = { timer, name, scheduledAt, trackForCleanup };
+    pendingHtmlSfx.add(pending);
     return;
   }
   start();

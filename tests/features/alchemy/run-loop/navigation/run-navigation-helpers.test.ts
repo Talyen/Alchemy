@@ -42,9 +42,13 @@ describe("tryStartNoviceCampaignBattle", () => {
 
     expect(started).toBe(true);
     expect(deps.initializeRunForDifficulty).toHaveBeenCalledWith("knight", DEFAULT_CAMPAIGN_DIFFICULTY_ID);
-    expect(deps.onStartBattle).toHaveBeenCalledWith(freshDeck, 99, DEFAULT_BATTLE_ENEMY_TYPE, [
-      { kind: "start-block", amount: 5 },
-    ]);
+    expect(deps.onStartBattle).toHaveBeenCalledWith(
+      freshDeck,
+      99,
+      DEFAULT_BATTLE_ENEMY_TYPE,
+      [{ kind: "start-block", amount: 5 }],
+      "skeleton",
+    );
     expect(deps.navigateToBattle).toHaveBeenCalledOnce();
   });
 

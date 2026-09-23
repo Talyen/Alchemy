@@ -65,7 +65,6 @@ export function BattleActors({
             surfaceRef={playerPanelRef}
             turnActive={isPlayerTurn}
             turnShineColors={getCharacterShineColors(characterId)}
-            hoverShineColors={getCharacterShineColors(characterId)}
             ccKeyword={playerCcKeyword}
             plasmaColorPair={getPlasmaColorPairForCharacter(characterId)}
             artCorner={
