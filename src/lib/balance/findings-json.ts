@@ -16,7 +16,10 @@ export function renderBalanceFindingsJson(
   options: ReportRunOptions,
 ): string {
   return stringifyReportJson({
-    agentNotice: "Read this findings file only. The full matrix is reports/balance-full/ and is drill-down only.",
+    agentNotice:
+      options.mode === "quick"
+        ? "Quick sampling is exploratory. Confirm small-cell findings with balance:sim:full before tuning. The full matrix is drill-down only."
+        : "Read this findings file only. The full matrix is reports/balance-full/ and is drill-down only.",
     meta: model.meta,
     options,
     bands: {

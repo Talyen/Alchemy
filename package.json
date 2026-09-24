@@ -91,6 +91,7 @@
     "perf:trace": "node scripts/run-performance.mjs --trace",
     "perf:compare": "node scripts/run-performance.mjs --compare",
     "balance:sim": "node scripts/run-balance-report.mjs && node scripts/open-report.mjs reports/balance-findings.html",
+    "balance:sim:full": "cross-env ALCHEMY_BALANCE_MODE=full npm run balance:sim",
     "balance:playthrough": "node scripts/run-playthrough.mjs",
     "balance:playthrough:replay": "node scripts/run-playthrough.mjs",
     "balance:playthrough:compare": "node scripts/run-playthrough.mjs",

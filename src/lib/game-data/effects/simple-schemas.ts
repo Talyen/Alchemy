@@ -35,7 +35,14 @@ const companionActionEffectDefinition = defineAmountEffect(
 
 const randomDrawEffectDefinition = defineRangedEffect("random-draw") satisfies EffectKindDefinition<"random-draw">;
 
-const wishEffectDefinition = defineAmountEffect("wish") satisfies EffectKindDefinition<"wish">;
+const wishEffectDefinition = {
+  kind: "wish",
+  schema: z.object({
+    kind: z.literal("wish"),
+    amount: PositiveAmountSchema,
+    companionIfAbsent: z.boolean().optional(),
+  }),
+} satisfies EffectKindDefinition<"wish">;
 
 const drawCardsEffectDefinition = defineAmountEffect("draw-cards") satisfies EffectKindDefinition<"draw-cards">;
 

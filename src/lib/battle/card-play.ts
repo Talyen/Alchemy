@@ -22,7 +22,8 @@ import {
 } from "./types";
 import { processCompanionTurnStart } from "./companion";
 import { detonateEnemyStatuses } from "./dot-resolve";
-import { addForgeToPlayer, applyBlockReward, countRemovableHarmfulStatuses } from "./status-player";
+import { tickEnemyPoison } from "./status-ticks";
+import { addForgeToPlayer, applyArmorReward, applyBlockReward, countRemovableHarmfulStatuses } from "./status-player";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { getBattleRng, rollPercent } from "@/lib/rng";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
@@ -276,6 +277,9 @@ function applyNatureCardPlayTalents(state: BattleState, card: BattleCard, combat
   if (nextState.talentEffects.healOnNatureCard > 0) {
     nextState = applyHealingWithCombatText(nextState, nextState.talentEffects.healOnNatureCard, combatTexts);
   }
+  if (nextState.gearEffects.armorOnNatureCard > 0) {
+    nextState = applyArmorReward(nextState, nextState.gearEffects.armorOnNatureCard, combatTexts);
+  }
   return nextState;
 }
 
@@ -333,12 +337,38 @@ function applyConsumeTalentRiders(
   return nextState;
 }
 
+function applyConsumeGearRiders(
+  state: BattleState,
+  card: BattleCard,
+  combatTexts: CombatTextEvent[],
+  lastCardInHand: boolean,
+  manaSpent: number,
+): BattleState {
+  let nextState = state;
+  for (let tick = 0; tick < state.gearEffects.poisonTickOnConsume; tick += 1) {
+    if (nextState.enemyHealth <= 0 || nextState.enemyStatuses.poison <= 0) break;
+    nextState = resolvePendingBattleReactions(tickEnemyPoison(nextState, combatTexts), combatTexts);
+    if (isPlayerDefeated(nextState)) return nextState;
+  }
+  if (cardHasKeyword(card, "burn") && nextState.gearEffects.forgeOnConsumeBurnCard > 0) {
+    nextState = addForgeToPlayer(nextState, nextState.gearEffects.forgeOnConsumeBurnCard, combatTexts);
+  }
+  if (manaSpent > 0 && nextState.gearEffects.manaOnPaidConsume > 0) {
+    nextState = gainManaWithCombatText(nextState, nextState.gearEffects.manaOnPaidConsume, combatTexts);
+  }
+  if (lastCardInHand && nextState.gearEffects.drawOnLastHandConsume > 0) {
+    nextState = applyDrawResult(nextState, drawFromState(nextState, nextState.gearEffects.drawOnLastHandConsume));
+  }
+  return nextState;
+}
+
 export function handlePostPlayCardDestination(
   state: BattleState,
   card: BattleCard,
   triggerConsumeRiders = true,
   combatTexts: CombatTextEvent[] = [],
   lastCardInHand = false,
+  manaSpent = 0,
 ): BattleState {
   if (card.consume) {
     let nextState = { ...state, exhausted: [...state.exhausted, card] };
@@ -347,6 +377,8 @@ export function handlePostPlayCardDestination(
         const draw = drawFromState(nextState, state.trinketEffects.runicQuillDrawOnConsume);
         nextState = applyDrawResult(nextState, draw);
       }
+      nextState = applyConsumeGearRiders(nextState, card, combatTexts, lastCardInHand, manaSpent);
+      if (isPlayerDefeated(nextState)) return nextState;
       nextState = applyConsumeTalentRiders(nextState, card, combatTexts, lastCardInHand);
     }
     return nextState;
@@ -383,6 +415,7 @@ export function playBattleCardResolved(
     ...prepared.state,
     playerStatuses: { ...prepared.state.playerStatuses, block: prepared.state.playerStatuses.block - blockCost },
   };
+  const manaSpent = Math.min(paymentState.mana, effectiveCost);
   if (blockCost > 0)
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: blockCost });
   const played = executeCardPlayState(
@@ -410,7 +443,14 @@ export function playBattleCardResolved(
   if (playerAlive && enemyWasAlive) {
     nextState = applyResonantChimeTrinket(nextState, combatTexts);
   }
-  nextState = handlePostPlayCardDestination(nextState, card, playerAlive, combatTexts, state.hand.length === 1);
+  nextState = handlePostPlayCardDestination(
+    nextState,
+    card,
+    playerAlive,
+    combatTexts,
+    state.hand.length === 1,
+    manaSpent,
+  );
   if (prepared.harvest) nextState = returnHarvestCard(nextState, card);
 
   return { state: resolvePendingBattleReactions(nextState, combatTexts), combatTexts };

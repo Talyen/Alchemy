@@ -4,12 +4,13 @@ import { LABYRINTH_TRAITS } from "@/lib/content-systems/labyrinth/trait-catalog"
 import type { EncounterCombatTraitId, EncounterRewardTraitId, EncounterTraitId } from "@/lib/content-systems/types";
 import type { KeywordId } from "./game-data-catalog";
 import { keywordIcons } from "./metadata";
+import { phoenixFeatherStatus } from "./phoenix-feather-status";
 
 const additionalTraitKeywords = (category: "combat" | "reward") =>
   Object.fromEntries(
     Object.entries(LABYRINTH_TRAITS)
       .filter(([, trait]) => trait.category === category)
-      .map(([id, trait]) => [id, [trait.keyword]]),
+      .flatMap(([id, trait]) => (trait.keyword ? [[id, [trait.keyword]]] : [])),
   );
 
 export const ENCOUNTER_COMBAT_TRAIT_KEYWORDS: Partial<Record<EncounterCombatTraitId, KeywordId[]>> = {
@@ -61,8 +62,10 @@ export function getEncounterTraitPresentation(id: string) {
   const traitId = id as EncounterTraitId;
   const keywords = traitKeywords[traitId] ?? [];
   const primary = keywords[0];
+  const status = traitId === "phoenix-nest" ? phoenixFeatherStatus : undefined;
   const Icon =
+    status?.icon ??
     traitIcons[traitId] ??
     (primary ? keywordIcons[primary] : ENCOUNTER_TRAITS[traitId].category === "combat" ? Swords : Gift);
-  return { keywords, Icon };
+  return { keywords, Icon, colorClass: status?.colorClass, textShineColors: status?.textShineColors };
 }

@@ -64,7 +64,7 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   return dealEnemyDotTick(state, "burn", finalDamage, nextBurn, combatTexts);
 }
 
-function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
+export function tickEnemyPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.enemyStatuses.poison;
   if (damage <= 0) return state;
   const multiplier = getEnemyDamageMultiplier(state, "poison") * gearFrozenDamageMultiplier(state);
@@ -123,7 +123,7 @@ export function tickEnemyStatuses(state: BattleState, combatTexts: CombatTextEve
   }
   return resolveBattleSequence(
     state,
-    [tickBurn, tickPoison, tickBleed],
+    [tickBurn, tickEnemyPoison, tickBleed],
     combatTexts,
     (current, tick) => tick(current, combatTexts),
     { kind: "each-step", settle: resolvePendingBattleReactions },

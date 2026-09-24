@@ -7,15 +7,19 @@ interface LabyrinthTraitInput {
   description: string;
   modes: ReadonlyArray<"labyrinth" | "wildwood">;
   labyrinthNodes: readonly LabyrinthNodeType[];
-  keyword: KeywordId;
+  keyword?: KeywordId;
 }
 
-function benefit(label: string, description: string, keyword: KeywordId): LabyrinthTraitInput & { category: "reward" } {
+function benefit(
+  label: string,
+  description: string,
+  keyword?: KeywordId,
+): LabyrinthTraitInput & { category: "reward" } {
   return {
     category: "reward",
     label,
     description,
-    keyword,
+    ...(keyword ? { keyword } : {}),
     modes: ["labyrinth"],
     labyrinthNodes: ["combat", "elite", "boss"],
   };
@@ -57,7 +61,7 @@ export const LABYRINTH_TRAITS = {
   wildheart: benefit("Wildheart", "Your first Nature attack each turn deals double damage", "nature"),
   "eager-pack": benefit("Eager Pack", "Your Companions act twice when summoned", "companion"),
   quickdraw: benefit("Quickdraw", "Your first Archery card each turn costs 1 less", "archery"),
-  "phoenix-nest": benefit("Phoenix Nest", "Start battle with Phoenix Feather", "phoenixFeather"),
+  "phoenix-nest": benefit("Phoenix Nest", "Start battle with Phoenix Feather"),
   elusive: benefit("Elusive", "Gain 15% Dodge this battle", "dodge"),
   bramblecoat: benefit("Bramblecoat", "Start each turn with at least 3 Thorns", "thorns"),
   restorative: benefit("Restorative", "Restore 2 Health at the end of your turn", "health"),

@@ -7,6 +7,7 @@ import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
+import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import type { BattleCardEffect } from "@/lib/game-data";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { damageOnlyEffects } from "@/lib/battle/card-classification";
@@ -23,12 +24,12 @@ function dodgeThenMissRng() {
 }
 
 describe("unique item battle effects", () => {
-  it("Wardbreaker purges one mitigation category on every attack and deals 1 holy damage", () => {
+  it("Wardbreaker purges one benefit per turn without dealing Holy damage", () => {
     const baseState = patchBattleState({
       enemyHealth: 100,
       enemyMaxHealth: 100,
       enemyMitigation: { armor: 10, block: 15, forge: 5 },
-      gearEffects: { ...defaultGearEffects, attackPurgeDealHolyPerEffect: 1 },
+      gearEffects: { ...defaultGearEffects, attackPurgeOncePerTurn: 1 },
     });
 
     const combatTexts: CombatTextEvent[] = [];
@@ -38,22 +39,40 @@ describe("unique item battle effects", () => {
     expect(afterPurge.enemyMitigation.block).toBe(15);
     expect(afterPurge.enemyMitigation.forge).toBe(5);
 
-    expect(afterPurge.enemyHealth).toBe(99);
+    expect(afterPurge.enemyHealth).toBe(100);
+    expect(afterPurge.uniqueGear.wardbreakerPurgeUsed).toBe(true);
+    expect(combatTexts).toContainEqual(expect.objectContaining({ target: "enemy", stat: "armor", signal: "purge" }));
+    const sameTurn = resolvePlayerHit(afterPurge, { source: "attack-purge" }, []);
+    expect(sameTurn.enemyMitigation.block).toBe(15);
+    const nextTurn = advanceToPlayerTurn(sameTurn);
+    expect(nextTurn.uniqueGear.wardbreakerPurgeUsed).toBe(false);
+    expect(resolvePlayerHit(nextTurn, { source: "attack-purge" }, []).enemyMitigation.block).toBe(0);
   });
 
-  it("Wardbreaker falls through to block when the enemy holds no armor", () => {
+  it("Wardbreaker purges beneficial enemy statuses after mitigation and ignores harmful statuses", () => {
     const baseState = patchBattleState({
       enemyHealth: 100,
       enemyMaxHealth: 100,
-      enemyMitigation: { armor: 0, block: 15, forge: 5 },
-      gearEffects: { ...defaultGearEffects, attackPurgeDealHolyPerEffect: 1 },
+      enemyStatuses: { thorns: 3, burnBonus: 2, poison: 4 },
+      gearEffects: { ...defaultGearEffects, attackPurgeOncePerTurn: 1 },
     });
 
     const afterPurge = resolvePlayerHit(baseState, { source: "attack-purge" }, []);
 
-    expect(afterPurge.enemyMitigation.block).toBe(0);
-    expect(afterPurge.enemyMitigation.forge).toBe(5);
-    expect(afterPurge.enemyHealth).toBe(99);
+    expect(afterPurge.enemyStatuses).toMatchObject({ thorns: 0, burnBonus: 2, poison: 4 });
+    const nextTurn = advanceToPlayerTurn(afterPurge);
+    const afterBonus = resolvePlayerHit(nextTurn, { source: "attack-purge" }, []);
+    expect(afterBonus.enemyStatuses).toMatchObject({ burnBonus: 0, poison: 4 });
+  });
+
+  it("Wardbreaker saves its turn use until an enemy gains a benefit", () => {
+    const state = patchBattleState({ gearEffects: { ...defaultGearEffects, attackPurgeOncePerTurn: 1 } });
+    const empty = resolvePlayerHit(state, { source: "attack-purge" }, []);
+    expect(empty.uniqueGear.wardbreakerPurgeUsed).toBe(false);
+    const protectedEnemy = { ...empty, enemyMitigation: { ...empty.enemyMitigation, block: 4 } };
+    const purged = resolvePlayerHit(protectedEnemy, { source: "attack-purge" }, []);
+    expect(purged.enemyMitigation.block).toBe(0);
+    expect(purged.uniqueGear.wardbreakerPurgeUsed).toBe(true);
   });
 
   it("Wardbreaker purge triggers when playing an attack card", () => {
@@ -69,13 +88,13 @@ describe("unique item battle effects", () => {
       enemyHealth: 100,
       enemyMaxHealth: 100,
       enemyMitigation: { armor: 4, block: 0, forge: 0 },
-      gearEffects: { ...defaultGearEffects, attackPurgeDealHolyPerEffect: 1 },
+      gearEffects: { ...defaultGearEffects, attackPurgeOncePerTurn: 1 },
     });
 
     const resolution = playBattleCardResolved(baseState, "strike", 0);
 
     expect(resolution.state.enemyMitigation.armor).toBe(0);
-    expect(resolution.state.enemyHealth).toBe(89);
+    expect(resolution.state.enemyHealth).toBe(90);
   });
 
   it("Golden Verdict awards gold whenever a stun CCs, regardless of source", () => {

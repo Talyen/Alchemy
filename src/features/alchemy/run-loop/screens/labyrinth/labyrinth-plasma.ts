@@ -7,11 +7,13 @@ import { type KeywordId } from "@/lib/game-data";
 import type { LabyrinthNode } from "@/lib/content-systems/types";
 import {
   getPlasmaColorPair,
+  getPlasmaColorPairFromColors,
   getPlasmaKeywordsForEnemy,
   type PlasmaColorPair,
 } from "@/features/alchemy/shared/config/plasma-palettes";
 import { destinationMeta } from "@/features/alchemy/shared/config/metadata";
 import { LABYRINTH_TYPE_TO_DESTINATION } from "@/lib/content-systems/labyrinth/data";
+import { phoenixFeatherStatus } from "@/features/alchemy/shared/config/phoenix-feather-status";
 
 const LABYRINTH_TYPE_BASE_KEYWORDS: Record<LabyrinthNode["type"], KeywordId[]> = {
   entrance: [],
@@ -65,20 +67,28 @@ function getLabyrinthNodeKeywordIds(node: LabyrinthNode): KeywordId[] {
   }
 
   if (ordered.length === 0 && base.length > 0) push(base);
-  if (ordered.length === 0) push(["physical"]);
-
   return ordered;
 }
 
 export function getLabyrinthNodePlasmaPair(node: LabyrinthNode): PlasmaColorPair | null {
   if (node.type === "entrance") return null;
+  const keywordIds = getLabyrinthNodeKeywordIds(node);
+  const hasPhoenixNest = node.rewardModifiers?.includes("phoenix-nest") ?? false;
+  const keywordPair =
+    keywordIds.length > 0
+      ? getPlasmaColorPair(keywordIds)
+      : hasPhoenixNest
+        ? getPlasmaColorPairFromColors(phoenixFeatherStatus.shineColors)
+        : getPlasmaColorPair(["physical"]);
+  const pair =
+    keywordPair && hasPhoenixNest && keywordIds.length === 1
+      ? { ...keywordPair, secondary: phoenixFeatherStatus.shineColors[0] }
+      : keywordPair;
   if (node.type === "boss") {
-    const keywordIds = getLabyrinthNodeKeywordIds(node);
-    return getPlasmaColorPair(keywordIds);
+    return pair;
   }
   const dest = LABYRINTH_TYPE_TO_DESTINATION[node.type];
   const meta = dest ? destinationMeta[dest] : undefined;
   if (meta?.plasmaColorPair) return meta.plasmaColorPair;
-  const keywordIds = getLabyrinthNodeKeywordIds(node);
-  return getPlasmaColorPair(keywordIds);
+  return pair;
 }

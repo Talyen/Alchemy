@@ -208,14 +208,6 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
     pillBgClass: "bg-yellow-300/15",
     shineColors: ["#fde047", "#ca8a04", "#fde047"],
   },
-  phoenixFeather: {
-    id: "phoenixFeather",
-    label: "Phoenix Feather",
-    description: "The next time you would die, instead restore 30% Health, then remove this effect",
-    colorClass: "text-orange-300",
-    borderClass: "border-orange-300",
-    shineColors: ["#fdba74", "#ea580c", "#fdba74"],
-  },
   thorns: {
     id: "thorns",
     label: "Thorns",

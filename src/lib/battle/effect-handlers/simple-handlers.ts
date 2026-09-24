@@ -4,7 +4,7 @@ import type { BattleState } from "../types";
 import type { EffectHandler } from "./handler-types";
 import { companionLibrary } from "@/lib/game-data";
 import { applyPotionMultiplier } from "../amount-helpers";
-import { mergeCombatText, addGoldWithCombatText } from "../combat-text";
+import { mergeCombatText, addGoldWithCombatText, applyBlockReward } from "../combat-text";
 import { applyWishEffect } from "../wish";
 import { resolvePendingBattleReactions } from "../enemy-attack-damage";
 import { drawFromState, applyDrawResult } from "../draw";
@@ -34,7 +34,10 @@ export const applySummonCompanionEffect = defineHandler(
   "summon-companion",
   (state, _card, effect, _potionMult, combatTexts) => {
     mergeCombatText(combatTexts, { target: "player", kind: "notice", stat: "companion", text: "" });
-    return { ...state, activeCompanion: companionLibrary[effect.companionId] };
+    const summoned = { ...state, activeCompanion: companionLibrary[effect.companionId] };
+    return summoned.gearEffects.blockOnCompanionSummon > 0
+      ? applyBlockReward(summoned, summoned.gearEffects.blockOnCompanionSummon, combatTexts)
+      : summoned;
   },
 );
 
@@ -55,12 +58,20 @@ export const applyGainGoldEffect = defineHandler("gain-gold", (state, _card, eff
 });
 
 export const applyWishEffectHandler = defineHandler("wish", (state, card, effect, potionMult, combatTexts) => {
+  if (effect.companionIfAbsent && state.activeCompanion) return state;
   const adjustedWish = applyPotionMultiplier(effect.amount, potionMult);
   if (adjustedWish > 0) mergeCombatText(combatTexts, { target: "player", kind: "notice", stat: "wish", text: "" });
-  return applyWishEffect(state, card, adjustedWish, combatTexts, {
-    kind: "each-step",
-    settle: resolvePendingBattleReactions,
-  });
+  return applyWishEffect(
+    state,
+    card,
+    adjustedWish,
+    combatTexts,
+    {
+      kind: "each-step",
+      settle: resolvePendingBattleReactions,
+    },
+    effect.companionIfAbsent === true,
+  );
 });
 
 export const applyDrawCardsEffect = defineHandler("draw-cards", (state, _card, effect, potionMult, combatTexts) => {

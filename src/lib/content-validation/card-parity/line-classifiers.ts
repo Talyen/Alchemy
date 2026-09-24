@@ -40,7 +40,9 @@ export function isGoldLine(line: string): boolean {
 }
 
 export function isWishLine(line: string): boolean {
-  return line.startsWith("Wish ") || line.endsWith(" or Wish");
+  return (
+    line.startsWith("Wish ") || line.endsWith(" or Wish") || line === "If you don't have a Companion, Wish for one"
+  );
 }
 
 export function isRemoveHarmfulStatusLine(line: string): boolean {

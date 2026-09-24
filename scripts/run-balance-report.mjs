@@ -8,12 +8,13 @@ const rootDir = resolve(fileURLToPath(new URL("..", import.meta.url)));
 export async function runBalanceReport(env = process.env) {
   return runWithBalanceServer({
     rootDir,
-    command: "npm run balance:sim",
+    command: env.ALCHEMY_BALANCE_MODE === "full" ? "npm run balance:sim:full" : "npm run balance:sim",
     artifacts: [
       { path: "reports/balance-findings.html", role: "primary" },
       { path: "reports/balance-findings.json", role: "secondary" },
     ],
-    summary: ({ findings }) => `Balance report: ${findings.findings.length}/${findings.totalBeforeCap} findings shown.`,
+    summary: ({ findings, report }) =>
+      `Balance ${report.model.meta.samplingMode} report: ${findings.findings.length}/${findings.totalBeforeCap} findings shown.`,
     run: async ({
       buildBalanceReport,
       evaluateBalanceFindings,

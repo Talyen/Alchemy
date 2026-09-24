@@ -56,10 +56,13 @@ Headless battle simulator for overpowered or underpowered cards, classes, enemie
 ```sh
 npm run balance:sim
 
-# Increase iterations per scenario (default: 100)
+# Run the exhaustive comparison with the original sample counts
+npm run balance:sim:full
+
+# Increase iterations per scenario (quick default: 12; full default: 100)
 ALCHEMY_BALANCE_ITERATIONS=500 npm run balance:sim
 
-# Increase independent class-deck seeds (default: 3)
+# Increase independent class-deck seeds (quick default: 1; full default: 3)
 ALCHEMY_BALANCE_DECK_SEEDS=5 npm run balance:sim
 
 # Change the play policy (random-playable, greedy-damage, defensive-random, greedy-effective-damage)
@@ -75,6 +78,16 @@ ALCHEMY_BALANCE_PACING=off npm run balance:sim
 npm run test:balance
 ```
 
+`balance:sim` is the interactive sweep: it still covers every hero, enemy,
+card, talent, Companion, Trinket, Gear item, and affix across Early/Mid/Late,
+but uses 12 core iterations, 5 paired iterations, 15 isolated-card deck
+samples, and one core/affix deck seed by default. Isolated and in-class card
+comparisons use up to 3 fight iterations per scenario. Findings from small
+cells are exploratory. `balance:sim:full` restores 100 core iterations, 50
+paired iterations, 33 isolated-card deck samples, and 3 deck seeds for tuning
+decisions. Both commands write the standard `reports/balance-findings.*` and
+`reports/balance-full/` artifacts.
+
 Live autoplay scoring lives in `src/lib/battle/autoplay-policy.ts` and is game-design owned; changing those weights changes autoplay and Wish picks in real runs. `src/lib/balance/play-policy.ts` re-exports that policy so reports match the skill floor — fork sim-local scoring there instead of retuning live. `findings.ts` gathers ordered candidates from rate, equity, matchup, paired, and anomaly collectors in `findings-*.ts`; `findings-selection.ts` owns deduplication, ranking, matchup clustering, and bucket selection. `report-methodology.ts` supplies shared HTML/JSON methodology without importing the simulation runner. Shared HTML shell, escaping, and JSON stringification live in `report-layout.ts`; gauntlet depths and typical gear-roll depth live in `report-catalog.ts` / `gear-preset.ts`.
 
 Exact presets, finding bands, report grouping, pairing methodology, and measurement semantics are owned by `src/lib/balance/` and the generated report; use findings as review input rather than applying tunings automatically. The summary opens `reports/balance-findings.html` and writes a JSON companion.
@@ -82,7 +95,7 @@ Exact presets, finding bands, report grouping, pairing methodology, and measurem
 Paired sweeps describe reference fights and one or more variants in `report-sweeps.ts`. `report-sweep-runner.ts` owns batch configuration, matched-fight validation, one simulation of each shared reference, and paired result aggregation. A pair must keep character, enemy, depth, tier, fight seed, and iteration count equal; only the tested deck, talent, Trinket, or Gear input varies. A variant can use the reference as either the baseline or treatment, so removing a card or talent preserves the meaning of the reported delta.
 
 Numeric environment values must be positive integers. Policy and loadout values must exactly match the choices above; pacing accepts `on`/`1`/`true` or `off`/`0`/`false` (anything else fails fast). Invalid configuration fails before report files are written. `ALCHEMY_BALANCE_FINDINGS_CAP` controls the number of findings in both rendered summaries (default: 100).
-`balance:sim` generates reports; `test:balance` verifies finite full-report
+`balance:sim` and `balance:sim:full` generate reports; `test:balance` verifies finite full-report
 construction and render purity without touching `reports/`. Changed balance
 implementation runs both the focused unit suite and this report check.
 

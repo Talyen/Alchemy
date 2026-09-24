@@ -7,6 +7,7 @@ import { seededRng } from "../../fixtures/rng";
 import { patchBattleState } from "../../fixtures/battle";
 import { makeTestCard } from "../../fixtures/cards";
 import { MAX_HAND_SIZE } from "@/lib/game-constants";
+import { cardById } from "@/lib/game-data";
 
 describe("buildWishOptions", () => {
   it("returns shuffled options excluding the triggering card", () => {
@@ -32,6 +33,24 @@ describe("buildWishOptions", () => {
     const options = buildWishOptions(state, card);
     expect(options).toHaveLength(3);
     expect(options.every((o) => !["strike", "bash", "block"].includes(o.id))).toBe(true);
+  });
+
+  it("draws distinct Companion summon options from the seeded Wish pool", () => {
+    const source = makeTestCard({ id: "pack-tactics", title: "Pack Tactics" });
+    const first = buildWishOptions(
+      patchBattleState({ deck: [cardById["wolf-companion"]!], rng: seededRng(7) }),
+      source,
+      true,
+    );
+    const second = buildWishOptions(
+      patchBattleState({ deck: [cardById["wolf-companion"]!], rng: seededRng(7) }),
+      source,
+      true,
+    );
+    expect(first.map((card) => card.id)).toEqual(second.map((card) => card.id));
+    expect(first).toHaveLength(3);
+    expect(new Set(first.map((card) => card.id)).size).toBe(3);
+    expect(first.every((card) => card.effects.some((effect) => effect.kind === "summon-companion"))).toBe(true);
   });
 
   it("falls back to all cards when not enough undiscovered exist", () => {

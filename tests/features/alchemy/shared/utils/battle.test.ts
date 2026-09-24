@@ -8,6 +8,7 @@ import {
   getCombatTextIcon,
 } from "@/features/alchemy/shared/utils/battle";
 import { keywordIcons } from "@/features/alchemy/shared/config";
+import { phoenixFeatherStatus } from "@/features/alchemy/shared/config/phoenix-feather-status";
 import { enemyBestiary, keywordDefinitions } from "@/lib/game-data";
 import { makeTestCard } from "../../../../fixtures/battle";
 
@@ -257,6 +258,12 @@ describe("getCombatTextColorClass", () => {
       "text-green-400",
     );
   });
+
+  it("keeps Phoenix Feather's status color", () => {
+    expect(getCombatTextColorClass({ target: "player", kind: "status", stat: "phoenixFeather", amount: 1 })).toBe(
+      "text-orange-300",
+    );
+  });
 });
 
 describe("getCombatImpactVisual", () => {
@@ -293,5 +300,10 @@ describe("getCombatTextIcon", () => {
   it("returns the stat's icon for damage", () => {
     const icon = getCombatTextIcon({ target: "enemy", kind: "damage", stat: "burn", amount: 5 });
     expect(icon).toBe(keywordIcons.burn);
+  });
+
+  it("keeps Phoenix Feather's status icon", () => {
+    const icon = getCombatTextIcon({ target: "player", kind: "status", stat: "phoenixFeather", amount: 1 });
+    expect(icon).toBe(phoenixFeatherStatus.icon);
   });
 });

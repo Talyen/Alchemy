@@ -241,6 +241,7 @@ export function buildBalanceReport(options: ReportRunOptions): BalanceReportMode
   });
   return {
     meta: {
+      samplingMode: options.mode ?? "custom",
       policy: options.policy,
       loadoutMode: options.loadoutMode,
       iterations: options.iterations,

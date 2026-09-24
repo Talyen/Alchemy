@@ -32,6 +32,18 @@ describe("StatusIcon", () => {
     });
   });
 
+  it("presents Phoenix Feather as a status without a numeric badge", async () => {
+    render(<StatusIcon chip={{ id: "phoenixFeather", value: 1, hideValue: true }} />);
+
+    fireEvent.mouseEnter(screen.getByRole("button", { name: "Phoenix Feather" }));
+
+    await waitFor(() => {
+      const tooltip = document.querySelector<HTMLElement>(".hover-popup-panel[data-visible]");
+      expect(tooltip?.textContent).toContain("The next time you would die, instead restore 30% Health");
+    });
+    expect(screen.queryByText("1")).toBeNull();
+  });
+
   it("keeps armed one-shot effects badge-less", () => {
     render(<StatusIcon chip={{ id: "nextHitCrit", value: 1, hideValue: true }} />);
 

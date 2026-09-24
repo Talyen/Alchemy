@@ -123,9 +123,9 @@ const PRESENTATION: { [K in BattleCardEffect["kind"]]: EffectPresentation<K> } =
     },
   },
   wish: {
-    keywords: () => ["wish"],
+    keywords: (effect) => (effect.companionIfAbsent ? [] : ["wish"]),
     describe: (effect) => {
-      return `Wish ${effect.amount}`;
+      return effect.companionIfAbsent ? "If you don't have a Companion, Wish for one" : `Wish ${effect.amount}`;
     },
   },
   "summon-companion": { keywords: () => ["companion"] },

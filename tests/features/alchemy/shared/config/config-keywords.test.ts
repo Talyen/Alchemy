@@ -3,10 +3,11 @@ import { keywordDefinitions } from "@/lib/game-data";
 import { extractKeywordIds, keywordAliases, keywordPattern } from "@/features/alchemy/shared/config/keywords";
 
 describe("keywordAliases", () => {
-  it("recognizes every keyword label, including Dodge and Phoenix Feather", () => {
+  it("recognizes every keyword label without classifying Phoenix Feather as a keyword", () => {
     for (const definition of Object.values(keywordDefinitions)) {
       expect(extractKeywordIds(definition.label)).toEqual([definition.id]);
     }
+    expect(extractKeywordIds("Phoenix Feather")).toEqual([]);
   });
 
   it("every alias has a match string and keywordId", () => {

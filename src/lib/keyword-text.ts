@@ -5,7 +5,6 @@ export const keywordAliases: Array<{ match: string; keywordId: KeywordId }> = [
   { match: "Dodges", keywordId: "dodge" },
   { match: "Dodged", keywordId: "dodge" },
   { match: "Dodging", keywordId: "dodge" },
-  { match: "Phoenix Feather", keywordId: "phoenixFeather" },
   { match: "Physical", keywordId: "physical" },
   { match: "Stun", keywordId: "stun" },
   { match: "Stunned", keywordId: "stun" },

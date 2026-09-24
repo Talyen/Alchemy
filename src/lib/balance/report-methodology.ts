@@ -10,6 +10,7 @@ import {
 
 export function reportMethodologyLines(options: ReportRunOptions): string[] {
   return [
+    `Sampling mode=${options.mode ?? "custom"}. Quick mode covers the same hero, enemy, card, talent, companion, gear, and affix catalogs with fewer repeats; its small-cell findings are exploratory and should be confirmed with the full mode before tuning.`,
     `Core scenarios: all characters × normal/elite/boss × tier depths × ${options.deckSeeds} semantic class-deck seeds. Each tier/class deck sample is reused across enemies; fight seeds remain matchup-specific.`,
     `Deck: starting deck + affinity extras (Early +${CLASS_SIM_AFFINITY_EXTRAS.early}, Mid +${CLASS_SIM_AFFINITY_EXTRAS.mid}, Late +${CLASS_SIM_AFFINITY_EXTRAS.late}). Wildcard random ${WILDCARD_SIM_DECK_SIZE.early}/${WILDCARD_SIM_DECK_SIZE.mid}/${WILDCARD_SIM_DECK_SIZE.late}. Alchemist +2 mixed potions.`,
     `Talents (tree order, including economic talents; placeholders excluded): Early none; Mid ${MID_AFFINITY_TALENT_COUNT} affinity + ${MID_OTHER_TALENT_COUNT} other; Late up to ${LATE_AFFINITY_TALENT_CAP} affinity + ${LATE_OTHER_TALENT_COUNT} other. Only individual-talent sweeps exclude meta-only talents; presets retain tree-order investments.`,

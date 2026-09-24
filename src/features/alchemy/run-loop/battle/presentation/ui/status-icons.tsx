@@ -10,7 +10,9 @@ import {
   getPlasmaKeywordsForText,
   HASTE_PLASMA_PAIR,
   keywordIcons,
+  getPlasmaColorPairFromColors,
 } from "../../../../shared/config/index";
+import { phoenixFeatherStatus } from "../../../../shared/config/phoenix-feather-status";
 import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
 import { augmentDefinitions } from "../../../../shared/augment-definitions";
 import type { StatusChip } from "../../../../shared/types";
@@ -97,6 +99,26 @@ function StatusTooltip({
 export function StatusIcon({ chip }: { chip: StatusChip }) {
   if (chip.id === "haste") {
     return <HasteStatusIcon value={chip.value} />;
+  }
+
+  if (chip.id === "phoenixFeather") {
+    const Icon = phoenixFeatherStatus.icon;
+    return (
+      <StatusChipShell
+        ariaLabel={phoenixFeatherStatus.label}
+        icon={<Icon className={cn(STATUS_ICON_CLASS, phoenixFeatherStatus.colorClass)} />}
+        tooltip={
+          <StatusTooltip
+            labelNode={<TooltipHeader className="mb-0">{phoenixFeatherStatus.label}</TooltipHeader>}
+            value={chip.value}
+            hideValue={chip.hideValue}
+            valueColorClass={phoenixFeatherStatus.colorClass}
+            description={renderColoredKeywords(phoenixFeatherStatus.description)}
+          />
+        }
+        plasmaColorPair={getPlasmaColorPairFromColors(phoenixFeatherStatus.shineColors)}
+      />
+    );
   }
 
   const augment = augmentDefinitions[chip.id as keyof typeof augmentDefinitions];

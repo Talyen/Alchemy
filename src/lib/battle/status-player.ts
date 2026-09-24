@@ -256,12 +256,19 @@ export function addForgeToPlayer(state: BattleState, baseAmount: number, combatT
 }
 
 /** Only attack spending is eligible for Patient Edge recovery. */
-export function spendPlayerForgeForAttack(state: BattleState, amount: number): BattleState {
+export function spendPlayerForgeForAttack(
+  state: BattleState,
+  amount: number,
+  combatTexts: CombatTextEvent[],
+): BattleState {
   const spent = clamp(amount, 0, state.playerStatuses.forge);
   if (spent <= 0) return state;
-  const next = setPlayerStatus(state, "forge", state.playerStatuses.forge - spent);
-  return state.gearEffects.recoverSpentForge > 0
-    ? { ...next, uniqueGear: { ...next.uniqueGear, spentForge: next.uniqueGear.spentForge + spent } }
+  let next = setPlayerStatus(state, "forge", state.playerStatuses.forge - spent);
+  if (state.gearEffects.recoverSpentForge > 0) {
+    next = { ...next, uniqueGear: { ...next.uniqueGear, spentForge: next.uniqueGear.spentForge + spent } };
+  }
+  return next.playerStatuses.forge === 0 && state.gearEffects.blockOnLastForgeSpent > 0
+    ? applyBlockReward(next, state.gearEffects.blockOnLastForgeSpent, combatTexts)
     : next;
 }
 

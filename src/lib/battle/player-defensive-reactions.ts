@@ -1,6 +1,6 @@
 import type { EnemyAttackEffect } from "@/lib/game-data";
 import { BATTLE_CONFIG } from "../game-constants";
-import { applyHealingWithCombatText, mergeCombatText } from "./combat-text";
+import { addPlayerStatusWithCombatText, applyHealingWithCombatText, mergeCombatText } from "./combat-text";
 import { resolvePlayerHit } from "./hit-resolution";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { decayArmorAfterDamage } from "./status-helpers";
@@ -83,6 +83,15 @@ function applyBlockDepletedHeal(
   // The hit depleted Block even if threshold or healing rewards refilled it.
   if (isBlockDepleted && prevState.talentEffects.forgeOnBlockDepleted > 0) {
     finalState = addForgeToPlayer(finalState, prevState.talentEffects.forgeOnBlockDepleted, combatTexts);
+  }
+
+  if (isBlockDepleted && prevState.gearEffects.thornsOnBlockDepleted > 0) {
+    finalState = addPlayerStatusWithCombatText(
+      finalState,
+      "thorns",
+      prevState.gearEffects.thornsOnBlockDepleted,
+      combatTexts,
+    );
   }
 
   if (isBlockDepleted && prevState.gearEffects.stunOnBlockDepleted > 0 && finalState.enemyHealth > 0) {

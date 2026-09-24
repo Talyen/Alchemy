@@ -123,7 +123,7 @@ export const coreCards: BattleCard[] = [
   cardBuilders.effectsCard({
     id: "hemorrhage",
     art: assetRefs.hemorrhage,
-    effects: [{ kind: "damage", damageType: "bleed", amount: 1, detonateAllBleed: true }],
+    effects: [{ kind: "damage", damageType: "bleed", amount: 2, detonateAllBleed: true }],
   }),
   cardBuilders.effectsCard({
     id: "phoenix-feather",
@@ -212,7 +212,7 @@ export const coreCards: BattleCard[] = [
     id: "bloodthorn",
     art: assetRefs.bloodthorn,
     damageType: "nature",
-    amount: 3,
+    amount: 2,
     lifesteal: true,
   }),
   cardBuilders.effectsCard({
@@ -244,7 +244,10 @@ export const coreCards: BattleCard[] = [
   cardBuilders.effectsCard({
     id: "pack-tactics",
     art: assetRefs.packTactics,
-    effects: [{ kind: "companion-action", amount: 2 }],
+    effects: [
+      { kind: "companion-action", amount: 2 },
+      { kind: "wish", amount: 1, companionIfAbsent: true },
+    ],
   }),
   cardBuilders.effectsCard({
     id: "serrated-edge",

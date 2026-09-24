@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { LabyrinthNode } from "@/lib/content-systems/types";
 import { getPlasmaColorPair } from "@/features/alchemy/shared/config/plasma-palettes";
 import { getLabyrinthNodePlasmaPair } from "@/features/alchemy/run-loop/screens/labyrinth/labyrinth-plasma";
+import { phoenixFeatherStatus } from "@/features/alchemy/shared/config/phoenix-feather-status";
+import { getEncounterTraitPresentation } from "@/features/alchemy/shared/config/encounter-trait-presentation";
 
 function makeNode(overrides: Partial<LabyrinthNode> = {}): LabyrinthNode {
   return {
@@ -32,6 +34,24 @@ describe("labyrinth node plasma", () => {
     // an unknown enemy exercises the documented physical fallback.
     const pair = getLabyrinthNodePlasmaPair(makeNode({ type: "boss", enemyId: "no-such-enemy" }));
     expect(pair).toEqual(getPlasmaColorPair(["physical"]));
+  });
+
+  it("keeps Phoenix Nest's feather presentation without a Phoenix keyword", () => {
+    const trait = getEncounterTraitPresentation("phoenix-nest");
+    expect(trait?.keywords).toEqual([]);
+    expect(trait?.Icon).toBe(phoenixFeatherStatus.icon);
+    expect(getLabyrinthNodePlasmaPair(makeNode({ type: "boss", rewardModifiers: ["phoenix-nest"] }))).toEqual({
+      primary: phoenixFeatherStatus.shineColors[0],
+      secondary: phoenixFeatherStatus.shineColors[1],
+    });
+    expect(
+      getLabyrinthNodePlasmaPair(
+        makeNode({ type: "boss", modifiers: ["tempered"], rewardModifiers: ["phoenix-nest"] }),
+      ),
+    ).toEqual({
+      primary: getPlasmaColorPair(["forge"])?.primary,
+      secondary: phoenixFeatherStatus.shineColors[0],
+    });
   });
 
   it("is deterministic for the same node", () => {

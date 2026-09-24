@@ -248,16 +248,17 @@ describe("Brass Censer", () => {
     expect(result.enemyStatuses.burn).toBe(6);
   });
 
-  it("also triggers on Holy damage from purging enemy defenses", () => {
+  it("does not trigger on Wardbreaker's damage-free purge", () => {
     const state = patchBattleState({
       rng: rolls(0.1, 0.1),
       trinketEffects: { brassCenserProcChance: 20 },
       enemyMitigation: { armor: 3 },
-      gearEffects: { attackPurgeDealHolyPerEffect: 4 },
+      gearEffects: { attackPurgeOncePerTurn: 1 },
     });
     const result = resolvePlayerHit(state, { source: "attack-purge" }, []);
-    expect(result.enemyHealth).toBe(state.enemyHealth - 8);
-    expect(result.enemyStatuses.burn).toBe(4);
+    expect(result.enemyHealth).toBe(state.enemyHealth);
+    expect(result.enemyStatuses.burn).toBe(0);
+    expect(result.enemyMitigation.armor).toBe(0);
   });
 
   it("does not roll without the Censer", () => {

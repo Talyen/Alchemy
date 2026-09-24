@@ -14,16 +14,17 @@ export function TraitBox({ trait }: { trait: EnemyTrait }) {
   const thematic = encounter?.keywords ?? [];
   const primary = thematic[0] ?? keywords[0];
   const Icon = encounter?.Icon ?? getEnemyTraitIcon(trait);
+  const colorClass = encounter?.colorClass ?? (primary ? keywordDefinitions[primary].colorClass : "text-stone-400");
   return (
     <div data-trait={trait.id} className="flex min-w-0 items-center gap-3">
       {createElement(Icon, {
         "aria-hidden": true,
-        className: cn("size-9 shrink-0", primary ? keywordDefinitions[primary].colorClass : "text-stone-400"),
+        className: cn("size-9 shrink-0", colorClass),
       })}
       <div className="min-w-0">
         <h3 className="text-lg font-semibold">
           <ShineText
-            colors={getKeywordTextShineColors(keywords.length > 0 ? keywords : thematic)}
+            colors={encounter?.textShineColors ?? getKeywordTextShineColors(keywords.length > 0 ? keywords : thematic)}
             fallbackClassName="text-stone-200"
           >
             {trait.title}

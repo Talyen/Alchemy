@@ -42,6 +42,7 @@ export interface PairedTierRow {
 
 export interface BalanceReportModel {
   readonly meta: {
+    readonly samplingMode?: "quick" | "full" | "custom";
     readonly policy: BalancePlayPolicy;
     readonly loadoutMode: BalanceLoadoutMode;
     readonly iterations: number;

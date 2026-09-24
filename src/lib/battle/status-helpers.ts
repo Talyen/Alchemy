@@ -71,8 +71,13 @@ export function getEnemyDamageMultiplier(
   return multiplier;
 }
 
-export function reduceDamageByMana(state: Pick<BattleState, "mana" | "gearEffects">, amount: number): number {
-  return Math.max(0, amount - state.gearEffects.damageReductionPerMana * state.mana);
+export function reduceDamageByMana(
+  state: Pick<BattleState, "mana" | "maxMana" | "gearEffects">,
+  amount: number,
+): number {
+  const fullCrystals =
+    state.gearEffects.damageReductionPerMana > 0 ? Math.max(0, Math.min(state.mana, state.maxMana)) : 0;
+  return Math.max(0, amount - fullCrystals);
 }
 
 export function dealSelfDamage(

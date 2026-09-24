@@ -89,7 +89,10 @@ export function runTrinketSweep(options: ReportRunOptions): PairedTierRow[] {
 function* isolatedCardGroups(options: ReportRunOptions, enemyId: string): Iterable<PairedSweepGroup> {
   const ids = reportCharacterIds();
   const depthDelta = gauntletDepthDeltaFor(enemyId);
-  const iterations = Math.max(1, Math.min(options.pairedIterations, Math.floor(options.iterations / 10) || 1));
+  const iterations = Math.min(
+    options.pairedIterations,
+    Math.max(options.mode === "quick" ? 3 : 1, Math.floor(options.iterations / 10) || 1),
+  );
   for (const tier of REPORT_TIERS) {
     for (let index = 0; index < options.cardDeckSamples; index += 1) {
       const characterId = ids[index % ids.length] ?? ids[0];
@@ -121,7 +124,10 @@ export function runCardSweepIsolated(options: ReportRunOptions, enemyId: string)
 }
 
 function* inClassCardGroups(options: ReportRunOptions): Iterable<PairedSweepGroup> {
-  const iterations = Math.max(1, Math.min(options.pairedIterations, Math.floor(options.iterations / 5) || 1));
+  const iterations = Math.min(
+    options.pairedIterations,
+    Math.max(options.mode === "quick" ? 3 : 1, Math.floor(options.iterations / 5) || 1),
+  );
   for (const tier of REPORT_TIERS) {
     for (const characterId of reportCharacterIds()) {
       const deckSeed = balanceScenarioSeed("card-in-class-deck", tier.preset, characterId);

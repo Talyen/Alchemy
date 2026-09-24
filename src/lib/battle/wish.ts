@@ -13,7 +13,12 @@ import {
   gainManaWithCombatText,
   mergeCombatText,
 } from "./combat-text";
-import { removeHarmfulPlayerStatuses, applyPlayerStatusEffect, applyArmorReward } from "./status-player";
+import {
+  removeHarmfulPlayerStatuses,
+  applyPlayerStatusEffect,
+  applyArmorReward,
+  applyBlockReward,
+} from "./status-player";
 import { getEnemyDamageMultiplier, rollTalentChance } from "./status-helpers";
 import { getBattleRng, pickRandom, rollPercent } from "@/lib/rng";
 import { getEditableCorruptionTargets, updateCardNumericValue } from "@/lib/corruption";
@@ -57,7 +62,11 @@ function upgradeWishCard(card: BattleCard): BattleCard {
   }, card);
 }
 
-export function buildWishOptions(state: BattleState, card: Pick<BattleCard, "id"> | undefined): BattleCard[] {
+export function buildWishOptions(
+  state: BattleState,
+  card: Pick<BattleCard, "id"> | undefined,
+  companionOnly = false,
+): BattleCard[] {
   const baseCount =
     WISH_CHOICE_COUNT +
     state.talentEffects.wishExtraChoices +
@@ -65,7 +74,11 @@ export function buildWishOptions(state: BattleState, card: Pick<BattleCard, "id"
     (hasEncounterBenefit(state, "wishful") && !state.flags.encounterWishUsed ? 1 : 0) +
     (rollTalentChance(state.talentEffects.wishExtraChoiceChance, state) ? 1 : 0);
 
-  const candidates = getOfferableCardPool().filter((candidate) => candidate.id !== card?.id);
+  const candidates = getOfferableCardPool().filter(
+    (candidate) =>
+      candidate.id !== card?.id &&
+      (!companionOnly || candidate.effects.some((effect) => effect.kind === "summon-companion")),
+  );
   const fullDeck = [...state.deck, ...state.hand, ...state.discard, ...state.exhausted];
   const undiscovered = state.talentEffects.wishUndiscoveredCards
     ? candidates.filter((candidate) => !state.discoveredCardIds.includes(candidate.id))
@@ -136,6 +149,9 @@ function applyWishHealthAndStatusTriggers(
   if (nextState.talentEffects.removeHarmfulStatusOnWish) {
     nextState = removeHarmfulPlayerStatuses(nextState, 1, combatTexts);
   }
+  if (nextState.gearEffects.blockOnWish > 0) {
+    nextState = applyBlockReward(nextState, nextState.gearEffects.blockOnWish, combatTexts);
+  }
   return nextState;
 }
 
@@ -153,13 +169,14 @@ export function applyWishEffect(
   amount: number,
   combatTexts: CombatTextEvent[],
   reactions: ReactionBoundary = { kind: "enclosing-action" },
+  companionOnly = false,
 ) {
   const wishCount = Math.max(0, Math.round(amount));
   if (wishCount <= 0) return state;
 
   const nextWishOptions: BattleCard[][] = [];
   for (let index = 0; index < wishCount; index += 1) {
-    nextWishOptions.push(buildWishOptions(state, card));
+    nextWishOptions.push(buildWishOptions(state, card, companionOnly));
     if (state.flags.nextWishExtraChoice) state = { ...state, flags: { ...state.flags, nextWishExtraChoice: false } };
     if (hasEncounterBenefit(state, "wishful")) state = { ...state, flags: { ...state.flags, encounterWishUsed: true } };
   }

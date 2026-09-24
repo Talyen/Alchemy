@@ -1,4 +1,5 @@
 import { applyHitHealth, type CardHitFacts } from "./hit-facts";
+import { beneficialEnemyStatusIds } from "@/lib/game-data";
 import type { HitRequest, CardHitRequest } from "./hit-request";
 import { BLACKFLETCH_EXECUTE_HEALTH_PERCENT, PERCENT_DENOMINATOR } from "../game-constants";
 import { halveRounded } from "./amount-helpers";
@@ -6,11 +7,10 @@ import { applyHitEpilogue, mergeCombatText } from "./combat-text";
 import { computeReflectedHolyDamageToEnemy } from "./damage-calc";
 import { applyDamageStatuses, applyPoisonTalentRiders } from "./damage-status-riders";
 import { detonateEnemyStatuses } from "./dot-resolve";
-import { paceCombatDamage } from "./fight-pacing";
-import { applyBrassCenser, resolveFollowUpHit, tryPoisonStunProc, tryTalentTypedHit } from "./follow-up-hit-resolution";
-import { decayArmorAfterDamage, getEnemyDamageMultiplier, rollTalentChance } from "./status-helpers";
+import { resolveFollowUpHit, tryPoisonStunProc, tryTalentTypedHit } from "./follow-up-hit-resolution";
+import { decayArmorAfterDamage, rollTalentChance } from "./status-helpers";
 import { addForgeToPlayer } from "./status-player";
-import { addEnemyStatus, type BattleState, type CombatTextEvent } from "./types";
+import { addEnemyStatus, setEnemyStatus, type BattleState, type CombatTextEvent } from "./types";
 import {
   applyHolyDamageRiders,
   applyNatureDamageRiders,
@@ -78,27 +78,19 @@ function applyArcheryDetonate(state: BattleState, combatTexts: CombatTextEvent[]
 }
 
 function resolveAttackPurgeHit(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
-  if (state.gearEffects.attackPurgeDealHolyPerEffect <= 0 || state.enemyHealth <= 0) return state;
+  if (state.gearEffects.attackPurgeOncePerTurn <= 0 || state.uniqueGear.wardbreakerPurgeUsed || state.enemyHealth <= 0)
+    return state;
   const mitigation = state.enemyMitigation;
   const category =
     mitigation.armor > 0 ? "armor" : mitigation.block > 0 ? "block" : mitigation.forge > 0 ? "forge" : null;
-  if (!category) return state;
-  let nextState: BattleState = {
-    ...state,
-    enemyMitigation: { ...state.enemyMitigation, [category]: 0 },
-  };
-  const holyDamage = paceCombatDamage(
-    nextState,
-    Math.round(nextState.gearEffects.attackPurgeDealHolyPerEffect * getEnemyDamageMultiplier(nextState, "holy")),
-    "player",
-  );
-  if (holyDamage > 0) {
-    mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "holy", amount: holyDamage });
-    const { state: damaged, facts } = applyHitHealth(nextState, holyDamage);
-    nextState = applyHitEpilogue(damaged, facts.previousHealth, facts.enemyWasAlive, combatTexts);
-    nextState = applyBrassCenser(nextState, holyDamage, combatTexts, facts.previousHealth);
-  }
-  return nextState;
+  const status = beneficialEnemyStatusIds.find((candidate) => state.enemyStatuses[candidate] > 0);
+  const purged = category ?? status;
+  if (!purged) return state;
+  const nextState = category
+    ? { ...state, enemyMitigation: { ...mitigation, [category]: 0 } }
+    : setEnemyStatus(state, status!, 0);
+  combatTexts.push({ target: "enemy", kind: "notice", stat: purged, text: "Purged", signal: "purge" });
+  return { ...nextState, uniqueGear: { ...nextState.uniqueGear, wardbreakerPurgeUsed: true } };
 }
 
 function applyCardArcheryReactions(
@@ -149,7 +141,7 @@ function resolveCardHit(state: BattleState, request: CardHitRequest, combatTexts
   // Spend the resource used by this packet before its rewards grant fresh Forge.
   let nextState = applyIronGuardReward(hit.state, effect.damageType, facts.healthDamage, combatTexts);
   if (effect.damageType === "bleed") nextState = applyBleedDamageDraw(nextState, facts.healthDamage);
-  nextState = consumeForgeAfterDamage(nextState, effect, modifiedDamage, companionAttack);
+  nextState = consumeForgeAfterDamage(nextState, effect, modifiedDamage, combatTexts, companionAttack);
 
   nextState = decayArmorAfterDamage(nextState, modifiedDamage, "enemy");
 

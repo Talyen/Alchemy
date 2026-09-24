@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { BattleCardEffectSchema, cardById, companionLibrary, type BattleCard } from "@/lib/game-data";
+import { BattleCardEffectSchema, cardById, companionLibrary, getCardKeywords, type BattleCard } from "@/lib/game-data";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
+import { chooseWishCard } from "@/lib/battle/wish";
 import { getEnemyAbilityPressure } from "@/lib/battle/battle-enemy-setup";
 import { applyNumericCorruption, getEditableCorruptionTargets } from "@/lib/corruption/numeric";
 import { validateCardDescriptionParity } from "@/lib/content-validation/card-parity";
@@ -68,7 +69,7 @@ describe("thematic card effects", () => {
     expect(cardById["golden-plate"]?.descriptionLines).toEqual(["Gain 3 Armor", "Gain 3 Gold", "Consume"]);
     expect(cardById["golden-retriever-companion"]?.descriptionLines).toEqual(["Steals 2 Gold each turn", "Companion"]);
     expect(cardById["grasping-vines"]?.descriptionLines).toEqual(["Deal 3 Stun or Nature damage"]);
-    expect(cardById["hemorrhage"]?.descriptionLines).toEqual(["Deal 1 Bleed damage", "Detonate all Bleed"]);
+    expect(cardById["hemorrhage"]?.descriptionLines).toEqual(["Deal 2 Bleed damage", "Detonate all Bleed"]);
     expect(cardById["ice-shot"]?.descriptionLines).toEqual([
       "Deal 2 Freeze damage",
       "Doubled against Frozen enemies",
@@ -101,7 +102,7 @@ describe("thematic card effects", () => {
     expect(cardById.steal?.descriptionLines).toEqual(["Deal 1 Stun damage", "Steal 1 Gold"]);
     expect(cardById.sunder?.descriptionLines).toEqual(["Halve enemy Armor", "Deal 3 Physical damage"]);
     expect(cardById.tithe?.descriptionLines).toEqual(["Deal 1 Holy damage", "Gain 1 Gold"]);
-    expect(cardById["venom-arrow"]?.descriptionLines).toEqual(["Deal 1 Poison or Physical damage", "Archery"]);
+    expect(cardById["venom-arrow"]?.descriptionLines).toEqual(["Deal 2 Poison or Physical damage", "Archery"]);
     expect(cardById["venom-fangs"]?.descriptionLines).toEqual(["Deal 1 Poison damage", "Leech"]);
     expect(cardById["wishing-potion"]?.descriptionLines).toEqual(["Wish 1", "Draw a card", "Consume"]);
     expect(cardById["wishing-well"]?.descriptionLines).toEqual(["Gain 1 Gold or Wish"]);
@@ -192,11 +193,11 @@ describe("thematic card effects", () => {
 
   it("Hemorrhage detonates all Bleed, including its own stack", () => {
     const fresh = play("hemorrhage");
-    expect(fresh.enemyHealth).toBe(98);
+    expect(fresh.enemyHealth).toBe(96);
     expect(fresh.enemyStatuses.bleed).toBe(0);
 
     const stacked = play("hemorrhage", { enemyStatuses: { bleed: 3 } });
-    expect(stacked.enemyHealth).toBe(95);
+    expect(stacked.enemyHealth).toBe(93);
     expect(stacked.enemyStatuses.bleed).toBe(0);
   });
 
@@ -264,10 +265,20 @@ describe("thematic card effects", () => {
   it.each([
     [0, "poison"],
     [0.99, "physical"],
-  ] as const)("Venom Arrow resolves one 1-damage %s hit", (roll, damageType) => {
+  ] as const)("Venom Arrow resolves one 2-damage %s hit", (roll, damageType) => {
     const result = play("venom-arrow", { rng: sequenceRng([roll, 0.99]) });
-    expect(result.enemyHealth).toBe(99);
-    expect(result.enemyStatuses.poison).toBe(damageType === "poison" ? 1 : 0);
+    expect(result.enemyHealth).toBe(98);
+    expect(result.enemyStatuses.poison).toBe(damageType === "poison" ? 2 : 0);
+  });
+
+  it("Blood Offering trades Health for cards without losing net Mana", () => {
+    const drawA = makeTestCard({ id: "draw-a" });
+    const drawB = makeTestCard({ id: "draw-b" });
+    const result = play("blood-offering", { mana: 2, playerHealth: 20, deck: [drawA, drawB] });
+    expect(result.playerHealth).toBe(19);
+    expect(result.mana).toBe(2);
+    expect(result.hand.map((card) => card.id).sort()).toEqual([drawA.id, drawB.id]);
+    expect(cardById["blood-offering"]?.descriptionLines).toEqual(["Lose 1 Health", "Draw 2 cards", "Gain 1 Mana"]);
   });
 
   it("Venom Fangs deals one Poison damage and Leech heals the player", () => {
@@ -472,16 +483,39 @@ describe("thematic card effects", () => {
     expect(result.deck).toHaveLength(4);
   });
 
-  it("Pack Tactics repeats utility actions, does nothing without a Companion, and stops on victory", () => {
+  it("Pack Tactics acts twice with a Companion or Wishes for a summon without one", () => {
+    const packTactics = cardById["pack-tactics"]!;
+    expect(packTactics.descriptionLines).toEqual([
+      "Your Companion acts twice",
+      "If you don't have a Companion, Wish for one",
+    ]);
+    expect(validateCardDescriptionParity(packTactics)).toEqual([]);
+    expect(getCardKeywords(packTactics)).not.toContain("wish");
     const utility = play("pack-tactics", { activeCompanion: companionLibrary["golden-retriever"] });
     expect(utility.gold).toBe(4);
     expect(utility.companionDamageBuff).toBe(0);
+    expect(utility.wishOptions).toBeNull();
     const absent = play("pack-tactics");
     expect(absent.enemyHealth).toBe(100);
     expect(absent.companionDamageBuff).toBe(0);
+    expect(absent.wishOptions).toHaveLength(3);
+    expect(absent.wishOptions?.every((card) => card.effects.some((effect) => effect.kind === "summon-companion"))).toBe(
+      true,
+    );
+    const chosen = absent.wishOptions![0]!;
+    expect(chooseWishCard(absent, chosen.id).hand.some((card) => card.id === chosen.id)).toBe(true);
     const lethal = play("pack-tactics", { activeCompanion: companionLibrary.wolf, enemyHealth: 1 });
     expect(lethal.enemyHealth).toBe(0);
     expect(lethal.playerStatuses.block).toBe(0);
+    expect(lethal.wishOptions).toBeNull();
+  });
+
+  it("Pack Tactics grants normal Wish rewards only when it offers a Companion", () => {
+    const trinketEffects = { wishingWellGoldOnWish: 3 };
+    const absent = play("pack-tactics", { trinketEffects });
+    expect(absent.gold).toBe(3);
+    const active = play("pack-tactics", { activeCompanion: companionLibrary.wolf, trinketEffects });
+    expect(active.gold).toBe(0);
   });
 
   it("Sunder halves Armor before striking and Acid halves Armor behind Block", () => {

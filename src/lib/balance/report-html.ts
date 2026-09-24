@@ -94,7 +94,7 @@ export function renderBalanceReportHtml(model: BalanceReportModel, options: Repo
     title: "Balance Report",
     body: `<h1>Balance Report</h1>
 <p class="meta"><a href="../balance-findings.html">Findings summary</a> (preferred). This page is the full matrix — do not use it as the default read.</p>
-<p class="meta">policy=${escapeHtml(meta.policy)} | loadout=${escapeHtml(meta.loadoutMode)} | iterations=${meta.iterations} | pairedIterations=${meta.pairedIterations} | cardDeckSamples=${meta.cardDeckSamples} | deckSeeds=${meta.deckSeeds}</p>
+<p class="meta">mode=${escapeHtml(meta.samplingMode ?? "custom")} | policy=${escapeHtml(meta.policy)} | loadout=${escapeHtml(meta.loadoutMode)} | iterations=${meta.iterations} | pairedIterations=${meta.pairedIterations} | cardDeckSamples=${meta.cardDeckSamples} | deckSeeds=${meta.deckSeeds}</p>
 
 <h2>Simulation Methodology</h2>
 <div class="meta"><ul>

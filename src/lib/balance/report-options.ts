@@ -9,10 +9,13 @@ const PLAY_POLICIES: readonly BalancePlayPolicy[] = [
 ];
 
 const LOADOUT_MODES: readonly BalanceLoadoutMode[] = ["bare", "typical"];
+const REPORT_MODES = ["quick", "full"] as const;
+type BalanceReportMode = (typeof REPORT_MODES)[number];
 
 export const DEFAULT_FINDINGS_CAP = 100;
 
 export interface ReportRunOptions {
+  mode?: BalanceReportMode;
   iterations: number;
   pairedIterations: number;
   cardDeckSamples: number;
@@ -56,12 +59,24 @@ export function appliesFightPacingFromEnv(raw = process.env.ALCHEMY_BALANCE_PACI
 }
 
 export function parseBalanceReportOptions(env: NodeJS.ProcessEnv = process.env): ReportRunOptions {
-  const iterations = parsePositiveInteger("ALCHEMY_BALANCE_ITERATIONS", env.ALCHEMY_BALANCE_ITERATIONS, 100);
+  const mode = parseChoice("ALCHEMY_BALANCE_MODE", env.ALCHEMY_BALANCE_MODE, "quick", REPORT_MODES);
+  const iterations = parsePositiveInteger(
+    "ALCHEMY_BALANCE_ITERATIONS",
+    env.ALCHEMY_BALANCE_ITERATIONS,
+    mode === "quick" ? 12 : 100,
+  );
   return {
+    mode,
     iterations,
-    pairedIterations: Math.max(20, Math.floor(iterations / 2)),
-    cardDeckSamples: Math.max(30, Math.floor(iterations / 3)),
-    deckSeeds: parsePositiveInteger("ALCHEMY_BALANCE_DECK_SEEDS", env.ALCHEMY_BALANCE_DECK_SEEDS, 3),
+    pairedIterations:
+      mode === "quick" ? Math.max(5, Math.floor(iterations / 3)) : Math.max(20, Math.floor(iterations / 2)),
+    cardDeckSamples:
+      mode === "quick" ? Math.max(15, Math.floor(iterations / 4)) : Math.max(30, Math.floor(iterations / 3)),
+    deckSeeds: parsePositiveInteger(
+      "ALCHEMY_BALANCE_DECK_SEEDS",
+      env.ALCHEMY_BALANCE_DECK_SEEDS,
+      mode === "quick" ? 1 : 3,
+    ),
     policy: parseChoice("ALCHEMY_BALANCE_POLICY", env.ALCHEMY_BALANCE_POLICY, "random-playable", PLAY_POLICIES),
     loadoutMode: parseChoice("ALCHEMY_BALANCE_LOADOUT", env.ALCHEMY_BALANCE_LOADOUT, "typical", LOADOUT_MODES),
     appliesFightPacing: appliesFightPacingFromEnv(env.ALCHEMY_BALANCE_PACING),

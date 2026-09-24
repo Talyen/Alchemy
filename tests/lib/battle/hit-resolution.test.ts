@@ -2,7 +2,6 @@ import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { describe, expect, it } from "vitest";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
-import { paceCombatDamage } from "@/lib/battle/fight-pacing";
 import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
 import { defaultTalentEffects } from "@/lib/battle";
 import type { CombatTextEvent } from "@/lib/battle/types";
@@ -275,35 +274,19 @@ describe("damage rider regressions", () => {
     expect(result.flags.nextPhysicalDealsBleed).toBe(false);
   });
 
-  it("activates Divine Aegis when Wardbreaker crosses half Health", () => {
+  it("Wardbreaker purge alone does not cross a Health threshold", () => {
     const state = patchBattleState({
       enemyHealth: 6,
       enemyMaxHealth: 10,
       currentEnemy: { traits: [ENCOUNTER_TRAITS["divine-aegis"].enemyTrait] },
       enemyMitigation: { armor: 1 },
-      gearEffects: { attackPurgeDealHolyPerEffect: 1 },
+      gearEffects: { attackPurgeOncePerTurn: 1 },
     });
     const result = resolvePlayerHit(state, { source: "attack-purge" }, []);
-    expect(result.enemyHealth).toBe(5);
-    expect(result.flags.divineAegisTriggered).toBe(true);
-    expect(result.enemyMitigation).toMatchObject({ armor: 2, block: 4 });
+    expect(result.enemyHealth).toBe(6);
+    expect(result.flags.divineAegisTriggered).toBe(false);
+    expect(result.enemyMitigation).toMatchObject({ armor: 0, block: 0 });
     expect(state.flags.divineAegisTriggered).toBe(false);
-  });
-
-  it("scales Wardbreaker damage with fight pacing", () => {
-    const state = patchBattleState({
-      appliesFightPacing: true,
-      turn: 40,
-      enemyHealth: 1000,
-      enemyMaxHealth: 1000,
-      enemyMitigation: { armor: 1 },
-      gearEffects: { attackPurgeDealHolyPerEffect: 10 },
-    });
-    const expectedDamage = paceCombatDamage(state, 10, "player");
-    expect(expectedDamage).toBeGreaterThan(10);
-    expect(resolvePlayerHit(state, { source: "attack-purge" }, []).enemyHealth).toBe(
-      state.enemyHealth - expectedDamage,
-    );
   });
 
   it("does not trigger Obsidian Hammer when Block absorbs all Physical damage", () => {
@@ -321,15 +304,15 @@ describe("damage rider regressions", () => {
     expect(result.playerStatuses.forge).toBe(4);
   });
 
-  it("skips the main hit when Wardbreaker purge kills the enemy", () => {
+  it("keeps the main hit after Wardbreaker purges a defense", () => {
     const state = patchBattleState({
       rng: () => 0.99,
-      enemyHealth: 3,
+      enemyHealth: 30,
       enemyMaxHealth: 30,
       playerHealth: 20,
       playerMaxHealth: 30,
       enemyMitigation: { armor: 0, block: 5, forge: 0 },
-      gearEffects: { attackPurgeDealHolyPerEffect: 5 },
+      gearEffects: { attackPurgeOncePerTurn: 1 },
     });
     const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10, lifesteal: true }] });
     const texts = makeCombatTexts();
@@ -338,8 +321,9 @@ describe("damage rider regressions", () => {
       { source: "card-attack", card, effect: card.effects[0] as never, resolvedDamage: 10 },
       texts,
     );
-    expect(result.enemyHealth).toBe(0);
-    expect(result.playerHealth).toBe(20);
-    expect(texts.some((entry) => entry.stat === "physical")).toBe(false);
+    expect(result.enemyHealth).toBeLessThan(30);
+    expect(result.playerHealth).toBe(25);
+    expect(texts.some((entry) => entry.stat === "physical")).toBe(true);
+    expect(texts.some((entry) => entry.stat === "holy")).toBe(false);
   });
 });

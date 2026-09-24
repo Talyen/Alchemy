@@ -2,8 +2,23 @@ import { describe, expect, it } from "vitest";
 import { parseBalanceReportOptions } from "@/lib/balance/report-options";
 
 describe("parseBalanceReportOptions", () => {
-  it("preserves the report defaults", () => {
+  it("defaults to a broad quick sweep", () => {
     expect(parseBalanceReportOptions({})).toEqual({
+      mode: "quick",
+      iterations: 12,
+      pairedIterations: 5,
+      cardDeckSamples: 15,
+      deckSeeds: 1,
+      policy: "random-playable",
+      loadoutMode: "typical",
+      appliesFightPacing: true,
+      findingsCap: 100,
+    });
+  });
+
+  it("retains the original exhaustive sample counts explicitly", () => {
+    expect(parseBalanceReportOptions({ ALCHEMY_BALANCE_MODE: "full" })).toEqual({
+      mode: "full",
       iterations: 100,
       pairedIterations: 50,
       cardDeckSamples: 33,
@@ -18,6 +33,7 @@ describe("parseBalanceReportOptions", () => {
   it("accepts every supported choice and derives sweep counts", () => {
     expect(
       parseBalanceReportOptions({
+        ALCHEMY_BALANCE_MODE: "full",
         ALCHEMY_BALANCE_ITERATIONS: "12",
         ALCHEMY_BALANCE_DECK_SEEDS: "2",
         ALCHEMY_BALANCE_POLICY: "greedy-effective-damage",
@@ -25,6 +41,7 @@ describe("parseBalanceReportOptions", () => {
         ALCHEMY_BALANCE_PACING: "off",
       }),
     ).toEqual({
+      mode: "full",
       iterations: 12,
       pairedIterations: 20,
       cardDeckSamples: 30,
@@ -41,6 +58,7 @@ describe("parseBalanceReportOptions", () => {
     ["ALCHEMY_BALANCE_ITERATIONS", "0"],
     ["ALCHEMY_BALANCE_ITERATIONS", "-1"],
     ["ALCHEMY_BALANCE_ITERATIONS", "1.5"],
+    ["ALCHEMY_BALANCE_MODE", "sample"],
     ["ALCHEMY_BALANCE_DECK_SEEDS", "many"],
     ["ALCHEMY_BALANCE_POLICY", "fast"],
     ["ALCHEMY_BALANCE_LOADOUT", "loaded"],

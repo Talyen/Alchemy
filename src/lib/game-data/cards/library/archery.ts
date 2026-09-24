@@ -27,7 +27,7 @@ export const archeryCards: BattleCard[] = [
     id: "venom-arrow",
     art: assetRefs.venomArrow,
     tags: ["archery"],
-    effects: [{ kind: "damage", damageType: "poison", damageTypePool: ["poison", "physical"], amount: 1 }],
+    effects: [{ kind: "damage", damageType: "poison", damageTypePool: ["poison", "physical"], amount: 2 }],
   }),
   cardBuilders.damageCard({
     id: "serrated-arrowhead",

@@ -130,6 +130,7 @@ export function consumeForgeAfterDamage(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   damage: number,
+  combatTexts: CombatTextEvent[],
   companionAttack = false,
 ) {
   if (hasEncounterBenefit(state, "white-heat")) return state;
@@ -140,7 +141,7 @@ export function consumeForgeAfterDamage(
 
   if (!forgeWasApplied || damage <= 0 || state.playerStatuses.forge <= 0) return state;
 
-  return spendPlayerForgeForAttack(state, BATTLE_CONFIG.FORGE_DECAY_AMOUNT);
+  return spendPlayerForgeForAttack(state, BATTLE_CONFIG.FORGE_DECAY_AMOUNT, combatTexts);
 }
 
 export function applyCardStatusReactions(

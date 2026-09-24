@@ -1,6 +1,12 @@
 import { isPotionCard, getCardKeywords, type BattleCard } from "@/lib/game-data";
 import { addPlayerStatusWithCombatText } from "./combat-text";
-import { addForgeToPlayer, applyArmorReward, applyCleanseHeals, applyPlayerStatusEffect } from "./status-player";
+import {
+  addForgeToPlayer,
+  applyArmorReward,
+  applyBlockReward,
+  applyCleanseHeals,
+  applyPlayerStatusEffect,
+} from "./status-player";
 import { isAttackCard } from "./card-classification";
 import { applyDrawResult, drawFromState } from "./draw";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
@@ -33,6 +39,9 @@ function applyTalentDrawTriggers(state: BattleState, keywords: string[], archery
   if (archery && state.enemyCC.stunSkipTurns > 0 && talents.drawOnArcheryVsStunned > 0) {
     nextState = applyDrawResult(nextState, drawFromState(nextState, talents.drawOnArcheryVsStunned));
   }
+  if (archery && rollTalentChance(state.gearEffects.archeryDrawChance, state)) {
+    nextState = applyDrawResult(nextState, drawFromState(nextState, 1));
+  }
   if (keywords.includes("companion") && talents.drawOnCompanionCard > 0) {
     nextState = applyDrawResult(nextState, drawFromState(nextState, talents.drawOnCompanionCard));
   }
@@ -48,6 +57,7 @@ function applyTalentStatusAndHitTriggers(
 ): BattleState {
   let nextState = state;
   const talents = state.talentEffects;
+  const archeryWithoutBlock = keywords.includes("archery") && state.playerStatuses.block === 0;
 
   if (keywords.includes("holy") && talents.wishExtraChoiceAfterHolyCard) {
     nextState = { ...nextState, flags: { ...nextState.flags, nextWishExtraChoice: true } };
@@ -101,6 +111,10 @@ function applyTalentStatusAndHitTriggers(
     if (stolen > 0) {
       nextState = applyArmorReward(reduceEnemyArmor(nextState, stolen), stolen, combatTexts);
     }
+  }
+
+  if (archeryWithoutBlock && state.gearEffects.blockOnArcheryWithoutBlock > 0) {
+    nextState = applyBlockReward(nextState, state.gearEffects.blockOnArcheryWithoutBlock, combatTexts);
   }
 
   return nextState;

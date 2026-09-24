@@ -22,7 +22,6 @@ export type KeywordId =
   | "nature"
   | "companion"
   | "archery"
-  | "phoenixFeather"
   | "dodge"
   | "thorns";
 
@@ -166,6 +165,12 @@ export const beneficialPlayerStatusIds: PlayerStatusId[] = [
   "haste",
   "phoenixFeather",
 ];
+
+export const beneficialEnemyStatusIds = [
+  "thorns",
+  "burnBonus",
+  "freezeBonus",
+] as const satisfies readonly EnemyStatusId[];
 
 export const PLAYER_STATUS_DISPLAY_ORDER: readonly PlayerStatusId[] = [
   "block",

@@ -70,8 +70,8 @@ describe("combat interaction fixes", () => {
   it("Aetherward reduces Pyromancy's bonus together with the attack", () => {
     const state = patchBattleState({
       rng: () => 0.99,
-      mana: 2,
-      gearEffects: { damageReductionPerMana: 10 },
+      mana: 4,
+      gearEffects: { damageReductionPerMana: 1 },
       currentEnemy: { traits: [{ id: "pyromancer", title: "", description: "" }] },
     });
     const result = applyEnemyAbility(

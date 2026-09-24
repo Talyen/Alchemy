@@ -101,13 +101,16 @@ function resolveStartingPlayerStatuses(
   playerStartingArmor: number,
   mana: number,
 ): BattleState["playerStatuses"] {
+  const startingArmor = playerStartingArmor + (battleTalents.manaShellActive ? mana : 0);
   return {
     ...baseStatuses,
     phoenixFeather: encounterBenefits.includes("phoenix-nest") ? 1 : 0,
-    thorns: encounterBenefits.includes("bramblecoat") ? LABYRINTH_MODIFIER_CONFIG.playerThornsMinimum : 0,
+    thorns:
+      (encounterBenefits.includes("bramblecoat") ? LABYRINTH_MODIFIER_CONFIG.playerThornsMinimum : 0) +
+      battleGearEffects.startThorns,
     block: startingBlock + (battleTalents.manaBulwarkActive ? mana : 0),
     forge: battleTalents.startForge + battleGearEffects.startForge,
-    armor: playerStartingArmor + (battleTalents.manaShellActive ? mana : 0),
+    armor: startingArmor > 0 ? startingArmor + battleGearEffects.flatArmorGained : 0,
   };
 }
 

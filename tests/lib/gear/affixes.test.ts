@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { GEAR_AFFIX_IDS, gearAffixCatalog } from "@/lib/gear/affix-catalog";
 import { defaultGearEffects, getGearAffixTooltipEntries, normalizeAffixRolls, resolveAffixEffects } from "@/lib/gear";
+import { buildEligibleAffixPool } from "@/lib/gear/affix-pool";
+import { gearDefinitions } from "@/lib/gear/definitions";
 
 describe("gear affixes", () => {
   it("shows both Saintfall magnitudes in its tooltip", () => {
@@ -42,6 +44,14 @@ describe("gear affixes", () => {
 });
 
 describe("rebalanced saved affixes", () => {
+  it.each(["basic", "astral", "unique"] as const)("uses one fixed Aetherward effect for %s gear", (rarity) => {
+    const rolls = normalizeAffixRolls([{ id: "absorb-per-mana", value: 5 }], rarity);
+    expect(rolls).toEqual([{ id: "absorb-per-mana", value: 1 }]);
+    expect(getGearAffixTooltipEntries(rolls, rarity)[0]?.text).toBe(
+      "Reduce damage taken by your number of full Mana Crystals",
+    );
+  });
+
   it.each(["basic", "astral", "unique"] as const)("normalizes Lifegiving to 1 for %s gear", (rarity) => {
     const normalized = normalizeAffixRolls([{ id: "health-per-turn", value: 4 }], rarity);
     expect(normalized).toEqual([{ id: "health-per-turn", value: 1 }]);
@@ -52,5 +62,55 @@ describe("rebalanced saved affixes", () => {
     ["astral", 2],
   ] as const)("normalizes Emberforged for %s gear", (rarity, value) => {
     expect(normalizeAffixRolls([{ id: "forge-on-burn", value: 4 }], rarity)).toEqual([{ id: "forge-on-burn", value }]);
+  });
+});
+
+describe("new ordinary affixes", () => {
+  it("makes every new affix eligible on at least one Basic or Astral item", () => {
+    const newIds = [
+      "start-thorns",
+      "thorns-damage",
+      "thorns-on-block-depleted",
+      "forge-on-consume-burn",
+      "armor-on-thorns-damage",
+      "mana-on-paid-consume",
+      "poison-tick-on-consume",
+      "draw-on-last-hand-consume",
+      "block-on-companion-summon",
+      "forge-on-companion-burning-damage",
+      "archery-draw-chance",
+      "block-on-archery-without-block",
+      "armor-gain",
+      "armor-on-nature-card",
+      "block-on-wish",
+      "leech-block-chance",
+      "block-on-last-forge-spent",
+    ] as const;
+    const reachable = new Set(
+      Object.values(gearDefinitions)
+        .filter((definition) => definition.rarity === "basic" || definition.rarity === "astral")
+        .flatMap((definition) => buildEligibleAffixPool(definition).map((affix) => affix.id)),
+    );
+    expect(newIds.filter((id) => !reachable.has(id))).toEqual([]);
+  });
+
+  it("keeps the revised Rotbloom, Bloodward, and Smithguard tooltip contracts", () => {
+    expect(gearAffixCatalog["poison-tick-on-consume"].roll).toMatchObject({
+      basic: { min: 1, max: 1 },
+      astral: { min: 1, max: 1 },
+    });
+    expect(getGearAffixTooltipEntries([{ id: "poison-tick-on-consume", value: 1 }], "basic")[0]?.text).toBe(
+      "When you Consume a card, your Poison deals damage immediately",
+    );
+    expect(gearAffixCatalog["leech-block-chance"].roll).toMatchObject({
+      basic: { min: 10, max: 15 },
+      astral: { min: 15, max: 20 },
+    });
+    expect(getGearAffixTooltipEntries([{ id: "leech-block-chance", value: 15 }], "basic")[0]?.text).toBe(
+      "Leech has a 15% chance to also grant an equal amount of Block",
+    );
+    expect(getGearAffixTooltipEntries([{ id: "block-on-last-forge-spent", value: 3 }], "basic")[0]?.text).toBe(
+      "When you spend your last Forge, gain 3 Block",
+    );
   });
 });

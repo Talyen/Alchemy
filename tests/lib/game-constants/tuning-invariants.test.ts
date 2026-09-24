@@ -7,6 +7,7 @@ import {
   ENEMY_TRAIT_IDS,
   LOOT_DEPTH_CURVES,
   LOOT_SOURCE_WEIGHTS,
+  ROOM_SCALING_INCREMENT,
   TRAIT_DAMAGE_RULES,
   TRAIT_DAMAGE_WEAKNESS_MULTIPLIER,
 } from "@/lib/game-constants";
@@ -40,6 +41,16 @@ describe("tuning invariants", () => {
     expect(second).toBeGreaterThan(first);
     expect(third).toBeGreaterThan(second);
     expect(second).toBeCloseTo(pressureAt("normal", 1), 10);
+  });
+
+  it("slows Elite pressure growth while preserving enemy-specific modifiers", () => {
+    const iceWraith = enemyBestiary.find((enemy) => enemy.id === "ice-wraith")!;
+    const atDepth = (depth: number) =>
+      getEnemyAbilityPressure({ roomScalingMultiplier: 1 + depth * ROOM_SCALING_INCREMENT, currentEnemy: iceWraith });
+    expect(atDepth(7)).toBeCloseTo(pressureAt("elite", 7) * 1.25, 10);
+    expect(atDepth(23)).toBeCloseTo(pressureAt("elite", 23) * 1.25, 10);
+    expect(atDepth(7) - atDepth(6)).toBeGreaterThan(atDepth(23) - atDepth(22));
+    expect(atDepth(23)).toBeGreaterThan(atDepth(22));
   });
 
   it("caps scaling pressure overrides at their stated max", () => {

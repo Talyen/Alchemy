@@ -170,6 +170,25 @@ describe("runCardSweepInClass", () => {
     }
   });
 
+  it("keeps three matched iterations for quick card comparisons", () => {
+    const options = {
+      mode: "quick" as const,
+      iterations: 12,
+      pairedIterations: 5,
+      cardDeckSamples: 15,
+      deckSeeds: 1,
+      policy: "random-playable" as const,
+      loadoutMode: "bare" as const,
+    };
+    const isolated = runCardSweepIsolated(options, "mimic");
+    expect(new Set(simulateWinSeries.mock.calls.map(([config]) => config.iterations))).toEqual(new Set([3]));
+    expect(isolated.every((row) => row.deltas.early.n === 45)).toBe(true);
+    simulateWinSeries.mockClear();
+    const inClass = runCardSweepInClass(options);
+    expect(new Set(simulateWinSeries.mock.calls.map(([config]) => config.iterations))).toEqual(new Set([3]));
+    expect(inClass.length).toBe(cardLibrary.length);
+  });
+
   it("pairs each trinket against an empty-trinket baseline with matched fight seeds", () => {
     simulateWinSeries.mockReset();
     simulateWinSeries.mockImplementation((config: BalanceBatchConfig) => ({

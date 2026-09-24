@@ -12,6 +12,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { Skull, Sparkles, Layers, Eraser, ShieldMinus, Clock } from "lucide-react";
 import { keywordIcons } from "../config/metadata";
+import { phoenixFeatherStatus } from "../config/phoenix-feather-status";
 import { augmentDefinitions } from "../augment-definitions";
 import type { CombatImpactCue, StatusChip, FloatingCombatText } from "../types";
 
@@ -24,6 +25,7 @@ const ENEMY_MITIGATION_DISPLAY_ORDER: ReadonlyArray<keyof BattleSnapshot["enemyM
 export function getCombatTextColorClass(event: CombatTextEvent): string {
   if (event.stat === "deathsDoor") return "text-red-200";
   if (event.kind === "heal") return "text-green-400";
+  if (event.stat === "phoenixFeather") return phoenixFeatherStatus.colorClass;
   const augment = augmentDefinitions[event.stat as keyof typeof augmentDefinitions];
   if (augment) return augment.colorClass;
   const kw = keywordDefinitions[event.stat as KeywordId];
@@ -54,6 +56,7 @@ const combatTextIconClasses: Record<string, LucideIcon> = {
 
 export function getCombatTextIcon(event: CombatTextEvent) {
   if (event.kind === "heal") return keywordIcons.health;
+  if (event.stat === "phoenixFeather") return phoenixFeatherStatus.icon;
   const augment = augmentDefinitions[event.stat as keyof typeof augmentDefinitions];
   if (augment) return augment.icon;
   const kw = keywordIcons[event.stat as KeywordId];
@@ -72,7 +75,8 @@ export function getCombatTextLeadingIcon(event: CombatTextEvent) {
 export function getCombatTextAccessibleLabel(event: FloatingCombatText): string {
   const augment = augmentDefinitions[event.stat as keyof typeof augmentDefinitions];
   const keyword = keywordDefinitions[event.stat as KeywordId];
-  const label = augment?.label ?? keyword?.label ?? event.stat;
+  const label =
+    event.stat === "phoenixFeather" ? phoenixFeatherStatus.label : (augment?.label ?? keyword?.label ?? event.stat);
   if (event.kind === "notice") {
     if (event.signal === "purge" || event.text === "Purged") return `Purged ${label}`;
     if (event.signal === "cleanse") return `Cleansed ${label}`;

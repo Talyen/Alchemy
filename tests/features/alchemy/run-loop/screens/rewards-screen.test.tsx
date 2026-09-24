@@ -193,7 +193,7 @@ describe("RewardsScreen", () => {
     fireEvent.focus(unique);
     const shine = unique.querySelector<HTMLElement>(".shine-border")!;
     const color = document.createElement("span");
-    for (const keyword of ["holy", "stun"] as const) {
+    for (const keyword of ["stun"] as const) {
       color.style.color = keywordDefinitions[keyword].shineColors[0];
       expect(shine.querySelector<HTMLElement>(".shine-border-paint")!.style.backgroundImage).toContain(
         color.style.color,

@@ -17,6 +17,7 @@ import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
 import { applyDamageStatuses, applyPoisonTalentRiders } from "@/lib/battle/damage-status-riders";
 import { addEnemyStatus } from "@/lib/battle/types/state-helpers";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
+import { reduceDamageByMana } from "@/lib/battle/status-helpers";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { resolvePlayerCrowdControlTrigger } from "@/lib/battle/status-cc";
 import type { BattleCardEffect, EnemyAttackEffect } from "@/lib/game-data";
@@ -138,12 +139,23 @@ describe("gear-effects", () => {
     const state = makeState({
       mana: 3,
       playerStatuses: { ...makeState().playerStatuses, block: 10 },
-      gearEffects: { ...makeState().gearEffects, damageReductionPerMana: 2 },
+      gearEffects: { ...makeState().gearEffects, damageReductionPerMana: 1 },
     });
     const texts: CombatTextEvent[] = [];
     const nextState = processEnemyDamageEffect(state, enemyDamage(10), texts);
-    expect(nextState.playerStatuses.block).toBe(6);
+    expect(nextState.playerStatuses.block).toBe(3);
     expect(nextState.playerHealth).toBe(state.playerHealth);
+  });
+
+  it("Aetherward counts filled crystals once, ignoring overflow and duplicate affixes", () => {
+    const state = makeState({
+      mana: 6,
+      maxMana: 4,
+      gearEffects: { ...defaultGearEffects, damageReductionPerMana: 2 },
+    });
+    expect(reduceDamageByMana(state, 10)).toBe(6);
+    expect(reduceDamageByMana({ ...state, mana: 2 }, 10)).toBe(8);
+    expect(reduceDamageByMana({ ...state, mana: 0 }, 10)).toBe(10);
   });
 
   it("heal-on-burn-death: restores health when enemy with Burn dies", () => {

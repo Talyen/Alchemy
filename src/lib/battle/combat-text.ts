@@ -397,7 +397,11 @@ export function applyArmorStatusEffect(
   combatTexts: CombatTextEvent[],
 ): BattleState {
   const armorBefore = state.playerStatuses.armor;
-  const checked = applyArmorTalentChecks(state, amount + state.talentEffects.flatArmorAmount, combatTexts);
+  const checked = applyArmorTalentChecks(
+    state,
+    amount + state.talentEffects.flatArmorAmount + (amount > 0 ? state.gearEffects.flatArmorGained : 0),
+    combatTexts,
+  );
   state = checked.state;
   amount = checked.amount;
   mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "armor", amount });

@@ -8,7 +8,6 @@ import {
   Crosshair,
   Dices,
   Droplet,
-  Feather,
   Flame,
   FlaskConical,
   Gem,
@@ -193,7 +192,6 @@ export const keywordIcons: Record<KeywordId, LucideIcon> = {
   nature: Leaf,
   companion: PawPrint,
   archery: Crosshair,
-  phoenixFeather: Feather,
   dodge: Wind,
   thorns: TreePine,
 };

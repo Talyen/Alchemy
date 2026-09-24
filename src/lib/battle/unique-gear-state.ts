@@ -10,6 +10,7 @@ export interface UniqueGearBattleState {
   redHarvestUid: number | null;
   huntsmasterUsed: boolean;
   wrenflightActive: boolean;
+  wardbreakerPurgeUsed: boolean;
   finalSparkUsed: boolean;
   freeBurnUsed: boolean;
   freeFreezeUsed: boolean;
@@ -30,6 +31,7 @@ export function createUniqueGearBattleState(): UniqueGearBattleState {
     redHarvestUid: null,
     huntsmasterUsed: false,
     wrenflightActive: false,
+    wardbreakerPurgeUsed: false,
     finalSparkUsed: false,
     freeBurnUsed: false,
     freeFreezeUsed: false,
@@ -46,6 +48,7 @@ type PerTurnUniqueGearReset = Pick<
   | "redHarvestUid"
   | "huntsmasterUsed"
   | "wrenflightActive"
+  | "wardbreakerPurgeUsed"
   | "finalSparkUsed"
   | "freeBurnUsed"
   | "freeFreezeUsed"
@@ -63,6 +66,7 @@ export const PER_TURN_UNIQUE_GEAR_RESET: PerTurnUniqueGearReset = {
   redHarvestUid: null,
   huntsmasterUsed: false,
   wrenflightActive: false,
+  wardbreakerPurgeUsed: false,
   finalSparkUsed: false,
   freeBurnUsed: false,
   freeFreezeUsed: false,

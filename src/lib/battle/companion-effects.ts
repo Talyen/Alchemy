@@ -11,6 +11,7 @@ import { applyBlockReward, applyHealingWithCombatText, gainManaWithCombatText } 
 import { rollTalentChance } from "./status-helpers";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { getBattleCompanionDamageModifiers } from "./companion-scaling";
+import { addForgeToPlayer } from "./status-player";
 
 export function resolveCompanionTurnStart(
   state: BattleState,
@@ -41,6 +42,7 @@ export function resolveCompanionTurnStart(
   if (options?.damageOnly) companionCard.effects = damageOnlyEffects(companionCard.effects);
 
   return resolveSecondaryAction(state, "companion", (s) => {
+    const burningEnemy = s.enemyStatuses.burn > 0;
     const attackBonuses = { flat: s.flags.companionNextAttackBonus, physical: 0, bleed: 0 };
     const damageEffects: NonNullable<CardEffectResolutionContext["damageEffects"]> = [];
     let damageDealt = 0;
@@ -65,6 +67,9 @@ export function resolveCompanionTurnStart(
 
     afterEffects = { ...afterEffects, flags: { ...afterEffects.flags, companionNextAttackBonus: attackBonuses.flat } };
     if (isPlayerDefeated(afterEffects)) return afterEffects;
+    if (damageDealt > 0 && burningEnemy && s.gearEffects.forgeOnCompanionDamageVsBurning > 0) {
+      afterEffects = addForgeToPlayer(afterEffects, s.gearEffects.forgeOnCompanionDamageVsBurning, combatTexts);
+    }
     if (
       damageDealt > 0 &&
       state.gearEffects.healOnCompanionAttack > 0 &&

@@ -101,6 +101,7 @@ export const consumableCards: BattleCard[] = [
     effects: [
       { kind: "lose-health", amount: 1 },
       { kind: "draw-cards", amount: 2 },
+      { kind: "restore-mana", amount: 1 },
     ],
   }),
   cardBuilders.effectsCard({

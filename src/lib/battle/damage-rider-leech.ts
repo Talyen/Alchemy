@@ -61,6 +61,9 @@ export function applyLeechHealing(
   let restored = options.cardHealing
     ? applyCardHealing(state, healing, combatTexts, { skipFightPacing: true, allowOverhealBlock: false })
     : applyHealingWithCombatText(state, healing, combatTexts, { skipFightPacing: true });
+  if (actualHealing > 0 && rollTalentChance(state.gearEffects.leechBlockChance, state)) {
+    restored = applyBlockReward(restored, actualHealing, combatTexts, { skipFightPacing: true });
+  }
   if (
     state.playerHealth < state.playerMaxHealth / HALF_DIVISOR &&
     state.talentEffects.leechBlockBelowHalfPercent > 0 &&

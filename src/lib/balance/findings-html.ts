@@ -84,13 +84,18 @@ export function renderBalanceFindingsHtml(
   }
   const sections = FINDING_BUCKET_ORDER.map((bucket) => bucketSection(bucket, byBucket[bucket])).join("\n");
   const empty = findings.findings.length === 0 ? '<p class="meta">No findings vs target bands.</p>' : "";
+  const quickNotice =
+    meta.samplingMode === "quick"
+      ? '<p class="meta">Quick sampling is exploratory. Confirm small-cell findings with the full sweep before tuning.</p>'
+      : "";
 
   return renderReportPage({
     title: "Balance Findings",
     extraStyle: "h2 { font-size: 1.05rem; }",
     bodyStyle: "max-width: 72rem; margin: 0 auto;",
     body: `<h1>Balance Findings</h1>
-<p class="meta">policy=${escapeHtml(meta.policy)} | loadout=${escapeHtml(meta.loadoutMode)} | iterations=${meta.iterations} | ${findings.findings.length} of ${findings.totalBeforeCap} after grouping (cap ${findings.cap}, omitted ${findings.omitted})</p>
+<p class="meta">mode=${escapeHtml(meta.samplingMode ?? "custom")} | policy=${escapeHtml(meta.policy)} | loadout=${escapeHtml(meta.loadoutMode)} | iterations=${meta.iterations} | ${findings.findings.length} of ${findings.totalBeforeCap} after grouping (cap ${findings.cap}, omitted ${findings.omitted})</p>
+${quickNotice}
 <p class="meta">Matchups collapse to the worst class per enemy / tier / metric / bucket. The cap then round-robins issue types so stalls, 0/100, length, equity, and anomalies are not crowded out by one boss-WR cluster. Recommendations are discussion prompts — do not apply tunings until reviewed.</p>
 <p class="meta">${bucketSummary(findings)}</p>
 <p class="meta"><a href="${escapeHtml(fullMatrixHref)}">Open full matrix</a></p>

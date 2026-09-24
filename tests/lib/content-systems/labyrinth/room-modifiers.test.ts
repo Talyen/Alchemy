@@ -37,8 +37,9 @@ describe("Labyrinth modifier catalog", () => {
   });
 
   it("covers all registered themes", () => {
-    const covered = new Set(Object.values(LABYRINTH_TRAITS).map((trait) => trait.keyword));
+    const covered = new Set(Object.values(LABYRINTH_TRAITS).flatMap((trait) => (trait.keyword ? [trait.keyword] : [])));
     expect([...covered].sort()).toEqual(Object.keys(keywordDefinitions).sort());
+    expect(LABYRINTH_TRAITS["phoenix-nest"].keyword).toBeUndefined();
   });
 
   it("offers a positive modifier for each playable node without cross-room leakage", () => {

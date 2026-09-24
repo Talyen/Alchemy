@@ -22,6 +22,7 @@ describe("gameplay scaling regressions", () => {
     expect(offering?.effects).toEqual([
       { kind: "lose-health", amount: 1 },
       { kind: "draw-cards", amount: 3 },
+      { kind: "restore-mana", amount: 2 },
     ]);
     expect(offers.find((card) => card.id === "exorcism")?.effects[0]).toEqual(cardById.exorcism!.effects[0]);
     expect(offers.find((card) => card.id === "cauterize")?.effects).toEqual(cardById.cauterize!.effects);
@@ -32,9 +33,9 @@ describe("gameplay scaling regressions", () => {
       playerHealth: 40,
       playerMaxHealth: 40,
       mana: 2,
-      gearEffects: { damageReductionPerMana: 2 },
+      gearEffects: { damageReductionPerMana: 1 },
     });
-    expect(dealSelfDamage(state, 6, "burn", []).healthLost).toBe(2);
+    expect(dealSelfDamage(state, 6, "burn", []).healthLost).toBe(4);
     expect(dealSelfDamage(state, 6, "health", []).healthLost).toBe(6);
   });
 
@@ -63,9 +64,9 @@ describe("gameplay scaling regressions", () => {
       playerMaxHealth: 40,
       mana: 2,
       playerStatuses: { [status]: 10 },
-      gearEffects: { damageReductionPerMana: 2 },
+      gearEffects: { damageReductionPerMana: 1 },
     });
-    expect(tickPlayerStatuses(state, []).playerHealth).toBe(34);
+    expect(tickPlayerStatuses(state, []).playerHealth).toBe(32);
     expect(tickPlayerStatuses({ ...state, mana: 0 }, []).playerHealth).toBe(30);
   });
 

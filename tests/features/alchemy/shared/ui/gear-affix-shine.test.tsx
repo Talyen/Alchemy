@@ -39,10 +39,13 @@ describe("gear affix shine rendering", () => {
     }
   });
 
-  it("keeps every affix description keyword represented in its shine colors", () => {
+  it("keeps described keywords or authored affinity represented in each affix shine", () => {
     for (const affix of Object.values(gearAffixCatalog)) {
-      const keywords = extractKeywordIds(affix.descriptionTemplate);
-      expect(keywords.length).toBeGreaterThan(0);
+      const described = extractKeywordIds(affix.descriptionTemplate);
+      const keywords =
+        described.length > 0
+          ? described
+          : [affix.keywordId, ...(affix.secondaryKeywordId ? [affix.secondaryKeywordId] : [])];
       const colors = getGearAffixTextShineColors(affix);
       expect(colors.length).toBeGreaterThan(0);
       for (const id of keywords.slice(0, 3)) {

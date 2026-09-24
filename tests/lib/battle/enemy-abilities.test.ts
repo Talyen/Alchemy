@@ -343,14 +343,14 @@ describe("enemy card effects", () => {
 describe("ability trait boundaries", () => {
   it.each(["bandit", "banshee"])("Aetherward preserves landed-hit reactions for %s", (enemy) => {
     const initial = enemyState(enemy, {
-      mana: 3,
+      mana: 4,
       enemyHealth: 50,
       playerStatuses: defaultPlayerStatusValues({ thorns: 3, armor: 4 }),
       difficultyModifiers: [{ kind: "enemy-attacks-gain-leech" }],
     });
     const texts: CombatTextEvent[] = [];
     const result = useAbility(
-      { ...initial, gearEffects: { ...initial.gearEffects, damageReductionPerMana: 10 } },
+      { ...initial, gearEffects: { ...initial.gearEffects, damageReductionPerMana: 1 } },
       "slash",
       texts,
     );
@@ -437,7 +437,7 @@ describe("ability trait boundaries", () => {
     expect(useAbility(state, "fangs").enemyHealth).toBe(
       useAbility(enemyState("skeleton", { enemyHealth: 10 }), "fangs").enemyHealth,
     );
-    expect(useAbility(state, "bloodthorn").enemyHealth).toBe(12);
+    expect(useAbility(state, "bloodthorn").enemyHealth).toBe(11);
   });
 
   it("adds one Blood Scent hit strictly below half Health without additional Leech", () => {

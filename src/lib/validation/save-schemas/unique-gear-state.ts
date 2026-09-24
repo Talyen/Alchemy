@@ -26,6 +26,7 @@ export const UniqueGearBattleStateSchema = z
     redHarvestUid: cardUid,
     huntsmasterUsed: ready,
     wrenflightActive: ready,
+    wardbreakerPurgeUsed: ready,
     finalSparkUsed: ready,
     freeBurnUsed: ready,
     freeFreezeUsed: ready,

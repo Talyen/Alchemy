@@ -210,9 +210,8 @@ export const wardUniqueAffixes = [
     "Wardbreaking",
     "offensive",
     "stun",
-    "Your attacks Purge one enemy buff and deal {value} Holy damage",
-    "attackPurgeDealHolyPerEffect",
-    "holy",
+    "Once per turn, your attacks Purge one beneficial status effect",
+    "attackPurgeOncePerTurn",
   ),
   uniqueAffix(
     "dance-of-blades",
