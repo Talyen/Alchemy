@@ -349,6 +349,77 @@ describe("Labyrinth enemy modifiers", () => {
     expect(play(state({ currentEnemy: enemy("thick-hide") }), attack("physical", 8)).enemyHealth).toBe(96);
   });
 
+  it("Shielded Arrival grants six enemy Block before the first turn", () => {
+    const next = createBattleState({
+      runDeck: [],
+      currentEnemy: { ...state().currentEnemy, traits: enemy("shielded-arrival").traits },
+      contentSystemType: "labyrinth",
+      rng: () => 0.99,
+      appliesFightPacing: false,
+    });
+    expect(next.enemyMitigation.block).toBe(6);
+  });
+
+  it.each([
+    ["thick-hide", "physical"],
+    ["burn-resistance", "burn"],
+    ["venom-ward", "poison"],
+    ["crimson-ward", "bleed"],
+    ["sunward", "holy"],
+    ["frostbound-ward", "freeze"],
+    ["thunder-ward", "stun"],
+    ["grove-ward", "nature"],
+  ] as const)("%s halves %s damage", (id, type) => {
+    expect(play(state({ currentEnemy: enemy(id) }), attack(type, 8)).enemyHealth).toBe(96);
+  });
+
+  it("Sundered Guard removes Block before attack damage", () => {
+    const current = state({ currentEnemy: enemy("sundered-guard"), playerStatuses: { block: 6 } });
+    const texts: Parameters<typeof applyEnemyAbility>[2] = [];
+    const next = applyEnemyAbility(
+      current,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] }),
+      texts,
+    );
+    expect(next.playerHealth).toBe(current.playerHealth - 1);
+    expect(next.playerStatuses.block).toBe(0);
+    expect(texts.filter((text) => text.stat === "block" && text.kind === "damage").length).toBeGreaterThan(0);
+  });
+
+  it("Sundered Guard triggers Block depletion rewards when its strip removes the last Block", () => {
+    const current = state({
+      currentEnemy: enemy("sundered-guard"),
+      playerHealth: 20,
+      playerStatuses: { block: 2 },
+      talentEffects: { blockDepletedHeal: 3 },
+    });
+    const next = applyEnemyAbility(
+      current,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 2 }] }),
+      [],
+    );
+    expect(next.playerStatuses.block).toBe(0);
+    expect(next.playerHealth).toBe(21);
+  });
+
+  it("Unbinding Strike Purges a buff on each landed attack", () => {
+    const current = state({ currentEnemy: enemy("unbinding-strike"), playerStatuses: { block: 10, forge: 2 } });
+    const texts: Parameters<typeof applyEnemyAbility>[2] = [];
+    const next = applyEnemyAbility(
+      current,
+      makeEnemyTestCard({
+        effects: [
+          { kind: "damage", damageType: "physical", amount: 2 },
+          { kind: "damage", damageType: "physical", amount: 2 },
+        ],
+      }),
+      texts,
+    );
+    expect(next.playerStatuses.block).toBe(0);
+    expect(next.playerStatuses.forge).toBe(0);
+    expect(texts.filter((text) => text.kind === "notice" && text.signal === "purge")).toHaveLength(2);
+  });
+
   it("legacy snapshots default to no player benefits", () => {
     const saved = JSON.parse(JSON.stringify(state()));
     delete saved.encounterBenefits;

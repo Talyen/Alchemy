@@ -28,10 +28,17 @@ function benefit(
 function enemy(
   label: string,
   description: string,
-  keyword: KeywordId,
+  keyword?: KeywordId,
   labyrinthNodes: readonly LabyrinthNodeType[] = ["combat", "elite", "boss"],
 ): LabyrinthTraitInput & { category: "combat" } {
-  return { category: "combat", label, description, keyword, modes: ["labyrinth"], labyrinthNodes };
+  return {
+    category: "combat",
+    label,
+    description,
+    ...(keyword ? { keyword } : {}),
+    modes: ["labyrinth"],
+    labyrinthNodes,
+  };
 }
 
 function room(
@@ -68,6 +75,13 @@ export const LABYRINTH_TRAITS = {
   fletched: benefit("Fletched", "Choose a free Archery card after victory", "archery"),
   wishkeeper: benefit("Wishkeeper", "Choose a free Wish card after victory", "wish"),
   "kindred-spoils": benefit("Kindred Spoils", "Choose a free Nature card after victory", "nature"),
+  "arms-hoard": benefit("Arms Hoard", "Choose Gear for a hand slot after victory", "physical"),
+  "armor-hoard": benefit("Armor Hoard", "Choose Armor for the body slot after victory", "armor"),
+  "ring-hoard": benefit("Ring Hoard", "Choose a Ring after victory"),
+  "amulet-hoard": benefit("Amulet Hoard", "Choose an Amulet after victory"),
+  "astral-hoard": benefit("Astral Hoard", "Choose an Astral item after victory", "forge"),
+  "trinket-hoard": benefit("Trinket Hoard", "Choose a Trinket after victory"),
+  "unique-hoard": benefit("Unique Hoard", "Choose a Unique item after victory"),
   entrenched: enemy("Entrenched", "Enemy Block no longer halves each turn", "block"),
   winterborn: enemy("Winterborn", "Enemy receives half Freeze buildup", "freeze"),
   toxic: enemy("Toxic", "Enemy deals 1 Poison damage each turn", "poison"),
@@ -76,6 +90,16 @@ export const LABYRINTH_TRAITS = {
   ravenous: enemy("Ravenous", "Enemy attacks gain Leech", "leech"),
   "elusive-foe": enemy("Elusive Foe", "Enemy gains 10% Dodge", "dodge"),
   "thick-hide": enemy("Thick Hide", "Enemy takes half Physical damage", "physical"),
+  "burn-resistance": enemy("Cinder Ward", "Enemy receives half Burn damage", "burn"),
+  "venom-ward": enemy("Venom Ward", "Enemy receives half Poison damage", "poison"),
+  "crimson-ward": enemy("Crimson Ward", "Enemy receives half Bleed damage", "bleed"),
+  sunward: enemy("Sunward", "Enemy receives half Holy damage", "holy"),
+  "frostbound-ward": enemy("Frostbound Ward", "Enemy receives half Freeze damage", "freeze"),
+  "thunder-ward": enemy("Thunder Ward", "Enemy receives half Stun damage", "stun"),
+  "grove-ward": enemy("Grove Ward", "Enemy receives half Nature damage", "nature"),
+  "shielded-arrival": enemy("Shielded Arrival", "Enemy starts with 6 Block", "block"),
+  "sundered-guard": enemy("Sundered Guard", "Enemy attacks remove 2 extra Block", "block"),
+  "unbinding-strike": enemy("Unbinding Strike", "Enemy attacks Purge 1 buff"),
   unbreakable: enemy("Unbreakable", "Enemy no longer loses Armor when taking damage", "armor", ["elite", "boss"]),
   whitehot: enemy("Whitehot", "Enemy no longer loses Forge when dealing damage", "forge", ["elite", "boss"]),
   executioner: enemy("Desperation", "Enemy deals double Physical damage while below half Health", "physical", [

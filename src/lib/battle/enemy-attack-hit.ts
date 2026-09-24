@@ -1,11 +1,12 @@
 import { readCombatFlag } from "./action-context";
 import { resolveSecondaryAction } from "./action-context";
-import { HALF_DIVISOR, REACTIVE_REWARD_CHANCES } from "../game-constants";
+import { HALF_DIVISOR, LABYRINTH_MODIFIER_CONFIG, REACTIVE_REWARD_CHANCES } from "../game-constants";
 import { rollTalentChance } from "./status-helpers";
 import type { EnemyAttackEffect } from "@/lib/game-data";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
 import { mergeCombatText, addGoldWithCombatText, applyHealingWithCombatText } from "./combat-text";
 import { processCompanionTurnStart } from "./companion";
+import { purgeOnePlayerBenefit } from "./player-purge";
 import { halveRounded, scalePercent } from "./amount-helpers";
 import { takeRandomCardFromDeck, drawKeywordCard } from "./draw";
 import { tryDodgeEnemyAttackPacket } from "./dodge";
@@ -266,11 +267,22 @@ export function resolveEnemyAttackHit(
       dodged: true,
       killed: false,
     };
-  const result = resolveEnemyDamageEffect(state, effect, combatTexts, {
+  const resolved = resolveEnemyDamageEffect(state, effect, combatTexts, {
     ...damageOptions,
     preparedDamage,
     triggerBlockRetaliation: canDodge,
+    preDamageBlockStrip: hasEnemyTrait(state, "sundered-guard") ? LABYRINTH_MODIFIER_CONFIG.attackBlockRemoval : 0,
   });
+  const result = {
+    ...resolved,
+    state:
+      resolved.landed &&
+      resolved.state.enemyHealth > 0 &&
+      !isPlayerDefeated(resolved.state) &&
+      hasEnemyTrait(resolved.state, "unbinding-strike")
+        ? purgeOnePlayerBenefit(resolved.state, combatTexts).state
+        : resolved.state,
+  };
   const blockDepleted = state.playerStatuses.block > 0 && result.blockLost === state.playerStatuses.block;
   if (
     blockDepleted &&

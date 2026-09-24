@@ -1,6 +1,8 @@
 import { hasEncounterBenefit, hasEnemyTrait } from "./types";
 import {
   BATTLE_CONFIG,
+  LABYRINTH_HALF_DAMAGE_WARDS,
+  LABYRINTH_MODIFIER_CONFIG,
   MIN_ARMOR_AMOUNT,
   PERCENT_DENOMINATOR,
   POISON_DECAY_PERCENT,
@@ -57,10 +59,13 @@ export function getPoisonDamageMultiplierAgainstBleeding(
 
 export function getEnemyTraitDamageMultiplier(state: Pick<BattleState, "currentEnemy">, damageType: string): number {
   const traits = state.currentEnemy.traits;
-  for (const rule of TRAIT_DAMAGE_RULES) {
-    if (damageType === rule.damageType && traits.some((t) => t.id === rule.traitId)) return rule.multiplier;
-  }
-  return 1;
+  const native = TRAIT_DAMAGE_RULES.find(
+    (rule) => damageType === rule.damageType && traits.some((trait) => trait.id === rule.traitId),
+  );
+  const hasWard = LABYRINTH_HALF_DAMAGE_WARDS.some(
+    (rule) => rule.damageType === damageType && traits.some((trait) => trait.id === rule.traitId),
+  );
+  return (native?.multiplier ?? 1) * (hasWard ? LABYRINTH_MODIFIER_CONFIG.half : 1);
 }
 
 export function getEnemyDamageMultiplier(

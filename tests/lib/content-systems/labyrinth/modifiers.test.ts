@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { ENCOUNTER_TRAITS, REWARD_ENCOUNTER_TRAIT_IDS } from "@/lib/content-systems/encounter-traits";
-import { getEnemyModifiersForNodeType, getRewardModifiersForNodeType } from "@/lib/content-systems/labyrinth/modifiers";
+import {
+  areLabyrinthTraitsCompatible,
+  getEnemyModifiersForNodeType,
+  getRewardModifiersForNodeType,
+} from "@/lib/content-systems/labyrinth/modifiers";
+import { createSeededRng } from "@/lib/rng";
 
 describe("ENCOUNTER_TRAITS", () => {
   it("each modifier has a non-empty label and description", () => {
@@ -45,6 +50,11 @@ describe("getEnemyModifiersForNodeType", () => {
       expect(unique.size).toBe(mods.length);
     }
   });
+
+  it("keeps new attack riders distinct from matching native enemy traits", () => {
+    expect(areLabyrinthTraitsCompatible("shielded-arrival", "starting-block")).toBe(false);
+    expect(areLabyrinthTraitsCompatible("unbinding-strike", "banshee")).toBe(false);
+  });
 });
 
 describe("getRewardModifiersForNodeType", () => {
@@ -61,6 +71,15 @@ describe("getRewardModifiersForNodeType", () => {
         expect((REWARD_ENCOUNTER_TRAIT_IDS as readonly string[]).includes(m)).toBe(true);
         expect(ENCOUNTER_TRAITS[m].category).toBe("reward");
       }
+    }
+  });
+
+  it("does not announce premium Hoards before their depth gates", () => {
+    for (let seed = 1; seed <= 256; seed += 1) {
+      const picked = getRewardModifiersForNodeType(createSeededRng(seed), "combat", 1);
+      expect(picked).not.toContain("astral-hoard");
+      expect(picked).not.toContain("trinket-hoard");
+      expect(picked).not.toContain("unique-hoard");
     }
   });
 });

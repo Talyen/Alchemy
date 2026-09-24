@@ -43,6 +43,7 @@ export interface EnemyDamageOptions {
   ignoreBlock?: boolean;
   physicalBlockBreakMultiplier?: number;
   extraPoisonBlockStrip?: number;
+  preDamageBlockStrip?: number;
   skipTraitReactions?: boolean;
   preparedDamage?: { attemptedDamage: number; incomingDamage: number };
   traitSet?: ReadonlySet<string>;
@@ -277,17 +278,34 @@ function resolveEnemyDamageEffectCore(
       killed: false,
     };
   const { attemptedDamage, incomingDamage } = options.preparedDamage ?? prepareEnemyDamage(state, effect, options);
+  const preDamageBlockStrip =
+    attemptedDamage > 0 ? Math.min(state.playerStatuses.block, options.preDamageBlockStrip ?? 0) : 0;
+  const hitState =
+    preDamageBlockStrip > 0
+      ? {
+          ...state,
+          playerStatuses: { ...state.playerStatuses, block: state.playerStatuses.block - preDamageBlockStrip },
+        }
+      : state;
+  if (preDamageBlockStrip > 0)
+    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: preDamageBlockStrip });
 
-  const mitigation = calculateBlockAndArmorMitigation(state, effect, incomingDamage, combatTexts, options);
+  const mitigation = calculateBlockAndArmorMitigation(hitState, effect, incomingDamage, combatTexts, options);
 
-  const hit = applyEnemyHealthHit(state, effect, attemptedDamage, mitigation, combatTexts);
+  const hit = applyEnemyHealthHit(hitState, effect, attemptedDamage, mitigation, combatTexts);
   const { facts } = hit;
   const { blockLost, outcome } = facts;
   // Capture Health loss before threshold healing, then resolve retaliation only for survivors.
-  let nextState = applyPlayerDefensiveReactions(hit.state, effect, facts, combatTexts);
-  nextState = applyHealthLossTalentRewards(state, nextState, outcome.healthDamage, combatTexts);
+  let nextState = applyPlayerDefensiveReactions(
+    hit.state,
+    effect,
+    { ...facts, blockDepletedByStrip: preDamageBlockStrip > 0 && preDamageBlockStrip === state.playerStatuses.block },
+    combatTexts,
+  );
+  nextState = applyHealthLossTalentRewards(hitState, nextState, outcome.healthDamage, combatTexts);
 
-  if (nextState.enemyHealth <= 0 || nextState.playerHealth <= 0) return { state: nextState, ...outcome };
+  const fullOutcome = { ...outcome, blockLost: outcome.blockLost + preDamageBlockStrip };
+  if (nextState.enemyHealth <= 0 || nextState.playerHealth <= 0) return { state: nextState, ...fullOutcome };
 
   nextState = resolvePlayerCrowdControlTriggers(nextState, combatTexts);
 
@@ -298,18 +316,18 @@ function resolveEnemyDamageEffectCore(
       nextState,
       blockLost,
       combatTexts,
-      blockLost > 0 && blockLost >= state.playerStatuses.block,
+      blockLost > 0 && blockLost >= hitState.playerStatuses.block,
     );
   }
 
-  if (nextState.enemyHealth <= 0 || nextState.playerHealth <= 0) return { state: nextState, ...outcome };
+  if (nextState.enemyHealth <= 0 || nextState.playerHealth <= 0) return { state: nextState, ...fullOutcome };
 
   if (!options.skipTraitReactions) {
     const traitSet = options.traitSet ?? getEnemyTraitSet(nextState);
     if (
       hasEnemyTrait(nextState, "earth-elemental", traitSet) &&
-      state.playerStatuses.block > 0 &&
-      blockLost >= state.playerStatuses.block &&
+      hitState.playerStatuses.block > 0 &&
+      blockLost >= hitState.playerStatuses.block &&
       nextState.playerHealth > 0
     ) {
       nextState = processEnemyDamageEffect(
@@ -321,7 +339,7 @@ function resolveEnemyDamageEffectCore(
     }
   }
 
-  return { state: nextState, ...outcome };
+  return { state: nextState, ...fullOutcome };
 }
 
 function resolvePendingCinderSkinReaction(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {

@@ -150,6 +150,7 @@ export function computeVictoryRewardState(
     talentEffects?: TalentEffectManifest;
     gearAstralChanceBonus?: number;
     purseGold?: number;
+    labyrinthRewardModifiers?: readonly EncounterRewardTraitId[];
   },
   rng: () => number,
 ): RewardState {
@@ -175,6 +176,7 @@ export function computeVictoryRewardState(
     ownedUniqueIds: input.ownedUniqueIds ?? new Set(),
     gearAstralChanceBonus,
     inCombatGold,
+    rewardModifiers: input.labyrinthRewardModifiers ?? [],
   };
 
   if (input.battleState.currentEnemy.enemyType === ENEMY_TYPES.BOSS) {
@@ -332,6 +334,7 @@ export function computeVictoryRewards(
       talentEffects,
       rollBossEnemyId: input.rollBossEnemyId,
       gearAstralChanceBonus: input.homesteadEffects.gearAstralChanceBonus,
+      labyrinthRewardModifiers,
     },
     rng,
   );

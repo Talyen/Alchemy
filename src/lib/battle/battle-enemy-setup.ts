@@ -7,6 +7,7 @@ import {
   ENEMY_BASE_REGENERATION,
   ENEMY_BOSS_REGENERATION,
   ENEMY_STARTING_BLOCK,
+  LABYRINTH_MODIFIER_CONFIG,
   LIVING_ARMOR_STARTING_ARMOR,
   ROOM_SCALING_INCREMENT,
   ENEMY_BALANCE_BY_TYPE,
@@ -118,13 +119,16 @@ function computeStartingStatuses(modifiers: DifficultyModifier[], enemy: Bestiar
   const startingEnemyBlock = enemy.traits.some((t) => t.id === "starting-block")
     ? Math.round(ENEMY_STARTING_BLOCK * roomMul)
     : 0;
+  const modifierBlock = enemy.traits.some((t) => t.id === "shielded-arrival")
+    ? LABYRINTH_MODIFIER_CONFIG.shieldedArrivalBlock
+    : 0;
   return {
     startingArmor: startingArmor + traitStartingArmor,
     startBlock,
     manaBonus,
     startCompanion,
     startCompanionId,
-    startingEnemyBlock,
+    startingEnemyBlock: startingEnemyBlock + modifierBlock,
   };
 }
 

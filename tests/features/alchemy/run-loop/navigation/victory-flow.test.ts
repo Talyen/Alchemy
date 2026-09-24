@@ -89,6 +89,19 @@ function baseInput(overrides: Record<string, unknown> = {}): VictoryRewardsInput
 const testRng = () => 0.25;
 
 describe("Fetch victory rewards", () => {
+  it("applies a Labyrinth Hoard to the actual victory choices", () => {
+    const result = computeVictoryRewards(
+      baseInput({ contentSystemType: "labyrinth", activeLabyrinthRewardModifiers: ["ring-hoard"] }),
+      testRng,
+    );
+    expect(result.rewardState.rewardType).toBe("gear");
+    if (result.rewardState.rewardType !== "gear") throw new Error("expected Gear choices");
+    expect(result.rewardState.choices.length).toBeGreaterThan(0);
+    expect(
+      result.rewardState.choices.every((choice) => gearDefinitions[choice.definitionId].baseItemId.endsWith("-ring")),
+    ).toBe(true);
+  });
+
   it.each(["campaign", "labyrinth", "wildwood"])("grants three Gold with a Companion in %s", (contentSystemType) => {
     const input = baseInput({ contentSystemType, battleState: baseBattleState({ activeCompanion: { id: "wolf" } }) });
     const original = computeVictoryRewards(input, testRng);

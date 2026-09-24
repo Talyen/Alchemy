@@ -21,6 +21,15 @@ export const TRAIT_DAMAGE_WEAKNESS_MULTIPLIER = 2;
 // stay out of the game-constants barrel (knip entry-exports enforced).
 const TRAIT_DAMAGE_RESISTANCE_MULTIPLIER = 0.5;
 
+export const LABYRINTH_HALF_DAMAGE_WARDS = [
+  { traitId: "venom-ward", damageType: "poison" },
+  { traitId: "crimson-ward", damageType: "bleed" },
+  { traitId: "sunward", damageType: "holy" },
+  { traitId: "frostbound-ward", damageType: "freeze" },
+  { traitId: "thunder-ward", damageType: "stun" },
+  { traitId: "grove-ward", damageType: "nature" },
+] as const;
+
 const TRAIT_BURN_VULNERABILITY_MULTIPLIER = 1.3;
 
 const POISON_RESISTANCE_MULTIPLIER = 0.75;

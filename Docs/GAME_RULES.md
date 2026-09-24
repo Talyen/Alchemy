@@ -295,6 +295,23 @@ none. Native enemy Traits participate in compatibility checks. Stronger red
 modifiers are restricted to Elites/Bosses. Campaign and Wildwood ignore these
 room rules. Combat-specific effects follow [Labyrinth exceptions](#labyrinth-exceptions).
 
+Shielded Arrival gives the enemy 6 starting Block. Sundered Guard removes 2
+additional Block before each landed attack resolves damage. Unbinding Strike
+Purges one random beneficial player status after each landed attack. Ravenous
+already grants attack Leech, and Thick Hide already halves Physical damage;
+they remain the Labyrinth entries for those effects. Cinder Ward reuses the
+native half-Burn rule. The other wards halve Poison, Bleed, Holy, Freeze,
+Stun, or Nature damage. Nature is the damage type used by Thorns retaliation.
+Wards combine with existing native defenses and follow the ordinary damage
+pipeline, including its status-buildup behavior.
+
+Arms, Armor, Ring, and Amulet Hoards make all Gear reward choices match the
+named family and use normal Basic/Astral relative weights. Astral, Unique,
+and Trinket Hoards make the entire reward choice set the named tier. Premium
+Hoards only roll on depth-eligible nodes; if their tier or unowned pool is
+unavailable at victory, the reward uses the ordinary roll. Gold and material
+bonuses remain the existing Generous, Wealthy, Scavenger, and Herbalist rules.
+
 Card Shop themes survive refreshes. Gear specialties constrain ordinary and
 Unique offers and fallbacks. Shop displays and transactions share prices; free
 services retain their visit limits. Strong Spirits doubles Potion amounts and

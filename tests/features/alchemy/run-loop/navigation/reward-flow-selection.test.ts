@@ -6,7 +6,7 @@ import {
 } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { getStartingDeck, trinketLibrary } from "@/lib/game-data";
-import { gearDefinitions, uniqueItemList } from "@/lib/gear";
+import { gearBaseItemList, gearDefinitions, uniqueItemList } from "@/lib/gear";
 import { createSeededRng } from "@/lib/rng";
 import type { RewardState } from "@/lib/active-run-session";
 
@@ -37,6 +37,72 @@ function premiums(reward: RewardState): string[] {
 }
 
 describe("progressive reward selection", () => {
+  it.each([
+    [
+      "arms-hoard",
+      (id: string) => gearBaseItemList.some((base) => base.id === id && base.compatibleSlots.includes("main-hand")),
+    ],
+    [
+      "armor-hoard",
+      (id: string) => gearBaseItemList.some((base) => base.id === id && base.compatibleSlots.includes("body")),
+    ],
+    ["ring-hoard", (id: string) => id.endsWith("-ring")],
+    ["amulet-hoard", (id: string) => id.endsWith("-amulet")],
+  ] as const)("%s offers only matching Basic or Astral Gear", (modifier, matches) => {
+    const result = createCombatRewardState({ ...input, rng: createSeededRng(17), rewardModifiers: [modifier] });
+    expect(result.rewardType).toBe("gear");
+    if (result.rewardType !== "gear") throw new Error("expected Gear choices");
+    expect(result.choices).toHaveLength(3);
+    for (const choice of result.choices) {
+      const definition = gearDefinitions[choice.definitionId];
+      expect(matches(definition.baseItemId)).toBe(true);
+      expect(["basic", "astral"]).toContain(definition.rarity);
+    }
+  });
+
+  it.each([
+    ["astral-hoard", "gear", "astral"],
+    ["unique-hoard", "gear", "unique"],
+    ["trinket-hoard", "trinket", "trinket"],
+  ] as const)("%s guarantees its tier at an eligible depth", (modifier, group, tier) => {
+    const result = createCombatRewardState({ ...input, rng: createSeededRng(29), rewardModifiers: [modifier] });
+    expect(result.rewardType).toBe(group);
+    expect(result.choices.length).toBeGreaterThan(0);
+    expect(premiums(result)).toContain(tier);
+    if (result.rewardType === "gear") {
+      expect(result.choices.every((choice) => gearDefinitions[choice.definitionId].rarity === tier)).toBe(true);
+    }
+  });
+
+  it("falls back to normal rewards when a guaranteed tier is gated or exhausted", () => {
+    const early = { depth: 1, highestCompletedDifficulty: null };
+    for (const modifier of ["astral-hoard", "unique-hoard", "trinket-hoard"] as const) {
+      const expected = createCombatRewardState({ ...input, lootProgress: early, rng: createSeededRng(33) });
+      const actual = createCombatRewardState({
+        ...input,
+        lootProgress: early,
+        rng: createSeededRng(33),
+        rewardModifiers: [modifier],
+      });
+      expect(actual).toEqual(expected);
+    }
+    const ownedUniqueIds = new Set(uniqueItemList.map((unique) => unique.id));
+    const ownedTrinketIds = trinketLibrary.map((trinket) => trinket.id);
+    for (const [modifier, inventory] of [
+      ["unique-hoard", { ownedUniqueIds }],
+      ["trinket-hoard", { ownedTrinketIds }],
+    ] as const) {
+      const expected = createCombatRewardState({ ...input, ...inventory, rng: createSeededRng(33) });
+      const actual = createCombatRewardState({
+        ...input,
+        ...inventory,
+        rng: createSeededRng(33),
+        rewardModifiers: [modifier],
+      });
+      expect(actual).toEqual(expected);
+    }
+  });
+
   it("preserves reward payloads, grouped choices, and independently rolled Gear", () => {
     const types = new Set<string>();
     let mixedGear = false;

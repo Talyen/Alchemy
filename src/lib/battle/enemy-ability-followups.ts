@@ -1,6 +1,4 @@
 import { resolveSecondaryAction } from "./action-context";
-import { beneficialPlayerStatusIds } from "@/lib/game-data";
-import { getBattleRng, pickRandom } from "@/lib/rng";
 import { BRAWLER_PENALTY_MULTIPLIER, ENEMY_ABILITY_TRAIT_REWARD, VAMPIRE_BLOOD_SCENT_DAMAGE } from "../game-constants";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { recordEnemyAbilityHit, type EnemyAbilityContext } from "./enemy-ability-context";
@@ -8,7 +6,7 @@ import { applyArmorReward, applyHealingWithCombatText } from "./combat-text";
 import { resolveEnemyAttackHit } from "./enemy-attack-hit";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { applyPlayerStatusFromAttack } from "./status-player";
-import { removePlayerArmor } from "./status-helpers";
+import { purgeOnePlayerBenefit } from "./player-purge";
 import {
   hasEnemyTrait,
   isPlayerDefeated,
@@ -72,16 +70,8 @@ export function applyAbilityFollowups(
   }
   if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
   if (context.landed && hasEnemyTrait(nextState, "banshee", context.traitSet)) {
-    const purgeCandidates = beneficialPlayerStatusIds.filter((stat) => nextState.playerStatuses[stat] > 0);
-    const purgeTarget = pickRandom(purgeCandidates, getBattleRng(nextState));
-    if (purgeTarget) {
-      nextState = recordEnemyAbilityActivation(nextState, "banshee");
-      nextState =
-        purgeTarget === "armor"
-          ? removePlayerArmor(nextState, nextState.playerStatuses.armor, combatTexts)
-          : setPlayerStatus(nextState, purgeTarget, 0);
-      combatTexts.push({ target: "player", kind: "notice", stat: purgeTarget, text: "Purged", signal: "purge" });
-    }
+    const purged = purgeOnePlayerBenefit(nextState, combatTexts);
+    if (purged.purged) nextState = recordEnemyAbilityActivation(purged.state, "banshee");
   }
   if (nextState.enemyStatuses.onAttackBleed > 0) {
     const amount = nextState.enemyStatuses.onAttackBleed;

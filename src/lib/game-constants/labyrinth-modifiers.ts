@@ -11,6 +11,8 @@ export const LABYRINTH_MODIFIER_CONFIG = {
   healingPerTurn: 2,
   secondWindHealing: 0.2,
   fortressArmor: 12,
+  shieldedArrivalBlock: 6,
+  attackBlockRemoval: 2,
   hiddenPurseGold: 15,
   trinketPriceMultiplier: 0.75,
   restfulDiscoveryHealing: 0.15,

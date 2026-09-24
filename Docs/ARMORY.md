@@ -44,6 +44,14 @@ Presentation follows [UI item shine](./UI.md#item-shine). Pass affix identity an
 - Reward screens roll one group from summed eligible weights, then roll each Gear choice independently from those same weights. Cards, Trinkets, and Boons stay grouped. Unavailable pools are excluded before sampling and eligibility is recomputed after every Gear choice. An empty premium/Gear-only source uses Basic Gear; cards are the terminal combat fallback when Gear is unavailable. Bosses can therefore award Basic Gear before premium eligibility. Narrow equipment-shop pools may repeat ordinary bases to fill shelves, but never repeat Uniques or pair a Unique with another offering of its base.
 - Newly offered Trinket shops and Astral-guaranteeing events/modifiers respect the same eligibility gates. Labyrinth generation substitutes an equipment shop for an ineligible Trinket shop and uses the minimum reachable room ordinal when assigning Masterwork. Existing maps, saved offers, and explicitly promised Astrals retain their contents; hydration never rerolls or reapplies eligibility. Entering an already-promised Trinket shop initializes its shelf even on an older shallow map; saved shelves remain purchasable, but refreshing is blocked until Trinkets are eligible. Trinket shops draw uniformly from unowned trinkets once eligible: depth gates access but does not weight the shelf, unlike equipment shops. Uniform shelves are the current intent; weight them by depth as a design task if progression demands it.
 
+Labyrinth Hoards force a reward choice group: Arms (both hand slots), Armor
+(body), Ring, and Amulet constrain ordinary Basic/Astral Gear choices;
+Astral, Unique, and Trinket Hoards constrain the tier. Secondary Accessory
+slots share Ring and Amulet bases rather than needing separate modifiers.
+Unique and Trinket choices still exclude owned definitions. A premium Hoard is
+omitted from a newly generated map before its depth gate, and a saved Hoard
+with no eligible choices at victory falls back to the normal reward roll.
+
 Edit the source weights and progression points in `run-rewards.ts`, then run `npm run balance:loot`. The seeded report in `reports/loot-progression/report.html` compares premium availability per screen and expected offered items along explicit routes for every account tier and fresh/nearly-complete collections. It counts offers, not acquisitions; three Gear choices can expose premium loot more often than a single item roll. Gear offer rates are estimated by rolling rarities directly rather than generating full instances. The report records sampling uncertainty and holds ownership fixed along each comparison route.
 
 ## Materials tuning

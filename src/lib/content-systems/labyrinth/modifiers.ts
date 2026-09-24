@@ -29,6 +29,8 @@ const INCOMPATIBLE_TRAITS: ReadonlyArray<readonly string[]> = [
   ["overgrowth", "second-wind", "regeneration"],
   ["thick-hide", "will-o-wisp", "amorphous", "dire-wolf", "ice-wraith"],
   ["ravenous", "vampire"],
+  ["shielded-arrival", "starting-block"],
+  ["unbinding-strike", "banshee"],
 ];
 
 export function isLabyrinthTraitEligible(id: EncounterTraitId, type: LabyrinthNodeType): boolean {
@@ -66,7 +68,11 @@ export function getRewardModifiersForNodeType(
   lootDepth = 1,
 ): EncounterRewardTraitId[] {
   const pool = eligibleEncounterTraitIds("labyrinth", "reward").filter(
-    (id) => isLabyrinthTraitEligible(id, type) && (id !== "masterwork" || isLootEligible("astral", lootDepth)),
+    (id) =>
+      isLabyrinthTraitEligible(id, type) &&
+      ((id !== "masterwork" && id !== "astral-hoard") || isLootEligible("astral", lootDepth)) &&
+      (id !== "trinket-hoard" || isLootEligible("trinket", lootDepth)) &&
+      (id !== "unique-hoard" || isLootEligible("unique", lootDepth)),
   );
   const selected = pickRandom(pool, rng);
   return selected ? [selected] : [];

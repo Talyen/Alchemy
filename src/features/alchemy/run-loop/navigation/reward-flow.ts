@@ -1,4 +1,11 @@
-import { resolveLootWeights, rollLootGroup, type LootProgress, type LootSource } from "@/lib/loot";
+import {
+  isLootEligible,
+  resolveLootWeights,
+  rollLootGroup,
+  type LootAvailability,
+  type LootProgress,
+  type LootSource,
+} from "@/lib/loot";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
 import { ENEMY_TYPES, getCardKeywords, selectRewardCards, trinketLibrary, type BattleCard } from "@/lib/game-data";
@@ -6,7 +13,13 @@ import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/car
 import { LABYRINTH_REWARD_CONFIG, REWARD_CARD_CHOICES } from "@/lib/game-constants";
 import { pickRandom, sampleItems } from "@/lib/rng";
 import { REWARD_ROUTES, type Destination, type RewardRoute } from "@/lib/routing";
-import { generateLootGearChoices, getRewardLootAvailability } from "@/lib/gear";
+import {
+  gearBaseItemList,
+  generateGearRewardChoicesForRarity,
+  generateLootGearChoices,
+  getGearLootAvailability,
+  getRewardLootAvailability,
+} from "@/lib/gear";
 import {
   createEmptyRewardState,
   resolveRewardChoice,
@@ -49,6 +62,7 @@ export interface BossRewardInput {
   ownedTrinketIds?: string[];
   ownedUniqueIds?: ReadonlySet<string>;
   inCombatGold?: number | undefined;
+  rewardModifiers?: readonly EncounterRewardTraitId[];
 }
 
 export interface CombatRewardInput {
@@ -70,6 +84,7 @@ export interface CombatRewardInput {
   ownedUniqueIds?: ReadonlySet<string>;
   gearAstralChanceBonus?: number;
   inCombatGold?: number | undefined;
+  rewardModifiers?: readonly EncounterRewardTraitId[];
 }
 
 export function createNextRewardState(rewardState: RewardState): CardRewardState {
@@ -150,6 +165,71 @@ export function finalizeRewardState({ rewardState, companionRewardCards }: Final
   };
 }
 
+function hoardBaseIds(modifier: EncounterRewardTraitId): string[] | null {
+  if (modifier === "arms-hoard")
+    return gearBaseItemList
+      .filter((base) => base.compatibleSlots.includes("main-hand") || base.compatibleSlots.includes("off-hand"))
+      .map((base) => base.id);
+  if (modifier === "armor-hoard")
+    return gearBaseItemList.filter((base) => base.compatibleSlots.includes("body")).map((base) => base.id);
+  if (modifier === "ring-hoard")
+    return gearBaseItemList.filter((base) => base.id.endsWith("-ring")).map((base) => base.id);
+  if (modifier === "amulet-hoard")
+    return gearBaseItemList.filter((base) => base.id.endsWith("-amulet")).map((base) => base.id);
+  return null;
+}
+
+function createHoardRewardState({
+  rewardModifiers,
+  lootProgress,
+  source,
+  rng,
+  ownedUniqueIds,
+  trinkets,
+  availability,
+  gearAstralChanceBonus,
+}: {
+  rewardModifiers: readonly EncounterRewardTraitId[];
+  lootProgress: LootProgress;
+  source: LootSource;
+  rng: () => number;
+  ownedUniqueIds: ReadonlySet<string>;
+  trinkets: typeof trinketLibrary;
+  availability: LootAvailability;
+  gearAstralChanceBonus: number;
+}): RewardState | null {
+  for (const modifier of rewardModifiers) {
+    const baseIds = hoardBaseIds(modifier);
+    if (baseIds) {
+      const gearAvailable = getGearLootAvailability(ownedUniqueIds, baseIds);
+      if (baseIds.length === 0 || (!gearAvailable.basic && !gearAvailable.astral)) return null;
+      const weights = resolveLootWeights({
+        source,
+        progress: lootProgress,
+        astralChanceBonus: gearAstralChanceBonus,
+        available: { ...gearAvailable, card: false, boon: false, trinket: false, unique: false },
+      });
+      const choices = generateLootGearChoices(REWARD_CARD_CHOICES, rng, weights, ownedUniqueIds, baseIds, true);
+      return choices.length > 0 ? { ...createEmptyRewardState(), rewardType: "gear", choices } : null;
+    }
+    if (modifier === "astral-hoard" || modifier === "unique-hoard") {
+      const rarity = modifier === "astral-hoard" ? "astral" : "unique";
+      if (!isLootEligible(rarity, lootProgress.depth) || availability[rarity] === false) return null;
+      const choices = generateGearRewardChoicesForRarity(REWARD_CARD_CHOICES, rarity, rng, ownedUniqueIds);
+      return choices.length > 0 ? { ...createEmptyRewardState(), rewardType: "gear", choices } : null;
+    }
+    if (modifier === "trinket-hoard") {
+      if (!isLootEligible("trinket", lootProgress.depth) || trinkets.length === 0) return null;
+      return {
+        ...createEmptyRewardState(),
+        rewardType: "trinket",
+        choices: sampleItems(trinkets, REWARD_CARD_CHOICES, rng),
+      };
+    }
+  }
+  return null;
+}
+
 function createLootRewardState({
   source,
   lootProgress,
@@ -159,6 +239,7 @@ function createLootRewardState({
   ownedTrinketIds = [],
   excludedBoonIds = [],
   ownedUniqueIds = new Set(),
+  rewardModifiers = [],
 }: {
   source: LootSource;
   lootProgress: LootProgress;
@@ -168,6 +249,7 @@ function createLootRewardState({
   ownedTrinketIds?: readonly string[];
   excludedBoonIds?: readonly string[];
   ownedUniqueIds?: ReadonlySet<string>;
+  rewardModifiers?: readonly EncounterRewardTraitId[];
 }): RewardState {
   const cards = getOfferableCardPool();
   // "boon" and "trinket" rewards draw from the same trinketLibrary with
@@ -177,16 +259,28 @@ function createLootRewardState({
   // serializes each reward type on its own branch.
   const boons = trinketLibrary.filter((entry) => !excludedBoonIds.includes(entry.id));
   const trinkets = trinketLibrary.filter((entry) => !ownedTrinketIds.includes(entry.id));
+  const availability = getRewardLootAvailability(ownedUniqueIds, {
+    cards: cards.length > 0,
+    boons: boons.length > 0,
+    trinkets: trinkets.length > 0,
+  });
   const weights = resolveLootWeights({
     source,
     progress: lootProgress,
     astralChanceBonus: gearAstralChanceBonus,
-    available: getRewardLootAvailability(ownedUniqueIds, {
-      cards: cards.length > 0,
-      boons: boons.length > 0,
-      trinkets: trinkets.length > 0,
-    }),
+    available: availability,
   });
+  const hoard = createHoardRewardState({
+    rewardModifiers,
+    lootProgress,
+    source,
+    rng,
+    ownedUniqueIds,
+    trinkets,
+    availability,
+    gearAstralChanceBonus,
+  });
+  if (hoard) return hoard;
   const category = rollLootGroup(weights, rng);
   switch (category) {
     case "gear":
