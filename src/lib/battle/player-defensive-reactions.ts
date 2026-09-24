@@ -1,6 +1,7 @@
 import type { EnemyAttackEffect } from "@/lib/game-data";
 import { BATTLE_CONFIG } from "../game-constants";
-import { addPlayerStatusWithCombatText, applyHealingWithCombatText, mergeCombatText } from "./combat-text";
+import { addPlayerStatusWithCombatText, applyHealingWithCombatText } from "./player-rewards";
+import { mergeCombatText } from "./combat-text-events";
 import { resolvePlayerHit } from "./hit-resolution";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { decayArmorAfterDamage } from "./status-helpers";

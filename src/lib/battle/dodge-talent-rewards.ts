@@ -1,7 +1,7 @@
 import { REACTIVE_REWARD_CHANCES } from "../game-constants";
 import { rollTalentChance } from "./status-helpers";
 import { applyDrawResult, drawFromState } from "./draw";
-import { addPlayerStatusWithCombatText } from "./combat-text";
+import { addPlayerStatusWithCombatText } from "./player-rewards";
 import { addForgeToPlayer, applyCleanseHeals } from "./status-player";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { setPlayerStatus, type BattleState, type CombatTextEvent } from "./types";

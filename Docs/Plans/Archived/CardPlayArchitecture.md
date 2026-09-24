@@ -5,8 +5,8 @@ updated: 2026-09-24
 
 # Card play phase ownership
 
-The card play module mixes validation and payment, effect execution, and post-play rewards. Enemy Dodge also imports that top-level module solely to reuse effect and reward helpers. This makes the reaction order and dependency direction difficult to follow.
+Validation and payment, effect execution, and post-play rewards once lived in one card-play module. Ordinary play now keeps validation, payment, and sequencing; focused battle modules own shared effects, rewards, and Consume routing for ordinary and Dodge-triggered plays. Named routing context makes their ordering explicit.
 
-1. Move shared card effect and post-play reward phases into focused battle modules. Keep the ordinary card play entry point responsible for validation, payment, and sequencing.
-2. Replace the positional Consume-routing arguments with a named context. Update both ordinary and Dodge-triggered play callers.
-3. Document the phase ownership, add focused coverage for the ordering boundary, and run the task-owned verification gate.
+The refactor preserves public play behavior and reaction order. The implementation commit includes focused battle ordering coverage; this archive does not retain a separate gate result.
+
+Implementation: `c02a7f56`. Current owner: [Battle path](../../ARCHITECTURE.md#battle-path).

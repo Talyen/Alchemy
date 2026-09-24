@@ -3,7 +3,7 @@ import { readCombatFlag } from "./action-context";
 import { scalePercent } from "./amount-helpers";
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 import { UNIQUE_GEAR_COMBAT } from "../game-constants";
-import { addGoldWithCombatText } from "./combat-text";
+import { addGoldWithCombatText } from "./player-rewards";
 import { computeCardDamageToEnemy } from "./damage-calc";
 import { resolvePlayerHit } from "./hit-resolution";
 import { tryDodgePlayerAttackPacket } from "./dodge";

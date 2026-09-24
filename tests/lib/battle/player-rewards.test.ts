@@ -5,64 +5,16 @@ import {
   gainManaWithCombatText,
   addPlayerStatusWithCombatText,
   applyHealingWithCombatText,
-  emitOverhealBlockText,
-  mergeCombatText,
-  shouldShowCombatText,
-} from "@/lib/battle/combat-text";
+  payKillPayouts,
+} from "@/lib/battle/player-rewards";
+import { emitOverhealBlockText } from "@/lib/battle/player-reward-feedback";
 import type { GearEffectManifest } from "@/lib/gear";
 import { resolveFollowUpHit } from "@/lib/battle/follow-up-hit-resolution";
 import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
 import { tryTriggerEnemyFreeze } from "@/lib/battle/damage-status-riders";
 import type { BattleState } from "@/lib/battle/types";
-import { defaultPlayerStatusValues } from "../../fixtures/default-battle-state";
-import { defaultTrinketManifest } from "../../fixtures/default-battle-state";
+import { defaultPlayerStatusValues, defaultTrinketManifest } from "../../fixtures/default-battle-state";
 import { makeCombatTexts as makeTexts, patchBattleState } from "../../fixtures/battle";
-
-describe("shouldShowCombatText", () => {
-  it("hides harmful status application text", () => {
-    expect(shouldShowCombatText({ target: "player", kind: "status", stat: "burn", amount: 2 })).toBe(false);
-    expect(shouldShowCombatText({ target: "enemy", kind: "status", stat: "poison", amount: 3 })).toBe(false);
-    expect(shouldShowCombatText({ target: "enemy", kind: "status", stat: "bleed", amount: 4 })).toBe(false);
-    expect(shouldShowCombatText({ target: "enemy", kind: "status", stat: "freeze", amount: 5 })).toBe(false);
-    expect(shouldShowCombatText({ target: "enemy", kind: "status", stat: "stun", amount: 6 })).toBe(false);
-  });
-
-  it("keeps harmful status damage text visible", () => {
-    expect(shouldShowCombatText({ target: "player", kind: "damage", stat: "burn", amount: 2 })).toBe(true);
-  });
-
-  it("keeps control notices visible", () => {
-    expect(shouldShowCombatText({ target: "enemy", kind: "notice", stat: "stun", text: "Stunned" })).toBe(true);
-    expect(shouldShowCombatText({ target: "enemy", kind: "notice", stat: "freeze", text: "Frozen" })).toBe(true);
-  });
-
-  it("keeps beneficial status and resource text visible", () => {
-    expect(shouldShowCombatText({ target: "player", kind: "status", stat: "block", amount: 5 })).toBe(true);
-    expect(shouldShowCombatText({ target: "player", kind: "status", stat: "gold", amount: 3 })).toBe(true);
-  });
-});
-
-describe("mergeCombatText", () => {
-  it("does not add harmful status application events", () => {
-    const texts = makeTexts();
-    mergeCombatText(texts, { target: "player", kind: "status", stat: "burn", amount: 2 });
-    expect(texts).toEqual([]);
-  });
-
-  it("still merges visible events", () => {
-    const texts = makeTexts();
-    mergeCombatText(texts, { target: "player", kind: "status", stat: "block", amount: 2 });
-    mergeCombatText(texts, { target: "player", kind: "status", stat: "block", amount: 3 });
-    expect(texts).toEqual([{ target: "player", kind: "status", stat: "block", amount: 5 }]);
-  });
-
-  it("deduplicates matching control notices", () => {
-    const texts = makeTexts();
-    mergeCombatText(texts, { target: "enemy", kind: "notice", stat: "stun", text: "Stunned" });
-    mergeCombatText(texts, { target: "enemy", kind: "notice", stat: "stun", text: "Stunned" });
-    expect(texts).toEqual([{ target: "enemy", kind: "notice", stat: "stun", text: "Stunned" }]);
-  });
-});
 
 describe("emitOverhealBlockText", () => {
   it("emits block combat text when overheal increases block", () => {
@@ -195,6 +147,24 @@ function withGear(state: BattleState, gear: Partial<GearEffectManifest>): Battle
 }
 
 describe("lethality payouts — every kill path pays the same rewards", () => {
+  it("shares Health feedback across defeat rewards and pays only once", () => {
+    const base = ccProcKillState();
+    const state = {
+      ...withGear(base, { healOnKill: 3, goldOnKill: 4 }),
+      enemyHealth: 0,
+      trinketEffects: defaultTrinketManifest({ boneCharmHealOnKill: 2, grovesFavorThornsOnHealthRestore: 1 }),
+    };
+    const texts = makeTexts();
+
+    const rewarded = payKillPayouts(state, true, texts);
+    expect(rewarded.playerHealth).toBe(25);
+    expect(rewarded.playerStatuses.thorns).toBe(2);
+    expect(rewarded.gold).toBe(4);
+    expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 5 });
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "thorns", amount: 2 });
+    expect(payKillPayouts(rewarded, true, texts)).toBe(rewarded);
+  });
+
   it("thunderstone-on-stun kill pays gear kill rewards and Bone Charm heal", () => {
     const base = ccProcKillState();
     const state = {

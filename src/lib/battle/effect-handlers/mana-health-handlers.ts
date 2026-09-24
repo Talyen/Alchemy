@@ -10,12 +10,8 @@ import {
 } from "../status-player";
 import { applyPotionMultiplier } from "../amount-helpers";
 import { MIN_MAX_MANA_FLOOR, PERCENT_DENOMINATOR } from "../../game-constants";
-import {
-  applyHealOnManaGain,
-  gainManaWithCombatText,
-  mergeCombatText,
-  applyHealingWithCombatText,
-} from "../combat-text";
+import { applyHealOnManaGain, gainManaWithCombatText, applyHealingWithCombatText } from "../player-rewards";
+import { mergeCombatText } from "../combat-text-events";
 import { dealSelfDamage, getEnemyDamageMultiplier } from "../status-helpers";
 import { resolvePlayerHealing, type BattleState, type CombatTextEvent } from "../types";
 import { paceCombatMagnitude } from "../fight-pacing";

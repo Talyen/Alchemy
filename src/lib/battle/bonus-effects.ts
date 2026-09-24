@@ -1,7 +1,7 @@
 import { FREE_CARD_SENTINEL } from "../game-constants";
 import { rollTalentChance } from "./status-helpers";
 import { drawFromState, applyDrawResult } from "./draw";
-import { addGoldWithCombatText, gainManaWithCombatText } from "./combat-text";
+import { addGoldWithCombatText, gainManaWithCombatText } from "./player-rewards";
 import { setFlag, stripEnemyArmor, stripEnemyBlock, type BattleState, type CombatTextEvent } from "./types";
 import { addForgeToPlayer, applyBlockReward } from "./status-player";
 

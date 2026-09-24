@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyEnemyHealingWithCombatText } from "@/lib/battle/combat-text";
+import { applyEnemyHealingWithCombatText } from "@/lib/battle/enemy-healing";
 import { processEnemyDamageEffect, applyEnemyLeechHealing } from "@/lib/battle/enemy-attack-damage";
 import { processEnemyRegeneration } from "@/lib/battle/enemy-turn-traits";
 import { processEncounterTraitActionStart } from "@/lib/battle/encounter-trait-events";

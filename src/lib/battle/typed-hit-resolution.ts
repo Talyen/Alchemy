@@ -1,7 +1,8 @@
 import { applyHitHealth } from "./hit-facts";
 import type { HitFacts } from "./hit-facts";
 import type { DamageType } from "@/lib/game-data";
-import { applyHitEpilogue, mergeCombatText } from "./combat-text";
+import { applyHitEpilogue } from "./player-rewards";
+import { mergeCombatText } from "./combat-text-events";
 import { applyDamageStatuses } from "./damage-status-riders";
 import { decayArmorAfterDamage } from "./status-helpers";
 import { applyIronGuardReward } from "./status-player";

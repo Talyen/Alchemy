@@ -1,6 +1,6 @@
 import { readCombatFlag } from "./action-context";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
-import { mergeCombatText } from "./combat-text";
+import { mergeCombatText } from "./combat-text-events";
 import type { BattleCard } from "@/lib/game-data";
 import {
   type BattleResolution,

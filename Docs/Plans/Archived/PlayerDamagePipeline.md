@@ -1,30 +1,12 @@
 ---
 status: complete
-updated: 2026-09-22
+updated: 2026-09-24
 ---
 
 # Player damage calculation ownership
 
-## Problem
+Flat packet construction and multiplicative bonuses once shared one module with positional origin arguments. `player-damage-base.ts` now owns base packets and typed flat modifiers; `player-damage-multipliers.ts` owns additive multipliers and first-Burn flags. `damage-calc.ts` keeps their order with pacing, critical strikes, and mitigation.
 
-`player-damage-bonuses.ts` mixes flat packet construction with multiplicative
-bonuses and once-per-battle flag consumption. Its positional arguments hide
-whether a hit came from a Companion. This makes damage changes hard to place
-and easy to apply at the wrong stage.
+This private refactor preserves damage values, rounding, RNG order, flag use, and battle entry points. The implementation commit includes focused damage coverage; this archive does not retain a separate gate result.
 
-## Plan
-
-1. Move packet construction, Forge eligibility, and typed flat modifiers into
-   `player-damage-base.ts`.
-2. Move additive multipliers and first-Burn flag consumption into
-   `player-damage-multipliers.ts`.
-3. Give both stages named inputs for card, bonus, and Companion origin. Keep
-   `damage-calc.ts` as the ordering owner for base amount, first-hit bonuses,
-   multiplication, pacing, critical strikes, and mitigation.
-4. Update the battle-rule owner and the consumer inventory, then run focused
-   damage tests and the task-scoped handoff gate.
-
-## Invariants
-
-Damage values, rounding, RNG draw order, flag consumption, and public battle
-entry points remain unchanged. This is a private battle-engine refactor.
+Implementation: `0e140aa9`. Current owner: [Engine invariants](../../GAME_RULES.md#engine-invariants).

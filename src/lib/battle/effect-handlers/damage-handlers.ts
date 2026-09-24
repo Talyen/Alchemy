@@ -1,6 +1,6 @@
 import type { EffectHandler } from "./handler-types";
 import { resolveConditionalCardDamage } from "../conditional-card-damage";
-import { mergeCombatText } from "../combat-text";
+import { mergeCombatText } from "../combat-text-events";
 import { setPlayerStatus } from "../types";
 import { applyBlockDepletionForgeReward, applyHealthLossTalentRewards, checkHealthThresholds } from "../status-player";
 import { DAMAGE_TYPES } from "@/lib/game-data";

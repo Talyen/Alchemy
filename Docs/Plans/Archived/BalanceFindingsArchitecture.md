@@ -1,20 +1,12 @@
 ---
 status: complete
-updated: 2026-09-23
+updated: 2026-09-24
 ---
 
 # Balance findings architecture
 
-The current `src/lib/balance/findings.ts` mixes independent rule families in one
-large module and passes a mutable callback between them. That makes it hard to
-locate a finding rule or change one family without reading the whole pipeline.
+The former findings module mixed independent rule families with a mutable callback. Focused collectors now own rates, equity, matchups, paired deltas, and anomalies; the entry point gathers their ordered candidates before selection. This makes a finding rule easier to locate while retaining IDs, text, thresholds, order, and the public `evaluateBalanceFindings` contract.
 
-1. Extract shared rate and median helpers, then move enemy/class equity,
-   matchups, paired deltas, and anomalies into focused modules. Each collector
-   returns an ordered `BalanceFinding[]`; the entry point concatenates them in
-   the existing order before selection.
-2. Keep finding IDs, text, thresholds, candidate order, selection, and the
-   public `evaluateBalanceFindings` contract unchanged. Update the canonical
-   architecture note to identify the new owners.
-3. Run the balance findings tests and task-scoped handoff gate. Review the final
-   diff, mark this plan complete, and archive it.
+The implementation commit includes balance-finding coverage; this archive does not retain a separate gate result.
+
+Implementation: `81132e6c`. Current owner: [Balance simulation](../../REFERENCE.md#balance-simulation).

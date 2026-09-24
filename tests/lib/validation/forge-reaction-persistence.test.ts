@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { patchBattleState } from "../../fixtures/battle";
-import { addGoldWithCombatText } from "@/lib/battle/combat-text";
+import { addGoldWithCombatText } from "@/lib/battle/player-rewards";
 import { resolvePendingBattleReactions } from "@/lib/battle/enemy-attack-damage";
 import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
 import { deliverPendingHandCards } from "@/lib/battle/draw";

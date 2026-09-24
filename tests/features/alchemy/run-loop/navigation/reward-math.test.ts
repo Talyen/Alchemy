@@ -4,7 +4,6 @@ import { CONTENT_SYSTEMS } from "@/lib/content-systems/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import {
   applyLabyrinthRewardMaterialModifiers,
-  computeRewardGold,
   computeVictoryGold,
   getActiveRewardModifiersForContentSystem,
   getGenerousGoldBonus,
@@ -68,21 +67,6 @@ describe("reward math", () => {
     const herbalist = applyLabyrinthRewardMaterialModifiers(materials, ["herbalist"]);
     expect(herbalist.herbs).toBe(4 + LABYRINTH_REWARD_CONFIG.herbalistHerbBonus);
     expect(herbalist.iron).toBe(3);
-  });
-
-  it("applies the gold multiplier to the summed reward gold", () => {
-    const input = {
-      baseGold: 10,
-      bonusGold: 2,
-      generousBonus: 3,
-      wealthyBonus: 5,
-      talentGoldPerCombat: 1,
-      trinketIds: [],
-      goldMultiplier: 2,
-    };
-    expect(computeRewardGold({ ...input, goldMultiplier: 1 })).toBe(21);
-    expect(computeRewardGold(input)).toBe(42);
-    expect(computeRewardGold({ ...input, inCombatGold: 5, goldMultiplier: 1 })).toBe(26);
   });
 
   it("settles victory gold against the purse", () => {

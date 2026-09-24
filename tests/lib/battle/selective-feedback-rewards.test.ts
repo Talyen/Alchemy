@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { cardById, companionLibrary, computeTalentEffects, type BattleCard } from "@/lib/game-data";
 import type { CombatTextEvent } from "@/lib/battle";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
-import { addGoldWithCombatText, applyHealingWithCombatText, gainManaWithCombatText } from "@/lib/battle/combat-text";
+import { addGoldWithCombatText, applyHealingWithCombatText, gainManaWithCombatText } from "@/lib/battle/player-rewards";
 import { applyDamageStatuses } from "@/lib/battle/damage-status-riders";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";

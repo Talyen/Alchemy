@@ -18,7 +18,7 @@ import {
   addPlayerStatusWithCombatText,
   applyHealingWithCombatText,
   gainManaWithCombatText,
-} from "./combat-text";
+} from "./player-rewards";
 import { scaledGearLeechHeal } from "./gear-effects";
 import { rollTalentChance } from "./status-helpers";
 import { getBattleRng, pickRandom } from "@/lib/rng";

@@ -4,7 +4,7 @@ import { battleSnapshot, hasEncounterBenefit } from "./types";
 import type { BattleResolutionContext } from "./types";
 import { processCompanionTurnStart } from "./companion";
 import { deliverPendingHandCards } from "./draw";
-import { applyHealingWithCombatText } from "./combat-text";
+import { applyHealingWithCombatText } from "./player-rewards";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 import { isPlayerDefeated, type BattleState, type BattleSnapshot, type CombatTextEvent } from "./types";

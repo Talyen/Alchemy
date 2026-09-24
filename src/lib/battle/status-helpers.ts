@@ -10,7 +10,8 @@ import {
   TRAIT_DAMAGE_RULES,
   TRAIT_DAMAGE_WEAKNESS_MULTIPLIER,
 } from "../game-constants";
-import { addPlayerStatusWithCombatText, mergeCombatText } from "./combat-text";
+import { addPlayerStatusWithCombatText } from "./player-rewards";
+import { mergeCombatText } from "./combat-text-events";
 import {
   applyPlayerCombatDamage,
   isPlayerDefeated,

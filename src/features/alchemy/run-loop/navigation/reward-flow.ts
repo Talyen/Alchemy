@@ -12,7 +12,6 @@ import {
 } from "@/lib/active-run-session";
 import type { BattleSnapshot } from "@/lib/battle";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import { computeRewardGold } from "./reward-math";
 import { createRewardOffer } from "./reward-offers";
 
 export { getCompanionCardChoices, getRandomPotionCard } from "./reward-offers";
@@ -34,30 +33,21 @@ export interface FinalizeRewardResult {
 
 interface RewardPayoutInput {
   lootProgress: LootProgress;
-  gold: number;
-  generousBonus: number;
-  wealthyBonus: number;
-  talentGoldPerCombat: number;
+  goldPayout: number;
   materials: MaterialInventory;
-  trinketIds: string[];
-  goldMultiplier?: number;
   rng: () => number;
   excludedBoonIds?: string[];
   gearAstralChanceBonus?: number;
   ownedTrinketIds?: string[];
   ownedUniqueIds?: ReadonlySet<string>;
-  inCombatGold?: number | undefined;
   rewardModifiers?: readonly EncounterRewardTraitId[];
 }
 
-export interface BossRewardInput extends RewardPayoutInput {
-  bossBonus: number;
-}
+export type BossRewardInput = RewardPayoutInput;
 
 export interface CombatRewardInput extends RewardPayoutInput {
   battleState: BattleSnapshot;
   runDeck: BattleCard[];
-  eliteBonus: number;
   destinations: Destination[];
 }
 
@@ -109,25 +99,11 @@ export function finalizeRewardState({ rewardState, companionRewardCards }: Final
   };
 }
 
-function computeSharedRewardGold(input: RewardPayoutInput, bonusGold: number): number {
-  // Boss and combat rewards differ only in which encounter bonus feeds bonusGold.
-  return computeRewardGold({
-    baseGold: input.gold,
-    bonusGold,
-    generousBonus: input.generousBonus,
-    wealthyBonus: input.wealthyBonus,
-    talentGoldPerCombat: input.talentGoldPerCombat,
-    trinketIds: input.trinketIds,
-    goldMultiplier: input.goldMultiplier ?? 1,
-    inCombatGold: input.inCombatGold,
-  });
-}
-
 export function createBossRewardState(input: BossRewardInput): RewardState {
   return {
     ...createEmptyRewardState(),
     ...createRewardOffer({ ...input, source: "boss" }),
-    gold: computeSharedRewardGold(input, input.bossBonus),
+    gold: input.goldPayout,
     materials: input.materials,
   };
 }
@@ -171,7 +147,7 @@ export function createCombatRewardState(input: CombatRewardInput): RewardState {
   return {
     ...createEmptyRewardState(),
     ...createRewardOffer({ ...input, source }),
-    gold: computeSharedRewardGold(input, input.eliteBonus),
+    gold: input.goldPayout,
     materials: input.materials,
     destinations: input.destinations,
   };

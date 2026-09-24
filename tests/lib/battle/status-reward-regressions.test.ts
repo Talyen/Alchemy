@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { cardById, companionLibrary } from "@/lib/game-data";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
-import { applyBlockReward, removeHarmfulPlayerStatuses } from "@/lib/battle/combat-text";
+import { applyBlockReward, removeHarmfulPlayerStatuses } from "@/lib/battle/player-rewards";
 import { applyPlayerStatusEffect } from "@/lib/battle/status-player";
 import { resolveEnemyAttackHit } from "@/lib/battle/enemy-attack-hit";
 import { paceCombatMagnitude } from "@/lib/battle/fight-pacing";

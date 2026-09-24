@@ -123,7 +123,7 @@ Bond 0 preserves the baseline. Damage, healing, Gold, and Scarab Block gain +1 p
 - **Talent Health cutoffs** — “below” is strict: Kill Shot requires less than 20% enemy Health and Desperate Wish less than half player Health. Desperate Guard triggers once per combat on the first surviving crossing from at or above half Health to below it, including status ticks, typed self-damage, and Health costs; lethal damage grants no defensive reward. Evaluate the crossing after incoming buildup but before Block-break healing. Other below-half talents recheck their condition for each applicable event.
 - **Half-Health bonuses** — talents described as active below 50% Health require strictly less than half of the relevant maximum Health, including Armor, Forge, Physical/Bleed damage, and Leech bonuses. Exactly half Health does not qualify.
 - **Fatal action cutoffs** — a fatal Health cost or retaliation stops subsequent card effects, including nested chance outcomes and queued effects. Death's Door and Phoenix Feather count as survival. Drain pending reactions from pre-card rewards before manual or automatic card effects begin. Fatal Cinder Skin during enemy status ticks stops the later ticks and the enemy ability, including when the enemy would otherwise skip its turn.
-- **Lethality payouts** — a kill via any damage source (main hits, follow-up typed hits, stun/freeze procs, wish triggers, DoT ticks, bleed/poison detonation, mana-crystal burn) pays the same rewards exactly once per health transition: Bone Charm heal + gear kill rewards via `payKillPayouts` (`src/lib/battle/combat-text.ts`). Enemy DoT ticks and detonates share `applyEnemyDotDamage` in `src/lib/battle/dot-resolve.ts` so Divine Aegis and armor decay cannot skip a source. Documented exceptions stay source-specific (e.g. Lucky Clover gold is off freeze-proc kills).
+- **Lethality payouts** — a kill via any damage source (main hits, follow-up typed hits, stun/freeze procs, wish triggers, DoT ticks, bleed/poison detonation, mana-crystal burn) pays the same rewards exactly once per health transition: Bone Charm heal + gear kill rewards via `payKillPayouts` (`src/lib/battle/player-rewards.ts`). Enemy DoT ticks and detonates share `applyEnemyDotDamage` in `src/lib/battle/dot-resolve.ts` so Divine Aegis and armor decay cannot skip a source. Documented exceptions stay source-specific (e.g. Lucky Clover gold is off freeze-proc kills).
 - **Kill rewards** — Toxic Profit grants 3 Gold when defeating a Poisoned enemy through a hit, triggered damage, tick, or detonation, including a lethal hit that first inflicts Poison. The saved `killRewardsPaid` flag prevents nested damage reactions from paying the same enemy’s kill rewards twice.
 
 #### Status ticks and detonation
@@ -322,7 +322,8 @@ current catalog has only two direct healing Trinkets and no Archery-specific
 Trinkets, so neither theme rolls.
 
 Mystery rooms select a compatible event and modify its displayed choices before
-resolution. Resume reconstructs the same offers without reapplying rewards.
+resolution. Resume restores the saved resolved offer without rerolling choices or
+reapplying rewards.
 Corruption chambers reuse the Campaign altar rules and their green modifier
 changes the corruption roll. Leaving before corrupting returns to the maze with
 the chamber still reachable.

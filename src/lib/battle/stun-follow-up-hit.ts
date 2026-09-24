@@ -1,5 +1,6 @@
 import { resolveSecondaryAction } from "./action-context";
-import { applyHitEpilogue, mergeCombatText } from "./combat-text";
+import { applyHitEpilogue } from "./player-rewards";
+import { mergeCombatText } from "./combat-text-events";
 import { computeCardDamageToEnemy } from "./damage-calc";
 import { applyHitHealth } from "./hit-facts";
 import { decayArmorAfterDamage } from "./status-helpers";

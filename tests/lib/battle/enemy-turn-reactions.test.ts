@@ -121,7 +121,8 @@ describe("applyEnemyAbility: reactions", () => {
   });
 
   it("blood-countess damages itself only on actual hero healing", async () => {
-    const { applyEnemyHealingWithCombatText, applyHealingWithCombatText } = await import("@/lib/battle/combat-text");
+    const { applyEnemyHealingWithCombatText } = await import("@/lib/battle/enemy-healing");
+    const { applyHealingWithCombatText } = await import("@/lib/battle/player-rewards");
     const countessState = patchBattleState({
       currentEnemy: enemyBestiary.find((e) => e.id === "blood-countess")!,
       playerHealth: 20,

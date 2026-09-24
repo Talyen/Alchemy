@@ -1,4 +1,5 @@
-import { applyHitEpilogue, mergeCombatText } from "./combat-text";
+import { applyHitEpilogue } from "./player-rewards";
+import { mergeCombatText } from "./combat-text-events";
 import { addEnemyStatus, damageEnemyHealth, type BattleState, type CombatTextEvent } from "./types";
 import { decayArmorAfterDamage } from "./status-helpers";
 import { paceCombatDamage } from "./fight-pacing";

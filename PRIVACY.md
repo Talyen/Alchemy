@@ -11,12 +11,13 @@ identity to diagnostic reports.
 
 Browser saves use local browser storage. Desktop saves use local files and may
 be mirrored to Steam Cloud. Save data contains gameplay progress, settings,
-decks, unlocks, and run state. Save handling, recovery order, and deletion are
-described in the in-game save controls and the project’s save contract.
+decks, unlocks, and run state. The [save contract](./src/features/alchemy/shared/storage/MIGRATIONS.md#public-save-contract)
+describes technical recovery and deletion behavior.
 
-Deleting local data through Alchemy’s clear-save or protected-save controls
-removes the candidates those controls identify. Steam may independently retain
-cloud or platform records under its own policies.
+Options offers **Clear Save Data** to remove local save data and start fresh.
+On desktop, Alchemy also attempts to delete its Steam Cloud save copies;
+a failed Cloud deletion may leave a copy there. Device-local Game Size and
+Tooltip Size preferences remain until Reset to Default is used.
 
 ## Crash reporting
 

@@ -4,7 +4,7 @@ import { prepareTalentCardPlay } from "./talent-card-play";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import { drawKeywordCard } from "./draw";
 import { applyCardEffects } from "./effect-handlers";
-import { addPlayerStatusWithCombatText, applyHealingWithCombatText, gainManaWithCombatText } from "./combat-text";
+import { addPlayerStatusWithCombatText, applyHealingWithCombatText, gainManaWithCombatText } from "./player-rewards";
 import { isPotionCard, type BattleCard } from "@/lib/game-data";
 import { type BattleState, type CombatTextEvent, isPlayerDefeated } from "./types";
 import { processCompanionTurnStart } from "./companion";

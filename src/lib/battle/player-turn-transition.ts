@@ -6,7 +6,7 @@ import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import type { BattleCard } from "@/lib/game-data";
 import { processArcheryEchoes } from "./unique-card-effects";
 import { CARDS_PER_TURN, MAX_HAND_SIZE } from "../game-constants";
-import { addPlayerStatusWithCombatText, applyHealingWithCombatText, gainManaWithCombatText } from "./combat-text";
+import { addPlayerStatusWithCombatText, applyHealingWithCombatText, gainManaWithCombatText } from "./player-rewards";
 import { halveRounded } from "./amount-helpers";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { applyBlockDepletionForgeReward, applyCleanseHeals, restoreSpentPlayerForge } from "./status-player";

@@ -15,7 +15,8 @@ import {
 import { scalePercent } from "./amount-helpers";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { scaleEnemyAbilityDamage } from "./battle-enemy-setup";
-import { applyEnemyHealingWithCombatText, mergeCombatText } from "./combat-text";
+import { applyEnemyHealingWithCombatText } from "./enemy-healing";
+import { mergeCombatText } from "./combat-text-events";
 import { resolveEnemyAttackHit } from "./enemy-attack-hit";
 import { addEnemyMitigationWithCombatText } from "./encounter-trait-health-threshold";
 import { scaleByRoomMultiplier } from "./enemy-turn-traits";

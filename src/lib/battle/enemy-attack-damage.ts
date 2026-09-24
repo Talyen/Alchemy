@@ -1,7 +1,8 @@
 import type { EnemyAttackEffect } from "@/lib/game-data";
 import { HALF_DIVISOR, LABYRINTH_MODIFIER_CONFIG, PERCENT_DENOMINATOR } from "../game-constants";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
-import { applyEnemyHealingWithCombatText, mergeCombatText } from "./combat-text";
+import { applyEnemyHealingWithCombatText } from "./enemy-healing";
+import { mergeCombatText } from "./combat-text-events";
 import { computeLeechHeal } from "./damage-rider-leech";
 import { isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-traits";
 import { paceCombatDamage } from "./fight-pacing";

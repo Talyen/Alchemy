@@ -14,13 +14,13 @@ import {
 import {
   addPlayerStatusWithCombatText,
   applyHealingWithCombatText,
-  mergeCombatText,
   applyArmorReward,
   applyArmorStatusEffect,
   applyBlockReward,
   removeHarmfulPlayerStatuses,
   onFirstCrossThreshold,
-} from "./combat-text";
+} from "./player-rewards";
+import { mergeCombatText } from "./combat-text-events";
 import { BLEED_STATUS_MULTIPLIER, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
 import { paceCombatMagnitude } from "./fight-pacing";
 import { dealScaledBurnWithStacks } from "./scaled-damage";
@@ -411,4 +411,4 @@ export function applyPlayerStatusFromAttack(
   return applyBeneficialStatusFromAttack(state, status, amount, combatTexts);
 }
 
-export { applyArmorReward, applyBlockReward, applyCleanseHeals, removeHarmfulPlayerStatuses } from "./combat-text";
+export { applyArmorReward, applyBlockReward, applyCleanseHeals, removeHarmfulPlayerStatuses } from "./player-rewards";

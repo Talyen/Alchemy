@@ -52,6 +52,31 @@ describe("gear generation", () => {
     expect(choices).toHaveLength(3);
   });
 
+  it("fills a narrow equipment shelf with ordinary Gear from its allowed bases", () => {
+    const choices = generateGearRewardChoicesForRarity(4, "astral", () => 0, new Set(), ["emerald-ring"], true);
+    expect(choices).toHaveLength(4);
+    expect(choices.every((choice) => gearDefinitions[choice.definitionId].baseItemId === "emerald-ring")).toBe(true);
+  });
+
+  it("fills a narrow shelf without pairing a Unique with ordinary Gear of its base", () => {
+    const choices = generateLootGearChoices(
+      4,
+      () => 0.99,
+      { ...weights, basic: 0, astral: 1, unique: 100 },
+      new Set(),
+      ["ruby-ring", "emerald-ring"],
+      true,
+    );
+    const definitions = choices.map((choice) => gearDefinitions[choice.definitionId]);
+    expect(choices).toHaveLength(4);
+    expect(definitions.filter((definition) => definition.rarity === "unique")).toHaveLength(1);
+    const uniqueBaseId = definitions.find((definition) => definition.rarity === "unique")?.baseItemId;
+    expect(definitions.filter((definition) => definition.baseItemId === uniqueBaseId)).toHaveLength(1);
+    expect(new Set(definitions.map((definition) => definition.baseItemId))).toEqual(
+      new Set(["ruby-ring", "emerald-ring"]),
+    );
+  });
+
   it("generates a dev random instance with valid definition and affix bounds", () => {
     let roll = 0;
     const rng = () => {

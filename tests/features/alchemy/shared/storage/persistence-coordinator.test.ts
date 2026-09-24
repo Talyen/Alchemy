@@ -8,7 +8,12 @@ import { defaultSaveData } from "@/features/alchemy/shared/storage";
 import { SaveDataSchema } from "@/lib/validation";
 import { useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
-import { mutateGearForTest, resetRunDomainStore } from "../../../../helpers/run-domain-store-test";
+import {
+  mutateGearForTest,
+  resetRunDomainStore,
+  setRunProgress,
+  setRunSession,
+} from "../../../../helpers/run-domain-store-test";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import {
   handleCollectionTabChange,
@@ -21,7 +26,7 @@ import {
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { addGearCurrencies } from "@/features/alchemy/shared/stores/gear-actions";
 import { readProfileStore } from "@/features/alchemy/shared/stores/profile-store";
-import { readRunProfile } from "@/features/alchemy/shared/stores/run-reads";
+import { readRunProfile, readRunSession } from "@/features/alchemy/shared/stores/run-reads";
 import { createEmptyGearInventories, generateUniqueGearInstance, getUniqueItemDefinition } from "@/lib/gear";
 
 beforeEach(() => {
@@ -112,6 +117,56 @@ describe("persistence coordinator", () => {
     expect(listener).not.toHaveBeenCalled();
 
     dispatchRunSessionCommand((draft) => setDiscoveredCardIds(draft, ["slash"]));
+    expect(listener).toHaveBeenCalledOnce();
+    unsubscribe();
+  });
+
+  it("ignores claim locks and battle presentation snapshots while saving reward payload changes", () => {
+    const listener = vi.fn();
+    const unsubscribe = subscribeAlchemyPersistence(listener);
+
+    setRunSession({ rewardClaimInFlight: true });
+    dispatchRunSessionCommand((draft) => {
+      draft.battle.battleStartState = { ...draft.battle.battleState };
+    });
+    dispatchRunSessionCommand((draft) => {
+      draft.runProfile.effects = { ...draft.runProfile.effects };
+    });
+    expect(listener).not.toHaveBeenCalled();
+
+    setRunSession({ rewardState: { ...readRunSession().rewardFlow.state, gold: 1 } });
+    expect(listener).toHaveBeenCalledOnce();
+    unsubscribe();
+  });
+
+  it("only saves mode-specific session fields while that mode is active", () => {
+    const listener = vi.fn();
+    const unsubscribe = subscribeAlchemyPersistence(listener);
+
+    setRunSession({ activeLabyrinthModifiers: [] });
+    expect(listener).not.toHaveBeenCalled();
+
+    setRunProgress({ contentSystemType: "labyrinth" });
+    expect(listener).toHaveBeenCalledOnce();
+    listener.mockClear();
+    setRunSession({ activeLabyrinthModifiers: [] });
+    expect(listener).toHaveBeenCalledOnce();
+
+    setRunProgress({ contentSystemType: "wildwood" });
+    listener.mockClear();
+    setRunSession({ starterDraftChoices: [] });
+    expect(listener).not.toHaveBeenCalled();
+    setRunSession({
+      wildwoodDraft: {
+        phase: "draft",
+        draftChoices: [],
+        remainingBossIds: [],
+        previousBossId: null,
+        currentBossId: null,
+        currentCombatTraitIds: [],
+        currentRewardTraitIds: [],
+      },
+    });
     expect(listener).toHaveBeenCalledOnce();
     unsubscribe();
   });

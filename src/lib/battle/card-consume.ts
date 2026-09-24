@@ -1,12 +1,8 @@
 import { readCombatFlag } from "./action-context";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { drawFromState, applyDrawResult } from "./draw";
-import {
-  addGoldWithCombatText,
-  applyHealingWithCombatText,
-  gainManaWithCombatText,
-  mergeCombatText,
-} from "./combat-text";
+import { addGoldWithCombatText, applyHealingWithCombatText, gainManaWithCombatText } from "./player-rewards";
+import { mergeCombatText } from "./combat-text-events";
 import type { BattleCard } from "@/lib/game-data";
 import { type BattleState, type CombatTextEvent, isPlayerDefeated, addEnemyStatus } from "./types";
 import { detonateEnemyStatuses } from "./dot-resolve";

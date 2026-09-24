@@ -28,7 +28,7 @@ import {
 import { gearFrozenDamageMultiplier } from "./gear-effects";
 import { POISON_GAIN_AMOUNT } from "../game-constants";
 import { applyPoisonTalentRiders } from "./damage-status-riders";
-import { mergeCombatText } from "./combat-text";
+import { mergeCombatText } from "./combat-text-events";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
 import { applyEnemyLeechHealing, resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { resolveFollowUpHit, tryPoisonStunProc } from "./follow-up-hit-resolution";

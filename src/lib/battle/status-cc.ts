@@ -1,5 +1,5 @@
 import { recordEnemyAbilityActivation } from "./battle-metrics";
-import { mergeCombatText } from "./combat-text";
+import { mergeCombatText } from "./combat-text-events";
 import { applyArmorReward } from "./status-player";
 import { BATTLE_CONFIG, FREEZE_THRESHOLD_FRACTION, STATUS_CONFIG, STUN_THRESHOLD_FRACTION } from "../game-constants";
 import {

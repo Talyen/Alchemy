@@ -1,24 +1,12 @@
 ---
 status: complete
-updated: 2026-09-23
+updated: 2026-09-24
 ---
 
 # Enemy ability resolution architecture
 
-## Objective
+Enemy ability selection, damage and once-per-ability rewards, and trait follow-ups now have separate private owners with one shared per-ability context. This makes reaction order visible without changing public ability entry points, RNG draws, damage, or combat text order.
 
-Make enemy abilities easier to change without altering damage, trait reward,
-reaction, RNG, or combat text order. Keep the existing public ability entry points.
+The implementation commit includes focused enemy ability coverage; this archive does not retain a separate gate result.
 
-## Plan
-
-- [x] Keep `enemy-turn-attack.ts` as the ability-selection and effect-sequencing owner.
-- [x] Move damage calculation and once-per-ability hit rewards to a private damage module.
-- [x] Move post-ability trait follow-ups to a private follow-up module, sharing one
-      explicit per-ability context and hit recorder with the damage and sequence owners.
-- [x] Document the stage ownership in the battle rules, review the final diff,
-      run focused enemy ability tests, and run the task-owned handoff gate.
-
-## Notes
-
-Keep durable rules in their canonical owner. For test selection and task-owned handoff, follow [CONTRIBUTING](../../../CONTRIBUTING.md#what-to-run-when-you-change) and [the plan lifecycle](../README.md#task-handoff).
+Implementation: `81132e6c`. Current ownership: [Enemy combat rules](../../GAME_RULES.md#enemy-abilities-and-traits).

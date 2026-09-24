@@ -122,11 +122,7 @@ describe("Fetch victory rewards", () => {
 describe("computeVictoryRewardState", () => {
   const rewardInput = {
     ...baseInput(),
-    gold: 15,
-    eliteBonus: 4,
-    generousBonus: 0,
-    wealthyBonus: 0,
-    bossBonus: 7,
+    goldPayout: 19,
     materials: { ...emptyInventory(), wood: 2 },
     destinations: ["Campfire"] as Destination[],
   };
@@ -144,6 +140,7 @@ describe("computeVictoryRewardState", () => {
     const result = computeVictoryRewardState(
       {
         ...rewardInput,
+        goldPayout: 22,
         battleState: baseBattleState({ currentEnemy: { id: "dragon", enemyType: "boss" } }),
         ownedTrinketIds: trinketLibrary.slice(0, -2).map((entry) => entry.id),
       },
@@ -177,6 +174,33 @@ describe("computeVictoryRewardState", () => {
 });
 
 describe("computeVictoryRewards", () => {
+  it.each([
+    ["campaign", "normal"],
+    ["campaign", "elite"],
+    ["campaign", "boss"],
+    ["labyrinth", "normal"],
+    ["labyrinth", "elite"],
+    ["labyrinth", "boss"],
+    ["wildwood", "normal"],
+    ["wildwood", "elite"],
+    ["wildwood", "boss"],
+  ] as const)("uses the settled Gold payout for %s %s rewards", (contentSystemType, enemyType) => {
+    const purseGold = 10;
+    const input = baseInput({
+      contentSystemType,
+      purseGold,
+      battleState: baseBattleState({
+        gold: 14,
+        currentEnemy: { id: enemyType, enemyType },
+      }),
+    });
+    const withoutTrinket = computeVictoryRewards(input, testRng);
+    const result = computeVictoryRewards({ ...input, equippedTrinketId: "smugglers-map" }, testRng);
+
+    expect(result.rewardState.gold).toBe(result.persistedGold - purseGold);
+    expect(result.rewardState.gold - withoutTrinket.rewardState.gold).toBe(2);
+  });
+
   it.each(["campaign", "labyrinth", "wildwood"] as const)(
     "does not draw a boss after an ordinary %s victory",
     (contentSystemType) => {

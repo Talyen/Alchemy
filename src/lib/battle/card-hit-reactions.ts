@@ -20,7 +20,7 @@ import {
 } from "./follow-up-hit-resolution";
 import { rollTalentChance } from "./status-helpers";
 import { applyArmorReward, applyBlockReward, spendPlayerForgeForAttack } from "./status-player";
-import { addPlayerStatusWithCombatText, applyHealingWithCombatText } from "./combat-text";
+import { addPlayerStatusWithCombatText, applyHealingWithCombatText } from "./player-rewards";
 import { addEnemyStatus, hasEncounterBenefit, type BattleState, type CombatTextEvent } from "./types";
 import { applyWishEffect } from "./wish";
 import type { CardHitRequest } from "./hit-request";

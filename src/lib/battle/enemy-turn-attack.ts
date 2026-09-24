@@ -10,7 +10,8 @@ import {
 import { getBattleRng, pickRandom, rollChance } from "@/lib/rng";
 import { halveRounded } from "./amount-helpers";
 import { recordEnemyAbilityUse, recordEnemyAttackAction } from "./battle-metrics";
-import { applyEnemyHealingWithCombatText, mergeCombatText } from "./combat-text";
+import { applyEnemyHealingWithCombatText } from "./enemy-healing";
+import { mergeCombatText } from "./combat-text-events";
 import { createEnemyAbilityContext, type EnemyAbilityContext } from "./enemy-ability-context";
 import { applyAbilityDamage } from "./enemy-ability-damage";
 import { applyAbilityFollowups } from "./enemy-ability-followups";

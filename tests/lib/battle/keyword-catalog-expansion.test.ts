@@ -6,7 +6,7 @@ import { detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { handlePostPlayCardDestination } from "@/lib/battle/card-consume";
-import { addGoldWithCombatText, payKillPayouts } from "@/lib/battle/combat-text";
+import { addGoldWithCombatText, payKillPayouts } from "@/lib/battle/player-rewards";
 import { tickEnemyPoison } from "@/lib/battle/status-ticks";
 import { applyWishEffect } from "@/lib/battle/wish";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";

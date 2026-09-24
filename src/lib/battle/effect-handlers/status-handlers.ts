@@ -1,7 +1,7 @@
 import type { EffectHandler } from "./handler-types";
 import { applyPotionMultiplier } from "../amount-helpers";
 import { addEnemyStatus, setPlayerStatus, type BattleState, type CombatTextEvent } from "../types";
-import { mergeCombatText } from "../combat-text";
+import { mergeCombatText } from "../combat-text-events";
 import { defineHandler } from "./handler-types";
 import { applyPlayerStatusEffect, applyCleanseHeals, removeHarmfulPlayerStatuses } from "../status-player";
 import { tryTriggerEnemyFreeze } from "../damage-status-riders";

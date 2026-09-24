@@ -11,8 +11,8 @@ import {
   applyHealingWithCombatText,
   applyHitEpilogue,
   gainManaWithCombatText,
-  mergeCombatText,
-} from "./combat-text";
+} from "./player-rewards";
+import { mergeCombatText } from "./combat-text-events";
 import {
   removeHarmfulPlayerStatuses,
   applyPlayerStatusEffect,

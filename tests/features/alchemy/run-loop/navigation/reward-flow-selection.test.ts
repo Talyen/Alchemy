@@ -13,14 +13,8 @@ import type { RewardState } from "@/lib/active-run-session";
 const lootProgress = { depth: 24, highestCompletedDifficulty: null };
 const input = {
   lootProgress,
-  gold: 10,
-  bossBonus: 5,
-  eliteBonus: 3,
-  generousBonus: 0,
-  wealthyBonus: 0,
-  talentGoldPerCombat: 2,
+  goldPayout: 15,
   materials: { ...emptyInventory(), wood: 2 },
-  trinketIds: [],
   runDeck: getStartingDeck("knight"),
   destinations: ["Campfire" as const],
   battleState: { currentEnemy: { enemyType: "normal" } } as never,
@@ -107,7 +101,7 @@ describe("progressive reward selection", () => {
     const types = new Set<string>();
     let mixedGear = false;
     for (let seed = 1; seed <= 100; seed += 1) {
-      const result = createCombatRewardState({ ...input, rng: createSeededRng(seed), goldMultiplier: 1.5 });
+      const result = createCombatRewardState({ ...input, rng: createSeededRng(seed), goldPayout: 23 });
       types.add(result.rewardType);
       expect(result.gold).toBe(23);
       expect(result.materials).toEqual(input.materials);
@@ -121,7 +115,7 @@ describe("progressive reward selection", () => {
     }
     expect(types).toEqual(new Set(["card", "gear", "boon", "trinket"]));
     expect(mixedGear).toBe(true);
-    const boss = createBossRewardState({ ...input, rng: () => 0.1, goldMultiplier: 2 });
+    const boss = createBossRewardState({ ...input, rng: () => 0.1, goldPayout: 34 });
     expect(boss.gold).toBe(34);
     expect(boss.materials).toEqual(input.materials);
   });

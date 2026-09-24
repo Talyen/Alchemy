@@ -5,7 +5,7 @@ import {
   addPlayerStatusWithCombatText,
   applyHitEpilogue,
   gainManaWithCombatText,
-} from "./combat-text";
+} from "./player-rewards";
 import { applyCrowdControlTriggerBonuses } from "./bonus-effects";
 import { tryTriggerEnemyCc } from "./status-cc";
 import { resolveStunTrigger } from "./status-stun-resolve";

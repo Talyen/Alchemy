@@ -163,7 +163,7 @@ const TRINKET_EFFECT_CONSUMERS: Record<keyof TrinketManifest, string> = {
   extraDrawPerBattle: "battle-setup.ts (cards per turn)",
   brassCenserProcChance: "follow-up-hit-resolution.ts",
   firstBurnDoubled: "player-damage-multipliers.ts",
-  boneCharmHealOnKill: "combat-text.ts (kill rewards)",
+  boneCharmHealOnKill: "player-rewards.ts (kill rewards)",
   forgeStunThreshold: "card-hit-reactions.ts",
   forgeStunAmount: "card-hit-reactions.ts",
   frozenHeartDamage: "damage-status-riders.ts",

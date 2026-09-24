@@ -5,7 +5,7 @@ import { applyTalentHitConversions, resolveFollowUpHit } from "@/lib/battle/foll
 import { applyLeechHealing, applyLeechHitHealing, applyHolyBlockChance } from "@/lib/battle/damage-rider-leech";
 import { applyPoisonTalentRiders, applyDamageStatuses } from "@/lib/battle/damage-status-riders";
 import { applyBlockReward, applyHealthLossTalentRewards, checkHealthThresholds } from "@/lib/battle/status-player";
-import { gainManaWithCombatText } from "@/lib/battle/combat-text";
+import { gainManaWithCombatText } from "@/lib/battle/player-rewards";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { companionLibrary } from "@/lib/game-data";

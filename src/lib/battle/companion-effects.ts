@@ -7,7 +7,7 @@ import { getModifiedCompanionEffects, type BattleCard } from "@/lib/game-data";
 import { isPlayerDefeated, type BattleState, type CombatTextEvent } from "./types";
 import { applyScaledLeechHealing, computeLeechHeal } from "./damage-rider-leech";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
-import { applyBlockReward, applyHealingWithCombatText, gainManaWithCombatText } from "./combat-text";
+import { applyBlockReward, applyHealingWithCombatText, gainManaWithCombatText } from "./player-rewards";
 import { rollTalentChance } from "./status-helpers";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { getBattleCompanionDamageModifiers } from "./companion-scaling";

@@ -1,5 +1,5 @@
 import { isPotionCard, getCardKeywords, type BattleCard } from "@/lib/game-data";
-import { addPlayerStatusWithCombatText } from "./combat-text";
+import { addPlayerStatusWithCombatText } from "./player-rewards";
 import {
   addForgeToPlayer,
   applyArmorReward,

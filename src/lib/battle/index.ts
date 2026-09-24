@@ -8,7 +8,7 @@ export {
 } from "./autoplay-policy";
 export { getBattleCardPlayTarget, isAttackCard } from "./card-classification";
 export { canPlayCard, playBattleCardResolved, type CardPlayOptions } from "./card-play";
-export { mergeCombatText } from "./combat-text";
+export { mergeCombatText } from "./combat-text-events";
 export { processCompanionTurnStart } from "./companion";
 export { getBattleCompanionDamageModifiers } from "./companion-scaling";
 export { drawCards } from "./draw";

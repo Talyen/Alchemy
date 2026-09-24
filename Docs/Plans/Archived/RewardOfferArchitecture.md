@@ -5,23 +5,8 @@ updated: 2026-09-24
 
 # Reward offer architecture
 
-## Objective
+`reward-offers.ts` owns category eligibility, hoard guarantees, and seeded choice sampling. `reward-flow.ts` adds settlement fields and continuation to the typed offer. This keeps combat, boss, and Wildwood choices consistent without changing the persisted reward shape, RNG sequence, payouts, or public call sites.
 
-Keep combat, boss, and Wildwood reward choices consistent while making their
-eligibility and selection rules easier to change. Preserve the existing reward
-state shape, seeded RNG sequence, settlement amounts, and public call sites.
+The implementation commit includes reward and route coverage; this archive does not retain a separate gate result.
 
-## Plan
-
-- [x] Move category availability, hoard guarantees, and choice sampling into one
-      reward-offer owner with a discriminated result: each reward kind carries
-      only the matching choice type.
-- [x] Keep `reward-flow.ts` responsible for settlement and reward continuation;
-      compose the offer with the existing persisted reward state there. Share
-      the common boss/combat payout fields without changing callers.
-- [x] Document the ownership boundary and verify existing reward selection,
-      route, and victory behavior with task-scoped checks.
-
-## Notes
-
-Keep durable rules in their canonical owner. For test selection and task-owned handoff, follow [CONTRIBUTING](../../../CONTRIBUTING.md#what-to-run-when-you-change) and [the plan lifecycle](../README.md#task-handoff).
+Implementation: `c02a7f56`. Current ownership: [Run loop overview](../../ARCHITECTURE.md#run-loop-overview).

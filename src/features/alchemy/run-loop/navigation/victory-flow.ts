@@ -129,9 +129,6 @@ export function computeVictoryRewardState(
   input: Pick<
     VictoryRewardsInput,
     | "lootProgress"
-    | "characterId"
-    | "selectedDifficulty"
-    | "unlockedTalents"
     | "runDeck"
     | "runBoons"
     | "equippedTrinketId"
@@ -140,50 +137,31 @@ export function computeVictoryRewardState(
     | "battleState"
     | "rollBossEnemyId"
   > & {
-    gold: number;
-    eliteBonus: number;
-    generousBonus: number;
-    wealthyBonus: number;
-    bossBonus: number;
+    goldPayout: number;
     materials: MaterialInventory;
     destinations: Destination[];
-    talentEffects?: TalentEffectManifest;
     gearAstralChanceBonus?: number;
-    purseGold?: number;
     labyrinthRewardModifiers?: readonly EncounterRewardTraitId[];
   },
   rng: () => number,
 ): RewardState {
-  const talentEffects = input.talentEffects ?? computeTalentEffects(input.unlockedTalents);
-  const goldMultiplier = getGoldMultiplier(input.characterId, input.selectedDifficulty);
   const gearAstralChanceBonus = input.gearAstralChanceBonus ?? 0;
   const activeTrinketEffectIds = combineTrinketEffectIds(input.runBoons, input.equippedTrinketId ?? null);
-  const inCombatGold = input.purseGold !== undefined ? Math.max(0, input.battleState.gold - input.purseGold) : 0;
-  // Boss and combat rewards share every input except the encounter bonus and
-  // the combat-only deck/elite/destination fields.
+  // Offer construction consumes the settled payout; it must not re-sum bonuses.
   const sharedFlowInput = {
     lootProgress: input.lootProgress,
-    gold: input.gold,
-    generousBonus: input.generousBonus,
-    wealthyBonus: input.wealthyBonus,
-    talentGoldPerCombat: victoryGoldPerCombat(talentEffects, input.battleState),
+    goldPayout: input.goldPayout,
     materials: input.materials,
-    trinketIds: activeTrinketEffectIds,
-    goldMultiplier,
     rng,
     excludedBoonIds: activeTrinketEffectIds,
     ownedTrinketIds: input.ownedTrinketIds ?? [],
     ownedUniqueIds: input.ownedUniqueIds ?? new Set(),
     gearAstralChanceBonus,
-    inCombatGold,
     rewardModifiers: input.labyrinthRewardModifiers ?? [],
   };
 
   if (input.battleState.currentEnemy.enemyType === ENEMY_TYPES.BOSS) {
-    return createBossRewardStateFromFlow({
-      ...sharedFlowInput,
-      bossBonus: input.bossBonus,
-    });
+    return createBossRewardStateFromFlow(sharedFlowInput);
   }
 
   return withSelectedBossForDestinations(
@@ -192,7 +170,6 @@ export function computeVictoryRewardState(
       ...sharedFlowInput,
       battleState: input.battleState,
       runDeck: input.runDeck,
-      eliteBonus: input.eliteBonus,
       destinations: input.destinations,
     }),
     input.rollBossEnemyId,
@@ -235,7 +212,7 @@ function computeVictorySettlement(
       ? Math.min(effectiveMaxHealth, input.battleState.playerHealth + victoryHealing)
       : input.battleState.playerHealth;
 
-  return { goldRoll, goldResult, materials, playerHealth, maxHealthDelta, effectiveMaxHealth };
+  return { goldResult, materials, playerHealth, maxHealthDelta, effectiveMaxHealth };
 }
 
 function prepareVictoryDestinations(
@@ -286,6 +263,7 @@ export function computeVictoryRewards(
     playerHealth: settlement.playerHealth,
     maxHealthDelta: settlement.maxHealthDelta,
   };
+  const goldPayout = settlement.goldResult.persistedGold - input.purseGold;
   if (input.contentSystemType === CONTENT_SYSTEMS.WILDWOOD) {
     return {
       ...commonResult,
@@ -299,7 +277,7 @@ export function computeVictoryRewards(
           ownedTrinketIds: input.ownedTrinketIds ?? [],
           ownedUniqueIds: input.ownedUniqueIds ?? new Set(),
         }),
-        gold: settlement.goldResult.persistedGold - input.purseGold,
+        gold: goldPayout,
         materials: settlement.materials,
       },
       destinationOfferState: input.destinationOfferState,
@@ -318,20 +296,15 @@ export function computeVictoryRewards(
   const rewardState = computeVictoryRewardState(
     {
       lootProgress: input.lootProgress,
-      characterId: input.characterId,
-      selectedDifficulty: input.selectedDifficulty,
-      unlockedTalents: input.unlockedTalents,
       runDeck: input.runDeck,
       runBoons: input.runBoons,
       equippedTrinketId: input.equippedTrinketId ?? null,
       ownedTrinketIds: input.ownedTrinketIds ?? [],
       ownedUniqueIds: input.ownedUniqueIds ?? new Set(),
       battleState: input.battleState,
-      purseGold: input.purseGold,
-      ...settlement.goldRoll,
+      goldPayout,
       materials: settlement.materials,
       destinations,
-      talentEffects,
       rollBossEnemyId: input.rollBossEnemyId,
       gearAstralChanceBonus: input.homesteadEffects.gearAstralChanceBonus,
       labyrinthRewardModifiers,

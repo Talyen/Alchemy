@@ -1,5 +1,5 @@
 import type { DamageType } from "@/lib/game-data";
-import { gainManaWithCombatText } from "./combat-text";
+import { gainManaWithCombatText } from "./player-rewards";
 import { rollTalentChance } from "./status-helpers";
 import type { BattleState, CombatTextEvent } from "./types";
 

@@ -2,7 +2,7 @@ import { resolveSecondaryAction } from "./action-context";
 import { BRAWLER_PENALTY_MULTIPLIER, ENEMY_ABILITY_TRAIT_REWARD, VAMPIRE_BLOOD_SCENT_DAMAGE } from "../game-constants";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { recordEnemyAbilityHit, type EnemyAbilityContext } from "./enemy-ability-context";
-import { applyArmorReward, applyHealingWithCombatText } from "./combat-text";
+import { applyArmorReward, applyHealingWithCombatText } from "./player-rewards";
 import { resolveEnemyAttackHit } from "./enemy-attack-hit";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { applyPlayerStatusFromAttack } from "./status-player";

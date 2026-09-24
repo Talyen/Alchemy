@@ -3,7 +3,7 @@ import { cardById, computeTalentEffects, type DamageType } from "@/lib/game-data
 import { resolveFollowUpHit, tryTalentTypedHit } from "@/lib/battle/follow-up-hit-resolution";
 import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
 import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/follow-up-hit-resolution";
-import { payKillPayouts } from "@/lib/battle/combat-text";
+import { payKillPayouts } from "@/lib/battle/player-rewards";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { detonateEnemyStatuses } from "@/lib/battle/dot-resolve";
 import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";

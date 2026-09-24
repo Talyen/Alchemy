@@ -4,7 +4,8 @@ import { HALF_DIVISOR, LABYRINTH_MODIFIER_CONFIG, REACTIVE_REWARD_CHANCES } from
 import { rollTalentChance } from "./status-helpers";
 import type { EnemyAttackEffect } from "@/lib/game-data";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
-import { mergeCombatText, addGoldWithCombatText, applyHealingWithCombatText } from "./combat-text";
+import { mergeCombatText } from "./combat-text-events";
+import { addGoldWithCombatText, applyHealingWithCombatText } from "./player-rewards";
 import { processCompanionTurnStart } from "./companion";
 import { purgeOnePlayerBenefit } from "./player-purge";
 import { halveRounded, scalePercent } from "./amount-helpers";

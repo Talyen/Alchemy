@@ -5,7 +5,7 @@ import { enemyBestiary } from "@/lib/game-data";
 import { getEnemyDamageMultiplier } from "@/lib/battle/status-helpers";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
 import { getEnemyAbilityPressure } from "@/lib/battle/battle-enemy-setup";
-import { applyHealingWithCombatText } from "@/lib/battle/combat-text";
+import { applyHealingWithCombatText } from "@/lib/battle/player-rewards";
 import { processEnemyRegeneration } from "@/lib/battle/enemy-turn-traits";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { resolvePlayerCrowdControlTriggers } from "@/lib/battle/status-cc";

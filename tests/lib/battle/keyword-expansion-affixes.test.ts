@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
-import { applyHealingWithCombatText, payKillPayouts } from "@/lib/battle/combat-text";
+import { applyHealingWithCombatText, payKillPayouts } from "@/lib/battle/player-rewards";
 import { resolvePendingBattleReactions } from "@/lib/battle/enemy-attack-damage";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
 import { resolveDeathsDoorGraceExpiry } from "@/lib/battle/player-turn-transition";

@@ -2,7 +2,8 @@ import { applyCardHealing } from "@/lib/battle/status-player";
 import { describe, expect, it } from "vitest";
 import { cardById } from "@/lib/game-data";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
-import { applyHealingWithCombatText, shouldShowCombatText } from "@/lib/battle/combat-text";
+import { applyHealingWithCombatText } from "@/lib/battle/player-rewards";
+import { shouldShowCombatText } from "@/lib/battle/combat-text-events";
 import type { CombatTextEvent } from "@/lib/battle";
 import { patchBattleState } from "../../fixtures/battle";
 

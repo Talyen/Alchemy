@@ -6,8 +6,7 @@ import { applyPercentBonus } from "./amount-helpers";
 import { FIRST_EFFECT_MULTIPLIER, HALF_DIVISOR } from "../game-constants";
 import { mergeCombatText } from "./combat-text-events";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
-export { mergeCombatText, shouldShowCombatText } from "./combat-text-events";
-export { applyEnemyHealingWithCombatText } from "./enemy-healing";
+import { emitReactiveThornsText, resolveHealingWithFeedback } from "./player-reward-feedback";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import type { PlayerStatusId } from "@/lib/game-data";
 import {
@@ -16,7 +15,6 @@ import {
   setFlag,
   setPlayerStatus,
   addPlayerStatus,
-  resolvePlayerHealing,
   gainMana,
   scaleGoldReward,
   hasEnemyTrait,
@@ -24,35 +22,6 @@ import {
   type CombatTextEvent,
 } from "./types";
 import { paceCombatMagnitude } from "./fight-pacing";
-
-export function emitOverhealBlockText(
-  stateBefore: Pick<BattleState, "playerStatuses">,
-  stateAfter: Pick<BattleState, "playerStatuses">,
-  combatTexts: CombatTextEvent[],
-) {
-  if (stateAfter.playerStatuses.block <= stateBefore.playerStatuses.block) return;
-  mergeCombatText(combatTexts, {
-    target: "player",
-    kind: "status",
-    stat: "block",
-    amount: stateAfter.playerStatuses.block - stateBefore.playerStatuses.block,
-  });
-}
-
-function emitReactiveThornsText(
-  stateBefore: Pick<BattleState, "playerStatuses">,
-  stateAfter: Pick<BattleState, "playerStatuses">,
-  combatTexts: CombatTextEvent[],
-) {
-  const thornsGained = stateAfter.playerStatuses.thorns - stateBefore.playerStatuses.thorns;
-  if (thornsGained <= 0) return;
-  mergeCombatText(combatTexts, {
-    target: "player",
-    kind: "status",
-    stat: "thorns",
-    amount: thornsGained,
-  });
-}
 
 function applyBloodCountessHealingReaction(
   state: BattleState,
@@ -77,16 +46,9 @@ export function applyHealingWithCombatText(
   if (amount <= 0) return state;
   const healAmount = options?.skipFightPacing ? amount : paceCombatMagnitude(state, amount, "player");
   const prevState = state;
-  const healing = resolvePlayerHealing(state, healAmount, options?.allowOverhealBlock);
+  const healing = resolveHealingWithFeedback(state, healAmount, combatTexts, options?.allowOverhealBlock);
   const nextState = healing.state;
   const actualHeal = healing.restored;
-  if (combatTexts) {
-    if (healing.effective > 0) {
-      mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healing.effective });
-    }
-    emitOverhealBlockText(prevState, nextState, combatTexts);
-    emitReactiveThornsText(prevState, nextState, combatTexts);
-  }
   const reacted = applyBlockGainRewards(
     applyBloodCountessHealingReaction(nextState, actualHeal, combatTexts),
     nextState.playerStatuses.block - prevState.playerStatuses.block,
@@ -206,15 +168,10 @@ export function addGoldWithCombatText(
 
 function applyKillRewardHealing(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
   if (amount <= 0) return state;
-  const previousState = state;
-  const healing = resolvePlayerHealing(state, paceCombatMagnitude(state, amount, "player"));
-  const nextState = healing.state;
-  if (healing.effective > 0) {
-    mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healing.effective });
-  }
-  emitOverhealBlockText(previousState, nextState, combatTexts);
-  emitReactiveThornsText(previousState, nextState, combatTexts);
-  return applyRestorativeCleanse(nextState, healing.restored, combatTexts);
+  // Defeat healing grants ordinary restore feedback and cleanse, but must not
+  // restart the full healing reaction chain while settling a kill.
+  const healing = resolveHealingWithFeedback(state, paceCombatMagnitude(state, amount, "player"), combatTexts);
+  return applyRestorativeCleanse(healing.state, healing.restored, combatTexts);
 }
 
 function applyKillRewardGold(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {

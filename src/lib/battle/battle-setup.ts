@@ -1,5 +1,5 @@
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
-import { applyHealingWithCombatText } from "./combat-text";
+import { applyHealingWithCombatText } from "./player-rewards";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import {

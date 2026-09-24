@@ -4,7 +4,7 @@ import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { repeatUniqueCardDamage } from "@/lib/battle/unique-card-effects";
-import { applyHealingWithCombatText } from "@/lib/battle/combat-text";
+import { applyHealingWithCombatText } from "@/lib/battle/player-rewards";
 import { companionLibrary } from "@/lib/game-data";
 
 describe("combat reward sources", () => {

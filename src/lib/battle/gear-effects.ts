@@ -1,7 +1,7 @@
 import type { GearEffectManifest } from "@/lib/gear";
 import { PERCENT_DENOMINATOR } from "../game-constants";
 import { applyPercentBonus } from "./amount-helpers";
-import { applyHitEpilogue } from "./combat-text";
+import { applyHitEpilogue } from "./player-rewards";
 import { getEnemyDamageMultiplier } from "./status-helpers";
 import { type BattleState, type CombatTextEvent } from "./types";
 import { dealEnemyScaledDamage } from "./scaled-damage";

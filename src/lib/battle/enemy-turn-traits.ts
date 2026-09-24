@@ -1,5 +1,6 @@
 import { recordEnemyAbilityActivation } from "./battle-metrics";
-import { applyEnemyHealingWithCombatText, mergeCombatText } from "./combat-text";
+import { applyEnemyHealingWithCombatText } from "./enemy-healing";
+import { mergeCombatText } from "./combat-text-events";
 import type { BestiaryEntry, DifficultyModifier } from "@/lib/game-data";
 import { COMBAT_ENCOUNTER_TRAIT_IDS } from "@/lib/content-systems/encounter-traits";
 import { logError } from "../error-logger";

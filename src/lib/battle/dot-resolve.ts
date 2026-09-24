@@ -18,7 +18,8 @@ import {
   getPoisonDamageMultiplierAgainstBleeding,
 } from "./status-helpers";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-threshold";
-import { addGoldWithCombatText, mergeCombatText, payKillPayouts } from "./combat-text";
+import { addGoldWithCombatText, payKillPayouts } from "./player-rewards";
+import { mergeCombatText } from "./combat-text-events";
 import { payPendingBleedLeech } from "./damage-rider-leech";
 import { applyBleedDamageDraw } from "./bleed-reactions";
 import { gearFrozenDamageMultiplier } from "./gear-effects";

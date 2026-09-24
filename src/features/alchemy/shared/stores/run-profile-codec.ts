@@ -15,7 +15,7 @@ type RunProfileSnapshot = PermanentProgressFields;
 // Explicit save shape: adding a field to PermanentProgressFields fails the
 // exhaustiveness check below until the save contract is updated deliberately.
 // `effects` is derived on hydrate and never persisted.
-const RUN_PROFILE_SAVE_KEYS = [
+export const RUN_PROFILE_SAVE_KEYS = [
   "gold",
   "talentXP",
   "unlockedTalents",

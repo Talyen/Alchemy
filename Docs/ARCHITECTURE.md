@@ -52,6 +52,13 @@ generation is not exposed through the content-system navigation API.
 
 The engine resolves gameplay before presentation; playback consumes committed results.
 
+`battle/player-rewards.ts` owns the coupled player reward reactions (Health,
+Mana, Gold, Block, Armor, cleanse, and defeat payouts). The base Health update
+and its feedback live in `battle/player-reward-feedback.ts`; defeat healing uses
+that base update without restarting the full healing reaction chain. Import
+`battle/combat-text-events.ts` for text aggregation and `battle/enemy-healing.ts`
+for enemy healing. Combat text is feedback, not a gameplay rule owner.
+
 - **Card play:** UI → `useBattleController.playCard()` → `playBattleCardResolved()` → `applyCardEffects()` → new `BattleState` → store.
 - **Enemy turn:** `commitEndTurn()` → `resolveBattleTurn(snapshot, context)` → committed result and XP → `playTurnFrames()` for presentation only.
 
@@ -86,15 +93,17 @@ store commits in domain command modules (`reward-commands`, `victory-commands`, 
 navigation plus sound in `run-flow-*.ts` shells composed by `run/run-flow.ts`.
 `shell/run-flow-engine.ts` wires the factories to route actions. Reading order
 for a change: `run-flow.ts` → the `run-flow-*` file for the outcome → its
-`*-commands` → the `navigation/` pure function. Gold: `victory-flow.ts` gold
-roll → `reward-math.ts` → `reward-flow.ts` reward states.
+`*-commands` → the `navigation/` pure function. Victory Gold is settled once in
+`reward-math.ts` through `victory-flow.ts`; the saved purse and every reward
+screen derive from that same settlement. `reward-flow.ts` receives the settled
+Gold payout and only assembles reward states.
 `reward-offers.ts` owns category eligibility, hoard guarantees, and seeded
 choice sampling. It returns a typed offer without run settlement fields;
-`reward-flow.ts` adds the reward state defaults, Gold, Materials, destinations,
+`reward-flow.ts` adds the reward state defaults, settled Gold, Materials, destinations,
 and post-claim routing.
 
-Single owners to know: `run/run-materials.ts` owns the "Wildwood awards no
-materials" rule for both during-run and end-of-run awards;
+Single owners to know: `run/run-materials.ts` owns the run-earned Material grant
+site inventory and end-of-run Material totals across all three modes;
 `battle/autoplay-driver.ts` owns the shared autoplay / auto-end-turn gate
 (`isBattlePlaybackBlocked`, `usePlaybackBlocked`); `battle/playback-lifetime.ts`
 owns explicit playback phases, binding readiness, cancellation, timers, transfers, and draw counts.

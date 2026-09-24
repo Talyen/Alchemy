@@ -1,4 +1,4 @@
-import { addGoldWithCombatText } from "@/lib/battle/combat-text";
+import { addGoldWithCombatText } from "@/lib/battle/player-rewards";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { describe, expect, it } from "vitest";
 import { dealDamage, makeEffect, makeTestCard, patchBattleState } from "../../fixtures/battle";

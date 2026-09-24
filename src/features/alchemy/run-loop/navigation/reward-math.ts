@@ -24,17 +24,6 @@ interface VictoryGoldResult {
   persistedGold: number;
 }
 
-interface RewardGoldInput {
-  baseGold: number;
-  bonusGold: number;
-  generousBonus: number;
-  wealthyBonus: number;
-  talentGoldPerCombat: number;
-  trinketIds: string[];
-  goldMultiplier: number;
-  inCombatGold?: number | undefined;
-}
-
 function hasRewardModifier(modifiers: EncounterRewardTraitId[], kind: EncounterRewardTraitId): boolean {
   return modifiers.includes(kind);
 }
@@ -98,21 +87,6 @@ function sumGoldBonuses(
   trinketIds: string[],
 ): number {
   return bonusGold + generousBonus + wealthyBonus + talentGoldPerCombat + getSmugglersMapGoldBonus(trinketIds);
-}
-
-export function computeRewardGold(input: RewardGoldInput): number {
-  return Math.round(
-    (input.baseGold +
-      (input.inCombatGold ?? 0) +
-      sumGoldBonuses(
-        input.bonusGold,
-        input.generousBonus,
-        input.wealthyBonus,
-        input.talentGoldPerCombat,
-        input.trinketIds,
-      )) *
-      input.goldMultiplier,
-  );
 }
 
 export function computeVictoryGold({

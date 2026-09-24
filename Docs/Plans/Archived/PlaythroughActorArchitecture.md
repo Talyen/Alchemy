@@ -1,13 +1,12 @@
 ---
 status: complete
-updated: 2026-09-22
+updated: 2026-09-24
 ---
 
 # Playthrough actor architecture
 
-The headless career actor previously combined offer construction for unrelated phases with replay dispatch in one mutable closure. Its string-keyed command map silently replaced duplicate offers.
+The headless actor formerly combined offers for unrelated phases with replay dispatch in one mutable closure; duplicate string keys could replace a command. A choice catalog now owns identities and rejects collisions, while separate between-run and run-activity builders register legal actions. The actor retains observation lifecycle and phase routing.
 
-1. Introduce a small choice catalog that owns offer identity, rejects duplicates, and dispatches commands registered by the current observation. Preserve the recorded `PlayerChoice` shape.
-2. Move between-run progression and Gear offers into a focused module. Keep production command calls and scoring rules intact.
-3. Move run-activity offers into a focused module. Keep the actor responsible for observation lifecycle and phase routing only.
-4. Protect catalog collisions and replay behavior with focused tests, run the existing headless career suite, and update the architecture owner.
+Recorded choice shapes, production commands, and scoring rules remain unchanged. The implementation commit includes choice-catalog coverage; this archive does not retain a separate gate result.
+
+Implementation: `0e140aa9`. Current owner: [Headless playthrough testing](../../PLAYTHROUGH_SIMULATION.md#owners-and-verification).
