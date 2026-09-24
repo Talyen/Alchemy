@@ -2,6 +2,7 @@ import { applyHitEpilogue, mergeCombatText } from "./combat-text";
 import { addEnemyStatus, damageEnemyHealth, type BattleState, type CombatTextEvent } from "./types";
 import { decayArmorAfterDamage } from "./status-helpers";
 import { paceCombatDamage } from "./fight-pacing";
+import { applyElementalDamageManaRestore } from "./elemental-mana";
 
 export interface DealEnemyScaledDamageOptions {
   multiplier?: number;
@@ -22,7 +23,8 @@ export function dealEnemyScaledDamage(
     mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat, amount: finalDamage });
   }
   const hit = damageEnemyHealth(state, finalDamage);
-  return options.riders ? options.riders(hit.state, finalDamage, combatTexts) : hit.state;
+  const resolved = options.riders ? options.riders(hit.state, finalDamage, combatTexts) : hit.state;
+  return applyElementalDamageManaRestore(resolved, stat, hit.healthDamage, combatTexts);
 }
 
 // Shared closer for scaled burn hits that also stack burn: forge bursts,

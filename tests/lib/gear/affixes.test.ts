@@ -85,6 +85,22 @@ describe("new ordinary affixes", () => {
       "block-on-wish",
       "leech-block-chance",
       "block-on-last-forge-spent",
+      "thorns-on-nature-without-thorns",
+      "poison-on-thorns-damage",
+      "heal-on-combat-gold",
+      "gold-on-kill-with-forge",
+      "thorns-on-leech-without-thorns",
+      "stun-on-leech-below-half",
+      "discount-on-empty-hand-wish",
+      "freeze-on-wish",
+      "armor-on-consume",
+      "holy-on-consume-without-mana",
+      "stun-on-armor-lost-to-attack",
+      "nature-leech-vs-poisoned",
+      "poison-bonus-vs-bleeding",
+      "physical-leech-below-half",
+      "block-on-holy-hit-without-block",
+      "holy-bonus-vs-stunned",
     ] as const;
     const reachable = new Set(
       Object.values(gearDefinitions)

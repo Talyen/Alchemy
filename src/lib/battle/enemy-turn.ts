@@ -110,7 +110,7 @@ function resolveEnemyPostTickResolution(
     nextState = processEncounterTraitActionDamage(nextState, texts);
   }
   if (isPlayerDefeated(nextState)) return { state: nextState, ...(afterAbilityState ? { afterAbilityState } : {}) };
-  nextState = resolveDeathsDoorGraceExpiry(nextState);
+  nextState = resolveDeathsDoorGraceExpiry(nextState, texts);
   if (!regenerationBlocked) nextState = processEnemyRegeneration(nextState, texts);
   if (afterAbilityState === undefined) return { state: nextState };
   return { state: nextState, afterAbilityState };
@@ -125,7 +125,10 @@ function resolveSkippedEnemyTurn(state: BattleState, startResult = resolveEnemyT
   if (enemyTurnStartState.enemyHealth <= 0 || isPlayerDefeated(enemyTurnStartState)) {
     return {
       kind: "skipped" as const,
-      ...finalizePlayerTurn(resolveDeathsDoorGraceExpiry(enemyTurnStartState), enemyTurnStartCombatTexts),
+      ...finalizePlayerTurn(
+        resolveDeathsDoorGraceExpiry(enemyTurnStartState, enemyTurnStartCombatTexts),
+        enemyTurnStartCombatTexts,
+      ),
       enemyTurnStartState,
       enemyTurnStartCombatTexts,
       enemyResolutionCombatTexts: [],
@@ -166,7 +169,10 @@ function resolveStandardEnemyTurn(nextState: BattleState) {
   if (enemyTurnStartState.enemyHealth <= 0 || isPlayerDefeated(enemyTurnStartState)) {
     return {
       kind: "standard" as const,
-      ...finalizePlayerTurn(resolveDeathsDoorGraceExpiry(enemyTurnStartState), enemyTurnStartCombatTexts),
+      ...finalizePlayerTurn(
+        resolveDeathsDoorGraceExpiry(enemyTurnStartState, enemyTurnStartCombatTexts),
+        enemyTurnStartCombatTexts,
+      ),
       enemyTurnStartState,
       enemyTurnStartCombatTexts,
       enemyResolutionCombatTexts: [],

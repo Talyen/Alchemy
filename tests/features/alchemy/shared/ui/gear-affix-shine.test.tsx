@@ -69,7 +69,7 @@ describe("gear affix shine rendering", () => {
     );
     expect(screen.getByText("Lifegiving").style.backgroundImage).toContain("rgb(248, 113, 113)");
     expect(screen.getByText("Lifegiving").closest("div")?.textContent).toContain("Restore 1 Health each turn");
-    expect(screen.getByText("Emberforged").closest("div")?.textContent).toContain("grants 2 Forge");
+    expect(screen.getByText("Emberforged").closest("div")?.textContent).toContain("gains 2 Forge");
     expect(screen.getByText("Emberforged").style.backgroundImage).toContain("rgb(251, 146, 60)");
     expect(screen.getByText("Stalwart").style.backgroundImage).toContain("rgb(103, 232, 249)");
   });

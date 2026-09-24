@@ -28,19 +28,21 @@ export function applyDodgeTalentStatuses(state: BattleState, combatTexts: Combat
     state.talentEffects.cleanseCcOnDodge &&
     (nextState.playerStatuses.stun > 0 || nextState.playerStatuses.freeze > 0)
   ) {
+    const removed = Number(nextState.playerStatuses.stun > 0) + Number(nextState.playerStatuses.freeze > 0);
     nextState = applyCleanseHeals(
       { ...nextState, playerStatuses: { ...nextState.playerStatuses, stun: 0, freeze: 0 } },
       combatTexts,
+      removed,
     );
   }
   const amount = state.talentEffects.cleanseStacksOnDodge;
   if (amount <= 0) return nextState;
 
-  let removedStatus = false;
+  let removedStatuses = 0;
   for (const status of ["burn", "poison", "bleed"] as const) {
     const previous = nextState.playerStatuses[status];
     nextState = setPlayerStatus(nextState, status, Math.max(0, previous - amount));
-    removedStatus ||= previous > 0 && nextState.playerStatuses[status] === 0;
+    removedStatuses += Number(previous > 0 && nextState.playerStatuses[status] === 0);
   }
-  return removedStatus ? applyCleanseHeals(nextState, combatTexts) : nextState;
+  return removedStatuses > 0 ? applyCleanseHeals(nextState, combatTexts, removedStatuses) : nextState;
 }

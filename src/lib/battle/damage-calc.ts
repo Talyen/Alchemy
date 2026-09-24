@@ -16,7 +16,9 @@ import { hasEncounterBenefit, reduceEnemyArmor, setFlag, type BattleState } from
 export { forgeAppliesToDamageType } from "./player-damage-base";
 
 function applyCrit(damage: number, state: BattleState) {
-  const critical = readCombatFlag(state, "nextHitCrit") || rollPercent(GLOBAL_CRIT_CHANCE_PERCENT, getBattleRng(state));
+  const chance =
+    GLOBAL_CRIT_CHANCE_PERCENT + (state.deathsDoorActive ? state.gearEffects.criticalChanceWhileDeathsDoor : 0);
+  const critical = readCombatFlag(state, "nextHitCrit") || rollPercent(chance, getBattleRng(state));
   return {
     damage:
       critical && damage > 0 ? damage * CRIT_MULTIPLIER + (state.talentEffects.homesteadCriticalDamage ?? 0) : damage,

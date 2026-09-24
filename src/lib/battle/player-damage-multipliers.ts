@@ -74,6 +74,9 @@ function computeTypeSpecificDamageBonus(
   if (effect.damageType === "holy" && state.enemyStatuses.burn > 0 && state.talentEffects.holyVsBurnMultiplier > 0) {
     bonus += state.talentEffects.holyVsBurnMultiplier / PERCENT_DENOMINATOR;
   }
+  if (effect.damageType === "holy" && state.enemyCC.stunSkipTurns > 0) {
+    bonus += state.gearEffects.holyBonusVsStunnedPercent / PERCENT_DENOMINATOR;
+  }
   if (isBleedLikeDamage(effect.damageType, state)) {
     if (isBelowHalfHealth(state) && state.talentEffects.bleedDesperateMultiplier > 1) {
       bonus += state.talentEffects.bleedDesperateMultiplier - 1;

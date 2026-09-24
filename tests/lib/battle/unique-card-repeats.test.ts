@@ -1,7 +1,6 @@
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { addPlayerStatus } from "@/lib/battle/types";
 import { repeatUniqueCardDamage } from "@/lib/battle/unique-card-effects";
-import { companionLibrary } from "@/lib/game-data";
 import { describe, expect, it } from "vitest";
 import * as uniqueGearBattle from "../../fixtures/unique-gear-battle";
 
@@ -17,7 +16,7 @@ describe("Unique Gear unique card repeats", () => {
       ],
     });
     const charged = addPlayerStatus(
-      battle({ gearEffects: { forgeReadiesPhysicalRepeat: 1, forgeOnBurnDealt: 2 } }),
+      battle({ gearEffects: { forgeReadiesPhysicalRepeat: 1, forgeOnBurnVsUnburned: 2 } }),
       "forge",
       4,
     );
@@ -28,22 +27,6 @@ describe("Unique Gear unique card repeats", () => {
     const second = play(result, attack("physical"));
     expect(second.uniqueGear.everkeenReady).toBe(false);
     expect(second.enemyHealth).toBeLessThan(result.enemyHealth - 20);
-  });
-
-  it("Huntsmaster repeats Companion damage but not Mana restoration, once per turn", () => {
-    const companion = {
-      ...companionLibrary.wolf!,
-      turnStartEffects: [
-        { kind: "damage" as const, damageType: "nature" as const, amount: 7 },
-        { kind: "restore-mana" as const, amount: 5 },
-      ],
-    };
-    const state = battle({ gearEffects: { firstArcheryCompanionAttack: 1 }, activeCompanion: companion });
-    const card = attack("physical", { tags: ["archery"] });
-    const result = play(state, card);
-    expect(result.enemyHealth).toBe(983);
-    expect(result.mana).toBe(8);
-    expect(play(result, card).enemyHealth).toBe(973);
   });
 
   it("Returning Gale repeats actual damage effects next turn without repeating utility or echoing forever", () => {

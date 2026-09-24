@@ -50,7 +50,7 @@ describe("card payment", () => {
       hand: [card],
       talentEffects: { firstHolyCardFree: true, firstArcheryCardFree: true },
       flags: { nextArcheryCardFree: true },
-      gearEffects: { firstElementalCardsFree: 1, blockReadiesFreePhysical: 1 },
+      gearEffects: { blockReadiesFreePhysical: 1 },
       uniqueGear: { knightsAnswerReady: true },
       encounterBenefits: ["quickdraw"],
       rng: () => 0.99,
@@ -59,12 +59,7 @@ describe("card payment", () => {
     expect(payment.effectiveCost).toBe(0);
     expect(payment.consumedFlags).toEqual(new Set(["firstHolyCardFreeUsed", "encounterArcheryUsed"]));
     expect(payment.disarmedFlags.size).toBe(0);
-    expect(payment.uniqueDiscounts).toEqual({
-      knightsAnswerReady: false,
-      freeHolyUsed: true,
-      freeBurnUsed: true,
-      freeFreezeUsed: true,
-    });
+    expect(payment.uniqueDiscounts).toEqual({ knightsAnswerReady: false });
     expect(canPlayCard(state, card, 0)).toBe(true);
     expect(canPlayCard(state, card, 0)).toBe(true);
     expect(state.flags.firstHolyCardFreeUsed).toBe(false);

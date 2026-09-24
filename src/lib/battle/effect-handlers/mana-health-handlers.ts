@@ -3,6 +3,7 @@ import type { EffectHandler } from "./handler-types";
 import { isPotionCard } from "@/lib/game-data";
 import {
   applyCardHealing,
+  addForgeToPlayer,
   applyBlockReward,
   applyHealthLossTalentRewards,
   checkHealthThresholds,
@@ -61,9 +62,19 @@ function burnEnemyOnManaCrystalLoss(
   if (crystalsLost <= 0 || state.talentEffects.burnDamageOnManaCrystalLoss <= 0 || state.enemyHealth <= 0) {
     return state;
   }
-  return dealScaledBurnWithStacks(state, state.talentEffects.burnDamageOnManaCrystalLoss * crystalsLost, combatTexts, {
-    multiplier: getEnemyDamageMultiplier(state, "burn"),
-  });
+  const burned = dealScaledBurnWithStacks(
+    state,
+    state.talentEffects.burnDamageOnManaCrystalLoss * crystalsLost,
+    combatTexts,
+    {
+      multiplier: getEnemyDamageMultiplier(state, "burn"),
+    },
+  );
+  return state.enemyStatuses.burn === 0 &&
+    burned.enemyHealth < state.enemyHealth &&
+    burned.gearEffects.forgeOnBurnVsUnburned > 0
+    ? addForgeToPlayer(burned, burned.gearEffects.forgeOnBurnVsUnburned, combatTexts)
+    : burned;
 }
 function loseMaxMana(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
   const newMaxMana = Math.max(MIN_MAX_MANA_FLOOR, state.maxMana - amount);

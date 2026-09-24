@@ -282,6 +282,8 @@ export function applyPlayerCombatDamage(
       deathsDoorActive: true,
       deathsDoorTriggeredTurn: state.turn,
       deathsDoorGraceTurnsRemaining: deathsDoorGraceTurns(state.talentEffects.deathsDoorExtension),
+      flags:
+        state.gearEffects.burnOnDeathsDoorEntry > 0 ? { ...state.flags, pendingEmberwakeDamage: true } : state.flags,
     };
   }
   if (state.deathsDoorActive) {

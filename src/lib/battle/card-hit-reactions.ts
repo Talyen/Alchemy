@@ -19,7 +19,7 @@ import {
   tryPoisonStunProc,
 } from "./follow-up-hit-resolution";
 import { rollTalentChance } from "./status-helpers";
-import { applyArmorReward, spendPlayerForgeForAttack } from "./status-player";
+import { applyArmorReward, applyBlockReward, spendPlayerForgeForAttack } from "./status-player";
 import { addPlayerStatusWithCombatText, applyHealingWithCombatText } from "./combat-text";
 import { addEnemyStatus, hasEncounterBenefit, type BattleState, type CombatTextEvent } from "./types";
 import { applyWishEffect } from "./wish";
@@ -30,8 +30,9 @@ function applyBurnDamageRiders(
   state: BattleState,
   modifiedDamage: number,
   combatTexts: CombatTextEvent[],
+  enemyWasBurningBefore: boolean,
 ): BattleState {
-  const nextState = applyBurnForgePayout(state, combatTexts);
+  const nextState = applyBurnForgePayout(state, combatTexts, enemyWasBurningBefore);
   if (rollTalentChance(state.talentEffects.burnStunChance, state)) {
     return resolveFollowUpHit(
       nextState,
@@ -46,6 +47,7 @@ export function applyNatureDamageRiders(
   state: BattleState,
   facts: HitFacts,
   combatTexts: CombatTextEvent[],
+  alreadyLeeches = false,
 ): BattleState {
   const { resolvedDamage: modifiedDamage, previousHealth: enemyHealthBeforeHit } = facts;
   if (modifiedDamage <= 0) return state;
@@ -61,8 +63,16 @@ export function applyNatureDamageRiders(
   if (rollTalentChance(state.talentEffects.healOnNatureDamageChance, state)) {
     nextState = applyHealingWithCombatText(nextState, modifiedDamage, combatTexts);
   }
-  if (state.talentEffects.natureLeechChance > 0 || state.gearEffects.natureLeechChance > 0) {
-    nextState = applyNatureLeech(nextState, modifiedDamage, combatTexts, enemyHealthBeforeHit);
+  const guaranteedLeech =
+    !alreadyLeeches && state.gearEffects.natureLeechVsPoisoned > 0 && facts.eligibility.enemyStatuses.poison > 0;
+  if (guaranteedLeech || state.talentEffects.natureLeechChance > 0 || state.gearEffects.natureLeechChance > 0) {
+    nextState = applyNatureLeech(
+      nextState,
+      guaranteedLeech ? facts.healthDamage : modifiedDamage,
+      combatTexts,
+      enemyHealthBeforeHit,
+      guaranteedLeech,
+    );
   }
   nextState = applyTalentHitConversions(nextState, "nature", modifiedDamage, combatTexts);
   if (rollTalentChance(state.talentEffects.naturePoisonChance, state)) {
@@ -106,10 +116,20 @@ export function applyHolyDamageRiders(
   card: BattleCard | undefined,
   facts: HitFacts,
   combatTexts: CombatTextEvent[],
+  heroAttack = true,
 ) {
   const { resolvedDamage: damage, previousHealth: enemyHealthBeforeHit, eligibility } = facts;
   if (damage <= 0) return state;
   let nextState = applyHolyLifesteal(state, damage, combatTexts, eligibility);
+  if (
+    heroAttack &&
+    card &&
+    facts.healthDamage > 0 &&
+    eligibility.playerStatuses.block === 0 &&
+    state.gearEffects.blockOnHolyHitWithoutBlock > 0
+  ) {
+    nextState = applyBlockReward(nextState, state.gearEffects.blockOnHolyHitWithoutBlock, combatTexts);
+  }
   nextState = applyHolyBlockChance(nextState, damage, combatTexts);
   nextState = applyDamageBlock(nextState, damage, combatTexts, eligibility);
   nextState = applyHolyTithe(nextState, damage, combatTexts);
@@ -185,7 +205,7 @@ export function applyCardStatusReactions(
   }
 
   if (effect.damageType === "burn" && modifiedDamage > 0) {
-    nextState = applyBurnDamageRiders(nextState, modifiedDamage, combatTexts);
+    nextState = applyBurnDamageRiders(nextState, modifiedDamage, combatTexts, enemyWasBurningBefore);
   }
 
   return nextState;
@@ -204,7 +224,11 @@ export function applyCardLeechAndFrozenReactions(
   const companionAttack = request.origin === "companion";
   if (
     effect.lifesteal ||
-    (effect.damageType === "physical" && enemyWasStunned && facts.eligibility.talentEffects.physicalLeechVsStunned)
+    (effect.damageType === "physical" && enemyWasStunned && facts.eligibility.talentEffects.physicalLeechVsStunned) ||
+    (effect.damageType === "physical" &&
+      !companionAttack &&
+      eligibility.playerHealth < eligibility.playerMaxHealth / 2 &&
+      eligibility.gearEffects.physicalLeechBelowHalfHealth > 0)
   ) {
     nextState = applyLifestealAndPlayerHitTriggers(
       nextState,

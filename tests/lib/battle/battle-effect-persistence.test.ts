@@ -1,4 +1,3 @@
-import { canPlayCard, playBattleCardResolved } from "@/lib/battle/card-play";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
@@ -52,15 +51,6 @@ describe("Talent battle effect persistence", () => {
 describe("Unique Gear battle effect persistence", () => {
   const { battle, attack, play } = uniqueGearBattle;
 
-  it("restoring a used free-card allowance never grants a second free play", () => {
-    const card = attack("burn");
-    const state = play(battle({ mana: 0, gearEffects: { firstElementalCardsFree: 1 } }), card);
-    const restored = PersistedBattleStateSchema.parse(JSON.parse(JSON.stringify(state)));
-    const ready = { ...restored, hand: [card], rng: () => 0.99 };
-    expect(canPlayCard(ready, card, 0)).toBe(false);
-    expect(playBattleCardResolved(ready, card.id, 0).state).toBe(ready);
-  });
-
   it("defaults older saves without changing their captured effects", () => {
     const saved = battle();
     const { uniqueGear: _unique, ...legacy } = saved;
@@ -69,12 +59,12 @@ describe("Unique Gear battle effect persistence", () => {
     expect(restored.gearEffects).toEqual(saved.gearEffects);
   });
 
-  it("preserves charges, spent allowances, and delayed arrows through reload", () => {
+  it("preserves charges and delayed arrows through reload", () => {
     const card = attack("physical", { tags: ["archery"] });
     const state = play(
       battle({
         gearEffects: { archeryEchoNextTurn: 1 },
-        uniqueGear: { wildheartReady: true, freeBurnUsed: true, spentForge: 3 },
+        uniqueGear: { wildheartReady: true, spentForge: 3 },
       }),
       card,
     );

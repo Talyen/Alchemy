@@ -80,7 +80,7 @@ describe("card reward interactions", () => {
     expect(result.playerHealth).toBe(13);
   });
 
-  it.each(["unique", "encounter"] as const)(
+  it.each(["talent", "encounter"] as const)(
     "preserves Divine Favor when %s already makes the Holy card free",
     (source) => {
       const card = makeTestCard({
@@ -92,7 +92,7 @@ describe("card reward interactions", () => {
         hand: [card],
         mana: 0,
         flags: { nextHolyCardFree: true },
-        gearEffects: { firstElementalCardsFree: source === "unique" ? 1 : 0 },
+        talentEffects: { firstHolyCardFree: source === "talent" },
         encounterBenefits: source === "encounter" ? ["fleeting"] : [],
       });
       const result = playBattleCardResolved(state, card.id, 0).state;

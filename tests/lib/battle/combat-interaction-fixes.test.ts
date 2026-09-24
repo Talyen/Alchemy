@@ -31,23 +31,6 @@ describe("combat interaction fixes", () => {
     expect(result.wishOptions?.length).toBeGreaterThan(0);
   });
 
-  it("Returning Flight recovers an unplayed card returned by Red Harvest", () => {
-    const arrow = { ...card("venom-arrow"), uid: 10 };
-    const state = patchBattleState({
-      rng: () => 0.99,
-      hand: [arrow],
-      deck: [],
-      discard: [],
-      nextCardUid: 11,
-      gearEffects: { returnFirstPhysicalCard: 1, recoverLastArcheryCard: 1 },
-      enemyCC: { stunSkipTurns: 1 },
-    });
-    const played = playBattleCardResolved(state, arrow.id, 0).state;
-    const next = endPlayerTurn(played).state;
-    expect(next.hand).toHaveLength(1);
-    expect(next.uniqueGear.returningFlightUid).toBe(next.hand[0]?.uid);
-  });
-
   it("stops enemy trait pulses when a status-tick cleanse kills Blood Countess", () => {
     const state = patchBattleState({
       rng: () => 0.99,

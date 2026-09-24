@@ -1,10 +1,9 @@
 import { resolveSecondaryAction } from "./action-context";
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
-import { MAX_HAND_SIZE, UNIQUE_GEAR_COMBAT } from "../game-constants";
+import { UNIQUE_GEAR_COMBAT } from "../game-constants";
 import { damageOnlyEffects } from "./card-classification";
 import { applyCardEffects } from "./effect-handlers";
 import { cardHasDamageType, cardHasKeyword, isNatureCard } from "./card-classification";
-import { processCompanionTurnStart } from "./companion";
 import { type BattleState, type CombatTextEvent, isPlayerDefeated } from "./types";
 
 export function repeatUniqueCardDamage(
@@ -37,15 +36,11 @@ export function prepareUniqueCardPlay(state: BattleState, card: BattleCard, mana
     state.mana > 0 &&
     manaCost >= state.mana &&
     (cardHasKeyword(card, "burn") || cardHasKeyword(card, "freeze"));
-  const hunt = gear.firstArcheryCompanionAttack > 0 && !unique.huntsmasterUsed && archery;
-  const harvest = gear.returnFirstPhysicalCard > 0 && !unique.redHarvestUsed && physical;
   const critical = gear.dodgeReadiesNatureCrit > 0 && unique.wildheartReady && nature;
   const damageEffects: Array<Extract<BattleCardEffect, { kind: "damage" }>> = [];
   return {
     damageEffects,
     repeatCount: Number(everkeen) + Number(finalSpark),
-    hunt,
-    harvest,
     critical,
     state: {
       ...state,
@@ -53,8 +48,6 @@ export function prepareUniqueCardPlay(state: BattleState, card: BattleCard, mana
         ...unique,
         everkeenReady: everkeen ? false : unique.everkeenReady,
         wildheartReady: critical ? false : unique.wildheartReady,
-        redHarvestUsed: unique.redHarvestUsed || harvest,
-        huntsmasterUsed: unique.huntsmasterUsed || hunt,
         finalSparkUsed: unique.finalSparkUsed || finalSpark,
         wrenflightActive: unique.wrenflightActive || (gear.archeryDodgeAndDraw > 0 && archery),
         lastArcheryUid: gear.recoverLastArcheryCard > 0 && archery ? (card.uid ?? null) : unique.lastArcheryUid,
@@ -78,32 +71,7 @@ export function finishUniqueCardDamage(
     };
   }
   for (let i = 0; i < prepared.repeatCount; i++) next = repeatUniqueCardDamage(next, damageCard, combatTexts);
-  return prepared.hunt ? processCompanionTurnStart(next, combatTexts, { damageOnly: true }) : next;
-}
-
-export function returnHarvestCard(state: BattleState, card: BattleCard): BattleState {
-  if (card.consume || state.hand.length >= MAX_HAND_SIZE || isPlayerDefeated(state)) return state;
-  // Cards in battle always receive a uid from the draw system, so uid matching
-  // reliably identifies cloned cards that lost reference equality.
-  const index = state.discard.findLastIndex(
-    (candidate) => candidate === card || (card.uid !== undefined && candidate.uid === card.uid),
-  );
-  if (index < 0) return state;
-  const returned = { ...card, uid: state.nextCardUid };
-  return {
-    ...state,
-    hand: [...state.hand, returned],
-    discard: state.discard.filter((_, i) => i !== index),
-    nextCardUid: state.nextCardUid + 1,
-    uniqueGear: {
-      ...state.uniqueGear,
-      redHarvestUid: returned.uid,
-      lastArcheryUid:
-        card.uid !== undefined && state.uniqueGear.lastArcheryUid === card.uid
-          ? returned.uid
-          : state.uniqueGear.lastArcheryUid,
-    },
-  };
+  return next;
 }
 
 export function processArcheryEchoes(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {

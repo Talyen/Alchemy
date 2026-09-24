@@ -78,7 +78,7 @@ describe("combat perk regressions", () => {
     const state = patchBattleState({
       hand: [card],
       rng: () => 0.99,
-      gearEffects: { forgeOnBurnDealt: 1 },
+      gearEffects: { forgeOnBurnVsUnburned: 1 },
       talentEffects: { flatForgeGained: 1 },
     });
     const result = playBattleCardResolved(state, card.id, 0).state;

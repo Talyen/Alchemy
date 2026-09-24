@@ -47,6 +47,7 @@ function applyDodgeDrawAndPlay(state: BattleState, combatTexts: CombatTextEvent[
   };
 
   const playTwice = shouldElementalTalentRepeat(nextState, drawn.card);
+  const hadNoThornsOnPlay = nextState.playerStatuses.thorns === 0;
   const chained = resolveCardEffectChain(nextState, drawn.card, combatTexts, { skipTalentRewards: playTwice });
   nextState = chained.state;
   const repeatedDamageEffects: NonNullable<CardEffectResolutionContext["damageEffects"]> = [];
@@ -59,7 +60,7 @@ function applyDodgeDrawAndPlay(state: BattleState, combatTexts: CombatTextEvent[
       enemyFreezeSkipTurnsAtStart: nextState.enemyCC.freezeSkipTurns,
     });
     nextState = applyMortarAndPestlePotionUse(nextState, drawn.card, combatTexts);
-    nextState = applyCardPlayTalentRewards(nextState, drawn.card, combatTexts);
+    nextState = applyCardPlayTalentRewards(nextState, drawn.card, combatTexts, hadNoThornsOnPlay);
   }
   nextState = processEncounterTraitCardAction(nextState, drawn.card, combatTexts, chained.attackAttempted);
   if (playTwice) {

@@ -87,7 +87,6 @@ describe("normalizePersistedBattleState", () => {
       expect(normalized.gearEffects[key]).toBe(0);
     }
     expect(normalized.flags.firstHolyCardFreeUsed).toBe(false);
-    expect(normalized.flags.emberforgedUsedThisTurn).toBe(false);
     expect(normalized.flags.pendingCinderSkinReaction).toBe(false);
   });
 
@@ -179,12 +178,6 @@ describe("normalizePersistedBattleState", () => {
 
     expect(normalized.talentEffects.burnDamagePerManaCrystal).toBe(MANABURN_DAMAGE_PERCENT);
   });
-});
-
-it("preserves the spent Emberforged trigger when resuming a turn", () => {
-  const state = defaultBattleState();
-  state.flags.emberforgedUsedThisTurn = true;
-  expect(normalizePersistedBattleState(state).flags.emberforgedUsedThisTurn).toBe(true);
 });
 
 describe("repairPersistedTrinketManifest (owned by normalize-persisted-battle-state)", () => {

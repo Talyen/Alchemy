@@ -71,17 +71,24 @@ export function applyNatureGoldReward(state: BattleState, damage: number, combat
 
 // Shared burn-hit forge payout (card hits and talent follow-ups grant the
 // same forge; kept here so the two call sites cannot drift apart).
-export function applyBurnForgePayout(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+export function applyBurnForgePayout(
+  state: BattleState,
+  combatTexts: CombatTextEvent[],
+  enemyWasBurningBefore: boolean,
+): BattleState {
   let nextState = state;
   if (state.talentEffects.forgeOnBurnDealt > 0) {
     nextState = addForgeToPlayer(nextState, state.talentEffects.forgeOnBurnDealt, combatTexts);
   }
-  if (state.gearEffects.forgeOnBurnDealt > 0 && !state.flags.emberforgedUsedThisTurn) {
-    nextState = setFlag(
-      addForgeToPlayer(nextState, state.gearEffects.forgeOnBurnDealt, combatTexts),
-      "emberforgedUsedThisTurn",
-      true,
-    );
-  }
-  return nextState;
+  return applyEmberforgedPayout(nextState, combatTexts, enemyWasBurningBefore);
+}
+
+export function applyEmberforgedPayout(
+  state: BattleState,
+  combatTexts: CombatTextEvent[],
+  enemyWasBurningBefore: boolean,
+): BattleState {
+  return state.gearEffects.forgeOnBurnVsUnburned > 0 && !enemyWasBurningBefore
+    ? addForgeToPlayer(state, state.gearEffects.forgeOnBurnVsUnburned, combatTexts)
+    : state;
 }

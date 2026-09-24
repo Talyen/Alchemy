@@ -178,8 +178,9 @@ function applyStunStatusRider(
   actualDamage: number,
   combatTexts: CombatTextEvent[],
   preHitHealth: number,
+  fromHolyDamage = false,
 ): BattleState {
-  return resolveStunTrigger(addEnemyStatus(state, "stun", actualDamage), combatTexts, preHitHealth);
+  return resolveStunTrigger(addEnemyStatus(state, "stun", actualDamage), combatTexts, preHitHealth, fromHolyDamage);
 }
 
 function applyFrozenHeartDamage(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
@@ -272,7 +273,11 @@ function applyPhysicalBleedChance(
 }
 
 function applyPhysicalBleedDetonate(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
-  if (!state.talentEffects.physicalDetonatesBleed || state.enemyStatuses.bleed <= 0) return state;
+  if (
+    (!state.talentEffects.physicalDetonatesBleed && state.gearEffects.physicalCritDetonatesBleed <= 0) ||
+    state.enemyStatuses.bleed <= 0
+  )
+    return state;
   return detonateEnemyStatuses(state, ["bleed"], combatTexts);
 }
 
@@ -344,7 +349,7 @@ export function applyDamageStatuses(
       );
     case "holy":
       if (state.gearEffects.holyStunBuildupGold > 0 && actualDamage > 0) {
-        return applyStunStatusRider(state, actualDamage, combatTexts, preHitHealth);
+        return applyStunStatusRider(state, actualDamage, combatTexts, preHitHealth, true);
       }
       return state;
     case "nature":

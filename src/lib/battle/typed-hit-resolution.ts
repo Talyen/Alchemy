@@ -6,6 +6,7 @@ import { applyDamageStatuses } from "./damage-status-riders";
 import { decayArmorAfterDamage } from "./status-helpers";
 import { applyIronGuardReward } from "./status-player";
 import { applyBleedDamageDraw } from "./bleed-reactions";
+import { applyElementalDamageManaRestore } from "./elemental-mana";
 import { type BattleState, type CombatTextEvent } from "./types";
 
 export function resolveTypedEnemyHit(
@@ -34,6 +35,7 @@ export function resolveTypedEnemyHit(
   if (effect.damageType === "poison" && options.allowTalentChanceProcs !== false && options.onPoisonDamage) {
     next = options.onPoisonDamage(next, resolvedDamage, combatTexts);
   }
+  next = applyElementalDamageManaRestore(next, effect.damageType, facts.healthDamage, combatTexts);
   if (resolvedDamage > 0) {
     mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: effect.damageType, amount: resolvedDamage });
   }

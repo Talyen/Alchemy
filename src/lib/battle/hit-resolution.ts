@@ -1,5 +1,4 @@
 import { applyHitHealth, type CardHitFacts } from "./hit-facts";
-import { beneficialEnemyStatusIds } from "@/lib/game-data";
 import type { HitRequest, CardHitRequest } from "./hit-request";
 import { BLACKFLETCH_EXECUTE_HEALTH_PERCENT, PERCENT_DENOMINATOR } from "../game-constants";
 import { halveRounded } from "./amount-helpers";
@@ -10,7 +9,8 @@ import { detonateEnemyStatuses } from "./dot-resolve";
 import { resolveFollowUpHit, tryPoisonStunProc, tryTalentTypedHit } from "./follow-up-hit-resolution";
 import { decayArmorAfterDamage, rollTalentChance } from "./status-helpers";
 import { addForgeToPlayer } from "./status-player";
-import { addEnemyStatus, setEnemyStatus, type BattleState, type CombatTextEvent } from "./types";
+import { addEnemyStatus, type BattleState, type CombatTextEvent } from "./types";
+import { applyPurgeGearRewards, purgeEnemyBenefits } from "./enemy-purge";
 import {
   applyHolyDamageRiders,
   applyNatureDamageRiders,
@@ -20,6 +20,8 @@ import {
 } from "./card-hit-reactions";
 import { applyIronGuardReward } from "./status-player";
 import { applyBleedDamageDraw } from "./bleed-reactions";
+import { drawKeywordCard } from "./draw";
+import { applyElementalDamageManaRestore } from "./elemental-mana";
 
 /** Direct player hits have explicit recipes; shallow sources never re-enter card reactions. */
 export function resolvePlayerHit(state: BattleState, request: HitRequest, combatTexts: CombatTextEvent[]): BattleState {
@@ -56,6 +58,7 @@ function resolveReflectedHolyHit(state: BattleState, blockLost: number, combatTe
     facts.previousHealth,
   );
   nextState = applyHolyDamageRiders(nextState, undefined, facts, combatTexts);
+  nextState = applyElementalDamageManaRestore(nextState, "holy", facts.healthDamage, combatTexts);
   return applyHitEpilogue(nextState, facts.previousHealth, facts.enemyWasAlive, combatTexts, preDamageStatuses);
 }
 
@@ -80,17 +83,10 @@ function applyArcheryDetonate(state: BattleState, combatTexts: CombatTextEvent[]
 function resolveAttackPurgeHit(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   if (state.gearEffects.attackPurgeOncePerTurn <= 0 || state.uniqueGear.wardbreakerPurgeUsed || state.enemyHealth <= 0)
     return state;
-  const mitigation = state.enemyMitigation;
-  const category =
-    mitigation.armor > 0 ? "armor" : mitigation.block > 0 ? "block" : mitigation.forge > 0 ? "forge" : null;
-  const status = beneficialEnemyStatusIds.find((candidate) => state.enemyStatuses[candidate] > 0);
-  const purged = category ?? status;
-  if (!purged) return state;
-  const nextState = category
-    ? { ...state, enemyMitigation: { ...mitigation, [category]: 0 } }
-    : setEnemyStatus(state, status!, 0);
-  combatTexts.push({ target: "enemy", kind: "notice", stat: purged, text: "Purged", signal: "purge" });
-  return { ...nextState, uniqueGear: { ...nextState.uniqueGear, wardbreakerPurgeUsed: true } };
+  const purged = purgeEnemyBenefits(state, 1, combatTexts);
+  if (purged.removed === 0) return state;
+  const marked = { ...purged.state, uniqueGear: { ...purged.state.uniqueGear, wardbreakerPurgeUsed: true } };
+  return applyPurgeGearRewards(marked, purged.removed, combatTexts);
 }
 
 function applyCardArcheryReactions(
@@ -149,13 +145,23 @@ function resolveCardHit(state: BattleState, request: CardHitRequest, combatTexts
   nextState = applyCardStatusReactions(nextState, request, facts, combatTexts);
   nextState = applyCardLeechAndFrozenReactions(nextState, request, facts, combatTexts);
   nextState = applyCardArcheryReactions(nextState, request, facts, combatTexts);
+  if (
+    facts.critical &&
+    modifiedDamage > 0 &&
+    card.tags?.includes("archery") &&
+    nextState.gearEffects.archeryCritDrawsCompanion > 0
+  ) {
+    nextState = drawKeywordCard(nextState, "companion");
+  }
   if (effect.damageType === "holy") {
-    nextState = applyHolyDamageRiders(nextState, card, facts, combatTexts);
+    nextState = applyHolyDamageRiders(nextState, card, facts, combatTexts, !companionAttack);
   }
 
   if (effect.damageType === "nature") {
-    nextState = applyNatureDamageRiders(nextState, facts, combatTexts);
+    nextState = applyNatureDamageRiders(nextState, facts, combatTexts, effect.lifesteal === true);
   }
+
+  nextState = applyElementalDamageManaRestore(nextState, effect.damageType, facts.healthDamage, combatTexts);
 
   if (modifiedDamage > 0) {
     mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: effect.damageType, amount: modifiedDamage });

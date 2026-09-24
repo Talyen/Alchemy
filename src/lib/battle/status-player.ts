@@ -192,9 +192,14 @@ function applyForgeBurnBurst(state: BattleState, oldForge: number, newForge: num
     state.talentEffects.forgeBurnThreshold,
     (s) => {
       if (s.enemyHealth <= 0) return s;
-      return dealScaledBurnWithStacks(s, s.talentEffects.forgeBurnDamage, combatTexts ?? [], {
+      const burned = dealScaledBurnWithStacks(s, s.talentEffects.forgeBurnDamage, combatTexts ?? [], {
         multiplier: getEnemyDamageMultiplier(s, "burn"),
       });
+      return s.enemyStatuses.burn === 0 &&
+        burned.enemyHealth < s.enemyHealth &&
+        burned.gearEffects.forgeOnBurnVsUnburned > 0
+        ? addForgeToPlayer(burned, burned.gearEffects.forgeOnBurnVsUnburned, combatTexts)
+        : burned;
     },
     state,
   );

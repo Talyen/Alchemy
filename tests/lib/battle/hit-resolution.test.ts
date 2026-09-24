@@ -1,10 +1,9 @@
-import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { describe, expect, it } from "vitest";
 import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
 import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
 import { defaultTalentEffects } from "@/lib/battle";
-import type { CombatTextEvent } from "@/lib/battle/types";
+import { setEnemyStatus, type CombatTextEvent } from "@/lib/battle/types";
 import { dealDamage, makeCombatTexts, makeTestCard, patchBattleState, seededRng } from "../../fixtures/battle";
 import {
   defaultPlayerStatusValues,
@@ -91,11 +90,11 @@ describe("damage riders via applyCardEffects", () => {
     expect(result.playerStatuses.forge).toBeGreaterThanOrEqual(3);
   });
 
-  it("applies forge on burn via gear forgeOnBurnDealt", () => {
+  it("applies Emberforged when Burn hits an unburned enemy", () => {
     const state = patchBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
-      gearEffects: { forgeOnBurnDealt: 2 },
+      gearEffects: { forgeOnBurnVsUnburned: 2 },
       rng: () => 0.5,
       deck: [],
       hand: [],
@@ -219,13 +218,13 @@ describe("damage riders via applyCardEffects", () => {
   });
 });
 
-describe("Emberforged turn limit", () => {
-  it("grants Forge once across multiple Burn hits and refreshes next turn", () => {
+describe("Emberforged ignition", () => {
+  it("grants Forge when Burn is absent, then waits for Burn to clear", () => {
     const state = patchBattleState({
       enemyHealth: 1000,
       enemyMaxHealth: 1000,
       playerStatuses: defaultPlayerStatusValues(),
-      gearEffects: { forgeOnBurnDealt: 2 },
+      gearEffects: { forgeOnBurnVsUnburned: 2 },
       talentEffects: { ...defaultTalentEffects, forgeOnBurnDealt: 3 },
     });
     const card = makeTestCard({ effects: [{ kind: "damage", damageType: "burn", amount: 1 }] });
@@ -233,9 +232,7 @@ describe("Emberforged turn limit", () => {
     const second = applyCardEffects(first, card, []);
     expect(first.playerStatuses.forge).toBe(5);
     expect(second.playerStatuses.forge).toBe(8);
-    expect(second.flags.emberforgedUsedThisTurn).toBe(true);
-    const refreshed = advanceToPlayerTurn(second, []);
-    expect(refreshed.flags.emberforgedUsedThisTurn).toBe(false);
+    const refreshed = setEnemyStatus(second, "burn", 0);
     const third = applyCardEffects(refreshed, card, []);
     expect(third.playerStatuses.forge).toBe(refreshed.playerStatuses.forge + 5);
   });

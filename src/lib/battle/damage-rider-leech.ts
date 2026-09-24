@@ -23,6 +23,7 @@ import { scaledGearLeechHeal } from "./gear-effects";
 import { rollTalentChance } from "./status-helpers";
 import { getBattleRng, pickRandom } from "@/lib/rng";
 import { applyPercentBonus, scalePercent } from "./amount-helpers";
+import { resolveStunFollowUpHit } from "./stun-follow-up-hit";
 import { FIRST_EFFECT_MULTIPLIER, HALF_DIVISOR, LEECH_HEAL_FRACTION, PERCENT_DENOMINATOR } from "../game-constants";
 
 export function computeLeechHeal(damageDealt: number): number {
@@ -61,6 +62,21 @@ export function applyLeechHealing(
   let restored = options.cardHealing
     ? applyCardHealing(state, healing, combatTexts, { skipFightPacing: true, allowOverhealBlock: false })
     : applyHealingWithCombatText(state, healing, combatTexts, { skipFightPacing: true });
+  if (actualHealing > 0 && state.playerStatuses.thorns === 0 && state.gearEffects.thornsOnLeechWithoutThorns > 0) {
+    restored = addPlayerStatusWithCombatText(
+      restored,
+      "thorns",
+      state.gearEffects.thornsOnLeechWithoutThorns,
+      combatTexts,
+    );
+  }
+  if (
+    actualHealing > 0 &&
+    state.playerHealth < state.playerMaxHealth / HALF_DIVISOR &&
+    state.gearEffects.stunOnLeechBelowHalfHealth > 0
+  ) {
+    restored = resolveStunFollowUpHit(restored, state.gearEffects.stunOnLeechBelowHalfHealth, combatTexts);
+  }
   if (actualHealing > 0 && rollTalentChance(state.gearEffects.leechBlockChance, state)) {
     restored = applyBlockReward(restored, actualHealing, combatTexts, { skipFightPacing: true });
   }

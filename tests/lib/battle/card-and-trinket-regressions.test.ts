@@ -7,7 +7,6 @@ import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
 import { tickEnemyStatuses } from "@/lib/battle/status-ticks";
 import { validateCardDescriptionParity } from "@/lib/content-validation/card-parity";
 import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
-import { returnHarvestCard } from "@/lib/battle/unique-card-effects";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 const drawingPotion = {
@@ -112,20 +111,5 @@ describe("player-facing card and trinket regressions", () => {
     expect(result.flags.secondWindTriggered).toBe(true);
     expect(result.enemyHealth).toBeGreaterThan(2);
     expect(result.playerHealth).toBe(20);
-  });
-
-  it("returnHarvestCard matches cloned card with identical uid in discard", () => {
-    const card = makeTestCard({ id: "strike", uid: 42 });
-    const clonedCard = { ...card };
-    const state = patchBattleState({
-      hand: [],
-      discard: [clonedCard],
-      nextCardUid: 100,
-    });
-    const result = returnHarvestCard(state, card);
-    expect(result.hand).toHaveLength(1);
-    expect(result.discard).toHaveLength(0);
-    expect(result.hand[0]!.uid).toBe(100);
-    expect(result.uniqueGear.redHarvestUid).toBe(100);
   });
 });

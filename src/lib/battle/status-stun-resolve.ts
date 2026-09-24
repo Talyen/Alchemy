@@ -63,22 +63,21 @@ function applyStunTrinketEffects(state: BattleState, combatTexts?: CombatTextEve
   return nextState;
 }
 
-function applyStunUniqueGearEffects(state: BattleState, combatTexts: CombatTextEvent[] | undefined): BattleState {
-  let nextState = state;
-  if (nextState.gearEffects.holyStunBuildupGold > 0 && !nextState.flags.verdictGoldPaid) {
-    nextState = addGoldWithCombatText(
-      setFlag(nextState, "verdictGoldPaid", true),
-      nextState.gearEffects.holyStunBuildupGold,
-      combatTexts ?? [],
-    );
-  }
-  return nextState;
+function applyStunUniqueGearEffects(
+  state: BattleState,
+  combatTexts: CombatTextEvent[] | undefined,
+  fromHolyDamage: boolean,
+): BattleState {
+  return fromHolyDamage && state.gearEffects.holyStunBuildupGold > 0
+    ? addGoldWithCombatText(state, state.gearEffects.holyStunBuildupGold, combatTexts ?? [])
+    : state;
 }
 
 export function resolveStunTrigger(
   state: BattleState,
   combatTexts?: CombatTextEvent[],
   preHitHealth = state.enemyHealth,
+  fromHolyDamage = false,
 ) {
   const threshold = Math.max(
     MIN_CC_THRESHOLD_FRACTION,
@@ -114,6 +113,6 @@ export function resolveStunTrigger(
   nextState = applyStunTriggerBonuses(nextState, combatTexts);
   nextState = applyStunGearDamage(nextState, combatTexts);
   nextState = applyStunTrinketEffects(nextState, combatTexts);
-  nextState = applyStunUniqueGearEffects(nextState, combatTexts);
+  nextState = applyStunUniqueGearEffects(nextState, combatTexts, fromHolyDamage);
   return nextState;
 }

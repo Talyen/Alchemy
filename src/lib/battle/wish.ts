@@ -200,7 +200,23 @@ export function applyWishEffect(
       next = applyWishGemsGoldTrigger(next, combatTexts);
       next = applyWishHealthAndStatusTriggers(next, combatTexts, eligibility);
       next = applyWishDrawTriggers(next);
+      if (eligibility.hand.length === 0 && next.gearEffects.nextCardDiscountOnEmptyHandWish > 0) {
+        next = {
+          ...next,
+          flags: {
+            ...next.flags,
+            nextCardCostReduction: next.flags.nextCardCostReduction + next.gearEffects.nextCardDiscountOnEmptyHandWish,
+          },
+        };
+      }
       next = applyWishBurnTrigger(next, combatTexts, eligibility);
+      if (next.gearEffects.freezeOnWish > 0) {
+        next = resolveFollowUpHit(
+          next,
+          { source: "player-follow-up", damageType: "freeze", amount: next.gearEffects.freezeOnWish },
+          combatTexts,
+        );
+      }
       next = applyWishManaTrigger(next, combatTexts, eligibility);
       next = applyWishTrinketTrigger(next, combatTexts);
       return applyWishDesperateTrigger(next, combatTexts, eligibility);

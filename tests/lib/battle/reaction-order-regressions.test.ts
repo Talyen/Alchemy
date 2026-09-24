@@ -11,13 +11,9 @@ import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
-import { resolveEnemyAttackHit } from "@/lib/battle/enemy-attack-hit";
 import { createBattleStartState } from "@/lib/battle/battle-setup";
 import { getBattleCompanionDamageModifiers } from "@/lib/battle/companion-scaling";
-import { applyDrawResult, drawFromState, drawKeywordCard } from "@/lib/battle/draw";
-import { computeEffectiveCost } from "@/lib/battle/card-cost-rules";
-import { battleSnapshot, type BattleState } from "@/lib/battle/types";
-import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persisted-battle-state";
+import { setEnemyStatus } from "@/lib/battle/types";
 import { makeTestCard, regressionBattle as battle } from "../../fixtures/battle";
 
 describe("card and turn reaction ordering", () => {
@@ -56,19 +52,18 @@ describe("card and turn reaction ordering", () => {
     expect(result.playerStatuses.forge).toBe(2);
   });
 
-  it("Phoenix shares Emberforged's once-per-turn reward with card attacks", () => {
+  it("Phoenix and card attacks earn Emberforged only while reigniting Burn", () => {
     let state = battle({
       activeCompanion: companionLibrary.phoenix,
-      gearEffects: { forgeOnBurnDealt: 2 },
+      gearEffects: { forgeOnBurnVsUnburned: 2 },
     });
     state = processCompanionTurnStart(state, []);
     expect(state.playerStatuses.forge).toBe(2);
-    expect(state.flags.emberforgedUsedThisTurn).toBe(true);
     state = processCompanionTurnStart(state, []);
     const card = cardById.fireball!;
     state = playBattleCardResolved({ ...state, hand: [card] }, card.id, 0).state;
     expect(state.playerStatuses.forge).toBe(2);
-    state = processCompanionTurnStart(advanceToPlayerTurn(state), []);
+    state = processCompanionTurnStart(setEnemyStatus(state, "burn", 0), []);
     expect(state.playerStatuses.forge).toBe(4);
   });
 
@@ -162,70 +157,6 @@ describe("card and turn reaction ordering", () => {
     expect(capped.playerHealth).toBe(14);
     expect(capped.playerStatuses.thorns).toBeGreaterThan(0);
   });
-});
-
-describe("Red Harvest instance tracking", () => {
-  function discardedHarvest(): BattleState {
-    const card = { ...cardById.stab!, uid: 50 };
-    let state = battle({
-      hand: [card],
-      deck: [],
-      discard: [],
-      nextCardUid: 100,
-      enemyHealth: 1000,
-      enemyMaxHealth: 1000,
-      gearEffects: { returnFirstPhysicalCard: 1 },
-    });
-    state = playBattleCardResolved(state, card.id, 0).state;
-    expect(computeEffectiveCost(state, state.hand[0]!).effectiveCost).toBe(0);
-    return playBattleCardResolved(state, card.id, 0).state;
-  }
-
-  it("Twin Casting keeps the discount on the matching card instance", () => {
-    const discarded = discardedHarvest();
-    const card = { ...discarded.discard[0]!, tags: ["freeze" as const] };
-    const fireball = cardById.fireball!;
-    const result = playBattleCardResolved(
-      {
-        ...discarded,
-        hand: [fireball],
-        deck: [card],
-        discard: [],
-        gearEffects: { ...discarded.gearEffects, elementalTwinCasting: 1 },
-      },
-      fireball.id,
-      0,
-    ).state;
-    expect(result.hand[0]!.id).toBe(card.id);
-    expect(result.hand[0]!.uid).not.toBe(card.uid);
-    expect(computeEffectiveCost(result, result.hand[0]!).effectiveCost).toBe(0);
-  });
-
-  it.each(["normal", "keyword", "automatic"] as const)(
-    "discount survives %s draws, save/resume, and expires next turn",
-    (kind) => {
-      let state = discardedHarvest();
-      if (kind === "automatic") {
-        let rolls = 0;
-        state = resolveEnemyAttackHit(
-          {
-            ...state,
-            gearEffects: { ...state.gearEffects, dodgeDrawAndPlay: 1 },
-            rng: () => (rolls++ === 0 ? 0 : 0.99),
-          },
-          { kind: "damage", damageType: "physical", amount: 1 },
-          [],
-          { canDodge: true },
-        ).state;
-      }
-      state = kind === "keyword" ? drawKeywordCard(state, "physical") : applyDrawResult(state, drawFromState(state, 1));
-      expect(computeEffectiveCost(state, state.hand[0]!).effectiveCost).toBe(0);
-      expect(computeEffectiveCost(state, { ...state.hand[0]!, uid: 999 }).effectiveCost).toBe(1);
-      const saved = PersistedBattleStateSchema.parse(JSON.parse(JSON.stringify(battleSnapshot(state))));
-      expect(saved.uniqueGear.redHarvestUid).toBe(state.hand[0]!.uid);
-      expect(computeEffectiveCost(advanceToPlayerTurn(state), state.hand[0]!).effectiveCost).toBe(1);
-    },
-  );
 });
 
 describe("Companion descriptions match their own damage scaling", () => {

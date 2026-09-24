@@ -304,28 +304,17 @@ describe("saved reaction allowances", () => {
     expect(play(resumedRearmed, arrow).state.enemyHealth).toBe(72);
   });
 
-  it("Verdict pays only once across renewed Stuns, turn boundaries, and save/resume", () => {
+  it("Verdict pays for each Holy Stun after immunity expires, including after resume", () => {
     const state = battle({ enemyStatuses: { stun: 120 }, gearEffects: { holyStunBuildupGold: 3 } });
-    const first = resolveStunTrigger(state, []);
+    expect(resolveStunTrigger(state, []).gold).toBe(0);
+    const first = resolveStunTrigger(state, [], state.enemyHealth, true);
     expect(first.gold).toBe(3);
     const second = resolveStunTrigger(
       { ...resume(first), turn: 10, enemyCC: state.enemyCC, enemyStatuses: state.enemyStatuses },
       [],
+      state.enemyHealth,
+      true,
     );
-    expect(second.gold).toBe(3);
-    expect(second.flags.verdictGoldPaid).toBe(true);
-    const oldSave = JSON.parse(JSON.stringify(first));
-    delete oldSave.flags.verdictGoldPaid;
-    delete oldSave.flags.hawkEyeReady;
-    expect(PersistedBattleStateSchema.parse(oldSave).flags).toMatchObject({
-      verdictGoldPaid: false,
-      hawkEyeReady: false,
-    });
-    oldSave.flags.verdictGoldPaid = "true";
-    oldSave.flags.hawkEyeReady = 1;
-    expect(PersistedBattleStateSchema.parse(oldSave).flags).toMatchObject({
-      verdictGoldPaid: false,
-      hawkEyeReady: false,
-    });
+    expect(second.gold).toBe(6);
   });
 });

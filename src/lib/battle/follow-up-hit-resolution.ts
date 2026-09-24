@@ -9,6 +9,7 @@ import {
 } from "../game-constants";
 import {
   applyBurnForgePayout,
+  applyEmberforgedPayout,
   applyLuckyCloverGold,
   applyNatureGoldReward,
   applyNatureManaRefund,
@@ -24,6 +25,7 @@ import {
 } from "./damage-rider-leech";
 import { rollTalentChance } from "./status-helpers";
 import { resolveTypedEnemyHit } from "./typed-hit-resolution";
+import { resolveStunFollowUpHit } from "./stun-follow-up-hit";
 import { type BattleState, type CombatTextEvent } from "./types";
 
 import type { FollowUpHitRequest } from "./hit-request";
@@ -36,6 +38,7 @@ export function resolveFollowUpHit(
 ): BattleState {
   switch (request.source) {
     case "player-follow-up":
+      if (request.damageType === "stun") return resolveStunFollowUpHit(state, request.amount, combatTexts);
       return resolveSecondaryAction(state, "reward", (current) =>
         resolvePlayerFollowUp(current, request.damageType, request.amount, combatTexts),
       );
@@ -63,6 +66,16 @@ function resolvePlayerFollowUp(
   const preHitHealth = hit.facts.previousHealth;
   let nextState = hit.state;
   if (damageType === "nature") {
+    if (state.gearEffects.natureLeechVsPoisoned > 0 && state.enemyStatuses.poison > 0 && hit.facts.healthDamage > 0) {
+      nextState = applyLifestealAndPlayerHitTriggers(
+        nextState,
+        hit.facts.healthDamage,
+        combatTexts,
+        false,
+        false,
+        preHitHealth,
+      );
+    }
     nextState = applyLuckyCloverGold(nextState, modifiedDamage, combatTexts);
     nextState = applyNatureGoldReward(nextState, hit.facts.healthDamage, combatTexts);
     nextState = applyNatureManaRefund(nextState, modifiedDamage, combatTexts);
@@ -70,6 +83,9 @@ function resolvePlayerFollowUp(
   if (damageType === "holy") {
     nextState = applyHolyBlockChance(nextState, modifiedDamage, combatTexts);
     nextState = applyBrassCenser(nextState, modifiedDamage, combatTexts, preHitHealth);
+  }
+  if (damageType === "burn" && hit.facts.healthDamage > 0) {
+    nextState = applyEmberforgedPayout(nextState, combatTexts, state.enemyStatuses.burn > 0);
   }
   return nextState;
 }
@@ -116,12 +132,22 @@ function resolveTalentFollowUp(
     nextState = applyHolyTithe(nextState, resolved, combatTexts);
   }
   if (damageType === "nature") {
+    if (state.gearEffects.natureLeechVsPoisoned > 0 && state.enemyStatuses.poison > 0 && hit.facts.healthDamage > 0) {
+      nextState = applyLifestealAndPlayerHitTriggers(
+        nextState,
+        hit.facts.healthDamage,
+        combatTexts,
+        false,
+        false,
+        hit.facts.previousHealth,
+      );
+    }
     nextState = applyLuckyCloverGold(nextState, resolved, combatTexts);
     nextState = applyNatureGoldReward(nextState, hit.facts.healthDamage, combatTexts);
     nextState = applyNatureManaRefund(nextState, resolved, combatTexts);
   }
   if (damageType === "burn") {
-    nextState = applyBurnForgePayout(nextState, combatTexts);
+    nextState = applyBurnForgePayout(nextState, combatTexts, hit.facts.eligibility.enemyStatuses.burn > 0);
   }
   return nextState;
 }
@@ -172,10 +198,11 @@ export function applyNatureLeech(
   damage: number,
   combatTexts: CombatTextEvent[],
   enemyHealthBeforeHit = state.enemyHealth,
+  guaranteed = false,
 ) {
   if (damage <= 0) return state;
   const leechChance = state.talentEffects.natureLeechChance + state.gearEffects.natureLeechChance;
-  if (leechChance <= 0 || !rollTalentChance(leechChance, state)) return state;
+  if (!guaranteed && (leechChance <= 0 || !rollTalentChance(leechChance, state))) return state;
   return applyLifestealAndPlayerHitTriggers(state, damage, combatTexts, false, false, enemyHealthBeforeHit);
 }
 

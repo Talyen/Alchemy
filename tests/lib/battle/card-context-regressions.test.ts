@@ -8,18 +8,18 @@ import { PersistedBattleStateSchema } from "@/lib/validation/save-schemas/persis
 import { patchBattleState } from "../../fixtures/battle";
 
 describe("card context regressions", () => {
-  it("grants the first Burn card discount to Cauterize's utility effects", () => {
+  it("grants the Burn card Talent discount to Cauterize's utility effects", () => {
     const card = cardById.cauterize!;
     const state = patchBattleState({
       mana: 0,
       hand: [card],
       playerStatuses: { poison: 2 },
-      gearEffects: { firstElementalCardsFree: 1 },
+      talentEffects: { firstBurnCardFree: true },
     });
     expect(computeCardPayment(state, card)).toMatchObject({ effectiveCost: 0, affordable: true });
     const played = playBattleCardResolved(state, card.id, 0).state;
     expect(played.playerStatuses.poison).toBe(0);
-    expect(played.uniqueGear.freeBurnUsed).toBe(true);
+    expect(played.flags.firstBurnCardFreeUsed).toBe(true);
   });
 
   it.each(["concussive-shot"])("%s retains its pooled Archery hit after saving", (id) => {

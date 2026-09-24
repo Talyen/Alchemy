@@ -22,6 +22,7 @@ import { addGoldWithCombatText, mergeCombatText, payKillPayouts } from "./combat
 import { payPendingBleedLeech } from "./damage-rider-leech";
 import { applyBleedDamageDraw } from "./bleed-reactions";
 import { gearFrozenDamageMultiplier } from "./gear-effects";
+import { applyElementalDamageManaRestore } from "./elemental-mana";
 
 export type EnemyDotStatus = "burn" | "poison" | "bleed";
 
@@ -53,8 +54,14 @@ export function applyEnemyDotDamage(
     nextState = addGoldWithCombatText(nextState, state.trinketEffects.cutpurseGoldOnBleed, combatTexts);
   }
 
-  for (const pulse of pulses) {
+  for (const [index, pulse] of pulses.entries()) {
     nextState = setEnemyStatus(nextState, pulse.status, pulse.nextStacks);
+    nextState = applyElementalDamageManaRestore(
+      nextState,
+      pulse.status,
+      pulseHealthDamage(pulses, index, previousHealth),
+      combatTexts,
+    );
   }
   if (applyRiders) nextState = applyRiders(nextState, hit);
   nextState = decayArmorAfterDamage(nextState, finalDamage, "enemy", combatTexts);

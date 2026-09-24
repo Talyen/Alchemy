@@ -5,6 +5,7 @@ import { applyEnemyHealingWithCombatText, mergeCombatText } from "./combat-text"
 import { computeLeechHeal } from "./damage-rider-leech";
 import { isFreezeActiveForAspect, scaleByRoomMultiplier } from "./enemy-turn-traits";
 import { paceCombatDamage } from "./fight-pacing";
+import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { resolvePlayerCrowdControlTriggers } from "./status-cc";
 import { armorMitigatesElementalDamage, reduceDamageByMana } from "./status-helpers";
 import { applyForgeThresholdRewards, applyHealthLossTalentRewards } from "./status-player";
@@ -337,9 +338,24 @@ function resolvePendingCinderSkinReaction(state: BattleState, combatTexts: Comba
   ).state;
 }
 
+function resolvePendingEmberwakeDamage(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+  if (!state.flags.pendingEmberwakeDamage) return state;
+  const ready = { ...state, flags: { ...state.flags, pendingEmberwakeDamage: false } };
+  if (ready.enemyHealth <= 0) return ready;
+  return resolveFollowUpHit(
+    ready,
+    { source: "player-follow-up", damageType: "burn", amount: ready.gearEffects.burnOnDeathsDoorEntry },
+    combatTexts,
+  );
+}
+
 export function resolvePendingBattleReactions(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   let nextState = state;
-  while (nextState.pendingForgeThresholds.length > 0 || nextState.flags.pendingCinderSkinReaction) {
+  while (
+    nextState.pendingForgeThresholds.length > 0 ||
+    nextState.flags.pendingCinderSkinReaction ||
+    nextState.flags.pendingEmberwakeDamage
+  ) {
     const thresholds = nextState.pendingForgeThresholds;
     if (thresholds.length > 0) {
       nextState = { ...nextState, pendingForgeThresholds: [] };
@@ -348,6 +364,7 @@ export function resolvePendingBattleReactions(state: BattleState, combatTexts: C
       }
     }
     nextState = resolvePendingCinderSkinReaction(nextState, combatTexts);
+    nextState = resolvePendingEmberwakeDamage(nextState, combatTexts);
   }
   return nextState;
 }

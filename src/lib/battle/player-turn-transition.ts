@@ -6,7 +6,7 @@ import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
 import type { BattleCard } from "@/lib/game-data";
 import { processArcheryEchoes } from "./unique-card-effects";
 import { CARDS_PER_TURN, MAX_HAND_SIZE } from "../game-constants";
-import { applyHealingWithCombatText, gainManaWithCombatText } from "./combat-text";
+import { addPlayerStatusWithCombatText, applyHealingWithCombatText, gainManaWithCombatText } from "./combat-text";
 import { halveRounded } from "./amount-helpers";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { applyBlockDepletionForgeReward, applyCleanseHeals, restoreSpentPlayerForge } from "./status-player";
@@ -209,6 +209,14 @@ export function advanceToPlayerTurn(
 
   const beforeTurnReset = nextState;
   nextState = performDrawAndResetPhase(nextState, deathsDoorNeedsRecoveryTurn, options);
+  if (nextState.playerStatuses.block > 0 && nextState.gearEffects.thornsOnRetainedBlock > 0) {
+    nextState = addPlayerStatusWithCombatText(
+      nextState,
+      "thorns",
+      nextState.gearEffects.thornsOnRetainedBlock,
+      combatTexts,
+    );
+  }
   nextState = applyBlockDepletionForgeReward(beforeTurnReset, nextState, combatTexts);
   nextState = resolvePendingBattleReactions(restoreSpentPlayerForge(nextState, combatTexts), combatTexts);
   if (nextState.enemyHealth <= 0 || isPlayerDefeated(nextState)) return nextState;
@@ -261,16 +269,19 @@ export function reduceSkipTurns(state: BattleState): BattleState {
     : nextState;
 }
 
-export function resolveDeathsDoorGraceExpiry(state: BattleState): BattleState {
+export function resolveDeathsDoorGraceExpiry(state: BattleState, combatTexts: CombatTextEvent[] = []): BattleState {
   if (!state.deathsDoorActive) return state;
   const remaining = computeDeathsDoorGraceRemaining(state);
   if (remaining <= 0) {
-    return {
+    const survived = {
       ...state,
       deathsDoorActive: false,
       deathsDoorTriggeredTurn: null,
       deathsDoorGraceTurnsRemaining: null,
     };
+    return survived.playerHealth > 0 && survived.gearEffects.healOnDeathsDoorSurvival > 0
+      ? applyHealingWithCombatText(survived, survived.gearEffects.healOnDeathsDoorSurvival, combatTexts)
+      : survived;
   }
   return state;
 }

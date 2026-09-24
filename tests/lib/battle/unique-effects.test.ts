@@ -12,8 +12,7 @@ import type { BattleCardEffect } from "@/lib/game-data";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { damageOnlyEffects } from "@/lib/battle/card-classification";
 import { defaultGearEffects } from "@/lib/gear";
-import { prepareUniqueCardPlay, processArcheryEchoes, returnHarvestCard } from "@/lib/battle/unique-card-effects";
-import { MAX_HAND_SIZE } from "@/lib/game-constants";
+import { prepareUniqueCardPlay, processArcheryEchoes } from "@/lib/battle/unique-card-effects";
 
 function dodgeThenMissRng() {
   let calls = 0;
@@ -97,7 +96,7 @@ describe("unique item battle effects", () => {
     expect(resolution.state.enemyHealth).toBe(90);
   });
 
-  it("Golden Verdict awards gold whenever a stun CCs, regardless of source", () => {
+  it("Golden Verdict awards gold when Holy damage completes a Stun", () => {
     const nonHolyStun = patchBattleState({
       gold: 10,
       enemyHealth: 100,
@@ -107,7 +106,7 @@ describe("unique item battle effects", () => {
     });
 
     const afterNonHolyStun = resolveStunTrigger(nonHolyStun, []);
-    expect(afterNonHolyStun.gold).toBe(35);
+    expect(afterNonHolyStun.gold).toBe(10);
 
     const holyEffect: Extract<BattleCardEffect, { kind: "damage" }> = {
       kind: "damage",
@@ -544,32 +543,9 @@ describe("prepareUniqueCardPlay flag matrix", () => {
     expect(prepared.critical).toBe(true);
     expect(prepared.state.uniqueGear.wildheartReady).toBe(false);
   });
-
-  it("marks harvest and hunt once each", () => {
-    const physical = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 4 }] });
-    const harvest = prepareUniqueCardPlay(
-      patchBattleState({ gearEffects: gear({ returnFirstPhysicalCard: 1 }) }),
-      physical,
-      1,
-    );
-    expect(harvest.harvest).toBe(true);
-    expect(harvest.state.uniqueGear.redHarvestUsed).toBe(true);
-
-    const archery = makeTestCard({
-      tags: ["archery"],
-      effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
-    });
-    const hunt = prepareUniqueCardPlay(
-      patchBattleState({ gearEffects: gear({ firstArcheryCompanionAttack: 1 }) }),
-      archery,
-      1,
-    );
-    expect(hunt.hunt).toBe(true);
-    expect(hunt.state.uniqueGear.huntsmasterUsed).toBe(true);
-  });
 });
 
-describe("processArcheryEchoes and returnHarvestCard", () => {
+describe("processArcheryEchoes", () => {
   it("clears queued echoes even when the echo gear is disabled", () => {
     const echo = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 4 }] });
     const state = patchBattleState({
@@ -580,24 +556,5 @@ describe("processArcheryEchoes and returnHarvestCard", () => {
     const result = processArcheryEchoes(state, []);
     expect(result.uniqueGear.archeryEchoes).toEqual([]);
     expect(result.enemyHealth).toBe(40);
-  });
-
-  it("returns a harvested card by uid and tracks the new instance", () => {
-    const card = { ...makeTestCard({ uid: 7 }), cost: 1 };
-    const state = patchBattleState({ discard: [card] });
-    const result = returnHarvestCard(state, card);
-    expect(result.hand).toHaveLength(state.hand.length + 1);
-    expect(result.uniqueGear.redHarvestUid).toBe(result.hand[result.hand.length - 1]?.uid);
-  });
-
-  it("refuses harvest returns for consume cards and full hands", () => {
-    const card = { ...makeTestCard({ uid: 7 }), cost: 1 };
-    const state = patchBattleState({ discard: [card] });
-    expect(returnHarvestCard(state, { ...card, consume: true }).hand).toHaveLength(state.hand.length);
-    const full = patchBattleState({
-      discard: [card],
-      hand: Array.from({ length: MAX_HAND_SIZE }, (_, index) => makeTestCard({ uid: 100 + index })),
-    });
-    expect(returnHarvestCard(full, card).hand).toHaveLength(MAX_HAND_SIZE);
   });
 });

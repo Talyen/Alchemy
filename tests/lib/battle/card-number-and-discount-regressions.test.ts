@@ -7,10 +7,10 @@ import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
 import { patchBattleState } from "../../fixtures/battle";
 
 describe("card number and discount regressions", () => {
-  it.each(["quickdraw", "threefold", "knight"] as const)(
+  it.each(["quickdraw", "burn talent", "knight"] as const)(
     "a saved zero-cost card preserves the %s discount for the next paid card",
     (source) => {
-      const card = cardById[source === "threefold" ? "fireball" : "venom-arrow"]!;
+      const card = cardById[source === "burn talent" ? "fireball" : "venom-arrow"]!;
       const free = { ...card, cost: 0, uid: 1 };
       const paid = { ...card, uid: 2 };
       const state = patchBattleState({
@@ -20,10 +20,8 @@ describe("card number and discount regressions", () => {
         enemyHealth: 100,
         enemyMaxHealth: 100,
         encounterBenefits: source === "quickdraw" ? ["quickdraw"] : [],
-        gearEffects: {
-          firstElementalCardsFree: source === "threefold" ? 1 : 0,
-          blockReadiesFreePhysical: source === "knight" ? 1 : 0,
-        },
+        talentEffects: { firstBurnCardFree: source === "burn talent" },
+        gearEffects: { blockReadiesFreePhysical: source === "knight" ? 1 : 0 },
         uniqueGear: { knightsAnswerReady: source === "knight" },
       });
       const first = playBattleCardResolved(state, free.id, 0).state;

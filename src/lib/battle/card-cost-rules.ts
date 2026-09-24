@@ -127,44 +127,26 @@ function getEncounterCostDiscount(
   return { discount, quickdrawUsed: quickdraw };
 }
 
-type UniqueCostDiscounts = Partial<
-  Pick<
-    BattleSnapshot["uniqueGear"],
-    "knightsAnswerReady" | "freeBurnUsed" | "freeFreezeUsed" | "freeHolyUsed" | "returningFlightUid"
-  >
->;
+type UniqueCostDiscounts = Partial<Pick<BattleSnapshot["uniqueGear"], "knightsAnswerReady" | "returningFlightUid">>;
 
 function resolveGearCostTriggers(
   gear: CardCostState["gearEffects"],
   unique: CardCostState["uniqueGear"],
   card: BattleCard,
 ): { isFree: boolean; returnedDiscount: number; uniqueDiscounts: UniqueCostDiscounts } {
-  const elementalFree =
-    gear.firstElementalCardsFree > 0 &&
-    ((cardHasKeyword(card, "burn") && !unique.freeBurnUsed) ||
-      (cardHasKeyword(card, "freeze") && !unique.freeFreezeUsed) ||
-      (cardHasKeyword(card, "holy") && !unique.freeHolyUsed));
   const natureFree = gear.dodgeReadiesNatureCrit > 0 && unique.wildheartReady && isNatureCard(card);
   const physicalFree =
     gear.blockReadiesFreePhysical > 0 && unique.knightsAnswerReady && cardHasDamageType(card, "physical");
-  const returned =
-    card.uid !== undefined &&
-    ((gear.returnFirstPhysicalCard > 0 && card.uid === unique.redHarvestUid) ||
-      (gear.recoverLastArcheryCard > 0 && card.uid === unique.returningFlightUid));
+  const returned = card.uid !== undefined && gear.recoverLastArcheryCard > 0 && card.uid === unique.returningFlightUid;
 
   const uniqueDiscounts: UniqueCostDiscounts = {};
   if (card.cost > 0) {
     if (physicalFree) uniqueDiscounts.knightsAnswerReady = false;
-    if (gear.firstElementalCardsFree > 0) {
-      if (cardHasKeyword(card, "burn")) uniqueDiscounts.freeBurnUsed = true;
-      if (cardHasKeyword(card, "freeze")) uniqueDiscounts.freeFreezeUsed = true;
-      if (cardHasKeyword(card, "holy")) uniqueDiscounts.freeHolyUsed = true;
-    }
   }
   if (card.uid === unique.returningFlightUid) uniqueDiscounts.returningFlightUid = null;
 
   return {
-    isFree: elementalFree || natureFree || physicalFree,
+    isFree: natureFree || physicalFree,
     returnedDiscount: returned ? UNIQUE_GEAR_COMBAT.returnedCardDiscount : 0,
     uniqueDiscounts,
   };

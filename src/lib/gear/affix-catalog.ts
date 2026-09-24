@@ -7,7 +7,14 @@ import {
   dodgeUniqueAffixes,
   reactionUniqueAffixes,
 } from "./unique-affixes";
-import { primaryAffixes, secondaryAffixes, dodgeAffixes, dodgeBleedAffixes } from "./ordinary-affixes";
+import {
+  primaryAffixes,
+  secondaryAffixes,
+  dodgeAffixes,
+  dodgeBleedAffixes,
+  keywordGapAffixes,
+} from "./ordinary-affixes";
+import { keywordExpansionAffixes } from "./keyword-expansion-affixes";
 
 // Keep the historical interleaving for seeded affix selection.
 const affixRows = [
@@ -20,6 +27,8 @@ const affixRows = [
   ...dodgeUniqueAffixes,
   ...dodgeBleedAffixes,
   ...reactionUniqueAffixes,
+  ...keywordGapAffixes,
+  ...keywordExpansionAffixes,
 ] as const;
 
 export interface GearAffixDefinition extends AffixRowInput {

@@ -87,11 +87,21 @@ export function applyHealingWithCombatText(
     emitOverhealBlockText(prevState, nextState, combatTexts);
     emitReactiveThornsText(prevState, nextState, combatTexts);
   }
-  return applyBlockGainRewards(
+  const reacted = applyBlockGainRewards(
     applyBloodCountessHealingReaction(nextState, actualHeal, combatTexts),
     nextState.playerStatuses.block - prevState.playerStatuses.block,
     combatTexts ?? [],
   );
+  return applyRestorativeCleanse(reacted, actualHeal, combatTexts);
+}
+
+function applyRestorativeCleanse(state: BattleState, actualHeal: number, combatTexts?: CombatTextEvent[]): BattleState {
+  return actualHeal > 0 &&
+    state.gearEffects.healCleanseChance > 0 &&
+    harmfulPlayerStatusIds.some((status) => state.playerStatuses[status] > 0) &&
+    rollRewardChance(state.gearEffects.healCleanseChance, state)
+    ? removeHarmfulPlayerStatuses(state, 1, combatTexts)
+    : state;
 }
 
 export function applyHealOnManaGain(
@@ -176,6 +186,9 @@ export function addGoldWithCombatText(
       amount: scaledGold,
     });
   }
+  if (scaledGold > 0 && nextState.gearEffects.healOnCombatGoldGain > 0) {
+    nextState = applyHealingWithCombatText(nextState, nextState.gearEffects.healOnCombatGoldGain, combatTexts ?? []);
+  }
   if (state.gearEffects.goldGrantsForgeAndHoly <= 0 || scaledGold <= 0 || state.playerStatuses.forge > 0)
     return nextState;
   const previousForge = nextState.playerStatuses.forge;
@@ -201,7 +214,7 @@ function applyKillRewardHealing(state: BattleState, amount: number, combatTexts:
   }
   emitOverhealBlockText(previousState, nextState, combatTexts);
   emitReactiveThornsText(previousState, nextState, combatTexts);
-  return nextState;
+  return applyRestorativeCleanse(nextState, healing.restored, combatTexts);
 }
 
 function applyKillRewardGold(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
@@ -213,10 +226,11 @@ export function applyGearKillRewards(
   enemyWasAlive: boolean,
   combatTexts: CombatTextEvent[],
   enemyStatusesOverride?: BattleState["enemyStatuses"],
+  forgeAtKill = state.playerStatuses.forge > 0,
 ): BattleState {
   if (state.enemyHealth > 0 || !enemyWasAlive) return state;
   let nextState = state;
-  const { healOnKill, goldOnKill, healOnBurnEnemyDefeated } = state.gearEffects;
+  const { healOnKill, goldOnKill, healOnBurnEnemyDefeated, goldOnKillWithForge } = state.gearEffects;
   if (healOnKill > 0) {
     nextState = applyKillRewardHealing(nextState, healOnKill, combatTexts);
   }
@@ -226,6 +240,9 @@ export function applyGearKillRewards(
   }
   if (goldOnKill > 0) {
     nextState = applyKillRewardGold(nextState, goldOnKill, combatTexts);
+  }
+  if (forgeAtKill && goldOnKillWithForge > 0) {
+    nextState = applyKillRewardGold(nextState, goldOnKillWithForge, combatTexts);
   }
   return nextState;
 }
@@ -237,13 +254,14 @@ export function payKillPayouts(
   enemyStatusesOverride?: BattleState["enemyStatuses"],
 ): BattleState {
   if (state.enemyHealth > 0 || !enemyWasAlive || state.flags.killRewardsPaid) return state;
+  const forgeAtKill = state.playerStatuses.forge > 0;
   state = { ...state, flags: { ...state.flags, killRewardsPaid: true } };
   const statuses = enemyStatusesOverride ?? state.enemyStatuses;
   if (statuses.poison > 0 && state.talentEffects.goldOnPoisonedKill > 0) {
     state = addGoldWithCombatText(state, state.talentEffects.goldOnPoisonedKill, combatTexts);
   }
   const afterBoneCharm = applyKillRewardHealing(state, state.trinketEffects.boneCharmHealOnKill, combatTexts);
-  const rewarded = applyGearKillRewards(afterBoneCharm, enemyWasAlive, combatTexts, statuses);
+  const rewarded = applyGearKillRewards(afterBoneCharm, enemyWasAlive, combatTexts, statuses, forgeAtKill);
   return rewarded.dodgeChanceFromDamage > 0 ? { ...rewarded, dodgeChanceFromDamage: 0 } : rewarded;
 }
 
@@ -308,14 +326,26 @@ function clearHarmfulStatuses(state: BattleState, statusTypesToClear: number) {
   return { nextState, removed };
 }
 
-export function applyCleanseHeals(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
+export function applyCleanseHeals(
+  state: BattleState,
+  combatTexts?: CombatTextEvent[],
+  removedStatuses = 1,
+): BattleState {
   const nextState = applyHealingWithCombatText(
     state,
     state.trinketEffects.sinEaterHealOnHarmfulStatusRemove,
     combatTexts,
   );
   const healed = applyHealingWithCombatText(nextState, nextState.talentEffects.healOnStatusCleanse, combatTexts);
-  return healed.talentEffects.nextHolyFreeOnCleanse ? setFlag(healed, "nextHolyCardFree", true) : healed;
+  const blocked =
+    healed.gearEffects.blockOnCleanse > 0
+      ? applyBlockReward(healed, healed.gearEffects.blockOnCleanse * removedStatuses, combatTexts ?? [])
+      : healed;
+  const restored =
+    blocked.gearEffects.manaOnCleanse > 0
+      ? gainManaWithCombatText(blocked, blocked.gearEffects.manaOnCleanse * removedStatuses, combatTexts ?? [])
+      : blocked;
+  return restored.talentEffects.nextHolyFreeOnCleanse ? setFlag(restored, "nextHolyCardFree", true) : restored;
 }
 
 export function removeHarmfulPlayerStatuses(state: BattleState, amount: number, combatTexts?: CombatTextEvent[]) {

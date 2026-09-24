@@ -1,6 +1,5 @@
 export const FLAG_DEFINITIONS = {
   hawkEyeReady: { default: false as const, secondaryValue: null, lifetime: "until-consumed" },
-  verdictGoldPaid: { default: false as const, secondaryValue: null, lifetime: "combat" },
   killRewardsPaid: { default: false as const, secondaryValue: null, lifetime: "combat" },
   nextHolyCardFree: { default: false as const, secondaryValue: false as const, lifetime: "until-consumed" },
   nextWishExtraChoice: { default: false as const, secondaryValue: null, lifetime: "until-consumed" },
@@ -38,11 +37,13 @@ export const FLAG_DEFINITIONS = {
 
   resonantChimeUsedThisTurn: { default: false as const, secondaryValue: true as const, lifetime: "player-turn" },
   runicQuillUsedThisTurn: { default: false as const, secondaryValue: true as const, lifetime: "player-turn" },
-  emberforgedUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
   consumeDrawUsedThisTurn: { default: false as const, secondaryValue: true as const, lifetime: "player-turn" },
   pendingCinderSkinReaction: { default: false as const, secondaryValue: null, lifetime: "combat" },
+  pendingEmberwakeDamage: { default: false as const, secondaryValue: null, lifetime: "combat" },
   cinderSkinUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
   holyRetributionUsedThisTurn: { default: false as const, secondaryValue: true as const, lifetime: "player-turn" },
+  spitefulHealedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
+  spellrendingUsedThisTurn: { default: false as const, secondaryValue: null, lifetime: "player-turn" },
 
   divineAegisTriggered: { default: false as const, secondaryValue: null, lifetime: "combat" },
   desperateGuardUsed: { default: false as const, secondaryValue: null, lifetime: "combat" },
