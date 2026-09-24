@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ESCAPE_PRIORITY, pushEscapeHandler, resetEscapeStackForTests } from "@/app/escape-stack";
-import { useAppKeyboardShortcuts } from "@/app/use-app-navigation";
+import { useAppKeyboardShortcuts } from "@/app/use-app-keyboard-shortcuts";
 
 afterEach(() => {
   cleanup();

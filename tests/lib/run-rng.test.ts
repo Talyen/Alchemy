@@ -97,10 +97,13 @@ describe("run RNG", () => {
 
   it("throws on unknown stream", () => {
     const state = createRunRngState(() => 0.1);
-    // @ts-expect-error — force unknown stream for guard branch
-    expect(() => nextRunRngValue(state, "unknown")).toThrow(/Unknown run RNG stream/);
-    // @ts-expect-error — force unknown stream for guard branch
-    expect(() => createRunStreamRng(42, "unknown")).toThrow(/Unknown run RNG stream/);
+    for (const stream of ["unknown", "toString", "__proto__"] as const) {
+      // @ts-expect-error — force unknown stream for guard branch
+      expect(() => nextRunRngValue(state, stream)).toThrow(/Unknown run RNG stream/);
+      // @ts-expect-error — force unknown stream for guard branch
+      expect(() => createRunStreamRng(42, stream)).toThrow(/Unknown run RNG stream/);
+    }
+    expect(state.counters).toEqual({ rewards: 0, destinations: 0, events: 0, shops: 0, world: 0 });
   });
 
   it("pins the exact draw sequence for seed 123456", () => {

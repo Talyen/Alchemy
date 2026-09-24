@@ -20,6 +20,7 @@ import {
 import { WILDWOOD_BOSS_IDS } from "@/lib/content-systems/wildwood/bosses";
 import { DRAFT_CHOICES, DRAFT_ROUNDS } from "@/lib/game-constants";
 import type { BestiaryEntry, BattleCard } from "@/lib/game-data";
+import { createRunRngState, stepRunRng } from "@/lib/rng";
 import { makeTestCard } from "../../../fixtures/cards";
 
 function countingRng() {
@@ -174,6 +175,16 @@ describe("Wildwood phase transitions", () => {
     const prepared = prepareNextWildwoodBoss(afterVictory!, 5, () => 0);
     expect(prepared).not.toBeNull();
     expect(enterWildwoodBattle(prepared!.state)?.phase).toBe("battle");
+  });
+
+  it("uses one world draw for each trait when the boss bag is already filled", () => {
+    const rngState = createRunRngState(42);
+    const prepared = prepareNextWildwoodBoss(draftState({ phase: "reward" }), 5, () => stepRunRng(rngState, "world"));
+
+    expect(prepared?.bossId).toBe("iron-bear");
+    expect(prepared?.state.currentCombatTraitIds).toHaveLength(1);
+    expect(prepared?.state.currentRewardTraitIds).toHaveLength(1);
+    expect(rngState.counters.world).toBe(2);
   });
 
   it("enters removal only from reward and skip only from removal", () => {

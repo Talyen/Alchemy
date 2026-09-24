@@ -4,7 +4,7 @@ import {
   resolveOptionsBackTarget,
   resolveReturnToRunTarget,
   resolveScreenBackHandler,
-} from "@/app/use-app-navigation";
+} from "@/app/screen-navigation-policy";
 import type { Screen } from "@/lib/routing";
 
 function setup(

@@ -7,7 +7,7 @@ import {
 } from "../game-constants";
 import type { BattleCard, BattleCardEffect } from "../game-data";
 import {
-  effectChildren,
+  describeCardEffects,
   isMixedPotionCard,
   isRecursiveBattleCardEffectKind,
   mapEffectChildren,
@@ -51,102 +51,14 @@ function scaledAmount(amount: number, multiplier: number, potencyBonus: number):
   return Math.round(amount * multiplier + potencyBonus);
 }
 
-function nestedPotionChildren(effect: BattleCardEffect): BattleCardEffect[] {
-  if (isRecursiveBattleCardEffectKind(effect.kind)) return effectChildren(effect);
-  // Generic fallback so future nesting kinds do not silently skip scaling/collection.
-  const nested = effect as Partial<{
-    successEffects: BattleCardEffect[];
-    failureEffects: BattleCardEffect[];
-    effects: BattleCardEffect[];
-  }>;
-  return [...(nested.successEffects ?? []), ...(nested.failureEffects ?? []), ...(nested.effects ?? [])];
-}
-
-function scaleNestedArrays(
-  effect: BattleCardEffect,
-  multiplier: number,
-  potencyBonus: number,
-): BattleCardEffect | null {
-  const nested = effect as Partial<{
-    successEffects: BattleCardEffect[];
-    failureEffects: BattleCardEffect[];
-    effects: BattleCardEffect[];
-  }>;
-  if (!nested.successEffects && !nested.failureEffects && !nested.effects) return null;
-  const scaled: Record<string, unknown> = { ...effect };
-  if (nested.successEffects)
-    scaled.successEffects = nested.successEffects.map((child) => scalePotionEffect(child, multiplier, potencyBonus));
-  if (nested.failureEffects)
-    scaled.failureEffects = nested.failureEffects.map((child) => scalePotionEffect(child, multiplier, potencyBonus));
-  if (nested.effects)
-    scaled.effects = nested.effects.map((child) => scalePotionEffect(child, multiplier, potencyBonus));
-  return scaled as BattleCardEffect;
-}
-
 function scalePotionEffect(effect: BattleCardEffect, multiplier: number, potencyBonus: number): BattleCardEffect {
   if (isRecursiveBattleCardEffectKind(effect.kind)) {
     return mapEffectChildren(effect, (child) => scalePotionEffect(child, multiplier, potencyBonus));
   }
-  const generic = scaleNestedArrays(effect, multiplier, potencyBonus);
-  if (generic) return generic;
   if ("amount" in effect && typeof effect.amount === "number") {
     return { ...effect, amount: scaledAmount(effect.amount, multiplier, potencyBonus) };
   }
   return { ...effect };
-}
-
-function collectScaledAmounts(
-  effect: BattleCardEffect,
-  multiplier: number,
-  potencyBonus: number,
-  scaleMap: Map<number, number>,
-): void {
-  const children = nestedPotionChildren(effect);
-  if (children.length > 0) {
-    for (const child of children) collectScaledAmounts(child, multiplier, potencyBonus, scaleMap);
-    return;
-  }
-  if ("amount" in effect && typeof effect.amount === "number" && effect.amount > 0) {
-    scaleMap.set(effect.amount, scaledAmount(effect.amount, multiplier, potencyBonus));
-  }
-}
-
-function scaleCardDescriptionLines(card: BattleCard, multiplier: number, potencyBonus: number): string[] {
-  const linesWithoutConsume = card.descriptionLines.filter((line) => line !== CONSUME_DESCRIPTION_LINE);
-  if (multiplier === 1 && potencyBonus === 0) {
-    return linesWithoutConsume;
-  }
-
-  const scaleMap = new Map<number, number>();
-  for (const effect of card.effects) {
-    collectScaledAmounts(effect, multiplier, potencyBonus, scaleMap);
-  }
-
-  if (scaleMap.size === 0) {
-    return linesWithoutConsume;
-  }
-
-  return linesWithoutConsume.map((line) => {
-    if (line === "Draw a card") {
-      const amount = scaleMap.get(1);
-      if (amount !== undefined) return amount === 1 ? line : `Draw ${amount} cards`;
-    }
-    return line
-      .split(" or ")
-      .map((alternative) => {
-        let replaced = false;
-        return alternative.replace(/\b\d+\b/g, (match) => {
-          if (replaced) return match;
-          const scaled = scaleMap.get(Number(match));
-          if (scaled !== undefined) {
-            replaced = true;
-            return String(scaled);
-          }
-          return match;
-        });
-      })
-      .join(" or ");
-  });
 }
 
 export function createMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyBonus: number = 0): BattleCard {
@@ -161,8 +73,11 @@ export function createMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyB
   );
 
   const descriptionLines: string[] = sameCard
-    ? scaleCardDescriptionLines(cardA, 2, potencyBonus)
-    : [...scaleCardDescriptionLines(cardA, 1, potencyBonus), ...scaleCardDescriptionLines(cardB, 1, potencyBonus)];
+    ? describeCardEffects(effects)
+    : [
+        ...describeCardEffects(effects.slice(0, cardA.effects.length)),
+        ...describeCardEffects(effects.slice(cardA.effects.length)),
+      ];
 
   descriptionLines.push(CONSUME_DESCRIPTION_LINE);
 
@@ -202,9 +117,10 @@ export function applyMixToDeck(deck: BattleCard[], indexA: number, indexB: numbe
 }
 
 export function doublePotionPotency(card: BattleCard): BattleCard {
+  const effects = card.effects.map((effect) => scalePotionEffect(effect, 2, 0));
   return {
     ...card,
-    effects: card.effects.map((effect) => scalePotionEffect(effect, 2, 0)),
-    descriptionLines: [...scaleCardDescriptionLines(card, 2, 0), ...(card.consume ? [CONSUME_DESCRIPTION_LINE] : [])],
+    effects,
+    descriptionLines: [...describeCardEffects(effects), ...(card.consume ? [CONSUME_DESCRIPTION_LINE] : [])],
   };
 }

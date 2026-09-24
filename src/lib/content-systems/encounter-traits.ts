@@ -1,7 +1,7 @@
 import { LABYRINTH_TRAITS } from "./labyrinth/trait-catalog";
 import type { EnemyTrait } from "@/lib/game-data";
 import { LABYRINTH_REWARD_CONFIG } from "@/lib/game-constants";
-import { sampleItems } from "@/lib/utils";
+import { pickRandom, sampleItems } from "@/lib/rng";
 import type { ContentSystemId } from "./content-system-ids";
 
 const RETIRED_ENCOUNTER_TRAIT_IDS = [
@@ -174,7 +174,7 @@ export function pickEncounterTrait<Category extends EncounterTraitCategory>(
   category: Category,
   rng: () => number,
 ): EncounterTraitIdFor<Category> {
-  const [traitId] = pickEncounterTraits(mode, category, 1, rng);
+  const traitId = pickRandom(eligibleEncounterTraitIds(mode, category), rng);
   if (!traitId) throw new Error(`No ${category} encounter traits are eligible for ${mode}`);
   return traitId;
 }

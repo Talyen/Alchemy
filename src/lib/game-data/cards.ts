@@ -4,4 +4,10 @@ export { getCompanionDescriptionLines } from "./cards/companion-turn-description
 
 export { cloneBattleCard } from "./cards/hydrate-card";
 
-export { isMixedPotionCard, isPotionCard, isStandardPotionCard } from "./cards/card-pools";
+export {
+  getOfferableCardPool,
+  getStandardPotionPool,
+  isMixedPotionCard,
+  isPotionCard,
+  isStandardPotionCard,
+} from "./cards/card-pools";

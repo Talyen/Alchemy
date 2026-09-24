@@ -15,10 +15,10 @@ import { applyArmorReward, applyBlockDepletionForgeReward, applyBlockReward } fr
 import {
   applyCardPlayTalentRewards,
   applyMortarAndPestlePotionUse,
-  handlePostPlayCardDestination,
   resolveCardEffectChain,
   shouldElementalTalentRepeat,
-} from "./card-play";
+} from "./card-play-effects";
+import { handlePostPlayCardDestination } from "./card-consume";
 import { applyCardEffects } from "./effect-handlers";
 import type { CardEffectResolutionContext } from "./effect-handlers/handler-types";
 import {
@@ -73,7 +73,10 @@ function applyDodgeDrawAndPlay(state: BattleState, combatTexts: CombatTextEvent[
       { cardPlayed: false },
     );
   }
-  nextState = handlePostPlayCardDestination(nextState, drawn.card, !isPlayerDefeated(nextState), combatTexts);
+  nextState = handlePostPlayCardDestination(nextState, drawn.card, {
+    triggerConsumeRiders: !isPlayerDefeated(nextState),
+    combatTexts,
+  });
   return nextState;
 }
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createBattleState, defaultTalentEffects } from "@/lib/battle";
-import { playBattleCardResolved, handlePostPlayCardDestination } from "@/lib/battle/card-play";
+import { playBattleCardResolved } from "@/lib/battle/card-play";
+import { handlePostPlayCardDestination } from "@/lib/battle/card-consume";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { applyScaledLeechHealing } from "@/lib/battle/damage-rider-leech";
 import { applyEnemyAbility } from "@/lib/battle/enemy-turn-attack";
@@ -79,7 +80,7 @@ describe("new ordinary affix interactions", () => {
       },
       rng: () => 0.99,
     });
-    const result = handlePostPlayCardDestination(state, consumed, true, [], true, 1);
+    const result = handlePostPlayCardDestination(state, consumed, { lastCardInHand: true, manaSpent: 1 });
 
     expect(result.enemyHealth).toBe(25);
     expect(result.enemyStatuses.poison).toBe(4);

@@ -1,25 +1,8 @@
-import {
-  isLootEligible,
-  resolveLootWeights,
-  rollLootGroup,
-  type LootAvailability,
-  type LootProgress,
-  type LootSource,
-} from "@/lib/loot";
+import type { LootProgress } from "@/lib/loot";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { CONTENT_SYSTEMS, type ContentSystemId } from "@/lib/content-systems/types";
-import { ENEMY_TYPES, getCardKeywords, selectRewardCards, trinketLibrary, type BattleCard } from "@/lib/game-data";
-import { getOfferableCardPool, getStandardPotionPool } from "@/lib/game-data/cards/card-pools";
-import { LABYRINTH_REWARD_CONFIG, REWARD_CARD_CHOICES } from "@/lib/game-constants";
-import { pickRandom, sampleItems } from "@/lib/rng";
+import { ENEMY_TYPES, type BattleCard } from "@/lib/game-data";
 import { REWARD_ROUTES, type Destination, type RewardRoute } from "@/lib/routing";
-import {
-  gearBaseItemList,
-  generateGearRewardChoicesForRarity,
-  generateLootGearChoices,
-  getGearLootAvailability,
-  getRewardLootAvailability,
-} from "@/lib/gear";
 import {
   createEmptyRewardState,
   resolveRewardChoice,
@@ -30,6 +13,9 @@ import {
 import type { BattleSnapshot } from "@/lib/battle";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { computeRewardGold } from "./reward-math";
+import { createRewardOffer } from "./reward-offers";
+
+export { getCompanionCardChoices, getRandomPotionCard } from "./reward-offers";
 
 export type FinalizeRewardRoute = RewardRoute;
 
@@ -46,10 +32,9 @@ export interface FinalizeRewardResult {
   route: FinalizeRewardRoute;
 }
 
-export interface BossRewardInput {
+interface RewardPayoutInput {
   lootProgress: LootProgress;
   gold: number;
-  bossBonus: number;
   generousBonus: number;
   wealthyBonus: number;
   talentGoldPerCombat: number;
@@ -65,26 +50,15 @@ export interface BossRewardInput {
   rewardModifiers?: readonly EncounterRewardTraitId[];
 }
 
-export interface CombatRewardInput {
-  lootProgress: LootProgress;
+export interface BossRewardInput extends RewardPayoutInput {
+  bossBonus: number;
+}
+
+export interface CombatRewardInput extends RewardPayoutInput {
   battleState: BattleSnapshot;
   runDeck: BattleCard[];
-  gold: number;
   eliteBonus: number;
-  generousBonus: number;
-  wealthyBonus: number;
-  talentGoldPerCombat: number;
-  materials: MaterialInventory;
   destinations: Destination[];
-  trinketIds: string[];
-  goldMultiplier?: number;
-  rng: () => number;
-  excludedBoonIds?: string[];
-  ownedTrinketIds?: string[];
-  ownedUniqueIds?: ReadonlySet<string>;
-  gearAstralChanceBonus?: number;
-  inCombatGold?: number | undefined;
-  rewardModifiers?: readonly EncounterRewardTraitId[];
 }
 
 export function createNextRewardState(rewardState: RewardState): CardRewardState {
@@ -94,36 +68,6 @@ export function createNextRewardState(rewardState: RewardState): CardRewardState
     lastVictoryEnemyType: rewardState.lastVictoryEnemyType,
     lastVictoryContentSystem: rewardState.lastVictoryContentSystem,
   };
-}
-
-export function getRandomPotionCard(rng: () => number): BattleCard | null {
-  const potion = pickRandom(getStandardPotionPool(), rng);
-  if (!potion) {
-    // The pool is statically populated; a data error skips the grant instead of
-    // aborting the reward claim mid-command.
-    if (import.meta.env.DEV)
-      console.warn("[reward-flow] getRandomPotionCard: no potion cards in getStandardPotionPool()");
-    return null;
-  }
-  return potion;
-}
-
-export function getCompanionCardChoices(
-  rng: () => number,
-  modifiers: readonly EncounterRewardTraitId[] = ["companion"],
-): BattleCard[] {
-  const theme = modifiers.includes("fletched")
-    ? "archery"
-    : modifiers.includes("wishkeeper")
-      ? "wish"
-      : modifiers.includes("kindred-spoils")
-        ? "nature"
-        : "companion";
-  const companions =
-    theme === "companion"
-      ? getOfferableCardPool().filter((c) => c.effects?.some((e) => e.kind === "summon-companion"))
-      : getOfferableCardPool().filter((card) => getCardKeywords(card).includes(theme));
-  return sampleItems(companions, LABYRINTH_REWARD_CONFIG.companionCardChoices, rng);
 }
 
 function resolveRewardRoute(contentSystemType: ContentSystemId, currentEnemyType: string): FinalizeRewardRoute {
@@ -165,155 +109,7 @@ export function finalizeRewardState({ rewardState, companionRewardCards }: Final
   };
 }
 
-function hoardBaseIds(modifier: EncounterRewardTraitId): string[] | null {
-  if (modifier === "arms-hoard")
-    return gearBaseItemList
-      .filter((base) => base.compatibleSlots.includes("main-hand") || base.compatibleSlots.includes("off-hand"))
-      .map((base) => base.id);
-  if (modifier === "armor-hoard")
-    return gearBaseItemList.filter((base) => base.compatibleSlots.includes("body")).map((base) => base.id);
-  if (modifier === "ring-hoard")
-    return gearBaseItemList.filter((base) => base.id.endsWith("-ring")).map((base) => base.id);
-  if (modifier === "amulet-hoard")
-    return gearBaseItemList.filter((base) => base.id.endsWith("-amulet")).map((base) => base.id);
-  return null;
-}
-
-function createHoardRewardState({
-  rewardModifiers,
-  lootProgress,
-  source,
-  rng,
-  ownedUniqueIds,
-  trinkets,
-  availability,
-  gearAstralChanceBonus,
-}: {
-  rewardModifiers: readonly EncounterRewardTraitId[];
-  lootProgress: LootProgress;
-  source: LootSource;
-  rng: () => number;
-  ownedUniqueIds: ReadonlySet<string>;
-  trinkets: typeof trinketLibrary;
-  availability: LootAvailability;
-  gearAstralChanceBonus: number;
-}): RewardState | null {
-  for (const modifier of rewardModifiers) {
-    const baseIds = hoardBaseIds(modifier);
-    if (baseIds) {
-      const gearAvailable = getGearLootAvailability(ownedUniqueIds, baseIds);
-      if (baseIds.length === 0 || (!gearAvailable.basic && !gearAvailable.astral)) return null;
-      const weights = resolveLootWeights({
-        source,
-        progress: lootProgress,
-        astralChanceBonus: gearAstralChanceBonus,
-        available: { ...gearAvailable, card: false, boon: false, trinket: false, unique: false },
-      });
-      const choices = generateLootGearChoices(REWARD_CARD_CHOICES, rng, weights, ownedUniqueIds, baseIds, true);
-      return choices.length > 0 ? { ...createEmptyRewardState(), rewardType: "gear", choices } : null;
-    }
-    if (modifier === "astral-hoard" || modifier === "unique-hoard") {
-      const rarity = modifier === "astral-hoard" ? "astral" : "unique";
-      if (!isLootEligible(rarity, lootProgress.depth) || availability[rarity] === false) return null;
-      const choices = generateGearRewardChoicesForRarity(REWARD_CARD_CHOICES, rarity, rng, ownedUniqueIds);
-      return choices.length > 0 ? { ...createEmptyRewardState(), rewardType: "gear", choices } : null;
-    }
-    if (modifier === "trinket-hoard") {
-      if (!isLootEligible("trinket", lootProgress.depth) || trinkets.length === 0) return null;
-      return {
-        ...createEmptyRewardState(),
-        rewardType: "trinket",
-        choices: sampleItems(trinkets, REWARD_CARD_CHOICES, rng),
-      };
-    }
-  }
-  return null;
-}
-
-function createLootRewardState({
-  source,
-  lootProgress,
-  rng,
-  runDeck = [],
-  gearAstralChanceBonus = 0,
-  ownedTrinketIds = [],
-  excludedBoonIds = [],
-  ownedUniqueIds = new Set(),
-  rewardModifiers = [],
-}: {
-  source: LootSource;
-  lootProgress: LootProgress;
-  rng: () => number;
-  runDeck?: BattleCard[];
-  gearAstralChanceBonus?: number;
-  ownedTrinketIds?: readonly string[];
-  excludedBoonIds?: readonly string[];
-  ownedUniqueIds?: ReadonlySet<string>;
-  rewardModifiers?: readonly EncounterRewardTraitId[];
-}): RewardState {
-  const cards = getOfferableCardPool();
-  // "boon" and "trinket" rewards draw from the same trinketLibrary with
-  // different exclusion sets: boons exclude currently-active effects (so a
-  // reward never duplicates what is already equipped), trinkets exclude the
-  // permanent collection. The split is load-bearing for persistence, which
-  // serializes each reward type on its own branch.
-  const boons = trinketLibrary.filter((entry) => !excludedBoonIds.includes(entry.id));
-  const trinkets = trinketLibrary.filter((entry) => !ownedTrinketIds.includes(entry.id));
-  const availability = getRewardLootAvailability(ownedUniqueIds, {
-    cards: cards.length > 0,
-    boons: boons.length > 0,
-    trinkets: trinkets.length > 0,
-  });
-  const weights = resolveLootWeights({
-    source,
-    progress: lootProgress,
-    astralChanceBonus: gearAstralChanceBonus,
-    available: availability,
-  });
-  const hoard = createHoardRewardState({
-    rewardModifiers,
-    lootProgress,
-    source,
-    rng,
-    ownedUniqueIds,
-    trinkets,
-    availability,
-    gearAstralChanceBonus,
-  });
-  if (hoard) return hoard;
-  const category = rollLootGroup(weights, rng);
-  switch (category) {
-    case "gear":
-      return {
-        ...createEmptyRewardState(),
-        rewardType: "gear",
-        choices: generateLootGearChoices(REWARD_CARD_CHOICES, rng, weights, ownedUniqueIds),
-      };
-    case "trinket":
-      return {
-        ...createEmptyRewardState(),
-        rewardType: "trinket",
-        choices: sampleItems(trinkets, REWARD_CARD_CHOICES, rng),
-      };
-    case "boon":
-      return { ...createEmptyRewardState(), rewardType: "boon", choices: sampleItems(boons, REWARD_CARD_CHOICES, rng) };
-    case "card":
-      return { ...createEmptyRewardState(), choices: selectRewardCards(runDeck, cards, REWARD_CARD_CHOICES, [], rng) };
-  }
-}
-
-function computeSharedRewardGold(
-  input: {
-    gold: number;
-    generousBonus: number;
-    wealthyBonus: number;
-    talentGoldPerCombat: number;
-    trinketIds: string[];
-    goldMultiplier?: number;
-    inCombatGold?: number | undefined;
-  },
-  bonusGold: number,
-): number {
+function computeSharedRewardGold(input: RewardPayoutInput, bonusGold: number): number {
   // Boss and combat rewards differ only in which encounter bonus feeds bonusGold.
   return computeRewardGold({
     baseGold: input.gold,
@@ -329,7 +125,8 @@ function computeSharedRewardGold(
 
 export function createBossRewardState(input: BossRewardInput): RewardState {
   return {
-    ...createLootRewardState({ ...input, source: "boss" }),
+    ...createEmptyRewardState(),
+    ...createRewardOffer({ ...input, source: "boss" }),
     gold: computeSharedRewardGold(input, input.bossBonus),
     materials: input.materials,
   };
@@ -354,22 +151,26 @@ export function createWildwoodRewardState({
   ownedTrinketIds = [],
   ownedUniqueIds = new Set(),
 }: WildwoodRewardInput): RewardState {
-  return createLootRewardState({
-    source: "wildwood",
-    runDeck,
-    rng,
-    lootProgress,
-    gearAstralChanceBonus,
-    excludedBoonIds,
-    ownedTrinketIds,
-    ownedUniqueIds,
-  });
+  return {
+    ...createEmptyRewardState(),
+    ...createRewardOffer({
+      source: "wildwood",
+      runDeck,
+      rng,
+      lootProgress,
+      gearAstralChanceBonus,
+      excludedBoonIds,
+      ownedTrinketIds,
+      ownedUniqueIds,
+    }),
+  };
 }
 
 export function createCombatRewardState(input: CombatRewardInput): RewardState {
   const source = input.battleState.currentEnemy.enemyType === ENEMY_TYPES.ELITE ? "elite" : "normal";
   return {
-    ...createLootRewardState({ ...input, source }),
+    ...createEmptyRewardState(),
+    ...createRewardOffer({ ...input, source }),
     gold: computeSharedRewardGold(input, input.eliteBonus),
     materials: input.materials,
     destinations: input.destinations,

@@ -55,6 +55,14 @@ The engine resolves gameplay before presentation; playback consumes committed re
 - **Card play:** UI → `useBattleController.playCard()` → `playBattleCardResolved()` → `applyCardEffects()` → new `BattleState` → store.
 - **Enemy turn:** `commitEndTurn()` → `resolveBattleTurn(snapshot, context)` → committed result and XP → `playTurnFrames()` for presentation only.
 
+`battle/card-play.ts` owns hand validation, payment, and the ordinary play sequence.
+`battle/card-play-effects.ts` owns effect execution, repeated effects, and
+post-effect talent and trinket rewards; both ordinary play and Dodge-triggered
+automatic play use it. `battle/card-consume.ts` owns the final discard or
+exhaust routing and Consume rewards. Keep the order of effect resolution,
+encounter reactions, and Consume routing explicit at each caller; automatic
+play does not use the ordinary payment entry point.
+
 Direct player hits use source-specific recipes in `lib/battle/hit-resolution.ts`
 and its lower `follow-up-hit-resolution.ts` tier. `hit-request.ts` carries source
 intent; `hit-facts.ts` captures eligibility and Health results before nested
@@ -73,13 +81,17 @@ The [session capability reference](./RUN_STATE.md#session-capability-ports) list
 ### Run loop overview
 
 `run-loop/` splits each outcome into three layers: pure computation in
-`navigation/` (`reward-flow`, `victory-flow`, `mystery-flow`, `reward-math`),
+`navigation/` (`reward-flow`, `reward-offers`, `victory-flow`, `mystery-flow`, `reward-math`),
 store commits in domain command modules (`reward-commands`, `victory-commands`, `destination-commands`, `progression-commands`, `wildwood-commands`, and `run-end-commands`), and
 navigation plus sound in `run-flow-*.ts` shells composed by `run/run-flow.ts`.
 `shell/run-flow-engine.ts` wires the factories to route actions. Reading order
 for a change: `run-flow.ts` → the `run-flow-*` file for the outcome → its
 `*-commands` → the `navigation/` pure function. Gold: `victory-flow.ts` gold
 roll → `reward-math.ts` → `reward-flow.ts` reward states.
+`reward-offers.ts` owns category eligibility, hoard guarantees, and seeded
+choice sampling. It returns a typed offer without run settlement fields;
+`reward-flow.ts` adds the reward state defaults, Gold, Materials, destinations,
+and post-claim routing.
 
 Single owners to know: `run/run-materials.ts` owns the "Wildwood awards no
 materials" rule for both during-run and end-of-run awards;

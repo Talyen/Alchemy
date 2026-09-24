@@ -73,10 +73,10 @@ export function createRunRngState(seedOrRng: number | Rng): RunRngState {
 }
 
 export function nextRunRngValue(state: RunRngState, stream: RunRngStream): { value: number; nextCounter: number } {
-  const counter = state.counters[stream] ?? 0;
-  if (!(stream in STREAM_SALTS)) {
+  if (!Object.hasOwn(STREAM_SALTS, stream)) {
     throw new Error(`Unknown run RNG stream: ${stream}`);
   }
+  const counter = state.counters[stream] ?? 0;
   const value = mixUint32(state.seed ^ STREAM_SALTS[stream] ^ Math.imul(counter + 1, 0x85eb_ca6b)) / UINT32_RANGE;
   return { value, nextCounter: counter + 1 };
 }
@@ -95,7 +95,7 @@ export function rngInt(rng: Rng, n: number): number {
 export function createRunStreamRng(seed: number, stream: RunRngStream = "world", startCounter = 0): Rng {
   if (!Number.isInteger(startCounter) || startCounter < 0)
     throw new Error("createRunStreamRng requires a non-negative integer startCounter");
-  if (!(stream in STREAM_SALTS)) {
+  if (!Object.hasOwn(STREAM_SALTS, stream)) {
     throw new Error(`Unknown run RNG stream: ${stream}`);
   }
   const seed32 = toUint32(seed);

@@ -9,7 +9,8 @@ import {
   type KeywordId,
 } from "@/lib/game-data";
 import { createBattleStartState } from "@/lib/battle/battle-setup";
-import { playBattleCardResolved, handlePostPlayCardDestination } from "@/lib/battle/card-play";
+import { playBattleCardResolved } from "@/lib/battle/card-play";
+import { handlePostPlayCardDestination } from "@/lib/battle/card-consume";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { prepareTalentCardPlay } from "@/lib/battle/talent-card-play";
 import { applyDodgeTalentStatuses } from "@/lib/battle/dodge-talent-rewards";
@@ -298,12 +299,12 @@ describe("repeatable card and Consume rewards", () => {
       deck: [drawCard, drawCard, drawCard],
       rng: () => 0,
     });
-    const first = handlePostPlayCardDestination(initial, cardById["health-potion"]!, true, [], true);
+    const first = handlePostPlayCardDestination(initial, cardById["health-potion"]!, { lastCardInHand: true });
     expect(first.enemyHealth).toBe(97);
     expect(first.enemyStatuses).toMatchObject({ burn: 0, poison: 0 });
     expect(first.playerStatuses.forge).toBe(3);
     expect(first.hand).toHaveLength(1);
-    const second = handlePostPlayCardDestination(first, cardById["health-potion"]!, true, [], false);
+    const second = handlePostPlayCardDestination(first, cardById["health-potion"]!);
     expect(second.enemyHealth).toBe(97);
     expect(second.playerStatuses.forge).toBe(3);
     expect(second.hand).toHaveLength(2);

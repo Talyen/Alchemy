@@ -26,7 +26,13 @@ describe("encounter trait catalog", () => {
       for (const category of ["combat", "reward"] as const) {
         const pool = eligibleEncounterTraitIds(mode, category);
         expect(pool.length, `${mode} ${category}`).toBeGreaterThan(0);
-        expect(() => pickEncounterTrait(mode, category, () => 0.5)).not.toThrow();
+        let draws = 0;
+        const selected = pickEncounterTrait(mode, category, () => {
+          draws += 1;
+          return 0.5;
+        });
+        expect(pool).toContain(selected);
+        expect(draws, `${mode} ${category}`).toBe(1);
       }
     }
   });

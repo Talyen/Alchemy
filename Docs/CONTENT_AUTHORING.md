@@ -30,6 +30,9 @@ currently preserves complete saved content and refreshes title/art from the
 catalog, so a catalog rebalance alone does not replace saved effects. This is
 not a requirement to retain obsolete card mechanics; retire incompatible
 development snapshots through the save owner when current rules require it.
+Strong Spirits and Alchemist mixing render their scaled Potion effects through
+`describeCardEffects` in `effect-metadata.ts`; add Potion wording there rather
+than changing numeric text in the mixer.
 
 Cards in `cardLibrary` are automatically included in card shop, combat rewards, mysteries, wish, and draft via `getOfferableCardPool()` — no separate pool registration. Exclude a card with `excludeFromOfferPool: true` (`mixed-potion` is the current example). Distillation-eligible Potions are the explicit `POTION_CARD_IDS` list in `cards/card-pools.ts` — a new brew must be added there deliberately; Mana Berries, Mana Crystals, Apple, and Bread are intentionally excluded.
 

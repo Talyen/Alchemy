@@ -10,7 +10,8 @@ import {
   patchBattleState,
 } from "../../fixtures/battle";
 import { defaultCcState } from "../../fixtures/default-battle-state";
-import { handlePostPlayCardDestination, playBattleCardResolved } from "@/lib/battle/card-play";
+import { playBattleCardResolved } from "@/lib/battle/card-play";
+import { handlePostPlayCardDestination } from "@/lib/battle/card-consume";
 import { computeCardDamageToEnemy } from "@/lib/battle/damage-calc";
 import { processEnemyDamageEffect } from "@/lib/battle/enemy-attack-damage";
 import { resolvePlayerHit } from "@/lib/battle/hit-resolution";
@@ -110,7 +111,7 @@ describe("gear-effects", () => {
     const state = makeState({
       gearEffects: { ...defaultGearEffects, burnOnConsume: 5 },
     });
-    const withText = handlePostPlayCardDestination(state, card, true, []);
+    const withText = handlePostPlayCardDestination(state, card, { combatTexts: [] });
     const withoutText = handlePostPlayCardDestination(state, card);
     expect(withoutText.enemyStatuses.burn).toBe(0);
     expect(withoutText).toEqual(withText);

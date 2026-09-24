@@ -9,6 +9,25 @@ import { applyArmorReward } from "@/lib/battle/status-player";
 import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
 describe("combat reward ordering", () => {
+  it("Resonant Chime restores Mana before a Consumed card checks Lastlight", () => {
+    const card = makeTestCard({ id: "chimed-consume", consume: true, cost: 0, effects: [] });
+    const state = patchBattleState({
+      hand: [card],
+      mana: 0,
+      maxMana: 3,
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      gearEffects: { holyOnConsumeWithoutMana: 3 },
+      trinketEffects: { resonantChimeCardsRequired: 1, resonantChimeMana: 1 },
+      rng: () => 0.99,
+    });
+
+    const result = playBattleCardResolved(state, card.id, 0).state;
+    expect(result.mana).toBe(1);
+    expect(result.enemyHealth).toBe(30);
+    expect(result.exhausted).toContainEqual(card);
+  });
+
   it("Dodge Armor receives Reinforced and Last Stand and triggers Armored Surge", () => {
     const state = patchBattleState({
       rng: () => 0.01,

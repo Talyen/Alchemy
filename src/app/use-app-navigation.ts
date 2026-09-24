@@ -1,26 +1,19 @@
-import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
-import { useLatestRef } from "@/features/alchemy/shared/ui/use-latest-ref";
-import { discoverCardIds, discoverTrinketIds, discoverUniqueIds } from "@/features/alchemy/shared/stores/profile-store";
-import { clearAllPersistentGameData } from "@/features/alchemy/shared/stores/reset";
+import {
+  rememberNonOptionsScreen,
+  resolveOptionsBackTarget,
+  resolveReturnToRunTarget,
+  resolveScreenBackHandler,
+} from "@/app/screen-navigation-policy";
 import {
   useForegroundResumeKind,
   useHasActiveBattle,
   useRunResumeScreen,
 } from "@/features/alchemy/shared/stores/run-reads";
-import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
-import {
-  setEncounteredEnemyIds,
-  setFinishedRunCharacters,
-  setMaterials,
-} from "@/features/alchemy/shared/stores/run-session-write-port";
-import { useSequentialFadeSwap } from "@/features/alchemy/shared/ui/use-fade";
-import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 import type { AlchemyRunCommands } from "@/features/alchemy/shell/route-commands";
+import { useSequentialFadeSwap } from "@/features/alchemy/shared/ui/use-fade";
 import { resolveGameDelay } from "@/lib/animation/game-timer";
 import { MOTION_FADE_MS } from "@/lib/game-constants";
-import { cardLibrary, enemyBestiary, trinketLibrary } from "@/lib/game-data";
-import { uniqueItemList } from "@/lib/gear";
-import { isRunResumeScreen, type Screen } from "@/lib/routing";
+import type { Screen } from "@/lib/routing";
 import { useCallback, useEffect, useState } from "react";
 
 export function useGameMenuState() {
@@ -64,33 +57,6 @@ export function useRenderedScreenTransition(controllerScreen: Screen) {
   const tooltipBlocked = renderedScreen !== unblockedScreen;
   const pagePhase: "enter" | "exit" = fadePhase === "exit" ? "exit" : "enter";
   return { renderedScreen, pagePhase, tooltipBlocked };
-}
-
-export function resolveReturnToRunTarget(
-  returnToRunScreen: Screen | null,
-  hasActiveBattle: boolean,
-  hasResumableRun = false,
-): Screen | null {
-  if (returnToRunScreen) return returnToRunScreen;
-  if (hasActiveBattle) return "battle";
-  if (hasResumableRun) return "destination";
-  return null;
-}
-
-export function rememberNonOptionsScreen(renderedScreen: Screen, previous: Screen): Screen {
-  return renderedScreen === "options" ? previous : renderedScreen;
-}
-
-export function resolveOptionsBackTarget(
-  optionsReturnScreen: Screen,
-  hasActiveBattle: boolean,
-  hasResumableRun: boolean,
-): { kind: "returnToRun" } | { kind: "goToScreen"; screen: Screen } {
-  if (isRunResumeScreen(optionsReturnScreen)) {
-    if (hasActiveBattle || hasResumableRun) return { kind: "returnToRun" };
-    if (optionsReturnScreen !== "difficulty-select") return { kind: "goToScreen", screen: "menu" };
-  }
-  return { kind: "goToScreen", screen: optionsReturnScreen };
 }
 
 export function useReturnToRunNavigation({
@@ -161,146 +127,4 @@ export function useReturnToRunNavigation({
     hasActiveBattle,
     screenBackHandler,
   };
-}
-
-export function resolveScreenBackHandler({
-  renderedScreen,
-  returnToRunTarget,
-  returnToRun,
-  handleMainMenu,
-  backFromOptions,
-  goToScreen,
-}: {
-  renderedScreen: Screen;
-  returnToRunTarget: Screen | null;
-  returnToRun: () => void;
-  handleMainMenu: () => void;
-  backFromOptions: () => void;
-  goToScreen: (screen: Screen) => void;
-}): (() => void) | undefined {
-  if (renderedScreen === "options") return backFromOptions;
-  if (
-    renderedScreen === "collection" ||
-    renderedScreen === "homestead" ||
-    renderedScreen === "talents" ||
-    renderedScreen === "armory"
-  ) {
-    return returnToRunTarget ? returnToRun : handleMainMenu;
-  }
-  if (renderedScreen === "game-mode-select") {
-    return handleMainMenu;
-  }
-  if (renderedScreen === "character-select") {
-    return () => goToScreen("game-mode-select");
-  }
-  if (renderedScreen === "difficulty-select") {
-    return () => goToScreen("character-select");
-  }
-  return undefined;
-}
-
-function isRadixEscapeTargetOpen(): boolean {
-  return Boolean(
-    document.querySelector(
-      [
-        '[data-radix-select-content][data-state="open"]',
-        '[data-radix-dropdown-menu-content][data-state="open"]',
-        '[data-radix-popover-content][data-state="open"]',
-        '[data-radix-combobox-content][data-state="open"]',
-      ].join(", "),
-    ),
-  );
-}
-
-export function useAppKeyboardShortcuts({
-  renderedScreen,
-  screenInteractive,
-  gameMenuOpen,
-  onBack,
-  toggleGameMenu,
-}: {
-  renderedScreen: Screen;
-  screenInteractive: boolean;
-  gameMenuOpen: boolean;
-  onBack?: (() => void) | undefined;
-  toggleGameMenu: () => void;
-}) {
-  const screenInteractiveRef = useLatestRef(screenInteractive);
-  const gameMenuOpenRef = useLatestRef(gameMenuOpen);
-  const renderedScreenRef = useLatestRef(renderedScreen);
-  const onBackRef = useLatestRef(onBack);
-  const toggleGameMenuRef = useLatestRef(toggleGameMenu);
-
-  // Subscribed once; freshness comes from latest-refs above so menu/back/screen
-  // updates never resubscribe the global Escape stack.
-  useEffect(() => {
-    const removeBackHandler = pushEscapeHandler({
-      id: "app-screen-back",
-      priority: ESCAPE_PRIORITY.SCREEN_OVERLAY,
-      onEscape: () => {
-        if (isRadixEscapeTargetOpen()) return false;
-        if (gameMenuOpenRef.current || !screenInteractiveRef.current) return false;
-        if (onBackRef.current) {
-          onBackRef.current();
-          return;
-        }
-        return false;
-      },
-    });
-
-    const removeMenuHandler = pushEscapeHandler({
-      id: "app-game-menu",
-      priority: ESCAPE_PRIORITY.APP_MENU,
-      onEscape: () => {
-        // An existing menu remains dismissible while navigation is locked.
-        if (!screenInteractiveRef.current && !gameMenuOpenRef.current) return false;
-        if (renderedScreenRef.current === "menu") return false;
-        if (isRadixEscapeTargetOpen()) return false;
-        toggleGameMenuRef.current();
-        return;
-      },
-    });
-
-    return () => {
-      removeBackHandler();
-      removeMenuHandler();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally subscribe once; refs stay fresh
-  }, []);
-}
-
-export function useDevShortcuts(run: Pick<AlchemyRunCommands, "resetRunState" | "unlockAllTalents">) {
-  const { resetRunState, unlockAllTalents } = run;
-  const clearSaveData = useCallback(() => {
-    void clearAllPersistentGameData().then((cleared) => {
-      if (cleared) resetRunState();
-    });
-  }, [resetRunState]);
-
-  const unlockAllDevMode = useCallback(() => {
-    if (!isAlchemyDevBuild()) return;
-    dispatchRunSessionCommand((draft) => {
-      discoverCardIds(
-        draft,
-        cardLibrary.map((card) => card.id),
-      );
-      setEncounteredEnemyIds(
-        draft,
-        enemyBestiary.map((enemy) => enemy.id),
-      );
-      discoverTrinketIds(
-        draft,
-        trinketLibrary.map((boon) => boon.id),
-      );
-      discoverUniqueIds(
-        draft,
-        uniqueItemList.map((unique) => unique.id),
-      );
-      setFinishedRunCharacters(draft, ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"]);
-      setMaterials(draft, { wood: 99, stone: 99, iron: 99, food: 99, herbs: 99, hide: 99, gems: 99 });
-    });
-    unlockAllTalents();
-  }, [unlockAllTalents]);
-
-  return { clearSaveData, unlockAllDevMode };
 }

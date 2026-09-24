@@ -96,6 +96,8 @@ Destination offers use the `destinations` stream for sampling. They draw a boss 
 
 Run-luck helpers live in `@/lib/rng` (the single door), small math in `@/lib/math`, and class-name/string/id helpers in `@/lib/utils`. Every draw stays in `[0, 1)`; unknown streams, out-of-range draws, empty ranges, and negative sample counts throw in every build. Counters hash as `counter + 1`, so resume continues at the exact next draw. Snapshot-only placeholders always draw zero and must never reach live combat. Full battle RNG + arithmetic rules: [GAME_RULES](./GAME_RULES.md).
 
+Choosing one encounter trait draws once from its eligible pool. Wildwood boss preparation draws once for its combat trait and once for its reward trait after selecting a boss; refilling the boss bag has its own draws.
+
 ## Persistence API
 
 `run-resume-codec.ts` is the single feature-owned `RunSession` ↔ `ActiveRunData` translation boundary. `encodeRunResumeSnapshot(source)` assembles the wire shape through `encodeActiveRunFromSession`, `encodePersistedShops`, and `encode-interrupted-flow.ts`; `decodeRunResumeSnapshot(data)` returns aggregate session fields. Legacy screen inference remains for decoding and an uninitialized activity. `run-restore.ts` applies decoded fields to the command draft.
