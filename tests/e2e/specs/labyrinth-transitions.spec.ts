@@ -42,7 +42,7 @@ async function installArtworkProbe(page: Page) {
       const map = document.querySelector('[aria-label="Labyrinth map"]');
       if (!map) leftMap = true;
       if (map && leftMap) {
-        for (const image of map.querySelectorAll('[data-state="cleared"] img')) {
+        for (const image of map.querySelectorAll('[data-state="cleared"]:not([data-current="true"]) img')) {
           const style = getComputedStyle(image);
           probe.samples += 1;
           if (

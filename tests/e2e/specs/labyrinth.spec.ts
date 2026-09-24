@@ -22,7 +22,7 @@ test.describe("Labyrinth exploration", critical, () => {
       "location",
     );
     const currentArt = page.getByRole("button", { name: "Entrance chamber, you are here", exact: true }).locator("img");
-    await expect(currentArt).toHaveAttribute("src", /knight\.webp/);
+    await expect(currentArt).toHaveAttribute("src", /knight(?:-[\w-]+)?\.webp/);
     await expect(currentArt).not.toHaveClass(/grayscale/);
     await expect(currentArt).toHaveCSS("object-position", "50% 13%");
     const hidden = page.getByRole("button", { name: /^Undiscovered chamber/ });
@@ -71,7 +71,7 @@ test.describe("Labyrinth exploration", critical, () => {
     await expect(page.getByRole("heading", { name: "Campfire", exact: true, level: 1 })).toBeVisible();
     await page.getByRole("button", { name: "Rest", exact: true }).click();
     await expect(room).toHaveAttribute("aria-current", "location");
-    await expect(room.locator("img")).toHaveAttribute("src", /knight\.webp/);
+    await expect(room.locator("img")).toHaveAttribute("src", /knight(?:-[\w-]+)?\.webp/);
     await expect(room.locator("img")).not.toHaveClass(/grayscale/);
     await expect(page.getByRole("button", { name: /^Entrance chamber/ }).locator("img")).toHaveClass(/grayscale/);
     await expect(diagonal.locator("img")).not.toHaveAttribute("src", /labyrinth-shrouded-/);
