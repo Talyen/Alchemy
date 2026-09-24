@@ -10,6 +10,7 @@ import { getLabyrinthNodePlasmaPair } from "./labyrinth-plasma";
 
 interface Props {
   map: LabyrinthMap;
+  heroArt: string;
   nodes: LabyrinthNode[];
   selectedNodeId: string | null;
   onEnter: () => void;
@@ -18,7 +19,16 @@ interface Props {
   onDeselect: () => void;
 }
 
-export function LabyrinthMapViewport({ map, nodes, selectedNodeId, onEnter, onDescend, onSelect, onDeselect }: Props) {
+export function LabyrinthMapViewport({
+  map,
+  heroArt,
+  nodes,
+  selectedNodeId,
+  onEnter,
+  onDescend,
+  onSelect,
+  onDeselect,
+}: Props) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const inspectorRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 0, height: 0, scale: 1 });
@@ -139,6 +149,7 @@ export function LabyrinthMapViewport({ map, nodes, selectedNodeId, onEnter, onDe
                     key={node.id}
                     node={node}
                     map={map}
+                    heroArt={heroArt}
                     selected={selectedNodeId === node.id}
                     emphasized={selectedNodeId === node.id || hoveredNodeId === node.id || focusedNodeId === node.id}
                     x={point.x}

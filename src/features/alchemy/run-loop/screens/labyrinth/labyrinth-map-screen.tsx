@@ -10,6 +10,7 @@ import { usePlasmaBaseline } from "@/features/alchemy/shared/ui/use-plasma-sourc
 
 interface Props {
   labyrinthMap: LabyrinthMap | null;
+  heroArt: string;
   selectedNodeId: string | null;
   onNodeSelect: (nodeId: string) => void;
   onNodeDeselect: () => void;
@@ -19,6 +20,7 @@ interface Props {
 
 export function LabyrinthMapScreen({
   labyrinthMap,
+  heroArt,
   selectedNodeId,
   onNodeSelect,
   onNodeDeselect,
@@ -66,6 +68,7 @@ export function LabyrinthMapScreen({
             <LabyrinthMapViewport
               key={labyrinthMap.currentFloor}
               map={labyrinthMap}
+              heroArt={heroArt}
               nodes={floorNodes(labyrinthMap, labyrinthMap.currentFloor)}
               selectedNodeId={selectedNode?.id ?? null}
               onSelect={onNodeSelect}

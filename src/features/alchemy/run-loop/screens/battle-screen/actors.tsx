@@ -10,6 +10,7 @@ import {
   getBossShineColors,
   getCharacterShineColors,
   getCompanionShineColors,
+  getEnemyKeywordShineColors,
   getPlasmaColorPairForCharacter,
 } from "@/features/alchemy/shared/config";
 import { ShakingArtPanel, ShakingCompanionPanel } from "../../battle/presentation/actor-vfx";
@@ -104,7 +105,11 @@ export function BattleActors({
           turnActive={!isPlayerTurn && !enemyDead}
           turnUrgentHide={enemyDead}
           ccKeyword={enemyCcKeyword}
-          {...(isBoss ? { turnShineColors: getBossShineColors(battleState.currentEnemy) } : {})}
+          turnShineColors={
+            isBoss
+              ? getBossShineColors(battleState.currentEnemy, activeLabyrinthModifiers)
+              : getEnemyKeywordShineColors(battleState.currentEnemy, activeLabyrinthModifiers)
+          }
         />
       </div>
     </section>

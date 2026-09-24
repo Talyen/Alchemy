@@ -2,6 +2,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { GearTooltipContent } from "@/features/alchemy/shared/ui/tooltips/gear-tooltip-content";
 import { keywordDefinitions } from "@/lib/game-data";
+import { NEUTRAL_SHINE_FALLBACK } from "@/lib/animation/shine-gradient";
 import { extractKeywordIds } from "@/lib/keyword-text";
 import { gearAffixCatalog, gearDefinitions, getGearAffixTextShineColors, type GearInstance } from "@/lib/gear";
 
@@ -39,16 +40,14 @@ describe("gear affix shine rendering", () => {
     }
   });
 
-  it("keeps described keywords or authored affinity represented in each affix shine", () => {
+  it("keeps only described keywords represented in each affix shine", () => {
     for (const affix of Object.values(gearAffixCatalog)) {
       const described = extractKeywordIds(affix.descriptionTemplate);
-      const keywords =
-        described.length > 0
-          ? described
-          : [affix.keywordId, ...(affix.secondaryKeywordId ? [affix.secondaryKeywordId] : [])];
       const colors = getGearAffixTextShineColors(affix);
-      expect(colors.length).toBeGreaterThan(0);
-      for (const id of keywords.slice(0, 3)) {
+      if (described.length === 0) {
+        expect(colors).toEqual(NEUTRAL_SHINE_FALLBACK.slice(0, 2));
+      }
+      for (const id of described.slice(0, 3)) {
         expect(colors.join(" ")).toContain(keywordDefinitions[id].shineColors[0]!);
       }
     }

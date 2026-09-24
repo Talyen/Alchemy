@@ -4,6 +4,11 @@ import { test } from "../../fixtures/e2e";
 import { assertNoOverflow, assertHorizontalNeighborGap } from "../../browser-helpers";
 import { MenuPage } from "../../pages/menu-page";
 import { critical } from "../../playwright-tags";
+import { keywordDefinitions } from "@/lib/game-data/keywords";
+
+function cssRgb(hex: string): string {
+  return `rgb(${Number.parseInt(hex.slice(1, 3), 16)}, ${Number.parseInt(hex.slice(3, 5), 16)}, ${Number.parseInt(hex.slice(5, 7), 16)})`;
+}
 
 async function expectHoverOnlyShine(entry: Locator) {
   await expect(entry.locator(".shine-border")).toHaveCount(0);
@@ -40,6 +45,31 @@ test.describe("Collection", () => {
 
       await assertHorizontalNeighborGap(page.getByRole("button", { name: /Inspect/ }));
     });
+
+    test("Pack Tactics shines for both Companion and Wish in its description", async ({ page }) => {
+      test.setTimeout(60000);
+      await new MenuPage(page).gotoCollection({ discoveredCardIds: ["pack-tactics"] });
+      await page.getByRole("button", { name: "Cards", exact: true }).click();
+      await expect(page.getByRole("button", { name: "Inspect Undiscovered Entry" }).first()).toBeVisible();
+      const card = page.getByRole("button", { name: "Inspect Pack Tactics" });
+      const nextPageButton = page.getByRole("button", { name: "Next page" });
+      const firstArt = page.locator('button[aria-label^="Inspect"] img').first();
+      for (let index = 0; index < 20 && !(await card.count()); index++) {
+        await expect(nextPageButton).toBeEnabled();
+        const previousArt = await firstArt.getAttribute("src");
+        await nextPageButton.click();
+        await expect(firstArt).not.toHaveAttribute("src", previousArt ?? "");
+        await expect(page.getByRole("button", { name: /^Inspect / }).first()).toBeVisible();
+      }
+      await expect(card).toBeVisible();
+      await card.hover();
+      await expect(page.getByText(/Wish for one/)).toBeVisible();
+      const gradient = await card
+        .locator(".shine-border-paint")
+        .evaluate((element) => getComputedStyle(element).backgroundImage);
+      expect(gradient).toContain(cssRgb(keywordDefinitions.companion.shineColors[0]));
+      expect(gradient).toContain(cssRgb(keywordDefinitions.wish.shineColors[0]));
+    });
   });
 
   test.describe("with a discovered unique", () => {
@@ -59,7 +89,7 @@ test.describe("Collection", () => {
       await expect(inspectBtn).toBeVisible({ timeout: 5000 });
       await expectHoverOnlyShine(inspectBtn);
       await inspectBtn.hover();
-      await expect(page.getByText(/Purge one enemy buff/)).toBeVisible();
+      await expect(page.getByText(/Purge one beneficial status effect/)).toBeVisible();
     });
   });
 

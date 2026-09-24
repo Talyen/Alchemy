@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-import { ScreenDescription, TitledScreenShell } from "../../shared/ui/layout-components";
+import { TitledScreenShell } from "../../shared/ui/layout-components";
 import { Button } from "@/components/ui/button";
 import { campfire } from "@/features/alchemy/shared/config/game-data-catalog";
 import { getCampfireRestHealth } from "@/lib/campfire-heal";
@@ -24,9 +24,6 @@ export function CampfireScreen({
   const [rest, setRest] = useState<{ from: number; to: number; maxHealth: number } | null>(null);
   const [done, setDone] = useState(false);
   const resting = rest !== null;
-  const restoredHealth = rest
-    ? rest.to - rest.from
-    : getCampfireRestHealth(playerHealth, maxHealth, healFraction, healingBonus) - playerHealth;
   const { displayHealth, progressHealth } = useEasedHealth({
     from: rest?.from ?? playerHealth,
     to: rest?.to ?? playerHealth,
@@ -51,7 +48,6 @@ export function CampfireScreen({
   return (
     <TitledScreenShell title="Campfire" minHeightClass="min-h-[62cqh]">
       <div className="mt-6 flex flex-col items-center gap-8 text-center">
-        <ScreenDescription>{`Rest to Restore ${restoredHealth} Health`}</ScreenDescription>
         <div className="flex w-full max-w-[calc(30.0038*var(--content-rem,1rem))] flex-col items-center gap-8">
           <img src={campfire} alt="Campfire" className="w-full rounded-shell-panel object-contain" loading="eager" />
           <div className="flex min-h-[calc(4.75*var(--content-rem,1rem))] w-full items-center justify-center">

@@ -23,6 +23,7 @@ function renderViewport(selectedNodeId: string) {
   const map = gridLabyrinthMapFixture();
   const props = {
     map,
+    heroArt: "/knight.webp",
     nodes: floorNodes(map, map.currentFloor),
     selectedNodeId,
     onEnter: vi.fn(),

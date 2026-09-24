@@ -25,6 +25,7 @@ it("preserves completed-room inspection but dismisses selection when its floor i
   map.currentFloor = 1;
   const props = {
     labyrinthMap: map,
+    heroArt: "/knight.webp",
     selectedNodeId: "labyrinth-floor-1-n0",
     onNodeSelect: vi.fn(),
     onNodeDeselect: vi.fn(),

@@ -2,10 +2,9 @@ import { memo, useState, type RefObject } from "react";
 
 import { playCardSound, playEnemyAttack } from "@/lib/audio";
 import { cardBack, getEffectiveCardDescriptionLines } from "@/lib/game-data";
-import { gearDefinitions } from "@/lib/gear";
-import { getTrinketKeywords, cardById } from "../../../shared/config/game-data-catalog";
+import { gearDefinitions, getGearDefinitionShineColors } from "@/lib/gear";
+import { cardById } from "../../../shared/config/game-data-catalog";
 import { cn } from "@/lib/utils";
-import { extractKeywordIds } from "@/lib/keyword-text";
 import { ShineBorder } from "@/components/ui/shine-border";
 
 import {
@@ -14,9 +13,9 @@ import {
   cardSurfaceClass,
   getTileWidthClass,
   getCardInspectionShineColors,
-  getInspectionKeywordShineColors,
   getCharacterShineColors,
-  getPlasmaKeywordsForEnemy,
+  getEnemyKeywordShineColors,
+  getTrinketShineColors,
   getPlasmaColorPairForCard,
   getPlasmaColorPairForTrinket,
   getPlasmaColorPairForUnique,
@@ -112,11 +111,11 @@ function collectionTileShineColors(item: CollectionTileItem): readonly string[] 
     if (catalogCard) return getCardInspectionShineColors(catalogCard);
   }
   if (item.character) return getCharacterShineColors(item.character.id);
-  if (item.enemyEntry) return getInspectionKeywordShineColors(getPlasmaKeywordsForEnemy(item.enemyEntry));
-  if (item.frameType === "trinket") return getInspectionKeywordShineColors(getTrinketKeywords(item.id));
+  if (item.enemyEntry) return getEnemyKeywordShineColors(item.enemyEntry);
+  if (item.frameType === "trinket") return getTrinketShineColors(item.id);
   if (item.frameType === "unique") {
     const definition = gearDefinitions[item.id];
-    return definition ? getInspectionKeywordShineColors(extractKeywordIds(definition.descriptionLines.join(" "))) : [];
+    return definition ? getGearDefinitionShineColors(definition) : [];
   }
   return [];
 }

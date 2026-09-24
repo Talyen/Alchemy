@@ -632,6 +632,15 @@
   outline: none;
 }
 
+.labyrinth-node[data-current="true"] > .surface {
+  border-width: 3px;
+  --surface-frame-border-width: 3px;
+}
+
+.labyrinth-node[data-current="true"] > .surface.has-shine-border .shine-border {
+  --border-width: 4px !important;
+}
+
 .labyrinth-boss {
   box-shadow: 0 0 12px 2px color-mix(in srgb, var(--color-red-500) 45%, transparent);
 }
@@ -650,6 +659,10 @@
   object-fit: cover;
   user-select: none;
   animation: labyrinth-discover 180ms ease-out both;
+}
+
+.labyrinth-hero-art {
+  object-position: center 13%;
 }
 
 @media (prefers-reduced-motion: reduce) {

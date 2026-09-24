@@ -45,8 +45,8 @@ describe("getCharacterShineColors", () => {
 });
 
 describe("getCardKeywordShineColors", () => {
-  it("returns no colors when the card has no keywords", () => {
-    expect(getCardKeywordShineColors(makeTestCard())).toEqual([]);
+  it("uses neutral shine when the card has no described keywords", () => {
+    expect(getCardKeywordShineColors(makeTestCard())).toEqual([...SHINE_PALETTES.bossVictoryFallback]);
   });
 
   it("uses a keyword's 3-stop pulse for a single keyword", () => {
@@ -71,8 +71,23 @@ describe("getCardKeywordShineColors", () => {
     const companion = cardLibrary.find((card) => card.id === "wolf-companion");
     expect(companion).toBeDefined();
 
-    expect(getCardDisplayKeywords(companion!)).toEqual(["companion"]);
+    expect(getCardDisplayKeywords(companion!)).toEqual(["bleed", "physical", "companion"]);
     expect(getCardInspectionShineColors(companion!)).not.toContain(keywordDefinitions.consume.shineColors[0]);
+  });
+
+  it("includes conditional and companion keywords visible in card descriptions", () => {
+    const packTactics = cardLibrary.find((card) => card.id === "pack-tactics")!;
+    const wolfCompanion = cardLibrary.find((card) => card.id === "wolf-companion")!;
+
+    expect(getCardDisplayKeywords(packTactics)).toEqual(["companion", "wish"]);
+    expect(getCardKeywordShineColors(packTactics)).toEqual([
+      keywordDefinitions.companion.shineColors[0],
+      keywordDefinitions.wish.shineColors[0],
+      keywordDefinitions.companion.shineColors[0],
+    ]);
+    expect(getCardInspectionShineColors(packTactics)).toEqual(getCardKeywordShineColors(packTactics));
+    expect(getCardDisplayKeywords(wolfCompanion)).toEqual(["bleed", "physical", "companion"]);
+    expect(getCardDisplayKeywords(wolfCompanion)).not.toContain("consume");
   });
 });
 
@@ -82,9 +97,9 @@ describe("getTrinketShineColors", () => {
     expect(colors).toEqual(expect.arrayContaining([...keywordDefinitions.burn.shineColors]));
   });
 
-  it("falls back to the boon palette when no keywords resolve", () => {
-    expect(getTrinketShineColors("tattered-pages")).toEqual([...SHINE_PALETTES.boon]);
-    expect(getTrinketShineColors("missing-trinket")).toEqual([...SHINE_PALETTES.boon]);
+  it("uses neutral shine when no trinket keywords are described", () => {
+    expect(getTrinketShineColors("tattered-pages")).toEqual([...SHINE_PALETTES.bossVictoryFallback]);
+    expect(getTrinketShineColors("missing-trinket")).toEqual([...SHINE_PALETTES.bossVictoryFallback]);
   });
 });
 

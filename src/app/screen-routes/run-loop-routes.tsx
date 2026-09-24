@@ -125,9 +125,11 @@ function BattleScreenRoute({
 
 function LabyrinthMapScreenRoute({ commands }: { commands: RunLoopCommands["labyrinth"] }) {
   const r = useLabyrinthMapScreenData();
+  const { heroArt } = useAppScreenChrome();
   return (
     <LabyrinthMapScreen
       labyrinthMap={r.labyrinthMap}
+      heroArt={heroArt}
       selectedNodeId={r.selectedLabyrinthNodeId}
       onNodeSelect={commands.handleNodeSelect}
       onNodeDeselect={commands.handleNodeDeselect}

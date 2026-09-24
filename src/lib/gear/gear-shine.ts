@@ -12,15 +12,8 @@ import type { GearInstance } from "./types";
 const UNIQUE_SHINE_COLORS = [UI_GOLD.light, UI_GOLD.base, UI_GOLD.deep, UI_GOLD.pale, UI_GOLD.light] as const;
 const UNIQUE_TEXT_SHINE_COLORS = [UI_GOLD.pale, `color-mix(in srgb, ${UI_GOLD.pale} 55%, transparent)`] as const;
 
-function affixShineKeywordIds(affix: {
-  descriptionTemplate: string;
-  keywordId?: KeywordId;
-  secondaryKeywordId?: KeywordId;
-}): KeywordId[] {
-  const described = extractKeywordIds(affix.descriptionTemplate);
-  return described.length > 0
-    ? described
-    : [affix.keywordId, affix.secondaryKeywordId].filter((id): id is KeywordId => !!id);
+function affixShineKeywordIds(affix: { descriptionTemplate: string }): KeywordId[] {
+  return extractKeywordIds(affix.descriptionTemplate);
 }
 
 export function selectTextShineKeywordIds(
@@ -80,7 +73,11 @@ function resolveShineColors(
 }
 
 export function getGearDefinitionShineColors(definition: GearDefinition): readonly string[] {
-  return resolveShineColors(definition.rarity, "border", definition.affinityKeywords);
+  const keywords =
+    definition.rarity === "unique"
+      ? extractKeywordIds(definition.descriptionLines.join(" "))
+      : definition.affinityKeywords;
+  return resolveShineColors(definition.rarity, "border", keywords);
 }
 
 export function getGearInstanceShineColors(instance: GearInstance): readonly string[] {
@@ -110,10 +107,6 @@ export function getAstralShineColors(instance: GearInstance): readonly string[] 
   return colors.length > 0 ? colors : undefined;
 }
 
-export function getGearAffixTextShineColors(affix: {
-  descriptionTemplate: string;
-  keywordId?: KeywordId;
-  secondaryKeywordId?: KeywordId;
-}): readonly string[] {
+export function getGearAffixTextShineColors(affix: { descriptionTemplate: string }): readonly string[] {
   return collectShineColors(affixShineKeywordIds(affix), "text");
 }

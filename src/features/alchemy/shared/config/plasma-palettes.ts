@@ -14,10 +14,12 @@ import {
   type TrinketEntry,
 } from "@/features/alchemy/shared/config/game-data-catalog";
 import { gearDefinitions, getGearInstanceKeywordIds, getUniqueGearShineColors, type GearInstance } from "@/lib/gear";
+import { ENCOUNTER_TRAITS } from "@/lib/content-systems/encounter-traits";
+import type { EncounterCombatTraitId } from "@/lib/content-systems/types";
 import { keywordAliasMap, keywordPattern } from "./keywords";
-import { getKeywordBorderShineColors } from "@/lib/keyword-border-shine";
 import {
   getCompanionShineColors,
+  getInspectionKeywordShineColors,
   getKeywordShineColors,
   SHINE_PALETTES,
   WILDCARD_KEYWORD_SHINE_COLORS,
@@ -122,27 +124,30 @@ export function getPlasmaColorPairForCompanion(companion: CompanionDefinition): 
 }
 
 export function getPlasmaKeywordsForEnemy(entry: BestiaryEntry): KeywordId[] {
-  return [
-    ...new Set([
-      ...getPlasmaKeywordsForText(entry.traits.map((trait) => trait.description).join(" ")),
-      ...getEnemyAbilities(entry).flatMap(getCardKeywords),
-    ]),
+  return [...new Set([...getEnemyTraitKeywordIds(entry), ...getEnemyAbilities(entry).flatMap(getCardKeywords)])];
+}
+
+function getEnemyTraitKeywordIds(entry: BestiaryEntry, modifiers: readonly EncounterCombatTraitId[] = []): KeywordId[] {
+  const modifierIds = new Set<string>(modifiers);
+  const descriptions = [
+    ...entry.traits.filter((trait) => !modifierIds.has(trait.id)).map((trait) => trait.description),
+    ...modifiers.map((id) => ENCOUNTER_TRAITS[id].enemyTrait.description),
   ];
+  return getPlasmaKeywordsForText(descriptions.join(" "));
 }
 
-export function getEnemyKeywordShineColors(entry: BestiaryEntry): readonly string[] {
-  return getKeywordBorderShineColors(getPlasmaKeywordsForEnemy(entry));
+export function getEnemyKeywordShineColors(
+  entry: BestiaryEntry,
+  modifiers: readonly EncounterCombatTraitId[] = [],
+): readonly string[] {
+  return getInspectionKeywordShineColors(getEnemyTraitKeywordIds(entry, modifiers));
 }
 
-export function getBossShineColors(boss: BestiaryEntry): readonly string[] {
-  const matchedIds = getPlasmaKeywordsForEnemy(boss);
-
-  const colors: string[] = [];
-  for (const id of matchedIds) {
-    const def = keywordDefinitions[id];
-    if (def?.shineColors) colors.push(...def.shineColors);
-  }
-  return colors.length > 0 ? colors : [...SHINE_PALETTES.bossVictoryFallback];
+export function getBossShineColors(
+  boss: BestiaryEntry,
+  modifiers: readonly EncounterCombatTraitId[] = [],
+): readonly string[] {
+  return getEnemyKeywordShineColors(boss, modifiers);
 }
 
 export function getBossTextShineColors(boss: BestiaryEntry): readonly string[] {

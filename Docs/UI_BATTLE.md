@@ -98,7 +98,9 @@ sections in Battle hover, Bestiary hover, and the modal. Each subheader pairs a
 small static Lucide icon with `ShineText`; colors come from up to three distinct
 keywords in description order through `getKeywordTextShineColors`. Descriptions
 use the shared keyword tokenizer for bold/color emphasis. No-keyword titles use
-the normal neutral fallback. Encounter modifiers use the same rendering and are
+the normal neutral fallback. Enemy artwork borders use keywords in those visible
+Trait descriptions, including active encounter Traits; ability-only keywords do
+not color the border. Encounter modifiers use the same rendering and are
 shown once in their existing separate group. Enemy trait copy refers to heroes.
 
 Opening inspection dismisses the portrait tooltip through its standard fade.

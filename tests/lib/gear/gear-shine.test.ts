@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { keywordDefinitions } from "@/lib/game-data";
 import { getKeywordBorderShineColors } from "@/lib/keyword-border-shine";
+import { NEUTRAL_SHINE_FALLBACK } from "@/lib/animation/shine-gradient";
 import { gearAffixCatalog } from "@/lib/gear/affix-catalog";
 import { gearDefinitions } from "@/lib/gear/definitions";
 import {
@@ -45,6 +46,17 @@ describe("gear shine", () => {
       "#bef264",
       "color-mix(in srgb, #bef264 55%, transparent)",
     ]);
+  });
+
+  it("does not add metadata-only keywords from affixes without visible keyword text", () => {
+    const gear = instance({
+      instanceId: "metadata-only",
+      definitionId: "longsword-astral",
+      affixes: [{ id: "crit-on-deaths-door", value: 1 }],
+    });
+    expect(getGearInstanceKeywordIds(gear)).toEqual([]);
+    expect(getGearAffixTextShineColors(gearAffixCatalog["wardbreaker-purge"])).toEqual(["#cbd5e1", "#64748b"]);
+    expect(getGearAffixTextShineColors(gearAffixCatalog["crit-on-deaths-door"])).toEqual(["#cbd5e1", "#64748b"]);
   });
 
   it("does not add green from Leather Armor affinity without a green affix keyword", () => {
@@ -152,11 +164,7 @@ describe("gear shine", () => {
     expect(getGearInstanceShineColors(unique)).toEqual(expectedBorder);
     expect(getAstralShineColors(unique)).toEqual(expectedBorder);
     expect(getGearInstanceShineColors(unique)).not.toEqual(gold);
-    expect(getGearDefinitionShineColors(gearDefinitions.wardbreaker!)).toEqual([
-      keywordDefinitions.physical.shineColors[0],
-      keywordDefinitions.stun.shineColors[0],
-      keywordDefinitions.physical.shineColors[0],
-    ]);
+    expect(getGearDefinitionShineColors(gearDefinitions.wardbreaker!)).toEqual([...NEUTRAL_SHINE_FALLBACK]);
     expect(getGearInstanceTextShineColors(unique)).toEqual(["#f3e4ca", "color-mix(in srgb, #f3e4ca 55%, transparent)"]);
     expect(getGearDefinitionTextShineColors(gearDefinitions.wardbreaker!)).toEqual([
       "#f3e4ca",

@@ -1,7 +1,6 @@
 import { UI_GOLD } from "@/lib/game-constants/ui-colors";
 import {
   characters,
-  getCardKeywords,
   getCompanionKeywords,
   getTrinketKeywords,
   keywordDefinitions,
@@ -21,6 +20,7 @@ import { NEUTRAL_SHINE_FALLBACK } from "@/lib/animation/shine-gradient";
 
 const GOLD_SHINE = [UI_GOLD.light, UI_GOLD.deep, UI_GOLD.light] as const;
 const CORRUPTION_SHINE = ["#450a0a", "#dc2626", "#f87171", "#7f1d1d"] as const;
+const LABYRINTH_RED_SHINE = ["#dc2626", "#f87171", "#fca5a5", "#ef4444"] as const;
 
 export const SHINE_PALETTES = {
   gold: [...GOLD_SHINE],
@@ -34,17 +34,17 @@ export const SHINE_PALETTES = {
   corruption: [...CORRUPTION_SHINE],
   boon: ["#312e81", "#818cf8", "#e0e7ff", "#7c3aed"],
   labyrinth: {
-    entrance: ["#292524", "#57534e", "#a8a29e", "#44403c"],
-    combat: [...CORRUPTION_SHINE],
-    elite: ["#3b0764", "#9333ea", "#c084fc", "#581c87"],
-    rest: ["#431407", "#d97706", "#fb923c", "#78350f"],
-    mystery: ["#27272a", "#a1a1aa", "#e4e4e7", "#525252"],
-    corruption: [...CORRUPTION_SHINE],
-    shop: ["#422006", "#eab308", "#fde047", "#78350f"],
-    alchemist: ["#022c22", "#10b981", "#6ee7b7", "#064e3b"],
-    "trinket-shop": ["#2e1065", "#a855f7", "#e9d5ff", "#581c87"],
-    "equipment-shop": ["#1e293b", "#94a3b8", "#e2e8f0", "#334155"],
-    boss: ["#450a0a", "#b91c1c", "#fca5a5", "#7f1d1d"],
+    entrance: ["#78716c", "#a8a29e", "#e7e5e4", "#a8a29e"],
+    combat: [...LABYRINTH_RED_SHINE],
+    elite: ["#9333ea", "#c084fc", "#e9d5ff", "#a855f7"],
+    rest: ["#c2410c", "#f97316", "#fed7aa", "#fb923c"],
+    mystery: ["#71717a", "#a1a1aa", "#e4e4e7", "#a1a1aa"],
+    corruption: [...LABYRINTH_RED_SHINE],
+    shop: ["#a16207", "#eab308", "#fde047", "#ca8a04"],
+    alchemist: ["#047857", "#10b981", "#6ee7b7", "#059669"],
+    "trinket-shop": ["#7c3aed", "#a855f7", "#e9d5ff", "#a855f7"],
+    "equipment-shop": ["#64748b", "#94a3b8", "#e2e8f0", "#94a3b8"],
+    boss: ["#dc2626", "#ef4444", "#fca5a5", "#ef4444"],
   },
 } as const;
 
@@ -57,18 +57,13 @@ export function getInspectionKeywordShineColors(keywordIds: readonly KeywordId[]
   return colors.length > 0 ? colors : SHINE_PALETTES.bossVictoryFallback;
 }
 
-/**
- * Presentation keywords keep mechanical-only card metadata out of artwork
- * shine. A card can be Consume mechanically without displaying the Consume
- * keyword, as companion summon cards currently do.
- */
+/** Artwork shine follows the keywords players can read, including conditional effects. */
 export function getCardDisplayKeywords(card: BattleCard): KeywordId[] {
-  const describedKeywords = new Set(extractKeywordIds(card.descriptionLines.join(" ")));
-  return getCardKeywords(card).filter((keywordId) => describedKeywords.has(keywordId));
+  return extractKeywordIds(card.descriptionLines.join(" "));
 }
 
 export function getCardKeywordShineColors(card: BattleCard): readonly string[] {
-  return getKeywordBorderShineColors(getCardDisplayKeywords(card));
+  return getInspectionKeywordShineColors(getCardDisplayKeywords(card));
 }
 
 export function getCardInspectionShineColors(card: BattleCard): readonly string[] {
@@ -81,8 +76,7 @@ export function getCompanionShineColors(companion: CompanionDefinition): readonl
 }
 
 export function getTrinketShineColors(trinketId: string): readonly string[] {
-  const colors = getKeywordBorderShineColors(getTrinketKeywords(trinketId));
-  return colors.length > 0 ? colors : [...SHINE_PALETTES.boon];
+  return getInspectionKeywordShineColors(getTrinketKeywords(trinketId));
 }
 
 export function getTrinketTextShineColors(trinketId: string): readonly string[] {

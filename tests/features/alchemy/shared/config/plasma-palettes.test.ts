@@ -171,14 +171,18 @@ describe("getPlasmaKeywordsForEnemy", () => {
     expect(getPlasmaKeywordsForEnemy(entry)).toEqual(["poison", "freeze", "burn"]);
   });
 
-  it("maps trait and ability keywords to the enemy shine palette", () => {
+  it("uses visible trait keywords for the enemy shine palette", () => {
     const entry: BestiaryEntry = {
       ...baseEntry,
       traits: [{ id: "t1", title: "Spores", description: "Applies Poison to the hero." }],
       abilityIds: ["frostbolt"],
     };
 
-    expect(getEnemyKeywordShineColors(entry)).toEqual(getKeywordBorderShineColors(["poison", "freeze"]));
+    expect(getEnemyKeywordShineColors(entry)).toEqual(getKeywordBorderShineColors(["poison"]));
+    expect(getEnemyKeywordShineColors({ ...baseEntry, abilityIds: ["frostbolt"] })).toEqual([
+      ...SHINE_PALETTES.bossVictoryFallback,
+    ]);
+    expect(getEnemyKeywordShineColors(entry, ["tempered"])).toEqual(getKeywordBorderShineColors(["poison", "forge"]));
   });
 
   it("maps enemy keywords to a plasma pair with wildcard fallback", () => {
@@ -215,7 +219,7 @@ describe("getBossShineColors", () => {
     };
   }
 
-  it("collects keyword shine colors from boss traits and ability cards", () => {
+  it("collects boss border colors from visible traits, excluding ability-only keywords", () => {
     const frostwarden = getBossById("frostwarden");
     expect(frostwarden).toBeDefined();
 
@@ -223,7 +227,7 @@ describe("getBossShineColors", () => {
 
     expect(colors).toContain(keywordDefinitions.freeze.shineColors[0]);
     expect(colors).toContain(keywordDefinitions.burn.shineColors[0]);
-    expect(colors).toContain(keywordDefinitions.block.shineColors[0]);
+    expect(colors).not.toContain(keywordDefinitions.block.shineColors[0]);
   });
 
   it("falls back when no combat keywords match", () => {

@@ -21,9 +21,20 @@ test.describe("Labyrinth exploration", critical, () => {
       "aria-current",
       "location",
     );
+    const currentArt = page.getByRole("button", { name: "Entrance chamber, you are here", exact: true }).locator("img");
+    await expect(currentArt).toHaveAttribute("src", /knight\.webp/);
+    await expect(currentArt).not.toHaveClass(/grayscale/);
+    await expect(currentArt).toHaveCSS("object-position", "50% 13%");
     const hidden = page.getByRole("button", { name: /^Undiscovered chamber/ });
     expect(await hidden.count()).toBeGreaterThanOrEqual(15);
     await expect(hidden.first().locator("img")).toHaveAttribute("src", /labyrinth-shrouded-/);
+    await expect(hidden.first().locator("img")).toHaveCSS("filter", "brightness(0.82) saturate(0.8)");
+    await expect(
+      page
+        .getByRole("button", { name: /Combat chamber, reachable/ })
+        .first()
+        .locator("img"),
+    ).toHaveCSS("filter", "brightness(0.9) saturate(0.85)");
     await expect(hidden.first()).toHaveText("");
     const fogSources = await hidden
       .locator("img")
@@ -60,6 +71,9 @@ test.describe("Labyrinth exploration", critical, () => {
     await expect(page.getByRole("heading", { name: "Campfire", exact: true, level: 1 })).toBeVisible();
     await page.getByRole("button", { name: "Rest", exact: true }).click();
     await expect(room).toHaveAttribute("aria-current", "location");
+    await expect(room.locator("img")).toHaveAttribute("src", /knight\.webp/);
+    await expect(room.locator("img")).not.toHaveClass(/grayscale/);
+    await expect(page.getByRole("button", { name: /^Entrance chamber/ }).locator("img")).toHaveClass(/grayscale/);
     await expect(diagonal.locator("img")).not.toHaveAttribute("src", /labyrinth-shrouded-/);
     const entrance = page.getByRole("button", { name: /^Entrance chamber/ });
     await entrance.click();
@@ -238,6 +252,8 @@ test("node hover, focus and selection retain shared shine without moving neighbo
   await room.hover();
   await expect(room.locator("..")).toHaveCSS("scale", "1.06");
   await expect(room.locator(".shine-border")).toBeVisible();
+  await expect(room).toHaveCSS("border-color", "rgba(0, 0, 0, 0)");
+  await expect(room.locator(".shine-border")).toHaveCSS("--border-width", "3px");
   expect(await neighbor.boundingBox()).toEqual(neighborBefore);
   await page.getByRole("heading", { name: "Labyrinth", exact: true }).hover();
   await expect(room.locator("..")).toHaveCSS("scale", "none");
@@ -257,6 +273,7 @@ test("current amber, dim room borders and the boss glow remain stable through ho
   const boss = page.getByRole("button", { name: /^Boss chamber/ });
   await expect(page.getByTestId("labyrinth-location")).toHaveCount(0);
   await expect(entrance).toHaveClass(/border-primary/);
+  await expect(entrance).toHaveCSS("border-top-width", "3px");
   const roomBorder = await room.evaluate((element) => getComputedStyle(element).borderColor);
   await expect(hidden).toHaveCSS("border-color", roomBorder);
   await expect(boss).toHaveCSS("border-color", roomBorder);
@@ -265,6 +282,9 @@ test("current amber, dim room borders and the boss glow remain stable through ho
   await boss.hover();
   await expect(boss.locator(".shine-border")).toBeVisible();
   await expect(boss).toHaveCSS("box-shadow", glow);
+  await page.getByRole("heading", { name: "Labyrinth", exact: true }).hover();
+  await entrance.hover();
+  await expect(entrance.locator(".shine-border")).toHaveCSS("--border-width", "4px");
   await page.getByRole("heading", { name: "Labyrinth", exact: true }).hover();
   await expect(boss.locator(".shine-border")).toHaveCount(0);
   await expect(boss).toHaveCSS("box-shadow", glow);

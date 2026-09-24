@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 interface Props {
   node: LabyrinthNode;
   map: LabyrinthMap;
+  heroArt: string;
   selected: boolean;
   emphasized: boolean;
   x: number;
@@ -29,6 +30,7 @@ interface Props {
 export const LabyrinthNodeSeal = memo(function LabyrinthNodeSeal({
   node,
   map,
+  heroArt,
   selected,
   emphasized,
   x,
@@ -43,12 +45,14 @@ export const LabyrinthNodeSeal = memo(function LabyrinthNodeSeal({
   const discovered = visual !== "undiscovered";
   const current = node.id === map.currentNodeId;
   const colors = discovered ? SHINE_PALETTES.labyrinth[node.type] : SHINE_PALETTES.labyrinth.entrance;
-  const art = discovered
-    ? node.enemyId && isEnemyId(node.enemyId)
-      ? enemyById[node.enemyId].art
-      : LABYRINTH_NODE_META[node.type].art
-    : // Node identity keeps fog stable across rerenders and saves without using gameplay RNG or encounter data.
-      labyrinthShroudedArt[hashStringToUint32(node.id) % labyrinthShroudedArt.length]!;
+  const art = current
+    ? heroArt
+    : discovered
+      ? node.enemyId && isEnemyId(node.enemyId)
+        ? enemyById[node.enemyId].art
+        : LABYRINTH_NODE_META[node.type].art
+      : // Node identity keeps fog stable across rerenders and saves without using gameplay RNG or encounter data.
+        labyrinthShroudedArt[hashStringToUint32(node.id) % labyrinthShroudedArt.length]!;
   const { onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard("labyrinth", node.id);
   const status = current
     ? "you are here"
@@ -65,6 +69,7 @@ export const LabyrinthNodeSeal = memo(function LabyrinthNodeSeal({
     <div
       data-labyrinth-node={node.id}
       data-state={visual}
+      data-current={current}
       className="labyrinth-node"
       data-emphasized={emphasized}
       style={{ left: x, top: y, width, height }}
@@ -99,18 +104,14 @@ export const LabyrinthNodeSeal = memo(function LabyrinthNodeSeal({
         shimmerRounded="rounded-shell-compact"
         overlay={
           emphasized ? (
-            <ShineBorder
-              shineColor={colors}
-              borderWidth={2.5}
-              duration={3}
-              className="z-20 motion-reduce:animate-none"
-            />
+            <ShineBorder shineColor={colors} borderWidth={2} className="z-20 motion-reduce:animate-none" />
           ) : null
         }
         className={cn(
           "card-art-frame aspect-[4/3] rounded-shell-compact",
           discovered ? "cursor-pointer" : "cursor-default",
           current ? "border-primary" : "border-border/80",
+          emphasized && "has-shine-border",
           node.type === "boss" && "labyrinth-boss",
         )}
       >
@@ -121,8 +122,11 @@ export const LabyrinthNodeSeal = memo(function LabyrinthNodeSeal({
           draggable={false}
           className={cn(
             "labyrinth-discovery",
-            visual === "cleared" && "opacity-60 grayscale",
+            current && "labyrinth-hero-art",
+            visual === "cleared" && !current && "opacity-60 grayscale",
             visual === "locked" && "opacity-80",
+            (visual === "reachable" || visual === "locked") && "brightness-[0.9] saturate-[0.85]",
+            visual === "undiscovered" && "brightness-[0.82] saturate-[0.8]",
           )}
         />
       </Surface>

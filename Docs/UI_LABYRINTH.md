@@ -19,10 +19,15 @@ replaces the fog with the actual artwork and plays the reveal. Actual Mystery en
 their existing art. The boss is always visible and inspectable, with the shared
 display label Boss and a persistent red glow independent of hover/selection.
 All rooms rest with the standard dim `border-border/80` frame, except the current
-room's shared `border-primary` amber. Reachability does not change border color.
-Shared hover, focus, and selection keep shimmer and Shine Border; unknown
-interactions stay neutral. Completed art remains grayscale and subdued from
-its first frame, including during the opacity reveal and route returns.
+room's thicker `border-primary` amber frame. Reachability does not change border color.
+Unentered rooms are slightly dimmed and desaturated, with a stronger treatment
+for undiscovered fog art. The current room shows the active hero's full-color
+portrait, cropped toward the face in the 4:3 tile.
+Shared hover, focus, and selection keep shimmer and Shine Border with the same
+hidden resting frame and emphasized border width as other artwork tiles; unknown
+interactions stay neutral. Room-specific shine colors stay bright enough to remain
+visible throughout the animation. Earlier completed rooms remain grayscale and
+subdued from their first frame, including during the opacity reveal and route returns.
 
 Clicking or keyboard-activating a discovered room opens its inspector. An
 unfinished room offers its action when adjacent to any completed room; there
