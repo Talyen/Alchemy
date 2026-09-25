@@ -170,14 +170,14 @@ describe("canUnlockTalent", () => {
 
   it("allows a real talent on an unlocked row when points are available", () => {
     const phys = getTalentsForKeyword("physical");
-    const result = canUnlockTalent("physical", phys[0]!.id, { physical: 10 }, {});
+    const result = canUnlockTalent("physical", phys[0]!.id, { physical: 20 }, {});
     expect(result.ok).toBe(true);
   });
 
   it("allows any real talent on an unlocked row, not just the next in order", () => {
     const phys = getTalentsForKeyword("physical");
     const unlocked = { physical: [phys[0]!.id, phys[1]!.id] };
-    const result = canUnlockTalent("physical", phys[2]!.id, { physical: 100 }, unlocked);
+    const result = canUnlockTalent("physical", phys[2]!.id, { physical: 200 }, unlocked);
     expect(result.ok).toBe(true);
   });
 
@@ -191,7 +191,7 @@ describe("canUnlockTalent", () => {
 describe("tryUnlockTalent", () => {
   it("appends only when validation passes", () => {
     const phys = getTalentsForKeyword("physical");
-    const applied = tryUnlockTalent("physical", phys[0]!.id, { physical: 10 }, {});
+    const applied = tryUnlockTalent("physical", phys[0]!.id, { physical: 20 }, {});
     expect(applied.unlockedTalents?.physical).toEqual([phys[0]!.id]);
   });
 });

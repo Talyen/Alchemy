@@ -146,7 +146,7 @@ Live pool events are authored in `src/lib/mystery/pool.ts`; other `MysteryEffect
 - **5. Wire follow-up UI in mystery screen** — `run-loop/screens/mystery/mystery-screen.tsx` (exported via screens barrel)
 - **6. Route-held fade / empty-visit continue** — `app/screen-routes/mystery-screen-route.tsx`
 - **7. Persist new visit fields if the kind stores rolled results** — Mystery visit schema in `src/lib/validation/save-schemas/active-run.ts` + `src/lib/active-run-session/mystery-visit-persistence.ts`
-- **8. Author choice `effects` in display order** — `src/lib/mystery/pool.ts`: XP → gold → materials → portrait reward per choice
+- **8. Author choice `effects` in display order** — `src/lib/mystery/pool.ts`: XP → portrait reward → gold → materials per choice
 
 ---
 

@@ -14,7 +14,7 @@ describe("KeywordProgressCard", () => {
   });
 
   it("renders Lv# with keyword color and a thicker progress bar, without XP gain or progress text", () => {
-    const { container } = render(<KeywordProgressCard kw="physical" totalXP={15} animate={false} size="md" />);
+    const { container } = render(<KeywordProgressCard kw="physical" totalXP={30} animate={false} size="md" />);
 
     expect(screen.getByText("Physical")).toBeTruthy();
     expect(screen.queryByText("+5 XP")).toBeNull();
@@ -29,11 +29,11 @@ describe("KeywordProgressCard", () => {
   });
 
   it("holds the bar empty until animate, then sweeps to the final progress", () => {
-    const { container, rerender } = render(<KeywordProgressCard kw="physical" totalXP={15} animate={false} />);
+    const { container, rerender } = render(<KeywordProgressCard kw="physical" totalXP={30} animate={false} />);
 
     expect(barFillWidth(container)).toContain("width: 0%");
 
-    rerender(<KeywordProgressCard kw="physical" totalXP={15} animate={true} />);
+    rerender(<KeywordProgressCard kw="physical" totalXP={30} animate={true} />);
 
     expect(barFillWidth(container)).toContain("width: 25%");
     expect(barFillWidth(container)).toContain("width 1000ms ease-out");

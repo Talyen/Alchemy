@@ -207,8 +207,10 @@ describe("ported Purge affix rewards", () => {
     expect(rewarded.playerStatuses.block).toBe(2);
     expect(rewarded.enemyHealth).toBe(28);
 
-    const empty = purgeEnemyBenefits(rewarded, 1, []);
+    const emptyTexts: CombatTextEvent[] = [];
+    const empty = purgeEnemyBenefits(rewarded, 1, emptyTexts);
     expect(empty.removed).toBe(0);
+    expect(emptyTexts).toEqual([]);
     expect(applyPurgeGearRewards(empty.state, empty.removed, []).enemyHealth).toBe(28);
   });
 

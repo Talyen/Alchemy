@@ -17,9 +17,9 @@ import {
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 
 describe("xpForNextPoint", () => {
-  it("returns 10 XP for point 0→1", () => expect(xpForNextPoint(0)).toBe(10));
-  it("returns 20 XP for point 1→2", () => expect(xpForNextPoint(1)).toBe(20));
-  it("returns 50 XP for point 4→5", () => expect(xpForNextPoint(4)).toBe(50));
+  it("returns 20 XP for point 0→1", () => expect(xpForNextPoint(0)).toBe(20));
+  it("returns 40 XP for point 1→2", () => expect(xpForNextPoint(1)).toBe(40));
+  it("returns 100 XP for point 4→5", () => expect(xpForNextPoint(4)).toBe(100));
 });
 
 describe("talent save compatibility", () => {
@@ -76,26 +76,26 @@ describe("run-end talent XP", () => {
 
 describe("xpThresholdForPoints", () => {
   it("returns 0 for 0 points", () => expect(xpThresholdForPoints(0)).toBe(0));
-  it("returns 10 for 1 point", () => expect(xpThresholdForPoints(1)).toBe(10));
-  it("returns 30 for 2 points", () => expect(xpThresholdForPoints(2)).toBe(30));
-  it("returns 60 for 3 points", () => expect(xpThresholdForPoints(3)).toBe(60));
+  it("returns 20 for 1 point", () => expect(xpThresholdForPoints(1)).toBe(20));
+  it("returns 60 for 2 points", () => expect(xpThresholdForPoints(2)).toBe(60));
+  it("returns 120 for 3 points", () => expect(xpThresholdForPoints(3)).toBe(120));
 });
 
 describe("computeTalentPoints", () => {
   it("returns 0 for 0 XP", () => expect(computeTalentPoints(0)).toBe(0));
-  it("returns 0 for XP below 10", () => expect(computeTalentPoints(9)).toBe(0));
-  it("returns 1 for exactly 10 XP", () => expect(computeTalentPoints(10)).toBe(1));
-  it("returns 2 for 30 XP", () => expect(computeTalentPoints(30)).toBe(2));
-  it("returns 3 for 60 XP", () => expect(computeTalentPoints(60)).toBe(3));
-  it("returns 4 for 100 XP", () => expect(computeTalentPoints(100)).toBe(4));
+  it("returns 0 for XP below 20", () => expect(computeTalentPoints(19)).toBe(0));
+  it("returns 1 for exactly 20 XP", () => expect(computeTalentPoints(20)).toBe(1));
+  it("returns 2 for 60 XP", () => expect(computeTalentPoints(60)).toBe(2));
+  it("returns 3 for 120 XP", () => expect(computeTalentPoints(120)).toBe(3));
+  it("returns 4 for 200 XP", () => expect(computeTalentPoints(200)).toBe(4));
   it("does not go negative", () => expect(computeTalentPoints(-5)).toBe(0));
 });
 
 describe("xpToNextPoint", () => {
-  it("returns 10 remaining from 0 XP", () => expect(xpToNextPoint(0)).toBe(10));
-  it("returns 5 remaining from 5 XP", () => expect(xpToNextPoint(5)).toBe(5));
-  it("returns 20 remaining from exactly 10 XP (next threshold is 30)", () => expect(xpToNextPoint(10)).toBe(20));
-  it("returns 19 remaining from 11 XP (toward threshold of 30)", () => expect(xpToNextPoint(11)).toBe(19));
+  it("returns 20 remaining from 0 XP", () => expect(xpToNextPoint(0)).toBe(20));
+  it("returns 15 remaining from 5 XP", () => expect(xpToNextPoint(5)).toBe(15));
+  it("returns 40 remaining from exactly 20 XP (next threshold is 60)", () => expect(xpToNextPoint(20)).toBe(40));
+  it("returns 39 remaining from 21 XP (toward threshold of 60)", () => expect(xpToNextPoint(21)).toBe(39));
 });
 
 describe("computeTotalTalentPoints", () => {
@@ -104,7 +104,7 @@ describe("computeTotalTalentPoints", () => {
   });
 
   it("sums points across keywords", () => {
-    expect(computeTotalTalentPoints({ physical: 10, burn: 30 })).toBe(3);
+    expect(computeTotalTalentPoints({ physical: 20, burn: 60 })).toBe(3);
   });
 });
 
@@ -114,7 +114,7 @@ describe("computeStartingMaxHealth", () => {
   });
 
   it("adds 1 max health per earned talent point", () => {
-    expect(computeStartingMaxHealth({ physical: 10, health: 30 })).toBe(MAX_PLAYER_HEALTH + 3);
+    expect(computeStartingMaxHealth({ physical: 20, health: 60 })).toBe(MAX_PLAYER_HEALTH + 3);
   });
 });
 
@@ -157,35 +157,35 @@ describe("getTalentKeywordProgress", () => {
   });
 
   it("reports 0 points below XP threshold", () => {
-    const result = getTalentKeywordProgress(9, 0);
+    const result = getTalentKeywordProgress(18, 0);
     expect(result.points).toBe(0);
     expect(result.displayLevel).toBe(1);
-    expect(result.xpForNext).toBe(10);
-    expect(result.xpRemaining).toBe(1);
+    expect(result.xpForNext).toBe(20);
+    expect(result.xpRemaining).toBe(2);
     expect(result.progressPercent).toBe(90);
   });
 
-  it("reports 1 point at exactly 10 XP", () => {
-    const result = getTalentKeywordProgress(10, 0);
+  it("reports 1 point at exactly 20 XP", () => {
+    const result = getTalentKeywordProgress(20, 0);
     expect(result.points).toBe(1);
     expect(result.displayLevel).toBe(2);
-    expect(result.xpForNext).toBe(20);
-    expect(result.xpRemaining).toBe(20);
+    expect(result.xpForNext).toBe(40);
+    expect(result.xpRemaining).toBe(40);
     expect(result.progressPercent).toBe(0);
     expect(result.hasUnspent).toBe(true);
   });
 
   it("computes progress percentage correctly", () => {
-    const result = getTalentKeywordProgress(15, 0);
+    const result = getTalentKeywordProgress(30, 0);
     expect(result.points).toBe(1);
     expect(result.displayLevel).toBe(2);
-    expect(result.xpForNext).toBe(20);
-    expect(result.xpRemaining).toBe(15);
+    expect(result.xpForNext).toBe(40);
+    expect(result.xpRemaining).toBe(30);
     expect(result.progressPercent).toBe(25);
   });
 
   it("distinguishes spent vs unspent points", () => {
-    const result = getTalentKeywordProgress(30, 1);
+    const result = getTalentKeywordProgress(60, 1);
     expect(result.points).toBe(2);
     expect(result.displayLevel).toBe(3);
     expect(result.spentPoints).toBe(1);
@@ -194,7 +194,7 @@ describe("getTalentKeywordProgress", () => {
   });
 
   it("reports hasUnspent false when all points are spent", () => {
-    const result = getTalentKeywordProgress(30, 2);
+    const result = getTalentKeywordProgress(60, 2);
     expect(result.points).toBe(2);
     expect(result.displayLevel).toBe(3);
     expect(result.spentPoints).toBe(2);
@@ -203,10 +203,10 @@ describe("getTalentKeywordProgress", () => {
   });
 
   it("handles high XP values", () => {
-    const result = getTalentKeywordProgress(100, 3);
+    const result = getTalentKeywordProgress(200, 3);
     expect(result.points).toBe(4);
     expect(result.displayLevel).toBe(5);
-    expect(result.xpForNext).toBe(50);
+    expect(result.xpForNext).toBe(100);
     expect(result.spentPoints).toBe(3);
     expect(result.unspentPoints).toBe(1);
   });
@@ -217,7 +217,7 @@ describe("getTalentKeywordProgress", () => {
   });
 
   it("handles more spent than available points", () => {
-    const result = getTalentKeywordProgress(10, 5);
+    const result = getTalentKeywordProgress(20, 5);
     expect(result.points).toBe(1);
     expect(result.displayLevel).toBe(2);
     expect(result.spentPoints).toBe(5);

@@ -150,6 +150,9 @@ export function applyCardEffects(
     combatTexts.length === 0 &&
     !isPlayerDefeated(state) &&
     card.effects.length > 0 &&
+    !["remove-harmful-status", "remove-player-status", "cleanse-player-status-to-damage"].includes(
+      card.effects[0]!.kind,
+    ) &&
     (hasEffectApplyHandler(card.effects[0]!.kind) || isRecursiveBattleCardEffectKind(card.effects[0]!.kind))
   ) {
     const primary = card.effects[0]!;

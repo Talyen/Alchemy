@@ -114,7 +114,7 @@ describe("MysteryRewardSummary", () => {
         grantedGearInstances={[]}
         chosenCardId={null}
         runTalentXP={{ burn: 8 }}
-        talentXP={{ burn: 10 }}
+        talentXP={{ burn: 12 }}
         onContinue={onContinue}
       />,
     );

@@ -112,7 +112,7 @@ describe("createRunStartSnapshot", () => {
       contentSystemType: "campaign",
       difficultyId: "difficulty-1",
       talentStartGold: 0,
-      talentXP: { physical: 10, health: 30 },
+      talentXP: { physical: 20, health: 60 },
     });
 
     expect(result.runMaxHealth).toBe(MAX_PLAYER_HEALTH + 3);

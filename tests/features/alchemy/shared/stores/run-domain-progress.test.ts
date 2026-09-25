@@ -333,20 +333,20 @@ describe("awardMysteryXP", () => {
 
 describe("unlockTalent", () => {
   it("appends the next eligible talent when points are available", () => {
-    setRunProgress({ talentXP: { burn: 10 } });
+    setRunProgress({ talentXP: { burn: 20 } });
     unlockTalent("burn", "burn-dmg-1");
     expect(readRunProfile().unlockedTalents.burn).toEqual(["burn-dmg-1"]);
   });
 
   it("preserves existing unlocks for sequential choices", () => {
-    setRunProgress({ talentXP: { burn: 30 } });
+    setRunProgress({ talentXP: { burn: 60 } });
     unlockTalent("burn", "burn-dmg-1");
     unlockTalent("burn", "burn-dmg-2");
     expect(readRunProfile().unlockedTalents.burn).toEqual(["burn-dmg-1", "burn-dmg-2"]);
   });
 
   it("ignores duplicate unlock of the same talentId", () => {
-    setRunProgress({ talentXP: { burn: 10 } });
+    setRunProgress({ talentXP: { burn: 20 } });
     unlockTalent("burn", "burn-dmg-1");
     unlockTalent("burn", "burn-dmg-1");
     expect(readRunProfile().unlockedTalents.burn).toEqual(["burn-dmg-1"]);
@@ -358,7 +358,7 @@ describe("unlockTalent", () => {
   });
 
   it("rejects out-of-order unlocks", () => {
-    setRunProgress({ talentXP: { burn: 10 } });
+    setRunProgress({ talentXP: { burn: 20 } });
     unlockTalent("burn", "burn-dmg-5");
     expect(readRunProfile().unlockedTalents.burn).toBeUndefined();
   });
@@ -441,18 +441,18 @@ describe("talent XP accumulation through run end", () => {
     };
     setRunProgress({ selectedDifficulty: "difficulty-1" });
 
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 20; i++) {
       awardCardXP(card);
     }
-    expect(readActiveRun().runTalentXP.physical).toBe(10);
+    expect(readActiveRun().runTalentXP.physical).toBe(20);
     expect(computeTalentPoints(readRunProfile().talentXP.physical ?? 0)).toBe(0);
 
     finalizeRunXP();
 
     expect(readActiveRun().runTalentXP).toEqual({});
-    expect(readRunProfile().talentXP.physical).toBe(10);
+    expect(readRunProfile().talentXP.physical).toBe(20);
     expect(computeTalentPoints(readRunProfile().talentXP.physical ?? 0)).toBe(1);
-    expect(readRunSession().runEndTalentXP.physical).toBe(10);
+    expect(readRunSession().runEndTalentXP.physical).toBe(20);
   });
 });
 

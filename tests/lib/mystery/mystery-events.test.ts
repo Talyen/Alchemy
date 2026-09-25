@@ -91,6 +91,32 @@ describe("mysteryPool", () => {
     }
   });
 
+  it("offers all fifteen new scenes with their intended existing artwork", () => {
+    const reusedArtByEvent = {
+      "locked-treatise": "abandoned-study",
+      "altars-afterglow": "ancient-altar",
+      "singing-crystal": "crystal-garden",
+      "clearwater-remedy": "enchanted-spring",
+      "fae-lanterns": "fairy-ring",
+      "sporekeepers-tools": "fungal-grotto",
+      "rootbound-dispatch": "hidden-cache",
+      "moth-in-the-thicket": "mana-berries",
+      "healers-recipe": "medicinal-herb-garden",
+      "cooled-core": "meteorite-crash",
+      "drowned-toll": "murky-pond",
+      "forgotten-door": "overgrown-temple",
+      "fallen-bough": "sacred-grove",
+      "seed-in-the-ash": "the-phoenix",
+      "patient-scout": "the-wolf",
+    };
+
+    for (const [eventId, sourceEventId] of Object.entries(reusedArtByEvent)) {
+      const event = mysteryPool.find((entry) => entry.id === eventId);
+      expect(event, `${eventId} is missing from the pool`).toBeDefined();
+      expect(event?.art, `${eventId} uses the wrong illustration`).toBe(mysteryEventArt[sourceEventId]);
+    }
+  });
+
   it("addCard effects reference valid card IDs", () => {
     for (const event of mysteryPool) {
       for (const choice of event.choices) {

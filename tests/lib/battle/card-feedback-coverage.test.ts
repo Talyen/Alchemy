@@ -5,9 +5,11 @@ import { applyCardEffects } from "@/lib/battle/effect-handlers";
 import { applyHealingWithCombatText } from "@/lib/battle/player-rewards";
 import { shouldShowCombatText } from "@/lib/battle/combat-text-events";
 import type { CombatTextEvent } from "@/lib/battle";
-import { patchBattleState } from "../../fixtures/battle";
+import { makeTestCard, patchBattleState } from "../../fixtures/battle";
 
-const cards = Object.values(cardById).filter((card) => card.effects.length > 0);
+const cards = Object.values(cardById).filter(
+  (card) => card.effects.length > 0 && !["cleanse", "panacea-potion", "smelling-salts"].includes(card.id),
+);
 describe("card feedback coverage", () => {
   it.each(cards)("$id has visible feedback even with full Health and no ailments", (card) => {
     const texts: CombatTextEvent[] = [];
@@ -26,6 +28,25 @@ describe("card feedback coverage", () => {
       texts,
     );
     expect(texts.filter(shouldShowCombatText).length).toBeGreaterThan(0);
+  });
+  it.each(["cleanse", "panacea-potion", "smelling-salts"])(
+    "%s does not invent Cleanse feedback when no harmful status is removed",
+    (cardId) => {
+      const texts: CombatTextEvent[] = [];
+      applyCardEffects(patchBattleState({ playerHealth: 100, playerMaxHealth: 100 }), cardById[cardId]!, texts);
+      expect(
+        texts.some((event) => event.stat === "cleanse" || (event.kind === "notice" && event.signal === "cleanse")),
+      ).toBe(false);
+    },
+  );
+  it("leaves the feedback queue empty for a Cleanse effect with no target", () => {
+    const texts: CombatTextEvent[] = [];
+    applyCardEffects(
+      patchBattleState(),
+      makeTestCard({ effects: [{ kind: "remove-harmful-status", amount: 1 }] }),
+      texts,
+    );
+    expect(texts).toEqual([]);
   });
   it("Predator's Focus acknowledges every cast without accumulating its Leech flag", () => {
     const texts: CombatTextEvent[] = [];

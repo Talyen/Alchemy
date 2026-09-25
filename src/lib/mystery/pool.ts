@@ -236,6 +236,141 @@ export const mysteryPool: MysteryEvent[] = [
       ["Open the Cache", [xp("companion"), gear("recurve-bow"), mat("food", 3)]],
     ],
   ),
+  ev(
+    "locked-treatise",
+    "The Locked Treatise",
+    "The lock on a scholar's treatise hangs broken. Loose pages on the desk describe a cleansing rite; another bundle records arcane experiments.",
+    [
+      ["Learn the Cleansing Rite", [xp("holy"), card("exorcism")]],
+      ["Keep the Loose Pages", [xp("mana"), trinket("tattered-pages")]],
+    ],
+  ),
+  ev(
+    "altars-afterglow",
+    "The Altar's Afterglow",
+    "A brass censer rests beside the altar's offering bowl. A topaz amulet lies in the same shaft of light, its gem still loose in its setting.",
+    [
+      ["Kindle the Censer", [xp("holy"), trinket("brass-censer")]],
+      ["Lift the Sunstone", [gear("topaz-amulet"), mat("gems", 3)]],
+    ],
+  ),
+  ev(
+    "singing-crystal",
+    "The Singing Crystal",
+    "Crystal branches ring against chimes hanging among the shards. Smaller, charged crystals have fallen into the garden bed below.",
+    [
+      ["Tune the Chimes", [xp("mana"), trinket("resonant-chimes")]],
+      ["Gather the Charged Shards", [card("mana-crystals"), mat("gems", 3)]],
+    ],
+  ),
+  ev(
+    "clearwater-remedy",
+    "Clearwater Remedy",
+    "A discarded flask has filled with the spring's clear water. Restorative moss grows along the bank, thick enough to weave into a charm.",
+    [
+      ["Bottle the Spring Water", [card("health-potion"), mat("herbs", 3)]],
+      ["Weave the Spring Moss", [xp("nature"), trinket("groves-favor")]],
+    ],
+  ),
+  ev(
+    "fae-lanterns",
+    "Fae Lanterns",
+    "A pixie flickers among the moonlit mushrooms. Enchanted dew gathers on their caps, shining each time the little creature passes.",
+    [
+      ["Follow the Pixie", [xp("companion"), card("pixie-companion")]],
+      ["Bottle the Dew", [card("wishing-potion"), mat("herbs", 3)]],
+    ],
+  ),
+  ev(
+    "sporekeepers-tools",
+    "The Sporekeeper's Tools",
+    "Someone left a mortar and a set of small bottles beside the grotto's luminous mushrooms. Caustic spores drift down whenever the caps are disturbed.",
+    [
+      ["Grind the Mushroom Caps", [trinket("mortar-and-pestle"), mat("herbs", 3)]],
+      ["Bottle the Bitter Spores", [xp("poison"), card("acid-potion")]],
+    ],
+  ),
+  ev(
+    "rootbound-dispatch",
+    "Rootbound Dispatch",
+    "A wrapped bundle beneath the roots holds a route map and a well-kept dagger. One marked stop leads to a small coin cache nearby.",
+    [
+      ["Follow the Marked Route", [trinket("smugglers-map"), gold(20)]],
+      ["Claim the Dagger", [gear("dagger"), mat("iron", 3)]],
+    ],
+  ),
+  ev(
+    "moth-in-the-thicket",
+    "Moth in the Thicket",
+    "A mana moth feeds among the glowing berries, undisturbed by your approach. Ripe fruit and useful herbs crowd the stems beneath it.",
+    [
+      ["Coax the Moth Closer", [xp("mana"), card("mana-moth-companion")]],
+      ["Dry the Ripe Berries", [card("mana-berries"), mat("herbs", 3)]],
+    ],
+  ),
+  ev(
+    "healers-recipe",
+    "The Healer's Recipe",
+    "A legible remedy recipe lies beside a usable mortar in the overgrown herb beds. The plants it calls for are still growing nearby.",
+    [
+      ["Prepare the Remedy", [xp("health"), card("panacea-potion")]],
+      ["Keep the Mortar", [trinket("mortar-and-pestle"), mat("herbs", 3)]],
+    ],
+  ),
+  ev(
+    "cooled-core",
+    "The Cooled Core",
+    "The fallen stone has split open. Its heart still radiates heat, while blue crystal veins run through the cooling shell.",
+    [
+      ["Lift the Warm Heart", [xp("burn"), trinket("meteorite")]],
+      ["Chip the Blue Veins", [card("mana-crystals"), mat("gems", 3)]],
+    ],
+  ),
+  ev(
+    "drowned-toll",
+    "The Drowned Toll",
+    "A coin stamped with a wishing well glints beside a sunken purse. Medicinal reeds grow thick along the bank, their leaves full of clear sap.",
+    [
+      ["Dredge the Coin Purse", [trinket("wishing-well-coin"), gold(20)]],
+      ["Cut the Healing Reeds", [card("health-potion"), mat("herbs", 3)]],
+    ],
+  ),
+  ev(
+    "forgotten-door",
+    "The Forgotten Door",
+    "Roots have opened two shallow alcoves in the ruined temple. A prayer book rests in one; an old shield stands in the other.",
+    [
+      ["Take the Prayer Book", [xp("holy"), gear("spellbook")]],
+      ["Claim the Shield", [xp("block"), gear("kite-shield")]],
+    ],
+  ),
+  ev(
+    "fallen-bough",
+    "The Fallen Bough",
+    "A fallen ironwood limb lies across the sunlit grove, broad enough to shape into a buckler. A small bark charm hangs nearby, glossy with healing sap.",
+    [
+      ["Shape the Ironwood", [trinket("ironwood-buckler"), mat("wood", 3)]],
+      ["Take the Sap Charm", [trinket("groves-favor"), mat("herbs", 3)]],
+    ],
+  ),
+  ev(
+    "seed-in-the-ash",
+    "A Seed in the Ash",
+    "A living ember-bloom grows from the phoenix's charred nest. Beside it, a ruby amulet glows among loose gems, embers, and fallen wood.",
+    [
+      ["Nurture the Bloom", [card("cinderbloom"), mat("wood", 3)]],
+      ["Take the Ruby Amulet", [gear("ruby-amulet"), mat("gems", 3)]],
+    ],
+  ),
+  ev(
+    "patient-scout",
+    "The Patient Scout",
+    "The wolf leads you to its den, then waits beside an old companion's collar and a store of hides left by its former keeper.",
+    [
+      ["Earn Its Trust", [xp("companion"), card("wolf-companion")]],
+      ["Recover the Collar", [trinket("companions-collar"), mat("hide", 3)]],
+    ],
+  ),
 ];
 
 export function findMysteryEvent(eventId: string): MysteryEvent | null {

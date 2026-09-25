@@ -155,7 +155,12 @@ export function createBattleCardPlay(
       getPresentation().telegraphCast("player");
     }
     animatePlayedCard(card, index, sourceRect, currentState.hand.length);
-    playCardSound(card.id);
+    if (
+      card.id !== "cleanse" ||
+      played.combatTexts.some((event) => event.kind === "notice" && event.signal === "cleanse")
+    ) {
+      playCardSound(card.id);
+    }
     ctx.setHoveredCardId((current) => (current === getHoverId("hand", getHandCardKey(card, index)) ? null : current));
 
     runDrawSequenceAndFinalize(

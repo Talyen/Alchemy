@@ -75,6 +75,21 @@ describe("applyEnemyAbility: reactions", () => {
     }
   });
 
+  it("does not show Purge feedback when the player has no beneficial status", () => {
+    const state = patchBattleState({
+      currentEnemy: enemyBestiary.find((enemy) => enemy.id === "banshee")!,
+      playerHealth: 30,
+      rng: () => 0.99,
+    });
+    const texts = makeTexts();
+    applyEnemyAbility(
+      state,
+      makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 2 }] }),
+      texts,
+    );
+    expect(texts.some((event) => event.kind === "notice" && event.signal === "purge")).toBe(false);
+  });
+
   it("banshee purges thorns without retaliation and purges phoenix feather", () => {
     const banshee = enemyBestiary.find((e) => e.id === "banshee")!;
     const physicalHit = () => makeEnemyTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });

@@ -82,7 +82,7 @@ describe("TalentsScreen", () => {
   it("shows unspent points at the bottom of the allocation screen and hides at zero", async () => {
     const { rerender } = render(
       <TalentsScreen
-        talentXP={{ physical: 100 }}
+        talentXP={{ physical: 200 }}
         unlockedTalents={{ physical: [] }}
         onUnlockTalent={vi.fn()}
         onResetTalents={vi.fn()}
@@ -97,7 +97,7 @@ describe("TalentsScreen", () => {
 
     rerender(
       <TalentsScreen
-        talentXP={{ physical: 100 }}
+        talentXP={{ physical: 200 }}
         unlockedTalents={{ physical: ["physical-a", "physical-b", "physical-c", "physical-d"] }}
         onUnlockTalent={vi.fn()}
         onResetTalents={vi.fn()}
@@ -109,7 +109,7 @@ describe("TalentsScreen", () => {
   it("updates the points footer in real time and uses the singular label", async () => {
     const { rerender } = render(
       <TalentsScreen
-        talentXP={{ physical: 100 }}
+        talentXP={{ physical: 200 }}
         unlockedTalents={{ physical: [] }}
         onUnlockTalent={vi.fn()}
         onResetTalents={vi.fn()}
@@ -121,7 +121,7 @@ describe("TalentsScreen", () => {
 
     rerender(
       <TalentsScreen
-        talentXP={{ physical: 100 }}
+        talentXP={{ physical: 200 }}
         unlockedTalents={{ physical: ["physical-a"] }}
         onUnlockTalent={vi.fn()}
         onResetTalents={vi.fn()}
@@ -131,7 +131,7 @@ describe("TalentsScreen", () => {
 
     rerender(
       <TalentsScreen
-        talentXP={{ physical: 10 }}
+        talentXP={{ physical: 20 }}
         unlockedTalents={{ physical: [] }}
         onUnlockTalent={vi.fn()}
         onResetTalents={vi.fn()}

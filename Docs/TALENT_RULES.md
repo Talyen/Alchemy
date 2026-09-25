@@ -4,6 +4,8 @@ Canonical detail linked from [GAME_RULES.md](./GAME_RULES.md).
 
 ## Talent manifests and progression
 
+Each keyword earns talent points independently. The first point costs 20 XP, and each following point costs 20 XP more; point `n` unlocks at `10 × n × (n + 1)` total keyword XP.
+
 Talent tuning follows repeatability, not merely whether a condition exists. Frequent rewards stay small; once-per-combat opening grants and bounded opening/finishing windows can remain larger. Shatter adds 1 damage to positive player/Companion packets against Frozen enemies, and Corrosive does the same against Poisoned enemies; Exploit Weakness retains double damage. Active Stun/Freeze blocks further crowd control, and recovery starts their shared three-turn immunity. Do not balance around simultaneous Stun and Freeze as an ordinarily reachable state. Resource and Health threshold rewards can retrigger after returning across their threshold; they are not once-per-combat rewards.
 
 Current scaling talents use numeric percentage fields. Run restoration rebuilds derived manifests from purchased talent IDs and Homestead effects without replaying opening rewards. Preserve valid current combat flags and progression; retire obsolete manifest fields and incompatible development snapshots under the [save baseline](../src/features/alchemy/shared/storage/MIGRATIONS.md#supported-baseline).

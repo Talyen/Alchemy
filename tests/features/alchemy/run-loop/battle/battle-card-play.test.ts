@@ -16,7 +16,7 @@ import { setSyncedBattleState } from "@/features/alchemy/shared/stores/write/run
 import { resetBattlePresentationAndRun } from "./battle-test-reset";
 import { makeTestBattleState } from "../../../../fixtures/battle";
 import { makeTestCard } from "../../../../fixtures/battle";
-import { playBattleEvent, playUISound } from "@/lib/audio";
+import { playBattleEvent, playCardSound, playUISound } from "@/lib/audio";
 import { AUTOPLAY_PREVIEW_MS } from "@/lib/game-constants";
 import { logError } from "@/lib/error-logger";
 import { useBattlePresentationStore } from "@/features/alchemy/run-loop/battle/battle-presentation-store";
@@ -134,6 +134,33 @@ beforeEach(() => {
 });
 
 describe("createBattleCardPlay", () => {
+  it.each([
+    { burn: 0, playsCleanseSound: false },
+    { burn: 3, playsCleanseSound: true },
+  ])("plays the Cleanse cue only when a status is removed (Burn $burn)", ({ burn, playsCleanseSound }) => {
+    const cleanse = makeTestCard({
+      id: "cleanse",
+      cost: 1,
+      effects: [
+        { kind: "remove-harmful-status", amount: 1 },
+        { kind: "heal", amount: 2 },
+      ],
+    });
+    const base = makeTestBattleState();
+    const state = makeTestBattleState({
+      hand: [{ ...cleanse, uid: 1 }],
+      mana: 3,
+      playerHealth: 20,
+      playerStatuses: { ...base.playerStatuses, burn },
+    });
+    dispatchRunSessionCommand((draft) => setSyncedBattleState(draft, state));
+
+    const { ctx, session, transferDeps } = makeDeps();
+    clickCard(createBattleCardPlay(ctx, session, transferDeps).handleCardClick, { ...cleanse, uid: 1 }, 0);
+
+    expect(playCardSound).toHaveBeenCalledTimes(playsCleanseSound ? 1 : 0);
+  });
+
   it("plays a legal card and syncs battle state", async () => {
     const slash = makeTestCard({
       id: "slash",

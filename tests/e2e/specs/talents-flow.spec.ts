@@ -86,7 +86,7 @@ test.describe("Talents Flow", () => {
 
   test("spending the last talent point preserves node geometry", slow, async ({ page }) => {
     const menu = new MenuPage(page);
-    await menu.gotoWithUnlockedMeta({ talentXP: { physical: 10 }, unlockedTalents: {} });
+    await menu.gotoWithUnlockedMeta({ talentXP: { physical: 20 }, unlockedTalents: {} });
     await menu.openTalents();
 
     await page.getByRole("button", { name: "Select Physical Talents" }).click();

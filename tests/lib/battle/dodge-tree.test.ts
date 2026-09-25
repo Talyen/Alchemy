@@ -14,13 +14,13 @@ const fullTree = computeTalentEffects({ dodge: dodgeTalents.map((talent) => tale
 describe("Dodge tree progression", () => {
   it("offers ten real talents in four gated rows", () => {
     expect(getTalentRows("dodge").map((row) => row.length)).toEqual([1, 2, 3, 4]);
-    expect(tryUnlockTalent("dodge", "dodge-lightfoot", { dodge: 9 }, {}).unlockedTalents).toBeNull();
-    const first = tryUnlockTalent("dodge", "dodge-lightfoot", { dodge: 10 }, {});
+    expect(tryUnlockTalent("dodge", "dodge-lightfoot", { dodge: 19 }, {}).unlockedTalents).toBeNull();
+    const first = tryUnlockTalent("dodge", "dodge-lightfoot", { dodge: 20 }, {});
     expect(first.unlockedTalents).toEqual({ dodge: ["dodge-lightfoot"] });
-    expect(tryUnlockTalent("dodge", "dodge-feint", { dodge: 550 }, {}).unlockedTalents).toBeNull();
+    expect(tryUnlockTalent("dodge", "dodge-feint", { dodge: 1100 }, {}).unlockedTalents).toBeNull();
     let unlocked = {};
     for (const talent of dodgeTalents) {
-      const result = tryUnlockTalent("dodge", talent.id, { dodge: 550 }, unlocked);
+      const result = tryUnlockTalent("dodge", talent.id, { dodge: 1100 }, unlocked);
       expect(result.unlockedTalents).not.toBeNull();
       unlocked = result.unlockedTalents!;
     }
