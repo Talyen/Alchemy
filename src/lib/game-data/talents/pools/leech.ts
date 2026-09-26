@@ -1,82 +1,74 @@
-import { talent } from "../talent-builder";
+import { talentFor } from "../talent-builder";
 import { setEffect } from "../types";
 
+const t = talentFor("leech");
+
 export const leechTalents = [
-  talent(
+  t(
     "leech-first-double",
-    "leech",
     "Deep Siphon",
     "Leech from your cards restores 10% more Health",
     "Sword",
     setEffect("cardLeechBonusPercent", 10),
   ),
-  talent(
+  t(
     "leech-blood-debt",
-    "leech",
     "Blood Debt",
     "Leech has a 10% chance to also grant Gold equal to Health restored",
     "CircleDollarSign",
     setEffect("leechGoldChance", 10),
   ),
-  talent(
+  t(
     "leech-nature-chance",
-    "leech",
     "Affliction Siphon",
     "Leech restores 10% more Health against Poisoned or Bleeding enemies",
     "Utensils",
     setEffect("afflictionLeechBonusPercent", 10),
   ),
-  talent(
+  t(
     "leech-desperate",
-    "leech",
     "Desperate Siphon",
     "Leech is doubled while you're below half Health",
     "HeartCrack",
     setEffect("leechDesperateMultiplier", 100),
   ),
-  talent(
+  t(
     "leech-cull-weak",
-    "leech",
     "Cull the Weak",
     "Leech cards deal 25% more damage against enemies below half Health",
     "Skull",
     setEffect("leechCardDamageVsLowHealthPercent", 25),
   ),
-  talent(
+  t(
     "leech-block-enemy",
-    "leech",
     "Sanguine Overflow",
     "When Leech fills your Health, gain 1 Mana",
     "Hash",
     setEffect("manaOnLeechToFull", 1),
   ),
-  talent(
+  t(
     "leech-bleed-chance",
-    "leech",
     "Bloodletting",
     "Losing Health has a 10% chance to cleanse a negative status effect",
     "Droplets",
     setEffect("healthLossCleanseChance", 10),
   ),
-  talent(
+  t(
     "leech-mana-siphon",
-    "leech",
     "Mana Siphon",
     "Leech has a 10% chance to gain 1 Mana",
     "Gem",
     setEffect("manaOnLeechChance", 10),
   ),
-  talent(
+  t(
     "leech-trinket-siphon",
-    "leech",
     "Armor Siphon",
     "Your Leech cards steal 1 Armor before their effects resolve",
     "Wrench",
     setEffect("armorStealOnLeechCard", 1),
   ),
-  talent(
+  t(
     "leech-poison",
-    "leech",
     "Virulent Leech",
     "Poison damage has a 10% chance to Leech",
     "FlaskConical",

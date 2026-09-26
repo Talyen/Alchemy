@@ -1,82 +1,74 @@
-import { talent } from "../talent-builder";
+import { talentFor } from "../talent-builder";
 import { addEffect, setEffect } from "../types";
 
+const t = talentFor("consume");
+
 export const consumeTalents = [
-  talent(
+  t(
     "consume-gourmand",
-    "consume",
     "Gourmand",
     "Consume cards restore 20% more Health",
     "Apple",
     setEffect("consumeHealMultiplier", 0.2),
   ),
-  talent(
+  t(
     "consume-last-supper",
-    "consume",
     "Last Supper",
     "When you Consume your last card in hand, gain 3 Forge",
     "Gift",
     setEffect("forgeOnConsume", 3),
   ),
-  talent(
+  t(
     "consume-volatility",
-    "consume",
     "Volatility",
     "Consume cards deal 20% more damage",
     "Flame",
     setEffect("consumeDamageBonusPercent", 20),
   ),
-  talent(
+  t(
     "consume-distillation",
-    "consume",
     "Distillation",
     "Potions you Consume are 10% more potent",
     "FlaskConical",
     addEffect("potionPotency", 0.1),
   ),
-  talent(
+  t(
     "consume-brewmaster",
-    "consume",
     "Brewmaster",
     "Mixed Potions you Consume are 10% more potent",
     "Wine",
     addEffect("mixedPotionPotency", 0.1),
   ),
-  talent(
+  t(
     "consume-aftertaste",
-    "consume",
     "Aftertaste",
     "When you Consume a card, restore 1 Health",
     "Cookie",
     setEffect("healOnConsume", 1),
   ),
-  talent(
+  t(
     "consume-leftovers",
-    "consume",
     "Leftovers",
     "Consuming a card has a 25% chance to grant 4 Gold",
     "Package",
     setEffect("goldOnConsume", 4),
   ),
-  talent(
+  t(
     "consume-second-helping",
-    "consume",
     "Second Helping",
     "When you Consume a card, draw a card",
     "CopyPlus",
     setEffect("uncappedDrawOnConsume", 1),
   ),
-  talent(
+  t(
     "consume-rotgut",
-    "consume",
     "Rotgut",
     "Your Poison Potions deal 2 additional Poison damage",
     "FlaskRound",
     setEffect("poisonDamageOnConsume", 2),
   ),
-  talent(
+  t(
     "consume-feast",
-    "consume",
     "Feast",
     "Apple and Bread restore twice as much Health",
     "CookingPot",

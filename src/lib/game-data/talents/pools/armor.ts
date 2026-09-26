@@ -1,85 +1,65 @@
-import { talent } from "../talent-builder";
+import { talentFor } from "../talent-builder";
 import { setEffect } from "../types";
 
+const t = talentFor("armor");
+
 export const armorTalents = [
-  talent(
+  t(
     "armor-desperate-double",
-    "armor",
     "Last Stand",
     "Gain 25% more Armor while below half Health",
     "HeartCrack",
     setEffect("armorLowHealthBonusPercent", 25),
   ),
-  talent(
+  t(
     "armor-block-burst",
-    "armor",
     "Armored Surge",
     "Gaining Block has a 10% chance to also grant that amount of Armor",
     "Shield",
     setEffect("armorOnBlockChance", 10),
   ),
-  talent(
+  t(
     "armor-burn-mitigate",
-    "armor",
     "Fireward",
     "Armor mitigates Burn damage taken",
     "Flame",
     setEffect("armorMitigatesBurn", true),
   ),
-  talent(
+  t(
     "armor-break-block",
-    "armor",
     "Reactive Guard",
     "When Armor breaks, gain 3 Block",
     "ShieldPlus",
     setEffect("armorBreakBlock", 3),
   ),
-  talent(
-    "armor-start-combat",
-    "armor",
-    "Bulwark",
-    "Start each combat with 2 Armor",
-    "Square",
-    setEffect("startArmor", 2),
-  ),
-  talent(
+  t("armor-start-combat", "Bulwark", "Start each combat with 2 Armor", "Square", setEffect("startArmor", 2)),
+  t(
     "armor-mitigate-bleed",
-    "armor",
     "Thick Hide",
     "Armor mitigates Bleed damage taken",
     "Hexagon",
     setEffect("armorMitigatesBleed", true),
   ),
-  talent(
+  t(
     "armor-first-double",
-    "armor",
     "Iron Guard",
     "Dealing Physical damage has a 10% chance to also grant that amount of Armor",
     "Lock",
     setEffect("armorOnPhysicalDamageChance", 10),
   ),
-  talent(
+  t(
     "armor-mitigate-stun",
-    "armor",
     "Steadfast",
     "When your Health falls below half, gain 3 Armor",
     "Anchor",
     setEffect("healthThresholdArmor", [{ threshold: 50, amount: 3 }]),
   ),
-  talent(
+  t(
     "armor-cleanse-threshold",
-    "armor",
     "Purification",
     "Gaining Armor has a 10% chance to Cleanse a harmful status effect",
     "Sparkles",
     setEffect("armorCleanseChance", 10),
   ),
-  talent(
-    "armor-flat-bonus",
-    "armor",
-    "Reinforced",
-    "10% chance to double Armor gained",
-    "Plus",
-    setEffect("armorDoubleChance", 10),
-  ),
+  t("armor-flat-bonus", "Reinforced", "10% chance to double Armor gained", "Plus", setEffect("armorDoubleChance", 10)),
 ];

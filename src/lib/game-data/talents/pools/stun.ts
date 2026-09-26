@@ -1,75 +1,68 @@
-import { talent } from "../talent-builder";
+import { talentFor } from "../talent-builder";
 import { setEffect } from "../types";
 
+const t = talentFor("stun");
+
 export const stunTalents = [
-  talent(
+  t(
     "stun-forge-grant",
-    "stun",
     "Riled Up",
     "If you have no Forge, Stunning an enemy grants 2 Forge",
     "Flame",
     setEffect("forgeOnStun", 2),
   ),
-  talent(
+  t(
     "stun-double-damage",
-    "stun",
     "Exploit Weakness",
     "Stunned enemies take double damage",
     "TrendingUp",
     setEffect("stunDoubleDamage", true),
   ),
-  talent(
+  t(
     "stun-block-grant",
-    "stun",
     "Guarded Counter",
     "If you have no Block, Stunning an enemy grants 4 Block",
     "Shield",
     setEffect("blockOnStun", 4),
   ),
-  talent(
+  t(
     "stun-duration-1",
-    "stun",
     "Extended Stun",
     "Stun effects last 1 turn longer",
     "Clock",
     setEffect("stunDurationExtension", 1),
   ),
-  talent(
+  t(
     "stun-strip-armor",
-    "stun",
     "Shatter Guard",
     "When you Stun an enemy, remove all its Armor",
     "ShieldOff",
     setEffect("stunStripArmor", true),
   ),
-  talent(
+  t(
     "stun-damage-1",
-    "stun",
     "Jarring Blow",
     "Stun cards have a 10% chance to play twice",
     "Bolt",
     setEffect("stunCardPlayTwiceChance", 10),
   ),
-  talent(
+  t(
     "stun-next-free",
-    "stun",
     "Free Follow-up",
     "When you Stun an enemy, your next card is free",
     "Gift",
     setEffect("nextCardFreeOnStun", true),
   ),
-  talent(
+  t(
     "stun-threshold",
-    "stun",
     "Concussive Force",
     "Stun threshold reduced by 10%",
     "Waves",
     setEffect("stunThresholdReduction", 0.1),
   ),
-  talent("stun-draw", "stun", "Stun Insight", "When you Stun an enemy, draw a card", "Eye", setEffect("drawOnStun", 1)),
-  talent(
+  t("stun-draw", "Stun Insight", "When you Stun an enemy, draw a card", "Eye", setEffect("drawOnStun", 1)),
+  t(
     "stun-mana-grant",
-    "stun",
     "Stun Surge",
     "If you have no Mana, Stunning an enemy grants 1 Mana",
     "PlugZap",

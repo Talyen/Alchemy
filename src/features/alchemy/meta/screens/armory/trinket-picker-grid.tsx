@@ -31,11 +31,11 @@ export function TrinketPickerGrid({
   editable: boolean;
   onEquip: (trinketId: string) => void;
   onCombatLockedAttempt: () => void;
-  page?: number | undefined;
-  totalPages?: number | undefined;
-  onPageChange?: ((page: number) => void) | undefined;
-  fillerCount?: number | undefined;
-  pageItems?: TrinketEntry[] | undefined;
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  fillerCount: number;
+  pageItems: TrinketEntry[];
   placeholderIndex?: number | null | undefined;
   hiddenArtworkIds?: ReadonlySet<string> | undefined;
 }) {
@@ -57,8 +57,6 @@ export function TrinketPickerGrid({
       fillerCount={fillerCount}
       pageItems={pageItems}
       placeholderIndex={placeholderIndex}
-      selectedId={equippedTrinkets[characterId]}
-      context={`trinket:${characterId}`}
       testId="armory-trinket-picker"
       swapKey={characterId}
       renderItem={(trinket) => {

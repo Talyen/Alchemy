@@ -1,82 +1,68 @@
-import { talent } from "../talent-builder";
+import { talentFor } from "../talent-builder";
 import { addEffect, setEffect } from "../types";
 
+const t = talentFor("block");
+
 export const blockTalents = [
-  talent(
+  t(
     "block-depleted-heal",
-    "block",
     "Second Wind",
     "When Block is depleted, restore 2 Health",
     "Wind",
     setEffect("blockDepletedHeal", 2),
   ),
-  talent(
+  t(
     "block-absorb-physical",
-    "block",
     "Reinforce",
     "Block absorbs 10% more Physical damage",
     "ShieldCheck",
     setEffect("blockAbsorbPhysicalBonus", 10),
   ),
-  talent(
+  t(
     "block-to-holy",
-    "block",
     "Sacred Shield",
     "Holy damage is increased by 10% of your Block",
     "Sun",
     setEffect("blockHolyDamagePercent", 10),
   ),
-  talent(
+  t(
     "block-to-stun",
-    "block",
     "Impact Guard",
     "Stun damage is increased by 10% of your Block",
     "Zap",
     setEffect("blockStunDamagePercent", 10),
   ),
-  talent(
+  t(
     "block-prevent-stun",
-    "block",
     "Grounding",
     "While you have Block, prevent Stun buildup",
     "Anchor",
     setEffect("blockPreventsStun", true),
   ),
-  talent(
+  t(
     "block-to-physical",
-    "block",
     "Weighted Guard",
     "Physical damage is increased by 10% of your Block",
     "Weight",
     addEffect("blockToPhysicalDamageMultiplier", 0.1),
   ),
-  talent(
+  t(
     "block-reduce-burn",
-    "block",
     "Sun-Struck Shield",
     "When attacks deplete your Block, reflect 30% of Block lost as Holy damage",
     "Flame",
     setEffect("holyReflectionBlockLostPercent", 30),
   ),
-  talent(
-    "block-start",
-    "block",
-    "Footwork",
-    "Gain 2 Block when you Dodge",
-    "ChevronsUp",
-    setEffect("dodgeBlockAmount", 2),
-  ),
-  talent(
+  t("block-start", "Footwork", "Gain 2 Block when you Dodge", "ChevronsUp", setEffect("dodgeBlockAmount", 2)),
+  t(
     "block-prevent-bleed",
-    "block",
     "Coagulate",
     "While you have Block, Bleed damage taken is halved",
     "Droplets",
     setEffect("blockHalvesBleedDamage", true),
   ),
-  talent(
+  t(
     "block-prevent-poison",
-    "block",
     "Detoxify",
     "While you have Block, Poison damage taken is halved",
     "FlaskConical",

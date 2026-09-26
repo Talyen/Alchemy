@@ -1,75 +1,68 @@
-import { talent } from "../talent-builder";
+import { talentFor } from "../talent-builder";
 import { setEffect } from "../types";
 
+const t = talentFor("mana");
+
 export const manaTalents = [
-  talent(
+  t(
     "mana-wellspring",
-    "mana",
     "Wellspring",
     "When you end your turn with unspent Mana, keep 1 for next turn",
     "Droplets",
     setEffect("wellspringKeepMana", 1),
   ),
-  talent(
+  t(
     "mana-bulwark",
-    "mana",
     "Mana Bulwark",
     "Start each combat with Block equal to your Mana Crystals",
     "ShieldPlus",
     setEffect("manaBulwarkActive", true),
   ),
-  talent("mana-leylines", "mana", "Leyline Attunement", "Gain 1 Mana Crystal", "Atom", setEffect("startMana", 1)),
-  talent(
+  t("mana-leylines", "Leyline Attunement", "Gain 1 Mana Crystal", "Atom", setEffect("startMana", 1)),
+  t(
     "mana-arcane-wish",
-    "mana",
     "Dark Recovery",
     "End your turn with no Mana to gain 1 extra Mana next turn",
     "Sparkles",
     setEffect("manaAfterEmptyTurn", 1),
   ),
-  talent(
+  t(
     "mana-manaburn",
-    "mana",
     "Manaburn",
     "Burn damage is increased by 25% of your Mana",
     "Flame",
     setEffect("burnDamagePerMana", 25),
   ),
-  talent(
+  t(
     "mana-arcane-frost",
-    "mana",
     "Arcane Frost",
     "Freeze damage is increased by 25% of your Mana",
     "Snowflake",
     setEffect("freezeDamagePerMana", 25),
   ),
-  talent(
+  t(
     "mana-flare",
-    "mana",
     "Mana Flare",
     "When you lose a Mana Crystal, deal 3 Burn damage",
     "Bomb",
     setEffect("burnDamageOnManaCrystalLoss", 3),
   ),
-  talent(
+  t(
     "mana-familiar-bond",
-    "mana",
     "Familiar Bond",
     "Companion damage has a 10% chance to gain 1 Mana",
     "PawPrint",
     setEffect("companionManaChance", 10),
   ),
-  talent(
+  t(
     "mana-shell",
-    "mana",
     "Mana Shell",
     "Start each combat with Armor equal to your Mana Crystals",
     "ShieldHalf",
     setEffect("manaShellActive", true),
   ),
-  talent(
+  t(
     "mana-arcane-mending",
-    "mana",
     "Arcane Mending",
     "Gaining Mana also restores Health",
     "Wand",

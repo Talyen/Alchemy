@@ -29,13 +29,13 @@ interface ArmoryPickerPanelProps {
   actions: ArmoryItemActions;
   onSpawnDevGear: ((characterId: CharacterId) => void) | undefined;
   onSort: (option: ArmorySortOption) => void;
-  page?: number;
-  totalPages?: number;
-  onPageChange?: (page: number) => void;
-  fillerCount?: number;
-  pagedGear?: GearInstance[];
-  pagedTrinkets?: TrinketEntry[];
-  placeholderIndex?: number | null;
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  fillerCount: number;
+  pagedGear: GearInstance[];
+  pagedTrinkets: TrinketEntry[];
+  placeholderIndex?: number | null | undefined;
   hiddenArtworkIds?: ReadonlySet<string>;
 }
 
@@ -64,6 +64,7 @@ export function ArmoryPickerPanel({
 }: ArmoryPickerPanelProps) {
   const selectDismiss = useSelectDismiss();
   const { editable, salvageMode, activeCurrencyId, craftingResult } = targeting;
+  const paging = { page, totalPages, onPageChange, fillerCount, placeholderIndex, hiddenArtworkIds };
   return (
     <section
       data-testid="armory-right-panel"
@@ -80,14 +81,8 @@ export function ArmoryPickerPanel({
                 <span className="text-xs font-medium">Sort</span>
               </SelectTrigger>
               <SelectContent>
-                {selectedSlot === "trinket" ? (
-                  <SelectItem value="name">Name</SelectItem>
-                ) : (
-                  <>
-                    <SelectItem value="rarity">Rarity</SelectItem>
-                    <SelectItem value="name">Name</SelectItem>
-                  </>
-                )}
+                {selectedSlot === "trinket" ? null : <SelectItem value="rarity">Rarity</SelectItem>}
+                <SelectItem value="name">Name</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -115,19 +110,13 @@ export function ArmoryPickerPanel({
             editable={editable}
             onEquip={actions.onEquipTrinket}
             onCombatLockedAttempt={actions.onCombatLockedAttempt}
-            page={page}
-            totalPages={totalPages}
-            onPageChange={onPageChange}
-            fillerCount={fillerCount}
             pageItems={pagedTrinkets}
-            placeholderIndex={placeholderIndex}
-            hiddenArtworkIds={hiddenArtworkIds}
+            {...paging}
           />
         ) : (
           <ItemPickerGrid
             reservedGear={combatRestrictions.gear}
             slot={selectedSlot}
-            characterId={characterId}
             items={pickerItems}
             loadout={loadout}
             loadouts={loadouts}
@@ -140,13 +129,8 @@ export function ArmoryPickerPanel({
             onSalvage={actions.onSalvage}
             onApplyCurrency={actions.onApplyCurrency}
             onCombatLockedAttempt={actions.onCombatLockedAttempt}
-            page={page}
-            totalPages={totalPages}
-            onPageChange={onPageChange}
-            fillerCount={fillerCount}
             pageItems={pagedGear}
-            placeholderIndex={placeholderIndex}
-            hiddenArtworkIds={hiddenArtworkIds}
+            {...paging}
           />
         )}
       </FadeSlot>

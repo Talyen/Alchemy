@@ -18,48 +18,68 @@ export function flattenEffects(effects: BattleCardEffect[]): BattleCardEffect[] 
   return flattenInternal(effects, true);
 }
 
-export function countByKind(effects: BattleCardEffect[], kind: string): number {
-  return flattenEffects(effects).filter((effect) => effect.kind === kind).length;
-}
-
 // Chance-only flattening intentionally keeps repeat-over-turns wrappers intact.
 // Block/status count rules use this variant because repeat lines use "each
 // turn" wording that the block rule excludes explicitly; numeric parity cursors
 // use the full flattening above. The two counts can legitimately differ.
-export function flattenChanceEffects(effects: BattleCardEffect[]): BattleCardEffect[] {
+function flattenChanceEffects(effects: BattleCardEffect[]): BattleCardEffect[] {
   return flattenInternal(effects, false);
 }
 
-export function hasKind(effects: BattleCardEffect[], kind: string): boolean {
-  return flattenEffects(effects).some((effect) => effect.kind === kind);
+/** Single flatten per card shared by every parity check below. */
+export interface CardEffectIndex {
+  flat: BattleCardEffect[];
+  chanceFlat: BattleCardEffect[];
+  countKind: (kind: string) => number;
+  hasKind: (kind: string) => boolean;
+  lifesteal: boolean;
+  nonStandardDamage: boolean;
 }
 
-export function hasLifesteal(effects: BattleCardEffect[]): boolean {
-  return flattenEffects(effects).some((effect) => effect.kind === "damage" && effect.lifesteal === true);
-}
-
-function hasEqualToBlockOrArmor(effects: BattleCardEffect[]): boolean {
-  return effects.some(
-    (effect) =>
-      effect.kind === "damage" &&
-      (effect.equalToBlock === true ||
-        effect.equalToArmor === true ||
-        effect.equalToForge === true ||
-        effect.equalToGoldPercent !== undefined),
-  );
-}
-
-export function hasNonStandardDamageEffects(effects: BattleCardEffect[]): boolean {
+export function indexCardEffects(effects: BattleCardEffect[]): CardEffectIndex {
   const flat = flattenEffects(effects);
-  return (
-    hasEqualToBlockOrArmor(flat) ||
-    flat.some((effect) => effect.kind === "cleanse-player-status-to-damage" || effect.kind === "random-damage") ||
-    effects.some((effect) => isRecursiveBattleCardEffectKind(effect.kind))
-  );
+  const chanceFlat = flattenChanceEffects(effects);
+  const counts = new Map<string, number>();
+  for (const effect of flat) counts.set(effect.kind, (counts.get(effect.kind) ?? 0) + 1);
+  return {
+    flat,
+    chanceFlat,
+    countKind: (kind) => counts.get(kind) ?? 0,
+    hasKind: (kind) => counts.has(kind),
+    lifesteal: flat.some((effect) => effect.kind === "damage" && effect.lifesteal === true),
+    nonStandardDamage:
+      flat.some(
+        (effect) =>
+          (effect.kind === "damage" &&
+            (effect.equalToBlock === true ||
+              effect.equalToArmor === true ||
+              effect.equalToForge === true ||
+              effect.equalToGoldPercent !== undefined)) ||
+          effect.kind === "cleanse-player-status-to-damage" ||
+          effect.kind === "random-damage",
+      ) || effects.some((effect) => isRecursiveBattleCardEffectKind(effect.kind)),
+  };
 }
 
-export function countLinesStartingWith(lines: string[], prefix: string): number {
-  return lines.filter((line) => line.startsWith(prefix)).length;
+/** Per-kind cursors over one flattening, consumed in description-line order. */
+export type EffectQueues = <T extends BattleCardEffect["kind"]>(
+  kind: T,
+) => Extract<BattleCardEffect, { kind: T }> | undefined;
+
+export function createEffectQueues(flat: BattleCardEffect[]): EffectQueues {
+  const byKind = new Map<string, BattleCardEffect[]>();
+  for (const effect of flat) {
+    const list = byKind.get(effect.kind);
+    if (list) list.push(effect);
+    else byKind.set(effect.kind, [effect]);
+  }
+  const consumed = new Map<string, number>();
+  return ((kind: string) => {
+    const list = byKind.get(kind) ?? [];
+    const at = consumed.get(kind) ?? 0;
+    consumed.set(kind, at + 1);
+    return list[at];
+  }) as EffectQueues;
 }
 
 export function effectParityDescriptionLines(card: BattleCard): string[] {

@@ -1,21 +1,19 @@
 ---
 status: complete
-updated: 2026-09-24
+updated: 2026-09-25
 ---
 
 # Persistence commit policy
 
-## Problem
+Autosave commit filtering now compares saved inputs directly and typechecks the
+classification of every run, battle, and session field. It shares transient and
+mode-gated classifications with the resume codec and uses the permanent progress
+codec's save keys, excluding derived Homestead effects. This prevents new fields
+from silently bypassing autosave while preserving one save signal per relevant
+commit and the existing save format.
 
-Autosave decides whether a gameplay commit matters by comparing arbitrary object keys through record casts and skip lists. This duplicates the run resume encoder's rules and leaves new session fields classified only by a comment. A missed classification can skip a needed save; a broad comparison can schedule snapshots for changes that cannot appear in one.
+The implementation commit includes persistence coordinator coverage for claim
+locks, battle-start snapshots, derived effects, and mode-gated session fields.
+This record retains no separate handoff-gate result.
 
-## Plan
-
-1. Express the save-relevant run, battle, and session fields as direct typed comparisons. Reuse the encoder's transient and mode-gated field names, and make TypeScript require every session field to be classified.
-2. Preserve one save signal per gameplay commit and the current mode-gating semantics. Compare reward payload without the transient claim lock.
-3. Extend the persistence coordinator tests for active and inactive mode fields, reward claim changes, battle presentation-only state, and real persisted changes.
-4. Update the persistence contract, run the save-focused and changed-path checks, then archive this plan.
-
-## Result
-
-The detector now uses direct comparisons for saved inputs and typechecks the classification of run, battle, and session fields. It reuses the permanent progress codec's save-key list, excluding derived Homestead effects. Persistence coordinator tests cover the claim lock, battle start snapshot, derived effects, and mode-gated session fields.
+Implementation: `fc67516a`. Current owner: [Persistence API](../../RUN_STATE.md#persistence-api).

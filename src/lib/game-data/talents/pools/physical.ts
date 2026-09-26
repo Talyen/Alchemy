@@ -1,82 +1,74 @@
-import { talent } from "../talent-builder";
+import { talentFor } from "../talent-builder";
 import { setEffect } from "../types";
 
+const t = talentFor("physical");
+
 export const physicalTalents = [
-  talent(
+  t(
     "physical-expert-blacksmith",
-    "physical",
     "Expert Blacksmith",
     "Physical damage bonus from Forge is increased by 25%",
     "Anvil",
     setEffect("forgeToPhysicalDamageMultiplier", 1.25),
   ),
-  talent(
+  t(
     "physical-shield-bash",
-    "physical",
     "Shield Slam",
     "Physical damage is increased by half your Block",
     "Shield",
     setEffect("blockToPhysicalDamageMultiplier", 0.5),
   ),
-  talent(
+  t(
     "physical-armored-fists",
-    "physical",
     "Armored Fists",
     "Physical damage is increased by half your Armor",
     "HandFist",
     setEffect("armorPhysicalDamagePercent", 50),
   ),
-  talent(
+  t(
     "physical-heavy-blows",
-    "physical",
     "Heavy Blows",
     "Physical damage has a 10% chance to also Stun",
     "Hammer",
     setEffect("physicalStunChance", 10),
   ),
-  talent(
+  t(
     "physical-finish-him",
-    "physical",
     "Finish Him",
     "Physical damage is doubled against enemies below 25% Health",
     "Skull",
     setEffect("physicalDoubledBelowQuarterHealth", true),
   ),
-  talent(
+  t(
     "physical-shatter",
-    "physical",
     "Icebreaker",
     "Physical hits against Frozen enemies grant 1 Forge",
     "Split",
     setEffect("forgeOnPhysicalVsFrozen", 1),
   ),
-  talent(
+  t(
     "physical-lacerate",
-    "physical",
     "Lacerate",
     "Physical damage has a 10% chance to Bleed",
     "Scissors",
     setEffect("physicalBleedChance", 10),
   ),
-  talent(
+  t(
     "physical-hemorrhage",
-    "physical",
     "Rupture",
     "Physical critical hits detonate Bleed",
     "Droplets",
     setEffect("physicalDetonatesBleed", true),
   ),
-  talent(
+  t(
     "physical-brute-force",
-    "physical",
     "Riposte",
     "After you Dodge, your next Physical attack is guaranteed to Critical Hit",
     "Swords",
     setEffect("physicalCritOnDodge", true),
   ),
-  talent(
+  t(
     "physical-unrelenting",
-    "physical",
     "Unrelenting",
     "Physical damage is doubled while you're below half Health",
     "ShieldCheck",

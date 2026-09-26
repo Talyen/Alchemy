@@ -1,68 +1,50 @@
-import { talent } from "../talent-builder";
+import { talentFor } from "../talent-builder";
 import { addEffect, setEffect } from "../types";
 
+const t = talentFor("wish");
+
 export const wishTalents = [
-  talent(
+  t(
     "wish-trinket",
-    "wish",
     "Wishful Trinket",
     "50% chance to gain 1 Forge or Armor when you Wish",
     "Gem",
     setEffect("wishTrinketChoice", true),
   ),
-  talent(
+  t(
     "wish-undiscovered",
-    "wish",
     "Discovery",
     "Wish always includes an undiscovered card when one is available",
     "Compass",
     setEffect("wishUndiscoveredCards", true),
   ),
-  talent("wish-health", "wish", "Vital Wish", "Restore 1 Health when you Wish", "Heart", setEffect("healthOnWish", 1)),
-  talent(
+  t("wish-health", "Vital Wish", "Restore 1 Health when you Wish", "Heart", setEffect("healthOnWish", 1)),
+  t(
     "wish-cleanse",
-    "wish",
     "Purifying Wish",
     "Cleanse 1 harmful status effect when you Wish",
     "Sparkle",
     setEffect("removeHarmfulStatusOnWish", true),
   ),
-  talent(
+  t(
     "wish-extra-choice",
-    "wish",
     "Generous Wish",
     "Wish cards have a 10% chance to play twice",
     "Gift",
     setEffect("wishCardPlayTwiceChance", 10),
   ),
-  talent(
-    "wish-draw",
-    "wish",
-    "Insight",
-    "Wish has a 10% chance to draw a card",
-    "Eye",
-    setEffect("wishDrawChance", 10),
-  ),
-  talent(
-    "wish-powerful",
-    "wish",
-    "Powerful Wish",
-    "Wish cards are upgraded",
-    "Bolt",
-    setEffect("wishCardsUpgraded", true),
-  ),
-  talent("wish-mana", "wish", "Mana from Heaven", "Gain 1 Mana when you Wish", "CloudRain", addEffect("manaOnWish", 1)),
-  talent(
+  t("wish-draw", "Insight", "Wish has a 10% chance to draw a card", "Eye", setEffect("wishDrawChance", 10)),
+  t("wish-powerful", "Powerful Wish", "Wish cards are upgraded", "Bolt", setEffect("wishCardsUpgraded", true)),
+  t("wish-mana", "Mana from Heaven", "Gain 1 Mana when you Wish", "CloudRain", addEffect("manaOnWish", 1)),
+  t(
     "wish-gold",
-    "wish",
     "Roads Not Taken",
     "Wish has a 10% chance to also grant one of the cards not chosen",
     "Coins",
     setEffect("declinedWishCardChance", 10),
   ),
-  talent(
+  t(
     "wish-desperate",
-    "wish",
     "Desperate Wish",
     "When you Wish below half Health, gain 2 Block",
     "HeartCrack",

@@ -17,167 +17,56 @@ export interface EnemyLootTable {
   bonuses: MaterialLootEntry[];
 }
 
-function lootEntry(material: MaterialId, min: number, max: number, chance = 1): MaterialLootEntry {
-  return { material, min, max, chance };
+function bonus(material: MaterialId, chance: number, max = 1): MaterialLootEntry {
+  return { material, min: 1, max, chance };
+}
+
+// Compact loot row: guaranteed partial plus bonus triples. Defaults (min 1,
+// max 1) cover every current bonus; max 2 is passed explicitly where needed.
+function lootTable(guaranteed: Partial<MaterialInventory>, bonuses: MaterialLootEntry[] = []): EnemyLootTable {
+  return { guaranteed: materialCost(guaranteed), bonuses };
 }
 
 export const enemyLootTables: Record<string, EnemyLootTable> = {
-  skeleton: {
-    guaranteed: emptyInventory(),
-    bonuses: [lootEntry("herbs", 1, 1, 0.3)],
-  },
-  goblin: {
-    guaranteed: materialCost({ wood: 1, food: 1 }),
-    bonuses: [lootEntry("wood", 1, 1, 0.4), lootEntry("hide", 1, 1, 0.3)],
-  },
-  mimic: {
-    guaranteed: materialCost({ iron: 2 }),
-    bonuses: [lootEntry("gems", 1, 1, 0.5), lootEntry("iron", 1, 1, 0.4)],
-  },
-  "mud-elemental": {
-    guaranteed: materialCost({ herbs: 1 }),
-    bonuses: [],
-  },
-  necromancer: {
-    guaranteed: materialCost({ herbs: 2, gems: 1 }),
-    bonuses: [lootEntry("gems", 1, 1, 0.3), lootEntry("herbs", 1, 1, 0.5)],
-  },
-  "plague-doctor": {
-    guaranteed: materialCost({ herbs: 2 }),
-    bonuses: [lootEntry("herbs", 1, 1, 0.4)],
-  },
-  "forge-golem": {
-    guaranteed: materialCost({ iron: 3, gems: 1 }),
-    bonuses: [lootEntry("iron", 1, 2, 0.6), lootEntry("gems", 1, 1, 0.4), lootEntry("stone", 1, 1, 0.5)],
-  },
-  frostwarden: {
-    guaranteed: materialCost({ gems: 3 }),
-    bonuses: [lootEntry("gems", 1, 2, 0.6), lootEntry("iron", 1, 1, 0.3)],
-  },
-  "blight-treant": {
-    guaranteed: materialCost({ wood: 2, herbs: 2 }),
-    bonuses: [lootEntry("wood", 1, 2, 0.6), lootEntry("herbs", 1, 2, 0.5)],
-  },
-  "living-armor": {
-    guaranteed: materialCost({ iron: 2 }),
-    bonuses: [lootEntry("iron", 1, 1, 0.4), lootEntry("gems", 1, 1, 0.3)],
-  },
-  "iron-bear": {
-    guaranteed: materialCost({ iron: 2, food: 1 }),
-    bonuses: [lootEntry("iron", 1, 2, 0.5), lootEntry("food", 1, 1, 0.4), lootEntry("hide", 1, 1, 0.5)],
-  },
-  "fire-elemental": {
-    guaranteed: materialCost({ iron: 1, gems: 1 }),
-    bonuses: [lootEntry("gems", 1, 1, 0.4)],
-  },
-  "frost-elemental": {
-    guaranteed: materialCost({ gems: 2 }),
-    bonuses: [lootEntry("gems", 1, 1, 0.6)],
-  },
-  slime: {
-    guaranteed: materialCost({ food: 1 }),
-    bonuses: [lootEntry("herbs", 1, 1, 0.3)],
-  },
-  "will-o-wisp": {
-    guaranteed: materialCost({ gems: 2 }),
-    bonuses: [lootEntry("gems", 1, 1, 0.6)],
-  },
-  bandit: {
-    guaranteed: materialCost({ wood: 1, food: 1 }),
-    bonuses: [lootEntry("wood", 1, 1, 0.4), lootEntry("hide", 1, 1, 0.3)],
-  },
-  ogre: {
-    guaranteed: materialCost({ iron: 2, food: 1 }),
-    bonuses: [lootEntry("iron", 1, 1, 0.5), lootEntry("hide", 1, 1, 0.4)],
-  },
-  "fire-imp": {
-    guaranteed: materialCost({ iron: 1, gems: 1 }),
-    bonuses: [lootEntry("gems", 1, 1, 0.4)],
-  },
-  hellhound: {
-    guaranteed: materialCost({ food: 2, iron: 1 }),
-    bonuses: [lootEntry("food", 1, 1, 0.4), lootEntry("hide", 1, 1, 0.4)],
-  },
-  pyromancer: {
-    guaranteed: materialCost({ gems: 2, iron: 1 }),
-    bonuses: [lootEntry("gems", 1, 1, 0.5)],
-  },
-  "giant-spider": {
-    guaranteed: materialCost({ herbs: 1, food: 1 }),
-    bonuses: [lootEntry("herbs", 1, 1, 0.5), lootEntry("hide", 1, 1, 0.4)],
-  },
-  "giant-snake": {
-    guaranteed: materialCost({ herbs: 2 }),
-    bonuses: [lootEntry("herbs", 1, 1, 0.5), lootEntry("hide", 1, 1, 0.5)],
-  },
-  "blood-cultist": {
-    guaranteed: materialCost({ herbs: 2, gems: 1 }),
-    bonuses: [lootEntry("gems", 1, 1, 0.4)],
-  },
-  "dire-wolf": {
-    guaranteed: materialCost({ food: 2 }),
-    bonuses: [lootEntry("food", 1, 1, 0.5), lootEntry("hide", 1, 1, 0.5)],
-  },
-  vampire: {
-    guaranteed: materialCost({ herbs: 2, food: 1 }),
-    bonuses: [lootEntry("gems", 1, 1, 0.4)],
-  },
-  "blood-countess": {
-    guaranteed: materialCost({ herbs: 3, gems: 1 }),
-    bonuses: [lootEntry("herbs", 1, 2, 0.6), lootEntry("gems", 1, 1, 0.4)],
-  },
-  zealot: {
-    guaranteed: materialCost({ food: 1, gems: 1 }),
-    bonuses: [lootEntry("food", 1, 1, 0.4)],
-  },
-  cleric: {
-    guaranteed: materialCost({ herbs: 1, gems: 1 }),
-    bonuses: [lootEntry("herbs", 1, 1, 0.4)],
-  },
-  inquisitor: {
-    guaranteed: materialCost({ iron: 1, gems: 1 }),
-    bonuses: [lootEntry("iron", 1, 1, 0.4)],
-  },
-  paladin: {
-    guaranteed: materialCost({ iron: 2, gems: 1 }),
-    bonuses: [lootEntry("iron", 1, 1, 0.5)],
-  },
-  seraph: {
-    guaranteed: materialCost({ gems: 3, herbs: 1 }),
-    bonuses: [lootEntry("gems", 1, 2, 0.6), lootEntry("herbs", 1, 1, 0.4)],
-  },
-  "winter-wolf": {
-    guaranteed: materialCost({ food: 1, gems: 1 }),
-    bonuses: [lootEntry("gems", 1, 1, 0.4), lootEntry("hide", 1, 1, 0.4)],
-  },
-  "ice-wraith": {
-    guaranteed: materialCost({ gems: 2, herbs: 1 }),
-    bonuses: [lootEntry("gems", 1, 1, 0.5)],
-  },
-  yeti: {
-    guaranteed: materialCost({ food: 2, iron: 1 }),
-    bonuses: [lootEntry("food", 1, 1, 0.4), lootEntry("hide", 1, 1, 0.4)],
-  },
-  banshee: {
-    guaranteed: materialCost({ herbs: 1, gems: 1 }),
-    bonuses: [lootEntry("herbs", 1, 1, 0.4)],
-  },
-  brawler: {
-    guaranteed: materialCost({ iron: 2, food: 1 }),
-    bonuses: [lootEntry("iron", 1, 1, 0.5)],
-  },
-  "stone-golem": {
-    guaranteed: materialCost({ stone: 3 }),
-    bonuses: [lootEntry("iron", 1, 2, 0.5), lootEntry("stone", 1, 1, 0.4)],
-  },
-  "earth-elemental": {
-    guaranteed: materialCost({ stone: 1, herbs: 1 }),
-    bonuses: [lootEntry("stone", 1, 1, 0.4)],
-  },
-  "stone-titan": {
-    guaranteed: materialCost({ stone: 3, gems: 1 }),
-    bonuses: [lootEntry("iron", 1, 2, 0.6), lootEntry("gems", 1, 1, 0.4)],
-  },
+  skeleton: lootTable({}, [bonus("herbs", 0.3)]),
+  goblin: lootTable({ wood: 1, food: 1 }, [bonus("wood", 0.4), bonus("hide", 0.3)]),
+  mimic: lootTable({ iron: 2 }, [bonus("gems", 0.5), bonus("iron", 0.4)]),
+  "mud-elemental": lootTable({ herbs: 1 }),
+  necromancer: lootTable({ herbs: 2, gems: 1 }, [bonus("gems", 0.3), bonus("herbs", 0.5)]),
+  "plague-doctor": lootTable({ herbs: 2 }, [bonus("herbs", 0.4)]),
+  "forge-golem": lootTable({ iron: 3, gems: 1 }, [bonus("iron", 0.6, 2), bonus("gems", 0.4), bonus("stone", 0.5)]),
+  frostwarden: lootTable({ gems: 3 }, [bonus("gems", 0.6, 2), bonus("iron", 0.3)]),
+  "blight-treant": lootTable({ wood: 2, herbs: 2 }, [bonus("wood", 0.6, 2), bonus("herbs", 0.5, 2)]),
+  "living-armor": lootTable({ iron: 2 }, [bonus("iron", 0.4), bonus("gems", 0.3)]),
+  "iron-bear": lootTable({ iron: 2, food: 1 }, [bonus("iron", 0.5, 2), bonus("food", 0.4), bonus("hide", 0.5)]),
+  "fire-elemental": lootTable({ iron: 1, gems: 1 }, [bonus("gems", 0.4)]),
+  "frost-elemental": lootTable({ gems: 2 }, [bonus("gems", 0.6)]),
+  slime: lootTable({ food: 1 }, [bonus("herbs", 0.3)]),
+  "will-o-wisp": lootTable({ gems: 2 }, [bonus("gems", 0.6)]),
+  bandit: lootTable({ wood: 1, food: 1 }, [bonus("wood", 0.4), bonus("hide", 0.3)]),
+  ogre: lootTable({ iron: 2, food: 1 }, [bonus("iron", 0.5), bonus("hide", 0.4)]),
+  "fire-imp": lootTable({ iron: 1, gems: 1 }, [bonus("gems", 0.4)]),
+  hellhound: lootTable({ food: 2, iron: 1 }, [bonus("food", 0.4), bonus("hide", 0.4)]),
+  pyromancer: lootTable({ gems: 2, iron: 1 }, [bonus("gems", 0.5)]),
+  "giant-spider": lootTable({ herbs: 1, food: 1 }, [bonus("herbs", 0.5), bonus("hide", 0.4)]),
+  "giant-snake": lootTable({ herbs: 2 }, [bonus("herbs", 0.5), bonus("hide", 0.5)]),
+  "blood-cultist": lootTable({ herbs: 2, gems: 1 }, [bonus("gems", 0.4)]),
+  "dire-wolf": lootTable({ food: 2 }, [bonus("food", 0.5), bonus("hide", 0.5)]),
+  vampire: lootTable({ herbs: 2, food: 1 }, [bonus("gems", 0.4)]),
+  "blood-countess": lootTable({ herbs: 3, gems: 1 }, [bonus("herbs", 0.6, 2), bonus("gems", 0.4)]),
+  zealot: lootTable({ food: 1, gems: 1 }, [bonus("food", 0.4)]),
+  cleric: lootTable({ herbs: 1, gems: 1 }, [bonus("herbs", 0.4)]),
+  inquisitor: lootTable({ iron: 1, gems: 1 }, [bonus("iron", 0.4)]),
+  paladin: lootTable({ iron: 2, gems: 1 }, [bonus("iron", 0.5)]),
+  seraph: lootTable({ gems: 3, herbs: 1 }, [bonus("gems", 0.6, 2), bonus("herbs", 0.4)]),
+  "winter-wolf": lootTable({ food: 1, gems: 1 }, [bonus("gems", 0.4), bonus("hide", 0.4)]),
+  "ice-wraith": lootTable({ gems: 2, herbs: 1 }, [bonus("gems", 0.5)]),
+  yeti: lootTable({ food: 2, iron: 1 }, [bonus("food", 0.4), bonus("hide", 0.4)]),
+  banshee: lootTable({ herbs: 1, gems: 1 }, [bonus("herbs", 0.4)]),
+  brawler: lootTable({ iron: 2, food: 1 }, [bonus("iron", 0.5)]),
+  "stone-golem": lootTable({ stone: 3 }, [bonus("iron", 0.5, 2), bonus("stone", 0.4)]),
+  "earth-elemental": lootTable({ stone: 1, herbs: 1 }, [bonus("stone", 0.4)]),
+  "stone-titan": lootTable({ stone: 3, gems: 1 }, [bonus("iron", 0.6, 2), bonus("gems", 0.4)]),
 };
 
 export const enemyLootTableIds = Object.keys(enemyLootTables);

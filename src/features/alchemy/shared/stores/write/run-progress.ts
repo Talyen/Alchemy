@@ -8,22 +8,12 @@ import type { MaterialInventory as ProfileMaterialInventory } from "@/lib/homest
 import { stepRunRng, type RunRngStream } from "@/lib/rng";
 import type { GameplayDraft } from "../run-session-command";
 import type { ActiveRunProgressFields } from "../run-state-init";
-import { type FieldUpdate, setField } from "./write-field";
+import { defineDraftSetter } from "./write-field";
 
 // ── Run progress ─────────────────────────────────────────────────────────────
 
-function setRunProgressField<K extends keyof ActiveRunProgressFields>(
-  draft: GameplayDraft,
-  field: K,
-  action: FieldUpdate<ActiveRunProgressFields[K]>,
-): void {
-  setField(draft.run.activeRun, field, action);
-}
-
 function defineRunProgressSetter<K extends keyof ActiveRunProgressFields>(field: K) {
-  return (draft: GameplayDraft, action: FieldUpdate<ActiveRunProgressFields[K]>): void => {
-    setRunProgressField(draft, field, action);
-  };
+  return defineDraftSetter((draft: GameplayDraft) => draft.run.activeRun, field);
 }
 
 export const setRunDeck = defineRunProgressSetter("runDeck");

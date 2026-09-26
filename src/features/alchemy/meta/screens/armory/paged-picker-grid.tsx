@@ -1,5 +1,4 @@
 import { PackageOpen } from "lucide-react";
-import { usePagination } from "../../../shared/ui/use-pagination";
 import type { CSSProperties, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { collectionGridGapXClass, collectionGridTileWidthClass, gearArtAspectClass } from "../../../shared/config";
@@ -7,8 +6,6 @@ import { FadeSlot } from "../../../shared/ui/use-fade";
 import { PaginationControls } from "../../../shared/ui/navigation";
 
 const ARMORY_PICKER_COLUMNS = 3;
-const ARMORY_PICKER_ROWS = 2;
-const ARMORY_PICKER_PAGE_SIZE = ARMORY_PICKER_COLUMNS * ARMORY_PICKER_ROWS;
 
 const armoryPickerGridStyle = {
   gridTemplateColumns: `repeat(${ARMORY_PICKER_COLUMNS}, minmax(0, 1fr))`,
@@ -77,69 +74,35 @@ function PagedPickerGrid({
   );
 }
 
-export function useArmoryPickerPage<T>(context: string, items: T[], selectedIndex = -1) {
-  const pageSize = ARMORY_PICKER_PAGE_SIZE;
-  const {
-    page: safePage,
-    totalPages,
-    setPage: onPageChange,
-  } = usePagination(items.length, pageSize, context, selectedIndex);
-  const pageItems = items.slice(safePage * pageSize, (safePage + 1) * pageSize);
-  return {
-    pageItems,
-    fillerCount: Math.max(0, pageSize - pageItems.length),
-    safePage,
-    totalPages,
-    onPageChange,
-  };
-}
-
+// Pagination state is owned by useArmoryOrdering (ARMORY_PAGE_SIZE); the page
+// size here must stay ROWS x COLUMNS so filler slots complete the last page.
 export function ArmoryPagedGrid<T>({
   items,
-  selectedId,
-  context,
   testId,
   swapKey,
   fillerTestId,
   renderItem,
-  page: controlledPage,
-  totalPages: controlledTotalPages,
-  onPageChange: controlledOnPageChange,
-  fillerCount: controlledFillerCount,
-  pageItems: controlledPageItems,
+  page,
+  totalPages,
+  onPageChange,
+  fillerCount,
+  pageItems,
   placeholderIndex,
 }: {
   items: T[];
-  selectedId?: string | null;
-  context: string;
   testId: string;
   swapKey: string;
   fillerTestId?: string;
   renderItem: (item: T) => ReactNode;
-  page?: number | undefined;
-  totalPages?: number | undefined;
-  onPageChange?: ((page: number) => void) | undefined;
-  fillerCount?: number | undefined;
-  pageItems?: T[] | undefined;
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  fillerCount: number;
+  pageItems: T[];
   placeholderIndex?: number | null | undefined;
 }) {
-  const selectedIndex = selectedId
-    ? items.findIndex(
-        (item) =>
-          (item as { instanceId?: unknown; id?: unknown }).instanceId === selectedId ||
-          (item as { id?: unknown }).id === selectedId,
-      )
-    : -1;
-  const fallback = useArmoryPickerPage(context, items, selectedIndex);
-
-  const safePage = controlledPage ?? fallback.safePage;
-  const totalPages = controlledTotalPages ?? fallback.totalPages;
-  const onPageChange = controlledOnPageChange ?? fallback.onPageChange;
-  const pageItems = controlledPageItems ?? fallback.pageItems;
-  const baseFillerCount = controlledFillerCount ?? fallback.fillerCount;
-
   const hasPlaceholder = placeholderIndex !== null && placeholderIndex !== undefined;
-  const effectiveFillerCount = hasPlaceholder ? Math.max(0, baseFillerCount - 1) : baseFillerCount;
+  const effectiveFillerCount = hasPlaceholder ? Math.max(0, fillerCount - 1) : fillerCount;
 
   const renderedElements: ReactNode[] = [];
   let itemIdx = 0;
@@ -168,7 +131,7 @@ export function ArmoryPagedGrid<T>({
       testId={testId}
       swapKey={swapKey}
       isEmpty={items.length === 0 && !hasPlaceholder}
-      safePage={safePage}
+      safePage={page}
       totalPages={totalPages}
       onPageChange={onPageChange}
       fillerCount={effectiveFillerCount}

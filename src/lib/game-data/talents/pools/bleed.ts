@@ -1,82 +1,68 @@
-import { talent } from "../talent-builder";
+import { talentFor } from "../talent-builder";
 import { setEffect } from "../types";
 
+const t = talentFor("bleed");
+
 export const bleedTalents = [
-  talent(
+  t(
     "bleed-first-free",
-    "bleed",
     "First Blood",
     "Bleed hits deal 25% more damage against enemies that were not already Bleeding",
     "Swords",
     setEffect("bleedUnwoundedBonusPercent", 25),
   ),
-  talent(
+  t(
     "bleed-physical-bonus",
-    "bleed",
     "Parting Cut",
     "After you Dodge, your next Physical card deals half its damage as Bleed damage",
     "Slash",
     setEffect("partingCutDamagePercent", 50),
   ),
-  talent(
+  t(
     "bleed-leech-chance",
-    "bleed",
     "Sanguine",
     "Bleed damage has a 10% chance to Leech",
     "HeartPulse",
     setEffect("bleedLeechChance", 10),
   ),
-  talent(
+  t(
     "bleed-enemy-weak",
-    "bleed",
     "Mortal Wound",
     "Enemies restore half as much Health while they are Bleeding",
     "Bone",
     setEffect("bleedHalvesEnemyHealing", true),
   ),
-  talent(
-    "bleed-wound-care",
-    "bleed",
-    "Wound Care",
-    "Take half Bleed damage",
-    "Bandage",
-    setEffect("receiveHalfBleedDamage", true),
-  ),
-  talent(
+  t("bleed-wound-care", "Wound Care", "Take half Bleed damage", "Bandage", setEffect("receiveHalfBleedDamage", true)),
+  t(
     "bleed-execute",
-    "bleed",
     "Flay",
     "Bleed hits have a 20% chance to halve enemy Armor",
     "Scissors",
     setEffect("bleedHalveArmorChance", 20),
   ),
-  talent(
+  t(
     "bleed-desperate",
-    "bleed",
     "Bleeding Out",
     "Deal 25% more Bleed damage while below half Health",
     "HeartCrack",
     setEffect("bleedDesperateMultiplier", 1.25),
   ),
-  talent(
+  t(
     "bleed-poison-chance",
-    "bleed",
     "Tainted Wound",
     "Bleed hits have a 10% chance to deal half their damage as Poison damage",
     "FlaskConical",
     setEffect("bleedPoisonDamageChance", 10),
   ),
-  talent(
+  t(
     "bleed-septic-shock",
-    "bleed",
     "Septic Shock",
     "Bleeding enemies take 10% more Poison damage",
     "TriangleAlert",
     setEffect("bleedPoisonDamageTakenPercent", 10),
   ),
-  talent(
+  t(
     "bleed-rip-and-tear",
-    "bleed",
     "Bloodrush",
     "Dealing Bleed damage has a 10% chance to draw a card",
     "Scissors",

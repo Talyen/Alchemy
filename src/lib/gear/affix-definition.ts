@@ -4,7 +4,7 @@ import type { GearRarity } from "./types";
 
 export type GearAffixAspect = "offensive" | "defensive";
 
-type AffixRollRange = Record<GearRarity, { min: number; max: number }>;
+export type AffixRollRange = Record<GearRarity, { min: number; max: number }>;
 
 export function rollRange(basicMin: number, basicMax: number, astralMin: number, astralMax: number): AffixRollRange {
   return {
@@ -85,5 +85,54 @@ export function resistAffix<const T extends string>(
     descriptionTemplate: `Reduce ${label} damage taken by {value}%`,
     effectKey,
     roll: ROLL_RESIST,
+  };
+}
+
+function affixLabel(keywordId: KeywordId): string {
+  return keywordId.charAt(0).toUpperCase() + keywordId.slice(1);
+}
+
+// "Increases {Keyword} damage by {value}" rows (flat damage bonuses). The
+// template derives from the keyword exactly like resistAffix, so new damage
+// types cannot drift from the catalog wording.
+export function flatDamageAffix<const T extends string>(
+  id: T,
+  name: string,
+  keywordId: KeywordId,
+  effectKey: keyof GearEffectManifest,
+  roll: AffixRollRange = ROLL_SMALL,
+  secondaryKeywordId?: KeywordId,
+): AffixRowInput & { id: T } {
+  return {
+    id,
+    name,
+    aspect: "offensive",
+    keywordId,
+    ...(secondaryKeywordId ? { secondaryKeywordId } : {}),
+    descriptionTemplate: `Increases ${affixLabel(keywordId)} damage by {value}`,
+    effectKey,
+    roll,
+  };
+}
+
+// "Gain {value} {Keyword} at the start of combat" rows. Restore/Deal wordings
+// (start-heal, start-freeze) stay explicit: the verb is part of their rules.
+export function startOfCombatAffix<const T extends string>(
+  id: T,
+  name: string,
+  keywordId: KeywordId,
+  effectKey: keyof GearEffectManifest,
+  roll: AffixRollRange,
+  secondaryKeywordId?: KeywordId,
+): AffixRowInput & { id: T } {
+  return {
+    id,
+    name,
+    aspect: "defensive",
+    keywordId,
+    ...(secondaryKeywordId ? { secondaryKeywordId } : {}),
+    descriptionTemplate: `Gain {value} ${affixLabel(keywordId)} at the start of combat`,
+    effectKey,
+    roll,
   };
 }

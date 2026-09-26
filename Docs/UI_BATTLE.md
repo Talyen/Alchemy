@@ -43,7 +43,7 @@ lifetimes and limits live in [motion constants](../src/lib/game-constants/ui-mot
 Do not duplicate outline elements or animate shadows. Implementation and playback
 ordering follow [the battle workflow](./WORKFLOWS.md#change-battle-playback).
 
-Divine Intervention readiness uses an armed player status chip, not another floating notice. Its tooltip explains the extra choice, nonstacking behavior, and combat lifetime.
+Divine Intervention opens or queues an ordinary Wish under the [Talent rules](./TALENT_RULES.md#wishes-and-mana), using the existing [Wish interaction](./UI_BROWSING.md#rewards-and-wishes). The retained `nextWishExtraChoice` status chip describes compatibility state, not readiness granted by the current talent.
 
 ## Deck and pile inspection
 

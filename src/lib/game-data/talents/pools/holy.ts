@@ -1,82 +1,68 @@
-import { talent } from "../talent-builder";
+import { talentFor } from "../talent-builder";
 import { setEffect } from "../types";
 
+const t = talentFor("holy");
+
 export const holyTalents = [
-  talent(
+  t(
     "holy-block-scaling",
-    "holy",
     "Faith Barrier",
     "Holy damage has a 10% chance to also grant Block",
     "Shield",
     setEffect("holyBlockChance", 10),
   ),
-  talent(
+  t(
     "holy-half-damage",
-    "holy",
     "Celestial Ward",
     "Take half Holy damage",
     "ShieldCheck",
     setEffect("receiveHalfHolyDamage", true),
   ),
-  talent(
+  t(
     "holy-vs-burn",
-    "holy",
     "Purge",
     "Holy damage is increased by 10% against Burning enemies",
     "Eraser",
     setEffect("holyVsBurnMultiplier", 10),
   ),
-  talent(
+  t(
     "holy-first-free",
-    "holy",
     "Divine Favor",
     "When you cleanse a harmful status effect, your next Holy card is free",
     "Gift",
     setEffect("nextHolyFreeOnCleanse", true),
   ),
-  talent(
+  t(
     "holy-gold-scaling",
-    "holy",
     "Prosperity",
     "Holy damage is increased by 1% of your Gold",
     "TrendingUp",
     setEffect("holyGoldPercent", 1),
   ),
-  talent(
+  t(
     "holy-burn-chance",
-    "holy",
     "Scorching Light",
     "Holy damage has a 10% chance to also deal Burn damage",
     "Flame",
     setEffect("holyBurnDamageChance", 10),
   ),
-  talent(
-    "holy-tithe",
-    "holy",
-    "Tithe",
-    "Holy damage has a 10% chance to also grant Gold",
-    "Cross",
-    setEffect("holyGoldChance", 10),
-  ),
-  talent(
+  t("holy-tithe", "Tithe", "Holy damage has a 10% chance to also grant Gold", "Cross", setEffect("holyGoldChance", 10)),
+  t(
     "holy-block-grant",
-    "holy",
     "Radiant Guard",
     "Gaining Block has a 10% chance to draw a Holy card",
     "ShieldPlus",
     setEffect("drawHolyOnBlockChance", 10),
   ),
-  talent(
+  t(
     "holy-lifesteal",
-    "holy",
     "Blessed Leech",
     "Holy damage gains Leech while you're below half Health",
     "HeartPulse",
     setEffect("holyLifestealPercent", 50),
   ),
-  talent(
+  t(
     "holy-wish-chance",
-    "holy",
     "Divine Intervention",
     "Holy damage has a 10% chance to Wish",
     "Sparkles",

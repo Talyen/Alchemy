@@ -1,82 +1,74 @@
-import { talent } from "../talent-builder";
+import { talentFor } from "../talent-builder";
 import { addEffect, setEffect } from "../types";
 
+const t = talentFor("nature");
+
 export const natureTalents = [
-  talent(
+  t(
     "nature-overgrowth",
-    "nature",
     "Overgrowth",
     "Nature cards have a 10% chance to play twice",
     "TrendingUp",
     setEffect("natureCardPlayTwiceChance", 10),
   ),
-  talent(
+  t(
     "nature-thornskin",
-    "nature",
     "Thornskin",
     "Nature damage has a 10% chance to also grant Armor",
     "Hexagon",
     setEffect("armorOnNatureDamageChance", 10),
   ),
-  talent(
+  t(
     "nature-natural-armor",
-    "nature",
     "Bramblegrowth",
     "Nature damage has a 10% chance to also grant Thorns",
     "Shield",
     setEffect("thornsOnNatureDamageChance", 10),
   ),
-  talent(
+  t(
     "nature-photosynthesis",
-    "nature",
     "Photosynthesis",
     "Nature damage has a 10% chance to also restore Health",
     "Leaf",
     setEffect("healOnNatureDamageChance", 10),
   ),
-  talent(
+  t(
     "nature-canopy",
-    "nature",
     "Windstep",
     "When you Dodge, your next Nature card is free",
     "Feather",
     setEffect("nextNatureCardFreeOnDodge", true),
   ),
-  talent(
+  t(
     "nature-briar-patch",
-    "nature",
     "Briar Patch",
     "Nature damage has a 10% chance to also Bleed",
     "Triangle",
     setEffect("natureBleedChance", 10),
   ),
-  talent(
+  t(
     "nature-toxic-pollen",
-    "nature",
     "Toxic Pollen",
     "Nature damage has a 10% chance to also Poison",
     "Wind",
     setEffect("naturePoisonChance", 10),
   ),
-  talent(
+  t(
     "nature-verdant-cycle",
-    "nature",
     "Verdant Cycle",
     "Nature damage has a 10% chance to Leech",
     "RotateCw",
     addEffect("natureLeechChance", 10),
   ),
-  talent(
+  t(
     "nature-ecosystem",
-    "nature",
     "Ecosystem",
     "Draw a Nature card at the start of combat",
     "Network",
     setEffect("drawNatureCardAtCombatStart", true),
   ),
-  talent(
+  t(
     "nature-entangle",
-    "nature",
     "Entangle",
     "Nature damage has a 10% chance to also Stun",
     "Link",

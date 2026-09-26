@@ -1,83 +1,75 @@
-import { talent } from "../talent-builder";
+import { talentFor } from "../talent-builder";
 import { setEffect } from "../types";
 
+const t = talentFor("burn");
+
 export const burnTalents = [
-  talent(
+  t(
     "burn-dmg-1",
-    "burn",
     "Flashpoint",
     "Your first Burn card each combat costs no mana",
     "Thermometer",
     setEffect("firstBurnCardFree", true),
   ),
-  talent(
+  t(
     "burn-dmg-2",
-    "burn",
     "Thermal Vent",
     "Burn cards have a 10% chance to grant 3 Forge",
     "WavesArrowUp",
     setEffect("forgeOnBurnCard", 3),
     setEffect("forgeOnBurnCardChance", 10),
   ),
-  talent(
+  t(
     "burn-dmg-5",
-    "burn",
     "Smoke Screen",
     "When you Dodge a Burning enemy, deal 2 Burn damage",
     "Shield",
     setEffect("burnOnDodgeBurning", 2),
   ),
-  talent(
+  t(
     "burn-dmg-4",
-    "burn",
     "Combustible",
     "10% chance when you Consume a card to detonate the enemy's Burn",
     "Bomb",
     setEffect("consumeDetonatesBurnChance", 10),
   ),
-  talent(
+  t(
     "burn-first-double",
-    "burn",
     "Wildfire",
     "Burn cards have a 10% chance to play twice",
     "TrendingUp",
     setEffect("burnCardPlayTwiceChance", 10),
   ),
-  talent(
+  t(
     "burn-remove-armor",
-    "burn",
     "Melting Point",
     "Burn hits remove enemy Armor equal to the damage dealt",
     "Droplets",
     setEffect("burnRemovesEnemyArmor", true),
   ),
-  talent(
+  t(
     "burn-dmg-3",
-    "burn",
     "Heat Exhaustion",
     "Burn hits have a 10% chance to also deal Stun damage",
     "TrendingDown",
     setEffect("burnStunChance", 10),
   ),
-  talent(
+  t(
     "burn-dmg-6",
-    "burn",
     "Burning Wish",
     "When you Wish, deal 1 Burn damage to the enemy",
     "Sparkles",
     setEffect("burnOnWish", 1),
   ),
-  talent(
+  t(
     "burn-double-chance",
-    "burn",
     "Smoldering",
     "Burn has a 10% chance to not decay",
     "Wind",
     setEffect("burnPreventDecayChance", 10),
   ),
-  talent(
+  t(
     "burn-half-damage",
-    "burn",
     "Fire Resistance",
     "Take half Burn damage",
     "ShieldCheck",

@@ -9,23 +9,13 @@ import { enterWildwoodReward } from "@/lib/content-systems/wildwood/gauntlet";
 import { DESTINATIONS, type Destination } from "@/lib/routing";
 import type { GameplayDraft } from "../run-session-command";
 import { createInitialSessionFields, type RunRewardFlow, type RunSessionFields } from "../run-domain-types";
-import { type FieldUpdate, setField } from "./write-field";
+import { type FieldUpdate, defineDraftSetter } from "./write-field";
 import { setCompletedDestinations, setDestinationIndexInAct, setDestinationOfferState } from "./run-progress";
 
 // ── Session ──────────────────────────────────────────────────────────────────
 
-function setSessionField<K extends keyof RunSessionFields>(
-  draft: GameplayDraft,
-  field: K,
-  action: FieldUpdate<RunSessionFields[K]>,
-): void {
-  setField(draft.session, field, action);
-}
-
 function defineSessionSetter<K extends keyof RunSessionFields>(field: K) {
-  return (draft: GameplayDraft, action: FieldUpdate<RunSessionFields[K]>): void => {
-    setSessionField(draft, field, action);
-  };
+  return defineDraftSetter((draft: GameplayDraft) => draft.session, field);
 }
 
 export const setPendingCharacterId = defineSessionSetter("pendingCharacterId");
@@ -47,18 +37,8 @@ export function clearTransientSession(draft: GameplayDraft): void {
 
 // ── Reward flow ──────────────────────────────────────────────────────────────
 
-function setRewardFlowField<K extends keyof RunRewardFlow>(
-  draft: GameplayDraft,
-  field: K,
-  action: FieldUpdate<RunRewardFlow[K]>,
-): void {
-  setField(draft.session.rewardFlow, field, action);
-}
-
 function defineRewardFlowSetter<K extends keyof RunRewardFlow>(field: K) {
-  return (draft: GameplayDraft, action: FieldUpdate<RunRewardFlow[K]>): void => {
-    setRewardFlowField(draft, field, action);
-  };
+  return defineDraftSetter((draft: GameplayDraft) => draft.session.rewardFlow, field);
 }
 
 export const setRewardState = defineRewardFlowSetter("state");

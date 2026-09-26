@@ -1,153 +1,20 @@
-import { canonicalCardDescriptionMatches, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
+import { canonicalCardDescriptionMatches, type BattleCard } from "@/lib/game-data";
 import type { ContentValidationIssue } from "../types";
-import {
-  countByKind,
-  countLinesStartingWith,
-  effectParityDescriptionLines,
-  flattenChanceEffects,
-  flattenEffects,
-  hasKind,
-  hasLifesteal,
-  hasNonStandardDamageEffects,
-} from "./helpers";
-import {
-  isBlockLine,
-  cleanseLineEffectCount,
-  isCompanionActionLine,
-  isConvertManaBlockLine,
-  isDieRollLine,
-  isDoubleLine,
-  isDrawLine,
-  isGainMaxManaLine,
-  isGainStatusLine,
-  isGoldLine,
-  isHealLine,
-  isLoseHealthLine,
-  isLoseMaxManaLine,
-  isNonStandardDealLine,
-  isPerManaBlockLine,
-  isRandomDrawLine,
-  isRemoveEnemyArmorLine,
-  isRemoveHarmfulStatusLine,
-  isRestoreManaLine,
-  isWishLine,
-  parseDealLineShape,
-} from "./line-classifiers";
-import { validateCardNumericParity } from "./numeric-parity";
-
-interface CountParityRule {
-  label: string;
-  countLines: (lines: string[]) => number;
-  // Both effect lists are flattened once per card by checkRuleParity: the full
-  // flatten (all wrappers unwrapped) and the chance-only flatten (repeat-over-
-  // turns wrappers kept, since repeat lines use excluded "each turn" wording).
-  countEffects: (flat: BattleCardEffect[], chanceFlat: BattleCardEffect[]) => number;
-}
-
-function countKind(flat: BattleCardEffect[], kind: BattleCardEffect["kind"]): number {
-  return flat.filter((effect) => effect.kind === kind).length;
-}
-
-function kindCountRule(
-  label: string,
-  isLine: (line: string) => boolean,
-  kind: BattleCardEffect["kind"],
-  extraKind?: BattleCardEffect["kind"],
-): CountParityRule {
-  return {
-    label,
-    countLines: (lines) => lines.filter(isLine).length,
-    countEffects: (flat) => countKind(flat, kind) + (extraKind ? countKind(flat, extraKind) : 0),
-  };
-}
-
-function cleanseStatusRule(): CountParityRule {
-  return {
-    label: "remove-player-status",
-    countLines: (lines) => lines.reduce((count, line) => count + cleanseLineEffectCount(line), 0),
-    countEffects: (flat) =>
-      countKind(flat, "remove-player-status") + countKind(flat, "cleanse-player-status-to-damage"),
-  };
-}
-
-function blockVariantRule(
-  label: string,
-  isLine: (line: string) => boolean,
-  hasVariant: (effect: BattleCardEffect) => boolean,
-): CountParityRule {
-  return {
-    label,
-    countLines: (lines) => lines.filter(isLine).length,
-    countEffects: (_flat, chanceFlat) => chanceFlat.filter(hasVariant).length,
-  };
-}
-
-function isPlainBlock(effect: BattleCardEffect): boolean {
-  return (
-    effect.kind === "player-status" &&
-    effect.status === "block" &&
-    (effect.statusPool === undefined || effect.statusPool.includes("block")) &&
-    effect.perManaCrystal === undefined &&
-    effect.convertCurrentMana === undefined
-  );
-}
-
-function isConvertBlock(effect: BattleCardEffect): boolean {
-  return effect.kind === "player-status" && effect.status === "block" && effect.convertCurrentMana !== undefined;
-}
-
-function isPerManaBlock(effect: BattleCardEffect): boolean {
-  return effect.kind === "player-status" && effect.status === "block" && effect.perManaCrystal !== undefined;
-}
-
-function statusParityRule(status: "armor" | "forge" | "thorns", name: string): CountParityRule {
-  return {
-    label: status,
-    countLines: (lines) => lines.filter((line) => isGainStatusLine(line, name)).length,
-    countEffects: (_flat, chanceFlat) =>
-      chanceFlat.filter(
-        (effect) =>
-          effect.kind === "player-status" && (effect.status === status || effect.statusPool?.includes(status) === true),
-      ).length,
-  };
-}
-
-const COUNT_PARITY_RULES: CountParityRule[] = [
-  kindCountRule("heal", isHealLine, "heal"),
-  kindCountRule("restore-mana", isRestoreManaLine, "restore-mana"),
-  kindCountRule("gain-gold", isGoldLine, "gain-gold"),
-  kindCountRule("wish", isWishLine, "wish"),
-  kindCountRule("remove-harmful-status", isRemoveHarmfulStatusLine, "remove-harmful-status"),
-  kindCountRule("lose-max-mana", isLoseMaxManaLine, "lose-max-mana"),
-  kindCountRule("gain-max-mana", isGainMaxManaLine, "gain-max-mana"),
-  kindCountRule("lose-health", isLoseHealthLine, "lose-health"),
-  kindCountRule("draw-cards", isDrawLine, "draw-cards"),
-  // "Roll a six-sided die" and "Draw that many cards" co-occur with a single
-  // random-draw effect: both rules compare against the same effect count, so a
-  // card with only one of the two lines fails with a count mismatch.
-  kindCountRule("random-draw", isRandomDrawLine, "random-draw"),
-  kindCountRule("random-draw die", isDieRollLine, "random-draw"),
-  kindCountRule("companion-action", isCompanionActionLine, "companion-action"),
-  kindCountRule("remove-enemy-armor", isRemoveEnemyArmorLine, "remove-enemy-armor"),
-  kindCountRule("multiply-enemy-status", isDoubleLine, "multiply-enemy-status"),
-  cleanseStatusRule(),
-  blockVariantRule("block", isBlockLine, isPlainBlock),
-  blockVariantRule("convert-mana block", isConvertManaBlockLine, isConvertBlock),
-  blockVariantRule("per-mana block", isPerManaBlockLine, isPerManaBlock),
-  statusParityRule("armor", "Armor"),
-  statusParityRule("forge", "Forge"),
-  statusParityRule("thorns", "Thorns"),
-];
+import { effectParityDescriptionLines, indexCardEffects, type CardEffectIndex } from "./helpers";
+import { isNonStandardDealLine, parseDealLineShape } from "./line-classifiers";
+import { validateCardLineParity } from "./numeric-parity";
 
 export { TRAIT_REQUIRED_TERMS, validateEnemyTraitDescriptionParity } from "./enemy-trait-parity";
 export { flattenEffects } from "./helpers";
 export { validateTrinketDescriptionParity } from "./trinket-parity";
 
-function checkDamageParity(card: BattleCard): ContentValidationIssue | null {
-  const { effects } = card;
-  const descriptionLines = effectParityDescriptionLines(card);
-  if (hasNonStandardDamageEffects(effects)) return null;
-  if (hasKind(effects, "self-damage")) {
+function checkDamageParity(
+  card: BattleCard,
+  descriptionLines: string[],
+  index: CardEffectIndex,
+): ContentValidationIssue | null {
+  if (index.nonStandardDamage) return null;
+  if (index.hasKind("self-damage")) {
     if (!descriptionLines.some((line) => /self|Receive|Take/.test(line))) {
       return {
         severity: "error",
@@ -162,7 +29,7 @@ function checkDamageParity(card: BattleCard): ContentValidationIssue | null {
       if (!shape || isNonStandardDealLine(line)) return count;
       return count + (shape.twice ? 2 : 1);
     }, 0);
-    const damageEffects = countByKind(effects, "damage") + countByKind(effects, "random-damage");
+    const damageEffects = index.countKind("damage") + index.countKind("random-damage");
     if (dealLines !== damageEffects) {
       return {
         severity: "error",
@@ -180,7 +47,7 @@ function cardIssue(severity: "error" | "warning", id: string, message: string): 
 }
 
 interface PresenceParityCheck {
-  hasEffect: (card: BattleCard) => boolean;
+  hasEffect: (card: BattleCard, index: CardEffectIndex) => boolean;
   hasText: (card: BattleCard) => boolean;
   message: string;
 }
@@ -192,19 +59,21 @@ const PRESENCE_PARITY_CHECKS: PresenceParityCheck[] = [
     message: "Haste effect is missing extra-turn description text",
   },
   {
-    hasEffect: (card) =>
-      flattenEffects(card.effects).some(
-        (effect) => effect.kind === "player-status" && effect.status === "phoenixFeather",
-      ),
+    hasEffect: (_, index) =>
+      index.flat.some((effect) => effect.kind === "player-status" && effect.status === "phoenixFeather"),
     hasText: (card) => card.descriptionLines.some((line) => line.includes("die") || line.includes("30%")),
     message: "Phoenix Feather effect is missing revive description text",
   },
 ];
 
-function checkBuffCompanionParity(card: BattleCard): ContentValidationIssue | null {
-  if (hasKind(card.effects, "self-damage")) return null;
-  const described = countLinesStartingWith(card.descriptionLines, "Increase ");
-  const actual = countByKind(card.effects, "buff-companion");
+function checkBuffCompanionParity(
+  card: BattleCard,
+  descriptionLines: string[],
+  index: CardEffectIndex,
+): ContentValidationIssue | null {
+  if (index.hasKind("self-damage")) return null;
+  const described = descriptionLines.filter((line) => line.startsWith("Increase ")).length;
+  const actual = index.countKind("buff-companion");
   if (described !== actual) {
     return cardIssue(
       "error",
@@ -215,9 +84,9 @@ function checkBuffCompanionParity(card: BattleCard): ContentValidationIssue | nu
   return null;
 }
 
-function checkTagWarnings(card: BattleCard): ContentValidationIssue[] {
+function checkTagWarnings(card: BattleCard, index: CardEffectIndex): ContentValidationIssue[] {
   const warnings: ContentValidationIssue[] = [];
-  if (hasLifesteal(card.effects) && !card.descriptionLines.some((line) => line === "Leech"))
+  if (index.lifesteal && !card.descriptionLines.some((line) => line === "Leech"))
     warnings.push(cardIssue("warning", card.id, "Lifesteal effect is missing Leech description line"));
   const hasArcheryTag = card.tags?.includes("archery") === true;
   const hasArcheryLine = card.descriptionLines.some((line) => line === "Archery");
@@ -234,53 +103,33 @@ function checkTagWarnings(card: BattleCard): ContentValidationIssue[] {
   if (card.consume === true) {
     const hasConsume = card.descriptionLines.some((line) => line === "Consume");
     const hasCompanion =
-      hasKind(card.effects, "summon-companion") && card.descriptionLines.some((line) => line === "Companion");
+      index.hasKind("summon-companion") && card.descriptionLines.some((line) => line === "Companion");
     if (!hasConsume && !hasCompanion)
       warnings.push(cardIssue("warning", card.id, "consume:true is missing Consume or Companion description line"));
   }
-  if (hasKind(card.effects, "summon-companion") && !card.descriptionLines.some((line) => line.includes("Companion")))
+  if (index.hasKind("summon-companion") && !card.descriptionLines.some((line) => line.includes("Companion")))
     warnings.push(cardIssue("warning", card.id, "summon-companion effect is missing Companion description line"));
   return warnings;
 }
 
-function checkRuleParity(card: BattleCard): ContentValidationIssue[] {
-  const issues: ContentValidationIssue[] = [];
-  const flat = flattenEffects(card.effects);
-  const chanceFlat = flattenChanceEffects(card.effects);
-  const descriptionLines = effectParityDescriptionLines(card);
-  for (const rule of COUNT_PARITY_RULES) {
-    const described = rule.countLines(descriptionLines);
-    const actual = rule.countEffects(flat, chanceFlat);
-    if (described !== actual) {
-      issues.push(
-        cardIssue(
-          "error",
-          card.id,
-          `${rule.label} description count ${described} does not match effect count ${actual}`,
-        ),
-      );
-    }
-  }
-  return issues;
-}
-
 export function validateCardDescriptionParity(card: BattleCard): ContentValidationIssue[] {
-  if (canonicalCardDescriptionMatches(card)) return checkTagWarnings(card);
+  if (canonicalCardDescriptionMatches(card)) return checkTagWarnings(card, indexCardEffects(card.effects));
   const issues: ContentValidationIssue[] = [];
+  const index = indexCardEffects(card.effects);
+  const descriptionLines = effectParityDescriptionLines(card);
 
-  const check = checkDamageParity(card);
+  const check = checkDamageParity(card, descriptionLines, index);
   if (check) issues.push(check);
 
-  issues.push(...checkRuleParity(card));
-
   for (const presence of PRESENCE_PARITY_CHECKS) {
-    if (presence.hasEffect(card) && !presence.hasText(card)) issues.push(cardIssue("error", card.id, presence.message));
+    if (presence.hasEffect(card, index) && !presence.hasText(card))
+      issues.push(cardIssue("error", card.id, presence.message));
   }
 
-  const buff = checkBuffCompanionParity(card);
+  const buff = checkBuffCompanionParity(card, descriptionLines, index);
   if (buff) issues.push(buff);
 
-  issues.push(...checkTagWarnings(card));
+  issues.push(...checkTagWarnings(card, index));
 
-  return [...issues, ...validateCardNumericParity(card)];
+  return [...issues, ...validateCardLineParity(card, descriptionLines, index)];
 }

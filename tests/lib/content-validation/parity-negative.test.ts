@@ -29,6 +29,20 @@ describe("card parity failure paths", () => {
     expect(issues.map((issue) => issue.message)).toContain("block description count 1 does not match effect count 0");
   });
 
+  it.each(["Gain +1 Maximum Mana", "Gain +1 Mana Crystal"])(
+    "rejects an unsupported resource grant in custom text: %s",
+    (line) => {
+      const issues = validateCardDescriptionParity(
+        makeCard({
+          id: "extra-max-mana",
+          descriptionLines: ["Draw a card", line],
+          effects: [{ kind: "draw-cards", amount: 1 }],
+        }),
+      );
+      expect(issues.map((issue) => issue.message)).toContain(`"${line}" has no matching effect`);
+    },
+  );
+
   it("rejects a damage amount that does not match the authored value", () => {
     const issues = validateCardDescriptionParity(
       makeCard({

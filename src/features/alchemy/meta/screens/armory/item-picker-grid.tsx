@@ -32,7 +32,6 @@ import { targetingRingClass } from "./targeting-highlight";
 export function ItemPickerGrid({
   reservedGear,
   slot,
-  characterId,
   items,
   loadout,
   loadouts,
@@ -55,7 +54,6 @@ export function ItemPickerGrid({
 }: {
   reservedGear: Record<string, CharacterId>;
   slot: GearSlot;
-  characterId: string;
   items: GearInstance[];
   loadout: GearLoadout;
   loadouts: GearLoadouts;
@@ -68,11 +66,11 @@ export function ItemPickerGrid({
   onSalvage: (instance: GearInstance) => void;
   onApplyCurrency: (instance: GearInstance) => void;
   onCombatLockedAttempt: () => void;
-  page?: number | undefined;
-  totalPages?: number | undefined;
-  onPageChange?: ((page: number) => void) | undefined;
-  fillerCount?: number | undefined;
-  pageItems?: GearInstance[] | undefined;
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  fillerCount: number;
+  pageItems: GearInstance[];
   placeholderIndex?: number | null | undefined;
   hiddenArtworkIds?: ReadonlySet<string> | undefined;
 }) {
@@ -96,8 +94,6 @@ export function ItemPickerGrid({
       fillerCount={fillerCount}
       pageItems={pageItems}
       placeholderIndex={placeholderIndex}
-      selectedId={loadout[slot]}
-      context={`${characterId}:${slot}`}
       testId="armory-item-picker"
       swapKey={slot}
       fillerTestId="armory-inventory-filler"

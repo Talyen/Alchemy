@@ -12,12 +12,11 @@ import { gearFrozenDamageMultiplier } from "./gear-effects";
 import { getBurnBonusToBleedingMultiplier, getEnemyDamageMultiplier } from "./status-helpers";
 import { setFlag, type BattleState } from "./types";
 
-function sharesBurnBleedBonuses(state: BattleState): boolean {
-  return state.gearEffects.sharedBurnBleedBonuses > 0;
-}
-
 function isLikeDamage(damageType: DamageType, target: "burn" | "bleed", state: BattleState): boolean {
-  return damageType === target || (sharesBurnBleedBonuses(state) && (damageType === "burn" || damageType === "bleed"));
+  return (
+    damageType === target ||
+    (state.gearEffects.sharedBurnBleedBonuses > 0 && (damageType === "burn" || damageType === "bleed"))
+  );
 }
 
 function isBurnLikeDamage(damageType: DamageType, state: BattleState): boolean {

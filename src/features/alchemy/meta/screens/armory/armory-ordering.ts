@@ -11,9 +11,7 @@ import {
 
 export const ARMORY_PAGE_SIZE = 6;
 
-type GearSortOption = "rarity" | "name";
-type TrinketSortOption = "name";
-export type ArmorySortOption = GearSortOption | TrinketSortOption;
+export type ArmorySortOption = "rarity" | "name";
 
 const RARITY_RANK: Record<GearRarity, number> = {
   unique: 0,
@@ -26,86 +24,45 @@ function getGearRarityRank(instance: GearInstance): number {
   return rarity ? RARITY_RANK[rarity] : 3;
 }
 
-export function defaultGearCompare(a: GearInstance, b: GearInstance): number {
-  const rankA = getGearRarityRank(a);
-  const rankB = getGearRarityRank(b);
-  if (rankA !== rankB) return rankA - rankB;
-
-  const titleA = getGearInstanceTitle(a);
-  const titleB = getGearInstanceTitle(b);
-  const titleCompare = titleA.localeCompare(titleB);
-  if (titleCompare !== 0) return titleCompare;
-
-  return a.instanceId.localeCompare(b.instanceId);
+/** Sortable row unifying the gear and trinket pipelines: trinkets always rank 0. */
+export interface ArmoryOrderRow {
+  id: string;
+  title: string;
+  rank: number;
 }
 
-export function nameGearCompare(a: GearInstance, b: GearInstance): number {
-  const titleA = getGearInstanceTitle(a);
-  const titleB = getGearInstanceTitle(b);
-  const titleCompare = titleA.localeCompare(titleB);
-  if (titleCompare !== 0) return titleCompare;
-
-  const rankA = getGearRarityRank(a);
-  const rankB = getGearRarityRank(b);
-  if (rankA !== rankB) return rankA - rankB;
-
-  return a.instanceId.localeCompare(b.instanceId);
+export function gearOrderRow(instance: GearInstance): ArmoryOrderRow {
+  return { id: instance.instanceId, title: getGearInstanceTitle(instance), rank: getGearRarityRank(instance) };
 }
 
-export function trinketCompare(a: TrinketEntry, b: TrinketEntry): number {
+export function trinketOrderRow(entry: TrinketEntry): ArmoryOrderRow {
+  return { id: entry.id, title: entry.title, rank: 0 };
+}
+
+export function compareOrderRows(a: ArmoryOrderRow, b: ArmoryOrderRow, sort: ArmorySortOption): number {
+  const rankCompare = a.rank - b.rank;
   const titleCompare = a.title.localeCompare(b.title);
-  if (titleCompare !== 0) return titleCompare;
-
+  if (sort === "name") {
+    if (titleCompare !== 0) return titleCompare;
+    if (rankCompare !== 0) return rankCompare;
+  } else {
+    if (rankCompare !== 0) return rankCompare;
+    if (titleCompare !== 0) return titleCompare;
+  }
   return a.id.localeCompare(b.id);
 }
 
-export function clampPage(page: number, totalCount: number, pageSize: number = ARMORY_PAGE_SIZE): number {
-  if (totalCount <= 0) return 0;
-  const maxPage = Math.max(0, Math.ceil(totalCount / pageSize) - 1);
-  return Math.max(0, Math.min(page, maxPage));
-}
-
-export function reconcileWorkingList<T extends { id: string }>(
-  currentIds: readonly string[],
-  availablePool: readonly T[],
-  defaultCompare: (a: T, b: T) => number,
-): string[] {
-  const availableMap = new Map<string, T>(availablePool.map((item) => [item.id, item]));
-  const surviving = currentIds.filter((id) => availableMap.has(id));
+/** Keep surviving ids in manual order; append newly available rows in default order. */
+export function reconcileOrder(currentIds: readonly string[], rows: readonly ArmoryOrderRow[]): string[] {
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  const surviving = currentIds.filter((id) => byId.has(id));
   const survivingSet = new Set(surviving);
-
-  const newlyAvailable = availablePool
-    .filter((item) => !survivingSet.has(item.id))
+  const newlyAvailable = rows
+    .filter((row) => !survivingSet.has(row.id))
     .slice()
-    .sort(defaultCompare)
-    .map((item) => item.id);
-
+    .sort((a, b) => compareOrderRows(a, b, "rarity"))
+    .map((row) => row.id);
   return [...surviving, ...newlyAvailable];
-}
-
-export function applyReplace(currentIds: readonly string[], incomingId: string, replacedId: string): string[] {
-  const index = currentIds.indexOf(incomingId);
-  if (index === -1) {
-    return [...currentIds.filter((id) => id !== incomingId), replacedId];
-  }
-  const next = currentIds.slice();
-  next[index] = replacedId;
-  return next;
-}
-
-export function applyEmptySlotEquip(currentIds: readonly string[], incomingId: string): string[] {
-  return currentIds.filter((id) => id !== incomingId);
-}
-
-export function applyUnequip(
-  currentIds: readonly string[],
-  unequippedId: string,
-  page: number,
-  pageSize: number = ARMORY_PAGE_SIZE,
-): string[] {
-  const filtered = currentIds.filter((id) => id !== unequippedId);
-  const insertIndex = Math.max(0, Math.min(page * pageSize, filtered.length));
-  return [...filtered.slice(0, insertIndex), unequippedId, ...filtered.slice(insertIndex)];
 }
 
 export interface DisplacedGearItem {
@@ -113,7 +70,12 @@ export interface DisplacedGearItem {
   instance: GearInstance;
 }
 
-export function applyHandConflicts(
+/**
+ * Single transfer placement. Replacing the incoming slot (or pushing the
+ * displaced target) and removing an equipped-away id are the same operation;
+ * the empty-displaced case is exactly the old replace/remove specializations.
+ */
+export function placeTransfer(
   currentIds: readonly string[],
   incomingId: string,
   targetReplacedId: string | null,
@@ -131,31 +93,34 @@ export function applyHandConflicts(
   const additionalIds = compatibleAdditional.map((d) => d.instance.instanceId);
   // Displaced hand items may already be visible in this category. Remove them
   // before locating the incoming item so their old positions cannot skew insertion.
-  let list = currentIds.filter((id) => !additionalIds.includes(id));
+  const list = currentIds.filter((id) => !additionalIds.includes(id));
   const incomingIndex = list.indexOf(incomingId);
 
   // 1. Target slot replacement or removal
   if (targetReplacedId) {
-    if (incomingIndex !== -1) {
-      list[incomingIndex] = targetReplacedId;
-    } else {
-      list.push(targetReplacedId);
-    }
+    if (incomingIndex !== -1) list[incomingIndex] = targetReplacedId;
+    else list.push(targetReplacedId);
   } else {
-    list = list.filter((id) => id !== incomingId);
+    const removalIndex = list.indexOf(incomingId);
+    if (removalIndex !== -1) list.splice(removalIndex, 1);
   }
 
   if (compatibleAdditional.length > 0) {
     const anchorIndex = targetReplacedId ? list.indexOf(targetReplacedId) : incomingIndex;
-    const insertPosition = targetReplacedId
-      ? anchorIndex !== -1
-        ? anchorIndex + 1
-        : list.length
-      : anchorIndex !== -1
-        ? Math.min(anchorIndex, list.length)
-        : list.length;
+    const insertPosition = anchorIndex === -1 ? list.length : targetReplacedId ? anchorIndex + 1 : anchorIndex;
     list.splice(insertPosition, 0, ...additionalIds);
   }
 
   return list;
+}
+
+export function placeUnequip(
+  currentIds: readonly string[],
+  unequippedId: string,
+  page: number,
+  pageSize: number = ARMORY_PAGE_SIZE,
+): string[] {
+  const filtered = currentIds.filter((id) => id !== unequippedId);
+  const insertIndex = Math.max(0, Math.min(page * pageSize, filtered.length));
+  return [...filtered.slice(0, insertIndex), unequippedId, ...filtered.slice(insertIndex)];
 }

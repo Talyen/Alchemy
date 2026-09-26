@@ -98,6 +98,31 @@ function resolveHandConflicts(
   return characterLoadout;
 }
 
+/**
+ * Steady-state hand repair shared by loadout normalization: a two-handed main
+ * hand, a quiver without a ranged main hand, and a ranged main hand without a
+ * quiver each forfeit the off-hand slot. The equip path additionally prefers
+ * an incoming item over the incumbent (see resolveHandConflicts), so the two
+ * must not be merged.
+ */
+function repairHandPairing(
+  characterLoadout: GearLoadouts[GearCharacterId],
+  inventory: GearInstance[],
+): GearLoadouts[GearCharacterId] {
+  const mainHand = resolveEquippedDefinitionAt(inventory, characterLoadout, "main-hand");
+  const offHand = resolveEquippedDefinitionAt(inventory, characterLoadout, "off-hand");
+  if (mainHand && isTwoHanded(mainHand) && characterLoadout["off-hand"]) {
+    return { ...characterLoadout, "off-hand": null };
+  }
+  if (offHand && isQuiver(offHand) && (!mainHand || !isRangedWeapon(mainHand))) {
+    return { ...characterLoadout, "off-hand": null };
+  }
+  if (mainHand && isRangedWeapon(mainHand) && offHand && !isQuiver(offHand)) {
+    return { ...characterLoadout, "off-hand": null };
+  }
+  return characterLoadout;
+}
+
 export function pruneOrphanGearLoadouts(inventory: GearInstance[], loadouts: GearLoadouts): GearLoadouts {
   const inventoryById = new Map(inventory.map((item) => [item.instanceId, item]));
   const next = createEmptyGearLoadouts();
@@ -109,17 +134,9 @@ export function pruneOrphanGearLoadouts(inventory: GearInstance[], loadouts: Gea
       const definition = instance ? gearDefinitions[instance.definitionId] : undefined;
       if (instanceId && definition && isGearCompatibleWithSlot(definition, slot)) next[characterId][slot] = instanceId;
     }
-    const offHand = resolveEquippedDefinitionAt(inventory, next[characterId], "off-hand");
-    const mainHand = resolveEquippedDefinitionAt(inventory, next[characterId], "main-hand");
-    // Mirror resolveHandConflicts so crafted/legacy saves cannot hold hand
-    // pairings the equip path would never produce.
-    if (mainHand && isTwoHanded(mainHand) && next[characterId]["off-hand"]) {
-      next[characterId]["off-hand"] = null;
-    } else if (offHand && isQuiver(offHand) && (!mainHand || !isRangedWeapon(mainHand))) {
-      next[characterId]["off-hand"] = null;
-    } else if (mainHand && isRangedWeapon(mainHand) && offHand && !isQuiver(offHand)) {
-      next[characterId]["off-hand"] = null;
-    }
+    // Crafted/legacy saves cannot hold hand pairings the equip path would
+    // never produce; repair them with the same steady-state rule.
+    next[characterId] = repairHandPairing(next[characterId], inventory);
   }
 
   return normalizeExclusiveGearLoadouts(next);

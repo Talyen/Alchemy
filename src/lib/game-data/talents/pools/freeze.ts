@@ -1,82 +1,74 @@
-import { talent } from "../talent-builder";
+import { talentFor } from "../talent-builder";
 import { setEffect } from "../types";
 
+const t = talentFor("freeze");
+
 export const freezeTalents = [
-  talent(
+  t(
     "freeze-threshold",
-    "freeze",
     "Bitter Cold",
     "Enemy Freeze threshold is reduced by 10%",
     "ThermometerSnowflake",
     setEffect("freezeThresholdReduction", 0.1),
   ),
-  talent(
+  t(
     "freeze-double-damage",
-    "freeze",
     "Shatter",
     "Frozen enemies take 1 additional damage",
     "Split",
     setEffect("freezeDamageBonusVsFrozen", 1),
   ),
-  talent(
+  t(
     "freeze-start-amount",
-    "freeze",
     "Winter's Grasp",
     "Freeze cards have a 10% chance to play twice",
     "MountainSnow",
     setEffect("freezeCardPlayTwiceChance", 10),
   ),
-  talent(
+  t(
     "freeze-block-grant",
-    "freeze",
     "Icebound",
     "When you Freeze an enemy, remove all its Block",
     "Snowflake",
     setEffect("freezeStripBlock", true),
   ),
-  talent(
+  t(
     "freeze-companion-bonus",
-    "freeze",
     "Snow Pack",
     "Companions deal 1 additional damage against Frozen enemies",
     "CloudSnow",
     setEffect("companionVsFrozenBonus", 1),
   ),
-  talent(
+  t(
     "freeze-strip-armor",
-    "freeze",
     "Brittle Armor",
     "When you Freeze an enemy, remove all its Armor",
     "ShieldOff",
     setEffect("freezeStripArmor", true),
   ),
-  talent(
+  t(
     "freeze-half-damage",
-    "freeze",
     "Cold Resistance",
     "Take half Freeze damage",
     "Thermometer",
     setEffect("receiveHalfFreezeDamage", true),
   ),
-  talent(
+  t(
     "freeze-poison-preserve",
-    "freeze",
     "Cryo-preservation",
     "Poison does not decay on Frozen enemies",
     "FlaskConical",
     setEffect("freezePreventsPoisonDecay", true),
   ),
-  talent(
+  t(
     "freeze-prevent-scaling",
-    "freeze",
     "Thaw Dividend",
     "When an enemy recovers from Freeze, draw a card",
     "Hexagon",
     setEffect("drawOnThaw", 1),
   ),
-  talent(
+  t(
     "freeze-block-healing",
-    "freeze",
     "Glacial Barrier",
     "When you Freeze an enemy, gain 3 Block",
     "Lock",

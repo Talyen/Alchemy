@@ -1,82 +1,74 @@
-import { talent } from "../talent-builder";
+import { talentFor } from "../talent-builder";
 import { addEffect, setEffect } from "../types";
 
+const t = talentFor("archery");
+
 export const archeryTalents = [
-  talent(
+  t(
     "archery-damage",
-    "archery",
     "Arrow Dance",
     "When you Dodge, your next Archery card is free",
     "Move",
     setEffect("nextArcheryCardFreeOnDodge", true),
   ),
-  talent(
+  t(
     "archery-hail",
-    "archery",
     "Follow-through",
     "Your second Archery card each turn deals 1 additional damage",
     "CloudRain",
     setEffect("archerySecondCardDamage", 1),
   ),
-  talent(
+  t(
     "archery-eagle-eye",
-    "archery",
     "Eagle Eye",
     "When you play an Archery card against a Stunned enemy, draw a card",
     "Eye",
     setEffect("drawOnArcheryVsStunned", 1),
   ),
-  talent(
+  t(
     "archery-hawk-eye",
-    "archery",
     "Hawk Eye",
     "Freezing or Stunning an enemy causes your next attack to Critically Hit",
     "ScanEye",
     setEffect("archeryCritOnCrowdControl", true),
   ),
-  talent(
+  t(
     "archery-longshot",
-    "archery",
     "Longshot",
     "Archery cards deal double damage against enemies at full Health",
     "ArrowRight",
     setEffect("archeryDoubledVsHighHealth", true),
   ),
-  talent(
+  t(
     "archery-piercing-shot",
-    "archery",
     "Piercing Shot",
     "Archery cards ignore 1 Armor",
     "Aperture",
     addEffect("archeryArmorPiercing", 1),
   ),
-  talent(
+  t(
     "archery-quickdraw",
-    "archery",
     "Quickdraw",
     "Archery cards deal 1 additional damage if you have no Block",
     "Zap",
     setEffect("archeryDamageWithoutBlock", 1),
   ),
-  talent(
+  t(
     "archery-kill-shot",
-    "archery",
     "Kill Shot",
     "Archery cards deal double damage against enemies below 20% Health",
     "Crosshair",
     setEffect("archeryDoubledVsLowHealth", true),
   ),
-  talent(
+  t(
     "archery-broadhead",
-    "archery",
     "Broadhead",
     "Archery hits have a 10% chance to deal a quarter of their damage as Bleed damage",
     "Diamond",
     setEffect("archeryBleedDamageChance", 10),
   ),
-  talent(
+  t(
     "archery-trophy-shot",
-    "archery",
     "Trophy Shot",
     "Gain 2 Gold when an Archery card defeats an enemy",
     "Award",

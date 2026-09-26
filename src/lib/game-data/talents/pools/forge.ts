@@ -1,82 +1,68 @@
-import { talent } from "../talent-builder";
+import { talentFor } from "../talent-builder";
 import { setEffect } from "../types";
 
+const t = talentFor("forge");
+
 export const forgeTalents = [
-  talent(
+  t(
     "forge-to-burn",
-    "forge",
     "Ignite",
     "Burn damage is increased by half your Forge",
     "Flame",
     setEffect("forgeBurnDamagePercent", 50),
   ),
-  talent(
+  t(
     "forge-to-holy",
-    "forge",
     "Sanctify",
     "Holy damage is increased by half your Forge",
     "Sun",
     setEffect("forgeHolyDamagePercent", 50),
   ),
-  talent(
+  t(
     "forge-to-block",
-    "forge",
     "Tempered Guard",
     "Block gained is increased by half your Forge",
     "Shield",
     setEffect("forgeBlockPercent", 50),
   ),
-  talent(
+  t(
     "forge-burn-burst",
-    "forge",
     "Overheat",
     "Gain twice as much Forge while you're Burning",
     "Thermometer",
     setEffect("forgeBurningBonusPercent", 100),
   ),
-  talent(
-    "forge-strength-1",
-    "forge",
-    "Forge Mastery",
-    "Start each combat with 1 Forge",
-    "FlameKindling",
-    setEffect("startForge", 1),
-  ),
-  talent(
+  t("forge-strength-1", "Forge Mastery", "Start each combat with 1 Forge", "FlameKindling", setEffect("startForge", 1)),
+  t(
     "forge-strength-2",
-    "forge",
     "Rust",
     "Bleed damage is increased by half your Forge",
     "Eraser",
     setEffect("forgeBleedDamagePercent", 50),
   ),
-  talent(
+  t(
     "forge-strength-3",
-    "forge",
     "Sunder",
     "Physical attacks remove Armor equal to your Forge",
     "ShieldOff",
     setEffect("physicalStripArmorByForge", true),
   ),
-  talent(
+  t(
     "forge-strength-4",
-    "forge",
     "Intensify",
     "10% chance to double Forge gained",
     "ChevronsUp",
     setEffect("forgeDoubleChance", 10),
   ),
-  talent(
+  t(
     "forge-strength-5",
-    "forge",
     "Desperate Forge",
     "Gain 25% more Forge while below half Health",
     "HeartCrack",
     setEffect("forgeLowHealthBonusPercent", 25),
   ),
-  talent(
+  t(
     "forge-strength-6",
-    "forge",
     "Forged Bulwark",
     "Gain 1 Forge when your Block is depleted",
     "Castle",

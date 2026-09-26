@@ -1,82 +1,74 @@
-import { talent } from "../talent-builder";
+import { talentFor } from "../talent-builder";
 import { setEffect } from "../types";
 
+const t = talentFor("poison");
+
 export const poisonTalents = [
-  talent(
+  t(
     "poison-leech-chance",
-    "poison",
     "Hemotoxin",
     "Poison has a 10% chance to also deal Bleed damage",
     "Biohazard",
     setEffect("poisonBleedDamageChance", 10),
   ),
-  talent(
+  t(
     "poison-physical-bonus",
-    "poison",
     "Corrosive",
     "Poisoned enemies take 1 additional damage",
     "Droplets",
     setEffect("poisonDamageBonusVsPoisoned", 1),
   ),
-  talent(
+  t(
     "poison-strip-armor",
-    "poison",
     "Caustic",
     "Poison damage removes enemy Armor equal to damage dealt",
     "FlaskRound",
     setEffect("poisonStripArmorByDamage", true),
   ),
-  talent(
+  t(
     "poison-half-damage",
-    "poison",
     "Toxin Resistance",
     "Take half Poison damage",
     "Shield",
     setEffect("receiveHalfPoisonDamage", true),
   ),
-  talent(
+  t(
     "poison-gold-first",
-    "poison",
     "Toxic Profit",
     "Gain 3 Gold when you defeat a Poisoned enemy",
     "Coins",
     setEffect("goldOnPoisonedKill", 3),
   ),
-  talent(
+  t(
     "poison-heal-reduce",
-    "poison",
     "Necrosis",
     "Poisoned enemies restore half as much Health",
     "Skull",
     setEffect("poisonHalvesHealing", true),
   ),
-  talent(
+  t(
     "poison-stun-chance",
-    "poison",
     "Paralytic Venom",
     "Poison damage has a 10% chance to Stun",
     "Lock",
     setEffect("poisonStunChance", 10),
   ),
-  talent(
+  t(
     "poison-gain-chance",
-    "poison",
     "Virulent",
     "Poison has a 10% chance to gain instead of lose a stack",
     "TrendingUp",
     setEffect("poisonGainChance", 10),
   ),
-  talent(
+  t(
     "poison-reduce-damage",
-    "poison",
     "Torpor",
     "Poisoned enemies cannot Dodge",
     "Moon",
     setEffect("poisonPreventsEnemyDodge", true),
   ),
-  talent(
+  t(
     "poison-first-free",
-    "poison",
     "Venom Strike",
     "Poison cards have a 10% chance to play twice",
     "Syringe",
