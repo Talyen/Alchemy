@@ -12,7 +12,7 @@ beforeEach(() => {
   resetRunDomainStore();
 });
 
-describe("legacy enemy-phase resume RNG", () => {
+describe("continue-end-turn resume RNG", () => {
   it("recovers a playable hand from the world stream without drawing the resting rng", () => {
     setRunProgress({ rng: createRunRngState(() => 42 / 0x1_0000_0000), initialized: true });
     const worldBefore = readGameplayState().run.activeRun.rng.counters.world;
@@ -25,7 +25,7 @@ describe("legacy enemy-phase resume RNG", () => {
       discard,
     };
 
-    dispatchRunSessionCommand((draft) => initializeActiveBattle(draft, enemyPhase, { kind: "legacy-enemy-turn" }));
+    dispatchRunSessionCommand((draft) => initializeActiveBattle(draft, enemyPhase, { kind: "continue-end-turn" }));
 
     expect(readGameplayState().battle.battleState).not.toHaveProperty("rng");
 

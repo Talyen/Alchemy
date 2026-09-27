@@ -1,14 +1,12 @@
-import type { MysteryChoice, MysteryEffect, MysteryEvent } from "@/lib/mystery";
+import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import type { BattleCard } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
+import type { MysteryChoice, MysteryEffect, MysteryEvent } from "@/lib/mystery";
 import type { PersistedMysteryVisit } from "./types";
 
 export interface HydratedMysteryVisit {
   mysteryEvent: MysteryEvent | null;
   mysteryChosenChoice: MysteryChoice | null;
-  // Legacy: no live flow sets player-choice removal anymore (removeCard resolves
-  // immediately). Kept so old saves and stale visits still parse and clear.
-  mysteryPendingRemoval: boolean;
   mysteryCardChoices: BattleCard[] | null;
   mysteryGrantedTrinketIds: string[];
   mysteryGrantedGearInstances: GearInstance[];
@@ -19,7 +17,6 @@ export function emptyHydratedMysteryVisit(): HydratedMysteryVisit {
   return {
     mysteryEvent: null,
     mysteryChosenChoice: null,
-    mysteryPendingRemoval: false,
     mysteryCardChoices: null,
     mysteryGrantedTrinketIds: [],
     mysteryGrantedGearInstances: [],
@@ -33,11 +30,29 @@ export function serializeMysteryVisit(visit: HydratedMysteryVisit): PersistedMys
   return {
     event,
     chosenChoice: visit.mysteryChosenChoice,
-    ...(visit.mysteryPendingRemoval ? { pendingRemoval: true } : {}),
     cardChoices: visit.mysteryCardChoices,
     grantedTrinketIds: visit.mysteryGrantedTrinketIds,
     grantedGear: visit.mysteryGrantedGearInstances,
     chosenCardId: visit.mysteryChosenCardId,
+  };
+}
+
+interface PersistedMysteryEventInput {
+  id: string;
+  title: string;
+  art: string;
+  narrative: string;
+  choices: readonly PersistedMysteryChoiceInput[];
+}
+
+function hydrateMysteryEvent(event: PersistedMysteryEventInput | MysteryEvent | null): MysteryEvent | null {
+  if (!event) return null;
+  return {
+    id: event.id,
+    title: event.title,
+    art: event.art,
+    narrative: event.narrative,
+    choices: event.choices.map((choice) => hydratePersistedMysteryChoice(choice)!),
   };
 }
 
@@ -46,11 +61,33 @@ export function hydrateMysteryVisit(data: PersistedMysteryVisit | null): Hydrate
   return {
     mysteryEvent: data.event,
     mysteryChosenChoice: hydratePersistedMysteryChoice(data.chosenChoice),
-    mysteryPendingRemoval: data.pendingRemoval === true,
     mysteryCardChoices: data.cardChoices,
     mysteryGrantedTrinketIds: data.grantedTrinketIds,
     mysteryGrantedGearInstances: data.grantedGear ?? [],
     mysteryChosenCardId: data.chosenCardId,
+  };
+}
+
+interface PersistedMysteryVisitInput {
+  event: PersistedMysteryEventInput | MysteryEvent;
+  chosenChoice?: PersistedMysteryChoiceInput | MysteryChoice | null;
+  cardChoices?: readonly unknown[] | null;
+  grantedTrinketIds?: readonly string[];
+  grantedGear?: readonly GearInstance[];
+  chosenCardId?: string | null;
+}
+
+export function hydratePersistedMysteryVisit(
+  data: PersistedMysteryVisitInput | PersistedMysteryVisit | null,
+): PersistedMysteryVisit | null {
+  if (!data) return null;
+  return {
+    event: hydrateMysteryEvent(data.event)!,
+    chosenChoice: hydratePersistedMysteryChoice(data.chosenChoice ?? null),
+    cardChoices: data.cardChoices?.map((card) => hydrateCard(card as BattleCard)) ?? null,
+    grantedTrinketIds: [...(data.grantedTrinketIds ?? [])],
+    grantedGear: [...(data.grantedGear ?? [])],
+    chosenCardId: data.chosenCardId ?? null,
   };
 }
 

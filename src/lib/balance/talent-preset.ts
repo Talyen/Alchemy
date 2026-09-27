@@ -96,6 +96,10 @@ export function buildPresetUnlockedTalents(keywords: readonly KeywordId[], prese
   return unlockedTalents;
 }
 
+/**
+ * Total unlocked talent points in the preset tree for health scaling (1 HP per talent point).
+ * Matches computeTotalTalentPoints * MAX_HEALTH_PER_TALENT_POINT in progression.ts.
+ */
 export function countUnlockedCombatTalents(keywords: readonly KeywordId[], preset: TalentPreset): number {
   const unlocked = buildPresetUnlockedTalents(keywords, preset);
   return Object.values(unlocked).reduce((total, ids) => total + (ids?.length ?? 0), 0);

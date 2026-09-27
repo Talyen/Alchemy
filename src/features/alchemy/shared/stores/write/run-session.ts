@@ -211,9 +211,6 @@ export const setMysteryEvent = defineMysteryVisitSetter("mysteryEvent");
 
 export const setMysteryChosenChoice = defineMysteryVisitSetter("mysteryChosenChoice");
 
-// Legacy: only stale-visit clearing and tests write this; no live navigation sets it.
-export const setMysteryPendingRemoval = defineMysteryVisitSetter("mysteryPendingRemoval");
-
 export const setMysteryCardChoices = defineMysteryVisitSetter("mysteryCardChoices");
 
 export const setMysteryGrantedTrinketIds = defineMysteryVisitSetter("mysteryGrantedTrinketIds");

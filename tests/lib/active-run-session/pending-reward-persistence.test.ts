@@ -195,4 +195,30 @@ describe("pending reward persistence", () => {
       expect(restored.choices).toEqual([plain]);
     }
   });
+
+  it("serializes and restores gear rewards with empty choices while preserving shared currencies", () => {
+    const rewardState = {
+      ...createEmptyRewardState(),
+      rewardType: "gear" as const,
+      choices: [],
+      gold: 25,
+      materials: { wood: 2, iron: 1, herbs: 0, food: 0, gems: 0, stone: 0, hide: 0 },
+    };
+    const persisted = serializePendingReward(rewardState);
+    expect(persisted).toEqual({
+      rewardType: "gear",
+      gearChoices: [],
+      companionChoiceIds: [],
+      selectedId: null,
+      gold: 25,
+      materials: rewardState.materials,
+      destinations: [],
+      selectedBossId: null,
+      lastVictoryEnemyType: null,
+      lastVictoryContentSystem: null,
+    });
+
+    const restored = restorePendingReward(persisted!);
+    expect(restored).toEqual(rewardState);
+  });
 });

@@ -222,7 +222,7 @@ describe("encodeRunResumeSnapshot", () => {
     expect(result.activeCombat!.battleState.turnPhase).toBe("enemy");
   });
 
-  it("marks enemy-phase saves without a pending transition for boot recovery", () => {
+  it("preserves enemy-phase battle state when no pending transition exists", () => {
     writeBattle({
       hasActiveBattle: true,
       battleState: { ...defaultBattleState(), turnPhase: "enemy" as const, hand: [] },
@@ -231,7 +231,7 @@ describe("encodeRunResumeSnapshot", () => {
     const activeRun = encodeState();
     const decoded = decodeRunResumeSnapshot(activeRun);
 
-    expect(decoded.pendingBattleTransition).toEqual({ kind: "legacy-enemy-turn" });
+    expect(decoded.pendingBattleTransition).toBeNull();
     expect(activeRun.activeCombat?.battleState.turnPhase).toBe("enemy");
   });
 

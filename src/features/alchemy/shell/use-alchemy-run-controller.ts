@@ -14,13 +14,13 @@ import {
   prepareLabyrinthRoomTraits,
   resetCorruptionVisit,
 } from "@/features/alchemy/shared/stores/navigation-commands";
-import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useCallback, useMemo } from "react";
+import { getRunPhase } from "@/lib/routing";
 import { createLabyrinthNodeRouting } from "./labyrinth-node-routing";
 import { clearRunCardHover, readRunAvailableDestinations } from "./run-destination-wiring";
 import { useBattleController } from "./use-battle-controller";
 import { createLabyrinthController } from "@/features/alchemy/run-loop/run/labyrinth-controller";
-import { useRunFlowEngine } from "./use-run-flow-engine";
+import { createRunFlowEngine } from "./run-flow-engine";
 import { useScreenTransitions } from "./use-screen-transitions";
 import { useSteamRichPresence } from "./use-steam-rich-presence";
 
@@ -31,10 +31,6 @@ export function useAlchemyRunController(): AlchemyRunCommands {
   const screen = useActiveRunScreenValue();
   const { navigateTo, resumeTo, transition, cancelPending, navigationPending } = useScreenTransitions(screen);
 
-  const setHoveredCardId = useCallback((id: string | null | ((prev: string | null) => string | null)) => {
-    const store = useUiStore.getState();
-    store.setHoveredCardId(typeof id === "function" ? id(store.hoveredCardId) : id);
-  }, []);
   const outcomes = useMemo(
     () =>
       createRunOutcomes({
@@ -45,7 +41,6 @@ export function useAlchemyRunController(): AlchemyRunCommands {
   );
   const battle = useBattleController({
     screen,
-    setHoveredCardId,
     onBattleVictory: outcomes.victory.handleBattleVictory,
     onBattleDefeat: outcomes.defeat.handleBattleDefeat,
   });
@@ -61,33 +56,27 @@ export function useAlchemyRunController(): AlchemyRunCommands {
       }),
     [talentEffects, gearAstralChanceBonus, mixPotionDiscount, removeCardDiscount],
   );
-
   const labyrinth = useMemo(() => createLabyrinthController(), []);
 
-  const battleLauncher = useMemo(
-    () => ({
-      onStartBattle: battle.startBattle,
-      onStartBossBattle: battle.startBossBattle,
-      onStartBossById: battle.startBossById,
-    }),
-    [battle.startBattle, battle.startBossBattle, battle.startBossById],
+  const nav = useMemo(
+    () =>
+      createRunFlowEngine(
+        {
+          navigateTo,
+          resumeTo,
+          transition,
+          cancelPending,
+          battle,
+          initializeShop: shop.initialize,
+          labyrinthClearNode: labyrinth.onNodeCleared,
+        },
+        outcomes,
+      ),
+    [navigateTo, resumeTo, transition, cancelPending, battle, labyrinth, outcomes, shop.initialize],
   );
 
-  const nav = useRunFlowEngine(
-    {
-      screen,
-      navigateTo,
-      resumeTo,
-      transition,
-      cancelPending,
-      battle: battleLauncher,
-      initializeShop: shop.initialize,
-      labyrinthClearNode: labyrinth.onNodeCleared,
-    },
-    outcomes,
-  );
-
-  useSteamRichPresence(screen, nav.runPhase, characterId);
+  const runPhase = getRunPhase(screen, battle.hasActiveBattle);
+  useSteamRichPresence(screen, runPhase, characterId);
 
   const cancelBattle = battle.cancelBattle;
   const handleAbandonRun = nav.handleAbandonRun;
@@ -98,15 +87,12 @@ export function useAlchemyRunController(): AlchemyRunCommands {
         prepareRoomTraits: prepareLabyrinthRoomTraits,
         navigateTo,
         labyrinth,
-        battle: {
-          startBattle: battle.startBattle,
-          startBossBattle: battle.startBossBattle,
-        },
+        battle,
         nav: { beginMysteryEvent: nav.beginMysteryEvent },
         shop,
         corruption: { reset: resetCorruptionVisit },
       }),
-    [navigateTo, labyrinth, battle.startBattle, battle.startBossBattle, nav.beginMysteryEvent, shop],
+    [navigateTo, labyrinth, battle, nav.beginMysteryEvent, shop],
   );
 
   const handleEndRun = useCallback(() => {

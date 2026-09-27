@@ -41,13 +41,22 @@ function deepFreeze<T>(obj: T): T {
   return obj;
 }
 
+const VISIT_FACTORIES: { readonly [K in keyof RunActivityData]: () => RunActivityData[K] } = {
+  shop: emptyShopState,
+  alchemist: emptyAlchemistState,
+  "trinket-shop": emptyTrinketShopState,
+  "equipment-shop": emptyEquipmentShopState,
+  mystery: emptyHydratedMysteryVisit,
+  corruption: () => null,
+};
+
 const EMPTY_VISITS: Readonly<RunActivityData> = deepFreeze({
-  shop: emptyShopState(),
-  alchemist: emptyAlchemistState(),
-  "trinket-shop": emptyTrinketShopState(),
-  "equipment-shop": emptyEquipmentShopState(),
-  mystery: emptyHydratedMysteryVisit(),
-  corruption: null,
+  shop: VISIT_FACTORIES.shop(),
+  alchemist: VISIT_FACTORIES.alchemist(),
+  "trinket-shop": VISIT_FACTORIES["trinket-shop"](),
+  "equipment-shop": VISIT_FACTORIES["equipment-shop"](),
+  mystery: VISIT_FACTORIES.mystery(),
+  corruption: VISIT_FACTORIES.corruption(),
 });
 
 /**
@@ -66,15 +75,6 @@ export function runActivityScreen(activity: RunActivity): Screen | null {
   return activity.kind === "idle" || activity.kind === "inactive" ? null : activity.kind;
 }
 
-const ACTIVITY_FACTORIES: Partial<Record<Screen, () => RunActivity>> = {
-  shop: () => ({ kind: "shop", data: emptyShopState() }),
-  alchemist: () => ({ kind: "alchemist", data: emptyAlchemistState() }),
-  "trinket-shop": () => ({ kind: "trinket-shop", data: emptyTrinketShopState() }),
-  "equipment-shop": () => ({ kind: "equipment-shop", data: emptyEquipmentShopState() }),
-  mystery: () => ({ kind: "mystery", data: emptyHydratedMysteryVisit() }),
-  corruption: () => ({ kind: "corruption", data: null }),
-};
-
 const STATELESS_RUN_SCREENS = new Set<ProgressActivityKind>([
   "battle",
   "rewards",
@@ -88,8 +88,10 @@ const STATELESS_RUN_SCREENS = new Set<ProgressActivityKind>([
 
 export function transitionRunActivity(activity: RunActivity, screen: Screen): RunActivity {
   if (activity.kind === screen) return activity;
-  const factory = ACTIVITY_FACTORIES[screen];
-  if (factory) return factory();
+  if (Object.hasOwn(VISIT_FACTORIES, screen)) {
+    const factory = VISIT_FACTORIES[screen as keyof RunActivityData];
+    return { kind: screen as keyof RunActivityData, data: factory() } as RunActivity;
+  }
   if (STATELESS_RUN_SCREENS.has(screen as ProgressActivityKind)) {
     return { kind: screen as ProgressActivityKind };
   }

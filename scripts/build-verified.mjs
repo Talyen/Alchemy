@@ -1,10 +1,8 @@
 #!/usr/bin/env node
 /** Non-mutating verified build: validate generated outputs then invoke Vite directly without lifecycle preparation. */
 import { syncGenerated } from "./sync-generated.mjs";
-import { isMainModule } from "./lib/is-main-module.mjs";
-import { resolveViteBin } from "./lib/command-invocation.mjs";
 import { runTaskCommand } from "./lib/run-command.mjs";
-import { UsageError } from "./lib/script-run.mjs";
+import { defineScript, UsageError } from "./lib/script-run.mjs";
 import { validateDesktopBuildConfig } from "./lib/release/desktop-build-config.mjs";
 
 async function main(argv = process.argv.slice(2)) {
@@ -44,7 +42,7 @@ async function main(argv = process.argv.slice(2)) {
   // Validate all generated outputs without mutating. Throws if stale.
   await syncGenerated({ check: true });
 
-  const viteArgs = [resolveViteBin(), "build"];
+  const viteArgs = ["build"];
   if (isDesktop && modes.length === 0) {
     viteArgs.push("--mode", "desktop");
   }
@@ -52,20 +50,16 @@ async function main(argv = process.argv.slice(2)) {
     viteArgs.push(...viteForward);
   }
 
-  const result = await runTaskCommand(process.execPath, viteArgs, {
+  const result = await runTaskCommand("npx", ["vite", ...viteArgs], {
     env: { ...process.env },
     label: isDesktop ? "desktop build" : "web build",
     live,
   });
   if (result.error) {
-    console.error(`Failed to run ${["node", ...viteArgs].join(" ")}:`, result.error.message);
+    console.error(`Failed to run vite ${viteArgs.join(" ")}:`, result.error.message);
   }
-  if (result.status !== 0) process.exit(result.status ?? 1);
+  return result.status ?? 1;
 }
 
-if (isMainModule(import.meta.url)) {
-  main().catch((error) => {
-    console.error(error instanceof Error ? error.message : String(error));
-    process.exitCode = error instanceof UsageError ? 2 : 1;
-  });
-}
+export { main as runBuildVerified };
+defineScript(import.meta.url, () => main());

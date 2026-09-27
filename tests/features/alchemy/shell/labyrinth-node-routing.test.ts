@@ -6,7 +6,7 @@ import { ROUTE_SCREENS } from "@/lib/routing";
 function makeRoutingDeps(enterImpl: (handlers: LabyrinthNodeHandlers) => void) {
   return {
     prepareRoomTraits: vi.fn(),
-    navigateTo: vi.fn(),
+    navigateTo: vi.fn((_screen: string, prepare?: () => void) => prepare?.()),
     labyrinth: {
       enterSelectedNode: (handlers: LabyrinthNodeHandlers) => {
         enterImpl(handlers);
@@ -62,7 +62,7 @@ describe("createLabyrinthNodeRouting", () => {
     expect(combatDeps.prepareRoomTraits).toHaveBeenCalledWith(expect.any(Array), ["generous"]);
     // Combat traits travel via session store, not battle-starter args.
     expect(combatDeps.battle.startBattle).toHaveBeenCalledWith(undefined, undefined, "elite", [], "goblin");
-    expect(combatDeps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE);
+    expect(combatDeps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE, expect.any(Function));
 
     const shopDeps = makeRoutingDeps((handlers) => handlers.onStartShop());
     createLabyrinthNodeRouting(shopDeps).handleLabyrinthNodeEnter();
@@ -70,7 +70,7 @@ describe("createLabyrinthNodeRouting", () => {
     expect(shopDeps.prepareRoomTraits).toHaveBeenCalledWith([], expect.any(Array));
     expect(shopDeps.prepareRoomTraits).toHaveBeenCalledWith(expect.any(Array), []);
     expect(shopDeps.shop.initialize).toHaveBeenCalledWith("merchant");
-    expect(shopDeps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.SHOP);
+    expect(shopDeps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.SHOP, expect.any(Function));
   });
 });
 
@@ -91,5 +91,15 @@ it("routes corruption nodes to the altar with cleared results and room modifiers
   expect(deps.prepareRoomTraits).toHaveBeenCalledWith([], expect.any(Array));
   expect(deps.prepareRoomTraits).toHaveBeenCalledWith(expect.any(Array), ["blood-rite"]);
   expect(deps.corruption.reset).toHaveBeenCalledOnce();
-  expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.CORRUPTION);
+  expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.CORRUPTION, expect.any(Function));
+});
+
+it("does not mutate traits or initialize destination if navigateTo does not execute prepare", () => {
+  const deps = makeRoutingDeps((handlers) => handlers.onStartShop());
+  deps.navigateTo = vi.fn(); // does not execute prepare callback
+  createLabyrinthNodeRouting(deps).handleLabyrinthNodeEnter();
+
+  expect(deps.prepareRoomTraits).not.toHaveBeenCalled();
+  expect(deps.shop.initialize).not.toHaveBeenCalled();
+  expect(deps.navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.SHOP, expect.any(Function));
 });

@@ -133,7 +133,7 @@ describe("ActiveRunDataSchema persisted session payloads", () => {
     expect(result.data.activeCombat?.pendingBattleTransition?.kind).toBe("enemy-turn");
   });
 
-  it("accepts legacy-enemy-turn pending transition markers", () => {
+  it("falls back to null for retired or invalid pending transition markers", () => {
     const defaults = defaultBattleState();
     const result = ActiveRunDataSchema.safeParse(
       run({
@@ -149,7 +149,7 @@ describe("ActiveRunDataSchema persisted session payloads", () => {
 
     expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
     if (!result.success) return;
-    expect(result.data.activeCombat?.pendingBattleTransition).toEqual({ kind: "legacy-enemy-turn" });
+    expect(result.data.activeCombat?.pendingBattleTransition).toBeNull();
   });
 
   it("accepts a resumable opening draw transition", () => {
@@ -318,7 +318,7 @@ describe("ActiveRunDataSchema persisted session payloads", () => {
     }
   });
 
-  it("rejects pending gear rewards with no valid choices", () => {
+  it("preserves pending gear rewards with empty choices", () => {
     const result = ActiveRunDataSchema.safeParse(
       run({
         interruptedFlow: {
@@ -339,7 +339,13 @@ describe("ActiveRunDataSchema persisted session payloads", () => {
     );
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.interruptedFlow).toEqual({ kind: "none" });
+      expect(result.data.interruptedFlow.kind).toBe("primary-reward");
+      if (result.data.interruptedFlow.kind === "primary-reward") {
+        expect(result.data.interruptedFlow.pending.rewardType).toBe("gear");
+        if (result.data.interruptedFlow.pending.rewardType === "gear") {
+          expect(result.data.interruptedFlow.pending.gearChoices).toEqual([]);
+        }
+      }
     }
   });
 

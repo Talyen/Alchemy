@@ -36,6 +36,7 @@ export function emptyRateCell(): RateCell {
 
 export function combineRateCells(cells: readonly RateCell[]): RateCell {
   if (cells.length === 0) return emptyRateCell();
+  if (cells.length === 1 && cells[0]) return { ...cells[0] };
   let n = 0;
   let winsTotal = 0;
   let lossesTotal = 0;

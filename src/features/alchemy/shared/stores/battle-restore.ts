@@ -5,7 +5,6 @@ import {
   battleSnapshot,
   isPlayerDefeated,
   processCompanionTurnStart,
-  recoverLegacyEnemyPhase,
   resolveBattleTurn,
   type BattleSnapshot,
 } from "@/lib/battle";
@@ -54,9 +53,7 @@ export function restoreActiveBattle(
         : draft.battle.battleState;
   if ("resultState" in pending) state = { ...state, gold: draft.runProfile.gold + state.gold - before.gold };
   const input = { ...before, gold: draft.runProfile.gold };
-  if (pending.kind === "legacy-enemy-turn") {
-    state = battleSnapshot(recoverLegacyEnemyPhase(withDraftWorldBattleRng(draft, state)));
-  } else if (pending.kind === "continue-end-turn" || ("playerTurnSkipped" in pending && pending.playerTurnSkipped)) {
+  if (pending.kind === "continue-end-turn" || ("playerTurnSkipped" in pending && pending.playerTurnSkipped)) {
     const result = resolveBattleTurn(state, { rng: withDraftWorldBattleRng(draft, state).rng });
     awardBattleDodgeXP(draft, state, result.state);
     state = result.state;

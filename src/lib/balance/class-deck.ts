@@ -10,7 +10,7 @@ import {
   type CompanionId,
   type KeywordId,
 } from "@/lib/game-data";
-import { createSeededRng, pickRandom, sampleItems, shuffle } from "@/lib/rng";
+import { createSeededRng, pickRandom, sampleItems } from "@/lib/rng";
 import type { TalentPreset } from "./simulator-types";
 
 const ALCHEMIST_MIXED_POTION_COUNT = 2;
@@ -74,8 +74,7 @@ export function buildClassSimDeck(characterId: CharacterId, preset: TalentPreset
   const rng = createSeededRng(seed);
 
   if (characterId === "wildcard") {
-    const pool = shuffle([...getOfferableCardPool()], rng);
-    return pool.slice(0, WILDCARD_SIM_DECK_SIZE[preset]).map(cloneBattleCard);
+    return sampleItems(getOfferableCardPool(), WILDCARD_SIM_DECK_SIZE[preset], rng).map(cloneBattleCard);
   }
 
   const { startingDeck, candidates } = getClassDeckTemplate(characterId);

@@ -1,10 +1,9 @@
 import "../../../helpers/mock-audio";
-import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTE_SCREENS, type Screen, type ScreenTransitionOptions } from "@/lib/routing";
 import { DRAFT_ROUNDS } from "@/lib/game-constants";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
-import { useRunFlowEngine } from "@/features/alchemy/shell/use-run-flow-engine";
+import { createRunFlowEngine } from "@/features/alchemy/shell/run-flow-engine";
 import { createRunOutcomes } from "@/features/alchemy/run-loop/run/run-flow";
 import { readRunAvailableDestinations } from "@/features/alchemy/shell/run-destination-wiring";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
@@ -13,6 +12,7 @@ import { readActiveRun, readBattle, readRunSession } from "@/features/alchemy/sh
 import { setHasActiveBattle, setHasActiveRun } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { makeTestCard } from "../../../fixtures/battle";
 import { resetAllTestStores, setRunProgress, setRunSession } from "../../../helpers/run-domain-store-test";
+
 beforeEach(() => {
   resetAllTestStores();
 });
@@ -27,34 +27,52 @@ function makeOutcomes(navigateTo: TestNavigate, transition: TestTransition) {
   });
 }
 
-describe("useRunFlowEngine", () => {
+function makeEngine({
+  navigateTo = vi.fn(),
+  resumeTo = vi.fn(),
+  transition = vi.fn(),
+  cancelPending = vi.fn(),
+  startBattle = vi.fn(),
+  startBossBattle = vi.fn(),
+  startBossById = vi.fn(),
+  initializeShop = vi.fn(),
+  labyrinthClearNode = vi.fn(),
+}: {
+  navigateTo?: TestNavigate;
+  resumeTo?: TestNavigate;
+  transition?: TestTransition;
+  cancelPending?: () => void;
+  startBattle?: () => void;
+  startBossBattle?: () => void;
+  startBossById?: (bossId: string) => boolean;
+  initializeShop?: () => void;
+  labyrinthClearNode?: () => void;
+} = {}) {
+  return createRunFlowEngine(
+    {
+      navigateTo,
+      resumeTo,
+      transition,
+      cancelPending,
+      battle: {
+        startBattle,
+        startBossBattle,
+        startBossById,
+      },
+      initializeShop,
+      labyrinthClearNode,
+    },
+    makeOutcomes(navigateTo, transition),
+  );
+}
+
+describe("createRunFlowEngine", () => {
   it("clears card hover on every flow navigation", () => {
     const navigateTo = vi.fn();
-    const transition = vi.fn();
-    const { result } = renderHook(() =>
-      useRunFlowEngine(
-        {
-          screen: ROUTE_SCREENS.MENU,
-          navigateTo,
-          resumeTo: vi.fn(),
-          transition,
-          cancelPending: vi.fn(),
-          battle: {
-            onStartBattle: vi.fn(),
-            onStartBossBattle: vi.fn(),
-            onStartBossById: vi.fn(),
-          },
-          initializeShop: vi.fn(),
-          labyrinthClearNode: vi.fn(),
-        },
-        makeOutcomes(navigateTo, transition),
-      ),
-    );
+    const engine = makeEngine({ navigateTo });
 
     useUiStore.setState({ hoveredCardId: "card-1" });
-    act(() => {
-      result.current.beginCampaign();
-    });
+    engine.beginCampaign();
     expect(useUiStore.getState().hoveredCardId).toBeNull();
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.CHARACTER_SELECT, undefined);
   });
@@ -65,32 +83,10 @@ describe("useRunFlowEngine", () => {
       setHasActiveBattle(draft, true);
     });
     const navigateTo = vi.fn((_screen: string, onCommit?: () => void) => onCommit?.());
-    const transition = vi.fn();
     const cancelPending = vi.fn();
 
-    const { result } = renderHook(() =>
-      useRunFlowEngine(
-        {
-          screen: ROUTE_SCREENS.BATTLE,
-          navigateTo,
-          resumeTo: vi.fn(),
-          transition,
-          cancelPending,
-          battle: {
-            onStartBattle: vi.fn(),
-            onStartBossBattle: vi.fn(),
-            onStartBossById: vi.fn(),
-          },
-          initializeShop: vi.fn(),
-          labyrinthClearNode: vi.fn(),
-        },
-        makeOutcomes(navigateTo, transition),
-      ),
-    );
-
-    act(() => {
-      result.current.resetRunState();
-    });
+    const engine = makeEngine({ navigateTo, cancelPending });
+    engine.resetRunState();
 
     expect(cancelPending).toHaveBeenCalledOnce();
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.MENU, expect.any(Function));
@@ -110,42 +106,17 @@ describe("useRunFlowEngine", () => {
       pendingContentSystemType: "wildwood",
       wildwoodDraft,
     });
-    const onStartBossById = vi.fn(() => true);
+    const startBossById = vi.fn(() => true);
     const navigateTo = vi.fn();
-    const transition = vi.fn();
 
-    const { result } = renderHook(() =>
-      useRunFlowEngine(
-        {
-          screen: ROUTE_SCREENS.DRAFT_DECK,
-          navigateTo,
-          resumeTo: vi.fn(),
-          transition,
-          cancelPending: vi.fn(),
-          battle: {
-            onStartBattle: vi.fn(),
-            onStartBossBattle: vi.fn(),
-            onStartBossById,
-          },
-          initializeShop: vi.fn(),
-          labyrinthClearNode: vi.fn(),
-        },
-        makeOutcomes(navigateTo, transition),
-      ),
-    );
-
-    act(() => {
-      result.current.handleWildwoodDraftComplete();
-    });
+    const engine = makeEngine({ navigateTo, startBossById });
+    engine.handleWildwoodDraftComplete();
 
     expect(readActiveRun().runDeck).toEqual(draftedCards);
     expect(readRunSession().pendingCharacterId).toBeNull();
     expect(readRunSession().wildwoodDraft).toMatchObject({ phase: "battle" });
-    expect(onStartBossById).toHaveBeenCalledOnce();
+    expect(startBossById).toHaveBeenCalledOnce();
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE, undefined);
-
-    expect(readRunSession().wildwoodDraft).toMatchObject({ phase: "battle" });
-    expect(onStartBossById).toHaveBeenCalledOnce();
   });
 
   it("removes a Wildwood card in the same command that enters battle", () => {
@@ -155,31 +126,10 @@ describe("useRunFlowEngine", () => {
       hasActiveRun: true,
       wildwoodDraft: { ...createInitialWildwoodDraftState("knight", () => 0.5), phase: "removal" },
     });
-    const onStartBossById = vi.fn(() => true);
-    const navigateTo = vi.fn();
-    const transition = vi.fn();
+    const startBossById = vi.fn(() => true);
 
-    const { result } = renderHook(() =>
-      useRunFlowEngine(
-        {
-          screen: ROUTE_SCREENS.WILDWOOD_REMOVAL,
-          navigateTo,
-          resumeTo: vi.fn(),
-          transition,
-          cancelPending: vi.fn(),
-          battle: {
-            onStartBattle: vi.fn(),
-            onStartBossBattle: vi.fn(),
-            onStartBossById,
-          },
-          initializeShop: vi.fn(),
-          labyrinthClearNode: vi.fn(),
-        },
-        makeOutcomes(navigateTo, transition),
-      ),
-    );
-
-    act(() => result.current.handleWildwoodRemoveCard(1));
+    const engine = makeEngine({ startBossById });
+    engine.handleWildwoodRemoveCard(1);
 
     expect(readActiveRun().runDeck.map((card) => card.id)).toEqual([
       "wildwood-removal-0",
@@ -191,7 +141,7 @@ describe("useRunFlowEngine", () => {
       "wildwood-removal-7",
     ]);
     expect(readRunSession().wildwoodDraft).toMatchObject({ phase: "battle" });
-    expect(onStartBossById).toHaveBeenCalledOnce();
+    expect(startBossById).toHaveBeenCalledOnce();
   });
 
   it("commits a skipped Wildwood removal before the battle screen swap", () => {
@@ -201,34 +151,12 @@ describe("useRunFlowEngine", () => {
       hasActiveRun: true,
       wildwoodDraft: { ...createInitialWildwoodDraftState("knight", () => 0.5), phase: "removal" },
     });
-    const onStartBossById = vi.fn(() => true);
+    const startBossById = vi.fn(() => true);
     const navigateTo = vi.fn();
-    const transition = vi.fn();
 
-    const { result } = renderHook(() =>
-      useRunFlowEngine(
-        {
-          screen: ROUTE_SCREENS.WILDWOOD_REMOVAL,
-          navigateTo,
-          resumeTo: vi.fn(),
-          transition,
-          cancelPending: vi.fn(),
-          battle: {
-            onStartBattle: vi.fn(),
-            onStartBossBattle: vi.fn(),
-            onStartBossById,
-          },
-          initializeShop: vi.fn(),
-          labyrinthClearNode: vi.fn(),
-        },
-        makeOutcomes(navigateTo, transition),
-      ),
-    );
-
-    act(() => {
-      result.current.handleWildwoodSkipRemoval();
-      result.current.handleWildwoodSkipRemoval();
-    });
+    const engine = makeEngine({ navigateTo, startBossById });
+    engine.handleWildwoodSkipRemoval();
+    engine.handleWildwoodSkipRemoval();
 
     expect(readActiveRun().runDeck).toEqual(runDeck);
     expect(readRunSession().wildwoodDraft).toMatchObject({ phase: "battle" });
@@ -246,37 +174,14 @@ describe("useRunFlowEngine", () => {
       pendingContentSystemType: "wildwood",
       wildwoodDraft: createInitialWildwoodDraftState("knight", () => 0.5),
     });
-    const onStartBossById = vi.fn(() => true);
-    const navigateTo = vi.fn();
-    const transition = vi.fn();
+    const startBossById = vi.fn(() => true);
 
-    const { result } = renderHook(() =>
-      useRunFlowEngine(
-        {
-          screen: ROUTE_SCREENS.DRAFT_DECK,
-          navigateTo,
-          resumeTo: vi.fn(),
-          transition,
-          cancelPending: vi.fn(),
-          battle: {
-            onStartBattle: vi.fn(),
-            onStartBossBattle: vi.fn(),
-            onStartBossById,
-          },
-          initializeShop: vi.fn(),
-          labyrinthClearNode: vi.fn(),
-        },
-        makeOutcomes(navigateTo, transition),
-      ),
-    );
-
-    act(() => {
-      result.current.handleWildwoodDraftComplete();
-    });
+    const engine = makeEngine({ startBossById });
+    engine.handleWildwoodDraftComplete();
 
     expect(readRunSession().pendingCharacterId).toBe("knight");
     expect(readRunSession().wildwoodDraft).toMatchObject({ phase: "draft" });
-    expect(onStartBossById).not.toHaveBeenCalled();
+    expect(startBossById).not.toHaveBeenCalled();
   });
 
   it("advances Wildwood draft from authoritative deck regardless of stale screen payload", () => {
@@ -290,33 +195,11 @@ describe("useRunFlowEngine", () => {
       pendingContentSystemType: "wildwood",
       wildwoodDraft: createInitialWildwoodDraftState("knight", () => 0.5),
     });
-    const onStartBossById = vi.fn(() => true);
+    const startBossById = vi.fn(() => true);
     const navigateTo = vi.fn();
-    const transition = vi.fn();
 
-    const { result } = renderHook(() =>
-      useRunFlowEngine(
-        {
-          screen: ROUTE_SCREENS.DRAFT_DECK,
-          navigateTo,
-          resumeTo: vi.fn(),
-          transition,
-          cancelPending: vi.fn(),
-          battle: {
-            onStartBattle: vi.fn(),
-            onStartBossBattle: vi.fn(),
-            onStartBossById,
-          },
-          initializeShop: vi.fn(),
-          labyrinthClearNode: vi.fn(),
-        },
-        makeOutcomes(navigateTo, transition),
-      ),
-    );
-
-    act(() => {
-      result.current.handleWildwoodDraftComplete();
-    });
+    const engine = makeEngine({ navigateTo, startBossById });
+    engine.handleWildwoodDraftComplete();
 
     expect(readRunSession().pendingCharacterId).toBeNull();
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.BATTLE, undefined);

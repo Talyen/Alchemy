@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ActiveRunDataSchema } from "@/lib/validation";
 import { parseActiveRun } from "@/lib/active-run-session";
-import { findMysteryEvent } from "@/lib/mystery";
 import { createSeededRng } from "@/lib/utils";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { makeMinimalActiveRunInput } from "../../../../fixtures/active-run";
@@ -127,25 +126,6 @@ describe("active run field parsing and normalization", () => {
   it("rejects invalid runTalentXP values and falls back to empty object", () => {
     const result = parseActiveRunSchema(makeMinimalActiveRunInput({ runTalentXP: "invalid" }));
     expect(result?.runTalentXP).toEqual({});
-  });
-
-  it("preserves a pending legacy mystery removal until the player resolves it", () => {
-    const result = parseActiveRun(
-      makeMinimalActiveRunInput({
-        currentScreen: "mystery",
-        mysteryVisit: {
-          event: findMysteryEvent("ancient-altar")!,
-          chosenChoice: null,
-          pendingRemoval: true,
-          cardChoices: null,
-          grantedTrinketIds: [],
-          grantedGear: [],
-          chosenCardId: null,
-        },
-      }),
-    );
-    expect(result?.mysteryVisit?.pendingRemoval).toBe(true);
-    expect(result?.mysteryVisit?.event.id).toBe("ancient-altar");
   });
 
   it("preserves conditional card effects across active-run parsing", () => {

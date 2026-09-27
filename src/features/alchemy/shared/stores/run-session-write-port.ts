@@ -49,7 +49,6 @@ export {
   setMysteryEvent,
   setMysteryGrantedGearInstances,
   setMysteryGrantedTrinketIds,
-  setMysteryPendingRemoval,
   setPendingCharacterId,
   setPendingContentSystemType,
   setRewardState,

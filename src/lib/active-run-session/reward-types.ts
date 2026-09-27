@@ -1,8 +1,24 @@
-import type { BattleCard, TrinketEntry } from "@/lib/game-data";
+import type { ContentSystemId } from "@/lib/content-systems/types";
+import type { BattleCard, EnemyType, TrinketEntry } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import type { PendingRewardSharedInput } from "./pending-reward-shared";
+import type { MaterialInventory } from "@/lib/homestead/types";
 import type { Destination } from "@/lib/routing";
+
+export interface PendingRewardSharedFields {
+  companionChoiceIds: string[];
+  selectedId: string | null;
+  gold: number;
+  materials: MaterialInventory;
+  destinations: Destination[];
+  selectedBossId: string | null;
+  lastVictoryEnemyType: EnemyType | null;
+  lastVictoryContentSystem: ContentSystemId | null;
+}
+
+type PendingRewardSharedInput = Omit<PendingRewardSharedFields, "companionChoiceIds"> & {
+  companionChoiceIds?: string[];
+};
 
 type RewardStateBase = PendingRewardSharedInput;
 
@@ -42,24 +58,8 @@ export function resolveRewardChoice(
   id = rewardState.selectedId,
 ): ResolvedRewardChoice | null {
   if (!id) return null;
-  switch (rewardState.rewardType) {
-    case "card": {
-      const choice = rewardState.choices.find((card) => card.id === id);
-      return choice ? { rewardType: "card", choice } : null;
-    }
-    case "boon": {
-      const choice = rewardState.choices.find((boon) => boon.id === id);
-      return choice ? { rewardType: "boon", choice } : null;
-    }
-    case "trinket": {
-      const choice = rewardState.choices.find((trinket) => trinket.id === id);
-      return choice ? { rewardType: "trinket", choice } : null;
-    }
-    case "gear": {
-      const choice = rewardState.choices.find((gear) => gear.instanceId === id);
-      return choice ? { rewardType: "gear", choice } : null;
-    }
-  }
+  const choice = rewardState.choices.find((item) => getRewardChoiceId(item) === id);
+  return choice ? ({ rewardType: rewardState.rewardType, choice } as ResolvedRewardChoice) : null;
 }
 
 export function createEmptyRewardState(destinations: Destination[] = []): CardRewardState {

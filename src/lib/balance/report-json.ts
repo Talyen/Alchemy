@@ -1,4 +1,4 @@
-import { LENGTH_BAND_BY_TYPE, MATERIAL_TIMEOUT_RATE, WIN_RATE_BAND_BY_TYPE } from "./findings-bands";
+import { LENGTH_BAND_BY_TYPE, MATERIAL_TIMEOUT_RATE, WIN_RATE_BAND_BY_TYPE } from "./findings-types";
 import { stringifyReportJson } from "./report-layout";
 import { reportMethodologyLines } from "./report-methodology";
 import type { BalanceReportModel } from "./report-model";

@@ -40,6 +40,9 @@ describe("script consolidation", () => {
     expect(parseKnownFlags(["--check", "--", "--not-a-flag"], { check: {} }).rest).toEqual(["--not-a-flag"]);
     expect(() => parseKnownFlags(["--bogus"], { check: {} })).toThrow(UsageError);
     expect(() => parseKnownFlags(["--mode"], { mode: { takesValue: true } })).toThrow(UsageError);
+    expect(parseKnownFlags(["-p=5173"], { port: { short: "p", takesValue: true } }).values.get("port")).toEqual([
+      "5173",
+    ]);
     expect(() => parseKnownFlags(["--mode=desktop"], { check: {} })).toThrow(UsageError);
     expect(() => parseKnownFlags(["-m=desktop"], { check: {} })).toThrow(UsageError);
   });
@@ -74,6 +77,8 @@ describe("script consolidation", () => {
     expect(passed.elapsedMs).toBeGreaterThanOrEqual(0);
     const failed = runStreamCommand(process.execPath, ["-e", "process.exit(3)"]);
     expect(failed.status).toBe(3);
+    const timedOut = runStreamCommand(process.execPath, ["-e", "setInterval(() => {}, 1000)"], { timeout: 100 });
+    expect(timedOut.error).toBeDefined();
   });
 
   it("captures one-shot task output and exposes only a compact result", async () => {

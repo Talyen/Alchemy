@@ -41,6 +41,4 @@ export async function runCompact(argv, rootDir = ROOT) {
   return status;
 }
 
-defineScript(import.meta.url, async () => {
-  process.exitCode = await runCompact(process.argv.slice(2));
-});
+defineScript(import.meta.url, () => runCompact(process.argv.slice(2)));

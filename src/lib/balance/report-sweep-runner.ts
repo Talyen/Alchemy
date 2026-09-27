@@ -3,7 +3,7 @@ import type { GearEffectManifest } from "@/lib/gear";
 import { reportTierForPreset, reportTierRecord } from "./report-catalog";
 import type { PairedTierRow } from "./report-model";
 import type { ReportRunOptions } from "./report-options";
-import { combinePairedWinStats, makePairedDelta, pairedWinStats, type PairedWinStats } from "./report-rankings";
+import { emptyPairedWinStats, makePairedDelta, pairedWinStats, type PairedWinStats } from "./report-rankings";
 import { DEFAULT_MAX_TURNS } from "./simulator";
 import { simulateWinSeries, type WinSeries } from "./simulator-batch";
 import type { BalanceBatchConfig, TalentPreset } from "./simulator-types";
@@ -65,20 +65,32 @@ function assertMatchedPair(reference: BalanceBatchConfig, variant: BalanceBatchC
   }
 }
 
-type PairedStatsById = Map<string, Map<TalentPreset, PairedWinStats[]>>;
+type PairedStatsById = Map<string, Map<TalentPreset, PairedWinStats>>;
 
 function addComparison(collected: PairedStatsById, tier: TalentPreset, id: string, stats: PairedWinStats): void {
-  const byTier = collected.get(id) ?? new Map<TalentPreset, PairedWinStats[]>();
-  const entries = byTier.get(tier) ?? [];
-  entries.push(stats);
-  byTier.set(tier, entries);
-  collected.set(id, byTier);
+  let byTier = collected.get(id);
+  if (!byTier) {
+    byTier = new Map<TalentPreset, PairedWinStats>();
+    collected.set(id, byTier);
+  }
+  const existing = byTier.get(tier);
+  if (!existing) {
+    byTier.set(tier, { ...stats });
+  } else {
+    existing.n += stats.n;
+    existing.treatmentWins += stats.treatmentWins;
+    existing.baselineWins += stats.baselineWins;
+    existing.squaredDifferenceSum += stats.squaredDifferenceSum;
+    existing.treatmentTurns += stats.treatmentTurns;
+    existing.baselineTurns += stats.baselineTurns;
+    existing.squaredTurnDifferenceSum += stats.squaredTurnDifferenceSum;
+  }
 }
 
 function rowsFromComparisons(collected: PairedStatsById): PairedTierRow[] {
   return [...collected.entries()].map(([id, byTier]) => ({
     id,
-    deltas: reportTierRecord((tier) => makePairedDelta(id, combinePairedWinStats(byTier.get(tier) ?? []))),
+    deltas: reportTierRecord((tier) => makePairedDelta(id, byTier.get(tier) ?? emptyPairedWinStats())),
   }));
 }
 

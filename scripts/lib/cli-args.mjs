@@ -52,15 +52,13 @@ export function parseKnownFlags(argv, spec = {}, { usage } = {}) {
       else flags.add(name);
       continue;
     }
-    if (arg.startsWith("-m=") || arg.startsWith("--mode=")) {
-      // Back-compat for `-m=value`/`--mode=value` spellings when the spec
-      // declares a value-taking `mode` (or short `m`). Anything else follows
-      // the same unknown-option / no-value rules as the longhand forms.
-      const name = shortToLong.get("m") ?? "mode";
+    if (arg.startsWith("-") && !arg.startsWith("--") && arg.includes("=") && arg.indexOf("=") === 2) {
+      const shortChar = arg[1];
+      const name = shortToLong.get(shortChar);
+      if (!name) throw new UsageError(`Unknown option: ${arg}.${usage ? ` ${usage}` : ""}`);
       const definition = spec[name];
-      if (!definition) throw new UsageError(`Unknown option: ${arg}.${usage ? ` ${usage}` : ""}`);
       if (!definition.takesValue) throw new UsageError(`Option does not take a value: ${arg}.`);
-      pushValue(name, arg.slice(arg.indexOf("=") + 1), arg);
+      pushValue(name, arg.slice(3), arg);
       continue;
     }
     rest.push(arg);

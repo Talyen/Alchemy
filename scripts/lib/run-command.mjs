@@ -100,7 +100,7 @@ export function runCommand(command, args = [], options = {}) {
 export function runStreamCommand(command, args = [], options = {}) {
   const started = Date.now();
   const invocation = commandInvocation(command, args);
-  const unsupported = ["timeout", "shell", "stdio", "logPath", "maxBuffer"].filter((key) => options[key] !== undefined);
+  const unsupported = ["shell", "stdio", "logPath", "maxBuffer"].filter((key) => options[key] !== undefined);
   if (unsupported.length > 0) {
     throw new Error(`runStreamCommand does not support option(s): ${unsupported.join(", ")}`);
   }
@@ -110,6 +110,7 @@ export function runStreamCommand(command, args = [], options = {}) {
     shell: false,
     stdio: "inherit",
     encoding: "utf8",
+    timeout: options.timeout,
   });
   return { ...result, elapsedMs: Date.now() - started };
 }

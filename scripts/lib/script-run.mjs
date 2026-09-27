@@ -31,10 +31,15 @@ export function defineScript(importMetaUrl, fn) {
     console.error(error instanceof Error ? error.message : error);
     process.exitCode = error instanceof UsageError ? 2 : 1;
   };
+  const handleResult = (res) => {
+    if (typeof res === "number") process.exitCode = res;
+  };
   try {
     const result = fn();
-    if (result && typeof result.catch === "function") {
-      result.catch(report);
+    if (result && typeof result.then === "function") {
+      result.then(handleResult, report);
+    } else {
+      handleResult(result);
     }
   } catch (error) {
     report(error);

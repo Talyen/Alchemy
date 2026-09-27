@@ -1,6 +1,6 @@
 import { enemyById, isEnemyId } from "@/lib/game-data";
 import { ANOMALY_THRESHOLD_BY_PRESET } from "./anomalies";
-import { formatLengthBand, formatWinRateBand, isLengthOutsideBand, isWinRateOutsideTypeBand } from "./findings-bands";
+import { formatLengthBand, formatWinRateBand, isLengthOutsideBand, isWinRateOutsideTypeBand } from "./findings-types";
 import { titleFor, type ReportEnemyType, type TitleLookupKind } from "./report-catalog";
 import { escapeHtml, formatPercent, renderReportPage } from "./report-layout";
 import { reportMethodologyLines } from "./report-methodology";

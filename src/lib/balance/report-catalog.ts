@@ -12,6 +12,7 @@ import {
 } from "@/lib/game-data";
 import { gearAffixList } from "@/lib/gear/affix-catalog";
 import { gearBaseItemList } from "@/lib/gear";
+import { hashStringToUint32 } from "@/lib/rng";
 import type { TalentPreset } from "./simulator-types";
 
 export const REPORT_ENEMY_TYPES = ["normal", "elite", "boss"] as const;
@@ -77,12 +78,8 @@ export function coreMatchupsForTier(tier: ReportTier): ReportMatchup[] {
 }
 
 export function balanceScenarioSeed(namespace: string, ...parts: ReadonlyArray<string | number>): number {
-  let hash = 2_166_136_261;
   const identity = [namespace, ...parts].join("\u001f");
-  for (let index = 0; index < identity.length; index += 1) {
-    hash = Math.imul(hash ^ identity.charCodeAt(index), 16_777_619);
-  }
-  const seed = hash >>> 0;
+  const seed = hashStringToUint32(identity);
   return seed === 0 ? 1 : seed;
 }
 

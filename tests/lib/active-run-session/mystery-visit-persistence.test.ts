@@ -31,7 +31,6 @@ describe("serializeMysteryVisit", () => {
       serializeMysteryVisit({
         mysteryEvent: event!,
         mysteryChosenChoice: ANCIENT_ALTAR_MYSTERY_VISIT.chosenChoice,
-        mysteryPendingRemoval: true,
         mysteryCardChoices: [slash],
         mysteryGrantedTrinketIds: ["bone-charm"],
         mysteryGrantedGearInstances: [],
@@ -40,7 +39,6 @@ describe("serializeMysteryVisit", () => {
     ).toEqual({
       event,
       chosenChoice: ANCIENT_ALTAR_MYSTERY_VISIT.chosenChoice,
-      pendingRemoval: true,
       cardChoices: [slash],
       grantedTrinketIds: ["bone-charm"],
       grantedGear: [],
@@ -58,7 +56,6 @@ describe("serializeMysteryVisit", () => {
     const persisted = serializeMysteryVisit({
       mysteryEvent: event!,
       mysteryChosenChoice: choice!,
-      mysteryPendingRemoval: false,
       mysteryCardChoices: null,
       mysteryGrantedTrinketIds: [],
       mysteryGrantedGearInstances: [instance],
@@ -92,12 +89,6 @@ describe("hydrateMysteryVisit", () => {
 
     expect(hydrated.mysteryEvent?.id).toBe("ancient-altar");
     expect(hydrated.mysteryChosenChoice).toEqual({ label: "Browse", effects: [{ kind: "chooseCard" }] });
-  });
-
-  it("hydrates a pending legacy card removal", () => {
-    const hydrated = hydrateMysteryVisit({ ...ANCIENT_ALTAR_MYSTERY_VISIT, pendingRemoval: true });
-
-    expect(hydrated.mysteryPendingRemoval).toBe(true);
   });
 
   it("keeps the exact offered choices rather than rebuilding them from the pool", () => {

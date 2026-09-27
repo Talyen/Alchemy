@@ -4,22 +4,21 @@ import type { BattleCard, DifficultyModifier } from "@/lib/game-data";
 import type { Screen, ScreenTransitionOptions } from "@/lib/routing";
 
 export interface BattleLauncherDeps {
-  onStartBattle: (
+  startBattle: (
     deck?: BattleCard[],
     gold?: number,
     enemyType?: "normal" | "elite",
     modifiers?: DifficultyModifier[],
     enemyId?: string,
   ) => void;
-  onStartBossBattle: (modifiers?: DifficultyModifier[], enemyId?: string) => void;
-  onStartBossById: (
-    bossId: string,
-    modifiers?: DifficultyModifier[],
-    wildwoodModifierId?: WildwoodModifierId,
-  ) => boolean;
+  startBossBattle: (modifiers?: DifficultyModifier[], enemyId?: string) => void;
+  startBossById: (bossId: string, modifiers?: DifficultyModifier[], wildwoodModifierId?: WildwoodModifierId) => boolean;
+  onStartBattle?: BattleLauncherDeps["startBattle"];
+  onStartBossBattle?: BattleLauncherDeps["startBossBattle"];
+  onStartBossById?: BattleLauncherDeps["startBossById"];
 }
 
-export interface RunNavigationDeps {
+interface RunNavigationDeps {
   /** Display-only current screen for React slices; never used for commands. */
   screen: Screen;
   navigateTo: (nextScreen: Screen, prepareNavigation?: () => void) => void;

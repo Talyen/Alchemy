@@ -2,6 +2,7 @@ export {
   emptyHydratedMysteryVisit,
   hydrateMysteryVisit,
   hydratePersistedMysteryChoice,
+  hydratePersistedMysteryVisit,
   serializeMysteryVisit,
 } from "./mystery-visit-persistence";
 export type { HydratedMysteryVisit } from "./mystery-visit-persistence";
@@ -16,7 +17,7 @@ export type {
   RewardState,
   TrinketRewardState,
 } from "./reward-types";
-export { repairShopOfferings, shopItemSlotKey } from "./shop-offering-repair";
+export { defaultShopSlotKeyOf, repairShopOfferings, shopItemSlotKey } from "./shop-offering-repair";
 export {
   hydrateAlchemistState,
   hydrateEquipmentShopState,

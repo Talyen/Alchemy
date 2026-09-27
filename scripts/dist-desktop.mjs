@@ -2,9 +2,8 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { spawnSync } from "node:child_process";
 import { assertSupportedTargets, targetToBuilderFlag } from "./lib/release/desktop-artifact.mjs";
-import { resolveBuilderBin } from "./lib/command-invocation.mjs";
+import { runStreamCommand } from "./lib/run-command.mjs";
 import { resolveSentryRelease } from "./lib/release/sentry-release.mjs";
 import { validateDesktopBuildConfig } from "./lib/release/desktop-build-config.mjs";
 
@@ -28,7 +27,6 @@ if (process.env.CI_RELEASE === "true" && sentryUploadEnabled) {
   }
 }
 
-const builderCli = resolveBuilderBin();
 // Publishing is an explicit release-workflow responsibility. electron-builder
 // otherwise infers publishing from CI environment variables.
 const packageDir = process.env.ALCHEMY_PACKAGE_DIR === "1" || process.argv.includes("--dir");
@@ -62,22 +60,18 @@ if (process.env.REQUIRE_CODE_SIGNING === "true") {
   builderArgs.push("-c.forceCodeSigning=true");
 }
 
-const result = spawnSync(process.execPath, [builderCli, ...builderArgs], {
+const result = runStreamCommand("npx", ["electron-builder", ...builderArgs], {
   cwd: root,
   env: { ...process.env, NODE_OPTIONS: "--no-deprecation" },
-  stdio: "inherit",
-  shell: false,
 });
 
 if (result.error) throw result.error;
 if ((result.status ?? 1) !== 0) process.exit(result.status ?? 1);
 
 for (const target of targets) {
-  const verifyResult = spawnSync(process.execPath, ["scripts/verify-desktop-package.mjs"], {
+  const verifyResult = runStreamCommand(process.execPath, ["scripts/verify-desktop-package.mjs"], {
     cwd: root,
     env: { ...process.env, DESKTOP_TARGET: target },
-    stdio: "inherit",
-    shell: false,
   });
   if (verifyResult.error) throw verifyResult.error;
   if ((verifyResult.status ?? 1) !== 0) process.exit(verifyResult.status ?? 1);

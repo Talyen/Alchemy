@@ -41,9 +41,15 @@ const DEFAULT_LOADOUT: BalanceLoadoutMode = "typical";
 export const DEFAULT_SEED = 1;
 
 function getPlayableCards(state: BattleState): Array<{ card: BattleCard; index: number }> {
-  return state.hand
-    .map((card, index) => ({ card, index }))
-    .filter(({ card, index }) => canPlayCard(state, card, index));
+  const hand = state.hand;
+  const playable: Array<{ card: BattleCard; index: number }> = [];
+  for (let index = 0; index < hand.length; index += 1) {
+    const card = hand[index];
+    if (card && canPlayCard(state, card, index)) {
+      playable.push({ card, index });
+    }
+  }
+  return playable;
 }
 
 function chooseCardToPlay(state: BattleState, policy: BalancePlayPolicy): { card: BattleCard; index: number } | null {

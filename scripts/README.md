@@ -187,10 +187,8 @@ runs, profiling, formatting). Do not use raw `spawnSync` in scripts — the
 documented long-running owners are `repository-paths.mjs:runGit` (single git spawn with
 stale-cache overrides; `git-safety-guard` must exec past its own shim and
 `release-runner` keeps mockable flows) and `agent-worktree.mjs` worktree git.
-Bounded-deadline desktop CLIs (`ensure-electron`, `dist-desktop`,
-`smoke-desktop`) still use raw `spawnSync` for timeout/inherit flows that
-`runStreamCommand` does not support yet; migrate them when the shared runner
-grows deadline support rather than adding new raw call sites.
+`runStreamCommand` supports deadlines via `timeout`, allowing bounded-deadline desktop CLIs
+(`ensure-electron`, `dist-desktop`, `smoke-desktop`) to use the shared runner directly.
 
 `lib/command-invocation.mjs` resolves installed Node tools and npm without a shell,
 keeping arguments literal and never downloading missing tools. Interrupted

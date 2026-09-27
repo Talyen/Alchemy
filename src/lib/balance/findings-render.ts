@@ -1,28 +1,25 @@
 import {
+  ANOMALY_FINDING_THRESHOLDS,
+  EQUITY_SPREAD,
   FINDING_BUCKET_LABELS,
   FINDING_BUCKET_ORDER,
+  LENGTH_BAND_BY_TYPE,
+  MATERIAL_TIMEOUT_RATE,
+  WIN_RATE_BAND_BY_TYPE,
   type BalanceFinding,
   type BalanceFindingsReport,
   type FindingBucket,
   type FindingMetric,
-} from "./findings";
-import {
-  ANOMALY_FINDING_THRESHOLDS,
-  EQUITY_SPREAD,
-  LENGTH_BAND_BY_TYPE,
-  MATERIAL_TIMEOUT_RATE,
-  WIN_RATE_BAND_BY_TYPE,
-} from "./findings-bands";
+} from "./findings-types";
+import { escapeHtml, formatPercent, renderReportPage, stringifyReportJson } from "./report-layout";
 import type { BalanceReportModel } from "./report-model";
-import { escapeHtml, formatPercent, renderReportPage } from "./report-layout";
+import type { ReportRunOptions } from "./report-options";
 
-function formatObserved(metric: FindingMetric, value: number): string {
+export function formatFindingObserved(metric: FindingMetric, value: number): string {
   if (metric === "averageTurns") return value.toFixed(1);
   if (metric === "anomaly") return String(Math.round(value));
   return formatPercent(value);
 }
-
-export { formatObserved as formatFindingObserved };
 
 function severityClass(severity: BalanceFinding["severity"]): string {
   if (severity === "critical") return "neg";
@@ -52,7 +49,7 @@ function findingRow(finding: BalanceFinding): string {
 <td>${escapeHtml(finding.scope)}</td>
 <td>${escapeHtml(finding.title)}</td>
 <td>${escapeHtml(finding.tier)}</td>
-<td>${escapeHtml(formatObserved(finding.metric, finding.observed))}</td>
+<td>${escapeHtml(formatFindingObserved(finding.metric, finding.observed))}</td>
 <td>${escapeHtml(finding.band)}</td>
 <td>${escapeHtml(finding.worstScenario)}${hint}${cluster}</td>
 <td>${escapeHtml(finding.recommendation)}</td>
@@ -104,5 +101,36 @@ ${quickNotice}
 <p class="meta">Never 0% or 100%. Early / Mid / Late: Normal ${(WIN_RATE_BAND_BY_TYPE.normal.min * 100).toFixed(0)}–${(WIN_RATE_BAND_BY_TYPE.normal.max * 100).toFixed(1)}%, Elite ${(WIN_RATE_BAND_BY_TYPE.elite.min * 100).toFixed(0)}–${(WIN_RATE_BAND_BY_TYPE.elite.max * 100).toFixed(0)}%, Boss ≥${(WIN_RATE_BAND_BY_TYPE.boss.min * 100).toFixed(0)}% and &lt;100%. Length: Normal ${LENGTH_BAND_BY_TYPE.normal.min}–${LENGTH_BAND_BY_TYPE.normal.max} / Elite ${LENGTH_BAND_BY_TYPE.elite.min}–${LENGTH_BAND_BY_TYPE.elite.max} / Boss ${LENGTH_BAND_BY_TYPE.boss.min}–${LENGTH_BAND_BY_TYPE.boss.max} turns. Equity ${EQUITY_SPREAD * 100}pp. Timeouts ≥${(MATERIAL_TIMEOUT_RATE * 100).toFixed(0)}% are stalls. Anomalies Early ${ANOMALY_FINDING_THRESHOLDS.early} / Mid ${ANOMALY_FINDING_THRESHOLDS.mid} / Late ${ANOMALY_FINDING_THRESHOLDS.late}.</p>
 ${empty}
 ${sections}`,
+  });
+}
+
+export function renderBalanceFindingsJson(
+  findings: BalanceFindingsReport,
+  model: BalanceReportModel,
+  options: ReportRunOptions,
+): string {
+  return stringifyReportJson({
+    agentNotice:
+      options.mode === "quick"
+        ? "Quick sampling is exploratory. Confirm small-cell findings with balance:sim:full before tuning. The full matrix is drill-down only."
+        : "Read this findings file only. The full matrix is reports/balance-full/ and is drill-down only.",
+    meta: model.meta,
+    options,
+    bands: {
+      lengthByType: LENGTH_BAND_BY_TYPE,
+      winRateByType: WIN_RATE_BAND_BY_TYPE,
+      equitySpread: EQUITY_SPREAD,
+      materialTimeoutRate: MATERIAL_TIMEOUT_RATE,
+      anomalyThresholds: ANOMALY_FINDING_THRESHOLDS,
+      cap: findings.cap,
+    },
+    selection: {
+      method: "collapse matchups to worst class per enemy/tier/metric/bucket, then round-robin buckets",
+      omitted: findings.omitted,
+      totalBeforeCap: findings.totalBeforeCap,
+      shownByBucket: findings.shownByBucket,
+      omittedByBucket: findings.omittedByBucket,
+    },
+    findings: findings.findings,
   });
 }

@@ -148,7 +148,7 @@ describe("session facade API", () => {
     expect(snap.currentScreen).toBe("rewards");
     expect(snap.interruptedFlow).toMatchObject({
       kind: "primary-reward",
-      pending: { rewardType: "card", choiceIds: [], lastVictoryEnemyType: "boss" },
+      pending: { rewardType: "gear", gearChoices: [], lastVictoryEnemyType: "boss" },
     });
 
     const parsed = ActiveRunDataSchema.parse(JSON.parse(JSON.stringify(snap)));
@@ -160,7 +160,7 @@ describe("session facade API", () => {
     expect(finalizeRewardState({ rewardState, companionRewardCards: null }).route).toBe(REWARD_ROUTES.ACT_COMPLETE);
   });
 
-  it("marks enemy-phase combat without a transition for boot recovery", () => {
+  it("preserves enemy-phase combat without a transition on restore", () => {
     const enemyPhase = { ...defaultBattleState(), turnPhase: "enemy" as const, hand: [] };
     initializeActiveBattle(enemyPhase, null);
     setScreen(ROUTE_SCREENS.BATTLE);
@@ -169,7 +169,7 @@ describe("session facade API", () => {
     expect(snap.activeCombat?.pendingBattleTransition).toBeNull();
 
     restoreRun(snap, {}, {});
-    expect(readBattle().battleState.turnPhase).toBe("player");
+    expect(readBattle().battleState.turnPhase).toBe("enemy");
   });
 
   it("rebinds old talent tuning on resume without replaying opening rewards or clearing prepared bonuses", () => {
@@ -425,28 +425,6 @@ describe("session facade API", () => {
     expect(readActivityData(readRunSession().activity, "mystery").mysteryGrantedTrinketIds).toEqual(["bone-charm"]);
     expect(readActivityData(readRunSession().activity, "mystery").mysteryGrantedGearInstances).toEqual([]);
     expect(readActivityData(readRunSession().activity, "mystery").mysteryChosenCardId).toBe("slash");
-  });
-
-  it("restores a pending legacy mystery card removal", () => {
-    const activeRun: ActiveRunData = {
-      ...snapshotRun(),
-      currentScreen: "mystery",
-      interruptedFlow: { kind: "none" },
-      mysteryVisit: {
-        event: findMysteryEvent("ancient-altar")!,
-        chosenChoice: { label: "Offer", effects: [{ kind: "removeCard" }] },
-        pendingRemoval: true,
-        cardChoices: null,
-        grantedTrinketIds: [],
-        grantedGear: [],
-        chosenCardId: null,
-      },
-    };
-
-    restoreRun(activeRun, {}, {});
-
-    expect(readActivityData(readRunSession().activity, "mystery").mysteryPendingRemoval).toBe(true);
-    expect(snapshotRun().mysteryVisit?.pendingRemoval).toBe(true);
   });
 
   it("restores the destination offer when a saved Mystery visit is missing", () => {

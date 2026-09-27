@@ -171,17 +171,23 @@ function collectAnomalies(rows: CoreRow[]): { anomalies: AnomalyReportRow[]; met
 }
 
 function buildClassMatchups(rows: CoreRow[]): ClassMatchupRow[] {
-  const keys = new Set(rows.map((row) => `${row.characterId}|${row.enemyId}|${row.enemyType}`));
-  return [...keys]
-    .map((key) => {
+  const groups = new Map<string, CoreRow[]>();
+  for (const row of rows) {
+    const key = `${row.characterId}|${row.enemyId}|${row.enemyType}`;
+    const list = groups.get(key);
+    if (list) list.push(row);
+    else groups.set(key, [row]);
+  }
+
+  return [...groups.entries()]
+    .map(([key, matching]) => {
       const [characterId, enemyId, enemyType] = key.split("|") as [CharacterId, string, ReportEnemyType];
-      const matching = rows.filter(
-        (row) => row.characterId === characterId && row.enemyId === enemyId && row.enemyType === enemyType,
-      );
       const lateCardCounts: Record<string, number> = {};
-      for (const row of matching.filter((entry) => entry.tier === "late")) {
-        for (const [id, count] of Object.entries(row.cardPlayCounts)) {
-          lateCardCounts[id] = (lateCardCounts[id] ?? 0) + count;
+      for (const row of matching) {
+        if (row.tier === "late") {
+          for (const [id, count] of Object.entries(row.cardPlayCounts)) {
+            lateCardCounts[id] = (lateCardCounts[id] ?? 0) + count;
+          }
         }
       }
       return {
@@ -205,24 +211,76 @@ function buildClassMatchups(rows: CoreRow[]): ClassMatchupRow[] {
 export function equalWeightByType(byType: Readonly<Record<ReportEnemyType, RateCell>>): RateCell {
   const types = REPORT_ENEMY_TYPES.filter((type) => byType[type].n > 0);
   if (types.length === 0) return emptyRateCell();
-  const equalWeighted = combineRateCells(types.map((type) => ({ ...byType[type], n: 1 })));
-  return { ...equalWeighted, n: types.reduce((total, type) => total + byType[type].n, 0) };
+  let totalN = 0;
+  let winsTotal = 0;
+  let lossesTotal = 0;
+  let timeoutsTotal = 0;
+  let winRateSum = 0;
+  let timeoutRateSum = 0;
+  let turnsSum = 0;
+  let healthSum = 0;
+  let attacksSum = 0;
+  let abilityUsesSum = 0;
+  let abilityActivationsSum = 0;
+  let winsBeforeAttackSum = 0;
+
+  for (const type of types) {
+    const cell = byType[type];
+    totalN += cell.n;
+    winsTotal += cell.wins;
+    lossesTotal += cell.losses;
+    timeoutsTotal += cell.timeouts;
+    winRateSum += cell.winRate;
+    timeoutRateSum += cell.timeoutRate;
+    turnsSum += cell.averageTurns;
+    healthSum += cell.averageHealthRemaining;
+    attacksSum += cell.averageEnemyAttacks;
+    abilityUsesSum += cell.averageEnemyAbilityUses;
+    abilityActivationsSum += cell.averageEnemyAbilityActivations;
+    winsBeforeAttackSum += cell.winsBeforeEnemyAttackRate;
+  }
+  const count = types.length;
+  return {
+    wins: winsTotal,
+    losses: lossesTotal,
+    timeouts: timeoutsTotal,
+    winRate: winRateSum / count,
+    timeoutRate: timeoutRateSum / count,
+    averageTurns: turnsSum / count,
+    averageEnemyAttacks: attacksSum / count,
+    averageEnemyAbilityUses: abilityUsesSum / count,
+    averageEnemyAbilityActivations: abilityActivationsSum / count,
+    winsBeforeEnemyAttackRate: winsBeforeAttackSum / count,
+    averageHealthRemaining: healthSum / count,
+    n: totalN,
+  };
 }
 
 export function buildBalanceReport(options: ReportRunOptions): BalanceReportModel {
   const core = withPhaseTiming("core scenarios", () => runCoreScenarios(options));
   const { anomalies, metrics } = withPhaseTiming("anomalies", () => collectAnomalies(core));
-  const enemies = [...new Set(core.map((row) => row.enemyId))].map((id) => {
-    const matching = core.filter((row) => row.enemyId === id);
-    return {
-      id,
-      rates: reportTierRecord((tier) =>
-        combineRateCells(matching.filter((row) => row.tier === tier).map((row) => row.cell)),
-      ),
-    };
-  });
+
+  const byEnemy = new Map<string, CoreRow[]>();
+  const byCharacter = new Map<CharacterId, CoreRow[]>();
+  for (const row of core) {
+    const enemyList = byEnemy.get(row.enemyId);
+    if (enemyList) enemyList.push(row);
+    else byEnemy.set(row.enemyId, [row]);
+
+    const charList = byCharacter.get(row.characterId);
+    if (charList) charList.push(row);
+    else byCharacter.set(row.characterId, [row]);
+  }
+
+  const enemies = [...byEnemy.entries()].map(([id, matching]) => ({
+    id,
+    rates: reportTierRecord((tier) =>
+      combineRateCells(matching.filter((row) => row.tier === tier).map((row) => row.cell)),
+    ),
+  }));
+
   const classes = reportCharacterIds().map((id) => {
-    const matching = core.filter((row) => row.characterId === id);
+    const matching = byCharacter.get(id) ?? [];
     const byType = (tier: TalentPreset): Record<ReportEnemyType, RateCell> =>
       Object.fromEntries(
         REPORT_ENEMY_TYPES.map((type) => [

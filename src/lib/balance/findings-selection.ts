@@ -36,15 +36,8 @@ function scoreFinding(finding: BalanceFinding): number {
   }
 }
 
-const SCORE_CACHE = new WeakMap<BalanceFinding, number>();
-
 function getScore(finding: BalanceFinding): number {
-  let score = SCORE_CACHE.get(finding);
-  if (score === undefined) {
-    score = scoreFinding(finding);
-    SCORE_CACHE.set(finding, score);
-  }
-  return score;
+  return scoreFinding(finding);
 }
 
 export function selectBalanceFindings(candidates: readonly BalanceFinding[], cap: number): BalanceFindingsReport {

@@ -19,5 +19,5 @@ export function useScreenTransitions(currentScreen: Screen, setScreen: (screen: 
     [currentScreenRef, setScreen],
   );
   useEffect(() => navigation.cancelPending, [navigation]);
-  return { ...navigation, navigationPending };
+  return useMemo(() => ({ ...navigation, navigationPending }), [navigation, navigationPending]);
 }

@@ -1,5 +1,4 @@
 import "../../../helpers/mock-audio";
-import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createMysteryEventNavigation } from "@/features/alchemy/run-loop/navigation/mystery-event-navigation";
 import { resetAllTestStores, resetProfileForTest } from "../../../helpers/run-domain-store-test";
@@ -16,9 +15,10 @@ import { playGoldGain, playGoldSpend, playUISound } from "@/lib/audio";
 import { ROUTE_SCREENS, type Screen } from "@/lib/routing";
 import { emptyHydratedMysteryVisit, hydrateMysteryVisit, readActivityData } from "@/lib/active-run-session";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
+const act = (fn: () => void) => fn();
 function renderMysteryNav(navigateTo = vi.fn((_screen: Screen, onCommit?: () => void) => onCommit?.())) {
-  const hook = renderHook(() => createMysteryEventNavigation({ navigateTo }));
-  return { ...hook, navigateTo };
+  const nav = createMysteryEventNavigation({ navigateTo });
+  return { result: { current: nav }, navigateTo };
 }
 
 function offerChoices(choices: MysteryChoice[]): MysteryChoice[] {

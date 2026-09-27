@@ -135,7 +135,7 @@ Save the complete resolved Mystery offer after Boon substitution and Labyrinth m
 
 Mystery choice commands accept only a choice object from the current resolved visit. Retained callbacks from an earlier visit, even one with the same event, cannot apply effects to the new visit. Resolve effects from the stored offer so the displayed choice and awarded outcome stay together.
 
-`removeCard` removes a random deck card immediately with no picker. The old player-choice removal picker is retired: `handleMysteryRemoveCard` and the screen's remove phase are gone, and `mysteryPendingRemoval` persists only so old saves still parse.
+`removeCard` removes a random deck card immediately with no picker. The old player-choice removal picker and `mysteryPendingRemoval` are retired.
 
 Live pool events are authored in `src/lib/mystery/pool.ts`; other `MysteryEffect` kinds stay on the union and handlers for authoring even when no live event uses them.
 

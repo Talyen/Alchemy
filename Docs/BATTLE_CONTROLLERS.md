@@ -4,7 +4,7 @@ Architecture index: [ARCHITECTURE](./ARCHITECTURE.md). Engine rules: [GAME_RULES
 
 ## Battle path
 
-Controller composition supplies callbacks; screens do not construct controllers. Battle outcome handlers are constructed before the battle controller and passed directly, without ref-backed late binding. `shell/run-flow-engine.ts` composes framework-independent command factories; `use-run-flow-engine.ts` provides React lifetime and display reads:
+Controller composition supplies callbacks; screens do not construct controllers. Battle outcome handlers are constructed before the battle controller and passed directly, without ref-backed late binding. `shell/run-flow-engine.ts` composes framework-independent command factories; `use-alchemy-run-controller.ts` provides React lifetime and display reads:
 
 ```text
 useAlchemyRunController → useBattleController → routeCommands.battle

@@ -1,5 +1,4 @@
 import "../../../helpers/mock-audio";
-import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createMysteryEventNavigation } from "@/features/alchemy/run-loop/navigation/mystery-event-navigation";
 import { resetAllTestStores } from "../../../helpers/run-domain-store-test";
@@ -9,10 +8,12 @@ import { setMysteryCardChoices } from "@/features/alchemy/shared/stores/run-sess
 import { cardLibrary } from "@/lib/game-data";
 import type { Screen } from "@/lib/routing";
 import { readActivityData } from "@/lib/active-run-session";
+
+const act = (fn: () => void) => fn();
 function renderMysteryNav() {
   const navigateTo = vi.fn((_screen: Screen, onCommit?: () => void) => onCommit?.());
-  const hook = renderHook(() => createMysteryEventNavigation({ navigateTo }));
-  return { hook, navigateTo };
+  const nav = createMysteryEventNavigation({ navigateTo });
+  return { hook: { result: { current: nav } }, navigateTo };
 }
 
 beforeEach(() => {

@@ -55,7 +55,6 @@ const MysteryEventPersistSchema = z.object({
 const MysteryVisitObjectSchema = z.object({
   event: MysteryEventPersistSchema,
   chosenChoice: MysteryChoicePersistSchema.nullable().catch(null),
-  pendingRemoval: z.boolean().catch(false),
   cardChoices: savedCardArraySchema("mysteryVisit.cardChoices").nullable().catch(null),
   grantedTrinketIds: z.array(z.string()).catch([]),
   grantedGear: GearInstanceArraySchema.catch([]),
@@ -86,7 +85,6 @@ const PersistedBattleTransitionSchema = z
       playerTurnSkipped: z.boolean(),
     }),
     z.object({ kind: z.literal("continue-end-turn") }),
-    z.object({ kind: z.literal("legacy-enemy-turn") }),
   ])
   .nullable()
   .catch(null);
@@ -200,7 +198,7 @@ const PersistedPendingRewardUnionSchema = z.discriminatedUnion("rewardType", [
     // a gear reward with no valid choices cannot be offered, and restore
     // already maps empty gear to null. Shared gold/materials on the same
     // pending reward are dropped with it; preserving them is a future change.
-    gearChoices: z.preprocess(normalizeGearInstanceArray, z.array(GearInstanceSchema).min(1)),
+    gearChoices: z.preprocess(normalizeGearInstanceArray, z.array(GearInstanceSchema).catch([])),
     ...PersistedPendingRewardBaseSchema,
   }),
 ]);

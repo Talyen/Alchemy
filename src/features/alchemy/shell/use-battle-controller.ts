@@ -12,13 +12,14 @@ import { createBattleEndTurnUi } from "@/features/alchemy/run-loop/battle/end-tu
 import { useBattleOpeningDraw } from "@/features/alchemy/run-loop/battle/use-battle-opening-draw";
 import { useHasActiveBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { preferredAutoplayEnabled, useSettingsStore } from "@/features/alchemy/shared/stores/settings-store";
+import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import type { CardRect } from "@/features/alchemy/shared/types";
 import type { Screen } from "@/lib/routing";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 interface UseBattleControllerProps {
   screen: Screen;
-  setHoveredCardId: React.Dispatch<React.SetStateAction<string | null>>;
+  setHoveredCardId?: React.Dispatch<React.SetStateAction<string | null>>;
   onBattleVictory?: () => void;
   onBattleDefeat?: () => void;
   measureElementRect?: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
@@ -27,7 +28,7 @@ interface UseBattleControllerProps {
 
 export function useBattleController({
   screen,
-  setHoveredCardId,
+  setHoveredCardId = useUiStore.getState().setHoveredCardId,
   onBattleVictory,
   onBattleDefeat,
   measureElementRect = defaultMeasureElementRect,

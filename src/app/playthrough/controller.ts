@@ -46,11 +46,7 @@ export function createPlaythroughController() {
       resumeTo,
       transition,
       cancelPending: navigation.cancelPending,
-      battle: {
-        onStartBattle: battle.startBattle,
-        onStartBossBattle: battle.startBossBattle,
-        onStartBossById: battle.startBossById,
-      },
+      battle,
       initializeShop: (kind) => shop().initialize(kind),
       labyrinthClearNode: labyrinth.onNodeCleared,
     },

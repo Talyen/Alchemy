@@ -2,10 +2,11 @@
 import { join } from "node:path";
 
 import { GENERATED_OUTPUTS } from "./assets/asset-constants.mjs";
-import { isMainModule } from "./lib/is-main-module.mjs";
 import { readRepoPackageJson } from "./lib/repo-package.mjs";
 import { resolveRootDir } from "./assets/asset-pipeline-runner.mjs";
 import { writeTextIfChanged } from "./lib/write-text-if-changed.mjs";
+import { parseKnownFlags } from "./lib/cli-args.mjs";
+import { defineScript } from "./lib/script-run.mjs";
 
 export async function syncVersionMetadata({ check = false } = {}) {
   const root = resolveRootDir(import.meta.url);
@@ -22,14 +23,9 @@ export const CURRENT_GAME_BUILD_VERSION = ${JSON.stringify(version)};
   return wrote;
 }
 
-async function main() {
-  const check = process.argv.includes("--check");
-  await syncVersionMetadata({ check });
+export async function runSyncVersionMetadata(argv = process.argv.slice(2)) {
+  const { flags } = parseKnownFlags(argv, { check: {} }, { usage: "npm run sync:version [-- --check]" });
+  await syncVersionMetadata({ check: flags.has("check") });
 }
 
-if (isMainModule(import.meta.url)) {
-  main().catch((error) => {
-    console.error(error);
-    process.exitCode = 1;
-  });
-}
+defineScript(import.meta.url, () => runSyncVersionMetadata());

@@ -1,8 +1,6 @@
-#!/usr/bin/env node
-import { commandInvocation } from "./lib/command-invocation.mjs";
-
-import { spawnSync } from "node:child_process";
 import path from "node:path";
+import { runStreamCommand } from "./lib/run-command.mjs";
+import { defineScript } from "./lib/script-run.mjs";
 import {
   electronRoot,
   isElectronInstalled,
@@ -19,10 +17,9 @@ function envWithoutSkip() {
 
 function runNpmRebuildElectronSync() {
   console.log("Running npm rebuild electron...");
-  const result = spawnSync(...commandInvocation("npm", ["rebuild", "electron"]), {
+  const result = runStreamCommand("npm", ["rebuild", "electron"], {
     cwd: projectRoot,
     env: envWithoutSkip(),
-    stdio: "inherit",
     timeout: 600_000,
   });
 
@@ -37,10 +34,9 @@ function runNpmRebuildElectronSync() {
 
 function runScriptSync(scriptName, { cwd = projectRoot, timeout = 600_000 } = {}) {
   const scriptPath = path.join(projectRoot, "scripts", scriptName);
-  const result = spawnSync(process.execPath, [scriptPath], {
+  const result = runStreamCommand(process.execPath, [scriptPath], {
     cwd,
     env: envWithoutSkip(),
-    stdio: "inherit",
     timeout,
   });
 
@@ -55,10 +51,9 @@ function runScriptSync(scriptName, { cwd = projectRoot, timeout = 600_000 } = {}
 
 function runOfficialInstallSync() {
   console.log("Running official Electron install.js...");
-  const result = spawnSync(process.execPath, [path.join(electronRoot, "install.js")], {
+  const result = runStreamCommand(process.execPath, [path.join(electronRoot, "install.js")], {
     cwd: electronRoot,
     env: envWithoutSkip(),
-    stdio: "inherit",
     timeout: 600_000,
   });
 
@@ -77,7 +72,7 @@ function finalize() {
   writeExecutablePathMarker(executablePath);
 }
 
-function main() {
+export function ensureElectron() {
   if (isElectronInstalled()) {
     finalize();
     return;
@@ -108,9 +103,4 @@ function main() {
   finalize();
 }
 
-try {
-  main();
-} catch (error) {
-  console.error(error);
-  process.exit(1);
-}
+defineScript(import.meta.url, () => ensureElectron());

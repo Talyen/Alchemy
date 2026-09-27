@@ -13,7 +13,7 @@ export function runCommand(command: string, args?: string[], options?: Record<st
 export function runStreamCommand(
   command: string,
   args?: string[],
-  options?: { cwd?: string; env?: NodeJS.ProcessEnv },
+  options?: { cwd?: string; env?: NodeJS.ProcessEnv; timeout?: number },
 ): ScriptCommandResult & { elapsedMs: number };
 
 export function runTaskCommand(

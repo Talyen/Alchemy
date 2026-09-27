@@ -63,7 +63,15 @@ function descendantCommand(root: string, delayMs = 1000) {
 
 describe("script execution reliability", () => {
   it("resolves installed tools through Node and never downloads unknown tools", () => {
-    for (const tool of ["vitest", "playwright", "eslint", "depcruise", "commit-and-tag-version"]) {
+    for (const tool of [
+      "vitest",
+      "playwright",
+      "eslint",
+      "depcruise",
+      "commit-and-tag-version",
+      "vite",
+      "electron-builder",
+    ]) {
       const [executable, args] = commandInvocation("npx", [tool, "--version"]);
       expect(executable).toBe(process.execPath);
       expect(fs.existsSync(args[0])).toBe(true);

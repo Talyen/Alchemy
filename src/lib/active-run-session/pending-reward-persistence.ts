@@ -2,12 +2,12 @@ import { cardById, trinketById, type BattleCard, type TrinketEntry } from "@/lib
 import { logError } from "@/lib/error-logger";
 import { filterValidDestinations } from "@/lib/routing";
 import type { PersistedPendingReward } from "./types";
-import type { PendingRewardSharedFields } from "./pending-reward-shared";
 import {
   createEmptyRewardState,
   type BoonRewardState,
   type CardRewardState,
   type GearRewardState,
+  type PendingRewardSharedFields,
   type RewardState,
   type TrinketRewardState,
 } from "./reward-types";
@@ -78,32 +78,19 @@ export function serializePendingReward(
   rewardState: RewardState,
   companionRewardCards: BattleCard[] | null = null,
 ): PersistedPendingReward | null {
-  if (
-    rewardState.choices.length === 0 &&
-    !companionRewardCards?.length &&
-    rewardState.lastVictoryContentSystem === null &&
-    rewardState.lastVictoryEnemyType === null &&
-    rewardState.selectedBossId === null &&
-    rewardState.destinations.length === 0 &&
-    rewardState.gold === 0 &&
-    !Object.values(rewardState.materials).some((amount) => amount > 0)
-  )
+  if (!rewardState.choices.length && !companionRewardCards?.length && !hasSharedRewardValue(rewardState)) {
     return null;
+  }
 
   const shared = sharedRewardFields(rewardState, companionRewardCards);
   if (rewardState.rewardType === "gear") {
-    return rewardState.choices.length > 0
-      ? { ...shared, rewardType: "gear", gearChoices: rewardState.choices }
-      : { ...shared, rewardType: "card", choiceIds: [] };
+    return { ...shared, rewardType: "gear", gearChoices: rewardState.choices };
   }
-  if (rewardState.rewardType === "trinket" || rewardState.rewardType === "boon") {
-    return {
-      ...shared,
-      rewardType: rewardState.rewardType,
-      choiceIds: rewardState.choices.map((choice) => choice.id),
-    };
-  }
-  return { ...shared, rewardType: "card", choiceIds: rewardState.choices.map((choice) => choice.id) };
+  return {
+    ...shared,
+    rewardType: rewardState.rewardType,
+    choiceIds: rewardState.choices.map((choice) => choice.id),
+  };
 }
 
 function restoreSharedRewardFields(persisted: PersistedPendingReward): RewardState {
@@ -118,59 +105,54 @@ function restoreSharedRewardFields(persisted: PersistedPendingReward): RewardSta
   };
 }
 
+function restoreCatalogRewardChoices(
+  shared: RewardState,
+  rewardType: "card" | "boon" | "trinket",
+  choiceIds: readonly string[],
+  catalog: Record<string, BattleCard | TrinketEntry | undefined>,
+  logContext: string,
+): RewardState | null {
+  const makeState = (choices: Array<BattleCard | TrinketEntry>): RewardState => {
+    if (rewardType === "card") {
+      return { ...shared, rewardType: "card", choices: choices as BattleCard[] } satisfies CardRewardState;
+    }
+    if (rewardType === "boon") {
+      return { ...shared, rewardType: "boon", choices: choices as TrinketEntry[] } satisfies BoonRewardState;
+    }
+    return { ...shared, rewardType: "trinket", choices: choices as TrinketEntry[] } satisfies TrinketRewardState;
+  };
+
+  if (choiceIds.length === 0) {
+    return hasSharedRewardValue(shared) ? makeState([]) : null;
+  }
+  const { valid, droppedIds } = resolveCatalogChoicesWithDropped(choiceIds as string[], catalog);
+  if (droppedIds.length > 0) {
+    logError(`Dropped invalid pending ${logContext} choices`, "storage", { droppedIds });
+  }
+  if (valid.length === 0) {
+    return hasSharedRewardValue(shared) ? makeState([]) : null;
+  }
+  return makeState(valid);
+}
+
 export function restorePendingReward(persisted: PersistedPendingReward): RewardState | null {
   const shared = restoreSharedRewardFields(persisted);
 
   if (persisted.rewardType === "gear") {
     const choices = nonEmptyChoicesOrNull(persisted.gearChoices);
     if (!choices) {
-      // Empty gear means “no choices offered”; preserve shared gold/materials
-      // the same way card/trinket restores do instead of dropping them.
       return hasSharedRewardValue(shared)
-        ? ({ ...shared, rewardType: "card", choices: [] } satisfies CardRewardState)
+        ? ({ ...shared, rewardType: "gear", choices: [] } satisfies GearRewardState)
         : null;
     }
     return { ...shared, rewardType: "gear", choices } satisfies GearRewardState;
   }
 
   if (persisted.rewardType === "card") {
-    if (persisted.choiceIds.length === 0) {
-      // Empty means “no choices offered” (e.g. gold-only reward), not invalid data.
-      // With no shared value there is nothing to restore.
-      return hasSharedRewardValue(shared)
-        ? ({ ...shared, rewardType: "card", choices: [] } satisfies CardRewardState)
-        : null;
-    }
-    const { valid, droppedIds } = resolveCatalogChoicesWithDropped(persisted.choiceIds, cardById);
-    if (droppedIds.length > 0) {
-      logError("Dropped invalid pending card choices", "storage", { droppedIds });
-    }
-    if (valid.length === 0) {
-      // Preserve shared gold/materials/destinations as a standalone reward instead of dropping them.
-      return hasSharedRewardValue(shared)
-        ? ({ ...shared, rewardType: "card", choices: [] } satisfies CardRewardState)
-        : null;
-    }
-    return { ...shared, rewardType: "card", choices: valid } satisfies CardRewardState;
+    return restoreCatalogRewardChoices(shared, "card", persisted.choiceIds, cardById, "card");
   }
 
-  const rewardType = persisted.rewardType;
-  const toTrinketState = (choices: TrinketEntry[]) =>
-    rewardType === "boon"
-      ? ({ ...shared, rewardType: "boon", choices } satisfies BoonRewardState)
-      : ({ ...shared, rewardType: "trinket", choices } satisfies TrinketRewardState);
-
-  if (persisted.choiceIds.length === 0) {
-    return hasSharedRewardValue(shared) ? toTrinketState([]) : null;
-  }
-  const { valid, droppedIds } = resolveCatalogChoicesWithDropped(persisted.choiceIds, trinketById);
-  if (droppedIds.length > 0) {
-    logError("Dropped invalid pending trinket/boon choices", "storage", { droppedIds });
-  }
-  if (valid.length === 0) {
-    return hasSharedRewardValue(shared) ? toTrinketState([]) : null;
-  }
-  return toTrinketState(valid);
+  return restoreCatalogRewardChoices(shared, persisted.rewardType, persisted.choiceIds, trinketById, "trinket/boon");
 }
 
 export interface RestoredPendingReward {

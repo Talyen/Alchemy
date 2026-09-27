@@ -13,7 +13,7 @@ import {
 } from "./shop-session-types";
 import { trinketById, type TrinketEntry } from "@/lib/game-data";
 import { gearDefinitions } from "@/lib/gear/definitions";
-import { repairShopOfferings, shopItemSlotKey } from "./shop-offering-repair";
+import { repairShopOfferings } from "./shop-offering-repair";
 
 export function lookupTrinketEntries(ids: readonly string[]): TrinketEntry[] {
   return ids
@@ -30,21 +30,8 @@ function hydrateRefreshableFields(data: RefreshableShopFields): RefreshableShopF
   };
 }
 
-function serializeRefreshable(state: RefreshableShopFields): RefreshableShopFields {
-  return {
-    refreshesLeft: state.refreshesLeft,
-    freeRefreshUsed: state.freeRefreshUsed,
-    firstPurchaseUsed: state.firstPurchaseUsed,
-    purchasedSlotKeys: state.purchasedSlotKeys,
-  };
-}
-
 export function serializeShopState(state: ShopState): PersistedShopState {
-  return {
-    cards: state.cards,
-    removeUsed: state.removeUsed,
-    ...serializeRefreshable(state),
-  };
+  return { ...state };
 }
 
 export function hydrateShopState(data: PersistedShopState): ShopState {
@@ -56,11 +43,7 @@ export function hydrateShopState(data: PersistedShopState): ShopState {
 }
 
 export function serializeAlchemistState(state: AlchemistState): PersistedAlchemistState {
-  return {
-    potions: state.potions,
-    mixUsed: state.mixUsed,
-    ...serializeRefreshable(state),
-  };
+  return { ...state };
 }
 
 export function hydrateAlchemistState(data: PersistedAlchemistState): AlchemistState {
@@ -72,9 +55,10 @@ export function hydrateAlchemistState(data: PersistedAlchemistState): AlchemistS
 }
 
 export function serializeTrinketShopState(state: TrinketShopState): PersistedTrinketShopState {
+  const { trinkets, ...rest } = state;
   return {
-    trinketIds: state.trinkets.map((trinket) => trinket.id),
-    ...serializeRefreshable(state),
+    ...rest,
+    trinketIds: trinkets.map((trinket) => trinket.id),
   };
 }
 
@@ -82,8 +66,7 @@ export function hydrateTrinketShopState(data: PersistedTrinketShopState): Trinke
   const repaired = repairShopOfferings(
     data.trinketIds,
     data.purchasedSlotKeys ?? [],
-    (id) => Object.hasOwn(trinketById, id),
-    shopItemSlotKey,
+    (id) => Object.hasOwn(trinketById, id) && Boolean(trinketById[id]),
   );
   return {
     trinkets: lookupTrinketEntries(repaired.items),
@@ -92,10 +75,7 @@ export function hydrateTrinketShopState(data: PersistedTrinketShopState): Trinke
 }
 
 export function serializeEquipmentShopState(state: EquipmentShopState): PersistedEquipmentShopState {
-  return {
-    gear: state.gear,
-    ...serializeRefreshable(state),
-  };
+  return { ...state };
 }
 
 export function hydrateEquipmentShopState(data: PersistedEquipmentShopState): EquipmentShopState {
@@ -103,7 +83,6 @@ export function hydrateEquipmentShopState(data: PersistedEquipmentShopState): Eq
     data.gear,
     data.purchasedSlotKeys ?? [],
     (instance) => gearDefinitions[instance.definitionId] != null,
-    (instance) => instance.instanceId,
   );
   return {
     gear: repaired.items,

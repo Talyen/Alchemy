@@ -15,7 +15,6 @@ import {
   setMysteryEvent,
   setMysteryGrantedGearInstances,
   setMysteryGrantedTrinketIds,
-  setMysteryPendingRemoval,
   setRewardState,
 } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { makeFlowHandlerDeps } from "../../../../helpers/run-flow-handler-deps";
@@ -161,7 +160,6 @@ describe("run destination controller actions", () => {
         ]);
         setMysteryChosenCardId(draft, "slash");
         setMysteryChosenChoice(draft, { label: "Leave", effects: [] });
-        setMysteryPendingRemoval(draft, true);
       });
 
       const labyrinthClearNode = vi.fn();

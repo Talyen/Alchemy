@@ -167,20 +167,8 @@ interface EncodeResumeFields {
   corruptionResult: CorruptionResult | null;
 }
 
-function synthesizeLegacyEnemyTurnTransition(activeRun: ActiveRunData): PersistedBattleTransition | null {
-  // Legacy compat: saves written before pending transitions existed may resume
-  // mid-enemy-turn. Kept deliberately (no save wipe planned); removal needs a
-  // schema version gate per MIGRATIONS.md.
-  if (activeRun.activeCombat?.battleState.turnPhase === "enemy") {
-    return { kind: "legacy-enemy-turn" };
-  }
-  return null;
-}
-
 function resolvePendingBattleTransition(activeRun: ActiveRunData): PersistedBattleTransition | null {
-  const pending = activeRun.activeCombat?.pendingBattleTransition ?? null;
-  if (pending) return pending;
-  return synthesizeLegacyEnemyTurnTransition(activeRun);
+  return activeRun.activeCombat?.pendingBattleTransition ?? null;
 }
 
 function encodeActivityFields(

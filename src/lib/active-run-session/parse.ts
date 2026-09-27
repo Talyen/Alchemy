@@ -2,7 +2,7 @@ import { hydrateCard } from "@/lib/game-data/cards/hydrate-card";
 import { ActiveRunDataSchema, type ParsedActiveRunData } from "@/lib/validation";
 
 import type { ActiveRunData } from "./types";
-import { hydratePersistedMysteryChoice } from "./mystery-visit-persistence";
+import { hydratePersistedMysteryVisit } from "./mystery-visit-persistence";
 
 export function toActiveRunData(parsed: ParsedActiveRunData): ActiveRunData {
   return {
@@ -27,20 +27,7 @@ export function toActiveRunData(parsed: ParsedActiveRunData): ActiveRunData {
           potions: parsed.alchemistState.potions.map(hydrateCard),
         }
       : null,
-    mysteryVisit: parsed.mysteryVisit
-      ? {
-          event: {
-            ...parsed.mysteryVisit.event,
-            choices: parsed.mysteryVisit.event.choices.map((choice) => hydratePersistedMysteryChoice(choice)!),
-          },
-          chosenChoice: hydratePersistedMysteryChoice(parsed.mysteryVisit.chosenChoice),
-          ...(parsed.mysteryVisit.pendingRemoval ? { pendingRemoval: true } : {}),
-          cardChoices: parsed.mysteryVisit.cardChoices?.map(hydrateCard) ?? null,
-          grantedTrinketIds: parsed.mysteryVisit.grantedTrinketIds,
-          grantedGear: parsed.mysteryVisit.grantedGear,
-          chosenCardId: parsed.mysteryVisit.chosenCardId,
-        }
-      : null,
+    mysteryVisit: hydratePersistedMysteryVisit(parsed.mysteryVisit),
     corruptionResult: parsed.corruptionResult
       ? {
           ...parsed.corruptionResult,

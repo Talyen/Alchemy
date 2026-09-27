@@ -23,7 +23,7 @@ const EXCLUSIONS = [
 ];
 
 function matchesSearchGlob(file, glob) {
-  return globToRegExp(glob).test(file) || (glob.startsWith("**/") && globToRegExp(glob.slice(3)).test(file));
+  return globToRegExp(glob).test(file);
 }
 
 const DISCOVERY_NOISE = [

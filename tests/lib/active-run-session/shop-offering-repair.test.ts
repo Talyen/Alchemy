@@ -1,7 +1,35 @@
 import { describe, expect, it } from "vitest";
-import { repairShopOfferings, shopItemSlotKey } from "@/lib/active-run-session/shop-offering-repair";
+import {
+  defaultShopSlotKeyOf,
+  repairShopOfferings,
+  shopItemSlotKey,
+} from "@/lib/active-run-session/shop-offering-repair";
+
+describe("defaultShopSlotKeyOf", () => {
+  it("extracts instanceId from gear instances", () => {
+    expect(defaultShopSlotKeyOf({ instanceId: "inst-1", definitionId: "ring" }, 0)).toBe("inst-1");
+  });
+
+  it("extracts id with index from object with id", () => {
+    expect(defaultShopSlotKeyOf({ id: "bone-charm" }, 2)).toBe("bone-charm-2");
+  });
+
+  it("extracts primitive string id with index", () => {
+    expect(defaultShopSlotKeyOf("slash", 1)).toBe("slash-1");
+  });
+});
 
 describe("repairShopOfferings", () => {
+  it("defaults to defaultShopSlotKeyOf when slotKeyOf is omitted", () => {
+    const repaired = repairShopOfferings(
+      [{ instanceId: "gear-1" }, { instanceId: "gear-2" }],
+      ["gear-2"],
+      (item) => item.instanceId === "gear-2",
+    );
+    expect(repaired.items).toEqual([{ instanceId: "gear-2" }]);
+    expect(repaired.purchasedSlotKeys).toEqual(["gear-2"]);
+  });
+
   it("remaps purchased id-index keys after an earlier offering is dropped", () => {
     const repaired = repairShopOfferings(
       ["tombstone", "slash", "bash"],

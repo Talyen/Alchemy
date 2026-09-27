@@ -32,8 +32,6 @@ export type PersistedEquipmentShopState = EquipmentShopState;
 export interface PersistedMysteryVisit {
   event: MysteryEvent;
   chosenChoice: MysteryChoice | null;
-
-  pendingRemoval?: boolean;
   cardChoices: BattleCard[] | null;
   grantedTrinketIds: string[];
   grantedGear: GearInstance[];
@@ -54,9 +52,6 @@ export type PersistedBattleTransition =
     }
   | {
       kind: "continue-end-turn";
-    }
-  | {
-      kind: "legacy-enemy-turn";
     };
 
 interface ActiveCombatData {

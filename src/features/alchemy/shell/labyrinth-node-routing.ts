@@ -11,8 +11,10 @@ interface LabyrinthNodeRoutingDeps {
     enterSelectedNode: (handlers: LabyrinthNodeHandlers) => boolean;
   };
   battle: {
-    startBattle: BattleLauncherDeps["onStartBattle"];
-    startBossBattle: BattleLauncherDeps["onStartBossBattle"];
+    startBattle?: BattleLauncherDeps["startBattle"];
+    startBossBattle?: BattleLauncherDeps["startBossBattle"];
+    onStartBattle?: BattleLauncherDeps["startBattle"];
+    onStartBossBattle?: BattleLauncherDeps["startBossBattle"];
   };
   nav: { beginMysteryEvent: () => void };
   shop: Pick<ShopActions, "initialize">;
@@ -20,6 +22,9 @@ interface LabyrinthNodeRoutingDeps {
 }
 
 export function createLabyrinthNodeRouting(deps: LabyrinthNodeRoutingDeps) {
+  const startBattle = deps.battle.startBattle ?? deps.battle.onStartBattle;
+  const startBossBattle = deps.battle.startBossBattle ?? deps.battle.onStartBossBattle;
+
   function applyNodeModifiers(
     battleModifiers: EncounterCombatTraitId[] = [],
     rewardModifiers: EncounterRewardTraitId[] = [],
@@ -36,9 +41,10 @@ export function createLabyrinthNodeRouting(deps: LabyrinthNodeRoutingDeps) {
     battleModifiers?: EncounterCombatTraitId[],
     rewardModifiers?: EncounterRewardTraitId[],
   ) {
-    applyNodeModifiers(battleModifiers ?? [], rewardModifiers ?? []);
-    init?.();
-    deps.navigateTo(screen);
+    deps.navigateTo(screen, () => {
+      applyNodeModifiers(battleModifiers ?? [], rewardModifiers ?? []);
+      init?.();
+    });
   }
 
   function handleLabyrinthNodeEnter(): boolean {
@@ -49,7 +55,7 @@ export function createLabyrinthNodeRouting(deps: LabyrinthNodeRoutingDeps) {
         enterLabyrinthNodeScreen(
           ROUTE_SCREENS.BATTLE,
           () => {
-            deps.battle.startBattle(undefined, undefined, enemyType, [], enemyId);
+            startBattle?.(undefined, undefined, enemyType, [], enemyId);
           },
           modifiers,
           rewardModifiers,
@@ -59,7 +65,7 @@ export function createLabyrinthNodeRouting(deps: LabyrinthNodeRoutingDeps) {
         enterLabyrinthNodeScreen(
           ROUTE_SCREENS.BATTLE,
           () => {
-            deps.battle.startBossBattle([], enemyId);
+            startBossBattle?.([], enemyId);
           },
           modifiers,
           rewardModifiers,

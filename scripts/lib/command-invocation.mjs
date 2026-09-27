@@ -8,6 +8,8 @@ const LOCAL_CLIS = {
   eslint: "eslint/bin/eslint.js",
   depcruise: "dependency-cruiser/bin/dependency-cruise.mjs",
   "commit-and-tag-version": "commit-and-tag-version/bin/cli.js",
+  vite: "vite/bin/vite.js",
+  "electron-builder": "electron-builder/out/cli/cli.js",
 };
 
 function npmCli() {
@@ -36,12 +38,12 @@ function resolveNodeCli(label, ...segments) {
 
 /** Absolute path to the bundled electron-builder CLI, avoiding npx resolution and shell quirks. */
 export function resolveBuilderBin() {
-  return resolveNodeCli("electron-builder", "electron-builder", "out", "cli", "cli.js");
+  return resolveNodeCli("electron-builder", LOCAL_CLIS["electron-builder"]);
 }
 
 /** Absolute path to the bundled Vite CLI, avoiding npx resolution and shell quirks. */
 export function resolveViteBin() {
-  return resolveNodeCli("Vite", "vite", "bin", "vite.js");
+  return resolveNodeCli("Vite", LOCAL_CLIS.vite);
 }
 
 /** Resolve our Node tools without a shell interpreting spaces, quotes or pipes. */
