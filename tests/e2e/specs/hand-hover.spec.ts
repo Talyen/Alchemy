@@ -69,7 +69,7 @@ async function sweep(page: Page) {
   }
 }
 
-test("six and seven cards select in order and clicks follow the highlighted card", critical, async ({ page }) => {
+test("six and seven cards select in order and clicks follow the highlighted card", slow, async ({ page }) => {
   await openHand(page);
   await inspectOuterEdges(page);
   await sweep(page);

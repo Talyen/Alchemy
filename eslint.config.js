@@ -418,7 +418,6 @@ export default tseslint.config(
       "tests/e2e/specs/*animations.spec.ts",
       "tests/e2e/specs/*-transitions.spec.ts",
       "tests/e2e/specs/tooltip-motion.spec.ts",
-      "tests/e2e/specs/player-death-animation.spec.ts",
       "tests/e2e/specs/stun-enemy-turn-presentation.spec.ts",
       "tests/e2e/specs/battle-end-turn-canary.spec.ts",
       "performance/scenarios/**/*.perf.ts",

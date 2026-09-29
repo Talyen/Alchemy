@@ -4,7 +4,6 @@ import { defineConfig } from "vitest/config";
 import { SSR_OPTIMIZE_INCLUDE, VITE_ALIAS_PATH, VITE_ALIAS_TARGET } from "./scripts/lib/vite-aliases.mjs";
 
 const excludedTestPaths = ["tests/balance/**"];
-const domTestPrefixes = ["tests/app/", "tests/features/"];
 const domLibPrefixes = [
   "tests/lib/animation/",
   "tests/lib/battle/block-decay",
@@ -13,18 +12,45 @@ const domLibPrefixes = [
   "tests/lib/image-preload",
   "tests/lib/platform",
 ];
-const domTypeScriptTests = [
-  ...domTestPrefixes.map((prefix) => `${prefix}**/*.test.ts`),
+const domTypeScriptPatterns = [
+  "tests/**/*.dom.test.ts",
+  "tests/**/use-*.test.ts",
+  "tests/**/*-hook.test.ts",
   ...domLibPrefixes.map((prefix) => `${prefix}*.test.ts`),
   "tests/lib/animation/**/*.test.ts",
-  "tests/**/*.dom.test.ts",
+  "tests/app/escape-stack.test.ts",
+  "tests/features/alchemy/run-loop/battle/battle-card-play.test.ts",
+  "tests/features/alchemy/run-loop/battle/battle-presentation-store.test.ts",
+  "tests/features/alchemy/run-loop/battle/controller-utils.test.ts",
+  "tests/features/alchemy/run-loop/battle/hand-slot-reflow.test.ts",
+  "tests/features/alchemy/run-loop/battle/presentation-gate.test.ts",
+  "tests/features/alchemy/run-loop/run/labyrinth-destination-modifiers.test.ts",
+  "tests/features/alchemy/run-loop/run/run-victory-handlers.test.ts",
+  "tests/features/alchemy/shared/storage/storage-io.test.ts",
+  "tests/features/alchemy/shared/storage/storage-write.test.ts",
+  "tests/features/alchemy/shared/stores/device-display-store.test.ts",
+  "tests/features/alchemy/shared/stores/error-log-store.test.ts",
+  "tests/features/alchemy/shared/stores/profile-settings-stores.test.ts",
+  "tests/features/alchemy/shared/stores/reset.test.ts",
+  "tests/features/alchemy/shared/stores/run-domain-session.test.ts",
+  "tests/features/alchemy/shared/ui/ui-hooks.test.ts",
+  "tests/features/alchemy/shared/utils/dev-mode.test.ts",
 ];
+const domTypeScriptTests = domTypeScriptPatterns;
 
 function testEnvironmentForPath(filePath: string): "dom" | "node" {
-  if (filePath.endsWith(".test.tsx")) return "dom";
-  if (filePath.endsWith(".dom.test.ts")) return "dom";
-  if (domTestPrefixes.some((prefix) => filePath.startsWith(prefix))) return "dom";
-  if (domLibPrefixes.some((prefix) => filePath.startsWith(prefix))) return "dom";
+  const normalized = filePath.replaceAll("\\", "/");
+  if (normalized.endsWith(".test.tsx")) return "dom";
+  if (normalized.endsWith(".dom.test.ts")) return "dom";
+  if (normalized.includes("/use-") || normalized.endsWith("-hook.test.ts")) return "dom";
+  if (domLibPrefixes.some((prefix) => normalized.startsWith(prefix))) return "dom";
+  if (
+    domTypeScriptPatterns.some(
+      (pattern) => !pattern.includes("*") && normalized.endsWith(pattern.replace(/^tests\//, "")),
+    )
+  ) {
+    return "dom";
+  }
   return "node";
 }
 

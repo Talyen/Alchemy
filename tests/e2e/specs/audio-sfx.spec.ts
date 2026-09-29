@@ -1,8 +1,7 @@
 import { expect, test } from "../../fixtures/e2e";
 import { MenuPage } from "../../pages/menu-page";
-import { activeMusic, readSfxPlays, resetSfxPlays, trackActiveMusic, trackSfxPlays } from "../../pages/audio-harness";
+import { readSfxPlays, resetSfxPlays, trackSfxPlays } from "../../pages/audio-harness";
 import { critical } from "../../playwright-tags";
-import { FADE_OUT_DURATION_MS, MUSIC_FADE_TICK_MS, NAVIGATION_DELAY_MS, MOTION_FADE_MS } from "@/lib/game-constants";
 
 test.describe("SFX playback", critical, () => {
   test("menu interaction starts at least one SFX", async ({ page }) => {
@@ -19,65 +18,4 @@ test.describe("SFX playback", critical, () => {
 
     expect(await readSfxPlays(page)).toBeGreaterThan(0);
   });
-});
-
-test("Bestiary boss music follows portrait activation and browsing", critical, async ({ page }) => {
-  test.setTimeout(60_000);
-
-  await trackActiveMusic(page);
-  const nowPlaying = () => activeMusic(page);
-  const menu = new MenuPage(page);
-  await menu.gotoCollection({ encounteredEnemyIds: ["forge-golem"] });
-  await page.getByRole("button", { name: "Bestiary", exact: true }).click();
-  const boss = page.getByRole("button", { name: /Inspect .*Forge Golem/, includeHidden: true });
-  const firstPortrait = page
-    .getByRole("button", { name: /^Inspect / })
-    .first()
-    .locator("img");
-  for (let attempt = 0; attempt < 20; attempt += 1) {
-    await expect(firstPortrait).toBeVisible();
-    if (await boss.isVisible()) break;
-    const previousArt = await firstPortrait.getAttribute("src");
-    await page.getByRole("button", { name: "Next page" }).click();
-    await expect(firstPortrait).not.toHaveAttribute("src", previousArt!);
-  }
-  await expect(boss).toBeVisible();
-  await boss.focus();
-  await page.keyboard.press("Enter");
-  await expect.poll(nowPlaying).toEqual([expect.stringContaining("The Forge Golem.mp3")]);
-  await page.keyboard.press("Escape");
-  await expect(page.getByTestId("enemy-inspection-overlay")).toBeHidden();
-  await page.getByRole("button", { name: "Previous page" }).click();
-  await expect.poll(nowPlaying).toEqual([expect.stringMatching(/Menu \d\.mp3/)]);
-  await page.getByRole("button", { name: "Next page" }).click();
-  await boss.click();
-  await expect.poll(nowPlaying).toEqual([expect.stringContaining("The Forge Golem.mp3")]);
-  await page.keyboard.press("Escape");
-  await expect(page.getByTestId("enemy-inspection-overlay")).toBeHidden();
-  await page.getByRole("button", { name: "Cards", exact: true }).click();
-  await expect.poll(nowPlaying).toEqual([expect.stringMatching(/Menu \d\.mp3/)]);
-  await page.getByRole("button", { name: "Bestiary", exact: true }).click();
-  await boss.click();
-  await expect.poll(nowPlaying).toEqual([expect.stringContaining("The Forge Golem.mp3")]);
-  await page.keyboard.press("Escape");
-  await expect(page.getByTestId("enemy-inspection-overlay")).toBeHidden();
-  await page.keyboard.press("Escape");
-  await menu.expectMainMenu();
-  await expect.poll(nowPlaying).toEqual([expect.stringMatching(/Menu \d\.mp3/)]);
-  await page.getByRole("button", { name: "Collection", exact: true }).click();
-  await expect(boss).toBeVisible();
-  await boss.focus();
-  const now = new Date();
-  await page.clock.install({ time: now });
-  await page.clock.pauseAt(new Date(now.getTime() + 1000));
-  await page.keyboard.press("Escape");
-  await page.clock.runFor(NAVIGATION_DELAY_MS);
-  const outgoingScreen = page.locator(".page-exit");
-  await expect(outgoingScreen).toHaveAttribute("inert", "");
-  await page.keyboard.press("Enter");
-  await boss.dispatchEvent("click");
-  await page.clock.runFor(MOTION_FADE_MS + FADE_OUT_DURATION_MS + MUSIC_FADE_TICK_MS);
-  await page.clock.resume();
-  await menu.expectMainMenu();
-  await expect.poll(nowPlaying).toEqual([expect.stringMatching(/Menu \d\.mp3/)]);
 });

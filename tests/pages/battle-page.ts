@@ -125,6 +125,9 @@ export class BattlePage {
   }
 
   async winViaCombat(maxTurns = 6) {
+    if (!(await this.isBattleOver())) {
+      await this.waitForOpeningHand();
+    }
     for (let turn = 0; turn < maxTurns; turn++) {
       if (await this.isBattleOver()) break;
       await this.playAllCards();

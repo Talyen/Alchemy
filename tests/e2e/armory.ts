@@ -53,39 +53,3 @@ export function equipmentSlotLocator(page: Page, slot: GearSlot) {
 export async function selectArmorySlot(page: Page, slot: GearSlot) {
   await equipmentSlotLocator(page, slot).click();
 }
-
-export function currencyLocator(page: Page, currencyId: CraftingCurrencyId) {
-  return page.locator(`[data-testid="armory-crafting-currency"][data-currency-id="${currencyId}"]`);
-}
-
-export async function activateCurrency(page: Page, currencyId: CraftingCurrencyId) {
-  const currency = currencyLocator(page, currencyId);
-  await expect(currency).toBeVisible();
-  await currency.click();
-  await expect(currency).toHaveAttribute("aria-pressed", "true");
-}
-
-export async function applyCurrencyToGear(page: Page, gearTitle: string, currencyDisplayName: string) {
-  await page.getByRole("button", { name: `Apply ${currencyDisplayName} to ${gearTitle}` }).click();
-}
-
-async function enterSalvageMode(page: Page) {
-  const toggle = page.getByTestId("armory-salvage-toggle");
-  await expect(toggle).toBeEnabled();
-  await toggle.click();
-  await expect(toggle).toHaveAttribute("aria-pressed", "true");
-}
-
-export async function salvageInventoryItem(page: Page, gearTitle: string, index = 0) {
-  await enterSalvageMode(page);
-  await page.getByLabel(`Salvage ${gearTitle}`, { exact: true }).nth(index).click({ force: true });
-}
-
-export async function confirmSalvage(page: Page) {
-  await page.getByRole("dialog").getByRole("button", { name: "Salvage", exact: true }).click();
-}
-
-export async function expectSalvageDialog(page: Page) {
-  await expect(page.getByRole("dialog").getByText(/will yield:/)).toBeVisible();
-  await expect(page.getByTestId("armory-salvage-yield")).toBeVisible();
-}

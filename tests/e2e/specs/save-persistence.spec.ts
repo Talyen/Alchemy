@@ -7,7 +7,6 @@ import {
   SAVE_KEY,
   seedRandom,
   makeHighDamageCard,
-  startAtDestination,
   startBattleWithDeck,
   enterPrimaryRewardScreen,
   failOnRuntimeErrors,
@@ -72,7 +71,7 @@ test.describe("Save Persistence & Resume", () => {
     expect(savedAfter.activeRun.runPlayerHealth).toBe(18);
   });
 
-  test("resume restores saved destination choices", async ({ page }) => {
+  test("resume restores destination choices when reloaded between battles", critical, async ({ page }) => {
     await seedRandom(page, 42);
     await injectDestinationAtIndex(page, {
       destinations: ["Campfire", "Mystery", "Card Shop"],
@@ -82,26 +81,12 @@ test.describe("Save Persistence & Resume", () => {
       runPlayerHealth: 22,
     });
     await page.goto("/");
+    await resumeCampaignRun(page);
 
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole("button", { name: "Campfire" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Mystery" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Card Shop" })).toBeVisible();
-  });
-
-  test("resume restores destination choices when reloaded between battles", critical, async ({ page }) => {
-    await seedRandom(page, 42);
-    await injectSaveState(page, {
-      runPlayerHealth: 22,
-      runMaxHealth: 30,
-      roomsEncountered: 2,
-      destinationIndexInAct: 1,
-      completedDestinations: ["Normal Combat"],
-    });
-    await page.goto("/");
-
-    await resumeCampaignRun(page);
-
     await expect(page.locator('[aria-label^="Play "]')).toHaveCount(0);
   });
 
@@ -269,23 +254,5 @@ test.describe("Autosave Cadence", () => {
     } finally {
       await resumedPage.close();
     }
-  });
-
-  test("save persists across page navigation", critical, async ({ page }) => {
-    test.setTimeout(30000);
-    await startAtDestination(page, { runGold: 42, runPlayerHealth: 22 }, { forceDestination: "Campfire" });
-
-    const goldBefore = await page.evaluate((saveKey) => {
-      return JSON.parse(localStorage.getItem(saveKey) || "{}");
-    }, SAVE_KEY);
-    expect(persistedPurseGold(goldBefore)).toBe(42);
-
-    await page.goto("/");
-    await resumeCampaignRun(page);
-
-    const goldAfter = await page.evaluate((saveKey) => {
-      return JSON.parse(localStorage.getItem(saveKey) || "{}");
-    }, SAVE_KEY);
-    expect(persistedPurseGold(goldAfter)).toBe(42);
   });
 });

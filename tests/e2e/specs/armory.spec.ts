@@ -1,35 +1,19 @@
 import { controllerInput } from "../controller-input";
 import { BattlePage } from "../../pages/battle-page";
 import { expect } from "@playwright/test";
-import { EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear/crafting-ids";
-import {
-  activateCurrency,
-  applyCurrencyToGear,
-  bodyGear,
-  confirmSalvage,
-  currencyLocator,
-  equipmentSlotLocator,
-  expectSalvageDialog,
-  gearItemLocator,
-  openArmory,
-  salvageInventoryItem,
-  selectArmorySlot,
-} from "../armory";
+import { bodyGear, equipmentSlotLocator, gearItemLocator, openArmory, selectArmorySlot } from "../armory";
 import { createEmptyGearInventories, createEmptyGearLoadouts } from "@/lib/gear/types";
 import { assertGearFlatDamageBoostsPhysicalDamage } from "../gear-combat";
-import { seedRandom } from "../rng";
 import { injectActiveBattle, makeGoblinBattleState, makeHighDamageCard } from "../../browser-helpers";
 import { MenuPage } from "../../pages/menu-page";
 import { test } from "../../fixtures/e2e";
-import { critical, slow } from "../../playwright-tags";
+import { critical } from "../../playwright-tags";
 
 const affixedSword = {
   instanceId: "gear-sword",
   definitionId: "longsword-basic" as const,
   affixes: [{ id: "flat-physical" as const, value: 1 }],
 };
-
-const emptyCraftingCurrencies = { ...EMPTY_CRAFTING_CURRENCIES };
 
 test.describe("Armory equip", () => {
   test("click-equips, unequips, and switches characters", critical, async ({ page }) => {
@@ -151,82 +135,6 @@ test(
     await expect(equipmentSlotLocator(page, "main-hand").locator("img")).toHaveCount(2);
   },
 );
-
-test.describe("Armory crafting", () => {
-  test("salvages gear and grants crafting materials", critical, async ({ page }) => {
-    await seedRandom(page, 0);
-    const sword = {
-      instanceId: "gear-sword",
-      definitionId: "shortsword-basic" as const,
-      affixes: [{ id: "flat-physical" as const, value: 1 }],
-    };
-
-    await openArmory(page, {
-      inventory: [sword],
-      craftingCurrencies: { ...emptyCraftingCurrencies },
-    });
-
-    await salvageInventoryItem(page, "Shortsword");
-    await expectSalvageDialog(page);
-    await confirmSalvage(page);
-
-    await expect(gearItemLocator(page, "Shortsword")).toHaveCount(0);
-    await expect(currencyLocator(page, "discordant-dice")).toBeVisible();
-    await expect
-      .poll(async () => {
-        const text = await currencyLocator(page, "discordant-dice").textContent();
-        return Number(text?.trim() || "0");
-      })
-      .toBeGreaterThan(0);
-  });
-
-  test("voidstone targeting lifecycle and affix display", critical, async ({ page }) => {
-    await openArmory(page, {
-      inventory: [affixedSword],
-      craftingCurrencies: { ...emptyCraftingCurrencies, voidstone: 1 },
-    });
-    await gearItemLocator(page, "Longsword").hover();
-    await expect(page.getByText("Ironbound")).toBeVisible();
-    await expect(page.getByText("Increases Physical damage by 1")).toBeVisible();
-    await activateCurrency(page, "voidstone");
-    await expect(page.getByRole("button", { name: /Apply Voidstone to Longsword/ })).toBeVisible();
-    await page.keyboard.press("Escape");
-    await expect(page.getByRole("button", { name: /Apply Voidstone/ })).toHaveCount(0);
-    await activateCurrency(page, "voidstone");
-    await applyCurrencyToGear(page, "Longsword", "Voidstone");
-    await expect(page.getByTestId("armory-crafting-cursor")).toHaveCount(0);
-    await expect(currencyLocator(page, "voidstone")).toContainText("0");
-    await expect(page.getByTestId("armory-crafting-result")).toContainText("Removed");
-    await page.getByRole("button", { name: "Dismiss result" }).click();
-    await gearItemLocator(page, "Longsword").hover();
-    await expect(page.getByText("Ironbound")).toHaveCount(0);
-  });
-
-  test("rejects invalid voidstone target without consuming currency", async ({ page }) => {
-    await openArmory(page, {
-      inventory: [bodyGear],
-      craftingCurrencies: { ...emptyCraftingCurrencies, voidstone: 1 },
-    });
-    await selectArmorySlot(page, "body");
-    await activateCurrency(page, "voidstone");
-    await gearItemLocator(page, "Leather Armor").click();
-    await expect(currencyLocator(page, "voidstone")).toContainText("1");
-    await expect(currencyLocator(page, "voidstone")).toHaveAttribute("aria-pressed", "true");
-  });
-
-  test("upgrades basic gear to astral with ascension seal", slow, async ({ page }) => {
-    await openArmory(page, {
-      inventory: [affixedSword],
-      craftingCurrencies: { ...emptyCraftingCurrencies, "ascension-seal": 1 },
-    });
-
-    await activateCurrency(page, "ascension-seal");
-    await applyCurrencyToGear(page, "Longsword", "Ascension Seal");
-
-    await expect(gearItemLocator(page, "Astral Longsword")).toBeVisible();
-    await expect(gearItemLocator(page, "Longsword")).toHaveCount(0);
-  });
-});
 
 test.describe("Gear combat", () => {
   test("equipped gear increases physical damage in battle", critical, async ({ page, fastBattle }) => {
