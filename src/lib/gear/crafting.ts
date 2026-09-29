@@ -104,7 +104,12 @@ function eligibleNewAffixes(item: GearInstance) {
 }
 
 function hasAvailableAffix(item: GearInstance): boolean {
-  return eligibleNewAffixes(item).length > 0;
+  const def = gearDefinitions[item.definitionId];
+  if (!def) return false;
+  const pool = buildEligibleAffixPool(def);
+  if (pool.length === 0) return false;
+  if (item.affixes.length === 0) return true;
+  return pool.some((affix) => !item.affixes.some((present) => present.id === affix.id));
 }
 
 function affixMaxValue(roll: GearAffixRoll, rarity: GearRarity): number {

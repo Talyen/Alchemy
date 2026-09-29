@@ -25,7 +25,7 @@ import {
   rollTalentChance,
   reduceDamageByMana,
 } from "./status-helpers";
-import { gearFrozenDamageMultiplier } from "./gear-effects";
+import { gearFrozenDamageMultiplier } from "./scaled-damage";
 import { POISON_GAIN_AMOUNT } from "../game-constants";
 import { applyPoisonTalentRiders } from "./damage-status-riders";
 import { mergeCombatText } from "./combat-text-events";

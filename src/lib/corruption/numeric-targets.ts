@@ -268,7 +268,8 @@ export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget
       const value = Number(wishingWellMatch[1]);
       const goldEntry = bindings.claim(value, line, (entry) => entry.effect.kind === "gain-gold");
       if (goldEntry) {
-        targets.push(targetFromBinding(goldEntry, lineIndex, line.indexOf(wishingWellMatch[1]!)));
+        // Capture group starts after "Gain " (5 chars) in the WISHING_WELL_LINE pattern.
+        targets.push(targetFromBinding(goldEntry, lineIndex, 5));
       }
       return;
     }
@@ -283,9 +284,9 @@ export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget
     const sharedResourceChoice = SHARED_RESOURCE_CHOICE_LINE.exec(line);
     if (sharedResourceChoice) {
       const value = Number(sharedResourceChoice[1]);
-      const matchIndex = line.indexOf(sharedResourceChoice[1]!);
+      // Capture group starts after "Gain " (5 chars) in the SHARED_RESOURCE_CHOICE_LINE pattern.
       const shared = bindings.claimSharedResource(value);
-      if (shared) targets.push(targetFromBinding(shared, lineIndex, matchIndex));
+      if (shared) targets.push(targetFromBinding(shared, lineIndex, 5));
       return;
     }
     for (const match of matches) {

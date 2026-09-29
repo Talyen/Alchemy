@@ -44,16 +44,6 @@ function buildRandomDeck(seed: number, size = 10): BattleCard[] {
   return sampleItems(getOfferableCardPool(), size, createRunStreamRng(seed, "world"));
 }
 
-function buildCardIsolationDecks(
-  target: BattleCard,
-  seed: number,
-  size = 10,
-): { baseline: BattleCard[]; treatment: BattleCard[] } {
-  const candidates = getOfferableCardPool().filter((card) => card.id !== target.id);
-  const baseline = sampleItems(candidates, size, createRunStreamRng(seed, "world"));
-  return { baseline, treatment: [...baseline.slice(0, size - 1), target] };
-}
-
 function* trinketGroups(options: ReportRunOptions): Iterable<PairedSweepGroup> {
   for (const tier of REPORT_TIERS) {
     for (const characterId of reportCharacterIds()) {
@@ -108,13 +98,25 @@ function* isolatedCardGroups(options: ReportRunOptions, enemyId: string): Iterab
         trinketIds: [],
         iterations,
       };
-      for (const card of cardLibrary) {
-        const decks = buildCardIsolationDecks(card, deckSeed);
-        yield {
-          reference: { ...shared, deck: decks.baseline },
-          variants: [{ id: card.id, scenario: { ...shared, deck: decks.treatment } }],
-        };
-      }
+      const baseDeck = buildRandomDeck(deckSeed, 10);
+      const baseIds = new Set(baseDeck.map((card) => card.id));
+      yield {
+        reference: { ...shared, deck: baseDeck },
+        variants: cardLibrary.map((card) => {
+          if (baseIds.has(card.id)) {
+            return {
+              id: card.id,
+              scenario: { ...shared, deck: removeCardIdFromDeck(baseDeck, card.id) },
+              referenceSide: "treatment" as const,
+            };
+          }
+          return {
+            id: card.id,
+            scenario: { ...shared, deck: [...baseDeck.slice(0, 9), card] },
+            referenceSide: "baseline" as const,
+          };
+        }),
+      };
     }
   }
 }

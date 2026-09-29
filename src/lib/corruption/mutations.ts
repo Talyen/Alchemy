@@ -68,6 +68,7 @@ function isPlainMagnitude(effect: BattleCardEffect): boolean {
   return (
     effect.kind === "damage" &&
     !effect.equalToBlock &&
+    effect.equalToBlockPercent === undefined &&
     !effect.equalToArmor &&
     !effect.equalToForge &&
     effect.equalToGoldPercent === undefined &&
@@ -162,13 +163,20 @@ function canRemoveConsume(card: BattleCard): boolean {
 }
 
 function removeConsume(card: BattleCard): BattleCard {
+  const consumeIndex = card.descriptionLines.indexOf("Consume");
+  const positions =
+    consumeIndex < 0
+      ? (card.corruptedValuePositions ?? [])
+      : (card.corruptedValuePositions ?? [])
+          .filter((pos) => pos.lineIndex !== consumeIndex)
+          .map((pos) => (pos.lineIndex > consumeIndex ? { ...pos, lineIndex: pos.lineIndex - 1 } : pos));
   return {
     ...card,
     corrupted: true,
     consume: false,
     ...(card.tags ? { tags: card.tags.filter((tag) => tag !== "consume") } : {}),
     descriptionLines: card.descriptionLines.filter((line) => line !== "Consume"),
-    corruptedValuePositions: [],
+    corruptedValuePositions: positions,
   };
 }
 

@@ -19,7 +19,7 @@ export function blockAmountWithForge(state: BattleState, amount: number): number
   return amount + forgeBonus;
 }
 
-export function playerStatusDelta(state: BattleState, status: PlayerStatusId, delta: number): number {
+function playerStatusDelta(state: BattleState, status: PlayerStatusId, delta: number): number {
   if (status === "stun" && delta > 0) {
     return Math.max(0, Math.round(delta * (1 - state.talentEffects.stunBuildupReductionPercent / PERCENT_DENOMINATOR)));
   }

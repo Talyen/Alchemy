@@ -27,11 +27,14 @@ import {
 } from "@/lib/game-data";
 import {
   MATERIAL_IDS,
+  type BuildingId,
+  type FarmId,
   type HomesteadBuilding,
   type HomesteadFarm,
   type HomesteadResearch,
   type MaterialId,
   type MaterialInventory,
+  type ResearchId,
   materialLabels,
 } from "@/lib/homestead/types";
 import { MaterialInlineChip } from "../../../shared/ui/material-icons";
@@ -44,6 +47,8 @@ import { getInspectionKeywordShineColors } from "@/features/alchemy/shared/confi
 
 export type Tab = "buildings" | "companions" | "farm" | "research";
 
+type HomesteadUpgradeId = BuildingId | FarmId | ResearchId;
+
 export type GoalItem =
   | { kind: "building"; data: HomesteadBuilding }
   | { kind: "farm"; data: HomesteadFarm }
@@ -55,7 +60,7 @@ export const HOMESTEAD_CONFIG = {
   hoverScope: "homestead",
 } as const;
 
-const itemArt: Record<string, string> = {
+const itemArt = {
   "blacksmiths-forge": blacksmithsForge,
   "chicken-coop": chickenCoop,
   "herb-garden": herbGarden,
@@ -79,10 +84,10 @@ const itemArt: Record<string, string> = {
   "culinary-arts": culinaryArts,
   "wool-tailoring": woolTailoring,
   "agility-training": agilityTraining,
-};
+} satisfies Record<HomesteadUpgradeId, string>;
 
 export function getArt(id: string): string {
-  return itemArt[id] ?? "";
+  return (itemArt as Record<string, string>)[id] ?? "";
 }
 
 export { HomesteadResourceWallet as MaterialsBar } from "../../../shared/ui/material-icons";

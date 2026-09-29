@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { shouldReduceMotion } from "@/lib/animation/animation-prefs";
 import { INITIAL_LOAD_MIN_DURATION_MS, LOADING_WORD_FADE_MS, LOADING_WORD_INTERVAL_MS } from "@/lib/game-constants";
 import { clamp01 } from "@/lib/math";
 import { LOADING_WORDS } from "./loading-words";
@@ -9,7 +10,7 @@ function useSyncedLoadingWord() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (shouldReduceMotion()) return;
     const id = window.setInterval(() => {
       setWordIndex((prev) => (prev + 1) % LOADING_WORDS.length);
     }, LOADING_WORD_INTERVAL_MS);

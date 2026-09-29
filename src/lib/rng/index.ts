@@ -82,9 +82,16 @@ export function nextRunRngValue(state: RunRngState, stream: RunRngStream): { val
 }
 
 export function stepRunRng(state: RunRngState, stream: RunRngStream): number {
-  const draw = nextRunRngValue(state, stream);
-  state.counters[stream] = draw.nextCounter;
-  return draw.value;
+  if (!Object.hasOwn(STREAM_SALTS, stream)) {
+    throw new Error(`Unknown run RNG stream: ${stream}`);
+  }
+  const nextCounter = (state.counters[stream] ?? 0) + 1;
+  state.counters[stream] = nextCounter;
+  return mixUint32(state.seed ^ STREAM_SALTS[stream] ^ Math.imul(nextCounter, 0x85eb_ca6b)) / UINT32_RANGE;
+}
+
+export function createRunStateRng(state: RunRngState, stream: RunRngStream): Rng {
+  return () => stepRunRng(state, stream);
 }
 
 export function rngInt(rng: Rng, n: number): number {

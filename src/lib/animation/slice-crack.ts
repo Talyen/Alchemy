@@ -117,11 +117,26 @@ export function sliceCrackPointAtFraction(fraction: number): SlicePoint {
   return SLICE_CRACK_POINTS[SLICE_CRACK_POINTS.length - 1] ?? { x: 0.5, y: 0.5 };
 }
 
-export function sliceCrackPolylineToFraction(fraction: number, width: number, height: number): SlicePoint[] {
+export function traceSliceCrackPath(
+  ctx: CanvasRenderingContext2D,
+  fraction: number,
+  width: number,
+  height: number,
+  originX = 0,
+  originY = 0,
+): { tipX: number; tipY: number } | null {
   const lead = clamp01(fraction);
-  const first = SLICE_CRACK_POINTS[0] ?? { x: 0.5, y: 0.5 };
-  const result: SlicePoint[] = [{ x: first.x * width, y: first.y * height }];
-  if (lead <= 0) return result;
+  const first = SLICE_CRACK_POINTS[0];
+  if (!first) return null;
+
+  let currentX = originX + first.x * width;
+  let currentY = originY + first.y * height;
+  ctx.moveTo(currentX, currentY);
+
+  if (lead <= 0) {
+    return { tipX: currentX, tipY: currentY };
+  }
+
   const target = lead * SLICE_CRACK_TOTAL_ASPECT_LENGTH;
   let remaining = target;
   for (let index = 0; index < SLICE_CRACK_POINTS.length - 1; index++) {
@@ -132,18 +147,20 @@ export function sliceCrackPolylineToFraction(fraction: number, width: number, he
     const end = CUMULATIVE_ASPECT_LENGTHS[index + 1] ?? start;
     const segmentLength = end - start;
     if (segmentLength <= remaining) {
-      result.push({ x: b.x * width, y: b.y * height });
+      currentX = originX + b.x * width;
+      currentY = originY + b.y * height;
+      ctx.lineTo(currentX, currentY);
       remaining -= segmentLength;
     } else {
       const local = segmentLength > 0 ? remaining / segmentLength : 0;
-      result.push({
-        x: (a.x + (b.x - a.x) * local) * width,
-        y: (a.y + (b.y - a.y) * local) * height,
-      });
+      currentX = originX + (a.x + (b.x - a.x) * local) * width;
+      currentY = originY + (a.y + (b.y - a.y) * local) * height;
+      ctx.lineTo(currentX, currentY);
       break;
     }
   }
-  return result;
+
+  return { tipX: currentX, tipY: currentY };
 }
 
 export function sliceCrackTangentAtFraction(fraction: number): SliceVec {

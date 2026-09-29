@@ -31,8 +31,12 @@ const affixRows = [
   ...keywordExpansionAffixes,
 ] as const;
 
+import { extractKeywordIds } from "@/lib/keyword-text";
+import type { KeywordId } from "@/lib/game-data";
+
 export interface GearAffixDefinition extends AffixRowInput {
   id: GearAffixId;
+  visibleKeywordIds: readonly KeywordId[];
 }
 
 export type GearAffixId = (typeof affixRows)[number]["id"];
@@ -40,7 +44,13 @@ export type GearAffixId = (typeof affixRows)[number]["id"];
 export const GEAR_AFFIX_IDS = affixRows.map((row) => row.id) as [GearAffixId, ...GearAffixId[]];
 
 export const gearAffixCatalog: Record<GearAffixId, GearAffixDefinition> = Object.fromEntries(
-  affixRows.map((row) => [row.id, { ...row }]),
+  affixRows.map((row) => [
+    row.id,
+    {
+      ...row,
+      visibleKeywordIds: Object.freeze(extractKeywordIds(row.descriptionTemplate)),
+    },
+  ]),
 ) as Record<GearAffixId, GearAffixDefinition>;
 
 // Object.fromEntries silently overwrites duplicate ids, so fail fast here

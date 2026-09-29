@@ -14,7 +14,7 @@ import {
 import { affixMatchesAffinity } from "@/lib/gear/affixes";
 import { buildEligibleAffixPool } from "@/lib/gear/affix-pool";
 import { gearAffixCatalog } from "@/lib/gear/affix-catalog";
-import { createSeededRng } from "@/lib/utils";
+import { createSeededRng } from "@/lib/rng";
 
 const weights = resolveLootWeights({ source: "equipment", progress: { depth: 24, highestCompletedDifficulty: null } });
 

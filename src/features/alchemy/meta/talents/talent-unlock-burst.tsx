@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef } from "react";
 
-import { isAnimationDisabled } from "@/lib/animation/animation-prefs";
+import { shouldReduceMotion } from "@/lib/animation/animation-prefs";
 import { animateHurtSparks, createHurtSparks } from "@/lib/animation/hurt-sparks";
 import { TALENT_UNLOCK_ANIMATION_MS, TALENT_UNLOCK_SPARK_COUNT } from "@/lib/game-constants";
 
@@ -14,17 +14,11 @@ const VERTICAL_EDGE_SPAWN = {
   angleJitter: 0.35,
 } as const;
 
-function shouldSkipBurst(): boolean {
-  if (isAnimationDisabled()) return true;
-  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-}
-
 export function TalentUnlockBurst({ active, colors }: { active: boolean; colors: readonly string[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useLayoutEffect(() => {
-    if (!active || colors.length === 0 || shouldSkipBurst()) return;
+    if (!active || colors.length === 0 || shouldReduceMotion()) return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;

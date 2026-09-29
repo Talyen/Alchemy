@@ -1,4 +1,4 @@
-import { sliceCrackPolylineToFraction } from "./slice-crack";
+import { traceSliceCrackPath } from "./slice-crack";
 import {
   sampleBorderSpark,
   sampleCutSpark,
@@ -60,36 +60,22 @@ export function drawSliceFrame(
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
   if (visual.lineOpacity > 0.02 && visual.crackDraw > 0) {
-    const pixels = sliceCrackPolylineToFraction(visual.crackDraw, cardWidth, cardHeight);
-    if (pixels.length === 0) {
-      ctx.globalAlpha = 1;
-      return;
-    }
-    const first = pixels[0];
-    const tip = pixels[pixels.length - 1];
-    if (!first || !tip) {
-      ctx.globalAlpha = 1;
-      return;
-    }
     ctx.globalAlpha = visual.lineOpacity * 0.95;
     ctx.strokeStyle = SLICE_CRACK_LINE_COLOR;
     ctx.lineWidth = 2.6 * Math.max(visual.lineOpacity, 0.35);
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.beginPath();
-    ctx.moveTo(originX + first.x, originY + first.y);
-    for (let i = 1; i < pixels.length; i++) {
-      const point = pixels[i];
-      if (!point) continue;
-      ctx.lineTo(originX + point.x, originY + point.y);
+    const tip = traceSliceCrackPath(ctx, visual.crackDraw, cardWidth, cardHeight, originX, originY);
+    if (tip) {
+      ctx.stroke();
+      const tipRadius = 2.2 * Math.max(visual.lineOpacity, 0.35);
+      ctx.globalAlpha = visual.lineOpacity;
+      ctx.fillStyle = SLICE_CRACK_LINE_COLOR;
+      ctx.beginPath();
+      ctx.arc(tip.tipX, tip.tipY, tipRadius, 0, Math.PI * 2);
+      ctx.fill();
     }
-    ctx.stroke();
-    const tipRadius = 2.2 * Math.max(visual.lineOpacity, 0.35);
-    ctx.globalAlpha = visual.lineOpacity;
-    ctx.fillStyle = SLICE_CRACK_LINE_COLOR;
-    ctx.beginPath();
-    ctx.arc(originX + tip.x, originY + tip.y, tipRadius, 0, Math.PI * 2);
-    ctx.fill();
   }
 
   ctx.fillStyle = SLICE_SPARK_COLOR;

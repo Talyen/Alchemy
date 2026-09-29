@@ -1,5 +1,5 @@
 import { createWebGLProgram } from "./webgl-program";
-import { parsePlasmaHexColor } from "@/lib/animation/plasma-colors";
+import { parsePlasmaHexColor, type RgbTuple } from "@/lib/animation/plasma-colors";
 import { createPlasmaLifecycle } from "./keyword-plasma-lifecycle";
 import type { PlasmaRendererOptions } from "./keyword-plasma-types";
 
@@ -98,10 +98,10 @@ export function startWebGLKeywordPlasma(options: PlasmaRendererOptions): (() => 
   gl.useProgram(program);
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.ONE, gl.ONE);
-  let cachedPrimaryHex = "";
-  let cachedSecondaryHex = "";
-  let cachedPrimary: [number, number, number] = [0, 0, 0];
-  let cachedSecondary: [number, number, number] = [0, 0, 0];
+  let cachedPrimarySource: string | RgbTuple | null = null;
+  let cachedSecondarySource: string | RgbTuple | null = null;
+  let cachedPrimary: RgbTuple = [0, 0, 0];
+  let cachedSecondary: RgbTuple = [0, 0, 0];
 
   const lifecycle = createPlasmaLifecycle({
     canvas,
@@ -113,13 +113,17 @@ export function startWebGLKeywordPlasma(options: PlasmaRendererOptions): (() => 
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
 
-      if (cachedPrimaryHex !== colorsRef.current.primary) {
-        cachedPrimaryHex = colorsRef.current.primary;
-        cachedPrimary = parsePlasmaHexColor(cachedPrimaryHex);
+      if (cachedPrimarySource !== colorsRef.current.primary) {
+        cachedPrimarySource = colorsRef.current.primary;
+        cachedPrimary =
+          typeof cachedPrimarySource === "string" ? parsePlasmaHexColor(cachedPrimarySource) : cachedPrimarySource;
       }
-      if (cachedSecondaryHex !== colorsRef.current.secondary) {
-        cachedSecondaryHex = colorsRef.current.secondary;
-        cachedSecondary = parsePlasmaHexColor(cachedSecondaryHex);
+      if (cachedSecondarySource !== colorsRef.current.secondary) {
+        cachedSecondarySource = colorsRef.current.secondary;
+        cachedSecondary =
+          typeof cachedSecondarySource === "string"
+            ? parsePlasmaHexColor(cachedSecondarySource)
+            : cachedSecondarySource;
       }
       const primary = cachedPrimary;
       const secondary = cachedSecondary;

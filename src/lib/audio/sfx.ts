@@ -10,7 +10,7 @@ import { audioState } from "./state";
 import { getSoundUrl } from "./url";
 import { releaseAudioElement } from "./element";
 import { clamp01 } from "../math";
-import { pickRandomUnsafe } from "../rng";
+import { pickRandomUnsafe } from "@/lib/rng";
 import {
   SFX_COOLDOWN_MS,
   SFX_DEFEAT_VOLUME,

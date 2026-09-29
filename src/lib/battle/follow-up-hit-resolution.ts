@@ -28,7 +28,7 @@ import { resolveTypedEnemyHit } from "./typed-hit-resolution";
 import { resolveStunFollowUpHit } from "./stun-follow-up-hit";
 import { type BattleState, type CombatTextEvent } from "./types";
 
-import type { FollowUpHitRequest } from "./hit-request";
+import type { FollowUpHitRequest } from "./player-hit-core";
 
 /** Lower resolution tier: Wish and other reactions can emit shallow hits without importing card orchestration. */
 export function resolveFollowUpHit(
@@ -40,7 +40,7 @@ export function resolveFollowUpHit(
     case "player-follow-up":
       if (request.damageType === "stun") return resolveStunFollowUpHit(state, request.amount, combatTexts);
       return resolveSecondaryAction(state, "reward", (current) =>
-        resolvePlayerFollowUp(current, request.damageType, request.amount, combatTexts),
+        resolveDerivedFollowUp(current, request.damageType, request.amount, request.source, combatTexts),
       );
     case "talent-fixed":
     case "talent-derived":
@@ -48,46 +48,82 @@ export function resolveFollowUpHit(
   }
 }
 
-function resolvePlayerFollowUp(
+function resolveDerivedFollowUp(
   state: BattleState,
   damageType: DamageType,
   amount: number,
+  source: FollowUpHitRequest["source"],
   combatTexts: CombatTextEvent[],
 ): BattleState {
   if (amount <= 0 || state.enemyHealth <= 0) return state;
+  const isPlayer = source === "player-follow-up";
   const effect = { kind: "damage" as const, damageType, amount };
-  const { nextState: afterMods, modifiedDamage, critical } = computeCardDamageToEnemy(state, effect);
-  const hit = resolveTypedEnemyHit(afterMods, effect, modifiedDamage, combatTexts, state, {
+  let base: BattleState;
+  let resolved: number;
+  let critical = false;
+  if (isPlayer) {
+    const mods = computeCardDamageToEnemy(state, effect);
+    base = mods.nextState;
+    resolved = mods.modifiedDamage;
+    critical = mods.critical;
+  } else {
+    const blocked = computeTalentDamageToEnemy(state, damageType, amount, source);
+    if (blocked.remainingDamage <= 0) return blocked.state;
+    base = blocked.state;
+    resolved = blocked.remainingDamage;
+  }
+  const hit = resolveTypedEnemyHit(base, effect, resolved, combatTexts, state, {
     critical,
+    ...(isPlayer ? {} : { allowPoisonBleedConversion: false as const }),
     onPoisonBleedConversion: (current, damage, texts) =>
       resolveFollowUpHit(current, { source: "talent-derived", damageType: "bleed", amount: damage }, texts),
-    onPoisonDamage: tryPoisonStunProc,
+    ...(isPlayer ? { onPoisonDamage: tryPoisonStunProc } : {}),
   });
   const preHitHealth = hit.facts.previousHealth;
   let nextState = hit.state;
   if (damageType === "nature") {
-    if (state.gearEffects.natureLeechVsPoisoned > 0 && state.enemyStatuses.poison > 0 && hit.facts.healthDamage > 0) {
-      nextState = applyLifestealAndPlayerHitTriggers(
-        nextState,
-        hit.facts.healthDamage,
-        combatTexts,
-        false,
-        false,
-        preHitHealth,
-      );
-    }
-    nextState = applyLuckyCloverGold(nextState, modifiedDamage, combatTexts);
-    nextState = applyNatureGoldReward(nextState, hit.facts.healthDamage, combatTexts);
-    nextState = applyNatureManaRefund(nextState, modifiedDamage, combatTexts);
+    nextState = applyFollowUpNatureRiders(
+      nextState,
+      resolved,
+      hit.facts.healthDamage,
+      preHitHealth,
+      state,
+      combatTexts,
+    );
   }
   if (damageType === "holy") {
-    nextState = applyHolyBlockChance(nextState, modifiedDamage, combatTexts);
-    nextState = applyBrassCenser(nextState, modifiedDamage, combatTexts, preHitHealth);
+    if (!isPlayer) nextState = applyHolyLifesteal(nextState, resolved, combatTexts, hit.facts.eligibility);
+    nextState = applyHolyBlockChance(nextState, resolved, combatTexts);
+    if (!isPlayer) {
+      nextState = applyDamageBlock(nextState, resolved, combatTexts, hit.facts.eligibility);
+      nextState = applyHolyTithe(nextState, resolved, combatTexts);
+    } else {
+      nextState = applyBrassCenser(nextState, resolved, combatTexts, preHitHealth);
+    }
   }
-  if (damageType === "burn" && hit.facts.healthDamage > 0) {
-    nextState = applyEmberforgedPayout(nextState, combatTexts, state.enemyStatuses.burn > 0);
+  if (damageType === "burn" && (isPlayer ? hit.facts.healthDamage > 0 : true)) {
+    nextState = isPlayer
+      ? applyEmberforgedPayout(nextState, combatTexts, state.enemyStatuses.burn > 0)
+      : applyBurnForgePayout(nextState, combatTexts, hit.facts.eligibility.enemyStatuses.burn > 0);
   }
   return nextState;
+}
+
+function applyFollowUpNatureRiders(
+  state: BattleState,
+  damage: number,
+  healthDamage: number,
+  preHitHealth: number,
+  eligibility: BattleState,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  let nextState = state;
+  if (eligibility.gearEffects.natureLeechVsPoisoned > 0 && eligibility.enemyStatuses.poison > 0 && healthDamage > 0) {
+    nextState = applyLifestealAndPlayerHitTriggers(nextState, healthDamage, combatTexts, false, false, preHitHealth);
+  }
+  nextState = applyLuckyCloverGold(nextState, damage, combatTexts);
+  nextState = applyNatureGoldReward(nextState, healthDamage, combatTexts);
+  return applyNatureManaRefund(nextState, damage, combatTexts);
 }
 
 export function tryPoisonStunProc(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
@@ -114,42 +150,7 @@ function resolveTalentFollowUp(
   request: Extract<FollowUpHitRequest, { source: "talent-fixed" | "talent-derived" }>,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  const { damageType, amount, source } = request;
-  if (amount <= 0 || state.enemyHealth <= 0) return state;
-  const { state: blocked, remainingDamage: resolved } = computeTalentDamageToEnemy(state, damageType, amount, source);
-  if (resolved <= 0) return blocked;
-  const hit = resolveTypedEnemyHit(blocked, { kind: "damage", damageType, amount }, resolved, combatTexts, state, {
-    allowPoisonBleedConversion: false,
-    allowTalentChanceProcs: false,
-    onPoisonBleedConversion: (current, damage, texts) =>
-      resolveFollowUpHit(current, { source: "talent-derived", damageType: "bleed", amount: damage }, texts),
-  });
-  let nextState = hit.state;
-  if (damageType === "holy") {
-    nextState = applyHolyLifesteal(nextState, resolved, combatTexts, hit.facts.eligibility);
-    nextState = applyHolyBlockChance(nextState, resolved, combatTexts);
-    nextState = applyDamageBlock(nextState, resolved, combatTexts, hit.facts.eligibility);
-    nextState = applyHolyTithe(nextState, resolved, combatTexts);
-  }
-  if (damageType === "nature") {
-    if (state.gearEffects.natureLeechVsPoisoned > 0 && state.enemyStatuses.poison > 0 && hit.facts.healthDamage > 0) {
-      nextState = applyLifestealAndPlayerHitTriggers(
-        nextState,
-        hit.facts.healthDamage,
-        combatTexts,
-        false,
-        false,
-        hit.facts.previousHealth,
-      );
-    }
-    nextState = applyLuckyCloverGold(nextState, resolved, combatTexts);
-    nextState = applyNatureGoldReward(nextState, hit.facts.healthDamage, combatTexts);
-    nextState = applyNatureManaRefund(nextState, resolved, combatTexts);
-  }
-  if (damageType === "burn") {
-    nextState = applyBurnForgePayout(nextState, combatTexts, hit.facts.eligibility.enemyStatuses.burn > 0);
-  }
-  return nextState;
+  return resolveDerivedFollowUp(state, request.damageType, request.amount, request.source, combatTexts);
 }
 
 export function tryTalentTypedHit(
@@ -217,9 +218,12 @@ interface HitConversion {
 }
 
 const TALENT_HIT_CONVERSIONS: Record<ConversionSource, readonly HitConversion[]> = {
-  physical: [{ chance: "physicalBleedDamageChance", target: "bleed" }],
+  physical: [{ chance: "physicalBleedChance", target: "bleed" }],
   bleed: [{ chance: "bleedPoisonDamageChance", target: "poison" }],
-  nature: [{ chance: "naturePoisonDamageChance", target: "poison" }],
+  nature: [
+    { chance: "naturePoisonChance", target: "poison" },
+    { chance: "natureBleedChance", target: "bleed" },
+  ],
   holy: [{ chance: "holyBurnDamageChance", target: "burn", fraction: 1 }],
   leech: [
     { chance: "leechBleedDamageChance", target: "bleed" },

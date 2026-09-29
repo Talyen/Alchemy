@@ -133,6 +133,7 @@ export function createVerificationCache(rootDir, commands, options = {}) {
       for (const outcome of outcomes) {
         if (!candidate(outcome.command)) continue;
         const filename = receiptPath(rootDir, outcome.command);
+        let temporary;
         try {
           if (!stable || !outcome.passed) {
             fs.rmSync(filename, { force: true });
@@ -140,7 +141,7 @@ export function createVerificationCache(rootDir, commands, options = {}) {
           }
           if (outcome.reused) continue;
           fs.mkdirSync(path.dirname(filename), { recursive: true });
-          const temporary = `${filename}.${crypto.randomUUID()}.tmp`;
+          temporary = `${filename}.${crypto.randomUUID()}.tmp`;
           fs.writeFileSync(
             temporary,
             JSON.stringify({
@@ -153,7 +154,13 @@ export function createVerificationCache(rootDir, commands, options = {}) {
             }),
           );
           fs.renameSync(temporary, filename);
-        } catch {}
+        } catch {
+          if (temporary) {
+            try {
+              fs.rmSync(temporary, { force: true });
+            } catch {}
+          }
+        }
       }
       return stable;
     },

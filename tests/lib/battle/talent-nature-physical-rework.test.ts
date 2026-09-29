@@ -88,7 +88,7 @@ describe("Nature and Physical Talent reworks", () => {
     expect(result.enemyHealth).toBe(0);
     expect(result.playerStatuses).toMatchObject({ armor: 5, thorns: 5 });
     expect(result.playerHealth).toBe(10);
-    expect(result.enemyStatuses).toMatchObject({ bleed: 5, poison: 5 });
+    expect(result.enemyStatuses).toMatchObject({ bleed: 0, poison: 0 });
   });
 
   it("does not run Nature riders for a zero-damage packet", () => {
@@ -128,7 +128,7 @@ describe("Nature and Physical Talent reworks", () => {
     expect(computeCardDamageToEnemy(armorState, effect).modifiedDamage).toBe(7);
   });
 
-  it("applies Lacerate as direct Bleed instead of a secondary damage hit", () => {
+  it("applies Lacerate as a derived Bleed hit with Block/Armor/resistance", () => {
     const state = patchBattleState({
       rng: () => 0.99,
       enemyHealth: 100,
@@ -140,8 +140,9 @@ describe("Nature and Physical Talent reworks", () => {
 
     const result = resolvePlayerHit(state, { source: "card-attack", card, effect, resolvedDamage: 5 }, []);
 
-    expect(result.enemyHealth).toBe(95);
-    expect(result.enemyStatuses.bleed).toBe(5);
+    // Primary 5 Physical → 95 HP; derived Bleed follow-up uses 0.25 fraction → round(1.25)=1
+    expect(result.enemyHealth).toBe(94);
+    expect(result.enemyStatuses.bleed).toBe(1);
   });
 
   it("does not recursively roll Lacerate from a derived Physical hit", () => {

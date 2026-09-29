@@ -19,7 +19,13 @@ import {
   type FindingsTier,
 } from "./findings-types";
 import { REPORT_ENEMY_TYPES, REPORT_TIERS, titleFor } from "./report-catalog";
-import type { BalanceReportModel, ClassMatchupRow, PairedTierRow, TierRateRow } from "./report-model";
+import type {
+  BalanceReportModel,
+  ClassMatchupRow,
+  ClassTypeSplitRow,
+  PairedTierRow,
+  TierRateRow,
+} from "./report-model";
 import { isDeltaNoisy, type RateCell } from "./report-rankings";
 
 const ENEMY_CAUSE_HINTS: Record<string, string> = {
@@ -32,6 +38,11 @@ const ENEMY_CAUSE_HINTS: Record<string, string> = {
   slime: "Amorphous: 10% less Physical and Poison.",
   necromancer: "Fangs, Bloodthorn, and Rend; double Holy damage received.",
 };
+
+function causeHintSpread(id: string): { causeHint?: string } {
+  const hint = ENEMY_CAUSE_HINTS[id];
+  return hint ? { causeHint: hint } : {};
+}
 
 const REVIEW_SUFFIX = " Discuss before applying a change.";
 
@@ -167,7 +178,7 @@ function collectEnemyRateFindings(model: BalanceReportModel): BalanceFinding[] {
           cell: enemy.rates[tier],
           enemyType,
           worstScenario: `${title} (${tier})`,
-          ...(ENEMY_CAUSE_HINTS[enemy.id] ? { causeHint: ENEMY_CAUSE_HINTS[enemy.id] } : {}),
+          ...causeHintSpread(enemy.id),
         }),
       );
     }
@@ -247,7 +258,7 @@ function collectEnemyTypeEquity(enemies: readonly TierRateRow[]): BalanceFinding
           observed: row.rates[tier].winRate,
           band: `within ${EQUITY_SPREAD * 100}% of ${enemyType} median (${(med * 100).toFixed(1)}%)`,
           worstScenario: `${title} (${tier})`,
-          ...(ENEMY_CAUSE_HINTS[row.id] ? { causeHint: ENEMY_CAUSE_HINTS[row.id] } : {}),
+          ...causeHintSpread(row.id),
           recommendation: `This ${enemyType} is 15pp+ from the type median (same power budget).${REVIEW_SUFFIX}`,
         });
       }
@@ -256,7 +267,7 @@ function collectEnemyTypeEquity(enemies: readonly TierRateRow[]): BalanceFinding
   return findings;
 }
 
-function collectClassEquity(classes: BalanceReportModel["classes"]): BalanceFinding[] {
+function collectClassEquity(classes: readonly ClassTypeSplitRow[]): BalanceFinding[] {
   const findings: BalanceFinding[] = [];
   for (const { preset: tier } of REPORT_TIERS) {
     const rates = classes.filter((row) => row.rates[tier].n > 0).map((row) => row.rates[tier].winRate);
@@ -321,7 +332,7 @@ function collectMatchupFindings(model: BalanceReportModel): BalanceFinding[] {
               cell,
               enemyType: effectiveEnemyType,
               worstScenario: `${matchupTitle} (${tier})`,
-              ...(ENEMY_CAUSE_HINTS[row.enemyId] ? { causeHint: ENEMY_CAUSE_HINTS[row.enemyId] } : {}),
+              ...causeHintSpread(row.enemyId),
             }),
           );
           findings.push({
@@ -335,7 +346,7 @@ function collectMatchupFindings(model: BalanceReportModel): BalanceFinding[] {
             observed: cell.winRate,
             band: `within ${EQUITY_SPREAD * 100}% of this enemy's class median (${(med * 100).toFixed(1)}%)`,
             worstScenario: `${matchupTitle} (${tier})`,
-            ...(ENEMY_CAUSE_HINTS[row.enemyId] ? { causeHint: ENEMY_CAUSE_HINTS[row.enemyId] } : {}),
+            ...causeHintSpread(row.enemyId),
             recommendation: `This matchup is 15pp+ from other classes vs the same enemy.${REVIEW_SUFFIX}`,
           });
         } else if (
@@ -352,7 +363,7 @@ function collectMatchupFindings(model: BalanceReportModel): BalanceFinding[] {
               cell,
               enemyType: effectiveEnemyType,
               worstScenario: `${matchupTitle} (${tier})`,
-              ...(ENEMY_CAUSE_HINTS[row.enemyId] ? { causeHint: ENEMY_CAUSE_HINTS[row.enemyId] } : {}),
+              ...causeHintSpread(row.enemyId),
             }),
           );
         }

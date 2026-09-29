@@ -56,7 +56,8 @@ export function getArmoryTargetState({
 }
 
 export function formatTrinketEquipAriaLabel(title: string, equippedBy: CharacterId | null | undefined): string {
-  return `Equip ${title}${equippedBy ? ` from ${equippedBy}` : ""}`;
+  const characterName = equippedBy ? (characters[equippedBy]?.name ?? equippedBy) : null;
+  return `Equip ${title}${characterName ? ` from ${characterName}` : ""}`;
 }
 
 type ArmoryItemAction =

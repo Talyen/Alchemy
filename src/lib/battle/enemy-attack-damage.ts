@@ -48,6 +48,8 @@ export interface EnemyDamageOptions {
   skipTraitReactions?: boolean;
   preparedDamage?: { attemptedDamage: number; incomingDamage: number };
   traitSet?: ReadonlySet<string>;
+  /** Set by the attack-hit orchestrator; damage resolution itself ignores it. */
+  canDodge?: boolean;
 }
 
 function computeMitigatedDamage(

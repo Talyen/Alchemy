@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createSeededRng } from "@/lib/utils";
+import { createSeededRng } from "@/lib/rng";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { evaluateSaveCandidates } from "@/features/alchemy/shared/storage/save-candidates";

@@ -28,10 +28,8 @@ const converted = {
     holy: ["holy-burn-chance"],
     leech: ["leech-bleed-chance", "leech-poison"],
   }),
-  naturePoisonChance: 0,
-  physicalBleedChance: 0,
-  naturePoisonDamageChance: 10,
-  physicalBleedDamageChance: 10,
+  naturePoisonChance: 10,
+  physicalBleedChance: 10,
 };
 
 describe("talent damage conversions", () => {
@@ -242,7 +240,7 @@ describe("Toxic Profit and saved damage rules", () => {
       },
       [],
     );
-    expect(hit.enemyHealth).toBe(92);
-    expect(hit.enemyStatuses.bleed).toBe(8);
+    expect(hit.enemyHealth).toBe(90);
+    expect(hit.enemyStatuses.bleed).toBe(2);
   });
 });

@@ -8,7 +8,8 @@ import {
   type CharacterId,
 } from "@/lib/game-data";
 import { DRAFT_CHOICES, DRAFT_ROUNDS } from "@/lib/game-constants";
-import { isValidDeckIndex, shuffle } from "@/lib/utils";
+import { shuffle } from "@/lib/rng";
+import { isValidDeckIndex } from "@/lib/utils";
 import { WILDWOOD_BOSS_IDS, type WildwoodBossId } from "./bosses";
 import {
   appendEncounterTraits,

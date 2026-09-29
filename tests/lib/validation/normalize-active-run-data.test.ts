@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { ActiveRunDataSchema } from "@/lib/validation";
 import { defaultBattleState } from "@/lib/battle";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
-import { createSeededRng } from "@/lib/utils";
+import { createSeededRng } from "@/lib/rng";
 import {
   baseActiveRunInput,
   liveCard,

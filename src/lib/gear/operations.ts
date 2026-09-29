@@ -4,7 +4,6 @@ import { GEAR_AFFIX_COUNT } from "@/lib/game-constants";
 import { computeSalvageYield, type SalvageYield } from "./crafting";
 import { gearDefinitions } from "./definitions";
 import { getUniqueAffixes } from "./unique-catalog";
-import { mergeGearEffectManifests } from "./gear-effect-manifest";
 import {
   createEmptyGearLoadouts,
   normalizeExclusiveGearLoadouts,
@@ -36,13 +35,15 @@ export function isQuiver(definition: GearDefinition): boolean {
 }
 
 function resolveEquippedDefinitionAt(
-  inventory: GearInstance[],
+  inventoryOrLookup: GearInstance[] | ReadonlyMap<string, GearInstance>,
   loadout: GearLoadouts[GearCharacterId],
   slot: GearSlot,
 ): GearDefinition | undefined {
   const instanceId = loadout[slot];
   if (!instanceId) return undefined;
-  const instance = inventory.find((item) => item.instanceId === instanceId);
+  const instance: GearInstance | undefined = Array.isArray(inventoryOrLookup)
+    ? inventoryOrLookup.find((item) => item.instanceId === instanceId)
+    : inventoryOrLookup.get(instanceId);
   if (!instance) return undefined;
   return gearDefinitions[instance.definitionId];
 }
@@ -107,10 +108,10 @@ function resolveHandConflicts(
  */
 function repairHandPairing(
   characterLoadout: GearLoadouts[GearCharacterId],
-  inventory: GearInstance[],
+  inventoryOrLookup: GearInstance[] | ReadonlyMap<string, GearInstance>,
 ): GearLoadouts[GearCharacterId] {
-  const mainHand = resolveEquippedDefinitionAt(inventory, characterLoadout, "main-hand");
-  const offHand = resolveEquippedDefinitionAt(inventory, characterLoadout, "off-hand");
+  const mainHand = resolveEquippedDefinitionAt(inventoryOrLookup, characterLoadout, "main-hand");
+  const offHand = resolveEquippedDefinitionAt(inventoryOrLookup, characterLoadout, "off-hand");
   if (mainHand && isTwoHanded(mainHand) && characterLoadout["off-hand"]) {
     return { ...characterLoadout, "off-hand": null };
   }
@@ -136,7 +137,7 @@ export function pruneOrphanGearLoadouts(inventory: GearInstance[], loadouts: Gea
     }
     // Crafted/legacy saves cannot hold hand pairings the equip path would
     // never produce; repair them with the same steady-state rule.
-    next[characterId] = repairHandPairing(next[characterId], inventory);
+    next[characterId] = repairHandPairing(next[characterId], inventoryById);
   }
 
   return normalizeExclusiveGearLoadouts(next);
@@ -269,11 +270,27 @@ export function computeGearManifest(
   loadouts: GearLoadouts,
 ): GearEffectManifest {
   const byId = new Map(inventory.map((item) => [item.instanceId, item]));
-  return Object.values(loadouts[characterId]).reduce<GearEffectManifest>(
-    (effects, instanceId) => {
-      const instance = instanceId ? byId.get(instanceId) : undefined;
-      return instance ? mergeGearEffectManifests(effects, effectsForInstance(instance)) : effects;
-    },
-    { ...defaultGearEffects },
-  );
+  const manifest: GearEffectManifest = { ...defaultGearEffects };
+  const characterLoadout = loadouts[characterId];
+  if (!characterLoadout) return manifest;
+
+  for (const slot of GEAR_SLOTS) {
+    const instanceId = characterLoadout[slot];
+    if (!instanceId) continue;
+    const instance = byId.get(instanceId);
+    if (!instance) continue;
+    const definition = gearDefinitions[instance.definitionId];
+    if (!definition) continue;
+    // Rolls are already normalized by save parsing and generation, but normalize
+    // again so a stale or hand-edited roll clamps exactly like effectsForInstance.
+    const rolls = normalizeAffixRolls([...getGearInstanceAffixes(instance)], definition.rarity);
+    for (const roll of rolls) {
+      const def = gearAffixCatalog[roll.id];
+      if (def) {
+        manifest[def.effectKey] += roll.value;
+      }
+    }
+  }
+
+  return manifest;
 }

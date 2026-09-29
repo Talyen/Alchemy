@@ -45,7 +45,7 @@ describe("armory-item-state", () => {
 
   it("formats trinket equip labels with prior owner", () => {
     expect(formatTrinketEquipAriaLabel("Bone Charm", null)).toBe("Equip Bone Charm");
-    expect(formatTrinketEquipAriaLabel("Bone Charm", "knight")).toBe("Equip Bone Charm from knight");
+    expect(formatTrinketEquipAriaLabel("Bone Charm", "knight")).toBe("Equip Bone Charm from Knight");
   });
 });
 

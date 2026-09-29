@@ -2,6 +2,11 @@ import { capitalizeWord } from "@/lib/utils";
 import { getModifiedCompanionEffects, type CompanionDamageModifiers } from "../companions";
 import type { CompanionDefinition, BattleCardEffect } from "../types";
 
+function joinChanceTurnLines(success: string | null, failure: string | null): string | null {
+  if (!success || !failure) return null;
+  return `${success.replace(/ each turn$/, "")} or ${failure.replace(/ each turn$/, "")} each turn`;
+}
+
 function companionTurnLine(effect: BattleCardEffect, amountOverride?: number): string | null {
   switch (effect.kind) {
     case "damage": {
@@ -32,8 +37,7 @@ function companionTurnLine(effect: BattleCardEffect, amountOverride?: number): s
     case "chance": {
       const success = effect.successEffects[0] ? companionTurnLine(effect.successEffects[0]) : null;
       const failure = effect.failureEffects[0] ? companionTurnLine(effect.failureEffects[0]) : null;
-      if (!success || !failure) return null;
-      return `${success.replace(/ each turn$/, "")} or ${failure.replace(/ each turn$/, "")} each turn`;
+      return joinChanceTurnLines(success, failure);
     }
     case "wish":
     case "enemy-status":
@@ -86,8 +90,7 @@ export function formatCompanionTurnStartLine(
     const failure = turnEffect.failureEffects[0]
       ? formatCompanionTurnStartLine(turnEffect.failureEffects[0], context)
       : null;
-    if (!success || !failure) return null;
-    return `${success.replace(/ each turn$/, "")} or ${failure.replace(/ each turn$/, "")} each turn`;
+    return joinChanceTurnLines(success, failure);
   }
   return formatCompanionTurnLineBase(turnEffect);
 }

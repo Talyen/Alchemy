@@ -1,6 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { HOMESTEAD_CONFIG, getArt, renderTextWithMaterials } from "@/features/alchemy/meta/screens/homestead/helpers";
+import {
+  BUILDING_GOAL_ITEMS,
+  FARM_GOAL_ITEMS,
+  HOMESTEAD_CONFIG,
+  RESEARCH_GOAL_ITEMS,
+  formatMaterialCostSummary,
+  getArt,
+  getHomesteadUpgradeShineColors,
+  renderTextWithMaterials,
+} from "@/features/alchemy/meta/screens/homestead/helpers";
+import { emptyInventory } from "@/lib/homestead/inventory";
 
 describe("renderTextWithMaterials", () => {
   it("renders multiple chips in one line and plain text segments", () => {
@@ -24,6 +34,44 @@ describe("getArt", () => {
 
   it("returns fallback empty for unknown id", () => {
     expect(getArt("unknown-id")).toBe("");
+  });
+
+  it("resolves valid artwork for every building, farm, and research upgrade", () => {
+    const allGoals = [...BUILDING_GOAL_ITEMS, ...FARM_GOAL_ITEMS, ...RESEARCH_GOAL_ITEMS];
+    expect(allGoals).toHaveLength(23);
+    for (const goal of allGoals) {
+      const art = getArt(goal.data.id);
+      expect(art, `Art for ${goal.data.id} should be non-empty`).toBeTruthy();
+      expect(typeof art).toBe("string");
+    }
+  });
+});
+
+describe("formatMaterialCostSummary", () => {
+  it("returns formatted string for single material", () => {
+    const cost = { ...emptyInventory(), wood: 10 };
+    expect(formatMaterialCostSummary(cost)).toBe("10 Wood");
+  });
+
+  it("returns formatted string for multiple materials in canonical order", () => {
+    const cost = { ...emptyInventory(), stone: 8, iron: 22 };
+    expect(formatMaterialCostSummary(cost)).toBe("8 Stone, 22 Iron");
+  });
+
+  it("returns empty string when cost is zero", () => {
+    expect(formatMaterialCostSummary(emptyInventory())).toBe("");
+  });
+});
+
+describe("getHomesteadUpgradeShineColors", () => {
+  it("returns an array of shine colors for an upgrade item and caches it", () => {
+    const item = BUILDING_GOAL_ITEMS[0]!;
+    const colors1 = getHomesteadUpgradeShineColors(item);
+    expect(Array.isArray(colors1)).toBe(true);
+    expect(colors1.length).toBeGreaterThan(0);
+
+    const colors2 = getHomesteadUpgradeShineColors(item);
+    expect(colors2).toBe(colors1); // cached reference
   });
 });
 

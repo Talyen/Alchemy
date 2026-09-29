@@ -82,10 +82,10 @@ describe("applyHolyDamageRiders", () => {
     expect(texts).toContainEqual({ target: "player", kind: "status", stat: "block", amount: 7 });
   });
 
-  it("applies burn on holy damage with holyBurnChance", () => {
+  it("applies burn on holy damage with holyBurnDamageChance", () => {
     const state = patchBattleState({
       rng: () => 0.1,
-      talentEffects: { ...defaultTalentEffects, holyBurnChance: 50, holyLifestealPercent: 0, holyGoldPercent: 0 },
+      talentEffects: { ...defaultTalentEffects, holyBurnDamageChance: 50, holyLifestealPercent: 0, holyGoldPercent: 0 },
     });
     const card = makeTestCard({ effects: [makeEffect("holy", 10)] });
     const result = dealDamage(state, card);

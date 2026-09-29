@@ -85,6 +85,7 @@ describe("sampleItems", () => {
   it("caps sample count at array length and handles empty input", () => {
     expect(sampleItems([10, 20], 5, () => 0.5)).toHaveLength(2);
     expect(sampleItems([], 3, () => 0.5)).toEqual([]);
+    expect(sampleItems([10, 20], 2, () => 0.5)).toEqual([10, 20]);
   });
 });
 
@@ -100,6 +101,14 @@ describe("sampleItemsExcluding", () => {
 
   it("returns [] when everything is excluded", () => {
     expect(sampleItemsExcluding(entries, 2, () => 0.5, new Set(["a", "b", "c", "d"]), keyOf)).toEqual([]);
+  });
+
+  it("handles empty exclusion set and disjoint exclusions", () => {
+    const emptyExclude = sampleItemsExcluding(entries, 2, () => 0.5, new Set(), keyOf);
+    expect(emptyExclude).toHaveLength(2);
+
+    const disjointExclude = sampleItemsExcluding(entries, 2, () => 0.5, new Set(["z"]), keyOf);
+    expect(disjointExclude).toHaveLength(2);
   });
 });
 

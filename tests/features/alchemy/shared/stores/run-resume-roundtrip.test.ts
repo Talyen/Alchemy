@@ -9,7 +9,7 @@ import { finalizeRewardState } from "@/features/alchemy/run-loop/navigation/rewa
 import { createEmptyRewardState, emptyEquipmentShopState, emptyShopState } from "@/lib/active-run-session";
 import { canEnterLabyrinthNode, withClearedNode } from "@/lib/content-systems/labyrinth/map-state";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
-import { createSeededRng } from "@/lib/utils";
+import { createSeededRng } from "@/lib/rng";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { decodeRunResumeSnapshot, encodePersistedShops } from "@/features/alchemy/shared/stores/run-resume-codec";
 import { runProfilePersistenceCodec } from "@/features/alchemy/shared/stores/run-profile-codec";

@@ -1,6 +1,6 @@
 import { mysteryEventArt, type KeywordId } from "@/lib/game-data";
 import type { MaterialId } from "@/lib/homestead/types";
-import { pickRandom } from "@/lib/utils";
+import { pickRandom } from "@/lib/rng";
 
 import { resolveMysteryEventTrinkets } from "./resolve-trinkets";
 import type { MysteryEffect, MysteryEvent } from "./types";

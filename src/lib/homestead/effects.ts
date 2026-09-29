@@ -1,6 +1,6 @@
 import type { TalentEffectManifest } from "@/lib/game-data";
 import type { HomesteadEffectManifest } from "./types";
-import { HOMESTEAD_BATTLE_NUMERIC_KEYS, HOMESTEAD_BATTLE_BOOLEAN_KEYS } from "./types";
+import { HOMESTEAD_BATTLE_NUMERIC_KEYS } from "./types";
 import { defaultHomesteadEffects } from "./defaults";
 import { buildings, farmPlots, researchUpgrades } from "./data";
 
@@ -15,8 +15,6 @@ function applyTierEffects(base: HomesteadEffectManifest, partial?: Partial<Homes
     const val = partial[key];
     if (typeof val === "number") {
       (base[key] as number) = addNumericEffect(base[key] as number, val);
-    } else if (typeof val === "boolean") {
-      (base[key] as boolean) = (base[key] as boolean) || val;
     } else if (typeof val === "object" && val !== null) {
       const baseVal = base[key];
       if (typeof baseVal === "object" && baseVal !== null) {
@@ -94,12 +92,6 @@ export function mergeIntoManifest(
 
   for (const key of HOMESTEAD_BATTLE_NUMERIC_KEYS) {
     merged[key] = addNumericEffect(merged[key], homesteadEffects[key]);
-  }
-
-  for (const key of HOMESTEAD_BATTLE_BOOLEAN_KEYS) {
-    if (homesteadEffects[key]) {
-      merged[key] = true;
-    }
   }
 
   mergeCardHealBonus(merged, homesteadEffects);

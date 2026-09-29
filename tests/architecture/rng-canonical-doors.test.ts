@@ -23,6 +23,26 @@ describe("rng canonical doors", () => {
     expect(matchingOtherFiles(paths, /(?:from\s+|import\s*\()["'](?:\.\.\/)+rng["']/u)).toEqual([]);
   });
 
+  it("utils does not re-export RNG helpers", () => {
+    const utils = readText("src/lib/utils.ts");
+    expect(utils).not.toMatch(/from\s+["'][^"']*rng["']/u);
+  });
+
+  it("does not import RNG helpers through @/lib/utils", () => {
+    const paths = listSourceFiles(["src", "tests"]);
+    expect(
+      matchingOtherFiles(
+        paths,
+        /import\s+[^;]*\b(?:createSeededRng|shuffle|sampleItems|pickRandom|takeRandomItem|createRunStateRng)\b[^;]*from\s+["'][^"']*utils["']/u,
+      ),
+    ).toEqual([]);
+  });
+
+  it("keeps src outside lib/rng on the canonical @/lib/rng door without relative imports", () => {
+    const paths = listSourceFiles("src").filter((filePath) => !filePath.startsWith("src/lib/rng/"));
+    expect(matchingOtherFiles(paths, /(?:from\s+|import\s*\()["'](?:\.\.\/|\.\/)+rng(?:\/index)?["']/u)).toEqual([]);
+  });
+
   it("selectRewardCards requires a seeded RNG and does not fallback to Math.random", () => {
     const file = readText("src/lib/game-data/reward-selection.ts");
     expect(file).not.toMatch(/(\?\?|\|\||=|return)\s*Math\.random/u);

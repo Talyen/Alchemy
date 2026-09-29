@@ -81,7 +81,7 @@ export function affixMatchesAffinity(def: GearAffixDefinition, affinityKeywords:
   );
 }
 
-export function getGearInstanceAffixes(instance: GearInstance): GearAffixRoll[] {
+export function getGearInstanceAffixes(instance: GearInstance): readonly GearAffixRoll[] {
   return getUniqueAffixes(instance.definitionId) ?? instance.affixes;
 }
 

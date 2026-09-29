@@ -245,17 +245,13 @@ function tryDodgeEnemyDamagePacket(
   return applyOnPlayerDodge(dodged, combatTexts, dodgedAmount);
 }
 
-export interface AttackDamageOptions extends EnemyDamageOptions {
-  canDodge: boolean;
-}
-
 export function resolveEnemyAttackHit(
   state: BattleState,
   effect: EnemyAttackEffect & { kind: "damage" },
   combatTexts: CombatTextEvent[],
-  options: AttackDamageOptions,
+  options: EnemyDamageOptions,
 ): EnemyDamageResult {
-  const { canDodge, ...damageOptions } = options;
+  const { canDodge = false, ...damageOptions } = options;
   if (canDodge && hasEnemyTrait(state, "ravenous")) effect = { ...effect, lifesteal: true };
   const preparedDamage = prepareEnemyDamage(state, effect, damageOptions);
   const dodged = tryDodgeEnemyDamagePacket(state, combatTexts, canDodge, preparedDamage.incomingDamage);

@@ -1,9 +1,9 @@
 // Parses conventional commits into changelog and player-facing patch note sections.
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
+const root = path.resolve(import.meta.dirname, "../../..");
+
 const versionConfig = JSON.parse(readFileSync(path.join(root, ".versionrc.json"), "utf8"));
 const TYPE_METADATA = [
   ...versionConfig.types,
@@ -90,7 +90,7 @@ export function cleanCommitBody(body) {
   return (body ?? "")
     .split("\n")
     .filter((line) => !line.startsWith("Co-authored-by:"))
-    .filter((line) => !/^User-Facing:\s*(yes|no)\s*$/iu.test(line.trim()))
+    .filter((line) => !USER_FACING_TRAILER.test(line.trim()))
     .join("\n")
     .trim();
 }

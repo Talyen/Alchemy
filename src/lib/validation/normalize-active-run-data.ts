@@ -4,7 +4,7 @@ import type { ContentSystemId } from "@/lib/content-systems/types";
 import { DRAFT_CHOICES, DRAFT_ROUNDS, MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
 import { cardById, characters, selectRewardCards, type BattleCard, type KeywordId } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
-import { stepRunRng, type RunRngState, type RunRngStream } from "@/lib/rng";
+import { createRunStateRng, type RunRngState, type RunRngStream } from "@/lib/rng";
 import type {
   ActiveCombatData,
   AlchemistState,
@@ -116,10 +116,6 @@ function toPersistedCard(card: BattleCard): PersistedBattleCard {
   return base;
 }
 
-function createRepairRng(rngState: RunRngState, stream: RunRngStream): () => number {
-  return () => stepRunRng(rngState, stream);
-}
-
 function repairEmptyCardChoices(
   rngState: RunRngState,
   stream: RunRngStream,
@@ -133,7 +129,7 @@ function repairEmptyCardChoices(
     getOfferableCardPool(),
     count,
     alreadyOwned,
-    createRepairRng(rngState, stream),
+    createRunStateRng(rngState, stream),
     seedKeywords,
   ).map(toPersistedCard);
   return repaired.length > 0 ? repaired : null;

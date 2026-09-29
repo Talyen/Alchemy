@@ -6,7 +6,7 @@ import {
   CompletedDifficultiesSchema,
   UnlockedTalentsSchema,
 } from "@/lib/validation";
-import { createSeededRng } from "@/lib/utils";
+import { createSeededRng } from "@/lib/rng";
 import { deduplicateFromSet, deduplicatedSetArraySchema } from "@/lib/validation/save-schemas/validation-utils";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { withClearedNode } from "@/lib/content-systems/labyrinth/map-state";

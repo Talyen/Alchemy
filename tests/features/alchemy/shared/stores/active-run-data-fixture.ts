@@ -5,8 +5,7 @@ import { getStartingDeck } from "@/lib/game-data";
 import { findMysteryEvent } from "@/lib/mystery";
 import type { ActiveRunData, PersistedMysteryVisit } from "@/lib/active-run-session";
 import { EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear";
-import { createRunRngState } from "@/lib/rng";
-import { createSeededRng } from "@/lib/utils";
+import { createRunRngState, createSeededRng } from "@/lib/rng";
 
 export const ANCIENT_ALTAR_MYSTERY_VISIT: PersistedMysteryVisit = {
   event: findMysteryEvent("ancient-altar")!,

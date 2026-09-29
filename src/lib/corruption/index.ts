@@ -1,7 +1,7 @@
 import { isMixedPotionCard, type BattleCard } from "@/lib/game-data";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { CORRUPTION_TRANSFORM_CHANCE_FRACTION } from "@/lib/game-constants";
-import { pickRandom } from "@/lib/utils";
+import { pickRandom } from "@/lib/rng";
 import { getCorruptionMutationGroups, type CorruptionMutationGroup } from "./mutations";
 
 export { getEditableCorruptionTargets, replaceNumberAt, updateCardNumericValue } from "./numeric";
@@ -61,43 +61,36 @@ export function corruptCard(
   if (groups.length === 0) return null;
   const mutation = pickMutation(groups, rng);
   if (!mutation) return null;
-  if (!twin) {
-    return {
-      originalCard: selectedCard,
-      corruptedCard: preserveCardUid(mutation.card, selectedCard.uid),
-      transformed,
-      delta: mutation.delta,
-    };
-  }
-  const firstKind = groups.find((entry) => entry.mutations.includes(mutation))?.kind;
-  const secondGroups = getCorruptionMutationGroups(mutation.card, singleModifiers).filter(
-    (group) => group.kind !== firstKind && !isOppositeAxis(firstKind, group.kind),
-  );
-  const second = pickMutation(secondGroups, rng);
-  if (!second) {
-    return {
-      originalCard: selectedCard,
-      corruptedCard: preserveCardUid(mutation.card, selectedCard.uid),
-      transformed,
-      delta: mutation.delta,
-    };
+  let finalCard = mutation.card;
+  let finalDelta = mutation.delta;
+  if (twin) {
+    const firstKind = groups.find((entry) => entry.mutations.includes(mutation))?.kind;
+    const secondGroups = getCorruptionMutationGroups(mutation.card, singleModifiers).filter(
+      (group) => group.kind !== firstKind && !isOppositeAxis(firstKind, group.kind),
+    );
+    const second = pickMutation(secondGroups, rng);
+    if (second) {
+      finalCard = second.card;
+      finalDelta = mutation.delta === -1 && second.delta === -1 ? -1 : 1;
+    }
   }
   return {
     originalCard: selectedCard,
-    corruptedCard: preserveCardUid(second.card, selectedCard.uid),
+    corruptedCard: preserveCardUid(finalCard, selectedCard.uid),
     transformed,
-    delta: mutation.delta === -1 && second.delta === -1 ? -1 : 1,
+    delta: finalDelta,
   };
 }
 
+const OPPOSITE_AXIS: Partial<Record<CorruptionMutationGroup["kind"], CorruptionMutationGroup["kind"]>> = {
+  strengthen: "weaken",
+  weaken: "strengthen",
+  consume: "reusable",
+  reusable: "consume",
+};
+
 function isOppositeAxis(first: CorruptionMutationGroup["kind"] | undefined, second: CorruptionMutationGroup["kind"]) {
-  if (!first) return false;
-  return (
-    (first === "strengthen" && second === "weaken") ||
-    (first === "weaken" && second === "strengthen") ||
-    (first === "consume" && second === "reusable") ||
-    (first === "reusable" && second === "consume")
-  );
+  return first !== undefined && OPPOSITE_AXIS[first] === second;
 }
 
 export function corruptDeckCard(

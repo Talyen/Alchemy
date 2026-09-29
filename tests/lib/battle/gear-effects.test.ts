@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { applyGearKillRewards } from "@/lib/battle/player-rewards";
-import { gearFrozenDamageMultiplier, scaledGearLeechHeal } from "@/lib/battle/gear-effects";
+import { gearFrozenDamageMultiplier, scaledGearLeechHeal } from "@/lib/battle/scaled-damage";
 import { applyGearDamageResistance, scaleGoldReward, type CombatTextEvent } from "@/lib/battle/types";
 import { defaultGearEffects } from "@/lib/gear";
 import {

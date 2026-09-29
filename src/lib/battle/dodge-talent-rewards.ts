@@ -44,5 +44,5 @@ export function applyDodgeTalentStatuses(state: BattleState, combatTexts: Combat
     nextState = setPlayerStatus(nextState, status, Math.max(0, previous - amount));
     removedStatuses += Number(previous > 0 && nextState.playerStatuses[status] === 0);
   }
-  return removedStatuses > 0 ? applyCleanseHeals(nextState, combatTexts, removedStatuses) : nextState;
+  return removedStatuses > 0 ? applyCleanseHeals(nextState, combatTexts, 1) : nextState;
 }

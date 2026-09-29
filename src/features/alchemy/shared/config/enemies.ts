@@ -8,7 +8,7 @@ import {
   type BestiaryEntry,
   type EnemyType,
 } from "@/features/alchemy/shared/config/game-data-catalog";
-import { pickRandom } from "@/lib/utils";
+import { pickRandom } from "@/lib/rng";
 
 function withoutEncountered(pool: readonly BestiaryEntry[], encounteredEnemyIds: readonly string[]): BestiaryEntry[] {
   if (encounteredEnemyIds.length === 0) return [...pool];

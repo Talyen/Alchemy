@@ -1,5 +1,4 @@
 import {
-  defineResearch,
   foodSingleCosts,
   gemsSingleCosts,
   herbsSingleCosts,
@@ -7,7 +6,6 @@ import {
   stackingBuilding,
   stackingFarm,
   stackingResearch,
-  stackingTiers,
   woodFoodCosts,
   woodHideCosts,
   woodStoneCosts,
@@ -197,18 +195,13 @@ export const researchUpgrades = [
     (t) => `${5 * t}% chance to spend no Mana`,
     (t) => `+${t} Gems per Room`,
   ),
-  defineResearch(
+  stackingResearch(
     "detect-magic",
     "Detect Magic",
-    stackingTiers(
-      gemsSingleCosts(),
-      { gearAstralChanceBonus: 0.03, endRunGemsPerRoom: 1 },
-      (t) => `Basic → Astral chance +${[3, 6, 10, 15][t - 1]}%`,
-      (t) => `+${t} Gems per Room`,
-    ).map((tier, index) => ({
-      ...tier,
-      effects: { ...tier.effects, gearAstralChanceBonus: index < 2 ? 0.03 : index === 2 ? 0.04 : 0.05 },
-    })),
+    gemsSingleCosts(),
+    (t) => ({ gearAstralChanceBonus: t <= 2 ? 0.03 : t === 3 ? 0.04 : 0.05, endRunGemsPerRoom: 1 }),
+    (t) => `Basic → Astral chance +${[3, 6, 10, 15][t - 1]}%`,
+    (t) => `+${t} Gems per Room`,
   ),
   stackingResearch(
     "botanical-distillation",

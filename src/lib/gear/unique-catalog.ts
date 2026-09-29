@@ -160,7 +160,7 @@ export function getUniqueItemDefinition(id: string): UniqueItemDefinition | unde
 }
 
 export function getUniqueAffixes(id: string): GearAffixRoll[] | undefined {
-  const definition = getUniqueItemDefinition(id);
+  const definition = uniqueItemDefinitions.get(id);
   return definition
     ? [definition.signatureAffix, ...definition.supportingAffixes].map((affix) => ({ ...affix }))
     : undefined;

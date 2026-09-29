@@ -137,7 +137,7 @@ describe("runCardSweepInClass", () => {
     }
   });
 
-  it("keeps the target card out of every isolated baseline", () => {
+  it("groups every isolated card variant against a shared baseline per sample", () => {
     runCardSweepIsolated(
       {
         iterations: 1,
@@ -151,22 +151,28 @@ describe("runCardSweepInClass", () => {
     );
 
     const calls = simulateWinSeries.mock.calls.map(([config]) => config as BalanceBatchConfig);
-    expect(calls).toHaveLength(3 * cardLibrary.length * 2);
-    for (let index = 0; index < calls.length; index += 2) {
-      const baseline = calls[index]?.deck ?? [];
-      const treatment = calls[index + 1]?.deck ?? [];
-      const targetId = treatment.at(-1)?.id;
-      const baselineIds = new Set(baseline.map((card) => card.id));
-      const treatmentIds = new Set(treatment.map((card) => card.id));
+    expect(calls).toHaveLength(3 * (1 + cardLibrary.length));
+    const groupSize = 1 + cardLibrary.length;
+    for (let tierIndex = 0; tierIndex < 3; tierIndex += 1) {
+      const groupCalls = calls.slice(tierIndex * groupSize, (tierIndex + 1) * groupSize);
+      const baselineConfig = groupCalls[0];
+      const baselineDeck = baselineConfig?.deck ?? [];
+      expect(baselineDeck).toHaveLength(10);
+      const baselineIds = new Set(baselineDeck.map((card) => card.id));
 
-      expect(targetId).toBeDefined();
-      expect(baselineIds.has(targetId!)).toBe(false);
-      expect(baseline).toHaveLength(10);
-      expect(treatment).toHaveLength(10);
-      expect(treatmentIds.size).toBe(10);
-      expect(baseline.filter((card) => treatmentIds.has(card.id))).toHaveLength(9);
-      expect(treatment.slice(0, 9)).toEqual(baseline.slice(0, 9));
-      expect(calls[index + 1]?.seed).toBe(calls[index]?.seed);
+      for (let cardIndex = 0; cardIndex < cardLibrary.length; cardIndex += 1) {
+        const variantConfig = groupCalls[cardIndex + 1];
+        const card = cardLibrary[cardIndex];
+        expect(variantConfig?.seed).toBe(baselineConfig?.seed);
+        const variantDeck = variantConfig?.deck ?? [];
+        if (baselineIds.has(card.id)) {
+          expect(variantDeck).toHaveLength(9);
+          expect(variantDeck.some((c) => c.id === card.id)).toBe(false);
+        } else {
+          expect(variantDeck).toHaveLength(10);
+          expect(variantDeck.at(-1)?.id).toBe(card.id);
+        }
+      }
     }
   });
 

@@ -2,7 +2,7 @@ import { readCombatFlag } from "./action-context";
 import { applyArmorReward, applyBlockReward, applyCardHealing } from "./status-player";
 import { hasEncounterBenefit } from "./types";
 import { LABYRINTH_MODIFIER_CONFIG } from "../game-constants";
-import { type EnemyStatusId, type PlayerStatusId } from "@/lib/game-data";
+import { type PlayerStatusId } from "@/lib/game-data";
 import {
   addEnemyStatus,
   addPlayerStatus,
@@ -19,7 +19,7 @@ import {
   applyHealingWithCombatText,
   gainManaWithCombatText,
 } from "./player-rewards";
-import { scaledGearLeechHeal } from "./gear-effects";
+import { scaledGearLeechHeal } from "./scaled-damage";
 import { rollTalentChance } from "./status-helpers";
 import { getBattleRng, pickRandom } from "@/lib/rng";
 import { applyPercentBonus, scalePercent } from "./amount-helpers";
@@ -59,6 +59,8 @@ export function applyLeechHealing(
     (amount > 0 ? (state.talentEffects.homesteadLeechHealing ?? 0) : 0);
   // Capture Leech's own restoration before cleansing or kill rewards can heal again.
   const actualHealing = resolvePlayerHealing(state, healing).restored;
+  const belowHalf = state.playerHealth < state.playerMaxHealth / HALF_DIVISOR;
+  const restoredToFull = actualHealing > 0 && state.playerHealth + actualHealing >= state.playerMaxHealth;
   let restored = options.cardHealing
     ? applyCardHealing(state, healing, combatTexts, { skipFightPacing: true, allowOverhealBlock: false })
     : applyHealingWithCombatText(state, healing, combatTexts, { skipFightPacing: true });
@@ -70,21 +72,13 @@ export function applyLeechHealing(
       combatTexts,
     );
   }
-  if (
-    actualHealing > 0 &&
-    state.playerHealth < state.playerMaxHealth / HALF_DIVISOR &&
-    state.gearEffects.stunOnLeechBelowHalfHealth > 0
-  ) {
+  if (actualHealing > 0 && belowHalf && state.gearEffects.stunOnLeechBelowHalfHealth > 0) {
     restored = resolveStunFollowUpHit(restored, state.gearEffects.stunOnLeechBelowHalfHealth, combatTexts);
   }
   if (actualHealing > 0 && rollTalentChance(state.gearEffects.leechBlockChance, state)) {
     restored = applyBlockReward(restored, actualHealing, combatTexts, { skipFightPacing: true });
   }
-  if (
-    state.playerHealth < state.playerMaxHealth / HALF_DIVISOR &&
-    state.talentEffects.leechBlockBelowHalfPercent > 0 &&
-    actualHealing > 0
-  ) {
+  if (belowHalf && state.talentEffects.leechBlockBelowHalfPercent > 0 && actualHealing > 0) {
     restored = applyBlockReward(
       restored,
       Math.round((actualHealing * state.talentEffects.leechBlockBelowHalfPercent) / PERCENT_DENOMINATOR),
@@ -92,32 +86,24 @@ export function applyLeechHealing(
       { skipFightPacing: true },
     );
   }
-  restored =
-    actualHealing > 0 &&
-    state.playerHealth + actualHealing >= state.playerMaxHealth &&
-    state.talentEffects.manaOnLeechToFull > 0
-      ? gainManaWithCombatText(restored, state.talentEffects.manaOnLeechToFull, combatTexts)
-      : restored;
+  if (restoredToFull && state.talentEffects.manaOnLeechToFull > 0) {
+    restored = gainManaWithCombatText(restored, state.talentEffects.manaOnLeechToFull, combatTexts);
+  }
   if (actualHealing > 0 && rollTalentChance(state.talentEffects.leechGoldChance, state)) {
     restored = addGoldWithCombatText(restored, actualHealing, combatTexts);
   }
-  restored =
-    actualHealing > 0 &&
-    state.playerHealth + actualHealing >= state.playerMaxHealth &&
-    state.talentEffects.nextAttackPhysicalOnLeechToFull > 0
-      ? setFlag(restored, "sanguinePhysicalBonus", state.talentEffects.nextAttackPhysicalOnLeechToFull)
-      : restored;
+  if (restoredToFull && state.talentEffects.nextAttackPhysicalOnLeechToFull > 0) {
+    restored = setFlag(restored, "sanguinePhysicalBonus", state.talentEffects.nextAttackPhysicalOnLeechToFull);
+  }
   return healing > 0 && !isPlayerDefeated(restored) ? applyLeechManaRider(restored, combatTexts) : restored;
 }
 
-function executePlayerHealing(
-  state: BattleState,
-  amount: number,
-  combatTexts: CombatTextEvent[],
-  cardHealing = false,
-): BattleState {
-  if (amount <= 0) return state;
-  return applyLeechHealing(state, scalePlayerLeechHeal(state, amount), combatTexts, { cardHealing });
+/** Shared base scaler: desperate → blood debt → gear → blood-feast, in that order. */
+function scaleLeechBase(state: BattleState, amount: number): number {
+  return scalePlayerLeechHeal(
+    state,
+    scaledGearLeechHeal(addBloodDebtHealing(state, applyDesperateLeechBonus(state, amount)), state.gearEffects),
+  );
 }
 
 export function applyScaledLeechHealing(
@@ -127,22 +113,7 @@ export function applyScaledLeechHealing(
   options: { cardHealing?: boolean; afflicted?: boolean } = {},
 ): BattleState {
   if (rawAmount <= 0) return state;
-  return applyLeechHealing(
-    state,
-    scalePlayerLeechHeal(
-      state,
-      scaledGearLeechHeal(addBloodDebtHealing(state, applyDesperateLeechBonus(state, rawAmount)), state.gearEffects),
-    ),
-    combatTexts,
-    options,
-  );
-}
-
-function applyLeechStatusRider(state: BattleState, status: EnemyStatusId, chance: number, damage: number): BattleState {
-  if (rollTalentChance(chance, state)) {
-    return addEnemyStatus(state, status, damage);
-  }
-  return state;
+  return applyLeechHealing(state, scaleLeechBase(state, rawAmount), combatTexts, options);
 }
 
 function applyLeechManaRider(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
@@ -156,36 +127,43 @@ function applyLeechManaRider(state: BattleState, combatTexts: CombatTextEvent[])
 }
 
 function applyLeechTrinketSiphonRider(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
-  if (rollTalentChance(state.talentEffects.trinketSiphonChance, state)) {
-    const mit = state.enemyMitigation;
-    const pool: Array<{ key: keyof EnemyMitigation; status: PlayerStatusId }> = [];
-    if (mit.forge > 0) pool.push({ key: "forge", status: "forge" });
-    if (mit.armor > 0) pool.push({ key: "armor", status: "armor" });
-    if (mit.block > 0) pool.push({ key: "block", status: "block" });
-    const steal = pickRandom(pool, getBattleRng(state));
-    if (steal) {
-      const nextState = {
-        ...state,
-        enemyMitigation: { ...mit, [steal.key]: Math.max(0, mit[steal.key] - 1) },
-      };
-      if (steal.status === "armor") {
-        return applyArmorReward(nextState, 1, combatTexts);
-      }
-      if (steal.status === "block") {
-        return addPlayerStatusWithCombatText(nextState, steal.status, 1, undefined, { skipFightPacing: true });
-      }
-      return addPlayerStatus(nextState, steal.status, 1);
-    }
+  if (!rollTalentChance(state.talentEffects.trinketSiphonChance, state)) return state;
+  const mit = state.enemyMitigation;
+  const pool: Array<{ key: keyof EnemyMitigation; status: PlayerStatusId }> = (
+    [
+      ["forge", "forge"],
+      ["armor", "armor"],
+      ["block", "block"],
+    ] as const
+  )
+    .filter(([key]) => mit[key] > 0)
+    .map(([key, status]) => ({ key, status }));
+  const steal = pickRandom(pool, getBattleRng(state));
+  if (!steal) return state;
+  const nextState = {
+    ...state,
+    enemyMitigation: { ...mit, [steal.key]: Math.max(0, mit[steal.key] - 1) },
+  };
+  if (steal.status === "armor") {
+    return applyArmorReward(nextState, 1, combatTexts);
   }
-  return state;
+  if (steal.status === "block") {
+    return addPlayerStatusWithCombatText(nextState, steal.status, 1, undefined, { skipFightPacing: true });
+  }
+  return addPlayerStatus(nextState, steal.status, 1);
 }
 
 export function applyLeechHitRewards(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
   if (damage <= 0) return state;
   let nextState = state;
-  nextState = applyLeechStatusRider(nextState, "bleed", state.talentEffects.leechBleedChance, damage);
+  if (rollTalentChance(state.talentEffects.leechBleedChance, state)) {
+    nextState = addEnemyStatus(nextState, "bleed", damage);
+  }
   nextState = applyLeechTrinketSiphonRider(nextState, combatTexts);
-  return applyLeechStatusRider(nextState, "poison", state.talentEffects.leechPoisonChance, damage);
+  if (rollTalentChance(state.talentEffects.leechPoisonChance, state)) {
+    nextState = addEnemyStatus(nextState, "poison", damage);
+  }
+  return nextState;
 }
 
 export function applyLeechHitHealing(
@@ -216,8 +194,9 @@ export function applyLeechHitHealing(
   if (cardLeech && state.talentEffects.cardLeechBonusPercent > 0) {
     healAmount = applyPercentBonus(healAmount, state.talentEffects.cardLeechBonusPercent, PERCENT_DENOMINATOR);
   }
+  if (healAmount <= 0) return state;
 
-  return executePlayerHealing(state, healAmount, combatTexts, cardHealing);
+  return applyLeechHealing(state, scalePlayerLeechHeal(state, healAmount), combatTexts, { cardHealing });
 }
 
 export function applyHolyLifesteal(

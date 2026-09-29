@@ -1,47 +1,38 @@
-import type { BattleCard, CompanionDefinition, KeywordDefinition, KeywordId } from "./types";
+import type { BattleCard, BattleCardEffect, CompanionDefinition, KeywordDefinition, KeywordId } from "./types";
 import { collectKeywordsFromBattleEffect } from "./effect-metadata";
 
 const CARD_KEYWORD_CACHE = new WeakMap<BattleCard, KeywordId[]>();
 const COMPANION_KEYWORD_CACHE = new WeakMap<CompanionDefinition, KeywordId[]>();
 
-export function getCardKeywords(card: BattleCard): KeywordId[] {
-  const cached = CARD_KEYWORD_CACHE.get(card);
+function cachedEffectKeywords(
+  cache: WeakMap<object, KeywordId[]>,
+  key: object,
+  effects: readonly BattleCardEffect[],
+): KeywordId[] {
+  const cached = cache.get(key);
   if (cached) return cached;
-
   const keywords = new Set<KeywordId>();
-
-  for (const effect of card.effects) {
+  for (const effect of effects) {
     for (const keyword of collectKeywordsFromBattleEffect(effect)) {
       keywords.add(keyword);
     }
   }
-
-  if (card.consume) keywords.add("consume");
-
-  for (const tag of card.tags ?? []) {
-    keywords.add(tag);
-  }
-
-  const result = Array.from(keywords);
-  CARD_KEYWORD_CACHE.set(card, result);
+  const result = [...keywords];
+  cache.set(key, result);
   return result;
 }
 
+export function getCardKeywords(card: BattleCard): KeywordId[] {
+  const base = cachedEffectKeywords(CARD_KEYWORD_CACHE, card, card.effects);
+  if (!card.consume && !card.tags?.length) return base;
+  const keywords = new Set(base);
+  if (card.consume) keywords.add("consume");
+  for (const tag of card.tags ?? []) keywords.add(tag);
+  return [...keywords];
+}
+
 export function getCompanionKeywords(companion: CompanionDefinition): KeywordId[] {
-  const cached = COMPANION_KEYWORD_CACHE.get(companion);
-  if (cached) return cached;
-
-  const keywords = new Set<KeywordId>();
-
-  for (const effect of companion.turnStartEffects) {
-    for (const keyword of collectKeywordsFromBattleEffect(effect)) {
-      keywords.add(keyword);
-    }
-  }
-
-  const result = Array.from(keywords);
-  COMPANION_KEYWORD_CACHE.set(companion, result);
-  return result;
+  return cachedEffectKeywords(COMPANION_KEYWORD_CACHE, companion, companion.turnStartEffects);
 }
 
 export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {

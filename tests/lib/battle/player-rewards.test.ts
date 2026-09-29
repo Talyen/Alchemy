@@ -5,9 +5,9 @@ import {
   gainManaWithCombatText,
   addPlayerStatusWithCombatText,
   applyHealingWithCombatText,
+  emitOverhealBlockText,
   payKillPayouts,
 } from "@/lib/battle/player-rewards";
-import { emitOverhealBlockText } from "@/lib/battle/player-reward-feedback";
 import type { GearEffectManifest } from "@/lib/gear";
 import { resolveFollowUpHit } from "@/lib/battle/follow-up-hit-resolution";
 import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";

@@ -18,8 +18,7 @@ import {
   FREEZE_THRESHOLD_FRACTION,
   MIN_CC_THRESHOLD_FRACTION,
 } from "../game-constants";
-import { applyGearCcPhysicalDamage } from "./gear-effects";
-import { dealEnemyScaledDamage } from "./scaled-damage";
+import { applyGearCcPhysicalDamage, dealEnemyScaledDamage } from "./scaled-damage";
 import { applyScaledLeechHealing, computeLeechHeal } from "./damage-rider-leech";
 import { detonateEnemyStatuses } from "./dot-resolve";
 import { halveRounded } from "./amount-helpers";
@@ -70,8 +69,11 @@ function applyPoisonStatusRider(
     nextState.talentEffects.goldOnFirstPoison > 0 &&
     !nextState.flags.goldOnFirstPoisonThisCombat
   ) {
-    const poisonGold = nextState.talentEffects.goldOnFirstPoison;
-    nextState = setFlag(addGoldWithCombatText(nextState, poisonGold, combatTexts), "goldOnFirstPoisonThisCombat", true);
+    nextState = setFlag(
+      addGoldWithCombatText(nextState, nextState.talentEffects.goldOnFirstPoison, combatTexts),
+      "goldOnFirstPoisonThisCombat",
+      true,
+    );
   }
   nextState = applyPoisonTalentRiders(
     nextState,
@@ -115,54 +117,28 @@ export function applyPoisonTalentRiders(
   return nextState;
 }
 
-function stackBleed(state: BattleState, statusDamage: number): BattleState {
-  const bleedAmount = statusDamage * BLEED_STATUS_MULTIPLIER;
-  return addEnemyStatus(state, "bleed", bleedAmount);
-}
-
-function queueBleedLeech(
-  state: BattleState,
-  effect: Extract<BattleCardEffect, { kind: "damage" }>,
-  bleedAmount: number,
-): BattleState {
-  if (bleedAmount <= 0) return state;
-  const leechFromCard = effect.lifesteal;
-  const leechFromTalent = rollTalentChance(state.talentEffects.bleedLeechChance, state);
-  if (!leechFromCard && !leechFromTalent) return state;
-  return { ...state, pendingBleedLeechHealing: state.pendingBleedLeechHealing + bleedAmount };
-}
-
-function procBleedPoison(state: BattleState, actualDamage: number, bleedAmount: number): BattleState {
-  if (
-    bleedAmount <= 0 ||
-    actualDamage <= 0 ||
-    state.talentEffects.bleedPoisonChance <= 0 ||
-    !rollTalentChance(state.talentEffects.bleedPoisonChance, state)
-  )
-    return state;
-  return addEnemyStatus(state, "poison", actualDamage);
-}
-
-function awardCutpurseGold(state: BattleState, bleedAmount: number, combatTexts: CombatTextEvent[]): BattleState {
-  if (bleedAmount <= 0 || state.trinketEffects.cutpurseGoldOnBleed <= 0) return state;
-  return addGoldWithCombatText(state, state.trinketEffects.cutpurseGoldOnBleed, combatTexts);
-}
-
 function applyBleedStatusRider(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   actualDamage: number,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  let nextState = stackBleed(state, actualDamage);
+  let nextState = addEnemyStatus(state, "bleed", actualDamage * BLEED_STATUS_MULTIPLIER);
   const bleedAmount = nextState.enemyStatuses.bleed - state.enemyStatuses.bleed;
   if (actualDamage > 0 && rollTalentChance(nextState.talentEffects.bleedHalveArmorChance, nextState)) {
     const halved = halveRounded(nextState.enemyMitigation.armor);
     const removed = nextState.enemyMitigation.armor - halved;
     if (removed > 0) nextState = reduceEnemyArmor(nextState, removed);
   }
-  nextState = queueBleedLeech(nextState, effect, bleedAmount);
-  nextState = procBleedPoison(nextState, actualDamage, bleedAmount);
+  // Preserve draw order: the leech chance rolls whenever bleed stacked,
+  // even when card lifesteal already guarantees the queue.
+  const leechRoll = bleedAmount > 0 && rollTalentChance(nextState.talentEffects.bleedLeechChance, nextState);
+  if (bleedAmount > 0 && (effect.lifesteal || leechRoll)) {
+    nextState = { ...nextState, pendingBleedLeechHealing: nextState.pendingBleedLeechHealing + bleedAmount };
+  }
+  if (bleedAmount > 0 && actualDamage > 0 && rollTalentChance(nextState.talentEffects.bleedPoisonChance, nextState)) {
+    nextState = addEnemyStatus(nextState, "poison", actualDamage);
+  }
   nextState = applyGearBurnBleedMirrorLeech(
     nextState,
     actualDamage,
@@ -170,7 +146,10 @@ function applyBleedStatusRider(
     combatTexts,
     state.enemyStatuses.burn > 0 && state.enemyStatuses.bleed > 0,
   );
-  return awardCutpurseGold(nextState, bleedAmount, combatTexts);
+  if (bleedAmount > 0 && nextState.trinketEffects.cutpurseGoldOnBleed > 0) {
+    nextState = addGoldWithCombatText(nextState, nextState.trinketEffects.cutpurseGoldOnBleed, combatTexts);
+  }
+  return nextState;
 }
 
 function applyStunStatusRider(
@@ -181,23 +160,6 @@ function applyStunStatusRider(
   fromHolyDamage = false,
 ): BattleState {
   return resolveStunTrigger(addEnemyStatus(state, "stun", actualDamage), combatTexts, preHitHealth, fromHolyDamage);
-}
-
-function applyFrozenHeartDamage(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
-  if (state.trinketEffects.frozenHeartDamage <= 0) return state;
-  const enemyWasAlive = state.enemyHealth > 0;
-  return dealEnemyScaledDamage(state, state.trinketEffects.frozenHeartDamage, "physical", combatTexts, {
-    multiplier: getEnemyDamageMultiplier(state, "physical"),
-    riders: (damagedState) => applyHitEpilogue(damagedState, state.enemyHealth, enemyWasAlive, combatTexts),
-  });
-}
-
-function applyGearFreezeDamage(
-  preHitState: BattleState,
-  state: BattleState,
-  combatTexts: CombatTextEvent[],
-): BattleState {
-  return applyGearCcPhysicalDamage(state, preHitState.gearEffects.damageOnFreezePhysical, combatTexts);
 }
 
 export function tryTriggerEnemyFreeze(
@@ -222,14 +184,20 @@ export function tryTriggerEnemyFreeze(
     combatTexts,
   });
   if (!triggered) return nextState;
-
   if (triggered.kind === "immune") return triggered.state;
 
   let result = preHitState.talentEffects.archeryCritOnCrowdControl
     ? setFlag(triggered.state, "hawkEyeReady", true)
     : triggered.state;
-  result = applyFrozenHeartDamage(result, combatTexts);
-  result = applyGearFreezeDamage(preHitState, result, combatTexts);
+  if (result.trinketEffects.frozenHeartDamage > 0) {
+    const enemyWasAlive = result.enemyHealth > 0;
+    const frozenHealth = result.enemyHealth;
+    result = dealEnemyScaledDamage(result, result.trinketEffects.frozenHeartDamage, "physical", combatTexts, {
+      multiplier: getEnemyDamageMultiplier(result, "physical"),
+      riders: (damagedState) => applyHitEpilogue(damagedState, frozenHealth, enemyWasAlive, combatTexts),
+    });
+  }
+  result = applyGearCcPhysicalDamage(result, preHitState.gearEffects.damageOnFreezePhysical, combatTexts);
   result = applyCrowdControlTriggerBonuses(
     result,
     {
@@ -261,48 +229,33 @@ function applyFreezeStatusRider(
   return tryTriggerEnemyFreeze(state, nextState, combatTexts, preHitHealth);
 }
 
-function applyPhysicalBleedChance(
-  state: BattleState,
-  actualDamage: number,
-  allowTalentChanceProcs = true,
-): BattleState {
-  const bleedChance =
-    (allowTalentChanceProcs ? state.talentEffects.physicalBleedChance : 0) + state.gearEffects.physicalBleedChance;
-  if (actualDamage <= 0 || !rollTalentChance(bleedChance, state)) return state;
-  return addEnemyStatus(state, "bleed", actualDamage);
-}
-
-function applyPhysicalBleedDetonate(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
-  if (
-    (!state.talentEffects.physicalDetonatesBleed && state.gearEffects.physicalCritDetonatesBleed <= 0) ||
-    state.enemyStatuses.bleed <= 0
-  )
-    return state;
-  return detonateEnemyStatuses(state, ["bleed"], combatTexts);
-}
-
-function applyPhysicalShieldSlamArmorStrip(state: BattleState, actualDamage: number, forge: number): BattleState {
-  let nextState = state;
-  if (actualDamage > 0 && state.talentEffects.physicalStripArmorByForge && forge > 0) {
-    nextState = reduceEnemyArmor(nextState, forge);
-  }
-  if (state.talentEffects.physicalStripArmorWhileBlocked && state.playerStatuses.block > 0) {
-    nextState = reduceEnemyArmor(nextState, 2);
-  }
-  return nextState;
-}
-
 function applyPhysicalStatusRider(
   state: BattleState,
   actualDamage: number,
   combatTexts: CombatTextEvent[],
   critical = false,
-  allowTalentChanceProcs = true,
   forgeBeforeHit = state.playerStatuses.forge,
 ): BattleState {
-  let nextState = applyPhysicalBleedChance(state, actualDamage, allowTalentChanceProcs);
-  if (actualDamage > 0 && critical) nextState = applyPhysicalBleedDetonate(nextState, combatTexts);
-  nextState = applyPhysicalShieldSlamArmorStrip(nextState, actualDamage, forgeBeforeHit);
+  let nextState =
+    actualDamage > 0 &&
+    state.gearEffects.physicalBleedChance > 0 &&
+    rollTalentChance(state.gearEffects.physicalBleedChance, state)
+      ? addEnemyStatus(state, "bleed", actualDamage)
+      : state;
+  if (
+    actualDamage > 0 &&
+    critical &&
+    (state.talentEffects.physicalDetonatesBleed || state.gearEffects.physicalCritDetonatesBleed > 0) &&
+    nextState.enemyStatuses.bleed > 0
+  ) {
+    nextState = detonateEnemyStatuses(nextState, ["bleed"], combatTexts);
+  }
+  if (actualDamage > 0 && state.talentEffects.physicalStripArmorByForge && forgeBeforeHit > 0) {
+    nextState = reduceEnemyArmor(nextState, forgeBeforeHit);
+  }
+  if (state.talentEffects.physicalStripArmorWhileBlocked && state.playerStatuses.block > 0) {
+    nextState = reduceEnemyArmor(nextState, 2);
+  }
   return nextState;
 }
 
@@ -317,7 +270,6 @@ export function applyDamageStatuses(
     onPoisonBleedConversion?: (state: BattleState, damage: number, combatTexts: CombatTextEvent[]) => BattleState;
     critical?: boolean;
     forgeBeforeHit?: number;
-    allowTalentChanceProcs?: boolean;
   } = {},
 ) {
   switch (effect.damageType) {
@@ -339,14 +291,7 @@ export function applyDamageStatuses(
     case "freeze":
       return applyFreezeStatusRider(state, actualDamage, combatTexts, preHitHealth);
     case "physical":
-      return applyPhysicalStatusRider(
-        state,
-        actualDamage,
-        combatTexts,
-        options.critical,
-        options.allowTalentChanceProcs,
-        options.forgeBeforeHit,
-      );
+      return applyPhysicalStatusRider(state, actualDamage, combatTexts, options.critical, options.forgeBeforeHit);
     case "holy":
       if (state.gearEffects.holyStunBuildupGold > 0 && actualDamage > 0) {
         return applyStunStatusRider(state, actualDamage, combatTexts, preHitHealth, true);

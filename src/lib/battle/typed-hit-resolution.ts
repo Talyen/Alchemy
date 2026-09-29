@@ -1,13 +1,15 @@
-import { applyHitHealth } from "./hit-facts";
-import type { HitFacts } from "./hit-facts";
 import type { DamageType } from "@/lib/game-data";
 import { applyHitEpilogue } from "./player-rewards";
 import { mergeCombatText } from "./combat-text-events";
 import { applyDamageStatuses } from "./damage-status-riders";
 import { decayArmorAfterDamage } from "./status-helpers";
 import { applyIronGuardReward } from "./status-player";
-import { applyBleedDamageDraw } from "./bleed-reactions";
-import { applyElementalDamageManaRestore } from "./elemental-mana";
+import {
+  applyBleedDamageDraw,
+  applyElementalDamageManaRestore,
+  applyHitHealth,
+  type HitFacts,
+} from "./player-hit-core";
 import { type BattleState, type CombatTextEvent } from "./types";
 
 export function resolveTypedEnemyHit(
@@ -21,7 +23,6 @@ export function resolveTypedEnemyHit(
     allowPoisonBleedConversion?: boolean;
     onPoisonBleedConversion?: (state: BattleState, damage: number, combatTexts: CombatTextEvent[]) => BattleState;
     onPoisonDamage?: (state: BattleState, damage: number, combatTexts: CombatTextEvent[]) => BattleState;
-    allowTalentChanceProcs?: boolean;
   } = {},
 ): { state: BattleState; facts: HitFacts } {
   const { state: damaged, facts } = applyHitHealth(state, resolvedDamage, eligibility, options.critical ?? false);
@@ -29,11 +30,8 @@ export function resolveTypedEnemyHit(
   if (effect.damageType === "bleed") next = applyBleedDamageDraw(next, facts.healthDamage);
   next = decayArmorAfterDamage(next, resolvedDamage, "enemy", combatTexts);
   // Buildup can trigger another hit. Resolve it before thresholds and once-only kill rewards.
-  next = applyDamageStatuses(next, effect, resolvedDamage, combatTexts, facts.previousHealth, {
-    ...options,
-    allowTalentChanceProcs: false,
-  });
-  if (effect.damageType === "poison" && options.allowTalentChanceProcs !== false && options.onPoisonDamage) {
+  next = applyDamageStatuses(next, effect, resolvedDamage, combatTexts, facts.previousHealth, options);
+  if (effect.damageType === "poison" && options.onPoisonDamage) {
     next = options.onPoisonDamage(next, resolvedDamage, combatTexts);
   }
   next = applyElementalDamageManaRestore(next, effect.damageType, facts.healthDamage, combatTexts);

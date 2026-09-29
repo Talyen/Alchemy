@@ -2,13 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { clamp01, cn } from "@/lib/utils";
 import {
   getPlasmaColorPair,
-  lerpParsedPlasmaColor,
   parsePlasmaHexColor,
   type PlasmaColorPair,
 } from "@/features/alchemy/shared/config/plasma-palettes";
 import type { KeywordId } from "@/features/alchemy/shared/config/game-data-catalog";
 import { shouldReduceMotion } from "@/lib/animation/animation-prefs";
 import { startKeywordPlasma, type PlasmaColorState } from "@/lib/animation/keyword-plasma";
+import { lerpParsedRgbFloats } from "@/lib/animation/plasma-colors";
 
 const COLOR_LERP_MS = 400;
 
@@ -69,8 +69,8 @@ export function KeywordPlasmaBackground({
     wakeRef.current();
 
     const start = performance.now();
-    const fromPrimary = parsePlasmaHexColor(from.primary);
-    const fromSecondary = parsePlasmaHexColor(from.secondary);
+    const fromPrimary = typeof from.primary === "string" ? parsePlasmaHexColor(from.primary) : from.primary;
+    const fromSecondary = typeof from.secondary === "string" ? parsePlasmaHexColor(from.secondary) : from.secondary;
     let cachedTarget: PlasmaColorPair | null = null;
     let toPrimary = parsePlasmaHexColor(currentTarget.primary);
     let toSecondary = parsePlasmaHexColor(currentTarget.secondary);
@@ -87,8 +87,8 @@ export function KeywordPlasmaBackground({
 
       const t = Math.min(1, (now - start) / COLOR_LERP_MS);
       colorsRef.current = {
-        primary: lerpParsedPlasmaColor(fromPrimary, toPrimary, t),
-        secondary: lerpParsedPlasmaColor(fromSecondary, toSecondary, t),
+        primary: lerpParsedRgbFloats(fromPrimary, toPrimary, t),
+        secondary: lerpParsedRgbFloats(fromSecondary, toSecondary, t),
       };
 
       if (t < 1) {

@@ -13,7 +13,7 @@ import { LABYRINTH_REWARD_CONFIG } from "@/lib/game-constants";
 import { trinketLibrary } from "@/lib/game-data";
 import { gearDefinitions, uniqueItemList } from "@/lib/gear";
 import { rollFreshBossId } from "@/features/alchemy/shared/config";
-import { createRunRngState, stepRunRng } from "@/lib/rng";
+import { createRunRngState, createRunStateRng } from "@/lib/rng";
 import type { Destination } from "@/lib/routing";
 import { getAvailableDestinations } from "@/lib/routing/destination-availability";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
@@ -208,7 +208,7 @@ describe("computeVictoryRewards", () => {
       const result = computeVictoryRewards(
         baseInput({
           contentSystemType,
-          rollBossEnemyId: () => rollFreshBossId(() => stepRunRng(rngState, "world")),
+          rollBossEnemyId: () => rollFreshBossId(createRunStateRng(rngState, "world")),
         }),
         testRng,
       );
@@ -222,7 +222,7 @@ describe("computeVictoryRewards", () => {
     const result = computeVictoryRewards(
       baseInput({
         getAvailableDestinations: () => ["Boss Combat"],
-        rollBossEnemyId: () => rollFreshBossId(() => stepRunRng(rngState, "world")),
+        rollBossEnemyId: () => rollFreshBossId(createRunStateRng(rngState, "world")),
       }),
       testRng,
     );

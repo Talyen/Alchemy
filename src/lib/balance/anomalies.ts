@@ -8,6 +8,8 @@ export interface BattleAnomalies {
   enemyArmorGranted: number;
   maxPlayerBlock: number;
   maxPlayerArmor: number;
+  maxPlayerThorns: number;
+  maxPlayerForge: number;
   maxPlayerBurn: number;
   maxPlayerPoison: number;
   maxPlayerBleed: number;
@@ -18,6 +20,7 @@ export interface BattleAnomalies {
   maxEnemyBleed: number;
   maxEnemyFreeze: number;
   maxEnemyStun: number;
+  maxEnemyThorns: number;
   maxEnemyArmor: number;
   maxEnemyForge: number;
   maxEnemyFreezeBonus: number;
@@ -45,6 +48,8 @@ interface StatusAnomalyMetric {
 const STATUS_ANOMALY_METRICS: StatusAnomalyMetric[] = [
   { key: "maxPlayerBlock", label: "Block on Player", read: (s) => s.playerStatuses.block },
   { key: "maxPlayerArmor", label: "Armor on Player", read: (s) => s.playerStatuses.armor },
+  { key: "maxPlayerThorns", label: "Thorns on Player", read: (s) => s.playerStatuses.thorns },
+  { key: "maxPlayerForge", label: "Forge on Player", read: (s) => s.playerStatuses.forge },
   { key: "maxPlayerBurn", label: "Burn on Player", read: (s) => s.playerStatuses.burn },
   { key: "maxPlayerPoison", label: "Poison on Player", read: (s) => s.playerStatuses.poison },
   { key: "maxPlayerBleed", label: "Bleed on Player", read: (s) => s.playerStatuses.bleed },
@@ -55,6 +60,7 @@ const STATUS_ANOMALY_METRICS: StatusAnomalyMetric[] = [
   { key: "maxEnemyBleed", label: "Bleed on Enemy", read: (s) => s.enemyStatuses.bleed },
   { key: "maxEnemyFreeze", label: "Freeze on Enemy", read: (s) => s.enemyStatuses.freeze },
   { key: "maxEnemyStun", label: "Stun on Enemy", read: (s) => s.enemyStatuses.stun },
+  { key: "maxEnemyThorns", label: "Thorns on Enemy", read: (s) => s.enemyStatuses.thorns },
   { key: "maxEnemyArmor", label: "Armor on Enemy", read: (s) => s.enemyMitigation.armor },
   { key: "maxEnemyForge", label: "Forge on Enemy", read: (s) => s.enemyMitigation.forge },
   { key: "maxEnemyFreezeBonus", label: "FreezeBonus on Enemy", read: (s) => s.enemyStatuses.freezeBonus },
@@ -89,6 +95,8 @@ export function createEmptyAnomalies(): BattleAnomalies {
     enemyArmorGranted: 0,
     maxPlayerBlock: 0,
     maxPlayerArmor: 0,
+    maxPlayerThorns: 0,
+    maxPlayerForge: 0,
     maxPlayerBurn: 0,
     maxPlayerPoison: 0,
     maxPlayerBleed: 0,
@@ -99,6 +107,7 @@ export function createEmptyAnomalies(): BattleAnomalies {
     maxEnemyBleed: 0,
     maxEnemyFreeze: 0,
     maxEnemyStun: 0,
+    maxEnemyThorns: 0,
     maxEnemyArmor: 0,
     maxEnemyForge: 0,
     maxEnemyFreezeBonus: 0,

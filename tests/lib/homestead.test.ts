@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { MATERIAL_IDS, materialLabels } from "@/lib/homestead/types";
-import { emptyInventory, addInventory, canAfford, subtractInventory } from "@/lib/homestead/inventory";
+import { EMPTY_INVENTORY, emptyInventory, addInventory, canAfford, subtractInventory } from "@/lib/homestead/inventory";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { computeHomesteadEffects, mergeIntoManifest } from "@/lib/homestead/effects";
@@ -18,7 +18,7 @@ import { enemyBestiary } from "@/lib/game-data/compendium/enemies";
 import { createEmptyTalentEffectManifest } from "@/lib/game-data";
 import { canUpgradeTierItem, getNextTierCost } from "@/lib/homestead/upgrades";
 
-describe("emptyInventory", () => {
+describe("emptyInventory and EMPTY_INVENTORY", () => {
   it("returns all materials at 0", () => {
     const inv = emptyInventory();
     for (const mat of MATERIAL_IDS) {
@@ -28,6 +28,11 @@ describe("emptyInventory", () => {
 
   it("has exactly the material keys", () => {
     expect(Object.keys(emptyInventory())).toEqual(MATERIAL_IDS);
+  });
+
+  it("matches frozen EMPTY_INVENTORY constant", () => {
+    expect(emptyInventory()).toEqual(EMPTY_INVENTORY);
+    expect(Object.isFrozen(EMPTY_INVENTORY)).toBe(true);
   });
 });
 
@@ -111,13 +116,13 @@ describe("MATERIAL_IDS and labels", () => {
 });
 
 describe("defaultHomesteadEffects", () => {
-  it("all values are at default (0 or false)", () => {
+  it("all values are at default (0 or empty)", () => {
     expect(defaultHomesteadEffects.flatPhysicalDamage).toBe(0);
     expect(defaultHomesteadEffects.companionDamage).toBe(0);
     expect(defaultHomesteadEffects.companionBondLevels.wolf).toBe(0);
-    expect(defaultHomesteadEffects.forgeToBurn).toBe(false);
+    expect("forgeToBurn" in defaultHomesteadEffects).toBe(false);
     expect("healMultiplier" in defaultHomesteadEffects).toBe(false);
-    expect(defaultHomesteadEffects.potionPotency).toBe(0);
+    expect("potionPotency" in defaultHomesteadEffects).toBe(false);
   });
 });
 
@@ -152,6 +157,13 @@ describe.each([
   });
 });
 
+describe("homestead upgrade IDs cross-category uniqueness", () => {
+  it("all IDs across buildings, farmPlots, and researchUpgrades are mutually unique", () => {
+    const allIds = [...buildings.map((b) => b.id), ...farmPlots.map((f) => f.id), ...researchUpgrades.map((r) => r.id)];
+    expect(new Set(allIds).size).toBe(allIds.length);
+  });
+});
+
 describe("computeHomesteadEffects", () => {
   it("returns defaults and ignores unknown IDs", () => {
     expect(computeHomesteadEffects({ unknown: 4 }, {}, { unknown: 4 })).toEqual(defaultHomesteadEffects);
@@ -166,19 +178,15 @@ describe("computeHomesteadEffects", () => {
     expect(effects).toMatchObject({
       flatPhysicalDamage: 4,
       homesteadForgeBurnPercent: 100,
-      forgeToBurn: false,
       flatFreezeDamage: 4,
       flatHolyDamage: 4,
       flatNatureDamage: 4,
       flatArrowDamage: 0,
       homesteadCriticalDamage: 4,
-      runMaxManaBonus: 0,
-      startMana: 0,
       homesteadFreeManaChance: 20,
       dodgeChance: 8,
       companionDamage: 0,
       poisonDamageReduction: 4,
-      natureDamageReduction: 0,
       removeCardDiscount: 8,
       endRunStonePerRoom: 4,
       gearAstralChanceBonus: 0.15,
@@ -238,8 +246,7 @@ describe("mergeIntoManifest", () => {
     flatPhysicalDamage: 1,
     companionDamage: 1,
     companionBondLevels: { ...defaultHomesteadEffects.companionBondLevels, wolf: 2 },
-    forgeToBurn: true,
-    potionPotency: 0.2,
+    homesteadPotionBonus: 1,
   });
 
   it("adds homestead effects to talent effects", () => {
@@ -248,13 +255,11 @@ describe("mergeIntoManifest", () => {
     expect(merged.startGold).toBe(10);
     expect(merged.startBlock).toBe(2);
     expect(merged.campfireHealBonus).toBeCloseTo(0.1);
-    expect(merged.potionPotency).toBeCloseTo(1.2);
+    expect(merged.homesteadPotionBonus).toBe(1);
     expect(merged.companionBondLevels.wolf).toBe(2);
-    expect(merged.forgeToBurn).toBe(true);
     expect(merged.healMultiplier).toBe(1);
     expect(merged.flatFreezeDamage).toBe(0);
     expect(merged.flatNatureDamage).toBe(0);
-    expect(merged.wishGemsGold).toBe(0);
   });
 
   it("preserves non-merged talent fields", () => {

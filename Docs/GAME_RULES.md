@@ -17,12 +17,12 @@ Operational rules for `src/lib/battle/` that deviate from typical CCG assumption
 
 ### Direct player hit resolution
 
-`hit-request.ts` names the source of each direct player-to-enemy hit. `hit-resolution.ts`
-owns card, reflection, and purge recipes; `follow-up-hit-resolution.ts` is its lower
-resolution tier, also used by Wish and defensive reactions. That dependency direction
-keeps shallow hits from importing their parent card/Wish orchestration. Card-specific
-reaction stages live in `card-hit-reactions.ts`; calculation and intrinsic statuses
-remain in their existing lower-level owners.
+`player-hit-core.ts` names the source of each direct player-to-enemy hit. `hit-resolution.ts`
+owns card, reflection, and purge recipes, including the card-specific reaction stages;
+`follow-up-hit-resolution.ts` is its lower resolution tier, also used by Wish and
+defensive reactions. That dependency direction
+keeps shallow hits from importing their parent card/Wish orchestration. Calculation and
+intrinsic statuses remain in their existing lower-level owners.
 
 The table describes the current hit recipes. “Intrinsic” means
 `applyDamageStatuses`, including its existing status-triggered reactions, not just

@@ -8,7 +8,7 @@ import {
   PERCENT_DENOMINATOR,
 } from "../game-constants";
 import { cardHasKeyword } from "./card-classification";
-import { gearFrozenDamageMultiplier } from "./gear-effects";
+import { gearFrozenDamageMultiplier } from "./scaled-damage";
 import { getBurnBonusToBleedingMultiplier, getEnemyDamageMultiplier } from "./status-helpers";
 import { setFlag, type BattleState } from "./types";
 

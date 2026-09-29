@@ -51,10 +51,14 @@ describe("sampleAnomalies", () => {
   it("records status peaks from battle state", () => {
     const anomalies = createEmptyAnomalies();
     const state = patchBattleState({
-      playerStatuses: { burn: 50 },
+      playerStatuses: { burn: 50, thorns: 15, forge: 8 },
+      enemyStatuses: { thorns: 20 },
     });
     sampleAnomalies(state, [], anomalies);
     expect(anomalies.maxPlayerBurn).toBe(50);
+    expect(anomalies.maxPlayerThorns).toBe(15);
+    expect(anomalies.maxPlayerForge).toBe(8);
+    expect(anomalies.maxEnemyThorns).toBe(20);
   });
 
   it("never lowers an existing peak", () => {

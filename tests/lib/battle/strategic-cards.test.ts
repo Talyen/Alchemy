@@ -131,10 +131,10 @@ describe("strategic cards", () => {
     }
   });
 
-  it("legacy saved chance-based Maul still upgrades and resolves both branches", () => {
+  it("chance-based damage still upgrades and resolves both branches", () => {
     const legacy: BattleCard = {
       ...cardById.maul!,
-      descriptionLines: ["Deal 3 Stun or Bleed damage at random"],
+      descriptionLines: ["50% chance: Deal 3 Stun damage", "Otherwise: Deal 3 Bleed damage"],
       effects: [
         {
           kind: "chance",
@@ -145,7 +145,8 @@ describe("strategic cards", () => {
       ],
     };
     const restored = hydrateCard(BattleCardSchema.parse(JSON.parse(JSON.stringify(legacy))));
-    const changed = applyNumericCorruption(restored, getEditableCorruptionTargets(restored)[0]!, 1);
+    const first = applyNumericCorruption(restored, getEditableCorruptionTargets(restored)[0]!, 1);
+    const changed = applyNumericCorruption(first, getEditableCorruptionTargets(first)[1]!, 1);
     expect(changed.effects[0]).toMatchObject({ successEffects: [{ amount: 4 }], failureEffects: [{ amount: 4 }] });
     expect(validateCardDescriptionParity(changed)).toEqual([]);
     const texts: Array<import("@/lib/battle").CombatTextEvent> = [];

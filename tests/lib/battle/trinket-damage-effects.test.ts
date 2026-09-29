@@ -219,7 +219,7 @@ describe("Brass Censer", () => {
       rng: rolls(0.99, 0.99, 0.1, 0.1),
       playerHealth: 10,
       trinketEffects: { brassCenserProcChance: 20 },
-      talentEffects: { holyBurnChance: 100, holyLifestealPercent: 10 },
+      talentEffects: { holyBurnDamageChance: 100, holyLifestealPercent: 10 },
     });
     const result = dealDamage(state, holyCard(10));
     expect(result.playerHealth).toBe(11);

@@ -109,7 +109,7 @@ function AppMainContent({
       flatPhysicalDamage: homesteadEffects.flatPhysicalDamage + talentEffects.flatPhysicalDamage,
       companionDamage: homesteadEffects.companionDamage + talentEffects.companionDamage,
       companionBondLevels: homesteadBondedCompanions,
-      potionPotency: talentEffects.potionPotency + homesteadEffects.potionPotency,
+      potionPotency: talentEffects.potionPotency,
     }),
     [homesteadBondedCompanions, homesteadEffects, talentEffects],
   );

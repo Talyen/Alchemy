@@ -34,11 +34,10 @@ export function listArtifactDirsToRemove(rootDir, options = {}) {
  * @returns {{ path: string, bytes: number }}
  */
 export function measurePath(absolutePath) {
-  if (!fs.existsSync(absolutePath)) {
+  const stats = fs.lstatSync(absolutePath, { throwIfNoEntry: false });
+  if (!stats) {
     return { path: absolutePath, bytes: 0 };
   }
-
-  const stats = fs.lstatSync(absolutePath);
   if (stats.isFile() || stats.isSymbolicLink()) {
     return { path: absolutePath, bytes: stats.size };
   }

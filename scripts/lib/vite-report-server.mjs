@@ -1,4 +1,4 @@
-import { fileURLToPath } from "node:url";
+import path from "node:path";
 import { createServer } from "vite";
 
 /**
@@ -11,7 +11,7 @@ export async function withReportServer(fn) {
     configFile: false,
     appType: "custom",
     server: { middlewareMode: true, hmr: false, ws: false },
-    resolve: { alias: { "@": fileURLToPath(new URL("../../src", import.meta.url)) } },
+    resolve: { alias: { "@": path.resolve(import.meta.dirname, "../../src") } },
   });
   try {
     return await fn(server);

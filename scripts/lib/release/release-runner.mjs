@@ -2,15 +2,15 @@ import { commandInvocation } from "../command-invocation.mjs";
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+
 
 import { syncVersionMetadata } from "../../sync-version-metadata.mjs";
 import { verifyReleaseVersionTag } from "./release-checks.mjs";
 
-const currentFile = fileURLToPath(import.meta.url);
-const root = path.resolve(path.dirname(currentFile), "../../..");
+const root = path.resolve(import.meta.dirname, "../../..");
 const npx = "npx";
 const npm = "npm";
+
 
 function run(command, args) {
   console.log(`▸ ${command} ${args.join(" ")}`);

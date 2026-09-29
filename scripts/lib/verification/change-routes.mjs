@@ -2,12 +2,10 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 
 import { globToRegExp } from "../glob-pattern.mjs";
-import { expandRepositoryPaths, toRepoRelative } from "../repository-paths.mjs";
+import { expandRepositoryPaths, REPO_ROOT as ROOT_DIR, toRepoRelative } from "../repository-paths.mjs";
 import { COMMANDS } from "./test-commands.mjs";
 import { RELATED_SELECTION_BYTES } from "../agent/selection-budgets.mjs";
 import { readDocumentSection } from "../agent/markdown-sections.mjs";
-
-const ROOT_DIR = path.resolve(import.meta.dirname, "../../..");
 
 function doc(pathname, heading = null, reason = "owner documentation") {
   return { path: pathname, heading, reason };
@@ -286,6 +284,11 @@ export function validateRouteCatalog({ rootDir = ROOT_DIR } = {}) {
   for (const candidate of ROUTES) {
     if (!existsSync(path.join(rootDir, candidate.fixture))) {
       errors.push(`${candidate.id} fixture does not exist: ${candidate.fixture}`);
+    }
+    for (const commandKey of candidate.commands) {
+      if (!COMMANDS[commandKey]) {
+        errors.push(`${candidate.id} references unknown command: ${commandKey}`);
+      }
     }
     for (const owner of candidate.docs) {
       const ownerPath = path.join(rootDir, owner.path);

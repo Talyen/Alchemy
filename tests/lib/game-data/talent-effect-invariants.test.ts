@@ -150,6 +150,11 @@ const UNUSED_MANIFEST_ALLOWLIST: ReadonlySet<keyof TalentEffectManifest> = new S
   "blockOnNatureCard",
   "bleedExecuteThreshold",
   "bleedExecuteMultiplier",
+  "forgeToBurn",
+  "natureDamageReduction",
+  "potionMixPotency",
+  "wishGemsGold",
+  "runMaxManaBonus",
 ]);
 
 const HOMESTEAD_KEYS = new Set<string>([

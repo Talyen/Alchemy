@@ -1,11 +1,17 @@
-import { MATERIAL_IDS, type MaterialId, type MaterialInventory } from "./types";
+import { MATERIAL_IDS, type MaterialInventory } from "./types";
 
-export function materialAmount(inventory: Partial<MaterialInventory> | undefined, materialId: MaterialId): number {
-  return inventory?.[materialId] ?? 0;
-}
+export const EMPTY_INVENTORY: Readonly<MaterialInventory> = Object.freeze({
+  wood: 0,
+  stone: 0,
+  iron: 0,
+  food: 0,
+  herbs: 0,
+  hide: 0,
+  gems: 0,
+});
 
 export function emptyInventory(): MaterialInventory {
-  return { wood: 0, stone: 0, iron: 0, food: 0, herbs: 0, hide: 0, gems: 0 };
+  return { ...EMPTY_INVENTORY };
 }
 
 export function addInventory(a: MaterialInventory, b: MaterialInventory): MaterialInventory {

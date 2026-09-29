@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { defaultBattleState, defaultTalentEffects, endPlayerTurn, playBattleCardResolved } from "@/lib/battle";
 import { drawCards, drawKeywordCard } from "@/lib/battle/draw";
 import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
-import { shuffle } from "@/lib/utils";
+import { shuffle } from "@/lib/rng";
 import { CARDS_PER_TURN, MAX_HAND_SIZE } from "@/lib/game-constants";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { makeTestBattleState, makeTestCardWithId, seededRng } from "../../fixtures/battle";

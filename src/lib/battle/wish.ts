@@ -33,7 +33,7 @@ import {
 } from "../game-constants";
 import { shouldConvertGemsWishToGold } from "@/lib/content-systems/battle-content";
 import { dealEnemyScaledDamage } from "./scaled-damage";
-import { gearFrozenDamageMultiplier } from "./gear-effects";
+import { gearFrozenDamageMultiplier } from "./scaled-damage";
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { scaleByRoomMultiplier } from "./enemy-turn-traits";
 

@@ -1,6 +1,6 @@
 import { MATERIAL_IDS, type MaterialId, type MaterialInventory } from "./types";
 import type { HomesteadEffectManifest } from "./types";
-import { emptyInventory, materialAmount } from "./inventory";
+import { emptyInventory } from "./inventory";
 import { materialCost } from "./data-builders";
 import { HOMESTEAD_LOOT_MULTIPLIERS, LABYRINTH_REWARD_CONFIG } from "../game-constants";
 
@@ -84,7 +84,7 @@ function applyTypeMultiplier(loot: MaterialInventory, enemyType: string): Materi
     // Battle-standard rounding: Math.round keeps elite multi-drops meaningfully
     // above normal (2 × 1.3 = 2.6 → 3) where flooring would erase the bonus.
     // Singleton drops stay identical to normal (1 × 1.3 = 1.3 → 1) by design.
-    result[mat] = Math.round(materialAmount(result, mat) * multiplier);
+    result[mat] = Math.round((result[mat] ?? 0) * multiplier);
   }
   return result;
 }

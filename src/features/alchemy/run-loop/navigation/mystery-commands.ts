@@ -75,7 +75,6 @@ export function chooseMysteryOption(choice: MysteryChoice) {
         };
       }
       if (result.goldSound) goldSounds.push(result.goldSound);
-      if (result.followUp) break;
     }
     setMysteryChosenChoice(draft, { ...offeredChoice, effects: resolvedEffects });
     return goldSounds;

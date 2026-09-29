@@ -1,10 +1,9 @@
 /** Shared execution-plan checks under Docs/Plans/ (used by check-docs and archive-plans CLIs). */
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { isoDate, PLANS_DIR, PLAN_STALE_DAYS, PLAN_STATUSES, REQUIRED_PLAN_KEYS } from "./plan-contract.mjs";
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+const ROOT = path.resolve(import.meta.dirname, "../..");
 
 export function parsePlanMetadata(source) {
   const lines = source.split(/\r?\n/u);

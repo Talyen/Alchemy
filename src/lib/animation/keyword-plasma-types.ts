@@ -1,6 +1,10 @@
+import type { RgbTuple } from "./plasma-colors";
+
+type PlasmaColorValue = string | RgbTuple;
+
 export interface PlasmaColorState {
-  primary: string;
-  secondary: string;
+  primary: PlasmaColorValue;
+  secondary: PlasmaColorValue;
 }
 
 export interface PlasmaRendererOptions {
@@ -8,8 +12,8 @@ export interface PlasmaRendererOptions {
   colorsRef: { current: PlasmaColorState };
   focalYOffset: number;
   active: () => boolean;
-  onAvailabilityChange?: (available: boolean) => void;
-  onWakeReady?: (wake: () => void) => void;
+  onAvailabilityChange?: ((available: boolean) => void) | undefined;
+  onWakeReady?: ((wake: () => void) => void) | undefined;
 }
 
 export const PLASMA_MAX_BACKING_PIXELS = 1_500_000;

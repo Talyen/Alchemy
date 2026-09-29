@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { countUnlockedCombatTalents, resolveSimLoadout, simulateBattle, TIER_GOLD } from "@/lib/balance";
 import { buildTypicalGearEffects } from "@/lib/balance/gear-preset";
 import { buildSimCompanionBondLevels, companionIdsFromDeck } from "@/lib/balance/homestead-preset";
-import { createSeededRng } from "@/lib/utils";
+import { createSeededRng } from "@/lib/rng";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { characters, getStartingDeck } from "@/lib/game-data";
 import { defaultGearEffects } from "@/lib/gear/gear-effect-manifest";

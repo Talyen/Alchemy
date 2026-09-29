@@ -13,7 +13,7 @@ it("finishes nested Archery hits before the parent payout without adding random 
     playerHealth: 10,
     playerMaxHealth: 30,
     playerStatuses: { forge: 2 },
-    talentEffects: { archeryPlayTwiceChance: 100, physicalBleedDamageChance: 50, leechPoisonDamageChance: 50 },
+    talentEffects: { archeryPlayTwiceChance: 100, physicalBleedChance: 50, leechPoisonDamageChance: 50 },
     gearEffects: { goldOnKill: 2 },
   });
   const card = makeTestCard({

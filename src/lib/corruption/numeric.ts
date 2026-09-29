@@ -28,6 +28,20 @@ function areEffectsEquivalent(a: BattleCardEffect, b: BattleCardEffect | undefin
   return aKeys.every((key) => aRecord[key] === bRecord[key]);
 }
 
+// Declarative rules for lines that need word-to-digit or singular/plural normalization
+// after the raw numeric substitution. Each rule matches the replaced line and reformats it.
+const PLURAL_LINE_RULES: Array<{ pattern: RegExp; format: (value: number) => string }> = [
+  { pattern: /^Draw \d+ cards?$/i, format: (v) => (v === 1 ? "Draw a card" : `Draw ${v} cards`) },
+  {
+    pattern: /^Gain \d+ Mana Crystals?$/,
+    format: (v) => `Gain ${v} Mana Crystal${v === 1 ? "" : "s"}`,
+  },
+  {
+    pattern: /^Cleanse \d+ harmful status effects?$/,
+    format: (v) => `Cleanse ${v} harmful status effect${v === 1 ? "" : "s"}`,
+  },
+];
+
 export function replaceNumberAt(line: string, matchIndex: number, nextValue: number): string {
   if (line.startsWith("Your Companion acts ") && matchIndex === 20) {
     return `Your Companion acts ${nextValue === 1 ? "once" : nextValue === 2 ? "twice" : `${nextValue} times`}`;
@@ -38,11 +52,10 @@ export function replaceNumberAt(line: string, matchIndex: number, nextValue: num
   const match = line.slice(matchIndex).match(CORRUPTION_TEXT_PATTERNS.leadingNumber);
   if (!match) return line;
   const replaced = `${line.slice(0, matchIndex)}${nextValue}${line.slice(matchIndex + match[0].length)}`;
-  // Handle digit-to-word revert when value becomes 1.
-  if (/^Draw \d+ cards?$/i.test(replaced)) return nextValue === 1 ? "Draw a card" : `Draw ${nextValue} cards`;
-  if (/^Gain \d+ Mana Crystals?$/.test(replaced)) return `Gain ${nextValue} Mana Crystal${nextValue === 1 ? "" : "s"}`;
-  if (/^Cleanse \d+ harmful status effects?$/.test(replaced))
-    return `Cleanse ${nextValue} harmful status effect${nextValue === 1 ? "" : "s"}`;
+  // Handle digit-to-word revert and singular/plural normalization.
+  for (const rule of PLURAL_LINE_RULES) {
+    if (rule.pattern.test(replaced)) return rule.format(nextValue);
+  }
   return replaced;
 }
 
@@ -131,14 +144,13 @@ export function applyNumericCorruption(
   if (nextCard === card) return card;
   nextCard.corrupted = true;
   const deltaLen = nextCard.descriptionLines[target.lineIndex]!.length - currentLine.length;
-  const shiftedExisting =
-    deltaLen !== 0
-      ? (card.corruptedValuePositions ?? []).map((pos) =>
-          pos.lineIndex === target.lineIndex && pos.matchIndex > target.matchIndex
-            ? { ...pos, matchIndex: pos.matchIndex + deltaLen }
-            : pos,
-        )
-      : (card.corruptedValuePositions ?? []);
+  const shiftedExisting = (card.corruptedValuePositions ?? [])
+    .filter((pos) => !(pos.lineIndex === target.lineIndex && pos.matchIndex === target.matchIndex))
+    .map((pos) =>
+      deltaLen !== 0 && pos.lineIndex === target.lineIndex && pos.matchIndex > target.matchIndex
+        ? { ...pos, matchIndex: pos.matchIndex + deltaLen }
+        : pos,
+    );
   nextCard.corruptedValuePositions = [
     ...shiftedExisting,
     { lineIndex: target.lineIndex, matchIndex: target.matchIndex },

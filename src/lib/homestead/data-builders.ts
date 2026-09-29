@@ -19,41 +19,41 @@ export function materialCost(partial: Partial<MaterialInventory>): MaterialInven
   return { ...emptyInventory(), ...partial };
 }
 
-export function singleMaterialCosts(material: MaterialId): MaterialInventory[] {
-  return HOMESTEAD_SINGLE_TIER_COSTS.map((amount) => materialCost({ [material]: amount }));
+function singleResourceLadder(material: MaterialId, amounts: readonly number[]): MaterialInventory[] {
+  return amounts.map((amount) => materialCost({ [material]: amount }));
 }
 
-export function stackingTiers(
+export function singleMaterialCosts(material: MaterialId): MaterialInventory[] {
+  return singleResourceLadder(material, HOMESTEAD_SINGLE_TIER_COSTS);
+}
+
+export type PerTierEffects =
+  | Partial<HomesteadEffectManifest>
+  | ((tierOneBased: number) => Partial<HomesteadEffectManifest>);
+
+function stackingTiers(
   costs: readonly MaterialInventory[],
-  perTierEffects: Partial<HomesteadEffectManifest>,
+  perTierEffects: PerTierEffects,
   benefitForTier: (tierOneBased: number) => string,
   nonCombatBenefitDescription?: string | ((tierOneBased: number) => string),
 ): HomesteadUpgradeTier[] {
-  return costs.map((cost, index) => ({
-    cost,
-    effects: { ...perTierEffects },
-    benefitDescription: benefitForTier(index + 1),
-    ...(nonCombatBenefitDescription
-      ? {
-          nonCombatBenefitDescription:
-            typeof nonCombatBenefitDescription === "function"
-              ? nonCombatBenefitDescription(index + 1)
-              : nonCombatBenefitDescription,
-        }
-      : {}),
-  }));
-}
-
-function defineUpgradeItem<TId extends string>(
-  id: TId,
-  title: string,
-  tiers: HomesteadUpgradeTier[],
-): HomesteadUpgradeItem<TId> {
-  return { id, title, tiers };
-}
-
-export function defineResearch(id: ResearchId, title: string, tiers: HomesteadUpgradeTier[]): HomesteadResearch {
-  return defineUpgradeItem(id, title, tiers);
+  return costs.map((cost, index) => {
+    const tierOneBased = index + 1;
+    const effects = typeof perTierEffects === "function" ? perTierEffects(tierOneBased) : { ...perTierEffects };
+    return {
+      cost,
+      effects,
+      benefitDescription: benefitForTier(tierOneBased),
+      ...(nonCombatBenefitDescription
+        ? {
+            nonCombatBenefitDescription:
+              typeof nonCombatBenefitDescription === "function"
+                ? nonCombatBenefitDescription(tierOneBased)
+                : nonCombatBenefitDescription,
+          }
+        : {}),
+    };
+  });
 }
 
 // Shared four-tier cost ladders. Each returns fresh inventories so upgrades
@@ -87,71 +87,63 @@ export function woodStoneCosts(): MaterialInventory[] {
 }
 
 export function herbsSingleCosts(): MaterialInventory[] {
-  return [
-    materialCost({ herbs: 22 }),
-    materialCost({ herbs: 33 }),
-    materialCost({ herbs: 44 }),
-    materialCost({ herbs: 55 }),
-  ];
+  return singleResourceLadder("herbs", [22, 33, 44, 55]);
 }
 
 export function foodSingleCosts(): MaterialInventory[] {
-  return [
-    materialCost({ food: 23 }),
-    materialCost({ food: 35 }),
-    materialCost({ food: 46 }),
-    materialCost({ food: 58 }),
-  ];
+  return singleResourceLadder("food", [23, 35, 46, 58]);
 }
 
 export function gemsSingleCosts(): MaterialInventory[] {
-  return [
-    materialCost({ gems: 21 }),
-    materialCost({ gems: 32 }),
-    materialCost({ gems: 42 }),
-    materialCost({ gems: 53 }),
-  ];
+  return singleResourceLadder("gems", [21, 32, 42, 53]);
 }
 
 type BenefitFn = (tierOneBased: number) => string;
+
+function stackingUpgrade<TId extends string>(
+  id: TId,
+  title: string,
+  costs: readonly MaterialInventory[],
+  perTierEffects: PerTierEffects,
+  benefitForTier: BenefitFn,
+  nonCombatBenefitDescription?: string | BenefitFn,
+): HomesteadUpgradeItem<TId> {
+  return {
+    id,
+    title,
+    tiers: stackingTiers(costs, perTierEffects, benefitForTier, nonCombatBenefitDescription),
+  };
+}
 
 export function stackingBuilding(
   id: BuildingId,
   title: string,
   costs: readonly MaterialInventory[],
-  perTierEffects: Partial<HomesteadEffectManifest>,
+  perTierEffects: PerTierEffects,
   benefitForTier: BenefitFn,
   nonCombatBenefitDescription?: string | BenefitFn,
 ): HomesteadBuilding {
-  return defineUpgradeItem(
-    id,
-    title,
-    stackingTiers(costs, perTierEffects, benefitForTier, nonCombatBenefitDescription),
-  );
+  return stackingUpgrade(id, title, costs, perTierEffects, benefitForTier, nonCombatBenefitDescription);
 }
 
 export function stackingFarm(
   id: FarmId,
   title: string,
   costs: readonly MaterialInventory[],
-  perTierEffects: Partial<HomesteadEffectManifest>,
+  perTierEffects: PerTierEffects,
   benefitForTier: BenefitFn,
   nonCombatBenefitDescription?: string | BenefitFn,
 ): HomesteadFarm {
-  return defineUpgradeItem(
-    id,
-    title,
-    stackingTiers(costs, perTierEffects, benefitForTier, nonCombatBenefitDescription),
-  );
+  return stackingUpgrade(id, title, costs, perTierEffects, benefitForTier, nonCombatBenefitDescription);
 }
 
 export function stackingResearch(
   id: ResearchId,
   title: string,
   costs: readonly MaterialInventory[],
-  perTierEffects: Partial<HomesteadEffectManifest>,
+  perTierEffects: PerTierEffects,
   benefitForTier: BenefitFn,
   nonCombatBenefitDescription?: string | BenefitFn,
 ): HomesteadResearch {
-  return defineResearch(id, title, stackingTiers(costs, perTierEffects, benefitForTier, nonCombatBenefitDescription));
+  return stackingUpgrade(id, title, costs, perTierEffects, benefitForTier, nonCombatBenefitDescription);
 }

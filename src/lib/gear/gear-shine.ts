@@ -12,8 +12,11 @@ import type { GearInstance } from "./types";
 const UNIQUE_SHINE_COLORS = [UI_GOLD.light, UI_GOLD.base, UI_GOLD.deep, UI_GOLD.pale, UI_GOLD.light] as const;
 const UNIQUE_TEXT_SHINE_COLORS = [UI_GOLD.pale, `color-mix(in srgb, ${UI_GOLD.pale} 55%, transparent)`] as const;
 
-function affixShineKeywordIds(affix: { descriptionTemplate: string }): KeywordId[] {
-  return extractKeywordIds(affix.descriptionTemplate);
+function affixShineKeywordIds(affix: {
+  descriptionTemplate: string;
+  visibleKeywordIds?: readonly KeywordId[];
+}): readonly KeywordId[] {
+  return affix.visibleKeywordIds ?? extractKeywordIds(affix.descriptionTemplate);
 }
 
 export function selectTextShineKeywordIds(
@@ -39,7 +42,7 @@ export function getGearInstanceKeywordIds(instance: GearInstance): KeywordId[] {
   for (const roll of getGearInstanceAffixes(instance)) {
     const affix = gearAffixCatalog[roll.id];
     if (affix) {
-      for (const keywordId of affixShineKeywordIds(affix)) keywordIds.add(keywordId);
+      for (const keywordId of affix.visibleKeywordIds) keywordIds.add(keywordId);
     }
   }
 

@@ -21,9 +21,8 @@ import { processEncounterTraitHealthThreshold } from "./encounter-trait-health-t
 import { addGoldWithCombatText, payKillPayouts } from "./player-rewards";
 import { mergeCombatText } from "./combat-text-events";
 import { payPendingBleedLeech } from "./damage-rider-leech";
-import { applyBleedDamageDraw } from "./bleed-reactions";
-import { gearFrozenDamageMultiplier } from "./gear-effects";
-import { applyElementalDamageManaRestore } from "./elemental-mana";
+import { applyBleedDamageDraw, applyElementalDamageManaRestore } from "./player-hit-core";
+import { gearFrozenDamageMultiplier } from "./scaled-damage";
 
 export type EnemyDotStatus = "burn" | "poison" | "bleed";
 

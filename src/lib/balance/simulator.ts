@@ -221,7 +221,10 @@ export function simulateBattle(config: BattleSimulationConfig): BattleSimulation
   const trackAnomalies = config.trackAnomalies !== false;
   const anomalies = trackAnomalies ? createEmptyAnomalies() : null;
 
-  let state: BattleState = { ...initialState, battleMetrics: { enemyAttackActions: 0, enemyAbilityActivations: {} } };
+  let state: BattleState = {
+    ...initialState,
+    battleMetrics: { enemyAttackActions: 0, enemyAbilityActivations: {}, enemyAbilityUses: {} },
+  };
   let turns = 0;
 
   while (state.enemyHealth > 0 && !isPlayerDefeated(state) && turns < maxTurns) {
@@ -232,7 +235,11 @@ export function simulateBattle(config: BattleSimulationConfig): BattleSimulation
   const outcome: BattleSimulationOutcome =
     state.enemyHealth <= 0 ? "win" : isPlayerDefeated(state) ? "loss" : "timeout";
 
-  const battleMetrics = state.battleMetrics ?? { enemyAttackActions: 0, enemyAbilityActivations: {} };
+  const battleMetrics = state.battleMetrics ?? {
+    enemyAttackActions: 0,
+    enemyAbilityActivations: {},
+    enemyAbilityUses: {},
+  };
   return {
     characterId: config.characterId,
     enemyId: enemy.id,

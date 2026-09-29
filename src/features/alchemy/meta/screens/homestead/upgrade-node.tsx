@@ -1,8 +1,8 @@
 import { type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { type MaterialInventory } from "@/lib/homestead/types";
-import { emptyInventory } from "@/lib/homestead/inventory";
-import { canUpgradeTierItem, getNextTierCost } from "@/lib/homestead/upgrades";
+import { canAfford, EMPTY_INVENTORY } from "@/lib/homestead/inventory";
+import { getNextTierCost } from "@/lib/homestead/upgrades";
 import { DetailPopup } from "../../../shared/ui/tooltips/card-popup";
 import { InteractiveArtTile, type PopupContext } from "../../../shared/ui/interactive-art-tile";
 import { StarRating } from "../../../shared/ui/star-rating";
@@ -17,7 +17,7 @@ import {
 } from "./helpers";
 import { HomesteadTooltipCost, homesteadCompletedSurfaceClass, homesteadTileDimClass } from "./homestead-tile-node";
 
-const ZERO_COST: MaterialInventory = emptyInventory();
+const ZERO_COST: MaterialInventory = EMPTY_INVENTORY;
 
 export function HomesteadUpgradeNode({
   item,
@@ -36,7 +36,7 @@ export function HomesteadUpgradeNode({
   const nextTierIndex = isCompleted ? maxTiers - 1 : Math.min(currentLevel, maxTiers - 1);
   const nextCost = getNextTierCost(item.data, currentLevel);
   const itemCost = nextCost ?? item.data.tiers[nextTierIndex]?.cost ?? ZERO_COST;
-  const itemAffordable = canUpgradeTierItem(item.data, currentLevel, materialInventory);
+  const itemAffordable = nextCost !== null && canAfford(materialInventory, nextCost);
 
   const detailTooltip = getUpgradeTooltip(
     item,

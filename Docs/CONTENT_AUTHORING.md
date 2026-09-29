@@ -36,7 +36,7 @@ than changing numeric text in the mixer.
 
 Cards in `cardLibrary` are automatically included in card shop, combat rewards, mysteries, wish, and draft via `getOfferableCardPool()` — no separate pool registration. Exclude a card with `excludeFromOfferPool: true` (`mixed-potion` is the current example). Distillation-eligible Potions are the explicit `POTION_CARD_IDS` list in `cards/card-pools.ts` — a new brew must be added there deliberately; Mana Berries, Mana Crystals, Apple, and Bread are intentionally excluded.
 
-Run `npm run content:audit` before handing off: card text must match effects (count + numeric parity in `src/lib/content-validation/card-parity/`, with shared line shapes in `line-classifiers.ts`) and prose must pass the typography rules (no em dashes; description lines stay period-free).
+Run `npm run content:audit` before handing off: card text must match effects (canonical description diff in `src/lib/content-validation/card-parity/`) and prose must pass the typography rules (no em dashes; description lines stay period-free).
 
 ---
 
@@ -44,7 +44,7 @@ Run `npm run content:audit` before handing off: card text must match effects (co
 
 Follow [Battle handlers § Adding a kind](../src/lib/game-data/effects/BATTLE_HANDLERS.md#adding-a-kind)
 for the union, grouped schema, registry, runtime handler, description metadata,
-and numeric-parity updates. That owner also documents recursive kinds,
+and description parity updates. That owner also documents recursive kinds,
 effect ordering, and the focused schema/handler/description tests.
 
 ---
@@ -141,7 +141,7 @@ New keywords still follow [Add a new keyword](./CONTENT_AUTHORING.md#add-a-new-k
 ## Add a homestead upgrade
 
 1. Add `BuildingId` / `FarmId` / `ResearchId` — `src/lib/homestead/types.ts`
-2. Define the item in `src/lib/homestead/data.ts` with `stackingBuilding`, `stackingFarm`, or `stackingResearch` from `data-builders.ts`. Supply four authored tier costs, reusing a matching cost ladder when appropriate, plus per-tier incremental effects and cumulative description callbacks. Research with unequal tier increments uses `defineResearch` with explicit tiers, as Detect Magic does by adjusting `stackingTiers` output.
+2. Define the item in `src/lib/homestead/data.ts` with `stackingBuilding`, `stackingFarm`, or `stackingResearch` from `data-builders.ts`. Supply four authored tier costs, reusing a matching cost ladder when appropriate, plus per-tier incremental effects and cumulative description callbacks. Upgrades with unequal tier increments pass a per-tier effect builder `(tierOneBased) => effects` instead of a flat object, as Detect Magic does for its Astral chance.
 3. Add effect keys only when existing keys cannot express the upgrade — `HomesteadEffectManifest` + `HOMESTEAD_BATTLE_*_KEYS` in `types.ts`; defaults in `defaults.ts`
 4. Companion bond tiers (if companion) — `src/lib/homestead/companions.ts` (`COMPANION_BOND_TIERS` + `companionTierItems`) + `src/lib/game-data/companions.ts`
 5. Art & palette — Add `helpers.tsx:itemArt` entry in `src/features/alchemy/meta/screens/homestead/helpers.tsx` + art via the [asset workflow](./WORKFLOWS-ASSETS.md#add-or-replace-game-art)

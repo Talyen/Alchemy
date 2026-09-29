@@ -90,10 +90,10 @@ export function tailOutput(output, maxBytes = 4_000) {
   if (rawBytes <= maxBytes) return normalized;
   let prefix = `[...${rawBytes} bytes omitted...]\n`;
   let suffix = "";
-  const candidateTail = normalized.length > maxBytes ? normalized.slice(-maxBytes) : normalized;
+  const allCodePoints = Array.from(normalized);
+  const codePoints = allCodePoints.length > maxBytes ? allCodePoints.slice(-maxBytes) : allCodePoints;
   for (let pass = 0; pass < 2; pass += 1) {
     let remaining = Math.max(0, maxBytes - Buffer.byteLength(prefix, "utf8"));
-    const codePoints = Array.from(candidateTail);
     let start = codePoints.length;
     while (start > 0) {
       const bytes = Buffer.byteLength(codePoints[start - 1], "utf8");

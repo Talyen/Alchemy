@@ -2,7 +2,7 @@ import { gearArtByDefinitionId } from "@/lib/game-data";
 import { gearBaseItems, type GearBaseItemId } from "./base-items";
 import type { GearDefinition, GearInstance, GearRarity } from "./types";
 export type { GearAffixRoll, GearDefinition, GearInstance } from "./types";
-import { getUniqueItemDefinition, uniqueItemList } from "./unique-catalog";
+import { uniqueItemList } from "./unique-catalog";
 
 export function gearInstanceRarity(instance: GearInstance): GearRarity | null {
   return gearDefinitions[instance.definitionId]?.rarity ?? null;
@@ -47,6 +47,7 @@ function buildVariantDefinitions(): Record<string, GearDefinition> {
       if (art !== gearArtByDefinitionId[id]) trackMissingArt(id, `base ${baseItemId}`);
       variants[id] = {
         id,
+        displayName: rarity === "astral" ? `Astral ${baseItem.displayName}` : baseItem.displayName,
         baseItemId,
         rarity,
         compatibleSlots: [...baseItem.compatibleSlots],
@@ -76,6 +77,7 @@ function buildVariantDefinitions(): Record<string, GearDefinition> {
     }
     variants[unique.id] = {
       id: unique.id,
+      displayName: unique.displayName,
       baseItemId: unique.baseItemId,
       rarity: "unique",
       compatibleSlots: [...baseItem.compatibleSlots],
@@ -102,23 +104,10 @@ export function getGearDefinitionsByRarity(rarity: GearRarity): GearDefinition[]
   return gearDefinitionList.filter((definition) => definition.rarity === rarity);
 }
 
-function baseItemDisplayName(definition: GearDefinition): string {
-  return gearBaseItems[definition.baseItemId].displayName;
-}
-
-function titleForDefinition(definition: GearDefinition): string {
-  const uniqueDef = getUniqueItemDefinition(definition.id);
-  if (uniqueDef) return uniqueDef.displayName;
-  const name = baseItemDisplayName(definition);
-  return definition.rarity === "astral" ? `Astral ${name}` : name;
-}
-
 export function getGearDefinitionTitle(definition: GearDefinition): string {
-  return titleForDefinition(definition);
+  return definition.displayName;
 }
 
 export function getGearInstanceTitle(instance: GearInstance): string {
-  const definition = gearDefinitions[instance.definitionId];
-  if (!definition) return "Gear";
-  return getGearDefinitionTitle(definition);
+  return gearDefinitions[instance.definitionId]?.displayName ?? "Gear";
 }

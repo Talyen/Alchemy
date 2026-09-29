@@ -13,20 +13,20 @@ function makeCard(
 
 // Synthetic failure cases for card text↔effects parity. The full catalog is
 // pinned clean by content-validation.test.ts; these cases pin the failure
-// paths (counts, values, warning severities) that a clean catalog never hits.
+// paths (canonical diffs, warning severities) that a clean catalog never hits.
 describe("card parity failure paths", () => {
   it("rejects a heal line with no matching effect", () => {
     const issues = validateCardDescriptionParity(
       makeCard({ id: "heal-missing", descriptionLines: ["Restore 4 Health"], effects: [] }),
     );
-    expect(issues.map((issue) => issue.message)).toContain("heal description count 1 does not match effect count 0");
+    expect(issues.map((issue) => issue.message)).toContain('"Restore 4 Health" has no matching effect');
   });
 
   it("rejects a block line with no matching effect", () => {
     const issues = validateCardDescriptionParity(
       makeCard({ id: "block-missing", descriptionLines: ["Gain 5 Block"], effects: [] }),
     );
-    expect(issues.map((issue) => issue.message)).toContain("block description count 1 does not match effect count 0");
+    expect(issues.map((issue) => issue.message)).toContain('"Gain 5 Block" has no matching effect');
   });
 
   it.each(["Gain +1 Maximum Mana", "Gain +1 Mana Crystal"])(
@@ -47,11 +47,13 @@ describe("card parity failure paths", () => {
     const issues = validateCardDescriptionParity(
       makeCard({
         id: "damage-mismatch",
-        descriptionLines: ["Deal 5 physical damage"],
+        descriptionLines: ["Deal 5 Physical damage"],
         effects: [{ kind: "damage", damageType: "physical", amount: 3 }],
       }),
     );
-    expect(issues.map((issue) => issue.message)).toContain('"Deal 5 physical damage" does not match authored amount 3');
+    expect(issues.map((issue) => issue.message)).toContain(
+      '"Deal 5 Physical damage" does not match expected "Deal 3 Physical damage"',
+    );
   });
 
   it("rejects a six-sided die line when the effect range is wrong", () => {
@@ -62,7 +64,9 @@ describe("card parity failure paths", () => {
         effects: [{ kind: "random-draw", minAmount: 1, maxAmount: 4 }],
       }),
     );
-    expect(issues.map((issue) => issue.message)).toContain('"Roll a six-sided die" does not match authored amount 4');
+    expect(issues.map((issue) => issue.message)).toContain(
+      '"Roll a six-sided die" does not match expected "Draw 1–4 cards"',
+    );
   });
 
   it("rejects Remove-all-armor text without a removeAll effect", () => {
@@ -73,14 +77,16 @@ describe("card parity failure paths", () => {
         effects: [{ kind: "remove-enemy-armor", amount: 2 }],
       }),
     );
-    expect(issues.map((issue) => issue.message)).toContain('"Remove all enemy Armor" has no matching effect');
+    expect(issues.map((issue) => issue.message)).toContain(
+      '"Remove all enemy Armor" does not match expected "Remove 2 enemy Armor"',
+    );
   });
 
   it("keeps lifesteal without a Leech line as a warning, not an error", () => {
     const issues = validateCardDescriptionParity(
       makeCard({
         id: "lifesteal-warning",
-        descriptionLines: ["Deal 5 physical damage"],
+        descriptionLines: ["Deal 5 Physical damage"],
         effects: [{ kind: "damage", damageType: "physical", amount: 5, lifesteal: true }],
       }),
     );
@@ -96,7 +102,7 @@ describe("card parity failure paths", () => {
     const archery = validateCardDescriptionParity(
       makeCard({
         id: "archery-warning",
-        descriptionLines: ["Deal 5 physical damage"],
+        descriptionLines: ["Deal 5 Physical damage"],
         tags: ["archery"],
         effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
       }),
@@ -106,7 +112,7 @@ describe("card parity failure paths", () => {
     const consume = validateCardDescriptionParity(
       makeCard({
         id: "consume-warning",
-        descriptionLines: ["Draw 1"],
+        descriptionLines: ["Draw a card"],
         consume: true,
         effects: [{ kind: "draw-cards", amount: 1 }],
       }),
@@ -116,7 +122,7 @@ describe("card parity failure paths", () => {
     const companion = validateCardDescriptionParity(
       makeCard({
         id: "companion-warning",
-        descriptionLines: ["Deal 5 physical damage"],
+        descriptionLines: ["Deal 5 Physical damage"],
         effects: [
           { kind: "damage", damageType: "physical", amount: 5 },
           { kind: "summon-companion", companionId: "wolf" },
@@ -138,7 +144,7 @@ describe("card parity failure paths", () => {
       }),
     );
     expect(issues.map((issue) => issue.message)).toContain(
-      '"Deal 1 Freeze damage, twice" does not match authored amount 2',
+      '"Deal 1 Freeze damage, twice" does not match expected "Deal 1 Freeze damage"',
     );
   });
 
@@ -146,7 +152,7 @@ describe("card parity failure paths", () => {
     const issues = validateCardDescriptionParity(
       makeCard({
         id: "clean-card",
-        descriptionLines: ["Deal 5 physical damage", "Gain 3 Block", "Leech"],
+        descriptionLines: ["Deal 5 Physical damage", "Gain 3 Block", "Leech"],
         effects: [
           { kind: "damage", damageType: "physical", amount: 5, lifesteal: true },
           { kind: "player-status", status: "block", amount: 3 },

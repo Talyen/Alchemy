@@ -150,7 +150,7 @@ The route wrapper (`src/app/screen-routes/meta-routes.tsx`) consumes `useArmoryC
 
 ## Battle integration
 
-Gear effects are **snapshotted** at battle start. `computeGearManifest(characterId, inventory, loadouts)` flattens equipped Gear into `BattleState.gearEffects`. Allowed Gear, talent, and Homestead mutations refresh that manifest through `rebindLiveRunMeta` in the same session command. Battle calculations read the battle manifest, never the Gear aggregate directly. `battle/gear-effects.ts` holds only shared helpers, not a dispatch table: each consumer reads the manifest where its effect applies.
+Gear effects are **snapshotted** at battle start. `computeGearManifest(characterId, inventory, loadouts)` flattens equipped Gear into `BattleState.gearEffects`. Allowed Gear, talent, and Homestead mutations refresh that manifest through `rebindLiveRunMeta` in the same session command. Battle calculations read the battle manifest, never the Gear aggregate directly. `battle/scaled-damage.ts` holds only shared helpers, not a dispatch table: each consumer reads the manifest where its effect applies.
 
 Trinket effects snapshot the same way via `computeTrinketManifest` (`src/lib/trinkets.ts`) over run Boons plus the equipped Trinket. Every `TrinketManifest` key is granted by at least one trinket and has a documented battle/run consumer; the key→consumer map lives in the manifest coverage test (`tests/lib/content-validation/trinket-validation.test.ts`) and fails compilation when a key is added or removed without updating it.
 

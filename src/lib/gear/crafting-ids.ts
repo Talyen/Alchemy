@@ -1,11 +1,3 @@
-export type CraftingCurrencyId =
-  | "discordant-dice"
-  | "sprig-of-growth"
-  | "voidstone"
-  | "ascension-seal"
-  | "severance-maw"
-  | "smiths-whetstone";
-
 export const CRAFTING_CURRENCY_IDS = [
   "discordant-dice",
   "sprig-of-growth",
@@ -13,7 +5,9 @@ export const CRAFTING_CURRENCY_IDS = [
   "ascension-seal",
   "severance-maw",
   "smiths-whetstone",
-] as const satisfies readonly CraftingCurrencyId[];
+] as const;
+
+export type CraftingCurrencyId = (typeof CRAFTING_CURRENCY_IDS)[number];
 
 export const EMPTY_CRAFTING_CURRENCIES = Object.fromEntries(CRAFTING_CURRENCY_IDS.map((id) => [id, 0])) as Record<
   CraftingCurrencyId,

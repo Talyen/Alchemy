@@ -1,28 +1,41 @@
-import { applyHitHealth, type CardHitFacts } from "./hit-facts";
-import type { HitRequest, CardHitRequest } from "./hit-request";
-import { BLACKFLETCH_EXECUTE_HEALTH_PERCENT, PERCENT_DENOMINATOR } from "../game-constants";
+import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
+import { applyBleedDamageDraw, applyElementalDamageManaRestore, applyHitHealth } from "./player-hit-core";
+import type { CardHitRequest, HitFacts, HitRequest } from "./player-hit-core";
+import { BLACKFLETCH_EXECUTE_HEALTH_PERCENT, BATTLE_CONFIG, PERCENT_DENOMINATOR } from "../game-constants";
 import { halveRounded } from "./amount-helpers";
-import { applyHitEpilogue } from "./player-rewards";
+import { addPlayerStatusWithCombatText, applyHealingWithCombatText, applyHitEpilogue } from "./player-rewards";
 import { mergeCombatText } from "./combat-text-events";
-import { computeReflectedHolyDamageToEnemy } from "./damage-calc";
+import { computeReflectedHolyDamageToEnemy, forgeAppliesToDamageType } from "./damage-calc";
 import { applyDamageStatuses, applyPoisonTalentRiders } from "./damage-status-riders";
 import { detonateEnemyStatuses } from "./dot-resolve";
-import { resolveFollowUpHit, tryPoisonStunProc, tryTalentTypedHit } from "./follow-up-hit-resolution";
-import { decayArmorAfterDamage, rollTalentChance } from "./status-helpers";
-import { addForgeToPlayer } from "./status-player";
-import { addEnemyStatus, type BattleState, type CombatTextEvent } from "./types";
-import { applyPurgeGearRewards, purgeEnemyBenefits } from "./enemy-purge";
 import {
-  applyHolyDamageRiders,
-  applyNatureDamageRiders,
-  consumeForgeAfterDamage,
-  applyCardStatusReactions,
-  applyCardLeechAndFrozenReactions,
-} from "./card-hit-reactions";
-import { applyIronGuardReward } from "./status-player";
-import { applyBleedDamageDraw } from "./bleed-reactions";
+  applyBrassCenser,
+  applyLifestealAndPlayerHitTriggers,
+  applyNatureLeech,
+  applyTalentHitConversions,
+  resolveFollowUpHit,
+  tryPoisonStunProc,
+  tryTalentTypedHit,
+} from "./follow-up-hit-resolution";
+import {
+  applyBurnForgePayout,
+  applyLuckyCloverGold,
+  applyNatureGoldReward,
+  applyNatureManaRefund,
+} from "./bonus-effects";
+import { applyDamageBlock, applyHolyBlockChance, applyHolyLifesteal, applyHolyTithe } from "./damage-rider-leech";
+import { decayArmorAfterDamage, rollTalentChance } from "./status-helpers";
+import {
+  addForgeToPlayer,
+  applyArmorReward,
+  applyBlockReward,
+  applyIronGuardReward,
+  spendPlayerForgeForAttack,
+} from "./status-player";
+import { addEnemyStatus, hasEncounterBenefit, type BattleState, type CombatTextEvent } from "./types";
+import { applyPurgeGearRewards, purgeEnemyBenefits } from "./enemy-purge";
+import { applyWishEffect } from "./wish";
 import { drawKeywordCard } from "./draw";
-import { applyElementalDamageManaRestore } from "./elemental-mana";
 
 /** Direct player hits have explicit recipes; shallow sources never re-enter card reactions. */
 export function resolvePlayerHit(state: BattleState, request: HitRequest, combatTexts: CombatTextEvent[]): BattleState {
@@ -90,10 +103,139 @@ function resolveAttackPurgeHit(state: BattleState, combatTexts: CombatTextEvent[
   return applyPurgeGearRewards(marked, purged.removed, combatTexts);
 }
 
+function applyBurnDamageRiders(
+  state: BattleState,
+  modifiedDamage: number,
+  combatTexts: CombatTextEvent[],
+  enemyWasBurningBefore: boolean,
+): BattleState {
+  const nextState = applyBurnForgePayout(state, combatTexts, enemyWasBurningBefore);
+  if (rollTalentChance(state.talentEffects.burnStunChance, state)) {
+    return resolveFollowUpHit(
+      nextState,
+      { source: "talent-derived", damageType: "stun", amount: modifiedDamage },
+      combatTexts,
+    );
+  }
+  return nextState;
+}
+
+function applyNatureDamageRiders(
+  state: BattleState,
+  facts: HitFacts,
+  combatTexts: CombatTextEvent[],
+  alreadyLeeches = false,
+): BattleState {
+  const { resolvedDamage: modifiedDamage, previousHealth: enemyHealthBeforeHit } = facts;
+  if (modifiedDamage <= 0) return state;
+  let nextState = applyLuckyCloverGold(state, modifiedDamage, combatTexts);
+  nextState = applyNatureGoldReward(nextState, facts.healthDamage, combatTexts);
+  nextState = applyNatureManaRefund(nextState, modifiedDamage, combatTexts);
+  if (rollTalentChance(state.talentEffects.armorOnNatureDamageChance, state)) {
+    nextState = applyArmorReward(nextState, modifiedDamage, combatTexts);
+  }
+  if (rollTalentChance(state.talentEffects.thornsOnNatureDamageChance, state)) {
+    nextState = addPlayerStatusWithCombatText(nextState, "thorns", modifiedDamage, combatTexts);
+  }
+  if (rollTalentChance(state.talentEffects.healOnNatureDamageChance, state)) {
+    nextState = applyHealingWithCombatText(nextState, modifiedDamage, combatTexts);
+  }
+  const guaranteedLeech =
+    !alreadyLeeches && state.gearEffects.natureLeechVsPoisoned > 0 && facts.eligibility.enemyStatuses.poison > 0;
+  if (guaranteedLeech || state.talentEffects.natureLeechChance > 0 || state.gearEffects.natureLeechChance > 0) {
+    nextState = applyNatureLeech(
+      nextState,
+      guaranteedLeech ? facts.healthDamage : modifiedDamage,
+      combatTexts,
+      enemyHealthBeforeHit,
+      guaranteedLeech,
+    );
+  }
+  nextState = applyTalentHitConversions(nextState, "nature", modifiedDamage, combatTexts);
+  if (rollTalentChance(state.talentEffects.natureStunChance, state)) {
+    nextState = resolveFollowUpHit(
+      nextState,
+      { source: "talent-derived", damageType: "stun", amount: modifiedDamage },
+      combatTexts,
+    );
+  }
+  return nextState;
+}
+
+function applyForgeStunRider(
+  state: BattleState,
+  effect: Extract<BattleCardEffect, { kind: "damage" }>,
+  combatTexts: CombatTextEvent[],
+  forgeBeforeHit: number,
+) {
+  if (
+    effect.damageType !== "physical" ||
+    state.trinketEffects.forgeStunThreshold <= 0 ||
+    forgeBeforeHit < state.trinketEffects.forgeStunThreshold
+  )
+    return state;
+
+  return resolveFollowUpHit(
+    state,
+    { source: "player-follow-up", damageType: "stun", amount: state.trinketEffects.forgeStunAmount },
+    combatTexts,
+  );
+}
+
+function applyHolyDamageRiders(
+  state: BattleState,
+  card: BattleCard | undefined,
+  facts: HitFacts,
+  combatTexts: CombatTextEvent[],
+  heroAttack = true,
+) {
+  const { resolvedDamage: damage, previousHealth: enemyHealthBeforeHit, eligibility } = facts;
+  if (damage <= 0) return state;
+  let nextState = applyHolyLifesteal(state, damage, combatTexts, eligibility);
+  if (
+    heroAttack &&
+    card &&
+    facts.healthDamage > 0 &&
+    eligibility.playerStatuses.block === 0 &&
+    state.gearEffects.blockOnHolyHitWithoutBlock > 0
+  ) {
+    nextState = applyBlockReward(nextState, state.gearEffects.blockOnHolyHitWithoutBlock, combatTexts);
+  }
+  nextState = applyHolyBlockChance(nextState, damage, combatTexts);
+  nextState = applyDamageBlock(nextState, damage, combatTexts, eligibility);
+  nextState = applyHolyTithe(nextState, damage, combatTexts);
+
+  nextState = applyTalentHitConversions(nextState, "holy", damage, combatTexts);
+
+  if (rollTalentChance(nextState.talentEffects.holyWishChance, nextState)) {
+    nextState = applyWishEffect(nextState, card, 1, combatTexts, { kind: "enclosing-action" });
+  }
+
+  return applyBrassCenser(nextState, damage, combatTexts, enemyHealthBeforeHit);
+}
+
+function consumeForgeAfterDamage(
+  state: BattleState,
+  effect: Extract<BattleCardEffect, { kind: "damage" }>,
+  damage: number,
+  combatTexts: CombatTextEvent[],
+  companionAttack = false,
+) {
+  if (hasEncounterBenefit(state, "white-heat")) return state;
+  if (effect.damageType === "holy" && state.gearEffects.holyPreservesForge > 0) return state;
+  const forgeWasApplied =
+    effect.equalToForge === true ||
+    forgeAppliesToDamageType(effect.damageType, state.talentEffects, state.gearEffects, companionAttack);
+
+  if (!forgeWasApplied || damage <= 0 || state.playerStatuses.forge <= 0) return state;
+
+  return spendPlayerForgeForAttack(state, BATTLE_CONFIG.FORGE_DECAY_AMOUNT, combatTexts);
+}
+
 function applyCardArcheryReactions(
   nextState: BattleState,
   request: CardHitRequest,
-  facts: CardHitFacts,
+  facts: HitFacts,
   combatTexts: CombatTextEvent[],
 ): BattleState {
   const { resolvedDamage } = facts;
@@ -124,6 +266,86 @@ function applyCardArcheryReactions(
   return nextState;
 }
 
+function applyCardHitReactions(
+  nextState: BattleState,
+  request: CardHitRequest,
+  facts: HitFacts,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  const { effect } = request;
+  const { previousHealth, eligibility, resolvedDamage: modifiedDamage } = facts;
+  const enemyWasBurningBefore = eligibility.enemyStatuses.burn > 0;
+  if (effect.damageType === "physical" || effect.damageType === "bleed") {
+    nextState = applyTalentHitConversions(nextState, effect.damageType, modifiedDamage, combatTexts);
+  }
+  nextState = applyDamageStatuses(nextState, effect, modifiedDamage, combatTexts, previousHealth, {
+    critical: facts.critical,
+    forgeBeforeHit: eligibility.playerStatuses.forge,
+    onPoisonBleedConversion: (current, damage, texts) =>
+      resolveFollowUpHit(current, { source: "talent-derived", damageType: "bleed", amount: damage }, texts),
+  });
+  if (effect.detonateAllBurn || (effect.detonateIfEnemyBurning && enemyWasBurningBefore)) {
+    nextState = detonateEnemyStatuses(nextState, ["burn"], combatTexts);
+  }
+  if (effect.detonateAllBleed) {
+    nextState = detonateEnemyStatuses(nextState, ["bleed"], combatTexts);
+  }
+  if (modifiedDamage > 0)
+    nextState = applyForgeStunRider(nextState, effect, combatTexts, facts.eligibility.playerStatuses.forge);
+  if (effect.damageType === "physical" && modifiedDamage > 0) {
+    const stunChance = nextState.talentEffects.physicalStunChance + nextState.gearEffects.physicalStunChance;
+    if (rollTalentChance(stunChance, nextState)) {
+      nextState = resolveFollowUpHit(
+        nextState,
+        { source: "talent-derived", damageType: "stun", amount: modifiedDamage },
+        combatTexts,
+      );
+    }
+  }
+  if (effect.damageType === "poison") {
+    nextState = tryPoisonStunProc(nextState, modifiedDamage, combatTexts);
+  }
+
+  if (effect.damageType === "burn" && modifiedDamage > 0) {
+    nextState = applyBurnDamageRiders(nextState, modifiedDamage, combatTexts, enemyWasBurningBefore);
+  }
+
+  const enemyWasStunned = eligibility.enemyCC.stunSkipTurns > 0;
+  const cardHealing = request.origin === "played-card" || request.origin === "triggered-card";
+  const companionAttack = request.origin === "companion";
+  if (
+    effect.lifesteal ||
+    (effect.damageType === "physical" && enemyWasStunned && facts.eligibility.talentEffects.physicalLeechVsStunned) ||
+    (effect.damageType === "physical" &&
+      !companionAttack &&
+      eligibility.playerHealth < eligibility.playerMaxHealth / 2 &&
+      eligibility.gearEffects.physicalLeechBelowHalfHealth > 0)
+  ) {
+    nextState = applyLifestealAndPlayerHitTriggers(
+      nextState,
+      modifiedDamage,
+      combatTexts,
+      cardHealing && !!effect.lifesteal,
+      !companionAttack && !!effect.lifesteal,
+      previousHealth,
+    );
+  }
+
+  if (modifiedDamage > 0 && companionAttack && eligibility.enemyCC.freezeSkipTurns > 0) {
+    nextState = resolveFollowUpHit(
+      nextState,
+      {
+        source: "talent-fixed",
+        damageType: "freeze",
+        amount: eligibility.talentEffects.companionFreezeDamageVsFrozen,
+      },
+      combatTexts,
+    );
+  }
+
+  return nextState;
+}
+
 function resolveCardHit(state: BattleState, request: CardHitRequest, combatTexts: CombatTextEvent[]): BattleState {
   const { card, effect, resolvedDamage: modifiedDamage, onDamageDealt } = request;
   const companionAttack = request.origin === "companion";
@@ -132,7 +354,7 @@ function resolveCardHit(state: BattleState, request: CardHitRequest, combatTexts
   const prePurgeState = request.source === "archery-extra" ? state : resolveAttackPurgeHit(state, combatTexts);
   if (prePurgeState.enemyHealth <= 0) return prePurgeState;
   const hit = applyHitHealth(prePurgeState, modifiedDamage, eligibility, request.critical ?? false);
-  const facts: CardHitFacts = { ...hit.facts };
+  const facts = hit.facts;
   const { previousHealth } = facts;
   onDamageDealt?.(facts.healthDamage);
   // Spend the resource used by this packet before its rewards grant fresh Forge.
@@ -143,8 +365,7 @@ function resolveCardHit(state: BattleState, request: CardHitRequest, combatTexts
   nextState = decayArmorAfterDamage(nextState, modifiedDamage, "enemy");
 
   // Reactions stay depth-first: Archery's extra hit finishes before the outer hit's payout.
-  nextState = applyCardStatusReactions(nextState, request, facts, combatTexts);
-  nextState = applyCardLeechAndFrozenReactions(nextState, request, facts, combatTexts);
+  nextState = applyCardHitReactions(nextState, request, facts, combatTexts);
   nextState = applyCardArcheryReactions(nextState, request, facts, combatTexts);
   if (
     facts.critical &&
@@ -156,9 +377,7 @@ function resolveCardHit(state: BattleState, request: CardHitRequest, combatTexts
   }
   if (effect.damageType === "holy") {
     nextState = applyHolyDamageRiders(nextState, card, facts, combatTexts, !companionAttack);
-  }
-
-  if (effect.damageType === "nature") {
+  } else if (effect.damageType === "nature") {
     nextState = applyNatureDamageRiders(nextState, facts, combatTexts, effect.lifesteal === true);
   }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createSeededRng } from "@/lib/utils";
+import { createSeededRng } from "@/lib/rng";
 import {
   expandBeyondBoss,
   generateLabyrinthMap,

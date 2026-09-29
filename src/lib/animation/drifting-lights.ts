@@ -1,5 +1,5 @@
 import type { BackgroundLightsSettings } from "../screen-effect-settings";
-import { logError } from "../error-logger";
+import { attachWebGLContextLifecycle } from "./webgl-lifecycle";
 import { createCanvasLifecycle } from "./canvas-lifecycle";
 import { createWebGLProgram } from "./webgl-program";
 
@@ -62,7 +62,6 @@ export function startDriftingLights(
   let settings: LightSettings = { strength: 0, motion: "still" };
   let elapsed = 0;
   let resource: { draw: () => void; wake: () => void; dispose: () => void } | null = null;
-  let disposed = false;
 
   function start() {
     let gl: WebGLRenderingContext | null = null;
@@ -129,37 +128,32 @@ export function startDriftingLights(
       },
     };
   }
-  function initialize() {
-    if (disposed) return;
-    resource = start();
-    onAvailable(resource !== null);
-    if (!resource) logError("Drifting lights WebGL unavailable; using static decoration", "other");
-  }
-  function lost(event: Event) {
-    event.preventDefault();
-    resource?.dispose();
-    resource = null;
-    onAvailable(false);
-    logError("Drifting lights WebGL context lost; using static decoration", "other");
-  }
-  function restored() {
-    initialize();
-  }
-  canvas.addEventListener("webglcontextlost", lost);
-  canvas.addEventListener("webglcontextrestored", restored);
-  initialize();
+
+  const detach = attachWebGLContextLifecycle({
+    canvas,
+    start: () => {
+      resource = start();
+      return resource
+        ? () => {
+            resource?.dispose();
+            resource = null;
+          }
+        : null;
+    },
+    onAvailabilityChange: (available) => {
+      if (!available) resource = null;
+      onAvailable(available);
+    },
+    unavailableErrorMessage: "Drifting lights WebGL unavailable; using static decoration",
+    contextLostErrorMessage: "Drifting lights WebGL context lost; using static decoration",
+  });
+
   return {
     update: (next) => {
       settings = next;
       resource?.draw();
       resource?.wake();
     },
-    dispose: () => {
-      disposed = true;
-      canvas.removeEventListener("webglcontextlost", lost);
-      canvas.removeEventListener("webglcontextrestored", restored);
-      resource?.dispose();
-      resource = null;
-    },
+    dispose: detach,
   };
 }

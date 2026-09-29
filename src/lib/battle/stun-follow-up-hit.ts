@@ -2,11 +2,12 @@ import { resolveSecondaryAction } from "./action-context";
 import { applyHitEpilogue } from "./player-rewards";
 import { mergeCombatText } from "./combat-text-events";
 import { computeCardDamageToEnemy } from "./damage-calc";
-import { applyHitHealth } from "./hit-facts";
+import { applyHitHealth } from "./player-hit-core";
 import { decayArmorAfterDamage } from "./status-helpers";
 import { resolveStunTrigger } from "./status-stun-resolve";
 import { addEnemyStatus, type BattleState, type CombatTextEvent } from "./types";
 
+/** Leaf stun entry: stays free of hit-resolution tiers so leech riders can call it without a module cycle. */
 export function resolveStunFollowUpHit(
   state: BattleState,
   amount: number,

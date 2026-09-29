@@ -36,6 +36,7 @@ export interface GearAffixRoll {
 
 export interface GearDefinition {
   id: string;
+  displayName: string;
   baseItemId: GearBaseItemId;
   rarity: GearRarity | null;
   descriptionLines: string[];

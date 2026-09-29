@@ -78,6 +78,7 @@ export const TrinketContentSchema = z.object({
 
 export const GearDefinitionContentSchema = z.object({
   id: NonEmptyStringSchema,
+  displayName: NonEmptyStringSchema,
   baseItemId: NonEmptyStringSchema,
   rarity: z.enum(GEAR_RARITIES).nullable(),
   descriptionLines: z.array(z.string()),

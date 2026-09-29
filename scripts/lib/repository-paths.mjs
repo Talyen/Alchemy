@@ -2,6 +2,8 @@ import { spawnSync } from "node:child_process";
 import { statSync } from "node:fs";
 import path from "node:path";
 
+export const REPO_ROOT = path.resolve(import.meta.dirname, "../..");
+
 // Verification must see new files even when Git's filesystem caches are stale.
 // Command-local overrides leave the user's persistent Git configuration intact.
 const UNCACHED_GIT_OPTIONS = ["-c", "core.fsmonitor=false", "-c", "core.untrackedCache=false"];

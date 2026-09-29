@@ -73,5 +73,7 @@ export default {
     "electron-builder",
     // Invoked via npx in scripts/lib/release/release-runner.mjs; knip cannot trace it.
     "commit-and-tag-version",
+    // Loaded via prettier-plugin-tailwindcss plugin in .prettierrc; knip cannot trace it.
+    "tailwindcss",
   ],
 };

@@ -1,11 +1,40 @@
 import { CAMPFIRE_HEAL_FRACTION } from "@/lib/game-constants";
 import { capitalizeWord } from "@/lib/utils";
 import { conditionalDamageDescription } from "./cards/conditional-damage-description";
-import type { BattleCard, BattleCardEffect, KeywordId } from "./types";
+import type { BattleCard, BattleCardEffect, EnemyStatusId, KeywordId } from "./types";
 
 interface EffectPresentation<K extends BattleCardEffect["kind"]> {
   keywords: (effect: Extract<BattleCardEffect, { kind: K }>) => KeywordId[];
-  describe?: (effect: Extract<BattleCardEffect, { kind: K }>) => string;
+  describe?: string | ((effect: Extract<BattleCardEffect, { kind: K }>) => string);
+}
+
+/**
+ * Oxford choice join shared by every damage/resource line. Damage pools and
+ * resource gains omit the comma for two options ("A or B"); random damage and
+ * status choices always keep it ("A, or B") — preserved exactly per site.
+ */
+function joinOrOptions(items: readonly string[], alwaysComma = false): string {
+  const rest = [...items];
+  const last = rest.pop() ?? "";
+  const comma = rest.length > 1 || alwaysComma ? "," : "";
+  return `${rest.join(", ")}${comma} or ${last}`;
+}
+
+/** "Gain/Restore/Lose {amount} {noun}" one-liners (Health/Mana stay fixed; crystals pluralize). */
+function amountLine(verb: "Gain" | "Restore" | "Lose", singular: string, plural = `${singular}s`) {
+  return (effect: { amount: number }) => `${verb} ${effect.amount} ${effect.amount === 1 ? singular : plural}`;
+}
+
+const ENEMY_STATUS_KEYWORDS: ReadonlySet<EnemyStatusId> = new Set(["burn", "poison", "bleed", "freeze", "stun"]);
+
+function isKeywordEnemyStatus(status: EnemyStatusId): status is Extract<EnemyStatusId, KeywordId> {
+  return ENEMY_STATUS_KEYWORDS.has(status);
+}
+
+/** Single-effect wording for "twice" / "this turn and next" merges; null when it needs no merge. */
+function describeOnce(effect: BattleCardEffect): string | null {
+  const described = describeCardEffects([effect]);
+  return described.length === 1 ? described[0]! : null;
 }
 
 const PRESENTATION: { [K in BattleCardEffect["kind"]]: EffectPresentation<K> } = {
@@ -29,26 +58,20 @@ const PRESENTATION: { [K in BattleCardEffect["kind"]]: EffectPresentation<K> } =
       if (effect.equalToForge) return `Deal ${type} damage equal to your Forge`;
       if (effect.equalToGoldPercent !== undefined)
         return `Deal ${type} damage equal to ${effect.equalToGoldPercent}% of your Gold`;
-      if (conditionalDamageDescription(effect)) return conditionalDamageDescription(effect)!;
-      if (effect.damageTypePool && effect.damageTypePool.length > 0) {
-        const types = [...effect.damageTypePool].map(capitalizeWord);
-        const last = types.pop();
-        return `Deal ${effect.amount} ${types.join(", ")}${types.length > 1 ? "," : ""} or ${last} damage`;
-      }
+      const conditional = conditionalDamageDescription(effect);
+      if (conditional) return conditional;
+      if (effect.damageTypePool?.length)
+        return `Deal ${effect.amount} ${joinOrOptions(effect.damageTypePool.map(capitalizeWord))} damage`;
       return `Deal ${effect.amount} ${capitalizeWord(effect.damageType)} damage`;
     },
   },
   "cleanse-player-status-to-damage": { keywords: (effect) => [effect.status, effect.damageType] },
   "random-damage": {
     keywords: (effect) => (effect.damageTypePool?.length ? effect.damageTypePool : ["physical"]),
-    describe: (effect) => {
-      if (effect.damageTypePool?.length) {
-        const types = effect.damageTypePool.map(capitalizeWord);
-        const last = types.pop();
-        return `Deal ${effect.minAmount}–${effect.maxAmount} ${types.join(", ")}, or ${last} damage`;
-      }
-      return `Deal ${effect.minAmount}–${effect.maxAmount} Random damage`;
-    },
+    describe: (effect) =>
+      effect.damageTypePool?.length
+        ? `Deal ${effect.minAmount}–${effect.maxAmount} ${joinOrOptions(effect.damageTypePool.map(capitalizeWord), true)} damage`
+        : `Deal ${effect.minAmount}–${effect.maxAmount} Random damage`,
   },
   chance: { keywords: (effect) => collectKeywordsFromChance(effect) },
   "player-status": {
@@ -72,61 +95,30 @@ const PRESENTATION: { [K in BattleCardEffect["kind"]]: EffectPresentation<K> } =
         effect.status === "thorns" ||
         effect.status === "forge"
       )
-        return playerStatusDescriptionLine(effect.status, effect.amount);
+        return `Gain ${effect.amount} ${capitalizeWord(effect.status)}`;
       throw new Error(`effectDescriptionLine: unsupported player-status ${effect.status}`);
     },
   },
   "enemy-status": {
-    keywords: (effect) =>
-      effect.status === "burn" ||
-      effect.status === "poison" ||
-      effect.status === "bleed" ||
-      effect.status === "freeze" ||
-      effect.status === "stun"
-        ? [effect.status]
-        : [],
+    keywords: (effect) => (isKeywordEnemyStatus(effect.status) ? [effect.status] : []),
   },
-  heal: {
-    keywords: () => ["health"],
-    describe: (effect) => {
-      return `Restore ${effect.amount} Health`;
-    },
-  },
+  heal: { keywords: () => ["health"], describe: amountLine("Restore", "Health", "Health") },
   "restore-mana": {
     keywords: () => ["mana"],
-    describe: (effect) => {
-      return `${effect.ifEnemyFrozen ? "If the enemy is Frozen, gain" : "Gain"} ${effect.amount} Mana${effect.allowOverflow ? ", allowing overflow" : ""}`;
-    },
+    describe: (effect) =>
+      `${effect.ifEnemyFrozen ? "If the enemy is Frozen, gain" : "Gain"} ${effect.amount} Mana${effect.allowOverflow ? ", allowing overflow" : ""}`,
   },
-  "lose-mana": {
-    keywords: () => ["mana"],
-    describe: (effect) => {
-      return `Lose ${effect.amount} Mana`;
-    },
-  },
-  "lose-max-mana": {
-    keywords: () => ["mana"],
-    describe: (effect) => {
-      return `Lose ${effect.amount} Mana Crystal${effect.amount === 1 ? "" : "s"}`;
-    },
-  },
-  "gain-max-mana": {
-    keywords: () => ["mana"],
-    describe: (effect) => {
-      return `Gain ${effect.amount} Mana Crystal${effect.amount === 1 ? "" : "s"}`;
-    },
-  },
+  "lose-mana": { keywords: () => ["mana"], describe: amountLine("Lose", "Mana", "Mana") },
+  "lose-max-mana": { keywords: () => ["mana"], describe: amountLine("Lose", "Mana Crystal") },
+  "gain-max-mana": { keywords: () => ["mana"], describe: amountLine("Gain", "Mana Crystal") },
   "gain-gold": {
     keywords: () => ["gold"],
-    describe: (effect) => {
-      return `Gain ${effect.amount} Gold${effect.ifEnemyStunned ? " if the enemy is Stunned" : ""}`;
-    },
+    describe: (effect) => `Gain ${effect.amount} Gold${effect.ifEnemyStunned ? " if the enemy is Stunned" : ""}`,
   },
   wish: {
     keywords: (effect) => (effect.companionIfAbsent ? [] : ["wish"]),
-    describe: (effect) => {
-      return effect.companionIfAbsent ? "If you don't have a Companion, Wish for one" : `Wish ${effect.amount}`;
-    },
+    describe: (effect) =>
+      effect.companionIfAbsent ? "If you don't have a Companion, Wish for one" : `Wish ${effect.amount}`,
   },
   "summon-companion": { keywords: () => ["companion"] },
   "buff-companion": { keywords: () => ["companion"] },
@@ -139,38 +131,27 @@ const PRESENTATION: { [K in BattleCardEffect["kind"]]: EffectPresentation<K> } =
   "remove-harmful-status": {
     keywords: () => [],
     describe: (effect) => {
-      {
-        if (effect.removeAll) return "Cleanse all harmful status effects";
-        if (effect.amount === undefined)
-          throw new Error("effectDescriptionLine: remove-harmful-status needs amount without removeAll");
-        return effect.amount === 1
-          ? "Cleanse a harmful status effect"
-          : `Cleanse ${effect.amount} harmful status effects`;
-      }
+      if (effect.removeAll) return "Cleanse all harmful status effects";
+      if (effect.amount === undefined)
+        throw new Error("effectDescriptionLine: remove-harmful-status needs amount without removeAll");
+      return effect.amount === 1
+        ? "Cleanse a harmful status effect"
+        : `Cleanse ${effect.amount} harmful status effects`;
     },
   },
-  "lose-health": {
-    keywords: () => ["health"],
-    describe: (effect) => {
-      return `Lose ${effect.amount} Health`;
-    },
-  },
+  "lose-health": { keywords: () => ["health"], describe: amountLine("Lose", "Health", "Health") },
   "draw-cards": {
     keywords: () => [],
-    describe: (effect) => {
-      return effect.amount === 1 ? "Draw a card" : `Draw ${effect.amount} cards`;
-    },
+    describe: (effect) => (effect.amount === 1 ? "Draw a card" : `Draw ${effect.amount} cards`),
   },
   "remove-enemy-armor": {
     keywords: () => ["armor"],
     describe: (effect) => {
-      {
-        if (effect.halve) return "Halve enemy Armor";
-        if (effect.removeAll) return "Remove all enemy Armor";
-        if (effect.amount === undefined)
-          throw new Error("effectDescriptionLine: remove-enemy-armor needs amount without removeAll");
-        return `Remove ${effect.amount} enemy Armor`;
-      }
+      if (effect.halve) return "Halve enemy Armor";
+      if (effect.removeAll) return "Remove all enemy Armor";
+      if (effect.amount === undefined)
+        throw new Error("effectDescriptionLine: remove-enemy-armor needs amount without removeAll");
+      return `Remove ${effect.amount} enemy Armor`;
     },
   },
   "multiply-enemy-status": {
@@ -185,45 +166,19 @@ const PRESENTATION: { [K in BattleCardEffect["kind"]]: EffectPresentation<K> } =
   },
   "self-damage": {
     keywords: (effect) => [effect.damageType],
-    describe: (effect) => {
-      return `Take ${effect.amount} ${capitalizeWord(effect.damageType)} damage`;
-    },
+    describe: (effect) => `Take ${effect.amount} ${capitalizeWord(effect.damageType)} damage`,
   },
   "repeat-over-turns": { keywords: (effect) => effect.effects.flatMap(collectKeywordsFromBattleEffect) },
-  "next-hit-crit": {
-    keywords: () => [],
-    describe: () => {
-      return "Your next damaging card is a critical strike";
-    },
-  },
-  "next-hit-leech": {
-    keywords: () => ["leech"],
-    describe: () => {
-      return "Your next attack has Leech";
-    },
-  },
-  "play-next-card-twice": {
-    keywords: () => [],
-    describe: () => {
-      return "Your next card is played twice";
-    },
-  },
-  "next-hit-poison": {
-    keywords: () => [],
-    describe: () => {
-      return "Your next attack deals Poison";
-    },
-  },
-  "next-archery-free": {
-    keywords: () => ["archery"],
-    describe: () => {
-      return "Your next Archery card is free";
-    },
-  },
+  "next-hit-crit": { keywords: () => [], describe: "Your next damaging card is a critical strike" },
+  "next-hit-leech": { keywords: () => ["leech"], describe: "Your next attack has Leech" },
+  "play-next-card-twice": { keywords: () => [], describe: "Your next card is played twice" },
+  "next-hit-poison": { keywords: () => [], describe: "Your next attack deals Poison" },
+  "next-archery-free": { keywords: () => ["archery"], describe: "Your next Archery card is free" },
 };
 
 export function effectDescriptionLine(effect: BattleCardEffect): string {
   const describe = PRESENTATION[effect.kind].describe;
+  if (typeof describe === "string") return describe;
   if (!describe) throw new Error(`effectDescriptionLine: unsupported effect kind ${effect.kind}`);
   return describe(effect as never);
 }
@@ -246,6 +201,32 @@ function resourceChoices(effect: BattleCardEffect): Array<{ label: string; amoun
     return success && failure ? [...success, ...failure] : null;
   }
   return null;
+}
+
+function describeChance(effect: Extract<BattleCardEffect, { kind: "chance" }>): string[] {
+  const success = effect.successEffects[0];
+  const failure = effect.failureEffects[0];
+  if (
+    effect.probability === 0.5 &&
+    effect.successEffects.length === 1 &&
+    effect.failureEffects.length === 1 &&
+    success?.kind === "wish" &&
+    success.amount === 1 &&
+    failure?.kind === "gain-gold" &&
+    !failure.ifEnemyStunned
+  ) {
+    return [`Gain ${failure.amount} Gold or Wish`];
+  }
+  const choices = resourceChoices(effect);
+  if (choices?.every((choice) => choice.amount === choices[0]!.amount)) {
+    return [`Gain ${choices[0]!.amount} ${joinOrOptions(choices.map((choice) => choice.label))}`];
+  }
+  if (!effect.successEffects.length) throw new Error("Chance effect needs a success outcome");
+  const lines = [
+    `${Math.round(effect.probability * 100)}% chance: ${describeCardEffects(effect.successEffects).join("; ")}`,
+  ];
+  if (effect.failureEffects.length) lines.push(`Otherwise: ${describeCardEffects(effect.failureEffects).join("; ")}`);
+  return lines;
 }
 
 /** All mechanic clauses derive from effects; no numeric prose is authored independently. */
@@ -275,56 +256,26 @@ export function describeCardEffects(effects: readonly BattleCardEffect[]): strin
         index++;
         continue;
       }
-      if (JSON.stringify(effect) === JSON.stringify(next)) {
-        const described = describeCardEffects([effect]);
-        if (described.length === 1) {
-          lines.push(`${described[0]} twice`);
-          index++;
-          continue;
-        }
+      const repeated = describeOnce(effect);
+      if (repeated && JSON.stringify(effect) === JSON.stringify(next)) {
+        lines.push(`${repeated} twice`);
+        index++;
+        continue;
       }
       if (
+        repeated &&
         next.kind === "repeat-over-turns" &&
         next.remainingTurns === 1 &&
         next.effects.length === 1 &&
         JSON.stringify(effect) === JSON.stringify(next.effects[0])
       ) {
-        const described = describeCardEffects([effect]);
-        if (described.length === 1) {
-          lines.push(`${described[0]} this turn and next`);
-          index++;
-          continue;
-        }
+        lines.push(`${repeated} this turn and next`);
+        index++;
+        continue;
       }
     }
     if (effect.kind === "chance") {
-      const success = effect.successEffects[0];
-      const failure = effect.failureEffects[0];
-      if (
-        effect.probability === 0.5 &&
-        effect.successEffects.length === 1 &&
-        effect.failureEffects.length === 1 &&
-        success?.kind === "wish" &&
-        success.amount === 1 &&
-        failure?.kind === "gain-gold" &&
-        !failure.ifEnemyStunned
-      ) {
-        lines.push(`Gain ${failure.amount} Gold or Wish`);
-        continue;
-      }
-      const choices = resourceChoices(effect);
-      if (choices && choices.every((choice) => choice.amount === choices[0]!.amount)) {
-        const labels = choices.map((choice) => choice.label);
-        const last = labels.pop();
-        lines.push(`Gain ${choices[0]!.amount} ${labels.join(", ")}${labels.length > 1 ? "," : ""} or ${last}`);
-        continue;
-      }
-      if (!effect.successEffects.length) throw new Error("Chance effect needs a success outcome");
-      lines.push(
-        `${Math.round(effect.probability * 100)}% chance: ${describeCardEffects(effect.successEffects).join("; ")}`,
-      );
-      if (effect.failureEffects.length)
-        lines.push(`Otherwise: ${describeCardEffects(effect.failureEffects).join("; ")}`);
+      lines.push(...describeChance(effect));
       continue;
     }
     if (effect.kind === "repeat-over-turns") {
@@ -406,14 +357,8 @@ export function collectKeywordsFromBattleEffect(effect: BattleCardEffect): Keywo
 
 type PlayerStatusDescriptionStatus = "block" | "armor" | "thorns" | "forge";
 
-function playerStatusDescriptionLine(status: PlayerStatusDescriptionStatus, amount: number): string {
-  return `Gain ${amount} ${capitalizeWord(status)}`;
-}
-
 function playerStatusChoiceDescriptionLine(statuses: readonly PlayerStatusDescriptionStatus[], amount: number): string {
-  const labels = statuses.map(capitalizeWord);
-  const last = labels.pop();
-  return `Gain ${amount} ${labels.join(", ")}, or ${last}`;
+  return `Gain ${amount} ${joinOrOptions(statuses.map(capitalizeWord), true)}`;
 }
 
 /** Exact canonical text needs no second number parser. Custom and saved wording still uses parity rules. */

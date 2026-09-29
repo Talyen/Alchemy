@@ -44,20 +44,28 @@ function resolveMysteryTrinketEffect(
   rng: () => number,
   fallbackSeed: string,
 ): MysteryEffect {
-  if (effect.kind !== "gainTrinket" && effect.kind !== "gainRandomTrinket") return effect;
-  if (effect.kind === "gainTrinket" && owned.has(effect.trinketId)) {
-    // The named reward is already owned: grant fallback gear rather than an
-    // unrelated random trinket the narrative does not name.
-    return mysteryTrinketFallbackEffect(fallbackSeed);
+  if (effect.kind === "gainTrinket") {
+    if (owned.has(effect.trinketId)) {
+      return mysteryTrinketFallbackEffect(fallbackSeed);
+    }
+    owned.add(effect.trinketId);
+    return effect;
   }
-  const id = pickMysteryTrinketGrantId(
-    effect.kind === "gainTrinket"
-      ? { preferredId: effect.trinketId, owned, rng }
-      : { fromIds: effect.fromIds, owned: new Set([...owned, ...reservedNamedIds]), rng },
-  );
-  if (!id) return mysteryTrinketFallbackEffect(fallbackSeed);
-  owned.add(id);
-  return { kind: "gainTrinket", trinketId: id };
+
+  if (effect.kind === "gainRandomTrinket") {
+    const isExcluded = (id: string) => owned.has(id) || reservedNamedIds.has(id);
+    const fromIds = effect.fromIds;
+    const candidates = fromIds?.length
+      ? trinketLibrary.filter((entry) => fromIds.includes(entry.id) && !isExcluded(entry.id))
+      : [];
+    const pool = candidates.length > 0 ? candidates : trinketLibrary.filter((entry) => !isExcluded(entry.id));
+    const picked = pickRandom(pool, rng)?.id;
+    if (!picked) return mysteryTrinketFallbackEffect(fallbackSeed);
+    owned.add(picked);
+    return { kind: "gainTrinket", trinketId: picked };
+  }
+
+  return effect;
 }
 
 export function resolveMysteryEventTrinkets(

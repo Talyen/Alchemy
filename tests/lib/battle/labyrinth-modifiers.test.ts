@@ -8,7 +8,7 @@ import {
   tickEnemyStatuses,
   tickPlayerStatuses,
 } from "@/lib/battle";
-import { applyGearCcPhysicalDamage } from "@/lib/battle/gear-effects";
+import { applyGearCcPhysicalDamage } from "@/lib/battle/scaled-damage";
 import { computeEffectiveCost } from "@/lib/battle/card-cost-rules";
 import { addEnemyStatus } from "@/lib/battle/types";
 import { applyLifestealAndPlayerHitTriggers } from "@/lib/battle/follow-up-hit-resolution";

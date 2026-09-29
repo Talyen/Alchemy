@@ -2,7 +2,7 @@ import type { BattleCard } from "@/lib/game-data";
 import { keywordDefinitions } from "@/features/alchemy/shared/config/game-data-catalog";
 import { getTrinketTextShineColors, SHINE_PALETTES } from "@/features/alchemy/shared/config/shine-palettes";
 import { getKeywordBorderShineColors } from "@/lib/keyword-border-shine";
-import { tooltipChipClass } from "@/features/alchemy/shared/config";
+import { tooltipChipClass, getCardInspectionShineColors } from "@/features/alchemy/shared/config";
 import { MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 import { materialLabels } from "@/lib/homestead/types";
@@ -84,7 +84,7 @@ const renderXpBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "gainXP" }>> =
 const renderAddCardBadge: BadgeRenderer<Extract<MysteryEffect, { kind: "addCard" }>> = (effect, ctx) => {
   const card = ctx.findCard?.(effect.cardId);
   const title = card?.title ?? "a card";
-  const colors: readonly string[] = [];
+  const colors = card && "cost" in card ? getCardInspectionShineColors(card) : [];
 
   return ctx.tooltip ? (
     <span className="text-sm text-muted-foreground">

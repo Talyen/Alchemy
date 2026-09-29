@@ -474,4 +474,80 @@ describe("replaceNumberAt", () => {
     expect(replaceNumberAt(line, 50, 9)).toBe("Deal 5 damage");
     expect(replaceNumberAt(line, 0, 9)).toBe("Deal 5 damage");
   });
+
+  it("normalizes Mana Crystal singular/plural", () => {
+    expect(replaceNumberAt("Gain 2 Mana Crystals", 5, 1)).toBe("Gain 1 Mana Crystal");
+    expect(replaceNumberAt("Gain 1 Mana Crystal", 5, 3)).toBe("Gain 3 Mana Crystals");
+  });
+
+  it("normalizes Cleanse harmful status effect singular/plural", () => {
+    expect(replaceNumberAt("Cleanse 2 harmful status effects", 8, 1)).toBe("Cleanse 1 harmful status effect");
+    expect(replaceNumberAt("Cleanse 1 harmful status effect", 8, 3)).toBe("Cleanse 3 harmful status effects");
+  });
+});
+
+describe("corruptedValuePositions deduplication", () => {
+  it("does not produce duplicate positions when re-corrupting the same target", () => {
+    const card = makeTestCard({
+      descriptionLines: ["Deal 4 Physical damage"],
+      effects: [{ kind: "damage", damageType: "physical", amount: 4 }],
+    });
+    const targets = getEditableCorruptionTargets(card);
+    const first = applyNumericCorruption(card, targets[0]!, 1);
+    expect(first.descriptionLines).toEqual(["Deal 5 Physical damage"]);
+    expect(first.corruptedValuePositions).toEqual([{ lineIndex: 0, matchIndex: 5 }]);
+
+    // Second mutation on the already-corrupted card at the same line position.
+    const secondTargets = getEditableCorruptionTargets(first);
+    const second = applyNumericCorruption(first, secondTargets[0]!, 1);
+    expect(second.descriptionLines).toEqual(["Deal 6 Physical damage"]);
+    // Must have exactly one entry, not a duplicate.
+    expect(second.corruptedValuePositions).toEqual([{ lineIndex: 0, matchIndex: 5 }]);
+  });
+});
+
+describe("removeConsume highlight preservation", () => {
+  it("preserves prior corrupted value positions and shifts line indices when removing Consume", () => {
+    // Build a small consumable card with existing corrupted highlight positions.
+    const card = makeTestCard({
+      descriptionLines: ["Restore 4 Health", "Consume"],
+      effects: [{ kind: "heal", amount: 4 }],
+      consume: true,
+      corrupted: true,
+    });
+    // Simulate a prior corruption having marked the "4" on line 0.
+    (card as { corruptedValuePositions: Array<{ lineIndex: number; matchIndex: number }> }).corruptedValuePositions = [
+      { lineIndex: 0, matchIndex: 8 },
+    ];
+
+    const groups = getCorruptionMutationGroups(card);
+    const reusableGroup = groups.find((g) => g.kind === "reusable");
+    expect(reusableGroup).toBeDefined();
+    const reusable = reusableGroup!.mutations[0]!.card;
+    expect(reusable.consume).toBe(false);
+    expect(reusable.descriptionLines).toEqual(["Restore 4 Health"]);
+    // The prior highlight from line 0 must survive (Consume was on line 1).
+    expect(reusable.corruptedValuePositions).toEqual([{ lineIndex: 0, matchIndex: 8 }]);
+  });
+
+  it("shifts line indices down when Consume precedes other lines", () => {
+    // Edge case: Consume is the first line (unusual but possible after addLine first=true).
+    const card = makeTestCard({
+      descriptionLines: ["Consume", "Deal 6 Physical damage"],
+      effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
+      consume: true,
+      corrupted: true,
+    });
+    (card as { corruptedValuePositions: Array<{ lineIndex: number; matchIndex: number }> }).corruptedValuePositions = [
+      { lineIndex: 1, matchIndex: 5 },
+    ];
+
+    const groups = getCorruptionMutationGroups(card);
+    const reusableGroup = groups.find((g) => g.kind === "reusable");
+    expect(reusableGroup).toBeDefined();
+    const reusable = reusableGroup!.mutations[0]!.card;
+    expect(reusable.descriptionLines).toEqual(["Deal 6 Physical damage"]);
+    // The highlight on what was line 1 must shift to line 0.
+    expect(reusable.corruptedValuePositions).toEqual([{ lineIndex: 0, matchIndex: 5 }]);
+  });
 });

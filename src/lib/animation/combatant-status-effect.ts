@@ -10,6 +10,7 @@ import {
 } from "@/lib/game-constants";
 import { clamp01 } from "@/lib/math";
 import { animationNoise } from "./animation-noise";
+import { parseHexRgbBytes, type RgbTuple } from "./plasma-colors";
 
 export type CombatantStatusEffectKind = "stun" | "freeze";
 
@@ -17,28 +18,9 @@ export interface CombatantStatusPalette {
   primary: string;
   secondary: string;
   glow: string;
-  primaryRgb: readonly [number, number, number];
-  secondaryRgb: readonly [number, number, number];
-  glowRgb: readonly [number, number, number];
-}
-
-function parseHexRgb(hex: string): readonly [number, number, number] {
-  const normalized = hex.trim().replace(/^#/, "");
-  if (normalized.length === 3) {
-    return [
-      Number.parseInt(normalized.charAt(0) + normalized.charAt(0), 16),
-      Number.parseInt(normalized.charAt(1) + normalized.charAt(1), 16),
-      Number.parseInt(normalized.charAt(2) + normalized.charAt(2), 16),
-    ];
-  }
-  if (normalized.length === 6) {
-    return [
-      Number.parseInt(normalized.slice(0, 2), 16),
-      Number.parseInt(normalized.slice(2, 4), 16),
-      Number.parseInt(normalized.slice(4, 6), 16),
-    ];
-  }
-  return [255, 255, 255];
+  primaryRgb: RgbTuple;
+  secondaryRgb: RgbTuple;
+  glowRgb: RgbTuple;
 }
 
 export function combatantStatusPalette(keyword: ActiveCcKeyword): CombatantStatusPalette {
@@ -50,9 +32,9 @@ export function combatantStatusPalette(keyword: ActiveCcKeyword): CombatantStatu
     primary,
     secondary,
     glow,
-    primaryRgb: parseHexRgb(primary),
-    secondaryRgb: parseHexRgb(secondary),
-    glowRgb: parseHexRgb(glow),
+    primaryRgb: parseHexRgbBytes(primary),
+    secondaryRgb: parseHexRgbBytes(secondary),
+    glowRgb: parseHexRgbBytes(glow),
   };
 }
 
@@ -67,7 +49,7 @@ export function combatantStatusWobbleDegrees(kind: CombatantStatusEffectKind, pr
   return Math.sin(progress * Math.PI * 2) * 2.2 * appear;
 }
 
-function withAlpha(color: readonly [number, number, number], alpha: number): string {
+function withAlpha(color: RgbTuple, alpha: number): string {
   return `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${alpha})`;
 }
 
@@ -76,8 +58,8 @@ function drawStar(
   x: number,
   y: number,
   size: number,
-  primary: readonly [number, number, number],
-  secondary: readonly [number, number, number],
+  primary: RgbTuple,
+  secondary: RgbTuple,
   opacity: number,
 ): void {
   const spikes = 4;
@@ -104,11 +86,12 @@ function drawSnowflake(
   centerY: number,
   radius: number,
   rotation: number,
-  primary: readonly [number, number, number],
-  secondary: readonly [number, number, number],
+  primary: RgbTuple,
+  secondary: RgbTuple,
   opacity: number,
 ): void {
   const petals = 6;
+  ctx.beginPath();
   for (let petal = 0; petal < petals; petal++) {
     const angle = (petal / petals) * Math.PI * 2 + rotation;
     const tipX = centerX + Math.cos(angle) * radius;
@@ -117,26 +100,31 @@ function drawSnowflake(
     const perpX = -Math.sin(angle);
     const perpY = Math.cos(angle);
 
-    ctx.beginPath();
     ctx.moveTo(centerX, centerY);
     ctx.lineTo(tipX + perpX * side, tipY + perpY * side);
     ctx.lineTo(tipX, tipY);
     ctx.lineTo(tipX - perpX * side, tipY - perpY * side);
     ctx.closePath();
-    ctx.fillStyle = withAlpha(primary, opacity * 0.7);
-    ctx.fill();
-    ctx.strokeStyle = withAlpha(secondary, opacity);
-    ctx.lineWidth = 0.65;
-    ctx.stroke();
+  }
+  ctx.fillStyle = withAlpha(primary, opacity * 0.7);
+  ctx.fill();
+  ctx.strokeStyle = withAlpha(secondary, opacity);
+  ctx.lineWidth = 0.65;
+  ctx.stroke();
 
+  ctx.beginPath();
+  for (let petal = 0; petal < petals; petal++) {
+    const angle = (petal / petals) * Math.PI * 2 + rotation;
     const midX = centerX + Math.cos(angle) * radius * 0.55;
     const midY = centerY + Math.sin(angle) * radius * 0.55;
     const arm = radius * 0.22;
-    ctx.beginPath();
+    const perpX = -Math.sin(angle);
+    const perpY = Math.cos(angle);
+
     ctx.moveTo(midX + perpX * arm, midY + perpY * arm);
     ctx.lineTo(midX - perpX * arm, midY - perpY * arm);
-    ctx.stroke();
   }
+  ctx.stroke();
 }
 
 function drawSwirlingStars(

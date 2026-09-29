@@ -74,17 +74,22 @@ export function runCommand(command, args = [], options = {}) {
   const started = Date.now();
   const invocation = commandInvocation(command, args);
   const capture = openCapture(options);
-  const result = spawnSync(...invocation, {
-    ...spawnOpts(options),
-    ...(capture.stdio ? { stdio: capture.stdio } : {}),
-    maxBuffer: capture.maxBuffer,
-    encoding: "utf8",
-  });
-  const captured = capture.finish();
+  let result;
+  let captured;
+  try {
+    result = spawnSync(...invocation, {
+      ...spawnOpts(options),
+      ...(capture.stdio ? { stdio: capture.stdio } : {}),
+      maxBuffer: capture.maxBuffer,
+      encoding: "utf8",
+    });
+  } finally {
+    captured = capture.finish();
+  }
   return {
     ...result,
     ...captured,
-    output: collectOutput(captured.output ?? result.stdout, result.stderr, result.error),
+    output: collectOutput(captured.output ?? result.stdout, result?.stderr, result?.error),
     elapsedMs: Date.now() - started,
   };
 }

@@ -91,3 +91,19 @@ describe("drawSliceFrame", () => {
     expect(ctx.lineTo).toHaveBeenCalled();
   });
 });
+
+describe("traceSliceCrackPath", () => {
+  it("traces along polyline points to canvas context without allocating arrays", async () => {
+    const { traceSliceCrackPath } = await import("@/lib/animation/slice-crack");
+    const moveTo = vi.fn();
+    const lineTo = vi.fn();
+    const ctx = { moveTo, lineTo } as unknown as CanvasRenderingContext2D;
+
+    const tip = traceSliceCrackPath(ctx, 0.5, 200, 300, 10, 20);
+    expect(moveTo).toHaveBeenCalledOnce();
+    expect(lineTo).toHaveBeenCalled();
+    expect(tip).not.toBeNull();
+    expect(Number.isFinite(tip?.tipX)).toBe(true);
+    expect(Number.isFinite(tip?.tipY)).toBe(true);
+  });
+});

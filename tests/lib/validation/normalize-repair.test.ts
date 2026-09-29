@@ -1,12 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { makeWildwoodDraft, parseActiveRunData, tombstonedCard, tombstonedCard2 } from "../../fixtures/active-run";
-import { createRunRngState, stepRunRng } from "@/lib/rng";
+import { createRunRngState, createSeededRng, stepRunRng } from "@/lib/rng";
 import { TOMBSTONED_CARD_IDS, isTombstonedCardId } from "@/lib/validation/migration/tombstoned-content-ids";
 import { cardById } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import { DRAFT_ROUNDS } from "@/lib/game-constants";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
-import { createSeededRng } from "@/lib/utils";
 import { findMysteryEvent } from "@/lib/mystery";
 
 function makeRng() {

@@ -1,92 +1,33 @@
-import { canonicalCardDescriptionMatches, type BattleCard } from "@/lib/game-data";
+import { describeCardEffects, type BattleCard } from "@/lib/game-data";
+import { MIXED_POTION_CARD_ID } from "@/lib/game-constants";
+import { capitalizeWord } from "@/lib/utils";
 import type { ContentValidationIssue } from "../types";
-import { effectParityDescriptionLines, indexCardEffects, type CardEffectIndex } from "./helpers";
-import { isNonStandardDealLine, parseDealLineShape } from "./line-classifiers";
-import { validateCardLineParity } from "./numeric-parity";
+import { flattenEffects } from "./helpers";
 
 export { TRAIT_REQUIRED_TERMS, validateEnemyTraitDescriptionParity } from "./enemy-trait-parity";
 export { flattenEffects } from "./helpers";
 export { validateTrinketDescriptionParity } from "./trinket-parity";
 
-function checkDamageParity(
-  card: BattleCard,
-  descriptionLines: string[],
-  index: CardEffectIndex,
-): ContentValidationIssue | null {
-  if (index.nonStandardDamage) return null;
-  if (index.hasKind("self-damage")) {
-    if (!descriptionLines.some((line) => /self|Receive|Take/.test(line))) {
-      return {
-        severity: "error",
-        area: "cards",
-        id: card.id,
-        message: "Self-damage effect is missing matching description text",
-      };
-    }
-  } else {
-    const dealLines = descriptionLines.reduce((count, line) => {
-      const shape = parseDealLineShape(line);
-      if (!shape || isNonStandardDealLine(line)) return count;
-      return count + (shape.twice ? 2 : 1);
-    }, 0);
-    const damageEffects = index.countKind("damage") + index.countKind("random-damage");
-    if (dealLines !== damageEffects) {
-      return {
-        severity: "error",
-        area: "cards",
-        id: card.id,
-        message: `damage description count ${dealLines} does not match effect count ${damageEffects}`,
-      };
-    }
-  }
-  return null;
-}
-
 function cardIssue(severity: "error" | "warning", id: string, message: string): ContentValidationIssue {
   return { severity, area: "cards", id, message };
 }
 
-interface PresenceParityCheck {
-  hasEffect: (card: BattleCard, index: CardEffectIndex) => boolean;
-  hasText: (card: BattleCard) => boolean;
-  message: string;
+// Tag-like lines carry no numeric mechanic and stay warnings-only, matching
+// the previous checker: a missing Leech/Archery/Consume/Companion line never
+// errors, it warns.
+function tagLinesFor(card: BattleCard): Set<string> {
+  const tags = new Set<string>(["Leech", "Consume", "Companion"]);
+  for (const tag of card.tags ?? []) tags.add(capitalizeWord(tag));
+  return tags;
 }
 
-const PRESENCE_PARITY_CHECKS: PresenceParityCheck[] = [
-  {
-    hasEffect: (card) => card.effects.some((effect) => effect.kind === "player-status" && effect.status === "haste"),
-    hasText: (card) => card.descriptionLines.some((line) => line.includes("extra turn")),
-    message: "Haste effect is missing extra-turn description text",
-  },
-  {
-    hasEffect: (_, index) =>
-      index.flat.some((effect) => effect.kind === "player-status" && effect.status === "phoenixFeather"),
-    hasText: (card) => card.descriptionLines.some((line) => line.includes("die") || line.includes("30%")),
-    message: "Phoenix Feather effect is missing revive description text",
-  },
-];
-
-function checkBuffCompanionParity(
-  card: BattleCard,
-  descriptionLines: string[],
-  index: CardEffectIndex,
-): ContentValidationIssue | null {
-  if (index.hasKind("self-damage")) return null;
-  const described = descriptionLines.filter((line) => line.startsWith("Increase ")).length;
-  const actual = index.countKind("buff-companion");
-  if (described !== actual) {
-    return cardIssue(
-      "error",
-      card.id,
-      `buff-companion description count ${described} does not match effect count ${actual}`,
-    );
-  }
-  return null;
-}
-
-function checkTagWarnings(card: BattleCard, index: CardEffectIndex): ContentValidationIssue[] {
+function checkTagWarnings(card: BattleCard): ContentValidationIssue[] {
   const warnings: ContentValidationIssue[] = [];
-  if (index.lifesteal && !card.descriptionLines.some((line) => line === "Leech"))
+  const flat = flattenEffects(card.effects);
+  if (
+    flat.some((effect) => effect.kind === "damage" && effect.lifesteal === true) &&
+    !card.descriptionLines.some((line) => line === "Leech")
+  )
     warnings.push(cardIssue("warning", card.id, "Lifesteal effect is missing Leech description line"));
   const hasArcheryTag = card.tags?.includes("archery") === true;
   const hasArcheryLine = card.descriptionLines.some((line) => line === "Archery");
@@ -103,33 +44,61 @@ function checkTagWarnings(card: BattleCard, index: CardEffectIndex): ContentVali
   if (card.consume === true) {
     const hasConsume = card.descriptionLines.some((line) => line === "Consume");
     const hasCompanion =
-      index.hasKind("summon-companion") && card.descriptionLines.some((line) => line === "Companion");
+      flat.some((effect) => effect.kind === "summon-companion") &&
+      card.descriptionLines.some((line) => line === "Companion");
     if (!hasConsume && !hasCompanion)
       warnings.push(cardIssue("warning", card.id, "consume:true is missing Consume or Companion description line"));
   }
-  if (index.hasKind("summon-companion") && !card.descriptionLines.some((line) => line.includes("Companion")))
+  if (
+    flat.some((effect) => effect.kind === "summon-companion") &&
+    !card.descriptionLines.some((line) => line.includes("Companion"))
+  )
     warnings.push(cardIssue("warning", card.id, "summon-companion effect is missing Companion description line"));
   return warnings;
 }
 
-export function validateCardDescriptionParity(card: BattleCard): ContentValidationIssue[] {
-  if (canonicalCardDescriptionMatches(card)) return checkTagWarnings(card, indexCardEffects(card.effects));
+// The catalog's Steal wording is a flavor alias for the canonical Gain gold
+// line. Player-visible text stays untouched; only the checker normalizes.
+function normalizeAlias(line: string): string {
+  if (line.startsWith("Steal ")) return `Gain ${line.slice("Steal ".length)}`;
+  if (line.startsWith("Steals ")) return `Gain ${line.slice("Steals ".length)}`;
+  return line;
+}
+
+function diffMechanicLines(card: BattleCard, expectedMechanic: string[]): ContentValidationIssue[] {
+  const tags = tagLinesFor(card);
+  const actualMechanic = card.descriptionLines.filter((line) => !tags.has(line));
+  const expectedNormalized = expectedMechanic.filter((line) => !tags.has(line));
   const issues: ContentValidationIssue[] = [];
-  const index = indexCardEffects(card.effects);
-  const descriptionLines = effectParityDescriptionLines(card);
-
-  const check = checkDamageParity(card, descriptionLines, index);
-  if (check) issues.push(check);
-
-  for (const presence of PRESENCE_PARITY_CHECKS) {
-    if (presence.hasEffect(card, index) && !presence.hasText(card))
-      issues.push(cardIssue("error", card.id, presence.message));
+  const count = Math.max(actualMechanic.length, expectedNormalized.length);
+  for (let index = 0; index < count; index += 1) {
+    const actual = actualMechanic[index];
+    const expected = expectedNormalized[index];
+    if (actual === undefined && expected !== undefined) {
+      issues.push(cardIssue("error", card.id, `missing expected description line "${expected}"`));
+    } else if (expected === undefined && actual !== undefined) {
+      issues.push(cardIssue("error", card.id, `"${actual}" has no matching effect`));
+    } else if (actual !== undefined && expected !== undefined && normalizeAlias(actual) !== expected) {
+      issues.push(cardIssue("error", card.id, `"${actual}" does not match expected "${expected}"`));
+    }
   }
+  return issues;
+}
 
-  const buff = checkBuffCompanionParity(card, descriptionLines, index);
-  if (buff) issues.push(buff);
-
-  issues.push(...checkTagWarnings(card, index));
-
-  return [...issues, ...validateCardLineParity(card, descriptionLines, index)];
+export function validateCardDescriptionParity(card: BattleCard): ContentValidationIssue[] {
+  const warnings = checkTagWarnings(card);
+  // Placeholder template and companion summons have no canonical mechanic
+  // phrasing; preserve the previous lenient pass with tag warnings only.
+  if (card.id === MIXED_POTION_CARD_ID) return warnings;
+  if (card.effects.length > 0 && card.effects.every((effect) => effect.kind === "summon-companion")) return warnings;
+  let expected: string[];
+  try {
+    expected = describeCardEffects(card.effects);
+  } catch {
+    // Effect kinds without canonical phrasing (no catalog usage) stay lenient.
+    return warnings;
+  }
+  if (card.tags) expected.push(...card.tags.map(capitalizeWord));
+  if (card.consume) expected.push("Consume");
+  return [...warnings, ...diffMechanicLines(card, expected)];
 }

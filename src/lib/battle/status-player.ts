@@ -5,7 +5,6 @@ import {
   addPlayerStatus,
   effectivePlayerHealingAmount,
   isPlayerDefeated,
-  playerStatusDelta,
   setPlayerStatus,
   stripEnemyArmor,
   type BattleState,
@@ -50,6 +49,14 @@ export function countRemovableHarmfulStatuses(playerStatuses: BattleState["playe
   return harmfulPlayerStatusIds.filter((statusId) => playerStatuses[statusId] > 0).length;
 }
 
+function applyChanceReward(
+  state: BattleState,
+  chance: number,
+  apply: (state: BattleState) => BattleState,
+): BattleState {
+  return chance > 0 && rollTalentChance(chance, state) ? apply(state) : state;
+}
+
 export function applyHealthLossTalentRewards(
   previousState: BattleState,
   nextState: BattleState,
@@ -72,14 +79,10 @@ export function applyIronGuardReward(
   healthDamage: number,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  if (
-    damageType !== "physical" ||
-    healthDamage <= 0 ||
-    !rollTalentChance(state.talentEffects.armorOnPhysicalDamageChance, state)
-  ) {
-    return state;
-  }
-  return applyArmorReward(state, healthDamage, combatTexts);
+  if (damageType !== "physical" || healthDamage <= 0) return state;
+  return applyChanceReward(state, state.talentEffects.armorOnPhysicalDamageChance, (s) =>
+    applyArmorReward(s, healthDamage, combatTexts),
+  );
 }
 
 export function applyBlockDepletionForgeReward(
@@ -97,6 +100,10 @@ export function applyBlockDepletionForgeReward(
   return addForgeToPlayer(nextState, previousState.talentEffects.forgeOnBlockDepleted, combatTexts);
 }
 
+function crossedBelow(prevHealth: number, nextHealth: number, thresholdHp: number): boolean {
+  return prevHealth >= thresholdHp && nextHealth < thresholdHp;
+}
+
 export function applyHealthThresholdCleanse(
   previousHealth: number,
   state: BattleState,
@@ -108,126 +115,60 @@ export function applyHealthThresholdCleanse(
     : state;
 }
 
+function applyHealthThresholdRewards(
+  prevHealth: number,
+  nextHealth: number,
+  state: BattleState,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  if (nextHealth <= 0) return state;
+  let nextState = applyHealthThresholdCleanse(prevHealth, state, combatTexts);
+  const maxHealth = state.playerMaxHealth;
+  for (const config of normalizeThresholdConfigs(state.talentEffects.healthThresholdBlock, "block")) {
+    const thresholdHp = (maxHealth * config.threshold) / PERCENT_DENOMINATOR;
+    if (!crossedBelow(prevHealth, nextHealth, thresholdHp)) continue;
+    nextState = applyPlayerStatusEffect(
+      nextState,
+      { kind: "player-status", status: "block", amount: config.amount },
+      combatTexts,
+    );
+  }
+  const once = state.talentEffects.healthThresholdBlockOnce;
+  if (once && !readCombatFlag(nextState, "desperateGuardUsed")) {
+    const thresholdHp = (maxHealth * once.threshold) / PERCENT_DENOMINATOR;
+    if (crossedBelow(prevHealth, nextHealth, thresholdHp)) {
+      nextState = applyBlockReward(nextState, once.amount, combatTexts);
+      nextState = { ...nextState, flags: { ...nextState.flags, desperateGuardUsed: true } };
+    }
+  }
+  for (const config of normalizeThresholdConfigs(state.talentEffects.healthThresholdArmor, "armor")) {
+    const thresholdHp = (maxHealth * config.threshold) / PERCENT_DENOMINATOR;
+    if (!crossedBelow(prevHealth, nextHealth, thresholdHp)) continue;
+    nextState = applyArmorReward(nextState, config.amount, combatTexts);
+  }
+  return nextState;
+}
+
+function normalizeThresholdConfigs(
+  configs: { threshold: number; amount: number } | Array<{ threshold: number; amount: number }> | null,
+  stat: "block" | "armor",
+): Array<{ threshold: number; amount: number; stat: "block" | "armor" }> {
+  if (configs == null) return [];
+  const list = Array.isArray(configs) ? configs : [configs];
+  return list.map((config) => ({ ...config, stat }));
+}
+
 export function checkHealthThresholds(
   prevHealth: number,
   nextHealth: number,
   state: BattleState,
   combatTexts: CombatTextEvent[],
 ) {
-  if (nextHealth <= 0) return state;
-  let nextState = state;
-
-  nextState = applyHealthThresholdCleanse(prevHealth, nextState, combatTexts);
-  nextState = applyHealthThresholdStatBonus(
-    nextState,
-    prevHealth,
-    nextHealth,
-    state.playerMaxHealth,
-    state.talentEffects.healthThresholdBlock,
-    "block",
-    combatTexts,
-  );
-  nextState = applyOncePerCombatHealthThresholdBlock(
-    nextState,
-    prevHealth,
-    nextHealth,
-    state.playerMaxHealth,
-    state.talentEffects.healthThresholdBlockOnce,
-    combatTexts,
-  );
-  nextState = applyHealthThresholdStatBonus(
-    nextState,
-    prevHealth,
-    nextHealth,
-    state.playerMaxHealth,
-    state.talentEffects.healthThresholdArmor,
-    "armor",
-    combatTexts,
-  );
-  return nextState;
+  return applyHealthThresholdRewards(prevHealth, nextHealth, state, combatTexts);
 }
 
-function applyOncePerCombatHealthThresholdBlock(
-  currentState: BattleState,
-  prevHealth: number,
-  nextHealth: number,
-  playerMaxHealth: number,
-  config: { threshold: number; amount: number } | null,
-  combatTexts: CombatTextEvent[],
-): BattleState {
-  if (!config || readCombatFlag(currentState, "desperateGuardUsed")) return currentState;
-  const thresholdHp = (playerMaxHealth * config.threshold) / PERCENT_DENOMINATOR;
-  if (prevHealth < thresholdHp || nextHealth >= thresholdHp) return currentState;
-  const rewarded = applyBlockReward(currentState, config.amount, combatTexts);
-  return { ...rewarded, flags: { ...rewarded.flags, desperateGuardUsed: true } };
-}
-
-function applyHealthThresholdStatBonus(
-  currentState: BattleState,
-  prevHealth: number,
-  nextHealth: number,
-  playerMaxHealth: number,
-  configs: { threshold: number; amount: number } | Array<{ threshold: number; amount: number }> | null,
-  stat: "block" | "armor",
-  combatTexts: CombatTextEvent[],
-): BattleState {
-  const bonuses = configs == null ? [] : Array.isArray(configs) ? configs : [configs];
-  let next = currentState;
-  for (const config of bonuses) {
-    const thresholdHp = (playerMaxHealth * config.threshold) / PERCENT_DENOMINATOR;
-    if (prevHealth >= thresholdHp && nextHealth < thresholdHp) {
-      next =
-        stat === "armor"
-          ? applyArmorReward(next, config.amount, combatTexts)
-          : applyPlayerStatusEffect(next, { kind: "player-status", status: stat, amount: config.amount }, combatTexts);
-    }
-  }
-  return next;
-}
-
-function applyForgeBurnBurst(state: BattleState, oldForge: number, newForge: number, combatTexts?: CombatTextEvent[]) {
-  return onFirstCrossThreshold(
-    oldForge,
-    newForge,
-    state.talentEffects.forgeBurnThreshold,
-    (s) => {
-      if (s.enemyHealth <= 0) return s;
-      const burned = dealScaledBurnWithStacks(s, s.talentEffects.forgeBurnDamage, combatTexts ?? [], {
-        multiplier: getEnemyDamageMultiplier(s, "burn"),
-      });
-      return s.enemyStatuses.burn === 0 &&
-        burned.enemyHealth < s.enemyHealth &&
-        burned.gearEffects.forgeOnBurnVsUnburned > 0
-        ? addForgeToPlayer(burned, burned.gearEffects.forgeOnBurnVsUnburned, combatTexts)
-        : burned;
-    },
-    state,
-  );
-}
-
-function applyForgeStripArmorBurst(state: BattleState, oldForge: number, newForge: number): BattleState {
-  return onFirstCrossThreshold(
-    oldForge,
-    newForge,
-    state.talentEffects.forgeStripArmorThreshold,
-    stripEnemyArmor,
-    state,
-  );
-}
-
-function applyForgeBlockBurst(
-  state: BattleState,
-  oldForge: number,
-  newForge: number,
-  combatTexts?: CombatTextEvent[],
-): BattleState {
-  return onFirstCrossThreshold(
-    oldForge,
-    newForge,
-    state.talentEffects.forgeBlockThreshold,
-    (s) => applyBlockReward(s, s.talentEffects.forgeBlockAmount, combatTexts ?? []),
-    state,
-  );
+function scaleBleedStatus(status: PlayerStatusId, amount: number): number {
+  return status === "bleed" ? amount * BLEED_STATUS_MULTIPLIER : amount;
 }
 
 export function addForgeToPlayer(state: BattleState, baseAmount: number, combatTexts?: CombatTextEvent[]): BattleState {
@@ -294,9 +235,38 @@ export function applyForgeThresholdRewards(
   newForge: number,
   combatTexts?: CombatTextEvent[],
 ): BattleState {
-  let nextState = applyForgeBurnBurst(state, oldForge, newForge, combatTexts);
-  nextState = applyForgeStripArmorBurst(nextState, oldForge, newForge);
-  return applyForgeBlockBurst(nextState, oldForge, newForge, combatTexts);
+  const thresholds: Array<{
+    threshold: number;
+    apply: (s: BattleState) => BattleState;
+  }> = [
+    {
+      threshold: state.talentEffects.forgeBurnThreshold,
+      apply: (s) => {
+        if (s.enemyHealth <= 0) return s;
+        const burned = dealScaledBurnWithStacks(s, s.talentEffects.forgeBurnDamage, combatTexts ?? [], {
+          multiplier: getEnemyDamageMultiplier(s, "burn"),
+        });
+        return s.enemyStatuses.burn === 0 &&
+          burned.enemyHealth < s.enemyHealth &&
+          burned.gearEffects.forgeOnBurnVsUnburned > 0
+          ? addForgeToPlayer(burned, burned.gearEffects.forgeOnBurnVsUnburned, combatTexts)
+          : burned;
+      },
+    },
+    {
+      threshold: state.talentEffects.forgeStripArmorThreshold,
+      apply: stripEnemyArmor,
+    },
+    {
+      threshold: state.talentEffects.forgeBlockThreshold,
+      apply: (s) => applyBlockReward(s, s.talentEffects.forgeBlockAmount, combatTexts ?? []),
+    },
+  ];
+  let nextState = state;
+  for (const { threshold, apply } of thresholds) {
+    nextState = onFirstCrossThreshold(oldForge, newForge, threshold, apply, nextState);
+  }
+  return nextState;
 }
 
 export function applyPlayerStatusEffect(
@@ -304,30 +274,28 @@ export function applyPlayerStatusEffect(
   effect: Extract<BattleCardEffect, { kind: "player-status" }>,
   combatTexts: CombatTextEvent[],
 ) {
-  const amount = effect.amount;
-  if (effect.status === "armor") return applyArmorStatusEffect(state, amount, combatTexts);
+  if (effect.status === "armor") return applyArmorStatusEffect(state, effect.amount, combatTexts);
   if (effect.status === "forge") {
-    return addForgeToPlayer(state, amount, combatTexts);
+    return addForgeToPlayer(state, effect.amount, combatTexts);
   }
   if (effect.status === "block") {
-    return applyBlockReward(state, amount, combatTexts);
+    return applyBlockReward(state, effect.amount, combatTexts);
   }
-  const effectiveAmount = playerStatusDelta(state, effect.status, amount);
-  mergeCombatText(combatTexts, {
-    target: "player",
-    kind: "status",
-    stat: effect.status,
-    amount: effectiveAmount,
-  });
-  return addPlayerStatus(state, effect.status, amount);
+  return addPlayerStatusWithCombatText(state, effect.status, effect.amount, combatTexts, { skipFightPacing: true });
 }
+
+const BLOCK_PREVENTED_STATUSES: Partial<
+  Record<DamageType | PlayerStatusId, "blockPreventsStun" | "blockPreventsBleed" | "blockPreventsPoison">
+> = {
+  stun: "blockPreventsStun",
+  bleed: "blockPreventsBleed",
+  poison: "blockPreventsPoison",
+};
 
 export function shouldBlockPreventStatusBuildup(state: BattleState, status: DamageType | PlayerStatusId): boolean {
   if (state.playerStatuses.block <= 0) return false;
-  if (status === "stun") return state.talentEffects.blockPreventsStun;
-  if (status === "bleed") return state.talentEffects.blockPreventsBleed;
-  if (status === "poison") return state.talentEffects.blockPreventsPoison;
-  return false;
+  const flag = BLOCK_PREVENTED_STATUSES[status];
+  return flag ? state.talentEffects[flag] : false;
 }
 
 export function applyPlayerDamageStatuses(
@@ -344,8 +312,7 @@ export function applyPlayerDamageStatuses(
     statusType === "freeze" ||
     statusType === "stun"
   ) {
-    const adjustedDamage = statusType === "bleed" ? actualDamage * BLEED_STATUS_MULTIPLIER : actualDamage;
-    return addPlayerStatus(state, statusType, adjustedDamage);
+    return addPlayerStatus(state, statusType, scaleBleedStatus(statusType, actualDamage));
   }
   return state;
 }
@@ -355,47 +322,6 @@ export type DirectPlayerStatusAttackEffect = Extract<EnemyAttackEffect, { kind: 
   status: DirectPlayerStatusId;
 };
 
-function applyHarmfulStatusFromAttack(
-  state: BattleState,
-  status: DirectPlayerStatusId,
-  amount: number,
-  blockPreventsStatus: boolean,
-  combatTexts: CombatTextEvent[],
-): BattleState {
-  if (blockPreventsStatus) {
-    return state;
-  }
-
-  const appliedAmount = status === "bleed" ? amount * BLEED_STATUS_MULTIPLIER : amount;
-  const nextState = addPlayerStatus(state, status, appliedAmount);
-
-  mergeCombatText(combatTexts, {
-    target: "player",
-    kind: "status",
-    stat: status,
-    amount: appliedAmount,
-  });
-  return nextState;
-}
-
-function applyBeneficialStatusFromAttack(
-  state: BattleState,
-  status: DirectPlayerStatusId,
-  amount: number,
-  combatTexts: CombatTextEvent[],
-): BattleState {
-  if (status === "block") {
-    return applyBlockReward(state, amount, combatTexts, { skipFightPacing: true });
-  }
-  mergeCombatText(combatTexts, {
-    target: "player",
-    kind: "status",
-    stat: status,
-    amount,
-  });
-  return addPlayerStatus(state, status, amount);
-}
-
 export function applyPlayerStatusFromAttack(
   state: BattleState,
   effect: DirectPlayerStatusAttackEffect,
@@ -403,12 +329,16 @@ export function applyPlayerStatusFromAttack(
 ): BattleState {
   const status = effect.status;
   const amount = effect.amount;
-  const blockPreventsStatus = shouldBlockPreventStatusBuildup(state, status);
-
   if (harmfulPlayerStatusIds.includes(status)) {
-    return applyHarmfulStatusFromAttack(state, status, amount, blockPreventsStatus, combatTexts);
+    if (shouldBlockPreventStatusBuildup(state, status)) return state;
+    return addPlayerStatusWithCombatText(state, status, scaleBleedStatus(status, amount), combatTexts, {
+      skipFightPacing: true,
+    });
   }
-  return applyBeneficialStatusFromAttack(state, status, amount, combatTexts);
+  if (status === "block") {
+    return applyBlockReward(state, amount, combatTexts, { skipFightPacing: true });
+  }
+  return addPlayerStatusWithCombatText(state, status, amount, combatTexts, { skipFightPacing: true });
 }
 
 export { applyArmorReward, applyBlockReward, applyCleanseHeals, removeHarmfulPlayerStatuses } from "./player-rewards";

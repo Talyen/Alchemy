@@ -1,6 +1,6 @@
 import { ACTS_PER_RUN, MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { normalizeGearInstance } from "@/lib/gear/operations";
-import { type RunRngState } from "@/lib/rng";
+import { createRunRngState, type RunRngState } from "@/lib/rng";
 import { DESTINATIONS } from "@/lib/routing";
 import { z } from "zod";
 import { savedCardArraySchema } from "./battle-card-schemas";
@@ -52,10 +52,7 @@ const RunObtainedItemArraySchema = z.preprocess(normalizeRunObtainedItems, z.arr
 // Fresh fallback per use: stepRunRng advances counters in place, so sharing
 // one frozen object across parses would hand live runs an unusable state.
 function createFallbackRunRngState(): RunRngState {
-  return {
-    seed: 1,
-    counters: { rewards: 0, destinations: 0, events: 0, shops: 0, world: 0 },
-  };
+  return createRunRngState(1);
 }
 
 const RunRngStateSchema = z

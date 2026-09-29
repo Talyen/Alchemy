@@ -1,6 +1,7 @@
 import { GEAR_AFFIX_COUNT, GEAR_AFFIX_COUNT_MIN_WEIGHT } from "@/lib/game-constants";
 import { rollLootGearRarity, type LootAvailability, type LootWeights } from "@/lib/loot";
-import { createInstanceId, pickRandom, sampleItems } from "@/lib/utils";
+import { pickRandom, sampleItems } from "@/lib/rng";
+import { createInstanceId } from "@/lib/utils";
 import { rollAffixes } from "./affix-pool";
 import { gearBaseItemList, gearBaseItems, type GearBaseItemId } from "./base-items";
 import { gearDefinitionId, gearDefinitions } from "./definitions";

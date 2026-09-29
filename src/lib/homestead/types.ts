@@ -60,10 +60,6 @@ type NumericTalentKey = {
   [K in keyof TalentEffectManifest]: TalentEffectManifest[K] extends number ? K : never;
 }[keyof TalentEffectManifest];
 
-type BooleanTalentKey = {
-  [K in keyof TalentEffectManifest]: TalentEffectManifest[K] extends boolean ? K : never;
-}[keyof TalentEffectManifest];
-
 type RecordTalentKey = {
   [K in keyof TalentEffectManifest]: TalentEffectManifest[K] extends Record<string, unknown> ? K : never;
 }[keyof TalentEffectManifest];
@@ -80,29 +76,19 @@ export const HOMESTEAD_BATTLE_NUMERIC_KEYS = [
   "homesteadForgeBurnPercent",
   "dodgeChance",
   "wishExtraChoiceChance",
-
   "companionDamage",
-
-  "potionPotency",
   "flatBurnDamage",
   "flatArrowDamage",
   "flatFreezeDamage",
   "flatNatureDamage",
-  "wishGemsGold",
-  "startMana",
   "startBlock",
-  "cardLeechBonusPercent",
-  "consumeHealMultiplier",
-  "potionMixPotency",
   "burnDamageReduction",
   "freezeDamageReduction",
-  "natureDamageReduction",
   "poisonDamageReduction",
   "runMaxHealthBonus",
-  "runMaxManaBonus",
 ] as const satisfies readonly NumericTalentKey[];
 
-export const HOMESTEAD_BATTLE_BOOLEAN_KEYS = ["forgeToBurn"] as const satisfies readonly BooleanTalentKey[];
+export const HOMESTEAD_BATTLE_BOOLEAN_KEYS = [] as const;
 
 export const HOMESTEAD_BATTLE_RECORD_KEYS = [
   "companionBondLevels",
@@ -111,7 +97,6 @@ export const HOMESTEAD_BATTLE_RECORD_KEYS = [
 
 type HomesteadBattleKey =
   | (typeof HOMESTEAD_BATTLE_NUMERIC_KEYS)[number]
-  | (typeof HOMESTEAD_BATTLE_BOOLEAN_KEYS)[number]
   | (typeof HOMESTEAD_BATTLE_RECORD_KEYS)[number];
 
 type HomesteadBattleEffects = Pick<TalentEffectManifest, HomesteadBattleKey>;

@@ -10,13 +10,27 @@ export function globToRegExp(glob) {
       index += 2;
       continue;
     }
+    if (glob.slice(index).startsWith("/**/")) {
+      source += "/(?:.*/)?";
+      index += 3;
+      continue;
+    }
+    if (glob.slice(index) === "/**") {
+      source += "(?:/.*)?";
+      index += 2;
+      continue;
+    }
     const char = glob[index];
     if (char === "*" && glob[index + 1] === "*") {
       source += ".*";
       index += 1;
-    } else if (char === "*") source += "[^/]*";
-    else if (char === "?") source += "[^/]";
-    else source += char.replace(/[.+^${}()|[\]\\]/gu, "\\$&");
+    } else if (char === "*") {
+      source += "[^/]*";
+    } else if (char === "?") {
+      source += "[^/]";
+    } else {
+      source += char.replace(/[.+^${}()|[\]\\]/gu, "\\$&");
+    }
   }
   const regex = new RegExp(`${source}$`, "u");
   CACHE.set(glob, regex);

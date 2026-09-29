@@ -103,6 +103,27 @@ describe("MysteryEffectBadge", () => {
 
     expect(screen.getByText("Add random Gear to your Armory")).toBeTruthy();
   });
+
+  it("renders addCard with card title and deck destination in tooltip mode", () => {
+    const card = {
+      id: "mana-berries",
+      title: "Mana Berries",
+      descriptionLines: [],
+      cost: 1,
+      effects: [],
+    };
+    render(
+      <MysteryEffectBadge
+        effect={{ kind: "addCard", cardId: "mana-berries" }}
+        findCard={(id) => (id === "mana-berries" ? card : undefined)}
+        findTrinket={undefined}
+        tooltip
+      />,
+    );
+
+    expect(screen.getByText("Mana Berries")).toBeTruthy();
+    expect(screen.getByText(/to your deck/)).toBeTruthy();
+  });
 });
 
 describe("MysteryEffectList", () => {

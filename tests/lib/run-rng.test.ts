@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { createRunRngState, createRunStreamRng, nextRunRngValue, stepRunRng } from "@/lib/rng";
+import { createRunRngState, createRunStateRng, createRunStreamRng, nextRunRngValue, stepRunRng } from "@/lib/rng";
 import { createDraftRunRandomSource } from "@/features/alchemy/shared/stores/run-session-write-port";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { restoreRun, snapshotRun } from "@/features/alchemy/shared/stores/run-lifecycle";
@@ -95,11 +95,28 @@ describe("run RNG", () => {
     expect(createRunRngState(() => 0.5).seed).toBe(((0.5 * 0x1_0000_0000) | 0) >>> 0);
   });
 
+  it("createRunStateRng matches stepRunRng and advances state counters", () => {
+    const state1 = createRunRngState(123456);
+    const state2 = createRunRngState(123456);
+    const bound = createRunStateRng(state1, "world");
+
+    for (let index = 0; index < 5; index += 1) {
+      const drawn = bound();
+      const direct = stepRunRng(state2, "world");
+      expect(drawn).toBe(direct);
+      expect(state1.counters.world).toBe(index + 1);
+    }
+  });
+
   it("throws on unknown stream", () => {
     const state = createRunRngState(() => 0.1);
     for (const stream of ["unknown", "toString", "__proto__"] as const) {
       // @ts-expect-error — force unknown stream for guard branch
       expect(() => nextRunRngValue(state, stream)).toThrow(/Unknown run RNG stream/);
+      // @ts-expect-error — force unknown stream for guard branch
+      expect(() => stepRunRng(state, stream)).toThrow(/Unknown run RNG stream/);
+      // @ts-expect-error — force unknown stream for guard branch
+      expect(() => createRunStateRng(state, stream)()).toThrow(/Unknown run RNG stream/);
       // @ts-expect-error — force unknown stream for guard branch
       expect(() => createRunStreamRng(42, stream)).toThrow(/Unknown run RNG stream/);
     }

@@ -237,4 +237,25 @@ describe("createMysteryEventNavigation", () => {
     expect(playGoldGain).not.toHaveBeenCalled();
     expect(playGoldSpend).not.toHaveBeenCalled();
   });
+
+  it("awards trailing material rewards even when choice triggers card selection", () => {
+    const { result } = renderMysteryNav();
+    const beforeWood = readRunProfile().materialInventory.wood;
+    const choice = offerChoices([
+      {
+        label: "Study and Gather",
+        effects: [
+          { kind: "chooseCard" as const },
+          { kind: "gainMaterial" as const, material: "wood" as const, amount: 3 },
+        ],
+      },
+    ])[0]!;
+
+    act(() => {
+      result.current.handleMysteryChoice(choice);
+    });
+
+    expect(readRunProfile().materialInventory.wood).toBe(beforeWood + 3);
+    expect(readActivityData(readRunSession().activity, "mystery").mysteryCardChoices).not.toBeNull();
+  });
 });

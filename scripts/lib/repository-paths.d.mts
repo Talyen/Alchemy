@@ -1,3 +1,5 @@
+export const REPO_ROOT: string;
+
 export function runGit(
   root: string,
   args: string[],

@@ -53,8 +53,8 @@ generation is not exposed through the content-system navigation API.
 The engine resolves gameplay before presentation; playback consumes committed results.
 
 `battle/player-rewards.ts` owns the coupled player reward reactions (Health,
-Mana, Gold, Block, Armor, cleanse, and defeat payouts). The base Health update
-and its feedback live in `battle/player-reward-feedback.ts`; defeat healing uses
+Mana, Gold, Block, Armor, cleanse, and defeat payouts), including the base
+Health update and its combat-text feedback; defeat healing uses
 that base update without restarting the full healing reaction chain. Import
 `battle/combat-text-events.ts` for text aggregation and `battle/enemy-healing.ts`
 for enemy healing. Combat text is feedback, not a gameplay rule owner.
@@ -71,9 +71,9 @@ encounter reactions, and Consume routing explicit at each caller; automatic
 play does not use the ordinary payment entry point.
 
 Direct player hits use source-specific recipes in `lib/battle/hit-resolution.ts`
-and its lower `follow-up-hit-resolution.ts` tier. `hit-request.ts` carries source
-intent; `hit-facts.ts` captures eligibility and Health results before nested
-reactions. Attack orchestration keeps Dodge, reserved bonuses, numeric preparation,
+and its lower `follow-up-hit-resolution.ts` tier. `player-hit-core.ts` carries source
+intent (`HitRequest`) and captures eligibility and Health results (`HitFacts`) before
+nested reactions. Attack orchestration keeps Dodge, reserved bonuses, numeric preparation,
 whole-packet follow-ups, and retaliation. Card reaction stages cannot call back into
 attack orchestration. The [hit-source matrix](./GAME_RULES.md#direct-player-hit-resolution)
 describes the current ordering and scaling differences. Retirement of legacy

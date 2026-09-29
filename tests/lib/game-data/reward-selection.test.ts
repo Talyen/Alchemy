@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { deckHasCompanionCard, getCardKeywords, selectRewardCards } from "@/lib/game-data";
-import { sampleItems } from "@/lib/utils";
+import { sampleItems } from "@/lib/rng";
 import type { BattleCard } from "@/lib/game-data";
 
 function card(overrides: Partial<BattleCard> = {}): BattleCard {

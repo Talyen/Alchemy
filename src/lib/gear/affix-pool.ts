@@ -1,4 +1,4 @@
-import { takeRandomItem } from "@/lib/utils";
+import { takeRandomItem } from "@/lib/rng";
 import { affixMatchesAffinity, rollAffixValue } from "./affixes";
 import { gearAffixList, type GearAffixAspect, type GearAffixDefinition } from "./affix-catalog";
 import type { GearDefinition } from "./definitions";

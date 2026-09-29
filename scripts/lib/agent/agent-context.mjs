@@ -1,7 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { expandRepositoryPaths } from "../repository-paths.mjs";
 import { resolveRoutePlan } from "../verification/change-routes.mjs";
 import { readDocumentSection } from "./markdown-sections.mjs";
 
@@ -306,7 +305,8 @@ export const CONTEXT_TASKS = {
 const FALLBACK_DOC_ROUTES = new Set(["save", "balance", "performance", "desktop", "documentation", "unit-test"]);
 
 export function selectContext(paths, task) {
-  paths = expandRepositoryPaths(path.resolve(import.meta.dirname, "../../.."), paths);
+  const plan = resolveRoutePlan(paths);
+  paths = plan.paths;
   if (task && !Object.hasOwn(CONTEXT_TASKS, task)) {
     const alternate = task.endsWith("s") ? task.slice(0, -1) : `${task}s`;
     if (Object.hasOwn(CONTEXT_TASKS, alternate)) task = alternate;
@@ -316,7 +316,6 @@ export function selectContext(paths, task) {
   const selected = Object.entries(CONTEXT_TASKS).filter(
     ([id, entry]) => id === task || paths.some((file) => entry.matches.test(file)),
   );
-  const plan = resolveRoutePlan(paths);
   const docs = selected.flatMap(([, entry]) => entry.docs);
   if (selected.some(([id]) => id.startsWith("save-"))) docs.unshift(...CONTEXT_TASKS.save.docs);
   for (const route of plan.routes) {

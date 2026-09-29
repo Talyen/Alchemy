@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ActiveRunDataSchema } from "@/lib/validation";
 import { parseActiveRun } from "@/lib/active-run-session";
-import { createSeededRng } from "@/lib/utils";
+import { createSeededRng } from "@/lib/rng";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { makeMinimalActiveRunInput } from "../../../../fixtures/active-run";
 

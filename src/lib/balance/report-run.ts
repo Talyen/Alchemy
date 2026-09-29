@@ -331,7 +331,9 @@ export function buildBalanceReport(options: ReportRunOptions): BalanceReportMode
     gear: withPhaseTiming("gear sweep", () =>
       runGearSweep(options).sort((a, b) => a.deltas.late.delta - b.deltas.late.delta),
     ),
-    affixes: withPhaseTiming("affix sweep", () => runAffixSweep(options)),
+    affixes: withPhaseTiming("affix sweep", () =>
+      runAffixSweep(options).sort((a, b) => a.deltas.late.delta - b.deltas.late.delta),
+    ),
     anomalies,
     anomalyMetrics: metrics,
   };

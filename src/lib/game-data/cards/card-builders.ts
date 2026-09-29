@@ -34,18 +34,15 @@ export function damageCard({
   lifesteal = false,
   tags,
 }: DamageCardInput): BattleCard {
-  const descriptionLines = [`Deal ${amount} ${capitalizeWord(damageType)} damage`];
-  if (lifesteal) descriptionLines.push("Leech");
-  if (tags) descriptionLines.push(...tags.map((tag) => capitalizeWord(tag)));
-  return {
+  // Damage wording lives in describeCardEffects, so builders cannot drift from canonical text.
+  return effectsCard({
     id,
-    title: deriveTitle(id, title),
-    descriptionLines,
     art,
     cost,
-    ...(tags ? { tags } : {}),
+    ...(title === undefined ? {} : { title }),
+    ...(tags === undefined ? {} : { tags }),
     effects: [{ kind: "damage", damageType, amount, ...(lifesteal ? { lifesteal: true } : {}) }],
-  };
+  });
 }
 
 type PlayerStatusCardInput = CardBaseInput & { status: "block" | "armor" | "thorns" | "forge"; amount: number };

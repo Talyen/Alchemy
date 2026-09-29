@@ -19,7 +19,7 @@ import {
 } from "@/lib/game-constants";
 import { DESTINATIONS } from "@/lib/routing";
 import { rollFreshBossId } from "@/features/alchemy/shared/config";
-import { createRunRngState, stepRunRng } from "@/lib/rng";
+import { createRunRngState, createRunStateRng } from "@/lib/rng";
 
 vi.mock("@/lib/routing", async () => {
   const actual = await vi.importActual<typeof import("@/lib/routing")>("@/lib/routing");
@@ -168,7 +168,7 @@ describe("restoreOrCreateDestinationRewardState", () => {
 
   it("repairs a missing boss preview with one world draw and preserves a saved preview", () => {
     const rngState = createRunRngState(42);
-    const rollBossEnemyId = () => rollFreshBossId(() => stepRunRng(rngState, "world"));
+    const rollBossEnemyId = () => rollFreshBossId(createRunStateRng(rngState, "world"));
     const options = {
       availableDestinations: [DESTINATIONS.BOSS_COMBAT],
       offerState: createEmptyDestinationOfferState(),
@@ -194,7 +194,7 @@ describe("createInitialDestinationResult", () => {
     const result = createInitialDestinationResult({
       availableDestinations: [offer],
       offerState: createEmptyDestinationOfferState(),
-      rollBossEnemyId: () => rollFreshBossId(() => stepRunRng(rngState, "world")),
+      rollBossEnemyId: () => rollFreshBossId(createRunStateRng(rngState, "world")),
       rng: () => 0.5,
     });
     expect(result.rewardState.destinations).toEqual([offer]);
