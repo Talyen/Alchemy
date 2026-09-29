@@ -3,11 +3,9 @@ import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vitest/config";
 import { SSR_OPTIMIZE_INCLUDE, VITE_ALIAS_PATH, VITE_ALIAS_TARGET } from "./scripts/lib/vite-aliases.mjs";
 
-const excludedTestPaths = ["tests/balance/**"];
+const excludedTestPaths = ["tests/balance/**", "tests/playthrough/**"];
 const domLibPrefixes = [
   "tests/lib/animation/",
-  "tests/lib/battle/block-decay",
-  "tests/lib/battle/enemy-turn",
   "tests/lib/crash-reporting",
   "tests/lib/image-preload",
   "tests/lib/platform",

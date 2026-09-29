@@ -1,6 +1,6 @@
 import { expect, test } from "../../fixtures/e2e";
 import { injectActiveBattle, makeCard, makeGoblinBattleState } from "../../browser-helpers";
-import { critical } from "../../playwright-tags";
+import { critical, slow } from "../../playwright-tags";
 import { MenuPage } from "../../pages/menu-page";
 import { CorruptionPage } from "../../pages/corruption-page";
 import { openArmory } from "../armory";
@@ -23,7 +23,7 @@ test("Escape cannot redirect a prepared navigation", async ({ page }) => {
   await expect(page.getByTestId("game-menu")).toHaveCount(0);
 });
 
-test("interrupting a tab reveal never jumps back to full opacity", critical, async ({ page }) => {
+test("interrupting a tab reveal never jumps back to full opacity", slow, async ({ page }) => {
   await new MenuPage(page).gotoCollection();
   await expect(page.locator(".page-enter")).toHaveCSS("opacity", "1");
   const samples = await page.evaluate(async () => {

@@ -17,7 +17,7 @@ export function makeCard(overrides: Record<string, unknown> = {}) {
   };
 }
 
-export const BLOCK_CARD = makeTestCard({
+const BLOCK_CARD = makeTestCard({
   id: "block",
   title: "Block",
   descriptionLines: ["Gain 5 Block"],
@@ -25,18 +25,7 @@ export const BLOCK_CARD = makeTestCard({
   effects: [{ kind: "player-status", status: "block", amount: 5 }],
 });
 
-export const AEGIS_CARD = makeTestCard({
-  id: "blessed-aegis",
-  title: "Blessed Aegis",
-  descriptionLines: ["Gain 2 Block", "Deal Holy damage equal to half your Block"],
-  art: "placeholder",
-  effects: [
-    { kind: "player-status", status: "block", amount: 2 },
-    { kind: "damage", damageType: "holy", amount: 0, equalToBlock: true, equalToBlockPercent: 50 },
-  ],
-});
-
-export const ANVIL_CARD = makeTestCard({
+const ANVIL_CARD = makeTestCard({
   id: "anvil",
   title: "Anvil",
   descriptionLines: ["Gain 1 Forge"],

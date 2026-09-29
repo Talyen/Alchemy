@@ -95,7 +95,7 @@
     "balance:playthrough": "node scripts/run-playthrough.mjs",
     "balance:playthrough:replay": "node scripts/run-playthrough.mjs",
     "balance:playthrough:compare": "node scripts/run-playthrough.mjs",
-    "test:playthrough": "node scripts/run-compact.mjs vitest run tests/playthrough",
+    "test:playthrough": "node scripts/run-compact.mjs vitest run --config vitest.playthrough.config.ts",
     "balance:loot": "node scripts/run-loot-report.mjs",
     "test:balance": "node scripts/run-compact.mjs vitest run --config vitest.balance.config.ts",
     "check:static": "concurrently --max-process 4 --names generated,format,typecheck,eslint \"npm run check:generated\" \"npm run format:check\" \"npm run typecheck:all\" \"npm run lint\"",

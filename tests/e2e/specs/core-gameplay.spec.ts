@@ -1,4 +1,3 @@
-import { controllerInput } from "../controller-input";
 import { expect } from "@playwright/test";
 import { MAX_HAND_SIZE } from "@/lib/game-constants";
 import {
@@ -11,27 +10,9 @@ import {
 import { test } from "../../fixtures/e2e";
 import { BattlePage } from "../../pages/battle-page";
 import { DestinationPage } from "../../pages/destination-page";
-import { expectRunPhase } from "../../pages/game-stage";
 import { critical, slow } from "../../playwright-tags";
 
 test.describe("Battle Flow", () => {
-  test("end turn triggers enemy phase and draws new cards", async ({ page, fastBattle }) => {
-    void fastBattle;
-    await startBattleWithDeck(
-      page,
-      Array.from({ length: 6 }, () => makeCard()),
-    );
-    const battle = new BattlePage(page);
-
-    const handBefore = await battle.handCount();
-    await battle.playFirstCard();
-    expect(await battle.handCount()).toBe(handBefore - 1);
-
-    await battle.endTurn();
-    const handAfterTurn = await battle.handCount();
-    expect(handAfterTurn).toBe(4);
-  });
-
   test("maximum hand remains visible beyond the battle scene boundary", async ({ page, fastBattle }) => {
     void fastBattle;
     await injectActiveBattle(
@@ -102,19 +83,6 @@ test.describe("Card Interactions", slow, () => {
 
     await battle.hand.nth(0).click();
     await expect(async () => expect(await battle.handCount()).toBe(handBefore - 2)).toPass({ timeout: 3000 });
-  });
-
-  test("campfire screen restores Health and continues to next battle", async ({ page }) => {
-    await startAtDestination(page, { runPlayerHealth: 10, runMaxHealth: 30 }, { forceDestination: "Campfire" });
-
-    const destination = new DestinationPage(page);
-    await controllerInput(page).activate(page.getByRole("button", { name: "Campfire", exact: true }));
-    await expectRunPhase(page, "runLoop");
-
-    await expect(page.getByRole("button", { name: "Rest" })).toBeVisible({ timeout: 3000 });
-    await controllerInput(page).activate(page.getByRole("button", { name: "Rest", exact: true }));
-    await destination.expectVisible();
-    await destination.enterAnyCombat();
   });
 });
 

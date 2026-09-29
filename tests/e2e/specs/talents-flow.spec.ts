@@ -43,6 +43,9 @@ test.describe("Talents Flow", () => {
     await expect(page.getByRole("heading", { name: "Reset Talents" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Reset", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Cancel" })).toBeVisible();
+    await page.getByRole("button", { name: "Cancel" }).click();
+    await expect(page.getByRole("heading", { name: "Reset Talents" })).toHaveCount(0);
+    await expect(resetBtn).toBeEnabled();
   });
 
   test("keyboard navigation unlocks consecutive talents without leaving the tree", critical, async ({ page }) => {
