@@ -35,6 +35,16 @@ async function measureViewportLayout(page: Page) {
   });
 }
 
+async function changeDisplayMode(page: Page, label: string) {
+  await new MenuPage(page).openOptions();
+  const select = page.getByRole("combobox", { name: "Display Mode" });
+  await select.click();
+  await page.getByRole("option", { name: label, exact: true }).click();
+  await expect(select).toHaveText(label);
+  await page.getByRole("button", { name: "Back", exact: true }).click();
+  await new MenuPage(page).expectMainMenuAfterColdStart();
+}
+
 test("desktop and browser share composition at matching viewports and desktop fullscreen", async ({ browser }) => {
   const app = await launchElectronApp();
   const web = await browser.newPage({ viewport: CONTENT_REFERENCE_VIEWPORT });
@@ -43,7 +53,7 @@ test("desktop and browser share composition at matching viewports and desktop fu
     const desktopErrors = failOnRuntimeErrors(desktop);
     const browserErrors = failOnRuntimeErrors(web);
     await new MenuPage(desktop).expectMainMenuAfterColdStart();
-    await desktop.evaluate(() => window.alchemyDesktop!.setDisplayMode("windowed"));
+    await changeDisplayMode(desktop, "Windowed");
     await app.evaluate(({ BrowserWindow }, viewport) => {
       BrowserWindow.getAllWindows()[0].setContentSize(viewport.width, viewport.height);
     }, CONTENT_REFERENCE_VIEWPORT);
@@ -60,7 +70,10 @@ test("desktop and browser share composition at matching viewports and desktop fu
     const windowed = await measureComposition(desktop);
     expect(windowed.artworkWidth).toBeCloseTo(baseline.artworkWidth, 0);
     expect(windowed.tooltipFont).toBeCloseTo(baseline.tooltipFont, 2);
-    await desktop.evaluate(() => window.alchemyDesktop!.setDisplayMode("borderless-fullscreen"));
+    await desktop.getByRole("button", { name: "Back", exact: true }).click();
+    await new MenuPage(desktop).expectMainMenuAfterColdStart();
+    await changeDisplayMode(desktop, "Borderless Fullscreen");
+    await new MenuPage(desktop).openGameModeSelect();
     const display = await app.evaluate(
       ({ BrowserWindow, screen }) => screen.getDisplayMatching(BrowserWindow.getAllWindows()[0].getBounds()).bounds,
     );
