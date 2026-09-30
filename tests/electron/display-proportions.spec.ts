@@ -20,6 +20,21 @@ async function measureComposition(page: Page) {
   };
 }
 
+async function measureViewportLayout(page: Page) {
+  return page.evaluate(() => {
+    const stage = document.querySelector<HTMLElement>('[data-testid="vr-stage"]');
+    const frame = stage?.parentElement;
+    return {
+      viewport: { width: innerWidth, height: innerHeight },
+      contentScale: getComputedStyle(document.documentElement).getPropertyValue("--content-scale").trim(),
+      stageTransform: stage?.style.transform,
+      stageWidth: stage?.getBoundingClientRect().width,
+      stageLayoutWidth: stage?.offsetWidth,
+      frameWidth: frame?.getBoundingClientRect().width,
+    };
+  });
+}
+
 test("desktop and browser share composition at matching viewports and desktop fullscreen", async ({ browser }) => {
   const app = await launchElectronApp();
   const web = await browser.newPage({ viewport: CONTENT_REFERENCE_VIEWPORT });
@@ -53,14 +68,36 @@ test("desktop and browser share composition at matching viewports and desktop fu
       .poll(() => desktop.evaluate(() => ({ width: innerWidth, height: innerHeight })))
       .toEqual({ width: display.width, height: display.height });
     await waitForLayoutSettled(desktop);
-    const fullscreen = await measureComposition(desktop);
     const factor = Math.min(
       display.width / CONTENT_REFERENCE_VIEWPORT.width,
       display.height / CONTENT_REFERENCE_VIEWPORT.height,
     );
-    expect(fullscreen.artworkWidth / baseline.artworkWidth).toBeCloseTo(factor, 2);
+    const initialFullscreenLayout = await measureViewportLayout(desktop);
+    await expect
+      .poll(
+        async () => {
+          const current = await measureComposition(desktop);
+          return current.artworkWidth / baseline.artworkWidth;
+        },
+        {
+          timeout: 10_000,
+          message: `Fullscreen composition did not settle; initial layout: ${JSON.stringify(initialFullscreenLayout)}`,
+        },
+      )
+      .toBeCloseTo(factor, 2);
+    const fullscreen = await measureComposition(desktop);
+    const fullscreenLayout = await measureViewportLayout(desktop);
+    expect(
+      fullscreen.artworkWidth / baseline.artworkWidth,
+      `Fullscreen layout metrics: ${JSON.stringify(fullscreenLayout)}`,
+    ).toBeCloseTo(factor, 2);
     expect(fullscreen.tooltipFont / baseline.tooltipFont).toBeCloseTo(factor, 2);
     await desktop.screenshot({ path: "reports/display-proportions/desktop-fullscreen.png" });
+    if (await desktop.getByTestId("static-plasma-background").isVisible()) {
+      expect(desktopErrors.splice(0).map((message) => message.trim())).toEqual([
+        "[other] Plasma WebGL unavailable; using static decoration",
+      ]);
+    }
     expect(desktopErrors).toEqual([]);
     expect(browserErrors).toEqual([]);
   } finally {
