@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { getElectronMainWindow, launchElectronApp } from "./electron-helpers";
 import { ELECTRON_PREVIEW_PORT, previewPortFromEnv } from "../playwright-shared";
-import { failOnRuntimeErrors } from "../browser-helpers";
+import { failOnRuntimeErrors, waitForLayoutSettled } from "../browser-helpers";
 import { MenuPage } from "../pages/menu-page";
 import { CONTENT_REFERENCE_VIEWPORT } from "../../src/lib/game-constants/ui-layout";
 
@@ -35,6 +35,7 @@ test("desktop and browser share composition at matching viewports and desktop fu
     await expect
       .poll(() => desktop.evaluate(() => ({ width: innerWidth, height: innerHeight })))
       .toEqual(CONTENT_REFERENCE_VIEWPORT);
+    await waitForLayoutSettled(desktop);
     const port = previewPortFromEnv("PLAYWRIGHT_ELECTRON_PREVIEW_PORT", ELECTRON_PREVIEW_PORT);
     await web.goto(`http://127.0.0.1:${port}/`);
     await new MenuPage(web).expectMainMenuAfterColdStart();
@@ -51,6 +52,7 @@ test("desktop and browser share composition at matching viewports and desktop fu
     await expect
       .poll(() => desktop.evaluate(() => ({ width: innerWidth, height: innerHeight })))
       .toEqual({ width: display.width, height: display.height });
+    await waitForLayoutSettled(desktop);
     const fullscreen = await measureComposition(desktop);
     const factor = Math.min(
       display.width / CONTENT_REFERENCE_VIEWPORT.width,

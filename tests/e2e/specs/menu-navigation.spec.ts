@@ -213,18 +213,22 @@ test.describe("Startup Loading Screen", slow, () => {
 });
 
 test.describe("Progression Locks", () => {
-  test("clean save gates meta buttons and game-mode tiles", critical, async ({ page }) => {
-    await injectHomestead(page, { finishedRunCharacters: [] });
-    await page.goto("/");
-    await expect(page.getByRole("button", { name: "Talents" })).toHaveAttribute("aria-disabled", "true");
-    await expect(page.getByRole("button", { name: "Homestead" })).toHaveAttribute("aria-disabled", "true");
-    await expect(page.getByRole("button", { name: "Armory" })).toHaveAttribute("aria-disabled", "true");
+  test(
+    "clean save gates progression features and game-mode tiles while Armory stays open",
+    critical,
+    async ({ page }) => {
+      await injectHomestead(page, { finishedRunCharacters: [] });
+      await page.goto("/");
+      await expect(page.getByRole("button", { name: "Talents" })).toHaveAttribute("aria-disabled", "true");
+      await expect(page.getByRole("button", { name: "Homestead" })).toHaveAttribute("aria-disabled", "true");
+      await expect(page.getByRole("button", { name: "Armory" })).toBeEnabled();
 
-    const menu = new MenuPage(page);
-    await menu.openGameModeSelect();
-    await expect(page.getByRole("button", { name: "The Labyrinth (Locked)" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Wildwood Draft (Locked)" })).toBeVisible();
-  });
+      const menu = new MenuPage(page);
+      await menu.openGameModeSelect();
+      await expect(page.getByRole("button", { name: "The Labyrinth (Locked)" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Wildwood Draft (Locked)" })).toBeVisible();
+    },
+  );
 
   test("finished Rogue and Ranger unlock Labyrinth and Wildwood tiles", async ({ page }) => {
     await injectHomestead(page, { finishedRunCharacters: ["rogue", "ranger"] });
