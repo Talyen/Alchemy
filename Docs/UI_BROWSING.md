@@ -113,7 +113,7 @@ Escape closes the panel before navigating away and returns focus to Filters.
 Match counts and removable criteria chips occupy a reserved summary row so the
 six-item grid does not jump when criteria are added or removed.
 
-Currency artwork shares one 5rem size between the crafting strip, pointer attachment, and salvage preview. The pointer attachment is offset from the hit point, hides for touch and outside the workspace, and never intercepts input. Reward quantities are plain numbers; preview currencies are focusable information groups rather than action buttons.
+Crafting-strip, reward, and salvage-preview currency artwork uses 5 content rem so it follows Game Size. The floating pointer attachment keeps its 5 CSS rem cursor footprint; it is offset from the hit point, hides for touch and outside the workspace, and never intercepts input. Reward quantities are plain numbers; preview currencies are focusable information groups rather than action buttons.
 
 Selecting an item for salvage immediately ends targeting and clears its cursor and highlights. Confirm, Cancel, and Escape return to browsing. The dialog uses the heading “Salvage,” a wrapping shining item name in “Salvaging [item] will yield:”, a portrait, full-size currency rewards, and an equipped-character warning where applicable. Confirmations focus Cancel, contain keyboard focus, and disable actions during exit.
 

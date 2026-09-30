@@ -24,6 +24,9 @@ const { resolveEdition, editionPolicy } = require("../game-edition.mjs");
 const { createDemoProgressBridge, stampSaveOwner } = require("./demo-progress.cjs");
 const TEST_PROFILE_ISOLATED =
   app.commandLine.hasSwitch("user-data-dir") || (!app.isPackaged && Boolean(process.env.ALCHEMY_ELECTRON_TEST_PROFILE));
+// Background automation is restricted to isolated development profiles.
+const BACKGROUND_AUTOMATION =
+  !app.isPackaged && TEST_PROFILE_ISOLATED && process.env.ALCHEMY_ELECTRON_BACKGROUND === "1";
 const { openWishlist } = require("./wishlist.cjs");
 const metadata = require(path.join(app.getAppPath(), "package.json"));
 const EDITION = resolveEdition(app.isPackaged ? metadata.gameEdition : process.env.ALCHEMY_EDITION);
@@ -126,6 +129,7 @@ function setRendererFullscreen(window, enabled) {
 }
 
 function applyDisplayMode(window, mode) {
+  if (BACKGROUND_AUTOMATION) return;
   if (process.platform === "darwin") {
     // Native macOS/HTML fullscreen reserves the notch strip. Simple fullscreen
     // uses the entire display and stays on the current desktop instead.
@@ -374,12 +378,14 @@ function createMainWindow() {
     height: WINDOWED_SIZE.height,
     minWidth: 960,
     minHeight: 540,
-    fullscreen: process.platform !== "darwin",
+    fullscreen: !BACKGROUND_AUTOMATION && process.platform !== "darwin",
     fullscreenable: true,
-    simpleFullscreen: process.platform === "darwin",
+    simpleFullscreen: !BACKGROUND_AUTOMATION && process.platform === "darwin",
     backgroundColor: "#120d0a",
     show: false,
     webPreferences: {
+      backgroundThrottling: !BACKGROUND_AUTOMATION,
+      offscreen: BACKGROUND_AUTOMATION && process.env.ALCHEMY_ELECTRON_OFFSCREEN === "1",
       allowRunningInsecureContent: false,
       contextIsolation: true,
       devTools: !USE_PACKAGED_RENDERER,
@@ -396,7 +402,7 @@ function createMainWindow() {
     },
   });
 
-  if (process.platform === "darwin") mainWindow.setSimpleFullScreen(true);
+  if (!BACKGROUND_AUTOMATION && process.platform === "darwin") mainWindow.setSimpleFullScreen(true);
 
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
   mainWindow.webContents.on("will-navigate", (event, url) => {
@@ -406,7 +412,9 @@ function createMainWindow() {
     if (!details.isMainFrame || !isAllowedRendererUrl(details.url, RENDERER_POLICY)) event.preventDefault();
   });
   mainWindow.webContents.on("will-redirect", (event) => event.preventDefault());
-  mainWindow.once("ready-to-show", () => mainWindow?.show());
+  mainWindow.once("ready-to-show", () => {
+    if (!BACKGROUND_AUTOMATION) mainWindow?.show();
+  });
   mainWindow.webContents.on("before-input-event", (_event, input) => {
     if (input.type === "keyDown" && input.key === "Tab" && input.shift) {
       mainWindow?.webContents.send("alchemy:external-focus-lost");
@@ -421,6 +429,7 @@ function createMainWindow() {
 }
 
 app.whenReady().then(async () => {
+  if (BACKGROUND_AUTOMATION && process.platform === "darwin") app.setActivationPolicy("prohibited");
   await registerRendererProtocol();
   applySessionSecurity();
   registerIpcHandlers();
@@ -438,6 +447,7 @@ app.whenReady().then(async () => {
 
   createMainWindow();
   app.on("activate", () => {
+    if (BACKGROUND_AUTOMATION) return;
     if (!mainWindow) createMainWindow();
   });
 });

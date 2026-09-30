@@ -27,7 +27,7 @@ function getElectronExecutablePath(): string {
 }
 
 export async function launchElectronApp(
-  options: { packagedRenderer?: boolean; enableGpu?: boolean } = {},
+  options: { packagedRenderer?: boolean; enableGpu?: boolean; background?: boolean; offscreen?: boolean } = {},
 ): Promise<ElectronApplication> {
   const args =
     process.env.CI && !options.enableGpu
@@ -45,6 +45,9 @@ export async function launchElectronApp(
       env: {
         ...process.env,
         ALCHEMY_ELECTRON_TEST_PROFILE: profile,
+        ALCHEMY_ELECTRON_OFFSCREEN: options.offscreen === true ? "1" : "0",
+        ALCHEMY_ELECTRON_BACKGROUND:
+          (options.background ?? process.env.ALCHEMY_ELECTRON_BACKGROUND === "1") ? "1" : "0",
         ELECTRON_RENDERER_URL: getRendererUrl(),
         ...(options.packagedRenderer ? { ELECTRON_FORCE_PACKAGED_RENDERER: "1" } : {}),
       },

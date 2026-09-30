@@ -36,7 +36,9 @@ export default {
     "desktop/*.cjs",
   ],
   // The compact CLI wrapper hides --config from command-line inference.
-  playwright: { config: ["playwright.config.{js,ts,mjs}", "playwright.electron.config.ts"] },
+  playwright: {
+    config: ["playwright.config.{js,ts,mjs}", "playwright.electron.config.ts", "playwright.layout-review.config.ts"],
+  },
   project: ["src/**/*.{ts,tsx}", "scripts/**/*.mjs", "desktop/**/*.cjs", "tests/**/*.{ts,tsx}"],
   ignoreIssues: {
     // Compatibility barrel for active-run persistence types + serializers.

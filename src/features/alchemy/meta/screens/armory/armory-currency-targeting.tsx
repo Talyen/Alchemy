@@ -60,7 +60,7 @@ export function ArmoryCurrencyCursor({ activeCurrencyId }: { activeCurrencyId: C
     <div
       data-testid="armory-crafting-cursor"
       className={cn(
-        "armory-currency-art pointer-events-none fixed z-[130] translate-x-4 translate-y-4 overflow-hidden rounded-xl",
+        "armory-currency-cursor pointer-events-none fixed z-[130] translate-x-4 translate-y-4 overflow-hidden rounded-xl",
         CURRENCY_CURSOR_STYLES[activeCurrencyId].className,
       )}
       style={{ left: Math.min(point.x, window.innerWidth - 112), top: Math.min(point.y, window.innerHeight - 112) }}

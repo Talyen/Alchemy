@@ -5,7 +5,7 @@ import { BattlePage } from "../pages/battle-page";
 import { DestinationPage } from "../pages/destination-page";
 import { RewardPage } from "../pages/reward-page";
 import { makeStartingDeck } from "./cards";
-import { resumeCampaignRun } from "./navigation";
+import { navigateToGame, resumeCampaignRun } from "./navigation";
 import { injectSaveState, destinationInterruptedFlow } from "./save-injection";
 import type { DestinationName } from "./types";
 
@@ -30,7 +30,7 @@ export async function startAtDestination(
       ? { currentScreen: "destination", interruptedFlow: destinationInterruptedFlow([options.forceDestination]) }
       : {}),
   });
-  await page.goto("/");
+  await navigateToGame(page);
   if (options.forceDestination) {
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 8000 });
     await expect(
@@ -51,7 +51,7 @@ export async function startBattleWithDeck(page: Page, deck: BattleCard[], overri
     interruptedFlow: destinationInterruptedFlow(["Normal Combat"]),
     ...overrides,
   });
-  await page.goto("/");
+  await navigateToGame(page);
   const destination = new DestinationPage(page);
   await destination.expectVisible();
   await destination.enterCombat("Combat");

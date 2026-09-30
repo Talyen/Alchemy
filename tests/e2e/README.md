@@ -21,6 +21,13 @@ Run browser batches serially or combine specs in one invocation. Browser, Electr
 
 Local Electron runs collect only the desktop bridge and main-menu smoke, so they open one temporary game window. The CI and nightly Electron jobs explicitly select the full suite.
 
+For agent runs on macOS, set `ALCHEMY_ELECTRON_BACKGROUND=1` to keep the isolated
+Electron window hidden and render without taking focus. Background mode
+suppresses native display-mode changes; native fullscreen checks need a visible
+launch and user authorization when they would interrupt their desktop. The opt-in
+[desktop layout review](../layout-review/README.md) captures the full viewport
+matrix with this mode and verifies hidden versus offscreen composition.
+
 Browser tests default to port 4173. To use another port, run `PLAYWRIGHT_BROWSER_PREVIEW_PORT=4273 PLAYWRIGHT_VITE_MODE=dev npx playwright test tests/e2e/specs/menu-navigation.spec.ts --project=chromium`. The override also sets the browser URL and seeded storage origin. Electron uses `PLAYWRIGHT_ELECTRON_PREVIEW_PORT` (default 4175), and performance uses `PLAYWRIGHT_PERF_PORT` (default 4176). Preview mode still requires rebuilding after source changes.
 
 Do not rebuild `dist/` while a preview-mode suite is running. Replaced asset files can produce unrelated 404s and interaction failures in tests already in progress.

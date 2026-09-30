@@ -9,7 +9,9 @@ import {
   SAVE_KEY,
   startAtDestination,
   startBattleWithDeck,
+  waitForLayoutSettled,
 } from "../../browser-helpers";
+import { openArmory } from "../armory";
 import { MenuPage } from "../../pages/menu-page";
 import { slow } from "../../playwright-tags";
 import { CONTENT_REFERENCE_VIEWPORT, STAGE_HEIGHT } from "../../../src/lib/game-constants/ui-layout";
@@ -447,3 +449,26 @@ test(
       .toEqual(before);
   },
 );
+
+test("Armory currency artwork follows Game Size", slow, async ({ page }) => {
+  await page.setViewportSize(CONTENT_REFERENCE_VIEWPORT);
+  await page.goto("/");
+  const widths: number[] = [];
+  for (const gameSizePercent of [80, 120]) {
+    await page.evaluate(
+      (percent) =>
+        localStorage.setItem(
+          "alchemy-device-display-v1",
+          JSON.stringify({ version: 1, gameSizePercent: percent, tooltipSizePercent: 100 }),
+        ),
+      gameSizePercent,
+    );
+    await openArmory(page);
+    const currency = page.getByTestId("armory-crafting-currency").first();
+    await waitForLayoutSettled(page, currency);
+    const bounds = (await currency.boundingBox())!;
+    expect(bounds.width).toBeCloseTo(bounds.height, 1);
+    widths.push(bounds.width);
+  }
+  expect(widths[1]! / widths[0]!).toBeCloseTo(1.5, 2);
+});

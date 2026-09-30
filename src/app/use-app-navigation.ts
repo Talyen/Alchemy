@@ -27,6 +27,14 @@ export function useGameMenuState() {
     setGameMenuOpen(true);
   }, []);
 
+  useEffect(() => {
+    // A captured trigger rect becomes stale after resizing. Keep the menu open
+    // (and combat paused), using its existing centered presentation instead.
+    const clearAnchor = () => setMenuAnchorRect(null);
+    window.addEventListener("resize", clearAnchor);
+    return () => window.removeEventListener("resize", clearAnchor);
+  }, []);
+
   useEffect(
     () =>
       getDesktopApi()?.onExternalFocusLost?.(() => {

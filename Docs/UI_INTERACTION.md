@@ -31,6 +31,9 @@ descriptions can use available width to fit; tooltips never scroll or truncate.
 
 ## Overlay lifecycle
 
+An open game menu switches to its centered presentation when the window resizes,
+discarding its stale hamburger anchor while keeping combat paused.
+
 Modals and panels use `useModalEscapeDismiss` or `useCaptureEscapeCancel` so the global Escape stack remains ordered.
 
 `ModalOverlayShell` portals into the app's shared modal host, outside the scaled

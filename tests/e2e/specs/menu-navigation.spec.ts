@@ -245,3 +245,23 @@ test("controller-equivalent options, select arrows and dialog focus", critical, 
   await page.goto("/");
   await exerciseControllerOptions(page);
 });
+
+test("keeps an open game menu reachable after resizing the window", slow, async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await injectActiveBattle(page, makeGoblinBattleState());
+  await page.getByRole("button", { name: "Open game menu", exact: true }).click();
+  const panel = page.getByTestId("game-menu");
+  await expect(panel).toBeVisible();
+  for (const viewport of [
+    { width: 1280, height: 720 },
+    { width: 3440, height: 1440 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await expect(panel).toBeInViewport({ ratio: 0.99 });
+    await expect(panel.getByRole("button", { name: "Main Menu", exact: true })).toBeInViewport({ ratio: 0.99 });
+    await expect(panel.getByRole("button", { name: "End Run", exact: true })).toBeInViewport({ ratio: 0.99 });
+  }
+  await page.keyboard.press("Escape");
+  await expect(panel).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "End Turn", exact: true })).toBeVisible();
+});

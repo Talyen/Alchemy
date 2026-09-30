@@ -24,6 +24,12 @@
 }
 
 .armory-currency-art {
+  width: calc(5 * var(--content-rem, 1rem));
+  height: calc(5 * var(--content-rem, 1rem));
+}
+
+/* The floating pointer preview lives outside the stage and keeps a cursor-sized footprint. */
+.armory-currency-cursor {
   width: 5rem;
   height: 5rem;
 }

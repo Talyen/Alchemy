@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page } from "@playwright/test";
-import { openGameModeSelect, selectGameMode } from "../e2e/navigation";
+import { navigateToGame, openGameModeSelect, selectGameMode } from "../e2e/navigation";
 import { injectHomestead } from "../e2e/save-injection";
 import type { GameMode } from "../e2e/types";
 
@@ -21,7 +21,7 @@ export class MenuPage {
   }
 
   async goto() {
-    await this.page.goto("/");
+    await navigateToGame(this.page);
   }
 
   async gotoWithUnlockedMeta(overrides: Parameters<typeof injectHomestead>[1] = {}) {
