@@ -22,10 +22,19 @@ Music playback has one private owner in `music.ts`: cached records bind the trac
 media element, and fade gain. Its playback state distinguishes idle, paused,
 playing, fading in, and fading out; only fading out carries a pending destination.
 Fade states own their timers, and cancellation invalidates their callbacks.
-`state.ts` contains shared preferences and SFX cooldowns, never music pointers.
+`state.ts` contains shared preferences, never playback pointers or cooldowns.
 Volume controls call `syncMusicSettings()` so updates retain the actual playing
 track's boss boost and fade gain. Tests observe fake Audio elements rather than
 injecting media pointers into shared state.
+
+Sound effects have one lifetime owner in `sfx-player.ts`. `sfx.ts` selects registered
+sounds and adapts browser media, settings, clocks, and timers to that player.
+Each cue moves from ready to pending or playing, then finished. Stopping battle
+sounds and resetting the runtime use the same idempotent disposal path, which
+cancels timers, detaches handlers, and releases stopped media sources. Reset
+also disposes UI sounds and stingers. Cooldown reservations belong to the player;
+identity checks prevent an older failed play from clearing a newer reservation.
+Finished cues ignore late failure callbacks, including callbacks after reset.
 
 Playback modules live together in `src/lib/audio/`; callers use `@/lib/audio`, backed by `index.ts`. `getSoundUrl` is exported once from the facade (owner `url.ts`); `isAppInBackground` is exported once from the facade (owner `host.ts`). Tests mirror this folder in `tests/lib/audio/`, with `*.dom.test.ts` identifying tests that need browser APIs.
 

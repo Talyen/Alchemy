@@ -6,7 +6,6 @@ interface AudioRuntimeState {
   sfxVolume: number;
   musicVolume: number;
   masterVolume: number;
-  lastPlayedAt: Map<string, number>;
 }
 
 export const audioState: AudioRuntimeState = {
@@ -15,5 +14,4 @@ export const audioState: AudioRuntimeState = {
   sfxVolume: DEFAULT_SFX_VOLUME_PCT / 100,
   musicVolume: DEFAULT_MUSIC_VOLUME_PCT / 100,
   masterVolume: DEFAULT_MASTER_VOLUME_PCT / 100,
-  lastPlayedAt: new Map(),
 };

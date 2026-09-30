@@ -310,8 +310,10 @@ describe("SFX lifetime", () => {
     playCardSound("slash");
     const el = lastFakeAudio()!;
     el.onerror?.();
+    expect(el.pause).toHaveBeenCalledOnce();
+    expect(el.removeAttribute).toHaveBeenCalledWith("src");
     stopAllSfx();
-    expect(el.pause).not.toHaveBeenCalled();
+    expect(el.pause).toHaveBeenCalledOnce();
   });
 
   it("releases an element whose play rejects", async () => {
@@ -386,5 +388,76 @@ describe("in-flight HTMLAudio mute and volume", () => {
     expect(el.muted).toBe(true);
     stopAllSfx();
     expect(el.pause).not.toHaveBeenCalled();
+  });
+});
+
+describe("cue ownership", () => {
+  it("keeps the newer cooldown when an older play rejects in the same clock tick", async () => {
+    vi.useFakeTimers();
+    let rejectFirst!: (reason: Error) => void;
+    let created = 0;
+    installFakeAudio({
+      onCreate: (element) => {
+        if (!element.src || created++ > 0) return;
+        element.play.mockImplementationOnce(
+          () =>
+            new Promise<void>((_, reject) => {
+              rejectFirst = reject;
+            }),
+        );
+      },
+    });
+    playBattleEvent("playerHit", { cooldownMs: 0 });
+    const rejected = lastFakeAudio()!;
+    playBattleEvent("playerHit", { cooldownMs: 0 });
+    const newest = lastFakeAudio()!;
+    rejectFirst(new Error("blocked"));
+    await Promise.resolve();
+    playBattleEvent("playerHit");
+    expect(lastFakeAudio()).toBe(newest);
+    expect(rejected.removeAttribute).toHaveBeenCalledWith("src");
+  });
+
+  it("disposes every cue on reset and ignores failure from the old runtime", async () => {
+    vi.useFakeTimers();
+    let rejectOld!: (reason: Error) => void;
+    installFakeAudio({
+      onCreate: (element) => {
+        if (!element.src) return;
+        element.play.mockImplementationOnce(
+          () =>
+            new Promise<void>((_, reject) => {
+              rejectOld = reject;
+            }),
+        );
+      },
+    });
+    playUISound("error");
+    const old = lastFakeAudio()!;
+    playBattleEvent("playerHit", { delay: 1 });
+    resetAudioRuntimeForTests();
+    expect(old.pause).toHaveBeenCalledOnce();
+    expect(old.onended).toBeNull();
+    expect(old.onerror).toBeNull();
+    expect(vi.getTimerCount()).toBe(0);
+    installFakeAudio();
+    playUISound("error");
+    const current = lastFakeAudio()!;
+    rejectOld(new Error("late failure"));
+    await Promise.resolve();
+    playUISound("error");
+    expect(soundedFakeAudio()).toEqual([current]);
+    expect(old.pause).toHaveBeenCalledOnce();
+  });
+
+  it("allows retry after a media error without waiting for cooldown", () => {
+    playBattleEvent("playerHit");
+    const failed = lastFakeAudio()!;
+    failed.onerror?.();
+    playBattleEvent("playerHit");
+    expect(lastFakeAudio()).not.toBe(failed);
+    expect(lastFakeAudio()?.play).toHaveBeenCalledOnce();
+    expect(failed.onended).toBeNull();
+    expect(failed.onerror).toBeNull();
   });
 });

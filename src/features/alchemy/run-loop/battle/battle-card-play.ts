@@ -17,7 +17,7 @@ import { presentCombatTexts, shouldPlayCardGoldGain } from "./controller-utils";
 import { PLAYABLE_HAND_OPTIONS, getHandCardKey } from "./playable-hand";
 import { runBattleDraw } from "./draw-sequence";
 import { type createBattleSession } from "./battle-session";
-import type { createBattleTransferDeps } from "./draw-sequence";
+import type { createBattleTransferDeps } from "./battle-transfers";
 import type { AutoplayCardControl, BattleControllerContext } from "./battle-context";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { commitCardPlay, commitBattleWish } from "@/features/alchemy/shared/stores/battle-commands";

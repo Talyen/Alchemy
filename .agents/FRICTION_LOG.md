@@ -25,6 +25,13 @@ caused five-second unit timeouts and one-minute dev-server startup failures.
 Dependency-related verification now uses the existing four-worker budget in
 [verification test commands](../scripts/lib/verification/test-commands.mjs).
 Browser journeys should still run serially after broad unit verification.
+A 2026-09-30 Corruption refactor check passed 328 related suites / 4,091
+assertions in 538s. A repeat after a type-notation-only lint correction ran for
+1,233s before cancellation and reported five-second UI and simulation timeouts;
+all six failing suites plus five affected suites passed together with
+`--maxWorkers=1` (174 assertions, 70s). The four-worker cap does not eliminate
+local timing sensitivity. Next investigate related-test import analysis and
+worker contention before changing product code or raising global timeouts.
 
 ## Resolved history
 

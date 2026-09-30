@@ -10,7 +10,7 @@ import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { markBattleStage } from "@/lib/performance/battle-stage-marks";
 import { isBattlePlaybackBlocked } from "./autoplay-driver";
 import { logBattleError, playCompanionSound, presentCombatTexts } from "./controller-utils";
-import type { createBattleTransferDeps } from "./draw-sequence";
+import type { createBattleTransferDeps } from "./battle-transfers";
 import type { BattleControllerContext } from "./battle-context";
 import { commitEndTurn } from "./battle-session";
 import { runHandDrawSequence, type HandDrawSequenceDeps } from "./draw-sequence";
@@ -162,8 +162,8 @@ export function createBattleEndTurnUi(
       } finally {
         session.runIfSessionActive(sessionNum, () => {
           presentation.setDisplayedBattle(null);
-          presentation.resetHandTransferUi();
           if (ctx.playback.pendingDraws === 0) {
+            presentation.resetHandTransferUi();
             ctx.playback.completeAction(sessionNum);
             ctx.playback.scheduleAutoEndTurn(readBattle().battleState);
           }

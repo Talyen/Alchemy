@@ -9,7 +9,7 @@ import type { MouseEvent } from "react";
 import { createBattleCardPlay } from "@/features/alchemy/run-loop/battle/battle-card-play";
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
-import type { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/draw-sequence";
+import type { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/battle-transfers";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { readBattle } from "@/features/alchemy/shared/stores/run-reads";
 import { setSyncedBattleState } from "@/features/alchemy/shared/stores/write/run-battle";

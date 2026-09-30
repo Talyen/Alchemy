@@ -3,7 +3,8 @@ import type { Screen } from "@/lib/routing";
 import { useCallback, useEffect } from "react";
 import type { BattleControllerContext } from "./battle-context";
 import { useBattlePresentationStore, type BattlePresentationPort } from "./battle-presentation-store";
-import { runBattleDraw, type createBattleTransferDeps } from "./draw-sequence";
+import { runBattleDraw } from "./draw-sequence";
+import type { createBattleTransferDeps } from "./battle-transfers";
 
 export interface BattleOpeningDrawContext {
   playback: Pick<BattleControllerContext["playback"], "id" | "completeAction" | "scheduleAutoEndTurn">;

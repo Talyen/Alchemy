@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { resetAudioRuntimeForTests } from "@/lib/audio/reset";
 import { audioState } from "@/lib/audio/state";
 import {
   defaultMeasureVisualCardRect,
@@ -14,7 +15,7 @@ beforeEach(() => {
   audioState.muted = false;
   audioState.sfxVolume = 0.35;
   audioState.masterVolume = 1;
-  audioState.lastPlayedAt = new Map();
+  resetAudioRuntimeForTests();
   vi.stubGlobal(
     "Audio",
     class {

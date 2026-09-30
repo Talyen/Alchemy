@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createBattleEndTurnUi } from "@/features/alchemy/run-loop/battle/end-turn-ui";
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import type { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
-import type { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/draw-sequence";
+import type { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/battle-transfers";
 import { readGameplayState } from "@/features/alchemy/shared/stores/gameplay-state-store";
 import { dispatchRunSessionCommand } from "@/features/alchemy/shared/stores/run-session-command";
 import { initializeActiveBattle } from "@/features/alchemy/shared/stores/write/run-battle";
@@ -21,7 +21,7 @@ beforeEach(() => {
   useUiStore.getState().setCardInspection(null);
 });
 
-function makeUi(rejectDraw = false) {
+function makeUi(rejectDraw = false, onDraw?: (ctx: BattleControllerContext) => void) {
   const initial = patchBattleState({
     playerHealth: 1000,
     playerMaxHealth: 1000,
@@ -51,8 +51,18 @@ function makeUi(rejectDraw = false) {
     clearAllBattleTimeouts: vi.fn(),
   } as unknown as ReturnType<typeof createBattleSession>;
   const deps = makeDrawSequenceDeps({
+    setTransferInProgress: (active) => ctx.getPresentation().setCardTransferInProgress(active),
+    setHiddenHandCardKeys: (update) => ctx.getPresentation().setHiddenHandCardKeys(update),
+    playback: {
+      beginDraw: (id) => ctx.playback.beginDraw(id),
+      get pendingDraws() {
+        return ctx.playback.pendingDraws;
+      },
+      waitForFrame: async () => true,
+    },
     animateDrawnHand: async () => {
       if (rejectDraw) throw new Error("draw failed");
+      onDraw?.(ctx);
     },
   });
   const transfers = { animateDiscardedHand: () => discard, getDrawSequenceDeps: () => deps } as unknown as ReturnType<
@@ -94,6 +104,26 @@ describe("End Turn execution and playback", () => {
       }
     },
   );
+
+  it("leaves an overlapping card draw visible and blocked when turn playback finishes", async () => {
+    vi.useFakeTimers();
+    try {
+      let finishCardDraw = () => {};
+      const { ui, ctx, releaseDiscard } = makeUi(false, (context) => {
+        finishCardDraw = context.playback.beginDraw(context.playback.id);
+        context.getPresentation().setHiddenHandCardKeys(() => ["drawing-card"]);
+      });
+      ui.handleEndTurn();
+      releaseDiscard();
+      await vi.runAllTimersAsync();
+      expect(ctx.playback.pendingDraws).toBe(1);
+      expect(useBattlePresentationStore.getState().hiddenHandCardKeys).toEqual(["drawing-card"]);
+      expect(useBattlePresentationStore.getState().cardTransferInProgress).toBe(true);
+      finishCardDraw();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 
   it("cancelling presentation on another screen leaves a playable result", async () => {
     const { ui, ctx, releaseDiscard } = makeUi();

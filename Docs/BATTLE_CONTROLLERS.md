@@ -44,6 +44,15 @@ available during victory grace. Late completions cannot unlock a newer lifetime
 or restart auto-end-turn in a finishing battle. React subscribes to binding
 readiness; no callback-ref bundle or binding-version counter is needed.
 
+Hand reveals acquire a draw lease from this lifetime and release it on success,
+failure, or cancellation. Transfer visibility reads the same pending count; it
+never depends on a dependency object's identity. Card-action draw leases separately
+gate completion of overlapping card plays. Animation-frame waits belong to the
+lifetime and settle on cancellation even if the browser never delivers a frame.
+`draw-sequence.ts` owns sequencing; `battle-transfers.ts` adapts DOM measurements,
+sounds, and transfer timers. End-turn cleanup resets hand transfer UI only after
+all animated draws have settled.
+
 `battle-session.ts` reconciles committed screen changes. Leaving battle cancels
 the old lifetime; returning displays committed gameplay. A new battle prepared
 before its navigation fade commits retains its opening sequence. Terminal restored

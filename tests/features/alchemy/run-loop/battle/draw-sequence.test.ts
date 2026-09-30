@@ -1,5 +1,6 @@
 import { clearBattleStageMarks, battleStageMarkName } from "@/lib/performance/battle-stage-marks";
 import { describe, expect, it, vi } from "vitest";
+import { PlaybackLifetime } from "@/features/alchemy/run-loop/battle/playback-lifetime";
 import { runHandDrawSequence } from "@/features/alchemy/run-loop/battle/draw-sequence";
 import { defaultBattleState } from "@/lib/battle";
 import { makeTestCardWithId } from "../../../../fixtures/battle";
@@ -56,7 +57,7 @@ describe("runHandDrawSequence", () => {
     expect(hiddenKeys.length).toBeGreaterThan(0);
   });
 
-  it("preserves overlapping draws when a no-draw play and an earlier draw finish", async () => {
+  it("shares draw ownership across copied dependencies and preserves overlapping draws", async () => {
     let hidden: string[] = [];
     const finish: Array<() => void> = [];
     const deps = makeDrawSequenceDeps({
@@ -72,7 +73,10 @@ describe("runHandDrawSequence", () => {
     const second = makeTestCardWithId("block", { uid: 2 });
     const state = { ...defaultBattleState(), hand: [first] };
     const firstDraw = runHandDrawSequence([], state, () => {}, 1, deps);
-    const secondDraw = runHandDrawSequence([first], { ...state, hand: [first, second] }, () => {}, 1, deps);
+    const secondDraw = runHandDrawSequence([first], { ...state, hand: [first, second] }, () => {}, 1, {
+      ...deps,
+      isSessionActive: () => true,
+    });
     await vi.waitFor(() => expect(finish).toHaveLength(2));
     await runHandDrawSequence([first], state, () => {}, 1, deps);
     expect(hidden).toEqual(["slash-1", "block-2"]);
@@ -84,6 +88,61 @@ describe("runHandDrawSequence", () => {
     await secondDraw;
     expect(hidden).toEqual([]);
     expect(deps.setTransferInProgress).toHaveBeenLastCalledWith(false);
+  });
+
+  it("releases draw ownership and hidden cards when animation fails", async () => {
+    let hidden: string[] = [];
+    const deps = makeDrawSequenceDeps({
+      animateDrawnHand: async () => {
+        throw new Error("animation failed");
+      },
+      setHiddenHandCardKeys: (update) => {
+        hidden = [...update(hidden)];
+      },
+    });
+    await expect(
+      runHandDrawSequence(
+        [],
+        { ...defaultBattleState(), hand: [makeTestCardWithId("slash", { uid: 1 })] },
+        () => {},
+        1,
+        deps,
+      ),
+    ).rejects.toThrow("animation failed");
+    expect(deps.playback.pendingDraws).toBe(0);
+    expect(hidden).toEqual([]);
+    expect(deps.setTransferInProgress).toHaveBeenLastCalledWith(false);
+  });
+
+  it("settles a cancelled draw before its frame arrives and preserves the new battle", async () => {
+    const playback = new PlaybackLifetime();
+    const callbacks: FrameRequestCallback[] = [];
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+      callbacks.push(callback);
+      return 42;
+    });
+    vi.stubGlobal("cancelAnimationFrame", vi.fn());
+    try {
+      const deps = makeDrawSequenceDeps({ playback, isSessionActive: (id) => playback.isCurrent(id) });
+      const drawing = runHandDrawSequence(
+        [],
+        { ...defaultBattleState(), hand: [makeTestCardWithId("slash", { uid: 1 })] },
+        () => {},
+        playback.id,
+        deps,
+      );
+      expect(playback.pendingDraws).toBe(1);
+      playback.restart();
+      const finishNewDraw = playback.beginDraw(playback.id);
+      await expect(drawing).resolves.toBe(false);
+      callbacks[0]!(0);
+      expect(playback.pendingDraws).toBe(1);
+      expect(deps.animateDrawnHand).not.toHaveBeenCalled();
+      expect(deps.setHiddenHandCardKeys).toHaveBeenCalledOnce();
+      finishNewDraw();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it("does not mutate presentation when the battle session ends mid-draw", async () => {

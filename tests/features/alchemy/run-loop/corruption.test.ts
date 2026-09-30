@@ -354,6 +354,47 @@ describe("labyrinth corruption room modifiers", () => {
 });
 
 describe("numeric text alignment", () => {
+  it("rejects a stale shared edit without changing any branch or its description", () => {
+    const card = cardById["luck-potion"]!;
+    const target = getEditableCorruptionTargets(card)[0]!;
+    const altered = makeTestCard({
+      ...card,
+      effects: card.effects.map((effect) =>
+        effect.kind === "chance"
+          ? { ...effect, failureEffects: [{ kind: "gain-gold", amount: target.value + 1 }] }
+          : effect,
+      ),
+    });
+    // The selected branch is unchanged; another member of the same displayed value changed.
+    expect(updateCardNumericValue(altered, target, target.value + 2)).toBe(altered);
+    expect(applyNumericCorruption(altered, target, 2)).toBe(altered);
+  });
+
+  it("applies an explicit shared edit after a card is serialized, keeping an independent delayed value", () => {
+    const hit = { kind: "damage" as const, damageType: "physical" as const, amount: 3 };
+    const card = makeTestCard({
+      descriptionLines: ["Deal 3 Physical damage this turn and next", "Deal 3 Physical damage next turn"],
+      effects: [
+        hit,
+        { kind: "repeat-over-turns", remainingTurns: 1, effects: [{ ...hit }] },
+        { kind: "repeat-over-turns", remainingTurns: 1, effects: [{ ...hit }] },
+      ],
+    });
+    const target = getEditableCorruptionTargets(card)[0]!;
+    const restored = JSON.parse(JSON.stringify(card)) as typeof card;
+    const changed = updateCardNumericValue(restored, target, 4);
+    expect(changed.descriptionLines).toEqual([
+      "Deal 4 Physical damage this turn and next",
+      "Deal 3 Physical damage next turn",
+    ]);
+    expect(changed.effects).toEqual([
+      { ...hit, amount: 4 },
+      { kind: "repeat-over-turns", remainingTurns: 1, effects: [{ ...hit, amount: 4 }] },
+      { kind: "repeat-over-turns", remainingTurns: 1, effects: [hit] },
+    ]);
+    expect(restored).toEqual(card);
+  });
+
   it("keeps Ice Shot's implicit Frozen damage doubled after numeric changes", () => {
     const card = cardById["ice-shot"]!;
     const target = getEditableCorruptionTargets(card)[0]!;

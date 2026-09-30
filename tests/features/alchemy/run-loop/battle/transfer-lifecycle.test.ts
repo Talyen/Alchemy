@@ -2,6 +2,24 @@ import { describe, expect, it, vi } from "vitest";
 import { PlaybackLifetime } from "@/features/alchemy/run-loop/battle/playback-lifetime";
 
 describe("PlaybackLifetime", () => {
+  it("settles a suspended frame on cancellation without leaking into a restarted battle", async () => {
+    const frame = vi.fn(() => 42);
+    const cancelFrame = vi.fn();
+    vi.stubGlobal("requestAnimationFrame", frame);
+    vi.stubGlobal("cancelAnimationFrame", cancelFrame);
+    try {
+      const lifetime = new PlaybackLifetime();
+      const waiting = lifetime.waitForFrame(lifetime.id);
+      lifetime.restart();
+      await expect(waiting).resolves.toBe(false);
+      expect(cancelFrame).toHaveBeenCalledWith(42);
+      expect(lifetime.pendingDraws).toBe(0);
+      expect(lifetime.canAcceptInput()).toBe(true);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("unregisters callbacks so cancelAll skips them", () => {
     const registry = new PlaybackLifetime();
     const callback = vi.fn();

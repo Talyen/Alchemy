@@ -109,7 +109,9 @@ site inventory and end-of-run Material totals across all three modes;
 `battle/autoplay-driver.ts` owns the shared autoplay / auto-end-turn gate
 (`isBattlePlaybackBlocked`, `usePlaybackBlocked`); `battle/playback-lifetime.ts`
 owns explicit playback phases, binding readiness, cancellation, timers, transfers, and draw counts.
-`battle/draw-sequence.ts` keeps only per-deps animated-draw counts for transfer UI.
+`battle/draw-sequence.ts` sequences hand reveals against that lifetime; draw ownership
+is shared even when callers copy dependencies to strengthen a screen guard.
+`battle/battle-transfers.ts` supplies DOM measurements, sound, and timed transfer wiring.
 `battle/battle-session.ts` adapts that lifetime to presentation and delegates turn
 commit to `shared/stores/battle-commands.ts`; legacy recovery stays inside `shared/stores/battle-restore.ts`. Battle start
 uses `shared/stores/battle-start-commands.ts` and then arms presentation. Fight feedback (floating numbers + shake + sound) is

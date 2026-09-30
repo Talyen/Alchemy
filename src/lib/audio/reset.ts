@@ -13,7 +13,6 @@ import { resetSoundPreloadCache } from "./preload";
 export function resetAudioRuntimeForTests(): void {
   audioState.muted = false;
   audioState.hostForcesMute = false;
-  audioState.lastPlayedAt.clear();
   resetHtmlSfxRuntime();
   resetMusicRuntimeForTests();
   resetSoundPreloadCache();

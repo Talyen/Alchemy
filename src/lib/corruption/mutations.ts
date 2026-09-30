@@ -87,7 +87,6 @@ function isPlainMagnitude(effect: BattleCardEffect): boolean {
 }
 
 function numericMutations(card: BattleCard, targets: CorruptionTarget[], strengthen: boolean): Mutation[] {
-  const authoredPaths = new Set(targets.map((entry) => [entry.effectIndex, ...(entry.effectPath ?? [])].join("/")));
   return targets.flatMap((target) => {
     const effect = getCorruptionTargetEffect(card, target);
     if (!effect) return [];
@@ -100,7 +99,7 @@ function numericMutations(card: BattleCard, targets: CorruptionTarget[], strengt
     const amount = scalable
       ? Math.max(1, Math.round(target.value * (strengthen ? CORRUPTION_STRENGTHEN_RATIO : CORRUPTION_WEAKEN_RATIO)))
       : 1;
-    const next = applyNumericCorruption(card, target, direction * amount, authoredPaths);
+    const next = applyNumericCorruption(card, target, direction * amount);
     return next === card ? [] : [{ card: next, delta: strengthen ? 1 : -1 }];
   });
 }

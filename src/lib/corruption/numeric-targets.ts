@@ -16,7 +16,7 @@ const CORRUPTIBLE_NUMERIC_FIELDS = [
 
 type CorruptibleNumericField = (typeof CORRUPTIBLE_NUMERIC_FIELDS)[number];
 
-export interface CorruptionTarget {
+interface NumericTarget {
   lineIndex: number;
   matchIndex: number;
   value: number;
@@ -25,10 +25,27 @@ export interface CorruptionTarget {
   field: CorruptibleNumericField;
 }
 
-const WISHING_WELL_LINE = /^Gain (\d+) Gold or Wish$/;
-export const SHARED_RESOURCE_CHOICE_LINE = /^Gain (\d+) Mana, Gold, or Block$/;
+interface NumericEffectAddress {
+  effectIndex: number;
+  effectPath?: number[];
+}
 
-export function isSharedResourceChoiceEffect(effect: BattleCardEffect | undefined): boolean {
+interface NumericEffectEdit extends NumericEffectAddress {
+  kind: BattleCardEffect["kind"];
+  field: CorruptibleNumericField;
+  expectedValue: number;
+  multiplier: 1 | 2;
+}
+
+/** One displayed value and every effect field it owns, resolved during discovery. */
+export interface CorruptionTarget extends NumericTarget {
+  edits: readonly NumericEffectEdit[];
+}
+
+const WISHING_WELL_LINE = /^Gain (\d+) Gold or Wish$/;
+const SHARED_RESOURCE_CHOICE_LINE = /^Gain (\d+) Mana, Gold, or Block$/;
+
+function isSharedResourceChoiceEffect(effect: BattleCardEffect | undefined): boolean {
   return (
     effect?.kind === "restore-mana" ||
     effect?.kind === "gain-gold" ||
@@ -36,7 +53,7 @@ export function isSharedResourceChoiceEffect(effect: BattleCardEffect | undefine
   );
 }
 
-export function hasSharedRandomAmount(card: BattleCard, effect: BattleCardEffect): boolean {
+function hasSharedRandomAmount(card: BattleCard, effect: BattleCardEffect): boolean {
   return (
     effect.kind === "random-damage" &&
     effect.minAmount === effect.maxAmount &&
@@ -44,7 +61,7 @@ export function hasSharedRandomAmount(card: BattleCard, effect: BattleCardEffect
   );
 }
 
-export function sharesDamageAmount(line: string, effect: BattleCardEffect): boolean {
+function sharesDamageAmount(line: string, effect: BattleCardEffect): boolean {
   if (effect.kind !== "damage") return false;
   const alternative = /^Deal (\d+) (\w+) or (\w+) damage( at random)?$/.exec(line);
   if (alternative) {
@@ -61,11 +78,11 @@ export function sharesDamageAmount(line: string, effect: BattleCardEffect): bool
   return Boolean(repeated && Number(repeated[1]) === effect.amount && repeated[2]?.toLowerCase() === effect.damageType);
 }
 
-export function isRepeatedDamageLine(line: string): boolean {
+function isRepeatedDamageLine(line: string): boolean {
   return /^Deal \d+ \w+ damage twice$/.test(line);
 }
 
-export function sharesCombinedDamageAmount(line: string, effect: BattleCardEffect): boolean {
+function sharesCombinedDamageAmount(line: string, effect: BattleCardEffect): boolean {
   if (effect.kind !== "damage" && effect.kind !== "self-damage") return false;
   const match = /^Deal and Receive (\d+) (\w+) damage$/.exec(line);
   return Boolean(match && Number(match[1]) === effect.amount && match[2]?.toLowerCase() === effect.damageType);
@@ -136,7 +153,7 @@ function createBindingLedger() {
   };
 }
 
-function targetFromBinding(binding: NumericBinding, lineIndex: number, matchIndex: number): CorruptionTarget {
+function targetFromBinding(binding: NumericBinding, lineIndex: number, matchIndex: number): NumericTarget {
   return {
     lineIndex,
     matchIndex,
@@ -148,12 +165,29 @@ function targetFromBinding(binding: NumericBinding, lineIndex: number, matchInde
 }
 
 export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget[] {
-  const targets: CorruptionTarget[] = [];
+  const targets: NumericTarget[] = [];
   const bindings = createBindingLedger();
   const sharedDamageLines = new Set<string>();
-  const combinedDamageTargets = new Map<number, CorruptionTarget>();
+  const combinedDamageTargets = new Map<number, NumericTarget>();
   const conditionalLines = new Set<number>();
+  const implicitScheduledPaths = new Set<string>();
+  card.effects.forEach((effect, index) => {
+    const previous = card.effects[index - 1];
+    if (
+      previous?.kind === "damage" &&
+      !previous.lifesteal &&
+      effect.kind === "repeat-over-turns" &&
+      effect.remainingTurns === 1 &&
+      effect.effects.length === 1 &&
+      areEffectsEquivalent(previous, effect.effects[0]!) &&
+      card.descriptionLines.includes(`${effectDescriptionLine(previous)} this turn and next`)
+    )
+      implicitScheduledPaths.add(effectAddressKey({ effectIndex: index, effectPath: [0] }));
+  });
   function collect(effect: BattleCardEffect, effectIndex: number, effectPath: number[] = []) {
+    // The immediate line already owns this delayed copy. It must not claim a
+    // separately displayed delayed value just because the amounts are equal.
+    if (implicitScheduledPaths.has(effectAddressKey({ effectIndex, effectPath }))) return;
     const conditional = conditionalDamageDescription(effect);
     if (conditional && effect.kind === "damage") {
       const lineIndex = card.descriptionLines.findIndex(
@@ -299,14 +333,86 @@ export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget
     }
   });
 
-  return targets.sort((a, b) => a.lineIndex - b.lineIndex || a.matchIndex - b.matchIndex);
+  const authored = new Set(targets.map(effectAddressKey));
+  return targets
+    .sort((a, b) => a.lineIndex - b.lineIndex || a.matchIndex - b.matchIndex)
+    .map((target) => bindTargetEdits(card, target, authored));
 }
 
-export function getCorruptionTargetEffect(card: BattleCard, target: CorruptionTarget): BattleCardEffect | undefined {
+export function getCorruptionTargetEffect(
+  card: BattleCard,
+  target: NumericEffectAddress,
+): BattleCardEffect | undefined {
   let effect = card.effects[target.effectIndex];
   for (const index of target.effectPath ?? []) {
     if (!effect) return undefined;
     effect = effectChildren(effect)[index];
   }
   return effect;
+}
+
+function effectAddressKey(address: NumericEffectAddress): string {
+  return [address.effectIndex, ...(address.effectPath ?? [])].join("/");
+}
+
+function areEffectsEquivalent(a: BattleCardEffect, b: BattleCardEffect): boolean {
+  if (a === b) return true;
+  if (a.kind !== b.kind) return false;
+  const aKeys = Object.keys(a);
+  if (aKeys.length !== Object.keys(b).length) return false;
+  const aRecord = a as Record<string, unknown>;
+  const bRecord = b as Record<string, unknown>;
+  return aKeys.every((key) => aRecord[key] === bRecord[key]);
+}
+
+function bindTargetEdits(card: BattleCard, target: NumericTarget, authored: ReadonlySet<string>): CorruptionTarget {
+  const source = getCorruptionTargetEffect(card, target)!;
+  const line = card.descriptionLines[target.lineIndex]!;
+  const selected = effectAddressKey(target);
+  const sharedResourceChoice = SHARED_RESOURCE_CHOICE_LINE.test(line);
+  const sharedDamage = target.field === "amount" && sharesDamageAmount(line, source);
+  const combinedDamage = target.field === "amount" && sharesCombinedDamageAmount(line, source);
+  const edits: NumericEffectEdit[] = [];
+
+  function collect(effect: BattleCardEffect, effectIndex: number, effectPath: number[] = []) {
+    const address = { effectIndex, ...(effectPath.length ? { effectPath } : {}) };
+    const key = effectAddressKey(address);
+    const sharesValue =
+      key === selected ||
+      (sharedResourceChoice &&
+        effectIndex === target.effectIndex &&
+        isSharedResourceChoiceEffect(effect) &&
+        target.field === "amount") ||
+      (sharedDamage &&
+        sharesDamageAmount(line, effect) &&
+        (effectIndex === target.effectIndex || isRepeatedDamageLine(line))) ||
+      (combinedDamage && sharesCombinedDamageAmount(line, effect)) ||
+      (effectPath.length > 0 && !authored.has(key) && areEffectsEquivalent(effect, source));
+    if (sharesValue) {
+      const add = (field: CorruptibleNumericField, multiplier: 1 | 2 = 1) => {
+        edits.push({
+          ...address,
+          kind: effect.kind,
+          field,
+          expectedValue: (effect as Record<string, unknown>)[field] as number,
+          multiplier,
+        });
+      };
+      add(target.field);
+      if (effect.kind === "random-damage" && target.field === "minAmount" && hasSharedRandomAmount(card, effect))
+        add("maxAmount");
+      if (
+        effect.kind === "damage" &&
+        target.field === "amount" &&
+        effect.damageTypeIfTargetFrozen === effect.damageType &&
+        card.descriptionLines.includes("Doubled against Frozen enemies")
+      )
+        add("amountIfTargetFrozen", 2);
+      // A matched effect owns its edit; its children are separate effect addresses.
+      return;
+    }
+    effectChildren(effect).forEach((child, index) => collect(child, effectIndex, [...effectPath, index]));
+  }
+  card.effects.forEach((effect, index) => collect(effect, index));
+  return { ...target, edits };
 }

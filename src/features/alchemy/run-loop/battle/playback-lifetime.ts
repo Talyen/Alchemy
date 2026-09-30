@@ -147,4 +147,25 @@ export class PlaybackLifetime {
   nextTransferId(): string {
     return `transfer-${++this.transferSequence}`;
   }
+
+  waitForFrame(id: number): Promise<boolean> {
+    if (!this.isCurrent(id)) return Promise.resolve(false);
+    return new Promise((resolve) => {
+      let settled = false;
+      let unregister = () => {};
+      const finish = (ready: boolean) => {
+        if (settled) return;
+        settled = true;
+        unregister();
+        resolve(ready && this.isCurrent(id));
+      };
+      const frame = requestAnimationFrame(() => finish(true));
+      if (settled) return;
+      unregister = this.registerCancel(() => {
+        cancelAnimationFrame(frame);
+        finish(false);
+      });
+      if (settled) unregister();
+    });
+  }
 }

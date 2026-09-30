@@ -3,7 +3,7 @@ import { useBattleControllerContext } from "@/features/alchemy/run-loop/battle/b
 import { createBattleInit } from "@/features/alchemy/run-loop/battle/battle-init";
 import { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
 import { createBattleDevOutcomes } from "@/features/alchemy/run-loop/battle/battle-session";
-import { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/draw-sequence";
+import { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/battle-transfers";
 import {
   defaultMeasureElementRect,
   defaultMeasureVisualCardRect,
