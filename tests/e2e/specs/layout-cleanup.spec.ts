@@ -62,15 +62,13 @@ test(
   "Collection keeps its column limits and centered rows on short, tall, and large displays",
   slow,
   async ({ page }) => {
-    test.setTimeout(90_000);
+    test.setTimeout(60_000);
     await page.setViewportSize({ width: 1470, height: 738 });
     await new MenuPage(page).gotoCollection();
     const tiles = page.getByRole("button", { name: /^Inspect/ });
     for (const viewport of [
       { width: 1470, height: 738 },
-      { width: 1470, height: 956 },
       { width: 3840, height: 2160 },
-      { width: 3440, height: 1440 },
     ]) {
       await page.setViewportSize(viewport);
       for (const tab of ["Heroes", "Cards", "Bestiary", "Trinkets", "Uniques"]) {

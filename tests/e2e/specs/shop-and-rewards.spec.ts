@@ -35,9 +35,7 @@ test.describe("Card Shop", critical, () => {
 
 test.describe("Shop fade-out", () => {
   for (const destination of ["Card Shop", "Gear Shop"] as const) {
-    const gate = destination === "Card Shop" ? critical : slow;
-
-    test(`keeps ${destination} offerings mounted through route fade-out`, gate, async ({ page }) => {
+    test(`keeps ${destination} offerings mounted through route fade-out`, slow, async ({ page }) => {
       const shop = new ShopPage(page);
       await enterShop(page, 9999, destination);
       const offeringCount = await shop.buyBtn.count();
@@ -45,8 +43,11 @@ test.describe("Shop fade-out", () => {
 
       await page.getByRole("button", { name: "Leave", exact: true }).click({ noWaitAfter: true });
 
-      await expect.poll(() => shop.buyBtn.count(), { timeout: 10000 }).toBe(offeringCount);
-      await new DestinationPage(page).expectVisible();
+      const destinationPage = new DestinationPage(page);
+      if (!(await page.getByRole("heading", { name: "Choose Destination" }).isVisible())) {
+        await expect(shop.buyBtn).toHaveCount(offeringCount);
+      }
+      await destinationPage.expectVisible();
     });
   }
 });

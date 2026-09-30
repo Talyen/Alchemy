@@ -68,14 +68,7 @@ export const E2E_ROUTES = Object.freeze({
   }),
   battle: Object.freeze({
     label: "battle Playwright flows",
-    args: [
-      "playwright",
-      "test",
-      "tests/e2e/specs/core-gameplay.spec.ts",
-      "tests/e2e/specs/combat-mechanics.spec.ts",
-      "--project",
-      "chromium",
-    ],
+    args: ["playwright", "test", "tests/e2e/specs/core-gameplay.spec.ts", "--project", "chromium"],
   }),
   save: Object.freeze({
     label: "save Playwright flows",

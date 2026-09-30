@@ -114,8 +114,8 @@ export class BattlePage {
   async playAllCards() {
     for (let i = 0; i < 8; i++) {
       const card = this.hand.filter({ visible: true }).first();
-      if (!(await card.isVisible({ timeout: 1000 }).catch(() => false))) break;
-      if (!(await card.isEnabled({ timeout: 1000 }).catch(() => false))) break;
+      if (!(await card.isVisible({ timeout: 500 }).catch(() => false))) break;
+      if (!(await card.isEnabled({ timeout: 100 }).catch(() => false))) break;
       await card.click({ timeout: 2000 }).catch(async (e) => {
         if (await this.isBattleOver()) return;
         throw e;

@@ -148,3 +148,59 @@ test.describe("Gear combat", () => {
     });
   });
 });
+
+test.describe("Armory browsing", () => {
+  test("inventory browsing combines criteria, sorts, and dismisses with keyboard focus", async ({ page }) => {
+    const inventory = [
+      {
+        instanceId: "basic-sword",
+        definitionId: "longsword-basic" as const,
+        affixes: [{ id: "flat-physical" as const, value: 1 }],
+      },
+      {
+        instanceId: "astral-hatchet",
+        definitionId: "hatchet-astral" as const,
+        affixes: [{ id: "flat-physical" as const, value: 2 }],
+      },
+      { instanceId: "plain-sword", definitionId: "longsword-basic" as const, affixes: [] },
+      { instanceId: "unique-sword", definitionId: "oathkeeper" as const, affixes: [] },
+      { instanceId: "armor", definitionId: "leather-armor-basic" as const, affixes: [] },
+    ];
+    await openArmory(page, inventory);
+    const items = page.getByTestId("armory-inventory-item");
+    const search = page.getByRole("searchbox", { name: "Search inventory" });
+    const filters = page.getByRole("button", { name: /^Filters/ });
+    const gridTop = (await items.first().boundingBox())!.y;
+    await search.fill(" physical  LONGSWORD ");
+    await expect(items).toHaveCount(2);
+    await expect(page.getByRole("status")).toHaveText("2 of 4 items");
+    await controllerInput(page).activate(filters);
+    const panel = page.getByRole("dialog", { name: "Inventory filters" });
+    await expect(panel).toBeVisible();
+    await expect(panel.getByRole("button", { name: "Close inventory filters" })).toBeFocused();
+    await panel.getByRole("button", { name: "Basic", exact: true }).click();
+    await panel.getByRole("searchbox", { name: "Find a keyword" }).fill("physical");
+    await panel.getByRole("checkbox", { name: "Physical", exact: true }).check();
+    await expect(items).toHaveCount(1);
+    await page.keyboard.press("Escape");
+    await expect(panel).toBeHidden();
+    await expect(filters).toBeFocused();
+    await expect(page.getByRole("heading", { name: "Armory", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Remove Basic filter", exact: true }).click();
+    await expect(items).toHaveCount(2);
+    await page.getByRole("button", { name: "Clear all", exact: true }).click();
+    await expect(items).toHaveCount(4);
+    expect((await items.first().boundingBox())!.y).toBeCloseTo(gridTop, 0);
+    await page.getByRole("combobox", { name: "Sort inventory" }).click();
+    await page.getByRole("option", { name: "Name: Z–A", exact: true }).click();
+    await expect(items.first()).toHaveAttribute("data-gear-title", "Oathkeeper");
+    await search.fill("unfindable");
+    await expect(page.getByText("No items match your search and filters.")).toBeVisible();
+    await page.getByRole("button", { name: "Clear inventory search" }).click();
+    await expect(items).toHaveCount(4);
+    await filters.click();
+    await search.click();
+    await expect(panel).toBeHidden();
+    await expect(search).toBeFocused();
+  });
+});

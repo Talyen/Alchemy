@@ -4,22 +4,32 @@ import { defineConfig } from "vitest/config";
 import { SSR_OPTIMIZE_INCLUDE, VITE_ALIAS_PATH, VITE_ALIAS_TARGET } from "./scripts/lib/vite-aliases.mjs";
 
 const excludedTestPaths = ["tests/balance/**", "tests/playthrough/**"];
-const domLibPrefixes = [
-  "tests/lib/animation/",
-  "tests/lib/crash-reporting",
-  "tests/lib/image-preload",
-  "tests/lib/platform",
+const domLibPrefixes = ["tests/lib/crash-reporting", "tests/lib/image-preload", "tests/lib/platform"];
+const domAnimationTests = [
+  "tests/lib/animation/animation-prefs.test.ts",
+  "tests/lib/animation/background-particles.test.ts",
+  "tests/lib/animation/canvas-lifecycle.test.ts",
+  "tests/lib/animation/combatant-status-effect.test.ts",
+  "tests/lib/animation/combatant-status-effect-loop.test.ts",
+  "tests/lib/animation/game-timer.test.ts",
+  "tests/lib/animation/hurt-sparks.test.ts",
+  "tests/lib/animation/keyword-plasma.test.ts",
+  "tests/lib/animation/keyword-plasma-lifecycle.test.ts",
+  "tests/lib/animation/keyword-plasma-webgl.test.ts",
+  "tests/lib/animation/particle-loop.test.ts",
+  "tests/lib/animation/slice-crack.test.ts",
+  "tests/lib/animation/slice-particles-and-draw.test.ts",
+  "tests/lib/animation/webgl-lifecycle.test.ts",
 ];
 const domTypeScriptPatterns = [
   "tests/**/*.dom.test.ts",
   "tests/**/use-*.test.ts",
   "tests/**/*-hook.test.ts",
   ...domLibPrefixes.map((prefix) => `${prefix}*.test.ts`),
-  "tests/lib/animation/**/*.test.ts",
+  ...domAnimationTests,
   "tests/app/escape-stack.test.ts",
   "tests/features/alchemy/run-loop/battle/battle-card-play.test.ts",
   "tests/features/alchemy/run-loop/battle/battle-presentation-store.test.ts",
-  "tests/features/alchemy/run-loop/battle/controller-utils.test.ts",
   "tests/features/alchemy/run-loop/battle/hand-slot-reflow.test.ts",
   "tests/features/alchemy/run-loop/battle/presentation-gate.test.ts",
   "tests/features/alchemy/run-loop/run/labyrinth-destination-modifiers.test.ts",

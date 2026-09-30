@@ -27,7 +27,7 @@ export function createArmoryInventories(
   return inventories;
 }
 
-export function createArmoryScreenProps(overrides: Partial<ArmoryScreenProps> = {}): ArmoryScreenProps {
+function createArmoryScreenProps(overrides: Partial<ArmoryScreenProps> = {}): ArmoryScreenProps {
   return {
     inventories: createArmoryInventories(),
     loadouts: createEmptyGearLoadouts(),

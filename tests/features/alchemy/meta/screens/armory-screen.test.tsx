@@ -3,9 +3,10 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { playUISound } from "@/lib/audio";
-import { createEmptyGearLoadouts } from "@/lib/gear";
+import { createEmptyGearLoadouts, EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear";
 import { ArmoryScreen } from "@/features/alchemy/meta/screens/armory-screen";
 import { COMBAT_LOCKED_MESSAGE } from "@/features/alchemy/meta/screens/armory/armory-item-state";
+import { installReadyArtworkForTests, waitForArtwork } from "../../../../helpers/artwork-test";
 import {
   createArmoryInventories,
   installArmoryScreenTestHooks,
@@ -14,6 +15,7 @@ import {
 
 describe("ArmoryScreen core", () => {
   installArmoryScreenTestHooks();
+  installReadyArtworkForTests();
 
   it("renders equipment slots and the matching item picker", () => {
     renderArmoryScreen();
@@ -203,6 +205,7 @@ describe("ArmoryScreen core", () => {
 
 describe("ArmoryScreen equipment movement and inventory ordering", () => {
   installArmoryScreenTestHooks();
+  installReadyArtworkForTests();
 
   it("searches and clears inventory from the browsing controls", async () => {
     const user = userEvent.setup();
@@ -358,5 +361,79 @@ describe("ArmoryScreen equipment movement and inventory ordering", () => {
     await user.click(staffBtn);
 
     expect(onEquip).toHaveBeenCalledWith("knight", "main-hand", expect.objectContaining({ instanceId: "staff-1" }));
+  });
+
+  it("enters currency targeting mode, applies currency to gear, and clears on cancellation", async () => {
+    const user = userEvent.setup();
+    const onApplyCurrency = vi.fn(() => true);
+    const affixedSword = {
+      instanceId: "gear-sword",
+      definitionId: "longsword-basic" as const,
+      affixes: [{ id: "flat-physical" as const, value: 2 }],
+    };
+
+    const { rerender, props } = renderArmoryScreen({
+      inventories: createArmoryInventories([affixedSword]),
+      craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES, voidstone: 1 },
+      onApplyCurrency,
+    });
+
+    const voidstoneBtn = screen.getByLabelText(/^Use Voidstone,/);
+    await user.click(voidstoneBtn);
+    expect(voidstoneBtn.getAttribute("aria-pressed")).toBe("true");
+
+    await user.click(screen.getByRole("button", { name: /Apply Voidstone/ }));
+    expect(onApplyCurrency).toHaveBeenCalledWith("voidstone", "gear-sword");
+
+    // Clears targeting when count reaches zero
+    rerender(<ArmoryScreen {...props} craftingCurrencies={{ ...EMPTY_CRAFTING_CURRENCIES, voidstone: 0 }} />);
+    await waitFor(() => expect(screen.queryByRole("button", { name: /Apply Voidstone/ })).toBeNull());
+  });
+
+  it("salvages an item after confirmation and exits on Escape", async () => {
+    const user = userEvent.setup();
+    const onSalvage = vi.fn(() => true);
+    renderArmoryScreen({ onSalvage });
+
+    await user.click(screen.getByLabelText("Salvage"));
+    await user.click(screen.getByRole("button", { name: "Salvage Longsword" }));
+
+    // Confirm dialog is shown
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText(/will yield:/)).toBeTruthy();
+
+    // Escape dismisses dialog without salvaging
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(onSalvage).not.toHaveBeenCalled();
+
+    // Reopen and confirm salvage
+    await user.click(screen.getByLabelText("Salvage"));
+    await user.click(screen.getByRole("button", { name: "Salvage Longsword" }));
+    await waitForArtwork();
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: /^Salvage$/ }));
+    expect(onSalvage).toHaveBeenCalledWith("gear-sword");
+  });
+
+  it("portals equipped gear and crafting currency tooltips", async () => {
+    const user = userEvent.setup();
+    const loadouts = createEmptyGearLoadouts();
+    loadouts.knight.body = "gear-body";
+    renderArmoryScreen({
+      loadouts,
+      craftingCurrencies: { ...EMPTY_CRAFTING_CURRENCIES, voidstone: 1 },
+    });
+
+    await user.hover(screen.getByLabelText("Armor equipment slot"));
+    await waitFor(() => {
+      expect(screen.getByText("Leather Armor").closest(".armory-inventory-tooltip")).toBeTruthy();
+    });
+
+    await user.hover(screen.getByLabelText(/^Use Voidstone,/));
+    await waitFor(() => {
+      const panel = document.querySelector(".hover-popup-panel[data-visible]");
+      expect(panel?.textContent).toContain("Remove");
+      expect(panel?.textContent).toContain("Affixes");
+    });
   });
 });

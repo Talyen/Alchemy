@@ -199,3 +199,24 @@ test("inspection reveals a complete panel and retains its page through exit", cr
   await page.keyboard.press("Escape");
   await expect(overlay).toHaveCount(0);
 });
+
+test("stacked modal dialog Escape dismisses dialog and keeps underlying screen", critical, async ({ page }) => {
+  const menu = new MenuPage(page);
+  await menu.goto();
+  await menu.openOptions();
+  await expect(page.getByRole("heading", { name: "Options", exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "Other", exact: true }).click();
+  await page.getByRole("button", { name: "Clear Save Data", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+
+  // Escape closes the topmost confirmation dialog
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Options", exact: true })).toBeVisible();
+
+  // Back returns to main menu
+  await page.getByRole("button", { name: "Back", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible();
+});

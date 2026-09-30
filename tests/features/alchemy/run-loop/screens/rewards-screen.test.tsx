@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RewardsScreen } from "@/features/alchemy/run-loop/screens/rewards-screen";
@@ -263,5 +263,30 @@ describe("RewardsScreen", () => {
     expect(container.querySelector('div.h-16[aria-hidden="true"]')).not.toBeNull();
     // Empty gold/materials still reserves one pill-row height.
     expect(container.querySelector('div[class*="52px"]')).not.toBeNull();
+  });
+
+  it("shows card effect description on hover and keyboard focus of a reward choice", async () => {
+    render(<RewardsScreen rewardState={readRunSession().rewardFlow.state} onSkip={vi.fn()} onClaimReward={vi.fn()} />);
+
+    const button = screen.getByRole("button", { name: /select slash/i });
+    const wrapper = button.parentElement as HTMLElement;
+    fireEvent.mouseEnter(wrapper);
+
+    await waitFor(() => {
+      const panel = document.querySelector(".hover-popup-panel[data-visible]");
+      expect(panel?.textContent).toContain("Deal");
+      expect(panel?.textContent).toContain("6");
+    });
+
+    fireEvent.mouseLeave(wrapper);
+    await waitFor(() => {
+      expect(document.querySelector(".hover-popup-panel[data-visible]")).toBeNull();
+    });
+
+    button.focus();
+    fireEvent.focus(button);
+    await waitFor(() => {
+      expect(document.querySelector(".hover-popup-panel[data-visible]")?.textContent).toContain("Deal");
+    });
   });
 });

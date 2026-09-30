@@ -25,4 +25,20 @@ test.describe("Battle end turn with animations", critical, () => {
     await expect(battle.hand).toHaveCount(4);
     await expect(battle.endTurnBtn).toBeEnabled({ timeout: 15_000 });
   });
+
+  test("rapid clicking End Turn does not produce duplicate turns or hang", async ({ page }) => {
+    test.setTimeout(45_000);
+
+    await seedRandom(page, 42);
+    const state = makeGoblinBattleState({ hand: WEAK_DECK.slice(0, 4), deck: WEAK_DECK.slice(4) });
+    state.currentEnemy = { ...state.currentEnemy, abilityIds: ["slash", "sunder", "burning-blade"] };
+    await injectActiveBattle(page, state);
+    const battle = new BattlePage(page);
+
+    await battle.playFirstCard();
+    await expect(battle.hand).toHaveCount(3);
+    await battle.endTurnBtn.click({ clickCount: 3, delay: 20 }).catch(() => {});
+    await expect(battle.hand).toHaveCount(4);
+    await expect(battle.endTurnBtn).toBeEnabled({ timeout: 15_000 });
+  });
 });

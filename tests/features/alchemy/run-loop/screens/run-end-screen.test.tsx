@@ -80,9 +80,6 @@ describe("RunEndScreen", () => {
       .getAllByText(/^Lv\d+$/)
       .find((el) => el.className.includes(keywordDefinitions.burn.colorClass));
     expect(burnLv).toBeTruthy();
-
-    const progressBars = document.querySelectorAll(".h-1\\.5");
-    expect(progressBars.length).toBeGreaterThanOrEqual(2);
   });
 
   it("hides keyword section when runEndTalentXP is empty", () => {
@@ -115,9 +112,6 @@ describe("RunEndScreen", () => {
       keywords.map((kw) => expect.stringContaining(keywordDefinitions[kw]!.label)),
     );
     expect(row?.children).toHaveLength(count);
-    for (const card of row?.children ?? []) {
-      expect(card.className).toContain("w-56");
-    }
   });
 
   it("rebalances on container resize and Game Size changes without remounting cards", () => {

@@ -1,4 +1,4 @@
-import { expect, type ElementHandle, type Locator, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
 // These are Steam Input's intended outputs, not an emulation of Steam or a device.
 export const controllerKeys = {
@@ -22,33 +22,43 @@ export function controllerInput(page: Page) {
     await expect.poll(() => target.evaluate((element) => !element.matches(":disabled"))).toBe(true);
     await expect.poll(() => target.evaluate((element) => !element.closest("[inert]"))).toBe(true);
     const history: string[] = [];
-    const visited: ElementHandle[] = [];
+    const targetHandle = await target.elementHandle();
+    if (!targetHandle) throw new Error(`Target element not found: ${target}`);
+    await page.evaluate(() => {
+      (window as unknown as { __reachVisited?: Set<Element> }).__reachVisited = new Set();
+    });
     try {
       for (let step = 0; step <= limit; step++) {
-        if (await target.evaluate((element) => element === document.activeElement)) return;
+        const { isTarget, cycled, label } = await page.evaluate((t) => {
+          const active = document.activeElement;
+          const visited = (window as unknown as { __reachVisited: Set<Element> }).__reachVisited;
+          const isTarget = active === t;
+          const cycled = active && active !== document.body ? visited.has(active) : false;
+          if (active && active !== document.body) visited.add(active);
+          const label = active
+            ? active.getAttribute("aria-label") ||
+              active.getAttribute("name") ||
+              active.textContent?.trim().slice(0, 40) ||
+              active.tagName.toLowerCase()
+            : "document body";
+          return { isTarget, cycled, label };
+        }, targetHandle);
+        if (isTarget) return;
+        history.push(label);
+        if (cycled) {
+          throw new Error(`Focus cycled before reaching ${target}. Recent focus: ${history.slice(-12).join(" → ")}`);
+        }
         if (step === limit) break;
         await press(direction);
-        const active = page.locator(":focus");
-        const label = (await active.count()) ? await active.ariaSnapshot() : "document body";
-        history.push(label);
-        const handle = (await page.evaluateHandle(() => document.activeElement)).asElement();
-        if (handle) {
-          for (const previous of visited) {
-            if (await handle.evaluate((element, other) => element === other, previous)) {
-              await handle.dispose();
-              throw new Error(
-                `Focus cycled before reaching ${target}. Recent focus: ${history.slice(-12).join(" → ")}`,
-              );
-            }
-          }
-          visited.push(handle);
-        }
       }
       throw new Error(
         `Could not reach ${target} in ${limit} ${direction} presses. Recent focus: ${history.slice(-12).join(" → ")}`,
       );
     } finally {
-      await Promise.all(visited.map((element) => element.dispose()));
+      await targetHandle.dispose();
+      await page.evaluate(() => {
+        delete (window as unknown as { __reachVisited?: Set<Element> }).__reachVisited;
+      });
     }
   }
 

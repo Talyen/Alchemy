@@ -6,6 +6,8 @@ import {
   assertStageFitsViewport,
   failOnRuntimeErrors,
   makeCard,
+  SAVE_KEY,
+  startAtDestination,
   startBattleWithDeck,
 } from "../../browser-helpers";
 import { MenuPage } from "../../pages/menu-page";
@@ -321,3 +323,127 @@ test("compact Options controls remain reachable without overlapping at large siz
   await input.reach(page.getByRole("switch", { name: "Mute in Background" }));
   await expect(page.getByRole("slider", { name: "Brightness", exact: true })).toHaveCount(0);
 });
+
+test("Start a Run artwork and tooltips share proportional scaling through resizes", slow, async ({ page }) => {
+  await page.setViewportSize(CONTENT_REFERENCE_VIEWPORT);
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      "alchemy-device-display-v1",
+      JSON.stringify({ version: 1, gameSizePercent: 100, tooltipSizePercent: 100 }),
+    );
+  });
+  const menu = new MenuPage(page);
+  await menu.goto();
+  await menu.openGameModeSelect();
+  const campaign = page.getByRole("button", { name: "The Campaign", exact: true });
+  const image = campaign.locator("img").first();
+  await campaign.hover();
+  const tooltip = page.locator("#tooltip-root .hover-popup-panel[data-visible]").last();
+  await expect(tooltip).toBeVisible();
+  await expect(campaign).toHaveCSS("scale", "1.035");
+  const reference = {
+    image: (await image.boundingBox())!,
+    tooltipContentWidth: await tooltip.evaluate((el) => {
+      const style = getComputedStyle(el);
+      return el.getBoundingClientRect().width - parseFloat(style.borderLeftWidth) - parseFloat(style.borderRightWidth);
+    }),
+    font: await tooltip
+      .locator("p")
+      .first()
+      .evaluate((el) => parseFloat(getComputedStyle(el).fontSize)),
+  };
+  expect(reference.font).toBeCloseTo(18, 2);
+
+  for (const viewport of [
+    { width: 1280, height: 720 },
+    { width: 1920, height: 1080 },
+  ]) {
+    await page.setViewportSize(viewport);
+    const factor = Math.min(
+      viewport.width / CONTENT_REFERENCE_VIEWPORT.width,
+      viewport.height / CONTENT_REFERENCE_VIEWPORT.height,
+    );
+    await campaign.hover();
+    await expect(campaign).toHaveCSS("scale", "1.035");
+    await expect.poll(async () => (await image.boundingBox())!.width / reference.image.width).toBeCloseTo(factor, 2);
+    await expect(tooltip).toBeVisible();
+    await expect
+      .poll(() =>
+        tooltip
+          .locator("p")
+          .first()
+          .evaluate((el) => parseFloat(getComputedStyle(el).fontSize)),
+      )
+      .toBeCloseTo(reference.font * factor, 2);
+    await assertStageFitsViewport(page);
+    await assertNoOverflow(page, `Start a Run ${viewport.width} × ${viewport.height}`);
+  }
+});
+
+test("uses CSS viewport dimensions without double-scaling for high DPR", slow, async ({ page }) => {
+  await page.setViewportSize({ width: 1512, height: 982 });
+  await page.addInitScript(
+    ({ saveKey }) => {
+      const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
+      save.selectedAspectRatio = "auto";
+      localStorage.setItem(saveKey, JSON.stringify(save));
+    },
+    { saveKey: SAVE_KEY },
+  );
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
+
+  expect(Number(await page.getByTestId("vr-stage").getAttribute("data-stage-pixel-ratio"))).toBe(1);
+  await assertStageFitsViewport(page);
+});
+
+test(
+  "card selection grid removal actions stay visible and stable across pages at maximum game size",
+  slow,
+  async ({ page }) => {
+    await page.addInitScript((gameSizePercent) => {
+      localStorage.setItem(
+        "alchemy-device-display-v1",
+        JSON.stringify({ version: 1, gameSizePercent, tooltipSizePercent: 125 }),
+      );
+    }, 120);
+    await page.setViewportSize({ width: 1366, height: 768 });
+    await startAtDestination(
+      page,
+      { runGold: 9999, runDeck: Array.from({ length: 13 }, () => makeCard()) },
+      { forceDestination: "Card Shop" },
+    );
+    await page.getByRole("button", { name: "Card Shop", exact: true }).click();
+    await page.getByRole("button", { name: /Remove Card/ }).click();
+    const heading = page.getByRole("heading", { name: "Remove Card", exact: true });
+    const remove = page.getByRole("button", { name: /^Remove Gold/ });
+    const cancel = page.getByRole("button", { name: "Cancel", exact: true });
+    const next = page.getByRole("button", { name: "Next page" });
+    await expect(heading).toBeVisible();
+    await expect(remove).toBeInViewport({ ratio: 0.999 });
+    await expect(cancel).toBeInViewport({ ratio: 0.999 });
+    const cards = page.getByRole("button", { name: "Select Slash", exact: true });
+    const grid = page.getByTestId("card-selection-grid");
+    const fullPageSize = 3;
+    await expect(cards).toHaveCount(fullPageSize);
+    for (const card of await cards.all()) {
+      await expect(card).toBeInViewport({ ratio: 0.999 });
+    }
+    const before = { heading: await heading.boundingBox(), remove: await remove.boundingBox() };
+    while (await next.isEnabled()) {
+      await next.click();
+    }
+    await expect(cards).toHaveCount(1);
+    await expect(grid).toHaveCSS("opacity", "1");
+    await expect
+      .poll(async () => ({ heading: await heading.boundingBox(), remove: await remove.boundingBox() }))
+      .toEqual(before);
+    await expect(page.getByText("Select a card to remove from your deck")).toHaveCount(0);
+    await page.getByRole("button", { name: "Previous page" }).click();
+    await expect(cards).toHaveCount(fullPageSize);
+    await expect(grid).toHaveCSS("opacity", "1");
+    await expect
+      .poll(async () => ({ heading: await heading.boundingBox(), remove: await remove.boundingBox() }))
+      .toEqual(before);
+  },
+);

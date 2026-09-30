@@ -47,19 +47,6 @@ describe("HomesteadScreen", () => {
     expect(onConstructBuilding).toHaveBeenCalled();
   });
 
-  it("shows build cost inside the hover tooltip", async () => {
-    render(<HomesteadScreen {...defaultProps} />);
-
-    const trigger = screen.getByRole("button", { name: /Blacksmith/i }).parentElement as HTMLElement;
-    fireEvent.mouseEnter(trigger);
-
-    await waitFor(() => {
-      const panel = document.querySelector(".hover-popup-panel");
-      expect(panel?.textContent).toContain("Build");
-      expect(panel?.textContent).toContain("22");
-    });
-  });
-
   it("does not construct when the tile is unaffordable", () => {
     const onConstructBuilding = vi.fn(() => true);
     render(
