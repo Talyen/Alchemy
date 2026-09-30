@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import { validateDesktopBuildConfig } from "../../scripts/lib/release/desktop-build-config.mjs";
 
-const release = { CI_RELEASE: "true", STEAM_APP_ID: "123456" };
+const release = { CI_RELEASE: "true", STEAM_APP_ID: "123456", STEAM_DEPOT_ID: "123457" };
 const sentry = { SENTRY_DSN: "dsn", SENTRY_AUTH_TOKEN: "token", SENTRY_ORG: "org", SENTRY_PROJECT: "project" };
 
 describe("desktop build configuration", () => {
@@ -102,6 +102,9 @@ describe("build command forwarding", () => {
 
 it.each([false, true])("pins unpacked Windows packaging to x64 (environment selector: %s)", (viaEnvironment) => {
   const source = `import cp from 'node:child_process';
+    import fs from 'node:fs';
+    const readFileSync = fs.readFileSync;
+    fs.readFileSync = (file, ...args) => String(file).endsWith('/dist/edition.json') ? JSON.stringify({ edition: 'full' }) : readFileSync(file, ...args);
     import { syncBuiltinESMExports } from 'node:module';
     cp.spawnSync = (_command, args) => { console.log(JSON.stringify(args)); return { status: 0 }; };
     syncBuiltinESMExports();

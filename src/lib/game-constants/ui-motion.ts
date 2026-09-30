@@ -56,8 +56,11 @@ export const CARD_TRANSFER_CONFIG = {
     mediumCardCount: 3,
     smallMaxCardCount: 2,
   },
-  discardFlipKeyframes: [0, 90, 180],
-  drawFlipKeyframes: [180, 90, 0],
+  arcRatio: 0.1,
+  discardFlipKeyframes: [0, 180],
+  drawFlipKeyframes: [180, 0],
+  discardFlipTimes: [0.4, 0.95],
+  drawFlipTimes: [0.28, 0.82],
 } as const;
 
 export const GHOST_TRAVEL_SCALE = 0.74;

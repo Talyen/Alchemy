@@ -1,3 +1,4 @@
+import { FULL_GAME_LOCK_MESSAGE } from "@/lib/game-edition";
 import type { RefObject } from "react";
 import type { CharacterDefinition } from "@/features/alchemy/shared/config/game-data-catalog";
 import { getPlasmaColorPairForCharacter } from "@/features/alchemy/shared/config";
@@ -10,12 +11,14 @@ import { renderUnlockMessage } from "../unlock-text";
 export function HeroTooltip({
   character,
   isLocked,
+  requiresFullGame = false,
   unlockRequirementText,
   triggerRef,
   visible,
 }: {
   character: CharacterDefinition;
   isLocked: boolean;
+  requiresFullGame?: boolean;
   unlockRequirementText: string;
   triggerRef: RefObject<HTMLElement | null>;
   visible: boolean;
@@ -24,13 +27,19 @@ export function HeroTooltip({
     <PortaledTooltip
       triggerRef={triggerRef}
       visible={visible}
-      plasmaColorPair={isLocked ? null : getPlasmaColorPairForCharacter(character.id)}
+      plasmaColorPair={isLocked || requiresFullGame ? null : getPlasmaColorPairForCharacter(character.id)}
     >
       <TooltipHeader>{character.name}</TooltipHeader>
 
-      {isLocked ? (
+      {isLocked || requiresFullGame ? (
         <TooltipBody>
-          <p>{renderUnlockMessage(unlockRequirementText)}</p>
+          <p>
+            {requiresFullGame ? (
+              <strong className="font-bold text-destructive">{FULL_GAME_LOCK_MESSAGE}</strong>
+            ) : (
+              renderUnlockMessage(unlockRequirementText)
+            )}
+          </p>
         </TooltipBody>
       ) : (
         <>

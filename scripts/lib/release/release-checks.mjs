@@ -1,3 +1,4 @@
+import { releaseEdition, assertPackageEdition } from "./game-edition.mjs";
 import { execFileSync } from "node:child_process";
 import { closeSync, existsSync, openSync, readFileSync, readdirSync, readSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -43,17 +44,17 @@ export function verifyWindowsExecutableArchitecture(executable) {
 }
 
 /** Inspect the artifact itself, including assets that JavaScript imports cannot validate. */
-export function verifyPackagedRenderer(archivePath, musicDirectory = resolve("public/Music")) {
+export function verifyPackagedRenderer(archivePath, musicDirectory = resolve("public/Music"), rendererDirectory = "dist") {
   const asar = require("@electron/asar");
   const entries = asar.listPackage(archivePath).map((entry) => entry.replaceAll("\\", "/").replace(/^\//u, ""));
   if (entries.some((entry) => entry.endsWith(".map"))) {
     throw new Error("Source maps were found inside app.asar.");
   }
-  if (!entries.includes("dist/index.html")) throw new Error("Packaged renderer is missing dist/index.html.");
+  if (!entries.includes(`${rendererDirectory}/index.html`)) throw new Error("Packaged renderer is missing dist/index.html.");
   const music = readdirSync(musicDirectory).filter((name) => name.endsWith(".mp3"));
   if (music.length === 0) throw new Error("No authored music found for package verification.");
   for (const name of music) {
-    const archiveEntry = join("dist", "Music", name);
+    const archiveEntry = join(rendererDirectory, "Music", name);
     const normalizedEntry = archiveEntry.replaceAll("\\", "/");
     if (!entries.includes(normalizedEntry)) throw new Error(`Packaged music is missing: ${normalizedEntry}`);
     if (!asar.extractFile(archivePath, archiveEntry).equals(readFileSync(join(musicDirectory, name)))) {
@@ -75,16 +76,17 @@ export function verifyReleaseVersionTag(tag, version) {
 /** Verify packaged desktop integrity: fuses, ASAR boundary, natives, secrets, signing. */
 export async function verifyDesktopPackage() {
   const asar = require("@electron/asar");
-  const outputRoot = resolve("release-desktop");
+  const selected = releaseEdition();
+  const outputRoot = resolve(selected.packageDirectory);
   const requestedTarget = process.env.DESKTOP_TARGET;
   const appDirectory = resolveUnpackedDirectory(outputRoot, { target: requestedTarget });
   const target = requestedTarget ?? targetFromUnpackedName(basename(appDirectory));
   const artifactPlatform = targetPlatform(target);
-  const executable = executablePath(appDirectory, target);
+  const executable = executablePath(appDirectory, target, { productFilename: selected.productName });
   if (!existsSync(executable)) throw new Error(`Packaged executable is missing: ${executable}`);
   if (artifactPlatform === "win32") verifyWindowsExecutableArchitecture(executable);
 
-  const snapshotDirectories = browserSnapshotDirectories(appDirectory, target);
+  const snapshotDirectories = browserSnapshotDirectories(appDirectory, target, { productFilename: selected.productName });
   if (
     !snapshotDirectories.some(
       (directory) =>
@@ -112,7 +114,7 @@ export async function verifyDesktopPackage() {
 
   const packagedAsar = join(appDirectory, "resources", "app.asar");
   if (!existsSync(packagedAsar)) throw new Error("Packaged application is not stored in app.asar.");
-  verifyPackagedRenderer(packagedAsar);
+  verifyPackagedRenderer(packagedAsar, undefined, selected.rendererDirectory);
   if (readdirSync(appDirectory).some((name) => name.endsWith(".map"))) {
     throw new Error("Source maps were found beside the packaged executable.");
   }
@@ -125,6 +127,8 @@ export async function verifyDesktopPackage() {
   }
 
   const packagedMetadata = JSON.parse(asar.extractFile(packagedAsar, "package.json").toString("utf8"));
+  const rendererIdentity = JSON.parse(asar.extractFile(packagedAsar, `${selected.rendererDirectory}/edition.json`).toString("utf8"));
+  assertPackageEdition(packagedMetadata, rendererIdentity);
   if (process.env.CI_RELEASE === "true") {
     const bakedAppId = packagedMetadata.steamAppId;
     const parsedAppId = Number.parseInt(String(bakedAppId ?? ""), 10);

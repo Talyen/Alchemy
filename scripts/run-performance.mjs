@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { releaseEdition } from "./lib/release/game-edition.mjs";
 import { runTaskCommand } from "./lib/run-command.mjs";
 /**
  * On-demand FPS / hitch profiling runner.
@@ -130,7 +131,7 @@ Env (harness iteration only, not for baselines):
 }
 
 async function buildDist({ skipIfPresent = false, live = false } = {}) {
-  if (skipIfPresent && fs.existsSync(path.join(root, "dist", "index.html"))) return;
+  if (skipIfPresent && fs.existsSync(path.join(root, releaseEdition().rendererDirectory, "index.html"))) return;
   console.log("Building production renderer for performance profiling…");
   const result = await runTaskCommand("npm", ["run", "build"], { cwd: root, label: "performance build", live });
   if (result.status !== 0) process.exit(result.status ?? 1);

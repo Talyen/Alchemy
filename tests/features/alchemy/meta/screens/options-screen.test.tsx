@@ -1,4 +1,3 @@
-import { createDefaultScreenEffects, createDefaultBackgroundLights } from "@/lib/screen-effect-settings";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { OptionsScreen } from "@/features/alchemy/meta/screens/options-screen";
@@ -16,14 +15,8 @@ const defaultProps = {
     onBrightnessChange: vi.fn(),
     backgroundParticlesIntensity: 100,
     onBackgroundParticlesIntensityChange: vi.fn(),
-    screenEffects: createDefaultScreenEffects(),
-    backgroundLights: createDefaultBackgroundLights(),
-    onBackgroundLightsChange: vi.fn(),
-    onScreenEffectsChange: vi.fn(),
     backgroundGlowIntensity: 100,
     onBackgroundGlowIntensityChange: vi.fn(),
-  },
-  interface: {
     gameSizePercent: 100,
     tooltipSizePercent: 100,
     onGameSizeChange: vi.fn(),
@@ -72,13 +65,6 @@ describe("OptionsScreen", () => {
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
-  it("toggles Screen Effects by clicking its label", () => {
-    const onScreenEffectsChange = vi.fn();
-    render(<OptionsScreen {...defaultProps} display={{ ...defaultProps.display, onScreenEffectsChange }} />);
-    fireEvent.click(screen.getByText("Screen Effects", { selector: "label" }));
-    expect(onScreenEffectsChange).toHaveBeenCalledWith({ enabled: true });
-  });
-
   it("groups display options and reports background intensity changes", () => {
     const onBackgroundParticlesIntensityChange = vi.fn();
     const onBackgroundGlowIntensityChange = vi.fn();
@@ -93,7 +79,7 @@ describe("OptionsScreen", () => {
       />,
     );
 
-    for (const name of ["Display Setup", "Background Atmosphere", "Screen Effects"]) {
+    for (const name of ["Display", "Background"]) {
       expect(screen.getByRole("heading", { name })).toBeTruthy();
     }
     fireEvent.change(screen.getByRole("slider", { name: "Background Particles" }), {

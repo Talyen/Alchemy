@@ -46,7 +46,7 @@ export function CampfireScreen({
   }
 
   return (
-    <TitledScreenShell title="Campfire" minHeightClass="min-h-[62cqh]">
+    <TitledScreenShell title="Campfire">
       <div className="mt-6 flex flex-col items-center gap-8 text-center">
         <div className="flex w-full max-w-[calc(30.0038*var(--content-rem,1rem))] flex-col items-center gap-8">
           <img src={campfire} alt="Campfire" className="w-full rounded-shell-panel object-contain" loading="eager" />

@@ -1,6 +1,18 @@
+export interface DemoImportSource {
+  initialized: boolean;
+  fullSaveExists: boolean;
+  readFailed: boolean;
+  candidates: string[];
+}
+
 import type { DisplayMode } from "./settings-values";
 
 export interface AlchemyDesktopApi {
+  edition?: "demo" | "full";
+  openWishlist?: () => Promise<boolean>;
+  readDemoImportSource?: () => Promise<DemoImportSource>;
+  completeDemoInitialization?: () => Promise<boolean>;
+  onExternalFocusLost?: (listener: () => void) => () => void;
   isDesktop: boolean;
   crashReportingEnabled?: boolean;
   setDisplayMode: (mode: DisplayMode) => Promise<void>;

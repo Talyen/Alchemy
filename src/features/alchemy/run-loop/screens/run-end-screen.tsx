@@ -33,6 +33,7 @@ export function RunEndScreen({
   runEndCurrencies,
   runEndItems,
   onContinue,
+  continueLabel = "Main Menu",
 }: {
   runRecap: RunRecap | null;
   title: string;
@@ -45,6 +46,7 @@ export function RunEndScreen({
   runEndCurrencies: Record<CraftingCurrencyId, number>;
   runEndItems: readonly RunObtainedItem[];
   onContinue: () => void;
+  continueLabel?: "Main Menu" | "Continue";
 }) {
   const [boonsOpen, setBoonsOpen] = useState(false);
   const plasmaColorPair =
@@ -93,7 +95,7 @@ export function RunEndScreen({
         ) : null}
 
         <Button size="lg" variant="primary" className="min-w-56" onClick={onContinue}>
-          Main Menu
+          {continueLabel}
         </Button>
       </div>
       <BattleBoonInspectOverlay

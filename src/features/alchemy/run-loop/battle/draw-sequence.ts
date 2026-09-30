@@ -177,7 +177,11 @@ export function createBattleTransferDeps(
 
   const cardTransferDeps: CardTransferAnimationDeps = {
     isSessionActive: isCurrentBattleSession,
-    measureDiscardPile: () => ctx.measureElementRect(ctx.discardPileRef.current, scene()),
+    measureDiscardPile: () =>
+      ctx.measureElementRect(
+        ctx.discardPileRef.current?.querySelector<HTMLElement>("[data-pile-top-card]") ?? ctx.discardPileRef.current,
+        scene(),
+      ),
     measureDrawPile: () => ctx.measureElementRect(ctx.drawPileRef.current, scene()),
     measureHandCard,
     runCardTransfer,

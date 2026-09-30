@@ -27,6 +27,11 @@ import { ArmoryCharacterTabs, ArmoryOverlays, type ArmoryScreenProps } from "./a
 import { ArmoryEquipmentPanel } from "./armory/armory-equipment-panel";
 import { ArmoryFeedback } from "./armory/armory-feedback";
 import { COMBAT_LOCKED_MESSAGE } from "./armory/armory-item-state";
+import {
+  getArmoryEquippedGearIds,
+  getArmoryEquippedTrinketIds,
+  type ArmoryInventoryFilters,
+} from "./armory/armory-inventory-filtering";
 import type { ArmorySortOption } from "./armory/armory-ordering";
 import { ArmoryPickerPanel } from "./armory/armory-picker-panel";
 import { applyCurrencyToGear, itemsMatchingSlot } from "./armory/armory-screen-actions";
@@ -83,11 +88,17 @@ export function ArmoryScreen({
   const equippedTrinketId = equippedTrinkets[characterId];
   const equippedTrinket = equippedTrinketId ? trinketById[equippedTrinketId] : undefined;
 
+  const equippedGearIds = useMemo(() => getArmoryEquippedGearIds(loadouts), [loadouts]);
+  const otherHeroGearIds = useMemo(() => getArmoryEquippedGearIds(loadouts, characterId), [loadouts, characterId]);
+  const equippedTrinketIds = useMemo(() => getArmoryEquippedTrinketIds(equippedTrinkets), [equippedTrinkets]);
   const ordering = useArmoryOrdering({
     characterId,
     selectedSlot,
     pickerItems,
     ownedTrinkets,
+    equippedGearIds,
+    equippedTrinketIds,
+    otherHeroGearIds,
   });
 
   const {
@@ -217,6 +228,15 @@ export function ArmoryScreen({
     [ordering, settleActiveTransfers],
   );
 
+  const handleFiltersChange = useCallback(
+    (filters: ArmoryInventoryFilters) => {
+      settleActiveTransfers();
+      clearTargeting();
+      ordering.setFilters(filters);
+    },
+    [ordering, settleActiveTransfers, clearTargeting],
+  );
+
   const handleSort = useCallback(
     (option: ArmorySortOption) => {
       settleActiveTransfers();
@@ -281,8 +301,8 @@ export function ArmoryScreen({
                 combatRestrictions={combatRestrictions}
                 selectedSlot={selectedSlot}
                 characterId={characterId}
-                pickerItems={pickerItems}
-                ownedTrinkets={ownedTrinkets}
+                pickerItems={ordering.visibleGear}
+                ownedTrinkets={ordering.visibleTrinkets}
                 equippedTrinkets={equippedTrinkets}
                 loadout={loadout}
                 loadouts={loadouts}
@@ -297,6 +317,11 @@ export function ArmoryScreen({
                 }}
                 onSpawnDevGear={onSpawnDevGear}
                 onSort={handleSort}
+                filters={ordering.filters}
+                matchCount={ordering.matchCount}
+                totalCount={ordering.totalCount}
+                onFiltersChange={handleFiltersChange}
+                onBrowse={clearTargeting}
                 page={ordering.safePage}
                 totalPages={ordering.totalPages}
                 onPageChange={handlePageChange}

@@ -45,19 +45,22 @@ export function CardShopScreen({
   return (
     <FadeSlot swapKey={removeMode ? "remove" : "browse"} className="h-full w-full">
       {removeMode ? (
-        <ScreenShell minHeightClass="min-h-0" className="h-full gap-3 overflow-hidden">
-          <ScreenHeaderRow title="Remove Card" />
-          <RemoveCardPanel
-            runDeck={runDeck}
-            gold={gold}
-            removePrice={removePrice}
-            fitHeight
-            onConfirm={(index) => {
-              if (onRemoveCard(index)) setRemoveMode(false);
-            }}
-            onCancel={() => setRemoveMode(false)}
-          />
-        </ScreenShell>
+        <div className="flex h-full min-h-0 w-full items-center justify-center px-5 py-7">
+          {/* Bound the two-row fitting area in content units while keeping short-window controls reachable. */}
+          <ScreenShell className="h-full max-h-[calc(70*var(--content-rem,1rem))] gap-6 overflow-hidden">
+            <ScreenHeaderRow title="Remove Card" />
+            <RemoveCardPanel
+              runDeck={runDeck}
+              gold={gold}
+              removePrice={removePrice}
+              fitHeight
+              onConfirm={(index) => {
+                if (onRemoveCard(index)) setRemoveMode(false);
+              }}
+              onCancel={() => setRemoveMode(false)}
+            />
+          </ScreenShell>
+        </div>
       ) : (
         <GenericShopScreen
           title="Card Shop"

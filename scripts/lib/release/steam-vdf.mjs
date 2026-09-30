@@ -1,3 +1,4 @@
+import { releaseEdition } from "./game-edition.mjs";
 // Substitutes Steam VDF template placeholders and writes build artifacts for steamcmd.
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -14,14 +15,15 @@ export function substituteSteamVdf(template, env) {
 }
 
 export function writeSteamBuildVdfs(root, env) {
-  const buildDir = join(root, "steam", "build");
+  const selected = releaseEdition(env);
+  const buildDir = selected.edition === "demo" ? join(root, "steam", "build", "demo") : join(root, "steam", "build");
   mkdirSync(buildDir, { recursive: true });
 
-  const buildOutput = join(root, "release-desktop");
-  const contentRoot = steamContentRoot(root);
+  const buildOutput = join(root, selected.packageDirectory);
+  const contentRoot = steamContentRoot(root, env);
   const resolvedEnv = {
-    STEAM_APP_ID: env.STEAM_APP_ID ?? "0",
-    STEAM_DEPOT_ID: env.STEAM_DEPOT_ID ?? "0",
+    STEAM_APP_ID: selected.steamAppId ?? "0",
+    STEAM_DEPOT_ID: selected.steamDepotId ?? "0",
     BUILD_OUTPUT: buildOutput,
     CONTENT_ROOT: contentRoot,
   };

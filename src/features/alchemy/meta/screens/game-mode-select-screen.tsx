@@ -1,3 +1,4 @@
+import { isEditionModeAvailable, FULL_GAME_LOCK_MESSAGE } from "@/lib/game-edition";
 import { useRef } from "react";
 import { cn } from "@/lib/utils";
 import {
@@ -67,7 +68,17 @@ function GameModeTile({
           <PortaledTooltip triggerRef={tileTriggerRef} visible className="text-center">
             <TooltipHeader>{meta.title}</TooltipHeader>
             <TooltipBody>
-              {isLocked ? <p>{renderUnlockMessage(getGameModeUnlockMessage(modeId))}</p> : <p>{meta.description}</p>}
+              {isLocked ? (
+                <p>
+                  {isEditionModeAvailable(modeId) ? (
+                    renderUnlockMessage(getGameModeUnlockMessage(modeId))
+                  ) : (
+                    <strong className="font-bold text-destructive">{FULL_GAME_LOCK_MESSAGE}</strong>
+                  )}
+                </p>
+              ) : (
+                <p>{meta.description}</p>
+              )}
             </TooltipBody>
           </PortaledTooltip>
         ) : null
@@ -98,19 +109,13 @@ export function GameModeSelectScreen({
   };
 
   return (
-    <TitledScreenShell
-      title="Start a Run"
-      minHeightClass="min-h-[50cqh]"
-      maxWidthClass={gameModeRowShellWidthClass}
-      onBack={onBack}
-      onMenu={onMenu}
-    >
-      <div className="my-auto flex flex-1 flex-col justify-center py-4">
+    <TitledScreenShell title="Start a Run" maxWidthClass={gameModeRowShellWidthClass} onBack={onBack} onMenu={onMenu}>
+      <div className="mt-6 flex flex-col justify-center">
         <div className={cn("flex w-full flex-nowrap items-start justify-center", chooserRowGapClass)}>
           {GAME_MODE_IDS.map((modeId) => {
             const meta = gameModeMeta[modeId];
             if (!meta) return null;
-            const isLocked = !isGameModeUnlocked(modeId, finishedRunCharacters);
+            const isLocked = !isEditionModeAvailable(modeId) || !isGameModeUnlocked(modeId, finishedRunCharacters);
 
             return (
               <GameModeTile key={modeId} modeId={modeId} meta={meta} isLocked={isLocked} onSelect={handlers[modeId]} />

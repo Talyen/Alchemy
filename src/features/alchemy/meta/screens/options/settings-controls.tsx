@@ -1,11 +1,39 @@
 import { useSelectDismiss } from "../../../shared/ui/use-select-dismiss";
 import { useId, type ReactNode } from "react";
-import { useReducedMotionPreference } from "@/components/ui/use-reduced-motion-preference";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { controlLabelClass, settingsPanelShellClass } from "@/features/alchemy/shared/config";
+import { controlLabelClass, controlDescriptionClass } from "@/features/alchemy/shared/config";
 import { cn } from "@/lib/utils";
 import type { AspectRatioOption, DisplayMode } from "../../../shared/types";
+
+export function SettingsSection({ title, children }: { title?: string; children: ReactNode }) {
+  return (
+    <section>
+      {title ? <h2 className="options-settings-heading text-base font-semibold text-gold-pale">{title}</h2> : null}
+      {children}
+    </section>
+  );
+}
+
+export function SettingsAction({
+  label,
+  description,
+  children,
+}: {
+  label: string;
+  description: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="options-settings-row">
+      <div className="options-settings-label">
+        <p className={controlLabelClass}>{label}</p>
+        <p className={controlDescriptionClass}>{description}</p>
+      </div>
+      <div className="options-settings-control flex justify-end">{children}</div>
+    </div>
+  );
+}
 
 interface SettingsSelectProps<T extends string> {
   id: string;
@@ -15,15 +43,15 @@ interface SettingsSelectProps<T extends string> {
   onChange: (value: T) => void;
 }
 
-export function SettingsSelect<T extends string>({ id, label, value, options, onChange }: SettingsSelectProps<T>) {
+function SettingsSelect<T extends string>({ id, label, value, options, onChange }: SettingsSelectProps<T>) {
   const selectDismiss = useSelectDismiss();
   return (
-    <div className={cn(settingsPanelShellClass, "text-left")}>
-      <label htmlFor={id} className={cn("block", controlLabelClass)}>
+    <div className="options-settings-row">
+      <label htmlFor={id} className={cn("options-settings-label", controlLabelClass)}>
         {label}
       </label>
       <Select {...selectDismiss} value={value} onValueChange={(nextValue) => onChange(nextValue as T)}>
-        <SelectTrigger id={id} className="mt-3">
+        <SelectTrigger id={id} className="options-settings-control py-2">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -94,21 +122,21 @@ export function SettingsSlider({
   step?: number;
 }) {
   return (
-    <div className={settingsPanelShellClass}>
-      <div className="flex items-center justify-between gap-4">
-        <p className={controlLabelClass}>{label}</p>
-        <p className={cn(controlLabelClass, "text-primary")}>{value}%</p>
+    <div className="options-settings-row">
+      <p className={cn("options-settings-label", controlLabelClass)}>{label}</p>
+      <div className="options-settings-control flex items-center gap-3">
+        <input
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={(event) => onChange(Number(event.target.value))}
+          aria-label={label}
+          className="h-8 min-w-0 flex-1 cursor-pointer accent-primary"
+        />
+        <p className="w-14 shrink-0 text-right text-lg font-semibold text-primary tabular-nums">{value}%</p>
       </div>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
-        aria-label={label}
-        className="mt-3 w-full accent-primary"
-      />
     </div>
   );
 }
@@ -124,35 +152,11 @@ export function SettingsToggle({
 }) {
   const id = useId();
   return (
-    <div className={settingsPanelShellClass}>
-      <div className="flex items-center justify-between gap-4">
-        <label htmlFor={id} className={cn(controlLabelClass, "cursor-pointer")}>
-          {label}
-        </label>
-        <Switch id={id} checked={checked} onCheckedChange={onChange} />
-      </div>
-    </div>
-  );
-}
-
-/** Reversible height transition keeps surrounding options in normal document flow. */
-export function SettingsReveal({ open, children }: { open: boolean; children: ReactNode }) {
-  const reducedMotion = useReducedMotionPreference();
-  return (
-    <div
-      className="grid transition-[grid-template-rows,opacity] duration-[var(--motion-fade-duration)] ease-in-out"
-      style={{
-        gridTemplateRows: open ? "1fr" : "0fr",
-        opacity: open ? 1 : 0,
-        transitionDuration: reducedMotion ? "0ms" : undefined,
-      }}
-      inert={!open}
-      aria-hidden={!open}
-      data-settings-reveal={open ? "open" : "closed"}
-    >
-      <div className="min-h-0 overflow-hidden">
-        <div className="space-y-4 pt-4">{children}</div>
-      </div>
+    <div className="options-settings-row options-settings-toggle">
+      <label htmlFor={id} className={cn("min-w-0 flex-1 cursor-pointer", controlLabelClass)}>
+        {label}
+      </label>
+      <Switch id={id} checked={checked} onCheckedChange={onChange} />
     </div>
   );
 }

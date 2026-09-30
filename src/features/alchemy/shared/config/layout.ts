@@ -18,18 +18,16 @@ export const battleTrinketInspectRowMaxWidthClass =
 
 export const collectionGridTileWidthClass = "mx-auto w-full max-w-[calc(17.2868*var(--content-rem,1rem))]";
 export const collectionGridGapXClass = "gap-x-5";
-export const artTileGridRowsClass = "grid-rows-2 gap-y-8";
 
-export const collectionShellWidthClass = "max-w-[1280px]";
+export const collectionShellWidthClass = "max-w-[calc(80*var(--content-rem,1rem))]";
 
 export const collectionGridBestiaryWidthClass = "mx-auto w-full max-w-[calc(25.8323*var(--content-rem,1rem))]";
 
 export const COLLECTION_CARD_REFERENCE_WIDTH = 244.512;
 export const COLLECTION_BESTIARY_REFERENCE_WIDTH = 390;
-// Growth caps: the grid resolves columns from measured width (two rows per
-// page), so large stages show more columns instead of stretching tiles.
-export const COLLECTION_CARD_MAX_COLUMNS = 8;
-export const COLLECTION_BESTIARY_MAX_COLUMNS = 6;
+// Collection keeps at most two rows with the same column caps on every display.
+export const COLLECTION_CARD_MAX_COLUMNS = 4;
+export const COLLECTION_BESTIARY_MAX_COLUMNS = 3;
 
 export type TileWidthVariant = "collection" | "view" | "bestiary" | "collectionCard";
 
@@ -48,7 +46,6 @@ export function getTileWidthClass(variant: TileWidthVariant): string {
   }
 }
 
-export const collectionGridMinHeightClass = "min-h-[64cqh]";
 export const pileCardWidthClass = "w-[calc(var(--hand-card-width)*0.8)]";
 
 export const chooserArtWidthClass = "w-full max-w-[calc(26.3993*var(--content-rem,1rem))]";

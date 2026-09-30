@@ -185,7 +185,7 @@ export function MysteryRewardSummary({
   }, [choice.effects, grantedTrinketIds, grantedGearInstances]);
 
   return (
-    <div className="flex min-h-[56cqh] w-full flex-1 flex-col items-center justify-center space-y-6 text-center">
+    <div className="flex w-full flex-col items-center gap-6 text-center">
       <KeywordProgressGrid
         entries={xpKeywords.map((kw) => ({
           kw,

@@ -1,6 +1,6 @@
 import { UI_GOLD } from "@/lib/game-constants/ui-colors";
 import { useState, type ReactNode } from "react";
-import { BookOpen, Cog, Shield, Swords, TreePine, WandSparkles } from "lucide-react";
+import { BookOpen, Cog, Power, Shield, Swords, TreePine, WandSparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ShineBorder } from "@/components/ui/shine-border";
 import type { PlasmaColorPair } from "@/lib/animation/plasma-colors";
@@ -54,10 +54,10 @@ export function MenuScreen({
   onHomestead,
   onArmory,
   onQuit,
+  onWishlist,
   logoSrc,
   hasUnspentTalents = false,
   hasAffordableHomestead = false,
-  isArmoryLocked = false,
   finishedRunCharacters,
 }: {
   onPlay: () => void;
@@ -68,14 +68,28 @@ export function MenuScreen({
   onHomestead: () => void;
   onArmory: () => void;
   onQuit?: () => void;
+  onWishlist?: () => void;
   logoSrc: string;
   hasUnspentTalents?: boolean;
   hasAffordableHomestead?: boolean;
-  isArmoryLocked?: boolean;
   finishedRunCharacters: CharacterId[];
 }) {
   const isTalentsLocked = !isProgressionFeatureUnlocked("talents", finishedRunCharacters);
   const isHomesteadLocked = !isProgressionFeatureUnlocked("homestead", finishedRunCharacters);
+  const optionsButton = (
+    <MenuPlasmaHover colorPair={OPTIONS_PLASMA_PAIR}>
+      <Button
+        size="lg"
+        variant="outline"
+        wrapperClassName={MENU_NAV_BUTTON_WRAPPER_CLASS}
+        className={MENU_NAV_BUTTON_CLASS}
+        onClick={onOptions}
+      >
+        <Cog className="h-7 w-7 text-zinc-400" />
+        Options
+      </Button>
+    </MenuPlasmaHover>
+  );
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-5 py-4 text-center">
@@ -94,6 +108,14 @@ export function MenuScreen({
       </Surface>
 
       <div className="grid shrink-0 justify-items-center gap-3 overflow-visible">
+        {onWishlist ? (
+          <div className="flex flex-wrap justify-center gap-3">
+            <Button variant="outline" onClick={onWishlist}>
+              Wishlist on Steam
+            </Button>
+          </div>
+        ) : null}
+
         <MenuPlasmaHover colorPair={PLAY_PLASMA_PAIR}>
           <Button
             size="lg"
@@ -160,47 +182,37 @@ export function MenuScreen({
             )}
           </MenuPlasmaHover>
           <MenuPlasmaHover colorPair={ARMORY_PLASMA_PAIR}>
-            <LockedMenuItem
-              title="Armory"
-              message="Find Gear to unlock"
-              locked={isArmoryLocked}
-              onSelect={onArmory}
-              icon={<Shield className="h-7 w-7 text-sky-300" />}
-              wrapperClassName={MENU_NAV_BUTTON_WRAPPER_CLASS}
-              className={MENU_NAV_BUTTON_CLASS}
-              size="lg"
-              variant="outline"
-              tooltipPlacement="side-end"
-            >
-              Armory
-            </LockedMenuItem>
-          </MenuPlasmaHover>
-        </div>
-        <MenuPlasmaHover colorPair={OPTIONS_PLASMA_PAIR}>
-          <Button
-            size="lg"
-            variant="outline"
-            wrapperClassName={MENU_NAV_BUTTON_WRAPPER_CLASS}
-            className={MENU_NAV_BUTTON_CLASS}
-            onClick={onOptions}
-          >
-            <Cog className="h-7 w-7 text-zinc-400" />
-            Options
-          </Button>
-        </MenuPlasmaHover>
-        {onQuit ? (
-          <div className="menu-nav-button">
             <Button
               size="lg"
               variant="outline"
               wrapperClassName={MENU_NAV_BUTTON_WRAPPER_CLASS}
               className={MENU_NAV_BUTTON_CLASS}
-              onClick={onQuit}
+              onClick={onArmory}
             >
-              Quit
+              <Shield className="h-7 w-7 text-sky-300" />
+              Armory
             </Button>
+          </MenuPlasmaHover>
+        </div>
+        {onQuit ? (
+          <div className="grid grid-cols-2 gap-3">
+            <div className="menu-nav-button">
+              <Button
+                size="lg"
+                variant="outline"
+                wrapperClassName={MENU_NAV_BUTTON_WRAPPER_CLASS}
+                className={MENU_NAV_BUTTON_CLASS}
+                onClick={onQuit}
+              >
+                <Power className="h-7 w-7 text-rose-400" />
+                Quit
+              </Button>
+            </div>
+            {optionsButton}
           </div>
-        ) : null}
+        ) : (
+          optionsButton
+        )}
       </div>
     </div>
   );

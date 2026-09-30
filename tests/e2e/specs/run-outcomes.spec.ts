@@ -36,7 +36,9 @@ test.describe("Run Outcomes", () => {
       },
     );
 
-    test("defeating Act III boss shows run victory screen", critical, async ({ page, fastBattle }) => {
+    // Nightly-only: Act I above gates the boss-victory wiring every push;
+    // Act III shares that flow and only swaps the victory screen.
+    test("defeating Act III boss shows run victory screen", async ({ page, fastBattle }) => {
       void fastBattle;
       await injectBossState(page, 3);
       await page.goto("/");

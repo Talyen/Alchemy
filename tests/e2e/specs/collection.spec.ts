@@ -1,7 +1,7 @@
 import { controllerInput } from "../controller-input";
 import { expect, type Locator } from "@playwright/test";
 import { test } from "../../fixtures/e2e";
-import { assertNoOverflow, assertHorizontalNeighborGap } from "../../browser-helpers";
+import { assertHorizontalNeighborGap } from "../../browser-helpers";
 import { MenuPage } from "../../pages/menu-page";
 import { critical } from "../../playwright-tags";
 
@@ -63,89 +63,8 @@ test.describe("Collection", () => {
     });
   });
 
-  test.describe("heroes tab", () => {
-    test("defaults to Heroes and shows the starting-deck tooltip for unlocked heroes", async ({ page }) => {
-      await new MenuPage(page).gotoCollection();
-      await expect(page.getByRole("button", { name: "Inspect Knight" })).toBeVisible();
-
-      await expectHoverOnlyShine(page.getByRole("button", { name: "Inspect Knight" }));
-      await page.getByRole("button", { name: "Inspect Knight" }).hover();
-      await expect(page.getByText("Starting Deck").first()).toBeVisible();
-      await expect(page.getByText(/Anvil/).first()).toBeVisible();
-    });
-
-    test("locked heroes keep their name and unlock tooltip", async ({ page }) => {
-      await new MenuPage(page).gotoCollection({ finishedRunCharacters: [] });
-      const rogue = page.getByRole("button", { name: "Inspect Rogue (Locked)" });
-      await expect(rogue).toBeVisible();
-      await rogue.hover();
-      await expect(page.getByText("Finish a Run as the Knight to unlock")).toBeVisible();
-    });
-  });
-
-  test.describe("default homestead", () => {
-    async function settledAspectRatios(images: Locator): Promise<number[]> {
-      let ratios: number[] = [];
-      await expect(async () => {
-        ratios = await images.evaluateAll((nodes) =>
-          nodes.map((node) => {
-            const rect = node.getBoundingClientRect();
-            return rect.width / rect.height;
-          }),
-        );
-        expect(ratios.length).toBeGreaterThan(0);
-        for (const ratio of ratios) expect(Number.isFinite(ratio)).toBe(true);
-      }).toPass({ timeout: 5_000 });
-      return ratios;
-    }
-
-    test("heroes to cards keeps the collection heading still when pagination appears", async ({ page }) => {
-      await new MenuPage(page).gotoCollection();
-      const heading = page.getByRole("heading", { name: "Collection" });
-      await expect(heading).toBeVisible();
-      await expect(page.getByRole("button", { name: "Previous page" })).toHaveCount(0);
-      await expect(page.getByRole("button", { name: "Next page" })).toHaveCount(0);
-      const heroesY = await heading.evaluate((el) => el.getBoundingClientRect().y);
-      await page.getByRole("button", { name: "Cards" }).click();
-      await expect(page.getByRole("button", { name: /Inspect/ }).first()).toBeVisible();
-      await expect(page.getByRole("button", { name: "Previous page" })).toBeVisible();
-      await expect(page.getByRole("button", { name: "Next page" })).toBeVisible();
-      const cardsY = await heading.evaluate((el) => el.getBoundingClientRect().y);
-      expect(Math.abs(cardsY - heroesY)).toBeLessThan(0.5);
-    });
-
-    test("collection tab navigation shows bestiary and boon undiscovered entries", async ({ page }) => {
-      await new MenuPage(page).gotoCollection();
-      await page.getByRole("button", { name: "Bestiary" }).click();
-      await expect(page.getByRole("button", { name: "Inspect Undiscovered Entry" }).first()).toBeVisible();
-      await page.getByRole("button", { name: "Trinkets" }).click();
-      await expect(page.getByRole("button", { name: "Inspect Undiscovered Entry" }).first()).toBeVisible();
-      await page.getByRole("button", { name: "Uniques" }).click();
-      await expect(page.getByRole("button", { name: "Inspect Undiscovered Entry" }).first()).toBeVisible();
-      await page.getByRole("button", { name: "Cards" }).click();
-      await expect(page.getByRole("button", { name: /Inspect/ }).first()).toBeVisible();
-    });
-
-    test("bestiary tiles use landscape art without collection overflow", async ({ page }) => {
-      await new MenuPage(page).gotoCollection();
-      await page.getByRole("button", { name: "Bestiary" }).click();
-      const bestiaryButtons = page.locator('button[aria-label="Inspect Undiscovered Entry"]');
-      await expect(bestiaryButtons).toHaveCount(6);
-      const bestiaryImages = bestiaryButtons.locator("img");
-      const ratios = await settledAspectRatios(bestiaryImages);
-      expect(ratios).toHaveLength(6);
-      for (const ratio of ratios) expect(ratio).toBeCloseTo(4 / 3, 2);
-      await assertNoOverflow(page, "collection bestiary");
-    });
-
-    test("trinket tiles use portrait art without collection overflow", async ({ page }) => {
-      await new MenuPage(page).gotoCollection();
-      await page.getByRole("button", { name: "Trinkets" }).click();
-      const trinketImages = page.locator('button[aria-label="Inspect Undiscovered Entry"] img');
-      await expect(trinketImages.first()).toBeVisible();
-      const ratios = await settledAspectRatios(trinketImages);
-      for (const ratio of ratios) expect(ratio).toBeCloseTo(3 / 4, 2);
-      await assertNoOverflow(page, "collection trinkets");
-    });
-  });
+  // Heroes tooltips, lock states, heading stability, undiscovered entries, and
+  // art ratios live in collection-screen.test.tsx, collection-pagination.test.tsx,
+  // and collection/collection-tile.test.tsx; the browser keeps the tab,
+  // inspection, and gap journey above plus the unique-signature flow below.
 });

@@ -13,7 +13,7 @@ const GAME_MENU_CONFIG = {
   anchoredMenuWidthPx: 392,
 } as const;
 
-type Gate = "talents" | "homestead" | "armory";
+type Gate = "talents" | "homestead";
 
 interface GameMenuProps {
   isOpen: boolean;
@@ -31,7 +31,6 @@ interface GameMenuProps {
   currentScreen?: Screen;
   isTalentsLocked?: boolean;
   isHomesteadLocked?: boolean;
-  isArmoryLocked?: boolean;
 }
 
 interface MenuItem {
@@ -114,7 +113,6 @@ function buildMenuItems({
       label: "Armory",
       Icon: Shield,
       iconClassName: "text-sky-300",
-      gate: "armory",
       show: currentScreen !== "armory",
       handler: closeAfter(onArmory),
     },
@@ -204,7 +202,6 @@ export function GameMenu({
   currentScreen,
   isTalentsLocked = false,
   isHomesteadLocked = false,
-  isArmoryLocked = false,
 }: GameMenuProps) {
   const layoutAnchorRect = useHeldWhile(isOpen, anchorRect ?? null);
 
@@ -223,11 +220,10 @@ export function GameMenu({
         returnToRunLabel,
         currentScreen,
       })}
-      locks={{ talents: isTalentsLocked, homestead: isHomesteadLocked, armory: isArmoryLocked }}
+      locks={{ talents: isTalentsLocked, homestead: isHomesteadLocked }}
       messages={{
         talents: getProgressionFeatureUnlockMessage("talents"),
         homestead: getProgressionFeatureUnlockMessage("homestead"),
-        armory: "Find Gear to unlock",
       }}
     />
   );

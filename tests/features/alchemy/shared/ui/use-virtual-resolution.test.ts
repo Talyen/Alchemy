@@ -25,7 +25,7 @@ describe("getVirtualResolutionLayout", () => {
     expect(parseFloat(layout.frameStyle.height)).toBe(2160);
   });
 
-  it("reduces content proportions on large windows while filling the stage", () => {
+  it("preserves content proportions on large windows while filling the stage", () => {
     const standard = getVirtualResolutionLayout("16:9", 1920, 1080);
     const ultraHd = getVirtualResolutionLayout("16:9", 3840, 2160);
 
@@ -35,7 +35,7 @@ describe("getVirtualResolutionLayout", () => {
       return visualRem / parseFloat(layout.frameStyle.height);
     }
 
-    expect(fixedRemToFrameHeight(ultraHd) / fixedRemToFrameHeight(standard)).toBeCloseTo(2 ** -0.2, 8);
+    expect(fixedRemToFrameHeight(ultraHd) / fixedRemToFrameHeight(standard)).toBeCloseTo(1, 8);
   });
 
   it("fits arbitrary browser viewports fluidly with zero letterbox in auto mode", () => {

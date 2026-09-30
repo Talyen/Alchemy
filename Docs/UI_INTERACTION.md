@@ -8,13 +8,15 @@ Tooltips render through `PortaledTooltip` into the root-space `#tooltip-root`.
 Placement follows the Floating UI standard (`@floating-ui/dom`: preferred side,
 then automatic flip to a fitting side, then shift to stay in bounds), bounded to
 `[data-testid="vr-stage"]` with `documentElement` as a fallback, so panels keep
-an independent CSS-pixel scale and avoid clipped ancestors. Tooltip Size
-(90–125%, 5% steps; default 100%) scales text, chrome, and preferred width
-together. Enemy tooltip headers, outer padding, and preferred width remain
-independent of Game Size. Only the nested Trait list uses the game content scale
-as its baseline, matching Labyrinth and inspection Trait text, icons, and spacing;
-Tooltip Size also multiplies that baseline. Standard tooltips cap at 20rem of width;
-enemy tooltips prefer 32rem of width at the independent tooltip scale to give Trait descriptions room to wrap. Placement recomputes width bounds when the stage or tooltip changes
+the game's proportional growth without inheriting the stage transform or
+clipped ancestors. The reference browser retains its original untransformed
+tooltip size: normalize visible game content scale by the reference content
+scale (738 / 1080). Tooltip Size (90–125%, 5% steps; default 100%) multiplies
+that calibrated baseline, scaling text, icons, chrome spacing, and preferred width together.
+Game Size affects all tooltip content, including enemy headers and Traits;
+there is no separate Trait scale. Standard tooltips cap at 20 content-scaled rem
+of width; enemy tooltips prefer 32 content-scaled rem to give Trait descriptions
+room to wrap. Placement recomputes width bounds when the stage or tooltip changes
 size; position-only updates preserve the resolved width to avoid forced layout. Long
 descriptions can use available width to fit; tooltips never scroll or truncate.
 
@@ -73,7 +75,11 @@ to its existing target when the panel unmounts.
 Steam Input uses the existing keyboard and pointer interfaces; there is no second
 controller UI. The [mapping specification](./RELEASE_SETUP.md#mapping-specification)
 is maintained with release setup. Bumpers traverse focus, Enter activates it,
-Escape dismisses the top eligible layer, and arrows operate sliders and selects.
+Escape dismisses the top eligible layer. Arrow keys move focus to nearby visible
+controls within the screen or top dialog. Left/right adjust horizontal sliders;
+up/down leave them. Text editing and dropdowns keep their own arrow behavior.
+Tab/Shift+Tab remain keyboard traversal; Steam Input uses F7/Tab for bumpers
+to avoid the Steam overlay chord. Directional focus stops at layout edges.
 The controlled select state registers above dialogs in the Escape stack so it
 cannot accidentally navigate out of Options or Armory.
 

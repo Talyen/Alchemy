@@ -13,7 +13,6 @@ import {
   type UnlockedTalents,
   type TalentXP,
 } from "@/lib/game-data";
-import { cn } from "@/lib/utils";
 
 import { TalentOverviewGrid } from "../talents/talent-overview-grid";
 import { ConfirmationDialog } from "../../shared/ui/dialogs";
@@ -25,8 +24,7 @@ import { FadeSlot } from "../../shared/ui/use-fade";
 import { playUISound } from "@/lib/audio";
 import { TalentTree } from "../talents/talent-tree";
 
-const TALENT_PANE_CLASS = "flex min-h-[calc(52*var(--content-rem,1rem))] w-full flex-col items-center";
-const TALENT_PANE_TOP_PAD_CLASS = "pt-6 sm:pt-8";
+const TALENT_PANE_CLASS = "flex w-full flex-col items-center";
 
 export function TalentsScreen({
   talentXP,
@@ -131,7 +129,6 @@ export function TalentsScreen({
     <TitledScreenShell
       title={title}
       maxWidthClass="max-w-[calc(90*var(--content-rem,1rem))]"
-      minHeightClass="min-h-[76cqh]"
       onBack={selectedKeyword ? handleBack : onBack}
       onMenu={onMenu}
       headerActions={
@@ -144,9 +141,9 @@ export function TalentsScreen({
         </ChromeIconButton>
       }
     >
-      <FadeSlot swapKey={selectedKeyword ?? "overview"} className="mt-4 flex w-full flex-1 flex-col justify-center">
+      <FadeSlot swapKey={selectedKeyword ?? "overview"} className="mt-4 flex w-full flex-col">
         {selectedKeyword === null ? (
-          <div className={cn(TALENT_PANE_CLASS, TALENT_PANE_TOP_PAD_CLASS)}>
+          <div className={TALENT_PANE_CLASS}>
             <TalentOverviewGrid
               keywordIds={keywordIds}
               unspentByKeyword={unspentByKeyword}
@@ -158,7 +155,7 @@ export function TalentsScreen({
             />
           </div>
         ) : (
-          <div className={cn(TALENT_PANE_CLASS, TALENT_PANE_TOP_PAD_CLASS)}>
+          <div className={TALENT_PANE_CLASS}>
             <TalentTree
               key={selectedKeyword}
               allTalents={allTalentsForKeyword}

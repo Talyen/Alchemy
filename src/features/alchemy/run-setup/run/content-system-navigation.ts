@@ -1,4 +1,11 @@
 import {
+  isEditionCharacterAvailable,
+  isEditionModeAvailable,
+  isEditionDifficultyAvailable,
+  IS_DEMO,
+} from "@/lib/game-edition";
+import { isCharacterUnlocked } from "@/lib/game-data";
+import {
   afterCampaignCharacterResolved,
   type NoviceCampaignStartDeps,
 } from "@/features/alchemy/shared/run-flow/campaign-start";
@@ -40,7 +47,7 @@ function buildNoviceCampaignDeps(
   initializeRunForDifficulty: NoviceCampaignStartDeps["initializeRunForDifficulty"],
 ): NoviceCampaignStartDeps {
   return {
-    completedDifficulties: readProfileStore().completedDifficulties,
+    completedDifficulties: IS_DEMO ? {} : readProfileStore().completedDifficulties,
     initializeRunForDifficulty,
     getDifficultyModifiers,
     onStartBattle: deps.onStartBattle,
@@ -79,6 +86,12 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
       return;
     }
     const systemType = readRunSession().pendingContentSystemType;
+    if (
+      !isEditionCharacterAvailable(selectedId) ||
+      !isEditionModeAvailable(systemType) ||
+      (IS_DEMO && !isCharacterUnlocked(selectedId, readProfileStore().finishedRunCharacters))
+    )
+      return;
 
     if (systemType === CONTENT_SYSTEMS.WILDWOOD) {
       initializeWildwoodRun(selectedId);
@@ -213,7 +226,12 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
       return;
     }
     const completed = readProfileStore().completedDifficulties[selectedId] ?? [];
-    if (!isDifficultyUnlocked(difficultyId, completed)) return;
+    if (
+      !isEditionDifficultyAvailable(difficultyId) ||
+      !isEditionCharacterAvailable(selectedId) ||
+      !isDifficultyUnlocked(difficultyId, completed)
+    )
+      return;
     const { freshDeck, totalStartGold } = initializeRunForDifficulty(selectedId, difficultyId);
     if (!freshDeck || freshDeck.length === 0) return;
     const modifiers = getDifficultyModifiers(selectedId, difficultyId);

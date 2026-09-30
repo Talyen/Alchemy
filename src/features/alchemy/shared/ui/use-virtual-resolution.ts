@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { STAGE_HEIGHT } from "@/lib/game-constants";
+import { CONTENT_REFERENCE_VIEWPORT, STAGE_HEIGHT } from "@/lib/game-constants";
 import { DEFAULT_DEVICE_DISPLAY, normalizeDisplayPercent, type DeviceDisplayPreferences } from "@/lib/settings-values";
 import type { AspectRatioOption } from "../types";
 
@@ -76,8 +76,8 @@ function getAspectMode(resolvedAspect: Exclude<AspectRatioOption, "auto">): "sta
   return "standard";
 }
 
-const MAX_CONTENT_SCALE = 1.75;
-const CONTENT_GROWTH_EXPONENT = 0.8;
+const CONTENT_REFERENCE_STAGE_WIDTH =
+  STAGE_HEIGHT * (CONTENT_REFERENCE_VIEWPORT.width / CONTENT_REFERENCE_VIEWPORT.height);
 
 export function getVirtualResolutionLayout(
   selectedAspectRatio: AspectRatioOption,
@@ -93,11 +93,15 @@ export function getVirtualResolutionLayout(
       ? { stageWidth: STAGE_HEIGHT * viewportAspect, stageHeight: STAGE_HEIGHT }
       : getVirtualStageDimensions(selectedAspectRatio);
   const stageScale = Math.min(width / stageWidth, height / stageHeight);
-  const automaticScale =
-    stageScale <= 1 ? stageScale : Math.min(MAX_CONTENT_SCALE, stageScale ** CONTENT_GROWTH_EXPONENT);
+  // Fit the reference composition inside the frame; the stage still fills Auto's viewport.
+  const automaticScale = stageScale * Math.min(stageWidth / CONTENT_REFERENCE_STAGE_WIDTH, 1);
   const contentScale = automaticScale * (normalizeDisplayPercent("gameSizePercent", preferences.gameSizePercent) / 100);
   const stageContentScale = stageScale > 0 ? contentScale / stageScale : 1;
-  const tooltipScale = normalizeDisplayPercent("tooltipSizePercent", preferences.tooltipSizePercent) / 100;
+  // Reference-browser tooltips were untransformed. Preserve that baseline while
+  // following the game's proportional growth and the player's size adjustments.
+  const tooltipScale =
+    (contentScale / (CONTENT_REFERENCE_VIEWPORT.height / STAGE_HEIGHT)) *
+    (normalizeDisplayPercent("tooltipSizePercent", preferences.tooltipSizePercent) / 100);
 
   return {
     frameStyle: {
@@ -116,7 +120,6 @@ export function getVirtualResolutionLayout(
     },
     tooltipStyle: {
       "--content-scale": tooltipScale,
-      "--tooltip-trait-scale": contentScale * tooltipScale,
     } as React.CSSProperties,
     aspectMode:
       selectedAspectRatio === "auto" ? getAspectModeFromRatio(viewportAspect) : getAspectMode(selectedAspectRatio),

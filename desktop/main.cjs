@@ -1,6 +1,6 @@
 // Electron main process for the Windows desktop build. It owns the native
 // security boundary and loads either loopback Vite or the packaged renderer.
-const { app, BrowserWindow, ipcMain, Menu, net, protocol, session } = require("electron");
+const { app, BrowserWindow, ipcMain, Menu, net, protocol, session, shell } = require("electron");
 const fs = require("node:fs");
 const path = require("node:path");
 const { pathToFileURL } = require("node:url");
@@ -20,6 +20,18 @@ const {
   resolveAppAssetPath,
 } = require("./security.cjs");
 const { initializeMainSentry } = require("./sentry.cjs");
+const { resolveEdition, editionPolicy } = require("../game-edition.mjs");
+const { createDemoProgressBridge, stampSaveOwner } = require("./demo-progress.cjs");
+const TEST_PROFILE_ISOLATED =
+  app.commandLine.hasSwitch("user-data-dir") || (!app.isPackaged && Boolean(process.env.ALCHEMY_ELECTRON_TEST_PROFILE));
+const { openWishlist } = require("./wishlist.cjs");
+const metadata = require(path.join(app.getAppPath(), "package.json"));
+const EDITION = resolveEdition(app.isPackaged ? metadata.gameEdition : process.env.ALCHEMY_EDITION);
+const EDITION_POLICY = editionPolicy(EDITION);
+if (EDITION === "demo" && !TEST_PROFILE_ISOLATED) {
+  app.setName("Alchemy Demo");
+  app.setPath("userData", path.join(app.getPath("appData"), "Alchemy Demo"));
+}
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -38,13 +50,13 @@ const CRASH_REPORTING_ENABLED = initializeMainSentry(app);
 const DEV_SERVER_URL = process.env.ELECTRON_RENDERER_URL ?? `http://127.0.0.1:${process.env.ALCHEMY_DEV_PORT ?? 5173}`;
 const USE_PACKAGED_RENDERER = app.isPackaged || process.env.ELECTRON_FORCE_PACKAGED_RENDERER === "1";
 const RENDERER_POLICY = { packaged: USE_PACKAGED_RENDERER, devServerUrl: DEV_SERVER_URL };
-const RENDERER_ROOT = path.join(__dirname, "..", "dist");
+const RENDERER_ROOT = path.join(__dirname, "..", EDITION_POLICY.rendererDirectory);
 const WINDOWED_SIZE = { width: 1280, height: 720 };
 const SAVE_SLOTS = Object.fromEntries(
   ["save.json", "save-recovery.json"].map((name, index) => [
     index === 0 ? "primary" : "recovery",
     {
-      name,
+      name: EDITION_POLICY.cloudFiles[index],
       file: path.join(app.getPath("userData"), name),
       tmp: path.join(app.getPath("userData"), `${name}.tmp`),
       backups: [1, 2, 3].map((i) => path.join(app.getPath("userData"), `${name}.bak.${i}`)),
@@ -53,6 +65,13 @@ const SAVE_SLOTS = Object.fromEntries(
 );
 let mainWindow = null;
 let steamClient = null;
+const demoProgress = createDemoProgressBridge({
+  directory: app.getPath("userData"),
+  demoDirectory: path.join(app.getPath("appData"), "Alchemy Demo"),
+  getSteam: () => steamClient,
+  isSavePayload,
+  edition: EDITION,
+});
 
 if (!USE_PACKAGED_RENDERER) parseDevServerUrl(DEV_SERVER_URL);
 
@@ -71,11 +90,20 @@ function readPackagedSteamAppId() {
 function resolveSteamAppId() {
   // Packaged CI builds bake steamAppId via electron-builder extraMetadata.
   // Dev falls back to STEAM_APP_ID (from sync-steam-appid / env) then Spacewar 480.
-  return readPackagedSteamAppId() ?? Number.parseInt(process.env.STEAM_APP_ID ?? "480", 10);
+  return (
+    readPackagedSteamAppId() ??
+    Number.parseInt((EDITION === "demo" ? process.env.STEAM_DEMO_APP_ID : process.env.STEAM_APP_ID) ?? "480", 10)
+  );
 }
 
 function initializeSteamworks() {
+  // Automated Electron/package checks must not read or mirror a live Steam profile.
+  if (TEST_PROFILE_ISOLATED) return;
   const steamAppId = resolveSteamAppId();
+  if (app.isPackaged) {
+    const rendererIdentity = JSON.parse(fs.readFileSync(path.join(RENDERER_ROOT, "edition.json"), "utf8"));
+    if (rendererIdentity.edition !== EDITION) throw new Error("Package and renderer editions differ");
+  }
   try {
     const steamworks = require("steamworks.js");
     steamworks.electronEnableSteamOverlay();
@@ -158,6 +186,16 @@ async function readSaveSlot(slot) {
 }
 
 function registerIpcHandlers() {
+  handleAuthorized("alchemy:demo-import-source", () => demoProgress.readSource());
+  handleAuthorized("alchemy:demo-initialization", () => demoProgress.complete());
+  handleAuthorized("alchemy:wishlist", () =>
+    openWishlist({
+      appId: app.isPackaged ? metadata.fullGameSteamAppId : process.env.STEAM_APP_ID,
+      client: steamClient,
+      openExternal: (url) => shell.openExternal(url),
+      pause: () => mainWindow?.webContents.send("alchemy:external-focus-lost"),
+    }),
+  );
   handleAuthorized("alchemy:quit", () => app.quit());
   handleAuthorized("alchemy:set-display-mode", (mode) => {
     if (isDisplayMode(mode) && mainWindow) applyDisplayMode(mainWindow, mode);
@@ -174,6 +212,7 @@ function registerIpcHandlers() {
 
   handleAuthorized("alchemy:write-save", (data, slot) => {
     if (!isSavePayload(data)) return Promise.resolve(false);
+    data = stampSaveOwner(data, steamClient);
     const paths = resolveSaveSlot(slot);
     const writeTask = saveIpcQueue.then(async () => {
       try {
@@ -216,6 +255,7 @@ function registerIpcHandlers() {
   });
 
   handleAuthorized("alchemy:clear-save", async () => {
+    if (!(await demoProgress.complete({ localOnly: true }))) return false;
     // Wipe both rings so an older recovery snapshot cannot restore a cleared profile.
     try {
       for (const paths of Object.values(SAVE_SLOTS)) {
@@ -255,7 +295,7 @@ function registerIpcHandlers() {
     const { name } = resolveSaveSlot(slot);
     if (!steamClient || !isSavePayload(data)) return false;
     try {
-      return steamClient.cloud.writeFile(name, data);
+      return steamClient.cloud.writeFile(name, stampSaveOwner(data, steamClient));
     } catch (error) {
       console.error("[save] Error writing Steam Cloud save:", error);
       return false;
@@ -345,7 +385,10 @@ function createMainWindow() {
       devTools: !USE_PACKAGED_RENDERER,
       experimentalFeatures: false,
       nodeIntegration: false,
-      additionalArguments: CRASH_REPORTING_ENABLED ? ["--alchemy-crash-reporting-enabled"] : [],
+      additionalArguments: [
+        `--alchemy-edition=${EDITION}`,
+        ...(CRASH_REPORTING_ENABLED ? ["--alchemy-crash-reporting-enabled"] : []),
+      ],
       preload: path.join(__dirname, "preload.cjs"),
       sandbox: true,
       webSecurity: true,
@@ -364,6 +407,12 @@ function createMainWindow() {
   });
   mainWindow.webContents.on("will-redirect", (event) => event.preventDefault());
   mainWindow.once("ready-to-show", () => mainWindow?.show());
+  mainWindow.webContents.on("before-input-event", (_event, input) => {
+    if (input.type === "keyDown" && input.key === "Tab" && input.shift) {
+      mainWindow?.webContents.send("alchemy:external-focus-lost");
+    }
+  });
+  mainWindow.on("blur", () => mainWindow?.webContents.send("alchemy:external-focus-lost"));
   mainWindow.on("closed", () => {
     mainWindow = null;
   });

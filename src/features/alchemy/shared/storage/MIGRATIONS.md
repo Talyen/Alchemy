@@ -103,6 +103,11 @@ Autosave retains unacknowledged changes until a covering write succeeds. In-memo
 
 Browser lifecycle exits (`visibilitychange`, `pagehide`, and `beforeunload`) synchronously flush the latest unacknowledged snapshot to `localStorage` via `writeSync`. A successful synchronous flush returns `saved` immediately when the queue is idle. If an older write may still land, the latest snapshot also replaces pending queue work and completion waits for that final write. No await sits between the sync write and the idle check, so check-and-enqueue is atomic on the event loop (see `SaveStorage.flushSerializedExitSave` in [save-storage.ts](./save-storage.ts), the owner of this ordering; `io.ts` delegates exit saves to that storage instance). Each physical write stamps its own `lastSavedAt` at serialization time. Desktop IPC uses the same serialized coalescing queue and returns a promise for the actual write outcome. A failed synchronous exit remains retryable through the scheduler retry while mounted. Desktop shutdown remains best effort, so earlier visibility/pagehide signals give IPC time to finish before the window closes. Terminal saves supersede queued snapshots that have not started writing.
 
+Local write failures surface a non-modal warning while the autosave scheduler
+retries. An acknowledged primary or recovery write clears it; cloud-only failures
+do not imply local progress loss. This transient status is not saved and does not
+change candidate selection, recovery policy, or the write acknowledgement contract.
+
 ## Deletion
 
 Deletion mode is explicit (`"default"` | `"localWipe"`), not inferred from the visible screen:
@@ -155,19 +160,23 @@ incompatible, restarting or exiting its battle rather than continuing obsolete
 rules. Merge clocks, width reservations, and floating sums are presentation-only
 and never enter saves.
 
-## Screen-effect settings
+## Display preferences
 
-`screenEffects` owns the master enable flag and independent `scanlines`, `tint`,
-`edges` and `grain` records. `backgroundLights` independently owns its own enabled,
-strength, and motion fields alongside the other background preferences. Each record has enabled and strength fields,
-with spacing, color, or motion only where relevant. Defaults and field-level
-normalization live in `lib/screen-effect-settings.ts` and are shared by save
-validation and the settings codec. Missing or malformed values default safely;
-finite strengths clamp to 0–100. The master and every effect default off.
-
-The experimental preset model was removed before any saves required compatibility;
-there is deliberately no conversion or legacy preset data in the saved settings.
+Screen Effects and Drifting Lights were removed before the supported release
+baseline. Their renderers, defaults, codec fields, and schema fields are removed
+together. Existing snapshots retain ordinary settings and permanent progress;
+unknown removed preference fields are discarded by the save schema. Game Size
+and Tooltip Size remain device preferences despite sharing the Display tab.
 
 ## Shared run-progress shape
 
 `lib/validation/save-schemas/run-progress.ts` owns progression schema fields and legacy recovery defaults. `PersistedRunProgress` and `ACTIVE_RUN_PROGRESS_KEYS` derive from it; `ActiveRunData` extends the shared wire fields and `ActiveRunProgressFields` narrows destination names for live state. Saved callers remain permissive about historical destination names until normalization. Fresh-run constructors still own starting decks, seeded RNG, fresh collection instances and zero earned totals. Legacy missing `runHistoryPartial`/`runGoldEarned` still recover as `true`/`null`; never replace those with fresh-run defaults. New progress fields require their schema and meaningful fresh/resume initialization, without a duplicate wire/live declaration or key-list edit.
+
+## Demo account identity and transfer
+
+`steamAccountId` is a nullable additive envelope field, defaulting to null. Native
+Steam writes stamp the current account for matching local demo sources. Permanent
+progress import, separate cloud filenames and initialization receipts are owned
+by [Steam demo](../../../../../Docs/STEAM_DEMO.md). Receipts survive Clear Save Data;
+no active run or full-Campaign win credit is imported. Public demo carryover freezes
+the supported baseline just like a full release; never retire promised progress.

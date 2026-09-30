@@ -72,21 +72,9 @@ test.describe("Talents Flow", () => {
     }
   });
 
-  test("talent header stays put between overview and tree", slow, async ({ page }) => {
-    const menu = new MenuPage(page);
-    await menu.gotoWithUnlockedMeta();
-    await menu.openTalents();
-
-    const heading = page.getByRole("heading", { level: 1 });
-    await expect(heading).toHaveText("Talents");
-    const overviewY = await heading.evaluate((element) => element.getBoundingClientRect().y);
-
-    await page.getByRole("button", { name: "Select Physical Talents" }).click();
-    await expect(page.locator(".talent-node").first()).toBeVisible();
-    await expect(heading).toHaveText("Physical");
-    expect(await heading.evaluate((element) => element.getBoundingClientRect().y)).toBe(overviewY);
-  });
-
+  // Header stability and small-viewport description fit below belong to the
+  // display-sizing layout owner; talents keeps navigation, reset, keyboard,
+  // and node-geometry through unlock.
   test("spending the last talent point preserves node geometry", slow, async ({ page }) => {
     const menu = new MenuPage(page);
     await menu.gotoWithUnlockedMeta({ talentXP: { physical: 20 }, unlockedTalents: {} });
@@ -119,35 +107,5 @@ test.describe("Talents Flow", () => {
     await expect.poll(scales).toEqual(before.map(() => "none"));
 
     expect(await geometry()).toEqual(before);
-  });
-
-  test("long talent descriptions fit on a small viewport", slow, async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 720 });
-    const menu = new MenuPage(page);
-    await menu.gotoWithUnlockedMeta();
-    await menu.openTalents();
-    for (const [keyword, name] of [["Burn", "Wildfire"]]) {
-      await page.getByRole("button", { name: `Select ${keyword} Talents`, exact: true }).click();
-      const node = page.locator(".talent-node").filter({ has: page.getByText(name, { exact: true }) });
-      await expect(node).toBeVisible();
-      await expect
-        .poll(
-          () =>
-            node.evaluate((element) => {
-              const face = element.querySelector(".talent-card-face")!;
-              const description = element.querySelector("p")!;
-              const faceBounds = face.getBoundingClientRect();
-              const textBounds = description.getBoundingClientRect();
-              return (
-                textBounds.bottom <= faceBounds.bottom &&
-                textBounds.top >= faceBounds.top &&
-                description.scrollHeight <= description.clientHeight + 1
-              );
-            }),
-          { message: `${name} description fits its card` },
-        )
-        .toBe(true);
-      await page.getByRole("button", { name: "Back", exact: true }).click();
-    }
   });
 });

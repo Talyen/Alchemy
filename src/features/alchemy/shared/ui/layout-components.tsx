@@ -112,7 +112,7 @@ export function ScreenShell({
   children,
   className,
   maxWidthClass = "max-w-5xl",
-  minHeightClass = "min-h-[57.78cqh]",
+  minHeightClass = "min-h-0",
 }: {
   children: ReactNode;
   className?: string;

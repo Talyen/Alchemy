@@ -59,12 +59,37 @@ damage takes priority over Block-only impacts; the largest eligible amount wins,
 with first occurrence breaking ties. Each action requests each combat sound family
 at most once. Player and enemy deaths share the slice effect and battle-end delay;
 Death's Door is not defeat, and voluntary run exits remain immediate.
+The shared 1.25-second death effect uses a straight diagonal cut for both portrait
+halves and particle origins. A pointed white blade flash with a restrained warm
+halo sweeps across in 100ms and fades by 180ms. Dark shading and thin warm glints
+follow the cut edges as the halves separate and fade; a small directional spark
+burst accompanies the cut, followed by the existing border dissolve. Motion-disabled
+preferences skip the effect and its sound cue.
 
 Played cards fly as artwork and finish with a small pop before fading on
 arrival, marking the activation. At most six flight ghosts overlap; the oldest
 sheds first. Motion-disabled preferences skip the flight.
 Autoplay flashes the hover lift, scale, and shine for a beat before committing,
 without the description popup; reduced motion plays instantly with no preview.
+
+Draw and discard use a continuous eased arc with a height of 10% of the card,
+straightening and scaling to the measured destination while flipping between
+front and back. A single Motion progress value drives the pose at the display
+frame rate. A squared-sine arc envelope adds no vertical velocity at departure
+or landing, softening the transition into and out of the curve. There are no
+sampled straight segments or stops at the edge-on flip
+midpoint. Draw reveals the face later in the flight; discard delays its
+turn face-down. There is no added gold border, glow, or particle overlay; artwork
+retains its standard thin frame. Discard uses the muted-gem top-card artwork
+from the actual pile, with a shared crop and measured landing anchor. Width and
+height settle independently to match that anchor precisely. Tuning lives in
+`CARD_TRANSFER_CONFIG`, with artwork bounds in `DISCARD_PILE_TOP_CARD_BOUNDS`.
+
+Transfer durations, batch speeds, sounds, input locks, hidden-card handoff, and
+cancellation remain owned by existing playback. Reduced motion settles artwork
+at its destination immediately without delaying completion. The temporary
+animation selector and alternate styles have been removed. Played cards retain
+their existing travel, pop, and fade animation.
 
 ### Equipment movement animations
 

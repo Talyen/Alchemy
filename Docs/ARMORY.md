@@ -1,6 +1,6 @@
 # Armory
 
-The Armory is the permanent meta-progression screen for managing **Gear** (per-character equipment with affix rolls), fixed collectible **Trinkets**, and **Crafting Currencies**. It is the primary surface for `useGearArmorySlice` and the gateway to their in-battle effects.
+The Armory is available from the first launch, before finding any Gear. It is the permanent meta-progression screen for managing **Gear** (per-character equipment with affix rolls), fixed collectible **Trinkets**, and **Crafting Currencies**. It is the primary surface for `useGearArmorySlice` and the gateway to their in-battle effects.
 
 > **Related:** [ARCHITECTURE.md § Permanent Gear](./ARCHITECTURE.md#permanent-gear-gear-store), [GAME_RULES.md § Domain Glossary](./GLOSSARY.md#domain-glossary), [WORKFLOWS.md § Add permanent Gear](./WORKFLOWS.md#add-permanent-gear).
 
@@ -66,11 +66,13 @@ Working inventory order and pagination are screen-local and transient while the 
 - **Order lifetime**: Working order and current page are tracked per hero and equipment category/slot while the Armory remains mounted (`useArmoryOrdering`). Switching heroes or slots preserves the working order and current page for each slot.
 - **Inventory changes**: Each category records its default order on first visit. Crafting changes to an existing item keep its position. Missing items are removed; newly available items append in default-sorted batches without moving earlier arrivals. Inactive categories reconcile against current inventory when revisited.
 - **Page clamping**: If inventory shrinkage removes the current page, the category remembers the last valid page (page 0 when empty). Later inventory growth does not restore the old page.
-- **One-time sorting**: An explicit `Sort` control beside the inventory slot title provides deterministic one-time sorting (`Rarity` or `Name` for Gear, `Name` for Trinkets) and resets pagination to page 0 without altering the persistent save order or automatically maintaining sorted order after future actions.
+- **Browsing**: The bottom-center toolbar below pagination searches and filters the selected slot. Search matches all entered words across item/base names, affix names, and displayed effects, ignoring case and repeated whitespace. Rarity selections match any chosen rarity; equipment selects All, Unequipped, or Equipped by another hero. Affix Keywords match actual resolved affixes, including Unique signatures and supporting affixes, rather than base affinities. Any/All controls matching across selected keywords. Trinkets use Effect Keywords and have no Rarity filter. Different groups combine with AND.
+- **Criteria lifetime**: Search, filters, and filtered page are remembered per hero/slot while mounted. Criteria changes reset to page 0; Clear all preserves working order. Filtering projects the full order without deleting hidden positions. Crafting and equipment changes immediately update matches and persist page clamping. An empty inventory keeps its empty icon; a filtered inventory with no results explains that no items match.
+- **One-time sorting**: The toolbar's `Sort` provides Rarity (Unique → Astral → Basic), Name A–Z, and Name Z–A for Gear, and both Name directions for Trinkets. Each action sorts the complete category and resets pagination to page 0 without altering persistent save order or automatically maintaining sorting after future actions.
 - **Equipment movement**:
   - **Replacing equipped gear/trinket**: The unequipped item takes the exact inventory position of the equipped item being replaced, without shifting other items or changing pagination.
   - **Equipping into an empty slot**: The item is removed from the inventory grid, and subsequent items shift up/reflow to close the gap.
-  - **Unequipping gear/trinket**: The unequipped item is inserted at the first position of the currently viewed page (or index 0), shifting subsequent items down.
+  - **Unequipping gear/trinket**: The unequipped item is inserted before the first visible item of the currently viewed page in the complete working order (or index 0 when no items match), shifting subsequent items down. Returned items that fail the current criteria remain hidden.
 - **Hand conflicts**: Equipping a two-handed weapon in main-hand displaces the off-hand item: the main-hand replaced item takes the incoming slot's position; any displaced off-hand item compatible with the current category (such as a 1H weapon) is placed immediately following; incompatible displaced items (such as a shield) are removed from the active category view and return to their own category.
 
 Transfer orchestration lives in `armory/use-armory-transfers.ts`. After a successful
@@ -84,7 +86,7 @@ boundary.
 `armory-transfer-presentation.ts` builds optional flights for both Gear and
 Trinkets. Active flights are the single source of hidden artwork. Completion,
 scroll, resize, and screen selection changes settle flights and placeholders;
-operations without flights clear their placeholder immediately.
+operations without flights clear their placeholder immediately. Filtered moves commit immediately because returned items can disappear or reflow the visible target. Criteria and sort changes settle active transfers.
 
 ## Combat equipment restrictions
 

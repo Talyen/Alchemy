@@ -75,3 +75,34 @@ export function boxesOverlap(
 ): boolean {
   return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
 }
+
+/** Wait for the active view and virtual-stage geometry before measuring layout. */
+export async function waitForLayoutSettled(page: Page, readyTarget?: Locator) {
+  if (readyTarget) await expect(readyTarget.first()).toBeVisible();
+  await page.waitForFunction(() => {
+    const stage = document.querySelector('[data-testid="vr-stage"]');
+    const root = document.querySelector(".page-enter");
+    if (!stage || !root || getComputedStyle(root).opacity !== "1") return false;
+    const frame = stage.parentElement;
+    if (!frame) return false;
+    const stageBounds = stage.getBoundingClientRect();
+    const frameBounds = frame.getBoundingClientRect();
+    if (Math.abs(stageBounds.width - frameBounds.width) > 1 || Math.abs(stageBounds.height - frameBounds.height) > 1)
+      return false;
+    const slots = [...root.querySelectorAll(".screen-fade-in,.screen-fade-out,[data-artwork-pending]")].filter(
+      (element) => !element.closest('[aria-hidden="true"]'),
+    );
+    return slots.every(
+      (element) =>
+        !element.classList.contains("screen-fade-out") &&
+        element.getAttribute("data-artwork-pending") !== "true" &&
+        getComputedStyle(element).visibility !== "hidden" &&
+        getComputedStyle(element).opacity === "1",
+    );
+  });
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+    // Let resize observers and the resulting React render paint before sampling.
+    for (let frame = 0; frame < 6; frame += 1) await new Promise(requestAnimationFrame);
+  });
+}

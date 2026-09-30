@@ -29,9 +29,7 @@ export function EnemyTooltip({
     >
       <TooltipHeader>{discovered ? entry.title : "Undiscovered"}</TooltipHeader>
       {discovered ? (
-        <div className="[--content-scale:var(--tooltip-trait-scale,1)]">
-          <EnemyTraits entry={entry} modifiers={labyrinthModifiers} />
-        </div>
+        <EnemyTraits entry={entry} modifiers={labyrinthModifiers} />
       ) : (
         <TooltipBody>
           <p>Undiscovered</p>

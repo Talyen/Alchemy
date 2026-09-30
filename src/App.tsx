@@ -1,6 +1,6 @@
-import { DriftingLights } from "@/features/alchemy/shared/ui/drifting-lights";
-import type { BackgroundLightsSettings } from "@/lib/screen-effect-settings";
-import { ScreenEffect } from "@/features/alchemy/shared/ui/screen-effect";
+import { SaveWriteNotice } from "@/app/save-write-notice";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
 import {
   AppBackgroundParticles,
   AppScreenChromeProvider,
@@ -70,7 +70,6 @@ function AppMainContent({
   brightness,
   backgroundParticlesIntensity,
   backgroundGlowIntensity,
-  backgroundLights,
   run,
   renderedScreen,
   pagePhase,
@@ -84,14 +83,12 @@ function AppMainContent({
   brightness: number;
   backgroundParticlesIntensity: number;
   backgroundGlowIntensity: number;
-  backgroundLights: BackgroundLightsSettings;
   run: AlchemyRunCommands;
   renderedScreen: Screen;
   pagePhase: "enter" | "exit";
   tooltipBlocked: boolean;
   gameMenu: GameMenuState;
 }) {
-  const showBackgroundLights = backgroundLights.enabled && backgroundLights.strength > 0;
   const { screen: controllerScreen } = run;
   const { phase: runPhase } = useRunSessionNavigationSlice(controllerScreen);
   const autosaveEnabled = useAutosaveAllowed(controllerScreen);
@@ -205,17 +202,13 @@ function AppMainContent({
 
   return (
     <>
-      {showBackgroundLights ? (
-        <DriftingLights strength={backgroundLights.strength} motion={backgroundLights.motion} />
-      ) : null}
       <div
         ref={vrStageRef}
         data-testid="vr-stage"
         data-run-phase={runPhase}
         data-stage-pixel-ratio={stagePixelRatio}
         className={cn(
-          "[container-type:size] absolute top-0 left-0 overflow-hidden",
-          !showBackgroundLights && "bg-background",
+          "[container-type:size] absolute top-0 left-0 overflow-hidden bg-background",
           tooltipBlocked && "tooltips-disabled",
         )}
         style={stageStyle}
@@ -303,7 +296,6 @@ function AppInner({ displayLayout }: { displayLayout: ReturnType<typeof useVirtu
             brightness={settings.brightness}
             backgroundParticlesIntensity={settings.backgroundParticlesIntensity}
             backgroundGlowIntensity={settings.backgroundGlowIntensity}
-            backgroundLights={settings.backgroundLights}
             run={run}
             renderedScreen={renderedScreen}
             pagePhase={pagePhase}
@@ -317,7 +309,6 @@ function AppInner({ displayLayout }: { displayLayout: ReturnType<typeof useVirtu
             className={cn("pointer-events-none fixed inset-0 z-[130]", tooltipBlocked && "tooltips-disabled")}
           />
         </div>
-        <ScreenEffect settings={settings.screenEffects} />
       </div>
     </ErrorBoundary>
   );
@@ -344,5 +335,27 @@ export default function App() {
     return <StartupLoadingScreen progress={startupProgress} />;
   }
 
-  return <AppInner displayLayout={displayLayout} />;
+  return (
+    <>
+      {bootstrapResult.importedDemoProgress ? <DemoImportNotice /> : null}
+      <AppInner displayLayout={displayLayout} />
+      <SaveWriteNotice />
+    </>
+  );
+}
+
+function DemoImportNotice() {
+  const [visible, setVisible] = useState(true);
+  if (!visible) return null;
+  return (
+    <div
+      role="status"
+      className="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded-xl border border-border bg-background p-4 text-foreground"
+    >
+      Your earned demo progress has been imported. Start a new adventure in the full game.
+      <Button variant="ghost" className="ml-4" onClick={() => setVisible(false)}>
+        Dismiss
+      </Button>
+    </div>
+  );
 }

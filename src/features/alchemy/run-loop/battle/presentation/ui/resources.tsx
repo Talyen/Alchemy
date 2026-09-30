@@ -1,4 +1,5 @@
 import { battleManaCrystal, pileDiscardArt, pileDrawArt } from "@/features/alchemy/shared/config/game-data-catalog";
+import { DISCARD_PILE_TOP_CARD_BOUNDS } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 
 import {
@@ -53,7 +54,22 @@ export function PilePanel({
           onInspect?.();
         }}
       >
-        <img src={art} alt="" className={cn("block w-full", cardArtImageClass)} />
+        <div className="relative w-full">
+          <img src={art} alt="" className={cn("block w-full", cardArtImageClass)} />
+          {type === "discard" ? (
+            <span
+              data-pile-top-card
+              aria-hidden="true"
+              className="pointer-events-none absolute"
+              style={{
+                left: `${DISCARD_PILE_TOP_CARD_BOUNDS.x * 100}%`,
+                top: `${DISCARD_PILE_TOP_CARD_BOUNDS.y * 100}%`,
+                width: `${DISCARD_PILE_TOP_CARD_BOUNDS.width * 100}%`,
+                height: `${DISCARD_PILE_TOP_CARD_BOUNDS.height * 100}%`,
+              }}
+            />
+          ) : null}
+        </div>
       </Surface>
     </div>
   );

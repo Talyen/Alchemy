@@ -132,7 +132,7 @@ const DifficultyCard = memo(function DifficultyCard({
           </div>
         )}
         <p className={cn("font-sans", sectionTitleClass, locked && "text-muted-foreground")}>{name}</p>
-        <div className="flex min-h-[6.67cqh] w-full flex-col justify-center">
+        <div className="flex min-h-[calc(4.5*var(--content-rem,1rem))] w-full flex-col justify-center">
           <div className={cn("w-full text-center", bodyTextClass)}>{renderedDescription}</div>
         </div>
       </button>

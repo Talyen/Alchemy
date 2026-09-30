@@ -11,7 +11,7 @@ import { SLICE_PARTICLE_COUNT } from "./slice-timeline";
 import { clamp01 } from "@/lib/math";
 
 export const SLICE_SPARK_COLOR = "rgb(185, 28, 28)";
-export const SLICE_CRACK_LINE_COLOR = "rgb(226, 232, 240)";
+export const SLICE_CUT_SPARK_COLOR = "rgb(255, 213, 150)";
 
 const BORDER_DISTANCE = 110;
 const BORDER_DISTANCE_VARIATION = 50;
@@ -143,9 +143,9 @@ function makeSliceCutParticles(count: number): SliceCutParticle[] {
       linePosition,
       side,
       sprayAngle,
-      delay: animationNoise(index, 113) * 0.12,
+      delay: fraction * 0.25,
       speed: 45 + animationNoise(index, 127) * 95,
-      size: 2.5 + animationNoise(index, 131) * 3.5,
+      size: 0.7 + animationNoise(index, 131) * 1.1,
       lifetime: 0.35 + animationNoise(index, 139) * 0.35,
       unitOrigin,
       sprayDir: { dx: sprayDx, dy: sprayDy },
@@ -158,7 +158,7 @@ const HALF_COUNT = Math.max(SLICE_PARTICLE_COUNT / 2, 16);
 
 export const SLICE_LEFT_BORDER_PARTICLES = makeSliceBorderParticles(HALF_COUNT, true);
 export const SLICE_RIGHT_BORDER_PARTICLES = makeSliceBorderParticles(HALF_COUNT, false, 40);
-export const SLICE_CUT_PARTICLES = makeSliceCutParticles(Math.max(SLICE_PARTICLE_COUNT, 32));
+export const SLICE_CUT_PARTICLES = makeSliceCutParticles(12);
 
 export interface SliceSparkSample {
   x: number;

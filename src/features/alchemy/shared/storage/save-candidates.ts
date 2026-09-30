@@ -24,6 +24,7 @@ type SaveLoadStatus =
   | { kind: "corrupt" };
 
 export interface SaveLoadState {
+  importedDemoProgress?: boolean;
   data: SaveData;
   status: SaveLoadStatus;
 }

@@ -1,3 +1,7 @@
+import { releaseEdition, assertPackageEdition } from "./lib/release/game-edition.mjs";
+import { createRequire } from "node:module";
+const require = createRequire(import.meta.url);
+const asar = require("@electron/asar");
 // Uploads built desktop artifacts to Steam via steamcmd (or dry-run when STEAM_UPLOAD_DRY_RUN=1).
 import { existsSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -7,10 +11,29 @@ import { steamContentRoot } from "./lib/release/desktop-artifact.mjs";
 import { writeSteamBuildVdfs } from "./lib/release/steam-vdf.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+const selected = releaseEdition();
 const dryRun = process.env.STEAM_UPLOAD_DRY_RUN === "1";
 
 if (!dryRun) {
-  for (const key of ["STEAM_APP_ID", "STEAM_DEPOT_ID", "STEAM_USERNAME", "STEAM_PASSWORD"]) {
+  for (const [name, value] of [
+    ["App ID", selected.steamAppId],
+    ["depot ID", selected.steamDepotId],
+  ]) {
+    if (
+      !/^\d+$/u.test(value ?? "") ||
+      !Number.isSafeInteger(Number(value)) ||
+      Number(value) <= 0 ||
+      (name === "App ID" && Number(value) === 480)
+    ) {
+      throw new Error(`Invalid production Steam ${name}`);
+    }
+  }
+  for (const key of [
+    selected.edition === "demo" ? "STEAM_DEMO_APP_ID" : "STEAM_APP_ID",
+    selected.edition === "demo" ? "STEAM_DEMO_DEPOT_ID" : "STEAM_DEPOT_ID",
+    "STEAM_USERNAME",
+    "STEAM_PASSWORD",
+  ]) {
     if (!process.env[key]) {
       console.error(`Missing required env var: ${key}`);
       process.exit(1);
@@ -34,7 +57,7 @@ function assertSteamContentRoot(directory) {
     process.exit(1);
   }
 
-  const executable = join(directory, "Alchemy.exe");
+  const executable = join(directory, `${selected.productName}.exe`);
   if (!existsSync(executable)) {
     console.error(`Steam contentroot is missing Alchemy.exe: ${executable}`);
     process.exit(1);
@@ -52,6 +75,10 @@ function assertSteamContentRoot(directory) {
 }
 
 assertSteamContentRoot(contentRoot);
+const archive = join(contentRoot, "resources/app.asar");
+const metadata = JSON.parse(asar.extractFile(archive, "package.json").toString("utf8"));
+const renderer = JSON.parse(asar.extractFile(archive, `${selected.rendererDirectory}/edition.json`).toString("utf8"));
+assertPackageEdition(metadata, renderer);
 
 if (dryRun) {
   console.log("STEAM_UPLOAD_DRY_RUN=1 — wrote substituted VDFs:");

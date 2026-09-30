@@ -1,3 +1,4 @@
+import { isEditionCharacterAvailable } from "@/lib/game-edition";
 import { memo, useState, type RefObject } from "react";
 
 import { playCardSound, playEnemyAttack } from "@/lib/audio";
@@ -141,6 +142,7 @@ function CollectionTilePopup({
       <HeroTooltip
         character={item.character}
         isLocked={!item.discovered}
+        requiresFullGame={!isEditionCharacterAvailable(item.character.id)}
         unlockRequirementText={item.unlockRequirementText ?? ""}
         triggerRef={triggerRef}
         visible={hovered}

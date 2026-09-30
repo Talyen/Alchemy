@@ -68,7 +68,9 @@ export function useArmoryTransfers({
   }
 
   function present(flights: ArmoryFlight[]) {
-    if (reducedMotion || flights.length === 0) {
+    // A filtered view can remove the returned item or reflow its target cell.
+    // Commit those moves immediately rather than animate into a stale position.
+    if (reducedMotion || ordering.hasCriteria || flights.length === 0) {
       clearPlaceholder();
       return;
     }

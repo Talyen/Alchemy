@@ -6,6 +6,7 @@ import { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/vali
 // duplicating envelope shapes.
 export function playableSaveCandidate(lastSavedAt: number, overrides: Record<string, unknown> = {}): string {
   return JSON.stringify({
+    steamAccountId: null,
     saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
     contentVersion: CURRENT_CONTENT_VERSION,
     lastSavedAt,
@@ -31,6 +32,7 @@ export function futureContentSaveCandidate(
   overrides: Record<string, unknown> = {},
 ): string {
   return JSON.stringify({
+    steamAccountId: null,
     saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
     contentVersion: CURRENT_CONTENT_VERSION + 1,
     ...(lastSavedAt === undefined ? {} : { lastSavedAt }),

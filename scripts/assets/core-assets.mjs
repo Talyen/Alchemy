@@ -3,6 +3,12 @@ import { QUALITY, WIDTH } from "./asset-constants.mjs";
 export const coreAssets = [
   // Logo
   { source: "Logo/Alchemy Logo.png", target: "alchemy-logo.webp", width: WIDTH.logo, quality: QUALITY.logo },
+  {
+    source: "Marketing/Unlock Full Game Demo Promo.jpg",
+    target: "demo-feature-showcase.webp",
+    width: WIDTH.marketing,
+    quality: QUALITY.marketing,
+  },
   // Misc
   // Piles share the boon preset (82): flat graphic fields band at QUALITY.card (80).
   {

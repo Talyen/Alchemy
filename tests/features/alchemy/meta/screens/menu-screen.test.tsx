@@ -41,6 +41,29 @@ describe("MenuScreen logo", () => {
     expect(screen.getByRole("button", { name: /homestead/i }).getAttribute("aria-disabled")).toBe("false");
   });
 
+  it("offers Armory before any hero has finished a run", () => {
+    const onArmory = vi.fn();
+    render(<MenuScreen {...defaultProps} hasActiveRun={false} onArmory={onArmory} />);
+    const armory = screen.getByRole("button", { name: /^Armory$/ });
+    expect(armory.hasAttribute("disabled")).toBe(false);
+    expect(armory.getAttribute("aria-disabled")).not.toBe("true");
+    fireEvent.click(armory);
+    expect(onArmory).toHaveBeenCalledOnce();
+  });
+
+  it("pairs desktop Quit before Options and keeps browser Options without Quit", () => {
+    const onQuit = vi.fn();
+    const { rerender } = render(<MenuScreen hasActiveRun={false} {...defaultProps} onQuit={onQuit} />);
+    const quit = screen.getByRole("button", { name: "Quit" });
+    const options = screen.getByRole("button", { name: "Options" });
+    expect(quit.compareDocumentPosition(options) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    fireEvent.click(quit);
+    expect(onQuit).toHaveBeenCalledOnce();
+    rerender(<MenuScreen hasActiveRun={false} {...defaultProps} />);
+    expect(screen.queryByRole("button", { name: "Quit" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Options" })).toBeTruthy();
+  });
+
   it("glows gold on Play focus and leaves Quit without plasma", async () => {
     render(<MenuScreen hasActiveRun={false} {...defaultProps} onQuit={vi.fn()} />);
 

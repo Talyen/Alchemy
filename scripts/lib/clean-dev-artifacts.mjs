@@ -16,7 +16,7 @@ export const TRANSIENT_ARTIFACT_DIRS = Object.freeze([
 export const DEFAULT_ARTIFACT_DIRS = Object.freeze([...TRANSIENT_ARTIFACT_DIRS, "node_modules/.vite"]);
 
 /** Heavier rebuildable outputs; only removed with `--builds` / `--all`. */
-export const BUILD_ARTIFACT_DIRS = Object.freeze(["dist", "release-desktop"]);
+export const BUILD_ARTIFACT_DIRS = Object.freeze(["dist", "dist-demo", "release-desktop", "release-desktop-demo"]);
 
 /**
  * @param {string} rootDir

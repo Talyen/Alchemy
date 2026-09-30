@@ -10,9 +10,11 @@ import {
 } from "../../browser-helpers";
 import { MenuPage } from "../../pages/menu-page";
 import { slow } from "../../playwright-tags";
+import { CONTENT_REFERENCE_VIEWPORT, STAGE_HEIGHT } from "../../../src/lib/game-constants/ui-layout";
 
 const VIEWPORTS = [
   { width: 1280, height: 720 },
+  { width: 1920, height: 1080 },
   { width: 3440, height: 1440 },
 ];
 
@@ -52,9 +54,26 @@ test.describe("Responsive display sizes", slow, () => {
       await assertNoOverflow(page, `Collection ${viewport.width}`);
       await page.getByRole("button", { name: "Back", exact: true }).click();
       await menu.openOptions();
-      await page.getByRole("button", { name: "Interface", exact: true }).click();
+      await page.getByRole("button", { name: "Display", exact: true }).click();
       await expect(page.getByRole("slider", { name: "Game Size", exact: true })).toHaveValue("100");
       await assertNoOverflow(page, `Options ${viewport.width}`);
+      await expect(page.getByRole("slider", { name: "Background Particles", exact: true })).toBeInViewport();
+      const scroll = page.locator(".game-page-scroll");
+      await expect
+        .poll(() => scroll.evaluate((element) => element.scrollHeight - element.clientHeight))
+        .toBeLessThanOrEqual(1);
+      const header = page.getByRole("heading", { name: "Options", exact: true });
+      const headerTop = (await header.boundingBox())!.y;
+      for (const tab of ["Sound", "Gameplay", "Other", "Display"]) {
+        await page.getByRole("button", { name: tab, exact: true }).click();
+        await expect.poll(async () => (await header.boundingBox())!.y).toBeCloseTo(headerTop, 0);
+        await expect
+          .poll(() => scroll.evaluate((element) => element.scrollHeight - element.clientHeight))
+          .toBeLessThanOrEqual(1);
+      }
+      await page.getByRole("combobox", { name: "Aspect Ratio" }).click();
+      await expectTooltipFitsViewport(page.getByRole("listbox"), viewport);
+      await page.keyboard.press("Escape");
     }
   });
 
@@ -63,7 +82,7 @@ test.describe("Responsive display sizes", slow, () => {
     const menu = new MenuPage(page);
     await menu.goto();
     await menu.openOptions();
-    await page.getByRole("button", { name: "Interface", exact: true }).click();
+    await page.getByRole("button", { name: "Display", exact: true }).click();
     await setSlider(page.getByRole("slider", { name: "Game Size", exact: true }), 80);
     await setSlider(page.getByRole("slider", { name: "Tooltip Size", exact: true }), 125);
     await expect(page.getByRole("slider", { name: "Game Size", exact: true })).toHaveValue("80");
@@ -72,12 +91,12 @@ test.describe("Responsive display sizes", slow, () => {
     await assertNoOverflow(page, "Options after resizing");
     await page.reload();
     await menu.openOptions();
-    await page.getByRole("button", { name: "Interface", exact: true }).click();
+    await page.getByRole("button", { name: "Display", exact: true }).click();
     await expect(page.getByRole("slider", { name: "Game Size", exact: true })).toHaveValue("80");
     await expect(page.getByRole("slider", { name: "Tooltip Size", exact: true })).toHaveValue("125");
     await page.getByRole("button", { name: "Other", exact: true }).click();
     await page.getByRole("button", { name: "Reset to Default", exact: true }).click();
-    await page.getByRole("button", { name: "Interface", exact: true }).click();
+    await page.getByRole("button", { name: "Display", exact: true }).click();
     await expect(page.getByRole("slider", { name: "Game Size", exact: true })).toHaveValue("100");
     await expect(page.getByRole("slider", { name: "Tooltip Size", exact: true })).toHaveValue("100");
   });
@@ -141,6 +160,15 @@ test.describe("Responsive display sizes", slow, () => {
           await page.getByRole("button", { name: "Inspect Bandit", exact: true }).hover();
         }
         await expect(tooltip.locator("[data-trait]").first()).toBeVisible();
+        const headingSize = await tooltip
+          .locator("p")
+          .first()
+          .evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+        const traitSize = await tooltip
+          .locator("[data-trait] h3")
+          .first()
+          .evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+        expect(traitSize / headingSize).toBeCloseTo(20 / 18, 2);
         await expectTooltipFitsViewport(tooltip, { width: 1280, height: 720 }, 0);
       }
       expect(errors).toEqual([]);
@@ -149,7 +177,7 @@ test.describe("Responsive display sizes", slow, () => {
     }
   });
 
-  test("collection retains its resized page across portrait and landscape tabs", async ({ page }) => {
+  test("collection keeps page capacity and position across proportional resizes and tab changes", async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1080 });
     await new MenuPage(page).gotoCollection();
     await page.getByRole("button", { name: "Cards", exact: true }).click();
@@ -161,7 +189,7 @@ test.describe("Responsive display sizes", slow, () => {
     await expect.poll(() => cards.first().locator("img").first().getAttribute("src")).not.toBe(before);
     const first = await cards.first().locator("img").first().getAttribute("src");
     await page.setViewportSize({ width: 3840, height: 2160 });
-    await expect(cards).toHaveCount(10, { timeout: 15_000 });
+    await expect(cards).toHaveCount(8, { timeout: 15_000 });
     await expect
       .poll(() => cards.locator("img").evaluateAll((images) => images.map((img) => img.getAttribute("src"))))
       .toContain(first);
@@ -170,7 +198,7 @@ test.describe("Responsive display sizes", slow, () => {
       await page.getByRole("button", { name: tab, exact: true }).click();
       await expect.poll(() => cards.first().locator("img").first().getAttribute("src")).not.toBe(previousArt);
       await page.getByRole("button", { name: "Cards", exact: true }).click();
-      await expect(cards).toHaveCount(10, { timeout: 15_000 });
+      await expect(cards).toHaveCount(8, { timeout: 15_000 });
       await expect
         .poll(() => cards.locator("img").evaluateAll((images) => images.map((img) => img.getAttribute("src"))))
         .toContain(first);
@@ -232,7 +260,11 @@ test("keyboard Options and confirmation fit at 1280×720", async ({ page }, test
     body: `${renderedText.toFixed(1)} CSS pixels after scaling; not a physical glyph-height measurement`,
     contentType: "text/plain",
   });
-  expect(renderedText).toBeGreaterThanOrEqual(12);
+  const expectedScale = Math.min(
+    1280 / (STAGE_HEIGHT * (CONTENT_REFERENCE_VIEWPORT.width / CONTENT_REFERENCE_VIEWPORT.height)),
+    height / STAGE_HEIGHT,
+  );
+  expect(renderedText).toBeCloseTo(20 * expectedScale, 1);
   await input.activate(page.getByRole("button", { name: "Other", exact: true }));
   await input.activate(page.getByRole("button", { name: "Clear Save Data", exact: true }));
   const dialog = page.getByRole("dialog");
@@ -244,4 +276,48 @@ test("keyboard Options and confirmation fit at 1280×720", async ({ page }, test
   await page.screenshot({ path: `reports/controller-support/confirmation-${height}.png` });
   await input.press("back");
   await expect(dialog).toHaveCount(0);
+});
+
+test("compact Options controls remain reachable without overlapping at large size in a narrow window", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 480, height: 720 });
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      "alchemy-device-display-v1",
+      JSON.stringify({ version: 1, gameSizePercent: 120, tooltipSizePercent: 100 }),
+    );
+  });
+  const menu = new MenuPage(page);
+  await menu.goto();
+  await menu.openOptions();
+  const aspect = page.getByRole("combobox", { name: "Aspect Ratio" });
+  const label = page.getByText("Aspect Ratio", { exact: true });
+  await expect
+    .poll(async () => {
+      const controlBox = await aspect.boundingBox();
+      const labelBox = await label.boundingBox();
+      return Boolean(
+        controlBox &&
+        labelBox &&
+        (controlBox.y >= labelBox.y + labelBox.height - 1 || controlBox.x >= labelBox.x + labelBox.width - 1),
+      );
+    })
+    .toBe(true);
+  for (const tab of ["Display", "Sound", "Gameplay", "Other"]) {
+    const button = page.getByRole("button", { name: tab, exact: true });
+    await expectTooltipFitsViewport(button, { width: 480, height: 720 });
+    await button.click();
+  }
+  await page.getByRole("button", { name: "Clear Save Data", exact: true }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  await page.getByRole("button", { name: "Display", exact: true }).click();
+  const lastSlider = page.getByRole("slider", { name: "Background Particles", exact: true });
+  await lastSlider.scrollIntoViewIfNeeded();
+  await expect(lastSlider).toBeInViewport();
+  await page.getByRole("button", { name: "Sound", exact: true }).click();
+  const input = controllerInput(page);
+  await input.reach(page.getByRole("switch", { name: "Mute in Background" }));
+  await expect(page.getByRole("slider", { name: "Brightness", exact: true })).toHaveCount(0);
 });

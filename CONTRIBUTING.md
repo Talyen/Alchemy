@@ -55,6 +55,10 @@ For exhaustive orchestration checks such as the affix sweep, retain the scenario
 
 When removing or moving suites, update maintained references and explicit gate selections to match the surviving protection. Include deleted paths in verification scope; changed unit files that no longer exist are not executed, but their route escalations remain. For consolidation, also select the surviving test files; for retirement without replacement, run applicable gates and report material lost protection. Use timing and coverage reports as evidence when useful, without inventing quotas, mandatory measurements, or automatic threshold ratcheting.
 
+CLI tests that create package or release artifacts must use temporary project roots,
+including the script dependency closure and output directories. Never create or
+remove fixtures in the checkout's real package-output or Steam build directories.
+
 ### Component and hook tests
 
 Vitest runs React, hook, and browser-adapter suites in the `dom` project; pure engine, validation, desktop-contract, and tooling suites run in the `node` project. `vitest.config.ts:testEnvironmentForPath` owns that classification.

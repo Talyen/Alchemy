@@ -1,4 +1,3 @@
-import { useIsArmoryLocked } from "@/features/alchemy/shared/stores/gear-store";
 import { useFinishedRunCharacters } from "@/features/alchemy/shared/stores/profile-store";
 import { useHasActiveRun } from "@/features/alchemy/shared/stores/run-reads";
 import { GameMenu } from "@/features/alchemy/shared/ui/game-menu";
@@ -49,7 +48,6 @@ export function GameMenuOverlay({
 }) {
   const hasActiveRun = useHasActiveRun();
   const finishedRunCharacters = useFinishedRunCharacters();
-  const isArmoryLocked = useIsArmoryLocked();
   return (
     <GameMenu
       isOpen={gameMenuOpen}
@@ -64,7 +62,6 @@ export function GameMenuOverlay({
       onOptions={() => nav.navigateToMeta("options")}
       isTalentsLocked={!isProgressionFeatureUnlocked("talents", finishedRunCharacters)}
       isHomesteadLocked={!isProgressionFeatureUnlocked("homestead", finishedRunCharacters)}
-      isArmoryLocked={isArmoryLocked}
       {...(nav.returnToRunTarget && nav.returnToRunTarget !== currentScreen
         ? {
             onReturnToRun: nav.returnToRun,

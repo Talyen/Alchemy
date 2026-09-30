@@ -4,7 +4,7 @@ import { expect, type ElementHandle, type Locator, type Page } from "@playwright
 export const controllerKeys = {
   confirm: "Enter",
   back: "Escape",
-  previous: "Shift+Tab",
+  previous: "F7",
   next: "Tab",
   up: "ArrowUp",
   down: "ArrowDown",

@@ -2,11 +2,9 @@ import { controllerInput } from "../controller-input";
 import { expect } from "@playwright/test";
 import { test } from "../../fixtures/e2e";
 import { injectDestinationAtIndex, injectMysterySummaryVisit, assertRowAlignment } from "../../browser-helpers";
-import { BattlePage } from "../../pages/battle-page";
 import { DestinationPage } from "../../pages/destination-page";
 import { MysteryPage } from "../../pages/mystery-page";
 import { CorruptionPage } from "../../pages/corruption-page";
-import { expectRunPhase } from "../../pages/game-stage";
 import { critical } from "../../playwright-tags";
 
 test.describe("Destination Progression", () => {
@@ -33,33 +31,9 @@ test.describe("Destination Progression", () => {
     await expect(page.getByRole("button", { name: "End Turn" })).toBeVisible();
   });
 
-  test("completed destinations do not appear in subsequent choices", async ({ page }) => {
-    await injectDestinationAtIndex(page, {
-      destinations: ["Campfire", "Mystery", "Card Shop"],
-      destinationIndexInAct: 1,
-      roomsEncountered: 1,
-      completedDestinations: ["Normal Combat"],
-    });
-    await page.goto("/");
-
-    const destination = new DestinationPage(page);
-    await destination.expectVisible();
-    await expect(page.getByRole("button", { name: "Campfire" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Combat", exact: true })).toHaveCount(0);
-  });
-
-  test("boss destination appears at end of act when all choices are exhausted", async ({ page }) => {
-    await injectDestinationAtIndex(page, {
-      destinations: ["Boss Combat"],
-      destinationIndexInAct: 4,
-      roomsEncountered: 4,
-      completedDestinations: ["Normal Combat", "Normal Combat", "Normal Combat", "Campfire"],
-    });
-    await page.goto("/");
-
-    await expect(page.getByRole("button", { name: /Boss/i })).toBeVisible({ timeout: 10000 });
-    await expect(page.getByRole("button", { name: /Boss/i }).locator(".shine-border")).toBeVisible();
-  });
+  // Pool exhaustion and boss-appearance rules live in run-destination-wiring
+  // and run-domain-progress unit tests; the browser keeps the choice-pool,
+  // mystery, and corruption-result wirings.
 });
 
 test.describe("Mystery Event Flow", () => {
@@ -75,21 +49,8 @@ test.describe("Mystery Event Flow", () => {
 });
 
 test.describe("Corruption Full Flow", () => {
-  test("corruption destination shows altar screen with intro and leave works", async ({ page }) => {
-    const corruption = new CorruptionPage(page);
-    await corruption.open();
-    await expectRunPhase(page, "runLoop");
-
-    await expect(corruption.altarHeading).toBeVisible({ timeout: 5000 });
-    await expect(corruption.corruptBtn).toBeVisible();
-    await expect(corruption.leaveBtn).toBeVisible();
-
-    await corruption.leaveBtn.click();
-    const destination = new DestinationPage(page);
-    await destination.expectVisible();
-    await expect(destination.destinationButton("Corruption")).toBeVisible();
-  });
-
+  // Altar intro/leave and corrupted-in-deck membership live in
+  // corruption.test.ts (engine) plus the result-flow wiring below.
   test("selecting a card and corrupting shows result view with continue", critical, async ({ page }) => {
     const corruption = new CorruptionPage(page);
     await corruption.open();
@@ -101,20 +62,5 @@ test.describe("Corruption Full Flow", () => {
 
     await controllerInput(page).activate(corruption.continueBtn);
     await new DestinationPage(page).expectVisible();
-  });
-
-  test("corrupted card appears in the deck during the next battle", async ({ page }) => {
-    const corruption = new CorruptionPage(page);
-    await corruption.open();
-
-    await corruption.selectAndCorrupt();
-    await corruption.continueBtn.click();
-
-    const destination = new DestinationPage(page);
-    await destination.enterAnyCombat();
-
-    await new BattlePage(page).waitForOpeningHand();
-    await page.getByRole("button", { name: /^View Deck/ }).click();
-    await expect(page.getByRole("dialog").getByRole("img", { name: /^Corrupted / })).toBeVisible();
   });
 });

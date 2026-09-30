@@ -1,4 +1,8 @@
-import type { ReactNode } from "react";
+import { IS_DEMO } from "@/lib/game-edition";
+import { isDesktop, openFullGameWishlist } from "@/lib/platform";
+import { useEffect, useState, type ReactNode } from "react";
+import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
+import { DemoCompletionScreen } from "@/features/alchemy/run-loop/screens/demo-completion-screen";
 import { RunEndScreen } from "@/features/alchemy/run-loop/screens/run-end-screen";
 import { useRunEndScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
 import type { RunEndCommands, RunEndRouteCtx } from "./route-ctx";
@@ -22,6 +26,23 @@ function RunEndScreenRoute({ outcome, commands }: { outcome: keyof typeof RUN_EN
     runEndLabyrinthFloor,
     runRecap,
   } = useRunEndScreenData();
+  const [marketing, setMarketing] = useState(false);
+  const demoVictory = IS_DEMO && outcome === "victory";
+  useEffect(() => {
+    if (!marketing) return;
+    return pushEscapeHandler({
+      id: "demo-completion",
+      priority: ESCAPE_PRIORITY.SCREEN_OVERLAY,
+      onEscape: () => commands.continueFromRunEnd(),
+    });
+  }, [marketing, commands]);
+  if (marketing && demoVictory)
+    return (
+      <DemoCompletionScreen
+        onMainMenu={commands.continueFromRunEnd}
+        {...(isDesktop() ? { onWishlist: openFullGameWishlist } : {})}
+      />
+    );
   const { title } = RUN_END_COPY[outcome];
   const subtitle =
     outcome === "defeat" && runEndLabyrinthFloor
@@ -31,7 +52,8 @@ function RunEndScreenRoute({ outcome, commands }: { outcome: keyof typeof RUN_EN
     <RunEndScreen
       title={title}
       runRecap={runRecap}
-      subtitle={subtitle}
+      subtitle={demoVictory ? "" : subtitle}
+      continueLabel={demoVictory ? "Continue" : "Main Menu"}
       outcome={outcome}
       characterId={characterId}
       runEndTalentXP={runEndTalentXP}
@@ -39,7 +61,7 @@ function RunEndScreenRoute({ outcome, commands }: { outcome: keyof typeof RUN_EN
       runEndMaterials={runEndMaterials}
       runEndCurrencies={runEndCurrencies}
       runEndItems={runEndItems}
-      onContinue={commands.continueFromRunEnd}
+      onContinue={demoVictory ? () => setMarketing(true) : commands.continueFromRunEnd}
     />
   );
 }

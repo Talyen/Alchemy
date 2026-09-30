@@ -65,17 +65,17 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
         </Button>
         <span className="ml-auto self-center text-sm text-muted-foreground">
           {visibleCopyFeedback?.status === "copied"
-            ? "Copied. "
+            ? "Copied · "
             : visibleCopyFeedback?.status === "failed"
-              ? "Copy failed. "
+              ? "Copy failed · "
               : null}
           {errors.length} error{errors.length !== 1 ? "s" : ""}
         </span>
       </div>
 
-      <div className="mt-4 flex max-h-[60vh] flex-col gap-2 overflow-y-auto">
+      <div className="mt-4 flex max-h-[60cqh] flex-col gap-2 overflow-y-auto">
         {errors.length === 0 ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">No errors logged.</p>
+          <p className="py-8 text-center text-sm text-muted-foreground">No errors logged</p>
         ) : (
           reversedErrors.map((e) => (
             <div key={e.id} className="rounded-shell-card border border-border/70 p-4 text-left surface-muted">

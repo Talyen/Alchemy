@@ -1,3 +1,4 @@
+import { GAME_EDITION_POLICY, IS_DEMO } from "@/lib/game-edition";
 import { getBossById, rollFreshBossId } from "@/features/alchemy/shared/config";
 import {
   createInitialDestinationResult,
@@ -76,9 +77,9 @@ export function createProgressionCommands(getAvailableDestinations: RunFlowHandl
       dispatchRunSessionCommand((draft) => {
         setHasActiveBattle(draft, false);
         const run = draft.run.activeRun;
-        if (run.currentAct >= ACTS_PER_RUN) {
+        if (run.currentAct >= (IS_DEMO ? GAME_EDITION_POLICY.campaignActs : ACTS_PER_RUN)) {
           const selectedDifficulty = run.selectedDifficulty;
-          if (selectedDifficulty) {
+          if (selectedDifficulty && !IS_DEMO) {
             setCompletedDifficulties(draft, (previous) => {
               const completed = previous[run.characterId] ?? [];
               return {

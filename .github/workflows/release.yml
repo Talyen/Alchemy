@@ -179,6 +179,30 @@ jobs:
             reports/runs/
           retention-days: 7
 
+  demo-e2e:
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      ALCHEMY_EDITION: demo
+      PLAYWRIGHT_VITE_MODE: preview
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup
+      - uses: ./.github/actions/setup-playwright
+      - run: npm run build
+      - run: npm run check:bundle
+      - run: npx playwright test tests/e2e/specs/steam-demo.spec.ts --project=chromium
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: demo-e2e-diagnostics
+          path: |
+            playwright-report/
+            test-results/
+            reports/
+          retention-days: 7
+
   package:
     outputs:
       artifact-id: ${{ steps.package-upload.outputs.artifact-id }}
@@ -222,6 +246,7 @@ jobs:
         env:
           CI_RELEASE: "true"
           STEAM_APP_ID: ${{ secrets.STEAM_APP_ID }}
+          STEAM_DEPOT_ID: ${{ secrets.STEAM_DEPOT_ID }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
@@ -263,6 +288,96 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
+  package-demo:
+    outputs:
+      artifact-id: ${{ steps.package-upload.outputs.artifact-id }}
+    needs: [lint, test, demo-e2e]
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup
+
+      - name: Cache Electron binary
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cache/electron
+            node_modules/electron/dist
+            node_modules/electron/path.txt
+          key: electron-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Ensure Electron binary
+        run: npm run ensure:electron
+
+      - name: Verify release tag matches package.json
+        run: node scripts/verify-release.mjs --skip-package
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+
+      - name: Generate patch notes
+        run: node scripts/generate-patch-notes.mjs
+        env:
+          RELEASE_VERSION: ${{ github.ref_name }}
+
+      - name: Assert committed outputs match preparation
+        run: npm run assets:check
+
+      - name: Build desktop installers
+        run: npm run dist:desktop
+        env:
+          ALCHEMY_EDITION: demo
+          CI_RELEASE: "true"
+          STEAM_DEMO_APP_ID: ${{ secrets.STEAM_DEMO_APP_ID }}
+          STEAM_DEMO_DEPOT_ID: ${{ secrets.STEAM_DEMO_DEPOT_ID }}
+          STEAM_APP_ID: ${{ secrets.STEAM_APP_ID }}
+          STEAM_DEPOT_ID: ${{ secrets.STEAM_DEPOT_ID }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CODE_SIGNING_PUBLISHER_NAME: ${{ secrets.AZURE_CODE_SIGNING_PUBLISHER_NAME }}
+          AZURE_CODE_SIGNING_ENDPOINT: ${{ secrets.AZURE_CODE_SIGNING_ENDPOINT }}
+          AZURE_CODE_SIGNING_ACCOUNT_NAME: ${{ secrets.AZURE_CODE_SIGNING_ACCOUNT_NAME }}
+          AZURE_CODE_SIGNING_CERTIFICATE_PROFILE_NAME: ${{ secrets.AZURE_CODE_SIGNING_CERTIFICATE_PROFILE_NAME }}
+          REQUIRE_CODE_SIGNING: ${{ vars.REQUIRE_CODE_SIGNING }}
+
+      - name: Smoke test packaged Windows game
+        timeout-minutes: 2
+        run: npm run smoke:desktop
+        env:
+          ALCHEMY_EDITION: demo
+
+      - name: Retain verified release package
+        id: package-upload
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-package-demo-${{ github.ref_name }}-${{ github.run_attempt }}
+          path: |
+            release-desktop-demo/
+            release-notes/${{ github.ref_name }}.md
+          retention-days: 7
+          compression-level: 0
+          if-no-files-found: error
+
+      - name: Retain build failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-diagnostics-release-package-demo
+          path: |
+            reports/compact/
+            reports/current-run.*
+            reports/runs/
+          retention-days: 7
+          if-no-files-found: ignore
+
   vercel-qa:
     # Deliberate web QA deploy: Vercel Git auto-deploys are disabled in
     # vercel.json, so release tags trigger the project's Deploy Hook instead.
@@ -282,7 +397,7 @@ jobs:
           curl --fail --show-error -X POST "$VERCEL_DEPLOY_HOOK_URL"
 
   release:
-    needs: package
+    needs: [package, package-demo]
     runs-on: windows-latest
     timeout-minutes: 30
     permissions:
@@ -296,6 +411,13 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           artifact-ids: ${{ needs.package.outputs.artifact-id }}
+          merge-multiple: true
+          path: .
+
+      - name: Download verified demo package
+        uses: actions/download-artifact@v8
+        with:
+          artifact-ids: ${{ needs.package-demo.outputs.artifact-id }}
           merge-multiple: true
           path: .
 
@@ -324,12 +446,24 @@ jobs:
             node scripts/steam-upload.mjs
           fi
 
+      - name: Upload verified demo candidate
+        env:
+          ALCHEMY_EDITION: demo
+          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+          STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
+          STEAM_APP_ID: ${{ secrets.STEAM_APP_ID }}
+          STEAM_DEMO_APP_ID: ${{ secrets.STEAM_DEMO_APP_ID }}
+          STEAM_DEMO_DEPOT_ID: ${{ secrets.STEAM_DEMO_DEPOT_ID }}
+        run: node scripts/steam-upload.mjs
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:
           files: |
             release-desktop/*.exe
             release-desktop/*.exe.blockmap
+            release-desktop-demo/*.exe
+            release-desktop-demo/*.exe.blockmap
             release-notes/**
           body_path: release-notes/${{ github.ref_name }}.md
         env:

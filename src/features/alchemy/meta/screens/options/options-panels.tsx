@@ -1,17 +1,14 @@
-import { BackgroundLightsOptions } from "./background-lights-options";
-import type { ScreenEffectsSettings, BackgroundLightsSettings } from "@/lib/screen-effect-settings";
-import { ScreenEffectsOptions } from "./screen-effects-options";
 import { Button } from "@/components/ui/button";
-import {
-  aspectRatioOptions,
-  controlDescriptionClass,
-  controlLabelClass,
-  displayModeOptions,
-  settingsPanelShellClass,
-} from "@/features/alchemy/shared/config";
-import { cn } from "@/lib/utils";
+import { aspectRatioOptions, displayModeOptions } from "@/features/alchemy/shared/config";
 import { DEVICE_DISPLAY_RANGES, SETTINGS_RANGES } from "@/lib/settings-values";
-import { AspectRatioSelect, DisplayModeSelect, SettingsSlider, SettingsToggle } from "./settings-controls";
+import {
+  AspectRatioSelect,
+  DisplayModeSelect,
+  SettingsSlider,
+  SettingsToggle,
+  SettingsSection,
+  SettingsAction,
+} from "./settings-controls";
 import type { AspectRatioOption, DisplayMode } from "../../../shared/types";
 
 export interface DisplayOptionsProps {
@@ -20,19 +17,12 @@ export interface DisplayOptionsProps {
   displayMode: DisplayMode;
   onDisplayModeChange: (mode: DisplayMode) => void;
   showDisplayMode: boolean;
-  screenEffects: ScreenEffectsSettings;
-  backgroundLights: BackgroundLightsSettings;
-  onBackgroundLightsChange: (patch: Partial<BackgroundLightsSettings>) => void;
-  onScreenEffectsChange: (patch: Partial<ScreenEffectsSettings>) => void;
   brightness: number;
   onBrightnessChange: (value: number) => void;
   backgroundParticlesIntensity: number;
   onBackgroundParticlesIntensityChange: (value: number) => void;
   backgroundGlowIntensity: number;
   onBackgroundGlowIntensityChange: (value: number) => void;
-}
-
-export interface InterfaceOptionsProps {
   gameSizePercent: number;
   tooltipSizePercent: number;
   onGameSizeChange: (value: number) => void;
@@ -73,70 +63,62 @@ export interface DevOptionsProps {
 export function DisplayOptionsPanel({ display }: { display: DisplayOptionsProps }) {
   return (
     <div className="space-y-4">
-      <h2 className={controlLabelClass}>Display Setup</h2>
-      {display.showDisplayMode ? (
-        <DisplayModeSelect
-          displayMode={display.displayMode}
-          displayModeOptions={displayModeOptions}
-          onChange={display.onDisplayModeChange}
+      <SettingsSection title="Display">
+        {display.showDisplayMode ? (
+          <DisplayModeSelect
+            displayMode={display.displayMode}
+            displayModeOptions={displayModeOptions}
+            onChange={display.onDisplayModeChange}
+          />
+        ) : null}
+        <AspectRatioSelect
+          selectedAspectRatio={display.selectedAspectRatio}
+          aspectRatioOptions={aspectRatioOptions}
+          onChange={display.onAspectRatioChange}
         />
-      ) : null}
-      <AspectRatioSelect
-        selectedAspectRatio={display.selectedAspectRatio}
-        aspectRatioOptions={aspectRatioOptions}
-        onChange={display.onAspectRatioChange}
-      />
-      <SettingsSlider
-        label="Brightness"
-        value={display.brightness}
-        onChange={display.onBrightnessChange}
-        min={SETTINGS_RANGES.brightness.min}
-        max={SETTINGS_RANGES.brightness.max}
-      />
-      <h2 className={cn(controlLabelClass, "pt-4")}>Background Atmosphere</h2>
-      <SettingsSlider
-        label="Background Glow"
-        value={display.backgroundGlowIntensity}
-        onChange={display.onBackgroundGlowIntensityChange}
-        {...SETTINGS_RANGES.specialEffects}
-      />
-      <SettingsSlider
-        label="Background Particles"
-        value={display.backgroundParticlesIntensity}
-        onChange={display.onBackgroundParticlesIntensityChange}
-        {...SETTINGS_RANGES.specialEffects}
-      />
-      <BackgroundLightsOptions settings={display.backgroundLights} onChange={display.onBackgroundLightsChange} />
-      <h2 className={cn(controlLabelClass, "pt-4")}>Screen Effects</h2>
-      <ScreenEffectsOptions settings={display.screenEffects} onChange={display.onScreenEffectsChange} />
-    </div>
-  );
-}
-
-export function InterfaceOptionsPanel({ interfaceOptions }: { interfaceOptions: InterfaceOptionsProps }) {
-  return (
-    <div className="space-y-4">
-      <SettingsSlider
-        label="Game Size"
-        value={interfaceOptions.gameSizePercent}
-        onChange={interfaceOptions.onGameSizeChange}
-        {...DEVICE_DISPLAY_RANGES.gameSizePercent}
-      />
-      <SettingsSlider
-        label="Tooltip Size"
-        value={interfaceOptions.tooltipSizePercent}
-        onChange={interfaceOptions.onTooltipSizeChange}
-        {...DEVICE_DISPLAY_RANGES.tooltipSizePercent}
-      />
+        <SettingsSlider
+          label="Brightness"
+          value={display.brightness}
+          onChange={display.onBrightnessChange}
+          min={SETTINGS_RANGES.brightness.min}
+          max={SETTINGS_RANGES.brightness.max}
+        />
+        <SettingsSlider
+          label="Game Size"
+          value={display.gameSizePercent}
+          onChange={display.onGameSizeChange}
+          {...DEVICE_DISPLAY_RANGES.gameSizePercent}
+        />
+        <SettingsSlider
+          label="Tooltip Size"
+          value={display.tooltipSizePercent}
+          onChange={display.onTooltipSizeChange}
+          {...DEVICE_DISPLAY_RANGES.tooltipSizePercent}
+        />
+      </SettingsSection>
+      <SettingsSection title="Background">
+        <SettingsSlider
+          label="Background Glow"
+          value={display.backgroundGlowIntensity}
+          onChange={display.onBackgroundGlowIntensityChange}
+          {...SETTINGS_RANGES.specialEffects}
+        />
+        <SettingsSlider
+          label="Background Particles"
+          value={display.backgroundParticlesIntensity}
+          onChange={display.onBackgroundParticlesIntensityChange}
+          {...SETTINGS_RANGES.specialEffects}
+        />
+      </SettingsSection>
     </div>
   );
 }
 
 export function AudioOptionsPanel({ audio }: { audio: AudioOptionsProps }) {
   return (
-    <div className="space-y-4">
+    <SettingsSection>
       <SettingsSlider
-        label="Master Volume"
+        label="Overall Volume"
         value={audio.masterVolume}
         onChange={audio.onMasterVolumeChange}
         min={SETTINGS_RANGES.volume.min}
@@ -161,82 +143,58 @@ export function AudioOptionsPanel({ audio }: { audio: AudioOptionsProps }) {
         checked={audio.muteInBackground}
         onChange={audio.onMuteInBackgroundChange}
       />
-    </div>
+    </SettingsSection>
   );
 }
 
 export function GameplayOptionsPanel({ gameplay }: { gameplay: GameplayOptionsProps }) {
   return (
-    <div className="space-y-4">
+    <SettingsSection>
       <SettingsToggle label="Auto-End Turn" checked={gameplay.autoEndTurn} onChange={gameplay.onAutoEndTurnChange} />
       <SettingsToggle
         label="Remember Auto-Battle Preference"
         checked={gameplay.rememberAutoplayPreference}
         onChange={gameplay.onRememberAutoplayPreferenceChange}
       />
-    </div>
+    </SettingsSection>
   );
 }
 
 function SaveDataOptionsPanel({ saveData }: { saveData: SaveDataOptionsProps }) {
   return (
-    <div className="space-y-4">
-      <div className={settingsPanelShellClass}>
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className={controlLabelClass}>Options</p>
-            <p className={controlDescriptionClass}>Restore display, sound, and gameplay options to their defaults.</p>
-          </div>
-          <Button size="lg" variant="outline" onClick={saveData.onResetOptions}>
-            Reset to Default
-          </Button>
-        </div>
-      </div>
-      <div className={settingsPanelShellClass}>
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className={controlLabelClass}>Save Data</p>
-            <p className={controlDescriptionClass}>Clear all existing save data and start fresh.</p>
-          </div>
-          <Button size="lg" variant="destructive" onClick={saveData.onOpenClearSaveConfirm}>
-            Clear Save Data
-          </Button>
-        </div>
-      </div>
-    </div>
+    <SettingsSection>
+      <SettingsAction label="Options" description="Reset all options to default values">
+        <Button variant="outline" onClick={saveData.onResetOptions}>
+          Reset to Default
+        </Button>
+      </SettingsAction>
+      <SettingsAction label="Save Data" description="Clear all existing save data and start fresh">
+        <Button variant="destructive" onClick={saveData.onOpenClearSaveConfirm}>
+          Clear Save Data
+        </Button>
+      </SettingsAction>
+    </SettingsSection>
   );
 }
 
 function DevOptionsPanel({ dev }: { dev: DevOptionsProps }) {
   if (!import.meta.env.DEV) return null;
   return (
-    <section className="rounded-shell-panel border border-primary/40 p-5 surface-muted">
-      <p className={cn(controlLabelClass, "mb-4")}>Dev Only</p>
-      <div className="space-y-4">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className={controlLabelClass}>Dev / QA Unlocks</p>
-            <p className={controlDescriptionClass}>
-              Unlock every collection entry and grant every talent node for testing.
-            </p>
-          </div>
-          <Button size="lg" onClick={dev.onUnlockAll}>
-            Unlock All
+    <SettingsSection title="Dev Only">
+      <SettingsAction
+        label="Dev / QA Unlocks"
+        description="Unlock every collection entry and grant every talent node for testing"
+      >
+        <Button onClick={dev.onUnlockAll}>Unlock All</Button>
+      </SettingsAction>
+      {dev.onOpenErrorLog ? (
+        <SettingsAction label="Error Log" description="Inspect errors logged during this session for bug reports">
+          <Button variant="outline" onClick={dev.onOpenErrorLog}>
+            View Log
           </Button>
-        </div>
-        {dev.onOpenErrorLog ? (
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className={controlLabelClass}>Error Log</p>
-              <p className={controlDescriptionClass}>Inspect errors logged during this session for bug reports.</p>
-            </div>
-            <Button size="lg" variant="outline" onClick={dev.onOpenErrorLog}>
-              View Log
-            </Button>
-          </div>
-        ) : null}
-      </div>
-    </section>
+        </SettingsAction>
+      ) : null}
+    </SettingsSection>
   );
 }
 

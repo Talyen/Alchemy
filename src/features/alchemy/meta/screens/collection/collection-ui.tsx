@@ -1,12 +1,7 @@
-import { useMemo, type CSSProperties } from "react";
-import { cn } from "@/lib/utils";
+import { useMemo } from "react";
 import { PaginationControls } from "../../../shared/ui/navigation";
 import { FadeSlot } from "../../../shared/ui/use-fade";
 import {
-  artTileGridRowsClass,
-  collectionCardGridTileWidthClass,
-  collectionGridBestiaryWidthClass,
-  collectionGridMinHeightClass,
   collectionTabMeta,
   COLLECTION_BESTIARY_REFERENCE_WIDTH,
   COLLECTION_CARD_REFERENCE_WIDTH,
@@ -27,7 +22,6 @@ export function CollectionGrid({
   page,
   pageSize,
   columns,
-  gridStyle,
   bondedCompanions,
   onEnemyActivate,
   inspectionOpen = false,
@@ -41,7 +35,6 @@ export function CollectionGrid({
   page: number;
   pageSize: number;
   columns: number;
-  gridStyle?: CSSProperties;
   bondedCompanions: Record<string, number>;
   onEnemyActivate?: (enemyId: string, trigger: HTMLButtonElement) => void;
   inspectionOpen?: boolean;
@@ -72,26 +65,25 @@ export function CollectionGrid({
     ],
   );
 
-  const fillerClass =
-    collectionTab === "bestiary"
-      ? cn(collectionGridBestiaryWidthClass, "aspect-[4/3]")
-      : cn(collectionCardGridTileWidthClass, "aspect-[3/4]");
-
-  const computedGridStyle: CSSProperties = gridStyle ?? {
-    gridTemplateColumns: `repeat(${columns}, minmax(0, calc(${collectionTab === "bestiary" ? COLLECTION_BESTIARY_REFERENCE_WIDTH : COLLECTION_CARD_REFERENCE_WIDTH}px * var(--content-scale, 1))))`,
-    justifyContent: "center",
-  };
+  const referenceWidth =
+    collectionTab === "bestiary" ? COLLECTION_BESTIARY_REFERENCE_WIDTH : COLLECTION_CARD_REFERENCE_WIDTH;
+  // Fractional scaling must not wrap the final tile solely because of CSS rounding.
+  const rowWidth = columns * referenceWidth + (columns - 1) * 20 + 0.5;
 
   return (
-    <FadeSlot swapKey={`${collectionTab}-${page}`} className={cn("overflow-visible", collectionGridMinHeightClass)}>
-      <div className={cn("grid w-full gap-x-5", artTileGridRowsClass)} style={computedGridStyle}>
+    <FadeSlot swapKey={`${collectionTab}-${page}`} className="w-full overflow-visible">
+      <div
+        className="mx-auto flex max-w-full flex-wrap justify-center gap-x-5 gap-y-8"
+        style={{ width: `calc(${rowWidth}px * var(--content-scale, 1))` }}
+      >
         {pageItems.map((item) => (
-          <div key={`${item.hoverScope}-${item.id}`} className="relative">
+          <div
+            key={`${item.hoverScope}-${item.id}`}
+            className="relative max-w-full shrink-0"
+            style={{ width: `calc(${referenceWidth}px * var(--content-scale, 1))` }}
+          >
             <CollectionTile item={item} onEnemyActivate={onEnemyActivate} inspectionOpen={inspectionOpen} />
           </div>
-        ))}
-        {Array.from({ length: Math.max(0, pageSize - pageItems.length) }).map((_, index) => (
-          <div key={`collection-filler-${index}`} className={fillerClass} />
         ))}
       </div>
     </FadeSlot>
@@ -127,7 +119,6 @@ export function CollectionPagination({
       totalPages={totalPages}
       onPageChange={onPageChange}
       size="default"
-      reserveSpace
       className="mt-0"
     />
   );

@@ -35,6 +35,7 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
       Array.from({ length: 6 }, () => makeCard()),
     );
     const battle = new BattlePage(page);
+    await expect(page.getByRole("combobox", { name: "Card Animations · Temporary" })).toHaveCount(0);
 
     await expect
       .poll(
@@ -75,6 +76,7 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
       body: await page.screenshot(),
       contentType: "image/png",
     });
+    await expect(ghostOverlays).toHaveCount(0);
   });
 
   test("accepts consecutive plays while draws and hand reflow are running", async ({ page }) => {
@@ -154,6 +156,58 @@ test.describe("Draw/discard animation invariants (1920×1080)", slow, () => {
       })
       .toBeGreaterThan(0);
     await Promise.all([transfersDuringTurn, endTurnDone]);
+  });
+
+  test("discard artwork lands exactly over the pile's muted-gem top card", async ({ page }, testInfo) => {
+    test.setTimeout(60_000);
+    await startBattleWithDeck(
+      page,
+      Array.from({ length: 6 }, () => makeCard()),
+    );
+    await waitForOpeningDeal(page);
+    const battle = new BattlePage(page);
+    const landing = page.evaluate(async () => {
+      const selector = '[data-flying-card][data-transfer-kind="discard"]';
+      const card = await new Promise<HTMLElement>((resolve) => {
+        const observer = new MutationObserver(() => {
+          const element = document.querySelector<HTMLElement>(selector);
+          if (element) {
+            observer.disconnect();
+            resolve(element);
+          }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+      });
+      const back = card.querySelector<HTMLElement>("[data-discard-card-back]")!;
+      const anchor = document.querySelector<HTMLElement>('[data-testid="discard-pile"] [data-pile-top-card]')!;
+      const pileImage = document.querySelector<HTMLImageElement>('[data-testid="discard-pile"] img')!;
+      const sameArtwork = back.querySelector<HTMLImageElement>("img")!.src === pileImage.src;
+      let error = Infinity;
+      let samples = 0;
+      while (card.isConnected) {
+        await new Promise(requestAnimationFrame);
+        if (!card.isConnected) break;
+        const actual = back.getBoundingClientRect();
+        const target = anchor.getBoundingClientRect();
+        error = Math.max(
+          Math.abs(actual.x - target.x),
+          Math.abs(actual.y - target.y),
+          Math.abs(actual.width - target.width),
+          Math.abs(actual.height - target.height),
+        );
+        samples++;
+      }
+      return { sameArtwork, error, samples };
+    });
+    const ending = battle.endTurn();
+    await expect(page.locator('[data-flying-card][data-transfer-kind="discard"]')).toHaveCount(1);
+    await testInfo.attach("discard-back-in-flight", { body: await page.screenshot(), contentType: "image/png" });
+    const result = await landing;
+    expect(result.sameArtwork).toBe(true);
+    expect(result.samples).toBeGreaterThan(2);
+    expect(result.error).toBeLessThan(1);
+    await ending;
+    await expect(page.locator('[aria-label^="Play "]:not(.opacity-0)')).toHaveCount(4);
   });
 
   test("playable hand cards stay colored during discard and draw transfers", async ({ page }) => {

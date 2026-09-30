@@ -47,7 +47,7 @@ export function CollectionScreen({
   const isBestiary = collectionTab === "bestiary";
   const referenceTileWidth = isBestiary ? COLLECTION_BESTIARY_REFERENCE_WIDTH : COLLECTION_CARD_REFERENCE_WIDTH;
   const maxColumns = isBestiary ? COLLECTION_BESTIARY_MAX_COLUMNS : COLLECTION_CARD_MAX_COLUMNS;
-  const { onContainer, onMeasure, pageSize, columns, gridStyle } = useAdaptiveGrid(
+  const { onContainer, onMeasure, pageSize, columns } = useAdaptiveGrid(
     referenceTileWidth,
     // Initial paint before measurement; the layout effect re-resolves
     // immediately from the container width.
@@ -117,15 +117,16 @@ export function CollectionScreen({
               page={activePage}
               pageSize={pageSize}
               columns={columns}
-              gridStyle={gridStyle}
               bondedCompanions={bondedCompanions}
               onEnemyActivate={handleEnemyActivate}
               inspectionOpen={inspectedEnemy !== null}
             />
           </div>
-          <div className="flex flex-wrap items-center justify-center">
-            <CollectionPagination page={activePage} totalPages={totalPages} onPageChange={handlePageChange} />
-          </div>
+          {totalPages > 1 ? (
+            <div className="flex flex-wrap items-center justify-center">
+              <CollectionPagination page={activePage} totalPages={totalPages} onPageChange={handlePageChange} />
+            </div>
+          ) : null}
         </div>
       </ScreenShell>
       <EnemyInspectionOverlay

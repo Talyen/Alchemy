@@ -5,6 +5,15 @@ import { controllerInput } from "./controller-input";
 export async function exerciseControllerOptions(page: Page) {
   const input = controllerInput(page);
   await input.activate(page.getByRole("button", { name: "Options", exact: true }));
+  const display = page.getByRole("button", { name: "Display", exact: true });
+  await input.reach(display);
+  await input.press("right");
+  await expect(page.getByRole("button", { name: "Sound", exact: true })).toBeFocused();
+  await input.press("left");
+  await expect(display).toBeFocused();
+  await expect(page.getByRole("button", { name: "Interface", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Background", exact: true })).toBeVisible();
+  await expect(page.getByRole("slider", { name: "Game Size", exact: true })).toBeVisible();
   const aspect = page.getByRole("combobox", { name: "Aspect Ratio" });
   await input.activate(aspect);
   await expect(page.getByRole("listbox")).toBeVisible();
@@ -29,9 +38,9 @@ export async function exerciseControllerOptions(page: Page) {
   const dialog = page.getByRole("dialog");
   const cancel = dialog.getByRole("button", { name: "Cancel", exact: true });
   await expect(cancel).toBeFocused();
-  await input.press("previous");
+  await input.press("right");
   await expect(dialog.getByRole("button", { name: "Clear Save Data" })).toBeFocused();
-  await input.press("next");
+  await input.press("left");
   await expect(cancel).toBeFocused();
   await input.press("back");
   await expect(dialog).toHaveCount(0);

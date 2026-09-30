@@ -6,6 +6,8 @@ Canonical reference for run state, store layout, and boot policy. Coding rules: 
 
 ## Guide index
 
+- [Steam demo edition](./STEAM_DEMO.md): build identity, command/resume restrictions and automatic progress transfer.
+
 - [Run state and persistence](./RUN_STATE.md): aggregate regions, command atomicity, RNG, save codecs, and capability ports.
 - [Battle controllers](./BATTLE_CONTROLLERS.md): command props, committed playback, and navigation timing.
 - Below: feature layout, run setup, shops, meta progression, import boundaries, and boot.

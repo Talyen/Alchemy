@@ -7,6 +7,7 @@ import type { SettingsSaveFields } from "../stores/settings-store";
 export type AlchemyPersistenceFields = SettingsSaveFields & ProfileSaveFields & GearSaveFields & RunProfileSaveFields;
 
 export interface SaveData extends AlchemyPersistenceFields {
+  steamAccountId: string | null;
   saveSchemaVersion: number;
   gameBuildVersion: string;
   contentVersion: number;

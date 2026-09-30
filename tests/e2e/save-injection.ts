@@ -155,6 +155,7 @@ function buildActiveRunSave(overrides: Record<string, unknown>) {
     activeRun: {
       characterId: "knight",
       contentSystemType: "campaign",
+      ...(process.env.ALCHEMY_EDITION === "demo" ? { selectedDifficulty: "difficulty-1" } : {}),
       runDeck: [],
       runPlayerHealth: 30,
       runMaxHealth: 30,
@@ -242,7 +243,7 @@ export async function injectTalentUnlocks(page: Page, unlockedTalents: Record<st
   );
 }
 
-export async function injectBossState(page: Page, act = 1) {
+export async function injectBossState(page: Page, act = 1, overrides: Record<string, unknown> = {}) {
   const highDamageCard = makeHighDamageCard();
   await injectSaveState(page, {
     characterId: "knight",
@@ -261,6 +262,7 @@ export async function injectBossState(page: Page, act = 1) {
       lastVictoryEnemyType: null,
       lastVictoryContentSystem: null,
     },
+    ...overrides,
   });
 }
 

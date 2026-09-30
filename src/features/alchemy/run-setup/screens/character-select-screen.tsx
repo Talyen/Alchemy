@@ -1,3 +1,4 @@
+import { isEditionCharacterAvailable, FULL_GAME_LOCK_MESSAGE } from "@/lib/game-edition";
 import { memo } from "react";
 import { cn } from "@/lib/utils";
 import {
@@ -105,6 +106,7 @@ const CharacterCard = memo(function CharacterCard({
           <HeroTooltip
             character={char}
             isLocked={isLocked}
+            requiresFullGame={!isEditionCharacterAvailable(id)}
             unlockRequirementText={unlockRequirementText}
             triggerRef={triggerRef}
             visible
@@ -138,8 +140,13 @@ export function CharacterSelectScreen({
     >
       <div className={cn("mt-6 grid w-full grid-cols-4 justify-items-center gap-y-6", chooserHeroRowGapClass)}>
         {CHARACTER_SELECT_ORDER.map((id) => {
-          const isLocked = !isCharacterUnlocked(id, finishedRunCharacters);
-          const unlockRequirementText = isLocked ? getCharacterUnlockMessage(id) : "";
+          const editionLocked = !isEditionCharacterAvailable(id);
+          const isLocked = editionLocked || !isCharacterUnlocked(id, finishedRunCharacters);
+          const unlockRequirementText = editionLocked
+            ? FULL_GAME_LOCK_MESSAGE
+            : isLocked
+              ? getCharacterUnlockMessage(id)
+              : "";
 
           return (
             <CharacterCard

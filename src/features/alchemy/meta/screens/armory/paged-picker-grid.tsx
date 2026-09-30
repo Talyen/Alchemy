@@ -16,6 +16,7 @@ function PagedPickerGrid({
   testId,
   swapKey,
   isEmpty,
+  noMatches,
   safePage,
   totalPages,
   onPageChange,
@@ -27,6 +28,7 @@ function PagedPickerGrid({
   testId: string;
   swapKey: string;
   isEmpty: boolean;
+  noMatches?: boolean | undefined;
   safePage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
@@ -42,11 +44,12 @@ function PagedPickerGrid({
           {isEmpty ? (
             <div
               data-testid={`${testId}-empty`}
-              role="img"
-              aria-label="Empty"
-              className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center text-muted-foreground"
+              role={noMatches ? "status" : "img"}
+              aria-label={noMatches ? undefined : "Empty"}
+              className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-4 text-center text-muted-foreground"
             >
               <PackageOpen aria-hidden="true" className="h-12 w-12" />
+              {noMatches ? <p className="text-sm">No items match your search and filters.</p> : null}
             </div>
           ) : null}
           <div
@@ -88,6 +91,7 @@ export function ArmoryPagedGrid<T>({
   fillerCount,
   pageItems,
   placeholderIndex,
+  noMatches,
 }: {
   items: T[];
   testId: string;
@@ -99,6 +103,7 @@ export function ArmoryPagedGrid<T>({
   onPageChange: (page: number) => void;
   fillerCount: number;
   pageItems: T[];
+  noMatches?: boolean | undefined;
   placeholderIndex?: number | null | undefined;
 }) {
   const hasPlaceholder = placeholderIndex !== null && placeholderIndex !== undefined;
@@ -130,6 +135,7 @@ export function ArmoryPagedGrid<T>({
     <PagedPickerGrid
       testId={testId}
       swapKey={swapKey}
+      noMatches={noMatches}
       isEmpty={items.length === 0 && !hasPlaceholder}
       safePage={page}
       totalPages={totalPages}

@@ -20,7 +20,7 @@ describe("ErrorLogViewer", () => {
     render(<ErrorLogViewer onClose={vi.fn()} />);
 
     expect(screen.getByRole("heading", { name: "Error Log" })).toBeTruthy();
-    expect(screen.getByText("No errors logged.")).toBeTruthy();
+    expect(screen.getByText("No errors logged")).toBeTruthy();
     expect(screen.getByText("0 errors")).toBeTruthy();
   });
 
@@ -66,7 +66,7 @@ describe("ErrorLogViewer", () => {
     expect(screen.getByText("Test error to clear")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Clear" }));
-    expect(screen.getByText("No errors logged.")).toBeTruthy();
+    expect(screen.getByText("No errors logged")).toBeTruthy();
   });
 
   it("calls onClose when close button is clicked", () => {
@@ -84,10 +84,10 @@ describe("ErrorLogViewer", () => {
     }
     render(<ErrorLogViewer onClose={vi.fn()} />);
     await user.click(screen.getByRole("button", { name: "Copy All" }));
-    expect(screen.getByText("Copied. 100 errors")).toBeTruthy();
+    expect(screen.getByText("Copied · 100 errors")).toBeTruthy();
     act(() => useErrorLogStore.getState().pushError({ message: "New failure", source: "global" }));
     expect(screen.getByText("100 errors")).toBeTruthy();
-    expect(screen.queryByText(/Copied\./)).toBeNull();
+    expect(screen.queryByText(/Copied ·/)).toBeNull();
   });
 
   it("keeps an unserializable error inspectable and reports copy failure", async () => {
@@ -97,10 +97,10 @@ describe("ErrorLogViewer", () => {
     useErrorLogStore.getState().pushError({ message: "Circular context", source: "global", context });
     render(<ErrorLogViewer onClose={vi.fn()} />);
     await user.click(screen.getByRole("button", { name: "Copy All" }));
-    expect(screen.getByText("Copy failed. 1 error")).toBeTruthy();
+    expect(screen.getByText("Copy failed · 1 error")).toBeTruthy();
     await user.click(screen.getByRole("button", { name: /Circular context/ }));
     expect(screen.getByText("Context could not be displayed.")).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Clear" }));
-    expect(screen.getByText("No errors logged.")).toBeTruthy();
+    expect(screen.getByText("No errors logged")).toBeTruthy();
   });
 });

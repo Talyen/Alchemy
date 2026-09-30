@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { releaseEdition } from "./lib/release/game-edition.mjs";
 // Enforces bundle size budget for the no-lazy eager entry invariant.
 // Replaces the former chunkSizeWarningLimit:900 silence with a real gate.
 import { readdirSync, statSync, existsSync } from "node:fs";
@@ -7,7 +8,7 @@ import { join } from "node:path";
 import { BUDGETS } from "./lib/verification/bundle-budget.mjs";
 import { isMainModule } from "./lib/is-main-module.mjs";
 
-const DEFAULT_ASSETS_DIR = "dist/assets";
+const DEFAULT_ASSETS_DIR = `${releaseEdition().rendererDirectory}/assets`;
 
 function chunkPattern(name) {
   return new RegExp(`^${name}-[A-Za-z0-9_-]+\\.js$`);

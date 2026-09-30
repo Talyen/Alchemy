@@ -92,7 +92,7 @@ export function MysteryScreen({
   return (
     <FadeSlot swapKey={`${event.id}:${phase}`} className="h-full w-full">
       <MysteryScreenShell title={title} keywordIds={plasmaKeywordIds}>
-        <div className="mt-6 flex min-h-[56cqh] w-full flex-col">
+        <div className="mt-6 flex w-full flex-col">
           {mysteryCardChoices ? (
             <CardChoicePicker choices={mysteryCardChoices} onSelect={handleCardChoiceConfirm} />
           ) : mysteryChosenChoice ? (

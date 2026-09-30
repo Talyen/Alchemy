@@ -15,12 +15,22 @@ import {
   type DisplacedGearItem,
 } from "./armory-ordering";
 
+import {
+  DEFAULT_ARMORY_INVENTORY_FILTERS,
+  hasArmoryCriteria,
+  matchesGearFilters,
+  matchesTrinketFilters,
+  type ArmoryInventoryFilters,
+} from "./armory-inventory-filtering";
+
+const NO_EQUIPPED_IDS: ReadonlySet<string> = new Set();
 const NO_IDS: readonly string[] = [];
 
 interface StoredCategory {
   order: string[];
   poolIds: string[];
   page: number;
+  filters: ArmoryInventoryFilters;
 }
 
 function reconcileCategory(
@@ -36,6 +46,7 @@ function reconcileCategory(
   const order = reconcileOrder(entry?.order ?? NO_IDS, pool);
   return {
     order,
+    filters: entry?.filters ?? DEFAULT_ARMORY_INVENTORY_FILTERS,
     poolIds: [...poolIds],
     page: getPagination(order.length, entry?.page ?? 0, ARMORY_PAGE_SIZE).page,
   };
@@ -46,11 +57,17 @@ export function useArmoryOrdering({
   selectedSlot,
   pickerItems,
   ownedTrinkets,
+  equippedGearIds = NO_EQUIPPED_IDS,
+  equippedTrinketIds = NO_EQUIPPED_IDS,
+  otherHeroGearIds = equippedGearIds,
 }: {
   characterId: CharacterId;
   selectedSlot: ArmorySlot;
   pickerItems: GearInstance[];
   ownedTrinkets: TrinketEntry[];
+  equippedGearIds?: ReadonlySet<string>;
+  equippedTrinketIds?: ReadonlySet<string>;
+  otherHeroGearIds?: ReadonlySet<string>;
 }) {
   const isTrinket = selectedSlot === "trinket";
   const activeKey = `${characterId}:${selectedSlot}`;
@@ -74,30 +91,37 @@ export function useArmoryOrdering({
 
   const entry = stored[activeKey];
   const reconciled = reconcileCategory(entry, pool, poolIds, poolSet);
-  if (reconciled !== entry) {
-    setStored({ ...stored, [activeKey]: reconciled });
-  }
   const orderedIds = reconciled.order;
   const storedPage = reconciled.page;
 
-  const { page: safePage, totalPages } = getPagination(orderedIds.length, storedPage, ARMORY_PAGE_SIZE);
+  const filters = reconciled.filters;
+  const hasCriteria = hasArmoryCriteria(filters, isTrinket);
 
-  // Turn reconciled IDs into actual items
-  const orderedGear = useMemo(() => {
-    if (isTrinket) return [];
-    return orderedIds.map((id) => gearById.get(id)).filter((item): item is GearInstance => Boolean(item));
-  }, [isTrinket, orderedIds, gearById]);
-
-  const orderedTrinkets = useMemo(() => {
-    if (!isTrinket) return [];
-    return orderedIds.map((id) => trinketById.get(id)).filter((item): item is TrinketEntry => Boolean(item));
-  }, [isTrinket, orderedIds, trinketById]);
+  // Keep the complete order separate from its current browsing projection.
+  // React Compiler memoizes these derivations; the category is also written
+  // below during reconciliation, so do not manually memoize aliases of it.
+  const orderedGear = isTrinket
+    ? []
+    : orderedIds.map((id) => gearById.get(id)).filter((item): item is GearInstance => Boolean(item));
+  const orderedTrinkets = !isTrinket
+    ? []
+    : orderedIds.map((id) => trinketById.get(id)).filter((item): item is TrinketEntry => Boolean(item));
+  const visibleGear = orderedGear.filter((item) =>
+    matchesGearFilters(item, filters, equippedGearIds, otherHeroGearIds),
+  );
+  const visibleTrinkets = orderedTrinkets.filter((item) => matchesTrinketFilters(item, filters, equippedTrinketIds));
+  const visibleIds = isTrinket ? visibleTrinkets.map((item) => item.id) : visibleGear.map((item) => item.instanceId);
+  const { page: safePage, totalPages } = getPagination(visibleIds.length, storedPage, ARMORY_PAGE_SIZE);
+  // Persist clamping so later inventory growth cannot restore an obsolete page.
+  if (reconciled !== entry || safePage !== storedPage) {
+    setStored({ ...stored, [activeKey]: { ...reconciled, page: safePage } });
+  }
 
   // Sliced page items
   const pageStart = safePage * ARMORY_PAGE_SIZE;
   const pageEnd = pageStart + ARMORY_PAGE_SIZE;
-  const pagedGear = useMemo(() => orderedGear.slice(pageStart, pageEnd), [orderedGear, pageStart, pageEnd]);
-  const pagedTrinkets = useMemo(() => orderedTrinkets.slice(pageStart, pageEnd), [orderedTrinkets, pageStart, pageEnd]);
+  const pagedGear = useMemo(() => visibleGear.slice(pageStart, pageEnd), [visibleGear, pageStart, pageEnd]);
+  const pagedTrinkets = useMemo(() => visibleTrinkets.slice(pageStart, pageEnd), [visibleTrinkets, pageStart, pageEnd]);
 
   const fillerCount = Math.max(0, ARMORY_PAGE_SIZE - (isTrinket ? pagedTrinkets.length : pagedGear.length));
 
@@ -111,7 +135,15 @@ export function useArmoryOrdering({
 
   const commitOrder = useCallback(
     (nextIds: string[], page: number) => {
-      setStored((prev) => ({ ...prev, [activeKey]: { order: nextIds, poolIds: [...poolIds], page } }));
+      setStored((prev) => ({
+        ...prev,
+        [activeKey]: {
+          order: nextIds,
+          poolIds: [...poolIds],
+          page,
+          filters: prev[activeKey]?.filters ?? DEFAULT_ARMORY_INVENTORY_FILTERS,
+        },
+      }));
     },
     [activeKey, poolIds],
   );
@@ -120,16 +152,18 @@ export function useArmoryOrdering({
   const setPage = useCallback(
     (nextPage: number) => {
       setPlaceholderIndex(null);
-      commitOrder(orderedIds, getPagination(orderedIds.length, nextPage, ARMORY_PAGE_SIZE).page);
+      commitOrder(orderedIds, getPagination(visibleIds.length, nextPage, ARMORY_PAGE_SIZE).page);
     },
-    [commitOrder, orderedIds],
+    [commitOrder, orderedIds, visibleIds.length],
   );
 
   // Explicit one-time sort
   const onSort = useCallback(
     (option: ArmorySortOption) => {
       setPlaceholderIndex(null);
-      const sorted = [...pool].sort((a, b) => compareOrderRows(a, b, isTrinket ? "name" : option)).map((row) => row.id);
+      const sorted = [...pool]
+        .sort((a, b) => compareOrderRows(a, b, isTrinket && option === "rarity" ? "name" : option))
+        .map((row) => row.id);
       commitOrder(sorted, 0);
     },
     [commitOrder, isTrinket, pool],
@@ -140,27 +174,47 @@ export function useArmoryOrdering({
     (incomingId: string, replacedId: string | null, displaced: readonly DisplacedGearItem[] = []) => {
       // Inventory placement is independent of artwork and motion preferences.
       const nextIds = placeTransfer(orderedIds, incomingId, replacedId, displaced, selectedSlot);
-      const incomingIndex = orderedIds.indexOf(incomingId);
-      setPlaceholderIndex(!replacedId && displaced.length === 0 && incomingIndex !== -1 ? incomingIndex : null);
+      const incomingIndex = visibleIds.indexOf(incomingId);
+      setPlaceholderIndex(
+        !hasCriteria && !replacedId && displaced.length === 0 && incomingIndex !== -1 ? incomingIndex : null,
+      );
       commitOrder(nextIds, getPagination(nextIds.length, storedPage, ARMORY_PAGE_SIZE).page);
     },
-    [commitOrder, orderedIds, storedPage, selectedSlot],
+    [commitOrder, orderedIds, storedPage, selectedSlot, visibleIds, hasCriteria],
   );
 
   const commitUnequip = useCallback(
     (unequippedId: string) => {
       setPlaceholderIndex(null);
-      const nextIds = placeUnequip(orderedIds, unequippedId, storedPage, ARMORY_PAGE_SIZE);
-      commitOrder(nextIds, storedPage);
+      const nextIds = placeUnequip(orderedIds, unequippedId, safePage, ARMORY_PAGE_SIZE, visibleIds);
+      commitOrder(nextIds, safePage);
     },
-    [commitOrder, orderedIds, storedPage],
+    [commitOrder, orderedIds, visibleIds, safePage],
   );
 
   const clearPlaceholder = useCallback(() => {
     setPlaceholderIndex(null);
   }, []);
 
+  const setFilters = useCallback(
+    (nextFilters: ArmoryInventoryFilters) => {
+      setPlaceholderIndex(null);
+      setStored((prev) => ({
+        ...prev,
+        [activeKey]: { ...reconciled, filters: nextFilters, page: 0 },
+      }));
+    },
+    [activeKey, reconciled],
+  );
+
   return {
+    filters,
+    setFilters,
+    hasCriteria,
+    visibleGear,
+    visibleTrinkets,
+    matchCount: visibleIds.length,
+    totalCount: poolIds.length,
     safePage,
     totalPages,
     fillerCount,

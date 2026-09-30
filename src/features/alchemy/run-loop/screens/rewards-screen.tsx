@@ -165,7 +165,7 @@ export function RewardsScreen({
         className="flex flex-col"
       >
         <h2 className={cn("mt-3 text-center font-sans", sectionTitleClass)}>Choose a Reward</h2>
-        <div className="mt-8 flex flex-col items-center gap-8">
+        <div className="mt-4 flex flex-col items-center gap-8">
           {/* Reserve one tile row (collection width 17.2868rem at 3/4 aspect) so
               1-2 choice, empty, and 3-choice states share the same height. */}
           <div className="flex min-h-[calc(23.05*var(--content-rem,1rem))] flex-wrap items-start justify-center gap-6">

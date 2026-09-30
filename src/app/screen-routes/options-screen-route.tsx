@@ -16,8 +16,6 @@ function OptionsScreenRoute({ onClearSaveData, onUnlockAllDevMode, onBack, onOpe
     useShallow((s) => ({
       selectedAspectRatio: s.selectedAspectRatio,
       displayMode: s.displayMode,
-      screenEffects: s.screenEffects,
-      backgroundLights: s.backgroundLights,
       brightness: s.brightness,
       backgroundParticlesIntensity: s.backgroundParticlesIntensity,
       backgroundGlowIntensity: s.backgroundGlowIntensity,
@@ -52,18 +50,12 @@ function OptionsScreenRoute({ onClearSaveData, onUnlockAllDevMode, onBack, onOpe
         // Desktop-only control: displayMode still persists on web (harmless —
         // it applies if the save ever loads on desktop) but has no editor here.
         showDisplayMode: isDesktop(),
-        screenEffects: settings.screenEffects,
-        backgroundLights: settings.backgroundLights,
-        onBackgroundLightsChange: actions.setBackgroundLights,
-        onScreenEffectsChange: actions.setScreenEffects,
         brightness: settings.brightness,
         onBrightnessChange: actions.setBrightness,
         backgroundParticlesIntensity: settings.backgroundParticlesIntensity,
         onBackgroundParticlesIntensityChange: actions.setBackgroundParticlesIntensity,
         backgroundGlowIntensity: settings.backgroundGlowIntensity,
         onBackgroundGlowIntensityChange: actions.setBackgroundGlowIntensity,
-      }}
-      interface={{
         gameSizePercent,
         tooltipSizePercent,
         onGameSizeChange: setGameSizePercent,

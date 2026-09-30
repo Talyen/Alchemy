@@ -4,7 +4,7 @@ import tailwind from "@tailwindcss/vite";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import babel from "@rolldown/plugin-babel";
 import { sentryVitePlugin } from "@sentry/vite-plugin";
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import checker from "vite-plugin-checker";
 import { visualizer } from "rollup-plugin-visualizer";
 import { resolveDevPort } from "./scripts/lib/dev-port.mjs";
@@ -13,11 +13,14 @@ import { VITE_ALIAS_PATH, VITE_ALIAS_TARGET } from "./scripts/lib/vite-aliases.m
 import { rolldownCodeSplittingGroups } from "./scripts/lib/vite-chunks.mjs";
 import { resolveSentryRelease, resolveSourcemapMode } from "./scripts/lib/release/sentry-release.mjs";
 import { TRANSIENT_ARTIFACT_DIRS } from "./scripts/lib/clean-dev-artifacts.mjs";
+import { resolveEdition, editionPolicy } from "./game-edition.mjs";
 
 // Single port contract shared with scripts/lib/dev-port.mjs consumers (polling/stop/cleanup).
 const devPort = resolveDevPort(process.env);
 
 export default defineConfig(({ mode, command }) => {
+  const edition = resolveEdition(process.env.ALCHEMY_EDITION);
+  const policy = editionPolicy(edition);
   const sentryEnabled =
     mode === "desktop" &&
     process.env.CI_RELEASE === "true" &&
@@ -27,6 +30,7 @@ export default defineConfig(({ mode, command }) => {
     !!process.env.SENTRY_DSN;
 
   return {
+    define: { __ALCHEMY_EDITION__: JSON.stringify(edition) },
     base: mode === "desktop" ? "./" : "/",
 
     server: {
@@ -39,6 +43,12 @@ export default defineConfig(({ mode, command }) => {
     },
     preview: { open: false },
     plugins: [
+      {
+        name: "alchemy-edition",
+        generateBundle() {
+          this.emitFile({ type: "asset", fileName: "edition.json", source: JSON.stringify({ edition }) });
+        },
+      } satisfies Plugin,
       tailwind(),
       react(),
       !process.env.VITEST &&
@@ -68,12 +78,13 @@ export default defineConfig(({ mode, command }) => {
             name: resolveSentryRelease(),
           },
           sourcemaps: {
-            filesToDeleteAfterUpload: ["./dist/**/*.map"],
+            filesToDeleteAfterUpload: [`${policy.rendererDirectory}/**/*.map`],
           },
           telemetry: false,
         }),
     ].filter(Boolean),
     build: {
+      outDir: policy.rendererDirectory,
       target: "esnext",
       assetsInlineLimit: 4096,
       reportCompressedSize: Boolean(process.env.ANALYZE),

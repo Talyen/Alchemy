@@ -34,6 +34,16 @@ test.describe("Electron desktop integration", { tag: [desktop.tag] }, () => {
   test("mapped controller keys navigate desktop Options", async () => {
     const errors = failOnRuntimeErrors(window);
     await new MenuPage(window).expectMainMenuAfterColdStart();
+    await electronApp!.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(1280, 720));
+    await window.getByRole("button", { name: "Options", exact: true }).click();
+    await expect(window.getByRole("combobox", { name: "Display Mode" })).toBeVisible();
+    await expect(window.getByRole("slider", { name: "Background Particles", exact: true })).toBeInViewport();
+    await expect
+      .poll(() =>
+        window.locator(".game-page-scroll").evaluate((element) => element.scrollHeight - element.clientHeight),
+      )
+      .toBeLessThanOrEqual(1);
+    await window.getByRole("button", { name: "Back", exact: true }).click();
     await exerciseControllerOptions(window);
     expect(errors).toEqual([]);
   });

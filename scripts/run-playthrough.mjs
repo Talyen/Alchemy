@@ -1,3 +1,4 @@
+import { resolveEdition } from "../game-edition.mjs";
 import { mkdirSync, readFileSync, writeFileSync, existsSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
 import { spawnSync, execFileSync } from "node:child_process";
@@ -56,7 +57,7 @@ defineScript(import.meta.url, async () => {
       : "reports/playthrough";
   const reportDir = resolve(arg("out", defaultDirectory));
   mkdirSync(reportDir, { recursive: true });
-  const hash = createHash("sha256");
+  const hash = createHash("sha256").update(`edition:${resolveEdition(process.env.ALCHEMY_EDITION)}`);
   const sourcePaths = execFileSync(
     "git",
     [
@@ -70,6 +71,7 @@ defineScript(import.meta.url, async () => {
       "scripts",
       "package.json",
       "package-lock.json",
+      "game-edition.mjs",
     ],
     { encoding: "utf8" },
   )
@@ -78,6 +80,7 @@ defineScript(import.meta.url, async () => {
   for (const path of [...new Set(sourcePaths)].sort())
     if (existsSync(path)) hash.update(path).update(readFileSync(path));
   const codeIdentity = {
+    edition: resolveEdition(process.env.ALCHEMY_EDITION),
     head: execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(),
     sourceHash: hash.digest("hex"),
   };

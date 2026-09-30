@@ -6,11 +6,14 @@ import { evaluateSaveCandidates, hasUnsupportedFutureCandidate, type SaveLoadSta
 import { createDefaultSaveData } from "./defaults";
 import { SaveWriteQueue, type SaveWriteOutcome } from "./save-write-queue";
 import { logStorageFailure } from "@/lib/storage-logging";
+import { IS_DEMO, isEditionRunAvailable } from "@/lib/game-edition";
+import { prepareDemoProgressImport } from "./demo-progress-import";
 
 export class SaveStorage {
   private readonly queue = new SaveWriteQueue();
   private pendingLoads = 0;
   private writeKey = SAVE_KEY;
+  private demoInitialization: Promise<SaveLoadState | null> | null = null;
 
   constructor(private backend: SaveBackend) {}
 
@@ -19,6 +22,7 @@ export class SaveStorage {
       throw new Error("Cannot configure save storage while an operation is pending");
     }
     this.backend = backend;
+    this.demoInitialization = null;
     this.writeKey = SAVE_KEY;
   }
 
@@ -41,6 +45,7 @@ export class SaveStorage {
 
   async resetForTests(): Promise<void> {
     await this.queue.reset();
+    this.demoInitialization = null;
     this.writeKey = SAVE_KEY;
   }
 
@@ -86,13 +91,43 @@ export class SaveStorage {
     const { candidates, useRecovery, readFailed } = await this.collectSaveCandidates();
 
     if (candidates.length === 0) {
+      if (!IS_DEMO && !useRecovery && !readFailed && this.backend.readDemoImportSource) {
+        this.demoInitialization ??= this.initializeDemoProgress();
+        const imported = await this.demoInitialization;
+        if (imported) return this.applySaveWritePolicy(imported, false);
+      }
       return this.applySaveWritePolicy(
         { data: createDefaultSaveData(), status: { kind: readFailed ? "unavailable" : "ok" } },
         useRecovery,
       );
     }
 
-    return this.applySaveWritePolicy(evaluateSaveCandidates(candidates), useRecovery);
+    const loaded = evaluateSaveCandidates(candidates);
+    if (loaded.data.activeRun && !isEditionRunAvailable(loaded.data.activeRun)) {
+      loaded.data.activeRun = null;
+    }
+    return this.applySaveWritePolicy(loaded, useRecovery);
+  }
+
+  private async initializeDemoProgress(): Promise<SaveLoadState | null> {
+    try {
+      const source = await this.backend.readDemoImportSource!();
+      const snapshot = prepareDemoProgressImport(source);
+      if (snapshot) {
+        const outcome = await this.save(snapshot);
+        if (outcome !== "saved") return null;
+        try {
+          await this.backend.completeDemoInitialization?.();
+        } catch (error) {
+          logStorageFailure("Imported progress was saved but its initialization receipt failed", error);
+        }
+        return { data: { ...snapshot, lastSavedAt: 0 }, status: { kind: "ok" }, importedDemoProgress: true };
+      }
+      if (!source.readFailed) await this.backend.completeDemoInitialization?.();
+    } catch (error) {
+      logStorageFailure("Demo progress initialization failed", error);
+    }
+    return null;
   }
 
   private trySerializeSaveSnapshot(data: UnstampedSaveData, context: "" | " during page exit"): string | null {
@@ -192,7 +227,10 @@ export class SaveStorage {
     const cleared = await this.queue.enqueueClear(() => this.backend.clear(SAVE_KEY, { forceLocalWipe }), {
       onError: (error) => logStorageFailure("Save data could not be cleared", error),
     });
-    if (cleared) this.writeKey = SAVE_KEY;
+    if (cleared) {
+      this.writeKey = SAVE_KEY;
+      this.demoInitialization = Promise.resolve(null);
+    }
     return cleared;
   }
 }

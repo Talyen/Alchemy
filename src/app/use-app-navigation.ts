@@ -1,3 +1,4 @@
+import { getDesktopApi } from "@/lib/desktop-api";
 import {
   rememberNonOptionsScreen,
   resolveOptionsBackTarget,
@@ -5,6 +6,7 @@ import {
   resolveScreenBackHandler,
 } from "@/app/screen-navigation-policy";
 import {
+  readActiveRunScreen,
   useForegroundResumeKind,
   useHasActiveBattle,
   useRunResumeScreen,
@@ -24,6 +26,14 @@ export function useGameMenuState() {
     setMenuAnchorRect(rect ?? null);
     setGameMenuOpen(true);
   }, []);
+
+  useEffect(
+    () =>
+      getDesktopApi()?.onExternalFocusLost?.(() => {
+        if (readActiveRunScreen() === "battle") openGameMenu();
+      }),
+    [openGameMenu],
+  );
 
   const closeGameMenu = useCallback(() => {
     setGameMenuOpen(false);

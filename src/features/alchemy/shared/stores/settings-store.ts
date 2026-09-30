@@ -1,11 +1,3 @@
-import {
-  createDefaultBackgroundLights,
-  normalizeBackgroundLights,
-  type BackgroundLightsSettings,
-  createDefaultScreenEffects,
-  normalizeScreenEffects,
-  type ScreenEffectsSettings,
-} from "@/lib/screen-effect-settings";
 import { create } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 import type { AspectRatioOption, DisplayMode } from "@/features/alchemy/shared/types";
@@ -28,8 +20,6 @@ import {
 export interface SettingsSaveFields {
   selectedAspectRatio: AspectRatioOption;
   displayMode: DisplayMode;
-  screenEffects: ScreenEffectsSettings;
-  backgroundLights: BackgroundLightsSettings;
   brightness: number;
   backgroundParticlesIntensity: number;
   backgroundGlowIntensity: number;
@@ -45,8 +35,6 @@ export interface SettingsSaveFields {
 export interface SettingsStore extends SettingsSaveFields {
   setSelectedAspectRatio: (value: AspectRatioOption) => void;
   setDisplayMode: (value: DisplayMode) => void;
-  setBackgroundLights: (patch: Partial<BackgroundLightsSettings>) => void;
-  setScreenEffects: (patch: Partial<ScreenEffectsSettings>) => void;
   setBrightness: (value: number) => void;
   setBackgroundParticlesIntensity: (value: number) => void;
   setBackgroundGlowIntensity: (value: number) => void;
@@ -64,8 +52,6 @@ export function createDefaultSettingsSaveFields(): SettingsSaveFields {
   return {
     selectedAspectRatio: "auto",
     displayMode: "borderless-fullscreen",
-    screenEffects: createDefaultScreenEffects(),
-    backgroundLights: createDefaultBackgroundLights(),
     brightness: DEFAULT_BRIGHTNESS_PCT,
     backgroundParticlesIntensity: DEFAULT_BACKGROUND_PARTICLES_PCT,
     backgroundGlowIntensity: DEFAULT_BACKGROUND_GLOW_PCT,
@@ -94,10 +80,6 @@ export const useSettingsStore = create<SettingsStore>()((set) => ({
 
   setSelectedAspectRatio: (selectedAspectRatio) => set({ selectedAspectRatio }),
   setDisplayMode: (displayMode) => set({ displayMode }),
-  setBackgroundLights: (patch) =>
-    set((state) => ({ backgroundLights: normalizeBackgroundLights({ ...state.backgroundLights, ...patch }) })),
-  setScreenEffects: (patch) =>
-    set((state) => ({ screenEffects: normalizeScreenEffects({ ...state.screenEffects, ...patch }) })),
   setBrightness: (brightness) => set({ brightness: clampBrightnessPct(brightness) }),
   setBackgroundParticlesIntensity: (backgroundParticlesIntensity) =>
     set({ backgroundParticlesIntensity: clampSpecialEffectsPct(backgroundParticlesIntensity) }),
@@ -123,8 +105,6 @@ function selectSettingsSaveFields(state: Pick<SettingsStore, keyof SettingsSaveF
   return {
     selectedAspectRatio: state.selectedAspectRatio,
     displayMode: state.displayMode,
-    screenEffects: state.screenEffects,
-    backgroundLights: state.backgroundLights,
     brightness: state.brightness,
     backgroundParticlesIntensity: state.backgroundParticlesIntensity,
     backgroundGlowIntensity: state.backgroundGlowIntensity,
@@ -148,8 +128,6 @@ export const settingsPersistenceCodec: StandalonePersistenceCodec<SettingsSaveFi
     const selected = selectSettingsSaveFields(fields);
     useSettingsStore.setState({
       ...selected,
-      screenEffects: normalizeScreenEffects(selected.screenEffects),
-      backgroundLights: normalizeBackgroundLights(selected.backgroundLights),
       brightness: clampBrightnessPct(selected.brightness),
       backgroundParticlesIntensity: clampSpecialEffectsPct(selected.backgroundParticlesIntensity),
       backgroundGlowIntensity: clampSpecialEffectsPct(selected.backgroundGlowIntensity),
@@ -168,8 +146,6 @@ export type SettingsActions = Pick<
   SettingsStore,
   | "setSelectedAspectRatio"
   | "setDisplayMode"
-  | "setBackgroundLights"
-  | "setScreenEffects"
   | "setBrightness"
   | "setBackgroundParticlesIntensity"
   | "setBackgroundGlowIntensity"
@@ -187,8 +163,6 @@ function selectSettingsActions(state: SettingsStore): SettingsActions {
   return {
     setSelectedAspectRatio: state.setSelectedAspectRatio,
     setDisplayMode: state.setDisplayMode,
-    setScreenEffects: state.setScreenEffects,
-    setBackgroundLights: state.setBackgroundLights,
     setBrightness: state.setBrightness,
     setBackgroundParticlesIntensity: state.setBackgroundParticlesIntensity,
     setBackgroundGlowIntensity: state.setBackgroundGlowIntensity,

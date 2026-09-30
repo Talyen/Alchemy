@@ -2,6 +2,8 @@
 
 Automated gates validate builds and release artifacts. Public release readiness also requires the [provenance and notice review](./RELEASE_SETUP.md#player-notices-and-asset-provenance) and manual Steamworks promotion described below.
 
+Demo/full edition behavior and save transfer are owned by [Steam demo](./STEAM_DEMO.md). Review the [Alchemy Steam demo checklist](./STEAM_DEMO_CHECKLIST.md) before approving a demo candidate.
+
 ## Commands
 
 Build and installer selection: [REFERENCE.md § Build commands decision tree](./COMMANDS.md#build-commands-decision-tree). `package.json` owns the complete script list. `check:ship:full` adds save E2E on top of `check:ship`. Electron coverage runs in the path-filtered `electron-e2e` CI job and unconditionally each night; `npm run test:ship:desktop` is also available locally but is not part of the pre-tag gate. Gate composition and tiers are owned by [CONTRIBUTING.md](../CONTRIBUTING.md#static-build-and-ci-policy).

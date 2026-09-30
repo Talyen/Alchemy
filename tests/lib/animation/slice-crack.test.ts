@@ -54,18 +54,25 @@ describe("slice crack", () => {
     expect(onBoundary(SLICE_CRACK_POINTS[SLICE_CRACK_POINTS.length - 1]!)).toBe(false);
   });
 
-  it("zigzags interior vertices across the base diagonal", () => {
-    const interior = SLICE_CRACK_POINTS.slice(1, -1);
-    expect(interior.length).toBeGreaterThanOrEqual(3);
-    let previousSign: number | undefined;
-    for (const point of interior) {
+  it("uses one straight cut through the portrait center", () => {
+    for (const fraction of [0, 0.25, 0.5, 0.75, 1]) {
+      const point = sliceCrackPointAtFraction(fraction);
       const dx = (point.x - 0.5) * SLICE_ASPECT_WIDTH;
       const dy = (point.y - 0.5) * SLICE_ASPECT_HEIGHT;
-      const sign = dx * SLICE_NORMAL.dx + dy * SLICE_NORMAL.dy >= 0 ? 1 : -1;
-      if (previousSign !== undefined) {
-        expect(sign * previousSign).toBeLessThan(0);
+      expect(dx * SLICE_NORMAL.dx + dy * SLICE_NORMAL.dy).toBeCloseTo(0);
+    }
+  });
+
+  it("covers the portrait exactly once with complementary halves", () => {
+    for (let x = 0.013; x < 1; x += 0.037) {
+      for (let y = 0.017; y < 1; y += 0.041) {
+        const point = { x, y };
+        if (Math.abs(sliceCrackSide(point)) < 0.01) continue;
+        const primary = pointInClipPolygon(SLICE_PRIMARY_CLIP_PATH, point);
+        const secondary = pointInClipPolygon(SLICE_SECONDARY_CLIP_PATH, point);
+        expect(Number(primary) + Number(secondary)).toBe(1);
+        expect(primary).toBe(sliceCrackSide(point) < 0);
       }
-      previousSign = sign;
     }
   });
 
@@ -106,6 +113,15 @@ describe("slice crack", () => {
 });
 
 describe("slice timeline", () => {
+  it("sweeps in 100ms and clears the flash by 180ms while retaining cut edges", () => {
+    const swept = computeSliceVisual(100 / 1250, 256, 192);
+    expect(swept.crackDraw).toBe(1);
+    expect(swept.flashOpacity).toBe(1);
+    const cleared = computeSliceVisual(180 / 1250, 256, 192);
+    expect(cleared.flashOpacity).toBeCloseTo(0);
+    expect(cleared.edgeOpacity).toBe(1);
+  });
+
   it("holds the split closed until the delay", () => {
     const before = computeSliceVisual(SLICE_SPLIT_DELAY, 200, 150);
     expect(before.splitT).toBe(0);
@@ -126,6 +142,7 @@ describe("slice timeline", () => {
     expect(end.splitT).toBe(1);
     expect(end.halfOpacity).toBe(0);
     expect(end.gap).toBeGreaterThan(20);
-    expect(end.lineOpacity).toBe(0);
+    expect(end.flashOpacity).toBe(0);
+    expect(end.edgeOpacity).toBe(0);
   });
 });

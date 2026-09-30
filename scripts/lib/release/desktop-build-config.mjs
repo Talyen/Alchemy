@@ -1,3 +1,4 @@
+import { releaseEdition } from "./game-edition.mjs";
 /** Validate configuration before Vite can upload source maps or packaging starts. */
 export function validateDesktopBuildConfig(env = process.env) {
   const sentryDsn = env.SENTRY_DSN?.trim() ?? "";
@@ -14,7 +15,8 @@ export function validateDesktopBuildConfig(env = process.env) {
     throw new Error("Production crash reporting requires source maps; unset ALCHEMY_SKIP_SOURCEMAP.");
   }
 
-  const steamAppId = env.STEAM_APP_ID?.trim();
+  const selected = releaseEdition(env);
+  const steamAppId = selected.steamAppId;
   const numericAppId = Number(steamAppId);
   if (
     env.CI_RELEASE === "true" &&
@@ -24,6 +26,15 @@ export function validateDesktopBuildConfig(env = process.env) {
       numericAppId === 480)
   ) {
     throw new Error("CI_RELEASE builds require STEAM_APP_ID to be set to the production Steam App ID (not 480).");
+  }
+  if (env.CI_RELEASE === "true" && selected.edition === "demo") {
+    const fullId = selected.fullGameSteamAppId;
+    if (!/^\d+$/u.test(fullId ?? "") || !Number.isSafeInteger(Number(fullId)) || Number(fullId) <= 0 || Number(fullId) === 480 || fullId === steamAppId) {
+      throw new Error("Demo releases require distinct production demo and full-game App IDs");
+    }
+  }
+  if (env.CI_RELEASE === "true" && (!/^\d+$/u.test(selected.steamDepotId ?? "") || !Number.isSafeInteger(Number(selected.steamDepotId)) || Number(selected.steamDepotId) <= 0)) {
+    throw new Error("Production desktop builds require the selected Steam depot ID");
   }
   const azureFields = {
     publisherName: env.AZURE_CODE_SIGNING_PUBLISHER_NAME?.trim(),

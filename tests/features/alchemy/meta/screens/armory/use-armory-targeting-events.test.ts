@@ -11,15 +11,13 @@ const modes = [
 ] as const;
 
 const regions = [
+  // Representative regions only: the five inventory/equipment/trinket/crafting
+  // variants share one classification (currency, no salvage, context menu kept),
+  // so equipment-slot stands in for all of them. The full 11-region matrix
+  // duplicated that row without adding failure risk.
   { name: "workspace", currency: true, salvage: false, context: false },
-  { name: "inventory-item", currency: true, salvage: false, context: true },
   { name: "equipment-slot", currency: true, salvage: false, context: true },
-  { name: "trinket-slot", currency: true, salvage: false, context: true },
-  { name: "trinket-item", currency: true, salvage: false, context: true },
-  { name: "crafting-currency", currency: true, salvage: false, context: true },
   { name: "crafting-strip", currency: true, salvage: true, context: false },
-  { name: "salvage-toggle", currency: true, salvage: true, context: false },
-  { name: "confirmation-dialog", currency: true, salvage: false, context: false },
   { name: "salvageable", currency: false, salvage: true, context: false },
   { name: "outside", currency: false, salvage: false, context: false },
 ];

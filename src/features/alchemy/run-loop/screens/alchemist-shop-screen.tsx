@@ -98,7 +98,7 @@ export function AlchemistShopScreen({
   const modeKey = mixedCard ? "result" : mixMode ? "mix" : "browse";
 
   return (
-    <FadeSlot swapKey={modeKey} className="h-full min-h-[56cqh] w-full">
+    <FadeSlot swapKey={modeKey} className="h-full w-full">
       {mixedCard ? (
         <ShopBrowseShell title="Alchemist's Shop" gold={gold} showGold={false}>
           <div className="flex flex-col items-center gap-6">

@@ -48,12 +48,8 @@ export function DestinationScreen({
   );
 
   return (
-    <TitledScreenShell
-      title={title}
-      minHeightClass="min-h-[50cqh]"
-      maxWidthClass={bossOnly ? "max-w-3xl" : chooserRowShellWidthClass}
-    >
-      <div className="my-auto flex flex-1 flex-col justify-center py-4">
+    <TitledScreenShell title={title} maxWidthClass={bossOnly ? "max-w-3xl" : chooserRowShellWidthClass}>
+      <div className="mt-6 flex flex-col justify-center">
         <DestinationChoices destinationOptions={destinationOptions} onChoose={onChoose} selectedBoss={boss} />
       </div>
     </TitledScreenShell>

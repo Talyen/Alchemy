@@ -57,16 +57,17 @@ Windows release job.
 
 ## GitHub secrets (one-time setup)
 
-| Secret                              | Purpose                                                                                     |
-| ----------------------------------- | ------------------------------------------------------------------------------------------- |
-| `STEAM_APP_ID`                      | Production Steam App ID                                                                     |
-| `STEAM_DEPOT_ID`                    | Primary content depot                                                                       |
-| `STEAM_USERNAME` / `STEAM_PASSWORD` | `steamcmd` upload                                                                           |
-| `SENTRY_DSN`                        | Public packaged crash endpoint                                                              |
-| `SENTRY_AUTH_TOKEN`                 | Source-map upload only                                                                      |
-| `SENTRY_ORG` / `SENTRY_PROJECT`     | Source-map destination                                                                      |
-| `AZURE_*` values above              | Optional Azure Trusted Signing                                                              |
-| `VERCEL_DEPLOY_HOOK_URL`            | Release web QA deploy trigger (Vercel project Settings → Git → Deploy Hooks, `main` branch) |
+| Secret                                      | Purpose                                                                                     |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `STEAM_APP_ID`                              | Full-game production Steam App ID                                                           |
+| `STEAM_DEMO_APP_ID` / `STEAM_DEMO_DEPOT_ID` | Demo app and depot; distinct from full game                                                 |
+| `STEAM_DEPOT_ID`                            | Primary content depot                                                                       |
+| `STEAM_USERNAME` / `STEAM_PASSWORD`         | `steamcmd` upload                                                                           |
+| `SENTRY_DSN`                                | Public packaged crash endpoint                                                              |
+| `SENTRY_AUTH_TOKEN`                         | Source-map upload only                                                                      |
+| `SENTRY_ORG` / `SENTRY_PROJECT`             | Source-map destination                                                                      |
+| `AZURE_*` values above                      | Optional Azure Trusted Signing                                                              |
+| `VERCEL_DEPLOY_HOOK_URL`                    | Release web QA deploy trigger (Vercel project Settings → Git → Deploy Hooks, `main` branch) |
 
 ## Steam Input default mapping (controller Playable)
 
@@ -88,12 +89,15 @@ confusing Xbox A with PlayStation Cross.
 | Right trigger                  | Left mouse click | Activate the pointed control                     |
 | South face button              | Enter            | Activate the focused control                     |
 | East face button / Menu / View | Escape           | Close the top eligible layer, back, or game menu |
-| Left / right bumper            | Shift+Tab / Tab  | Previous / next focus                            |
-| D-pad                          | Arrow keys       | Sliders and dropdown options                     |
+| Left / right bumper            | F7 / Tab         | Previous / next focus                            |
+| D-pad                          | Arrow keys       | Directional focus, sliders and dropdown options  |
 | Left stick up/down             | Mouse wheel      | Scroll the pointed container                     |
 
-D-pad arrows do not implement spatial navigation across ordinary buttons. Tabs
-and pagination remain normal buttons. Pointer activation and focused activation
+F7 traverses backward through eligible controls within the active dialog or screen, avoiding Steam's Shift+Tab overlay shortcut.
+
+D-pad arrows move focus between visible nearby controls within the active screen
+or dialog. Left/right adjust horizontal sliders; up/down leave them. Dropdowns
+and text fields retain their own arrow handling. Tabs and pagination remain normal buttons. Pointer activation and focused activation
 are separate actions. Holding confirm does not repeatedly activate controls.
 
 ### Configuration and validation status
@@ -140,3 +144,7 @@ hardware before changing the Steam listing or promoting a public build.
 - 4 GB RAM
 - DirectX 11 GPU
 - ~500 MB disk
+
+## Demo setup
+
+Follow [Steam demo](./STEAM_DEMO.md) for shared Cloud configuration, edition-specific save files, metadata, output directories, and additional hardware release evidence. Both editions require App IDs and depots before release CI packaging/upload.

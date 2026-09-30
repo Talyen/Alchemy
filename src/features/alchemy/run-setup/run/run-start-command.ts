@@ -1,3 +1,10 @@
+import {
+  isEditionCharacterAvailable,
+  isEditionModeAvailable,
+  isEditionDifficultyAvailable,
+  IS_DEMO,
+} from "@/lib/game-edition";
+import { isCharacterUnlocked } from "@/lib/game-data";
 import { computeTalentEffects, type BattleCard, type CharacterId, type DifficultyId } from "@/lib/game-data";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { computeGearManifest, flattenGearInventories } from "@/lib/gear";
@@ -21,6 +28,14 @@ export function createDraftRunStartSnapshot(
   draft: GameplayDraft,
   { characterId, contentSystemType, difficultyId, draftedDeck }: CreateRunStartSnapshotInput,
 ): RunStartSnapshot {
+  if (
+    !isEditionCharacterAvailable(characterId) ||
+    !isEditionModeAvailable(contentSystemType) ||
+    (difficultyId != null && !isEditionDifficultyAvailable(difficultyId)) ||
+    (IS_DEMO && !isCharacterUnlocked(characterId, draft.profile.finishedRunCharacters))
+  ) {
+    throw new Error("This run is unavailable");
+  }
   const talentXP = draft.runProfile.talentXP;
   const talentStartGold = computeTalentEffects(draft.runProfile.unlockedTalents).startGold;
   const gearMaxHealthBonus = computeGearManifest(
@@ -91,6 +106,13 @@ export function applyRunStartToDraft(
   snapshot: RunStartSnapshot,
   options: ApplyRunStartOptions = {},
 ): ApplyRunStartResult {
+  if (
+    !isEditionCharacterAvailable(snapshot.characterId) ||
+    !isEditionModeAvailable(snapshot.contentSystemType) ||
+    (snapshot.selectedDifficulty != null && !isEditionDifficultyAvailable(snapshot.selectedDifficulty))
+  ) {
+    throw new Error("This run is unavailable");
+  }
   const isFreshStart = draft.session.activity.kind === "inactive";
   if (
     !canReplaceRunForStart({

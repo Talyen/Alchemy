@@ -1,4 +1,3 @@
-import { normalizeScreenEffects, normalizeBackgroundLights } from "@/lib/screen-effect-settings";
 import { z } from "zod";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { companionTierItems } from "@/lib/homestead/companions";
@@ -112,11 +111,10 @@ export const SaveDataSchema = z
   .object({
     saveSchemaVersion: z.literal(CURRENT_SAVE_SCHEMA_VERSION).catch(CURRENT_SAVE_SCHEMA_VERSION),
     gameBuildVersion: z.string().catch(CURRENT_GAME_BUILD_VERSION),
+    steamAccountId: z.string().regex(/^\d+$/u).nullable().catch(null),
     contentVersion: z.number().int().nonnegative().catch(CURRENT_CONTENT_VERSION),
     selectedAspectRatio: AspectRatioOptionSchema.catch("auto"),
     displayMode: DisplayModeSchema.catch("borderless-fullscreen"),
-    backgroundLights: z.unknown().optional().transform(normalizeBackgroundLights),
-    screenEffects: z.unknown().optional().transform(normalizeScreenEffects),
     brightness: clampedSettingSchema(DEFAULT_BRIGHTNESS_PCT, SETTINGS_RANGES.brightness),
     backgroundParticlesIntensity: clampedSettingSchema(
       DEFAULT_BACKGROUND_PARTICLES_PCT,

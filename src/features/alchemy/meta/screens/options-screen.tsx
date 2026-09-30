@@ -1,3 +1,4 @@
+import "./options/options-layout.css";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -10,26 +11,23 @@ import { TabBar } from "../../shared/ui/tab-bar";
 import {
   AudioOptionsPanel,
   DisplayOptionsPanel,
-  InterfaceOptionsPanel,
   GameplayOptionsPanel,
   OtherOptionsPanel,
   type AudioOptionsProps,
   type DevOptionsProps,
   type DisplayOptionsProps,
   type GameplayOptionsProps,
-  type InterfaceOptionsProps,
   type SaveDataOptionsProps,
 } from "./options/options-panels";
 
-import { Gamepad2, Monitor, PanelsTopLeft, Sliders, Volume2 } from "lucide-react";
+import { Swords, Monitor, Sliders, Volume2 } from "lucide-react";
 
-type OptionsTab = "display" | "interface" | "sound" | "gameplay" | "other";
+type OptionsTab = "display" | "sound" | "gameplay" | "other";
 
 const optionsTabs = [
   { id: "display" as const, label: "Display", icon: Monitor },
-  { id: "interface" as const, label: "Interface", icon: PanelsTopLeft },
   { id: "sound" as const, label: "Sound", icon: Volume2 },
-  { id: "gameplay" as const, label: "Gameplay", icon: Gamepad2 },
+  { id: "gameplay" as const, label: "Gameplay", icon: Swords },
   { id: "other" as const, label: "Other", icon: Sliders },
 ];
 
@@ -37,7 +35,6 @@ export function OptionsScreen({
   onBack,
   onMenu,
   display,
-  interface: interfaceOptions,
   audio,
   gameplay,
   saveData,
@@ -46,7 +43,6 @@ export function OptionsScreen({
   onBack: () => void;
   onMenu?: ((rect: DOMRect) => void) | undefined;
   display: DisplayOptionsProps;
-  interface: InterfaceOptionsProps;
   audio: AudioOptionsProps;
   gameplay: GameplayOptionsProps;
   saveData: SaveDataOptionsProps;
@@ -57,21 +53,20 @@ export function OptionsScreen({
 
   return (
     <PageLayout>
-      <FadeSlot swapKey={showErrorLog ? "error-log" : "options"} className="min-h-[57.78cqh] w-full">
+      <FadeSlot swapKey={showErrorLog ? "error-log" : "options"} className="w-full">
         {showErrorLog ? (
           <ErrorLogViewer onClose={() => setShowErrorLog(false)} />
         ) : (
-          <ScreenShell maxWidthClass="max-w-4xl">
+          <ScreenShell maxWidthClass="max-w-4xl" minHeightClass="min-h-0" className="p-4">
             <ScreenHeaderRow title="Options" onBack={onBack} onMenu={onMenu} />
 
-            <div className="mt-6 flex flex-wrap justify-center gap-2">
-              <TabBar tabs={optionsTabs} activeTab={tab} onSelectTab={setTab} className="flex-nowrap" />
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              <TabBar tabs={optionsTabs} activeTab={tab} onSelectTab={setTab} />
             </div>
 
-            <FadeSlot swapKey={tab} className="grid min-h-[42cqh] pt-6 text-left">
+            <FadeSlot swapKey={tab} className="grid pt-4 text-left">
               {[
                 { id: "display", panel: <DisplayOptionsPanel display={display} /> },
-                { id: "interface", panel: <InterfaceOptionsPanel interfaceOptions={interfaceOptions} /> },
                 { id: "sound", panel: <AudioOptionsPanel audio={audio} /> },
                 { id: "gameplay", panel: <GameplayOptionsPanel gameplay={gameplay} /> },
                 {
@@ -105,7 +100,7 @@ export function OptionsScreen({
           <>
             Are you sure you wish to clear all Save Data?
             <br />
-            This cannot be undone.
+            This cannot be undone
           </>
         }
         confirmLabel="Clear Save Data"

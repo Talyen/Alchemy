@@ -82,7 +82,7 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
             : `Pick 1 of 3 cards - ${String(round)}/${String(DRAFT_ROUNDS)} selected`}
         </p>
 
-        <div className="mx-auto mt-8 min-h-[36cqh] w-full">
+        <div className="mx-auto mt-4 w-full">
           {isComplete ? (
             <div className="mx-auto grid max-w-fit grid-cols-3 justify-items-center gap-6">
               {draftedCards.map((card, index) => {
@@ -115,7 +115,7 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
         </div>
 
         {isComplete ? (
-          <div className="mt-8 flex justify-center">
+          <div className="mt-6 flex justify-center">
             <Button size="lg" variant="primary" className="min-w-56" onClick={() => onComplete()}>
               Continue
             </Button>

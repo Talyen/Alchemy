@@ -119,51 +119,16 @@ describe("HomesteadScreen", () => {
     });
   });
 
-  it("keeps companions gaps in line with upgrade tabs on a centered grid", async () => {
-    render(<HomesteadScreen {...defaultProps} />);
-    fireEvent.click(screen.getByRole("button", { name: "Companions" }));
-
-    await waitFor(() => {
-      expect(document.querySelector(".grid-cols-4")).toBeTruthy();
-    });
-    const companionsGrid = document.querySelector(".grid-cols-4")!;
-    expect(companionsGrid?.className).toContain("gap-x-5");
-    expect(companionsGrid?.className).toContain("mx-auto");
-    expect(companionsGrid?.className).toContain("max-w-fit");
-    expect(companionsGrid?.className).toContain("justify-items-center");
-
-    fireEvent.click(screen.getByRole("button", { name: "Buildings" }));
-    await waitFor(() => {
-      expect(document.querySelector(".grid-cols-3")).toBeTruthy();
-    });
-    const upgradesGrid = document.querySelector(".grid-cols-3");
-    expect(upgradesGrid).toBeTruthy();
-    expect(upgradesGrid?.className).toContain("gap-x-5");
-  });
-
-  it("pads the short companions page so tiles keep their slots", async () => {
+  it("paginates only the companion cards belonging to each page", async () => {
     const companions = cardLibrary.filter((c) => c.effects.some((e) => e.kind === "summon-companion"));
-    expect(companions.length).toBeGreaterThan(8);
     render(<HomesteadScreen {...defaultProps} />);
     fireEvent.click(screen.getByRole("button", { name: "Companions" }));
-
-    await waitFor(() => {
-      expect(document.querySelector(".grid-cols-4")?.children).toHaveLength(8);
-    });
-
-    const ninth = companions[8]!;
+    await waitFor(() => expect(screen.getByAltText(companions[0]!.title)).toBeTruthy());
+    expect(screen.queryByAltText(companions[8]!.title)).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Next page" }));
-    await waitFor(() => {
-      expect(screen.getByAltText(ninth.title)).toBeTruthy();
-    });
-    const grid = screen.getByAltText(ninth.title).closest(".grid-cols-4")!;
-    expect(grid.children).toHaveLength(8);
-    const fillers = Array.from(grid.children).filter((child) => child.getAttribute("aria-hidden") === "true");
-    const secondPageTiles = Math.min(8, companions.length - 8);
-    expect(fillers).toHaveLength(8 - secondPageTiles);
-    for (const filler of fillers) {
-      expect(filler.className).toContain("aspect-[3/4]");
-    }
+    await waitFor(() => expect(screen.getByAltText(companions[8]!.title)).toBeTruthy());
+    expect(screen.queryByAltText(companions[0]!.title)).toBeNull();
+    for (const card of companions.slice(8, 16)) expect(screen.getByAltText(card.title)).toBeTruthy();
   });
 
   it("paginates buildings across two pages with six on the first page", async () => {

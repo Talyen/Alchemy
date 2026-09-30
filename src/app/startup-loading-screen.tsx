@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { shouldReduceMotion } from "@/lib/animation/animation-prefs";
-import { INITIAL_LOAD_MIN_DURATION_MS, LOADING_WORD_FADE_MS, LOADING_WORD_INTERVAL_MS } from "@/lib/game-constants";
+import {
+  CONTENT_REFERENCE_VIEWPORT,
+  STAGE_HEIGHT,
+  INITIAL_LOAD_MIN_DURATION_MS,
+  LOADING_WORD_FADE_MS,
+  LOADING_WORD_INTERVAL_MS,
+} from "@/lib/game-constants";
 import { clamp01 } from "@/lib/math";
 import { LOADING_WORDS } from "./loading-words";
 
@@ -51,10 +57,13 @@ export function StartupLoadingScreen({ progress }: Props) {
       </h1>
       <p
         key={wordIndex}
-        className="alchemy-loading-word -mt-3 text-[12px] font-medium tracking-[0.18em] text-muted-foreground uppercase"
+        className="alchemy-loading-word -mt-3 font-medium tracking-[0.18em] text-muted-foreground uppercase"
         // Inline duration wins over the .alchemy-loading-word shorthand; both
         // mirror LOADING_WORD_FADE_MS (parity asserted in lint-architecture-smoke).
-        style={{ animationDuration: `${LOADING_WORD_FADE_MS}ms` }}
+        style={{
+          animationDuration: `${LOADING_WORD_FADE_MS}ms`,
+          fontSize: `calc(0.75 * var(--content-rem, 1rem) / ${CONTENT_REFERENCE_VIEWPORT.height / STAGE_HEIGHT})`,
+        }}
       >
         {loadingWord}...
       </p>

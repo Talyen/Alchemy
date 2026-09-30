@@ -1,0 +1,15 @@
+{
+  "cards": 105,
+  "talents": 200,
+  "uniques": 29,
+  "trinkets": 24,
+  "bosses": [
+    "The Forge Golem",
+    "The Frostwarden",
+    "The Blight Treant",
+    "The Iron Bear",
+    "The Blood Countess",
+    "The Seraph",
+    "The Stone Titan"
+  ]
+}

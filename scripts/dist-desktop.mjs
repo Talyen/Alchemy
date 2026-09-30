@@ -1,5 +1,6 @@
+import { releaseEdition, assertPackageEdition } from "./lib/release/game-edition.mjs";
 // Runs electron-builder for each target declared in steam/platforms.json.
-import { readdirSync, readFileSync } from "node:fs";
+import { mkdirSync, writeFileSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { assertSupportedTargets, targetToBuilderFlag } from "./lib/release/desktop-artifact.mjs";
@@ -8,13 +9,14 @@ import { resolveSentryRelease } from "./lib/release/sentry-release.mjs";
 import { validateDesktopBuildConfig } from "./lib/release/desktop-build-config.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+const selected = releaseEdition();
 const config = JSON.parse(readFileSync(join(root, "steam/platforms.json"), "utf8"));
 const targets = config.targets ?? ["win"];
 assertSupportedTargets(targets);
 const { sentryDsn, sentryUploadEnabled, steamAppId, azureFields } = validateDesktopBuildConfig();
 const sentryRelease = resolveSentryRelease();
 if (process.env.CI_RELEASE === "true" && sentryUploadEnabled) {
-  const pending = [join(root, "dist")];
+  const pending = [join(root, selected.rendererDirectory)];
   while (pending.length > 0) {
     const directory = pending.pop();
     for (const entry of readdirSync(directory, { withFileTypes: true })) {
@@ -30,7 +32,34 @@ if (process.env.CI_RELEASE === "true" && sentryUploadEnabled) {
 // Publishing is an explicit release-workflow responsibility. electron-builder
 // otherwise infers publishing from CI environment variables.
 const packageDir = process.env.ALCHEMY_PACKAGE_DIR === "1" || process.argv.includes("--dir");
+const rendererIdentity = JSON.parse(readFileSync(join(root, selected.rendererDirectory, "edition.json"), "utf8"));
+assertPackageEdition(
+  {
+    gameEdition: selected.edition,
+    steamAppId,
+    steamDepotId: selected.steamDepotId,
+    fullGameSteamAppId: selected.fullGameSteamAppId,
+  },
+  rendererIdentity,
+);
+const builderConfig = {
+  ...JSON.parse(readFileSync(join(root, "package.json"), "utf8")).build,
+  productName: selected.productName,
+  appId: selected.appId,
+  directories: { output: selected.packageDirectory },
+  files: ["desktop/**/*", "game-edition.mjs", `${selected.rendererDirectory}/**/*`, "!**/*.map", "package.json"],
+  extraMetadata: {
+    gameEdition: selected.edition,
+    steamAppId: steamAppId ?? 480,
+    steamDepotId: selected.steamDepotId ?? null,
+    fullGameSteamAppId: selected.fullGameSteamAppId ?? 480,
+  },
+};
+mkdirSync(join(root, "steam/build"), { recursive: true });
+const builderConfigPath = join(root, "steam/build", `electron-${selected.edition}.json`);
+writeFileSync(builderConfigPath, JSON.stringify(builderConfig));
 const builderArgs = ["--publish", "never"];
+builderArgs.push("--config", builderConfigPath);
 for (const target of targets) {
   builderArgs.push(targetToBuilderFlag(target));
 }

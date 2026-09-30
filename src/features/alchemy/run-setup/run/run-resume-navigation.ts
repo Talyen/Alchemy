@@ -1,3 +1,4 @@
+import { isEditionModeAvailable } from "@/lib/game-edition";
 import { rollFreshBossId } from "@/features/alchemy/shared/config";
 import {
   isBossOnlyDestinationOffer,
@@ -69,6 +70,7 @@ export function createRunResumeNavigation(deps: ContentSystemNavigationDeps) {
   }
 
   function beginContentSystem(systemId: ContentSystemId) {
+    if (!isEditionModeAvailable(systemId)) return;
     if (readHasActiveRun()) {
       resumeRun();
       return;

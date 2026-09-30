@@ -4,6 +4,15 @@ const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("alchemyDesktop", {
   isDesktop: true,
+  edition: process.argv.includes("--alchemy-edition=demo") ? "demo" : "full",
+  openWishlist: () => ipcRenderer.invoke("alchemy:wishlist"),
+  readDemoImportSource: () => ipcRenderer.invoke("alchemy:demo-import-source"),
+  completeDemoInitialization: () => ipcRenderer.invoke("alchemy:demo-initialization"),
+  onExternalFocusLost: (listener) => {
+    const handler = () => listener();
+    ipcRenderer.on("alchemy:external-focus-lost", handler);
+    return () => ipcRenderer.removeListener("alchemy:external-focus-lost", handler);
+  },
   crashReportingEnabled: process.argv.includes("--alchemy-crash-reporting-enabled"),
   setDisplayMode: (mode) => ipcRenderer.invoke("alchemy:set-display-mode", mode),
   quit: () => ipcRenderer.invoke("alchemy:quit"),

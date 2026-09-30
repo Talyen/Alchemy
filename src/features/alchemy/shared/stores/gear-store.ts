@@ -127,10 +127,6 @@ export function readHasUnownedTrinkets(): boolean {
   return readGameplayState().gear.ownedTrinketIds.length < trinketLibrary.length;
 }
 
-export function useIsArmoryLocked(): boolean {
-  return useGameplayStateStore((state) => !hasAnyOwnedGear(state.gear.inventories, state.gear.ownedTrinketIds));
-}
-
 export function readEquippedTrinketId(characterId: CharacterId): string | null {
   return readGameplayState().gear.equippedTrinkets[characterId];
 }

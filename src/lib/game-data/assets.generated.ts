@@ -57,6 +57,7 @@ export { default as crystalGarden } from "@/assets/optimized/crystal-garden.webp
 export { default as culinaryArts } from "@/assets/optimized/culinary-arts.webp";
 export { default as cutpurseKnife } from "@/assets/optimized/cutpurse-knife.webp";
 export { default as darkPact } from "@/assets/optimized/dark-pact.webp";
+export { default as demoFeatureShowcase } from "@/assets/optimized/demo-feature-showcase.webp";
 export { default as detectMagic } from "@/assets/optimized/detect-magic.webp";
 export { default as difficulty1 } from "@/assets/optimized/difficulty-1.webp";
 export { default as difficulty2 } from "@/assets/optimized/difficulty-2.webp";

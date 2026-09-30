@@ -47,6 +47,7 @@ describe("verification selection", () => {
     expect(plan.commands[0]?.args).toEqual([
       "vitest",
       "related",
+      "--maxWorkers=4",
       "src/lib/battle/damage-calc.ts",
       "--run",
       "--passWithNoTests",
@@ -115,6 +116,7 @@ describe("verification selection", () => {
     expect(plan.commands.find((command) => command.key === "related")?.args).toEqual([
       "vitest",
       "related",
+      "--maxWorkers=4",
       runtimePath,
       "--run",
       "--passWithNoTests",

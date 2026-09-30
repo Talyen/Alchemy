@@ -51,13 +51,9 @@ test.describe("Character Select", () => {
       .not.toBeNull();
   });
 
-  test("screen menu returns to main menu", async ({ page }) => {
-    const menu = new MenuPage(page);
-    await menu.goToCharacterSelect();
-    await page.getByRole("button", { name: "Open game menu" }).click();
-    await page.getByRole("button", { name: "Main Menu" }).click();
-    await menu.expectMainMenu();
-  });
+  // Menu-back routing and difficulty unlock states live in screen-routes and
+  // difficulty-select-screen unit tests; the browser keeps character persistence
+  // plus the two battle-boot wirings below.
 });
 
 test.describe("Difficulty Select", () => {
@@ -65,18 +61,7 @@ test.describe("Difficulty Select", () => {
     await unlockDifficulties(page, ["difficulty-1"]);
   });
 
-  test("difficulty screen shows all three cards with correct unlock states", async ({ page }) => {
-    const menu = new MenuPage(page);
-    await menu.goToCharacterSelect();
-    await menu.selectCharacterAndContinue("Knight");
-
-    await expect(page.getByRole("heading", { name: "A Knight's Journey" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Novice" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Adventurer" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Legend" })).toBeVisible();
-    await expect(page.getByText("Locked").first()).toBeVisible();
-  });
-
+  // Difficulty unlock states live in difficulty-select-screen.test.tsx.
   test("selecting difficulty enables Play and starts a battle; Back returns to character select", async ({
     page,
     fastBattle,

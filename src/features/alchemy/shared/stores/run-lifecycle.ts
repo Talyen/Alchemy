@@ -1,3 +1,4 @@
+import { isEditionRunAvailable } from "@/lib/game-edition";
 import { playDefeat, stopAllSfx } from "@/lib/audio";
 import { current, isDraft } from "immer";
 import type { ActiveRunData, RunRecap } from "@/lib/active-run-session";
@@ -38,7 +39,7 @@ export function restoreRun(
 ): void {
   dispatchRunSessionCommand((draft) => {
     applyTalentState(draft, talentXP, unlockedTalents);
-    applyRestoreRunToDraft(draft, activeRun);
+    applyRestoreRunToDraft(draft, activeRun && isEditionRunAvailable(activeRun) ? activeRun : null);
   });
 }
 

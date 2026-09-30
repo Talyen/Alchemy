@@ -112,17 +112,58 @@ example, Error Log expansion uses `aria-expanded`). Backdrops and click shields
 may use line-scoped, explained exceptions: their keyboard behavior belongs to
 the existing Escape handler and child controls, not an extra action on the wrapper.
 
+## Page sizing and spacing
+
+`ScreenShell` fits its content by default. `PageLayout` centers the complete
+header, body, and action group when it fits, and scrolls vertically when needed.
+Keep full available-space geometry for Battle, Armory, and Labyrinth. Do not use
+viewport-height minimums to add empty space to ordinary pages.
+
+Use one 24px gap in content units between a header and its main body. Meaningful
+helper text uses 12px above it and 16px before the primary content. Talents uses
+one 16px header gap, with no additional pane top padding. Preserve bounded
+resource, selection, and talent-footer reservations needed for stable actions;
+size those reservations in content units.
+
+Card Shop removal keeps its height-aware picker inside a centered, content-scaled
+maximum height and standard page gutters. Its available fitting area can shrink
+on short windows without stretching the footer toward taller window edges.
+
+Collection and Homestead center real items in wrapping rows, without layout-only
+fillers. Partial pages keep pagination immediately beneath the items; single-page
+views render neither pagination nor its wrapper. Picker measurement containers
+must receive available width independently of their rendered card count, so
+resizing cannot feed a narrower row back into its own column calculation.
+
+Desktop Main Menu pairs Quit on the bottom left with Options on the right. Quit
+uses a rose-colored Power icon; browser Options remains centered. Demo completion
+uses standard page gutters and fits its complete image into the remaining area.
+The loading caption preserves 12px at the reference viewport and follows the
+game's proportional scale from there. Error Log scroll caps use stage units.
+
 ## Display sizing
 
 On macOS, both desktop fullscreen modes fill the entire display, including the area beside the camera notch, using Electron simple fullscreen. They stay on the current desktop rather than opening a native fullscreen Space. Windowed mode restores the standard movable, resizable window. Do not request native or HTML fullscreen on macOS: it reserves a black strip at the notch.
 
 Talents on the end-run screen and Mystery rewards keep fixed-width boxes in centered, balanced rows. Use the fewest rows that fit (up to five boxes per row), distribute counts with at most one box of difference, and place larger rows first. Recalculate when available width or Game Size changes.
 
-The virtual stage owns available-space geometry and battle coordinates. Its fit
-scale is not capped; content growth is. At fit scale `s <= 1`, content follows
-`s`. Above that, automatic content scale is `min(1.75, s ** 0.8)`, multiplied by
-Game Size (80–120%, 5% steps). Use CSS viewport dimensions, never device pixel
-ratio, for layout. The root font remains 16px.
+The virtual stage owns available-space geometry and battle coordinates. Auto
+fills the available viewport; explicit aspect ratios retain their fitted frame.
+Content uniformly fits a reference composition based on the MacBook browser's
+1470 × 738 CSS-pixel game area, including the height lost to browser bars and the
+Dock. At 100% Game Size, the reference retains its original content scale of
+738 / 1080. Fit content against both frame width and height, then multiply by
+Game Size (80–120%, 5% steps). Wider or taller frames gain background space;
+there is no separate large-window growth curve or content-scale cap. Use CSS
+viewport dimensions, never device pixel ratio, for layout. The root font remains
+16px. Artwork preserves its aspect ratio and intentional crops.
+
+Hover tooltips retain their original untransformed size at the reference browser
+viewport. Their scale is visible game content scale divided by the reference
+content scale (738 / 1080), multiplied by Tooltip Size (90–125%, 5% steps).
+At 100%, tooltip text, icons, spacing, and panels grow proportionally with the
+game, including enemy Traits. Tooltip Size is an additional
+relative adjustment, not a fixed pixel size independent of Game Size.
 
 The stage's `--content-scale` is visible content scale divided by stage scale.
 Inline Tailwind theme tokens and `--content-rem` size text, controls, cards,
@@ -163,48 +204,10 @@ preferences keep their existing unanimated appearance without color-animation
 frames. Availability belongs to the renderer lifecycle; failures are logged,
 not shown in a player-facing dialog.
 
-## Display options and screen effects
+## Display options
 
-Display is grouped in rendering order:
-
-1. Display Setup: Display Mode (desktop only), Aspect Ratio, Brightness.
-2. Background Atmosphere: Background Glow, Background Particles, Drifting Lights. These remain
-   independent of the screen-effects master switch.
-3. Screen Effects: master toggle, then independent Scanlines, Color Tint,
-   Darkened Edges and Paper Grain toggles.
-
-Each enabled effect reveals only its controls using `SettingsReveal`. Scanlines
-has strength and Fine/Normal/Wide spacing; Color Tint has Green/Amber/Cool Blue
-and strength; Darkened Edges and Paper Grain each have strength. Background
-Drifting Lights has its own toggle, intensity, and Still/Slow/Flowing motion. All strengths range from 0–100%.
-The master and individual switches default off, with strengths prepared at 50%,
-Normal spacing, Amber tint, and Flowing motion. Toggling off preserves configuration;
-Reset Screen Effects restores just this group, while Reset to Default restores
-all options. There is no preset selector or per-preset customization.
-
-The pointer-transparent, accessibility-hidden overlay covers the viewport above
-menus and tooltips, outside virtual-resolution scaling. Only enabled, nonzero
-layers mount; the master switch removes the entire overlay. Layers composite in
-this order: tint, grain, scanlines, then one shared edge-shading layer.
-There is no central white sheen. Paper Grain uses a static seeded brown SVG
-texture without adding a pale haze; tint and edge shading are separate choices.
-
-Drifting Lights renders in the unscaled frame before the virtual-resolution stage,
-behind particles, plasma, artwork, and interface. Its active state makes the stage
-background transparent so the lights show through; the outer backdrop retains
-the base background color. Keeping its canvas outside stage scaling preserves
-pixel-scale dithering. It uses its own transparent WebGL canvas to draw teal/gold and violet
-lights in one pass. Slow uses roughly 24/31-second cycles; Flowing doubles speed.
-Stationary screen-space stochastic rounding dithers premultiplied RGBA by less
-than one 8-bit step, after applying intensity. There is no moving noise mask and
-no capture, blur, or sampling of the particle/plasma canvases or game artwork.
-The shared canvas lifecycle pauses animation when hidden/unfocused and releases
-resources on unmount. Still and reduced motion draw a static dithered frame;
-resizes and intensity changes redraw it. Backing resolution follows DPR up to 2x
-and a 4K pixel budget; supersized displays may soften pixel-scale dithering.
-Context loss or unavailable WebGL uses static CSS lights, which can still band.
-Context restoration rebuilds the renderer without polling.
-
-Avoid moving alpha-noise masks: a previous foreground-light implementation made
-particles look mottled. Check changes with both particles and plasma enabled,
-not only isolated light gradients. Background lights do not tint artwork or text.
+Display groups Display Mode (desktop only), Aspect Ratio, Brightness, Game Size,
+and Tooltip Size together. The Background section contains Background Glow and
+Background Particles. Screen Effects and Drifting Lights have been removed,
+including their renderers and saved preferences. Reset to Default restores the
+remaining preferences and device sizes.

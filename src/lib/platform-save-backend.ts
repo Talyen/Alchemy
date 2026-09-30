@@ -1,4 +1,4 @@
-import { getDesktopApi } from "./desktop-api";
+import { getDesktopApi, type DemoImportSource } from "./desktop-api";
 import { logStorageFailure } from "./storage-logging";
 import { tryLocalStorageGetItem, tryLocalStorageRemoveItem, tryLocalStorageSetItem } from "./storage-environment";
 import { SAVE_KEY, SAVE_RECOVERY_KEY } from "./game-constants";
@@ -9,6 +9,8 @@ type SaveBackendReadResult =
 type SaveBackendWriteResult = { ok: true } | { ok: false; error: unknown };
 
 export interface SaveBackend {
+  readDemoImportSource?: () => Promise<DemoImportSource>;
+  completeDemoInitialization?: () => Promise<boolean>;
   readCandidates(key: string): Promise<SaveBackendReadResult>;
   write(key: string, value: string): Promise<SaveBackendWriteResult>;
   writeSync(key: string, value: string): SaveBackendWriteResult | null;
@@ -54,6 +56,7 @@ async function clearDesktop(
   forceLocalWipe: boolean,
 ): Promise<SaveBackendWriteResult> {
   if (forceLocalWipe) {
+    // Native clearSave preserves the local initialization receipt before wiping.
     const localCleared = await desktop.clearSave();
     if (!localCleared) {
       return { ok: false, error: new Error("Failed to clear desktop save file") };
@@ -69,6 +72,9 @@ async function clearDesktop(
       );
     }
     return { ok: true };
+  }
+  if (desktop.completeDemoInitialization && !(await desktop.completeDemoInitialization())) {
+    return { ok: false, error: new Error("Could not preserve demo initialization before clearing progress") };
   }
   if (cloudSyncEnabled) {
     const cloudCleared = (await desktop.steamCloudDelete?.()) ?? false;
@@ -145,6 +151,14 @@ export function createBrowserSaveBackend(): SaveBackend {
 
 export function createDesktopSaveBackend({ cloudSyncEnabled = false }: PlatformSaveBackendOptions = {}): SaveBackend {
   return {
+    readDemoImportSource: async () =>
+      getDesktopApi()?.readDemoImportSource?.() ?? {
+        initialized: true,
+        fullSaveExists: false,
+        readFailed: false,
+        candidates: [],
+      },
+    completeDemoInitialization: async () => (await getDesktopApi()?.completeDemoInitialization?.()) ?? false,
     async readCandidates(key) {
       const desktop = getDesktopApi();
       if (desktop?.isDesktop !== true) return desktopUnavailable();
@@ -206,6 +220,8 @@ export function createPlatformSaveBackend({ cloudSyncEnabled = false }: Platform
   // environment between backend creation and use.
   const active = () => (getDesktopApi()?.isDesktop === true ? desktop : browser);
   return {
+    readDemoImportSource: () => desktop.readDemoImportSource!(),
+    completeDemoInitialization: () => desktop.completeDemoInitialization!(),
     readCandidates: (key) => active().readCandidates(key),
     write: (key, value) => active().write(key, value),
     writeSync: (key, value) => active().writeSync(key, value),

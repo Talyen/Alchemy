@@ -1,4 +1,3 @@
-import { animationNoise } from "./animation-noise";
 import { clamp01 } from "@/lib/math";
 
 export interface SlicePoint {
@@ -26,8 +25,6 @@ export const SLICE_NORMAL: SliceVec = {
 
 export const SLICE_ASPECT_WIDTH = 256;
 export const SLICE_ASPECT_HEIGHT = 192;
-const SLICE_SEGMENT_COUNT = 5;
-const SLICE_WOBBLE = 16;
 const END_PADDING = 24;
 
 function cardSpanOffsets(): { min: number; max: number } {
@@ -52,26 +49,9 @@ function basePoint(aspectOffset: number): SlicePoint {
   };
 }
 
-function offsetPoint(aspectOffset: number, perpendicular: number): SlicePoint {
-  return {
-    x: 0.5 + (SLICE_ALONG.dx * aspectOffset + SLICE_NORMAL.dx * perpendicular) / SLICE_ASPECT_WIDTH,
-    y: 0.5 + (SLICE_ALONG.dy * aspectOffset + SLICE_NORMAL.dy * perpendicular) / SLICE_ASPECT_HEIGHT,
-  };
-}
-
 function buildPoints(): SlicePoint[] {
   const span = cardSpanOffsets();
-  const vertices: SlicePoint[] = [basePoint(span.min - END_PADDING)];
-  const interiorCount = SLICE_SEGMENT_COUNT - 1;
-  for (let index = 1; index <= interiorCount; index++) {
-    const fraction = index / SLICE_SEGMENT_COUNT;
-    const aspectOffset = span.min + (span.max - span.min) * fraction;
-    const noise = animationNoise(index, 211);
-    const offset = SLICE_WOBBLE * (0.5 + 0.5 * noise) * (index % 2 === 0 ? 1 : -1);
-    vertices.push(offsetPoint(aspectOffset, offset));
-  }
-  vertices.push(basePoint(span.max + END_PADDING));
-  return vertices;
+  return [basePoint(span.min - END_PADDING), basePoint(span.max + END_PADDING)];
 }
 
 export const SLICE_CRACK_POINTS: readonly SlicePoint[] = buildPoints();

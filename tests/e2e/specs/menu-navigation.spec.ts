@@ -34,18 +34,8 @@ test.describe("Menu", () => {
     await expect(page.getByRole("button", { name: /Wildwood Draft/ })).toBeVisible();
   });
 
-  test("unspent talents and affordable homestead show gold shine borders on main menu", async ({ page }) => {
-    const menu = new MenuPage(page);
-    await menu.gotoWithUnlockedMeta({
-      talentXP: { dodge: 550 },
-      unlockedTalents: {},
-      materialInventory: { wood: 50, stone: 50, iron: 50, food: 50 },
-    });
-    await menu.expectMainMenu();
-    const shineBorders = page.locator(".shine-border");
-    await expect(shineBorders).toHaveCount(2);
-    await expect(shineBorders.first()).not.toHaveAttribute("data-glow", "true");
-  });
+  // Menu shine borders live in armory-shine-borders and collection-tile unit
+  // tests; the browser keeps the Continue-gate wiring below.
 
   test("Continue is the only play action until End Run clears the current adventure", critical, async ({ page }) => {
     await injectActiveBattle(page, makeGoblinBattleState());
@@ -135,7 +125,7 @@ test.describe("Options Screen", critical, () => {
     const headingBounds = await heading.boundingBox();
     expect(headingBounds).not.toBeNull();
     for (const [tab, label] of [
-      ["Interface", "Game Size"],
+      ["Display", "Game Size"],
       ["Sound", "Music Volume"],
       ["Gameplay", "Auto-End Turn"],
       ["Other", "Save Data"],
@@ -200,19 +190,6 @@ test("closing the game menu blocks stray keyboard navigation", async ({ page }) 
   ).toBe(false);
   await expect(panel).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Options", exact: true })).toBeVisible();
-});
-
-test.describe("Auto-End Turn", () => {
-  test("auto-end turn toggle is accessible in gameplay tab", async ({ page }) => {
-    const menu = new MenuPage(page);
-    await menu.goto();
-    await menu.openOptions();
-
-    const gameplayTab = page.getByRole("button", { name: "Gameplay" });
-    await expect(gameplayTab).toBeVisible({ timeout: 5000 });
-    await gameplayTab.click();
-    await expect(page.getByText("Auto-End Turn")).toBeVisible({ timeout: 2000 });
-  });
 });
 
 test.describe("Startup Loading Screen", slow, () => {

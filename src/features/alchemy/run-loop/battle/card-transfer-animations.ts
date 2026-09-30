@@ -157,11 +157,13 @@ export async function animateDiscardedHand(cards: BattleCard[], session: number,
     deps.setHiddenHandCardKeys((current) => (current.includes(cardKey) ? current : [...current, cardKey]));
     if (sourceRect.width <= 0) continue;
     await deps.runCardTransfer({
+      kind: "discard",
       card,
       from: sourceRect,
       to: targetRect,
       fromScale: 1,
       toScale: safeTransferScale(discardPileRect.width, sourceRect.width),
+      toScaleY: safeTransferScale(discardPileRect.height, sourceRect.height),
       fromRotation: (index - (cards.length - 1) / 2) * HAND_FAN_ROTATION_DEGREES,
       toRotation: 0,
       rotateY: [...CARD_TRANSFER_CONFIG.discardFlipKeyframes],
@@ -202,6 +204,7 @@ export async function animateDrawnHand(
     if (targetRect.width <= 0) continue;
     await deps.runCardTransfer(
       {
+        kind: "draw",
         card,
         from: sourceRect,
         to: targetRect,

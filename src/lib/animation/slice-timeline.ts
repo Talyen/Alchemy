@@ -3,7 +3,6 @@ import { SLICE_NORMAL } from "./slice-crack";
 
 const SLICE_INTENSITY = 0.5;
 export const SLICE_PARTICLE_COUNT = 48;
-const SLICE_TINT_STRENGTH = 0.85;
 const SLICE_SPLIT_GAP = 0.22;
 const SLICE_CRACK_GAP = 0.035;
 const SLICE_CRACK_DRAW_DURATION = 0.08;
@@ -24,7 +23,9 @@ export interface SliceVisual {
   dissolve: number;
   halfOpacity: number;
   crackDraw: number;
-  lineOpacity: number;
+  flashOpacity: number;
+  edgeOpacity: number;
+  sparkT: number;
   leftOffset: SliceOffset;
   rightOffset: SliceOffset;
 }
@@ -43,8 +44,9 @@ export function computeSliceVisual(progress: number, width: number, height: numb
   const halfOpacity = 1 - dissolve;
   const drawDuration = clamp(delay, 0.001, SLICE_CRACK_DRAW_DURATION);
   const crackDraw = clamp01(p / drawDuration);
-  const fade = 1 - clamp01((p - delay) / 0.18);
-  const lineOpacity = fade * Math.max(SLICE_INTENSITY, 0.35) * (0.55 + SLICE_TINT_STRENGTH * 0.7);
+  // The blade crosses in 100ms and clears by 180ms of the 1.25s death.
+  const flashOpacity = 1 - clamp01((p - 0.08) / 0.064);
+  const edgeOpacity = crackDraw * halfOpacity;
 
   return {
     crackT,
@@ -55,7 +57,9 @@ export function computeSliceVisual(progress: number, width: number, height: numb
     dissolve,
     halfOpacity,
     crackDraw,
-    lineOpacity,
+    flashOpacity,
+    edgeOpacity,
+    sparkT: p / 0.32,
     leftOffset: {
       x: -SLICE_NORMAL.dx * gap * 0.5,
       y: -SLICE_NORMAL.dy * gap * 0.5 - lift,

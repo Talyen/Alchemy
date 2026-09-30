@@ -19,7 +19,11 @@ export function RunEndObtainedItems({ items }: { items: readonly RunObtainedItem
 
   return (
     <FlankingPagination page={page} totalPages={totalPages} onPageChange={setPage}>
-      <FadeSlot swapKey={`run-end-items-${page}`} className={paging ? "min-h-[34cqh]" : undefined}>
+      {/* Reserve the portrait row in content units so the arrows stay aligned on sparse pages. */}
+      <FadeSlot
+        swapKey={`run-end-items-${page}`}
+        className={paging ? "min-h-[calc(18.4411*var(--content-rem,1rem))]" : undefined}
+      >
         <div className="flex w-full flex-wrap items-center justify-center gap-4">
           {pageItems.map((item, index) => {
             const itemKey = `${obtainedItemKey(item)}:${page * ITEM_PAGE_SIZE + index}`;

@@ -20,6 +20,10 @@ export function quitDesktopApp(): void {
   void getDesktopApi()?.quit();
 }
 
+export function openFullGameWishlist(): void {
+  void getDesktopApi()?.openWishlist?.();
+}
+
 export async function initializeSteam(): Promise<SteamInitialization> {
   const getPlayerName = getDesktopApi()?.steamGetName;
   if (!getPlayerName) return { playerName: null, cloudSyncEnabled: false };

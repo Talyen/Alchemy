@@ -1,3 +1,4 @@
+import { logStorageFailure } from "@/lib/storage-logging";
 import { createPlatformSaveBackend, type SaveBackend } from "@/lib/platform-save-backend";
 import { isClientContext } from "@/lib/storage-environment";
 import { createDefaultSaveData } from "./defaults";
@@ -10,6 +11,30 @@ export { serializeSaveSnapshot } from "./save-storage";
 
 const storage = new SaveStorage(createPlatformSaveBackend());
 let backendConfigured = false;
+let saveWriteFailed = false;
+const saveWriteListeners = new Set<() => void>();
+export function getSaveWriteFailure(): boolean {
+  return saveWriteFailed;
+}
+export function subscribeSaveWriteFailure(listener: () => void): () => void {
+  saveWriteListeners.add(listener);
+  return () => {
+    saveWriteListeners.delete(listener);
+  };
+}
+function reportSaveWriteOutcome(outcome: SaveWriteOutcome): SaveWriteOutcome {
+  if (outcome !== "skipped" && saveWriteFailed !== (outcome === "failed")) {
+    saveWriteFailed = outcome === "failed";
+    for (const listener of saveWriteListeners) {
+      try {
+        listener();
+      } catch (error) {
+        logStorageFailure("Save status update failed", error);
+      }
+    }
+  }
+  return outcome;
+}
 
 function isStorageAvailable(): boolean {
   return backendConfigured || isClientContext();
@@ -43,19 +68,22 @@ export async function loadAlchemySaveState(): Promise<SaveLoadState> {
 }
 
 export async function saveAlchemySaveData(data: UnstampedSaveData): Promise<SaveWriteOutcome> {
-  return isStorageAvailable() ? storage.save(data) : "skipped";
+  return reportSaveWriteOutcome(isStorageAvailable() ? await storage.save(data) : "skipped");
 }
 
 export async function saveAlchemySaveDataForExit(data: UnstampedSaveData): Promise<SaveWriteOutcome> {
-  return isStorageAvailable() ? storage.saveForExit(data) : "skipped";
+  return reportSaveWriteOutcome(isStorageAvailable() ? await storage.saveForExit(data) : "skipped");
 }
 
 export async function clearAlchemySaveData(mode: "default" | "localWipe" = "default"): Promise<boolean> {
-  return isStorageAvailable() ? storage.clear(mode) : true;
+  const cleared = isStorageAvailable() ? await storage.clear(mode) : true;
+  if (cleared) reportSaveWriteOutcome("saved");
+  return cleared;
 }
 
 export async function resetStorageIoForTests(): Promise<void> {
   await storage.resetForTests();
   storage.configureBackend(createPlatformSaveBackend());
   backendConfigured = false;
+  reportSaveWriteOutcome("saved");
 }

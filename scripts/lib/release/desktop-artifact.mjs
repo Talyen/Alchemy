@@ -1,3 +1,4 @@
+import { releaseEdition } from "./game-edition.mjs";
 import { createRequire } from "node:module";
 import path from "node:path";
 
@@ -11,8 +12,8 @@ export const resolveUnpackedDirectory = packageLayout.resolveUnpackedDirectory;
 export const targetFromUnpackedName = packageLayout.targetFromUnpackedName;
 export const targetPlatform = packageLayout.targetPlatform;
 
-export function steamContentRoot(root) {
-  return path.join(root, "release-desktop", packageLayout.unpackedDirectoryName("win"));
+export function steamContentRoot(root, env = process.env) {
+  return path.join(root, releaseEdition(env).packageDirectory, packageLayout.unpackedDirectoryName("win"));
 }
 
 /** platforms.json owns the target list; this owns the target-to-builder-flag mapping. */

@@ -52,6 +52,19 @@ describe("animateDiscardedHand", () => {
     expect(transferred).toEqual(["c", "b", "a"]);
   });
 
+  it("fits both dimensions of the discard top-card anchor", async () => {
+    const anchor = { x: 10, y: 20, width: 32, height: 44 };
+    const deps = makeDeps({ measureDiscardPile: () => anchor });
+    await animateDiscardedHand([makeTestCardWithId("slash", { uid: 1 })], 1, deps);
+    const transfer = vi.mocked(deps.runCardTransfer).mock.calls[0]![0];
+    const landedWidth = handRect.width * transfer.toScale;
+    const landedHeight = handRect.height * transfer.toScaleY!;
+    expect(landedWidth).toBeCloseTo(anchor.width);
+    expect(landedHeight).toBeCloseTo(anchor.height);
+    expect(transfer.to.x + (handRect.width - landedWidth) / 2).toBeCloseTo(anchor.x);
+    expect(transfer.to.y + (handRect.height - landedHeight) / 2).toBeCloseTo(anchor.y);
+  });
+
   it("stops transferring when the session becomes inactive", async () => {
     let active = true;
     const deps = makeDeps({

@@ -43,6 +43,7 @@ export const ART_PRESETS = Object.freeze({
   cardPlaceholder: Object.freeze({ width: 420, quality: 60 }),
   talent: Object.freeze({ width: 420, quality: 82 }),
   boon: Object.freeze({ width: 420, quality: 82 }),
+  marketing: Object.freeze({ width: 2560, quality: 90 }),
   hero: Object.freeze({ width: 720, quality: 82 }),
   enemy: Object.freeze({ width: 720, quality: 82 }),
   enemyPlaceholder: Object.freeze({ width: 720, quality: 60 }),

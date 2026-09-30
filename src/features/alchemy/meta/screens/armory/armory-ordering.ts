@@ -11,7 +11,7 @@ import {
 
 export const ARMORY_PAGE_SIZE = 6;
 
-export type ArmorySortOption = "rarity" | "name";
+export type ArmorySortOption = "rarity" | "name" | "name-desc";
 
 const RARITY_RANK: Record<GearRarity, number> = {
   unique: 0,
@@ -42,8 +42,8 @@ export function trinketOrderRow(entry: TrinketEntry): ArmoryOrderRow {
 export function compareOrderRows(a: ArmoryOrderRow, b: ArmoryOrderRow, sort: ArmorySortOption): number {
   const rankCompare = a.rank - b.rank;
   const titleCompare = a.title.localeCompare(b.title);
-  if (sort === "name") {
-    if (titleCompare !== 0) return titleCompare;
+  if (sort === "name" || sort === "name-desc") {
+    if (titleCompare !== 0) return sort === "name-desc" ? -titleCompare : titleCompare;
     if (rankCompare !== 0) return rankCompare;
   } else {
     if (rankCompare !== 0) return rankCompare;
@@ -119,8 +119,10 @@ export function placeUnequip(
   unequippedId: string,
   page: number,
   pageSize: number = ARMORY_PAGE_SIZE,
+  visibleIds: readonly string[] = currentIds,
 ): string[] {
   const filtered = currentIds.filter((id) => id !== unequippedId);
-  const insertIndex = Math.max(0, Math.min(page * pageSize, filtered.length));
+  const anchor = visibleIds.filter((id) => id !== unequippedId)[Math.max(0, page) * pageSize];
+  const insertIndex = anchor === undefined ? 0 : Math.max(0, filtered.indexOf(anchor));
   return [...filtered.slice(0, insertIndex), unequippedId, ...filtered.slice(insertIndex)];
 }

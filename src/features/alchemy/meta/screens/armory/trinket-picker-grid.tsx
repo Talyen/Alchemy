@@ -21,6 +21,7 @@ export function TrinketPickerGrid({
   onPageChange,
   fillerCount,
   pageItems,
+  noMatches,
   placeholderIndex,
   hiddenArtworkIds,
 }: {
@@ -36,6 +37,7 @@ export function TrinketPickerGrid({
   onPageChange: (page: number) => void;
   fillerCount: number;
   pageItems: TrinketEntry[];
+  noMatches?: boolean;
   placeholderIndex?: number | null | undefined;
   hiddenArtworkIds?: ReadonlySet<string> | undefined;
 }) {
@@ -50,6 +52,7 @@ export function TrinketPickerGrid({
 
   return (
     <ArmoryPagedGrid
+      noMatches={noMatches}
       items={trinkets}
       page={page}
       totalPages={totalPages}

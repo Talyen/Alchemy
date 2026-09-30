@@ -1,3 +1,5 @@
+import { IS_DEMO } from "@/lib/game-edition";
+import { openFullGameWishlist } from "@/lib/platform";
 import type { ReactNode } from "react";
 import { isDesktop, quitDesktopApp } from "@/lib/platform";
 import { menuLogo } from "@/lib/game-data";
@@ -31,7 +33,6 @@ import {
   useTalentProgressSlice,
 } from "@/features/alchemy/shared/stores/run-reads";
 import type { MetaCommands, MetaRouteCtx } from "./route-ctx";
-import { useIsArmoryLocked } from "@/features/alchemy/shared/stores/gear-store";
 import { useArmoryController } from "@/features/alchemy/meta/screens/armory/use-armory-controller";
 
 const setCollectionPageCommand = createRunSessionCommand(setCollectionPage);
@@ -44,10 +45,10 @@ const bondCompanionCommand = createRunSessionCommand(bondCompanion);
 function MenuScreenRoute({ commands }: { commands: MetaCommands }) {
   const { hasUnspentTalents, hasAffordableHomestead } = useMenuBadges();
   const hasActiveRun = useHasActiveRun();
-  const isArmoryLocked = useIsArmoryLocked();
   const finishedRunCharacters = useFinishedRunCharacters();
   return (
     <MenuScreen
+      {...(IS_DEMO && isDesktop() ? { onWishlist: openFullGameWishlist } : {})}
       hasActiveRun={hasActiveRun}
       onPlay={hasActiveRun ? commands.resumeRun : () => commands.goToScreen("game-mode-select")}
       onCollection={() => commands.goToScreen("collection")}
@@ -59,7 +60,6 @@ function MenuScreenRoute({ commands }: { commands: MetaCommands }) {
       logoSrc={menuLogo}
       hasUnspentTalents={hasUnspentTalents}
       hasAffordableHomestead={hasAffordableHomestead}
-      isArmoryLocked={isArmoryLocked}
       finishedRunCharacters={finishedRunCharacters}
     />
   );

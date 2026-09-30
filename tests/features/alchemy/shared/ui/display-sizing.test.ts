@@ -1,29 +1,49 @@
 import { anchoredPage } from "@/features/alchemy/shared/ui/pagination";
 import { describe, expect, it } from "vitest";
 import { getVirtualResolutionLayout } from "@/features/alchemy/shared/ui/use-virtual-resolution";
+import { CONTENT_REFERENCE_VIEWPORT, STAGE_HEIGHT } from "@/lib/game-constants";
 import { normalizeDisplayPercent } from "@/lib/settings-values";
 import { getGridCapacity } from "@/features/alchemy/shared/ui/adaptive-grid";
 
 describe("display sizing", () => {
-  it.each([
-    [1280, 720],
-    [1470, 956],
-    [1512, 982],
-    [1920, 1080],
-  ])("preserves laptop content at %i x %i", (width, height) => {
-    const result = getVirtualResolutionLayout("auto", width, height);
-    expect(result.stageContentScale).toBeCloseTo(1, 12);
-    expect(parseFloat(result.frameStyle.width)).toBeCloseTo(width);
-    expect(parseFloat(result.frameStyle.height)).toBeCloseTo(height);
+  it("preserves the reference browser content size", () => {
+    const { width, height } = CONTENT_REFERENCE_VIEWPORT;
+    const layout = getVirtualResolutionLayout("auto", width, height);
+    expect(layout.contentScale).toBeCloseTo(height / STAGE_HEIGHT, 12);
+    expect(layout.stageContentScale).toBeCloseTo(1, 12);
+    expect(layout.tooltipScale).toBeCloseTo(1, 12);
+    expect(parseFloat(layout.frameStyle.width)).toBeCloseTo(width);
+    expect(parseFloat(layout.frameStyle.height)).toBeCloseTo(height);
   });
-  it("grows continuously and caps content without capping the stage", () => {
-    const reference = getVirtualResolutionLayout("auto", 1920, 1080);
-    const nearby = getVirtualResolutionLayout("auto", 1920, 1080.001);
+  it.each([0.5, 1, 2, 4, 8])("preserves composition proportions at %ix reference size", (factor) => {
+    const { width, height } = CONTENT_REFERENCE_VIEWPORT;
+    const reference = getVirtualResolutionLayout("auto", width, height);
+    const layout = getVirtualResolutionLayout("auto", width * factor, height * factor);
+    expect(layout.contentScale / reference.contentScale).toBeCloseTo(factor, 12);
+    expect(layout.stageContentScale).toBeCloseTo(reference.stageContentScale, 12);
+    expect(layout.tooltipScale / reference.tooltipScale).toBeCloseTo(factor, 12);
+  });
+  it("adds space instead of enlarging content when only one dimension grows", () => {
+    const { width, height } = CONTENT_REFERENCE_VIEWPORT;
+    const reference = getVirtualResolutionLayout("auto", width, height);
+    for (const [w, h] of [
+      [width * 2, height],
+      [width, height * 2],
+    ]) {
+      const layout = getVirtualResolutionLayout("auto", w!, h!);
+      expect(layout.contentScale).toBeCloseTo(reference.contentScale, 12);
+      expect(parseFloat(layout.frameStyle.width)).toBeCloseTo(w!, 12);
+      expect(parseFloat(layout.frameStyle.height)).toBeCloseTo(h!, 12);
+    }
+  });
+  it("scales continuously across 1080 CSS pixels and has no large-window cap", () => {
+    const aspect = CONTENT_REFERENCE_VIEWPORT.width / CONTENT_REFERENCE_VIEWPORT.height;
+    const reference = getVirtualResolutionLayout("auto", 1080 * aspect, 1080);
+    const nearby = getVirtualResolutionLayout("auto", 1080.001 * aspect, 1080.001);
     expect(nearby.contentScale).toBeCloseTo(reference.contentScale, 5);
-    const huge = getVirtualResolutionLayout("auto", 7680, 4320);
-    expect(huge.contentScale).toBe(1.75);
-    expect(huge.stageScale).toBe(4);
-    expect(huge.frameStyle.height).toBe("4320px");
+    const huge = getVirtualResolutionLayout("auto", 4320 * aspect, 4320);
+    expect(huge.contentScale).toBe(4);
+    expect(huge.stageContentScale).toBe(1);
   });
   it.each([
     [0, 0],
@@ -40,15 +60,23 @@ describe("display sizing", () => {
     expect(layout.frameStyle.width).toBe("1280px");
     expect(layout.frameStyle.height).toBe("720px");
     expect(getVirtualResolutionLayout("16:9", 100, 60).frameStyle.width).toBe("100px");
+    const sameFrame = getVirtualResolutionLayout("auto", 1280, 720);
+    expect(layout.contentScale).toBe(sameFrame.contentScale);
+    for (const aspect of ["16:9", "16:10", "21:9"] as const) {
+      const small = getVirtualResolutionLayout(aspect, 1280, 800);
+      const large = getVirtualResolutionLayout(aspect, 2560, 1600);
+      expect(large.contentScale / small.contentScale).toBeCloseTo(2);
+    }
   });
-  it("adjusts game and tooltips independently", () => {
+  it("scales tooltips with Game Size and applies Tooltip Size as a relative adjustment", () => {
     const base = getVirtualResolutionLayout("auto", 3840, 2160);
     const game = getVirtualResolutionLayout("auto", 3840, 2160, { gameSizePercent: 80, tooltipSizePercent: 100 });
     const tooltip = getVirtualResolutionLayout("auto", 3840, 2160, { gameSizePercent: 100, tooltipSizePercent: 125 });
     expect(game.contentScale / base.contentScale).toBeCloseTo(0.8);
-    expect(game.tooltipScale).toBe(base.tooltipScale);
+    expect(game.tooltipScale / base.tooltipScale).toBeCloseTo(0.8);
     expect(tooltip.contentScale).toBe(base.contentScale);
-    expect(tooltip.tooltipScale).toBe(1.25);
+    expect(tooltip.tooltipScale / base.tooltipScale).toBeCloseTo(1.25);
+    expect(tooltip.tooltipStyle["--content-scale" as keyof typeof tooltip.tooltipStyle]).toBe(tooltip.tooltipScale);
   });
   it("bounds and rounds preferences", () => {
     expect(normalizeDisplayPercent("gameSizePercent", 82)).toBe(80);

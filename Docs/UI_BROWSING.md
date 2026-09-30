@@ -5,13 +5,15 @@ Shared conventions: [UI](./UI.md).
 ## Collection and Armory browsing
 
 Collection measures available grid width and scaled tile size. Page size is two
-rows times the resolved column count, capped at eight portrait or six landscape
-columns. Resize retains the selected or first visible item; switching artwork
+rows times the resolved column count, capped at four columns for Heroes, Cards,
+Trinkets, and Uniques, or three for Bestiary. Resize retains the selected or first visible item; switching artwork
 orientation resolves capacity before page synchronization. Collection keeps
 per-tab page memory.
 
 Armory uses six-item pages and retains working order and page per hero and slot
-while mounted. Sorting resets that category to page zero; equipment movement
+while mounted. Its bottom-center Search, Filters, and Sort toolbar keeps criteria
+per hero/slot. Filtering preserves hidden items in the complete working order;
+criteria changes and one-time sorting reset that category to page zero; equipment movement
 preserves positions according to [Armory ordering](./ARMORY.md#inventory-ordering-and-equipment-movement).
 Do not apply Collection's adaptive page-size policy to this inventory.
 
@@ -84,13 +86,18 @@ keep the same spacing.
 
 ## Options
 
+Gameplay Options lists the existing mouse/keyboard controls and core Mana/Block/inspection rules. Failed local saves show a non-modal warning until an acknowledged retry; the warning does not change save recovery behavior.
+
 Options opened from either end-run outcome returns to that same recap through Back or Escape, including after changing Game Size.
 
 Game Size and Tooltip Size are device-local preferences, separate from game
 saves and cloud mirroring. Reset Sizes and Reset Options reset both. Clearing
 progress or importing a save does not change them.
 
-Options centers a shared tab area sized by its tallest panel. Inactive panels
+Options uses compact unboxed groups with pale-gold headings, fading rules,
+neutral row dividers, inline controls, and
+fixed-width slider percentages. Slider and dropdown rows stack below 36
+content-scaled rem of panel width. Options centers a shared tab area sized by its tallest panel. Inactive panels
 remain in the same grid cell, invisible and inert, so switching tabs preserves
 the header and control positions. The page scrolls when the content exceeds the
 available height.
@@ -98,6 +105,13 @@ available height.
 ## Armory crafting and salvage
 
 Targeting cancellation treats icon descendants, including SVG paths, like their containing controls. Currency targeting survives clicks within the workspace and its recognized controls; salvage targeting survives clicks on salvageable items, the salvage toggle, and the crafting strip. Other clicks cancel targeting. Right-clicks on gear, Trinkets, equipment slots, and crafting currencies leave targeting active; other right-clicks cancel, suppressing the browser context menu only within the workspace. Escape, window blur, and hiding the document also cancel targeting. Activation clicks do not cancel the mode they enable, and cancellation listeners are active without a timer delay. Salvage confirmation owns its own dismissal while targeting listeners are suspended.
+
+Focusing the Armory browsing toolbar clears crafting/salvage targeting. The
+controlled filter panel opens above the toolbar, applies changes immediately,
+and dismisses on Escape, outside clicks, or keyboard focus leaving its controls.
+Escape closes the panel before navigating away and returns focus to Filters.
+Match counts and removable criteria chips occupy a reserved summary row so the
+six-item grid does not jump when criteria are added or removed.
 
 Currency artwork shares one 5rem size between the crafting strip, pointer attachment, and salvage preview. The pointer attachment is offset from the hit point, hides for touch and outside the workspace, and never intercepts input. Reward quantities are plain numbers; preview currencies are focusable information groups rather than action buttons.
 

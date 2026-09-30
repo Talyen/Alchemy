@@ -49,6 +49,7 @@ export function ItemPickerGrid({
   onPageChange,
   fillerCount,
   pageItems,
+  noMatches,
   placeholderIndex,
   hiddenArtworkIds,
 }: {
@@ -71,6 +72,7 @@ export function ItemPickerGrid({
   onPageChange: (page: number) => void;
   fillerCount: number;
   pageItems: GearInstance[];
+  noMatches?: boolean;
   placeholderIndex?: number | null | undefined;
   hiddenArtworkIds?: ReadonlySet<string> | undefined;
 }) {
@@ -87,6 +89,7 @@ export function ItemPickerGrid({
 
   return (
     <ArmoryPagedGrid
+      noMatches={noMatches}
       items={items}
       page={page}
       totalPages={totalPages}

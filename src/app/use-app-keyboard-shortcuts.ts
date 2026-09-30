@@ -1,3 +1,8 @@
+import {
+  focusPreviousControl,
+  focusInDirection,
+  type FocusDirection,
+} from "@/features/alchemy/shared/ui/focus-navigation";
 import { ESCAPE_PRIORITY, pushEscapeHandler } from "@/app/escape-stack";
 import { useLatestRef } from "@/features/alchemy/shared/ui/use-latest-ref";
 import type { Screen } from "@/lib/routing";
@@ -34,6 +39,28 @@ export function useAppKeyboardShortcuts({
   const renderedScreenRef = useLatestRef(renderedScreen);
   const onBackRef = useLatestRef(onBack);
   const toggleGameMenuRef = useLatestRef(toggleGameMenu);
+
+  useEffect(() => {
+    const previousFocus = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || !screenInteractiveRef.current)
+        return;
+      if (event.key === "F7" && !event.repeat) {
+        event.preventDefault();
+        focusPreviousControl();
+        return;
+      }
+      const directions: Record<string, FocusDirection> = {
+        ArrowLeft: "left",
+        ArrowRight: "right",
+        ArrowUp: "up",
+        ArrowDown: "down",
+      };
+      const direction = directions[event.key];
+      if (direction && !isRadixEscapeTargetOpen() && focusInDirection(direction)) event.preventDefault();
+    };
+    document.addEventListener("keydown", previousFocus);
+    return () => document.removeEventListener("keydown", previousFocus);
+  }, [screenInteractiveRef]);
 
   // Subscribe once; latest refs keep the Escape stack fresh without resubscribing.
   useEffect(() => {

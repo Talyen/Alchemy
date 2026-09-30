@@ -1,3 +1,4 @@
+export { getSaveWriteFailure, subscribeSaveWriteFailure } from "./io";
 export { clearAlchemySaveData, loadAlchemySaveState, saveAlchemySaveData, saveAlchemySaveDataForExit } from "./io";
 // Bootstrap and headless careers explicitly install their storage transport.
 export { configureSaveBackend } from "./io";

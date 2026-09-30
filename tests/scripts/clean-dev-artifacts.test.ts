@@ -43,7 +43,7 @@ describe("clean-dev-artifacts helpers", () => {
   it("covers the documented default and build relative dirs", () => {
     expect(DEFAULT_ARTIFACT_DIRS).toContain("test-results");
     expect(DEFAULT_ARTIFACT_DIRS).toContain("node_modules/.vite");
-    expect(BUILD_ARTIFACT_DIRS).toEqual(["dist", "release-desktop"]);
+    expect(BUILD_ARTIFACT_DIRS).toEqual(["dist", "dist-demo", "release-desktop", "release-desktop-demo"]);
   });
 
   it("measures nested file sizes and removes trees", () => {

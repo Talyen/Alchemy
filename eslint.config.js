@@ -83,6 +83,7 @@ export default tseslint.config(
   {
     ignores: [
       "dist",
+      "dist-demo",
       "node_modules",
       ".vite",
       ".worktrees",
@@ -92,6 +93,7 @@ export default tseslint.config(
       "test-results",
       "coverage",
       "release-desktop",
+      "release-desktop-demo",
       "reports",
       "blob-report",
       ".knip-output.json",

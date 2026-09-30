@@ -59,7 +59,7 @@ describe("CorruptionScreen", () => {
 
     await user.click(screen.getByRole("button", { name: /Corrupt a Card/i }));
 
-    expect(screen.getByText("Select one card. The altar may weaken, strengthen, or remake it.")).toBeTruthy();
+    expect(screen.getByText("The altar may weaken, strengthen, or remake your card.")).toBeTruthy();
 
     const corruptConfirmBtn = screen.getByRole("button", { name: "Corrupt" });
     expect(corruptConfirmBtn).toHaveProperty("disabled", true);
@@ -114,7 +114,7 @@ describe("CorruptionScreen", () => {
 
     if (method === "Escape") await user.keyboard("{Escape}");
     else await user.click(screen.getByRole("button", { name: /Cancel/i }));
-    expect(await screen.findByText("Select a Card to Corrupt")).toBeTruthy();
+    expect(await screen.findByRole("button", { name: "Corrupt a Card" })).toBeTruthy();
 
     // Re-entering picker should have selection cleared
     await user.click(screen.getByRole("button", { name: /Corrupt a Card/i }));

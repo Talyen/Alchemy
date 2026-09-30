@@ -1,3 +1,4 @@
+import { releaseEdition } from "./lib/release/game-edition.mjs";
 import path from "node:path";
 import { executablePath, resolveUnpackedDirectory } from "./lib/release/desktop-artifact.mjs";
 import { runStreamCommand } from "./lib/run-command.mjs";
@@ -11,7 +12,7 @@ export function runSmokeDesktop(rootDir = root) {
   if (process.platform !== "win32") {
     throw new Error("Packaged desktop smoke requires Windows; run it in the desktop-build or release CI job.");
   }
-  const directory = resolveUnpackedDirectory(path.join(rootDir, "release-desktop"), { target: "win" });
+  const directory = resolveUnpackedDirectory(path.join(rootDir, releaseEdition().packageDirectory), { target: "win" });
   const result = runStreamCommand(
     "powershell.exe",
     [
@@ -22,7 +23,7 @@ export function runSmokeDesktop(rootDir = root) {
       "-File",
       path.join(rootDir, "scripts/smoke-desktop.ps1"),
       "-Executable",
-      executablePath(directory, "win"),
+      executablePath(directory, "win", { productFilename: releaseEdition().productName }),
     ],
     { cwd: rootDir, timeout: 90_000 },
   );

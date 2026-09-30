@@ -122,36 +122,6 @@ describe("BattleBoonInspectOverlay", () => {
     expect(screen.getByRole("button", { name: "Previous page" }).hasAttribute("disabled")).toBe(true);
   });
 
-  it("pages when there are more trinkets than one inspect page", async () => {
-    const user = userEvent.setup();
-    const ids = trinketLibrary.slice(0, TRINKET_PAGE_SIZE + 1).map((entry) => entry.id);
-    render(<BattleBoonInspectOverlay open trinketIds={ids} onClose={vi.fn()} />);
-
-    expect(screen.getAllByRole("img")).toHaveLength(TRINKET_PAGE_SIZE);
-    expect(screen.getByRole("img", { name: trinketLibrary[0]!.title })).toBeTruthy();
-    expect(screen.queryByRole("img", { name: trinketLibrary[TRINKET_PAGE_SIZE]!.title })).toBeNull();
-
-    await waitForArtwork();
-    await user.click(screen.getByRole("button", { name: "Next page" }));
-
-    expect(await screen.findByRole("img", { name: trinketLibrary[TRINKET_PAGE_SIZE]!.title })).toBeTruthy();
-    expect(screen.queryByRole("img", { name: trinketLibrary[0]!.title })).toBeNull();
-    expect(screen.getAllByRole("img")).toHaveLength(1);
-  });
-
-  it("returns to the first page on reopening while preserving the closing page", async () => {
-    const user = userEvent.setup();
-    const ids = trinketLibrary.slice(0, TRINKET_PAGE_SIZE + 1).map((entry) => entry.id);
-    const { rerender } = render(<BattleBoonInspectOverlay open trinketIds={ids} onClose={vi.fn()} />);
-
-    await waitForArtwork();
-    await user.click(screen.getByRole("button", { name: "Next page" }));
-    expect(await screen.findByRole("img", { name: trinketLibrary[TRINKET_PAGE_SIZE]!.title })).toBeTruthy();
-
-    rerender(<BattleBoonInspectOverlay open={false} trinketIds={ids} onClose={vi.fn()} />);
-    rerender(<BattleBoonInspectOverlay open trinketIds={ids} onClose={vi.fn()} />);
-
-    expect(await screen.findByRole("img", { name: trinketLibrary[0]!.title })).toBeTruthy();
-    expect(screen.queryByRole("img", { name: trinketLibrary[TRINKET_PAGE_SIZE]!.title })).toBeNull();
-  });
+  // Boon pagination and reopen-reset live in card-inspection-overlay.test.tsx;
+  // the Boon overlay keeps its helpers, list, tooltip, close, and fade guard.
 });

@@ -80,7 +80,7 @@ describe("WishOverlay", () => {
     expect(onWishChoice).toHaveBeenCalledWith(wishCard);
   });
 
-  it("resets the activation guard and accepts a queued Wish with the same card options", async () => {
+  it.each(["queued", "reopened"])("accepts the next %s Wish even when its cards repeat", async (nextPrompt) => {
     const user = userEvent.setup();
     const onWishChoice = vi.fn();
     const battleState = patchBattleState({ wishOptions: [wishCard] });
@@ -91,32 +91,17 @@ describe("WishOverlay", () => {
     await user.click(screen.getByRole("button", { name: "Choose Wish Card" }));
     expect(onWishChoice).toHaveBeenCalledExactlyOnceWith(wishCard);
 
-    rerender(<WishOverlay open battleState={{ ...battleState, wishOptions: [wishCard] }} actions={actions} />);
-    expect(screen.queryByRole("button", { name: "Confirm" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Skip" })).toBeNull();
+    if (nextPrompt === "queued") {
+      rerender(<WishOverlay open battleState={{ ...battleState, wishOptions: [wishCard] }} actions={actions} />);
+    } else {
+      rerender(<WishOverlay open={false} battleState={battleState} actions={actions} />);
+      rerender(<WishOverlay open battleState={battleState} actions={actions} />);
+    }
+
     await waitForArtwork();
     await user.click(screen.getByRole("button", { name: "Choose Wish Card" }));
     expect(onWishChoice).toHaveBeenCalledTimes(2);
     expect(onWishChoice).toHaveBeenLastCalledWith(wishCard);
-  });
-
-  it("accepts a new choice after the overlay reopens", async () => {
-    const user = userEvent.setup();
-    const onWishChoice = vi.fn();
-    const battleState = patchBattleState({ wishOptions: [wishCard] });
-    const actions = { onWishChoice } as unknown as BattleActionsProps;
-    const { rerender } = render(<WishOverlay open battleState={battleState} actions={actions} />);
-
-    await waitForArtwork();
-    await user.click(screen.getByRole("button", { name: "Choose Wish Card" }));
-    expect(onWishChoice).toHaveBeenCalledTimes(1);
-
-    rerender(<WishOverlay open={false} battleState={battleState} actions={actions} />);
-    rerender(<WishOverlay open battleState={battleState} actions={actions} />);
-
-    await waitForArtwork();
-    await user.click(screen.getByRole("button", { name: "Choose Wish Card" }));
-    expect(onWishChoice).toHaveBeenCalledTimes(2);
   });
 
   it("highlights the autoplay-previewed wish option without its tooltip", async () => {

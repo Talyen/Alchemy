@@ -69,12 +69,8 @@ function CorruptionIntro({
   hasEligibleCards: boolean;
 }) {
   return (
-    <div className="flex flex-col items-center gap-5">
-      <div>
-        <ScreenDescription tone="danger">
-          {hasEligibleCards ? "Select a Card to Corrupt" : "No uncorrupted cards remain."}
-        </ScreenDescription>
-      </div>
+    <div className="flex flex-col items-center gap-4">
+      {!hasEligibleCards ? <ScreenDescription tone="danger">No uncorrupted cards remain.</ScreenDescription> : null}
       <div>
         <img
           src={corruptionAltar}
@@ -104,7 +100,7 @@ function CorruptionIntro({
 
 function CorruptionResultView({ result, onContinue }: { result: CorruptionResult; onContinue: () => void }) {
   return (
-    <div className="flex flex-col items-center gap-5">
+    <div className="flex flex-col items-center gap-4">
       <div>
         <ScreenDescription tone="danger">The altar returns your card changed.</ScreenDescription>
       </div>
@@ -184,14 +180,14 @@ export function CorruptionScreen({
   return (
     <FadeSlot swapKey={result ? "result" : selecting ? "select" : "intro"} className="h-full w-full">
       <TitledScreenShell title="Altar of Corruption">
-        <div className="mt-6 flex flex-col items-center gap-6 text-center">
+        <div className={cn("flex flex-col items-center gap-6 text-center", result || selecting ? "mt-3" : "mt-6")}>
           {result ? (
             <CorruptionResultView result={result} onContinue={handleExit} />
           ) : selecting ? (
-            <div className="flex flex-col items-center gap-5">
+            <div className="flex w-full min-w-0 flex-col items-center gap-4">
               <div>
                 <ScreenDescription tone="danger">
-                  Select one card. The altar may weaken, strengthen, or remake it.
+                  The altar may weaken, strengthen, or remake your card.
                 </ScreenDescription>
               </div>
               <CorruptionDeckPicker

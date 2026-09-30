@@ -31,8 +31,6 @@ export interface HomesteadSaveFixture {
   // Optional: present on real saves, omitted here so the load-tolerant
   // `.catch` path stays exercised. Typed from SaveData so access is checked.
   backgroundParticlesIntensity?: SaveData["backgroundParticlesIntensity"];
-  backgroundLights?: SaveData["backgroundLights"];
-  screenEffects?: SaveData["screenEffects"];
   backgroundGlowIntensity?: SaveData["backgroundGlowIntensity"];
   gearInventories?: SaveData["gearInventories"];
   gearLoadouts?: SaveData["gearLoadouts"];
@@ -71,6 +69,7 @@ export function saveEnvelopeFixture(overrides: Record<string, unknown> = {}) {
   // `wildcard` below is a real roster member (see GEAR_CHARACTER_IDS and the
   // CompletedDifficultiesSchema test), not dead data.
   return {
+    steamAccountId: null,
     saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
     gameBuildVersion: CURRENT_GAME_BUILD_VERSION,
     contentVersion: CURRENT_CONTENT_VERSION,

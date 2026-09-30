@@ -1,6 +1,7 @@
 import { createElement, StrictMode, type PropsWithChildren } from "react";
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { DEFAULT_ARMORY_INVENTORY_FILTERS } from "@/features/alchemy/meta/screens/armory/armory-inventory-filtering";
 import { useArmoryOrdering } from "@/features/alchemy/meta/screens/armory/use-armory-ordering";
 import type { GearInstance } from "@/lib/gear";
 import type { TrinketEntry } from "@/lib/game-data";
@@ -116,6 +117,94 @@ describe("useArmoryOrdering", () => {
     // Switch back to knight:main-hand
     rerender({ charId: "knight", slot: "main-hand" });
     expect(result.current.safePage).toBe(1); // knight remembered page 1
+  });
+
+  it("filters without losing hidden order and sorts the full category", () => {
+    const { result } = renderHook(() =>
+      useArmoryOrdering({
+        characterId: "knight",
+        selectedSlot: "main-hand",
+        pickerItems: [swordBasic1, hatchetBasic, swordAstral, swordUnique],
+        ownedTrinkets: [],
+      }),
+    );
+    const before = result.current.orderedGear.map((item) => item.instanceId);
+    act(() => result.current.setFilters({ ...DEFAULT_ARMORY_INVENTORY_FILTERS, search: "hatchet" }));
+    expect(result.current.pagedGear.map((item) => item.instanceId)).toEqual(["hatchet-b1"]);
+    expect(result.current.orderedGear.map((item) => item.instanceId)).toEqual(before);
+    act(() => result.current.onSort("name-desc"));
+    expect(result.current.pagedGear.map((item) => item.instanceId)).toEqual(["hatchet-b1"]);
+    act(() => result.current.setFilters(DEFAULT_ARMORY_INVENTORY_FILTERS));
+    expect(result.current.orderedGear.map((item) => item.instanceId)).toEqual([
+      "sword-unique",
+      "sword-b1",
+      "hatchet-b1",
+      "sword-astral",
+    ]);
+  });
+
+  it("remembers criteria and filtered pages by hero/slot and clamps after crafting", () => {
+    const items: GearInstance[] = Array.from({ length: 14 }, (_, index) => ({
+      ...swordBasic1,
+      instanceId: `sword-${String(index).padStart(2, "0")}`,
+      affixes: index % 2 === 0 ? [{ id: "flat-physical", value: 1 }] : [],
+    }));
+    const { result, rerender } = renderHook(
+      ({ hero, slot, pool }: { hero: "knight" | "rogue"; slot: "main-hand" | "body"; pool: GearInstance[] }) =>
+        useArmoryOrdering({ characterId: hero, selectedSlot: slot, pickerItems: pool, ownedTrinkets: [] }),
+      { initialProps: { hero: "knight", slot: "main-hand", pool: items } },
+    );
+    act(() => result.current.setFilters({ ...DEFAULT_ARMORY_INVENTORY_FILTERS, keywords: ["physical"] }));
+    expect(result.current.matchCount).toBe(7);
+    act(() => result.current.setPage(1));
+    rerender({ hero: "rogue", slot: "main-hand", pool: items });
+    expect(result.current.filters.keywords).toEqual([]);
+    rerender({ hero: "knight", slot: "body", pool: items });
+    expect(result.current.filters.keywords).toEqual([]);
+    rerender({ hero: "knight", slot: "main-hand", pool: items });
+    expect(result.current.safePage).toBe(1);
+    expect(result.current.filters.keywords).toEqual(["physical"]);
+    const crafted = items.map((item, index) => (index === 12 ? { ...item, affixes: [] } : item));
+    rerender({ hero: "knight", slot: "main-hand", pool: crafted });
+    expect(result.current.safePage).toBe(0);
+    rerender({ hero: "knight", slot: "main-hand", pool: items });
+    expect(result.current.safePage).toBe(0);
+  });
+
+  it("places filtered replacements in the full order and unequips before the visible page anchor", () => {
+    const items: GearInstance[] = Array.from({ length: 15 }, (_, index) => ({
+      ...swordBasic1,
+      instanceId: `sword-${String(index).padStart(2, "0")}`,
+      affixes: index % 2 === 0 ? [{ id: "flat-physical", value: 1 }] : [],
+    }));
+    const returned = { ...hatchetBasic, instanceId: "returned" };
+    const { result, rerender } = renderHook(
+      ({ pool }) =>
+        useArmoryOrdering({ characterId: "knight", selectedSlot: "main-hand", pickerItems: pool, ownedTrinkets: [] }),
+      { initialProps: { pool: items } },
+    );
+    act(() => result.current.setFilters({ ...DEFAULT_ARMORY_INVENTORY_FILTERS, keywords: ["physical"] }));
+    act(() => result.current.setPage(1));
+    act(() => result.current.commitEquip("sword-12", returned.instanceId));
+    rerender({ pool: [...items.filter((item) => item.instanceId !== "sword-12"), returned] });
+    expect(result.current.orderedGear[12]?.instanceId).toBe("returned");
+    expect(result.current.pagedGear.map((item) => item.instanceId)).toEqual(["sword-14"]);
+    expect(result.current.placeholderLocalIndex).toBeNull();
+    const unequipped = {
+      ...swordBasic2,
+      instanceId: "unequipped",
+      affixes: [{ id: "flat-physical" as const, value: 1 }],
+    };
+    act(() => result.current.commitUnequip(unequipped.instanceId));
+    rerender({ pool: [...items.filter((item) => item.instanceId !== "sword-12"), returned, unequipped] });
+    expect(result.current.orderedGear.slice(-2).map((item) => item.instanceId)).toEqual(["unequipped", "sword-14"]);
+    expect(result.current.pagedGear.map((item) => item.instanceId)).toEqual(["unequipped", "sword-14"]);
+    act(() => result.current.setFilters({ ...DEFAULT_ARMORY_INVENTORY_FILTERS, search: "no matches" }));
+    const secondReturn = { ...returned, instanceId: "second-return" };
+    act(() => result.current.commitUnequip(secondReturn.instanceId));
+    rerender({ pool: [...items.filter((item) => item.instanceId !== "sword-12"), returned, unequipped, secondReturn] });
+    expect(result.current.orderedGear[0]?.instanceId).toBe("second-return");
+    expect(result.current.matchCount).toBe(0);
   });
 
   it("sorts on demand and resets to page 0", () => {

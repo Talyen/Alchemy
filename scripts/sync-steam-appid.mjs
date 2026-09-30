@@ -1,3 +1,4 @@
+import { releaseEdition } from "./lib/release/game-edition.mjs";
 // Writes steam_appid.txt for local Steamworks dev from steam/platforms.json.
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -10,7 +11,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 export async function syncSteamAppId({ rootDir = root } = {}) {
   const config = JSON.parse(readFileSync(join(rootDir, "steam/platforms.json"), "utf8"));
-  const appId = process.env.STEAM_APP_ID ?? String(config.devAppId ?? 480);
+  const appId = releaseEdition().steamAppId ?? String(config.devAppId ?? 480);
   const outPath = join(rootDir, "steam_appid.txt");
 
   const wrote = await writeTextIfChanged(outPath, `${appId}\n`);

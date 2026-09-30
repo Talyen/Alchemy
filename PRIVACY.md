@@ -1,6 +1,6 @@
 # Alchemy privacy notice
 
-Effective: September 1, 2026
+Effective: September 29, 2026
 
 Alchemy stores game progress and settings locally on the player’s device. The
 desktop build may mirror saves to Steam Cloud when that service is available.
@@ -11,7 +11,13 @@ identity to diagnostic reports.
 
 Browser saves use local browser storage. Desktop saves use local files and may
 be mirrored to Steam Cloud. Save data contains gameplay progress, settings,
-decks, unlocks, and run state. The [save contract](./src/features/alchemy/shared/storage/MIGRATIONS.md#public-save-contract)
+decks, unlocks, and run state. Steam desktop saves also record the Steam account
+identifier to prevent importing another account's local demo progress. Demo and
+full-game saves remain separate; a fresh full-game profile can automatically
+import earned demo progression through shared Steam Cloud or local Windows saves.
+The import excludes active runs and device preferences. A small initialization
+receipt prevents repeated imports and survives Clear Save Data; it contains no
+progress and is not a diagnostic report. The [save contract](./src/features/alchemy/shared/storage/MIGRATIONS.md#public-save-contract)
 describes technical recovery and deletion behavior.
 
 Options offers **Clear Save Data** to remove local save data and start fresh.

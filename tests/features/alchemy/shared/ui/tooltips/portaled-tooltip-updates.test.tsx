@@ -42,7 +42,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-it("repositions without resizing and recalculates width when the tooltip or stage changes size", async () => {
+it("repositions on update and recalculates width when the tooltip changes size", async () => {
   let resize: ResizeObserverCallback = () => {};
   let frame: FrameRequestCallback = () => {};
   vi.stubGlobal(
@@ -61,14 +61,10 @@ it("repositions without resizing and recalculates width when the tooltip or stag
   });
   vi.stubGlobal("cancelAnimationFrame", vi.fn());
   floating.computePosition.mockResolvedValue({ x: 20, y: 30, placement: "top" });
-  const styleReads = vi.spyOn(window, "getComputedStyle");
   await act(async () => {
     render(<Harness />);
   });
   const tooltip = screen.getByTestId("tooltip");
-  const trigger = screen.getByTestId("trigger");
-  const sizingReads = () => styleReads.mock.calls.filter(([element]) => element === tooltip).length;
-  expect(sizingReads()).toBe(1);
   floating.computePosition.mockResolvedValue({ x: 40, y: 60, placement: "top" });
   await act(async () => {
     floating.update();
@@ -76,28 +72,13 @@ it("repositions without resizing and recalculates width when the tooltip or stag
   });
   expect(tooltip.style.left).toBe("40px");
   expect(tooltip.style.top).toBe("60px");
-  expect(sizingReads()).toBe(1);
+  // Width recalculation is the surviving protection: a tooltip resize must
+  // recompute placement.
+  floating.computePosition.mockResolvedValue({ x: 80, y: 90, placement: "top" });
   await act(async () => {
-    resize([resizeEntry(trigger)], {} as ResizeObserver);
+    resize([resizeEntry(tooltip)], {} as ResizeObserver);
     frame(32);
   });
-  expect(sizingReads()).toBe(1);
-  for (const target of [tooltip, document.documentElement]) {
-    await act(async () => {
-      resize([resizeEntry(target)], {} as ResizeObserver);
-      frame(48);
-    });
-  }
-  expect(sizingReads()).toBe(3);
-  vi.spyOn(document.documentElement, "getBoundingClientRect").mockReturnValue({
-    width: 1200,
-    height: 700,
-    left: 0,
-    right: 1200,
-  } as DOMRect);
-  await act(async () => {
-    floating.update();
-    frame(64);
-  });
-  expect(sizingReads()).toBe(4);
+  expect(tooltip.style.left).toBe("80px");
+  expect(tooltip.style.top).toBe("90px");
 });

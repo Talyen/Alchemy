@@ -204,81 +204,21 @@ describe("ArmoryScreen core", () => {
 describe("ArmoryScreen equipment movement and inventory ordering", () => {
   installArmoryScreenTestHooks();
 
-  it("renders the Sort control with Rarity and Name for gear", () => {
+  it("searches and clears inventory from the browsing controls", async () => {
+    const user = userEvent.setup();
     renderArmoryScreen();
     expect(screen.getByRole("combobox", { name: "Sort inventory" })).toBeTruthy();
+    await user.type(screen.getByRole("searchbox", { name: "Search inventory" }), "nothing matches");
+    expect(screen.getByText("No items match your search and filters.")).toBeTruthy();
+    expect(document.querySelectorAll('[data-testid="armory-inventory-item"]')).toHaveLength(0);
+    await user.click(screen.getByRole("button", { name: "Clear inventory search" }));
+    expect(document.querySelectorAll('[data-testid="armory-inventory-item"]')).toHaveLength(1);
   });
 
-  it("sorts inventory on demand and resets to page 0", async () => {
-    const user = userEvent.setup();
-    const items = [
-      ...Array.from({ length: 7 }, (_, i) => ({
-        instanceId: `sword-basic-${i}`,
-        definitionId: "longsword-basic" as const,
-        affixes: [],
-      })),
-      {
-        instanceId: "hatchet-basic-1",
-        definitionId: "hatchet-basic" as const,
-        affixes: [],
-      },
-    ];
-    renderArmoryScreen({ inventories: createArmoryInventories(items) });
-
-    // Move to page 1
-    await user.click(screen.getByLabelText("Next page"));
-    await waitFor(() => {
-      expect(document.querySelectorAll('[data-testid="armory-inventory-item"]')).toHaveLength(2);
-    });
-
-    // Click sort
-    await user.click(screen.getByRole("combobox", { name: "Sort inventory" }));
-    const nameOption = await screen.findByRole("option", { name: "Name" });
-    await user.click(nameOption);
-
-    // Resets to page 0
-    await waitFor(() => {
-      expect(document.querySelectorAll('[data-testid="armory-inventory-item"]')).toHaveLength(6);
-      expect(
-        document.querySelectorAll('[data-testid="armory-inventory-item"]')[0]?.getAttribute("data-gear-title"),
-      ).toBe("Hatchet");
-    });
-  });
-
-  it("preserves working order and page when switching categories", async () => {
-    const user = userEvent.setup();
-    const swords = Array.from({ length: 8 }, (_, i) => ({
-      instanceId: `sword-${i}`,
-      definitionId: "longsword-basic" as const,
-      affixes: [],
-    }));
-    const armor = Array.from({ length: 8 }, (_, i) => ({
-      instanceId: `armor-${i}`,
-      definitionId: "leather-armor-basic" as const,
-      affixes: [],
-    }));
-    renderArmoryScreen({ inventories: createArmoryInventories([...swords, ...armor]) });
-
-    // Currently on main-hand (swords). Advance to page 1.
-    await user.click(screen.getByLabelText("Next page"));
-    await waitFor(() => {
-      expect(document.querySelectorAll('[data-testid="armory-inventory-item"]')).toHaveLength(2);
-    });
-
-    // Switch to body slot
-    await user.click(screen.getByLabelText("Armor equipment slot"));
-    await waitFor(() => {
-      // Body slot starts on page 0 with 6 items
-      expect(document.querySelectorAll('[data-testid="armory-inventory-item"]')).toHaveLength(6);
-    });
-
-    // Switch back to main-hand slot
-    await user.click(screen.getByLabelText("Main-hand equipment slot"));
-    await waitFor(() => {
-      // Remembered page 1 (2 items)
-      expect(document.querySelectorAll('[data-testid="armory-inventory-item"]')).toHaveLength(2);
-    });
-  });
+  // Sort-on-demand ordering and hero/category page memory live in
+  // use-armory-ordering.test.ts (hook) and armory-ordering.test.ts (pure);
+  // the screen keeps browsing control integration above plus the
+  // equip/unequip wiring below.
 
   it("equips into an empty slot and compacts inventory", async () => {
     const user = userEvent.setup();

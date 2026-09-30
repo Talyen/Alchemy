@@ -193,8 +193,10 @@ describe("platform save backend", () => {
   it("wipes local even when cloud deletion fails when forceLocalWipe is set", async () => {
     vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const order: string[] = [];
+    const completeDemoInitialization = vi.fn().mockResolvedValue(false);
     installDesktopApi({
       overrides: {
+        completeDemoInitialization,
         steamCloudDelete: vi.fn().mockImplementation(async () => {
           order.push("cloud");
           return false;
@@ -210,6 +212,7 @@ describe("platform save backend", () => {
       createPlatformSaveBackend({ cloudSyncEnabled: true }).clear("ignored", { forceLocalWipe: true }),
     ).resolves.toEqual({ ok: true });
     expect(order).toEqual(["local", "cloud", "cloud"]);
+    expect(completeDemoInitialization).not.toHaveBeenCalled();
     vi.mocked(console.warn).mockRestore();
   });
 

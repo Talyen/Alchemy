@@ -1,11 +1,11 @@
-import { useSelectDismiss } from "../../../shared/ui/use-select-dismiss";
 import { Dices } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { sectionTitleClass } from "@/features/alchemy/shared/config";
 import type { CharacterId, TrinketEntry } from "@/lib/game-data";
 import type { ArmorySlot, EquippedTrinkets, GearInstance, GearLoadout, GearLoadouts } from "@/lib/gear";
 import { cn } from "@/lib/utils";
+import { ArmoryInventoryControls } from "./armory-inventory-controls";
+import type { ArmoryInventoryFilters } from "./armory-inventory-filtering";
 import { ItemPickerGrid } from "./item-picker-grid";
 import { SLOT_LABELS } from "./parts/slot-labels";
 import { TrinketPickerGrid } from "./trinket-picker-grid";
@@ -28,6 +28,11 @@ interface ArmoryPickerPanelProps {
   targeting: ArmoryTargeting;
   actions: ArmoryItemActions;
   onSpawnDevGear: ((characterId: CharacterId) => void) | undefined;
+  filters: ArmoryInventoryFilters;
+  matchCount: number;
+  totalCount: number;
+  onFiltersChange: (filters: ArmoryInventoryFilters) => void;
+  onBrowse: () => void;
   onSort: (option: ArmorySortOption) => void;
   page: number;
   totalPages: number;
@@ -53,6 +58,11 @@ export function ArmoryPickerPanel({
   actions,
   onSpawnDevGear,
   onSort,
+  filters,
+  matchCount,
+  totalCount,
+  onFiltersChange,
+  onBrowse,
   page,
   totalPages,
   onPageChange,
@@ -62,7 +72,6 @@ export function ArmoryPickerPanel({
   placeholderIndex,
   hiddenArtworkIds,
 }: ArmoryPickerPanelProps) {
-  const selectDismiss = useSelectDismiss();
   const { editable, salvageMode, activeCurrencyId, craftingResult } = targeting;
   const paging = { page, totalPages, onPageChange, fillerCount, placeholderIndex, hiddenArtworkIds };
   return (
@@ -72,20 +81,6 @@ export function ArmoryPickerPanel({
     >
       <FadeSlot swapKey={selectedSlot} className="flex min-h-0 min-w-0 flex-1 flex-col">
         <div className="relative flex min-h-10 w-full items-center justify-center">
-          <div className="absolute left-0">
-            <Select {...selectDismiss} value="" onValueChange={(val) => onSort(val as ArmorySortOption)}>
-              <SelectTrigger
-                aria-label="Sort inventory"
-                className="h-8 w-auto min-w-[4.5rem] gap-1.5 border-border/80 bg-background/80 px-2.5 py-1 text-xs"
-              >
-                <span className="text-xs font-medium">Sort</span>
-              </SelectTrigger>
-              <SelectContent>
-                {selectedSlot === "trinket" ? null : <SelectItem value="rarity">Rarity</SelectItem>}
-                <SelectItem value="name">Name</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
           <h2 className={cn("text-center font-sans", sectionTitleClass)}>{SLOT_LABELS[selectedSlot]}</h2>
           {onSpawnDevGear && editable && selectedSlot !== "trinket" ? (
             <div className="absolute right-0">
@@ -105,6 +100,7 @@ export function ArmoryPickerPanel({
           <TrinketPickerGrid
             reservedTrinkets={combatRestrictions.trinkets}
             characterId={characterId}
+            noMatches={totalCount > 0 && matchCount === 0}
             trinkets={ownedTrinkets}
             equippedTrinkets={equippedTrinkets}
             editable={editable}
@@ -117,6 +113,7 @@ export function ArmoryPickerPanel({
           <ItemPickerGrid
             reservedGear={combatRestrictions.gear}
             slot={selectedSlot}
+            noMatches={totalCount > 0 && matchCount === 0}
             items={pickerItems}
             loadout={loadout}
             loadouts={loadouts}
@@ -133,6 +130,16 @@ export function ArmoryPickerPanel({
             {...paging}
           />
         )}
+        <ArmoryInventoryControls
+          key={`${characterId}:${selectedSlot}`}
+          filters={filters}
+          isTrinket={selectedSlot === "trinket"}
+          matchCount={matchCount}
+          totalCount={totalCount}
+          onFiltersChange={onFiltersChange}
+          onSort={onSort}
+          onBrowse={onBrowse}
+        />
       </FadeSlot>
     </section>
   );

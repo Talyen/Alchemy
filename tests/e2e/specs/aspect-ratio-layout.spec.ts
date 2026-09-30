@@ -1,12 +1,5 @@
 import { expect, test } from "../../fixtures/e2e";
-import {
-  injectLabyrinthRun,
-  makeCard,
-  SAVE_KEY,
-  startAtDestination,
-  assertNoOverflow,
-  assertStageFitsViewport,
-} from "../../browser-helpers";
+import { makeCard, SAVE_KEY, startAtDestination, assertStageFitsViewport } from "../../browser-helpers";
 import { slow } from "../../playwright-tags";
 
 async function setAspectRatio(page: import("@playwright/test").Page, aspectRatio: string) {
@@ -83,46 +76,6 @@ test.describe("Card Selection Grid Layout", slow, () => {
   });
 });
 
-test.describe("Labyrinth map stage fitting", slow, () => {
-  test("labyrinth map stays inside the virtual stage without clipping", async ({ page }) => {
-    await page.setViewportSize({ width: 1920, height: 1080 });
-    await injectLabyrinthRun(page);
-    await expect(page.getByRole("heading", { name: /Labyrinth/i })).toBeVisible();
-    const labyrinthMap = page.getByRole("region", { name: "Labyrinth map" });
-    await expect(labyrinthMap).toBeVisible();
-    await page.getByRole("button", { name: /Combat chamber, reachable/ }).click();
-    await expect(page.getByRole("complementary", { name: "Chamber details" })).toBeVisible();
-    await expect(page.getByTestId("vr-stage")).toBeVisible();
-    await expect.poll(async () => labyrinthMap.boundingBox(), { timeout: 5000 }).not.toBeNull();
-
-    await assertNoOverflow(page, "Labyrinth");
-
-    await expect
-      .poll(
-        async () => {
-          return page.evaluate(() => {
-            const stage = document.querySelector('[data-testid="vr-stage"]');
-            const map = document.querySelector('[aria-label="Labyrinth map"]');
-            const inspector = document.querySelector('[aria-label="Chamber details"]');
-            if (!stage || !map || !inspector) return { ok: false as const, reason: "missing-nodes" };
-            const stageRect = stage.getBoundingClientRect();
-            const mapRect = map.getBoundingClientRect();
-            const inspectorRect = inspector.getBoundingClientRect();
-            const within = (rect: DOMRect) =>
-              rect.top >= stageRect.top - 2 &&
-              rect.bottom <= stageRect.bottom + 2 &&
-              rect.left >= stageRect.left - 2 &&
-              rect.right <= stageRect.right + 2;
-            return {
-              ok: within(mapRect) && within(inspectorRect),
-              stageBottom: stageRect.bottom,
-              mapBottom: mapRect.bottom,
-              inspectorBottom: inspectorRect.bottom,
-            };
-          });
-        },
-        { timeout: 5000 },
-      )
-      .toMatchObject({ ok: true });
-  });
-});
+// Labyrinth stage fitting lives in the labyrinth viewport loop plus the
+// display-sizing layout owner; this spec keeps DPR correctness and the
+// max-size card-grid stability.

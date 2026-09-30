@@ -46,6 +46,7 @@ export function buildAlchemySaveDataFromStores(activeRun: ActiveRunData | null):
   // snapshotRun. Callers snapshot the run first; this function only stamps.
   const persistenceFields = encodePersistenceFields();
   return {
+    steamAccountId: null,
     saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
     gameBuildVersion: CURRENT_GAME_BUILD_VERSION,
     contentVersion: CURRENT_CONTENT_VERSION,

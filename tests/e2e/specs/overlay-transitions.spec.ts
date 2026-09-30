@@ -2,7 +2,6 @@ import { expect, test } from "../../fixtures/e2e";
 import { injectActiveBattle, makeCard, makeGoblinBattleState } from "../../browser-helpers";
 import { critical, slow } from "../../playwright-tags";
 import { MenuPage } from "../../pages/menu-page";
-import { CorruptionPage } from "../../pages/corruption-page";
 import { openArmory } from "../armory";
 
 test("Escape cannot redirect a prepared navigation", async ({ page }) => {
@@ -123,29 +122,9 @@ test("closing during preparation never reveals late artwork, including reduced m
   await expect(panel.getByRole("button", { name: "Close card inspection" })).toBeFocused();
 });
 
-test("Corruption prepares the prompt, cards, and actions as one view", async ({ page }) => {
-  const corruption = new CorruptionPage(page);
-  await corruption.open();
-  await expect(corruption.corruptBtn).toBeVisible();
-  await page.evaluate(() => {
-    const decode = HTMLImageElement.prototype.decode;
-    const hold = new Promise<void>((resolve) => {
-      Object.assign(window, { releaseArtwork: resolve });
-    });
-    HTMLImageElement.prototype.decode = async function () {
-      await decode.call(this);
-      await hold;
-    };
-  });
-  await corruption.corruptBtn.click();
-  await expect(corruption.cardGrid).toHaveCount(1);
-  await expect(corruption.confirmCorruptBtn).toBeHidden();
-  await expect(page.getByText("Select one card. The altar may weaken, strengthen, or remake it.")).toBeHidden();
-  await page.evaluate(() => (window as unknown as { releaseArtwork: () => void }).releaseArtwork());
-  await expect(corruption.cardGrid).toBeVisible();
-  await expect(corruption.confirmCorruptBtn).toBeVisible();
-});
-
+// Corruption prompt/cards/actions mounting is covered by the corruption result
+// flow in destination-progression.spec.ts; this spec keeps the Escape, tab-reveal,
+// late-artwork, and inspection-pagination race canaries plus the Armory heading race.
 test("Armory slot headings never label the outgoing items", async ({ page }) => {
   await openArmory(page);
   const panel = page.getByTestId("armory-right-panel");

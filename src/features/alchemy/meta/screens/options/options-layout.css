@@ -1,0 +1,44 @@
+.options-settings-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--content-rem);
+  padding: calc(0.625 * var(--content-rem)) var(--content-rem);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.options-settings-heading::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: linear-gradient(to right, color-mix(in srgb, var(--color-gold-pale) 40%, transparent), transparent);
+}
+
+.options-settings-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(0.5 * var(--content-rem)) calc(1.5 * var(--content-rem));
+  min-height: calc(3.5 * var(--content-rem));
+  padding: calc(0.5 * var(--content-rem)) var(--content-rem);
+}
+
+.options-settings-row + .options-settings-row {
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent);
+}
+
+/* Flex bases stack controls below 36 content-scaled rem, including row padding and gap. */
+.options-settings-label {
+  flex: 2 1 calc(12.5 * var(--content-rem));
+  min-width: 0;
+}
+
+.options-settings-control {
+  flex: 3 1 calc(20 * var(--content-rem));
+  min-width: 0;
+  max-width: 100%;
+}
+
+.options-settings-toggle {
+  flex-wrap: nowrap;
+}

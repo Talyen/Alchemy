@@ -6,13 +6,7 @@ import { getPagination } from "../../shared/ui/pagination";
 import { FadeSlot } from "../../shared/ui/use-fade";
 import { playUISound } from "@/lib/audio";
 import { cardLibrary, type CompanionId } from "@/lib/game-data";
-import { cn } from "@/lib/utils";
-import {
-  artTileGridRowsClass,
-  collectionCardGridTileWidthClass,
-  collectionGridGapXClass,
-  collectionGridMinHeightClass,
-} from "../../shared/config";
+import { COLLECTION_BESTIARY_REFERENCE_WIDTH, COLLECTION_CARD_REFERENCE_WIDTH } from "../../shared/config";
 import {
   BUILDING_GOAL_ITEMS,
   FARM_GOAL_ITEMS,
@@ -95,8 +89,10 @@ export function HomesteadScreen({
     safeCompanionPage * HOMESTEAD_CONFIG.companionPageSize,
     (safeCompanionPage + 1) * HOMESTEAD_CONFIG.companionPageSize,
   );
-  const companionFillerCount = Math.max(0, HOMESTEAD_CONFIG.companionPageSize - visibleCompanionCards.length);
   const isCompanions = tab === "companions";
+  const columns = isCompanions ? 4 : 3;
+  const tileWidth = isCompanions ? COLLECTION_CARD_REFERENCE_WIDTH : COLLECTION_BESTIARY_REFERENCE_WIDTH;
+  const rowWidth = columns * tileWidth + (columns - 1) * 20 + 0.5;
 
   function handleSelectTab(nextTab: Tab) {
     setTab(nextTab);
@@ -120,59 +116,56 @@ export function HomesteadScreen({
 
           <FadeSlot
             swapKey={isCompanions ? `companions-${safeCompanionPage}` : `${tab}-${safeUpgradePage}`}
-            className={cn("mx-auto flex w-full flex-col justify-center overflow-visible", collectionGridMinHeightClass)}
+            className="mx-auto w-full overflow-visible"
           >
-            {isCompanions ? (
-              <div
-                className={cn(
-                  "mx-auto grid w-full max-w-fit grid-cols-4 justify-items-center",
-                  collectionGridGapXClass,
-                  artTileGridRowsClass,
-                )}
-              >
-                {visibleCompanionCards.map((card) => (
-                  <CompanionCardNode
-                    key={card.id}
-                    card={card}
-                    discovered={discoveredIds.has(card.id)}
-                    bondedCompanions={bondedCompanions}
-                    materialInventory={materialInventory}
-                    onBond={handleBondCompanion}
-                  />
-                ))}
-                {Array.from({ length: companionFillerCount }).map((_, index) => (
-                  <div
-                    key={`companion-filler-${index}`}
-                    aria-hidden
-                    className={cn(collectionCardGridTileWidthClass, "aspect-[3/4]")}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className={cn("grid w-full grid-cols-3", collectionGridGapXClass, artTileGridRowsClass)}>
-                {visibleUpgradeItems.map((item) => (
-                  <HomesteadUpgradeNode
-                    key={item.data.id}
-                    item={item}
-                    currentLevel={(upgradeLevels as Record<string, number>)[item.data.id] ?? 0}
-                    materialInventory={materialInventory}
-                    onAction={handleAction}
-                  />
-                ))}
-              </div>
-            )}
+            <div
+              className="mx-auto flex max-w-full flex-wrap justify-center gap-x-5 gap-y-8"
+              style={{ width: `calc(${rowWidth}px * var(--content-scale, 1))` }}
+            >
+              {isCompanions
+                ? visibleCompanionCards.map((card) => (
+                    <div
+                      key={card.id}
+                      className="max-w-full shrink-0"
+                      style={{ width: `calc(${tileWidth}px * var(--content-scale, 1))` }}
+                    >
+                      <CompanionCardNode
+                        card={card}
+                        discovered={discoveredIds.has(card.id)}
+                        bondedCompanions={bondedCompanions}
+                        materialInventory={materialInventory}
+                        onBond={handleBondCompanion}
+                      />
+                    </div>
+                  ))
+                : visibleUpgradeItems.map((item) => (
+                    <div
+                      key={item.data.id}
+                      className="max-w-full shrink-0"
+                      style={{ width: `calc(${tileWidth}px * var(--content-scale, 1))` }}
+                    >
+                      <HomesteadUpgradeNode
+                        item={item}
+                        currentLevel={(upgradeLevels as Record<string, number>)[item.data.id] ?? 0}
+                        materialInventory={materialInventory}
+                        onAction={handleAction}
+                      />
+                    </div>
+                  ))}
+            </div>
           </FadeSlot>
 
-          <div className="mx-auto flex flex-wrap items-center justify-center gap-x-2 gap-y-2">
-            <PaginationControls
-              page={isCompanions ? safeCompanionPage : safeUpgradePage}
-              totalPages={isCompanions ? companionPages : upgradePages}
-              onPageChange={isCompanions ? setCompanionPage : setUpgradePage}
-              size="default"
-              reserveSpace
-              className="mt-0"
-            />
-          </div>
+          {(isCompanions ? companionPages : upgradePages) > 1 ? (
+            <div className="mx-auto flex flex-wrap items-center justify-center gap-x-2 gap-y-2">
+              <PaginationControls
+                page={isCompanions ? safeCompanionPage : safeUpgradePage}
+                totalPages={isCompanions ? companionPages : upgradePages}
+                onPageChange={isCompanions ? setCompanionPage : setUpgradePage}
+                size="default"
+                className="mt-0"
+              />
+            </div>
+          ) : null}
         </div>
       </ScreenShell>
     </PageLayout>

@@ -156,7 +156,11 @@ describe("desktop CI artifact flow", () => {
     const delivery = releaseWorkflow.split("  release:\n")[1];
     expect(producer).toContain("artifact-id: ${{ steps.package-upload.outputs.artifact-id }}");
     expect(producer).toContain("id: package-upload");
-    expect(delivery).toContain("needs: package");
+    expect(delivery).toContain("needs: [package, package-demo]");
+    const demoProducer = releaseWorkflow.split("  package-demo:\n")[1].split("  vercel-qa:\n")[0];
+    expect(demoProducer).toContain("artifact-id: ${{ steps.package-upload.outputs.artifact-id }}");
+    expect(delivery).toContain("artifact-ids: ${{ needs.package-demo.outputs.artifact-id }}");
+    expect(demoProducer).toContain("release-desktop-demo/");
     expect(delivery).toContain("artifact-ids: ${{ needs.package.outputs.artifact-id }}");
     expect(delivery).toContain("merge-multiple: true");
     expect(delivery).not.toContain("github.run_attempt");

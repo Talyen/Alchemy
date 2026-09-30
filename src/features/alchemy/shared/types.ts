@@ -29,12 +29,14 @@ export interface CardGhost {
 }
 
 export interface CardTransfer {
+  kind: "draw" | "discard";
   id: string;
   card: BattleCard;
   from: CardRect;
   to: CardRect;
   fromScale: number;
   toScale: number;
+  toScaleY?: number;
   fromRotation: number;
   toRotation: number;
   rotateY: number[];
