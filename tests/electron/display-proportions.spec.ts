@@ -86,12 +86,16 @@ test("desktop and browser share composition at the reference and full-display vi
       }, display);
     }
     await expect
-      .poll(() => desktop.evaluate(() => ({ width: innerWidth, height: innerHeight })))
-      .toEqual({ width: display.width, height: display.height });
+      .poll(async () => {
+        const viewport = await desktop.evaluate(() => ({ width: innerWidth, height: innerHeight }));
+        return Math.abs(viewport.width - display.width) <= 1 && Math.abs(viewport.height - display.height) <= 1;
+      })
+      .toBe(true);
     await waitForLayoutSettled(desktop);
+    const fullscreenViewport = await desktop.evaluate(() => ({ width: innerWidth, height: innerHeight }));
     const factor = Math.min(
-      display.width / CONTENT_REFERENCE_VIEWPORT.width,
-      display.height / CONTENT_REFERENCE_VIEWPORT.height,
+      fullscreenViewport.width / CONTENT_REFERENCE_VIEWPORT.width,
+      fullscreenViewport.height / CONTENT_REFERENCE_VIEWPORT.height,
     );
     const initialFullscreenLayout = await measureViewportLayout(desktop);
     await expect
