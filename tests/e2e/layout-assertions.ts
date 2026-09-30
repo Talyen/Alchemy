@@ -57,7 +57,13 @@ export async function assertHorizontalNeighborGap(
   }).toPass({ timeout: 5_000 });
 
   const gap = second!.x - (first!.x + first!.width);
-  expect(gap).toBeGreaterThanOrEqual(minGap - SUBPIXEL_GAP_TOLERANCE);
+  const stageScale = await locator.first().evaluate((element) => {
+    const stage = element.closest('[data-testid="vr-stage"]') ?? document.querySelector('[data-testid="vr-stage"]');
+    if (!(stage instanceof HTMLElement) || stage.offsetWidth === 0) return 1;
+    const scale = stage.getBoundingClientRect().width / stage.offsetWidth;
+    return Number.isFinite(scale) && scale > 0 ? scale : 1;
+  });
+  expect(gap / stageScale).toBeGreaterThanOrEqual(minGap - SUBPIXEL_GAP_TOLERANCE);
 }
 
 export async function assertRowAlignment(locators: Locator[], maxDelta = 8) {
