@@ -116,5 +116,11 @@ describe("canonical verification commands", () => {
     expect(workflow).toMatch(
       /save-gate:\n {4}needs: \[changes, build\]\n {4}if: github\.event_name == 'workflow_dispatch' \|\| needs\.changes\.outputs\.save == 'true'/u,
     );
+    const saveJob = workflow.split("  save-gate:\n")[1].split("  desktop-build:\n")[0];
+    expect(saveJob).toContain("run: npm run test:ship:e2e -- --grep-invert @critical");
+    const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as { scripts: Record<string, string> };
+    expect(workflow.split("  e2e:\n")[1].split("  ship-gate:\n")[0]).toContain("npm run test:e2e:critical");
+    expect(pkg.scripts["test:e2e:critical"]).toContain("--grep @critical");
+    expect(pkg.scripts["test:ship:e2e"]).not.toContain("--grep");
   });
 });

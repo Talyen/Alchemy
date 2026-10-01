@@ -140,7 +140,7 @@ export function detonateEnemyStatuses(
     }
     const poisonPulse = pulses.find((pulse) => pulse.status === "poison");
     if (poisonPulse) {
-      nextState = applyPoisonDamageArmorRider(nextState, poisonPulse.finalDamage);
+      nextState = applyPoisonDamageArmorRider(nextState, poisonPulse.finalDamage, combatTexts);
       // Attribute overkill in pulse order so Poison cannot Leech Health already lost to Bleed.
       const healthDamage = pulseHealthDamage(pulses, pulses.indexOf(poisonPulse), previousHealth);
       if (applyPoisonRiders)

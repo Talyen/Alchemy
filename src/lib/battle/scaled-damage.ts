@@ -70,6 +70,12 @@ export function applyGearCcPhysicalDamage(
   const enemyWasAlive = state.enemyHealth > 0;
   return dealEnemyScaledDamage(state, gearDamage, "physical", combatTexts, {
     multiplier: getEnemyDamageMultiplier(state, "physical") * gearFrozenDamageMultiplier(state),
-    riders: (nextState, _finalDamage, texts) => applyHitEpilogue(nextState, state.enemyHealth, enemyWasAlive, texts),
+    riders: (nextState, finalDamage, texts) =>
+      applyHitEpilogue(
+        decayArmorAfterDamage(nextState, finalDamage, "enemy", texts),
+        state.enemyHealth,
+        enemyWasAlive,
+        texts,
+      ),
   });
 }

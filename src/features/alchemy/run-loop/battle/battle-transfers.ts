@@ -5,6 +5,7 @@ import type { CardRect, CardTransfer } from "../../shared/types";
 import { readBattle } from "../../shared/stores/run-reads";
 import type { BattleControllerContext } from "./battle-context";
 import type { HandDrawSequenceDeps } from "./draw-sequence";
+import { runPlaybackTask } from "./playback-task";
 import {
   animateDiscardedHand,
   animateDrawnHand,
@@ -28,31 +29,25 @@ export function createBattleTransferDeps(
   }
 
   function runCardTransfer(transfer: Omit<CardTransfer, "id">, onComplete?: () => void): Promise<void> {
-    return new Promise((resolve) => {
-      const id = ctx.playback.nextTransferId();
-      let completed = false;
-      let unregisterCancel = () => {};
-      let clearTimer = () => {};
-      const finish = (completeTransfer: boolean) => {
-        if (completed) return;
-        completed = true;
-        unregisterCancel();
-        clearTimer();
-        getPresentation().setCardTransfers((current) => current.filter((item) => item.id !== id));
-        if (completeTransfer) onComplete?.();
-        resolve();
-      };
-      unregisterCancel = ctx.playback.registerCancel(() => finish(false));
-      if (completed) {
-        unregisterCancel();
-        return;
-      }
-      getPresentation().setCardTransfers((current) => [...current, { ...transfer, id }]);
-      clearTimer = ctx.playback.timers.setGameTimeout(
-        () => finish(true),
-        Math.round(transfer.duration * 1000) + CARD_TRANSFER_CONFIG.completionBufferMs,
-      );
-    });
+    return runPlaybackTask<void>(
+      (callback) => ctx.playback.registerCancel(callback),
+      () => undefined,
+      (task) => {
+        const id = ctx.playback.nextTransferId();
+        task.own(() => {
+          getPresentation().setCardTransfers((current) => current.filter((item) => item.id !== id));
+        });
+        getPresentation().setCardTransfers((current) => [...current, { ...transfer, id }]);
+        task.schedule(
+          (callback) =>
+            ctx.playback.timers.setGameTimeout(
+              callback,
+              Math.round(transfer.duration * 1000) + CARD_TRANSFER_CONFIG.completionBufferMs,
+            ),
+          () => task.complete(undefined, onComplete),
+        );
+      },
+    );
   }
 
   const stableHandCardDeps: StableHandCardRectDeps = {

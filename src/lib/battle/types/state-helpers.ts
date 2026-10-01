@@ -1,5 +1,5 @@
 import { flatDamageReduction, receivesHalfDamage, gearResistancePercent } from "../damage-modifiers";
-import { LABYRINTH_MODIFIER_CONFIG } from "../../game-constants";
+import { BATTLE_CONFIG, MIN_ARMOR_AMOUNT, LABYRINTH_MODIFIER_CONFIG } from "../../game-constants";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { clamp } from "@/lib/math";
 import type { EnemyStatusId, PlayerStatusId } from "@/lib/game-data";
@@ -353,4 +353,17 @@ export function hasEncounterBenefit(
   id: EncounterRewardTraitId,
 ): boolean {
   return state.encounterBenefits.includes(id);
+}
+
+export function decayEnemyArmor(state: BattleState): BattleState {
+  if (hasEnemyTrait(state, "unbreakable") || state.enemyMitigation.armor <= MIN_ARMOR_AMOUNT) {
+    return state;
+  }
+  return {
+    ...state,
+    enemyMitigation: {
+      ...state.enemyMitigation,
+      armor: Math.max(0, state.enemyMitigation.armor - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT),
+    },
+  };
 }

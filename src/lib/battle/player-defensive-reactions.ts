@@ -50,13 +50,11 @@ function resolvePostDamageThresholds(
 ): BattleState {
   let nextState = applyVanguardCrestAfterBlock(state, blockAbsorb, remainingDamage, combatTexts);
   nextState = checkHealthThresholds(prevHealth, nextState.playerHealth, nextState, combatTexts);
-  const armorBeforeDecay = nextState.playerStatuses.armor;
-  nextState = decayArmorAfterDamage(nextState, actualDamage, "player", combatTexts);
-  if (
-    armorBeforeDecay > nextState.playerStatuses.armor &&
-    nextState.enemyHealth > 0 &&
-    nextState.gearEffects.stunOnArmorLostToAttack > 0
-  ) {
+  let armorLost = 0;
+  nextState = decayArmorAfterDamage(nextState, actualDamage, "player", combatTexts, (amount) => {
+    armorLost = amount;
+  });
+  if (armorLost > 0 && nextState.enemyHealth > 0 && nextState.gearEffects.stunOnArmorLostToAttack > 0) {
     nextState = resolveFollowUpHit(
       nextState,
       { source: "player-follow-up", damageType: "stun", amount: nextState.gearEffects.stunOnArmorLostToAttack },

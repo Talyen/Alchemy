@@ -32,6 +32,12 @@ all six failing suites plus five affected suites passed together with
 `--maxWorkers=1` (174 assertions, 70s). The four-worker cap does not eliminate
 local timing sensitivity. Next investigate related-test import analysis and
 worker contention before changing product code or raising global timeouts.
+A standalone full-suite comparison on 2026-09-30 took 237s with nine default
+workers and eight timeouts; the same checkout with four workers passed in 77s.
+Full local and CI unit runs now share the existing ceiling in
+[Vitest configuration](../vitest.config.ts), leaving one CPU free on smaller
+hosts. This bounds ordinary fan-out; overlapping sessions still need separate
+resource diagnosis.
 
 ## Resolved history
 

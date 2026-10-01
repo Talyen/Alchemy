@@ -61,7 +61,7 @@ remove fixtures in the checkout's real package-output or Steam build directories
 
 ### Component and hook tests
 
-Vitest runs React, hook, and browser-adapter suites in the `dom` project; pure engine, validation, desktop-contract, and tooling suites run in the `node` project. `vitest.config.ts:testEnvironmentForPath` owns that classification.
+Vitest runs React, hook, and browser-adapter suites in the `dom` project; pure engine, validation, desktop-contract, and tooling suites run in the `node` project. The include/exclude patterns in `vitest.config.ts` own that classification; the project guard checks actual collection rules for omissions and overlap. Full unit runs share the four-worker ceiling used by related and ship checks, leaving one CPU free on smaller hosts. CLI worker overrides remain available for focused diagnosis.
 
 Preserve test import order when a shared harness registers mocks or hooks. Import organization must not move that harness after modules whose dependencies it mocks; use explicit hoisted mocks where feasible. Ordinary explanatory comments are allowed; ESLint suppressions still require a reason. Keep comments focused on ordering, compatibility, and other reasons that names and tests alone do not explain.
 
@@ -69,7 +69,7 @@ Hook tests pass changing inputs through `renderHook(callback, { initialProps })`
 
 ## E2E policy
 
-Fixture, bootstrap, page-object, tag, and diagnostic instructions live in [tests/e2e/README.md](./tests/e2e/README.md). Every push runs the `@critical` suite once; save-touching pushes additionally run the complete save specs, intentionally repeating their overlapping critical tests. Nightly and release workflows own the full browser suite; nightly also owns coverage, mutation, deep entry-export analysis, and full Electron coverage.
+Fixture, bootstrap, page-object, tag, and diagnostic instructions live in [tests/e2e/README.md](./tests/e2e/README.md). Every push runs the `@critical` suite once; save-touching pushes additionally run the non-critical save scenarios. Together those jobs cover the complete save specs without repeating their critical journeys. Nightly and release workflows own the full browser suite; nightly also owns coverage, mutation, deep entry-export analysis, and full Electron coverage.
 
 ## Hooks and workflow hygiene
 

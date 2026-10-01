@@ -1,4 +1,5 @@
 import { resetTurnFlags } from "./combat-flags";
+import { mergeCombatText } from "./combat-text-events";
 import { resolveSecondaryAction } from "./action-context";
 import { resolvePendingBattleReactions } from "./enemy-attack-damage";
 import { hasEncounterBenefit, hasEnemyTrait } from "./types";
@@ -32,6 +33,11 @@ function applyPlagueDoctorMask(state: BattleState, combatTexts: CombatTextEvent[
   const removed = Math.min(state.playerStatuses.poison, state.trinketEffects.plagueDoctorPoisonCleanse);
   if (removed <= 0) return state;
   const poison = state.playerStatuses.poison - removed;
+  if (poison === 0) {
+    mergeCombatText(combatTexts, { target: "player", kind: "notice", stat: "poison", signal: "cleanse", text: "" });
+  } else {
+    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "poison", amount: removed, impact: false });
+  }
   const reduced = { ...state, playerStatuses: { ...state.playerStatuses, poison } };
   const cleansed = poison === 0 ? applyCleanseHeals(reduced, combatTexts) : reduced;
   return resolvePendingBattleReactions(

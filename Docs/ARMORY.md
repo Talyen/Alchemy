@@ -164,6 +164,8 @@ The keyword affixes use the same battle events as cards and talents. Bramblecall
 
 Cleanse, Purge, and Death's Door remain mechanics rather than Alchemy keywords; their new affixes use existing item affinities. Restorative rolls only after Health is actually restored, and Clearheaded and Solace reward each harmful status removed. Spellrending fires on the first card each turn that spends Mana, Purging one enemy benefit at either rarity; Unraveling and Denouncing reward a successful Purge once, even if it removes multiple benefits. Emberwake deals a Burn follow-up only on Death's Door entry, Lastwatch raises Critical Hit chance only during its grace window, and Rekindled heals on surviving expiry. Ironbriar grants Thorns when Block remains after turn decay. Bristling checks Block after the incoming hit, and Spiteful heals only for the first Thorns retaliation each turn that removes enemy Health.
 
+Fateful uses Mana as its secondary affinity so its Wish draw effect can roll on ordinary Mana Gear. The affix catalog test checks that every ordinary affix is reachable on at least one Basic or Astral item.
+
 Effect keys are listed in `GEAR_EFFECT_KEYS` (`src/lib/gear/gear-effect-manifest.ts`). Each entry in `gearAffixCatalog` declares its `effectKey: keyof GearEffectManifest`. The architecture guards `tests/architecture/affix-catalog-guard.test.ts` and `src/lib/content-validation/validators-gear.ts` assert:
 
 - Every `effectKey` in the catalog is a member of `GEAR_EFFECT_KEYS` (catches silent zero-roll typos).
@@ -198,8 +200,8 @@ persistence contracts in `tests/features/alchemy/shared/stores/gear-*` and
 `tests/features/alchemy/shared/storage/gear-save.test.ts`; Armory interaction
 in `tests/features/alchemy/meta/screens/armory-screen*.test.tsx` and
 `tests/features/alchemy/meta/screens/armory/*.test.ts`; architecture guards in
-`tests/architecture/affix-catalog-guard.test.ts` and
-`gear-affix-pool-guard.test.ts`; Unique battle behavior in
+`tests/architecture/affix-catalog-guard.test.ts` (including pool capacity and
+ordinary-affix reachability); Unique battle behavior in
 `tests/lib/battle/unique-effects.test.ts`, `unique-damage-bonuses.test.ts`,
 `unique-card-repeats.test.ts`, `unique-card-opportunities.test.ts`,
 `enemy-attack-damage.test.ts`, `damage-forge.test.ts`, and `battle-effect-persistence.test.ts`.

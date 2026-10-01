@@ -5,11 +5,15 @@ import { addPlayerStatusWithCombatText } from "./player-rewards";
 import { addForgeToPlayer, applyCleanseHeals } from "./status-player";
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { setPlayerStatus, type BattleState, type CombatTextEvent } from "./types";
+import { mergeCombatText } from "./combat-text-events";
 
 export function applyDodgeTalentStatuses(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   let nextState = state;
   if (state.talentEffects.drawOnDodge > 0) {
     nextState = applyDrawResult(nextState, drawFromState(nextState, state.talentEffects.drawOnDodge));
+    const drawn =
+      nextState.hand.length + nextState.pendingHandCards.length - state.hand.length - state.pendingHandCards.length;
+    if (drawn > 0) mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "draw", amount: drawn });
   }
   if (state.talentEffects.forgeOnDodge > 0 && rollTalentChance(REACTIVE_REWARD_CHANCES.feint, nextState)) {
     nextState = addForgeToPlayer(nextState, state.talentEffects.forgeOnDodge, combatTexts);
@@ -29,6 +33,11 @@ export function applyDodgeTalentStatuses(state: BattleState, combatTexts: Combat
     (nextState.playerStatuses.stun > 0 || nextState.playerStatuses.freeze > 0)
   ) {
     const removed = Number(nextState.playerStatuses.stun > 0) + Number(nextState.playerStatuses.freeze > 0);
+    for (const status of ["stun", "freeze"] as const) {
+      if (nextState.playerStatuses[status] > 0) {
+        mergeCombatText(combatTexts, { target: "player", kind: "notice", stat: status, signal: "cleanse", text: "" });
+      }
+    }
     nextState = applyCleanseHeals(
       { ...nextState, playerStatuses: { ...nextState.playerStatuses, stun: 0, freeze: 0 } },
       combatTexts,
@@ -42,7 +51,10 @@ export function applyDodgeTalentStatuses(state: BattleState, combatTexts: Combat
   for (const status of ["burn", "poison", "bleed"] as const) {
     const previous = nextState.playerStatuses[status];
     nextState = setPlayerStatus(nextState, status, Math.max(0, previous - amount));
-    removedStatuses += Number(previous > 0 && nextState.playerStatuses[status] === 0);
+    if (previous > 0 && nextState.playerStatuses[status] === 0) {
+      removedStatuses += 1;
+      mergeCombatText(combatTexts, { target: "player", kind: "notice", stat: status, signal: "cleanse", text: "" });
+    }
   }
   return removedStatuses > 0 ? applyCleanseHeals(nextState, combatTexts, 1) : nextState;
 }

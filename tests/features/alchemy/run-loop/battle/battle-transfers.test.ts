@@ -4,6 +4,7 @@ import { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/bat
 import { PlaybackLifetime } from "@/features/alchemy/run-loop/battle/playback-lifetime";
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/battle-context";
 import type { CardTransfer } from "@/features/alchemy/shared/types";
+import { CARD_TRANSFER_CONFIG } from "@/lib/game-constants";
 import { makeTestCardWithId } from "../../../../fixtures/battle";
 
 function makeTransfers() {
@@ -49,6 +50,37 @@ describe("battle transfer lifetime wiring", () => {
     const transfers = makeTransfers();
     transfers.playback.cancel();
     await transfers.animateDiscardedHand([makeTestCardWithId("slash", { uid: 1 })], 0);
+    expect(transfers.readTransfers()).toEqual([]);
+    expect(transfers.playback.timers.size).toBe(0);
+  });
+
+  it("finishes a transfer at its existing duration and releases its overlay", async () => {
+    vi.useFakeTimers();
+    try {
+      const transfers = makeTransfers();
+      const discarding = transfers.animateDiscardedHand([makeTestCardWithId("slash", { uid: 1 })], 0);
+      const transfer = transfers.readTransfers()[0]!;
+      const duration = Math.round(transfer.duration * 1000) + CARD_TRANSFER_CONFIG.completionBufferMs;
+      await vi.advanceTimersByTimeAsync(duration - 1);
+      expect(transfers.readTransfers()).toHaveLength(1);
+      await vi.advanceTimersByTimeAsync(1);
+      await discarding;
+      expect(transfers.readTransfers()).toEqual([]);
+      expect(transfers.playback.timers.size).toBe(0);
+      transfers.playback.cancelTransfers();
+      expect(transfers.readTransfers()).toEqual([]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("releases a published transfer if timer scheduling fails", async () => {
+    const transfers = makeTransfers();
+    const failure = new Error("timer unavailable");
+    vi.spyOn(transfers.playback.timers, "setGameTimeout").mockImplementation(() => {
+      throw failure;
+    });
+    await expect(transfers.animateDiscardedHand([makeTestCardWithId("slash", { uid: 1 })], 0)).rejects.toBe(failure);
     expect(transfers.readTransfers()).toEqual([]);
     expect(transfers.playback.timers.size).toBe(0);
   });

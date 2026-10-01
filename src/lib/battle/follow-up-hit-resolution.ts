@@ -40,7 +40,14 @@ export function resolveFollowUpHit(
     case "player-follow-up":
       if (request.damageType === "stun") return resolveStunFollowUpHit(state, request.amount, combatTexts);
       return resolveSecondaryAction(state, "reward", (current) =>
-        resolveDerivedFollowUp(current, request.damageType, request.amount, request.source, combatTexts),
+        resolveDerivedFollowUp(
+          current,
+          request.damageType,
+          request.amount,
+          request.source,
+          combatTexts,
+          "onDamageDealt" in request ? request.onDamageDealt : undefined,
+        ),
       );
     case "talent-fixed":
     case "talent-derived":
@@ -54,6 +61,7 @@ function resolveDerivedFollowUp(
   amount: number,
   source: FollowUpHitRequest["source"],
   combatTexts: CombatTextEvent[],
+  onDamageDealt?: (amount: number) => void,
 ): BattleState {
   if (amount <= 0 || state.enemyHealth <= 0) return state;
   const isPlayer = source === "player-follow-up";
@@ -79,6 +87,7 @@ function resolveDerivedFollowUp(
       resolveFollowUpHit(current, { source: "talent-derived", damageType: "bleed", amount: damage }, texts),
     ...(isPlayer ? { onPoisonDamage: tryPoisonStunProc } : {}),
   });
+  onDamageDealt?.(hit.facts.healthDamage);
   const preHitHealth = hit.facts.previousHealth;
   let nextState = hit.state;
   if (damageType === "nature") {

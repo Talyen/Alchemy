@@ -340,7 +340,7 @@ jobs:
       - name: Assert committed outputs match preparation
         run: npm run assets:check
 
-  # Save persistence remains path-gated because it intentionally exercises the complete save journeys.
+  # Critical save journeys run in e2e; this gate adds the remaining save scenarios.
   save-gate:
     needs: [changes, build]
     if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.save == 'true'
@@ -366,8 +366,8 @@ jobs:
       - uses: ./.github/actions/setup-playwright
 
       - run: mkdir -p reports
-      - name: Run complete save journeys
-        run: npm run test:ship:e2e
+      - name: Run additional save journeys
+        run: npm run test:ship:e2e -- --grep-invert @critical
         env:
           PLAYWRIGHT_VITE_MODE: preview
 

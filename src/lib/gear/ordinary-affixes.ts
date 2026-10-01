@@ -182,6 +182,7 @@ export const primaryAffixes = [
     descriptionTemplate: "Draw {value} Cards on Wish",
     effectKey: "drawOnWish",
     roll: rollRange(1, 1, 2, 2),
+    secondaryKeywordId: "mana",
   },
   {
     id: "consume-heal-bonus",

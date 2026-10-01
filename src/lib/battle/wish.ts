@@ -5,7 +5,7 @@ import { selectRewardCards } from "@/lib/game-data";
 import { getOfferableCardPool } from "@/lib/game-data/cards/card-pools";
 import type { BattleCard } from "@/lib/game-data";
 import { addCardToHandOrQueue, applyDrawResult, drawFromState } from "./draw";
-import { type BattleState, type CombatTextEvent } from "./types";
+import { isPlayerDefeated, type BattleState, type CombatTextEvent } from "./types";
 import {
   addGoldWithCombatText,
   applyHealingWithCombatText,
@@ -232,6 +232,20 @@ export function applyWishEffect(
  */
 export function applyEmergencyWish(state: BattleState, combatTexts: CombatTextEvent[] = []) {
   return applyWishEffect(state, undefined, 1, combatTexts, { kind: "enclosing-action" });
+}
+
+export function applyEmergencyWishForEmptyDraw(state: BattleState, amount: number, combatTexts: CombatTextEvent[]) {
+  return amount > 0 &&
+    state.turnPhase === "player" &&
+    state.enemyHealth > 0 &&
+    !isPlayerDefeated(state) &&
+    !state.wishOptions &&
+    state.hand.length === 0 &&
+    state.pendingHandCards.length === 0 &&
+    state.deck.length === 0 &&
+    state.discard.length === 0
+    ? applyEmergencyWish(state, combatTexts)
+    : state;
 }
 
 function applyWishBurnTrigger(

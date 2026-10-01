@@ -18,7 +18,6 @@ import {
   normalizeGearInstance,
   normalizeGearLoadout,
   pruneOrphanGearLoadouts,
-  rollAffixCount,
   salvageGear,
   unequipGear,
   getGearInstanceAffixes,
@@ -124,12 +123,6 @@ describe("gear domain", () => {
       flatBurnDamage: 2,
       flatFreezeDamage: 1,
     });
-  });
-
-  it("rolls the minimum affix count at the 80/20 boundary", () => {
-    // Full boundary coverage lives in generation.test.ts; this pins the contract here.
-    expect(rollAffixCount("basic", () => 0.79)).toBe(1);
-    expect(rollAffixCount("basic", () => 0.8)).toBe(2);
   });
 
   it("clears off-hand when equipping a two-handed main-hand weapon", () => {

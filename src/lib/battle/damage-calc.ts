@@ -125,8 +125,7 @@ function resolveDamageAfterMitigation(
   const isPhysicalOrStun = effect.damageType === "physical" || effect.damageType === "stun";
   const serpent = state.gearEffects.poisonedAttacksPierce > 0 && state.enemyStatuses.poison > 0 && card !== undefined;
   const kingbreaker = effect.damageType === "stun" && state.gearEffects.armorIncreasesStun > 0;
-  let nextState =
-    serpent || kingbreaker ? stateAfterBlock : applySunderingArmorPiercing(stateAfterBlock, isPhysicalOrStun);
+  let nextState = applySunderingArmorPiercing(stateAfterBlock, isPhysicalOrStun);
   // Ignoring Armor changes this hit's mitigation; only Sundering removes stacks.
   const ignoredArmor =
     state.gearEffects.armorPiercing +

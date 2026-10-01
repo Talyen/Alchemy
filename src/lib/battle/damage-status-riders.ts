@@ -21,7 +21,17 @@ import {
 import { applyGearCcPhysicalDamage, dealEnemyScaledDamage } from "./scaled-damage";
 import { applyScaledLeechHealing, computeLeechHeal } from "./damage-rider-leech";
 import { detonateEnemyStatuses } from "./dot-resolve";
+import { mergeCombatText } from "./combat-text-events";
 import { halveRounded } from "./amount-helpers";
+
+function removeEnemyArmorWithFeedback(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
+  const nextState = reduceEnemyArmor(state, amount);
+  const removed = state.enemyMitigation.armor - nextState.enemyMitigation.armor;
+  if (removed > 0) {
+    mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "armor", amount: removed, impact: false });
+  }
+  return nextState;
+}
 
 function applyGearBurnBleedMirrorLeech(
   state: BattleState,
@@ -34,6 +44,10 @@ function applyGearBurnBleedMirrorLeech(
   let nextState = state;
   if (rollPercent(BURN_BLEED_MIRROR_CHANCE_PERCENT, getBattleRng(nextState))) {
     nextState = addEnemyStatus(nextState, mirrorTarget, actualDamage);
+    const added = nextState.enemyStatuses[mirrorTarget] - state.enemyStatuses[mirrorTarget];
+    if (added > 0) {
+      mergeCombatText(combatTexts, { target: "enemy", kind: "multiply", stat: mirrorTarget, amount: added });
+    }
   }
   if (!alreadyBurningAndBleeding) return nextState;
   const healAmount = Math.max(1, halveRounded(actualDamage));
@@ -43,7 +57,7 @@ function applyGearBurnBleedMirrorLeech(
 function applyBurnStatusRider(state: BattleState, actualDamage: number, combatTexts: CombatTextEvent[]): BattleState {
   let nextState = addEnemyStatus(state, "burn", actualDamage);
   if (nextState.talentEffects.burnRemovesEnemyArmor) {
-    nextState = reduceEnemyArmor(nextState, actualDamage);
+    nextState = removeEnemyArmorWithFeedback(nextState, actualDamage, combatTexts);
   }
   return applyGearBurnBleedMirrorLeech(
     nextState,
@@ -63,7 +77,7 @@ function applyPoisonStatusRider(
   onPoisonBleedConversion?: (state: BattleState, damage: number, combatTexts: CombatTextEvent[]) => BattleState,
 ): BattleState {
   let nextState = addEnemyStatus(state, "poison", actualDamage);
-  nextState = applyPoisonDamageArmorRider(nextState, actualDamage);
+  nextState = applyPoisonDamageArmorRider(nextState, actualDamage, combatTexts);
   if (
     actualDamage > 0 &&
     nextState.talentEffects.goldOnFirstPoison > 0 &&
@@ -128,7 +142,7 @@ function applyBleedStatusRider(
   if (actualDamage > 0 && rollTalentChance(nextState.talentEffects.bleedHalveArmorChance, nextState)) {
     const halved = halveRounded(nextState.enemyMitigation.armor);
     const removed = nextState.enemyMitigation.armor - halved;
-    if (removed > 0) nextState = reduceEnemyArmor(nextState, removed);
+    if (removed > 0) nextState = removeEnemyArmorWithFeedback(nextState, removed, combatTexts);
   }
   // Preserve draw order: the leech chance rolls whenever bleed stacked,
   // even when card lifesteal already guarantees the queue.
@@ -251,7 +265,7 @@ function applyPhysicalStatusRider(
     nextState = detonateEnemyStatuses(nextState, ["bleed"], combatTexts);
   }
   if (actualDamage > 0 && state.talentEffects.physicalStripArmorByForge && forgeBeforeHit > 0) {
-    nextState = reduceEnemyArmor(nextState, forgeBeforeHit);
+    nextState = removeEnemyArmorWithFeedback(nextState, forgeBeforeHit, combatTexts);
   }
   if (state.talentEffects.physicalStripArmorWhileBlocked && state.playerStatuses.block > 0) {
     nextState = reduceEnemyArmor(nextState, 2);

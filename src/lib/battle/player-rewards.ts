@@ -11,6 +11,7 @@ import type { PlayerStatusId } from "@/lib/game-data";
 import {
   blockAmountWithForge,
   damageEnemyHealth,
+  decayEnemyArmor,
   setFlag,
   setPlayerStatus,
   addPlayerStatus,
@@ -77,7 +78,11 @@ function applyBloodCountessHealingReaction(
   const holyDamage = 1;
   if (combatTexts) mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "holy", amount: holyDamage });
   const hit = damageEnemyHealth(state, holyDamage);
-  const damagedState = processEncounterTraitHealthThreshold(hit.previousHealth, hit.state, combatTexts ?? []);
+  const damagedState = processEncounterTraitHealthThreshold(
+    hit.previousHealth,
+    decayEnemyArmor(hit.state),
+    combatTexts ?? [],
+  );
   return payKillPayouts(recordEnemyAbilityActivation(damagedState, "blood-countess"), enemyWasAlive, combatTexts ?? []);
 }
 
@@ -314,21 +319,23 @@ export function applyCleanseHeals(
   combatTexts?: CombatTextEvent[],
   removedStatuses = 1,
 ): BattleState {
-  const nextState = applyHealingWithCombatText(
-    state,
-    state.trinketEffects.sinEaterHealOnHarmfulStatusRemove,
-    combatTexts,
-  );
-  const healed = applyHealingWithCombatText(nextState, nextState.talentEffects.healOnStatusCleanse, combatTexts);
-  const blocked =
-    healed.gearEffects.blockOnCleanse > 0
-      ? applyBlockReward(healed, healed.gearEffects.blockOnCleanse * removedStatuses, combatTexts ?? [])
-      : healed;
-  const restored =
-    blocked.gearEffects.manaOnCleanse > 0
-      ? gainManaWithCombatText(blocked, blocked.gearEffects.manaOnCleanse * removedStatuses, combatTexts ?? [])
-      : blocked;
-  return restored.talentEffects.nextHolyFreeOnCleanse ? setFlag(restored, "nextHolyCardFree", true) : restored;
+  let nextState = state;
+  for (let index = 0; index < removedStatuses; index++) {
+    nextState = applyHealingWithCombatText(
+      nextState,
+      nextState.trinketEffects.sinEaterHealOnHarmfulStatusRemove,
+      combatTexts,
+    );
+    nextState = applyHealingWithCombatText(nextState, nextState.talentEffects.healOnStatusCleanse, combatTexts);
+    if (nextState.gearEffects.blockOnCleanse > 0) {
+      nextState = applyBlockReward(nextState, nextState.gearEffects.blockOnCleanse, combatTexts ?? []);
+    }
+    if (nextState.gearEffects.manaOnCleanse > 0) {
+      nextState = gainManaWithCombatText(nextState, nextState.gearEffects.manaOnCleanse, combatTexts ?? []);
+    }
+    if (nextState.talentEffects.nextHolyFreeOnCleanse) nextState = setFlag(nextState, "nextHolyCardFree", true);
+  }
+  return nextState;
 }
 
 export function removeHarmfulPlayerStatuses(state: BattleState, amount: number, combatTexts?: CombatTextEvent[]) {

@@ -99,7 +99,7 @@ CI retains JSON results on every run and failure diagnostics on failed or flaky
 runs, including tests that pass on retry. A retry remains permitted; flakes do
 not create an additional gate.
 
-The path-filtered `save-gate` intentionally reruns full save specs, including overlapping `@critical` tests, for save-touching pushes. Nightly runs those specs through the full web suite only once.
+The path-filtered `save-gate` runs save specs with `--grep-invert @critical`; the critical job already owns those journeys. Save-touching pushes cover the union once. Local `test:ship:e2e` and release checks still run the complete save specs, and nightly includes them in the full web suite.
 
 ## Controller-equivalent input
 

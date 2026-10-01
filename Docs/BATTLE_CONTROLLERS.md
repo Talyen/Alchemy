@@ -49,6 +49,14 @@ failure, or cancellation. Transfer visibility reads the same pending count; it
 never depends on a dependency object's identity. Card-action draw leases separately
 gate completion of overlapping card plays. Animation-frame waits belong to the
 lifetime and settle on cancellation even if the browser never delivers a frame.
+`playback-task.ts` owns single settlement and resource cleanup for frame waits,
+stable hand measurements, and timed card transfers. Each task registers with the
+existing lifetime, owns its visible transfer and pending callbacks, and releases
+them before completion or cancellation. Scheduling after settlement does nothing;
+cleanup returned by a synchronous completion is released immediately. Callback
+failures reject the task after cleanup rather than leaving a draw suspended.
+Consumers supply cancellation fallbacks and presentation work; they do not
+reimplement completion flags or unregister/timer/frame cleanup ordering.
 `draw-sequence.ts` owns sequencing; `battle-transfers.ts` adapts DOM measurements,
 sounds, and transfer timers. End-turn cleanup resets hand transfer UI only after
 all animated draws have settled.

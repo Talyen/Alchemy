@@ -23,6 +23,7 @@ import {
 } from "./controller-utils";
 import { getHandCardKey } from "./playable-hand";
 import type { HiddenHandCardKeys } from "./playable-hand";
+import { runPlaybackTask } from "./playback-task";
 
 export interface StableHandCardRectDeps {
   measureHandCard: (cardKey: string) => CardRect | null;
@@ -43,68 +44,34 @@ export function waitForStableHandCardRect(
   fallback: CardRect,
   deps: StableHandCardRectDeps,
 ): Promise<CardRect> {
-  return new Promise((resolve) => {
+  const measure = () => deps.measureHandCard(cardKey) ?? fallback;
+  return runPlaybackTask(deps.registerCancel, measure, (task) => {
     let frameCount = 0;
     let stableFrames = 0;
     let lastRect: CardRect | null = null;
-    let completed = false;
-    let unregisterCancel = () => {};
-    let clearDelay = () => {};
-    let measureFrame: number | null = null;
 
-    const finish = (rect: CardRect) => {
-      if (completed) return;
-      completed = true;
-      unregisterCancel();
-      clearDelay();
-      if (measureFrame !== null) cancelAnimationFrame(measureFrame);
-      resolve(rect);
-    };
-
-    const registeredCancel = deps.registerCancel(() => {
-      finish(deps.measureHandCard(cardKey) ?? fallback);
-    });
-    unregisterCancel = registeredCancel;
-    if (completed) {
-      unregisterCancel();
-      return;
-    }
-
-    const scheduledDelay = deps.scheduleTimeout(() => {
-      finish(deps.measureHandCard(cardKey) ?? fallback);
-    }, CARD_TRANSFER_CONFIG.stableRectTimeoutMs);
-    clearDelay = scheduledDelay;
-    if (completed) {
-      clearDelay();
-      return;
-    }
+    task.schedule(
+      (callback) => deps.scheduleTimeout(callback, CARD_TRANSFER_CONFIG.stableRectTimeoutMs),
+      () => task.complete(measure()),
+    );
 
     function tick() {
-      if (completed) return;
-      measureFrame = null;
       frameCount += 1;
-
-      const rect = deps.measureHandCard(cardKey) ?? fallback;
-
-      if (isRectStable(rect, lastRect)) {
-        stableFrames += 1;
-      } else {
-        stableFrames = 0;
-      }
+      const rect = measure();
+      stableFrames = isRectStable(rect, lastRect) ? stableFrames + 1 : 0;
       lastRect = rect;
 
       if (
         stableFrames >= CARD_TRANSFER_CONFIG.requiredStableSlotFrames ||
         frameCount >= CARD_TRANSFER_CONFIG.maxSlotStabilizeFrames
       ) {
-        finish(rect);
-        return;
+        task.complete(rect);
+      } else {
+        task.frame(tick);
       }
-
-      measureFrame = requestAnimationFrame(tick);
     }
 
-    measureFrame = requestAnimationFrame(tick);
+    task.frame(tick);
   });
 }
 

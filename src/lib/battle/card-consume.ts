@@ -12,6 +12,14 @@ import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { rollTalentChance } from "./status-helpers";
 import { cardHasKeyword } from "./card-classification";
 import { REACTIVE_REWARD_CHANCES } from "../game-constants";
+import { applyEmergencyWishForEmptyDraw } from "./wish";
+
+function drawConsumeReward(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
+  const drawn = applyDrawResult(state, drawFromState(state, amount));
+  const wished = applyEmergencyWishForEmptyDraw(drawn, amount, combatTexts);
+  // A failed draw can now trigger Wish damage; settle its retaliation before another reward.
+  return wished === drawn ? drawn : resolvePendingBattleReactions(wished, combatTexts);
+}
 
 function cardIsSummonCompanion(card: BattleCard): boolean {
   return card.effects.some((effect) => effect.kind === "summon-companion");
@@ -28,7 +36,8 @@ function applyConsumeTalentRiders(
   let nextState = state;
 
   if (talents.uncappedDrawOnConsume > 0) {
-    nextState = applyDrawResult(nextState, drawFromState(nextState, talents.uncappedDrawOnConsume));
+    nextState = drawConsumeReward(nextState, talents.uncappedDrawOnConsume, combatTexts);
+    if (isPlayerDefeated(nextState)) return nextState;
   }
   if (lastCardInHand && talents.forgeOnConsume > 0)
     nextState = addForgeToPlayer(nextState, talents.forgeOnConsume, combatTexts);
@@ -47,11 +56,12 @@ function applyConsumeTalentRiders(
     nextState = addGoldWithCombatText(nextState, talents.goldOnConsume, combatTexts);
   }
   if (talents.drawOnConsume > 0 && !readCombatFlag(nextState, "consumeDrawUsedThisTurn")) {
-    const draw = drawFromState(nextState, talents.drawOnConsume);
+    const drawn = drawConsumeReward(nextState, talents.drawOnConsume, combatTexts);
     nextState = {
-      ...applyDrawResult(nextState, draw),
-      flags: { ...nextState.flags, consumeDrawUsedThisTurn: true },
+      ...drawn,
+      flags: { ...drawn.flags, consumeDrawUsedThisTurn: true },
     };
+    if (isPlayerDefeated(nextState)) return nextState;
   }
   if (talents.poisonOnConsume > 0) {
     nextState = addEnemyStatus(nextState, "poison", talents.poisonOnConsume);
@@ -97,7 +107,7 @@ function applyConsumeGearRiders(
     nextState = gainManaWithCombatText(nextState, nextState.gearEffects.manaOnPaidConsume, combatTexts);
   }
   if (lastCardInHand && nextState.gearEffects.drawOnLastHandConsume > 0) {
-    nextState = applyDrawResult(nextState, drawFromState(nextState, nextState.gearEffects.drawOnLastHandConsume));
+    nextState = drawConsumeReward(nextState, nextState.gearEffects.drawOnLastHandConsume, combatTexts);
   }
   return nextState;
 }
@@ -118,8 +128,8 @@ export function handlePostPlayCardDestination(
     let nextState = { ...state, exhausted: [...state.exhausted, card] };
     if (triggerConsumeRiders) {
       if (state.trinketEffects.runicQuillDrawOnConsume > 0) {
-        const draw = drawFromState(nextState, state.trinketEffects.runicQuillDrawOnConsume);
-        nextState = applyDrawResult(nextState, draw);
+        nextState = drawConsumeReward(nextState, state.trinketEffects.runicQuillDrawOnConsume, combatTexts);
+        if (isPlayerDefeated(nextState)) return nextState;
       }
       nextState = applyConsumeGearRiders(nextState, card, combatTexts, lastCardInHand, manaSpent);
       if (isPlayerDefeated(nextState)) return nextState;

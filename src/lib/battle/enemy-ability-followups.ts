@@ -88,15 +88,26 @@ export function applyAbilityFollowups(
       nextState.playerStatuses.thorns +
       nextState.gearEffects.flatThornsDamage +
       (nextState.playerStatuses.block > 0 ? nextState.gearEffects.thornsDamageWhileBlocked : 0);
-    const healthBeforeThorns = nextState.enemyHealth;
+    let thornsHealthDamage = 0;
     nextState = resolveSecondaryAction(setPlayerStatus(nextState, "thorns", 0), "retaliation", (current) =>
-      resolveFollowUpHit(current, { source: "player-follow-up", damageType: "nature", amount }, combatTexts),
+      resolveFollowUpHit(
+        current,
+        {
+          source: "player-follow-up",
+          damageType: "nature",
+          amount,
+          onDamageDealt: (damage) => {
+            thornsHealthDamage = damage;
+          },
+        },
+        combatTexts,
+      ),
     );
-    if (nextState.enemyHealth < healthBeforeThorns && nextState.gearEffects.armorOnThornsDamage > 0) {
+    if (thornsHealthDamage > 0 && nextState.gearEffects.armorOnThornsDamage > 0) {
       nextState = applyArmorReward(nextState, nextState.gearEffects.armorOnThornsDamage, combatTexts);
     }
     if (
-      nextState.enemyHealth < healthBeforeThorns &&
+      thornsHealthDamage > 0 &&
       nextState.gearEffects.healOnFirstThornsDamageEachTurn > 0 &&
       !nextState.flags.spitefulHealedThisTurn
     ) {
@@ -107,7 +118,7 @@ export function applyAbilityFollowups(
       );
       nextState = { ...nextState, flags: { ...nextState.flags, spitefulHealedThisTurn: true } };
     }
-    if (nextState.enemyHealth < healthBeforeThorns && nextState.gearEffects.poisonOnThornsDamage > 0) {
+    if (thornsHealthDamage > 0 && nextState.gearEffects.poisonOnThornsDamage > 0) {
       nextState = resolveFollowUpHit(
         nextState,
         { source: "player-follow-up", damageType: "poison", amount: nextState.gearEffects.poisonOnThornsDamage },

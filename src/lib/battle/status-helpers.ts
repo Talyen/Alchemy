@@ -1,4 +1,4 @@
-import { hasEncounterBenefit, hasEnemyTrait } from "./types";
+import { hasEncounterBenefit } from "./types";
 import {
   BATTLE_CONFIG,
   LABYRINTH_HALF_DAMAGE_WARDS,
@@ -14,6 +14,7 @@ import { addPlayerStatusWithCombatText } from "./player-rewards";
 import { mergeCombatText } from "./combat-text-events";
 import {
   applyPlayerCombatDamage,
+  decayEnemyArmor,
   isPlayerDefeated,
   mitigatePlayerCombatDamage,
   reduceEnemyArmor,
@@ -133,9 +134,18 @@ export function rollTalentChance(chance: number, state: { rng?: () => number }):
   return chance > 0 && rollPercent(chance, getBattleRng(state));
 }
 
-export function applyPoisonDamageArmorRider(state: BattleState, damage: number): BattleState {
+export function applyPoisonDamageArmorRider(
+  state: BattleState,
+  damage: number,
+  combatTexts?: CombatTextEvent[],
+): BattleState {
   if (damage <= 0 || !state.talentEffects.poisonStripArmorByDamage) return state;
-  return reduceEnemyArmor(state, damage);
+  const nextState = reduceEnemyArmor(state, damage);
+  const removed = state.enemyMitigation.armor - nextState.enemyMitigation.armor;
+  if (removed > 0 && combatTexts) {
+    mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "armor", amount: removed, impact: false });
+  }
+  return nextState;
 }
 
 export type ArmorDecayTarget = "player" | "enemy";
@@ -147,9 +157,15 @@ export function armorMitigatesElementalDamage(state: BattleState, damageType: st
   );
 }
 
-export function removePlayerArmor(state: BattleState, amount: number, combatTexts?: CombatTextEvent[]): BattleState {
+export function removePlayerArmor(
+  state: BattleState,
+  amount: number,
+  combatTexts?: CombatTextEvent[],
+  onArmorLost?: (amount: number) => void,
+): BattleState {
   if (amount <= 0 || state.playerStatuses.armor <= 0) return state;
   const nextState = setPlayerStatus(state, "armor", Math.max(0, state.playerStatuses.armor - amount));
+  onArmorLost?.(state.playerStatuses.armor - nextState.playerStatuses.armor);
   if (
     nextState.playerStatuses.armor === 0 &&
     nextState.talentEffects.armorBreakBlock > 0 &&
@@ -160,25 +176,16 @@ export function removePlayerArmor(state: BattleState, amount: number, combatText
   return nextState;
 }
 
-function decayEnemyArmor(state: BattleState): BattleState {
-  if (hasEnemyTrait(state, "unbreakable") || state.enemyMitigation.armor <= MIN_ARMOR_AMOUNT) {
-    return state;
-  }
-  return {
-    ...state,
-    enemyMitigation: {
-      ...state.enemyMitigation,
-      armor: Math.max(0, state.enemyMitigation.armor - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT),
-    },
-  };
-}
-
-function decayPlayerArmor(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
+function decayPlayerArmor(
+  state: BattleState,
+  combatTexts?: CombatTextEvent[],
+  onArmorLost?: (amount: number) => void,
+): BattleState {
   if (hasEncounterBenefit(state, "ironclad") || state.playerStatuses.armor <= MIN_ARMOR_AMOUNT) {
     return state;
   }
 
-  return removePlayerArmor(state, BATTLE_CONFIG.ARMOR_DECAY_AMOUNT, combatTexts);
+  return removePlayerArmor(state, BATTLE_CONFIG.ARMOR_DECAY_AMOUNT, combatTexts, onArmorLost);
 }
 
 export function decayArmorAfterDamage(
@@ -186,11 +193,12 @@ export function decayArmorAfterDamage(
   damage: number,
   target: ArmorDecayTarget,
   combatTexts?: CombatTextEvent[],
+  onArmorLost?: (amount: number) => void,
 ): BattleState {
   if (damage <= 0) return state;
 
   if (target === "enemy") {
     return decayEnemyArmor(state);
   }
-  return decayPlayerArmor(state, combatTexts);
+  return decayPlayerArmor(state, combatTexts, onArmorLost);
 }

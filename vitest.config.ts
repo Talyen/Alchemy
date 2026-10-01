@@ -1,6 +1,8 @@
+import { availableParallelism } from "node:os";
 import { fileURLToPath, URL } from "node:url";
 
 import { defineConfig } from "vitest/config";
+import { VITEST_MAX_WORKERS } from "./scripts/lib/verification/test-concurrency.mjs";
 import { SSR_OPTIMIZE_INCLUDE, VITE_ALIAS_PATH, VITE_ALIAS_TARGET } from "./scripts/lib/vite-aliases.mjs";
 
 const excludedTestPaths = ["tests/balance/**", "tests/playthrough/**"];
@@ -44,24 +46,6 @@ const domTypeScriptPatterns = [
   "tests/features/alchemy/shared/ui/ui-hooks.test.ts",
   "tests/features/alchemy/shared/utils/dev-mode.test.ts",
 ];
-const domTypeScriptTests = domTypeScriptPatterns;
-
-function testEnvironmentForPath(filePath: string): "dom" | "node" {
-  const normalized = filePath.replaceAll("\\", "/");
-  if (normalized.endsWith(".test.tsx")) return "dom";
-  if (normalized.endsWith(".dom.test.ts")) return "dom";
-  if (normalized.includes("/use-") || normalized.endsWith("-hook.test.ts")) return "dom";
-  if (domLibPrefixes.some((prefix) => normalized.startsWith(prefix))) return "dom";
-  if (
-    domTypeScriptPatterns.some(
-      (pattern) => !pattern.includes("*") && normalized.endsWith(pattern.replace(/^tests\//, "")),
-    )
-  ) {
-    return "dom";
-  }
-  return "node";
-}
-
 const sharedProjectConfig = {
   restoreMocks: true,
   testTimeout: 5_000,
@@ -85,6 +69,7 @@ export default defineConfig({
     },
   },
   test: {
+    maxWorkers: Math.min(VITEST_MAX_WORKERS, Math.max(1, availableParallelism() - 1)),
     projects: [
       {
         extends: true,
@@ -92,7 +77,7 @@ export default defineConfig({
           ...sharedProjectConfig,
           name: "node",
           include: ["tests/**/*.test.ts"],
-          exclude: [...excludedTestPaths, ...domTypeScriptTests],
+          exclude: [...excludedTestPaths, ...domTypeScriptPatterns],
           environment: "node",
         },
       },
@@ -101,7 +86,7 @@ export default defineConfig({
         test: {
           ...sharedProjectConfig,
           name: "dom",
-          include: ["tests/**/*.test.tsx", ...domTypeScriptTests],
+          include: ["tests/**/*.test.tsx", ...domTypeScriptPatterns],
           exclude: excludedTestPaths,
           environment: "jsdom",
           setupFiles: ["tests/setup-dom.ts"],
@@ -130,5 +115,3 @@ export default defineConfig({
     },
   },
 });
-
-export { domTypeScriptTests, excludedTestPaths, testEnvironmentForPath };

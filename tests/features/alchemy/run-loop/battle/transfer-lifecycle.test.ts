@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { PlaybackLifetime } from "@/features/alchemy/run-loop/battle/playback-lifetime";
+import { runPlaybackTask } from "@/features/alchemy/run-loop/battle/playback-task";
 
 describe("PlaybackLifetime", () => {
   it("settles a suspended frame on cancellation without leaking into a restarted battle", async () => {
@@ -15,6 +16,24 @@ describe("PlaybackLifetime", () => {
       expect(cancelFrame).toHaveBeenCalledWith(42);
       expect(lifetime.pendingDraws).toBe(0);
       expect(lifetime.canAcceptInput()).toBe(true);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("ignores an old frame delivered after restart while the new wait remains active", async () => {
+    const frames: FrameRequestCallback[] = [];
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => frames.push(callback));
+    vi.stubGlobal("cancelAnimationFrame", vi.fn());
+    try {
+      const lifetime = new PlaybackLifetime();
+      const oldWait = lifetime.waitForFrame(lifetime.id);
+      lifetime.restart();
+      const newWait = lifetime.waitForFrame(lifetime.id);
+      frames[0]!(0);
+      await expect(oldWait).resolves.toBe(false);
+      frames[1]!(0);
+      await expect(newWait).resolves.toBe(true);
     } finally {
       vi.unstubAllGlobals();
     }
@@ -42,6 +61,63 @@ describe("PlaybackLifetime", () => {
     registry.registerCancel(third);
     registry.cancelTransfers();
     expect(third).toHaveBeenCalledOnce();
+  });
+});
+
+describe("playback task resources", () => {
+  it("cleans up and rejects a failed scheduled operation without executing late callbacks", async () => {
+    const lifetime = new PlaybackLifetime();
+    const releaseVisibleState = vi.fn();
+    const clearScheduledCallback = vi.fn();
+    const lateEffect = vi.fn();
+    let fire = () => {};
+    let fireLate = () => {};
+    const failure = new Error("measurement failed");
+    const pending = runPlaybackTask(
+      (callback) => lifetime.registerCancel(callback),
+      () => false,
+      (task) => {
+        task.own(releaseVisibleState);
+        task.schedule(
+          (callback) => {
+            fire = callback;
+            return () => {};
+          },
+          () => {
+            throw failure;
+          },
+        );
+        task.schedule((callback) => {
+          fireLate = callback;
+          return clearScheduledCallback;
+        }, lateEffect);
+      },
+    );
+    fire();
+    await expect(pending).rejects.toBe(failure);
+    lifetime.cancelTransfers();
+    fireLate();
+    expect(releaseVisibleState).toHaveBeenCalledOnce();
+    expect(clearScheduledCallback).toHaveBeenCalledOnce();
+    expect(lateEffect).not.toHaveBeenCalled();
+  });
+
+  it("releases all resources even when one cleanup fails", async () => {
+    const lifetime = new PlaybackLifetime();
+    const releaseTimer = vi.fn();
+    const pending = runPlaybackTask(
+      (callback) => lifetime.registerCancel(callback),
+      () => false,
+      (task) => {
+        task.own(() => {
+          throw new Error("overlay cleanup failed");
+        });
+        task.own(releaseTimer);
+      },
+    );
+    lifetime.cancelTransfers();
+    await expect(pending).rejects.toThrow("Battle playback cleanup failed");
+    expect(releaseTimer).toHaveBeenCalledOnce();
   });
 });
 

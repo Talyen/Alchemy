@@ -16,6 +16,7 @@ import { BattlePage } from "../../pages/battle-page";
 import { DestinationPage } from "../../pages/destination-page";
 import { RewardPage } from "../../pages/reward-page";
 import { critical } from "../../playwright-tags";
+import { CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation/metadata";
 import { currentSchemaCampaignSave } from "../../fixtures/current-saves";
 
 function getSavedLastSavedAt(page: import("@playwright/test").Page): Promise<number> {
@@ -180,14 +181,14 @@ test.describe("Save Persistence & Resume", () => {
   });
 
   test("resumes a run from a current-schema campaign fixture", async ({ page }) => {
-    const legacySave = currentSchemaCampaignSave();
+    const saved = currentSchemaCampaignSave();
     await page.addInitScript(
       (data) => {
         try {
           localStorage.setItem(data.saveKey, JSON.stringify(data.save));
         } catch {}
       },
-      { saveKey: SAVE_KEY, save: legacySave },
+      { saveKey: SAVE_KEY, save: saved },
     );
 
     await page.goto("/");
@@ -195,12 +196,12 @@ test.describe("Save Persistence & Resume", () => {
 
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
 
-    const upgraded = await page.evaluate((saveKey) => {
+    const restored = await page.evaluate((saveKey) => {
       return JSON.parse(localStorage.getItem(saveKey) || "{}");
     }, SAVE_KEY);
-    expect(upgraded.saveSchemaVersion).toBeDefined();
-    expect(persistedPurseGold(upgraded)).toBe(42);
-    expect(upgraded.activeRun.runPlayerHealth).toBe(18);
+    expect(restored.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
+    expect(persistedPurseGold(restored)).toBe(42);
+    expect(restored.activeRun.runPlayerHealth).toBe(18);
   });
 });
 

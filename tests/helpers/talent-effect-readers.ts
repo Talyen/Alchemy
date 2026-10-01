@@ -25,7 +25,7 @@ export function collectTalentEffectReaders(
     );
   };
   const visit = (node: ts.Node) => {
-    if (ts.isPropertyAccessExpression(node) && isRead(node)) {
+    if (ts.isPropertyAccessExpression(node) && fields.has(node.name.text) && isRead(node)) {
       record(checker.getTypeAtLocation(node.expression), node.name.text);
     } else if (ts.isElementAccessExpression(node) && isRead(node)) {
       const key = checker.getTypeAtLocation(node.argumentExpression);

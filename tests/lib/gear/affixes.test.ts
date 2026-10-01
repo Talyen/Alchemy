@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { GEAR_AFFIX_IDS, gearAffixCatalog } from "@/lib/gear/affix-catalog";
 import { defaultGearEffects, getGearAffixTooltipEntries, normalizeAffixRolls, resolveAffixEffects } from "@/lib/gear";
-import { buildEligibleAffixPool } from "@/lib/gear/affix-pool";
-import { gearDefinitions } from "@/lib/gear/definitions";
 
 describe("gear affixes", () => {
   it("shows both Saintfall magnitudes in its tooltip", () => {
@@ -29,6 +27,9 @@ describe("gear affixes", () => {
           { id: "flat-physical", value: 2 },
           { id: "not-an-affix", value: 1 },
           { id: "flat-stun", value: 0 },
+          { id: "flat-stun", value: -1 },
+          { id: "flat-stun", value: NaN },
+          { id: "flat-stun", value: Infinity },
         ]),
       ).toEqual([{ id: "flat-physical", value: 2 }]);
     });
@@ -65,51 +66,7 @@ describe("rebalanced saved affixes", () => {
   });
 });
 
-describe("new ordinary affixes", () => {
-  it("makes every new affix eligible on at least one Basic or Astral item", () => {
-    const newIds = [
-      "start-thorns",
-      "thorns-damage",
-      "thorns-on-block-depleted",
-      "forge-on-consume-burn",
-      "armor-on-thorns-damage",
-      "mana-on-paid-consume",
-      "poison-tick-on-consume",
-      "draw-on-last-hand-consume",
-      "block-on-companion-summon",
-      "forge-on-companion-burning-damage",
-      "archery-draw-chance",
-      "block-on-archery-without-block",
-      "armor-gain",
-      "armor-on-nature-card",
-      "block-on-wish",
-      "leech-block-chance",
-      "block-on-last-forge-spent",
-      "thorns-on-nature-without-thorns",
-      "poison-on-thorns-damage",
-      "heal-on-combat-gold",
-      "gold-on-kill-with-forge",
-      "thorns-on-leech-without-thorns",
-      "stun-on-leech-below-half",
-      "discount-on-empty-hand-wish",
-      "freeze-on-wish",
-      "armor-on-consume",
-      "holy-on-consume-without-mana",
-      "stun-on-armor-lost-to-attack",
-      "nature-leech-vs-poisoned",
-      "poison-bonus-vs-bleeding",
-      "physical-leech-below-half",
-      "block-on-holy-hit-without-block",
-      "holy-bonus-vs-stunned",
-    ] as const;
-    const reachable = new Set(
-      Object.values(gearDefinitions)
-        .filter((definition) => definition.rarity === "basic" || definition.rarity === "astral")
-        .flatMap((definition) => buildEligibleAffixPool(definition).map((affix) => affix.id)),
-    );
-    expect(newIds.filter((id) => !reachable.has(id))).toEqual([]);
-  });
-
+describe("ordinary affix tooltips", () => {
   it("keeps the revised Rotbloom, Bloodward, and Smithguard tooltip contracts", () => {
     expect(gearAffixCatalog["poison-tick-on-consume"].roll).toMatchObject({
       basic: { min: 1, max: 1 },

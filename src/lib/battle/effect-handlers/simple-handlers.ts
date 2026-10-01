@@ -6,7 +6,7 @@ import { companionLibrary } from "@/lib/game-data";
 import { applyPotionMultiplier } from "../amount-helpers";
 import { mergeCombatText } from "../combat-text-events";
 import { addGoldWithCombatText, applyBlockReward } from "../player-rewards";
-import { applyWishEffect } from "../wish";
+import { applyEmergencyWishForEmptyDraw, applyWishEffect } from "../wish";
 import { resolvePendingBattleReactions } from "../enemy-attack-damage";
 import { drawFromState, applyDrawResult } from "../draw";
 import { defineHandler } from "./handler-types";
@@ -26,9 +26,9 @@ export const applyRandomDrawEffect = defineHandler("random-draw", (state, _card,
     target: "player",
     kind: "status",
     stat: "draw",
-    amount: next.hand.length - state.hand.length,
+    amount: next.hand.length + next.pendingHandCards.length - state.hand.length - state.pendingHandCards.length,
   });
-  return next;
+  return applyEmergencyWishForEmptyDraw(next, amount, combatTexts);
 });
 
 export const applySummonCompanionEffect = defineHandler(
@@ -76,14 +76,15 @@ export const applyWishEffectHandler = defineHandler("wish", (state, card, effect
 });
 
 export const applyDrawCardsEffect = defineHandler("draw-cards", (state, _card, effect, potionMult, combatTexts) => {
-  const next = applyDrawResult(state, drawFromState(state, applyPotionMultiplier(effect.amount, potionMult)));
+  const amount = applyPotionMultiplier(effect.amount, potionMult);
+  const next = applyDrawResult(state, drawFromState(state, amount));
   mergeCombatText(combatTexts, {
     target: "player",
     kind: "status",
     stat: "draw",
-    amount: next.hand.length - state.hand.length,
+    amount: next.hand.length + next.pendingHandCards.length - state.hand.length - state.pendingHandCards.length,
   });
-  return next;
+  return applyEmergencyWishForEmptyDraw(next, amount, combatTexts);
 });
 
 const FLAG_EFFECTS = {

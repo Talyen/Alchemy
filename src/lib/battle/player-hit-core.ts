@@ -33,6 +33,13 @@ export function applyHitHealth(state: BattleState, resolvedDamage: number, eligi
 type DamageEffect = Extract<BattleCardEffect, { kind: "damage" }>;
 
 export type FollowUpHitRequest =
+  | Readonly<{
+      source: "player-follow-up";
+      damageType: "nature";
+      amount: number;
+      /** Health lost to this packet before threshold healing or other reactions. */
+      onDamageDealt: (amount: number) => void;
+    }>
   | Readonly<{ source: "player-follow-up"; damageType: DamageType; amount: number }>
   | Readonly<{ source: "talent-fixed" | "talent-derived"; damageType: DamageType; amount: number }>;
 

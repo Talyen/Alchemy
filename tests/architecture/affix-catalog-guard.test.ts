@@ -1,8 +1,33 @@
 import { describe, expect, it } from "vitest";
 import { GEAR_AFFIX_IDS, gearAffixCatalog } from "@/lib/gear/affix-catalog";
 import { GEAR_EFFECT_KEYS } from "@/lib/gear/gear-effect-manifest";
+import { GEAR_AFFIX_COUNT } from "@/lib/game-constants";
+import { gearDefinitions } from "@/lib/gear/definitions";
+import { buildEligibleAffixPool } from "@/lib/gear/affix-pool";
 
 describe("affix catalog guard", () => {
+  it("provides each Gear definition enough eligible affixes for its minimum roll", () => {
+    for (const definition of Object.values(gearDefinitions)) {
+      if (definition.rarity === null) continue;
+      expect(buildEligibleAffixPool(definition).length, definition.id).toBeGreaterThanOrEqual(
+        GEAR_AFFIX_COUNT[definition.rarity].min,
+      );
+    }
+  });
+
+  it("makes every ordinary affix reachable on Basic or Astral Gear", () => {
+    const reachable = new Set(
+      Object.values(gearDefinitions)
+        .filter((definition) => definition.rarity === "basic" || definition.rarity === "astral")
+        .flatMap((definition) => buildEligibleAffixPool(definition).map((affix) => affix.id)),
+    );
+    expect(
+      Object.values(gearAffixCatalog)
+        .filter((affix) => !affix.uniqueOnly && !reachable.has(affix.id))
+        .map((affix) => affix.id),
+    ).toEqual([]);
+  });
+
   it("defines every GEAR_AFFIX_IDS entry in gearAffixCatalog", () => {
     for (const id of GEAR_AFFIX_IDS) {
       expect(gearAffixCatalog[id], `missing catalog entry for ${id}`).toBeDefined();

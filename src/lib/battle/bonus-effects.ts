@@ -4,6 +4,7 @@ import { drawFromState, applyDrawResult } from "./draw";
 import { addGoldWithCombatText, gainManaWithCombatText } from "./player-rewards";
 import { setFlag, stripEnemyArmor, stripEnemyBlock, type BattleState, type CombatTextEvent } from "./types";
 import { addForgeToPlayer, applyBlockReward } from "./status-player";
+import { mergeCombatText } from "./combat-text-events";
 
 export interface CrowdControlTriggerBonuses {
   block?: number;
@@ -37,9 +38,27 @@ export function applyCrowdControlTriggerBonuses(
     nextState = addForgeToPlayer(nextState, forge, combatTexts);
   }
   if (bonuses.stripArmor) {
+    if (combatTexts && nextState.enemyMitigation.armor > 0) {
+      mergeCombatText(combatTexts, {
+        target: "enemy",
+        kind: "damage",
+        stat: "armor",
+        amount: nextState.enemyMitigation.armor,
+        impact: false,
+      });
+    }
     nextState = stripEnemyArmor(nextState);
   }
   if (bonuses.stripBlock) {
+    if (combatTexts && nextState.enemyMitigation.block > 0) {
+      mergeCombatText(combatTexts, {
+        target: "enemy",
+        kind: "damage",
+        stat: "block",
+        amount: nextState.enemyMitigation.block,
+        impact: false,
+      });
+    }
     nextState = stripEnemyBlock(nextState);
   }
   const mana = bonuses.mana ?? 0;

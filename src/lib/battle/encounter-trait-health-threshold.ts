@@ -37,7 +37,13 @@ export function processEncounterTraitHealthThreshold(
       { skipFightPacing: true },
     );
   }
-  if (!hasEnemyTrait(state, "divine-aegis") || state.flags.divineAegisTriggered || !crossedHalfHealth) return state;
+  if (
+    state.enemyHealth <= 0 ||
+    !hasEnemyTrait(state, "divine-aegis") ||
+    state.flags.divineAegisTriggered ||
+    !crossedHalfHealth
+  )
+    return state;
   let nextState = recordEnemyAbilityActivation(
     { ...state, flags: { ...state.flags, divineAegisTriggered: true } },
     "divine-aegis",

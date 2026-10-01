@@ -13,6 +13,7 @@ import type { CardEffectResolutionContext } from "./effect-handlers/handler-type
 import { resolveFollowUpHit } from "./follow-up-hit-resolution";
 import { rollTalentChance } from "./status-helpers";
 import { reduceEnemyArmor, setFlag, type BattleState, type CombatTextEvent } from "./types";
+import { mergeCombatText } from "./combat-text-events";
 
 function computeTalentAttackBonuses(
   state: BattleState,
@@ -109,6 +110,7 @@ function applyTalentStatusAndHitTriggers(
   if (keywords.includes("leech") && talents.armorStealOnLeechCard > 0) {
     const stolen = Math.min(nextState.enemyMitigation.armor, talents.armorStealOnLeechCard);
     if (stolen > 0) {
+      mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "armor", amount: stolen, impact: false });
       nextState = applyArmorReward(reduceEnemyArmor(nextState, stolen), stolen, combatTexts);
     }
   }

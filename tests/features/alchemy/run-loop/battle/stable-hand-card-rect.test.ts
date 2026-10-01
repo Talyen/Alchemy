@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   waitForStableHandCardRect,
   type StableHandCardRectDeps,
@@ -90,5 +90,24 @@ describe("waitForStableHandCardRect", () => {
     const pending = waitForStableHandCardRect("slash-1", fallback, deps);
     deps.timeouts.forEach((fire) => fire());
     await expect(pending).resolves.toEqual(rectA);
+  });
+
+  it("rejects a failed frame measurement and cancels the remaining timeout", async () => {
+    const clearTimeout = vi.fn();
+    const unregister = vi.fn();
+    const failure = new Error("hand measurement failed");
+    const deps = makeDeps({
+      measureHandCard: () => {
+        throw failure;
+      },
+      registerCancel: () => unregister,
+      scheduleTimeout: () => clearTimeout,
+    });
+    const pending = waitForStableHandCardRect("slash-1", fallback, deps);
+    flushFrames(1);
+    await expect(pending).rejects.toBe(failure);
+    expect(clearTimeout).toHaveBeenCalledOnce();
+    expect(unregister).toHaveBeenCalledOnce();
+    expect(rafQueue).toEqual([]);
   });
 });

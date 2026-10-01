@@ -83,7 +83,7 @@ export function tickEnemyPoison(state: BattleState, combatTexts: CombatTextEvent
     );
   }
   return dealEnemyDotTick(state, "poison", finalDamage, nextPoison, combatTexts, (nextState, hit) => {
-    let afterRiders = applyPoisonDamageArmorRider(nextState, finalDamage);
+    let afterRiders = applyPoisonDamageArmorRider(nextState, finalDamage, combatTexts);
     afterRiders = applyPoisonTalentRiders(afterRiders, hit.healthDamage, combatTexts, true, (current, damage, texts) =>
       resolveFollowUpHit(current, { source: "talent-derived", damageType: "bleed", amount: damage }, texts),
     );

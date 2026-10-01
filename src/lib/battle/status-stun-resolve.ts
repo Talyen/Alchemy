@@ -1,7 +1,7 @@
 import { recordEnemyAbilityActivation } from "./battle-metrics";
 import { hasEnemyTrait, setFlag, setEnemyStatus, type BattleState, type CombatTextEvent } from "./types";
 import { addGoldWithCombatText, applyHitEpilogue } from "./player-rewards";
-import { applyLuckyCloverGold, applyNatureManaRefund } from "./bonus-effects";
+import { applyLuckyCloverGold, applyNatureGoldReward, applyNatureManaRefund } from "./bonus-effects";
 import { applyGearCcPhysicalDamage, dealEnemyScaledDamage } from "./scaled-damage";
 import { getEnemyDamageMultiplier } from "./status-helpers";
 import { applyCrowdControlTriggerBonuses } from "./bonus-effects";
@@ -51,7 +51,11 @@ function applyStunTrinketEffects(state: BattleState, combatTexts?: CombatTextEve
         // the extras run first and the canonical tail stays in one place.
         riders: (damagedState, finalDamage, texts) =>
           applyHitEpilogue(
-            applyLuckyCloverGold(applyNatureManaRefund(damagedState, finalDamage, texts), finalDamage, texts),
+            applyNatureGoldReward(
+              applyLuckyCloverGold(applyNatureManaRefund(damagedState, finalDamage, texts), finalDamage, texts),
+              Math.max(0, previousHealth - damagedState.enemyHealth),
+              texts,
+            ),
             previousHealth,
             enemyWasAlive,
             texts,

@@ -1,6 +1,7 @@
 import { TimerGroup } from "@/lib/animation/game-timer";
 
 import type { BattleSnapshot } from "@/lib/battle";
+import { runPlaybackTask } from "./playback-task";
 
 export interface BattlePlaybackBind {
   scheduleAutoEndTurn: (state?: BattleSnapshot) => void;
@@ -150,22 +151,10 @@ export class PlaybackLifetime {
 
   waitForFrame(id: number): Promise<boolean> {
     if (!this.isCurrent(id)) return Promise.resolve(false);
-    return new Promise((resolve) => {
-      let settled = false;
-      let unregister = () => {};
-      const finish = (ready: boolean) => {
-        if (settled) return;
-        settled = true;
-        unregister();
-        resolve(ready && this.isCurrent(id));
-      };
-      const frame = requestAnimationFrame(() => finish(true));
-      if (settled) return;
-      unregister = this.registerCancel(() => {
-        cancelAnimationFrame(frame);
-        finish(false);
-      });
-      if (settled) unregister();
-    });
+    return runPlaybackTask(
+      (callback) => this.registerCancel(callback),
+      () => false,
+      (task) => task.frame(() => task.complete(this.isCurrent(id))),
+    );
   }
 }
