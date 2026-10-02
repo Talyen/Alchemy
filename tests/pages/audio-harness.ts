@@ -31,8 +31,11 @@ export async function trackSfxPlays(page: Page): Promise<void> {
         super(src);
         const origPlay = this.play.bind(this);
         this.play = async () => {
+          // Completion cleanup can release a short cue's src before this
+          // observer resumes. A fulfilled play promise confirms startup.
+          const isSfx = this.src.includes(marker);
           await origPlay();
-          if (this.src.includes(marker) && this.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+          if (isSfx) {
             runtime.__alchemySfxPlays = (runtime.__alchemySfxPlays ?? 0) + 1;
           }
         };

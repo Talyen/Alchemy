@@ -15,8 +15,7 @@ import {
 import { EncounterTraitContentSchema } from "./schemas";
 import { addDuplicateIssues, collectSchemaIssues, type Collector } from "./utils";
 
-export { validateCards, validateTrinkets } from "./validators-cards";
-export { validateEnemies, validateCompanions } from "./validators-enemies";
+export { validateTrinkets } from "./validators-cards";
 
 const encounterTraitIdList: readonly string[] = [...COMBAT_ENCOUNTER_TRAIT_IDS, ...REWARD_ENCOUNTER_TRAIT_IDS];
 const combatEncounterTraitIdSet = new Set<string>(COMBAT_ENCOUNTER_TRAIT_IDS);

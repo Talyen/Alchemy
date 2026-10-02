@@ -73,7 +73,12 @@ export function applyLeechHealing(
     );
   }
   if (actualHealing > 0 && belowHalf && state.gearEffects.stunOnLeechBelowHalfHealth > 0) {
-    restored = resolveStunFollowUpHit(restored, state.gearEffects.stunOnLeechBelowHalfHealth, combatTexts);
+    restored = resolveStunFollowUpHit(
+      restored,
+      state.gearEffects.stunOnLeechBelowHalfHealth,
+      combatTexts,
+      applyThunderstoneLeech,
+    );
   }
   if (actualHealing > 0 && rollBattleChance(state.gearEffects.leechBlockChance, state)) {
     restored = applyBlockReward(restored, actualHealing, combatTexts, { skipFightPacing: true });
@@ -118,6 +123,11 @@ export function applyScaledLeechHealing(
 ): BattleState {
   if (rawAmount <= 0) return state;
   return applyLeechHealing(state, scaleLeechBase(state, rawAmount, options.cardLeechFraction), combatTexts, options);
+}
+
+/** Thunderstone is a shallow trinket hit: restore its actual Health damage with ordinary Leech gain riders. */
+export function applyThunderstoneLeech(state: BattleState, damage: number, texts: CombatTextEvent[]): BattleState {
+  return applyScaledLeechHealing(state, computeLeechHeal(damage), texts);
 }
 
 function applyLeechManaRider(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {

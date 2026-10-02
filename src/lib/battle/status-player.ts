@@ -135,7 +135,10 @@ function applyHealthThresholdRewards(
   return nextState;
 }
 
-type HealthThresholdConfig = { threshold: number; amount: number };
+interface HealthThresholdConfig {
+  threshold: number;
+  amount: number;
+}
 const EMPTY_HEALTH_THRESHOLDS: readonly HealthThresholdConfig[] = [];
 
 function healthThresholdConfigs(

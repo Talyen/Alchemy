@@ -12,7 +12,7 @@ describe("CI action dependencies", () => {
   it("pins external actions in workflows and composite actions to full commit SHAs", () => {
     const references = [".github/workflows", ".github/actions"].flatMap((directory) => {
       const root = path.join(repoRoot, directory);
-      return readdirSync(root, { recursive: true })
+      return readdirSync(root, { recursive: true, encoding: "utf8" })
         .filter((file) => /\.ya?ml$/u.test(file))
         .flatMap((file) => {
           const contents = readFileSync(path.join(root, file), "utf8");

@@ -1,5 +1,5 @@
-import { createHash } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
+import { drawSliceFrameReference } from "../../fixtures/slice-draw-reference";
 import { drawSliceFrame } from "@/lib/animation/slice-draw";
 import {
   sampleBorderSpark,
@@ -68,7 +68,9 @@ describe("slice-particles", () => {
 
 describe("drawSliceFrame", () => {
   it("preserves exact drawing commands across sizes and the full animation", () => {
-    const commands: unknown[] = [];
+    let commands: unknown[] = [];
+    const expected: unknown[] = [];
+    const actual: unknown[] = [];
     const ctx = new Proxy(
       { canvas: { width: 0, height: 0 } },
       {
@@ -91,16 +93,19 @@ describe("drawSliceFrame", () => {
       ctx.canvas.width = width * 2;
       ctx.canvas.height = height * 2;
       for (const progress of [0, 0.01, 0.04, 0.08, 0.14, 0.22, 0.35, 0.5, 0.6, 0.8, 0.9, 1]) {
+        const visual = computeSliceVisual(progress, width, height);
+        commands = expected;
         commands.push([width, height, progress]);
-        drawSliceFrame(ctx, computeSliceVisual(progress, width, height), width, height, width / 2, height / 2);
+        drawSliceFrameReference(ctx, visual, width, height, width / 2, height / 2);
+        commands = actual;
+        commands.push([width, height, progress]);
+        drawSliceFrame(ctx, visual, width, height, width / 2, height / 2);
       }
     }
 
-    // Recorded before sample-storage reuse; includes paths, color/alpha state,
-    // spark coordinates and draw ordering without a large command fixture.
-    expect(createHash("sha256").update(JSON.stringify(commands)).digest("hex")).toMatchInlineSnapshot(
-      `"5452492cdbd82ac8c1111dd0d332595e5d40441c01e77c81c56bb13983bf489a"`,
-    );
+    // Exact numeric equality on the same host, including paths, color/alpha
+    // state, spark coordinates and draw ordering. No rounding or tolerance.
+    expect(actual).toEqual(expected);
   });
 
   function createMockCtx(): CanvasRenderingContext2D {

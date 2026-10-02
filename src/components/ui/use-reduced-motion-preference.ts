@@ -1,16 +1,15 @@
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 import { shouldReduceMotion } from "@/lib/animation/animation-prefs";
 
-const listeners = new Set<(reduced: boolean) => void>();
+const listeners = new Set<() => void>();
 let stopListening: (() => void) | undefined;
 
 function notifyListeners(): void {
-  const reduced = shouldReduceMotion();
-  for (const listener of listeners) listener(reduced);
+  for (const listener of listeners) listener();
 }
 
-function subscribe(listener: (reduced: boolean) => void): () => void {
+function subscribe(listener: () => void): () => void {
   // Animated text and effects share one browser subscription for the same preference.
   if (listeners.size === 0) {
     const media = window.matchMedia?.("(prefers-reduced-motion: reduce)");
@@ -39,13 +38,5 @@ function subscribe(listener: (reduced: boolean) => void): () => void {
  * `alchemy-disable-animations` flag must also be honored.
  */
 export function useReducedMotionPreference(): boolean {
-  const [reduced, setReduced] = useState(() => shouldReduceMotion());
-
-  useEffect(() => {
-    const unsubscribe = subscribe(setReduced);
-    setReduced(shouldReduceMotion());
-    return unsubscribe;
-  }, []);
-
-  return reduced;
+  return useSyncExternalStore(subscribe, shouldReduceMotion, shouldReduceMotion);
 }

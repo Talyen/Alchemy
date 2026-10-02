@@ -23,15 +23,15 @@ test.describe("shop-interactions", () => {
         let refreshed = false;
 
         while (Date.now() < deadline) {
-          const inspectCount = await shop.inspectButtons.count();
+          const inspectCount = await shop.buyBtn.count();
           if (inspectCount > 0) {
             await phase("shop-card-hover");
-            await shop.inspectButtons.nth(index % inspectCount).hover();
+            await shop.buyBtn.nth(index % inspectCount).hover();
           }
           if (!refreshed && index >= 2) {
             await phase("shop-refresh");
             await shop.refresh();
-            await expect(shop.inspectButtons.first()).toBeVisible();
+            await expect(shop.buyBtn.first()).toBeVisible();
             refreshed = true;
           }
           index += 1;

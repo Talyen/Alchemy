@@ -2,12 +2,33 @@ import { describe, expect, it } from "vitest";
 import { handlePostPlayCardDestination } from "@/lib/battle/card-consume";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
+import { applyScaledLeechHealing } from "@/lib/battle/damage-rider-leech";
 import { applyWishEffect } from "@/lib/battle/wish";
 import { companionLibrary, cardById } from "@/lib/game-data";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { makeTestCard, regressionBattle } from "../../fixtures/battle";
 
 describe("turn and trigger regressions", () => {
+  it("Leech-triggered Stun pays Thunderstone's Rootmender healing and its Leech riders once", () => {
+    const state = regressionBattle({
+      playerHealth: 10,
+      playerMaxHealth: 40,
+      enemyHealth: 40,
+      enemyMaxHealth: 40,
+      mana: 0,
+      maxMana: 3,
+      enemyStatuses: { stun: 20, poison: 1 },
+      gearEffects: { natureLeechVsPoisoned: 1, stunOnLeechBelowHalfHealth: 2 },
+      trinketEffects: { thunderstoneDamageOnStun: 6 },
+      talentEffects: { manaOnLeechChance: 100 },
+    });
+    const next = applyScaledLeechHealing(state, 2, []);
+    expect(next.enemyHealth).toBe(30);
+    expect(next.playerHealth).toBe(15);
+    expect(next.mana).toBe(2);
+    expect(next.enemyCC.stunSkipTurns).toBe(1);
+  });
+
   it("Lastlight checks Mana before Runic Quill can grant an Emergency Wish refund", () => {
     const card = makeTestCard({ consume: true });
     const state = regressionBattle({

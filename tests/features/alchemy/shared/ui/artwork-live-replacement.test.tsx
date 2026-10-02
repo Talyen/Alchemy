@@ -2,8 +2,8 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { useArtworkReady } from "@/features/alchemy/shared/ui/use-artwork-ready";
 
-function View({ source }: { source: string }) {
-  const { ref, pending } = useArtworkReady("same-page");
+function View({ source, initialRevealOnly = false }: { source: string; initialRevealOnly?: boolean }) {
+  const { ref, pending } = useArtworkReady("same-page", { initialRevealOnly });
   return (
     <div ref={ref} data-testid="view" data-artwork-pending={pending}>
       <img src={source} alt="Artwork" />
@@ -40,4 +40,19 @@ it("waits for replacement artwork after the same page was already revealed", asy
   await paint();
   expect(screen.getByTestId("view").dataset.artworkPending).toBeUndefined();
   expect(image.style.visibility).toBe("hidden");
+});
+
+it("keeps an already revealed screen interactive while replacement artwork decodes", async () => {
+  const { rerender } = render(<View source="first.webp" initialRevealOnly />);
+  const image = screen.getByAltText("Artwork");
+  Object.defineProperty(image, "decode", { value: () => Promise.resolve(), configurable: true });
+  fireEvent.load(image);
+  await paint();
+  rerender(<View source="replacement.webp" initialRevealOnly />);
+  await paint();
+  expect(screen.getByTestId("view").dataset.artworkPending).toBeUndefined();
+  expect(image.style.visibility).toBe("hidden");
+  fireEvent.load(image);
+  await paint();
+  expect(image.style.visibility).toBe("");
 });

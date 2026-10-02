@@ -23,6 +23,7 @@ import {
   applyHolyTithe,
   applyLeechHitHealing,
   applyLeechHitRewards,
+  applyThunderstoneLeech,
 } from "./damage-rider-leech";
 import { resolveTypedEnemyHit } from "./typed-hit-resolution";
 import { resolveStunFollowUpHit } from "./stun-follow-up-hit";
@@ -37,7 +38,8 @@ export function resolveFollowUpHit(
 ): BattleState {
   switch (request.source) {
     case "player-follow-up":
-      if (request.damageType === "stun") return resolveStunFollowUpHit(state, request.amount, combatTexts);
+      if (request.damageType === "stun")
+        return resolveStunFollowUpHit(state, request.amount, combatTexts, applyThunderstoneLeech);
       return resolveSecondaryAction(state, "reward", (current) =>
         resolveDerivedFollowUp(
           current,

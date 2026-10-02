@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 
 import { waitForImage } from "@/lib/preload";
 
-export function useArtworkReady(identity: string | number) {
+export function useArtworkReady(identity: string | number, { initialRevealOnly = false } = {}) {
   const ref = useRef<HTMLDivElement>(null);
   const [readyIdentity, setReadyIdentity] = useState<string | number | null>(null);
 
@@ -12,11 +12,13 @@ export function useArtworkReady(identity: string | number) {
     setReadyIdentity(null);
     const waits = new Map<HTMLImageElement, { source: string; lifetime: AbortController; pending: boolean }>();
     let pendingCount = 0;
+    let revealed = false;
     let frame: number | null = null;
     const scheduleReveal = () => {
       if (pendingCount > 0 || frame !== null) return;
       frame = requestAnimationFrame(() => {
         frame = null;
+        revealed = true;
         setReadyIdentity(identity);
       });
     };
@@ -37,6 +39,7 @@ export function useArtworkReady(identity: string | number) {
         waits.set(image, wait);
         pendingCount += 1;
         image.style.removeProperty("visibility");
+        if (initialRevealOnly && revealed) image.style.visibility = "hidden";
         image.loading = "eager";
         void waitForImage(image, wait.lifetime.signal).then((ready) => {
           if (wait.lifetime.signal.aborted) return;
@@ -45,12 +48,13 @@ export function useArtworkReady(identity: string | number) {
           wait.pending = false;
           pendingCount -= 1;
           if (!ready) image.style.visibility = "hidden";
+          else image.style.removeProperty("visibility");
           // Decode completions change readiness, not the mounted image set.
           // The observer handles DOM/source changes before the reveal frame.
           scheduleReveal();
         });
       }
-      if (pendingCount > 0) setReadyIdentity(null);
+      if (pendingCount > 0 && (!initialRevealOnly || !revealed)) setReadyIdentity(null);
       scheduleReveal();
     };
     const observer = new MutationObserver((records) => {
@@ -65,7 +69,7 @@ export function useArtworkReady(identity: string | number) {
       if (frame !== null) cancelAnimationFrame(frame);
       for (const wait of waits.values()) wait.lifetime.abort();
     };
-  }, [identity]);
+  }, [identity, initialRevealOnly]);
 
   return { ref, pending: readyIdentity !== identity || undefined };
 }

@@ -24,9 +24,9 @@ test("packaged plasma restores a lost context and falls back on shader failure",
       "[other] Plasma WebGL context lost; using static decoration",
     ]);
     await page.addInitScript(() => {
-      const original = WebGLRenderingContext.prototype.getShaderParameter;
-      WebGLRenderingContext.prototype.getShaderParameter = function (shader, parameter) {
-        return parameter === this.COMPILE_STATUS ? false : original.call(this, shader, parameter);
+      const original = WebGLRenderingContext.prototype.getProgramParameter;
+      WebGLRenderingContext.prototype.getProgramParameter = function (program, parameter) {
+        return parameter === this.LINK_STATUS ? false : original.call(this, program, parameter);
       };
     });
     await page.reload();

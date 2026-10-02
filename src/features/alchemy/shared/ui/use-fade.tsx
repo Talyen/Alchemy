@@ -102,7 +102,9 @@ export function FadeSlot({
     target: swapKey,
     durationMs: MOTION_FADE_MS,
   });
-  const { ref: artworkRef, pending: artworkPending } = useArtworkReady(shownKey);
+  // Card transfers and newly drawn artwork must not hide or make the live
+  // screen inert again. New images still wait individually for decoding.
+  const { ref: artworkRef, pending: artworkPending } = useArtworkReady(shownKey, { initialRevealOnly: true });
   const isLive = shownKey === swapKey;
   const heldChildren = useHeldWhile(isLive, children);
   const heldClassName = useHeldWhile(isLive, className);

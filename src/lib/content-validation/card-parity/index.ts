@@ -4,8 +4,7 @@ import { capitalizeWord } from "@/lib/utils";
 import type { ContentValidationIssue } from "../types";
 import { flattenEffects } from "./helpers";
 
-export { TRAIT_REQUIRED_TERMS, validateEnemyTraitDescriptionParity } from "./enemy-trait-parity";
-export { flattenEffects } from "./helpers";
+export { TRAIT_REQUIRED_TERMS } from "./enemy-trait-parity";
 export { validateTrinketDescriptionParity } from "./trinket-parity";
 
 function cardIssue(severity: "error" | "warning", id: string, message: string): ContentValidationIssue {
