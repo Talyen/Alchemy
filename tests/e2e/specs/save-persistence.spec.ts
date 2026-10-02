@@ -104,9 +104,12 @@ test("an interrupted enemy turn resumes once with a playable hand", critical, as
     await expect
       .poll(async () => Boolean((await readSavedGame(resumed)).activeRun?.activeCombat?.pendingBattleTransition))
       .toBe(false);
-    const health = await battle.enemyHealth();
     await battle.playFirstCard();
-    await expect.poll(() => battle.enemyHealth()).toBeLessThan(health);
+    // This fixture is lethal; its portrait unmounts when Rewards opens.
+    await expect(battle.victoryHeading).toBeVisible();
+    await expect
+      .poll(async () => (await readSavedGame(resumed)).activeRun?.interruptedFlow?.kind)
+      .toBe("primary-reward");
   });
 });
 
