@@ -24,7 +24,7 @@ async function pretendPlayerHost(page: Page): Promise<void> {
 }
 
 /** Counts successfully started SFX, including media loading and play rejection. */
-export async function trackSfxPlays(page: Page): Promise<void> {
+export async function trackSfxPlays(page: Page, marker = SFX_SRC_MARKER): Promise<void> {
   await pretendPlayerHost(page);
   await page.addInitScript((marker: string) => {
     const runtime = window as Window & { __alchemySfxPlays?: number };
@@ -45,7 +45,7 @@ export async function trackSfxPlays(page: Page): Promise<void> {
         };
       }
     };
-  }, SFX_SRC_MARKER);
+  }, marker);
 }
 
 export async function readSfxPlays(page: Page): Promise<number> {

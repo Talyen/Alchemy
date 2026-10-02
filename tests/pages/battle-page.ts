@@ -57,7 +57,11 @@ export class BattlePage {
   }
 
   async playFirstCard() {
-    await this.hand.first().click();
+    const card = this.hand.first();
+    // Playwright treats opacity-zero content as visible and does not wait for
+    // an inert ancestor to clear. Fresh-page resume must finish its artwork gate.
+    await expect.poll(() => card.evaluate((element) => !element.closest("[inert]"))).toBe(true);
+    await card.click();
   }
 
   async playCardNamed(name: string) {
