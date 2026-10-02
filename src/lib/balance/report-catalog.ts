@@ -126,7 +126,7 @@ const TITLE_LOOKUPS = {
   companion: new Map<string, string>(Object.values(companionLibrary).map((entry) => [entry.id, entry.title])),
   affix: new Map<string, string>(gearAffixList.map((entry) => [entry.id, entry.name])),
   gear: new Map<string, string>(gearBaseItemList.map((entry) => [entry.id, entry.displayName])),
-  talent: new Map<string, string>(talentPool.map((entry) => [entry.id, entry.name])),
+  talent: new Map<string, string | undefined>(talentPool.map((entry) => [entry.id, entry.name])),
 };
 
 export type TitleLookupKind = keyof typeof TITLE_LOOKUPS;

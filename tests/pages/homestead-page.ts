@@ -1,4 +1,4 @@
-import { type Page } from "@playwright/test";
+import { type Locator, type Page } from "@playwright/test";
 import { injectHomestead } from "../e2e/save-injection";
 import { MenuPage } from "./menu-page";
 

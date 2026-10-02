@@ -23,7 +23,7 @@ test("current-format resume retains Health, Gold, and offered destinations", cri
   await injectExactSave(page, {
     ...save,
     activeRun: {
-      ...(save.activeRun as Record<string, unknown>),
+      ...(save.activeRun as unknown as Record<string, unknown>),
       interruptedFlow: {
         kind: "destination",
         destinations: ["Campfire", "Mystery", "Card Shop"],

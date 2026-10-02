@@ -12,6 +12,10 @@ async function pretendPlayerHost(page: Page): Promise<void> {
   await page.addInitScript(() => {
     const userAgent = navigator.userAgent;
     Object.defineProperty(navigator, "webdriver", { configurable: true, get: () => false });
+    // Headless CI can expose a zero-size outer window even with a visible
+    // viewport. Model a normal player window for this real-media journey.
+    Object.defineProperty(window, "outerWidth", { configurable: true, get: () => window.innerWidth });
+    Object.defineProperty(window, "outerHeight", { configurable: true, get: () => window.innerHeight });
     Object.defineProperty(navigator, "userAgent", {
       configurable: true,
       get: () => userAgent.replace("HeadlessChrome", "Chrome"),

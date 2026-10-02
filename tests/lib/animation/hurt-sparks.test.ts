@@ -97,7 +97,7 @@ describe("hurt-sparks", () => {
           alphaWrites.push(value);
           alpha = value;
         },
-        fillRect(x: number, y: number, w: number, h: number) {
+        fillRect(this: { fillStyle: string }, x: number, y: number, w: number, h: number) {
           actual.push([this.fillStyle, alpha, x, y, w, h]);
         },
       } as unknown as CanvasRenderingContext2D;

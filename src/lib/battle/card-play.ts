@@ -75,7 +75,8 @@ function cleanseOnlyCardHasNoTargets(card: BattleCard, state: BattleSnapshot): b
   if (hasUsefulEffect) return false;
   return !card.effects.some((effect) =>
     effect.kind === "remove-harmful-status"
-      ? (effect.removeAll || (effect.amount ?? 0) > 0) && countRemovableHarmfulStatuses(state.playerStatuses) > 0
+      ? (effect.removeAll === true || (effect.amount ?? 0) > 0) &&
+        countRemovableHarmfulStatuses(state.playerStatuses) > 0
       : effect.kind === "remove-player-status" && state.playerStatuses[effect.status] > 0,
   );
 }

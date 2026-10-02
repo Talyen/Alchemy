@@ -116,7 +116,7 @@ function AppMainContent({
     run.routeCommands.battle;
   const runBoons = useActiveRunBoons();
   const hasInspectBoons = hasInspectableBoons(runBoons);
-  const { ref: artworkRef, pending: artworkPending } = useArtworkReady(renderedScreen);
+  const { ref: artworkRef, pending: artworkPending } = useArtworkReady(renderedScreen, { initialRevealOnly: true });
   const pagePhaseClass = pagePhase === "exit" ? "page-exit" : "page-enter";
   const screenInteractive =
     !run.navigationPending && controllerScreen === renderedScreen && pagePhase !== "exit" && !artworkPending;

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { AUTOPLAY_EFFECT_SCORE, getEffectiveDamageScore, getImmediateDefense } from "@/lib/battle/autoplay-policy";
 import type { BattleCard } from "@/lib/game-data";
 import * as simPolicy from "@/lib/balance/play-policy";
-import { makeTestBattleState } from "../../fixtures/battle";
+import { makeTestBattleState, patchBattleState } from "../../fixtures/battle";
 import { makeTestCard } from "../../fixtures/cards";
 
 // Live autoplay weights are game design. Any change alters autoplay and Wish
@@ -49,7 +49,7 @@ describe("autoplay policy guard", () => {
   });
 
   it("keeps conditional damage amounts and free-card Mana refill scoring", () => {
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       mana: 3,
       maxMana: 3,
       playerStatuses: { block: 2 },
@@ -104,7 +104,7 @@ describe("autoplay policy guard", () => {
   });
 
   it("keeps defensive status-pool averages and full-cleanse scores", () => {
-    const state = makeTestBattleState({ playerStatuses: { burn: 2, poison: 1, stun: 0 } });
+    const state = patchBattleState({ playerStatuses: { burn: 2, poison: 1, stun: 0 } });
     const score = (effects: BattleCard["effects"]) =>
       getEffectiveDamageScore(makeTestCard({ cost: 0, effects }), state);
     expect(score([{ kind: "player-status", status: "block", amount: 6 }])).toBe(3);

@@ -36,14 +36,14 @@ test(
     });
     await page.goto("/");
     await expect(page.getByRole("button", { name: /Take the Offering/ })).toBeVisible();
-    const before = (await readSavedGame(page)).activeRun?.runTalentXP.holy ?? 0;
+    const before = (await readSavedGame(page)).activeRun?.runTalentXP?.holy ?? 0;
     await page.getByRole("button", { name: /Take the Offering/ }).click({ clickCount: 2, delay: 20 });
-    await expect.poll(async () => (await readSavedGame(page)).activeRun?.runTalentXP.holy).toBe(before + 8);
+    await expect.poll(async () => (await readSavedGame(page)).activeRun?.runTalentXP?.holy).toBe(before + 8);
     await new MysteryPage(page).continueBtn.click();
     await new DestinationPage(page).expectVisible();
     await withSavedGame(page, async (resumed) => {
       await new DestinationPage(resumed).expectVisible();
-      expect((await readSavedGame(resumed)).activeRun?.runTalentXP.holy).toBe(before + 8);
+      expect((await readSavedGame(resumed)).activeRun?.runTalentXP?.holy).toBe(before + 8);
     });
   },
 );

@@ -5,7 +5,7 @@ import { advanceToPlayerTurn } from "@/lib/battle/player-turn-transition";
 import { shuffle } from "@/lib/rng";
 import { CARDS_PER_TURN, MAX_HAND_SIZE } from "@/lib/game-constants";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import { makeTestBattleState, makeTestCardWithId, seededRng } from "../../fixtures/battle";
+import { makeTestBattleState, makeTestCardWithId, patchBattleState, seededRng } from "../../fixtures/battle";
 import { makeTestCard } from "../../fixtures/cards";
 
 const makeCard = makeTestCardWithId;
@@ -256,7 +256,7 @@ describe("takeRandomCardFromDeck", () => {
   it.each(["deck", "discard"] as const)("preserves the %s input and seeded draw order", (pile) => {
     const cards = [makeCard("a", { uid: 1 }), makeCard("b", { uid: 2 }), makeCard("c", { uid: 3 })];
     const rng = vi.fn(() => 0);
-    const state = makeTestBattleState({
+    const state = patchBattleState({
       deck: pile === "deck" ? cards : [],
       discard: pile === "discard" ? cards : [],
       nextCardUid: 40,
